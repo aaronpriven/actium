@@ -1,0 +1,319 @@
+#!/usr/bin/perl
+
+# htmlskeds
+
+# Makes html versions of the skeds in /skeds
+
+use strict;
+
+####################################################################
+#  load libraries
+####################################################################
+
+use FindBin('$Bin'); 
+   # so $Bin is the location of the very file we're in now
+
+use lib $Bin; 
+   # there are few enough files that it makes sense to keep
+   # main program and library in the same directory
+
+# libraries dependent on $Bin
+
+
+use Skedfile qw(Skedread Skedwrite remove_blank_columns);
+use Myopts;
+use Skeddir;
+use Skedvars qw(%daydirhash %adjectivedaynames %bound);
+use Byroutes 'byroutes';
+use Skedtps qw(tphash tpxref %tphash %tpxref TPXREF_FULL);
+use FPMerge qw(FPread FPread_simple);
+
+our %second = ( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
+                "82L" => '82' ,  SA  => 'S'  , '51S' => '51' );
+
+our %first = reverse %second;
+
+######################################################################
+# initialize variables, command options, change to Skeds directory
+######################################################################
+
+our (%options);    # command line options
+
+Myopts::options (\%options, Skeddir::options(), 'quiet!');
+# command line options in %options;
+
+$| = 1; # don't buffer terminal output; perl's not supposed to need this, but it does
+
+print "htmlskeds - create a set of html files\n\n" unless $options{quiet};
+
+my $signup;
+$signup = (Skeddir::change (\%options))[2];
+print "Using signup $signup\n" unless $options{quiet};
+# Takes the necessary options to change directories, plus 'quiet', and
+# then changes directories to the "actium/db/xxxx" base directory.
+
+open DATE , "<effectivedate.txt" 
+      or die "Can't open effectivedate.txt for input: $!";
+our $effdate = scalar <DATE>;
+close DATE;
+chomp $effdate;
+
+
+my $prepdate;
+
+{
+my ($mday, $mon, $year) = (localtime(time))[3..5];
+$mon = qw(Jan. Feb. March April May June July Aug. Sept. Oct. Nov. Dec.)[$mon];
+$year += 1900; # Y2K compliant
+$prepdate = "$mon $mday, $year";
+}
+
+our (@lines , %lines);
+
+print "Timepoints and timepoint names... " unless $options{quiet};
+my $vals = Skedtps::initialize(TPXREF_FULL);
+print "$vals timepoints.\nLines... " unless $options{quiet};
+FPread_simple ("Lines.csv" , \@lines, \%lines, 'Line');
+print scalar(@lines) , " records.\n" unless $options{quiet};
+
+mkdir "html" or die 'Can\'t make directory "html": $!'  
+               unless -d "html";
+
+my @files = grep ((! /=/) , glob('skeds/*-a.txt'));
+# easier to use grep than try to construct a glob pattern that doesn't include 
+# equals signs
+
+my %skednamesbyroute = ();
+my %skeds;
+my %index;
+
+# slurp all the files into memory and build hashes
+foreach my $file (@files) {
+   my $sked = Skedread($file);
+   my $skedname = $sked->{SKEDNAME};
+   $skeds{$skedname} = $sked;
+
+   my %routes = ();
+   $routes{$_} = 1 foreach @{$sked->{ROUTES}}; # remember "ROUTES" is one for each trip
+   @{$sked->{ALLROUTES}} = keys %routes;
+
+   foreach my $route (@{$sked->{ALLROUTES}}) {
+      push @{$skednamesbyroute{$route}},$skedname;
+   }
+}
+
+print "\n";
+
+# write files
+
+foreach my $route (sort byroutes keys %skednamesbyroute) {
+
+   next if $second{$route};
+
+   my $linename;
+   if ($first{$route}) {
+      if ( $lines{$route}{Name} eq $lines{$first{$route}}{Name} ) {
+
+         $linename = "$route  & $first{$route}-$lines{$route}{Name}";
+
+      } else {
+
+         $linename = "$route $lines{$route}{Name} & $first{$route}-" .
+                     $lines{$first{$route}}{Name};
+      }
+
+
+   } else {
+      $linename = "$route $lines{$route}{Name}";
+   }
+
+
+   $index{$route} = qq(<a href="$route.html"><LI>$linename</a>\n);
+
+   my $lineword = "Line" ;
+   $lineword .= "s" if $first{$route};
+
+   open ROUTEF , ">html/$route.html" or die "Can't open $route.html: $!";
+   
+   print ROUTEF <<"EOF";
+<HTML><HEAD><TITLE>AC Transit $lineword $linename</TITLE></HEAD>
+<BODY><a href="http://www.actransit.org">AC Transit</a> : 
+<a href="index.html">Schedules</a> : $lineword $linename</p><hr>
+<p><H2>AC Transit $lineword $linename</H2>
+<p>Effective $effdate</p>
+<p><UL>
+EOF
+  
+   my @skednames = (@{$skednamesbyroute{$route}}) ;
+
+   foreach my $skedname ( sort bydaydirhash @{$skednamesbyroute{$route}}) {
+      my ($linegroup, $dir, $day) = split(/_/ , $skedname);
+      print ROUTEF qq(<a href="$route-$dir-$day.html">);
+      print ROUTEF "<LI>$bound{$dir} $adjectivedaynames{$day} Schedule</a>\n";
+   }
+
+   print ROUTEF <<"EOF";
+</UL></p><hr>
+Prepared by AC Transit Marketing and Communications<br>$prepdate
+</BODY></HTML>
+EOF
+
+   close ROUTEF;
+
+
+   # loop around each schedule - output the HTML file
+
+   foreach my $skedname (@{$skednamesbyroute{$route}}) {
+
+      my $dir = $skeds{$skedname}{DIR};
+      my $day = $skeds{$skedname}{DAY};
+
+      my $title = 
+        "$lineword $linename, $bound{$dir} $adjectivedaynames{$day} Schedule";
+
+      open HTML, ">html/$route-$dir-$day.html";
+
+      print HTML <<"EOF";
+<HTML><HEAD><TITLE>$title</TITLE>
+<BODY><p>
+<a href="http://www.actransit.org/">AC Transit</a> :
+<a href="index.html">Schedules</a> : 
+<a href="$route.html">$linename</a> :
+$bound{$dir} $adjectivedaynames{$day}</p><hr>
+<h2>$lineword $linename</h2>
+<h3>$bound{$dir} $adjectivedaynames{$day} Schedule</h3>
+<p>Effective $effdate</p>
+EOF
+
+      # TODO - insert "westbound", "Eastbound Weekend", etc. links here
+
+      print HTML qq(<p><a href="#key">) , 
+         "[Key to timepoint abbreviations follows the schedule]</a></p>", 
+         "<pre>";
+
+      my @tp = ();
+
+      my @timepointsnoeq = (@{$skeds{$skedname}{TP}}) ;
+ 
+      s/=.*// foreach @timepointsnoeq;
+
+      foreach my $tp (@timepointsnoeq) {
+         my @temp = split (/ / , $tp);
+         if ($#temp > 1 ) {
+            my $tempy = pop @temp;
+            $temp[0] .= " " . $temp[1];
+            $temp[1] = $tempy;
+         }
+         $tp[$_] .= sprintf " %-5s" , scalar$temp[$_] foreach (0 , 1);
+      }
+
+      my $tps = "<hr>RTE  $tp[0]\nNUM  $tp[1]\n";
+
+      my $count = 0;
+
+      ROW:
+      for my $row (0 .. $#{$skeds{$skedname}{ROUTES}}) {
+         my $thisroute = $skeds{$skedname}{ROUTES}[$row];
+
+         next ROW if $thisroute ne $route and
+            $thisroute ne $first{$route};
+
+         print HTML $tps unless $count % 25;
+         print HTML "\n" unless $count % 5;
+         $count++;
+
+         printf HTML "%3s " , $skeds{$skedname}{ROUTES}[$row];
+
+         for my $col (0 .. $#{$skeds{$skedname}{TP}}) {
+             printf HTML " %5s" , $skeds{$skedname}{TIMES}[$col][$row];
+         }
+         print HTML "\n";
+
+      }
+
+      print HTML 
+        qq(\n<hr><p><strong><a name="key">Key To Timepoints</strong></a></p>);
+
+      foreach my $tp (@timepointsnoeq) {
+         printf HTML "%-9s  " , $tp;
+         print HTML $tphash{$tp} , "\n";
+      }
+  
+      print HTML "\n</pre><hr><p>";
+      print HTML 
+         "Prepared by AC Transit Marketing and Communications<br>$prepdate";
+      print HTML "</p>\n</body></html>";
+
+      close HTML;
+   }
+
+}
+
+open INDEX , ">html/index.html" or die "Can't open html/index.html: $!";
+print INDEX  "<HTML><HEAD><TITLE>AC Transit Schedules</TITLE></HEAD>\n<BODY>";
+print INDEX  qq(<a href="http://www.actransit.org">AC Transit</a> : );
+print INDEX  "Schedules</p><hr><p>";
+print INDEX "<H2>AC Transit Schedules</H2>\n<p>Effective $effdate</p>\n";
+
+print INDEX <<EOF;
+<UL><LI><A HREF="#Local">Local Service</A></LI>
+<LI><A HREF="#Transbay">Transbay Service</A></LI>
+<LI><A HREF="#School">School Service</A></LI>
+</UL><HR>
+EOF
+
+my (@local, @transbay, @school);
+
+foreach (keys %index ) {
+   if (/^[\d]/) {
+      if ($_ < 600) {
+          push @local, $_;
+      } else {
+          push @school, $_;
+      }
+   } else {
+      push @transbay, $_;
+   }
+}
+
+print INDEX qq(<h3><a name="Local">Local Service</h3><UL>);
+print INDEX $index{$_} foreach sort byroutes @local;
+print INDEX "</UL>\n";
+
+print INDEX qq(<h3><a name="Transbay">Transbay Service</h3><UL>);
+print INDEX $index{$_} foreach sort byroutes @transbay;
+print INDEX "</UL>\n";
+
+print INDEX qq(<h3><a name="School">School Service</h3><UL>);
+print INDEX $index{$_} foreach sort byroutes @school;
+print INDEX "</UL>\n";
+
+# print index bits
+
+print INDEX  "<hr>\n";
+print INDEX  "Prepared by AC Transit Marketing and Communications<br>$prepdate";
+print INDEX "</BODY></HTML>";
+
+close INDEX;
+
+BEGIN { #perl cookbook #10.3
+
+my %multihash = ( 40  => '40' , "40L" => '40' ,
+                  59  => '59' , "59A" => '59' ,
+                  72  => '72' , "72M" => '72' ,
+                  82  => '82' , "82L" => '82' ,
+                  S   => 'S'   ,   SA  => 'S' ,
+                );
+
+sub route2sked {
+
+return ( $multihash{$_[0]} or $_[0] );
+
+}
+}
+
+sub bydaydirhash {
+   (my $aa = $a) =~ s/.*?_//; # minimal: it matches first _
+   (my $bb = $b) =~ s/.*?_//; # minimal: it matches first _
+   $daydirhash{$aa} cmp $daydirhash{$bb};
+}
