@@ -116,9 +116,9 @@ sub writestops ($\@\%) {
 }
 
 
-sub stopdescription ($$) {
+sub stopdescription ($$$) {
 
-   my ($stopid, $stopref) = @_;
+   my ($stopid, $stopref,$stopdata) = @_;
 
    my $description = "";
 
@@ -130,6 +130,8 @@ sub stopdescription ($$) {
    $description .= ", going $stopref->{'Direction'}";
    
    $description .= " ($stopid)";
+
+   $description .= ' *' unless $stopdata;
 
    return $description;
 
@@ -148,9 +150,10 @@ sub get_stopid_from_description {
 
 }
 
-sub stopdesclist (%) {
+sub stopdesclist (\%\%) {
 
-   my %stops = @_;
+   my %stops = %{+shift};
+   my %stopdata = %{+shift};
    my @retlist;
 
    foreach (sort 
@@ -162,7 +165,7 @@ sub stopdesclist (%) {
            } 
          keys %stops) 
    {
-      push @retlist, stopdescription($_,$stops{$_});
+      push @retlist, stopdescription($_,$stops{$_},$stopdata{$_});
    }
 
 return @retlist;
