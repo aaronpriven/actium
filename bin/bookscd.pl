@@ -11,14 +11,16 @@ sub print_right_head () ;
 sub print_right_tail ($);
 sub print_rows ($$$$$$$$);
 sub build_linenamehash () ;
-sub print_left_tail ($$) ;
+sub print_left_tail ($$$) ;
 sub print_tail ($$) ;
 sub build_batchlists ($) ;
 sub print_head ($$$$$) ;
 
-
-use constant ROWSPERPAGE => 36;
-use constant DROPCAPLINES => 2;
+use constant COLSPERPAGE => 16;
+use constant ROWSPERPAGE => 900;
+use constant DROPCAPLINES => 3;
+use constant BOXESINTEMPLATE => 12;
+# will need to be 13 soon
 
 require 'pubinflib.pl';
 
@@ -47,7 +49,7 @@ open REPORT , ">batchreport.txt";
 
 our %fullsched;
 
-my (%batchroutes, %batchdays, %routes);
+my (@batchnotes, %batchroutes, %batchdays, %routes);
 # %batchroutes are those routes given in the batch file.
 # %routes are those in the actual file.
 
@@ -61,7 +63,8 @@ foreach my $thisbatch (@batchlist) {
 
    my $line = $thisbatch->{LINE};
 
-   read_fullsched($line, ".acs");
+   read_fullsched($line, 0, ".acs");
+   # the 0 means only cross-reference where it says to always do so
 
    %batchroutes = ();
    %batchdays = ();
@@ -69,6 +72,8 @@ foreach my $thisbatch (@batchlist) {
    $batchroutes{$_} = 1 foreach (@{$thisbatch->{ROUTES}});
 
    $batchdays{$_} = 1 foreach (@{$thisbatch->{DAYS}});
+
+   @batchnotes = @{$thisbatch->{NOTES}};
 
    DAYDIR:
    foreach my $day_dir (keys %fullsched) {
@@ -85,6 +90,7 @@ foreach my $thisbatch (@batchlist) {
 
       $thistable->{DAY_DIR} = $day_dir;
       $thistable->{LINE} = $line;
+      $thistable->{BATCHNOTES} = [@batchnotes];
 
       my $numroutes = scalar keys %batchroutes;
 
@@ -120,7 +126,7 @@ foreach my $thisbatch (@batchlist) {
 
 my $firstsched = 1;
 
-my $verso= 1;
+my $verso = 1;
 
 print REPORT "\nProcessing tables:\n";
 print STDOUT "\nProcessing tables:\n";
@@ -132,6 +138,7 @@ foreach my $thistable (@tables) {
    my $day_dir = $thistable -> {DAY_DIR};
    my @routes = @{$thistable -> {ROUTES}};
    my $routesgiven = $thistable -> {ROUTESGIVEN};
+   my @batchnotes = @{$thistable -> {BATCHNOTES}} ;
 
    my $headnum = join ("/" , (sort byroutes @routes));
 
@@ -140,16 +147,15 @@ foreach my $thistable (@tables) {
 
    my ($dir, $day) = split (/_/ , $day_dir);
 
-   read_fullsched($line, ".acs");
+   read_fullsched($line, 0, ".acs");
+   # the 0 means don't crossreference unless it says to always do so
 
    my $totalrows = scalar (@{$fullsched{$day_dir}{ROUTES}});
 
    my $numroutes = scalar @routes;
 
    # the following while loop removes any rows that are for routes
-   # we don't want right now.  If no specific rotues were given, 
-   # simply set %routes 
-   # to be all routes present.
+   # we don't want right now.  
 
    if ($routesgiven) { # if any routes are given
 
@@ -173,6 +179,49 @@ foreach my $thistable (@tables) {
       }
    }
 
+   # merge identical rows
+
+   my $count = 1;  # not the first one -- has to be the second so it can
+                   # be compared to the first. Arrays start at 0.
+
+   IDENTIROW:
+   while ($count < $totalrows) {
+
+      my ($this, $prev);
+
+      foreach (@{$fullsched{$day_dir}{TIMES}}) {
+         $this .= $_->[$count];
+         $prev .= $_->[$count-1];
+      }
+
+      if ($this ne $prev) {
+         $count++;
+      } else {
+
+         if (join ("", sort 
+              ($fullsched{$day_dir}{"SPEC DAYS"}[$count],
+               $fullsched{$day_dir}{"SPEC DAYS"}[$count-1],
+                )) eq "SDSH") 
+         {
+            $fullsched{$day_dir}{"SPEC DAYS"}[$count-1] = "",
+         }
+
+         # if the times are identical, and one is a school holiday and
+         # the other is not, eliminate the special days on the remaining
+         # timepoint.
+
+         $totalrows--;
+         foreach ("ROUTES" , "NOTES" , "SPEC DAYS") {
+            splice ( @{$fullsched{$day_dir}{$_}} , $count, 1);
+         }
+         foreach ( 0 .. ( (scalar @{$fullsched{$day_dir}{TP}}) - 1) ) {
+              splice ( @{$fullsched{$day_dir}{TIMES}[$_]} , $count, 1);
+         }
+         # eliminate this row
+      } # if $this ne $prev 
+
+   } # identirow
+
    # the following loop removes columns # for timepoints that aren't used
    for ( my $col = (scalar @{$fullsched{$day_dir}{"TP"}} -1 ); 
           $col >= 0;  $col-- ) {
@@ -188,17 +237,50 @@ foreach my $thistable (@tables) {
    # now we determine which front columns are necessary: 
    # notes/special days, and routes
 
-   my $notescol =  ( ( exists $fullsched{$day_dir}{'NOTES'} and
-        length(join ("" , @{$fullsched{$day_dir}{'NOTES'}})) > 0 )
-              or
-        ( exists ( $fullsched{$day_dir}{'SPEC DAYS'} ) and 
-        length(join ("" , @{$fullsched{$day_dir}{'SPEC DAYS'}})) > 0 ) );
 
-   # ok -- if the NOTES array exists and it's not empty, or if the
-   # SPEC DAYS array exists and it's not empty, print the notes column.
-   # (if you just check to see that it's empty, it gives a fatal
-   # "can't use undefined value as array reference" error.)
+   my %uniqhash;
+   my $specdays = 0;
 
+   if ( (exists $fullsched{$day_dir}{'SPEC DAYS'}) and
+        ( length(join ("" , @{$fullsched{$day_dir}{'SPEC DAYS'}})) > 0 ) ) {
+
+      # we now know that there are special days here
+ 
+      %uniqhash = ();
+      foreach ( @{$fullsched{$day_dir}{"SPEC DAYS"}} ) {
+         $uniqhash{$_ or "BLANK"} = 1;
+      }
+
+      my $theday = (keys %uniqhash)[0];
+
+      if ((scalar keys %uniqhash) == 1 ) {
+         $day = $theday;
+      } else {
+         $specdays = 1;
+      }
+   }
+
+   my $notes = 0;
+   my $allbikes = 0;
+
+   if ( (exists $fullsched{$day_dir}{'NOTES'}) and
+        ( length(join ("" , @{$fullsched{$day_dir}{'NOTES'}})) > 0 ) ) {
+
+      # we now know that there are notes here
+
+      %uniqhash = ();
+      foreach ( @{$fullsched{$day_dir}{"NOTES"}} ) {
+         $uniqhash{$_ or "BLANK"} = 1;
+      }
+
+      if ((scalar keys %uniqhash) != 1 ) {
+         $notes = 1;
+      } else {
+         $allbikes = 1;
+      }
+   }
+
+   my $notescol =  ( $notes and $specdays);
 
    my $routescol = ($numroutes > 1);
 
@@ -206,7 +288,7 @@ foreach my $thistable (@tables) {
 
    my $extracolumns = ($notescol ? 1 : 0) + ($routescol ? 1 : 0) ;
 
-   my $wholespread = ($tpcolumns+$extracolumns) > 9;
+   my $wholespread = ($tpcolumns+$extracolumns) > COLSPERPAGE;
    # if there are more than nine columns, we need to prepare both sides
    # of the spread
 
@@ -216,7 +298,8 @@ foreach my $thistable (@tables) {
 
    if ($wholespread) {
       unless ($verso) {
-         print ("<\\b>" x 12);
+         print ("<\\b>" x BOXESINTEMPLATE);
+         # that's the number of boxes in the template; will need to change
          $verso = 1;
       }
    } else {
@@ -230,24 +313,63 @@ foreach my $thistable (@tables) {
       $firstpagetps = $tpcolumns;
    }
    # the above makes $firstpagetps the number of columns in the first
-   # page fo the spread
+   # page of the spread
 
-   my $headday = $longdaynames{$day};
-   $headday = $day unless $headday;
+   my %notedefs = ();
+
+   foreach (sort @{$fullsched{$day_dir}{NOTEDEFS}}) {
+      my ($note, $def) = split (/:/);
+      $notedefs{$note} = $def;
+   }
+
+   my $headday;
+
+   if ($notedefs{$day}) {
+      $headday = $notedefs{$day};
+      $headday =~ s/ only//i;
+   } else {
+      $headday = $longdaynames{$day};
+      $headday = $day unless $headday;
+   }
 
    # the following is to get the head destination,
    # which will be the last used timepoint
    my $headdest = $tphash{$fullsched{$day_dir}{TP}[-1]};
 
-   my $notedefs = "";
-   foreach (@{$fullsched{$day_dir}{NOTEDEFS}}) {
-       my ($note, $def) = split (/:/);
-       $notedefs .= "\n\@notedefs:$note: $def";
-       # probably could do that just with an s/:/: / but 
-       # I already did it and it's easier to do more with later.
+   # adds whole-schedule notes to batchnotes
+
+   my $wholeschednotes = "";
+
+   foreach (@batchnotes) {
+      print STDOUT "<$_> ";
+      my ($notedaydir,$notedef) = split /:/;
+      if ($notedaydir eq "*" or $notedaydir eq $day_dir) {
+         $wholeschednotes .= "\n" if $wholeschednotes;
+         # add \n but only if it's not the first one
+         $wholeschednotes .= $notedef ;
+      }
    }
+
+   my $notedefs = "";
+
+   foreach (sort @{$fullsched{$day_dir}{NOTEDEFS}}) {
+
+       my ($note, $def) = split (/:/);
+
+       if ($note eq '*' and $allbikes) {
+          $wholeschednotes .= "\n" if $wholeschednotes;
+          # add \n but only if it's not the first one
+          $wholeschednotes .= 
+                  "All buses equipped with bicycle racks."
+       } elsif ($note ne $day) {
+          $notedefs .= "\n" if $notedefs;
+          $notedefs .= "$note: $def";
+       }
+
+   }
+
    # so now $notedefs is a big multiline string that has all the note
-   # defintions in it.
+   # definitions in it.
 
    # OK, now we have all the information we need to print!
    # now we have to run through them in groups of 40 rows a piece.
@@ -282,7 +404,7 @@ foreach my $thistable (@tables) {
                   0, $firstpagetps, $day_dir , $wholespread);
       # Now the rows & tps for the first column
 
-      print_left_tail($notedefs, 
+      print_left_tail($notedefs, $wholeschednotes,
                  ( $continued and ! $wholespread ));
       # the bottom bit for the first column. Include the 'continued' text
       # only if this is the last page, and this is not a full spread
@@ -423,11 +545,14 @@ sub print_right_tail ($) {
    # print no text, but include the continued value from @_
 }
 
-sub print_left_tail ($$) {
-   my ($notedefs, $continued) = @_;
-   my $toprint = '@timenote:Light Face = a.m.  <B>Bold Face = p.m.<B>' . 
-              $notedefs;
-   print_tail ($toprint, $continued)
+sub print_left_tail ($$$) {
+   my ($notedefs, $wholeschednotes, $continued) = @_;
+   my $toprint = '@timenote:Light Face = a.m.  <B>Bold Face = p.m.<B>' ;
+   $toprint .= "\n" . '@wholeschednotes:' . $wholeschednotes 
+                 if $wholeschednotes;
+   $toprint .= '@notedefs:' . $notedefs 
+                 if $notedefs;
+   print_tail ($toprint, $continued);
 }
 
 sub print_tail ($$) {
@@ -453,25 +578,34 @@ sub build_batchlists ($) {
 
       chomp;
 
-      my @ary = split (/[\s,]+/);
-      # either commas or white space
+      my @ary = split (/\t/);
+      # tabs only
 
       my $line = shift @ary;
 
-      my @batchdays = ();
+      my (@batchroutes, @batchnotes, @batchdays) = ();
 
-      while ($ary[0] =~ /^:/) {
-         # if it begins with a colon, mark it as a day, not a route
-         my $day = shift @ary;
-         $day =~ s/^://;
-         push @batchdays, $day;
+      foreach (@ary) {
+
+         if (s/^://) {
+            push @batchdays, $_;
+         } elsif (s/^=//) {
+            push @batchnotes, $_;
+         } else {
+            push @batchroutes, $_;
+         }
       }
+
+#      print STDOUT "BATCHROUTES: " , join ("," , @batchroutes);
+#      print STDOUT "BATCHNOTES: " , join ("," , @batchnotes);
 
       $thisbatch->{DAYS} = [ @batchdays ];
 
-      $thisbatch->{ROUTES} = [ @ary ];
+      $thisbatch->{ROUTES} = [ @batchroutes ];
 
       $thisbatch->{LINE} = $line;
+
+      $thisbatch->{NOTES} = [ @batchnotes ];
 
       push @batchlist, $thisbatch;
 
@@ -488,9 +622,11 @@ sub print_head ($$$$$) {
 
       my ($num, $name, $day, $dest, $continued) = @_;
 
-      print '@head:<';
+# this is going to need serious revision
 
-      print '*d(' , length($num) +1 , ',' , DROPCAPLINES , ')>';  # drop cap
+      print '@head:';
+
+      print '<*d(' , length($num) +1 , ',' , DROPCAPLINES , ')>';  # drop cap
 
       print "$num \U$name\E<\\n>";
       print "$day to $dest";
