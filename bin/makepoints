@@ -6,6 +6,18 @@
 # This program generates the point schedules associated with 
 # particular signs.
 
+
+# TODO - 
+# 1) Change "headnum" routine so that if two adjacent numbers have
+# the same color, the slash between them uses that color (instead of
+# grey80)
+# 2) Change the default number of columns to be derived from the "SignType"
+# database, and add the number of added columns triggered by "usedcount" to it
+# 3) fix usedcount rollover so it works with a third/fourth etc. column
+# 4) (not strictly makepoints) Change the "Signtype" value list in signs.fp5
+# to be derived from the signtype database 
+# 5) Change everything to Indesign tags
+
 use strict;
 
 # initialization
@@ -23,7 +35,7 @@ use FPMerge qw(FPread FPread_simple);
 use Skedfile qw(Skedread);
 use Skeddir;
 use Skedvars;
-use Skedtps qw(%tphash %tpxref);
+use Skedtps qw(tphash tpxref %tphash %tpxref);
 use Byroutes 'byroutes';
 use Myopts;
 
@@ -54,15 +66,17 @@ EOF
 
 # read in FileMaker Pro data into variables in package main
 
-our (@signs, @stops, @lines, @skedspec);
-our (%signs, %stops, %lines, %skedspec);
+our (@signs, @stops, @lines, @signtypes, @skedspec);
+our (%signs, %stops, %lines, %signtypes, %skedspec);
 
 our ($schooldayflag, $anysecondflag);
 
 print "Timepoints and timepoint names... " unless $options{quiet};
 my $vals = Skedtps::initialize;
-print "$vals timepoints.\nSigns... " unless $options{quiet};
+print "$vals timepoints.\nSignTypes... " unless $options{quiet};
 
+FPread_simple ("SignTypes.csv" , \@signtypes, \%signtypes, 'SignType');
+print scalar(@signtypes) , " records.\nSigns... " unless $options{quiet};
 FPread_simple ("Signs.csv" , \@signs, \%signs, 'SignID');
 print scalar(@signs) , " records.\nSkedspec... " unless $options{quiet};
 FPread ("SkedSpec.csv" , \@skedspec, \%skedspec, 'SignID' , 1, 0);
@@ -98,20 +112,20 @@ if (@ARGV) {
    @signstodo = keys %signs;
 }
 
-
 SIGN:
 foreach my $signid (sort {$a <=> $b} @signstodo) {
 
-   next SIGN unless $signs{$signid}{Active} and exists $skedspec{$signid};
+   next SIGN unless lc($signs{$signid}{Active}) ne "no" 
+          and exists $skedspec{$signid};
    # skip inactive signs and those without skedspecs
    
    unless ($options{quiet}) {
+      print "$signid ";
       $displaycolumns += length($signid) + 1;
       if ($displaycolumns > 70) {
          $displaycolumns = 0;
          print "\n";
       }
-      print "$signid ";
    }
 
    $schooldayflag = 0;
@@ -197,11 +211,7 @@ sub build_point {
    # and we also just built $point->{LASTTP}
 
 
-   { # block for scoping
-   my $temp = $point->{M_TIMEPOINT};
-   $temp =~ s/=\d+$//; # eliminate trailing equals signs and digits
-   $point->{M_TPXREF} = $tpxref{$temp};
-   }
+   $point->{M_TPXREF} = tpxref($point->{M_TIMEPOINT} );
 
    $point->{HEADNUM} = [sort byroutes @{$point->{ROUTES2USE}}];
    # in the old windows version, there was a long routine that
@@ -246,7 +256,7 @@ sub build_used {
    
    my $point = shift;
 
-   my (%routes, $doblank, $blanktpnum, $dosecond , $s_tpnum);
+   my (%routes, $doblank, $blanktpnum, $dosecond , $usedrowcount , $s_tpnum);
 
    my $tpnum = $point->{TPNUM2USE};
 
@@ -350,6 +360,8 @@ ROW:
 
       vec ($point->{"USEDROWS"} , $row, 1) = 1;
 
+      $usedrowcount++;
+
       # and that's saved in $point->{"USEDROWS"}, which is
       # more easily accessed by the subroutine usedrow($point, $row)
 
@@ -385,6 +397,7 @@ ROW:
 
    # save USED array in $point
    $point->{USED} = \%used;
+   $point->{USEDROWCOUNT} = $usedrowcount;
 
    if ($dosecond) {
       if ($used{TP}{Timepoint} >= $used{TP}{SecondTimepoint}) {
@@ -505,13 +518,13 @@ sub headdest {
    # so $lasttp is the most common last timepoint
 
    foreach (keys %lasttpfreq) {
-      $point->{NOTEKEYS}{$_} = $tphash{$_};
+      $point->{NOTEKEYS}{$_} = tphash($_);
    }
 
    my $hashlookuptp = $lasttp;
    $hashlookuptp =~ s/=[0-9]*//;
 
-   return $lasttp, ($tphash{$hashlookuptp} or $hashlookuptp);
+   return $lasttp, (tphash($hashlookuptp) or $hashlookuptp);
 
 }
 
@@ -525,9 +538,19 @@ sub output_points {
 
    my ($head, $thismark, @thesemarks, 
        $route, $lasttp, $temp, 
-       $ampm, @markdefs, %usedmarks);
+       $ampm, @markdefs, %usedmarks, $lengthinlines);
 
    local ($_);
+
+
+   # set up "new column after x lines" thing
+   if ($signtypes{$signs{$signid}{SignType}}{LengthInLines}) {
+      $lengthinlines = $signtypes{$signs{$signid}{SignType}}{LengthInLines};
+   } else {
+      $lengthinlines = 0;
+   }
+
+   #print "<$lengthinlines> ";
 
    my $markcounter = 0;
 
@@ -553,20 +576,42 @@ sub output_points {
    foreach my $point (@points) {
 
       my $noteonly = $point->{NO};
+      my $headlength = 0;
 
-      $head = join ("/" , @{$point->{"HEADNUM"}});
+      {
+      my @headnums = ();
+      foreach (@{$point->{"HEADNUM"}}) {
+         $headlength += length($_);
+         push @headnums , '<c"' . getcolor($_) . '">' . $_ . '<c$>';
+      }
+      #my $slash = '/';   # color
+      my $slash = '<c"Grey80">/<c$>';   # color
+      $head = join ($slash , @headnums);
+      $headlength += $#headnums;
+      }
 
-      # TODO - change format here to the new headers style
+      # $head = join ("/" , @{$point->{"HEADNUM"}});
+
+      # TODO - change format here to the new headers style, with names
 
       # the gobbeldygook in the print statements are the quark tags
-      print OUT '@Column head:<';                                   # style
+
+      if (
+           (not $noteonly)
+           and $lengthinlines 
+           and $point->{USEDROWCOUNT} > $lengthinlines
+         ) {
+         print OUT '@Column head no rule:<';
+      } else {
+         print OUT '@Column head:<';
+      }
 
       print OUT 
-            '*d(' , length($head) +1 , ',2)><z10><b-1>';  # drop cap
+            '*d(' , $headlength +1 , ',2)><z10><b-1>';  # drop cap
 	                                                 # at smaller size
 
-      print OUT 
-            '<c"' , getcolor($point->{HEADNUM}[0]) , '">';   # color
+#      print OUT 
+#            '<c"' , getcolor($point->{HEADNUM}[0]) , '">';   # color
 
       # at some point, we may want to do some other kind of formatting if
       # there are two or more head numbers.
@@ -616,7 +661,7 @@ sub output_points {
          } else {
             $thismark = ++$markcounter;
             $usedmarks{"Timepoint:$_"} = $thismark;
-            $temp = $tphash{$_};
+            $temp = tphash($_);
 #            print "<<$_:$temp>> ";
             $temp =~ s/\.$//;
             $markdefs[$thismark] = 
@@ -653,7 +698,7 @@ sub output_points {
             } else {
                $thismark = ++$markcounter;
                $usedmarks{"Noteonly:s"} = $thismark;
-               $temp = $tphash{$_};
+               $temp = tphash($_);
                $markdefs[$thismark] = 
                 "Lines that operate school days only operate at times that " . 
                 "may vary from day to day. See the public timetable for more ". 
@@ -678,6 +723,7 @@ sub output_points {
       }
 
       my $prev = "z";
+      my $usedcount = 0;
 
       for (my $row = 0; 
             $row < scalar @{$point->{ROUTES}};
@@ -685,6 +731,13 @@ sub output_points {
       {
 
          next unless vec ($point->{USEDROWS} , $row, 1);
+
+         $usedcount++;
+         if ($lengthinlines and $usedcount > $lengthinlines) {
+            print OUT '<\c>@Blank head: <\c>';
+            $prev = "z";
+            $usedcount=1;
+         }
 
          local ($_) = $point->{"TIMES"}[$point->{TPNUM2USE}][$row];
 
@@ -699,7 +752,7 @@ sub output_points {
             $_ = $_ || $point->{"TIMES"}[$point->{S_TPNUM2USE}][$row];
          }
 
-         print OUT "\r" unless $prev eq "z";
+         print OUT "\r" unless $prev eq "z" ;
 
          $ampm = chop; 
          # removes last char from the time, and sets $ampm to be that char
@@ -767,8 +820,6 @@ sub output_points {
 
             $_ = "$route:$lasttp:$lesser";
 
-# TODO (but I don't remember why, argh)
-
             my $hashlasttp = $lasttp;
             $hashlasttp =~ s/=\d+$//;
  
@@ -784,10 +835,10 @@ sub output_points {
                   if ($route) {
                       $temp = "Line $route";
                       $temp .= ", to " .
-                              $tphash{$hashlasttp} if $lasttp;
+                              tphash($hashlasttp) if $lasttp;
    
                   } else {
-                     $temp = "To $tphash{$hashlasttp}";
+                     $temp = "To " . tphash($hashlasttp);
                   }
    
                   $temp =~ s/\.$//;
@@ -797,8 +848,10 @@ sub output_points {
 
                if ($lesser) {
 
-                  $temp = $tphash{$tpxref{$point->{L_TIMEPOINT}}};
+                  $temp = tphash(tpxref($point->{L_TIMEPOINT}));
+
                   $temp =~ s/\.$//;
+
 
                   $markdefs[$thismark] .= " " if $markdefs[$thismark];
                   $markdefs[$thismark] .= 
@@ -838,7 +891,7 @@ sub output_points {
     } else {
        print OUT 'Unless otherwise specified, departure times are given for ';
     }
-    $_ = $tphash{$defaultheadtp};
+    $_ = tphash($defaultheadtp);
     s/\&/and/;
     s/\.$//;
     print OUT "$_.";
@@ -930,38 +983,47 @@ sub signdescription {
    my ($signid) = shift;
 
    my $uniqueid = $signs{$signid}{UNIQUEID};
-   my $thisstop = $stops{$uniqueid}; # this is a reference
 
-   my ($on, $at) = ($thisstop->{OnF} , $thisstop->{AtF} ) ;
-
-   foreach ($on , $at) {
-
-      s/Av\.?$/Ave./;
-      s/Wy\.?$/Way/;
-      s/Path\.$/Path/;
-      s/Park\.$/Park/;
-      s/Ln\.$/Lane/;
-      s/Lp\.$/Loop/;
-      s/Broadway\.$/Broadway/;
-
-   }
-
-   my $description = "";
-
-   my $direction = $thisstop->{DirectionF}; 
-   $direction = $Skedvars::longdirnames{$direction} 
-        if $Skedvars::longdirnames{$direction};
-
-   $description .= "$thisstop->{StNumF} " 
-          if $thisstop->{StNumF};
-   $description .= $on; #$thisstop->{OnF};
-   $description .= " at $at" # " at $thisstop->{AtF}" 
-          if $at ; # $thisstop->{AtF};
-   $description .= 
-           ", " . $thisstop->{CityF} .
-           ", going $direction (#$signid; stop $uniqueid)";
+   if ($uniqueid) {
+ 
+      my $thisstop = $stops{$uniqueid}; # this is a reference
    
-   return $description;
+      my ($on, $at) = ($thisstop->{OnF} , $thisstop->{AtF} ) ;
+   
+      foreach ($on , $at) {
+   
+         s/Av\.?$/Ave./;
+         s/Wy\.?$/Way/;
+         s/Path\.$/Path/;
+         s/Park\.$/Park/;
+         s/Ln\.$/Lane/;
+         s/Lp\.$/Loop/;
+         s/Broadway\.$/Broadway/;
+
+      }
+
+      my $description = "";
+
+      my $direction = $thisstop->{DirectionF}; 
+      $direction = $Skedvars::longdirnames{$direction} 
+           if $Skedvars::longdirnames{$direction};
+
+      $description .= "$thisstop->{StNumF} " 
+             if $thisstop->{StNumF};
+      $description .= $on;
+      $description .= " at $at" if $at ; 
+      $description .= 
+              ", " . $thisstop->{CityF} .
+              ", going $direction (#$signid; stop $uniqueid)";
+   
+      return $description;
+
+   } 
+
+   # if no uniqueid,
+
+   return $signs{$signid}{NonStopLocation} . ", " . 
+          $signs{$signid}{NonStopCity} . ". (#$signid)";
 
 }
 
