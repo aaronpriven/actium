@@ -12,7 +12,7 @@ require 'pubinflib.pl';
 
 use constant ProgramTitle => "AC Transit Stop Signage Database - Changed Stops";
 
-my (@found,@refs, @keys, @routes, %routes, %stopdata , $found);
+my (%foundroutes, @found,@refs, @keys, @routes, %routes, %stopdata , $found);
 
 our (%stops);
 
@@ -44,7 +44,7 @@ close CHANGED;
 
 select OUT;
 
-print "Changed routes:\n";
+print "Looking for routes:\n";
 print join ("," , @changedroutes) , "\n\n";
 
 
@@ -71,19 +71,21 @@ foreach my $stopid (sort keys %stopdata) {
 
    # now all routes are in keys %routes, removing duplicates
 
+   my @theseroutes = ();
+
    ROUTE:
    foreach (@changedroutes) {
       if ($routes{$_}) {
-         $found = 1;
-         last;
+         push @theseroutes, $_;
       }
    }
 
    #print $found , "\n";
     
-   next unless $found;
+   next unless scalar(@theseroutes);
 
    push @found, $stopid;
+   $foundroutes{$stopid} = [@theseroutes];
 
 }
 
@@ -96,6 +98,10 @@ foreach my $stopid (sort keys %stopdata) {
 
 
 foreach (@found) {
+   next unless $stopdata{$_};
    print stopdescription($_, $stops{$_}, 
-                   1 ) , "\n" if $stopdata{$_} ;
+                   1 ) ;
+   print "\t";
+   print join ("," , sort byroutes @{$foundroutes{$_}} ) , "\n";
+
 }
