@@ -69,7 +69,6 @@ sub FPread {
    my ($file, $fparray, $fphash, $indexfield, $ignorerepeat, $ignoredupe) = @_;
 
    @$fparray = ();
-   %$fphash = ();
 
    -f $file or die "Can't find file $file (or it's not a plain file)";
    open CSVFILE , $file or die "Can't open $file for reading";
@@ -94,6 +93,7 @@ sub FPread {
    my $make_fphash = 0;
 
    if ($indexfield) {
+      %$fphash = ();
       foreach (@fields) {
          next unless $_ eq $indexfield;
          $make_fphash = 1;
