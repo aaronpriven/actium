@@ -24,12 +24,14 @@ sub read_fullsched ($) ;
 sub usedrow ($) ;
 sub build_usedrows ($$@) ;
 sub build_outsched (@) ;
+sub build_outsched_notes_and_times ($$$$$) ;
 sub headdest ($$) ;
 sub headdays ($$) ;
-sub headnum(@) ;
+sub headnum() ;
 sub note_definitions ($) ;
-sub uniq (@) ;
-sub get_useddays($$) ;
+sub build_usedhash($$) ;
+sub build_tphash();
+sub output_outsched();
 
 use strict;
 
@@ -39,11 +41,15 @@ init_vars();
 
 chdir get_directory() or die "Can't change to specified directory.\n";
 
+build_tphash();
+
 get_lines();
 
 my @pickedtps = pick_timepoints();
 
 build_outsched(@pickedtps);
+
+output_outsched();
 
 # -----------------------------------------------------------------
 # ---- INITIALIZING ROUTINES
@@ -58,6 +64,42 @@ sub init_vars () {
           SA => "Saturdays" ,
           SU => "Sundays" ,
         )
+
+}
+
+sub build_tphash () {
+
+   open TPHASH, "<timepoints.txt" or die "Can't open timepoints.txt";
+
+   read_tphash();
+
+   close TPHASH;
+
+   return unless -e "tpoverride.txt";
+
+   open TPHASH, "<tpoverride.txt" or die "Can't open tpoverride.txt";
+
+   read_tphash();
+
+   close TPHASH;
+
+}
+
+
+sub read_tphash () {
+
+our %tphash;
+
+my ($key, $value);
+
+   while (<TPHASH>) {
+
+      next if /^\s*#/;
+      next unless /\t/;
+      chomp;
+      ($key, $value) = split("\t");
+      $tphash{$key} = $value;
+   }
 
 }
 
@@ -403,9 +445,10 @@ TPS:
           last TPS if $fullsched{$day_dir}{"TIMES"}[$thistp][$fsrow];
       }
 
-      $fullsched{$day_dir}{"LASTTP"}[$fsrow] = $lasttpnum;
+      $fullsched{$day_dir}{"LASTTP"}[$fsrow] = 
+                $fullsched{$day_dir}{"TP"}[$lasttpnum];
 
-      # save the $lasttpnum for when we figure out where the destination is
+      # save the lasttp abbrev for when we figure out where the destination is
 
       next FSROW if $lasttpnum eq $tp;
       # Skip this time if it's the last one in the row.
@@ -418,8 +461,48 @@ TPS:
 
    }
 
+   build_usedhash ($day_dir, $tp);
+
 }
 
+sub build_usedhash($$) {
+
+   our (%fullsched, %used, %notes);
+   my ($day_dir, $tp) = @_;
+   %used = ();
+
+   local ($_);
+
+   for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
+         $fsrow++) {
+
+       next unless usedrow($fsrow);
+       # skip it if it's not used
+
+       $_ = $fullsched{$day_dir}{"NOTES"}[$fsrow];
+       $_ = "BLANK" unless $_;
+       $used{"NOTES"}{$_}++;
+
+       # I'm pretty sure it won't matter if we don't turn "" to "BLANK"
+       # but I'm not sure enough.
+
+       $_ = $fullsched{$day_dir}{"SPEC DAYS"}[$fsrow];
+       $_ = "BLANK" unless $_;
+       $used{"SPEC DAYS"}{$_}++;
+
+       $used{"ROUTES"}{$fullsched{$day_dir}{"ROUTES"}[$fsrow]}++;
+
+       # ROUTES will never be blank.
+
+   }
+
+   foreach (keys %{$used{"ROUTES"}}) {
+ 
+      $notes{$_} = "Route $_";
+
+   }
+
+}
 
 # -----------------------------------------------------------------
 # ---- BUILD_OUTSCHED
@@ -435,7 +518,7 @@ sub build_outsched (@) {
    local ($_);
 
    my ($column, $daycode, $lasttp, $line, $day_dir, $day, $tp, 
-       @routes, %usednotes );
+       @routes );
 
    $column = 0;
 
@@ -454,21 +537,38 @@ sub build_outsched (@) {
       # Now we know that usedrow(x) is 1 if the xth row is a valid one,
       # an 0 if it should be skipped. 
 
-      @{$outsched[$column]{"HEADNUM"}} = headnum(@routes);
+      # also puts route numbers into %notes
+
+      @{$outsched[$column]{"HEADNUM"}} = headnum();
       # get the header number(s)
 
       ($daycode, $outsched[$column]{"HEADDAYS"}) = 
            headdays ($day_dir, $tp);
       # get the header day text ("Mon thru Fri", etc.) 
 
-      ($lasttp, $outsched[$column]{"HEADDEST"}) = headdest ($day_dir, $tp)
+      ($lasttp, $outsched[$column]{"HEADDEST"}) = headdest ($day_dir, $tp);
       # get the header destination text ("To University and San Pablo")
+      # $lasttp is the timepoint short string ("UNIV S.P.")
+      # also puts the various non-default last tps into %notes
       
+      build_outsched_notes_and_times
+              ($column, $day_dir, $tp, $lasttp, $daycode);
+
+      # also builds $outsched[column]{NOTES}
+
+      $outsched[$column]{"TP"}=
+         $fullsched{$day_dir}{"TP"}[$tp];
+
+      $outsched[$column]{"LASTTP"}=
+         $lasttp;
+
+      # save the current timepoint and last timepoint
 
    } continue {
 
       print "\n---\n" , join("." , @{$outsched[$column]{"HEADNUM"}});
       print "\t" , $outsched[$column]{"HEADDAYS"};
+      print "\t" , $lasttp;
       print "\t" , $outsched[$column]{"HEADDEST"};
 
       $column++;
@@ -477,33 +577,120 @@ sub build_outsched (@) {
 
 # now we have our $outsched, only it's not in order.  
 
+print "\n\n";
+
 } 
+
+sub build_outsched_notes_and_times($$$$$) {
+
+   my ($column, $day_dir, $tp, $lasttp, $daycode) = @_;
+
+   my @notes;
+
+   local ($_);
+
+   our (%fullsched, @outsched, %used) ;
+
+   for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
+            $fsrow++) {
+
+      next unless usedrow($fsrow);
+
+      push @{$outsched[$column]{"TIMES"}},
+            $fullsched{$day_dir}{"TIMES"}[$tp][$fsrow];
+      # save the TIMES
+
+      # from here, we save the notes.
+
+      @notes = ();
+
+      $_ = $fullsched{$day_dir}{"NOTES"}[$fsrow];
+      push @notes, $_ if $_;
+
+      $_ = $fullsched{$day_dir}{"LASTTP"}[$fsrow];
+      push @notes, $_ unless 
+            $_ eq $lasttp;
+      # add the last timepoint for this row to @notes unless
+      # this is the same as the default for the column
+
+      $_ = $fullsched{$day_dir}{"ROUTES"}[$fsrow];
+      push @notes, $_ unless $_ eq $outsched[$column]{"HEADNUM"}[0];
+
+      # unless this is the same as the first number in HEADNUM,
+      # push this route to @notes
+
+      $_ = $fullsched{$day_dir}{"SPEC DAYS"}[$fsrow];
+      push @notes, $_ if ( $_ and $_ ne $daycode) ;
+      # add the special days, if it's there, and it's different
+      # from the day code
+
+      push @{$outsched[$column]{"NOTES"}} , [ @notes ] ;
+      # so now $outsched[$column]{"NOTES"}[thisrow] is a reference
+      # to a copy of the array in @notes
+
+   }
+}
+
+=pod
+
+If at some point we want to make this the most common route,
+rather than the first route, we will have to change the line above,
+
+      push @notes, $_ unless $_ eq $outsched[$column]{"HEADNUM"}[0];
+
+but we will also want to change HEADNUM so it selects the most common
+route as well (instead of just sorting alphanumerically by route), or 
+possibly create a new part of %outsched so that the most common route is 
+given in the header.
+
+The problem is that the columnar format doesn't really fit things
+like the 72/73 southbound from El Cerrito, where it can and should 
+be treated like one big line.  I've chosen to treat that as though the
+73 was a version of the 72.
+
+There aren't really very many of these, so maybe it won't matter. 
+Although there are lots of multiroute lines, nearly all of them should
+be separate columns: 90/92, even things like the K/KH and S/SA/SB.
+Only a few, like the 72/73, are exceptions. I'm assuming we can just
+ignore those few exceptions... we'll see how it goes.
+
+=cut
+
+
 
 sub headdest ($$) {
 
    my ($day_dir, $tp) = @_;
-   my ($lasttp, $lasttpnum, $headdest);
+   my ($lasttp, $lasttpnum);
    my (%lasttpfreq) = ();
-   our (%fullsched);
+   our (%fullsched, %tphash, %notes);
 
    for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
             $fsrow++) {
       next unless usedrow($fsrow);
       $lasttpfreq{$fullsched{$day_dir}{"LASTTP"}[$fsrow]}++;
-      print "\t$fsrow:" , $fullsched{$day_dir}{"LASTTP"}[$fsrow];
+      # print "\t$fsrow:" , $fullsched{$day_dir}{"LASTTP"}[$fsrow];
+ 
    }
 
-   $lasttpnum = 
+  #   $lasttpnum = 
+   $lasttp = 
        (sort { $lasttpfreq{$b} <=> $lasttpfreq{$a} } 
         keys %lasttpfreq)[0];
 
-   print "[$lasttpnum]";
+   print "{" , keys %lasttpfreq , "}\n\n";
 
-   $headdest = $fullsched{$day_dir}{"TIMEPOINTS"}[$lasttpnum];
+   # $headdest = $fullsched{$day_dir}{"TIMEPOINTS"}[$lasttpnum];
+   # print "[$lasttpnum]";
 
-   $lasttp = $fullsched{$day_dir}{"TPS"}[$lasttpnum];
-  
-   return $lasttp, $headdest;
+   # $lasttp = $fullsched{$day_dir}{"TP"}[$lasttpnum];
+
+   foreach (keys %lasttpfreq) {
+      $notes{"TP"} = $tphash {"TP"};
+   }
+
+
+   return $lasttp, $tphash{$lasttp};
 
 }
 
@@ -511,8 +698,10 @@ sub headdays ($$) {
 
    my ($day_dir, $tp) = @_;
 
-   my @used = get_useddays($day_dir, $tp);
-   # now we have the lists of used special days in @used
+   our %used;
+   
+   my @used = keys %{$used{"SPEC DAYS"}};
+   # now we have the lists of used special days in %used
 
    our (%notes, %longdaynames);
 
@@ -545,18 +734,20 @@ sub headdays ($$) {
 
 }
 
-sub headnum(@) {
+sub headnum() {
 
    # decides which route number to use at the top.
 
-   my @routes = @_;
+   # my @routes = @_;
    my (@temp, $temp, %routes, @headnum) =();
+
+   our (%used);
+   my @routes = keys %{$used{"ROUTES"}};
 
    local($_);
 
    foreach (@routes) {
-        s/^(\d+)/$1 /;
-        @temp = split;
+        @temp = split (/(?<=\d)(?=\D)/);
         $temp[1] = "BLANK" unless $temp[1];
         push @{$routes{$temp[0]}} , $temp[1];
    }
@@ -577,7 +768,7 @@ sub headnum(@) {
       push @headnum, $temp;
    }
    
-   return @headnum;
+   return sort byroutes @headnum;
 
 }
 
@@ -595,36 +786,23 @@ sub note_definitions ($) {
 
 } 
 
-sub uniq (@) {
+sub output_outsched () {
 
-   my %hash;
+our @outsched;
 
-   map {$hash{$_}=1} @_;
+   print "HEADNUM\t";
+   foreach (@{$outsched[0]{"HEADNUM"}}) { print; }
+    
+   foreach ( qw(HEADDAYS HEADDEST TP LASTTP) ) {
+      print "$_\t" , $outsched[0]{$_} , "\n";
+   } 
 
-   return keys %hash;
+   for (my $i = 0; $i < scalar(@{$outsched[0]{"TIMES"}}) ; $i++) {
 
-}
-
-sub get_useddays($$) {
-
-   our %fullsched;
-   my (@temp) = ();
-   my ($day_dir, $tp) = @_;
-
-   local ($_);
-
-   for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
-         $fsrow++) {
-
-       next unless usedrow($fsrow);
-       # skip it if it's not used
-
-       $_ = $fullsched{$day_dir}{"SPEC DAYS"}[$fsrow];
-       $_ = "BLANK" unless $_;
-       push @temp, $_;
+      print $outsched[0]{"TIMES"}[$i] , "\t";
+      foreach (@{$outsched[0]{"NOTES"}[$i]}) { print"[$_]" if $_; }
+      print "\n";
 
    }
-
-   return uniq (@temp);
-
+   
 }
