@@ -55,6 +55,28 @@ sub byroutes ($$) {
 # ---- INITIALIZING ROUTINES
 # -----------------------------------------------------------------
 
+=pod
+
+
+this doesn't work for some reason
+
+sub BOXSTYLES () {
+
+# added WS_MINIMIZEBOX to -style
+# subtracted WS_EX_CONTEXTHELP, WS_EX_DLGMODALFRAME from -exstyle
+    ( 
+      -style => (WS_BORDER | DS_MODALFRAME | WS_POPUP | 
+             WS_MINIMIZEBOX | WS_CAPTION | WS_SYSMENU) ,
+      -exstyle => (WS_EX_WINDOWEDGE | 
+                  WS_EX_CONTROLPARENT),
+       -top => 30 ,
+       -left => 30 ,
+    );
+
+}
+
+=cut
+
 sub init_vars () {
 
    our %longdaynames = 
@@ -82,6 +104,40 @@ sub init_vars () {
           NB => 30 ,
           CW => 20 ,
           CC => 10 ,
+        );
+
+   our %daydirhash = 
+        ( 
+         CC_DA => 110 ,
+         CW_DA => 120 ,
+         NB_DA => 130 ,
+         WB_DA => 140 ,
+         SB_DA => 150 ,
+         EB_DA => 160 ,
+         CC_WD => 210 ,
+         CW_WD => 220 ,
+         NB_WD => 230 ,
+         WB_WD => 240 ,
+         SB_WD => 250 ,
+         EB_WD => 260 ,
+         CC_WE => 310 ,
+         CW_WE => 320 ,
+         NB_WE => 330 ,
+         WB_WE => 340 ,
+         SB_WE => 350 ,
+         EB_WE => 360 ,
+         CC_SA => 410 ,
+         CW_SA => 420 ,
+         NB_SA => 430 ,
+         WB_SA => 440 ,
+         SB_SA => 450 ,
+         EB_SA => 460 ,
+         CC_SU => 510 ,
+         CW_SU => 520 ,
+         NB_SU => 530 ,
+         WB_SU => 540 ,
+         SB_SU => 550 ,
+         EB_SU => 560 ,
         );
 }
 
