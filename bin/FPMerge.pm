@@ -13,8 +13,11 @@ use Exporter;
 @EXPORT_OK = qw(FPread FPwrite);
 $VERSION = '0.00';
 
-use MyCSV;
+#use MyCSV;
+use NewCSV;
 use PickNewline('picknewline');
+
+use integer; # ever so slightly faster
 
 # FPread can build two different data structures.
 # It always builds @fparray. If an index field is passed, it also
@@ -42,7 +45,6 @@ use PickNewline('picknewline');
 sub FPread ($;$) {
 
    my ($file, $indexfield) = @_;
-   print "FPMerge: f: $file , i: $indexfield\n";
    my @fparray = ();
    my %fphash = ();
 
@@ -54,29 +56,27 @@ sub FPread ($;$) {
    die "FPMerge Unidentified newline in $file" unless $rs;
    local ($/) = $rs;
 
-   my $csv = MyCSV->new;
-
-   $csv->parse(scalar(<CSVFILE>)) 
-     or die "Parse failed reading headers: ", $csv->error_input;
-
-   my @fields = $csv->fields();
+   my $headerline = scalar <CSVFILE>;
+   chomp ($headerline);
+   my @fields = parse_csv($headerline);
 
    my $make_fphash = 0;
-   foreach (@fields) {
-      next unless $_ eq $indexfield;
-      $make_fphash = 1;
-      last;
+
+   if ($indexfield) {
+      foreach (@fields) {
+         next unless $_ eq $indexfield;
+         $make_fphash = 1;
+         last;
+      }
+      die "FPMerge: no $indexfield in $file" unless $make_fphash;
    }
 
    # if $indexfield is present and matches a field in the file, 
    # make the %fphash structure. Otherwise, it will just make
    # the @fparray structure.
 
-   die "FPMerge: no $indexfield in $file."
-      if $indexfield and not $make_fphash;
-
    my %repeating=();
-   my $unique_index = 1;
+   my $multiple_index = 0;
 
     # time
 
@@ -86,25 +86,21 @@ sub FPread ($;$) {
       $line =~ s/\013/\n/g;
       # change all the vertical tabs to newlines. VT is how
       # FileMaker represents embedded newlines
-
       # amazingly enough s/// seems to be faster than tr///
 
-      my %record = ();
+      my $recordref = +{}; # empty anonymous hash
 
-      $csv->parse($line)
-        or die "Parse failed reading values: ", $csv->error_input;
+      my @values = parse_csv($line);
 
-      my @values = $csv->fields();
-
-      foreach my $field (@fields) {
-         # go through all the fields in order and
-         my $value = shift @values;
-         # get the appropriate value.
+# faster than foreach @fields and shift @values
+      for (my $i = 0; $i <= $#fields ; $i++) { # faster than foreach @fields an
+         my $field=$fields[$i];
+         my $value=$values[$i];
 
          ### repeating fields
          if (not ( $repeating{$field} or $value =~ /\035/) ) {
                   # if not a repeating field
-            $record{$field} = $value;
+            $recordref->{$field} = $value;
          } else { 
             # it is a repeating field
 
@@ -113,7 +109,7 @@ sub FPread ($;$) {
 
                die "FPMerge: Can't make hash keys from repeated field $indexfield" if $field eq $indexfield ;
                # if this is the same as the index field, die
-
+                
                $_->{$field} = [ $_->{$field} ] foreach @fparray;
                # go through each record and set the new value 
                # of the appropriate field to be a reference
@@ -124,26 +120,28 @@ sub FPread ($;$) {
                # to ...{$field}[0..n] = "value"
 
                # The nice thing is that because it's a reference,
-               # I don't have to do the same thing for %fphash
+               # I don't have to do the same thing for %fphash (I think)
 
                $repeating{$field} = 1; # never do this again
             }
-            $record{$field} = [ split (/\035/ , $value) ];
-            # now $record 
+            $recordref->{$field} = [ split (/\035/ , $value) ];
+
          }
 
       } # field
 
-      my $recordref = { %record };
-      # copy the hash out of %record to a new anonymous hash
       push @fparray, $recordref;
 
       next unless $make_fphash;
       # now make the hash entry
+
+      my $indexvalue = $recordref->{$indexfield};
       
-      if ($fphash{$record{$indexfield}} or (not $unique_index)) {
+      if (exists $fphash{$indexvalue} or ($multiple_index)) {
         # if we've seen this one before or we know indexes aren't unique,
-          if ($unique_index) {
+          unless ($multiple_index) {
+
+             print "$indexfield ($indexvalue) is not a unique field in $file\n";
              # then if this is the first we learn about non-unique indexes,
 
              $fphash{$_} = [ $fphash{$_} ] foreach (keys %fphash);
@@ -154,23 +152,23 @@ sub FPread ($;$) {
              # This changes the structure from $fphash{$indexarray}{$field}... 
              # to $fphash{$indexarray}[0..n]{$field}...
 
-             $unique_index = 0;
+             $multiple_index = 1;
              # never do this again
 
           }
 
-          push @{$fphash{$record{$indexfield}}} , $recordref;
+          push @{$fphash{$indexvalue}} , $recordref;
 
       } else {
           # unique index
-          $fphash{$record{$indexfield}} = $recordref;
+          $fphash{$indexvalue} = $recordref;
       }
 
    } # line
 
    close CSVFILE;
 
-   return (\@fparray , \%fphash, $unique_index) if $make_fphash;
+   return (\@fparray , \%fphash, $multiple_index) if $make_fphash;
 
    return \@fparray;
 
@@ -178,64 +176,3 @@ sub FPread ($;$) {
    # out of scope so the value isn't retained for next time
 
 }
-
-__END__
-
-I haven't made FPWrite work with the current data structure. It uses the 
-now-obsolete $data{$field}[0..n] structure. It could be fixed.
-
-sub FPwrite ($$) {
-
-# call FPwrite as FPMerge::FPwrite($filename, \%data)
-
-   my $file = shift;
-   my %data = %{shift()};
-   # perl thinks %{shift} is the variable %shift.
-   # vim thinks %{shift} is a function call. Interesting.
-
-   my $csv = MyCSV->new;
-
-   my @fields = keys %data;
-
-   # the only real reason to do this is to ensure that the order is
-   # always the same. At some point I may write this so it specifies an
-   # order.
-   
-   open CSVFILE, ">$file" or die "Can't open $file for writing";
-
-   print CSVFILE join("," , @fields)  , "\n";
-
-   # This uses the system default newline. I hope, anyway, that FileMaker
-   # will recognize it.
-
-   my $max = 0;
-
-   foreach (@fields) {
-      my $thislength = @{$data{$_}};
-      next if $thislength >= $max;
-      $max = $thislength;
-   }
-
-   my @values;
-   foreach my $count (0 .. $max) { # the big .. array is optimized away, yay
-      @values = ();
-      foreach my $field (@fields) {
-          my $value = $data{$field}[$count];
-          if (ref ($value)) {
-             $value = join("\013" , @$value);
-          }
-          push @values, $value;
-      }
-
-      $csv->combine(@values) 
-        or die "Combine failed with values: ", $csv->error_input;
-
-      print CSVFILE $csv->string();
-
-   }
-
-close CSVFILE;
-   
-}
-
-1;
