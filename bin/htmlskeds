@@ -20,7 +20,7 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 
-use Skedfile qw(Skedread Skedwrite trim_sked copy_sked);
+use Skedfile qw(Skedread Skedwrite getfiles trim_sked copy_sked);
 use Myopts;
 use Skeddir;
 use Skedvars qw(%daydirhash %adjectivedaynames %bound %specdaynames);
@@ -80,9 +80,7 @@ print scalar(@lines) , " records.\n" unless $options{quiet};
 mkdir "html" or die 'Can\'t make directory "html": $!'  
                unless -d "html";
 
-my @files = grep ((! /=/) , glob('skeds/*-a.txt'));
-# easier to use grep than try to construct a glob pattern that doesn't include 
-# equals signs
+my @files = getfiles();
 
 my %skednamesbyroute = ();
 my %skeds;
