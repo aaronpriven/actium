@@ -104,7 +104,7 @@ local $/ = "\cL\cM";
 foreach my $file (glob ("headways/*.prt")) {
    open (my $fh , $file);
 
-   print "\n$file"; # debug
+   print "\n$file" unless $options{quiet}; # debug
 
    my %seenprint = ();
    my $seenprintcount = 0;
@@ -132,6 +132,11 @@ foreach my $file (glob ("headways/*.prt")) {
 
       $thispage{LINEGROUP} = stripblanks(substr($lines[3],11,3));
       next if $thispage{LINEGROUP} eq "399";
+
+      # HORRIBLE, HORRIBLE LINE 40 KLUDGE
+      $thispage{LINEGROUP} = "43" 
+         if $thispage{LINEGROUP} eq "40" and ($lines[1] =~ m/D2/i );
+
       if ($lines[1] =~ /Week/i) {
          $thispage{DAY} = "WD" 
       } else { 
@@ -147,7 +152,7 @@ foreach my $file (glob ("headways/*.prt")) {
                 $thispage{DAY},
                 );
 
-      unless ($seenprint{$thispage{LINEGROUP}}++) {
+      unless ($options{quiet} or $seenprint{$thispage{LINEGROUP}}++) {
          print "\n" unless ($seenprintcount++ % 19 ) ;
          printf "%4s" , $thispage{LINEGROUP};
       }
@@ -173,6 +178,9 @@ foreach my $file (glob ("headways/*.prt")) {
       { # scoping block
       my (undef, undef, undef, undef, @tps) = stripblanks(unpack $template, $lines[6]);
       my (undef, undef, undef, undef, @tps2) = stripblanks(unpack $template, $lines[7]);
+
+      tr/,/./ foreach (@tps , @tps2); 
+      # change commas to periods. FileMaker doesn't like commas for some reason.
       for my $thistp (0..$#tps) {
           $tps[$thistp] .= " " . $tps2[$thistp];
       } 
@@ -234,6 +242,16 @@ foreach my $file (glob ("headways/*.prt")) {
 # All pages are in %pages. Now to combine pages...
 ######################################################################
 
+# process each page
+
+print "\n\nCombining pages.\n" unless $options{quiet};
+
+foreach my $dataref (values %pages) {
+#   remove_blank_columns($dataref);
+   # from Skedfile.pm
+# shouldn't be necessary with Hastus
+   add_duplicate_tp_markers ($dataref);
+}
 
 #{
 #open (my $fh , ">pages.txt");
@@ -241,21 +259,111 @@ foreach my $file (glob ("headways/*.prt")) {
 #close $fh;
 #}
 
-
 my @skipped;
+my @skippedwhy;
 
 SKEDNAME: 
-for my $skedname (sort keys %seenskedname) {
+for my $skedname (sort {$a <=> $b} keys %seenskedname) {
 
-   my @morepages = sort byskednamenum grep /$skedname=/ , keys %pages ; 
-   next SKEDNAME unless scalar(@morepages);
-    
+   my @morepages = sort byskednamenum grep /^$skedname=/ , keys %pages ; 
+   next SKEDNAME unless scalar(@morepages); # only one page? don't combine 
+
    for my $thispage (@morepages) {
-      if (join ("" , @{$pages{$skedname}{TP}}) ne
-          join ("" , @{$pages{$thispage}{TP}}) ) {
-         push @skipped, $skedname;
-         next SKEDNAME;
-      } # if the timepoints aren't identical, skip it (for now)
+      unless (join ("" , @{$pages{$skedname}{TP}}) eq
+              join ("" , @{$pages{$thispage}{TP}}) ) {
+        # unless timepoints are identical, skip this bit that 
+        # splices unlike timepoints together.
+
+        # If one is subset of the other, and no non-consecutive
+        # duplicate timepoint names in longer one, can match.
+
+        my $skednumtps = $#{$pages{$skedname}{TP}} ;
+        my $thisnumtps = $#{$pages{$thispage}{TP}} ;
+
+        if ($skednumtps == $thisnumtps) {
+           push @skipped, $skedname;
+           push @skippedwhy, 1;
+           next SKEDNAME;
+           # they have equal numbers, but since the timepoints aren't equal
+           # (we know this from test done earlier) 
+           # we know one is not a subset of the other. skip it.
+        }
+
+        my (%bigset , %smallset, $big, $small);
+
+        if ($skednumtps > $thisnumtps ) {
+           $big = $skedname;
+           $small = $thispage;
+        } else {
+           $big = $thispage;
+           $small = $skedname;
+        }
+        my $count = 0;
+        $bigset{$_} = $count++ foreach @{$pages{$big}{TP}};
+        $count = 0;
+        $smallset{$_} = $count++ foreach @{$pages{$small}{TP}}; 
+
+        foreach (keys %smallset) {
+           unless (exists $bigset{$_}) {
+              push @skipped, $skedname ;
+              push @skippedwhy, 2 ;
+              next SKEDNAME;
+           } # if each entry in smallset isn't in bigset, skip this sked
+        }
+
+        for my $num (0 .. scalar keys %bigset) {
+           if (/=/) {
+              (my $sanseq = $pages{$big}{TP}[$num]) =~ s/=.*//;
+              unless ($pages{$big}{TP}[$num-1] eq $sanseq) {
+                 push @skipped, $skedname  ;
+                 push @skippedwhy, 3;
+                 next SKEDNAME;
+              }
+           }
+        } # if there are any equal entries in %bigset, and the previous
+          # one isn't the same as this one without the equal, then skip it
+          # (this will filter out all =3, =4s etc.)
+        
+        # OK, we know we can put these together now.
+
+        foreach (keys %smallset) {
+           next if /=/;
+           if (exists $bigset{"$_=2"} and not exists $smallset{"$_=2"}) {
+              $pages{$small}{TP}[$smallset{$_}] .= "=2";
+           }
+        }  # for each entry, if there's no =2 entry in the small set,
+           # but there is in the big set, change this timepoint to be
+           # the =2 entry instead. Aligns on departure, not arrival column
+
+        # regenerate smallset to deal with changed entries
+        $count = 0;
+        %smallset = ();
+        $smallset{$_} = $count++ foreach @{$pages{$small}{TP}}; 
+
+        { #scoping
+        # next: add extra tp columns to the shorter one
+        my @blankcol = ("") x @{$pages{$small}{ROUTES}};
+        my @newsmalltimes = ();
+        for my $col (0 .. $#{$pages{$big}{TP}}) { 
+           if (exists $smallset{$pages{$big}{TP}[$col]}) {
+               my $smallcol = $smallset{$pages{$big}{TP}[$col]};
+               push @newsmalltimes, $pages{$small}{TIMES}[$smallcol];
+           } else {
+               push @newsmalltimes, [@blankcol];
+           }
+        }
+        $pages{$small}{TIMES} = \@newsmalltimes;
+        }
+
+        $pages{$small}{TP} = $pages{$big}{TP};
+        # in case the small one is the first page, make sure it
+        # has the whole set of timepoint abbreviations
+
+        # so now the columns from first and second pages should be
+        # identical.
+
+      }
+
 
       for my $a ( qw(ROUTES SPECDAYS VT NOTES ) ) {
          push @{$pages{$skedname}{$a}} , @{$pages{$thispage}{$a}};
@@ -267,16 +375,29 @@ for my $skedname (sort keys %seenskedname) {
                  $pages{$thispage}{TIMES}[$col][$row] ;
          }
       }
+
+      delete $pages{$thispage};
+
    }
 
-   print "Combined: $skedname\n";
+   printf "%10s" , $skedname unless $options{quiet};
     
 }
 
-print "\nMultiple pages, skipped:\n" , join ("\n" , @skipped);
+print "\n\nCan't combine multiple pages, skipping:\n"  unless $options{quiet};
 
-delete $pages{$_} foreach @skipped;
-delete $pages{$_} foreach (grep /=/ , keys %pages);
+
+for (0 .. $#skipped) {
+   printf "%10s" ,  $skipped[$_] unless $options{quiet};
+   #print $skipped[$_] , " " , $skippedwhy [$_] , "\n" ;
+   #print $skipped[$_] , " " , $skippedwhy [$_] , "\n" ;
+   $pages{$skipped[$_]}{SKEDNAME} = $skipped[$_] . "=1";
+   $pages{$skipped[$_] . "=1"} = $pages{$skipped[$_]};
+   delete $pages{$skipped[$_]};
+}
+
+print "\n";
+
 
 sub byskednamenum {
 
@@ -291,25 +412,15 @@ sub byskednamenum {
 # All schedules now joined, or skipped. 
 ######################################################################
 
-# process each schedule
-
-foreach my $dataref (values %pages) {
-
-   remove_blank_columns($dataref);
-   # from Skedfile.pm
-
-   add_duplicate_tp_markers ($dataref);
-}
-
 merge_days (\%pages, "WD" , "WE" , "DA");
 # since Saturdays and Sundays always the same, this is the only possible
 # merger. 
 
-foreach my $dataref (values %pages) {
+foreach my $dataref (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) {
    Skedwrite ($dataref, "-a.txt");
    merge_columns ($dataref);
    Skedwrite ($dataref, "-s.txt");
-   push @index, skedidx_line ($dataref);
+   push @index, skedidx_line ($dataref) unless $dataref->{SKEDNAME} =~ m/=/;
 }
 
 print "\n" unless $options{quiet};
@@ -319,12 +430,13 @@ print "\n" unless $options{quiet};
 
 my @skeds = sort glob "../9xxskeds/*-s.txt";
 
-print "\nAdding exceptional schedules.\n" unless $options{quiet};
+print "\nAdding exceptional schedules (possibly overwriting previously processed ones).\n" unless $options{quiet};
 
 my $displaycolumns = 0;
 
 my $prevlinegroup = "";
 foreach my $file (@skeds) {
+   next if $file =~ m/=/; # skip file if it has a = in it
 
    unless ($options{quiet}) {
       my $linegroup = $file;
@@ -362,7 +474,7 @@ foreach my $file (@skeds) {
 }
 
 open IDX, ">Skedidx.txt" or die "Can't open $signup/skedidx.txt";
-print IDX join("\n" , @index) , "\n" ;
+print IDX join("\n" , sort {$a <=> $b} @index) , "\n" ;
 close IDX;
 
 print <<"EOF" unless $options{quiet};
@@ -427,30 +539,30 @@ sub merge_days {
    
    my $count = 0;
 
-   DAY: foreach my $day (0 .. $#firstscheds ) {
+   SKED: foreach my $sked (0 .. $#firstscheds ) {
    
       foreach ( qw(TP ROUTES SPECDAYS TIMES VT NOTES NOTEDEFS) ) {
    
-         next DAY if scalar @{$alldataref->{$firstscheds[$day]}{$_}} 
-                  != scalar @{$alldataref->{$secondscheds[$day]}{$_}}  ;
+         next SKED if scalar @{$alldataref->{$firstscheds[$sked]}{$_}} 
+                  != scalar @{$alldataref->{$secondscheds[$sked]}{$_}}  ;
 
       }
       # if the number of timepoints or rows, etc., are different, skip it
       
       foreach ( qw(TP ROUTES SPECDAYS VT NOTES NOTEDEFS )) {
       
-         next DAY 
-            if join ("" , @{$alldataref->{$firstscheds[$day]}{$_}})      ne
-               join ("" , @{$alldataref->{$secondscheds[$day]}{$_}}) ;
+         next SKED 
+            if join ("" , @{$alldataref->{$firstscheds[$sked]}{$_}})      ne
+               join ("" , @{$alldataref->{$secondscheds[$sked]}{$_}}) ;
       }
       # if the text of any of the data (other than TIMES) is different skip it
 
       for (my $column = 0; 
-           $column < scalar @{$alldataref->{$firstscheds[$day]}{"TIMES"}} ;  
+           $column < scalar @{$alldataref->{$firstscheds[$sked]}{"TIMES"}} ;  
            $column++) {
-         next DAY
-           if join ("" , @{$alldataref->{$firstscheds[$day]}{TIMES}[$column]}) ne
-              join ("" , @{$alldataref->{$secondscheds[$day]}{TIMES}[$column]});
+         next SKED
+           if join ("" , @{$alldataref->{$firstscheds[$sked]}{TIMES}[$column]}) ne
+              join ("" , @{$alldataref->{$secondscheds[$sked]}{TIMES}[$column]});
       }
 
       # if any of the times are different, skip it.
@@ -462,18 +574,18 @@ sub merge_days {
       # At this point, we know they're identical.
       # References make it pretty easy.
       
-      my $newschedname = $firstscheds[$day];
+      my $newschedname = $firstscheds[$sked];
       
       $newschedname =~ s/$firstday/$mergeday/;
       
-      $alldataref->{$newschedname} = $alldataref->{$firstscheds[$day]};
+      $alldataref->{$newschedname} = $alldataref->{$firstscheds[$sked]};
       $alldataref->{$newschedname}{DAY} = $mergeday;
       $alldataref->{$newschedname}{SKEDNAME} = $newschedname;
       
       # remember, that's a reference. Same reference, same thing.
       
-      delete $alldataref->{$firstscheds[$day]};
-      delete $alldataref->{$secondscheds[$day]};
+      delete $alldataref->{$firstscheds[$sked]};
+      delete $alldataref->{$secondscheds[$sked]};
       
       # so now, the original two days are gone, 
       # but the first day is still stored in $alldataref->{$newschedname}  
