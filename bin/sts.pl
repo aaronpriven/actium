@@ -914,11 +914,9 @@ sub output_outsched () {
 
       print OUT "<V>" , join (", ", sort {$a <=> $b} @thesemarks), "<V>" 
            if scalar (@thesemarks);
-
       #<V> is "superior" type
 
       print OUT "<\\c>";                                     # next column
-
       print OUT '@times:' ;                                    # style
 
       my $prev = "z";
@@ -1010,9 +1008,7 @@ sub output_outsched () {
                            $tphash{$lasttp} if $lasttp;
 
                } else {
-
                   $temp = "To $tphash{$lasttp}";
-
                }
 
                $temp =~ s/\.$//;
