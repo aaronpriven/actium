@@ -8,6 +8,8 @@
 use strict;
 use warnings;
 
+# initialization
+
 use FindBin('$Bin'); 
    # so $Bin is the location of the very file we're in now
 
@@ -15,50 +17,72 @@ use lib $Bin;
    # there are few enough files that it makes sense to keep
    # main program and library in the same directory
 
+# libraries dependent on $Bin
+
+use FPMerge qw(FPread FPread_simple);
+use Skedfile qw(Skedread);
+
+# open and load files
+
 our $skedsdir = "$Bin/..";
 
 chdir $skedsdir or die "Can't change directory to $skedsdir .";
 
-use FPMerge('FPread');
+print STDERR<<"EOF";
+makepoints - This is the makepoints program. It creates point schedules
+from the data exported from the FileMaker databases.
 
-# read in FileMaker Pro data
+Now loading data ...
+EOF
+
+# read in FileMaker Pro data into variables in package main
 
 our (@signs, @stops, @lines, @skedspec);
 our (%signs, %stops, %lines, %skedspec);
 
-{ # block to have non-strict refs (& scopes @ref, %indexfield)
- no strict 'refs';
- my @refs;
- my %indexfield = qw( Signs    SignID
-                      Stops    UNIQUEID
-                      Lines    Line
-                      SkedSpec SignID 
-                      );
+print STDERR "Signs... ";
+FPread_simple ("fm/Signs.csv" , \@signs, \%signs, 'SignID');
+print STDERR scalar(keys %signs) , " records.\nSkedspec... ";
+FPread ("fm/SkedSpec.csv" , \@skedspec, \%skedspec, 'SignID' , 1, 0);
+# ignores repeating fields, but works with non-unique SignIDs
+print STDERR scalar(keys %skedspec) , " records.\nLines... ";
+FPread_simple ("fm/Lines.csv" , \@lines, \%lines, 'Line');
+print STDERR scalar(keys %lines) , " records.\nStops (be patient, please) ... ";
+FPread_simple ("fm/Stops.csv" , \@stops , \%stops , 'UNIQUEID');
 
-  use Benchmark;
-  my ($t0, $t1, $td);
+print STDERR scalar(keys %stops) , " records.\nLoaded.\n\n";
 
- foreach (keys %indexfield) {
+# main loop
 
-    $t0 = new Benchmark;
-    @refs = FPread ("fm/$_.csv" , $indexfield{$_});
+print STDERR "Now processing point schedules.\n";
 
-    $t1 = new Benchmark;
-    $td = timediff($t1, $t0);
-    print "the code took:",timestr($td),"\n";  
+foreach my $signid (sort {$a <=> $b} keys %signs) {
 
+   next unless $signs{$signid}{Active} and exists $skedspec{$signid};
+   # skip inactive signs and those without skedspecs
+   
+   print STDERR "$signid\t";
 
-    $_ = lc($_); # this alters %indexfield but who cares
-    @$_ = @{$refs[0]};
-    %$_ = %{$refs[1]};
- }
+   my $point = build_point($signid); # point is a hashref
+
+   output_point ($point);
+
 }
 
-use Data::Dumper;
+sub build_point {
 
-my $ref = \%signs;
+   my $signid = shift;
+   our (%signs, %skedspec);
+   my $schooldayflag = "";
 
-$_ = <STDIN>;
+   my $point = {}; # anonymous hash
 
-print Dumper($ref);
+   foreach my $skedspec ( @{$skedspec{$signid}} ) {
+      # each schedule spec that matches this sign ID
+       $sked = Skedread($schedspec->'Timetable');
 
+      
+
+   }
+
+}
