@@ -1,0 +1,31 @@
+sub get_usednotes($$) {
+
+   our %fullsched;
+   my (@notes, @spec_days, %usednotes) = ();
+   my ($day_dir, $tp) = @_;
+
+   local ($_);
+
+
+   for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
+         $fsrow++) {
+
+       next unless usedrows($fsrow);
+       # skip it if it's not used
+
+       $_ = $fullsched{$day_dir}{"SPEC DAYS"}[$fsrow];
+       $_ = "BLANK" unless $_;
+       push @spec_days, $_;
+
+       $_ = $fullsched{$day_dir}{"NOTES"}[$fsrow];
+       $_ = "BLANK" unless $_;
+       push @notes, $_;
+
+   }
+
+   $usednotes{"NOTES"} = [ uniq (@notes) ];
+   $usednotes{"SPEC DAYS"} = [ uniq (@spec_days) ];
+
+   return \%usednotes;
+
+}
