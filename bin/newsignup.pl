@@ -57,7 +57,11 @@ foreach $linenum (@lines) {
    # -- e.g. weekday and Saturday schedules being the same, but different
    # from Sunday -- we can add those. But I think that's unlikely.
 
-   &output_schedule;
+   &output_schedule ("$linenum.acs");
+
+   &merge_columns;
+
+   &output_schedule ("$linenum.sls");
 
 }
 
@@ -321,9 +325,11 @@ foreach $thisrow (@schedrows) {
 
 sub output_schedule {
 
-open TEMPFILE , ">$linenum.acs" or die "Can't open file $linenum.acs.\n";
+my $file = $_[0];
 
-# print "Writing line $linenum to file $linenum.acs.\n";
+open TEMPFILE , ">$file" or die "Can't open file $file.\n";
+
+# print "Writing line $linenum to file $file.\n";
 
 foreach $schedname (sort keys %fullsched) {
 
@@ -458,4 +464,61 @@ return $count;
 
 # returns the number of merged schedules. I don't see that it actually matters.
 
+}
+
+sub merge_columns {
+
+   my ($prevtp, $tp);
+
+   ### Delete blank columns, and merge columns with the same timepoint (i.e., 
+   ### where a point says "arrives 10:30, leaves 10:35" just use the latter)
+   
+   foreach my $schedname (keys %fullsched) {
+
+      my ($prevtp, $tp);
+      undef $prevtp;
+      $tp = 0;
+      
+      TIMEPOINT: while  ( $tp < ( scalar @{$fullsched{$schedname}{"TP"}}) ) {
+      
+         unless (join ("", @{$fullsched{$schedname}{"TIMES"}[$tp]})) {
+            
+            splice (@{$fullsched{$schedname}{"TIMES"}}, $tp, 1);
+            splice (@{$fullsched{$schedname}{"TP"}}, $tp, 1);
+            splice (@{$fullsched{$schedname}{"TIMEPOINTS"}}, $tp, 1);
+            next TIMEPOINT;
+         }
+         # that gets rid of the blank ones. Now we merge ones
+         
+         unless ($fullsched{$schedname}{TP}[$tp] eq $prevtp) {
+             $prevtp = $fullsched{$schedname}{TP}[$tp];
+             $tp++;
+             next TIMEPOINT;
+         }
+
+         # unless they're the same timepoint, increment the counter
+         # and go to the next one
+
+         # so if it gets past that, we have duplicate columns
+
+         splice (@{$fullsched{$schedname}{"TP"}}, $tp, 1);
+         splice (@{$fullsched{$schedname}{"TIMEPOINTS"}}, $tp, 1);
+         # that gets rid of the extra TP and TIMEPOINTS
+         
+         for ($row =0; $row < scalar @{$fullsched{$schedname}{"TIMES"}[$tp]}  ;  $row++) {
+         
+            $fullsched{$schedname}{"TIMES"}[$tp - 1][$row]  
+               = $fullsched{$schedname}{"TIMES"}[$tp][$row] 
+                   if $fullsched{$schedname}{"TIMES"}[$tp][$row];
+                
+         }
+         # that takes all the values in the second column and puts them in the first column
+
+         splice (@{$fullsched{$schedname}{"TIMES"}}, $tp, 1);
+         # gets rid of extra TIMES array, now duplicated in the previous one
+   
+      }
+   
+   }
+   
 }
