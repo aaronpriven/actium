@@ -1,3 +1,6 @@
+# FPMerge.pm
+# vimcolor: #401000
+
 # This is FPMerge.pm, a module to read (and maybe later, write) 
 # the database files in "merge" format exported by FileMaker Pro.
 
@@ -39,17 +42,16 @@ use integer; # ever so slightly faster
 # repeating fields, it can't handle a repeating index field.
 # How would that work anyway?
 
+# @fparray and %fphash are filled with the same references -- so you can 
+# manipulate references within @fparray and the data in %fphash will be changed.
+
 sub FPread_simple {
 
    push @_ , 1, 1;
    # push shortcut numbers onto FPread. These save time
 
    goto &FPread; 
-   # pretend that FPread was called with the new @_
-
-   # If you believe goto's are an abomination, read the perl
-   # documentation about goto &NAME (as opposed to goto LABEL,
-   # which is what you think gotos are).
+   # pretend that FPread was called with the new @_ , see "goto" documentation
 
 }
 
@@ -211,7 +213,7 @@ sub FPread {
 
       ($fphash->{$indexvalue} = $recordref , next) if $ignoredupe;
       
-      if (exists $fphash->{$indexvalue} or ($multiple_index)) {
+      if ($multiple_index or exists $fphash->{$indexvalue} ) {
         # if we've seen this one before or we know indexes aren't unique,
           unless ($multiple_index) {
              # then if this is the first we learn about non-unique indexes,
