@@ -149,7 +149,7 @@ sub build_point {
    }
 
    # now $point includes all the data in Skedspec, too! 
-   # This includes Timetable, Lines, Timepoint, LastStop, ExactTP,
+   # This includes Timetable, Lines, Timepoint, NoteOnly, ExactTP,
    # SecondTimepoint, UseSecondTimepoint, BlankTimepoint, BlankorNonBlank,
    # AmPm, FullOrPoint, SkedID, SignID, SkedSpecSerial, TPXref,
    # BlankTPXref, SecondTPXref, Day, Dir, TPXrefName, Timepoint_NoEquals,
@@ -157,6 +157,12 @@ sub build_point {
 
    # Some of these will be blank because they are calculated fields not
    # stored
+
+   {
+   my $noteonly = lc(substr ($point->{NoteOnly} , 0 , 1) );
+   $noteonly = "" unless $noteonly =~ /^l|s|r$/;
+   $point->{NO} = $noteonly;
+   }
 
    {
    my $i=0;
@@ -448,7 +454,12 @@ sub headdays {
 
          $daystring = $point->{NOTEKEYS}{$used[0]};
          $daycode = $used[0];
-	 $schooldayflag = 1 if $daycode eq 'SD';
+	 $schooldayflag = 1 
+             if $daycode eq 'SD' and 
+             not $point->{NO};
+         # make sure it prints the thing about school trips running oddly,
+         # unless we have a whole-column-replaced-by-a-note thing,
+         # in which case we have no times so no point in printing it.
 
       }
 
@@ -538,7 +549,10 @@ sub output_points {
    my ($defaultheadtp, $defaultheadtpexact, $justoneheadtp) 
        = get_head_timepoints (\@points);
 
+
    foreach my $point (@points) {
+
+      my $noteonly = $point->{NO};
 
       $head = join ("/" , @{$point->{"HEADNUM"}});
 
@@ -557,7 +571,7 @@ sub output_points {
       # at some point, we may want to do some other kind of formatting if
       # there are two or more head numbers.
 
-      print OUT "$head " , '<b$><z$>';
+      print OUT "$head " , '<c$><b$><z$>';
 
       print OUT $point->{HEADDAYS} , " to " ,
                 $point->{HEADDEST};
@@ -569,7 +583,7 @@ sub output_points {
  
       $_ = $point->{MAINROUTE};
 
-      if ( scalar ( @{$point->{HEADNUM}}) > 1) {
+      if ( (not $noteonly) and scalar ( @{$point->{HEADNUM}}) > 1) {
 
         if ($usedmarks{"HEADNUM:$_"}) {
            $thismark = $usedmarks{"HEADNUM:$_"};
@@ -586,14 +600,16 @@ sub output_points {
       } 
 
       # add note to indicate that times refer to the proper timepoint
-      # if not the same as the current timepoint
+      # if not the same as the current timepoint. But not if this is a
+      # "note only" column.
 
       $_ = $point->{M_TPXREF};
 
-      if ($defaultheadtp ne $_) {
+      if ( not ($noteonly) and $defaultheadtp ne $_) {
       # if the default end timepoint for the schedule as a whole 
       # isn't the same as the default end timepoint for this column only,
-      # we need a head note.
+      # we need a head note. 
+      # But not if the whole column is a note only.
 
          if ($usedmarks{"Timepoint:$_"}) {
             $thismark = $usedmarks{"Timepoint:$_"};
@@ -619,6 +635,47 @@ sub output_points {
       #<V> is "superior" type
 
       print OUT "<\\c>"; # next column (really, next box)
+
+      if ($noteonly) {
+
+         print OUT '@noteonly:';
+
+         if ($noteonly eq "l" ) {
+         # Last stop
+
+         print OUT 'Last Stop';
+
+         } elsif ($noteonly eq "s" ) {
+         # School note
+
+            if ($usedmarks{"Noteonly:s"}) {
+               $thismark = $usedmarks{"Noteonly:s"};
+            } else {
+               $thismark = ++$markcounter;
+               $usedmarks{"Noteonly:s"} = $thismark;
+               $temp = $tphash{$_};
+               $markdefs[$thismark] = 
+                "Lines that operate school days only operate at times that " . 
+                "may vary from day to day. See the public timetable for more ". 
+                "information. Supplementary service is available to all " .
+                "riders at regular fares.";
+            }
+ 
+            print OUT "See\rNote $thismark";
+
+         } elsif ($noteonly eq "r" ) {
+         # Rapid note
+
+            print OUT 'Buses arrive about every twelve minutes Ñ<\\n>See information elsewhere on this sign.';
+            # that is an emdash - it should carry through. It's
+            # potentially a crossplatform issue though
+
+         }
+
+         print OUT '<\c>';  # next point marker
+         next; # next point. Skip per-row routine below.
+
+      }
 
       my $prev = "z";
 
@@ -710,7 +767,7 @@ sub output_points {
 
             $_ = "$route:$lasttp:$lesser";
 
-# TODO
+# TODO (but I don't remember why, argh)
 
             my $hashlasttp = $lasttp;
             $hashlasttp =~ s/=\d+$//;
@@ -762,7 +819,7 @@ sub output_points {
 
       } # end of row
 
-    print OUT '<\c>';  # next point marker
+      print OUT '<\c>';  # next point marker
 
     } # end of point
 
@@ -885,6 +942,7 @@ sub signdescription {
       s/Park\.$/Park/;
       s/Ln\.$/Lane/;
       s/Lp\.$/Loop/;
+      s/Broadway\.$/Broadway/;
 
    }
 
@@ -896,9 +954,9 @@ sub signdescription {
 
    $description .= "$thisstop->{StNumF} " 
           if $thisstop->{StNumF};
-   $description .= $thisstop->{OnF};
-   $description .= " at $thisstop->{AtF}" 
-          if $thisstop->{AtF};
+   $description .= $on; #$thisstop->{OnF};
+   $description .= " at $at" # " at $thisstop->{AtF}" 
+          if $at ; # $thisstop->{AtF};
    $description .= 
            ", " . $thisstop->{CityF} .
            ", going $direction (#$signid; stop $uniqueid)";
@@ -909,29 +967,32 @@ sub signdescription {
 
 sub getcolor {
 
-   local $_ = $_[0];
+   #local $_ = $_[0];
 
    our %lines;
-   return $lines{$_}{Color} if $lines{$_}{Color};
+   return ($lines{$_[0]}{Color} or "Grey80");
 
-   return "Local" if /^\d\d?$/;
+   # now it assumes that everything worth thinking about has a color in
+   # the Lines database. Those that don't (e.g., schools) get Grey80.
+
+   # old code for old map colors
+   #return "Local" if /^\d\d?$/;
    # return "Local" if it's one or two digits
 
-   return "Transbay" if $_ ge "A";
+   #return "Transbay" if $_ ge "A";
    # return "Transbay" if it's a letter
 
    # That's nearly all of them, here are some exceptions
 
-   return "EBExpress" if /\dX/;
-   return "EBLimited" if /\dL/;
+   #return "EBExpress" if /\dX/;
+   #return "EBLimited" if /\dL/;
 
-   my $firstchar = substr($_,0,1);
+   #my $firstchar = substr($_,0,1);
 
-   if (/^\d\d\d/) {
-      return "School" if $firstchar eq  "6";
-      return "LocalLtdHours" if $firstchar eq  "3";
-   }
-
-   return "Local";
+   #if (/^\d\d\d/) {
+   #   return "School" if $firstchar eq  "6";
+   #   return "LocalLtdHours" if $firstchar eq  "3";
+   #}
+   #return "Local";
 
 }
