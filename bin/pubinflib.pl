@@ -79,6 +79,14 @@ sub BOXSTYLES () {
 
 sub init_vars () {
 
+   our %longerdaynames = 
+        ( WD => "Monday through Friday" ,
+          WE => "Sat., Sun. and Holidays" ,
+          DA => "Daily" ,
+          SA => "Saturdays" ,
+          SU => "Sundays and Holidays" ,
+        );
+
    our %longdaynames = 
         ( WD => "Mon thru Fri" ,
           WE => "Sat, Sun and Holidays" ,
@@ -199,7 +207,7 @@ return $ARGV[0];
 
 sub get_lines () {
 
-   our ($longestline, @lines);
+   my (@lines);
 
    my @slsfiles;
    @slsfiles = <skeds/*.sls>;
@@ -211,13 +219,16 @@ sub get_lines () {
    }
 
    map { s/.sls$//i;}  @slsfiles;
+   map { s(^skeds/)()i;}  @slsfiles;
 
-   $longestline = 0;
+   my $longestline = 0;
    foreach (@slsfiles) {
       $longestline = length($_) if length($_) > $longestline;
    }
 
    @lines = (sort byroutes @slsfiles );
+
+   return $longestline, @lines;
 
 }
 
@@ -444,6 +455,8 @@ sub read_fullsched ($;$) {
       chomp($wholesched);
          
       @wholesched = (split ("\n", $wholesched));
+
+      s/\s+$// foreach @wholesched;
             
       $day_dir = shift (@wholesched);
 
@@ -923,7 +936,7 @@ sub output_outsched ($$) {
          $routes{$_}=1;
       }
 
-      $head = join ("-" , @{$column->{"HEADNUM"}});
+      $head = join ("/" , @{$column->{"HEADNUM"}});
       
       # the gobbeldygook in the print statements are the quark tags
       print OUT '@Column head:<';                                   # style
