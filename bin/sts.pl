@@ -21,15 +21,13 @@ sub pick_list ($@) ;
 sub display_lines () ;
 sub pick_line () ;
 sub read_fullsched ($) ;
-sub usedrow ($) ;
-sub build_usedrows ($$@) ;
+sub usedrow ($$) ;
+sub build_used ($) ;
 sub build_outsched (@) ;
-sub build_outsched_notes_and_times ($$$$$) ;
-sub headdest ($$$) ;
-sub headdays ($$) ;
-sub headnum() ;
+sub headdest ($) ;
+sub headdays ($) ;
+sub headnum($) ;
 sub note_definitions ($) ;
-sub build_usedhash($$) ;
 sub build_tphash();
 sub output_outsched();
 
@@ -62,17 +60,27 @@ sub init_vars () {
           WE => "Sat, Sun and Holidays" ,
           DA => "Daily" ,
           SA => "Saturdays" ,
-          SU => "Sundays" ,
+          SU => "Sundays and Holidays" ,
         );
+
+# the following hashes are used for sorting
 
    our %dayhash = 
-        ( DA => 1 ,
-          WD => 2 ,
-          WE => 3 ,
-          SA => 4 ,
-          SU => 5 ,
+        ( DA => 50 ,
+          WD => 40 ,
+          WE => 30 ,
+          SA => 20 ,
+          SU => 10 ,
         );
 
+   our %dirhash = 
+        ( EB => 60 ,
+          SB => 50 ,
+          WB => 40 ,
+          NB => 30 ,
+          CW => 20 ,
+          CC => 10 ,
+        );
 }
 
 sub build_tphash () {
@@ -409,106 +417,91 @@ sub read_fullsched ($) {
 # ---- USEDROWS
 # -----------------------------------------------------------------
 
-sub usedrow ($) {
+sub usedrow ($$) {
 
-   our @usedrows;
-   return $usedrows[$_[0]];
+   our @outsched;
+   my ($column, $row) = @_;
+   return vec ($outsched[$column]{"USEDROWS"} , $row, 1);
+
+   # This cannot be an lvalue subroutine, more's the pity
 
 }
 
-sub build_usedrows ($$@) {
+sub build_used ($) {
    
-   our (%fullsched, @usedrows);
-   my ($day_dir, $tp, @routes) = @_;
+   our (@outsched);
+   my ($column) = $_[0];
    my ($lasttpnum, %routes);
 
-   @usedrows = ();
+   my $tpnum = $outsched[$column]{'TPNUM2USE'};
+   my %used = ();
+   local ($_);
 
-   foreach (@routes) {
+   undef $outsched[$column]{"USEDROWS"};
+
+   foreach (@{$outsched[$column]{"ROUTES2USE"}}) {
       $routes{$_}=1;
    }
    # provides an easy "is an element" lookup
 
-FSROW: 
-   for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
-            $fsrow++) {
+ROW: 
+   for (my $row = 0; $row < scalar @{$outsched[$column]{"TIMES"}[$tpnum]};
+            $row++) {
 
-      # $fsrow is the row in %fullsched
-
-      next FSROW unless $routes{$fullsched{$day_dir}{"ROUTES"}[$fsrow]};
+      next ROW unless $routes{$outsched[$column]{"ROUTES"}[$row]};
       # if this route isn't on the list of routes to use, skip this row
       # (so if we're printing out a 40 schedule, the 43 won't show up)
 
-      $_ =  $fullsched{$day_dir}{"TIMES"}[$tp][$fsrow];
-      # $_ is the time for this row
+      next ROW unless  $outsched[$column]{"TIMES"}[$tpnum][$row];
+      # if there's no time for this row, skip it
 
-      next FSROW unless $_;
-      # if there's no time, skip it
+   TPS: 
+      for ( my $thistpnum = (scalar @{$outsched[$column]{"TP"}} -1 ); 
+                $thistpnum >= 0;  $thistpnum-- ) {
 
-TPS: 
-      for ( my $thistp = (scalar @{$fullsched{$day_dir}{"TP"}} -1 ); 
-                $thistp >= 0;  $thistp-- ) {
-
-          $lasttpnum = $thistp;
-          last TPS if $fullsched{$day_dir}{"TIMES"}[$thistp][$fsrow];
+          $lasttpnum = $thistpnum;
+          last TPS if $outsched[$column]{"TIMES"}[$thistpnum][$row];
       }
 
-      $fullsched{$day_dir}{"LASTTP"}[$fsrow] = 
-                $fullsched{$day_dir}{"TP"}[$lasttpnum];
+      $outsched[$column]{"LASTTP"}[$row] = 
+                $outsched[$column]{"TP"}[$lasttpnum];
 
       # save the lasttp abbrev for when we figure out where the destination is
 
-      next FSROW if $lasttpnum eq $tp;
+      next ROW if $lasttpnum eq $tpnum;
       # Skip this time if it's the last one in the row.
       # We don't want to tell people when buses leave from this point
       # if they go no further from here
 
       # ok, now we know this time should be included
 
-      $usedrows[$fsrow] = 1;
+      vec ($outsched[$column]{"USEDROWS"} , $row, 1) = 1;
+
+      # and that's saved in $outsched[$column]{"USEDROWS"}, which is
+      # more easily accessed by the subroutine usedrows($column, $row)
+
+      # OK, now we're going to go and build a new set of used variables.
+      # These are the *frequency* of the NOTES, SPEC DAYS, and ROUTES
+      # thingies in the used rows.
+
+      $_ = $outsched[$column]{"NOTES"}[$row];
+      $_ = "BLANK" unless $_;
+      $used{"NOTES"}{$_}++;
+
+      # I'm pretty sure it won't matter if we don't turn "" to "BLANK"
+      # but I'm not sure enough.
+
+      $_ = $outsched[$column]{"SPEC DAYS"}[$row];
+      $_ = "BLANK" unless $_;
+      $used{"SPEC DAYS"}{$_}++;
+
+      $used{"ROUTES"}{$outsched[$column]{"ROUTES"}[$row]}++;
+
+      # ROUTES will never be blank.
 
    }
 
-   build_usedhash ($day_dir, $tp);
-
-}
-
-sub build_usedhash($$) {
-
-   our (%fullsched, %used, %notes);
-   my ($day_dir, $tp) = @_;
-   %used = ();
-
-   local ($_);
-
-   for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
-         $fsrow++) {
-
-       next unless usedrow($fsrow);
-       # skip it if it's not used
-
-       $_ = $fullsched{$day_dir}{"NOTES"}[$fsrow];
-       $_ = "BLANK" unless $_;
-       $used{"NOTES"}{$_}++;
-
-       # I'm pretty sure it won't matter if we don't turn "" to "BLANK"
-       # but I'm not sure enough.
-
-       $_ = $fullsched{$day_dir}{"SPEC DAYS"}[$fsrow];
-       $_ = "BLANK" unless $_;
-       $used{"SPEC DAYS"}{$_}++;
-
-       $used{"ROUTES"}{$fullsched{$day_dir}{"ROUTES"}[$fsrow]}++;
-
-       # ROUTES will never be blank.
-
-   }
-
-   foreach (keys %{$used{"ROUTES"}}) {
- 
-      $notes{$_} = "Route $_";
-
-   }
+   $outsched[$column]{"USED"} = { %used };
 
 }
 
@@ -518,10 +511,9 @@ sub build_usedhash($$) {
 
 sub build_outsched (@) {
 
-   our (@outsched , %fullsched, %notes, %longdaynames);
+   our (@outsched , %fullsched, %longdaynames);
 
    @outsched = ();
-   %notes = ();
 
    local ($_);
 
@@ -541,46 +533,70 @@ sub build_outsched (@) {
       read_fullsched($line);
       # now we have the data
 
-      note_definitions($day_dir);
-      # read all note definitions into %notes
+      $outsched[$column] = $fullsched{$day_dir};
+      # remember, that's a *reference*. Same reference, same thing.
+      # So, now $outsched[column] points to the same hash that 
+      # $fullsched{$day_dir} used to point to.  We no longer need to refer
+      # to $fullsched at all. In fact,
+
+      %fullsched = ();
+
+      # that's probably not necessary, but it wipes out all the 
+      # now-unreferenced material (the other ($day_dir)s...) and thus saves
+      # memory.
+
+      ($outsched[$column]{"DIR"} , $outsched[$column]{"DAY"}) =
+          split (/_/ , $day_dir, 2);
+
+      # add DAY and DIR to $outsched
+
+      $outsched[$column]{"TPNUM2USE"} = $tp;
+      $outsched[$column]{"ROUTES2USE"} = [ @routes ];
+
+      # So now, $tp (which is the NUMBER of the timepoint)
+      # and the used routes are stored in $outsched[$column]. It should
+      # no longer be necessary to pass those explicitly, since they are
+      # associated with the column.
+     
+      note_definitions($column);
+      # read all note definitions into $outsched[$column]{NOTEKEYS}
  
-      build_usedrows($day_dir, $tp, @routes);
+      build_used($column);
       # Now we know that usedrow(x) is 1 if the xth row is a valid one,
       # an 0 if it should be skipped. 
 
-      # also puts route numbers into %notes
+      # We also just built $outsched[$column]{USED}..., which are 
+      # the frequency of routes, notes, and special days used
 
-      @{$outsched[$column]{"HEADNUM"}} = headnum();
+      # and we also just built $outsched[$column]{LASTTP}
+
+      @{$outsched[$column]{"HEADNUM"}} = headnum($column);
       # get the header number(s)
 
-      ($daycode, $outsched[$column]{"HEADDAYS"}) = 
-           headdays ($day_dir, $tp);
+      ($outsched[$column]{"DAY2USE"}, 
+       $outsched[$column]{"HEADDAYS"}) = 
+           headdays ($column);
       # get the header day text ("Mon thru Fri", etc.) 
 
-      ($lasttp, $outsched[$column]{"HEADDEST"}) = 
-           headdest ($day_dir, $tp, $outsched[$column]{"HEADNUM"}[0]);
+      ($outsched[$column]{"LASTTP2USE"} ,
+         $outsched[$column]{"HEADDEST"}) = 
+           headdest ($column);
+
       # get the header destination text ("To University and San Pablo")
-      # $lasttp is the timepoint short string ("UNIV S.P.")
-      # also puts the various non-default last tps into %notes
-      
-      build_outsched_notes_and_times
-              ($column, $day_dir, $tp, $lasttp, $daycode);
+      # ${LASTTP2USE} is the timepoint short string ("UNIV S.P.")
+      # also puts the various non-default last tps into {NOTEKEYS}
 
-      # also builds $outsched[column]{NOTES}
-
-      $outsched[$column]{"TP"}=
-         $fullsched{$day_dir}{"TP"}[$tp];
-
-      $outsched[$column]{"LASTTP"}=
-         $lasttp;
+      $outsched[$column]{"TP2USE"}=
+         $outsched[$column]{"TP"}[$outsched[$column]{"TPNUM2USE"}];
 
       # save the current timepoint and last timepoint
 
    } continue {
 
-      print "\n---\n" , join("." , @{$outsched[$column]{"HEADNUM"}});
+      print "\n---\n" , join("-" , @{$outsched[$column]{"HEADNUM"}});
       print "\t" , $outsched[$column]{"HEADDAYS"};
-      print "\t" , $lasttp;
+      print "\t" , $outsched[$column]{"TP2USE"};
+      print "\t" , $outsched[$column]{"LASTTP2USE"};
       print "\t" , $outsched[$column]{"HEADDEST"};
 
       $column++;
@@ -593,97 +609,26 @@ print "\n\n";
 
 } 
 
-sub build_outsched_notes_and_times($$$$$) {
+sub headdest ($) {
 
-   my ($column, $day_dir, $tp, $lasttp, $daycode) = @_;
-
-   my @notes;
-
-   local ($_);
-
-   our (%fullsched, @outsched, %used) ;
-
-   $outrow = 0;
-
-   # $outrow is the row in %outsched. %fsrow is the row in $fullsched.
-   # The difference is that $fullsched includes rows that are not used
-   # and thus not copied to $outsched.
-
-   for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
-            $fsrow++) {
-
-      next unless usedrow($fsrow);
-
-      $outsched[$column]{"TIMES"}[$outrow] = 
-            $fullsched{$day_dir}{"TIMES"}[$tp][$fsrow];
-      # save the TIMES
-
-      $_ = $fullsched{$day_dir}{"NOTES"}[$fsrow];
-      $outsched[$column]{"NOTES"} = $_ if $_;
-
-      $_ = $fullsched{$day_dir}{"ROUTES"}[$fsrow];
-      $outsched[$column]{"ROUTES"} = $_ 
-                     unless ($_ and $_ eq $outsched[$column]{"HEADNUM"}[0]);
-
-      # unless this is not blank, and 
-      # unless it's the same as the first number in HEADNUM,
-      # push this route to ROUTES
-
-      $_ = $fullsched{$day_dir}{"SPEC DAYS"}[$fsrow];
-      $outsched[$column]{"SPEC DAYS"} = $_ 
-         if ( $_ and $_ ne $daycode) ;
-      # add the special days, if it's there, and it's different
-      # from the day code
-
-      $outrow++;
-
-   }
-}
-
-=pod
-
-If at some point we want to make this the most common route,
-rather than the first route, we will have to change the line above,
-
-      push @notes, $_ unless $_ eq $outsched[$column]{"HEADNUM"}[0];
-
-but we will also want to change HEADNUM so it selects the most common
-route as well (instead of just sorting alphanumerically by route), or 
-possibly create a new part of %outsched so that the most common route is 
-given in the header.
-
-The problem is that the columnar format doesn't really fit things
-like the 72/73 southbound from El Cerrito, where it can and should 
-be treated like one big line.  I've chosen to treat that as though the
-73 was a version of the 72.
-
-There aren't really very many of these, so maybe it won't matter. 
-Although there are lots of multiroute lines, nearly all of them should
-be separate columns: 90/92, even things like the K/KH and S/SA/SB.
-Only a few, like the 72/73, are exceptions. I'm assuming we can just
-ignore those few exceptions... we'll see how it goes.
-
-=cut
-
-
-
-sub headdest ($$$) {
-
-   my ($day_dir, $tp, $headnum) = @_;
+   our @outsched;
+   our %tphash;
+   # my ($day_dir, $tp, $headnum) = @_;
+   my $column = $_[0];
+   my $headnum = $outsched[$column]{HEADNUM}[0];
    my ($lasttp, $lasttpnum);
    my (%lasttpfreq) = ();
-   our (%fullsched, %tphash, %notes);
+   my $tp = $outsched[$column]{"TPNUM2USE"};
 
-   for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
-            $fsrow++) {
-      next unless usedrow($fsrow) and
-            $fullsched{$day_dir}{"ROUTES"}[$fsrow] eq $headnum;
+   for (my $row = 0; $row < scalar @{$outsched[$column]{"TIMES"}[$tp]};  
+            $row++) {
+      next unless usedrow($column, $row) and
+            $outsched[$column]{"ROUTES"}[$row] eq $headnum;
 
       # skip it, unless this timepoint is used and the current 
       # route is the same as in $headnum
 
-      $lasttpfreq{$fullsched{$day_dir}{"LASTTP"}[$fsrow]}++;
-      # print "\t$fsrow:" , $fullsched{$day_dir}{"LASTTP"}[$fsrow];
+      $lasttpfreq{$outsched[$column]{"LASTTP"}[$row]}++;
  
    }
 
@@ -694,28 +639,28 @@ sub headdest ($$$) {
        (sort { $lasttpfreq{$b} <=> $lasttpfreq{$a} } 
         keys %lasttpfreq)[0];
 
+   # so $lasttp is the most common last timepoint
+
    # print "{" , keys %lasttpfreq , "}\n\n";
 
    foreach (keys %lasttpfreq) {
-      $notes{"TP"} = $tphash {"TP"};
+      $outsched[$column]{"NOTEKEYS"}{$_} = $tphash {$_};
    }
 
    return $lasttp, $tphash{$lasttp};
 
 }
 
-sub headdays ($$) {
+sub headdays ($) {
 
-   my ($day_dir, $tp) = @_;
+   my $column = $_[0];
 
-   our %used;
+   our (@outsched, %longdaynames);
    
-   my @used = keys %{$used{"SPEC DAYS"}};
+   my @used = keys %{$outsched[$column]{USED}{"SPEC DAYS"}};
    # now we have the lists of used special days in %used
 
-   our (%notes, %longdaynames);
-
-   my $daycode = (split (/_/ , $day_dir))[1];
+   my $daycode = $outsched[$column]{"DAY"};
    my $daystring;
 
    if (scalar( @used ) == 1) {
@@ -729,7 +674,7 @@ sub headdays ($$) {
       } else {
          # if only one day, but it's not blank, use that.
 
-         $daystring = $notes{$used[0]};
+         $daystring = $outsched[$column]{"NOTEKEYS"}{$used[0]};
          $daycode = $used[0];
       }
 
@@ -744,19 +689,21 @@ sub headdays ($$) {
 
 }
 
-sub headnum() {
+sub headnum ($) {
 
    # decides which route number to use at the top.
 
    # my @routes = @_;
-   my (@temp, $temp, %routes, @headnum) =();
 
-   our (%used);
-   my @routes = keys %{$used{"ROUTES"}};
+   my $column = $_[0];
+
+   my (@temp, %routes, @headnum) =();
+
+   our (@outsched);
 
    local($_);
 
-   foreach (@routes) {
+   foreach (sort byroutes @{$outsched[$column]{"ROUTES2USE"}}) {
         @temp = split (/(?<=\d)(?=\D)/);
         $temp[1] = "BLANK" unless $temp[1];
         push @{$routes{$temp[0]}} , $temp[1];
@@ -764,18 +711,19 @@ sub headnum() {
    # so now the hash %routes has keys which are the numeric parts,
    # and values which are a reference to a list of the letter parts.
    # i.e., for the 51, %routes will be (  51 => [ "BLANK" , "A" ] )
+   # note that the "sort byroutes" means that the final array will be
+   # sorted
 
    foreach (keys %routes) {
 
-      $temp = $_;
-      # $temp is the number
+      my $number = $_;
 
-      $temp .= $routes{$_}[0] 
+      $number .= $routes{$_}[0] 
              if scalar (@{$routes{$_}}) == 1 and $routes{$_}[0] ne "BLANK";
       # if there's only one letter part, and it isn't "BLANK", add it to 
       # $temp
 
-      push @headnum, $temp;
+      push @headnum, $number;
    }
    
    return sort byroutes @headnum;
@@ -784,16 +732,22 @@ sub headnum() {
 
 sub note_definitions ($) {
 
-      my $day_dir = $_[0];
-      our (%fullsched, %notes);
+   my $column = $_[0];
+   our (@outsched);
 
-      foreach (@{$fullsched{$day_dir}{"NOTEDEFS"}}) {
-         my ($note, $notedef) = split(/:/);
-         $notedef =~ s/ only//i;
-         $notes{$note} = $notedef;
-      }
-      # Now all the note definitions from here are are %notes
+   foreach (@{$outsched[$column]{"NOTEDEFS"}}) {
+      my ($key, $notedef) = split(/:/);
+      $notedef =~ s/ only//i;
+      $outsched[$column]{"NOTEKEYS"}{$key} = $notedef;
+   }
+   # Now all the note definitions from here are in
+   # the hash %{$outsched[$column]{NOTEKEYS}}
 
+   foreach (@{$outsched[$column]{"ROUTES2USE"}}) {
+ 
+      $outsched[$column]{"NOTEKEYS"}{$_} = "Route $_";
+
+   }
 } 
 
 sub get_output_filename () {
@@ -829,99 +783,275 @@ sub getcolor($) {
 
 }
 
-sub get_head_timepoints() {
+sub get_head_timepoints($) {
+
+   # returns the default timepoint *across* columns.
+   # the argument can either be "LASTTP2USE", in which case
+   # it returns the last end timepoint, or "TP2USE", in which case
+   # it returns the last timepoint for the columns shown.
 
    our @outsched;
+   my $refersto = $_[0];
    my %tpfreq = ();
+   my %tpcols = ();
 
-   foreach (@outsched) {
-      $tpfreq{$_->{TP}}++;
+   local ($_);
+
+   for ( my $column = ( $#outsched); 
+            $column >= 0;  $column-- ) {
+
+      $_ = $outsched[$column]{$refersto};
+      $tpfreq{$_}++;
+      $tpcols{$_} = $column;
    }
 
-   return (sort {$tpfreq{$b} <=> $tpfreq{$a}} keys %tpfreq)[0];
-   # get the keys of %tpfreq, sort them descending by value, and 
-   # return the first (highest) one.
+   return (sort {
+           $tpfreq{$b} <=> $tpfreq{$a} or
+           $tpcols{$a} <=> $tpcols{$b}
+           } keys %tpfreq)[0];
+   # get the keys of %tpfreq (which are the timepoint abbrevations), 
+   # sort them descending by value, and 
+   # return the first (highest) one.  If two or more are the same, 
+   # picks the first one in order by column.
 
 }
-
+ 
 sub output_outsched () {
 
-   our @outsched;
-   our %dayhash;
-   my ($head, $ampm, $defaultheadtp, $notechars);
+   our (@outsched, %dirhash, %dayhash, %tphash);
+   my ($head, $thismark, @thesemarks, %routes,
+       $route, $lasttp, $temp, $tpnum,
+       $ampm, $defaultheadtp, @markdefs, %usedmarks);
+   local ($_);
 
-   my $notemark = "";
+   my $markcounter = 0;
+
+   @markdefs = ();
 
    open OUT, ">" . get_output_filename();
 
    @outsched = sort 
        {
         byroutes ($a->{"HEADNUM"}[0], $b->{"HEADNUM"}[0]) or 
-        $dayhash{$a->{"DAY"}} <=> $dayhash{$b->{"DAY"}}
+        $dayhash{$b->{"DAY"}} <=> $dayhash{$a->{"DAY"}} or
+        $dirhash{$b->{"DIR"}} <=> $dayhash{$a->{"DIR"}}
        } @outsched;
 
 
-   $defaultheadtp = get_head_timepoints ();
-
-   $notechars = 0;
+   $defaultheadtp = get_head_timepoints ("TP2USE");
 
    foreach my $column (@outsched) {
 
+
+      foreach (@{$column->{"ROUTES2USE"}}) {
+         $routes{$_}=1;
+      }
+
       $head = join ("-" , @{$column->{"HEADNUM"}});
       
-      # this is the quark tags
+      # the gobbeldygook in the print statements are the quark tags
       print OUT
             '@Column head:',                                   # style
             '<*d(' , length($head) +1 , ',2)' ,                # drop cap
             'c"' , getcolor($column->{"HEADNUM"}[0]) , '">';   # color
+
+      # at some point, we may want to do some other kind of formatting if
+      # there are two or more head numbers.
 
       print OUT "$head ";
 
       print OUT $column->{"HEADDAYS"} , " to " ,
                 $column->{"HEADDEST"};
 
-      # ADD head notes here
+      @thesemarks = ();
 
-      print OUT "<\\c>";
+      # add note to indicate that times refer to the first route
+      # given (of one or more) if there are two or more headnums
+ 
+      $_ = $column->{"HEADNUM"}[0];
+
+      if ( scalar ( @{$column->{"HEADNUM"}}) > 1) {
+
+        if ($usedmarks{"HEADNUM:$_"}) {
+           $thismark = $usedmarks{"HEADNUM:$_"};
+        } else {
+           $thismark = ++$markcounter;
+           $usedmarks{"HEADNUM:$_"} = $thismark;
+           $markdefs[$thismark] = 
+              "Unless indicated otherwise, times in this column " .
+              "are for Route $_.";
+        }
+
+        push @thesemarks, $thismark;
+
+      } 
+
+      # add note to indicate that times refer to the proper timepoint
+      # if not the same as the current timepoint
+
+      $_ = $column->{"TP2USE"};
+
+      if ($defaultheadtp ne $_) {
+      # if the default end timepoint for the schedule as a whole 
+      # isn't the same as the default end timepoint for this column only,
+      # we need a head note.
+
+         if ($usedmarks{"TP2USE:$_"}) {
+            $thismark = $usedmarks{"TP2USE:$_"};
+         } else {
+            $thismark = ++$markcounter;
+            $usedmarks{"TP2USE:$_"} = $thismark;
+            $temp = $tphash{$_};
+            $temp =~ s/\.$//;
+            $markdefs[$thismark] = 
+               "Departure times are given for $temp. " .
+               "Buses will arrive somewhat later at this location.";
+         }
+ 
+         push @thesemarks, $thismark;
+
+      }
+
+      print OUT "<V>" , join (", ", sort {$a <=> $b} @thesemarks), "<V>" 
+           if scalar (@thesemarks);
+
+      #<V> is "superior" type
+
+      print OUT "<\\c>";                                     # next column
 
       print OUT '@times:' ;                                    # style
 
       my $prev = "z";
-      foreach (@{$column->{"TIMES"}}) {
 
-          print OUT "\n" unless $prev eq "z";
+      $tpnum = $column->{"TPNUM2USE"};
+      
+      for (my $row = 0; 
+            $row < scalar @{$column->{"TIMES"}[$tpnum]};
+            $row++) {
 
-          $ampm = chop; 
-          # removes last char from the time, and sets $ampm to be that char
+         next unless vec ($column->{"USEDROWS"} , $row, 1);
 
-          if ($ampm ne $prev) {
-              print OUT ($ampm eq 'a' ? '@amtimes:' : '@pm_times:' );
-              $prev = $ampm;
-          }
-          # if $ampm not the same as the last one, print the appropriate
-          # style sheet spec, and set the previous to be this one
+         local ($_) = $column->{"TIMES"}[$tpnum][$row];
 
-          substr($_, -2, 0) = ":";
+         print OUT "\n" unless $prev eq "z";
 
-          print OUT "$_";
+         $ampm = chop; 
+         # removes last char from the time, and sets $ampm to be that char
 
-          # ADD time notes here
+         if ($ampm ne $prev) {
+             print OUT ($ampm eq 'a' ? '@amtimes:' : '@pm_times:' );
+             $prev = $ampm;
+         }
+         # if $ampm not the same as the last one, print the appropriate
+         # style sheet spec, and set the previous to be this one
 
-      }
+         substr($_, -2, 0) = ":";
 
-    print OUT '<\c>';
+         print OUT "$_";
 
-    }
+         # time notes
+
+         @thesemarks = ();
+
+         # I am ignoring the bicycle note.
+
+         $_ = $column->{"SPEC DAYS"}[$row];
+
+         if ($_ and ($_ ne $column->{"DAY2USE"})) {
+         # if the special day mark for this row isn't blank, and it 
+         # isn't the same as the special days for the whole column,
+         # we need a note.
+
+            if ($usedmarks{$_}) {
+               $thismark = $usedmarks{$_};
+            } else {
+               $thismark = ++$markcounter;
+               $usedmarks{"$_"} = $thismark;
+               $temp = $column->{"NOTEKEYS"}{$_};
+               $temp =~ s/Days/days/;
+               $temp =~ s/Holidays/holidays/;
+               $markdefs[$thismark] = "$temp only.";
+            }
+ 
+            push @thesemarks, $thismark;
+
+         }
+         
+         # routes and timepoint
+
+         $_ = $column->{"ROUTES"}[$row];
+
+         undef $route;
+         undef $lasttp;
+         $route = $_ if $_ ne $column->{"HEADNUM"}[0];
+         # route is nothing if it's the same as the first headnum,
+         # otherwise it's the route from the row
+
+         $_ = $column->{"LASTTP"}[$row]; 
+         $lasttp = $_ if $_ ne $column->{"LASTTP2USE"};
+
+         # $_ is $route plus $lasttp, with a colon in the middle if 
+         # both are valid
+
+         if ($route or $lasttp) {
+            # if there's a different route or last timepoint,
+
+            $_ = "$route:$lasttp";
+ 
+            if ($usedmarks{$_}) {
+               $thismark = $usedmarks{$_};
+            } else {
+               $thismark = ++$markcounter;
+               $usedmarks{$_} = $thismark;
+
+               if ($route) {
+                   $temp = "Route $route";
+                   $temp .= ", to " .
+                           $tphash{$lasttp} if $lasttp;
+
+               } else {
+
+                  $temp = "To $tphash{$lasttp}";
+
+               }
+
+               $temp =~ s/\.$//;
+               
+               $markdefs[$thismark] = "$temp.";
+            }
+
+         push @thesemarks, $thismark;
+
+         }
+
+         print OUT "<V>" , join (", " , sort {$a <=> $b} @thesemarks), "<V>" 
+             if scalar (@thesemarks);
+
+      } # end of row
+
+    print OUT '<\c>';  # next column marker
+
+    } # end of column
 
     print OUT '@noteheaders:Light Face = a.m.<\n><b>Bold Face = p.m.<b>';
     print OUT "\n";
     print OUT '@noteheaders:<b>Unless otherwise specified, departure times are given for ';
     $_ = $tphash{$defaultheadtp};
     s/\&/and/;
-    s/.$//;
-    print OUT "$_. Buses will arrive somewhat later at this location.\n";
+    s/\.$//;
+    print OUT "$_. Buses will arrive somewhat later at this location.<b>\n";
 
-    # ADD note definitions here
+    if (scalar @markdefs) {
+
+       print OUT '@notedefs:';
+
+       for (my $i = 1; $i < scalar (@markdefs); $i++) {
+
+          print OUT "$i. " , $markdefs[$i] , "\n";
+
+       }
+
+    }
 
     close OUT;
 
