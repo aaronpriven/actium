@@ -46,7 +46,7 @@ foreach my $linenum (@lines) {
       undef @schedrows;
       # reset the various other arrays before the loop.
 
-      open IN, "<$schedfile" or die "Can't open file $schedfile.\n"; 
+      open IN, "<scd/$schedfile" or die "Can't open file scd/$schedfile.\n"; 
 
       $schedname = $schedfile;
       $schedname =~ s/^AC_${linenum}_//;
