@@ -21,7 +21,7 @@ sub byroutes ($$) {
    # a sort {block}, and the $a and $b from byroutes were clobbering 
    # the sort block's own $a and $b.
 
-   # Also, "man sort" says that you need the prototyped version
+   # Also, the man page says that you need the prototyped version
    # to use a sort routine in another package, but that's not why I did it.
  
    my $anum = ( $aa =~ /^\d/ );
