@@ -417,10 +417,12 @@ foreach my $dataref (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) {
 
 print "\n" unless $options{quiet};
 
-### read exception skeds (these don't change from signup to signup
-### unless this is done manually)
+### read exception skeds 
+# I've changed this so that now exceptions have to go in the signup directory. 
+# It turns out that each signup will have to have its own exceptions, although sometimes
+# these can be copied from the old ones...
 
-my @skeds = sort glob "../exceptions/*.txt";
+my @skeds = sort glob "exceptions/*.txt";
 
 print "\nAdding exceptional schedules (possibly overwriting previously processed ones).\n" unless $options{quiet};
 
@@ -432,7 +434,7 @@ foreach my $file (@skeds) {
 
    unless ($options{quiet}) {
       my $linegroup = $file;
-      $linegroup =~ s#^\.\./exceptions/##;
+      $linegroup =~ s#^exceptions/##;
       $linegroup =~ s/_.*//;
 
       unless ($linegroup eq $prevlinegroup) {
@@ -448,7 +450,7 @@ foreach my $file (@skeds) {
    }
 
    my $newfile = $file;
-   $newfile =~ s#\.\./exceptions#skeds#; # result is "skeds/filename"
+   $newfile =~ s#exceptions#skeds#; # result is "skeds/filename"
    copy ($file, $newfile) or die "Can't copy $file to $newfile"; 
    # call to File::Copy
 
