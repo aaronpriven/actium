@@ -7,13 +7,14 @@
 # particular signs.
 
 # TODO - 
-# 7) Add a "noteonly" database
-# 8) deal with two-level templates
-
-# DONE or irrelevant
 # 1) Change "headnum" routine so that if two adjacent numbers have
 # the same color, the slash between them uses that color (instead of
-# grey80) - DONE
+# grey80) - DONE -- but somehow undone when other things done -- redo
+# 7) Add a "noteonly" database
+# 8) deal with two-level templates
+# 10) Make sure beginning NL on each sign is gone
+
+# DONE or irrelevant
 # 2) Change the default number of columns to be derived from the "SignType"
 # database, and add the number of added columns triggered by "usedcount" to it
 # 3) change headnum routine so it uses "headnum-norule" for first headnum
@@ -22,6 +23,8 @@
 # to be derived from the signtype database  - # DONE
 # 5) Change everything to Indesign tags # DONE !
 # 6) Make the schedules on the right, instead of the left, of the sign
+# 9) Fix "last stop" destinations so they show up -- DONE (well,
+#    I decided to make them disappear instead)
 
 use strict;
 
@@ -66,6 +69,9 @@ $signup = (Skeddir::change (\%options))[2];
 # then changes directories to the "Skeds" base directory.
 
 # open and load files
+open LOG , ">>makepoints-log.txt";
+print LOG "makepoints started " . localtime(time) . "\n";
+
 
 print "Using signup $signup\n\n" unless $options{quiet};
 
@@ -75,8 +81,8 @@ EOF
 
 # read in FileMaker Pro data into variables in package main
 
-our (@signs, @stops, @lines, @signtypes, @skedspec);
-our (%signs, %stops, %lines, %signtypes, %skedspec);
+our (@signs, @stops, @lines, @signtypes, @skedspec, @projects);
+our (%signs, %stops, %lines, %signtypes, %skedspec, %projects);
 
 our ($schooldayflag, $anysecondflag);
 
@@ -85,7 +91,9 @@ my $vals = Skedtps::initialize;
 print "$vals timepoints.\nSignTypes... " unless $options{quiet};
 
 FPread_simple ("SignTypes.csv" , \@signtypes, \%signtypes, 'SignType');
-print scalar(@signtypes) , " records.\nSigns... " unless $options{quiet};
+print scalar(@signtypes) , " records.\nProjects... " unless $options{quiet};
+FPread_simple ("Projects.csv" , \@projects, \%projects, 'Project');
+print scalar(@projects) , " records.\nSkedspec... " unless $options{quiet};
 FPread_simple ("Signs.csv" , \@signs, \%signs, 'SignID');
 print scalar(@signs) , " records.\nSkedspec... " unless $options{quiet};
 FPread ("SkedSpec.csv" , \@skedspec, \%skedspec, 'SignID' , 1, 0);
@@ -95,7 +103,7 @@ FPread ("SkedSpec.csv" , \@skedspec, \%skedspec, 'SignID' , 1, 0);
 print scalar(@skedspec) , " records.\nLines... " unless $options{quiet};
 FPread_simple ("Lines.csv" , \@lines, \%lines, 'Line');
 print scalar(@lines) , " records.\nStops (be patient, please)... " unless $options{quiet};
-FPread_simple ("Stops.csv" , \@stops , \%stops , 'UNIQUEID');
+FPread_simple ("Stops.csv" , \@stops , \%stops , 'stop_id_1');
 print scalar(@stops) , " records.\nLoaded.\n\n" unless $options{quiet};
 
 open DATE , "<effectivedate.txt" 
@@ -104,6 +112,9 @@ open DATE , "<effectivedate.txt"
 our $effdate = scalar <DATE>;
 close DATE;
 chomp $effdate;
+$effdate =~ s/\r//g;
+my $nbsp = IDTags::nbsp;
+$effdate =~ s/ /$nbsp/g;
 
 # main loop
 
@@ -145,8 +156,10 @@ foreach my $signid (sort {$a <=> $b} @signstodo) {
    SCHEDULE:
    foreach my $skedspec (@{$skedspec{$signid}} ){
       next SCHEDULE if $skedspec->{FullOrPoint} eq 'Full';
-      push @points, build_point($skedspec); 
-      # returns a hashref to the point sked
+      my $point = build_point($skedspec); 
+      push @points, $point if ref($point);
+      # returns a hashref to the point sked, unless build_sked returns
+      # an error value (a scalar)
    }
 
    output_points(\@points , $signid) if scalar (@points);
@@ -156,6 +169,11 @@ foreach my $signid (sort {$a <=> $b} @signstodo) {
 }
 
 print "\n\n" unless $options{quiet};
+
+close LOG;
+
+####### END OF MAIN PROGRAM
+
 
 sub build_point {
 
@@ -201,7 +219,16 @@ sub build_point {
    $point->{TPNUM}{$_} = $i++ foreach @{$point->{TP}};
    } # calculates timepoint column numbers
 
-   $point->{TPNUM2USE} = $point->{TPNUM}{$point->{Timepoint}} ;
+   unless ( exists $point->{TPNUM}{$point->{Timepoint}} ) {
+     my $warning = $point->{SignID} . 
+        ": No such point as " . $point->{Timepoint} . " in " . 
+        $point->{SKEDNAME} . "\n";
+     print LOG $warning;
+     warn "\n" . $warning;
+     return -1;
+   } else {
+      $point->{TPNUM2USE} = $point->{TPNUM}{$point->{Timepoint}} ;
+   }
 
    $point->{DOSECOND} = 0;
    if ( lc($point->{UseSecondTimepoint}) eq "yes" ) {
@@ -509,7 +536,17 @@ sub headdays {
 
 sub headdest {
 
+   my $lasttp;
    my $point = shift;
+
+   if ($point->{NO} eq "l") {
+
+      $lasttp = $point->{LASTTP}[0];
+      # not sure this is right -- should be the last timepoint
+      # of the first row
+
+
+   } else {
 
    my (%lasttpfreq) = ();
 
@@ -527,7 +564,7 @@ sub headdest {
    # so now %lasttpfreq holds the frequency of the last timepoints
    # (for the most frequent route).
 
-   my $lasttp = 
+   $lasttp = 
        (sort { $lasttpfreq{$b} <=> $lasttpfreq{$a} } 
         keys %lasttpfreq)[0];
 
@@ -535,6 +572,8 @@ sub headdest {
 
    foreach (keys %lasttpfreq) {
       $point->{NOTEKEYS}{$_} = tphash($_);
+   }
+
    }
 
    my $hashlookuptp = $lasttp;
@@ -558,12 +597,12 @@ sub output_points {
 
    local ($_);
 
-   # set up "new column after x lines" thing
-   if ($signtypes{$signs{$signid}{SignType}}{TallColumnLines}) {
-      $lengthinlines = $signtypes{$signs{$signid}{SignType}}{TallColumnLines};
-   } else {
-      $lengthinlines = 0;
-   }
+#   # set up "new column after x lines" thing
+#   if ($signtypes{$signs{$signid}{SignType}}{TallColumnLines}) {
+#      $lengthinlines = $signtypes{$signs{$signid}{SignType}}{TallColumnLines};
+#   } else {
+#      $lengthinlines = 0;
+#   }
 
    #print "<$lengthinlines> ";
 
@@ -577,7 +616,8 @@ sub output_points {
    open OUT, ">idpoints/$signid-" . $signs{$signid}{SignType} . "-" . 
                   scalar (@points) . ".txt";
 
-   print OUT IDTags::start , IDTags::parastyle("Normal");
+   print OUT IDTags::start;
+   # print OUT IDTags::parastyle("Normal");
 
 
    @points = sort 
@@ -599,6 +639,20 @@ sub output_points {
    foreach my $point (@points) {
 
       $columncount++;
+
+      # set up "new column after x lines" thing
+      my $tallcols = $signtypes{$signs{$signid}{SignType}}{TallColumnLines};
+      my $usedrowcount = $point->{USEDROWCOUNT};
+
+      if ($tallcols and ($point->{USEDROWCOUNT} > $tallcols) ) {
+         my $numcols = int ($usedrowcount / $tallcols ) + 1;
+         $lengthinlines = int ($usedrowcount / $numcols);
+         $lengthinlines++ if $usedrowcount % $numcols;
+
+      } else {
+         $lengthinlines = 0;
+         # no line limit
+      }
 
       my $noteonly = $point->{NO};
       my $headlength = 0;
@@ -651,7 +705,7 @@ sub output_points {
 
          my $prev = 0;
          foreach (sort byroutes values(%topnums)) {
-            $pointtext .= " " . IDTags::bullet . " " if $prev;
+            $pointtext .= " " . IDTags::bullet . "\n" if $prev; # the \r was formerly space
             $prev = 1;
             my $thisname = getname($_);
             $pointtext .= IDTags::color ( getcolor($_) , 
@@ -664,8 +718,8 @@ sub output_points {
       }
 
       $pointtext .= IDTags::parastyle("days-dest");
-      $pointtext .= $point->{HEADDAYS} . " to " .
-                $point->{HEADDEST};
+      $pointtext .= $point->{HEADDAYS} ;
+      $pointtext .= " to " .  $point->{HEADDEST} unless $point->{NO} eq "l";
 
       @thesemarks = ();
 
@@ -747,9 +801,9 @@ sub output_points {
                $temp = tphash($_);
                $markdefs[$thismark] = 
                 "Lines that operate school days only operate at times that " . 
-                "may vary from day to day. See the public timetable for more ". 
-                "information. Supplementary service is available to all " .
-                "riders at regular fares.";
+                "may vary from day to day. Call 511 or visit www.actransit.org for more ". 
+                "information. Supplementary service is available to " .
+                "everyone at regular fares.";
             }
  
             $pointtext .= "See\rNote $thismark";
@@ -815,21 +869,21 @@ sub output_points {
                        $ampm eq 'a' ?  'amtimes'  : 'pmtimes' );
              #print OUT ($ampm eq 'a' ? '@amtimes:' : '@pmtimes:' );
              $prev = $ampm;
-             # $_ .= $ampm 
+             $_ .= $ampm;
              # if you want to add the "a" or "p back, uncomment the line above
+             # -- which I have now done -- and make next line -2
+             substr($_, -3, 0) = ":"; # add a colon. 
+         } else {
+             substr($_, -2, 0) = ":"; # add a colon
          }
          # if $ampm not the same as the last one, print the appropriate
          # style sheet spec, and set the previous to be this one
-
-         substr($_, -2, 0) = ":"; # add a colon
 
          $pointtext .= "\t$_"; # tab plus time
 
          # next bit: footnotes on the time
 
          @thesemarks = ();
-
-         # I am ignoring the bicycle note.
 
          $_ = $point->{SPECDAYS}[$row];
 
@@ -873,7 +927,12 @@ sub output_points {
          if ($route or $lasttp or $lesser) {
             # if there's a different route or last timepoint,
 
-            $_ = "$route:$lasttp:$lesser";
+            my $ltimepoint = $point->{L_TIMEPOINT};
+            $ltimepoint =~ s/=[0-9]*//;
+
+            $_ = "$route:$lasttp:$ltimepoint";
+
+#          print "<<$point->{SkedID} $_>> ";
 
             my $hashlasttp = $lasttp;
             $hashlasttp =~ s/=\d+$//;
@@ -943,8 +1002,12 @@ sub output_points {
 
     print OUT $pointtext;
 
+    # END OF POINTS - START OF SIDE NOTES
+
     # TODO - change to allow for both tall & short columns
 
+    print OUT IDTags::parastyle('sideeffective');
+    print OUT "Effective: $effdate\r";
     print OUT IDTags::parastyle('sidenotes');
     print OUT 'Light Face = a.m.' , IDTags::softreturn;
     print OUT IDTags::bold ('Bold Face = p.m.') , "\r"; 
@@ -963,11 +1026,31 @@ sub output_points {
 
     print OUT "\r";
 
+    # TODO - add side note from db and Note600s text
+
+    my $sidenote = $signs{$signid}{Sidenote};
+
+    if ($sidenote and ($sidenote !~ /^\s+$/)) {
+   
+       $sidenote =~ s/\n/\r/g;
+       $sidenote =~ s/\r+/\r/g;
+       $sidenote =~ s/\r+$//;
+       $sidenote =~ s/\0+$//;
+       print OUT IDTags::bold ($signs{$signid}{Sidenote}) , "\r" ;
+
+    }
+
+    if ($signs{$signid}{Note600s} =~ /^[Yy]/ ) {
+       print OUT "In addition to the lines shown, this stop may also be served by supplementary service lines. These lines are designated Lines 600" .
+       IDTags::endash . 
+       "699.  These trips operate school days only, and at times that may vary from day to day. Call 511 or visit www.actransit.org for more information. Supplementary service is available to everyone at regular fares.\r";
+    }
+
 
 #   SCHOOLDAYS
     if ($schooldayflag or $usedmarks{SD}) {
 
-       print OUT "Trips that run school days only may not operate every day and will occasionally operate at times other than those shown. Supplementary service is available to all riders at regular fares.\r";
+       print OUT "Trips that run school days only may not operate every day and will occasionally operate at times other than those shown. Supplementary service is available to everyone at regular fares.\r";
 
     }
 
@@ -983,10 +1066,15 @@ sub output_points {
 
     }
 
+    my $thisproject = $signs{$signid}{Project};
+    if ($projects{$thisproject}{'ProjectNote'}) {
+       print OUT $projects{$thisproject}{'ProjectNote'} , "\r";
+    }
+
     print OUT IDTags::boxbreak , IDTags::parastyle('bottomnotes');
     print OUT signdescription($signid) , ". ";
 
-    print OUT "[$signs{$signid}{PrintNotes}] " if $signs{$signid}{PrintNotes};
+    print OUT "[$signs{$signid}{DescripNotes}] " if $signs{$signid}{DescripNotes};
 
     my ($mday, $mon, $year) = (localtime(time))[3..5];
 
@@ -997,7 +1085,8 @@ sub output_points {
 
     my $prepdate = "$mon $mday, $year";
 
-    print OUT "Prepared: $prepdate. Service effective: $effdate." ;
+    #print OUT "Prepared: $prepdate. Service effective: $effdate." ;
+    print OUT "Prepared: $prepdate." ;
 #    print OUT "\r";
 
     close OUT;
@@ -1079,8 +1168,13 @@ sub signdescription {
       $description .= " at $at" if $at ; 
       $description .= 
               ", " . $thisstop->{CityF} .
-              ", going $direction (#$signid; stop $uniqueid)";
+              ", going $direction (#$signid; stop #$uniqueid";
    
+      $description .= "; shelter site #" . $signs{$signid}{ShelterNum} 
+              if $signs{$signid}{ShelterNum};
+
+      $description .= ")";
+ 
       return $description;
 
    } 
