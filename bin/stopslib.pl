@@ -120,17 +120,19 @@ sub stopdescription ($$$) {
 
    my ($stopid, $stopref,$stopdata) = @_;
 
+   our %longdirnames;
+   
    my $description = "";
+   my $direction = $stopref->{'Direction'}; 
+   my $direction = $longdirnames{$direction} if $longdirnames{$direction};
 
    $description .= "$stopref->{'StNum'} " 
           if $stopref->{'StNum'};
    $description .= $stopref->{'On'};
    $description .= " at $stopref->{'At'}" 
           if $stopref->{'At'};
-   $description .= ", going $stopref->{'Direction'}";
+   $description .= ", going $direction ($stopid)";
    
-   $description .= " ($stopid)";
-
    $description .= ' *' unless $stopdata;
 
    return $description;
