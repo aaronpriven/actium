@@ -1,8 +1,6 @@
 # This is FPMerge.pm, a module to read (and maybe later, write) 
 # the database files in "merge" format exported by FileMaker Pro.
 
-# this is untested...
-
 package FPMerge;
 
 use strict;
@@ -10,29 +8,28 @@ use vars qw(@ISA @EXPORT_OK $VERSION);
 
 use Exporter;
 @ISA = ('Exporter');
-@EXPORT_OK = qw(FPread FPwrite);
+@EXPORT_OK = qw(FPread FPread_simple);
 $VERSION = '0.00';
 
-#use MyCSV;
-use NewCSV;
+use constant QUOTE => '"';
 use PickNewline('picknewline');
-
 use integer; # ever so slightly faster
 
 # FPread can build two different data structures.
-# It always builds @fparray. If an index field is passed, it also
-# builds %fphash.
+# It always builds an array in the anonymous space pointed to by
+# the passed $fparray reference. If an index field is passed, it also
+# builds a hash pointed to by $fphash.
 
-# @fparray looks like this:
-# @fparray[0..n]{$field} = "value"
+# fparray looks like this:
+# fparray[0..n]{$field} = "value"
 # where 0..n is the number of the line in the file
 
-# %fphash looks like this:
-# %fphash{$indexfield}{$field} = "value"
+# fphash looks like this:
+# fphash{$indexfield}{$field} = "value"
 # 
 # If the index field isn't unique, all is not lost. The structure
 # automagically changes to 
-# %fphash{$indexfield}[0..n]{$field} = "value"
+# fphash{$indexfield}[0..n]{$field} = "value"
 #
 # In any case, "value" can either be a single value, or -- if 
 # FileMaker has put in ASCII 29 characters, meaning it's a repeated
@@ -42,7 +39,21 @@ use integer; # ever so slightly faster
 # repeating fields, it can't handle a repeating index field.
 # How would that work anyway?
 
-sub FPread ($;$;$;$) {
+sub FPread_simple {
+
+   push @_ , 1, 1;
+   # push shortcut numbers onto FPread. These save time
+
+   goto &FPread; 
+   # pretend that FPread was called with the new @_
+
+   # If you believe goto's are an abomination, read the perl
+   # documentation about goto &NAME (as opposed to goto LABEL,
+   # which is what you think gotos are).
+
+}
+
+sub FPread {
 
    # $ignorerepeat will simply pass through the \035 characters
    # to the calling program.
@@ -53,22 +64,23 @@ sub FPread ($;$;$;$) {
    # both of these are there to speed things up; the code is quite
    # intelligent enough to not need it, but it's slower.
 
-   my ($file, $indexfield, $ignorerepeat, $ignoredupe) = @_;
-   my @fparray = ();
-   my %fphash = ();
+   my ($file, $fparray, $fphash, $indexfield, $ignorerepeat, $ignoredupe) = @_;
+
+   @$fparray = ();
+   %$fphash = ();
 
    -f $file or die "Can't find file $file (or it's not a plain file)";
    open CSVFILE , $file or die "Can't open $file for reading";
 
-   my $rs = picknewline(\*CSVFILE);
-   die "FPMerge Unidentified newline in $file" unless $rs;
-   local ($/) = $rs;
+   local ($/) = picknewline(\*CSVFILE)
+      or die "FPMerge Unidentified newline in $file" ;
 
    my $headerline = scalar <CSVFILE>;
    chomp ($headerline);
    
    my @fields = split (/\,/ , $headerline);
-   # The headerline has no quotes, so no special CSV parsing necessary
+   # The headerline has no quotes or embedded commas, 
+   # so no special CSV parsing necessary
 
    my %fieldorder;
 
@@ -95,22 +107,65 @@ sub FPread ($;$;$;$) {
    my %repeating=();
    my $multiple_index = 0;
 
-    # time
-
+   LINE:
    while (my $line = <CSVFILE>) {
       chomp($line);
 
       $line =~ s/\013/\n/g;
       # change all the vertical tabs to newlines. VT is how
       # FileMaker represents embedded newlines
-      # amazingly enough s/// seems to be faster than tr///
+      # s/// seems to be faster than tr///
 
-      my $recordref = +{}; # empty anonymous hash
+      my $recordref = {}; # empty anonymous hash
 
-      my @values = parse_csv($line);
+      ### beginning of old NewCSV.pm
+      # This is **NOT** a generic CSV-to-list routine.
+      # It is much faster than the Text:CSV on CPAN, but
+      # it relies on FileMaker's promises that ALL field data
+      # is in quotes, and assumes that FileMaker writes valid
+      # data.
+
+      my $quotestatus = 0; # not in quotes
+
+      CHAR:
+      for (my $i = 0 ; $i != -1 ; $i = index ($line, QUOTE , $i + 1) ) {
+
+         substr($line,$i,1,""); # remove the quote from the line.
+
+         # if the next character is also a quote,
+         if (substr($line, $i, 1) eq QUOTE) {
+            next CHAR if $quotestatus; 
+            # leave it alone if we're in a quoted area.
+            # FileMaker encodes " as "" inside field data.
+
+            substr($line,$i,1,"");
+            # So this is seen double quotes not inside a field area,
+            # It indicates an empty field. delete the quote. 
+            # The only valid next character is a comma.
+
+         } else {
+            $quotestatus = not ($quotestatus);
+            # it's not a double quote, so we toggle whether 
+            # we're inside a field or not.
+         }
+
+         next CHAR if $quotestatus;
+
+         substr($line, $i, 1, "\t") unless ($quotestatus);
+         # OK. We know that we've just seen either a quote that ends
+         # a field. The ONLY valid next character is a comma. Change it
+         # to a tab, to avoid any commas in data.
+
+      } # CHAR
+
+      #### end of old NewCSV.pm
+
+      my @values = split /\t/ , $line;
 
       foreach my $field (@fields) {
          my $value=$values[$fieldorder{$field}];
+         # $value = "" unless defined($value);
+         # I don't think that's necessary and it takes up time in the loop
 
          ($recordref->{$field} = $value , next) if $ignorerepeat;
 
@@ -127,7 +182,7 @@ sub FPread ($;$;$;$) {
                die "FPMerge: Can't make hash keys from repeated field $indexfield" if $field eq $indexfield ;
                # if this is the same as the index field, die
                 
-               $_->{$field} = [ $_->{$field} ] foreach @fparray;
+               $_->{$field} = [ $_->{$field} ] foreach @$fparray;
                # go through each record and set the new value 
                # of the appropriate field to be a reference
                # to an anonymous array that contains one entry, the old value
@@ -147,23 +202,21 @@ sub FPread ($;$;$;$) {
 
       } # field
 
-      push @fparray, $recordref;
+      push @$fparray, $recordref;
 
       next unless $make_fphash;
       # now make the hash entry
 
       my $indexvalue = $recordref->{$indexfield};
 
-      ($fphash{$indexvalue} = $recordref , next) if $ignoredupe;
+      ($fphash->{$indexvalue} = $recordref , next) if $ignoredupe;
       
-      if (exists $fphash{$indexvalue} or ($multiple_index)) {
+      if (exists $fphash->{$indexvalue} or ($multiple_index)) {
         # if we've seen this one before or we know indexes aren't unique,
           unless ($multiple_index) {
-
-             print "$indexfield ($indexvalue) is not a unique field in $file\n";
              # then if this is the first we learn about non-unique indexes,
 
-             $fphash{$_} = [ $fphash{$_} ] foreach (keys %fphash);
+             $fphash->{$_} = [ $fphash->{$_} ] foreach (keys %$fphash);
              # go through the whole fphash and set the value of each
              # indexfield to be a reference to an anonymous array that
              # contains one entry, the old value
@@ -176,22 +229,19 @@ sub FPread ($;$;$;$) {
 
           }
 
-          push @{$fphash{$indexvalue}} , $recordref;
+          push @{$fphash->{$indexvalue}} , $recordref;
 
       } else {
           # unique index
-          $fphash{$indexvalue} = $recordref;
+          $fphash->{$indexvalue} = $recordref;
       }
 
    } # line
 
    close CSVFILE;
 
-   return (\@fparray , \%fphash, $multiple_index) if $make_fphash;
+   return ($fparray, $fphash, $multiple_index) if $make_fphash;
 
-   return \@fparray;
-
-   # @fparray and %fphash go 
-   # out of scope so the value isn't retained for next time
+   return ($fparray);
 
 }
