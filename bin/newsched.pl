@@ -1,78 +1,100 @@
 #!/usr/bin/perl5
 
-require ('/home/priven/public_html/cgi-lib.pl');
+&process_command_line;
 
-#### GET LINE NUMBER AND OTHER DATA ####
+chdir $directory;
 
-$agency = "AC";
+&assemble_lists;
+
+foreach $thisline (@lines) {
+
+   &makedata ($thisline)
+
+}
+
+
+sub process_command_line {
+
+###########################################################
+##### PROCESS COMMAND LINE 
+###########################################################
+
 
 if (@ARGV) {
-   $cgiflag = 0;
-   $linenum = $ARGV[0];
-   $directory = $ARGV[1];
-   $directory = "." unless $directory;
-
+   $directory = $ARGV[0];
 } else {
 
-   &ReadParse;
-   # Call the cgi-lib.pl thing and get the data
+   print <<EOF;
+newsched - Prepare schedule information from files from Transitinfo.
 
-   $cgiflag = 1;
-   $linenum = $in{"line"};
+Syntax:
 
-}
+     newsched.pl directory
 
-$linenum =~ tr/\W//;
-# clean up linenum; nothing but letters and numbers.
-
-die "Content-type: text/plain\n\nAck! Bad or no line specified!\n" unless $linenum;
-
-$infile = 
-    'lynx -source "http://www.transitinfo.org/cgi-bin/sched?C='
-    . $agency . '&R=' . $linenum . '" |';
-
-open IN, $infile;
-
-# open the URL for the specified line
-
-while (<IN>) {
-   push @schedurl, $_ if /href=\"sched?.*DR=/
-}
-
-# if the line contains a URL with a DR in it, that means it specifies a particular direction
-# and is a separate schedule. Other URLs on this page, and there are many,
-# will not have this term in it.
-
-foreach (@schedurl) {
-   chomp;
-   s/.*?href="//;
-   ($schedurl, $_) = split ('"',$_,2);   
-
-   s@^>@@;
-
-   s@</a>$@@;
-
-   $schedurl{$_} = $schedurl;
+Where "directory" contains the .scd files received from transitinfo.
+EOF
+die;
 
 }
 
-# That iterates over each line with a schedule URL in it. It takes each line, eliminates
-# the extra HTML in the line, and puts the name of the direction ("Eastbound Weekday Schedule")
-# as the key and the URL info as the value of the hash %schedurl
+# That means that you need to specify a directory in the command line.
 
+}
+
+###########################################################
+##### ASSEMBLE LISTS OF FILES AND LINES
+###########################################################
+
+sub assemble_lists {
+
+@scdfiles = sort <*.scd>
+
+# so @scdfiles has all the files in it, sorted
+
+$prev = "";
+@lines = ();
+
+foreach $dummyvar (@scdfiles) {
+
+   $_ = $dummyvar
+
+   # one has to use the $dummyvar and then the assignment, 
+   # otherwise the next two statements modify the @scdfiles array,
+   # which is not what we want.
+ 
+   s/^AC_//;
+   s/_.*//;
+   next if $_ eq "56";
+
+# THIS IS SPECIAL. LINE 56 IS BROKEN BECAUSE THERE ARE TWO SEPARATE SCHEDULES FOR LINE 56
+#  (THE LATE NIGHT SCHEDULE AND THE REGULAR SCHEDULE). IF THIS CHANGES, THE ABOVE CODE
+#  SHOULD BE REMOVED.
+
+   push @lines, $_ unless $prev eq $_;
+
+}
+
+# So now @lines contains all the lines.
+
+}
+
+
+
+sub makedata {
+
+my $line = @_[0];
+
+@thesefiles = grep (/^AC_$line/, @scdfiles) ;
+
+# So now @thesefiles contains a list of files on this line.
 
 ##### INPUT AND PARSE DATA ######
 
-foreach $schedname (keys %schedurl) {
+foreach $thisfile (@thesefiles) {
 
 
-   $infile = 
-      'lynx -source "http://www.transitinfo.org/cgi-bin/'
-      . $schedurl{$schedname} . '" |';
-
-   open IN, $infile; 
+   open IN, "<" . $thisfile; 
    # open the schedule URL
-
 
    undef @schedrows;
 
@@ -240,14 +262,6 @@ DAY: foreach $day (0,2) {
 }
 
 }
-
-
-
-
-
-
-
-
 
 
 
