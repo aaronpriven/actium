@@ -25,7 +25,7 @@ sub usedrow ($) ;
 sub build_usedrows ($$@) ;
 sub build_outsched (@) ;
 sub build_outsched_notes_and_times ($$$$$) ;
-sub headdest ($$) ;
+sub headdest ($$$) ;
 sub headdays ($$) ;
 sub headnum() ;
 sub note_definitions ($) ;
@@ -63,7 +63,15 @@ sub init_vars () {
           DA => "Daily" ,
           SA => "Saturdays" ,
           SU => "Sundays" ,
-        )
+        );
+
+   our %dayhash = 
+        ( DA => 1 ,
+          WD => 2 ,
+          WE => 3 ,
+          SA => 4 ,
+          SU => 5 ,
+        );
 
 }
 
@@ -527,6 +535,9 @@ sub build_outsched (@) {
 
       ($line, $day_dir, $tp, @routes) = split ("\t" , $pickedtp);
 
+      ($outsched[$column]{"DIR"} , $outsched[$column]{"DAY"}) =
+          split (/_/ , $day_dir, 2);
+
       read_fullsched($line);
       # now we have the data
 
@@ -546,7 +557,8 @@ sub build_outsched (@) {
            headdays ($day_dir, $tp);
       # get the header day text ("Mon thru Fri", etc.) 
 
-      ($lasttp, $outsched[$column]{"HEADDEST"}) = headdest ($day_dir, $tp);
+      ($lasttp, $outsched[$column]{"HEADDEST"}) = 
+           headdest ($day_dir, $tp, $outsched[$column]{"HEADNUM"}[0]);
       # get the header destination text ("To University and San Pablo")
       # $lasttp is the timepoint short string ("UNIV S.P.")
       # also puts the various non-default last tps into %notes
@@ -658,37 +670,38 @@ ignore those few exceptions... we'll see how it goes.
 
 
 
-sub headdest ($$) {
+sub headdest ($$$) {
 
-   my ($day_dir, $tp) = @_;
+   my ($day_dir, $tp, $headnum) = @_;
    my ($lasttp, $lasttpnum);
    my (%lasttpfreq) = ();
    our (%fullsched, %tphash, %notes);
 
    for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
             $fsrow++) {
-      next unless usedrow($fsrow);
+      next unless usedrow($fsrow) and
+            $fullsched{$day_dir}{"ROUTES"}[$fsrow] eq $headnum;
+
+      # skip it, unless this timepoint is used and the current 
+      # route is the same as in $headnum
+
       $lasttpfreq{$fullsched{$day_dir}{"LASTTP"}[$fsrow]}++;
       # print "\t$fsrow:" , $fullsched{$day_dir}{"LASTTP"}[$fsrow];
  
    }
 
-  #   $lasttpnum = 
+   # so now %lasttpfreq holds the frequency of the last timepoints
+   # (for the HEADNUM route).
+
    $lasttp = 
        (sort { $lasttpfreq{$b} <=> $lasttpfreq{$a} } 
         keys %lasttpfreq)[0];
 
-   print "{" , keys %lasttpfreq , "}\n\n";
-
-   # $headdest = $fullsched{$day_dir}{"TIMEPOINTS"}[$lasttpnum];
-   # print "[$lasttpnum]";
-
-   # $lasttp = $fullsched{$day_dir}{"TP"}[$lasttpnum];
+   # print "{" , keys %lasttpfreq , "}\n\n";
 
    foreach (keys %lasttpfreq) {
       $notes{"TP"} = $tphash {"TP"};
    }
-
 
    return $lasttp, $tphash{$lasttp};
 
@@ -786,23 +799,133 @@ sub note_definitions ($) {
 
 } 
 
+sub get_output_filename () {
+
+   return "output_test.txt";
+
+}
+
+
+sub getcolor($) {
+
+   local $_ = $_[0];
+
+   return "Local" if /^\d\d?/;
+   # return "Local" if it's one or two digits
+
+   return "Transbay" if $_ ge "A";
+   # return "Transbay" if it's a letter
+
+   # That's nearly all of them, here are some exceptions
+
+   return "EBExpress" if /\dX/;
+   return "EBLimited" if /\dL/;
+
+   my $firstchar = substr($_,0,1);
+
+   if (/^\d\d\d/) {
+      return "School" if $firstchar eq  "6";
+      return "LocalLtdHours" if $firstchar eq  "3";
+   }
+
+   return "Local";
+
+}
+
+sub get_head_timepoints() {
+
+   our @outsched;
+   my %tpfreq = ();
+
+   foreach (@outsched) {
+      $tpfreq{$_->{TP}}++;
+   }
+
+   return (sort {$tpfreq{$b} <=> $tpfreq{$a}} keys %tpfreq)[0];
+   # get the keys of %tpfreq, sort them descending by value, and 
+   # return the first (highest) one.
+
+}
+
 sub output_outsched () {
 
-our @outsched;
+   our @outsched;
+   our %dayhash;
+   my ($head, $ampm, $defaultheadtp, $notechars);
 
-   print "HEADNUM\t";
-   foreach (@{$outsched[0]{"HEADNUM"}}) { print; }
-    
-   foreach ( qw(HEADDAYS HEADDEST TP LASTTP) ) {
-      print "$_\t" , $outsched[0]{$_} , "\n";
-   } 
+   my $notemark = "";
 
-   for (my $i = 0; $i < scalar(@{$outsched[0]{"TIMES"}}) ; $i++) {
+   open OUT, ">" . get_output_filename();
 
-      print $outsched[0]{"TIMES"}[$i] , "\t";
-      foreach (@{$outsched[0]{"NOTES"}[$i]}) { print"[$_]" if $_; }
-      print "\n";
+   @outsched = sort 
+       {
+        byroutes ($a->{"HEADNUM"}[0], $b->{"HEADNUM"}[0]) or 
+        $dayhash{$a->{"DAY"}} <=> $dayhash{$b->{"DAY"}}
+       } @outsched;
 
-   }
-   
+
+   $defaultheadtp = get_head_timepoints ();
+
+   $notechars = 0;
+
+   foreach my $column (@outsched) {
+
+      $head = join ("-" , @{$column->{"HEADNUM"}});
+      
+      # this is the quark tags
+      print OUT
+            '@Column head:',                                   # style
+            '<*d(' , length($head) +1 , ',2)' ,                # drop cap
+            'c"' , getcolor($column->{"HEADNUM"}[0]) , '">';   # color
+
+      print OUT "$head ";
+
+      print OUT $column->{"HEADDAYS"} , " to " ,
+                $column->{"HEADDEST"};
+
+      # ADD head notes here
+
+      print OUT "<\\c>";
+
+      print OUT '@times:' ;                                    # style
+
+      my $prev = "z";
+      foreach (@{$column->{"TIMES"}}) {
+
+          print OUT "\n" unless $prev eq "z";
+
+          $ampm = chop; 
+          # removes last char from the time, and sets $ampm to be that char
+
+          if ($ampm ne $prev) {
+              print OUT ($ampm eq 'a' ? '@amtimes:' : '@pm_times:' );
+              $prev = $ampm;
+          }
+          # if $ampm not the same as the last one, print the appropriate
+          # style sheet spec, and set the previous to be this one
+
+          substr($_, -2, 0) = ":";
+
+          print OUT "$_";
+
+          # ADD time notes here
+
+      }
+
+    print OUT '<\c>';
+
+    }
+
+    print OUT '@noteheaders:Light Face = a.m.<\n><b>Bold Face = p.m.<b>';
+    print OUT "\n";
+    print OUT '@noteheaders:<b>Unless otherwise specified, departure times are given for ';
+    $_ = $tphash{$defaultheadtp};
+    s/\&/and/;
+    s/.$//;
+    print OUT "$_. Buses will arrive somewhat later at this location.\n";
+
+    # ADD note definitions here
+
+    close OUT;
+
 }
