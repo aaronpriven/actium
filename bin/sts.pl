@@ -603,42 +603,39 @@ sub build_outsched_notes_and_times($$$$$) {
 
    our (%fullsched, @outsched, %used) ;
 
+   $outrow = 0;
+
+   # $outrow is the row in %outsched. %fsrow is the row in $fullsched.
+   # The difference is that $fullsched includes rows that are not used
+   # and thus not copied to $outsched.
+
    for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
             $fsrow++) {
 
       next unless usedrow($fsrow);
 
-      push @{$outsched[$column]{"TIMES"}},
+      $outsched[$column]{"TIMES"}[$outrow] = 
             $fullsched{$day_dir}{"TIMES"}[$tp][$fsrow];
       # save the TIMES
 
-      # from here, we save the notes.
-
-      @notes = ();
-
       $_ = $fullsched{$day_dir}{"NOTES"}[$fsrow];
-      push @notes, $_ if $_;
-
-      $_ = $fullsched{$day_dir}{"LASTTP"}[$fsrow];
-      push @notes, $_ unless 
-            $_ eq $lasttp;
-      # add the last timepoint for this row to @notes unless
-      # this is the same as the default for the column
+      $outsched[$column]{"NOTES"} = $_ if $_;
 
       $_ = $fullsched{$day_dir}{"ROUTES"}[$fsrow];
-      push @notes, $_ unless $_ eq $outsched[$column]{"HEADNUM"}[0];
+      $outsched[$column]{"ROUTES"} = $_ 
+                     unless ($_ and $_ eq $outsched[$column]{"HEADNUM"}[0]);
 
-      # unless this is the same as the first number in HEADNUM,
-      # push this route to @notes
+      # unless this is not blank, and 
+      # unless it's the same as the first number in HEADNUM,
+      # push this route to ROUTES
 
       $_ = $fullsched{$day_dir}{"SPEC DAYS"}[$fsrow];
-      push @notes, $_ if ( $_ and $_ ne $daycode) ;
+      $outsched[$column]{"SPEC DAYS"} = $_ 
+         if ( $_ and $_ ne $daycode) ;
       # add the special days, if it's there, and it's different
       # from the day code
 
-      push @{$outsched[$column]{"NOTES"}} , [ @notes ] ;
-      # so now $outsched[$column]{"NOTES"}[thisrow] is a reference
-      # to a copy of the array in @notes
+      $outrow++;
 
    }
 }
