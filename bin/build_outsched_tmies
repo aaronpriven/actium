@@ -1,0 +1,71 @@
+=pod 
+
+sub build_outsched_times {
+
+FSROW: for ($fsrow =0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
+            $fsrow++) {
+
+          # $fsrow is the row in %fullsched
+
+          next FSROW unless $routes{$fullsched{$day_dir}{"ROUTES"}[$fsrow]};
+          # if this route isn't on the list of routes to use, skip this row
+          # (so if we're printing out a 40 schedule, the 43 won't show up)
+
+          $_ =  $fullsched{$day_dir}{"TIMES"}[$tp][$fsrow];
+          # $_ is the time for this row
+
+          next FSROW unless $_;
+          # if there's no time, skip it
+
+TPS:      for ( $thistp = scalar @{$fullsched{$day_dir}{"TP"}} ; 
+                $thistp >= 0;  $thistp-- ) {
+
+              $lasttp = $thistp;
+              last TPS if $fullsched{$day_dir}{"TIMES"}[$tp][$fsrow];
+          }
+
+          next FSROW if $lasttp eq $tp;
+          # Skip this time if it's the last one in the row.
+          # We don't want to tell people when buses leave from this point
+          # if they go no further from here
+
+          # ok, now we know this time should be included
+
+          $row++;
+
+          $outsched[$column]{"TIMES"}[$row] = $_;
+          # add the time to the outsched times
+
+          $lasttp[$row] = $lasttp;
+          # put the number of the last timepoint for this row in @lasttp
+
+
+          $_ = $fullsched{$day_dir}{"NOTES"}[$fsrow];
+
+          if ($_) {
+             push @{$outsched[$column]{"NOTES"}[$row]}, $_;
+             $usednotes{$_}=1;
+          }
+
+          # if there is one, add the note from this row of %fullsched to
+          # to @outsched's note array, and also to %usednotes
+
+          $tempcol{"SPEC DAYS"}[$row] = 
+                $fullsched{$day_dir}{"SPEC DAYS"}[$fsrow];
+        
+          $tempcol{"ROUTES"}[$row] = 
+                $fullsched{$day_dir}{"ROUTES"}[$fsrow];
+            
+       } # end of FSROW
+
+       # so, we now have all the times in TIMES and all the 
+       # last timepoints associated with each time in @lasttp.
+
+       # we also have NOTES in the $outsched{NOTES} as well as
+       # SPEC DAYS and ROUTES in $tempcol.  And all the NOTES used
+       # are in %usednotes. In practice, that will be either empty 
+       # or equal to  ( "*" => 1 )
+
+}
+
+=cut
