@@ -898,14 +898,16 @@ sub get_head_timepoints($) {
 
 }
  
-sub output_outsched ($$) {
+sub output_outsched ($$$) {
 
    our (@outsched, %dirhash, %dayhash, %tphash);
    my ($head, $thismark, @thesemarks, %routes,
        $route, $lasttp, $temp, $tpnum,
        $ampm, $defaultheadtp, @markdefs, %usedmarks);
 
-   my ($stopcode, $stopdescription) = @_;
+   my ($stopcode, $stopdescription, $stops) = @_;
+
+   my $printnotes = $stops->{'PrintNotes'};
 
    local ($_);
 
@@ -917,7 +919,10 @@ sub output_outsched ($$) {
 
    mkdir "out" or die 'Can\'t make directory "out"'  unless -d "out";
 
-   open OUT, ">out/$stopcode.txt";
+   my $filename = $stopcode . "-" . $stops->{SignType} . "-" . 
+                        scalar (@outsched) . ".txt";
+
+   open OUT, ">out/$filename";
 
    @outsched = sort 
        {
@@ -1155,7 +1160,9 @@ sub output_outsched ($$) {
     $mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)[$mon];
     $year += 1900; # Y2K compliant
 
-    print OUT "$mday-$mon-$year.\n";
+    print OUT "$mday-$mon-$year.";
+    print OUT "[$printnotes]" if $printnotes;
+    print OUT "\n";
 
     close OUT;
 
@@ -1819,7 +1826,7 @@ sub stopdescription ($$$) {
    $description .= $stopref->{'On'};
    $description .= " at $stopref->{'At'}" 
           if $stopref->{'At'};
-   $description .= ", going $direction (#$stopid)";
+   $description .= ", " . $stopref->{'City'} . ", going $direction (#$stopid)";
    
    $description .= ' *' unless $stopdata;
 
