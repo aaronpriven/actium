@@ -1,0 +1,1 @@
+#!/usr/bin/perl5require ('/home/priven/public_html/cgi-lib.pl');&ReadParse;# get data from form$direction = $in{"direction"};print <<"EOF";Content-type: text/plain$directionEOF
