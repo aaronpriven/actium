@@ -9,8 +9,6 @@ use strict;
 no strict 'subs';
 
 require 'pubinflib.pl';
-require 'stopslib.pl';
-require 'stopdatalib.pl';
 
 use constant ProgramTitle => "AC Transit Stop Signage Database";
 
@@ -21,6 +19,8 @@ our (%frequencies, %stops, $higheststop, @thisstopdata, %index);
 init_vars();
 
 chdir get_directory() or die "Can't change to specified directory.\n";
+
+build_tphash();
 
 %index = read_index();
 
@@ -50,6 +50,8 @@ foreach my $stopid (keys %stops) {
 }
 
 $stopdialog = setup_stopdialog();
+
+my $statusbox = setup_statusbox();
 
 our $tpdialog = setup_tpdialog();
 
@@ -156,8 +158,8 @@ sub AddStop_Click {
 
 sub SaveStop_Click {
 
-   writestops ($stopfile, @keys, %stops);
-   writestopdata ($stopdatafile, %stops);
+   writestops ($stopsfile, \@keys, \%stops);
+   writestopdata ($stopdatafile, %stopdata);
    
    Win32::MsgBox( "Saved!" , 0 | MB_ICONINFORMATION ,
         ProgramTitle);
@@ -192,8 +194,8 @@ sub QuitStop_Click {
 
    return -1 if $result == 7; # no
    
-   writestops ($stopfile, @keys, %stops);
-   writestopdata ($stopdatafile, %stops);
+   writestops ($stopsfile, \@keys, \%stops);
+   writestopdata ($stopdatafile, %stopdata);
    
    return -1;
 
@@ -203,6 +205,38 @@ sub StopDialog_Terminate {
 
    goto &QuitStop_Click;
    # that means the close box will work exactly as the "Quit" button
+
+}
+
+
+sub setup_statusbox {
+
+   my $statusbox = new Win32::GUI::DialogBox (
+       -text  => ProgramTitle ,
+       -name => "StatusBox",
+      -style => (WS_BORDER | DS_MODALFRAME | WS_POPUP | 
+             WS_CAPTION ) ,
+      -exstyle => (WS_EX_WINDOWEDGE | 
+                  WS_EX_CONTROLPARENT),
+       -top => 30 ,
+       -left => 30 ,
+       -height => 100 ,
+       -width  => 524 ,
+          );
+
+   
+   $statusbox->AddLabel (
+       -top => 25,
+       -width => 500,
+       -left => 12,
+       -height => 50,
+       -text => "Status",
+       -name => "StatusLabel",
+        );
+          
+    $statusbox->{'StatusLabel'}->Show;
+
+    return $statusbox;
 
 }
 
@@ -217,7 +251,8 @@ sub stopbutton {
        -tabstop => 1,
        -width => 96,
        -left => 512,
-       -top => 12+(30*($stopnum-1)),
+       -height => 40,
+       -top => 12+(50*($stopnum-1)),
        )
 }
 
@@ -232,14 +267,13 @@ sub setup_stopdialog {
                   WS_EX_CONTROLPARENT),
        -top => 30 ,
        -left => 30 ,
-       -height => 234 ,
+       -height => 434 ,
        -width  => 620 ,
           );
 
    $stopdialog->AddListbox  (
-       -name => "StopList",
-       -sort => 1,
-       -height => 180,
+       -name => 'StopList',
+       -height => 390,
 # 1 is LBS_NOTIFY, which sends clicks and double-clicks
        -style => WS_VSCROLL | 1 | WS_CHILD,
        -tabstop => 1,
@@ -256,6 +290,8 @@ sub setup_stopdialog {
    $stopdialog->AddButton ( stopbutton ("SaveStop", "&Save",5) );
    $stopdialog->AddButton ( stopbutton ("QuitStop", "&Quit",6) );
 
+ 
+   # the following shows all existing fields
    foreach (keys %{$stopdialog}) {
        next if /^-/;
        $stopdialog->$_->Show();
@@ -277,7 +313,7 @@ sub show_stopdialog {
 
    my $stopdialog = shift;
 
-   $stopdialog->{'StopList'}->Reset;
+   $stopdialog->{'StopList'}->Reset();
 
    foreach ( stopdesclist (\%stops, \%stopdata) ) {
       $stopdialog->{'StopList'}->AddString($_);
@@ -291,6 +327,7 @@ sub put_thisstopdata_into_tplist {
 
     my @thisstopdata = @_;
     our %index;
+    our %tphash;
  
 
     $datadialog->{'Data_TPList'}->Reset();
@@ -300,8 +337,12 @@ sub put_thisstopdata_into_tplist {
        my $line = $_->{'LINE'};
        my $day = $_->{'DAY'};
        my $dir = $_->{'DIR'};
-       my $timepoint = 
-            $index{$line}{$_->{'DAY_DIR'}}{'TIMEPOINTS'}[$_->{'TPNUM'}];
+#       my $timepoint = 
+#            $index{$line}{$_->{'DAY_DIR'}}{'TIMEPOINTS'}[$_->{'TPNUM'}];
+
+       my $tp = 
+            $index{$line}{$_->{'DAY_DIR'}}{'TP'}[$_->{'TPNUM'}];
+       my $timepoint = $tphash{$tp};
 
        $datadialog->{'Data_TPList'}->AddString(
            "Line $line, $day, $dir, " .
@@ -362,6 +403,11 @@ sub run_datadialog {
  
        }
 
+    } else {
+
+       $datadialog->{'Data_TPList'}->Reset();
+       # reset the TP list if it's new
+
     }
 
 
@@ -379,6 +425,9 @@ sub run_datadialog {
     @{ $stopdata{$stopid} } = @thisstopdata 
           if $dataresult and scalar (@thisstopdata);
     # put the current stop data into %stopdata, if there is any
+
+    $stops{$stopid}{'StopID'} = $stopid;
+    # set the stopid.  This is redundant if it's not an 'Add'
 
     foreach my $field 
            (qw(On StNum At NearFar SignType Condition 
@@ -492,7 +541,11 @@ sub Data_DelTP_Click {
                    4 | MB_ICONQUESTION , ProgramTitle) != 6;
    # 4 is Yes/No; 6 is the response for "Yes"
      
-   delete $thisstopdata[$selection];
+   #   delete $thisstopdata[$selection];
+   # no! delete zaps the entry, but doesn't move them all forward. What
+   # I wanted was this:
+
+   splice (@thisstopdata, $selection, 1);
 
    $datadialog->{'Data_TPList'}->RemoveItem($selection);
 
@@ -1182,7 +1235,7 @@ sub hide_tpdaydirs {
 
 sub show_tproutes {
 
-   our (%index, %daydirhash, @routes);
+   our (%index, %daydirhash, %tphash, @routes);
    my $tpdialog = shift;
    my $stopdata = shift;
    my $line = $stopdata->{'LINE'};
@@ -1201,8 +1254,10 @@ sub show_tproutes {
 
    $tpdialog->{'TP_TPS'}->Reset();
 
-   $tpdialog->{'TP_TPS'}->AddString ($_) 
-       foreach ( @{ $index{$line}{$day_dir}{'TIMEPOINTS'}});
+   foreach ( @{ $index{$line}{$day_dir}{'TP'}}) {
+      $tpdialog->{'TP_TPS'}->AddString ($tphash{$_}) ;
+      # print $_ , "\n";
+   }
 
    $tpdialog->{'TP_TPS'}->Select($stopdata->{'TPNUM'});
 
@@ -1295,11 +1350,21 @@ open INDEX , "<acsched.ndx" or die "Can't open index file.\n";
 }
 
 sub MakeStop_Click {
+
+   $statusbox->{'StatusLabel'}->Text ("Preparing to generate files");
+   $statusbox->Show();
+   $stopdialog->Show(SW_HIDE);
+  
    my ($description, @pickedtps);
 
-   foreach $stopid (keys %stops) {
+   foreach my $stopid (sort { $a <=> $b } keys %stops) {
 
       next unless $stopdata{$stopid};
+
+      $description = stopdescription($stopid, $stops{$stopid}, 
+                   $stopdata{$stopid});
+
+      $statusbox->{'StatusLabel'}->Text("Generating file for\r\n$description");
 
       @pickedtps = ();
 
@@ -1313,10 +1378,16 @@ sub MakeStop_Click {
       }
 
       build_outsched (@pickedtps);
-      $description = stopdescription($stopid, $stops{$stopid}, 
-                   $stopdata{$stopid});
       output_outsched($stopid, $description);
 
    }
+
+   $statusbox->Show(SW_HIDE);
+
+   Win32::MsgBox ("Output complete!" , MB_ICONINFORMATION , ProgramTitle) ;
+
+   $stopdialog->Show();
+
+   return 1;
 
 }
