@@ -93,6 +93,12 @@ sub DelStop_Click {
 
 }
 
+sub StopList_DblClick {
+
+  goto &EditStop_Click;
+
+}
+
 sub EditStop_Click {
 
     my $selection = $stopdialog->{'StopList'}->SelectedItem();
@@ -150,8 +156,8 @@ sub AddStop_Click {
 
 sub SaveStop_Click {
 
-   #writestops ($stopfile, @keys, %stops);
-   #writestopdata ($stopdatafile, %stops);
+   writestops ($stopfile, @keys, %stops);
+   writestopdata ($stopdatafile, %stops);
    
    Win32::MsgBox( "Saved!" , 0 | MB_ICONINFORMATION ,
         ProgramTitle);
@@ -170,10 +176,10 @@ sub QuitStop_Click {
 
       my $result = Win32::MsgBox 
              ("Do you really want to quit?\r\n(We'll miss you.)" ,
-                   4 | MB_ICONQUESTION , ProgramTitle);
-      # 4 is Yes/No
+                   1 | MB_ICONQUESTION , ProgramTitle);
+      # 1 is OK/Cancel
 
-      return -1 if $result == 6;  # yes
+      return -1 if $result == 1;  # OK
       return 1;
 
    }
@@ -186,8 +192,8 @@ sub QuitStop_Click {
 
    return -1 if $result == 7; # no
    
-   #writestops ($stopfile, @keys, %stops);
-   #writestopdata ($stopdatafile, %stops);
+   writestops ($stopfile, @keys, %stops);
+   writestopdata ($stopdatafile, %stops);
    
    return -1;
 
@@ -234,7 +240,8 @@ sub setup_stopdialog {
        -name => "StopList",
        -sort => 1,
        -height => 180,
-       -style => WS_VSCROLL,
+# 1 is LBS_NOTIFY, which sends clicks and double-clicks
+       -style => WS_VSCROLL | 1 | WS_CHILD,
        -tabstop => 1,
        -width => 488,
        -multisel => 0,
@@ -283,16 +290,30 @@ sub show_stopdialog {
 sub put_thisstopdata_into_tplist {
 
     my @thisstopdata = @_;
+    our %index;
+ 
 
     $datadialog->{'Data_TPList'}->Reset();
 
     foreach (@thisstopdata) {
 
+       my $line = $_->{'LINE'};
+       my $day = $_->{'DAY'};
+       my $dir = $_->{'DIR'};
+       my $timepoint = 
+            $index{$line}{$_->{'DAY_DIR'}}{'TIMEPOINTS'}[$_->{'TPNUM'}];
+
        $datadialog->{'Data_TPList'}->AddString(
-                 "Line " . $_->{'LINE'} . ", " .
-                 $_->{'DAY'} . ", " . $_->{'DIR'} . ", " .
-                 "Routes: " .  join ("," , @{ $_->{'ROUTES'} })
-                 );
+           "Line $line, $day, $dir, " .
+           "Routes: " .  join ("," , @{ $_->{'ROUTES'} }) .
+           " at $timepoint");
+
+#       $datadialog->{'Data_TPList'}->AddString(
+#                 "Line " . $_->{'LINE'} . ", " .
+#                 $_->{'DAY'} . ", " . $_->{'DIR'} . ", " .
+#                 "Routes: " .  join ("," , @{ $_->{'ROUTES'} } .
+#                 "at " . )
+#                 );
 
     }
 
@@ -355,8 +376,9 @@ sub run_datadialog {
      # in other words, return if it's an "Add Stop" that's been
      # canceled
 
-    @{ $stopdata{$stopid} } = @thisstopdata if $dataresult;
-    # put the current stop data into %stopdata
+    @{ $stopdata{$stopid} } = @thisstopdata 
+          if $dataresult and scalar (@thisstopdata);
+    # put the current stop data into %stopdata, if there is any
 
     foreach my $field 
            (qw(On StNum At NearFar SignType Condition 
@@ -431,6 +453,12 @@ sub Data_AddTP_Click {
 
 }
 
+sub Data_TPList_DblClick {
+
+  goto &Data_EditTP_Click;
+
+}
+
 sub Data_EditTP_Click {
 
    my $selection = $datadialog->{'Data_TPList'}->SelectedItem();
@@ -489,7 +517,7 @@ sub setup_datadialog {
        -left => 30 ,
        -text  => "Add or Edit a Stop",
        -name => "DataDialog",
-       -height => 350 ,
+       -height => 400 ,
        -width  => 565 ,
       );
 
@@ -519,8 +547,9 @@ sub setup_datadialog {
        -name => "Data_TPList",
        -sort => 1,
        -height => 100,
-       -style => WS_VSCROLL,
-       -width => 300,
+       -style => WS_VSCROLL | 1 | WS_CHILD,
+# 1 is LBS_NOTIFY, which sends clicks and double-clicks
+       -width => 449,
        -tabstop => 1,
        -multisel => 0,
        -top => 162,
@@ -540,7 +569,37 @@ sub setup_datadialog {
        $datadialog->$_->Show();
    }
 
+   new Win32::GUI::Graphic(
+       $datadialog, (
+           -name => 'DataDividers',
+           -left =>  0,
+           -width => $datadialog->ScaleWidth,
+           -top => 0,
+           -height=> $datadialog->ScaleWidth,
+            ));
+
    return $datadialog;
+
+}
+
+sub DataDividers_Paint {
+
+     my $dc = shift;
+
+     my $tppen = new Win32::GUI::Pen( 
+             -width => 1, -color => 0 ) ;
+
+     my $right = $datadialog->ScaleWidth() - 16;
+
+     $dc->SelectObject($tppen);
+     $dc->BeginPath();
+     $dc->MoveTo ( 16, 145);
+     $dc->LineTo ( $right, 145);
+     $dc->MoveTo ( 16, 302);
+     $dc->LineTo ( $right, 302);
+     $dc->EndPath();
+     $dc->StrokePath();
+     $dc->Validate;
 
 }
 
@@ -557,13 +616,15 @@ sub data_bigbutton () {
    $datadialog->AddButton (
        -name => $name ,
        -text => $label ,
-       -width => 145,
+       -width => 258,
+       -tabstop=>1,
        -height => 40,
-       -left => (92+(155*($num-1))),
-       -top => 275,
+       -left => (16+(268*($num-1))),
+       -top => 320,
        );
 
 }
+
 sub data_tpbutton () {
 
    my ($datadialog , $name, $label, $num) = @_;
@@ -571,10 +632,11 @@ sub data_tpbutton () {
    $datadialog->AddButton (
        -name => $name ,
        -text => $label ,
-       -width => 137,
+       -width => 143,
+       -tabstop=>1,
        -height => 22,
-       -left => 404,
-       -top => (163+(35*($num-1))),
+       -left => (93+(153*($num-1))),
+       -top => 265,
        );
 
 }
@@ -607,7 +669,9 @@ sub data_cbox {
        if $label;
  
    $datadialog->AddCombobox (
-        -style => WS_VISIBLE | 2 | WS_VSCROLL,
+        -style => WS_VISIBLE | 2 | 0x40 | WS_VSCROLL | WS_CHILD,
+# 2 is dropdown with entry box, CBS_DROPDOWN. 
+# 0x40 is CBS_AUTOHSCROLL, which allows the cursor to scroll right. 
         -name => $name,
         -left => 92 + $offset,
         -tabstop => 1,
@@ -649,19 +713,19 @@ sub setup_tpdialog {
        -left => 30 ,
        -text  => "Add or Edit a Schedule",
        -name => "TPDialog",
-       -height => 310 ,
-       -width  => 495 ,
+       -height => 420 ,
+       -width  => 620 ,
       );
 
      $tpdialog->AddCombobox (
-        -style => WS_VISIBLE | 3 | WS_VSCROLL,
+        -style => WS_VISIBLE | 3 | WS_VSCROLL | WS_CHILD,
 # three makes it a drop-down box only, one can't enter new values
 # I am sure this is documented somewhere on MS's web site, but I don't
 # have a clue where. I got it from the mailing list.
         -name => 'TP_Line',
         -left => 110,
         -tabstop => 1,
-        -top => 20,
+        -top => 15,
         -height => 200 ,
         -width => 105 ,
          );
@@ -672,7 +736,7 @@ sub setup_tpdialog {
         -name => 'TP_Line_Label',
         -left => 02,
         -text => "Select Line" ,
-        -top => 24,
+        -top => 19,
         -width => 90,
         -align => "right" ,
         -height => 22,
@@ -682,7 +746,7 @@ sub setup_tpdialog {
         -name => 'TP_Line_Use' ,
         -text => "&Use this line" ,
         -left => 225,
-        -top => 20,
+        -top => 15,
         -tabstop => 1,
         -height => 22,
         -width => 75,
@@ -693,7 +757,7 @@ sub setup_tpdialog {
         -text => '&Revert to line shown below' ,
         -left => 310,
         -tabstop => 1,
-        -top => 20,
+        -top => 15,
         -height => 22,
         -width => 150,
         );
@@ -702,11 +766,11 @@ sub setup_tpdialog {
         -name => 'TP_DayDir_Label',
         -left => 2,
         -text => "Days and\r\nDirections for\r\nLine XXX" ,
-        -top => 85,
+        -top => 70,
         -visible => 0,
         -width => 90,
         -align => "right" ,
-        -height => 50,
+        -height => 60,
           );
 
      for ($i = 0; $i < 6; $i++) {
@@ -714,7 +778,7 @@ sub setup_tpdialog {
             -name => "TP_DayDirButton$i" ,
             -text => "Button $i" ,
             -left =>  ( (int ($i/2) ) * 120 + 110) ,
-            -top => ( ($i % 2) * 25 + 83) ,
+            -top => ( ($i % 2) * 25 + 68) ,
             -width => 90 ,
         -tabstop => 1,
             -visible => 0,
@@ -725,20 +789,21 @@ sub setup_tpdialog {
      $tpdialog -> AddCheckbox (
          -text => "ALL ROUTES" ,
          -name => "TP_RouteboxAll" ,
-         -left =>  ( 110) ,
-         -top => ( 163) ,
-        -tabstop => 1,
+         -left =>  ( 490 ) ,
+         -top => ( 180) ,
+         -tabstop => 1,
          -width => 90 ,
          -visible => 0,
          -height => 22 ,
          );
 
-     for ($i = 0; $i < 7; $i++) {
+     for ($i = 0; $i < 8; $i++) {
         $tpdialog -> AddCheckbox (
             -name => "TP_Routebox$i" ,
             -text => "R$i" ,
-            -left =>  ( $i * 50 + 110) ,
-            -top => ( 188) ,
+            -top =>  ( (int ($i/2) ) * 25 + 205) ,
+            -left => ( ($i % 2) * 50 + 490) ,
+            -width => 90 ,
             -width => 45 ,
             -tabstop => 1,
             -visible => 0,
@@ -748,14 +813,39 @@ sub setup_tpdialog {
  
      $tpdialog->AddLabel (
         -name => 'TP_Routes_Label',
+        -left => 490,
+        -text => "Routes forr\nDA_DI" ,
+        -top => 140,
+        -width => 90,
+        -visible => 0,
+        -align => "left" ,
+        -height => 40,
+          );
+
+
+     $tpdialog->AddLabel (
+        -name => 'TP_TPS_Label',
         -left => 2,
-        -text => "Routes for\r\nDA_DI" ,
-        -top => 172,
+        -text => "Timepoints\r\nfor DA_DI" ,
+        -top => 140,
         -width => 90,
         -visible => 0,
         -align => "right" ,
         -height => 40,
           );
+
+     $tpdialog->AddListbox(
+       -name => "TP_TPS",
+       -height => 200,
+# 1 is LBS_NOTIFY, which sends clicks and double-clicks
+       -style => 1 | WS_VSCROLL | WS_CHILD,
+       -tabstop => 1,
+       -width => 347,
+       -multisel => 0,
+       -top => 140,
+       -left => 110,
+          );
+
    tp_bigbutton ($tpdialog, 'TP_OK' , "&OK" , 1);
    tp_bigbutton ($tpdialog, 'TP_Cancel' , "&Cancel" , 2);
 
@@ -786,12 +876,14 @@ sub TPDividers_Paint {
 
      $dc->SelectObject($tppen);
      $dc->BeginPath();
-     $dc->MoveTo ( 10, 65);
-     $dc->LineTo ( $right, 65);
-     $dc->MoveTo ( 10, 147);
-     $dc->LineTo ( $right, 147);
-     $dc->MoveTo ( 10, 221);
-     $dc->LineTo ( $right, 221);
+     $dc->MoveTo ( 10, 55);
+     $dc->LineTo ( $right, 55);
+     $dc->MoveTo ( 10, 127);
+     $dc->LineTo ( $right, 127);
+#     $dc->MoveTo ( 10, 221);
+#     $dc->LineTo ( $right, 221);
+     $dc->MoveTo ( 10, 337);
+     $dc->LineTo ( $right, 337);
      $dc->EndPath();
      $dc->StrokePath();
      $dc->Validate;
@@ -851,6 +943,26 @@ sub TP_Line_Revert_Click {
 
 sub TP_OK_Click {
    
+   our $newstopdata;
+   my $selection = $tpdialog->{'TP_TPS'}->SelectedItem();
+
+   if ($selection == -1) {
+      Win32::MsgBox( 
+         "You must select a timepoint." , 
+          0 | MB_ICONSTOP , ProgramTitle);
+      return 1;
+   }
+
+   $newstopdata->{'TPNUM'} = $selection;
+
+   unless (scalar (@{$newstopdata->{'ROUTES'}})) {
+      Win32::MsgBox( 
+         "You must select at least one route." , 
+          0 | MB_ICONSTOP , ProgramTitle);
+      return 1;
+   }
+
+
    $tpresult = 1;
    return -1;
 
@@ -870,6 +982,8 @@ sub tpdaydirclick {
   my ($dir, $day) = split (/_/, $daydirs[$button]);
   $newstopdata->{'DAY'} = $day;
   $newstopdata->{'DIR'} = $dir;
+
+  $newstopdata->{'TPNUM'} = -1;
 
   @{$newstopdata->{'ROUTES'}} = 
       sort byroutes 
@@ -891,7 +1005,7 @@ sub tprouteclick {
 
    $newstopdata->{'ROUTES'} = [ () ];
 
-   for (my $i = 0; $i < 7; $i++) {
+   for (my $i = 0; $i < 8; $i++) {
       next unless $tpdialog->{"TP_Routebox$i"}->Checked();
       $count++;
       push @{$newstopdata->{'ROUTES'}} , $routes[$i];
@@ -954,11 +1068,11 @@ sub tp_bigbutton () {
        -name => $name ,
        -text => $label ,
        -width => 167,
-       -height => 40,
+       -height => 32,
        -tabstop => 1,
        -visible => 1,
        -left => (110+(180*($num-1))),
-       -top => 235,
+       -top => 350,
        );
 
 }
@@ -977,6 +1091,8 @@ sub run_tpdialog {
              $tpdialog->{'TP_Line'}->FindStringExact($oldstopdata->{'LINE'}) 
              );
 
+      $tpdialog->Text("Edit Schedule");
+
       # have to copy the old data to the new data. just an assignment
       # won't work because that will copy the *references*...
 
@@ -993,7 +1109,10 @@ sub run_tpdialog {
 
    } else {
 
+      $tpdialog->Text("Add Schedule");
+
       $tpdialog->{'TP_Line'}->Select(-1);
+      $tpdialog->{'TP_TPS'}->Select(-1);
       
       hide_tpdaydirs($tpdialog);
       hide_tproutes($tpdialog);
@@ -1073,16 +1192,27 @@ sub show_tproutes {
    foreach (@{$stopdata->{'ROUTES'}}) {
       $usedroutes{$_} = 1;
    }
-
    
    $tpdialog->{'TP_Routes_Label'}->Text("Routes for\r\n$day_dir");
    $tpdialog->{'TP_Routes_Label'}->Show;
+
+   $tpdialog->{'TP_TPS_Label'}->Text("Timepoints\r\nfor $day_dir");
+   $tpdialog->{'TP_TPS_Label'}->Show;
+
+   $tpdialog->{'TP_TPS'}->Reset();
+
+   $tpdialog->{'TP_TPS'}->AddString ($_) 
+       foreach ( @{ $index{$line}{$day_dir}{'TIMEPOINTS'}});
+
+   $tpdialog->{'TP_TPS'}->Select($stopdata->{'TPNUM'});
+
+   $tpdialog->{'TP_TPS'}->Show;
 
    @routes = sort byroutes 
               @{ $index{$line}{$day_dir}{'ROUTES'} };
    
    my $count = 0;
-   for (my $i = 0; $i < 7; $i++) {
+   for (my $i = 0; $i < 8; $i++) {
 
       if ($routes[$i]) {
 
@@ -1110,11 +1240,13 @@ sub hide_tproutes {
 
    my $tpdialog = shift;
 
-   for (my $i = 0; $i < 7; $i++) {
+   for (my $i = 0; $i < 8; $i++) {
       $tpdialog->{"TP_Routebox$i"}->Show(SW_HIDE);
 
    }
 
+   $tpdialog->{'TP_TPS'}->Show(SW_HIDE);
+   $tpdialog->{'TP_TPS_Label'}->Show(SW_HIDE);
    $tpdialog->{'TP_Routes_Label'}->Show(SW_HIDE);
    $tpdialog->{'TP_OK'}->Disable;
    $tpdialog->{"TP_RouteboxAll"}->Show(SW_HIDE);
@@ -1159,5 +1291,32 @@ open INDEX , "<acsched.ndx" or die "Can't open index file.\n";
 
    }
    return %index;
+
+}
+
+sub MakeStop_Click {
+   my ($description, @pickedtps);
+
+   foreach $stopid (keys %stops) {
+
+      next unless $stopdata{$stopid};
+
+      @pickedtps = ();
+
+      foreach (@{$stopdata{$stopid}}) {
+         push @pickedtps, join ("\t" ,
+              $_->{'LINE'} , 
+              $_->{'DAY_DIR'} , 
+              $_->{'TPNUM'} , 
+              @{$_->{'ROUTES'}}
+              )
+      }
+
+      build_outsched (@pickedtps);
+      $description = stopdescription($stopid, $stops{$stopid}, 
+                   $stopdata{$stopid});
+      output_outsched($stopid, $description);
+
+   }
 
 }
