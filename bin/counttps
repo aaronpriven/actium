@@ -1,13 +1,8 @@
 #!/usr/bin/perl
 # 
 
-# This program generates full schedules suitable for pouring into
-# a desktop publishing program.
-
 use strict;
 use warnings;
-
-# icons for printing. These are Quark codes.
 
 # initialization
 
