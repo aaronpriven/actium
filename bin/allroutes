@@ -41,7 +41,7 @@ $signup = (Skeddir::change (\%options))[2];
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "actium/db/xxxx" base directory.
 
-my @files = grep ((! /=/) , glob('skeds/*-a.txt'));
+my @files = grep ((! /=/) , glob('skeds/*.txt'));
 # easier to use grep than try to construct a glob pattern that doesn't include 
 # equals signs
 
