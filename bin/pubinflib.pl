@@ -79,6 +79,19 @@ sub BOXSTYLES () {
 
 sub init_vars () {
 
+   open VARS , "vars.txt" or die "Can't open vars.txt";
+
+   our $effectivedate = scalar (<VARS>);
+
+   chomp $effectivedate;
+
+   close VARS;
+
+   our %privatetps = ( 58 => ["AIRP RECV"]);
+   our %privatetproutes;
+   $privatetproutes{$_} = 1 foreach (keys %privatetps);
+   # that's gonna have to be a file someday
+
    our %longerdaynames = 
         ( WD => "Monday through Friday" ,
           WE => "Sat., Sun. and Holidays" ,
@@ -160,39 +173,120 @@ sub init_vars () {
         );
 }
 
-sub build_tphash () {
+sub read_index {
 
-   open TPHASH, "<timepoints.txt" or die "Can't open timepoints.txt";
+open INDEX , "<acsched.ndx" or die "Can't open index file.\n";
 
-   read_tphash();
+   local ($/) = "---\n";
 
-   close TPHASH;
+   my (%index);
+   my @day_dirs;
+   my @thisdir;
+   my $day_dir;
+   my @timepoints;
+   my $line;
+   my $tp;
 
-   return unless -e "tpoverride.txt";
+   while (<INDEX>) {
 
-   open TPHASH, "<tpoverride.txt" or die "Can't open tpoverride.txt";
+      chomp;
+      @day_dirs = split("\n");
+      $line = shift @day_dirs;
+  
+      foreach (@day_dirs) {
+         # this $_ is local to the loop
 
-   read_tphash();
+         @thisdir = split("\t");
+         $day_dir = shift @thisdir;
+         @{$index{$line}{$day_dir}{"ROUTES"}} = split(/_/, shift @thisdir);
 
-   close TPHASH;
+         foreach (@thisdir) {
+            # another local $_
+
+            @timepoints = split(/_/);
+
+#            $tp = tpxref($timepoints[0], 1);
+            $tp = $timepoints[0];
+#            # cross-referencing - 1 means always do it
+
+            push @{$index{$line}{$day_dir}{"TP"}} , $tp;
+            push @{$index{$line}{$day_dir}{"TIMEPOINTS"}} , $timepoints[1];
+         }
+
+      }
+
+   }
+   return %index;
 
 }
 
+sub build_tphash () {
 
-sub read_tphash () {
+   open TPHASH, "<tps.txt" or die "Can't open timepoints.txt";
 
-our %tphash;
+   our %tpxrefs = ();
+   our %tphash;
 
-my ($key, $value);
+#   my ($key, $given, $mod, $city, $xref, $alwaysxref);
 
    while (<TPHASH>) {
 
       next if /^\s*#/;
       next unless /\t/;
       chomp;
-      ($key, $value) = split("\t");
-      $tphash{$key} = $value;
+
+      my ($key, @list) = split ("\t"); 
+
+      strip_quotes_and_spaces ($key);
+      strip_quotes_and_spaces (@list);
+
+      foreach my $field ( qw(Given Mod City Xref AlwaysXref) ) {
+
+         $tpxrefs{$key}{$field} = shift @list;
+      }
+
+      $tphash{$key} = $tpxrefs{$key}{Mod};
+
    }
+
+}
+
+sub strip_quotes_and_spaces {
+
+   foreach (@_) {
+      $_ = substr($_, 1, length ($_) -2)
+         if ($_ =~ /^"/) and ($_ =~ /"$/);
+      s/^\s+//;
+      s/\s+$//;
+
+   }
+
+}
+
+sub tpxref {
+
+    my ($thistp, $toxref) = @_;
+
+    our %tpxrefs;
+
+    if ($tpxrefs{$thistp}{Xref} and 
+       ($toxref or $tpxrefs{$thistp}{AlwaysXref}) ) {
+       # should xref
+
+#       while ($alltphash{$thistp}{Xref}) {
+           $thistp = $tpxrefs{$thistp}{Xref};
+#       }
+
+       # once this is done, $thistp isn't the original $thistp anymore,
+       # but is the cross-referenced $thistp.
+
+       # The while loop would allow multiple levels of cross-referencing,
+       # but would make infinite loops likely (if two timepoints each 
+       # reference the other).
+
+    }
+
+   return $thistp;
 
 }
 
@@ -232,209 +326,19 @@ sub get_lines () {
 
 }
 
-
-# -----------------------------------------------------------------
-# ---- PART OF pick_timepoints
-# -----------------------------------------------------------------
-
-sub pick_timepoints () {
-
-   our (%fullsched);
-
-   my (%routehash, @pickedtps);
-   my ($yorn, $line, $day_dir, @routes, $tp, $timepoint);
-
-   PICKEDTP: while (1) {
-
-      $line = pick_line();
-
-      read_fullsched($line);
-
-      $day_dir = pick_list("Pick a day and direction." , sort keys %fullsched);
-
-      %routehash = ();
-
-      foreach ( @{$fullsched{$day_dir}{"ROUTES"}} ) {
-          $routehash{$_} = 1;
-      } 
-
-      @routes = sort byroutes (keys %routehash);
-
-      # @routes = pick_multiple_list (@routes); 
-
-      # I haven't written the pick_multiple_list routine... and I may not
-      # until I get one free with MacPerl
-
-      ($timepoint, $tp) = pick_list (
-              "Pick a timepoint." , @{$fullsched{$day_dir}{"TIMEPOINTS"}});
-
-      push @pickedtps,  join( "\t" , $line, $day_dir, $tp, @routes);
-
-
-     
-      do {
-
-         print "Do another (y/n)? ";
-         $yorn = substr(uc(<STDIN>),0,1);
-         last PICKEDTP if $yorn eq "N";
-
-      } until $yorn eq "Y";
-
-   }
-
-   return @pickedtps;
-
-}
-
-
-
-
-sub pick_list ($@) {
-
-# Someday this will be replaced with a call to the MacPerl
-# list picker... but not yet.
-
-   local ($_);
-
-   my $i;
-
-   my $prompt = shift @_;
-
-   print "-" x 79 , "\n$prompt\n\n";
-
-    $i=0;
-
-    foreach (@_) {
-
-      $i++;
-
-      print " " if $i < 10;
-      print $i , ". " , $_ , "\n";
-   }
-
-
-   print "Enter number: ";
-
-   while (1) {
-      $_ = int <STDIN>;
-
-      chomp;
-      exit if lc($_) eq "quit";
-
-      last if ( $_ > 0 or $_ <= scalar(@_)) ;
-      print "Not a valid response. Try again.\nEnter number: ";
-   }
-
-   $_--;
-
-   # users count starting at one, but arrays are zero-based
-
-   return $_[$_] unless wantarray;
-
-   # return the value unless in list context.
-
-   return ($_[$_] , $_);
-
-   # if in list context, return value and also the index of the value.
-
-}
-
-sub display_lines () {
-
-
-   our ($longestline, @lines);
-
-   my ($i, $j, $lineformat, $cols, $rows, $entry);
-
-   $lineformat = "%-" . (3 + $longestline) . "s";
-
-   $cols = int ( 80 / (3+$longestline) );
-
-   $rows = int ((scalar @lines) / $cols) ;
-   # number of rows
-
-   $rows++ if ((scalar @lines) % $cols) ;
-   # add a row if there's a remainder
-
-   for ($i = 0 ; $i < $rows ; $i++ )  {
-      for ($j = 0; $j < $cols ; $j++ )  {
-
-          $entry = ($j*$rows) + $i;
-          next if $entry > $#lines ;
-          printf $lineformat , $lines[$entry];
-
-      }
-      print "\n";
-   }
-
-}
-
-sub pick_line () {
-
-   our (@lines);
-
-   local ($_);
-
-   my ($input, @matches);
-
-   print "\n" , "-" x 79 ,
-         "\nHere are all the lines (except line 56; you must do that one by hand).\n" ,
-         "Pick the one you want.\n\n";
-
-   display_lines();
-
-   INPUT: while (1) {
-
-      print "Enter line: ";
-      $input = uc(<STDIN>);
-
-      chomp ($input);;
-      exit if $input eq "QUIT";
-
-      redo INPUT if $input eq "";
-
-      foreach $_ (@lines) {
-         last INPUT if $_ eq $input;
-      }
-
-      @matches = grep /$input/ , @lines;
-
-      next INPUT unless scalar(@matches);
-
-      if (scalar (@matches) == 1)  {
-         $input = $matches[0];
-         last INPUT;
-      }
-
-      $input = pick_list (
-      "Your entry matched the following. Please pick one:",
-                        @matches);
-
-      last INPUT;
-
-   } continue {
-
-      print $input, " is not a valid response. Try again.\n";
-
-   }
-
-   return $input;
-
-}
-
-
 # -----------------------------------------------------------------
 # ---- READ DATA FROM DISK ROUTINE
 # -----------------------------------------------------------------
 
-sub read_fullsched ($;$) {
-
+sub read_fullsched ($$;$) {
 
    our (%fullsched);
 
    %fullsched = ();
 
    my $line = shift;
+
+   my $toxref = shift;
 
    my $ext = shift;
 
@@ -467,6 +371,16 @@ sub read_fullsched ($;$) {
 
       @{$fullsched{$day_dir}{"TIMEPOINTS"}} = split (/\t/, shift @wholesched);
       @{$fullsched{$day_dir}{"TP"}} =  split (/\t/, shift @wholesched);
+
+      unless ($toxref == 2) {
+
+         foreach my $thistp (@{ $fullsched{$day_dir}{"TP"} }) {
+            $thistp = tpxref( $thistp, $toxref);
+         }
+         # this is the bit that does the cross-referencing. It is skipped
+         # if it is 2, obviously
+
+      }
 
       splice ( @{$fullsched{$day_dir}{"TP"}} , 0, 3);
       splice ( @{$fullsched{$day_dir}{"TIMEPOINTS"}} , 0, 3);
@@ -620,8 +534,8 @@ sub build_outsched (@) {
       ($outsched[$column]{"DIR"} , $outsched[$column]{"DAY"}) =
           split (/_/ , $day_dir, 2);
 
-      read_fullsched($line);
-      # now we have the data
+      read_fullsched($line, 1);
+      # now we have the data. The 1 says to always use the cross-reference
 
       $outsched[$column] = $fullsched{$day_dir};
       # remember, that's a *reference*. Same reference, same thing.
@@ -827,7 +741,7 @@ sub note_definitions ($) {
 
    foreach (@{$outsched[$column]{"ROUTES2USE"}}) {
  
-      $outsched[$column]{"NOTEKEYS"}{$_} = "Route $_";
+      $outsched[$column]{"NOTEKEYS"}{$_} = "Line $_";
 
    }
 } 
@@ -976,7 +890,7 @@ sub output_outsched ($$$) {
            $usedmarks{"HEADNUM:$_"} = $thismark;
            $markdefs[$thismark] = 
               "Unless indicated otherwise, times in this column " .
-              "are for Route $_.";
+              "are for Line $_.";
         }
 
         push @thesemarks, $thismark;
@@ -1099,7 +1013,7 @@ sub output_outsched ($$$) {
                $usedmarks{$_} = $thismark;
 
                if ($route) {
-                   $temp = "Route $route";
+                   $temp = "Line $route";
                    $temp .= ", to " .
                            $tphash{$lasttp} if $lasttp;
 
@@ -1152,17 +1066,37 @@ sub output_outsched ($$$) {
     }
 
 
-    print OUT '<\c>@stopdescription:';
-    print OUT "$stopdescription ";
+    print OUT '<\c>@bottomnotes:' , $stopdescription , ". ";
+
+    print OUT "[$printnotes] " if $printnotes;
 
     my ($mday, $mon, $year) = (localtime(time))[3..5];
 
-    $mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)[$mon];
+#    $mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)[$mon];
+    $mon = qw(Jan. Feb. March April May June July Aug. Sept. Oct. Nov. Dec.)[$mon];
+
+
     $year += 1900; # Y2K compliant
 
-    print OUT "$mday-$mon-$year.";
-    print OUT "[$printnotes]" if $printnotes;
-    print OUT "\n";
+    our $effectivedate;
+
+    my $effdate = $effectivedate;
+
+    my $prepdate = "$mon $mday, $year";
+
+# new date routines
+
+
+#    my $prepdate = "$mday-$mon-$year";
+ 
+#    $prepdate =~ s'-'<\!->'g;
+#    $effdate =~ s'-'<\!->'g;
+
+    # change dates to non-breaking hyphens
+    # vim syntax checker doesn't like s''' but it's correct nonetheless
+
+    print OUT "Prepared: $prepdate. Service effective: $effdate." ;
+#    print OUT "\n";
 
     close OUT;
 
@@ -1216,6 +1150,9 @@ foreach my $dummyvar (@scdfiles) {
    # CHANGES, THE ABOVE CODE SHOULD BE REMOVED.
    # In the meantime, we'll have to do line 56 by hand.
 
+   # (I am changing this to make 56 some separate schedules that 
+   # are not processed by this program).
+
    $lines{"$_"} = 1;
 
 }
@@ -1256,6 +1193,8 @@ sub get_timepoint_info ($) {
 
    my $schedname = $_[0];
 
+   @{$fullsched{$schedname}{"TIMEPOINTS"}} = ();
+
    while (<IN>) {
    # keep reading data until the end of the file
    
@@ -1281,7 +1220,7 @@ sub get_schedule_info {
 
    ### Get the schedule info ####
 
-   my @toplines;
+   my @toplines = ();
    
    local $_ = <IN>; 
    # blank line at the top of the file is thrown away
