@@ -9,6 +9,8 @@ stopdata is in the hash %stopdata. Format is:
 
 %stopdata{$stopid}[0..x]{LINE} = the line
                         {DAY_DIR} = the day and direction
+                        {DAY} = the day (same as above, only easier)
+                        {DIR} = the direction (same as above, only easier)
                         {TPNUM} = the number of the appropriate timepoint
                         {ROUTES}[0..x] = each route used here
 
@@ -40,12 +42,18 @@ sub readstopdata ($) {
          
          @items = split (/\t/);
          $stopdata{$stopid}[$count]{"LINE"} = shift @items;
-         $stopdata{$stopid}[$count]{"DAY_DIR"} = shift @items;
+         my $daydir = shift @items;
+         $stopdata{$stopid}[$count]{"DAY_DIR"} = $daydir;
+         my ($dir, $day) = split (/_/ , $daydir);
+         $stopdata{$stopid}[$count]{"DAY"} = $day;
+         $stopdata{$stopid}[$count]{"DIR"} = $dir;
          $stopdata{$stopid}[$count]{"TPNUM"} = shift @items;
          $stopdata{$stopid}[$count]{"ROUTES"} = [ @items ];
 
          $count++;
       }
+
+      @{$stopdata{$stopid}} = sort bystopdatasort @{$stopdata{$stopid}};
 
    }
 
@@ -53,6 +61,13 @@ sub readstopdata ($) {
 
    return %stopdata;
 
+}
+
+sub bystopdatasort  {
+           our (%dayhash, %dirhash);
+           byroutes ($a->{"LINE"}, $b->{"LINE"}) or 
+           $dayhash{$b->{"DAY"}} <=> $dayhash{$a->{"DAY"}} or
+           $dirhash{$b->{"DIR"}} <=> $dirhash{$a->{"DIR"}}
 }
 
 sub writestopdata ($\%) {
