@@ -50,6 +50,7 @@ EOF
 
 %types = (CN => '6"x23" pole schedule' ,
           CW => '11"x23" pole schedule' ,
+          R22 => '8"x22" pole schedule' ,
           L21 => 'Lamar bus shelter (22"x36" info case)' ,
           T24 => '24"x24" information tube' );
 
@@ -103,7 +104,9 @@ foreach (sort
 
 }
 
-print "</table></body></html>";
+print "</table>\n";
+
+print "<p>Last updated:" , scalar(localtime()) , "</p></body></html>";
 
 ######################
 # END OF MAIN PROGRAM
