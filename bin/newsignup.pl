@@ -61,7 +61,7 @@ foreach $linenum (@lines) {
 
 }
 
-print "\n\n";
+print "\n";
 
 sub get_scheds_for_line {
 
@@ -328,6 +328,7 @@ open TEMPFILE , ">$linenum.acs" or die "Can't open file $linenum.acs.\n";
 foreach $schedname (sort keys %fullsched) {
 
    print TEMPFILE $schedname , "\n";
+   print TEMPFILE "Note Definitions:\t" , join ("\t", @{$fullsched{$schedname}{"NOTEDEFS"}} ) , "\n"; 
    print TEMPFILE "Special Days\tNotes\tRoute\t" , join ("\t"  , @{$fullsched{$schedname}{"TIMEPOINTS"}} ) , "\n"; 
    print TEMPFILE "SPEC DAYS\tNOTE\tRTE NUM\t" , join ("\t"  , @{$fullsched{$schedname}{"TP"}} ) , "\n"; 
 
@@ -366,7 +367,6 @@ foreach $schedname (sort keys %fullsched) {
 
    }
 
-   print TEMPFILE join ("\t", @{$fullsched{$schedname}{"NOTEDEFS"}} ) , "\n"; 
    print TEMPFILE "---\n";
 
 }
