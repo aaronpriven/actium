@@ -7,16 +7,23 @@
 # particular signs.
 
 
+
 # TODO - 
+# 7) Add a "noteonly" database
+# 8) deal with two-level templates
+
+# DONE or irrelevant
 # 1) Change "headnum" routine so that if two adjacent numbers have
 # the same color, the slash between them uses that color (instead of
-# grey80)
+# grey80) - DONE
 # 2) Change the default number of columns to be derived from the "SignType"
 # database, and add the number of added columns triggered by "usedcount" to it
-# 3) fix usedcount rollover so it works with a third/fourth etc. column
+# 3) change headnum routine so it uses "headnum-norule" for first headnum
+#   - (irrelevant with new Indesign routine)
 # 4) (not strictly makepoints) Change the "Signtype" value list in signs.fp5
-# to be derived from the signtype database 
-# 5) Change everything to Indesign tags
+# to be derived from the signtype database  - # DONE
+# 5) Change everything to Indesign tags # DONE !
+# 6) Make the schedules on the right, instead of the left, of the sign
 
 use strict;
 
@@ -31,11 +38,15 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
+
+use Data::Dumper;
+
 use FPMerge qw(FPread FPread_simple);
+use IDTags;
 use Skedfile qw(Skedread);
 use Skeddir;
 use Skedvars;
-use Skedtps qw(tphash tpxref %tphash %tpxref);
+use Skedtps qw(tphash tpxref);
 use Byroutes 'byroutes';
 use Myopts;
 
@@ -136,7 +147,8 @@ foreach my $signid (sort {$a <=> $b} @signstodo) {
    SCHEDULE:
    foreach my $skedspec (@{$skedspec{$signid}} ){
       next SCHEDULE if $skedspec->{FullOrPoint} eq 'Full';
-      push @points, build_point($skedspec); # returns a hashref to the point sked
+      push @points, build_point($skedspec); 
+      # returns a hashref to the point sked
    }
 
    output_points(\@points , $signid) if scalar (@points);
@@ -177,6 +189,9 @@ sub build_point {
    $noteonly = "" unless $noteonly =~ /^l|s|r$/;
    $point->{NO} = $noteonly;
    }
+   # so point->{NO} is a flag, if this is note only. $point->{NoteOnly} is
+   # a string corresponding to a particular note. This will need to change
+   # if there are more notes.
 
    {
    my $i=0;
@@ -491,8 +506,6 @@ sub headdays {
 
 sub headdest {
 
-   # %tphash imported from Skedtps.pm
-
    my $point = shift;
 
    my (%lasttpfreq) = ();
@@ -542,10 +555,9 @@ sub output_points {
 
    local ($_);
 
-
    # set up "new column after x lines" thing
-   if ($signtypes{$signs{$signid}{SignType}}{LengthInLines}) {
-      $lengthinlines = $signtypes{$signs{$signid}{SignType}}{LengthInLines};
+   if ($signtypes{$signs{$signid}{SignType}}{TallColumnLines}) {
+      $lengthinlines = $signtypes{$signs{$signid}{SignType}}{TallColumnLines};
    } else {
       $lengthinlines = 0;
    }
@@ -556,10 +568,14 @@ sub output_points {
 
    @markdefs = ();
 
-   mkdir "points" or die 'Can\'t make directory "points"'  unless -d "points";
+   mkdir "idpoints" or die 'Can\'t make directory "idpoints"'  
+                  unless -d "idpoints";
 
-   open OUT, ">points/$signid-" . $signs{$signid}{SignType} . "-" . 
+   open OUT, ">idpoints/$signid-" . $signs{$signid}{SignType} . "-" . 
                   scalar (@points) . ".txt";
+
+   print OUT IDTags::start , IDTags::parastyle("Normal");
+
 
    @points = sort 
        {
@@ -573,52 +589,79 @@ sub output_points {
        = get_head_timepoints (\@points);
 
 
+   my $pointtext = "";
+
+   my $columncount = 0;
+
    foreach my $point (@points) {
+
+      $columncount++;
 
       my $noteonly = $point->{NO};
       my $headlength = 0;
 
-      {
-      my @headnums = ();
-      foreach (@{$point->{"HEADNUM"}}) {
-         $headlength += length($_);
-         push @headnums , '<c"' . getcolor($_) . '">' . $_ . '<c$>';
+      # Numbers and Names
+
+      $pointtext .= IDTags::parastyle("num-name") ;
+
+      my @headnums = @{$point->{"HEADNUM"}};
+
+      if ($#headnums == 0) { # if there's only one head number 
+                            # (i.e., last one is #0),
+
+         local ($_) = ((@{$point->{"HEADNUM"}})[0]);
+         $pointtext .= IDTags::color(getcolor($_) , 
+                         $headnums[0] . " " . getname($_)) . "\r";
+                   
+
+      } else { # multiple head numbers....
+         # assumes if lines have the same name, they have the same color,
+         # too. Also assumes that numbers are unique (so you can't have
+         # 59-Sam and 59-Fred)
+
+         my %headnames = ();
+         my %topnums = ();
+
+         foreach (@headnums) {
+            push @{$headnames{getname($_)}} , $_;
+         }
+
+         # print Data::Dumper::Dumper(\%headnames) , "\n\n";
+
+         # So $headnames{"Fred"} is a reference to an array of all the 
+         # headnums whose name is "Fred"
+ 
+         foreach (keys (%headnames)) {
+            $topnums{$_} = ((sort byroutes @{$headnames{$_}})[0])
+         }
+
+         # print Data::Dumper::Dumper(\%topnums) , "\n\n";
+
+         # now $topnums{$_} is the *first* number, in route order,
+         # that uses the name $_
+
+         # so this prints the routes in order of the first number of each
+         # name.
+
+         # I don't know if all this complication is necessary, but now it
+         # should properly print 49 / 49M Harbor Bay ¥ 49X Harbor Bay Express"
+
+         my $prev = 0;
+         foreach (sort byroutes values(%topnums)) {
+            $pointtext .= " " . IDTags::bullet . " " if $prev;
+            $prev = 1;
+            my $thisname = getname($_);
+            $pointtext .= IDTags::color ( getcolor($_) , 
+                               join (" / " , @{$headnames{$thisname}} ) ,
+                                     " " , $thisname  ) ;
+         }
+
+         $pointtext .= "\r";
+ 
       }
-      #my $slash = '/';   # color
-      my $slash = '<c"Grey80">/<c$>';   # color
-      $head = join ($slash , @headnums);
-      $headlength += $#headnums;
-      }
 
-      # $head = join ("/" , @{$point->{"HEADNUM"}});
-
-      # TODO - change format here to the new headers style, with names
-
-      # the gobbeldygook in the print statements are the quark tags
-
-      if (
-           (not $noteonly)
-           and $lengthinlines 
-           and $point->{USEDROWCOUNT} > $lengthinlines
-         ) {
-         print OUT '@Column head no rule:<';
-      } else {
-         print OUT '@Column head:<';
-      }
-
-      print OUT 
-            '*d(' , $headlength +1 , ',2)><z10><b-1>';  # drop cap
-	                                                 # at smaller size
-
-#      print OUT 
-#            '<c"' , getcolor($point->{HEADNUM}[0]) , '">';   # color
-
-      # at some point, we may want to do some other kind of formatting if
-      # there are two or more head numbers.
-
-      print OUT "$head " , '<c$><b$><z$>';
-
-      print OUT $point->{HEADDAYS} , " to " ,
+      $pointtext .= IDTags::parastyle("days-dest");
+      $pointtext .= $point->{HEADDAYS} . " to " .
                 $point->{HEADDEST};
 
       @thesemarks = ();
@@ -675,20 +718,20 @@ sub output_points {
 
       }
 
-      print OUT "<V>" , join (",", sort {$a <=> $b} @thesemarks), "<V>" 
+      $pointtext .= IDTags::superscript (
+                join (",", sort {$a <=> $b} @thesemarks) )
            if scalar (@thesemarks);
-      #<V> is "superior" type
 
-      print OUT "<\\c>"; # next column (really, next box)
+      $pointtext .= IDTags::boxbreak; # next box
 
       if ($noteonly) {
 
-         print OUT '@noteonly:';
+         $pointtext .= IDTags::parastyle('noteonly');
 
          if ($noteonly eq "l" ) {
          # Last stop
 
-         print OUT 'Last Stop';
+         $pointtext .= 'Last Stop';
 
          } elsif ($noteonly eq "s" ) {
          # School note
@@ -706,18 +749,20 @@ sub output_points {
                 "riders at regular fares.";
             }
  
-            print OUT "See\rNote $thismark";
+            $pointtext .= "See\rNote $thismark";
 
          } elsif ($noteonly eq "r" ) {
          # Rapid note
 
-            print OUT 'Buses arrive about every twelve minutes Ñ<\\n>See information elsewhere on this sign.';
+            $pointtext .= 'Buses arrive about every twelve minutes Ñ' .
+                      IDTags::softreturn . 
+                      'See information elsewhere on this sign.';
             # that is an emdash - it should carry through. It's
-            # potentially a crossplatform issue though
+            # potentially a crossplatform issue though.
 
          }
 
-         print OUT '<\c>';  # next point marker
+         $pointtext .= IDTags::boxbreak;  # next point marker
          next; # next point. Skip per-row routine below.
 
       }
@@ -734,7 +779,9 @@ sub output_points {
 
          $usedcount++;
          if ($lengthinlines and $usedcount > $lengthinlines) {
-            print OUT '<\c>@Blank head: <\c>';
+            $pointtext .= IDTags::boxbreak() ;
+            $pointtext .= IDTags::parastyle('amtimes' , IDTags::boxbreak()) ;
+            $columncount++;
             $prev = "z";
             $usedcount=1;
          }
@@ -752,13 +799,15 @@ sub output_points {
             $_ = $_ || $point->{"TIMES"}[$point->{S_TPNUM2USE}][$row];
          }
 
-         print OUT "\r" unless $prev eq "z" ;
+         $pointtext .= "\r" unless $prev eq "z" ;
 
          $ampm = chop; 
          # removes last char from the time, and sets $ampm to be that char
 
          if ($ampm ne $prev) {
-             print OUT ($ampm eq 'a' ? '@amtimes:' : '@pmtimes:' );
+             $pointtext .= IDTags::parastyle (
+                       $ampm eq 'a' ?  'amtimes'  : 'pmtimes' );
+             #print OUT ($ampm eq 'a' ? '@amtimes:' : '@pmtimes:' );
              $prev = $ampm;
              # $_ .= $ampm 
              # if you want to add the "a" or "p back, uncomment the line above
@@ -766,11 +815,11 @@ sub output_points {
          # if $ampm not the same as the last one, print the appropriate
          # style sheet spec, and set the previous to be this one
 
-         substr($_, -2, 0) = ":";
+         substr($_, -2, 0) = ":"; # add a colon
 
-         print OUT "\t$_";
+         $pointtext .= "\t$_"; # tab plus time
 
-         # footnotes on the time
+         # next bit: footnotes on the time
 
          @thesemarks = ();
 
@@ -867,24 +916,32 @@ sub output_points {
 
          }
 
-         print OUT "<V>" , join ("," , sort {$a <=> $b} @thesemarks), "<V>" 
+         $pointtext .= IDTags::superscript (
+                    join ("," , sort {$a <=> $b} @thesemarks))
              if scalar (@thesemarks);
 
       } # end of row
 
-      print OUT '<\c>';  # next point marker
+      $pointtext .= IDTags::boxbreak ;  # next point marker
 
     } # end of point
 
-    if (scalar(@points) < 7 ) {
-       print OUT '<\c>' x (2 * ( 7 - scalar(@points)) );
-       # if there are less than seven columns, print extra column
+    my $maxcolumns = $signtypes{$signs{$signid}{SignType}}{TallColumnNum};
+    #print "[[" , $signs{$signid}{SignType} , "/" , $maxcolumns , "]] ";
+    if ($columncount < $maxcolumns) { 
+       my $break = IDTags::parastyle('amtimes' , IDTags::boxbreak());
+       print OUT ($break x (2 * ( $maxcolumns - $columncount) ));
+       # if there are less than the right # of columns, print extra column
        # markers for the blank ones
     }
 
-    print OUT '@noteheaders:Light Face = a.m.<\n><B>Bold Face = p.m.<B>';
-    print OUT "\r";
-    print OUT '@noteheaders:';
+    print OUT $pointtext;
+
+    # TODO - change to allow for both tall & short columns
+
+    print OUT IDTags::parastyle('sidenotes');
+    print OUT 'Light Face = a.m.' , IDTags::softreturn;
+    print OUT IDTags::bold ('Bold Face = p.m.') , "\r"; 
 
     if ( not ($anysecondflag) and $justoneheadtp ) { 
        print OUT 'Departure times are given for ';
@@ -910,17 +967,18 @@ sub output_points {
 
     if (scalar @markdefs) {
 
-       print OUT '@notedefs:';
+       # print OUT '@notedefs:'; # no style needed now
 
        for (my $i = 1; $i < scalar (@markdefs); $i++) {
 
-          print OUT "$i.\t" , $markdefs[$i] , "\r";
+          print OUT "$i. " , $markdefs[$i] , "\r";
 
        }
 
     }
 
-    print OUT '<\c>@bottomnotes:' , signdescription($signid) , ". ";
+    print OUT IDTags::boxbreak , IDTags::parastyle('bottomnotes');
+    print OUT signdescription($signid) , ". ";
 
     print OUT "[$signs{$signid}{PrintNotes}] " if $signs{$signid}{PrintNotes};
 
@@ -998,6 +1056,7 @@ sub signdescription {
          s/Park\.$/Park/;
          s/Ln\.$/Lane/;
          s/Lp\.$/Loop/;
+         s/Macarthur/MacArthur/;
          s/Broadway\.$/Broadway/;
 
       }
@@ -1026,6 +1085,16 @@ sub signdescription {
           $signs{$signid}{NonStopCity} . ". (#$signid)";
 
 }
+
+sub getname {
+
+
+   my $num = shift;
+   our %lines;
+   return ($lines{$num}{Name});
+
+}
+
 
 sub getcolor {
 
