@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# 
+# vimcolor: #200020 
 
 # makefulls
 #
@@ -9,30 +9,7 @@
 use strict;
 use warnings;
 
-#use constant BIGSPACE => '<\q>' x 2; # QXD <\q> = 1/4 em space
-use constant BIGSPACE => '<0x2002>'; # IND en space
-#use constant BOXBREAK => '<\\b>'; # QXD new box
-use constant BOXBREAK => '<cNextXChars:BoxBreak>'; # IND box break
-
-# QXD
-#our %icons = 
-#    (
-#      ST => '<f"Zapf Dingbats">H<f$>',
-#      SD => '<f"Carta">V<f$>',
-#      SH => '<f"Festive"><\#105><f$>',
-#      '*' => '<f"Transportation"><\#121><f$>',
-#    );
-# icons for printing. These are Quark codes.
-
-# IND
-our %icons = 
-    (
-      ST => '<cFont:Zapf Dingbats>H<cfont:>',
-      SD => '<cFont:Carta>V<cFont:>',
-      SH => '<cFont:Festive">i<cFont:>',
-      '*' => '<cFont:Transportation>y<cFont:>',
-    );
-# icons for printing. These are Quark codes.
+use constant NL => "\r";
 
 # initialization
 
@@ -45,17 +22,30 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
-use Skedfile qw(Skedread remove_blank_columns);
+use Skedfile qw(Skedread remove_blank_columns trim_sked copy_sked);
 use Skeddir;
 use Skedvars;
 use Byroutes 'byroutes';
 use FPMerge qw(FPread FPread_simple);
-use Skedtps qw(%tphash TPXREF_FULL); 
+use Skedtps qw(tphash TPXREF_FULL); 
 use Myopts;
+use TaggedText qw(%tags parastyle);
+
+use Storable qw(dclone);
 
 my %options;
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
+Myopts::options (\%options, Skeddir::options(), 'quiet!' , 'quark');
 # command line options in %options;
+
+my $outdir;
+if ( $options{'quark'} ) {
+   TaggedText::preparequark() if $options{'quark'};
+   $outdir = 'fulls-qk';
+} else {
+   $outdir = 'fulls';
+}
+   
+# defaults to indesign
 
 $| = 1; # make stdout "hot"
 
@@ -70,9 +60,7 @@ $signup = (Skeddir::change (\%options))[2];
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "Skeds" base directory.
 
-Skedtps::initialize(TPXREF_FULL);
-
-mkdir "fulls" or die "Can't create 'fulls' directory" unless -d 'fulls';
+mkdir $outdir or die "Can't create $outdir directory" unless -d $outdir;
 
 # open and load files
 
@@ -85,7 +73,7 @@ EOF
 # read in FileMaker Pro data into variables in package main
 
 print "Timepoints and timepoint names... " unless $options{quiet};
-my $vals = Skedtps::initialize;
+my $vals = Skedtps::initialize (TPXREF_FULL);
 print "$vals timepoints.\n" unless $options{quiet};
 
 our (%lines , @lines);
@@ -103,7 +91,15 @@ chomp $effdate;
 
 # main loop
 
-print "Now processing full schedules.\n" unless $options{quiet};
+unless ($options{quiet} ) {
+   print "Now processing full schedules " unless $options{quiet};
+   if ($options{quark}) {
+      print "(Quark Tags)";
+   } else {
+      print "(Indesign Tags)";
+   }
+   print ".\n";
+}
 
 my @files = glob ("skeds/*-a.txt");
 
@@ -207,7 +203,7 @@ sub output_fullsched {
    } else {
       $headday = $Skedvars::longerdaynames{$day} || $day;
    }
-  $headday .= BIGSPACE . $icons{ST} if $bottomnotes;
+  $headday .= $tags{BIGSPACE} . $tags{ST} if $bottomnotes;
   # add the "star" icon to the headday if it's relevant
   
    # put special days in the notes
@@ -215,8 +211,8 @@ sub output_fullsched {
    if ($specdays) {
       foreach my $thisday (sort keys %specdays) {
          next if $thisday eq $day;
-         $bottomnotes .= "\n" if $bottomnotes;
-         $bottomnotes .= $icons{$thisday} . BIGSPACE . $notedefs{$thisday};
+         $bottomnotes .= NL if $bottomnotes;
+         $bottomnotes .= $tags{$thisday} . $tags{BIGSPACE} . $notedefs{$thisday};
       }
    }
 
@@ -234,7 +230,8 @@ sub output_fullsched {
 
    # the following is to get the head destination,
    # which will be the last used timepoint
-   my $headdest = $tphash{$sked->{TP}[-1]} || $sked->{TP}[-1];
+   my $headdest = tphash($sked->{TP}[-1]) || $sked->{TP}[-1];
+   $headdest = "To: $headdest";
 
    ### set up some flags and convenience variables
 
@@ -251,7 +248,7 @@ sub output_fullsched {
    # number of columns beyond the ones needed for the timepoint
 
    ### open output file
-   my $fullsdir = "fulls/" . $sked->{LINEGROUP};
+   my $fullsdir = "$outdir/" . $sked->{LINEGROUP};
    mkdir $fullsdir or die "Can't create directory $fullsdir"
        unless -d $fullsdir;
    my $outfile = $sked->{DAY} . "_" . $sked->{DIR};
@@ -261,10 +258,12 @@ sub output_fullsched {
 
    ### print head
 
-   print OUT '@headnum:' , $headnum , BOXBREAK;
-   print OUT '@headname:' , $headname , "\n";
-   print OUT '@headdest:To ' , $headdest , "\n";
-   print OUT '@headdays:' , $headday , BOXBREAK;
+   print OUT $tags{START};
+
+   print OUT parastyle ('headnum')  , $headnum , $tags{BOXBREAK};
+   print OUT parastyle ('headname') , $headname , NL ;
+   print OUT parastyle ('headdest') , $headdest , NL ;
+   print OUT parastyle ('headdays') , $headday , $tags{BOXBREAK};
 
    ### print timepoint numbers in boxes
    # TODO - arrange to match the boxes to the line maps (probably
@@ -273,9 +272,12 @@ sub output_fullsched {
    # at this point, I don't know how many different timetable templates
    # there will be.
 
-   print OUT join(BOXBREAK, (1 .. $tpcolumns) ) , BOXBREAK;
+#   print OUT join($tags{BOXBREAK}, (1 .. $tpcolumns) ) , $tags{BOXBREAK};
+
+   print OUT parastyle ('tpnum') , join($tags{BOXBREAK}, (1 .. $tpcolumns) ) ;
+   print OUT $tags{BOXBREAK} x (17 - $tpcolumns );
    
-   print OUT '@tpname:' if ($notescol or $routescol);
+   print OUT parastyle ('tpname') ; # if ($notescol or $routescol);
    print OUT 'Route' if $routescol; 
    print OUT ' and ' if ($notescol and $routescol);
    print OUT 'Notes' if $notescol;
@@ -283,38 +285,36 @@ sub output_fullsched {
    # print the long timepoints
    
    for my $col ( 0 .. $tpcolumns - 1) {
-      print OUT BOXBREAK , '@tpname:';
-      unless ($col == 0) 
-      { 
+      print OUT $tags{BOXBREAK} , parastyle ('tpname');
+      unless ($col == 0)  {
          print OUT "Dep. " if 
          ($sked->{TP}[$col-1] eq $sked->{TP}[$col]);
       }
-      unless ($col == $tpcolumns - 1) 
+      unless ($col == $tpcolumns - 1)  {
       # unless this is the last column, check to see if the next one
       # is the same as this one
-      {
          print OUT "Arr. " if 
            ($sked->{TP}[$col+1] eq $sked->{TP}[$col]);
       }
-      my $thistp = $tphash{$sked->{TP}[$col]} || $sked->{TP}[$col];
+      my $thistp = tphash($sked->{TP}[$col]) || $sked->{TP}[$col];
 
-      #my $nonbreakingspace = '<\!s>'; # QXD
-      my $nonbreakingspace = '<0x00A0>'; # IND
-
-      $thistp =~ s/ (Apts|Ave|Blvd|St|Ct|Dr|Rd|Pkwy|Sq|Terr|Fwy|Pl)\./${nonbreakingspace}$1./g;
-      $thistp =~ s/ (Plaza|Lane|School|Way|Mall|Road)/${nonbreakingspace}$1/g;
+      {
+      my $n = $tags{NOBREAKSPC};
+      $thistp =~ s/ (Apts|Ave|Blvd|St|Ct|Dr|Rd|Pkwy|Sq|Terr|Fwy|Pl)\./${n}$1./g;
+      $thistp =~ s/ (Plaza|Lane|School|Way|Mall|Road)/${n}$1/g;
       # make non-breaking spaces where we know we can
+      }
       print OUT $thistp;
    }
 
-   ### print rows of times
+   print OUT $tags{BOXBREAK} x (17 - $tpcolumns );
 
-   print OUT BOXBREAK; # to start the box
+   ### print rows of times
 
    for my $row (0 .. $rows - 1) {
 
-      print OUT "\n" if $row; # all but the first one
-      print OUT '@times:';
+      print OUT NL if $row; # all but the first one
+      print OUT parastyle ('times');
       print OUT ($sked->{ROUTES}[$row] ) if $routescol;
 
       # currently this just does specdays. If you add other notes,
@@ -331,146 +331,22 @@ sub output_fullsched {
          my $ampm = chop $time;
          substr($time, -2, 0) = ":" if $time;
          if ($ampm eq "p") {
-#            print OUT "\t" , '<f"HelveticaNeue BoldCond">' , $time, '<f$>';
-# QXD
-            print OUT "\t" , '<f"HelveticaNeue BoldCond">' , $time, '<f$>';
-# IND            
-
+            print OUT "\t" , $tags{BOLDFONT} , $time, $tags{NOBOLDFONT};
          } else {
             print OUT "\t$time";
          } 
       }
 
       # add blank space for rules
-      print OUT "\n\@timesblank:" unless (($row+1) % 6) ;
+      print OUT NL , parastyle('timesblank') unless (($row+1) % 6) ;
    } # row
 
-   print OUT BOXBREAK , '@legend:Light Face = a.m.' , BIGSPACE;
-   print OUT '<f"HelveticaNeue BoldCond">Bold Face = p.m.<f$>' ;
-   print OUT "\n" , $bottomnotes;
+   print OUT $tags{BOXBREAK} , parastyle ('legend') , $bottomnotes;
 
    close OUT;
 
 }
 
-sub copy_sked {
-
-   # takes a schedule and returns a reference to a copy of all the 
-   # data in the schedule
-
-   my ($givensked) = @_;
-
-   my $sked = {}; # empty anonymous hash
-
-   ### make a copy of all data in $givensked into $sked
-   #   (we have to do this because otherwise we will screw up future
-   #   passes with this data)
-
-   # first, copy scalars
-   $sked->{$_} = $givensked->{$_} foreach qw(SKEDNAME LINEGROUP DIR DAY);
-   # then, copy arrays
-   @{$sked->{$_}} = @{$givensked->{$_}} 
-      foreach qw(SPECDAYS NOTES ROUTES NOTEDEFS TP);
-
-   # then, copy TIMES (an array of arrays)
-   $sked->{TIMES} = []; # ref to empty array
-
-   foreach my $col (0 .. scalar (@{$givensked->{TP}}) - 1) {
-      push @{$sked->{TIMES}} , [ @{$givensked->{TIMES}[$col]} ];
-   }
-
-   return $sked;
-
-}
-
-sub trim_sked {
-
-   my ($sked, $subset) = shift;
-
-   # the following will remove any rows that are for 
-   # routes we don't want right now.  
-
-   my %routes = ();
-
-   my $totalrows = scalar (@{$sked->{ROUTES}});
-
-   if ($subset) { # if any routes are given
-
-      # provides an easy "is an element" lookup
-      $routes{$_} = 1 foreach @$subset;
-
-      my $count = 0;
-      while ($count < $totalrows) {
-         if ($routes{$sked->{ROUTES}[$count]}) {
-            $count++;
-         } else {
-            $totalrows--;
-            foreach ( qw(ROUTES NOTES SPECDAYS)) {
-               splice ( @{$sked->{$_}} , $count, 1);
-            }
-            foreach my $col ( 0 .. ( (scalar @{$sked->{TP}}) - 1) ) {
-                 splice ( @{$sked->{TIMES}[$col]} , $count, 1);
-            }
-         }
-      }
-   } else { # no routes are given, so use them all
-      $routes{$_} = 1 foreach @{$sked->{ROUTES}};
-   }
-
-   ### merge identical rows
-
-   my $row = 1;    # not the first one -- has to be the second so it can
-                   # be compared to the first. Arrays start at 0.
-
-   IDENTIROW:
-   while ($row < $totalrows) {
-
-      my $this = "";
-      my $prev = "";
-
-      foreach my $col (0 .. scalar @{$sked->{TP}} - 1) {
-         my $thistime = $sked->{TIMES}[$row][$col];
-         my $prevtime = $sked->{TIMES}[$row-1][$col];
-
-         $this .= $thistime if defined $thistime;
-         $prev .= $prevtime if defined $prevtime;
-      }
-
-      if ($this ne $prev) {
-         $row++;
-      } else {
-
-         if (join ("", sort 
-              ($sked->{SPECDAYS}[$row],
-               $sked->{SPECDAYS}[$row-1],
-                )) eq "SDSH") 
-         {
-            $sked->{SPECDAYS}[$row-1] = "",
-         }
-
-         # if the times are identical, and one is a school holiday and
-         # the other is school days only, eliminate the special days 
-         # on the remaining # timepoint.
-
-         $totalrows--;
-         foreach (qw(ROUTES NOTES SPEC DAYS)) {
-            splice ( @{$sked->{$_}} , $row, 1);
-         }
-         foreach ( 0 .. ( (scalar @{$sked->{TP}}) - 1) ) {
-              splice ( @{$sked->{TIMES}[$_]} , $row, 1);
-         }
-         # eliminate this row
-      } # if $this ne $prev 
-
-   } # identirow
-
-   ### remove columns for timepoints that aren't used
-
-   remove_blank_columns($sked);
-
-   return %routes;
-
-}
 
 sub whole_sked_notes {
 
@@ -496,7 +372,7 @@ sub whole_sked_notes {
 
    FULLNOTE:
    foreach my $thisfullnote ( @notes2check ) {
-      foreach my $thisnoteline (split (/\n/ , $thisfullnote->{Lines})) {
+      foreach my $thisnoteline (split (/\r/ , $thisfullnote->{Lines})) {
          if ($routes{$thisnoteline}) {
             push @wholenotes, $thisfullnote->{Note};
             next FULLNOTE;
@@ -517,7 +393,7 @@ sub whole_sked_notes {
 
    my $bottomnotes;
    if (@wholenotes) {
-      $bottomnotes = $icons{ST} . BIGSPACE . join(" " , @wholenotes);
+      $bottomnotes = $tags{ST} . $tags{BIGSPACE} . join(" " , @wholenotes);
    } else {
       $bottomnotes = "";
    }
