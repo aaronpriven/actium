@@ -102,10 +102,10 @@ sub init_vars () {
 
    our %longdaynames = 
         ( WD => "Mon thru Fri" ,
-          WE => "Sat, Sun and Hol" ,
+          WE => "Sat, Sun and Holidays" ,
           DA => "Daily" ,
           SA => "Saturdays" ,
-          SU => "Sun and Hol" ,
+          SU => "Sundays and Holidays" ,
         );
 
    our %longdirnames = 
@@ -672,8 +672,7 @@ sub headdays ($) {
 
          $daystring = $outsched[$column]{"NOTEKEYS"}{$used[0]};
          $daycode = $used[0];
-	 $schooldayflag = $daycode if $daycode eq "SD";
-
+	 $schooldayflag = 1 if $daycode eq "SD";
       }
 
    } else {
@@ -873,11 +872,11 @@ sub output_outsched ($$$) {
       $head = join ("/" , @{$column->{"HEADNUM"}});
       
       # the gobbeldygook in the print statements are the quark tags
-      print OUT '@Column head:';                                   # style
+      print OUT '@Column head:<';                                   # style
 
 
       print OUT 
-            '<*d(' , length($head) +1 , ',2)><z10><b1>';  # drop cap
+            '*d(' , length($head) +1 , ',2)><z10><b1>';  # drop cap
 	                                                 # at smaller size
 
 #      print OUT 
@@ -1074,8 +1073,6 @@ sub output_outsched ($$$) {
     s/\&/and/;
     s/\.$//;
     print OUT "$_. Buses may arrive somewhat later at this location.<b>\n";
-
-    print OUT "!--$schooldayflag--!";
 
 #   SCHOOLDAYS
     if ($schooldayflag or $usedmarks{SD}) {
