@@ -14,7 +14,13 @@ our (@ISA , @EXPORT_OK);
 
 use Exporter;
 @ISA = ('Exporter');
-@EXPORT_OK = qw(Skedread Skedwrite remove_blank_columns times_column);
+@EXPORT_OK = qw(Skedread Skedwrite 
+                remove_blank_columns trim_sked copy_sked times_column);
+
+use Storable (dclone);
+# Storable is a module that needs to be imported from CPAN
+# By far the easiest way of doing that is to install fink (fink.sf.net) --
+# fink requires it. And fink is good to have anyway
 
 sub Skedread {
 
@@ -44,17 +50,18 @@ sub Skedread {
    $_ = <IN>;
    chomp;
    s/\s+$//;
-   (undef, undef, undef, @{$skedref->{TP}} ) = split (/\t/);
-   # the first three columns are always "SPEC DAYS", "NOTE" , and "RTE NUM"
+   (undef, undef, undef, undef, @{$skedref->{TP}} ) = split (/\t/);
+   # the first four columns are always "SPEC DAYS", "NOTE" , "VT" , and "RTE NUM"
 
    while (<IN>) {
        chomp;
        s/\s+$//;
        next unless $_; # skips blank lines
-       my ($specdays, $note, $route , @times) = split (/\t/);
+       my ($specdays, $note, $vt, $route , @times) = split (/\t/);
 
        push @{$skedref->{SPECDAYS}} , $specdays;
        push @{$skedref->{NOTES}} , $note;
+       push @{$skedref->{VT}} , $vt;
        push @{$skedref->{ROUTES}} , $route;
 
        $#times = $#{$skedref->{TP}}; 
@@ -88,7 +95,7 @@ sub Skedwrite ($;$) {
    print OUT $skedname , "\n";
    print OUT "Note Definitions:\t" , 
               join ("\t", @{$skedref->{"NOTEDEFS"}} ) , "\n"; 
-   print OUT "SPEC DAYS\tNOTE\tRTE NUM\t" , 
+   print OUT "SPEC DAYS\tNOTE\tVT\tRTE NUM\t" , 
               join ("\t"  , @{$skedref->{"TP"}} ) , "\n"; 
 
    # get the maximum number of rows
@@ -113,6 +120,7 @@ sub Skedwrite ($;$) {
 
       print OUT $skedref->{"SPECDAYS"}[$i] , "\t" ;
       print OUT $skedref->{"NOTES"}[$i] , "\t" ;
+      print OUT $skedref->{"VT"}[$i] , "\t" ;
       print OUT $skedref->{"ROUTES"}[$i] , "\t" ;
 
       foreach (@{$skedref->{TIMES}}) {
@@ -161,5 +169,131 @@ sub times_column ($$) {
    }
 
    return @times;
+
+}
+
+sub copy_sked {
+
+   # takes a schedule and returns a reference to a copy of all the 
+   # data in the schedule
+
+   my ($givensked) = @_;
+
+   return dclone ($givensked);
+
+=pod   
+
+
+   my $sked = {}; # empty anonymous hash
+
+   ### make a copy of all data in $givensked into $sked
+   #   (we have to do this because otherwise we will screw up future
+   #   passes with this data)
+
+   # first, copy scalars
+   $sked->{$_} = $givensked->{$_} foreach qw(SKEDNAME LINEGROUP DIR DAY);
+   # then, copy arrays
+   @{$sked->{$_}} = @{$givensked->{$_}} 
+      foreach qw(SPECDAYS VT NOTES ROUTES NOTEDEFS TP);
+
+   # then, copy TIMES (an array of arrays)
+   $sked->{TIMES} = []; # ref to empty array
+
+   foreach my $col (0 .. scalar (@{$givensked->{TP}}) - 1) {
+      push @{$sked->{TIMES}} , [ @{$givensked->{TIMES}[$col]} ];
+   }
+
+   return $sked;
+
+=cut
+
+}
+
+sub trim_sked {
+
+   my ($sked, $subset) = @_;
+
+   # the following will remove any rows that are for 
+   # routes we don't want right now.  
+
+   my %routes = ();
+
+   my $totalrows = scalar (@{$sked->{ROUTES}});
+
+   if ($subset) { # if any routes are given
+
+      # provides an easy "is an element" lookup
+      $routes{$_} = 1 foreach @$subset;
+
+      my $count = 0;
+      while ($count < $totalrows) {
+         if ($routes{$sked->{ROUTES}[$count]}) {
+            $count++;
+         } else {
+            $totalrows--;
+            foreach ( qw(ROUTES NOTES VT SPECDAYS)) {
+               splice ( @{$sked->{$_}} , $count, 1);
+            }
+            foreach my $col ( 0 .. ( (scalar @{$sked->{TP}}) - 1) ) {
+                 splice ( @{$sked->{TIMES}[$col]} , $count, 1);
+            }
+         }
+      }
+   } else { # no routes are given, so use them all
+      $routes{$_} = 1 foreach @{$sked->{ROUTES}};
+   }
+
+   ### merge identical rows
+
+   my $row = 1;    # not the first one -- has to be the second so it can
+                   # be compared to the first. Arrays start at 0.
+
+   IDENTIROW:
+   while ($row < $totalrows) {
+
+      my $this = "";
+      my $prev = "";
+
+      foreach my $col (0 .. scalar @{$sked->{TP}} - 1) {
+         my $thistime = ($sked->{TIMES}[$col][$row] or "");
+         my $prevtime = ($sked->{TIMES}[$col][$row-1] or "");
+
+         $this .= $thistime;
+         $prev .= $prevtime;
+      }
+
+      if ($this ne $prev) {
+         $row++;
+      } else {
+
+         if (join ("", sort 
+              ($sked->{SPECDAYS}[$row],
+               $sked->{SPECDAYS}[$row-1],
+                )) eq "SDSH") 
+         {
+            $sked->{SPECDAYS}[$row-1] = "",
+         }
+
+         # if the times are identical, and one is a school holiday and
+         # the other is school days only, eliminate the special days 
+         # on the remaining # timepoint.
+
+         $totalrows--;
+         foreach (qw(ROUTES NOTES VT SPECDAYS)) {
+            splice ( @{$sked->{$_}} , $row, 1);
+         }
+         foreach ( 0 .. ( (scalar @{$sked->{TP}}) - 1) ) {
+              splice ( @{$sked->{TIMES}[$_]} , $row, 1);
+         }
+         # eliminate this row
+      } # if $this ne $prev 
+
+   } # identirow
+
+   ### remove columns for timepoints that aren't used
+
+   remove_blank_columns($sked);
+
+   return %routes;
 
 }
