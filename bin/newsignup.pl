@@ -5,10 +5,6 @@
 # It creates the index files and data files used each time
 # a Single Timepoint Schedule is created.
 
-# Actually, I don't think I'll use the index file after all, 
-# or for that matter the non-slim schedule files, but
-# it hurts nothing to keep producing it.
-
 # To run this program, take the .scd files from Transitinfo and 
 # put them in a directory. On a command-line system, run 
 # the program with the directory name as the first entry in the 
