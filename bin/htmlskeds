@@ -35,7 +35,7 @@ use Skedtps qw(tphash TPXREF_FULL);
 use FPMerge qw(FPread FPread_simple);
 
 our %second = ( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
-                "82L" => '82' ,  SA  => 'S'  , '51S' => '51' );
+                "82L" => '82' ,  SA  => 'S' ); # , '51S' => '51' );
 
 our %first = reverse %second;
 
@@ -45,7 +45,7 @@ our %first = reverse %second;
 
 my $emailerlinktext = <<'EOF';
    <p><a href="http://www.actransit.org/acnews/">
-   Have schedule and route changes delivered to your computer &#8211; subscribe to AC Transit News.
+   Have schedule and route changes delivered to your computer &#8211; subscribe to AC Transit e-News.
    </a></p>
    <!-- Yeah, I know. 
         1994 called, they want their Web style back. -->
@@ -53,7 +53,7 @@ EOF
 
 my $genericemailerlinktext = <<'EOF';
    <p><a href="http://www.actransit.org/acnews/">
-   Have schedule and route changes delivered to your computer &#8211; subscribe to AC Transit News.
+   Have schedule and route changes delivered to your computer &#8211; subscribe to AC Transit e-News.
    </a></p>
    <!-- Yeah, I know. 
         1994 called, they want their Web style back. -->
@@ -64,7 +64,8 @@ our (%options);    # command line options
 
 our (%maplines);
 
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
+Myopts::options (\%options, Skeddir::options(), 'quiet!' , 'upcoming=s' , 
+    'current!' );
 # command line options in %options;
 
 $| = 1; # don't buffer terminal output; perl's not supposed to need this, but it does
@@ -157,6 +158,7 @@ foreach my $route (sort byroutes keys %skednamesbyroute) {
       $linename = "$route $lines{$route}{Name}";
    }
 
+   $linename =~ s/Õ/\'/;
 
    $index{$route} = qq(<LI><a href="$route.html">$linename</a></LI>\n);
 
@@ -172,9 +174,12 @@ foreach my $route (sort byroutes keys %skednamesbyroute) {
 <a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : 
 <a href="index.html">Schedules</a> : $linename</p><hr>
 <p><H2>AC Transit $lineword $linename</H2>
-<p>Effective $effdate</p>
-<p><UL>
+<p>Effective $effdate
 EOF
+
+   print ROUTEF upcoming();
+
+   print ROUTEF "</p><p><UL>";
   
 
 
@@ -205,6 +210,7 @@ EOF
    }
 
    if ($linemaptext) {
+      $linemaptext =~ s/Õ/\'/;
       print ROUTEF $linemaptext , $legendtext;
    }
 
@@ -237,8 +243,12 @@ EOF
 Complete Schedule</p><hr>
 <h2>$lineword $linename</h2>
 <h3>Complete Schedule</h3>
-<p>Effective $effdate</p><hr>
+<p>Effective $effdate
 EOF
+
+   print COMPLETE upcoming();
+
+   print COMPLETE "</p><hr>";
 
    print COMPLETE "<ul>$linemaptext $legendtext</ul><hr>\n" if $linemaptext;
 
@@ -264,9 +274,11 @@ EOF
 $bound{$dir} $adjectivedaynames{$day}</p><hr>
 <h2>$lineword $linename</h2>
 <h3>$bound{$dir} $adjectivedaynames{$day} Schedule</h3>
-<p>Effective $effdate</p>
-<p><font size=-1>
+<p>Effective $effdate
 EOF
+
+   print HTML upcoming()  , "</p><p><font size=-1>";
+
 
       # TODO - insert "westbound", "Eastbound Weekend", etc. links here
 
@@ -414,7 +426,7 @@ print INDEX  "<HTML><HEAD><TITLE>AC Transit Schedules</TITLE></HEAD>\n<BODY>";
 print INDEX  qq(<a href="http://www.actransit.org">AC Transit</a> : );
 print INDEX qq(<a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : );
 print INDEX  "Schedules</p><hr><p>";
-print INDEX "<H2>AC Transit Schedules</H2>\n<p>Effective $effdate</p>\n";
+print INDEX "<H2>AC Transit Schedules</H2>\n<p>Effective $effdate" , upcoming() , "</p>\n";
 
 print INDEX <<EOF;
 <UL><LI><A HREF="#Local">Local Service</A></LI>
@@ -461,7 +473,7 @@ open LMAPS , ">html/linemaps.html" or die "Can't open html/linemaps.html: $!";
 print LMAPS  "<HTML><HEAD><TITLE>AC Transit Line Maps</TITLE></HEAD>\n<BODY>";
 print LMAPS  qq(<a href="http://www.actransit.org">AC Transit</a> : );
 print LMAPS qq(<a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : );
-print LMAPS  qq(<a href="maps.html">Maps</a> : Line Maps</p><hr>);
+print LMAPS  qq(Line Maps</p><hr>);
 
 print LMAPS "<H2>AC Transit Line Maps</H2>\n";
 
@@ -527,4 +539,15 @@ sub mapline {
   return qq(<LI><a href="/pdf/schedulemaps/) . 
          $lines{$route}{MapFileName} . 
          qq(">Map for Line $route ) . $lines{$route}{Name} . qq(<a>\n);
+}
+
+sub upcoming {
+
+   return 
+   qq[&nbsp;&nbsp;<font size=-1>(<a href="upcoming/">Upcoming schedules effective ] . $options{'upcoming'} . " are also available</a>)</font>"
+          if $options{'upcoming'};
+
+   return qq[&nbsp;&nbsp;<font size=-1>(<a href="../">Current schedules are also available</a>)</font>]
+          if $options{'current'};
+
 }
