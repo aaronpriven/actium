@@ -11,6 +11,28 @@
 
 use strict;
 
+# use warnings;
+
+sub init_vars () ;
+sub get_directory () ;
+sub get_lines () ;
+sub pick_timepoints () ;
+sub pick_list ($@) ;
+sub display_lines () ;
+sub pick_line () ;
+sub read_fullsched ($) ;
+sub usedrow ($) ;
+sub build_usedrows ($$@) ;
+sub build_outsched (@) ;
+sub headdest ($$) ;
+sub headdays ($$) ;
+sub headnum(@) ;
+sub note_definitions ($) ;
+sub uniq (@) ;
+sub get_useddays($$) ;
+
+use strict;
+
 require 'byroutes.pl';
 
 init_vars();
@@ -39,7 +61,7 @@ sub init_vars () {
 
 }
 
-sub get_directory {
+sub get_directory () {
 
 die "No directory given in command line.\n" unless (@ARGV);
 
@@ -48,7 +70,7 @@ return $ARGV[0];
 }
 
 
-sub get_lines {
+sub get_lines () {
 
    our ($longestline, @lines);
 
@@ -75,7 +97,7 @@ sub get_lines {
 # ---- PART OF pick_timepoints
 # -----------------------------------------------------------------
 
-sub pick_timepoints {
+sub pick_timepoints () {
 
    our (%fullsched);
 
@@ -127,7 +149,7 @@ sub pick_timepoints {
 
 
 
-sub pick_list {
+sub pick_list ($@) {
 
 # Someday this will be replaced with a call to the MacPerl
 # list picker... but not yet.
@@ -177,7 +199,7 @@ sub pick_list {
 
 }
 
-sub display_lines {
+sub display_lines () {
 
 
    our ($longestline, @lines);
@@ -207,7 +229,7 @@ sub display_lines {
 
 }
 
-sub pick_line {
+sub pick_line () {
 
    our (@lines);
 
@@ -265,7 +287,7 @@ sub pick_line {
 # ---- READ DATA FROM DISK ROUTINE
 # -----------------------------------------------------------------
 
-sub read_fullsched {
+sub read_fullsched ($) {
 
 
    our (%fullsched);
@@ -337,33 +359,20 @@ sub read_fullsched {
 # ---- USEDROWS
 # -----------------------------------------------------------------
 
-sub usedrow ($) : lvalue {
+sub usedrow ($) {
 
-   # the lvalue means you can assign to this subroutine. So 
-   # usedrow(3) = 1
-   # will actually work. It's almost like... an array! Only of bits.
-
-   our $usedrows;
-   vec ($usedrows, $_[0], 1);
-
-   # so now, usedrow(3) gets us the value of bit 3 of $usedrow
-
-}
-
-sub reset_usedrows {
-
-   our $usedrows;
-   undef $usedrows;
+   our @usedrows;
+   return $usedrows[$_[0]];
 
 }
 
 sub build_usedrows ($$@) {
    
-   our (%fullsched);
+   our (%fullsched, @usedrows);
    my ($day_dir, $tp, @routes) = @_;
-   my ($lasttp, %routes);
+   my ($lasttpnum, %routes);
 
-   reset_usedrows();
+   @usedrows = ();
 
    foreach (@routes) {
       $routes{$_}=1;
@@ -387,23 +396,25 @@ FSROW:
       # if there's no time, skip it
 
 TPS: 
-      for ( my $thistp = scalar @{$fullsched{$day_dir}{"TP"}} ; 
+      for ( my $thistp = (scalar @{$fullsched{$day_dir}{"TP"}} -1 ); 
                 $thistp >= 0;  $thistp-- ) {
 
-          $lasttp = $thistp;
-          last TPS if $fullsched{$day_dir}{"TIMES"}[$tp][$fsrow];
+          $lasttpnum = $thistp;
+          last TPS if $fullsched{$day_dir}{"TIMES"}[$thistp][$fsrow];
       }
 
-      next FSROW if $lasttp eq $tp;
+      $fullsched{$day_dir}{"LASTTP"}[$fsrow] = $lasttpnum;
+
+      # save the $lasttpnum for when we figure out where the destination is
+
+      next FSROW if $lasttpnum eq $tp;
       # Skip this time if it's the last one in the row.
       # We don't want to tell people when buses leave from this point
       # if they go no further from here
 
       # ok, now we know this time should be included
 
-      usedrow($fsrow) = 1;
-
-      # that's an lvalue subroutine. How weird
+      $usedrows[$fsrow] = 1;
 
    }
 
@@ -414,7 +425,7 @@ TPS:
 # ---- BUILD_OUTSCHED
 # -----------------------------------------------------------------
 
-sub build_outsched {
+sub build_outsched (@) {
 
    our (@outsched , %fullsched, %notes, %longdaynames);
 
@@ -423,7 +434,8 @@ sub build_outsched {
 
    local ($_);
 
-   my ($line, $day_dir, $day, $tp, @routes, %usednotes );
+   my ($column, $daycode, $lasttp, $line, $day_dir, $day, $tp, 
+       @routes, %usednotes );
 
    $column = 0;
 
@@ -435,12 +447,12 @@ sub build_outsched {
       read_fullsched($line);
       # now we have the data
 
-      note_definitions();
+      note_definitions($day_dir);
       # read all note definitions into %notes
  
       build_usedrows($day_dir, $tp, @routes);
-      # Now we know that usedrows(x) is 1 if the xth row is a valid one,
-      # an 0 if it should be skipped. usedrows is an lvalue subroutine.
+      # Now we know that usedrow(x) is 1 if the xth row is a valid one,
+      # an 0 if it should be skipped. 
 
       @{$outsched[$column]{"HEADNUM"}} = headnum(@routes);
       # get the header number(s)
@@ -449,62 +461,87 @@ sub build_outsched {
            headdays ($day_dir, $tp);
       # get the header day text ("Mon thru Fri", etc.) 
 
-      ($lasttp,headdest ($day_dir, $tp)
+      ($lasttp, $outsched[$column]{"HEADDEST"}) = headdest ($day_dir, $tp)
+      # get the header destination text ("To University and San Pablo")
       
 
-
-
-
-
-
-
-
-
-
-
    } continue {
+
+      print "\n---\n" , join("." , @{$outsched[$column]{"HEADNUM"}});
+      print "\t" , $outsched[$column]{"HEADDAYS"};
+      print "\t" , $outsched[$column]{"HEADDEST"};
+
       $column++;
+       
    }
 
-   # now we have our $outsched, only it's not in order.
+# now we have our $outsched, only it's not in order.  
+
+} 
+
+sub headdest ($$) {
+
+   my ($day_dir, $tp) = @_;
+   my ($lasttp, $lasttpnum, $headdest);
+   my (%lasttpfreq) = ();
+   our (%fullsched);
+
+   for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
+            $fsrow++) {
+      next unless usedrow($fsrow);
+      $lasttpfreq{$fullsched{$day_dir}{"LASTTP"}[$fsrow]}++;
+      print "\t$fsrow:" , $fullsched{$day_dir}{"LASTTP"}[$fsrow];
+   }
+
+   $lasttpnum = 
+       (sort { $lasttpfreq{$b} <=> $lasttpfreq{$a} } 
+        keys %lasttpfreq)[0];
+
+   print "[$lasttpnum]";
+
+   $headdest = $fullsched{$day_dir}{"TIMEPOINTS"}[$lasttpnum];
+
+   $lasttp = $fullsched{$day_dir}{"TPS"}[$lasttpnum];
+  
+   return $lasttp, $headdest;
+
 }
 
 sub headdays ($$) {
 
-   # my ($day_dir, $tp) = @_;
-   # no reason to leave that code in, but that's what they are
+   my ($day_dir, $tp) = @_;
 
-   my @used = get_useddays(@_);
+   my @used = get_useddays($day_dir, $tp);
    # now we have the lists of used special days in @used
 
-   our %longdaynames;
+   our (%notes, %longdaynames);
 
-   my $daycode = (split (/_/ , $_[0]))[1];
+   my $daycode = (split (/_/ , $day_dir))[1];
    my $daystring;
 
    if (scalar( @used ) == 1) {
    # if there's only one day present,
 
-      if $used[0] eq "BLANK" {
+      if ($used[0] eq "BLANK") {
          # and it's blank, use the standard day routine
 
-         $daystring = $longdaynames{$day};
+         $daystring = $longdaynames{$daycode};
 
       } else {
          # if only one day, but it's not blank, use that.
 
-         $daystring = $notes{$usednotes{"SPEC DAYS"}[0]};
-         $day = $usednotes{"SPEC DAYS"}[0];
+         $daystring = $notes{$used[0]};
+         $daycode = $used[0];
       }
 
    } else {
 
       # more than one kind of day, so use the standard.
-      $daystring = $longdaynames{$day};
+      $daystring = $longdaynames{$daycode};
 
    }
 
-   return $day , $daystring;
+   return $daycode , $daystring;
 
 }
 
@@ -521,7 +558,7 @@ sub headnum(@) {
         s/^(\d+)/$1 /;
         @temp = split;
         $temp[1] = "BLANK" unless $temp[1];
-        push @{$routes{$temp[1]}} , $temp[1];
+        push @{$routes{$temp[0]}} , $temp[1];
    }
    # so now the hash %routes has keys which are the numeric parts,
    # and values which are a reference to a list of the letter parts.
@@ -544,7 +581,10 @@ sub headnum(@) {
 
 }
 
-sub note_definitions () {
+sub note_definitions ($) {
+
+      my $day_dir = $_[0];
+      our (%fullsched, %notes);
 
       foreach (@{$fullsched{$day_dir}{"NOTEDEFS"}}) {
          my ($note, $notedef) = split(/:/);
@@ -559,7 +599,7 @@ sub uniq (@) {
 
    my %hash;
 
-   map {%hash{$_}=1} @_;
+   map {$hash{$_}=1} @_;
 
    return keys %hash;
 
@@ -576,7 +616,7 @@ sub get_useddays($$) {
    for (my $fsrow = 0; $fsrow < scalar @{$fullsched{$day_dir}{"TIMES"}[$tp]};  
          $fsrow++) {
 
-       next unless usedrows($fsrow);
+       next unless usedrow($fsrow);
        # skip it if it's not used
 
        $_ = $fullsched{$day_dir}{"SPEC DAYS"}[$fsrow];
