@@ -23,7 +23,7 @@ use lib $Bin;
 use Skedfile qw(Skedread Skedwrite trim_sked copy_sked);
 use Myopts;
 use Skeddir;
-use Skedvars qw(%daydirhash %adjectivedaynames %bound);
+use Skedvars qw(%daydirhash %adjectivedaynames %bound %specdaynames);
 use Byroutes 'byroutes';
 use Skedtps qw(tphash TPXREF_FULL);
 use FPMerge qw(FPread FPread_simple);
@@ -58,7 +58,6 @@ our $effdate = scalar <DATE>;
 close DATE;
 chomp $effdate;
 
-
 my $prepdate;
 
 {
@@ -68,7 +67,7 @@ $year += 1900; # Y2K compliant
 $prepdate = "$mon $mday, $year";
 }
 
-$prepdate = localtime(time); # override for debugging only
+#$prepdate = localtime(time); # override for debugging only
 
 our (@lines , %lines);
 
@@ -112,6 +111,10 @@ foreach my $route (sort byroutes keys %skednamesbyroute) {
 
    next if $second{$route};
 
+   printf "%-4s", $route;
+
+   my %skedtext = ();
+
    my @theseroutes;
    my $linename;
    if ($first{$route}) {
@@ -138,23 +141,26 @@ foreach my $route (sort byroutes keys %skednamesbyroute) {
    $lineword .= "s" if $first{$route};
 
    open ROUTEF , ">html/$route.html" or die "Can't open $route.html: $!";
+   open COMPLETE , ">html/$route-A.html" or die "Can't open $route-A.html: $!";
    
    print ROUTEF <<"EOF";
 <HTML><HEAD><TITLE>AC Transit $lineword $linename</TITLE></HEAD>
 <BODY><a href="http://www.actransit.org">AC Transit</a> : 
-<a href="index.html">Schedules</a> : $lineword $linename</p><hr>
+<a href="index.html">Schedules</a> : $linename</p><hr>
 <p><H2>AC Transit $lineword $linename</H2>
 <p>Effective $effdate</p>
 <p><UL>
 EOF
   
-   my @skednames = (@{$skednamesbyroute{$route}}) ;
+   my @skednames = sort bydaydirhash (@{$skednamesbyroute{$route}}) ;
 
-   foreach my $skedname ( sort bydaydirhash @{$skednamesbyroute{$route}}) {
+   foreach my $skedname ( @skednames ) {
       my ($linegroup, $dir, $day) = split(/_/ , $skedname);
       print ROUTEF qq(<a href="$route-$dir-$day.html">);
       print ROUTEF "<LI>$bound{$dir} $adjectivedaynames{$day} Schedule</a>\n";
    }
+   print ROUTEF qq(<br><a href="$route-A.html">);
+   print ROUTEF "<LI>Complete Schedule</a>\n";
 
    print ROUTEF <<"EOF";
 </UL></p><hr>
@@ -164,10 +170,21 @@ EOF
 
    close ROUTEF;
 
+   print COMPLETE <<"EOF";
+<HTML><HEAD><TITLE>$lineword $linename: Complete Schedule</TITLE>
+<BODY><p>
+<a href="http://www.actransit.org/">AC Transit</a> :
+<a href="index.html">Schedules</a> : 
+<a href="$route.html">$linename</a> :
+Complete Schedule</p><hr>
+<h2>$lineword $linename</h2>
+<h3>Complete Schedule</h3>
+<p>Effective $effdate</p><hr>
+EOF
 
    # loop around each schedule - output the HTML file
 
-   foreach my $skedname (@{$skednamesbyroute{$route}}) {
+   foreach my $skedname (@skednames) {
 
       my $dir = $skeds{$skedname}{DIR};
       my $day = $skeds{$skedname}{DAY};
@@ -187,13 +204,31 @@ $bound{$dir} $adjectivedaynames{$day}</p><hr>
 <h2>$lineword $linename</h2>
 <h3>$bound{$dir} $adjectivedaynames{$day} Schedule</h3>
 <p>Effective $effdate</p>
+<p><font size=-1>
 EOF
 
       # TODO - insert "westbound", "Eastbound Weekend", etc. links here
 
-      print HTML qq(<p><a href="#key">) , 
-         "[Key to timepoint abbreviations follows the schedule]</a></p>", 
-         "<pre>";
+      foreach my $linkskedname (@skednames) {
+         my $linkdir = $skeds{$linkskedname}{DIR};
+         my $linkday = $skeds{$linkskedname}{DAY};
+
+         print HTML qq(<a href="$route-$linkdir-$linkday.html">)
+              unless $linkskedname eq $skedname;
+         print HTML "[$bound{$linkdir} $adjectivedaynames{$linkday}]";
+         print HTML "</a>" unless $linkskedname eq $skedname;
+         print HTML " " ;
+
+      }
+
+      print HTML qq(<a href="$route-A.html">);
+      print HTML "[Complete Schedule]</a></font><hr>\n";
+
+      ### all the "$skedtext{$skedname}"s used to be "print HTML"s
+
+      $skedtext{$skedname} =
+          qq(<p><a href="#key$dir$day">) . 
+         "<font size=-1>[Key to abbreviations follows the schedule]</a></p></font><pre>";
 
       my $trimsked = copy_sked($skeds{$skedname});
 
@@ -222,7 +257,7 @@ EOF
 
       delete $specdays{""} if $specdays{""};
 
-      my $tps = "<hr>   RTE  $tp[0]\n   NUM  $tp[1]\n";
+      my $tps = "   RTE  $tp[0]\n   NUM  $tp[1]\n";
 
       my $count = 0;
 
@@ -233,46 +268,62 @@ EOF
          next ROW if $thisroute ne $route and
             $thisroute ne $first{$route};
 
-         print HTML $tps unless $count % 25;
-         print HTML "\n" unless $count % 5;
+         $skedtext{$skedname} .= '<hr>' unless $count == 0 or $count % 25 ;
+         $skedtext{$skedname} .= $tps unless $count % 25;
+         $skedtext{$skedname} .= "\n" unless $count % 5;
          $count++;
 
-         printf HTML "%2s " , $trimsked->{SPECDAYS}[$row];
-         printf HTML "%3s " , $trimsked->{ROUTES}[$row];
+         $skedtext{$skedname} .= sprintf "%2s " , $trimsked->{SPECDAYS}[$row];
+         $skedtext{$skedname} .= sprintf "%3s " , $trimsked->{ROUTES}[$row];
 
          for my $col (0 .. $#{$skeds{$skedname}{TP}}) {
-             printf HTML " %5s" , $trimsked->{TIMES}[$col][$row];
+             $skedtext{$skedname} .= sprintf " %5s" , $trimsked->{TIMES}[$col][$row];
          }
-         print HTML "\n";
+         $skedtext{$skedname} .= "\n";
 
       }
+
+      $skedtext{$skedname} .= 
+        qq(\n</pre><hr><p><b><a name="key$dir$day">Key to Abbreviations</b></a></p><pre>);
 
       if (scalar keys %specdays) {
-         print HTML "\n";
-         print HTML "SD   School Days Only\n" if $specdays{SD};
-         print HTML "SH   School Holidays Only\n" if $specdays{SH};
-         print HTML "TT   Tuesdays and Thursdays Only\n" if $specdays{SH};
-         print HTML "TF   Tuesdays and Fridays Only\n" if $specdays{SH};
-         print HTML "WF   Wednesdays and Fridays Only\n" if $specdays{SH};
+         $skedtext{$skedname} .= $_ . "   " . $specdaynames{$_} . "\n"
+              for (sort keys %specdays) ;
+         $skedtext{$skedname} .= "\n";
       }
-
-      print HTML 
-        qq(\n<hr><p><strong><a name="key">Key To Timepoints</strong></a></p>);
-
+ 
       foreach my $tp (@timepointsnoeq) {
-         printf HTML "%-9s  " , $tp;
-         print HTML tphash($tp) , "\n";
+         $skedtext{$skedname} .= sprintf "%-9s  " , $tp;
+         $skedtext{$skedname} .= tphash($tp) . "\n";
       }
-  
-      print HTML "\n</pre><hr><p>";
+
+      $skedtext{$skedname} .= "</pre><hr>";
+
+      print HTML $skedtext{$skedname};
+      print HTML "<p>";
       print HTML 
          "Prepared by AC Transit Marketing and Communications<br>$prepdate";
       print HTML "</p>\n</body></html>";
 
       close HTML;
-   } # skedname
+
+      print COMPLETE  
+            "<h4>$bound{$dir} $adjectivedaynames{$day} Schedule</h4>\n" ,
+            $skedtext{$skedname};
+
+    } # skedname
+
+   print COMPLETE "</pre><p>";
+   print COMPLETE 
+      "Prepared by AC Transit Marketing and Communications<br>$prepdate";
+   print COMPLETE "</p>\n</body></html>";
+
+   close COMPLETE;
+  
 
 } # route
+
+print "\n";
 
 open INDEX , ">html/index.html" or die "Can't open html/index.html: $!";
 print INDEX  "<HTML><HEAD><TITLE>AC Transit Schedules</TITLE></HEAD>\n<BODY>";
@@ -320,22 +371,6 @@ print INDEX  "Prepared by AC Transit Marketing and Communications<br>$prepdate";
 print INDEX "</BODY></HTML>";
 
 close INDEX;
-
-BEGIN { #perl cookbook #10.3
-
-my %multihash = ( 40  => '40' , "40L" => '40' ,
-                  59  => '59' , "59A" => '59' ,
-                  72  => '72' , "72M" => '72' ,
-                  82  => '82' , "82L" => '82' ,
-                  S   => 'S'   ,   SA  => 'S' ,
-                );
-
-sub route2sked {
-
-return ( $multihash{$_[0]} or $_[0] );
-
-}
-}
 
 sub bydaydirhash {
    (my $aa = $a) =~ s/.*?_//; # minimal: it matches first _
