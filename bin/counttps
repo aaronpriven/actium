@@ -36,7 +36,7 @@ $signup = (Skeddir::change (\%options))[2];
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "Skeds" base directory.
 
-my @files = glob ("skeds/*-a.txt");
+my @files = glob ("skeds/*.txt");
 
 foreach my $file (@files) {
 
