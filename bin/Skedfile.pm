@@ -14,10 +14,15 @@ our (@ISA , @EXPORT_OK);
 
 use Exporter;
 @ISA = ('Exporter');
-@EXPORT_OK = qw(Skedread Skedwrite 
-                remove_blank_columns trim_sked copy_sked times_column);
+@EXPORT_OK = qw(Skedread Skedwrite merge_columns
+                remove_blank_columns trim_sked copy_sked times_column
+                getfiles GETFILES_ALL GETFILES_PUBLIC);
 
-use Storable (dclone);
+use constant GETFILES_ALL => 2;
+
+use constant GETFILES_PUBLIC => 1;
+
+use Storable qw(dclone);
 # Storable is a module that needs to be imported from CPAN
 # By far the easiest way of doing that is to install fink (fink.sf.net) --
 # fink requires it. And fink is good to have anyway
@@ -165,7 +170,7 @@ sub times_column ($$) {
    my @times = ();
 
    for (my $row = 0 ; $row < scalar (@{$skedref->{ROUTES}}) ; $row++) {
-      push @times , $skedref->{TIMES}[$tpnum][$row]; # TODO - check this out
+      push @times , $skedref->{TIMES}[$tpnum][$row];
    }
 
    return @times;
@@ -295,5 +300,72 @@ sub trim_sked {
    remove_blank_columns($sked);
 
    return %routes;
+
+}
+
+sub getfiles {
+
+   my $status = shift;
+
+   return grep ((! /=/ and ! /^I/) , glob('skeds/*.txt'))
+      if (not $status) or ($status == GETFILES_PUBLIC) ;
+
+   # internal ones start with the letter I
+
+   return grep (! /=/  , glob('skeds/*.txt'))
+       if $status == GETFILES_ALL ;
+
+   die "Invalid parameter to getfiles: $status";
+
+   # I can't imagine a time when I will want the equals signs ones
+
+}
+
+
+sub merge_columns {
+
+   my $dataref = shift;
+ 
+   ### Merge adjacent columns with the same timepoint (i.e., 
+   ### where a point says "arrives 10:30, leaves 10:35" just use the latter)
+
+   my $prevtp = "";
+   my $tp = 0;
+   
+   TIMEPOINT: while ( $tp < ( scalar @{$dataref->{"TP"}}) ) {
+   
+
+      my $thistp = $dataref->{TP}[$tp];
+      $thistp =~ s/=[0-9]+$//;
+      # eliminate =x from timepoint, for comparison
+
+      unless ($thistp eq $prevtp) {
+          $prevtp = $dataref->{TP}[$tp];
+          $tp++;
+          next TIMEPOINT;
+      }
+
+      # unless they're the same timepoint, increment the counter
+      # and go to the next one
+
+      # so if it gets past that, we have duplicate columns
+
+      splice (@{$dataref->{"TP"}}, $tp, 1);
+      # that gets rid of the second TP
+      
+      for (my $row =0; $row < scalar @{$dataref->{"TIMES"}[$tp]}  ;  $row++) {
+      
+         $dataref->{TIMES}[$tp - 1][$row]  
+            = $dataref->{TIMES}[$tp][$row] 
+                if $dataref->{TIMES}[$tp][$row];
+             
+      }
+      # that takes all the values in the second column and 
+      # puts them in the first column
+
+      splice (@{$dataref->{TIMES}}, $tp, 1);
+      # gets rid of extra TIMES array, now duplicated in the previous one
+
+   }
 
 }
