@@ -19,11 +19,11 @@ use Exporter;
                );
 
    our %specdaynames =
-        ( "SD" => "School Days Only" , 
-          "SH" => "School Holidays Only" ,
-          "TT" => "Tuesdays and Thursdays Only" ,
-          "TF" => "Tuesdays and Fridays Only" ,
-          "WF" => "Wednesdays and Fridays Only" ,
+        ( "SD" => "School days only" , 
+          "SH" => "School holidays only" ,
+          "TT" => "Tuesdays and Thursdays only" ,
+          "TF" => "Tuesdays and Fridays only" ,
+          "WF" => "Wednesdays and Fridays only" ,
         );
 
    our %bound = 
