@@ -50,7 +50,7 @@ print "Timepoints and timepoint names... " unless $options{quiet};
 my $vals = Skedtps::initialize(TPXREF_FULL);
 print "$vals timepoints.\n";
 
-my @files = grep ((! /=/) , glob('skeds/*-a.txt'));
+my @files = grep ((! /=/) , glob('skeds/*.txt'));
 # easier to use grep than try to construct a glob pattern that doesn't include 
 # equals signs
 
