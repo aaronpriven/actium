@@ -57,13 +57,13 @@ foreach my $file (@files) {
    }
 }
 
-print "\tRoute\tLinegroups\n\n";
+print "\tLinegroups\tRoutes\n\n";
 foreach (sort byroutes keys %routes) {
    print "\t$_\t" , 
          join(", " , sort byroutes keys %{$routes{$_}}) ,  "\n";
 }
 
-print "\nLinegroup    Routes:\n\n";
+print "\nRoutes\tLinegroups\n\n";
 foreach (sort byroutes keys %linegroups) {
    print "\t$_\t" , 
          join(", " , sort byroutes keys %{$linegroups{$_}}) ,  "\n";
