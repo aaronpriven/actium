@@ -1378,7 +1378,7 @@ sub MakeStop_Click {
       }
 
       build_outsched (@pickedtps);
-      output_outsched($stopid, $description);
+      output_outsched($stopid, $description,$stops{$stopid}{'PrintNotes'});
 
    }
 
