@@ -59,6 +59,7 @@ foreach $linenum (@lines) {
       # now @toplines is set to the first two lines,
       # %fullsched{$schedname}{NOTEDEFS} is set to the note definitions,
       # and @schedrows has all the rest of the schedule lines.
+      # The timepoint info hasn't been read yet.
 
       &get_timepoint_info;
 
@@ -66,6 +67,8 @@ foreach $linenum (@lines) {
       # close the schedule
 
       &parse_schedule;
+
+      &add_tps_to_tphash;
 
    }   
 
@@ -88,6 +91,8 @@ foreach $linenum (@lines) {
 }
 
 &close_index;
+
+&output_tphash;
 
 print "\n";
 
@@ -577,4 +582,27 @@ print INDEX "\n";
 
 print INDEX "---\n";
 
+}
+
+sub add_tps_to_tphash {
+
+   for (my $i=0; $i < scalar (@{$fullsched{$schedname}{"TP"}});  $i++) {
+
+      $tphash{$fullsched{$schedname}{"TP"}[$i]} = 
+            $fullsched{$schedname}{"TIMEPOINTS"}[$i];
+
+   }
+
+}
+
+sub output_tphash {
+
+   open TPHASH , ">timepoints.txt" or die "Can't open timepoints.txt";
+
+   my ($key, $value);
+   while (($key,$value) = each %tphash) {
+       print TPHASH "$key\t$value\n";
+   }
+
+   close TPHASH;
 }
