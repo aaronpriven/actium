@@ -19,6 +19,8 @@ require 'pubinflib.pl';
 
 chdir &get_directory or die "Can't change to specified directory.\n";
 
+&init_vars;
+
 # so we cd to the appropriate directory
 
 my ($temp1, $temp2) = &assemble_line_and_file_lists;
@@ -34,12 +36,12 @@ foreach my $linenum (@lines) {
 
    print "$linenum ";
 
-   undef %fullsched;
+   %fullsched = ();
    # reset the full schedule variable before the loop.
 
    foreach my $schedfile (&get_scheds_for_line ($linenum)) {
       
-      undef @schedrows;
+      @schedrows = ();
       # reset the various other arrays before the loop.
 
       open IN, "<scd/$schedfile" or die "Can't open file scd/$schedfile.\n"; 
@@ -66,7 +68,9 @@ foreach my $linenum (@lines) {
 
       &add_tps_to_tphash;
 
-   }   
+      &kill_bad_timepoints ($linenum) if $privatetproutes{$linenum};
+
+   }
 
 
    &merge_days ("SA" , "SU" , "WE");
@@ -92,3 +96,27 @@ foreach my $linenum (@lines) {
 
 print "\n";
 
+sub kill_bad_timepoints {
+
+   my $linenum = shift;
+
+   our (%fullsched, $schedname, %privatetps);
+
+   my (%theseprivatetps);
+
+   $theseprivatetps{$_} = 1 foreach (@{$privatetps{$linenum}});
+   # print "\n$linenum [[[" , keys %theseprivatetps , "]]]\n";
+
+   my $tp = 0;
+
+   while ( $tp < ( scalar @{$fullsched{$schedname}{"TP"}}) ) {
+      # print $fullsched{$schedname}{TP}[$tp] , " ";
+      if ($theseprivatetps{$fullsched{$schedname}{"TP"}[$tp]}) {
+         splice (@{$fullsched{$schedname}{"TIMES"}}, $tp, 1);
+         splice (@{$fullsched{$schedname}{"TP"}}, $tp, 1);
+         splice (@{$fullsched{$schedname}{"TIMEPOINTS"}}, $tp, 1);
+         next;
+      }
+      $tp++;
+   }
+}
