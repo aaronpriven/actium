@@ -17,13 +17,18 @@ sub build_batchlists ($) ;
 sub print_head ($$$$$) ;
 
 
-use constant ROWSPERPAGE => 36;
+use constant ROWSPERPAGE => 900;
+# use constant ROWSPERPAGE => 12;
+# use constant COLSPERPAGE => 9;
+use constant COLSPERPAGE => 16;
 use constant DROPCAPLINES => 3;
 use constant BOXESINTEMPLATE => 23;
 use constant BIGSPACE => '<\q>' x 2;
 # will need to be 13 soon
 
 require 'pubinflib.pl';
+
+chdir get_directory() or die "Can't change to specified directory.\n";
 
 init_vars();
 
@@ -36,9 +41,7 @@ our %icons =
     );
 
 
-our (%daydirhash, %longerdaynames);
-
-chdir get_directory() or die "Can't change to specified directory.\n";
+our (%daydirhash, %dayhash, %dirhash, %longerdaynames);
 
 our %tphash;
 
@@ -82,7 +85,8 @@ foreach my $thisbatch (@batchlist) {
 
    my $line = $thisbatch->{LINE};
 
-   read_fullsched($line, ".acs");
+   read_fullsched($line, 0, ".acs");
+   # 0 says don't crossreference unless necessary
 
    %batchroutes = ();
    %batchdays = ();
@@ -107,8 +111,32 @@ foreach my $thisbatch (@batchlist) {
       print REPORT "$line\t$day_dir\n";
 
       $thistable->{DAY_DIR} = $day_dir;
+      $thistable->{DIR} = $dir;
+      $thistable->{DAY} = $day;
       $thistable->{LINE} = $line;
       $thistable->{BATCHNOTES} = [@batchnotes];
+
+      # prepare to sort by time
+      read_fullsched($line, 0, ".acs");
+      # 0 says don't crossreference unless necessary
+
+      my $thistime;
+
+      for ( my $col = 0; $col < scalar @{$fullsched{$day_dir}{"TP"}} ; 
+             $col++ ) {
+         $thistime = $fullsched{$day_dir}{TIMES}[0][$col];
+         last if $thistime;
+      }
+
+      my $thisampm = chop $thistime;
+
+      $thistable->{AMPM} = $thisampm;
+     
+      $thistime =~ s/:(.*)//;
+      my $thisminute = $1;
+
+      $thistable->{HOUR} = $thistime;
+      $thistable->{MINUTE} = $thisminute;
 
       my $numroutes = scalar keys %batchroutes;
 
@@ -138,7 +166,10 @@ foreach my $thisbatch (@batchlist) {
 @tables = sort 
     {
      byroutes ($a->{"ROUTES"}[0], $b->{"ROUTES"}[0]) or 
-     $daydirhash{$a->{"DAY_DIR"}} <=> $daydirhash{$b->{"DAY_DIR"}}
+     $dayhash{$b->{"DAY"}} <=> $dayhash{$a->{"DAY"}} or
+     $a->{"AMPM"} cmp $b->{"AMPM"} or
+     $a->{"HOUR"} <=> $b->{"HOUR"} or
+     $a->{"MINUTE"} <=> $b->{"MINUTE"} 
     } @tables;
 
 
@@ -165,7 +196,8 @@ foreach my $thistable (@tables) {
 
    my ($dir, $day) = split (/_/ , $day_dir);
 
-   read_fullsched($line, ".acs");
+   read_fullsched($line, 0, ".acs");
+   # 0 says don't crossreference unless necessary
 
    my $totalrows = scalar (@{$fullsched{$day_dir}{ROUTES}});
 
@@ -306,7 +338,7 @@ foreach my $thistable (@tables) {
 
    my $extracolumns = ($notescol ? 1 : 0) + ($routescol ? 1 : 0) ;
 
-   my $wholespread = ($tpcolumns > 9);
+   my $wholespread = ($tpcolumns > COLSPERPAGE);
    # if there are more than nine columns, we need to prepare both sides
    # of the spread
 
@@ -326,7 +358,7 @@ foreach my $thistable (@tables) {
 
    my $firstpagetps;
    if ($wholespread) {
-      $firstpagetps = 9;
+      $firstpagetps = COLSPERPAGE;
    } else {
       $firstpagetps = $tpcolumns;
    }
@@ -481,7 +513,7 @@ sub print_rows ($$$$$$$$) {
 
          # print the numbers
 
-         print ('<\\b>' x (9 -  ($lasttp - $starttp )));
+         print ('<\\b>' x (COLSPERPAGE -  ($lasttp - $starttp )));
          # and any extra boxes
 
          ####################
@@ -489,9 +521,10 @@ sub print_rows ($$$$$$$$) {
 
          print '<\\b>';
 
-         print '@tpname:Notes' if $notescol;
-         print ' and Route' if $routescol; 
-         # must fix later to make good routes column
+         print '@tpname:' if ($notescol || $routescol);
+         print 'Route' if $routescol; 
+         print ' and ' if ($notescol && $routescol);
+         print 'Notes' if $notescol;
          
          TPHEADERCOL: 
          for (my $col = $starttp; $col < $lasttp ; $col++) {
@@ -519,7 +552,7 @@ sub print_rows ($$$$$$$$) {
          # get $extracolumns for this page, which may be different from that
          # for the whole spread
 
-         print ('<\\b>' x (9 -  ($lasttp - $starttp )));
+         print ('<\\b>' x (COLSPERPAGE -  ($lasttp - $starttp )));
          # print box markers for the remainder of the timepoint headers
 
          #######
@@ -580,7 +613,8 @@ sub print_rows ($$$$$$$$) {
 
             # add blank space for rules
 
-            unless (($row+1) % 6) {
+            unless (($row-$rowgroup+1) % 6) {
+
                print "\n\@timesblank:";
             }
 
@@ -694,7 +728,7 @@ sub print_head ($$$$$) {
 
       my ($num, $name, $day, $dest, $continued) = @_;
 
-      print '@headnum:' , $num , "\n";
+      print '@headnum:' , $num , '<\\b>';
       print '@headname:' , $name , "\n";
       print '@headdest:To ' , $dest , "\n";
       print '@headdays:' , $day;
