@@ -42,14 +42,22 @@ use integer; # ever so slightly faster
 # repeating fields, it can't handle a repeating index field.
 # How would that work anyway?
 
-sub FPread ($;$) {
+sub FPread ($;$;$;$) {
 
-   my ($file, $indexfield) = @_;
+   # $ignorerepeat will simply pass through the \035 characters
+   # to the calling program.
+
+   # $ignoredupe will pass only the last entry for each unique ID in
+   # %fphash. 
+
+   # both of these are there to speed things up; the code is quite
+   # intelligent enough to not need it, but it's slower.
+
+   my ($file, $indexfield, $ignorerepeat, $ignoredupe) = @_;
    my @fparray = ();
    my %fphash = ();
 
-
-   -f $file or die "Can't find file $file";
+   -f $file or die "Can't find file $file (or it's not a plain file)";
    open CSVFILE , $file or die "Can't open $file for reading";
 
    my $rs = picknewline(\*CSVFILE);
@@ -58,7 +66,16 @@ sub FPread ($;$) {
 
    my $headerline = scalar <CSVFILE>;
    chomp ($headerline);
-   my @fields = parse_csv($headerline);
+   
+   my @fields = split (/\,/ , $headerline);
+   # The headerline has no quotes, so no special CSV parsing necessary
+
+   my %fieldorder;
+
+   {
+   my $i = 0;
+   $fieldorder{$_} = $i++ foreach (@fields);
+   } # so now $fieldorder{$field} is the order in which they come in the file
 
    my $make_fphash = 0;
 
@@ -92,10 +109,10 @@ sub FPread ($;$) {
 
       my @values = parse_csv($line);
 
-# faster than foreach @fields and shift @values
-      for (my $i = 0; $i <= $#fields ; $i++) { # faster than foreach @fields an
-         my $field=$fields[$i];
-         my $value=$values[$i];
+      foreach my $field (@fields) {
+         my $value=$values[$fieldorder{$field}];
+
+         ($recordref->{$field} = $value , next) if $ignorerepeat;
 
          ### repeating fields
          if (not ( $repeating{$field} or $value =~ /\035/) ) {
@@ -136,6 +153,8 @@ sub FPread ($;$) {
       # now make the hash entry
 
       my $indexvalue = $recordref->{$indexfield};
+
+      ($fphash{$indexvalue} = $recordref , next) if $ignoredupe;
       
       if (exists $fphash{$indexvalue} or ($multiple_index)) {
         # if we've seen this one before or we know indexes aren't unique,
