@@ -93,7 +93,7 @@ print "$vals timepoints.\nSignTypes... " unless $options{quiet};
 FPread_simple ("SignTypes.csv" , \@signtypes, \%signtypes, 'SignType');
 print scalar(@signtypes) , " records.\nProjects... " unless $options{quiet};
 FPread_simple ("Projects.csv" , \@projects, \%projects, 'Project');
-print scalar(@projects) , " records.\nSkedspec... " unless $options{quiet};
+print scalar(@projects) , " records.\nSigns... " unless $options{quiet};
 FPread_simple ("Signs.csv" , \@signs, \%signs, 'SignID');
 print scalar(@signs) , " records.\nSkedspec... " unless $options{quiet};
 FPread ("SkedSpec.csv" , \@skedspec, \%skedspec, 'SignID' , 1, 0);
@@ -1041,9 +1041,9 @@ sub output_points {
     }
 
     if ($signs{$signid}{Note600s} =~ /^[Yy]/ ) {
-       print OUT "In addition to the lines shown, this stop may also be served by supplementary service lines. These lines are designated Lines 600" .
+       print OUT "This stop may also be served by supplementary lines (Lines 600" .
        IDTags::endash . 
-       "699.  These trips operate school days only, and at times that may vary from day to day. Call 511 or visit www.actransit.org for more information. Supplementary service is available to everyone at regular fares.\r";
+       "699), which operate school days only, at times that may vary from day to day. Call 511 or visit www.actransit.org for more information. This service is available to everyone at regular fares.\r";
     }
 
 
