@@ -65,6 +65,6 @@ foreach my $file (@files) {
 }
 
 foreach (sort keys %alltps) {
-   print "$_:" , tphash($_) , "\n";
-   # print "$_:\n" unless tphash($_);
+   # print "$_:" , tphash($_) , "\n";
+   print "$_:\n" unless tphash($_);
 }
