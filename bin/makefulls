@@ -231,7 +231,7 @@ sub output_fullsched {
    # the following is to get the head destination,
    # which will be the last used timepoint
    my $headdest = tphash($sked->{TP}[-1]) || $sked->{TP}[-1];
-   $headdest = "To: $headdest";
+   $headdest = "To $headdest";
 
    ### set up some flags and convenience variables
 
@@ -300,7 +300,7 @@ sub output_fullsched {
 
       {
       my $n = $tags{NOBREAKSPC};
-      $thistp =~ s/ (Apts|Ave|Blvd|St|Ct|Dr|Rd|Pkwy|Sq|Terr|Fwy|Pl)\./${n}$1./g;
+      $thistp =~ s/ (Apts|Ave?|Blvd|St|Ct|Dr|Rd|Pkwy|Sq|Terr|Fwy|Pl)\./${n}$1./g;
       $thistp =~ s/ (Plaza|Lane|School|Way|Mall|Road)/${n}$1/g;
       # make non-breaking spaces where we know we can
       }
@@ -315,7 +315,7 @@ sub output_fullsched {
 
       print OUT NL if $row; # all but the first one
       print OUT parastyle ('times');
-      print OUT ($sked->{ROUTES}[$row] ) if $routescol;
+      #print OUT ($sked->{ROUTES}[$row] ) if $routescol;
 
       # currently this just does specdays. If you add other notes,
       # make an array of the relevant notes and print them all
