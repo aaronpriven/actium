@@ -515,7 +515,8 @@ ROW:
 
 sub build_outsched (@) {
 
-   our (@outsched , %fullsched, %longdaynames);
+   our (@outsched , %fullsched, %longdaynames, $schooldayflag);
+   $schooldayflag="";
 
    @outsched = ();
 
@@ -672,7 +673,8 @@ sub headdays ($) {
 
          $daystring = $outsched[$column]{"NOTEKEYS"}{$used[0]};
          $daycode = $used[0];
-	 $schooldayflag = 1 if $daycode eq "SD";
+	 $schooldayflag = 1 if $daycode eq 'SD';
+
       }
 
    } else {
@@ -828,7 +830,6 @@ sub get_head_timepoints($) {
 sub output_outsched ($$$) {
 
    our (@outsched, %dirhash, %dayhash, %tphash, $schooldayflag);
-   $schooldayflag="";
    my ($head, $thismark, @thesemarks, %routes,
        $route, $lasttp, $temp, $tpnum,
        $ampm, $defaultheadtp, @markdefs, %usedmarks);
@@ -876,7 +877,7 @@ sub output_outsched ($$$) {
 
 
       print OUT 
-            '*d(' , length($head) +1 , ',2)><z10><b1>';  # drop cap
+            '*d(' , length($head) +1 , ',2)><z10><b-1>';  # drop cap
 	                                                 # at smaller size
 
 #      print OUT 
@@ -1068,11 +1069,12 @@ sub output_outsched ($$$) {
 
     print OUT '@noteheaders:Light Face = a.m.<\n><B>Bold Face = p.m.<B>';
     print OUT "\n";
-    print OUT '@noteheaders:<b>Unless otherwise specified, departure times are given for ';
+    print OUT '@noteheaders:Unless otherwise specified, departure times are given for ';
     $_ = $tphash{$defaultheadtp};
     s/\&/and/;
     s/\.$//;
-    print OUT "$_. Buses may arrive somewhat later at this location.<b>\n";
+    print OUT "$_. Buses may arrive somewhat later at this location.\n";
+
 
 #   SCHOOLDAYS
     if ($schooldayflag or $usedmarks{SD}) {
@@ -1129,6 +1131,8 @@ sub output_outsched ($$$) {
     close OUT;
 
 }
+
+#   ##############################################################
 
 sub get_scheds_for_line {
 
