@@ -22,7 +22,7 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
-use Skedfile qw(Skedread remove_blank_columns trim_sked copy_sked);
+use Skedfile qw(Skedread remove_blank_columns getfiles trim_sked copy_sked);
 use Skeddir;
 use Skedvars;
 use Byroutes 'byroutes';
@@ -101,7 +101,7 @@ unless ($options{quiet} ) {
    print ".\n";
 }
 
-my @files = glob ("skeds/*-a.txt");
+my @files = getfiles();
 
 foreach my $file (@files) {
 
