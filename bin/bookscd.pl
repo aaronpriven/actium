@@ -120,6 +120,8 @@ foreach my $thisbatch (@batchlist) {
 
 my $firstsched = 1;
 
+my $verso= 1;
+
 print REPORT "\nProcessing tables:\n";
 print STDOUT "\nProcessing tables:\n";
 
@@ -207,6 +209,19 @@ foreach my $thistable (@tables) {
    my $wholespread = ($tpcolumns+$extracolumns) > 9;
    # if there are more than nine columns, we need to prepare both sides
    # of the spread
+
+   # wholespread & verso - do nothing
+   # wholespread & not verso - print a blank (recto) page, make verso true
+   # not wholespread - toggle verso
+
+   if ($wholespread) {
+      unless ($verso) {
+         print ("<\\b>" x 12);
+         $verso = 1;
+      }
+   } else {
+     $verso = (not $verso) 
+   }
 
    my $firstpagetps;
    if ($wholespread) {
