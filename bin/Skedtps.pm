@@ -24,16 +24,22 @@ our $init = 0;
 our (%tphash , %tpxref);
 my $tpxref;
 
-# don't use this %tphash or %tpxref prior to "initialize"!
-
-# %tphash = the timepoint names. $tphash{"14TH BDWY"} is 
+# tphash = the timepoint names. tphash("14TH BDWY") is 
 # "Fourteenth St. & Broadway."
 
-# %tpxref = the cross-referenced timepoint abbreviation
-# $tpxref{"BDWY 14TH"} could be "14TH BDWY".
+# tpxref = the cross-referenced timepoint abbreviation
+# tpxref("BDWY 14TH") could be "14TH BDWY".
 
-# to use something that might be "S.C. PARK=2" -- with the 
-# =2 -- use the tphash and tpxref functions, not the hash itself
+# tpxref and tphash subroutines strip punctuation.. the only characters
+# used to determine the different timepoint names are [A-Za-z0-9= ]
+# (note space) (but actually a trailing =[0-9] are stripped too)
+
+# This is mainly to deal with a FileMaker quirk: it thinks "C.V. PKRD"
+# is the same as "C,V, PKRD" and "DEJE M.S" the same as "DEJE M.S."
+# so won't let you enter the second ones if the first ones are already there
+# (in fields marked "unique")  Which is a good thing I guess. But requires
+# this code to deal with it.
+
 
 sub initialize { goto &init }
 
@@ -56,24 +62,26 @@ sub init {
    # delete everything without punctuation
 
    foreach (0 .. $#timepoints) {
-      delete_punctuation ($timepoints[$_]{Abbrev9} , $tpnames[$_]{Xref} )
-      my $ref = $timepoints[$_]
-      delete $tpnames
-      $tpnames{$tpnames[$_]{Abbrev9}} = $tpnames[$_];
+      delete $timepoints{$timepoints[$_]{Abbrev9}};
+         # delete version with punct. from hash
+      delete_punctuation ($timepoints[$_]{Abbrev9} , $timepoints[$_]{Xref} );
+      $timepoints{$timepoints[$_]{Abbrev9}} = $timepoints[$_];
+         # add version without punct. from hash
    } # tpnames hash
 
+   foreach (0 .. $#tpnames) {
+      delete $tpnames{$tpnames[$_]{Abbrev9}};
+         # delete version with punct. from hash
+      delete_punctuation ($tpnames[$_]{Abbrev9});
+      $tpnames{$tpnames[$_]{Abbrev9}} = $tpnames[$_];
+         # add version without punct. from hash
+   } # timepoints hash
 
-   delete_punctuation ($tpnames[$num]{Abbrev9});
-      foreach my $num (0 .. $#tpnames) {
+   foreach (keys %timepoints) {
 
-   foreach my $num (0 .. $#timepoints) {
+      $status = $timepoints{$_}{XrefStatus};
 
-      delete_punctuation ($timepoints[$num]{Abbrev9});
-
-      $status = $timepoints[$num]{XrefStatus};
-
-      my $xref = $timepoints[$num]{Xref};
-      my $_ = $timepoints[$num]{Abbrev9};
+      my $xref = $timepoints{$_}{Xref};
 
       if ($tpxref == TPXREF_FULL) {
          if ($status eq 'Always') {
