@@ -1,4 +1,8 @@
-# This is NewCSV.pm, which picks out the fields from a CSV 
+# This is NewCSV.pm, which picks out the fields from a line from a 
+# FileMaker "merge" file.
+
+# This is NOT a generalized CSV parser! Merge files guarantee that their
+
 # There is a CPAN routine that does this (Text::CSV) but it's slow.
 # Even slower than this.
 
@@ -19,68 +23,55 @@ sub parse_csv ($) {
 
    my $line = shift;
 
-   # my @chars = split (// , +shift);
-
    my $quotestatus = 0; # not in quotes
 
-   # it is apparently faster to store length 
-   # and decrement when necessary rather than recomputing it
-
-   my $length = length($line);
-
    CHAR:
-   for (my $i = 0; $i < $length; $i++) { # }
+   for (my $i = 0 ; $i != -1 ; $i = index ($line, QUOTE , $i + 1) ) {
 
-      my $c = substr($line, $i, 1);
+      substr($line,$i,1,"");
+      # remove the quote from the line.
 
-      # print "i:$i\tc:$c\n";
+      my $c = substr($line, $i , 1); 
 
-      # we're working with the $c character, which is the $i'th 
-      # character of $line
+      # we are now working with the character *after* the quote.
 
-      ### If it's a quote
-      if ($c eq QUOTE) { 
+      # If it's a quote, we know we've just seen a pair of quote marks.
+      # Inside quotes, this should become a single quote, so we 
+      # just leave the quote and go to the next character.
+      # Outside quotes, this means we have a blank field. We
+      # delete the quote and go to the next field.
+
+      # If it's anything else, we know we've just seen a single quote,
+      # so we toggle $quotestatus. Then we stay in the loop,
+      # because it might be a comma.
+
+      # If the quote is the last character in the line,  $c will be "",
+      # and fail the following tests.
+
+
+      # if the next character is also a quote,
+      if ($c eq QUOTE) {
+         next CHAR if $quotestatus; 
+         # leave it alone if we're in a quoted area.
+         # FileMaker encodes " as "" inside field data.
+
          substr($line,$i,1,"");
-         $length--;
-         # remove the quote from the line
-         $c = substr($line, $i , 1); 
+         # So this is seen double quotes not inside a field area,
+         # It indicates an empty field. delete the quote. 
+         # The only valid next character is a comma.
 
-         # we are now working with the character *after* the quote.
-
-         # If it's a quote, we know we've just seen a double quote.
-         # Inside quotes, this should become a single quote, so we 
-         # just leave the quote and go to the next character.
-         # Outside quotes, this means we have a blank field. We
-         # delete the quote and go to the next field.
-
-         # If it's anything else, we know we've just seen a single quote,
-         # so we toggle $quotestatus. Then we stay in the loop,
-         # because it might be a comma.
-
-         # If the quote is the last character in the line,  $c will be "",
-         # and fail the following tests.
-
-         if ($c eq QUOTE) {
-            next CHAR if $quotestatus; # if we're in quotes, leave it
-            substr($line,$i,1,""); # otherwise, we've just seen double
-            $length--;
-                                   # quotes indicating an empty field.
-                                   # delete the quote. The only valid
-                                   # next character is a comma.
-            $c = substr($line, $i , 1); 
-            # character after the second quote
-         } else {
-               $quotestatus = not ($quotestatus);
-         }
-
+      } else {
+            $quotestatus = not ($quotestatus);
+            # it's not a double quote, so we toggle whether 
+            # we're inside a field or not.
       }
 
       next if $quotestatus;
-      # if we're in quotes, we don't need to replace the comma
 
-      ### It's a comma and we're in quotes, so make it a tab
-      substr($line,$i,1,"\t") if $c eq ",";
-
+      substr($line, $i, 1, "\t") unless ($quotestatus);
+      # OK. We know that we've just seen either a quote that ends
+      # a field. The ONLY valid next character is a comma. Change it
+      # to a tab, to avoid any commas in data.
    }
 
    # so now $line is tab-separated
