@@ -6,8 +6,6 @@
 # This program generates the point schedules associated with 
 # particular signs.
 
-
-
 # TODO - 
 # 7) Add a "noteonly" database
 # 8) deal with two-level templates
@@ -43,7 +41,7 @@ use Data::Dumper;
 
 use FPMerge qw(FPread FPread_simple);
 use IDTags;
-use Skedfile qw(Skedread);
+use Skedfile qw(Skedread merge_columns);
 use Skeddir;
 use Skedvars;
 use Skedtps qw(tphash tpxref);
@@ -163,12 +161,17 @@ sub build_point {
 
    my $skedspec = shift;
 
-   my $point = Skedread("skeds/" . $skedspec->{'SkedID'} . "-s.txt");
+   my $point = Skedread("skeds/" . $skedspec->{'SkedID'} . ".txt");
    # now $point includes all the data in the full schedule
    # This includes 
    # DAY, DIR, SKEDNAME, LINEGROUP (scalars)
    # TP, NOTEDEFS, NOTES, SPECDAYS, and ROUTES (arrays)
    # TIMES (array of arrays)
+
+   merge_columns ($point);
+   # this merges consecutive columns that have identical timepoint names.
+   # it gives you only departure times, not arrival times.
+
 
    foreach (keys %$skedspec) {
       $point->{$_} = $skedspec->{$_};
@@ -186,7 +189,7 @@ sub build_point {
 
    {
    my $noteonly = lc(substr ($point->{NoteOnly} , 0 , 1) );
-   $noteonly = "" unless $noteonly =~ /^l|s|r$/;
+   $noteonly = "" unless $noteonly =~ /^l|n|s|r$/;
    $point->{NO} = $noteonly;
    }
    # so point->{NO} is a flag, if this is note only. $point->{NoteOnly} is
@@ -250,11 +253,11 @@ sub note_definitions ($) {
 
    my $point = shift;
 
-   my %notekeys = ();
+   my %notekeys = %Skedvars::specdaynames;
 
    foreach (@{$point->{"NOTEDEFS"}}) {
       my ($key, $notedef) = split(/:/);
-      $notedef =~ s/ only//i;
+      #$notedef =~ s/ only//i;
       $notekeys{$key} = $notedef;
    }
    # Now all the note definitions from here are in
@@ -760,6 +763,9 @@ sub output_points {
             # that is an emdash - it should carry through. It's
             # potentially a crossplatform issue though.
 
+         } elsif ($noteonly eq "n" ) {
+         # No Locals note
+            $pointtext .= 'No local riders';
          }
 
          $pointtext .= IDTags::boxbreak;  # next point marker
@@ -840,7 +846,7 @@ sub output_points {
                $temp = $point->{NOTEKEYS}{$_};
                $temp =~ s/Days/days/;
                $temp =~ s/Holidays/holidays/;
-               $markdefs[$thismark] = "$temp only.";
+               $markdefs[$thismark] = "$temp.";
             }
  
             push @thesemarks, $thismark;
