@@ -34,7 +34,7 @@ sub get {
 
    my $options = shift; # $options is hash ref
 
-   my $basedir = $options->{basedir} || "$Bin/..";
+   my $basedir = $options->{basedir} || "$Bin/../db/";
 
    my $signup = $options->{signupdir}
        || $ENV{"SKEDS_SIGNUP"}
