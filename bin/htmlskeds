@@ -20,12 +20,12 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 
-use Skedfile qw(Skedread Skedwrite remove_blank_columns);
+use Skedfile qw(Skedread Skedwrite trim_sked copy_sked);
 use Myopts;
 use Skeddir;
 use Skedvars qw(%daydirhash %adjectivedaynames %bound);
 use Byroutes 'byroutes';
-use Skedtps qw(tphash tpxref %tphash %tpxref TPXREF_FULL);
+use Skedtps qw(tphash TPXREF_FULL);
 use FPMerge qw(FPread FPread_simple);
 
 our %second = ( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
@@ -67,6 +67,8 @@ $mon = qw(Jan. Feb. March April May June July Aug. Sept. Oct. Nov. Dec.)[$mon];
 $year += 1900; # Y2K compliant
 $prepdate = "$mon $mday, $year";
 }
+
+$prepdate = localtime(time); # override for debugging only
 
 our (@lines , %lines);
 
@@ -110,20 +112,22 @@ foreach my $route (sort byroutes keys %skednamesbyroute) {
 
    next if $second{$route};
 
+   my @theseroutes;
    my $linename;
    if ($first{$route}) {
+      @theseroutes = ( $route , $first{$route} );
       if ( $lines{$route}{Name} eq $lines{$first{$route}}{Name} ) {
 
-         $linename = "$route  & $first{$route}-$lines{$route}{Name}";
+         $linename = "$route  & $first{$route} $lines{$route}{Name}";
 
       } else {
 
-         $linename = "$route $lines{$route}{Name} & $first{$route}-" .
+         $linename = "$route $lines{$route}{Name} & $first{$route} " .
                      $lines{$first{$route}}{Name};
       }
 
-
    } else {
+      @theseroutes = ($route);
       $linename = "$route $lines{$route}{Name}";
    }
 
@@ -191,10 +195,14 @@ EOF
          "[Key to timepoint abbreviations follows the schedule]</a></p>", 
          "<pre>";
 
+      my $trimsked = copy_sked($skeds{$skedname});
+
+      #print join ("-" , @theseroutes) , "\n";
+      trim_sked ($trimsked , \@theseroutes );
+
       my @tp = ();
 
-      my @timepointsnoeq = (@{$skeds{$skedname}{TP}}) ;
- 
+      my @timepointsnoeq = (@{$trimsked->{TP}}) ;
       s/=.*// foreach @timepointsnoeq;
 
       foreach my $tp (@timepointsnoeq) {
@@ -207,13 +215,20 @@ EOF
          $tp[$_] .= sprintf " %-5s" , scalar$temp[$_] foreach (0 , 1);
       }
 
-      my $tps = "<hr>RTE  $tp[0]\nNUM  $tp[1]\n";
+      my %specdays = ();
+      foreach my $specday ( @{$trimsked->{SPECDAYS}}) {
+         $specdays{$specday} = 1;
+      }
+
+      delete $specdays{""} if $specdays{""};
+
+      my $tps = "<hr>   RTE  $tp[0]\n   NUM  $tp[1]\n";
 
       my $count = 0;
 
       ROW:
-      for my $row (0 .. $#{$skeds{$skedname}{ROUTES}}) {
-         my $thisroute = $skeds{$skedname}{ROUTES}[$row];
+      for my $row (0 .. $#{$trimsked->{ROUTES}}) {
+         my $thisroute = $trimsked->{ROUTES}[$row];
 
          next ROW if $thisroute ne $route and
             $thisroute ne $first{$route};
@@ -222,13 +237,23 @@ EOF
          print HTML "\n" unless $count % 5;
          $count++;
 
-         printf HTML "%3s " , $skeds{$skedname}{ROUTES}[$row];
+         printf HTML "%2s " , $trimsked->{SPECDAYS}[$row];
+         printf HTML "%3s " , $trimsked->{ROUTES}[$row];
 
          for my $col (0 .. $#{$skeds{$skedname}{TP}}) {
-             printf HTML " %5s" , $skeds{$skedname}{TIMES}[$col][$row];
+             printf HTML " %5s" , $trimsked->{TIMES}[$col][$row];
          }
          print HTML "\n";
 
+      }
+
+      if (scalar keys %specdays) {
+         print HTML "\n";
+         print HTML "SD   School Days Only\n" if $specdays{SD};
+         print HTML "SH   School Holidays Only\n" if $specdays{SH};
+         print HTML "TT   Tuesdays and Thursdays Only\n" if $specdays{SH};
+         print HTML "TF   Tuesdays and Fridays Only\n" if $specdays{SH};
+         print HTML "WF   Wednesdays and Fridays Only\n" if $specdays{SH};
       }
 
       print HTML 
@@ -236,7 +261,7 @@ EOF
 
       foreach my $tp (@timepointsnoeq) {
          printf HTML "%-9s  " , $tp;
-         print HTML $tphash{$tp} , "\n";
+         print HTML tphash($tp) , "\n";
       }
   
       print HTML "\n</pre><hr><p>";
@@ -245,9 +270,9 @@ EOF
       print HTML "</p>\n</body></html>";
 
       close HTML;
-   }
+   } # skedname
 
-}
+} # route
 
 open INDEX , ">html/index.html" or die "Can't open html/index.html: $!";
 print INDEX  "<HTML><HEAD><TITLE>AC Transit Schedules</TITLE></HEAD>\n<BODY>";
