@@ -1,5 +1,6 @@
 # This is NewCSV.pm, which picks out the fields from a CSV 
 # There is a CPAN routine that does this (Text::CSV) but it's slow.
+# Even slower than this.
 
 package NewCSV;
 
@@ -9,76 +10,82 @@ use Exporter;
 our @ISA = ('Exporter');
 our @EXPORT = qw(parse_csv);
 
-use constant IN => 1;
-use constant OUT => 0;
 use constant QUOTE => '"';
+use integer; # ever so slightly faster
 
 1;
 
 sub parse_csv ($) {
 
    my $line = shift;
-   my $newline = "";
 
    # my @chars = split (// , +shift);
 
-   my $quotestatus = OUT;
+   my $quotestatus = 0; # not in quotes
 
+   # it is apparently faster to store length 
+   # and decrement when necessary rather than recomputing it
 
-   local ($_);
-   for (my $i = 0; $i < length($line); $i++) {
+   my $length = length($line);
 
-      $_ = substr($line, $i, 1);
+   CHAR:
+   for (my $i = 0; $i < $length; $i++) { # }
 
-      ### It's a comma
- 
-      if ($_ eq ",") { 
-         $newline .= ( $quotestatus ? "," : "\t" );
-         # if we're in quotes, it's still a comma, otherwise it's a tab
+      my $c = substr($line, $i, 1);
 
-      ### It's a quote
+      # print "i:$i\tc:$c\n";
 
-      }  elsif ($_ eq QUOTE) {
-         $_ = substr($line, $i + 1, 1); 
-         # this is now the *following* character
+      # we're working with the $c character, which is the $i'th 
+      # character of $line
 
-         ### We've been in quotes
- 
-         if ($quotestatus) { 
+      ### If it's a quote
+      if ($c eq QUOTE) { 
+         substr($line,$i,1,"");
+         $length--;
+         # remove the quote from the line
+         $c = substr($line, $i , 1); 
 
-            ### following char is a quote -- a double quote representing
-            ### a quote char in the field
+         # we are now working with the character *after* the quote.
 
-            if ($_ eq QUOTE) {
-               $newline .= QUOTE;
-               $i++; 
-               # add a quote to $newline and skip the next entry
+         # If it's a quote, we know we've just seen a double quote.
+         # Inside quotes, this should become a single quote, so we 
+         # just leave the quote and go to the next character.
+         # Outside quotes, this means we have a blank field. We
+         # delete the quote and go to the next field.
 
-            ### next char is not a quote -- so we're no longer in quotes
+         # If it's anything else, we know we've just seen a single quote,
+         # so we toggle $quotestatus. Then we stay in the loop,
+         # because it might be a comma.
 
-            } else {
-               $quotestatus = OUT;
-            }
+         # If the quote is the last character in the line,  $c will be "",
+         # and fail the following tests.
 
-         ### It's a quote, and we've not been in quotes
-
-         } else { # we've not been in quotes
-               $quotestatus = IN;
-               # now we are
+         if ($c eq QUOTE) {
+            next CHAR if $quotestatus; # if we're in quotes, leave it
+            substr($line,$i,1,""); # otherwise, we've just seen double
+            $length--;
+                                   # quotes indicating an empty field.
+                                   # delete the quote. The only valid
+                                   # next character is a comma.
+            $c = substr($line, $i , 1); 
+            # character after the second quote
+         } else {
+               $quotestatus = not ($quotestatus);
          }
-
-      # neither quote nor comma
-      } else {
-
-      $newline .= $_;
 
       }
 
-   } # end for loop 
+      next if $quotestatus;
+      # if we're in quotes, we don't need to replace the comma
 
-   # so now $newline is tab-separated
+      ### It's a comma and we're in quotes, so make it a tab
+      substr($line,$i,1,"\t") if $c eq ",";
 
-   return split (/\t/ , $newline);
+   }
+
+   # so now $line is tab-separated
+
+   return split (/\t/ , $line);
    # returns the array
 
 }
