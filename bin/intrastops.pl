@@ -8,6 +8,7 @@ no strict 'subs';
 require 'pubinflib.pl';
 
 use constant ProgramTitle => "AC Transit Stop Signage Database";
+use constant TAB => "\t";
 
 my (%types , @refs, @keys, %stopdata, $stopdialog, $dataresult, $tpresult);
 
@@ -24,7 +25,9 @@ my $stopsfile = ($ARGV[1] or "stops.txt");
 init_vars();
 
 #open OUT , ">signlist.html";
-open OUT , ">w:/marcom/signlist.html";
+open OUT , ">w:/marcom/signlist.html" or die;
+
+open FIELD, ">fieldwork.txt" or die;
 
 select OUT;
 
@@ -38,6 +41,8 @@ print <<'EOF';
 <p>This is a list of signs in the district with site-specific 
 schedule information. Write <a href="mailto:apriven@actransit.org">
 Aaron Priven</a> for more information.</p>
+
+<p>The list is sorted by project, then by city, then by the street names.</p>
 
 EOF
 
@@ -62,24 +67,40 @@ foreach (sort
         } 
       keys %stops) 
 {
+
+   next if $stops{$_}{"Inactive"};
  
    print "<tr><td>";
 
    my $desc = stopdescription ($_ , $stops {$_} , 1) ;
    $desc =~ s/\(\#.*?\)//;
 
-   print join (   "</td><td>"  ,
+   print join(   "</td><td>"  ,
           $stops{$_}{"StopID"} ,
-          $stops{$_}{"City"} ,
-          $stops{$_}{"Neighborhood"} ,
+#          $stops{$_}{"City"} ,
+#          $stops{$_}{"Neighborhood"} ,
 #          stopdescription ($_ , $stops {$_} , 1) ,
           $desc,
           ( $types{$stops{$_}{"SignType"}} or $stops{$_}{"SignType"} ) ,
           $stops{$_}{"PrintNotes"} ,
-          $stops{$_}{"DateInstalled"} ,
+          $stops{$_}{"DatePrinted"} ,
           $stops{$_}{"Project"} );
           
    print "</td></tr>\n";
+
+
+   print FIELD join( TAB ,
+          $stops{$_}{"StopID"} ,
+          $stops{$_}{"City"} ,
+          $stops{$_}{"Neighborhood"} ,
+          $desc,
+          $stops{$_}{"NearFar"} ,
+          ( $types{$stops{$_}{"SignType"}} or $stops{$_}{"SignType"} ) ,
+          $stops{$_}{"PrintNotes"} ,
+          $stops{$_}{"DatePrinted"} ,
+          $stops{$_}{"Inactive"} ,
+          $stops{$_}{"Project"} ) , "\n";
+
 }
 
 print "</table></body></html>";
@@ -91,8 +112,10 @@ print "</table></body></html>";
 sub printheaders {
 
    print OUT "<table border=1>\n<tr><th>" , join ("</th><th>" , 
-     "Stop ID" , "City" , "Neighborhood" , "Location" ,
-       "Sign Type" , "Notes" , "Date Installed" , "Project" );
+     "Stop ID" , 
+# "City" , "Neighborhood" , 
+        "Location" ,
+       "Sign Type" , "Notes" , "Date Printed" , "Project" );
    print OUT "</th></tr>\n";
 
 
