@@ -44,6 +44,15 @@ our %tphash;
 
 build_tphash();
 
+foreach my $key (keys %tphash) {
+
+   $tphash{$key} =~ s/ (Apts|Ave|Blvd|St|Ct|Dr|Rd|Pkwy|Sq|Terr|Fwy|Pl)\./<\\!s>$1./g;
+
+   $tphash{$key} =~ s/ (Plaza|Lane|School|Way|Mall|Road)/<\\!s>$1/g;
+
+}
+
+
 my %linename = build_linenamehash();
 
 my $batchfile = $ARGV[1];
