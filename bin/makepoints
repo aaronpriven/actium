@@ -57,6 +57,8 @@ EOF
 our (@signs, @stops, @lines, @skedspec);
 our (%signs, %stops, %lines, %skedspec);
 
+our ($schooldayflag, $anysecondflag);
+
 print "Timepoints and timepoint names... " unless $options{quiet};
 my $vals = Skedtps::initialize;
 print "$vals timepoints.\nSigns... " unless $options{quiet};
@@ -112,6 +114,9 @@ foreach my $signid (sort {$a <=> $b} @signstodo) {
       print "$signid ";
    }
 
+   $schooldayflag = 0;
+   $anysecondflag = 0;
+   
    my @points = ();
    
    SCHEDULE:
@@ -132,8 +137,6 @@ sub build_point {
 
    my $skedspec = shift;
 
-   my $schooldayflag = "";
-
    my $point = Skedread("skeds/" . $skedspec->{'SkedID'} . "-s.txt");
    # now $point includes all the data in the full schedule
    # This includes 
@@ -153,17 +156,24 @@ sub build_point {
    # BlankTP_NoEquals, SecondTP_NoEquals
 
    # Some of these will be blank because they are calculated fields not
-   # exported.
+   # stored
 
    {
    my $i=0;
    $point->{TPNUM}{$_} = $i++ foreach @{$point->{TP}};
    } # calculates timepoint column numbers
 
-   $point->{TPXREF} = $tpxref{$point->{Timepoint}};
-
    $point->{TPNUM2USE} = $point->{TPNUM}{$point->{Timepoint}} ;
-                                              # order in column
+
+   $point->{DOSECOND} = 0;
+   if ( lc($point->{UseSecondTimepoint}) eq "yes" ) {
+      $point->{S_TPNUM2USE} = $point->{TPNUM}{$point->{SecondTimepoint}};
+      unless ($point->{S_TPNUM2USE} == $point->{TPNUM2USE}) {
+         $point->{DOSECOND} = 1;
+         $anysecondflag = 1;
+      }
+   }
+
    $point->{ROUTES2USE} = [ (split "\n" , $point->{Lines}) ];
 
    $point->{NOTEKEYS} = note_definitions($point);
@@ -180,12 +190,19 @@ sub build_point {
 
    # and we also just built $point->{LASTTP}
 
+
+   { # block for scoping
+   my $temp = $point->{M_TIMEPOINT};
+   $temp =~ s/=\d+$//; # eliminate trailing equals signs and digits
+   $point->{M_TPXREF} = $tpxref{$temp};
+   }
+
    $point->{HEADNUM} = [sort byroutes @{$point->{ROUTES2USE}}];
    # in the old windows version, there was a long routine that
    # combined things like 51/51A into a single number (51). 
    # I decided not to do that anymore
    
-   ( $point->{DAY2USE} , $point->{HEADDAYS} , $schooldayflag) = 
+   ( $point->{DAY2USE} , $point->{HEADDAYS} ) = 
        headdays ($point);
    # get the header day text ("Mon thru Fri", etc.) 
 
@@ -223,9 +240,40 @@ sub build_used {
    
    my $point = shift;
 
-   my (%routes);
+   my (%routes, $doblank, $blanktpnum, $dosecond , $s_tpnum);
 
    my $tpnum = $point->{TPNUM2USE};
+
+   # is there a second timepoint as well as the first?
+
+   $dosecond = 0;
+   if ($point->{DOSECOND}) {
+      $dosecond = 1; # it's easier to have a flag than to keep using "exists"
+      $s_tpnum = $point->{S_TPNUM2USE};
+   }
+
+   # the following implements the "blank or nonblank" thing
+
+   $doblank = 0; 
+   if ( lc($point->{BlankorNonBlank}) eq "blank" ) {
+      $doblank = -1; 
+   } elsif ( lc($point->{BlankorNonBlank}) eq "nonblank" ) {
+      $doblank = 1;
+   }
+
+   if ($doblank and exists ( $point->{TPNUM}{$point->{BlankTimepoint}} ) ) {
+      # if the user specified that we're to look for blank timepoints,
+      # and there is a valid timepoint number for that entry
+      $blanktpnum = ($point->{TPNUM}{$point->{BlankTimepoint}} ) ;
+      # $blanktpnum is the one we're looking at.
+      $doblank = 0 if $blanktpnum == $tpnum;
+      # but don't do it if the blanktp is the same as this timepoint,
+      # since that makes no sense.
+   } else {
+      $doblank = 0;
+      # otherwise, the user specified an invalid "blank" timepoint, and
+      # thus we just pretend the user didn't ask for us to look at it.
+   }
 
    my %used = ();
 
@@ -238,15 +286,37 @@ sub build_used {
    # provides an easy "is an element" lookup
 
 ROW: 
-   for (my $row = 0; $row < scalar @{$point->{"TIMES"}[$tpnum]};
+   for (my $row = 0; $row < scalar @{$point->{"ROUTES"}};
             $row++) {
 
       next ROW unless $routes{$point->{ROUTES}[$row]};
       # if this route isn't on the list of routes to use, skip this row
       # (so if we're printing out a 40 schedule, the 43 won't show up)
 
-      next ROW unless $point->{TIMES}[$tpnum][$row];
+      my $thistpnum = $tpnum;
+      if ($dosecond) {
+         next ROW unless $point->{TIMES}[$tpnum][$row] or 
+                         $point->{TIMES}[$s_tpnum][$row];
+         $thistpnum = $s_tpnum unless $point->{TIMES}[$tpnum][$row];
+      } else {
+         next ROW unless $point->{TIMES}[$tpnum][$row];
+      }
       # if there's no time for this row, skip it
+      # now "$thistpnum" is the time we will actually use, whether it is
+      # the main timepoint or the second timepoint
+
+      # the following implements the "am or pm" thing
+      if ($point->{AmPm} =~ /a/i ) {
+         next ROW unless $point->{TIMES}[$thistpnum][$row] =~ /a$/;
+      } elsif ($point->{AmPm} =~ /p/i ) {
+         next ROW unless $point->{TIMES}[$thistpnum][$row] =~ /p$/;
+      }
+
+      if ($doblank == 1)  { # not blank
+         next ROW unless $point->{TIMES}[$blanktpnum][$row];
+      } elsif ($doblank == -1) { # blank
+         next ROW     if $point->{TIMES}[$blanktpnum][$row];
+      }
 
       my $lasttpnum;
       TPS: 
@@ -264,7 +334,7 @@ ROW:
 
       # save the lasttp abbrev for when we figure out where the destination is
 
-      next ROW if $lasttpnum eq $tpnum;
+      next ROW if $lasttpnum == $thistpnum;
       # Skip this time if it's the last one in the row.
       # We don't want to tell people when buses leave from this point
       # if they go no further from here
@@ -292,16 +362,55 @@ ROW:
       $used{SPECDAYS}{$_}++;
 
       $used{ROUTES}{$point->{ROUTES}[$row]}++;
-
       # ROUTES will never be blank.
+
+      if ($dosecond) {
+         if ($thistpnum == $tpnum) {
+            $used{TP}{Timepoint}++;
+         } else {
+            $used{TP}{SecondTimepoint}++;
+         }
+      }
+      # this is whether the main timepoint or the second timepoint 
+      # is more frequent
 
    }
 
    # save USED array in $point
    $point->{USED} = \%used;
 
-   # put the most common route for each column in $point->{MAINROUTE}
+   if ($dosecond) {
+      if ($used{TP}{Timepoint} >= $used{TP}{SecondTimepoint}) {
+         # if the first timepoint is more common than the second one,
+         $point->{FIRSTISMAIN} = 1;
+         $point->{L_EXACT}     = $point->{ExactSecondTP};
+         $point->{L_TIMEPOINT} = $point->{SecondTimepoint};
+         $point->{L_TPNUM2USE} = $point->{S_TPNUM2USE};
+         $point->{M_EXACT}     = $point->{ExactTP};
+         $point->{M_TIMEPOINT} = $point->{Timepoint};
+         $point->{M_TPNUM2USE} = $point->{TPNUM2USE};
+         # "M" means "Main". "L" means "Lesser."
+      } else {
+         $point->{FIRSTISMAIN} = 0;
+         $point->{L_EXACT}     = $point->{ExactTP};
+         $point->{L_TIMEPOINT} = $point->{Timepoint};
+         $point->{L_TPNUM2USE} = $point->{TPNUM2USE};
+         $point->{M_EXACT}     = $point->{ExactSecondTP};
+         $point->{M_TIMEPOINT} = $point->{SecondTimepoint};
+         $point->{M_TPNUM2USE} = $point->{S_TPNUM2USE};
+      }
+   } else {
+         $point->{FIRSTISMAIN} = 1;
+         $point->{M_TIMEPOINT} = $point->{Timepoint};
+         $point->{M_TPNUM2USE} = $point->{TPNUM2USE};
+         $point->{M_EXACT} = $point->{ExactTP};
+   }
+   # if we combine two timepoints, and the second one is more frequent than
+   # the first, make $point->{MAINTP} "S_" -- this is a prefix used later.
+   # Otherwise, make it nothing.
 
+
+   # put the most common route for each column in $point->{MAINROUTE}
    $point->{MAINROUTE} = 
       ( sort { $used{ROUTES}{$b} <=> $used{ROUTES}{$a} } 
              keys %{$used{ROUTES}})[0];
@@ -319,8 +428,6 @@ sub headdays {
 
    my $point = shift;
 
-   my ($schooldayflag ) = "";
-   
    my @used = keys %{$point->{USED}{SPECDAYS}};
    # now we have the used special days in @used
 
@@ -351,7 +458,8 @@ sub headdays {
 
    }
 
-   return $daycode , $daystring , $schooldayflag;
+#   return $daycode , $daystring , $schooldayflag;
+   return $daycode , $daystring ;
 
 }
 
@@ -365,7 +473,7 @@ sub headdest {
    my (%lasttpfreq) = ();
 
    for (my $row = 0; 
-            $row < scalar @{$point->{"TIMES"}[$point->{TPNUM2USE}]};
+            $row < scalar @{$point->{ROUTES}};
             $row++) {
       next unless usedrow($point, $row) and
             $point->{ROUTES}[$row] eq $point->{MAINROUTE};
@@ -388,7 +496,10 @@ sub headdest {
       $point->{NOTEKEYS}{$_} = $tphash{$_};
    }
 
-   return $lasttp, $tphash{$lasttp};
+   my $hashlookuptp = $lasttp;
+   $hashlookuptp =~ s/=[0-9]*//;
+
+   return $lasttp, ($tphash{$hashlookuptp} or $hashlookuptp);
 
 }
 
@@ -400,8 +511,8 @@ sub output_points {
 
    our ($schooldayflag);
 
-   my ($head, $thismark, @thesemarks, %routes,
-       $route, $lasttp, $temp, $tpnum,
+   my ($head, $thismark, @thesemarks, 
+       $route, $lasttp, $temp, 
        $ampm, @markdefs, %usedmarks);
 
    local ($_);
@@ -423,14 +534,10 @@ sub output_points {
        } @points;
 
 
-   my ($defaultheadtp, $defaultheadtpexact) 
+   my ($defaultheadtp, $defaultheadtpexact, $justoneheadtp) 
        = get_head_timepoints (\@points);
 
    foreach my $point (@points) {
-
-      foreach (@{$point->{"ROUTES2USE"}}) {
-         $routes{$_}=1;
-      } # quick is-an-element lookup
 
       $head = join ("/" , @{$point->{"HEADNUM"}});
 
@@ -451,7 +558,7 @@ sub output_points {
 
       print OUT "$head " , '<b$><z$>';
 
-      print OUT $point->{"HEADDAYS"} , " to " ,
+      print OUT $point->{HEADDAYS} , " to " ,
                 $point->{HEADDEST};
 
       @thesemarks = ();
@@ -480,8 +587,7 @@ sub output_points {
       # add note to indicate that times refer to the proper timepoint
       # if not the same as the current timepoint
 
-      $_ = $point->{TPXREF};
-      # $_ = $point->{Timepoint};
+      $_ = $point->{M_TPXREF};
 
       if ($defaultheadtp ne $_) {
       # if the default end timepoint for the schedule as a whole 
@@ -494,12 +600,13 @@ sub output_points {
             $thismark = ++$markcounter;
             $usedmarks{"Timepoint:$_"} = $thismark;
             $temp = $tphash{$_};
+#            print "<<$_:$temp>> ";
             $temp =~ s/\.$//;
             $markdefs[$thismark] = 
                "Departure times are given for $temp." ;
             $markdefs[$thismark] .=
                " Buses may arrive somewhat later at this location."
-               unless $point->{ExactTP} eq "Yes";
+               unless lc($point->{M_EXACT}) eq "yes";
          }
  
          push @thesemarks, $thismark;
@@ -510,19 +617,29 @@ sub output_points {
            if scalar (@thesemarks);
       #<V> is "superior" type
 
-      print OUT "<\\c>";                                     # next point
+      print OUT "<\\c>"; # next column (really, next box)
 
       my $prev = "z";
 
-      $tpnum = $point->{"TPNUM2USE"};
-      
       for (my $row = 0; 
-            $row < scalar @{$point->{"TIMES"}[$tpnum]};
-            $row++) {
+            $row < scalar @{$point->{ROUTES}};
+            $row++) 
+      {
 
-         next unless vec ($point->{"USEDROWS"} , $row, 1);
+         next unless vec ($point->{USEDROWS} , $row, 1);
 
-         local ($_) = $point->{"TIMES"}[$tpnum][$row];
+         local ($_) = $point->{"TIMES"}[$point->{TPNUM2USE}][$row];
+
+         # find out if this one is main or lesser
+         my $lesser = 0;
+         if ($point->{DOSECOND}) { 
+            $lesser = 1 if ($_ xor $point->{FIRSTISMAIN} );
+            # so, if the first timepoint has a time but the first one
+            # isn't main, or the first timepoint has no time and
+            # the first one is main, then this row is lesser, not main.
+            # Whew.
+            $_ = $_ || $point->{"TIMES"}[$point->{S_TPNUM2USE}][$row];
+         }
 
          print OUT "\r" unless $prev eq "z";
 
@@ -532,6 +649,8 @@ sub output_points {
          if ($ampm ne $prev) {
              print OUT ($ampm eq 'a' ? '@amtimes:' : '@pmtimes:' );
              $prev = $ampm;
+             # $_ .= $ampm 
+             # if you want to add the "a" or "p back, uncomment the line above
          }
          # if $ampm not the same as the last one, print the appropriate
          # style sheet spec, and set the previous to be this one
@@ -540,7 +659,7 @@ sub output_points {
 
          print OUT "\t$_";
 
-         # time notes
+         # footnotes on the time
 
          @thesemarks = ();
 
@@ -568,8 +687,7 @@ sub output_points {
 
          }
          
-         # routes and timepoint
-	 #
+         # routes, last timepoint
 
          $_ = $point->{"ROUTES"}[$row];
 
@@ -579,16 +697,17 @@ sub output_points {
          # route is nothing if it's the same as the most common route,
          # otherwise it's the route from the row
 
-         $_ = $point->{"LASTTP"}[$row]; 
+         $_ = $point->{LASTTP}[$row]; 
          $lasttp = $_ if $_ ne $point->{"LASTTP2USE"};
 
          # $_ is $route plus $lasttp, with a colon in the middle if 
          # both are valid
 
-         if ($route or $lasttp) {
+
+         if ($route or $lasttp or $lesser) {
             # if there's a different route or last timepoint,
 
-            $_ = "$route:$lasttp";
+            $_ = "$route:$lasttp:$lesser";
  
             if ($usedmarks{$_}) {
                $thismark = $usedmarks{$_};
@@ -596,21 +715,39 @@ sub output_points {
                $thismark = ++$markcounter;
                $usedmarks{$_} = $thismark;
 
-               if ($route) {
-                   $temp = "Line $route";
-                   $temp .= ", to " .
-                           $tphash{$lasttp} if $lasttp;
+               $markdefs[$thismark] = "";
 
-               } else {
-                  $temp = "To $tphash{$lasttp}";
+               if ($route or $lasttp) {
+                  if ($route) {
+                      $temp = "Line $route";
+                      $temp .= ", to " .
+                              $tphash{$lasttp} if $lasttp;
+   
+                  } else {
+                     $temp = "To $tphash{$lasttp}";
+                  }
+   
+                  $temp =~ s/\.$//;
+               
+                  $markdefs[$thismark] = "$temp.";
                }
 
-               $temp =~ s/\.$//;
-               
-               $markdefs[$thismark] = "$temp.";
+               if ($lesser) {
+
+                  $temp = $tphash{$tpxref{$point->{L_TIMEPOINT}}};
+                  $temp =~ s/\.$//;
+
+                  $markdefs[$thismark] .= " " if $markdefs[$thismark];
+                  $markdefs[$thismark] .= 
+                     "Departure time is given for $temp." ;
+                  $markdefs[$thismark] .=
+                     " Buses may arrive somewhat later at this location."
+                     unless lc($point->{L_EXACT}) eq "yes";
+               }
+
             }
 
-         push @thesemarks, $thismark;
+            push @thesemarks, $thismark;
 
          }
 
@@ -631,7 +768,13 @@ sub output_points {
 
     print OUT '@noteheaders:Light Face = a.m.<\n><B>Bold Face = p.m.<B>';
     print OUT "\r";
-    print OUT '@noteheaders:Unless otherwise specified, departure times are given for ';
+    print OUT '@noteheaders:';
+
+    if ( not ($anysecondflag) and $justoneheadtp ) { 
+       print OUT 'Departure times are given for ';
+    } else {
+       print OUT 'Unless otherwise specified, departure times are given for ';
+    }
     $_ = $tphash{$defaultheadtp};
     s/\&/and/;
     s/\.$//;
@@ -681,7 +824,6 @@ sub output_points {
 
 }
 
-
 sub get_head_timepoints {
 
    # returns the default timepoint *across* columns.
@@ -696,10 +838,10 @@ sub get_head_timepoints {
    for ( my $column = ( $#points); 
             $column >= 0;  $column-- ) {
 
-      $_ = $points[$column]{TPXREF};
+      $_ = $points[$column]{M_TPXREF};
       $tpfreq{$_}++;
       $tpcols{$_} = $column;
-      $exact{$_}  = $points[$column]{ExactTP};
+      $exact{$_}  = $points[$column]{M_EXACT};
    }
 
 
@@ -713,7 +855,10 @@ sub get_head_timepoints {
    # return the first (highest) one.  If two or more are the same, 
    # picks the first one in order by column.
 
-   return ($thistp, $exact{$thistp})
+   my $justoneheadtp = 0;
+   $justoneheadtp = 1 if scalar(%tpfreq) == 1;
+
+   return ($thistp, $exact{$thistp} , $justoneheadtp)
 
 }
 
@@ -723,6 +868,19 @@ sub signdescription {
 
    my $uniqueid = $signs{$signid}{UNIQUEID};
    my $thisstop = $stops{$uniqueid}; # this is a reference
+
+   my ($on, $at) = ($thisstop->{OnF} , $thisstop->{AtF} ) ;
+
+   foreach ($on , $at) {
+
+      s/Av\.?$/Ave./;
+      s/Wy\.?$/Way/;
+      s/Path\.$/Path/;
+      s/Park\.$/Park/;
+      s/Ln\.$/Lane/;
+      s/Lp\.$/Loop/;
+
+   }
 
    my $description = "";
 
