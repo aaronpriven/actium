@@ -304,6 +304,7 @@ ROW:
       # if there's no time for this row, skip it
       # now "$thistpnum" is the time we will actually use, whether it is
       # the main timepoint or the second timepoint
+      # uses the first tpnum if both have times
 
       # the following implements the "am or pm" thing
       if ($point->{AmPm} =~ /a/i ) {
@@ -708,6 +709,11 @@ sub output_points {
             # if there's a different route or last timepoint,
 
             $_ = "$route:$lasttp:$lesser";
+
+# TODO
+
+            my $hashlasttp = $lasttp;
+            $hashlasttp =~ s/=\d+$//;
  
             if ($usedmarks{$_}) {
                $thismark = $usedmarks{$_};
@@ -721,10 +727,10 @@ sub output_points {
                   if ($route) {
                       $temp = "Line $route";
                       $temp .= ", to " .
-                              $tphash{$lasttp} if $lasttp;
+                              $tphash{$hashlasttp} if $lasttp;
    
                   } else {
-                     $temp = "To $tphash{$lasttp}";
+                     $temp = "To $tphash{$hashlasttp}";
                   }
    
                   $temp =~ s/\.$//;
