@@ -40,9 +40,8 @@ EOF
 
 # read in FileMaker Pro data into variables in package main
 
-our (@timepoints, %timepoints , @tpnames, %tpnames, @skedidx);
+our (@timepoints, %timepoints , @skedidx);
 
-FPread_simple ('TPNames.csv' , \@tpnames, \%tpnames, 'Abbrev9');
 FPread_simple ('Timepoints.csv' , \@timepoints, \%timepoints, 'Abbrev9');
 FPread('Skedidx.csv' , \@skedidx );
 
@@ -96,7 +95,7 @@ foreach my $linegroup (sort byroutes keys %linegroups) {
    $linegrouptext{$linegroup} = $linegrouptext;
    my @tps = ();
    for (sort keys %{$linegroups{$linegroup}}) {;
-       my $tp = ("$_: " . $tpnames{$_}{Modified}) ;
+       my $tp = ("$_: " . $timepoints{$_}{TPName}) ;
        $tp .= ", " . $timepoints{$_}{City} if $timepoints{$_}{City};
        push @tps, $tp;
 
@@ -108,7 +107,7 @@ foreach my $linegroup (sort byroutes keys %linegroups) {
 print qq(</dl>\n<h2><a name="lg">Line Groups by Timepoint</a></h2>\n<dl>\n);
 
 foreach my $tp9 (sort keys %tp9s) {
-   print "<dt>$tp9: " , $tpnames{$tp9}{Modified} ;
+   print "<dt>$tp9: " , $timepoints{$tp9}{TPName} ;
    print ", " . $timepoints{$tp9}{City} if $timepoints{$tp9}{City};
 
    print "\n";
