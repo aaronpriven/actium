@@ -102,10 +102,10 @@ sub init_vars () {
 
    our %longdaynames = 
         ( WD => "Mon thru Fri" ,
-          WE => "Sat, Sun and Holidays" ,
+          WE => "Sat, Sun and Hol" ,
           DA => "Daily" ,
           SA => "Saturdays" ,
-          SU => "Sundays and Holidays" ,
+          SU => "Sun and Hol" ,
         );
 
    our %longdirnames = 
@@ -651,7 +651,7 @@ sub headdays ($) {
 
    my $column = $_[0];
 
-   our (@outsched, %longdaynames);
+   our (@outsched, %longdaynames, $schooldayflag );
    
    my @used = keys %{$outsched[$column]{USED}{"SPEC DAYS"}};
    # now we have the lists of used special days in %used
@@ -672,6 +672,8 @@ sub headdays ($) {
 
          $daystring = $outsched[$column]{"NOTEKEYS"}{$used[0]};
          $daycode = $used[0];
+	 $schooldayflag = $daycode if $daycode eq "SD";
+
       }
 
    } else {
@@ -687,44 +689,56 @@ sub headdays ($) {
 
 sub headnum ($) {
 
-   # decides which route number to use at the top.
-
-   # my @routes = @_;
-
    my $column = $_[0];
-
-   my (@temp, %routes, @headnum) =();
-
    our (@outsched);
+   return sort byroutes (@{$outsched[$column]{"ROUTES2USE"}})
 
-   local($_);
+   # The following code merges things like "51" and 
+   # "51A" into "51". But I have decided I would just as soon it not do that.
+   # So I have told it not to. Hah.
 
-   foreach (sort byroutes @{$outsched[$column]{"ROUTES2USE"}}) {
-        @temp = split (/(?<=\d)(?=\D)/);
-        $temp[1] = "BLANK" unless $temp[1];
-        push @{$routes{$temp[0]}} , $temp[1];
-   }
-   # so now the hash %routes has keys which are the numeric parts,
-   # and values which are a reference to a list of the letter parts.
-   # i.e., for the 51, %routes will be (  51 => [ "BLANK" , "A" ] )
-   # note that the "sort byroutes" means that the final array will be
-   # sorted
 
-   foreach (keys %routes) {
+#   # decides which route number to use at the top.
+#
+#   # my @routes = @_;
+#
+#   my $column = $_[0];
+#
+#   my (@temp, %routes, @headnum) =();
+#
+#   our (@outsched);
+#
+#   local($_);
+#
+#   foreach (sort byroutes @{$outsched[$column]{"ROUTES2USE"}}) {
+#        @temp = split (/(?<=\d)(?=\D)/);
+#        $temp[1] = "BLANK" unless $temp[1];
+#        push @{$routes{$temp[0]}} , $temp[1];
+#   }
+#   # so now the hash %routes has keys which are the numeric parts,
+#   # and values which are a reference to a list of the letter parts.
+#   # i.e., for the 51, %routes will be (  51 => [ "BLANK" , "A" ] )
+#   # note that the "sort byroutes" means that the final array will be
+#   # sorted
+#
+#   foreach (keys %routes) {
+#
+#      my $number = $_;
+#
+#      $number .= $routes{$_}[0] 
+#             if scalar (@{$routes{$_}}) == 1 and $routes{$_}[0] ne "BLANK";
+#      # if there's only one letter part, and it isn't "BLANK", add it to 
+#      # $temp
+#
+#      push @headnum, $number;
+#   }
+#   
+#   return sort byroutes @headnum;
 
-      my $number = $_;
-
-      $number .= $routes{$_}[0] 
-             if scalar (@{$routes{$_}}) == 1 and $routes{$_}[0] ne "BLANK";
-      # if there's only one letter part, and it isn't "BLANK", add it to 
-      # $temp
-
-      push @headnum, $number;
-   }
-   
-   return sort byroutes @headnum;
 
 }
+
+
 
 sub note_definitions ($) {
 
@@ -814,7 +828,8 @@ sub get_head_timepoints($) {
  
 sub output_outsched ($$$) {
 
-   our (@outsched, %dirhash, %dayhash, %tphash);
+   our (@outsched, %dirhash, %dayhash, %tphash, $schooldayflag);
+   $schooldayflag="";
    my ($head, $thismark, @thesemarks, %routes,
        $route, $lasttp, $temp, $tpnum,
        $ampm, $defaultheadtp, @markdefs, %usedmarks);
@@ -841,8 +856,8 @@ sub output_outsched ($$$) {
    @outsched = sort 
        {
         byroutes ($a->{"HEADNUM"}[0], $b->{"HEADNUM"}[0]) or 
-        $dayhash{$b->{"DAY"}} <=> $dayhash{$a->{"DAY"}} or
-        $dirhash{$b->{"DIR"}} <=> $dayhash{$a->{"DIR"}}
+        $dirhash{$b->{"DIR"}} <=> $dirhash{$a->{"DIR"}} or
+        $dayhash{$b->{"DAY"}} <=> $dayhash{$a->{"DAY"}}
        } @outsched;
 
 
@@ -858,18 +873,24 @@ sub output_outsched ($$$) {
       $head = join ("/" , @{$column->{"HEADNUM"}});
       
       # the gobbeldygook in the print statements are the quark tags
-      print OUT '@Column head:<';                                   # style
-      print OUT 
-            '*d(' , length($head) +1 , ',2)'                 # drop cap
-            if length($head) <= 3;   # but only if the length is short
+      print OUT '@Column head:';                                   # style
+
 
       print OUT 
-            'c"' , getcolor($column->{"HEADNUM"}[0]) , '">';   # color
+            '<*d(' , length($head) +1 , ',2)><z10><b1>';  # drop cap
+	                                                 # at smaller size
+
+#      print OUT 
+#            '*d(' , length($head) +1 , ',2)'                 # drop cap
+#            if length($head) <= 3;   # but only if the length is short
+
+      print OUT 
+            '<c"' , getcolor($column->{"HEADNUM"}[0]) , '">';   # color
 
       # at some point, we may want to do some other kind of formatting if
       # there are two or more head numbers.
 
-      print OUT "$head ";
+      print OUT "$head " , '<b$><z$>';
 
       print OUT $column->{"HEADDAYS"} , " to " ,
                 $column->{"HEADDEST"};
@@ -986,6 +1007,7 @@ sub output_outsched ($$$) {
          }
          
          # routes and timepoint
+	 #
 
          $_ = $column->{"ROUTES"}[$row];
 
@@ -1052,6 +1074,15 @@ sub output_outsched ($$$) {
     s/\&/and/;
     s/\.$//;
     print OUT "$_. Buses may arrive somewhat later at this location.<b>\n";
+
+    print OUT "!--$schooldayflag--!";
+
+#   SCHOOLDAYS
+    if ($schooldayflag or $usedmarks{SD}) {
+
+       print OUT "Trips that run school days only may not operate every day and will occasionally operate at times other than those shown. Supplementary service is available to all riders at regular fares.\n";
+
+    }
 
     if (scalar @markdefs) {
 
