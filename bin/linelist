@@ -1,0 +1,49 @@
+#!/usr/bin/perl
+# vimcolor: #000030
+
+# linelist
+#
+# List lines in order by name
+# 
+
+use strict;
+use warnings;
+
+# initialization
+
+use FindBin('$Bin'); 
+   # so $Bin is the location of the very file we're in now
+
+use lib $Bin; 
+   # there are few enough files that it makes sense to keep
+   # main program and library in the same directory
+
+# libraries dependent on $Bin
+
+use Byroutes 'byroutes';
+use FPMerge qw(FPread FPread_simple);
+use Myopts;
+use Skeddir;
+
+my %options;
+Myopts::options (\%options, Skeddir::options(), 'quiet!');
+# command line options in %options;
+
+my $signup;
+$signup = (Skeddir::change (\%options))[2];
+# Takes the necessary options to change directories, plus 'quiet', and
+# then changes directories to the "Skeds" base directory.
+
+# open and load files
+
+our (@lines, %lines);
+
+FPread_simple ("Lines.csv" , \@lines, \%lines, 'Line');
+
+my @lineorder = sort byroutes keys %lines;
+
+foreach (@lineorder) {
+
+   print $_  , " " , $lines{$_}{Name} , "\n";
+
+}
