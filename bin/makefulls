@@ -9,17 +9,29 @@
 use strict;
 use warnings;
 
-use constant BIGSPACE => '<\q>' x 2;
-use constant BOXBREAK => '<\\b>';
+#use constant BIGSPACE => '<\q>' x 2; # QXD <\q> = 1/4 em space
+use constant BIGSPACE => '<0x2002>'; # IND en space
+#use constant BOXBREAK => '<\\b>'; # QXD new box
+use constant BOXBREAK => '<cNextXChars:BoxBreak>'; # IND box break
 
+# QXD
+#our %icons = 
+#    (
+#      ST => '<f"Zapf Dingbats">H<f$>',
+#      SD => '<f"Carta">V<f$>',
+#      SH => '<f"Festive"><\#105><f$>',
+#      '*' => '<f"Transportation"><\#121><f$>',
+#    );
+# icons for printing. These are Quark codes.
+
+# IND
 our %icons = 
     (
-      ST => '<f"Zapf Dingbats">H<f$>',
-      SD => '<f"Carta">V<f$>',
-      SH => '<f"Festive"><\#105><f$>',
-      '*' => '<f"Transportation"><\#121><f$>',
+      ST => '<cFont:Zapf Dingbats>H<cfont:>',
+      SD => '<cFont:Carta>V<cFont:>',
+      SH => '<cFont:Festive">i<cFont:>',
+      '*' => '<cFont:Transportation>y<cFont:>',
     );
-
 # icons for printing. These are Quark codes.
 
 # initialization
@@ -285,8 +297,12 @@ sub output_fullsched {
            ($sked->{TP}[$col+1] eq $sked->{TP}[$col]);
       }
       my $thistp = $tphash{$sked->{TP}[$col]} || $sked->{TP}[$col];
-      $thistp =~ s/ (Apts|Ave|Blvd|St|Ct|Dr|Rd|Pkwy|Sq|Terr|Fwy|Pl)\./<\\!s>$1./g;
-      $thistp =~ s/ (Plaza|Lane|School|Way|Mall|Road)/<\\!s>$1/g;
+
+      #my $nonbreakingspace = '<\!s>'; # QXD
+      my $nonbreakingspace = '<0x00A0>'; # IND
+
+      $thistp =~ s/ (Apts|Ave|Blvd|St|Ct|Dr|Rd|Pkwy|Sq|Terr|Fwy|Pl)\./${nonbreakingspace}$1./g;
+      $thistp =~ s/ (Plaza|Lane|School|Way|Mall|Road)/${nonbreakingspace}$1/g;
       # make non-breaking spaces where we know we can
       print OUT $thistp;
    }
@@ -315,7 +331,11 @@ sub output_fullsched {
          my $ampm = chop $time;
          substr($time, -2, 0) = ":" if $time;
          if ($ampm eq "p") {
+#            print OUT "\t" , '<f"HelveticaNeue BoldCond">' , $time, '<f$>';
+# QXD
             print OUT "\t" , '<f"HelveticaNeue BoldCond">' , $time, '<f$>';
+# IND            
+
          } else {
             print OUT "\t$time";
          } 
