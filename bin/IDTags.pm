@@ -30,6 +30,8 @@ EOF
 
 $starttext =~ s/\n/\r/g; #CRs rather than LFs for Mac programs
 
+$starttext =~ s/\r$//; # strip trailing newline
+
 return $starttext;
 
 # these are the definitions out of a test tagged file. The specific values
@@ -60,6 +62,14 @@ sub boxbreak {
 
 sub superscript {
    return "<cPosition:Superscript>@_<cPosition:>";
+}
+
+sub nbsp {
+   return '<0x00A0>';
+}
+
+sub endash {
+   return  '<0x2013>';
 }
  
 sub softreturn {
