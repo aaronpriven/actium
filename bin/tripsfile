@@ -1,0 +1,48 @@
+#!/usr/bin/perl
+# vimcolor: #000030
+
+package TripsFile;
+
+use strict;
+our (@ISA , @EXPORT_OK);
+
+use Exporter;
+@ISA = ('Exporter');
+
+@EXPORT_OK = qw(Tripsread , @fields );
+
+our @fields =  qw(line_group_id trp_number direction service_day 
+                  tp tpnum note trip_status_code route vehicle_type 
+                  notedef time);
+
+# have to add exceptions field
+
+our %tripsfiledays = ( Weekday => "WE" , Saturday => "WD" , "Daily" => "DA" );
+
+# note -- at the moment I am only getting Saturday info for weekends
+# system assumes identical weekday/weekend service
+
+my $file = shift @ARGV;
+open my $fh , "<" , $file or die "Can't open trips file $file.";
+
+%skeds = ();
+
+while (<$fh>) {
+   my %hash = ();
+   @hash{@fields} = split /,/;
+   my $sked = {};
+   $sked->{LINEGROUP} = $hash{line_group_id};
+   $sked->{DIR} = $hash{direction};
+   $sked->{DAY} = $tripsfiledays{$hash{service_day}};
+
+   $sked->{SKEDNAME} = join ("_" , $sked->{LINEGROUP} ,
+                                   $sked->{DIR} ,
+                                   $sked->{DAY});
+
+   
+
+}
+
+   
+
+
