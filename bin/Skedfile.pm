@@ -4,6 +4,9 @@
 # This is Skedfile.pm, a module to read and write
 # the tab-separated-value text files which store the bus schedules.
 
+# Also performs operations on bus schedule data structures that 
+# are shared between various programs.
+
 package Skedfile;
 
 use strict;
@@ -11,7 +14,7 @@ our (@ISA , @EXPORT_OK);
 
 use Exporter;
 @ISA = ('Exporter');
-@EXPORT_OK = qw(Skedread Skedwrite);
+@EXPORT_OK = qw(Skedread Skedwrite remove_blank_columns times_column);
 
 sub Skedread {
 
@@ -59,8 +62,8 @@ sub Skedread {
        # the number timepoint columns -- discarding any extras and
        # padding out empty ones with undef values
 
-       for (my $i = 0 ; $i < scalar (@times) ; $i++) {
-          push @{$skedref->{TIMES}[$i]} , $times[$i] ;
+       for (my $col = 0 ; $col < scalar (@times) ; $col++) {
+          push @{$skedref->{TIMES}[$col]} , $times[$col] ;
        }
    }
    close IN;
@@ -125,5 +128,38 @@ sub Skedwrite ($;$) {
    close OUT;
    
    return $skedref;
+
+}
+
+
+sub remove_blank_columns ($) {
+
+   my $dataref = shift;
+
+   my $tp = 0;
+   while ( $tp < ( scalar @{$dataref->{"TP"}}) ) {
+      # loop around each timepoint
+      unless (join ('', times_column($dataref,$tp))) {
+         # unless there is some data in the TIMES for this column,
+         splice (@{$dataref->{"TIMES"}}, $tp, 1);
+         splice (@{$dataref->{"TP"}}, $tp, 1);
+         # delete this column
+         next;
+      }
+   $tp++;
+   }
+
+}
+
+sub times_column ($$) {
+
+   my ($skedref , $tpnum) = @_;
+   my @times = ();
+
+   for (my $row = 0 ; $row < scalar (@{$skedref->{ROUTES}}) ; $row++) {
+      push @times , $skedref->{TIMES}[$tpnum][$row]; # TODO - check this out
+   }
+
+   return @times;
 
 }
