@@ -46,8 +46,7 @@ Myopts::options (\%options, Skeddir::options(), 'effectivedate:s' , 'quiet!');
 # command line options in %options;
 
 $| = 1; 
-# don't buffer terminal output; perl's not supposed to need this, 
-# but it does
+# don't buffer terminal output
 
 print "newsignup - create a new signup directory\n\n" unless $options{quiet};
 
@@ -69,24 +68,32 @@ if (exists ($options{effectivedate}) and $options{effectivedate} ) {
 
    print "Using effective date $effectivedate\n\n" unless $options{quiet};
 
+   writeeffectivedate($effectivedate);
+
 } else {
 
-   print "Enter an effective date for this signup, please.\n";
+   if (-e 'effectivedate.txt') {
+      open IN, 'effectivedate.txt';
+      $effectivedate = <IN>;
+      close IN;
 
-   $effectivedate = <STDIN> ;
-   until ($effectivedate) {
-      print "No blank entries, please.\n";
+   } else {
+
+      print "Enter an effective date for this signup, please.\n";
+   
       $effectivedate = <STDIN> ;
+      until ($effectivedate) {
+         print "No blank entries, please.\n";
+         $effectivedate = <STDIN> ;
+      }
+
+      print "Thanks!\n\n";
+
+      writeeffectivedate($effectivedate);
+
    }
 
-   print "Thanks!\n\n";
-
 }
-
-open OUT , ">effectivedate.txt" 
-    or die "Can't open effectivedate.txt for output";
-print OUT $effectivedate ;
-close OUT;
 
 
 ######################################################################
@@ -130,10 +137,12 @@ foreach my $file (glob ("headways/*.prt")) {
 
       $thispage{LINEGROUP} = stripblanks(substr($lines[3],11,3));
       next if $thispage{LINEGROUP} eq "399";
+      $thispage{LINEGROUP} = "51" if $thispage{LINEGROUP} eq "51S"; # stupid scheduling
 
-      # HORRIBLE, HORRIBLE LINE 40 KLUDGE
-      $thispage{LINEGROUP} = "43" 
-         if $thispage{LINEGROUP} eq "40" and ($lines[1] =~ m/D2/i );
+      # HORRIBLE, HORRIBLE LINE 40 KLUDGE 
+      # no longer necessary because Scheduling divided 43 and 40
+#      $thispage{LINEGROUP} = "43" 
+#         if $thispage{LINEGROUP} eq "40" and ($lines[1] =~ m/D2/i );
 
       if ($lines[1] =~ /Week/i) {
          $thispage{DAY} = "WD" 
@@ -212,10 +221,35 @@ foreach my $file (glob ("headways/*.prt")) {
             # day (so 11:59p is followed by 12:00x).
          }
 
-         $notes = "" if $notes eq "RRF";
-         # RRF note is "restroom facilities." At least in one case, this prevents
-         # merging from taking place. Don't want to tell the general public this
-         # anyway
+         foreach (qw(RRFB RRF1 RRF OWL OL)) {
+            $notes = "" if $notes eq $_;
+         }
+
+         $routes = "51" if $routes eq "51S"; # stupid scheduling
+
+         # RRF RRFB, RRF1 are restroom facilities. OWL and OL notes are just telling the operators
+         # stuff about owl service. These prevent merging from taking place. Don't want to 
+         # tell the general public this anyway
+
+
+         my %specdayoverride = (
+            305 => "TT" ,
+            360 => "TT" ,
+            329 => "WF" ,
+            356 => "TF" ,
+            314 => "TF" ,
+            391 => "TF" ,
+         ) ;
+    
+         foreach (keys %specdayoverride ) {
+
+             if ($routes eq $_ and $specdays eq '') {
+                $specdays = $specdayoverride{$_}
+             }
+         }
+
+         # until scheduling puts the WF, etc. back in, then 
+         # I have to override the shopper routes this way
 
          push @{$thispage{SPECDAYS}} , $specdays;
          push @{$thispage{ROUTES}} , $routes;
@@ -691,6 +725,17 @@ sub byskednamenum {
    (my $aa = $a) =~ s/.*=//;
    (my $bb = $b) =~ s/.*=//;
    return $aa <=> $bb;
+
+}
+
+sub writeeffectivedate {
+
+my $effectivedate = $_[0];
+
+open OUT , ">effectivedate.txt" 
+    or die "Can't open effectivedate.txt for output";
+print OUT $effectivedate ;
+close OUT;
 
 }
 
