@@ -9,7 +9,7 @@ no strict 'subs';
 no strict 'subs';
 sub print_right_head () ;
 sub print_right_tail ($);
-sub print_rows ($$$$$$$);
+sub print_rows ($$$$$$$$);
 sub build_linenamehash () ;
 sub print_left_tail ($$) ;
 sub print_tail ($$) ;
@@ -279,7 +279,7 @@ foreach my $thistable (@tables) {
 
 
       print_rows ($rowgroup, $lastrow, $notescol, $routescol,
-                  0, $firstpagetps, $day_dir);
+                  0, $firstpagetps, $day_dir , $wholespread);
       # Now the rows & tps for the first column
 
       print_left_tail($notedefs, 
@@ -293,7 +293,7 @@ foreach my $thistable (@tables) {
 
       # rows and TPs for the second column below:
       print_rows ($rowgroup, $lastrow, 0, 0, $firstpagetps, 
-        $tpcolumns+$extracolumns, $day_dir);
+        $tpcolumns+$extracolumns, $day_dir, 0);
 
       print_right_tail($continued); 
 
@@ -312,12 +312,12 @@ sub print_right_head () {
     print '<\\b>';
 }
 
-sub print_rows ($$$$$$$) {
+sub print_rows ($$$$$$$$) {
 
 # also prints timepoint headers
 
          my ($rowgroup, $lastrow, $notescol, $routescol,
-             $starttp, $lasttp, $day_dir) = @_;
+             $starttp, $lasttp, $day_dir, $spreadverso) = @_;
          our @fullsched;
 
          ####################
@@ -329,6 +329,21 @@ sub print_rows ($$$$$$$) {
          TPHEADERCOL: 
          for (my $col = $starttp; $col < $lasttp ; $col++) {
             print '<\\b>@tpheader:';
+            unless ($col == 0) 
+            { 
+               print "Dep. " if 
+                 ($fullsched{$day_dir}{TP}[$col-1] eq
+                 $fullsched{$day_dir}{TP}[$col]);
+            }
+            unless (not $spreadverso and $col == $lasttp - 1) 
+            # unless this is not the left page of a whole spread,
+            # and this is the last column, check to see if the next one
+            # is the same as this one
+            {
+               print "Arr. " if 
+                 ($fullsched{$day_dir}{TP}[$col+1] eq
+                 $fullsched{$day_dir}{TP}[$col]);
+            }
             print $tphash{ $fullsched{$day_dir}{TP}[$col] };
          }
          # print the headers
