@@ -505,7 +505,16 @@ ROW:
 
    }
 
+   # save USED array in $outsched
    $outsched[$column]{"USED"} = { %used };
+
+   # put the most common route for each column in $outsched[$column]{MAINROUTE}
+
+#   print join( "," , @{$outsched[$column]{'ROUTES2USE'}} ) , "\t" , $used{ROUTES} , "\n"; - for testing
+
+   my %temphash = %{ $used{"ROUTES"} };
+   $outsched[$column]{"MAINROUTE"} = 
+      ( sort { $temphash{$b} <=> $temphash {$a}  } keys %temphash )[0];
 
 }
 
@@ -612,25 +621,25 @@ sub headdest ($) {
    our %tphash;
    # my ($day_dir, $tp, $headnum) = @_;
    my $column = $_[0];
-   my $headnum = $outsched[$column]{HEADNUM}[0];
+   my $mainroute = $outsched[$column]{'MAINROUTE'};
    my ($lasttp, $lasttpnum);
    my (%lasttpfreq) = ();
-   my $tp = $outsched[$column]{"TPNUM2USE"};
+   my $tp = $outsched[$column]{'TPNUM2USE'};
 
    for (my $row = 0; $row < scalar @{$outsched[$column]{"TIMES"}[$tp]};  
             $row++) {
       next unless usedrow($column, $row) and
-            $outsched[$column]{"ROUTES"}[$row] eq $headnum;
+            $outsched[$column]{"ROUTES"}[$row] eq $mainroute;
 
       # skip it, unless this timepoint is used and the current 
-      # route is the same as in $headnum
+      # route is the same as in $mainroute
 
       $lasttpfreq{$outsched[$column]{"LASTTP"}[$row]}++;
  
    }
 
    # so now %lasttpfreq holds the frequency of the last timepoints
-   # (for the HEADNUM route).
+   # (for the most frequent route).
 
    $lasttp = 
        (sort { $lasttpfreq{$b} <=> $lasttpfreq{$a} } 
@@ -900,7 +909,7 @@ sub output_outsched ($$$) {
       # add note to indicate that times refer to the first route
       # given (of one or more) if there are two or more headnums
  
-      $_ = $column->{"HEADNUM"}[0];
+      $_ = $column->{"MAINROUTE"};
 
       if ( scalar ( @{$column->{"HEADNUM"}}) > 1) {
 
@@ -944,7 +953,7 @@ sub output_outsched ($$$) {
 
       }
 
-      print OUT "<V>" , join (", ", sort {$a <=> $b} @thesemarks), "<V>" 
+      print OUT "<V>" , join (",", sort {$a <=> $b} @thesemarks), "<V>" 
            if scalar (@thesemarks);
       #<V> is "superior" type
 
@@ -1013,8 +1022,8 @@ sub output_outsched ($$$) {
 
          undef $route;
          undef $lasttp;
-         $route = $_ if $_ ne $column->{"HEADNUM"}[0];
-         # route is nothing if it's the same as the first headnum,
+         $route = $_ if $_ ne $column->{"MAINROUTE"};
+         # route is nothing if it's the same as the most common route,
          # otherwise it's the route from the row
 
          $_ = $column->{"LASTTP"}[$row]; 
@@ -1052,7 +1061,7 @@ sub output_outsched ($$$) {
 
          }
 
-         print OUT "<V>" , join (", " , sort {$a <=> $b} @thesemarks), "<V>" 
+         print OUT "<V>" , join ("," , sort {$a <=> $b} @thesemarks), "<V>" 
              if scalar (@thesemarks);
 
       } # end of row
@@ -1089,7 +1098,7 @@ sub output_outsched ($$$) {
 
        for (my $i = 1; $i < scalar (@markdefs); $i++) {
 
-          print OUT "$i. " , $markdefs[$i] , "\n";
+          print OUT "$i.\t" , $markdefs[$i] , "\n";
 
        }
 
