@@ -21,7 +21,8 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
-use Skedfile qw(Skedwrite);
+use File::Copy;
+use Skedfile qw(Skedread Skedwrite remove_blank_columns);
 use Myopts;
 use Skeddir;
 use Byroutes 'byroutes';
@@ -36,10 +37,10 @@ my  (@index);      # data for the index
 
 push @index, "SkedID\tTimetable\tLines\tDay\tDir\tTP9s";
 
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
+Myopts::options (\%options, Skeddir::options(), 'effectivedate:s' , 'quiet!');
 # command line options in %options;
 
-$| = 1;
+$| = 1; # don't buffer terminal output; perl's not supposed to need this, but it does
 
 print "newsignup - create a new signup directory\n\n" unless $options{quiet};
 
@@ -58,19 +59,31 @@ do "privatetimepoints.rc"
 # ask about effective date
 ######################################################################
 
-print "Enter an effective date for this signup, please.\n";
+my $effectivedate;
 
-$_ = <STDIN> ;
-until ($_) {
-   print "No blank entries, please.\n";
-   $_ = <STDIN> ;
+if (exists ($options{effectivedate}) and $options{effectivedate} ) {
+
+   $effectivedate = $options{effectivedate};
+
+   print "Using effective date $effectivedate\n\n" unless $options{quiet};
+
+} else {
+
+   print "Enter an effective date for this signup, please.\n";
+
+   $effectivedate = <STDIN> ;
+   until ($effectivedate) {
+      print "No blank entries, please.\n";
+      $effectivedate = <STDIN> ;
+   }
+
+   print "Thanks!\n\n";
+
 }
-
-print "Thanks!\n\n";
 
 open OUT , ">effectivedate.txt" 
     or die "Can't open effectivedate.txt for output";
-print OUT $_ ;
+print OUT $effectivedate ;
 close OUT;
 
 
@@ -94,6 +107,8 @@ my @linegroups = @skeds;
 # loop over each line group
 ######################################################################
 
+my $displaycolumns = 0;
+
 foreach my $linegroup (@linegroups) {
 
    my %alldata = ();
@@ -101,14 +116,22 @@ foreach my $linegroup (@linegroups) {
    next if $linegroup eq "56";
    # our dear friends in planning have seriously broken the 56.
 
-   print "$linegroup " unless $options{quiet};
+   unless ($options{quiet}) {
+      $displaycolumns += length($linegroup) + 1;
+      if ($displaycolumns > 70) {
+         $displaycolumns = 0;
+         print "\n";
+      }
+      print "$linegroup ";
+   }
+
 
    my @theseskeds = grep /^${linegroup}_/ ,  @skeds;
    foreach my $thissked (@theseskeds) {
 
       # print "[$thissked] ";
    
-      my (undef , $day, $dir) = split(/_/ , $thissked);
+      my (undef , $dir, $day) = split(/_/ , $thissked);
    
       my $dataref = read_scdfile($thissked);
 
@@ -122,17 +145,20 @@ foreach my $linegroup (@linegroups) {
       remove_private_timepoints($dataref);
 
       remove_blank_columns($dataref);
-   
-      # if we are likely to have any other possible mergers,
-      # -- e.g. weekday and Saturday schedules being the same, but different
-      # from Sunday -- we can add those. But I think that's unlikely.
+      # from Skedfile.pm
 
+      add_duplicate_tp_markers ($dataref);
+   
       $alldata{$thissked} = $dataref;
 
    }
 
    merge_days (\%alldata, "SA" , "SU" , "WE");
    merge_days (\%alldata, "WD" , "WE" , "DA");
+
+   # if we are likely to have any other possible mergers,
+   # -- e.g. weekday and Saturday schedules being the same, but different
+   # from Sunday -- we can add those. But I think that's unlikely.
 
    foreach my $dataref (values %alldata) {
       Skedwrite ($dataref, "-a.txt");
@@ -144,11 +170,59 @@ foreach my $linegroup (@linegroups) {
 
 print "\n" unless $options{quiet};
 
+### read 9xxskeds skeds (these don't change from signup to signup
+### unless this is done manually)
+
+@skeds = sort glob "../9xxskeds/*-s.txt";
+
+print "\nAdding exceptional schedules.\n" unless $options{quiet};
+
+$displaycolumns = 0;
+
+my $prevlinegroup = "";
+foreach my $file (@skeds) {
+
+   unless ($options{quiet}) {
+      my $linegroup = $file;
+      $linegroup =~ s#^\.\./9xxskeds/##;
+      $linegroup =~ s/_.*//;
+
+      unless ($linegroup eq $prevlinegroup) {
+         $displaycolumns += length($linegroup) + 1;
+         if ($displaycolumns > 70) {
+            $displaycolumns = 0;
+            print "\n";
+         }
+         $prevlinegroup = $linegroup;
+         print "$linegroup ";
+      }
+   
+   }
+
+   my $newfile = $file;
+   $newfile =~ s#\.\./9xx##; # result is "skeds/filename"
+   copy ($file, $newfile) or die "Can't copy $file to $newfile"; 
+   # call to File::Copy
+
+   # print "\t[$file - $newfile]\n";
+
+   my $dataref = Skedread($newfile);
+
+   push @index, skedidx_line ($dataref);
+
+   $file =~ s/-s/-a/;
+   $newfile =~ s/-s/-a/;
+   copy ($file, $newfile) or die "Can't copy $file to $newfile"; 
+   # copy full schedules also
+ 
+}
+
 open IDX, ">Skedidx.txt" or die "Can't open $signup/skedidx.txt";
 print IDX join("\n" , @index) , "\n" ;
 close IDX;
 
 print <<"EOF" unless $options{quiet};
+
 
 Index $signup/Skedidx.txt written.
 Remember to import it into a clone of the FileMaker database "Skedidx.fp5"
@@ -169,7 +243,7 @@ sub read_scdfile {
    # $data{NOTES}[$row]     - notes listed for row
    # $data{SPECDAYS}[$row]  - special days listed for row
    #                           e.g., "SD" school days, "TF" for Tues/Fri
-   # $data{TIMES}[$column][$row] - times in column and row
+   # $data{TIMES}[$row][$column] - times in column and row
 
    my %data = ();
    my $scdfile = "scd/AC_$_[0].scd";
@@ -187,9 +261,8 @@ sub read_scdfile {
    foreach (@toplines) {
       chomp;
       $_ = substr($_,8);
-      s/\s+$//;
+      s/\s+$//; # eliminate leading and trailing spaces
    }
-   # eliminate leading and trailing spaces
 
    my $numpoints =  1 + int ( length($toplines[0]) / 6 );
    # There are 6 characters per timepoint: a blank space in front
@@ -209,16 +282,14 @@ sub read_scdfile {
       unpack ($unpacktemplate, $toplines[0])  ;
    my @tp2 =  unpack ($unpacktemplate, $toplines[1])  ;
 
-   {
-   my %seen = ();
    foreach (@{$data{"TP"}}) {
       $_ .= shift (@tp2); 
       s/^\s+//;
-      $_ .= "=" . $seen{$_} if $seen{$_}++;
    }
-   }
+
    # now $data{TP} is populated
-   # If there's a duplicate timepoint, it has a "=" and number appended to it
+
+
 
    $data{NOTEDEFS} = [];
    # initialize this to an empty array, since otherwise
@@ -230,6 +301,7 @@ sub read_scdfile {
    until (($_ = <IN>) =~ /timepoints/) {
       # keep reading data until the "key to timepoints" is reached
       chomp;
+      s/\s$//; # strip spaces at end
       next unless $_;
       next if /RTE/;
       next if /NUM/;
@@ -306,24 +378,24 @@ sub remove_private_timepoints {
 }
 
 
-sub remove_blank_columns {
+# sub remove_blank_columns {
 
-   my $dataref = shift;
+#    my $dataref = shift;
 
-   my $tp = 0;
-   while ( $tp < ( scalar @{$dataref->{"TP"}}) ) {
-      # loop around each timepoint
-      unless (join ("", @{$dataref->{"TIMES"}[$tp]})) {
-         # unless there is some data in the TIMES for this column,
-         splice (@{$dataref->{"TIMES"}}, $tp, 1);
-         splice (@{$dataref->{"TP"}}, $tp, 1);
-         # delete this column
-         next;
-      }
-   $tp++;
-   }
+#    my $tp = 0;
+#    while ( $tp < ( scalar @{$dataref->{"TP"}}) ) {
+#       # loop around each timepoint
+#       unless (join ("", @{$dataref->{"TIMES"}[$tp]})) {
+#          # unless there is some data in the TIMES for this column,
+#          splice (@{$dataref->{"TIMES"}}, $tp, 1);
+#          splice (@{$dataref->{"TP"}}, $tp, 1);
+#          # delete this column
+#          next;
+#       }
+#    $tp++;
+#    }
 
-}
+#}
 
 sub merge_days {
 
@@ -423,7 +495,12 @@ sub merge_columns {
    
    TIMEPOINT: while ( $tp < ( scalar @{$dataref->{"TP"}}) ) {
    
-      unless ($dataref->{TP}[$tp] eq $prevtp) {
+
+      my $thistp = $dataref->{TP}[$tp];
+      $thistp =~ s/=[0-9]+$//;
+      # eliminate =x from timepoint, for comparison
+
+      unless ($thistp eq $prevtp) {
           $prevtp = $dataref->{TP}[$tp];
           $tp++;
           next TIMEPOINT;
@@ -435,19 +512,19 @@ sub merge_columns {
       # so if it gets past that, we have duplicate columns
 
       splice (@{$dataref->{"TP"}}, $tp, 1);
-      splice (@{$dataref->{"TIMEPOINTS"}}, $tp, 1);
-      # that gets rid of the extra TP and TIMEPOINTS
+      # that gets rid of the second TP
       
       for (my $row =0; $row < scalar @{$dataref->{"TIMES"}[$tp]}  ;  $row++) {
       
-         $dataref->{"TIMES"}[$tp - 1][$row]  
-            = $dataref->{"TIMES"}[$tp][$row] 
-                if $dataref->{"TIMES"}[$tp][$row];
+         $dataref->{TIMES}[$tp - 1][$row]  
+            = $dataref->{TIMES}[$tp][$row] 
+                if $dataref->{TIMES}[$tp][$row];
              
       }
-      # that takes all the values in the second column and puts them in the first column
+      # that takes all the values in the second column and 
+      # puts them in the first column
 
-      splice (@{$dataref->{"TIMES"}}, $tp, 1);
+      splice (@{$dataref->{TIMES}}, $tp, 1);
       # gets rid of extra TIMES array, now duplicated in the previous one
 
    }
@@ -458,19 +535,36 @@ sub skedidx_line {
 
    my $dataref = shift;
 
-   my @index = ();
+   my @indexline = ();
    my %seen = ();
 
    my @routes = sort byroutes grep {! $seen{$_}++}  @{$dataref->{ROUTES}};
 
-   push @index, $dataref->{SKEDNAME};
-   push @index, $dataref->{LINEGROUP};
-   push @index, join("\035" , @routes);
+   push @indexline, $dataref->{SKEDNAME};
+   push @indexline, $dataref->{LINEGROUP};
+   push @indexline, join("\035" , @routes);
    # \035 says "this is a repeating field" to FileMaker
-   push @index, $dataref->{DAY};
-   push @index, $dataref->{DIR};
-   push @index, join("\035" , @{$dataref->{TP}});
+   push @indexline, $dataref->{DAY};
+   push @indexline, $dataref->{DIR};
+   push @indexline, join("\035" , @{$dataref->{TP}});
 
-   return join("\t" , @index);
+   return join("\t" , @indexline);
 
 }
+
+sub add_duplicate_tp_markers {
+
+   my $dataref = shift;
+
+   my %seen = ();
+   foreach (@{$dataref->{"TP"}}) {
+      $_ .= "=" . $seen{$_} if $seen{$_}++;
+   }
+      # If there's a duplicate timepoint, 
+      # it now has a "=" and number (usually "2") appended to it
+
+   return $dataref;
+
+} 
+
+
