@@ -7,7 +7,6 @@
 # Transitinfo and changes them to easier-to-deal-with TSV files.
 
 use strict;
-use warnings;
 
 ####################################################################
 #  load libraries
@@ -54,6 +53,26 @@ do "privatetimepoints.rc"
   or warn "Can't load $signup/privatetimepoints.rc";
 
 # this loads the list of private timepoints
+
+######################################################################
+# ask about effective date
+######################################################################
+
+print "Enter an effective date for this signup, please.\n";
+
+$_ = <STDIN> ;
+until ($_) {
+   print "No blank entries, please.\n";
+   $_ = <STDIN> ;
+}
+
+print "Thanks!\n\n";
+
+open OUT , ">effectivedate.txt" 
+    or die "Can't open effectivedate.txt for output";
+print OUT $_ ;
+close OUT;
+
 
 ######################################################################
 # set up per-file loop
@@ -116,7 +135,7 @@ foreach my $linegroup (@linegroups) {
    merge_days (\%alldata, "WD" , "WE" , "DA");
 
    foreach my $dataref (values %alldata) {
-      Skedwrite ($dataref);
+      Skedwrite ($dataref, "-a.txt");
       merge_columns ($dataref);
       Skedwrite ($dataref, "-s.txt");
       push @index, skedidx_line ($dataref);
