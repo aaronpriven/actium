@@ -1,5 +1,5 @@
 # Skedfile.pm
-# vimcolor: #000000
+# vimcolor: #200000
 
 # This is Skedfile.pm, a module to read and write
 # the tab-separated-value text files which store the bus schedules.
@@ -7,20 +7,63 @@
 package Skedfile;
 
 use strict;
-our (@ISA ,@EXPORT_OK ,$VERSION);
+our (@ISA , @EXPORT_OK);
 
 use Exporter;
 @ISA = ('Exporter');
 @EXPORT_OK = qw(Skedread Skedwrite);
 
-sub Skedread ($;$) {
+sub Skedread {
+
+   local ($_);
 
    my $skedref = {};
 
-   my ($line, $ext) = @_;
+   my ($file) = shift;
 
-   # read the schedule
+   open IN, $file
+      or die "Can't open $file for input";
 
+   $_ = <IN>;
+   chomp;
+   s/\s+$//;
+   $skedref->{SKEDNAME} = $_;
+
+   ($skedref->{LINEGROUP} , $skedref->{DIR} , $skedref->{DAY}) =
+      split (/_/);
+
+   $_ = <IN>;
+   s/\s+$//;
+   chomp;
+   (undef, @{$skedref->{NOTEDEFS}} ) = split (/\t/ );
+   # first column is always "Note Definitions"
+
+   $_ = <IN>;
+   chomp;
+   s/\s+$//;
+   (undef, undef, undef, @{$skedref->{TP}} ) = split (/\t/);
+   # the first three columns are always "SPEC DAYS", "NOTE" , and "RTE NUM"
+
+   while (<IN>) {
+       chomp;
+       s/\s+$//;
+       next unless $_; # skips blank lines
+       my ($specdays, $note, $route , @times) = split (/\t/);
+
+       push @{$skedref->{SPECDAYS}} , $specdays;
+       push @{$skedref->{NOTES}} , $note;
+       push @{$skedref->{ROUTES}} , $route;
+
+       $#times = $#{$skedref->{TP}}; 
+       # this means that the number of time columns will be the same as 
+       # the number timepoint columns -- discarding any extras and
+       # padding out empty ones with undef values
+
+       for (my $i = 0 ; $i < scalar (@times) ; $i++) {
+          push @{$skedref->{TIMES}[$i]} , $times[$i] ;
+       }
+   }
+   close IN;
    return $skedref;
 }
 
@@ -37,7 +80,7 @@ sub Skedwrite ($;$) {
    }
 
    open OUT , ">skeds/$skedname$extension"
-      or die "Can't open skeds/$skedname.$extension for output";
+      or die "Can't open skeds/$skedname$extension for output";
 
    print OUT $skedname , "\n";
    print OUT "Note Definitions:\t" , 
