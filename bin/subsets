@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+# 
+
+# subsets
+
+use strict;
+use warnings;
+
+    my @routes = qw(1 2 3);
+    my @subsets = ();
+    
+    foreach my $i ( 0 .. ( 2**(scalar @routes)) - 1 ) {
+        my $subset = [] ; # ref to empty list
+        foreach my $j ( 0 .. $#routes) {
+           push @$subset, $routes[$j] 
+              if $i & (2**$j);
+                 # add the $j'th entry to the subset,
+                 # if bit $j is on in $i
+        }
+
+        push @subsets, $subset;
+
+    }
+    
+
+foreach my $subset (@subsets) {
+   print join("," , @$subset) , "\n";
+}
+
