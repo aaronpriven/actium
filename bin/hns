@@ -35,14 +35,12 @@ use Byroutes 'byroutes';
 # any and I don't feel like reimplementing it
 
 our (%options);    # command line options
-my  (@index);      # data for the index
+my  (%index);      # data for the index
 my (%pages);       # pages
 
 my %dirnames = ( NO => 'NB' , SO => 'SB' , EA => 'EB' , WE => 'WB' , 
                    CL => 'CW' , CO => 'CC' );
 # translates new Hastus directions to old Transitinfo directions
-
-push @index, "SkedID\tTimetable\tLines\tDay\tDir\tTP9s";
 
 Myopts::options (\%options, Skeddir::options(), 'effectivedate:s' , 'quiet!');
 # command line options in %options;
@@ -420,7 +418,7 @@ foreach my $dataref (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) {
    Skedwrite ($dataref, "-a.txt");
    merge_columns ($dataref);
    Skedwrite ($dataref, "-s.txt");
-   push @index, skedidx_line ($dataref) unless $dataref->{SKEDNAME} =~ m/=/;
+   $index{$dataref->{SKEDNAME}} = skedidx_line ($dataref) unless $dataref->{SKEDNAME} =~ m/=/;
 }
 
 print "\n" unless $options{quiet};
@@ -464,7 +462,7 @@ foreach my $file (@skeds) {
 
    my $dataref = Skedread($newfile);
 
-   push @index, skedidx_line ($dataref);
+   $index{$dataref->{SKEDNAME}} = skedidx_line ($dataref);
 
    $file =~ s/-s/-a/;
    $newfile =~ s/-s/-a/;
@@ -474,7 +472,8 @@ foreach my $file (@skeds) {
 }
 
 open IDX, ">Skedidx.txt" or die "Can't open $signup/skedidx.txt";
-print IDX join("\n" , sort {$a <=> $b} @index) , "\n" ;
+print IDX "SkedID\tTimetable\tLines\tDay\tDir\tTP9s\n";
+print IDX join("\n" , sort {$a <=> $b || $a cmp $b} values %index) , "\n" ;
 close IDX;
 
 print <<"EOF" unless $options{quiet};
