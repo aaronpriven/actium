@@ -1,0 +1,14 @@
+sub uniq (@) {
+
+   my ($prev, $result);
+
+   undef $prev;
+
+   return grep 
+        {
+         $result = ($prev eq $_);
+         $prev = $_;
+         $result;
+        } sort @_;
+
+}
