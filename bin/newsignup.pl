@@ -641,9 +641,11 @@ sub skedidx_line {
    push @indexline, $dataref->{DIR};
 
    my @tps = ($dataref->{TP}[0]);
-   for (1 .. scalar @{$dataref->{TP}}) {
+   for (1 .. $#{$dataref->{TP}}) {
+      my @thesetps;
+      for (@thesetps = @{$dataref->{TP}}[$_-1,$_] ) {s/=\d+$//};
       push @tps , $dataref->{TP}[$_] 
-            if $dataref->{TP}[$_-1] ne $dataref->{TP}[$_];
+            if $thesetps[0] ne $thesetps[1];
    } # drop out duplicate arrival/departure timepoints (like merge_columns)
 
    push @indexline, join("\035" , @tps);
