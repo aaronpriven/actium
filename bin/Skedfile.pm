@@ -306,8 +306,8 @@ sub trim_sked {
 sub getfiles {
 
    my $status = shift;
-
-   return grep ((! /=/ and ! /^I/) , glob('skeds/*.txt'))
+ 
+   return grep ((! /=/ and ! m@^skeds/I@) , glob('skeds/*.txt'))
       if (not $status) or ($status == GETFILES_PUBLIC) ;
 
    # internal ones start with the letter I
