@@ -22,7 +22,7 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 use File::Copy;
-use Skedfile qw(Skedread Skedwrite remove_blank_columns);
+use Skedfile qw(Skedread Skedwrite trim_sked copy_sked remove_blank_columns);
 use Myopts;
 use Skeddir;
 use Byroutes 'byroutes';
@@ -397,24 +397,21 @@ for (0 .. $#skipped) {
 print "\n";
 
 
-sub byskednamenum {
-
-   (my $aa = $a) =~ s/.*=//;
-   (my $bb = $b) =~ s/.*=//;
-   return $aa <=> $bb;
-
-}
-
-
 ######################################################################
 # All schedules now joined, or skipped. 
 ######################################################################
 
+my @pages = (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) ;
+
+foreach my $dataref (@pages) {
+   trim_sked($dataref);
+}
+
 merge_days (\%pages, "WD" , "WE" , "DA");
-# since Saturdays and Sundays always the same, this is the only possible
+# since Saturdays and Sundays are now always the same, this is the only possible
 # merger. 
 
-foreach my $dataref (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) {
+foreach my $dataref (@pages) {
    Skedwrite ($dataref, "-a.txt");
    merge_columns ($dataref);
    Skedwrite ($dataref, "-s.txt");
@@ -517,7 +514,8 @@ sub merge_days {
 
    my ($alldataref, $firstday, $secondday, $mergeday) = @_;
    # the last three are, for example, (SA, SU, WE) or (WD, WE, DA)
-   
+   # only WD, WE, and DA are expected now
+
    my (@firstscheds, @secondscheds);  
    
    foreach (sort grep (/$firstday/ , (keys %$alldataref) ) ) {
@@ -530,6 +528,10 @@ sub merge_days {
 
    # so create lists in @firstscheds and @secondscheds of all the schedules 
    # that have both $firstday and $secondday variants
+
+   # this will break if $firstday is found elsewhere in the skedname than
+   # in the day position. If we ever have a linegroup called "WD" I'll have to
+   # fix this
   
    return -1 unless scalar(@firstscheds);
 
@@ -540,6 +542,39 @@ sub merge_days {
 
    SKED: foreach my $sked (0 .. $#firstscheds ) {
    
+
+      if ($firstday eq "WD" {
+         # if the first schedule is a weekday, 
+         # create a version with "SD" lines removed. Use that 
+         # for comparison.  This works because "School Days Only" 
+         # can work just as well on a weekend as weekday schedule.
+
+         # At this writing, at least 72, 88 like this.
+ 
+         # Duplicate SD/SH rows already trimmed away by earlier invocation of
+         # trim_sked
+
+          my $tempsked = copy_sked($sked);
+          my $totalrows = scalar (@{$tempsked->{ROUTES}});
+        
+          my $row = 1; # second row (first row is #0)
+          while ($row < $totalrows) {
+             next unless $tempsked->{SPECDAYS}[$row] eq "SD";
+             $totalrows--;
+             foreach (qw(ROUTES NOTES VT SPECDAYS)) {
+                splice ( @{$sked->{$_}} , $row, 1);
+             }
+             foreach ( 0 .. ( (scalar @{$sked->{TP}}) - 1) ) {
+                  splice ( @{$sked->{TIMES}[$_]} , $row, 1);
+             }
+             # eliminate this row
+          }
+
+          remove_blank_columns($tempsked); # 
+      } else { # should not happen unless Saturday and Sunday scheds diverge again
+          my $tempsked = $sked;
+      }
+
       foreach ( qw(TP ROUTES SPECDAYS TIMES VT NOTES NOTEDEFS) ) {
    
          next SKED if scalar @{$alldataref->{$firstscheds[$sked]}{$_}} 
@@ -568,8 +603,7 @@ sub merge_days {
 
       # TODO - it ought to say "if the only differences are on school days only
       # trips, merge anyway." Easier said than done.
-      
-   
+
       # At this point, we know they're identical.
       # References make it pretty easy.
       
@@ -606,6 +640,9 @@ sub merge_columns {
  
    ### Merge adjacent columns with the same timepoint (i.e., 
    ### where a point says "arrives 10:30, leaves 10:35" just use the latter)
+
+   # Truth is, I should probably move this to makepoints, which is the only
+   # thing that needs it, and eliminate the "-s" files. Haven't done that yet.
 
    my $prevtp = "";
    my $tp = 0;
@@ -695,6 +732,15 @@ sub stripblanks {
    }
 
    return wantarray ? @ary : $ary[0];
+
+}
+
+
+sub byskednamenum {
+
+   (my $aa = $a) =~ s/.*=//;
+   (my $bb = $b) =~ s/.*=//;
+   return $aa <=> $bb;
 
 }
 
