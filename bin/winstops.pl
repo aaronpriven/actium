@@ -16,9 +16,9 @@ my (@refs, @keys, %stopdata, $stopdialog, $dataresult, $tpresult);
 
 our (%frequencies, %stops, $higheststop, @thisstopdata, %index);
 
-init_vars();
-
 chdir get_directory() or die "Can't change to specified directory.\n";
+
+init_vars();
 
 build_tphash();
 
@@ -342,6 +342,10 @@ sub put_thisstopdata_into_tplist {
 
        my $tp = 
             $index{$line}{$_->{'DAY_DIR'}}{'TP'}[$_->{'TPNUM'}];
+
+       $tp = tpxref($tp,1);
+       #always xref here
+
        my $timepoint = $tphash{$tp};
 
        $datadialog->{'Data_TPList'}->AddString(
@@ -1309,45 +1313,6 @@ sub hide_tproutes {
 }
 
 
-sub read_index {
-
-open INDEX , "<acsched.ndx" or die "Can't open index file.\n";
-
-   local ($/) = "---\n";
-
-   my @day_dirs;
-   my @thisdir;
-   my $day_dir;
-   my @timepoints;
-   my $line;
-
-   while (<INDEX>) {
-
-      chomp;
-      @day_dirs = split("\n");
-      $line = shift @day_dirs;
-  
-      foreach (@day_dirs) {
-         # this $_ is local to the loop
-
-         @thisdir = split("\t");
-         $day_dir = shift @thisdir;
-         @{$index{$line}{$day_dir}{"ROUTES"}} = split(/_/, shift @thisdir);
-
-         foreach (@thisdir) {
-            # another local $_
-
-            @timepoints = split(/_/);
-            push @{$index{$line}{$day_dir}{"TP"}} , $timepoints[0];
-            push @{$index{$line}{$day_dir}{"TIMEPOINTS"}} , $timepoints[1];
-         }
-
-      }
-
-   }
-   return %index;
-
-}
 
 sub MakeStop_Click {
 
