@@ -1,7 +1,25 @@
 #!/usr/bin/perl5
 
+# newsignup.pl part of AC's Single Timepoint Schedule program
+
+# It creates the index files and data files used each time
+# a Single Timepoint Schedule is created.
+
+# Actually, I don't think I'll use the index file after all, 
+# or for that matter the non-slim schedule files, but
+# it hurts nothing to keep producing it.
+
+# To run this program, take the .scd files from Transitinfo and 
+# put them in a directory. On a command-line system, run 
+# the program with the directory name as the first entry in the 
+# command line (such as "newsignup.pl /schedule/scd")
+
 # Note that this assumes that the files are in the native text form
 # (for DOS/Windows/NT, that is, the line ends are CR/LF). 
+
+require 'byroutes.pl';
+
+# someday I'm going to have to learn how to write modules
 
 chdir &get_directory or die "Can't change to specified directory.\n";
 
@@ -10,6 +28,8 @@ chdir &get_directory or die "Can't change to specified directory.\n";
 # depends on the presence of a command line.
 
 &assemble_line_and_file_lists;
+
+&prepare_index_for_writing;
 
 # now @lines is a list of lines, and @scdfiles is a list of scdfiles
 
@@ -63,9 +83,19 @@ foreach $linenum (@lines) {
 
    &output_schedule ("$linenum.sls");
 
+   &output_index;
+
 }
 
+&close_index;
+
 print "\n";
+
+
+# -----------------------------------------------------------------
+# ---- END OF MAIN
+# -----------------------------------------------------------------
+
 
 sub get_scheds_for_line {
 
@@ -91,6 +121,10 @@ return $ARGV[0];
 sub assemble_line_and_file_lists {
 
 @scdfiles = sort <*.scd>;
+
+unless (scalar(@scdfiles)) {
+   die "Can't find any .scd files.";
+}
 
 # so @scdfiles has all the files in it, sorted
 
@@ -133,31 +167,6 @@ foreach $dummyvar (@scdfiles) {
 }
 
 
-sub byroutes  {
-
-   my ($aa, $bb, $anum, $bnum);
-
-   $aa = uc($a);
-   $bb = uc($b);
-   
-   $anum = $aa > 0;
-   $bnum = $bb > 0;
-   # So, $anum is true if $a is a number, etc.
-
-   return ($bnum <=> $anum) unless $anum == $bnum;
-
-   #  If they're not the same, return whichever one is lesser
-   #  (which will be whichever one is the number).
-
-   return ($aa <=> $bb) if ($anum and $bnum);
- 
-   # if $a and $b are both numbers, return a numeric comparison
-
-   return ($aa cmp $bb);
-
-   # otherwise they are both strings, so return the string comparison
-
-}
 
 
 sub get_schedule_info {
@@ -521,4 +530,51 @@ sub merge_columns {
    
    }
    
+}
+
+sub prepare_index_for_writing {
+
+open INDEX , ">acsched.ndx" or die "Can't open index file.\n";
+
+}
+
+sub close_index {
+
+close INDEX;
+
+}
+
+sub output_index {
+
+print INDEX "$linenum\n";
+
+my %routes;
+
+foreach $schedname (keys %fullsched) {
+
+   %routes = ();
+
+   print INDEX "$schedname\t";
+   foreach (@{$fullsched{$schedname}{"ROUTES"}}) {
+      $routes{$_}++;
+   }
+
+   print INDEX join("_" , sort byroutes (keys %routes)) ;
+
+   for ($i=0; $i < scalar (@{$fullsched{$schedname}{"TP"}});  $i++) {
+
+      print INDEX "\t" , $fullsched{$schedname}{"TP"}[$i];
+      print INDEX "_" , $fullsched{$schedname}{"TIMEPOINTS"}[$i];
+      # I was going to use \x1E, ascii US, Unit Separator
+      # but changed my mind
+      # I wanted to use something other than tab
+
+   }
+
+print INDEX "\n";
+
+}
+
+print INDEX "---\n";
+
 }
