@@ -13,11 +13,13 @@ use strict;
 
 sub byroutes ($$) {
 
-   my ($a, $b) = (uc($_[0]) , uc($_[1]));
+   my ($aa, $bb) = (uc($_[0]) , uc($_[1]));
  
-   my $anum = ( $a lt "A" );
-   my $bnum = ( $b lt "A" );
-   # So, $anum is true if $a is a number, etc.
+   my $anum = ( $aa lt "A" );
+   my $bnum = ( $bb lt "A" );
+   # So, $anum is true if $aa is a number, etc.
+   # admittedly this is not the most sophisticated routine to discover
+   # whether they are numbers
 
    unless ($anum == $bnum) {
            return -1 if $anum;
@@ -30,12 +32,12 @@ sub byroutes ($$) {
    
    #  letters come after numbers in our lists.
 
-   return ($a cmp $b) unless ($anum);
+   return ($aa cmp $bb) unless ($anum);
    # return a string comparison unless they're both numeric
    # (of course, $anum == $bnum or it would have returned already)
 
-   my @a = split (/(?<=\d)(?=\D)/ , $a, 2);
-   my @b = split (/(?<=\d)(?=\D)/ , $b, 2);
+   my @a = split (/(?<=\d)(?=\D)/ , $aa, 2);
+   my @b = split (/(?<=\d)(?=\D)/ , $bb, 2);
 
    # splits on the boundary (zero-width) between
    # a digit on the left and a non-digit on the right.
@@ -48,8 +50,6 @@ sub byroutes ($$) {
    # in which case return a string comparison on the second component.
 
 }
-
-1;
 
 # -----------------------------------------------------------------
 # ---- INITIALIZING ROUTINES
@@ -85,6 +85,17 @@ sub init_vars () {
           DA => "Daily" ,
           SA => "Saturdays" ,
           SU => "Sundays and Holidays" ,
+        );
+
+   our %longdirnames = 
+        ( E => "east" ,
+          N => "north" ,
+          S => "south" ,
+          W => "west" ,
+          SW => "southwest" ,
+          SE => "southeast" ,
+          'NE' => "northeast" ,
+          NW => "northwest" ,
         );
 
 # the following hashes are used for sorting
@@ -191,7 +202,9 @@ sub get_lines () {
    our ($longestline, @lines);
 
    my @slsfiles;
-   @slsfiles = <*.sls>;
+   @slsfiles = <skeds/*.sls>;
+
+   s#^sls/## foreach @slsfiles;
 
    unless (scalar(@slsfiles)) {
       die "Can't find any .sls files.";
@@ -403,14 +416,18 @@ sub pick_line () {
 # ---- READ DATA FROM DISK ROUTINE
 # -----------------------------------------------------------------
 
-sub read_fullsched ($) {
+sub read_fullsched ($;$) {
 
 
    our (%fullsched);
 
    %fullsched = ();
 
-   my $line = $_[0];
+   my $line = shift;
+
+   my $ext = shift;
+
+   $ext = ".sls" unless $ext;
 
    my (@wholesched, @thesetimes);
    my ($wholesched , $day_dir, $row, $note, $route, $spec_days , $tp) ;
@@ -418,7 +435,7 @@ sub read_fullsched ($) {
    local ($_);
    local ($/) = "\n---\n";
 
-   open IN , "$line.sls";
+   open IN , "skeds/$line" . $ext or die "Can't open file skeds/$line" . $ext;
 
    until (eof(IN)) {
 
@@ -611,8 +628,6 @@ sub build_outsched (@) {
       # add DAY and DIR to $outsched
 
       $outsched[$column]{"TPNUM2USE"} = $tp;
- #     print '{$outsched[$column]{"TPNUM2USE"}' , 
- #            $outsched[$column]{"TPNUM2USE"}, "}";
       $outsched[$column]{"ROUTES2USE"} = [ @routes ];
 
       # So now, $tp (which is the NUMBER of the timepoint)
@@ -655,19 +670,11 @@ sub build_outsched (@) {
 
    } continue {
 
-      print "\n---\n" , join("-" , @{$outsched[$column]{"HEADNUM"}});
-      print "\t" , $outsched[$column]{"HEADDAYS"};
-      print "\t" , $outsched[$column]{"TP2USE"};
-      print "\t" , $outsched[$column]{"LASTTP2USE"};
-      print "\t" , $outsched[$column]{"HEADDEST"};
-
       $column++;
        
    }
 
 # now we have our $outsched, only it's not in order.  
-
-print "\n\n";
 
 } 
 
@@ -823,7 +830,7 @@ sub getcolor($) {
 
    local $_ = $_[0];
 
-   return "Local" if /^\d\d?/;
+   return "Local" if /^\d\d?$/;
    # return "Local" if it's one or two digits
 
    return "Transbay" if $_ ge "A";
@@ -895,7 +902,9 @@ sub output_outsched ($$) {
 
 #   open OUT, ">" . get_output_filename();
 
-   open OUT, ">$stopcode.txt";
+   mkdir "out" or die 'Can\'t make directory "out"'  unless -d "out";
+
+   open OUT, ">out/$stopcode.txt";
 
    @outsched = sort 
        {
@@ -917,9 +926,12 @@ sub output_outsched ($$) {
       $head = join ("-" , @{$column->{"HEADNUM"}});
       
       # the gobbeldygook in the print statements are the quark tags
-      print OUT
-            '@Column head:',                                   # style
-            '<*d(' , length($head) +1 , ',2)' ,                # drop cap
+      print OUT '@Column head:<';                                   # style
+      print OUT 
+            '*d(' , length($head) +1 , ',2)'                 # drop cap
+            if length($head) <= 3;   # but only if the length is short
+
+      print OUT 
             'c"' , getcolor($column->{"HEADNUM"}[0]) , '">';   # color
 
       # at some point, we may want to do some other kind of formatting if
@@ -972,7 +984,7 @@ sub output_outsched ($$) {
             $temp =~ s/\.$//;
             $markdefs[$thismark] = 
                "Departure times are given for $temp. " .
-               "Buses will arrive somewhat later at this location.";
+               "Buses may arrive somewhat later at this location.";
          }
  
          push @thesemarks, $thismark;
@@ -984,7 +996,6 @@ sub output_outsched ($$) {
       #<V> is "superior" type
 
       print OUT "<\\c>";                                     # next column
-      print OUT '@times:' ;                                    # style
 
       my $prev = "z";
 
@@ -1004,7 +1015,7 @@ sub output_outsched ($$) {
          # removes last char from the time, and sets $ampm to be that char
 
          if ($ampm ne $prev) {
-             print OUT ($ampm eq 'a' ? '@amtimes:' : '@pm_times:' );
+             print OUT ($ampm eq 'a' ? '@amtimes:' : '@pmtimes:' );
              $prev = $ampm;
          }
          # if $ampm not the same as the last one, print the appropriate
@@ -1012,7 +1023,7 @@ sub output_outsched ($$) {
 
          substr($_, -2, 0) = ":";
 
-         print OUT "$_";
+         print OUT "\t$_";
 
          # time notes
 
@@ -1096,13 +1107,19 @@ sub output_outsched ($$) {
 
     } # end of column
 
-    print OUT '@noteheaders:Light Face = a.m.<\n><b>Bold Face = p.m.<b>';
+    if (scalar(@outsched) < 7 ) {
+       print OUT '<\c>' x (2 * ( 7 - scalar(@outsched)) );
+       # if there are less than seven columns, print extra column
+       # markers for the blank ones
+    }
+
+    print OUT '@noteheaders:Light Face = a.m.<\n><B>Bold Face = p.m.<B>';
     print OUT "\n";
     print OUT '@noteheaders:<b>Unless otherwise specified, departure times are given for ';
     $_ = $tphash{$defaultheadtp};
     s/\&/and/;
     s/\.$//;
-    print OUT "$_. Buses will arrive somewhat later at this location.<b>\n";
+    print OUT "$_. Buses may arrive somewhat later at this location.<b>\n";
 
     if (scalar @markdefs) {
 
@@ -1117,8 +1134,8 @@ sub output_outsched ($$) {
     }
 
 
-    print OUT '<\c>@noteheaders:';
-    print OUT "$stopdescription ($stopcode) ";
+    print OUT '<\c>@stopdescription:';
+    print OUT "$stopdescription ";
 
     my ($mday, $mon, $year) = (localtime(time))[3..5];
 
@@ -1146,7 +1163,9 @@ sub get_scheds_for_line {
 sub assemble_line_and_file_lists {
 
 our @lines;
-our @scdfiles = sort <*.scd>;
+our @scdfiles = sort <scd/*.scd>;
+
+s#scd/## foreach @scdfiles;
 
 local ($_);
 
@@ -1221,8 +1240,9 @@ sub get_timepoint_info ($) {
    # keep reading data until the end of the file
    
       chomp;
+      my $tp = substr ($_, 0, 9);
       $_ = substr ($_, 11);
-      push @{$fullsched{$schedname}{"TIMEPOINTS"}}, $_ if $_;
+      push @{$fullsched{$schedname}{"TIMEPOINTS"}}, ($_ or $tp);
 
    } 
 
@@ -1394,7 +1414,9 @@ sub output_schedule {
 
 my $file = $_[0];
 
-open TEMPFILE , ">$file" or die "Can't open file $file.\n";
+mkdir "skeds" or die 'Can\'t make directory "skeds"'  unless -d "skeds";
+
+open TEMPFILE , ">skeds/$file" or die "Can't open file $file.\n";
 
 # print "Writing line $linenum to file $file.\n";
 
@@ -1647,6 +1669,300 @@ sub add_tps_to_tphash {
             $fullsched{$schedname}{"TIMEPOINTS"}[$i];
 
    }
+
+}
+
+=pod
+
+this was stopslib.pl
+library of routines associated with the stops file
+
+The stops file is a tab-delimited ascii file. The field names
+form the first line, followed by a set of stops, one line per stop, each
+with a field.
+
+The routines will accept and spit back any field.  They know about the 
+following fields and will add them if they are not present in the 
+original file:
+
+   StopID
+   City
+   Neighborhood
+   On
+   At
+   StNum
+   NearFar
+   Direction
+   Condition
+   SignType
+
+The format in memory for this is under the hash %stops. The format is
+
+$stops{stopid}{field} = the value of that field.
+
+=cut
+
+use constant NL => "\n";
+use constant TAB => "\t";
+
+use strict;
+
+sub readstops ($) {
+
+   my (@values, %isakey, @keys, %hash, %stops);
+   my $filename = $_[0];
+   local ($_);
+
+   open  STOPFILE, $filename or die "Can't open stops file for reading";
+
+   $_ = <STOPFILE>;
+   chomp;
+   @keys = split (/\t/);
+   %stops = ();
+
+   while (<STOPFILE>) {
+      chomp;
+
+      @values = split (/\t/);
+      %hash = ();
+
+      foreach (@keys) {
+         $hash{$_} = shift @values;
+         $hash{$_} = substr($hash{$_}, 1, length ($hash{$_}) -2)
+              if ($hash{$_} =~ /^"/) and ($hash{$_} =~ /"$/);
+
+         # removes bracketing quote marks, which are put there for mysterious
+         # reasons by Excel sometimes
+
+      }
+
+      $stops{$hash{"StopID"}} = { %hash };
+
+      # yes, $stops{$stopid}{"StopID"} will always be the same as
+      # $stopid itself, on a valid record.
+      
+   }
+
+   $isakey{$_} = 1 foreach (@keys);
+
+   foreach (qw( StopID City Neighborhood On At
+               StNum NearFar Direction Condition )) {
+
+      push @keys, $_ unless $isakey{$_};   
+
+   }
+
+   close STOPFILE;
+
+   return ( \@keys, \%stops );
+
+}
+
+sub writestops ($\@\%) {
+
+   my $filename = shift;
+   my @keys = @{ +shift } ;
+   my %stops = %{ +shift } ;
+   my @values;
+
+   unless (rename $filename , "$filename.bak") {
+      warn qq(Can't rename old stops file "$filename"; saving as "TEMPSTOP");
+      $filename = 'TEMPSTOP';
+   }
+ 
+   open STOPS , ">$filename" or die "Can't open stops file for writing";
+
+   print STOPS join ( TAB , @keys) , NL ;
+
+   while (my $stopid = each %stops) {
+
+      @values = ();
+
+      foreach (@keys) {
+          push @values , $stops{$stopid}{$_};
+      }
+
+      print STOPS join ( TAB , @values) , NL;
+      
+   }
+
+   close STOPS;
+
+}
+
+
+sub stopdescription ($$$) {
+
+   my ($stopid, $stopref,$stopdata) = @_;
+
+   our %longdirnames;
+   
+   my $description = "";
+   my $direction = $stopref->{'Direction'}; 
+   $direction = $longdirnames{$direction} if $longdirnames{$direction};
+
+   $description .= "$stopref->{'StNum'} " 
+          if $stopref->{'StNum'};
+   $description .= $stopref->{'On'};
+   $description .= " at $stopref->{'At'}" 
+          if $stopref->{'At'};
+   $description .= ", going $direction (#$stopid)";
+   
+   $description .= ' *' unless $stopdata;
+
+   return $description;
+
+}
+
+sub get_stopid_from_description {
+
+  my $description = shift;
+
+  my $leftparenpos = rindex ($description, '(');
+  my $rightparenpos = rindex ($description, ')');
+
+  $description = 
+     substr ($description, $leftparenpos+1, 
+             $rightparenpos - $leftparenpos - 1);
+
+  $description =~ s/#//;
+
+  return $description;
+
+}
+
+sub stopdesclist (\%\%) {
+
+   my %stops = %{+shift};
+   my %stopdata = %{+shift};
+   my @retlist;
+
+   foreach (sort 
+           {  
+             $stops{$a}{"On"} cmp $stops{$b}{"On"} or 
+             $stops{$a}{"At"} cmp $stops{$b}{"At"} or
+             $stops{$a}{"StNum"} <=> $stops{$b}{"StNum"} or
+             $stops{$a}{"Direction"} cmp $stops{$b}{"Direction"} 
+           } 
+         keys %stops) 
+   {
+      push @retlist, stopdescription($_,$stops{$_},$stopdata{$_});
+   }
+
+return @retlist;
+
+}
+
+=pod
+
+this was stopdatalib.pl
+Routines for dealing with stop data
+
+stopdata is in the hash %stopdata. Format is:
+
+%stopdata{$stopid}[0..x]{LINE} = the line
+                        {DAY_DIR} = the day and direction
+                        {DAY} = the day (same as above, only easier)
+                        {DIR} = the direction (same as above, only easier)
+                        {TPNUM} = the number of the appropriate timepoint
+                        {ROUTES}[0..x] = each route used here
+
+=cut
+
+use strict;
+
+
+sub readstopdata ($) {
+
+   my $filename = shift;
+   my ($stopid, @pickedtps, %stopdata, @items, $count);
+
+   open STOPDATA, $filename or die "Can't open stop data file for reading";
+
+   local ($/) = "\n---\n";
+
+   local ($_);
+
+   while ($_ = <STOPDATA>) {
+
+      chomp;
+      ($stopid, @pickedtps) = split (/\n/);
+
+      next unless $stopid;
+
+      $stopid =~ s/\t.*//;
+
+      # throw away everything after the first tab (if anything)
+
+      $count = 0;
+      foreach (@pickedtps) {
+         
+         @items = split (/\t/);
+         $stopdata{$stopid}[$count]{"LINE"} = shift @items;
+         my $daydir = shift @items;
+         $stopdata{$stopid}[$count]{"DAY_DIR"} = $daydir;
+         my ($dir, $day) = split (/_/ , $daydir);
+         $stopdata{$stopid}[$count]{"DAY"} = $day;
+         $stopdata{$stopid}[$count]{"DIR"} = $dir;
+         $stopdata{$stopid}[$count]{"TPNUM"} = shift @items;
+         $stopdata{$stopid}[$count]{"ROUTES"} = [ @items ];
+
+         $count++;
+      }
+
+      @{$stopdata{$stopid}} = sort bystopdatasort @{$stopdata{$stopid}};
+
+   }
+
+   close STOPDATA;
+
+   return %stopdata;
+
+}
+
+sub bystopdatasort  {
+           our (%dayhash, %dirhash);
+           return byroutes ($a->{"LINE"} , $b->{"LINE"}) or 
+           $dayhash{$b->{"DAY"}} <=> $dayhash{$a->{"DAY"}} or
+           $dirhash{$b->{"DIR"}} <=> $dirhash{$a->{"DIR"}}
+}
+
+sub writestopdata () {
+
+   our %stops;
+   my $filename = shift;
+   my %stopdata = @_;
+
+   unless (rename $filename , "$filename.bak") {
+      warn qq(Can't rename old stop data file "$filename"; saving as "TEMPSD");
+      $filename = 'TEMPSD';
+   }
+ 
+   open STOPDATA , ">$filename" 
+       or die "Can't open stop data file $filename for writing";
+
+   foreach my $stopid (sort {$a <=> $b} keys %stopdata) {
+   # there's no particular reason to sort it, actually.
+
+      next unless $stopid;
+
+      print STOPDATA $stopid , TAB, 
+          stopdescription ($stopid, $stops{$stopid}, 1), NL;
+
+      foreach (@{$stopdata{$stopid}}) {
+
+         print STOPDATA $_->{"LINE"} , TAB;
+         print STOPDATA $_->{"DAY_DIR"} , TAB;
+         print STOPDATA $_->{"TPNUM"} , TAB;
+         print STOPDATA join ( TAB , @{$_->{"ROUTES"}}) , NL;
+ 
+      }
+
+   print STOPDATA "---\n";
+
+   }
+
+   close STOPDATA;
 
 }
 
