@@ -1,0 +1,64 @@
+#!/usr/bin/perl
+
+# makepoints
+#
+# This program generates the point schedules associated with 
+# particular signs.
+
+use strict;
+use warnings;
+
+use FindBin('$Bin'); 
+   # so $Bin is the location of the very file we're in now
+
+use lib $Bin; 
+   # there are few enough files that it makes sense to keep
+   # main program and library in the same directory
+
+our $skedsdir = "$Bin/..";
+
+chdir $skedsdir or die "Can't change directory to $skedsdir .";
+
+use FPMerge('FPread');
+
+# read in FileMaker Pro data
+
+our (@signs, @stops, @lines, @skedspec);
+our (%signs, %stops, %lines, %skedspec);
+
+{ # block to have non-strict refs (& scopes @ref, %indexfield)
+ no strict 'refs';
+ my @refs;
+ my %indexfield = qw( Signs    SignID
+                      Stops    UNIQUEID
+                      Lines    Line
+                      SkedSpec SignID 
+                      );
+
+  use Benchmark;
+  my ($t0, $t1, $td);
+
+ foreach (keys %indexfield) {
+
+    $t0 = new Benchmark;
+    @refs = FPread ("fm/$_.csv" , $indexfield{$_});
+
+    $t1 = new Benchmark;
+    $td = timediff($t1, $t0);
+    print "the code took:",timestr($td),"\n";  
+
+
+    $_ = lc($_); # this alters %indexfield but who cares
+    @$_ = @{$refs[0]};
+    %$_ = %{$refs[1]};
+ }
+}
+
+use Data::Dumper;
+
+my $ref = \%signs;
+
+$_ = <STDIN>;
+
+print Dumper($ref);
+
