@@ -79,8 +79,8 @@ print "$vals timepoints.\n" unless $options{quiet};
 our (%lines , @lines);
 FPread_simple("Lines.csv" , \@lines, \%lines , 'Line');
 
-our (%fullnotes , @fullnotes);
-FPread("FullNotes.csv" , \@fullnotes, \%fullnotes , 'SkedID');
+our (%skedadds , @skedadds);
+FPread("Skedadds.csv" , \@skedadds, \%skedadds , 'SkedID');
 
 open DATE , "<effectivedate.txt" 
       or die "Can't open effectivedate.txt for input";
@@ -160,12 +160,14 @@ sub output_fullsched {
    # I am currently ignoring the NOTES field, since the only thing in there
    # is the misleading bicycle information. Add code here to deal with it
    # if there are more notes later. This is still here because NOTEDEFS
-   # includes definitions for SPECDAYS as well as for NOTES.
-   my %notedefs = ();
+   # includes definitions for SPECDAYS as well as for NOTES. (Although these
+   # are not currently added to the file...)
+   my %notedefs = (SD => "School Days Only" , SH => "School Holidays Only");
    foreach (sort @{$sked->{NOTEDEFS}}) {
       my ($note, $def) = split (/:/);
       $notedefs{$note} = $def;
    }
+   
 
    ### establish information about the days of service
    # $specdays is true if there is a special day note for any 
@@ -267,7 +269,7 @@ sub output_fullsched {
 
    ### print timepoint numbers in boxes
    # TODO - arrange to match the boxes to the line maps (probably
-   # by having the user enter map info in FullNotes.fp5)
+   # by having the user enter map info in the SkedAdds table)
    # also, figure out if you should add blank entries to the boxes.
    # at this point, I don't know how many different timetable templates
    # there will be.
@@ -355,7 +357,7 @@ sub whole_sked_notes {
 
    my $sked = shift;
 
-   unless (exists ($fullnotes{$sked->{SKEDNAME}})) {
+   unless (exists ($skedadds{$sked->{SKEDNAME}})) {
       return "";
    } # if there aren't any full notes for this sked, skip it
 
@@ -364,18 +366,18 @@ sub whole_sked_notes {
    my @wholenotes = ();
    my @notes2check;
 
-   if (ref ($fullnotes{$sked->{SKEDNAME}}) eq "ARRAY") {
-      @notes2check = @{$fullnotes{$sked->{SKEDNAME}}};
+   if (ref ($skedadds{$sked->{SKEDNAME}}) eq "ARRAY") {
+      @notes2check = @{$skedadds{$sked->{SKEDNAME}}};
    } else { # it's a single one of the hash
-      @notes2check = ( $fullnotes{$sked->{SKEDNAME}}) ;
+      @notes2check = ( $skedadds{$sked->{SKEDNAME}}) ;
    }
 
-   FULLNOTE:
-   foreach my $thisfullnote ( @notes2check ) {
-      foreach my $thisnoteline (split (/\r/ , $thisfullnote->{Lines})) {
+   SKEDADD:
+   foreach my $thisskedadd ( @notes2check ) {
+      foreach my $thisnoteline (split (/\r/ , $thisskedadd->{Lines})) {
          if ($routes{$thisnoteline}) {
-            push @wholenotes, $thisfullnote->{Note};
-            next FULLNOTE;
+            push @wholenotes, $thisskedadd->{FullNote};
+            next SKEDADD;
          }
       }
    }
