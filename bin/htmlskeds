@@ -25,8 +25,8 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 
-use Skedfile qw(Skedread Skedwrite 
-                getfiles GETFILES_PUBLIC trim_sked copy_sked);
+use Skedfile qw(Skedread Skedwrite GETFILES_PUBLIC
+                getfiles GETFILES_PUBLIC_AND_DB trim_sked copy_sked);
 use Myopts;
 use Skeddir;
 use Skedvars qw(%daydirhash %adjectivedaynames %bound %specdaynames);
@@ -35,7 +35,8 @@ use Skedtps qw(tphash TPXREF_FULL);
 use FPMerge qw(FPread FPread_simple);
 
 our %second = ( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
-                "82L" => '82' ,  SA  => 'S' ); # , '51S' => '51' );
+                "82L" => '82' ,  SA  => 'S' , DB1 => 'DB' ,
+               ); # , '51S' => '51' );
 
 our %first = reverse %second;
 
@@ -44,6 +45,7 @@ our %first = reverse %second;
 ######################################################################
 
 my $emailerlinktext = <<'EOF';
+
    <p><a href="http://www.actransit.org/acnews/">
    Have schedule and route changes delivered to your computer &#8211; subscribe to AC Transit e-News.
    </a></p>
@@ -58,6 +60,11 @@ my $genericemailerlinktext = <<'EOF';
    <!-- Yeah, I know. 
         1994 called, they want their Web style back. -->
 EOF
+
+my $genericemailerlinktext = $emailerlinktext;
+# easier than commenting out the above multiple lines is just to put this
+# one in first
+
 my $legendtext = ' <font size=-1>(see also <a href="/pdf/schedulemaps/line-map-legend-jun04.pdf">the legend for line maps)</a></font>';
 
 our (%options);    # command line options
@@ -170,9 +177,9 @@ foreach my $route (sort byroutes keys %skednamesbyroute) {
    
    print ROUTEF <<"EOF";
 <HTML><HEAD><TITLE>AC Transit $lineword $linename</TITLE></HEAD>
-<BODY><a href="http://www.actransit.org">AC Transit</a> : 
+<BODY><p><a href="http://www.actransit.org">AC Transit</a> : 
 <a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : 
-<a href="index.html">Schedules</a> : $linename</p><hr>
+<a href="index.html">Summer School Schedules</a> : $linename</p><hr>
 <p><H2>AC Transit $lineword $linename</H2>
 <p>Effective $effdate
 EOF
@@ -211,21 +218,27 @@ EOF
 
    if ($linemaptext) {
       $linemaptext =~ s/Õ/\'/;
-      print ROUTEF $linemaptext , $legendtext;
+      print ROUTEF $linemaptext , $legendtext , "</ul>\n<ul>";
    }
 
    my @skednames = sort bydaydirhash (@{$skednamesbyroute{$route}}) ;
 
    foreach my $skedname ( @skednames ) {
       my ($linegroup, $dir, $day) = split(/_/ , $skedname);
-      print ROUTEF qq(<a href="$route-$dir-$day.html">);
-      print ROUTEF "<LI>$bound{$dir} $adjectivedaynames{$day} Schedule</a>\n";
+      print ROUTEF qq(<LI><a href="$route-$dir-$day.html">);
+      print ROUTEF "$bound{$dir} $adjectivedaynames{$day} Schedule</a>\n";
    }
-   print ROUTEF qq(<br><a href="$route-A.html">);
-   print ROUTEF "<LI>Complete Schedule</a>\n";
+   print ROUTEF qq(</ul><ul><LI><a href="$route-A.html">);
+   print ROUTEF "Complete Schedule</a>\n";
+
+   print ROUTEF "</UL><hr>\n";
+
+   if ($lines{$route}{FullWebNote}) {
+      $lines{$route}{FullWebNote} =~ s/Ó/\"/g;
+      print ROUTEF "<p>" , $lines{$route}{FullWebNote} , "</p>";
+   }
 
    print ROUTEF <<"EOF";
-</UL></p><hr>
 $emailerlinktext
 Prepared by AC Transit Marketing and Communications<br>$prepdate
 </BODY></HTML>
@@ -238,7 +251,7 @@ EOF
 <BODY><p>
 <a href="http://www.actransit.org/">AC Transit</a> :
 <a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : 
-<a href="index.html">Schedules</a> : 
+<a href="index.html">Summer School Schedules</a> : 
 <a href="$route.html">$linename</a> :
 Complete Schedule</p><hr>
 <h2>$lineword $linename</h2>
@@ -269,7 +282,7 @@ EOF
 <BODY><p>
 <a href="http://www.actransit.org/">AC Transit</a> :
 <a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : 
-<a href="index.html">Schedules</a> : 
+<a href="index.html">Summer School Schedules</a> : 
 <a href="$route.html">$linename</a> :
 $bound{$dir} $adjectivedaynames{$day}</p><hr>
 <h2>$lineword $linename</h2>
@@ -301,7 +314,7 @@ EOF
 
       $skedtext{$skedname} =
           qq(<p><a href="#key$dir$day">) . 
-         "<font size=-1>[Key to abbreviations follows the schedule]</a></p></font><pre>";
+         "<font size=-1>[Key to abbreviations follows the schedule]</font></a></p><pre>";
 
       my $trimsked = copy_sked($skeds{$skedname});
 
@@ -350,7 +363,7 @@ EOF
          next ROW if $thisroute ne $route and
             $thisroute ne $first{$route};
 
-         $skedtext{$skedname} .= '<hr>' unless $count == 0 or $count % 25 ;
+         $skedtext{$skedname} .= '</pre><hr><pre>' unless $count == 0 or $count % 25 ;
          $skedtext{$skedname} .= $tps unless $count % 25;
          $skedtext{$skedname} .= "\n" unless $count % 5;
          $count++;
@@ -366,7 +379,7 @@ EOF
       }
 
       $skedtext{$skedname} .= 
-        qq(\n</pre><hr><p><b><a name="key$dir$day">Key to Abbreviations</b></a></p><pre>);
+        qq(\n</pre><hr><p><b><a name="key$dir$day">Key to Abbreviations</a></b></p><pre>);
 
       if (scalar keys %specdays) {
          $skedtext{$skedname} .= $_ . "   " . $specdaynames{$_} . "\n"
@@ -396,9 +409,19 @@ EOF
       $skedtext{$skedname} .= "</pre><hr>";
 
       print HTML $skedtext{$skedname};
+      if ($lines{$route}{FullWebNote}) {
+         $lines{$route}{FullWebNote} =~ s/Ó/\"/g;
+         print ROUTEF "<p>" , $lines{$route}{FullWebNote} , "</p>";
+      }
+
+   if ($lines{$route}{FullWebNote}) {
+      $lines{$route}{FullWebNote} =~ s/Ó/\"/g;
+      print HTML "<p>" , $lines{$route}{FullWebNote} , "</p>";
+   }
+
       print HTML "<p>";
       print HTML $emailerlinktext , 
-         "Prepared by AC Transit Marketing and Communications<br>$prepdate";
+         "<p>Prepared by AC Transit Marketing and Communications<br>$prepdate";
       print HTML "</p>\n</body></html>";
 
       close HTML;
@@ -409,9 +432,14 @@ EOF
 
     } # skedname
 
-   print COMPLETE "</pre><p>";
+   if ($lines{$route}{FullWebNote}) {
+      $lines{$route}{FullWebNote} =~ s/Ó/\"/g;
+      print COMPLETE "<p>" , $lines{$route}{FullWebNote} , "</p>";
+   }
+
+   print COMPLETE "<p>";
    print COMPLETE $emailerlinktext , 
-      "Prepared by AC Transit Marketing and Communications<br>$prepdate";
+      "<p>Prepared by AC Transit Marketing and Communications<br>$prepdate";
    print COMPLETE "</p>\n</body></html>";
 
    close COMPLETE;
@@ -422,21 +450,28 @@ EOF
 print "\n";
 
 open INDEX , ">html/index.html" or die "Can't open html/index.html: $!";
-print INDEX  "<HTML><HEAD><TITLE>AC Transit Schedules</TITLE></HEAD>\n<BODY>";
+print INDEX  "<HTML><HEAD><TITLE>AC Transit Summer School Schedules</TITLE></HEAD>\n<BODY><p>";
 print INDEX  qq(<a href="http://www.actransit.org">AC Transit</a> : );
 print INDEX qq(<a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : );
-print INDEX  "Schedules</p><hr><p>";
-print INDEX "<H2>AC Transit Schedules</H2>\n<p>Effective $effdate" , upcoming() , "</p>\n";
+print INDEX  "Summer School Schedules</p><hr><p>";
+print INDEX "<H2>AC Transit Summer School Schedules</H2>\n<p>Effective $effdate" , upcoming() , "</p>\n";
 
+=pod
 print INDEX <<EOF;
 <UL><LI><A HREF="#Local">Local Service</A></LI>
 <LI><A HREF="#Transbay">Transbay Service</A></LI>
 <LI><A HREF="#School">School Service</A></LI>
 </UL><HR>
 EOF
+=cut
 
 my (@local, @transbay, @school);
 
+my @school = keys %index;
+
+print INDEX  "<UL>";
+
+=pod
 foreach (keys %index ) {
    if (/^[\d]/) {
       if ($_ < 600) {
@@ -449,15 +484,18 @@ foreach (keys %index ) {
    }
 }
 
-print INDEX qq(<h3><a name="Local">Local Service</h3><UL>);
+
+print INDEX qq(<h3><a name="Local">Local Service</a></h3><UL>);
 print INDEX $index{$_} foreach sort byroutes @local;
 print INDEX "</UL>\n";
 
-print INDEX qq(<h3><a name="Transbay">Transbay Service</h3><UL>);
+print INDEX qq(<h3><a name="Transbay">Transbay Service</a></h3><UL>);
 print INDEX $index{$_} foreach sort byroutes @transbay;
 print INDEX "</UL>\n";
 
-print INDEX qq(<h3><a name="School">School Service</h3><UL>);
+print INDEX qq(<h3><a name="School">School Service</a></h3><UL>);
+=cut
+
 print INDEX $index{$_} foreach sort byroutes @school;
 print INDEX "</UL>\n";
 
@@ -538,7 +576,7 @@ sub mapline {
 
   return qq(<LI><a href="/pdf/schedulemaps/) . 
          $lines{$route}{MapFileName} . 
-         qq(">Map for Line $route ) . $lines{$route}{Name} . qq(<a>\n);
+         qq(">Map for Line $route ) . $lines{$route}{Name} . qq(</a>\n);
 }
 
 sub upcoming {
