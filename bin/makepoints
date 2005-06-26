@@ -17,14 +17,8 @@
 # DONE or irrelevant
 # 2) Change the default number of columns to be derived from the "SignType"
 # database, and add the number of added columns triggered by "usedcount" to it
-# 3) change headnum routine so it uses "headnum-norule" for first headnum
-#   - (irrelevant with new Indesign routine)
 # 4) (not strictly makepoints) Change the "Signtype" value list in signs.fp5
 # to be derived from the signtype database  - # DONE
-# 5) Change everything to Indesign tags # DONE !
-# 6) Make the schedules on the right, instead of the left, of the sign
-# 9) Fix "last stop" destinations so they show up -- DONE (well,
-#    I decided to make them disappear instead)
 
 use strict;
 
@@ -84,7 +78,7 @@ EOF
 our (@signs, @stops, @lines, @signtypes, @skedspec, @projects);
 our (%signs, %stops, %lines, %signtypes, %skedspec, %projects);
 
-our ($schooldayflag, $anysecondflag);
+our ($schooldayflag, $anysecondflag,$addminsflag);
 
 print "Timepoints and timepoint names... " unless $options{quiet};
 my $vals = Skedtps::initialize;
@@ -150,6 +144,7 @@ foreach my $signid (sort {$a <=> $b} @signstodo) {
 
    $schooldayflag = 0;
    $anysecondflag = 0;
+   $addminsflag = 0;
    
    my @points = ();
    
@@ -196,6 +191,10 @@ sub build_point {
    }
 
    # now $point includes all the data in Skedspec, too! 
+
+   # I now consider this a serious BUG (or design flaw) since it means
+   # schedules and Skedspec cannot contain the same field names
+
    # This includes Timetable, Lines, Timepoint, NoteOnly, ExactTP,
    # SecondTimepoint, UseSecondTimepoint, BlankTimepoint, BlankorNonBlank,
    # AmPm, FullOrPoint, SkedID, SignID, SkedSpecSerial, TPXref,
@@ -207,7 +206,15 @@ sub build_point {
 
    {
    my $noteonly = lc(substr ($point->{NoteOnly} , 0 , 1) );
-   $noteonly = "" unless $noteonly =~ /^l|n|s|r$/;
+   
+   unless ($noteonly =~ /^l|n|s|r|a|b|t$/) {
+      $noteonly = '';
+      my $warning = $point->{SignID} . 
+         ":Unrecognized noteonly " . $point->{NoteOnly} . "\n" ;
+      print LOG $warning;
+      warn "\n" . $warning;
+   }
+
    $point->{NO} = $noteonly;
    }
    # so point->{NO} is a flag, if this is note only. $point->{NoteOnly} is
@@ -271,7 +278,7 @@ sub build_point {
    # get the header destination text ("To University and San Pablo")
    # $...{LASTTP2USE} is the timepoint short string ("UNIV S.P.")
    # also puts the various non-default last tps into {NOTEKEYS}
-   
+
    return $point;
 
 }
@@ -589,7 +596,7 @@ sub output_points {
    my @points = @{+shift};
    my $signid = shift;
 
-   our ($schooldayflag);
+   our ($schooldayflag, $addminsflag);
 
    my ($head, $thismark, @thesemarks, 
        $route, $lasttp, $temp, 
@@ -721,6 +728,17 @@ sub output_points {
       $pointtext .= $point->{HEADDAYS} ;
       $pointtext .= " to " .  $point->{HEADDEST} unless $point->{NO} eq "l";
 
+
+      if ($point->{DestinationNote} ) {
+ 
+         $pointtext .= " " . $point->{DestinationNote};
+
+      }
+      else {
+         $pointtext .= " (Clockwise loop)" if $point->{DIR} eq "CW";
+         $pointtext .= " (Counterclockwise loop)" if $point->{DIR} eq "CC";
+      }
+
       @thesemarks = ();
 
       # add note to indicate that times refer to the first route
@@ -746,15 +764,17 @@ sub output_points {
 
       # add note to indicate that times refer to the proper timepoint
       # if not the same as the current timepoint. But not if this is a
-      # "note only" column.
+      # "note only" column or there are approximate times
 
       $_ = $point->{M_TPXREF};
 
-      if ( not ($noteonly) and $defaultheadtp ne $_) {
+      if ( $point->{AddMins} == 0 and 
+           not ($noteonly) and 
+           $defaultheadtp ne $_) {
       # if the default end timepoint for the schedule as a whole 
       # isn't the same as the default end timepoint for this column only,
       # we need a head note. 
-      # But not if the whole column is a note only.
+      # But not if the whole column is a note only, or if it's estimated times
 
          if ($usedmarks{"Timepoint:$_"}) {
             $thismark = $usedmarks{"Timepoint:$_"};
@@ -808,12 +828,13 @@ sub output_points {
  
             $pointtext .= "See\rNote $thismark";
 
-         } elsif ($noteonly eq "r" ) {
+         } elsif ($noteonly =~ /^[rab]$/ ) {
          # Rapid note
-
-            $pointtext .= 'Buses arrive about every twelve minutes Ñ' .
-                      IDTags::softreturn . 
-                      'See information elsewhere on this sign.';
+            my %minutes = ( r => 'twelve' , a => 'ten' , b => 'fifteen' );
+    
+            $pointtext .= 'Buses arrive about every ' . $minutes{$noteonly} .
+                          'minutes Ñ' . IDTags::softreturn . 
+                          'See information elsewhere on this sign.';
             # that is an emdash - it should carry through. It's
             # potentially a crossplatform issue though.
 
@@ -824,6 +845,14 @@ sub output_points {
 
          $pointtext .= IDTags::boxbreak;  # next point marker
          next; # next point. Skip per-row routine below.
+
+      }
+
+      if ($point->{AddMins} >0 ) {
+         $addminsflag = 1;
+
+         $pointtext .= IDTags::parastyle('noteonly');
+         $pointtext .= "Approx<0x00AD>imate times only. See note.\r\r";
 
       }
 
@@ -859,10 +888,33 @@ sub output_points {
             $_ = $_ || $point->{"TIMES"}[$point->{S_TPNUM2USE}][$row];
          }
 
-         $pointtext .= "\r" unless $prev eq "z" ;
+         $pointtext .= "\r" unless $prev eq "z";
 
          $ampm = chop; 
          # removes last char from the time, and sets $ampm to be that char
+
+         # AddMins routine is here
+
+         if ($point->{AddMins} > 0 ) {
+
+            my $mins = substr($_,-2,2,""); # now $_ is hours
+            $mins += $point->{AddMins}; # coercing mins to number
+            while ($mins >= 60) { # roll over minutes
+               $mins -= 60;
+
+               # and change the hour too
+               if ($_ eq "12") {
+                   $_ = "1";
+               } elsif ($_ eq "11") {
+                   $ampm = ($ampm eq "a" ? "p" : "a");
+                   $_ = "12";
+               } else {
+                   $_ = $_ + 1; # coercion to number
+               }
+            }
+            $_ .= sprintf("%02d" , $mins);
+            
+         }
 
          if ($ampm ne $prev) {
              $pointtext .= IDTags::parastyle (
@@ -879,7 +931,7 @@ sub output_points {
          # if $ampm not the same as the last one, print the appropriate
          # style sheet spec, and set the previous to be this one
 
-         $pointtext .= "\t$_"; # tab plus time
+         my $time = $_;
 
          # next bit: footnotes on the time
 
@@ -981,9 +1033,21 @@ sub output_points {
 
          }
 
-         $pointtext .= IDTags::superscript (
-                    join ("," , sort {$a <=> $b} @thesemarks))
-             if scalar (@thesemarks);
+         if (scalar (@thesemarks)) {
+
+            my $footnotes = join ("," , sort {$a <=> $b} @thesemarks);
+
+            $time = "\t$time" if ((length($time) + length($footnotes)) < 7);
+
+            $time .= IDTags::superscript ( $footnotes) ;
+
+         } else {
+           $time = "\t$time";
+         }
+
+         $time = IDTags::color("Rapid Red", $time) if $point->{AddMins};
+
+         $pointtext .= $time;
 
       } # end of row
 
@@ -1011,6 +1075,9 @@ sub output_points {
     print OUT IDTags::parastyle('sidenotes');
     print OUT 'Light Face = a.m.' , IDTags::softreturn;
     print OUT IDTags::bold ('Bold Face = p.m.') , "\r"; 
+
+    print OUT IDTags::color ("Rapid Red" , "Times shown in red are only approximations. Buses may come somewhat earlier or later than the time shown.\r") 
+          if $addminsflag;
 
     if ( not ($anysecondflag) and $justoneheadtp ) { 
        print OUT 'Departure times are given for ';
@@ -1070,6 +1137,9 @@ sub output_points {
     if ($projects{$thisproject}{'ProjectNote'}) {
        print OUT $projects{$thisproject}{'ProjectNote'} , "\r";
     }
+
+
+    print OUT "See something wrong with this sign, or any other AC Transit sign? Let us know! Send email to signs\@actransit.org or call 511 to comment. Thanks!\r" if lc($signtypes{$signs{$signid}{SignType}}{GenerateWrongText}) eq "yes";
 
     print OUT IDTags::boxbreak , IDTags::parastyle('bottomnotes');
     print OUT signdescription($signid) , ". ";
@@ -1167,8 +1237,12 @@ sub signdescription {
       $description .= $on;
       $description .= " at $at" if $at ; 
       $description .= 
-              ", " . $thisstop->{CityF} .
-              ", going $direction (#$signid; stop #$uniqueid";
+              ", " . $thisstop->{CityF};
+      $description .= 
+              ", going $direction"
+              if $direction;
+
+      $description .= " (#$signid; stop #$uniqueid";
    
       $description .= "; shelter site #" . $signs{$signid}{ShelterNum} 
               if $signs{$signid}{ShelterNum};
