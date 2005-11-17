@@ -25,6 +25,7 @@ use File::Copy;
 use Skedfile qw(Skedread Skedwrite trim_sked copy_sked remove_blank_columns);
 use Myopts;
 use Skeddir;
+use Storable;
 use Byroutes 'byroutes';
 
 ######################################################################
@@ -42,6 +43,25 @@ my %dirnames = ( NO => 'NB' , SO => 'SB' , EA => 'EB' , WE => 'WB' ,
                    CL => 'CW' , CO => 'CC' );
 # translates new Hastus directions to old Transitinfo directions
 
+my %specdayoverride = (
+   305 => "TT" ,
+   360 => "TT" ,
+   329 => "WF" ,
+   356 => "TF" ,
+   314 => "TF" ,
+   391 => "TF" ,
+) ; # Scheduling hasn't put those in Hastus
+
+my %no_split_linegroups;
+$no_split_linegroups{$_} = 1 foreach qw(40 52 59 72 82 86 S DB);
+
+# Those are the lines that should be combined into a single schedule, for 
+# purposes of point schedules.  Note 52 and 86 should not be combined
+# for fulls.
+
+# TODO - Ideally this would be in a database rather than being specified here, 
+# but it isn't yet.
+ 
 Myopts::options (\%options, Skeddir::options(), 'effectivedate:s' , 'quiet!');
 # command line options in %options;
 
@@ -97,7 +117,7 @@ if (exists ($options{effectivedate}) and $options{effectivedate} ) {
 
 
 ######################################################################
-# import headway sheets as pages
+# import headway sheets as pages, and split them by routes
 ######################################################################
 
 my %seenskedname;
@@ -106,18 +126,19 @@ my %seenskedname;
 
 local $/ = "\cL\cM";
 
-foreach my $file (glob ("headways/*.prt")) {
+foreach my $file (glob ("headways/*.txt")) {
    open (my $fh , $file);
 
    print "\n$file" unless $options{quiet}; # debug
 
    my %seenprint = ();
    my $seenprintcount = 0;
+   # keep track of which line groups have been seen, so we don't
+   # print them more than once on to stdout
 
    while (<$fh>) {
       chomp;
       my @lines = split(/\r\n/);
-      #splice (@lines, -1, 2) ;
       pop @lines;
       pop @lines;
       # gets rid of bottom 2 lines, which are always footer lines
@@ -133,43 +154,22 @@ foreach my $file (glob ("headways/*.prt")) {
       # NOTES CONTINUED FROM THE PREVIOUS PAGE. WILL WANT TO HANDLE
       # THIS AT SOME POINT.
 
-      my %thispage;
+      my $linegroup = stripblanks(substr($lines[3],11,3));
+      next if $linegroup eq "399"; # supervisor orders
+      $linegroup = "51" if $linegroup eq "51S"; # stupid scheduling
+      $linegroup = "S" if $linegroup eq "131"; 
+      $linegroup = "DB" if $linegroup eq "137"; 
+      # S is only 1xx where two routes are combined
 
-      $thispage{LINEGROUP} = stripblanks(substr($lines[3],11,3));
-      next if $thispage{LINEGROUP} eq "399";
-      $thispage{LINEGROUP} = "51" if $thispage{LINEGROUP} eq "51S"; # stupid scheduling
-
-      # HORRIBLE, HORRIBLE LINE 40 KLUDGE 
-      # no longer necessary because Scheduling divided 43 and 40
-#      $thispage{LINEGROUP} = "43" 
-#         if $thispage{LINEGROUP} eq "40" and ($lines[1] =~ m/D2/i );
-
-      if ($lines[1] =~ /Week/i) {
-         $thispage{DAY} = "WD" 
-      } else { 
-         $thispage{DAY} = "WE" 
-      } #
-      $thispage{LGNAME} = stripblanks(substr($lines[3],18));
-      $thispage{DIR} = uc(stripblanks(substr($lines[4],11,2)));
-      $thispage{DIR} = $dirnames{$thispage{DIR}} if $dirnames{$thispage{DIR}};
-
-      $thispage{SKEDNAME} = join("_" , 
-                $thispage{'LINEGROUP'},
-                $thispage{DIR},
-                $thispage{DAY},
-                );
-
-      unless ($options{quiet} or $seenprint{$thispage{LINEGROUP}}++) {
+      unless ($options{quiet} or $seenprint{$linegroup}++) {
          print "\n" unless ($seenprintcount++ % 19 ) ;
-         printf "%4s" , $thispage{LINEGROUP};
-      }
-         
-
-      if ( $seenskedname{$thispage{SKEDNAME}}++ ) {
-         $thispage{SKEDNAME} .= "=" . $seenskedname{$thispage{SKEDNAME}}
+         printf "%4s" , $linegroup;
       }
 
-      # change SKEDNAME to include a number
+      # OK, we have the original line group. Now, read the times, lines, etc.
+
+      my %thispage = (); # this has the times
+      my %routes = (); # keep track of which routes we've seen
 
       my $timechars = index($lines[6], "DIV-IN") - 64;
       # DIV-IN is the column after the last timepoint column. The last character 
@@ -190,13 +190,15 @@ foreach my $file (glob ("headways/*.prt")) {
       # change commas to periods. FileMaker doesn't like commas for some reason.
       for my $thistp (0..$#tps) {
           $tps[$thistp] .= " " . $tps2[$thistp];
-      } 
+      }
       $thispage{TP} = \@tps;
       }
 
       $thispage{NOTEDEFS} = [];
       # initialize this to an empty array, since otherwise
       # things that expect it to be there break
+
+      my %seenroutes = ();
 
       for (@lines[9..57]) {
 
@@ -217,42 +219,30 @@ foreach my $file (glob ("headways/*.prt")) {
             s/\(\s*//;
             s/\s*\)//;
             s/x/a/;
-            # Hastus uses "a" for am, "p" for pm, and "x" for am the following
+         }  # Hastus uses "a" for am, "p" for pm, and "x" for am the following
             # day (so 11:59p is followed by 12:00x).
-         }
 
          foreach (qw(RRFB RRF1 RRF OWL OL)) {
             $notes = "" if $notes eq $_;
          }
+         # RRF RRFB, RRF1 are restroom facilities. OWL and OL
+         # notes are just telling the operators stuff about owl
+         # service. These prevent merging from taking place. Don't
+         # want to tell the general public this anyway
 
          $routes = "51" if $routes eq "51S"; # stupid scheduling
 
-         # RRF RRFB, RRF1 are restroom facilities. OWL and OL notes are just telling the operators
-         # stuff about owl service. These prevent merging from taking place. Don't want to 
-         # tell the general public this anyway
-
-
-         my %specdayoverride = (
-            305 => "TT" ,
-            360 => "TT" ,
-            329 => "WF" ,
-            356 => "TF" ,
-            314 => "TF" ,
-            391 => "TF" ,
-         ) ;
-    
          foreach (keys %specdayoverride ) {
-
              if ($routes eq $_ and $specdays eq '') {
                 $specdays = $specdayoverride{$_}
              }
          }
-
          # until scheduling puts the WF, etc. back in, then 
          # I have to override the shopper routes this way
 
          push @{$thispage{SPECDAYS}} , $specdays;
          push @{$thispage{ROUTES}} , $routes;
+         $seenroutes{$routes} = 1;
          push @{$thispage{VT}} , $vt;
          push @{$thispage{NOTES}} , $notes;
 
@@ -261,9 +251,81 @@ foreach my $file (glob ("headways/*.prt")) {
          }
  
 
-      } # lines
+      } # lines of the times
 
-   $pages{$thispage{SKEDNAME}} = \%thispage;
+
+# When Saturdays and Sundays were identical, this code assumed Saturday was weekend.
+
+      if ($lines[1] =~ /Saturday/i) {
+         $thispage{DAY} = "SA";
+      } elsif ($lines[1] =~ /Sunday/i) { 
+         $thispage{DAY} = "SU"; 
+      } else {
+         $thispage{DAY} = "WD";
+      }#
+
+      $thispage{LGNAME} = stripblanks(substr($lines[3],18));
+      $thispage{DIR} = uc(stripblanks(substr($lines[4],11,2)));
+      $thispage{DIR} = $dirnames{$thispage{DIR}} if $dirnames{$thispage{DIR}};
+      $thispage{ORIGLINEGROUP} = $linegroup;
+
+      # split pages so that it thinks there's a separate page for each route
+
+      my %thesepages;
+
+      if ($no_split_linegroups{$linegroup}) { 
+        # routes should be combined:
+
+         $linegroup = (sort byroutes keys %seenroutes)[0] 
+            unless $linegroup =~ /^\d\d$/;
+         # use first route for linegroups, except for two-digit numbers
+
+         $thesepages{$linegroup} = \%thispage;
+
+      } elsif (scalar(keys (%seenroutes)) == 1) {
+         # just one route
+
+         $linegroup = (keys %seenroutes)[0];
+         $thesepages{$linegroup} = \%thispage;
+
+      } else { # multiple routes that should not be combined
+
+         foreach my $thisroute (keys %seenroutes) {
+            $thesepages{$thisroute} = Storable::dclone (\%thispage);
+            for (my $line = $#{$thispage{ROUTES}}  ; $line >= 0 ; $line--) {
+               next if $thispage{ROUTES}[$line] eq $thisroute;
+               splice (@{$thesepages{$thisroute}{SPECDAYS}} , $line , 1);
+               splice (@{$thesepages{$thisroute}{ROUTES}}   , $line , 1);
+               splice (@{$thesepages{$thisroute}{VT}}       , $line , 1);
+               splice (@{$thesepages{$thisroute}{NOTES}}    , $line , 1);
+               for (my $col = $#{$thispage{TIMES}} ; $col >= 0 ; $col--) {
+                  splice (@{$thesepages{$thisroute}{TIMES}[$col]} , $line , 1 );
+               }
+               # remove all the lines that are not relevant for this route.
+               # yes I realize this is not particularly efficient.
+            }
+         }
+      }
+  
+      foreach (keys %thesepages) {
+
+         $thesepages{$_}{SKEDNAME} = join("_" , 
+                $_,
+                $thispage{DIR},
+                $thispage{DAY},
+                );
+
+         $thesepages{$_}{LINEGROUP} = $_;
+
+         if ( $seenskedname{$thesepages{$_}{SKEDNAME}}++ ) {
+            $thesepages{$_}{SKEDNAME} .= "=" . $seenskedname{$thesepages{$_}{SKEDNAME}};
+         }
+
+         # change SKEDNAME to include a number
+
+         $pages{$thesepages{$_}{SKEDNAME}} = $thesepages{$_};
+
+      }
 
    } # pages 
 
@@ -279,9 +341,8 @@ foreach my $file (glob ("headways/*.prt")) {
 print "\n\nCombining pages.\n" unless $options{quiet};
 
 foreach my $dataref (values %pages) {
-#   remove_blank_columns($dataref);
+   remove_blank_columns($dataref);
    # from Skedfile.pm
-# shouldn't be necessary with Hastus
    add_duplicate_tp_markers ($dataref);
 }
 
@@ -303,7 +364,7 @@ for my $skedname (sort {$a <=> $b} keys %seenskedname) {
    for my $thispage (@morepages) {
       unless (join ("" , @{$pages{$skedname}{TP}}) eq
               join ("" , @{$pages{$thispage}{TP}}) ) {
-        # unless timepoints are identical, skip this bit that 
+        # unless timepoints are identical, do this bit that 
         # splices unlike timepoints together.
 
         # If one is subset of the other, and no non-consecutive
@@ -439,9 +500,12 @@ foreach my $dataref (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) {
    trim_sked($dataref);
 }
 
+merge_days (\%pages, "SA" , "SU" , "WE");
+
 merge_days (\%pages, "WD" , "WE" , "DA");
-# since Saturdays and Sundays are now always the same, this is the only possible
-# merger. 
+
+# Should we ever have a schedule that is Weekdays-and-Saturdays but Sundays are different, I'll have to add
+# more merge_days-es.
 
 foreach my $dataref (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) {
    Skedwrite ($dataref, ".txt"); 
@@ -501,12 +565,22 @@ print IDX "SkedID\tTimetable\tLines\tDay\tDir\tTP9s\n";
 print IDX join("\n" , sort {$a <=> $b || $a cmp $b} values %index) , "\n" ;
 close IDX;
 
+open TPS, ">Skedtps.txt" or die "Can't open $signup/skedtps.txt";
+foreach ( sort {$a <=> $b || $a cmp $b} values %index) {
+   my @values = split (/\t/, $_) ;
+   my $skedid = $values[0];
+   my @tps = split (/\035/, $values[5]);
+   for (my $i = 0; $i < scalar(@tps); $i++) {
+      print TPS join ("\t" , $skedid , $i , $tps[$i]) , "\n";
+   }
+}
+close TPS;
+
 print <<"EOF" unless $options{quiet};
 
 
-Index $signup/Skedidx.txt written.
-Remember to import it into a clone of the FileMaker database "Skedidx.fp5"
-or else the databases won't work properly.
+Indexes $signup/Skedidx.txt and $signup/Skedtps.txt written.
+Remember to import it into FileMaker or the databases won't work properly.
 EOF
 
 ######################################################################
@@ -542,7 +616,6 @@ sub merge_days {
 
    my ($alldataref, $firstday, $secondday, $mergeday) = @_;
    # the last three are, for example, (SA, SU, WE) or (WD, WE, DA)
-   # only WD, WE, and DA are expected now
 
    my (@firstscheds, @secondscheds);  
    
@@ -559,8 +632,8 @@ sub merge_days {
    # not references to the schedules themselves.
 
    # this will break if $firstday is found elsewhere in the skedname than
-   # in the day position. If we ever have a linegroup called "WD" I'll have to
-   # fix this
+   # in the day position. If we ever have a linegroup called "WD" or "SA"
+   # I'll have to fix this
   
    return -1 unless scalar(@firstscheds);
 
@@ -605,7 +678,11 @@ sub merge_days {
           $tempskedref = ($alldataref->{$firstscheds[$sked]});
       }
 
-      foreach ( qw(TP ROUTES SPECDAYS TIMES VT NOTES NOTEDEFS) ) {
+      # I removed NOTES from all the following comparisons because
+      # they weren't being used and they were different across 
+      # weekends/weekdays
+
+      foreach ( qw(TP ROUTES SPECDAYS TIMES VT NOTEDEFS) ) {
    
          next SKED if scalar @{$tempskedref->{$_}} 
                   != scalar @{$alldataref->{$secondscheds[$sked]}{$_}}  ;
@@ -613,7 +690,7 @@ sub merge_days {
       }
       # if the number of timepoints or rows, etc., are different, skip it
       
-      foreach ( qw(TP ROUTES SPECDAYS VT NOTES NOTEDEFS )) {
+      foreach ( qw(TP ROUTES SPECDAYS VT NOTEDEFS )) {
       
          next SKED 
             if join ("" , @{$tempskedref->{$_}})      ne
