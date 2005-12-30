@@ -612,8 +612,10 @@ sub output_points {
    mkdir "idpoints" or die 'Can\'t make directory "idpoints"'  
                   unless -d "idpoints";
 
-   open OUT, ">idpoints/$signid-" . $signs{$signid}{SignType} . "-" . 
-                  scalar (@points) . ".txt";
+#   open OUT, ">idpoints/$signid-" . $signs{$signid}{SignType} . "-" . 
+#                  scalar (@points) . ".txt";
+
+   open OUT, ">idpoints/$signid.txt";
 
    print OUT IDTags::start;
    # print OUT IDTags::parastyle("Normal");
@@ -820,6 +822,21 @@ sub output_points {
  
             $pointtext .= "See\rNote $thismark";
 
+         } elsif ($noteonly eq 'a' or $noteonly eq 'b') {
+
+            if ($usedmarks{"Noteonly:a"}) {
+               $thismark = $usedmarks{"Noteonly:a"};
+            } else {
+               $thismark = ++$markcounter;
+               $usedmarks{"Noteonly:a"} = $thismark;
+               $temp = tphash($_);
+               $markdefs[$thismark] = 'Line 82L International Limited operates every 10 minutes between 6:00 a.m. and 7:00 p.m. weekdays, and every 15 minutes between 9:00 a.m. and 5:00 p.m. weekends. Buses are dispatched from the ends of the line and then proceed without set time points along the route.';
+
+            }
+
+            $pointtext .= "See\rNote $thismark";
+ 
+=pod
          } elsif ($noteonly eq "a" ) {
          # Rapid note
 
@@ -837,6 +854,8 @@ sub output_points {
                       'See information elsewhere on this sign.';
             # that is an emdash - it should carry through. It's
             # potentially a crossplatform issue though.
+
+=cut
 
          } elsif ($noteonly eq "r" ) {
          # Rapid note
@@ -1046,7 +1065,7 @@ sub output_points {
 
             my $footnotes = join ("," , sort {$a <=> $b} @thesemarks);
 
-            $time = "\t$time" if ((length($time) + length($footnotes)) < 7);
+            $time = "\t$time" if ((length($time) + length($footnotes)) < 8);
 
             $time .= IDTags::superscript ( $footnotes) ;
 
@@ -1116,6 +1135,22 @@ sub output_points {
 
     }
 
+    if (scalar @markdefs) {
+
+       # print OUT '@notedefs:'; # no style needed now
+
+       for (my $i = 1; $i < scalar (@markdefs); $i++) {
+          print OUT "$i. " , $markdefs[$i] , "\r";
+       }
+
+    }
+
+    my $thisproject = $signs{$signid}{Project};
+    if ($projects{$thisproject}{'ProjectNote'}) {
+       print OUT $projects{$thisproject}{'ProjectNote'} , "\r";
+    }
+
+
     if ($signs{$signid}{Note600s} =~ /^[Yy]/ ) {
        print OUT "This stop may also be served by supplementary lines (Lines 600" .
        IDTags::endash . 
@@ -1128,23 +1163,6 @@ sub output_points {
 
        print OUT "Trips that run school days only may not operate every day and will occasionally operate at times other than those shown. Supplementary service is available to everyone at regular fares.\r";
 
-    }
-
-    if (scalar @markdefs) {
-
-       # print OUT '@notedefs:'; # no style needed now
-
-       for (my $i = 1; $i < scalar (@markdefs); $i++) {
-
-          print OUT "$i. " , $markdefs[$i] , "\r";
-
-       }
-
-    }
-
-    my $thisproject = $signs{$signid}{Project};
-    if ($projects{$thisproject}{'ProjectNote'}) {
-       print OUT $projects{$thisproject}{'ProjectNote'} , "\r";
     }
 
 
