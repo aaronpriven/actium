@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+
+chdir "/Users/apriven/Desktop";
+
+open SL , "sl" or die "Can't open sl";
+
+my (%sl, $id, $currentlines);
+
+while (<SL>) {
+  chomp;
+  ($id, undef, $currentlines) = split (/\t/);
+  $sl{$id} = $currentlines;
+}
+
+open TUBES, "tubes.tab" or die "Can't open tubes.tab";
+
+my ( $desc, $site, $dir, $city, $status, $braille);
+
+open OUT , ">tubelines.txt" or die "Can't open tubelines.txt";
+
+print OUT "StopID\tStop Description\tSite\tDirection\tCity\tStatus\tCurrent Braille\tLines\n";
+
+while (<TUBES>) {
+
+   chomp;
+
+   ($id) = split (/\t/);
+   
+   if (exists ($sl{$id})) {
+   
+      print OUT ("$_\t" , $sl{$id} , "\n");
+   
+   } else {
+   
+      print "No id $id";
+      
+   }
+
+}  
