@@ -26,14 +26,12 @@ use Skedfile qw(Skedread Skedwrite trim_sked copy_sked remove_blank_columns);
 use Myopts;
 use Skeddir;
 use Storable;
+use Algorithm::Diff;
 use Byroutes 'byroutes';
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory
 ######################################################################
-
-# privatetimepoints stuff has been removed 'cause right now there aren't
-# any and I don't feel like reimplementing it
 
 our (%options);    # command line options
 my  (%index);      # data for the index
@@ -42,6 +40,8 @@ my (%pages);       # pages
 my %dirnames = ( NO => 'NB' , SO => 'SB' , EA => 'EB' , WE => 'WB' , 
                    CL => 'CW' , CO => 'CC' );
 # translates new Hastus directions to old Transitinfo directions
+
+my @privatetimepoints = ("OAKL AIRR" , );
 
 my %specdayoverride = (
    305 => "TT" ,
@@ -53,11 +53,12 @@ my %specdayoverride = (
 ) ; # Scheduling hasn't put those in Hastus
 
 my %no_split_linegroups;
-$no_split_linegroups{$_} = 1 foreach qw(40 52 59 72 82 86 S DB);
+$no_split_linegroups{$_} = 1 foreach qw(40 52 59 72 82 86 DB);
 
 # Those are the lines that should be combined into a single schedule, for 
 # purposes of point schedules.  Note 52 and 86 should not be combined
-# for fulls.
+# for fulls.  
+# S was removed 3/06.
 
 # TODO - Ideally this would be in a database rather than being specified here, 
 # but it isn't yet.
@@ -86,8 +87,6 @@ if (exists ($options{effectivedate}) and $options{effectivedate} ) {
 
    $effectivedate = $options{effectivedate};
 
-   print "Using effective date $effectivedate\n\n" unless $options{quiet};
-
    writeeffectivedate($effectivedate);
 
 } else {
@@ -112,6 +111,8 @@ if (exists ($options{effectivedate}) and $options{effectivedate} ) {
       writeeffectivedate($effectivedate);
 
    }
+
+   print "Using effective date $effectivedate\n\n" unless $options{quiet};
 
 }
 
@@ -149,7 +150,7 @@ foreach my $file (glob ("headways/*.txt")) {
       }
       last if $lines[3] eq "SUMMARY OF PROCESSED ROUTES:";  
 
-      next if substr($lines[6],8,3) ne "RTE";
+      next if ((length($lines[6]) < 11) or substr($lines[6],8,3) ne "RTE");
       # TODO - THIS WILL THROW AWAY ALL PAGES CONSISTING ONLY OF
       # NOTES CONTINUED FROM THE PREVIOUS PAGE. WILL WANT TO HANDLE
       # THIS AT SOME POINT.
@@ -157,9 +158,10 @@ foreach my $file (glob ("headways/*.txt")) {
       my $linegroup = stripblanks(substr($lines[3],11,3));
       next if $linegroup eq "399"; # supervisor orders
       $linegroup = "51" if $linegroup eq "51S"; # stupid scheduling
-      $linegroup = "S" if $linegroup eq "131"; 
+      # $linegroup = "S" if $linegroup eq "131"; # S and SA decoupled 3/06
       $linegroup = "DB" if $linegroup eq "137"; 
-      # S is only 1xx where two routes are combined
+      # Only need to override 1xx here where two routes are combined. Otherwise, will be overridden
+      # later.
 
       unless ($options{quiet} or $seenprint{$linegroup}++) {
          print "\n" unless ($seenprintcount++ % 19 ) ;
@@ -191,8 +193,17 @@ foreach my $file (glob ("headways/*.txt")) {
       for my $thistp (0..$#tps) {
           $tps[$thistp] .= " " . $tps2[$thistp];
       }
-      $thispage{TP} = \@tps;
+      
+      # STUPID KLUDGE BECAUSE SCHEDULING HAS "HILL MALL" mean both Hilltop and Hillsdale malls
+      if ($linegroup eq '135' or $linegroup eq '138') { # M, MA
+         foreach (@tps) {
+            $_ = 'HDAL MALL' if $_ eq 'HILL MALL';
+         }
       }
+      
+      $thispage{TP} = \@tps;
+      
+      } # scoping
 
       $thispage{NOTEDEFS} = [];
       # initialize this to an empty array, since otherwise
@@ -219,8 +230,12 @@ foreach my $file (glob ("headways/*.txt")) {
             s/\(\s*//;
             s/\s*\)//;
             s/x/a/;
+            s/b/p/;
          }  # Hastus uses "a" for am, "p" for pm, and "x" for am the following
-            # day (so 11:59p is followed by 12:00x).
+            # day (so 11:59p is followed by 12:00x). Also "b" for pm the previous
+            # day.
+            # TODO - move this so some programs can still retreive "b" and "x" if they
+            # want it
 
          foreach (qw(RRFB RRF1 RRF OWL OL)) {
             $notes = "" if $notes eq $_;
@@ -252,6 +267,12 @@ foreach my $file (glob ("headways/*.txt")) {
  
 
       } # lines of the times
+
+
+      if ($linegroup eq '805') {
+         # Will be faster with restriction. Shouldn't make a difference at this point
+         remove_private_timepoints (\%thispage , @privatetimepoints);
+      }
 
 
 # When Saturdays and Sundays were identical, this code assumed Saturday was weekend.
@@ -336,7 +357,7 @@ foreach my $file (glob ("headways/*.txt")) {
 # All pages are in %pages. Now to combine pages...
 ######################################################################
 
-# process each page
+# process each page$pagetp
 
 print "\n\nCombining pages.\n" unless $options{quiet};
 
@@ -352,141 +373,187 @@ foreach my $dataref (values %pages) {
 #close $fh;
 #}
 
-my @skipped;
-my @skippedwhy;
+#my @skipped;
+#my @skippedwhy;
 
 SKEDNAME: 
-for my $skedname (sort {$a <=> $b} keys %seenskedname) {
+for my $skedname (sort keys %seenskedname) {
 
    my @morepages = sort byskednamenum grep /^$skedname=/ , keys %pages ; 
    next SKEDNAME unless scalar(@morepages); # only one page? don't combine 
-
+   
    for my $thispage (@morepages) {
-      unless (join ("" , @{$pages{$skedname}{TP}}) eq
-              join ("" , @{$pages{$thispage}{TP}}) ) {
-        # unless timepoints are identical, do this bit that 
+
+#		if ($thispage eq "51_NB_WD=2") {
+#		   print "We're at the 51\n";	
+#		}
+
+      if (join ("" , @{$pages{$skedname}{TP}}) eq
+          join ("" , @{$pages{$thispage}{TP}}) ) {
+      # if timepoints are identical, just add the times.
+       
+	      for my $col (0 .. $#{$pages{$thispage}{TP}}) { 
+   	      for my $row (0 .. $#{$pages{$thispage}{ROUTES}}) {
+      	      push @{$pages{$skedname}{TIMES}[$col]} ,
+         	        $pages{$thispage}{TIMES}[$col][$row] ;
+        	 	}
+      	}
+
+      # ADD TIMES
+        
+      } else { # if timepoints aren't identical, do this bit that 
         # splices unlike timepoints together.
 
-        # If one is subset of the other, and no non-consecutive
-        # duplicate timepoint names in longer one, can match.
+#### INSERT SPLICING ROUTINE HERE ####
 
-        my $skednumtps = $#{$pages{$skedname}{TP}} ;
-        my $thisnumtps = $#{$pages{$thispage}{TP}} ;
+		my @components = Algorithm::Diff::sdiff($pages{$skedname}{TP},$pages{$thispage}{TP});
+		# That gives me a series of differences.
+		
+		my ($count, %pagetpnum);
+		$pagetpnum{$_} = $count++ for @{$pages{$thispage}{TP}};
+		
+		my $skedtpcounter = 0;
+		foreach my $componentnum (0 .. $#components) {
+	
+		   my ($action, $skedtp, $pagetp) = @{$components[$componentnum]};
+		
+		   if ($action eq "c") {
+		      my $skedtpfirst = 1; #default is to splice thistp first. An arbitrary choice.
+		      # the zero / one thing is meaningful.
+		      
+		      SKEDTPFIRST: {
+			      if ($skedtp =~ /$pages{$skedname}{TP}[$skedtpcounter-1]=/) {
+			         # if this skedtp is the same as the previous, with an equals,
+			      	$skedtpfirst = 1; # do the skedtp first
+			      	last;
+			      }
+			      if ($pagetp =~ /$pages{$skedname}{TP}[$skedtpcounter-1]=/) {
+	               $skedtpfirst = 0; # do thistp first
+	               last;
+	            }
+	            
+		         my ($prevcomp) = "";
+	            my $compcount = $componentnum - 1;
+	            PREVLOOP: while ($compcount >= 0) {
+	                $prevcomp = $components[$compcount][0];
+	                last PREVLOOP if $prevcomp ne "c";
+	                $compcount--;
+	            } # so $prevcomp is the previous component that isn't "c"
 
-        if ($skednumtps == $thisnumtps) {
-           push @skipped, $skedname;
-           push @skippedwhy, 1;
-           next SKEDNAME;
-           # they have equal numbers, but since the timepoints aren't equal
-           # (we know this from test done earlier) 
-           # we know one is not a subset of the other. skip it.
-        }
+	            my ($nextcomp) = "";
+	            $compcount = $componentnum + 1;
+	 				NEXTLOOP: while ($compcount >= scalar(@components)) {
+	                $nextcomp = $components[$compcount][0];
+	                last NEXTLOOP if $nextcomp ne "c";
+	            } # so $nextcomp is the next component that isn't "c"
 
-        my (%bigset , %smallset, $big, $small);
+					if ($prevcomp eq "+" or ($nextcomp) eq "-") {
+					   # previous was thistp or next is skedtp,
+					   $skedtpfirst = 1; # do thistp first
+					   last;
+					} elsif ($prevcomp eq "-" or ($nextcomp) eq "+") {
+					   # previous was skedtp or next is thistp,
+					   $skedtpfirst = 0; # do skedtp first
+					   last;
+					}
 
-        if ($skednumtps > $thisnumtps ) {
-           $big = $skedname;
-           $small = $thispage;
-        } else {
-           $big = $thispage;
-           $small = $skedname;
-        }
-        my $count = 0;
-        $bigset{$_} = $count++ foreach @{$pages{$big}{TP}};
-        $count = 0;
-        $smallset{$_} = $count++ foreach @{$pages{$small}{TP}}; 
+            } # skedtpfirst 'loop'
+            
+            # So now we know whether we have to put thistp first, or skedtp first.
+            
+            
+            my ($skedtpcol, $pagetpcol);
+             
+            if ($skedtpfirst) {
+                $skedtpcol = $skedtpcounter;
+                $pagetpcol = $skedtpcounter + 1;
+            } else {
+                $skedtpcol = $skedtpcounter + 1;
+                $pagetpcol = $skedtpcounter;
+            }
+              
+            # First, splice the one in from thispage
+				splice(@{$pages{$skedname}{TP}},$pagetpcol,0,$pagetp);
+				# add $pagetp to skedpage
+				
+				my @newcol =  ("") x @{$pages{$skedname}{ROUTES}};
+				push @newcol, @{$pages{$thispage}{TIMES}[$pagetpnum{$pagetp}]};
+				splice (@{$pages{$skedname}{TIMES}}, $pagetpcol, 0, \@newcol);
+				# add empty entries to fill out skedpage rows, 
+				# and then add times from thispage, to skedpage
 
-        foreach (keys %smallset) {
-           unless (exists $bigset{$_}) {
-              push @skipped, $skedname ;
-              push @skippedwhy, 2 ;
-              next SKEDNAME;
-           } # if each entry in smallset isn't in bigset, skip this sked
-        }
+				# Then, add enough blanks to fill out the other column
+            push @{$pages{$skedname}{TIMES}[$skedtpcol]}, (("") x @{$pages{$thispage}{ROUTES}});
 
-        for my $num (0 .. scalar keys %bigset) {
-           if (/=/) {
-              (my $sanseq = $pages{$big}{TP}[$num]) =~ s/=.*//;
-              unless ($pages{$big}{TP}[$num-1] eq $sanseq) {
-                 push @skipped, $skedname  ;
-                 push @skippedwhy, 3;
-                 next SKEDNAME;
-              }
-           }
-        } # if there are any equal entries in %bigset, and the previous
-          # one isn't the same as this one without the equal, then skip it
-          # (this will filter out all =3, =4s etc.)
-        
-        # OK, we know we can put these together now.
+            $skedtpcounter++; # extra one, since two columns were added for this component
 
-        foreach (keys %smallset) {
-           next if /=/;
-           if (exists $bigset{"$_=2"} and not exists $smallset{"$_=2"}) {
-              $pages{$small}{TP}[$smallset{$_}] .= "=2";
-           }
-        }  # for each entry, if there's no =2 entry in the small set,
-           # but there is in the big set, change this timepoint to be
-           # the =2 entry instead. Aligns on departure, not arrival column
+			} elsif ($action eq "-") {
+				# item is in the skedname page but not this page.
+            push @{$pages{$skedname}{TIMES}[$skedtpcounter]}, (("") x @{$pages{$thispage}{ROUTES}});
+            # Add enough blanks to fill out the column.
 
-        # regenerate smallset to deal with changed entries
-        $count = 0;
-        %smallset = ();
-        $smallset{$_} = $count++ foreach @{$pages{$small}{TP}}; 
+         } elsif ($action eq "+") {
+            # item is in this page but not the skednum page
+				splice(@{$pages{$skedname}{TP}},$skedtpcounter,0,$pagetp);
+				# add $pagetp to skedpage
+				
+				my @newcol =  ("") x @{$pages{$skedname}{ROUTES}};
+				push @newcol, @{$pages{$thispage}{TIMES}[$pagetpnum{$pagetp}]};
+				splice (@{$pages{$skedname}{TIMES}}, $skedtpcounter, 0, \@newcol);
+				# add empty entries to fill out skedpage rows, 
+				# and then add times from thispage, to skedpage
+      
+         } else { # action eq "u"
+            push @{$pages{$skedname}{TIMES}[$skedtpcounter]}, @{$pages{$thispage}{TIMES}[$pagetpnum{$pagetp}]};
+            # add times from thispage to skedpage
+         }
+		
+         $skedtpcounter++;
+		
+		}
 
-        { #scoping
-        # next: add extra tp columns to the shorter one
-        my @blankcol = ("") x @{$pages{$small}{ROUTES}};
-        my @newsmalltimes = ();
-        for my $col (0 .. $#{$pages{$big}{TP}}) { 
-           if (exists $smallset{$pages{$big}{TP}[$col]}) {
-               my $smallcol = $smallset{$pages{$big}{TP}[$col]};
-               push @newsmalltimes, $pages{$small}{TIMES}[$smallcol];
-           } else {
-               push @newsmalltimes, [@blankcol];
-           }
-        }
-        $pages{$small}{TIMES} = \@newsmalltimes;
-        }
-
-        $pages{$small}{TP} = $pages{$big}{TP};
-        # in case the small one is the first page, make sure it
-        # has the whole set of timepoint abbreviations
-
-        # so now the columns from first and second pages should be
-        # identical.
+      # so now the columns and times from first and second pages should be
+      # identical.
 
       }
-
 
       for my $a ( qw(ROUTES SPECDAYS VT NOTES ) ) {
          push @{$pages{$skedname}{$a}} , @{$pages{$thispage}{$a}};
-      }
-
-      for my $col (0 .. $#{$pages{$thispage}{TP}}) { 
-         for my $row (0 .. $#{$pages{$thispage}{ROUTES}}) {
-            push @{$pages{$skedname}{TIMES}[$col]} ,
-                 $pages{$thispage}{TIMES}[$col][$row] ;
-         }
-      }
-
+      } # add other entries
+      
       delete $pages{$thispage};
 
    }
 
+   # Where we have timepoints FRED and FRED=2 adjacent to each other,
+   # put all times in proper columns.
+   for my $tpnum (1 .. $#{$pages{$skedname}{TP}} - 1) { # second to penultimate
+      next if (($pages{$skedname}{TP}[$tpnum-1] . "=2") ne $pages{$skedname}{TP}[$tpnum]);
+      # Is the last one plus "=2" the same as this one?
+      # Will not combine =2 and =3 , etc., if they are adjacent. This is unlikely.
+      for my $row (0 .. $#{$pages{$skedname}{ROUTES}}) { # go through each row
+			next if $pages{$skedname}{TIMES}[$tpnum-1][$row] and $pages{$skedname}{TIMES}[$tpnum][$row];
+			# If both entries are times, and not the empty string, go to the next row. 
+			my $allsubsquenttimes = "";
+			$allsubsquenttimes .= $pages{$skedname}{TIMES}[$_][$row] foreach ($tpnum+1 .. $#{$pages{$skedname}{TP}});
+			# concatenates all the subsequent times on this row in $allsubsequent times
+			if ($allsubsquenttimes) { 
+			   # If there are any subsequent times, put the time on the right (departure)
+				next if $pages{$skedname}{TIMES}[$tpnum][$row]; # skip it if it's already there
+				$pages{$skedname}{TIMES}[$tpnum][$row] = $pages{$skedname}{TIMES}[$tpnum-1][$row];
+				$pages{$skedname}{TIMES}[$tpnum-1][$row] = "";
+			} else {
+			   # If there aren't any subsquent times, put the time on the left (arrival)
+			   next if $pages{$skedname}{TIMES}[$tpnum-1][$row]; # skip it if it's already there
+			   $pages{$skedname}{TIMES}[$tpnum-1][$row] = $pages{$skedname}{TIMES}[$tpnum][$row];
+			   $pages{$skedname}{TIMES}[$tpnum][$row] = "";
+			}
+	   } # end row
+   } # end tpnum
+
+
    printf "%10s" , $skedname unless $options{quiet};
     
-}
-
-print "\n\nCan't combine multiple pages, skipping:\n"  unless $options{quiet};
-
-
-for (0 .. $#skipped) {
-   printf "%10s" ,  $skipped[$_] unless $options{quiet};
-   #print $skipped[$_] , " " , $skippedwhy [$_] , "\n" ;
-   #print $skipped[$_] , " " , $skippedwhy [$_] , "\n" ;
-   $pages{$skipped[$_]}{SKEDNAME} = $skipped[$_] . "=1";
-   $pages{$skipped[$_] . "=1"} = $pages{$skipped[$_]};
-   delete $pages{$skipped[$_]};
 }
 
 print "\n";
@@ -561,7 +628,7 @@ foreach my $file (@skeds) {
 }
 
 open IDX, ">Skedidx.txt" or die "Can't open $signup/skedidx.txt";
-print IDX "SkedID\tTimetable\tLines\tDay\tDir\tTP9s\n";
+print IDX "SkedID\tTimetable\tLines\tDay\tDir\tTP9s\tNoteLetters\n";
 print IDX join("\n" , sort {$a <=> $b || $a cmp $b} values %index) , "\n" ;
 close IDX;
 
@@ -589,28 +656,25 @@ EOF
 ######################################################################
 
 
-#sub remove_private_timepoints {
+sub remove_private_timepoints {
 
-#   my $dataref = shift;
+   my $thispage = shift;
 
-#   our (%privatetps);
+   my (%privatetimepoints);
 
-#   my (%theseprivatetps);
+   $privatetimepoints{$_} = 1 foreach (@_);
 
-#   $theseprivatetps{$_} = 1 foreach (@{$privatetps{$dataref->{LINEGROUP}}});
+   my $tp = 0;
+   while ( $tp < ( scalar @{$thispage->{"TP"}}) ) {
+      if ($privatetimepoints{$thispage->{"TP"}[$tp]}) {
+         splice (@{$thispage->{"TIMES"}}, $tp, 1);
+         splice (@{$thispage->{"TP"}}, $tp, 1);
+         next;
+      }
+      $tp++;
+   }
 
-#   my $tp = 0;
-#   while ( $tp < ( scalar @{$dataref->{"TP"}}) ) {
-#      if ($theseprivatetps{$dataref->{"TP"}[$tp]}) {
-#         splice (@{$dataref->{"TIMES"}}, $tp, 1);
-#         splice (@{$dataref->{"TP"}}, $tp, 1);
-#         splice (@{$dataref->{"TIMEPOINTS"}}, $tp, 1);
-#         next;
-#      }
-#      $tp++;
-#   }
-
-#}
+}
 
 sub merge_days {
 
@@ -742,9 +806,11 @@ sub skedidx_line {
    my $dataref = shift;
 
    my @indexline = ();
-   my %seen = ();
 
+   my %seen = ();
    my @routes = sort byroutes grep {! $seen{$_}++}  @{$dataref->{ROUTES}};
+   %seen = ();
+   my @notes = sort grep {$_ and ! $seen{$_}++}  @{$dataref->{NOTES}};
 
    push @indexline, $dataref->{SKEDNAME};
    push @indexline, $dataref->{LINEGROUP};
@@ -762,6 +828,8 @@ sub skedidx_line {
    } # drop out duplicate arrival/departure timepoints (like merge_columns)
 
    push @indexline, join("\035" , @tps);
+
+   push @indexline, join ("\035" , @notes);
 
    return join("\t" , @indexline);
 
