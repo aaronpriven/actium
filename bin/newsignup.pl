@@ -143,6 +143,10 @@ foreach my $file (glob ("headways/*.txt")) {
       pop @lines;
       pop @lines;
       # gets rid of bottom 2 lines, which are always footer lines
+      
+      # This next line dumps lines[2], which reads "SYSTEM WEEKDAY SCHEDULES SUMR06",
+      # and returns the situation to where it was before
+      splice (@lines, 2, 1) if $lines[2] !~ /__+/;
 
       { # another block for localization
       local $/ = "\r\n";
@@ -211,7 +215,7 @@ foreach my $file (glob ("headways/*.txt")) {
 
       my %seenroutes = ();
 
-      for (@lines[9..57]) {
+      for (@lines[9..$#lines]) {
 
          next unless $_;
          next if /^_+$/;
@@ -246,6 +250,7 @@ foreach my $file (glob ("headways/*.txt")) {
          # want to tell the general public this anyway
 
          $routes = "51" if $routes eq "51S"; # stupid scheduling
+         $routes = "1" if $routes eq "1Lx"; # *really* stupid scheduling
 
          foreach (keys %specdayoverride ) {
              if ($routes eq $_ and $specdays eq '') {
