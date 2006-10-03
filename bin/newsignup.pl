@@ -46,19 +46,22 @@ my @privatetimepoints = ("OAKL AIRR" , );
 my %specdayoverride = (
    305 => "TT" ,
    360 => "TT" ,
-   329 => "WF" ,
+#   329 => "WF" ,
    356 => "TF" ,
    314 => "TF" ,
    391 => "TF" ,
 ) ; # Scheduling hasn't put those in Hastus
+# 329 removed for Fall '06
 
 my %no_split_linegroups;
-$no_split_linegroups{$_} = 1 foreach qw(40 52 59 72 82 86 DB);
+$no_split_linegroups{$_} = 1 foreach qw(40 59 72 82 86 DB);
 
 # Those are the lines that should be combined into a single schedule, for 
 # purposes of point schedules.  Note 52 and 86 should not be combined
 # for fulls.  
 # S was removed 3/06.
+# 52 removed 11/06
+# 40, 52, 82 all irrelevant as of 11/06
 
 # TODO - Ideally this would be in a database rather than being specified here, 
 # but it isn't yet.
@@ -115,6 +118,11 @@ if (exists ($options{effectivedate}) and $options{effectivedate} ) {
    print "Using effective date $effectivedate\n\n" unless $options{quiet};
 
 }
+
+unless (-e 'timepointorder.txt') {
+   die "Can't find timepointorder.txt.";
+}
+
 
 
 ######################################################################
@@ -226,9 +234,12 @@ foreach my $file (glob ("headways/*.txt")) {
          my ($specdays, $routes, $vt, $notes, @times) = 
               stripblanks (unpack $template, $_); 
 
+	 $notes = "";
+	 # blank all notes
+
          foreach (@times) {
-            if ($_ eq "......") {
-               $_ = "" ; 
+            if ($_ eq '......' or $_ eq '-----') {
+               $_ = '' ; 
                next;
             }
             s/\(\s*//;
@@ -242,15 +253,15 @@ foreach my $file (glob ("headways/*.txt")) {
             # want it
 
          foreach (qw(RRFB RRF1 RRF OWL OL)) {
-            $notes = "" if $notes eq $_;
+            $notes = '' if $notes eq $_;
          }
          # RRF RRFB, RRF1 are restroom facilities. OWL and OL
          # notes are just telling the operators stuff about owl
          # service. These prevent merging from taking place. Don't
          # want to tell the general public this anyway
 
-         $routes = "51" if $routes eq "51S"; # stupid scheduling
-         $routes = "1" if $routes eq "1Lx"; # *really* stupid scheduling
+         $routes = '51' if $routes eq '51S'; # stupid scheduling
+         $routes = '1' if $routes eq '1Lx'; # *really* stupid scheduling
 
          foreach (keys %specdayoverride ) {
              if ($routes eq $_ and $specdays eq '') {
@@ -573,11 +584,77 @@ foreach my $dataref (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) {
 }
 
 merge_days (\%pages, "SA" , "SU" , "WE");
-
 merge_days (\%pages, "WD" , "WE" , "DA");
-
 # Should we ever have a schedule that is Weekdays-and-Saturdays but Sundays are different, I'll have to add
 # more merge_days-es.
+
+######################################################################
+# Reorder columns where necessary.
+######################################################################
+
+# read timepointorder from file
+
+my %newtps_of;
+
+open IN, 'timepointorder.txt' or die "Can't open timepointorder.txt";
+
+while (<IN>) {
+   s/\s+\z//s; # strip final white space
+   my ($skedid, @tps) = split(/\t/);
+   $newtps_of{$skedid} = \@tps;
+}
+
+close IN;
+
+print "\n\nReordering timepoint columns.\n" unless $options{quiet};
+
+foreach my $skedname (keys %newtps_of) {
+
+   unless ($options{quiet}) {
+      printf "%10s" , $skedname;
+      print "(not found) " unless $pages{$skedname};
+   }
+
+   next unless $pages{$skedname};
+   # skip not-found schedules
+
+   my @oldtps = @{$pages{$skedname}{TP}};
+   my @newtps = @{$newtps_of{$skedname}};
+
+   if (scalar(@oldtps) != scalar(@newtps)
+       or join("",sort @oldtps) ne join("", sort @newtps)) {
+      warn "\nTimepoints in $skedname in timepointorder.txt don't match timepoints\n"
+           . "from scheduling. Can't reorder.\n";
+      next;
+   } # if the timepoints aren't exactly equal, skip and emit a warning.
+
+  
+   # Build mapping from old column list to new one.
+   
+   # create tporder hashes
+   my (%newcol_of);
+   for my $col (0 .. $#newtps) {
+      $newcol_of{$newtps[$col]} = $col;
+   }
+   # so $newcol_of{'BLAH BLAH'} is the new column that times associated with 'BLAH BLAH' should go in
+  
+   my @savedtimes = @{$pages{$skedname}{TIMES}}; # array full of references to various columns
+   
+   my @tpmap = ();
+   for my $col (0 .. $#oldtps) {
+      my $newcol = $newcol_of{$oldtps[$col]};
+      $pages{$skedname}{TIMES}[$newcol] = $savedtimes[$col];
+   }
+
+   $pages{$skedname}{TP}=\@newtps;
+   # set the timepoint abbreviations to be the new ones
+   
+}
+
+######################################################################
+# Write schedules to disk
+######################################################################
+
 
 foreach my $dataref (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) {
    Skedwrite ($dataref, ".txt"); 
