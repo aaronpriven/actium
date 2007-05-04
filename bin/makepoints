@@ -13,12 +13,14 @@
 # 7) Add a "noteonly" database
 # 8) deal with two-level templates
 # 10) Make sure beginning NL on each sign is gone
+# 11) Use Set::Intspan to allow ranges of numbers
 
 # DONE or irrelevant
 # 2) Change the default number of columns to be derived from the "SignType"
 # database, and add the number of added columns triggered by "usedcount" to it
 # 4) (not strictly makepoints) Change the "Signtype" value list in signs.fp5
 # to be derived from the signtype database  - # DONE
+
 
 use strict;
 
@@ -577,7 +579,7 @@ sub headdest {
 
    my $hashlookuptp = $lasttp;
    $hashlookuptp =~ s/=[0-9]*//;
-
+   
    return $lasttp, (tphash($hashlookuptp) or $hashlookuptp);
 
 }
@@ -623,11 +625,17 @@ sub output_points {
 
    @points = sort 
        {
+        return 1 if $a->{"HEADNUM"}[0] eq "82" and $b->{"HEADNUM"}[0] eq "82L";
+        return -1 if $b->{"HEADNUM"}[0] eq "82" and $a->{"HEADNUM"}[0] eq "82L";
+        return 1 if $a->{"HEADNUM"}[0] eq "82" and $b->{"HEADNUM"}[0] eq "801";
+        return -1 if $b->{"HEADNUM"}[0] eq "82" and $a->{"HEADNUM"}[0] eq "801";
+        return 1 if $a->{"HEADNUM"}[0] eq "82L" and $b->{"HEADNUM"}[0] eq "801";
+        return -1 if $b->{"HEADNUM"}[0] eq "82L" and $a->{"HEADNUM"}[0] eq "801";
+        # reverse 801, 82L, 82 since usually this is what we have to end up doing by hand
         byroutes ($a->{"HEADNUM"}[0], $b->{"HEADNUM"}[0]) or 
         $Skedvars::dirhash{$b->{"DIR"}} <=> $Skedvars::dirhash{$a->{"DIR"}} or
         $Skedvars::dayhash{$b->{"DAY"}} <=> $Skedvars::dayhash{$a->{"DAY"}}
        } @points;
-
 
    my ($defaultheadtp, $defaultheadtpexact, $justoneheadtp) 
        = get_head_timepoints (\@points);
@@ -656,82 +664,80 @@ sub output_points {
       }
 
       my $noteonly = $point->{NO};
-      my $headlength = 0;
 
-      # Numbers and Names
-
-      $pointtext .= IDTags::parastyle("num-name") ;
+      # Numbers (without names)
 
       my @headnums = @{$point->{"HEADNUM"}};
+      my $lengthheadnums = length(join("/" , @headnums));
 
       if ($#headnums == 0) { # if there's only one head number 
                             # (i.e., last one is #0),
 
-         local ($_) = ((@{$point->{"HEADNUM"}})[0]);
-         $pointtext .= IDTags::color(getcolor($_) , 
-                         $headnums[0] . " " . getname($_)) . "\r";
-                   
+         $pointtext .= IDTags::parastyle("dropcaphead") . IDTags::dropcapchars($lengthheadnums+1);
+         $pointtext .= IDTags::color(getcolor($headnums[0]) , $headnums[0] . " ");
 
       } else { # multiple head numbers....
-         # assumes if lines have the same name, they have the same color,
-         # too. Also assumes that numbers are unique (so you can't have
-         # 59-Sam and 59-Fred)
 
-         my %headnames = ();
-         my %topnums = ();
+         $pointtext .= IDTags::parastyle("dropcapheadmany") . IDTags::dropcapchars($lengthheadnums+1);
 
-         foreach (@headnums) {
-            push @{$headnames{getname($_)}} , $_;
+         my @headcolors;
+         foreach (0 .. $#headnums) {
+            $headcolors[$_] = getcolor($headnums[$_]);
          }
-
-         # print Data::Dumper::Dumper(\%headnames) , "\n\n";
-
-         # So $headnames{"Fred"} is a reference to an array of all the 
-         # headnums whose name is "Fred"
  
-         foreach (keys (%headnames)) {
-            $topnums{$_} = ((sort byroutes @{$headnames{$_}})[0])
+         foreach (0 .. $#headnums) {
+            unless ($_ == 0) {
+               my $sepcolor;
+               if ($headcolors[$_] eq $headcolors[$_-1]) {
+                  $sepcolor = $headcolors[$_];
+               } else {
+                  $sepcolor = 'Grey80';
+               }
+               $pointtext .= IDTags::color($sepcolor, "/");
+            }
+            $pointtext .= IDTags::color($headcolors[$_],$headnums[$_]);
          }
+         $pointtext .= " ";
+      }
+  
+      # end of numbers
+      # beginning of days & destinations
 
-         # print Data::Dumper::Dumper(\%topnums) , "\n\n";
+      $pointtext .= IDTags::bold($point->{HEADDAYS});
 
-         # now $topnums{$_} is the *first* number, in route order,
-         # that uses the name $_
+      unless ($point-{'NO'} eq "l") { # unless it's a "last stop" note,
 
-         # so this prints the routes in order of the first number of each
-         # name.
-
-         # I don't know if all this complication is necessary, but now it
-         # should properly print 49 / 49M Harbor Bay ¥ 49X Harbor Bay Express"
-
-         my $prev = 0;
-         foreach (sort byroutes values(%topnums)) {
-            $pointtext .= " " . IDTags::bullet . "\n" if $prev; # the \r was formerly space
-            $prev = 1;
-            my $thisname = getname($_);
-            $pointtext .= IDTags::color ( getcolor($_) , 
-                               join (" / " , @{$headnames{$thisname}} ) ,
-                                     " " , $thisname  ) ;
+         # add destination
+         if ($point->{DestinationNote} ) {
+           $pointtext .= " to " .  $point->{HEADDEST} . " " . notrailingperiod ($point->{DestinationNote}) . ".";
+         } elsif ($point->{DIR} eq "CW") {
+            $pointtext .= " to " .  $point->{HEADDEST} . " (Clockwise loop).";
+         } elsif ($point->{DIR} eq "CC") {
+            $pointtext .= " to " .  $point->{HEADDEST} . " (Counterclockwise loop).";
+         } else {
+            my $headdest = $point->{HEADDEST};
+            $headdest =~ s/\.$//;
+            $pointtext .= " to " . notrailingperiod($point->{HEADDEST}) . ".";
          }
+       
+         # add timepoint
+       
+         if ($point->{AddMins} == 0 and (not $noteonly) ) {
+            # if there are no added minutes here, 
+            # and there is no "noteonly",
+         
+            my $headtp;
+            if (lc($point->{M_EXACT}) eq "yes") {
+               $headtp = "here";
+            } else {
+               $headtp = tphash($point->{M_TPXREF});
+            }
 
-         $pointtext .= "\r";
- 
-      }
-
-      $pointtext .= IDTags::parastyle("days-dest");
-      $pointtext .= $point->{HEADDAYS} ;
-      $pointtext .= " to " .  $point->{HEADDEST} unless $point->{NO} eq "l";
-
-
-      if ($point->{DestinationNote} ) {
- 
-         $pointtext .= " " . $point->{DestinationNote};
-
-      }
-      else {
-         $pointtext .= " (Clockwise loop)" if $point->{DIR} eq "CW";
-         $pointtext .= " (Counterclockwise loop)" if $point->{DIR} eq "CC";
-      }
+            $pointtext .= " Leaves $headtp at:"
+         
+         }
+         
+      }  
 
       @thesemarks = ();
 
@@ -760,6 +766,10 @@ sub output_points {
       # if not the same as the current timepoint. But not if this is a
       # "note only" column or there are approximate times
 
+=comment
+
+# Old put-the-head-timepoint-in-the-footnote bit
+
       $_ = $point->{M_TPXREF};
 
       if ( $point->{AddMins} == 0 and 
@@ -775,9 +785,8 @@ sub output_points {
          } else {
             $thismark = ++$markcounter;
             $usedmarks{"Timepoint:$_"} = $thismark;
-            $temp = tphash($_);
+            my $temp = notrailingperiod(tphash($_));
 #            print "<<$_:$temp>> ";
-            $temp =~ s/\.$//;
             $markdefs[$thismark] = 
                "Departure times are given for $temp." ;
             $markdefs[$thismark] .=
@@ -785,9 +794,12 @@ sub output_points {
                unless lc($point->{M_EXACT}) eq "yes";
          }
  
+ 
          push @thesemarks, $thismark;
 
       }
+
+=cut
 
       $pointtext .= IDTags::superscript (
                 join (",", sort {$a <=> $b} @thesemarks) )
@@ -830,7 +842,7 @@ sub output_points {
                $thismark = ++$markcounter;
                $usedmarks{"Noteonly:a"} = $thismark;
                $temp = tphash($_);
-               $markdefs[$thismark] = 'Line 82L International Limited operates every 10 minutes between 6:00 a.m. and 7:00 p.m. weekdays, and every 15 minutes between 9:00 a.m. and 5:00 p.m. weekends. Buses are dispatched from the ends of the line and then proceed without set time points along the route.';
+               $markdefs[$thismark] = 'Line 82L operates every 10 minutes between 6:00 a.m. and 7:00 p.m. weekdays, and every 15 minutes between 9:00 a.m. and 5:00 p.m. weekends. Buses are dispatched from the ends of the line and then proceed without set time points along the route.';
 
             }
 
@@ -1099,13 +1111,29 @@ sub output_points {
     # TODO - change to allow for both tall & short columns
 
     print OUT IDTags::parastyle('sideeffective');
-    print OUT "Effective: $effdate\r";
-    print OUT IDTags::parastyle('sidenotes');
+    
+    # EFFECTIVE DATE and colors
+    my $color;
+    if ($effdate =~ /Dec|Jan|Feb/) {
+       $color = "H101-Purple"; # if it looks crummy change it to H3-Blue
+    } elsif ($effdate =~ /Mar|Apr|May/) {
+       $color = "New AC Green";
+    } elsif ($effdate =~ /Jun|Jul/) {
+       $color = "Black";
+    } else { # Aug, Sept, Oct, Nov
+       $color = "Rapid Red";
+    }
+    
+    print OUT IDTags::color($color , "Effective: $effdate");
+    print OUT "\r" , IDTags::parastyle('sidenotes');
     print OUT 'Light Face = a.m.' , IDTags::softreturn;
     print OUT IDTags::bold ('Bold Face = p.m.') , "\r"; 
 
     print OUT IDTags::color ("Rapid Red" , "Times shown in red are only approximations. Buses may come somewhat earlier or later than the time shown.\r") 
           if $addminsflag;
+
+=comment
+# Old put-the-default-timepoint-above-the-notes bit
 
     if ( not ($anysecondflag) and $justoneheadtp ) { 
        print OUT 'Departure times are given for ';
@@ -1120,6 +1148,8 @@ sub output_points {
                 unless $defaultheadtpexact eq "Yes";
 
     print OUT "\r";
+=cut
+
 
     # TODO - add side note from db and Note600s text
 
@@ -1327,4 +1357,10 @@ sub getcolor {
    #}
    #return "Local";
 
+}
+
+sub notrailingperiod {
+   local ($_) = shift;
+   s/\.$//;
+   return $_;
 }
