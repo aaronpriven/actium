@@ -41,6 +41,8 @@ my %dirnames = ( NO => 'NB' , SO => 'SB' , EA => 'EB' , WE => 'WB' ,
                    CL => 'CW' , CO => 'CC' );
 # translates new Hastus directions to old Transitinfo directions
 
+my $timeregexp = qr/\d{3,4}(?:a|p|b|x)/;
+
 my @privatetimepoints = ("OAKL AIRR" , );
 
 my %specdayoverride = (
@@ -133,9 +135,9 @@ my %seenskedname;
 
 { # block for local scoping
 
-local $/ = "\cL\cM";
+local $/ = "\cL";
 
-foreach my $file (glob ("headways/*.txt")) {
+foreach my $file (glob ("headways/*.{txt,prt}")) {
    open (my $fh , $file);
 
    print "\n$file" unless $options{quiet}; # debug
@@ -145,29 +147,19 @@ foreach my $file (glob ("headways/*.txt")) {
    # keep track of which line groups have been seen, so we don't
    # print them more than once on to stdout
 
-   while (<$fh>) {
+   while (<$fh>) { #page
       chomp;
-      my @lines = split(/\r\n/);
-      pop @lines;
-      pop @lines;
-      # gets rid of bottom 2 lines, which are always footer lines
+      s/\xad/-/g;
       
-      # This next line dumps lines[2], which reads "SYSTEM WEEKDAY SCHEDULES SUMR06",
-      # and returns the situation to where it was before
-      splice (@lines, 2, 1) if $lines[2] !~ /__+/;
-
-      { # another block for localization
-      local $/ = "\r\n";
-      chomp @lines;
-      }
-      last if $lines[3] eq "SUMMARY OF PROCESSED ROUTES:";  
-
-      next if ((length($lines[6]) < 11) or substr($lines[6],8,3) ne "RTE");
-      # TODO - THIS WILL THROW AWAY ALL PAGES CONSISTING ONLY OF
-      # NOTES CONTINUED FROM THE PREVIOUS PAGE. WILL WANT TO HANDLE
-      # THIS AT SOME POINT.
-
-      my $linegroup = stripblanks(substr($lines[3],11,3));
+      s/^\n+//;
+      my @lines = split(/\n/);
+      pop @lines;
+      # gets rid of bottom line, which is always "HASTUS 2006" blah blah blah
+      
+      next if $lines[4] ne "EXC";
+      # skip all pages with just notes
+      
+      my $linegroup = (words_of($lines[2]))[2];
       next if $linegroup eq "399"; # supervisor orders
       $linegroup = "51" if $linegroup eq "51S"; # stupid scheduling
       # $linegroup = "S" if $linegroup eq "131"; # S and SA decoupled 3/06
@@ -185,27 +177,21 @@ foreach my $file (glob ("headways/*.txt")) {
       my %thispage = (); # this has the times
       my %routes = (); # keep track of which routes we've seen
 
-      my $timechars = index($lines[6], "DIV-IN") - 64;
-      # DIV-IN is the column after the last timepoint column. The last character 
-      # of the last column ends two characters before "DIV-IN". The notes in
-      # the front comprise 63 characters.
-
-      my $template = "A4 x4 A3 x27 A1 x15 A5 x3" . "A8" x ($timechars / 8); 
-      # specdays rte vt note
-      # that gives the template for the unpacking. There are $numpoints
-      # points, and six characters to each one.  The capital A means to
-      # strip spaces and nulls from the result. 
-
-      { # scoping block
-      my (undef, undef, undef, undef, @tps) = stripblanks(unpack $template, $lines[6]);
-      my (undef, undef, undef, undef, @tps2) = stripblanks(unpack $template, $lines[7]);
-
-      tr/,/./ foreach (@tps , @tps2); 
-      # change commas to periods. FileMaker doesn't like commas for some reason.
-      for my $thistp (0..$#tps) {
-          $tps[$thistp] .= " " . $tps2[$thistp];
-      }
+      $lines[15] =~ s/^NOTE //;
       
+      my @tps;
+      
+      my $thislinenum = 15;
+      until ($lines[$thislinenum] eq "DIV-IN") {
+         push @tps , $lines[$thislinenum] . " " . $lines[$thislinenum+1];
+         $thislinenum = $thislinenum + 2;
+      }
+
+      # now @tps should be correct
+      
+      s/\,/\./g foreach @tps; 
+      # replace commas with periods, because FileMaker doesn't like commas
+
       # STUPID KLUDGE BECAUSE SCHEDULING HAS "HILL MALL" mean both Hilltop and Hillsdale malls
       if ($linegroup eq '135' or $linegroup eq '138') { # M, MA
          foreach (@tps) {
@@ -215,40 +201,75 @@ foreach my $file (glob ("headways/*.txt")) {
       
       $thispage{TP} = \@tps;
       
-      } # scoping
-
       $thispage{NOTEDEFS} = [];
       # initialize this to an empty array, since otherwise
       # things that expect it to be there break
 
       my %seenroutes = ();
 
-      for (@lines[9..$#lines]) {
+      for (@lines[$thislinenum + 4 .. $#lines]) {
 
-         next unless $_;
-         next if /^_+$/;
-         # skip lines that are blank, or only underlines
+         last if $_ eq '-'; # TODO - SKIP NOTE DEFINITIONS FOR NOW
+         
+         s/\(/ /;
+         s/\)/ /;
 
-         last if /^Notes:/; # TODO - SKIP NOTE DEFINITIONS FOR NOW
+         my @words = words_of($_);
 
-         my ($specdays, $routes, $vt, $notes, @times) = 
-              stripblanks (unpack $template, $_); 
+         my ($specdays, $routes, $vt, $notes, @times);
+         
+         if ($words[0] eq 'SD' or $words[0] eq 'SH') {
+            $specdays = shift(@words);
+         } else {
+            $specdays = '';
+         }
 
-	 $notes = "";
-	 # blank all notes
-
+         $routes = shift (@words);
+         
+         if (length($routes) > 3) {
+         
+            $routes = substr($routes, 0, 3);
+            # pdftotext attaches the run number to long routes sometimes
+         
+         } else {
+            shift (@words); # runnum
+         }
+         $vt = ''; # always blank currently
+         
+         shift (@words); # block num
+         
+         if ($words[0] =~ /^D\d\-/ or $words[0] =~ /^FR-/) {
+            shift @words;
+         }
+         # entry in DIV-IN column
+         
+         if ($words[0] =~ /$timeregexp/ or $words[0] =~ /^\.+$/ or $words[0] =~ /^\-+$/)  {
+            $notes = '';
+         } else {
+            $notes = shift(@words);
+         }
+         
+         @times = @words[0 .. $#tps];
+         # dumping subsequent columns like DIV-IN and STOP LVE
+         
+         next if join("", @times) !~ /$timeregexp.*$timeregexp/;
+         # if there are not at least two actual times, skip this line
+         
+         if (length($times[$#times]) > 5) {
+            $times[$#times] =~ s/($timeregexp).*/$1/;
+         } 
+         # strip everything after the time - this is 
+         # because "DIV_IN" gets connected to it
+         
          foreach (@times) {
-            if ($_ eq '......' or $_ eq '-----') {
+            if (/^\.+$/ or /^\-+$/) {
                $_ = '' ; 
                next;
             }
-            s/\(\s*//;
-            s/\s*\)//;
             s/x/a/;
             s/b/p/;
-         }  # Hastus uses "a" for am, "p" for pm, and "x" for am the following
-            # day (so 11:59p is followed by 12:00x). Also "b" for pm the previous
-            # day.
+         }  # Hastus uses "a" for am, "p" for pm, and "x" for am the following 
+            # day (so 11:59p is followed by 12:00x). Also "b" for pm the previous day.
             # TODO - move this so some programs can still retreive "b" and "x" if they
             # want it
 
@@ -261,7 +282,7 @@ foreach my $file (glob ("headways/*.txt")) {
          # want to tell the general public this anyway
 
          $routes = '51' if $routes eq '51S'; # stupid scheduling
-         $routes = '1' if $routes eq '1Lx'; # *really* stupid scheduling
+         $routes = '1' if $routes eq '1Lx' or $routes eq '1L'; # *really* stupid scheduling
 
          foreach (keys %specdayoverride ) {
              if ($routes eq $_ and $specdays eq '') {
@@ -301,8 +322,7 @@ foreach my $file (glob ("headways/*.txt")) {
          $thispage{DAY} = "WD";
       }#
 
-      $thispage{LGNAME} = stripblanks(substr($lines[3],18));
-      $thispage{DIR} = uc(stripblanks(substr($lines[4],11,2)));
+      $thispage{DIR} = uc(substr((words_of($lines[3]))[1],0,2));
       $thispage{DIR} = $dirnames{$thispage{DIR}} if $dirnames{$thispage{DIR}};
       $thispage{ORIGLINEGROUP} = $linegroup;
 
@@ -357,12 +377,16 @@ foreach my $file (glob ("headways/*.txt")) {
          if ( $seenskedname{$thesepages{$_}{SKEDNAME}}++ ) {
             $thesepages{$_}{SKEDNAME} .= "=" . $seenskedname{$thesepages{$_}{SKEDNAME}};
          }
-
          # change SKEDNAME to include a number
 
          $pages{$thesepages{$_}{SKEDNAME}} = $thesepages{$_};
+         # put these pages into the program-wide $pages
 
       }
+
+
+###########################
+
 
    } # pages 
 
@@ -419,8 +443,6 @@ for my $skedname (sort keys %seenskedname) {
         
       } else { # if timepoints aren't identical, do this bit that 
         # splices unlike timepoints together.
-
-#### INSERT SPLICING ROUTINE HERE ####
 
 		my @components = Algorithm::Diff::sdiff($pages{$skedname}{TP},$pages{$thispage}{TP});
 		# That gives me a series of differences.
@@ -698,7 +720,7 @@ foreach my $file (@skeds) {
 
    my $newfile = $file;
    $newfile =~ s#exceptions#skeds#; # result is "skeds/filename"
-   copy ($file, $newfile) or die "Can't copy $file to $newfile"; 
+   copy ($file, $newfile) or die "Can't copy $file to $newfile: $!"; 
    # call to File::Copy
 
    # print "\t[$file - $newfile]\n";
@@ -964,5 +986,13 @@ open OUT , ">effectivedate.txt"
 print OUT $effectivedate ;
 close OUT;
 
+}
+
+sub words_of  {
+
+   local ($_) = shift (@_);
+   
+   return (split());
+   
 }
 
