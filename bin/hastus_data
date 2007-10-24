@@ -1,0 +1,153 @@
+__END__
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+my %fields_of = init_field_names();
+
+unpack
+
+sub init_field_names {
+
+   my %fields_of;
+
+	local $/ = $EMPTY_STR; # paragraph mode
+
+	FIELD_TYPE:
+	while (<DATA>) {
+	   my @entries = split;
+	   
+	   # get field type length and field type
+	   my $field_type_length = shift @entries;
+	   my $field_type = shift @entries;
+	   
+	   # put field type length and field type into %fields_of
+	   $fields_of{$field_type}[0] = {
+	        NAME => $field_type ,
+	        POS  => 0 ,
+	        LEN  => $field_type_length,
+	        };
+
+	   my $position = $field_type_length + $DELIMITER_LENGTH;
+
+      my $count = 1;
+	   FIELDS:
+	   while (@entries) {
+
+	      # get items from entries
+	      my $field_length = shift @entries;
+	      my $field_name = shift @entries;
+	      
+	      # put field type, length, and position into %fields_of
+	      $fields_of{$field_type}[$count] = {
+	         NAME => $field_name,
+	         POS  => $position ,
+	         LEN  => $field_length,
+	         };
+	       
+	       $count++;
+	       $position = $position + $field_length + $DELIMITER_LENGTH;
+	      
+	   } # FIELDS
+	   
+	} # FIELD_TYPE
+
+   return %fields_of;
+}
+
+# length, then name
+__DATA__
+ 3 STP 
+ 8 Identifier! 
+50 Description 
+ 6 Place
+10 XCoordinate
+10 YCoordinate
+50 IntersectingStreetAtSegmentBeginning
+50 IntersectingStreetAtSegmentEnd
+ 5 DistanceToIntersection
+ 4 SegmentOffset
+ 6 District
+ 8 Zone
+ 1 IsPublic
+ 5 DistanceFromIntersectionAtBeginning
+ 5 DistanceFromIntersectionAtEnd
+
+ 3 PLC
+ 6 Identifier!
+ 40 Description
+ 6 ReferencePlace
+ 6 District
+ 8 Number
+20 AlternateName
+10 XCoordinate
+10 YCoordinate
+
+ 4 PPAT
+ 5 Route!
+10 Direction
+ 2 DirectionValue!
+ 6 RouteMainPlacePatternDirection
+ 6 RouteMainPlacePatternPlace*
+
+ 3 RTE
+ 5 Identifier!
+ 5 PublicIdentifier
+10 ServiceType
+ 2 ServiceTypeValue
+10 ServiceMode
+ 2 ServiceModeValue
+
+ 3 PAT
+ 5 Route!
+ 4 Identifier!
+10 Direction
+ 2 DirectionValue
+ 8 VehicleDisplay
+ 1 IsInService
+ 8 Via
+40 ViaDescription
+
+ 3 TPS
+ 8 StopIdentifier
+ 6 Place
+ 8 VehicleDisplay
+ 1 IsATimingPoint
+ 1 IsRoutingPoint
+
+ 3 TRP
+10 InternalNumber!
+ 8 Number
+ 7 OperatingDays
+ 5 RouteForStatistics
+ 4 Pattern
+15 Type
+ 2 TypeValue
+ 1 IsSpecial
+ 1 IsPublic
+
+ 3 PTS
+ 8 PassingTime
