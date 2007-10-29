@@ -16,7 +16,7 @@ use FindBin('$Bin');
 # the following are Getopt::Long options. Include this as part of the list
 # sent to Getopt::Long
 sub options () {
-   ('basedir=s' , 'signupdir=s');
+   return ('basedir=s' , 'signupdir=s');
 }
 
 sub change {
