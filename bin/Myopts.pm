@@ -24,7 +24,7 @@ sub options {
    if (ref ($_[0]) eq "HASH" ) {
       $hashref = shift;
       %$hashref = (); 
-      # zeroes out option entriess -- not doing this might confuse Getopt::Long
+      # zeroes out option entries -- not doing this might confuse Getopt::Long
    } else {
       $hashref = {};
    }
@@ -32,13 +32,15 @@ sub options {
    GetOptions ($hashref, @_);
 
    my @args = @_; # make a copy so it doesn't try to modify read-only values
-   foreach (@args) {
-      my $entry = s/[!+:=][sif]?$//; # eliminates options
+   foreach my $entry (@args) {
+      $entry =~ s/[!+:=][sif]?$//; # eliminates options
       $hashref->{$entry} = undef unless exists $hashref->{$entry};
    }
 
    # This says that all entries not on the command line are undef.
    # If we don't do this, the hash won't have an entry at all, and
    # $hashref->{$entry} might give an error. Or so I am told.
+
+   return;
 
 }
