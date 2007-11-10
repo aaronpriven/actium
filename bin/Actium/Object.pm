@@ -14,21 +14,41 @@ use Scalar::Util qw(blessed reftype refaddr);
 #        1         2         3         4         5         6         7        
 #23456789012345678901234567890123456789012345678901234567890123456789012345678
 
-my %verb_of = (
+#my %method_of = {
+#                  GET        => {
+#						                  'verb' => 'get'                ,
+#						                  '$'    => \&_get_scalar        ,
+#						                  '@'    => \&_get_array         ,
+#						                  '%'    => \&_get_hash          ,
+#                  },
+#					   SET        => {
+#						                  'verb' => 'set'                ,
+#						                  '$'    => \&_set_scalar        ,
+#						                  '@'    => \&_set_array         ,
+#						                  '%'    => \&_set_hash          ,
+#					   },
+#					   GETELEMENT => {
+#						                  'verb' => 'get an element of ' ,
+#						                  '@'    => \&_get_array_element ,
+#						                  '%'    => \&_get_hash_element  ,
+#					   },
+#					   SETELEMENT => {
+#						                  'verb' => 'set an element of ' ,
+#						                  '@'    => \&_set_array_element ,
+#						                  '%'    => \&_set_hash_element  ,
+#					   },
+#
+#};
+
+my %verb_of = {
                  GET        => 'get',
                  SET        => 'set',
                  GETELEMENT => 'get an element of',
                  SETELEMENT => 'set an element of',
-              );
-              
-my %methodname_of = (
-                 GET        => 'get&',
-                 SET        => 'set&',
-                 GETELEMENT => 'get&element',
-                 SETELEMENT => 'set&element',
-              );
+              };
  
-my %expansion_of = ( 
+
+my %method_of = { 
                  '$' => { 
                          GET        => \&_get_scalar ,
                          SET        => \&_set_scalar ,
@@ -45,50 +65,87 @@ my %expansion_of = (
                          GETELEMENT => \&_get_hash_element ,
                          SETELEMENT => \&_set_hash_element ,
                         },
-                 );
+                 };
+                 
 
-sub make_methods {
+# Translate standard code abbreviations (e.g., '$' for a scalar)
+# into code references
 
-   my ($class,$struct_of_ref,$fields_ref) = @_;
+sub get {
+   standard_method(@_,'GET');
+}
 
-   foreach my $field (keys %{$fields_ref}) {
-      my $coderefs_for_this_field = $fields_ref->{$field};
+sub set {
+   standard_method(@_,'SET');
+}
 
-      if (exists($expansion_of{$coderefs_for_this_field})) {
-         $coderefs_for_this_field = $expansion_of{$coderefs_for_this_field};
-      }
-      
-      croak 
-         "Declaring field '$field': '$coderefs_for_this_field'"
-         . " is not a valid field type"
-         if reftype($coderefs_for_this_field) ne 'HASH';
-         
-      foreach my $methodtype (keys %{$coderefs_for_this_field}) {
-      
-         my $methodname = $methodname_of{$methodtype};
-         $methodname =~ s/\&/_${field}_/;
-         $methodname =~ s/_\z//;
-         $methodname =~ s/\A_//;
+sub get_element {
+   standard_method(@_,'GETELEMENT');
+}
 
-			{
-	         no strict 'refs';
-	         *{$class . "::$methodname"} 
-	             = sub { 
-	                     my $self = shift;
-	                     my $struct = $struct_of_ref->{refaddr($self)};
-	                     &{$coderefs_for_this_field->{$methodtype}}
-	                       ($struct,@_);
-	                   };
-			}
+sub set_element {
+   standard_method(@_,'SETELEMENT');
+}
 
-      }
+sub get_el {
+   standard_method(@_,'GETELEMENT');
+}
+
+sub set_el {
+   standard_method(@_,'SETELEMENT');
+}
+
+
+sub standard_method {
+
+   # This is called by the set(), get(), set_element(), etc. methods,
+   # and decides based on the field definitions
    
+   my $called_method = pop @_; # added by "get" or "set" routines
+   my ($self, $field, @args) = @_;
+   
+   my $class = blessed($self)
+               or croak "$self is not an object";
+   
+   # If $self is reference to a scalar, then that scalar contains 
+   # a reference to the hashref that is the struct. If it's a reference 
+   # to a hash, it is itself a reference to the struct.
+   my $struct = (reftype($self) eq 'SCALAR') ? ${$self} : $self;
+   
+	# reference to the field definitions in the appropriate class.  If
+	# the value is a hash ref, then each standard method (GET, SET,
+	# SETELEMENT, etc.) has its own definition in the hash. If not, then
+	# it uses the standard definitions for that type.  A definition can
+	# be a string, in which case it is a key in %method_of, or a code
+	# reference.
+   my $field_ref = $self->fields(); 
+   
+   croak "No field $field in $class object" 
+      if not exists ($field_ref->{$field});
+
+   my $method_for_this_field;   
+   if reftype($field_ref->{$field}) eq 'HASH' {
+      $method_for_this_field = $field_ref->{$field}{$called_method};
+   }
+   else {
+      $method_for_this_field = $field_ref->{$field};
+   }
+
+   croak 
+      "Can't $method_of{$called_method}{verb} field $field in $class object "
+      . "($called_method method not defined)"
+      if not (defined $method_for_this_field) or ($method_for_this_field eq "!");
+
+   if ( reftype($method_for_this_field) eq 'CODE') {
+      &{$method_for_this_field}($struct,$field,@args);
+   }
+   else {
+      &{$method_of{$method_for_this_field}{$called_method}}($struct,$field,@args);
    }
 
 }
 
-# Note that the various subroutines below (_get_scalar, etc.) 
-# do NOT necessarily know
+# Note that the various submethods (_get_scalar, etc.) do NOT necessarily know
 # which class they are called in! They only know what data they hold. $struct
 # is not necessarily an object, just a hash ref. But it can be.
 
