@@ -33,11 +33,69 @@ our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
 
 # GET VALUES FROM ROW: GET, SHIFT, POP
 
+
+
+sub splice_row {
+   my $aoa_r  = shift;
+   my $offset = shift;
+   my $length = shift;
+   my @values = @_;
+   my $new_aoa_r = [ \@values ]; # so $new_aoa_r->[0] is ref to @values
+   my $return_r = splice_rows ($aoa_r, $offset, $length, $new_aoa_r);
+   if (scalar @{$return_r} == 1) { # only one 
+      return @{$return_r->[0]}; # return the list
+   }
+   return $return_r;
+   
+}
+
+sub splice_row2 {
+   my $aoa_r              = shift;
+   my $offset             = shift;
+   my $length             = shift;
+   my $replacement_aoa_r  = shift;
+
+   # If both OFFSET and LENGTH are omitted, removes everything.
+   # Pretty pointless if you ask me.
+
+   if (not defined $offset and not defined $length) {
+      @{$replacement_aoa_r} = @{$aoa_r};
+      @{$aoa_r} = [];
+      return $replacement_aoa_r;
+   }
+   
+   if (not defined $replacement_aoa_r) {
+      return get_rows ($aoa_r , $offset, $length);
+   }
+   
+   $replacement_aoa_r  = clone($replacement_aoa_r);
+
+   my $last_row = last_row ($aoa_r);
+
+   _adjust_offset ($offset, $last_row);
+   _adjust_length ($offset, $length, $last_row);
+   
+   pad_rows($aoa_r);
+   pad_rows($replacement_aoa_r);
+   # TODO - only pad if necessary
+
+   my @returned_aoa = ();
+   for my $column (0 .. (max $#{$replacement_aoa_r} , $#{$aoa_r}) ) {
+      push @returned_aoa ,
+         \( splice @{$aoa_r->[$column]} , $offset 
+           , $length, @{$replacement_aoa_r->[$column]} );
+   }
+
+   return \@returned_aoa;
+
+}
+
+
 sub get_row { # tested
    # get_row (\@aoa, offset)
    my $aoa_r = shift;
    my $offset = shift;
-   return map { $_->[$row_idx] } @{$aoa_r};
+   return map { $_->[$offset] } @{$aoa_r};
    # always returns row
 }
 
@@ -52,6 +110,7 @@ sub get_rows {
    _adjust_offset($offset,$last_row);
    _adjust_length($offset,$length,$last_row);
 
+   my $return_r;
    for my $row ($offset .. $offset + $length - 1) {
       push @{$return_r} , [ get_row($aoa_r , $row) ] ;
    }
@@ -59,42 +118,17 @@ sub get_rows {
    return $return_r;
 }   
    
+# shift, pop, unshift, push
 
 sub shift_row {
    # shift_row(\@lol)
-   my $aoa_r = shift;
-   my @row;
-   foreach my $ary_r (@{$aoa_r}) {
-      push @row, shift @{$ary_r};
-   }
-   
-   trim_columns($aoa_r);
-   
-   return @row;
-   # always returns row
-}   
+   return splice_row($_[0] , 0, 1);
+}
 
 sub pop_row {
-   # pop_row (\@lol);
-   my $aoa_r = shift;
-   my $last_row = last_row($aoa_r);
-   my @row;
-   
-   foreach my $ary_r (@{$aoa_r}) {
-      if ($#{$ary_r} == $last_row) {
-         push @row, pop @{$ary_r};
-      }
-      else {
-         push @row, undef;
-      }
-   }  
-
-   trim_columns($aoa_r);
-
-   return @row;
-   # always returns @row
-
+   return splice_row($_[0] , -1);
 }
+
 
 
 # PUT VALUES IN ROW: SET, UNSHIFT, PUSH
@@ -283,15 +317,11 @@ sub trim_rows {
 # INFORMATION: last_row
 
 sub last_row {
-   # last_row (\@lol)
-   my $aoa_r = shift;
-   my $last = 0;
-   foreach my $ary_r (@{$aoa_r}) {
-      my $end = $#{$ary_r};
-      $last = $end if $end > $last;
-   }
-   return $last;
-   # returns last row element (of course)
+   # last_row (\@aoa)
+   return max (       # maximum value of
+       map { $#{$_} } # the index of the last members of 
+           @{$_[0]};  # all the arrays
+                      # pointed to by the first entry in @_
 }
 
 # RETURNS CLONE: transpose
@@ -390,7 +420,7 @@ sub delete_rows {
 
 }
 
-sub splice_row {
+sub splice_row3 {
    my $aoa_r  = shift;
    my $offset = shift;
    my $length = shift;
