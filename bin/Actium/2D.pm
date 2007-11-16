@@ -12,28 +12,66 @@ use FindBin('$Bin');
 use lib $Bin , "$Bin/..";
 
 use List::Util (qw(min max));
-#use List::Moreutils (qw(any));
 use Carp;
 use Storable ('dclone');
 
 use Actium::Constants;
 
+use Data::Alias;
+
 use Exporter;
 our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = ('Exporter');
 @EXPORT_OK = 
-    qw(get_row   shift_row     pop_row    splice_row   insert_row   delete_row
+    qw(get_row       shift_row     pop_row    splice_row   insert_row   delete_row
        get_rows                           splice_rows  insert_rows  delete_rows
-       set_row   unshift_row   push_row     
-       set_rows  unshift_rows  push_rows
-       pad_rows  blank_rows    trim_rows  trim_columns
-       last_row  clone         transpose  clone_transposed
+       set_row       unshift_row   push_row     
+       set_rows      unshift_rows  push_rows
+       pad_rows      blank_rows    trim_rows  trim_columns
+       last_row_idx  clone         transposed clone_transposed
        );
 %EXPORT_TAGS = ( all => [ @EXPORT_OK ] );      
 
-# GET VALUES FROM ROW: GET, SHIFT, POP
+# UTILITY
 
+sub last_row_idx {
+   # last_row_idx (\@aoa)
+   return max (       # maximum value of
+       map { $#{$_} } # the index of the last members of 
+           @{$_[0]} );  # all the arrays
+                      # pointed to by the first entry in @_
+}
 
+sub transposed {
+   my $aoa_r = shift;
+   my $last_col = $#{$aoa_r};
+   my $last_row_idx = last_row_idx($aoa_r);
+   
+   my $transposed_r;
+   for (0 .. $last_row_idx) {
+      $#{$transposed_r->[$_]} = $last_col;
+   }
+
+   for my $i ( 0 .. $#{$aoa_r} ) {
+      for my $j ( 0 .. $last_row_idx ) {
+         alias $transposed_r->[$j][$i] = $aoa_r->[$i][$j];
+      }
+   }
+
+   return $transposed_r;
+   # ref to new AoA in $_[0]
+}
+
+sub trim_array { pop @_ while not defined $_[$#_] }
+
+sub get_row {
+   my $aoa = shift;
+   my $index = shift;
+   my $xaoa = transposed($aoa);
+   return trim_array(@{$xaoa->[$index]});
+}   
+
+__END__
 
 sub splice_row {
    my $aoa_r  = shift;
@@ -49,7 +87,7 @@ sub splice_row {
    
 }
 
-sub splice_row2 {
+sub splice_rows {
    my $aoa_r              = shift;
    my $offset             = shift;
    my $length             = shift;
@@ -70,10 +108,10 @@ sub splice_row2 {
    
    $replacement_aoa_r  = clone($replacement_aoa_r);
 
-   my $last_row = last_row ($aoa_r);
+   my $last_row_idx = last_row_idx ($aoa_r);
 
-   _adjust_offset ($offset, $last_row);
-   _adjust_length ($offset, $length, $last_row);
+   _adjust_offset ($offset, $last_row_idx);
+   _adjust_length ($offset, $length, $last_row_idx);
    
    pad_rows($aoa_r);
    pad_rows($replacement_aoa_r);
@@ -106,9 +144,9 @@ sub get_rows {
    my $offset = shift;
    my $length = shift;
    
-   my $last_row = last_row($aoa_r);
-   _adjust_offset($offset,$last_row);
-   _adjust_length($offset,$length,$last_row);
+   my $last_row_idx = last_row_idx($aoa_r);
+   _adjust_offset($offset,$last_row_idx);
+   _adjust_length($offset,$length,$last_row_idx);
 
    my $return_r;
    for my $row ($offset .. $offset + $length - 1) {
@@ -182,7 +220,7 @@ sub set_rows {
 #   my $aoa_r = shift;
 #   my $new_aoa_r = clone(shift);
 #   
-#   my $last_new_row = last_row($new_aoa_r);
+#   my $last_new_row = last_row_idx($new_aoa_r);
 #   
 #   for my $column (0 .. (max $#{$new_aoa_r} , $#{$aoa_r}) ) {
 #      $new_aoa_r->[$column][$last_new_row] = undef
@@ -191,7 +229,7 @@ sub set_rows {
 #      unshift @{ $aoa_r->[$column] }, @{ $new_aoa_r->[$column] };
 #   }
 #   
-#   return last_row($aoa_r)+1 if defined wantarray;
+#   return last_row_idx($aoa_r)+1 if defined wantarray;
 #   # returns number of rows
 #   return;
 #
@@ -215,7 +253,7 @@ sub unshift_rows {
       unshift @{ $aoa_r->[$column] }, @{ $new_aoa_r->[$column] };
    }
    
-   return last_row($aoa_r)+1 if defined wantarray;
+   return last_row_idx($aoa_r)+1 if defined wantarray;
    # returns number of rows
    return;
 
@@ -233,17 +271,17 @@ sub push_rows {
    my $aoa_r = shift;
    my $new_aoa_r = shift;
  
-   my $last_row = last_row ($aoa_r);
+   my $last_row_idx = last_row_idx ($aoa_r);
 
    for my $column (0 .. (max $#{$new_aoa_r} , $#{$aoa_r}) ) {
-      $aoa_r->[$column][$last_row] = undef
-          unless defined ($aoa_r->[$column][$last_row]);
+      $aoa_r->[$column][$last_row_idx] = undef
+          unless defined ($aoa_r->[$column][$last_row_idx]);
       if (ref $new_aoa_r->[$column]) {
          push @{ $aoa_r->[$column] }, @{ $new_aoa_r->[$column] };
       }
    }
    
-   return last_row($aoa_r)+1 if defined wantarray;
+   return last_row_idx($aoa_r)+1 if defined wantarray;
    # returns number of rows
    return;
 
@@ -251,10 +289,6 @@ sub push_rows {
 
 # MODIFICATION: pad_rows, trim_columns, transpose
 
-sub transpose {
-   $_[0] = clone_transposed($_[0]);
-   return; # nothing
-}
 
 sub pad_rows {
    # pad_rows(\@lol, $value) - if value omitted, will default to undef
@@ -262,11 +296,11 @@ sub pad_rows {
 
    my $aoa_r = shift;
    my $value = shift; # naturally defaults to undef
-   my $last_row = last_row($aoa_r);
+   my $last_row_idx = last_row_idx($aoa_r);
    
    foreach my $col_r (@{$aoa_r}) {
-      for my $j (0 .. $last_row) {
-         $col_r->[$last_row] = $value if not exists $col_r->[$last_row];
+      for my $j (0 .. $last_row_idx) {
+         $col_r->[$last_row_idx] = $value if not exists $col_r->[$last_row_idx];
       }
    }
    return; # nothing
@@ -276,11 +310,11 @@ sub blank_rows {
    # blank_rows(\@lol, $value) - if value omitted, will default to undef
    my $aoa_r = shift;
    my $value = shift; # naturally defaults to undef
-   my $last_row = last_row($aoa_r);
+   my $last_row_idx = last_row_idx($aoa_r);
    
    foreach my $col_r (@{$aoa_r}) {
-      for my $j (0 .. $last_row) {
-         $col_r->[$last_row] = $value if not defined $col_r->[$last_row];
+      for my $j (0 .. $last_row_idx) {
+         $col_r->[$last_row_idx] = $value if not defined $col_r->[$last_row_idx];
       }
    }
    return; # nothing
@@ -314,15 +348,7 @@ sub trim_rows {
   return;
 }
 
-# INFORMATION: last_row
 
-sub last_row {
-   # last_row (\@aoa)
-   return max (       # maximum value of
-       map { $#{$_} } # the index of the last members of 
-           @{$_[0]};  # all the arrays
-                      # pointed to by the first entry in @_
-}
 
 # RETURNS CLONE: transpose
 
@@ -333,13 +359,13 @@ sub clone {
    
 sub clone_transposed {
    my $aoa_r = shift;
-   my $last_row = last_row($aoa_r);
+   my $last_row_idx = last_row_idx($aoa_r);
    
    my $transposed_r;
-   push @{$transposed_r} , [] for 0 .. $last_row;
+   push @{$transposed_r} , [] for 0 .. $last_row_idx;
 
    for my $i ( 0 .. $#{$aoa_r} ) {
-      for my $j ( 0 .. $last_row ) {
+      for my $j ( 0 .. $last_row_idx ) {
          $transposed_r->[$j][$i] = $aoa_r->[$i][$j];
       }
    }
@@ -352,14 +378,14 @@ sub clone_transposed {
 
 sub _adjust_offset {
    my $offset = shift;
-   my $last_row = shift;
+   my $last_row_idx = shift;
    
-   if ($offset > $last_row) {
-      carp ("offset ($offset) greater than maximum value ($last_row) in "
+   if ($offset > $last_row_idx) {
+      carp ("offset ($offset) greater than maximum value ($last_row_idx) in "
          . caller);
-      $offset = $last_row;
+      $offset = $last_row_idx;
    } elsif ($offset < 0) {
-      $offset = $last_row + $offset + 1
+      $offset = $last_row_idx + $offset + 1
    }
    # If OFFSET is negative then it starts that far from the end of the array.
    # If OFFSET is past the end of the array, perl issues a warning, and 
@@ -369,13 +395,13 @@ sub _adjust_offset {
 sub _adjust_length {
    my $offset = shift;
    my $length = shift;
-   my $last_row = shift;
+   my $last_row_idx = shift;
 
    if (not defined($length)) {
-      $length = $last_row - $offset + 1;
+      $length = $last_row_idx - $offset + 1;
    }
    elsif ($length < 0) {
-      $length = ($last_row - $offset + 1) + $length;
+      $length = ($last_row_idx - $offset + 1) + $length;
    }
    # If LENGTH is omitted, removes everything from OFFSET onward. 
    # If LENGTH is negative, removes the elements from OFFSET onward 
@@ -404,11 +430,11 @@ sub delete_rows {
    my $offset = shift;
    my $length = shift;
    
-   my $last_row = last_row($aoa_r);
+   my $last_row_idx = last_row_idx($aoa_r);
 
-   _adjust_offset ($offset, $last_row);
+   _adjust_offset ($offset, $last_row_idx);
    
-   _adjust_length ($offset, $length, $last_row);
+   _adjust_length ($offset, $length, $last_row_idx);
 
    my @new_aoa;
    for my $column_r (@{$aoa_r}) {
@@ -450,10 +476,10 @@ sub splice_rows {
    
    $replacement_aoa_r  = clone($replacement_aoa_r);
 
-   my $last_row = last_row ($aoa_r);
+   my $last_row_idx = last_row_idx ($aoa_r);
 
-   _adjust_offset ($offset, $last_row);
-   _adjust_length ($offset, $length, $last_row);
+   _adjust_offset ($offset, $last_row_idx);
+   _adjust_length ($offset, $length, $last_row_idx);
    
    pad_rows($aoa_r);
    pad_rows($replacement_aoa_r);
