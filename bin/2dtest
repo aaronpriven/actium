@@ -1,0 +1,23 @@
+
+use lib "/Volumes/Bireme/ACTium/objbin/";
+
+use Actium::2D (qw(:all));
+
+use List::Util;
+use Data::Dumper;
+
+$data = 
+   [ 
+     [  1,  2,  3, 'a' , 'b' ] ,
+     [  4,  5,  6, 'c' , 'd' ] ,
+     [  7,  8,  9, 'e' , 'f' ] ,
+     [ 10, 11, 12, 'g' , 'h' ] ,
+   ];
+
+$new = transposed($data);
+
+print Dumper($new);
+
+sub pt {
+   print ((join ("  " , @_) , "\n"));
+}
