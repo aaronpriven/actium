@@ -1,0 +1,483 @@
+#!/usr/bin/perl
+
+@ARGV = qw(-s w07) if $ENV{RUNNING_UNDER_AFFRUS};
+
+# avl2skeds - see POD documentation below
+
+#00000000111111111122222222223333333333444444444455555555556666666666777777777
+#23456789012345678901234567890123456789012345678901234567890123456789012345678
+
+use warnings;
+use strict;
+
+# add the current program directory to list of files to include
+use FindBin('$Bin');
+use lib ($Bin , "$Bin/../bin");
+
+use Carp;
+#use Fatal qw(open close);
+use Storable();
+use Algorithm::Diff();
+use List::Util;
+
+use Actium::Transpose('transposed');
+use Actium::Say('say' , 'sayt');
+use Actium::Constants;
+use Myopts;
+use Skeddir;
+
+my %lines_to_combine = (
+   '59A' => 59 , '72M' => 72 ,  DB1 => 'DB' , DB3 => 'DB',  83 => 86,  386 => 86);
+      
+my %day_of = qw(
+     12345 WD
+     6     SA
+     7     SU
+     67    WE
+     *2*4* TT
+     *2**5 TF
+     );
+     
+my %dir_of = qw(
+    0 NB    1 SB
+    2 EB    3 WB
+    4 IN    5 OU
+    6 GO    7 RT
+    8 CW    9 CC
+   10 1    11 2
+   12 UP   13 DN
+    );
+    
+                
+
+# don't buffer terminal output
+$| = 1;
+
+# command line options in %options;
+my %options;
+Myopts::options (\%options, Skeddir::options(), 'quiet!');
+
+# change to skedsdir base directory (e.g., Actium/db/f07)
+my $signup = (Skeddir::change (\%options))[2];
+
+if (not $options{quiet}) {
+   print "avl2skeds - reads stored AVL data and makes skeds files\n\n";
+}
+
+# retrieve data
+
+
+
+my %skeds_pairs_of;
+my %skeds_routes_of;
+my %sked_order_of;
+my %skeds_cols_of;
+my %tp9_of;
+
+{ # scoping
+# the only real reason to do this is to release the %avldata structure, so Affrus
+# doesn't have to display it when it's not being used.
+my %avldata = %{
+   Storable::retrieve ('avl.storable') or die "Can't retreive avl.storable: $!"
+   };
+
+make_skeds_pairs_of_hash(\%avldata);
+make_tp9s(\%avldata);
+
+}
+
+
+# defintion of fields in %skeds_pairs_of;
+# $skeds_pairs_of{$line_dir_days}[$trip]{TIME} = $time;
+# $skeds_pairs_of{$line_dir_days}[$trip]{PLACE} = $place;
+
+# trim the thing down to the first item, for testing DEBUG
+#{ 
+#my ($one, $two) = each %skeds_pairs_of;
+#%skeds_pairs_of = ($one => $two);
+#}
+
+#iterates over each schedule
+for my $this_sked_key ( sort keys %skeds_pairs_of) {
+   
+   make_place_ordering($this_sked_key);
+   make_columns($this_sked_key);
+
+   sort_rows ($this_sked_key);
+
+   modify_duplicate_places($this_sked_key);
+   
+	write_columns($this_sked_key);
+
+}
+
+dump_ref(\%skeds_cols_of);
+
+print "\nEnd.\n";
+
+############# end of main program #######################
+
+
+sub modify_duplicate_places {
+   my $key = shift;
+   
+   # not written yet
+
+}
+
+sub all_true { $_ || return 0 for @_; 1 }
+
+sub get_avg {
+   my @elems = 
+      map {time_to_timenum($_) }
+      grep {$_} 
+      @{+shift}; # get timenums of elems that are true
+   return ( List::Util::sum (@elems) / scalar @elems);
+}
+
+sub sort_rows {
+   my $key = shift;
+   
+   my $thesecols = $skeds_cols_of{$key};
+
+   my $sortby = -1;
+   
+   my $transposed = transposed($thesecols);
+   
+   SORTBY:
+   for my $i (0 .. $#{$transposed}) {
+      if (all_true ( @{$transposed->[$i]} ) ) {
+         $sortby = $i;
+         last SORTBY;
+      }
+   }
+      
+   if ($sortby == -1) {
+      say ("Averaging times for $key.");
+	   @{$thesecols} =
+         map  { $_ -> [1] }
+	      sort { $a->[0] <=> $b->[0] }
+	      map  { [ get_avg($_) , $_ ] } @{$thesecols}; 
+   } 
+   else {
+	   @{$thesecols} = 
+	      map { $_ -> [1] }
+	      sort { $a->[0] <=> $b->[0] }
+	      map { [ time_to_timenum ($_->[$sortby]) , $_ ] } @{$thesecols}; 
+	}
+
+   # schwartzian transform
+   
+   # assigning to @{$thesecols} assigns to array pointed to by
+   # $skeds_cols_of{$key}
+      
+   return;
+   
+}
+
+
+sub make_columns {
+   my $key = shift;
+   my @trips = @{$skeds_pairs_of{$key}};
+   
+#    Go through each trip.
+#    Go through each place on that trip.
+#    Add time from that place to an array of times of that trip,
+#    with blank ones for all the places in the order that aren't
+#    there on that trip.
+   
+   my @allcolumns = ();
+   
+   foreach my $trip_r (@trips) {
+
+      my @column_of_times;
+      my $current_idx = 0;
+      
+      my $last_place = $#{$trip_r};
+
+      PLACE:
+      foreach my $place_to_process (@{$sked_order_of{$key}}) {
+         
+         if ($current_idx > $last_place) {
+            push @column_of_times, $EMPTY_STR;
+            next PLACE;
+         }
+         
+         my $current_place = $trip_r->[$current_idx]{PLACE};
+         my $current_time  = $trip_r->[$current_idx]{TIME};
+           
+         if ($place_to_process eq $current_place) {
+            $current_idx++;
+            push @column_of_times , $current_time;
+         }
+         else {
+            push @column_of_times, $EMPTY_STR;
+         }
+      
+      }
+		
+      push @allcolumns, \@column_of_times;
+   }
+   
+   $skeds_cols_of{$key} = \@allcolumns;
+   
+   # so:
+   # $skeds_cols_of{$key}[$column][$row] = a time
+   
+   return;
+
+}
+
+sub write_columns {
+   my $key = shift;
+
+   my $filename = $key;
+   $filename =~ s/$KEY_SEPARATOR/_/g;
+   open my $out, '>' , "skeds/$filename.txt" or die "$!";
+
+   print $out tab(map {$tp9_of{$_}} (@{$sked_order_of{$key}}));
+
+   foreach my $column ( @{$skeds_cols_of{$key}} ) {
+      print $out tab( @{$column} );
+   }
+   
+   close $out;
+
+}
+
+sub make_place_ordering {
+   my $key = shift;
+   my @trips = @{$skeds_pairs_of{$key}};
+   
+   my %trip_tps_seen;
+   
+   # go through each trip, and for each variant of the place
+   # order, put that variant in the %trip_tps_seen (keyed
+   # to a stringification of the trip). 
+   foreach my $trip (@trips) {
+
+      #make the list of places in @places
+      my @places = ();
+      foreach my $place_time_pair_r (@{$trip}) {
+         push (@places, $place_time_pair_r->{PLACE})
+      }
+
+      # %trip_tps_seen contains unique place lists
+      $trip_tps_seen{key(@places)} = \@places;
+   
+   }
+   
+   # run ordered_union on each of the values of %trips_tps_seen
+   # so basically this keeps creating more and more unions until there's
+   # only one left
+ 
+   # say ("Union: $key " , scalar keys %trip_tps_seen) if scalar keys %trip_tps_seen > 1;
+   $sked_order_of{$key} = ordered_multiple_union (values %trip_tps_seen); 
+ 
+   return;
+   
+}
+
+sub ordered_multiple_union {
+   my @array_rs = @_;
+   
+   # return the first array if there's only one array
+   return $array_rs[0] if $#array_rs == 0;
+   
+   @array_rs = reverse sort { @{$a} <=> @{$b} or "@{$a}" cmp "@{$b}" } @array_rs;
+
+   my $union_r = shift @array_rs;
+   foreach my $array_r (@array_rs) {
+      $union_r = ordered_union ($union_r, $array_r);
+   }
+
+   return $union_r;
+   
+}
+
+sub ordered_union {
+   # usage: @union = @{ ordered_union (\@a, \@b) };
+   # accepts two array refs. Returns reference to the union of the 
+   # two arrays, preserving their order as best determined by 
+   # Algorithm::Diff.
+   
+   # in a sequence like (a, b, d) and (a, c, d), will return
+   # entries in alphabetical order (a, b, c, d).
+   
+   my @union;
+   
+   unless (ref($_[0]) and ref($_[1])) {
+      croak "Non-reference arguments to ordered_union";
+   }
+   
+   foreach my $component ( Algorithm::Diff::sdiff ($_[0], $_[1]) ) {
+   
+      my ($action, $a_elem, $b_elem) = @$component;
+      
+      # in order of my expectation of frequency
+      push @union, (   $action eq 'u' ? ( $a_elem )
+                     : $action eq '+' ? ( $b_elem ) 
+                     : $action eq '-' ? ( $a_elem )
+                     : (sort ( $a_elem , $b_elem )) # $action eq "c"
+                   );
+      
+   }
+
+#   sayt @{$_[0]};
+#   sayt @{$_[1]};
+#   sayt @union;
+#   sayt '======';
+
+   return \@union;
+}
+
+sub make_tp9s {
+
+   my %avldata = %{+shift};
+   
+   while ( my ($place , $place_r) = each %{$avldata{PLC}} ) {
+      my $number = sprintf('%8s' , $place_r->{Number});
+      $number =~ tr/,/./; # FileMaker doesn't like commas
+      my $first  = substr($number, 0, 4);
+      my $second = substr($number, 4);
+      $first =~ s/\s+$//;
+      $second =~ s/\s+$//;
+      $tp9_of{$place} = "$first $second";
+   }
+   
+   $tp9_of{'HDMA'} = 'HDAL MALL'; 
+   # differentiates it from Hilltop which is also HILL MALL
+
+}
+
+sub make_skeds_pairs_of_hash {
+
+   my %avldata = %{+shift};
+
+   # separate trips out by which line and direction they're in
+   TRIP:
+   while ( my ($trip_number, $trip_of_r) = each %{$avldata{TRP}} ) {
+      my %tripinfo_of = %{$trip_of_r};
+      next TRIP unless $tripinfo_of{IsPublic};
+      
+      my $line      = $tripinfo_of{RouteForStatistics};
+      my $linegroup = linegroup($line);
+      
+      next TRIP if $line eq '399'; # supervisor order
+      
+      my $days     = $day_of{$tripinfo_of{OperatingDays}};
+      my $pattern  = $tripinfo_of{Pattern};
+      my $patkey   = key ($line, $pattern);
+      my $dir_code = $dir_of{$avldata{PAT}{$patkey}{DirectionValue}};
+
+      my @times = ();
+      TIMEIDX:
+      foreach my $timeidx (0 .. $#{$tripinfo_of{PTS}}) {
+         my $place = $avldata{PAT}{$patkey}{TPS}[$timeidx]{Place};
+         next TIMEIDX unless $place;
+
+         #remove -A and -D from places. not useful for us.
+
+         $place =~ s/-A$//;
+         $place =~ s/-D$//;
+
+         my $time = $tripinfo_of{PTS}[$timeidx];
+         $time =~ s/^0//;
+         push @times , {PLACE => $place, TIME => $time};
+      }
+      
+      push ( @{ $skeds_pairs_of {key($linegroup,$dir_code,$days)} }, \@times);
+       
+   }
+
+}
+
+sub time_to_timenum {
+   # takes a time like "0150a" 
+   # and turns it into the number of minutes since midnight
+
+   my $time = shift;
+   
+#   $time = '0000b' unless $time;
+   croak "Invalid time $time" 
+      if not ($time =~ /^ [01]? [0-9] [0-5] [0-9] [apbx] $/x) ;
+
+   my $ampm = chop $time;
+   
+   my $minutes = substr($time, -2, 2, $EMPTY_STR);
+   
+   # hour is 0 if it reads 12, or otherwise $time 
+   my $hour = ($time == 12 ? 0 : $time);
+   
+   return ($minutes  +  $hour * 60  +  $AMPM_OFFSETS{$ampm});
+
+}
+
+sub timenum_to_12h {
+   # time format: 1215a, 115p, etc.
+   
+   my $time = shift;
+   
+   croak "Invalid time $time" 
+      if not ($time >= ( - $MINS_IN_12HRS ) and $time < (3 * $MINS_IN_12HRS));
+
+   my $ampm;
+   if ($time < 0) {
+      $ampm = 'b';
+   }
+   else {
+      $ampm = int ($time / $MINS_IN_12HRS); # comes out to 0, 1, or 2
+      $ampm = (qw(a p x))[$ampm]; # turns 0, 1, or 2 into a, p, or x
+   }
+   
+   my $minutes = $time % $MINS_IN_12HRS;
+   
+   # hours = number of hours, but if it's 0, set it to 12
+   my $hours = (int($minutes / 12) or 12);
+   $minutes = $minutes % 60;
+   
+   return sprintf('%02d%02d%s', $hours, $minutes, $ampm);
+
+}
+
+sub dump_ref {
+   # for debugging only
+
+   use Data::Dumper;
+   open my $out , ">" , "avldump";
+   print $out Dumper(+shift);
+   close $out;
+
+}
+
+sub key {
+   return join ($KEY_SEPARATOR, @_);
+}
+
+sub tab {
+   return ( join ("\t", @_) . "\n");
+}
+
+sub linegroup {
+   my $line = shift;
+   return $lines_to_combine{$line} if exists $lines_to_combine{$line};
+   return $line;
+}
+   
+
+
+=head1 NAME
+
+avl2skeds - Make schedules from the avl stored data.
+
+=head1 DESCRIPTION
+
+avl2skeds reads the data written by readavl and turns it into schedule
+files suitable for ACTium.
+
+=head1 AUTHOR
+
+Aaron Priven
+
+=cut
+
