@@ -34,38 +34,45 @@ use Byroutes 'byroutes';
 use Skedtps qw(tphash TPXREF_FULL);
 use FPMerge qw(FPread FPread_simple);
 
-our %second = ( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
-                "82L" => '82' ,  SA  => 'S' , DB1 => 'DB' ,
+our %second = ( "59A" => '59' , "72M" => '72' ,
+                386  => '86' , DB1 => 'DB' , 
                ); # , '51S' => '51' );
 
+
 our %first = reverse %second;
+# create a reverse hash, with values of %second as keys and 
+# keys of %second as values
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory
 ######################################################################
 
+
+my $pdfloc = "http://www.actransit.org/pdf/schedules";
+
 my $emailerlinktext = <<'EOF';
 
-   <p><a href="http://www.actransit.org/acnews/">
-   Have schedule and route changes delivered to your computer &#8211; subscribe to AC Transit e-News.
-   </a></p>
-   <!-- Yeah, I know. 
-        1994 called, they want their Web style back. -->
+<p><strong>This site is not owned or controlled by AC Transit.</strong> For official information, please see:
+
+<ul>
+<li>
+<a href="http://www.actransit.org/">AC Transit official site</a>
+<li>
+<a href="http://transit.511.org/providers/providerinfo.asp?cid=AC">AC
+Transit (local service) section on 511.org</a>
+<li>
+<a href="http://transit.511.org/providers/providerinfo.asp?cid=AD">AC Transit (transbay service) section on 511.org</a>). 
+</ul>
+
+</p>
 EOF
 
-my $genericemailerlinktext = <<'EOF';
-   <p><a href="http://www.actransit.org/acnews/">
-   Have schedule and route changes delivered to your computer &#8211; subscribe to AC Transit e-News.
-   </a></p>
-   <!-- Yeah, I know. 
-        1994 called, they want their Web style back. -->
-EOF
+#my $genericemailerlinktext = <<'EOF';
+#  <p>This website is not associated with or provided by AC Transit.
+#   </p>
+#EOF
 
 my $genericemailerlinktext = $emailerlinktext;
-# easier than commenting out the above multiple lines is just to put this
-# one in first
-
-my $legendtext = ' <font size=-1>(see also <a href="/pdf/schedulemaps/line-map-legend-jun04.pdf">the legend for line maps)</a></font>';
 
 our (%options);    # command line options
 
@@ -75,7 +82,7 @@ Myopts::options (\%options, Skeddir::options(), 'quiet!' , 'upcoming=s' ,
     'current!' );
 # command line options in %options;
 
-$| = 1; # don't buffer terminal output; perl's not supposed to need this, but it does
+$| = 1; # don't buffer terminal output
 
 print "htmlskeds - create a set of html files\n\n" unless $options{quiet};
 
@@ -84,6 +91,24 @@ $signup = (Skeddir::change (\%options))[2];
 print "Using signup $signup\n" unless $options{quiet};
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "actium/db/xxxx" base directory.
+
+#if ($signup eq 'sp05') {
+#  $second{'82L'} = '82';
+#   $first{'82'} = '82L';
+#} # ugly hack because sp05 needs 82/82L joined while sum05 (and later, 
+#  # presumably) does not
+
+our $linemapfile;
+
+#if ($signup eq 'f05i' or $signup eq 'f05') {
+#  $linemapfile = 'line-map-legend-jun04.pdf';
+#} else {
+#   $linemapfile = 'line-map-legend-feb06.pdf';
+#}
+
+$linemapfile = 'TTLegend-may07-v2.pdf';
+
+my $legendtext = qq[ <font size=-1>(see also <a href="$pdfloc/$linemapfile">the legend for line maps)</a></font>];
 
 open DATE , "<effectivedate.txt" 
       or die "Can't open effectivedate.txt for input: $!";
@@ -110,10 +135,10 @@ print "$vals timepoints.\nLines... " unless $options{quiet};
 FPread_simple ("Lines.csv" , \@lines, \%lines, 'Line');
 print scalar(@lines) , " records.\n" unless $options{quiet};
 
-mkdir "html" or die 'Can\'t make directory "html": $!'  
-               unless -d "html";
+mkdir "infohtml" or die 'Can\'t make directory "infohtml": $!'  
+               unless -d "infohtml";
 
-my @files = getfiles(GETFILES_PUBLIC);
+my @files = getfiles(GETFILES_PUBLIC_AND_DB);
 
 my %skednamesbyroute = ();
 my %skeds;
@@ -172,14 +197,13 @@ foreach my $route (sort byroutes keys %skednamesbyroute) {
    my $lineword = "Line" ;
    $lineword .= "s" if $first{$route};
 
-   open ROUTEF , ">html/$route.html" or die "Can't open $route.html: $!";
-   open COMPLETE , ">html/$route-A.html" or die "Can't open $route-A.html: $!";
+   open ROUTEF , ">infohtml/$route.html" or die "Can't open $route.html: $!";
+   open COMPLETE , ">infohtml/$route-A.html" or die "Can't open $route-A.html: $!";
    
    print ROUTEF <<"EOF";
 <HTML><HEAD><TITLE>AC Transit $lineword $linename</TITLE></HEAD>
-<BODY><p><a href="http://www.actransit.org">AC Transit</a> : 
-<a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : 
-<a href="index.html">Summer School Schedules</a> : $linename</p><hr>
+<BODY><p><a href="http://www.actransit.info">www.actransit.info</a> : <a href="/skeds/">Schedules</a> 
+: $linename</p><hr>
 <p><H2>AC Transit $lineword $linename</H2>
 <p>Effective $effdate
 EOF
@@ -195,7 +219,7 @@ EOF
    if ($first{$route}) { # two routes
       if ($lines{$route}{MapFileName} eq $lines{$first{$route}}{MapFileName}) {
          if ($lines{$route}{MapFileName}) {
-            $linemaptext = qq(<LI><a href="/pdf/schedulemaps/) . 
+            $linemaptext = qq(<LI><a href="$pdfloc) . 
                $lines{$route}{MapFileName} . 
                qq(">Map for $lineword $linename</a>\n);
             $maplines{$route} = $linemaptext;
@@ -240,7 +264,7 @@ EOF
 
    print ROUTEF <<"EOF";
 $emailerlinktext
-Prepared by AC Transit Marketing and Communications<br>$prepdate
+Prepared $prepdate
 </BODY></HTML>
 EOF
 
@@ -249,9 +273,7 @@ EOF
    print COMPLETE <<"EOF";
 <HTML><HEAD><TITLE>$lineword $linename: Complete Schedule</TITLE>
 <BODY><p>
-<a href="http://www.actransit.org/">AC Transit</a> :
-<a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : 
-<a href="index.html">Summer School Schedules</a> : 
+<a href="http://www.actransit.info/">www.actransit.info</a> : <a href="/skeds/">Schedules</a> :
 <a href="$route.html">$linename</a> :
 Complete Schedule</p><hr>
 <h2>$lineword $linename</h2>
@@ -275,14 +297,12 @@ EOF
       my $title = 
         "$lineword $linename, $bound{$dir} $adjectivedaynames{$day} Schedule";
 
-      open HTML, ">html/$route-$dir-$day.html";
+      open HTML, ">infohtml/$route-$dir-$day.html";
 
       print HTML <<"EOF";
 <HTML><HEAD><TITLE>$title</TITLE>
 <BODY><p>
-<a href="http://www.actransit.org/">AC Transit</a> :
-<a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : 
-<a href="index.html">Summer School Schedules</a> : 
+<a href="http://www.actransit.info/">www.actransit.info</a> : <a href="/skeds/">Schedules</a> :
 <a href="$route.html">$linename</a> :
 $bound{$dir} $adjectivedaynames{$day}</p><hr>
 <h2>$lineword $linename</h2>
@@ -410,7 +430,7 @@ EOF
 
       print HTML $skedtext{$skedname};
       if ($lines{$route}{FullWebNote}) {
-         $lines{$route}{FullWebNote} =~ s/с/\"/g;
+         $lines{$route}{FullWebNote} =~ s/[ср]/\"/g;
          print ROUTEF "<p>" , $lines{$route}{FullWebNote} , "</p>";
       }
 
@@ -421,7 +441,7 @@ EOF
 
       print HTML "<p>";
       print HTML $emailerlinktext , 
-         "<p>Prepared by AC Transit Marketing and Communications<br>$prepdate";
+         "<p>Prepared $prepdate";
       print HTML "</p>\n</body></html>";
 
       close HTML;
@@ -439,7 +459,7 @@ EOF
 
    print COMPLETE "<p>";
    print COMPLETE $emailerlinktext , 
-      "<p>Prepared by AC Transit Marketing and Communications<br>$prepdate";
+      "<p>Prepared $prepdate";
    print COMPLETE "</p>\n</body></html>";
 
    close COMPLETE;
@@ -449,41 +469,35 @@ EOF
 
 print "\n";
 
-open INDEX , ">html/index.html" or die "Can't open html/index.html: $!";
-print INDEX  "<HTML><HEAD><TITLE>AC Transit Summer School Schedules</TITLE></HEAD>\n<BODY><p>";
-print INDEX  qq(<a href="http://www.actransit.org">AC Transit</a> : );
-print INDEX qq(<a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : );
-print INDEX  "Summer School Schedules</p><hr><p>";
-print INDEX "<H2>AC Transit Summer School Schedules</H2>\n<p>Effective $effdate" , upcoming() , "</p>\n";
+open INDEX , ">infohtml/index.html" or die "Can't open infohtml/index.html: $!";
+print INDEX  "<HTML><HEAD><TITLE>AC Transit Schedules</TITLE></HEAD>\n<BODY><p>";
+print INDEX  qq(<a href="http://www.actransit.info">www.actransit.info</a> : );
+print INDEX  "<a href='/skeds/'>Schedules</a></p><hr><p>";
+print INDEX "<H2>AC Transit Schedules</H2>\n<p>Effective $effdate" , upcoming() , "</p>\n";
 
-=pod
 print INDEX <<EOF;
 <UL><LI><A HREF="#Local">Local Service</A></LI>
 <LI><A HREF="#Transbay">Transbay Service</A></LI>
+<LI><A HREF="#AllNighter">All Nighter Service</A></LI>
 <LI><A HREF="#School">School Service</A></LI>
 </UL><HR>
 EOF
-=cut
 
-my (@local, @transbay, @school);
+my (@local, @transbay, @school,@allnighter);
 
-my @school = keys %index;
-
-print INDEX  "<UL>";
-
-=pod
 foreach (keys %index ) {
    if (/^[\d]/) {
       if ($_ < 600) {
           push @local, $_;
-      } else {
+      } elsif ($_ < 800) {
           push @school, $_;
+      } else {
+          push @allnighter, $_;
       }
    } else {
-      push @transbay, $_;
+      push @transbay, $_ unless $_ =~ /^DB/;
    }
 }
-
 
 print INDEX qq(<h3><a name="Local">Local Service</a></h3><UL>);
 print INDEX $index{$_} foreach sort byroutes @local;
@@ -493,53 +507,57 @@ print INDEX qq(<h3><a name="Transbay">Transbay Service</a></h3><UL>);
 print INDEX $index{$_} foreach sort byroutes @transbay;
 print INDEX "</UL>\n";
 
-print INDEX qq(<h3><a name="School">School Service</a></h3><UL>);
-=cut
+print INDEX qq(<h3><a name="AllNighter">All Nighter Service</a></h3><UL>);
+print INDEX $index{$_} foreach sort byroutes @allnighter;
+print INDEX "</UL>\n";
 
+print INDEX qq(<h3><a name="School">School Service</a></h3><UL>);
 print INDEX $index{$_} foreach sort byroutes @school;
 print INDEX "</UL>\n";
 
 # print index bits
 
 print INDEX  "<hr>\n";
-print INDEX  $genericemailerlinktext , "Prepared by AC Transit Marketing and Communications<br>$prepdate";
+print INDEX  $genericemailerlinktext , "Prepared $prepdate";
 print INDEX "</BODY></HTML>";
 
 close INDEX;
 
-open LMAPS , ">html/linemaps.html" or die "Can't open html/linemaps.html: $!";
+open LMAPS , ">infohtml/linemaps.html" or die "Can't open infohtml/linemaps.html: $!";
 print LMAPS  "<HTML><HEAD><TITLE>AC Transit Line Maps</TITLE></HEAD>\n<BODY>";
-print LMAPS  qq(<a href="http://www.actransit.org">AC Transit</a> : );
-print LMAPS qq(<a href="http://www.actransit.org/riderinfo/mapsandschedules.wu">Maps and Schedules</a> : );
+print LMAPS  qq(<a href="http://www.actransit.info">www.actransit.info</a> : );
 print LMAPS  qq(Line Maps</p><hr>);
 
 print LMAPS "<H2>AC Transit Line Maps</H2>\n";
 
-print LMAPS <<'EOF';
+print LMAPS <<"EOF";
 <UL><LI><A HREF="#Local">Local Service</A></LI>
 <LI><A HREF="#Transbay">Transbay Service</A></LI>
 <LI><A HREF="#School">School Service</A></LI>
 </UL>
 
 <p>
-See also <a href="/pdf/schedulemaps/line-map-legend-jun04.pdf">the legend for line maps.</a></p>
+See also <a href="$pdfloc/$linemapfile">the legend for line maps.</a></p>
 <hr>
 EOF
 
 @local = ();
 @school = ();
 @transbay = ();
+@allnighter=();
 
 foreach (keys %maplines ) {
    $maplines{$_} =~ s/Map for Lines? //;
    if (/^[\d]/) {
       if ($_ < 600) {
           push @local, $_;
-      } else {
+      } elsif ($_ < 800) {
           push @school, $_;
+      } else {
+          push @allnighter, $_;
       }
    } else {
-      push @transbay, $_;
+      push @transbay, $_ unless $_ eq "DB" or $_ eq 'NC' or $_ eq 'LC';
    }
 }
 
@@ -551,6 +569,10 @@ print LMAPS qq(<h3><a name="Transbay">Transbay Service</h3><UL>);
 print LMAPS $maplines{$_} foreach sort byroutes @transbay;
 print LMAPS "</UL>\n";
 
+print LMAPS qq(<h3><a name="AllNighter">All Nighter Service</h3><UL>);
+print LMAPS $maplines{$_} foreach sort byroutes @allnighter;
+print LMAPS "</UL>\n";
+
 print LMAPS qq(<h3><a name="School">School Service</h3><UL>);
 print LMAPS $maplines{$_} foreach sort byroutes @school;
 print LMAPS "</UL>\n";
@@ -558,7 +580,7 @@ print LMAPS "</UL>\n";
 # print index bits
 
 print LMAPS  "<hr>\n";
-print LMAPS  $genericemailerlinktext , "Prepared by AC Transit Marketing and Communications<br>$prepdate";
+print LMAPS  $genericemailerlinktext , "Prepared $prepdate";
 print LMAPS "</BODY></HTML>";
 
 close LMAPS;
@@ -574,7 +596,7 @@ sub mapline {
 
   my ($route) = shift;
 
-  return qq(<LI><a href="/pdf/schedulemaps/) . 
+  return qq(<LI><a href="$pdfloc/) . 
          $lines{$route}{MapFileName} . 
          qq(">Map for Line $route ) . $lines{$route}{Name} . qq(</a>\n);
 }
