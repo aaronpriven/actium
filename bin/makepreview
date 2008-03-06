@@ -1,0 +1,3 @@
+#!/bin/tcsh
+
+/opt/local/bin/epstool --add-tiff6p-preview --dpi 72 --gs-args "-dTextAlphaBits=4 -dGraphicsAlphaBits=4 -dUseCIEColor" $1 preview-$1 >& $1.log &
