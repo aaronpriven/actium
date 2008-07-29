@@ -37,9 +37,13 @@ memoize ('time_to_timenum');
 memoize ('timenum_to_12h');
 memoize ('timenum_to_12h_ap_only');
 
-my %lines_to_combine = (
-   '59A' => 59 , '72M' => 72 ,  DB1 => 'DB' , DB3 => 'DB',  83 => 86,  386 => 86 ,
-    NC => 'NX3' , LC => 'L' , '51S' => '51' , );
+my %lines_to_combine = qw(
+    59A  59         72M  72  
+    DB1  DB         DB3  DB
+    83   86         386  86
+    NC   NX3        LC    L 
+    51S  51 
+    );
       
 my %day_of = qw(
      12345 WD
@@ -59,7 +63,6 @@ my %dir_of = qw(
    10 1    11 2
    12 UP   13 DN
     );
-    
                 
 
 # don't buffer terminal output
@@ -67,7 +70,7 @@ $| = 1;
 
 # command line options in %options;
 my %options;
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
+Myopts::options (\%options, Skeddir::options(), 'quiet!', 'rawonly!');
 
 # change to skedsdir base directory (e.g., Actium/db/f07)
 my $signup = (Skeddir::change (\%options))[2];
@@ -78,8 +81,13 @@ if (not $options{quiet}) {
 
 # retrieve data
 
-mkdir "skeds" or die "Can't make directory 'skeds': $!"
-               unless -d "skeds";
+if ( not $options{'rawonly'} ) {
+   mkdir "skeds" or die "Can't make directory 'skeds': $!"
+       unless -d 'skeds';
+}              
+
+mkdir "rawskeds" or die "Can't make directory 'rawskeds': $!"
+    unless -d "rawskeds";
 
 my %skeds_pairs_of;
 my %skeds_lines_of;
@@ -87,14 +95,15 @@ my %skeds_specdays_of;
 my %sked_order_of;
 my %sked_of;
 my %tp9_of;
+my %tp4_of;
 my @averaged_keys;
 my %sked_override_order_of;
 
-load_timepoint_overrides();
-
 { # scoping
 # the reason to do this is to release the %avldata structure, so Affrus
-# doesn't have to display it when it's not being used. Of course it saves memory, too
+# doesn't have to display it when it's not being used. Of course it saves
+# memory, too
+
 print "Retrieving data...";
 my %avldata = %{
    Storable::retrieve ('avl.storable') or die "Can't retreive avl.storable: $!"
@@ -106,7 +115,9 @@ make_tp9s(\%avldata);
 
 }
 
-# defintion of fields in %skeds_pairs_of;
+load_timepoint_overrides();
+
+# definition of fields in %skeds_pairs_of;
 # $skeds_pairs_of{$linegroup_dir_days}[$trip]{TIME} = $time;
 # $skeds_pairs_of{$linegroup_dir_days}[$trip]{PLACE} = $place;
 
@@ -135,6 +146,7 @@ for my $this_sked_key ( sort keys %skeds_pairs_of) {
    }
    
    make_place_ordering($this_sked_key);
+   
    make_sked($this_sked_key);
 
    # so:
@@ -142,9 +154,12 @@ for my $this_sked_key ( sort keys %skeds_pairs_of) {
    # $sked_of{$key}[$trip]{LINE} = line number
    # $sked_of{$key}[$trip]{SPECDAYS} = special days
 
+   modify_duplicate_places($this_sked_key);
+
    sort_rows ($this_sked_key);
 
-   modify_duplicate_places($this_sked_key);
+   remove_duplicate_rows ($this_sked_key);
+
 
 }
    
@@ -152,19 +167,18 @@ merge_days ("SA" , "SU" , "WE");
 merge_days ("WD" , "WE" , "DA");
 
 for my $this_sked_key ( keys %sked_of) {
-   write_sked($this_sked_key);
+   write_sked($this_sked_key, 'skeds') unless $options{'rawonly'};   
+   write_sked($this_sked_key, 'rawskeds');
 }
-
-
 
 say "\n\nAveraged keys:";
 
 $_ = underline($_) for @averaged_keys;
 print "   $_\n" for (@averaged_keys);
 
-dump_ref(\%sked_of);
+#dump_ref(\%sked_of); # DEBUG
 
-copy_exceptions();
+copy_exceptions() unless $options{'rawonly'};
 
 print "\nEnd.\n";
 
@@ -172,12 +186,18 @@ print "\nEnd.\n";
 
 sub load_timepoint_overrides {
 
-   open my $tpofile, '<' , 'tp4order.txt' 
-      or die q{Can't open tp4order.txt};
+   open my $tpofile, '<' , 'timepointorder.txt' 
+      or die "Can't open timepointorder.txt: $!";
    
    while (my $tpo = <$tpofile>) {
       chomp $tpo;
-      my ($sked, @tp4s) = split (/\t/ , $tpo);
+      my ($sked, @timepoints) = split (/\t/ , $tpo);
+       
+      # convert tp9s to tp4s
+      foreach (@timepoints) {
+         $_ = $tp4_of{$_} if $tp4_of{$_};
+      }
+      
       my ($line, $dircode, $days) = split (/_/ , $sked);
       
       my @skeds;
@@ -191,10 +211,12 @@ sub load_timepoint_overrides {
          push @skeds, key($line,$dircode,'WD');
       }
       
-      $sked_override_order_of{$_} = \@tp4s for @skeds;
+      #print (tab(@timepoints) , "\n"); # DEBUG
+       
+      $sked_override_order_of{$_} = \@timepoints for @skeds;
       
    }
-
+   
 }
 
 sub modify_duplicate_places {
@@ -294,7 +316,7 @@ sub merge_days {
    SKED:
    foreach my $skedkey (keys %sked_of) {
       my ($linegroup, $dircode, $days) = split (/$KEY_SEPARATOR/ , $skedkey);
-      print "HERE --> $skedkey\n" unless $days;
+      # print "HERE --> $skedkey\n" unless $days; # DEBUG
       next SKED if $days ne $merging[0];
       my $secondkey = key($linegroup,$dircode,$merging[1]);
       next SKED if (not exists($sked_of{$secondkey}));
@@ -346,7 +368,33 @@ sub get_avg {
    return ( List::Util::sum (@elems) / scalar @elems);
 }
 
- 
+
+sub remove_duplicate_rows {
+
+   my $key = shift;
+   my $sked = $sked_of{$key};
+   
+   my $row = 0;
+   
+   until ($row >= $#{$sked}) {
+   
+      $row++;
+      
+      next if $sked->[$row]{LINE} ne $sked->[$row-1]{LINE};
+#      next if $sked->[$row]{SPECDAYS} ne $sked->[$row-1]{SPECDAYS};
+# special days deliberately omitted - not sure whether that's correct or not,
+# given that no special days information comes through
+
+      next if join($EMPTY_STR , @{$sked->[$row]{TIMES}})
+               ne join($EMPTY_STR , @{$sked->[$row-1]{TIMES}});
+               
+      splice( @{$sked}, $row, 1); # delete this row
+     
+   } 
+
+}
+
+
 
 sub sort_rows {
    my $key = shift;
@@ -391,12 +439,14 @@ sub sort_rows {
                 my $ea = each_arrayref($a->{TIMES}, $b->{TIMES});
                 # Establishes an iterator, like "each" over hashes.
                 while ( my ($a_time, $b_time) = $ea->() )  {
+                
+                   my $comparison = time_to_timenum($a_time) <=> time_to_timenum($b_time);
                    # so $a_time and $b_time are paired entries of each array, in turn.
-                   return  (time_to_timenum($a_time) <=> time_to_timenum($b_time))
+                   return $comparison
                       #return the comparison of the two times,
-                      if $a_time and $b_time;
-                      # if there are two times present
-                }
+                      if $comparison and $a_time and $b_time;
+                      # if there is a difference and there are two times present
+                } 
             
               return get_avg($a->{TIMES}) <=> get_avg($b->{TIMES})  ; 
               # none in common; return the average
@@ -477,7 +527,8 @@ sub make_sked {
       }
       
       # so now @expanded_trip contains that trip, with blanks inserted as necessary
-		
+     
+      		
       push @alltrips, { LINE => $line , SPECDAYS => $specdays, TIMES => \@expanded_trip } ;
    }
    
@@ -490,17 +541,16 @@ sub make_sked {
 
 sub write_sked {
    my $key = shift;
+   my $dir = shift;
 
    my $filename = underline($key);
 
-   open my $out, '>' , "skeds/$filename.txt" or die "$!";
+   open my $out, '>' , "$dir/$filename.txt" or die "$dir/$filename.txt: $!";
    
    print $out $filename , "\n";
    print $out "Note Definitions:\t\n";
-   
 
    print $out tab( 'SPEC DAYS', 'NOTE' , 'VT' , 'RTE NUM' , map {tp9($_)} (@{$sked_order_of{$key}}));
-
 
    foreach my $trip ( @{$sked_of{$key}} ) {
       my @times = @{$trip->{TIMES}};
@@ -541,7 +591,7 @@ sub make_place_ordering {
  
    if ($sked_override_order_of{$key}) {
       $sked_order_of{$key} 
-         = ordered_multiple_union ($sked_override_order_of{$key} , values %trip_tps_seen);
+         = ordered_union ($sked_override_order_of{$key} , values %trip_tps_seen);
       
       if (join ($EMPTY_STR, @{$sked_override_order_of{$key}} ) 
           ne join ($EMPTY_STR, @{$sked_order_of{$key}}) ) {
@@ -626,7 +676,9 @@ sub make_tp9s {
       my $second = substr($number, 4);
       $first =~ s/\s+$//;
       $second =~ s/\s+$//;
-      $tp9_of{$place} = "$first $second";
+      my $tp9 = "$first $second";
+      $tp9_of{$place} = $tp9;
+      $tp4_of{$tp9} = $place unless $place =~ /-[AD12]\z/;
    }
    
    $tp9_of{'HDMA'} = 'HDAL MALL'; 
@@ -644,7 +696,9 @@ sub tp9 {
      return "$tp9_of{$tp4}=$number";
   }
   
-  return $tp9_of{$tp4};
+  # figure out what to return if no valid value
+  
+  return $tp9_of{$tp4} or "$tp4 ----";
 
 }
 
@@ -866,6 +920,13 @@ avl2skeds - Make schedules from the avl stored data.
 
 avl2skeds reads the data written by readavl and turns it into schedule
 files suitable for ACTium.
+
+=head1 BUGS
+
+Sometimes two different places will have the same long timepoint abbreviation, e.g., Hillsdale Mall
+and Hilltop Mall are both HILL MALL, even though one is HIML and the other is HDMA. For this particular
+example, it knows that HDMA should be changed to HDAL MALL . For everything else, it will be ambiguous.
+Enter the four-digit abbreviation, not the longer one, in timepointorder.txt.
 
 =head1 AUTHOR
 
