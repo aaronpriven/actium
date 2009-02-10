@@ -41,8 +41,6 @@ my %dirnames = ( NO => 'NB' , SO => 'SB' , EA => 'EB' , WE => 'WB' ,
                    CL => 'CW' , CO => 'CC' );
 # translates new Hastus directions to old Transitinfo directions
 
-my $timeregexp = qr/\d{3,4}(?:a|p|b|x)/;
-
 my @privatetimepoints = ("OAKL AIRR" , );
 
 my %specdayoverride = (
@@ -135,7 +133,7 @@ my %seenskedname;
 
 { # block for local scoping
 
-local $/ = "\cL";
+local $/ = "\cL\cM";
 
 foreach my $file (glob ("headways/*.{txt,prt}")) {
    open (my $fh , $file);
@@ -147,19 +145,29 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
    # keep track of which line groups have been seen, so we don't
    # print them more than once on to stdout
 
-   while (<$fh>) { #page
+   while (<$fh>) {
       chomp;
-      s/\xad/-/g;
-      
-      s/^\n+//;
-      my @lines = split(/\n/);
+      my @lines = split(/\r\n/);
       pop @lines;
-      # gets rid of bottom line, which is always "HASTUS 2006" blah blah blah
+      pop @lines;
+      # gets rid of bottom 2 lines, which are always footer lines
       
-      next if $lines[4] ne "EXC";
-      # skip all pages with just notes
-      
-      my $linegroup = (words_of($lines[2]))[2];
+      # This next line dumps lines[2], which reads "SYSTEM WEEKDAY SCHEDULES SUMR06",
+      # and returns the situation to where it was before
+      splice (@lines, 2, 1) if $lines[2] !~ /__+/;
+
+      { # another block for localization
+      local $/ = "\r\n";
+      chomp @lines;
+      }
+      last if $lines[3] eq "SUMMARY OF PROCESSED ROUTES:";  
+
+      next if ((length($lines[6]) < 11) or substr($lines[6],8,3) ne "RTE");
+      # TODO - THIS WILL THROW AWAY ALL PAGES CONSISTING ONLY OF
+      # NOTES CONTINUED FROM THE PREVIOUS PAGE. WILL WANT TO HANDLE
+      # THIS AT SOME POINT.
+
+      my $linegroup = stripblanks(substr($lines[3],11,3));
       next if $linegroup eq "399"; # supervisor orders
       $linegroup = "51" if $linegroup eq "51S"; # stupid scheduling
       # $linegroup = "S" if $linegroup eq "131"; # S and SA decoupled 3/06
@@ -177,21 +185,27 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
       my %thispage = (); # this has the times
       my %routes = (); # keep track of which routes we've seen
 
-      $lines[15] =~ s/^NOTE //;
-      
-      my @tps;
-      
-      my $thislinenum = 15;
-      until ($lines[$thislinenum] eq "DIV-IN") {
-         push @tps , $lines[$thislinenum] . " " . $lines[$thislinenum+1];
-         $thislinenum = $thislinenum + 2;
+      my $timechars = index($lines[6], "DIV-IN") - 64;
+      # DIV-IN is the column after the last timepoint column. The last character 
+      # of the last column ends two characters before "DIV-IN". The notes in
+      # the front comprise 63 characters.
+
+      my $template = "A4 x4 A3 x27 A1 x15 A5 x3" . "A8" x ($timechars / 8); 
+      # specdays rte vt note
+      # that gives the template for the unpacking. There are $numpoints
+      # points, and six characters to each one.  The capital A means to
+      # strip spaces and nulls from the result. 
+
+      { # scoping block
+      my (undef, undef, undef, undef, @tps) = stripblanks(unpack $template, $lines[6]);
+      my (undef, undef, undef, undef, @tps2) = stripblanks(unpack $template, $lines[7]);
+
+      tr/,/./ foreach (@tps , @tps2); 
+      # change commas to periods. FileMaker doesn't like commas for some reason.
+      for my $thistp (0..$#tps) {
+          $tps[$thistp] .= " " . $tps2[$thistp];
       }
-
-      # now @tps should be correct
       
-      s/\,/\./g foreach @tps; 
-      # replace commas with periods, because FileMaker doesn't like commas
-
       # STUPID KLUDGE BECAUSE SCHEDULING HAS "HILL MALL" mean both Hilltop and Hillsdale malls
       if ($linegroup eq '135' or $linegroup eq '138') { # M, MA
          foreach (@tps) {
@@ -201,75 +215,37 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
       
       $thispage{TP} = \@tps;
       
+      } # scoping
+
       $thispage{NOTEDEFS} = [];
       # initialize this to an empty array, since otherwise
       # things that expect it to be there break
 
       my %seenroutes = ();
 
-      for (@lines[$thislinenum + 4 .. $#lines]) {
+      for (@lines[9..$#lines]) {
 
-         last if $_ eq '-'; # TODO - SKIP NOTE DEFINITIONS FOR NOW
-         
-         s/\(/ /;
-         s/\)/ /;
+         next unless $_;
+         next if /^_+$/;
+         # skip lines that are blank, or only underlines
 
-         my @words = words_of($_);
+         last if /^Notes:/; # TODO - SKIP NOTE DEFINITIONS FOR NOW
 
-         my ($specdays, $routes, $vt, $notes, @times);
-         
-         if ($words[0] eq 'SD' or $words[0] eq 'SH') {
-            $specdays = shift(@words);
-         } else {
-            $specdays = '';
-         }
+         my ($specdays, $routes, $vt, $notes, @times) = 
+              stripblanks (unpack $template, $_); 
 
-         $routes = shift (@words);
-         
-         if (length($routes) > 3) {
-         
-            $routes = substr($routes, 0, 3);
-            # pdftotext attaches the run number to long routes sometimes
-         
-         } else {
-            shift (@words); # runnum
-         }
-         $vt = ''; # always blank currently
-         
-         shift (@words); # block num
-         
-         if ($words[0] =~ /^D\d\-/ or $words[0] =~ /^FR-/) {
-            shift @words;
-         }
-         # entry in DIV-IN column
-         
-         if ($words[0] =~ /$timeregexp/ or $words[0] =~ /^\.+$/ or $words[0] =~ /^\-+$/)  {
-            $notes = '';
-         } else {
-            $notes = shift(@words);
-         }
-         
-         @times = @words[0 .. $#tps];
-         # dumping subsequent columns like DIV-IN and STOP LVE
-         
-         next if join("", @times) !~ /$timeregexp.*$timeregexp/;
-         # if there are not at least two actual times, skip this line
-         
-         if (length($times[$#times]) > 5) {
-            $times[$#times] =~ s/($timeregexp).*/$1/;
-         } 
-         # strip everything after the time - this is 
-         # because "DIV_IN" gets connected to it
-         
          foreach (@times) {
             if (/^\.+$/ or /^\-+$/) {
                $_ = '' ; 
                next;
             }
+            s/\(\s*//;
+            s/\s*\)//;
             s/x/a/;
             s/b/p/;
-         }  # Hastus uses "a" for am, "p" for pm, and "x" for am the following 
-            # day (so 11:59p is followed by 12:00x). Also "b" for pm the previous day.
+         }  # Hastus uses "a" for am, "p" for pm, and "x" for am the following
+            # day (so 11:59p is followed by 12:00x). Also "b" for pm the previous
+            # day.
             # TODO - move this so some programs can still retreive "b" and "x" if they
             # want it
 
@@ -322,7 +298,8 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
          $thispage{DAY} = "WD";
       }#
 
-      $thispage{DIR} = uc(substr((words_of($lines[3]))[1],0,2));
+      $thispage{LGNAME} = stripblanks(substr($lines[3],18));
+      $thispage{DIR} = uc(stripblanks(substr($lines[4],11,2)));
       $thispage{DIR} = $dirnames{$thispage{DIR}} if $dirnames{$thispage{DIR}};
       $thispage{ORIGLINEGROUP} = $linegroup;
 
@@ -377,16 +354,12 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
          if ( $seenskedname{$thesepages{$_}{SKEDNAME}}++ ) {
             $thesepages{$_}{SKEDNAME} .= "=" . $seenskedname{$thesepages{$_}{SKEDNAME}};
          }
+
          # change SKEDNAME to include a number
 
          $pages{$thesepages{$_}{SKEDNAME}} = $thesepages{$_};
-         # put these pages into the program-wide $pages
 
       }
-
-
-###########################
-
 
    } # pages 
 
@@ -443,6 +416,8 @@ for my $skedname (sort keys %seenskedname) {
         
       } else { # if timepoints aren't identical, do this bit that 
         # splices unlike timepoints together.
+
+#### INSERT SPLICING ROUTINE HERE ####
 
 		my @components = Algorithm::Diff::sdiff($pages{$skedname}{TP},$pages{$thispage}{TP});
 		# That gives me a series of differences.
@@ -986,13 +961,5 @@ open OUT , ">effectivedate.txt"
 print OUT $effectivedate ;
 close OUT;
 
-}
-
-sub words_of  {
-
-   local ($_) = shift (@_);
-   
-   return (split());
-   
 }
 
