@@ -22,7 +22,8 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 use File::Copy;
-use Skedfile qw(Skedread Skedwrite trim_sked copy_sked remove_blank_columns);
+use Skedfile qw(Skedread Skedwrite Skedwrite_anydir
+                trim_sked copy_sked remove_blank_columns);
 use Myopts;
 use Skeddir;
 use Storable;
@@ -54,7 +55,7 @@ my %specdayoverride = (
 # 329 removed for Fall '06
 
 my %no_split_linegroups;
-$no_split_linegroups{$_} = 1 foreach qw(40 59 72 82 86 DB);
+$no_split_linegroups{$_} = 1 foreach qw(40 59 72 86 DB);
 
 # Those are the lines that should be combined into a single schedule, for 
 # purposes of point schedules.  Note 52 and 86 should not be combined
@@ -148,10 +149,11 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
    while (<$fh>) {
       chomp;
       my @lines = split(/\r\n/);
-      pop @lines;
-      pop @lines;
-      # gets rid of bottom 2 lines, which are always footer lines
-      
+
+      splice (@lines, 0, 3);
+      splice (@lines, -5, 5);
+      # delete header and footer
+
       # This next line dumps lines[2], which reads "SYSTEM WEEKDAY SCHEDULES SUMR06",
       # and returns the situation to where it was before
       splice (@lines, 2, 1) if $lines[2] !~ /__+/;
@@ -162,12 +164,12 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
       }
       last if $lines[3] eq "SUMMARY OF PROCESSED ROUTES:";  
 
-      next if ((length($lines[6]) < 11) or substr($lines[6],8,3) ne "RTE");
+      next if ((length($lines[6]) < 11) or substr($lines[6],5,3) ne "RTE");
       # TODO - THIS WILL THROW AWAY ALL PAGES CONSISTING ONLY OF
       # NOTES CONTINUED FROM THE PREVIOUS PAGE. WILL WANT TO HANDLE
       # THIS AT SOME POINT.
 
-      my $linegroup = stripblanks(substr($lines[3],11,3));
+      my $linegroup = stripblanks(substr($lines[3],23,3));
       next if $linegroup eq "399"; # supervisor orders
       $linegroup = "51" if $linegroup eq "51S"; # stupid scheduling
       # $linegroup = "S" if $linegroup eq "131"; # S and SA decoupled 3/06
@@ -185,12 +187,12 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
       my %thispage = (); # this has the times
       my %routes = (); # keep track of which routes we've seen
 
-      my $timechars = index($lines[6], "DIV-IN") - 64;
+      my $timechars = index($lines[6], "DIV-IN") - 42;
       # DIV-IN is the column after the last timepoint column. The last character 
       # of the last column ends two characters before "DIV-IN". The notes in
-      # the front comprise 63 characters.
+      # the front comprise 42 characters. (used to be 63)
 
-      my $template = "A4 x4 A3 x27 A1 x15 A5 x3" . "A8" x ($timechars / 8); 
+      my $template = "A4 A5 x11 A3 x12 A5 x2" . "A9" x ($timechars / 9); 
       # specdays rte vt note
       # that gives the template for the unpacking. There are $numpoints
       # points, and six characters to each one.  The capital A means to
@@ -226,6 +228,7 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
       for (@lines[9..$#lines]) {
 
          next unless $_;
+         next if /^\s+$/;
          next if /^_+$/;
          # skip lines that are blank, or only underlines
 
@@ -234,6 +237,12 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
          my ($specdays, $routes, $vt, $notes, @times) = 
               stripblanks (unpack $template, $_); 
 
+         #print "[$specdays][$routes][$vt][$notes]";
+         #print "[$_]" foreach  @times;
+         #print "\n";
+         # horrific debugging
+
+         my $numtimes = 0;
          foreach (@times) {
             if (/^\.+$/ or /^\-+$/) {
                $_ = '' ; 
@@ -243,12 +252,17 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
             s/\s*\)//;
             s/x/a/;
             s/b/p/;
+            $numtimes++ if $_;
+            
          }  # Hastus uses "a" for am, "p" for pm, and "x" for am the following
             # day (so 11:59p is followed by 12:00x). Also "b" for pm the previous
             # day.
             # TODO - move this so some programs can still retreive "b" and "x" if they
             # want it
 
+         next if $numtimes < 2;
+         # drop lines with only one time
+         
          foreach (qw(RRFB RRF1 RRF OWL OL)) {
             $notes = '' if $notes eq $_;
          }
@@ -271,6 +285,7 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
          push @{$thispage{SPECDAYS}} , $specdays;
          push @{$thispage{ROUTES}} , $routes;
          $seenroutes{$routes} = 1;
+         $vt = ''; $notes = ''; # blank out for comparison
          push @{$thispage{VT}} , $vt;
          push @{$thispage{NOTES}} , $notes;
 
@@ -298,8 +313,8 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
          $thispage{DAY} = "WD";
       }#
 
-      $thispage{LGNAME} = stripblanks(substr($lines[3],18));
-      $thispage{DIR} = uc(stripblanks(substr($lines[4],11,2)));
+      $thispage{LGNAME} = stripblanks(substr($lines[3],28));
+      $thispage{DIR} = uc(stripblanks(substr($lines[4],14,2)));
       $thispage{DIR} = $dirnames{$thispage{DIR}} if $dirnames{$thispage{DIR}};
       $thispage{ORIGLINEGROUP} = $linegroup;
 
@@ -655,6 +670,7 @@ foreach my $skedname (keys %newtps_of) {
 
 foreach my $dataref (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) {
    Skedwrite ($dataref, ".txt"); 
+   Skedwrite_anydir ('rawskeds' , $dataref, '.txt');
    $index{$dataref->{SKEDNAME}} = 
            skedidx_line ($dataref) unless $dataref->{SKEDNAME} =~ m/=/;
 }
@@ -833,7 +849,7 @@ sub merge_days {
       }
       # if the number of timepoints or rows, etc., are different, skip it
       
-      foreach ( qw(TP ROUTES SPECDAYS VT NOTEDEFS )) {
+      foreach ( qw(TP ROUTES SPECDAYS NOTEDEFS )) {
       
          next SKED 
             if join ("" , @{$tempskedref->{$_}})      ne
