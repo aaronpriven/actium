@@ -14,9 +14,11 @@ our (@ISA , @EXPORT_OK);
 
 use Exporter;
 @ISA = ('Exporter');
-@EXPORT_OK = qw(Skedread Skedwrite merge_columns
+@EXPORT_OK = qw(Skedread Skedwrite merge_columns Skedwrite_anydir
                 remove_blank_columns trim_sked copy_sked times_column
-                getfiles GETFILES_ALL GETFILES_PUBLIC);
+                getfiles GETFILES_ALL GETFILES_PUBLIC GETFILES_PUBLIC_AND_DB);
+
+use constant GETFILES_PUBLIC_AND_DB => 3;
 
 use constant GETFILES_ALL => 2;
 
@@ -82,20 +84,25 @@ sub Skedread {
    return $skedref;
 }
 
-sub Skedwrite ($;$) {
+sub Skedwrite {
+   Skedwrite_anydir ('skeds', @_);
+}
 
-   my ($skedref , $extension) = @_;
+
+sub Skedwrite_anydir {
+
+   my ($dir, $skedref , $extension) = @_;
 
    $extension ||= '.txt';
 
    my $skedname = $skedref->{SKEDNAME};
 
-   unless (-d "skeds") {
-      mkdir "skeds" or die "Can't create skeds directory";
+   unless (-d $dir) {
+      mkdir $dir or die "Can't create skeds directory";
    }
 
-   open OUT , ">skeds/$skedname$extension"
-      or die "Can't open skeds/$skedname$extension for output";
+   open OUT , ">$dir/$skedname$extension"
+      or die "Can't open $dir/$skedname$extension for output";
 
    print OUT $skedname , "\n";
    print OUT "Note Definitions:\t" , 
@@ -127,14 +134,21 @@ sub Skedwrite ($;$) {
       print OUT $skedref->{"NOTES"}[$i] , "\t" ;
       print OUT $skedref->{"VT"}[$i] , "\t" ;
       print OUT $skedref->{"ROUTES"}[$i] , "\t" ;
+ 
+      my $times = '';
 
-      foreach (@{$skedref->{TIMES}}) {
-          print OUT $_ -> [$i] , "\t";
+      foreach (@{$skedref->{TIMES}}) { 
+       
+          $times .= $_ -> [$i] . "\t";
 
       }
+
       # ok. $_ becomes the ref to the first, second, etc. list of times.  
 
-      print OUT "\n";
+      $times =~ s/\s+$//;
+      #strip whitespace
+
+      print OUT "$times\n";
 
    }
    
@@ -152,6 +166,7 @@ sub remove_blank_columns ($) {
    my $tp = 0;
    while ( $tp < ( scalar @{$dataref->{"TP"}}) ) {
       # loop around each timepoint
+      no warnings 'uninitialized';
       unless (join ('', times_column($dataref,$tp))) {
          # unless there is some data in the TIMES for this column,
          splice (@{$dataref->{"TIMES"}}, $tp, 1);
@@ -219,7 +234,7 @@ sub trim_sked {
    my ($sked, $subset) = @_;
 
    # the following will remove any rows that are for 
-   # routes we don't want right now.  
+   # routes we don't want right now.  $subset is arrayref
 
    my %routes = ();
 
@@ -307,10 +322,13 @@ sub getfiles {
 
    my $status = shift;
  
-   return grep ((! /=/ and ! m@^skeds/I@) , glob('skeds/*.txt'))
+   return grep ((! /=/ and ! m@^skeds/I@ and ! m@^skeds/DB@ and ! m@^skeds/[LN]C@ ) , glob('skeds/*.txt'))
       if (not $status) or ($status == GETFILES_PUBLIC) ;
 
-   # internal ones start with the letter I
+   # internal ones start with the letter I or with DB, or are NC or LC
+
+   return grep ((! /=/ and ! m@^skeds/I@ and ! m@^skeds/[LN]C@ ) , glob('skeds/*.txt'))
+       if $status == GETFILES_PUBLIC_AND_DB ;
 
    return grep (! /=/  , glob('skeds/*.txt'))
        if $status == GETFILES_ALL ;
