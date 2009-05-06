@@ -5,6 +5,8 @@
 
 package Actium;
 use strict;
+use warnings;
+
 use Getopt::Long;
 use FindBin('$Bin');
 use Carp;
@@ -14,7 +16,7 @@ use Memoize;
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK 
-   = qw(add_option ensuredir all_true option initialize avldata byroutes
+   = qw(add_option ensuredir chdir_signup all_true option initialize avldata byroutes
         underlinekey jt jn jtn key say sayf sayq printq sayt transposed);
 
 use Actium::Constants;
@@ -35,18 +37,18 @@ sub add_option {
        my $option = lc(+shift);
        my $optiontext = shift;
        
-	    my $caller = (scalar(caller())) || 'main';
+       my $caller = (scalar(caller())) || 'main';
 
-	    # check to see that there are no duplicate options
-	   
-	    foreach my $optionname (_split_optionnames($option)) {
-	    
-		    if (exists $caller_of{$optionname} ) {
-		       croak "Duplicate option $optionname. Set by $caller_of{$optionname} and $caller";
-		    }
-		    $caller_of{$_} = $caller;
-		 }
-		 $optionspecs{$option} = $optiontext;
+       # check to see that there are no duplicate options
+      
+       foreach my $optionname (_split_optionnames($option)) {
+       
+          if (exists $caller_of{$optionname} ) {
+             croak "Duplicate option $optionname. Set by $caller_of{$optionname} and $caller";
+          }
+          $caller_of{$optionname} = $caller;
+       }
+       $optionspecs{$option} = $optiontext;
    }
 }
 
@@ -85,10 +87,11 @@ sub initialize {
    my $helptext = shift;
    my $intro = shift;
 
-   add_option ('basedir=s' , 'Base directory (normally .../Actium/db)');
-   add_option ('signup=s' ,  'Signup. This is the subdirectory under the base directory. '
-                          .  'Typically something like "f08" (meaning Fall 2008).'
-                          );
+   add_option ('basedir=s' , 'Base directory (normally [something]/Actium/db)');
+   add_option ('signup=s' 
+               , 'Signup. This is the subdirectory under the base directory. '
+               . 'Typically something like "f08" (meaning Fall 2008).'
+               );
    add_option ('quiet!' , 'Do not display status information.' );
    add_option ('help'   , 'Display this message and quit.');
    add_option ('debug!' , 'Produce debugging text.');
@@ -128,9 +131,9 @@ sub initialize {
       foreach my $spec (keys %optionspecs) {
          my (@optionnames) = _split_optionnames($spec);
 
-	      foreach (@optionnames) {
-	         $longest = length($_) if $longest < length($_);
-	      }
+         foreach (@optionnames) {
+            $longest = length($_) if $longest < length($_);
+         }
          
          my $first = shift @optionnames;
 
@@ -160,18 +163,14 @@ sub initialize {
 # check for, and change to, directories
 
    $options{basedir} = $options{basedir} 
-         || $ENV{"ACTIUM_BASEDIR"}
+         || $ENV{'ACTIUM_BASEDIR'}
          || "$Bin/../db/";
 
-   croak "Base directory $options{basedir} not found" unless -d $options{basedir};
+   croak "Base directory $options{basedir} not found" 
+      unless -d $options{basedir};
 
-   $options{signup} = $options{signup}
-       || $ENV{"ACTIUM_SIGNUP"}
-       || croak "No signup directory specified.";
-
-   chdir "$options{basedir}/$options{signup}"
-        or croak "Can't change directory to $options{basedir}/$options{signup}";
-   
+   chdir_signup (qw(signup ACTIUM_SIGNUP signup));
+    
    return;
    
 }
@@ -179,6 +178,20 @@ sub initialize {
 #####################################
 ### DIRECTORIES, FILES, ETC ROUTINES
 #####################################
+
+sub chdir_signup {
+   my $option = shift;
+   my $env_variable = shift;
+   my $description = shift;
+   
+   $options{$option} = $options{$option}
+       || $ENV{$env_variable}
+       || croak "No $description directory specified.";
+
+   chdir "$options{basedir}/$options{$option}"
+        or croak "Can't change directory to $options{basedir}/$options{$option}";
+
+}
 
 sub ensuredir {
   my $dir = shift;
@@ -189,7 +202,9 @@ sub ensuredir {
 sub avldata {
    printq ("Retrieving data...");
    
-   my $avldata_r = Storable::retrieve ('avl.storable') or croak "Can't retreive avl.storable: $!";
+   my $avldata_r = 
+      Storable::retrieve ('avl.storable') 
+      or croak "Can't retreive avl.storable: $!";
    
    sayq ("done.");
    return $avldata_r;
@@ -255,14 +270,14 @@ sub all_true { $_ || return 0 for @_; 1 }
 ##########################
 
 sub transposed {
-    my $self = shift;
+    my $aoa_r = shift;
     my @result;
     my $m;
 
-    for my $col (@{$self->[0]}) {
+    for my $col (@{$aoa_r->[0]}) {
         push @result, [];
     }
-    for my $row (@{$self}) {
+    for my $row (@{$aoa_r}) {
         $m=0;
         for my $col (@{$row}) {
             push(@{$result[$m++]}, $col);
@@ -276,52 +291,152 @@ sub transposed {
 ##########################
 
 # The following is set to my initial assumption about the longest 
-# used component length. But it will expand it if it finds a longer one.
+# used component length. But the program will make the length
+# larger if it finds a longer one.
+# Or, if you know it's longer, specify it by doing 
+# "sortable_maxcomplength(yournum);"
 
 my $max_comp_length = 3;
-my $redo_expansion = '*';
 
-memoize('_expand_route');
+sub sortable_maxcomplength {
+   $max_comp_length = $_[0] unless $_[0] < $max_comp_length;
+   return $max_comp_length;
+}
 
-sub _expand_route {
+#memoize('sortable_route', NORMALIZER => '_normalize_sortable_route');
+#memoize('_sortable_route_generate');
 
-   # The idea here is that since you can't just do an ASCII sort on
-   # routes to give a reasonable result (otherwise you get 1, 10, 1R...)
+
+sub sortable_route {
+
+   # This routine takes a list of routes and returns a list of values
+   # that you can use to sort the routes properly.
+   
+   # for example, if you do
+   #
+   # @sorted_value_of{@routes} = sortable_route(@routes);
+   #
+   # then
+   #
+   # @routes = sort { $sorted_value_of{$a} cmp $sorted_value_of{$b} } @routes 
+   #
+   # will give you a properly sorted list of routes.
+
+   # The idea here is that you can't just do an ASCII sort on
+   # routes to give a reasonable result (otherwise you get 1, 10, 1R, 2...)
    # but you can generate an intermediate value that you can directly compare.
 
    # This routine is here, rather than simply placed in the "byroutes"
    # sub, to allow memoization (caching), which should speed up
    # processing significantly.
+   
+   # Note that the values are only guaranteed to be consistent within a single
+   # operation of sortable_route, because the length of each component
+   # (group of digits or letters) may change. If you do 
+   #
+   # $a = sortable_route($route1);
+   # $b = sortable_route($route2);
+   #
+   # then the values of $a and $b may or may not be comparable, depending on
+   # the makeup of $route2. So don't do that unless you know the maximum component
+   # length won't change.
+   
+   # Anything other than a digit is treated like a letter and sorted in character-code
+   # order. Which is probably not what you want, but I can't imagine anybody
+   # actually using routes like "dollar-sign" or "e-with-acute" and if they did I don't
+   # know how they'd sort them.
 
-   my @components = split (/(?<=\d)(?=\D)|(?<=\D)(?=\d)/, $_[0]);
+  my @sortables;
+     
+  ROUTES:
+  {
+
+  foreach (@_) {
+     my $sortable = _sortable_route_generate($_);
+     unless (defined($sortable)) {
+         # _sortable_route_generate returns undef if maximum
+         # component length has changed
+         
+         #Memoize::flush_cache('sortable_route');
+         #Memoize::flush_cache('_sortable_route_generate');
+         @sortables = ();
+         redo ROUTES;
+     }
+         
+     # If the maximum component length has changed, go back
+     # and do everything over, since that means all the 
+     # old ones aren't long enough to be sorted.
+     
+     # Another way to do this would be to go through all the routes passed
+     # to sortable_routes first, calculate the longest component 
+     # length, and then use that.
+     
+     # But this makes it do lots and lots of calculating of the longest 
+     # component length of each possible set of routes sorted, and this
+     # would have to be re-done over and over. Since the
+     # longest component is only going to be reset *at most* a couple
+     # of times -- and more likely, never, since I've preset it to 3
+     # and not many systems have routes like "1000" or "AAAA", I thought
+     # it was better to do it this way.
+
+     push @sortables, $sortable;
+     
+     }
+  } # ROUTES
+
+  return @sortables;
+   
+}
+
+sub _normalize_sortable_route {
+
+   # Memoize uses the string that this returns to figure out whether
+   # this argument has been seen before.
+   
+   # This allows sortable_route('B', 'A') to use value from 
+   # the cache for sortable_route('A', 'B'). 
+   
+   my @routes = map ( uc , @_);
+   # uppercase each entry
+  
+   return join($KEY_SEPARATOR , sort @routes);
+   # return the list of routes, naively sorted
+
+}
+
+sub _sortable_route_generate {
+
+   # This returns either a sortable route string, or "undef" if the 
+   # caches need to be cleared because the maximum component length was
+   # too short.
+   
+   my @components = split (/(?<=\d)(?=\D)|(?<=\D)(?=\d)/, uc($_[0]));
    # That is the zero-width boundary between a number and a non-number.
-   # (regardless of order)
+   # (regardless of order). Converts to uppercase letters.
 
    for (@components) {
       
-	   # if the component length is longer the maximum, raise the maximum.
-	   # Then return a fake entry, indicating that the caller should call again.
-	   # We can't just flush the cache and leave it at that, since the caller
-	   # may be comparing this one to a previous entry, and we need the
-	   # previous entry to be zeroed out too.)
+      # if the component length is longer the maximum, raise the maximum
+      # and return undef (so the calling routine can flush the caches).
+
       if (length($_) > $max_comp_length) {
          $max_comp_length = length($_);
-         Memoize::flush_cache('_expand_route');
-         return $redo_expansion;
+         return undef;
       }
 
       # right-justify numbers. left-justify letters. This gives a proper
       # ASCII sort for both letters and numbers.
       if (/\d/) { # numbers
 
+         $_ = sprintf('%0*s'  , $max_comp_length , $_);
+
          tr/0-9/a-j/ if option('lettersfirst');
          # convert numbers to lowercase letters. These sort after uppercase
          # letters. Effectively this changes the sort order to make letters
          # first and not second.
 
-         $_ = sprintf('%*s'  , $max_comp_length , $_);
       } 
-      else { # letters
+      else { # letters (or anything else)
          $_ = sprintf('%-*s' , $max_comp_length , uc($_));
       }
    }
@@ -332,17 +447,9 @@ sub _expand_route {
 
 sub byroutes ($$) {
 
-   my ($a, $b);
-   LOOP:
-   {
-      $a = _expand_route ($_[0]);
-      $b = _expand_route ($_[1]);
-      if ($a eq $redo_expansion or $b eq $redo_expansion) {
-         redo LOOP;
-      }
-   }
-
+   my ($a, $b) = sortable_route(@_);
    return $a cmp $b;
+
 }
 
 1;
