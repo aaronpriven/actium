@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-@ARGV = qw(-s w08 -o f08) if $ENV{RUNNING_UNDER_AFFRUS};
+@ARGV = qw(-s sp10 -o w09) if $ENV{RUNNING_UNDER_AFFRUS};
 
 # comparestops - see POD documentation below
 
@@ -44,7 +44,7 @@ Actium::initialize ($helptext, $intro);
 
 my %newstoplists = assemble_stoplists();
 
-open my $out, '>' ,  'comparestops.txt';
+open my $out, '>' ,  'comparestops-dir.txt';
 # done here so as to make sure the file is saved in the *new*
 # signup directory
 
@@ -76,6 +76,8 @@ foreach my $stopid (@stopids) {
    
    next STOPID if (join ('', @oldroutes)) eq (join('', @newroutes ));
    # no changes
+   
+   my (@added, @removed, @unchanged);
 
    COMPONENT:
    foreach my $component ( Algorithm::Diff::sdiff (\@oldroutes, \@newroutes) ) {
@@ -83,70 +85,108 @@ foreach my $stopid (@stopids) {
       my ($action, $a_elem, $b_elem) = @$component;
       
       if ($action eq 'u') {
-         push @{$changes{CHANGEDSTOPS}{$stopid}{UNCHANGED}} , $a_elem;
+         #push @{$changes{CHANGEDSTOPS}{$stopid}{UNCHANGED}} , $a_elem;
+         push @unchanged, $a_elem;
       } 
       
       if ($action eq 'c' or $action eq '-') {
-         push @{$changes{CHANGEDSTOPS}{$stopid}{REMOVED}} , $a_elem; 
+         #push @{$changes{CHANGEDSTOPS}{$stopid}{REMOVED}} , $a_elem;
+         push @removed, $a_elem; 
       }
       
       if ($action eq 'c' or $action eq '+') {
-         push @{$changes{CHANGEDSTOPS}{$stopid}{ADDED}}   , $b_elem; 
+         #push @{$changes{CHANGEDSTOPS}{$stopid}{ADDED}}   , $b_elem;
+         push @added, $b_elem; 
       }
       
    }# COMPONENT
+   
+   if (not @removed) {
+      $changes{ADDLINES}{$stopid}{ADDED} = \@added; 
+      $changes{ADDLINES}{$stopid}{UNCHANGED} = \@unchanged;
+   } 
+   elsif (not @added) {
+      $changes{REMOVEDLINES}{$stopid}{REMOVED} = \@removed; 
+      $changes{REMOVEDLINES}{$stopid}{UNCHANGED} = \@unchanged;
+   }
+   else {
+      $changes{CHANGEDSTOPS}{$stopid}{ADDED} = \@added; 
+      $changes{CHANGEDSTOPS}{$stopid}{REMOVED} = \@removed; 
+      $changes{CHANGEDSTOPS}{$stopid}{UNCHANGED} = \@unchanged;
+      
+   }
 
 }# STOPID
 
-print $out "Added stops:\n";
 
-foreach my $added_stopid  ( @{$changes{ADDEDSTOPS}}) {
+print $out "Added stops: " , scalar @{$changes{ADDEDSTOPS}} , "\n";
+
+foreach my $added_stopid  (sort @{$changes{ADDEDSTOPS}}) {
    print $out $added_stopid , "\t" , $newstoplists{$added_stopid}{Description} , "\t"
          , join (',' , sort keys %{$newstoplists{$added_stopid}{Routes}}) , "\n";
 }
 
-print $out "\nRemoved stops:\n";
+print $out "\nRemoved stops: " , scalar @{$changes{DELETEDSTOPS}} , "\n";
 
-foreach my $deleted_stopid  ( @{$changes{DELETEDSTOPS}}) {
-   print $out $deleted_stopid , "\t\t" , $oldstoplists{$deleted_stopid}{Description} , "\t"
+foreach my $deleted_stopid  ( sort @{$changes{DELETEDSTOPS}}) {
+   print $out $deleted_stopid , "\t" , $oldstoplists{$deleted_stopid}{Description} , "\t\t"
          , join (',' , sort keys %{$oldstoplists{$deleted_stopid}{Routes}}) , "\n";
 }
 
-print $out "\nChanged stops:\n";
+output_stops ('Stops with added lines' , $out, 'ADDLINES');
 
-foreach my $changed_stopid  ( keys %{$changes{CHANGEDSTOPS}}) {
+output_stops ('Stops with removed lines' , $out, 'REMOVEDLINES');
 
-   print $out $changed_stopid , "\t" , $oldstoplists{$changed_stopid}{Description};
-   
-   if (exists $changes{CHANGEDSTOPS}{$changed_stopid}{ADDED} ) {
-      my @added = sort @{$changes{CHANGEDSTOPS}{$changed_stopid}{ADDED}};
-      print $out "\t", join (',' , @added);
-   } 
-   else {
-   print $out "\t";
-   }
-
-   if (exists $changes{CHANGEDSTOPS}{$changed_stopid}{REMOVED}) {
-      my @removed = sort @{$changes{CHANGEDSTOPS}{$changed_stopid}{REMOVED}};
-      print $out "\t" , join (',' , @removed);
-   }
-   else {
-   print $out "\t";
-   }
-   
-   if (exists $changes{CHANGEDSTOPS}{$changed_stopid}{UNCHANGED} ) {
-      my @unchanged = sort @{$changes{CHANGEDSTOPS}{$changed_stopid}{UNCHANGED}};
-      print $out "\t" , join (',' , @unchanged);
-   }
-   else {
-   print $out "\t";
-   }
-
-   print $out "\n";   
-}
-
+output_stops ('Stops with changed lines' , $out, 'CHANGEDSTOPS');
 
 sayq "Completed comparison.";
+
+sub output_stops {
+   my $desc = shift;
+   my $fh = shift;
+   my $type = shift;
+   
+   my %thesestops = %{$changes{$type}};
+   
+   print $fh "\n$desc: " , scalar keys %thesestops , "\n";
+   
+   foreach my $stopid  ( sort keys %thesestops) {
+
+      print $fh $stopid , "\t" , $oldstoplists{$stopid}{Description};
+
+      if (exists $changes{$type}{$stopid}{ADDED} ) {
+         my @added = sort @{$changes{$type}{$stopid}{ADDED}};
+         print $fh "\t", join (',' , @added);
+      } 
+      else {
+         print $fh "\t";
+      }
+
+      if (exists $changes{$type}{$stopid}{REMOVED}) {
+         my @removed = sort @{$changes{$type}{$stopid}{REMOVED}};
+         print $fh "\t" , join (',' , @removed);
+      }
+      else {
+         print $fh "\t";
+      }
+   
+      if (exists $changes{$type}{$stopid}{UNCHANGED} ) {
+         my @unchanged = sort @{$changes{$type}{$stopid}{UNCHANGED}};
+         print $fh "\t" , join (',' , @unchanged);
+      }
+      else {
+         print $fh "\t";
+      }
+
+      print $fh "\n";   
+   
+   }
+
+   
+  return; 
+   
+}
+
 
 
 sub assemble_stoplists {
@@ -176,11 +216,15 @@ sub assemble_stoplists {
 	   $dir = $DIR_OF{$dir};
 
 	   my $route = $pat{$key}{Route};
+	   
+	   next if $route eq 'NC' or $route eq 'LC' or $route eq '678' or $route eq '51S';
 
 	   foreach my $tps_r ( @{$pat{$key}{TPS}}) {
 	       my $stopid = $tps_r->{StopIdentifier};
+	       next if $stopid =~ /^D/i;
 	       
 	       $stoplist{$stopid}{Routes}{"$route-$dir"} = 1;
+	       #$stoplist{$stopid}{Routes}{$route} = 1;
 	       $stoplist{$stopid}{Description} = $stp{$stopid}{Description};
 	       
 	   }
