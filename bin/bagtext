@@ -1,0 +1,250 @@
+#!/usr/bin/perl
+
+@ARGV = qw(-s sp10) if $ENV{RUNNING_UNDER_AFFRUS};
+
+# baglist
+
+#00000000111111111122222222223333333333444444444455555555556666666666777777777
+#23456789012345678901234567890123456789012345678901234567890123456789012345678
+
+use warnings;
+use strict;
+
+use sort ('stable');
+
+# add the current program directory to list of files to include
+use FindBin('$Bin');
+use lib ($Bin , "$Bin/../bin");
+
+use Actium( qw[say sayt jn jtn initialize avldata ensuredir byroutes option]);
+use Actium::Constants;
+use Actium::FPMerge (qw(FPread FPread_simple));
+
+use IDTags;
+
+# don't buffer terminal output
+$| = 1;
+
+my $helptext = <<'EOF';
+baglist makes the text for the bags.
+EOF
+
+my $intro = 'baglist -- makes text for bags';
+
+my $CR = "\r";
+
+Actium::initialize ($helptext, $intro);
+
+# retrieve data
+my (@stops, %stops);
+FPread_simple ("Stops.csv" , \@stops , \%stops , 'stop_id_1');
+
+my %compare;
+open my $comp , '<' , 'comparestops-x.txt';
+while (<$comp>) {
+   chomp;
+   my ($type, $stopid, $desc, $numadded, $added,
+       $numremoved, $removed, $numunchanged, $unchanged) 
+       = split(/\t/);
+   $compare{$stopid} = 
+       { Type => $type ,
+         Added => $added ,
+         Removed => $removed ,
+         Unchanged => $unchanged ,
+       };
+}
+
+close $comp;
+
+my %output_dispatch = (
+   AL => \&al_output,
+   RL => \&rl_output,
+   CL => \&cl_output,
+   AS => \&as_output,
+   RS => \&rs_output,
+);
+
+my $stopcount = 0;
+my $filecount = 0;
+
+ensuredir ('bagtexts');
+
+open my $baglist , '<' , 'baglist.txt';
+
+open my $bagtext , '>' , "bagtexts/$filecount.txt";
+
+print $bagtext start();
+
+my $separator = IDTags::enspace . IDTags::discretionary_lf;
+
+
+while (<$baglist>) {
+
+      chomp;
+      my ($routedir, @thesestopids) = split (/\t/);
+      my $numstops = scalar @thesestopids;
+
+      foreach my $i (0 .. $#thesestopids) {
+          $stopcount++;
+          my $stopid = $thesestopids[$i];
+          my $desc = $stops{$stopid}{DescriptionF} || die "No description for $stopid";
+          my $city = $stops{$stopid}{CityF} || die "No city for $stopid";
+          my $phoneid = $stops{$stopid}{PhoneID} || die "No phone for $stopid";
+
+          print $bagtext para ('Teeny');
+
+          print $bagtext "$routedir (" , $i+1 , " of $numstops)";
+          print $bagtext IDTags::emspace , "$desc, $city";
+          print $bagtext IDTags::emspace , "Stop $stopid ($phoneid)$CR";
+
+          my $type = $compare{$stopid}{Type} || die "No type for $stopid";
+          my $added = $compare{$stopid}{Added} || $EMPTY_STR;
+          my $removed = $compare{$stopid}{Removed} || $EMPTY_STR;
+          my $unchanged = $compare{$stopid}{Unchanged} || $EMPTY_STR;
+
+          my (@added, @removed, @unchanged , @current);
+
+          @added = split(/,/ , $added) if $added;
+          @removed = split(/,/ , $removed) if $removed;
+          @unchanged = split(/,/ , $unchanged) if $unchanged;
+          @current = sort byroutes (@removed, @unchanged);
+
+          my %added = prepary(@added);
+          my %removed = prepary(@removed);
+          my %current = prepary(@current);
+
+          print $bagtext 
+              $output_dispatch{$type}->(\%added, \%removed, \%current);
+
+          print $bagtext para ('Questions' ,
+            'Questions? Call 511 and say, <0x201C>AC Transit.<0x201D>');
+          print $bagtext IDTags::boxbreak;
+
+      }
+      
+      if ($stopcount > 350) {
+          close $bagtext;
+          $filecount++;
+          $stopcount = 0;
+
+          open $bagtext , '>' , "bagtexts/$filecount.txt" or die $!;
+
+          print STDERR $filecount;
+
+          print $bagtext start();
+     }
+
+}
+
+close $baglist;
+close $bagtext;
+
+sub al_output {
+          my %added = %{ +shift };
+          my %removed = %{ +shift };
+          my %current = %{ +shift };
+
+          my $r = current(%current);
+ 
+          $r .= para ('FirstLineIntro');
+          $r .= "Effective March 28, $added{these} will also stop here:$CR";
+          $r .= para('HighlightedLines' , $added{lines}) . $CR;
+          return $r;
+     
+}
+
+sub rl_output {
+          my %added = %{ +shift };
+          my %removed = %{ +shift };
+          my %current = %{ +shift };
+
+          my $r = current(%current);
+          $r .= para ('FirstLineIntro');
+          $r .= "Effective March 28, $removed{these} will not stop here:$CR";
+          $r .= para('HighlightedLines' , $removed{lines}) . $CR;
+          return $r;
+
+}
+
+sub cl_output {
+          my %added = %{ +shift };
+          my %removed = %{ +shift };
+          my %current = %{ +shift };
+
+          my $r = current(%current);
+
+          $r .= para ('FirstLineIntro');
+          $r .= "Effective March 28, $added{these} will begin stopping here:$CR";
+          $r .= para('HighlightedLines' , $added{lines}) . $CR;
+          $r .= para ('LineIntro');
+          $r .= ucfirst("$removed{these} will not stop here:$CR");
+          $r .= para('HighlightedLines' , $removed{lines}) . $CR;
+          return $r;
+
+
+}
+sub as_output {
+          my %added = %{ +shift };
+          my %removed = %{ +shift };
+          my %current = %{ +shift };
+
+          my $r = para('NewBusStop' , "NEW " . IDTags::softreturn . "BUS STOP$CR");
+          $r .= para ('FirstLineIntro');
+          $r .= "Effective March 28, $added{these} will stop here:$CR";
+          $r .= para('HighlightedLines' , $added{lines}) . $CR;
+          return $r;
+
+}
+
+sub rs_output {
+          my %added = %{ +shift };
+          my %removed = %{ +shift };
+          my %current = %{ +shift };
+
+          my $r = current(%current) . 
+                para('Removed' , 'Effective March 28, this bus stop will be removed.') . $CR;
+
+
+          return $r;
+
+}
+
+sub para {
+
+   return IDTags::parastyle (@_);
+
+}
+
+sub current {
+          my %current = @_;
+          my $r = para('Current' , "Current $current{word} at this stop:$CR");
+          $r .= para ('CurrentLines' , $current{lines}) . $CR;
+          return $r;
+}
+
+
+
+sub prepary {
+
+   my %return;
+
+   my ($word, $lines);
+   if (scalar(@_) == 1) {
+      $return{word} = 'line';
+      $return{these} = 'this line';
+      $return{thesestop} = 'this line stops';
+   } else {
+      $return{word} = 'lines';
+      $return{these} = 'these lines';
+      $return{thesestop} = 'these lines stop';
+   }
+
+   $return{lines} = join ($separator, @_);
+
+   return (%return);
+
+}
+
+sub start {
+   return "<ASCII-MAC>$CR<Version:6><FeatureSet:InDesign-Roman>";
+}
