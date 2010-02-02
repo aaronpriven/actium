@@ -19,8 +19,9 @@ use lib ($Bin , "$Bin/../bin");
 use Carp;
 use Storable();
 
-use Actium( qw[say sayt jn jt initialize avldata ensuredir option]);
+use Actium( qw[say sayt jn jt initialize avldata ensuredir byroutes option]);
 use Actium::Constants;
+use List::Util (qw<max>);
 
 # don't buffer terminal output
 $| = 1;
@@ -35,61 +36,93 @@ my $intro = 'slists2bagorder -- makes order for bags';
 Actium::initialize ($helptext, $intro);
 
 # retrieve data
-
 my %stops_of = %{ Storable::retrieve('oldline.storable') } or die $!;
 
+# delete bad lines like NC and LC
+foreach my $linedir (keys %stops_of) {
+   if (    $linedir =~ /^NC/ or $linedir =~ /^LC/ or  $linedir =~ /^399/ or $linedir =~ /^51S/ ) {
+       delete $stops_of{$linedir};
+   }
+}
+
+# load the stops that are changing
 open my $in , '<' , 'comparestops-x.txt' or die $!;
-
 my %stop_used;
-
 while (<$in>) {
    my ($type, $stop);
    ($type, $stop, undef) = split (/\t/ , $_ , 3);
    $stop_used{$stop} = $type;
 }
-
 close $in or die $!;
 
+# eliminate all stops that are not changing
 while (my ($linedir , $stops_r) = each %stops_of) {
-
    my @newstops;
-
    foreach my $stop (@{$stops_r}) {
       push @newstops, $stop if $stop_used{$stop};
    }
    $stops_of{$linedir} = \@newstops;
-   
 }
+
+# Now %stops_of contains all stops in every line.
 
 open my $baglist, '>' , 'baglist.txt' or die $!;
 
-my %seen_stop;
+while ( scalar keys %stops_of ) {
 
-foreach my $linedir ( sort { scalar @{$stops_of{$b}} <=> scalar @{$stops_of{$a}} } keys %stops_of ) {
-   next if $linedir =~ /^NC/;
-   next if $linedir =~ /^LC/;
-   next if $linedir =~ /^399/;
 
-   print $baglist $linedir;
-   foreach my $stop ( @{$stops_of{$linedir}} ) {
-      next if $seen_stop{$stop};
-      print $baglist "\t$stop";
-      $seen_stop{$stop} = 1;
+   my @list = keys %stops_of;
+
+    my $max_linedir = (sort { 
+       ( $a =~ /^6\d\d/ <=> $b =~ /^6\d\d/ ) or
+       ( scalar @{$stops_of{$b}} <=> scalar @{$stops_of{$a}} ) or
+       byroutes ($a , $b) 
+       } keys %stops_of)[0];
+   
+   my @stops = @{$stops_of{$max_linedir}};
+   
+   last unless scalar @stops;
+
+   print $baglist  join ("\t" , $max_linedir , @stops) , "\n" ;   
+   
+   delete $stops_of{$max_linedir};
+   
+   delete $stop_used{$_} foreach @stops;
+   
+   # we've printed the one with the most stops.
+   # now delete all stops in the subsequent series that have been done so far
+   
+   my %seen_stop;
+   $seen_stop{$_} = 1 foreach @stops;
+   
+   while (my ($linedir , $stops_r) = each %stops_of) {
+      my @newstops;
+      foreach my $stop (@{$stops_r}) {
+         push @newstops, $stop unless $seen_stop{$stop};
+      }
+      if (@newstops) {
+         $stops_of{$linedir} = \@newstops;
+      }
+      else {
+         delete $stops_of{$linedir};
+      }
    }
-   print $baglist "\n";
 
-}
+
+}      
 
 close $baglist or die $!;
 
+while ( my ($linedir, $type) = each %stop_used) {
+   print join ("\t" , $linedir, $type) , "\n";
+}
 
+sub numify {
+    my $num = shift;
+    return "ZZZZ" if $num =~ /^6\d\d/;
+    return $num;
 
-
-
-
-
-
-
+}
 
 
 
