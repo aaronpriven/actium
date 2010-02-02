@@ -2,7 +2,7 @@
 
 @ARGV = qw(-s sp10) if $ENV{RUNNING_UNDER_AFFRUS};
 
-# baglist
+# bagtext
 
 #00000000111111111122222222223333333333444444444455555555556666666666777777777
 #23456789012345678901234567890123456789012345678901234567890123456789012345678
@@ -20,16 +20,20 @@ use Actium( qw[say sayt jn jtn initialize avldata ensuredir byroutes option]);
 use Actium::Constants;
 use Actium::FPMerge (qw(FPread FPread_simple));
 
+use List::MoreUtils ('natatime');
+
+use POSIX qw(ceil);
+
 use IDTags;
 
 # don't buffer terminal output
 $| = 1;
 
 my $helptext = <<'EOF';
-baglist makes the text for the bags.
+bagtext makes the text for the bags.
 EOF
 
-my $intro = 'baglist -- makes text for bags';
+my $intro = 'bagtext -- makes text for bags';
 
 my $CR = "\r";
 
@@ -69,14 +73,15 @@ my $filecount = 0;
 
 ensuredir ('bagtexts');
 
-open my $baglist , '<' , 'baglist.txt';
+my (%texts_of, %texts_of_type);
 
-open my $bagtext , '>' , "bagtexts/$filecount.txt";
-
-print $bagtext start();
+my %seen_length ;
 
 my $separator = IDTags::enspace . IDTags::discretionary_lf;
 
+foreach my $file ( qw(baglist.txt baglist-add.txt baglist-rm.txt) ) {
+
+open my $baglist , '<' , $file;
 
 while (<$baglist>) {
 
@@ -85,6 +90,11 @@ while (<$baglist>) {
       my $numstops = scalar @thesestopids;
 
       foreach my $i (0 .. $#thesestopids) {
+ 
+          my $thistext = '';
+
+          open my $bagtext , '>' , \$thistext or die $!;
+
           $stopcount++;
           my $stopid = $thesestopids[$i];
           my $desc = $stops{$stopid}{DescriptionF} || die "No description for $stopid";
@@ -113,31 +123,114 @@ while (<$baglist>) {
           my %removed = prepary(@removed);
           my %current = prepary(@current);
 
-          print $bagtext 
+          my ($text, $length) = 
               $output_dispatch{$type}->(\%added, \%removed, \%current);
 
+          print $bagtext $text;
+
           print $bagtext para ('Questions' ,
-            'Questions? Call 511 and say, <0x201C>AC Transit.<0x201D>');
-          print $bagtext IDTags::boxbreak;
+'Want more info? Visit www.actransit.org or call 511 (and say, <0x201C>AC Transit.<0x201D>)');
+
+ 	  close $bagtext;
+
+          $length+= .75; # for the top and bottom margin
+
+          $seen_length{$length}++;
+
+          my $outtype = 'C' if ($type eq 'AL' or $type eq 'RL' or $type eq 'CL');
+
+          $seen_length{"$outtype-$length"}++;
+
+          push @{$texts_of{$outtype}{$length}} , $thistext;
+          #push @{$texts_of_length{ ceil(($length)/2) * 2}} , $thistext;
+          # round to nearest 2 inches.
+
+          push @{$texts_of_type{$type}} , $thistext;
 
       }
       
-      if ($stopcount > 350) {
-          close $bagtext;
-          $filecount++;
-          $stopcount = 0;
-
-          open $bagtext , '>' , "bagtexts/$filecount.txt" or die $!;
-
-          print STDERR $filecount;
-
-          print $bagtext start();
-     }
 
 }
 
 close $baglist;
-close $bagtext;
+
+}
+
+open my $sample , '>' , 'bagtexts/sample.txt' or die $!;
+print $sample start();
+
+for my $type (qw(AL RL CL AS RS)) {
+
+    my %seen;
+
+    for (0 .. 15) {
+       my $random = rand( $#{$texts_of_type{$type}} );
+       redo if $seen{$random};
+       $seen{$random} = 1;
+       print $sample $texts_of_type{$type}[$random] , IDTags::boxbreak;
+
+    }
+
+}
+
+
+while ( my($outtype , $lengths_of_r) = each %texts_of) {
+
+while ( my($length , $texts_r) = each %{$lengths_of_r}) {
+
+    my $texts_count = scalar @$texts_r;
+
+#    if ($texts_count > 60) {
+#       my @samples = @{$texts_r}[0 , 15 , 30 , 45 , 60];
+#       print $sample join( IDTags::boxbreak , @samples) , IDTags::boxbreak;
+#    }
+#    elsif ($texts_count > 8) {
+#       my @samples = @{$texts_r}[0 , 2 , 4 , 6 , 8];
+#       print $sample join( IDTags::boxbreak , @samples) , IDTags::boxbreak;
+#    }
+
+    my $fname = "$outtype-$length";
+
+    if ( $texts_count > 250 ) {
+
+       my $suffix = 'a';
+
+       my $it = natatime 250, @$texts_r;
+       while (my @texts = $it->()) {
+
+          open my $bagtext , '>' , "bagtexts/$fname-$suffix.txt" or die $!;
+          print $bagtext start();
+          print $bagtext join( IDTags::boxbreak , @texts);
+          close $bagtext;
+
+          $suffix++; # alphabetic auto-increment
+
+       }
+                 
+    } 
+    else {
+
+       open my $bagtext , '>' , "bagtexts/$fname.txt" or die $!;
+
+       print $bagtext start();
+       print $bagtext join( IDTags::boxbreak , @{$texts_r});
+
+       close $bagtext;
+    }
+
+}
+
+}
+
+close $sample;
+
+# end of main
+
+foreach (sort { $a <=> $b } keys %seen_length ) {
+
+   say $_ , ": " , $seen_length{$_};
+
+}
 
 sub al_output {
           my %added = %{ +shift };
@@ -147,9 +240,14 @@ sub al_output {
           my $r = current(%current);
  
           $r .= para ('FirstLineIntro');
-          $r .= "Effective March 28, $added{these} will also stop here:$CR";
+          $r .= "Effective March 28, $added{these} will ";
+          $r .= IDTags::underline('also');
+          $r .= " stop here:$CR";
           $r .= para('HighlightedLines' , $added{lines}) . $CR;
-          return $r;
+
+	  my $length = $added{len} + $current{len} + 11;
+
+          return $r , $length;
      
 }
 
@@ -160,9 +258,12 @@ sub rl_output {
 
           my $r = current(%current);
           $r .= para ('FirstLineIntro');
-          $r .= "Effective March 28, $removed{these} will not stop here:$CR";
+          $r .= "Effective March 28, $removed{these} will ";
+          $r .= IDTags::underline('not');
+          $r .= " stop here:$CR";
           $r .= para('HighlightedLines' , $removed{lines}) . $CR;
-          return $r;
+	  my $length = $removed{len} + $current{len} + 11;
+          return $r , $length;
 
 }
 
@@ -173,13 +274,16 @@ sub cl_output {
 
           my $r = current(%current);
 
-          $r .= para ('FirstLineIntro');
-          $r .= "Effective March 28, $added{these} will begin stopping here:$CR";
+          $r .= para ('FirstLineIntroSm');
+          $r .= "Effective March 28, $added{these} will ";
+          $r .= IDTags::underline('begin') . " stopping here:$CR";
           $r .= para('HighlightedLines' , $added{lines}) . $CR;
-          $r .= para ('LineIntro');
-          $r .= ucfirst("$removed{these} will not stop here:$CR");
+          $r .= para ('LineIntroSm');
+          $r .= ucfirst("$removed{these} will ");
+          $r .= IDTags::underline('not') . " stop here:$CR";
           $r .= para('HighlightedLines' , $removed{lines}) . $CR;
-          return $r;
+	  my $length = $added{len} + $removed{len} + $current{len} + 15;
+          return $r , $length;
 
 
 }
@@ -192,7 +296,8 @@ sub as_output {
           $r .= para ('FirstLineIntro');
           $r .= "Effective March 28, $added{these} will stop here:$CR";
           $r .= para('HighlightedLines' , $added{lines}) . $CR;
-          return $r;
+	  my $length = $added{len} + 13.5;
+          return $r , $length;
 
 }
 
@@ -200,12 +305,13 @@ sub rs_output {
           my %added = %{ +shift };
           my %removed = %{ +shift };
           my %current = %{ +shift };
+	  my $length = $current{len} + 15;
 
           my $r = current(%current) . 
                 para('Removed' , 'Effective March 28, this bus stop will be removed.') . $CR;
 
 
-          return $r;
+          return $r , $length;
 
 }
 
@@ -228,7 +334,7 @@ sub prepary {
 
    my %return;
 
-   my ($word, $lines);
+   my ($word, $lines );
    if (scalar(@_) == 1) {
       $return{word} = 'line';
       $return{these} = 'this line';
@@ -238,6 +344,17 @@ sub prepary {
       $return{these} = 'these lines';
       $return{thesestop} = 'these lines stop';
    }
+
+   my $chars = join($EMPTY_STR , @_);
+
+   my $numbers = ($chars =~ tr/0-9// );
+   my $letters = ($chars =~ tr/A-Z// );
+
+   my $charlength = $numbers + $letters*1.33 + $#_; 
+
+   my $textlines = ceil($charlength / 14) - 1; # starts with 0
+
+   $return{'len'} = $textlines * 2.25;
 
    $return{lines} = join ($separator, @_);
 
