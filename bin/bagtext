@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-@ARGV = qw(-s sp10) if $ENV{RUNNING_UNDER_AFFRUS};
-
 # bagtext
 
 #00000000111111111122222222223333333333444444444455555555556666666666777777777
@@ -10,13 +8,15 @@
 use warnings;
 use strict;
 
+@ARGV = qw(-s sp10) if $ENV{RUNNING_UNDER_AFFRUS};
+
 use sort ('stable');
 
 # add the current program directory to list of files to include
 use FindBin('$Bin');
-use lib ($Bin , "$Bin/../bin");
+use lib ( $Bin, "$Bin/../bin" );
 
-use Actium( qw[say sayt jn jtn initialize avldata ensuredir byroutes option]);
+use Actium(qw[say sayt jn jtn initialize avldata ensuredir byroutes option]);
 use Actium::Constants;
 use Actium::FPMerge (qw(FPread FPread_simple));
 
@@ -37,331 +37,366 @@ my $intro = 'bagtext -- makes text for bags';
 
 my $CR = "\r";
 
-Actium::initialize ($helptext, $intro);
+my %height_of = {
+    numbers => 3,
+    AL      => 13.375,
+    AS      => 15.175,
+    RL      => 13.375,
+    CL      => 17.875,
+    margins => 0.75,
+    RS      => 16.375,
+};
+
+Actium::initialize( $helptext, $intro );
 
 # retrieve data
-my (@stops, %stops);
-FPread_simple ("Stops.csv" , \@stops , \%stops , 'stop_id_1');
+my ( @stops, %stops );
+FPread_simple( 'Stops.csv', \@stops, \%stops, 'stop_id_1' );
 
 my %compare;
-open my $comp , '<' , 'comparestops-x.txt';
+open my $comp, '<', 'comparestops-x.txt';
 while (<$comp>) {
-   chomp;
-   my ($type, $stopid, $desc, $numadded, $added,
-       $numremoved, $removed, $numunchanged, $unchanged) 
-       = split(/\t/);
-   $compare{$stopid} = 
-       { Type => $type ,
-         Added => $added ,
-         Removed => $removed ,
-         Unchanged => $unchanged ,
-       };
+    chomp;
+    my ($type,       $stopid,  $desc,         $numadded, $added,
+        $numremoved, $removed, $numunchanged, $unchanged
+    ) = split(/\t/);
+    $compare{$stopid} = {
+        Type      => $type,
+        Added     => $added,
+        Removed   => $removed,
+        Unchanged => $unchanged,
+    };
 }
 
 close $comp;
 
 my %output_dispatch = (
-   AL => \&al_output,
-   RL => \&rl_output,
-   CL => \&cl_output,
-   AS => \&as_output,
-   RS => \&rs_output,
+    AL => \&al_output,
+    RL => \&rl_output,
+    CL => \&cl_output,
+    AS => \&as_output,
+    RS => \&rs_output,
 );
 
 my $stopcount = 0;
 my $filecount = 0;
 
-ensuredir ('bagtexts');
+ensuredir('bagtexts');
 
-my (%texts_of, %texts_of_type);
+my ( %texts_of, %texts_of_type );
 
-my %seen_length ;
+my %seen_length;
 
 my $separator = IDTags::enspace . IDTags::discretionary_lf;
 
-foreach my $file ( qw(baglist.txt baglist-add.txt baglist-rm.txt) ) {
+foreach my $file (qw(baglist.txt baglist-add.txt baglist-rm.txt)) {
 
-open my $baglist , '<' , $file;
+    open my $baglist, '<', $file;
 
-while (<$baglist>) {
+    while (<$baglist>) {
 
-      chomp;
-      my ($routedir, @thesestopids) = split (/\t/);
-      my $numstops = scalar @thesestopids;
+        chomp;
+        my ( $routedir, @thesestopids ) = split(/\t/);
+        my $numstops = scalar @thesestopids;
 
-      foreach my $i (0 .. $#thesestopids) {
- 
-          my $thistext = '';
+        foreach my $i ( 0 .. $#thesestopids ) {
 
-          open my $bagtext , '>' , \$thistext or die $!;
+            my $thistext = '';
 
-          $stopcount++;
-          my $stopid = $thesestopids[$i];
-          my $desc = $stops{$stopid}{DescriptionF} || die "No description for $stopid";
-          my $city = $stops{$stopid}{CityF} || die "No city for $stopid";
-          my $phoneid = $stops{$stopid}{PhoneID} || die "No phone for $stopid";
+            open my $bagtext, '>', \$thistext or die $!;
 
-          print $bagtext para ('Teeny');
+            $stopcount++;
+            my $stopid = $thesestopids[$i];
+            my $desc   = $stops{$stopid}{DescriptionF}
+              || die "No description for $stopid";
+            my $city = $stops{$stopid}{CityF} || die "No city for $stopid";
+            my $phoneid = $stops{$stopid}{PhoneID}
+              || die "No phone for $stopid";
 
-          print $bagtext "$routedir (" , $i+1 , " of $numstops)";
-          print $bagtext IDTags::emspace , "$desc, $city";
-          print $bagtext IDTags::emspace , "Stop $stopid ($phoneid)$CR";
+            print $bagtext para('Teeny');
 
-          my $type = $compare{$stopid}{Type} || die "No type for $stopid";
-          my $added = $compare{$stopid}{Added} || $EMPTY_STR;
-          my $removed = $compare{$stopid}{Removed} || $EMPTY_STR;
-          my $unchanged = $compare{$stopid}{Unchanged} || $EMPTY_STR;
+            print $bagtext "$routedir (", $i + 1, " of $numstops)";
+            print $bagtext IDTags::emspace, "$desc, $city";
+            print $bagtext IDTags::emspace, "Stop $stopid ($phoneid)$CR";
 
-          my (@added, @removed, @unchanged , @current);
+            my $type  = $compare{$stopid}{Type}  || die "No type for $stopid";
+            my $added = $compare{$stopid}{Added} || $EMPTY_STR;
+            my $removed   = $compare{$stopid}{Removed}   || $EMPTY_STR;
+            my $unchanged = $compare{$stopid}{Unchanged} || $EMPTY_STR;
 
-          @added = split(/,/ , $added) if $added;
-          @removed = split(/,/ , $removed) if $removed;
-          @unchanged = split(/,/ , $unchanged) if $unchanged;
-          @current = sort byroutes (@removed, @unchanged);
+            my ( @added, @removed, @unchanged, @current );
 
-          my %added = prepary(@added);
-          my %removed = prepary(@removed);
-          my %current = prepary(@current);
+            @added     = split( /,/, $added )     if $added;
+            @removed   = split( /,/, $removed )   if $removed;
+            @unchanged = split( /,/, $unchanged ) if $unchanged;
+            @current = sort byroutes ( @removed, @unchanged );
 
-          my ($text, $length) = 
-              $output_dispatch{$type}->(\%added, \%removed, \%current);
+            my %added   = prepary(@added);
+            my %removed = prepary(@removed);
+            my %current = prepary(@current);
 
-          print $bagtext $text;
+            my ( $text, $length )
+              = $output_dispatch{$type}->( \%added, \%removed, \%current );
 
-          print $bagtext para ('Questions' ,
-'Want more info? Visit www.actransit.org or call 511 (and say, <0x201C>AC Transit.<0x201D>)');
+            print $bagtext $text;
 
- 	  close $bagtext;
+            print $bagtext para( 'Questions',
+'Want more info? Visit www.actransit.org or call 511 (and say, <0x201C>AC Transit.<0x201D>)'
+            );
 
-          $length+= .75; # for the top and bottom margin
+            close $bagtext;
 
-          $seen_length{$length}++;
+            $length += $height_of{margin};
 
-          my $outtype = 'C' if ($type eq 'AL' or $type eq 'RL' or $type eq 'CL');
+            my $outtype = $type;
 
-          $seen_length{"$outtype-$length"}++;
+            $outtype = 'C'
+              if ( $type eq 'AL' or $type eq 'RL' or $type eq 'CL' );
 
-          push @{$texts_of{$outtype}{$length}} , $thistext;
-          #push @{$texts_of_length{ ceil(($length)/2) * 2}} , $thistext;
-          # round to nearest 2 inches.
+            $seen_length{"$length-$outtype"}++;
 
-          push @{$texts_of_type{$type}} , $thistext;
+            push @{ $texts_of{$outtype}{$length} }, $thistext;
 
-      }
-      
+            #push @{$texts_of_length{ ceil(($length)/2) * 2}} , $thistext;
+            # round to nearest 2 inches.
 
-}
+            push @{ $texts_of_type{$type} }, $thistext;
 
-close $baglist;
+        } ## <perltidy> end foreach my $i ( 0 .. $#thesestopids)
 
-}
+    } ## <perltidy> end while (<$baglist>)
 
-open my $sample , '>' , 'bagtexts/sample.txt' or die $!;
+    close $baglist;
+
+} ## <perltidy> end foreach my $file (...)
+
+open my $sample, '>', 'bagtexts/sample.txt' or die $!;
 print $sample start();
 
 for my $type (qw(AL RL CL AS RS)) {
 
     my %seen;
 
-    for (0 .. 15) {
-       my $random = rand( $#{$texts_of_type{$type}} );
-       redo if $seen{$random};
-       $seen{$random} = 1;
-       print $sample $texts_of_type{$type}[$random] , IDTags::boxbreak;
+    for ( 0 .. 15 ) {
+        my $random = rand( $#{ $texts_of_type{$type} } );
+        redo if $seen{$random};
+        $seen{$random} = 1;
+        print $sample $texts_of_type{$type}[$random], IDTags::boxbreak;
 
     }
 
 }
 
+while ( my ( $outtype, $lengths_of_r ) = each %texts_of ) {
 
-while ( my($outtype , $lengths_of_r) = each %texts_of) {
+    while ( my ( $length, $texts_r ) = each %{$lengths_of_r} ) {
 
-while ( my($length , $texts_r) = each %{$lengths_of_r}) {
+        my $texts_count = scalar @$texts_r;
 
-    my $texts_count = scalar @$texts_r;
+   #    if ($texts_count > 60) {
+   #       my @samples = @{$texts_r}[0 , 15 , 30 , 45 , 60];
+   #       print $sample join( IDTags::boxbreak , @samples) , IDTags::boxbreak;
+   #    }
+   #    elsif ($texts_count > 8) {
+   #       my @samples = @{$texts_r}[0 , 2 , 4 , 6 , 8];
+   #       print $sample join( IDTags::boxbreak , @samples) , IDTags::boxbreak;
+   #    }
 
-#    if ($texts_count > 60) {
-#       my @samples = @{$texts_r}[0 , 15 , 30 , 45 , 60];
-#       print $sample join( IDTags::boxbreak , @samples) , IDTags::boxbreak;
-#    }
-#    elsif ($texts_count > 8) {
-#       my @samples = @{$texts_r}[0 , 2 , 4 , 6 , 8];
-#       print $sample join( IDTags::boxbreak , @samples) , IDTags::boxbreak;
-#    }
+        my $fname = "$outtype-$length";
 
-    my $fname = "$outtype-$length";
+        if ( $texts_count > 260 ) {
 
-    if ( $texts_count > 250 ) {
+            my $suffix = 'a';
 
-       my $suffix = 'a';
+            my $it = natatime 260, @$texts_r;
+            while ( my @texts = $it->() ) {
 
-       my $it = natatime 250, @$texts_r;
-       while (my @texts = $it->()) {
+                open my $bagtext, '>', "bagtexts/$fname-$suffix.txt" or die $!;
+                print $bagtext start();
+                print $bagtext join( IDTags::boxbreak, @texts );
+                close $bagtext;
 
-          open my $bagtext , '>' , "bagtexts/$fname-$suffix.txt" or die $!;
-          print $bagtext start();
-          print $bagtext join( IDTags::boxbreak , @texts);
-          close $bagtext;
+                $suffix++;    # alphabetic auto-increment
 
-          $suffix++; # alphabetic auto-increment
+            }
 
-       }
-                 
-    } 
-    else {
+        }
+        else {
 
-       open my $bagtext , '>' , "bagtexts/$fname.txt" or die $!;
+            open my $bagtext, '>', "bagtexts/$fname.txt" or die $!;
 
-       print $bagtext start();
-       print $bagtext join( IDTags::boxbreak , @{$texts_r});
+            print $bagtext start();
+            print $bagtext join( IDTags::boxbreak, @{$texts_r} );
 
-       close $bagtext;
-    }
+            close $bagtext;
+        }
 
-}
+    } ## <perltidy> end while ( my ( $length, $texts_r...))
 
-}
+} ## <perltidy> end while ( my ( $outtype, $lengths_of_r...))
 
 close $sample;
 
 # end of main
 
-foreach (sort { $a <=> $b } keys %seen_length ) {
+{
+    no warnings 'numeric';
 
-   say $_ , ": " , $seen_length{$_};
+    foreach ( sort { $a <=> $b } keys %seen_length ) {
+
+        say $_ , ": ", $seen_length{$_};
+
+    }
 
 }
 
 sub al_output {
-          my %added = %{ +shift };
-          my %removed = %{ +shift };
-          my %current = %{ +shift };
+    my %added   = %{ +shift };
+    my %removed = %{ +shift };
+    my %current = %{ +shift };
 
-          my $r = current(%current);
- 
-          $r .= para ('FirstLineIntro');
-          $r .= "Effective March 28, $added{these} will ";
-          $r .= IDTags::underline('also');
-          $r .= " stop here:$CR";
-          $r .= para('HighlightedLines' , $added{lines}) . $CR;
+    my $r = current(%current);
 
-	  my $length = $added{len} + $current{len} + 11;
+    $r .= para('FirstLineIntro');
+    $r .= "Effective March 28, $added{these} will ";
+    $r .= IDTags::underline('also');
+    $r .= " stop here:$CR";
+    $r .= para( 'HighlightedLines', $added{lines} ) . $CR;
 
-          return $r , $length;
-     
+    my $length = $added{len} + $current{len} + $height_of{AL};
+
+    return $r, $length;
+
 }
 
 sub rl_output {
-          my %added = %{ +shift };
-          my %removed = %{ +shift };
-          my %current = %{ +shift };
+    my %added   = %{ +shift };
+    my %removed = %{ +shift };
+    my %current = %{ +shift };
 
-          my $r = current(%current);
-          $r .= para ('FirstLineIntro');
-          $r .= "Effective March 28, $removed{these} will ";
-          $r .= IDTags::underline('not');
-          $r .= " stop here:$CR";
-          $r .= para('HighlightedLines' , $removed{lines}) . $CR;
-	  my $length = $removed{len} + $current{len} + 11;
-          return $r , $length;
+    my $r = current(%current);
+    $r .= para('FirstLineIntro');
+    $r .= "Effective March 28, $removed{these} will ";
+    $r .= IDTags::underline('not');
+    $r .= " stop here:$CR";
+    $r .= para( 'HighlightedLines', $removed{lines} ) . $CR;
+    my $length = $removed{len} + $current{len} + $height_of{RL};
+    return $r, $length;
 
 }
 
 sub cl_output {
-          my %added = %{ +shift };
-          my %removed = %{ +shift };
-          my %current = %{ +shift };
+    my %added   = %{ +shift };
+    my %removed = %{ +shift };
+    my %current = %{ +shift };
 
-          my $r = current(%current);
+    my $r = current(%current);
 
-          $r .= para ('FirstLineIntroSm');
-          $r .= "Effective March 28, $added{these} will ";
-          $r .= IDTags::underline('begin') . " stopping here:$CR";
-          $r .= para('HighlightedLines' , $added{lines}) . $CR;
-          $r .= para ('LineIntroSm');
-          $r .= ucfirst("$removed{these} will ");
-          $r .= IDTags::underline('not') . " stop here:$CR";
-          $r .= para('HighlightedLines' , $removed{lines}) . $CR;
-	  my $length = $added{len} + $removed{len} + $current{len} + 15;
-          return $r , $length;
-
+    $r .= para('FirstLineIntroSm');
+    $r .= "Effective March 28, $added{these} will ";
+    $r .= IDTags::underline('begin') . " stopping here:$CR";
+    $r .= para( 'HighlightedLines', $added{lines} ) . $CR;
+    $r .= para('LineIntroSm');
+    $r .= ucfirst("$removed{these} will ");
+    $r .= IDTags::underline('not') . " stop here:$CR";
+    $r .= para( 'HighlightedLines', $removed{lines} ) . $CR;
+    my $length = $added{len} + $removed{len} + $current{len} + $height_of{CL};
+    return $r, $length;
 
 }
-sub as_output {
-          my %added = %{ +shift };
-          my %removed = %{ +shift };
-          my %current = %{ +shift };
 
-          my $r = para('NewBusStop' , "NEW " . IDTags::softreturn . "BUS STOP$CR");
-          $r .= para ('FirstLineIntro');
-          $r .= "Effective March 28, $added{these} will stop here:$CR";
-          $r .= para('HighlightedLines' , $added{lines}) . $CR;
-	  my $length = $added{len} + 13.5;
-          return $r , $length;
+sub as_output {
+    my %added   = %{ +shift };
+    my %removed = %{ +shift };
+    my %current = %{ +shift };
+
+    my $r = para( 'NewBusStop', "NEW " . IDTags::softreturn . "BUS STOP$CR" );
+    $r .= para('FirstLineIntro');
+    $r .= "Effective March 28, $added{these} will stop here:$CR";
+    $r .= para( 'HighlightedLines', $added{lines} ) . $CR;
+    my $length = $added{len} + $height_of{AS};
+    return $r, $length;
 
 }
 
 sub rs_output {
-          my %added = %{ +shift };
-          my %removed = %{ +shift };
-          my %current = %{ +shift };
-	  my $length = $current{len} + 15;
+    my %added   = %{ +shift };
+    my %removed = %{ +shift };
+    my %current = %{ +shift };
+    my $length  = $current{len} + $height_of{RS};
 
-          my $r = current(%current) . 
-                para('Removed' , 'Effective March 28, this bus stop will be removed.') . $CR;
+    my $r
+      = current(%current)
+      . para( 'Removed', 'Effective March 28, this bus stop will be removed.' )
+      . $CR;
 
-
-          return $r , $length;
+    return $r, $length;
 
 }
 
 sub para {
 
-   return IDTags::parastyle (@_);
+    return IDTags::parastyle(@_);
 
 }
 
 sub current {
-          my %current = @_;
-          my $r = para('Current' , "Current $current{word} at this stop:$CR");
-          $r .= para ('CurrentLines' , $current{lines}) . $CR;
-          return $r;
+    my %current = @_;
+    my $r = para( 'Current', "Current $current{word} at this stop:$CR" );
+    $r .= para( 'CurrentLines', $current{lines} ) . $CR;
+    return $r;
 }
-
-
 
 sub prepary {
 
-   my %return;
+    my %return;
 
-   my ($word, $lines );
-   if (scalar(@_) == 1) {
-      $return{word} = 'line';
-      $return{these} = 'this line';
-      $return{thesestop} = 'this line stops';
-   } else {
-      $return{word} = 'lines';
-      $return{these} = 'these lines';
-      $return{thesestop} = 'these lines stop';
-   }
+    my ( $word, $lines );
+    if ( scalar(@_) == 1 ) {
+        $return{word}      = 'line';
+        $return{these}     = 'this line';
+        $return{thesestop} = 'this line stops';
+    }
+    else {
+        $return{word}      = 'lines';
+        $return{these}     = 'these lines';
+        $return{thesestop} = 'these lines stop';
+    }
 
-   my $chars = join($EMPTY_STR , @_);
+    #my $chars = join( $EMPTY_STR, @_ );
+    #my $numbers = ( $chars =~ tr/0-9// );
+    #my $letters = ( $chars =~ tr/A-Z// );
+    #my $charlength = $numbers + $letters * 1.33 + $#_;
+    #my $textlines = ceil( $charlength / 10 ) - 1;    # starts with 0
 
-   my $numbers = ($chars =~ tr/0-9// );
-   my $letters = ($chars =~ tr/A-Z// );
+    my $sum       = 0;
+    my $textlines = 0;    # one line of numbers is assumed in
+                          # $height{AL}, $height{RL}, etc.
 
-   my $charlength = $numbers + $letters*1.33 + $#_; 
+    foreach my $chars (@_) {
+        my $charlength
+          = ( $chars =~ tr/0-9// ) + ( $chars =~ tr/A-Z// ) * 1.34;
+        if ( $sum + $charlength < 10 ) {    # less than line length
+            $sum += $charlength + 1;        # add this length, plus a space
+        }
+        elsif ( $sum + $charlength > 10 ) {    # overflows line
+            $sum = $charlength + 1;    # new line is this length, plus space
+            $lines++;                  # add new line
+        }
+            else {                     # exactly the line length
+                $sum = 0;              # new line is nothing
+                $lines++;              # add new line
+            }
+        }
 
-   my $textlines = ceil($charlength / 14) - 1; # starts with 0
+        $return{'len'} = $textlines * $height_of{numbers};
 
-   $return{'len'} = $textlines * 2.25;
+        $return{lines} = join( $separator, @_ );
 
-   $return{lines} = join ($separator, @_);
+        return (%return);
 
-   return (%return);
+    } ## <perltidy> end foreach my $chars (@_)
 
-}
-
-sub start {
-   return "<ASCII-MAC>$CR<Version:6><FeatureSet:InDesign-Roman>";
-}
+    sub start {
+        return "<ASCII-MAC>$CR<Version:6><FeatureSet:InDesign-Roman>";
+    }
