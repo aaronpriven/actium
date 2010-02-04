@@ -1,0 +1,17 @@
+#!/ActivePerl/bin/perl
+
+use 5.010;
+use warnings;
+use strict;
+
+@ARGV = '/Volumes/Bireme/Actium/db/sp10/baglist.txt';
+
+while (<>) {
+   chomp;
+   my @fields = split (/\t/);
+
+   my $route = shift (@fields);
+ 
+   say join("\t" , $route, scalar @fields);
+
+}
