@@ -16,7 +16,7 @@ use sort ('stable');
 use FindBin('$Bin');
 use lib ( $Bin, "$Bin/../bin" );
 
-use Actium(qw[say sayt jn jtn initialize avldata ensuredir byroutes option]);
+use Actium(qw[say sayt jt jn jtn initialize avldata ensuredir byroutes option]);
 use Actium::Constants;
 use Actium::FPMerge (qw(FPread FPread_simple));
 
@@ -37,15 +37,15 @@ my $intro = 'bagtext -- makes text for bags';
 
 my $CR = "\r";
 
-my %height_of = {
+my %height_of = (
     numbers => 3,
     AL      => 13.375,
     AS      => 15.175,
     RL      => 13.375,
     CL      => 17.875,
-    margins => 0.75,
+    margin  => 0.75,
     RS      => 16.375,
-};
+);
 
 Actium::initialize( $helptext, $intro );
 
@@ -87,7 +87,13 @@ my ( %texts_of, %texts_of_type );
 
 my %seen_length;
 
-my $separator = IDTags::enspace . IDTags::discretionary_lf;
+my %decalroutes;
+
+$decalroutes{$_} = 1 foreach qw(
+  210 211 212 213 214 215 216 217 218 235 305 328 329 332 360 77 81 M SB
+);
+
+my $date = 'March' . IDTags::nbsp() . '28';
 
 foreach my $file (qw(baglist.txt baglist-add.txt baglist-rm.txt)) {
 
@@ -141,7 +147,7 @@ foreach my $file (qw(baglist.txt baglist-add.txt baglist-rm.txt)) {
             print $bagtext $text;
 
             print $bagtext para( 'Questions',
-'Want more info? Visit www.actransit.org or call 511 (and say, <0x201C>AC Transit.<0x201D>)'
+'Want more info? ' . IDTags::softreturn . 'Visit www.actransit.org or call 511 (and say, <0x201C>AC Transit.<0x201D>)'
             );
 
             close $bagtext;
@@ -150,8 +156,15 @@ foreach my $file (qw(baglist.txt baglist-add.txt baglist-rm.txt)) {
 
             my $outtype = $type;
 
-            $outtype = 'C'
-              if ( $type eq 'AL' or $type eq 'RL' or $type eq 'CL' );
+            if ( $type eq 'AL' or $type eq 'RL' or $type eq 'CL' ) {
+                $outtype = 'C';
+                my $route = substr($routedir,0,index($routedir,'-'));
+                $outtype = 'CD' if $decalroutes{$route};
+
+            }
+
+            # IGNORE HEIGHTS FOR PRINTING ON BAGS
+            $length = 36;
 
             $seen_length{"$length-$outtype"}++;
 
@@ -204,11 +217,11 @@ while ( my ( $outtype, $lengths_of_r ) = each %texts_of ) {
 
         my $fname = "$outtype-$length";
 
-        if ( $texts_count > 260 ) {
+        if ( $texts_count > 550 ) {
 
             my $suffix = 'a';
 
-            my $it = natatime 260, @$texts_r;
+            my $it = natatime 550, @$texts_r;
             while ( my @texts = $it->() ) {
 
                 open my $bagtext, '>', "bagtexts/$fname-$suffix.txt" or die $!;
@@ -258,7 +271,7 @@ sub al_output {
     my $r = current(%current);
 
     $r .= para('FirstLineIntro');
-    $r .= "Effective March 28, $added{these} will ";
+    $r .= "Effective $date, $added{these} will ";
     $r .= IDTags::underline('also');
     $r .= " stop here:$CR";
     $r .= para( 'HighlightedLines', $added{lines} ) . $CR;
@@ -276,7 +289,7 @@ sub rl_output {
 
     my $r = current(%current);
     $r .= para('FirstLineIntro');
-    $r .= "Effective March 28, $removed{these} will ";
+    $r .= "Effective $date, $removed{these} will ";
     $r .= IDTags::underline('not');
     $r .= " stop here:$CR";
     $r .= para( 'HighlightedLines', $removed{lines} ) . $CR;
@@ -293,7 +306,7 @@ sub cl_output {
     my $r = current(%current);
 
     $r .= para('FirstLineIntroSm');
-    $r .= "Effective March 28, $added{these} will ";
+    $r .= "Effective $date, $added{these} will ";
     $r .= IDTags::underline('begin') . " stopping here:$CR";
     $r .= para( 'HighlightedLines', $added{lines} ) . $CR;
     $r .= para('LineIntroSm');
@@ -312,7 +325,7 @@ sub as_output {
 
     my $r = para( 'NewBusStop', "NEW " . IDTags::softreturn . "BUS STOP$CR" );
     $r .= para('FirstLineIntro');
-    $r .= "Effective March 28, $added{these} will stop here:$CR";
+    $r .= "Effective $date, $added{these} will stop here:$CR";
     $r .= para( 'HighlightedLines', $added{lines} ) . $CR;
     my $length = $added{len} + $height_of{AS};
     return $r, $length;
@@ -327,7 +340,7 @@ sub rs_output {
 
     my $r
       = current(%current)
-      . para( 'Removed', 'Effective March 28, this bus stop will be removed.' )
+      . para( 'Removed', 'Effective $date, this bus stop will be removed.' )
       . $CR;
 
     return $r, $length;
@@ -351,7 +364,6 @@ sub prepary {
 
     my %return;
 
-    my ( $word, $lines );
     if ( scalar(@_) == 1 ) {
         $return{word}      = 'line';
         $return{these}     = 'this line';
@@ -366,37 +378,85 @@ sub prepary {
     #my $chars = join( $EMPTY_STR, @_ );
     #my $numbers = ( $chars =~ tr/0-9// );
     #my $letters = ( $chars =~ tr/A-Z// );
-    #my $charlength = $numbers + $letters * 1.33 + $#_;
-    #my $textlines = ceil( $charlength / 10 ) - 1;    # starts with 0
+    #my $charwidth = $numbers + $letters * 1.33 + $#_;
+    #my $textlines = ceil( $charwidth / 10 ) - 1;    # starts with 0
 
-    my $sum       = 0;
-    my $textlines = 0;    # one line of numbers is assumed in
-                          # $height{AL}, $height{RL}, etc.
+    #my $sum       = 0;
+    #my $textlines = 0;    # one line of numbers is assumed in
+    #                      # $height{AL}, $height{RL}, etc.
 
-    foreach my $chars (@_) {
-        my $charlength
-          = ( $chars =~ tr/0-9// ) + ( $chars =~ tr/A-Z// ) * 1.34;
-        if ( $sum + $charlength < 10 ) {    # less than line length
-            $sum += $charlength + 1;        # add this length, plus a space
+    my $bigsep = IDTags::enspace . IDTags::discretionary_lf;
+    #my $smallsep = $bigsep;
+    my $smallsep = IDTags::thirdspace 
+                 . ( IDTags::hairspace() x 2 ) . IDTags::discretionary_lf;
+
+    my @textlines;
+    my $thisline = $EMPTY_STR;
+
+    my $line_width = 11;
+
+    foreach my $i (0 .. $#_ - 1 ) {
+
+        my $chars = $_[$i];
+
+        if (charwidth ($thisline . $chars) <= $line_width ) {    
+            # less than or equal to than line length
+            $thisline .= $chars . $SPACE;
         }
-        elsif ( $sum + $charlength > 10 ) {    # overflows line
-            $sum = $charlength + 1;    # new line is this length, plus space
-            $lines++;                  # add new line
-        }
-            else {                     # exactly the line length
-                $sum = 0;              # new line is nothing
-                $lines++;              # add new line
-            }
+        else {
+            push @textlines, $thisline;
+            $thisline = $chars . $SPACE;
         }
 
-        $return{'len'} = $textlines * $height_of{numbers};
+     }
 
-        $return{lines} = join( $separator, @_ );
+     # last item
 
-        return (%return);
+     my $chars = $_[-1] || $EMPTY_STR;
 
-    } ## <perltidy> end foreach my $chars (@_)
+     if (charwidth ($thisline . $chars) <= ($line_width ) ) {
+         # less than or equal to than line length
+         push @textlines, $thisline . $chars ;
+     }
+     else {
+         push @textlines, $thisline, $chars;
+     }
 
-    sub start {
-        return "<ASCII-MAC>$CR<Version:6><FeatureSet:InDesign-Roman>";
+    $return{'len'} = $#textlines * $height_of{numbers};
+
+    my $sep = $bigsep;
+
+    foreach (@textlines) {
+       if (charwidth($_) >= $line_width -1 ) {
+          $sep = $smallsep;
+          last;
+       }
     }
+
+    my $lines = join( $EMPTY_STR, @textlines );
+    $lines =~ s/$SPACE/$sep/g;
+    $return{lines} = $lines;
+
+    #$return{lines} = join( $separator, @_ );
+
+    return (%return);
+
+} ## <perltidy> end sub prepary
+
+sub start {
+    return "<ASCII-MAC>$CR<Version:6><FeatureSet:InDesign-Roman>";
+}
+
+sub charwidth {
+   my $chars = shift;
+
+   my $letters = ( $chars =~ tr/A-Z// );
+
+   my $nonletters = length($chars) - $letters;
+   
+   return ( $letters * 1.34 + $nonletters);
+
+}
+
+ 
+
