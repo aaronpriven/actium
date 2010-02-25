@@ -5,7 +5,7 @@ use strict;
 
 use Exporter qw( import );
 our @EXPORT_OK
-  = qw(arrayhandles arrayhanldes_ro stringhandles numhandles boolhandles counterhandles hashhandles );
+  = qw(arrayhandles arrayhandles_ro stringhandles numhandles boolhandles counterhandles hashhandles );
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
 ### PRIVATE HELPER ROUTINES FOR ATTRIBUTE HANDLERS
@@ -88,7 +88,7 @@ sub _num {
 
 sub _hash {
     return ( _op_name(qw<get set delete keys exists 
-             defined values kv elements clear count is_empty ) );
+             defined values kv elements clear count is_empty > ) );
 
 # This is kind of the easy way out -- it makes sense for some things
 # (get_thing_of{other_thing}) but less so for other things
@@ -100,9 +100,11 @@ sub _hash {
 }
 
 sub _bool {
-    return ( _op_name(qw<set unset toggle not>) );
+    return ( _op_name(qw<toggle not>),
+             't_%' => 'set' ,
+             'f_%' => 'unset',
+     );
 }
-# do NOT use is => 'ro' or is => 'rw' on this one!
 
 sub _counter {
     return ( _op_name(qw<inc dec reset>) );
