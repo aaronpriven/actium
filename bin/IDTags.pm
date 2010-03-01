@@ -29,7 +29,7 @@ my $starttext = <<'EOF';
 <DefineParaStyle:pmtimes=<BasedOn:amtimes><Nextstyle:pmtimes><cTypeface:67 Bold Condensed>>
 <DefineParaStyle:sidenotes=<BasedOn:Normal><Nextstyle:sidenotes><pSpaceAfter:6.000000><pKeepParaTogether:1><pKeepLines:1><pHyphenationWeight:3>>
 <DefineParaStyle:bottomnotes=<BasedOn:Normal><Nextstyle:bottomnotes><cSize:9.000000><cLeading:10.000000>>
-<DefineCharStyle:Bold=<Nextstyle:Bold><cTypeface:67 Bold Condensed>>
+<DefineCharStyle:Bold=<Nextstyle:Bold><cTypeface:67 Bold Condensed>><DefineCharStyle:footnum=<Nextstyle:footnum>>
 EOF
 
 $starttext =~ s/\n/\r/g; #CRs rather than LFs for Mac programs
@@ -97,13 +97,13 @@ sub parastyle {
 }
 
 sub charstyle {
-
    my ($style, @text) = @_;
-
    my $text = join("", @text);
-
    return "<CharStyle:$style>$text";
+}
 
+sub nocharstyle {
+   return "<CharStyle:>";
 }
 
 sub dropcapchars {
@@ -118,7 +118,7 @@ sub thinspace {return '<0x2009>' }
 sub bullet { return '<0x2022>' }
 
 sub boxbreak {
-   return "<cNextXChars:Box>\r";
+   return "<cNextXChars:Box>\r<cNextXChars:>";
 }
 
 sub superscript {
@@ -130,7 +130,11 @@ sub nbsp {
 }
 
 sub endash {
-   return  '<0x2013>';
+   return '<0x2013>';
+}
+
+sub emdash {
+   return '<0x2014>';
 }
  
 sub softreturn {
@@ -168,7 +172,17 @@ sub discretionary_lf {
    return '<0x200B>';
 }
 
+sub combiside {
+   my $num = combichar ( +shift);
+   return charstyle ('sidenum' , $num) . nocharstyle;
+}
+
 sub combifootnote {
+   my $num = combichar ( +shift);
+   return charstyle ('footnum' , $num) . nocharstyle;
+}
+
+sub combichar {
 
    my $num = shift;
 
@@ -190,7 +204,7 @@ sub combifootnote {
        $num = join('', @chars);
    }
 
-   return charstyle ('footnum' , $num);
+   return $num;
    
 }
 
