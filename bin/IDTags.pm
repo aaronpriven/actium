@@ -12,6 +12,8 @@ use strict;
 #@ISA = ('Exporter');
 #@EXPORT_OK = qw(start);
 
+use Carp;
+
 sub start { 
 
 my $starttext = <<'EOF';
@@ -162,9 +164,34 @@ sub hairspace {
 }
 
 
-
 sub discretionary_lf {
    return '<0x200B>';
+}
+
+sub combifootnote {
+
+   my $num = shift;
+
+   if ( $num < 1 or $num > 99 or $num != int($num) ) { 
+        croak "invalid footnote '$num'" ;
+   }
+
+   if ($num < 20) {
+      $num = (qw(p q w e r t y u i o a s d f g h j k l ;))[$num];
+      # 1 through 19
+   }
+   else {
+       my @chars = split (// , $num);
+       no warnings qw(qw);
+       $chars[1] = (qw/ ) ! @ # $ % ^ & * ( /)[$chars[1]];
+       # The characters above are the right halves of two-digit numbers.
+       # 0-9 are, themselves, the left halves of two-digit numbers,
+       # so we don't need to modify those.
+       $num = join('', @chars);
+   }
+
+   return charstyle ('footnum' , $num);
+   
 }
 
 1;
