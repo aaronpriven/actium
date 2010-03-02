@@ -12,10 +12,10 @@ use Exporter;
 our @ISA = ('Exporter');
 our @EXPORT_OK = qw(time_to_timenum timenum_to_12h timenum_to_12h_ap_only);
 
-use Memoize;
-memoize ('time_to_timenum');
-memoize ('timenum_to_12h');
-memoize ('timenum_to_12h_ap_only');
+#use Memoize;
+#memoize ('time_to_timenum');
+#memoize ('timenum_to_12h');
+#memoize ('timenum_to_12h_ap_only');
 
 
 sub time_to_timenum {
@@ -25,7 +25,9 @@ sub time_to_timenum {
    my $time = shift;
    
 #   $time = '0000b' unless $time;
-   croak "Invalid time [[$time]]" 
+   confess "Time not defined" unless defined $time;
+
+   confess "Invalid time [[$time]]" 
       if not ($time =~ /^ [01]? [0-9] [0-5] [0-9] [apbx] $/x) ;
 
    my $ampm = chop $time;
