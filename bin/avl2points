@@ -1,0 +1,389 @@
+#!/usr/bin/perl
+
+# avl2points - see POD documentation below
+
+#00000000111111111122222222223333333333444444444455555555556666666666777777777
+#23456789012345678901234567890123456789012345678901234567890123456789012345678
+
+use warnings;
+use strict;
+
+use sort ('stable');
+
+# add the current program directory to list of files to include
+use FindBin('$Bin');
+use lib (
+    $Bin, "$Bin/../bin",
+);
+
+use Carp;
+use POSIX ('ceil');
+
+#use Fatal qw(open close);
+use Storable();
+
+use Actium::Timenum (qw(time_to_timenum timenum_to_12h timenum_to_12h_ap_only));
+use Actium(
+    qw[say sayt jn jt byroutes jtn initialize key avldata ensuredir option]);
+use Actium::Constants;
+use Actium::Union('ordered_union');
+use List::MoreUtils (qw<any all>);
+
+# don't buffer terminal output
+$| = 1;
+
+my $helptext = <<'EOF';
+avl2points reads the data written by readavl and turns it into 
+a list of times that buses pass each stop.
+It is saved in the directory "kpoints" in the directory for that signup.
+EOF
+
+my $intro = 'avl2points -- makes list of times that buses pass each stop';
+
+#my %daysort = (
+#    DA => 0,
+#    WD => 1,
+#    WE => 2,
+#    SA => 3,
+#    SU => 4,
+#    MZ => 100,
+#    TT => 120,
+#    TF => 121
+#);
+
+Actium::initialize( $helptext, $intro );
+
+# retrieve data
+
+my ( %stopinfo, %concatenated, %note_of);
+
+{    # more scoping
+
+    my $somedata_r;
+
+    {    # scoping
+
+        my $avldata_r = avldata();
+
+        foreach (qw<PAT TRP>) {
+            $somedata_r->{$_} = $avldata_r->{$_};
+        }
+
+    }
+
+    %stopinfo = makestoptimes($somedata_r);
+
+}
+
+# now each of $stopinfo{$stop}{$linegroup}{$dir_code}{$days}[0..n]
+# is a hashref, with the keys TIME , DESTINATION, and LINE
+
+print "Sorting times and merging days...\n";
+
+foreach my $stop ( keys %stopinfo ) {
+
+    foreach my $linegroup ( keys %{ $stopinfo{$stop} } ) {
+
+        my (%has_last_stop , %has_non_last_stop);
+
+        # sorting times within each day
+        foreach my $dir_code ( keys %{ $stopinfo{$stop}{$linegroup} } ) {
+
+            foreach
+              my $days ( keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
+            {
+
+                my @times_hr
+                  = @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} };
+
+                # sort @times_hr first by time, then by line, then by dest
+
+                @times_hr = sort {
+                    ( time_to_timenum( $a->{TIME} )
+                      <=> time_to_timenum( $b->{TIME} ) )
+                      or $a->{LINE} cmp $b->{LINE}
+                      or $a->{DESTINATION} cmp $b->{DESTINATION}
+                } @times_hr;
+
+                $stopinfo{$stop}{$linegroup}{$dir_code}{$days} = \@times_hr;
+
+                my @each_time_concat
+                  = map { join( ':', $_->{TIME}, $_->{LINE}, $_->{DESTINATION} ) }
+                  @times_hr;
+
+                $concatenated{$stop}{$linegroup}{$dir_code}{$days}
+                  = join( ':', @each_time_concat );
+
+            } ## <perltidy> end foreach my $days ( keys %{ ...})
+
+            # merging days goes here
+
+            if (    exists( $concatenated{$stop}{$linegroup}{$dir_code}{'6'} )
+                and exists( $concatenated{$stop}{$linegroup}{$dir_code}{'7'} )
+                and $concatenated{$stop}{$linegroup}{$dir_code}{'6'} eq
+                $concatenated{$stop}{$linegroup}{$dir_code}{'7'} )
+            {
+
+                $concatenated{$stop}{$linegroup}{$dir_code}{'67'}
+                  = $concatenated{$stop}{$linegroup}{$dir_code}{'6'};
+                $stopinfo{$stop}{$linegroup}{$dir_code}{'67'}
+                  = $stopinfo{$stop}{$linegroup}{$dir_code}{'6'};
+
+                delete $concatenated{$stop}{$linegroup}{$dir_code}{'6'};
+                delete $concatenated{$stop}{$linegroup}{$dir_code}{'7'};
+                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'6'};
+                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'7'};
+
+            }
+
+            if (    exists( $concatenated{$stop}{$linegroup}{$dir_code}{'67'} )
+                and exists( $concatenated{$stop}{$linegroup}{$dir_code}{'12345'} )
+                and $concatenated{$stop}{$linegroup}{$dir_code}{'67'} eq
+                $concatenated{$stop}{$linegroup}{$dir_code}{'12345'} )
+            {
+
+                $concatenated{$stop}{$linegroup}{$dir_code}{'1234567'}
+                  = $concatenated{$stop}{$linegroup}{$dir_code}{'12345'};
+                $stopinfo{$stop}{$linegroup}{$dir_code}{'1234567'}
+                  = $stopinfo{$stop}{$linegroup}{$dir_code}{'12345'};
+
+                delete $concatenated{$stop}{$linegroup}{$dir_code}{'67'};
+                delete $concatenated{$stop}{$linegroup}{$dir_code}{'12345'};
+                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'67'};
+                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'12345'};
+
+            }
+
+            # LAST STOP PROCESSING
+
+            foreach
+              my $days ( keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } ) 
+            { # loop - deal with final stops. Add notes
+
+                 my $times_r = $stopinfo{$stop}{$linegroup}{$dir_code}{$days}  ;
+
+                 if ( all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
+                    $has_last_stop{$linegroup} = 1;
+                    $note_of{"$stop:$linegroup:$dir_code:$days"} = "LASTSTOP"
+                 } else 
+                 {
+                    $has_non_last_stop{$linegroup} = 1;
+                    foreach my $i ( reverse 0 .. $#{$times_r} ) {
+                       if ($times_r->[$i]->{PLACE} eq $times_r->[$i]->{DESTINATION}) {
+
+                          #delete $times_r->[$i];
+                          # "I do not think that word means what you think it means."
+
+                          splice (@{$times_r} , $i, 1);
+                       }
+
+                    }
+                 }
+
+            }
+
+
+        } ## <perltidy> end foreach my $dir_code ( keys...)
+
+    if ( $has_non_last_stop{$linegroup} and $has_last_stop{$linegroup} ) {
+       # if there are both last-stop and non-last-stop columns for this linegroup,
+       # delete the last-stop columns
+
+       foreach my $dir_code ( keys %{ $stopinfo{$stop}{$linegroup} } ) {
+
+          foreach my $days ( keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } ) {
+
+              if ( $note_of{"$stop:$linegroup:$dir_code:$days"} and
+                  $note_of{"$stop:$linegroup:$dir_code:$days"} eq "LASTSTOP" ) {
+                  delete $stopinfo{$stop}{$linegroup}{$dir_code}{$days};
+                  delete $note_of{"$stop:$linegroup:$dir_code:$days"} ;
+              }
+
+          }
+
+       }
+
+    }
+
+
+    } ## <perltidy> end foreach my $linegroup ( keys...)
+
+
+} ## <perltidy> end foreach my $stop ( keys %stopinfo)
+
+print "Reassembled. Now outputting...\n";
+
+ensuredir('kpoints');
+
+my $count = 0;
+
+foreach my $stop ( keys %stopinfo ) {
+
+    $count++;
+    print '.' unless $count % 100;
+
+    my $citycode = substr( $stop, 0, 2 );
+
+    ensuredir("kpoints/$citycode");
+
+    open my $out, '>', "kpoints/$citycode/$stop.txt" or die $!;
+
+    foreach my $linegroup ( sort byroutes keys %{ $stopinfo{$stop} } ) {
+
+        foreach my $dir_code (
+            sort { $a <=> $b }
+            keys %{ $stopinfo{$stop}{$linegroup} }
+          )
+        {
+
+            foreach my $days (
+                sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} }
+              )
+            {
+
+                print $out "$linegroup\t$dir_code\t$days";
+                
+                my $note = $note_of{"$stop:$linegroup:$dir_code:$days"};
+                if ($note)  {
+                    print $out "\t#$note\t";
+                    my (%lines, %destinations);
+                    foreach my $time_r (
+                        @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} } )
+                    {
+                     $lines{$time_r->{LINE}}++;
+                     $destinations{$time_r->{DESTINATION}}++;
+                    }
+
+                    print $out join (":" , sort byroutes keys %lines);
+                    print $out "\t" , join (":" , 
+                       sort { $destinations{$b} <=> $destinations{$a} } keys %destinations);
+
+                } 
+                else {
+                foreach my $time_r (
+                    @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} } )
+                {
+
+                    #print "$stop:$linegroup:$dir_code:$days\n";
+                    print $out "\t", join(
+                        ':',
+                        $time_r->{TIME},        $time_r->{LINE},
+                        $time_r->{DESTINATION}, $time_r->{PLACE},
+                        $time_r->{DAYEXCEPTIONS}
+                    );
+
+                }
+ 
+                }
+                print $out "\n";
+
+            } ## <perltidy> end foreach my $days ( sort { $daysort...})
+
+        } ## <perltidy> end foreach my $dir_code ( sort...)
+
+    } ## <perltidy> end foreach my $linegroup ( sort...)
+
+    close $out or die $!;
+
+} ## <perltidy> end foreach my $stop ( keys %stopinfo)
+
+print "\nDone.\n";
+
+sub makestoptimes {
+    my %avldata = %{ +shift };
+
+    my %stopinfo;
+
+  TRIP:
+    while ( my ( $trip_number, $trip_of_r ) = each %{ $avldata{TRP} } ) {
+        my %tripinfo_of = %{$trip_of_r};
+        next TRIP unless $tripinfo_of{IsPublic};
+
+        my $line = $tripinfo_of{RouteForStatistics};
+        next TRIP if $line eq '399';    # supervisor order
+
+        #$line = '1' if $line eq '1Lx';
+        #$line = '51' if $line eq '51S';
+
+        my $linegroup = linegroup($line);
+
+        my $pattern = $tripinfo_of{Pattern};
+        my $patkey = key( $line, $pattern );
+
+        my $days = $tripinfo_of{OperatingDays} ;
+        $days =~ tr/0-9//cd; # strip everything but digits
+
+        #my $hdays = $tripinfo_of{OperatingDays} ;
+        #my $days = $DAY_OF{ $hdays };
+        #warn "unrecognized days $hdays in line $line" unless $daysort{$days};
+        my $dir_code = $avldata{PAT}{$patkey}{DirectionValue};
+
+        my @tps         = @{ $avldata{PAT}{$patkey}{TPS} };
+        #my $final_tps   = $tps[-1];
+        my $final_tps   = pop @tps;
+        my $final_place = remove_place_suffixes($final_tps->{Place});
+
+      TIMEIDX:
+        #foreach my $timeidx ( 0 .. $#{ $tripinfo_of{PTS} } - 1 ) {
+        # from first to penultimate stop
+        # Commented out to add last stop back
+
+        foreach my $timeidx ( 0 .. $#{ $tripinfo_of{PTS} }  ) {
+            my $stop = $avldata{PAT}{$patkey}{TPS}[$timeidx]{StopIdentifier};
+
+            next TIMEIDX if $stop =~ /^D/i;
+
+            my $place = $avldata{PAT}{$patkey}{TPS}[$timeidx]{Place};
+            $place = remove_place_suffixes($place);
+
+            my $time = $tripinfo_of{PTS}[$timeidx];
+            $time =~ s/^0//;
+
+            push @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} }, {
+                TIME          => $time,
+                DESTINATION   => $final_place,
+                LINE          => $line,
+                PLACE         => $place,
+                DAYEXCEPTIONS => '',             # TODO add later
+            };
+
+        }
+
+    } ## <perltidy> end while ( my ( $trip_number...))
+
+    return %stopinfo;
+
+} ## <perltidy> end sub makestoptimes
+
+sub linegroup {
+    return wantarray ? @_ : $_[0];
+
+    # at the moment, simply returns its arguments.
+    # At some point we will want to change this,
+    # to allow for joining lines into linegroups.
+    # But not today.
+
+}
+
+sub remove_place_suffixes {
+   my $place = shift;
+   $place =~ s/-[AD12]$//;
+   return $place;
+}
+
+=head1 NAME
+
+avl2points - makes list of times that buses pass each stop';
+
+=head1 DESCRIPTION
+
+avl2points reads the data written by readavl and turns it into 
+a list of times that buses pass each stop.
+It is saved in the directory "kpoints" in the directory for that signup.
+
+=head1 AUTHOR
+
+Aaron Priven
+
+=cut
+
