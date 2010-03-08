@@ -208,7 +208,7 @@ sub build_point {
 
    {
    my $noteonly = lc(substr ($point->{NoteOnly} , 0 , 1) );
-   $noteonly = "" unless $noteonly =~ /^l|n|s|r|a|b$/;
+   $noteonly = "" unless $noteonly =~ /^l|n|s|r|a|b|c$/;
    $point->{NO} = $noteonly;
    }
    # so point->{NO} is a flag, if this is note only. $point->{NoteOnly} is
@@ -834,6 +834,7 @@ sub output_points {
  
             $pointtext .= "See\rNote $thismark";
 
+=pod
          } elsif ($noteonly eq 'a' or $noteonly eq 'b') {
 
             if ($usedmarks{"Noteonly:a"}) {
@@ -848,26 +849,32 @@ sub output_points {
 
             $pointtext .= "See\rNote $thismark";
  
-=pod
+=cut
          } elsif ($noteonly eq "a" ) {
-         # Rapid note
+         # 1R7day note
 
-            $pointtext .= 'Buses arrive about every 10 minutes Ñ' .
+            $pointtext .= 'Buses arrive about every 12 minutes weekdays, 15 minutes weekends Ñ' .
                       IDTags::softreturn . 
                       'See information elsewhere on this sign.';
             # that is an emdash - it should carry through. It's
             # potentially a crossplatform issue though.
 
          } elsif ($noteonly eq "b" ) {
-         # Rapid note
+         # 1R5day note
 
-            $pointtext .= 'Buses arrive about every 15 minutes Ñ' .
+            $pointtext .= 'Buses arrive about every 12 minutes Ñ' .
                       IDTags::softreturn . 
                       'See information elsewhere on this sign.';
             # that is an emdash - it should carry through. It's
             # potentially a crossplatform issue though.
 
-=cut
+         } elsif ($noteonly eq "c" ) {
+         # 1R5&7 note
+
+            $pointtext .= 'Buses arrive about every 12 minutes weekdays, and 15 minutes weekends. (Weekend service to downtown Oakland only.) ' .
+                      IDTags::softreturn . 
+                      'See information elsewhere on this sign.';
+
 
          } elsif ($noteonly eq "r" ) {
          # Rapid note
