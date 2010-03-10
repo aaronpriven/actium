@@ -47,25 +47,53 @@ print STDERR scalar(@stops) , " stops.\n";
 
 # fields - stop_id_1,STOPROUTES,UNSHOWNROU,ERRSHOWNRO,POLENUM,SHELTR,TIMEPOINT,SignID,MyNeighborhood,MyPoleType,MyDescription,CityF,OnF,AtF,StNumF,CommentF,CornerF,SiteF,DirectionF,NotesForR_P
 
-my %hash = ();
+my %lines_of;
+my %cities_of;
 
 foreach my $stop (@stops) {
 
-   my @routes = split(/\./ , $stop->{STOPROUTES});
+   next if $stop->{In_last_update} =~ /no/i;
+
+   my @routes = split(' ' , $stop->{ud_stp_FlagRoute});
    foreach (@routes) {
 
       next if /NULL/;
       my $city = $stop->{CityF};
       $city =~ s/^\s+//;
       $city =~ s/\s+$//;
-      $hash{$city}{$_}++;
+      $lines_of{$city}{$_}++;
+      $cities_of{$_}{$city}++;
    }
 }
 
-foreach my $city (sort keys %hash) {
+my @cities = sort keys %lines_of;
 
-   print "$city: ";
-   print join ( ", " , sort byroutes keys (%{$hash{$city}} ) );
+my @lines = sort byroutes keys %cities_of;
+
+#foreach my $city (@cities) {
+
+#   print "$city: ";
+#   print join ( ", " , sort byroutes keys (%{$lines_of{$city}} ) );
+#   print "\n";
+#
+#}
+
+# build matrix
+
+foreach my $line (@lines) {
+   print "\t$line";
+}
+print "\n";
+
+foreach my $city (@cities) {
+   print "$city:";
+   foreach my $line (@lines) {
+      my $x = $lines_of{$city}{$line} ? 'X' : '';
+      print "\t$x";
+   }
+
    print "\n";
 
 }
+
+
