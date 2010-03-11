@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+
+use List::MoreUtils(qw<all none>);
+
+open my $in , '<' , '/Volumes/Bireme/Actium/db/sp10/stoplines.txt' 
+   or die $!;
+
+my %nb;
+
+$nb{$_} = 1 foreach qw< Z W V U SB S P OX O NX4 NX3 NX2 NX1 NX NL M LA L
+                        J H G FS F E DB3 DB1 DB CB C B BA DA
+                        25 49 39 31 20 21 52 73 31 26 88 72R 72M 72 7 67 655 
+                        65 648 645 62 614 605 604 54 47 40 1R 18 15 14 12 1
+                        20 21 25 26 31 39 49 52 51A 51B 73>;
+
+my %status;
+
+while (<$in>) {
+
+   my ($stop, $lines, @others) = split (/\t/);
+
+   my @lines = split (' ' , $lines);
+   my $count = scalar (@lines);
+
+   if ( all { $nb{$_} } @lines ) { 
+      $status{all}{$count}++;
+      $status{someall}{$count}++;
+   }
+   elsif (none { $nb{$_} } @lines) { 
+      $status{none}{$count}++;
+   } 
+   else { 
+      $status{some}{$count}++;
+      $status{someall}{$count}++;
+   }
+
+}
+
+foreach (qw<some all none someall >) {
+
+      print ucfirst("$_:\n");
+
+      my @counts = sort { $a <=> $b } keys %{$status{$_}};
+
+      foreach my $count (@counts) {
+
+         print "  $count: $status{$_}{$count}\n";
+
+      }
+
+}
+
+
