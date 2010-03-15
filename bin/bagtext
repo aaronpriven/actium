@@ -54,7 +54,7 @@ my ( @stops, %stops );
 FPread_simple( 'Stops.csv', \@stops, \%stops, 'stop_id_1' );
 
 my %compare;
-open my $comp, '<', 'comparestops-x.txt';
+open my $comp, '<', '89list.txt';
 while (<$comp>) {
     chomp;
     my ($type,       $stopid,  $desc,         $numadded, $added,
@@ -82,6 +82,7 @@ my $stopcount = 0;
 my $filecount = 0;
 
 ensuredir('bagtexts');
+ensuredir('bagtexts/new');
 
 my ( %texts_of, %texts_of_type );
 
@@ -95,7 +96,7 @@ $decalroutes{$_} = 1 foreach qw(
 
 my $date = 'March' . IDTags::nbsp() . '28';
 
-foreach my $file (qw(baglist.txt baglist-add.txt baglist-rm.txt)) {
+foreach my $file (qw(baglist89.txt )) {
 
     open my $baglist, '<', $file;
 
@@ -154,14 +155,7 @@ foreach my $file (qw(baglist.txt baglist-add.txt baglist-rm.txt)) {
 
             $length += $height_of{margin};
 
-            my $outtype = $type;
-
-            if ( $type eq 'AL' or $type eq 'RL' or $type eq 'CL' ) {
-                $outtype = 'C';
-                my $route = substr($routedir,0,index($routedir,'-'));
-                $outtype = 'CD' if $decalroutes{$route};
-
-            }
+            my $outtype = "89";
 
             # IGNORE HEIGHTS FOR PRINTING ON BAGS
             $length = 36;
@@ -183,22 +177,7 @@ foreach my $file (qw(baglist.txt baglist-add.txt baglist-rm.txt)) {
 
 } ## <perltidy> end foreach my $file (...)
 
-open my $sample, '>', 'bagtexts/sample.txt' or die $!;
-print $sample start();
-
-for my $type (qw(AL RL CL AS RS)) {
-
-    my %seen;
-
-    for ( 0 .. 15 ) {
-        my $random = rand( $#{ $texts_of_type{$type} } );
-        redo if $seen{$random};
-        $seen{$random} = 1;
-        print $sample $texts_of_type{$type}[$random], IDTags::boxbreak;
-
-    }
-
-}
+my $number_in_a_group = 275;
 
 while ( my ( $outtype, $lengths_of_r ) = each %texts_of ) {
 
@@ -217,16 +196,19 @@ while ( my ( $outtype, $lengths_of_r ) = each %texts_of ) {
 
         my $fname = "$outtype-$length";
 
-        if ( $texts_count > 550 ) {
+        if ( $texts_count > $number_in_a_group ) {
 
             my $suffix = 'a';
 
-            my $it = natatime 550, @$texts_r;
+            my $it = natatime $number_in_a_group, @$texts_r;
             while ( my @texts = $it->() ) {
 
-                open my $bagtext, '>', "bagtexts/$fname-$suffix.txt" or die $!;
+                open my $bagtext, '>', "bagtexts/new/$fname-$suffix.txt" or die $!;
                 print $bagtext start();
-                print $bagtext join( IDTags::boxbreak, @texts );
+                foreach (@texts) {
+                    print $bagtext $_ , IDTags::boxbreak ;
+		}
+                #print $bagtext join( IDTags::boxbreak, @texts );
                 close $bagtext;
 
                 $suffix++;    # alphabetic auto-increment
@@ -236,10 +218,13 @@ while ( my ( $outtype, $lengths_of_r ) = each %texts_of ) {
         }
         else {
 
-            open my $bagtext, '>', "bagtexts/$fname.txt" or die $!;
+            open my $bagtext, '>', "bagtexts/new/$fname.txt" or die $!;
 
             print $bagtext start();
-            print $bagtext join( IDTags::boxbreak, @{$texts_r} );
+            #print $bagtext join( IDTags::boxbreak, @{$texts_r} );
+            foreach (@{$texts_r}) {
+                print $bagtext $_ , IDTags::boxbreak ;
+            }
 
             close $bagtext;
         }
@@ -248,7 +233,7 @@ while ( my ( $outtype, $lengths_of_r ) = each %texts_of ) {
 
 } ## <perltidy> end while ( my ( $outtype, $lengths_of_r...))
 
-close $sample;
+#close $sample;
 
 # end of main
 
@@ -340,7 +325,7 @@ sub rs_output {
 
     my $r
       = current(%current)
-      . para( 'Removed', 'Effective $date, this bus stop will be removed.' )
+      . para( 'Removed', "Effective $date, this bus stop will be removed." )
       . $CR;
 
     return $r, $length;
