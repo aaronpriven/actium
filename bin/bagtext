@@ -54,7 +54,7 @@ my ( @stops, %stops );
 FPread_simple( 'Stops.csv', \@stops, \%stops, 'stop_id_1' );
 
 my %compare;
-open my $comp, '<', '89list.txt';
+open my $comp, '<', 'tclist.txt' or die $!;
 while (<$comp>) {
     chomp;
     my ($type,       $stopid,  $desc,         $numadded, $added,
@@ -69,6 +69,7 @@ while (<$comp>) {
 }
 
 close $comp;
+
 
 my %output_dispatch = (
     AL => \&al_output,
@@ -90,15 +91,15 @@ my %seen_length;
 
 my %decalroutes;
 
-$decalroutes{$_} = 1 foreach qw(
-  210 211 212 213 214 215 216 217 218 235 305 328 329 332 360 77 81 M SB
-);
+#$decalroutes{$_} = 1 foreach qw(
+#  210 211 212 213 214 215 216 217 218 235 305 328 329 332 360 77 81 M SB
+#);
 
 my $date = 'March' . IDTags::nbsp() . '28';
 
-foreach my $file (qw(baglist89.txt )) {
+foreach my $file (qw(baglisttc.txt )) {
 
-    open my $baglist, '<', $file;
+    open my $baglist, '<', $file or die $!;
 
     while (<$baglist>) {
 
@@ -155,7 +156,7 @@ foreach my $file (qw(baglist89.txt )) {
 
             $length += $height_of{margin};
 
-            my $outtype = "89";
+            my $outtype = "tc";
 
             # IGNORE HEIGHTS FOR PRINTING ON BAGS
             $length = 36;
@@ -203,6 +204,7 @@ while ( my ( $outtype, $lengths_of_r ) = each %texts_of ) {
             my $it = natatime $number_in_a_group, @$texts_r;
             while ( my @texts = $it->() ) {
 
+                print "bagtexts/new/$fname-$suffix.txt\n";
                 open my $bagtext, '>', "bagtexts/new/$fname-$suffix.txt" or die $!;
                 print $bagtext start();
                 foreach (@texts) {
@@ -218,6 +220,7 @@ while ( my ( $outtype, $lengths_of_r ) = each %texts_of ) {
         }
         else {
 
+            print "bagtexts/new/$fname.txt\n";
             open my $bagtext, '>', "bagtexts/new/$fname.txt" or die $!;
 
             print $bagtext start();
