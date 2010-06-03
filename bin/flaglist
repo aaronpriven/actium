@@ -6,12 +6,16 @@ use warnings;
 
 use autodie;
 
+use List::MoreUtils ('uniq');
+
 open IN , '<' , "/Volumes/Bireme/Actium/db/sp10/phoneids.txt";
 
 my %phoneid;
 my %desc;
 my %lines;
 my %numlines;
+my %numlinesdirs;
+my %numlinescdirs;
 
 while (<IN>) {
 
@@ -37,18 +41,22 @@ while (<IN>) {
    my $stopid = shift @items;
 
    my $lines = shift @items;
-
+ 
    next if $lines =~ /1R/;
    next if $lines =~ /72R/;
 
-   $lines{$stopid} = shift @items;
+   $lines{$stopid} = $lines;
+
    $numlines{$stopid} = shift @items;
+   $numlinesdirs{$stopid} = shift @items;
+   $numlinescdirs{$stopid} = shift @items;
 }
 
 close IN;
 
 #my @list = reverse sort { $numlines{$a} <=> $numlines{$b} or 
 #               $a cmp $b } keys %lines;
+
 
 my @list = sort keys %lines;
 
@@ -60,18 +68,29 @@ my %is_smallcity;
 $is_smallcity{$_} = 1 foreach qw(04 12 18 19 21 23 24 25 26 97);
 
 foreach (@list) {
+
+   $lines{$_} =~ s/-[NSEW]B//g;
+   $lines{$_} =~ s/-/_/g;
+
+   my @uniqlines = (split (' ' , $lines{$_}));
+   @uniqlines = uniq @uniqlines;
+   $lines{$_} = "@uniqlines";
+
    my $city = substr($_,0,2);
    my $file;
 
    given ($_) {
-       when  ($numlines{$_} > 10) { 
+       when  ($numlinescdirs{$_} > 10) { 
            $file = 'oversize';
        }
-       when ($numlines{$_} > 5 ) {
+       when ($numlinescdirs{$_} > 5 ) {
            $file = 'big';
        }
-       when ($numlines{$_} > 3 ) {
-           $file = 'medium';
+       when ($numlinescdirs{$_} == 5 ) {
+           $file = 'medium-five';
+       }
+       when ($numlinescdirs{$_} == 4 ) {
+           $file = 'medium-four';
        }
        when ( not (not ($is_smallcity{$city})) ) {
            # the double "not" forces the value to be a boolean, so it
