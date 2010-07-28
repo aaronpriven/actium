@@ -1,5 +1,4 @@
 # Skedvars.pm
-# vimcolor: #DDFFDD
 
 # This contains various literal data used in the Skeds programs.
 # This just has the data which you call directly 
@@ -16,6 +15,7 @@ use Exporter;
 @EXPORT_OK = qw(%longerdaynames %longdaynames %longdirnames
                 %dayhash        %dirhash      %daydirhash
                 %adjectivedaynames %bound %specdaynames
+                %shortdaynames
                );
 
    our %specdaynames =
@@ -24,6 +24,7 @@ use Exporter;
           "TT" => "Tuesdays and Thursdays only" ,
           "TF" => "Tuesdays and Fridays only" ,
           "WF" => "Wednesdays and Fridays only" ,
+	  "MZ" => "Mondays, Wednesdays, and Fridays only" ,
         );
 
    our %bound = 
@@ -46,7 +47,7 @@ use Exporter;
    our %longerdaynames = 
         ( WD => "Monday through Friday" ,
           WE => "Sat., Sun. and Holidays" ,
-          DA => "Daily" ,
+          DA => "Every day" ,
           SA => "Saturdays" ,
           SU => "Sundays and Holidays" ,
         );
@@ -54,10 +55,19 @@ use Exporter;
    our %longdaynames = 
         ( WD => "Mon thru Fri" ,
           WE => "Sat, Sun and Holidays" ,
-          DA => "Daily" ,
+          DA => "Every day" ,
           SA => "Saturdays" ,
           SU => "Sundays and Holidays" ,
         );
+
+   our %shortdaynames = 
+        ( WD => "Mon thru Fri" ,
+          WE => "Sat, Sun, Hol" ,
+          DA => "Every day" ,
+          SA => "Saturdays" ,
+          SU => "Sun & Hol" ,
+        );
+
 
    our %longdirnames = 
         ( E => "east" ,
