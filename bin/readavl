@@ -1,6 +1,6 @@
-#!/usr/bin/perl
+#!/ActivePerl/bin/perl
 
-@ARGV = qw(-s sp07) if $ENV{RUNNING_UNDER_AFFRUS};
+@ARGV = qw(-s f08) if $ENV{RUNNING_UNDER_AFFRUS};
 
 # readavl - see POD documentation below
 
@@ -10,44 +10,41 @@
 use warnings;
 use strict;
 use Carp;
-use Fatal qw (open close);
+#use Fatal qw (open close);
 
 # add the current program directory to list of files to include
 use FindBin('$Bin');
 use lib $Bin;
-use lib '/Volumes/Bireme/ACTium/bin';
 
 use Actium::Constants;
-use Actium::Say('say' , 'sayt');
+use Actium ( qw[say sayq sayt add_option option]);
 
 use Text::Trim;
 use Storable();
-use Myopts;
-use Skeddir;
 
 # set some constants
 use Readonly;
 Readonly my $NO_PARENT => q{top};
 Readonly my $DELIMITER => q{,};
-my $DELIMITER_LENGTH;
-{use bytes; Readonly $DELIMITER_LENGTH => length($DELIMITER) };
-# the "use bytes" is going to come in really handy when Hastus outputs
-# utf-8 delimiters. ha.
+Readonly my $DELIMITER_LENGTH => length($DELIMITER);
 
 # don't buffer terminal output
 $| = 1;
 
-# command line options in %options;
-my %options;
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
+add_option('skipsd!' , 'Skip processing school day additions in sdtrip.txt.');
 
-# change to skedsdir base directory (e.g., Actium/db/f07)
-my $signup = (Skeddir::change (\%options))[2];
+my $helptext = <<'EOF';
+readavl reads the files transmitted in the Hastus AVL Standard Interface format,
+as described in the Hastus 2006 documentation, and collects it in a structure
+readable in perl. See "perldoc readavl" for more information.
+EOF
 
-if (not $options{quiet}) {
-   print 'readavl - reads AVL files from Hastus and stores them in an easier-'
-         , "\nto-read-form.\n\n";
-}
+my $intro = <<'EOF';
+readavl - reads AVL files from Hastus and stores them in an easier-
+to-read-form.
+EOF
+
+Actium::initialize ( $helptext, $intro);
 
 # set up row type hashes
 
@@ -71,27 +68,27 @@ my @files = glob ('avl/*');
 # read rows
 read_files(@files);
 
-open my $fh , ">internalnumbers.txt";
-for my $internalnumber (keys %{$data_of{TRP}}) {
-   print $fh $internalnumber , "\n";
-}
-close $fh;
+#open my $fh , ">internalnumbers.txt";
+#for my $internalnumber (keys %{$data_of{TRP}}) {
+#   print $fh $internalnumber , "\n";
+#}
+#close $fh;
 
-read_sd();
+read_sd() unless option('skipsd');
 
-print "----\nStoring avl.storable..." unless $options{quiet};
+sayq ("----\nStoring avl.storable...");
 
 Storable::nstore \%data_of, 'avl.storable' 
    or die "Can't store avl.storable: $!";
 
-print "\nStored.\n" unless $options{quiet};
+sayq ("\nStored.") ;
 
 ############# end of main program #######################
 
-
+#
 #sub read_sd {
 #
-#   open my $fh, '<' , 'sdtrip.txt';
+#   open my $fh, '<' , 'SD.txt';
 #
 #   local ($/) = "\r\n";
 #   
@@ -101,14 +98,12 @@ print "\nStored.\n" unless $options{quiet};
 #      
 #      my @fields = split (/,/ , $line);
 #      trim(@fields);
-#      my ($type,$runnum, $blocknum,$blocknum_sd,$line,$internal_trip_no,$startplace,$starttime,$endtime,$endplace)
+#      my ($type,$blocknum,$sd,$line,$tripno,$internal_trip_no,$startplace,$starttime,$endtime,$endplace)
 #         = @fields;
 #         
 #      next TRIP unless exists($data_of{TRP}{$internal_trip_no});
 #      
-#      my $sd = (substr($blocknum_sd,-2,2) eq 'SD') ? 'SD' : $EMPTY_STR;
-#      
-#      $data_of{TRP}{$internal_trip_no}{SpecDays} = $sd;
+#      $data_of{TRP}{$internal_trip_no}{SpecDays} = $sd || $EMPTY_STR;
 #   
 #   }
 #   
@@ -116,20 +111,40 @@ print "\nStored.\n" unless $options{quiet};
 #
 #}
 
+
 sub read_sd {
-# not really reading sd -- just going by routes. So trippers are ignored.
 
-   foreach my $internal_trip_no (keys %{$data_of{TRP}}) {
-
-      my $route = $data_of{TRP}{$internal_trip_no}{RouteForStatistics};
-
-      if ($route =~ /6\d\d/ or $route eq '51S') {
-         $data_of{TRP}{$internal_trip_no}{SpecDays} = "SD";
-      }
-   
+   my $fh;
+   unless (open $fh, '<' , 'sdtrip.txt') {
+       warn "Can't open 'sdtrip.txt': $!. Skipping school day additions.\n";
+       return;
    }
 
+   local ($/) = "\r\n";
+   
+   TRIP:
+   while (my $line = <$fh>) {
+      chomp $line;
+      
+      my @fields = split (/,/ , $line);
+      trim(@fields);
+      my ($type,$runnum, $blocknum,$blocknum_sd,$line,$internal_trip_no
+         ,$startplace,$starttime,$endtime,$endplace)
+         = @fields;
+         
+      next TRIP unless exists($data_of{TRP}{$internal_trip_no});
+      
+      my $sd = (substr($blocknum_sd,-2,2) eq 'SD') ? 'SD' : $EMPTY_STR;
+      
+      $data_of{TRP}{$internal_trip_no}{SpecDays} = $sd;
+   
+   }
+   
+   close $fh;
+
 }
+
+
 
 sub read_files {
 
@@ -147,7 +162,7 @@ sub read_files {
 	   chomp;
 
       # DEBUG - print filenames
-	   if (! $options{quiet} and $prevfile ne $ARGV) {
+	   if (! option('quiet') and $prevfile ne $ARGV) {
 	      print "$ARGV\n" ;
    	   $prevfile = $ARGV;
 	   }
@@ -158,6 +173,8 @@ sub read_files {
       
 	   next ROW if (not $is_used{$row_type});
       
+
+      #print $template_of{$row_type} , "\n";
       my @fields = unpack ($template_of{$row_type}, $_);
       trim(@fields);
       my @field_names = @{$field_names_of{$row_type}};
@@ -395,7 +412,7 @@ __DATA__
 
  3 STP
  y top
- 8 Identifier!
+ 5 Identifier!
 50 Description 
  6 Place
 10 XCoordinate
@@ -462,14 +479,14 @@ __DATA__
 
  3 TPS
  y PAT
- 8 StopIdentifier
+ 5 StopIdentifier
  6 Place
  8 VehicleDisplay
  1 IsATimingPoint
  1 IsRoutingPoint
 
  3 VDC
- n top
+ y top
  8 Identifier!
  8 AlternateCode
 40 Message1
