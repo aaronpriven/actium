@@ -18,7 +18,7 @@ use Carp;
 #use Fatal qw(open close);
 use Storable();
 
-use Actium( qw[add_option initialize avldata sayq chdir_signup option]);
+use Actium( qw[add_option initialize avldata sayq chdir_signup option byroutes]);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils('uniq');
@@ -42,17 +42,17 @@ add_option('oldsignup=s'
 
 Actium::initialize ($helptext, $intro);
 
-my %newstoplists = assemble_stoplists();
+my %newstoplists = assemble_stoplists(qw(BSH 51S));
 
-open my $out, '>' ,  'comparestops-dir.txt';
+open my $out, '>' ,  'comparestops-x.txt';
 # done here so as to make sure the file is saved in the *new*
 # signup directory
 
-print $out "StopID\tStop Description\tAdded\tRemoved\tUnchanged\n";
+print $out "Change\tStopID\tStop Description\tNumAdded\tAdded\tNumRemoved\tRemoved\tNumUnchanged\tUnchanged\n";
 
 chdir_signup ('oldsignup', 'ACTIUM_OLDSIGNUP' , 'old signup');
 
-my %oldstoplists = assemble_stoplists();
+my %oldstoplists = assemble_stoplists(qw(BSH LC NC));
 
 my @stopids = uniq ( sort (keys %newstoplists, keys %oldstoplists) );
 
@@ -119,25 +119,23 @@ foreach my $stopid (@stopids) {
 }# STOPID
 
 
-print $out "Added stops: " , scalar @{$changes{ADDEDSTOPS}} , "\n";
-
 foreach my $added_stopid  (sort @{$changes{ADDEDSTOPS}}) {
-   print $out $added_stopid , "\t" , $newstoplists{$added_stopid}{Description} , "\t"
-         , join (',' , sort keys %{$newstoplists{$added_stopid}{Routes}}) , "\n";
+   my @list = sort byroutes keys %{$newstoplists{$added_stopid}{Routes}};
+   print $out "AS\t" , $added_stopid , "\t" , $newstoplists{$added_stopid}{Description} , "\t"
+         , scalar @list , "\t" , join (',' , @list ) , "\n";
 }
-
-print $out "\nRemoved stops: " , scalar @{$changes{DELETEDSTOPS}} , "\n";
 
 foreach my $deleted_stopid  ( sort @{$changes{DELETEDSTOPS}}) {
-   print $out $deleted_stopid , "\t" , $oldstoplists{$deleted_stopid}{Description} , "\t\t"
-         , join (',' , sort keys %{$oldstoplists{$deleted_stopid}{Routes}}) , "\n";
+   my @list = sort byroutes keys %{$oldstoplists{$deleted_stopid}{Routes}};
+   print $out "RS\t" , $deleted_stopid , "\t" , $oldstoplists{$deleted_stopid}{Description} , "\t\t\t"
+         , scalar @list , "\t" , join (',' , @list ) , "\n";
 }
 
-output_stops ('Stops with added lines' , $out, 'ADDLINES');
+output_stops ('AL' , $out, 'ADDLINES');
 
-output_stops ('Stops with removed lines' , $out, 'REMOVEDLINES');
+output_stops ('RL' , $out, 'REMOVEDLINES');
 
-output_stops ('Stops with changed lines' , $out, 'CHANGEDSTOPS');
+output_stops ('CL' , $out, 'CHANGEDSTOPS');
 
 sayq "Completed comparison.";
 
@@ -148,35 +146,33 @@ sub output_stops {
    
    my %thesestops = %{$changes{$type}};
    
-   print $fh "\n$desc: " , scalar keys %thesestops , "\n";
-   
    foreach my $stopid  ( sort keys %thesestops) {
 
-      print $fh $stopid , "\t" , $oldstoplists{$stopid}{Description};
+      print $fh "$desc\t" , $stopid , "\t" , $oldstoplists{$stopid}{Description};
 
       if (exists $changes{$type}{$stopid}{ADDED} ) {
-         my @added = sort @{$changes{$type}{$stopid}{ADDED}};
-         print $fh "\t", join (',' , @added);
+         my @added = sort byroutes @{$changes{$type}{$stopid}{ADDED}};
+         print $fh "\t" , scalar @added , "\t", join (',' , @added);
       } 
       else {
-         print $fh "\t";
+         print $fh "\t\t";
       }
 
       if (exists $changes{$type}{$stopid}{REMOVED}) {
-         my @removed = sort @{$changes{$type}{$stopid}{REMOVED}};
-         print $fh "\t" , join (',' , @removed);
+         my @removed = sort byroutes @{$changes{$type}{$stopid}{REMOVED}};
+         print $fh "\t" , scalar @removed , "\t" , join (',' , @removed);
       }
       else {
-         print $fh "\t";
+         print $fh "\t\t";
       }
    
       if (exists $changes{$type}{$stopid}{UNCHANGED} ) {
-         my @unchanged = sort @{$changes{$type}{$stopid}{UNCHANGED}};
-         print $fh "\t" , join (',' , @unchanged);
+         my @unchanged = sort byroutes @{$changes{$type}{$stopid}{UNCHANGED}};
+         print $fh "\t" , scalar @unchanged , "\t" , join (',' , @unchanged);
       }
-      else {
-         print $fh "\t";
-      }
+#      else {
+#         print $fh "\t\t";
+#      }
 
       print $fh "\n";   
    
@@ -192,6 +188,9 @@ sub output_stops {
 sub assemble_stoplists {
 
    my %stoplist = ();
+
+        my %skipped;
+        $skipped{$_} = 1 foreach @_;
    
 	my (%pat, %stp);
 
@@ -217,14 +216,15 @@ sub assemble_stoplists {
 
 	   my $route = $pat{$key}{Route};
 	   
-	   next if $route eq 'NC' or $route eq 'LC' or $route eq '678' or $route eq '51S';
+	   #next if $route eq 'BSH' or $route eq '51S' or $route eq 'NC';
+           next if $skipped{$route};
 
 	   foreach my $tps_r ( @{$pat{$key}{TPS}}) {
 	       my $stopid = $tps_r->{StopIdentifier};
 	       next if $stopid =~ /^D/i;
 	       
-	       $stoplist{$stopid}{Routes}{"$route-$dir"} = 1;
-	       #$stoplist{$stopid}{Routes}{$route} = 1;
+	       #$stoplist{$stopid}{Routes}{"$route-$dir"} = 1;
+	       $stoplist{$stopid}{Routes}{$route} = 1;
 	       $stoplist{$stopid}{Description} = $stp{$stopid}{Description};
 	       
 	   }
