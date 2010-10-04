@@ -39,18 +39,24 @@ Actium::initialize ($helptext, $intro);
 my %stops_of = %{ Storable::retrieve('oldline.storable') } or die $!;
 
 # delete bad lines like NC and LC
-foreach my $linedir (keys %stops_of) {
-   if (    $linedir =~ /^NC/ or $linedir =~ /^LC/ or  $linedir =~ /^399/ or $linedir =~ /^51S/ ) {
-       delete $stops_of{$linedir};
-   }
-}
+#foreach my $linedir (keys %stops_of) {
+#   if (    $linedir =~ /^NC/ or $linedir =~ /^LC/ or  $linedir =~ /^399/ or $linedir =~ /^51S/ ) {
+#       delete $stops_of{$linedir};
+#   }
+#}
 
 # load the stops that are changing
 open my $in , '<' , 'comparestops-x.txt' or die $!;
 my %stop_used;
+
 while (<$in>) {
+
    my ($type, $stop);
    ($type, $stop, undef) = split (/\t/ , $_ , 3);
+
+
+   next if $type eq 'RS'; #handled separately
+   next if $type eq 'AS'; #handled separately
    $stop_used{$stop} = $type;
 }
 close $in or die $!;
@@ -123,22 +129,4 @@ sub numify {
     return $num;
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
