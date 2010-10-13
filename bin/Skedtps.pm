@@ -10,7 +10,7 @@ our (@ISA ,@EXPORT_OK ,%EXPORT_TAGS);
 
 use Exporter;
 @ISA = ('Exporter');
-@EXPORT_OK = qw(tphash tpxref);
+@EXPORT_OK = qw(tphash tpxref %timepoints @timepoints destination );
 %EXPORT_TAGS = (Constants => [ qw(TPXREF_FULL TPXREF_POINT) ]);
 
 Exporter::export_ok_tags q(Constants);
@@ -23,6 +23,8 @@ use FPMerge qw(FPread_simple);
 our $init = 0;
 our (%tphash , %tpxref);
 my $tpxref;
+
+our (%timepoints, @timepoints );
 
 # tphash = the timepoint names. tphash("14TH BDWY") is 
 # "Fourteenth St. & Broadway."
@@ -44,7 +46,7 @@ my $tpxref;
 sub initialize { goto &init }
 
 sub init {
-   my (%timepoints, %tpnames, @timepoints, @tpnames);
+   our (%timepoints, @timepoints );
 
    # assumes it's chdir'd to the proper directory
 
@@ -57,7 +59,6 @@ sub init {
        unless $tpxref == TPXREF_POINT or $tpxref == TPXREF_FULL;
 
    FPread_simple ('Timepoints.csv' , \@timepoints, \%timepoints, 'Abbrev9');
-   FPread_simple ('TPNames.csv' , \@tpnames, \%tpnames, 'Abbrev9');
 
    # delete everything without punctuation
 
@@ -66,15 +67,8 @@ sub init {
          # delete version with punct. from hash
       delete_punctuation ($timepoints[$_]{Abbrev9} , $timepoints[$_]{Xref} );
       $timepoints{$timepoints[$_]{Abbrev9}} = $timepoints[$_];
-         # add version without punct. from hash
-   } # tpnames hash
-
-   foreach (0 .. $#tpnames) {
-      delete $tpnames{$tpnames[$_]{Abbrev9}};
-         # delete version with punct. from hash
-      delete_punctuation ($tpnames[$_]{Abbrev9});
-      $tpnames{$tpnames[$_]{Abbrev9}} = $tpnames[$_];
-         # add version without punct. from hash
+         # add version without punct. from 
+         # %timepoints hash - replaces it from @timepoints array
    } # timepoints hash
 
    foreach (keys %timepoints) {
@@ -83,21 +77,24 @@ sub init {
 
       my $xref = $timepoints{$_}{Xref};
 
+      # It might be easier to use the exported names from the
+      # FileMaker self-join, but for whatever reason, I didn't.
+
       if ($tpxref == TPXREF_FULL) {
          if ($status eq 'Always') {
-            $tphash{$_} = $tpnames{$xref}{Modified}; 
+            $tphash{$_} = $timepoints{$xref}{TPName}; 
             $tpxref{$_} = $xref;
             # use the xref
          } else { # $status is "Never" or "Point Only"
-            $tphash{$_} = $tpnames{$_}{Modified}; # use the non-xref
+            $tphash{$_} = $timepoints{$_}{TPName}; # use the non-xref
             $tpxref{$_} = $_;
          }
       } else { # TPXREF_POINT
          if ($status eq 'Never') {
-            $tphash{$_} = $tpnames{$_}{Modified}; # use the non-xref
+            $tphash{$_} = $timepoints{$_}{TPName}; # use the non-xref
             $tpxref{$_} = $_;
          } else { # $status is "Always" or "Point Only"
-            $tphash{$_} = $tpnames{$xref}{Modified}; # use the xref
+            $tphash{$_} = $timepoints{$xref}{TPName}; # use the xref
             $tpxref{$_} = $xref;
          }
       } 
@@ -128,6 +125,19 @@ sub delete_punctuation {
    foreach (@_) {
       tr/[A-Za-z0-9= ]//cd;
    }
+}
+
+sub destination {
+   init() unless $init;
+   my @destinations;
+   foreach (@_) {
+      delete_punctuation($_);
+      s/=\d+$//;
+      push @destinations , $timepoints{$_}{DestinationF};
+   }
+
+   return wantarray ? @destinations : $destinations[0];
+
 }
 
 1;
