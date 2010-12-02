@@ -6,6 +6,8 @@
 # List lines in order by name
 # 
 
+use 5.010;
+
 use strict;
 use warnings;
 
@@ -24,9 +26,10 @@ use Byroutes 'byroutes';
 use FPMerge qw(FPread FPread_simple);
 use Myopts;
 use Skeddir;
+use Columnprint(':all');
 
 my %options;
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
+Myopts::options (\%options, Skeddir::options(), '1' , 'quiet!');
 # command line options in %options;
 
 my $signup;
@@ -36,14 +39,23 @@ $signup = (Skeddir::change (\%options))[2];
 
 # open and load files
 
-our (@lines, %lines);
+our (@idx, %idx);
 
-FPread_simple ("Lines.csv" , \@lines, \%lines, 'Line');
+FPread_simple ("Skedidx.csv" , \@idx, \%idx, 'SkedID');
 
-my @lineorder = sort byroutes keys %lines;
+my %seen;
+foreach my $idx (@idx) {
+   my @lines = split ("\c]" , $idx->{Lines});
+   $seen{$_} = 1 foreach @lines;
+}
 
-foreach (@lineorder) {
+my @lines = sort byroutes keys %seen;
 
-   print $_  , " " , $lines{$_}{Name} , "\n";
+#say join("\n" , @lines);
 
+if ($options{'1'}) {
+   print join("\n" , @lines) , "\n";
+} 
+else {
+   print Columnprint::columnprint({SCREENWIDTH => 80 , PADDING => 5} , @lines);
 }
