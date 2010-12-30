@@ -106,6 +106,11 @@ my %skednamesbyroute = ();
 my %skeds;
 my %index;
 
+#use Data::Dumper;
+#open my $dump , '>' , "/tmp/timepoints.dump";
+#print $dump Data::Dumper::Dumper(\%Skedtps::timepoints);
+#close $dump;
+
 # slurp all the files into memory and build hashes
 foreach my $file (@files) {
    my $sked = Skedread($file);
@@ -192,23 +197,36 @@ foreach my $route (sort byroutes keys %skednamesbyroute) {
 
        #my @tp = (@{$skedref->{TP}});  # moved earlier
 
-       outtab (@tp);
+       #outtab (@tp);
+       my (@tp4, @tp_lookup);
+       @tp_lookup = @tp;
+       s/=\d+\z// foreach @tp_lookup;
+       Skedtps::delete_punctuation(@tp_lookup);
+       push @tp4 , $Skedtps::timepoints{$_}{Abbrev4} foreach @tp_lookup;
+
+       outtab (@tp4);
 
        my $tpcol;
        for $tpcol ( 0 .. $#tp) {
 
           my $tp = $tp[$tpcol];
+          my $tp_lookup = $tp_lookup[$tpcol];
+          my $tp4 = $tp4[$tpcol];
           #my $tp = tpxref($tp[$tpcol]);
           my $faketimepointnote;
           #$faketimepointnote = "Waits six minutes for transferring BART passengers."
           #    if $tp eq "SHAY BART" and $skedname eq "91_SB_WD";
 
-          outtab ($tp, 
+
+          warn "Not 4 characters: [$tp4/$tp_lookup/$tp]" if length($tp4) != 4;
+
+          outtab (
+                 $tp4,
                  tphash($tp) , 
-                 $Skedtps::timepoints{$tp}{City} , 
-                 $Skedtps::timepoints{$tp}{UseCity} , 
-                 $Skedtps::timepoints{$tp}{Neighborhood} , 
-                 $Skedtps::timepoints{$tp}{TPNote} , 
+                 $Skedtps::timepoints{$tp_lookup}{City} , 
+                 $Skedtps::timepoints{$tp_lookup}{UseCity} , 
+                 $Skedtps::timepoints{$tp_lookup}{Neighborhood} , 
+                 $Skedtps::timepoints{$tp_lookup}{TPNote} , 
                  $faketimepointnote  ); 
                  # When you add a way to have "Notes associated with a timepoint (column) in this schedule alone",
                  # replace $faketimepointnote with that.
