@@ -1,6 +1,6 @@
-#!/usr/bin/perl
+#!/ActivePerl/bin/perl
 
-# avl2points - see POD documentation below
+# avl2skeds - see POD documentation below
 
 #00000000111111111122222222223333333333444444444455555555556666666666777777777
 #23456789012345678901234567890123456789012345678901234567890123456789012345678
@@ -8,500 +8,792 @@
 use warnings;
 use strict;
 
+use 5.012;
+
 use sort ('stable');
 
 # add the current program directory to list of files to include
 use FindBin('$Bin');
-use lib (
-    $Bin, "$Bin/../bin",
-);
+use lib ($Bin , "$Bin/../bin");
 
-use Carp;
-use POSIX ('ceil');
+use List::Util;
+use List::MoreUtils ('each_arrayref');
 
-#use Fatal qw(open close);
-use Storable();
+use File::Copy;
 
-use Actium::Timenum (qw(time_to_timenum timenum_to_12h timenum_to_12h_ap_only));
-use Actium(
-    qw[say sayt jn jt byroutes jtn initialize key avldata ensuredir option]);
+
+use Actium (qw(option avldata all_true add_option transposed ensuredir say sayt sayq jtn key underlinekey));
+
 use Actium::Constants;
 use Actium::Union('ordered_union');
-use List::MoreUtils (qw<any all>);
+use Actium::Timenum (qw(time_to_timenum timenum_to_12h timenum_to_12h_ap_only));
+
+add_option('rawonly!' , 'Only create "rawskeds" and not "skeds".');
+
+my $helptext = <<'EOF';
+avl2skeds. Reads stored AVL data and makes skeds files.
+Try "perldoc avl2skeds" for more information.
+EOF
+
+my $intro = "avl2skeds - reads stored AVL data and makes skeds files";
+
+Actium::initialize ($helptext, $intro);
 
 # don't buffer terminal output
 $| = 1;
 
-my $helptext = <<'EOF';
-avl2points reads the data written by readavl and turns it into 
-a list of times that buses pass each stop.
-It is saved in the directory "kpoints" in the directory for that signup.
-EOF
-
-my $intro = 'avl2points -- makes list of times that buses pass each stop';
-
-#my %daysort = (
-#    DA => 0,
-#    WD => 1,
-#    WE => 2,
-#    SA => 3,
-#    SU => 4,
-#    MZ => 100,
-#    TT => 120,
-#    TF => 121
-#);
-
-Actium::initialize( $helptext, $intro );
-
 # retrieve data
 
-my ( %stopinfo, %note_of );
+if ( not option('rawonly') ) {
+   ensuredir ('skeds');
+}              
 
-{    # more scoping
+ensuredir('rawskeds');
 
-    my $somedata_r;
+my %skeds_pairs_of;
+my %skeds_lines_of;
+my %skeds_specdays_of;
+my %sked_order_of;
+my %sked_of;
+my %tp9_of;
+my %tp4_of;
+my @averaged_keys;
+my %sked_override_order_of;
 
-    {    # scoping
+{ # scoping
+# the reason to do this is to release the %{$avldata_r} structure, so Affrus
+# doesn't have to display it when it's not being used. Of course it saves
+# memory, too
 
-        my $avldata_r = avldata();
+my $avldata_r = avldata();
 
-        foreach (qw<PAT TRP>) {
-            $somedata_r->{$_} = $avldata_r->{$_};
-        }
-
-    }
-
-    %stopinfo = makestoptimes($somedata_r);
- 
-}
-
-print "Combining combo routes...\n";
-
-my %combo_of = (qw<
-    L   LC      LA  LC
-    NX1 NC      NX2 NC     NX3 NC   >);
-my %is_combo;
-$is_combo{$_}++ foreach values %combo_of;
-
-foreach my $stop ( keys %stopinfo ) {
-
-    foreach my $combolg ( keys %{ $stopinfo{$stop} } ) {
-
-        if (is_combo{$combolg} ) {
-           foreach my $singlelg ( keys %{ $stopinfo{$stop} } ) {
-              if ($combo_of{$singlelg} eq $combolg) {
-
-                  foreach my $dir_code ( keys %{ $stopinfo{$stop}{$combolg} } ) {
-                     foreach my $days ( keys %{ $stopinfo{$stop}{$combolg}{$dir_code} } ) {
-                        foreach my $time_r ( @{ $stopinfo{$stop}{$combolg}{$dir_code}{$days} } ) {
-                             $time_r->{LINE} = $singlelg;
-                             push @{ $stopinfo{$stop}{$singlelg}{$dir_code}{$days} } , $time_r ;
-                        }
-                             
-                     }
-
-                  }
-
-              }
-           }
-           delete $stopinfo{$stop}{$combolg};
-        }
-
-    }
+make_skeds_pairs_of_hash($avldata_r);
+make_tp9s($avldata_r);
 
 }
 
-# now each of $stopinfo{$stop}{$linegroup}{$dir_code}{$days}[0..n]
-# is a hashref, with the keys TIME , DESTINATION, and LINE
-
-print "Sorting times and merging days...\n";
-
-my @nolocals = qw<FS L NX NX1 NX2 NX3 U W>;
-my %is_a_nolocal_route;
-$is_a_nolocal_route{$_} = 1 foreach @nolocals;
-
-my @routenotes = qw<1R 72R>;
-my %is_a_routenote;
-$is_a_routenote{$_} = 1 foreach @routenotes;
-
-foreach my $stop ( keys %stopinfo ) {
-
-    foreach my $linegroup ( keys %{ $stopinfo{$stop} } ) {
-
-        my (%has_last_stop , %has_non_last_stop);
-
-        # processing times within each day
-        foreach my $dir_code ( keys %{ $stopinfo{$stop}{$linegroup} } ) {
-
-            my %concatenated;
-
-            foreach my $days ( keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } ) {
-
-                my @times_hr
-                  = @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} };
-
-                # sort @times_hr first by time, then by line, then by dest
-
-                @times_hr = sort {
-                    ( time_to_timenum( $a->{TIME} )
-                      <=> time_to_timenum( $b->{TIME} ) )
-                      or $a->{LINE} cmp $b->{LINE}
-                      or $a->{DESTINATION} cmp $b->{DESTINATION}
-                } @times_hr;
-
-                $stopinfo{$stop}{$linegroup}{$dir_code}{$days} = \@times_hr;
-
-                my @each_time_concat
-                  = map { join( ':', $_->{TIME}, $_->{LINE}, $_->{DESTINATION} ) }
-                  @times_hr;
-
-                $concatenated{$days}
-                  = join( ':', @each_time_concat );
-
-            } ## <perltidy> end foreach my $days ( keys %{ ...})
-
-            # merge days (columns with times)
-
-            if (    exists( $concatenated{'6'} )
-                and exists( $concatenated{'7'} )
-                and $concatenated{'6'} eq
-                $concatenated{'7'} )
-            {
-
-                $concatenated{'67'}
-                  = $concatenated{'6'};
-                $stopinfo{$stop}{$linegroup}{$dir_code}{'67'}
-                  = $stopinfo{$stop}{$linegroup}{$dir_code}{'6'};
-
-                delete $concatenated{'6'};
-                delete $concatenated{'7'};
-                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'6'};
-                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'7'};
-
-            }
-
-            if (    exists( $concatenated{'67'} )
-                and exists( $concatenated{'12345'} )
-                and $concatenated{'67'} eq
-                $concatenated{'12345'} )
-            {
-
-                #$concatenated{$dir_code}{'1234567'}
-                #  = $concatenated{$dir_code}{'12345'};
-                $stopinfo{$stop}{$linegroup}{$dir_code}{'1234567'}
-                  = $stopinfo{$stop}{$linegroup}{$dir_code}{'12345'};
-
-                #delete $concatenated{$dir_code}{'67'};
-                #delete $concatenated{$dir_code}{'12345'};
-                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'67'};
-                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'12345'};
-
-            }
-
-            # LAST STOP PROCESSING
-
-            DAYS_NOTESLOOP:
-            foreach my $days ( keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } ) {
-                 # loop - deal with final stops. Add notes
-
-                 my $times_r = $stopinfo{$stop}{$linegroup}{$dir_code}{$days};
-
-                 # LASTSTOP
-
-                 if ( all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
-                    $has_last_stop{$linegroup} = 1;
-                    $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE} = "LASTSTOP"
-                 } 
-                 else {
-                 
-                    $has_non_last_stop{$linegroup} = 1;
-                    foreach my $i ( reverse 0 .. $#{$times_r} ) {
-                        if ($times_r->[$i]->{PLACE} eq $times_r->[$i]->{DESTINATION}) {
-                           splice (@{$times_r} , $i, 1);
-                        }
-                    }
-                 }
- 
-                 # DROPOFF
-
-                 if ($is_a_nolocal_route{$linegroup} and $dir_code eq '2') {
-                     #eastbound
-                     $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE} = "DROPOFF";
-                 }
-
-                 # TODO - figure out how to do line U
-
-                 if ($is_a_routenote{$linegroup} ) {
-                     $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE} = $linegroup;
-                 }
-
-                 if ($note_of{"$stop:$linegroup:$dir_code:$days"}) {
-                    
-                   my (%lines, %destinations);
-                   foreach my $time_r ( @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} } ) {
-                      $lines{$time_r->{LINE}}++;
-                      $destinations{$time_r->{DESTINATION}}++;
-                   }
-
-                   my @lines = sort byroutes keys %lines;
-                   my @destinations = 
-                       sort { $destinations{$b} <=> $destinations{$a} } keys %destinations;
-
-                   $note_of{"$stop:$linegroup:$dir_code:$days"}{INFO}
-                        = join (":" , @lines) .  "\t" . 
-                          join (":" , @destinations);
-
-                   $note_of{"$stop:$linegroup:$dir_code:$days"}{COMP}
-                        = $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE} . 
-                          join (":" , @lines) .  "\t$destinations[0]";
-
-                 }
-
-            }
-
-            # merge notes
-
-            if (
-                $note_of{"$stop:$linegroup:$dir_code:6"} and
-                $note_of{"$stop:$linegroup:$dir_code:7"} and
-                $note_of{"$stop:$linegroup:$dir_code:6"}{COMP} eq  
-                $note_of{"$stop:$linegroup:$dir_code:7"}{COMP} ) {
-
-                $stopinfo{$stop}{$linegroup}{$dir_code}{'67'}
-                  = $stopinfo{$stop}{$linegroup}{$dir_code}{'6'};
-                 $note_of{"$stop:$linegroup:$dir_code:67"} =
-                    $note_of{"$stop:$linegroup:$dir_code:6"};
-
-                delete $note_of{"$stop:$linegroup:$dir_code:6"};
-                delete $note_of{"$stop:$linegroup:$dir_code:7"};
-                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'6'};
-                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'7'};
-
-            }
-
-
-            if ($note_of{"$stop:$linegroup:$dir_code:67"} and
-                $note_of{"$stop:$linegroup:$dir_code:12345"} and
-                $note_of{"$stop:$linegroup:$dir_code:67"}{COMP} eq  
-                $note_of{"$stop:$linegroup:$dir_code:12345"}{COMP} ) {
-
-                $stopinfo{$stop}{$linegroup}{$dir_code}{'1234567'}
-                  = $stopinfo{$stop}{$linegroup}{$dir_code}{'12345'};
-                 $note_of{"$stop:$linegroup:$dir_code:1234567"} =
-                    $note_of{"$stop:$linegroup:$dir_code:12345"};
-
-                delete $note_of{"$stop:$linegroup:$dir_code:12345"};
-                delete $note_of{"$stop:$linegroup:$dir_code:67"};
-                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'12345'};
-                delete $stopinfo{$stop}{$linegroup}{$dir_code}{'67'};
-
-            }
-
-            # above handles all of 1R except the parts heading northbound
-            # to downtown Oakland (which has mixed destinations)
-
-            if ($note_of{"$stop:$linegroup:$dir_code:67"}    and
-                $note_of{"$stop:$linegroup:$dir_code:12345"} and
-                $note_of{"$stop:$linegroup:$dir_code:67"}{NOTE} eq '1R' and
-                $note_of{"$stop:$linegroup:$dir_code:12345"}{NOTE} eq '1R' ) {
-                # we know they are different destinations because otherwise they would
-                # already be merged
-
-                $stopinfo{$stop}{$linegroup}{$dir_code}{'1234567'}
-                    = $stopinfo{$stop}{$linegroup}{$dir_code}{'12345'};
-                $note_of{"$stop:$linegroup:$dir_code:1234567"} =  
-                   $note_of{"$stop:$linegroup:$dir_code:12345"};
-                    
-                $note_of{"$stop:$linegroup:$dir_code:1234567"}{NOTE} = '1R-MIXED';
-
-            }
-
-        } ## <perltidy> end foreach my $dir_code ( keys...)
-
-    if ( $has_non_last_stop{$linegroup} and $has_last_stop{$linegroup} ) {
-       # if there are both last-stop and non-last-stop columns for this linegroup,
-       # delete the last-stop columns
-
-       foreach my $dir_code ( keys %{ $stopinfo{$stop}{$linegroup} } ) {
-
-          foreach my $days ( keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } ) {
-
-              if ( $note_of{"$stop:$linegroup:$dir_code:$days"} and
-                  $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE} eq "LASTSTOP" ) {
-                  delete $stopinfo{$stop}{$linegroup}{$dir_code}{$days};
-                  delete $note_of{"$stop:$linegroup:$dir_code:$days"} ;
-              }
-
-          }
-
-       }
-
-    }
-
-
-    } ## <perltidy> end foreach my $linegroup ( keys...)
-
-
-} ## <perltidy> end foreach my $stop ( keys %stopinfo)
-
-print "Reassembled. Now outputting...\n";
-
-ensuredir('kpoints');
-
+load_timepoint_overrides();
+
+# definition of fields in %skeds_pairs_of;
+# $skeds_pairs_of{$linegroup_dir_days}[$trip]{TIME} = $time;
+# $skeds_pairs_of{$linegroup_dir_days}[$trip]{PLACE} = $place;
+
+# trim the thing down to the first item, for testing DEBUG
+#{ 
+#my ($one, $two) = each %skeds_pairs_of;
+#%skeds_pairs_of = ($one => $two);
+#}
+
+#iterates over each schedule
 my $count = 0;
+my $prev = $EMPTY_STR;
 
-foreach my $stop ( keys %stopinfo ) {
+print "Processing line:";
 
-    $count++;
-    print '.' unless $count % 100;
+for my $this_sked_key ( sort keys %skeds_pairs_of) {
+   
+   my $line = $this_sked_key;
+   $line =~ s/$KEY_SEPARATOR.*//;
 
-    my $citycode = substr( $stop, 0, 2 );
+   unless (option('quiet')) {
+	   if ($line ne $prev) {
+	      print "\n" unless $count % 18;
+	      $count++;
+	      printf ('%4s', $line);
+	      $prev = $line;
+	   }
+   }
+   
+   make_place_ordering($this_sked_key);
+   
+   make_sked($this_sked_key);
 
-    ensuredir("kpoints/$citycode");
+   # so:
+   # $sked_of{$key}[$trip]{TIMES}[$tpnum] = a time
+   # $sked_of{$key}[$trip]{LINE} = line number
+   # $sked_of{$key}[$trip]{SPECDAYS} = special days
 
-    open my $out, '>', "kpoints/$citycode/$stop.txt" or die $!;
+   modify_duplicate_places($this_sked_key);
 
-    foreach my $linegroup ( sort byroutes keys %{ $stopinfo{$stop} } ) {
+   sort_rows ($this_sked_key);
 
-        foreach my $dir_code (
-            sort { $a <=> $b }
-            keys %{ $stopinfo{$stop}{$linegroup} }
-          )
-        {
+   remove_duplicate_rows ($this_sked_key);
 
-            foreach my $days (
-                sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} }
-              )
-            {
 
-                print $out "$linegroup\t$dir_code\t$days";
-                
-                my $note = $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE};
-                if ($note)  {
-                    print $out "\t#$note\t";
-                    print $out $note_of{"$stop:$linegroup:$dir_code:$days"}{INFO};
+}
+   
+merge_days ('MO' , 'TWT', 'MTWT');
+merge_days ('MTWT' , 'FR', 'WD');
+merge_days ('TWT' , 'FR', 'TWTF');
+merge_days ('SA' , 'SU' , 'WE');
+merge_days ('WD' , 'SA' , 'WA');
+merge_days ('WD' , 'SU' , 'WU');
+merge_days ('WD' , 'WE' , 'DA');
+merge_days ('FR' , 'SA' , 'FS');
+
+for my $this_sked_key ( keys %sked_of) {
+   write_sked($this_sked_key, 'skeds') unless option('rawonly');   
+   write_sked($this_sked_key, 'rawskeds');
+}
+
+sayq ("\n\nAveraged keys:");
+
+sayq ("   " , underlinekey($_) ) for (@averaged_keys);
+
+copy_exceptions() unless option('rawonly');
+
+sayq ("\nEnd.");
+
+############# end of main program #######################
+
+sub load_timepoint_overrides {
+
+   open my $tpofile, '<' , 'timepointorder.txt' 
+      or die "Can't open timepointorder.txt: $!";
+   
+   while (my $tpo = <$tpofile>) {
+      chomp $tpo;
+      my ($sked, @timepoints) = split (/\t/ , $tpo);
+       
+      # convert tp9s to tp4s
+      foreach (@timepoints) {
+         $_ = $tp4_of{$_} if $tp4_of{$_};
+      }
+      
+      my ($line, $dircode, $days) = split (/_/ , $sked);
+      
+      my @skeds;
+      push @skeds, key($line,$dircode,$days);
+      
+      if ($days eq 'WE' or $days eq 'DA') {
+         push @skeds, key($line,$dircode,'SA');
+         push @skeds, key($line,$dircode,'SU');
+      }
+      if ($days eq 'DA') {
+         push @skeds, key($line,$dircode,'WD');
+      }
+      
+      $sked_override_order_of{$_} = \@timepoints for @skeds;
+      
+   }
+   
+}
+
+sub modify_duplicate_places {
+   # modify duplicate tp names and rearrange columns
+
+   my $key = shift;
+
+   # rearrange columns so arrivals always are first
+   # and departures are second
+
+   TRIP:
+   for my $trip ( @{$sked_of{$key}} ) {
+   
+      my $lastplaceidx = $#{$trip->{TIMES}};
+
+      PLACE:
+      for my $placeidx ( 1 .. $lastplaceidx  - 1) {
+         next PLACE if $sked_order_of{$key}[$placeidx] 
+                    ne $sked_order_of{$key}[$placeidx-1];
+         my $thistime = $trip->{TIMES}[$placeidx];
+         my $prevtime = $trip->{TIMES}[$placeidx - 1];
+         next PLACE if $thistime ne $EMPTY_STR and $prevtime ne $EMPTY_STR;
+         
+         # now we know we have only one time between the two columns.
+         # Put it in the second column if there are more times; otherwise
+         # put it in the first one.
+
+         $thistime = $thistime || $prevtime;
+         
+         if (join( $EMPTY_STR , 
+                   @{$trip->{TIMES}}[$placeidx + 1 .. $lastplaceidx]) eq $EMPTY_STR) {
+            # if all the times after this one are blank
+            
+            # put it in the first column
+            $trip->{TIMES}[$placeidx] = $EMPTY_STR;
+            $trip->{TIMES}[$placeidx-1] = $thistime;
+         }
+         else {
+            # put it in the second column
+            $trip->{TIMES}[$placeidx-1] = $EMPTY_STR;
+            $trip->{TIMES}[$placeidx] = $thistime;
+         }
+      
+      }   
+   }
+    
+   # add equals-signs and numbers
+   my %seen;
+   for my $place (@{$sked_order_of{$key}}) {
+      if ($seen{$place}) {
+         $seen{$place}++;
+         $place .= "=$seen{$place}";
+      }
+      else {
+         $seen{$place} = 1;
+      }
+   }
+
+
+
+
+# unneeded routine to eliminate blank columns   
+#   my @times = ();
+#   
+#   foreach my $sked_r (@{$sked_of{$key}}) {
+#      push @times, $sked_r->{TIMES}; # ref to this row
+#   }
+#   # now @times is array of arrays - first row, then column
+#   
+#   my @transposed = transposed(\@times);
+#   
+#   # now @transposed is array of arrays - first column, then row
+#
+#
+#   for my $idx (reverse (0 .. $#transposed) ) {
+#      if (join( @{$transposed[$idx]} eq $EMPTY_STR ) {
+#         # remove this column
+#         splice (@transposed , $idx, 1 );
+#         splice ( @{$sked_order_of{$key}}, $idx, 1 )
+#      
+#      }
+#   
+   
+   
+   
+   
+   
+
+}
+
+sub merge_days {
+   my @merging;
+   my $merged;
+   ($merging[0] , $merging[1] , $merged) = @_;
+   
+
+   SKED:
+   foreach my $skedkey (keys %sked_of) {
+      my ($linegroup, $dircode, $days) = split (/$KEY_SEPARATOR/ , $skedkey);
+
+      next SKED if $days ne $merging[0];
+      my $secondkey = key($linegroup,$dircode,$merging[1]);
+      next SKED if (not exists($sked_of{$secondkey}));
+      
+      # so now we know that the first day and second day exist.
+
+      next SKED 
+         if join ($EMPTY_STR, @{$sked_order_of{$skedkey  }}) 
+         ne join ($EMPTY_STR, @{$sked_order_of{$secondkey}});
+         # skip it if timepoints aren't all the same
+      
+      next SKED
+         if scalar @{$sked_of{$skedkey}} ne scalar @{$sked_of{$secondkey}};
+         # skip it if number of trips aren't the same
+      
+      for my $idx (0 .. $#{$sked_of{$skedkey}}) {
+         next SKED if $sked_of{$skedkey}[$idx]{LINE} ne $sked_of{$secondkey}[$idx]{LINE};
+         next SKED if $sked_of{$skedkey}[$idx]{SPECDAYS} ne $sked_of{$secondkey}[$idx]{SPECDAYS};
+         next SKED if join ($EMPTY_STR , @{$sked_of{$skedkey  }[$idx]{TIMES}}) 
+                   ne join ($EMPTY_STR , @{$sked_of{$secondkey}[$idx]{TIMES}});
+      
+      }
+      
+      # so at this point, all is identical.
+      
+      my $newkey = key($linegroup,$dircode,$merged);
+      $sked_of{$newkey} = $sked_of{$skedkey};
+      $sked_order_of{$newkey} = $sked_order_of{$skedkey};
+      delete $sked_of{$skedkey};
+      delete $sked_of{$secondkey};
+      delete $sked_order_of{$skedkey};
+      delete $sked_order_of{$secondkey};
+      
+   }
+
+   return;
+   
+}
+
+sub get_avg {
+   my @elems = 
+      map {time_to_timenum($_) }
+      grep {$_} 
+      @{+shift}; # get timenums of elems that are true
+   return ( List::Util::sum (@elems) / scalar @elems);
+}
+
+sub remove_duplicate_rows {
+
+   my $key = shift;
+   my $sked = $sked_of{$key};
+   
+   my $row = 0;
+   
+   until ($row >= $#{$sked}) {
+   
+      $row++;
+      
+      next if $sked->[$row]{LINE} ne $sked->[$row-1]{LINE};
+#      next if $sked->[$row]{SPECDAYS} ne $sked->[$row-1]{SPECDAYS};
+# special days deliberately omitted - not sure whether that's correct or not,
+# given that no special days information comes through
+
+      next if join($EMPTY_STR , @{$sked->[$row]{TIMES}})
+               ne join($EMPTY_STR , @{$sked->[$row-1]{TIMES}});
+               
+      splice( @{$sked}, $row, 1); # delete this row
+     
+   } 
+
+}
+
+
+
+sub sort_rows {
+   my $key = shift;
+   
+   my $sked = $sked_of{$key};
+
+   my $sortby = -1;
+   
+   # need to build new thing
+   
+   my @matrix;
+
+   foreach my $trip (@{$sked}) {
+      push @matrix, $trip->{TIMES};
+   }
+   
+   my $transposed = transposed(\@matrix);
+   
+   SORTBY:
+   for my $i (0 .. $#{$transposed}) {
+      if (all_true ( @{$transposed->[$i]} ) ) {
+         $sortby = $i;
+         last SORTBY;
+      }
+   }
+
+   if ($sortby == -1) {
+   
+      push @averaged_keys, $key;
+
+# First sort by the first one in common, then by the average 
+# of the times. I think this works. Yay!
+
+# -- old obsolete averaging code --      
+#	   @{$sked} =
+#         map  { $_ -> [1] }
+#	      sort { $a->[0] <=> $b->[0] }
+#	      map  { [ get_avg($_->{TIMES}) , $_ ] } @{$sked}; 
+
+      @{$sked} =
+         sort { 
+                my $ea = each_arrayref($a->{TIMES}, $b->{TIMES});
+                # Establishes an iterator, like "each" over hashes.
+                while ( my ($a_time, $b_time) = $ea->() )  {
+                   # so $a_time and $b_time are paired entries of each array, in turn.
+
+                   if ($a_time and $b_time) { # if there are two times present,
+	                   my $comparison = time_to_timenum($a_time) <=> time_to_timenum($b_time);
+	                   return $comparison if $comparison;
+	                      #return the comparison of the two times,
+	                      # if there is a difference and there are two times present
+                   }
                 } 
-                else {
-                foreach my $time_r (
-                    @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} } )
-                {
+            
+              return get_avg($a->{TIMES}) <=> get_avg($b->{TIMES})  ; 
+              # none in common; return the average
+              } @{$sked};
 
-                    #print "$stop:$linegroup:$dir_code:$days\n";
-                    print $out "\t", join(
-                        ':',
-                        $time_r->{TIME},        $time_r->{LINE},
-                        $time_r->{DESTINATION}, $time_r->{PLACE},
-                        $time_r->{DAYEXCEPTIONS}
-                    );
 
-                }
+   } 
+   else {
+	   @{$sked} = 
+	      map { $_ -> [1] }
+	      sort { $a->[0] <=> $b->[0] }
+	      map { [ time_to_timenum ($_->{TIMES}[$sortby]) , $_ ] } @{$sked}; 
+	}
+
+   # schwartzian transform. The second "map" creates a new anonymous array: 
+   # item 0 is the item to sort by, item 1 is ref to structure. 
+   # the "sort" sorts by the thing to sort by (item 0).
+   # then the first "map" builds a list of all the original structs 
+   # (item 1 of the anonymous array).
+   
+   # assigning to @{$sked} assigns to array pointed to by
+   # $sked_of{$key} since they are the same reference
+   
+   return;
+   
+}
+
+
+sub make_sked {
+   my $key = shift;
+   my @trips = @{$skeds_pairs_of{$key}};
+   my @lines = @{$skeds_lines_of{$key}};
+   my @specdays = @{$skeds_specdays_of{$key}};
+   
+#    Go through each trip.
+#    Go through each place on that trip.
+#    Add time from that place to an array of times of that trip,
+#    with blank ones for all the places in the order that aren't
+#    there on that trip.
+   
+   my @alltrips = ();
+   
+   foreach my $trip_idx (0 .. $#trips) {
+
+      my $trip_r = $trips[$trip_idx];
+      my $line = $lines[$trip_idx];
+      my $specdays = $specdays[$trip_idx];
+
+      my @expanded_trip;
+      my $current_idx = 0;
+      my $final_idx = $#{$trip_r};
+      # $current_idx and $final_idx refer to the non-expanded trip.
+      
+      # what this does is go through the ordered places. If this trip
+      # has a time for a place, it pushes that entry to the end of 
+      # @expanded_trip; if not, it pushes the empty string
+
+      PLACE:
+      foreach my $place_to_process (@{$sked_order_of{$key}}) {
+         
+         # pad out the trips until 
+         if ($current_idx > $final_idx) {
+            push @expanded_trip, $EMPTY_STR;
+            next PLACE;
+         }
+         
+         my $current_place = $trip_r->[$current_idx]{PLACE};
+         my $current_time  = $trip_r->[$current_idx]{TIME};
+           
+         if ($place_to_process eq $current_place) {
+            $current_idx++;
+            push @expanded_trip , $current_time;
+         }
+         else {
+            push @expanded_trip, $EMPTY_STR;
+         }
+      
+      }
+      
+      # so now @expanded_trip contains that trip, with blanks inserted as necessary
+     
+      		
+      push @alltrips, { LINE => $line , SPECDAYS => $specdays, TIMES => \@expanded_trip } ;
+   }
+   
+   $sked_of{$key} = \@alltrips;
+   
+   
+   return;
+
+}
+
+sub write_sked {
+   my $key = shift;
+   my $dir = shift;
+
+   my $filename = underlinekey($key);
+
+   open my $out, '>' , "$dir/$filename.txt" or die "$dir/$filename.txt: $!";
+   
+   print $out $filename , "\n";
+   print $out "Note Definitions:\t\n";
+
+   print $out jtn( 'SPEC DAYS', 'NOTE' , 'VT' , 'RTE NUM' , map {tp9($_)} (@{$sked_order_of{$key}}));
+
+   foreach my $trip ( @{$sked_of{$key}} ) {
+      my @times = @{$trip->{TIMES}};
+      if ($dir ne 'rawskeds') {
+         tr/bx/pa/ for @times; # old format can't handle b, a times
+      }
+      print $out jtn( $trip->{SPECDAYS}, $EMPTY_STR, $EMPTY_STR, $trip->{LINE}, @times);
+   }
+   
+   close $out;
+
+}
+
+sub make_place_ordering {
+   my $key = shift;
+   my @trips = @{$skeds_pairs_of{$key}};
+
+   my %trip_tps_seen;
+   
+   # go through each trip, and for each variant of the place
+   # order, put that variant in the %trip_tps_seen (keyed
+   # to a stringification of the trip). 
+   foreach my $trip (@trips) {
+
+      #make the list of places in @places
+      my @places = ();
+      foreach my $place_time_pair_r (@{$trip}) {
+         push (@places, $place_time_pair_r->{PLACE})
+      }
+
+      # %trip_tps_seen contains unique place lists
+      $trip_tps_seen{key(@places)} = \@places;
+   
+   }
+   
+   # run ordered_union on each of the values of %trips_tps_seen
+   # so basically this keeps creating more and more unions until there's
+   # only one left
  
-                }
-                print $out "\n";
+ 
+   if ($sked_override_order_of{$key}) {
+      $sked_order_of{$key} 
+         = ordered_union ($sked_override_order_of{$key} , values %trip_tps_seen);
+      
+      if (join ($EMPTY_STR, @{$sked_override_order_of{$key}} ) 
+          ne join ($EMPTY_STR, @{$sked_order_of{$key}}) ) {
+         warn "\nTimepoints in timepointorder.txt not the same as final result for "
+               . underlinekey($key) . "\n\n";
+      }
+   }
+   else {
+	   $sked_order_of{$key} = ordered_union (values %trip_tps_seen);
+	}
+ 
+   return;
+   
+}
 
-            } ## <perltidy> end foreach my $days ( sort { $daysort...})
 
-        } ## <perltidy> end foreach my $dir_code ( sort...)
+sub make_tp9s {
 
-    } ## <perltidy> end foreach my $linegroup ( sort...)
+   my %avldata = %{+shift};
+   
+   while ( my ($place , $place_r) = each %{$avldata{PLC}} ) {
+      my $number = sprintf('%-8s' , $place_r->{Number});
+      $number =~ tr/,/./; # FileMaker doesn't like commas
+      my $first  = substr($number, 0, 4);
+      my $second = substr($number, 4);
+      $first =~ s/\s+$//;
+      $second =~ s/\s+$//;
+      $first =~ s/^\s+//;
+      $second =~ s/^\s+//;
+      my $tp9 = "$first $second";
+      $tp9_of{$place} = $tp9;
+      $tp4_of{$tp9} = $place unless $place =~ /-[AD12]\z/;
+   }
+   
+   # known duplicate tp9s are given as tp4s instead
+   foreach (qw/HDMA HIML BRJR BRMD/) {
+      # change %tp4_of entries
+      my $old_tp9 = $tp9_of{$_};
+      delete $tp4_of{$old_tp9} if $old_tp9;
+      $tp4_of{$_} = $_;
+      $tp9_of{$_} = $_;
+   }
 
-    close $out or die $!;
+}
 
-} ## <perltidy> end foreach my $stop ( keys %stopinfo)
+sub tp9 {
 
-print "\nDone.\n";
+  my $tp4 = shift;
+  my $number;
+  my $tp9;
+  
+  if ($tp4 =~ /=\d+\z/) {
+     ($tp4, $number) = split (/=/ , $tp4);
+  #   return "$tp9_of{$tp4}=$number";
+  } 
+  
+  # figure out what to return if no valid value
+  
+  if (exists($tp9_of{$tp4})) {
+     $tp9 = $tp9_of{$tp4};
+  } 
+  else {
+     $tp9 = "$tp4 ----";
+  }
+  
+  if ($number) {
+     $tp9 .= "=$number";
+  }   
+  
+  return $tp9;
 
-sub makestoptimes {
-    my %avldata = %{ +shift };
+}
 
-    my %stopinfo;
+sub make_skeds_pairs_of_hash {
 
-  TRIP:
-    while ( my ( $trip_number, $trip_of_r ) = each %{ $avldata{TRP} } ) {
-        my %tripinfo_of = %{$trip_of_r};
-        next TRIP unless $tripinfo_of{IsPublic};
+   my %avldata = %{+shift};
 
-        my $line = $tripinfo_of{RouteForStatistics};
-        next TRIP if $line eq '399';    # supervisor order
+   # separate trips out by which line and direction they're in
+   TRIP:
+   while ( my ($trip_number, $trip_of_r) = each %{$avldata{TRP}} ) {
+      my %tripinfo_of = %{$trip_of_r};
+      next TRIP unless $tripinfo_of{IsPublic};
+      
+      my $line      = $tripinfo_of{RouteForStatistics};
+      next TRIP if $line eq '399'; # supervisor order
+      
+      my $specdays = $tripinfo_of{SpecDays} || $EMPTY_STR;
+      
+      my $days     = $DAY_OF{$tripinfo_of{OperatingDays}};
 
-        #$line = '1' if $line eq '1Lx';
-        #$line = '51' if $line eq '51S';
+      unless ($days) {
+         print "*";
+      }
+      
+      if ($days eq 'TT' or $days eq 'TF' or $days eq 'MZ') {
+         $specdays = $days;
+         $days = 'WD';
+      }
+      
+      my $pattern  = $tripinfo_of{Pattern};
+      my $patkey   = key ($line, $pattern);
+      my $dir_code = $DIR_OF{$avldata{PAT}{$patkey}{DirectionValue}};
 
-        my $linegroup = linegroup($line);
-
-        my $pattern = $tripinfo_of{Pattern};
-        my $patkey = key( $line, $pattern );
-
-        my $days = $tripinfo_of{OperatingDays} ;
-        $days =~ tr/0-9//cd; # strip everything but digits
-
-        #my $hdays = $tripinfo_of{OperatingDays} ;
-        #my $days = $DAY_OF{ $hdays };
-        #warn "unrecognized days $hdays in line $line" unless $daysort{$days};
-        my $dir_code = $avldata{PAT}{$patkey}{DirectionValue};
-
-        my @tps         = @{ $avldata{PAT}{$patkey}{TPS} };
-        #my $final_tps   = $tps[-1];
-        my $final_tps   = pop @tps;
-        my $final_place = remove_place_suffixes($final_tps->{Place});
-
+      my @pairs = ();
       TIMEIDX:
-        #foreach my $timeidx ( 0 .. $#{ $tripinfo_of{PTS} } - 1 ) {
-        # from first to penultimate stop
-        # Commented out to add last stop back
+      foreach my $timeidx (0 .. $#{$tripinfo_of{PTS}}) {
+         my $place = $avldata{PAT}{$patkey}{TPS}[$timeidx]{Place};
+         next TIMEIDX unless $place;
 
-        foreach my $timeidx ( 0 .. $#{ $tripinfo_of{PTS} }  ) {
-            my $stop = $avldata{PAT}{$patkey}{TPS}[$timeidx]{StopIdentifier};
+         #remove -A and -D from places. not useful for us.
 
-            next TIMEIDX if $stop =~ /^D/i;
+         $place =~ s/-[AD12]$//;
+         
+         next TIMEIDX if $place eq 'OARC'; 
+         # the only private timepoint currently is OARC (aka OAKL AIRR).
+         # If we need more, we can add a routine here
 
-            my $place = $avldata{PAT}{$patkey}{TPS}[$timeidx]{Place};
-            $place = remove_place_suffixes($place);
+         my $time = $tripinfo_of{PTS}[$timeidx];
+         $time =~ s/^0//;
+         push @pairs , {PLACE => $place, TIME => $time};
+      }
 
-            my $time = $tripinfo_of{PTS}[$timeidx];
-            $time =~ s/^0//;
+      my $linegroup = linegroup($line);
 
-            push @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} }, {
-                TIME          => $time,
-                DESTINATION   => $final_place,
-                LINE          => $line,
-                PLACE         => $place,
-                DAYEXCEPTIONS => '',             # TODO add later
-            };
+      my @days;
 
-        }
+      # Alter days for 800 and 801
+      if ($line eq '800' or $line eq '801') {
+         my $initial_time = $pairs[0]{TIME};
+         if ($initial_time =~ /\d+ x/x ) { # if first time is an "x" time (am next day)
+            $_->{TIME} =~ tr/x/a/ foreach @pairs;
+            given ($days) { 
+               when ('SU') {
+                  @days = 'MO';
+               }
+               when ('SA') {
+                  @days = 'SU';
+               }
+               when ('WD') {
+                  @days = qw(TWT FR SA);
+               }
+            }
+         }
+         elsif ($initial_time =~ /\d+ p/x ) { # if first time is an "p" time (pm that day)
+            $_->{TIME} =~ tr/px/ba/ foreach @pairs;
+            given ($days) { 
+               when ('SU') {
+                  @days = 'SA';
+               }
+               when ('SA') {
+                  @days = 'FR';
+               }
+               when ('WD') {
+                  @days = qw(SU MO TWT);
+               }
+            }
+         }
+         elsif ($days eq 'WD') {
+            @days = qw(MO TWT FR);
+         }
+         else {
+            @days = ($days);
+         }
+       
+      }
+      else {
+         @days = ($days);
+      }
 
-    } ## <perltidy> end while ( my ( $trip_number...))
+      foreach my $thesedays (@days) {
+         my $key = key($linegroup,$dir_code,$thesedays);
+         push ( @{ $skeds_lines_of{$key} }, $line );
+         push ( @{ $skeds_specdays_of{$key} }, $specdays );
+         push ( @{ $skeds_pairs_of{$key} }, [ @pairs ] );
+      }
+ 
+   }
 
-    return %stopinfo;
-
-} ## <perltidy> end sub makestoptimes
+}
 
 sub linegroup {
-    return wantarray ? @_ : $_[0];
+   my $line = shift;
+   return $LINES_TO_COMBINE{$line} if exists $LINES_TO_COMBINE{$line};
+   return $line;
+}
+   
 
-    # at the moment, simply returns its arguments.
-    # At some point we will want to change this,
-    # to allow for joining lines into linegroups.
-    # But not today.
+sub copy_exceptions {
+
+### read exception skeds 
+# I've changed this so that now exceptions have to go in the signup directory. 
+# It turns out that each signup will have to have its own exceptions, although sometimes
+# these can be copied from the old ones...
+
+my @skeds = sort glob 'exceptions/*.txt';
+
+sayq ( "\nAdding exceptional schedules (possibly overwriting previously processed ones).");
+
+my $displaycolumns = 0;
+
+my $prevlinegroup = "";
+foreach my $file (@skeds) {
+   next if $file =~ m/=/; # skip file if it has a = in it
+
+   unless (option('quiet')) {
+      my $linegroup = $file;
+      $linegroup =~ s#^exceptions/##;
+      $linegroup =~ s/_.*//;
+
+      unless ($linegroup eq $prevlinegroup) {
+         $displaycolumns += length($linegroup) + 1;
+         if ($displaycolumns > 70) {
+            $displaycolumns = 0;
+            print "\n";
+         }
+         $prevlinegroup = $linegroup;
+         print "$linegroup ";
+      }
+   
+   }
+
+   my $newfile = $file;
+   $newfile =~ s#exceptions#skeds#; # result is "skeds/filename"
+   File::Copy::copy ($file, $newfile) or die "Can't copy $file to $newfile: $!"; 
 
 }
 
-sub remove_place_suffixes {
-   my $place = shift;
-   $place =~ s/-[AD12]$//;
-   return $place;
 }
 
 =head1 NAME
 
-avl2points - makes list of times that buses pass each stop';
+avl2skeds - Make schedules from the avl stored data.
 
 =head1 DESCRIPTION
 
-avl2points reads the data written by readavl and turns it into 
-a list of times that buses pass each stop.
-It is saved in the directory "kpoints" in the directory for that signup.
+avl2skeds reads the data written by readavl and turns it into schedule
+files suitable for ACTium.
+
+=head1 BUGS
+
+Sometimes two different places will have the same long timepoint abbreviation, e.g., Hillsdale Mall
+and Hilltop Mall are both HILL MALL, even though one is HIML and the other is HDMA. For this particular
+example, it knows that HDMA should be changed to HDAL MALL . For everything else, it will be ambiguous.
+Enter the four-digit abbreviation, not the longer one, in timepointorder.txt.
 
 =head1 AUTHOR
 
