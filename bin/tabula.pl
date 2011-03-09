@@ -1,23 +1,31 @@
 #!/ActivePerl/bin/perl
-# vimcolor: #200020 
 
-# tabula
-
-use strict;
 use warnings;
-use 5.010;
+use 5.012;
 
 # initialization
 
 use FindBin('$Bin'); 
-use lib ($Bin , "$Bin/../bin");
+use lib ($Bin);
+
+{
+    no warnings('once');
+    if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
+        @ARGV = Actium::Eclipse::get_command_line();
+    }
+}
 
 use IDTags;
 use Skedfile qw(Skedread getfiles GETFILES_PUBLIC_AND_DB);
-use Actium (qw(option ensuredir byroutes ));
+use Actium (qw(option ensuredir ));
 use Skedvars qw(%longerdaynames %daydirhash %specdaynames);
 use Array::Transpose;
-use Data::Dumper;
+use File::Slurp;
+
+use Actium::Sorting('sortbyline');
+
+use List::Util ('max');
+
 
 use constant CR => "\r";
 
@@ -45,13 +53,15 @@ my %tags = indesign_tags();
 my %tables_of_line;
 
 foreach my $file (@files) {
-
+    
    # open files and print InDesign start tag
    my %sked = %{Skedread($file)};
    my $skedname = $sked{SKEDNAME};
    my $linegroup = $sked{LINEGROUP};
    my $dir = $sked{DIR};
    my $day = $sked{DAY};
+   
+   my %specdays_used;
 
    # get number of columns and rows
 
@@ -67,7 +77,7 @@ foreach my $file (@files) {
 
    my %seenroutes;
    $seenroutes{$_} = 1 foreach @{$sked{ROUTES}};
-   my @seenroutes = sort byroutes keys %seenroutes;
+   my @seenroutes = sortbyline keys %seenroutes;
 
    if ( (scalar @seenroutes) != 1 ) {
       $halfcols++;
@@ -114,7 +124,7 @@ foreach my $file (@files) {
    print $skedname ;
    print " (" , join(" " , sort keys %seenroutes) , ")" 
       if scalar keys %seenroutes > 1;
-   print ", $colcount";
+   print ", $tpcount";
    print "+$halfcols" if $halfcols;
    say " x $timerows" ;
 
@@ -185,6 +195,7 @@ foreach my $file (@files) {
       if ($has_specdays_col) {
          my $specdays = $sked{SPECDAYS}[$i];
          print $th "<CellStyle:LineNote><StylePriority:20><CellStart:1,1><ParaStyle:Time>$specdays<CellEnd:>";
+         $specdays_used{$specdays} = 1;
       }
  
       for my $j ( 0 .. $#row) {
@@ -215,17 +226,29 @@ foreach my $file (@files) {
    # Table End
    print $th "<TableEnd:>\r";
    
+   foreach my $specdays (keys %specdays_used ) {
+       given ($specdays)  {
+           when ('SD') {
+               print $th "\rSD - School days only";
+           }
+           when ('SH') {
+               print $th "\rSH - School holidays only";
+           }
+           
+       }
+       
+   }
+   
    close $th;
 
    $tables_of_line{$linegroup}{"${dir}_$day"}{TEXT} = $table;
    $tables_of_line{$linegroup}{"${dir}_$day"}{SPECDAYSCOL} = $has_specdays_col;
-   $tables_of_line{$linegroup}{"${dir}_$day"}{ROUTECOL} = $has_specdays_col;
+   $tables_of_line{$linegroup}{"${dir}_$day"}{ROUTECOL} = $has_route_col;
    $tables_of_line{$linegroup}{"${dir}_$day"}{WIDTH} = $tpcount + ($halfcols / 2);
    $tables_of_line{$linegroup}{"${dir}_$day"}{HEIGHT} = (3*12) + 6.136  # 3p6.136 height of color header
                                                       + (3*12) + 10.016 # 3p10.016 four-line timepoint header
                                                       + ($timerows * 10.516); # p10.516 time cell
-
-  
+                                                      
 }
 
 my $boxwidth = 4.5; # table columns in box
@@ -272,6 +295,30 @@ for my $linegroup (keys %tables_of_line) {
 
 }
 
+my @texts;
+
+my $maxwidth = 0;
+my $maxheight = 0;
+
+for my $linegroup (sortbyline keys %tables_of_line) {
+
+    foreach my $dirday ( sort { $daydirhash{$a} <=> $daydirhash{$b} } 
+        keys %{$tables_of_line{$linegroup}} ) {
+        push @texts , $tables_of_line{$linegroup}{$dirday}{TEXT};
+        $maxwidth  = max ($maxwidth , $tables_of_line{$linegroup}{$dirday}{WIDTH});
+        $maxheight  = max ($maxheight , $tables_of_line{$linegroup}{$dirday}{HEIGHT});
+    }
+
+}
+
+open my $out , '>' , "tabulae/all.txt" or die "Can't open tabulae/all.txt: $!";
+print $out $tags{start} , join (IDTags::boxbreak , @texts);
+close $out;
+
+$maxheight = $maxheight / 72; # inches instead of points
+
+say "Maximum height in inches: $maxheight; maximum columns: $maxwidth";
+
 sub indesign_tags {
 
    my %tags;
@@ -280,11 +327,3 @@ sub indesign_tags {
   return %tags;
 
 }
-
-
-
-
-
-
-
-
