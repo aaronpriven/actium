@@ -1,9 +1,0 @@
-sub uniqhash (@) {
-
-   my %hash;
-
-   map {$hash{$_}=1} @_;
-
-   return keys %hash;
-
-}
