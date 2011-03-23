@@ -21,8 +21,9 @@ use List::MoreUtils ('each_arrayref');
 
 use File::Copy;
 
+use Array::Transpose;
 
-use Actium (qw(option avldata all_true add_option transposed ensuredir say sayt sayq jtn key underlinekey));
+use Actium (qw(option avldata all_true add_option ensuredir say sayt sayq jtn key underlinekey));
 
 use Actium::Constants;
 use Actium::Union('ordered_union');
@@ -238,35 +239,6 @@ sub modify_duplicate_places {
    }
 
 
-
-
-# unneeded routine to eliminate blank columns   
-#   my @times = ();
-#   
-#   foreach my $sked_r (@{$sked_of{$key}}) {
-#      push @times, $sked_r->{TIMES}; # ref to this row
-#   }
-#   # now @times is array of arrays - first row, then column
-#   
-#   my @transposed = transposed(\@times);
-#   
-#   # now @transposed is array of arrays - first column, then row
-#
-#
-#   for my $idx (reverse (0 .. $#transposed) ) {
-#      if (join( @{$transposed[$idx]} eq $EMPTY_STR ) {
-#         # remove this column
-#         splice (@transposed , $idx, 1 );
-#         splice ( @{$sked_order_of{$key}}, $idx, 1 )
-#      
-#      }
-#   
-   
-   
-   
-   
-   
-
 }
 
 sub merge_days {
@@ -352,7 +324,6 @@ sub remove_duplicate_rows {
 }
 
 
-
 sub sort_rows {
    my $key = shift;
    
@@ -368,7 +339,7 @@ sub sort_rows {
       push @matrix, $trip->{TIMES};
    }
    
-   my $transposed = transposed(\@matrix);
+   my $transposed = transpose(\@matrix) ;
    
    SORTBY:
    for my $i (0 .. $#{$transposed}) {
