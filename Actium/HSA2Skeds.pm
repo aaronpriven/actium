@@ -24,17 +24,14 @@ use File::Copy;
 
 use Actium::Options qw(option add_option);
 
-use Actium::HSA qw(day_of dir_of);
-
-#use Actium (qw(option avldata all_true add_option transposed ensuredir say sayt sayq jtn key underlinekey));
+use Actium::HastusASI::Util qw(day_of dir_of);
 
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Time (qw(time_to_timenum timenum_to_12h timenum_to_12h_ap_only));
 
-sub OPTIONS {
-   add_option('rawonly!' , 'Only create "rawskeds" and not "skeds".');
-}
+
+add_option('rawonly!' , 'Only create "rawskeds" and not "skeds".');
 
 my $helptext = <<'EOF';
 hsa2skeds. Reads stored AVL data and makes skeds files.
@@ -234,36 +231,6 @@ sub modify_duplicate_places {
          $seen{$place} = 1;
       }
    }
-
-
-
-
-# unneeded routine to eliminate blank columns   
-#   my @times = ();
-#   
-#   foreach my $sked_r (@{$sked_of{$key}}) {
-#      push @times, $sked_r->{TIMES}; # ref to this row
-#   }
-#   # now @times is array of arrays - first row, then column
-#   
-#   my @transposed = transposed(\@times);
-#   
-#   # now @transposed is array of arrays - first column, then row
-#
-#
-#   for my $idx (reverse (0 .. $#transposed) ) {
-#      if (join( @{$transposed[$idx]} eq $EMPTY_STR ) {
-#         # remove this column
-#         splice (@transposed , $idx, 1 );
-#         splice ( @{$sked_order_of{$key}}, $idx, 1 )
-#      
-#      }
-#   
-   
-   
-   
-   
-   
 
 }
 
@@ -616,7 +583,7 @@ sub make_skeds_pairs_of_hash {
       
       my $specdays = $tripinfo_of{SpecDays} || $EMPTY_STR;
       
-      my $days     = day_of({$tripinfo_of{OperatingDays}});
+      my $days     = day_of_hasi({$tripinfo_of{OperatingDays}});
       
       if ($days eq 'TT' or $days eq 'TF') {
          $specdays = $days;
@@ -625,7 +592,7 @@ sub make_skeds_pairs_of_hash {
       
       my $pattern  = $tripinfo_of{Pattern};
       my $patkey   = key ($line, $pattern);
-      my $dir_code = dir_of({$avldata{PAT}{$patkey}{DirectionValue}});
+      my $dir_code = dir_of_hasi({$avldata{PAT}{$patkey}{DirectionValue}});
 
       my @pairs = ();
       TIMEIDX:

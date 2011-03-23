@@ -16,8 +16,8 @@ use Memoize;
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK 
-   = qw(add_option ensuredir chdir_signup all_true option initialize avldata byroutes
-        underlinekey jt jn jtn key say sayf sayq printq sayt transposed);
+   = qw(add_option ensuredir chdir_signup all_true option initialize avldata 
+        byroutes underlinekey jt jn jtn key say sayf sayq printq sayt );
 
 use Actium::Constants;
 
@@ -264,27 +264,6 @@ sub underlinekey {
 sub all_true { $_ || return 0 for @_; 1 }
 # tests each entry of @_, and returns 0 if any of them are false.
 
-
-##########################
-### TRANSPOSE
-##########################
-
-sub transposed {
-    my $aoa_r = shift;
-    my @result;
-    my $m;
-
-    for my $col (@{$aoa_r->[0]}) {
-        push @result, [];
-    }
-    for my $row (@{$aoa_r}) {
-        $m=0;
-        for my $col (@{$row}) {
-            push(@{$result[$m++]}, $col);
-        }
-    }
-    return \@result;
-}
 
 ##########################
 ### BYROUTES
