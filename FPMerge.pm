@@ -1,8 +1,9 @@
 # FPMerge.pm
-# vimcolor: #401000
 
 # This is FPMerge.pm, a module to read (and maybe later, write) 
 # the database files in "merge" format exported by FileMaker Pro.
+
+# This needs to be replaced... soon...
 
 package FPMerge;
 
@@ -15,7 +16,6 @@ use Exporter;
 $VERSION = '0.00';
 
 use constant QUOTE => '"';
-use PickNewline('picknewline');
 use integer; # ever so slightly faster
 
 # FPread can build two different data structures.
@@ -246,4 +246,43 @@ sub FPread {
 
    return ($fparray);
 
+}
+
+
+sub picknewline {
+
+    # the tell and seek stuff restores the current position of the file.
+    # I actually don't know why the position would be anything other than
+    # zero, but I want to be on my best behavior...
+
+    my $fh = shift;
+
+    my $tell = tell $fh;
+
+    my $nl;
+
+    seek ($fh, 0, 0);
+
+    local $_ = "";
+
+    read ($fh, $_, 8192);
+
+    if (/\cM\cJ/) {
+        $nl = "\cM\cJ";
+        # if there's a CRLF pair, the line ending must be CRLF.
+    } elsif (/\cJ/) {
+        $nl = "\cJ";
+        # if there's a LF but no CRLF pair, the line ending must be LF.
+    } elsif (/\cM/) {
+        # if there's a CR but no LF, the line ending must be CR.
+        $nl = "\cM";
+    } else {
+        # we don't know. Could be anything. We'll set it to undef
+        $nl = undef;
+    }
+
+    seek ($fh, $tell, 0);
+
+    return $nl;
+    
 }
