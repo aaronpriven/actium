@@ -29,7 +29,6 @@ use Actium::Sorting (qw(sortbyline));
 use FPMerge qw(FPread FPread_simple);
 use Skedtps qw(tphash TPXREF_FULL); 
 use Myopts;
-use TaggedText qw(%tags parastyle);
 
 use Storable qw(dclone);
 
@@ -88,6 +87,52 @@ open DATE , "<effectivedate.txt"
 our $effdate = scalar <DATE>;
 close DATE;
 chomp $effdate;
+
+# define tags
+
+our (%quark , %indesign , %tags);
+         
+%quark = (
+BIGSPACE => '<\q><\q>' ,
+BOXBREAK => '<\\b>' ,
+ST => '<f"Zapf Dingbats">H<f$>',
+SD => '<f"Carta">V<f$>',
+SH => '<f"Festive"><\#105><f$>',
+'*' => '<f"Transportation"><\#121><f$>',
+PARASTYSTART => '<@' ,
+PARASTYEND => ':' ,
+CHARSTYSTART => '<@' ,
+CHARSTYEND => ':' ,
+NOBREAKSPC => '<\!s>' ,
+BOLDFONT => '<f"HelveticaNeue BoldCond">',
+NOBOLDFONT => '<f$>' ,
+START => '' ,
+);
+
+%indesign = (
+BIGSPACE => '<0x2002>' ,
+BOXBREAK => "<cNextXChars:Box>\r<cNextXChars:>" ,
+ST => '<cFont:Zapf Dingbats>H<cfont:>',
+SD => '<cFont:Carta>V<cFont:>',
+SH => '<cFont:Festive">i<cFont:>',
+'*' => '<cFont:Transportation>y<cFont:>',
+PARASTYSTART => '<ParaStyle:' ,
+PARASTYEND => '>',
+CHARSTYSTART => '<CharStyle:' ,
+CHARSTYEND => '>',
+NOBREAKSPC =>  '<0x00A0>' ,
+BOLDFONT => '<CharStyle:pmtimes>' ,
+NOBOLDFONT => '<CharStyle:>' ,
+START => "<ASCII-MAC>\r" ,
+);
+
+$indesign{START} .= "<DefineParaStyle:$_=>" foreach 
+    ( qw(headnum headname headdest headdays tpnum tpname times timesblank legend) );
+
+$indesign{START} .= "<DefineCharStyle:$_=>" foreach 
+    ( qw(pmtimes) );
+
+%tags = %indesign;
 
 # main loop
 
@@ -402,5 +447,18 @@ sub whole_sked_notes {
 
    return $bottomnotes;
 
+}
+
+
+sub preparequark { %tags = %quark }
+
+sub prepareindesign { %tags = %indesign }
+
+sub parastyle { 
+   return $tags{PARASTYSTART} . $_[0] . $tags{PARASTYEND}
+}
+
+sub charstyle { 
+   return $tags{CHARSTYSTART} . $_[0] . $tags{CHARSTYEND}
 }
 
