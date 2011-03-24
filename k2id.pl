@@ -1,5 +1,4 @@
 #!/ActivePerl/bin/perl
-# vimcolor: #180028
 
 # k2id - see POD documentation below
 
@@ -14,13 +13,8 @@ use 5.010;
 use sort ('stable');
 
 # add the current program directory to list of files to include
-use FindBin('$Bin');
-use lib (
-    $Bin, "$Bin/../bin",
-
-    #    '/Volumes/Bireme/Actium/bin ',
-    #    '/Volumes/Bireme/Actium/objbin'
-);
+use FindBin qw($Bin);
+use lib $Bin;
 
 use Carp;
 use POSIX ('ceil');
@@ -40,7 +34,7 @@ use List::MoreUtils('natatime');
 use File::Slurp;
 use Text::Trim;
 
-use Kidpoint;
+use Actium::Kidpoint;
 
 # don't buffer terminal output
 $| = 1;
@@ -128,7 +122,7 @@ foreach my $signid ( sort { $a <=> $b } @signstodo ) {
 
     # 1) Read kpoints from file
 
-    my $kidpoint = Kidpoint->new_from_kpoints( $stopid, $signid, $effdate );
+    my $kidpoint = Actium::Kidpoint->new_from_kpoints( $stopid, $signid, $effdate );
 
     # 2) Change kpoints to the kind of data that's output in
     #    each column (that is, separate what's in the header
