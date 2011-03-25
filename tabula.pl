@@ -1,5 +1,9 @@
 #!/ActivePerl/bin/perl
 
+# Produces InDesign tag files that represent timetables.
+
+# legacy status: 2, although actually it was written relatively recently.
+
 use warnings;
 use 5.012;
 

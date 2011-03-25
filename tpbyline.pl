@@ -1,5 +1,11 @@
 #!/usr/bin/perl
 
+# legacy status: 1
+
+# This obviously produces a cross-tabulation of line groups and
+# timepoints. I don't remember why I wanted this... or why I wanted
+# it in HTML...
+
 use strict;
 
 # initialization

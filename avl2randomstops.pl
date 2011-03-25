@@ -1,11 +1,11 @@
 #!/ActivePerl/bin/perl
 
-@ARGV = qw(-s sp09) if $ENV{RUNNING_UNDER_AFFRUS};
+# avl2randomstops.pl
 
-# avl2stoplines - see POD documentation below
+# another variant of avl2stoplines that randomizes the results, 
+# allowing us to pick random stops for sampling.
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
+# legacy stage 2
 
 use warnings;
 use strict;
@@ -80,21 +80,6 @@ foreach my $stopid (@stopids) {
 
 }
 
-=head1 NAME
-
-avl2stoplines - Make a list of stops with the lines for that stop.
-
-=head1 DESCRIPTION
-
-avl2stoplines reads the data written by readavl and turns it into a 
-list of stops with the lines served by that stop. 
-It is saved in the file "stoplines.txt" in the directory for that signup.
-
-=head1 AUTHOR
-
-Aaron Priven
-
-=cut
 
 
 

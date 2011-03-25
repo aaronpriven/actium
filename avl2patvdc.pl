@@ -4,6 +4,9 @@
 
 # avl2patvdc - see POD documentation below
 
+# This was used for generating the destinations that Nextbus uses on its 
+# web site. Now it is not used, because we use avl2patdest instead
+
 #00000000111111111122222222223333333333444444444455555555556666666666777777777
 #23456789012345678901234567890123456789012345678901234567890123456789012345678
 

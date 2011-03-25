@@ -1,8 +1,11 @@
 #!/usr/bin/perl
 
-# all routes
+# allroutes.pl
 
-# lists all linegroups and the routes in them
+# legacy status 1
+
+# lists all linegroups and the routes in them, deriving this from the
+# skeds files.
 
 use strict;
 
