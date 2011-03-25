@@ -2,8 +2,10 @@
 
 # avl2skeds - see POD documentation below
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
+# legacy stage 2
+
+# This is one of the most important programs: it produces the skeds files from 
+# the avl files.
 
 use warnings;
 use strict;

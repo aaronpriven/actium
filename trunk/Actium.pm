@@ -3,6 +3,13 @@
 # Actium.pm
 # Various initialization and other routines related to the Actium system
 
+# Legacy stage 2
+
+# This program is duplicative of other modules that have been written as
+# part of stage 3 (Actium::Sorting, Actium::Util, Actium::Options, etc.) 
+
+# Programs using it should be rewritten to use the new modules instead.
+
 package Actium;
 use strict;
 use warnings;

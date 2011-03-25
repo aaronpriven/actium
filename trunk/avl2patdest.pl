@@ -1,9 +1,11 @@
 #!/Activeperl/bin/perl
 
-# avl2patvdc - see POD documentation below
+# avl2patdest.pl
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
+# legacy stage 2
+
+# This is used for generating the destinations that Nextbus uses on its 
+# web site.
 
 use 5.010;
 
@@ -141,20 +143,3 @@ foreach (sort keys %seen) {
    }
 }
 
-#print "$route\t$pat\t$dir\t$dest\n";
-
-=head1 NAME
-
-avl2patvdc - Displays the vehicle display code for each pattern
-
-=head1 DESCRIPTION
-
-avl2patvdc reads the data written by readavl.
-It then assembles a list of patterns and the appropriate 
-vehicle display messages.
-
-=head1 AUTHOR
-
-Aaron Priven
-
-=cut

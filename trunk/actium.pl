@@ -2,13 +2,18 @@
 
 # actium.pl - command-line access to Actium system
 
+# Legacy Stage 3
+
+# This is the single executable file that allows access to various Actium
+# commands. There are a couple of reasons for this. The main one is that I
+# would like to rewrite the modules so that they can provide data that can
+# be reused in other programs. With standalone programs it's been difficult
+# to do that. Also, littering the world with lots of little executables seems
+# like a bad idea.
+
 # Subversion: $Id$
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
-
 ## no critic (RequireLocalizedPunctuationVars)
-
 
 use strict;
 use warnings;
@@ -32,6 +37,12 @@ use Actium::Options qw(add_option init_options option);
         @ARGV = Actium::Eclipse::get_command_line();
     }
 }
+
+
+# The below make sure that all errors give full stack traces.
+# This should be changed to a command-line option
+
+# arguably also the facetious name should be changed
 
 $SIG{'__WARN__'} = \&soft_cushions;
 $SIG{'__DIE__'} = \&soft_cushions;

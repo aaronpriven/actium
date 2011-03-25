@@ -2,10 +2,13 @@
 
 @ARGV = qw(-s sp09) if $ENV{RUNNING_UNDER_AFFRUS};
 
-# avl2stoplines - see POD documentation below
+# avl2flags.pl
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
+# legacy stage 2
+#
+# A variant of avl2stoplines. It is not much different from that program,
+# but has a slightly different output. All these avl2stoplines programs
+# should be redone to provide all the different outputs 
 
 use warnings;
 use strict;

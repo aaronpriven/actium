@@ -1,11 +1,11 @@
 #!/ActivePerl/bin/perl
 
-@ARGV = qw(-s sp09) if $ENV{RUNNING_UNDER_AFFRUS};
-
 # avl2stoplines - see POD documentation below
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
+# legacy stage 2
+
+# There are a number of variants of this program, including avl2flags, 
+# avl2stoplines-dir, etc. They should be combined
 
 use warnings;
 use strict;
