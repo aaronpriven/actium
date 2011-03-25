@@ -1,7 +1,13 @@
 #!/usr/bin/perl
-# vimcolor: #000030
 
-# makepoints
+# tablepoints
+
+# This is a never-completed version of a new version of makepoints,
+# which creates the same sort of information, but in a different InDesign
+# format.
+
+# legacy status: 1
+
 #
 # This program generates the point schedules associated with 
 # particular signs.

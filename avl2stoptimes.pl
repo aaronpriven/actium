@@ -1,11 +1,6 @@
 #!/usr/bin/perl
 
-@ARGV = qw(-s sp09) if $ENV{RUNNING_UNDER_AFFRUS};
-
 # avl2stoptimes - see POD documentation below
-
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
 
 use warnings;
 use strict;
@@ -136,7 +131,8 @@ avl2stoptimes - Get lists of stop times from the avl stored data.
 =head1 DESCRIPTION
 
 avl2stoptimes reads the data written by readavl and turns it 
-into files that contain each stop and what the times for that stop are.
+into files that contain each stop and what the span of service for that stop
+is -- when the first and last buses pass that stop.
 
 =head1 AUTHOR
 

@@ -1,6 +1,11 @@
 #!/usr/bin/perl
 # tabskeds
 
+# This is the program that creates the "tab files" that are used in the 
+# Designtek-era web schedules
+
+# legacy stage 1
+
 # Makes tab-delimited but public versions of the skeds in /skeds
 
 @ARGV = qw(-s w07) if $ENV{RUNNING_UNDER_AFFRUS};

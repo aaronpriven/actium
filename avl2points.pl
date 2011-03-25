@@ -2,8 +2,10 @@
 
 # avl2points - see POD documentation below
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
+# legacy stage 2
+
+# Actually this was written relatively late, and includes some stage 2 and
+# some stage 3 modules.
 
 use warnings;
 use 5.012;

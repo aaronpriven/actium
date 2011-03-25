@@ -1,11 +1,8 @@
 #!/usr/bin/perl
 
-@ARGV = qw(-s sp09) if $ENV{RUNNING_UNDER_AFFRUS};
-
 # avl2stopnames - see POD documentation below
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
+# legacy stage 2
 
 use warnings;
 use strict;
@@ -149,6 +146,4 @@ The simple rules are regular expressions found in the program.
 Aaron Priven
 
 =cut
-
-
 

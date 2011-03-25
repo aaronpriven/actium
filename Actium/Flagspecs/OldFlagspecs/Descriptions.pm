@@ -15,7 +15,7 @@ our $VERSION = '0.001';
 $VERSION = eval $VERSION;    ## no critic (StringyEval)
 
 use Actium::Constants;
-use Actium::Flagspecs::RelevantPlaces ('relevant_places');
+#use Actium::Flagspecs::RelevantPlaces ('relevant_places');
 
 use Perl6::Export::Attrs;
 

@@ -2,7 +2,10 @@
 
 @ARGV = qw(-s sp09) if $ENV{RUNNING_UNDER_AFFRUS};
 
-# avl2stoplines - see POD documentation below
+# avl2stoplines-dir
+
+# Another variant of avl2stoplines, this one lists directions as well as routes
+# legacy stage 2
 
 #00000000111111111122222222223333333333444444444455555555556666666666777777777
 #23456789012345678901234567890123456789012345678901234567890123456789012345678
@@ -454,20 +457,3 @@ sub remove_last {
     $disp =~ s/-LAST\z//;
     return $disp;
 }
-
-=head1 NAME
-
-avl2stoplines - Make a list of stops with the lines for that stop.
-
-=head1 DESCRIPTION
-
-avl2stoplines reads the data written by readavl and turns it into a 
-list of stops with the lines served by that stop. 
-It is saved in the file "stoplines.txt" in the directory for that signup.
-
-=head1 AUTHOR
-
-Aaron Priven
-
-=cut
-
