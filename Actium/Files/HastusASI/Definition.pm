@@ -12,6 +12,8 @@ package Actium::Files::HastusASI::Definition 0.001;
 use English ('-no_match_vars');
 use Actium::Constants;
 
+use Perl6::Export::Attrs;
+
 #########################################
 ### DEFINITION
 #########################################
@@ -236,117 +238,104 @@ ENDNAMES
 
 # READ DEFINITION
 
-sub definition {
- 
-my %table;
-my %filetype;
+sub definition_objects : Export {
 
-local $INPUT_RECORD_SEPARATOR = $EMPTY_STR;    # paragraph mode
+    my %table_spec_of;
+    my %filetype_spec_of;
 
-open my $definition_h, '<', \$DEFINITION
-  or die "Can't open internal variable for reading: $OS_ERROR";
+    local $INPUT_RECORD_SEPARATOR = $EMPTY_STR;    # paragraph mode
 
-TABLE:
-while (<$definition_h>) {
-    my @entries = split;
-    
-    my %thistable;
-    
-    # get row type length and column type
-    my ( $table, $filetype, $parent )
-      = splice( @entries, 0, 3 );    ## no critic (ProhibitMagicNumbers)
-      
-    $thistable{filetype} = $filetype;
-    push @{$filetype{$filetype}{tables_r}} , $table;
-    
-    # is this a child?
-    if ( $parent ne 'noparent' ) {
-        $thistable{parent} = $parent;
-        push @{ $table{$parent}{children_r} }, $table;
-    }
-    else {
-        $thistable{parent} = undef;
-    }
-     
-    my $column_order = 0;
+    open my $definition_h, '<', \$DEFINITION
+      or die "Can't open internal variable for reading: $OS_ERROR";
 
-  COLUMN:
-    while (@entries) {
+  TABLE:
+    while (<$definition_h>) {
+        my @entries = split;
 
-        # get items from entries
-        my $column_length = shift @entries;
-        my $column        = shift @entries;
-        
-        $thistable{column_length} = $column_length;
+        my %spec;
 
-        # if it's a key column, put that in hashes
-        if ( $column =~ /!\z/s ) {
-            $column =~ s/!\z//s;
-            push @{ $thistable{key_columns_r}  },      $column;
-            push @{ $thistable{key_column_order_r} }, $column_order;
+        # get row type length and column type
+        my ( $table_id, $filetype, $parent ) =
+          splice( @entries, 0, 3 );    ## no critic (ProhibitMagicNumbers)
+
+        $spec{filetype} = $filetype;
+        $spec{id}       = $table_id;
+        push @{ $filetype_spec_of{$filetype}{tables_r} }, $table_id;
+
+        # is this a child?
+        if ( $parent ne 'noparent' ) {
+            $spec{parent} = $parent;
+            push @{ $table_spec_of{$parent}{children_r} }, $table_id;
+        }
+        else {
+            $spec{parent} = undef;
         }
 
-        # save column type and order
-        push @{$thistable{columns_r}} , $column;
-        $thistable{column_order_r}{$column} = $column_order;
-        
-        $column_order++;
+        my $column_order = 0;
 
-    } ## tidy end: while (@entries)
+      COLUMN:
+        while (@entries) {
 
-    # if there's a key, save name of key. If only one column is used
-    # as the key, save that name. Otherwise, create a new column called
-    # TABLE_key (e.g., PAT_key, BLK_key, etc.)
+            # get items from entries
+            my $column_length = shift @entries;
+            my $column        = shift @entries;
 
-    given ( scalar @{ $thistable{key_columns_r} } ) {
-        when (0) {
-            # do nothing
+            # if it's a key column, save that
+            if ( $column =~ /!\z/s ) {
+                $column =~ s/!\z//s;
+                push @{ $spec{key_columns_r} },      $column;
+                push @{ $spec{key_column_order_r} }, $column_order;
+            }
+
+            # save column type, length,  and order
+            push @{ $spec{columns_r} },       $column;
+            push @{ $spec{column_length_r} }, $column_length;
+            $spec{column_order_r}{$column} = $column_order;
+
+            $column_order++;
+
+        }    ## tidy end: while (@entries)
+
+        # if there's a key, save name of key. If only one column is used
+        # as the key, save that name. Otherwise, create a new column called
+        # TABLE_key (e.g., PAT_key, BLK_key, etc.)
+
+        given ( scalar @{ $spec{key_columns_r} } ) {
+            when (0) {
+
+                # do nothing
+            }
+            when (1) {
+                $spec{keycolumn}               = $spec{key_columns_r}[0];
+                $spec{has_multiple_keycolumns} = 0;
+            }
+            default {
+                $spec{has_multiple_keycolumns} = 1;
+                $spec{keycolumn}               = "${table_id}_key";
+            }
         }
-        when (1) {
-            $keycolumn_of{$table}            = $key_columns_of{$table}[0];
-            $has_multiple_keycolumns{$table} = 0;
+
+        # if final column is repeating, save that
+        if ( $spec{columns_r}[-1] =~ /\*\z/s ) {
+            $spec{columns_r}[-1] =~ s/\*\z//s;    # remove * marker
+            $spec{has_repeating_final_column} = 1;
         }
-        default {
-            $has_multiple_keycolumns{$table} = 1;
-            $keycolumn_of{$table}            = "${table}_key";
-        }
-    }
 
-    # if final column is repeating, save that
-    if ( $columns_of{$table}[-1] =~ /\*\z/s ) {
-        $columns_of{$table}[-1] =~ s/\*\z//s;    # remove * marker
-        $has_repeating_final_column{$table} = 1;
-    }
-} ## tidy end: while (<$definition_h>)
+        $table_spec_of{$table_id} = \%spec;
 
-## CREATE SQL COMMANDS
+    }    ## tidy end: while (<$definition_h>)
 
-foreach my $table ( keys %filetype_of ) {
+    close $definition_h
+      or die "Can't close internal variable for reading: $OS_ERROR";
 
-    my @create_columns = @{ $columns_of{$table} };
-    my $parent         = $parent_of{$table};
-    if ($parent) {
-        unshift @create_columns, "${parent}_id INTEGER";
-    }
+    my @tableobjs =
+      map { Actium::Files::HastusASI::Table->new($_) } values %table_spec_of;
 
-    my $key = $keycolumn_of{$table};
+    my @filetypeobjs =
+      map { Actium::Files::HastusASI::Filetype->new($_) }
+      values %filetype_spec_of;
 
-    if ($key) {
-        push @create_columns, $key
-          if $has_multiple_keycolumns{$table};
-        $sql_idxcmd_of{$table}
-          = "CREATE INDEX idx_${table}_key ON $table ($key)";
-    }
-
-    unshift @create_columns, "${table}_id INTEGER PRIMARY KEY";
-
-    $sql_createcmd_of{$table}
-      = "CREATE TABLE $table (" . join( q{,}, @create_columns ) . q{)};
-
-    $sql_insertcmd_of{$table} = "INSERT INTO $table VALUES ("
-      . join( q{,}, ('?') x @create_columns ) . ')';
-
-} ## tidy end: foreach my $table ( keys %filetype_of)
+    return \@tableobjs, \@filetypeobjs;
 
 }
 
