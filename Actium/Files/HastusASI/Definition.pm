@@ -13,6 +13,8 @@ use English ('-no_match_vars');
 use Actium::Constants;
 
 use Perl6::Export::Attrs;
+use Actium::Files::HastusASI::Filetype;
+use Actium::Files::HastusASI::Table;
 
 #########################################
 ### DEFINITION
@@ -328,14 +330,16 @@ sub definition_objects : Export {
     close $definition_h
       or die "Can't close internal variable for reading: $OS_ERROR";
 
-    my @tableobjs =
-      map { Actium::Files::HastusASI::Table->new($_) } values %table_spec_of;
+    my %tableobjs =
+      map { $_ => Actium::Files::HastusASI::Table->new( $table_spec_of{$_} ) }
+      keys %table_spec_of;
 
-    my @filetypeobjs =
-      map { Actium::Files::HastusASI::Filetype->new($_) }
-      values %filetype_spec_of;
+    my %filetypeobjs =
+      map {
+        $_ => Actium::Files::HastusASI::Filetype->new( $filetype_spec_of{$_} )
+      } keys %filetype_spec_of;
 
-    return \@tableobjs, \@filetypeobjs;
+    return \%tableobjs, \%filetypeobjs;
 
 }
 

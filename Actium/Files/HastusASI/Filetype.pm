@@ -13,13 +13,13 @@ use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
-has 'tables_r' => {
+has 'tables_r' => (
     is       => 'ro',
     traits   => ['Array'],
     isa      => 'ArrayRef[Str]',
     required => 1,
     handles  => { tables => 'elements', },
-};
+);
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 

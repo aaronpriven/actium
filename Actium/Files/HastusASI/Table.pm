@@ -13,84 +13,84 @@ use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
-has [qw[id parent filetype keycolumn sql_insertcmd sql_createcmd ]] => {
+has [qw[id parent filetype keycolumn sql_insertcmd sql_createcmd ]] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1
-};
+);
 
-has 'sql_insertcmd' => {
+has 'sql_insertcmd' => (
     is      => 'ro',
     isa     => 'Str',
-    builder => \&_build_sql_insertcmd,
+    builder => '_build_sql_insertcmd',
     lazy    => 1,
-};
+);
 
-has 'sql_createcmd' => {
+has 'sql_createcmd' => (
     is      => 'ro',
     isa     => 'Str',
-    builder => \&_build_sql_createcmd,
+    builder => '_build_sql_createcmd',
     lazy    => 1,
-};
+);
 
-has 'sql_idxcmd' => {
+has 'sql_idxcmd' => (
     is      => 'ro',
     isa     => 'Str',
-    builder => \&_build_sql_idxcmd,
+    builder => '_build_sql_idxcmd',
     lazy    => 1,
-};
+);
 
-has [qw[has_repeating_final_column has_multiple_keycolumns]] => {
+has [qw[has_repeating_final_column has_multiple_keycolumns]] => (
     is      => 'ro',
     isa     => 'Bool',
     default => 0,
-};
+);
 
 foreach my $attribute (qw[columns children]) {
-    has "${attribute}_r" => {
+    has "${attribute}_r" => (
         is       => 'ro',
         traits   => ['Array'],
         isa      => 'ArrayRef[Str]',
         required => 1,
         handles  => { $attribute => 'elements', },
-    };
+    );
 }
 
-has '_create_columns_r' => {
+has '_create_columns_r' => (
     is      => 'ro',
     traits  => ['Array'],
     isa     => 'ArrayRef[Str]',
     lazy    => 1,
-    builder => \&_build_create_columns_r,
+    builder => '_build_create_columns_r',
     handles => { _create_columns => 'elements' },
-};
+);
 
 foreach my $attribute (qw[key_columns]) {
-    has "${attribute}_r" => {
+    has "${attribute}_r" => (
         is      => 'ro',
         traits  => ['Array'],
         isa     => 'ArrayRef[Str]',
         default => sub { [] },
         handles => { $attribute => 'elements', },
-    };
+    );
 }
 
-has 'key_column_order_r' => {
+has 'key_column_order_r' => (
     is      => 'ro',
     traits  => ['Array'],
     isa     => 'ArrayRef[Int]',
     default => sub { [] },
     handles => { key_column_order => 'elements', },
-};
+);
 
 foreach my $attribute (qw(column_order column_length)) {
-    has "${attribute}_r" => {
+    has "${attribute}_r" => (
         is       => 'ro',
         traits   => ['Hash'],
         isa      => 'HashRef[Int]',
         required => 1,
         handles  => { "${attribute}_of" => 'get', },
-    };
+    );
 }
 
 sub _build_sql_idxcmd {
