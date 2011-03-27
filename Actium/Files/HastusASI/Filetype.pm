@@ -13,19 +13,14 @@ use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
-foreach my $attribute (qw[tables]) {
-    has "${attribute}_r" => {
-        is      => 'ro',
-        traits  => ['Array'],
-        isa     => 'ArrayRef[Str]',
-        default => sub { [] },
-        required => 1,
-        handles => { $attribute => 'elements', },
-    };
-}
+has 'tables_r' => {
+    is       => 'ro',
+    traits   => ['Array'],
+    isa      => 'ArrayRef[Str]',
+    required => 1,
+    handles  => { tables => 'elements', },
+};
 
-# my ( %children_of );
-# my ( %columns_of, %column_order_of );
-# my ( %key_columns_of,   %key_column_order_of );
+__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
