@@ -25,7 +25,7 @@ use File::Glob qw(:glob);
 use File::Spec;
 use Readonly;
 
-use Actium::Files::HastusASI::Definition ('definition_objects'); 
+use Actium::Files::HastusASI::Definition;
 
 # set some constants
 Readonly my $NO_PARENT                   => 'noparent';
@@ -150,6 +150,13 @@ my (%tables, %filetypes) = definition_objects();
 ######################################
 ### FILES LIST
 ######################################
+
+has '_definition' => (
+    is => 'bare' ,
+    isa => 'Actium::Files::HastusASI::Definition',
+    default => Actium::Files::HastusASI::Definition->instance ,
+    # handles => { ... },
+);
 
 has '_files_of_filetype_r' => (
     traits  => ['Hash'],
