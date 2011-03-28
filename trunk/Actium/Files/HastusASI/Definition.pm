@@ -4,6 +4,8 @@
 
 # Subversion: $Id$
 
+# Legacy stage 4
+
 use warnings;
 use 5.012;    # turns on features
 
@@ -12,29 +14,30 @@ package Actium::Files::HastusASI::Definition 0.001;
 use MooseX::Singleton;
 
 use English ('-no_match_vars');
-use Actium::Constants;
 
 use Actium::Files::HastusASI::Filetype;
 use Actium::Files::HastusASI::Table;
 
 has 'table_of_r' => (
+    init_arg => undef,
     is      => 'ro',
     traits  => ['Hash'],
     isa     => 'HashRef[Actium::Files::HastusASI::Table]',
-    builder => '_build_tableobjs',
+    builder => '_build_table_of_r',
     lazy    => 1,
-
-    #handles  => { ... },
+    handles => { tables => 'keys' },
 );
 
 has 'filetype_of_r' => (
+    init_arg => undef,
     is      => 'ro',
     traits  => ['Hash'],
     isa     => 'HashRef[Actium::Files::HastusASI::Filetype]',
-    builder => '_build_filetypeobjs',
+    builder => '_build_filetype_of_r',
     lazy    => 1,
 
-    #handles  => { ... },
+    handles => { filetypes => 'keys' },
+
 );
 
 #########################################
@@ -249,25 +252,26 @@ ENDNAMES
 # COLUMNNAME* - column is a final, repeating column
 #   (contains more than one value)
 
-#my ( %parent_of,        %children_of );
-#my ( %filetype_of,      %tables_of );
-#my ( %columns_of,       %column_order_of );
-#my ( %keycolumn_of,     %has_multiple_keycolumns );
-#my ( %key_columns_of,   %key_column_order_of );
-#my ( %sql_insertcmd_of, %sql_createcmd_of, %sql_idxcmd_of );
-#my (%has_repeating_final_column);
-
-# these are processed when file is read
-
 # READ DEFINITION
 
-sub _build_tableobjs {
+# so, the way this works is that it goes through each table and builds little
+# constructor-specifications for each of the various properties:
+# id, filetype, parent , columns_r, column_length_of_r, 
+# has_repeating_final_column, and key_components_r
+
+# As it goes through the subsquent tables, it goes back to the previous ones
+# when it has to specify that a table has children
+
+# At the end, it creates a bunch of new little objects from the constructor
+# specs, and returns them to be found in the table_of_r attribute
+
+sub _build_table_of_r {
+
+    my $self = shift;
 
     my %table_spec_of;
 
-    #my %filetype_spec_of;
-
-    local $INPUT_RECORD_SEPARATOR = $EMPTY_STR;    # paragraph mode
+    local $INPUT_RECORD_SEPARATOR = q{};    # paragraph mode
 
     open my $definition_h, '<', \$DEFINITION
       or die "Can't open internal variable for reading: $OS_ERROR";
@@ -279,24 +283,17 @@ sub _build_tableobjs {
         my %spec;
 
         # get row type length and column type
-        my ( $table_id, $filetype, $parent ) =
-          splice( @entries, 0, 3 );    ## no critic (ProhibitMagicNumbers)
+        my ( $table_id, $filetype, $parent )
+          = splice( @entries, 0, 3 );    ## no critic (ProhibitMagicNumbers)
 
         $spec{filetype} = $filetype;
         $spec{id}       = $table_id;
-
-        #push @{ $filetype_spec_of{$filetype}{tables_r} }, $table_id;
 
         # is this a child?
         if ( $parent ne 'noparent' ) {
             $spec{parent} = $parent;
             push @{ $table_spec_of{$parent}{children_r} }, $table_id;
         }
-        else {
-            $spec{parent} = undef;
-        }
-
-        my $column_order = 0;
 
       COLUMN:
         while (@entries) {
@@ -308,37 +305,14 @@ sub _build_tableobjs {
             # if it's a key column, save that
             if ( $column =~ /!\z/s ) {
                 $column =~ s/!\z//s;
-                push @{ $spec{key_columns_r} },      $column;
-                push @{ $spec{key_column_order_r} }, $column_order;
+                push @{ $spec{key_components_r} },      $column;
             }
 
-            # save column type, length,  and order
+            # save column type and length
             push @{ $spec{columns_r} },       $column;
-            push @{ $spec{column_length_r} }, $column_length;
-            $spec{column_order_r}{$column} = $column_order;
+            $spec{column_length_of_r}{$column} = $column_length;
 
-            $column_order++;
-
-        }    ## tidy end: while (@entries)
-
-        # if there's a key, save name of key. If only one column is used
-        # as the key, save that name. Otherwise, create a new column called
-        # TABLE_key (e.g., PAT_key, BLK_key, etc.)
-
-        given ( scalar @{ $spec{key_columns_r} } ) {
-            when (0) {
-
-                # do nothing
-            }
-            when (1) {
-                $spec{keycolumn}               = $spec{key_columns_r}[0];
-                $spec{has_multiple_keycolumns} = 0;
-            }
-            default {
-                $spec{has_multiple_keycolumns} = 1;
-                $spec{keycolumn}               = "${table_id}_key";
-            }
-        }
+        } ## tidy end: while (@entries)
 
         # if final column is repeating, save that
         if ( $spec{columns_r}[-1] =~ /\*\z/s ) {
@@ -348,36 +322,124 @@ sub _build_tableobjs {
 
         $table_spec_of{$table_id} = \%spec;
 
-    }    ## tidy end: while (<$definition_h>)
+    } ## tidy end: while (<$definition_h>)
 
     close $definition_h
       or die "Can't close internal variable for reading: $OS_ERROR";
 
-    my %tableobjs =
-      map { $_ => Actium::Files::HastusASI::Table->new( $table_spec_of{$_} ) }
+    my %tableobjs
+      = map { $_ => Actium::Files::HastusASI::Table->new( $table_spec_of{$_} ) }
       keys %table_spec_of;
 
     return \%tableobjs;
 
-}
+} ## tidy end: sub _build_table_of_r
 
-sub _build_filetypeobjs {
-    my $self = shift;
+sub _build_filetype_of_r {
+    my $self      = shift;
     my %tableobjs = %{ $self->table_of_r };
-    my %filetype_spec_of;
-    
-    while ( my ($table, $tableobj) = each %tableobjs) {
-        $filetype_spec_of{$table} = $tableobj->filetype;
+    my %tables_of;
+
+    while ( my ( $table, $tableobj ) = each %tableobjs ) {
+        my $filetype = $tableobj->filetype;
+        push @{ $tables_of{$filetype} }, $table;
     }
 
-    my %filetypeobjs = map {
-        $_ => Actium::Files::HastusASI::Filetype->new( $filetype_spec_of{$_} )
-    } keys %filetype_spec_of;
+    my %filetypeobj_of;
+    foreach my $filetype ( keys %tables_of ) {
+        $filetypeobj_of{$filetype} = Actium::Files::HastusASI::Filetype->new(
+            id       => $filetype,
+            tables_r => $tables_of{$filetype},
+        );
+    }
 
-    return \%filetypeobjs;
+    return \%filetypeobj_of;
 
-}
+} ## tidy end: sub _build_filetype_of_r
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
+
+=head1 NAME
+
+Actium::Files::HastusASI::Definition - singleton object/class for Hastus AVL 
+Standard Interface 
+
+=head1 VERSION
+
+This documentation refers to <name> version 0.001
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 OPTIONS
+
+A complete list of every available command-line option with which
+the application can be invoked, explaining what each does and listing
+any restrictions or interactions.
+
+If the application has no options, this section may be omitted.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties
+that can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+=item * MooseX::Singleton
+
+=item * perl 5.012
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2011
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
