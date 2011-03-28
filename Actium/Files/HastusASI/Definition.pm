@@ -9,12 +9,33 @@ use 5.012;    # turns on features
 
 package Actium::Files::HastusASI::Definition 0.001;
 
+use MooseX::Singleton;
+
 use English ('-no_match_vars');
 use Actium::Constants;
 
-use Perl6::Export::Attrs;
 use Actium::Files::HastusASI::Filetype;
 use Actium::Files::HastusASI::Table;
+
+has 'table_of_r' => (
+    is      => 'ro',
+    traits  => ['Hash'],
+    isa     => 'HashRef[Actium::Files::HastusASI::Table]',
+    builder => '_build_tableobjs',
+    lazy    => 1,
+
+    #handles  => { ... },
+);
+
+has 'filetype_of_r' => (
+    is      => 'ro',
+    traits  => ['Hash'],
+    isa     => 'HashRef[Actium::Files::HastusASI::Filetype]',
+    builder => '_build_filetypeobjs',
+    lazy    => 1,
+
+    #handles  => { ... },
+);
 
 #########################################
 ### DEFINITION
@@ -240,10 +261,11 @@ ENDNAMES
 
 # READ DEFINITION
 
-sub definition_objects : Export {
+sub _build_tableobjs {
 
     my %table_spec_of;
-    my %filetype_spec_of;
+
+    #my %filetype_spec_of;
 
     local $INPUT_RECORD_SEPARATOR = $EMPTY_STR;    # paragraph mode
 
@@ -262,7 +284,8 @@ sub definition_objects : Export {
 
         $spec{filetype} = $filetype;
         $spec{id}       = $table_id;
-        push @{ $filetype_spec_of{$filetype}{tables_r} }, $table_id;
+
+        #push @{ $filetype_spec_of{$filetype}{tables_r} }, $table_id;
 
         # is this a child?
         if ( $parent ne 'noparent' ) {
@@ -334,13 +357,27 @@ sub definition_objects : Export {
       map { $_ => Actium::Files::HastusASI::Table->new( $table_spec_of{$_} ) }
       keys %table_spec_of;
 
-    my %filetypeobjs =
-      map {
-        $_ => Actium::Files::HastusASI::Filetype->new( $filetype_spec_of{$_} )
-      } keys %filetype_spec_of;
-
-    return \%tableobjs, \%filetypeobjs;
+    return \%tableobjs;
 
 }
+
+sub _build_filetypeobjs {
+    my $self = shift;
+    my %tableobjs = %{ $self->table_of_r };
+    my %filetype_spec_of;
+    
+    while ( my ($table, $tableobj) = each %tableobjs) {
+        $filetype_spec_of{$table} = $tableobj->filetype;
+    }
+
+    my %filetypeobjs = map {
+        $_ => Actium::Files::HastusASI::Filetype->new( $filetype_spec_of{$_} )
+    } keys %filetype_spec_of;
+
+    return \%filetypeobjs;
+
+}
+
+__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
