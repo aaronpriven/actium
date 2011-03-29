@@ -29,14 +29,11 @@ use Moose::Role;
 use MooseX::SemiAffordanceAccessor;
 
 use Actium::Constants;
-use Actium::Files qw/filename/;
 use Actium::Term;
-use Actium::Util qw(jk);
 use Actium::Options (qw/add_option option/);
 use Carp;
 use DBI;
 use English '-no_match_vars';
-use File::Glob qw(:glob);
 use File::Spec;
 use Readonly;
 
@@ -50,7 +47,8 @@ Readonly my $DB_EXTENSION => '.SQLite';
 
 requires(
     qw/db_type key_of_table columns_of_table 
-       _load _files_of_filetype _tables_of_filetype/
+       _load _files_of_filetype _tables_of_filetype
+       _filetype_of_table/
 );
 
 # db_type is something like 'HastusASI' or 'FPMerge' or something, which
@@ -61,8 +59,12 @@ requires(
 # or "$filetype.csv" for FPMerge
 
 # _tables_of_filetype yields the different tables that go with filetype
-# -- e.g., for HastusDB it would be 'PAT' , 'TPS' for filetype 'PAT'
+# -- e.g., for HastusASI it would be 'PAT' , 'TPS' for filetype 'PAT'
 # For FPmerge it would be just the name of the file ('Timepoints')
+
+# _filetype_of_table yields the filetype to which a table belongs.
+# For HastusASI "TPS" would yield "PAT", for example. For anything
+# with one table per file, would just yield the table name.
 
 # _load is the routine that actually loads the flat files into
 # the database
@@ -134,6 +136,8 @@ has 'dbh' => (
 ### BUILDING AND DEMOLISHING THE OBJECT
 ############################################
 
+# allows a single "flats_folder" argument, or a hash or hashref with full
+# attribute specifications
 around BUILDARGS => sub {
     my $orig     = shift;
     my $class    = shift;
@@ -151,6 +155,7 @@ sub _build_db_folder {
 }
 
 sub _build_db_filename {
+    # only run when no db filename is specified
     my $self = shift;
     return $self->dbtype . $DB_EXTENSION;
 }
@@ -163,7 +168,6 @@ sub _build_db_filespec {
 sub _connect {
     my $self        = shift;
     my $db_filespec = $self->_db_filespec();
-    my $db_filename = $self->db_filename();
     my $existed     = -e $db_filespec;
 
     emit(
@@ -184,34 +188,36 @@ sub _connect {
 
 } ## tidy end: sub _connect
 
-sub DEMOLISH { }
+# DBI does the same thing, so this disconnection routine is not needed here.
 
-after DEMOLISH => sub {
-    my $self = shift;
-    my $dbh  = $self->dbh;
-    $dbh->disconnect();
-    return;
-};
+#sub DEMOLISH { }
+#
+#after DEMOLISH => sub {
+#    my $self = shift;
+#    my $dbh  = $self->dbh;
+#    $dbh->disconnect();
+#    return;
+#};
 
 #########################################
 ### GET MTIMES
 #########################################
 
-sub current_mtimes {
+sub _current_mtimes {
     my $self  = shift;
     my @files = sort @_;
 
     my $mtimes = $EMPTY_STR;
 
     foreach my $file (@files) {
-        my $filespec = $self->flat_filespec($file);
+        my $filespec = $self->_flat_filespec($file);
 
         my @stat = stat($filespec);
         unless ( scalar @stat ) {
             emit_error;
             croak "Could not get file status for $filespec";
         }
-        $mtimes .= jk( $file, $stat[$STAT_MTIME] );
+        $mtimes .= "$file\t$stat[$STAT_MTIME]\t";
     }
 
     return $mtimes;
@@ -223,14 +229,18 @@ sub current_mtimes {
 
 sub ensure_loaded {
     my $self      = shift;
-    my @filetypes = @_;
-
+    my @tables = @_;
+    
+    # get filetypes from tables
+    
+    my @filetypes = map { $self->_filetype_of_table($_) } @tables;
+    
     foreach my $filetype (@filetypes) {
         next if ( $self->_is_loaded($filetype) );
 
         # If they're changed, read the flat files
 
-        my @flats = $self->files_of_filetype($filetype);
+        my @flats = $self->_files_of_filetype($filetype);
 
         my $dbh = $self->dbh();
         my ($stored_mtimes) = (
@@ -241,10 +251,10 @@ sub ensure_loaded {
               or $EMPTY_STR
         );
 
-        my $current_mtimes = $self->current_mtimes(@flats);
+        my $current_mtimes = $self->_current_mtimes(@flats);
         if ( $stored_mtimes ne $current_mtimes ) {
 
-            foreach my $table ( $self->tables_of_filetype($filetype) ) {
+            foreach my $table ( $self->_tables_of_filetype($filetype) ) {
                 my $table_sth
                   = $dbh->table_info( undef, undef, $table, 'TABLE' );
                 my $ary_ref = $table_sth->fetchrow_arrayref();
@@ -272,11 +282,27 @@ sub ensure_loaded {
 ### SQL -- PROVIDE ROWS TO CALLERS, OTHER SQL
 #########################################
 
+sub row {
+    my ( $self, $table, $keyvalue ) = @_;
+    my $key = $self->key_of_table($table);
+    croak "Can't use row() on table $table with no key"
+       unless $key;
+    $self->ensure_loaded($table);
+    my $dbh   = $self->dbh();
+    my $query = "SELECT * FROM $table WHERE $key = ?";
+    return $dbh->selectrow_hashref( $query, {}, $keyvalue );
+}
+
+sub each_row {
+    my ( $self, $table ) = @_;
+    return $self->each_row_where($table);
+}
+
 sub each_row_like {
-    my ( $self, $table, $column, $match ) = @_;
+    my ( $self, $table, $column, $like ) = @_;
     $self->_check_column( $table, $column );
     return $self->each_row_where( $table,
-        "WHERE $column LIKE ? ORDER BY $column", $match );
+        "WHERE $column LIKE ? ORDER BY $column", $like );
 }
 
 sub each_row_eq {
@@ -284,11 +310,6 @@ sub each_row_eq {
     $self->_check_column( $table, $column );
     return $self->each_row_where( $table, "WHERE $column = ? ORDER BY $column",
         $value );
-}
-
-sub each_row {
-    my ( $self, $table ) = @_;
-    return $self->each_row_where($table);
 }
 
 sub each_row_where {
@@ -320,15 +341,6 @@ sub _check_column {
     return;
 }
 
-sub row {
-    my ( $self, $table, $key ) = @_;
-    my $keycolumn = $self->key_of_table($table);
-    $self->ensure_loaded($table);
-    my $dbh   = $self->dbh();
-    my $query = "SELECT * FROM $table WHERE $keycolumn = ?";
-    return $dbh->selectrow_hashref( $query, {}, $key );
-}
-
 sub begin_transaction {
     my $self = shift;
     my $dbh  = $self->dbh;
@@ -345,7 +357,7 @@ sub end_transaction {
 ### UTILITY
 ###############################
 
-sub flat_filespec {
+sub _flat_filespec {
     my $self         = shift;
     my $flats_folder = $self->flats_folder;
     my @files        = @_;
@@ -357,3 +369,254 @@ sub flat_filespec {
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
+
+__END__
+
+head1 NAME
+
+Actium::Files::SQLite - role for reading flat files and storing the data
+in an SQLite database
+
+=head1 VERSION
+
+This documentation refers to version 0.001
+
+=head1 SYNOPSIS
+
+ use Actium::Files::RoleComposer;
+            
+ my $db = Actium::Files::RoleComposer->new(
+     flats_folder => $flats_folder,
+     db_folder    => $db_folder,
+     db_filename  => $db_filename,
+ );
+      
+ $row_hr = $db->row('Column' , 'Keyvalue');
+ $othervalue = $row_hr->{OtherValue};
+   
+=head1 DESCRIPTION
+
+Actium::Files::SQLite is a role for storing data from flat files
+in an SQLite database, using L<DBI|DBI> and L<DBD::SQLite|DBD::SQLite>.
+
+A class consumes this role if it knows about a particular set of
+file (for example, Hastus Standard AVL files, or FileMaker Pro
+"Merge" files).
+
+While much of the scut work of creating and populating the database
+is performed in this module, and some convenience methods are
+provided for reading the data, it is not intended that it should
+never be necessary to interact with the DBI object directly. The
+I<dbh()> method is provided for accessing the database handle, and
+users should be familiar with using DBI to fetch data.
+
+=head1 OPTIONS
+
+L<Actium::Options|Actium::Options> is used to read command-line options.
+
+The command-line option "db_folder" is used to specify the database folder
+if no folder is specified during object construction. 
+See L<db_folder|/db_folder> below.
+
+=head1 OBJECT CREATION
+
+=head2 CONSTRUCTOR
+
+The constructor is provided by Moose and is called "new". 
+
+=over
+
+=item B<new ($flats_folder)>
+
+=item B<new (I<attributes hash...>)>
+
+=back
+
+If only one argument is provided, it is used as the flats_folder
+attribute. Otherwise, the constructor expects to see a hash or hash
+reference, with attribute names as the keys and attribute values as 
+the values.
+
+=head2 ATTRIBUTES
+
+=over 
+
+=item B<flats_folder>
+
+The folder on disk where the flat files are located.
+This is required to be specified in the object creator.
+
+=item B<db_folder>
+
+The folder on disk where the database is to be stored. Defaults to either
+the value of the -db_folder command line option, or if there is none, to the
+value of I<flats_folder>.
+
+=item B<db_filename>
+
+The filename (not path) of the database.  Defaults to the value of the 
+L<B<db_type>|/db_type> method concatenated with ".SQLite": something like 
+"HastusASI.SQLite" or "FPMerge.SQLite" .
+
+=head1 METHODS
+
+=head2 Methods that must be provided by the consuming class
+
+=over
+
+=item B<db_type>
+
+This method should return a string (such as 'HastusASI' or 'FPMerge') which
+gives information on the type of data being stored. This is used, for example,
+as part of the default filename.
+
+=item B<columns_of_table(I<table>)>
+
+This method returns a list of the data columns of a particular
+table.  (These are the columns that come in from the data, and
+should not include any other columns such as ID columns or composite
+key columns.)
+
+=item B<key_of_table(I<table>)>
+
+This method returns the name of the key column, if any, associated
+with is table. It can be a regular column that comes from the data,
+or a composite key column which is created by the consuming class.
+
+=head2 Methods in Actium::Files::SQLite
+
+=item B<ensure_loaded(I<table>, ...)>
+
+Ensures that the flat files for one or more tables are loaded into
+the database.
+
+The first time B<ensure_loaded> is called (in this run of the
+program) for each type of file, then B<ensure_loaded> will check
+to see if it needs to be loaded.  Only if the files' modification
+times have been altered, or the names or quantities of files are
+different, I<ensure_loaded> will have the consuming class reload
+the files.  Otherwise it will read the data from the last time the
+database was populated from the flat files.
+
+=item B<dbh()>
+
+Provides the database handle associated with this database. See
+L<DBI|DBI> for information on the database handle.
+
+It is strongly recommended that B<ensure_loaded> be called for any
+table before the database handle is used to read it.
+
+=item B<row(I<table>, I<keyvalue>)>
+
+Fetches the row of the table where the value of the key column is the
+specified value.  (DBI will be happy to provide the "first" row if there
+is more than one row with that value, but which row is first is undefined.
+It is recommended for use only on rows with unique values in the key.) 
+
+The row is provided as a hash reference, where the keys are the
+column names and the values are the values for this row.
+
+=item B<each_row(I<table>)>
+
+=item B<each_row_eq(I<table>, I<column>, I<value>)>
+
+=item B<each_row_like(I<table>, I<column>, I<match>)>
+
+=item B<each_row_where(I<table>, I<column>, I<where> ,I<match> ...)>
+
+The each_row routines return an subroutine reference allowing iteration 
+through each row. Intended for use in C<while> loops:
+
+ my $eachtable = each_row("table");
+ while ($row_hr = $eachtable->() ) {
+    do_something_with_value($row_hr->{SomeColumn});
+ }
+
+The rows are provided as hash references, where the keys are the
+column names and the values are the values for this row.
+
+each_row provides every row in the table.
+
+each_row_eq provides every row where the column specified is equal to the
+value specified.
+
+each_row_like provides every row where the column specified matches
+the SQLite LIKE pattern matching characters. ("%" matches a sequence
+of zero or more characters, and "_" matches any single character.
+See L<the SQLite documentation on
+LIKE|http://www.sqlite.org/lang_expr.html#like> for details.)
+
+each_row_where is more flexible, allowing the user to specify any
+L<SQLite WHERE clause|http://www.sqlite.org/lang_select.html#whereclause>.
+It accepts multiple values for matching.
+
+=item B<begin_transaction>
+
+=item B<end_transaction>
+
+Tell the database that an exclusive transaction is beginning
+and ending, respectively.  Make sure that I<end_transaction> is run 
+before the database is disconnected.
+
+=back
+
+=head1 DIAGNOSTICS
+
+=item Could not get file status for $filespec
+
+The program could not read the modification time of the file.
+Probably an error with the file system of some kind.
+
+=item Can't use row() on table $table with no key
+
+Another module called the B<row> method, specifying a table with 
+no key. This is not valid.
+
+=item Invalid column $column for table $table
+
+A request specified a column that was not found in the specified table.
+
+=head1 DEPENDENCIES
+
+=over 
+
+=item perl 5.012
+
+=item DBI
+
+=item DBD::SQLite
+
+=item Moose::Role
+
+=item MooseX::SemiAffordanceAccessor
+
+=item Actium::Constants
+
+=item Actium::Term
+
+=item Actium::Options
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2011
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE. 

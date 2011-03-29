@@ -19,7 +19,6 @@ use Actium::Files;
 use Actium::Term;
 use Actium::Util qw(j jk);
 use Carp;
-use DBI;
 use English '-no_match_vars';
 use File::Glob qw(:glob);
 use File::Spec;
@@ -38,7 +37,7 @@ Readonly my $DISPLAY_PERCENTAGE_FACTOR   => 100 / $OCCASIONS_TO_DISPLAY;
 
 # Actium::Files::SQLite:
 # requires(
-#    qw/db_type keycolumn_of_table columns_of_table tables
+#    qw/db_type key_of_table columns_of_table tables
 #       _load _files_of_filetype _tables_of_filetype/
 #);
 
@@ -47,7 +46,7 @@ Readonly my $DISPLAY_PERCENTAGE_FACTOR   => 100 / $OCCASIONS_TO_DISPLAY;
 #########################################
 
 # db_type required by SQLite role
-sub db_type () { 'HastusASI' }
+sub db_type () {'HastusASI'}
 
 has '_definition' => (
     is       => 'bare',
@@ -56,10 +55,9 @@ has '_definition' => (
     default  => Actium::Files::HastusASI::Definition->instance,
     handles  => {
         columns_of_table            => 'columns_of_table',
-        keycolumn_of_table          => 'keycolumn_of_table',
+        key_of_table          => 'key_of_table',
         tables                      => 'tables',
         _create_query_of_table      => 'create_query_of_table',
-        _filetype_of                => 'filetype_of',
         _filetype_of_table          => 'filetype_of_table',
         _filetypes                  => 'filetypes',
         _has_composite_key          => 'has_composite_key',
@@ -68,7 +66,6 @@ has '_definition' => (
         _insert_query_of_table      => 'insert_query_of_table',
         _key_components_idxs        => 'key_components_idxs',
         _parent_of_table            => 'parent_of_table',
-        _table_of                   => 'table_of',
         _tables_of_filetype         => 'tables_of_filetype',
 
     },
@@ -78,7 +75,7 @@ has '_definition' => (
 ### FILES LIST
 ######################################
 
-has '_files_of_filetype_r' => (
+has '_files_of_filetype_hash' => (
     traits  => ['Hash'],
     is      => 'bare',
     isa     => 'HashRef[ArrayRef[Str]]',
@@ -100,8 +97,8 @@ sub _build_files_list {
 
     emit 'Assembling lists of filenames';
 
-    my @all_files =
-      bsd_glob( $self->_flat_filespec(q<*>), GLOB_NOCASE | GLOB_NOSORT );
+    my @all_files
+      = bsd_glob( $self->_flat_filespec(q<*>), GLOB_NOCASE | GLOB_NOSORT );
 
     if (File::Glob::GLOB_ERROR) {
         emit_error;
@@ -126,7 +123,7 @@ sub _build_files_list {
 
     return \%files_of;
 
-}    ## tidy end: sub _build_files_list
+} ## tidy end: sub _build_files_list
 
 #########################################
 ### LOAD FLAT FILES (if necessary)
@@ -143,7 +140,7 @@ sub _load {
 
     emit "Reading HastusASI $filetype files";
 
-    my ( %sth_of, %parent_of, %key_column_order_of, %has_composite_key,
+    my ( %sth_of, %parent_of, %key_components_idxs, %has_composite_key,
         %has_repeating_final_column );
     foreach my $table ( $self->_tables_of_filetype($filetype) ) {
 
@@ -151,17 +148,20 @@ sub _load {
             $self->_create_query_of_table($table),
             $self->_index_query_of_table($table),
         );
-        $dbh->do($_) foreach @queries;
+
+        foreach my $query (@queries) {
+            $dbh->do($query) if $query;
+        }
 
         $sth_of{$table} = $dbh->prepare( $self->insert_query_of_table($table) );
-        $parent_of{$table}         = $self->_parent_of_table($table);
-        $has_composite_key{$table} = $self->_has_composite_key($table);
-        $has_repeating_final_column{$table} =
-          $self->_has_repeating_final_column($table);
-        $key_column_order_of{$table} =
-          $self->_key_column_order_of_table($table);
+        $parent_of{$table} = $self->_parent_of_table($table);
+        $has_composite_key{$table}
+          = $self->_has_composite_key($table);
+        $has_repeating_final_column{$table}
+          = $self->_has_repeating_final_column($table);
+        $key_components_idxs{$table} = $self->_key_components_idxs($table);
 
-    }
+    } ## tidy end: foreach my $table ( $self->_tables_of_filetype...)
 
     my $sequence = 0;
     $self->begin_transaction;
@@ -169,7 +169,7 @@ sub _load {
   FILE:
     foreach my $file (@files) {
 
-        my $filespec = $self->flat_filespec($file);
+        my $filespec = $self->_flat_filespec($file);
 
         my $size                = -s $filespec;
         my $display_after_lines = int(
@@ -196,8 +196,8 @@ sub _load {
             $sequence++;
 
             if ( not( $count % $display_after_lines ) ) {
-                my $newfraction =
-                  int( tell($fh) / $size * $OCCASIONS_TO_DISPLAY );
+                my $newfraction
+                  = int( tell($fh) / $size * $OCCASIONS_TO_DISPLAY );
                 if ( $fraction != $newfraction ) {
                     $fraction = $newfraction;
 
@@ -209,7 +209,7 @@ sub _load {
 
             my ( $table, $_ ) = split( /$DELIMITER/sx, $_, 2 );
             unless ( _filetype_of_table($table) eq $filetype ) {
-                carp "Incorrect row type $table in file $filespec, "
+                carp "Incorrect table type $table in file $filespec, "
                   . "row $INPUT_LINE_NUMBER:\n$_\n";
                 set_term_pos(0);
                 next ROW;
@@ -232,7 +232,7 @@ sub _load {
 
             if ( $has_composite_key{$table} ) {
                 push @columns,
-                  jk( @columns[ @{ $key_column_order_of{$table} } ] );
+                  jk( @columns[ @{ $key_components_idxs{$table} } ] );
             }
 
             $sth_of{$table}->execute( $sequence, @columns );
@@ -253,9 +253,45 @@ sub _load {
 
     return;
 
-}    ## tidy end: sub _load
+} ## tidy end: sub _load
 
 sub _build_templates {
+    # builds the templates used to "unpack" the table row
+
+=begin comment
+    
+    This requires a bit of explanation.  HSA rows are specified in the HSA
+documentation as fixed-width records, with a delimiter -- practically
+always a comma -- inserted between each pair of fields.  The comma is
+not treated specially; it's just there to make the files easier to read.
+There is no escaping mechanism where the comma, if found in real data,
+is somehow marked as not being a real delimiter.  A program that naively
+treats an HSA file as a typical comma-separated values file (CSV) will
+yield incorrect results for each line where the data includes a comma.
+
+Unfortunately, some people have written custom HSA export routines that
+replace a standard field (such as the stop identifier) with another
+field (a shorter stop identifier, intended for public use), with a
+different length. So a program that uses the field lengths to determine
+where each field is will break when provided with this custom HSA
+export.
+
+What is constant, however, is that the number of fields is the same, and
+there will always be a comma between two fields. There will always be
+I<at minimum> that number of commas, and no fewer. There may, however,
+be more.
+
+So what this program does is go through each HSA file and look for rows
+that have the proper number of commas for the number of fields. If it
+has more commas than that, then one of those commas is part of the data,
+but if it has the right number for the number of fields, then we can use
+the positions of each comma to determine the positions of the beginning
+and end of each field.
+
+=end
+
+=cut
+
     my ( $self, $fh, $filetype, $filespec ) = @_;
 
     my %template_of;
@@ -289,11 +325,11 @@ sub _build_templates {
               "Couldn't return seek position to top of $filespec: $OS_ERROR";
         }
 
-    }    ## tidy end: foreach my $table ( $self->_tables_of_filetype...)
+    } ## tidy end: foreach my $table ( $self->_tables_of_filetype...)
 
     return %template_of;
 
-}    ## tidy end: sub _build_templates
+} ## tidy end: sub _build_templates
 
 with 'Actium::Files::SQLite';
 
@@ -305,7 +341,7 @@ __END__
 
 =head1 NAME
 
-Actium::Files::HastusASI - Routines for Actium::Files::SQLite storage of
+Actium::Files::HastusASI - Routines for SQLite storage of
 Hastus AVL Standard Interface files
 
 =head1 NOTE
@@ -333,14 +369,17 @@ This documentation refers to version 0.001
 =head1 DESCRIPTION
 
 This is a series of routines that store Hastus AVL Standard Interface files
-using the Actium::Files::SQLite role. This documentation describes
-the specifics of the Hastus ASI routines; for general information about the 
-database access and structure, see L<Actium::Files::SQLite|Actium::Files::SQLite>.
+using the Actium::Files::SQLite role. This documentation describes the
+specifics of the Hastus ASI routines; for general information about the
+database access and structure, see
+L<Actium::Files::SQLite|Actium::Files::SQLite>.
 
 For more information about the Hastus AVL Standard Interface, see the document
 "Hastus 2006 AVL Standard Interface, Last Update: July 26, 2005".
 
-=head1 METHODS 
+=head1 PUBLIC METHODS 
+
+These are all required by the Actium::Files::SQLite role.
 
 =over
 
@@ -350,10 +389,19 @@ Returns 'HastusASI'.  This distinguishes this type from other databases
 using Actium::Files::SQLite.
 
 =item B<columns_of_table>
-=item B<keycolumn_of_table>
+=item B<key_of_table>
 =item B<tables>
+
+These are delegated to 
+L<Actium::Files::HastusASI::Definition|Actium::Files::HastusASI::Definition>
+and information on them can be found there, or in other modules used by that 
+module.
+
+=back
+
+=head1 PRIVATE METHODS
+
 =item B<_create_query_of_table>
-=item B<_filetype_of>
 =item B<_filetype_of_table>
 =item B<_filetypes>
 =item B<_has_composite_key>
@@ -362,37 +410,109 @@ using Actium::Files::SQLite.
 =item B<_insert_query_of_table>
 =item B<_key_components_idxs>
 =item B<_parent_of_table>
-=item B<_table_of>
 =item B<_tables_of_filetype>
 
 These are delegated to 
 L<Actium::Files::HastusASI::Definition|Actium::Files::HastusASI::Definition>
 and information on them can be found there, or in other modules used by that 
-module.
+module. In that module, they do not have leading underscores.
 
-=item B<more...>
+Two (I<_tables_of_filetype> and I<_filetype_of_table>) are
+required by Actium::Files::SQLite. The others are only used within this module.
+
+=item B<_files_of_filetype(I<filetype>)>
+
+This returns the list of files on disk associated with a particular filetype.
+Usually, this will be just one file per filetype, but it's conceivable that
+different sets of Hastus AVL files could be usefully combined, so that ability
+is present.
+
+This method is required by Actium::Files::SQLite. 
+
+=item B<_load(I<filetype>,I<files...>)>
+
+This reads the files specified, which are of the filetype specified, and 
+saves the data into the database.
+
+This method is required by Actium::Files::SQLite. 
 
 =back
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
+=head2 FATAL ERRORS
 
-=head1 CONFIGURATION AND ENVIRONMENT
+=over
 
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
+=item Error reading list of filenames in Hastus AVL Standard folder $flats_folder: $OS_ERROR
+
+An error was found getting the list of files from C<glob>. 
+See L<File::Glob diagnostics for more information.|File::Glob/DIAGNOSTICS>.
+
+=item No files found in Hastus AVL Standard folder $flats_folder
+
+No matching files were found in the folder specified. Perhaps the wrong
+folder was specified?
+
+=item Can't open $filespec for reading: $OS_ERROR
+=item Can't close $filespec for reading: $OS_ERROR
+
+An error occurred opening or closing the file $filespec. Possibly the file is
+locked in another application, or there was some other operating system error.
+
+=item Unable to determine columns of $table in $filespec (never found a line with the right number)
+
+The program searched through the whole file and never found a line with
+the right number of fields for that row. Each table has a fixed number of fields,
+found in the HastusASI definition.  If no row has the proper number of 
+fields, probably the file is corrupt or incorrectly specified. (It is also
+possible that every row has data with a comma inside the data, but this
+is unlikely.)
+
+=item  Couldn't return seek position to top of $file
+
+After searching through the file for a row with the right number of fields 
+for each rowtype, the program received an input/ouptut error when trying to move
+the next-line pointer back to the top of the file.
+
+=back
+
+=head2 WARNINGS
+
+=over
+
+=item Incorrect table type $rowtype in file $file, row $INPUT_LINE_NUMBER
+
+An unrecognized table type was found in this file.  (It is probably not
+an HSA file.) This row will be skipped.
+
+=back
 
 =head1 DEPENDENCIES
 
-List its dependencies.
+=over
+
+=item perl 5.012
+
+=item Moose
+
+=item MooseX::SemiAffordanceAccessor
+
+=item MooseX::StrictConstructor
+
+=item Readonly
+
+=item Actium::Constants
+
+=item Actium::Files
+
+=item Actium::Files::SQLite
+
+=item Actium::Term
+
+=item Actium::Util
+
+=back
 
 =head1 AUTHOR
 
@@ -417,4 +537,4 @@ later version, or
 
 This program is distributed in the hope that it will be useful, but WITHOUT 
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+FITNESS FOR A PARTICULAR PURPOSE. 

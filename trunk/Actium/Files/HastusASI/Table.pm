@@ -98,15 +98,15 @@ has 'has_repeating_final_column' => (
 ### KEY COLUMN ATTRIBUTES
 #########################
 
-has 'key_column' => (
+has 'key' => (
     is       => 'bare',
     init_arg => undef,
     isa      => 'Str',
-    builder  => '_build_key_column',
+    builder  => '_build_key',
     lazy     => 1,
 );
 
-sub _build_key_column {
+sub _build_key {
     my $self           = shift;
     my @key_components = $self->key_components;
     given ( scalar @key_components ) {
@@ -205,7 +205,7 @@ sub _build_sql_insertcmd {
 
 sub _build_sql_idxcmd {
     my $self = shift;
-    my $key  = $self->key_column();
+    my $key  = $self->key;
     return unless $key;
     my $id = $self->id();
     return "CREATE INDEX idx_${id}_key ON $id ($key)";
@@ -228,7 +228,7 @@ sub _build_sql_columns_r {
     if ($parent) {
         unshift @columns, "${parent}_id INTEGER";
     }
-    my $key = $self->keycolumn;
+    my $key = $self->key;
     if ( $key and $self->has_composite_key ) {
         push @columns, $key;
     }
@@ -361,7 +361,7 @@ table.)
 
 =over
 
-=item B<key_column>
+=item B<key>
 
 The column used as the key for this table, or undef if no key is
 present.  For a composite key, the column will be a new column not
@@ -369,7 +369,7 @@ found in the original data, combining the various key columns.
 
 =item B<has_composite_key>
 
-This boolean flag indicates whether the key_column, if any, is a composite
+This boolean flag indicates whether the key, if any, is a composite
 key. (If false, either there is no key or the key is a single column from the
 Hastus ASI data.) Defaults to 0.
 
@@ -457,15 +457,16 @@ Defaults to the empty list.
 
 =over
 
-=item * Moose
+=item perl 5.012
 
-=item * MooseX::SemiAffordanceAccessor
+=item Moose
 
-=item * MooseX::StrictConstructor
+=item MooseX::SemiAffordanceAccessor
 
-=item * Perl 5.012
+=item MooseX::StrictConstructor
 
 =back
+
 
 =head1 AUTHOR
 
