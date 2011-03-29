@@ -103,13 +103,13 @@ specify tables_r and give a reference to the list of tables.)
 
 =over
 
-* Moose
+=item perl 5.012
 
-* MooseX::SemiAffordanceAccessor
+=item Moose
 
-* MooseX::StrictConstructor
+=item MooseX::SemiAffordanceAccessor
 
-* Perl 5.012
+=item MooseX::StrictConstructor
 
 =back
 
