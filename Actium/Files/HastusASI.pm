@@ -47,7 +47,7 @@ Readonly my $DISPLAY_PERCENTAGE_FACTOR   => 100 / $OCCASIONS_TO_DISPLAY;
 #########################################
 
 # db_type required by SQLite role
-sub db_type () {'HastusASI'}
+sub db_type () { 'HastusASI' }
 
 has '_definition' => (
     is       => 'bare',
@@ -65,11 +65,11 @@ has '_definition' => (
         _has_composite_key          => 'has_composite_key',
         _has_repeating_final_column => 'has_repeating_final_column',
         _index_query_of_table       => 'index_query_of_table',
-        _insert_query_of_table => 'insert_query_of_table',
-        _key_components_idxs   => 'key_components_idxs',
-        _parent_of_table       => 'parent_of_table',
-        _table_of              => 'table_of',
-        _tables_of_filetype    => 'tables_of_filetype',
+        _insert_query_of_table      => 'insert_query_of_table',
+        _key_components_idxs        => 'key_components_idxs',
+        _parent_of_table            => 'parent_of_table',
+        _table_of                   => 'table_of',
+        _tables_of_filetype         => 'tables_of_filetype',
 
     },
 );
@@ -100,8 +100,8 @@ sub _build_files_list {
 
     emit 'Assembling lists of filenames';
 
-    my @all_files
-      = bsd_glob( $self->_flat_filespec(q<*>), GLOB_NOCASE | GLOB_NOSORT );
+    my @all_files =
+      bsd_glob( $self->_flat_filespec(q<*>), GLOB_NOCASE | GLOB_NOSORT );
 
     if (File::Glob::GLOB_ERROR) {
         emit_error;
@@ -126,7 +126,7 @@ sub _build_files_list {
 
     return \%files_of;
 
-} ## tidy end: sub _build_files_list
+}    ## tidy end: sub _build_files_list
 
 #########################################
 ### LOAD FLAT FILES (if necessary)
@@ -156,10 +156,10 @@ sub _load {
         $sth_of{$table} = $dbh->prepare( $self->insert_query_of_table($table) );
         $parent_of{$table}         = $self->_parent_of_table($table);
         $has_composite_key{$table} = $self->_has_composite_key($table);
-        $has_repeating_final_column{$table}
-          = $self->_has_repeating_final_column($table);
-        $key_column_order_of{$table}
-          = $self->_key_column_order_of_table($table);
+        $has_repeating_final_column{$table} =
+          $self->_has_repeating_final_column($table);
+        $key_column_order_of{$table} =
+          $self->_key_column_order_of_table($table);
 
     }
 
@@ -196,8 +196,8 @@ sub _load {
             $sequence++;
 
             if ( not( $count % $display_after_lines ) ) {
-                my $newfraction
-                  = int( tell($fh) / $size * $OCCASIONS_TO_DISPLAY );
+                my $newfraction =
+                  int( tell($fh) / $size * $OCCASIONS_TO_DISPLAY );
                 if ( $fraction != $newfraction ) {
                     $fraction = $newfraction;
 
@@ -253,7 +253,7 @@ sub _load {
 
     return;
 
-} ## tidy end: sub _load
+}    ## tidy end: sub _load
 
 sub _build_templates {
     my ( $self, $fh, $filetype, $filespec ) = @_;
@@ -289,11 +289,11 @@ sub _build_templates {
               "Couldn't return seek position to top of $filespec: $OS_ERROR";
         }
 
-    } ## tidy end: foreach my $table ( $self->_tables_of_filetype...)
+    }    ## tidy end: foreach my $table ( $self->_tables_of_filetype...)
 
     return %template_of;
 
-} ## tidy end: sub _build_templates
+}    ## tidy end: sub _build_templates
 
 with 'Actium::Files::SQLite';
 
@@ -305,7 +305,13 @@ __END__
 
 =head1 NAME
 
-<name> - <brief description>
+Actium::Files::HastusASI - Routines for Actium::Files::SQLite storage of
+Hastus AVL Standard Interface files
+
+=head1 NOTE
+
+This documentation is intended for maintainers of the Actium system, not
+users of it. Run "perldoc Actium" for general information on the Actium system.
 
 =head1 VERSION
 
@@ -313,28 +319,58 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use <name>;
- # do something with <name>
-   
+ use Actium::Files::HastusASI;
+ 
+ my $hasi_db = Actium::Files::HastusASI->new(
+     flats_folder => $hasi_folder,
+     db_folder    => $db_folder,
+     db_filename  => $db_filename,
+ );
+      
+ $stoprow_hr = $hasi_db->row('STP' , '51111');
+ $description = $stoprow_hr->{Description};
+ 
 =head1 DESCRIPTION
 
-A full description of the module and its features.
+This is a series of routines that store Hastus AVL Standard Interface files
+using the Actium::Files::SQLite role. This documentation describes
+the specifics of the Hastus ASI routines; for general information about the 
+database access and structure, see L<Actium::Files::SQLite|Actium::Files::SQLite>.
 
-=head1 OPTIONS
+For more information about the Hastus AVL Standard Interface, see the document
+"Hastus 2006 AVL Standard Interface, Last Update: July 26, 2005".
 
-A complete list of every available command-line option with which
-the application can be invoked, explaining what each does and listing
-any restrictions or interactions.
-
-If the application has no options, this section may be omitted.
-
-=head1 SUBROUTINES or METHODS (pick one)
+=head1 METHODS 
 
 =over
 
-=item B<subroutine()>
+=item B<db_type()>
 
-Description of subroutine.
+Returns 'HastusASI'.  This distinguishes this type from other databases
+using Actium::Files::SQLite.
+
+=item B<columns_of_table>
+=item B<keycolumn_of_table>
+=item B<tables>
+=item B<_create_query_of_table>
+=item B<_filetype_of>
+=item B<_filetype_of_table>
+=item B<_filetypes>
+=item B<_has_composite_key>
+=item B<_has_repeating_final_column>
+=item B<_index_query_of_table>
+=item B<_insert_query_of_table>
+=item B<_key_components_idxs>
+=item B<_parent_of_table>
+=item B<_table_of>
+=item B<_tables_of_filetype>
+
+These are delegated to 
+L<Actium::Files::HastusASI::Definition|Actium::Files::HastusASI::Definition>
+and information on them can be found there, or in other modules used by that 
+module.
+
+=item B<more...>
 
 =back
 

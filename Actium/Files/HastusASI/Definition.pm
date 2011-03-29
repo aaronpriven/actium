@@ -452,6 +452,11 @@ __END__
 Actium::Files::HastusASI::Definition - singleton object/class for Hastus AVL 
 Standard Interface 
 
+=head1 NOTE
+
+This documentation is intended for maintainers of the Actium system, not
+users of it. Run "perldoc Actium" for general information on the Actium system.
+
 =head1 VERSION
 
 This documentation refers to version 0.001
@@ -472,6 +477,13 @@ string and creates the objects when necessary.
 =head1 METHODS
 
 =over
+
+=item B<instance>
+
+Use the B<instance> class method to obtain the object: 
+C<<Actium::Files::HastusASI::Definition->instance>>. (This is unlike
+standard Moose classes and most other perl classes, which create
+a constructor called "new".)
 
 =item B<tables>
 
