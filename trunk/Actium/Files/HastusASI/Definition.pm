@@ -241,9 +241,7 @@ ENDNAMES
 # when it has to specify that a table has children
 
 # At the end, it creates a bunch of new little objects from the constructor
-# specs, and returns them to be found in the table_of_r attribute
-
-
+# specs, and returns them to be found in the _table_of_r attribute
 
 sub _build_table_of_r {
 
@@ -317,7 +315,7 @@ sub _build_table_of_r {
 
 sub _build_filetype_of_r {
     my $self      = shift;
-    my %tableobjs = %{ $self->table_of_r };
+    my %tableobjs = %{ $self->_table_of_r };
     my %tables_of;
 
     while ( my ( $table, $tableobj ) = each %tableobjs ) {
@@ -342,7 +340,7 @@ sub _build_filetype_of_r {
 ### ATTRIBUTES
 ################################
 
-has 'table_of_r' => (
+has '_table_of_r' => (
     init_arg => undef,
     is       => 'ro',
     traits   => ['Hash'],
@@ -355,7 +353,7 @@ has 'table_of_r' => (
     },
 );
 
-has 'filetype_of_r' => (
+has '_filetype_of_r' => (
     init_arg => undef,
     is       => 'ro',
     traits   => ['Hash'],
@@ -380,7 +378,7 @@ has 'filetype_of_r' => (
 sub keycolumn_of_table {
     my $self  = shift;
     my $table = shift;
-    return $self->table_of($table)->key_column;
+    return $self->_table_of($table)->key_column;
 }
 
 sub columns_of_table {
@@ -447,6 +445,8 @@ __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
 
+__END__
+
 =head1 NAME
 
 Actium::Files::HastusASI::Definition - singleton object/class for Hastus AVL 
@@ -469,32 +469,102 @@ Actium::Files::HastusASI::Definition is a singleton class containing data
 about the definition of Hastus ASI files. It builds the data from an embedded
 string and creates the objects when necessary.
 
-=head1 SUBROUTINES or METHODS (pick one)
+=head1 METHODS
 
 =over
 
-=item B<subroutine()>
+=item B<tables>
 
-Description of subroutine.
+Returns a list of the identifiers for each table. See L<I<id> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/id>.
+
+=item B<filetypes>
+
+Returns a list of the identifiers for each filetype. 
+See L<I<id> in
+Actium::Files::HastusASI::Filetype|Actium::Files::HastusASI::Filetype/id>.
+
+=item B<keycolumn_of_table (I<table_id>)>
+
+Returns the key column of the specified table.
+See L<I<key_column> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/key_column>.
+
+=item B<columns_of_table (I<table_id>)>
+
+Returns a list of the columns of the specified table.
+See L<I<columns> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/columns>.
+
+=item B<tables_of_filetype (I<filetype_id>)>
+
+Returns a list of the tables of the specified filetype.
+See L<I<tables> in
+Actium::Files::HastusASI::Filetype|Actium::Files::HastusASI::Filetype/tables>.
+
+=item B<filetype_of_table (I<table_id>)>
+
+Returns the filetype of the specified table.
+See L<I<filetype> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/filetype>.
+
+=item B<parent_of_table (I<table_id>)>
+
+Returns the parent of the specified table, if any.
+See L<I<parent> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/parent>.
+
+=item B<has_repeating_final_column (I<table_id>)>
+
+Returns a boolean value representing whether the final column has repeated
+values (instead of just one value). 
+See L<I<has_repeating_final_column> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/has_repeating_final_column>.
+
+=item B<has_composite_key (I<table_id>)>
+
+Returns whether the key column is a composite of two or more other columns.
+See L<I<has_composite_key> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/has_composite_key>.
+
+=item B<create_query_of_table (I<table_id>)>
+
+Returns the SQLite command creating this table.
+See L<I<sql_createcmd> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/sql_createcmd>.
+
+=item B<insert_query_of_table (I<table_id>)>
+
+Returns the SQLite command inserting a row of this table into the database.
+See L<I<sql_insertcmd> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/sql_insertcmd>.
+
+=item B<index_query_of_table (I<table_id>)>
+
+Returns the SQLite command creating the index of the specified table based on the key
+column.
+See L<I<sql_idxcmd> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/sql_idxcmd>.
+
+=item B<key_components_idxs (I<table_id>)>
+
+Returns the column indexes (what order they are in the columns) of 
+the components that make up the key of the specified table.
+See L<I<key_components_idxs> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/key_components_idxs>.
 
 =back
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
+=over
 
-=head1 CONFIGURATION AND ENVIRONMENT
+=item * Can't open internal variable for reading
+=item * Can't close internal variable for reading
 
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
-
+Perl was unable to open, or close, the variable that holds the definition 
+entries. An unlikely error.
+      
 =head1 DEPENDENCIES
 
 =item * MooseX::Singleton
