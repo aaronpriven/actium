@@ -252,6 +252,11 @@ __END__
 Actium::Files::HastusASI::Table - Class representing tables in 
 Hastus AVL Standard Interface
 
+=head1 NOTE
+
+This documentation is intended for maintainers of the Actium system, not
+users of it. Run "perldoc Actium" for general information on the Actium system.
+
 =head1 VERSION
 
 This documentation refers to version 0.001
@@ -405,6 +410,9 @@ table, the value is undef.
 =back
 
 =head1 OBJECT CONSTRUCTION
+
+As with most Moose classes, the constructor method is called "new". Invoke it
+with C<Actium:::Files::HastusASI::Table->new(%hash_of_attributes)>.
 
 The following attributes should be specified in object construction:
 
