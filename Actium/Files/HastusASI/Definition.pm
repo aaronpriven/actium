@@ -18,28 +18,6 @@ use English ('-no_match_vars');
 use Actium::Files::HastusASI::Filetype;
 use Actium::Files::HastusASI::Table;
 
-has 'table_of_r' => (
-    init_arg => undef,
-    is      => 'ro',
-    traits  => ['Hash'],
-    isa     => 'HashRef[Actium::Files::HastusASI::Table]',
-    builder => '_build_table_of_r',
-    lazy    => 1,
-    handles => { tables => 'keys' },
-);
-
-has 'filetype_of_r' => (
-    init_arg => undef,
-    is      => 'ro',
-    traits  => ['Hash'],
-    isa     => 'HashRef[Actium::Files::HastusASI::Filetype]',
-    builder => '_build_filetype_of_r',
-    lazy    => 1,
-
-    handles => { filetypes => 'keys' },
-
-);
-
 #########################################
 ### DEFINITION
 #########################################
@@ -256,7 +234,7 @@ ENDNAMES
 
 # so, the way this works is that it goes through each table and builds little
 # constructor-specifications for each of the various properties:
-# id, filetype, parent , columns_r, column_length_of_r, 
+# id, filetype, parent , columns_r, column_length_of_r,
 # has_repeating_final_column, and key_components_r
 
 # As it goes through the subsquent tables, it goes back to the previous ones
@@ -264,6 +242,8 @@ ENDNAMES
 
 # At the end, it creates a bunch of new little objects from the constructor
 # specs, and returns them to be found in the table_of_r attribute
+
+
 
 sub _build_table_of_r {
 
@@ -305,14 +285,14 @@ sub _build_table_of_r {
             # if it's a key column, save that
             if ( $column =~ /!\z/s ) {
                 $column =~ s/!\z//s;
-                push @{ $spec{key_components_r} },      $column;
+                push @{ $spec{key_components_r} }, $column;
             }
 
             # save column type and length
-            push @{ $spec{columns_r} },       $column;
+            push @{ $spec{columns_r} }, $column;
             $spec{column_length_of_r}{$column} = $column_length;
 
-        } ## tidy end: while (@entries)
+        }
 
         # if final column is repeating, save that
         if ( $spec{columns_r}[-1] =~ /\*\z/s ) {
@@ -357,6 +337,112 @@ sub _build_filetype_of_r {
 
 } ## tidy end: sub _build_filetype_of_r
 
+
+################################
+### ATTRIBUTES
+################################
+
+has 'table_of_r' => (
+    init_arg => undef,
+    is       => 'ro',
+    traits   => ['Hash'],
+    isa      => 'HashRef[Actium::Files::HastusASI::Table]',
+    builder  => '_build_table_of_r',
+    lazy     => 1,
+    handles  => {
+        tables   => 'keys',
+        table_of => 'get',
+    },
+);
+
+has 'filetype_of_r' => (
+    init_arg => undef,
+    is       => 'ro',
+    traits   => ['Hash'],
+    isa      => 'HashRef[Actium::Files::HastusASI::Filetype]',
+    builder  => '_build_filetype_of_r',
+    lazy     => 1,
+    handles  => {
+        filetypes   => 'keys',
+        filetype_of => 'get',
+    },
+
+);
+
+######################################
+### TABLE AND FILETYPE METHODS
+######################################
+
+# I am not sure how to delegate methods to an object which is not itself
+# an attribute, but which is referred to by an attribute.
+# so, I've written these all out.
+
+sub keycolumn_of_table {
+    my $self  = shift;
+    my $table = shift;
+    return $self->table_of($table)->key_column;
+}
+
+sub columns_of_table {
+    my $self  = shift;
+    my $table = shift;
+    return $self->_table_of($table)->columns;
+}
+
+sub tables_of_filetype {
+    my $self     = shift;
+    my $filetype = shift;
+    return $self->_filetype_of($filetype)->tables;
+}
+
+sub filetype_of_table {
+    my $self  = shift;
+    my $table = shift;
+    return $self->_table_of($table)->filetype;
+}
+
+sub parent_of_table {
+    my $self  = shift;
+    my $table = shift;
+    return $self->_table_of($table)->parent;
+}
+
+sub has_repeating_final_column {
+    my $self  = shift;
+    my $table = shift;
+    return $self->_table_of($table)->has_repeating_final_column;
+}
+
+sub has_composite_key {
+    my $self  = shift;
+    my $table = shift;
+    return $self->_table_of($table)->has_composite_key;
+}
+
+sub create_query_of_table {
+    my $self  = shift;
+    my $table = shift;
+    return $self->_table_of($table)->sql_createcmd;
+}
+
+sub insert_query_of_table {
+    my $self  = shift;
+    my $table = shift;
+    return $self->_table_of($table)->sql_insertcmd;
+}
+
+sub index_query_of_table {
+    my $self  = shift;
+    my $table = shift;
+    return $self->_table_of($table)->sql_idxcmd;
+}
+
+sub key_components_idxs {
+    my $self  = shift;
+    my $table = shift;
+    return $self->_table_of($table)->key_components_idxs;
+}
+
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
@@ -368,24 +454,20 @@ Standard Interface
 
 =head1 VERSION
 
-This documentation refers to <name> version 0.001
+This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use <name>;
- # do something with <name>
-   
+ use Actium::Files::HastusASI::Definition;
+ my $definition = Actium::Files::HastusASI::Definition->instance;
+ 
+ my @tables = $defintion->tables;
+ 
 =head1 DESCRIPTION
 
-A full description of the module and its features.
-
-=head1 OPTIONS
-
-A complete list of every available command-line option with which
-the application can be invoked, explaining what each does and listing
-any restrictions or interactions.
-
-If the application has no options, this section may be omitted.
+Actium::Files::HastusASI::Definition is a singleton class containing data
+about the definition of Hastus ASI files. It builds the data from an embedded
+string and creates the objects when necessary.
 
 =head1 SUBROUTINES or METHODS (pick one)
 

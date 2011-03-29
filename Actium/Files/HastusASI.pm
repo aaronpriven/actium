@@ -28,135 +28,55 @@ use Readonly;
 use Actium::Files::HastusASI::Definition;
 
 # set some constants
-Readonly my $NO_PARENT                   => 'noparent';
 Readonly my $DELIMITER                   => q{,};
 Readonly my $DELIMITER_LENGTH            => length($DELIMITER);
 Readonly my $DELIMITER_TEMPLATE_PAD      => 'x' x $DELIMITER_LENGTH;
-Readonly my $STAT_MTIME                  => 9;
 Readonly my $EXTRA_FIELDS_WHEN_REPEATING => 49;
 Readonly my $OCCASIONS_TO_DISPLAY        => 20;
 Readonly my $AVERAGE_CHARS_PER_LINE      => 20;
 Readonly my $DISPLAY_PERCENTAGE_FACTOR   => 100 / $OCCASIONS_TO_DISPLAY;
 
-with 'Actium::Db::SQLite';
-
-my (%tables, %filetypes) = definition_objects();
-
-{    # scoping for these definition variables
-
-    my ( %parent_of,        %children_of );
-    my ( %filetype_of,      %tables_of );
-    my ( %columns_of,       %column_order_of );
-    my ( %keycolumn_of,     %has_multiple_keycolumns );
-    my ( %key_columns_of,   %key_column_order_of );
-    my ( %sql_insertcmd_of, %sql_createcmd_of, %sql_idxcmd_of );
-    my (%has_repeating_final_column);
-
-    # these are processed when file is read
-    
-    # TODO - change these methods to be delegations to table methods
+# Actium::Files::SQLite:
+# requires(
+#    qw/db_type keycolumn_of_table columns_of_table tables
+#       _load _files_of_filetype _tables_of_filetype/
+#);
 
 #########################################
-### CLASS METHODS FROM DEFINIITION
+### DEFINITION
 #########################################
-# (actually, the methods just ignore their invocant)
 
-    # db_type required by SQLite role
-    sub db_type () {'HastusASI'}
+# db_type required by SQLite role
+sub db_type () {'HastusASI'}
 
-    # keycolumn_of_table required by SQLite role
-    sub keycolumn_of_table {
-        my $self  = shift;
-        my $table = shift;
-        return $keycolumn_of{$table};
-    }
+has '_definition' => (
+    is       => 'bare',
+    init_arg => undef,
+    isa      => 'Actium::Files::HastusASI::Definition',
+    default  => Actium::Files::HastusASI::Definition->instance,
+    handles  => {
+        columns_of_table            => 'columns_of_table',
+        keycolumn_of_table          => 'keycolumn_of_table',
+        tables                      => 'tables',
+        _create_query_of_table      => 'create_query_of_table',
+        _filetype_of                => 'filetype_of',
+        _filetype_of_table          => 'filetype_of_table',
+        _filetypes                  => 'filetypes',
+        _has_composite_key          => 'has_composite_key',
+        _has_repeating_final_column => 'has_repeating_final_column',
+        _index_query_of_table       => 'index_query_of_table',
+        _insert_query_of_table => 'insert_query_of_table',
+        _key_components_idxs   => 'key_components_idxs',
+        _parent_of_table       => 'parent_of_table',
+        _table_of              => 'table_of',
+        _tables_of_filetype    => 'tables_of_filetype',
 
-    # columns_of_table required by SQLite role
-    sub columns_of_table {
-        my $self  = shift;
-        my $table = shift;
-        return @{ $columns_of{$table} };
-    }
-
-    # _tables_of_filetype required by SQLite role
-    sub _tables_of_filetype {
-        my $self     = shift;
-        my $filetype = shift;
-        return @{ $tables_of{$filetype} };
-    }
-
-    sub _filetypes {
-        my $self = shift;
-        return keys %tables_of;
-    }
-
-    sub _filetype_of_table {
-        my $self  = shift;
-        my $table = shift;
-        return $filetype_of{$table};
-    }
-
-    sub parent_of_table {
-        my $self  = shift;
-        my $table = shift;
-        return $parent_of{$table};
-    }
-
-    sub _has_repeating_final_column {
-        my $self  = shift;
-        my $table = shift;
-        return $has_repeating_final_column{$table};
-    }
-
-    sub _has_multiple_keycolumns {
-        my $self  = shift;
-        my $table = shift;
-        return $has_multiple_keycolumns{$table};
-    }
-
-    sub _create_query_of_table {
-        my $self  = shift;
-        my $table = shift;
-        return $sql_createcmd_of{$table};
-    }
-
-    sub _insert_query_of_table {
-        my $self  = shift;
-        my $table = shift;
-        return $sql_insertcmd_of{$table};
-    }
-
-    sub _index_query_of_table {
-        my $self  = shift;
-        my $table = shift;
-        return $sql_idxcmd_of{$table};
-    }
-
-    #sub key_columns {
-    #    my $self = shift;
-    #    my $table = shift;
-    #    return unless $key_columns_of{$table};
-    #    return @{ $key_columns_of{$table} };
-    #}
-
-    sub _key_column_order_of_table {
-        my $self  = shift;
-        my $table = shift;
-        return @{ $key_column_order_of{$table} };
-    }
-
-}    # end scoping of definition variables
+    },
+);
 
 ######################################
 ### FILES LIST
 ######################################
-
-has '_definition' => (
-    is => 'bare' ,
-    isa => 'Actium::Files::HastusASI::Definition',
-    default => Actium::Files::HastusASI::Definition->instance ,
-    # handles => { ... },
-);
 
 has '_files_of_filetype_r' => (
     traits  => ['Hash'],
@@ -223,7 +143,7 @@ sub _load {
 
     emit "Reading HastusASI $filetype files";
 
-    my ( %sth_of, %parent_of, %key_column_order_of, %has_multiple_keycolumns,
+    my ( %sth_of, %parent_of, %key_column_order_of, %has_composite_key,
         %has_repeating_final_column );
     foreach my $table ( $self->_tables_of_filetype($filetype) ) {
 
@@ -233,10 +153,9 @@ sub _load {
         );
         $dbh->do($_) foreach @queries;
 
-        $sth_of{$table}    = $dbh->prepare( $self->insert_query_of_table($table) );
-        $parent_of{$table} = $self->parent_of_table($table);
-        $has_multiple_keycolumns{$table}
-          = $self->_has_multiple_keycolumns($table);
+        $sth_of{$table} = $dbh->prepare( $self->insert_query_of_table($table) );
+        $parent_of{$table}         = $self->_parent_of_table($table);
+        $has_composite_key{$table} = $self->_has_composite_key($table);
         $has_repeating_final_column{$table}
           = $self->_has_repeating_final_column($table);
         $key_column_order_of{$table}
@@ -311,7 +230,7 @@ sub _load {
                 unshift @columns, $previous_seq_of{$parent};
             }
 
-            if ( $has_multiple_keycolumns{$table} ) {
+            if ( $has_composite_key{$table} ) {
                 push @columns,
                   jk( @columns[ @{ $key_column_order_of{$table} } ] );
             }
@@ -342,7 +261,7 @@ sub _build_templates {
     my %template_of;
 
     # determine number of columns
-    foreach my $table ( $self->tables_of_filetype($filetype) ) {
+    foreach my $table ( $self->_tables_of_filetype($filetype) ) {
         my $numcolumns = scalar( columns($table) ) + 1;    # add one for table
         $numcolumns += $EXTRA_FIELDS_WHEN_REPEATING
           if $self->has_repeating_final_column($table);
@@ -370,12 +289,96 @@ sub _build_templates {
               "Couldn't return seek position to top of $filespec: $OS_ERROR";
         }
 
-    } ## tidy end: foreach my $table ( $self->tables_of_filetype...)
+    } ## tidy end: foreach my $table ( $self->_tables_of_filetype...)
 
     return %template_of;
 
 } ## tidy end: sub _build_templates
 
+with 'Actium::Files::SQLite';
+
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
+
+__END__
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.001
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 OPTIONS
+
+A complete list of every available command-line option with which
+the application can be invoked, explaining what each does and listing
+any restrictions or interactions.
+
+If the application has no options, this section may be omitted.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties
+that can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2011
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
