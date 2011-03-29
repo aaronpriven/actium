@@ -291,7 +291,7 @@ attributes and methods should be considered private to that module.
 
 =item B<id>
 
-Identifier for the table. This should be the same as the file's "Record"
+Identifier for the table. This should be the same as the table's "Record"
 ('PAT' for the trip pattern description record, 'TPS' for the trip pattern
 detail record, etc.). 
 
@@ -313,7 +313,7 @@ The file type identifier for this table. For example, "DIS" and
 
 =back
 
-=head2 Columns
+=head2 Column information
 
 =over
 
@@ -352,7 +352,7 @@ table.)
 
 =back
 
-=head2 Key columns
+=head2 Key information
 
 =over
 
@@ -395,7 +395,7 @@ SQLite database.
 Returns a string containing an SQL command for inserting an entire row of data 
 of this table into an SQLite database.
 
-=item B<sql_createcmd>
+=item B<sql_idxcmd>
 
 Returns a string containing an SQL command for creating an index on the key 
 column of this table. The index will be called "idx_<table name>_key". (This 
