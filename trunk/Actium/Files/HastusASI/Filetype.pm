@@ -40,6 +40,11 @@ __END__
 Actium::Files::HastusASI::Filetype - Class representing filetypes in 
 Hastus AVL Standard Interface
 
+=head1 NOTE
+
+This documentation is intended for maintainers of the Actium system, not
+users of it. Run "perldoc Actium" for general information on the Actium system.
+
 =head1 VERSION
 
 This documentation refers to version 0.001
@@ -75,6 +80,11 @@ attributes and methods should be considered private to that module.
 =head1 ATTRIBUTES and METHODS
 
 =over
+
+=item B<new>
+
+As with most Moose classes, the constructor method is called "new". Invoke it
+with C<Actium:::Files::HastusASI::Filetype->new(%hash_of_attributes)>.
 
 =item B<id>
 
