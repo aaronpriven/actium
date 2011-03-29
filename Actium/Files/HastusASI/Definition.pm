@@ -217,33 +217,44 @@ my $DEFINITION = <<'ENDNAMES'
          
 ENDNAMES
   ;
+  
+=begin comment
 
-# TABLE FILE PARENT
-# COLUMNLENGTH COLUMNNAME
-# COLUMNLENGTH COLUMNNAME
-# etc.
+ TABLE FILE PARENT
+ COLUMNLENGTH COLUMNNAME
+ COLUMNLENGTH COLUMNNAME
+ etc.
 
-# Currently the COLUMNLENGTHs are not used, because I cannot
-# depend on them from signup to signup.
+ Currently the COLUMNLENGTHs are not used, because I cannot
+ depend on them from signup to signup.
 
-# COLUMNNAME! - column is a key column
-# COLUMNNAME* - column is a final, repeating column
-#   (contains more than one value)
+ COLUMNNAME! - column is a key column
+ COLUMNNAME* - column is a final, repeating column
+   (contains more than one value)
 
-# READ DEFINITION
 
-# so, the way this works is that it goes through each table and builds little
-# constructor-specifications for each of the various properties:
-# id, filetype, parent , columns_r, column_length_of_r,
-# has_repeating_final_column, and key_components_r
 
-# As it goes through the subsquent tables, it goes back to the previous ones
-# when it has to specify that a table has children
 
-# At the end, it creates a bunch of new little objects from the constructor
-# specs, and returns them to be found in the _table_of_r attribute
+=cut
 
 sub _build_table_of_r {
+ 
+=begin comment
+ 
+The way this works is that it goes through each table in the above
+DEFINITION string and builds little constructor-specifications for each
+of the various attributes: id, filetype, parent , columns_r,
+column_length_of_r, has_repeating_final_column, and key_components_r
+
+As it goes through the subsquent tables, it goes back to the previous
+ones when it finds a child table, and adds that ID to the children_r
+attribute of the parent table
+
+At the end, it creates a bunch of new little objects from the
+constructor specs, and returns them to be found in the _table_of_r
+attribute.
+
+=cut
 
     my $self = shift;
 
@@ -256,7 +267,7 @@ sub _build_table_of_r {
 
   TABLE:
     while (<$definition_h>) {
-        my @entries = split;
+        my @entries = split; # each word
 
         my %spec;
 
@@ -375,10 +386,10 @@ has '_filetype_of_r' => (
 # an attribute, but which is referred to by an attribute.
 # so, I've written these all out.
 
-sub keycolumn_of_table {
+sub key_of_table {
     my $self  = shift;
     my $table = shift;
-    return $self->_table_of($table)->key_column;
+    return $self->_table_of($table)->key;
 }
 
 sub columns_of_table {
@@ -474,6 +485,9 @@ Actium::Files::HastusASI::Definition is a singleton class containing data
 about the definition of Hastus ASI files. It builds the data from an embedded
 string and creates the objects when necessary.
 
+It is private to the L<Actium::Files::HastusASI|Actium::Files::HastusASI> 
+module. 
+
 =head1 METHODS
 
 =over
@@ -496,11 +510,11 @@ Returns a list of the identifiers for each filetype.
 See L<I<id> in
 Actium::Files::HastusASI::Filetype|Actium::Files::HastusASI::Filetype/id>.
 
-=item B<keycolumn_of_table (I<table_id>)>
+=item B<key_of_table (I<table_id>)>
 
 Returns the key column of the specified table.
-See L<I<key_column> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/key_column>.
+See L<I<key> in
+Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/key>.
 
 =item B<columns_of_table (I<table_id>)>
 
@@ -575,13 +589,19 @@ Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/key_components_i
 =item * Can't close internal variable for reading
 
 Perl was unable to open, or close, the variable that holds the definition 
-entries. An unlikely error.
+entries (which it opens as a file). An unlikely error.
       
 =head1 DEPENDENCIES
 
-=item * MooseX::Singleton
+=item perl 5.012
 
-=item * perl 5.012
+=item MooseX::Singleton
+
+=item Moose
+
+=item Actium::Files::HastusASI::Filetype
+
+=item Actium::Files::HastusASI::Table
 
 =head1 AUTHOR
 
