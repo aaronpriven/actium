@@ -19,8 +19,6 @@ use lib $Bin;
 use Carp;
 use POSIX ('ceil');
 
-use Actium::Timenum (
-    qw(time_to_timenum  timenum_to_12h timenum_to_12h_ap_only));
 use Actium(
     qw[say printq sayq sayt jn jt byroutes jtn initialize key ensuredir option]
 );

@@ -98,11 +98,11 @@ timepoint abbreviations.
 
 =item B<TimeNum>
 
-A time number, suitable for use by L<Actium::Timenum>. The number of minutes after
+A time number, suitable for use by L<Actium::Time>. The number of minutes after
 midnight (or before, if negative), or undef.
 Coerces strings into TimeNums using Actium::Time::timenum().
 
-=item B<ArrayRefOrTimenum>
+=item B<ArrayRefOrTimeNum>
 
 A "union type" -- either an array reference, or a TimeNum.
 

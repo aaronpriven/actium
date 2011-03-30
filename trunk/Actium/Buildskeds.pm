@@ -1,5 +1,7 @@
 # buildskeds - builds schedules from headways and from HSA files
 
+# never completed
+
 # Subversion: $Id$
 
 #00000000111111111122222222223333333333444444444455555555556666666666777777777

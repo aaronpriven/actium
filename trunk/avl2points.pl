@@ -22,7 +22,7 @@ use POSIX ('ceil');
 #use Fatal qw(open close);
 use Storable();
 
-use Actium::Timenum (qw(time_to_timenum timenum_to_12h timenum_to_12h_ap_only));
+use Actium::Time (qw(timenum ));
 use Actium(
     qw[say sayt jn jt byroutes jtn initialize key avldata ensuredir option]);
 use Actium::Constants;
@@ -187,8 +187,8 @@ foreach my $stop ( keys %stopinfo ) {
                 # sort @times_hr first by time, then by line, then by dest
 
                 @times_hr = sort {
-                    ( time_to_timenum( $a->{TIME} )
-                          <=> time_to_timenum( $b->{TIME} ) )
+                    ( timenum( $a->{TIME} )
+                          <=> timenum( $b->{TIME} ) )
                       or $a->{LINE} cmp $b->{LINE}
                       or $a->{DESTINATION} cmp $b->{DESTINATION}
                 } @times_hr;
