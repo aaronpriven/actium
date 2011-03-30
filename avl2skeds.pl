@@ -29,7 +29,7 @@ use Actium (qw(option avldata all_true add_option ensuredir say sayt sayq jtn ke
 
 use Actium::Constants;
 use Actium::Union('ordered_union');
-use Actium::Timenum (qw(time_to_timenum timenum_to_12h timenum_to_12h_ap_only)); 
+use Actium::Time ('timenum');
 
 use Actium::HastusASI::Util (':ALL');
 
@@ -294,7 +294,7 @@ sub merge_days {
 
 sub get_avg {
    my @elems = 
-      map {time_to_timenum($_) }
+      map {timenum($_) }
       grep {$_} 
       @{+shift}; # get timenums of elems that are true
    return ( List::Util::sum (@elems) / scalar @elems);
@@ -372,7 +372,7 @@ sub sort_rows {
                    # so $a_time and $b_time are paired entries of each array, in turn.
 
                    if ($a_time and $b_time) { # if there are two times present,
-	                   my $comparison = time_to_timenum($a_time) <=> time_to_timenum($b_time);
+	                   my $comparison = timenum($a_time) <=> timenum($b_time);
 	                   return $comparison if $comparison;
 	                      #return the comparison of the two times,
 	                      # if there is a difference and there are two times present
@@ -389,7 +389,7 @@ sub sort_rows {
 	   @{$sked} = 
 	      map { $_ -> [1] }
 	      sort { $a->[0] <=> $b->[0] }
-	      map { [ time_to_timenum ($_->{TIMES}[$sortby]) , $_ ] } @{$sked}; 
+	      map { [ timenum ($_->{TIMES}[$sortby]) , $_ ] } @{$sked}; 
 	}
 
    # schwartzian transform. The second "map" creates a new anonymous array: 

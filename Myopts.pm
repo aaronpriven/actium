@@ -4,6 +4,8 @@
 
 # by Aaron Priven
 
+# Legacy stage 1. This should be replaced by Actium::Options
+
 package Myopts;
 use Exporter;
 our @ISA = ('Exporter');
