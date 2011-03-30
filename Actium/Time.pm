@@ -41,7 +41,7 @@ our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 ## COMMAND
 ###########################################
 
-sub time_HELP {
+sub HELP {
 
     say <<'HELP' or die q{Can't open STDOUT for writing};
 actium time -- convert timenums to timestrings
@@ -65,7 +65,7 @@ HELP
 
 } ## #tidy# end sub time_HELP
 
-sub time_START {
+sub START {
 
     my $timestr_sub = timestr_sub( { XB    => 1 } );
     my $timestr_24  = timestr_sub( { HOURS => 24 } );
