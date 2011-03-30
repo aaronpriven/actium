@@ -86,7 +86,7 @@ my %tp_overridden;
 
 my %color_of;
 
-sub flagspecs_START {
+sub START {
 
     my $signup     = Actium::Signup->new();
     my $flagfolder = $signup->subdir('flags');
@@ -1429,8 +1429,8 @@ sub mydump {
     return Data::Dumper::Dumper(@_);
 }
 
-sub hasi2flagpat_HELP {
-    say 'No help written for hasi2flagpat yet';
+sub HELP {
+    say 'No help written for flagspecs yet';
     return;
 }
 

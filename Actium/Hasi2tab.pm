@@ -17,7 +17,7 @@ use Actium::Term ('output_usage');
 use Actium::Files::HastusASI;
 use Actium::Constants;
 
-sub hasi2tab_START {
+sub START {
 
     my $hasidir = Actium::Signup->new('hasi');
     my $hasi    = Actium::Files::HastusASI->new( $hasidir->get_dir() );
@@ -55,7 +55,7 @@ sub hasi2tab_START {
     return;
 } ## #tidy# end sub hasi2tab_START
 
-sub hasi2tab_HELP {
+sub HELP {
 
     say <<'HELP' or die q{Can't open STDOUT for writing};
 actium hasi2tab -- convert an Hasi file to tab file
