@@ -21,7 +21,7 @@ use Storable();
 use Actium( qw[say sayt jn jt initialize avldata ensuredir option]);
 use Actium::Constants;
 use Actium::Union('ordered_union');
-use Actium::HastusASI::Util (':ALL');
+use Actium::DaysDirections (':ALL');
 
 # don't buffer terminal output
 $| = 1;

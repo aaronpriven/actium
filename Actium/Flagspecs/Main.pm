@@ -16,6 +16,7 @@ use Actium::HiddenHash;
 use Actium::Signup;
 use Actium::Term;
 use Actium::Constants;
+use Actium::Files::HastusASI;
 
 use Carp;
 use Readonly;
@@ -61,9 +62,8 @@ sub load_merges {
 sub load_hasi {
     my $signup = shift;
     my $hasidir = $signup->subdir('hasi');
-    my $hasi_db = Actium::HastusASI::Db->new( $hasidir->get_dir(),
-        ( '/tmp/' . $hasidir->get_signup() . '_' ) );
-    $hasi_db->load(qw(PAT TRP));
+    my $hasi_db = Actium::Files::HastusASI->new( $hasidir->get_dir());
+    $hasi_db->ensure_loaded(qw(PAT TRP));
     return $hasi_db;
 }
 
