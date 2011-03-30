@@ -5,6 +5,13 @@
 # (e.g., %Skedvars::longerdaynames), there's no real reason to turn this
 # into functions.
 
+# That was written long, long ago, before I had a clue about that.
+# which makes this:
+
+# Legacy stage 1
+
+# soon to be deleted and incorporated into Actium::DaysDirections
+
 package Skedvars;
 
 use strict;
