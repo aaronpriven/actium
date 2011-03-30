@@ -15,7 +15,7 @@ use Storable();
 
 use Actium::FPMerge (qw(FPread FPread_simple));
 
-use Actium::Timenum (qw(time_to_timenum timenum_to_12h timenum_to_12h_ap_only) );
+use Actium::Time ('timenum');
 
 use Actium (qw(option ensuredir avldata key jt));
 
@@ -61,10 +61,10 @@ open my $fh , '>' ,  "/Users/apriven/Desktop/solarstops.txt" or die $!;
 #my $count = 0;
 for my $stopid (sort keys %times_of) {
    my @times = @{$times_of{$stopid}};
-   @times = sort { time_to_timenum($a) <=> time_to_timenum($b) } @times;
+   @times = sort { timenum($a) <=> timenum($b) } @times;
    my $count = 0;
    for my $time (@times) {
-      my $tn = time_to_timenum($time);
+      my $tn = timenum($time);
       $count++ if ( $tn < 360 or $tn > 1140);
    }
    
@@ -80,7 +80,7 @@ for my $stopid (sort keys %times_of) {
    print ".";
 
    my $result = jt ( $stopid , $on, $at, $stnum, $site, $direction, 
-        $first , $last, time_to_timenum($first) , time_to_timenum($last) , $count , "\n");
+        $first , $last, timenum($first) , timenum($last) , $count , "\n");
    print $fh ($result );
    
    #exit if $count++ > 10;

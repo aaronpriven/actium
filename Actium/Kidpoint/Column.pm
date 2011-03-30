@@ -1,7 +1,8 @@
 # Kidpoint/Column.pm
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
+# Object for a single column in an InDesign point schedule
+
+# legacy stage 3, mostly
 
 use warnings;
 use strict;
@@ -19,7 +20,7 @@ use Moose::Util::TypeConstraints;
 use Actium::AttributeHandlers ( 'stringhandles', 'arrayhandles',
     'arrayhandles_ro', 'hashhandles' );
 use Actium::Constants;
-use Actium::Timenum ('time_to_timenum');
+use Actium::Time ('timenum');
 use IDTags;
 
 around BUILDARGS => sub {
@@ -53,7 +54,7 @@ around BUILDARGS => sub {
 
     foreach (@entries) {
         my ( $time, $line, $destination, $place, $exception ) = split(/:/);
-        my $timenum = time_to_timenum($time);
+        my $timenum = timenum($time);
         $time_of{$_} = $timenum;
     }
 

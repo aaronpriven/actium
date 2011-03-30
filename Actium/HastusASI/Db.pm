@@ -5,6 +5,11 @@
 
 # Subversion: $Id$
 
+# this file should not be used in new programming. 
+# Code using it should replace it with Actium::Files::HastusASI
+
+# Legacy stage 3
+
 use strict;
 use warnings;
 

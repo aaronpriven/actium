@@ -3,6 +3,15 @@
 
 # Subversion: $Id$
 
+# So the idea here was that I would create a standard set of names
+# that would be used everywhere.
+# The problem with this is that it multiplies the interfaces by quite a lot,
+# making it difficult to determine what we have to continue to support.
+
+# So, this should no longer be used in current programs.
+
+# Legacy stage 3
+
 use warnings;
 use strict;
 
