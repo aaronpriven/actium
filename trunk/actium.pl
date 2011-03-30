@@ -47,18 +47,18 @@ use Actium::Options qw(add_option init_options option);
 $SIG{'__WARN__'} = \&soft_cushions;
 $SIG{'__DIE__'} = \&soft_cushions;
 
-sub soft_cushions {
-    # Confess! Confess! Or we will get the comfy chair!
-    require Carp;
-    Carp::confess (@_);
-}
+#sub soft_cushions {
+#    # Confess! Confess! Or we will get the comfy chair!
+#    require Carp;
+#    Carp::confess (@_);
+#}
 
 ### Get subcommand, and run subcommand
 
 my %module_of = (
     headways => 'Headways',
     time => 'Time',
-    hasi2tab => 'Hasi2x',
+    hasi2tab => 'Hasi2tab',
     flagspecs => 'Flagspecs',
     checkhasis => 'Hasi2x',
     drivingorder => 'DrivingOrder',
