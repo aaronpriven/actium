@@ -31,7 +31,7 @@ use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Time ('timenum');
 
-use Actium::HastusASI::Util (':ALL');
+use Actium::DaysDirections (':ALL');
 
 add_option('rawonly!' , 'Only create "rawskeds" and not "skeds".');
 

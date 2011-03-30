@@ -31,7 +31,7 @@ use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Sorting (qw(sortbyline));
 
-use Actium::HastusASI::Util (':ALL');
+use Actium::DaysDirections (':ALL');
 
 use List::Util ('max');
 

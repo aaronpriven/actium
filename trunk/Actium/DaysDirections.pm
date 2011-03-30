@@ -1,27 +1,16 @@
-# Actium/HastusASI/Util.pm
-# Routines associated with Hastus AVL Standard Interface files
+# Actium/DaysDirections
+# Day and direction codes, conversion between in Hastus and legacy systems
 
 # Subversion: $Id$
 
-use strict;
+use 5.012;
 use warnings;
 
-package Actium::HastusASI::Util;
+package Actium::DaysDirections 0.001;
 
-use 5.010;    # turns on features
-
-our $VERSION = "0.001";
-$VERSION = eval $VERSION;
-
-use Carp;
-use Storable;
 use Readonly;
 
 use Perl6::Export::Attrs;
-
-#use Exporter 'import';
-#our @EXPORT_OK = qw(day_of_hasi dir_of_hasi);
-#our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
 Readonly my %DAY_OF_HASI => {
     qw(
@@ -66,15 +55,15 @@ __END__
 
 =head1 NAME
 
-Actium::HastusASI::Util - Utility routines associated with Hastus Standard AVL Interface
+Actium::DaysDirections - Day and direcion codes
 
 =head1 VERSION
 
-This documentation refers to Actium::HastusASI::Util version 0.001
+This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::HastusASI::Util;
+ use Actium::DaysDirections;
  
  print day_of($hasi->{TRP}{'1632120'}{OperatingDays}) ;
  # prints two-letter day code for the operating days 
@@ -87,9 +76,7 @@ This documentation refers to Actium::HastusASI::Util version 0.001
 
 =head1 DESCRIPTION
 
-Actium::HastusASI::Util contains routines associated with the Hastus Standard AVL
-Interface, as defined by the document "Hastus 2006 AVL Standard Interface,
-Last Update: July 26, 2005". 
+Actium::DaysDirections 
 
 =head1 SUBROUTINES
 

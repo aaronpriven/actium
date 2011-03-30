@@ -18,8 +18,8 @@ $VERSION = eval $VERSION;    ## no critic (StringyEval)
 use Actium::Sorting ('sortbyline');
 use Actium::Util qw(sk jk jt keyreadable);
 use Actium::Union ('ordered_union');
-use Actium::HastusASI::Util(':ALL');
-use Actium::HastusASI::Db;
+use Actium::DaysDirections(':ALL');
+use Actium::Files::HastusASI;
 use Actium::Constants;
 use Actium::Term;
 use Actium::Signup;
@@ -60,9 +60,8 @@ sub flagspecs_START {
 
     {
         my $hasidir = $signup->subdir('hasi');
-        my $hasi_db = Actium::HastusASI::Db->new( $hasidir->get_dir(),
-            ( '/tmp/' . $hasidir->get_signup() . '_' ) );
-        $hasi_db->load(qw(PAT TRP));
+        my $hasi_db = Actium::Files::HastusASI->new( $hasidir->get_dir());
+        $hasi_db->ensure_loaded(qw(PAT TRP));
         build_place_and_stop_lists($hasi_db);
         build_trip_quantity_lists($hasi_db);
     }
