@@ -360,7 +360,8 @@ has '_table_of_r' => (
     lazy     => 1,
     handles  => {
         tables   => 'keys',
-        table_of => 'get',
+        _table_of => 'get',
+        is_a_table => 'exists',
     },
 );
 
@@ -373,7 +374,7 @@ has '_filetype_of_r' => (
     lazy     => 1,
     handles  => {
         filetypes   => 'keys',
-        filetype_of => 'get',
+        _filetype_of => 'get',
     },
 
 );
@@ -503,6 +504,11 @@ a constructor called "new".)
 
 Returns a list of the identifiers for each table. See L<I<id> in
 Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/id>.
+
+=item B<is_a_table(I<table>)>
+
+Returns true if the specified table is a valid table (that is, is a member
+of the above list).
 
 =item B<filetypes>
 

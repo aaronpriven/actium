@@ -1,8 +1,10 @@
-# Actium/Db/SQLite.pm
+# Actium/Files/SQLite.pm
 
 # Role for reading and processing flat files and storing in an SQLite database
 
 # Subversion: $Id$
+
+# Legacy stage 4
 
 #The idea is that classes for different types of files (HastusASI,
 #FileMaker Pro "Merge", FileMaker Pro "XML") will compose this role
@@ -16,17 +18,15 @@
 #4) Provides some SQL queries to fetch the data again
 #   (not intended to be complete...)
 #
-#
-#Each dbtype (datbase type), has one or more filetypes,
+#Each db_type (datbase type), has one or more filetypes,
 #which has one or more tables (aka rowtypes).
 
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::Db::SQLite 0.001;
+package Actium::Files::SQLite 0.001;
 
 use Moose::Role;
-use MooseX::SemiAffordanceAccessor;
 
 use Actium::Constants;
 use Actium::Term;
@@ -46,9 +46,9 @@ Readonly my $DB_EXTENSION => '.SQLite';
 # Required methods in consuming classes:
 
 requires(
-    qw/db_type key_of_table columns_of_table 
+    qw/db_type key_of_table columns_of_table tables
        _load _files_of_filetype _tables_of_filetype
-       _filetype_of_table/
+       _filetype_of_table is_a_table/
 );
 
 # db_type is something like 'HastusASI' or 'FPMerge' or something, which
@@ -72,6 +72,8 @@ requires(
 # columns_of_table lists, of course, the columns of the table
 
 # key_of_table is the key column, if any, of a particular table
+
+# is_a_table returns true if the specified table is valid
 
 ######################################
 ### ATTRIBUTES
@@ -142,7 +144,8 @@ around BUILDARGS => sub {
     my $orig     = shift;
     my $class    = shift;
     my $argument = shift;
-    return $class->$orig( $argument, @_ ) if ( ref $argument or @_ );
+    my @rest = @_;
+    return $class->$orig( $argument, @rest ) if ( ref $argument or @rest );
     return $class->$orig( flats_folder => $argument );
 };
 
@@ -157,7 +160,7 @@ sub _build_db_folder {
 sub _build_db_filename {
     # only run when no db filename is specified
     my $self = shift;
-    return $self->dbtype . $DB_EXTENSION;
+    return $self->db_type . $DB_EXTENSION;
 }
 
 sub _build_db_filespec {
@@ -233,7 +236,11 @@ sub ensure_loaded {
     
     # get filetypes from tables
     
-    my @filetypes = map { $self->_filetype_of_table($_) } @tables;
+    my @filetypes;
+    foreach my $table (@tables) {
+       $self->_check_table($table); 
+       push @filetypes, $self->_filetype_of_table($table);
+    }
     
     foreach my $filetype (@filetypes) {
         next if ( $self->_is_loaded($filetype) );
@@ -258,7 +265,7 @@ sub ensure_loaded {
                 my $table_sth
                   = $dbh->table_info( undef, undef, $table, 'TABLE' );
                 my $ary_ref = $table_sth->fetchrow_arrayref();
-                $dbh->do( 'DROP TABLE ?', {}, $table ) if $ary_ref;
+                $dbh->do( "DROP TABLE $table" ) if $ary_ref;
             }
 
             $self->_load( $filetype, @flats);
@@ -277,6 +284,13 @@ sub ensure_loaded {
     return;
 
 } ## tidy end: sub ensure_loaded
+
+sub _check_table {
+    my ( $self, $table ) = @_;
+    croak "Invalid table $table for database type " . $self->db_type()
+      if not ($self->is_a_table($table));
+    return;
+}
 
 #########################################
 ### SQL -- PROVIDE ROWS TO CALLERS, OTHER SQL
@@ -314,7 +328,7 @@ sub each_row_eq {
 
 sub each_row_where {
     my ( $self, $table, $where, @bind_values ) = @_;
-
+    
     $self->ensure_loaded($table);
     my $dbh = $self->dbh();
 
@@ -365,8 +379,6 @@ sub _flat_filespec {
       ? map { File::Spec->catfile( $flats_folder, $_ ) } @files
       : File::Spec->catfile( $flats_folder, $files[0] );
 }
-
-__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
 
@@ -473,9 +485,14 @@ as part of the default filename.
 =item B<columns_of_table(I<table>)>
 
 This method returns a list of the data columns of a particular
-table.  (These are the columns that come in from the data, and
-should not include any other columns such as ID columns or composite
-key columns.)
+table.  
+
+These are the columns that come in from the data, and will not include any 
+other columns. There will always be an additional column called "${table}_id"
+that is a serial number for the row, and there may be an additional column
+called "${table}_key" if the key for the row is a composite key. (This can be
+determined by testing whether $db->key_of_table{$table} is equal to 
+"${table}_key".)
 
 =item B<key_of_table(I<table>)>
 
@@ -575,6 +592,10 @@ no key. This is not valid.
 =item Invalid column $column for table $table
 
 A request specified a column that was not found in the specified table.
+
+=item Invalid table $table for database type $db_type
+
+A request specified a table that was not found for the specified database type.
 
 =head1 DEPENDENCIES
 

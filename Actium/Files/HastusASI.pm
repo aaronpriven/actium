@@ -5,6 +5,8 @@
 
 # Subversion: $Id$
 
+# Legacy stage 4
+
 use warnings;
 use 5.012;    # turns on features
 
@@ -52,11 +54,13 @@ has '_definition' => (
     is       => 'bare',
     init_arg => undef,
     isa      => 'Actium::Files::HastusASI::Definition',
-    default  => Actium::Files::HastusASI::Definition->instance,
+    default  => sub { Actium::Files::HastusASI::Definition->instance },
+    lazy     => 1,
     handles  => {
         columns_of_table            => 'columns_of_table',
-        key_of_table          => 'key_of_table',
+        key_of_table                => 'key_of_table',
         tables                      => 'tables',
+        is_a_table                  => 'is_a_table',
         _create_query_of_table      => 'create_query_of_table',
         _filetype_of_table          => 'filetype_of_table',
         _filetypes                  => 'filetypes',
@@ -65,7 +69,7 @@ has '_definition' => (
         _index_query_of_table       => 'index_query_of_table',
         _insert_query_of_table      => 'insert_query_of_table',
         _key_components_idxs        => 'key_components_idxs',
-        _parent_of_table            => 'parent_of_table',
+        parent_of_table            => 'parent_of_table',
         _tables_of_filetype         => 'tables_of_filetype',
 
     },
@@ -81,6 +85,7 @@ has '_files_of_filetype_hash' => (
     isa     => 'HashRef[ArrayRef[Str]]',
     handles => { '_files_of_filetype_r' => 'get' },
     builder => '_build_files_list',
+    lazy    => 1,
 );
 
 # _files_of_filetype required by SQLite role
@@ -153,13 +158,14 @@ sub _load {
             $dbh->do($query) if $query;
         }
 
-        $sth_of{$table} = $dbh->prepare( $self->insert_query_of_table($table) );
-        $parent_of{$table} = $self->_parent_of_table($table);
-        $has_composite_key{$table}
-          = $self->_has_composite_key($table);
+        $sth_of{$table}
+          = $dbh->prepare( $self->_insert_query_of_table($table) );
+
+        $parent_of{$table}         = $self->parent_of_table($table);
+        $has_composite_key{$table} = $self->_has_composite_key($table);
         $has_repeating_final_column{$table}
           = $self->_has_repeating_final_column($table);
-        $key_components_idxs{$table} = $self->_key_components_idxs($table);
+        $key_components_idxs{$table} = [ $self->_key_components_idxs($table) ];
 
     } ## tidy end: foreach my $table ( $self->_tables_of_filetype...)
 
@@ -208,8 +214,11 @@ sub _load {
             }
 
             my ( $table, $_ ) = split( /$DELIMITER/sx, $_, 2 );
-            unless ( _filetype_of_table($table) eq $filetype ) {
-                carp "Incorrect table type $table in file $filespec, "
+            unless ( $self->is_a_table($table)
+                and ( $self->_filetype_of_table($table) eq $filetype ) )
+            {
+                carp
+                  "Incorrect table type $table in file $filespec, "
                   . "row $INPUT_LINE_NUMBER:\n$_\n";
                 set_term_pos(0);
                 next ROW;
@@ -298,9 +307,10 @@ and end of each field.
 
     # determine number of columns
     foreach my $table ( $self->_tables_of_filetype($filetype) ) {
-        my $numcolumns = scalar( columns($table) ) + 1;    # add one for table
+        my $numcolumns
+          = scalar( $self->columns_of_table($table) ) + 1;   # add one for table
         $numcolumns += $EXTRA_FIELDS_WHEN_REPEATING
-          if $self->has_repeating_final_column($table);
+          if $self->_has_repeating_final_column($table);
 
         while ( not $template_of{$table} ) {
             my $line = <$fh>;
@@ -391,6 +401,8 @@ using Actium::Files::SQLite.
 =item B<columns_of_table>
 =item B<key_of_table>
 =item B<tables>
+=item B<is_a_table>
+=item B<parent_of_table>
 
 These are delegated to 
 L<Actium::Files::HastusASI::Definition|Actium::Files::HastusASI::Definition>
@@ -409,7 +421,6 @@ module.
 =item B<_index_query_of_table>
 =item B<_insert_query_of_table>
 =item B<_key_components_idxs>
-=item B<_parent_of_table>
 =item B<_tables_of_filetype>
 
 These are delegated to 
