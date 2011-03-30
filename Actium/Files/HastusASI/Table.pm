@@ -27,7 +27,7 @@ has [qw[ id filetype ]] => (
 
 has 'parent' => (
     is      => 'ro',
-    isa     => 'Str',
+    isa     => 'Maybe[Str]',
     default => undef,
 );
 
@@ -99,9 +99,9 @@ has 'has_repeating_final_column' => (
 #########################
 
 has 'key' => (
-    is       => 'bare',
+    is       => 'ro',
     init_arg => undef,
-    isa      => 'Str',
+    isa      => 'Maybe[Str]',
     builder  => '_build_key',
     lazy     => 1,
 );
@@ -131,7 +131,7 @@ has 'key_components_r' => (
 );
 
 has 'has_composite_key' => (
-    is       => 'bare',
+    is       => 'ro',
     isa      => 'Bool',
     builder  => '_build_has_composite_key',
     lazy     => 1,
@@ -172,7 +172,7 @@ sub _build_key_components_idxs {
 
 foreach my $attribute (qw[ sql_createcmd sql_insertcmd ]) {
     has $attribute => (
-        is       => 'bare',
+        is       => 'ro',
         init_arg => undef,
         isa      => 'Str',
         builder  => "_build_$attribute",
@@ -181,7 +181,7 @@ foreach my $attribute (qw[ sql_createcmd sql_insertcmd ]) {
 }
 
 has 'sql_idxcmd' => (
-        is       => 'bare',
+        is       => 'ro',
         init_arg => undef,
         isa      => 'Maybe[Str]',
         builder  => "_build_sql_idxcmd",
