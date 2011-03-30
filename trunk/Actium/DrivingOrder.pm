@@ -26,7 +26,7 @@ use Actium::Options(qw(option add_option));
 
 add_option( 'descriptions', 'Adds descriptions to the output file' );
 
-sub drivingorder_HELP {
+sub HELP {
 
     my $helptext = <<'EOF';
 slists2bagorder makes the order for bags (that is, listing stops by route in order
@@ -39,7 +39,7 @@ EOF
 
 }
 
-sub drivingorder_START {
+sub START {
 
     my ( $infile, $outfile ) = @ARGV;
 

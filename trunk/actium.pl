@@ -15,12 +15,8 @@
 
 ## no critic (RequireLocalizedPunctuationVars)
 
-use strict;
+use 5.012;
 use warnings;
-use 5.010;
-
-our $VERSION = "0.001"; ## no critic (ProhibitInterpolationOfLiterals)
-$VERSION = eval $VERSION;
 
 # add the current program directory to list of files to include
 use FindBin qw($Bin);
@@ -96,15 +92,10 @@ init_options();
 
 my $sub;
 if ( $help or option('help') ) {
-    $sub = $subcommand . '_HELP';
+    $module->HELP();
 }
 else {
-    $sub = $subcommand . '_START';
-}
-
-{
-no strict 'refs';
-$module->$sub();
+    $module->START();
 }
 
 sub mainhelp {

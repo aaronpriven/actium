@@ -34,7 +34,7 @@ use Carp;
 
 use English qw(-no_match_vars);
 
-sub headways_HELP {
+sub HELP {
 
     say <<'HELP' or die q{Can't open STDOUT for writing};
 actium headways -- read headway sheets and dump out schedules.
@@ -46,7 +46,7 @@ HELP
 
 }
 
-sub headways_START {
+sub START {
 
     # Term::Emit::setopts { -closestat => 'ERROR' };
 
