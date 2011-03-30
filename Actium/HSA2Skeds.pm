@@ -24,7 +24,7 @@ use File::Copy;
 
 use Actium::Options qw(option add_option);
 
-use Actium::HastusASI::Util qw(day_of dir_of);
+use Actium::DaysDirections (qw(day_of dir_of));
 
 use Actium::Constants;
 use Actium::Union('ordered_union');

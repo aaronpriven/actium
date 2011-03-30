@@ -22,7 +22,7 @@ use Actium( qw[add_option initialize avldata sayq chdir_signup option]);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils('uniq');
-use Actium::HastusASI::Util (':ALL');
+use Actium::DaysDirections (':ALL');
 
 # don't buffer terminal output
 $| = 1;
