@@ -1,0 +1,361 @@
+# Actium/Sked/Days.pm
+# Object representing the scheduled days (of a trip, or set of trips)
+
+# Subversion: $Id$
+
+use 5.012;
+use warnings;
+
+package Actium::Sked::Days 0.001;
+
+use Moose;
+use MooseX::StrictConstructor;
+use MooseX::SemiAffordanceAccessor;
+
+use Actium::Types qw<DayCode SchoolDayCode>;
+
+use Readonly;
+
+# Back in ancient days, the web site transtinfo.org used two-letter codes
+# for days and directions.  Stage 0 Actium was built on their processing,
+# and these codes have remained in use
+
+Readonly my %TRANSITINFO_OF_DAYS => {
+    qw(
+      1234567 DA
+      12345   WD
+      6       SA
+      7       SU
+      67      WE
+      24      TT
+      25      TF
+      35      WF
+      135     MZ
+      )
+};
+
+Readonly my %DAYS_OF_TRANSITINFO => reverse %TRANSITINFO_OF_DAYS;
+
+has 'days' => (
+   is => 'ro',
+   isa => 'DayCode',
+   required => 1,
+);
+
+has 'schooldays' => (
+   is => 'ro' ,
+   isa => 'SchoolDayCode' ,
+   required => 1,
+);
+   
+around BUILDARGS => sub {
+    my $class = shift;
+    my $orig = shift;
+    
+    my $days = shift;
+    my $schooldays = shift;
+    
+    $days = $DAYS_OF_TRANSITINFO{$days} if $DAYS_OF_TRANSITINFO{$days};
+    # if passed a day code from Transitinfo
+    
+    $days =~ s/[^\d]//g;
+    # eliminate anything that's not a digit
+    
+    # TODO - add option to make it Saturdays-and-holidays
+    #    instead of Sundays-and-holidays, or treat holidays as a separate
+    #    schedule
+    
+    $days =~ s/7/7H/;
+    
+    return $class->$orig(days => $days , schooldays => $schooldays);
+
+};
+
+# New day codes have a character for each set of days that are used.
+
+# 1 - 7 : Monday through Sunday (like in Hastus)
+# H - Holidays
+
+sub as_transitinfo {
+ 
+   my $self = shift;
+   my $days = $self->days;
+   my $wd = $self->is_weekdays_only;
+   
+   my $schooldays = $self->schooldays;
+   given ($schooldays) {
+       when ([qw<D>]) {
+           return "SD" if $wd;
+           return $self->invalid_transitinfo_days;
+       }
+       when ([qw<H>]) {
+           return "SH" if $wd;
+           return $self->invalid_transitinfo_days;
+       }
+   }
+   
+   my $transitinfo = $TRANSITINFO_OF_DAYS{$days};
+   
+   return $transitinfo if $transitinfo;
+   return $self->invalid_transitinfo_days;
+ 
+}
+
+sub invalid_transitinfo_days {
+    my $self = shift;
+    my $days = $self->days;
+    my $schooldays = $self->schooldays;
+    warn qq[Using invalid Transitinfo days XX for <$days/$schooldays>];
+    return 'XX';
+}
+
+sub is_weekdays_only {
+   my $self=shift;
+   return 1 if $self->days eq '12345';
+   return;
+}
+
+sub display_list_code {
+   my $self = shift;
+   my $days = $self->days;
+   $days =~ s/12345/W/; # Weekdays
+   $days =~ s/67/E/; # Weekends
+   $days =~ s/WEH/D/; # Every day
+}
+
+1;
+
+__END__
+
+   The following are from skedvars and will be incorporated shortly
+
+   my %specdaynames =
+        ( "SD" => "School days only" , 
+          "SH" => "School holidays only" ,
+          "TT" => "Tuesdays and Thursdays only" ,
+          "TF" => "Tuesdays and Fridays only" ,
+          "WF" => "Wednesdays and Fridays only" ,
+	  "MZ" => "Mondays, Wednesdays, and Fridays only" ,
+        );
+
+   my %bound = 
+        ( EB => 'Eastbound' ,
+          SB => 'Southbound' ,
+          WB => 'Westbound' ,
+          NB => 'Northbound' ,
+          CW => 'Clockwise' ,
+          CC => 'Counterclockwise' ,
+        );
+
+   my %adjectivedaynames = 
+        ( WD => "Weekday" ,
+          WE => "Weekend" ,
+          DA => "Daily" ,
+          SA => "Saturdays" ,
+          SU => "Sundays and Holidays" ,
+        );
+
+   my %longerdaynames = 
+        ( WD => "Monday through Friday" ,
+          WE => "Sat., Sun. and Holidays" ,
+          DA => "Every day" ,
+          SA => "Saturdays" ,
+          SU => "Sundays and Holidays" ,
+          WU => "Weekdays and Sundays",
+        );
+
+   my %longdaynames = 
+        ( WD => "Mon thru Fri" ,
+          WE => "Sat, Sun and Holidays" ,
+          DA => "Every day" ,
+          SA => "Saturdays" ,
+          SU => "Sundays and Holidays" ,
+        );
+
+   my %shortdaynames = 
+        ( WD => "Mon thru Fri" ,
+          WE => "Sat, Sun, Hol" ,
+          DA => "Every day" ,
+          SA => "Saturdays" ,
+          SU => "Sun & Hol" ,
+        );
+
+
+   my %longdirnames = 
+        ( E => "east" ,
+          N => "north" ,
+          S => "south" ,
+          W => "west" ,
+          SW => "southwest" ,
+          SE => "southeast" ,
+          'NE' => "northeast" ,
+          NW => "northwest" ,
+        );
+
+   my %dayhash = 
+        ( DA => 50 ,
+          WD => 40 ,
+          WE => 30 ,
+          SA => 20 ,
+          SU => 10 ,
+        );
+
+   my %dirhash = 
+        ( WB => 60 ,
+          SB => 50 ,
+          EB => 40 ,
+          NB => 30 ,
+          CC => 20 ,
+          CW => 10 ,
+        );
+
+   my %daydirhash = 
+        ( 
+         CW_DA => 110 ,
+         CC_DA => 120 ,
+         NB_DA => 130 ,
+         EB_DA => 140 ,
+         SB_DA => 150 ,
+         WB_DA => 160 ,
+         CW_WD => 210 ,
+         CC_WD => 220 ,
+         NB_WD => 230 ,
+         EB_WD => 240 ,
+         SB_WD => 250 ,
+         WB_WD => 260 ,
+         CW_WE => 310 ,
+         CC_WE => 320 ,
+         NB_WE => 330 ,
+         EB_WE => 340 ,
+         SB_WE => 350 ,
+         WB_WE => 360 ,
+         
+         CW_WU => 361 ,
+         CC_WU => 362 ,
+         NB_WU => 363 ,
+         EB_WU => 364 ,
+         SB_WU => 365 ,
+         WB_WU => 366 ,
+         
+         CW_SA => 410 ,
+         CC_SA => 420 ,
+         NB_SA => 430 ,
+         EB_SA => 440 ,
+         SB_SA => 450 ,
+         WB_SA => 460 ,
+         CW_SU => 510 ,
+         CC_SU => 520 ,
+         NB_SU => 530 ,
+         EB_SU => 540 ,
+         SB_SU => 550 ,
+         WB_SU => 560 ,
+        );
+
+
+
+
+
+=head1 NAME
+
+Actium::DaysDirections - Day and direcion codes
+
+=head1 VERSION
+
+This documentation refers to version 0.001
+
+=head1 SYNOPSIS
+
+ use Actium::DaysDirections;
+ 
+ print day_of($hasi->{TRP}{'1632120'}{OperatingDays}) ;
+ # prints two-letter day code for the operating days 
+ # of trip with internal trip number 1632120
+ 
+ print dir_of(
+     $hasi->{PAT}{'7' . $KEY_SEPARATOR . '58'}{DirectionValue}
+             );
+ # prints two-letter direction code for pattern 58 of route 7
+
+=head1 DESCRIPTION
+
+Actium::DaysDirections 
+
+=head1 SUBROUTINES
+
+=over
+
+=item B<day_of_hasi)>
+
+Takes one argument, the Hastus "Operating Days" code (which is usually one or 
+more digits from 1 to 7), and returns a two-letter code for the days:
+
+ WD Weekdays
+ SA Saturday
+ SU Sunday
+ WE Weekend
+ DA Daily
+ WF Wednesday and Friday
+ TT Tuesday and Thursday
+ TF Tuesday and Friday
+ 
+Ultimately, these codes (which originated at the old www.transitinfo.org 
+web site) are obsolete and should be replaced since they do not allow for 
+the full range of date possibilities.
+
+=item B<dir_of_hasi()>
+
+Takes one argument, the Hastus 2006 "Directions" code (see table 9.2 in the 
+Hastus 2006 AVL Standard Interface document), and returns a two-letter code
+representing the direction.
+
+ Code  Meaning
+ NB    Northbound
+ SB    Southbound
+ EB    Eastbound
+ WB    Westbound
+ CC    Counterclockwise
+ CW    Clockwise
+ IN    Inbound
+ OU    Outbound
+ UP    Up
+ DN    Down
+ GO    Go
+ RT    Return
+ 1     One
+ 2     Two
+
+Only the first six are actually used at AC Transit.
+
+These codes also come from www.transitinfo.org. There's nothing wrong with the 
+codes themselves, but because a route marked "Eastbound" may not actually 
+go in an eastward direction, avoid actually displaying their meanings
+to customers.
+
+=back
+
+=head1 DEPENDENCIES
+
+=over
+
+=item *
+
+Perl 5.010 and the standard distribution.
+
+=item *
+
+Readonly.
+
+=back
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 LICENSE AND COPYRIGHT
+
+This module is free software; you can redistribute it and/or modify it under 
+the same terms as Perl itself. See L<perlartistic>.
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.

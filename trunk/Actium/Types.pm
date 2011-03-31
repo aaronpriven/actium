@@ -16,9 +16,9 @@ $VERSION = eval $VERSION;
 ## no critic (ProhibitMagicNumbers)
 
 use MooseX::Types -declare => [
-    qw <Schedule_Day 
+    qw <Schedule_Day DayCode SchoolDayCode
       ArrayRefOfTimeNums _ArrayRefOfStrs ArrayRefOrTimeNum
-      TimeNum Str4 Str8> # StrOrArrayRef
+      TimeNum Str4 Str8 > # StrOrArrayRef
 ];
 
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
@@ -27,6 +27,13 @@ use Actium::Time;
 use Actium::Constants;
 
 enum( Schedule_Day, (@SCHEDULE_DAYS) );
+
+subtype DayCode , as Str, where { /\A1?2?3?4?5?6?7?H?\z/ },
+  message {qq<The entry "$_" is not an eight-character-long string>};
+# It uses question marks instead of [1-7H]+ because
+# the numbers have to be in order, and not repeated
+
+enum (SchoolDayCode , [qw<B D H>]);
 
 subtype Str8, as Str, where { length == 8 },
   message {qq<The entry "$_" is not an eight-character-long string>};
@@ -91,10 +98,21 @@ L<Moose::Manual::Types>.
 
 An enumeration of @Actium::Constants::SCHEDULE_DAYS. See L<Actium::Constants>.
 
+=item B<DayCode>
+
+This string represents scheduled days in a newer way, based on the way Hastus
+stores them: 1 = Monday, 2 = Tuesday ... 7 = Sunday, and H = holidays.
+They must be in order (e.g., "76" is invalid).
+
+=item B<SchoolDayCode>
+
+A character representing whether the scheduled days run during school days
+("D"), school holidays ("H"), or both ("B").
+
 =item B<Str4> and B<Str8>
 
-A string of exactly four characters or eight characters. These are used in specifying
-timepoint abbreviations.
+A string of exactly four characters or eight characters. These are used in 
+specifying timepoint abbreviations.
 
 =item B<TimeNum>
 
