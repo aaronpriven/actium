@@ -10,7 +10,7 @@
 
 # Legacy stage 1
 
-# soon to be deleted and incorporated into Actium::DaysDirections
+# soon to be deleted and incorporated into Actium::DaysDirections, or something
 
 package Skedvars;
 
