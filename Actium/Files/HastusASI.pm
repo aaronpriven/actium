@@ -48,7 +48,7 @@ Readonly my $DISPLAY_PERCENTAGE_FACTOR   => 100 / $OCCASIONS_TO_DISPLAY;
 #########################################
 
 # db_type required by SQLite role
-sub db_type () {'HastusASI'}
+sub db_type () { return 'HastusASI'}
 
 has '_definition' => (
     is       => 'bare',
@@ -120,7 +120,7 @@ sub _build_files_list {
 
     my %files_of;
     foreach my $filetype ( $self->_filetypes() ) {
-        my @files = grep ( {/\.$filetype/sx} @all_files );
+        my @files = grep ( {/[.] $filetype /sx} @all_files );
         $files_of{$filetype} = \@files;
     }
 
@@ -326,7 +326,7 @@ and end of each field.
         if ( not $template_of{$table} ) {
             emit_error;
             croak "Unable to determine columns of $table in $filespec\n"
-              . "(never found a line with the right number)";
+              . '(never found a line with the right number)';
         }
 
         if ( not seek $fh, 0, 0 ) {
