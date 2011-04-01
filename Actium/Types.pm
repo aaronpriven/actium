@@ -29,7 +29,7 @@ use Actium::Constants;
 enum( Schedule_Day, (@SCHEDULE_DAYS) );
 
 subtype DayCode , as Str, where { /\A1?2?3?4?5?6?7?H?\z/ },
-  message {qq<The entry "$_" is not an eight-character-long string>};
+  message {qq<"$_" is not a valid day code\n  (one or more of the characters 1-7 plus H, in order>};
 # It uses question marks instead of [1-7H]+ because
 # the numbers have to be in order, and not repeated
 
