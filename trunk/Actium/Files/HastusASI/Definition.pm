@@ -16,7 +16,7 @@ use MooseX::Singleton;
 use English ('-no_match_vars');
 
 use Actium::Files::HastusASI::Filetype;
-use Actium::Files::HastusASI::Table;
+use Actium::Files::SQLite::Table;
 
 #########################################
 ### DEFINITION
@@ -317,7 +317,7 @@ attribute.
       or die "Can't close internal variable for reading: $OS_ERROR";
 
     my %tableobjs
-      = map { $_ => Actium::Files::HastusASI::Table->new( $table_spec_of{$_} ) }
+      = map { $_ => Actium::Files::SQLite::Table->new( $table_spec_of{$_} ) }
       keys %table_spec_of;
 
     return \%tableobjs;
@@ -355,7 +355,7 @@ has '_table_of_r' => (
     init_arg => undef,
     is       => 'ro',
     traits   => ['Hash'],
-    isa      => 'HashRef[Actium::Files::HastusASI::Table]',
+    isa      => 'HashRef[Actium::Files::SQLite::Table]',
     builder  => '_build_table_of_r',
     lazy     => 1,
     handles  => {
@@ -503,7 +503,7 @@ a constructor called "new".)
 =item B<tables>
 
 Returns a list of the identifiers for each table. See L<I<id> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/id>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/id>.
 
 =item B<is_a_table(I<table>)>
 
@@ -520,13 +520,13 @@ Actium::Files::HastusASI::Filetype|Actium::Files::HastusASI::Filetype/id>.
 
 Returns the key column of the specified table.
 See L<I<key> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/key>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/key>.
 
 =item B<columns_of_table (I<table_id>)>
 
 Returns a list of the columns of the specified table.
 See L<I<columns> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/columns>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/columns>.
 
 =item B<tables_of_filetype (I<filetype_id>)>
 
@@ -538,52 +538,52 @@ Actium::Files::HastusASI::Filetype|Actium::Files::HastusASI::Filetype/tables>.
 
 Returns the filetype of the specified table.
 See L<I<filetype> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/filetype>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/filetype>.
 
 =item B<parent_of_table (I<table_id>)>
 
 Returns the parent of the specified table, if any.
 See L<I<parent> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/parent>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/parent>.
 
 =item B<has_repeating_final_column (I<table_id>)>
 
 Returns a boolean value representing whether the final column has repeated
 values (instead of just one value). 
 See L<I<has_repeating_final_column> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/has_repeating_final_column>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/has_repeating_final_column>.
 
 =item B<has_composite_key (I<table_id>)>
 
 Returns whether the key column is a composite of two or more other columns.
 See L<I<has_composite_key> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/has_composite_key>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/has_composite_key>.
 
 =item B<create_query_of_table (I<table_id>)>
 
 Returns the SQLite command creating this table.
 See L<I<sql_createcmd> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/sql_createcmd>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/sql_createcmd>.
 
 =item B<insert_query_of_table (I<table_id>)>
 
 Returns the SQLite command inserting a row of this table into the database.
 See L<I<sql_insertcmd> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/sql_insertcmd>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/sql_insertcmd>.
 
 =item B<index_query_of_table (I<table_id>)>
 
 Returns the SQLite command creating the index of the specified table based on the key
 column.
 See L<I<sql_idxcmd> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/sql_idxcmd>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/sql_idxcmd>.
 
 =item B<key_components_idxs (I<table_id>)>
 
 Returns the column indexes (what order they are in the columns) of 
 the components that make up the key of the specified table.
 See L<I<key_components_idxs> in
-Actium::Files::HastusASI::Table|Actium::Files::HastusASI::Table/key_components_idxs>.
+Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/key_components_idxs>.
 
 =back
 
@@ -607,7 +607,7 @@ entries (which it opens as a file). An unlikely error.
 
 =item Actium::Files::HastusASI::Filetype
 
-=item Actium::Files::HastusASI::Table
+=item Actium::Files::SQLite::Table
 
 =head1 AUTHOR
 
