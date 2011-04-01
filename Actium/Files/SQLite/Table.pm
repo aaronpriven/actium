@@ -1,6 +1,6 @@
-# Actium/Files/HastusASI/Table.pm
+# Actium/Files/SQLite/Table.pm
 
-# Class for Hastus ASI tables
+# Class for SQLite tables
 
 # Subversion: $Id$
 
@@ -9,11 +9,12 @@
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::Files::HastusASI::Table 0.001;
+package Actium::Files::SQLite::Table 0.001;
 
 use Moose;
-use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
+
+use Actium::Constants;
 
 #########################
 ### GENERAL ATTRIBUTES
@@ -77,15 +78,16 @@ sub _build_column_idx_of {
     return \%index_of;
 }
 
+#####################
+### ONLY POPULATED BY HASTUSASI (so far, anyway)
+#####################
+
 has 'column_length_of_r' => (
-    is       => 'bare',
-    traits   => ['Hash'],
-    isa      => 'HashRef[Int]',
-    required => 1,
-    handles  => {
-        column_length_of   => 'get',
-        column_length_hash => 'elements',
-    },
+    is      => 'bare',
+    traits  => ['Hash'],
+    isa     => 'HashRef[Int]',
+    default => sub { {} },
+    handles => { column_length_of => 'get', },
 );
 
 has 'has_repeating_final_column' => (
@@ -93,6 +95,42 @@ has 'has_repeating_final_column' => (
     isa     => 'Bool',
     default => 0,
 );
+
+#####################
+### ONLY POPULATED BY FILEMAKER (so far, anyway)
+#####################
+
+has 'column_repetitions_of_r' => (
+    is      => 'bare',
+    traits  => ['Hash'],
+    isa     => 'HashRef[Int]',
+    default => sub { {} },
+    handles => { _repetitions_given_of => 'get', },
+);
+
+sub column_repetitions_of {
+    my $self   = shift;
+    my $column = shift;
+    my $reps   = $self->_repetitions_given_of($column);
+    return $reps || 1;
+}
+
+has 'column_type_r' => (
+    is      => 'bare',
+    traits  => ['Hash'],
+    isa     => 'HashRef[Str]',
+    default => sub { {} },
+    handles => { _type_given_of => 'get', },
+);
+
+sub column_type_of {
+
+    my $self   = shift;
+    my $column = shift;
+    my $type   = _type_given_of($column);
+    return $type // $EMPTY_STR;
+
+}
 
 #########################
 ### KEY COLUMN ATTRIBUTES
@@ -107,19 +145,10 @@ has 'key' => (
 );
 
 sub _build_key {
-    my $self           = shift;
-    my @key_components = $self->key_components;
-    given ( scalar @key_components ) {
-        when (0) {
-            return;
-        }
-        when (1) {
-            return $key_components[0];
-        }
-    }
-    
-    my $id = $self->id;
-    return "${id}_key";
+    my $self = shift;
+    return unless $self->_key_component_count;
+    return $self->id . "_key" if $self->has_composite_key ;
+    return $self->_key_component_number(0);
 }
 
 has 'key_components_r' => (
@@ -127,7 +156,11 @@ has 'key_components_r' => (
     traits  => ['Array'],
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { key_components => 'elements' },
+    handles => {
+        key_components        => 'elements',
+        _key_component_count  => 'count',
+        _key_component_number => 'get',
+    },
 );
 
 has 'has_composite_key' => (
@@ -139,10 +172,8 @@ has 'has_composite_key' => (
 );
 
 sub _build_has_composite_key {
-    my $self           = shift;
-    my @key_components = $self->key_components;
-    return 1 if ( scalar @key_components > 1 );
-    return;
+    my $self = shift;
+    return $self->_key_component_count > 1;
 }
 
 has 'key_components_idxs_r' => (
@@ -181,11 +212,11 @@ foreach my $attribute (qw[ sql_createcmd sql_insertcmd ]) {
 }
 
 has 'sql_idxcmd' => (
-        is       => 'ro',
-        init_arg => undef,
-        isa      => 'Maybe[Str]',
-        builder  => "_build_sql_idxcmd",
-        lazy     => 1,
+    is       => 'ro',
+    init_arg => undef,
+    isa      => 'Maybe[Str]',
+    builder  => "_build_sql_idxcmd",
+    lazy     => 1,
 );
 
 sub _build_sql_createcmd {
@@ -249,8 +280,8 @@ __END__
 
 =head1 NAME
 
-Actium::Files::HastusASI::Table - Class representing tables in 
-Hastus AVL Standard Interface
+Actium::Files::SQLite::Table - Class representing tables used by classes
+consuming Actium::Files::SQLite role
 
 =head1 NOTE
 
@@ -263,7 +294,7 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Files::HastusASI::Table;
+ use Actium::Files::SQLite::Table;
  
  my $table_obj = 
      Actium::Files::HastusASI::Table->new(
@@ -281,12 +312,15 @@ This documentation refers to version 0.001
 
 =head1 DESCRIPTION
 
-Actium::Files::HastusASI::Table is a class holding information
-on the tables in a Hastus AVL Standard Interface export. All objects
-are read-only and are expected to be set during object construction.
+Actium::Files::SQLite::Table is a class holding information
+on the tables in a type of file imported into SQLite via a class consuming the 
+Actium::Files::SQLite role.
 
-It is intended to be used only from Actium::Files::HastusASI::Definition. All 
-attributes and methods should be considered private to that module.
+All objects are read-only and are expected to be set during object construction.
+
+It is intended to be used only from within another class, such as 
+Actium::Files::HastusASI::Definition or Actium::Files::FMPXMLresult. All 
+attributes and methods should be considered private to that class.
 
 =head1 ATTRIBUTES and METHODS
 
@@ -314,7 +348,8 @@ the list of names.)
 =item B<filetype>
 
 The file type identifier for this table. For example, "DIS" and
-"SHA" tables are found in the "NET" (itinerary) file.  
+"SHA" tables are found in the "NET" (itinerary) file.  (For FileMaker,
+the filetype and id will be identical.)
 
 =back
 
@@ -341,19 +376,38 @@ Returns a flattened hash. The column names are the keys, and the
 values are each column's place in the order: the first column's
 value is 0, the second's is 1, etc.
 
-=item B<column_length_hash>
+=item B<column_length_of>
 
-Returns a flattened hash. The the column names are the keys, and
-the values are each column's length in bytes. Using this value is
+Accepts a column name as an argument, and returns 
+the column's length in bytes. Using this is
 deprecated since not all Hastus ASI data in the world actually fits
-the specified lengths.
+the specified lengths. This will not be populated for all types of imports.
+
+=item B<column_type_of>
+
+Accepts a column name as an argument, and returns 
+the column's specified type (TEXT, NUMBER, etc.) from the original database. 
+At this time, these are not being used since SQLite pretty much ignores types.
+This will not be populated for all types of imports.
+
+=item B<column_repetitions_of>
+
+Accepts a column name as an argument, and returns 
+the number of repetitions found in that column. FileMaker allows a column to
+have a number of different values, called repetitions. If no number of repetitions
+was given, 1 will be returned. In any event, this will be 1 except for rare circumstances.
+
+For fields with more than one repetition, the data should be stored with data 
+for the different repetitions separated by the group separator character 
+( ASCII 29, "GS" Group Separator, also known as control-]. This is 
+$KEY_SEPARATOR in L<Actium::Constants|Actium::Constants>.)
 
 =item B<has_repeating_final_column>
 
 This boolean flag indicates whether the last column in the field
 definition is the first of 50 repeated entries. (I'm not sure why
 the PPAT table is defined like this instead of using a subsidiary
-table.) 
+table.)  This will not be used for all types of imports.
 
 =back
 
@@ -435,11 +489,24 @@ Defaults to an empty array.
 
 A reference to a list of the names of the columns.
 
-=item B<column_length_of_r> (required)
+=item B<column_length_of_r> (optional)
 
-A reference to a hash: the keys are the column names and the lengths are the 
-length in bytes of each column. Currently required, although usage of these
-values is deprecated.
+A reference to a hash: the keys are the column names and the values are the 
+length in bytes of each column. Usage of these values is deprecated.
+
+=item B<column_repetitions_of_r> (optional)
+
+A reference to a hash: the keys are the column names and the values are the 
+number of repetitions found in each column. 
+See L<the entry above under ATTRIBUTES and METHODS|/"ATTRIBUTES and METHODS">.
+
+If omitted, the returned value will be 1.
+
+=item B<column_type_of_r> (optional)
+
+A reference to a hash: the keys are the column names and the values are a
+string representing the type of each column. 
+See L<the entry above under ATTRIBUTES and METHODS|/"ATTRIBUTES and METHODS">.
 
 =item B<has_repeating_final_column> (optional)
 
@@ -460,8 +527,6 @@ Defaults to the empty list.
 =item perl 5.012
 
 =item Moose
-
-=item MooseX::SemiAffordanceAccessor
 
 =item MooseX::StrictConstructor
 
