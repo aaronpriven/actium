@@ -50,6 +50,10 @@ Readonly my %KEY_OF => (
     Stops         => 'PhoneID',
 );
 
+# Fields separated by / treated as composite keys, e.g., 
+# 'Days/Direction" treated as a composite key of Days and Direction
+# I'm not sure this will be used, but just in case...
+
 # Just one table per filetype, and file and filetype have the same name
 sub _tables_of_filetype {
     my $self  = shift;
