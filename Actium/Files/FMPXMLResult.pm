@@ -19,12 +19,15 @@ use MooseX::StrictConstructor;
 use POSIX ();
 
 use Actium::Constants;
+use Actium::Files;
+use Actium::Files::SQLite::Table;
 use Actium::Term;
 use Actium::Util('jk');
 use Readonly;
 use File::Glob qw(:glob);
 use Carp;
 use English '-no_match_vars';
+use XML::Twig;
 
 Readonly my $EXTENSION => '.xml';
 
@@ -34,7 +37,7 @@ Readonly my $EXTENSION => '.xml';
 #       _filetype_of_table is_a_table/
 #);
 
-sub db_type () {'FileMaker'}
+sub db_type () {return 'FileMaker'}
 
 # I think all the FileMaker exports will be the same database type
 
@@ -116,7 +119,7 @@ sub _build_table_r {
 
     foreach my $file (@all_files) {
         my $table = $file;
-        $table =~ s/$EXTENSION\z//;
+        $table =~ s/$EXTENSION\z//sx;
         $tables{$table} = 1;
     }
 
@@ -189,7 +192,7 @@ sub _load {
         my %spec     = (
             id               => $table,
             filetype         => $filetype,
-            key_components_r => [ split( m{/}, $KEY_OF{$table} ) ],
+            key_components_r => [ split( m{/}s, $KEY_OF{$table} ) ],
         );
 
         my $idx = 0;
@@ -212,14 +215,14 @@ sub _load {
         $dbh->do($idxcmd) if $idxcmd;
 
         $insert_sth = $dbh->prepare( $table_obj->sql_insertcmd );
-        
+
         return;
     };
 
     my $row_callback = sub {
         my $twig = shift;
         my $row  = shift;
-        
+
         if ( $record_count >= $next_emit ) {
             $next_emit = $record_count + $emit_increment;
             emit( sprintf( '%2d%%', $record_count / $records_to_import * 100 ) );
@@ -230,14 +233,14 @@ sub _load {
         if ( $table_obj->has_composite_key ) {
             push @values, jk( @values[ @{ $table_obj->key_components_idxs } ] );
         }
-        
+
         $insert_sth->execute($record_count++ ,@values);
 
         $twig->purge;
 
     };
 
-    my $twig = new XML::Twig(
+    my $twig = XML::Twig->new(
         twig_roots => { METADATA => 1, RESULTSET => 1 },
         start_tag_handlers => { RESULTSET => $resultset_callback },
         twig_handlers      => {
@@ -269,3 +272,7 @@ sub _row_parse {
     return @values;
 
 }
+
+with 'Actium::Files::SQLite';
+
+1;

@@ -147,7 +147,7 @@ has 'key' => (
 sub _build_key {
     my $self = shift;
     return unless $self->_key_component_count;
-    return $self->id . "_key" if $self->has_composite_key ;
+    return $self->id . '_key' if $self->has_composite_key ;
     return $self->_key_component_number(0);
 }
 
@@ -215,7 +215,7 @@ has 'sql_idxcmd' => (
     is       => 'ro',
     init_arg => undef,
     isa      => 'Maybe[Str]',
-    builder  => "_build_sql_idxcmd",
+    builder  => '_build_sql_idxcmd',
     lazy     => 1,
 );
 
