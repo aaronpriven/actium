@@ -1,4 +1,5 @@
 # Actium/Sked/Days.pm
+
 # Object representing the scheduled days (of a trip, or set of trips)
 
 # Subversion: $Id$
@@ -10,254 +11,264 @@ package Actium::Sked::Days 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
-use MooseX::SemiAffordanceAccessor;
 
 use Actium::Types qw<DayCode SchoolDayCode>;
+use Actium::Util qw<positional joinseries>;
+use Actium::Constants;
 
+use Carp;
 use Readonly;
+use List::MoreUtils ('mesh');
+
+###################################
+#### ENGLISH NAMES FOR DAYS CONSTANTS
+###################################
+
+Readonly my @DAYLETTERS => qw(1 2 3 4 5 6 7 H W E D X);
+
+# 1 = Monday, 2 = Tuesday, ... 7 = Sunday
+# H = holidays, W = Weekdays, E = Weekends, D = Daily,
+# X = every day except holidays
+
+Readonly my @SEVENDAYNAMES =>
+  qw(Monday Tuesday Wednesday Thursday Friday Saturday Sunday);
+Readonly my @SEVENDAYPLURALS => ( map {"${_}s"} @SEVENDAYNAMES );
+Readonly my @SEVENDAYABBREVS => map { substr( $_, 0, 3 ) } @SEVENDAYNAMES;
+
+###################################
+#### CONSTANTS FOR OTHER SYSTEMS (Hastus, Transitinfo, etc.)
+###################################
 
 # Back in ancient days, the web site transtinfo.org used two-letter codes
-# for days and directions.  Stage 0 Actium was built on their processing,
-# and these codes have remained in use
+# for days and directions.  Stage 0 Actium was built on their processing
+# of the schedules, and these codes have remained in use
 
-Readonly my %TRANSITINFO_OF_DAYS => {
+Readonly my %TO_TRANSITINFO => {
     qw(
-      1234567 DA
-      12345   WD
-      6       SA
-      7       SU
-      67      WE
-      24      TT
-      25      TF
-      35      WF
-      135     MZ
+      1234567H DA
+      12345    WD
+      6        SA
+      7H       SU
+      67H      WE
+      24       TT
+      25       TF
+      35       WF
+      135      MZ
       )
 };
 
-Readonly my %DAYS_OF_TRANSITINFO => reverse %TRANSITINFO_OF_DAYS;
+Readonly my %FROM_TRANSITINFO => reverse %TO_TRANSITINFO;
 
 has 'days' => (
-   is => 'ro',
-   isa => 'DayCode',
-   required => 1,
+    is          => 'ro',
+    isa         => 'DayCode',
+    required    => 1,
+    initializer => '_initialize_days',
 );
+# New day codes have a character for each set of days that are used.
+# 1 - 7 : Monday through Sunday (like in Hastus), and H - Holidays
 
-has 'schooldays' => (
-   is => 'ro' ,
-   isa => 'SchoolDayCode' ,
-   required => 1,
-);
-   
-around BUILDARGS => sub {
-    my $class = shift;
-    my $orig = shift;
-    
+sub _initialize_days {
+    my $self = shift;
     my $days = shift;
-    my $schooldays = shift;
-    
-    $days = $DAYS_OF_TRANSITINFO{$days} if $DAYS_OF_TRANSITINFO{$days};
-    # if passed a day code from Transitinfo
-    
+    my $set  = shift;
+
+    $days = $FROM_TRANSITINFO{$days} if $FROM_TRANSITINFO{$days};
+    # if passed a day code from the Transitinfo definitions, convert it
+
     $days =~ s/[^\d]//g;
     # eliminate anything that's not a digit
-    
+
     # TODO - add option to make it Saturdays-and-holidays
     #    instead of Sundays-and-holidays, or treat holidays as a separate
     #    schedule
-    
-    $days =~ s/7/7H/;
-    
-    return $class->$orig(days => $days , schooldays => $schooldays);
 
+    $days =~ s/7H?/7H/;    # make sure Sundays always includes holidays
+    $set->($days);
+}
+
+has 'schooldays' => (
+    is      => 'ro',
+    isa     => 'SchoolDayCode',    # [BDH]
+    default => 'B',
+);
+# D = school days only, H = school holidays only, B = both
+
+has '_composite_code' => (
+    is       => 'ro',
+    init_arg => undef,
+    builder  => '_build_composite_code',
+    lazy     => 1,
+);
+
+sub _build_composite_code {
+    my $self       = shift;
+    my $days       = $self->days;
+    my $schooldays = $self->schooldays;
+
+    return $self->days unless $schooldays;
+    return $self->schooldays . $self->days;
+}
+
+around BUILDARGS => sub {
+    return positional( \@_, 'days', 'schooldays' );
 };
-
-# New day codes have a character for each set of days that are used.
-
-# 1 - 7 : Monday through Sunday (like in Hastus)
-# H - Holidays
 
 sub as_transitinfo {
  
-   my $self = shift;
-   my $days = $self->days;
-   my $wd = $self->is_weekdays_only;
-   
-   my $schooldays = $self->schooldays;
-   given ($schooldays) {
-       when ([qw<D>]) {
-           return "SD" if $wd;
-           return $self->invalid_transitinfo_days;
-       }
-       when ([qw<H>]) {
-           return "SH" if $wd;
-           return $self->invalid_transitinfo_days;
-       }
-   }
-   
-   my $transitinfo = $TRANSITINFO_OF_DAYS{$days};
-   
-   return $transitinfo if $transitinfo;
-   return $self->invalid_transitinfo_days;
- 
-}
-
-sub invalid_transitinfo_days {
     my $self = shift;
+    my $composite = $self->_composite_code;
+    
+    state %cache;
+    return $cache{$composite} if $cache{$composite};
+    
     my $days = $self->days;
     my $schooldays = $self->schooldays;
-    warn qq[Using invalid Transitinfo days XX for <$days/$schooldays>];
+
+    return $cache{$composite} = "SD" if $self->_is_SD;
+    return $cache{$composite} = "SH" if $self->_is_SH;
+
+    my $transitinfo = $TO_TRANSITINFO{$days};
+
+    return $cache{$composite} = $transitinfo if $transitinfo;
+    return $cache{$composite} = $self->_invalid_transitinfo_days;
+    
+}
+
+sub _invalid_transitinfo_days {
+    my $self       = shift;
+    my $days       = $self->days;
+    my $schooldays = $self->schooldays;
+    carp qq[Using invalid Transitinfo days XX for <$days/$schooldays>];
     return 'XX';
 }
 
-sub is_weekdays_only {
-   my $self=shift;
-   return 1 if $self->days eq '12345';
-   return;
+sub _is_SD {
+    my $self = shift;
+    return 1 if ( $self->days eq '12345' and $self->schooldays eq 'D' );
+    return;
 }
 
-sub display_list_code {
-   my $self = shift;
-   my $days = $self->days;
-   $days =~ s/12345/W/; # Weekdays
-   $days =~ s/67/E/; # Weekends
-   $days =~ s/WEH/D/; # Every day
+sub _is_SH {
+    my $self = shift;
+    return 1 if ( $self->days eq '12345' and $self->schooldays eq 'H' );
+    return;
 }
+
+Readonly my @ADJECTIVES => ( @SEVENDAYNAMES, qw(Holiday Weekday Weekend Daily),
+    "Daily except holidays" );
+Readonly my %ADJECTIVE_OF => mesh( @DAYLETTERS, @ADJECTIVES );
+Readonly my %ADJECTIVE_SCHOOL_OF => (
+    B => $EMPTY_STR,
+    D => ' (except school holidays)',
+    H => ' (except school days)',
+);
+
+sub as_adjectives {
+
+    my $self      = shift;
+    my $composite = $self->_composite_code;
+
+    state %cache;
+    return $cache{$composite} if $cache{$composite};
+
+    my $days = $self->days;
+    $days =~ s/1234567H/D/;    # every day
+    $days =~ s/1234567/X/;     # every day except holidays
+    $days =~ s/12345/W/;       # weekdays
+    $days =~ s/67/E/;          # weekends
+
+    my $schooldays = $self->schooldays;
+
+    my @as_adjectives = map { $ADJECTIVE_OF{$_} } split( //, $days );
+
+    my $results
+      = joinseries(@as_adjectives) . $ADJECTIVE_SCHOOL_OF{$schooldays};
+
+    return $cache{$composite} = $results;
+
+} ## tidy end: sub as_adjectives
+
+Readonly my @PLURALS => (
+    @SEVENDAYPLURALS, qw(Holidays Weekdays Weekends),
+    'Every day', "Every day except holidays"
+);
+
+Readonly my %PLURAL_OF => mesh( @DAYLETTERS, @PLURALS );
+Readonly my %PLURAL_SCHOOL_OF => (
+    B => $EMPTY_STR,
+    D => ' (School days only)',
+    H => ' (School holidays only)',
+);
+
+sub as_plurals {
+
+    my $self      = shift;
+    my $composite = $self->_composite_code;
+
+    state %cache;
+    return $cache{$composite} if $cache{$composite};
+
+    my $days = $self->days;
+    $days =~ s/1234567H/D/;    # every day
+    $days =~ s/1234567/X/;     # every day except holidays
+    $days =~ s/12345/W/;       # weekdays
+         # $days =~ s/67/E/;  # weekends intentionally omitted
+
+    my $schooldays = $self->schooldays;
+
+    my @as_plurals = map { $PLURAL_OF{$_} } split( //, $days );
+
+    my $results = joinseries(@as_plurals) . $PLURAL_SCHOOL_OF{$schooldays};
+
+    return $cache{$composite} = $results;
+
+} ## tidy end: sub as_plurals
+
+Readonly my @ABBREVS =>
+  ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
+
+Readonly my %ABBREV_OF => mesh( @DAYLETTERS, @PLURALS );
+Readonly my %ABBREV_SCHOOL_OF => (
+    B => $EMPTY_STR,
+    D => ' (Sch days)',
+    H => ' (Sch hols)',
+);
+
+sub as_abbrevs {
+
+    my $self      = shift;
+    my $composite = $self->_composite_code;
+
+    state %cache;
+    return $cache{$composite} if $cache{$composite};
+
+    my $days = $self->days;
+    $days =~ s/1234567H/D/;    # every day
+    $days =~ s/1234567/X/;     # every day except holidays
+    $days =~ s/12345/W/;       # weekdays
+         # $days =~ s/67/E/;        # weekends intentionally omitted
+
+    my $schooldays = $self->schooldays;
+
+    my @as_abbrevs = map { $ABBREV_OF{$_} } split( //, $days );
+
+    if ( scalar @as_abbrevs > 1 ) {
+        $as_abbrevs[-1] = "& $as_abbrevs[-1]";
+    }
+    my $results = join( $SPACE, @as_abbrevs ) . $ABBREV_SCHOOL_OF{$schooldays};
+
+    return $cache{$composite} = $results;
+
+} ## tidy end: sub as_abbrevs
 
 1;
 
 __END__
 
-   The following are from skedvars and will be incorporated shortly
-
-   my %specdaynames =
-        ( "SD" => "School days only" , 
-          "SH" => "School holidays only" ,
-          "TT" => "Tuesdays and Thursdays only" ,
-          "TF" => "Tuesdays and Fridays only" ,
-          "WF" => "Wednesdays and Fridays only" ,
-	  "MZ" => "Mondays, Wednesdays, and Fridays only" ,
-        );
-
-   my %bound = 
-        ( EB => 'Eastbound' ,
-          SB => 'Southbound' ,
-          WB => 'Westbound' ,
-          NB => 'Northbound' ,
-          CW => 'Clockwise' ,
-          CC => 'Counterclockwise' ,
-        );
-
-   my %adjectivedaynames = 
-        ( WD => "Weekday" ,
-          WE => "Weekend" ,
-          DA => "Daily" ,
-          SA => "Saturdays" ,
-          SU => "Sundays and Holidays" ,
-        );
-
-   my %longerdaynames = 
-        ( WD => "Monday through Friday" ,
-          WE => "Sat., Sun. and Holidays" ,
-          DA => "Every day" ,
-          SA => "Saturdays" ,
-          SU => "Sundays and Holidays" ,
-          WU => "Weekdays and Sundays",
-        );
-
-   my %longdaynames = 
-        ( WD => "Mon thru Fri" ,
-          WE => "Sat, Sun and Holidays" ,
-          DA => "Every day" ,
-          SA => "Saturdays" ,
-          SU => "Sundays and Holidays" ,
-        );
-
-   my %shortdaynames = 
-        ( WD => "Mon thru Fri" ,
-          WE => "Sat, Sun, Hol" ,
-          DA => "Every day" ,
-          SA => "Saturdays" ,
-          SU => "Sun & Hol" ,
-        );
-
-
-   my %longdirnames = 
-        ( E => "east" ,
-          N => "north" ,
-          S => "south" ,
-          W => "west" ,
-          SW => "southwest" ,
-          SE => "southeast" ,
-          'NE' => "northeast" ,
-          NW => "northwest" ,
-        );
-
-   my %dayhash = 
-        ( DA => 50 ,
-          WD => 40 ,
-          WE => 30 ,
-          SA => 20 ,
-          SU => 10 ,
-        );
-
-   my %dirhash = 
-        ( WB => 60 ,
-          SB => 50 ,
-          EB => 40 ,
-          NB => 30 ,
-          CC => 20 ,
-          CW => 10 ,
-        );
-
-   my %daydirhash = 
-        ( 
-         CW_DA => 110 ,
-         CC_DA => 120 ,
-         NB_DA => 130 ,
-         EB_DA => 140 ,
-         SB_DA => 150 ,
-         WB_DA => 160 ,
-         CW_WD => 210 ,
-         CC_WD => 220 ,
-         NB_WD => 230 ,
-         EB_WD => 240 ,
-         SB_WD => 250 ,
-         WB_WD => 260 ,
-         CW_WE => 310 ,
-         CC_WE => 320 ,
-         NB_WE => 330 ,
-         EB_WE => 340 ,
-         SB_WE => 350 ,
-         WB_WE => 360 ,
-         
-         CW_WU => 361 ,
-         CC_WU => 362 ,
-         NB_WU => 363 ,
-         EB_WU => 364 ,
-         SB_WU => 365 ,
-         WB_WU => 366 ,
-         
-         CW_SA => 410 ,
-         CC_SA => 420 ,
-         NB_SA => 430 ,
-         EB_SA => 440 ,
-         SB_SA => 450 ,
-         WB_SA => 460 ,
-         CW_SU => 510 ,
-         CC_SU => 520 ,
-         NB_SU => 530 ,
-         EB_SU => 540 ,
-         SB_SU => 550 ,
-         WB_SU => 560 ,
-        );
-
-
-
-
-
 =head1 NAME
 
-Actium::DaysDirections - Day and direcion codes
+Actium::Sked::Days - Object for holding scheduled days
 
 =head1 VERSION
 
@@ -265,73 +276,133 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::DaysDirections;
+ use Actium::Sked::Days;
  
- print day_of($hasi->{TRP}{'1632120'}{OperatingDays}) ;
- # prints two-letter day code for the operating days 
- # of trip with internal trip number 1632120
+ my $days = Actium::Sked::Days->new ('135');
  
- print dir_of(
-     $hasi->{PAT}{'7' . $KEY_SEPARATOR . '58'}{DirectionValue}
-             );
- # prints two-letter direction code for pattern 58 of route 7
-
+ say $days->as_plurals; # "Mondays, Wednesdays, and Fridays"
+ say $days->as_adjectives; # "Monday, Wednesday, and Friday"
+ say $days->as_abbrevs; # "Mon Wed & Fri"
+ 
+ say $days->as_transitinfo; # 'MZ'
+ 
 =head1 DESCRIPTION
 
-Actium::DaysDirections 
+This class is used for objects storing scheduled day information. 
+Trips, or timetables, are assigned to particular scheduled days.
+Almost all the time this is either usually weekdays, Saturdays, 
+or Sundays-and-Holidays.  However, there are lots of exceptions.
+Some trips run only school days, while others run only school holidays. 
+Some trips run only a few weekdays (e.g., Mondays, Wednesdays, and Fridays).
 
-=head1 SUBROUTINES
+=head1 METHODS
 
 =over
 
-=item B<day_of_hasi)>
+=item B<Actium::Sked::Days->new(I<days> , I<schooldays>)>
 
-Takes one argument, the Hastus "Operating Days" code (which is usually one or 
-more digits from 1 to 7), and returns a two-letter code for the days:
+The object is constructed using "Actium::Sked::Days->new".  
 
- WD Weekdays
- SA Saturday
- SU Sunday
- WE Weekend
- DA Daily
- WF Wednesday and Friday
- TT Tuesday and Thursday
- TF Tuesday and Friday
+It accepts a day specification 
+as a string, containing any or all of the numbers 1 through 7 and optionally H.
+If a 1 is present, it operates on Mondays; if 2, it operates on Tuesdays;
+and so on through 7 for Sundays.  (7 is used instead of 0 for two reasons:
+because Hastus provides it in this way, and because 0 is false in perl and it's
+convenient to allow simple truth tests.)  The H, if present, is used to
+indicate holidays. However, at this time the system will add an H to any 7
+specified.
+
+As an alternative, the two-letter codes derived from those used by the old 
+www.transitinfo.org web site may be specified. See 
+L<as_transitinfo|/as_transitinfo> below. 
+
+The constructor also accepts a school days flag, a single character.
+If specified, "D" indicates that it operates school days only, and "H" that 
+it operates school holidays only. The default is "B", which indicates that 
+operation on both school days and school holidays. (This is regardless of
+whether school normally operates on that day -- weekend trips will 
+still have "B" as the school day flag, unless there is a situation where
+some school service is operated on a Saturday.)
+
+=item B<$obj->days()>
+
+Returns the day specification: a string with one or more of the characters
+1 through 7, indicating operation on Monday through Sunday, and the character
+H, indicating operation on holidays.
+
+=item B<$obj->schooldays()>
+
+Returns one character. "D" indicates operation school days only. "H" indicates
+operation school holidays only. "B" indicates operation on both types of days.
+(Service on days when school service does not operate is also indicated 
+by "B".)
+
+=item B<$obj->as_transitinfo>
+
+Returns the two-letter code for the day derived from the codes used by the 
+old www.transitinfo.org web site.
+
+Here is a table of equivalents:
+
+      DA  1234567H    SU  7H      TF  25
+      WD  12345       WE  67H     WF  35
+      SA  6           TT  24      MZ  135
  
-Ultimately, these codes (which originated at the old www.transitinfo.org 
-web site) are obsolete and should be replaced since they do not allow for 
-the full range of date possibilities.
+Since these codes do not allow for
+the full range of possibilities, these codes probably should not be used
+in new situations.
 
-=item B<dir_of_hasi()>
+Where there is no valid code for the days, the code "XX" is returned and a
+warning is generated (using "carp").
 
-Takes one argument, the Hastus 2006 "Directions" code (see table 9.2 in the 
-Hastus 2006 AVL Standard Interface document), and returns a two-letter code
-representing the direction.
+=item B<$obj->as_adjectives>
 
- Code  Meaning
- NB    Northbound
- SB    Southbound
- EB    Eastbound
- WB    Westbound
- CC    Counterclockwise
- CW    Clockwise
- IN    Inbound
- OU    Outbound
- UP    Up
- DN    Down
- GO    Go
- RT    Return
- 1     One
- 2     Two
+This returns a string containing English text describing the days in a
+form intended for use to describe service: "This is <x> service."
 
-Only the first six are actually used at AC Transit.
+The form is "Day, Day and Day" . The days used are as follows:
 
-These codes also come from www.transitinfo.org. There's nothing wrong with the 
-codes themselves, but because a route marked "Eastbound" may not actually 
-go in an eastward direction, avoid actually displaying their meanings
-to customers.
+ Monday     Thursday   Sunday    Weekend
+ Tuesday    Friday     Holiday   Daily
+ Wednesday  Saturday   Weekday
+ 
+May be followed by "(except school holidays)" or "(except school days)".
+
+=item B<$obj->as_plurals>
+
+This returns a string containing English text describing the days in a
+form intended for use as nouns: "This service runs <x>."
+
+The form is "Days, Days and Days" . The days used are as follows:
+
+ Mondays     Thursdays   Sundays    Every day
+ Tuesdays    Fridays     Holidays
+ Wednesdays  Saturdays   Weekdays
+ 
+(Saturdays and Sundays are not combined into weekends here.)
+ 
+May be followed by "(School days only)" or "(School holidays only)".
+
+=item B<$obj->as_abbrevs>
+
+This returns a string containing English text describing the days in as 
+brief a form as possible, for tables or other places with little space.
+
+The form is "Day Day & Day" . The days used are as follows:
+
+ Mon     Thu    Sun       Daily
+ Tue     Fri    Hol
+ Wed     Sat    Weekday
+ 
+May be followed by "(Sch days)" or "(Sch hols)".
 
 =back
+
+=head1 BUGS
+
+Holidays are hard-coded to always go with Sundays. At the very least 
+holidays should be allowed to go with Saturdays, since some agencies run
+a Saturday rather than Sunday schedule on holidays.
 
 =head1 DEPENDENCIES
 
@@ -339,11 +410,35 @@ to customers.
 
 =item *
 
-Perl 5.010 and the standard distribution.
+Perl 5.012 and the standard distribution.
 
 =item *
 
-Readonly.
+List::MoreUtils
+
+=item *
+
+Moose
+
+=item *
+
+MooseX::StrictConstructor
+
+=item *
+
+Readonly
+
+=item *
+
+Actium::Constants
+
+=item *
+
+Actium::Types
+
+=item *
+
+Actium::Util
 
 =back
 
