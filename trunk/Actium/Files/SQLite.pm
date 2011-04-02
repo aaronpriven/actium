@@ -37,7 +37,7 @@ use English '-no_match_vars';
 use File::Spec;
 use Readonly;
 
-add_option( 'db_folder', 'Directory where temporary databases are stored' );
+add_option( 'db_folder=s', 'Directory where temporary databases are stored' );
 
 # set some constants
 Readonly my $STAT_MTIME   => 9;
@@ -172,11 +172,13 @@ sub _connect {
     my $self        = shift;
     my $db_filespec = $self->_db_filespec();
     my $existed     = -e $db_filespec;
-
+    
+    my $db_filename = $self->db_filename;
+    
     emit(
         $existed
-        ? "Connecting to database $db_filespec"
-        : "Creating new database $db_filespec"
+        ? "Connecting to database $db_filename"
+        : "Creating new database $db_filename"
     );
 
     my $dbh = DBI->connect( "dbi:SQLite:dbname=$db_filespec",

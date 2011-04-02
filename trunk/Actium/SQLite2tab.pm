@@ -15,10 +15,13 @@ use Actium::Signup;
 use Actium::Util qw(jt );
 use Actium::Term ('output_usage');
 use Actium::Constants;
+use Actium::Files::FMPXMLResult;
+use Actium::Files::HastusASI;
+
 
 use Actium::Options(qw<add_option option>);
 
-add_option( 'type', 'Database type -- H for Hastus or F for FileMaker' );
+add_option( 'type=s', 'Database type -- H for Hastus or F for FileMaker' );
 
 sub START {
 
@@ -29,12 +32,10 @@ sub START {
     given ( lc($type) ) {
         when ('f') {
             $dir = Actium::Signup->new('xml');
-            require Actium::Files::FMPXMLResult;
             $db = Actium::Files::FMPXMLResult->new( $dir->get_dir() );
         }
         when ('h') {
             $dir = Actium::Signup->new('hasi');
-            require Actium::Files::HastusASI;
             $db = Actium::Files::HastusASI->new( $dir->get_dir() );
         }
         default {
