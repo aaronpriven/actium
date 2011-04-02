@@ -287,7 +287,7 @@ export.
 
 What is constant, however, is that the number of fields is the same, and
 there will always be a comma between two fields. There will always be
-I<at minimum> that number of commas, and no fewer. There may, however,
+*at minimum* that number of commas, and no fewer. There may, however,
 be more.
 
 So what this program does is go through each HSA file and look for rows

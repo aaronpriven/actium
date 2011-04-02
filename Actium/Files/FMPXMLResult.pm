@@ -27,6 +27,8 @@ use Readonly;
 use File::Glob qw(:glob);
 use Carp;
 use English '-no_match_vars';
+use Storable;
+use DBI (':sql_types');
 use XML::Twig;
 
 Readonly my $EXTENSION => '.xml';
@@ -37,9 +39,10 @@ Readonly my $EXTENSION => '.xml';
 #       _filetype_of_table is_a_table/
 #);
 
-sub db_type () {return 'FileMaker'}
-
+use constant db_type => 'FileMaker';
 # I think all the FileMaker exports will be the same database type
+
+use constant parent_of_table => undef;
 
 # TODO: Move to a configuration file of some kind
 Readonly my %KEY_OF => (
@@ -76,10 +79,10 @@ sub _filetype_of_table {
 sub _files_of_filetype {
     my $self  = shift;
     my $table = shift;
-    return $self->_flat_filespec( $table . $EXTENSION );
+    return $table . $EXTENSION;
 }
 
-has table_r {
+has table_r => (
     is       => 'bare',
     builder  => '_build_table_r',
     lazy     => 1,
@@ -90,7 +93,7 @@ has table_r {
         tables     => 'keys',
         is_a_table => 'get',
     },
-};
+);
 
 sub _build_table_r {
     my $self         = shift;
@@ -136,13 +139,13 @@ has '_table_obj_of_r' => (
     isa      => 'HashRef[Actium::Files::SQLite::Table]',
     default  => sub { {} },
     handles  => {
-        _table__obj_of    => 'get',
+        _table_obj_of     => 'get',
         _table_objs       => 'values',
         _set_table_obj_of => 'set',
     },
 );
 
-sub _key_of_table {
+sub key_of_table {
     my $self  = shift;
     my $table = shift;
     $self->ensure_loaded($table);
@@ -158,20 +161,41 @@ sub columns_of_table {
     return $table_obj->columns;
 }
 
+sub _stored_spec {
+    my $self  = shift;
+    my $table = shift;
+    my $dbh   = $self->dbh;
+
+    my ($spec) = (
+        $dbh->selectrow_array( 'SELECT spec FROM tablespec WHERE tablename = ?',
+            {}, $table )
+          or $EMPTY_STR
+    );
+
+    return $spec;
+}
+
 # _load required by SQLite role
 sub _load {
     my $self     = shift;
     my $filetype = shift;
     my $table    = $filetype;
-    my $file     = shift;
+    my $file     = $self->_flat_filespec(shift);
     my $dbh      = $self->dbh();
+
+    $dbh->do(
+        'CREATE TABLE IF NOT EXISTS tablespec ( tablename TEXT , spec TEXT )');
+    my $storedspec = $self->_stored_spec($table);
+    $dbh->do( 'DELETE FROM tablespec WHERE tablename = ?', {}, $table )
+      if $storedspec;
 
     emit "Reading FileMaker FMPXMLESULT $filetype";
     emit_over '0% ';
 
-    my ($table_obj,      $records_to_import, $record_count,
-        $emit_increment, $next_emit,         $insert_sth,
-        $has_composite_key,
+    my $record_count = 0;
+
+    my ($table_obj, $records_to_import, $emit_increment,
+        $next_emit, $insert_sth,        $has_composite_key,
     );
 
     # These callback definitions are inside '_load_' so they have access
@@ -199,7 +223,7 @@ sub _load {
 
         foreach my $field ( $metadata->children('FIELD') ) {
             my $name = $field->att('NAME');
-            push @{ $spec{column_r} }, $name;
+            push @{ $spec{columns_r} }, $name;
             $spec{column_repetitions_of_r}{$name} = $field->att('MAXREPEAT');
             $spec{column_type_of_r}{$name}        = $field->att('TYPE');
         }
@@ -214,6 +238,10 @@ sub _load {
         my $idxcmd = $table_obj->sql_idxcmd;
         $dbh->do($idxcmd) if $idxcmd;
 
+        my $serialized = Storable::freeze( \%spec );
+
+        $self->_insert_spec( $table, $serialized );
+
         $insert_sth = $dbh->prepare( $table_obj->sql_insertcmd );
 
         return;
@@ -225,7 +253,8 @@ sub _load {
 
         if ( $record_count >= $next_emit ) {
             $next_emit = $record_count + $emit_increment;
-            emit( sprintf( '%2d%%', $record_count / $records_to_import * 100 ) );
+            emit_over (
+                sprintf( '%2d%%', $record_count / $records_to_import * 100 ) );
         }
 
         my @values = $self->_row_parse( $row->children('COL') );
@@ -234,7 +263,7 @@ sub _load {
             push @values, jk( @values[ @{ $table_obj->key_components_idxs } ] );
         }
 
-        $insert_sth->execute($record_count++ ,@values);
+        $insert_sth->execute( ++$record_count, @values );
 
         $twig->purge;
 
@@ -249,8 +278,12 @@ sub _load {
         }
     );
 
+    $self->begin_transaction;
+
     $twig->parsefile($file);
     # all the actual stuff that happens is in the handlers
+
+    $self->end_transaction;
 
     emit_over '100% ';
 
@@ -258,6 +291,20 @@ sub _load {
     return;
 
 } ## tidy end: sub _load
+
+sub _insert_spec {    # scoping
+    my $self       = shift;
+    my $table      = shift;
+    my $serialized = shift;
+    my $dbh        = $self->dbh;
+
+    my $tablespec_sth = $dbh->prepare(
+        'INSERT INTO tablespec (tablename, spec) VALUES ( ? , ? )');
+    $tablespec_sth->bind_param( 1, $table );
+    $tablespec_sth->bind_param( 2, $serialized, SQL_BLOB );
+    $tablespec_sth->execute;
+    $tablespec_sth->finish;
+}
 
 sub _row_parse {
     my $self     = shift;
@@ -274,5 +321,18 @@ sub _row_parse {
 }
 
 with 'Actium::Files::SQLite';
+
+after 'ensure_loaded' => sub {
+    my $self   = shift;
+    my @tables = @_;
+
+    foreach my $table (@tables) {
+        my $spec_r    = Storable::thaw( $self->_stored_spec($table) );
+        my $table_obj = Actium::Files::SQLite::Table->new($spec_r);
+        $self->_set_table_obj_of( $table, $table_obj );
+    }
+    return;
+
+};
 
 1;

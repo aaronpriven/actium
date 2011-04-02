@@ -115,7 +115,7 @@ sub column_repetitions_of {
     return $reps || 1;
 }
 
-has 'column_type_r' => (
+has 'column_type_of_r' => (
     is      => 'bare',
     traits  => ['Hash'],
     isa     => 'HashRef[Str]',
