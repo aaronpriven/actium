@@ -253,19 +253,23 @@ sub _load {
 
         if ( $record_count >= $next_emit ) {
             $next_emit = $record_count + $emit_increment;
-            emit_over (
+            emit_over(
                 sprintf( '%2d%%', $record_count / $records_to_import * 100 ) );
+            $twig->purge;
         }
 
-        my @values = $self->_row_parse( $row->children('COL') );
+        my @values;
+        foreach my $col ( $row->children ) {
+            my @data_elts = $col->children;
+            push @values, jk( map { $_->text } @data_elts );
+        }
 
-        if ( $table_obj->has_composite_key ) {
+        if ($has_composite_key) {
             push @values, jk( @values[ @{ $table_obj->key_components_idxs } ] );
         }
 
         $insert_sth->execute( ++$record_count, @values );
-
-        $twig->purge;
+        return;
 
     };
 
@@ -284,6 +288,8 @@ sub _load {
     # all the actual stuff that happens is in the handlers
 
     $self->end_transaction;
+    
+    $twig->purge;
 
     emit_over '100% ';
 
