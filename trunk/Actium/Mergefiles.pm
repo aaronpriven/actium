@@ -3,6 +3,10 @@
 
 # Subversion: $Id$
 
+# Legacy status: 3
+
+# Should be eliminated in favor of Actium::Files::FMPXMLResult
+
 use strict;
 use warnings;
 

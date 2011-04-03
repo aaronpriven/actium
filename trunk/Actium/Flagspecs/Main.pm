@@ -2,21 +2,14 @@
 
 # Subversion: $Id$
 
+use 5.012;
 use warnings;
-use strict;
 
-package Actium::Flagspecs::Main;
+package Actium::Flagspecs::Main 0.001;
 
-use 5.010;
-
-our $VERSION = '0.001';
-$VERSION = eval $VERSION;    ## no critic (StringyEval)
-
-use Actium::HiddenHash;
 use Actium::Signup;
-use Actium::Term;
-use Actium::Constants;
 use Actium::Files::HastusASI;
+use Actium::Files::FMPXMLResult;
 
 use Carp;
 use Readonly;
@@ -26,10 +19,10 @@ sub flagspecs_START {
     my $signup     = Actium::Signup->new();
     my $flagfolder = $signup->subdir('flags');
 
-    my $merges_hh = load_merges($signup);
+    my $xml_db = load_xml($signup);
     my $hasi_db  = load_hasi($signup);
 
-    build_place_and_stop_lists( $hasi_db, $merges_hh->get('Stops') );
+    build_place_and_stop_lists( $hasi_db, $xml_db );
     build_trip_quantity_lists($hasi_db);
 
     cull_placepats();
@@ -43,20 +36,18 @@ sub flagspecs_START {
 
     build_color_of($signup);
 
-    output_specs( $flagfolder, $merges_hh->get('Stops') );
+    output_specs( $flagfolder, $xml_db );
 
     return;
 
 } ## tidy end: sub flagspecs_START
 
-sub load_merges {
+sub load_xml {
     my $signup = shift;
-    my $merges_hh = Actium::Hiddenhash->new();
-    foreach my $file (qw/Stops Timepoints/) {
-        my $mergedata = $signup->mergeread("$file.csv");
-        $merges_hh->set($file => $mergedata);
-    }
-    return $merges_hh;
+    my $xmldir = $signup->subdir('xml');
+    my $xml_db = Actium::Files::FMPXMLResult->new( $xmldir->get_dir());
+    $xml_db->ensure_loaded(qw(Stops Timepoints));
+    return $xml_db;
 }
 
 sub load_hasi {
