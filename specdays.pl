@@ -23,7 +23,7 @@ use lib $Bin;
 use Skedfile qw(Skedread Skedwrite remove_blank_columns);
 use Skeddir;
 use Myopts;
-use FPMerge qw(FPread FPread_simple);
+use Actium::FPMerge qw(FPread FPread_simple);
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory

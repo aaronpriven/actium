@@ -23,7 +23,7 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 use Actium::Sorting (qw(sortbyline));
-use FPMerge qw(FPread FPread_simple);
+use Actium::FPMerge qw(FPread FPread_simple);
 use Myopts;
 use Skeddir;
 use Columnprint(':all');

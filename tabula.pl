@@ -33,7 +33,7 @@ use List::Util ('max');
 
 use constant CR => "\r";
 
-use FPMerge qw(FPread_simple);
+use Actium::FPMerge qw(FPread_simple);
 
 my $helptext = <<'EOF';
 tabula. Reads schedules and makes tables out of them.
