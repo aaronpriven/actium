@@ -7,6 +7,12 @@
 
 # Legacy stage 4
 
+BEGIN {
+
+    #use Devel::NYTProf;
+    #DB::disable_profile();
+}
+
 use warnings;
 use 5.012;    # turns on features
 
@@ -40,6 +46,7 @@ Readonly my $EXTENSION => '.xml';
 #);
 
 use constant db_type => 'FileMaker';
+
 # I think all the FileMaker exports will be the same database type
 
 use constant parent_of_table => undef;
@@ -130,7 +137,7 @@ sub _build_table_r {
 
     return \%tables;
 
-} ## tidy end: sub _build_table_r
+}    ## tidy end: sub _build_table_r
 
 has '_table_obj_of_r' => (
     init_arg => undef,
@@ -175,7 +182,7 @@ sub _stored_spec {
     return $spec;
 }
 
-# _load required by SQLite role
+# _load required by SQLite roe
 sub _load {
     my $self     = shift;
     my $filetype = shift;
@@ -192,111 +199,18 @@ sub _load {
     emit "Reading FileMaker FMPXMLESULT $filetype";
     emit_over '0% ';
 
-    my $record_count = 0;
+    #DB::enable_profile();
 
-    my ($table_obj, $records_to_import, $emit_increment,
-        $next_emit, $insert_sth,        $has_composite_key,
-    );
+    $self->_load_xml_parser( $filetype, $file );
 
-    # These callback definitions are inside '_load_' so they have access
-    # to lexical variables
-
-    my $resultset_callback = sub {
-        my $twig = shift;
-        my $elt  = shift;
-        $records_to_import = $elt->att('FOUND');
-        $emit_increment    = POSIX::ceil( $records_to_import / 25 );
-        $next_emit         = $emit_increment;
-        return;
-    };
-
-    my $metadata_callback = sub {
-        my $twig     = shift;
-        my $metadata = shift;
-        my %spec     = (
-            id               => $table,
-            filetype         => $filetype,
-            key_components_r => [ split( m{/}s, $KEY_OF{$table} ) ],
-        );
-
-        my $idx = 0;
-
-        foreach my $field ( $metadata->children('FIELD') ) {
-            my $name = $field->att('NAME');
-            push @{ $spec{columns_r} }, $name;
-            $spec{column_repetitions_of_r}{$name} = $field->att('MAXREPEAT');
-            $spec{column_type_of_r}{$name}        = $field->att('TYPE');
-        }
-
-        $twig->purge;
-
-        $table_obj = Actium::Files::SQLite::Table->new( \%spec );
-        $self->_set_table_obj_of( $table, $table_obj );
-        $has_composite_key = $table_obj->has_composite_key;
-
-        $dbh->do( $table_obj->sql_createcmd );
-        my $idxcmd = $table_obj->sql_idxcmd;
-        $dbh->do($idxcmd) if $idxcmd;
-
-        my $serialized = Storable::freeze( \%spec );
-
-        $self->_insert_spec( $table, $serialized );
-
-        $insert_sth = $dbh->prepare( $table_obj->sql_insertcmd );
-
-        return;
-    };
-
-    my $row_callback = sub {
-        my $twig = shift;
-        my $row  = shift;
-
-        if ( $record_count >= $next_emit ) {
-            $next_emit = $record_count + $emit_increment;
-            emit_over(
-                sprintf( '%2d%%', $record_count / $records_to_import * 100 ) );
-            $twig->purge;
-        }
-
-        my @values;
-        foreach my $col ( $row->children ) {
-            my @data_elts = $col->children;
-            push @values, jk( map { $_->text } @data_elts );
-        }
-
-        if ($has_composite_key) {
-            push @values, jk( @values[ @{ $table_obj->key_components_idxs } ] );
-        }
-
-        $insert_sth->execute( ++$record_count, @values );
-        return;
-
-    };
-
-    my $twig = XML::Twig->new(
-        twig_roots => { METADATA => 1, RESULTSET => 1 },
-        start_tag_handlers => { RESULTSET => $resultset_callback },
-        twig_handlers      => {
-            METADATA => $metadata_callback,
-            ROW      => $row_callback,
-        }
-    );
-
-    $self->begin_transaction;
-
-    $twig->parsefile($file);
-    # all the actual stuff that happens is in the handlers
-
-    $self->end_transaction;
-    
-    $twig->purge;
+    #DB::disable_profile();
 
     emit_over '100% ';
-
     emit_done;
+
     return;
 
-} ## tidy end: sub _load
+}    ## tidy end: sub _load
 
 sub _insert_spec {    # scoping
     my $self       = shift;
@@ -304,26 +218,12 @@ sub _insert_spec {    # scoping
     my $serialized = shift;
     my $dbh        = $self->dbh;
 
-    my $tablespec_sth = $dbh->prepare(
-        'INSERT INTO tablespec (tablename, spec) VALUES ( ? , ? )');
+    my $tablespec_sth =
+      $dbh->prepare('INSERT INTO tablespec (tablename, spec) VALUES ( ? , ? )');
     $tablespec_sth->bind_param( 1, $table );
     $tablespec_sth->bind_param( 2, $serialized, SQL_BLOB );
     $tablespec_sth->execute;
     $tablespec_sth->finish;
-}
-
-sub _row_parse {
-    my $self     = shift;
-    my @col_elts = @_;
-
-    my @values;
-    foreach my $col (@col_elts) {
-        my @data_elts = $col->children;
-        push @values, jk( map { $_->text } @data_elts );
-    }
-
-    return @values;
-
 }
 
 with 'Actium::Files::SQLite';
@@ -340,5 +240,270 @@ after 'ensure_loaded' => sub {
     return;
 
 };
+
+# XML::Twig version is nicer... but XML::Parser is 5x faster
+
+#sub _load_xml_twig {
+#    my $self     = shift;
+#    my $filetype = shift;
+#    my $file     = shift;
+#    my $table    = $filetype;
+#    my $dbh      = $self->dbh();
+#
+#    my $record_count = 0;
+#
+#    my (
+#        $table_obj, $records_to_import, $emit_increment,
+#        $next_emit, $insert_sth,        $has_composite_key,
+#    );
+#
+#    # These callback definitions are inside '_load_' so they have access
+#    # to lexical variables
+#
+#    my $resultset_callback = sub {
+#        my $twig = shift;
+#        my $elt  = shift;
+#        $records_to_import = $elt->att('FOUND');
+#        $emit_increment    = POSIX::ceil( $records_to_import / 25 );
+#        $next_emit         = $emit_increment;
+#        return;
+#    };
+#
+#    my $metadata_callback = sub {
+#        my $twig     = shift;
+#        my $metadata = shift;
+#        my %spec     = (
+#            id               => $table,
+#            filetype         => $filetype,
+#            key_components_r => [ split( m{/}s, $KEY_OF{$table} ) ],
+#        );
+#
+#        my $idx = 0;
+#
+#        foreach my $field ( $metadata->children('FIELD') ) {
+#            my $name = $field->att('NAME');
+#            push @{ $spec{columns_r} }, $name;
+#            $spec{column_repetitions_of_r}{$name} = $field->att('MAXREPEAT');
+#            $spec{column_type_of_r}{$name}        = $field->att('TYPE');
+#        }
+#
+#        $twig->purge;
+#
+#        $table_obj = Actium::Files::SQLite::Table->new( \%spec );
+#        $self->_set_table_obj_of( $table, $table_obj );
+#        $has_composite_key = $table_obj->has_composite_key;
+#
+#        $dbh->do( $table_obj->sql_createcmd );
+#        my $idxcmd = $table_obj->sql_idxcmd;
+#        $dbh->do($idxcmd) if $idxcmd;
+#
+#        my $serialized = Storable::freeze( \%spec );
+#
+#        $self->_insert_spec( $table, $serialized );
+#
+#        $insert_sth = $dbh->prepare( $table_obj->sql_insertcmd );
+#
+#        return;
+#    };
+#
+#    my $row_callback = sub {
+#        my $twig = shift;
+#        my $row  = shift;
+#
+#        my @values =
+#          map { join( $KEY_SEPARATOR, $_->children_text ) } $row->children;
+#
+#        if ($has_composite_key) {
+#            push @values, jk( @values[ @{ $table_obj->key_components_idxs } ] );
+#        }
+#
+#        $insert_sth->execute( ++$record_count, @values );
+#
+#        if ( $record_count >= $next_emit ) {
+#            $next_emit = $record_count + $emit_increment;
+#            emit_over(
+#                sprintf( '%2d%%', $record_count / $records_to_import * 100 ) );
+#
+#            #$twig->purge;
+#        }
+#
+#        $twig->purge;
+#
+#        return;
+#
+#    };
+#
+#    my $twig = XML::Twig->new(
+#        twig_roots => { METADATA => 1, RESULTSET => 1 },
+#        start_tag_handlers => { RESULTSET => $resultset_callback },
+#        twig_handlers      => {
+#            METADATA => $metadata_callback,
+#            ROW      => $row_callback,
+#        }
+#    );
+#
+#    $self->begin_transaction;
+#
+#    $twig->parsefile($file);
+#
+#    # all the actual stuff that happens is in the handlers
+#
+#    $self->end_transaction;
+#
+#    $twig->purge;
+#
+#}
+
+sub _load_xml_parser {
+    my $self     = shift;
+    my $filetype = shift;
+    my $file     = shift;
+    my $table    = $filetype;
+    my $dbh      = $self->dbh();
+
+    my $data_buffer;
+    my @row_buffer;
+    my $first_data_in_col;    # don't add KEY_SEPARATOR
+    my $current_tag;
+
+    my (
+        $table_obj, $records_to_import, $emit_increment,
+        $next_emit, $insert_sth,        $has_composite_key,
+    );
+
+    my %spec = (
+        id               => $table,
+        filetype         => $filetype,
+        key_components_r => [ split( m{/}s, $KEY_OF{$table} ) ],
+    );
+
+    my $record_count = 0;
+
+=begin
+
+(Start of METADATA)
+Start of FIELD - store attributes in column info
+(End of FIELD)
+End of METADATA - save column info (create SQL table, etc.)
+
+START OF RESULTSET - store number of records returned
+(START OF ROW)
+Start of COL - set "beginning of COL" flag. Clear data_buffer.
+
+Start of DATA - unless if "beginning of COL" flag is set, add key separator to
+                data_buffer. Unset "beginning of COL" flag.
+CHARS - Add chars to buffer
+(End of DATA)
+End of COL - Move buffer to row_buffer
+End of ROW - Save row_buffer into SQL
+
+=end
+
+=cut
+
+    my $start = sub {
+        #my $expat   = shift;
+        my $element = $_[1];
+
+        if ( $element eq 'DATA' ) {
+            if ( not $first_data_in_col ) {
+                $data_buffer = "$data_buffer\c]";
+            }
+            else {
+                $first_data_in_col = 0;
+            }
+        }
+        elsif ( $element eq 'COL' ) {
+            $first_data_in_col = 1;
+            $data_buffer       = q{};
+        }
+        elsif ( $element eq 'FIELD' ) {
+            my %attr = @_;
+
+            my $name = $attr{NAME};
+            push @{ $spec{columns_r} }, $name;
+            $spec{column_repetitions_of_r}{$name} = $attr{MAXREPEAT};
+            $spec{column_type_of_r}{$name}        = $attr{TYPE};
+        }
+        elsif ( $element eq 'RESULTSET' ) {
+            my %attr = @_;
+
+            $records_to_import = $attr{FOUND};
+            $emit_increment    = POSIX::ceil( $records_to_import / 25 );
+            $next_emit         = $emit_increment;
+
+        }
+
+        return;
+    };
+
+    my $end = sub {
+        #my $expat   = shift;
+        my $element = $_[1];
+        return if $element eq 'DATA';
+
+        if ( $element eq 'COL' ) {
+            push @row_buffer, $data_buffer;
+            $data_buffer = {};
+        }
+        elsif ( $element eq 'ROW' ) {
+
+            if ($has_composite_key) {
+                push @row_buffer,
+                  jk( @row_buffer[ @{ $table_obj->key_components_idxs } ] );
+            }
+
+            $insert_sth->execute( ++$record_count, @row_buffer );
+
+            if ( $record_count >= $next_emit ) {
+                $next_emit = $record_count + $emit_increment;
+                emit_over(
+                    sprintf(
+                        '%2d%%', $record_count / $records_to_import * 100
+                    )
+                );
+
+            }
+
+            @row_buffer = ();
+        }
+        elsif ( $element eq 'METADATA' ) {
+            $table_obj = Actium::Files::SQLite::Table->new( \%spec );
+            $self->_set_table_obj_of( $table, $table_obj );
+            $has_composite_key = $table_obj->has_composite_key;
+
+            $dbh->do( $table_obj->sql_createcmd );
+            my $idxcmd = $table_obj->sql_idxcmd;
+            $dbh->do($idxcmd) if $idxcmd;
+
+            my $serialized = Storable::freeze( \%spec );
+
+            $self->_insert_spec( $table, $serialized );
+
+            $insert_sth = $dbh->prepare( $table_obj->sql_insertcmd );
+
+        }
+
+        return;
+    };
+
+    my $char = sub {
+        #my $expat  = shift;
+        #my $string = shift;
+        my $string = $_[1];
+        $data_buffer = $data_buffer . $string;
+        return;
+    };
+
+    my $parser =
+      XML::Parser->new(
+        Handlers => { Start => $start, End => $end, Char => $char, } );
+    $self->begin_transaction;
+
+    $parser->parsefile($file);
+
+    $self->end_transaction;
+
+}
 
 1;
