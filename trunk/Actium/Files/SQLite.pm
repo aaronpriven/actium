@@ -182,7 +182,7 @@ sub _connect {
     );
 
     my $dbh = DBI->connect( "dbi:SQLite:dbname=$db_filespec",
-        $EMPTY_STR, $EMPTY_STR, { RaiseError => 1 } );
+        $EMPTY_STR, $EMPTY_STR, { RaiseError => 1 , sqlite_unicode => 1} );
     $dbh->do(
 'CREATE TABLE files ( files_id INTEGER PRIMARY KEY, filetype TEXT , mtimes TEXT )'
     ) if not $existed;
