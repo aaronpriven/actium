@@ -48,6 +48,8 @@ sub START {
     my $iterator = $db->each_row($table);
 
     emit "Sending tab-delimited $table data to STDOUT";
+    
+    binmode STDOUT, ':utf8';
 
     my @columnnames = $db->columns_of_table($table);
 
