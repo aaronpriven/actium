@@ -15,7 +15,7 @@ use lib $Bin;
 
 @ARGV = qw(-s f08) if $ENV{RUNNING_UNDER_AFFRUS};
 
-use FPMerge qw(FPread FPread_simple);
+use Actium::FPMerge qw(FPread FPread_simple);
 use Skeddir;
 use Myopts;
 use Data::Dumper;

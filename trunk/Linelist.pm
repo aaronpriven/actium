@@ -13,7 +13,7 @@ use warnings;
 
 package Linelist;
 
-use FPMerge qw(FPread FPread_simple);
+use Actium::FPMerge qw(FPread FPread_simple);
 
 use Exporter qw/import/;
 our @EXPORT_OK = qw/linelist/;

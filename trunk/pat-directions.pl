@@ -18,7 +18,7 @@ use lib $Bin;
    # main program and library in the same directory
 
 
-use FPMerge qw(FPread FPread_simple);
+use Actium::FPMerge qw(FPread FPread_simple);
 use Myopts;
 use Skeddir;
 
