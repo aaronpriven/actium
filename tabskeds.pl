@@ -44,7 +44,7 @@ foreach (keys %specdaynames) {
 }
 
 use Skedtps qw(tphash tpxref destination TPXREF_FULL);
-use FPMerge qw(FPread FPread_simple);
+use Actium::FPMerge qw(FPread FPread_simple);
 
 my $KEY_SEPARATOR = "\c]";
 

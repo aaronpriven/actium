@@ -18,7 +18,7 @@ use lib $Bin;
 use Skedfile qw(Skedread);
 use Skeddir;
 use Skedvars;
-use FPMerge qw(FPread FPread_simple);
+use Actium::FPMerge qw(FPread FPread_simple);
 use Myopts;
 
 my %options;

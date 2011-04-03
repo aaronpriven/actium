@@ -149,7 +149,7 @@ Other modules this subprogram uses specify several other options. See:
 =item L<OPTIONS in Actium::Signup|Actium::Signup/OPTIONS>
 =item L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
 
-A complete list of options can be found by running "actium.pl help hasi2tab"
+A complete list of options can be found by running "actium.pl help sqlite2tab"
 
 =head1 DESCRIPTION
 
@@ -163,14 +163,14 @@ For Hastus ASI, it includes the data from the Hastus ASI files as documented in 
 AVL Standard Interface documentation.  For FileMaker, it includes whatever
 data was exported.
 
-It will also have at least one other column:
+It will also have one or more additional columns:
 
 =over 
 
 =item TABLE_id
 
 A serial number for each line in the file, called "${table}_id" (e.g., 
-"TPS" for the TPS table).
+"TPS" for the TPS table). This will always be present.
 
 =item PARENTTABLE_id
 
@@ -199,7 +199,9 @@ L<$KEY_SEPARATOR from Actium::Constants|Actium::Constants/$KEY_SEPARATOR>.
 
 =item Actium::Term 
 
-=item either Actium::Files::HastusASI or Actium::Files::FMPXMLResult
+=item Actium::Files::HastusASI 
+
+=item Actium::Files::FMPXMLResult
 
 =item Actium::Constants
 

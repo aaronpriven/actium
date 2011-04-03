@@ -25,7 +25,7 @@ use Skeddir;
 use Skedvars qw(%daydirhash %adjectivedaynames %bound);
 use Skedtps qw(TPXREF_FULL tpxref tphash);
 use Myopts;
-use FPMerge qw(FPread FPread_simple);
+use Actium::FPMerge qw(FPread FPread_simple);
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory

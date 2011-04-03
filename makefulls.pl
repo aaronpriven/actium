@@ -26,7 +26,7 @@ use Skedfile qw(Skedread remove_blank_columns getfiles trim_sked copy_sked);
 use Skeddir;
 use Skedvars;
 use Actium::Sorting (qw(sortbyline));
-use FPMerge qw(FPread FPread_simple);
+use Actium::FPMerge qw(FPread FPread_simple);
 use Skedtps qw(tphash TPXREF_FULL); 
 use Myopts;
 

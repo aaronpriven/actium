@@ -32,7 +32,7 @@ use Skeddir;
 use Skedvars qw(%daydirhash %adjectivedaynames %bound %specdaynames);
 use Actium::Sorting (qw(sortbyline));
 use Skedtps qw(tphash TPXREF_FULL);
-use FPMerge qw(FPread FPread_simple);
+use Actium::FPMerge qw(FPread FPread_simple);
 
 our %second = ( "72M" => '72' , 386  => '86' , DB1 => 'DB' , );
 
