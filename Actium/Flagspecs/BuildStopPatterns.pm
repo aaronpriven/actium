@@ -1,16 +1,11 @@
-# Actium/Flagspecs/StopPatterns.pm
+# Actium/Flagspecs/BuildStopPatterns.pm
 
 # Subversion: $Id$
 
+use 5.012;
 use warnings;
-use strict;
 
-package Actium::Flagspecs::StopPatterns;
-
-use 5.010;
-
-our $VERSION = '0.001';
-$VERSION = eval $VERSION;    ## no critic (StringyEval)
+package Actium::Flagspecs::BuildStopPatterns 0.001;
 
 use Actium::Util qw(j jk jt);
 use Actium::Constants;
@@ -21,6 +16,7 @@ use English('-no_match_vars');
 
 use Readonly;
 
+# These should be moved to Lines and Cities tables, respectively
 Readonly my @TRANSBAY_NOLOCALS => qw/FS L NX NX1 NX2 NX3 U W/;
 
 Readonly my %SIDE_OF => (
@@ -29,27 +25,27 @@ Readonly my %SIDE_OF => (
 );
 
 1;
-__END__ # remove when ready
+
+__END__
+
+# hidden behind __END__ to avoid errors when committing from Eclipse
 
 sub build_place_and_stop_lists {
     
     my $hasi_db  = shift;
-    my $stopdata = shift;
+    my $xml_db = shift;
     
     my %routes;
     my %stop_obj_of;
-
-    my ( $connections_col, $district_col )
-      = $stopdata->column_order_of( 'Connections', 'calc_district_id' );
 
     emit 'Building lists of places and stops';
 
     my $eachpat = $hasi_db->each_row_where( 'PAT',
         q{WHERE NOT IsInService = '' ORDER BY Route} );
 
-    my $dbh = $hasi_db->dbh();
+    my $hasi_dbh = $hasi_db->dbh();
     my $tps_sth
-      = $dbh->prepare('SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
+      = $hasi_dbh->prepare('SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
 
     my $prevroute = $EMPTY_STR;
   PAT:
@@ -63,7 +59,7 @@ sub build_place_and_stop_lists {
         }
 
         my @tps = @{
-            $dbh->selectall_arrayref( $tps_sth, { Slice => {} },
+            $hasi_dbh->selectall_arrayref( $tps_sth, { Slice => {} },
                 $pat->{PAT_id} )
           };
 
@@ -110,16 +106,16 @@ sub build_place_and_stop_lists {
                 @intermediate_stops = ();
             }
 
-            my ($row) = $stopdata->rows_where( 'PhoneID', $stop_ident );
+            my $row_r = $xml_db->row( 'Stops', $stop_ident );
 
             my $patinfo = { Place => $prevplace };
 
-            foreach my $connection ( split( /\n/sx, $row->[$connections_col] ) )
+            foreach my $connection ( split( /\n/sx, $row_r->{Connections} ) )
             {
                 $patinfo->{Connections}{$connection} = 1;
             }
 
-            my $district = $row->[$district_col];
+            my $district = $row_r->{'calc_district_id'};
             $district =~ s/\A 0//sx;
             $patinfo->{District} = $district;
             next TPS if $district =~ /\A D/sx;    # dummy stop

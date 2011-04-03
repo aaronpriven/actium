@@ -4,15 +4,10 @@
 
 # Subversion: $Id$
 
+use 5.012;
 use warnings;
-use strict;
 
-package Actium::Flagspecs::Stop;
-
-use 5.010;
-
-our $VERSION = '0.001';
-$VERSION = eval $VERSION;    ## no critic (StringyEval)
+package Actium::Flagspecs::Stop 0.001;
 
 use Moose;
 use MooseX::SemiAffordanceAccessor;
