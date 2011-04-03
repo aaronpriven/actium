@@ -212,7 +212,7 @@ sub _load {
 
 }    ## tidy end: sub _load
 
-sub _insert_spec {    # scoping
+sub _insert_spec {
     my $self       = shift;
     my $table      = shift;
     my $serialized = shift;
