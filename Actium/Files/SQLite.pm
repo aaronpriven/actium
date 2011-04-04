@@ -110,7 +110,8 @@ has '_db_filespec' => (
 has '_is_loaded_r' => (
     init_arg => undef,
     traits  => ['Hash'],
-    is      => 'rw',
+    is      => 'ro',
+    writer => '_set_is_loaded_r',
     isa     => 'HashRef[Bool]',
     default => sub { {} },
     handles => {
@@ -413,6 +414,12 @@ This documentation refers to version 0.001
 Actium::Files::SQLite is a role for storing data from flat files
 in an SQLite database, using L<DBI|DBI> and L<DBD::SQLite|DBD::SQLite>.
 
+The SQLite database acts as a cache, allowing quicker access
+to the flat files than would be possible otherwise.  When the timestamps
+on the files change, or (depending on the consuming class) when the names
+of the files themselves change, the files are re-loaded and stored into
+the SQLite database.
+
 A class consumes this role if it knows about a particular set of
 file (for example, Hastus Standard AVL files, or FileMaker Pro
 "Merge" files).
@@ -610,8 +617,6 @@ A request specified a table that was not found for the specified database type.
 =item DBD::SQLite
 
 =item Moose::Role
-
-=item MooseX::SemiAffordanceAccessor
 
 =item Actium::Constants
 
