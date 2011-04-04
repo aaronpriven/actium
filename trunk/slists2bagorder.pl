@@ -19,7 +19,7 @@ use lib ($Bin , "$Bin/../bin");
 use Carp;
 use Storable();
 
-use Actium( qw[say sayt jn jt initialize avldata ensuredir byroutes option]);
+use Actium::Sorting( qw<byline>);
 use Actium::Constants;
 use List::Util (qw<max>);
 
@@ -33,7 +33,10 @@ EOF
 
 my $intro = 'slists2bagorder -- makes order for bags';
 
-Actium::initialize ($helptext, $intro);
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # retrieve data
 my %stops_of = %{ Storable::retrieve('compare/oldline.storable') } or die $!;
@@ -81,7 +84,7 @@ while ( scalar keys %stops_of ) {
     my $max_linedir = (sort { 
        ( $a =~ /^6\d\d/ <=> $b =~ /^6\d\d/ ) or
        ( scalar @{$stops_of{$b}} <=> scalar @{$stops_of{$a}} ) or
-       byroutes ($a , $b) 
+       byline ($a , $b) 
        } keys %stops_of)[0];
    
    my @stops = @{$stops_of{$max_linedir}};

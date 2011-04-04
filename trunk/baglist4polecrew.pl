@@ -18,7 +18,6 @@ use sort ('stable');
 use FindBin('$Bin');
 use lib ( $Bin, "$Bin/../bin" );
 
-use Actium(qw[say sayt jt jn jtn initialize avldata ensuredir byroutes option]);
 use Actium::Constants;
 use Actium::FPMerge (qw(FPread FPread_simple));
 
@@ -35,7 +34,10 @@ EOF
 
 my $intro = 'baglist4polecrew -- makes bag list in route order for pole crew';
 
-Actium::initialize( $helptext, $intro );
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # retrieve data
 my ( @stops, %stops );
