@@ -8,8 +8,6 @@
 # the avl files.
 
 use warnings;
-use strict;
-
 use 5.012;
 
 use sort ('stable');
@@ -19,19 +17,22 @@ use FindBin('$Bin');
 use lib ($Bin , "$Bin/../bin");
 
 use List::Util;
-use List::MoreUtils ('each_arrayref');
+use List::MoreUtils (qw<all each_arrayref>);
 
 use File::Copy;
 
 use Array::Transpose;
 
-use Actium (qw(option avldata all_true add_option ensuredir say sayt sayq jtn key underlinekey));
+use Actium::Util (':ALL');
 
+use Actium::Term ('sayq');
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Time ('timenum');
 
 use Actium::DaysDirections (':ALL');
+
+use Actium::Options (qw<option add_option>);
 
 add_option('rawonly!' , 'Only create "rawskeds" and not "skeds".');
 
@@ -42,18 +43,20 @@ EOF
 
 my $intro = "avl2skeds - reads stored AVL data and makes skeds files";
 
-Actium::initialize ($helptext, $intro);
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # don't buffer terminal output
 $| = 1;
 
 # retrieve data
 
-if ( not option('rawonly') ) {
-   ensuredir ('skeds');
-}              
+my $skedsdir = $signup->subdir('skeds');
 
-ensuredir('rawskeds');
+if ( not option('rawonly') ) {
+   my $rawskedsdir = $signup->subdir('rawskeds');
+}              
 
 my %skeds_pairs_of;
 my %skeds_lines_of;
@@ -70,7 +73,9 @@ my %sked_override_order_of;
 # doesn't have to display it when it's not being used. Of course it saves
 # memory, too
 
-my $avldata_r = avldata();
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
+
 
 make_skeds_pairs_of_hash($avldata_r);
 make_tp9s($avldata_r);
@@ -143,7 +148,7 @@ for my $this_sked_key ( keys %sked_of) {
 
 sayq ("\n\nAveraged keys:");
 
-sayq ("   " , underlinekey($_) ) for (@averaged_keys);
+sayq ("   " , keyreadable($_) ) for (@averaged_keys);
 
 copy_exceptions() unless option('rawonly');
 
@@ -168,14 +173,14 @@ sub load_timepoint_overrides {
       my ($line, $dircode, $days) = split (/_/ , $sked);
       
       my @skeds;
-      push @skeds, key($line,$dircode,$days);
+      push @skeds, jk($line,$dircode,$days);
       
       if ($days eq 'WE' or $days eq 'DA') {
-         push @skeds, key($line,$dircode,'SA');
-         push @skeds, key($line,$dircode,'SU');
+         push @skeds, jk($line,$dircode,'SA');
+         push @skeds, jk($line,$dircode,'SU');
       }
       if ($days eq 'DA') {
-         push @skeds, key($line,$dircode,'WD');
+         push @skeds, jk($line,$dircode,'WD');
       }
       
       $sked_override_order_of{$_} = \@timepoints for @skeds;
@@ -254,7 +259,7 @@ sub merge_days {
       my ($linegroup, $dircode, $days) = split (/$KEY_SEPARATOR/ , $skedkey);
 
       next SKED if $days ne $merging[0];
-      my $secondkey = key($linegroup,$dircode,$merging[1]);
+      my $secondkey = jk($linegroup,$dircode,$merging[1]);
       next SKED if (not exists($sked_of{$secondkey}));
       
       # so now we know that the first day and second day exist.
@@ -278,7 +283,7 @@ sub merge_days {
       
       # so at this point, all is identical.
       
-      my $newkey = key($linegroup,$dircode,$merged);
+      my $newkey = jk($linegroup,$dircode,$merged);
       $sked_of{$newkey} = $sked_of{$skedkey};
       $sked_order_of{$newkey} = $sked_order_of{$skedkey};
       delete $sked_of{$skedkey};
@@ -345,7 +350,7 @@ sub sort_rows {
    
    SORTBY:
    for my $i (0 .. $#{$transposed}) {
-      if (all_true ( @{$transposed->[$i]} ) ) {
+      if (all { our $_ ; $_ }  ( @{$transposed->[$i]} ) ) {
          $sortby = $i;
          last SORTBY;
       }
@@ -474,21 +479,21 @@ sub write_sked {
    my $key = shift;
    my $dir = shift;
 
-   my $filename = underlinekey($key);
+   my $filename = keyreadable($key);
 
    open my $out, '>' , "$dir/$filename.txt" or die "$dir/$filename.txt: $!";
    
    print $out $filename , "\n";
    print $out "Note Definitions:\t\n";
 
-   print $out jtn( 'SPEC DAYS', 'NOTE' , 'VT' , 'RTE NUM' , map {tp9($_)} (@{$sked_order_of{$key}}));
+   say $out jt( 'SPEC DAYS', 'NOTE' , 'VT' , 'RTE NUM' , map {tp9($_)} (@{$sked_order_of{$key}}));
 
    foreach my $trip ( @{$sked_of{$key}} ) {
       my @times = @{$trip->{TIMES}};
       #if ($dir ne 'rawskeds') {
          tr/bx/pa/ for @times; # old format can't handle b, a times
       #}
-      print $out jtn( $trip->{SPECDAYS}, $EMPTY_STR, $EMPTY_STR, $trip->{LINE}, @times);
+      say $out jt( $trip->{SPECDAYS}, $EMPTY_STR, $EMPTY_STR, $trip->{LINE}, @times);
    }
    
    close $out;
@@ -513,7 +518,7 @@ sub make_place_ordering {
       }
 
       # %trip_tps_seen contains unique place lists
-      $trip_tps_seen{key(@places)} = \@places;
+      $trip_tps_seen{jk(@places)} = \@places;
    
    }
    
@@ -529,7 +534,7 @@ sub make_place_ordering {
       if (join ($EMPTY_STR, @{$sked_override_order_of{$key}} ) 
           ne join ($EMPTY_STR, @{$sked_order_of{$key}}) ) {
          warn "\nTimepoints in timepointorder.txt not the same as final result for "
-               . underlinekey($key) . "\n\n";
+               . keyreadable($key) . "\n\n";
       }
    }
    else {
@@ -625,7 +630,7 @@ sub make_skeds_pairs_of_hash {
       }
       
       my $pattern  = $tripinfo_of{Pattern};
-      my $patkey   = key ($line, $pattern);
+      my $patkey   = jk ($line, $pattern);
       my $dir_code = dir_of_hasi ($avldata{PAT}{$patkey}{DirectionValue});
 
       my @pairs = ();
@@ -695,7 +700,7 @@ sub make_skeds_pairs_of_hash {
       }
 
       foreach my $thesedays (@days) {
-         my $key = key($linegroup,$dir_code,$thesedays);
+         my $key = jk($linegroup,$dir_code,$thesedays);
          push ( @{ $skeds_lines_of{$key} }, $line );
          push ( @{ $skeds_specdays_of{$key} }, $specdays );
          push ( @{ $skeds_pairs_of{$key} }, [ @pairs ] );

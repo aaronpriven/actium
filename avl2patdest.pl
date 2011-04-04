@@ -21,7 +21,6 @@ use Carp;
 #use Fatal qw(open close);
 use Storable();
 
-use Actium(qw[add_option byroutes initialize avldata sayq chdir_signup option]);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 
@@ -39,7 +38,11 @@ EOF
 
 my $intro = 'avl2patdest -- patterns and destinations';
 
-Actium::initialize( $helptext, $intro );
+use Actium::Sorting('byline');
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 my %stoplist = ();
 
@@ -50,7 +53,10 @@ my ( %pat , %vdc );
         # (or, presumably, another IDE)
      # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-    my $avldata_r = avldata();
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
+
+
 
     %pat = %{ $avldata_r->{PAT} };
     %vdc = %{ $avldata_r->{VDC} };
@@ -126,7 +132,7 @@ foreach my $key ( keys %pat ) {
 }
 
 
-foreach (sort { byroutes ($a->{ROUTE} , $b->{ROUTE}) or $a->{PAT} <=> $b->{PAT} 
+foreach (sort { byline ($a->{ROUTE} , $b->{ROUTE}) or $a->{PAT} <=> $b->{PAT} 
 or $a->{DIR} <=> $b->{DIR} 
 } @results ) {
 

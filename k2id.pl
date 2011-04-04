@@ -19,9 +19,7 @@ use lib $Bin;
 use Carp;
 use POSIX ('ceil');
 
-use Actium(
-    qw[say printq sayq sayt jn jt byroutes jtn initialize key ensuredir option]
-);
+use Actium::Term (qw<printq sayq>);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 
@@ -45,9 +43,12 @@ EOF
 
 my $intro = 'k2id.pl -- makes kidpoints: point schedules from Hastus';
 
-Actium::initialize( $helptext, $intro );
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
-ensuredir ('kidpoints');
+my $kidpointdir = $signup->subdir('kidpoints');
 
 my $effdate = read_file( 'effectivedate.txt' ) ;
 

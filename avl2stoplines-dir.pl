@@ -27,7 +27,8 @@ use POSIX ('ceil');
 #use Fatal qw(open close);
 use Storable();
 
-use Actium(qw[say sayt jn byroutes jt initialize avldata ensuredir option]);
+use Actium::Util(qw<jt>);
+use Actium::Sorting (qw[sortbyline]);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 
@@ -48,7 +49,10 @@ EOF
 my $intro
   = 'avl2stoplines -- make a list of stops with lines served from AVL data';
 
-Actium::initialize( $helptext, $intro );
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # retrieve data
 
@@ -61,7 +65,9 @@ my %stp;
 # (or, presumably, another IDE)
 # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-    my $avldata_r = avldata();
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
+
 
     %pat = %{ $avldata_r->{PAT} };
 
@@ -181,7 +187,7 @@ foreach my $stop ( sort keys %{ $disp_route_of{'r6dir'} } ) {
         }
     }
 
-    my @routes = sort byroutes keys %{ $disp_route_of{'r6dir'}{$stop} };
+    my @routes = sortbyline keys %{ $disp_route_of{'r6dir'}{$stop} };
 
     next unless @routes; # eliminate BSH-only stops
 
@@ -193,7 +199,7 @@ foreach my $stop ( sort keys %{ $disp_route_of{'r6dir'} } ) {
     $stoplines{$stop}{ROUTES} = join( " ", @routes );
 
     foreach my $codekey (@code_order) {
-        my @disps = sort byroutes keys %{ $disp_route_of{$codekey}{$stop} };
+        my @disps = sortbyline keys %{ $disp_route_of{$codekey}{$stop} };
         my $disp_count = scalar @disps;
         #print $stoplines "\t", $disp_count;
         #push @{$stoplines{$stop}} , $disp_count;

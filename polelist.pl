@@ -1,6 +1,8 @@
-#!/usr/bin/perl
+#!/ActivePerl/bin/perl
 
-# crewlist
+# polelist
+
+# legacy status: 2
 
 #00000000111111111122222222223333333333444444444455555555556666666666777777777
 #23456789012345678901234567890123456789012345678901234567890123456789012345678
@@ -16,7 +18,6 @@ use sort ('stable');
 use FindBin('$Bin');
 use lib ( $Bin, "$Bin/../bin" );
 
-use Actium(qw[say sayt jt jn jtn initialize avldata ensuredir byroutes option]);
 use Actium::Constants;
 use Actium::FPMerge (qw(FPread FPread_simple));
 
@@ -45,7 +46,10 @@ my %height_of = (
     RS      => 16.375,
 );
 
-Actium::initialize( $helptext, $intro );
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # retrieve data
 my ( @stops, %stops );

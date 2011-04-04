@@ -16,7 +16,7 @@ use Carp;
 #use Fatal qw(open close);
 use Storable();
 
-use Actium(qw[add_option initialize avldata jt chdir_signup option]);
+use Actium::Util(qw[jt]);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils('uniq');
@@ -31,7 +31,10 @@ EOF
 
 my $intro = 'avl2tpimport -- Timepoints for FileMaker';
 
-Actium::initialize( $helptext, $intro );
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 my ( %plc );
 
@@ -40,7 +43,9 @@ my ( %plc );
         # (or, presumably, another IDE)
      # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-    my $avldata_r = avldata();
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
+
 
     %plc = %{ $avldata_r->{PLC} };
 

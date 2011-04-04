@@ -16,7 +16,7 @@ use sort ('stable');
 use FindBin('$Bin');
 use lib ( $Bin, "$Bin/../bin" );
 
-use Actium(qw[say sayt jt jn jtn initialize avldata ensuredir byroutes option]);
+use Actium::Sorting('sortbyline');
 use Actium::Constants;
 use Actium::FPMerge (qw(FPread FPread_simple));
 
@@ -54,7 +54,12 @@ my %height_of = (
     RS      => 16.375,
 );
 
-Actium::initialize( $helptext, $intro );
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
+
+my $bagtextdir = $signup->subdir('bagtexts');
 
 # retrieve data
 my ( @stops, %stops );
@@ -87,8 +92,6 @@ my %output_dispatch = (
 
 my $stopcount = 0;
 my $filecount = 0;
-
-ensuredir('bagtexts');
 
 my ( %texts_of, %texts_of_type );
 
@@ -140,7 +143,7 @@ foreach my $file (qw(baglist.txt baglist-add.txt baglist-rm.txt)) {
             @added     = split( /,/, $added )     if $added;
             @removed   = split( /,/, $removed )   if $removed;
             @unchanged = split( /,/, $unchanged ) if $unchanged;
-            @current = sort byroutes ( @removed, @unchanged );
+            @current = sortbyline ( @removed, @unchanged );
 
             my %added   = prepary(@added);
             my %removed = prepary(@removed);

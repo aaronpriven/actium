@@ -16,8 +16,9 @@ use Storable();
 use Actium::FPMerge (qw(FPread FPread_simple));
 
 use Actium::Time ('timenum');
+use Actium::Term;
 
-use Actium (qw(option ensuredir avldata key jt));
+use Actium::Util (qw(jt));
 
 use Actium::Constants;
 
@@ -32,11 +33,15 @@ into files that contain each stop and what the times for that stop are.
 Try "perldoc avl2stoptimes" for more information.
 EOF
 
-Actium::initialize ( $helptext , $intro);
+
+use Actium::Options (qw<option>);
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # retrieve data
 
-ensuredir('skeds');
+my $skedsdir = $signup->subdir('skeds');
 
 my %times_of;
 
@@ -50,7 +55,9 @@ print scalar(@stops) , " records.\nLoaded.\n\n" unless option qw{quiet};
 # the reason to do this is to release the %avldata structure, so Affrus
 # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-my $avldata_r = avldata();
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
+
 
 make_stop_times($avldata_r);
 
@@ -104,7 +111,7 @@ sub make_stop_times {
       
       my $pattern  = $tripinfo_of{Pattern};
       my $line     = $tripinfo_of{RouteForStatistics};
-      my $patkey   = key ($line, $pattern);
+      my $patkey   = jk ($line, $pattern);
  
       TIMEIDX:
       foreach my $timeidx (0 .. $#{$tripinfo_of{PTS}}) {

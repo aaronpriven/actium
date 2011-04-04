@@ -17,7 +17,6 @@ use Carp;
 #use Fatal qw(open close);
 use Storable();
 
-use Actium( qw[say sayt jn jt initialize avldata ensuredir option]);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 
@@ -33,7 +32,10 @@ EOF
 
 my $intro = 'avl2stoplists -- make more readable stop names from AVL data';
 
-Actium::initialize ($helptext, $intro);
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # retrieve data
 
@@ -44,7 +46,9 @@ my %stp;
 # (or, presumably, another IDE)
 # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-my $avldata_r = avldata();
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
+
 
 %stp = %{$avldata_r->{STP}};
 

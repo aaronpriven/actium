@@ -1,11 +1,12 @@
 # Skedfile.pm
-# vimcolor: #200000
 
 # This is Skedfile.pm, a module to read and write
 # the tab-separated-value text files which store the bus schedules.
 
 # Also performs operations on bus schedule data structures that 
 # are shared between various programs.
+
+# legacy stage 1
 
 package Skedfile;
 
