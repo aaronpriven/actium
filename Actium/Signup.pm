@@ -248,19 +248,6 @@ sub _set_subdir {
     return;
 }
 
-# dir (now generated from catdir)
-
-#sub _set_dir {
-#    my $self = shift;
-#    $self->{DIR} = shift;
-#    return;
-#}
-
-#sub get_dir {
-#    my $self = shift;
-#    return $self->{DIR};
-#}
-
 sub get_dir {
     my $self = shift;
     my @dirs
