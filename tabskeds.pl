@@ -31,8 +31,7 @@ use lib $Bin;
 use Actium::Sorting ('sortbyline');
 use Skedfile qw(Skedread Skedwrite GETFILES_PUBLIC
                 getfiles GETFILES_PUBLIC_AND_DB trim_sked copy_sked);
-use Myopts;
-use Skeddir;
+
 use Skedvars qw(%longerdaynames %longdaynames %longdirnames
                  %dayhash        %dirhash      %daydirhash
                  %adjectivedaynames %bound %specdaynames
@@ -46,7 +45,16 @@ foreach (keys %specdaynames) {
 use Skedtps qw(tphash tpxref destination TPXREF_FULL);
 use Actium::FPMerge qw(FPread FPread_simple);
 
-my $KEY_SEPARATOR = "\c]";
+use Actium::Options (qw<option add_option>);
+add_option ('upcoming=s' , 'Upcoming signup');
+add_option ('current!' , 'Current signup');
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+my $signup = $signupdir->get_signup;
+
+use Actium::Constants;
 
 our %second = ( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
                 386  => '86' , DB3 => 'DB' , DB1 => 'DB' ,
@@ -56,23 +64,13 @@ our %second = ( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
 our %first = reverse %second; # create a reverse hash, with values of %second as keys and 
 # keys of %second as values
 
-our (%options);    # command line options
-
 our (%maplines);
-
-Myopts::options (\%options, Skeddir::options(), 'quiet!' , 'upcoming=s' , 
-    'current!' );
-# command line options in %options;
 
 $| = 1; # don't buffer terminal output
 
-print "tab - create a set of public tab-delimited files\n\n" unless $options{quiet};
+printq "tab - create a set of public tab-delimited files\n\n" ;
 
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-print "Using signup $signup\n" unless $options{quiet};
-# Takes the necessary options to change directories, plus 'quiet', and
-# then changes directories to the "actium/db/xxxx" base directory.
+printq "Using signup $signup\n" ;
 
 open DATE , "<effectivedate.txt" 
       or die "Can't open effectivedate.txt for input: $!";
@@ -91,15 +89,15 @@ $prepdate = "$mon $mday, $year";
 
 our (@lines , %lines, @skedadds, %skedadds, %colors, @colors);
 
-print "Timepoints and timepoint names... " unless $options{quiet};
+printq "Timepoints and timepoint names... " ;
 my $vals = Skedtps::initialize(TPXREF_FULL);
-print "$vals timepoints.\nLines... " unless $options{quiet};
+printq "$vals timepoints.\nLines... " ;
 FPread_simple ("Lines.csv" , \@lines, \%lines, 'Line');
-print scalar(@lines) , " records. Colors...\n" unless $options{quiet};
+printq scalar(@lines) , " records. Colors...\n" ;
 FPread_simple ("Colors.csv" , \@colors, \%colors, 'ColorID');
-print scalar(@lines) , " records. SkedAdds...\n" unless $options{quiet};
+printq scalar(@lines) , " records. SkedAdds...\n" ;
 FPread_simple ("SkedAdds.csv" , \@skedadds, \%skedadds, 'SkedID');
-print scalar(@lines) , " records.\n" unless $options{quiet};
+printq scalar(@lines) , " records.\n" ;
 
 mkdir "tabxchange" or die "Can't make directory 'tabxchange': $!"
                unless -d "tabxchange";
