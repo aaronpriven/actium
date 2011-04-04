@@ -4,7 +4,6 @@
 
 # legacy stage 2
 
-
 use warnings;
 use strict;
 
@@ -18,7 +17,7 @@ use Carp;
 #use Fatal qw(open close);
 use Storable();
 
-use Actium( qw[say sayt jn jt initialize avldata ensuredir option]);
+use Actium::Util('jt');
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':ALL');
@@ -35,25 +34,28 @@ EOF
 
 my $intro = 'avl2stoplists -- make stop lists by pattern and route from AVL data';
 
-Actium::initialize ($helptext, $intro);
-
+use Actium::Options('option');
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # retrieve data
 
-ensuredir qw(slists);
-ensuredir qw<slists/pat>;
-ensuredir qw<slists/line>;
+my $slistsdir = $signup->subdir('slists');
+my $patdir = $slistsdir->subdir('pat');
+my $linedir = $slistsdir->subdir('line');
 
 my %pat;
 my %stp;
-my %tps;
 
 { # scoping
 # the reason to do this is to release the %avldata structure, so Affrus 
 # (or, presumably, another IDE)
 # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-my $avldata_r = avldata();
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
+
 
 %pat = %{$avldata_r->{PAT}};
 

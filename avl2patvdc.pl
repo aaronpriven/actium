@@ -22,7 +22,6 @@ use Carp;
 #use Fatal qw(open close);
 use Storable();
 
-use Actium(qw[add_option initialize avldata sayq chdir_signup option]);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils('uniq');
@@ -38,7 +37,10 @@ EOF
 
 my $intro = 'avl2patvdc -- patterns and vehicle display codes';
 
-Actium::initialize( $helptext, $intro );
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 my %stoplist = ();
 
@@ -48,8 +50,10 @@ my ( %pat, %vdc );
         # the reason to do this is to release the %avldata structure, so Affrus
         # (or, presumably, another IDE)
      # doesn't have to display it when it's not being used. Of course it saves memory, too
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
 
-    my $avldata_r = avldata();
+
 
     %pat = %{ $avldata_r->{PAT} };
 

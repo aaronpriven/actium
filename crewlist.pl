@@ -16,9 +16,10 @@ use sort ('stable');
 use FindBin('$Bin');
 use lib ( $Bin, "$Bin/../bin" );
 
-use Actium(qw[say sayt jt jn jtn initialize avldata ensuredir byroutes option]);
+use Actium::Util(qw<jt jtn jn>);
 use Actium::Constants;
 use Actium::FPMerge (qw(FPread FPread_simple));
+use Actium::Sorting('sortbyline');
 
 use List::MoreUtils ('natatime');
 
@@ -45,7 +46,10 @@ my %height_of = (
     RS      => 16.375,
 );
 
-Actium::initialize( $helptext, $intro );
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # retrieve data
 my ( @stops, %stops );
@@ -160,7 +164,7 @@ open my $decallist , '>' , 'decallist.txt' or die $!;
 
 print $decallist "Route\tNumStops\tNumDecals\n";
 
-foreach (sort byroutes keys %quantity_of) {
+foreach (sortbyline keys %quantity_of) {
 
    print $decallist "$_\t" , $quantity_of{$_} , "\t" , ceil ($quantity_of{$_} * 2.05 +.5 )  , "\n";
 

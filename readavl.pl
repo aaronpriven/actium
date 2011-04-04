@@ -17,7 +17,6 @@ use FindBin('$Bin');
 use lib $Bin;
 
 use Actium::Constants;
-use Actium ( qw[say sayq sayt add_option option]);
 
 use Text::Trim;
 use Storable();
@@ -30,6 +29,8 @@ Readonly my $DELIMITER_LENGTH => length($DELIMITER);
 
 # don't buffer terminal output
 $| = 1;
+
+use Actium::Options (qw<add_option option>);
 
 add_option('skipsd!' , 'Skip processing school day additions in sdtrip.txt.');
 
@@ -44,7 +45,9 @@ readavl - reads AVL files from Hastus and stores them in an easier-
 to-read-form.
 EOF
 
-Actium::initialize ( $helptext, $intro);
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # set up row type hashes
 
@@ -76,12 +79,8 @@ read_files(@files);
 
 read_sd() unless option('skipsd');
 
-sayq ("----\nStoring avl.storable...");
-
-Storable::nstore \%data_of, 'avl.storable' 
-   or die "Can't store avl.storable: $!";
-
-sayq ("\nStored.") ;
+use Actium::Files;
+Actium::Files::store(\%data_of, 'avl.storable');
 
 ############# end of main program #######################
 

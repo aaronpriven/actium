@@ -2,6 +2,7 @@
 
 # Subversion: $Id$
 
+# legacy status: 2
 
 #00000000111111111122222222223333333333444444444455555555556666666666777777777
 #23456789012345678901234567890123456789012345678901234567890123456789012345678
@@ -23,13 +24,13 @@ use Array::Transpose;
 use File::Copy;
 
 use Actium::Options qw(option add_option);
+use Actium::Term (qw<sayq printq>);
 
 use Actium::DaysDirections (qw(day_of dir_of));
 
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Time (qw(time_to_timenum timenum_to_12h timenum_to_12h_ap_only));
-
 
 add_option('rawonly!' , 'Only create "rawskeds" and not "skeds".');
 
@@ -40,7 +41,9 @@ EOF
 
 my $intro = "avl2skeds - reads stored AVL data and makes skeds files";
 
-Actium::initialize ($helptext, $intro);
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # don't buffer terminal output
 $| = 1;
@@ -68,7 +71,9 @@ my %sked_override_order_of;
 # doesn't have to display it when it's not being used. Of course it saves
 # memory, too
 
-my $avldata_r = avldata();
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
+
 
 make_skeds_pairs_of_hash($avldata_r);
 make_tp9s($avldata_r);

@@ -23,8 +23,11 @@ use POSIX ('ceil');
 use Storable();
 
 use Actium::Time (qw(timenum ));
-use Actium(
-    qw[say sayt jn jt byroutes jtn initialize key avldata ensuredir option]);
+    
+use Actium::Sorting('sortbyline');
+    
+use Actium::Util(qw<jk>);
+
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils (qw<any all>);
@@ -49,7 +52,10 @@ EOF
 
 my $intro = 'avl2points -- makes list of times that buses pass each stop';
 
-Actium::initialize( $helptext, $intro );
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 my ( @signs, @stops, @lines, @signtypes, @skedspec, @projects );
 my ( %signs, %stops, %lines, %signtypes, %skedspec, %projects );
@@ -81,8 +87,9 @@ my ( %stopinfo, %note_of );
     my $somedata_r;
 
     {    # scoping
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
 
-        my $avldata_r = avldata();
 
         foreach (qw<PAT TRP>) {
             $somedata_r->{$_} = $avldata_r->{$_};
@@ -285,7 +292,7 @@ foreach my $stop ( keys %stopinfo ) {
                         $destinations{ $time_r->{DESTINATION} }++;
                     }
 
-                    my @lines = sort byroutes keys %lines;
+                    my @lines = sortbyline keys %lines;
                     my @destinations
                       = sort { $destinations{$b} <=> $destinations{$a} }
                       keys %destinations;
@@ -387,7 +394,7 @@ foreach my $stop ( keys %stopinfo ) {
 
 print "Reassembled. Now outputting...\n";
 
-ensuredir('kpoints');
+my $kpointdir = $signup->subdir('kpoints');
 
 my $count = 0;
 
@@ -397,12 +404,12 @@ foreach my $stop ( keys %stopinfo ) {
     print '.' unless $count % 100;
 
     my $citycode = substr( $stop, 0, 2 );
-
-    ensuredir("kpoints/$citycode");
+    
+    my $citydir = $kpointdir->subdir($citycode);
 
     open my $out, '>', "kpoints/$citycode/$stop.txt" or die $!;
 
-    foreach my $linegroup ( sort byroutes keys %{ $stopinfo{$stop} } ) {
+    foreach my $linegroup ( sortbyline  keys %{ $stopinfo{$stop} } ) {
 
         foreach my $dir_code (
             sort { $a <=> $b }
@@ -467,7 +474,7 @@ sub makestoptimes {
         my $linegroup = linegroup($line);
 
         my $pattern = $tripinfo_of{Pattern};
-        my $patkey = key( $line, $pattern );
+        my $patkey = jk( $line, $pattern );
 
         my $days_input = $tripinfo_of{OperatingDays};
         $days_input =~ tr/0-9//cd;      # strip everything but digits

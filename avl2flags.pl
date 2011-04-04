@@ -13,7 +13,7 @@
 use warnings;
 use strict;
 
-use 5.010;
+use 5.012;
 
 use sort ('stable');
 
@@ -26,12 +26,16 @@ use POSIX ('ceil');
 #use Fatal qw(open close);
 use Storable();
 
-use Actium( qw[say sayt jn jt initialize avldata ensuredir option]);
+use Actium::Util ('jt');
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Sorting (qw(sortbyline));
-
 use Actium::DaysDirections (':ALL');
+
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 use List::Util ('max');
 
@@ -46,8 +50,6 @@ EOF
 
 my $intro = 'avl2stoplines -- make a list of stops with lines served from AVL data';
 
-Actium::initialize ($helptext, $intro);
-
 # retrieve data
 
 my %pat;
@@ -58,7 +60,8 @@ my %stp;
 # (or, presumably, another IDE)
 # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-my $avldata_r = avldata();
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
 
 %pat = %{$avldata_r->{PAT}};
 

@@ -23,7 +23,9 @@ use POSIX ('ceil');
 #use Fatal qw(open close);
 use Storable();
 
-use Actium( qw[say sayt jn byroutes jt initialize avldata ensuredir option]);
+use List::Util('shuffle');
+
+use Actium::Sorting ( qw<sortbyline>);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 
@@ -38,7 +40,12 @@ EOF
 
 my $intro = 'avl2stoplines -- make a list of stops with lines served from AVL data';
 
-Actium::initialize ($helptext, $intro);
+use Actium::Options (qw<add_option option>);
+add_option ('random' , 'Give stops in random order instead of sorted');
+
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # retrieve data
 
@@ -50,7 +57,9 @@ my %stp;
 # (or, presumably, another IDE)
 # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-my $avldata_r = avldata();
+use Actium::Files;
+my $avldata_r = Actium::Files::retrieve('avl.storable');
+
 
 %pat = %{$avldata_r->{PAT}};
 
@@ -85,9 +94,14 @@ say $stoplines "PhoneID\tud_stp_FlagRoute\tNumLines\tNonschool\tSchool\tplace_id
 
 my (@numlines, @fullqschool , @half, @halfqschool, @quarter, @nonschool, @school);
 
+my @stops = sort keys %routes_of;
+
+@stops = shuffle (@stops) 
+   if option('random') ;
+
 foreach my $stop (sort keys %routes_of) {
    print $stoplines "$stop\t";
-   my @lines = sort byroutes keys %{$routes_of{$stop}} ;
+   my @lines = sortbyline keys %{$routes_of{$stop}} ;
    my $numlines = scalar(@lines);
    print $stoplines join (" " , @lines);
    
