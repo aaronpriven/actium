@@ -25,31 +25,34 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 use Skedfile qw(Skedread Skedwrite trim_sked copy_sked remove_blank_columns);
-use Myopts;
-use Skeddir;
 use Storable;
 use Algorithm::Diff;
 use Actium::Sorting (qw(sortbyline));
 
+use Actium::Options (qw<option add_option>);
+
+add_option ('effectivedate:s' , 'Effective date of signup');
+
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+
+my $signup = $signupdir->get_signup;
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory
 ######################################################################
 
-our (%options);    # command line options
 my  (%index);      # data for the index
  
-Myopts::options (\%options, Skeddir::options(), 'effectivedate:s' , 'quiet!');
-# command line options in %options;
 
 $| = 1; 
 # don't buffer terminal output
 
-print "fullindex - generate index files\n\n" unless $options{quiet};
+printq "fullindex - generate index files\n\n" ;
 
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-print "Using signup $signup\n" unless $options{quiet};
+printq "Using signup $signup\n";
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "Skeds" base directory.
 
@@ -62,7 +65,7 @@ my $prevlinegroup = "";
 foreach my $file (@skeds) {
    next if $file =~ m/=/; # skip file if it has a = in it
 
-   unless ($options{quiet}) {
+   unless (option('quiet')) {
       my $linegroup = $file;
       $linegroup =~ s#^skeds/##;
       $linegroup =~ s/_.*//;
@@ -109,7 +112,7 @@ foreach ( sort {$num_of{$a} <=> $num_of{$b} or $a cmp $b} values %index) {
 }
 close TPS;
 
-print <<"EOF" unless $options{quiet};
+printq <<"EOF" ;
 
 
 Indexes $signup/Skedidx.txt and $signup/Skedtps.txt written.

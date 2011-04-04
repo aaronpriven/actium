@@ -19,16 +19,20 @@ use lib $Bin;
 
 
 use Actium::FPMerge qw(FPread FPread_simple);
-use Myopts;
-use Skeddir;
+
+use Actium::Options (qw<option add_option>);
+#add_option ('spec' , 'description');
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+my $signup = $signupdir->get_signup;
 
 my $in_service;
 
 my @patterns;
 
 my (%options , %name_of);
-
-Myopts::options (\%options, Skeddir::options());
 
 @ARGV = glob q(avl/*.PAT);
 

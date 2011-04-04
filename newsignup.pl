@@ -23,17 +23,22 @@ use lib $Bin;
 use File::Copy;
 use Skedfile qw(Skedread Skedwrite Skedwrite_anydir
                 trim_sked copy_sked remove_blank_columns);
-use Myopts;
-use Skeddir;
 use Storable;
 use Algorithm::Diff;
 use Actium::Sorting ('sortbyline');
+
+use Actium::Options (qw<option add_option>);
+add_option ('effectivedate:s' , 'Effective date of signup');
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+my $signup = $signupdir->get_signup;
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory
 ######################################################################
 
-our (%options);    # command line options
 my  (%index);      # data for the index
 my (%pages);       # pages
 
@@ -65,20 +70,8 @@ $no_split_linegroups{$_} = 1 foreach qw(40 59 72 86 DB);
 
 # TODO - Ideally this would be in a database rather than being specified here, 
 # but it isn't yet.
- 
-Myopts::options (\%options, Skeddir::options(), 'effectivedate:s' , 'quiet!');
-# command line options in %options;
 
-$| = 1; 
-# don't buffer terminal output
-
-print "newsignup - create a new signup directory\n\n" unless $options{quiet};
-
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-print "Using signup $signup\n" unless $options{quiet};
-# Takes the necessary options to change directories, plus 'quiet', and
-# then changes directories to the "Skeds" base directory.
+printq "newsignup - create a new signup directory\n\n" ;
 
 ######################################################################
 # ask about effective date
@@ -86,9 +79,9 @@ print "Using signup $signup\n" unless $options{quiet};
 
 my $effectivedate;
 
-if (exists ($options{effectivedate}) and $options{effectivedate} ) {
+if (option('effectivedate')) {
 
-   $effectivedate = $options{effectivedate};
+   $effectivedate = option('effectivedate');
 
    writeeffectivedate($effectivedate);
 
@@ -115,7 +108,7 @@ if (exists ($options{effectivedate}) and $options{effectivedate} ) {
 
    }
 
-   print "Using effective date $effectivedate\n\n" unless $options{quiet};
+   printq "Using effective date $effectivedate\n\n";
 
 }
 
@@ -138,7 +131,7 @@ local $/ = "\cL\cM";
 foreach my $file (glob ("headways/*.{txt,prt}")) {
    open (my $fh , $file);
 
-   print "\n$file" unless $options{quiet}; # debug
+   printq "\n$file";
 
    my %seenprint = ();
    my $seenprintcount = 0;
@@ -176,7 +169,7 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
       # Only need to override 1xx here where two routes are combined. Otherwise, will be overridden
       # later.
 
-      unless ($options{quiet} or $seenprint{$linegroup}++) {
+      unless (option('quiet') or $seenprint{$linegroup}++) {
          print "\n" unless ($seenprintcount++ % 19 ) ;
          printf "%4s" , $linegroup;
       }
@@ -386,7 +379,7 @@ foreach my $file (glob ("headways/*.{txt,prt}")) {
 
 # process each page$pagetp
 
-print "\n\nCombining pages.\n" unless $options{quiet};
+printq "\n\nCombining pages.\n" ;
 
 foreach my $dataref (values %pages) {
    remove_blank_columns($dataref);
@@ -579,7 +572,7 @@ for my $skedname (sort keys %seenskedname) {
    } # end tpnum
 
 
-   printf "%10s" , $skedname unless $options{quiet};
+   printf "%10s" , $skedname unless option('quiet');
     
 }
 
@@ -617,11 +610,11 @@ while (<IN>) {
 
 close IN;
 
-print "\n\nReordering timepoint columns.\n" unless $options{quiet};
+printq "\n\nReordering timepoint columns.\n" ;
 
 foreach my $skedname (keys %newtps_of) {
 
-   unless ($options{quiet}) {
+   unless (option('quiet')) {
       printf "%10s" , $skedname;
       print "(not found) " unless $pages{$skedname};
    }
@@ -674,7 +667,7 @@ foreach my $dataref (sort {$a->{SKEDNAME} cmp $b->{SKEDNAME}} values %pages) {
            skedidx_line ($dataref) unless $dataref->{SKEDNAME} =~ m/=/;
 }
 
-print "\n" unless $options{quiet};
+printq "\n" ;
 
 ### read exception skeds 
 # I've changed this so that now exceptions have to go in the signup directory. 
@@ -683,7 +676,7 @@ print "\n" unless $options{quiet};
 
 my @skeds = sort glob "exceptions/*.txt";
 
-print "\nAdding exceptional schedules (possibly overwriting previously processed ones).\n" unless $options{quiet};
+printq "\nAdding exceptional schedules (possibly overwriting previously processed ones).\n" ;
 
 my $displaycolumns = 0;
 
@@ -691,7 +684,7 @@ my $prevlinegroup = "";
 foreach my $file (@skeds) {
    next if $file =~ m/=/; # skip file if it has a = in it
 
-   unless ($options{quiet}) {
+   unless (option('quiet')) {
       my $linegroup = $file;
       $linegroup =~ s#^exceptions/##;
       $linegroup =~ s/_.*//;
@@ -737,7 +730,7 @@ foreach ( sort {$a <=> $b || $a cmp $b} values %index) {
 }
 close TPS;
 
-print <<"EOF" unless $options{quiet};
+printq <<"EOF" ;
 
 
 Indexes $signup/Skedidx.txt and $signup/Skedtps.txt written.

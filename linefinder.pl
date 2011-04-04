@@ -17,18 +17,15 @@ use lib $Bin;
 
 use Actium::Sorting (qw(sortbyline));
 use Actium::FPMerge qw(FPread FPread_simple);
-use Myopts;
-use Skeddir;
 use Linelist('linelist');
 
-my %options;
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
-# command line options in %options;
-
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-# Takes the necessary options to change directories, plus 'quiet', and
-# then changes directories to the "Skeds" base directory.
+use Actium::Options (qw<option add_option>);
+#add_option ('spec' , 'description');
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+my $signup = $signupdir->get_signup;
 
 my $current_version = '13';
 

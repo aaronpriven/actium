@@ -24,11 +24,21 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
+use Actium::Options (qw<option add_option>);
+
+add_option ('upcoming:s' , 'Upcoming signup');
+add_option ('current:s' , 'Current signup');
+
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+
+my $signup = $signupdir->get_signup;
+
 
 use Skedfile qw(Skedread Skedwrite GETFILES_PUBLIC
                 getfiles GETFILES_PUBLIC_AND_DB trim_sked copy_sked);
-use Myopts;
-use Skeddir;
 use Skedvars qw(%daydirhash %adjectivedaynames %bound %specdaynames);
 use Actium::Sorting (qw(sortbyline));
 use Skedtps qw(tphash TPXREF_FULL);
@@ -61,21 +71,15 @@ my $genericemailerlinktext = <<'EOF';
         1994 called, they want their Web style back. -->
 EOF
 
-our (%options);    # command line options
-
 our (%maplines);
 
-Myopts::options (\%options, Skeddir::options(), 'quiet!' , 'upcoming=s' , 
-    'current!' );
 # command line options in %options;
 
 $| = 1; # don't buffer terminal output
 
-print "htmlskeds - create a set of html files\n\n" unless $options{quiet};
+printq "htmlskeds - create a set of html files\n\n" ;
 
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-print "Using signup $signup\n" unless $options{quiet};
+printq "Using signup $signup\n";
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "actium/db/xxxx" base directory.
 
@@ -114,11 +118,11 @@ $prepdate = "$mon $mday, $year";
 
 our (@lines , %lines);
 
-print "Timepoints and timepoint names... " unless $options{quiet};
+printq "Timepoints and timepoint names... ";
 my $vals = Skedtps::initialize(TPXREF_FULL);
-print "$vals timepoints.\nLines... " unless $options{quiet};
+printq "$vals timepoints.\nLines... " ;
 FPread_simple ("Lines.csv" , \@lines, \%lines, 'Line');
-print scalar(@lines) , " records.\n" unless $options{quiet};
+printq scalar(@lines) , " records.\n";
 
 mkdir "html" or die 'Can\'t make directory "html": $!'  
                unless -d "html";
@@ -598,10 +602,10 @@ sub mapline {
 sub upcoming {
 
    return 
-   qq[&nbsp;&nbsp;<font size=-1>(<a href="upcoming/">Upcoming schedules effective ] . $options{'upcoming'} . " are also available</a>)</font>"
-          if $options{'upcoming'};
+   qq[&nbsp;&nbsp;<font size=-1>(<a href="upcoming/">Upcoming schedules effective ] . options('upcoming') . " are also available</a>)</font>"
+          if option('upcoming');
 
    return qq[&nbsp;&nbsp;<font size=-1>(<a href="../">Current schedules are also available</a>)</font>]
-          if $options{'current'};
+          if option('current');
 
 }

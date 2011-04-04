@@ -41,37 +41,32 @@ use Data::Dumper;
 use Actium::FPMerge qw(FPread FPread_simple);
 use IDTags;
 use Skedfile qw(Skedread merge_columns);
-use Skeddir;
 use Skedvars;
 use Skedtps qw(tphash tpxref);
 use Actium::Sorting (qw(sortbyline byline));
-use Myopts;
 
-my %options;
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
-# command line options in %options;
+use Actium::Options (qw<option add_option>);
+#add_option ('spec' , 'description');
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+my $signup = $signupdir->get_signup;
 
-$| = 1; # this shouldn't be necessary to a terminal, but apparently it is
-
-print <<"EOF" unless $options{quiet};
+printq <<"EOF";
 makepoints - This is the makepoints program. It creates point schedules
 from the data exported from the FileMaker databases.
 
 EOF
-
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-# Takes the necessary options to change directories, plus 'quiet', and
-# then changes directories to the "Skeds" base directory.
 
 # open and load files
 open LOG , ">>makepoints-log.txt";
 print LOG "makepoints started " . localtime(time) . "\n";
 
 
-print "Using signup $signup\n\n" unless $options{quiet};
+printq "Using signup $signup\n\n" ;
 
-print <<"EOF" unless $options{quiet};
+printq <<"EOF" ;
 Now loading data...
 EOF
 
@@ -82,25 +77,25 @@ our (%signs, %stops, %lines, %signtypes, %skedspec, %projects);
 
 our ($schooldayflag, $anysecondflag,$addminsflag);
 
-print "Timepoints and timepoint names... " unless $options{quiet};
+printq "Timepoints and timepoint names... " ;
 my $vals = Skedtps::initialize;
-print "$vals timepoints.\nSignTypes... " unless $options{quiet};
+printq "$vals timepoints.\nSignTypes... " ;
 
 FPread_simple ("SignTypes.csv" , \@signtypes, \%signtypes, 'SignType');
-print scalar(@signtypes) , " records.\nProjects... " unless $options{quiet};
+printq scalar(@signtypes) , " records.\nProjects... " ;
 FPread_simple ("Projects.csv" , \@projects, \%projects, 'Project');
-print scalar(@projects) , " records.\nSigns... " unless $options{quiet};
+printq scalar(@projects) , " records.\nSigns... " ;
 FPread_simple ("Signs.csv" , \@signs, \%signs, 'SignID');
-print scalar(@signs) , " records.\nSkedspec... " unless $options{quiet};
+printq scalar(@signs) , " records.\nSkedspec... " ;
 FPread ("SkedSpec.csv" , \@skedspec, \%skedspec, 'SignID' , 1, 0);
 # ignores repeating fields, but works with non-unique SignIDs
 # BUG - rest of program will break if there are *not* non-unique SignIDs.
 # Not a problem in real life, but may break simple test runs.
-print scalar(@skedspec) , " records.\nLines... " unless $options{quiet};
+printq scalar(@skedspec) , " records.\nLines... " ;
 FPread_simple ("Lines.csv" , \@lines, \%lines, 'Line');
-print scalar(@lines) , " records.\nStops (be patient, please)... " unless $options{quiet};
+printq scalar(@lines) , " records.\nStops (be patient, please)... " ;
 FPread_simple ("Stops.csv" , \@stops , \%stops , 'stop_id_1');
-print scalar(@stops) , " records.\nLoaded.\n\n" unless $options{quiet};
+printq scalar(@stops) , " records.\nLoaded.\n\n" ;
 
 open DATE , "<effectivedate.txt" 
       or die "Can't open effectivedate.txt for input";
@@ -114,8 +109,7 @@ $effdate =~ s/ /$nbsp/g;
 
 # main loop
 
-print "Now processing point schedules for sign number:\n" 
-    unless $options{quiet};
+printq "Now processing point schedules for sign number:\n" ;
 
 my $displaycolumns = 0;
 
@@ -138,7 +132,7 @@ foreach my $signid (sort {$a <=> $b} @signstodo) {
    # this sign added to deal with k2id.pl
    next SIGN if lc($signs{$signid}{UseOldMakepoints}) eq 'no';
    
-   unless ($options{quiet}) {
+   unless (option('quiet')) {
       print "$signid ";
       $displaycolumns += length($signid) + 1;
       if ($displaycolumns > 70) {
@@ -168,7 +162,7 @@ foreach my $signid (sort {$a <=> $b} @signstodo) {
 
 }
 
-print "\n\n" unless $options{quiet};
+printq "\n\n" ;
 
 close LOG;
 

@@ -19,32 +19,26 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
+use Actium::Options (qw<option add_option>);
+#add_option ('spec' , 'description');
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+my $signup = $signupdir->get_signup;
 
 
 use Actium::FPMerge qw(FPread FPread_simple);
 use IDTags;
-use Skeddir;
 use Skedvars;
 use Skedtps qw(tphash tpxref);
 use Actium::Sorting ('byline');
-use Myopts;
-
-my %options;
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
-# command line options in %options;
 
 $| = 1; # this shouldn't be necessary to a terminal, but apparently it is
 
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-# Takes the necessary options to change directories, plus 'quiet', and
-# then changes directories to the "Skeds" base directory.
+printq "Using signup $signup\n\n" ;
 
-
-
-print "Using signup $signup\n\n" unless $options{quiet};
-
-print <<"EOF" unless $options{quiet};
+printq <<"EOF" ;
 Now loading data...
 EOF
 
@@ -55,14 +49,14 @@ our (%signs, %stops, %lines, %signtypes, %skedspec, %projects);
 
 our ($schooldayflag, $anysecondflag,$addminsflag);
 
-print "Signs... " unless $options{quiet};
+printq "Signs... ";
 FPread_simple ("Signs.csv" , \@signs, \%signs, 'SignID');
-print scalar(@signs) , " records.\nSkedspec... " unless $options{quiet};
+printq scalar(@signs) , " records.\nSkedspec... " ;
 FPread ("SkedSpec.csv" , \@skedspec, \%skedspec, 'SignID' , 1, 0);
 # ignores repeating fields, but works with non-unique SignIDs
 # BUG - rest of program will break if there are *not* non-unique SignIDs.
 # Not a problem in real life, but may break simple test runs.
-print scalar(@skedspec) , " records.\n\n" unless $options{quiet};
+printq scalar(@skedspec) , " records.\n\n" ;
 
 my %signlines = ();
 

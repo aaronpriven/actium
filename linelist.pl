@@ -24,16 +24,19 @@ use lib $Bin;
 
 use Actium::Sorting (qw(sortbyline));
 use Actium::FPMerge qw(FPread FPread_simple);
-use Myopts;
-use Skeddir;
 use Columnprint(':all');
 
-my %options;
-Myopts::options (\%options, Skeddir::options(), '1' , 'quiet!');
-# command line options in %options;
+use Actium::Options (qw<option add_option>);
 
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
+add_option ('1' , 'One-column output');
+
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+
+my $signup = $signupdir->get_signup;
+
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "Skeds" base directory.
 
@@ -53,7 +56,7 @@ my @lines = sortbyline keys %seen;
 
 #say join("\n" , @lines);
 
-if ($options{'1'}) {
+if (option('1')) {
    print join("\n" , @lines) , "\n";
 } 
 else {

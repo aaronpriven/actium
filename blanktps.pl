@@ -13,29 +13,20 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
-@ARGV = qw(-s f08) if $ENV{RUNNING_UNDER_AFFRUS};
-
 use Actium::FPMerge qw(FPread FPread_simple);
-use Skeddir;
-use Myopts;
 use Data::Dumper;
 
-my %options;
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
-# command line options in %options;
-
-# $| = 1; # makes output "hot"
-
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-# Takes the necessary options to change directories, plus 'quiet', and
-# then changes directories to the "Skeds" base directory.
+use Actium::Options (qw<option add_option>);
+use Actium::Term;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 # open and load files
 
-print STDERR "Using signup $signup\n\n" unless $options{quiet};
+print STDERR "Using signup $signup\n\n" unless option('quiet');
 
-print STDERR <<"EOF" unless $options{quiet};
+print STDERR <<"EOF" unless option('quiet');
 Now loading data...
 EOF
 

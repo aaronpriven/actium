@@ -21,26 +21,23 @@ use lib $Bin;
 
 
 use Skedfile qw(Skedread Skedwrite remove_blank_columns);
-use Skeddir;
-use Myopts;
 use Actium::FPMerge qw(FPread FPread_simple);
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory
 ######################################################################
 
-our (%options);    # command line options
+use Actium::Options (qw<option add_option>);
+#add_option ('spec' , 'description');
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+my $signup = $signupdir->get_signup;
 
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
-# command line options in %options;
+printq "notpnames - missing timepoint names \n\n" ;
 
-$| = 1; # don't buffer terminal output; perl's not supposed to need this, but it does
-
-print "notpnames - missing timepoint names \n\n" unless $options{quiet};
-
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-print "Using signup $signup\n" unless $options{quiet};
+printq "Using signup $signup\n";
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "actium/db/xxxx" base directory.
 
