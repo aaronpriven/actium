@@ -23,26 +23,18 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 use Skedfile qw(Skedread Skedwrite remove_blank_columns);
-use Skeddir;
-use Myopts;
 use Actium::Sorting (qw(sortbyline));
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory
 ######################################################################
 
-our (%options);    # command line options
-
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
-# command line options in %options;
+use Actium::Options;
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 $| = 1; # don't buffer terminal output; perl's not supposed to need this, but it does
-
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-#print "Using signup $signup\n" unless $options{quiet};
-# Takes the necessary options to change directories, plus 'quiet', and
-# then changes directories to the "actium/db/xxxx" base directory.
 
 my @files = grep ((! /=/) , glob('skeds/*.txt'));
 # easier to use grep than try to construct a glob pattern that doesn't include 

@@ -27,8 +27,6 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 use Skedfile qw(Skedread );
-use Myopts;
-use Skeddir;
 use Actium::Sorting ('sortbyline');
 use List::Util;
 
@@ -36,21 +34,18 @@ use List::Util;
 # initialize variables, command options, change to Skeds directory
 ######################################################################
 
-our (%options);    # command line options
- 
-Myopts::options (\%options, Skeddir::options(), 'quiet!');
-# command line options in %options;
 
-$| = 1; 
-# don't buffer terminal output
+use Actium::Options (qw<option add_option>);
+#add_option ('spec' , 'description');
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->get_dir();
+my $signup = $signupdir->get_signup;
 
-print "skedsize - how big are the schedules\n\n" unless $options{quiet};
+printq "skedsize - how big are the schedules\n\n" ;
 
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-print "Using signup $signup\n" unless $options{quiet};
-# Takes the necessary options to change directories, plus 'quiet', and
-# then changes directories to the "Skeds" base directory.
+printq "Using signup $signup\n" ;
 
 open my $out , '>skedsizes.txt' or die "$!";
 

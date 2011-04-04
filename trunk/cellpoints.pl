@@ -27,8 +27,6 @@ use lib $Bin;
 # TODO - does not put route down in multi-route lines (e.g., 72/72M)
 
 use Skedfile qw(Skedread getfiles GETFILES_PUBLIC_AND_DB trim_sked copy_sked);
-use Myopts;
-use Skeddir;
 use Skedvars qw(%daydirhash %adjectivedaynames %bound %specdaynames);
 use Skedtps qw(tphash TPXREF_FULL);
 
@@ -36,18 +34,18 @@ use Skedtps qw(tphash TPXREF_FULL);
 # initialize variables, command options, change to Skeds directory
 ######################################################################
 
-my %options;
-
-Myopts::options (\%options, Skeddir::options(), 'quiet!' );
-# command line options in %options;
+use Actium::Options (qw<option add_option>);
+use Actium::Term (qw<printq sayq>);
+use Actium::Signup;
+my $signup = Actium::Signup->new();
+chdir $signup->get_dir();
 
 $| = 1; # don't buffer terminal output
 
-print "cellpoints - create a set of text point schedules\n\n" unless $options{quiet};
+sayq "cellpoints - create a set of text point schedules\n";
 
-my $signup;
-$signup = (Skeddir::change (\%options))[2];
-print "Using signup $signup\n" unless $options{quiet};
+sayq "Using signup $signup->get_signup";
+
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "actium/db/xxxx" base directory.
 
@@ -59,9 +57,9 @@ chomp $effdate;
 
 our (@lines , %lines);
 
-print "Timepoints and timepoint names... " unless $options{quiet};
+printq "Timepoints and timepoint names... ";
 my $vals = Skedtps::initialize(TPXREF_FULL);
-print "$vals timepoints.\n" unless $options{quiet};
+printq "$vals timepoints.\n" ;
 
 mkdir "cellpoints" unless -d "cellpoints";
 
@@ -76,7 +74,7 @@ foreach my $file (@files) {
 
    trim_sked($sked);
 
-   print "$skedname\t" unless $options{quiet};
+   printq "$skedname\t";
 
    for my $tpnum (0 .. $#{$sked->{TP}}) {
    
@@ -95,5 +93,5 @@ foreach my $file (@files) {
 
 }
 
-print "\n\n" unless $options{quiet};
+printq "\n\n";
 
