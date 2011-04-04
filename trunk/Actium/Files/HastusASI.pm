@@ -13,7 +13,6 @@ use 5.012;    # turns on features
 package Actium::Files::HastusASI 0.001;
 
 use Moose;
-use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
 use Actium::Constants;
@@ -506,8 +505,6 @@ an HSA file.) This row will be skipped.
 =item perl 5.012
 
 =item Moose
-
-=item MooseX::SemiAffordanceAccessor
 
 =item MooseX::StrictConstructor
 
