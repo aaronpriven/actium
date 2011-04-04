@@ -56,8 +56,8 @@ my %module_of = (
     time => 'Time',
     sqlite2tab => 'SQLite2tab',
     flagspecs => 'Flagspecs',
-    checkhasis => 'Hasi2x',
     drivingorder => 'DrivingOrder',
+    tabula => 'Tabula' ,
     # more to come
 );
 

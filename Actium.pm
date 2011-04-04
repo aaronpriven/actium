@@ -19,7 +19,6 @@ use FindBin('$Bin');
 use Carp;
 use Storable;
 use Text::Wrap;
-use Memoize;
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK 
