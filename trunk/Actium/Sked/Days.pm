@@ -59,35 +59,43 @@ Readonly my %TO_TRANSITINFO => {
 
 Readonly my %FROM_TRANSITINFO => reverse %TO_TRANSITINFO;
 
-has 'days' => (
+###################################
+#### ATTRIBUTES AND CONSTRUCTION
+###################################
+
+around BUILDARGS => sub {
+    return positional( \@_, 'daycode', 'schooldaycode' );
+};
+
+has 'daycode' => (
     is          => 'ro',
     isa         => 'DayCode',
     required    => 1,
-    initializer => '_initialize_days',
+    initializer => '_initialize_daycode',
 );
 # New day codes have a character for each set of days that are used.
 # 1 - 7 : Monday through Sunday (like in Hastus), and H - Holidays
 
-sub _initialize_days {
+sub _initialize_daycode {
     my $self = shift;
-    my $days = shift;
+    my $daycode = shift;
     my $set  = shift;
 
-    $days = $FROM_TRANSITINFO{$days} if $FROM_TRANSITINFO{$days};
+    $daycode = $FROM_TRANSITINFO{$daycode} if $FROM_TRANSITINFO{$daycode};
     # if passed a day code from the Transitinfo definitions, convert it
 
-    $days =~ s/[^\d]//g;
+    $daycode =~ s/[^\d]//g;
     # eliminate anything that's not a digit
 
     # TODO - add option to make it Saturdays-and-holidays
     #    instead of Sundays-and-holidays, or treat holidays as a separate
     #    schedule
 
-    $days =~ s/7H?/7H/;    # make sure Sundays always includes holidays
-    $set->($days);
+    $daycode =~ s/7H?/7H/;    # make sure Sundays always includes holidays
+    $set->($daycode);
 }
 
-has 'schooldays' => (
+has 'schooldaycode' => (
     is      => 'ro',
     isa     => 'SchoolDayCode',    # [BDH]
     default => 'B',
@@ -103,16 +111,20 @@ has '_composite_code' => (
 
 sub _build_composite_code {
     my $self       = shift;
-    my $days       = $self->days;
-    my $schooldays = $self->schooldays;
+    my $daycode       = $self->daycode;
+    my $schooldaycode = $self->schooldaycode;
 
-    return $self->days unless $schooldays;
-    return $self->schooldays . $self->days;
+    return $self->daycode unless $schooldaycode;
+    return $self->schooldaycode . $self->daycode;
 }
 
-around BUILDARGS => sub {
-    return positional( \@_, 'days', 'schooldays' );
-};
+sub as_sortable {
+    my $self = shift;
+    return $self->_composite_code;
+}
+# composite_code not guaranteed to remain sortable in the future
+
+
 
 sub as_transitinfo {
  
@@ -122,36 +134,36 @@ sub as_transitinfo {
     state %cache;
     return $cache{$composite} if $cache{$composite};
     
-    my $days = $self->days;
-    my $schooldays = $self->schooldays;
+    my $daycode = $self->daycode;
+    my $schooldaycode = $self->schooldaycode;
 
     return $cache{$composite} = "SD" if $self->_is_SD;
     return $cache{$composite} = "SH" if $self->_is_SH;
 
-    my $transitinfo = $TO_TRANSITINFO{$days};
+    my $transitinfo = $TO_TRANSITINFO{$daycode};
 
     return $cache{$composite} = $transitinfo if $transitinfo;
-    return $cache{$composite} = $self->_invalid_transitinfo_days;
+    return $cache{$composite} = $self->_invalid_transitinfo_daycode;
     
 }
 
-sub _invalid_transitinfo_days {
+sub _invalid_transitinfo_daycode {
     my $self       = shift;
-    my $days       = $self->days;
-    my $schooldays = $self->schooldays;
-    carp qq[Using invalid Transitinfo days XX for <$days/$schooldays>];
+    my $daycode       = $self->daycode;
+    my $schooldaycode = $self->schooldaycode;
+    carp qq[Using invalid Transitinfo daycode XX for <$daycode/$schooldaycode>];
     return 'XX';
 }
 
 sub _is_SD {
     my $self = shift;
-    return 1 if ( $self->days eq '12345' and $self->schooldays eq 'D' );
+    return 1 if ( $self->daycode eq '12345' and $self->schooldaycode eq 'D' );
     return;
 }
 
 sub _is_SH {
     my $self = shift;
-    return 1 if ( $self->days eq '12345' and $self->schooldays eq 'H' );
+    return 1 if ( $self->daycode eq '12345' and $self->schooldaycode eq 'H' );
     return;
 }
 
@@ -172,18 +184,18 @@ sub as_adjectives {
     state %cache;
     return $cache{$composite} if $cache{$composite};
 
-    my $days = $self->days;
-    $days =~ s/1234567H/D/;    # every day
-    $days =~ s/1234567/X/;     # every day except holidays
-    $days =~ s/12345/W/;       # weekdays
-    $days =~ s/67/E/;          # weekends
+    my $daycode = $self->daycode;
+    $daycode =~ s/1234567H/D/;    # every day
+    $daycode =~ s/1234567/X/;     # every day except holidays
+    $daycode =~ s/12345/W/;       # weekdays
+    $daycode =~ s/67/E/;          # weekends
 
-    my $schooldays = $self->schooldays;
+    my $schooldaycode = $self->schooldaycode;
 
-    my @as_adjectives = map { $ADJECTIVE_OF{$_} } split( //, $days );
+    my @as_adjectives = map { $ADJECTIVE_OF{$_} } split( //, $daycode );
 
     my $results
-      = joinseries(@as_adjectives) . $ADJECTIVE_SCHOOL_OF{$schooldays};
+      = joinseries(@as_adjectives) . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
 
     return $cache{$composite} = $results;
 
@@ -209,17 +221,17 @@ sub as_plurals {
     state %cache;
     return $cache{$composite} if $cache{$composite};
 
-    my $days = $self->days;
-    $days =~ s/1234567H/D/;    # every day
-    $days =~ s/1234567/X/;     # every day except holidays
-    $days =~ s/12345/W/;       # weekdays
-         # $days =~ s/67/E/;  # weekends intentionally omitted
+    my $daycode = $self->daycode;
+    $daycode =~ s/1234567H/D/;    # every day
+    $daycode =~ s/1234567/X/;     # every day except holidays
+    $daycode =~ s/12345/W/;       # weekdays
+    # $daycode =~ s/67/E/;  # weekends intentionally omitted
 
-    my $schooldays = $self->schooldays;
+    my $schooldaycode = $self->schooldaycode;
 
-    my @as_plurals = map { $PLURAL_OF{$_} } split( //, $days );
+    my @as_plurals = map { $PLURAL_OF{$_} } split( //, $daycode );
 
-    my $results = joinseries(@as_plurals) . $PLURAL_SCHOOL_OF{$schooldays};
+    my $results = joinseries(@as_plurals) . $PLURAL_SCHOOL_OF{$schooldaycode};
 
     return $cache{$composite} = $results;
 
@@ -243,20 +255,20 @@ sub as_abbrevs {
     state %cache;
     return $cache{$composite} if $cache{$composite};
 
-    my $days = $self->days;
-    $days =~ s/1234567H/D/;    # every day
-    $days =~ s/1234567/X/;     # every day except holidays
-    $days =~ s/12345/W/;       # weekdays
-         # $days =~ s/67/E/;        # weekends intentionally omitted
+    my $daycode = $self->daycode;
+    $daycode =~ s/1234567H/D/;    # every day
+    $daycode =~ s/1234567/X/;     # every day except holidays
+    $daycode =~ s/12345/W/;       # weekdays
+         # $daycode =~ s/67/E/;        # weekends intentionally omitted
 
-    my $schooldays = $self->schooldays;
+    my $schooldaycode = $self->schooldaycode;
 
-    my @as_abbrevs = map { $ABBREV_OF{$_} } split( //, $days );
+    my @as_abbrevs = map { $ABBREV_OF{$_} } split( //, $daycode );
 
     if ( scalar @as_abbrevs > 1 ) {
         $as_abbrevs[-1] = "& $as_abbrevs[-1]";
     }
-    my $results = join( $SPACE, @as_abbrevs ) . $ABBREV_SCHOOL_OF{$schooldays};
+    my $results = join( $SPACE, @as_abbrevs ) . $ABBREV_SCHOOL_OF{$schooldaycode};
 
     return $cache{$composite} = $results;
 
@@ -278,13 +290,13 @@ This documentation refers to version 0.001
 
  use Actium::Sked::Days;
  
- my $days = Actium::Sked::Days->new ('135');
+ my $daycode = Actium::Sked::Days->new ('135');
  
- say $days->as_plurals; # "Mondays, Wednesdays, and Fridays"
- say $days->as_adjectives; # "Monday, Wednesday, and Friday"
- say $days->as_abbrevs; # "Mon Wed & Fri"
+ say $daycode->as_plurals; # "Mondays, Wednesdays, and Fridays"
+ say $daycode->as_adjectives; # "Monday, Wednesday, and Friday"
+ say $daycode->as_abbrevs; # "Mon Wed & Fri"
  
- say $days->as_transitinfo; # 'MZ'
+ say $daycode->as_transitinfo; # 'MZ'
  
 =head1 DESCRIPTION
 
@@ -299,7 +311,7 @@ Some trips run only a few weekdays (e.g., Mondays, Wednesdays, and Fridays).
 
 =over
 
-=item B<Actium::Sked::Days->new(I<days> , I<schooldays>)>
+=item B<Actium::Sked::Days->new(I<daycode> , I<schooldaycode>)>
 
 The object is constructed using "Actium::Sked::Days->new".  
 
@@ -324,18 +336,23 @@ whether school normally operates on that day -- weekend trips will
 still have "B" as the school day flag, unless there is a situation where
 some school service is operated on a Saturday.)
 
-=item B<$obj->days()>
+=item B<$obj->daycode()>
 
 Returns the day specification: a string with one or more of the characters
 1 through 7, indicating operation on Monday through Sunday, and the character
 H, indicating operation on holidays.
 
-=item B<$obj->schooldays()>
+=item B<$obj->schooldaycode()>
 
 Returns one character. "D" indicates operation school days only. "H" indicates
 operation school holidays only. "B" indicates operation on both types of days.
 (Service on days when school service does not operate is also indicated 
 by "B".)
+
+=item B<$obj->as_sortable()>
+
+Returns a version of the day code / schoolday code that can be sorted using 
+perl's cmp operator to be in order.
 
 =item B<$obj->as_transitinfo>
 
@@ -408,37 +425,21 @@ a Saturday rather than Sunday schedule on holidays.
 
 =over
 
-=item *
+=item Perl 5.012 and the standard distribution.
 
-Perl 5.012 and the standard distribution.
+=item List::MoreUtils
 
-=item *
+=item Moose
 
-List::MoreUtils
+=item MooseX::StrictConstructor
 
-=item *
+=item Readonly
 
-Moose
+=item Actium::Constants
 
-=item *
+=item Actium::Types
 
-MooseX::StrictConstructor
-
-=item *
-
-Readonly
-
-=item *
-
-Actium::Constants
-
-=item *
-
-Actium::Types
-
-=item *
-
-Actium::Util
+=item Actium::Util
 
 =back
 
@@ -453,4 +454,4 @@ the same terms as Perl itself. See L<perlartistic>.
 
 This program is distributed in the hope that it will be useful, but WITHOUT 
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+FITNESS FOR A PARTICULAR PURPOSE. 

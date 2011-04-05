@@ -57,6 +57,8 @@ BEGIN {
 # Weekdays, Saturdays, Sundays, Weekdays-and-Saturdays,
 # Weekdays-and-Sundays, Weekends, Daily
 
+        DIRCODES => [qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN )],
+
     );
 
     no warnings 'once';
