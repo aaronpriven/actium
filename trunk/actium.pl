@@ -58,6 +58,7 @@ my %module_of = (
     flagspecs => 'Flagspecs',
     drivingorder => 'DrivingOrder',
     tabula => 'Tabula' ,
+    orderbytravel => 'OrderByTravel',
     # more to come
 );
 

@@ -81,11 +81,11 @@ sub START {
 sub HELP {
 
     say <<'HELP' or die q{Can't open STDOUT for writing};
-actium db2tab -- convert Actium::Files::SQLite data to tab file
+actium sqlite2tab -- convert Actium::Files::SQLite data to tab file
 
 Usage:
 
-actium db2tab --type <type> <table>
+actium sqlite2tab --type <type> <table>
 
 <type> must be either H for Hastus or F for FileMaker.
 
@@ -106,7 +106,7 @@ __END__
 
 =head1 NAME
 
-db2tab - fetch data from a SQLite database
+sqlite2tab - fetch data from a SQLite database
 and output as tab-delimited files
 
 =head1 VERSION
@@ -117,7 +117,7 @@ This documentation refers to version 0.001
 
 From a shell:
 
- actium.pl db2tab -type <type> <table>
+ actium.pl sqlite2tab -type <type> <table>
    
 =head1 REQUIRED ARGUMENTS
 
