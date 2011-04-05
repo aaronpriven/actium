@@ -10,8 +10,6 @@ use warnings;
 
 package Actium::OrderByTravel 0.001;
 
-use sort ('stable');
-
 # add the current program directory to list of files to include
 
 use Carp;
