@@ -30,7 +30,7 @@ sub positional : Export {
 
     my %newargs;
     if ( ref( $arguments[-1] ) eq 'HASH' ) {
-        %newargs = %{ +pop };
+        %newargs = %{ pop @arguments };
     }
     if ( scalar @attrnames < scalar @arguments ) {
         croak 'Too many positional arguments in object construction';
@@ -269,7 +269,7 @@ Just like I<joinseries>, but uses "&" instead of "and".
 For each string passed to it, returns a string where the $KEY_SEPARATOR value from Actium::Constants is replaced by an underline (_), 
 making it readable. (A quicker way to type "s/$KEY_SEPARATOR/_/g foreach @list;".)
 
-=item B<positional(I<arguments>, C<\@_>)>
+=item B<positional(C<\@_> , I<arguments>)>
 
 The I<positional> routine is intended for use within a BUILDARGS block in a
 Moose class (see L<Moose::Manual::Construction|Moose::Manual::Construction>, 
@@ -302,17 +302,17 @@ For example, the following are all valid in the above example:
  Class->new( 'foo_value' , { bar => 'bar_value', baz => 'baz_value'} );
     # Mixing it up will work also
  Class->new( foo => 'foo_value', { foo => 'foo_value'});
-    # Will be OK, because 'foo_value' equals 'foo_value', although
+    # Will be OK, because the specified values are the same, although
     #  why you'd want to do this is unclear
 
-Note that if only named arguments are given, they must be given in a hash
-reference. 
+Note that if only named arguments are given, I<they must be given in a hash
+reference>. 
 
-The following will not work:
+B<The following will not work:>
 
  Class->new( foo => 'foo_value');
     # will be taken as two positional arguments: foo => foo and 
-    #    bar => 'foo_value
+    #    bar => 'foo_value'
  Class->new( foo => 'foo_value', bar => 'bar_value');
     # Will croak 'Too many positional arguments in object construction'
  Class->new( foo => 'foo_value', { foo => 'a_different_foo_value');
@@ -381,9 +381,9 @@ to customers.
 
 =over
 
-=item *
+=item Perl 5.12
 
-Perl 5.12
+=item Perl6::Export::Attrs
 
 =back
 
