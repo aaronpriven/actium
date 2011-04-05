@@ -18,7 +18,7 @@ $VERSION = eval $VERSION;
 use MooseX::Types -declare => [
     qw <Schedule_Day DayCode SchoolDayCode
       ArrayRefOfTimeNums _ArrayRefOfStrs ArrayRefOrTimeNum
-      TimeNum Str4 Str8 > # StrOrArrayRef
+      TimeNum Str4 Str8 DirCode HastusDirCode >    # StrOrArrayRef
 ];
 
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
@@ -28,36 +28,50 @@ use Actium::Constants;
 
 enum( Schedule_Day, (@SCHEDULE_DAYS) );
 
-subtype DayCode , as Str, where { /\A1?2?3?4?5?6?7?H?\z/ },
-  message {qq<"$_" is not a valid day code\n  (one or more of the characters 1-7 plus H, in order>};
+subtype DayCode, as Str, where {/\A1?2?3?4?5?6?7?H?\z/}, message {
+qq<"$_" is not a valid day code\n  (one or more of the characters 1-7 plus H, in order>;
+};
 # It uses question marks instead of [1-7H]+ because
 # the numbers have to be in order, and not repeated
 
-enum (SchoolDayCode , [qw<B D H>]);
+enum( SchoolDayCode, [qw<B D H>] );
+
+enum( DirCode, @DIRCODES );
+
+subtype HastusDirCode, as Int, where { $_ >= 0 and $_ <= $#DIRCODES };
+
+coerce DirCode, from HastusDirCode, via {
+    $_ == 3 ? 2
+      : 2   ? 3
+      :       $_;
+};
+
+# we use westbound before eastbound, but other than that
+# we use the Hastus order
 
 subtype Str8, as Str, where { length == 8 },
   message {qq<The entry "$_" is not an eight-character-long string>};
 
 subtype Str4, as Str, where { length == 8 },
   message {qq<The entry "$_" is not an four-character-long string>};
-  
+
 #subtype StrOrArrayRef, as Str|ArrayRef;
 
 ## Time numbers
-subtype TimeNum, as Maybe[Int];
+subtype TimeNum, as Maybe [Int];
 
-subtype ArrayRefOrTimeNum, as TimeNum|ArrayRef[TimeNum];
+subtype ArrayRefOrTimeNum, as TimeNum | ArrayRef [TimeNum];
 
 coerce TimeNum, from Str, via { Actium::Time::timenum($_) };
 
-subtype ArrayRefOfTimeNums, as ArrayRef[Maybe[TimeNum]];
+subtype ArrayRefOfTimeNums, as ArrayRef [ Maybe [TimeNum] ];
 
-subtype _ArrayRefOfStrs, as ArrayRef[Str];
+subtype _ArrayRefOfStrs, as ArrayRef [Str];
 # _ArrayRefOfStrs only exists to make ArrayRefOfTimeNums coercion work
 
 coerce ArrayRefOfTimeNums, from _ArrayRefOfStrs, via {
-    my @array = map { to_TimeNum ($_) } @{$_} ;
-    return (\@array);
+    my @array = map { to_TimeNum($_) } @{$_};
+    return ( \@array );
 };
 
 1;
