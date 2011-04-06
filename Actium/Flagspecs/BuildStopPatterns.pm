@@ -33,8 +33,6 @@ sub build_stop_patterns {
     my $hasi_db = shift;
     my $xml_db  = shift;
 
-    my %routes;
-
     my %stop_obj_of;
     my %pattern_obj_of;
 
@@ -44,8 +42,8 @@ sub build_stop_patterns {
         q{WHERE NOT IsInService = '' ORDER BY Route} );
 
     my $hasi_dbh = $hasi_db->dbh();
-    my $tps_sth  = $hasi_dbh->prepare(
-        'SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
+    my $tps_sth =
+      $hasi_dbh->prepare('SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
 
     my $prevroute = $EMPTY_STR;
 
@@ -60,12 +58,15 @@ sub build_stop_patterns {
         }
 
         my $pattern_obj = Actium::Flagspecs::Pattern->new(
-            {   route     => $route,
+            {
+                route     => $route,
                 direction => $pat->{DirectionValue},
                 identifer => $pat_ident,
             }
         );
-        $pattern_obj_of{ $pattern_obj->unique_id } = $pattern_obj;
+
+        my $pattern_unique_id = $pattern_obj->unique_id;
+        $pattern_obj_of{$pattern_unique_id} = $pattern_obj;
 
         my @tps_rows = @{
             $hasi_dbh->selectall_arrayref( $tps_sth, { Slice => {} },
@@ -75,6 +76,8 @@ sub build_stop_patterns {
         my $prevplace = $EMPTY_STR;
         my $prevstop  = $EMPTY_STR;
         my ( @intermediate_stop_objs, @all_stop_objs );
+
+        my %seen_stop_in_this_pattern;
 
       TPS:
 
@@ -88,7 +91,7 @@ sub build_stop_patterns {
 
                 # skip stop entirely unless place is changed
 
-                $all_stop_objs[-1]->set_place = $place;
+                $all_stop_objs[-1]->set_place($pattern_unique_id , $place);
 
                 # if place changed, make previous stop this new place
 
@@ -97,9 +100,9 @@ sub build_stop_patterns {
 
                 next TPS;
             }
-            
+
             # so not the same stop
-            
+
             my $stops_row_r = $xml_db->row( 'Stops', $stop_ident );
 
             my $stop_obj;
@@ -130,13 +133,14 @@ sub build_stop_patterns {
                 $is_at_place = 1;
 
                 foreach (@intermediate_stop_objs) {
-                    $_->set_nextplace->($place);
+                    $_->set_nextplace->($pattern_unique_id, $place);
                 }
                 @intermediate_stop_objs = ();
             }
 
             my $relation_obj = Actium::Flagspecs::Stop::PatternRelation->new(
-                {   place             => $place,
+                {
+                    place             => $place,
                     is_at_place       => $is_at_place,
                     pattern_unique_id => $pattern_obj->unique_id,
                 }
@@ -148,26 +152,28 @@ sub build_stop_patterns {
                 $relation_obj->add_connection($connection);
             }
 
-            push @all_stop_objs, $pattern_obj;
-            
-=for FIXING SHORTLY
+            push @all_stop_objs,          $pattern_obj;
+            push @intermediate_stop_objs, $pattern_obj;
 
-            my $already_in_pattern
-              = set_pats_of_stop( $stop_ident, $routedir, $pat_ident,
-                $patinfo );
-            #$pats_of_stop{$stop_ident}{$routedir}{$pat_ident} = $patinfo;
-            $routes_of_stop{$stop_ident}{$route}++ unless $already_in_pattern;
-            $routes{$route}++;
+            # If this stop is present more than once in the same pattern
+            # then do not add this pattern relation to the list.
+            # This would be the case for loops, where the last stop is
+            # the same as the first. For lollipop routes or other weird
+            # shapes, it might not be the last stop.... 
             
-=cut
+            if ( not $seen_stop_in_this_pattern{$stop_ident} ) {
+                $stop_obj->add_pattern_relation($pattern_obj);
+                $seen_stop_in_this_pattern{$stop_ident} = 1;
+                $stop_obj->add_route($route);
+            }
 
             $pattern_obj->add_stop($stop_ident);
-            push @intermediate_stop_objs, $pattern_obj;
 
             # references to the same anonymous hash
 
-        } ## tidy end: for my $tps_row (@tps_rows)
-        $all_stop_objs[-1]->set_last_stop;
+        }    ## tidy end: for my $tps_row (@tps_rows)
+
+        $all_stop_objs[-1]->set_last_stop($pattern_unique_id);
 
         # connections and Transbay info
 
@@ -175,7 +181,7 @@ sub build_stop_patterns {
 
         # Place lists
 
-        my $placelist = jk($pattern_obj->places);
+        my $placelist = jk( $pattern_obj->places );
 
 =for FIXING SHORTLY
 
@@ -187,13 +193,13 @@ sub build_stop_patterns {
         # now we have cross-indexed the pattern ident
         # and its place listing
 
-    } ## tidy end: while ( my $pat = $eachpat...)
+    }    ## tidy end: while ( my $pat = $eachpat...)
 
     emit_done;
 
     return;
 
-} ## tidy end: sub build_stop_patterns
+}    ## tidy end: sub build_stop_patterns
 
 #  TODO - finish modifying below for OO
 
@@ -204,10 +210,12 @@ sub transbay_and_connections {
     my $prev_side;
     my %these_connections;
     for my $patinfo ( reverse @all_stops ) {
+
         # first, put all existing connections into ConnIcons
         foreach my $connection ( keys %these_connections ) {
             $patinfo->{ConnIcons}{$connection} = 1;
         }
+
         # then, save the connections of the current stop for later
         foreach my $connection ( keys %{ $patinfo->{Connections} } ) {
             $these_connections{$connection} = 1;
@@ -226,7 +234,7 @@ sub transbay_and_connections {
                 $prev_side = $side;
             }
         }
-    } ## tidy end: for my $patinfo ( reverse...)
+    }    ## tidy end: for my $patinfo ( reverse...)
 
     if ( $route ~~ @TRANSBAY_NOLOCALS ) {
         my $dropoff;
@@ -249,8 +257,8 @@ sub transbay_and_connections {
 
         }
 
-    } ## tidy end: if ( $route ~~ @TRANSBAY_NOLOCALS)
+    }    ## tidy end: if ( $route ~~ @TRANSBAY_NOLOCALS)
 
-} ## tidy end: sub transbay_and_connections
+}    ## tidy end: sub transbay_and_connections
 
 1;

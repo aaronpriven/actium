@@ -38,7 +38,7 @@ has 'place' => (
     isa => 'Str',
 );
 
-has 'nextplace' => (
+has 'next_place' => (
     is  => 'rw',
     isa => 'Str',
 );
