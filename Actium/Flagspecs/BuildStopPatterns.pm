@@ -11,6 +11,10 @@ use Actium::Util qw(jk);
 use Actium::Constants;
 use Actium::Term (':all');
 
+use Actium::Flagspecs::Pattern;
+use Actium::Flagspecs::Stop;
+use Actium::Flagspecs::Stop::PatternRelation;
+
 use Carp;
 use English('-no_match_vars');
 
@@ -35,6 +39,7 @@ sub build_stop_patterns {
 
     my %stop_obj_of;
     my %pattern_obj_of;
+    my %placelist_obj_of;
 
     emit 'Building lists of patterns, stops, and places';
 
@@ -42,8 +47,8 @@ sub build_stop_patterns {
         q{WHERE NOT IsInService = '' ORDER BY Route} );
 
     my $hasi_dbh = $hasi_db->dbh();
-    my $tps_sth =
-      $hasi_dbh->prepare('SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
+    my $tps_sth  = $hasi_dbh->prepare(
+        'SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
 
     my $prevroute = $EMPTY_STR;
 
@@ -58,8 +63,7 @@ sub build_stop_patterns {
         }
 
         my $pattern_obj = Actium::Flagspecs::Pattern->new(
-            {
-                route     => $route,
+            {   route     => $route,
                 direction => $pat->{DirectionValue},
                 identifer => $pat_ident,
             }
@@ -73,11 +77,8 @@ sub build_stop_patterns {
                 $pat->{PAT_id} )
           };
 
-        my $prevplace = $EMPTY_STR;
-        my $prevstop  = $EMPTY_STR;
-        my ( @intermediate_stop_objs, @all_stop_objs );
-
-        my %seen_stop_in_this_pattern;
+        my ( $prevplace, $prevstop ) = ( $EMPTY_STR, $EMPTY_STR );
+        my ( @intermediate_relation_objs, @all_relation_objs );
 
       TPS:
 
@@ -91,7 +92,7 @@ sub build_stop_patterns {
 
                 # skip stop entirely unless place is changed
 
-                $all_stop_objs[-1]->set_place($pattern_unique_id , $place);
+                $all_relation_objs[-1]->set_place($place);
 
                 # if place changed, make previous stop this new place
 
@@ -132,133 +133,133 @@ sub build_stop_patterns {
 
                 $is_at_place = 1;
 
-                foreach (@intermediate_stop_objs) {
-                    $_->set_nextplace->($pattern_unique_id, $place);
+                foreach (@intermediate_relation_objs) {
+                    $_->set_next_place->( $pattern_unique_id, $place );
                 }
-                @intermediate_stop_objs = ();
+                @intermediate_relation_objs = ();
             }
 
             my $relation_obj = Actium::Flagspecs::Stop::PatternRelation->new(
-                {
-                    place             => $place,
+                {   place             => $place,
                     is_at_place       => $is_at_place,
                     pattern_unique_id => $pattern_obj->unique_id,
+                    stop_obj          => $stop_obj,
                 }
             );
 
             foreach
               my $connection ( split( /\n/sx, $stops_row_r->{Connections} ) )
             {
-                $relation_obj->add_connection($connection);
+                $relation_obj->mark_at_connection($connection);
             }
 
-            push @all_stop_objs,          $pattern_obj;
-            push @intermediate_stop_objs, $pattern_obj;
+            push @all_relation_objs,          $relation_obj;
+            push @intermediate_relation_objs, $relation_obj;
 
-            # If this stop is present more than once in the same pattern
-            # then do not add this pattern relation to the list.
-            # This would be the case for loops, where the last stop is
-            # the same as the first. For lollipop routes or other weird
-            # shapes, it might not be the last stop.... 
-            
-            if ( not $seen_stop_in_this_pattern{$stop_ident} ) {
-                $stop_obj->add_pattern_relation($pattern_obj);
-                $seen_stop_in_this_pattern{$stop_ident} = 1;
-                $stop_obj->add_route($route);
-            }
-
+            $stop_obj->add_relation($pattern_obj);
+            $stop_obj->set_route($route);
             $pattern_obj->add_stop($stop_ident);
 
-            # references to the same anonymous hash
+        } ## tidy end: for my $tps_row (@tps_rows)
 
-        }    ## tidy end: for my $tps_row (@tps_rows)
-
-        $all_stop_objs[-1]->set_last_stop($pattern_unique_id);
+        $all_relation_objs[-1]->set_last_stop($pattern_unique_id);
 
         # connections and Transbay info
 
-        transbay_and_connections( $route, @all_stop_objs );
+        transbay_and_connections( $route, @all_relation_objs );
 
         # Place lists
 
-        my $placelist = jk( $pattern_obj->places );
+        my $placelist = $pattern_obj->placelist;
+        if ( exists $placelist_obj_of{$placelist} ) {
+            $placelist_obj_of{$placelist}->add_pattern($pattern_obj);
+        }
+        else {
 
-=for FIXING SHORTLY
-
-        push @{ $pats_of{$routedir}{$placelist} }, $pat_rdi;
-        $placelist_of{$pat_rdi} = $placelist;
-        
-=cut
+            $placelist_obj_of{$placelist} = Actium::Flagspecs::Placelist->new(
+                placelist => $placelist,
+                pattern_r => [$pattern_obj],
+            );
+        }
 
         # now we have cross-indexed the pattern ident
         # and its place listing
 
-    }    ## tidy end: while ( my $pat = $eachpat...)
+    } ## tidy end: while ( my $pat = $eachpat...)
 
     emit_done;
 
-    return;
+    return \%stop_obj_of, \%pattern_obj_of, \%placelist_obj_of;
 
-}    ## tidy end: sub build_stop_patterns
-
-#  TODO - finish modifying below for OO
+} ## tidy end: sub build_stop_patterns
 
 sub transbay_and_connections {
-    my ( $route, @all_stops ) = @_;
+    # runs once for each pattern
+
+    my ( $route, @all_relation_objs ) = @_;
 
     my $transbay;
     my $prev_side;
     my %these_connections;
-    for my $patinfo ( reverse @all_stops ) {
+
+    # go through stops, backwards.
+    # It puts connection information from the subsequent stops
+    # in the pattern into the current stop
+
+    for my $relation_obj ( reverse @all_relation_objs ) {
 
         # first, put all existing connections into ConnIcons
         foreach my $connection ( keys %these_connections ) {
-            $patinfo->{ConnIcons}{$connection} = 1;
+            $relation_obj->mark_connection_to($connection);
         }
 
         # then, save the connections of the current stop for later
-        foreach my $connection ( keys %{ $patinfo->{Connections} } ) {
+        foreach my $connection ( $relation_obj->connections_here ) {
             $these_connections{$connection} = 1;
         }
 
         if ($transbay) {
-            $patinfo->{TransbayIcon} = 1;
+            $relation_obj->set_going_transbay;
         }
         else {
-            my $side = $patinfo->{Side};
+            my $side = $relation_obj->stop_obj->side;
             if ( $prev_side and ( $prev_side ne $side ) ) {
+                $relation_obj->set_going_transbay;
                 $transbay = 1;
-                $patinfo->{TransbayIcon} = 1;
             }
             else {
                 $prev_side = $side;
             }
         }
-    }    ## tidy end: for my $patinfo ( reverse...)
+    } ## tidy end: for my $relation_obj ( ...)
 
     if ( $route ~~ @TRANSBAY_NOLOCALS ) {
         my $dropoff;
         undef $prev_side;
-        for my $patinfo (@all_stops) {
+        for my $relation_obj (@all_relation_objs) {
             if ($dropoff) {
-                $patinfo->{DropOffOnly} = 1;
+                $relation_obj->set_dropoff_only;
             }
             else {
-                my $side = $patinfo->{Side};
+                my $side = $relation_obj->stop_obj->side;
                 if ( $prev_side and ( $prev_side ne $side ) ) {
                     $dropoff = 1;
-                    $patinfo->{DropOffOnly} = 1;
+                    $relation_obj->set_dropoff_only;
                 }
                 else {
-                    $patinfo->{TransbayOnly} = 1;
+                    $relation_obj->set_transbay_only;
                     $prev_side = $side;
                 }
             }
 
         }
 
-    }    ## tidy end: if ( $route ~~ @TRANSBAY_NOLOCALS)
+    } ## tidy end: if ( $route ~~ @TRANSBAY_NOLOCALS)
 
-}    ## tidy end: sub transbay_and_connections
+    return;
+
+} ## tidy end: sub transbay_and_connections
 
 1;
+
+__END__
