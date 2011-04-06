@@ -52,9 +52,9 @@ coerce DirCode, from HastusDirCode, via {
 subtype Str8, as Str, where { length == 8 },
   message {qq<The entry "$_" is not an eight-character-long string>};
 
-subtype Str4, as Str, where { length == 8 },
+subtype Str4, as Str, where { length == 4 },
   message {qq<The entry "$_" is not an four-character-long string>};
-
+  
 #subtype StrOrArrayRef, as Str|ArrayRef;
 
 ## Time numbers

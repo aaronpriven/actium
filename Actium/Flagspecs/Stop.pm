@@ -19,44 +19,52 @@ has 'stop_ident' => (
     isa      => 'Str',
 );
 
-has 'routes_r' => (
-    is  => 'rw',
+has 'count_of_routes_r' => (
+    is  => 'ro',
     traits    => ['Hash'],
     isa => 'Hashref',
     default   => sub { {} },
-    handles => { set_route => 'set' ,
+    handles => { _set_routecount => 'set' ,
                  routes => 'keys' ,
-                 get_route => 'get' ,
+                 count_of_route => 'get' ,
                  has_route => 'exists' ,
     },
         
 );
 
-has 'boxes_r' => (
-    is => 'rw' ,
-    traits    => ['Hash'],
-    isa => 'Hashref[Actium::Flagspecs::Box]',
-    default   => sub { {} },
-    handles => { set_box => 'set' ,
-                 routedirs => 'keys' ,
-                 get_box => 'get' ,
-                 has_routedir => 'exists' ,
-    },
-);
+has 'district' => {
+   is => 'rw' ,
+   isa => 'Str' ,
+};
+
+has 'side' => {
+   is => 'rw' ,
+   isa => 'Str' ,
+};
+
+has 'pattern_relation_r' => {
+   is => 'bare',
+   isa => 'ArrayRef[Actium::Flagspecs::Stop::PatternRelation]',
+   default => sub { [] } ,
+   handles => {
+       pattern_relations => 'elements',
+       add_pattern_relation => 'push' ,
+   },
+ 
+};
 
 sub add_route {
     my $self = shift;
     my $route = shift;
     
     if ($self->has_route($route)) {
-        my $count = $self->get_route($route);
-        $self->set_route($route, $count + 1);
+        my $count = $self->count_of_route($route);
+        $self->_set_routecount($route, $count + 1);
     }
     else {
-        $self->set_route($route, 1);
+        $self->set_routecount($route, 1);
     }
 }
-
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
