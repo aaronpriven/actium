@@ -13,6 +13,8 @@ use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
+use Actium::Constants;
+
 use Actium::Util ('jk');
 
 has 'route' => (
@@ -66,8 +68,9 @@ has 'places_r' => (
     handles => {
         places    => 'elements',
         add_place => 'push',
+        placelist => ['join' , $KEY_SEPARATOR ],
     },
-);   
+);
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
