@@ -19,99 +19,80 @@ has 'stop_ident' => (
     isa      => 'Str',
 );
 
-has 'count_of_routes_r' => (
+has 'routes_r' => (
     is      => 'ro',
     traits  => ['Hash'],
-    isa     => 'Hashref',
+    isa     => 'HashRef[Bool]',
     default => sub { {} },
     handles => {
-        _set_routecount => 'set',
-        routes          => 'keys',
-        count_of_route  => 'get',
-        has_route       => 'exists',
+        add_route => [ 'set' , 1 ],
+        routes    => 'keys',
+        has_route => 'exists',
     },
-
 );
 
-has 'district' => {
+has 'district' => (
     is  => 'rw',
     isa => 'Str',
-};
+);
 
-has 'side' => {
+has 'side' => (
     is  => 'rw',
     isa => 'Str',
-};
+);
 
-has 'pattern_relation_of_r' => {
+has '_relation_list_of_r' => (
     is      => 'bare',
-    isa     => 'HashRef[Actium::Flagspecs::Stop::PatternRelation]',
-    default => sub { [] },
+    isa     => 'HashRef[ArrayRef[Actium::Flagspecs::Stop::PatternRelation]]',
+    default => sub { {} },
+    traits => ['Hash'],
     handles => {
-        pattern_relations        => 'values',
-        _pattern_relation_of     => 'get',
-        _set_pattern_relation_of => 'set',
-        _has_pattern_relation    => 'exists',
+        _relation_list_r_of     => 'get',
+        _set_relation_list_r_of => 'set',
+        _has_relation_list_r    => 'exists',
+        _relation_list_ids      => 'keys',
     },
+);
 
-};
-
-##############
-## Pattern Relation delegates... only it has to check that it exists first
-
-sub set_at_place {
-    my $self              = shift;
-    my $pattern_unique_id = shift;
-    if ( $self->_has_pattern_relation($pattern_unique_id) ) {
-        $self->pattern_relation_of($pattern_unique_id)->set_at_place;
-    }
-}
-
-sub set_last_stop {
-    my $self              = shift;
-    my $pattern_unique_id = shift;
-    if ( $self->_has_pattern_relation($pattern_unique_id) ) {
-        $self->pattern_relation_of($pattern_unique_id)->set_last_stop;
-    }
-}
-
-sub set_place {
-    my $self              = shift;
-    my $pattern_unique_id = shift;
-    my $place             = shift;
-    if ( $self->_has_pattern_relation($pattern_unique_id) ) {
-        $self->pattern_relation_of($pattern_unique_id)->set_place($place);
-    }
-}
-
-sub set_next_place {
-    my $self              = shift;
-    my $pattern_unique_id = shift;
-    my $place             = shift;
-    if ( $self->_has_pattern_relation($pattern_unique_id) ) {
-        $self->pattern_relation_of($pattern_unique_id)->set_next_place($place);
-    }
-}
-
-sub add_pattern_relation {
+sub add_relation {
     my $self              = shift;
     my $relation_obj      = shift;
     my $pattern_unique_id = $relation_obj->pattern_unique_id;
-    _set_pattern_relation_of( $pattern_unique_id, $relation_obj );
+
+    if ( $self->has_relation_list_r($pattern_unique_id) ) {
+        push @{ $self->relation_list_r_of($pattern_unique_id) }, $relation_obj;
+    }
+    else {
+        $self->_set_relation_list_r_of( $pattern_unique_id, [$relation_obj] );
+    }
     return;
 }
 
-sub add_route {
-    my $self  = shift;
-    my $route = shift;
+sub first_relation_of {
+    my $self              = shift;
+    my $pattern_unique_id = shift;
+    return $self->_relation_list_r_of($pattern_unique_id)->[0];
+}
 
-    if ( $self->has_route($route) ) {
-        my $count = $self->count_of_route($route);
-        $self->_set_routecount( $route, $count + 1 );
+sub first_relations {
+    my $self = shift;
+    my @results;
+    return map { $self->first_relation_of($_) } $self->_relation_list_ids;
+}
+
+sub relations_of {
+    my $self              = shift;
+    my $pattern_unique_id = shift;
+    return @{ $self->_relation_list_r_of($pattern_unique_id) };
+}
+
+sub relations {
+    my $self = shift;
+    my @results;
+    foreach my $pattern_unique_id ( $self->_relation_list_ids ) {
+        push @results, @{ $self->_relation_list_r_of($pattern_unique_id) };
     }
-    else {
-        $self->set_routecount( $route, 1 );
-    }
+    return @results;
 }
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
