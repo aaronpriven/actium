@@ -21,12 +21,14 @@ use English('-no_match_vars');
 use Readonly;
 
 # These should be moved to Lines and Cities tables, respectively
-Readonly my @TRANSBAY_NOLOCALS => qw/FS L NX NX1 NX2 NX3 U W/;
+#Readonly my @TRANSBAY_NOLOCALS => qw/FS L NX NX1 NX2 NX3 U W/;
 
-Readonly my %SIDE_OF => (
-    ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
-    ( map { $_ => 'W' } (qw/14 18 19 22 24 25 26 97/) ),
-);
+#Readonly my %SIDE_OF => (
+#    ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
+#    ( map { $_ => 'W' } (qw/14 18 19 22 24 25 26 97/) ),
+#);
+
+# those should now be from Actium::Constants
 
 1;
 

@@ -20,6 +20,8 @@ use Carp;
 use Readonly;
 use List::MoreUtils ('mesh');
 
+use Data::Dumper;
+
 ###################################
 #### ENGLISH NAMES FOR DAYS CONSTANTS
 ###################################
@@ -36,30 +38,6 @@ Readonly my @SEVENDAYPLURALS => ( map {"${_}s"} @SEVENDAYNAMES );
 Readonly my @SEVENDAYABBREVS => map { substr( $_, 0, 3 ) } @SEVENDAYNAMES;
 
 ###################################
-#### CONSTANTS FOR OTHER SYSTEMS (Hastus, Transitinfo, etc.)
-###################################
-
-# Back in ancient days, the web site transtinfo.org used two-letter codes
-# for days and directions.  Stage 0 Actium was built on their processing
-# of the schedules, and these codes have remained in use
-
-Readonly my %TO_TRANSITINFO => {
-    qw(
-      1234567H DA
-      12345    WD
-      6        SA
-      7H       SU
-      67H      WE
-      24       TT
-      25       TF
-      35       WF
-      135      MZ
-      )
-};
-
-Readonly my %FROM_TRANSITINFO => reverse %TO_TRANSITINFO;
-
-###################################
 #### ATTRIBUTES AND CONSTRUCTION
 ###################################
 
@@ -69,22 +47,25 @@ around BUILDARGS => sub {
 
 has 'daycode' => (
     is          => 'ro',
-    isa         => 'DayCode',
+    isa         => DayCode,
     required    => 1,
     initializer => '_initialize_daycode',
+    coerce => 1,
 );
+
 # New day codes have a character for each set of days that are used.
 # 1 - 7 : Monday through Sunday (like in Hastus), and H - Holidays
 
 sub _initialize_daycode {
-    my $self = shift;
+    my $self    = shift;
     my $daycode = shift;
-    my $set  = shift;
-
-    $daycode = $FROM_TRANSITINFO{$daycode} if $FROM_TRANSITINFO{$daycode};
+    my $set     = shift;
+    
+    #$daycode = $DAYS_FROM_TRANSITINFO{$daycode} if $DAYS_FROM_TRANSITINFO{$daycode};
     # if passed a day code from the Transitinfo definitions, convert it
+    # TODO - maybe use coercion instead?
 
-    $daycode =~ s/[^\d]//g;
+    $daycode =~ s/\D//g;
     # eliminate anything that's not a digit
 
     # TODO - add option to make it Saturdays-and-holidays
@@ -92,12 +73,14 @@ sub _initialize_daycode {
     #    schedule
 
     $daycode =~ s/7H?/7H/;    # make sure Sundays always includes holidays
+    
     $set->($daycode);
-}
+} ## tidy end: sub _initialize_daycode
 
 has 'schooldaycode' => (
     is      => 'ro',
-    isa     => 'SchoolDayCode',    # [BDH]
+#    isa => 'Str' , # code not working and I don't know why
+    isa     => SchoolDayCode,    # [BDH]
     default => 'B',
 );
 # D = school days only, H = school holidays only, B = both
@@ -110,7 +93,7 @@ has '_composite_code' => (
 );
 
 sub _build_composite_code {
-    my $self       = shift;
+    my $self          = shift;
     my $daycode       = $self->daycode;
     my $schooldaycode = $self->schooldaycode;
 
@@ -124,31 +107,29 @@ sub as_sortable {
 }
 # composite_code not guaranteed to remain sortable in the future
 
-
-
 sub as_transitinfo {
- 
-    my $self = shift;
+
+    my $self      = shift;
     my $composite = $self->_composite_code;
-    
+
     state %cache;
     return $cache{$composite} if $cache{$composite};
-    
-    my $daycode = $self->daycode;
+
+    my $daycode       = $self->daycode;
     my $schooldaycode = $self->schooldaycode;
 
     return $cache{$composite} = "SD" if $self->_is_SD;
     return $cache{$composite} = "SH" if $self->_is_SH;
 
-    my $transitinfo = $TO_TRANSITINFO{$daycode};
+    my $transitinfo = $TRANSITINFO_DAYS_OF{$daycode};
 
     return $cache{$composite} = $transitinfo if $transitinfo;
     return $cache{$composite} = $self->_invalid_transitinfo_daycode;
-    
-}
+
+} ## tidy end: sub as_transitinfo
 
 sub _invalid_transitinfo_daycode {
-    my $self       = shift;
+    my $self          = shift;
     my $daycode       = $self->daycode;
     my $schooldaycode = $self->schooldaycode;
     carp qq[Using invalid Transitinfo daycode XX for <$daycode/$schooldaycode>];
@@ -179,6 +160,7 @@ Readonly my %ADJECTIVE_SCHOOL_OF => (
 sub as_adjectives {
 
     my $self      = shift;
+    
     my $composite = $self->_composite_code;
 
     state %cache;
@@ -193,6 +175,11 @@ sub as_adjectives {
     my $schooldaycode = $self->schooldaycode;
 
     my @as_adjectives = map { $ADJECTIVE_OF{$_} } split( //, $daycode );
+    
+    if (not @as_adjectives) {
+     
+      say Data::Dumper::Dumper($self);
+    }
 
     my $results
       = joinseries(@as_adjectives) . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
@@ -225,18 +212,25 @@ sub as_plurals {
     $daycode =~ s/1234567H/D/;    # every day
     $daycode =~ s/1234567/X/;     # every day except holidays
     $daycode =~ s/12345/W/;       # weekdays
-    # $daycode =~ s/67/E/;  # weekends intentionally omitted
+         # $daycode =~ s/67/E/;  # weekends intentionally omitted
 
     my $schooldaycode = $self->schooldaycode;
 
     my @as_plurals = map { $PLURAL_OF{$_} } split( //, $daycode );
+    my $results = joinseries(@as_plurals);
 
-    my $results = joinseries(@as_plurals) . $PLURAL_SCHOOL_OF{$schooldaycode};
+    if ( $PLURAL_SCHOOL_OF{$schooldaycode} ) {
+
+        my $results .= $PLURAL_SCHOOL_OF{$schooldaycode};
+    }
+    else {
+
+        $results .= ' except holidays' unless $daycode =~ /H/;
+    }
 
     return $cache{$composite} = $results;
 
 } ## tidy end: sub as_plurals
-
 Readonly my @ABBREVS =>
   ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
 
@@ -268,7 +262,8 @@ sub as_abbrevs {
     if ( scalar @as_abbrevs > 1 ) {
         $as_abbrevs[-1] = "& $as_abbrevs[-1]";
     }
-    my $results = join( $SPACE, @as_abbrevs ) . $ABBREV_SCHOOL_OF{$schooldaycode};
+    my $results
+      = join( $SPACE, @as_abbrevs ) . $ABBREV_SCHOOL_OF{$schooldaycode};
 
     return $cache{$composite} = $results;
 

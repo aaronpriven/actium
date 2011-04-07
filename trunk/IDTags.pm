@@ -6,6 +6,9 @@
 package IDTags;
 
 use strict;
+
+use Perl6::Export::Attrs;
+
 #our (@ISA ,@EXPORT_OK ,%EXPORT_TAGS);
 
 #use Exporter;
@@ -14,7 +17,7 @@ use strict;
 
 use Carp;
 
-sub start { 
+sub start :Export { 
 
 my $starttext = <<'EOF';
 <ASCII-MAC>
@@ -43,7 +46,7 @@ return $starttext;
 
 }
 
-sub start_with_tables { 
+sub start_with_tables :Export { 
 
 my $starttext = <<'EOF';
 <ASCII-MAC>
@@ -76,17 +79,17 @@ return $starttext;
 
 }
 
-sub underline { 
+sub underline :Export { 
     my $text = shift; 
     return "<CharStyle:Underline>$text<CharStyle:>" ;
 }
 
-sub bold { 
+sub bold :Export { 
     my $text = shift; 
     return "<CharStyle:Bold>$text<CharStyle:>" ;
 }
 
-sub parastyle {
+sub parastyle :Export {
 
    my ($style, @text) = @_;
 
@@ -96,93 +99,93 @@ sub parastyle {
 
 }
 
-sub charstyle {
+sub charstyle :Export {
    my ($style, @text) = @_;
    my $text = join("", @text);
    return "<CharStyle:$style>$text";
 }
 
-sub nocharstyle {
+sub nocharstyle :Export {
    return "<CharStyle:>";
 }
 
-sub dropcapchars {
+sub dropcapchars :Export {
    my $chars = shift;
    return "<pdcc:$chars>";
 }
 
-sub punctuationspace {return '<0x2008>' }
+sub punctuationspace :Export {return '<0x2008>' }
 
-sub thinspace {return '<0x2009>' }
+sub thinspace :Export {return '<0x2009>' }
 
-sub bullet { return '<0x2022>' }
+sub bullet :Export { return '<0x2022>' }
 
-sub boxbreak {
+sub boxbreak :Export {
    return "<cNextXChars:Box>\r<cNextXChars:>";
 }
 
-sub superscript {
+sub superscript :Export {
    return "<cPosition:Superscript>@_<cPosition:>";
 }
 
-sub nbsp {
+sub nbsp :Export {
    return '<0x00A0>';
 }
 
-sub endash {
+sub endash :Export {
    return '<0x2013>';
 }
 
-sub emdash {
+sub emdash :Export {
    return '<0x2014>';
 }
  
-sub softreturn {
+sub softreturn :Export {
     return "\n"; # this really is an \n, as opposed to the usual \r
 }
 
-sub color {
+sub color :Export {
    my ($color, @text) = @_;
    my $text = join("", @text);
    return "<cColor:$color>$text<cColor:>";
 }
 
-sub emspace {
+sub emspace :Export {
    return '<0x2003>';
 }
 
-sub enspace {
+sub enspace :Export {
    return '<0x2002>';
 }
 
-sub nonjoiner  {
+sub nonjoiner  :Export {
    return '<0x200C>';
 }
 
-sub thirdspace {
+sub thirdspace :Export {
    return '<0x2004>';
 }
 
-sub hairspace {
+sub hairspace :Export {
    return '<0x200A>';
 }
 
 
-sub discretionary_lf {
+sub discretionary_lf :Export {
    return '<0x200B>';
 }
 
-sub combiside {
+sub combiside :Export {
    my $num = combichar ( +shift);
    return charstyle ('sidenum' , $num) . nocharstyle;
 }
 
-sub combifootnote {
+sub combifootnote :Export {
    my $num = combichar ( +shift);
    return charstyle ('footnum' , $num) . nocharstyle;
 }
 
-sub combichar {
+sub combichar :Export {
 
    my $num = shift;
 
