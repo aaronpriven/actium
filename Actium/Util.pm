@@ -24,10 +24,10 @@ sub positional : Export {
 
     my @arguments = @{$argument_r};
     my @attrnames = @_;
-
-    my $class = shift @arguments; # See Moose::Manual::Construction
+    
     my $orig  = shift @arguments; # See Moose::Manual::Construction
-
+    my $class = shift @arguments; # See Moose::Manual::Construction
+    
     my %newargs;
     if ( ref( $arguments[-1] ) eq 'HASH' ) {
         %newargs = %{ pop @arguments };
@@ -54,17 +54,17 @@ sub _joinseries_with_x {
     my $and = shift;
     my @things = @_;
     return $things[0] if @things == 1;
-    return "$things[0] and $things[1]" if @things = 2;
+    return "$things[0] and $things[1]" if @things == 2;
     my $last = pop @things;
     return ( join( q{, }, @things ) . " $and $last" );
 }
 
 sub joinseries :Export {
-    return _joinseries_with_x('and');
+    return _joinseries_with_x('and', @_);
 }
 
 sub joinseries_ampersand :Export {
-    return _joinseries_with_x('&');
+    return _joinseries_with_x('&' , @_);
 };
 
 sub j : Export {
