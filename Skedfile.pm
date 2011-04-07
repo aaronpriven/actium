@@ -45,19 +45,20 @@ sub Skedread {
     s/\s+$//;
     $skedref->{SKEDNAME} = $_;
 
-    ( $skedref->{LINEGROUP}, $skedref->{DIR}, $skedref->{DAY} )
-      = split(/_/);
+    ( $skedref->{LINEGROUP}, $skedref->{DIR}, $skedref->{DAY} ) = split(/_/);
 
     $_ = <IN>;
     s/\s+$//;
     chomp;
     ( undef, @{ $skedref->{NOTEDEFS} } ) = split(/\t/);
+
     # first column is always "Note Definitions"
 
     $_ = <IN>;
     chomp;
     s/\s+$//;
     ( undef, undef, undef, undef, @{ $skedref->{TP} } ) = split(/\t/);
+
   # the first four columns are always "SPEC DAYS", "NOTE" , "VT" , and "RTE NUM"
 
     while (<IN>) {
@@ -72,6 +73,7 @@ sub Skedread {
         push @{ $skedref->{ROUTES} },   $route;
 
         $#times = $#{ $skedref->{TP} };
+
         # this means that the number of time columns will be the same as
         # the number timepoint columns -- discarding any extras and
         # padding out empty ones with undef values
@@ -79,10 +81,10 @@ sub Skedread {
         for ( my $col = 0 ; $col < scalar(@times) ; $col++ ) {
             push @{ $skedref->{TIMES}[$col] }, $times[$col];
         }
-    } ## tidy end: while (<IN>)
+    }    ## tidy end: while (<IN>)
     close IN;
     return $skedref;
-} ## tidy end: sub Skedread
+}    ## tidy end: sub Skedread
 
 sub Skedwrite {
     Skedwrite_anydir( 'skeds', @_ );
@@ -145,17 +147,18 @@ sub Skedwrite_anydir {
         # ok. $_ becomes the ref to the first, second, etc. list of times.
 
         $times =~ s/\s+$//;
+
         #strip whitespace
 
         print OUT "$times\n";
 
-    } ## tidy end: for ( my $i = 0 ; $i < ...)
+    }    ## tidy end: for ( my $i = 0 ; $i < ...)
 
     close OUT;
 
     return $skedref;
 
-} ## tidy end: sub Skedwrite_anydir
+}    ## tidy end: sub Skedwrite_anydir
 
 sub remove_blank_columns ($) {
 
@@ -163,12 +166,15 @@ sub remove_blank_columns ($) {
 
     my $tp = 0;
     while ( $tp < ( scalar @{ $dataref->{"TP"} } ) ) {
+
         # loop around each timepoint
         no warnings 'uninitialized';
         unless ( join( '', times_column( $dataref, $tp ) ) ) {
+
             # unless there is some data in the TIMES for this column,
             splice( @{ $dataref->{"TIMES"} }, $tp, 1 );
             splice( @{ $dataref->{"TP"} },    $tp, 1 );
+
             # delete this column
             next;
         }
@@ -232,7 +238,7 @@ sub trim_sked {
                 }
             }
         }
-    } ## tidy end: if ($subset)
+    }         ## tidy end: if ($subset)
     else {    # no routes are given, so use them all
         $routes{$_} = 1 foreach @{ $sked->{ROUTES} };
     }
@@ -261,12 +267,10 @@ sub trim_sked {
         }
         else {
 
-            if (join(
-                    "",
-                    sort ( $sked->{SPECDAYS}[$row],
-                        $sked->{SPECDAYS}[ $row - 1 ],
-                    )
-                ) eq "SDSH"
+            if (
+                join( "",
+                    sort $sked->{SPECDAYS}[$row],
+                    $sked->{SPECDAYS}[ $row - 1 ] ) eq "SDSH"
               )
             {
                 $sked->{SPECDAYS}[ $row - 1 ] = "",;
@@ -283,6 +287,7 @@ sub trim_sked {
             foreach ( 0 .. ( ( scalar @{ $sked->{TP} } ) - 1 ) ) {
                 splice( @{ $sked->{TIMES}[$_] }, $row, 1 );
             }
+
             # eliminate this row
         }    # if $this ne $prev
 
@@ -294,7 +299,7 @@ sub trim_sked {
 
     return %routes;
 
-} ## tidy end: sub trim_sked
+}    ## tidy end: sub trim_sked
 
 sub getfiles {
 
@@ -320,7 +325,7 @@ sub getfiles {
 
     # I can't imagine a time when I will want the equals signs ones
 
-} ## tidy end: sub getfiles
+}    ## tidy end: sub getfiles
 
 sub merge_columns {
 
@@ -336,6 +341,7 @@ sub merge_columns {
 
         my $thistp = $dataref->{TP}[$tp];
         $thistp =~ s/=[0-9]+$//;
+
         # eliminate =x from timepoint, for comparison
 
         unless ( $thistp eq $prevtp ) {
@@ -350,6 +356,7 @@ sub merge_columns {
         # so if it gets past that, we have duplicate columns
 
         splice( @{ $dataref->{"TP"} }, $tp, 1 );
+
         # that gets rid of the second TP
 
         for (
@@ -363,15 +370,17 @@ sub merge_columns {
               if $dataref->{TIMES}[$tp][$row];
 
         }
+
         # that takes all the values in the second column and
         # puts them in the first column
 
         splice( @{ $dataref->{TIMES} }, $tp, 1 );
+
         # gets rid of extra TIMES array, now duplicated in the previous one
 
-    } ## tidy end: while ( $tp < ( scalar @{...}))
+    }    ## tidy end: while ( $tp < ( scalar @{...}))
 
-} ## tidy end: sub merge_columns
+}    ## tidy end: sub merge_columns
 
 sub earliest_time {
     my $sked_r = shift;
@@ -384,7 +393,7 @@ sub earliest_time {
 
     return;
 
-    # it will only get here if there are no times in first row, ... 
+    # it will only get here if there are no times in first row, ...
     # but why would there be a blank row? that makes no sense
 
 }
