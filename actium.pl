@@ -34,30 +34,20 @@ use Actium::Options qw(add_option init_options option);
     }
 }
 
-
 # The below make sure that all errors give full stack traces.
 # This should be changed to a command-line option
 
 # arguably also the facetious name should be changed
 
-$SIG{'__WARN__'} = \&soft_cushions;
-$SIG{'__DIE__'} = \&soft_cushions;
-
-sub soft_cushions {
-    # Confess! Confess! Or we will get the comfy chair!
-    require Carp;
-    Carp::confess (@_);
-}
-
 ### Get subcommand, and run subcommand
 
 my %module_of = (
-    headways => 'Headways',
-    time => 'Time',
-    sqlite2tab => 'SQLite2tab',
-    flagspecs => 'Flagspecs',
-    drivingorder => 'DrivingOrder',
-    tabula => 'Tabula' ,
+    headways      => 'Headways',
+    time          => 'Time',
+    sqlite2tab    => 'SQLite2tab',
+    flagspecs     => 'Flagspecs',
+    drivingorder  => 'DrivingOrder',
+    tabula        => 'Tabula',
     orderbytravel => 'OrderByTravel',
     # more to come
 );
@@ -65,7 +55,7 @@ my %module_of = (
 my $help       = 0;
 my $subcommand = shift(@ARGV);
 
-if ( not $subcommand or ( lc($subcommand) eq "help" and (@ARGV == 0) ) )   {
+if ( not $subcommand or ( lc($subcommand) eq "help" and ( @ARGV == 0 ) ) ) {
     print mainhelp() or die "Can't print help text: $OS_ERROR";
     exit 0;
 }
@@ -88,8 +78,15 @@ my $module = "Actium::$module_of{$subcommand}";
 require( modulefile($module) ) or die $OS_ERROR;
 
 add_option( 'help|?', 'Displays this help message.' );
+add_option( '_stacktrace',
+    'Force a stack trace if an error or warning is given ' );
 
 init_options();
+
+if ( option('_stacktrace') ) {
+    $SIG{'__WARN__'} = \&soft_cushions;
+    $SIG{'__DIE__'}  = \&soft_cushions;
+}
 
 my $sub;
 if ( $help or option('help') ) {
@@ -102,10 +99,10 @@ else {
 sub mainhelp {
 
     my $help = "$0 subcommands available:\n\n";
-    foreach (sort keys %module_of ) {
+    foreach ( sort keys %module_of ) {
         $help .= "$_\n";
     }
-    
+
     return $help;
 
 }
@@ -114,6 +111,12 @@ sub modulefile {
     my $name = shift;
     $name =~ s{::|'}{/}gs;
     return "$name.pm";
+}
+
+sub soft_cushions {
+    # Confess! Confess! Or we will get the comfy chair!
+    require Carp;
+    Carp::confess(@_);
 }
 
 __END__
@@ -206,4 +209,5 @@ later version, or
 This program is distributed in the hope that it will be useful, but WITHOUT 
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
 FITNESS FOR A PARTICULAR PURPOSE.
+
 

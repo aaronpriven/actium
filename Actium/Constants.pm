@@ -21,7 +21,7 @@ $VERSION = eval $VERSION;
 my %constants;
 my ( $name, $value );
 
-# In /OldActium/Constants are: DAY_OF and DIR_OF 
+# In /OldActium/Constants are: DAY_OF and DIR_OF
 # (which I moved to HastusASI/Util, although this may change)
 # and MINS_IN_12HRS which got moved to Actium::Time
 
@@ -31,7 +31,7 @@ BEGIN {
 
     %constants = (
         FALSE       => \0,
-        TRUE        => \(not 0),
+        TRUE        => \( not 0 ),
         EMPTY_STR   => \q{},
         CRLF        => \qq{\cM\cJ},
         SPACE       => \q{ },
@@ -42,25 +42,64 @@ BEGIN {
         KEY_SEPARATOR => \"\c]",
 
         LINES_TO_COMBINE => {
-#            '21'  => '20', # coming March 2010
+            #            '21'  => '20', # coming March 2010
             '72M' => '72',
             'DB1' => 'DB',
             'DB3' => 'DB',
             '83'  => '86',
             '386' => '86',
-            'NC'  => 'NX4', 
-            'NXC' => 'NX4', 
+            'NC'  => 'NX4',
+            'NXC' => 'NX4',
             'LC'  => 'LA',
         },
-        
-        SCHEDULE_DAYS => [ qw/WD SA SU WA WU WE DA/ ] ,
-# Weekdays, Saturdays, Sundays, Weekdays-and-Saturdays,
-# Weekdays-and-Sundays, Weekends, Daily
+
+        SCHEDULE_DAYS => [qw/WD SA SU WA WU WE DA/],
+        # Weekdays, Saturdays, Sundays, Weekdays-and-Saturdays,
+        # Weekdays-and-Sundays, Weekends, Daily
 
         DIRCODES => [qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN )],
+        
+#        DAYS_FROM_TRANSITINFO => { reverse
+#                 qw(
+#              1234567H DA
+#              12345    WD
+#              6        SA
+#              7H       SU
+#              67H      WE
+#              24       TT
+#              25       TF
+#              35       WF
+#              135      MZ
+#              )    
+#        },
+
+        TRANSITINFO_DAYS_OF => {
+            qw(
+              1234567H DA
+              123457H  WU
+              123456   WA
+              12345    WD
+              6        SA
+              7H       SU
+              67H      WE
+              24       TT
+              25       TF
+              35       WF
+              135      MZ
+              )
+        },
+
+        TRANSBAY_NOLOCALS => [qw/FS L NX NX1 NX2 NX3 U W/],
+
+        SIDE_OF => {
+            ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
+            ( map { $_ => 'W' } (qw/14 18 19 22 24 25 26 97/) ),
+        },
 
     );
-
+    
+    $constants{DAYS_FROM_TRANSITINFO} = { reverse %{$constants{TRANSITINFO_DAYS_OF}} };
+    
     no warnings 'once';
     no strict 'refs';
 
@@ -68,7 +107,7 @@ BEGIN {
         *{$name} = $value;    # supports <sigil>__PACKAGE__::<variable>
     }
 
-}
+} ## tidy end: BEGIN
 
 sub import {
     my $caller = caller;

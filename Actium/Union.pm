@@ -2,15 +2,11 @@
 # Ordered union of lists
 
 # Subversion: $Id$
+
+use 5.012;
 use warnings;
-use strict;
 
-package Actium::Union;
-
-use 5.010;
-
-our $VERSION = '0.001';
-$VERSION = eval $VERSION;    ## no critic (ProhibitStringyEval)
+package Actium::Union 0.001;
 
 use Carp;
 

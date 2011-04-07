@@ -16,9 +16,9 @@ $VERSION = eval $VERSION;
 ## no critic (ProhibitMagicNumbers)
 
 use MooseX::Types -declare => [
-    qw <Schedule_Day DayCode SchoolDayCode
+    qw <Schedule_Day TransitinfoDays DayCode SchoolDayCode
       ArrayRefOfTimeNums _ArrayRefOfStrs ArrayRefOrTimeNum
-      TimeNum Str4 Str8 DirCode HastusDirCode >    # StrOrArrayRef
+      TransitInfoDays TimeNum Str4 Str8 DirCode HastusDirCode >    # StrOrArrayRef
 ];
 
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
@@ -34,7 +34,13 @@ qq<"$_" is not a valid day code\n  (one or more of the characters 1-7 plus H, in
 # It uses question marks instead of [1-7H]+ because
 # the numbers have to be in order, and not repeated
 
-enum( SchoolDayCode, [qw<B D H>] );
+enum (TransitInfoDays, values %TRANSITINFO_DAYS_OF);
+
+coerce DayCode, from TransitInfoDays, via {
+    $DAYS_FROM_TRANSITINFO{$_}
+};
+
+enum( SchoolDayCode , 'B' , 'D' , 'H' );
 
 enum( DirCode, @DIRCODES );
 
