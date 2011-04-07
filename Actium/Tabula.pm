@@ -14,15 +14,16 @@ package Actium::Tabula 0.001;
 
 # initialization
 
+use English '-no_match_vars';
 use IDTags;
 use Skedfile qw(Skedread getfiles GETFILES_PUBLIC_AND_DB);
-use Skedvars qw(%longerdaynames %daydirhash %specdaynames);
+use Skedvars qw(%longerdaynames %daydirhash %dirhash %dayhash %specdaynames);
 use Array::Transpose;
 use Actium::Signup;
-use File::Slurp;
 use Actium::Sorting('sortbyline');
 use List::Util ('max');
 use Actium::FPMerge qw(FPread_simple);
+use Actium::Time ('timenum');
 
 use constant CR => "\r";
 
@@ -251,13 +252,18 @@ sub START {
 
         close $th;
 
-        $tables_of_line{$linegroup}{"${dir}_$day"}{TEXT} = $table;
-        $tables_of_line{$linegroup}{"${dir}_$day"}{SPECDAYSCOL}
-          = $has_specdays_col;
-        $tables_of_line{$linegroup}{"${dir}_$day"}{ROUTECOL} = $has_route_col;
-        $tables_of_line{$linegroup}{"${dir}_$day"}{WIDTH}
+        my $dirday = "${dir}_$day";
+
+        $tables_of_line{$linegroup}{$dirday}{DAY} = $day;
+        $tables_of_line{$linegroup}{$dirday}{DIR} = $dir;
+        $tables_of_line{$linegroup}{$dirday}{EARLIESTTIME}
+          = timenum( Skedfile::earliest_time( \%sked ) );
+        $tables_of_line{$linegroup}{$dirday}{TEXT}        = $table;
+        $tables_of_line{$linegroup}{$dirday}{SPECDAYSCOL} = $has_specdays_col;
+        $tables_of_line{$linegroup}{$dirday}{ROUTECOL}    = $has_route_col;
+        $tables_of_line{$linegroup}{$dirday}{WIDTH}
           = $tpcount + ( $halfcols / 2 );
-        $tables_of_line{$linegroup}{"${dir}_$day"}{HEIGHT}
+        $tables_of_line{$linegroup}{$dirday}{HEIGHT}
           = ( 3 * 12 ) + 6.136         # 3p6.136 height of color header
           + ( 3 * 12 ) + 10.016        # 3p10.016 four-line timepoint header
           + ( $timerows * 10.516 );    # p10.516 time cell
@@ -274,11 +280,24 @@ sub START {
         my @widths;
         my $specdayscol;
 
+        foreach my $dirday ( keys %{ $tables_of_line{$linegroup} } ) {
+
+            $tables_of_line{$linegroup}{$dirday}{SORTBY}
+              = _sort_by( \%tables_of_line, $linegroup, $dirday );
+        }
+
         foreach my $dirday (
-            sort { $daydirhash{$a} <=> $daydirhash{$b} }
+            #sort { $daydirhash{$a} <=> $daydirhash{$b} }
+
+            sort {
+                $tables_of_line{$linegroup}{$a}{SORTBY} cmp
+                  $tables_of_line{$linegroup}{$b}{SORTBY}
+            }
+
             keys %{ $tables_of_line{$linegroup} }
           )
         {
+
             push @texts,   $tables_of_line{$linegroup}{$dirday}{TEXT};
             push @heights, $tables_of_line{$linegroup}{$dirday}{HEIGHT};
             push @widths,  $tables_of_line{$linegroup}{$dirday}{WIDTH};
@@ -326,7 +345,11 @@ sub START {
     for my $linegroup ( sortbyline keys %tables_of_line ) {
 
         foreach my $dirday (
-            sort { $daydirhash{$a} <=> $daydirhash{$b} }
+            #            sort { $daydirhash{$a} <=> $daydirhash{$b} }
+            sort {
+                $tables_of_line{$linegroup}{$a}{SORTBY}
+                  cmp $tables_of_line{$linegroup}{$b}{SORTBY}
+            }
             keys %{ $tables_of_line{$linegroup} }
           )
         {
@@ -347,7 +370,26 @@ sub START {
     $maxheight = $maxheight / 72;    # inches instead of points
 
     say "Maximum height in inches: $maxheight; maximum columns: $maxwidth";
+    
+=begin 
+    open my $in, '<' , 'tabulae-config.txt' 
+    or die "Can't open tabulae-config.txt for reading: $OS_ERROR";
+    
+    my %config; 
+   
+    while (<$in>) {
+     chomp;
+     
+     
+     
+     
+     
+    }
+    
+=end
 
+=cut
+    
 } ## tidy end: sub START
 
 sub indesign_tags {
@@ -362,4 +404,56 @@ sub indesign_tags {
 
 1;
 
+sub _sort_by {
+    my $tables_of_line_r = shift;
+    my $linegroup        = shift;
+    my $dirday           = shift;
+
+    my $dir = $tables_of_line_r->{$linegroup}{$dirday}{DIR};
+    my $day = $tables_of_line_r->{$linegroup}{$dirday}{DAY};
+
+    my $time;
+    if ( exists( $tables_of_line_r->{$linegroup}{"${dir}_WD"} ) ) {
+        $time = $tables_of_line_r->{$linegroup}{"${dir}_WD"}{EARLIESTTIME};
+    }
+    else {
+        $time = $tables_of_line_r->{$linegroup}{$dirday}{EARLIESTTIME};
+    }
+    
+    my $dayval = $dayhash{$day} // '00';
+
+    return join( "\0",
+        Actium::Sorting::linekeys( $dayval, $time, $dirhash{$dir} ) );
+
+} ## tidy end: sub _sort_by
+
 __END__
+
+[B
+>Oakland
+Trestle Glen Road
+Lakeshore Avenue
+>San Francisco
+Transbay Temporary Terminal
+[C P
+>Piedmont
+Highland Avenue
+>Oakland
+Piedmont Avenue
+40th Street
+>Emeryville
+Christie Avenue
+>San Francisco
+Transbay Temporary Terminal
+[M
+>Hayward
+Hayward BRT
+Chabot College
+>Foster City
+Vintage Park
+Metro Center
+>Redwood City
+Oracle Headquarters
+>San Mateo
+Hillsdale Caltrain
+Hillsdale Mall

@@ -2,6 +2,8 @@
 
 # Subversion: $Id$
 
+# This is part of a so-far incomplete effort to refactor Flagspecs.
+
 use 5.012;
 use warnings;
 
