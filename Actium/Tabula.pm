@@ -47,6 +47,8 @@ sub START {
 
     chdir( $signup->get_dir() );
 
+    my %front_matter = _get_configuration($signup);
+
     my ( @timepoints, %timepoints );
     FPread_simple( 'Timepoints.csv', \@timepoints, \%timepoints, 'Abbrev9' );
 
@@ -88,13 +90,14 @@ sub START {
             $has_route_col = 1;
         }
 
-        my $routechars
-          = length( join( '', @seenroutes ) ) + ( 3 * ($#seenroutes) ) + 1;
+        my $routechars =
+          length( join( '', @seenroutes ) ) + ( 3 * ($#seenroutes) ) + 1;
+
         # number of characters in routes, plus three characters -- space bullet
         # space -- for each route except the first one, plus a final space
 
-        my $bullet
-          = '<0x2009><CharStyle:SmallRoundBullet><0x2022><CharStyle:><0x2009>';
+        my $bullet =
+          '<0x2009><CharStyle:SmallRoundBullet><0x2022><CharStyle:><0x2009>';
         my $routetext = join( $bullet, @seenroutes );
 
         my $dayname = $longerdaynames{ $sked{DAY} };
@@ -228,11 +231,11 @@ sub START {
                     print $th $time;
                 }
                 print $th '<CellEnd:>';
-            } ## tidy end: for my $j ( 0 .. $#row )
+            }    ## tidy end: for my $j ( 0 .. $#row )
 
             print $th '<RowEnd:>';
 
-        } ## tidy end: for my $i ( 0 .. $#timerows)
+        }    ## tidy end: for my $i ( 0 .. $#timerows)
 
         # Table End
         print $th "<TableEnd:>\r";
@@ -256,22 +259,22 @@ sub START {
 
         $tables_of_line{$linegroup}{$dirday}{DAY} = $day;
         $tables_of_line{$linegroup}{$dirday}{DIR} = $dir;
-        $tables_of_line{$linegroup}{$dirday}{EARLIESTTIME}
-          = timenum( Skedfile::earliest_time( \%sked ) );
+        $tables_of_line{$linegroup}{$dirday}{EARLIESTTIME} =
+          timenum( Skedfile::earliest_time( \%sked ) );
         $tables_of_line{$linegroup}{$dirday}{TEXT}        = $table;
         $tables_of_line{$linegroup}{$dirday}{SPECDAYSCOL} = $has_specdays_col;
         $tables_of_line{$linegroup}{$dirday}{ROUTECOL}    = $has_route_col;
-        $tables_of_line{$linegroup}{$dirday}{WIDTH}
-          = $tpcount + ( $halfcols / 2 );
-        $tables_of_line{$linegroup}{$dirday}{HEIGHT}
-          = ( 3 * 12 ) + 6.136         # 3p6.136 height of color header
+        $tables_of_line{$linegroup}{$dirday}{WIDTH} =
+          $tpcount + ( $halfcols / 2 );
+        $tables_of_line{$linegroup}{$dirday}{HEIGHT} =
+          ( 3 * 12 ) + 6.136    # 3p6.136 height of color header
           + ( 3 * 12 ) + 10.016        # 3p10.016 four-line timepoint header
           + ( $timerows * 10.516 );    # p10.516 time cell
 
-    } ## tidy end: foreach my $file (@files)
+    }    ## tidy end: foreach my $file (@files)
 
-    my $boxwidth  = 4.5;               # table columns in box
-    my $boxheight = 49 * 12;           # points in box
+    my $boxwidth  = 4.5;        # table columns in box
+    my $boxheight = 49 * 12;    # points in box
 
     for my $linegroup ( keys %tables_of_line ) {
 
@@ -282,16 +285,17 @@ sub START {
 
         foreach my $dirday ( keys %{ $tables_of_line{$linegroup} } ) {
 
-            $tables_of_line{$linegroup}{$dirday}{SORTBY}
-              = _sort_by( \%tables_of_line, $linegroup, $dirday );
+            $tables_of_line{$linegroup}{$dirday}{SORTBY} =
+              _sort_by( \%tables_of_line, $linegroup, $dirday );
         }
 
         foreach my $dirday (
+
             #sort { $daydirhash{$a} <=> $daydirhash{$b} }
 
             sort {
-                $tables_of_line{$linegroup}{$a}{SORTBY} cmp
-                  $tables_of_line{$linegroup}{$b}{SORTBY}
+                $tables_of_line{$linegroup}{$a}{SORTBY}
+                  cmp $tables_of_line{$linegroup}{$b}{SORTBY}
             }
 
             keys %{ $tables_of_line{$linegroup} }
@@ -319,23 +323,45 @@ sub START {
                   unless $heights[0] + $heights[1] + 18 < $boxheight
                       and $widths[0] < $boxwidth * 2
                       and $widths[1] < $boxwidth * 2
+
                       # they fit up and down
                       or $widths[0] + $widths[1] < $boxwidth
                       and $heights[0] < $boxheight
                       and $heights[1] < $boxheight;
+
                 # or they fit side by side
             }
             default {    # TODO - figure out for larger sizes
                 $size = 'big';
             }
-        } ## tidy end: given
+        }    ## tidy end: given
 
         open my $out, '>', "tabulae/$size/$linegroup.txt"
           or die "Can't open tabulae/$size/$linegroup.txt: $!";
-        print $out $tags{start}, join( CR, @texts );
+        print $out $tags{start};
+        
+        if (exists $front_matter{$linegroup}) {
+         
+            # TODO - print linegroup, effective date, appropriate boxbreaks
+         
+            foreach my $front_line (@{$front_matter{$linegroup}}) {
+             
+                if ( substr ($front_line, 0 , 1) eq '>' ) {
+                    print $out parastyle('***HEADERLINE***' , substr($front_line,1) );
+                } else {
+                    print $out parastyle('***TEXTLINE***' , $front_line);
+                }
+             
+            }
+            
+        }
+        
+        
+        
+        print $out join( CR, @texts );
         close $out;
 
-    } ## tidy end: for my $linegroup ( keys...)
+    }    ## tidy end: for my $linegroup ( keys...)
 
     my @texts;
 
@@ -345,6 +371,7 @@ sub START {
     for my $linegroup ( sortbyline keys %tables_of_line ) {
 
         foreach my $dirday (
+
             #            sort { $daydirhash{$a} <=> $daydirhash{$b} }
             sort {
                 $tables_of_line{$linegroup}{$a}{SORTBY}
@@ -354,10 +381,10 @@ sub START {
           )
         {
             push @texts, $tables_of_line{$linegroup}{$dirday}{TEXT};
-            $maxwidth
-              = max( $maxwidth, $tables_of_line{$linegroup}{$dirday}{WIDTH} );
-            $maxheight
-              = max( $maxheight, $tables_of_line{$linegroup}{$dirday}{HEIGHT} );
+            $maxwidth =
+              max( $maxwidth, $tables_of_line{$linegroup}{$dirday}{WIDTH} );
+            $maxheight =
+              max( $maxheight, $tables_of_line{$linegroup}{$dirday}{HEIGHT} );
         }
 
     }
@@ -370,7 +397,7 @@ sub START {
     $maxheight = $maxheight / 72;    # inches instead of points
 
     say "Maximum height in inches: $maxheight; maximum columns: $maxwidth";
-    
+
 =begin 
     open my $in, '<' , 'tabulae-config.txt' 
     or die "Can't open tabulae-config.txt for reading: $OS_ERROR";
@@ -389,14 +416,14 @@ sub START {
 =end
 
 =cut
-    
-} ## tidy end: sub START
+
+}    ## tidy end: sub START
 
 sub indesign_tags {
 
     my %tags;
-    $tags{start}
-      = "<ASCII-MAC>\r<Version:6><FeatureSet:InDesign-Roman><DefineParaStyle:Time=><DefineParaStyle:dropcaphead=><DefineTableStyle:TimeTable=><DefineCellStyle:ColorHeader=><DefineCharStyle:DropCapHeadDays=>";
+    $tags{start} =
+"<ASCII-MAC>\r<Version:6><FeatureSet:InDesign-Roman><DefineParaStyle:Time=><DefineParaStyle:dropcaphead=><DefineTableStyle:TimeTable=><DefineCellStyle:ColorHeader=><DefineCharStyle:DropCapHeadDays=>";
 
     return %tags;
 
@@ -419,41 +446,44 @@ sub _sort_by {
     else {
         $time = $tables_of_line_r->{$linegroup}{$dirday}{EARLIESTTIME};
     }
-    
+
     my $dayval = $dayhash{$day} // '00';
 
-    return join( "\0",
-        Actium::Sorting::linekeys( $dayval, $time, $dirhash{$dir} ) );
+    return
+      join( "\0", Actium::Sorting::linekeys( $dayval, $time, $dirhash{$dir} ) );
 
-} ## tidy end: sub _sort_by
+}    ## tidy end: sub _sort_by
+
+sub _get_configuration {
+
+    my $signup   = shift;
+    my $filespec = $signup->make_filespec('tabula-config.txt');
+
+    open my $config_h, '<', $filespec
+      or die "Can't open $filespec for reading: $OS_ERROR";
+
+    my %front_matter;
+    my $timetable;
+
+  LINE:
+    while ( my $line = <$config_h> ) {
+        chomp $line;
+        next LINE unless $line;
+        if ( substr( $line, 0, 1 ) eq '[' ) {
+            $timetable = ( substr( $line, 1 ) );
+        }
+        else {
+            next LINE unless $timetable;
+            push @{ $front_matter{$timetable} }, $line;
+        }
+    }
+    
+    close $config_h 
+      or die "Can't close $filespec for writing: $OS_ERROR";
+
+    return %front_matter;
+
+}
 
 __END__
 
-[B
->Oakland
-Trestle Glen Road
-Lakeshore Avenue
->San Francisco
-Transbay Temporary Terminal
-[C P
->Piedmont
-Highland Avenue
->Oakland
-Piedmont Avenue
-40th Street
->Emeryville
-Christie Avenue
->San Francisco
-Transbay Temporary Terminal
-[M
->Hayward
-Hayward BRT
-Chabot College
->Foster City
-Vintage Park
-Metro Center
->Redwood City
-Oracle Headquarters
->San Mateo
-Hillsdale Caltrain
-Hillsdale Mall
