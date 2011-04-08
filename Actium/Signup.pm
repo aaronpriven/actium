@@ -29,6 +29,9 @@ Readonly my $LAST_RESORT_BASEDIR =>
   File::Spec->catdir( $FindBin::Bin, File::Spec->updir(), 'signups' );
 Readonly my $DEFAULT_HSA_FILENAME => 'hsa.storable';
 
+Readonly my $DEFAULT_BASEDIR => ( $ENV{$BASE_ENV} || $LAST_RESORT_BASEDIR );
+Readonly my $DEFAULT_SIGNUP => ( $ENV{$SIGNUP_ENV} || 'none' );
+
 # The routine below was designed to allow the caller to opt out
 # of the use of command line options. Which seems less useful in retrospect.
 
@@ -59,11 +62,13 @@ Readonly my $DEFAULT_HSA_FILENAME => 'hsa.storable';
 #}
 
 add_option( 'basedir=s',
-    'Base directory (normally [something]/Actium/signups)' );
+"Base directory (normally [something]/Actium/signups); current default is $DEFAULT_BASEDIR"
+);
 
 add_option( 'signup=s',
         'Signup. This is the subdirectory under the base directory. '
-      . 'Typically something like "f08" (meaning Fall 2008).' );
+      . qq<Typically something like "f08" (meaning Fall 2008). Current default is $DEFAULT_SIGNUP>
+);
 
 # class or object methods
 
@@ -142,7 +147,7 @@ sub new {
             $params{SUBDIRS} = [ $params{SUBDIR} ];
         }
 
-    } ## <perltidy> end if ( ref( $_[0] ) eq 'HASH')
+    }    ## <perltidy> end if ( ref( $_[0] ) eq 'HASH')
 
     elsif (@_) {
         %params = ( SUBDIRS => [@_] );
@@ -150,7 +155,7 @@ sub new {
     else {
         %params = ();
     }
-    
+
     my $newsignup = $params{NEWSIGNUP};
     my $basedir   = $params{BASEDIR};
     my $signup    = $params{SIGNUP};
@@ -171,7 +176,7 @@ sub new {
 
     if ( exists( $params{SUBDIRS} ) ) {
         @subdirs = @{ $params{SUBDIRS} };
-        
+
         #while ( my $subdir = shift(@subdirs) ) {
         foreach my $subdir (@subdirs) {
             $dir = File::Spec->catdir( $dir, $subdir );
@@ -179,7 +184,7 @@ sub new {
         }
 
     }
-    
+
     my $self = {};
     bless $self, $class;
 
@@ -191,7 +196,7 @@ sub new {
 
     return $self;
 
-} ## <perltidy> end sub new
+}    ## <perltidy> end sub new
 
 sub subdir {
 
@@ -271,7 +276,7 @@ sub make_filespec {
 sub glob_files {
     my $self = shift;
     my $pattern = shift || q{*};
-    return glob (File::Spec->catfile( $self->get_dir(), $pattern ) );
+    return glob( File::Spec->catfile( $self->get_dir(), $pattern ) );
 
 }
 

@@ -10,10 +10,9 @@ use warnings;
 package Actium::Flagspecs::Stop 0.001;
 
 use Moose;
-use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
-has 'stop_ident' => (
+has 'id' => (
     required => 1,
     is       => 'ro',
     isa      => 'Str',
@@ -25,20 +24,28 @@ has 'routes_r' => (
     isa     => 'HashRef[Bool]',
     default => sub { {} },
     handles => {
-        add_route => [ 'set' , 1 ],
+        _set_route => 'set',
         routes    => 'keys',
         has_route => 'exists',
     },
 );
 
+sub set_route {
+    my $self = shift;
+    my $route = shift;
+    $self->_set_route($route, 1);
+}
+
 has 'district' => (
-    is  => 'rw',
+    is  => 'ro',
     isa => 'Str',
+    required => 1,
 );
 
 has 'side' => (
-    is  => 'rw',
+    is  => 'ro',
     isa => 'Str',
+    required => 1,
 );
 
 has '_relation_list_of_r' => (
@@ -59,8 +66,8 @@ sub add_relation {
     my $relation_obj      = shift;
     my $pattern_unique_id = $relation_obj->pattern_unique_id;
 
-    if ( $self->has_relation_list_r($pattern_unique_id) ) {
-        push @{ $self->relation_list_r_of($pattern_unique_id) }, $relation_obj;
+    if ( $self->_has_relation_list_r($pattern_unique_id) ) {
+        push @{ $self->_relation_list_r_of($pattern_unique_id) }, $relation_obj;
     }
     else {
         $self->_set_relation_list_r_of( $pattern_unique_id, [$relation_obj] );

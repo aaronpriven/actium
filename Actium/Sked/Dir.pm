@@ -25,10 +25,8 @@ use List::MoreUtils ('mesh');
 ###################################
 
 #Readonly my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN ) ;
-# DIRCODES defined in Actium::Constants
-
-Readonly my @HASTUS_DIRS => ( 0, 1, 3, 2, 4.. $#DIRCODES);
-# Hastus puts EB before WB, but we don't
+#Readonly my @HASTUS_DIRS => ( 0, 1, 3, 2, 4.. $#DIRCODES);
+# now defined in Actium::Constants
 
 Readonly my @DIRECTIONS => (
    qw(North South West East In Out Go Return Clockwise Counterclockwise),
@@ -44,9 +42,11 @@ Readonly my %DIRECTION_OF => mesh (@DIRCODES, @DIRECTIONS);
 Readonly my %BOUND_OF => mesh (@DIRCODES, @BOUND);
 Readonly my %ORDER_OF => mesh @DIRCODES , @{ [ 0 .. $#DIRCODES ] };
 
+use Moose::Util::TypeConstraints;
+
 has 'dircode' => (
     is          => 'ro',
-    isa         => 'DirCode',
+    isa         => DirCode,
 );
 
 # New day codes have a character for each set of days that are used.

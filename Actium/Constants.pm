@@ -58,20 +58,20 @@ BEGIN {
         # Weekdays-and-Sundays, Weekends, Daily
 
         DIRCODES => [qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN )],
-        
-#        DAYS_FROM_TRANSITINFO => { reverse
-#                 qw(
-#              1234567H DA
-#              12345    WD
-#              6        SA
-#              7H       SU
-#              67H      WE
-#              24       TT
-#              25       TF
-#              35       WF
-#              135      MZ
-#              )    
-#        },
+
+        #        DAYS_FROM_TRANSITINFO => { reverse
+        #                 qw(
+        #              1234567H DA
+        #              12345    WD
+        #              6        SA
+        #              7H       SU
+        #              67H      WE
+        #              24       TT
+        #              25       TF
+        #              35       WF
+        #              135      MZ
+        #              )
+        #        },
 
         TRANSITINFO_DAYS_OF => {
             qw(
@@ -97,9 +97,13 @@ BEGIN {
         },
 
     );
-    
-    $constants{DAYS_FROM_TRANSITINFO} = { reverse %{$constants{TRANSITINFO_DAYS_OF}} };
-    
+
+    $constants{HASTUS_DIRS}
+      = [ 0, 1, 3, 2, 4 .. scalar @{ $constants{DIRCODES} } ];
+
+    $constants{DAYS_FROM_TRANSITINFO}
+      = { reverse %{ $constants{TRANSITINFO_DAYS_OF} } };
+
     no warnings 'once';
     no strict 'refs';
 

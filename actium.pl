@@ -49,6 +49,7 @@ my %module_of = (
     drivingorder  => 'DrivingOrder',
     tabula        => 'Tabula',
     orderbytravel => 'OrderByTravel',
+    testfs => 'Flagspecs::Main',
     # more to come
 );
 
