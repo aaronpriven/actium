@@ -50,7 +50,7 @@ has 'daycode' => (
     isa         => DayCode,
     required    => 1,
     initializer => '_initialize_daycode',
-    coerce => 1,
+    coerce      => 1,
 );
 
 # New day codes have a character for each set of days that are used.
@@ -60,10 +60,10 @@ sub _initialize_daycode {
     my $self    = shift;
     my $daycode = shift;
     my $set     = shift;
-    
-    #$daycode = $DAYS_FROM_TRANSITINFO{$daycode} if $DAYS_FROM_TRANSITINFO{$daycode};
-    # if passed a day code from the Transitinfo definitions, convert it
-    # TODO - maybe use coercion instead?
+
+#$daycode = $DAYS_FROM_TRANSITINFO{$daycode} if $DAYS_FROM_TRANSITINFO{$daycode};
+# if passed a day code from the Transitinfo definitions, convert it
+# TODO - maybe use coercion instead?
 
     $daycode =~ s/\D//g;
     # eliminate anything that's not a digit
@@ -73,13 +73,13 @@ sub _initialize_daycode {
     #    schedule
 
     $daycode =~ s/7H?/7H/;    # make sure Sundays always includes holidays
-    
+
     $set->($daycode);
 } ## tidy end: sub _initialize_daycode
 
 has 'schooldaycode' => (
-    is      => 'ro',
-#    isa => 'Str' , # code not working and I don't know why
+    is => 'ro',
+    #    isa => 'Str' , # code not working and I don't know why
     isa     => SchoolDayCode,    # [BDH]
     default => 'B',
 );
@@ -159,8 +159,8 @@ Readonly my %ADJECTIVE_SCHOOL_OF => (
 
 sub as_adjectives {
 
-    my $self      = shift;
-    
+    my $self = shift;
+
     my $composite = $self->_composite_code;
 
     state %cache;
@@ -175,10 +175,10 @@ sub as_adjectives {
     my $schooldaycode = $self->schooldaycode;
 
     my @as_adjectives = map { $ADJECTIVE_OF{$_} } split( //, $daycode );
-    
-    if (not @as_adjectives) {
-     
-      say Data::Dumper::Dumper($self);
+
+    if ( not @as_adjectives ) {
+
+        say Data::Dumper::Dumper($self);
     }
 
     my $results
@@ -189,8 +189,8 @@ sub as_adjectives {
 } ## tidy end: sub as_adjectives
 
 Readonly my @PLURALS => (
-    @SEVENDAYPLURALS, qw(Holidays Weekdays Weekends),
-    'Every day', "Every day except holidays"
+    @SEVENDAYPLURALS, 'Holidays', 'Mondays through Fridays',
+    'Weekends', 'Every day', "Every day except holidays"
 );
 
 Readonly my %PLURAL_OF => mesh( @DAYLETTERS, @PLURALS );
@@ -232,7 +232,8 @@ sub as_plurals {
 
 } ## tidy end: sub as_plurals
 Readonly my @ABBREVS =>
-  ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
+  ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" )
+  ;
 
 Readonly my %ABBREV_OF => mesh( @DAYLETTERS, @PLURALS );
 Readonly my %ABBREV_SCHOOL_OF => (
