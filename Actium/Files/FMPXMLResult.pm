@@ -105,7 +105,7 @@ sub _build_table_r {
     my $self         = shift;
     my $flats_folder = $self->flats_folder();
 
-    emit 'Assembling list of filenames';
+    #emit 'Assembling list of filenames';
 
     my @all_files = bsd_glob( $self->_flat_filespec(qq<*$EXTENSION>),
         GLOB_NOCASE | GLOB_NOSORT );
@@ -132,7 +132,7 @@ sub _build_table_r {
         $tables{$table} = 1;
     }
 
-    emit_done;
+    #emit_done;
 
     return \%tables;
 

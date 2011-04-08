@@ -29,6 +29,7 @@ has 'stop_obj' => (
 has 'is_at_place' => (
     is      => 'ro',
     isa     => 'Bool',
+    traits  => ['Bool'],
     default => 0,
     handles => { 'set_at_place' => 'set', },
 );
@@ -36,6 +37,7 @@ has 'is_at_place' => (
 has 'is_dropoff_only' => (
     is      => 'ro',
     isa     => 'Bool',
+    traits  => ['Bool'],
     default => 0,
     handles => { 'set_dropoff_only' => 'set', },
 );
@@ -44,6 +46,7 @@ has 'is_dropoff_only' => (
 has 'is_transbay_only' => (
     is      => 'ro',
     isa     => 'Bool',
+    traits  => ['Bool'],
     default => 0,
     handles => { 'set_transbay_only' => 'set', },
 );
@@ -51,6 +54,7 @@ has 'is_transbay_only' => (
 has 'is_last_stop' => (
     is      => 'ro',
     isa     => 'Bool',
+    traits  => ['Bool'],
     default => 0,
     handles => { 'set_last_stop' => 'set', },
 );
@@ -94,6 +98,7 @@ has 'going_transbay' => (
     is      => 'ro',
     isa     => 'Bool',
     traits  => ['Bool'],
+    default => 0,
     handles => { set_going_transbay => 'set', },
 );
 

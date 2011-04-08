@@ -14,7 +14,7 @@ use Algorithm::Diff qw(sdiff traverse_sequences);
 use Scalar::Util ('reftype');
 
 use Exporter qw( import );
-our @EXPORT_OK = qw(ordered_union distinguish);
+our @EXPORT_OK = qw(ordered_union distinguish comm);
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
 sub ordered_union {
@@ -35,24 +35,35 @@ sub ordered_union {
 
     my $union_r = shift @array_rs;
     foreach my $array_r (@array_rs) {
-        $union_r = _ordered_union_pair( $union_r, $array_r );
+        ( $union_r, undef ) = _comm_unchecked( $union_r, $array_r );
     }
 
     return wantarray ? @{$union_r} : $union_r;
 
 }    ## <perltidy> end sub ordered_union
 
-sub _ordered_union_pair {
+sub comm {
+    my @array_rs = @_;
+    _check_arrayrefs(@array_rs);
+    croak "Not enough arguments to comm" if @array_rs < 2;
+    croak "Too many arguments to comm"   if @array_rs > 2;
+    return _comm_unchecked(@array_rs);
+}
+
+sub _comm_unchecked {
 
     my $a_r = shift;    # array ref
     my $b_r = shift;    # array ref
 
     my @union;
+    my @markers;
     my @tempa;
     my @tempb;
 
     my $match = sub {
         push @union, @tempa, @tempb, $a_r->[ $_[0] ];
+        push @markers, ('<') x @tempa, ('>') x @tempb, '=';
+
         @tempa = ();
         @tempb = ();
     };
@@ -70,8 +81,9 @@ sub _ordered_union_pair {
     );
 
     push @union, @tempa, @tempb;
+    push @markers, ('<') x @tempa, ('>') x @tempb;
 
-    return wantarray ? @union : \@union;
+    return ( \@union, \@markers );
 
     # This works as follows. traverse_sequences goes through the
     # lists as described in the Algorithm::Diff documentation,
@@ -91,13 +103,15 @@ sub _ordered_union_pair {
     # Finally, at the end, the temporary arrays are pushed onto @union,
     # in case the last entry isn't a match.
 
+    # It saves what it did in @markers.
+
     # In normal usage most of the time the temporary arrays will be empty.
     # But this ensures that the sequences /A 1 2 Z/ and /A L M Z/ will end
     # up as /A 1 2 L M Z/. There's no way to know whether the proper order
     # should have been /A L M 1 2 Z/ instead, but we can be pretty sure
     # that interleaving them -- /A 1 L M 2 Z/ or /A 1 L 2 M Z/ -- is wrong.
 
-}    ## <perltidy> end sub _ordered_union_pair
+}
 
 sub _check_arrayrefs {
     #my $caller    = '$' . shift . '()';
@@ -117,11 +131,10 @@ sub distinguish {
     my @inputs = @_;
 
     _check_arrayrefs(@inputs);
-    
+
     my @check_order = reverse
       sort { scalar @{ $inputs[$a] } <=> scalar @{ $inputs[$b] } }
       ( 0 .. $#inputs );
-      
 
     my ( @firsts, @lasts );
     foreach my $input_r (@inputs) {
@@ -136,9 +149,9 @@ sub distinguish {
 
     my @results;
 
-    foreach my $from ( @check_order ) {
+    foreach my $from (@check_order) {
         my @sdiffs;
-        foreach my $to ( @check_order ) {
+        foreach my $to (@check_order) {
             next if $from == $to;
             push @sdiffs,
               [ grep { $_->[0] ne q{+} }
@@ -149,7 +162,7 @@ sub distinguish {
 
         # $sdiffs[to-list][place][0] = change_value (c, +, - , u )
         # $sdiffs[to-list][place][1] = place
-        
+
         my @change_ranges;
         my @prevchanges = ('u') x @sdiffs;
         my $in_a_range  = 0;
@@ -228,10 +241,10 @@ sub distinguish {
         $results[$from] = \@relevants;
         #push @results, \@relevants;
 
-    } ## tidy end: foreach my $from ( 0 .. $#inputs)
+    } ## tidy end: foreach my $from (@check_order)
 
     #@results = @results[@input_order];
-    
+
     return @results;
 
 } ## tidy end: sub distinguish
@@ -265,7 +278,7 @@ This documentation refers to Actium::Union version 0.001
  
 =head1 DESCRIPTION
 
-Actium::Union consists of two specialized set functions.
+Actium::Union consists of three specialized set functions.
 
 =head1 SUBROUTINES
 
@@ -304,8 +317,27 @@ the algorithm puts the values of the first list ahead of the values from the
 second list, keeping values from the same list together until there is a match
 again. (It doesn't do something like qw/5 p ! @ a/.)
 
-=item B<distinguish()>
+=item B<comm()>
 
+This routine is named after the Unix utility C<comm>. It accepts as its 
+arguments two lists which are to be compared.  It returns the unified list,
+as I<ordered_union> does, but also provides a second list, with markers as to 
+whether each result is from the first list only ('<'), the second list only
+('>'), or both lists ('=').
+
+To use the example from above, if passed the two lists
+
+ qw/m v c 6   f e w 5 ! a t       m/
+ qw/m v c 6 z f   w p @   t r x y m/
+
+then the result from comm would be
+
+ qw/m v c 6 z f e w 5 ! a p @ t r x y m/
+ qw/= = = = > = < = < < = > > = > > > =/
+ 
+Unlike I<ordered_union>, I<comm> can accept only two lists as arguments.
+
+=item B<distinguish()>
 Takes a series of array references as arguments, and provides in turn the relevant
 elements from each list, in order to describe the differences between them.
 
@@ -339,6 +371,12 @@ differing entries, only one is kept (it tries to pick one in the middle).
 
 Something was passed to I<ordered_union()> or I<distinguish()> 
 that was not an array reference.
+
+=item Not enough arguments to comm
+=item Too many arguments to comm
+
+The I<comm> routine can compare two, but only two, lists. Some number of lists
+other than two were passed to it.
 
 =back
 
