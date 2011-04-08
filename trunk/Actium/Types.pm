@@ -18,6 +18,7 @@ $VERSION = eval $VERSION;
 use MooseX::Types -declare => [
     qw <Schedule_Day TransitinfoDays DayCode SchoolDayCode
       ArrayRefOfTimeNums _ArrayRefOfStrs ArrayRefOrTimeNum
+      ActiumSkedDir
       TransitInfoDays TimeNum Str4 Str8 DirCode HastusDirCode >
 ];
 
@@ -25,6 +26,7 @@ use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
 
 use Actium::Time;
 use Actium::Constants;
+#use Actium::Sked::Dir;
 
 enum( Schedule_Day, (@SCHEDULE_DAYS) );
 
@@ -34,33 +36,39 @@ qq<"$_" is not a valid day code\n  (one or more of the characters 1-7 plus H, in
 # It uses question marks instead of [1-7H]+ because
 # the numbers have to be in order, and not repeated
 
-enum (TransitInfoDays, values %TRANSITINFO_DAYS_OF);
+enum( TransitInfoDays, values %TRANSITINFO_DAYS_OF );
 
 coerce DayCode, from TransitInfoDays, via {
-    $DAYS_FROM_TRANSITINFO{$_}
+    $DAYS_FROM_TRANSITINFO{$_};
 };
 
-enum( SchoolDayCode , 'B' , 'D' , 'H' );
+enum( SchoolDayCode, 'B', 'D', 'H' );
 
 enum( DirCode, @DIRCODES );
 
 subtype HastusDirCode, as Int, where { $_ >= 0 and $_ <= $#DIRCODES };
 
 coerce DirCode, from HastusDirCode, via {
-    $_ == 3 ? 2
+    $DIRCODES[ $_ == 3 ? 2
       : 2   ? 3
-      :       $_;
+      :       $_ ] ;
 };
 
-# we use westbound before eastbound, but other than that
-# we use the Hastus order
+subtype ActiumSkedDir, as class_type('Actium::Sked::Dir');
+
+coerce( ActiumSkedDir,
+    from HastusDirCode,
+    via { Actium::Sked::Dir->new( to_DirCode($_) ) },
+    from DirCode,
+    via { Actium::Sked::Dir->new($_) },
+);
 
 subtype Str8, as Str, where { length == 8 },
   message {qq<The entry "$_" is not an eight-character-long string>};
 
 subtype Str4, as Str, where { length == 4 },
   message {qq<The entry "$_" is not an four-character-long string>};
-  
+
 ## Time numbers
 subtype TimeNum, as Maybe [Int];
 

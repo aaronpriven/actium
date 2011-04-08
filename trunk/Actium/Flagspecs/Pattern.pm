@@ -12,8 +12,11 @@ package Actium::Flagspecs::Pattern 0.001;
 use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
+use Moose::Util::TypeConstraints;
 
 use Actium::Constants;
+use Actium::Types (qw/DirCode HastusDirCode ActiumSkedDir/);
+use Actium::Sked::Dir;
 
 use Actium::Util ('jk');
 
@@ -25,10 +28,11 @@ has 'route' => (
 
 has 'dir_obj' => (
     required => 1,
+    coerce => 1,
     init_arg => 'direction',
     is       => 'ro',
-    isa      => 'Actium::Sked::Dir',
-    handles  => {direction => 'dircode'},
+    isa      => ActiumSkedDir,
+    handles  => ['dircode'],
 );
 
 has 'identifier' => (

@@ -99,7 +99,7 @@ sub _build_files_list {
     my $self         = shift;
     my $flats_folder = $self->flats_folder();
 
-    emit 'Assembling lists of filenames';
+    #emit 'Assembling lists of filenames';
 
     my @all_files
       = bsd_glob( $self->_flat_filespec(q<*>), GLOB_NOCASE | GLOB_NOSORT );
@@ -123,7 +123,7 @@ sub _build_files_list {
         $files_of{$filetype} = \@files;
     }
 
-    emit_done;
+    #emit_done;
 
     return \%files_of;
 
