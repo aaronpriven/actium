@@ -10,13 +10,10 @@ use warnings;
 package Actium::Flagspecs::Route 0.001;
 
 use Moose;
-use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
-use Actium::Util ('jk');
-
 around BUILDARGS => sub {
-    return positional( \@_, 'route' );
+    return positional( \@_, 'patterns_r' );
 };
 
 has 'route' => (
@@ -25,97 +22,101 @@ has 'route' => (
     isa      => 'Str',
 );
 
-#has 'patterns_r' => (
-#    is      => 'bare',
-#    isa     => 'ArrayRef[Actium::Flagspecs::Pattern]',
-#    handles => {
-#        _push_pattern => 'push',
-#        patterns    => 'elements',
-#    },
-#);
-#
-#
-#sub add_pattern {
-# 
-# my $self = shift;
-# my $pattern_obj = shift;
-# $self->_push_pattern($pattern_obj);
-# 
-# 
-# 
-#}
-
-#has 'pattern_of_placelist_r' => (
-#    is      => 'ro',
-#    traits  => ['Hash'],
-#    isa     => 'HashRef[ArrayRef[Actium::Flagspecs::Pattern]]',
-#    default => sub { {} },
-#    handles => {
-#        placelists  => 'keys',
-#        pattern_of_placelist => 'get',
-#        has_placelist => 'exists',
-#    },
-# 
-#);
- 
- 
- 
-has 'pattern_of_placelist_r' => (
+has 'patterns_r' => (
     is      => 'bare',
-    isa     => 'HashRef[ArrayRef[Actium::Flagspecs::Stop::PatternRelation]]',
-    default => sub { {} },
-    traits => ['Hash'],
+    isa     => 'ArrayRef[Actium::Flagspecs::Pattern]',
+    default => sub { [] },
+    traits  => ['Array'],
     handles => {
-        _pattern_list_r_of     => 'get',
-        _set_pattern_list_r_of => 'set',
-        _has_pattern_list_r    => 'exists',
-        _pattern_list_ids      => 'keys',
+        patterns    => 'elements',
     },
 );
 
-sub add_pattern {
-    my $self              = shift;
-    my $pattern_obj      = shift;
-    my $pattern_unique_id = $pattern_obj->pattern_unique_id;
 
-    if ( $self->has_pattern_list_r($pattern_unique_id) ) {
-        push @{ $self->pattern_list_r_of($pattern_unique_id) }, $pattern_obj;
-    }
-    else {
-        $self->_set_pattern_list_r_of( $pattern_unique_id, [$pattern_obj] );
-    }
-    return;
-}
+has 'dir_obj_of' => (
+    is      => 'bare',
+    traits  => ['Hash'],
+    isa     => 'HashRef[Actium::Sked::Dir]',
+    builder => '_build_dir_objs_of' ,
+    lazy => 1,
+    handles => {
+        dir_codes    => 'keys',
+        dir_obj_of => 'get' ,
+        dir_objs => 'values' ,
+        has_direction => 'exists',
+    },
+);
 
-#sub first_pattern_of {
-#    my $self              = shift;
-#    my $pattern_unique_id = shift;
-#    return $self->_pattern_list_r_of($pattern_unique_id)->[0];
-#}
-#
-#sub first_patterns {
-#    my $self = shift;
-#    my @results;
-#    return map { $self->first_pattern_of($_) } $self->_pattern_list_ids;
-#}
-
-sub patterns_of {
-    my $self              = shift;
-    my $pattern_unique_id = shift;
-    return @{ $self->_pattern_list_r_of($pattern_unique_id) };
-}
-
-sub patterns {
+sub _build_dir_objs_of {
     my $self = shift;
-    my @results;
-    foreach my $pattern_unique_id ( $self->_pattern_list_ids ) {
-        push @results, @{ $self->_pattern_list_r_of($pattern_unique_id) };
+    my %dir_obj_of;
+    foreach my $pattern ($self->patterns) {
+        my $dir_obj = $pattern->dir_obj;
+        my $dircode = $dir_obj->dircode;
+        $dir_obj_of{$dircode} = $dir_obj;
     }
-    return @results;
+    return \%dir_obj_of;
 }
- 
-   
 
+# $hashref->{placelist}->[0..n]
+
+has 'pattern_of_placelist_r' => (
+    is      => 'bare',
+    isa     => 'HashRef[ArrayRef[Actium::Flagspecs::Pattern]]',
+    builder => '_build_pattern_of_placelist_r' ,
+    lazy => 1,
+    traits => ['Hash'],
+    handles => {
+        _pattern_list_of_placelist_r     => 'get',
+        _set_pattern_list_of_placelist_r => 'set',
+        has_placelist    => 'exists',
+        placelists => 'keys',
+    },
+);
+
+sub _build_pattern_of_placelist_r {
+    my $self = shift;
+    my %patterns_of;
+    foreach my $pattern ($self->patterns) {
+        push @{$patterns_of{$pattern->placelist}} , $pattern;
+    }
+    return \%patterns_of;
+}
+
+sub patterns_of_placelist {
+    my $self              = shift;
+    my $placelist = shift;
+    return @{ $self->_pattern_list_of_placelist_r($placelist) };
+}
+
+has 'pattern_of_dir_r' => (
+    is      => 'bare',
+    isa     => 'HashRef[ArrayRef[Actium::Flagspecs::Pattern]]',
+    builder => '_build_pattern_of_dir_r' ,
+    lazy => 1,
+    traits => ['Hash'],
+    handles => {
+        _pattern_list_of_dir_r     => 'get',
+        _set_pattern_list_of_dir_r => 'set',
+    },
+);
+
+sub _build_pattern_of_dir_r {
+    my $self = shift;
+    my %patterns_of;
+    foreach my $pattern ($self->patterns) {
+        push @{$patterns_of{$pattern->direction}} , $pattern;
+    }
+    return \%patterns_of;
+}
+
+sub patterns_of_dir {
+    my $self              = shift;
+    my $dir = shift;
+    return @{ $self->_pattern_list_of_dir_r($dir) };
+}
+
+# TODO - build route stop lists here
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
