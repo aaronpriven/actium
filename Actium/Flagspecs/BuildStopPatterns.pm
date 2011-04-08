@@ -7,15 +7,14 @@ use warnings;
 
 package Actium::Flagspecs::BuildStopPatterns 0.001;
 
-use Actium::Util qw(jk);
 use Actium::Constants;
 use Actium::Term  (':all');
 use Actium::Union ('ordered_union');
+use Actium::Util qw(jk);
 
 use Actium::Flagspecs::Pattern;
 use Actium::Flagspecs::Stop;
 use Actium::Flagspecs::Stop::PatternRelation;
-use Actium::Flagspecs::Placelist;
 use Actium::Flagspecs::Route;
 
 use Carp;
@@ -42,7 +41,8 @@ sub build_stop_patterns {
     my $hasi_db = shift;
     my $xml_db  = shift;
 
-    my ( %stop_obj_of, %pattern_obj_of, %placelist_obj_of, %route_obj_of );
+    my ( %stop_obj_of, %pattern_obj_of);
+    my %pattern_objs_of_route;
 
     emit 'Building lists of patterns, stops, and places';
 
@@ -58,24 +58,15 @@ sub build_stop_patterns {
     while ( my $pat_row = $eachpat->() ) {
 
         my ( $pat_ident, $route, $pattern_unique_id, $pattern_obj )
-          = _build_pattern_object($pat_row);
+          = _build_pattern_obj($pat_row);
 
         if ( $route ne $prevroute ) {
             emit_over $route ;
             $prevroute = $route;
         }
 
-        my $route_obj;
-        if ( exists $route_obj_of{$route} ) {
-            $route_obj = $route_obj_of{$route};
-        }
-        else {
-            $route_obj = Actium::Flagspecs::Pattern->new($route);
-            $route_obj_of{$route} = $route_obj;
-        }
-        $route_obj->add_pattern($pattern_obj);
-
-        $pattern_obj_of{$pattern_unique_id} = $pattern_obj;
+         push @{$pattern_objs_of_route{$route}}, $pattern_obj;
+         $pattern_obj_of{$pattern_unique_id} = $pattern_obj;
 
         my ( $prevplace, $prevstop ) = ( $EMPTY_STR, $EMPTY_STR );
         my ( @intermediate_relation_objs, @all_relation_objs );
@@ -157,26 +148,13 @@ sub build_stop_patterns {
         # connections and Transbay info
         _transbay_and_connections( $route, @all_relation_objs );
 
-        # Place lists
-
-        my $placelist = $pattern_obj->placelist;
-        if ( exists $placelist_obj_of{$placelist} ) {
-            $placelist_obj_of{$placelist}->add_pattern($pattern_obj);
-        }
-        else {
-            $placelist_obj_of{$placelist} = Actium::Flagspecs::Placelist->new(
-                placelist => $placelist,
-                pattern_r => [$pattern_obj],
-            );
-        }
-
     } ## tidy end: while ( my $pat_row = $eachpat...)
-
-    _build_stop_list();
+    
+    my $route_obj_of_r = _build_route_objs (\%pattern_objs_of_route);
 
     emit_done;
 
-    return \%stop_obj_of, \%pattern_obj_of, \%placelist_obj_of, \%route_obj_of;
+    return \%stop_obj_of, \%pattern_obj_of, $route_obj_of_r;
 
 } ## tidy end: sub build_stop_patterns
 
@@ -193,7 +171,7 @@ sub _tps_rows {
 
 }
 
-sub _build_pattern_object {
+sub _build_pattern_obj {
 
     my $pat_row = shift;
 
@@ -300,7 +278,25 @@ sub _transbay_and_connections {
 
 } ## tidy end: sub _transbay_and_connections
 
-=for making work
+sub _build_route_objs {
+ 
+     my $patterns_of_r = shift;
+     my %route_obj_of;
+     
+     foreach my $route (keys %$patterns_of_r) {
+      
+        $route_obj_of{$route} = Actium::Flagspecs::Route->new
+        ( $patterns_of_r->{$route} ) ;
+      
+     }
+     
+     return \%route_obj_of;
+
+}
+
+
+# TODO - build stop list
+=for TODO
 
 sub _build_stop_list {
  
