@@ -18,7 +18,7 @@ $VERSION = eval $VERSION;
 use MooseX::Types -declare => [
     qw <Schedule_Day TransitinfoDays DayCode SchoolDayCode
       ArrayRefOfTimeNums _ArrayRefOfStrs ArrayRefOrTimeNum
-      TransitInfoDays TimeNum Str4 Str8 DirCode HastusDirCode >    # StrOrArrayRef
+      TransitInfoDays TimeNum Str4 Str8 DirCode HastusDirCode >
 ];
 
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
@@ -61,8 +61,6 @@ subtype Str8, as Str, where { length == 8 },
 subtype Str4, as Str, where { length == 4 },
   message {qq<The entry "$_" is not an four-character-long string>};
   
-#subtype StrOrArrayRef, as Str|ArrayRef;
-
 ## Time numbers
 subtype TimeNum, as Maybe [Int];
 
