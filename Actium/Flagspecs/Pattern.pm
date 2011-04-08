@@ -57,6 +57,7 @@ has 'stops_r' => (
     handles => {
         stops    => 'elements',
         add_stop => 'push',
+        stoplist => ['join' , $KEY_SEPARATOR ],
     },
 );
 

@@ -9,11 +9,14 @@ package Actium::Flagspecs::BuildStopPatterns 0.001;
 
 use Actium::Util qw(jk);
 use Actium::Constants;
-use Actium::Term (':all');
+use Actium::Term  (':all');
+use Actium::Union ('ordered_union');
 
 use Actium::Flagspecs::Pattern;
 use Actium::Flagspecs::Stop;
 use Actium::Flagspecs::Stop::PatternRelation;
+use Actium::Flagspecs::Placelist;
+use Actium::Flagspecs::Route;
 
 use Carp;
 use English('-no_match_vars');
@@ -39,9 +42,7 @@ sub build_stop_patterns {
     my $hasi_db = shift;
     my $xml_db  = shift;
 
-    my %stop_obj_of;
-    my %pattern_obj_of;
-    my %placelist_obj_of;
+    my ( %stop_obj_of, %pattern_obj_of, %placelist_obj_of, %route_obj_of );
 
     emit 'Building lists of patterns, stops, and places';
 
@@ -51,46 +52,46 @@ sub build_stop_patterns {
     my $hasi_dbh = $hasi_db->dbh();
     my $tps_sth  = $hasi_dbh->prepare(
         'SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
-
     my $prevroute = $EMPTY_STR;
 
   PAT:
-    while ( my $pat = $eachpat->() ) {
+    while ( my $pat_row = $eachpat->() ) {
 
-        my $pat_ident = $pat->{Identifier};
-        my $route     = $pat->{Route};
+        my ( $pat_ident, $route, $pattern_unique_id, $pattern_obj )
+          = _build_pattern_object($pat_row);
+
         if ( $route ne $prevroute ) {
             emit_over $route ;
             $prevroute = $route;
         }
 
-        my $pattern_obj = Actium::Flagspecs::Pattern->new(
-            {   route     => $route,
-                direction => $pat->{DirectionValue},
-                identifer => $pat_ident,
-            }
-        );
+        my $route_obj;
+        if ( exists $route_obj_of{$route} ) {
+            $route_obj = $route_obj_of{$route};
+        }
+        else {
+            $route_obj = Actium::Flagspecs::Pattern->new($route);
+            $route_obj_of{$route} = $route_obj;
+        }
+        $route_obj->add_pattern($pattern_obj);
 
-        my $pattern_unique_id = $pattern_obj->unique_id;
         $pattern_obj_of{$pattern_unique_id} = $pattern_obj;
-
-        my @tps_rows = @{
-            $hasi_dbh->selectall_arrayref( $tps_sth, { Slice => {} },
-                $pat->{PAT_id} )
-          };
 
         my ( $prevplace, $prevstop ) = ( $EMPTY_STR, $EMPTY_STR );
         my ( @intermediate_relation_objs, @all_relation_objs );
 
       TPS:
 
-        for my $tps_row (@tps_rows) {
+        for my $tps_row ( _tps_rows( $hasi_dbh, $tps_sth, $pat_row ) ) {
+
             my $place = $tps_row->{Place};
             $place =~ s/-[AD12]\z//sx;
             my $stop_ident = $tps_row->{StopIdentifier};
 
             if ( $stop_ident eq $prevstop ) {    # same stop
-                next TPS if ( not $place ) or ( $place eq $prevplace );
+                next TPS
+                  if ( not $place )
+                  or ( $place eq $prevplace );
 
                 # skip stop entirely unless place is changed
 
@@ -113,18 +114,7 @@ sub build_stop_patterns {
                 $stop_obj = $stop_obj_of{$stop_ident};
             }
             else {
-                my $district = $stops_row_r->{'calc_district_id'};
-                $district =~ s/\A 0//sx;
-                my $side = $SIDE_OF{$district};
-                if ( not $side ) {
-                    carp "Unknown district: $district";
-                    set_term_pos(0);
-                }
-                $stop_obj = Actium::Flagspecs::Stop->new(
-                    id       => $stop_ident,
-                    district => $district,
-                    side     => $side
-                );
+                $stop_obj = _build_stop_obj( $stop_ident, $stops_row_r );
                 $stop_obj_of{$stop_ident} = $stop_obj;
             }
 
@@ -144,31 +134,28 @@ sub build_stop_patterns {
             my $relation_obj = Actium::Flagspecs::Stop::PatternRelation->new(
                 {   place             => $place,
                     is_at_place       => $is_at_place,
-                    pattern_unique_id => $pattern_obj->unique_id,
+                    pattern_unique_id => $pattern_unique_id,
                     stop_obj          => $stop_obj,
                 }
             );
 
-            foreach
-              my $connection ( split( /\n/sx, $stops_row_r->{Connections} ) )
-            {
-                $relation_obj->mark_at_connection($connection);
+            foreach my $conn ( split( /\n/sx, $stops_row_r->{Connections} ) ) {
+                $relation_obj->mark_at_connection($conn);
             }
 
             push @all_relation_objs,          $relation_obj;
             push @intermediate_relation_objs, $relation_obj;
 
-            $stop_obj->add_relation($pattern_obj);
+            $stop_obj->add_relation($relation_obj);
             $stop_obj->set_route($route);
             $pattern_obj->add_stop($stop_ident);
 
-        } ## tidy end: for my $tps_row (@tps_rows)
+        } ## tidy end: for my $tps_row ( _tps_rows...)
 
         $all_relation_objs[-1]->set_last_stop($pattern_unique_id);
 
         # connections and Transbay info
-
-        transbay_and_connections( $route, @all_relation_objs );
+        _transbay_and_connections( $route, @all_relation_objs );
 
         # Place lists
 
@@ -177,25 +164,76 @@ sub build_stop_patterns {
             $placelist_obj_of{$placelist}->add_pattern($pattern_obj);
         }
         else {
-
             $placelist_obj_of{$placelist} = Actium::Flagspecs::Placelist->new(
                 placelist => $placelist,
                 pattern_r => [$pattern_obj],
             );
         }
 
-        # now we have cross-indexed the pattern ident
-        # and its place listing
+    } ## tidy end: while ( my $pat_row = $eachpat...)
 
-    } ## tidy end: while ( my $pat = $eachpat...)
+    _build_stop_list();
 
     emit_done;
 
-    return \%stop_obj_of, \%pattern_obj_of, \%placelist_obj_of;
+    return \%stop_obj_of, \%pattern_obj_of, \%placelist_obj_of, \%route_obj_of;
 
 } ## tidy end: sub build_stop_patterns
 
-sub transbay_and_connections {
+sub _tps_rows {
+
+    my $hasi_dbh = shift;
+    my $tps_sth  = shift;
+    my $pat_row  = shift;
+
+    return @{
+        $hasi_dbh->selectall_arrayref( $tps_sth, { Slice => {} },
+            $pat_row->{PAT_id} )
+      };
+
+}
+
+sub _build_pattern_object {
+
+    my $pat_row = shift;
+
+    my $pat_ident = $pat_row->{Identifier};
+    my $route     = $pat_row->{Route};
+
+    my $pattern_obj = Actium::Flagspecs::Pattern->new(
+        {   route     => $route,
+            direction => $pat_row->{DirectionValue},
+            identifer => $pat_ident,
+        }
+    );
+    my $pattern_unique_id = $pattern_obj->unique_id;
+
+    return ( $pat_ident, $route, $pattern_unique_id, $pattern_obj );
+
+}
+
+sub _build_stop_obj {
+    my $stop_ident  = shift;
+    my $stops_row_r = shift;
+
+    my $district = $stops_row_r->{'calc_district_id'};
+    $district =~ s/\A 0//sx;
+    my $side = $SIDE_OF{$district};
+    if ( not $side ) {
+        carp "Unknown district: $district";
+        set_term_pos(0);
+    }
+
+    my $stop_obj = Actium::Flagspecs::Stop->new(
+        id       => $stop_ident,
+        district => $district,
+        side     => $side
+    );
+
+    return $stop_obj;
+} ## tidy end: sub _build_stop_obj
+
+sub _transbay_and_connections {
     # runs once for each pattern
 
     my ( $route, @all_relation_objs ) = @_;
@@ -260,7 +298,45 @@ sub transbay_and_connections {
 
     return;
 
-} ## tidy end: sub transbay_and_connections
+} ## tidy end: sub _transbay_and_connections
+
+=for making work
+
+sub _build_stop_list {
+ 
+my $pattern_obj_of_r = shift;
+ 
+my $count = 0;
+
+my %stops_of_line;
+
+
+
+foreach my $route (keys %liststomerge) {
+   foreach my $dir (keys %{$liststomerge{$route}}) {
+   
+      my @union = @{ ordered_union(@{$liststomerge{$route}{$dir}}) };
+      $stops_of_line{"$route-$dir"} = \@union;
+      
+      open my $fh , '>' , "slists/line/$route-$dir.txt" or die "Cannot open slists/line/$route-$dir.txt for output";
+      print $fh jt( $route , $dir ) , "\n" ;
+      foreach (@union) {
+         print $fh jt($_, $stp{$_}{Description}) , "\n";
+      }
+      close $fh;
+      
+   
+   }
+}
+
+print "\n\n";
+
+Storable::nstore (\%stops_of_line , "slists/line.storable");
+ 
+ 
+}
+
+=cut
 
 1;
 

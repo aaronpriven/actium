@@ -29,7 +29,7 @@ use Actium::EffectiveDate ('effectivedate');
 use Actium::Constants;
 use Actium::Sked::Days;
 
-use Data::Dumper;
+#use Data::Dumper;
 
 use constant CR => "\r";
 
@@ -289,13 +289,14 @@ sub START {
         my @heights;
         my @widths;
         my $specdayscol;
+        my %days_of_linegroup;
 
         foreach my $dirday ( keys %{ $tables_of_line{$linegroup} } ) {
 
             $tables_of_line{$linegroup}{$dirday}{SORTBY}
               = _sort_by( \%tables_of_line, $linegroup, $dirday );
 
-            my $days = figure_days(
+            $days_of_linegroup{$linegroup} = figure_days(
                 map { $tables_of_line{$linegroup}{$_}{DAY} }
                   keys %{ $tables_of_line{$linegroup} }
             );
@@ -378,23 +379,27 @@ sub START {
         }
         print $out boxbreak;
 
-        # TODO - work this out algorithmically
-        print $out parastyle(
-            'CoverNote',
-            join(
-                CR,
-                'Monday through Friday',
-                'Except holidays',
-                #                'Commute hours only' )
-            )
-          ),
-          CR;
+        my $days = $days_of_linegroup{$linegroup};
+        $days =~ s/except/\rExcept/sx;
+        
+        print $out parastyle('CoverNote', $days) , CR;
+        
+#        print $out parastyle(
+#            'CoverNote',
+#            join(
+#                CR,
+#                'Monday through Friday',
+#                'Except holidays',
+#                #                'Commute hours only' )
+#            )
+#          ),
+#          CR;
 
         if ( $linegroup ~~ @TRANSBAY_NOLOCALS ) {
             print $out parastyle( 'CoverLocalPax',
                 'No Local Passengers Permitted' );
         }
-        else {
+        elsif ($linegroup =~ /\A [A-Z]/sx) {
             print $out parastyle( 'CoverLocalPax', 'Local Passengers Allowed' );
         }
 
@@ -403,9 +408,9 @@ sub START {
         print $out join( CR, @texts );
         close $out;
         
-        print "\n";
-
     } ## tidy end: for my $linegroup ( keys...)
+    
+        print "\n";
 
     my @texts;
 
@@ -441,25 +446,6 @@ sub START {
     $maxheight = $maxheight / 72;    # inches instead of points
 
     say "Maximum height in inches: $maxheight; maximum columns: $maxwidth";
-
-=begin 
-    open my $in, '<' , 'tabulae-config.txt' 
-    or die "Can't open tabulae-config.txt for reading: $OS_ERROR";
-    
-    my %config; 
-   
-    while (<$in>) {
-     chomp;
-     
-     
-     
-     
-     
-    }
-    
-=end
-
-=cut
 
 } ## tidy end: sub START
 
@@ -538,7 +524,7 @@ sub figure_days {
    $catdaycode = join $EMPTY_STR , ( uniq sort ( split // , $catdaycode ) );
    
    my $catdayobj = Actium::Sked::Days->new($catdaycode);
-   return $catdayobj->as_adjectives;
+   return $catdayobj->as_plurals;
 
 }
 
