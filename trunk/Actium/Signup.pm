@@ -14,6 +14,7 @@ our $VERSION = '0.001';
 $VERSION = eval $VERSION;
 
 use Actium::Options qw(add_option option is_an_option);
+use Actium::Files::CacheOption;
 use Actium::Constants;
 use Actium::Files;
 use Carp;
@@ -29,8 +30,8 @@ Readonly my $LAST_RESORT_BASEDIR =>
   File::Spec->catdir( $FindBin::Bin, File::Spec->updir(), 'signups' );
 Readonly my $DEFAULT_HSA_FILENAME => 'hsa.storable';
 
-Readonly my $DEFAULT_BASEDIR => ( $ENV{$BASE_ENV} || $LAST_RESORT_BASEDIR );
-Readonly my $DEFAULT_SIGNUP => ( $ENV{$SIGNUP_ENV} || 'none' );
+Readonly my $DEFAULT_BASEDIR => ( $ENV{$BASE_ENV}   || $LAST_RESORT_BASEDIR );
+Readonly my $DEFAULT_SIGNUP  => ( $ENV{$SIGNUP_ENV} || 'none' );
 
 # The routine below was designed to allow the caller to opt out
 # of the use of command line options. Which seems less useful in retrospect.
@@ -65,18 +66,20 @@ add_option( 'basedir=s',
 "Base directory (normally [something]/Actium/signups); current default is $DEFAULT_BASEDIR"
 );
 
-add_option( 'signup=s',
-        'Signup. This is the subdirectory under the base directory. '
+add_option(
+    'signup=s',
+    'Signup. This is the subdirectory under the base directory. '
       . qq<Typically something like "f08" (meaning Fall 2008). Current default is $DEFAULT_SIGNUP>
 );
+
 
 # class or object methods
 
 sub _basedir {
     my $invoked_as = shift;
 
-    my $basedir
-      = (    +shift
+    my $basedir =
+      (      +shift
           || option('basedir')
           || $ENV{$BASE_ENV}
           || $LAST_RESORT_BASEDIR );
@@ -91,8 +94,8 @@ sub _signup {
     my $invoked_as = shift;
     my $basedir    = shift;
 
-    my $signup
-      = (    +shift
+    my $signup =
+      (      +shift
           || option('signup')
           || $ENV{$SIGNUP_ENV}
           || croak 'No signup directory specified' );
@@ -130,7 +133,8 @@ sub new {
     if ( ref( $_[0] ) eq 'HASH' ) {
         %params = validate(
             @_,
-            {   NEWSIGNUP => 0,
+            {
+                NEWSIGNUP => 0,
                 BASEDIR   => 0,
                 SIGNUP    => 0,
                 SUBDIR    => 0,
@@ -205,7 +209,8 @@ sub subdir {
     my @subdirs   = @_;
 
     return $class->new(
-        {   BASEDIR => $signupobj->get_basedir(),
+        {
+            BASEDIR => $signupobj->get_basedir(),
             SIGNUP  => $signupobj->get_signup(),
             SUBDIRS => [ $signupobj->get_subdirs(), @subdirs ],
         }
@@ -255,8 +260,8 @@ sub _set_subdir {
 
 sub get_dir {
     my $self = shift;
-    my @dirs
-      = ( $self->get_basedir(), $self->get_signup(), $self->get_subdirs() );
+    my @dirs =
+      ( $self->get_basedir(), $self->get_signup(), $self->get_subdirs() );
     return File::Spec->catdir(@dirs);
 }
 
@@ -305,6 +310,7 @@ sub retrieve {
     my $self     = shift;
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
+
     #require Actium::Files;
     return Actium::Files::retrieve($filespec);
 }
@@ -320,10 +326,29 @@ sub store {
     my $data_r   = shift;
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
+
     #require Actium::Files;
     return Actium::Files::store( $data_r, $filespec );
 }
 
+
+sub load_xml {
+    my $self = shift;
+    my $xmlfoldername = shift || 'xml';
+    my $xmldir = $self->subdir($xmlfoldername);
+    require Actium::Files::FMPXMLResult;
+    my $xml_db = Actium::Files::FMPXMLResult->new( $xmldir->get_dir() );
+    return $xml_db;
+}
+
+sub load_hasi {
+    my $self  = shift;
+    my $hasifoldername = shift || 'hasi';
+    my $hasidir = $self->subdir($hasifoldername);
+    require Actium::Files::HastusASI;
+    my $hasi_db = Actium::Files::HastusASI->new( $hasidir->get_dir() );
+    return $hasi_db;
+}
 
 
 1;
@@ -638,6 +663,18 @@ to the file F<filename> in the directory represented by the object.
 
 Just like B<retrieve> and B<store>, but they use 
 "hsa.storable" as the default filename.
+
+=item B<$obj-E<gt>load_xml(F<foldername>)>
+
+Returns an Actium::Files::FMPXMLResult object, created from the files 
+in the "foldername" subdirectory of the passed object. If no folder name is 
+passed, defaults to "xml".
+
+=item B<$obj-E<gt>load_hasi(F<foldername>)>
+
+Returns an Actium::Files::HastusASI object, created from the files 
+in the "foldername" subdirectory of the passed object. If no folder name is 
+passed, defaults to "hasi".
 
 =back
 

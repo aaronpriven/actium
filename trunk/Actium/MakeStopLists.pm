@@ -19,27 +19,28 @@ use Actium::Sorting('sortbyline');
 
 sub START {
 
-    my $pattern_folder   = Actium::Signup->new('patterns');
-    my $stoplists_folder = Actium::Signup->new('slists');
+    my $signup           = Actium::Signup->new();
+    my $pattern_folder   = $signup->subdir('patterns');
+    my $stoplists_folder = $signup->subdir('slists');
 
     my %stop_obj_of  = %{ $pattern_folder->retrieve('stops.storable') };
     my %route_obj_of = %{ $pattern_folder->retrieve('routes.storable') };
-    
-my %stops_of_line;
 
-emit "Making stop lists";
+    my $xml_db  = $signup->load_xml;
+    my $hasi_db = $signup->load_hasi;
 
-}
-__END__
-# hidden behind END to allow committing without errors
+    emit "Making stop lists";
 
-foreach my $route_obj (sortbyline keys %route_obj_of) {
-   my $route = $route_obj->route;
-   emit_over($route);
-      
-   my @stoplist_objs;
-   foreach my $dir ($route_obj->dircodes) {
-      
+    my %stops_of_line;
+
+    foreach my $route_obj ( sortbyline keys %route_obj_of ) {
+        my $route = $route_obj->route;
+        emit_over($route);
+
+        my @stoplist_objs;
+        foreach my $dir ( $route_obj->dircodes ) {
+
+=for TODO
       
     
       open my $fh , '>' , "slists/line/$route-$dir.txt" or die "Cannot open slists/line/$route-$dir.txt for output";
@@ -49,21 +50,17 @@ foreach my $route_obj (sortbyline keys %route_obj_of) {
       }
       close $fh;
       
-   
-   }
+=cut
+
+        }
+
+    }
+
+    $stoplists_folder->store( \%stops_of_line, "slists/line.storable" );
+
 }
 
-print "\n\n";
-
-Storable::nstore (\%stops_of_line , "slists/line.storable");
-    
-    
-    
-}
-      
 package Actium::MakeStopLists::DirList 0.001;
-
-
 
 1;
 
