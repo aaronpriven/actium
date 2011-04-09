@@ -1,23 +1,21 @@
 #!/ActivePerl/bin/perl
 
-#/Actium/Pattern/Pattern.pm
+#/Actium/Patterns/Pattern.pm
 
-# Subversion: $Id: Pattern.pm 56 2011-04-08 22:19:22Z aaronpriven $
+# Subversion: $Id$
 
 use 5.012;
 use warnings;
 
-package Actium::Pattern::Pattern 0.001;
+package Actium::Patterns::Pattern 0.001;
 
 use Moose;
-use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
 use Actium::Constants;
 use Actium::Types (qw/DirCode HastusDirCode ActiumSkedDir/);
 use Actium::Sked::Dir;
-
 use Actium::Util ('jk');
 
 has 'route' => (

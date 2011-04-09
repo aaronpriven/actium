@@ -1,6 +1,8 @@
-# Actium/ProcessPatterns.pm
+# Actium/Patterns.pm
 
 # Subversion: $Id$
+
+# Go through PAT and TPS, building whatever needs to be built
 
 use 5.012;
 use warnings;
@@ -8,6 +10,9 @@ use warnings;
 package Actium::Patterns 0.001;
 
 use Actium::Constants;
+use Actium::Files::HastusASI;
+use Actium::Files::FMPXMLResult;
+use Actium::Signup;
 use Actium::Term  (':all');
 use Actium::Union ('ordered_union');
 use Actium::Util qw(jk doe);
@@ -20,21 +25,13 @@ use Actium::Patterns::Route;
 use Carp;
 use English('-no_match_vars');
 
-use Readonly;
-
-# those should now be from Actium::Constants
-
-1;
-
-# Go through PAT and TPS, building whatever needs to be built
-
 sub START {
 
     my $signup     = Actium::Signup->new();
     my $flagfolder = $signup->subdir('flags');
 
-    my $xml_db  = load_xml($signup);
-    my $hasi_db = load_hasi($signup);
+    my $xml_db  = _load_xml($signup);
+    my $hasi_db = _load_hasi($signup);
 
     my ( $stop_obj_of_r, $route_obj_of_r )
       = process_patterns( $hasi_db, $xml_db );
@@ -46,7 +43,7 @@ sub START {
 
 }
 
-sub load_xml {
+sub _load_xml {
     my $signup = shift;
     my $xmldir = $signup->subdir('xml');
     my $xml_db = Actium::Files::FMPXMLResult->new( $xmldir->get_dir() );
@@ -54,7 +51,7 @@ sub load_xml {
     return $xml_db;
 }
 
-sub load_hasi {
+sub _load_hasi {
     my $signup  = shift;
     my $hasidir = $signup->subdir('hasi');
     my $hasi_db = Actium::Files::HastusASI->new( $hasidir->get_dir() );
