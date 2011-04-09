@@ -1,13 +1,13 @@
 #!/ActivePerl/bin/perl
 
-#/Actium/Pattern/Route.pm
+#/Actium/Patterns/Route.pm
 
 # Subversion: $Id$
 
 use 5.012;
 use warnings;
 
-package Actium::Pattern::Route 0.001;
+package Actium::Patterns::Route 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
@@ -28,7 +28,7 @@ has 'route' => (
 
 has 'patterns_r' => (
     is      => 'bare',
-    isa     => 'ArrayRef[Actium::Pattern::Pattern]',
+    isa     => 'ArrayRef[Actium::Patterns::Pattern]',
     default => sub { [] },
     traits  => ['Array'],
     handles => { patterns => 'elements', },
@@ -63,7 +63,7 @@ sub _build_dir_objs_of {
 
 has 'pattern_of_placelist_r' => (
     is      => 'bare',
-    isa     => 'HashRef[ArrayRef[Actium::Pattern::Pattern]]',
+    isa     => 'HashRef[ArrayRef[Actium::Patterns::Pattern]]',
     builder => '_build_pattern_of_placelist_r',
     lazy    => 1,
     traits  => ['Hash'],
@@ -92,7 +92,7 @@ sub patterns_of_placelist {
 
 has 'pattern_of_dir_r' => (
     is      => 'bare',
-    isa     => 'HashRef[ArrayRef[Actium::Pattern::Pattern]]',
+    isa     => 'HashRef[ArrayRef[Actium::Patterns::Pattern]]',
     builder => '_build_pattern_of_dir_r',
     lazy    => 1,
     traits  => ['Hash'],
@@ -124,6 +124,12 @@ has stops_of_dir_r => (
     traits  => ['Hash'],
     handles => { _stops_of_dir_r => 'get', },
 );
+
+sub stops_of_dir {
+   my $self = shift;
+   my $dir = shift;
+   return @{ $self->_stops_of_dir_r($dir)};
+}
 
 sub _build_stops_of_dir {
     my $self = shift;
