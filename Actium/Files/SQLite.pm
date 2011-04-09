@@ -30,14 +30,13 @@ use Moose::Role;
 
 use Actium::Constants;
 use Actium::Term;
-use Actium::Options (qw/add_option option/);
+use Actium::Options (qw/is_an_option option/);
+use Actium::Files::CacheOption;
 use Carp;
 use DBI;
 use English '-no_match_vars';
 use File::Spec;
 use Readonly;
-
-add_option( 'db_folder=s', 'Directory where temporary databases are stored' );
 
 # set some constants
 Readonly my $STAT_MTIME   => 9;
@@ -47,8 +46,8 @@ Readonly my $DB_EXTENSION => '.SQLite';
 
 requires(
     qw/db_type key_of_table columns_of_table tables
-       _load _files_of_filetype _tables_of_filetype
-       _filetype_of_table is_a_table/
+      _load _files_of_filetype _tables_of_filetype
+      _filetype_of_table is_a_table/
 );
 
 # db_type is something like 'HastusASI' or 'FPMerge' or something, which
@@ -100,21 +99,21 @@ has 'db_filename' => (
 );
 
 has '_db_filespec' => (
-    is      => 'ro',
+    is       => 'ro',
     init_arg => undef,
-    isa     => 'Str',
-    builder => '_build_db_filespec',
-    lazy    => 1,
+    isa      => 'Str',
+    builder  => '_build_db_filespec',
+    lazy     => 1,
 );
 
 has '_is_loaded_r' => (
     init_arg => undef,
-    traits  => ['Hash'],
-    is      => 'ro',
-    writer => '_set_is_loaded_r',
-    isa     => 'HashRef[Bool]',
-    default => sub { {} },
-    handles => {
+    traits   => ['Hash'],
+    is       => 'ro',
+    writer   => '_set_is_loaded_r',
+    isa      => 'HashRef[Bool]',
+    default  => sub { {} },
+    handles  => {
         '_is_loaded'     => 'get',
         '_set_loaded_to' => 'set',
     },
@@ -129,10 +128,10 @@ sub _mark_loaded {
 
 has 'dbh' => (
     init_arg => undef,
-    is      => 'ro',
-    isa     => 'DBI::db',
-    builder => '_connect',
-    lazy    => 1,
+    is       => 'ro',
+    isa      => 'DBI::db',
+    builder  => '_connect',
+    lazy     => 1,
 );
 
 ############################################
@@ -145,20 +144,24 @@ around BUILDARGS => sub {
     my $orig     = shift;
     my $class    = shift;
     my $argument = shift;
-    my @rest = @_;
+    my @rest     = @_;
     return $class->$orig( $argument, @rest ) if ( ref $argument or @rest );
     return $class->$orig( flats_folder => $argument );
 };
 
 sub _build_db_folder {
+
     # only run when no db folder is specified
-    my $option_db_folder = option('db_folder');
-    return $option_db_folder if $option_db_folder;
+    if ( is_an_option('cache') ) {
+        my $option_cache = option('cache');
+        return $option_cache if $option_cache;
+    }
     my $self = shift;
     return $self->flats_folder;
 }
 
 sub _build_db_filename {
+
     # only run when no db filename is specified
     my $self = shift;
     return $self->db_type . $DB_EXTENSION;
@@ -173,9 +176,9 @@ sub _connect {
     my $self        = shift;
     my $db_filespec = $self->_db_filespec();
     my $existed     = -e $db_filespec;
-    
+
     my $db_filename = $self->db_filename;
-    
+
     emit(
         $existed
         ? "Connecting to database $db_filename"
@@ -183,7 +186,7 @@ sub _connect {
     );
 
     my $dbh = DBI->connect( "dbi:SQLite:dbname=$db_filespec",
-        $EMPTY_STR, $EMPTY_STR, { RaiseError => 1 , sqlite_unicode => 1} );
+        $EMPTY_STR, $EMPTY_STR, { RaiseError => 1, sqlite_unicode => 1 } );
     $dbh->do(
 'CREATE TABLE files ( files_id INTEGER PRIMARY KEY, filetype TEXT , mtimes TEXT )'
     ) if not $existed;
@@ -192,7 +195,7 @@ sub _connect {
 
     return $dbh;
 
-} ## tidy end: sub _connect
+}    ## tidy end: sub _connect
 
 # DBI does the same thing, so this disconnection routine is not needed here.
 
@@ -234,17 +237,17 @@ sub _current_mtimes {
 #########################################
 
 sub ensure_loaded {
-    my $self      = shift;
+    my $self   = shift;
     my @tables = @_;
-    
+
     # get filetypes from tables
-    
+
     my @filetypes;
     foreach my $table (@tables) {
-       $self->_check_table($table); 
-       push @filetypes, $self->_filetype_of_table($table);
+        $self->_check_table($table);
+        push @filetypes, $self->_filetype_of_table($table);
     }
-    
+
     foreach my $filetype (@filetypes) {
         next if ( $self->_is_loaded($filetype) );
 
@@ -265,13 +268,13 @@ sub ensure_loaded {
         if ( $stored_mtimes ne $current_mtimes ) {
 
             foreach my $table ( $self->_tables_of_filetype($filetype) ) {
-                my $table_sth
-                  = $dbh->table_info( undef, undef, $table, 'TABLE' );
+                my $table_sth =
+                  $dbh->table_info( undef, undef, $table, 'TABLE' );
                 my $ary_ref = $table_sth->fetchrow_arrayref();
-                $dbh->do( "DROP TABLE $table" ) if $ary_ref;
+                $dbh->do("DROP TABLE $table") if $ary_ref;
             }
 
-            $self->_load( $filetype, @flats);
+            $self->_load( $filetype, @flats );
             $dbh->do( 'DELETE FROM files WHERE filetype = ?', {}, $filetype )
               if $stored_mtimes;
             $dbh->do( 'INSERT INTO files (filetype , mtimes) VALUES ( ? , ? )',
@@ -282,16 +285,16 @@ sub ensure_loaded {
         # now that we've checked, mark them as loaded
         $self->_mark_loaded($filetype);
 
-    } ## tidy end: foreach my $filetype (@filetypes)
+    }    ## tidy end: foreach my $filetype (@filetypes)
 
     return;
 
-} ## tidy end: sub ensure_loaded
+}    ## tidy end: sub ensure_loaded
 
 sub _check_table {
     my ( $self, $table ) = @_;
     croak "Invalid table $table for database type " . $self->db_type()
-      if not ($self->is_a_table($table));
+      if not( $self->is_a_table($table) );
     return;
 }
 
@@ -303,7 +306,7 @@ sub row {
     my ( $self, $table, $keyvalue ) = @_;
     my $key = $self->key_of_table($table);
     croak "Can't use row() on table $table with no key"
-       unless $key;
+      unless $key;
     $self->ensure_loaded($table);
     my $dbh   = $self->dbh();
     my $query = "SELECT * FROM $table WHERE $key = ?";
@@ -331,7 +334,7 @@ sub each_row_eq {
 
 sub each_row_where {
     my ( $self, $table, $where, @bind_values ) = @_;
-    
+
     $self->ensure_loaded($table);
     my $dbh = $self->dbh();
 
@@ -348,7 +351,7 @@ sub each_row_where {
         $sth->finish() if not $result;
         return $result;
     };
-} ## tidy end: sub each_row_where
+}    ## tidy end: sub each_row_where
 
 sub _check_column {
     my ( $self, $table, $column ) = @_;
@@ -402,7 +405,7 @@ This documentation refers to version 0.001
             
  my $db = Actium::Files::RoleComposer->new(
      flats_folder => $flats_folder,
-     db_folder    => $db_folder,
+     cache    => $cache,
      db_filename  => $db_filename,
  );
       
@@ -435,7 +438,7 @@ users should be familiar with using DBI to fetch data.
 
 L<Actium::Options|Actium::Options> is used to read command-line options.
 
-The command-line option "db_folder" is used to specify the database folder
+The command-line option "cache" is used to specify the database folder
 if no folder is specified during object construction. 
 See L<db_folder|/db_folder> below.
 
@@ -470,7 +473,7 @@ This is required to be specified in the object creator.
 =item B<db_folder>
 
 The folder on disk where the database is to be stored. Defaults to either
-the value of the -db_folder command line option, or if there is none, to the
+the value of the -cache command line option, or if there is none, to the
 value of I<flats_folder>.
 
 =item B<db_filename>
