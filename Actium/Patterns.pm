@@ -30,8 +30,8 @@ sub START {
     my $signup     = Actium::Signup->new();
     my $flagfolder = $signup->subdir('flags');
 
-    my $xml_db  = _load_xml($signup);
-    my $hasi_db = _load_hasi($signup);
+    my $xml_db  = $signup->load_xml;
+    my $hasi_db = $signup->load_hasi;
 
     my ( $stop_obj_of_r, $route_obj_of_r )
       = process_patterns( $hasi_db, $xml_db );
@@ -43,21 +43,21 @@ sub START {
 
 }
 
-sub _load_xml {
-    my $signup = shift;
-    my $xmldir = $signup->subdir('xml');
-    my $xml_db = Actium::Files::FMPXMLResult->new( $xmldir->get_dir() );
-    $xml_db->ensure_loaded(qw(Stops Timepoints));
-    return $xml_db;
-}
-
-sub _load_hasi {
-    my $signup  = shift;
-    my $hasidir = $signup->subdir('hasi');
-    my $hasi_db = Actium::Files::HastusASI->new( $hasidir->get_dir() );
-    $hasi_db->ensure_loaded(qw(PAT TRP));
-    return $hasi_db;
-}
+#sub _load_xml {
+#    my $signup = shift;
+#    my $xmldir = $signup->subdir('xml');
+#    my $xml_db = Actium::Files::FMPXMLResult->new( $xmldir->get_dir() );
+#    $xml_db->ensure_loaded(qw(Stops Timepoints));
+#    return $xml_db;
+#}
+#
+#sub _load_hasi {
+#    my $signup  = shift;
+#    my $hasidir = $signup->subdir('hasi');
+#    my $hasi_db = Actium::Files::HastusASI->new( $hasidir->get_dir() );
+#    $hasi_db->ensure_loaded(qw(PAT TRP));
+#    return $hasi_db;
+#}
 
 sub process_patterns {
 
