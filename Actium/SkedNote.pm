@@ -2,11 +2,7 @@
 
 # Subversion: $Id$
 
-###################
-###
-### NOTE
-###
-###################
+# legacy status 3
 
 package Actium::SkedNote;
 

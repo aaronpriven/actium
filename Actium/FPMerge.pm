@@ -4,6 +4,10 @@
 # This is FPMerge.pm, a module to read (and maybe later, write) 
 # the database files in "merge" format exported by FileMaker Pro.
 
+# legacy stage 2
+
+# obsolete - replace with Actium::Files::FMPXMLResult
+
 package Actium::FPMerge;
 
 use strict;

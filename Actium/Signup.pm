@@ -8,6 +8,9 @@
 # One of the first programs written for stage 3, it predates adoption
 # of Moose and probably should be rewritten to be a Moose class
 
+# maybe Actium::Folder should have everything not specifically related 
+# to signup folders, and Actium::Folder::Signup should be signups
+
 use strict;
 use warnings;
 

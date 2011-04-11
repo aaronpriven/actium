@@ -4,6 +4,8 @@
 
 # Subversion: $Id$
 
+# legacy status 3
+
 package Actium::Sked;
 
 use 5.010;

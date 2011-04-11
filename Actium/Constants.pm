@@ -3,6 +3,8 @@
 
 # Subversion: $Id$
 
+# legacy stages 3 and 4
+
 use strict;
 use warnings;
 
