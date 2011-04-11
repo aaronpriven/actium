@@ -296,7 +296,7 @@ but if it has the right number for the number of fields, then we can use
 the positions of each comma to determine the positions of the beginning
 and end of each field.
 
-=end
+=end comment
 
 =cut
 
