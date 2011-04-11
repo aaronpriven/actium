@@ -84,7 +84,7 @@ attributes and methods should be considered private to that module.
 =item B<new>
 
 As with most Moose classes, the constructor method is called "new". Invoke it
-with C<Actium:::Files::HastusASI::Filetype->new(%hash_of_attributes)>.
+with C<< Actium:::Files::HastusASI::Filetype->new(%hash_of_attributes) >>.
 
 =item B<id>
 

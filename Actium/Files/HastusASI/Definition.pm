@@ -233,7 +233,7 @@ ENDNAMES
    (contains more than one value)
 
 
-
+=end comment
 
 =cut
 
@@ -253,6 +253,8 @@ attribute of the parent table
 At the end, it creates a bunch of new little objects from the
 constructor specs, and returns them to be found in the _table_of_r
 attribute.
+
+=end comment
 
 =cut
 
@@ -596,8 +598,12 @@ Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/key_components_idxs>.
 
 Perl was unable to open, or close, the variable that holds the definition 
 entries (which it opens as a file). An unlikely error.
+
+=back
       
 =head1 DEPENDENCIES
+
+=over
 
 =item perl 5.012
 
@@ -608,6 +614,8 @@ entries (which it opens as a file). An unlikely error.
 =item Actium::Files::HastusASI::Filetype
 
 =item Actium::Files::SQLite::Table
+
+=back
 
 =head1 AUTHOR
 

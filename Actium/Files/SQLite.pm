@@ -482,6 +482,8 @@ The filename (not path) of the database.  Defaults to the value of the
 L<B<db_type>|/db_type> method concatenated with ".SQLite": something like 
 "HastusASI.SQLite" or "FPMerge.SQLite" .
 
+=back
+
 =head1 METHODS
 
 =head2 Methods that must be provided by the consuming class
@@ -512,7 +514,11 @@ This method returns the name of the key column, if any, associated
 with is table. It can be a regular column that comes from the data,
 or a composite key column which is created by the consuming class.
 
+=back
+
 =head2 Methods in Actium::Files::SQLite
+
+=over
 
 =item B<ensure_loaded(I<table>, ...)>
 
@@ -591,6 +597,8 @@ before the database is disconnected.
 
 =head1 DIAGNOSTICS
 
+=over
+
 =item Could not get file status for $filespec
 
 The program could not read the modification time of the file.
@@ -609,6 +617,8 @@ A request specified a column that was not found in the specified table.
 
 A request specified a table that was not found for the specified database type.
 
+=back
+
 =head1 DEPENDENCIES
 
 =over 
@@ -626,6 +636,8 @@ A request specified a table that was not found for the specified database type.
 =item Actium::Term
 
 =item Actium::Options
+
+=back
 
 =head1 AUTHOR
 
