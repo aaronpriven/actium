@@ -4,6 +4,8 @@
 
 # Subversion: $Id$
 
+# legacy stage 3
+
 use strict;
 use warnings;
 
@@ -994,5 +996,4 @@ sub write_prehistorics {
 
 } ## <perltidy> end sub write_prehistorics
 
-1;
-
+1; 

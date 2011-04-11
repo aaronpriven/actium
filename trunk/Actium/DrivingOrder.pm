@@ -1,8 +1,10 @@
+# Actium/DrivingOrder.pm
+
 # Subversion: $Id$
+
 # make lists of stops by driving order
 
-# This needs refactoring badly.
-# Currently though it is still the version being used.
+# legacy stage 2, mostly, but converted to an actium.pl subcommnand
 
 use warnings;
 use 5.012;

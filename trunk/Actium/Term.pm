@@ -3,6 +3,8 @@
 
 # Subversion: $Id$
 
+# legacy status 3
+
 use strict;
 use warnings;
 
@@ -263,7 +265,7 @@ them in a pretty manner. It is intended to be used from HELP routines in modules
 
 This routine is designed to allow regular output (print, say, etc.) to be mixed with
 Actium::Term output. It tells Term::Emit to set the current cursor position to $position.
-See L<Term::Emit/Mixing Term::Emit with printÕed Output>.
+See L<Term::Emit/Mixing Term::Emit with printï¿½ed Output>.
 
 =back
 

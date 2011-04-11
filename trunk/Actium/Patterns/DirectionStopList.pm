@@ -4,6 +4,10 @@
 
 # Subversion: $Id$
 
+# legacy stage 4
+
+# This is only supposed to be used inside MakeStopLists.pm
+
 use 5.012;
 use warnings;
 

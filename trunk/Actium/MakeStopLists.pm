@@ -4,7 +4,7 @@
 
 # Subversion: $Id$
 
-# legacy status: 4
+# legacy stage 4
 
 use 5.012;
 use warnings;

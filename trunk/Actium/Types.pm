@@ -3,6 +3,8 @@
 
 # Subversion: $Id$
 
+# legacy status 4
+
 use strict;
 use warnings;
 
@@ -16,19 +18,19 @@ $VERSION = eval $VERSION;
 ## no critic (ProhibitMagicNumbers)
 
 use MooseX::Types -declare => [
-    qw <Schedule_Day TransitinfoDays DayCode SchoolDayCode
-      ArrayRefOfTimeNums _ArrayRefOfStrs ArrayRefOrTimeNum
-      ActiumSkedDir
-      TransitInfoDays TimeNum Str4 Str8 DirCode HastusDirCode >
+    qw <TransitInfoDays     DayCode  SchoolDayCode
+        HastusDirCode       DirCode  ActiumSkedDir
+        ArrayRefOfTimeNums  TimeNum  _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
+        Str4                Str8 >
 ];
 
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
 
 use Actium::Time;
 use Actium::Constants;
-#use Actium::Sked::Dir;
 
-enum( Schedule_Day, (@SCHEDULE_DAYS) );
+##################
+### SCHEDULE DAYS
 
 subtype DayCode, as Str, where {/\A1?2?3?4?5?6?7?H?\z/}, message {
 qq<"$_" is not a valid day code\n  (one or more of the characters 1-7 plus H, in order>;
@@ -38,11 +40,12 @@ qq<"$_" is not a valid day code\n  (one or more of the characters 1-7 plus H, in
 
 enum( TransitInfoDays, values %TRANSITINFO_DAYS_OF );
 
-coerce DayCode, from TransitInfoDays, via {
-    $DAYS_FROM_TRANSITINFO{$_};
-};
+coerce DayCode, from TransitInfoDays, via { $DAYS_FROM_TRANSITINFO{$_} };
 
 enum( SchoolDayCode, 'B', 'D', 'H' );
+
+#########################
+### SCHEDULE DIRECTIONS
 
 enum( DirCode, @DIRCODES );
 
@@ -59,13 +62,9 @@ coerce( ActiumSkedDir,
     via { Actium::Sked::Dir->new($_) },
 );
 
-subtype Str8, as Str, where { length == 8 },
-  message {qq<The entry "$_" is not an eight-character-long string>};
+######################
+## SCHEDULE TIMES
 
-subtype Str4, as Str, where { length == 4 },
-  message {qq<The entry "$_" is not an four-character-long string>};
-
-## Time numbers
 subtype TimeNum, as Maybe [Int];
 
 subtype ArrayRefOrTimeNum, as TimeNum | ArrayRef [TimeNum];
@@ -81,6 +80,16 @@ coerce ArrayRefOfTimeNums, from _ArrayRefOfStrs, via {
     my @array = map { to_TimeNum($_) } @{$_};
     return ( \@array );
 };
+
+############################
+### TIMEPOINT ABBREVIATIONS
+
+subtype Str8, as Str, where { length == 8 },
+  message {qq<The entry "$_" is not an eight-character-long string>};
+
+subtype Str4, as Str, where { length == 4 },
+  message {qq<The entry "$_" is not an four-character-long string>};
+
 
 1;
 __END__
@@ -98,14 +107,14 @@ This documentation refers to Actium::Types version 0.001
  # in a Moose class
  package MyClass;
  use Moose;
- use Actium::Types qw(Schedule_Day);
+ use Actium::Types qw(DayCode);
  
  has 'days' =>
     is => 'rw' ,
-    isa => Schedule_Day ,
+    isa => DayCode ,
  );
  # now the days attribute of MyClass is constrained to be a 
- # Schedule_Day value
+ # DayCode value
  
 =head1 DESCRIPTION
 
@@ -114,11 +123,14 @@ L<Moose::Manual::Types>.
 
 =head1 TYPES
 
+=head2 SCHEDULE DAYS
+
 =over
 
-=item B<Schedule_Day>
+=item B<TransitInfoDays>
 
-An enumeration of @Actium::Constants::SCHEDULE_DAYS. See L<Actium::Constants>.
+An enumeration of the values of %Actium::Constants::TRANSITINFO_DAYS_OF. 
+See L<Actium::Constants/Actium::Constants>. Can be coerced into a DayCode.
 
 =item B<DayCode>
 
@@ -131,10 +143,32 @@ They must be in order (e.g., "76" is invalid).
 A character representing whether the scheduled days run during school days
 ("D"), school holidays ("H"), or both ("B").
 
-=item B<Str4> and B<Str8>
+=back
 
-A string of exactly four characters or eight characters. These are used in 
-specifying timepoint abbreviations.
+=head2 SCHEDULE DIRECTIONS
+
+=over
+
+=item B<HastusDirCode>
+
+A number from 0 to 13, representing the various direction codes used in the 
+Hastus AVL Standard Interface. It can be coerced into DirCode or ActiumSkedDir.
+
+=item B<DirCode>
+
+An enumeration of the elements of @Actium::Constants::DIRCODES. 
+See L<Actium::Constants/Actium::Constants>. It can be coerced into 
+ActiumSkedDir.
+
+=item B<ActiumSkedDir>
+
+A type representing the Actium::Sked::Dir class.
+
+=back
+
+=head2 TIME NUMBERS AND STRINGS
+
+=over
 
 =item B<TimeNum>
 
@@ -152,19 +186,28 @@ An array reference, which must refer to an array consisting solely of TimeNums.
 
 =back
 
+=head2 TIMEPOINT ABBREVIATIONS
+
+=over
+
+=item B<Str4> and B<Str8>
+
+A string of exactly four characters or eight characters. These are used in 
+specifying timepoint abbreviations.
+
+=back
+
 =head1 DEPENDENCIES
 
 =over
 
-=item *
-Actium::Constants
+=item Actium::Constants
 
-=item *
+=item Actium::Time
 
-Moose
+=item Moose
 
-=item *
-MooseX::Types
+=item MooseX::Types
 
 =back
 
@@ -174,7 +217,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2009 
+Copyright 2011
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
@@ -191,4 +234,4 @@ later version, or
 
 This program is distributed in the hope that it will be useful, but WITHOUT 
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+FITNESS FOR A PARTICULAR PURPOSE. 

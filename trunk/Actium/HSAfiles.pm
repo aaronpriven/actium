@@ -3,6 +3,8 @@
 
 # Subversion: $Id$
 
+# legacy stage 3 - eliminate with new Actium::Files::HastusASI
+
 use strict;
 use warnings;
 

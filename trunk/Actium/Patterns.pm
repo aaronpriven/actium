@@ -4,6 +4,8 @@
 
 # Go through PAT and TPS, building whatever needs to be built
 
+# legacy stage 4
+
 use 5.012;
 use warnings;
 
