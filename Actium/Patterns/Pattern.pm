@@ -30,7 +30,7 @@ has 'dir_obj' => (
     init_arg => 'direction',
     is       => 'ro',
     isa      => ActiumSkedDir,
-    handles  => ['dircode'],
+    handles  => ['dircode' ],
 );
 
 has 'identifier' => (
@@ -45,6 +45,11 @@ has 'unique_id' => (
     lazy    => 1,
     builder => '_build_unique_id',
 );
+
+sub id {
+   my $self = shift;
+   return $self->unique_id;
+}
 
 sub _build_unique_id {
     my $self = shift;

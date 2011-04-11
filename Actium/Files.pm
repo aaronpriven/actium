@@ -18,10 +18,15 @@ use Storable();
 use Carp;
 #use Term::Emit qw(:all) , { -closestat => 'ERROR' };
 
+use Params::Validate(':all');
+
+use open ':encoding(utf8)';
+
 use File::Spec;
 
 use Exporter qw( import );
-our @EXPORT_OK = qw(retrieve store writefileswithmethod writefilesfromhash filename);
+our @EXPORT_OK
+  = qw(retrieve store write_files_with_method write_files_from_hash filename);
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
 use English qw<'-no_match_vars'>;
@@ -32,9 +37,9 @@ sub retrieve {
 
     croak "$filespec does not exist"
       unless -e $filespec;
-      
+
     my $filename = filename($filespec);
-      
+
     emit("Retrieving $filename");
 
     my $data_r = Storable::retrieve($filespec);
@@ -48,7 +53,7 @@ sub retrieve {
 
     return $data_r;
 
-}
+} ## tidy end: sub retrieve
 
 sub store {
 
@@ -69,7 +74,7 @@ sub store {
 
     return;
 
-}
+} ## tidy end: sub store
 
 sub filename {
 
@@ -79,75 +84,106 @@ sub filename {
     return $filename;
 }
 
-sub writefileswithmethod {
-	
-	my @objects = @{ shift @_ };
-	my $filetype = shift;
-	my $extension = shift;
-	my $method = shift || $filetype;
-	
-	my $count;
-	
-	emit ("Writing $filetype files");
-	
-	my $dir = Actium::Signup->new($filetype);
-	
-	my %seen_id;
+sub write_files_with_method {
 
-    foreach my $obj ( @objects ) {
+    my %params = validate(
+        @_,
+        {   OBJECTS   => { type => ARRAYREF },
+            FILETYPE  => 1,
+            SIGNUP    => { can => 'make_filespec' },
+            EXTENSION => 1,
+            METHOD    => 0,
+        }
+    );
+
+    my @objects   = @{ $params{OBJECTS} };
+    my $filetype  = $params{FILETYPE};
+    my $folder    = $params{SIGNUP};
+    my $extension = $params{EXTENSION};
+    my $method    = $params{METHOD} || $filetype;
+
+    my $count;
+
+    emit("Writing $filetype files");
+
+    $folder = Actium::Signup->new($filetype)
+      unless $folder;
+
+    my %seen_id;
+
+    foreach my $obj (@objects) {
 
         my $out;
+
         my $id = $obj->id;
         emit_over $id;
-        
-        $seen_id{$id}++;
-        
-        $id .= "_$seen_id{$id}" unless $seen_id{$id} == 1;
-        
-        my $file = $dir->make_filespec( $id . ".$extension" );
-        
-        unless ( open $out, '>', $file ) {
-            emit_error;
-            die "Can't open $file for writing: $OS_ERROR";
-        }
-        
-        print $out $obj->$method() or die "Can't print to $file: $OS_ERROR";
 
-        unless ( close $out ) {
-            emit_error;
-            die "Can't close $file for writing: $OS_ERROR";
-        }
+        $seen_id{$id}++;
+
+        $id .= "_$seen_id{$id}" unless $seen_id{$id} == 1;
+        write_file_with_method(
+            {   OBJECT   => $obj,
+                FOLDER   => $folder,
+                METHOD   => $method,
+                FILENAME => "$id.$extension"
+            }
+        );
 
     }
 
     emit_done;
-	
-}
 
-sub writefilesfromhash {
-    
-    my %hash = %{ shift @_ };
-    my $filetype = shift;
+} ## tidy end: sub write_files_with_method
+
+sub write_file_with_method {
+    my %params   = %{ +shift };
+    my $obj      = $params{OBJECT};
+    my $folder   = $params{FOLDER};
+    my $filename = $params{FILENAME};
+    my $method   = $params{METHOD};
+
+    my $out;
+
+    my $file = $folder->make_filespec($filename);
+
+    unless ( open $out, '>', $file ) {
+        emit_error;
+        die "Can't open $file for writing: $OS_ERROR";
+    }
+
+    print $out $obj->$method() or die "Can't print to $file: $OS_ERROR";
+
+    unless ( close $out ) {
+        emit_error;
+        die "Can't close $file for writing: $OS_ERROR";
+    }
+
+} ## tidy end: sub write_file_with_method
+
+sub write_files_from_hash {
+
+    my %hash      = %{ shift @_ };
+    my $filetype  = shift;
     my $extension = shift;
-    
+
     my $count;
-    
-    emit ("Writing $filetype files");
-    
-    my $dir = Actium::Signup->new($filetype);
+
+    emit("Writing $filetype files");
+
+    my $folder = Actium::Signup->new($filetype);
 
     foreach my $key ( sort keys %hash ) {
 
         my $out;
         emit_over $key;
-        
-        my $file = $dir->make_filespec( $key . ".$extension" );
-        
+
+        my $file = $folder->make_filespec( $key . ".$extension" );
+
         unless ( open $out, '>', $file ) {
             emit_error;
             die "Can't open $file for writing: $OS_ERROR";
         }
-        
+
         print $out $hash{$key} or die "Can't print to $file: $OS_ERROR";
 
         unless ( close $out ) {
@@ -155,11 +191,11 @@ sub writefilesfromhash {
             die "Can't close $file for writing: $OS_ERROR";
         }
 
-    }
+    } ## tidy end: foreach my $key ( sort keys...)
 
     emit_done;
-    
-}
+
+} ## tidy end: sub write_files_from_hash
 
 1;
 

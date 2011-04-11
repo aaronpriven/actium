@@ -15,6 +15,7 @@ use MooseX::StrictConstructor;
 use Actium::Union('ordered_union');
 use Actium::Util('positional');
 
+use Array::Transpose;
 
 around BUILDARGS => sub {
     return positional( \@_, 'route' , 'patterns_r' );
@@ -25,6 +26,11 @@ has 'route' => (
     is       => 'ro',
     isa      => 'Str',
 );
+
+sub id {
+   my $self = shift;
+   return $self->route;
+}
 
 has 'patterns_r' => (
     is      => 'bare',
@@ -41,12 +47,20 @@ has 'dir_obj_of' => (
     builder => '_build_dir_objs_of',
     lazy    => 1,
     handles => {
-        dircodes      => 'keys',
+        _unsorted_dircodes      => 'keys',
         dir_obj_of    => 'get',
         dir_objs      => 'values',
         has_direction => 'exists',
     },
 );
+
+sub dircodes {
+    my $self = shift;
+    my @objs = $self->dir_objs;
+    my %sortable_of = map { $_->dircode, $_->as_sortable } @objs;
+    my @dircodes = sort {$sortable_of{$a} cmp $sortable_of{$b}} keys %sortable_of;
+    return @dircodes;
+}
 
 sub _build_dir_objs_of {
     my $self = shift;
@@ -122,7 +136,9 @@ has stops_of_dir_r => (
     isa     => 'HashRef[ArrayRef[Str]]',
     builder => '_build_stops_of_dir',
     traits  => ['Hash'],
-    handles => { _stops_of_dir_r => 'get', },
+    handles => { _stops_of_dir_r => 'get', 
+                _stoplists_by_dir => 'kv' ,
+    },
 );
 
 sub stops_of_dir {
@@ -134,13 +150,55 @@ sub stops_of_dir {
 sub _build_stops_of_dir {
     my $self = shift;
     my %stops_of_dir;
-    foreach my $dircode ( $self->dircodes ) {
+    foreach my $dircode ( $self->_unsorted_dircodes ) {
         my @stoplist_rs = map { [ $_->stops ] }
           $self->patterns_of_dir($dircode);
         $stops_of_dir{$dircode} = ordered_union(@stoplist_rs);
     }
     return \%stops_of_dir;
 }
+
+has stoplist_r => (
+   is => 'bare',
+   isa => 'ArrayRef[ArrayRef[Str]]' ,
+   traits => ['Array'],
+   builder => '_build_stoplist_r',
+   lazy => 1,
+   handles => {stoplist => 'elements' },
+);
+   
+=for comment
+
+"stoplist" returns a matrix as follows:
+
+ [
+  [ stop_id, marker],
+  [ stop_id, marker],
+  ...
+ ]
+   
+The marker is either < for the first direction only, > for the second 
+direction only, or nothing for both directions.
+
+=cut
+    
+sub _build_stoplist_r {
+  my $self = shift;
+  my @dircodes = $self->dircodes; # sorted
+  my @lists = map { [ $_ , $self->stops_of_dir($_) ] } @dircodes; 
+  
+  my ($union_r, $markers_r) = comm($lists[0][1] , $lists[1][1]);
+  # so in the markers, < is always the first direction when sorted, and 
+  # > always the second
+  
+  my @stoplist_items = Array::Transpose::transpose([$union_r , $markers_r]);
+  
+  return \@stoplist_items; 
+  
+}
+
+# the usual lists we publish like that use shading for different patterns
+# (e.g., short turns). Might want to think about that.
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 

@@ -43,29 +43,11 @@ sub START {
 
 }
 
-#sub _load_xml {
-#    my $signup = shift;
-#    my $xmldir = $signup->subdir('xml');
-#    my $xml_db = Actium::Files::FMPXMLResult->new( $xmldir->get_dir() );
-#    $xml_db->ensure_loaded(qw(Stops Timepoints));
-#    return $xml_db;
-#}
-#
-#sub _load_hasi {
-#    my $signup  = shift;
-#    my $hasidir = $signup->subdir('hasi');
-#    my $hasi_db = Actium::Files::HastusASI->new( $hasidir->get_dir() );
-#    $hasi_db->ensure_loaded(qw(PAT TRP));
-#    return $hasi_db;
-#}
-
 sub process_patterns {
 
     my ( $hasi_db, $xml_db ) = @_;
 
     my ( %stop_obj_of, %pattern_objs_of_route );
-
-    emit 'Building lists of patterns, stops, and places';
 
     my $eachpat = $hasi_db->each_row_where( 'PAT',
         q{WHERE NOT IsInService = '' ORDER BY Route} );
@@ -74,6 +56,8 @@ sub process_patterns {
     my $tps_sth  = $hasi_dbh->prepare(
         'SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
     my $prevroute = $EMPTY_STR;
+    
+    emit 'Building lists of patterns, stops, and places';
 
   PAT:
     while ( my $pat_row = $eachpat->() ) {
@@ -208,7 +192,7 @@ sub _build_pattern_obj {
             identifier => $pat_ident,
         }
     );
-
+    
     return ( $pat_ident, $route, $pattern_obj );
 
 } ## tidy end: sub _build_pattern_obj

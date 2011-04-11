@@ -48,11 +48,7 @@ enum( DirCode, @DIRCODES );
 
 subtype HastusDirCode, as Int, where { $_ >= 0 and $_ <= $#DIRCODES };
 
-coerce DirCode, from HastusDirCode, via {
-    $DIRCODES[ $_ == 3 ? 2
-      : 2   ? 3
-      :       $_ ] ;
-};
+coerce DirCode, from HastusDirCode, via { $DIRCODES[$HASTUS_DIRS[$_]] };
 
 subtype ActiumSkedDir, as class_type('Actium::Sked::Dir');
 
