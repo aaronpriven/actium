@@ -10,12 +10,6 @@
 use warnings;
 use 5.012;    # turns on features
 
-BEGIN {
-
-    #use Devel::NYTProf;
-    #DB::disable_profile();
-}
-
 package Actium::Files::FMPXMLResult 0.001;
 
 use Moose;
@@ -198,11 +192,7 @@ sub _load {
     emit "Reading FileMaker FMPXMLESULT $filetype";
     emit_over '0% ';
 
-    #DB::enable_profile();
-
     $self->_load_xml_parser( $filetype, $file );
-
-    #DB::disable_profile();
 
     emit_over '100% ';
     emit_done;
@@ -265,7 +255,7 @@ sub _load_xml_parser {
 
     my $record_count = 0;
 
-=begin
+=begin comment
 
 Here is the list of events that are noted. Any tags that are completely
 ignored are not shown. An ignored start or end tag is shown in (parens).
@@ -283,11 +273,11 @@ Start of DATA - unless if "beginning of COL" flag is set, add key separator to
                 $data_buffer. Unset "beginning of COL" flag.
 CHARS - Add chars to $data_buffer
 (End of DATA)
-End of COL - Push $data_buffer to @row_buffer
+End of COL - Push $data_buffer to @row_buffer, and clear $data_buffer
 End of ROW - Save row_buffer into SQLite database
 (End of RESULTSET)
 
-=end
+=end comment
 
 =cut
 
@@ -477,6 +467,7 @@ The columns of each table are not known until after the table is loaded into
 SQLite, so asking for the columns will load the data.
 
 =item B<key_of_table>
+
 Returns the key column of the table, which are stored in 
 L<Actium::Files::SQLite::Table|Actium::Files::SQLite::Table> objects. At the 
 moment the keys of each column are hard coded into the program, but eventually
@@ -500,7 +491,10 @@ Always returns undef, since FileMaker tables have no parents.
 
 =head1 PRIVATE METHODS
 
+=over
+
 =item B<_filetype_of_table(I<table>)>
+
 =item B<_tables_of_filetype(I<filetype>)>
 
 Always returns the table name, since filetypes and table names in FMPXMLResult

@@ -277,7 +277,6 @@ __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 __END__
 
-
 =head1 NAME
 
 Actium::Files::SQLite::Table - Class representing tables used by classes
@@ -466,7 +465,7 @@ table, the value is undef.
 =head1 OBJECT CONSTRUCTION
 
 As with most Moose classes, the constructor method is called "new". Invoke it
-with C<Actium:::Files::HastusASI::Table->new(%hash_of_attributes)>.
+with C<< Actium:::Files::HastusASI::Table->new(%hash_of_attributes) >>.
 
 The following attributes should be specified in object construction:
 
