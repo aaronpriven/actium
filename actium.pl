@@ -42,6 +42,7 @@ use Actium::Options qw(add_option init_options option);
 ### Get subcommand, and run subcommand
 
 my %module_of = (
+    makestoplists => 'MakeStopLists',
     headways      => 'Headways',
     time          => 'Time',
     sqlite2tab    => 'SQLite2tab',

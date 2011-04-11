@@ -62,62 +62,12 @@ sub START {
 
     my ( $skeds_r, $notes_r ) = read_headways(@files);
 
-    writefileswithmethod( $skeds_r, 'headskeds', 'txt', 'dump' );
-    writefileswithmethod( $notes_r, 'headnotes', 'txt', 'dump' );
+    write_files_with_method( $skeds_r, 'headskeds', 'txt', 'dump' );
+    write_files_with_method( $notes_r, 'headnotes', 'txt', 'dump' );
 
     # this probably should be a separate program, but for now, isn't
 
     write_prehistorics($skeds_r);
-
- #    my $headskedsdir = Actium::Signup->new('headskeds');
- #    my $headnotesdir = Actium::Signup->new('headnotes');
- #
- #    emit 'Writing headskeds';
- #
- #    foreach my $sked ( @{$skeds_r} ) {
- #
- #        my $out;
- #
- #        my $skedfile = $headskedsdir->make_filespec( $sked->skedid . '.txt' );
- #        unless ( open $out, '>', $skedfile ) {
- #            emit_error;
- #            die "Can't open $skedfile for writing: $OS_ERROR";
- #        }
- #
- #        print $out $sked->dump() or die "Can't print to $skedfile: $OS_ERROR";
- #
- #        unless ( close $out ) {
- #            emit_error;
- #            die "Can't close $skedfile for writing: $OS_ERROR";
- #        }
- #
- #    }
- #
- #    emit_done;
- #
- #    emit 'Writing headnotes';
- #
- #    foreach my $note ( @{$notes_r} ) {
- #
- #        my $notefile = $headnotesdir->make_filespec( $note->noteid . '.txt' );
- #
- #        my $out;
- #
- #        unless ( open $out, '>', $notefile ) {
- #            emit_error;
- #            die "Can't open $notefile for writing: $OS_ERROR";
- #        }
- #
- #        print $out $note->dump() or die "Can't print to $notefile: $OS_ERROR";
- #
- #        unless ( close $out ) {
- #            emit_error;
- #            die "Can't close $notefile for writing: $OS_ERROR";
- #        }
- #
- #    }
- #
- #    emit_done;
 
     return;
 
@@ -1036,7 +986,7 @@ sub write_prehistorics {
 
     emit_done;
 
-    writefilesfromhash( \%allprehistorics, 'prehistoric', 'txt' );
+    write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
 
     emit_done;
 
