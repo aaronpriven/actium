@@ -263,14 +263,24 @@ This documentation refers to Actium::Union version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Union qw(ordered_union distinguish);
+ use Actium::Union qw(ordered_union comm distinguish);
  @list = qw/HILL_MALL CCJR_COLL DELN_BART UNIV_S.P. OAKL_AMTK/;
- @list2 = qw/CAST_TEWK RICH_BART UNIV_S.P. DELN_BART/;
+ @list2 = qw/CAST_TEWK RICH_BART DELN_BART UNIV_S.P./;
  @list3 = qw/DELN_BART OAKL_AMTK/;
+ 
  @union = ordered_union (\@list1, \@list2, \@list3);
+ 
  @distinguished = distinguish(\@list1, \@list2, \@list3);
+ 
+ @comm = comm(\@list1 , \@list2);
+ 
  # @union = qw/HILL_MALL CCJR_COLL CAST_TEWK 
  #             RICH_BART DELN_BART UNIV_S.P. OAKL_AMTK/
+ 
+ #@comm = (
+ # [qw/HILL_MALL CCJR_COLL CAST_TEWK RICH_BART DELN_BART UNIV_S.P. OAKL_AMTK/],
+ # [qw/<         <         >         >         =         =         <        /])
+ 
  # @distinguished = (
  #  [ qw/HILL_MALL OAKL_AMTK/ ], 
  #  [ qw/CAST_TEWK DELN_BART/ ],
@@ -291,7 +301,7 @@ order of the two sets as much as possible.  It takes the two lists and
 interleaves the two, coming up with a list that preserves the order of the two
 while including all elements.
 
-Most work of this routine comes from L<Algorithm::Diff|Algorithm::Diff>. 
+Most of the work of this routine comes from L<Algorithm::Diff|Algorithm::Diff>. 
 Basically it takes the result from Algorithm::Diff and stitches it back
 together again as best it can.
 
@@ -319,7 +329,11 @@ again. (It doesn't do something like qw/5 p ! @ a/.)
 
 =item B<comm()>
 
-This routine is named after the Unix utility C<comm>. It accepts as its 
+This routine is named after the Unix utility C<comm>, in that it is similar
+conceptually, even though the results are different.
+(I couldn't think of a better name. Sorry.)
+
+It accepts as its 
 arguments two lists which are to be compared.  It returns the unified list,
 as I<ordered_union> does, but also provides a second list, with markers as to 
 whether each result is from the first list only ('<'), the second list only
@@ -332,8 +346,8 @@ To use the example from above, if passed the two lists
 
 then the result from comm would be
 
- qw/m v c 6 z f e w 5 ! a p @ t r x y m/
- qw/= = = = > = < = < < = > > = > > > =/
+ [ qw/m v c 6 z f e w 5 ! a p @ t r x y m/ ,
+   qw/= = = = > = < = < < = > > = > > > =/ ]
  
 Unlike I<ordered_union>, I<comm> can accept only two lists as arguments.
 
@@ -369,7 +383,7 @@ differing entries, only one is kept (it tries to pick one in the middle).
 
 =item Arguments to I<caller> must be array references
 
-Something was passed to I<ordered_union()> or I<distinguish()> 
+Something was passed to I<ordered_union()>, I<comm()> or I<distinguish()> 
 that was not an array reference.
 
 =item Not enough arguments to comm
@@ -384,13 +398,9 @@ other than two were passed to it.
 
 =over
 
-=item *
+=item Perl 5.012
 
-Perl 5.010
-
-=item *
-
-Algorithm::Diff
+=item Algorithm::Diff
 
 =back
 

@@ -3,6 +3,9 @@
 
 # Subversion: $Id$
 
+# legacy stage 2, mostly
+# should be eliminated in favor of Actium::Sked::Days and Actium::Sked::Dir
+
 use 5.012;
 use warnings;
 

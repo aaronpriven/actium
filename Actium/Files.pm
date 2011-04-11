@@ -3,6 +3,11 @@
 
 # Subversion: $Id$
 
+# legacy stage 3
+
+# I am thinking the right thing to do is to combine this and Actium::Signup
+# into new Actium::Folder and Actium::Folder::Signup classes
+
 use strict;
 use warnings;
 

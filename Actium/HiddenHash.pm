@@ -4,6 +4,10 @@
 
 # Subversion: $Id$
 
+# legacy stage 3
+
+# Less necessary since began use of databases. Maybe eliminate.
+
 use warnings;
 use strict;
 

@@ -3,6 +3,8 @@
 
 # Subversion: $Id$
 
+# legacy status 4
+
 use 5.012;
 use warnings;
 
@@ -317,7 +319,7 @@ sorting in another program, or what have you.
 
 =item travelsort( I<stops> , I<stops_of_linedir> )
 
-The routine requires two arguments. The first  is a reference to an array
+The routine requires two arguments. The first is a reference to an array
 of the stops that are to be sorted. 
 
  [qw<stop_1 stop_2 stop_3>] ...

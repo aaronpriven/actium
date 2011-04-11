@@ -5,12 +5,12 @@
 
 # Subversion: $Id$
 
+# legacy stage 4
+
 use 5.012;
 use warnings;
 
 package Actium::OrderByTravel 0.001;
-
-# add the current program directory to list of files to include
 
 use Carp;
 use Storable();

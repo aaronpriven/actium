@@ -10,7 +10,6 @@ package Actium::Util 0.001;
 
 use Actium::Constants;
 use Perl6::Export::Attrs;
-use Readonly;
 use List::Util;
 use Carp;
 
@@ -151,42 +150,6 @@ sub doe : Export {
     return wantarray ? @list : $list[0];
 }
 
-Readonly my %LEGACY_DAY => {
-    qw(
-      1234567 DA
-      12345   WD
-      6       SA
-      7       SU
-      67      WE
-      24      TT
-      25      TF
-      35      WF
-      135     MZ
-      )
-};
-
-Readonly my %LEGACY_DIR => {
-    qw(
-      0 NB    1 SB
-      2 EB    3 WB
-      4 IN    5 OU
-      6 GO    7 RT
-      8 CW    9 CC
-      10 1    11 2
-      12 UP   13 DN
-      )
-};
-
-sub legacy_day : Export {
-    my $days = shift;
-    $days =~ s/[^\d]//g;
-    return $LEGACY_DAY{$days};
-}
-
-sub legacy_dir : Export {
-    return $LEGACY_DIR{ $_[0] };
-}
-
 1;
 
 __END__
@@ -214,12 +177,9 @@ This documentation refers to Actium::Util version 0.001
  $string = undef;
  $string = doe($string); # now contains empty string
  
- print legacy_day('12345'); # 'WD'
- print legacy_dir('8'); # 'CW'
- 
 =head1 DESCRIPTION
 
-This module contains some simple syntactic sugar. 
+This module contains some simple routines for use in other modules.
 
 =head1 SUBROUTINES
 
@@ -232,16 +192,19 @@ that value, if defined, or the empty string, if not.
 
 =item B<j()>
 
-Takes the list passed to it and joins it together as a simple string. A quicker way to type "join ('' , @list)".
+Takes the list passed to it and joins it together as a simple string. 
+A quicker way to type "join ('' , @list)".
 
 =item B<jk()>
 
-Takes the list passed to it and joins it together, with each element separated the $KEY_SEPARATOR value from L<Actium::Constants>.
+Takes the list passed to it and joins it together, with each element separated 
+by the $KEY_SEPARATOR value from L<Actium::Constants>.
 A quicker way to type "join ($KEY_SEPARATOR , @list)".
 
 =item B<jt()>
 
-Takes the list passed to it and joins it together, with each element separated by tabs. A quicker way to type 'join ("\t" , @list)'.
+Takes the list passed to it and joins it together, with each element separated 
+by tabs. A quicker way to type 'join ("\t" , @list)'.
 
 =item B<joinseries(I<list>)>
 
@@ -318,63 +281,6 @@ B<The following will not work:>
  Class->new( foo => 'foo_value', { foo => 'a_different_foo_value');
     # Will croak 'Conflicting values specified in object construction'
     
-=back
-
-
-The B<legacy_day> and B<legacy_dir> routines contain definitions from 
-the Hastus Standard AVL Interface, as defined by the document 
-"Hastus 2006 AVL Standard Interface, Last Update: July 26, 2005". 
-
-=over
-
- 
-=item B<legacy_day)>
-
-Takes one argument, the Hastus "Operating Days" code (which is usually one or 
-more digits from 1 to 7), and returns a two-letter code for the days:
-
- WD Weekdays
- SA Saturday
- SU Sunday
- WE Weekend
- DA Daily
- WF Wednesday and Friday
- TT Tuesday and Thursday
- TF Tuesday and Friday
- 
-Ultimately, these codes (which originated at the old www.transitinfo.org 
-web site) are obsolete and should be replaced since they do not allow for 
-the full range of date possibilities.
-
-=item B<legacy_dir()>
-
-Takes one argument, the Hastus 2006 "Directions" code (see table 9.2 in the 
-Hastus 2006 AVL Standard Interface document), and returns a two-letter code
-representing the direction.
-
- Code  Meaning
- NB    Northbound
- SB    Southbound
- EB    Eastbound
- WB    Westbound
- CC    Counterclockwise
- CW    Clockwise
- IN    Inbound
- OU    Outbound
- UP    Up
- DN    Down
- GO    Go
- RT    Return
- 1     One
- 2     Two
-
-Only the first six are actually used at AC Transit.
-
-These codes also come from www.transitinfo.org. There's nothing wrong with the 
-codes themselves, but because a route marked "Eastbound" may not actually 
-go in an eastward direction, avoid actually displaying their meanings
-to customers.
-
 =back
 
 =head1 DEPENDENCIES
