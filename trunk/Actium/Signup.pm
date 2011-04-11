@@ -3,6 +3,11 @@
 
 # Subversion: $Id$
 
+# legacy stage 3
+
+# One of the first programs written for stage 3, it predates adoption
+# of Moose and probably should be rewritten to be a Moose class
+
 use strict;
 use warnings;
 
@@ -293,6 +298,7 @@ sub glob_plain_files {
 ### convenience methods for various Files routines
 
 sub mergeread {
+ # should be obsolete with Actium::Files::FMPXMLResult
     my $self     = shift;
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
@@ -301,6 +307,7 @@ sub mergeread {
 }
 
 sub retrieve_hsa {
+ # should be obsolete with Actium::Files::HastusASI
     my $self = shift;
     my $filename = shift || $DEFAULT_HSA_FILENAME;
     return $self->retrieve($filename);
