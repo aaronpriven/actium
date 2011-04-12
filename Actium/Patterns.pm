@@ -35,13 +35,13 @@ sub START {
     my $xml_db  = $signup->load_xml;
     my $hasi_db = $signup->load_hasi;
 
-    my ( $stop_obj_of_r, $route_obj_of_r )
-      = process_patterns( $hasi_db, $xml_db );
+    my ( $stop_obj_of_r, $route_obj_of_r ) =
+      process_patterns( $hasi_db, $xml_db );
 
     my $pattern_folder = $signup->subdir('patterns');
-    
-    $pattern_folder->store($stop_obj_of_r , 'stops.storable');
-    $pattern_folder->store($route_obj_of_r , 'routes.storable');
+
+    $pattern_folder->store( $stop_obj_of_r,  'stops.storable' );
+    $pattern_folder->store( $route_obj_of_r, 'routes.storable' );
 
 }
 
@@ -55,10 +55,14 @@ sub process_patterns {
         q{WHERE NOT IsInService = '' ORDER BY Route} );
 
     my $hasi_dbh = $hasi_db->dbh();
-    my $tps_sth  = $hasi_dbh->prepare(
-        'SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
+    my $tps_sth =
+      $hasi_dbh->prepare('SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
     my $prevroute = $EMPTY_STR;
-    
+
+    my $stops_row_of_r  =
+      $xml_db->all_in_columns_key(
+        qw/Stops DescriptionCityF Connections district_id place_id/);
+        
     emit 'Building lists of patterns, stops, and places';
 
   PAT:
@@ -103,15 +107,16 @@ sub process_patterns {
 
             # so not the same stop
 
-            my $stops_row_r = $xml_db->row( 'Stops', $stop_ident );
+            #my $stops_row_r = $xml_db->row( 'Stops', $stop_ident );
 
             my $stop_obj;
             if ( exists $stop_obj_of{$stop_ident} ) {
                 $stop_obj = $stop_obj_of{$stop_ident};
             }
             else {
-                $stop_obj
-                  = _build_stop_obj( $stop_ident, $hasi_db, $stops_row_r );
+                $stop_obj =
+                  _build_stop_obj( $stop_ident, $hasi_db,
+                    $stops_row_of_r->{$stop_ident} );
                 $stop_obj_of{$stop_ident} = $stop_obj;
             }
 
@@ -129,14 +134,17 @@ sub process_patterns {
             }
 
             my $relation_obj = Actium::Patterns::Stop::PatternRelation->new(
-                {   place             => $place,
+                {
+                    place             => $place,
                     is_at_place       => $is_at_place,
                     pattern_unique_id => $pattern_obj->unique_id,
                     stop_obj          => $stop_obj,
                 }
             );
 
-            foreach my $conn ( split( /\n/sx, $stops_row_r->{Connections} ) ) {
+            my $connvalue =
+              $stops_row_of_r->{$stop_ident}{Connections};
+            foreach my $conn ( split( /\n/sx, $connvalue ) ) {
                 $relation_obj->mark_at_connection($conn);
             }
 
@@ -147,14 +155,14 @@ sub process_patterns {
             $stop_obj->set_route($route);
             $pattern_obj->add_stop($stop_ident);
 
-        } ## tidy end: for my $tps_row ( _tps_rows...)
+        }    ## tidy end: for my $tps_row ( _tps_rows...)
 
         $all_relation_objs[-1]->set_last_stop();
 
         # connections and Transbay info
         _transbay_and_connections( $route, @all_relation_objs );
 
-    } ## tidy end: while ( my $pat_row = $eachpat...)
+    }    ## tidy end: while ( my $pat_row = $eachpat...)
 
     my $route_obj_of_r = _build_route_objs( \%pattern_objs_of_route );
 
@@ -162,7 +170,7 @@ sub process_patterns {
 
     return \%stop_obj_of, $route_obj_of_r;
 
-} ## tidy end: sub process_patterns
+}    ## tidy end: sub process_patterns
 
 sub _tps_rows {
 
@@ -189,23 +197,24 @@ sub _build_pattern_obj {
     #$direction = $DIRCODES[$HASTUS_DIRS[$direction]];
 
     my $pattern_obj = Actium::Patterns::Pattern->new(
-        {   route      => $route,
+        {
+            route      => $route,
             direction  => $direction,
             identifier => $pat_ident,
         }
     );
-    
+
     return ( $pat_ident, $route, $pattern_obj );
 
-} ## tidy end: sub _build_pattern_obj
+}    ## tidy end: sub _build_pattern_obj
 
 sub _build_stop_obj {
     my $stop_ident  = shift;
     my $hasi_db     = shift;
     my $stops_row_r = shift;
 
-    my ( $side, $district )
-      = _get_district( $stop_ident, $hasi_db, $stops_row_r );
+    my ( $side, $district ) =
+      _get_district( $stop_ident, $hasi_db, $stops_row_r );
 
     my $stop_obj = Actium::Patterns::Stop->new(
         id       => $stop_ident,
@@ -222,6 +231,7 @@ sub _get_district {
     my $stops_row_r = shift;
 
     my $district = $stops_row_r->{'district_id'};
+
     # get district from Stops database
 
     # if not there, get it from places field in HASI
@@ -253,9 +263,10 @@ sub _get_district {
 
     return ( $side, $district );
 
-} ## tidy end: sub _get_district
+}    ## tidy end: sub _get_district
 
 sub _transbay_and_connections {
+
     # runs once for each pattern
 
     my ( $route, @all_relation_objs ) = @_;
@@ -293,7 +304,7 @@ sub _transbay_and_connections {
                 $prev_side = $side;
             }
         }
-    } ## tidy end: for my $relation_obj ( ...)
+    }    ## tidy end: for my $relation_obj ( ...)
 
     # next block sets either Transbay only or Drop Off only
 
@@ -318,11 +329,11 @@ sub _transbay_and_connections {
 
         }
 
-    } ## tidy end: if ( $route ~~ @TRANSBAY_NOLOCALS)
+    }    ## tidy end: if ( $route ~~ @TRANSBAY_NOLOCALS)
 
     return;
 
-} ## tidy end: sub _transbay_and_connections
+}    ## tidy end: sub _transbay_and_connections
 
 sub _build_route_objs {
 
@@ -331,8 +342,8 @@ sub _build_route_objs {
 
     foreach my $route ( keys %$patterns_of_r ) {
 
-        $route_obj_of{$route}
-          = Actium::Patterns::Route->new( $route, $patterns_of_r->{$route} );
+        $route_obj_of{$route} =
+          Actium::Patterns::Route->new( $route, $patterns_of_r->{$route} );
 
     }
 

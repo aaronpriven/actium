@@ -148,6 +148,7 @@ has '_table_obj_of_r' => (
 sub key_of_table {
     my $self  = shift;
     my $table = shift;
+    $self->_check_table($table);
     $self->ensure_loaded($table);
     my $table_obj = $self->_table_obj_of($table);
     return $table_obj->key;

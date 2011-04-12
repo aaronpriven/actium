@@ -14,6 +14,7 @@ package Actium::MakeStopLists 0.001;
 use Actium::Signup;
 use Actium::Patterns::Stop;
 use Actium::Patterns::Route;
+
 #use Actium::Patterns::DirectionStopList;
 use Actium::Term;
 use Actium::Sorting('sortbyline');
@@ -37,12 +38,10 @@ sub START {
 
     emit 'Getting stop descriptions from FileMaker export';
 
-    my $dbh          = $xml_db->dbh;
-    my %all_descrips = @{
-        $dbh->selectcol_arrayref(
-            'select PhoneID, DescriptionCityF from Stops',
-            { Columns => [ 1, 2 ] } )
-      };
+    my $dbh = $xml_db->dbh;
+
+    my $stops_row_of_r =
+      $xml_db->all_in_columns_key(qw/Stops DescriptionCityF/);
 
     emit_done;
 
@@ -60,13 +59,15 @@ sub START {
         foreach my $dir ( $route_obj->dircodes ) {
 
             my @stops = $route_obj->stops_of_dir($dir);
-            my %description_of = map { $_ => $all_descrips{$_} } @stops;
-
+            my %description_of =
+              map { $_ => $stops_row_of_r->{DescriptionCityF}{$_} } @stops;
             $stops_of_line{"$route-$dir"} = \@stops;
+
             # for the storable file
 
             push @stoplist_objs,
-#              Actium::Patterns::DirectionStopList->new(
+
+              #              Actium::Patterns::DirectionStopList->new(
               Actium::MakeStopLists::DirectionStopList->new(
                 route          => $route,
                 dir            => $dir,
@@ -76,10 +77,11 @@ sub START {
 
         }
 
-    } ## tidy end: foreach my $route ( sortbyline...)
+    }    ## tidy end: foreach my $route ( sortbyline...)
 
     write_files_with_method(
-        {   OBJECTS   => \@stoplist_objs,
+        {
+            OBJECTS   => \@stoplist_objs,
             SIGNUP    => $stoplists_line_folder,
             FILETYPE  => 'textlist',
             METHOD    => 'textlist',
@@ -92,7 +94,7 @@ sub START {
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 #sub get_description {
 #    my $stop = shift;
@@ -124,29 +126,28 @@ has 'stops_r' => (
 
 has 'description_of_r' => (
     init_arg => 'description_of',
-    is => 'bare',
-    isa => 'HashRef[Str]',
-    traits => ['Hash'],
-    handles => { description_of => 'get' ,
-    },
+    is       => 'bare',
+    isa      => 'HashRef[Str]',
+    traits   => ['Hash'],
+    handles  => { description_of => 'get', },
 );
 
 has 'id' => (
-   is => 'ro' ,
-   builder => '_build_id',
-   lazy => 1,
+    is      => 'ro',
+    builder => '_build_id',
+    lazy    => 1,
 );
 
 sub _build_id {
-  my $self = shift;
-  return join(q{-} , $self->route , $self->dir);
+    my $self = shift;
+    return join( q{-}, $self->route, $self->dir );
 }
 
 sub textlist {
-  my $self = shift;
-  my @stops = $self->stops;
-  my @results = map { "$_\t" . $self->description_of($_) } @stops;
-  return join("\n" , $self->id, @results) . "\n";
+    my $self    = shift;
+    my @stops   = $self->stops;
+    my @results = map { "$_\t" . $self->description_of($_) } @stops;
+    return join( "\n", $self->id, @results ) . "\n";
 }
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
