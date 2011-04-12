@@ -32,10 +32,12 @@ use Actium::Constants;
 use Actium::Term;
 use Actium::Options (qw/is_an_option option/);
 use Actium::Files::CacheOption;
+
 use Carp;
 use DBI;
 use English '-no_match_vars';
 use File::Spec;
+use List::MoreUtils('uniq');
 use Readonly;
 
 # set some constants
@@ -320,14 +322,14 @@ sub each_row {
 
 sub each_row_like {
     my ( $self, $table, $column, $like ) = @_;
-    $self->_check_column( $table, $column );
+    $self->_check_columns( $table, $column );
     return $self->each_row_where( $table,
         "WHERE $column LIKE ? ORDER BY $column", $like );
 }
 
 sub each_row_eq {
     my ( $self, $table, $column, $value ) = @_;
-    $self->_check_column( $table, $column );
+    $self->_check_columns( $table, $column );
     return $self->each_row_where( $table, "WHERE $column = ? ORDER BY $column",
         $value );
 }
@@ -353,11 +355,37 @@ sub each_row_where {
     };
 }    ## tidy end: sub each_row_where
 
-sub _check_column {
-    my ( $self, $table, $column ) = @_;
+sub all_in_columns_key {
+    my $self    = shift;
+    my $table   = shift;
+    my @columns = @_;
+    
+    $self->ensure_loaded($table);
+    $self->_check_columns($table, @columns);
+    
+    my $key = $self->key_of_table($table);
+    unshift @columns, $key;
+    @columns = uniq(@columns);
+    
+    my $dbh = $self->dbh;
+
+    #my %column_index_of = map { $columns[$_] => $_ } ( 0 .. $#columns );
+
+    my $selection_cmd =
+      "SELECT " . join( q{ , }, @columns ) . " FROM $table";
+      
+    my $rows_r = $dbh->selectall_hashref($selection_cmd, $key);
+    return $rows_r;
+
+}
+
+sub _check_columns {
+    my ( $self, $table, @input_columns ) = @_;
     my @columns = $self->columns_of_table($table);
-    croak "Invalid column $column for table $table"
-      if not $column ~~ @columns;
+    foreach my $input (@input_columns) {
+        croak "Invalid column $input for table $table"
+          if not $input ~~ @columns;
+    }
     return;
 }
 

@@ -138,9 +138,7 @@ has stops_of_dir_r => (
     isa     => 'HashRef[ArrayRef[Str]]',
     builder => '_build_stops_of_dir',
     traits  => ['Hash'],
-    handles => { _stops_of_dir_r => 'get', 
-                _stoplists_by_dir => 'kv' ,
-    },
+    handles => { _stops_of_dir_r => 'get' },
 );
 
 sub stops_of_dir {
@@ -169,7 +167,7 @@ has stoplist_r => (
    handles => {stoplist => 'elements' },
 );
    
-=for comment
+=begin comment
 
 "stoplist" returns a matrix as follows:
 
@@ -181,6 +179,8 @@ has stoplist_r => (
    
 The marker is either < for the first direction only, > for the second 
 direction only, or nothing for both directions.
+
+=end comment
 
 =cut
     
