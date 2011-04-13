@@ -305,8 +305,8 @@ sub mergeread {
     my $self     = shift;
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
-    require Actium::Mergefiles;
-    return Actium::Mergefiles->mergeread($filespec);
+    require Actium::Files::Merge::Mergefiles;
+    return Actium::Files::Merge::Mergefiles->mergeread($filespec);
 }
 
 sub retrieve_hsa {
@@ -652,7 +652,7 @@ Like B<glob_files>, except returns only plain files (that is, where B<-f I<file>
 
 =item B<$obj-E<gt>mergeread(F<filename>)>
 
-Returns an L<Actium::Mergefiles> object representing the data in 
+Returns an L<Actium::Files::Merge::Mergefiles> object representing the data in 
 F<filename> in the directory represented by this object.
 
 =item B<$obj-E<gt>retrieve(F<filename>)>
@@ -728,7 +728,7 @@ It will accept one or the other, but not both.
 
 =item * Params::Validate
 
-=item * Actium::Mergefiles
+=item * Actium::Files::Merge::Mergefiles
 
 =back
 

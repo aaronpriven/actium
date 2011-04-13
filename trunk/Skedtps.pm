@@ -18,7 +18,7 @@ Exporter::export_ok_tags q(Constants);
 use constant TPXREF_FULL => 2;
 use constant TPXREF_POINT => 1;
 
-use Actium::FPMerge qw(FPread_simple);
+use Actium::Files::Merge::FPMerge qw(FPread_simple);
 
 our $init = 0;
 our (%tphash , %tpxref);

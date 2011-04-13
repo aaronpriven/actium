@@ -1,4 +1,4 @@
-# Actium/Trip.pm
+# Actium/Sked/Trip.pm
 
 # Trip object (for schedules and headways)
 
@@ -6,7 +6,7 @@
 
 # legacy status 3
 
-package Actium::Trip;
+package Actium::Sked::Trip;
 
 use Moose;
 
@@ -76,7 +76,7 @@ has 'placetime_r' => (
 has 'mergedtrip_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Actium::Trip]',
+    isa     => 'ArrayRef[Actium::Sked::Trip]',
     default => sub { [] },
     handles => { arrayhandles('mergedtrip') },
 
@@ -147,17 +147,17 @@ __END__
 
 =head1 NAME
 
-Actium::Trip.pm - Object representing a trip in a schedule
+Actium::Sked::Trip.pm - Object representing a trip in a schedule
 
 =head1 VERSION
 
-This documentation refers to Actium::Trip.pm version 0.001
+This documentation refers to Actium::Sked::Trip.pm version 0.001
 
 =head1 DESCRIPTION
 
 This is a Moose class, representing each trip of a bus schedule. It contains
 information for each trip of a schedule. It is intended to be used by the 
-L<Actium::HeadwayPage> object and the L<Actium::Sked> object.
+L<Actium::Sked::HeadwayPage> object and the L<Actium::Sked> object.
 
 =head1 ATTRIBUTES
 
@@ -232,7 +232,7 @@ See L<Actium::AttributeHandlers/arrayhandles>. The base names are "stoptime" and
 =item B<mergedtrip_r>
 
 After trips are  merged using I<merge_trips()>, this array holds all the 
-Actium::Trip objects that were originally merged.  
+Actium::Sked::Trip objects that were originally merged.  
 
 This attribute has a full set of methods to handle common array functions. 
 See L<Actium::AttributeHandlers/arrayhandles>. The base name is "mergedtrip".
@@ -250,9 +250,9 @@ and placetimes. (The purpose is to allow two trips that are scheduled identicall
 two buses that are designed to run at the same time to allow an extra heavy load to be
 carried -- to appear only once in the schedule.)
 
- Actium::Trip->merge_trips($trip1, $trip2);
+ Actium::Sked::Trip->merge_trips($trip1, $trip2);
 
-A new Actium::Trip object is created, with attributes as follows:
+A new Actium::Sked::Trip object is created, with attributes as follows:
 
 =over
 
@@ -262,11 +262,11 @@ The stoptimes and placetimes for the first trip are used.
 
 =item mergedtrips
 
-This attribute contains the Actium::Trip objects for all the parent trips. 
-In the simplest case, it contains the two Actium::Trip objects passed to merge_trips.
+This attribute contains the Actium::Sked::Trip objects for all the parent trips. 
+In the simplest case, it contains the two Actium::Sked::Trip objects passed to merge_trips.
 
-However, if either of the Actium::Trip objects passed to merge_trips already has a
-mergedtrips attribute, then instead of saving the current Actium::Trip object, it saves
+However, if either of the Actium::Sked::Trip objects passed to merge_trips already has a
+mergedtrips attribute, then instead of saving the current Actium::Sked::Trip object, it saves
 the contents of mergedtrips. The upshot is that mergedtrips contains all the trips 
 that are parents of this merged trip.
 

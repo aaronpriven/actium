@@ -31,7 +31,7 @@ use Actium::Util(qw<jk>);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils (qw<any all>);
-use Actium::FPMerge (qw(FPread FPread_simple));
+use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 
 use Readonly;
 
