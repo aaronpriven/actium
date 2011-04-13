@@ -1,10 +1,10 @@
-# Actium/SkedNote.pm
+# Actium/Sked/Note.pm
 
 # Subversion: $Id$
 
 # legacy status 3
 
-package Actium::SkedNote;
+package Actium::Sked::Note;
 
 use 5.010;
 
@@ -39,25 +39,6 @@ sub dump {
     return Data::Dumper::Dumper ($self);
 }
     
-# sub dump {
-#   my $self = shift;
-#
-#    my $dumpdata;
-#    
-#    open (my $dump , '>' , \$dumpdata);
-#    
-#    say $dump "origlinegroup\t" , $self->origlinegroup();
-#    say $dump "noteletter\t" , $self->noteletter();
-#    say $dump "days\t" , $self->days();
-#    say $dump "note\t" , $self->note();
-#    
-#    close $dump;
-#    
-#    return $dumpdata;
-    
-#}
-
-
 no Moose;
 __PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
 
