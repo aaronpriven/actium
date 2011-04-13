@@ -23,7 +23,7 @@ use lib $Bin;
 use Skedfile qw(Skedread Skedwrite remove_blank_columns);
 use Skedvars qw(%daydirhash %adjectivedaynames %bound);
 use Skedtps qw(TPXREF_FULL tpxref tphash);
-use Actium::FPMerge qw(FPread FPread_simple);
+use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory

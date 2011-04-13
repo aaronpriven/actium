@@ -13,7 +13,7 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
-use Actium::FPMerge qw(FPread FPread_simple);
+use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 use Data::Dumper;
 
 use Actium::Options (qw<option add_option>);

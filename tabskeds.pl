@@ -43,7 +43,7 @@ foreach (keys %specdaynames) {
 }
 
 use Skedtps qw(tphash tpxref destination TPXREF_FULL);
-use Actium::FPMerge qw(FPread FPread_simple);
+use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 
 use Actium::Options (qw<option add_option>);
 add_option ('upcoming=s' , 'Upcoming signup');

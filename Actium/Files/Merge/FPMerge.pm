@@ -8,7 +8,7 @@
 
 # obsolete - replace with Actium::Files::FMPXMLResult
 
-package Actium::FPMerge;
+package Actium::Files::Merge::FPMerge;
 
 use strict;
 use warnings;

@@ -23,7 +23,7 @@ use Actium::Signup;
 use Actium::Sorting('sortbyline');
 use List::Util ('max');
 use List::MoreUtils('uniq');
-use Actium::FPMerge qw(FPread_simple);
+use Actium::Files::Merge::FPMerge qw(FPread_simple);
 use Actium::Time          ('timenum');
 use Actium::EffectiveDate ('effectivedate');
 use Actium::Constants;
