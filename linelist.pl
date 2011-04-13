@@ -24,13 +24,12 @@ use lib $Bin;
 
 use Actium::Sorting (qw(sortbyline));
 use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
-use Columnprint(':all');
+use Actium::Term (':all');
 
 use Actium::Options (qw<option add_option>);
 
 add_option ('1' , 'One-column output');
 
-use Actium::Term (qw<printq sayq>);
 use Actium::Signup;
 my $signupdir = Actium::Signup->new();
 chdir $signupdir->get_dir();
@@ -60,5 +59,5 @@ if (option('1')) {
    print join("\n" , @lines) , "\n";
 } 
 else {
-   print Columnprint::columnprint({SCREENWIDTH => 80 , PADDING => 5} , @lines);
+   print_in_columns ({PADDING => 5} , @lines);
 }
