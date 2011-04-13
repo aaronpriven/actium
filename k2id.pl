@@ -23,7 +23,7 @@ use Actium::Term (qw<printq sayq>);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 
-use Actium::FPMerge (qw(FPread FPread_simple));
+use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 
 use List::MoreUtils('natatime');
 

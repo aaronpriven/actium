@@ -4,7 +4,7 @@
 
 # Subversion: $Id$
 
-package Actium::HeadwayPage;
+package Actium::Sked::HeadwayPage;
 
 use 5.010;
 
@@ -21,7 +21,7 @@ use Actium::Constants;
 use Actium::Term;
 use Actium::Sked; 
 use Text::Trim();
-use Actium::Trip;
+use Actium::Sked::Trip;
 use Actium::Util qw<:ALL>;
 use Actium::AttributeHandlers qw<:all>;
 
@@ -50,7 +50,7 @@ has [qw<linedescrip origlinegroup direction days>] => (
 has 'trip_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Actium::Trip]',
+    isa     => 'ArrayRef[Actium::Sked::Trip]',
     default => sub { [] },
     handles => { arrayhandles('trip') },
 );

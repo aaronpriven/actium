@@ -38,7 +38,7 @@ use lib $Bin;
 
 use Data::Dumper;
 
-use Actium::FPMerge qw(FPread FPread_simple);
+use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 use IDTags;
 use Skedfile qw(Skedread merge_columns);
 use Skedvars;

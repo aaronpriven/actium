@@ -18,7 +18,7 @@ use lib $Bin;
    # main program and library in the same directory
 
 
-use Actium::FPMerge qw(FPread FPread_simple);
+use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 
 use Actium::Options (qw<option add_option>);
 #add_option ('spec' , 'description');

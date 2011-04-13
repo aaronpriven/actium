@@ -75,7 +75,7 @@ sub routes {
 has 'trip_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Actium::Trip]',
+    isa     => 'ArrayRef[Actium::Sked::Trip]',
     default => sub { [] },
     handles => { arrayhandles('trip') },
 

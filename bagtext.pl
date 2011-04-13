@@ -13,7 +13,7 @@ use lib ( $Bin, "$Bin/../bin" );
 
 use Actium::Sorting('sortbyline');
 use Actium::Constants;
-use Actium::FPMerge (qw(FPread FPread_simple));
+use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 
 use List::MoreUtils ('natatime');
 

@@ -18,7 +18,7 @@ use lib ( $Bin, "$Bin/../bin" );
 
 use Actium::Util(qw<jt jtn jn>);
 use Actium::Constants;
-use Actium::FPMerge (qw(FPread FPread_simple));
+use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 use Actium::Sorting('sortbyline');
 
 use List::MoreUtils ('natatime');

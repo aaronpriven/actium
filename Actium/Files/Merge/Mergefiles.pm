@@ -1,4 +1,4 @@
-# Actium/Mergefiles.pm
+# Actium/Files/Merge/Mergefiles.pm
 # Reads files in "merge" format exported by FileMaker Pro.
 
 # Subversion: $Id$
@@ -10,7 +10,7 @@
 use strict;
 use warnings;
 
-package Actium::Mergefiles;
+package Actium::Files::Merge::Mergefiles;
 
 use 5.010;
 
@@ -227,18 +227,18 @@ __END__
 
 =head1 NAME
 
-Actium::Mergefiles - data from "Merge" (CSV) files 
+Actium::Files::Merge::Mergefiles - data from "Merge" (CSV) files 
 saved by FileMaker Pro
 
 =head1 VERSION
 
-This documentation refers to Actium::Mergefiles version 0.001
+This documentation refers to Actium::Files::Merge::Mergefiles version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Mergefiles;
+ use Actium::Files::Merge::Mergefiles;
 
- $mergeobj = Actium::Mergefiles->new("filename.csv");
+ $mergeobj = Actium::Files::Merge::Mergefiles->new("filename.csv");
  @rows = $mergeobj->array();
 
  %hash = $mergeobj->hash('Fieldname');
@@ -254,7 +254,7 @@ FileMaker Pro, and allows rows to be accessed through an object.
 
 =over
 
-=item B<$obj = Actium::Mergefiles-E<gt>mergeread( F<filename> )>
+=item B<$obj = Actium::Files::Merge::Mergefiles-E<gt>mergeread( F<filename> )>
 
 Constructs an object containing the data in F<filename>, reading the data
 from disk.
@@ -298,15 +298,15 @@ Each row is an arrayref where the the values are the column values.
 
 =over
 
-=item Actium::Mergefiles can't open file F<filename>
+=item Actium::Files::Merge::Mergefiles can't open file F<filename>
 
-=item Actium::Mergefiles can't close file F<filename>
+=item Actium::Files::Merge::Mergefiles can't close file F<filename>
 
 An input/output error occurred while opening or closing F<filename>.
 
-=item Actium::Mergefiles can't read column names in F<filename>
+=item Actium::Files::Merge::Mergefiles can't read column names in F<filename>
 
-=item Actium::Mergefiles can't read line I<n> in F<filename>
+=item Actium::Files::Merge::Mergefiles can't read line I<n> in F<filename>
 
 An error was received reading column names, or a line. In other words, 
 Text::CSV returned an undefined value. This is followed by a 

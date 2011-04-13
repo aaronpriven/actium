@@ -28,7 +28,7 @@ chdir $signupdir->get_dir();
 my $signup = $signupdir->get_signup;
 
 
-use Actium::FPMerge qw(FPread FPread_simple);
+use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 use IDTags;
 use Skedvars;
 use Skedtps qw(tphash tpxref);

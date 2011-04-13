@@ -22,8 +22,8 @@ use Actium::Files qw<:all>;
 use Actium::Signup;
 use Actium::Constants;
 use Actium::Union(':all');
-use Actium::HeadwayPage;
-use Actium::Trip;
+use Actium::Sked::HeadwayPage;
+use Actium::Sked::Trip;
 use Actium::SkedNote;
 use Actium::Util qw<j>;
 
@@ -176,7 +176,7 @@ sub read_headways {
     sub new_page {
         my @lines_in_this_page = @_;
 
-        my $newpage = Actium::HeadwayPage->new(@lines_in_this_page);
+        my $newpage = Actium::Sked::HeadwayPage->new(@lines_in_this_page);
 
         # set origlinegroup , line description , days
 
@@ -519,7 +519,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
                   if ( true { /\d/ } @times ) < 2;
 
                 my $trip
-                  = Actium::Trip->new( { placetime_r => \@times, %fields } );
+                  = Actium::Sked::Trip->new( { placetime_r => \@times, %fields } );
 
                 $page->push_trips($trip);
 
@@ -723,7 +723,7 @@ sub combine_identical_trips {
                 # are the same, the trip is the same.
 
                 my $combined_trip
-                  = Actium::Trip->merge_trips( $prevtrip, $trip );
+                  = Actium::Sked::Trip->merge_trips( $prevtrip, $trip );
                 $page->set_trip( $i - 1, $combined_trip );
                 $page->delete_trip($i);
 
