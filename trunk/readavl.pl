@@ -1,5 +1,10 @@
 #!/ActivePerl/bin/perl
 
+# Legacy stage 2
+
+# All the programs that use the 'avl.storable' file depend on this one.
+# This shouild ultimately be replaced with Actium::Files::HastusASI
+
 @ARGV = qw(-s f08) if $ENV{RUNNING_UNDER_AFFRUS};
 
 # readavl - see POD documentation below
