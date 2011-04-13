@@ -23,15 +23,19 @@ use Actium::Options qw(option add_option);
 use Carp;
 use Term::ReadKey;
 use Text::Wrap;
+use List::Util('max');
+use POSIX qw(ceil floor);
+use Scalar::Util qw(reftype);
 
 use English qw<-no_match_vars>;
 
-#use Exporter qw( import );
+# TODO - regularize when STDERR is used vs. STDOUT.
+# Fix documentation, which is incorrect on this
 
 use Exporter;
 our @ISA         = qw<Exporter>;
 our @EXPORT      = qw<emit_over emit_prog>;
-our @EXPORT_OK   = qw(sayq printq output_usage);
+our @EXPORT_OK   = qw(sayq printq output_usage print_in_columns columnize);
 our %EXPORT_TAGS = ( all => [ @EXPORT_OK, @EXPORT ] );
 
 $SIG{'WINCH'} = \&set_width;
@@ -74,18 +78,6 @@ sub import {
     my $caller = caller();
 
     set_width();
-
-    #my $width;
-    #
-    #    $width = (
-    #        eval {
-    #            local ( $SIG{__DIE__} ) = 'IGNORE';
-    #            ( Term::ReadKey::GetTerminalSize() )[0];
-    #        }
-    #          or 80
-    #    );
-
-    # GetTerminalSize gives errors that irritate Eclipse
 
     my @term_emit_imports
       = grep { $_ ne 'emit_over' and $_ ne 'emit_prog' } @Term::Emit::EXPORT_OK;
@@ -187,6 +179,46 @@ sub output_usage {
 
 } ## <perltidy> end sub output_usage
 
+
+# TODO: Document columnize and print_in_columns
+sub columnize {
+
+   my $screenwidth = get_width();
+   my $padding = 1;
+
+   if (reftype($_[0]) eq 'HASH' ) {
+      my %args = %{+shift};
+      $padding = $args{PADDING} || $padding;
+   }
+
+   my $results = '';
+
+   my @list = @_;
+   
+   my $colwidth = $padding + max (map { length } @list);
+   
+   @list = map { sprintf ("%*s" , - ( $colwidth ),  $_) } @list;
+
+   my $cols = floor($screenwidth / ($colwidth)) || 1;
+   my $rows = ceil(@list / $cols);
+
+   push @list , (" " x $colwidth) x ($cols*$rows - @list);
+
+   for my $y ( 0 .. $rows - 1 ) {
+      for my $x (0 .. $cols - 1) {
+         $results .= $list[$x * $rows + $y ] ;
+      }
+      $results .= "\n";
+   }
+
+   return $results;
+      
+}
+
+sub print_in_columns {
+   print columnize(@_);
+}
+
 1;
 __END__
 
@@ -227,7 +259,7 @@ current terminal window (by using Term::Readkey) and tells Term::Emit to use
 this width.
 
 Actium::Term acts on the currently selected file handle. See
-L<perlfunc/select>.
+L<perlfunc/select>. (NO IT DOESN'T -- IT DEPENDS. MUST FIX THIS)
 
 =head1 OPTIONS
 
@@ -302,11 +334,10 @@ Term::Readkey
 
 =head1 BUGS AND LIMITATIONS
 
-Actium::Term only works on the currently selected filehandle. You can't
-do "sayq STDERR 'Something'", for example.
+Actium::Term is inconsistent in its use of the currently selected filehandle
+vs. STDERR. 
 
-Actium::Term uses Term::Readkey to set the width of the display for 
-Term::Emit.
+Actium::Term uses Term::Readkey to set the width of the display.
 
 =head1 AUTHOR
 
