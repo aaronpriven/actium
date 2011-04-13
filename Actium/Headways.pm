@@ -24,7 +24,7 @@ use Actium::Constants;
 use Actium::Union(':all');
 use Actium::Sked::HeadwayPage;
 use Actium::Sked::Trip;
-use Actium::SkedNote;
+use Actium::Sked::Note;
 use Actium::Util qw<j>;
 
 # use Term::Emit qw/:all/, {-closestat => "ERROR"};
@@ -572,7 +572,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
         }
 
         foreach my $noteletter ( keys %thispages_notes ) {
-            my $note_obj = Actium::SkedNote->new(
+            my $note_obj = Actium::Sked::Note->new(
                 {   origlinegroup => $page->origlinegroup(),
                     days          => $days,
                     noteletter    => $noteletter,
