@@ -13,14 +13,13 @@ use 5.010;
 our $VERSION = '0.001';
 $VERSION = eval $VERSION;
 
+use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
-use Moose;
 use Moose::Util::TypeConstraints;
 
 use List::MoreUtils qw<uniq none>;
 use Actium::Util(qw<:ALL>);
-use Actium::AttributeHandlers qw<:all>;
 
 use Actium::Time(qw<:all>);
 
@@ -31,19 +30,19 @@ use Actium::Constants;
 # comes from AVL, not headways
 has 'place4_r' => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { arrayhandles('place4') },
+    handles => { place4s => 'elements' , },
 );
 
 # comes from AVL or headways
 has 'place8_r' => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { arrayhandles('place8') },
+    handles => { place8s => 'elements' , },
 );
 
 # from AVL or headways
@@ -74,30 +73,28 @@ sub routes {
 # from AVL or headways, but specific data in trips varies
 has 'trip_r' => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'bare',
     isa     => 'ArrayRef[Actium::Sked::Trip]',
     default => sub { [] },
-    handles => { arrayhandles('trip') },
-
-    #handles => { 'add_trip' => 'push' , 'tripelems' => 'elements'},
+    handles => { trips => 'elements' , trip => 'get', },
 );
 
 # from AVL only
 
 has 'stopid_r' => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { arrayhandles('stopid') },
+    handles => { stopids => 'elements' , },
 );
 
 has 'stopplace_r' => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { arrayhandles('stopplace') },
+    handles => { stopplaces => 'elements' , },
 );
 
 sub divide_sked {
@@ -320,33 +317,6 @@ sub prehistoric_skedsfile {
     return $outdata;
 
 } ## <perltidy> end sub prehistoric_skedsfile
-
-#sub dump {
-#    my $self = shift;
-#
-#    my $dumpdata;
-#
-#    open( my $dump, '>', \$dumpdata );
-#
-#    say $dump "origlinegroup\t", $self->origlinegroup();
-#    say $dump "linegroup\t",     $self->linegroup();
-#    say $dump "linedescrip\t",   $self->linedescrip();
-#    say $dump "direction\t",     $self->direction();
-#    say $dump "place4\t",        jt( $self->place4s() );
-#    say $dump "place8\t",        jt( $self->place8s() );
-#    say $dump "stopid\t",        jt( $self->stopids() );
-#    say $dump "stopplace\t",     jt( $self->stopplaces() );
-#    say $dump "trips:\n";
-#
-#    foreach my $trip ( $self->trips() ) {
-#        say $dump $trip->dump();
-#    }
-#
-#    close $dump;
-#
-#    return $dumpdata;
-#
-#} ## <perltidy> end sub dump
 
 1;
 

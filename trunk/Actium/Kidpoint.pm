@@ -13,14 +13,7 @@ use sort ('stable');
 
 use Moose;
 use MooseX::SemiAffordanceAccessor;
-#use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
-
-use Actium::AttributeHandlers(
-    qw<
-      boolhandles numhandles arrayhandles
-      hashhandles stringhandles counterhandles
->);
 
 use Actium::Constants;
 use Actium::Sorting (qw(byline sortbyline));
@@ -39,10 +32,10 @@ has [qw/effdate stopid signid/] => (
 
 has 'note600' => (
     traits  => ['Bool'],
-    is      => 'rw',
+    is      => 'ro',
     isa     => 'Bool',
     default => '0',
-    handles => { boolhandles('note600') },
+    handles => { set_note600 => 'set' , },
 );
 
 has 'column_r' => (
@@ -50,7 +43,9 @@ has 'column_r' => (
     is      => 'rw',
     isa     => 'ArrayRef[Actium::Kidpoint::Column]',
     default => sub { [] },
-    handles => { arrayhandles('column') },
+    handles => { columns => 'elements' , push_columns => 'push' ,
+      sort_columns => 'sort_in_place' ,
+    },
 );
 
 has 'marker_of_footnote_r' => (
@@ -58,7 +53,11 @@ has 'marker_of_footnote_r' => (
     is      => 'rw',
     isa     => 'HashRef[Str]',
     default => sub { {} },
-    handles => { hashhandles('marker_of_footnote') },
+    handles => { 
+     get_marker_of_footnote => 'get' , 
+     set_marker_of_footnote => 'set' , 
+     elements_marker_of_footnote => 'elements',
+    } ,
 
 );
 
@@ -67,7 +66,7 @@ has 'highest_footnote' => (
     default => 0,
     is      => 'rw',
     isa     => 'Num',
-    handles => { counterhandles('highest_footnote') },
+    handles => { inc_highest_footnote => 'inc' , }
 );
 
 has 'formatted_side' => (
@@ -75,7 +74,6 @@ has 'formatted_side' => (
     default => $EMPTY_STR,
     is      => 'rw',
     isa     => 'Str',
-    handles => { stringhandles('formatted_side') },
 );
 
 has 'formatted_bottom' => (
@@ -83,14 +81,12 @@ has 'formatted_bottom' => (
     default => $EMPTY_STR,
     is      => 'rw',
     isa     => 'Str',
-    handles => { stringhandles('formatted_bottom') },
 );
 
 has 'width' => (
     isa     => 'Num',
     is      => 'rw',
     default => 0,
-    #handles => { numhandles('width') },
 );
 
 sub add_to_width {
@@ -122,7 +118,7 @@ sub new_from_kpoints {
             $self->push_columns($column);
         }    # skip 600-series lines
         else {
-            $self->t_note600;
+            $self->set_note600;
         }
 
     }
