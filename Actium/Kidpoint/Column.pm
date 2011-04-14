@@ -17,8 +17,6 @@ use Moose;
 use MooseX::SemiAffordanceAccessor;
 use Moose::Util::TypeConstraints;
 
-use Actium::AttributeHandlers ( 'arrayhandles',
-    'arrayhandles_ro', 'hashhandles' );
 use Actium::Constants;
 use Actium::Time ('timenum');
 use IDTags;
@@ -122,32 +120,77 @@ has primary_approxflag => (
     isa => 'Bool',
 );
 
-foreach my $attr (qw<line time destination place exception >) {
-    has "${attr}_r" => (
-        traits  => ['Array'],
-        is      => 'ro',
-        isa     => 'ArrayRef[Str]',
-        default => sub { [] },
-        handles => { arrayhandles_ro($attr) },
-    );
-}
+has time_r => (
+    traits  => ['Array'],
+    is      => 'ro',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles =>
+      { 'time' => 'get', time_count => 'count', 'times' => 'elements' },
+);
 
-foreach my $attr (qw<formatted_time head_line>) {
-    has "${attr}_r" => (
-        traits  => ['Array'],
-        is      => 'rw',
-        isa     => 'ArrayRef[Str]',
-        default => sub { [] },
-        handles => { arrayhandles($attr) },
-    );
-}
+has line_r => (
+    traits  => ['Array'],
+    is      => 'ro',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => { line => 'get', lines => 'elements' },
+);
+
+has destination_r => (
+    traits  => ['Array'],
+    is      => 'ro',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => { destination => 'get', destinations => 'elements' },
+);
+
+has exception_r => (
+    traits  => ['Array'],
+    is      => 'ro',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => { exception => 'get', exceptions => 'elements' },
+);
+
+has place_r => (
+    traits  => ['Array'],
+    is      => 'ro',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => { places => 'elements' },
+);
+
+has "head_line_r" => (
+    traits  => ['Array'],
+    is      => 'rw',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => {
+        head_line       => 'get',
+        head_lines      => 'elements',
+        head_line_count => 'count'
+    },
+);
+
+has "formatted_time_r" => (
+    traits  => ['Array'],
+    is      => 'rw',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => {
+        set_formatted_time   => 'set',
+        formatted_times      => 'elements',
+        formatted_time_count => 'count',
+    },
+);
 
 has 'foot_r' => (
     traits  => ['Array'],
     is      => 'rw',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { arrayhandles( 'foot', 'feet' ) },
+    handles => { feet => 'elements', set_foot => 'set', foot => 'get', },
 );
 
 has approxflag_r => (
@@ -155,7 +198,7 @@ has approxflag_r => (
     is      => 'ro',
     isa     => 'ArrayRef[Bool]',
     default => sub { [] },
-    handles => { arrayhandles_ro('approxflag') },
+    handles => { approxflags => 'elements', approxflag => 'get', },
 );
 
 sub format_header {
@@ -179,9 +222,10 @@ sub format_head_lines {
     my ( $color, $head_lines );
 
     foreach my $line (@head_lines) {
-    { no warnings 'once';
-        $color = ( $main::lines{$line}{Color} or 'Grey80' );
-    }
+        {
+            no warnings 'once';
+            $color = ( $main::lines{$line}{Color} or 'Grey80' );
+        }
         $color_of{$line}    = $color;
         $seen_color{$color} = 1;
     }
@@ -267,8 +311,9 @@ sub format_headdest {
     my $self    = shift;
     my $desttp4 = $self->primary_destination;
     my $tpname;
-    { no warnings 'once';
-    $tpname  = $main::timepoints{$desttp4}{TPName};
+    {
+        no warnings 'once';
+        $tpname = $main::timepoints{$desttp4}{TPName};
     }
 
     my $dest;
@@ -320,6 +365,4 @@ __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
 1;
 
-__END__
-
-
+__END__ 
