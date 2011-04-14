@@ -13,33 +13,39 @@ our $VERSION = '0.001';
 $VERSION = eval $VERSION;
 
 #use Term::Emit qw(:all);
+use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
-use Moose;
 use Moose::Util::TypeConstraints;
 use Actium::Constants;
 use Actium::Term;
-use Actium::Sked; 
+use Actium::Sked;
 use Text::Trim();
 use Actium::Sked::Trip;
 use Actium::Util qw<:ALL>;
-use Actium::AttributeHandlers qw<:all>;
 
 has 'line_r' => (
     traits   => ['Array'],
-    is       => 'rw',
+    is       => 'bare',
     isa      => 'ArrayRef[Str]',
     default  => sub { [] },
     required => 1,
-    handles  => { arrayhandles('line') },
+    handles => {
+        line       => 'get',
+        line_count => 'count',
+        set_line   => 'set',
+        lines      => 'elements',
+        push_lines => 'push',
+    },
 
 );
 
 has 'place8_r' => (
-    traits  => ['Array'],
-    is      => 'rw',
-    isa     => 'ArrayRef[Str]',
-    handles => { arrayhandles('place8') },
+    traits => ['Array'],
+    is     => 'rw',
+    isa    => 'ArrayRef[Str]',
+    handles =>
+      { place8s => 'elements', place8 => 'get', splice_place8s => 'splice' },
 );
 
 has [qw<linedescrip origlinegroup direction days>] => (
@@ -49,10 +55,17 @@ has [qw<linedescrip origlinegroup direction days>] => (
 
 has 'trip_r' => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'ro',
     isa     => 'ArrayRef[Actium::Sked::Trip]',
     default => sub { [] },
-    handles => { arrayhandles('trip') },
+    handles => {
+        push_trips  => 'push',
+        trips       => 'elements',
+        trip_count  => 'count',
+        trip        => 'get',
+        set_trip    => 'set',
+        delete_trip => 'delete',
+    },
 );
 
 #has [qw(direction_idx route_idx)] => (
@@ -108,7 +121,6 @@ sub sked {
     return $sked;
 
 }
-
 
 no Moose::Util::TypeConstraints;
 no Moose;

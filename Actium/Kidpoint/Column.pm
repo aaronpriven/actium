@@ -17,7 +17,7 @@ use Moose;
 use MooseX::SemiAffordanceAccessor;
 use Moose::Util::TypeConstraints;
 
-use Actium::AttributeHandlers ( 'stringhandles', 'arrayhandles',
+use Actium::AttributeHandlers ( 'arrayhandles',
     'arrayhandles_ro', 'hashhandles' );
 use Actium::Constants;
 use Actium::Time ('timenum');
@@ -109,8 +109,6 @@ foreach (qw/formatted_header formatted_column/) {
         is      => 'rw',
         isa     => 'Str',
         default => $EMPTY_STR,
-        #handles => { stringhandles($_) },
-        #handles => { append_to_formatted_header => 'append' },
     );
 }
 

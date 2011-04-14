@@ -23,7 +23,6 @@ use Moose;
 #use Moose::Util::TypeConstraints;
 use Actium::Time qw<timestr timestr_sub>;
 use Actium::Util 'jt';
-use Actium::AttributeHandlers 'arrayhandles';
 use Actium::Constants;
 
 use Actium::Types qw<ArrayRefOfTimeNums TimeNum>;
@@ -56,29 +55,35 @@ has 'stopleave' => (
 # from HSA
 has 'stoptime_r' => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'ro',
     isa     => ArrayRefOfTimeNums,
     default => sub { [] },
     coerce  => 1,
-    handles => { arrayhandles('stoptime') },
+    handles => { stoptimes => 'elements', stoptimes_are_empty => 'is_empty',},
 );
 
 # from either
 has 'placetime_r' => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'ro',
     isa     => ArrayRefOfTimeNums,
     default => sub { [] },
     coerce  => 1,
-    handles => { arrayhandles('placetime') },
+    handles => {
+        placetimes           => 'elements',
+        splice_placetimes    => 'splice',
+        placetime_count => 'count',
+        placetimes_are_empty => 'is_empty',
+        placetime => 'get',
+    },
 );
 
 has 'mergedtrip_r' => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'bare',
     isa     => 'ArrayRef[Actium::Sked::Trip]',
     default => sub { [] },
-    handles => { arrayhandles('mergedtrip') },
+    handles => { mergedtrips => 'elements', mergedtrip_count => 'count', },
 
 );
 
@@ -128,12 +133,12 @@ sub merge_trips {
                     $merged_value_of{$attrname} = $firstattr;
                 }
             }
-        } ## <perltidy> end given
+        }    ## <perltidy> end given
 
-    } ## <perltidy> end foreach my $attribute ( $class...)
+    }    ## <perltidy> end foreach my $attribute ( $class...)
     return $class->new(%merged_value_of);
 
-} ## <perltidy> end sub merge_trips
+}    ## <perltidy> end sub merge_trips
 
 no Moose;
 
