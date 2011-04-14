@@ -64,8 +64,28 @@ sub START {
 
     my ( $skeds_r, $notes_r ) = read_headways(@files);
 
-    write_files_with_method( $skeds_r, 'headskeds', 'txt', 'dump' );
-    write_files_with_method( $notes_r, 'headnotes', 'txt', 'dump' );
+    #write_files_with_method( $skeds_r, 'headskeds', 'txt', 'dump' );
+    #write_files_with_method( $notes_r, 'headnotes', 'txt', 'dump' );
+
+    write_files_with_method(
+        {
+            OBJECTS   => $skeds_r,
+            EXTENSION => 'txt',
+            FILETYPE  => 'skeds',
+            METHOD    => 'dump',
+            SIGNUP    => Actium::Signup->new('headskeds')
+        }
+    );
+
+    write_files_with_method(
+        {
+            OBJECTS   => $notes_r,
+            FILETYPE  => 'notes',
+            EXTENSION => 'txt',
+            METHOD    => 'dump',
+            SIGNUP    => Actium::Signup->new('headnotes')
+        }
+    );
 
     # this probably should be a separate program, but for now, isn't
 
@@ -73,7 +93,7 @@ sub START {
 
     return;
 
-} ## <perltidy> end sub START
+}    ## <perltidy> end sub START
 
 sub read_headways {
     my @files = @_;
@@ -95,7 +115,7 @@ sub read_headways {
 
     # note that what is returned has not merged the days
 
-} ## <perltidy> end sub read_headways
+}    ## <perltidy> end sub read_headways
 
 {    # this block is for scoping - variables about each headway sheet file
 
@@ -135,7 +155,7 @@ sub read_headways {
 
         return $schedules_r, \@notes;
 
-    } ## <perltidy> end sub read_headway_file
+    }    ## <perltidy> end sub read_headway_file
 
     sub load_pages {
 
@@ -171,7 +191,7 @@ sub read_headways {
 
         return;
 
-    } ## <perltidy> end sub load_pages
+    }    ## <perltidy> end sub load_pages
 
     sub new_page {
         my @lines_in_this_page = @_;
@@ -183,11 +203,11 @@ sub read_headways {
         my $routeline = $newpage->line( $indexes{route} );
 
         $routeline =~ s/.*?oute:\s+//sx;
-        my ( $origlinegroup, $linedescrip )
-          = Text::Trim::trim( split( $SPACE, $routeline, 2 ) );
+        my ( $origlinegroup, $linedescrip ) =
+          Text::Trim::trim( split( $SPACE, $routeline, 2 ) );
 
-        $newpage->set_origlinegroup($origlinegroup);
         $newpage->set_linedescrip($linedescrip);
+        $newpage->set_origlinegroup($origlinegroup);
         $newpage->set_days($days);
 
         # set direction
@@ -209,7 +229,7 @@ sub read_headways {
 
         return $newpage;
 
-    } ## <perltidy> end sub new_page
+    }    ## <perltidy> end sub new_page
 
     sub load_a_page {
         my $fh = shift;
@@ -243,11 +263,11 @@ sub read_headways {
 
             }
 
-        } ## <perltidy> end while ( my $this_line = readline...)
+        }    ## <perltidy> end while ( my $this_line = readline...)
 
         return @lines_in_this_page;
 
-    } ## <perltidy> end sub load_a_page
+    }    ## <perltidy> end sub load_a_page
 
     sub determine_header_indexes {
 
@@ -257,7 +277,8 @@ sub read_headways {
 
         my $first_idx = ( first_index { our $_; /^EXC /s } @lines ) - 1;
         my $schedule_idx = first_index { our $_; /^\w+\s+schedule:/isx } @lines;
-        my $route_idx    = first_index { our $_; /^(?:R|^Public\sr)oute/isx } @lines;
+        my $route_idx =
+          first_index { our $_; /^(?:R|^Public\sr)oute/isx } @lines;
         my $direction_idx = first_index { our $_; /^Direction:/isx } @lines;
 
 ## no critic (ProhibitMagicNumbers)
@@ -284,7 +305,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         return;
 
-    } ## <perltidy> end sub determine_header_indexes
+    }    ## <perltidy> end sub determine_header_indexes
 
     sub determine_days {
 
@@ -310,13 +331,13 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         }
         else {
-            emit_prog ($days);
+            emit_prog($days);
             emit_ok;
         }
 
         return;
 
-    } ## <perltidy> end sub determine_days
+    }    ## <perltidy> end sub determine_days
 
     sub determine_columns {
 
@@ -352,17 +373,17 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
         }
 
         if ( $reporttype eq 'Crew' ) {
-            @leading_fieldnames
-              = qw[ exceptions routenum runid blockid vehicletype from noteletter ];
-            $leading_template
-              = q[  A4         A6       A10   A11     A4          A10  A8 ];
+            @leading_fieldnames =
+              qw[ exceptions routenum runid blockid vehicletype from noteletter ];
+            $leading_template =
+              q[  A4         A6       A10   A11     A4          A10  A8 ];
             $leading_chars = 53;
         }
         else {    # type eq 'Vehicle'
-            @leading_fieldnames
-              = qw[ exceptions routenum blockid vehicletype from noteletter ];
-            $leading_template
-              = q[  A4         A6       A10     A4          A10  A8 ];
+            @leading_fieldnames =
+              qw[ exceptions routenum blockid vehicletype from noteletter ];
+            $leading_template =
+              q[  A4         A6       A10     A4          A10  A8 ];
             $leading_chars = 42;
         }
 
@@ -372,7 +393,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         return;
 
-    } ## <perltidy> end sub determine_columns
+    }    ## <perltidy> end sub determine_columns
 
     sub assemble_wide_pages {
 
@@ -427,13 +448,13 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
             splice( @pages, $next_page_idx, 1 ); # delete page at $next_page_idx
 
-        } ## <perltidy> end while ( $next_page_idx < ...)
+        }    ## <perltidy> end while ( $next_page_idx < ...)
 
         emit_done;
 
         return;
 
-    } ## <perltidy> end sub assemble_wide_pages
+    }    ## <perltidy> end sub assemble_wide_pages
 
     sub parse_pages {
 
@@ -446,8 +467,9 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
             # get origlinegroup - this is just for display
             my $origlinegroup = $page->origlinegroup();
-            emit_over $origlinegroup unless $seen_origlinegroup{$origlinegroup}++;
-            
+            emit_over $origlinegroup
+              unless $seen_origlinegroup{$origlinegroup}++;
+
             my $firstline = $page->line( $indexes{first} );
 
             if ( $firstline =~ /^Notes:/s ) {
@@ -457,11 +479,11 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
             }
 
             my $chars_per_timepoint = 9;    ## no critic (ProhibitMagicNumbers)
-            my $number_of_timepoints
-              = ( index( $firstline, 'DIV-IN' ) - $leading_chars )
-              / $chars_per_timepoint;
-            my $template
-              = $leading_template . ( 'A9' x $number_of_timepoints ) . 'A9 A*';
+            my $number_of_timepoints =
+              ( index( $firstline, 'DIV-IN' ) - $leading_chars ) /
+              $chars_per_timepoint;
+            my $template =
+              $leading_template . ( 'A9' x $number_of_timepoints ) . 'A9 A*';
 
             my @colheads = Text::Trim::trim( unpack( $template, $firstline ) );
             my @colheads_secondline = Text::Trim::trim(
@@ -470,8 +492,8 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
             my @place8s = splice( @colheads, scalar @leading_fieldnames,
                 $number_of_timepoints );
 
-            my @place8s_secondline
-              = splice( @colheads_secondline, scalar @leading_fieldnames,
+            my @place8s_secondline =
+              splice( @colheads_secondline, scalar @leading_fieldnames,
                 $number_of_timepoints );
 
             our ( $a, $b );    ## no critic 'ProhibitPackageVars'
@@ -514,18 +536,18 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
                 my %fields;
                 @fields{@remaining_fieldnames} = @fields;    # hash slice
-                
+
                 next LINE
                   if ( true { /\d/ } @times ) < 2;
 
-                my $trip
-                  = Actium::Sked::Trip->new( { placetime_r => \@times, %fields } );
+                my $trip = Actium::Sked::Trip->new(
+                    { placetime_r => \@times, %fields } );
 
                 $page->push_trips($trip);
 
-            } ## <perltidy> end for my $this_line_idx (...)
+            }    ## <perltidy> end for my $this_line_idx (...)
 
-        } ## <perltidy> end for my $page (@pages)
+        }    ## <perltidy> end for my $page (@pages)
 
         emit_done;
 
@@ -545,7 +567,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         return;
 
-    } ## <perltidy> end sub parse_pages
+    }    ## <perltidy> end sub parse_pages
 
     sub parse_notes {
 
@@ -573,7 +595,8 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         foreach my $noteletter ( keys %thispages_notes ) {
             my $note_obj = Actium::Sked::Note->new(
-                {   origlinegroup => $page->origlinegroup(),
+                {
+                    origlinegroup => $page->origlinegroup(),
                     days          => $days,
                     noteletter    => $noteletter,
                     note          => $thispages_notes{$noteletter},
@@ -586,7 +609,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         return;
 
-    } ## <perltidy> end sub parse_notes
+    }    ## <perltidy> end sub parse_notes
 
     sub assemble_tall_pages {
 
@@ -627,13 +650,13 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
                 next PAGE;
             }
 
-            my @thesepages
-              = @pages[ $page_idx .. $page_idx + $pages_to_combine ];
+            my @thesepages =
+              @pages[ $page_idx .. $page_idx + $pages_to_combine ];
 
             # array slice
 
             my @place8_refs = map {
-                grep {defined}
+                grep { defined }
                   $_->place8_r()
             } @thesepages;
             my @union_place8s = ordered_union(@place8_refs);
@@ -673,11 +696,11 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
                         $current_column++;
                     }
 
-                } ## <perltidy> end foreach my $place_to_process...
-                    # PLACE
+                }    ## <perltidy> end foreach my $place_to_process...
+                     # PLACE
 
-            } ## <perltidy> end foreach my $pagetoexpand (@thesepages)
-                    # EXPANDTPS
+            }    ## <perltidy> end foreach my $pagetoexpand (@thesepages)
+                 # EXPANDTPS
 
             # Combine pages
 
@@ -686,14 +709,14 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
             splice( @pages, $page_idx + 1, $pages_to_combine );
             $page_idx++;
 
-        } ## <perltidy> end while ( $page_idx < $#pages)
-                    # PAGE
+        }    ## <perltidy> end while ( $page_idx < $#pages)
+             # PAGE
 
         emit_done;
 
         return;
 
-    } ## <perltidy> end sub assemble_tall_pages
+    }    ## <perltidy> end sub assemble_tall_pages
 
 }    # block for scoping
 
@@ -716,14 +739,15 @@ sub combine_identical_trips {
             my $trip     = $page->trip($i);
             my $prevtrip = $page->trip( $i - 1 );
 
-            if ( j( $trip->placetimes ) eq j( $prevtrip->placetimes ) 
-                 and $trip->routenum() eq $prevtrip->routenum() ) {
+            if ( j( $trip->placetimes ) eq j( $prevtrip->placetimes )
+                and $trip->routenum() eq $prevtrip->routenum() )
+            {
 
-                # if the route number and all the placetimes 
+                # if the route number and all the placetimes
                 # are the same, the trip is the same.
 
-                my $combined_trip
-                  = Actium::Sked::Trip->merge_trips( $prevtrip, $trip );
+                my $combined_trip =
+                  Actium::Sked::Trip->merge_trips( $prevtrip, $trip );
                 $page->set_trip( $i - 1, $combined_trip );
                 $page->delete_trip($i);
 
@@ -731,13 +755,13 @@ sub combine_identical_trips {
 
         }
 
-    } ## <perltidy> end foreach my $page (@pages)
+    }    ## <perltidy> end foreach my $page (@pages)
 
     emit_done;
 
     return;
 
-} ## <perltidy> end sub combine_identical_trips
+}    ## <perltidy> end sub combine_identical_trips
 
 sub combine_duplicate_timepoints {
 
@@ -769,18 +793,18 @@ sub combine_duplicate_timepoints {
 
     return;
 
-} ## <perltidy> end sub combine_duplicate_timepoints
+}    ## <perltidy> end sub combine_duplicate_timepoints
 
 sub create_skeds_from_pages {
     my @pages = @_;
     emit 'Making schedules from pages, by linegroup';
     my @skeds;
-    
+
     my %seen;
     foreach my $page (@pages) {
         my $lg = $page->origlinegroup();
         emit_over $lg unless $seen{$lg}++;
-        
+
         my $sked = $page->sked();
         push @skeds, $sked->divide_sked();
     }
@@ -817,7 +841,7 @@ sub create_duplicate_timepoint_runs {
 
     return @runs;
 
-} ## <perltidy> end sub create_duplicate_timepoint_runs
+}    ## <perltidy> end sub create_duplicate_timepoint_runs
 
 sub shrink_duplicate_timepoint_runs {
     my $page = shift;
@@ -853,28 +877,28 @@ sub shrink_duplicate_timepoint_runs {
                 push @double_list, [ undef, undef ];
                 next TRIP;
             }
-            
+
             if ( scalar @thesetimes != 1 ) {
 
-                @thesetimes
-                  = @thesetimes[ 0, -1 ];    ## no critic 'ProhibitMagicNumbers'
+                @thesetimes =
+                  @thesetimes[ 0, -1 ];    ## no critic 'ProhibitMagicNumbers'
                      # first and last only -- discard any middle times.
                      # Unlikely to actually happen
 
                 if ( $thesetimes[0] == $thesetimes[1] ) {
-                    @thesetimes = ( $thesetimes[0] ) ;
+                    @thesetimes = ( $thesetimes[0] );
 
                     # if they're the same, just keep one.
                 }
 
             }
 
-            # now @thesetimes contains one time 
+            # now @thesetimes contains one time
             # or two times that are different.
 
             if ( scalar @thesetimes == 2 ) {
                 push @single_list, $thesetimes[1];
-                push @double_list, [ @thesetimes ];
+                push @double_list, [@thesetimes];
                 $has_double = 1;
                 next TRIP;
             }
@@ -887,38 +911,42 @@ sub shrink_duplicate_timepoint_runs {
                 and any { defined($_) }
                 @alltimes[ $lastcolumn + 1 .. $#alltimes ] )
             {
+
                 # Then set the single time to be the departure time
                 @thesetimes = ( undef, $thesetimes[0] );
             }
             else {
+
                 # otherwise set it to be the arrival time
                 @thesetimes = ( $thesetimes[0], undef );
             }
 
-            push @double_list, [ @thesetimes ];
+            push @double_list, [@thesetimes];
 
-        } ## <perltidy> end foreach my $trip ( $page->trips)
+        }    ## <perltidy> end foreach my $trip ( $page->trips)
 
         if ($has_double) {
             $page->splice_place8s( $firstcolumn, $numcolumns, $place, $place );
             foreach my $trip ( $page->trips ) {
-               my $thesetimes_r = shift @double_list;
-               my @thesetimes   = @{$thesetimes_r};
-                $trip->splice_placetimes( $firstcolumn, $numcolumns, @thesetimes );
+                my $thesetimes_r = shift @double_list;
+                my @thesetimes   = @{$thesetimes_r};
+                $trip->splice_placetimes( $firstcolumn, $numcolumns,
+                    @thesetimes );
             }
         }
         else {
             $page->splice_place8s( $firstcolumn, $numcolumns, $place );
             foreach my $trip ( $page->trips ) {
-                $trip->splice_placetimes( $firstcolumn, $numcolumns, shift @single_list );
+                $trip->splice_placetimes( $firstcolumn, $numcolumns,
+                    shift @single_list );
             }
         }
 
-    } ## <perltidy> end foreach my $run ( reverse @runs)
+    }    ## <perltidy> end foreach my $run ( reverse @runs)
 
     return;
 
-} ## <perltidy> end sub shrink_duplicate_timepoint_runs
+}    ## <perltidy> end sub shrink_duplicate_timepoint_runs
 
 sub write_prehistorics {
 
@@ -945,8 +973,8 @@ sub write_prehistorics {
 
     my %allprehistorics;
 
-    my @comparisons
-      = ( [qw/SA SU WE/], [qw/WD SA WA/], [qw/WD SU WU/], [qw/WD WE DA/], );
+    my @comparisons =
+      ( [qw/SA SU WE/], [qw/WD SA WA/], [qw/WD SU WU/], [qw/WD WE DA/], );
 
     emit 'Merging days';
 
@@ -975,16 +1003,16 @@ sub write_prehistorics {
                 delete $prehistorics_of{$group_dir}{$second_days};
             }
 
-        } ## <perltidy> end foreach my $comparison_r (@comparisons)
+        }    ## <perltidy> end foreach my $comparison_r (@comparisons)
 
         # copy to overall list
 
         foreach my $days ( keys %{ $prehistorics_of{$group_dir} } ) {
-            $allprehistorics{"${group_dir}_$days"}
-              = $prehistorics_of{$group_dir}{$days};
+            $allprehistorics{"${group_dir}_$days"} =
+              $prehistorics_of{$group_dir}{$days};
         }
 
-    } ## <perltidy> end foreach my $group_dir ( sort...)
+    }    ## <perltidy> end foreach my $group_dir ( sort...)
 
     emit_done;
 
@@ -994,6 +1022,6 @@ sub write_prehistorics {
 
     return;
 
-} ## <perltidy> end sub write_prehistorics
+}    ## <perltidy> end sub write_prehistorics
 
-1; 
+1;

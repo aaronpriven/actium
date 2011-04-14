@@ -43,8 +43,11 @@ EOF
 
 my $intro = 'k2id.pl -- makes kidpoints: point schedules from Hastus';
 
-use Actium::Options;
+use Actium::Options(qw<option init_options>);;
 use Actium::Signup;
+
+init_options();
+
 my $signup = Actium::Signup->new();
 chdir $signup->get_dir();
 
