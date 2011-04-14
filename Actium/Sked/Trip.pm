@@ -230,17 +230,44 @@ These are integers, the number of minutes since midnight (or before midnight, if
 negative). If an entry is set to a string, it is coerced to an integer using 
 L<Actium::Time::timenum|Actium::Time/"timenum ($time)">.
 
-Each of these has a full set of methods to handle common array functions. 
-See L<Actium::AttributeHandlers/arrayhandles>. The base names are "stoptime" and
-"placetime" respectively.
+=item B<stoptimes>
+
+=item B<placetimes>
+
+The elements of the I<stoptime_r> and I<placetime_r> array references, 
+respectively.
+
+=item B<stoptimes_are_empty>
+
+=item B<placetimes_are_empty>
+
+Returns false if stoptime_r or placetime_r, respectively, have any elements;
+true otherwise.
+
+=item B<placetime_count>
+
+The number of elements in the placetime array.
+
+=item B<placetime(I<index>)>
+
+Returns the value of the placetime of the given index ( beginning at 0).
+
+=item B<splice_placetimes(I<offset>, I<length>, I<values>)>
+
+Like the perl builtin L<splice|perlfunc/splice>.
 
 =item B<mergedtrip_r>
 
 After trips are  merged using I<merge_trips()>, this array holds all the 
 Actium::Sked::Trip objects that were originally merged.  
 
-This attribute has a full set of methods to handle common array functions. 
-See L<Actium::AttributeHandlers/arrayhandles>. The base name is "mergedtrip".
+=item B<mergedtrips>
+
+Returns the elements of I<mergedtrip_r>.
+
+=item B<mergedtrip_count>
+
+The number of elements in the mergedtrip array.
 
 =back
 
@@ -292,17 +319,19 @@ See L<Moose>.
 
 =over
 
-=item *
+=item Moose
 
-Moose
+=item MooseX::SemiAffordanceAccessor
 
-=item *
+=item MooseX::StrictConstructor
 
-MooseX::SemiAffordanceAccessor
+=item Actium::Constants
 
-=item *
+=item Actium::Time
 
-MooseX::StrictConstructor
+=item Actium::Types
+
+=item Actium::Util
 
 =back
 
