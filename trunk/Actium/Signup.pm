@@ -48,7 +48,7 @@ add_option( 'cache=s',
       . 'on network filesystems are stored here. Defaults to the location '
       . 'of the files being cached.' );
 
-around BUILDARGS {
+around BUILDARGS => sub {
     my $orig           = shift;
     my $class          = shift;
     my $first_argument = shift;
@@ -68,8 +68,8 @@ around BUILDARGS {
     # (Actium::Folder takes care of dividing pieces that have several
     # folders, like "/users/yourname/actium/base", into individual pieces
 
-    my $base   = $params_r->{base}   // $class->_build_base;
-    my $signup = $params_r->{signup} // $class->_build_signup;
+    my $base   = $params_r->{base}   // $class->_build_base();
+    my $signup = $params_r->{signup} // $class->_build_signup();
 
     if ( exists $params_r->{subfolders} ) {
         my $subfolders = $params_r->{subfolders};
@@ -89,7 +89,7 @@ around BUILDARGS {
 
     return $class->$orig($params_r);
 
-} ## tidy end: BUILDARGS
+}; ## tidy end: BUILDARGS
 
 has base => (
     is       => 'ro',
@@ -136,6 +136,8 @@ sub _build_cache {
     return $ENV{$CACHE_ENV}  if $ENV{$CACHE_ENV};
     return;
 }
+
+1;
 
 __END__
 

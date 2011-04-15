@@ -6,7 +6,7 @@
 # legacy stage 3
 
 # This is now obsolete, and calls should be replaced with calls to 
-# Actium::Folder::Signup or Actium::Folder
+# Actium::Signup or Actium::Folder
 
 use strict;
 use warnings;
@@ -207,6 +207,9 @@ sub write_files_from_hash {
 =head1 NAME
 
 Actium::Files - File subroutines for use with the Actium system
+
+This is now obsolete and should be replaced with calls to Actium::Folder or
+Actium::Signup
 
 =head1 VERSION
 

@@ -63,7 +63,7 @@ open my $out, '>', 'compare/comparestops.txt' or die "$!";
 print $out
 "Change\tStopID\tStop Description\tNumAdded\tAdded\tNumRemoved\tRemoved\tNumUnchanged\tUnchanged\n";
 
-my $oldsignup = Actium::Signup->new({SIGNUP => option('oldsignup')});
+my $oldsignup = Actium::Signup->new({signup => option('oldsignup')});
 chdir $oldsignup->get_dir();
 
 my %oldstoplists = assemble_stoplists(qw(BSH 399));
