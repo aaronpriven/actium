@@ -145,10 +145,10 @@ has 'dbh' => (
 around BUILDARGS => sub {
     my $orig     = shift;
     my $class    = shift;
-    my $argument = shift;
+    my $first_argument = shift;
     my @rest     = @_;
-    return $class->$orig( $argument, @rest ) if ( ref $argument or @rest );
-    return $class->$orig( flats_folder => $argument );
+    return $class->$orig( $first_argument, @rest ) if ( ref $first_argument or @rest );
+    return $class->$orig( flats_folder => $first_argument );
 };
 
 sub _build_db_folder {
