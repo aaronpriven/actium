@@ -8,8 +8,7 @@
 # One of the first programs written for stage 3, it predates adoption
 # of Moose and probably should be rewritten to be a Moose class
 
-# maybe Actium::Folder should have everything not specifically related 
-# to signup folders, and Actium::Folder::Signup should be signups
+# THIS IS NOW OBSOLETE AND SHOULD BE REPLACED WITH ACTIUM::FOLDER::SIGNUP
 
 use strict;
 use warnings;
@@ -22,7 +21,6 @@ our $VERSION = '0.001';
 $VERSION = eval $VERSION;
 
 use Actium::Options qw(add_option option is_an_option);
-use Actium::Files::CacheOption;
 use Actium::Constants;
 use Actium::Files;
 use Carp;
@@ -80,6 +78,9 @@ add_option(
       . qq<Typically something like "f08" (meaning Fall 2008). Current default is $DEFAULT_SIGNUP>
 );
 
+add_option( 'cache=s',
+        'Cache directory. Files (like SQLite files) that cannot be stored '
+      . 'on network filesystems are stored here.' );
 
 # class or object methods
 
