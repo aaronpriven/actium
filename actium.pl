@@ -47,10 +47,9 @@ my %module_of = (
     time          => 'Time',
     sqlite2tab    => 'SQLite2tab',
     flagspecs     => 'Flagspecs',
-    drivingorder  => 'DrivingOrder',
     tabula        => 'Tabula',
     orderbytravel => 'OrderByTravel',
-    patterns => 'Patterns',
+    patterns      => 'Patterns',
     # more to come
 );
 
