@@ -5,8 +5,8 @@
 
 # legacy stage 3
 
-# I am thinking the right thing to do is to combine this and Actium::Signup
-# into new Actium::Folder and Actium::Folder::Signup classes
+# This is now obsolete, and calls should be replaced with calls to 
+# Actium::Folder::Signup or Actium::Folder
 
 use strict;
 use warnings;
