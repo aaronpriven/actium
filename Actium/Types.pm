@@ -19,9 +19,11 @@ $VERSION = eval $VERSION;
 
 use MooseX::Types -declare => [
     qw <TransitInfoDays     DayCode  SchoolDayCode
-        HastusDirCode       DirCode  ActiumSkedDir
-        ArrayRefOfTimeNums  TimeNum  _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
-        Str4                Str8 >
+      HastusDirCode       DirCode  ActiumSkedDir
+      ArrayRefOfTimeNums  TimeNum  _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
+      Str4                Str8
+      FolderComponent     FolderList
+      >
 ];
 
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
@@ -51,15 +53,14 @@ enum( DirCode, @DIRCODES );
 
 subtype HastusDirCode, as Int, where { $_ >= 0 and $_ <= $#DIRCODES };
 
-coerce DirCode, from HastusDirCode, via { $DIRCODES[$HASTUS_DIRS[$_]] };
+coerce DirCode, from HastusDirCode, via { $DIRCODES[ $HASTUS_DIRS[$_] ] };
 
 subtype ActiumSkedDir, as class_type('Actium::Sked::Dir');
 
 coerce( ActiumSkedDir,
     from HastusDirCode,
-    via { Actium::Sked::Dir->new( to_DirCode($_) ) },
-    from DirCode,
-    via { Actium::Sked::Dir->new($_) },
+    via               { Actium::Sked::Dir->new( to_DirCode($_) ) },
+    from DirCode, via { Actium::Sked::Dir->new($_) },
 );
 
 ######################
@@ -74,7 +75,12 @@ coerce TimeNum, from Str, via { Actium::Time::timenum($_) };
 subtype ArrayRefOfTimeNums, as ArrayRef [ Maybe [TimeNum] ];
 
 subtype _ArrayRefOfStrs, as ArrayRef [Str];
-# _ArrayRefOfStrs only exists to make ArrayRefOfTimeNums coercion work
+# _ArrayRefOfStrs only exists to make ArrayRefOfTimeNums
+# and other coercions work.
+
+# I think this is actually unnecessary, as coercing *from* a Moose built-in
+# type may be OK, unlike coercing *to* a built-in, which is a no-no.
+# But I'm not sure, and this is working, so...
 
 coerce ArrayRefOfTimeNums, from _ArrayRefOfStrs, via {
     my @array = map { to_TimeNum($_) } @{$_};
@@ -90,6 +96,16 @@ subtype Str8, as Str, where { length == 8 },
 subtype Str4, as Str, where { length == 4 },
   message {qq<The entry "$_" is not an four-character-long string>};
 
+############################
+### FOLDERS
+
+subtype FolderList, as ArrayRef [Str];
+
+subtype FolderComponent, as Str;
+# only for coercion
+
+coerce FolderList, from FolderComponent,
+  via { [ File::Spec->splitdir($_) ] };
 
 1;
 __END__
@@ -196,6 +212,12 @@ A string of exactly four characters or eight characters. These are used in
 specifying timepoint abbreviations.
 
 =back
+
+=head2 FOLDERS AND FILES
+
+=item B<FolderPath>
+
+A string representing a path of folders (subdirectories).
 
 =head1 DEPENDENCIES
 
