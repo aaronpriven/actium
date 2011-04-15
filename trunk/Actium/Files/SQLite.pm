@@ -30,8 +30,6 @@ use Moose::Role;
 
 use Actium::Constants;
 use Actium::Term;
-use Actium::Options (qw/is_an_option option/);
-use Actium::Files::CacheOption;
 
 use Carp;
 use DBI;
@@ -154,10 +152,6 @@ around BUILDARGS => sub {
 sub _build_db_folder {
 
     # only run when no db folder is specified
-    if ( is_an_option('cache') ) {
-        my $option_cache = option('cache');
-        return $option_cache if $option_cache;
-    }
     my $self = shift;
     return $self->flats_folder;
 }
@@ -433,7 +427,7 @@ This documentation refers to version 0.001
             
  my $db = Actium::Files::RoleComposer->new(
      flats_folder => $flats_folder,
-     cache    => $cache,
+     db_folder    => $cache,
      db_filename  => $db_filename,
  );
       
@@ -461,14 +455,6 @@ provided for reading the data, it is not intended that it should
 never be necessary to interact with the DBI object directly. The
 I<dbh()> method is provided for accessing the database handle, and
 users should be familiar with using DBI to fetch data.
-
-=head1 OPTIONS
-
-L<Actium::Options|Actium::Options> is used to read command-line options.
-
-The command-line option "cache" is used to specify the database folder
-if no folder is specified during object construction. 
-See L<db_folder|/db_folder> below.
 
 =head1 OBJECT CREATION
 
@@ -500,9 +486,8 @@ This is required to be specified in the object creator.
 
 =item B<db_folder>
 
-The folder on disk where the database is to be stored. Defaults to either
-the value of the -cache command line option, or if there is none, to the
-value of I<flats_folder>.
+The folder on disk where the database is to be stored. Defaults to 
+the value of I<flats_folder>.
 
 =item B<db_filename>
 
@@ -662,8 +647,6 @@ A request specified a table that was not found for the specified database type.
 =item Actium::Constants
 
 =item Actium::Term
-
-=item Actium::Options
 
 =back
 
