@@ -15,7 +15,7 @@ use Moose;
 use MooseX::StrictConstructor;
 
 use Actium::Types qw<DirCode>;
-use Actium::Util qw<positional>;
+use Actium::Util qw<positional_around>;
 use Actium::Constants;
 
 use Carp;
@@ -55,7 +55,7 @@ has 'dircode' => (
 # 1 - 7 : Monday through Sunday (like in Hastus), and H - Holidays
 
 around BUILDARGS => sub {
-    return positional( \@_, 'dircode' );
+    return positional_around( \@_, 'dircode' );
 };
 
 sub as_bound {

@@ -24,9 +24,6 @@ sub positional : Export {
     my @arguments = @{$argument_r};
     my @attrnames = @_;
     
-    my $orig  = shift @arguments; # See Moose::Manual::Construction
-    my $class = shift @arguments; # See Moose::Manual::Construction
-    
     my %newargs;
     if ( ref( $arguments[-1] ) eq 'HASH' ) {
         %newargs = %{ pop @arguments };
@@ -45,9 +42,16 @@ sub positional : Export {
         $newargs{$name} = $value;
     }
 
-    return $class->$orig( \%newargs );
+    return \%newargs;
 
 } ## tidy end: sub positional :
+
+sub positional_around : Export {
+    my $arguments_r = shift;
+    my $orig = shift @{$arguments_r}; # see Moose::Manual::Construction
+    my $invocant = shift @{$arguments_r}; # see Moose::Manual::Construction
+    return $invocant->$orig(positional_method ($arguments_r , @_));
+}
 
 sub _joinseries_with_x {
     my $and = shift;
@@ -234,25 +238,44 @@ making it readable. (A quicker way to type "s/$KEY_SEPARATOR/_/g foreach @list;"
 
 =item B<positional(C<\@_> , I<arguments>)>
 
-The I<positional> routine is intended for use within a BUILDARGS block in a
-Moose class (see L<Moose::Manual::Construction|Moose::Manual::Construction>, 
-and allows the use of positional arguments in addition to 
-named arguments during object construction. Typical use would be as follows: 
+=item B<positional_around(C<\@_> , I<arguments>)>
+
+The B<positional> and B<positional_around> routines allow the use of positional
+arguments in addition to named arguments in method calls or Moose object
+construction.
+
+The I<positional_around> routine is intended for use within a BUILDARGS block,
+or another "around" method modifer in a
+Moose class (see L<Moose::Manual::Construction|Moose::Manual::Construction>
+and L<Moose::Manual::MethodModifiers|Moose::Manual::MethodModifiers>).
+
+Typical use for positional would be as follows:
+
+ sub a_method {
+    my $self = shift;
+    $arguments_r = positional(\@_, 'foo' , 'bar');
+    
+    ... # rest of your method
+    
+ }
+
+Typical use for positional_around would be as follows: 
 
  around BUILDARGS => sub {
-    return positional(\@_ , 'foo' , 'bar' );
+    return positional_around (\@_ , 'foo' , 'bar' );
  };
  
-The first argument to I<positional> must always be a reference to the 
-arguments passed to BUILDARGS. The remaining arguments are the names (well,
-C<init_arg> values) of attributes to be passed to Moose.
+The first argument to I<positional> or I<positional_around> must always be 
+a reference to the arguments passed to the original routine. 
+The remaining arguments are the C<init_arg> values (usually, the same
+as the names) of attributes to be passed to Moose.
 
-Using positional, the arguments to your object's constructor are 
+When using these routines, the arguments to your method are 
 first, the optional positional arguments that you specify, followed by 
 an optional hashref of named arguments, which may be the same as the
 positional arguments if they do not conflict.
 
-For example, the following are all valid in the above example:
+For example, the following are all valid in the above positional_around example:
 
  Class->new('foo_value', 'bar_value'); 
     # both specified
