@@ -15,12 +15,12 @@ use Moose;
 use MooseX::StrictConstructor;
 
 use Actium::Union('ordered_union');
-use Actium::Util('positional');
+use Actium::Util('positional_around');
 
 use Array::Transpose;
 
 around BUILDARGS => sub {
-    return positional( \@_, 'route' , 'patterns_r' );
+    return positional_around( \@_, 'route' , 'patterns_r' );
 };
 
 has 'route' => (

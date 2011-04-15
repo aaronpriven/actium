@@ -50,7 +50,8 @@ sub parents {
     my @parents;
 
     while (@folders) {
-        $path_so_far = File::Spec->catpath( $volume,
+        $path_so_far =
+          File::Spec->catpath( $volume,
             File::Spec->catdir( $path_so_far, shift @folders ) );
         push @parents, $path_so_far;
     }
@@ -125,7 +126,7 @@ sub BUILD {
 
     return;
 
-} ## tidy end: sub BUILD
+}    ## tidy end: sub BUILD
 
 #######################
 ### CLONING
@@ -134,32 +135,33 @@ sub subfolder {
     my $self           = shift;
     my $first_argument = shift;
     my @rest           = @_;
-    
+
     my $params_r;
-    if (ref($first_argument) eq 'HASH') {
+    if ( ref($first_argument) eq 'HASH' ) {
         $params_r = $first_argument;
     }
     else {
-        $params_r = { subfolders => [$first_argument, @rest] };
+        $params_r = { subfolders => [ $first_argument, @rest ] };
     }
-    
-    if (exists $params_r->{subfolders}) {
+
+    if ( exists $params_r->{subfolders} ) {
         my $subfolders = $params_r->{subfolders};
-        if (ref($subfolders)  eq 'ARRAY' ) {
-           $params_r->{folderlist_r} = [ $self->folders, @{$subfolders} ];
-        } else {
-           $params_r->{folderlist_r} = [ $self->folders, $subfolders ];
+        if ( ref($subfolders) eq 'ARRAY' ) {
+            $params_r->{folderlist_r} = [ $self->folders, @{$subfolders} ];
+        }
+        else {
+            $params_r->{folderlist_r} = [ $self->folders, $subfolders ];
         }
         delete $params_r->{subfolders};
     }
-    
-    if (not exists $params_r->{must_exist} ) {
+
+    if ( not exists $params_r->{must_exist} ) {
         $params_r->{must_exist} = 0;
     }
-        
+
     return $self->meta->clone_object( $self, $params_r );
-    
-} ## tidy end: sub subfolder
+
+}    ## tidy end: sub subfolder
 
 ########################
 ### FILE NAMES, GLOBBING FILES, ETC.
@@ -190,6 +192,7 @@ sub glob_plain_files {
 ### READ OR WRITE MISC FILES IN THIS FOLDER
 
 sub mergeread {
+
     # should be obsolete with Actium::Files::FMPXMLResult
     my $self     = shift;
     my $filename = shift;
@@ -219,7 +222,7 @@ sub retrieve {
     emit_done;
 
     return $data_r;
-} ## tidy end: sub retrieve
+}    ## tidy end: sub retrieve
 
 sub store {
     my $self     = shift;
@@ -243,54 +246,50 @@ sub store {
 #######################
 ### READ OR WRITE SQLITE FILES IN THIS FOLDER
 
-sub _load_sqlite {
-    my $self           = shift;
-    my $database_class = shift;
-    my $flats_folder   = shift;
-    my $db_folder      = shift;
-
-    if ( blessed $flats_folder) {
-        $flats_folder = $flats_folder->path;
-    }
-
-    my $params_r = { flats_folder => $flats_folder };
-
-    if ($db_folder) {
-        if ( blessed $db_folder) {
-            $db_folder = $db_folder->path;
+sub load_sqlite {
+    my $self              = shift;
+    my $default_subfolder = shift;
+    my $database_class    = shift;
+    my %params            = validate(
+        @_,
+        {
+            subfolder => 0,
+            db_folder => 0,
         }
+    );
 
-        $params_r->{db_folder} = $db_folder;
+    my $subfolder;
+    if ( exists $params{$subfolder} ) {
+        $subfolder = $params{subfolder};
+        delete $params{$subfolder};
+    }
+    else {
+        $subfolder = $default_subfolder;
     }
 
-    return $database_class->new($params_r);
+    if ($subfolder ne $EMPTY_STR) {
+       $params{flats_folder} = $self->subfolder( $subfolder )->path;
+    }
 
-} ## tidy end: sub _load_sqlite
+    my $db_folder = $params{db_folder};
+    if ( $db_folder and blessed $db_folder) {
+        $params{db_folder} = $db_folder->path;
+    }
+
+    eval("require $database_class");
+
+    return $database_class->new(%params);
+
+}    ## tidy end: sub _load_sqlite
 
 sub load_xml {
-    my $self      = shift;
-    my $subfolder = shift || 'xml';
-    my $db_folder = shift;
-
-    my $flats_folder = $self->subfolder($subfolder);
-
-    require Actium::Files::FMPXMLResult;
-    return $self->_load_sqlite( 'Actium::Files::FMPXMLResult', $flats_folder,
-        $db_folder );
-
+    my $self = shift;
+    $self->_load_sqlite( 'xml', 'Actium::Files::FMPXMLResult', @_ );
 }
 
 sub load_hasi {
-    my $self      = shift;
-    my $subfolder = shift || 'hasi';
-    my $db_folder = shift;
-
-    my $flats_folder = $self->subfolder($subfolder);
-
-    require Actium::Files::HastusASI;
-    return $self->_load_sqlite( 'Actium::Files::HastusASI', $flats_folder,
-        $db_folder );
-
+    my $self = shift;
+    $self->_load_sqlite( 'hasi', 'Actium::Files::HastusASI', @_ );
 }
 
 ##########################
@@ -301,7 +300,8 @@ sub write_files_with_method {
 
     my %params = validate(
         @_,
-        {   OBJECTS   => { type => ARRAYREF },
+        {
+            OBJECTS   => { type => ARRAYREF },
             METHOD    => 1,
             EXTENSION => 1,
             SUBFOLDER => 0,
@@ -338,7 +338,8 @@ sub write_files_with_method {
 
         $id .= "_$seen_id{$id}" unless $seen_id{$id} == 1;
         $folder->write_file_with_method(
-            {   OBJECT   => $obj,
+            {
+                OBJECT   => $obj,
                 METHOD   => $method,
                 FILENAME => "$id.$extension"
             }
@@ -348,10 +349,10 @@ sub write_files_with_method {
 
     emit_done;
 
-} ## tidy end: sub write_files_with_method
+}    ## tidy end: sub write_files_with_method
 
 sub write_file_with_method {
-    my $self = shift;
+    my $self     = shift;
     my %params   = %{ +shift };
     my $obj      = $params{OBJECT};
     my $filename = $params{FILENAME};
@@ -373,10 +374,10 @@ sub write_file_with_method {
         croak "Can't close $file for writing: $OS_ERROR";
     }
 
-} ## tidy end: sub write_file_with_method
+}    ## tidy end: sub write_file_with_method
 
 sub write_files_from_hash {
- 
+
     my $self = shift;
 
     my %hash      = %{ shift @_ };
@@ -406,7 +407,7 @@ sub write_files_from_hash {
             die "Can't close $file for writing: $OS_ERROR";
         }
 
-    } ## tidy end: foreach my $key ( sort keys...)
+    }    ## tidy end: foreach my $key ( sort keys...)
 
     emit_done;
 

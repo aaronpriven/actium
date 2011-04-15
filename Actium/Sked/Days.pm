@@ -15,7 +15,7 @@ use Moose;
 use MooseX::StrictConstructor;
 
 use Actium::Types qw<DayCode SchoolDayCode>;
-use Actium::Util qw<positional joinseries>;
+use Actium::Util qw<positional_around joinseries>;
 use Actium::Constants;
 
 use Carp;
@@ -44,7 +44,7 @@ Readonly my @SEVENDAYABBREVS => map { substr( $_, 0, 3 ) } @SEVENDAYNAMES;
 ###################################
 
 around BUILDARGS => sub {
-    return positional( \@_, 'daycode', 'schooldaycode' );
+    return positional_around( \@_, 'daycode', 'schooldaycode' );
 };
 
 has 'daycode' => (

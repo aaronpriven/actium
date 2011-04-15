@@ -63,8 +63,8 @@ around BUILDARGS {
         $params_r = { subfolders => [$first_argument, @rest] };
     }
     
-    my $base = $class->_build_base;
-    my $signup = $class->_build_signup;
+    my $base = $params_r->{base} || $class->_build_base;
+    my $signup = $params_r->{signup} || $class->_build_signup;
     
     if (exists $params_r->{subfolders}) {
         my $subfolders = $params_r->{subfolders};
@@ -79,6 +79,8 @@ around BUILDARGS {
         $params_r->{folderlist_r} = [$base, $signup];
     }
     
+    $params_r->{must_exist} = 0 unless $params_r->{must_exist};
+    
     return $class->$orig($params_r);
     
 }
@@ -90,6 +92,7 @@ has base => (
 );
 
 sub _build_base {
+ # invoked from BUILDARGS
   return option('base') || $ENV{$BASE_ENV} || $LAST_RESORT_BASEFOLDER ;
 }
 
@@ -97,296 +100,23 @@ has signup => (
    is => 'ro' ,
    isa => 'Str' ,
    required => 1,
-   builder => '_build_signup',
 );
 
 sub _build_signup {
+ # invoked from BUILDARGS
   return option('signup') if option('signup');
   return $ENV{$BASE_ENV} if $ENV{$BASE_ENV} ;
   croak 'No signup folder specified';
 }
 
-# class or object methods
-
-sub _base {
-    my $invoked_as = shift;
-
-    my $basedir =
-      (      +shift
-          || option('basedir')
-          || $ENV{$BASE_ENV}
-          || $LAST_RESORT_BASEFOLDER );
-
-    $invoked_as->_testdir($basedir);
-
-    return $basedir;
-
-}
-
-sub _signup {
-    my $invoked_as = shift;
-    my $basedir    = shift;
-
-    my $signup =
-      (      +shift
-          || option('signup')
-          || $ENV{$SIGNUP_ENV}
-          || croak 'No signup directory specified' );
-
-    return $signup;
-
-}
-
-sub _testdir {
-    my $invoked_as = shift;
-    my $dir        = File::Spec->catdir(@_);
-
-    croak "Directory '$dir' not found"
-      unless -d $dir;
-
-    return;
-}
-
-sub _ensuredir {
-
-    my $invoked_as = shift;
-    my $dir        = File::Spec->catdir(@_);
-    mkdir $dir or croak "Can't make directory '$dir': $!"
-      unless -d $dir;
-
-    return;
-}
-
-# constructors
-
-sub new {
-    my $class = shift;
-    my %params;
-
-    if ( ref( $_[0] ) eq 'HASH' ) {
-        %params = validate(
-            @_,
-            {
-                NEWSIGNUP => 0,
-                BASEFOLDER   => 0,
-                SIGNUP    => 0,
-                SUBFOLDER    => 0,
-                SUBFOLDERS =>
-                  { type => Params::Validate::ARRAYREF, optional => 1 },
-            }
-        );
-
-        if ( exists( $params{SUBFOLDER} ) and exists( $params{SUBFOLDERS} ) ) {
-            croak "$class: Can't specify both SUBFOLDER and SUBFOLDERS to new()";
-        }
-
-        if ( exists( $params{SUBFOLDER} ) ) {
-            $params{SUBFOLDERS} = [ $params{SUBFOLDER} ];
-        }
-
-    }    ## <perltidy> end if ( ref( $_[0] ) eq 'HASH')
-
-    elsif (@_) {
-        %params = ( SUBFOLDERS => [@_] );
+around load_sqlite => sub {
+    my ($orig, $self, $default_subfolder, $db_class, $params_r) = @_;
+    if (not exists ($params_r->{db_folder})) {
+       $params_r->db_folder = option('cache');
     }
-    else {
-        %params = ();
-    }
-
-    my $newsignup = $params{NEWSIGNUP};
-    my $basedir   = $params{BASEFOLDER};
-    my $signup    = $params{SIGNUP};
-
-    $basedir = $class->_basedir($basedir);
-    $signup = $class->_signup( $basedir, $signup );
-
-    my $dir = File::Spec->catdir( $basedir, $signup );
-
-    if ($newsignup) {
-        $class->_ensuredir($dir);
-    }
-    else {
-        $class->_testdir($dir);
-    }
-
-    my @subdirs;
-
-    if ( exists( $params{SUBFOLDERS} ) ) {
-        @subdirs = @{ $params{SUBFOLDERS} };
-
-        #while ( my $subdir = shift(@subdirs) ) {
-        foreach my $subdir (@subdirs) {
-            $dir = File::Spec->catdir( $dir, $subdir );
-            $class->_ensuredir($dir);
-        }
-
-    }
-
-    my $self = {};
-    bless $self, $class;
-
-    $self->_set_basedir($basedir);
-    $self->_set_signup($signup);
-
-    #    $self->_set_dir($dir);
-    $self->_set_subdir(@subdirs);
-
-    return $self;
-
-}    ## <perltidy> end sub new
-
-sub subdir {
-
-    my $signupobj = shift;
-    my $class     = blessed($signupobj);
-    my @subdirs   = @_;
-
-    return $class->new(
-        {
-            BASEFOLDER => $signupobj->get_basedir(),
-            SIGNUP  => $signupobj->get_signup(),
-            SUBFOLDERS => [ $signupobj->get_subdirs(), @subdirs ],
-        }
-    );
-
-}
-
-# simple accessors
-
-sub get_basedir {
-    my $self = shift;
-    return $self->{BASEFOLDER};
-}
-
-sub get_signup {
-    my $self = shift;
-    return $self->{SIGNUP};
-}
-
-sub get_subdirs {
-    my $self = shift;
-    return @{ $self->{SUBFOLDERS} };
-}
-
-sub _set_basedir {
-    my $self = shift;
-    $self->{BASEFOLDER} = shift;
-    return;
-}
-
-sub _set_signup {
-    my $self = shift;
-    $self->{SIGNUP} = shift;
-    return;
-}
-
-sub _set_subdir {
-    my $self = shift;
-    if ( ref( $_[0] ) eq 'ARRAY' ) {
-        $self->{SUBFOLDERS} = shift;
-    }
-    else {
-        $self->{SUBFOLDERS} = [@_];
-    }
-    return;
-}
-
-sub get_dir {
-    my $self = shift;
-    my @dirs =
-      ( $self->get_basedir(), $self->get_signup(), $self->get_subdirs() );
-    return File::Spec->catdir(@dirs);
-}
-
-# file specification info
-
-sub make_filespec {
-
-    # returns a filename in this directory
-    my $self     = shift;
-    my $filename = shift
-      or croak 'No file specified to make_filespec';
-
-    return File::Spec->catfile( $self->get_dir(), $filename );
-
-}
-
-sub glob_files {
-    my $self = shift;
-    my $pattern = shift || q{*};
-    return glob( File::Spec->catfile( $self->get_dir(), $pattern ) );
-
-}
-
-sub glob_plain_files {
-    my $self = shift;
-    return grep { -f $_ } $self->glob_files(@_);
-}
-
-### convenience methods for various Files routines
-
-sub mergeread {
- # should be obsolete with Actium::Files::FMPXMLResult
-    my $self     = shift;
-    my $filename = shift;
-    my $filespec = $self->make_filespec($filename);
-    require Actium::Files::Merge::Mergefiles;
-    return Actium::Files::Merge::Mergefiles->mergeread($filespec);
-}
-
-sub retrieve_hsa {
- # should be obsolete with Actium::Files::HastusASI
-    my $self = shift;
-    my $filename = shift || $DEFAULT_HSA_FILENAME;
-    return $self->retrieve($filename);
-}
-
-sub retrieve {
-    my $self     = shift;
-    my $filename = shift;
-    my $filespec = $self->make_filespec($filename);
-
-    #require Actium::Files;
-    return Actium::Files::retrieve($filespec);
-}
-
-sub store_hsa {
-    my ( $self, $data_r, $filename ) = @_;
-    $filename ||= $DEFAULT_HSA_FILENAME;
-    return $self->store( $data_r, $filename );
-}
-
-sub store {
-    my $self     = shift;
-    my $data_r   = shift;
-    my $filename = shift;
-    my $filespec = $self->make_filespec($filename);
-
-    #require Actium::Files;
-    return Actium::Files::store( $data_r, $filespec );
-}
-
-
-sub load_xml {
-    my $self = shift;
-    my $xmlfoldername = shift || 'xml';
-    my $xmldir = $self->subdir($xmlfoldername);
-    require Actium::Files::FMPXMLResult;
-    my $xml_db = Actium::Files::FMPXMLResult->new( $xmldir->get_dir() );
-    return $xml_db;
-}
-
-sub load_hasi {
-    my $self  = shift;
-    my $hasifoldername = shift || 'hasi';
-    my $hasidir = $self->subdir($hasifoldername);
-    require Actium::Files::HastusASI;
-    my $hasi_db = Actium::Files::HastusASI->new( $hasidir->get_dir() );
-    return $hasi_db;
-}
-
-
-1;
+    $self->$orig($default_subfolder, $db_class, $params_r);
+ 
+};
 
 __END__
 
