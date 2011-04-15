@@ -14,7 +14,6 @@ use Moose;
 use MooseX::StrictConstructor;
 
 use Actium::Constants;
-use Actium::Types ('FolderList');
 use Actium::Term(':all');
 use Carp;
 use English '-no_match_vars';
@@ -25,13 +24,23 @@ use Params::Validate qw(:all);
 # class or object methods
 
 has folderlist_r => (
-    reader   => '_folderlist_r',
-    isa      => FolderList,
-    coerce   => 1,
-    required => 1,
-    traits   => ['Array'],
-    handles  => { folders => 'elements' },
+    reader      => '_folderlist_r',
+    init_arg    => 'folderlist',
+    isa         => 'ArrayRef[Str]',
+    initializer => '_initialize_folderlist',
+    required    => 1,
+    traits      => ['Array'],
+    handles     => { folders => 'elements' },
 );
+
+sub _initialize_folderlist {
+    my ( $self, $value, $set, $attr ) = @_;
+    my @folders;
+    foreach my $folder ( @{$value} ) {
+        push @folders, File::Spec->splitdir( File::Spec->canonpath($folder) );
+    }
+    $set->( \@folders );
+}
 
 sub folder {
     my $self         = shift;
@@ -40,20 +49,17 @@ sub folder {
 }
 
 sub parents {
-
     my $self    = shift;
     my $volume  = $self->volume;
     my @folders = $self->folders;
     pop @folders;    # don't return this folder, just parents
 
-    my $path_so_far = $EMPTY_STR;
+    my $path_so_far = File::Spec->rootdir;
     my @parents;
 
     while (@folders) {
-        $path_so_far =
-          File::Spec->catpath( $volume,
-            File::Spec->catdir( $path_so_far, shift @folders ) );
-        push @parents, $path_so_far;
+        $path_so_far = File::Spec->catdir( $path_so_far, shift @folders );
+        push @parents, File::Spec->catpath( $volume, $path_so_far, $EMPTY_STR );
     }
 
     return @parents;
@@ -66,16 +72,17 @@ has volume => (
 );
 
 has path => (
-    is      => 'ro',
-    isa     => 'Str',
-    builder => '_build_path',
-    lazy    => 1,
+    is       => 'ro',
+    isa      => 'Str',
+    init_arg => undef,
+    builder  => '_build_path',
+    lazy     => 1,
 );
 
 sub _build_path {
     my $self = shift;
     return File::Spec->catpath( $self->volume,
-        File::Spec->catdir( $self->folders ) );
+        File::Spec->catdir( File::Spec->rootdir, $self->folders ) );
 }
 
 has must_exist => (
@@ -98,7 +105,7 @@ around BUILDARGS => sub {
         $hashref = $first_argument;
     }
     else {
-        $hashref = { folderlist_r => [ $first_argument, @rest ], };
+        $hashref = { folderlist => [ $first_argument, @rest ], };
     }
 
     return $class->$orig($hashref)
@@ -110,23 +117,23 @@ sub BUILD {
     my $path = $self->path;
 
     if ( $self->must_exist ) {
-        croak "Directory '$path' not found"
+        croak qq<Folder "$path" not found>
           unless -d $path;
     }
-    elsif ( -d $path ) {
+    elsif ( not( -d $path ) ) {
         my @paths = ( $self->parents, $self->path );
 
         foreach my $path_so_far (@paths) {
             if ( not -d $path_so_far ) {
                 mkdir $path_so_far
-                  or croak "Can't make directory '$path_so_far': $!";
+                  or croak qq<Can't make folder "$path_so_far": $OS_ERROR>;
             }
         }
     }
 
     return;
 
-}    ## tidy end: sub BUILD
+} ## tidy end: sub BUILD
 
 #######################
 ### CLONING
@@ -141,18 +148,20 @@ sub subfolder {
         $params_r = $first_argument;
     }
     else {
-        $params_r = { subfolders => [ $first_argument, @rest ] };
+        $params_r = { folderlist => [ $first_argument, @rest ] };
     }
 
-    if ( exists $params_r->{subfolders} ) {
-        my $subfolders = $params_r->{subfolders};
+    if ( exists $params_r->{folderlist} ) {
+        my $subfolders = $params_r->{folderlist};
         if ( ref($subfolders) eq 'ARRAY' ) {
-            $params_r->{folderlist_r} = [ $self->folders, @{$subfolders} ];
+            $params_r->{folderlist} = [ $self->folders, @{$subfolders} ];
         }
         else {
-            $params_r->{folderlist_r} = [ $self->folders, $subfolders ];
+            $params_r->{folderlist} = [ $self->folders, $subfolders ];
         }
-        delete $params_r->{subfolders};
+    }
+    else {
+        croak 'No folderlist specified to object method subfolder';
     }
 
     if ( not exists $params_r->{must_exist} ) {
@@ -161,14 +170,14 @@ sub subfolder {
 
     return $self->meta->clone_object( $self, $params_r );
 
-}    ## tidy end: sub subfolder
+} ## tidy end: sub subfolder
 
 ########################
 ### FILE NAMES, GLOBBING FILES, ETC.
 
 sub make_filespec {
 
-    # returns a filename in this directory
+    # returns a filename in this folder
     my $self     = shift;
     my $filename = shift
       or croak 'No file specified to make_filespec';
@@ -222,7 +231,7 @@ sub retrieve {
     emit_done;
 
     return $data_r;
-}    ## tidy end: sub retrieve
+} ## tidy end: sub retrieve
 
 sub store {
     my $self     = shift;
@@ -252,8 +261,7 @@ sub load_sqlite {
     my $database_class    = shift;
     my %params            = validate(
         @_,
-        {
-            subfolder => 0,
+        {   subfolder => 0,
             db_folder => 0,
         }
     );
@@ -267,8 +275,15 @@ sub load_sqlite {
         $subfolder = $default_subfolder;
     }
 
-    if ($subfolder ne $EMPTY_STR) {
-       $params{flats_folder} = $self->subfolder( $subfolder )->path;
+    my $subfolder_is_empty = (
+        ( $subfolder eq $EMPTY_STR )
+          or (  ref $subfolder eq 'ARRAY'
+            and @{$subfolder} == 1
+            and $subfolder->[0] eq $EMPTY_STR )
+    );
+
+    if ($subfolder_is_empty) {
+        $params{flats_folder} = $self->subfolder($subfolder)->path;
     }
 
     my $db_folder = $params{db_folder};
@@ -280,7 +295,7 @@ sub load_sqlite {
 
     return $database_class->new(%params);
 
-}    ## tidy end: sub _load_sqlite
+} ## tidy end: sub load_sqlite
 
 sub load_xml {
     my $self = shift;
@@ -300,16 +315,22 @@ sub write_files_with_method {
 
     my %params = validate(
         @_,
-        {
-            OBJECTS   => { type => ARRAYREF },
+        {   OBJECTS   => { type => ARRAYREF },
             METHOD    => 1,
-            EXTENSION => 1,
+            EXTENSION => 0,
             SUBFOLDER => 0,
         }
     );
 
-    my @objects   = @{ $params{OBJECTS} };
-    my $extension = $params{EXTENSION};
+    my @objects = @{ $params{OBJECTS} };
+    my $extension;
+    if ( exists $params{EXTENSION} ) {
+        $extension = q{.} . $params{EXTENSION};
+    }
+    else {
+        $extension = $EMPTY_STR;
+    }
+
     my $method    = $params{METHOD};
     my $subfolder = $params{SUBFOLDER};
 
@@ -338,8 +359,7 @@ sub write_files_with_method {
 
         $id .= "_$seen_id{$id}" unless $seen_id{$id} == 1;
         $folder->write_file_with_method(
-            {
-                OBJECT   => $obj,
+            {   OBJECT   => $obj,
                 METHOD   => $method,
                 FILENAME => "$id.$extension"
             }
@@ -349,7 +369,7 @@ sub write_files_with_method {
 
     emit_done;
 
-}    ## tidy end: sub write_files_with_method
+} ## tidy end: sub write_files_with_method
 
 sub write_file_with_method {
     my $self     = shift;
@@ -374,7 +394,7 @@ sub write_file_with_method {
         croak "Can't close $file for writing: $OS_ERROR";
     }
 
-}    ## tidy end: sub write_file_with_method
+} ## tidy end: sub write_file_with_method
 
 sub write_files_from_hash {
 
@@ -383,6 +403,12 @@ sub write_files_from_hash {
     my %hash      = %{ shift @_ };
     my $filetype  = shift;
     my $extension = shift;
+    if ( defined $extension ) {
+        $extension = ".$extension";
+    }
+    else {
+        $extension = $EMPTY_STR;
+    }
 
     my $count;
 
@@ -393,7 +419,7 @@ sub write_files_from_hash {
         my $out;
         emit_over $key;
 
-        my $file = $self->make_filespec( $key . ".$extension" );
+        my $file = $self->make_filespec( $key . $extension );
 
         unless ( open $out, '>', $file ) {
             emit_error;
@@ -407,11 +433,11 @@ sub write_files_from_hash {
             die "Can't close $file for writing: $OS_ERROR";
         }
 
-    }    ## tidy end: foreach my $key ( sort keys...)
+    } ## tidy end: foreach my $key ( sort keys...)
 
     emit_done;
 
-}
+} ## tidy end: sub write_files_from_hash
 
 1;
 
@@ -419,181 +445,122 @@ __END__
 
 =head1 NAME
 
-Actium::Signup - Signup directory objects for the Actium system
+Actium::Folder - Folder objects for the Actium system
 
 =head1 VERSION
 
-This documentation refers to Actium::Signup version 0.001
+This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Signup;
+ use Actium::Folder;
 
- $signupdir = Actium::Signup->new();
- $skedsdir = $signupdir->subdir('skeds');
- # or alternatively
- $skedsdir = Actium::Signup->new('skeds') # same thing
+ $folder = Actium::Folder->new('/path/to/folder');
 
- $rawskedsdir = Actium::Signup->subdir('rawskeds');
+ $filespec = $folder->make_filespec('10_EB_WD.txt');
+ # $filespec is something like /path/to/folder/10_EB_WD.txt
 
- $oldsignup = Actium::Signup->new({SIGNUP => 'f08'});
- $oldskeds = $oldsignup->subdir('skeds');
-
- $filespec = $oldskeds->make_filespec('10_EB_WD.txt');
- # $filespec is something like /Actium/signups/f08/skeds/10_EB_WD.txt
-
- @files = $skedsdir->glob_files('*.txt');
- # @files contains all the *.txt files in the 'skeds' directory
- # in the command-line signup directory
+ @files = $folder->glob_files('*.txt');
+ # @files contains all the *.txt files in the '/path/to/folder' folder
 
 =head1 DESCRIPTION
 
-=head2 Introduction
+Actium::Folder provides an object-oriented interface to folders on disk.
+(They are referred to here as "folders" rather than "directories" mainly
+because "dir" is more commonly used within the Actium system as an 
+abbreviation for "direction", and I wanted to avoid ambiguity.)
 
-Actium::Signup provides an object-oriented interface to the system of
-signup directories.
+This module is intended to make it easier to open files within folders and
+create new subfolders.
 
-A "signup" is the period that a particular set of transit schedules is in 
-effect.  (It is named after the drivers' activity of "signing up" for a new
-piece of work for that period.) 
+It forms the base class used by 
+L<Actium::Folder::Signup|Actium::Folder::Signup>, which is more likely to be
+used directly in programs.
 
-Actium uses a series of directories for storing data about each signup.
-Each signup has a directory, and then within that there is a series of
-subdirectories containing different types of data (e.g., processed 
-schedule files, files from the Hastus Standard AVL interface, and so
-forth).
+As much as possible, Actium::Folder uses the L<File::Spec> module in order
+to be platform-independent (although Actium is tested only under Mac OS X for 
+the moment).
 
-This module is designed to make it easier to locate the signup directories
-and the subdirectories within them.
+=head1 OBJECT CONSTRUCTION
 
-=head2 Actium Directory Structure
+Actium::Folder objects are created using the B<new> constructor inherited from
+Moose. Alternatively, they can be cloned from an existing Actium::Folder object,
+using B<subfolder>.
 
-The typical Actium directory structure looks something like this:
+For either method, if the first argument is a hash reference, 
+it is taken as a reference to named
+arguments. If not, the arguments given are considered part of the 
+I<folderlist> argument. So this:
 
- Actium
- |-- bin                (the Actium program files)
- |   |-- Actium
- |-- signups
- |   |-- sp09           (the Spring 2009 signup)
- |   |   |-- exceptions
- |   |   |-- fulls
- |   |   |-- headways
- |   |   |-- hsa
- |   |   |-- html
- |   |   |-- idpoints
- |   |   |-- rawskeds
- |   |   |-- skeds
- |   |   `-- tabxchange
- |   `-- w08            (the Winter 2008 signup)
- |       |-- exceptions
- |       |-- fulls
- |       |-- headways
- |       |-- hsa
- |       |-- html
- |       |-- idpoints
- |       |-- rawskeds
- |       |-- skeds
- |       `-- tabxchange
- |-- signart
- |-- stop lists
- `-- subsidiary
+ my $folder = Actium::Folder->new($folder1, $folder2 )
+ 
+is a shortcut for this:
 
-This module is designed to allow access to the directories 
-under the "signups" directory.
+ my $folder = Actium::Folder->new({folderlist => [ $folder1, $folder2 ]})
 
-For the purposes of this module, there are three levels that are important:
+=head2 NAMED ARGUMENTS
 
 =over
 
-=item Base directory
+=item I<folderlist>
 
-The base directory is, in this example, equivalent to /Actium/signups: it's
-the directory where all the directories of signup data are stored.
-(Arguably "base directory" would more likely apply to "/Actium", but I can't
-think of a better name for the base directory than that.)
+This required attribute consists of a string representing a folder path, or a 
+reference to an array of strings, representing folders in a folder path.
 
-The base directory is specified as follows (in the following order of
-precedence):
+This can be a single string with an entire path ('/path/to/folder'), 
+a reference to a list containing that single string (['/path/to/folder']),
+a series of strings each with a folder name (['path' , 'to' , 'folder']),
+or a combination (['/path/to' , 'folder']). Actium::Folder splits the pieces
+into individual folders for you.
 
-=over
+Actium::Folder ignores whether the path begins with a leading slash 
+or other indication that the folder path is absolute (begins at the root). 
+Folder lists passed to B<new> are always treated as absolute. Folder lists
+passed to B<subfolder> are treated as relative to the folder
+represented by the original object.
 
-=item *
+=item I<volume>
 
-In the "BASEDIR" argument to the "signup" method call
+This optional attribute to I<new> is the volume ID under operating systems 
+(such as Windows) that care about it. It will be ignored under operating 
+systems that don't. In B<subfolder>, the value is copied from the original
+object to the new object.
 
-=item *
-In the command line with the "-basedir" option
+=item I<must_exist>
 
-=item *
-By the environment variable "ACTIUM_BASEDIR".
+This attribute, if set to a true value, will cause Actium::Folder to throw
+an exception if the specified folder does not yet exist. If not set, 
+Actium::Folder will attempt to create this folder and, if necessary, its 
+parents.
+
+Unless specified in the arguments to either B<new> or B<subfolder>, the
+value will be false. The B<subfolder> routine resets the value to false,
+and does not copy the value from the original object.
 
 =back
 
-If none of these are set, Actium::Signup uses L<FindBin> to find the directory 
-where the script is running (in the above example, /Actium/bin), and 
-sets the base directory to "signups" in the script directory's parent directory. 
-In other words, it's something like "/Actium/bin/../signups". In the normal
-case where the "bin" directory is in the same directory as the Actium data
-this means it will all work fine without any specification of the base 
-directory. If not, then it will croak. 
-
-=item Signup directory
-
-The data for each signup is stored in a subdirectory of the base directory.
-This directory is usually named after the period of time when the signup
-becomes effective ("w08" meaning "Winter 2008", for example). 
-
-The signup directory is specified as follows (in the following order of
-precedence):
+=head1 ATTRIBUTES
 
 =over
 
-=item *
-In the "SIGNUP" argument to the "signup" method call
+=item B<< $self->folders() >>
 
-=item *
-In the command line with the "-signup" option
+Returns the list of folder names that, combined, make up the path to the
+folder represented by this object.
 
-=item *
-By the environment variable "ACTIUM_SIGNUP".
+=item B<< $self->folder() >>
 
-=back
+The folder name of the folder that is represented by this object.
+The same as the last element of I<< $self->folders() >>.
 
-If none of these are present, then Actium::Signup 
-will croak "No signup directory specified."
+=item B<< $self->path() >>
 
-=item Subdirectory
+The full path name of the folder represented by this object, as a string.
 
-Subdirectories are found under the signup directory. Most of the input
-and output files used by Actium are stored in these subdirectories. 
-This is generally equivalent to a subset of data for that particular signup:
-the data from the Hastus AVL interface in "hsa", HTML schedules in "html", 
-and so forth. Occasionally some data will be found further down in the
-directory tree, so several different subdirectories will be needed. The 
-new() and subdir() calls both can take a 
+=item B<< $self->volume() >>
+=item B<< $self->must_exist() >>
 
-Subdirectories are specified in the arguments to the "new" class method
-or the "subdir" object method call.
-
-=back
-
-=head1 COMMAND-LINE OPTIONS AND ENVIRONMENT VARIABLES
-
-=over
-
-=item -basedir (option)
-
-=item ACTIUM_BASEDIR (environment variable)
-
-These supply a base directory used when the calling program doesn't
-specify one.
-
-=item -signup (option)
-
-=item ACTIUM_SIGNUP (environment variable)
-
-These supply a signup directory used when the calling program doesn't
-specify one.
+The values of the B<volume> and B<must_exist> attributes, respectively.
 
 =back
 
@@ -601,101 +568,16 @@ specify one.
 
 =over
 
-=item B<< $obj = Actium::Signup->new() >>
+=item B<< $self->make_filespec(F<filename>) >>
 
-This is a class method which constructs and returns 
-a new Actium::Signup object.
-
-The B<new> method can be called in two ways. If the first argument
-is a hash reference, it uses the hash as a series of named parameters.
-If it is not, then it uses all arguments as a list of subdirectory
-names.
-
-The named parameters are as follows:
-
-=over
-
-=item BASEDIR
-
-This is a string that specifies a base directory. See L</Base directory>.
-
-=item SIGNUP
-
-This is a string that specifies a signup directory. See L</Signup directory>.
-
-=item NEWSIGNUP
-
-This is a boolean specifying whether the signup directory must already
-exist. It defaults to false, which means that the method will croak if the
-signup directory does not already exist. If it is true, the signup directory
-will be created.
-
-Except when very first processing a new signup, this should be left as false.
-
-=item SUBDIR
-
-This is a string that specifies a single subdirectory. This parameter is
-mutually exclusive with SUBDIRS. If both SUBDIR and 
-SUBDIRS are provided in the same call, the method will croak.
-
-"SUBDIR => 'skeds'" is the same as "SUBDIRS => [ 'skeds' ]".
-
-=item SUBDIRS
-
-This is an array reference, containing strings that specify a series of
-subdirectories.  These are concatenated together to form the final
-filespec. 
-
-This parameter is
-mutually exclusive with SUBDIR. If both SUBDIR and 
-SUBDIRS are provided in the same call, the method will croak.
-
-=back
-
-If the first argument is not a hash reference, then the method uses
-all arguments as a list of subdirectory names. "Actium::Signup->new('skeds')"
-is the same as "Actium::Signup->new({SUBDIR => 'skeds'}).
-
-Most of the time, usage will be very simple: Actium::Signup->new('skeds')
-returns an object representing the 'skeds' subdirectory in the 
-base directory and signup directory set either by default, by the
-environment, or by the command line. This is usually what's needed.
-
-=item B<< $obj->subdir() >>
-
-The subdir() object method creates a new Actium::Signup object from
-an old one. The new object represents a subdirectory of the directory
-represented by the old object.  For example, if $dir_obj represents
-"/Actium/signups/f08/fulls", then $dir_obj->subdir('72') represents
-"/Actium/signups/f08/fulls/72". 
-
-The arguments are a list of subdirectory names.
-
-
-=item B<$obj-E<gt>get_basedir()>
-
-=item B<$obj-E<gt>get_signup()>
-
-=item B<$obj-E<gt>get_subdirs()>
-
-Returns the applicable attribute, as set by the object constructor. The 
-get_basedir and get_signup calls return a scalar, while the get_subdirs 
-call returns a list of subdirectories.
-
-=item B<$obj-E<gt>get_dir()>
-
-Returns the complete path of the directory represented, e.g.
-"/Actium/signups/f08/fulls/72".
-
-=item B<$obj-E<gt>make_filespec(F<filename>)>
-
-Takes a single string, a filename, and returns a complete filespec
-with the file located in the directory represented by the object.
+Takes a passed filename and returns the full path to the file in the 
+folder represented by the object. (That is, turns "file.txt" into
+"/path/to/folder/file.txt")
 
 =item B<$obj-E<gt>glob_files(I<pattern>)>
 
 Returns a list of all the files matching the glob pattern in the
-directory represented by the object. If no pattern is specified, uses
+folder represented by the object. If no pattern is specified, uses
 "*".
 
 =item B<$obj-E<gt>glob_plain_files(I<pattern>)>
@@ -705,38 +587,139 @@ Like B<glob_files>, except returns only plain files (that is, where B<-f I<file>
 =item B<$obj-E<gt>mergeread(F<filename>)>
 
 Returns an L<Actium::Files::Merge::Mergefiles> object representing the data in 
-F<filename> in the directory represented by this object.
+F<filename> in the folder represented by this object. 
 
-=item B<$obj-E<gt>retrieve(F<filename>)>
-
-Using the routines in L<Actium::Files> (which themselves use L<Storable>),
-retrieves a reference to a complex data structure
-from the file F<filename> in the directory represented by the object.
+This is an obsolete feature and will be removed. Actium::Files::FMPXMLResult 
+should be used to read FileMaker exports.
 
 =item B<$obj-E<gt>store($data_r , F<filename>)>
 
-Using the routines in L<Actium::Files> (which themselves use L<Storable>),
-stores a complex data structure (referred to by $data_r)
-to the file F<filename> in the directory represented by the object.
+=item B<$obj-E<gt>retrieve(F<filename>)>
 
-=item B<$obj-E<gt>retrieve_hsa(F<filename>)>
+Saves or retrieves a L<Storable|Storable> file (using Storable::nstore and 
+Storable::retrieve) in the folder represented by the object. 
+Uses Actium::Term to provide feedback to the terminal.
 
-=item B<$obj-E<gt>store_hsa($data_r , F<filename>)>
+=item B<$obj-E<gt>load_xml({I<named arguments>>)>
+ 
+=item B<$obj-E<gt>load_hasi({I<named arguments>>)>
 
-Just like B<retrieve> and B<store>, but they use 
-"hsa.storable" as the default filename.
+Returns an Actium::Files::FMPXMLResult object, or an Actium::Files::HastusASI 
+object. The named arguments are:
 
-=item B<$obj-E<gt>load_xml(F<foldername>)>
+=over
 
-Returns an Actium::Files::FMPXMLResult object, created from the files 
-in the "foldername" subdirectory of the passed object. If no folder name is 
-passed, defaults to "xml".
+=item subfolder
 
-=item B<$obj-E<gt>load_hasi(F<foldername>)>
+An optional item representing the folder where the flat files are to be found:
+either a string, or an array to a list of one or more strings.
 
-Returns an Actium::Files::HastusASI object, created from the files 
-in the "foldername" subdirectory of the passed object. If no folder name is 
-passed, defaults to "hasi".
+If the empty string is provided, then the folder of the object itself is used.
+Otherwise, a subfolder of the object's folder is used: either one specified
+by the string or strings provided, or the default: 'xml' for load_xml, or
+'hasi' for load_hasi.
+
+=item db_folder
+
+An optional item passed to Actium::Files::SQLite: the folder where the SQLite 
+database will be stored.
+
+=back
+
+=item B<load_sqlite (I<default_subfolder>, I<database_class> , I<named_arguments>>
+
+This method is used to do the work of the load_xml and load_hasi routines. 
+The named arguments are the same as those methods. 
+
+The default subfolder is a string or reference to a list of strings representing
+subfolders of the folder of the current object.
+
+The database class will be some perl class to be "require"d by this method,
+probably composing the Actium::Files::SQLite role.
+
+The named arguments are the same as those of the B<load_xml> and B<load_hasi> 
+methods, above.
+
+=item B<$obj-E<gt>write_files_with_method({I<named arguments>>)>
+
+This routine takes a list of objects passed to it, takes the result of
+an object method applied to each of those objects, and saves that result
+in files in the specified folder.  The filename used will be the result
+of the object's B<id> method, followed by the extension, if provided.
+It takes named arguments, as follows:
+
+=over
+
+=item OBJECTS
+
+A reference to an array of objects. The objects must implement an B<id> method
+as well as the method passed in the METHOD argument.
+
+=item METHOD
+
+The name of a method the object is to perform. The results are saved
+in the file.
+
+=item EXTENSION
+
+An optional argument indicating a file extension to be appended to the 
+filename, after a period. 
+
+=item SUBFOLDER
+
+A folder, or series of folders, under the folder represented by this object.
+This is where the series of files are to be stored.
+
+=back
+
+=item B<$obj-E<gt>write_file_with_method({I<named arguments>>)>
+
+Writes the result of a single method to a file in the folder represented by
+the current object. It takes named arguments as follows. All are mandatory.
+
+=over
+
+=item OBJECT
+
+An object that can perform the method passed in the METHOD argument.
+
+=item METHOD
+
+The name of a method the object is to perform. The results are saved
+in the file.
+
+=item FILENAME
+
+The file name that the results of the method are to be saved in. It will 
+be saved in the folder represented by the Actium::Folder object.
+
+=back
+
+=item B<$obj-E<gt>write_files_from_hash(I<hashref> , I<filetype> , I<extension>)>
+
+This somewhat antiquated routine is similar to B<write_files_with_method> but
+uses a hash reference instead of a series of objects. In this case, the 
+arguments are positional, and all are mandatory except I<extension>.
+The files are saved in the folder represented by this object.
+
+=over
+
+=item I<hashref>
+
+A reference to a hash of strings.  The keys will be used as the filenames 
+(with the extension, if any, appended). The values will be used as the content
+of the files.
+
+=item I<filetype>
+
+This is a string used in describing the files in feedback to the terminal.
+
+=item I<extension>
+
+The file extension. If it is not empty, it is added to the filename, after
+a period.
+
+=back
 
 =back
 
@@ -744,25 +727,43 @@ passed, defaults to "hasi".
 
 =over
 
-=item No signup directory specified
+=item Folder "$path" not found
+        
+In creating the Actium::Folder object, the must_exist attribute was given
+as true, but the folder 
 
-A call to new() was made, but no signup was specified either on the
-command line, in the environment, or in the method call.
+=item Can't make folder "$path": $OS_ERROR
 
-=item Directory I<directory> not found
+The folder (which could be the folder of this object, or a parent folder) 
+was not found on disk and it could not be created.
 
-The directory specified (either as the base directory
-or as the signup directory) did not seem to exist.
+=item No folderlist specified to object method subfolder
 
-=item Can't make directory I<directory>
+The method B<subfolder> had no named argument "folderlist".
 
-The specified directory was not found on disk and it could not be
-created.
+=item No file specified to make_filespec;
 
-=item Can't specify both SUBDIR and SUBDIRS to new()
+The method B<make_filespec> did not receive a file in its argument list.
 
-The new() constructor was passed both SUBDIR and SUBDIRS parameters. 
-It will accept one or the other, but not both.
+=item $filespec does not exist
+
+In attempting to retrieve a L<Storable|Storable> file, the file was not found.
+
+=item Can't retreive $filespec: $OS_ERROR
+
+=item Can't store $filespec: $OS_ERROR
+
+An input/output error was found trying to use L<Storable> to retrieve or store
+a file.
+
+=item Can't open $file for writing: $OS_ERROR
+
+=item Can't print to $file: $OS_ERROR
+
+=item Can't close $file for writing: $OS_ERROR
+
+An input/output error occurred in the L<write_file_with_method> or
+L<write_files_from_hash> routines.
 
 =back
 
@@ -770,17 +771,31 @@ It will accept one or the other, but not both.
 
 =over
 
-=item * perl 5.010 and the core distribution
+=item perl 5.012
 
-=item * Actium::Options
+=item Moose
 
-=item * Actium::Constants
+=item MooseX::StrictConstructor
 
-=item * Readonly
+=item Readonly
 
-=item * Params::Validate
+=item Params::Validate
 
-=item * Actium::Files::Merge::Mergefiles
+=item Actium::Constants
+
+=item Actium::Term
+
+=back
+
+The following are loaded only when necessary:
+
+=over
+
+=item Actium::Files::FMPXMLResult
+
+=item Actium::Files::HastusASI
+
+=item Actium::Files::Merge::Mergefiles
 
 =back
 
@@ -795,6 +810,4 @@ the same terms as Perl itself. See L<perlartistic>.
 
 This program is distributed in the hope that it will be useful, but WITHOUT 
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
-
-
+FITNESS FOR A PARTICULAR PURPOSE. 

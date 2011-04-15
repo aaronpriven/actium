@@ -96,16 +96,16 @@ subtype Str8, as Str, where { length == 8 },
 subtype Str4, as Str, where { length == 4 },
   message {qq<The entry "$_" is not an four-character-long string>};
 
-############################
-### FOLDERS
-
-subtype FolderList, as ArrayRef [Str];
-
-subtype FolderComponent, as Str;
-# only for coercion
-
-coerce FolderList, from FolderComponent,
-  via { [ File::Spec->splitdir($_) ] };
+#############################
+#### FOLDERS (not used)
+#
+#subtype FolderList, as ArrayRef [Str];
+#
+#subtype FolderComponent, as Str;
+## only for coercion
+#
+#coerce FolderList, from FolderComponent,
+#  via { [ File::Spec->splitdir($_) ] };
 
 1;
 __END__
@@ -212,12 +212,6 @@ A string of exactly four characters or eight characters. These are used in
 specifying timepoint abbreviations.
 
 =back
-
-=head2 FOLDERS AND FILES
-
-=item B<FolderPath>
-
-A string representing a path of folders (subdirectories).
 
 =head1 DEPENDENCIES
 
