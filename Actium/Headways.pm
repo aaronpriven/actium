@@ -18,14 +18,14 @@ $VERSION = eval $VERSION;
 use 5.010;
 
 use Actium::Term qw<:all>;
-use Actium::Files qw<:all>;
+#use Actium::Files qw<:all>;
 use Actium::Signup;
 use Actium::Constants;
 use Actium::Union(':all');
 use Actium::Sked::HeadwayPage;
 use Actium::Sked::Trip;
 use Actium::Sked::Note;
-use Actium::Util qw<j>;
+use Actium::Util qw<j filename>;
 
 # use Term::Emit qw/:all/, {-closestat => "ERROR"};
 
@@ -52,6 +52,7 @@ sub START {
 
     # Term::Emit::setopts { -closestat => 'ERROR' };
 
+    my $signup      = Actium::Signup->new;
     my $headwaysdir = Actium::Signup->new('headways');
 
     my @files = $headwaysdir->glob_plain_files();
@@ -67,29 +68,25 @@ sub START {
     #write_files_with_method( $skeds_r, 'headskeds', 'txt', 'dump' );
     #write_files_with_method( $notes_r, 'headnotes', 'txt', 'dump' );
 
-    write_files_with_method(
-        {
-            OBJECTS   => $skeds_r,
+    $signup->write_files_with_method(
+        {   OBJECTS   => $skeds_r,
             EXTENSION => 'txt',
-            FILETYPE  => 'skeds',
+            SUBFOLDER => 'headskeds',
             METHOD    => 'dump',
-            SIGNUP    => Actium::Signup->new('headskeds')
         }
     );
 
-    write_files_with_method(
-        {
-            OBJECTS   => $notes_r,
-            FILETYPE  => 'notes',
+    $signup->write_files_with_method(
+        {   OBJECTS   => $notes_r,
+            SUBFOLDER => 'headnotes',
             EXTENSION => 'txt',
             METHOD    => 'dump',
-            SIGNUP    => Actium::Signup->new('headnotes')
         }
     );
 
     # this probably should be a separate program, but for now, isn't
 
-    write_prehistorics($skeds_r);
+    write_prehistorics( $skeds_r, $signup );
 
     return;
 
@@ -132,7 +129,7 @@ sub read_headways {
     sub read_headway_file {
 
         $file     = shift;
-        $dispfile = Actium::Files::filename($file);
+        $dispfile = filename($file);
         emit 'Reading ' . $dispfile;
 
         @notes = ();
@@ -203,8 +200,8 @@ sub read_headways {
         my $routeline = $newpage->line( $indexes{route} );
 
         $routeline =~ s/.*?oute:\s+//sx;
-        my ( $origlinegroup, $linedescrip ) =
-          Text::Trim::trim( split( $SPACE, $routeline, 2 ) );
+        my ( $origlinegroup, $linedescrip )
+          = Text::Trim::trim( split( $SPACE, $routeline, 2 ) );
 
         $newpage->set_linedescrip($linedescrip);
         $newpage->set_origlinegroup($origlinegroup);
@@ -277,8 +274,8 @@ sub read_headways {
 
         my $first_idx = ( first_index { our $_; /^EXC /s } @lines ) - 1;
         my $schedule_idx = first_index { our $_; /^\w+\s+schedule:/isx } @lines;
-        my $route_idx =
-          first_index { our $_; /^(?:R|^Public\sr)oute/isx } @lines;
+        my $route_idx
+          = first_index { our $_; /^(?:R|^Public\sr)oute/isx } @lines;
         my $direction_idx = first_index { our $_; /^Direction:/isx } @lines;
 
 ## no critic (ProhibitMagicNumbers)
@@ -373,17 +370,17 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
         }
 
         if ( $reporttype eq 'Crew' ) {
-            @leading_fieldnames =
-              qw[ exceptions routenum runid blockid vehicletype from noteletter ];
-            $leading_template =
-              q[  A4         A6       A10   A11     A4          A10  A8 ];
+            @leading_fieldnames
+              = qw[ exceptions routenum runid blockid vehicletype from noteletter ];
+            $leading_template
+              = q[  A4         A6       A10   A11     A4          A10  A8 ];
             $leading_chars = 53;
         }
         else {    # type eq 'Vehicle'
-            @leading_fieldnames =
-              qw[ exceptions routenum blockid vehicletype from noteletter ];
-            $leading_template =
-              q[  A4         A6       A10     A4          A10  A8 ];
+            @leading_fieldnames
+              = qw[ exceptions routenum blockid vehicletype from noteletter ];
+            $leading_template
+              = q[  A4         A6       A10     A4          A10  A8 ];
             $leading_chars = 42;
         }
 
@@ -479,11 +476,11 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
             }
 
             my $chars_per_timepoint = 9;    ## no critic (ProhibitMagicNumbers)
-            my $number_of_timepoints =
-              ( index( $firstline, 'DIV-IN' ) - $leading_chars ) /
-              $chars_per_timepoint;
-            my $template =
-              $leading_template . ( 'A9' x $number_of_timepoints ) . 'A9 A*';
+            my $number_of_timepoints
+              = ( index( $firstline, 'DIV-IN' ) - $leading_chars )
+              / $chars_per_timepoint;
+            my $template
+              = $leading_template . ( 'A9' x $number_of_timepoints ) . 'A9 A*';
 
             my @colheads = Text::Trim::trim( unpack( $template, $firstline ) );
             my @colheads_secondline = Text::Trim::trim(
@@ -492,8 +489,8 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
             my @place8s = splice( @colheads, scalar @leading_fieldnames,
                 $number_of_timepoints );
 
-            my @place8s_secondline =
-              splice( @colheads_secondline, scalar @leading_fieldnames,
+            my @place8s_secondline
+              = splice( @colheads_secondline, scalar @leading_fieldnames,
                 $number_of_timepoints );
 
             our ( $a, $b );    ## no critic 'ProhibitPackageVars'
@@ -538,7 +535,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
                 @fields{@remaining_fieldnames} = @fields;    # hash slice
 
                 next LINE
-                  if ( true { /\d/ } @times ) < 2;
+                  if ( true {/\d/} @times ) < 2;
 
                 my $trip = Actium::Sked::Trip->new(
                     { placetime_r => \@times, %fields } );
@@ -595,8 +592,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         foreach my $noteletter ( keys %thispages_notes ) {
             my $note_obj = Actium::Sked::Note->new(
-                {
-                    origlinegroup => $page->origlinegroup(),
+                {   origlinegroup => $page->origlinegroup(),
                     days          => $days,
                     noteletter    => $noteletter,
                     note          => $thispages_notes{$noteletter},
@@ -650,13 +646,13 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
                 next PAGE;
             }
 
-            my @thesepages =
-              @pages[ $page_idx .. $page_idx + $pages_to_combine ];
+            my @thesepages
+              = @pages[ $page_idx .. $page_idx + $pages_to_combine ];
 
             # array slice
 
             my @place8_refs = map {
-                grep { defined }
+                grep {defined}
                   $_->place8_r()
             } @thesepages;
             my @union_place8s = ordered_union(@place8_refs);
@@ -746,14 +742,14 @@ sub combine_identical_trips {
                 # if the route number and all the placetimes
                 # are the same, the trip is the same.
 
-                my $combined_trip =
-                  Actium::Sked::Trip->merge_trips( $prevtrip, $trip );
+                my $combined_trip
+                  = Actium::Sked::Trip->merge_trips( $prevtrip, $trip );
                 $page->set_trip( $i - 1, $combined_trip );
                 $page->delete_trip($i);
 
             }
 
-        }
+        } ## tidy end: while ( $i > 1 )
 
     }    ## <perltidy> end foreach my $page (@pages)
 
@@ -880,8 +876,8 @@ sub shrink_duplicate_timepoint_runs {
 
             if ( scalar @thesetimes != 1 ) {
 
-                @thesetimes =
-                  @thesetimes[ 0, -1 ];    ## no critic 'ProhibitMagicNumbers'
+                @thesetimes
+                  = @thesetimes[ 0, -1 ];    ## no critic 'ProhibitMagicNumbers'
                      # first and last only -- discard any middle times.
                      # Unlikely to actually happen
 
@@ -954,6 +950,8 @@ sub write_prehistorics {
 
     my $skeds_r = shift;
 
+    my $signup = shift;
+
     my %prehistorics_of;
 
     emit 'Creating prehistoric file data';
@@ -973,8 +971,8 @@ sub write_prehistorics {
 
     my %allprehistorics;
 
-    my @comparisons =
-      ( [qw/SA SU WE/], [qw/WD SA WA/], [qw/WD SU WU/], [qw/WD WE DA/], );
+    my @comparisons
+      = ( [qw/SA SU WE/], [qw/WD SA WA/], [qw/WD SU WU/], [qw/WD WE DA/], );
 
     emit 'Merging days';
 
@@ -1008,16 +1006,16 @@ sub write_prehistorics {
         # copy to overall list
 
         foreach my $days ( keys %{ $prehistorics_of{$group_dir} } ) {
-            $allprehistorics{"${group_dir}_$days"} =
-              $prehistorics_of{$group_dir}{$days};
+            $allprehistorics{"${group_dir}_$days"}
+              = $prehistorics_of{$group_dir}{$days};
         }
 
     }    ## <perltidy> end foreach my $group_dir ( sort...)
 
     emit_done;
 
-    write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
-
+    $signup->subfolder('prehistoric')
+      ->write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
     emit_done;
 
     return;
