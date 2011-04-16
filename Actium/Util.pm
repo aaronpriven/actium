@@ -154,6 +154,17 @@ sub doe : Export {
     return wantarray ? @list : $list[0];
 }
 
+sub filename :Export {
+    require File::Spec;
+ 
+    my $self = shift;
+
+    my $filespec = shift;
+    my $filename;
+    ( undef, undef, $filename ) = File::Spec->splitpath($filespec);
+    return $filename;
+}
+
 1;
 
 __END__

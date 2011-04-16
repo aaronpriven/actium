@@ -18,7 +18,7 @@ use MooseX::StrictConstructor;
 use Actium::Constants;
 use Actium::Files;
 use Actium::Term;
-use Actium::Util qw(j jk);
+use Actium::Util qw(j jk filename);
 use Carp;
 use English '-no_match_vars';
 use File::Glob qw(:glob);
@@ -115,7 +115,7 @@ sub _build_files_list {
         croak "No files found in Hastus AVL Standard folder $flats_folder";
     }
 
-    @all_files = map { Actium::Files::filename($_) } @all_files;
+    @all_files = map { filename($_) } @all_files;
 
     my %files_of;
     foreach my $filetype ( $self->_filetypes() ) {
