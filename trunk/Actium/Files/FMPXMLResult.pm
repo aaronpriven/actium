@@ -18,10 +18,9 @@ use MooseX::StrictConstructor;
 use POSIX ();
 
 use Actium::Constants;
-use Actium::Files;
 use Actium::Files::SQLite::Table;
 use Actium::Term;
-use Actium::Util('jk');
+use Actium::Util(qw<jk filename>);
 use Readonly;
 use File::Glob qw(:glob);
 use Carp;
@@ -116,7 +115,7 @@ sub _build_table_r {
           "No FileMaker Pro FMPXMLRESULT files found in folder $flats_folder";
     }
 
-    @all_files = map { Actium::Files::filename($_) } @all_files;
+    @all_files = map { filename($_) } @all_files;
 
     my %tables;
 

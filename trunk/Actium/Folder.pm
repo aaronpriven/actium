@@ -101,7 +101,7 @@ around BUILDARGS => sub {
     my @rest           = @_;
 
     my $hashref;
-    if ( ref($first_argument) ne 'HASH' ) {
+    if ( ref($first_argument) eq 'HASH' ) {
         $hashref = $first_argument;
     }
     else {

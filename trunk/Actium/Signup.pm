@@ -60,16 +60,34 @@ around BUILDARGS => sub {
     if ( ref($first_argument) eq 'HASH' ) {
         $params_r = $first_argument;
     }
-    else {
+    elsif (defined($first_argument)) {
         $params_r = { subfolders => [ $first_argument, @rest ] };
+    }
+    else {
+     $params_r = {};
     }
 
     # build folderlist argument from base, signup, and subfolders
     # (Actium::Folder takes care of dividing pieces that have several
     # folders, like "/users/yourname/actium/base", into individual pieces
+    
+    my ($base, $signup);
 
-    my $base   = $params_r->{base}   // $class->_build_base();
-    my $signup = $params_r->{signup} // $class->_build_signup();
+    if (exists $params_r->{base} ) {
+        $base = $params_r->{base} ;
+    }
+    else {
+        $base = $class->_build_base();
+        $params_r->{base} = $base;
+    }
+    
+    if (exists $params_r->{signup} ) {
+        $signup = $params_r->{signup} ;
+    }
+    else {
+        $signup = $class->_build_signup();
+        $params_r->{signup} = $signup;
+    }
 
     if ( exists $params_r->{subfolders} ) {
         my $subfolders = $params_r->{subfolders};
@@ -86,7 +104,7 @@ around BUILDARGS => sub {
     }
 
     $params_r->{must_exist} = 0 unless $params_r->{must_exist};
-
+    
     return $class->$orig($params_r);
 
 }; ## tidy end: BUILDARGS
