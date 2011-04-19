@@ -13,17 +13,17 @@ use Perl6::Export::Attrs;
 use List::Util;
 use Carp;
 
-#### MISC UTILITY ROUTINES
+#### ACCEPTING POSITIONAL OR NAMED ARGUMENTS
 
 sub positional : Export {
 
     my $argument_r = shift;
-    croak 'First argument to positional must be a reference to the BUILDARGS @_'
+    croak 'First argument to positional must be a reference to @_'
       if not( ref($argument_r) eq 'ARRAY' );
 
     my @arguments = @{$argument_r};
     my @attrnames = @_;
-    
+
     my %newargs;
     if ( ref( $arguments[-1] ) eq 'HASH' ) {
         %newargs = %{ pop @arguments };
@@ -48,13 +48,15 @@ sub positional : Export {
 
 sub positional_around : Export {
     my $arguments_r = shift;
-    my $orig = shift @{$arguments_r}; # see Moose::Manual::Construction
-    my $invocant = shift @{$arguments_r}; # see Moose::Manual::Construction
-    return $invocant->$orig(positional_method ($arguments_r , @_));
+    my $orig        = shift @{$arguments_r};   # see Moose::Manual::Construction
+    my $invocant    = shift @{$arguments_r};   # see Moose::Manual::Construction
+    return $invocant->$orig( positional( $arguments_r, @_ ) );
 }
 
+# JOINING AND SPLITTING
+
 sub _joinseries_with_x {
-    my $and = shift;
+    my $and    = shift;
     my @things = @_;
     return $things[0] if @things == 1;
     return "$things[0] and $things[1]" if @things == 2;
@@ -62,13 +64,13 @@ sub _joinseries_with_x {
     return ( join( q{, }, @things ) . " $and $last" );
 }
 
-sub joinseries :Export {
-    return _joinseries_with_x('and', @_);
+sub joinseries : Export {
+    return _joinseries_with_x( 'and', @_ );
 }
 
-sub joinseries_ampersand :Export {
-    return _joinseries_with_x('&' , @_);
-};
+sub joinseries_ampersand : Export {
+    return _joinseries_with_x( '&', @_ );
+}
 
 sub j : Export {
     return join( $EMPTY_STR, map { $_ // $EMPTY_STR } @_ );
@@ -93,6 +95,8 @@ sub sk : Export {
 sub st : Export {
     return split( /\t/, $_[0] );
 }
+
+# KEY SEPARATOR ADDING AND REMOVING
 
 sub keyreadable : Export {
     if (wantarray) {
@@ -154,15 +158,30 @@ sub doe : Export {
     return wantarray ? @list : $list[0];
 }
 
-sub filename :Export {
+sub filename : Export {
     require File::Spec;
- 
     my $self = shift;
 
     my $filespec = shift;
     my $filename;
     ( undef, undef, $filename ) = File::Spec->splitpath($filespec);
     return $filename;
+}
+
+sub flat_arrayref : Export {
+
+    my @inputs = @_;
+    my @results;
+    foreach my $input (@inputs) {
+        if ( ref($input) eq 'ARRAY' ) {
+            push @results, flat_arrayref( @{$input} );
+        }
+        else {
+            push @results, $input;
+        }
+    }
+
+    return \@results;
 }
 
 1;
@@ -244,8 +263,24 @@ Just like I<joinseries>, but uses "&" instead of "and".
 
 =item B<keyreadable()>
 
-For each string passed to it, returns a string where the $KEY_SEPARATOR value from Actium::Constants is replaced by an underline (_), 
-making it readable. (A quicker way to type "s/$KEY_SEPARATOR/_/g foreach @list;".)
+For each string passed to it, returns a string where the $KEY_SEPARATOR 
+value from Actium::Constants is replaced by an underline (_), 
+making it readable. (An easier way to type "s/$KEY_SEPARATOR/_/g foreach 
+@list;".)
+
+=item B<flat_arrayref(I<list>)
+
+Takes a list and flattens it, ensuring that the contents of any lists of lists
+are returned as individual items.
+
+So
+
+ @list =  ( 'A' , [ 'B1' , B2', [ 'B3A' , 'B3B' ], ] ) ; 
+
+ @list_ref = flat_arrayref(@list);
+ # $list_ref = [ 'A', 'B1', 'B2', 'B3A', 'B3B' ]
+
+Always returns its result as a list reference.
 
 =item B<positional(C<\@_> , I<arguments>)>
 
