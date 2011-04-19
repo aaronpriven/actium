@@ -84,8 +84,7 @@ read_files(@files);
 
 read_sd() unless option('skipsd');
 
-use Actium::Files;
-Actium::Files::store(\%data_of, 'avl.storable');
+$signup->store(\%data_of, 'avl.storable');
 
 ############# end of main program #######################
 

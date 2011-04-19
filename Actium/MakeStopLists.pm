@@ -18,7 +18,6 @@ use Actium::Patterns::Route;
 use Actium::Stoplists::ByDirection;
 use Actium::Term;
 use Actium::Sorting('sortbyline');
-use Actium::Files('write_files_with_method');
 use Actium::Sked::Dir;
 
 my $xml_db;
@@ -31,11 +30,9 @@ sub START {
 
     my ( $stoplist_objs_r, $stops_of_line_r ) = stop_lists($signup);
 
-    write_files_with_method(
+    $stoplists_line_folder->write_files_with_method(
         {
             OBJECTS   => $stoplist_objs_r,
-            SIGNUP    => $stoplists_line_folder,
-            FILETYPE  => 'textlist',
             METHOD    => 'textlist',
             EXTENSION => 'txt',
         }
