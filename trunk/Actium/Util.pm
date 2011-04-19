@@ -160,11 +160,10 @@ sub doe : Export {
 
 sub filename : Export {
     require File::Spec;
-    my $self = shift;
 
     my $filespec = shift;
     my $filename;
-    ( undef, undef, $filename ) = File::Spec->splitpath($filespec);
+    ( undef, undef, $filename ) = File::Spec->splitpath($filespec );
     return $filename;
 }
 
@@ -174,7 +173,7 @@ sub flat_arrayref : Export {
     my @results;
     foreach my $input (@inputs) {
         if ( ref($input) eq 'ARRAY' ) {
-            push @results, flat_arrayref( @{$input} );
+            push @results, @{flat_arrayref( @{$input} ) } ;
         }
         else {
             push @results, $input;
@@ -275,9 +274,9 @@ are returned as individual items.
 
 So
 
- @list =  ( 'A' , [ 'B1' , B2', [ 'B3A' , 'B3B' ], ] ) ; 
+ @list =  ( 'A' , [ 'B1' , 'B2', [ 'B3A' , 'B3B' ], ] ) ; 
 
- @list_ref = flat_arrayref(@list);
+ $list_ref = flat_arrayref(@list);
  # $list_ref = [ 'A', 'B1', 'B2', 'B3A', 'B3B' ]
 
 Always returns its result as a list reference.
