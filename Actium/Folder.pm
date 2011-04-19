@@ -39,7 +39,7 @@ sub _initialize_folderlist {
     foreach my $folder ( @{$value} ) {
         push @folders, File::Spec->splitdir( File::Spec->canonpath($folder) );
     }
-    $set->( \@folders );
+    $set->( [ grep {$_ ne $EMPTY_STR} @folders ] );
 }
 
 sub folder {
@@ -168,7 +168,7 @@ sub subfolder {
         $params_r->{must_exist} = 0;
     }
 
-    return $self->meta->clone_object( $self, $params_r );
+    return $self->meta->clone_object( $self, %{$params_r} );
 
 } ## tidy end: sub subfolder
 
@@ -307,7 +307,7 @@ sub load_hasi {
     $self->_load_sqlite( 'hasi', 'Actium::Files::HastusASI', @_ );
 }
 
-##########################
+################################################
 ### READ OR WRITE FILES IN THIS FOLDER FROM OBJECTS
 
 sub write_files_with_method {
