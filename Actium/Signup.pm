@@ -23,14 +23,13 @@ extends 'Actium::Folder';
 
 Readonly my $BASE_ENV   => 'ACTIUM_BASE';
 Readonly my $SIGNUP_ENV => 'ACTIUM_SIGNUP';
-Readonly my $CACHE_ENV => 'ACTIUM_CACHE';
+Readonly my $CACHE_ENV  => 'ACTIUM_CACHE';
 
 Readonly my $LAST_RESORT_BASE =>
   File::Spec->catdir( $FindBin::Bin, File::Spec->updir(), 'signups' );
 Readonly my $DEFAULT_HSA_FILENAME => 'hsa.storable';
 
-Readonly my $DEFAULT_BASE =>
-  ( $ENV{$BASE_ENV} // $LAST_RESORT_BASE );
+Readonly my $DEFAULT_BASE   => ( $ENV{$BASE_ENV}   // $LAST_RESORT_BASE );
 Readonly my $DEFAULT_SIGNUP => ( $ENV{$SIGNUP_ENV} // 'none' );
 
 add_option( 'base=s',
@@ -60,29 +59,27 @@ around BUILDARGS => sub {
     if ( ref($first_argument) eq 'HASH' ) {
         $params_r = $first_argument;
     }
-    elsif (defined($first_argument)) {
+    elsif ( defined($first_argument) ) {
         $params_r = { subfolders => [ $first_argument, @rest ] };
     }
     else {
-     $params_r = {};
+        $params_r = {};
     }
 
     # build folderlist argument from base, signup, and subfolders
-    # (Actium::Folder takes care of dividing pieces that have several
-    # folders, like "/users/yourname/actium/base", into individual pieces
-    
-    my ($base, $signup);
 
-    if (exists $params_r->{base} ) {
-        $base = $params_r->{base} ;
+    my ( $base, $signup );
+
+    if ( exists $params_r->{base} ) {
+        $base = $params_r->{base};
     }
     else {
         $base = $class->_build_base();
         $params_r->{base} = $base;
     }
-    
-    if (exists $params_r->{signup} ) {
-        $signup = $params_r->{signup} ;
+
+    if ( exists $params_r->{signup} ) {
+        $signup = $params_r->{signup};
     }
     else {
         $signup = $class->_build_signup();
@@ -91,23 +88,19 @@ around BUILDARGS => sub {
 
     if ( exists $params_r->{subfolders} ) {
         my $subfolders = $params_r->{subfolders};
-        if ( ref($subfolders) eq 'ARRAY' ) {
-            $params_r->{folderlist} = [ $base, $signup, @{$subfolders} ];
-        }
-        else {
-            $params_r->{folderlist} = [ $base, $signup, $subfolders ];
-        }
-        delete $params_r->{subfolders};
+        $params_r->{subfolders} = $class->split_folderlist($subfolders);
+        $params_r->{folderlist} = [ $base, $signup, $subfolders ];
     }
     else {
         $params_r->{folderlist} = [ $base, $signup ];
+        $params_r->{subfolders} = [];
     }
+    # all arrayrefs in folderlist will be flattened in the Actium::Folder
+    # BUILDARGS
 
-    $params_r->{must_exist} = 0 unless $params_r->{must_exist};
-    
     return $class->$orig($params_r);
 
-}; ## tidy end: BUILDARGS
+};    ## tidy end: BUILDARGS
 
 has base => (
     is       => 'ro',
@@ -135,25 +128,55 @@ sub _build_signup {
 
 around load_sqlite => sub {
     my ( $orig, $self, $default_subfolder, $db_class, $params_r ) = @_;
-    if ( not exists( $params_r->{db_folder} ) ) {
-        $params_r->db_folder = option('cache');
+    if ( not exists( $params_r->{db_folder} ) and $self->cache ) {
+        $params_r->{db_folder} = $self->cache;
     }
     $self->$orig( $default_subfolder, $db_class, $params_r );
 
 };
 
 has cache => (
-   is => 'ro' ,
-   isa => 'Str' ,
-   builder => '_build_cache',
-   lazy => 1,
+    is      => 'ro',
+    isa     => 'Maybe[Str]',
+    builder => '_build_cache',
+    lazy    => 1,
 );
 
 sub _build_cache {
-    return option('cache') if option('cache');
-    return $ENV{$CACHE_ENV}  if $ENV{$CACHE_ENV};
+    return option('cache')  if option('cache');
+    return $ENV{$CACHE_ENV} if $ENV{$CACHE_ENV};
     return;
 }
+
+has subfolderlist_r => (
+    reader   => '_subfolderlist_r',
+    init_arg => 'subfolders',
+    isa      => 'ArrayRef[Str]',
+    required => 1,
+    traits   => ['Array'],
+    handles  => { subfolders => 'elements' },
+);
+
+# Because subfolderlist comes from File::Spec->splitdir, it may
+# have elements that are the empty string. I don't think 
+# this will matter.
+
+# for below, see big comment in Actium::Folder
+
+override 'original_parameters' => sub {
+    my $self     = shift;
+    my $params_r = super();
+    delete $params_r->{folderlist};
+    $params_r->{base}       = $self->base;
+    $params_r->{signup}     = $self->signup;
+    $params_r->{subfolders} = $self->subfolders;
+    $params_r->{cache}      = $self->cache;
+
+    return $params_r;
+
+};
+
+override subfolderlist_attribute => sub {'subfolders'};
 
 1;
 
@@ -178,7 +201,7 @@ This documentation refers to version 0.001
 
  $rawskeds = Actium::Signup->subfolder('rawskeds');
 
- $oldsignup = Actium::Signup->new({SIGNUP => 'f08'});
+ $oldsignup = Actium::Signup->new({signup => 'f08'});
  $oldskeds = $oldsignup->subfolder('skeds');
 
  $filespec = $oldskeds->make_filespec('10_EB_WD.txt');
@@ -391,7 +414,7 @@ a series of strings each with a folder name (['path' , 'to' , 'folder']),
 or a combination (['path/to' , 'folder']). Actium::Folder splits the pieces
 into individual folders for you.
 
-If none is supplied, Actium::Signup will represent the signup
+If none is supplied, Actium::Signup will represent the signup folder
 itself.
 
 =item I<cache>
@@ -455,6 +478,8 @@ command line, in the environment, or in the method call.
 =item Moose::StrictConstructor
 
 =item Readonly
+
+=item Actium::Folder
 
 =back
 
