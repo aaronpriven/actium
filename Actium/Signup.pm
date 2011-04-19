@@ -169,7 +169,7 @@ override 'original_parameters' => sub {
     delete $params_r->{folderlist};
     $params_r->{base}       = $self->base;
     $params_r->{signup}     = $self->signup;
-    $params_r->{subfolders} = $self->subfolders;
+    $params_r->{subfolders} = $self->_subfolderlist_r;
     $params_r->{cache}      = $self->cache;
 
     return $params_r;
@@ -177,6 +177,16 @@ override 'original_parameters' => sub {
 };
 
 override subfolderlist_attribute => sub {'subfolders'};
+
+override display_path => sub {
+   my $self = shift;
+   my @subfolders = $self->subfolders;
+   if (@subfolders) {
+      return File::Spec->catdir(@subfolders) . " in signup " . $self->signup;
+   }
+   return "signup " . $self->signup;
+
+};
 
 1;
 

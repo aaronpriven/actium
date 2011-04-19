@@ -80,6 +80,11 @@ sub _build_path {
         File::Spec->catdir( File::Spec->rootdir, $self->folders ) );
 }
 
+sub display_path {
+    my $self = shift;
+    return $self->path;
+}
+
 sub subfolder_path {
     my $self    = shift;
     my $subpath = shift;
@@ -123,8 +128,8 @@ sub split_folderlist {
     my $self     = shift;
     my $folder_r = flat_arrayref(@_);
 
-    $folder_r
-      = map { File::Spec->splitdir( File::Spec->canonpath($_) ) } @{$folder_r};
+    $folder_r = [ map { File::Spec->splitdir( File::Spec->canonpath($_) ) }
+          @{$folder_r} ];
 
     return $folder_r;
 
@@ -215,7 +220,7 @@ sub subfolderlist_attribute {'folderlist'}
 sub subfolder {
     my $self = shift;
 
-    my $attribute = $self->folderlist_attribute;
+    my $attribute = $self->subfolderlist_attribute;
 
     my ( $params_r, @subfolders );
 
@@ -401,7 +406,7 @@ sub write_files_with_method {
     my @objects = @{ $params{OBJECTS} };
     my $extension;
     if ( exists $params{EXTENSION} ) {
-        $extension = q{.} . $params{EXTENSION};
+        $extension = $params{EXTENSION};
     }
     else {
         $extension = $EMPTY_STR;
@@ -420,7 +425,7 @@ sub write_files_with_method {
 
     my $count;
 
-    emit( "Writing $method files to " . $folder->path );
+    emit( "Writing $method files to " . $folder->display_path );
 
     my %seen_id;
 
@@ -488,7 +493,7 @@ sub write_files_from_hash {
 
     my $count;
 
-    emit("Writing $filetype files");
+    emit("Writing $filetype files to " . $self->display_path);
 
     foreach my $key ( sort keys %hash ) {
 
