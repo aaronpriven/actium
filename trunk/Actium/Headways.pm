@@ -18,7 +18,6 @@ $VERSION = eval $VERSION;
 use 5.010;
 
 use Actium::Term qw<:all>;
-#use Actium::Files qw<:all>;
 use Actium::Signup;
 use Actium::Constants;
 use Actium::Union(':all');
