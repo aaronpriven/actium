@@ -16,7 +16,6 @@ use Moose;
 use MooseX::StrictConstructor;
 
 use Actium::Constants;
-use Actium::Files;
 use Actium::Term;
 use Actium::Util qw(j jk filename);
 use Carp;
@@ -511,8 +510,6 @@ an HSA file.) This row will be skipped.
 =item Readonly
 
 =item Actium::Constants
-
-=item Actium::Files
 
 =item Actium::Files::SQLite
 

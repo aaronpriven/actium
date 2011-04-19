@@ -73,9 +73,7 @@ my %sked_override_order_of;
 # doesn't have to display it when it's not being used. Of course it saves
 # memory, too
 
-use Actium::Files;
-my $avldata_r = Actium::Files::retrieve('avl.storable');
-
+my $avldata_r = $signup->retrieve('avl.storable');
 
 make_skeds_pairs_of_hash($avldata_r);
 make_tp9s($avldata_r);

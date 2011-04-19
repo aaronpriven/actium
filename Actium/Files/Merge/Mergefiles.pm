@@ -19,7 +19,7 @@ $VERSION = eval $VERSION;
 
 use Actium::Constants;
 use Actium::Term;
-use Actium::Files;
+use Actium::Util('filename');
 use Text::CSV;
 use Carp;
 
@@ -32,7 +32,7 @@ sub mergeread {    # constructor
     my $file  = shift;
     my $self  = {};
 
-    emit "Loading ", Actium::Files::filename($file);
+    emit "Loading ", filename($file);
 
     local $/ = "\r";
 
@@ -318,17 +318,13 @@ Text::CSV error diagnostic. See L<Text::CSV/DIAGNOSTICS>.
 
 =over
 
-=item *
+=item Perl 5.010 and the standard distribution.
 
-Perl 5.010 and the standard distribution.
+=item Text::CSV (which in turn requires Text::CSV_XS or Text::CSV_PP)
 
-=item *
+=item Actium::Constants
 
-Text::CSV (which in turn requires Text::CSV_XS or Text::CSV_PP)
-
-=item *
-
-Actium::Constants
+=item Actium::Util
 
 =back
 

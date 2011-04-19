@@ -60,8 +60,7 @@ my %stp;
 # (or, presumably, another IDE)
 # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-use Actium::Files;
-my $avldata_r = Actium::Files::retrieve('avl.storable');
+my $avldata_r = $signup->retrieve('avl.storable');
 
 %pat = %{$avldata_r->{PAT}};
 
