@@ -15,6 +15,7 @@ use MooseX::StrictConstructor;
 
 use Actium::Constants;
 use Actium::Term(':all');
+use Actium::Util('flat_arrayref');
 use Carp;
 use English '-no_match_vars';
 use File::Spec;
@@ -24,23 +25,17 @@ use Params::Validate qw(:all);
 # class or object methods
 
 has folderlist_r => (
-    reader      => '_folderlist_r',
-    init_arg    => 'folderlist',
-    isa         => 'ArrayRef[Str]',
-    initializer => '_initialize_folderlist',
-    required    => 1,
-    traits      => ['Array'],
-    handles     => { folders => 'elements' },
+    reader   => '_folderlist_r',
+    init_arg => 'folderlist',
+    isa      => 'ArrayRef[Str]',
+    required => 1,
+    traits   => ['Array'],
+    handles  => { folders => 'elements' },
 );
 
-sub _initialize_folderlist {
-    my ( $self, $value, $set, $attr ) = @_;
-    my @folders;
-    foreach my $folder ( @{$value} ) {
-        push @folders, File::Spec->splitdir( File::Spec->canonpath($folder) );
-    }
-    $set->( [ grep {$_ ne $EMPTY_STR} @folders ] );
-}
+# Because folderlist comes from File::Spec->splitdir, it may
+# have elements that are the empty string. I don't think
+# this will matter.
 
 sub folder {
     my $self         = shift;
@@ -85,6 +80,13 @@ sub _build_path {
         File::Spec->catdir( File::Spec->rootdir, $self->folders ) );
 }
 
+sub subfolder_path {
+    my $self    = shift;
+    my $subpath = shift;
+    return File::Spec->catpath( $self->volume,
+        File::Spec->catdir( File::Spec->rootdir, $self->folders, $subpath ) );
+}
+
 has must_exist => (
     is      => 'ro',
     isa     => 'Bool',
@@ -108,9 +110,25 @@ around BUILDARGS => sub {
         $hashref = { folderlist => [ $first_argument, @rest ], };
     }
 
+    $hashref->{folderlist} = $class->split_folderlist( $hashref->{folderlist} );
+
     return $class->$orig($hashref)
 
 };
+
+sub split_folderlist {
+    # splits folder list into components (e.g., "path/to" becomes qw<path to>).
+    # Takes either an array of strings, or an arrayref of strings.
+
+    my $self     = shift;
+    my $folder_r = flat_arrayref(@_);
+
+    $folder_r
+      = map { File::Spec->splitdir( File::Spec->canonpath($_) ) } @{$folder_r};
+
+    return $folder_r;
+
+}
 
 sub BUILD {
     my $self = shift;
@@ -138,37 +156,95 @@ sub BUILD {
 #######################
 ### CLONING
 
+sub original_parameters {
+    my $self = shift;
+
+    my $params_r = {
+        folderlist => $self->_folderlist_r,
+        volume     => $self->volume,
+    };
+
+    return $params_r;
+
+    # must_exist deliberately omitted -- must be specified
+    # explicitly for each folder
+
+}
+
+=begin comment
+
+The idea here is that Actium::Folder has a single list of folders,
+"folderlist," which is specified in the new() constructor and
+subfolder() cloner. In the cloner, the specified folderlist is added to the
+old one to form the complete new folderlist.
+
+The Actium::Signup subclass, however, has a second list of folders 
+that is primary -- "subfolders". The idea is that the subfolders
+are kept separately from the base and signup folders.
+
+So what this does is as follows:
+
+1) It determines what the attribute is that is used as the primary set 
+of folders. This is retreived by the method subfolder_attribute, which is
+'folderlist' in this class but overridden in other classes.
+
+2) It gets the list of subfolders from either the argument list, if it
+is using non-named arguments, or from the named arguments if they are used.
+All other non-named arguments are preserved.
+
+3) It gets the original parameter settings. These aren't the actual
+parameter settings passed to the constructor -- we don't want to 
+copy the must_exist attribute, for example. Just whatever would be 
+useful in cloning.
+
+4) It adds the new subfolders to the old folders.
+
+5) It copies all other old named arguments to the new named argument list.
+
+6) It returns a new object of the proper type.
+
+I tried doing this with $object->meta->clone_object but it didn't seem
+to set up the new object properly, so here we are.
+
+=end comment
+
+=cut
+
+sub subfolderlist_attribute {'folderlist'}
+
 sub subfolder {
-    my $self           = shift;
-    my $first_argument = shift;
-    my @rest           = @_;
+    my $self = shift;
 
-    my $params_r;
-    if ( ref($first_argument) eq 'HASH' ) {
-        $params_r = $first_argument;
+    my $attribute = $self->folderlist_attribute;
+
+    my ( $params_r, @subfolders );
+
+    if ( ref( $_[0] ) eq 'HASH' ) {
+        $params_r   = { %{ $_[0] } };            # new ref
+        @subfolders = $params_r->{$attribute};
+        delete $params_r->{$attribute};
     }
     else {
-        $params_r = { folderlist => [ $first_argument, @rest ] };
+        $params_r   = {};
+        @subfolders = @_;
     }
 
-    if ( exists $params_r->{folderlist} ) {
-        my $subfolders = $params_r->{folderlist};
-        if ( ref($subfolders) eq 'ARRAY' ) {
-            $params_r->{folderlist} = [ $self->folders, @{$subfolders} ];
-        }
-        else {
-            $params_r->{folderlist} = [ $self->folders, $subfolders ];
-        }
-    }
-    else {
-        croak 'No folderlist specified to object method subfolder';
+    croak 'No folders passed to method "subfolder"'
+      unless @subfolders;
+
+    my $original_params_r = $self->original_parameters;
+
+    $params_r->{$attribute} = [ $original_params_r->{$attribute}, @subfolders ];
+    # constructor will flatten the arrayrefs into an array
+
+    delete $original_params_r->{$attribute};
+
+    while ( my ( $key, $value ) = each %{$original_params_r} ) {
+        $params_r->{$key} = $value unless exists $params_r->{$key};
     }
 
-    if ( not exists $params_r->{must_exist} ) {
-        $params_r->{must_exist} = 0;
-    }
-
-    return $self->meta->clone_object( $self, %{$params_r} );
+    my $class = blessed($self);
+    return $class->new($params_r);
 
 } ## tidy end: sub subfolder
 
@@ -474,7 +550,7 @@ This module is intended to make it easier to open files within folders and
 create new subfolders.
 
 It forms the base class used by 
-L<Actium::Folder::Signup|Actium::Folder::Signup>, which is more likely to be
+L<Actium::Signup|Actium::Signup>, which is more likely to be
 used directly in programs.
 
 As much as possible, Actium::Folder uses the L<File::Spec> module in order
@@ -567,6 +643,20 @@ The values of the B<volume> and B<must_exist> attributes, respectively.
 =head1 METHODS
 
 =over
+
+=item B<< $self->subfolder_path(F<path>) >>
+
+Returns a path name to a specified subfolder under the folder -- that is,
+this:
+
+ $folder = new Actium::Folder ('/Users');
+ $path = $folder->subfolder_path('apriven');
+
+will yield "/Users/apriven".
+
+Generally it might
+be better to create a new folder object, but in some instances (e.g.,
+when a whole series of subdirectories are created) this is overkill.
 
 =item B<< $self->make_filespec(F<filename>) >>
 
@@ -784,6 +874,8 @@ L<write_files_from_hash> routines.
 =item Actium::Constants
 
 =item Actium::Term
+
+=item Actium::Util
 
 =back
 
