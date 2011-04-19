@@ -51,6 +51,8 @@ HELP
 sub START {
 
     # Term::Emit::setopts { -closestat => 'ERROR' };
+    
+    emit 'Processing headway sheets';
 
     my $signup      = Actium::Signup->new;
     my $headwaysdir = Actium::Signup->new('headways');
@@ -87,6 +89,8 @@ sub START {
     # this probably should be a separate program, but for now, isn't
 
     write_prehistorics( $skeds_r, $signup );
+    
+    emit_done;
 
     return;
 
