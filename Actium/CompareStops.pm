@@ -27,7 +27,7 @@ use Actium::Patterns::Stop;
 
 use Readonly;
 
-Readonly my $DEFAULT_SKIPLINES => '399,51S,BSH';
+Readonly my $DEFAULT_SKIPLINES => '399,51S,BSH,BSD,BSN';
 
 add_option( 'oldsignup', 'Previous signup to compare this signup to' );
 
@@ -59,7 +59,7 @@ HELP
     output_usage();
     return;
 
-}    ## tidy end: sub HELP
+} ## tidy end: sub HELP
 
 sub START {
 
@@ -70,19 +70,22 @@ sub START {
 
     my $stops_row_of_r = get_xml_stops($newsignup);
 
-    my ( $changes_r, $stops_of_change_r ) =
-      compare_stops( $oldsignup, $newsignup, $skipped_lines_r );
+    my ( $comparisons_r, $stops_of_change_r )
+      = compare_stops( $oldsignup, $newsignup, $skipped_lines_r );
 
-    my %lines_of_stop =
-      make_comparetext( $changes_r, $stops_of_change_r, $stops_row_of_r,
-        $skipped_lines_r );
+    my %lines_of_stop = make_comparetext(
+        $comparisons_r,  $stops_of_change_r,
+        $stops_row_of_r, $skipped_lines_r
+    );
 
     output_comparetext( $newsignup, $stops_row_of_r, \%lines_of_stop );
 
-    output_comparetravel( $changes_r, $stops_of_change_r, $oldsignup,
+    my @lines = make_comparetravel( $comparisons_r, $stops_of_change_r );
+
+    output_comparetravel( $comparisons_r, $stops_of_change_r, $oldsignup,
         $newsignup, $stops_row_of_r );
 
-}
+} ## tidy end: sub START
 
 sub get_xml_stops {
 
@@ -94,8 +97,8 @@ sub get_xml_stops {
     emit 'Getting stop descriptions from FileMaker export';
     my $dbh = $xml_db->dbh;
 
-    my $stops_row_of_r =
-      $xml_db->all_in_columns_key(qw/Stops CityF OnF AtF DescriptionCityF/);
+    my $stops_row_of_r
+      = $xml_db->all_in_columns_key(qw/Stops CityF OnF AtF DescriptionCityF/);
 
     emit_done;
 
@@ -148,11 +151,11 @@ sub compare_stops {
         push @{ $stops_of_change{ $result->{'?'} } }, $stop_id;
         $changes_of{$stop_id} = $result;
 
-    }    ## tidy end: foreach my $stop_ids (@stop_ids)
+    } ## tidy end: foreach my $stop_id (@stop_ids)
 
     return \%changes_of, \%stops_of_change;
 
-}    ## tidy end: sub compare_stops
+} ## tidy end: sub compare_stops
 
 sub compare_stop {
     my $oldroutes_r = shift;
@@ -204,17 +207,17 @@ sub compare_stop {
 
     return \%results;
 
-}    ## tidy end: sub compare_stop
+} ## tidy end: sub compare_stop
 
 sub make_comparetext {
-    my $changes_r         = shift;
+    my $comparisons_r     = shift;
     my $stops_of_change_r = shift;
     my $stops_row_of_r    = shift;
     my $skipped_lines_r   = shift;
 
     my %text_of;
 
-    while ( my ( $stop_id, $comparison_r ) = each %{$changes_r} ) {
+    while ( my ( $stop_id, $comparison_r ) = each %{$comparisons_r} ) {
 
         my @columns = (
             $comparison_r->{'?'}, $stop_id,
@@ -228,7 +231,7 @@ sub make_comparetext {
 
     return \%text_of;
 
-}
+} ## tidy end: sub make_comparetext
 
 sub route_columns {
     my $comparison_r = shift;
@@ -270,11 +273,11 @@ sub output_comparetext {
 
     return;
 
-}
+} ## tidy end: sub output_comparetext
 
-sub output_comparetravel {
+sub make_comparetravel {
 
-    my $changes_r         = shift;
+    my $comparisons_r     = shift;
     my $stops_of_change_r = shift;
     my $oldsignup         = shift;
     my $newsignup         = shift;
@@ -294,26 +297,56 @@ sub output_comparetravel {
     my $old_stops_of_linedir_r = stops_of_linedir($oldsignup);
     my $new_stops_of_linedir_r = stops_of_linedir($newsignup);
 
-    output_travel_change( $fh, $new_stops_of_linedir_r, 'ADD', @added_stops );
-    output_travel_change( $fh, $old_stops_of_linedir_r, 'REMOVE',
-        @removed_stops );
-    output_travel_change( $fh, $new_stops_of_linedir_r, 'CHANGE',
-        @changed_stops );
+    my $output_travel_change_r = sub {
+
+        my $stops_of_linedir_r = shift;
+        my $change             = shift;
+        my @stops              = @_;
+
+        my @sorted = travelsort( \@stops, $stops_of_linedir_r );
+
+        my @results;
+
+        foreach my $linedir_list_r (@sorted) {
+            my ( $linedir, @thesestops ) = @{$linedir_list_r};
+            foreach my $idx ( 0 .. $#thesestops ) {
+                my $stop_id = $thesestops[$idx];
+                my @columns = (
+                    $stop_id,
+                    "$linedir-$change",
+                    "$idx of $#thesestops",
+                    $stops_row_of_r->{DescriptionCityF},
+                    route_columns( $comparisons_r->{$stop_id} ),
+                );
+                push @results, jt(@columns);
+
+            }
+
+        }
+
+        return @results;
+    };
+
+    $output_travel_change_r->( $new_stops_of_linedir_r, 'ADD', @added_stops );
+    $output_travel_change_r->(
+        $old_stops_of_linedir_r, 'REMOVE', @removed_stops
+    );
+    $output_travel_change_r->(
+        $new_stops_of_linedir_r, 'CHANGE', @changed_stops
+    );
 
     return;
 
-}
+} ## tidy end: sub make_comparetravel
 
-sub output_travel_change {
+sub stops_of_linedir {
+ my $signup = shift;
+ 
+ my $pattern_folder = $signup->subdir('patterns');
 
-    my $fh                 = shift;
-    my $stops_of_linedir_r = shift;
-    my $change             = shift;
-    my @stops              = @_;
-
-    
-    #my @sorted = travelsort( [ keys %description_of ], $stops_of_r );
-
+ my %stop_obj_of  = %{ $pattern_folder->retrieve('stops.storable') };
+ 
+ 
 }
 
 1;
