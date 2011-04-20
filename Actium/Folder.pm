@@ -333,6 +333,30 @@ sub store {
     emit_done;
 }
 
+sub open_read {
+    my $self = shift;
+    my $filename = shift;
+    my $filespec = $self->make_filespec($filename);
+    
+    open my $fh , '<:encoding(UTF-8)' , $filespec 
+      or croak "Can't open $filespec for reading: $OS_ERROR";
+    
+    return $fh;
+ 
+}
+
+sub open_write {
+    my $self = shift;
+    my $filename = shift;
+    my $filespec = $self->make_filespec($filename);
+    
+    open my $fh , '>:encoding(UTF-8)' , $filespec
+      or croak "Can't open $filespec for writing: $OS_ERROR";
+    
+    return $fh;
+ 
+}
+
 #######################
 ### READ OR WRITE SQLITE FILES IN THIS FOLDER
 
@@ -694,6 +718,15 @@ should be used to read FileMaker exports.
 Saves or retrieves a L<Storable|Storable> file (using Storable::nstore and 
 Storable::retrieve) in the folder represented by the object. 
 Uses Actium::Term to provide feedback to the terminal.
+
+=item B<open_read (F<filename>)>
+
+=item B<open_write (F<filename>)>
+
+Opens a file for reading (using mode '<'), or writing (using mode '>'), 
+in the object's folder with the current filename, throwing an exception
+upon failure. Returns the open file handle. In either case, uses UTF-8
+encoding.
 
 =item B<$obj-E<gt>load_xml({I<named arguments>>)>
  
