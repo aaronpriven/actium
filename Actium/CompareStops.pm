@@ -70,27 +70,17 @@ sub START {
 
     my $stops_row_of_r = get_xml_stops($newsignup);
 
+    my ( $changes_r, $stops_of_change_r ) =
+      compare_stops( $oldsignup, $newsignup, $skipped_lines_r );
+
     my %lines_of_stop =
-      make_comparetext( $oldsignup, $newsignup, $stops_row_of_r,
+      make_comparetext( $changes_r, $stops_of_change_r, $stops_row_of_r,
         $skipped_lines_r );
 
-    my @stopids = sort {
-        lc( $stops_row_of_r->{$a}{CityF} ) cmp
-          lc( $stops_row_of_r->{$b}{CityF} )
-          or lc( $stops_row_of_r->{$a}{OnF} ) cmp
-          lc( $stops_row_of_r->{$b}{OnF} )
-          or lc( $stops_row_of_r->{$a}{AtF} ) cmp
-          lc( $stops_row_of_r->{$b}{AtF} )
-          or $a cmp $b
-    } keys %lines_of_stop;
+    output_comparetext( $newsignup, $stops_row_of_r, \%lines_of_stop );
 
-    my $compare_folder = $newsignup->subdir('compare');
-    my $fh             = $compare_folder->open_write('comparestops.txt');
-    say $fh comparetextline_headers();
-    say $fh jn( @lines_of_stop{@stopids} );
-    close $fh or die "Can't close comparestops.txt for writing: $OS_ERROR";
-
-    return;
+    output_comparetravel( $changes_r, $stops_of_change_r, $newsignup,
+        $stops_row_of_r  );
 
 }
 
@@ -217,13 +207,10 @@ sub compare_stop {
 }    ## tidy end: sub compare_stop
 
 sub make_comparetext {
-    my $oldsignup       = shift;
-    my $newsignup       = shift;
-    my $stops_row_of_r  = shift;
-    my $skipped_lines_r = shift;
-
-    my ( $changes_r, $stops_of_change_r ) =
-      compare_stops( $oldsignup, $newsignup, $skipped_lines_r );
+    my $changes_r         = shift;
+    my $stops_of_change_r = shift;
+    my $stops_row_of_r    = shift;
+    my $skipped_lines_r   = shift;
 
     my %text_of;
 
@@ -234,10 +221,7 @@ sub make_comparetext {
             $stops_row_of_r->{PhoneID}{DescriptionCityF}
         );
 
-        foreach my $type (qw/+ - =/) {
-            my @list = sortbyline @{ $comparison_r->{$type} };
-            push @columns, scalar @list, "@list";
-        }
+        push @columns, route_columns($comparison_r);
 
         $text_of{$stop_id} = jt(@columns);
     }
@@ -246,10 +230,61 @@ sub make_comparetext {
 
 }
 
+sub route_columns {
+    my $comparison_r = shift;
+
+    my @columns;
+
+    foreach my $type (qw/+ - =/) {
+        my @list = sortbyline @{ $comparison_r->{$type} };
+        push @columns, ( scalar @list || $EMPTY_STR ), "@list";
+    }
+
+    return @columns;
+
+}
+
 sub comparetextline_headers {
     my @columns = qw/Change Stop_ID Description
       NumAdded Added NumRemoved Removed NumUnchanged Unchanged/;
     return jt(@columns);
+
+}
+
+sub output_comparetext {
+
+    my ( $newsignup, $stops_row, $lines_of_stop_r ) = @_;
+
+    my @stopids = sort {
+             lc( $stops_row->{$a}{CityF} ) cmp lc( $stops_row->{$b}{CityF} )
+          or lc( $stops_row->{$a}{OnF} ) cmp lc( $stops_row->{$b}{OnF} )
+          or lc( $stops_row->{$a}{AtF} ) cmp lc( $stops_row->{$b}{AtF} )
+          or $a cmp $b
+    } keys %{$lines_of_stop_r};
+
+    my $compare_folder = $newsignup->subdir('compare');
+    my $fh             = $compare_folder->open_write('comparestops.txt');
+    say $fh comparetextline_headers();
+    say $fh jn( @{$lines_of_stop_r}{@stopids} );
+    close $fh or die "Can't close comparestops.txt for writing: $OS_ERROR";
+
+    return;
+
+}
+
+sub output_comparetravel {
+
+    my $changes_r = shift;
+    my $stops_of_change_r = shift;
+    my $signup         = shift;
+    my $stops_row_of_r = shift;
+    
+    my $slistsdir = $signup->subdir('slists');
+
+    # retrieve data
+    my $stops_of_linedir_r = $slistsdir->retrieve('line.storable');
+
+    #my @sorted = travelsort( [ keys %description_of ], $stops_of_r );
 
 }
 
