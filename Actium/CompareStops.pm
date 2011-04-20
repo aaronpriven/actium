@@ -79,8 +79,8 @@ sub START {
 
     output_comparetext( $newsignup, $stops_row_of_r, \%lines_of_stop );
 
-    output_comparetravel( $changes_r, $stops_of_change_r, $newsignup,
-        $stops_row_of_r  );
+    output_comparetravel( $changes_r, $stops_of_change_r, $oldsignup,
+        $newsignup, $stops_row_of_r );
 
 }
 
@@ -121,13 +121,13 @@ sub compare_stops {
     my ( %changes_of, %stops_of_change );
 
   STOPID:
-    foreach my $stop_ids (@stop_ids) {
+    foreach my $stop_id (@stop_ids) {
 
         my @oldroutes = sort
-          grep { not $is_skipped{$_} } $old_stop_of{$stop_ids}->routes;
+          grep { not $is_skipped{$_} } $old_stop_of{$stop_id}->routes;
         my @newroutes = sort
 
-          grep { not $is_skipped{$_} } $new_stop_of{$stop_ids}->routes;
+          grep { not $is_skipped{$_} } $new_stop_of{$stop_id}->routes;
 
         next STOPID if ( "@oldroutes" eq "@newroutes" );
 
@@ -135,18 +135,18 @@ sub compare_stops {
 
         my $result;
 
-        if ( not exists $old_stop_of{$stop_ids} ) {
+        if ( not exists $old_stop_of{$stop_id} ) {
             $result = { '?' => 'AS', q{+} => \@newroutes };
         }
-        elsif ( not exists $new_stop_of{$stop_ids} ) {
+        elsif ( not exists $new_stop_of{$stop_id} ) {
             $result = { '?' => 'RS', q{-} => \@oldroutes };
         }
         else {
             $result = compare_stop( \@oldroutes, \@newroutes );
         }
 
-        push @{ $stops_of_change{ $result->{'?'} } }, $stop_ids;
-        $changes_of{$stop_ids} = $result;
+        push @{ $stops_of_change{ $result->{'?'} } }, $stop_id;
+        $changes_of{$stop_id} = $result;
 
     }    ## tidy end: foreach my $stop_ids (@stop_ids)
 
@@ -274,16 +274,44 @@ sub output_comparetext {
 
 sub output_comparetravel {
 
-    my $changes_r = shift;
+    my $changes_r         = shift;
     my $stops_of_change_r = shift;
-    my $signup         = shift;
-    my $stops_row_of_r = shift;
+    my $oldsignup         = shift;
+    my $newsignup         = shift;
+    my $stops_row_of_r    = shift;
+
+    my @added_stops   = @{ $stops_of_change_r->{AS} };
+    my @removed_stops = @{ $stops_of_change_r->{RS} };
+    my @changed_stops;
+    foreach my $type (qw(AL RL CL)) {
+        push @changed_stops, @{ $stops_of_change_r->{$type} };
+    }
+
+    my $compare_folder = $newsignup->subdir('compare');
+    my $fh             = $compare_folder->open_write('comparestopstravel.txt');
+    say $fh comparetravelline_headers();
+
+    my $old_stops_of_linedir_r = stops_of_linedir($oldsignup);
+    my $new_stops_of_linedir_r = stops_of_linedir($newsignup);
+
+    output_travel_change( $fh, $new_stops_of_linedir_r, 'ADD', @added_stops );
+    output_travel_change( $fh, $old_stops_of_linedir_r, 'REMOVE',
+        @removed_stops );
+    output_travel_change( $fh, $new_stops_of_linedir_r, 'CHANGE',
+        @changed_stops );
+
+    return;
+
+}
+
+sub output_travel_change {
+
+    my $fh                 = shift;
+    my $stops_of_linedir_r = shift;
+    my $change             = shift;
+    my @stops              = @_;
+
     
-    my $slistsdir = $signup->subdir('slists');
-
-    # retrieve data
-    my $stops_of_linedir_r = $slistsdir->retrieve('line.storable');
-
     #my @sorted = travelsort( [ keys %description_of ], $stops_of_r );
 
 }
