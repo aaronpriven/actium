@@ -19,38 +19,71 @@ open my $assignments , '<' , $ASSIGNFILE;
 # source-number-master
 
 my %output_of_source = ( qw(
-Pten-over	19.5x35.25-P-O
-Rsix-over	19.5x35.25-R-O
+C4          SKIP
+I5          SKIP
+I9          SKIP
+P10         SKIP
+R10         SKIP
+R6          SKIP
+R2          SKIP
+SKIP        SKIP
 
-R10	19.5x45.75-R-R
-R6	19.5x35.25-R-R
+IB2         20x16-IB
+IB2N        14x16-IB
+IB3         19.5x17-IB
+IB3N        14x22-IB
+IB4N        14x26-IB
+IB5         14x34-IB
+IB5N        19.5x22.25-IB
+IB9         19.5x32.75-IB
 
-P10	19.5x35.25-P
-P10R	19.5x35.25-R
-P6	19.5x24.75-P
+PBO         SKIP
 
-R6P  19.5x35.25-P-R
-R2P  19.5x24.75-P-R
+IC3         SKIP
+IC3N        SKIP
+IC4N        SKIP
+IC5         SKIP
+IC5N        SKIP
+IC9         SKIP
 
-I3N	14x22-I
-I3	19.5x17-I
-I4N	14x26-I
-I5	14x34-I
-I5N	19.5x22.25-I
-I9	19.5x32.75-I
+PB4         SKIP
+PB6         SKIP
 
-C4	19.5x19.5-C
 ) );
+
+# ignoring
+
+#IC3         19.5x17-IB
+#IC3N        14x22-IB
+#IC4N        14x26-IB
+#IC5         14x34-IB
+#IC5N        19.5x22.25-IB
+#IC9         19.5x32.75-IB
+
+#PB4         19.5x19.5-PB
+#PB6         19.5x24.75-PB
+
 
 # size - purchase source - master-or-oversize
 
 my %source_for;
 my %sourcenum_of;
+
+$_ = <$assignments>; # skip header line
+ 
 while (<$assignments>) {
    chomp;
    my @fields = split(/\t/);
    my ($stop, $source) = @fields[0,6];
-   next if (not $source) or $source eq 'SKIP';
+   next if (not $source);
+   next if $source eq 'SKIP' ;
+   next if $output_of_source{$source} eq 'SKIP';
+   
+   if (not $output_of_source{$source}) {
+       warn "Unknown source: $source";
+       next;
+   }
+   
    $source_for{$stop} = $source;
 
    next unless $source =~ /\d/;

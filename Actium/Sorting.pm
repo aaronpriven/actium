@@ -1,5 +1,5 @@
 # Actium/Sorting.pm
-# Sorting routines (by line designation, or by travel route)
+# Sorting routines (by line designation, or by travel line)
 
 # Subversion: $Id$
 
@@ -13,6 +13,8 @@ package Actium::Sorting 0.001;
 use Storable;
 use Actium::Options (qw(add_option option));
 
+use Actium::Constants;
+
 use Exporter qw( import );
 our @EXPORT_OK = qw(byline sortbyline linekeys travelsort);
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
@@ -20,6 +22,13 @@ our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 add_option( 'lettersfirst!',
         'When lines are sorted, sort letters ahead of numbers '
       . '(like Muni, not AC)' );
+
+add_option( 'promote=s',
+        'When sorting by travel, give a list of lines to be sorted first, '
+      . 'separated by commas. For example, -promote 26,A,58' );
+
+add_option( 'demote600s!',
+    'When sorting by travel, lower the priority of 600-series lines. ' );
 
 ########################
 ### SORTING BY LINE NAME
@@ -118,14 +127,27 @@ sub travelsort {
 
     my %allstops_of_linedir = %{ +shift };
 
-    # keys: travel routes. values: array ref of stops
+    # keys: travel lines. values: array ref of stops
+
+    my %is_priority_line;
+    if ( option('promote') ) {
+        my @prioritylines = split /,/, option('promote');
+        $is_priority_line{$_} = 1 foreach @prioritylines;
+    }
 
     # Make new %used_stops_of_linedir with only stops
     # on the first list
 
     my %used_stops_of_linedir;
+    my %is_priority_linedir;
 
     while ( my ( $linedir, $stops_r ) = each %allstops_of_linedir ) {
+
+        my ($line) = split /-/, $linedir;
+
+        $is_priority_linedir{$linedir} = 1
+          if $is_priority_line{$line};
+
         my @usedstops;
         foreach my $stop ( @{$stops_r} ) {
             push @usedstops, $stop if $stop_is_used{$stop};
@@ -137,7 +159,8 @@ sub travelsort {
 
     while ( scalar keys %used_stops_of_linedir ) {
 
-        my $max_linedir = _get_max_linedir( \%used_stops_of_linedir );
+        my $max_linedir
+          = _get_max_linedir( \%used_stops_of_linedir, \%is_priority_linedir );
 
         # $max_linedir is now the line/dir combination with the most stops
 
@@ -153,7 +176,7 @@ sub travelsort {
 
         delete $used_stops_of_linedir{$max_linedir};
 
-        # delete all stops in the remaining routes
+        # delete all stops in the remaining lines
         # that have been seen already
 
         my %seen_stop;
@@ -172,26 +195,54 @@ sub travelsort {
             }
         }
 
-    }
+    } ## tidy end: while ( scalar keys %used_stops_of_linedir)
     return @results;
-}
+} ## tidy end: sub travelsort
 
 sub _get_max_linedir {
 
-    my $stops_of_linedir_r = shift;
+    my $stops_of_linedir_r    = shift;
+    my $is_priority_linedir_r = shift;
 
-    my $max_linedir = (
-        sort {
+    my $max_linedir;
 
-            #( $a =~ /^6\d\d/ <=> $b =~ /^6\d\d/ ) or
-            ( @{ $stops_of_linedir_r->{$b} } <=>
-                  @{ $stops_of_linedir_r->{$a} } )
-              or byline( $a, $b )
-          } keys %{$stops_of_linedir_r}
-    )[0];
+    if ( option('demote600s') ) {
+
+        $max_linedir = (
+            sort {
+                ( ( $is_priority_linedir_r->{$b} // 0 )
+                    <=> ( $is_priority_linedir_r->{$a} // 0 ) )
+
+                  or
+
+                  ( $a =~ /^6\d\d/ <=> $b =~ /^6\d\d/ )
+                  or ( @{ $stops_of_linedir_r->{$b} } <=>
+                    @{ $stops_of_linedir_r->{$a} } )
+                  or byline( $a, $b )
+              } keys %{$stops_of_linedir_r}
+        )[0];
+
+    }
+    else {
+
+        $max_linedir = (
+            sort {
+                ( ( $is_priority_linedir_r->{$b} // 0 )
+                    <=> ( $is_priority_linedir_r->{$a} // 0 ) )
+
+                  or
+
+                  #( $a =~ /^6\d\d/ <=> $b =~ /^6\d\d/ ) or
+                  ( @{ $stops_of_linedir_r->{$b} } <=>
+                    @{ $stops_of_linedir_r->{$a} } )
+                  or byline( $a, $b )
+              } keys %{$stops_of_linedir_r}
+        )[0];
+
+    }
 
     return $max_linedir;
-}
+} ## tidy end: sub _get_max_linedir
 
 1;
 
@@ -261,9 +312,9 @@ case-insensitive.
 
 =head2 By Travel Route
 
-The second kind of sorting is by travel route. The purpose is to provide
+The second kind of sorting is by travel line. The purpose is to provide
 lists of stops ordered in a way that makes it easier for a maintenance
-worker or surveyor to travel down a bus route and visit all the stops,
+worker or surveyor to travel down a bus line and visit all the stops,
 but without duplicates.
 
 The result is a list of routings, with the affected stops, with all duplicates
@@ -333,7 +384,7 @@ values are the stops that it uses, in order.
  ...
  
 Stops on the second list but not on the first list are ignored, allowing 
-users to pass (for example) the full set of stops-by-route to the routine.
+users to pass (for example) the full set of stops-by-line to the routine.
  
 The result is a list of arrayrefs. The first element of each arrayref
 is the routing, and the following elements are the stops.
@@ -341,6 +392,8 @@ is the routing, and the following elements are the stops.
  [qw(5-Northbound stop_3 stop_2 stop_7)]
  [qw(1-Northbound stop_2 stop_1 stop_5)]
  ...
+ 
+=back
 
 =head1 OPTIONS
 
