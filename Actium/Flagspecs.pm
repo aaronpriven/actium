@@ -89,13 +89,13 @@ my %color_of;
 sub START {
 
     my $signup     = Actium::Signup->new();
-    my $flagfolder = $signup->subdir('flags');
+    my $flagfolder = $signup->subfolder('flags');
 
     my $stopdata = $signup->mergeread('Stops.csv');
 
     {
-        my $hasidir = $signup->subdir('hasi');
-        my $hasi_db = Actium::Files::HastusASI->new( $hasidir->get_dir());
+        my $hasidir = $signup->subfolder('hasi');
+        my $hasi_db = Actium::Files::HastusASI->new( $hasidir->path());
         $hasi_db->ensure_loaded(qw(PAT TRP));
         build_place_and_stop_lists( $hasi_db, $stopdata );
 

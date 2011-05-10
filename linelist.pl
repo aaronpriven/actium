@@ -1,5 +1,4 @@
-#!/usr/bin/perl
-# vimcolor: #000030
+#!/ActivePerl/bin/perl
 
 # linelist
 #
@@ -26,15 +25,17 @@ use Actium::Sorting (qw(sortbyline));
 use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 use Actium::Term (':all');
 
-use Actium::Options (qw<option add_option>);
+use Actium::Options (qw<option init_options add_option>);
 
 add_option ('1' , 'One-column output');
 
+init_options();
+
 use Actium::Signup;
 my $signupdir = Actium::Signup->new();
-chdir $signupdir->get_dir();
+chdir $signupdir->path();
 
-my $signup = $signupdir->get_signup;
+my $signup = $signupdir->signup;
 
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "Skeds" base directory.
