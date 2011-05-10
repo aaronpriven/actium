@@ -66,10 +66,13 @@ sub START {
 
     my @sorted = travelsort( [ keys %description_of ], $stops_of_r );
 
-    binmode STDOUT, ':utf-8';
-    while ( my ( $linedir, @stops ) = @{ shift @sorted } ) {
-        foreach my $i ( 0 .. $#stops ) {
-            say "$linedir\t$i of $#stops\t$description_of{stop}";
+    binmode STDOUT, ':utf8';
+    while ( my $ref = shift @sorted ) {
+    my ($linedir, @stops) = @{$ref};
+        my $numstops = scalar @stops;
+        foreach my $i ( 1 .. $numstops ) {
+            my $stop = $stops[$i - 1];
+            say "$linedir\t$i of $numstops\t$stop\t$description_of{$stop}";
         }
     }
 
