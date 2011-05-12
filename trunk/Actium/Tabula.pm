@@ -300,7 +300,7 @@ sub make_table {
         }
     }
 
-    my $colcount = $tpcount + $halfcols + 1;
+    my $colcount = $tpcount + $halfcols ;
     # +1 for end column, added to allow more space
 
     my %tpname_of;
@@ -326,11 +326,10 @@ sub make_table {
     print $th IDTags::parastyle('UnderlyingTables');
     print $th '<TableStyle:TimeTable>';
     print $th "<TableStart:$rowcount,$colcount,2,0<tCellDefaultCellType:Text>>";
-    print $th '<ColStart:<tColAttrWidth:27.9444444444444>>'
+    print $th '<ColStart:<tColAttrWidth:24>>'
       for ( 1 .. $halfcols );
-    print $th '<ColStart:<tColAttrWidth:53.3333333333333>>'
+    print $th '<ColStart:<tColAttrWidth:48>>'
       for ( 1 .. $tpcount );
-    print $th '<ColStart:<tColAttrWidth:1>>';    # end column
 
     # Header Row (line, days, dest)
     print $th '<RowStart:<tRowAttrHeight:43.128692626953125>>';
@@ -376,9 +375,6 @@ sub make_table {
 "<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:Timepoints>$tpname<CellEnd:>";
     }
 
-    print $th
-'<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:Timepoints><CellEnd:>';
-
     print $th '<RowEnd:>';
 
     # Time Rows
@@ -414,7 +410,7 @@ sub make_table {
             }
             print $th
 "<CellStyle:Time><StylePriority:20><CellStart:1,1><ParaStyle:$parastyle>";
-            if ( $time =~ /p$/ ) {
+            if ( $time =~ /p\z/ ) {
                 print $th IDTags::bold($time);
             }
             else {
@@ -542,6 +538,8 @@ sub figure_days {
     return $catdayobj->as_plurals;
 
 }
+
+1;
 
 __END__
 
