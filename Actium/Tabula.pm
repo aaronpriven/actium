@@ -241,6 +241,12 @@ sub START {
 
 } ## tidy end: sub START
 
+sub make_all_tables {
+ 
+  
+ 
+}
+
 sub make_table {
     my $file       = shift;
     my %timepoints = %{ +shift };
@@ -318,8 +324,8 @@ sub make_table {
 
     my $rowcount = $timerows + 2;    # headers
 
-    my $table;
-    open my $th, '>', \$table
+    my $tabletext;
+    open my $th, '>', \$tabletext
       or die "Can't open table scalar for writing: $!";
 
     # Table Start
@@ -451,7 +457,7 @@ sub make_table {
     $table{DAY}          = $day;
     $table{DIR}          = $dir;
     $table{EARLIESTTIME} = timenum( Skedfile::earliest_time( \%sked ) );
-    $table{TEXT}         = $table;
+    $table{TEXT}         = $tabletext;
     $table{SPECDAYSCOL}  = $has_specdays_col;
     $table{ROUTECOL}     = $has_route_col;
     $table{WIDTH}        = $tpcount + ( $halfcols / 2 );
