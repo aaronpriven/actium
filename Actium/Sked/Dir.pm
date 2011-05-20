@@ -106,7 +106,7 @@ Trips, or timetables, are assigned to particular scheduled directions.
 
 =over
 
-=item B<Actium::Sked::Days->new(I<dircode>  )>
+=item B<< Actium::Sked::Days->new(I<dircode>) >>
 
 The object is constructed using "Actium::Sked::Dir->new".  
 
@@ -119,11 +119,11 @@ except that 2 is "EB" and 3 is "WB". (These are the codes from the Hastus
 Standard AVL Interface. This program sorts westbound before eastbound, unlike
 Hastus.)
 
-=item B<$obj->dircode()>
+=item B<< $obj->dircode >>
 
 Returns the direction code, as the string given above.
 
-=item B<$obj->as_direction>
+=item B<< $obj->as_direction >>
 
 Returns one of the following, corresponding to the direction:
 
@@ -131,12 +131,11 @@ Returns one of the following, corresponding to the direction:
    West            East 
    In              Out      
    Go              Return 
-   Clockwise       Counterclockwise),
+   Clockwise       Counterclockwise
    Direction One   Direction Two
    Up              Down
-   
-   
-=item B<$obj->as_bound>
+
+=item B<< $obj->as_bound >>
 
 Returns one of the following, corresponding to the direction:
 
@@ -144,11 +143,14 @@ Returns one of the following, corresponding to the direction:
    Westbound       Eastbound
    Inbound         Outbound 
    Go              Return 
-   Clockwise       Counterclockwise),
+   Clockwise       Counterclockwise
    Direction One   Direction Two
    Up              Down
    
-=item B<$obj->as_sortable>
+At this point I don't think "Clockwisebound" or "Upbound" make much sense, but
+this may change.
+   
+=item B<< $obj->as_sortable >>
 
 Returns a code corresponding to the directions in order,
 suitable for sorting using perl's cmp operator.
