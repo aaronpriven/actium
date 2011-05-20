@@ -309,7 +309,7 @@ Some trips run only a few weekdays (e.g., Mondays, Wednesdays, and Fridays).
 
 =over
 
-=item B<Actium::Sked::Days->new(I<daycode> , I<schooldaycode>)>
+=item B<< Actium::Sked::Days->new(I<daycode> , I<schooldaycode>) >>
 
 The object is constructed using "Actium::Sked::Days->new".  
 
@@ -334,25 +334,25 @@ whether school normally operates on that day -- weekend trips will
 still have "B" as the school day flag, unless there is a situation where
 some school service is operated on a Saturday.)
 
-=item B<$obj->daycode()>
+=item B<< $obj->daycode >>
 
 Returns the day specification: a string with one or more of the characters
 1 through 7, indicating operation on Monday through Sunday, and the character
 H, indicating operation on holidays.
 
-=item B<$obj->schooldaycode()>
+=item B<< $obj->schooldaycode >>
 
 Returns one character. "D" indicates operation school days only. "H" indicates
 operation school holidays only. "B" indicates operation on both types of days.
 (Service on days when school service does not operate is also indicated 
 by "B".)
 
-=item B<$obj->as_sortable()>
+=item B<< $obj->as_sortable >>
 
 Returns a version of the day code / schoolday code that can be sorted using 
 perl's cmp operator to be in order.
 
-=item B<$obj->as_transitinfo>
+=item B<< $obj->as_transitinfo >>
 
 Returns the two-letter code for the day derived from the codes used by the 
 old www.transitinfo.org web site.
@@ -370,7 +370,7 @@ in new situations.
 Where there is no valid code for the days, the code "XX" is returned and a
 warning is generated (using "carp").
 
-=item B<$obj->as_adjectives>
+=item B<< $obj->as_adjectives >>
 
 This returns a string containing English text describing the days in a
 form intended for use to describe service: "This is <x> service."
@@ -383,7 +383,7 @@ The form is "Day, Day and Day" . The days used are as follows:
  
 May be followed by "(except school holidays)" or "(except school days)".
 
-=item B<$obj->as_plurals>
+=item B<< $obj->as_plurals >>
 
 This returns a string containing English text describing the days in a
 form intended for use as nouns: "This service runs <x>."
@@ -398,7 +398,7 @@ The form is "Days, Days and Days" . The days used are as follows:
  
 May be followed by "(School days only)" or "(School holidays only)".
 
-=item B<$obj->as_abbrevs>
+=item B<< $obj->as_abbrevs >>
 
 This returns a string containing English text describing the days in as 
 brief a form as possible, for tables or other places with little space.
@@ -413,7 +413,7 @@ May be followed by "(Sch days)" or "(Sch hols)".
 
 =back
 
-=head1 BUGS
+=head1 BUGS AND LIMITATIONS
 
 Holidays are hard-coded to always go with Sundays. At the very least 
 holidays should be allowed to go with Saturdays, since some agencies run
