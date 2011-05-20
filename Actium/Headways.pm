@@ -50,7 +50,7 @@ HELP
 sub START {
 
     # Term::Emit::setopts { -closestat => 'ERROR' };
-    
+
     emit 'Processing headway sheets';
 
     my $signup      = Actium::Signup->new;
@@ -88,7 +88,7 @@ sub START {
     # this probably should be a separate program, but for now, isn't
 
     write_prehistorics( $skeds_r, $signup );
-    
+
     emit_done;
 
     return;
@@ -120,7 +120,7 @@ sub read_headways {
 {    # this block is for scoping - variables about each headway sheet file
 
     my %indexes;
-    my $days;
+    my $pagedays;
     my $file;
     my $dispfile;
     my ( @leading_fieldnames, $leading_template, $leading_chars );
@@ -208,7 +208,7 @@ sub read_headways {
 
         $newpage->set_linedescrip($linedescrip);
         $newpage->set_origlinegroup($origlinegroup);
-        $newpage->set_days($days);
+        $newpage->set_days($pagedays);
 
         # set direction
 
@@ -216,13 +216,16 @@ sub read_headways {
 
         my $dir;
         given ($directionline) {
-            when (/North/is)            { $dir = 'NB'; }
-            when (/South/is)            { $dir = 'SB'; }
-            when (/East/is)             { $dir = 'EB'; }
-            when (/West/is)             { $dir = 'WB'; }
-            when (/Counterclockwise/is) { $dir = 'CC'; }
-            when (/Clockwise/is)        { $dir = 'CW'; }
-            default                     { $dir = 'DEFAULT'; }
+            when (/North/is)            { $dir = '0'; }    # NB
+            when (/South/is)            { $dir = '1'; }    # SB
+            when (/West/is)             { $dir = '3'; }    # WB
+            when (/East/is)             { $dir = '2'; }    # EB
+            when (/Counterclockwise/is) { $dir = '9'; }    # CC
+            when (/Clockwise/is)        { $dir = '8'; }    # CW
+            default {
+                $dir = '10';
+                # Hastus "Direction One"
+            }
         }
 
         $newpage->set_direction($dir);
@@ -316,22 +319,22 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
         my $line = $lines[ $indexes{schedule} ];
 
         given ($line) {
-            when (/Saturday/s) { $days = 'SA'; }
-            when (/Sunday/s)   { $days = 'SU'; }
-            when (/Weekday/s)  { $days = 'WD'; }
-            default            { $days = 'DEFAULT'; }
+            when (/Saturday/s) { $pagedays = '6'; }
+            when (/Sunday/s)   { $pagedays = '7H'; }
+            when (/Weekday/s)  { $pagedays = '12345'; }
+            default            { $pagedays = 'DEFAULT'; }
         }
 
-        if ( $days eq 'DEFAULT' ) {
+        if ( $pagedays eq 'DEFAULT' ) {
 
-            $days = 'WD';
+            $pagedays = '12345';
 
             emit_warn {
                 -reason => "No days found in $file; assuming weekdays" };
 
         }
         else {
-            emit_prog($days);
+            emit_prog($pagedays);
             emit_ok;
         }
 
@@ -596,7 +599,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
         foreach my $noteletter ( keys %thispages_notes ) {
             my $note_obj = Actium::Sked::Note->new(
                 {   origlinegroup => $page->origlinegroup(),
-                    days          => $days,
+                    days          => $pagedays,
                     noteletter    => $noteletter,
                     note          => $thispages_notes{$noteletter},
                 }

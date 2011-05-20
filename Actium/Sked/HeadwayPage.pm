@@ -30,7 +30,7 @@ has 'line_r' => (
     isa      => 'ArrayRef[Str]',
     default  => sub { [] },
     required => 1,
-    handles => {
+    handles  => {
         line       => 'get',
         line_count => 'count',
         set_line   => 'set',
@@ -109,18 +109,46 @@ around BUILDARGS => sub {
 sub sked {
     my $self = shift;
 
+    my $pagedays = $self->days;
+
+#  TODO - MOVE THIS TO A BUILDER ROUTINE IN Actium::Sked
+
+    my %is_an_exception;
+    my $has_exceptions;
+    foreach my $trip ( $self->trips ) {
+        my $exception = $trip->exceptions || $SPACE;
+        $is_an_exception{$exception} = 1;
+    }
+
+    my $daycode;
+    if ( scalar keys %is_an_exception == 1 and not $is_an_exception{$SPACE} ) {
+        $daycode = ( values %is_an_exception )[0];
+    }
+    else {
+        $daycode = $pagedays;
+    }
+    
+    my $daysobj;
+
+    given ($daycode) {
+        $daysobj = Actium::Sked::Dir->new( '12345', 'D' ) when 'SD';
+        $daysobj = Actium::Sked::Dir->new( '12345', 'H' ) when 'SH';
+        default { $daysobj = Actium::Sked::Dir->new($daycode) };
+    }
+
     my $sked = Actium::Sked->new(
         place8_r      => $self->place8_r(),
         origlinegroup => $self->origlinegroup(),
         linedescrip   => $self->linedescrip(),
         direction     => $self->direction(),
-        days          => $self->days(),
+        days          => $daysobj,
+        pagedays      => $pagedays,
         trip_r        => $self->trip_r(),
     );
 
     return $sked;
 
-}
+} ## tidy end: sub sked
 
 no Moose::Util::TypeConstraints;
 no Moose;

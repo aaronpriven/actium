@@ -6,6 +6,9 @@
 
 # legacy status 3
 
+# TODO - Build the direction object from the trips in this object and the
+# passed "pagedays"
+
 package Actium::Sked 0.001;
 
 use 5.012;
@@ -26,7 +29,11 @@ use Actium::Time(qw<:all>);
 use Actium::Sorting qw<sortbyline>;
 use Actium::Constants;
 
+use Actium::Types (qw/DirCode HastusDirCode ActiumSkedDir ActiumSkedDays/);
+
 use Actium::Sked::Trip;
+use Actium::Sked::Dir;
+use Actium::Sked::Days;
 
 ###################################
 ## MOOSE ATTRIBUTES
@@ -49,10 +56,30 @@ has 'place8_r' => (
     handles => { place8s => 'elements', },
 );
 
-# from AVL or headways
-has [qw/origlinegroup linegroup linedescrip direction days/] => (
+# from AVL or headways (only headways gives pagedays)
+has [qw/origlinegroup linegroup linedescrip pagedays/] => (
     is  => 'rw',
     isa => 'Str',
+);
+
+# direction
+has 'dir_obj' => (
+    required => 1,
+    coerce   => 1,
+    init_arg => 'direction',
+    is       => 'ro',
+    isa      => ActiumSkedDir,
+    handles  => ['dircode'],
+);
+
+# days
+has 'days_obj' => (
+    required => 1,
+    coerce   => 1,
+    init_arg => 'days',
+    is       => 'ro',
+    isa      => ActiumSkedDays,
+    handles  => ['daycode'],
 );
 
 # from AVL or headways, but specific data in trips varies
@@ -268,7 +295,12 @@ sub id {
 sub skedid {
     my $self = shift;
     my $linegroup = $self->linegroup || $self->oldlinegroup;
-    return ( join( '_', $linegroup, $self->direction, $self->days ) );
+    return (
+        join( '_',
+            $linegroup, $self->dircode,
+            $self->pagedays || $self->days_obj->as_transitinfo )
+    );
+          # TODO - figure something better than as_transitinfo!
 }
 
 sub dump {
@@ -328,7 +360,7 @@ sub prehistoric_skedsfile {
 sub new_from_prehistoric {
 
     my $class = shift;
-    
+
     my $filespec = shift;
 
     my %spec;
@@ -341,7 +373,7 @@ sub new_from_prehistoric {
     $_ = <$skedsfh>;
     trim;
 
-    @spec{qw(linegroup direction days)} = split(/_/);
+    @spec{qw(linegroup direction pagedays)} = split(/_/);
 
     $_ = <$skedsfh>;
     # Currently ignores "Note Definitions" line
@@ -386,7 +418,7 @@ sub new_from_prehistoric {
         $notespec{routenum}    = shift @fields;
 
         $#fields = $#places;
-        
+
         $notespec{placetime_r} = \@fields;
 
         # this means that the number of time columns will be the same as
@@ -403,7 +435,7 @@ sub new_from_prehistoric {
 
     $class->new(%spec);
 
-} ## tidy end: sub new_from_prehistoric_skedsfile
+} ## tidy end: sub new_from_prehistoric
 
 1;
 

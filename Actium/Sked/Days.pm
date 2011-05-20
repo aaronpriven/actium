@@ -63,10 +63,6 @@ sub _initialize_daycode {
     my $daycode = shift;
     my $set     = shift;
 
-#$daycode = $DAYS_FROM_TRANSITINFO{$daycode} if $DAYS_FROM_TRANSITINFO{$daycode};
-# if passed a day code from the Transitinfo definitions, convert it
-# TODO - maybe use coercion instead?
-
     $daycode =~ s/\D//g;
     # eliminate anything that's not a digit
 
@@ -81,7 +77,6 @@ sub _initialize_daycode {
 
 has 'schooldaycode' => (
     is => 'ro',
-    #    isa => 'Str' , # code not working and I don't know why
     isa     => SchoolDayCode,    # [BDH]
     default => 'B',
 );
@@ -288,13 +283,13 @@ This documentation refers to version 0.001
 
  use Actium::Sked::Days;
  
- my $daycode = Actium::Sked::Days->new ('135');
+ my $days = Actium::Sked::Days->new ('135');
  
- say $daycode->as_plurals; # "Mondays, Wednesdays, and Fridays"
- say $daycode->as_adjectives; # "Monday, Wednesday, and Friday"
- say $daycode->as_abbrevs; # "Mon Wed & Fri"
+ say $days->as_plurals; # "Mondays, Wednesdays, and Fridays"
+ say $days->as_adjectives; # "Monday, Wednesday, and Friday"
+ say $days->as_abbrevs; # "Mon Wed & Fri"
  
- say $daycode->as_transitinfo; # 'MZ'
+ say $days->as_transitinfo; # 'MZ'
  
 =head1 DESCRIPTION
 
