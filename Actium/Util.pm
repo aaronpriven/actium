@@ -267,7 +267,7 @@ value from Actium::Constants is replaced by an underline (_),
 making it readable. (An easier way to type "s/$KEY_SEPARATOR/_/g foreach 
 @list;".)
 
-=item B<flat_arrayref(I<list>)
+=item B<flat_arrayref(I<list>)>
 
 Takes a list and flattens it, ensuring that the contents of any lists of lists
 are returned as individual items.

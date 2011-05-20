@@ -6,26 +6,30 @@
 
 # legacy status 3
 
-package Actium::Sked;
+package Actium::Sked 0.001;
 
-use 5.010;
-
-our $VERSION = '0.001';
-$VERSION = eval $VERSION;
+use 5.012;
+use strict;
 
 use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
+use English '-no_match_vars';
+
 use List::MoreUtils qw<uniq none>;
+use Text::Trim;
+
 use Actium::Util(qw<:ALL>);
-
 use Actium::Time(qw<:all>);
-
 use Actium::Sorting qw<sortbyline>;
-
 use Actium::Constants;
+
+use Actium::Sked::Trip;
+
+###################################
+## MOOSE ATTRIBUTES
 
 # comes from AVL, not headways
 has 'place4_r' => (
@@ -33,7 +37,7 @@ has 'place4_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { place4s => 'elements' , },
+    handles => { place4s => 'elements', },
 );
 
 # comes from AVL or headways
@@ -42,7 +46,7 @@ has 'place8_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { place8s => 'elements' , },
+    handles => { place8s => 'elements', },
 );
 
 # from AVL or headways
@@ -50,6 +54,36 @@ has [qw/origlinegroup linegroup linedescrip direction days/] => (
     is  => 'rw',
     isa => 'Str',
 );
+
+# from AVL or headways, but specific data in trips varies
+has 'trip_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Actium::Sked::Trip]',
+    default => sub { [] },
+    handles => { trips => 'elements', trip => 'get', },
+);
+
+# from AVL only
+
+has 'stopid_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => { stopids => 'elements', },
+);
+
+has 'stopplace_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => { stopplaces => 'elements', },
+);
+
+#################################
+## METHODS
 
 sub routes {
 
@@ -69,33 +103,6 @@ sub routes {
     return sortbyline( keys %seen_route );
 
 }
-
-# from AVL or headways, but specific data in trips varies
-has 'trip_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Actium::Sked::Trip]',
-    default => sub { [] },
-    handles => { trips => 'elements' , trip => 'get', },
-);
-
-# from AVL only
-
-has 'stopid_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Str]',
-    default => sub { [] },
-    handles => { stopids => 'elements' , },
-);
-
-has 'stopplace_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Str]',
-    default => sub { [] },
-    handles => { stopplaces => 'elements' , },
-);
 
 sub divide_sked {
     my $self = shift;
@@ -164,7 +171,7 @@ sub divide_sked {
             # want to clone objects this way.
 
             $value_of{$attrname} = $value;
-        } ## <perltidy> end foreach my $attribute ( $self...)
+        }    ## <perltidy> end foreach my $attribute ( $self...)
 
         my $newsked = Actium::Sked->new(
             trip_r    => $trips_of{$linegroup},
@@ -176,11 +183,11 @@ sub divide_sked {
 
         push @newskeds, $newsked;
 
-    } ## <perltidy> end foreach my $linegroup (@linegroups)
+    }    ## <perltidy> end foreach my $linegroup (@linegroups)
 
     return @newskeds;
 
-} ## <perltidy> end sub divide_sked
+}    ## <perltidy> end sub divide_sked
 
 sub placetime_columns {
     my $self = shift;
@@ -251,7 +258,7 @@ sub delete_blank_columns {
 
     return;
 
-} ## <perltidy> end sub delete_blank_columns
+}    ## <perltidy> end sub delete_blank_columns
 
 sub id {
     my $self = shift;
@@ -316,7 +323,87 @@ sub prehistoric_skedsfile {
 
     return $outdata;
 
-} ## <perltidy> end sub prehistoric_skedsfile
+}    ## <perltidy> end sub prehistoric_skedsfile
+
+sub new_from_prehistoric {
+
+    my $class = shift;
+    
+    my $filespec = shift;
+
+    my %spec;
+
+    open my $skedsfh, '<', $filespec
+      or die "Can't open $filespec for input";
+
+    local ($_);
+
+    $_ = <$skedsfh>;
+    trim;
+
+    @spec{qw(linegroup direction days)} = split(/_/);
+
+    $_ = <$skedsfh>;
+    # Currently ignores "Note Definitions" line
+
+    $_ = <$skedsfh>;
+    trim;
+
+    my @places;
+    ( undef, undef, undef, undef, @places ) = split(/\t/);
+    # the first four columns are always
+    # "SPEC DAYS", "NOTE" , "VT" , and "RTE NUM"
+
+    # Remove the extra space added in avl2skeds.
+    # So returns tp9 to tp8.
+  PLACE:
+    foreach my $place (@places) {
+        for my $i ( reverse 0 .. 4 ) {
+            if ( substr( $place, $i, 1 ) eq $SPACE ) {
+                substr( $place, $i, 1, $EMPTY_STR );
+                next PLACE;
+            }
+        }
+    }
+
+    my $last_tp_idx = $#places;
+
+    $spec{place8_r} = \@places;
+
+    my @trips;
+
+    while (<$skedsfh>) {
+        rtrim;
+
+        next unless $_;    # skips blank lines
+
+        my @fields = split(/\t/);
+
+        my %notespec;
+        $notespec{exceptions}  = shift @fields;
+        $notespec{noteletter}  = shift @fields;
+        $notespec{vehicletype} = shift @fields;
+        $notespec{routenum}    = shift @fields;
+
+        $#fields = $#places;
+        
+        $notespec{placetime_r} = \@fields;
+
+        # this means that the number of time columns will be the same as
+        # the number timepoint columns -- discarding any extras and
+        # padding out empty ones with undef values
+
+        push @trips, Actium::Sked::Trip->new(%notespec);
+
+    } ## tidy end: while (<$skedsfh>)
+
+    $spec{trip_r} = \@trips;
+
+    close $skedsfh or die "Can't close $filespec for reading: $OS_ERROR";
+
+    $class->new(%spec);
+
+} ## tidy end: sub new_from_prehistoric_skedsfile
 
 1;
 
