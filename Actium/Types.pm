@@ -18,9 +18,10 @@ $VERSION = eval $VERSION;
 ## no critic (ProhibitMagicNumbers)
 
 use MooseX::Types -declare => [
-    qw <TransitInfoDays     DayCode  SchoolDayCode
-      HastusDirCode       DirCode  ActiumSkedDir
-      ArrayRefOfTimeNums  TimeNum  _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
+    qw <TransitInfoDays   DayCode     SchoolDayCode
+      DaySpec             ActiumSkedDays
+      HastusDirCode       DirCode     ActiumSkedDir
+      ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
       Str4                Str8
       FolderComponent     FolderList
       >
@@ -45,6 +46,16 @@ enum( TransitInfoDays, values %TRANSITINFO_DAYS_OF );
 coerce DayCode, from TransitInfoDays, via { $DAYS_FROM_TRANSITINFO{$_} };
 
 enum( SchoolDayCode, 'B', 'D', 'H' );
+
+subtype DaySpec, as ArrayRef, where {
+    $#{$_} == 1
+      and is_DayCode( $_->[0] )
+      and is_SchoolDayCode( $_->[1] );
+};
+
+subtype ActiumSkedDays, as class_type('Actium::Sked::Days');
+
+coerce ActiumSkedDays, from DaySpec, via { Actium::Sked::Dir->new($_) };
 
 #########################
 ### SCHEDULE DIRECTIONS
