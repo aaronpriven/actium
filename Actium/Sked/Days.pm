@@ -95,7 +95,7 @@ sub _build_composite_code {
     my $schooldaycode = $self->schooldaycode;
 
     return $self->daycode unless $schooldaycode;
-    return $self->schooldaycode . $self->daycode;
+    return $self->schooldaycode . q{-} . $self->daycode;
 }
 
 sub as_sortable {
@@ -124,6 +124,19 @@ sub as_transitinfo {
     return $cache{$composite} = $self->_invalid_transitinfo_daycode;
 
 } ## tidy end: sub as_transitinfo
+
+sub for_prehistoric {
+   # prehistoric skeds files just uses the days from the headway sheets
+   
+   my $self = shift;
+   my $transitinfo = $self->as_transitinfo;
+   
+   my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
+   
+   return 'WD' unless $transitinfo ~~ @valid_prehistorics;
+   return $transitinfo;
+   
+}
 
 sub _invalid_transitinfo_daycode {
     my $self          = shift;

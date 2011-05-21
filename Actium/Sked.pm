@@ -6,9 +6,6 @@
 
 # legacy status 3
 
-# TODO - Build the direction object from the trips in this object and the
-# passed "pagedays"
-
 package Actium::Sked 0.001;
 
 use 5.012;
@@ -35,6 +32,8 @@ use Actium::Sked::Trip;
 use Actium::Sked::Dir;
 use Actium::Sked::Days;
 
+use Actium::Term;
+
 ###################################
 ## MOOSE ATTRIBUTES
 
@@ -56,8 +55,8 @@ has 'place8_r' => (
     handles => { place8s => 'elements', },
 );
 
-# from AVL or headways (only headways gives pagedays)
-has [qw/origlinegroup linegroup linedescrip pagedays/] => (
+# from AVL or headways
+has [qw<origlinegroup linegroup linedescrip>] => (
     is  => 'rw',
     isa => 'Str',
 );
@@ -79,7 +78,11 @@ has 'days_obj' => (
     init_arg => 'days',
     is       => 'ro',
     isa      => ActiumSkedDays,
-    handles  => ['daycode'],
+    handles  => {
+        prehistoric_days => 'for_prehistoric',
+        daycode          => 'daycode',
+        schooldaycode    => 'schooldaycode',
+      }
 );
 
 # from AVL or headways, but specific data in trips varies
@@ -296,11 +299,14 @@ sub skedid {
     my $self = shift;
     my $linegroup = $self->linegroup || $self->oldlinegroup;
     return (
-        join( '_',
-            $linegroup, $self->dircode,
-            $self->pagedays || $self->days_obj->as_transitinfo )
-    );
-          # TODO - figure something better than as_transitinfo!
+        join( '_', $linegroup, $self->dircode, $self->daycode  ) );
+}
+
+sub prehistoric_id {
+    my $self = shift;
+    my $linegroup = $self->linegroup || $self->oldlinegroup;
+    return (
+        join( '_', $linegroup, $self->dircode, $self->prehistoric_days  ) );
 }
 
 sub dump {
@@ -309,6 +315,8 @@ sub dump {
     return Data::Dumper::Dumper($self);
 }
 
+## TODO - Modify prehistoric routines for new day information
+
 sub prehistoric_skedsfile {
 
     my $self = shift;
@@ -316,7 +324,7 @@ sub prehistoric_skedsfile {
     my $outdata;
     open( my $out, '>', \$outdata );
 
-    say $out $self->id;
+    say $out $self->prehistoric_id;
 
     say $out "Note Definitions:\t";
 
@@ -347,8 +355,8 @@ sub prehistoric_skedsfile {
     foreach my $trip ( $self->trips ) {
         my $times = $timesub->( $trip->placetimes );
 
-        say $out jt( $trip->exceptions, $EMPTY_STR, $EMPTY_STR, $trip->routenum,
-            $times );
+        say $out jt( $trip->dayexception, $EMPTY_STR, $EMPTY_STR,
+            $trip->routenum, $times );
     }
 
     close $out;
@@ -412,10 +420,10 @@ sub new_from_prehistoric {
         my @fields = split(/\t/);
 
         my %notespec;
-        $notespec{exceptions}  = shift @fields;
-        $notespec{noteletter}  = shift @fields;
-        $notespec{vehicletype} = shift @fields;
-        $notespec{routenum}    = shift @fields;
+        $notespec{dayexception} = shift @fields;
+        $notespec{noteletter}   = shift @fields;
+        $notespec{vehicletype}  = shift @fields;
+        $notespec{routenum}     = shift @fields;
 
         $#fields = $#places;
 
@@ -436,6 +444,85 @@ sub new_from_prehistoric {
     $class->new(%spec);
 
 } ## tidy end: sub new_from_prehistoric
+
+sub write_prehistorics {
+
+    my $skeds_r = shift;
+    my $signup  = shift;
+
+    # TODO - adjust to deal with new day objects
+
+    emit 'Preparing prehistoric sked files';
+
+    my %prehistorics_of;
+
+    emit 'Creating prehistoric file data';
+
+    foreach my $sked ( @{$skeds_r} ) {
+        my $group_dir = $sked->linegroup . q{_} . $sked->direction;
+        my $days      = $sked->days();
+        emit_over "${group_dir}_$days";
+        $prehistorics_of{$group_dir}{$days} = $sked->prehistoric_skedsfile();
+    }
+
+    emit_done;
+
+    # so now %{$prehistorics_of{$group_dir}} is a hash:
+    # keys are days (WD, SU, SA)
+    # and values are the full text of the prehistoric sked
+
+    my %allprehistorics;
+
+    my @comparisons
+      = ( [qw/SA SU WE/], [qw/WD SA WA/], [qw/WD SU WU/], [qw/WD WE DA/], );
+
+    emit 'Merging days';
+
+    foreach my $group_dir ( sort keys %prehistorics_of ) {
+
+        emit_over $group_dir;
+
+        # merge days
+        foreach my $comparison_r (@comparisons) {
+            my ( $first_days, $second_days, $to ) = @{$comparison_r};
+
+            next
+              unless $prehistorics_of{$group_dir}{$first_days}
+                  and $prehistorics_of{$group_dir}{$second_days};
+
+            my $prefirst  = $prehistorics_of{$group_dir}{$first_days};
+            my $presecond = $prehistorics_of{$group_dir}{$second_days};
+
+            my ( $idfirst,  $bodyfirst )  = split( /\n/s, $prefirst,  2 );
+            my ( $idsecond, $bodysecond ) = split( /\n/s, $presecond, 2 );
+
+            if ( $bodyfirst eq $bodysecond ) {
+                my $new = "${group_dir}_$to\n$bodyfirst";
+                $prehistorics_of{$group_dir}{$to} = $new;
+                delete $prehistorics_of{$group_dir}{$first_days};
+                delete $prehistorics_of{$group_dir}{$second_days};
+            }
+
+        }    ## <perltidy> end foreach my $comparison_r (@comparisons)
+
+        # copy to overall list
+
+        foreach my $days ( keys %{ $prehistorics_of{$group_dir} } ) {
+            $allprehistorics{"${group_dir}_$days"}
+              = $prehistorics_of{$group_dir}{$days};
+        }
+
+    }    ## <perltidy> end foreach my $group_dir ( sort...)
+
+    emit_done;
+
+    $signup->subfolder('prehistoric')
+      ->write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
+    emit_done;
+
+    return;
+
+}    ## <perltidy> end sub write_prehistorics
 
 1;
 
