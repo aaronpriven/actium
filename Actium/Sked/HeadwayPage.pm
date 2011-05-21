@@ -24,6 +24,8 @@ use Text::Trim();
 use Actium::Sked::Trip;
 use Actium::Util qw<:ALL>;
 
+use List::MoreUtils ('uniq');
+
 has 'line_r' => (
     traits   => ['Array'],
     is       => 'bare',
@@ -109,40 +111,35 @@ around BUILDARGS => sub {
 sub sked {
     my $self = shift;
 
-    my $pagedays = $self->days;
-
-#  TODO - MOVE THIS TO A BUILDER ROUTINE IN Actium::Sked
-
-    my %is_an_exception;
-    my $has_exceptions;
-    foreach my $trip ( $self->trips ) {
-        my $exception = $trip->exceptions || $SPACE;
-        $is_an_exception{$exception} = 1;
-    }
-
-    my $daycode;
-    if ( scalar keys %is_an_exception == 1 and not $is_an_exception{$SPACE} ) {
-        $daycode = ( values %is_an_exception )[0];
+    # Convert day strings with exceptions to # Actium::Sked::Day objects
+    
+    my $day_obj;
+    
+    my @dayexceptions = uniq ( map { $_->dayexception } $self->trips) ;
+    
+    if (@dayexceptions == 1 ) {
+        given ($dayexceptions[0]) {
+         when ('SD') {
+            $day_obj = Actium::Sked::Days->new($self->days, 'D');
+         }
+         when ('SH') {
+            $day_obj = Actium::Sked::Days->new($self->days, 'H');
+         }
+         default {
+            $day_obj = Actium::Sked::Days->new($self->days);
+         }
+        }
     }
     else {
-        $daycode = $pagedays;
+            $day_obj = Actium::Sked::Days->new($self->days);
     }
     
-    my $daysobj;
-
-    given ($daycode) {
-        $daysobj = Actium::Sked::Dir->new( '12345', 'D' ) when 'SD';
-        $daysobj = Actium::Sked::Dir->new( '12345', 'H' ) when 'SH';
-        default { $daysobj = Actium::Sked::Dir->new($daycode) };
-    }
-
     my $sked = Actium::Sked->new(
         place8_r      => $self->place8_r(),
         origlinegroup => $self->origlinegroup(),
         linedescrip   => $self->linedescrip(),
-        direction     => $self->direction(),
-        days          => $daysobj,
-        pagedays      => $pagedays,
+        direction     => $self->direction(), # coerces string to object
+        days          => $day_obj,
         trip_r        => $self->trip_r(),
     );
 

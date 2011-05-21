@@ -6,7 +6,7 @@
 # This program generates the point schedules associated with 
 # particular signs.
 
-# TODO - 
+# OLDTODO - 
 # 1) Change "headnum" routine so that if two adjacent numbers have
 # the same color, the slash between them uses that color (instead of
 # grey80) - DONE -- but somehow undone when other things done -- redo

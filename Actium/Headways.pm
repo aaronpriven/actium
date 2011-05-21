@@ -54,9 +54,9 @@ sub START {
     emit 'Processing headway sheets';
 
     my $signup      = Actium::Signup->new;
-    my $headwaysdir = Actium::Signup->new('headways');
+    my $headwaysfolder = Actium::Signup->new('headways');
 
-    my @files = $headwaysdir->glob_plain_files();
+    my @files = $headwaysfolder->glob_plain_files();
 
     #### DEBUG ONLY
     #@files = ( $files[1] );
@@ -87,7 +87,7 @@ sub START {
 
     # this probably should be a separate program, but for now, isn't
 
-    write_prehistorics( $skeds_r, $signup );
+    Actium::Sked->write_prehistorics( $skeds_r, $signup );
 
     emit_done;
 
@@ -120,7 +120,7 @@ sub read_headways {
 {    # this block is for scoping - variables about each headway sheet file
 
     my %indexes;
-    my $pagedays;
+    my $days;
     my $file;
     my $dispfile;
     my ( @leading_fieldnames, $leading_template, $leading_chars );
@@ -208,7 +208,7 @@ sub read_headways {
 
         $newpage->set_linedescrip($linedescrip);
         $newpage->set_origlinegroup($origlinegroup);
-        $newpage->set_days($pagedays);
+        $newpage->set_days($days);
 
         # set direction
 
@@ -319,22 +319,22 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
         my $line = $lines[ $indexes{schedule} ];
 
         given ($line) {
-            when (/Saturday/s) { $pagedays = '6'; }
-            when (/Sunday/s)   { $pagedays = '7H'; }
-            when (/Weekday/s)  { $pagedays = '12345'; }
-            default            { $pagedays = 'DEFAULT'; }
+            when (/Saturday/s) { $days = '6'; }
+            when (/Sunday/s)   { $days = '7H'; }
+            when (/Weekday/s)  { $days = '12345'; }
+            default            { $days = 'DEFAULT'; }
         }
 
-        if ( $pagedays eq 'DEFAULT' ) {
+        if ( $days eq 'DEFAULT' ) {
 
-            $pagedays = '12345';
+            $days = '12345';
 
             emit_warn {
                 -reason => "No days found in $file; assuming weekdays" };
 
         }
         else {
-            emit_prog($pagedays);
+            emit_prog($days);
             emit_ok;
         }
 
@@ -377,14 +377,14 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         if ( $reporttype eq 'Crew' ) {
             @leading_fieldnames
-              = qw[ exceptions routenum runid blockid vehicletype from noteletter ];
+              = qw[ dayexception routenum runid blockid vehicletype from noteletter ];
             $leading_template
               = q[  A4         A6       A10   A11     A4          A10  A8 ];
             $leading_chars = 53;
         }
         else {    # type eq 'Vehicle'
             @leading_fieldnames
-              = qw[ exceptions routenum blockid vehicletype from noteletter ];
+              = qw[ dayexception routenum blockid vehicletype from noteletter ];
             $leading_template
               = q[  A4         A6       A10     A4          A10  A8 ];
             $leading_chars = 42;
@@ -533,10 +533,11 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
                 Text::Trim::trim(@fields);
 
-                # separate fields...
+                # separate fields... first take out all the times
                 my @times = splice( @fields, scalar @leading_fieldnames,
                     $number_of_timepoints );
 
+                # then put remaining fields in %fields
                 my %fields;
                 @fields{@remaining_fieldnames} = @fields;    # hash slice
 
@@ -599,7 +600,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
         foreach my $noteletter ( keys %thispages_notes ) {
             my $note_obj = Actium::Sked::Note->new(
                 {   origlinegroup => $page->origlinegroup(),
-                    days          => $pagedays,
+                    days          => $days,
                     noteletter    => $noteletter,
                     note          => $thispages_notes{$noteletter},
                 }
@@ -950,82 +951,6 @@ sub shrink_duplicate_timepoint_runs {
 
 }    ## <perltidy> end sub shrink_duplicate_timepoint_runs
 
-sub write_prehistorics {
 
-    emit 'Preparing prehistoric sked files';
-
-    my $skeds_r = shift;
-
-    my $signup = shift;
-
-    my %prehistorics_of;
-
-    emit 'Creating prehistoric file data';
-
-    foreach my $sked ( @{$skeds_r} ) {
-        my $group_dir = $sked->linegroup . q{_} . $sked->direction;
-        my $days      = $sked->days();
-        emit_over "${group_dir}_$days";
-        $prehistorics_of{$group_dir}{$days} = $sked->prehistoric_skedsfile();
-    }
-
-    emit_done;
-
-    # so now %{$prehistorics_of{$group_dir}} is a hash:
-    # keys are days (WD, SU, SA)
-    # and values are the full text of the prehistoric sked
-
-    my %allprehistorics;
-
-    my @comparisons
-      = ( [qw/SA SU WE/], [qw/WD SA WA/], [qw/WD SU WU/], [qw/WD WE DA/], );
-
-    emit 'Merging days';
-
-    foreach my $group_dir ( sort keys %prehistorics_of ) {
-
-        emit_over $group_dir;
-
-        # merge days
-        foreach my $comparison_r (@comparisons) {
-            my ( $first_days, $second_days, $to ) = @{$comparison_r};
-
-            next
-              unless $prehistorics_of{$group_dir}{$first_days}
-                  and $prehistorics_of{$group_dir}{$second_days};
-
-            my $prefirst  = $prehistorics_of{$group_dir}{$first_days};
-            my $presecond = $prehistorics_of{$group_dir}{$second_days};
-
-            my ( $idfirst,  $bodyfirst )  = split( /\n/s, $prefirst,  2 );
-            my ( $idsecond, $bodysecond ) = split( /\n/s, $presecond, 2 );
-
-            if ( $bodyfirst eq $bodysecond ) {
-                my $new = "${group_dir}_$to\n$bodyfirst";
-                $prehistorics_of{$group_dir}{$to} = $new;
-                delete $prehistorics_of{$group_dir}{$first_days};
-                delete $prehistorics_of{$group_dir}{$second_days};
-            }
-
-        }    ## <perltidy> end foreach my $comparison_r (@comparisons)
-
-        # copy to overall list
-
-        foreach my $days ( keys %{ $prehistorics_of{$group_dir} } ) {
-            $allprehistorics{"${group_dir}_$days"}
-              = $prehistorics_of{$group_dir}{$days};
-        }
-
-    }    ## <perltidy> end foreach my $group_dir ( sort...)
-
-    emit_done;
-
-    $signup->subfolder('prehistoric')
-      ->write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
-    emit_done;
-
-    return;
-
-}    ## <perltidy> end sub write_prehistorics
 
 1;
