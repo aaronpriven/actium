@@ -18,8 +18,7 @@ use Moose::Util::TypeConstraints;
 
 use English '-no_match_vars';
 
-use List::MoreUtils qw<uniq none>;
-use Text::Trim;
+use List::MoreUtils qw<none>;
 
 use Actium::Util(qw<:ALL>);
 use Actium::Time(qw<:all>);
@@ -79,10 +78,9 @@ has 'days_obj' => (
     is       => 'ro',
     isa      => ActiumSkedDays,
     handles  => {
-        prehistoric_days => 'for_prehistoric',
         daycode          => 'daycode',
         schooldaycode    => 'schooldaycode',
-      }
+    }
 );
 
 # from AVL or headways, but specific data in trips varies
@@ -298,15 +296,7 @@ sub id {
 sub skedid {
     my $self = shift;
     my $linegroup = $self->linegroup || $self->oldlinegroup;
-    return (
-        join( '_', $linegroup, $self->dircode, $self->daycode  ) );
-}
-
-sub prehistoric_id {
-    my $self = shift;
-    my $linegroup = $self->linegroup || $self->oldlinegroup;
-    return (
-        join( '_', $linegroup, $self->dircode, $self->prehistoric_days  ) );
+    return ( join( '_', $linegroup, $self->dircode, $self->daycode ) );
 }
 
 sub dump {
@@ -315,214 +305,8 @@ sub dump {
     return Data::Dumper::Dumper($self);
 }
 
-## TODO - Modify prehistoric routines for new day information
-
-sub prehistoric_skedsfile {
-
-    my $self = shift;
-
-    my $outdata;
-    open( my $out, '>', \$outdata );
-
-    say $out $self->prehistoric_id;
-
-    say $out "Note Definitions:\t";
-
-    my @place9s;
-    my %place9s_seen;
-
-    foreach ( $self->place8s ) {
-        my $place9 = $_;
-        substr( $place9, 4, 0, $SPACE );
-        $place9 =~ s/  / /g;
-
-        if ( $place9s_seen{$place9} ) {
-
-            $place9s_seen{$place9}++;
-            $place9 .= '=' . $place9s_seen{$place9};
-        }
-        else {
-            $place9s_seen{$place9} = 1;
-        }
-
-        push @place9s, $place9;
-    }
-
-    say $out jt( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
-
-    my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR );
-
-    foreach my $trip ( $self->trips ) {
-        my $times = $timesub->( $trip->placetimes );
-
-        say $out jt( $trip->dayexception, $EMPTY_STR, $EMPTY_STR,
-            $trip->routenum, $times );
-    }
-
-    close $out;
-
-    return $outdata;
-
-}    ## <perltidy> end sub prehistoric_skedsfile
-
-sub new_from_prehistoric {
-
-    my $class = shift;
-
-    my $filespec = shift;
-
-    my %spec;
-
-    open my $skedsfh, '<', $filespec
-      or die "Can't open $filespec for input";
-
-    local ($_);
-
-    $_ = <$skedsfh>;
-    trim;
-
-    @spec{qw(linegroup direction pagedays)} = split(/_/);
-
-    $_ = <$skedsfh>;
-    # Currently ignores "Note Definitions" line
-
-    $_ = <$skedsfh>;
-    trim;
-
-    my @places;
-    ( undef, undef, undef, undef, @places ) = split(/\t/);
-    # the first four columns are always
-    # "SPEC DAYS", "NOTE" , "VT" , and "RTE NUM"
-
-    # Remove the extra space added in avl2skeds.
-    # So returns tp9 to tp8.
-  PLACE:
-    foreach my $place (@places) {
-        for my $i ( reverse 0 .. 4 ) {
-            if ( substr( $place, $i, 1 ) eq $SPACE ) {
-                substr( $place, $i, 1, $EMPTY_STR );
-                next PLACE;
-            }
-        }
-    }
-
-    my $last_tp_idx = $#places;
-
-    $spec{place8_r} = \@places;
-
-    my @trips;
-
-    while (<$skedsfh>) {
-        rtrim;
-
-        next unless $_;    # skips blank lines
-
-        my @fields = split(/\t/);
-
-        my %notespec;
-        $notespec{dayexception} = shift @fields;
-        $notespec{noteletter}   = shift @fields;
-        $notespec{vehicletype}  = shift @fields;
-        $notespec{routenum}     = shift @fields;
-
-        $#fields = $#places;
-
-        $notespec{placetime_r} = \@fields;
-
-        # this means that the number of time columns will be the same as
-        # the number timepoint columns -- discarding any extras and
-        # padding out empty ones with undef values
-
-        push @trips, Actium::Sked::Trip->new(%notespec);
-
-    } ## tidy end: while (<$skedsfh>)
-
-    $spec{trip_r} = \@trips;
-
-    close $skedsfh or die "Can't close $filespec for reading: $OS_ERROR";
-
-    $class->new(%spec);
-
-} ## tidy end: sub new_from_prehistoric
-
-sub write_prehistorics {
-
-    my $skeds_r = shift;
-    my $signup  = shift;
-
-    # TODO - adjust to deal with new day objects
-
-    emit 'Preparing prehistoric sked files';
-
-    my %prehistorics_of;
-
-    emit 'Creating prehistoric file data';
-
-    foreach my $sked ( @{$skeds_r} ) {
-        my $group_dir = $sked->linegroup . q{_} . $sked->direction;
-        my $days      = $sked->days();
-        emit_over "${group_dir}_$days";
-        $prehistorics_of{$group_dir}{$days} = $sked->prehistoric_skedsfile();
-    }
-
-    emit_done;
-
-    # so now %{$prehistorics_of{$group_dir}} is a hash:
-    # keys are days (WD, SU, SA)
-    # and values are the full text of the prehistoric sked
-
-    my %allprehistorics;
-
-    my @comparisons
-      = ( [qw/SA SU WE/], [qw/WD SA WA/], [qw/WD SU WU/], [qw/WD WE DA/], );
-
-    emit 'Merging days';
-
-    foreach my $group_dir ( sort keys %prehistorics_of ) {
-
-        emit_over $group_dir;
-
-        # merge days
-        foreach my $comparison_r (@comparisons) {
-            my ( $first_days, $second_days, $to ) = @{$comparison_r};
-
-            next
-              unless $prehistorics_of{$group_dir}{$first_days}
-                  and $prehistorics_of{$group_dir}{$second_days};
-
-            my $prefirst  = $prehistorics_of{$group_dir}{$first_days};
-            my $presecond = $prehistorics_of{$group_dir}{$second_days};
-
-            my ( $idfirst,  $bodyfirst )  = split( /\n/s, $prefirst,  2 );
-            my ( $idsecond, $bodysecond ) = split( /\n/s, $presecond, 2 );
-
-            if ( $bodyfirst eq $bodysecond ) {
-                my $new = "${group_dir}_$to\n$bodyfirst";
-                $prehistorics_of{$group_dir}{$to} = $new;
-                delete $prehistorics_of{$group_dir}{$first_days};
-                delete $prehistorics_of{$group_dir}{$second_days};
-            }
-
-        }    ## <perltidy> end foreach my $comparison_r (@comparisons)
-
-        # copy to overall list
-
-        foreach my $days ( keys %{ $prehistorics_of{$group_dir} } ) {
-            $allprehistorics{"${group_dir}_$days"}
-              = $prehistorics_of{$group_dir}{$days};
-        }
-
-    }    ## <perltidy> end foreach my $group_dir ( sort...)
-
-    emit_done;
-
-    $signup->subfolder('prehistoric')
-      ->write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
-    emit_done;
-
-    return;
-
-}    ## <perltidy> end sub write_prehistorics
+with 'Actium::Sked::Prehistoric';
+# allows prehistoric skeds files to be read and written.
 
 1;
 
