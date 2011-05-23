@@ -334,27 +334,27 @@ sub store {
 }
 
 sub open_read {
-    my $self = shift;
+    my $self     = shift;
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
-    
-    open my $fh , '<:encoding(UTF-8)' , $filespec 
+
+    open my $fh, '<:encoding(UTF-8)', $filespec
       or croak "Can't open $filespec for reading: $OS_ERROR";
-    
+
     return $fh;
- 
+
 }
 
 sub open_write {
-    my $self = shift;
+    my $self     = shift;
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
-    
-    open my $fh , '>:encoding(UTF-8)' , $filespec
+
+    open my $fh, '>:encoding(UTF-8)', $filespec
       or croak "Can't open $filespec for writing: $OS_ERROR";
-    
+
     return $fh;
- 
+
 }
 
 #######################
@@ -372,7 +372,7 @@ sub load_sqlite {
     );
 
     my $subfolder;
-    if ( exists $params{$subfolder} ) {
+    if ( exists $params{subfolder} ) {
         $subfolder = $params{subfolder};
         delete $params{$subfolder};
     }
@@ -388,6 +388,9 @@ sub load_sqlite {
     );
 
     if ($subfolder_is_empty) {
+        $params{flats_folder} = $self->path;
+    }
+    else {
         $params{flats_folder} = $self->subfolder($subfolder)->path;
     }
 
@@ -404,12 +407,12 @@ sub load_sqlite {
 
 sub load_xml {
     my $self = shift;
-    $self->_load_sqlite( 'xml', 'Actium::Files::FMPXMLResult', @_ );
+    $self->load_sqlite( 'xml', 'Actium::Files::FMPXMLResult', @_ );
 }
 
 sub load_hasi {
     my $self = shift;
-    $self->_load_sqlite( 'hasi', 'Actium::Files::HastusASI', @_ );
+    $self->load_sqlite( 'hasi', 'Actium::Files::HastusASI', @_ );
 }
 
 ################################################
@@ -517,7 +520,7 @@ sub write_files_from_hash {
 
     my $count;
 
-    emit("Writing $filetype files to " . $self->display_path);
+    emit( "Writing $filetype files to " . $self->display_path );
 
     foreach my $key ( sort keys %hash ) {
 

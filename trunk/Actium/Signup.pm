@@ -158,7 +158,7 @@ has subfolderlist_r => (
 );
 
 # Because subfolderlist comes from File::Spec->splitdir, it may
-# have elements that are the empty string. I don't think 
+# have elements that are the empty string. I don't think
 # this will matter.
 
 # for below, see big comment in Actium::Folder
@@ -179,14 +179,29 @@ override 'original_parameters' => sub {
 override subfolderlist_attribute => sub {'subfolders'};
 
 override display_path => sub {
-   my $self = shift;
-   my @subfolders = $self->subfolders;
-   if (@subfolders) {
-      return File::Spec->catdir(@subfolders) . " in signup " . $self->signup;
-   }
-   return "signup " . $self->signup;
+    my $self       = shift;
+    my @subfolders = $self->subfolders;
+    if (@subfolders) {
+        return File::Spec->catdir(@subfolders) . " in signup " . $self->signup;
+    }
+    return "signup " . $self->signup;
 
 };
+
+sub signup_obj {
+
+    my $self  = shift;
+    my $class = blessed $self;
+
+    return $class->new(
+        {   base   => $self->base,
+            signup => $self->signup,
+            cache  => $self->cache,
+            volume => $self->volume,
+        }
+    );
+
+}
 
 1;
 
@@ -461,6 +476,12 @@ Identical to their Actium::Folder counterparts, except that if present, the
 Actium::Signup cache folder
 (specified on the command line, or in the cache argument to 
 Actium::Signup->new ) is used instead of the SQLite default.
+
+=item B<$obj-E<gt>signup_obj()>
+
+Returns an object representing the signup folder of this object. Useful if, 
+in a method or subroutine, one is only passed an object representing a signup
+subfolder and one needs the signup folder itself.
 
 =back
 
