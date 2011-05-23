@@ -53,9 +53,16 @@ subtype DaySpec, as ArrayRef, where {
       and is_SchoolDayCode( $_->[1] );
 };
 
+coerce DaySpec, from DayCode, via { [ $_, 'B' ] },
+  from TransitInfoDays, via { [ to_DayCode($_), 'B' ] };
+
 subtype ActiumSkedDays, as class_type('Actium::Sked::Days');
 
-coerce ActiumSkedDays, from DaySpec, via { Actium::Sked::Dir->new($_) };
+coerce ActiumSkedDays,
+  from DaySpec, via { Actium::Sked::Dir->new($_) },
+  from DayCode, via { Actium::Sked::Dir->new(to_DaySpec($_)) },
+  from TransitInfoDays, via { Actium::Sked::Dir->new(to_DaySpec($_)) },
+  ;
 
 #########################
 ### SCHEDULE DIRECTIONS

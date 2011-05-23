@@ -6,12 +6,35 @@ use 5.012;
 use FindBin qw($Bin);
 use lib $Bin;
 
+use Actium::Options ('init_options');
+
+use Actium::Signup;
+
 use Actium::Sked;
 
-my $object
-  = Actium::Sked->new_from_prehistoric('/b/Actium/db/f10/skeds/31_SB_WD.txt')
-  ;
- 
+init_options;
+
+my $skedsfolder = Actium::Signup->new(
+    {   base       => '/b/Actium/db/',
+        signup     => 'f10',
+        subfolders => 'skeds',
+        cache => '/tmp/apriven/',
+    }
+);
+
+my $skedobjs = Actium::Sked->load_prehistorics( $skedsfolder, '3*' );
+
 use Data::Dumper;
 
-say Dumper(\$object); 
+open my $outfh, '>', '/tmp/dumpy.txt' or die $!;
+
+foreach my $object ( @{$skedobjs} ) {
+
+    my $id = "OBJ_" . $object->id;
+
+    say $outfh Data::Dumper->Dump( [ \$object ], [$id] );
+
+    close $outfh;
+
+}
+

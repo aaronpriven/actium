@@ -51,9 +51,6 @@ has 'dircode' => (
     isa         => DirCode,
 );
 
-# New day codes have a character for each set of days that are used.
-# 1 - 7 : Monday through Sunday (like in Hastus), and H - Holidays
-
 around BUILDARGS => sub {
     return positional_around( \@_, 'dircode' );
 };
@@ -106,7 +103,7 @@ Trips, or timetables, are assigned to particular scheduled directions.
 
 =over
 
-=item B<< Actium::Sked::Days->new(I<dircode>) >>
+=item B<< Actium::Sked::Dir->new(I<dircode>) >>
 
 The object is constructed using "Actium::Sked::Dir->new".  
 
