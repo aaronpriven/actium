@@ -86,15 +86,15 @@ sub prehistoric_skedsfile {
 
 sub load_prehistorics {
 
-    my $class = shift;
+    my $class     = shift;
     my $folder    = shift;
     my @filespecs = @_;
-    
-    my $signup    = $folder->signup_obj;
+
+    my $signup = $folder->signup_obj;
 
     my $xml_db = $signup->load_xml;
     $xml_db->ensure_loaded('Timepoints');
-    
+
     my $xml_dbh = $xml_db->dbh;
 
     my %tp4_of_tp8;
@@ -151,6 +151,8 @@ sub _new_from_prehistoric {
     ( undef, undef, undef, undef, @place8s ) = _tp9_to_tp8( split(/\t/) );
     # the first four columns are always
     # "SPEC DAYS", "NOTE" , "VT" , and "RTE NUM"
+    
+    s/=.*// foreach @place8s; # get rid of =2, =3, etc.
 
     $spec{place8_r} = \@place8s;
     $spec{place4_r} = [ map { $tp4_of_tp8{$_} } @place8s ];
@@ -158,6 +160,10 @@ sub _new_from_prehistoric {
     my $last_tp_idx = $#place8s;
 
     my @trips;
+    
+    if ($linegroup eq '376') {
+     say '';
+    }
 
     while (<$skedsfh>) {
         rtrim;
@@ -198,7 +204,13 @@ sub _new_from_prehistoric {
             when ( exists $DAYS_FROM_TRANSITINFO{$_} ) {
                 $days = Actium::Sked::Days->new( $DAYS_FROM_TRANSITINFO{$_} );
             }
+            default {
+                $days = Actium::Sked::Days->new($days);
+            }
         }
+    }
+    else {
+        $days = Actium::Sked::Days->new($days);
     }
 
     $spec{days} = $days;
@@ -209,7 +221,7 @@ sub _new_from_prehistoric {
 
     $class->new(%spec);
 
-} ## tidy end: sub new_from_prehistoric
+} ## tidy end: sub _new_from_prehistoric
 
 sub write_prehistorics {
 
@@ -296,8 +308,8 @@ sub _tp9_to_tp8 {
 
   PLACE:
     foreach my $place (@places) {
-     next PLACE unless $place =~ / /;
-       CHARACTER:
+        next PLACE unless $place =~ / /;
+      CHARACTER:
         for my $i ( reverse 0 .. 4 ) {
             if ( substr( $place, $i, 1 ) eq $SPACE ) {
                 substr( $place, $i, 1, $EMPTY_STR );

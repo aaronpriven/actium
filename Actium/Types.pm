@@ -59,9 +59,9 @@ coerce DaySpec, from DayCode, via { [ $_, 'B' ] },
 subtype ActiumSkedDays, as class_type('Actium::Sked::Days');
 
 coerce ActiumSkedDays,
-  from DaySpec, via { Actium::Sked::Dir->new($_) },
-  from DayCode, via { Actium::Sked::Dir->new(to_DaySpec($_)) },
-  from TransitInfoDays, via { Actium::Sked::Dir->new(to_DaySpec($_)) },
+  from DaySpec, via { Actium::Sked::Days->new($_) },
+  from DayCode, via { Actium::Sked::Days->new(to_DaySpec($_)) },
+  from TransitInfoDays, via { Actium::Sked::Days->new(to_DaySpec($_)) },
   ;
 
 #########################
@@ -88,11 +88,11 @@ subtype TimeNum, as Maybe [Int];
 
 subtype ArrayRefOrTimeNum, as TimeNum | ArrayRef [TimeNum];
 
-coerce TimeNum, from Str, via { Actium::Time::timenum($_) };
+coerce TimeNum, from Str, via { Actium::Time::timenum($_) }; 
 
 subtype ArrayRefOfTimeNums, as ArrayRef [ Maybe [TimeNum] ];
 
-subtype _ArrayRefOfStrs, as ArrayRef [Str];
+subtype _ArrayRefOfStrs, as ArrayRef [Maybe[Str]];
 # _ArrayRefOfStrs only exists to make ArrayRefOfTimeNums
 # and other coercions work.
 
@@ -101,7 +101,7 @@ subtype _ArrayRefOfStrs, as ArrayRef [Str];
 # But I'm not sure, and this is working, so...
 
 coerce ArrayRefOfTimeNums, from _ArrayRefOfStrs, via {
-    my @array = map { to_TimeNum($_) } @{$_};
+    my @array = map { defined ($_) ? to_TimeNum($_) : undef } @{$_};
     return ( \@array );
 };
 
@@ -113,17 +113,6 @@ subtype Str8, as Str, where { length == 8 },
 
 subtype Str4, as Str, where { length == 4 },
   message {qq<The entry "$_" is not an four-character-long string>};
-
-#############################
-#### FOLDERS (not used)
-#
-#subtype FolderList, as ArrayRef [Str];
-#
-#subtype FolderComponent, as Str;
-## only for coercion
-#
-#coerce FolderList, from FolderComponent,
-#  via { [ File::Spec->splitdir($_) ] };
 
 1;
 __END__
