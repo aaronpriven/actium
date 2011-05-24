@@ -42,7 +42,10 @@ has 'place4_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { place4s => 'elements', },
+    handles => { 
+                place4s => 'elements', 
+                place_count => 'count' ,
+    },
 );
 
 # comes from AVL or headways
@@ -89,7 +92,7 @@ has 'trip_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Actium::Sked::Trip]',
     default => sub { [] },
-    handles => { trips => 'elements', trip => 'get', },
+    handles => { trips => 'elements', trip => 'get', trip_count => 'count' },
 );
 
 # from AVL only
@@ -118,6 +121,9 @@ sub routes {
     # It would be nice to cache this in some way, but getting the Trip object
     # to regenerate the cache each time it's changed is more trouble than
     # it's worth.
+    
+    # Trips are kept read-write so that AVL and headways can be merged --
+    # would it be better to have only 
 
     my $self = shift;
 
@@ -130,6 +136,33 @@ sub routes {
 
     return sortbyline( keys %seen_route );
 
+}
+
+sub has_multiple_routes {
+ my $self = shift;
+ my @routes = $self->routes;
+ return @routes > 1;
+}
+
+sub daysexceptions {
+
+    my $self = shift;
+
+    my $route_r;
+    my %seen_daysexceptions;
+
+    foreach my $trip ( $self->trips() ) {
+        $seen_daysexceptions{ $trip->daysexceptions } = 1;
+    }
+
+    return sort keys %seen_daysexceptions;
+
+}
+
+sub has_multiple_daysexceptions {
+ my $self = shift;
+ my @daysexceptions = $self->daysexceptions;
+ return @daysexceptions > 1;
 }
 
 sub divide_sked {
