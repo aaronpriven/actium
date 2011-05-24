@@ -1,7 +1,7 @@
-# Actium/Sked/InDesignTable.pm
+# Actium/Sked/Timetable.pm
 
-# Takes a sked file and produces the tagged text from it that represents
-# that schedule.
+# Object representing the data in a displayed timetable. 
+# Designed to take an Actium::Sked object and make it displayable.
 
 # Subversion: $Id$
 
@@ -10,60 +10,85 @@
 use 5.012;
 use warnings;
 
-package Actium::Sked::InDesignTable 0.001;
+package Actium::Sked::Timetable 0.001;
 
-use English '-no_match_vars';
-use IDTags (qw<boxbreak parastyle charstyle>);
-use Skedfile qw(Skedread getfiles GETFILES_PUBLIC_AND_DB);
-use Skedvars qw(%longerdaynames %daydirhash %dirhash %dayhash %specdaynames);
-use Array::Transpose;
+use Moose;
+use MooseX::StrictConstructor;
 
-use Actium::Sorting ('sortbyline');
-use Actium::Time ('timenum');
-use Actium::Constants;
-use Actium::Sked::Days;
+has [ qw <half_columns columns trailing_halves trailing_columns> ] => {
+   isa => 'Int',
+   is => 'ro' ,
+};
 
+has 'header_route_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    required => 1,
+    handles => { header_routes => 'elements', },
+);
 
-__END__ 
+has [ qw <header_dirtext header_daytext> ] => {
+    is => 'ro' ,
+    isa => 'Str',
+};
 
-protect from Eclipse errors for now
+has header_columntext_r => {
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    required => 1,
+    handles => { header_columntexts => 'elements', }, 
+};
 
-sub indesign_table {
+has body_rowtext_rs => {
+    traits => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[ArrayRef[Str]]',
+    required => 1,
+    handles => { body_row_rs => 'elements' },
+};
+
+sub new_from_sked {
  
-    my $self = shift;
+    my $class = shift;
+    my $sked = shift;
     my $xml_db = shift;
     my $minimum_columns = shift || 0;
+    my $minimum_halfcols = shift || 0;
     
-    # open files and print InDesign start tag
-    my %sked      = %{ Skedread($file) };
-    my $skedname  = $sked{SKEDNAME};
-    my $linegroup = $sked{LINEGROUP};
-    my $dir       = $sked{DIR};
-    my $day       = $sked{DAY};
+    my %dimensions = get_dimensons ($sked, $minimum_columns, $minimum_halfcols);
+    
+    
+}
 
-    my %specdays_used;
-
-    # get number of columns and rows
-
-    my @tps = @{ $sked{TP} };
-
-    s/=[0-9]+$// foreach @tps;
-
-    my $tpcount = scalar @tps;
-
+sub get_dimensions {
+ 
+    my ($sked, $minimum_columns, $minimum_halfcols) = @_;
+    
+    my %dimensions;
+ 
     my $halfcols = 0;
+    $halfcols++ if $sked->has_multiple_routes;
+    $halfcols++ if $sked->has_multiple_daysexceptions;
+    
+    $dimensions{LEADINGHALF} = $halfcols;
+    $dimensions{TRAILINGHALF} = $minimum_halfcols > $halfcols ? $minimum_halfcols : 0;
+    
+    my $columns = $sked->place_count;
+    $dimensions{TRAILINGCOLS} = $minimum_columns > $columns ? $minimum_columns - $columns : 0 ;
+    $dimensions{COLUMNS} = $columns;
+    
+    $dimensions{ROWS} = $sked->trip_count;
+    
+    return %dimensions;
+    
+}
 
-    my ( $has_route_col, $has_specdays_col );
-
-    my %seenroutes;
-    $seenroutes{$_} = 1 foreach @{ $sked{ROUTES} };
-    my @seenroutes = sortbyline keys %seenroutes;
-
-    if ( ( scalar @seenroutes ) != 1 ) {
-        $halfcols++;
-        $has_route_col = 1;
-    }
-
+__END__
+    
+    
+    
     my $routechars
       = length( join( '', @seenroutes ) ) + ( 3 * ($#seenroutes) ) + 1;
 
@@ -74,23 +99,8 @@ sub indesign_table {
       = '<0x2009><CharStyle:SmallRoundBullet><0x2022><CharStyle:><0x2009>';
     my $routetext = join( $bullet, @seenroutes );
 
-    my $dayname = $longerdaynames{ $sked{DAY} };
-
-    my %seenspecdays;
-    $seenspecdays{$_} = 1 foreach @{ $sked{SPECDAYS} };
-    if ( ( scalar keys %seenspecdays ) != 1 ) {
-        $halfcols++;
-        $has_specdays_col = 1;
-    }
-    else {
-        my ( $specdays, $count ) = each %seenspecdays;    # just one
-        if ($specdays) {
-            $dayname = $specdaynames{$specdays};
-        }
-    }
-
-    my $colcount = $tpcount + $halfcols ;
-    # +1 for end column, added to allow more space
+    my $dayname = $self->days_obj->as_plurals;
+    
 
     my %tpname_of;
     $tpname_of{$_} = $timepoints{$_}{TPName} foreach (@tps);
@@ -250,5 +260,7 @@ sub indesign_table {
 
     return \%table;
 } ## tidy end: sub make_table
+
+
 
 1;

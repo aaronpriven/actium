@@ -186,11 +186,6 @@ sub as_adjectives {
 
     my @as_adjectives = map { $ADJECTIVE_OF{$_} } split( //, $daycode );
 
-    if ( not @as_adjectives ) {
-
-        say Data::Dumper::Dumper($self);
-    }
-
     my $results
       = joinseries(@as_adjectives) . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
 
