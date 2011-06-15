@@ -306,7 +306,7 @@ sub getfiles {
     my $status = shift;
 
     return
-      grep ( ( !/=/ and !m@^skeds/I@ and !m@^skeds/DB@ and !m@^skeds/[LN]C@ ),
+      grep ( ( !/=/ and !m@^skeds/I@ and !m@^skeds/DB@ and !m@^skeds/BS[DNH]@ ),
         glob('skeds/*.txt') )
       if ( not $status )
       or ( $status == GETFILES_PUBLIC );
@@ -314,7 +314,7 @@ sub getfiles {
     # internal ones start with the letter I or with DB, or are NC or LC
 
     return
-      grep ( ( !/=/ and !m@^skeds/I@ and !m@^skeds/[LN]C@ ),
+      grep ( ( !/=/ and !m@^skeds/I@ and !m@^skeds/BS[DNH]@ ),
         glob('skeds/*.txt') )
       if $status == GETFILES_PUBLIC_AND_DB;
 

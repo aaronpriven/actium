@@ -42,9 +42,9 @@ has 'place4_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { 
-                place4s => 'elements', 
-                place_count => 'count' ,
+    handles => {
+        place4s     => 'elements',
+        place_count => 'count',
     },
 );
 
@@ -81,8 +81,8 @@ has 'days_obj' => (
     is       => 'ro',
     isa      => ActiumSkedDays,
     handles  => {
-        daycode          => 'daycode',
-        schooldaycode    => 'schooldaycode',
+        daycode       => 'daycode',
+        schooldaycode => 'schooldaycode',
     }
 );
 
@@ -121,9 +121,10 @@ sub routes {
     # It would be nice to cache this in some way, but getting the Trip object
     # to regenerate the cache each time it's changed is more trouble than
     # it's worth.
-    
+
     # Trips are kept read-write so that AVL and headways can be merged --
-    # would it be better to have only 
+    # would it be better to have them be readonly,
+    # and create new sked objects each time?
 
     my $self = shift;
 
@@ -136,12 +137,12 @@ sub routes {
 
     return sortbyline( keys %seen_route );
 
-}
+} ## tidy end: sub routes
 
 sub has_multiple_routes {
- my $self = shift;
- my @routes = $self->routes;
- return @routes > 1;
+    my $self   = shift;
+    my @routes = $self->routes;
+    return @routes > 1;
 }
 
 sub daysexceptions {
@@ -160,9 +161,9 @@ sub daysexceptions {
 }
 
 sub has_multiple_daysexceptions {
- my $self = shift;
- my @daysexceptions = $self->daysexceptions;
- return @daysexceptions > 1;
+    my $self           = shift;
+    my @daysexceptions = $self->daysexceptions;
+    return @daysexceptions > 1;
 }
 
 sub divide_sked {

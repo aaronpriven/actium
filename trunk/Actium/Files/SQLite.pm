@@ -451,10 +451,10 @@ file (for example, Hastus Standard AVL files, or FileMaker Pro
 
 While much of the scut work of creating and populating the database
 is performed in this module, and some convenience methods are
-provided for reading the data, it is not intended that it should
-never be necessary to interact with the DBI object directly. The
-I<dbh()> method is provided for accessing the database handle, and
-users should be familiar with using DBI to fetch data.
+provided for reading the data, it is not intended that using
+this module will make it unnecessary to interact with the DBI object 
+directly. The I<dbh()> method is provided for accessing the database handle, 
+and users should be familiar with using DBI to fetch data.
 
 =head1 OBJECT CREATION
 
@@ -570,7 +570,7 @@ column names and the values are the values for this row.
 
 =item B<each_row_like(I<table>, I<column>, I<match>)>
 
-=item B<each_row_where(I<table>, I<column>, I<where> ,I<match> ...)>
+=item B<each_row_where(I<table>, I<column>, I<where>, I<match> ...)>
 
 The each_row routines return an subroutine reference allowing iteration 
 through each row. Intended for use in C<while> loops:
