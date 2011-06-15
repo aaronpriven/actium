@@ -161,10 +161,6 @@ sub _new_from_prehistoric {
 
     my @trips;
     
-    if ($linegroup eq '376') {
-     say '';
-    }
-
     while (<$skedsfh>) {
         rtrim;
 
