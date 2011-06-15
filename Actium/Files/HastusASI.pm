@@ -397,9 +397,13 @@ Returns 'HastusASI'.  This distinguishes this type from other databases
 using Actium::Files::SQLite.
 
 =item B<columns_of_table>
+
 =item B<key_of_table>
+
 =item B<tables>
+
 =item B<is_a_table>
+
 =item B<parent_of_table>
 
 These are delegated to 
@@ -411,14 +415,24 @@ module.
 
 =head1 PRIVATE METHODS
 
+=over
+
 =item B<_create_query_of_table>
+
 =item B<_filetype_of_table>
+
 =item B<_filetypes>
+
 =item B<_has_composite_key>
+
 =item B<_has_repeating_final_column>
+
 =item B<_index_query_of_table>
+
 =item B<_insert_query_of_table>
+
 =item B<_key_components_idxs>
+
 =item B<_tables_of_filetype>
 
 These are delegated to 
@@ -464,6 +478,7 @@ No matching files were found in the folder specified. Perhaps the wrong
 folder was specified?
 
 =item Can't open $filespec for reading: $OS_ERROR
+
 =item Can't close $filespec for reading: $OS_ERROR
 
 An error occurred opening or closing the file $filespec. Possibly the file is

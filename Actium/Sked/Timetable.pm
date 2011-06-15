@@ -1,9 +1,9 @@
 # Actium/Sked/Timetable.pm
 
-# Object representing the data in a displayed timetable. 
+# Object representing the data in a displayed timetable.
 # Designed to take an Actium::Sked object and make it displayable.
 
-# Subversion: $Id$
+# Subversion:  $Id$
 
 # legacy status: 4 (mostly)
 
@@ -15,75 +15,77 @@ package Actium::Sked::Timetable 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
-has [ qw <half_columns columns trailing_halves trailing_columns> ] => {
-   isa => 'Int',
-   is => 'ro' ,
+has [qw <half_columns columns trailing_halves trailing_columns>] => {
+    isa => 'Int',
+    is  => 'ro',
 };
 
 has 'header_route_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Str]',
+    traits   => ['Array'],
+    is       => 'bare',
+    isa      => 'ArrayRef[Str]',
     required => 1,
-    handles => { header_routes => 'elements', },
+    handles  => { header_routes => 'elements', },
 );
 
-has [ qw <header_dirtext header_daytext> ] => {
-    is => 'ro' ,
+has [qw <header_dirtext header_daytext>] => {
+    is  => 'ro',
     isa => 'Str',
 };
 
 has header_columntext_r => {
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Str]',
+    traits   => ['Array'],
+    is       => 'bare',
+    isa      => 'ArrayRef[Str]',
     required => 1,
-    handles => { header_columntexts => 'elements', }, 
+    handles  => { header_columntexts => 'elements', },
 };
 
 has body_rowtext_rs => {
-    traits => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[ArrayRef[Str]]',
+    traits   => ['Array'],
+    is       => 'bare',
+    isa      => 'ArrayRef[ArrayRef[Str]]',
     required => 1,
-    handles => { body_row_rs => 'elements' },
+    handles  => { body_row_rs => 'elements' },
 };
 
 sub new_from_sked {
- 
-    my $class = shift;
-    my $sked = shift;
-    my $xml_db = shift;
-    my $minimum_columns = shift || 0;
+
+    my $class            = shift;
+    my $sked             = shift;
+    my $xml_db           = shift;
+    my $minimum_columns  = shift || 0;
     my $minimum_halfcols = shift || 0;
-    
-    my %dimensions = get_dimensons ($sked, $minimum_columns, $minimum_halfcols);
-    
-    
+
+    my %dimensions
+      = get_dimensons( $sked, $minimum_columns, $minimum_halfcols );
+
 }
 
 sub get_dimensions {
- 
-    my ($sked, $minimum_columns, $minimum_halfcols) = @_;
-    
+
+    my ( $sked, $minimum_columns, $minimum_halfcols ) = @_;
+
     my %dimensions;
- 
+
     my $halfcols = 0;
     $halfcols++ if $sked->has_multiple_routes;
     $halfcols++ if $sked->has_multiple_daysexceptions;
-    
+
     $dimensions{LEADINGHALF} = $halfcols;
-    $dimensions{TRAILINGHALF} = $minimum_halfcols > $halfcols ? $minimum_halfcols : 0;
-    
+    $dimensions{TRAILINGHALF}
+      = $minimum_halfcols > $halfcols ? $minimum_halfcols : 0;
+
     my $columns = $sked->place_count;
-    $dimensions{TRAILINGCOLS} = $minimum_columns > $columns ? $minimum_columns - $columns : 0 ;
+    $dimensions{TRAILINGCOLS}
+      = $minimum_columns > $columns ? $minimum_columns - $columns : 0;
     $dimensions{COLUMNS} = $columns;
-    
+
     $dimensions{ROWS} = $sked->trip_count;
-    
+
     return %dimensions;
-    
-}
+
+} ## tidy end: sub get_dimensions
 
 __END__
     
@@ -120,7 +122,6 @@ __END__
     my $tabletext;
     open my $th, '>', \$tabletext
       or die "Can't open table scalar for writing: $!";
-
     # Table Start
     print $th IDTags::parastyle('UnderlyingTables');
     print $th '<TableStyle:TimeTable>';

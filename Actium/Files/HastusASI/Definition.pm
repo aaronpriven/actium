@@ -498,7 +498,7 @@ module.
 =item B<instance>
 
 Use the B<instance> class method to obtain the object: 
-C<<Actium::Files::HastusASI::Definition->instance>>. (This is unlike
+C<Actium::Files::HastusASI::Definition-E<gt>instance>. (This is unlike
 standard Moose classes and most other perl classes, which create
 a constructor called "new".)
 
@@ -594,6 +594,7 @@ Actium::Files::SQLite::Table|Actium::Files::SQLite::Table/key_components_idxs>.
 =over
 
 =item * Can't open internal variable for reading
+
 =item * Can't close internal variable for reading
 
 Perl was unable to open, or close, the variable that holds the definition 
