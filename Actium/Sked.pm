@@ -70,7 +70,8 @@ has 'dir_obj' => (
     init_arg => 'direction',
     is       => 'ro',
     isa      => ActiumSkedDir,
-    handles  => ['dircode'],
+    handles  => {'dircode' => 'dircode ' ,
+                 'to_text' => 'as_to_text' },
 );
 
 # days
@@ -115,6 +116,7 @@ has 'stopplace_r' => (
 
 #################################
 ## METHODS
+
 
 sub routes {
 

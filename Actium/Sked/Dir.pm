@@ -73,6 +73,18 @@ sub as_sortable {
     return ('A' .. 'N')[$ORDER_OF{$dircode}];
 }
 
+sub as_to_text {
+   my $self = shift;
+   my $dircode = $self->dircode;
+   
+   if ($dircode eq '8' or $dircode eq '9') {
+       return $self->as_direction . " to";
+   }
+   
+   return "To";
+
+}
+
 1;
 
 __END__
