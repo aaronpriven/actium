@@ -24,6 +24,15 @@ use English '-no_match_vars';
 
 use Moose::Role;
 
+# comes from prehistorics
+has 'place9_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => { place9s => 'elements', },
+);
+
 sub prehistoric_id {
     my $self = shift;
     my $linegroup = $self->linegroup || $self->oldlinegroup;
@@ -147,13 +156,16 @@ sub _new_from_prehistoric {
     $_ = <$skedsfh>;
     trim;
 
-    my @place8s;
-    ( undef, undef, undef, undef, @place8s ) = _tp9_to_tp8( split(/\t/) );
+    my @place9s;
+    ( undef, undef, undef, undef, @place9s ) = split(/\t/) ;
+    my @place8s = _tp9_to_tp8( @place9s) ;
+    
     # the first four columns are always
     # "SPEC DAYS", "NOTE" , "VT" , and "RTE NUM"
     
     s/=.*// foreach @place8s; # get rid of =2, =3, etc.
 
+    $spec{place9_r} = \@place9s;
     $spec{place8_r} = \@place8s;
     $spec{place4_r} = [ map { $tp4_of_tp8{$_} } @place8s ];
 

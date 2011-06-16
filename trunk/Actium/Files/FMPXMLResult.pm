@@ -41,7 +41,7 @@ sub db_type { return 'FileMaker' }
 
 # I think all the FileMaker exports will be the same database type
 
-sub parent_of_table { return undef };  ## no critic (RequireFinalReturn)
+sub parent_of_table { return undef };    ## no critic (RequireFinalReturn)
 
 # TODO: Move to a configuration file of some kind
 Readonly my %KEY_OF => (
@@ -404,6 +404,37 @@ End of ROW - Save row_buffer into SQLite database
 
 } ## tidy end: sub _load_xml_parser
 
+has timepoints_structs_r => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef',
+    lazy    => 1,
+    builder => '_build_timepoints_structs',
+    handles => { timepoints_structs => 'elements' },
+);
+
+sub _build_timepoints_structs {
+
+    my ( $rows_r, %rows_of_place4, %rows_of_place9 );
+
+    my $self = shift;
+    my $dbh  = $self->dbh;
+
+    $self->ensure_loaded('Timepoints');
+
+    $rows_r = $dbh->selectall_arrayref(
+        'SELECT * FROM Timepoints',
+        { Slice => {} }
+    );
+
+    foreach my $row ( @{$rows_r} ) {
+        $rows_of_place4{ $row->{Abbrev4} } = $row;
+        $rows_of_place9{ $row->{Abbrev9} } = $row;
+    }
+
+    return [ $rows_r, \%rows_of_place4, \%rows_of_place9 ];
+} ## tidy end: sub _build_timepoints
+
 1;
 
 __END__
@@ -448,9 +479,9 @@ L<FileMaker's help
 file|http://www.filemaker.com/11help/html/import_export.16.34.html> 
 or the "fmpxmlresult_dtd.htm" file that comes with FileMaker Pro 10.
 
-=head1 PUBLIC METHODS 
+=head1 PUBLIC GENERAL METHODS 
 
-These are all required by the Actium::Files::SQLite role.
+The first three are all required by the Actium::Files::SQLite role.
 
 =over
 
@@ -486,6 +517,27 @@ Returns 1 if the specified table exists in the list of tables.
 =item B<parent_of_table>
 
 Always returns undef, since FileMaker tables have no parents.
+
+=back
+
+=head1 PUBLIC SPECIFIC METHODS
+
+These methods provide a convenient way of loading common tables.
+
+=over
+
+=item B<timepoints_structs>
+
+Since Timepoints is a frequenly used database and yet one that is reasonably 
+small, this returns the entire Timepoints database in perl data structures.
+
+Each row is a hash, where the keys are the field names and the values are the
+values.
+
+Returns three references. The first is an array reference, with references
+to each row.  The second is a hash reference, with the 'Abbrev4' values
+as the keys, and the row references as the values. The third is like the second,
+except it uses 'Abbrev9' as the key instead of 'Abbrev4'.
 
 =back
 
