@@ -151,7 +151,6 @@ sub daysexceptions {
 
     my $self = shift;
 
-    my $route_r;
     my %seen_daysexceptions;
 
     foreach my $trip ( $self->trips() ) {
