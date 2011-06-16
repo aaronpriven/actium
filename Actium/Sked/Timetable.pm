@@ -21,11 +21,11 @@ use Actium::Constants;
 my $timesub = Actium::Time::timestr_sub();
 # Someday it would be nice to make that configurable
 
-has [qw <half_columns columns trailing_halves trailing_columns sum_of_columns>]
-  => {
-    isa => 'Int',
-    is  => 'ro',
-  };
+has [qw <half_columns columns>] => {
+    isa      => 'Int',
+    is       => 'ro',
+    required => 1,
+};
 
 has 'header_route_r' => (
     traits   => ['Array'],
@@ -35,15 +35,15 @@ has 'header_route_r' => (
     handles  => { header_routes => 'elements', },
 );
 
-has [ qw <has_route_col has_note_col> ]  => (
-    is => 'ro',
-    isa => 'Bool',
+has [qw <has_route_col has_note_col>] => (
+    is       => 'ro',
+    isa      => 'Bool',
     required => 1,
 );
 
 has [qw <header_dirtext header_daytext>] => {
-    is  => 'ro',
-    isa => 'Str',
+    is       => 'ro',
+    isa      => 'Str',
     required => 1,
 };
 
@@ -53,6 +53,14 @@ has header_columntext_r => {
     isa      => 'ArrayRef[Str]',
     required => 1,
     handles  => { header_columntexts => 'elements', },
+};
+
+has note_definitions_r => {
+    traits   => ['Array'],
+    is       => 'bare',
+    isa      => 'ArrayRef[Str]',
+    required => 1,
+    handles  => { note_definitions => 'elements', },
 };
 
 has body_rowtext_rs => {
@@ -72,37 +80,47 @@ sub new_from_sked {
     my $sked   = shift;
     my $xml_db = shift;
 
-    my $minimum_columns  = shift || 0;
-    my $minimum_halfcols = shift || 0;
-
     my %spec;
 
     # ASCERTAIN COLUMNS
 
     my $has_multiple_routes         = $sked->has_multiple_routes;
     my $has_multiple_daysexceptions = $sked->has_multiple_daysexceptions;
-    
-    $spec{has_note_col} = $has_multiple_daysexceptions;
+
+    $spec{has_note_col}  = $has_multiple_daysexceptions;
     $spec{has_route_col} = $has_multiple_routes;
 
     # TODO allow for other timepoint notes
 
+    my @place9s = $sked->place9s;
+
     my $halfcols = 0;
     $halfcols++ if $has_multiple_routes;
-    $halfcols++ if $has_multiple_daysexceptions;
 
-    my $sum = ( $spec{half_columns} = $halfcols );
+    my @note_definitions;
 
-    my $trailing_halves = $minimum_halfcols > $halfcols ? $minimum_halfcols : 0;
-    $sum += ( $spec{trailing_halves} = $trailing_halves );
+    if ($has_multiple_daysexceptions) {
+        $halfcols++;
+        foreach my $dayexceptions ( $sked->daysexceptions ) {
 
-    my $columns = $sked->place_count;
-    my $trailing_columns
-      = $minimum_columns > $columns ? $minimum_columns - $columns : 0;
+            given ($dayexceptions) {
+                when ('SD') {
+                    push @note_definitions, 'SD - School days only';
+                }
+                when ('SH') {
+                    push @note_definitions, 'SH - School holidays only';
+                }
 
-    $sum += ( $spec{trailing_columns} = $trailing_columns );
-    $sum += ( $spec{columns}          = $columns );
-    $spec{sum_of_columns} = $sum;
+            }
+
+        }
+
+    }
+
+    $spec{note_definitions_r} = \@note_definitions;
+
+    $spec{half_columns} = $halfcols;
+    $spec{columns}      = scalar @place9s;
 
     # HEADERS
 
@@ -117,24 +135,23 @@ sub new_from_sked {
     push @header_columntexts, 'Line' if $has_multiple_routes;
     push @header_columntexts, 'Note' if $has_multiple_daysexceptions;
 
-    my @place9s = $sked->place9s;
-
     # TODO - allow for place4 or at least place8 instead of place9
-    
-    # TODO - Add arrives/departs text
-    foreach my $place9 (@place9s) {
-        push @header_columntexts, $timepoint_row_of{$place9}{TPName};
-    }
-    
-#            if ( $i != 0 and $tps[ $i - 1 ] eq $tp ) {
-#            $tpname = "Leaves $tpname";
-#        }
-#        elsif ( $i != $#tps and $tps[ $i + 1 ] eq $tp ) {
-#            $tpname = "Arrives $tpname";
-#        }
 
-    push @header_columntexts,
-      ($EMPTY_STR) x ( $spec{trailing_halves} + $spec{trailing_columns} );
+    for my $i ( 0 .. $#place9s ) {
+        my $place9 = $place9s[$i];
+        my $tpname = $timepoint_row_of{$place9}{TPName};
+
+        push @header_columntexts, $timepoint_row_of{$place9}{TPName};
+
+        if ( $i != 0 and $place9s[ $i - 1 ] eq $place9 ) {
+            $tpname = "Leaves $tpname";
+        }
+        elsif ( $i != $#place9s and $place9s[ $i + 1 ] eq $place9 ) {
+            $tpname = "Arrives $tpname";
+        }
+        push @header_columntexts, $tpname;
+
+    }
 
     $spec{header_columntext_r} = \@header_columntexts;
 
@@ -161,8 +178,6 @@ sub new_from_sked {
             push @row, $timesub->($timenum);
         }
 
-        push @row,
-          ($EMPTY_STR) x ( $spec{trailing_halves} + $spec{trailing_columns} );
     }
 
     $spec{body_rowtext_rs} = \@body_rows;
@@ -176,29 +191,43 @@ use IDTags;
 sub as_indesign {
 
     my $self = shift;
+
+    my $minimum_columns  = shift || 0;
+    my $minimum_halfcols = shift || 0;
+
+    my $columns  = $self->columns;
+    my $halfcols = $self->half_columns;
+
+    my $trailing_halves = $minimum_halfcols > $halfcols ? $minimum_halfcols : 0;
+
+    my $trailing_columns
+      = $minimum_columns > $columns ? $minimum_columns - $columns : 0;
+
+    my $trailing = $trailing_columns + $trailing_halves;
+    my @trailers = ($EMPTY_STR) x $trailing;
+
+    my $rowcount = $self->body_row_count + 2;          # 2 header rows
+    my $colcount = $columns + $halfcols + $trailing;
+
+    ##############
+    # Table Start
+
     my $tabletext;
     open my $th, '>', \$tabletext
       or die "Can't open table scalar for writing: $!";
-
-    my $rowcount = $self->body_row_count + 2; # 2 header rows
-    my $colcount = $self->sum_of_columns;
-    
-    ##############
-    # Table Start
 
     print $th IDTags::parastyle('UnderlyingTables');
     print $th '<TableStyle:TimeTable>';
     print $th
       "<TableStart:$self->$rowcount,$colcount,2,0<tCellDefaultCellType:Text>>";
-    print $th '<ColStart:<tColAttrWidth:24>>' for ( 1 .. $self->half_columns );
+    print $th '<ColStart:<tColAttrWidth:24>>' for ( 1 .. $halfcols );
     print $th '<ColStart:<tColAttrWidth:48>>'
-      for ( 1 .. $self->columns + $self->trailing_columns );
-    print $th '<ColStart:<tColAttrWidth:24>>'
-      for ( 1 .. $self->trailing_halves );
+      for ( 1 .. $columns + $trailing_columns );
+    print $th '<ColStart:<tColAttrWidth:24>>' for ( 1 .. $trailing_halves );
 
     ##############
     # Header Row (line, days, dest)
-    
+
     my @routes = $self->header_routes;
     my $routechars = length( join( '', @routes ) ) + ( 3 * ($#routes) ) + 1;
 
@@ -225,85 +254,62 @@ sub as_indesign {
         print $th '<CellStyle:ColorHeader><CellStart:1,1><CellEnd:>';
     }
     print $th '<RowEnd:>';
-    
+
     ##############
     # Column Header Row (line, note, timepoints)
-    
+
     my $has_route_col = $self->has_route_col;
-    my $has_note_col = $self->has_note_col;
-    
-    my @header_columntexts = $self->header_columntexts;
-    
+    my $has_note_col  = $self->has_note_col;
+
+    my @header_columntexts = ( $self->header_columntexts, @trailers );
+
     print $th
       '<RowStart:<tRowAttrHeight:35.5159912109375><tRowAttrMinRowSize:3>>';
+
+    # The following is written this way so that in future, we can decide to
+    # treat Note and Line with special graphic treatment (italics, color, etc.)
 
     if ($has_route_col) {
         my $header = shift @header_columntexts;
         print $th
 "<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:Timepoints>$header<CellEnd:>";
     }
-    
+
     if ($has_note_col) {
         my $header = shift @header_columntexts;
         print $th
 "<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:Timepoints>$header<CellEnd:>";
     }
-    
+
     for my $headertext (@header_columntexts) {
         print $th
 "<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:Timepoints>$headertext<CellEnd:>";
     }
 
     print $th '<RowEnd:>';
-    
 
-} ## tidy end: sub as_indesign
-
-__END__
-    
-    
-
-
-    
-
-    my $timerows = scalar( @{ $sked{ROUTES} } );
-
-    print $skedname ;
-    print " (", join( " ", sort keys %seenroutes ), ")"
-      if scalar keys %seenroutes > 1;
-    print ", $tpcount";
-    print "+$halfcols" if $halfcols;
-    say " x $timerows";
-
-    my $rowcount = $timerows + 2;    # headers
-
-
-
-    # Timepoint Name Row
-
+    ##############
     # Time Rows
 
-    my @timerows = Array::Transpose::transpose $sked{TIMES};
-
-    for my $i ( 0 .. $#timerows ) {
-        my @row = @{ $timerows[$i] };
+    for my $body_row_r ( $self->body_row_rs ) {
+        my @body_row = @{$body_row_r},;
 
         print $th '<RowStart:<tRowAttrHeight:10.5159912109375>>';
 
         if ($has_route_col) {
-            my $route = $sked{ROUTES}[$i];
+            my $route = shift @body_row;
+
             print $th
 "<CellStyle:LineNote><StylePriority:20><CellStart:1,1><ParaStyle:Time>$route<CellEnd:>";
         }
-        if ($has_specdays_col) {
-            my $specdays = $sked{SPECDAYS}[$i];
+        if ($has_note_col) {
+            my $note = shift @body_row;
             print $th
-"<CellStyle:LineNote><StylePriority:20><CellStart:1,1><ParaStyle:Time>$specdays<CellEnd:>";
-            $specdays_used{$specdays} = 1;
+"<CellStyle:LineNote><StylePriority:20><CellStart:1,1><ParaStyle:Time>$note<CellEnd:>";
         }
 
-        for my $j ( 0 .. $#row ) {
-            my $time      = $row[$j];
+        for my $time (@body_row) {
+
             my $parastyle = 'Time';
             if ($time) {
                 substr( $time, -3, 0 ) = ":";    # add colon
@@ -321,51 +327,27 @@ __END__
                 print $th $time;
             }
             print $th '<CellEnd:>';
-        } ## tidy end: for my $j ( 0 .. $#row )
+        } ## tidy end: for my $time (@body_row)
+
+        for ( 0 .. $trailing ) {
+            print $th
+"<CellStyle:Time><StylePriority:20><CellStart:1,1><ParaStyle:LineNote><CellEnd:>";
+        }
 
         print $th '<RowEnd:>';
 
-    } ## tidy end: for my $i ( 0 .. $#timerows)
+    } ## tidy end: for my $body_row_r ( $self...)
 
+    ###############
     # Table End
+
     print $th "<TableEnd:>\r";
 
-    foreach my $specdays ( keys %specdays_used ) {
-        given ($specdays) {
-            when ('SD') {
-                print $th "\rSD - School days only";
-            }
-            when ('SH') {
-                print $th "\rSH - School holidays only";
-            }
-
-        }
-
+    foreach my $note_definition ( $self->note_definitions ) {
+        print $th "\r$note_definition";
     }
 
-    close $th;
-
-    my $dirday = "${dir}_$day";
-
-    my %table;
-
-    $table{LINEGROUP} = $linegroup;
-    $table{DIRDAY}    = $dirday;
-
-    $table{DAY}          = $day;
-    $table{DIR}          = $dir;
-    $table{EARLIESTTIME} = timenum( Skedfile::earliest_time( \%sked ) );
-    $table{TEXT}         = $tabletext;
-    $table{SPECDAYSCOL}  = $has_specdays_col;
-    $table{ROUTECOL}     = $has_route_col;
-    $table{WIDTH}        = $tpcount + ( $halfcols / 2 );
-    $table{HEIGHT} = ( 3 * 12 ) + 6.136    # 3p6.136 height of color header
-      + ( 3 * 12 ) + 10.016                # 3p10.016 four-line timepoint header
-      + ( $timerows * 10.516 );            # p10.516 time cell
-
-    return \%table;
-} ## tidy end: sub make_table
-
-
+}
 
 1;
+
