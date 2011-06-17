@@ -4,17 +4,120 @@
 
 # Subversion: $Id$
 
-# legacy status: 2, although actually it was written relatively recently
-# and then converted to an actium.pl command
+# legacy status: 4
 
 use warnings;
 use 5.012;
 
 package Actium::Tabula 0.001;
 
+use English '-no_match_vars';
+use autodie;
+use Actium::Sorting ('byline');
+use Actium::InDesignTags;
+use Readonly;
+
+Readonly my $idt => 'Actium::InDesignTags';
+# saves typing
+
+sub HELP {
+
+    say <<'HELP' or die q{Can't open STDOUT for writing};
+tabula. Reads schedules and makes tables out of them.
+HELP
+
+    Actium::Term::output_usage();
+
+    return;
+}
+
+sub START {
+
+    my $signup     = Actium::Signup->new();
+    my $tabulae_folder = $signup->subfolder('tabulae');
+    my $pubtt_folder     = $tabulae_folder->subfolder('pubtt');
+    
+    my $prehistorics_folder = $signup->subfolder('skeds');
+    
+    chdir( $signup->path );
+
+    my %front_matter = _get_configuration($signup);
+    
+    my @skeds = Actium::Sked->load_prehistorics($prehistorics_folder);
+    
+    @skeds = map  { $_->[0] } 
+             sort { byline( $a->[1] , $b->[1] ) } 
+             map  { [$_, $_->id() ] } 
+             @skeds;
+
+    # probably should do a better job than sorting by id, but whatever
+    
+    my (%table_of , @alltables);
+    foreach my $sked (@skeds) {
+       my $daycode = $sked->daycode;
+       my $dircode = $sked->dircode;
+       my $linegroup = $sked->linegroup;
+       my $table = Actium::Sked::Timetable->new_from_sked($sked);
+       $table_of{$linegroup}{$daycode}{$dircode} = $table;
+       push @alltables, $table;
+    }
+    
+    _output_all_tables ($tabulae_folder, \@alltables);
+    
+    
+}
+
+sub _output_all_tables {
+ 
+    my $tabulae_folder = shift;
+    my $alltables_r = shift;
+    
+    open my $allfh , '>' , $tabulae_folder->make_filespec('all.txt') ;
+    
+    print $allfh $idt->start;
+    foreach my $table (@{$alltables_r}) {
+       print $allfh $idt->encode_high_chars($table), $idt->boxbreak;
+    }
+    
+}
+
+sub _get_configuration {
+
+    my $signup   = shift;
+    my $filespec = $signup->make_filespec('tabula-config.txt');
+
+    open my $config_h, '<', $filespec
+      or die "Can't open $filespec for reading: $OS_ERROR";
+
+    my %front_matter;
+    my $timetable;
+
+  LINE:
+    while ( my $line = <$config_h> ) {
+        chomp $line;
+        next LINE unless $line;
+        if ( substr( $line, 0, 1 ) eq '[' ) {
+            $timetable = ( substr( $line, 1 ) );
+        }
+        else {
+            next LINE unless $timetable;
+            push @{ $front_matter{$timetable} }, $line;
+        }
+    }
+
+    close $config_h
+      or die "Can't close $filespec for writing: $OS_ERROR";
+
+    return %front_matter;
+
+} ## tidy end: sub _get_configuration
+
+1;
+
+__END__
+
 # initialization
 
-use English '-no_match_vars';
 use IDTags (qw<boxbreak parastyle charstyle>);
 use Skedfile qw(Skedread getfiles GETFILES_PUBLIC_AND_DB);
 use Skedvars qw(%longerdaynames %daydirhash %dirhash %dayhash %specdaynames);
@@ -33,16 +136,6 @@ use Actium::Sked::Days;
 
 use constant CR => "\r";
 
-sub HELP {
-
-    say <<'HELP' or die q{Can't open STDOUT for writing};
-tabula. Reads schedules and makes tables out of them.
-HELP
-
-    Actium::Term::output_usage();
-
-    return;
-}
 
 sub START {
 
@@ -501,36 +594,7 @@ sub _sort_by {
 
 } ## tidy end: sub _sort_by
 
-sub _get_configuration {
 
-    my $signup   = shift;
-    my $filespec = $signup->make_filespec('tabula-config.txt');
-
-    open my $config_h, '<', $filespec
-      or die "Can't open $filespec for reading: $OS_ERROR";
-
-    my %front_matter;
-    my $timetable;
-
-  LINE:
-    while ( my $line = <$config_h> ) {
-        chomp $line;
-        next LINE unless $line;
-        if ( substr( $line, 0, 1 ) eq '[' ) {
-            $timetable = ( substr( $line, 1 ) );
-        }
-        else {
-            next LINE unless $timetable;
-            push @{ $front_matter{$timetable} }, $line;
-        }
-    }
-
-    close $config_h
-      or die "Can't close $filespec for writing: $OS_ERROR";
-
-    return %front_matter;
-
-} ## tidy end: sub _get_configuration
 
 sub figure_days {
     my @days     = uniq(@_);
