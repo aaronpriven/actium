@@ -1,6 +1,6 @@
 # Actium/Sked/Timetable.pm
 
-# Object representing the data in a displayed timetable.
+# Object representing the data in a timetable to be displayed to the user.
 # Designed to take an Actium::Sked object and make it displayable.
 
 # Subversion:  $Id$
