@@ -44,6 +44,7 @@ sub linekeys {
             push @keys, _numbers_first($line);
         }
     }
+    if (@keys == 1 ) { return $keys[0] };
     return @keys;
 }
 
