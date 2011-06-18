@@ -15,6 +15,10 @@ use English '-no_match_vars';
 use autodie;
 use Actium::Sorting ('byline');
 use Actium::InDesignTags;
+use Actium::Signup;
+use Actium::Term;
+use Actium::Sked;
+use Actium::Sked::Timetable;
 use Readonly;
 
 Readonly my $idt => 'Actium::InDesignTags';
@@ -22,7 +26,7 @@ Readonly my $idt => 'Actium::InDesignTags';
 
 sub HELP {
 
-    say <<'HELP' or die q{Can't open STDOUT for writing};
+    say <<'HELP' or die q{Can't write to STDOUT};
 tabula. Reads schedules and makes tables out of them.
 HELP
 
@@ -33,52 +37,56 @@ HELP
 
 sub START {
 
-    my $signup     = Actium::Signup->new();
-    my $tabulae_folder = $signup->subfolder('tabulae');
-    my $pubtt_folder     = $tabulae_folder->subfolder('pubtt');
-    
+    my $signup         = Actium::Signup->new();
+    my $tabulae_folder = $signup->subfolder('tabulae-test');
+    my $pubtt_folder   = $tabulae_folder->subfolder('pubtt');
+
+    my $xml_db = $signup->load_xml;
+
     my $prehistorics_folder = $signup->subfolder('skeds');
-    
+
     chdir( $signup->path );
 
     my %front_matter = _get_configuration($signup);
-    
-    my @skeds = Actium::Sked->load_prehistorics($prehistorics_folder);
-    
-    @skeds = map  { $_->[0] } 
-             sort { byline( $a->[1] , $b->[1] ) } 
-             map  { [$_, $_->id() ] } 
-             @skeds;
 
-    # probably should do a better job than sorting by id, but whatever
-    
-    my (%table_of , @alltables);
+    my @skeds = Actium::Sked->load_prehistorics($prehistorics_folder);
+
+    @skeds = map { $_->[0] }
+      sort { $a->[1] cmp $b->[1] }
+      map { [ $_, $_->sortable_id() ] } @skeds;
+
+    my ( %tables_of, @alltables );
     foreach my $sked (@skeds) {
-       my $daycode = $sked->daycode;
-       my $dircode = $sked->dircode;
-       my $linegroup = $sked->linegroup;
-       my $table = Actium::Sked::Timetable->new_from_sked($sked);
-       $table_of{$linegroup}{$daycode}{$dircode} = $table;
-       push @alltables, $table;
+        my $daycode   = $sked->daycode;
+        my $dircode   = $sked->dircode;
+        my $linegroup = $sked->linegroup;
+        my $table = Actium::Sked::Timetable->new_from_sked( $sked, $xml_db );
+        push @{$tables_of{$linegroup}} , $table;
+        push @alltables, $table;
     }
-    
-    _output_all_tables ($tabulae_folder, \@alltables);
-    
-    
-}
+
+    _output_all_tables( $tabulae_folder, \@alltables );
+    _output_pubtts ( $pubtt_folder, \%front_matter, \%tables_of );
+
+} ## tidy end: sub START
 
 sub _output_all_tables {
- 
+
     my $tabulae_folder = shift;
-    my $alltables_r = shift;
+    my $alltables_r    = shift;
     
-    open my $allfh , '>' , $tabulae_folder->make_filespec('all.txt') ;
+    #$alltables_r =  [ (@{$alltables_r})[0..50] ]; # debug
     
+    open my $allfh, '>', $tabulae_folder->make_filespec('all.txt');
+
     print $allfh $idt->start;
-    foreach my $table (@{$alltables_r}) {
-       print $allfh $idt->encode_high_chars($table), $idt->boxbreak;
+    foreach my $table ( @{$alltables_r} ) {
+        print $allfh $table->as_indesign ,
+          $idt->boxbreak;
     }
-    
+
+    close $allfh;
+
 }
 
 sub _get_configuration {
@@ -111,6 +119,44 @@ sub _get_configuration {
     return %front_matter;
 
 } ## tidy end: sub _get_configuration
+
+sub _output_pubtts {
+ 
+  my $pubtt_folder = shift;
+  my %front_matter = %{+shift};
+  my %tables_of = %{+shift};
+  
+  foreach my $pubtt (sortbyline (keys %front_matter)) {
+   
+   open my $ttfh , '>' , $pubtt_folder->make_filespec("$pubtt.txt");
+   
+   print $ttfh $idt->start;
+   
+   my @lines = sortbyline (split (' ' , $pubtt));
+   
+   # TODO print front matter
+   
+   my @tabletexts;
+   foreach my $line (@lines) {
+       my @tables = @{$tables_of{$line}};
+       
+       # TODO sort tables
+       
+       push @tabletexts, map { $_->as_indesign} @tables;
+    
+   }
+   
+   print $ttfh join ($idt->hardreturn , @tabletexts);
+   
+   # End matter, if there is any, goes here
+   
+   close $ttfh;
+   
+   
+  }
+ 
+ 
+}
 
 1;
 

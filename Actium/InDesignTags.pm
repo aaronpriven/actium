@@ -16,7 +16,7 @@ use 5.012;
 use Carp;
 
 use constant {
-    start            => '<ASCII-MAC>\r<Version:6><FeatureSet:InDesign-Roman>',
+    start            => "<ASCII-MAC>\r<Version:6><FeatureSet:InDesign-Roman>",
     punctuationspace => '<0x2008>',
     thinspace        => '<0x2009>',
     bullet           => '<0x2022>',
@@ -24,13 +24,13 @@ use constant {
     nbsp             => '<0x00A0>',
     endash           => '<0x2013>',
     emdash           => '<0x2014>',
+    hardreturn       => "\r",
     softreturn       => "\n",
-    # this really is an \n, as opposed to the usual \r
     emspace          => '<0x2003>',
     enspace          => '<0x2002>',
-    nonjoiner        => '<0x200C>',
     thirdspace       => '<0x2004>',
     hairspace        => '<0x200A>',
+    nonjoiner        => '<0x200C>',
     discretionary_lf => '<0x200B>',
     noparastyle      => '<ParaStyle:>',
     nocharstyle      => '<CharStyle:>',
@@ -57,6 +57,14 @@ sub color {
 
 sub parastyle {
     return _parameter( @_, 'ParaStyle' );
+}
+
+sub tablestyle {
+    return _parameter( @_, 'TableStyle' );
+}
+
+sub cellstyle {
+    return _parameter( @_, 'CellStyle' );
 }
 
 sub charstyle {
@@ -111,11 +119,11 @@ sub encode_high_chars {
 
     @_ = @_ ? @_ : $_ if defined wantarray;
     # set @_ to be a copy of itself, or of $_, if not in void context
-    
-    # allows it to work on copies in any but void context, or on 
+
+    # allows it to work on copies in any but void context, or on
     # the original in void context. Thanks to Text::Trim
 
-    for ( @_ ? @_ : $_ ) { # alias $_ to each entry of @_, or if none, $_
+    for ( @_ ? @_ : $_ ) {    # alias $_ to each entry of @_, or if none, $_
         next unless defined;
         my @chars = split(//);
         for my $i ( 0 .. $#chars ) {
@@ -137,6 +145,6 @@ sub encode_high_chars {
 
     return;
 
-} ## tidy end: sub escape_chars
+} ## tidy end: sub encode_high_chars
 
 1;

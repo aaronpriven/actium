@@ -83,7 +83,7 @@ sub prehistoric_skedsfile {
     foreach my $trip ( $self->trips ) {
         my $times = $timesub->( $trip->placetimes );
 
-        say $out jt( $trip->dayexception, $EMPTY_STR, $EMPTY_STR,
+        say $out jt( $trip->daysexceptions, $EMPTY_STR, $EMPTY_STR,
             $trip->routenum, $times );
     }
 
@@ -158,6 +158,9 @@ sub _new_from_prehistoric {
 
     my @place9s;
     ( undef, undef, undef, undef, @place9s ) = split(/\t/) ;
+   
+    s/=[0-9]+\z//sx foreach @place9s;
+    
     my @place8s = _tp9_to_tp8( @place9s) ;
     
     # the first four columns are always
@@ -181,7 +184,7 @@ sub _new_from_prehistoric {
         my @fields = split(/\t/);
 
         my %tripspec;
-        $tripspec{dayexception} = shift @fields;
+        $tripspec{daysexceptions} = shift @fields;
 
         $tripspec{noteletter}  = shift @fields;
         $tripspec{vehicletype} = shift @fields;
@@ -199,10 +202,10 @@ sub _new_from_prehistoric {
 
     } ## tidy end: while (<$skedsfh>)
 
-    my @dayexceptions = uniq( map { $_->dayexception } @trips );
+    my @daysexceptions = uniq( map { $_->daysexceptions } @trips );
 
-    if ( @dayexceptions == 1 ) {
-        given ( $dayexceptions[0] ) {
+    if ( @daysexceptions == 1 ) {
+        given ( $daysexceptions[0] ) {
             when ('SD') {
                 $days = Actium::Sked::Days->new( $days, 'D' );
             }

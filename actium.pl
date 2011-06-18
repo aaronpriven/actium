@@ -34,11 +34,6 @@ use Actium::Options qw(add_option init_options option);
     }
 }
 
-# The below make sure that all errors give full stack traces.
-# This should be changed to a command-line option
-
-# arguably also the facetious name should be changed
-
 ### Get subcommand, and run subcommand
 
 my %module_of = (
