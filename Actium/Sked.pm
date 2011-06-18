@@ -19,10 +19,11 @@ use Moose::Util::TypeConstraints;
 use English '-no_match_vars';
 
 use List::MoreUtils qw<none>;
+use List::Util;
 
 use Actium::Util(qw<:ALL>);
 use Actium::Time(qw<:all>);
-use Actium::Sorting qw<sortbyline>;
+use Actium::Sorting qw<sortbyline linekeys>;
 use Actium::Constants;
 
 use Actium::Types (qw/DirCode HastusDirCode ActiumSkedDir ActiumSkedDays/);
@@ -32,6 +33,9 @@ use Actium::Sked::Dir;
 use Actium::Sked::Days;
 
 use Actium::Term;
+
+with 'Actium::Sked::Prehistoric';
+# allows prehistoric skeds files to be read and written.
 
 ###################################
 ## MOOSE ATTRIBUTES
@@ -70,8 +74,10 @@ has 'dir_obj' => (
     init_arg => 'direction',
     is       => 'ro',
     isa      => ActiumSkedDir,
-    handles  => {'dircode' => 'dircode ' ,
-                 'to_text' => 'as_to_text' },
+    handles  => {
+        'dircode' => 'dircode',
+        'to_text' => 'as_to_text'
+    },
 );
 
 # days
@@ -114,15 +120,34 @@ has 'stopplace_r' => (
     handles => { stopplaces => 'elements', },
 );
 
+has 'earliest_timenum' => (
+    is       => 'ro',
+    lazy     => 1,
+    builder  => '_build_earliest_timenum',
+    required => 0,
+    init_arg => undef,
+);
+
+#### BUILDERS
+
+sub _build_earliest_timenum {
+ 
+    my $self = shift;
+    my $trip = $self->trip(0);
+    my @times = $trip->placetimes;
+    
+    my $timenum = first { defined $_ } @times;
+    return $timenum;
+ 
+}
+
 #################################
 ## METHODS
 
-
 sub routes {
 
-    # It would be nice to cache this in some way, but getting the Trip object
-    # to regenerate the cache each time it's changed is more trouble than
-    # it's worth.
+    # It would be nice to make this a lazy attribute, but the Trip objects
+    # would change.
 
     # Trips are kept read-write so that AVL and headways can be merged --
     # would it be better to have them be readonly,
@@ -334,14 +359,19 @@ sub skedid {
     return ( join( '_', $linegroup, $self->dircode, $self->daycode ) );
 }
 
+sub sortable_id {
+    my $self = shift;
+    my $linegroup = linekeys( $self->linegroup || $self->oldlinegroup );
+    $linegroup =~ s/\0/ /g;
+    my $dir = $self->dir_obj->as_sortable;
+    return join( "\t", $linegroup, $self->daycode, $dir );
+}
+
 sub dump {
     my $self = shift;
     require Data::Dumper;
     return Data::Dumper::Dumper($self);
 }
-
-with 'Actium::Sked::Prehistoric';
-# allows prehistoric skeds files to be read and written.
 
 1;
 

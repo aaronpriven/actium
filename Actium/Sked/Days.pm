@@ -194,7 +194,7 @@ sub as_adjectives {
 } ## tidy end: sub as_adjectives
 
 Readonly my @PLURALS => (
-    @SEVENDAYPLURALS, 'Holidays', 'Mondays through Fridays',
+    @SEVENDAYPLURALS, 'holidays', 'Mondays through Fridays',
     'Weekends', 'Every day', "Every day except holidays"
 );
 
@@ -214,14 +214,15 @@ sub as_plurals {
     return $cache{$composite} if $cache{$composite};
 
     my $daycode = $self->daycode;
-    $daycode =~ s/1234567H/D/;    # every day
-    $daycode =~ s/1234567/X/;     # every day except holidays
-    $daycode =~ s/12345/W/;       # weekdays
-         # $daycode =~ s/67/E/;  # weekends intentionally omitted
+    my $seriescode = $daycode;
+    $seriescode =~ s/1234567H/D/;    # every day
+    $seriescode =~ s/1234567/X/;     # every day except holidays
+    $seriescode =~ s/12345/W/;       # weekdays
+         # $seriescode =~ s/67/E/;  # weekends intentionally omitted
 
     my $schooldaycode = $self->schooldaycode;
 
-    my @as_plurals = map { $PLURAL_OF{$_} } split( //, $daycode );
+    my @as_plurals = map { $PLURAL_OF{$_} } split( //, $seriescode );
     my $results = joinseries(@as_plurals);
 
     if ( $PLURAL_SCHOOL_OF{$schooldaycode} ) {
@@ -229,11 +230,10 @@ sub as_plurals {
         my $results .= $PLURAL_SCHOOL_OF{$schooldaycode};
     }
     else {
-
         $results .= ' except holidays' unless $daycode =~ /H/;
     }
 
-    return $cache{$composite} = $results;
+    return $cache{$composite} = ucfirst($results);
 
 } ## tidy end: sub as_plurals
 Readonly my @ABBREVS =>

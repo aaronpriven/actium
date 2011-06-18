@@ -115,10 +115,10 @@ sub sked {
     
     my $day_obj;
     
-    my @dayexceptions = uniq ( map { $_->dayexception } $self->trips) ;
+    my @daysexceptions = uniq ( map { $_->daysexceptions } $self->trips) ;
     
-    if (@dayexceptions == 1 ) {
-        given ($dayexceptions[0]) {
+    if (@daysexceptions == 1 ) {
+        given ($daysexceptions[0]) {
          when ('SD') {
             $day_obj = Actium::Sked::Days->new($self->days, 'D');
          }

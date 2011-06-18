@@ -19,13 +19,13 @@ use Actium::Time;
 use Actium::Constants;
 
 my $timesub = Actium::Time::timestr_sub();
-# Someday it would be nice to make that configurable
+# Uses default values. Someday it would be nice to make that configurable
 
-has [qw <half_columns columns>] => {
+has [qw <half_columns columns>] => (
     isa      => 'Int',
     is       => 'ro',
     required => 1,
-};
+);
 
 has 'header_route_r' => (
     traits   => ['Array'],
@@ -41,29 +41,29 @@ has [qw <has_route_col has_note_col>] => (
     required => 1,
 );
 
-has [qw <header_dirtext header_daytext>] => {
+has [qw <header_dirtext header_daytext>] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
-};
+);
 
-has header_columntext_r => {
+has header_columntext_r => (
     traits   => ['Array'],
     is       => 'bare',
     isa      => 'ArrayRef[Str]',
     required => 1,
     handles  => { header_columntexts => 'elements', },
-};
+);
 
-has note_definitions_r => {
+has note_definitions_r => (
     traits   => ['Array'],
     is       => 'bare',
     isa      => 'ArrayRef[Str]',
     required => 1,
     handles  => { note_definitions => 'elements', },
-};
+);
 
-has body_rowtext_rs => {
+has body_rowtext_rs => (
     traits   => ['Array'],
     is       => 'bare',
     isa      => 'ArrayRef[ArrayRef[Str]]',
@@ -72,7 +72,12 @@ has body_rowtext_rs => {
         body_row_rs    => 'elements',
         body_row_count => 'count',
     },
-};
+);
+
+has earliest_timenum => (
+   is => 'ro',
+   required => 1,
+   );
 
 sub new_from_sked {
 
@@ -101,9 +106,9 @@ sub new_from_sked {
 
     if ($has_multiple_daysexceptions) {
         $halfcols++;
-        foreach my $dayexceptions ( $sked->daysexceptions ) {
+        foreach my $daysexceptions ( $sked->daysexceptions ) {
 
-            given ($dayexceptions) {
+            given ($daysexceptions) {
                 when ('SD') {
                     push @note_definitions, 'SD - School days only';
                 }
@@ -126,10 +131,12 @@ sub new_from_sked {
 
     $spec{header_route_r} = [ $sked->routes ];
 
+    my $daycode = $sked->daycode;
+
     $spec{header_daytext} = $sked->days_obj->as_plurals;
 
     my @timepoint_structs = $xml_db->timepoints_structs;
-    my %timepoint_row_of  = $timepoint_structs[2];         # Abbrev9
+    my %timepoint_row_of  = %{ $timepoint_structs[2] };    # Abbrev9
     my @header_columntexts;
 
     push @header_columntexts, 'Line' if $has_multiple_routes;
@@ -140,8 +147,6 @@ sub new_from_sked {
     for my $i ( 0 .. $#place9s ) {
         my $place9 = $place9s[$i];
         my $tpname = $timepoint_row_of{$place9}{TPName};
-
-        push @header_columntexts, $timepoint_row_of{$place9}{TPName};
 
         if ( $i != 0 and $place9s[ $i - 1 ] eq $place9 ) {
             $tpname = "Leaves $tpname";
@@ -161,6 +166,8 @@ sub new_from_sked {
       . $timepoint_row_of{ $place9s[-1] }{DestinationF};
 
     # BODY
+    
+    $spec{earliest_timenum} = $sked->earliest_timenum;
 
     my @body_rows;
 
@@ -171,12 +178,15 @@ sub new_from_sked {
         }
 
         if ($has_multiple_daysexceptions) {
-            push @row, $trip->dayexception;
+            push @row, $trip->daysexceptions;
         }
 
         foreach my $timenum ( $trip->placetimes ) {
             push @row, $timesub->($timenum);
         }
+        
+        
+        push @body_rows, \@row;
 
     }
 
@@ -186,7 +196,9 @@ sub new_from_sked {
 
 } ## tidy end: sub new_from_sked
 
-use IDTags;
+use Actium::InDesignTags;
+
+my $idt = 'Actium::InDesignTags';
 
 sub as_indesign {
 
@@ -216,10 +228,11 @@ sub as_indesign {
     open my $th, '>', \$tabletext
       or die "Can't open table scalar for writing: $!";
 
-    print $th IDTags::parastyle('UnderlyingTables');
-    print $th '<TableStyle:TimeTable>';
-    print $th
-      "<TableStart:$self->$rowcount,$colcount,2,0<tCellDefaultCellType:Text>>";
+    print $th $idt->parastyle('UnderlyingTables');
+    print $th $idt->tablestyle('TimeTable');
+    print $th '<TableStart:';
+    print $th join( ',', $rowcount, $colcount, 2, 0 );
+    print $th '<tCellDefaultCellType:Text>>';
     print $th '<ColStart:<tColAttrWidth:24>>' for ( 1 .. $halfcols );
     print $th '<ColStart:<tColAttrWidth:48>>'
       for ( 1 .. $columns + $trailing_columns );
@@ -241,18 +254,18 @@ sub as_indesign {
     print $th '<RowStart:<tRowAttrHeight:43.128692626953125>>';
     print $th '<CellStyle:ColorHeader><StylePriority:2>';
     print $th "<CellStart:1,$colcount>";
-    print $th IDTags::parastyle('dropcaphead');
+    print $th $idt->parastyle('dropcaphead');
     print $th "<pDropCapCharacters:$routechars>$routetext ";
-    print $th IDTags::charstyle('DropCapHeadDays');
+    print $th $idt->charstyle('DropCapHeadDays');
     print $th $self->header_daytext;
-    print $th IDTags::nocharstyle, '<0x000A>';
-    print $th IDTags::charstyle( 'DropCapHeadDest', '\cG',
-        $self->header_dirtext );    # control-G is "Insert to Here"
-    print $th IDTags::nocharstyle, '<CellEnd:>';
+    print $th $idt->nocharstyle, '<0x000A>';
+    print $th $idt->charstyle('DropCapHeadDest'),
+      , "\cG", $self->header_dirtext;    # control-G is "Insert to Here"
+    print $th $idt->nocharstyle, '<CellEnd:>';
 
-    for ( 2 .. $colcount ) {
-        print $th '<CellStyle:ColorHeader><CellStart:1,1><CellEnd:>';
-    }
+#    for ( 2 .. $colcount ) {
+#        print $th '<CellStyle:ColorHeader><CellStart:1,1><CellEnd:>';
+#    }
     print $th '<RowEnd:>';
 
     ##############
@@ -292,7 +305,7 @@ sub as_indesign {
     # Time Rows
 
     for my $body_row_r ( $self->body_row_rs ) {
-        my @body_row = @{$body_row_r},;
+        my @body_row = @{$body_row_r};
 
         print $th '<RowStart:<tRowAttrHeight:10.5159912109375>>';
 
@@ -300,28 +313,25 @@ sub as_indesign {
             my $route = shift @body_row;
 
             print $th
-"<CellStyle:LineNote><StylePriority:20><CellStart:1,1><ParaStyle:Time>$route<CellEnd:>";
+"<CellStyle:LineNote><StylePriority:20><CellStart:1,1><ParaStyle:LineNote>$route<CellEnd:>";
         }
         if ($has_note_col) {
             my $note = shift @body_row;
             print $th
-"<CellStyle:LineNote><StylePriority:20><CellStart:1,1><ParaStyle:Time>$note<CellEnd:>";
+"<CellStyle:LineNote><StylePriority:20><CellStart:1,1><ParaStyle:LineNote>$note<CellEnd:>";
         }
 
         for my $time (@body_row) {
 
             my $parastyle = 'Time';
-            if ($time) {
-                substr( $time, -3, 0 ) = ":";    # add colon
-            }
-            else {
-                $time      = IDTags::emdash;
+            if (! $time) {
+                $time      = $idt->emdash;
                 $parastyle = 'LineNote';
             }
             print $th
 "<CellStyle:Time><StylePriority:20><CellStart:1,1><ParaStyle:$parastyle>";
             if ( $time =~ /p\z/ ) {
-                print $th IDTags::bold($time);
+                print $th $idt->char_bold, $time, $idt->nocharstyle;
             }
             else {
                 print $th $time;
@@ -329,7 +339,7 @@ sub as_indesign {
             print $th '<CellEnd:>';
         } ## tidy end: for my $time (@body_row)
 
-        for ( 0 .. $trailing ) {
+        for ( 1 .. $trailing ) {
             print $th
 "<CellStyle:Time><StylePriority:20><CellStart:1,1><ParaStyle:LineNote><CellEnd:>";
         }
@@ -337,17 +347,21 @@ sub as_indesign {
         print $th '<RowEnd:>';
 
     } ## tidy end: for my $body_row_r ( $self...)
-
+    
     ###############
     # Table End
 
-    print $th "<TableEnd:>\r";
+    print $th "<TableEnd:>";
 
     foreach my $note_definition ( $self->note_definitions ) {
         print $th "\r$note_definition";
     }
 
-}
+    close $th;
+
+    return $tabletext;
+
+} ## tidy end: sub as_indesign
 
 1;
 
