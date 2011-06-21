@@ -21,6 +21,13 @@ use Actium::Constants;
 my $timesub = Actium::Time::timestr_sub();
 # Uses default values. Someday it would be nice to make that configurable
 
+# TODO 
+# Restructure so that instead of copying lots of stuff from the sked object,
+# it just has a reference to that object.
+
+# On the other hand maybe Timetable should be a lazy attribute of 
+# the sked object. That might make more sense.
+
 has [qw <half_columns columns>] => (
     isa      => 'Int',
     is       => 'ro',
@@ -74,13 +81,13 @@ has body_rowtext_rs => (
     },
 );
 
-has earliest_timenum => (
+has [qw<sortable_id earliest_timenum days_obj>] => (
    is => 'ro',
    required => 1,
    );
 
 sub new_from_sked {
-
+ 
     my $class  = shift;
     my $sked   = shift;
     my $xml_db = shift;
@@ -96,8 +103,9 @@ sub new_from_sked {
     $spec{has_route_col} = $has_multiple_routes;
 
     # TODO allow for other timepoint notes
-
+    
     my @place9s = $sked->place9s;
+    
 
     my $halfcols = 0;
     $halfcols++ if $has_multiple_routes;
@@ -131,14 +139,14 @@ sub new_from_sked {
 
     $spec{header_route_r} = [ $sked->routes ];
 
-    my $daycode = $sked->daycode;
-
+    $spec{days_obj} = $sked->days_obj;
+    
     $spec{header_daytext} = $sked->days_obj->as_plurals;
-
+    
     my @timepoint_structs = $xml_db->timepoints_structs;
     my %timepoint_row_of  = %{ $timepoint_structs[2] };    # Abbrev9
     my @header_columntexts;
-
+    
     push @header_columntexts, 'Line' if $has_multiple_routes;
     push @header_columntexts, 'Note' if $has_multiple_daysexceptions;
 
@@ -168,6 +176,7 @@ sub new_from_sked {
     # BODY
     
     $spec{earliest_timenum} = $sked->earliest_timenum;
+    $spec{sortable_id} = $sked->sortable_id;
 
     my @body_rows;
 
@@ -196,9 +205,9 @@ sub new_from_sked {
 
 } ## tidy end: sub new_from_sked
 
-use Actium::InDesignTags;
+use Actium::Text::InDesignTags;
 
-my $idt = 'Actium::InDesignTags';
+my $idt = 'Actium::Text::InDesignTags';
 
 sub as_indesign {
 
@@ -257,10 +266,10 @@ sub as_indesign {
     print $th $idt->parastyle('dropcaphead');
     print $th "<pDropCapCharacters:$routechars>$routetext ";
     print $th $idt->charstyle('DropCapHeadDays');
-    print $th $self->header_daytext;
+    print $th "\cG" , $self->header_daytext;
     print $th $idt->nocharstyle, '<0x000A>';
     print $th $idt->charstyle('DropCapHeadDest'),
-      , "\cG", $self->header_dirtext;    # control-G is "Insert to Here"
+      , $self->header_dirtext;    # control-G is "Indent to Here"
     print $th $idt->nocharstyle, '<CellEnd:>';
 
 #    for ( 2 .. $colcount ) {

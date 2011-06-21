@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 use English '-no_match_vars';
 
 use List::MoreUtils qw<none>;
-use List::Util;
+use List::Util ('first');
 
 use Actium::Util(qw<:ALL>);
 use Actium::Time(qw<:all>);
@@ -364,7 +364,12 @@ sub sortable_id {
     my $linegroup = linekeys( $self->linegroup || $self->oldlinegroup );
     $linegroup =~ s/\0/ /g;
     my $dir = $self->dir_obj->as_sortable;
-    return join( "\t", $linegroup, $self->daycode, $dir );
+    
+    my $earliest_timenum = $self->earliest_timenum; 
+    $earliest_timenum = 0 if $earliest_timenum < 0;
+    $earliest_timenum = linekeys($self->earliest_timenum);
+
+    return join( "\t", $linegroup, $self->daycode, $earliest_timenum, $dir );
 }
 
 sub dump {

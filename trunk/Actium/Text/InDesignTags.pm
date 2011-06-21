@@ -1,4 +1,4 @@
-# Actium/InDesignTags.pm
+# Actium/Text/InDesignTags.pm
 
 # class providing routines and constants for InDesign tagged text
 
@@ -6,7 +6,7 @@
 
 # Legacy stage 4
 
-package Actium::InDesignTags;
+package Actium::Text::InDesignTags;
 
 use warnings;
 use 5.012;

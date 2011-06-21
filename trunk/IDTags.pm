@@ -3,7 +3,7 @@
 
 # This is IDTags.pm, a module to print ID Tags.
 
-# Obsolete. Use Actium::InDesignTags.pm instead
+# Obsolete. Use Actium::Text::InDesignTags.pm instead
 
 package IDTags;
 
