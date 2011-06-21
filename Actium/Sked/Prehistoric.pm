@@ -97,11 +97,14 @@ sub load_prehistorics {
 
     my $class     = shift;
     my $folder    = shift;
+    my $xml_db = shift;
     my @filespecs = @_;
 
-    my $signup = $folder->signup_obj;
-
-    my $xml_db = $signup->load_xml;
+    if (not defined $xml_db) {
+       my $signup = $folder->signup_obj;
+       $xml_db = $signup->load_xml;
+    }
+    
     $xml_db->ensure_loaded('Timepoints');
 
     my $xml_dbh = $xml_db->dbh;
@@ -221,7 +224,11 @@ sub _new_from_prehistoric {
         }
     }
     else {
+        if ($linegroup =~ /\A 6 \d \d \z/sx) {
+        $days = Actium::Sked::Days->new($days, 'D');
+        } else {
         $days = Actium::Sked::Days->new($days);
+        }
     }
 
     $spec{days} = $days;

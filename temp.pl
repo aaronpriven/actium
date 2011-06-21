@@ -22,7 +22,7 @@ my $skedsfolder = Actium::Signup->new(
     }
 );
 
-my @skedobjs = Actium::Sked->load_prehistorics( $skedsfolder, '3*' );
+my @skedobjs = Actium::Sked->load_prehistorics( $skedsfolder, undef , '3*' );
 
 use Data::Dumper;
 
