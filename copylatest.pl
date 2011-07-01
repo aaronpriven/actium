@@ -9,9 +9,18 @@ use warnings;
 
 use File::Glob(':glob');
 
-chdir "/Volumes/Bireme/Maps/Schematics" if $ENV{'RUNNING_UNDER_AFFRUS'};
+my $arg = shift @ARGV;
 
-my $newdir = $ARGV[0] || "/tmp/copylatest";
+my $use_date = 1;
+
+if (defined $arg and $arg eq '-n') {
+    $arg = shift @ARGV;
+    $use_date = 0;
+}
+
+my $newdir = $arg || "/tmp/copylatest";
+
+# pathetically bad option handling
 
 mkdir $newdir or die "Can't make $newdir: $!"
    unless (-d $newdir);
@@ -51,6 +60,9 @@ use vars qw/*name *dir *prune/;
 File::Find::find({wanted => \&wanted}, '.');
 
 sub wanted {
+ 
+    return if $dir =~ m{\A\./_};
+    # skip if first folder begins with _
 
     lstat($_);
     unless (-f _) {
@@ -62,7 +74,7 @@ sub wanted {
     return unless /\.eps$/;
     
     my ($name, $path, $ext) = fileparse($_ , (qr{\.[^.]+}) );
-        
+    
     my ($lines_and_token, $date, $ver) = split (/-/ , $name, 3);
     
     return unless (not $using_validlines) or $validlines{$lines_and_token};
@@ -107,6 +119,18 @@ foreach my $lines_and_token (sort keys %latest_date_of) {
    foreach (@files) {
       my $newfile = $_;
       $newfile =~ s#.*/#$newdir/#;
+      
+      if (! $use_date) {
+          $newfile =~ s#.*/##;
+          my $extension = $newfile;
+          $extension =~ s/.*\.//;
+          $newfile = "$newdir/$lines_and_token.$extension";
+      }
+      else {
+          $newfile =~ s#.*/#$newdir/#;
+      }
+       
+      
       print "$_   $newfile\n";
       copy ($_ , $newfile);
    

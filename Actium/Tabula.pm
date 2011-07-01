@@ -13,10 +13,12 @@ package Actium::Tabula 0.001;
 
 use English '-no_match_vars';
 use autodie;
+use Text::Trim;
 use Actium::EffectiveDate ('effectivedate');
 use Actium::Sorting ( 'sortbyline', 'byline' );
 use Actium::Constants;
 use Actium::Text::InDesignTags;
+use Actium::Text::CharWidth ('char_width');
 use Actium::Signup;
 use Actium::Term;
 use Actium::Sked;
@@ -165,12 +167,21 @@ sub _output_pubtts {
 
         my @lines = sortbyline( split( ' ', $pubtt ) );
 
+        my %minimums_of_line;
+
         my @tables;
         foreach my $line (@lines) {
             next unless $tables_of{$line};
-            push @tables,
-              sort { $a->sortable_id cmp $b->sortable_id }
+            my @these_tables = sort { $a->sortable_id cmp $b->sortable_id }
               @{ $tables_of{$line} };
+
+            $minimums_of_line{$line}{half_columns}
+              = max( map { $_->half_columns } @these_tables );
+            $minimums_of_line{$line}{columns}
+              = max( map { $_->columns } @these_tables );
+
+            push @tables, @these_tables;
+
         }
 
         my $days_obj_of_r = _figure_days( \%tables_of, @lines );
@@ -178,7 +189,24 @@ sub _output_pubtts {
         _output_pubtt_front_matter( $ttfh, \@lines, $front_matter{$pubtt},
             $days_obj_of_r, $effectivedate );
 
-        my @tabletexts = map { $_->as_indesign } @tables;
+        print $ttfh $idt->boxbreak;
+
+        my @tabletexts;
+        foreach my $table (@tables) {
+            my $min_half_columns
+              = $minimums_of_line{ $table->linegroup }{half_columns};
+            my $min_columns = $minimums_of_line{ $table->linegroup }{columns};
+
+            if ( $min_columns * 2 + $min_half_columns <= 9 ) {
+
+                $min_half_columns = 1;
+                $min_columns      = 4;
+
+            }
+
+            push @tabletexts,
+              $table->as_indesign( $min_columns, $min_half_columns );
+        }
 
         print $ttfh join( ( $idt->hardreturn x 2 ), @tabletexts );
 
@@ -201,7 +229,7 @@ sub _figure_days {
 
     foreach my $line (@lines) {
         my @daycodes
-          = uniq( map { $_->days_obj->daycode } @{ $tables_of_r->{line} } );
+          = uniq( map { $_->days_obj->daycode } @{ $tables_of_r->{$line} } );
         my @schooldaycodes = uniq( map { $_->days_obj->schooldaycode }
               @{ $tables_of_r->{line} } );
 
@@ -218,11 +246,19 @@ sub _figure_days {
 
     }
 
-    return %days_obj_of;
+    return \%days_obj_of;
 
 } ## tidy end: sub _figure_days
 
-my %front_style_of = ( '>' => 'CoverCity', );
+my %front_style_of = (
+    '>' => 'CoverCity',
+    '}' => 'CoverCitySm',
+    ':' => 'CoverLineInDesc',
+    ';' => 'CoverLineInDesc',
+    '|' => 'CoverNote',
+    '*' => 'CoverLocalPax',
+
+);
 
 sub _output_pubtt_front_matter {
 
@@ -240,24 +276,25 @@ sub _output_pubtt_front_matter {
         $length = length( $lines[0] );
     }
     else {
-        $length = max( map {length} @lines, scalar @lines );
-        # longest line number, or if more routes than the number of
+        #$length = max( map {length} @lines, scalar @lines );
+
+        $length = max( map { char_width($_) } @lines, scalar @lines );
+
+        # longest line number in ems, or if more routes than the number of
         # characters, use that instead
-        
-        # TODO - use CharWidth to come up with something better
 
     }
 
     print $ttfh $idt->parastyle("CoverLine$length");
-    print $ttfh join( $idt->boxbreak, @lines ), $idt->boxbreak;
+    print $ttfh join( $idt->hardreturn, @lines ), $idt->boxbreak;
 
     # EFFECTIVE DATE
 
     print $ttfh $idt->parastyle('CoverEffectiveBlack'), 'Effective:',
       $idt->hardreturn;
-    print $ttfh $idt->parastyle('CoverDate'), $effectivedate, $idt->hardreturn;
+    print $ttfh $idt->parastyle('CoverDate'), $effectivedate;
 
-    # WORK OUT NO LOCALS AND COVER DAYS
+    # NO LOCALS AND COVER DAYS
 
     my %has_local_value;
     foreach my $line (@lines) {
@@ -268,43 +305,49 @@ sub _output_pubtt_front_matter {
             $has_local_value{LocalsOK} = 1;
         }
     }
-    my $mixed_locals = scalar keys %has_local_value > 1 ? 0 : 1;
-    my @days = uniq( map { $_->as_sortable } values %days_obj_of );
-    my $mixed_days = @days > 1;
+    my $mixed_locals = ( scalar keys %has_local_value ) > 1;
+    my @days         = uniq( map { $_->as_sortable } values %days_obj_of );
+    my $mixed_days   = @days > 1;
 
     # COVER MATERIALS
 
     foreach my $front_text (@front_matter) {
+     
+        print $ttfh $idt->hardreturn;
+        
         my $leading_char = substr( $front_text, 0, 1 );
 
         if ( not $front_style_of{$leading_char} ) {
-            print $ttfh $idt->parastyle( 'CoverPlace', $front_text ),
-              $idt->hardreturn;
+            print $ttfh $idt->parastyle('CoverPlace'), $front_text ;
             next;
         }
 
         $front_text = substr( $front_text, 1 );
+        trim($front_text);
 
-        given ($leading_char) {
-            when (':') {
-                print $ttfh $idt->parastyle('CoverLineInDesc'), $front_text,
-                  $idt->hardreturn;
-                print $ttfh _local_text($front_text) if $mixed_locals;
-                print $ttfh $days_obj_of{$front_text}->as_plurals 
-                  if $mixed_days;
-            }
-            when ('>') {
-                print $ttfh $idt->parastyle( $front_style_of{$leading_char} ),
-                  $idt->hardreturn;
-            }
-        }
+        print $ttfh $idt->parastyle( $front_style_of{$leading_char} ),
+          $front_text;
+          
+
+        if ( $leading_char eq ':' ) {
+
+            print $ttfh _local_text($front_text)
+              if $mixed_locals;
+            print $ttfh $idt->parastyle('CoverNote'),
+              $days_obj_of{$front_text}->as_plurals
+              if $mixed_days;
+        } elsif ($leading_char eq '*') { $mixed_locals = 1 }
+         
 
     } ## tidy end: foreach my $front_text (@front_matter)
 
     print $ttfh $idt->boxbreak;
 
-    print $ttfh _local_text( $lines[0] ) unless $mixed_locals;
-    print $ttfh $days_obj_of{$lines[0]}->as_plurals  unless $mixed_days;
+    print $ttfh _local_text( $lines[0] )
+      unless $mixed_locals;
+    print $ttfh $idt->parastyle('CoverNote'),
+      $days_obj_of{ $lines[0] }->as_plurals
+      unless $mixed_days;
 
     return;
 
@@ -314,12 +357,11 @@ sub _local_text {
     my $linegroup = shift;
 
     if ( $linegroup ~~ @TRANSBAY_NOLOCALS ) {
-        return $idt->parastyle('CoverLocalPax')
-          . 'No Local Passengers Permitted';
+        return $idt->parastyle('CoverLocalPax') . 'No Local Passengers Allowed';
     }
 
     if ( $linegroup eq '800' or $linegroup =~ /\A [A-Z]/sx ) {
-        return $idt->parastyle('CoverLocalPax') . 'Local Passengers Allowed';
+        return $idt->parastyle('CoverLocalPax') . 'Local Passengers Permitted';
     }
 
     return $EMPTY_STR;
