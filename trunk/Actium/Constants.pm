@@ -44,7 +44,6 @@ BEGIN {
         KEY_SEPARATOR => \"\c]",
 
         LINES_TO_COMBINE => {
-            #            '21'  => '20', # coming March 2010
             '72M' => '72',
             'DB1' => 'DB',
             'DB3' => 'DB',
@@ -52,7 +51,7 @@ BEGIN {
             '386' => '86',
             'NC'  => 'NX4',
             'NXC' => 'NX4',
-            'LC'  => 'LA',
+            'LC'  => 'L',
         },
 
         SCHEDULE_DAYS => [qw/WD SA SU WA WU WE DA/],

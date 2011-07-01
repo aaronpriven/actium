@@ -34,6 +34,12 @@ has [qw <half_columns columns>] => (
     required => 1,
 );
 
+has 'linegroup' => (
+    isa => 'Str',
+    is => 'ro', 
+    required => 1,
+    );
+
 has 'header_route_r' => (
     traits   => ['Array'],
     is       => 'bare',
@@ -140,6 +146,7 @@ sub new_from_sked {
     $spec{header_route_r} = [ $sked->routes ];
 
     $spec{days_obj} = $sked->days_obj;
+    $spec{linegroup} = $sked->linegroup;
     
     $spec{header_daytext} = $sked->days_obj->as_plurals;
     
@@ -350,7 +357,7 @@ sub as_indesign {
 
         for ( 1 .. $trailing ) {
             print $th
-"<CellStyle:Time><StylePriority:20><CellStart:1,1><ParaStyle:LineNote><CellEnd:>";
+"<CellStyle:Time><StylePriority:20><CellStart:1,1><ParaStyle:LineNote> <CellEnd:>";
         }
 
         print $th '<RowEnd:>';
