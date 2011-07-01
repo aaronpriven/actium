@@ -17,7 +17,7 @@ use POSIX ('ceil');
 
 use Perl6::Export::Attrs;
 
-# the following are character widths for a few fonts, derived from the AFM 
+# the following are character widths for a few fonts, derived from the AFM
 # files
 
 # This is nowhere near good enough to lay everything out really precisely,
@@ -143,8 +143,8 @@ $widths{Futura_Heavy} = [
 # Correct 0, 3, 4, 8 since they turn out wider in Futura
 
 foreach (qw/0 3 4 8/) {
-    $widths{Futura_Condensed}[ord] *= 1.2;
-    $widths{Futura_Heavy}[ord]     *= 1.2;
+    $widths{Futura_CondensedBold}[ord] *= 1.2;
+    $widths{Futura_Heavy}[ord]         *= 1.2;
 }
 
 my $default = ord('2');
@@ -164,10 +164,10 @@ sub twelfths : Export {
 sub char_width : Export {
     my $text = shift;
     my $font = _check_font(shift);
-    return ceil( _calc_ems( $text, $font ) / $widths{$font}[$default] ) ;
+    return ceil( _calc_ems( $text, $font ) / $widths{$font}[$default] );
 }
 
-sub _calc {
+sub _calc_ems {
     my ( $text, $font ) = @_;
     my @chars = split( //, $text );
     return sum( map { $widths{$font}[ord] // $widths{$font}[$default] }
@@ -176,18 +176,21 @@ sub _calc {
 
 sub _check_font {
     my $font = shift;
+
+    return 'Univers_CondensedBold' unless defined $font;
+
     $font =~ s/ /_/g;
 
-    if ( $widths{font} or $warned_font{$font} ) {
+    if ( $widths{$font} or $warned_font{$font} ) {
         return $font;
     }
 
     if ( not $warned_font{$font} ) {
-        carp
-          "Unknown font $font in calculating widths. Using Univers Condensed";
+        carp "Unknown font $font in calculating widths. "
+          . 'Using Univers Condensed Bold';
         $warned_font{$font} = 1;
     }
-    return 'Univers_Condensed';
+    return 'Univers_CondensedBold';
 }
 
 1;
