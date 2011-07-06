@@ -28,6 +28,7 @@ use List::Util ('max');
 use List::MoreUtils ( 'uniq', 'each_arrayref' );
 
 Readonly my $idt => 'Actium::Text::InDesignTags';
+
 # saves typing
 
 sub HELP {
@@ -57,8 +58,8 @@ sub START {
 
     emit "Loading prehistoric schedules";
 
-    my @skeds
-      = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
+    my @skeds =
+      Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
 
     emit_done;
 
@@ -88,7 +89,7 @@ sub START {
     _output_all_tables( $tabulae_folder, \@alltables );
     _output_pubtts( $pubtt_folder, \%front_matter, \%tables_of, $signup );
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 sub _output_all_tables {
 
@@ -110,7 +111,7 @@ sub _output_all_tables {
 
     emit_done;
 
-} ## tidy end: sub _output_all_tables
+}    ## tidy end: sub _output_all_tables
 
 sub _get_configuration {
 
@@ -141,7 +142,7 @@ sub _get_configuration {
 
     return %front_matter;
 
-} ## tidy end: sub _get_configuration
+}    ## tidy end: sub _get_configuration
 
 sub _output_pubtts {
 
@@ -166,8 +167,6 @@ sub _output_pubtts {
 
         print $ttfh Actium::Text::InDesignTags->start;
 
-        #my $days_obj_of_r = _figure_days( \%tables_of, $lines_r );
-
         _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r,
             $front_matter{$pubtt}, $effectivedate );
 
@@ -176,9 +175,10 @@ sub _output_pubtts {
         print $ttfh $idt->boxbreak;
 
         my @tabletexts;
+
         #foreach my $table (@tables) {
-        while ( my ( $minimum_of_r, $table )
-            = each_arrayref( $minimums_r, $tables_r ) )
+        while ( my ( $minimum_of_r, $table ) =
+            each_arrayref( $minimums_r, $tables_r ) )
         {
             my $min_half_columns = $minimum_of_r->{half_columns};
             my $min_columns      = $minimum_of_r->{columns};
@@ -200,14 +200,14 @@ sub _output_pubtts {
 
         close $ttfh;
 
-    } ## tidy end: foreach my $pubtt ( sortbyline...)
+    }    ## tidy end: foreach my $pubtt ( sortbyline...)
 
     emit_done;
 
-} ## tidy end: sub _output_pubtts
+}    ## tidy end: sub _output_pubtts
 
 sub _minimums {
- ...
+    ...;
 }
 
 sub _tables_and_lines {
@@ -217,63 +217,24 @@ sub _tables_and_lines {
 
     my @linegroups = sortbyline( split( ' ', $pubtt ) );
 
-    my ( %minimums_of_lg, @tables, @lines );
+    my ( @tables, @lines );
 
     foreach my $linegroup (@linegroups) {
         next unless $tables_of{$linegroup};
-        my @these_tables = sort { $a->sortable_id cmp $b->sortable_id }
-          @{ $tables_of{$linegroup} };
-
-        $minimums_of_lg{$linegroup}{half_columns}
-          = max( map { $_->half_columns } @these_tables );
-        $minimums_of_lg{$linegroup}{columns}
-          = max( map { $_->columns } @these_tables );
-
-        push @tables, @these_tables;
-
+        push @tables, @{ $tables_of{$linegroup} };
     }
+    
+    @tables = sort { $a->sortable_id cmp $b->sortable_id } @tables;
 
-    {
-        my %is_a_line;
-        foreach my $table (@tables) {
-            $is_a_line{$_} = 1 foreach ( @{ $table->header_routes } );
-        }
-        @lines = sortbyline( keys %is_a_line );
+    my %is_a_line;
+    foreach my $table (@tables) {
+        $is_a_line{$_} = 1 foreach ( @{ $table->header_routes } );
     }
+    @lines = sortbyline( keys %is_a_line );
 
     return \@tables, \@lines;
 
-} ## tidy end: sub _tables_and_lines
-
-sub _figure_days {
-
-    my $tables_of_r = shift;
-    my @lines       = @{ +shift };
-
-    my %days_obj_of;
-
-    foreach my $line (@lines) {
-        my @daycodes
-          = uniq( map { $_->days_obj->daycode } @{ $tables_of_r->{$line} } );
-        my @schooldaycodes = uniq( map { $_->days_obj->schooldaycode }
-              @{ $tables_of_r->{line} } );
-
-        my $catschooldaycode;
-        if ( @schooldaycodes == 1 ) {
-            $catschooldaycode = $schooldaycodes[0];
-        }
-        else { $catschooldaycode = 'B'; }
-
-        my $catdaycode = join( $EMPTY_STR, sort @daycodes );
-        $catdaycode = join $EMPTY_STR, ( uniq sort ( split //, $catdaycode ) );
-        $days_obj_of{$line}
-          = Actium::Sked::Days->new( $catdaycode, $catschooldaycode );
-
-    }
-
-    return \%days_obj_of;
-
-} ## tidy end: sub _figure_days
+}    ## tidy end: sub _tables_and_lines
 
 my %front_style_of = (
     '>' => 'CoverCity',
@@ -295,20 +256,9 @@ sub _output_pubtt_front_matter {
 
     # ROUTES
 
-    my $length;
-
-    if ( @lines == 1 ) {
-        $length = length( $lines[0] );
-    }
-    else {
-        #$length = max( map {length} @lines, scalar @lines );
-
-        $length = max( map { char_width($_) } @lines, scalar @lines );
-
+    my $length = max( map { char_width($_) } @lines, scalar @lines );
         # longest line number in ems, or if more routes than the number of
         # characters, use that instead
-
-    }
 
     print $ttfh $idt->parastyle("CoverLine$length");
     print $ttfh join( $idt->hardreturn, @lines ), $idt->boxbreak;
@@ -318,6 +268,8 @@ sub _output_pubtt_front_matter {
     print $ttfh $idt->parastyle('CoverEffectiveBlack'), 'Effective:',
       $idt->hardreturn;
     print $ttfh $idt->parastyle('CoverDate'), $effectivedate;
+
+    my ($days_r, $locals_r)  = _make_days_and_locals($tables_r, \@lines);
 
     # NO LOCALS AND COVER DAYS
 
@@ -363,7 +315,7 @@ sub _output_pubtt_front_matter {
         }
         elsif ( $leading_char eq '*' ) { $mixed_locals = 1 }
 
-    } ## tidy end: foreach my $front_text (@front_matter)
+    }    ## tidy end: foreach my $front_text (@front_matter)
 
     print $ttfh $idt->boxbreak;
 
@@ -375,7 +327,59 @@ sub _output_pubtt_front_matter {
 
     return;
 
-} ## tidy end: sub _output_pubtt_front_matter
+}    ## tidy end: sub _output_pubtt_front_matter
+
+sub _make_days {
+
+    my @tables = @{+shift};
+    
+    my %days_objs_of;
+    
+    foreach my $table (@tables) {
+        foreach my $line ($table->header_routes) {
+            push @{$days_objs_of{$line}} , $table->days_obj();
+        }
+    }
+    
+    my %days_of;
+    while ( my ($line, $days_objs_r) = each %days_of) {
+        $days_of{$line} = Actium::Sked::Days->union(@{$days_objs_r});
+    }
+    
+    
+        
+    
+}
+
+sub _make_locals {
+ ...
+}
+    
+#part of old sub figure_days
+#    my %days_obj_of;
+#
+#    foreach my $line (@lines) {
+#        my @daycodes =
+#          uniq( map { $_->days_obj->daycode } @{ $tables_of_r->{$line} } );
+#        my @schooldaycodes =
+#          uniq( map { $_->days_obj->schooldaycode } @{ $tables_of_r->{line} } );
+#
+#        my $catschooldaycode;
+#        if ( @schooldaycodes == 1 ) {
+#            $catschooldaycode = $schooldaycodes[0];
+#        }
+#        else { $catschooldaycode = 'B'; }
+#
+#        my $catdaycode = join( $EMPTY_STR, sort @daycodes );
+#        $catdaycode = join $EMPTY_STR, ( uniq sort ( split //, $catdaycode ) );
+#        $days_obj_of{$line} =
+#          Actium::Sked::Days->new( $catdaycode, $catschooldaycode );
+#
+#    }
+#
+#    return \%days_obj_of;
+#
+#}    ## tidy end: sub _figure_days
 
 sub _local_text {
     my $linegroup = shift;

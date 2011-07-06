@@ -275,6 +275,14 @@ sub as_abbrevs {
 
 } ## tidy end: sub as_abbrevs
 
+sub union {
+ # take multiple day objects and return the union of them
+ # e.g., take one representing Saturday and one representing
+ # Sunday and turn it into one representing both Saturday and Sunday
+ ...
+ 
+}
+
 1;
 
 __END__
@@ -308,7 +316,7 @@ or Sundays-and-Holidays.  However, there are lots of exceptions.
 Some trips run only school days, while others run only school holidays. 
 Some trips run only a few weekdays (e.g., Mondays, Wednesdays, and Fridays).
 
-=head1 METHODS
+=head1 CLASS METHODS
 
 =over
 
@@ -336,6 +344,22 @@ operation on both school days and school holidays. (This is regardless of
 whether school normally operates on that day -- weekend trips will 
 still have "B" as the school day flag, unless there is a situation where
 some school service is operated on a Saturday.)
+
+=item B<< Actium::Sked::Days->union(I<days_obj> , ... >>
+
+Another constructor. It takes one or more Actium::Sked::Days objects and 
+returns a new object representing the union of those objects. For example,
+if passed an object representing Saturday and an object representing Sunday, 
+will return an object representing both Saturday and Sunday.
+
+If the school day codes of the passed objects are identical, it will use that
+code. Otherwise it will use "B".
+
+=back
+
+=head1 OBJECT METHODS
+
+=over
 
 =item B<< $obj->daycode >>
 
