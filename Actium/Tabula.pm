@@ -24,8 +24,8 @@ use Actium::Term;
 use Actium::Sked;
 use Actium::Sked::Timetable;
 use Readonly;
-use List::Util      ('max');
-use List::MoreUtils ('uniq');
+use List::Util ('max');
+use List::MoreUtils ( 'uniq', 'each_arrayref' );
 
 Readonly my $idt => 'Actium::Text::InDesignTags';
 # saves typing
@@ -156,8 +156,9 @@ sub _output_pubtts {
 
     foreach my $pubtt ( sortbyline( keys %front_matter ) ) {
 
-        my $file = $pubtt;
-        $file =~ s/ /_/g;
+        my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
+
+        my $file = join( "_", @{$lines_r} );
 
         emit_prog "$file ";
 
@@ -165,37 +166,22 @@ sub _output_pubtts {
 
         print $ttfh Actium::Text::InDesignTags->start;
 
-        my @lines = sortbyline( split( ' ', $pubtt ) );
+        #my $days_obj_of_r = _figure_days( \%tables_of, $lines_r );
 
-        my %minimums_of_line;
+        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r,
+            $front_matter{$pubtt}, $effectivedate );
 
-        my @tables;
-        foreach my $line (@lines) {
-            next unless $tables_of{$line};
-            my @these_tables = sort { $a->sortable_id cmp $b->sortable_id }
-              @{ $tables_of{$line} };
-
-            $minimums_of_line{$line}{half_columns}
-              = max( map { $_->half_columns } @these_tables );
-            $minimums_of_line{$line}{columns}
-              = max( map { $_->columns } @these_tables );
-
-            push @tables, @these_tables;
-
-        }
-
-        my $days_obj_of_r = _figure_days( \%tables_of, @lines );
-
-        _output_pubtt_front_matter( $ttfh, \@lines, $front_matter{$pubtt},
-            $days_obj_of_r, $effectivedate );
+        my $minimums_r = _minimums($tables_r);
 
         print $ttfh $idt->boxbreak;
 
         my @tabletexts;
-        foreach my $table (@tables) {
-            my $min_half_columns
-              = $minimums_of_line{ $table->linegroup }{half_columns};
-            my $min_columns = $minimums_of_line{ $table->linegroup }{columns};
+        #foreach my $table (@tables) {
+        while ( my ( $minimum_of_r, $table )
+            = each_arrayref( $minimums_r, $tables_r ) )
+        {
+            my $min_half_columns = $minimum_of_r->{half_columns};
+            my $min_columns      = $minimum_of_r->{columns};
 
             if ( $min_columns * 2 + $min_half_columns <= 9 ) {
 
@@ -220,10 +206,49 @@ sub _output_pubtts {
 
 } ## tidy end: sub _output_pubtts
 
+sub _minimums {
+ ...
+}
+
+sub _tables_and_lines {
+
+    my $pubtt     = shift;
+    my %tables_of = %{ +shift };
+
+    my @linegroups = sortbyline( split( ' ', $pubtt ) );
+
+    my ( %minimums_of_lg, @tables, @lines );
+
+    foreach my $linegroup (@linegroups) {
+        next unless $tables_of{$linegroup};
+        my @these_tables = sort { $a->sortable_id cmp $b->sortable_id }
+          @{ $tables_of{$linegroup} };
+
+        $minimums_of_lg{$linegroup}{half_columns}
+          = max( map { $_->half_columns } @these_tables );
+        $minimums_of_lg{$linegroup}{columns}
+          = max( map { $_->columns } @these_tables );
+
+        push @tables, @these_tables;
+
+    }
+
+    {
+        my %is_a_line;
+        foreach my $table (@tables) {
+            $is_a_line{$_} = 1 foreach ( @{ $table->header_routes } );
+        }
+        @lines = sortbyline( keys %is_a_line );
+    }
+
+    return \@tables, \@lines;
+
+} ## tidy end: sub _tables_and_lines
+
 sub _figure_days {
 
     my $tables_of_r = shift;
-    my @lines       = @_;
+    my @lines       = @{ +shift };
 
     my %days_obj_of;
 
@@ -263,9 +288,9 @@ my %front_style_of = (
 sub _output_pubtt_front_matter {
 
     my $ttfh          = shift;
+    my $tables_r      = shift;
     my @lines         = @{ +shift };
     my @front_matter  = @{ +shift };
-    my %days_obj_of   = %{ +shift };
     my $effectivedate = shift;
 
     # ROUTES
@@ -312,13 +337,13 @@ sub _output_pubtt_front_matter {
     # COVER MATERIALS
 
     foreach my $front_text (@front_matter) {
-     
+
         print $ttfh $idt->hardreturn;
-        
+
         my $leading_char = substr( $front_text, 0, 1 );
 
         if ( not $front_style_of{$leading_char} ) {
-            print $ttfh $idt->parastyle('CoverPlace'), $front_text ;
+            print $ttfh $idt->parastyle('CoverPlace'), $front_text;
             next;
         }
 
@@ -327,7 +352,6 @@ sub _output_pubtt_front_matter {
 
         print $ttfh $idt->parastyle( $front_style_of{$leading_char} ),
           $front_text;
-          
 
         if ( $leading_char eq ':' ) {
 
@@ -336,8 +360,8 @@ sub _output_pubtt_front_matter {
             print $ttfh $idt->parastyle('CoverNote'),
               $days_obj_of{$front_text}->as_plurals
               if $mixed_days;
-        } elsif ($leading_char eq '*') { $mixed_locals = 1 }
-         
+        }
+        elsif ( $leading_char eq '*' ) { $mixed_locals = 1 }
 
     } ## tidy end: foreach my $front_text (@front_matter)
 
