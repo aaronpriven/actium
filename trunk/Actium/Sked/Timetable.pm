@@ -21,12 +21,24 @@ use Actium::Constants;
 my $timesub = Actium::Time::timestr_sub();
 # Uses default values. Someday it would be nice to make that configurable
 
-# TODO 
-# Restructure so that instead of copying lots of stuff from the sked object,
-# it just has a reference to that object.
+has sked_obj => (
+    isa      => 'Actium::Sked',
+    is       => 'ro',
+    required => 1,
+    handles  => {
+        linegroup        => 'linegroup',
+        has_note_col     => 'has_multiple_daysexceptions',
+        has_route_col    => 'has_multiple_routes',
+        header_routes    => 'routes',
+        sortable_id      => 'sortable_id',
+        earliest_timenum => 'earliest_timenum',
+        days_obj         => 'days_obj',
+      }
 
-# On the other hand maybe Timetable should be a lazy attribute of 
-# the sked object. That might make more sense.
+);
+# At one point I thought this object could be contained by the sked object
+# rather than the other way around, but it can't because I need the xml
+# data to make this object, and the sked object doesn't know it.
 
 has [qw <half_columns columns>] => (
     isa      => 'Int',
@@ -34,25 +46,25 @@ has [qw <half_columns columns>] => (
     required => 1,
 );
 
-has 'linegroup' => (
-    isa => 'Str',
-    is => 'ro', 
-    required => 1,
-    );
+#has 'linegroup' => (
+#    isa => 'Str',
+#    is => 'ro',
+#    required => 1,
+#    );
 
-has 'header_route_r' => (
-    traits   => ['Array'],
-    is       => 'bare',
-    isa      => 'ArrayRef[Str]',
-    required => 1,
-    handles  => { header_routes => 'elements', },
-);
-
-has [qw <has_route_col has_note_col>] => (
-    is       => 'ro',
-    isa      => 'Bool',
-    required => 1,
-);
+#has 'header_route_r' => (
+#    traits   => ['Array'],
+#    is       => 'bare',
+#    isa      => 'ArrayRef[Str]',
+#    required => 1,
+#    handles  => { header_routes => 'elements', },
+#);
+#
+#has [qw <has_route_col has_note_col>] => (
+#    is       => 'ro',
+#    isa      => 'Bool',
+#    required => 1,
+#);
 
 has [qw <header_dirtext header_daytext>] => (
     is       => 'ro',
@@ -87,31 +99,29 @@ has body_rowtext_rs => (
     },
 );
 
-has [qw<sortable_id earliest_timenum days_obj>] => (
-   is => 'ro',
-   required => 1,
-   );
+#has [qw<sortable_id earliest_timenum days_obj>] => (
+#   is => 'ro',
+#   required => 1,
+#   );
 
 sub new_from_sked {
- 
+
     my $class  = shift;
     my $sked   = shift;
     my $xml_db = shift;
 
     my %spec;
 
+    $spec{sked_obj} = $sked;
+
     # ASCERTAIN COLUMNS
 
     my $has_multiple_routes         = $sked->has_multiple_routes;
     my $has_multiple_daysexceptions = $sked->has_multiple_daysexceptions;
 
-    $spec{has_note_col}  = $has_multiple_daysexceptions;
-    $spec{has_route_col} = $has_multiple_routes;
-
     # TODO allow for other timepoint notes
-    
+
     my @place9s = $sked->place9s;
-    
 
     my $halfcols = 0;
     $halfcols++ if $has_multiple_routes;
@@ -143,17 +153,17 @@ sub new_from_sked {
 
     # HEADERS
 
-    $spec{header_route_r} = [ $sked->routes ];
+    #    $spec{header_route_r} = [ $sked->routes ];
 
-    $spec{days_obj} = $sked->days_obj;
-    $spec{linegroup} = $sked->linegroup;
-    
+    #$spec{days_obj} = $sked->days_obj;
+    #$spec{linegroup} = $sked->linegroup;
+
     $spec{header_daytext} = $sked->days_obj->as_plurals;
-    
+
     my @timepoint_structs = $xml_db->timepoints_structs;
     my %timepoint_row_of  = %{ $timepoint_structs[2] };    # Abbrev9
     my @header_columntexts;
-    
+
     push @header_columntexts, 'Line' if $has_multiple_routes;
     push @header_columntexts, 'Note' if $has_multiple_daysexceptions;
 
@@ -181,9 +191,9 @@ sub new_from_sked {
       . $timepoint_row_of{ $place9s[-1] }{DestinationF};
 
     # BODY
-    
-    $spec{earliest_timenum} = $sked->earliest_timenum;
-    $spec{sortable_id} = $sked->sortable_id;
+
+    #    $spec{earliest_timenum} = $sked->earliest_timenum;
+    #    $spec{sortable_id} = $sked->sortable_id;
 
     my @body_rows;
 
@@ -200,8 +210,7 @@ sub new_from_sked {
         foreach my $timenum ( $trip->placetimes ) {
             push @row, $timesub->($timenum);
         }
-        
-        
+
         push @body_rows, \@row;
 
     }
@@ -273,15 +282,15 @@ sub as_indesign {
     print $th $idt->parastyle('dropcaphead');
     print $th "<pDropCapCharacters:$routechars>$routetext ";
     print $th $idt->charstyle('DropCapHeadDays');
-    print $th "\cG" , $self->header_daytext;
+    print $th "\cG", $self->header_daytext;
     print $th $idt->nocharstyle, '<0x000A>';
     print $th $idt->charstyle('DropCapHeadDest'),
       , $self->header_dirtext;    # control-G is "Indent to Here"
     print $th $idt->nocharstyle, '<CellEnd:>';
 
-#    for ( 2 .. $colcount ) {
-#        print $th '<CellStyle:ColorHeader><CellStart:1,1><CellEnd:>';
-#    }
+    #    for ( 2 .. $colcount ) {
+    #        print $th '<CellStyle:ColorHeader><CellStart:1,1><CellEnd:>';
+    #    }
     print $th '<RowEnd:>';
 
     ##############
@@ -340,7 +349,7 @@ sub as_indesign {
         for my $time (@body_row) {
 
             my $parastyle = 'Time';
-            if (! $time) {
+            if ( !$time ) {
                 $time      = $idt->emdash;
                 $parastyle = 'LineNote';
             }
@@ -353,7 +362,7 @@ sub as_indesign {
                 print $th $time;
             }
             print $th '<CellEnd:>';
-        } ## tidy end: for my $time (@body_row)
+        }
 
         for ( 1 .. $trailing ) {
             print $th
@@ -363,7 +372,7 @@ sub as_indesign {
         print $th '<RowEnd:>';
 
     } ## tidy end: for my $body_row_r ( $self...)
-    
+
     ###############
     # Table End
 
