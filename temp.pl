@@ -15,8 +15,8 @@ use Actium::Sked;
 init_options;
 
 my $skedsfolder = Actium::Signup->new(
-    {   base       => '/b/Actium/db/',
-        signup     => 'f10',
+    {   base       => '/Users/aaron/Dev/signups/',
+        signup     => 'sp11',
         subfolders => 'skeds',
         cache => '/tmp/apriven/',
     }
