@@ -20,7 +20,7 @@ use Actium::Constants;
 
 use Carp;
 use Readonly;
-use List::MoreUtils ('mesh');
+use List::MoreUtils (qw<mesh uniq>);
 
 use Data::Dumper;
 
@@ -73,10 +73,10 @@ sub _initialize_daycode {
     $daycode =~ s/7H?/7H/;    # make sure Sundays always includes holidays
 
     $set->($daycode);
-} ## tidy end: sub _initialize_daycode
+}
 
 has 'schooldaycode' => (
-    is => 'ro',
+    is      => 'ro',
     isa     => SchoolDayCode,    # [BDH]
     default => 'B',
 );
@@ -102,7 +102,8 @@ sub as_sortable {
     my $self = shift;
     return $self->_composite_code;
 }
-# composite_code not guaranteed to remain sortable in the future
+# composite_code not guaranteed to remain sortable in the future,
+# so we put this stub in so that we can make a sortable version
 
 sub as_transitinfo {
 
@@ -126,16 +127,16 @@ sub as_transitinfo {
 } ## tidy end: sub as_transitinfo
 
 sub for_prehistoric {
-   # prehistoric skeds files just uses the days from the headway sheets
-   
-   my $self = shift;
-   my $transitinfo = $self->as_transitinfo;
-   
-   my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
-   
-   return 'WD' unless $transitinfo ~~ @valid_prehistorics;
-   return $transitinfo;
-   
+    # prehistoric skeds files just uses the days from the headway sheets
+
+    my $self        = shift;
+    my $transitinfo = $self->as_transitinfo;
+
+    my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
+
+    return 'WD' unless $transitinfo ~~ @valid_prehistorics;
+    return $transitinfo;
+
 }
 
 sub _invalid_transitinfo_daycode {
@@ -213,7 +214,7 @@ sub as_plurals {
     state %cache;
     return $cache{$composite} if $cache{$composite};
 
-    my $daycode = $self->daycode;
+    my $daycode    = $self->daycode;
     my $seriescode = $daycode;
     $seriescode =~ s/1234567H/D/;    # every day
     $seriescode =~ s/1234567/X/;     # every day except holidays
@@ -237,8 +238,7 @@ sub as_plurals {
 
 } ## tidy end: sub as_plurals
 Readonly my @ABBREVS =>
-  ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" )
-  ;
+  ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
 
 Readonly my %ABBREV_OF => mesh( @DAYLETTERS, @PLURALS );
 Readonly my %ABBREV_SCHOOL_OF => (
@@ -276,12 +276,45 @@ sub as_abbrevs {
 } ## tidy end: sub as_abbrevs
 
 sub union {
- # take multiple day objects and return the union of them
- # e.g., take one representing Saturday and one representing
- # Sunday and turn it into one representing both Saturday and Sunday
- ...
- 
-}
+    # take multiple day objects and return the union of them
+    # e.g., take one representing Saturday and one representing
+    # Sunday and turn it into one representing both Saturday and Sunday
+
+    my $class = shift;
+    my @objs  = @_;
+
+    my $union_obj           = shift @objs;
+    my $union_daycode       = $union_obj->daycode;
+    my $union_schooldaycode = $union_obj->schooldaycode;
+
+    foreach my $obj (@objs) {
+
+        my $daycode       = $obj->daycode;
+        my $schooldaycode = $obj->schooldaycode;
+
+        next
+          if $daycode eq $union_daycode
+              and $schooldaycode eq $union_schooldaycode;
+
+        if ( $schooldaycode ne $union_schooldaycode ) {
+            $union_schooldaycode = 'B';
+        }
+
+        if ( $daycode ne $union_daycode ) {
+
+            $union_daycode = join( $EMPTY_STR,
+                ( uniq sort ( split //, $union_daycode . $daycode ) ) );
+                
+        }
+
+        $union_obj = $class->new( $union_daycode, $union_schooldaycode );
+
+
+    } ## tidy end: foreach my $obj (@objs)
+
+    return $union_obj;
+
+} ## tidy end: sub union
 
 1;
 
