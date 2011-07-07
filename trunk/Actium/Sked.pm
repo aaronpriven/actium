@@ -81,8 +81,15 @@ has 'dir_obj' => (
 );
 
 has 'linedir' => (
-    lazy => 1,
+    lazy    => 1,
     builder => '_build_linedir',
+    is      => 'ro',
+);
+
+has 'linedays' => (
+    lazy    => 1,
+    builder => '_build_linedays',
+    is      => 'ro',
 );
 
 # days
@@ -95,6 +102,7 @@ has 'days_obj' => (
     handles  => {
         daycode       => 'daycode',
         schooldaycode => 'schooldaycode',
+        sortable_days => 'as_sortable',
     }
 );
 
@@ -136,21 +144,28 @@ has 'earliest_timenum' => (
 #### BUILDERS
 
 sub _build_linedir {
- 
- my $self = shift;
- return jk($self->linegroup,$self->dircode);
- 
+
+    my $self = shift;
+    return jk( $self->linegroup, $self->dircode );
+
+}
+
+sub _build_linedays {
+
+    my $self = shift;
+    return jk( $self->linegroup, $self->sortable_days );
+
 }
 
 sub _build_earliest_timenum {
- 
-    my $self = shift;
-    my $trip = $self->trip(0);
+
+    my $self  = shift;
+    my $trip  = $self->trip(0);
     my @times = $trip->placetimes;
-    
+
     my $timenum = first { defined $_ } @times;
     return $timenum;
- 
+
 }
 
 #################################
@@ -376,10 +391,10 @@ sub sortable_id {
     my $linegroup = linekeys( $self->linegroup || $self->oldlinegroup );
     $linegroup =~ s/\0/ /g;
     my $dir = $self->dir_obj->as_sortable;
-    
-    my $earliest_timenum = $self->earliest_timenum; 
+
+    my $earliest_timenum = $self->earliest_timenum;
     $earliest_timenum = 0 if $earliest_timenum < 0;
-    $earliest_timenum = linekeys($self->earliest_timenum);
+    $earliest_timenum = linekeys( $self->earliest_timenum );
 
     return join( "\t", $linegroup, $self->daycode, $earliest_timenum, $dir );
 }

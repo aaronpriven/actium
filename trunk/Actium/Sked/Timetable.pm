@@ -33,9 +33,10 @@ has sked_obj => (
         sortable_id      => 'sortable_id',
         earliest_timenum => 'earliest_timenum',
         days_obj         => 'days_obj',
-        dircode => 'dircode',
-        linedir => 'linedir',
-        
+        dircode          => 'dircode',
+        linedir          => 'linedir',
+        linedays    => 'linedays',
+
       }
 
 );
