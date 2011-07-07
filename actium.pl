@@ -80,8 +80,8 @@ add_option( '_stacktrace',
 init_options();
 
 if ( option('_stacktrace') ) {
-    $SIG{'__WARN__'} = \&soft_cushions;
-    $SIG{'__DIE__'}  = \&soft_cushions;
+    $SIG{'__WARN__'} = \&stacktrace;
+    $SIG{'__DIE__'}  = \&stacktrace;
 }
 
 my $sub;
@@ -109,8 +109,7 @@ sub modulefile {
     return "$name.pm";
 }
 
-sub soft_cushions {
-    # Confess! Confess! Or we will get the comfy chair!
+sub stacktrace {
     require Carp;
     Carp::confess(@_);
 }
