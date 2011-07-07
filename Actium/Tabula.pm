@@ -18,7 +18,7 @@ use Actium::EffectiveDate ('effectivedate');
 use Actium::Sorting ( 'sortbyline', 'byline' );
 use Actium::Constants;
 use Actium::Text::InDesignTags;
-use Actium::Text::CharWidth ('char_width');
+use Actium::Text::CharWidth ('ems', 'char_width');
 use Actium::Signup;
 use Actium::Term;
 use Actium::Sked;
@@ -176,11 +176,11 @@ sub _output_pubtts {
 
         my @tabletexts;
 
-        foreach my $table (@{$tables_r}) {
-            
-            my $linedir = $table->linedir;
-            my $min_half_columns = $minimum_of_r->{$linedir}{half_columns};
-            my $min_columns      = $minimum_of_r->{$linedir}{columns};
+        foreach my $table ( @{$tables_r} ) {
+
+            my $linedays          = $table->linedays;
+            my $min_half_columns = $minimum_of_r->{$linedays}{half_columns};
+            my $min_columns      = $minimum_of_r->{$linedays}{columns};
 
             if ( $min_columns * 2 + $min_half_columns <= 9 ) {
 
@@ -193,8 +193,17 @@ sub _output_pubtts {
               $table->as_indesign( $min_columns, $min_half_columns );
         }
 
-        print $ttfh join( ( $IDT->hardreturn x 2 ), @tabletexts );
-
+        #print $ttfh join( ( $IDT->hardreturn x 2 ), @tabletexts );
+        
+        print $ttfh $tabletexts[0];
+        
+        for my $i (1 .. $#tabletexts) {
+           my $break = ($i % 2) ? ($IDT->hardreturn x 2) : $IDT->boxbreak;
+           print $ttfh $break , $tabletexts[$i];
+        }
+        # print two returns in between each pair of schedules
+        # print a box break after each pair
+        
         # End matter, if there is any, goes here
 
         close $ttfh;
@@ -206,31 +215,29 @@ sub _output_pubtts {
 } ## tidy end: sub _output_pubtts
 
 sub _minimums {
-    my @tables = @{+shift};
-    
+    my @tables = @{ +shift };
+
     my %minimum_of;
     foreach my $table (@tables) {
-        my $linedir = $table->linedir;
-        
-        my $half_columns = $table->half_columns;
-        my $columns = $table->columns;
-        
-        if (not exists $minimum_of{$linedir}) {
-           $minimum_of{$linedir}{half_columns} = $half_columns;
-           $minimum_of{$linedir}{columns} = $columns;
-        }
-        
-        $minimum_of{$linedir}{half_columns} = $half_columns 
-           if $half_columns > $minimum_of{$linedir}{half_columns};
-        $minimum_of{$linedir}{columns} = $columns 
-           if $columns > $minimum_of{$linedir}{columns};
-    }
- 
- 
-    return \%minimum_of;
- 
+        my $linedays = $table->linedays;
 
-}
+        my $half_columns = $table->half_columns;
+        my $columns      = $table->columns;
+
+        if ( not exists $minimum_of{$linedays} ) {
+            $minimum_of{$linedays}{half_columns} = $half_columns;
+            $minimum_of{$linedays}{columns}      = $columns;
+        }
+
+        $minimum_of{$linedays}{half_columns} = $half_columns
+          if $half_columns > $minimum_of{$linedays}{half_columns};
+        $minimum_of{$linedays}{columns} = $columns
+          if $columns > $minimum_of{$linedays}{columns};
+    }
+
+    return \%minimum_of;
+
+} ## tidy end: sub _minimums
 
 sub _tables_and_lines {
 
@@ -250,7 +257,7 @@ sub _tables_and_lines {
 
     my %is_a_line;
     foreach my $table (@tables) {
-        $is_a_line{$_} = 1 foreach ( @{ $table->header_routes } );
+        $is_a_line{$_} = 1 foreach ( $table->header_routes );
     }
     @lines = sortbyline( keys %is_a_line );
 
@@ -263,7 +270,8 @@ my %front_style_of = (
     '}' => 'CoverCitySm',
     ':' => 'CoverLineInDesc',
     ';' => 'CoverLineInDesc',
-    '|' => 'CoverNote',
+    '/' => 'CoverNote',
+    '|' => 'CoverNoteBold',
     '*' => 'CoverLocalPax',
 
 );
@@ -278,10 +286,8 @@ sub _output_pubtt_front_matter {
 
     # ROUTES
 
-    my $length = max( map { char_width($_) } @lines, scalar @lines );
-    # longest line number in ems, or if more routes than the number of
-    # characters, use that instead
-
+    my $length = _make_length(@lines); 
+    
     print $ttfh $IDT->parastyle("CoverLine$length");
     print $ttfh join( $IDT->hardreturn, @lines ), $IDT->boxbreak;
 
@@ -312,15 +318,17 @@ sub _output_pubtt_front_matter {
         print $ttfh $IDT->parastyle( $front_style_of{$leading_char} ),
           $front_text;
 
-        if ( $leading_char eq ':' ) {
-            print $per_line_texts_r->{$front_text};
+        if ( $leading_char eq ':' and exists $per_line_texts_r->{$front_text} )
+        {
+            print $ttfh $per_line_texts_r->{$front_text};
         }
 
     } ## tidy end: foreach my $front_text (@front_matter)
 
     print $ttfh $IDT->boxbreak;
 
-    print $per_line_texts_r->{$EMPTY_STR};
+    print $ttfh $per_line_texts_r->{$EMPTY_STR}
+      if exists $per_line_texts_r->{$EMPTY_STR};
 
     return;
 
@@ -340,10 +348,12 @@ sub _make_per_line_texts {
     {
 
         my @texts;
-        push @texts, $IDT->parastyle('CoverNote'),
+        push @texts, $IDT->parastyle('CoverNoteBold'),
           $days_of_r->{$line}->as_plurals
           if $days_of_r->{$line};
-        push @texts, _local_text($line) if $locals_of_r->{$line};
+          
+        my $local_line = $line || $lines_r->[0];
+        push @texts, _local_text($local_line) if $locals_of_r->{$line};
         $per_line_texts{$line} = join( $IDT->hardreturn, @texts );
 
     }
@@ -391,7 +401,7 @@ sub _make_locals {
 
     my %local_of;
     foreach my $line (@lines) {
-        if ( $line =~ /\A A-Z/sx or $line eq '800' ) {
+        if ( $line =~ /\A [A-Z]/sx or $line eq '800' ) {
             if ( @TRANSBAY_NOLOCALS ~~ $line ) {
                 $local_of{$line} = 0;
             }
@@ -405,9 +415,9 @@ sub _make_locals {
         }
     }
 
-    my @locals = values %local_of;
+    my @locals = uniq( sort values %local_of );
 
-    if ( scalar( uniq(@locals) ) == 1 ) {
+    if ( @locals == 1 ) {
         return { $EMPTY_STR => $locals[0] };
     }
 
@@ -428,6 +438,31 @@ sub _local_text {
 
     return $EMPTY_STR;
 
+}
+
+sub _make_length {
+ 
+    my @lines = @_;
+    
+    my $ems = max( (map { ems($_) } @lines) );
+    
+    my $length;
+    given ($ems) {
+        when ($_ > ems('N66') ) {
+           $length = 4;
+        }
+        when ($_ > ems('ME') ) {
+           $length = 3;
+        }
+        when ($_ > ems('88') ) {
+           $length = 2;
+        }
+        default {
+         $length = 1
+        };
+    }
+        
+    return max ($length, scalar @lines);
 }
 
 1;
