@@ -80,6 +80,11 @@ has 'dir_obj' => (
     },
 );
 
+has 'linedir' => (
+    lazy => 1,
+    builder => '_build_linedir',
+);
+
 # days
 has 'days_obj' => (
     required => 1,
@@ -129,6 +134,13 @@ has 'earliest_timenum' => (
 );
 
 #### BUILDERS
+
+sub _build_linedir {
+ 
+ my $self = shift;
+ return jk($self->linegroup,$self->dircode);
+ 
+}
 
 sub _build_earliest_timenum {
  

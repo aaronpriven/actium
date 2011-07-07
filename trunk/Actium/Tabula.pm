@@ -27,7 +27,7 @@ use Readonly;
 use List::Util ('max');
 use List::MoreUtils ( 'uniq', 'each_arrayref' );
 
-Readonly my $idt => 'Actium::Text::InDesignTags';
+Readonly my $IDT => 'Actium::Text::InDesignTags';
 
 # saves typing
 
@@ -58,8 +58,8 @@ sub START {
 
     emit "Loading prehistoric schedules";
 
-    my @skeds =
-      Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
+    my @skeds
+      = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
 
     emit_done;
 
@@ -89,7 +89,7 @@ sub START {
     _output_all_tables( $tabulae_folder, \@alltables );
     _output_pubtts( $pubtt_folder, \%front_matter, \%tables_of, $signup );
 
-}    ## tidy end: sub START
+} ## tidy end: sub START
 
 sub _output_all_tables {
 
@@ -102,16 +102,16 @@ sub _output_all_tables {
 
     open my $allfh, '>', $tabulae_folder->make_filespec('all.txt');
 
-    print $allfh $idt->start;
+    print $allfh $IDT->start;
     foreach my $table ( @{$alltables_r} ) {
-        print $allfh $table->as_indesign, $idt->boxbreak;
+        print $allfh $table->as_indesign, $IDT->boxbreak;
     }
 
     close $allfh;
 
     emit_done;
 
-}    ## tidy end: sub _output_all_tables
+} ## tidy end: sub _output_all_tables
 
 sub _get_configuration {
 
@@ -142,7 +142,7 @@ sub _get_configuration {
 
     return %front_matter;
 
-}    ## tidy end: sub _get_configuration
+} ## tidy end: sub _get_configuration
 
 sub _output_pubtts {
 
@@ -170,18 +170,17 @@ sub _output_pubtts {
         _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r,
             $front_matter{$pubtt}, $effectivedate );
 
-        my $minimums_r = _minimums($tables_r);
+        my $minimum_of_r = _minimums($tables_r);
 
-        print $ttfh $idt->boxbreak;
+        print $ttfh $IDT->boxbreak;
 
         my @tabletexts;
 
-        #foreach my $table (@tables) {
-        while ( my ( $minimum_of_r, $table ) =
-            each_arrayref( $minimums_r, $tables_r ) )
-        {
-            my $min_half_columns = $minimum_of_r->{half_columns};
-            my $min_columns      = $minimum_of_r->{columns};
+        foreach my $table (@{$tables_r}) {
+            
+            my $linedir = $table->linedir;
+            my $min_half_columns = $minimum_of_r->{$linedir}{half_columns};
+            my $min_columns      = $minimum_of_r->{$linedir}{columns};
 
             if ( $min_columns * 2 + $min_half_columns <= 9 ) {
 
@@ -194,20 +193,43 @@ sub _output_pubtts {
               $table->as_indesign( $min_columns, $min_half_columns );
         }
 
-        print $ttfh join( ( $idt->hardreturn x 2 ), @tabletexts );
+        print $ttfh join( ( $IDT->hardreturn x 2 ), @tabletexts );
 
         # End matter, if there is any, goes here
 
         close $ttfh;
 
-    }    ## tidy end: foreach my $pubtt ( sortbyline...)
+    } ## tidy end: foreach my $pubtt ( sortbyline...)
 
     emit_done;
 
-}    ## tidy end: sub _output_pubtts
+} ## tidy end: sub _output_pubtts
 
 sub _minimums {
-    ...;
+    my @tables = @{+shift};
+    
+    my %minimum_of;
+    foreach my $table (@tables) {
+        my $linedir = $table->linedir;
+        
+        my $half_columns = $table->half_columns;
+        my $columns = $table->columns;
+        
+        if (not exists $minimum_of{$linedir}) {
+           $minimum_of{$linedir}{half_columns} = $half_columns;
+           $minimum_of{$linedir}{columns} = $columns;
+        }
+        
+        $minimum_of{$linedir}{half_columns} = $half_columns 
+           if $half_columns > $minimum_of{$linedir}{half_columns};
+        $minimum_of{$linedir}{columns} = $columns 
+           if $columns > $minimum_of{$linedir}{columns};
+    }
+ 
+ 
+    return \%minimum_of;
+ 
+
 }
 
 sub _tables_and_lines {
@@ -223,7 +245,7 @@ sub _tables_and_lines {
         next unless $tables_of{$linegroup};
         push @tables, @{ $tables_of{$linegroup} };
     }
-    
+
     @tables = sort { $a->sortable_id cmp $b->sortable_id } @tables;
 
     my %is_a_line;
@@ -234,7 +256,7 @@ sub _tables_and_lines {
 
     return \@tables, \@lines;
 
-}    ## tidy end: sub _tables_and_lines
+} ## tidy end: sub _tables_and_lines
 
 my %front_style_of = (
     '>' => 'CoverCity',
@@ -257,139 +279,151 @@ sub _output_pubtt_front_matter {
     # ROUTES
 
     my $length = max( map { char_width($_) } @lines, scalar @lines );
-        # longest line number in ems, or if more routes than the number of
-        # characters, use that instead
+    # longest line number in ems, or if more routes than the number of
+    # characters, use that instead
 
-    print $ttfh $idt->parastyle("CoverLine$length");
-    print $ttfh join( $idt->hardreturn, @lines ), $idt->boxbreak;
+    print $ttfh $IDT->parastyle("CoverLine$length");
+    print $ttfh join( $IDT->hardreturn, @lines ), $IDT->boxbreak;
 
     # EFFECTIVE DATE
 
-    print $ttfh $idt->parastyle('CoverEffectiveBlack'), 'Effective:',
-      $idt->hardreturn;
-    print $ttfh $idt->parastyle('CoverDate'), $effectivedate;
+    print $ttfh $IDT->parastyle('CoverEffectiveBlack'), 'Effective:',
+      $IDT->hardreturn;
+    print $ttfh $IDT->parastyle('CoverDate'), $effectivedate;
 
-    my ($days_r, $locals_r)  = _make_days_and_locals($tables_r, \@lines);
-
-    # NO LOCALS AND COVER DAYS
-
-    my %has_local_value;
-    foreach my $line (@lines) {
-        if ( @TRANSBAY_NOLOCALS ~~ $line ) {
-            $has_local_value{NoLocals} = 1;
-        }
-        else {
-            $has_local_value{LocalsOK} = 1;
-        }
-    }
-    my $mixed_locals = ( scalar keys %has_local_value ) > 1;
-    my @days         = uniq( map { $_->as_sortable } values %days_obj_of );
-    my $mixed_days   = @days > 1;
+    my $per_line_texts_r = _make_per_line_texts( $tables_r, \@lines );
 
     # COVER MATERIALS
 
     foreach my $front_text (@front_matter) {
 
-        print $ttfh $idt->hardreturn;
+        print $ttfh $IDT->hardreturn;
 
         my $leading_char = substr( $front_text, 0, 1 );
 
         if ( not $front_style_of{$leading_char} ) {
-            print $ttfh $idt->parastyle('CoverPlace'), $front_text;
+            print $ttfh $IDT->parastyle('CoverPlace'), $front_text;
             next;
         }
 
         $front_text = substr( $front_text, 1 );
         trim($front_text);
 
-        print $ttfh $idt->parastyle( $front_style_of{$leading_char} ),
+        print $ttfh $IDT->parastyle( $front_style_of{$leading_char} ),
           $front_text;
 
         if ( $leading_char eq ':' ) {
-
-            print $ttfh _local_text($front_text)
-              if $mixed_locals;
-            print $ttfh $idt->parastyle('CoverNote'),
-              $days_obj_of{$front_text}->as_plurals
-              if $mixed_days;
+            print $per_line_texts_r->{$front_text};
         }
-        elsif ( $leading_char eq '*' ) { $mixed_locals = 1 }
 
-    }    ## tidy end: foreach my $front_text (@front_matter)
+    } ## tidy end: foreach my $front_text (@front_matter)
 
-    print $ttfh $idt->boxbreak;
+    print $ttfh $IDT->boxbreak;
 
-    print $ttfh _local_text( $lines[0] )
-      unless $mixed_locals;
-    print $ttfh $idt->parastyle('CoverNote'),
-      $days_obj_of{ $lines[0] }->as_plurals
-      unless $mixed_days;
+    print $per_line_texts_r->{$EMPTY_STR};
 
     return;
 
-}    ## tidy end: sub _output_pubtt_front_matter
+} ## tidy end: sub _output_pubtt_front_matter
+
+sub _make_per_line_texts {
+
+    my $tables_r = shift;
+    my $lines_r  = shift;
+    my %per_line_texts;
+
+    my $days_of_r = _make_days( $tables_r, $lines_r );
+    my $locals_of_r = _make_locals($lines_r);
+
+    foreach
+      my $line ( uniq( sort ( keys %{$days_of_r}, keys %{$locals_of_r} ) ) )
+    {
+
+        my @texts;
+        push @texts, $IDT->parastyle('CoverNote'),
+          $days_of_r->{$line}->as_plurals
+          if $days_of_r->{$line};
+        push @texts, _local_text($line) if $locals_of_r->{$line};
+        $per_line_texts{$line} = join( $IDT->hardreturn, @texts );
+
+    }
+
+    return \%per_line_texts;
+
+} ## tidy end: sub _make_per_line_texts
 
 sub _make_days {
 
-    my @tables = @{+shift};
-    
-    my %days_objs_of;
-    
+    my @tables = @{ +shift };
+    my @lines  = @{ +shift };
+
+    my %all_days_objs_of;
+
     foreach my $table (@tables) {
-        foreach my $line ($table->header_routes) {
-            push @{$days_objs_of{$line}} , $table->days_obj();
+        foreach my $line ( $table->header_routes ) {
+            push @{ $all_days_objs_of{$line} }, $table->days_obj();
         }
     }
-    
-    my %days_of;
-    while ( my ($line, $days_objs_r) = each %days_of) {
-        $days_of{$line} = Actium::Sked::Days->union(@{$days_objs_r});
+
+    my %days_obj_of;
+    while ( my ( $line, $days_objs_r ) = each %all_days_objs_of ) {
+        $days_obj_of{$line} = Actium::Sked::Days->union( @{$days_objs_r} );
     }
-    
-    
-        
-    
-}
+
+    if ( @lines == 1 ) {
+        return { $EMPTY_STR => $days_obj_of{ $lines[0] } };
+    }
+
+    my @days_objs = values %days_obj_of;
+    my @days_codes = uniq( map { $_->as_sortable } @days_objs );
+
+    if ( @days_codes == 1 ) {
+        return { $EMPTY_STR => $days_objs[0] };
+    }
+
+    return \%days_obj_of;
+
+} ## tidy end: sub _make_days
 
 sub _make_locals {
- ...
-}
-    
-#part of old sub figure_days
-#    my %days_obj_of;
-#
-#    foreach my $line (@lines) {
-#        my @daycodes =
-#          uniq( map { $_->days_obj->daycode } @{ $tables_of_r->{$line} } );
-#        my @schooldaycodes =
-#          uniq( map { $_->days_obj->schooldaycode } @{ $tables_of_r->{line} } );
-#
-#        my $catschooldaycode;
-#        if ( @schooldaycodes == 1 ) {
-#            $catschooldaycode = $schooldaycodes[0];
-#        }
-#        else { $catschooldaycode = 'B'; }
-#
-#        my $catdaycode = join( $EMPTY_STR, sort @daycodes );
-#        $catdaycode = join $EMPTY_STR, ( uniq sort ( split //, $catdaycode ) );
-#        $days_obj_of{$line} =
-#          Actium::Sked::Days->new( $catdaycode, $catschooldaycode );
-#
-#    }
-#
-#    return \%days_obj_of;
-#
-#}    ## tidy end: sub _figure_days
+
+    my @lines = @{ +shift };
+
+    my %local_of;
+    foreach my $line (@lines) {
+        if ( $line =~ /\A A-Z/sx or $line eq '800' ) {
+            if ( @TRANSBAY_NOLOCALS ~~ $line ) {
+                $local_of{$line} = 0;
+            }
+            else {
+                $local_of{$line} = 1;
+            }
+
+        }
+        else {
+            $local_of{$line} = undef;
+        }
+    }
+
+    my @locals = values %local_of;
+
+    if ( scalar( uniq(@locals) ) == 1 ) {
+        return { $EMPTY_STR => $locals[0] };
+    }
+
+    return \%local_of;
+
+} ## tidy end: sub _make_locals
 
 sub _local_text {
     my $linegroup = shift;
 
     if ( $linegroup ~~ @TRANSBAY_NOLOCALS ) {
-        return $idt->parastyle('CoverLocalPax') . 'No Local Passengers Allowed';
+        return $IDT->parastyle('CoverLocalPax') . 'No Local Passengers Allowed';
     }
 
     if ( $linegroup eq '800' or $linegroup =~ /\A [A-Z]/sx ) {
-        return $idt->parastyle('CoverLocalPax') . 'Local Passengers Permitted';
+        return $IDT->parastyle('CoverLocalPax') . 'Local Passengers Permitted';
     }
 
     return $EMPTY_STR;
