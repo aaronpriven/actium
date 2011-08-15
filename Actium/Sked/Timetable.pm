@@ -232,18 +232,16 @@ my $idt = 'Actium::Text::InDesignTags';
 sub as_indesign {
 
     my $self = shift;
-
+    
     my $minimum_columns  = shift || 0;
     my $minimum_halfcols = shift || 0;
-
+    
     my $columns  = $self->columns;
     my $halfcols = $self->half_columns;
-
-    my $trailing_halves = $minimum_halfcols > $halfcols ? $minimum_halfcols : 0;
-
-    my $trailing_columns
-      = $minimum_columns > $columns ? $minimum_columns - $columns : 0;
-
+    
+    my ($trailing_columns , $trailing_halves)  =
+      _minimums ($columns, $halfcols, $minimum_columns, $minimum_halfcols);
+    
     my $trailing = $trailing_columns + $trailing_halves;
     my @trailers = ($EMPTY_STR) x $trailing;
 
@@ -279,9 +277,11 @@ sub as_indesign {
     my $bullet
       = '<0x2009><CharStyle:SmallRoundBullet><0x2022><CharStyle:><0x2009>';
     my $routetext = join( $bullet, @routes );
+    
+    my $header_style = _get_header_style($routes[0]);
 
     print $th '<RowStart:<tRowAttrHeight:43.128692626953125>>';
-    print $th '<CellStyle:ColorHeader><StylePriority:2>';
+    print $th "<CellStyle:$header_style><StylePriority:2>";
     print $th "<CellStart:1,$colcount>";
     print $th $idt->parastyle('dropcaphead');
     print $th "<pDropCapCharacters:$routechars>$routetext ";
@@ -293,7 +293,7 @@ sub as_indesign {
     print $th $idt->nocharstyle, '<CellEnd:>';
 
     #    for ( 2 .. $colcount ) {
-    #        print $th '<CellStyle:ColorHeader><CellStart:1,1><CellEnd:>';
+    #        print $th '<CellStyle:$header_style><CellStart:1,1><CellEnd:>';
     #    }
     print $th '<RowEnd:>';
 
@@ -391,6 +391,48 @@ sub as_indesign {
     return $tabletext;
 
 } ## tidy end: sub as_indesign
+
+sub _get_header_style {
+ 
+   # TODO - this shouldn't be here, it should be specified in a database
+   # or something
+ 
+   my $route = shift;
+   
+   return 'ColorHeader' if $route =~ /\A DB /;
+   
+   return 'GreyHeader' if $route =~ /\A 6\d\d \z/sx;
+   return 'TransbayHeader' if $route =~ /\A [A-Z] /sx or $route eq '800';
+   
+   return 'ColorHeader';
+ 
+}
+
+sub _minimums {
+ 
+    my ($columns, $halfcols, $minimum_columns, $minimum_halfcols) = @_;
+    
+    # adjust so it's a proper fraction (no more than one halfcol)
+    
+    #$minimum_columns += int($minimum_halfcols/2);
+    #$minimum_halfcols = $minimum_halfcols % 2;
+    
+    #$columns += int($halfcols/2);
+    #$halfcols = $halfcols % 2;
+    
+    my $length = $columns*2 + $halfcols;
+    my $minimum_length = $minimum_columns*2 + $minimum_halfcols;
+    
+    return (0, 0) unless $minimum_length > $length;
+    
+    my $length_to_add = $minimum_length - $length;
+    
+    my $trailing_halves = $length_to_add % 2;
+    my $trailing_columns = int($length_to_add/2);
+    
+    return ($trailing_columns, $trailing_halves);
+    
+}
 
 1;
 

@@ -227,8 +227,7 @@ sub as_plurals {
     my $results = joinseries(@as_plurals);
 
     if ( $PLURAL_SCHOOL_OF{$schooldaycode} ) {
-
-        my $results .= $PLURAL_SCHOOL_OF{$schooldaycode};
+        $results .= $PLURAL_SCHOOL_OF{$schooldaycode};
     }
     else {
         $results .= ' except holidays' unless $daycode =~ /H/;
