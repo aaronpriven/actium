@@ -28,6 +28,7 @@ use List::Util ('max');
 use List::MoreUtils ( 'uniq', 'each_arrayref' );
 
 Readonly my $IDT => 'Actium::Text::InDesignTags';
+Readonly my $SOFTRETURN => $IDT->softreturn;
 
 # saves typing
 
@@ -104,8 +105,9 @@ sub _output_all_tables {
 
     print $allfh $IDT->start;
     foreach my $table ( @{$alltables_r} ) {
-        print $allfh $table->as_indesign, $IDT->boxbreak;
+        print $allfh $table->as_indesign(4,0), $IDT->boxbreak;
     }
+    # minimum 4 columns, no half columns
 
     close $allfh;
 
@@ -175,6 +177,8 @@ sub _output_pubtts {
         print $ttfh $IDT->boxbreak;
 
         my @tabletexts;
+        
+        my $tablecount = scalar @{$tables_r};
 
         foreach my $table ( @{$tables_r} ) {
 
@@ -188,6 +192,11 @@ sub _output_pubtts {
                 $min_columns      = 4;
 
             }
+            
+            if ($tablecount <= 2 or $table->linegroup() =~ /\A 6 \d \d \z/sx ){
+                $min_half_columns = 0;
+                $min_columns = 10;
+            }
 
             push @tabletexts,
               $table->as_indesign( $min_columns, $min_half_columns );
@@ -198,7 +207,8 @@ sub _output_pubtts {
         print $ttfh $tabletexts[0];
         
         for my $i (1 .. $#tabletexts) {
-           my $break = ($i % 2) ? ($IDT->hardreturn x 2) : $IDT->boxbreak;
+           #my $break = ($i % 2) ? ($IDT->hardreturn x 2) : $IDT->boxbreak;
+           my $break = ($IDT->hardreturn x 2);
            print $ttfh $break , $tabletexts[$i];
         }
         # print two returns in between each pair of schedules
@@ -300,7 +310,9 @@ sub _output_pubtt_front_matter {
     my $per_line_texts_r = _make_per_line_texts( $tables_r, \@lines );
 
     # COVER MATERIALS
-
+    if ($lines[0] eq '604') {
+       emit_prog ".";
+    }
     foreach my $front_text (@front_matter) {
 
         print $ttfh $IDT->hardreturn;
@@ -348,12 +360,25 @@ sub _make_per_line_texts {
     {
 
         my @texts;
-        push @texts, $IDT->parastyle('CoverNoteBold'),
-          $days_of_r->{$line}->as_plurals
-          if $days_of_r->{$line};
+        
+        if ($days_of_r->{$line}) {
+         
+         my $daytext = $days_of_r->{$line}->as_plurals;
+         
+         $daytext =~ s/\(/${SOFTRETURN}\(/g;
+        
+        push @texts, $IDT->parastyle('CoverNoteBold'). $daytext;
+          
+        }
+
           
         my $local_line = $line || $lines_r->[0];
-        push @texts, _local_text($local_line) if $locals_of_r->{$line};
+        
+        if ($locals_of_r->{$line}) {
+           my $local_text = _local_text($local_line) ;
+           push @texts, $local_text if $local_text;
+        }
+        
         $per_line_texts{$line} = join( $IDT->hardreturn, @texts );
 
     }
@@ -411,7 +436,7 @@ sub _make_locals {
 
         }
         else {
-            $local_of{$line} = undef;
+            $local_of{$line} = -1;
         }
     }
 
@@ -446,20 +471,25 @@ sub _make_length {
     
     my $ems = max( (map { ems($_) } @lines) );
     
+    if ($lines[0] eq '621') {
+       emit_prog ".";
+    }
+    
     my $length;
     given ($ems) {
-        when ($_ > ems('N66') ) {
-           $length = 4;
+        when ($_ <= .9 ) { # two digits are .888
+         $length = 1;
         }
-        when ($_ > ems('ME') ) {
-           $length = 3;
-        }
-        when ($_ > ems('88') ) {
+        when ($_ <= 1.2 ) { # three digits are 1.332
            $length = 2;
         }
+        when ($_ <= 1.5 ) { # N66 is 1.555
+           $length = 3;
+        }
         default {
-         $length = 1
+         $length = 4;
         };
+        
     }
         
     return max ($length, scalar @lines);
