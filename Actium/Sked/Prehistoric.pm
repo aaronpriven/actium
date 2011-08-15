@@ -152,6 +152,12 @@ sub _new_from_prehistoric {
     my ( $linegroup, $direction, $days ) = split(/_/);
     $spec{linegroup} = $linegroup;
     $spec{direction} = $direction;
+    
+    state %seen_linegroup;
+    if (not $seen_linegroup{$linegroup}) {
+        emit_over $linegroup unless $seen_linegroup{$linegroup};
+        $seen_linegroup{$linegroup} = 1;
+    }
 
     $_ = <$skedsfh>;
     # Currently ignores "Note Definitions" line
@@ -206,8 +212,8 @@ sub _new_from_prehistoric {
     } ## tidy end: while (<$skedsfh>)
 
     my @daysexceptions = uniq( map { $_->daysexceptions } @trips );
-
-    if ( @daysexceptions == 1 ) {
+    
+    if ( @daysexceptions == 1 and $linegroup !~ /\A 6 \d \d \z/sx) {
         given ( $daysexceptions[0] ) {
             when ('SD') {
                 $days = Actium::Sked::Days->new( $days, 'D' );

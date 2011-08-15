@@ -148,9 +148,9 @@ foreach (qw/0 3 4 8/) {
 }
 
 foreach (qw/1/) {
-    $widths{Futura_CondensedBold}[ord] *= .7;
-    $widths{Univers_CondensedBold}[ord] *= .7;
-    $widths{Futura_Heavy}[ord]         *= .7;
+    $widths{Futura_CondensedBold}[ord] *= .8;
+    $widths{Univers_CondensedBold}[ord] *= .8;
+    $widths{Futura_Heavy}[ord]         *= .8;
 }
 
 my $default = ord('M');
