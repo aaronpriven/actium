@@ -19,15 +19,18 @@ use Actium::Sorting (qw(sortbyline));
 use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 use Linelist('linelist');
 
-use Actium::Options (qw<option add_option>);
+use Actium::Options (qw<option add_option init_options>);
 #add_option ('spec' , 'description');
 use Actium::Term (qw<printq sayq>);
 use Actium::Signup;
-my $signupdir = Actium::Signup->new();
-chdir $signupdir->get_dir();
-my $signup = $signupdir->get_signup;
 
-my $current_version = '13';
+init_options;
+
+my $signupdir = Actium::Signup->new();
+chdir $signupdir->path();
+my $signup = $signupdir->signup;
+
+my $current_version = '16';
 
 use autodie;
 
@@ -50,7 +53,7 @@ my (%group);
 
 for my $line (linelist()) {
 
-   next if $line eq 'BSH';
+   next if $line =~ /\ABS[DHN]\z/;
 
    $desc_of{$line} = $lines{$line}{Description};
 
@@ -83,21 +86,22 @@ foreach (qw/Local Transbay Supplementary AllNighter/) {
     $pub = 'All Nighter' if /AllNighter/;
     $pub .= ' Lines';
     
+    print $out qq{<table style="border-collapse: collapse;" border="1"><caption style="padding-top: 1.2em;"><strong><a name="$_">$pub</a></strong></caption>};
 
-    say $out qq{<table><caption><a name="$_">$pub</a></caption>};
-
-    say $out '<thead><tr><th>Lines</th><th>Description</th>';
-    say $out '<th class="center">Links</th></thead>';
-    say $out '<tbody>';
+    print $out '<thead><tr><th style="background-color: silver;">Lines</th><th style="background-color: silver;">Description</th>';
+    
+    say $out '<th style="background-color: silver;">Links</th></thead>';   
+    
+    print $out '<tbody>';
 
     foreach my $line (sortbyline @{$group{$_}} ) {
 
-       say $out qq{<tr><td class="center" >$line</td>};
-       say $out "<td>$desc_of{$line}</td>";
-       say $out '<td class="center">';
-       say $out qq{<a href="http://www.actransit.org/maps/maps_results.php?ms_view_type=2&maps_line=$line&version_id=$current_version&map_submit=Get+Map">Map</a>};
-       say $out "<br><br>";
-       say $out qq{<a href="http://www.actransit.org/maps/schedule_results.php?quick_line=$line&Go=Go&version_id=$current_version">Schedule</a>};
+       print $out qq{<tr><td style="text-align: center;">$line</td>};
+       print $out qq{<td style="padding: 2pt;">$desc_of{$line}</td>};
+       print $out '<td style="text-align: center;">';
+       print $out qq{<a href="http://www.actransit.org/maps/maps_results.php?ms_view_type=2&maps_line=$line&version_id=$current_version&map_submit=Get+Map">Map</a>};
+       print $out "<br>";
+       print $out qq{<a href="http://www.actransit.org/maps/schedule_results.php?quick_line=$line&Go=Go">Schedule</a>};
        say $out '</td></tr>';
 
     }
@@ -115,15 +119,16 @@ close $out;
 
 sub FOOTER {
 
-return <<'EOF';
+my $footer = <<'EOF';
   <p> <strong>Find <a href="http://www.actransit.org/maps/index.php">maps 
     &amp; schedules</a> for these lines.</strong> Or call 511 and say 
     &quot;AC Transit&quot; for trip-planning assistance.</p>
-  <p > <img align="right" src="/images/riderinfo/transbay/ACT_logo.jpg"> 
-  </p>
-</body>
-</html>
 EOF
+
+$footer =~ s/\n/ /g;
+$footer =~ s/ +/ /g;
+
+return $footer;
 
 }
 
@@ -131,66 +136,7 @@ sub header {
 
    my $effdate = shift;
 
-return <<"EOF";
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-            "http://www.w3.org/TR/html4/loose.dtd">
-<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
-
-<head>
-<title>AC Transit Bus Line Descriptions</title>
-
-<style type="text/css">
-body {
-    background-color: #fff;
-    color: #000;
-    font-family: arial, geneva, helvetica, sans-serif;
-    text-align: left;
-    font-size: 100%;
-
-}    
-
-table {
-    border-collapse: collapse;
-	border-style: ridge
-    width: 90%;
-	valign=top;
-	vspace=3pt;
-	text-display: automatic;
-} 
-
-caption {
-    padding-top: 1.2em;
-    text-align: left;
-    font-weight: bold;
-    font-size: 1.2em;
-    padding-bottom: 0.2em;
-}
-
-th {
-    background-color: silver;
-    padding: 2pt;
-    border: 1pt solid #006666;
-    text-align: left;
-}
-
-
-td {
-    padding: 2pt;
-    border: 1pt solid #006666;
-    text-align: left;
-}
-
-.center {
-   text-align:center;
-}
-  
-</style>
-</head>
-
-<body>
-
-<h1> AC Transit Bus Line Descriptions </h1>
-
+my $header = <<"EOF";
 <p>Effective $effdate</p>
 
 <h2>About Bus Line Numbers and Letters</h2>
@@ -215,7 +161,7 @@ have altered schedules when local schools have minimum day or
 alternative schedules. These lines are open to all passengers at
 regular fares.</p>
 
-<p>Lines 800–899 are All-Nighter lines, operating from 1 a.m. – 5
+<p>Lines 800–899 are All Nighter lines, operating from 1 a.m. – 5
 a.m. daily. Some may operate somewhat earlier or later (especially
 on weekends).</p>
 
@@ -236,5 +182,10 @@ Bay to San Francisco or the Peninsula.</p>
 
 <hr>
 EOF
+
+$header =~ s/\n/ /g;
+$header =~ s/ +/ /g;
+
+return $header;
 
 }

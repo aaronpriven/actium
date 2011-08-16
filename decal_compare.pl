@@ -7,8 +7,14 @@ use List::MoreUtils('natatime');
 use autodie;
 use FindBin('$Bin');
 use lib ($Bin );
+
+use Actium::Options('init_options');
+
 use Actium::Sorting('sortbyline');
 use Actium::Util('even_tab_columns');
+
+init_options;
+
 
 my $firstfile = shift(@ARGV);
 
