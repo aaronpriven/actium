@@ -8,7 +8,7 @@ use autodie;
 use FileCache;
 
 use Readonly;
-Readonly my $FLAGDIR => '/Volumes/Bireme/Actium/db/f10/flags';
+Readonly my $FLAGDIR => '/Volumes/Bireme/Actium/db/f11/flags';
 Readonly my $ASSIGNDIR => "$FLAGDIR/assignments";
 Readonly my $ASSIGNFILE => "$FLAGDIR/assignments.txt";
 Readonly my $STOPDECALFILE => "$FLAGDIR/stop-decals.txt";
@@ -23,9 +23,6 @@ C4          SKIP
 I5          SKIP
 I9          SKIP
 P10         SKIP
-R10         SKIP
-R6          SKIP
-R2          SKIP
 SKIP        SKIP
 
 IB2         20x16-IB
@@ -33,11 +30,20 @@ IB2N        14x16-IB
 IB3         19.5x17-IB
 IB3N        14x22-IB
 IB4N        14x26-IB
-IB5         14x34-IB
-IB5N        19.5x22.25-IB
+IB5         19.5x22.25-IB
+IB5N        14x34-IB
 IB9         19.5x32.75-IB
 
+CB15        28x35.25-CB
+CBR10       19.5x45.75-CB-R
+CBR6       19.5x35.25-CB-R
+CBR4       19.5x30-CB-R
+
 PBO         SKIP
+
+R10         SKIP
+R6          SKIP
+R2          SKIP
 
 IC3         SKIP
 IC3N        SKIP
@@ -53,15 +59,15 @@ PB6         SKIP
 
 # ignoring
 
-#IC3         19.5x17-IB
-#IC3N        14x22-IB
-#IC4N        14x26-IB
-#IC5         14x34-IB
-#IC5N        19.5x22.25-IB
-#IC9         19.5x32.75-IB
+#IC3         19.5x17-IC
+#IC3N        14x22-IC
+#IC4N        14x26-IC
+#IC5         14x34-IC
+#IC5N        19.5x22.25-IC
+#IC9         19.5x32.75-IC
 
-#PB4         19.5x19.5-PB
-#PB6         19.5x24.75-PB
+#PB4         19.5x19.5-PC
+#PB6         19.5x24.75-PC
 
 
 # size - purchase source - master-or-oversize
