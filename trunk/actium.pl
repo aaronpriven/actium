@@ -45,6 +45,7 @@ my %module_of = (
     tabula        => 'Tabula',
     orderbytravel => 'OrderByTravel',
     patterns      => 'Patterns',
+    adddescriptionf => 'AddDescriptionF',
     # more to come
 );
 

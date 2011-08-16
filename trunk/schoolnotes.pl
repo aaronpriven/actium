@@ -27,9 +27,12 @@ $Text::Wrap::columns = 72;
 
 foreach my $entry (@entries) {
     trim($entry);
-    $entry =~ s ( ([LR]) \\ ) ($1/)gx;
+    $entry =~ s (\\)(/)g;
+    $entry =~ s ( ([LR]) / ) ($1/)gx;
     $entry = nc($entry);
     $entry =~ s/\bInto\b/into/g;
     $entry =~ s/\bVia\b/via/g;
+    $entry = wrap('','',$entry);
     say $entry ;
+    say '';
 }
