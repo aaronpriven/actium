@@ -298,7 +298,8 @@ sub transbay_and_connections {
         }
         else {
             my $side = $patinfo->{Side};
-            if ( $prev_side and ( $prev_side ne $side ) ) {
+            if ( $route !~ /^DB/ and $prev_side and ( $prev_side ne $side ) ) {
+                # DB, DB1, DB3 should not have transbay icon
                 $transbay = 1;
                 $patinfo->{TransbayIcon} = 1;
             }

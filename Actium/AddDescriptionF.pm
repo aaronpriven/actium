@@ -49,7 +49,7 @@ sub START {
    while (<$in>) {
        chomp;
     
-       my ($stopid, $text) = split (/\t/);
+       my ($stopid, $text) = split (/\t/, $_, 2);
        my $desc = $stops_row_of_r->{$stopid}{DescriptionCityF};
        say "$stopid\t$desc\t$text";
        
