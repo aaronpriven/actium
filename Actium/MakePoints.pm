@@ -117,12 +117,13 @@ sub START {
 
         next SIGN
           unless $stopid
-              and ( $sign_is_active eq 'yes' or $sign_is_active eq 'bsh' )
+              and $sign_is_active eq 'yes'
               and $signs{$signid}{Status} !~ /no service/i;
         # skip inactive signs and those without stop IDs
+        
+        my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints});
 
-        next SIGN
-          if lc( $signs{$signid}{UseOldMakepoints} ) eq "yes";
+        next SIGN if $old_makepoints eq 'yes';
 
         #####################
         # Following steps
@@ -143,7 +144,7 @@ sub START {
 
         my $point
           = Actium::Points::Point->new_from_kpoints( $stopid, $signid,
-            $effdate );
+            $effdate , $old_makepoints);
 
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header

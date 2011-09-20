@@ -96,7 +96,7 @@ sub add_to_width {
 }
 
 sub new_from_kpoints {
-    my ( $class, $stopid, $signid, $effdate ) = @_;
+    my ( $class, $stopid, $signid, $effdate, $bsh ) = @_;
     my $self = $class->new(
         stopid  => $stopid,
         signid  => $signid,
@@ -113,6 +113,15 @@ sub new_from_kpoints {
     while (<$kpoint>) {
         chomp;
         my $column = Actium::Points::Column->new($_);
+        
+        my $linegroup = $column->linegroup;
+        
+        if ($bsh eq 'bsh') {
+           if ($linegroup =~ /^BS[DSH]$/) {
+              $self->push_columns($column);
+           }
+           next;
+        }
 
         if ( $column->linegroup !~ /^6\d\d/ ) {
             $self->push_columns($column);
@@ -122,7 +131,7 @@ sub new_from_kpoints {
         }
 
     }
-
+    
     close $kpoint or die "Can't close $kpointfile: $!";
 
     return $self;
