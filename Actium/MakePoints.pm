@@ -113,7 +113,7 @@ sub START {
         my $ostopid = $signs{$signid}{UNIQUEID};
         my $stopid  = $stops_by_oldstopid{$ostopid}{PhoneID};
 
-        my $sign_is_active = lc( $signs{$signid}{Active} ) eq "yes";
+        my $sign_is_active = lc( $signs{$signid}{Active} ) ;
 
         next SIGN
           unless $stopid
