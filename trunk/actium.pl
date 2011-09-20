@@ -46,6 +46,7 @@ my %module_of = (
     orderbytravel => 'OrderByTravel',
     patterns      => 'Patterns',
     adddescriptionf => 'AddDescriptionF',
+    makepoints => 'MakePoints' ,
     # more to come
 );
 

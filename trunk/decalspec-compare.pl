@@ -169,6 +169,8 @@ foreach my $stop ( sort keys %change ) {
 
 close $change_file;
 
+if (0) {
+
 open my $new_assign_file, '>', $NEWASSIGNFILE;
 
 say $new_assign_file
@@ -179,6 +181,8 @@ foreach my $stop (sort keys %assign) {
 }
 
 close $new_assign_file;
+
+}
 
 sub get_lines_and_boxes {
 
