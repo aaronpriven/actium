@@ -1,4 +1,4 @@
-# Kidpoint.pm
+# Actium/Points/Point.pm
 
 # legacy stages 2 and 3
 
@@ -7,7 +7,7 @@ use strict;
 
 use 5.010;
 
-package Actium::Kidpoint;
+package Actium::Points::Point;
 
 use sort ('stable');
 
@@ -21,7 +21,7 @@ use List::MoreUtils('natatime');
 
 use POSIX ();
 
-use Actium::Kidpoint::Column;
+use Actium::Points::Column;
 
 use IDTags;
 
@@ -41,7 +41,7 @@ has 'note600' => (
 has 'column_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Actium::Kidpoint::Column]',
+    isa     => 'ArrayRef[Actium::Points::Column]',
     default => sub { [] },
     handles => { columns => 'elements' , push_columns => 'push' ,
       sort_columns => 'sort_in_place' ,
@@ -112,7 +112,7 @@ sub new_from_kpoints {
 
     while (<$kpoint>) {
         chomp;
-        my $column = Actium::Kidpoint::Column->new($_);
+        my $column = Actium::Points::Column->new($_);
 
         if ( $column->linegroup !~ /^6\d\d/ ) {
             $self->push_columns($column);
