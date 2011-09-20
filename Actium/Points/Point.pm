@@ -123,7 +123,7 @@ sub new_from_kpoints {
            next;
         }
 
-        if ( $column->linegroup !~ /^6\d\d/ ) {
+        if ( $linegroup !~ /^6\d\d/ ) {
             $self->push_columns($column);
         }    # skip 600-series lines
         else {
@@ -602,7 +602,7 @@ sub output {
 
     my $signid = $self->signid;
 
-    open my $fh, '>', "kidpoints/$signid.txt"
+    open my $fh, '>', "kidpoints-test/$signid.txt"
       or die "Can't open $signid.txt for writing: $!";
 
     print $fh IDTags::start;
