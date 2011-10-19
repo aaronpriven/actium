@@ -349,10 +349,51 @@ sub each_row_where {
     };
 }    ## tidy end: sub each_row_where
 
+#sub all_in_columns_key {
+#    my $self    = shift;
+#    my $table   = shift;
+#    my @columns = @_;
+#    
+#    $self->ensure_loaded($table);
+#    $self->_check_columns($table, @columns);
+#    
+#    my $key = $self->key_of_table($table);
+#    unshift @columns, $key;
+#    @columns = uniq(@columns);
+#    
+#    my $dbh = $self->dbh;
+#
+#    #my %column_index_of = map { $columns[$_] => $_ } ( 0 .. $#columns );
+#
+#    my $selection_cmd =
+#      "SELECT " . join( q{ , }, @columns ) . " FROM $table";
+#      
+#    my $rows_r = $dbh->selectall_hashref($selection_cmd, $key);
+#    return $rows_r;
+#
+#}
+
 sub all_in_columns_key {
     my $self    = shift;
-    my $table   = shift;
-    my @columns = @_;
+    
+    my $firstarg = shift;
+    
+    my ($table, @columns, $where, @bind_values); 
+    
+    if ( ref($table) eq 'HASH' ) {
+        $table   = $firstarg->{TABLE} ;
+        @columns = @{$firstarg->{COLUMNS}};
+        $where = $firstarg->{WHERE} ;
+        
+        my $bindval_r = $firstarg->{BIND_VALUES};
+        @bind_values = @{$bindval_r}
+           if defined $bindval_r;
+        
+    }
+    else {
+       $table = $firstarg;
+       @columns = @_;
+    }
     
     $self->ensure_loaded($table);
     $self->_check_columns($table, @columns);
@@ -366,9 +407,11 @@ sub all_in_columns_key {
     #my %column_index_of = map { $columns[$_] => $_ } ( 0 .. $#columns );
 
     my $selection_cmd =
-      "SELECT " . join( q{ , }, @columns ) . " FROM $table";
+      "SELECT " . join( q{ , }, @columns ) . " FROM $table" ;
+     
+    $selection_cmd .= " WHERE $where" if defined $where;
       
-    my $rows_r = $dbh->selectall_hashref($selection_cmd, $key);
+    my $rows_r = $dbh->selectall_hashref($selection_cmd, $key, {} , @bind_values);
     return $rows_r;
 
 }
