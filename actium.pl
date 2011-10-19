@@ -47,6 +47,7 @@ my %module_of = (
     patterns      => 'Patterns',
     adddescriptionf => 'AddDescriptionF',
     makepoints => 'MakePoints' ,
+    nearbyroutes => 'NearbyRoutes' , 
     # more to come
 );
 
