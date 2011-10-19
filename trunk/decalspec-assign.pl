@@ -41,8 +41,11 @@ IC5N        SKIP
 IC9         SKIP
 IC15        SKIP
 
-CC15        28x35.25-CC
-CC4         19.5x19.5-CC
+CC15        SKIP
+CC4         SKIP
+
+IBB3        19.5x17-IBB
+IBB4N       14x26-IBB
 
 PC4         SKIP
 PC6         SKIP
