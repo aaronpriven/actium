@@ -7,8 +7,7 @@ use File::Copy;
 
 my $gsargs = '-sDEVICE=jpeg -dGraphicsAlphaBits=4 -dTextAlphaBits=4';
 
-my $output_folder = '/Users/apriven/Desktop/Maps/toup/';
-# = '/Volumes/SHARE$/District Public Share/APRIVEN/Maps_For_Web';
+my $output_folder = '/b/maps/Line Maps/_maps_for_web';
 
 #my $resolution = 288;
 
@@ -18,7 +17,7 @@ my $output_folder = '/Users/apriven/Desktop/Maps/toup/';
 #                   36 => '12.5pct',
 #                  );
 
-my %layers = ( 18 => 4);
+my %layers = ( 288 => 0);
 #my %layers = ( 288 => 0, 144 => 1, 72 => 2, 36 => 3 , 18 => 4);
 
 foreach (@ARGV) {
@@ -37,7 +36,7 @@ foreach (@ARGV) {
         my $first_output_line    = shift @output_lines;
         my $first_output_pdf     = $first_output_line . '.pdf';
         my $first_output_pdfspec = "$output_folder/$first_output_pdf";
-        my $first_jpeg           = "$first_output_line$layer.jpeg";
+        my $first_jpeg           = "$first_output_line.jpeg";
         my $first_jpeg_spec      = "$output_folder/$first_jpeg";
 
         say "\n$_ -> ${first_output_line}.jpeg \n";
@@ -52,7 +51,7 @@ foreach (@ARGV) {
         foreach my $output_line (@output_lines) {
             my $output_pdf     = $output_line . '.pdf';
             my $output_pdfspec = "$output_folder/$output_pdf";
-            my $jpeg           = "$output_line$layer.jpeg";
+            my $jpeg           = "$output_line.jpeg";
             my $jpeg_spec      = "$output_folder/$jpeg";
 
             if ( $layer == 0 ) {
