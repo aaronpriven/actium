@@ -22,7 +22,7 @@ use List::MoreUtils('uniq');
 my $dbname      = 'geocoder.db';
 my $addressname = 'addresses.txt';
 
-my $threshold = 5280 / 3;    # 1/4 mile
+my $threshold = 5280 / 3;    # 1/3 mile
 
 sub START {
 
