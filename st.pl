@@ -5,7 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 
-my $simplefile = '/volumes/bireme/actium/db/f11/SimpleStops.tab';
+my $simplefile = '/volumes/bireme/actium/db/current/SimpleStops.tab';
 
 open my $in, '<', $simplefile
   or die "Can't open $simplefile";
