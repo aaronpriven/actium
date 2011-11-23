@@ -132,6 +132,19 @@ sub merge_trips {
                 {
                     $merged_value_of{$attrname} = $firstattr;
                 }
+                # if they're identical, set the array to the value
+                elsif ($attrname ~~ ['daysexceptions'] ) {
+                    $merged_value_of{$attrname} = '';
+                }
+                # otherwise, if the attribute name is one of the those, then
+                # set it to nothing. (If it isn't listed, the attribute will
+                # be blank.)
+                
+                # TODO - special days merging should probably merge 
+                # daysexceptions specially, although currently -- with the
+                # only possible values SD and SH -- it would't make 
+                # a difference
+
             }
         }    ## <perltidy> end given
 

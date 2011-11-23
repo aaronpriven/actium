@@ -113,9 +113,10 @@ sub sked {
 
     # Convert day strings with exceptions to # Actium::Sked::Day objects
     
-    my $day_obj;
+    my ($day_obj, @daysexceptions );
     
-    my @daysexceptions = uniq ( map { $_->daysexceptions } $self->trips) ;
+    @daysexceptions = uniq ( map { $_->daysexceptions } $self->trips) ;
+    
     
     if (@daysexceptions == 1 ) {
         given ($daysexceptions[0]) {

@@ -57,6 +57,8 @@ sub START {
     my $headwaysfolder = Actium::Signup->new('headways');
 
     my @files = $headwaysfolder->glob_plain_files();
+    
+    die "No headway files found" unless @files;
 
     #### DEBUG ONLY
     #@files = ( $files[1] );
@@ -377,14 +379,14 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         if ( $reporttype eq 'Crew' ) {
             @leading_fieldnames
-              = qw[ dayexception routenum runid blockid vehicletype from noteletter ];
+              = qw[ daysexceptions routenum runid blockid vehicletype from noteletter ];
             $leading_template
               = q[  A4         A6       A10   A11     A4          A10  A8 ];
             $leading_chars = 53;
         }
         else {    # type eq 'Vehicle'
             @leading_fieldnames
-              = qw[ dayexception routenum blockid vehicletype from noteletter ];
+              = qw[ daysexceptions routenum blockid vehicletype from noteletter ];
             $leading_template
               = q[  A4         A6       A10     A4          A10  A8 ];
             $leading_chars = 42;
