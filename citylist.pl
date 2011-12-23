@@ -20,7 +20,7 @@ use Actium::Options (qw<option add_option>);
 use Actium::Term (qw<printq sayq>);
 use Actium::Signup;
 my $signup = Actium::Signup->new();
-chdir $signup->get_dir();
+chdir $signup->path();
 
 # $| = 1; # makes output "hot"
 

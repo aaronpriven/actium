@@ -7,7 +7,18 @@
 use strict;
 use warnings;
 
+use feature('say');
+
 use File::Glob(':glob');
+
+{
+    no warnings('once');
+    if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
+        @ARGV = Actium::Eclipse::get_command_line();
+        chdir shift @ARGV;
+    }
+    
+}
 
 my $arg = shift @ARGV;
 
@@ -138,4 +149,7 @@ foreach my $lines_and_token (sort keys %latest_date_of) {
 
 }
 
+#use Data::Dumper;
+
+#say Dumper( [ \%latest_date_of , \%latest_ver_of ] );
 

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/ActivePerl/bin/perl
 
 use strict;
 
@@ -16,19 +16,21 @@ use lib $Bin;
 use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 use Actium::Sorting (qw(sortbyline));
 
-use Actium::Options (qw<option add_option>);
+use Actium::Options (qw<option add_option init_options>);
 #add_option ('spec' , 'description');
-use Actium::Term (qw<printq sayq>);
 use Actium::Signup;
+
+init_options();
+
 my $signupdir = Actium::Signup->new();
-chdir $signupdir->get_dir();
-my $signup = $signupdir->get_signup;
+chdir $signupdir->path();
+my $signup = $signupdir->signup;
 
 # open and load files
 
-printq STDERR "Using signup $signup\n\n";
+print STDERR "Using signup $signup\n\n";
 
-printq STDERR <<"EOF" ;
+print STDERR <<"EOF" ;
 Now loading data...
 EOF
 
