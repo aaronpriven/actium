@@ -94,8 +94,9 @@ sub START {
     my $stopdata = $signup->mergeread('Stops.csv');
 
     {
-        my $hasidir = $signup->subfolder('hasi');
-        my $hasi_db = Actium::Files::HastusASI->new( $hasidir->path());
+        my $hasi_db = $signup->load_hasi();
+#        my $hasidir = $signup->subfolder('hasi');
+#        my $hasi_db = Actium::Files::HastusASI->new( $hasidir->path());
         $hasi_db->ensure_loaded(qw(PAT TRP));
         build_place_and_stop_lists( $hasi_db, $stopdata );
 
@@ -155,7 +156,7 @@ sub build_place_and_stop_lists {
             $prevroute = $route;
         }
 
-        next PAT if $route eq 'BSH' or $route eq '399';
+        next PAT if $route ~~ [ 'BSH' , 'BSD' , 'BSN' , '399'];
         # skip Broadway Shuttle
 
         my @tps = @{
@@ -705,7 +706,7 @@ sub delete_placelist_from_lists {
     sub process_combo_overrides {
         my $flagfolder = shift;
         my $file
-          = File::Spec->catfile( $flagfolder->get_dir(), $OVERRIDE_FILENAME );
+          = File::Spec->catfile( $flagfolder->path(), $OVERRIDE_FILENAME );
         my $newfile = "$file.new";
         my $bakfile = "$file.bak";
 
@@ -1057,7 +1058,7 @@ sub output_specs {
     emit "Writing stop decal file $STOP_SPEC_FILENAME";
 
     my $file
-      = File::Spec->catfile( $flagfolder->get_dir(), $STOP_SPEC_FILENAME );
+      = File::Spec->catfile( $flagfolder->path(), $STOP_SPEC_FILENAME );
 
     open my $out, '>', $file
       or die "Can't open $file for writing: $OS_ERROR";
@@ -1176,7 +1177,7 @@ sub make_decal_spec {
 
         my $flagfolder = shift;
         my $file
-          = File::Spec->catfile( $flagfolder->get_dir(), $DECAL_SPEC_FILENAME );
+          = File::Spec->catfile( $flagfolder->path(), $DECAL_SPEC_FILENAME );
 
         # first, we input the file, receiving the user overrides
 
@@ -1264,7 +1265,7 @@ sub make_decal_spec {
         emit "Writing decal specification file $DECAL_SPEC_FILENAME";
 
         my $file
-          = File::Spec->catfile( $flagfolder->get_dir(), $DECAL_SPEC_FILENAME );
+          = File::Spec->catfile( $flagfolder->path(), $DECAL_SPEC_FILENAME );
 
         open my $out, '>', $file or die "Can't open $file for writing";
         my $oldfh = select $out;
@@ -1369,7 +1370,7 @@ sub read_plain_overrides {
     my $flagfolder = shift;
 
     my $file
-      = File::Spec->catfile( $flagfolder->get_dir(), $PLAIN_OVERRIDE_FILENAME );
+      = File::Spec->catfile( $flagfolder->path(), $PLAIN_OVERRIDE_FILENAME );
 
     emit "Reading plain override file $PLAIN_OVERRIDE_FILENAME";
 
@@ -1393,7 +1394,7 @@ sub read_tp_overrides {
     my $flagfolder = shift;
 
     my $file
-      = File::Spec->catfile( $flagfolder->get_dir(), $TP_OVERRIDE_FILENAME );
+      = File::Spec->catfile( $flagfolder->path(), $TP_OVERRIDE_FILENAME );
 
     emit "Reading timepoint override file $TP_OVERRIDE_FILENAME";
 
@@ -1430,7 +1431,11 @@ sub mydump {
 }
 
 sub HELP {
-    say 'No help written for flagspecs yet';
+    say 'actium.pl flagspecs';
+    say '  (takes no arguments)';
+    
+    Actium::Term::output_usage();
+    
     return;
 }
 
