@@ -688,7 +688,7 @@ will yield "/Users/apriven".
 
 Generally it might
 be better to create a new folder object, but in some instances (e.g.,
-when a whole series of subdirectories are created) this is overkill.
+when a whole series of subfolders are created) this is overkill.
 
 =item B<< $self->make_filespec(F<filename>) >>
 

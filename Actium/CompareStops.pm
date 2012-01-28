@@ -265,7 +265,7 @@ sub output_comparetext {
           or $a cmp $b
     } keys %{$lines_of_stop_r};
 
-    my $compare_folder = $newsignup->subdir('compare');
+    my $compare_folder = $newsignup->subfolder('compare');
     my $fh             = $compare_folder->open_write('comparestops.txt');
     say $fh comparetextline_headers();
     say $fh jn( @{$lines_of_stop_r}{@stopids} );
@@ -290,7 +290,7 @@ sub make_comparetravel {
         push @changed_stops, @{ $stops_of_change_r->{$type} };
     }
 
-    my $compare_folder = $newsignup->subdir('compare');
+    my $compare_folder = $newsignup->subfolder('compare');
     my $fh             = $compare_folder->open_write('comparestopstravel.txt');
     say $fh comparetravelline_headers();
 
@@ -342,7 +342,7 @@ sub make_comparetravel {
 sub stops_of_linedir {
  my $signup = shift;
  
- my $pattern_folder = $signup->subdir('patterns');
+ my $pattern_folder = $signup->subfolder('patterns');
 
  my %stop_obj_of  = %{ $pattern_folder->retrieve('stops.storable') };
  

@@ -212,25 +212,74 @@ sub format_header {
 
 }
 
+my %longname_of = (
+    BSH => 'Broadway Shuttle',
+    BSD => 'DAY',
+    BSN => 'NIGHT',
+);
+
 sub format_head_lines {
 
     my $self = shift;
 
     my ( %color_of, %seen_color );
     my @head_lines = $self->head_lines;
-
     my ( $color, $head_lines );
 
+    # old formatting for very long names
+
+    # override if @head_lines contains BSD or BSN
+    #
+    #if ( @head_lines == 1 and @head_lines ~~ qr/BS[DNH]/ ) {
+    #    my $line = $head_lines[0];
+    #    $color = $line;    # colors in InDesign file are BSD, BSN, and BSH
+    #    $head_lines = IDTags::color( $color, $longname_of{$line} );
+    #    $head_lines = IDTags::parastyle( 'bsh-name', $head_lines ) . "\r"
+    #      . IDTags::parastyle('days-dest');
+    #    $self->append_to_formatted_header($head_lines);
+    #    return;
+    #}
+
+    # new formatting for just "Day" and "Night". Crashes InDesign -- I've
+    # no idea why at this point
+
+ #        if ( @head_lines == 1 and @head_lines ~~ qr/BS[DNH]/ ) {
+ #
+ #            my $line = $head_lines[0];
+ #            $color = $line;    # colors in InDesign file are BSD, BSN, and BSH
+ #
+ #            $head_lines = $longname_of{$line} . $SPACE;
+ #            my $length_head_lines = length($head_lines);
+ #
+ #            $head_lines = IDTags::color( $color, $longname_of{$line} );
+ #
+ #            $head_lines = IDTags::parastyle( 'dropcapbsh',
+ #                IDTags::dropcapchars($length_head_lines), $head_lines );
+ #
+ #            $self->append_to_formatted_header($head_lines);
+ #            return;
+ #
+ #        }
+
+    my $pstyle = $#head_lines ? 'dropcapheadmany' : 'dropcaphead';
+    
     foreach my $line (@head_lines) {
         {
             no warnings 'once';
-            $color = ( $main::lines{$line}{Color} or 'Grey80' );
+            if ( $line =~ /BS[DNH]/ ) {
+                $color = $line;
+                $line = $longname_of{$line};
+                $pstyle = 'dropcapheadbsh';
+            }
+            else {
+                $color
+                  = ( $Actium::MakePoints::lines{$line}{Color} or 'Grey80' );
+            }
         }
         $color_of{$line}    = $color;
         $seen_color{$color} = 1;
     }
 
-    my $pstyle = $#head_lines ? 'dropcapheadmany' : 'dropcaphead';
 
     my $length_head_lines
       = length( join( $head_line_separator, @head_lines ) ) + 1;
@@ -253,8 +302,8 @@ sub format_head_lines {
             IDTags::dropcapchars($length_head_lines), $head_lines );
 
     }
-
     $self->append_to_formatted_header( $head_lines . $SPACE );
+
     #$self->set_formatted_header
     #      ($self->formatted_header . $head_lines . $SPACE);
 
@@ -313,7 +362,8 @@ sub format_headdest {
     my $tpname;
     {
         no warnings 'once';
-        $tpname = $main::timepoints{$desttp4}{TPName};
+        use Data::Dumper;
+        $tpname = $Actium::MakePoints::timepoints{$desttp4}{TPName};
     }
 
     my $dest;

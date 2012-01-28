@@ -35,7 +35,7 @@ has 'note600' => (
     is      => 'ro',
     isa     => 'Bool',
     default => '0',
-    handles => { set_note600 => 'set' , },
+    handles => { set_note600 => 'set', },
 );
 
 has 'column_r' => (
@@ -43,8 +43,10 @@ has 'column_r' => (
     is      => 'rw',
     isa     => 'ArrayRef[Actium::Points::Column]',
     default => sub { [] },
-    handles => { columns => 'elements' , push_columns => 'push' ,
-      sort_columns => 'sort_in_place' ,
+    handles => {
+        columns      => 'elements',
+        push_columns => 'push',
+        sort_columns => 'sort_in_place',
     },
 );
 
@@ -53,11 +55,11 @@ has 'marker_of_footnote_r' => (
     is      => 'rw',
     isa     => 'HashRef[Str]',
     default => sub { {} },
-    handles => { 
-     get_marker_of_footnote => 'get' , 
-     set_marker_of_footnote => 'set' , 
-     elements_marker_of_footnote => 'elements',
-    } ,
+    handles => {
+        get_marker_of_footnote      => 'get',
+        set_marker_of_footnote      => 'set',
+        elements_marker_of_footnote => 'elements',
+    },
 
 );
 
@@ -66,7 +68,7 @@ has 'highest_footnote' => (
     default => 0,
     is      => 'rw',
     isa     => 'Num',
-    handles => { inc_highest_footnote => 'inc' , }
+    handles => { inc_highest_footnote => 'inc', }
 );
 
 has 'formatted_side' => (
@@ -89,6 +91,12 @@ has 'width' => (
     default => 0,
 );
 
+has 'is_bsh' => (
+    isa     => 'Bool',
+    is      => 'rw',
+    default => 0,
+);
+
 sub add_to_width {
     my $self = shift;
     $self->set_width( $self->width + $_[0] );
@@ -97,10 +105,12 @@ sub add_to_width {
 
 sub new_from_kpoints {
     my ( $class, $stopid, $signid, $effdate, $bsh ) = @_;
+
     my $self = $class->new(
         stopid  => $stopid,
         signid  => $signid,
-        effdate => $effdate
+        effdate => $effdate,
+        is_bsh  => ( $bsh eq 'bsh' ),
     );
 
     my $citycode = substr( $stopid, 0, 2 );
@@ -113,14 +123,14 @@ sub new_from_kpoints {
     while (<$kpoint>) {
         chomp;
         my $column = Actium::Points::Column->new($_);
-        
+
         my $linegroup = $column->linegroup;
-        
-        if ($bsh eq 'bsh') {
-           if ($linegroup =~ /^BS[DSH]$/) {
-              $self->push_columns($column);
-           }
-           next;
+
+        if ( $bsh eq 'bsh' ) {
+            if ( $linegroup =~ /^BS[DNH]$/ ) {
+                $self->push_columns($column);
+            }
+            next;
         }
 
         if ( $linegroup !~ /^6\d\d/ ) {
@@ -130,8 +140,8 @@ sub new_from_kpoints {
             $self->set_note600;
         }
 
-    }
-    
+    } ## tidy end: while (<$kpoint>)
+
     close $kpoint or die "Can't close $kpointfile: $!";
 
     return $self;
@@ -376,7 +386,8 @@ sub format_columns {
 
         }    ## <perltidy> end foreach my $i ( 0 .. $column...)
 
-        my $column_length = $main::signtypes{$signtype}{TallColumnLines};
+        my $column_length
+          = $Actium::MakePoints::signtypes{$signtype}{TallColumnLines};
         my $formatted_columns;
 
         if ($column_length) {
@@ -411,6 +422,7 @@ sub format_side {
     my $self    = shift;
     my $signid  = $self->signid;
     my $effdate = $self->effdate;
+    my $is_bsh  = $self->is_bsh;
 
     my $formatted_side;
     open my $sidefh, '>', \$formatted_side;
@@ -418,16 +430,31 @@ sub format_side {
     # EFFECTIVE DATE and colors
     my $color;
     if ( $effdate =~ /Dec|Jan|Feb/ ) {
-        $color = "H101-Purple";    # if it looks crummy change it to H3-Blue
+        if ($is_bsh) {
+            $color = "BSD";
+        }
+        else {
+            $color = "H101-Purple";    # if it looks crummy change it to H3-Blue
+        }
     }
     elsif ( $effdate =~ /Mar|Apr|May/ ) {
-        $color = "New AC Green";
+        if ($is_bsh) {
+            $color = "BSH";
+        }
+        else {
+            $color = "New AC Green";
+        }
     }
     elsif ( $effdate =~ /Jun|Jul/ ) {
         $color = "Black";
     }
-    else {                         # Aug, Sept, Oct, Nov
-        $color = "Rapid Red";
+    else {    # Aug, Sept, Oct, Nov
+        if ($is_bsh) {
+            $color = "BSD";
+        }
+        else {
+            $color = "Rapid Red";
+        }
     }
 
     my $nbsp = IDTags::nbsp;
@@ -443,21 +470,24 @@ sub format_side {
     print $sidefh 'Light Face = a.m.', IDTags::softreturn;
     print $sidefh IDTags::bold('Bold Face = p.m.'), "\r";
 
-    my $sidenote = $main::signs{$signid}{Sidenote};
+    my $sidenote = $Actium::MakePoints::signs{$signid}{Sidenote};
 
     if ( $sidenote and ( $sidenote !~ /^\s+$/ ) ) {
         $sidenote =~ s/\n/\r/g;
         $sidenote =~ s/\r+/\r/g;
         $sidenote =~ s/\r+$//;
         $sidenote =~ s/\0+$//;
-        print $sidefh IDTags::bold( $main::signs{$signid}{Sidenote} ) . "\r";
+        print $sidefh IDTags::bold(
+            $Actium::MakePoints::signs{$signid}{Sidenote} )
+          . "\r";
     }
 
     print $sidefh $self->format_sidenotes;
 
-    my $thisproject = $main::signs{$signid}{Project};
-    if ( $main::projects{$thisproject}{'ProjectNote'} ) {
-        print $sidefh $main::projects{$thisproject}{'ProjectNote'}, "\r";
+    my $thisproject = $Actium::MakePoints::signs{$signid}{Project};
+    if ( $Actium::MakePoints::projects{$thisproject}{'ProjectNote'} ) {
+        print $sidefh $Actium::MakePoints::projects{$thisproject}
+          {'ProjectNote'}, "\r";
     }
 
     if ( $self->note600 ) {
@@ -475,8 +505,8 @@ sub format_side {
     print $sidefh
 "See something wrong with this sign, or any other AC Transit sign? Let us know! Send email to signs\@actransit.org or call 511 to comment. Thanks!\r"
       if lc(
-        $main::signtypes{ $main::signs{$signid}{SignType} }{GenerateWrongText} )
-      eq "yes";
+        $Actium::MakePoints::signtypes{ $Actium::MakePoints::signs{$signid}
+              {SignType} }{GenerateWrongText} ) eq "yes";
 
     close $sidefh;
 
@@ -485,6 +515,13 @@ sub format_side {
     $self->set_formatted_side($formatted_side);
 
 } ## tidy end: sub format_side
+
+# TODO - allow all values in Actium::Sked::Days
+my %text_of_exception = (
+    SD     => 'school days only',
+    SH     => 'school holidays only',
+    '1234' => 'weekdays except Fridays',
+);
 
 sub format_sidenotes {
 
@@ -515,7 +552,7 @@ sub format_sidenotes {
 
         @attr{@attrs} = split( /:/, $foot, scalar @attrs );
         # scalar @attrs sets the LIMIT field, so it doesn't delete empty
-        # trailing entries
+        # trailing entries, see split in perldoc perlfunc for info on LIMIT
 
         $attr{approxflag} = 2 if $attr{approxflag} eq '0';
 
@@ -529,14 +566,21 @@ sub format_sidenotes {
         $line = $attr{line} if $attr{line};
 
         if ( $attr{destination} ) {
-            $dest = $main::timepoints{ $attr{destination} }{TPName};
+            $dest
+              = $Actium::MakePoints::timepoints{ $attr{destination} }{TPName};
             $dest =~ s/\.*$/\./;
         }
-        $exc = (
-            $attr{exception} eq 'SD'
-            ? 'school days only'
-            : 'school holidays only'
-        ) if $attr{exception};
+
+        # TODO - Update to allow all values in Actium::Sked::Days
+        if ( $attr{exception} ) {
+            $exc = $text_of_exception{ $attr{exception} };
+        }
+
+        #$exc = (
+        #    $attr{exception} eq 'SD'
+        #    ? 'school days only'
+        #    : 'school holidays only'
+        #) if $attr{exception};
         $app
           = $attr{approxflag} eq '1'
           ? 'approximate departure time'
@@ -544,20 +588,24 @@ sub format_sidenotes {
           if $attr{approxflag};
 
         given ($attrcode) {
-            when ('a')    { print $sidefh "\u$app."; }
-            when ('ad')   { print $sidefh "\u$app, to $dest"; }
-            when ('ade')  { print $sidefh "\u$app, $exc to $dest"; }
-            when ('adel') { print $sidefh "\u$app, $exc, Line $line to $dest"; }
-            when ('ae')   { print $sidefh "\u$app, $exc."; }
-            when ('ael')  { print $sidefh "\u$app, $exc, Line $line."; }
-            when ('al')   { print $sidefh "\u$app, for Line $line."; }
-            when ('d')    { print $sidefh "To $dest"; }
-            when ('de')   { print $sidefh "\u$exc to $dest"; }
-            when ('del')  { print $sidefh "\u$exc, Line $line to $dest"; }
-            when ('dl')   { print $sidefh "Line $line to $dest"; }
-            when ('e')    { print $sidefh "\u$exc." }
-            when ('el')   { print $sidefh "\u$exc, Line $line."; }
-            when ('l')    { print $sidefh "Line $line."; }
+            when ('a')   { print $sidefh "\u$app."; }
+            when ('ad')  { print $sidefh "\u$app, to $dest"; }
+            when ('ade') { print $sidefh "\u$app. Operates $exc to $dest"; }
+            when ('adel') {
+                print $sidefh "\u$app for Line $line. Operates $exc to $dest";
+            }
+            when ('ae') { print $sidefh "\u$app. Operates $exc."; }
+            when ('ael') {
+                print $sidefh "\u$app for Line $line. Operates $exc.";
+            }
+            when ('al')  { print $sidefh "\u$app for Line $line."; }
+            when ('d')   { print $sidefh "To $dest"; }
+            when ('de')  { print $sidefh "Operates $exc to $dest"; }
+            when ('del') { print $sidefh "Line $line. Operates $exc to $dest"; }
+            when ('dl')  { print $sidefh "Line $line, to $dest"; }
+            when ('e')   { print $sidefh "Operates $exc." }
+            when ('el')  { print $sidefh "Line $line. Operates $exc."; }
+            when ('l')   { print $sidefh "Line $line."; }
         }    ## <perltidy> end given
 
         print $sidefh "\r";
@@ -581,14 +629,15 @@ sub format_bottom {
     open my $botfh, '>', \$formatted_bottom;
 
     no warnings('once');
-    my $stop_r = $main::stops{$stopid};    # this is a reference
+    my $stop_r = $Actium::MakePoints::stops{$stopid};    # this is a reference
 
     print $botfh $stop_r->{DescriptionF}, ", ", $stop_r->{CityF};
 
     print $botfh ". Sign #$signid. Stop $stopid.";
 
-    print $botfh " Shelter site #" . $main::signs{$signid}{ShelterNum} . "."
-      if $main::signs{$signid}{ShelterNum};
+    print $botfh " Shelter site #"
+      . $Actium::MakePoints::signs{$signid}{ShelterNum} . "."
+      if $Actium::MakePoints::signs{$signid}{ShelterNum};
 
     close $botfh;
 
@@ -602,7 +651,7 @@ sub output {
 
     my $signid = $self->signid;
 
-    open my $fh, '>', "kidpoints-test/$signid.txt"
+    open my $fh, '>', "indesign_points/$signid.txt"
       or die "Can't open $signid.txt for writing: $!";
 
     print $fh IDTags::start;
@@ -610,7 +659,8 @@ sub output {
     # output blank columns at beginning
 
     my $maxcolumns
-      = $main::signtypes{ $main::signs{$signid}{SignType} }{TallColumnNum};
+      = $Actium::MakePoints::signtypes{ $Actium::MakePoints::signs{$signid}
+          {SignType} }{TallColumnNum};
     my $break = IDTags::boxbreak;
 
     if ( $maxcolumns and $maxcolumns > $self->width )

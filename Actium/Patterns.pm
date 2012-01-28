@@ -30,7 +30,7 @@ use English('-no_match_vars');
 sub START {
 
     my $signup     = Actium::Signup->new();
-    my $flagfolder = $signup->subdir('flags');
+    my $flagfolder = $signup->subfolder('flags');
 
     my $xml_db  = $signup->load_xml;
     my $hasi_db = $signup->load_hasi;
@@ -38,7 +38,7 @@ sub START {
     my ( $stop_obj_of_r, $route_obj_of_r ) =
       process_patterns( $hasi_db, $xml_db );
 
-    my $pattern_folder = $signup->subdir('patterns');
+    my $pattern_folder = $signup->subfolder('patterns');
 
     $pattern_folder->store( $stop_obj_of_r,  'stops.storable' );
     $pattern_folder->store( $route_obj_of_r, 'routes.storable' );
