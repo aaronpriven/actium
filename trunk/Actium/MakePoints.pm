@@ -4,9 +4,6 @@
 
 # legacy stage 4
 
-use 5.012;
-use warnings;
-
 package Actium::MakePoints 0.001;
 
 use warnings;
@@ -65,7 +62,7 @@ sub START {
     my $signup = Actium::Signup->new();
     chdir $signup->path();
 
-    my $pointdir = $signup->subdir($IDPOINTFOLDER);
+    my $pointdir = $signup->subfolder($IDPOINTFOLDER);
 
     my $effdate = read_file('effectivedate.txt');
 

@@ -52,10 +52,10 @@ $| = 1;
 
 # retrieve data
 
-my $skedsdir = $signup->subdir('skeds');
+my $skedsdir = $signup->subfolder('skeds');
 
 if ( not option('rawonly') ) {
-   my $rawskedsdir = $signup->subdir('rawskeds');
+   my $rawskedsdir = $signup->subfolder('rawskeds');
 }              
 
 my %skeds_pairs_of;

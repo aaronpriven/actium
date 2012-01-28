@@ -52,7 +52,7 @@ use Actium::Signup;
 my $signup = Actium::Signup->new();
 chdir $signup->get_dir();
 
-my $comparedir = $signup->subdir('compare') ;
+my $comparedir = $signup->subfolder('compare') ;
 
 my %newstoplists = assemble_stoplists(qw(BSH 399));
 

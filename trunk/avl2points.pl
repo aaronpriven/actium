@@ -394,7 +394,7 @@ foreach my $stop ( keys %stopinfo ) {
 
 print "Reassembled. Now outputting...\n";
 
-my $kpointdir = $signup->subdir('kpoints');
+my $kpointdir = $signup->subfolder('kpoints');
 
 my $count = 0;
 
@@ -405,7 +405,7 @@ foreach my $stop ( keys %stopinfo ) {
 
     my $citycode = substr( $stop, 0, 2 );
     
-    my $citydir = $kpointdir->subdir($citycode);
+    my $citydir = $kpointdir->subfolder($citycode);
 
     open my $out, '>', "kpoints/$citycode/$stop.txt" or die $!;
 
@@ -480,6 +480,9 @@ sub makestoptimes {
         $days_input =~ tr/0-9//cd;      # strip everything but digits
 
         my @days;
+        
+        ### the following changes 800 and 801 times that start on the
+        ### following day to the current day
 
         if ( $line eq '800' or $line eq '801' ) {
             my $initial_time = $tripinfo_of{PTS}[0];
@@ -527,6 +530,8 @@ sub makestoptimes {
         else {
             @days = ($days_input);
         }
+        
+        # END OF 800/801 day-changing code
 
         my $dir_code = $avldata{PAT}{$patkey}{DirectionValue};
 
