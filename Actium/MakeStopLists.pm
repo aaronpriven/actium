@@ -25,8 +25,8 @@ my $xml_db;
 sub START {
 
     my $signup                = Actium::Signup->new();
-    my $stoplists_folder      = $signup->subdir('slists');
-    my $stoplists_line_folder = $stoplists_folder->subdir('line');
+    my $stoplists_folder      = $signup->subfolder('slists');
+    my $stoplists_line_folder = $stoplists_folder->subfolder('line');
 
     my ( $stoplist_objs_r, $stops_of_line_r ) = stop_lists($signup);
 
@@ -50,7 +50,7 @@ sub stop_lists {
 
     my $signup = shift;
 
-    my $pattern_folder = $signup->subdir('patterns');
+    my $pattern_folder = $signup->subfolder('patterns');
 
     my %stop_obj_of  = %{ $pattern_folder->retrieve('stops.storable') };
     my %route_obj_of = %{ $pattern_folder->retrieve('routes.storable') };

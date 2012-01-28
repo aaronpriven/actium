@@ -37,17 +37,18 @@ use Actium::Options qw(add_option init_options option);
 ### Get subcommand, and run subcommand
 
 my %module_of = (
-    makestoplists => 'MakeStopLists',
-    headways      => 'Headways',
-    time          => 'Time',
-    sqlite2tab    => 'SQLite2tab',
-    flagspecs     => 'Flagspecs',
-    tabula        => 'Tabula',
-    orderbytravel => 'OrderByTravel',
-    patterns      => 'Patterns',
+    theaimport      => 'TheaImport',
+    makestoplists   => 'MakeStopLists',
+    headways        => 'Headways',
+    time            => 'Time',
+    sqlite2tab      => 'SQLite2tab',
+    flagspecs       => 'Flagspecs',
+    tabula          => 'Tabula',
+    orderbytravel   => 'OrderByTravel',
+    patterns        => 'Patterns',
     adddescriptionf => 'AddDescriptionF',
-    makepoints => 'MakePoints' ,
-    nearbyroutes => 'NearbyRoutes' , 
+    makepoints      => 'MakePoints',
+    nearbyroutes    => 'NearbyRoutes',
     # more to come
 );
 
@@ -146,7 +147,6 @@ may be omitted entirely.
 =over
 
 =item B<argument()>
-
 Description of argument.
 
 =back

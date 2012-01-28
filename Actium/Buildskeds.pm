@@ -37,7 +37,7 @@ sub build_skeds {
 sub process_headway_sheets {
    my $signup = shift;
    
-   my $headwaysdir = $signup->subdir("headways");
+   my $headwaysdir = $signup->subfolder("headways");
    my @headwaysfiles = $headwaysdir->glob_plain_files('*.{prt,txt}');
 
    my @skeds = Actium::Headways::read_headways(@headwaysfiles);

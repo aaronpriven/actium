@@ -54,7 +54,7 @@ use Actium::Signup;
 my $signup = Actium::Signup->new();
 chdir $signup->get_dir();
 
-my $bagtextdir = $signup->subdir('bagtexts');
+my $bagtextdir = $signup->subfolder('bagtexts');
 
 # retrieve data
 my ( @stops, %stops );
