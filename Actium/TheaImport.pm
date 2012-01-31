@@ -17,6 +17,8 @@ use Text::Trim;
 use Actium::Util('filename');
 use Actium::Files::TabDelimited;
 
+use constant { T_DIRECTION => 0, T_STOPS => 1, T_PLACES => 2 };
+
 sub HELP {
 
     say <<'HELP' or die q{Can't open STDOUT for writing};
@@ -38,6 +40,10 @@ my %required_headers = (
         qw<stp_511_id tpat_stp_rank tpat_stp_plc tpat_stp_tp_sequence>,
         'item tpat_id', 'item tpat_route',
     ],
+    trips => [
+        qw<trip_int_number trp_route trp_pattern trp_is_in_serv
+          trp_blking_day trp_event>
+    ],
 );
 
 my %dircode_of_thea = (
@@ -55,13 +61,34 @@ sub START {
     my $signup     = Actium::Signup->new;
     my $theafolder = $signup->subfolder('thea');
 
-    my %patterns = get_patterns( $theafolder);
+    my %patterns = get_patterns($theafolder);
 
-    use Data::Dumper;
-
-    say Dumper( \%patterns );
+    my %trips = get_trips($theafolder);
 
     # Pattern info and order now in %patterns
+
+}
+
+sub get_trips {
+    my $theafolder = shift;
+    emit 'Reading THEA trip files';
+    
+    my %trips;
+
+    my $tripfileobj = Actium::Files::TabDelimited->new(
+        {   glob_files       => ['*trips.txt'],
+            folder           => $theafolder,
+            required_headers => $required_headers{'trips'}
+        }
+    );
+
+    while ( my $value_of_r = $tripfileobj->next_line() ) {
+
+       # rewrite tab thingy to do it with a callback
+       
+    }
+    
+    emit_done;
 
 }
 
@@ -92,7 +119,7 @@ sub get_patterns {
         my $direction = $dircode_of_thea{$tpat_direction}
           or emit_text("Unknown direction: $tpat_direction");
 
-        $patterns{$key}{DIRECTION} = $direction;
+        $patterns{$key}[ T_DIRECTION() ] = $direction;
 
     }
 
@@ -116,22 +143,30 @@ sub get_patterns {
 
         next unless exists $patterns{$key};
 
-        $patterns{$key}{STOPS}{ $value_of_r->{tpat_stp_rank} } = {
-            STOPID                => $value_of_r->{stp_511_id},
-            PLACE_OF_STOP         => $value_of_r->{tpat_stp_plc},
-            PLACESEQUENCE_OF_STOP => $value_of_r->{tpat_stp_tp_sequence},
-        };
+        my @patinfo = $value_of_r->{stp_511_id};
 
-        $patterns{$key}{PLACES}{ $value_of_r->{tpat_stp_tp_sequence} }
-          = $value_of_r->{tpat_stp_plc};
+        my $tpat_stp_plc         = $value_of_r->{tpat_stp_plc};
+        my $tpat_stp_tp_sequence = $value_of_r->{tpat_stp_tp_sequence};
 
-    }
+        if ( $tpat_stp_plc or $tpat_stp_tp_sequence ) {
+            push @patinfo, $tpat_stp_plc, $tpat_stp_tp_sequence;
+        }
+
+        my $tpat_stp_rank = $value_of_r->{tpat_stp_rank};
+
+        $patterns{$key}[ T_STOPS() ][$tpat_stp_rank] = \@patinfo;
+
+        $patterns{$key}[ T_PLACES() ]{$tpat_stp_tp_sequence} = $tpat_stp_plc
+          if $tpat_stp_tp_sequence;
+
+    } ## tidy end: while ( my $value_of_r = ...)
 
     emit_done;
 
     return %patterns;
 
 } ## tidy end: sub get_patterns
+
 __END__
 
 sub get_patterns {
