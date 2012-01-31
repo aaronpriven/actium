@@ -15,6 +15,7 @@ use Actium::Term ':all';
 use Actium::Signup;
 use Text::Trim;
 use Actium::Util('filename');
+use Actium::Files::TabDelimited;
 
 sub HELP {
 
@@ -28,13 +29,14 @@ HELP
 
 }
 
-my @thea_filetypes
-  = qw( trips trippatterns trippatternstops tripstops stops places );
-
 my %required_headers = (
     trippatterns => [
         qw<tpat_route tpat_id tpat_direction
           tpat_in_serv tpat_via tpat_trips_match>
+    ],
+    trippatternstops => [
+        qw<stp_511_id tpat_stp_rank tpat_stp_plc tpat_stp_tp_sequence>,
+        'item tpat_id', 'item tpat_route',
     ],
 );
 
@@ -53,17 +55,84 @@ sub START {
     my $signup     = Actium::Signup->new;
     my $theafolder = $signup->subfolder('thea');
 
-    my %files_of = get_file_names($theafolder);
-
-    my %patterns = get_patterns( $theafolder, \%files_of );
-    
-    # TODO - load trippatternstops to add what the stops are for each pattern
+    my %patterns = get_patterns( $theafolder);
 
     use Data::Dumper;
 
-    print Dumper( \%patterns );
+    say Dumper( \%patterns );
+
+    # Pattern info and order now in %patterns
 
 }
+
+sub get_patterns {
+    my $theafolder = shift;
+
+    emit 'Reading THEA trippattern files';
+
+    my %patterns;
+
+    my $patfileobj = Actium::Files::TabDelimited->new(
+        {   glob_files       => ['*trippatterns.txt'],
+            folder           => $theafolder,
+            required_headers => $required_headers{'trippatterns'}
+        }
+    );
+
+    while ( my $value_of_r = $patfileobj->next_line() ) {
+
+        next unless $value_of_r->{tpat_in_serv};
+        next unless $value_of_r->{tpat_trips_match};
+
+        my $tpat_route     = $value_of_r->{tpat_route};
+        my $tpat_id        = $value_of_r->{tpat_id};
+        my $tpat_direction = $value_of_r->{tpat_direction};
+
+        my $key       = "$tpat_route:$tpat_id";
+        my $direction = $dircode_of_thea{$tpat_direction}
+          or emit_text("Unknown direction: $tpat_direction");
+
+        $patterns{$key}{DIRECTION} = $direction;
+
+    }
+
+    emit_done;
+
+    emit 'Reading THEA trippatternstops files';
+
+    my $patstopsfileobj = Actium::Files::TabDelimited->new(
+        {   glob_files       => ['*trippatternstops.txt'],
+            folder           => $theafolder,
+            required_headers => $required_headers{'trippatternstops'}
+        }
+    );
+
+    while ( my $value_of_r = $patstopsfileobj->next_line() ) {
+
+        my $tpat_route = $value_of_r->{'item tpat_route'};
+        my $tpat_id    = $value_of_r->{'item tpat_id'};
+
+        my $key = "$tpat_route:$tpat_id";
+
+        next unless exists $patterns{$key};
+
+        $patterns{$key}{STOPS}{ $value_of_r->{tpat_stp_rank} } = {
+            STOPID                => $value_of_r->{stp_511_id},
+            PLACE_OF_STOP         => $value_of_r->{tpat_stp_plc},
+            PLACESEQUENCE_OF_STOP => $value_of_r->{tpat_stp_tp_sequence},
+        };
+
+        $patterns{$key}{PLACES}{ $value_of_r->{tpat_stp_tp_sequence} }
+          = $value_of_r->{tpat_stp_plc};
+
+    }
+
+    emit_done;
+
+    return %patterns;
+
+} ## tidy end: sub get_patterns
+__END__
 
 sub get_patterns {
     my $theafolder = shift;
@@ -92,9 +161,43 @@ sub get_patterns {
             my $direction = $dircode_of_thea{ $patvalue_of{tpat_direction} }
               or emit_text("Unknown direction: $patvalue_of{tpat_direction}");
 
-            $patterns{$key} = $direction;
+            $patterns{$key}{DIRECTION} = $direction;
 
         }
+
+    } ## tidy end: foreach my $file ( @{ $files_of_r...})
+
+    emit_done;
+
+    emit 'Reading THEA trippatternstops files';
+
+    foreach my $file ( @{ $files_of_r->{'trippatternstops'} } ) {
+
+        emit_over $file;
+        my ( $fh, @headers )
+          = open_thea_file( $file, 'trippatternstops', $theafolder );
+
+        while (<$fh>) {
+            trim;
+
+            my %patvalue_of;
+            @patvalue_of{@headers} = split("\t");
+
+            my $key
+              = "$patvalue_of{'item tpat_route'}:$patvalue_of{'item tpat_id'}";
+
+            next unless exists $patterns{$key};
+
+            $patterns{$key}{STOPS}[ $patvalue_of{tpat_stp_rank} ] = {
+                STOPID                => $patvalue_of{stp_511_id},
+                PLACE_OF_STOP         => $patvalue_of{tpat_stp_plc},
+                PLACESEQUENCE_OF_STOP => $patvalue_of{tpat_stp_tp_sequence},
+            };
+
+            $patterns{$key}{PLACES}{ $patvalue_of{tpat_stp_tp_sequence} }
+              = $patvalue_of{tpat_stp_plc};
+
+        } ## tidy end: while (<$fh>)
 
     } ## tidy end: foreach my $file ( @{ $files_of_r...})
 
@@ -107,7 +210,6 @@ sub get_patterns {
 sub get_file_names {
     emit 'Assembling list of THEA files';
 
-    emit_done;
     my $theafolder = shift;
     my %files_of;
     foreach my $filetype (@thea_filetypes) {
@@ -126,7 +228,7 @@ sub open_thea_file {
     my ( $file, $filetype, $theafolder ) = @_;
 
     my $fh      = $theafolder->open_read($file);
-    my $line    = trim(scalar(<$fh>));
+    my $line    = trim( scalar(<$fh>) );
     my @headers = split( "\t", $line );
 
     foreach my $required_header ( @{ $required_headers{$filetype} } ) {
