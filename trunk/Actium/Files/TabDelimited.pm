@@ -13,7 +13,7 @@ use Carp;
 use English '-no_match_vars';
 use Text::Trim;
 
-use Params::Validate;
+use Params::Validate (':all');
 
 use Actium::Signup;
 use Actium::Term;
@@ -22,7 +22,7 @@ use Actium::Util('filename');
 use Readonly;
 Readonly my $LINES_BETWEEN_EMITTING_PERCENTAGES => 2000;
 
-use Sub::Exporter -setup => { exports => [ qw(read_tab_files) ] };
+use Sub::Exporter -setup => { exports => [qw(read_tab_files)] };
 
 sub read_tab_files {
 
@@ -34,11 +34,10 @@ sub read_tab_files {
                     'open_read',     'display_path'
                 ]
             },
-            # eventually replace isa with can
-            files            => { type => 'ARRAYREF', default => [] },
-            globpatterns     => { type => 'ARRAYREF', default => [] },
-            required_headers => { type => 'ARRAYREF', default => [] },
-            callback         => { type => 'CODEREF' },
+            files            => { type => ARRAYREF, default => [] },
+            globpatterns     => { type => ARRAYREF, default => [] },
+            required_headers => { type => ARRAYREF, default => [] },
+            callback         => { type => CODEREF },
         },
 
     );
@@ -94,10 +93,6 @@ sub _expand_files {
 
     my @files;
 
-    foreach ( @{$files_r} ) {
-        push @files, $folder->make_filespec($_);
-    }
-
     foreach (@$globpatterns_r) {
         push @files, filename( $folder->glob_plain_files($_) );
     }
@@ -109,7 +104,7 @@ sub _expand_files {
 
     return @files;
 
-} ## tidy end: sub _expand_files
+}
 
 sub _verify_headers {
 

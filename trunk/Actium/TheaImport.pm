@@ -15,7 +15,7 @@ use Actium::Term ':all';
 use Actium::Signup;
 use Text::Trim;
 use Actium::Util('filename');
-use Actium::Files::TabDelimited;
+use Actium::Files::TabDelimited 'read_tab_files';
 
 use constant { T_DIRECTION => 0, T_STOPS => 1, T_PLACES => 2 };
 
@@ -63,54 +63,47 @@ sub START {
 
     my %patterns = get_patterns($theafolder);
 
-    my %trips = get_trips($theafolder);
+    #my %trips = get_trips($theafolder);
 
     # Pattern info and order now in %patterns
+    
+    use Data::Dumper;
+    say Dumper(\%patterns);
 
 }
 
 sub get_trips {
     my $theafolder = shift;
     emit 'Reading THEA trip files';
-    
-    my %trips;
 
-    my $tripfileobj = Actium::Files::TabDelimited->new(
-        {   glob_files       => ['*trips.txt'],
+    my %trips;
+    
+    my $trip_callback = sub {}; # TODO
+
+    read_tab_files (
+        {   globpatterns       => ['*trips.txt'],
             folder           => $theafolder,
-            required_headers => $required_headers{'trips'}
+            required_headers => $required_headers{'trips'},
+            callback => $trip_callback ,
         }
     );
 
-    while ( my $value_of_r = $tripfileobj->next_line() ) {
-
-       # rewrite tab thingy to do it with a callback
-       
-    }
-    
     emit_done;
 
-}
+} ## tidy end: sub get_trips
 
 sub get_patterns {
     my $theafolder = shift;
+    my %patterns;
 
     emit 'Reading THEA trippattern files';
 
-    my %patterns;
+    my $patfile_callback = sub {
 
-    my $patfileobj = Actium::Files::TabDelimited->new(
-        {   glob_files       => ['*trippatterns.txt'],
-            folder           => $theafolder,
-            required_headers => $required_headers{'trippatterns'}
-        }
-    );
+        my $value_of_r = shift;
 
-    while ( my $value_of_r = $patfileobj->next_line() ) {
-
-        next unless $value_of_r->{tpat_in_serv};
-        next unless $value_of_r->{tpat_trips_match};
-
+        return unless $value_of_r->{tpat_in_serv};
+        return unless $value_of_r->{tpat_trips_match};
         my $tpat_route     = $value_of_r->{tpat_route};
         my $tpat_id        = $value_of_r->{tpat_id};
         my $tpat_direction = $value_of_r->{tpat_direction};
@@ -120,28 +113,29 @@ sub get_patterns {
           or emit_text("Unknown direction: $tpat_direction");
 
         $patterns{$key}[ T_DIRECTION() ] = $direction;
+    };
 
-    }
+    read_tab_files(
+        {   globpatterns     => ['*trippatterns.txt'],
+            folder           => $theafolder,
+            required_headers => $required_headers{'trippatterns'},
+            callback         => $patfile_callback,
+        }
+    );
 
     emit_done;
 
     emit 'Reading THEA trippatternstops files';
 
-    my $patstopsfileobj = Actium::Files::TabDelimited->new(
-        {   glob_files       => ['*trippatternstops.txt'],
-            folder           => $theafolder,
-            required_headers => $required_headers{'trippatternstops'}
-        }
-    );
-
-    while ( my $value_of_r = $patstopsfileobj->next_line() ) {
+    my $patstopfile_callback = sub {
+        my $value_of_r = shift;
 
         my $tpat_route = $value_of_r->{'item tpat_route'};
         my $tpat_id    = $value_of_r->{'item tpat_id'};
 
         my $key = "$tpat_route:$tpat_id";
 
-        next unless exists $patterns{$key};
+        return unless exists $patterns{$key};
 
         my @patinfo = $value_of_r->{stp_511_id};
 
@@ -159,7 +153,15 @@ sub get_patterns {
         $patterns{$key}[ T_PLACES() ]{$tpat_stp_tp_sequence} = $tpat_stp_plc
           if $tpat_stp_tp_sequence;
 
-    } ## tidy end: while ( my $value_of_r = ...)
+    };
+
+    read_tab_files(
+        {   globpatterns     => ['*trippatternstops.txt'],
+            folder           => $theafolder,
+            required_headers => $required_headers{'trippatternstops'},
+            callback         => $patstopfile_callback,
+        }
+    );
 
     emit_done;
 
