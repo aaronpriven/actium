@@ -58,7 +58,8 @@ sub read_tab_files {
 
         my @headers = _verify_headers( $fh, $file, $required_headers_r );
 
-        my $size    = -s $file;
+        my $size    = -s $fh;
+        #my $size    = -s $folder->make_filespec($file);
         my $linenum = 0;
 
         emit_over ' 0%';
@@ -91,7 +92,7 @@ sub _expand_files {
 
     my ( $files_r, $globpatterns_r, $folder ) = @_;
 
-    my @files;
+    my @files = @{$files_r};
 
     foreach (@$globpatterns_r) {
         push @files, filename( $folder->glob_plain_files($_) );

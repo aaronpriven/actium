@@ -14,10 +14,15 @@ package Actium::TheaImport 0.001;
 use Actium::Term ':all';
 use Actium::Signup;
 use Text::Trim;
-use Actium::Util('filename');
 use Actium::Files::TabDelimited 'read_tab_files';
+use Actium::Sked::Days;
 
-use constant { T_DIRECTION => 0, T_STOPS => 1, T_PLACES => 2 };
+use constant { P_DIRECTION => 0, P_STOPS => 1, P_PLACES => 2 };
+use constant {
+    T_DAYS    => 0,
+    T_VEHICLE => 1,
+    T_TIMES   => 2,
+};
 
 sub HELP {
 
@@ -31,20 +36,6 @@ HELP
 
 }
 
-my %required_headers = (
-    trippatterns => [
-        qw<tpat_route tpat_id tpat_direction
-          tpat_in_serv tpat_via tpat_trips_match>
-    ],
-    trippatternstops => [
-        qw<stp_511_id tpat_stp_rank tpat_stp_plc tpat_stp_tp_sequence>,
-        'item tpat_id', 'item tpat_route',
-    ],
-    trips => [
-        qw<trip_int_number trp_route trp_pattern trp_is_in_serv
-          trp_blking_day trp_event>
-    ],
-);
 
 my %dircode_of_thea = (
     Northbound       => 'NB',
@@ -56,41 +47,121 @@ my %dircode_of_thea = (
     '1'              => 'D1',
 );
 
+my %required_headers = (
+    trippatterns => [
+        qw<tpat_route tpat_id tpat_direction
+          tpat_in_serv tpat_via tpat_trips_match>
+    ],
+    trippatternstops => [
+        qw<stp_511_id tpat_stp_rank tpat_stp_plc tpat_stp_tp_sequence>,
+        'item tpat_id', 'item tpat_route',
+    ],
+    trips => [
+        qw<trp_int_number trp_route trp_pattern trp_is_in_service
+          trp_blkng_day_digits trp_event>
+    ],
+    tripstops => [qw<trp_int_number tstp_position tstp_passing_time>],
+);
+
+
+
 sub START {
 
     my $signup     = Actium::Signup->new;
     my $theafolder = $signup->subfolder('thea');
 
-    my %patterns = get_patterns($theafolder);
-
-    #my %trips = get_trips($theafolder);
-
-    # Pattern info and order now in %patterns
+    my $patterns_r = get_patterns($theafolder);
+    my ($trip_of_tnum_r , $trips_of_patkey_r) = get_trips($theafolder);
     
-    use Data::Dumper;
-    say Dumper(\%patterns);
+    
+    
 
 }
+
+#my %is_a_valid_trip_type = { Regular => 1, Opportunity => 1 };
 
 sub get_trips {
     my $theafolder = shift;
     emit 'Reading THEA trip files';
 
-    my %trips;
-    
-    my $trip_callback = sub {}; # TODO
+    my %trip_of_tnum;
+    my %trips_of_patkey;
 
-    read_tab_files (
-        {   globpatterns       => ['*trips.txt'],
+    my $trip_callback = sub {
+        my $value_of_r = shift;
+
+        return unless $value_of_r->{trp_is_in_service};
+#        return unless $is_a_valid_trip_type{ $value_of_r->{trp_type} };
+        my $tnum = $value_of_r->{trp_int_number};
+        
+        my $patkey 
+          = $value_of_r->{trp_route} . ':' . $value_of_r->{trp_pattern};
+        
+        push @{$trips_of_patkey{$patkey}}, $tnum;
+
+        my $vehicle = $value_of_r->{trp_veh_groups};
+        $trip_of_tnum{$tnum}[T_VEHICLE] = $vehicle if $vehicle;
+
+        my $days_obj = make_days_obj( $value_of_r->{trp_blkng_day_digits},
+            $value_of_r->{trp_event} );
+
+        $trip_of_tnum{$tnum}[T_DAYS] = $days_obj;
+
+    };
+
+    read_tab_files(
+        {   globpatterns     => ['*trips.txt'],
             folder           => $theafolder,
             required_headers => $required_headers{'trips'},
-            callback => $trip_callback ,
+            callback         => $trip_callback,
         }
     );
 
     emit_done;
 
+    emit 'Reading THEA trip stop (time) files';
+
+    my $tripstops_callback = sub {
+        my $value_of_r = shift;
+        my $tnum = $value_of_r->{trp_int_number};
+        
+        return unless exists $trip_of_tnum{$tnum};
+        
+        $trip_of_tnum{$tnum}[T_TIMES][$value_of_r->{tstp_position}-1] = 
+           $value_of_r->{tstp_passing_time};
+
+    };
+
+    read_tab_files(
+        {   globpatterns     => ['*tripstops.txt'],
+            folder           => $theafolder,
+            required_headers => $required_headers{'tripstops'},
+            callback         => $tripstops_callback,
+        }
+    );
+
+    emit_done;
+
+    return \%trip_of_tnum, \%trips_of_patkey;
+
 } ## tidy end: sub get_trips
+
+sub make_days_obj {
+
+    my $day_digits = shift;
+    my $trp_event  = shift;
+
+    $day_digits =~ s/0/7H/;
+    $day_digits = join( '', sort ( split( //, $day_digits ) ) );
+    # sort $theaday by characters - putting 7 at end
+
+    my $schooldaycode
+      = $trp_event eq 'SD' ? 'D'
+      : $trp_event eq 'SH' ? 'H'
+      :                      'B';
+
+    return Actium::Sked::Days->new( $day_digits, $schooldaycode );
+}
 
 sub get_patterns {
     my $theafolder = shift;
@@ -102,7 +173,7 @@ sub get_patterns {
 
         my $value_of_r = shift;
 
-        return unless $value_of_r->{tpat_in_serv};
+        return unless $value_of_r->{tpat_in_service};
         return unless $value_of_r->{tpat_trips_match};
         my $tpat_route     = $value_of_r->{tpat_route};
         my $tpat_id        = $value_of_r->{tpat_id};
@@ -112,7 +183,7 @@ sub get_patterns {
         my $direction = $dircode_of_thea{$tpat_direction}
           or emit_text("Unknown direction: $tpat_direction");
 
-        $patterns{$key}[ T_DIRECTION() ] = $direction;
+        $patterns{$key}[ P_DIRECTION() ] = $direction;
     };
 
     read_tab_files(
@@ -148,9 +219,9 @@ sub get_patterns {
 
         my $tpat_stp_rank = $value_of_r->{tpat_stp_rank};
 
-        $patterns{$key}[ T_STOPS() ][$tpat_stp_rank] = \@patinfo;
+        $patterns{$key}[ P_STOPS() ][$tpat_stp_rank] = \@patinfo;
 
-        $patterns{$key}[ T_PLACES() ]{$tpat_stp_tp_sequence} = $tpat_stp_plc
+        $patterns{$key}[ P_PLACES() ]{$tpat_stp_tp_sequence} = $tpat_stp_plc
           if $tpat_stp_tp_sequence;
 
     };
@@ -170,114 +241,3 @@ sub get_patterns {
 } ## tidy end: sub get_patterns
 
 __END__
-
-sub get_patterns {
-    my $theafolder = shift;
-    my $files_of_r = shift;
-
-    emit 'Reading THEA trippattern files';
-
-    my %patterns;
-
-    foreach my $file ( @{ $files_of_r->{'trippatterns'} } ) {
-
-        emit_over $file;
-
-        my ( $fh, @headers )
-          = open_thea_file( $file, 'trippatterns', $theafolder );
-
-        while (<$fh>) {
-            trim;
-
-            my %patvalue_of;
-            @patvalue_of{@headers} = split("\t");
-            next unless $patvalue_of{tpat_in_serv};
-            next unless $patvalue_of{tpat_trips_match};
-
-            my $key       = "$patvalue_of{tpat_route}:$patvalue_of{tpat_id}";
-            my $direction = $dircode_of_thea{ $patvalue_of{tpat_direction} }
-              or emit_text("Unknown direction: $patvalue_of{tpat_direction}");
-
-            $patterns{$key}{DIRECTION} = $direction;
-
-        }
-
-    } ## tidy end: foreach my $file ( @{ $files_of_r...})
-
-    emit_done;
-
-    emit 'Reading THEA trippatternstops files';
-
-    foreach my $file ( @{ $files_of_r->{'trippatternstops'} } ) {
-
-        emit_over $file;
-        my ( $fh, @headers )
-          = open_thea_file( $file, 'trippatternstops', $theafolder );
-
-        while (<$fh>) {
-            trim;
-
-            my %patvalue_of;
-            @patvalue_of{@headers} = split("\t");
-
-            my $key
-              = "$patvalue_of{'item tpat_route'}:$patvalue_of{'item tpat_id'}";
-
-            next unless exists $patterns{$key};
-
-            $patterns{$key}{STOPS}[ $patvalue_of{tpat_stp_rank} ] = {
-                STOPID                => $patvalue_of{stp_511_id},
-                PLACE_OF_STOP         => $patvalue_of{tpat_stp_plc},
-                PLACESEQUENCE_OF_STOP => $patvalue_of{tpat_stp_tp_sequence},
-            };
-
-            $patterns{$key}{PLACES}{ $patvalue_of{tpat_stp_tp_sequence} }
-              = $patvalue_of{tpat_stp_plc};
-
-        } ## tidy end: while (<$fh>)
-
-    } ## tidy end: foreach my $file ( @{ $files_of_r...})
-
-    emit_done;
-
-    return %patterns;
-
-} ## tidy end: sub get_patterns
-
-sub get_file_names {
-    emit 'Assembling list of THEA files';
-
-    my $theafolder = shift;
-    my %files_of;
-    foreach my $filetype (@thea_filetypes) {
-        my @files = $theafolder->glob_plain_files("*$filetype.txt");
-
-        foreach my $file (@files) {
-            push @{ $files_of{$filetype} }, filename($file);
-        }
-    }
-    emit_done;
-    return %files_of;
-}
-
-sub open_thea_file {
-
-    my ( $file, $filetype, $theafolder ) = @_;
-
-    my $fh      = $theafolder->open_read($file);
-    my $line    = trim( scalar(<$fh>) );
-    my @headers = split( "\t", $line );
-
-    foreach my $required_header ( @{ $required_headers{$filetype} } ) {
-        if ( not $required_header ~~ @headers ) {
-            die "Required header $required_header not found in file $file";
-        }
-
-    }
-
-    return $fh, @headers;
-
-}
-
-__END__
-
