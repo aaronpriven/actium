@@ -17,12 +17,12 @@ use Text::Trim;
 use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Sked::Days;
 
-use constant { P_DIRECTION => 0, P_STOPS => 1, P_PLACES => 2 };
-use constant {
-    T_DAYS    => 0,
-    T_VEHICLE => 1,
-    T_TIMES   => 2,
-};
+use Actium::Constants;
+
+use English '-no_match_vars';
+
+use constant { P_DIRECTION => 0, P_STOPS   => 1, P_PLACES => 2 };
+use constant { T_DAYS      => 0, T_VEHICLE => 1, T_TIMES  => 2 };
 
 sub HELP {
 
@@ -35,7 +35,6 @@ HELP
     Actium::Term::output_usage();
 
 }
-
 
 my %dircode_of_thea = (
     Northbound       => 'NB',
@@ -63,19 +62,57 @@ my %required_headers = (
     tripstops => [qw<trp_int_number tstp_position tstp_passing_time>],
 );
 
-
-
 sub START {
 
     my $signup     = Actium::Signup->new;
     my $theafolder = $signup->subfolder('thea');
 
     my $patterns_r = get_patterns($theafolder);
-    my ($trip_of_tnum_r , $trips_of_patkey_r) = get_trips($theafolder);
     
+    my ( $trip_of_tnum_r, $trips_of_patkey_r ) = get_trips($theafolder);
     
-    
+    output_debugging_patterns($signup, $patterns_r);
+ 
 
+}
+
+sub output_debugging_patterns {
+   my $signup = shift;
+   my $patterns_r = shift;
+ 
+   my $fh = $signup->open_write('thea_patterns.txt');
+    
+    foreach my $patkey (sort keys $patterns_r) {
+     
+        my $direction = $patterns_r->{$patkey}[P_DIRECTION];
+        
+        my @stopinfos = @{$patterns_r->{$patkey}[P_STOPS]};
+        my @stops;
+        foreach my $stopinfo (@stopinfos) {
+             my $text = shift $stopinfo;
+             if (scalar @$stopinfo) {
+                 my $plc = shift $stopinfo;
+                 my $seq = shift $stopinfo;
+                 $text .= ":$plc:$seq";
+             }
+             push @stops, $text;
+         
+        }
+        my $stops = join(" " , @stops);
+        
+        my %places = %{$patterns_r->{$patkey}[ P_PLACES() ]};
+        my @places;
+        
+        foreach my $seq (sort { $a <=> $b } keys %places) {
+            push @places, "$seq:$places{$seq}";
+        }
+        my $places = join(" " , @places);
+         
+        say $fh "$patkey\t$direction\n$stops\n$places\n";
+        
+    }
+    
+    close $fh or die "Can't close thea_patterns.txt: $OS_ERROR"; 
 }
 
 #my %is_a_valid_trip_type = { Regular => 1, Opportunity => 1 };
@@ -91,13 +128,13 @@ sub get_trips {
         my $value_of_r = shift;
 
         return unless $value_of_r->{trp_is_in_service};
-#        return unless $is_a_valid_trip_type{ $value_of_r->{trp_type} };
+        #        return unless $is_a_valid_trip_type{ $value_of_r->{trp_type} };
         my $tnum = $value_of_r->{trp_int_number};
-        
-        my $patkey 
+
+        my $patkey
           = $value_of_r->{trp_route} . ':' . $value_of_r->{trp_pattern};
-        
-        push @{$trips_of_patkey{$patkey}}, $tnum;
+
+        push @{ $trips_of_patkey{$patkey} }, $tnum;
 
         my $vehicle = $value_of_r->{trp_veh_groups};
         $trip_of_tnum{$tnum}[T_VEHICLE] = $vehicle if $vehicle;
@@ -123,12 +160,12 @@ sub get_trips {
 
     my $tripstops_callback = sub {
         my $value_of_r = shift;
-        my $tnum = $value_of_r->{trp_int_number};
-        
+        my $tnum       = $value_of_r->{trp_int_number};
+
         return unless exists $trip_of_tnum{$tnum};
-        
-        $trip_of_tnum{$tnum}[T_TIMES][$value_of_r->{tstp_position}-1] = 
-           $value_of_r->{tstp_passing_time};
+
+        $trip_of_tnum{$tnum}[T_TIMES][ $value_of_r->{tstp_position} - 1 ]
+          = $value_of_r->{tstp_passing_time};
 
     };
 
@@ -152,6 +189,7 @@ sub make_days_obj {
     my $trp_event  = shift;
 
     $day_digits =~ s/0/7H/;
+    # Thea uses 0 instead of 7 for Sunday, as Hastus Standard AVL did.
     $day_digits = join( '', sort ( split( //, $day_digits ) ) );
     # sort $theaday by characters - putting 7 at end
 
@@ -173,7 +211,7 @@ sub get_patterns {
 
         my $value_of_r = shift;
 
-        return unless $value_of_r->{tpat_in_service};
+        return unless $value_of_r->{tpat_in_serv};
         return unless $value_of_r->{tpat_trips_match};
         my $tpat_route     = $value_of_r->{tpat_route};
         my $tpat_id        = $value_of_r->{tpat_id};
@@ -235,8 +273,8 @@ sub get_patterns {
     );
 
     emit_done;
-
-    return %patterns;
+    
+    return \%patterns;
 
 } ## tidy end: sub get_patterns
 
