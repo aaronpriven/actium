@@ -20,7 +20,7 @@ use Actium::Term;
 use Actium::Util('filename');
 
 use Readonly;
-Readonly my $LINES_BETWEEN_EMITTING_PERCENTAGES => 2000;
+Readonly my $LINES_BETWEEN_EMITTING_PERCENTAGES => 5000;
 
 use Sub::Exporter -setup => { exports => [qw(read_tab_files)] };
 
