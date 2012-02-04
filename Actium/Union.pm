@@ -14,8 +14,10 @@ use Algorithm::Diff qw(sdiff traverse_sequences);
 use Scalar::Util ('reftype');
 
 use Exporter qw( import );
-our @EXPORT_OK = qw(ordered_union distinguish comm);
+our @EXPORT_OK = qw(ordered_union distinguish comm ordered_union_columns);
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+
+use Params::Validate (':all');
 
 sub ordered_union {
     my @array_rs = @_;
@@ -111,7 +113,200 @@ sub _comm_unchecked {
     # should have been /A L M 1 2 Z/ instead, but we can be pretty sure
     # that interleaving them -- /A 1 L M 2 Z/ or /A 1 L 2 M Z/ -- is wrong.
 
-}
+} ## tidy end: sub _comm_unchecked
+
+my $sets_callback = {
+    'not a list of lists' => sub {
+        my $sets_r = shift;
+        foreach ( @{$sets_r} ) {
+            my $reftype = reftype($_);
+            if ( not( $reftype and $reftype eq 'ARRAYREF' ) ) {
+                return 0;
+            }
+            return 1;
+        }
+      }
+};
+
+my $set_ids_callback = {
+    'different number of set IDs as sets' => sub {
+        my $set_ids_r = shift;
+        my $sets_r    = $_[0]->{sets};
+        return ( scalar @$set_ids_r == scalar @$sets_r );
+      }
+};
+
+my $ordered_union_columns_validspec = {
+    sets => { type => ARRAYREF, callback => $sets_callback, },
+    ids  => { type => ARRAYREF, optional => 1, callback => $set_ids_callback },
+    tiebreaker => {
+        type    => CODEREF,
+        default => sub { return 0 }
+    },
+};
+
+sub ordered_union_columns {
+
+    ### GET PARAMETERS
+
+    my %params = validate( @_, $ordered_union_columns_validspec );
+
+    my ( @set_rs, @set_ids, $tiebreaker );
+
+    @set_rs = @{ $params{sets} };
+
+    if ( $params{ids} ) {
+        @set_ids = @{ $params{ids} };
+    }
+    else {
+        @set_ids = ( 0 .. $#set_rs );
+    }
+
+    @set_rs = reverse sort { @{$a} <=> @{$b} or "@{$a}" cmp "@{$b}" } @set_rs;
+
+    # sort it so the list with the most entries is first,
+    # or alternatively the one that sorts alphabetically latest.
+    # The latter test is arbitrary, just to make sure the
+    # result is the same each time.
+
+    ### INITIALIZE LOOP OF ARRAYS
+
+    my $union_set_r  = shift @set_rs;
+    my $highest_col  = $#{$union_set_r};
+    my $union_cols_r = [ 0 .. $highest_col ];
+
+    my $first_set_id = shift @set_ids;
+    my %cols_of = { $first_set_id => [ 0 .. $highest_col ] };
+
+    my $markers_r;
+
+    while (@set_rs) {
+        my $set_r  = shift @set_rs;
+        my $set_id = shift @set_ids;
+        my $set_cols;
+
+        ( $union_set_r, $union_cols_r, $markers_r, $set_cols )
+          = _columns_pair( $union_set_r, $union_cols_r, $set_r, $highest_col,
+            $tiebreaker );
+
+        $cols_of{$set_id} = $set_cols;
+
+    }
+
+    ### CONVERT COLUMN IDS TO COLUMN INDEXES
+    # previous column IDs aren't in numeric order. 
+    # This makes indexes that are in order.
+
+    # go through the list of column id, and identify the index of that id
+    my %idx_of_id;
+    for my $idx ( 0 .. $#{$union_cols_r} ) {
+        my $id = $union_cols_r->[$idx];
+        $idx_of_id{$id} = $idx;
+    }
+
+    # set the $col_idx_of{$set_id} to be the numeric index of
+    # the values in $col_of{$set_id}
+    my %col_idxs_of;
+    foreach my $set_id ( keys %cols_of ) {
+        $col_idxs_of{$set_id}
+          = [ map { $idx_of_id{$_} } @{ $cols_of{$set_id} } ];
+    }
+
+    my %return = (
+        union      => $union_set_r,
+        markers    => $markers_r,
+        columns_of => \%col_idxs_of,
+    );
+
+} ## tidy end: sub ordered_union_columns
+
+sub _columns_pair {
+
+    my ( $a_r, $a_col_r, $b_r, $highest_col, $tiebreaker ) = @_;
+
+    my ( @union, @u_col, @b_col,     @markers );
+    my ( @tempa, @tempb, @tempa_col, @tempb_col );
+
+    my $only_in_a = sub {
+        my $idx = $_[0];
+        push @tempa,     $a_r->[$idx];
+        push @tempa_col, $a_col_r->[$idx];
+
+        # when we get a value that's only in the first list,
+        # we add it to the temporary first list, and
+        # add the previously generated column id to the temporary
+        # first column list. The temporary lists are added
+        # to the union lists later
+
+    };
+
+    my $only_in_b = sub {
+        push @tempb, $b_r->[ $_[1] ];
+        my $thiscol = $highest_col++;
+        push @tempb_col, $thiscol;
+        push @b_col,     $thiscol;
+
+        # when we get a value that's only in the second list,
+        # we add it to the temporary second list, and
+        # generated a new column id, which we put in the temporary
+        # second column list, and also the b column list.
+        # The temporary lists are added to the union lists later.
+        # The b column list is returned to ordered_union_columns, and
+        # stored associated with the b list's id.
+
+    };
+
+    my $add_temps_to_union_r = sub {
+        my $following_value = shift;
+        
+        my $previous_value = @union ? $union[-1] : undef;
+        
+        my $afirst = ( $tiebreaker->( \@tempa, \@tempb , 
+             $previous_value, $following_value) <= 0 );
+
+        if ($afirst) {
+            push @union, @tempa,     @tempb;
+            push @u_col, @tempa_col, @tempb_col;
+            push @markers, ('<') x @tempa, ('>') x @tempb;
+        }
+        else {
+            push @union, @tempb,     @tempa;
+            push @u_col, @tempb_col, @tempa_col;
+            push @markers, ('>') x @tempb, ('<') x @tempa;
+        }
+
+        @tempa     = ();
+        @tempa_col = ();
+        @tempb     = ();
+        @tempb_col = ();
+
+    };
+
+    my $match = sub {
+
+        my $matching_value = $a_r->[ $_[0] ];
+        
+        $add_temps_to_union_r->($matching_value);
+
+        push @union,   $matching_value;
+        push @u_col,   $a_col_r->[ $_[0] ];
+        push @markers, '=';
+
+    };
+
+    traverse_sequences(
+        $a_r, $b_r,
+        {   MATCH     => $match,
+            DISCARD_A => $only_in_a,
+            DISCARD_B => $only_in_b,
+        }
+    );
+
+    $add_temps_to_union_r->();
+
+    return ( \@union, \@u_col, \@markers, \@b_col );
+
+} ## tidy end: sub _columns_pair
 
 sub _check_arrayrefs {
     #my $caller    = '$' . shift . '()';
@@ -288,7 +483,7 @@ This documentation refers to Actium::Union version 0.001
  
 =head1 DESCRIPTION
 
-Actium::Union consists of three specialized set functions.
+Actium::Union consists of four specialized set functions.
 
 =head1 SUBROUTINES
 
@@ -351,6 +546,101 @@ then the result from comm would be
  
 Unlike I<ordered_union>, I<comm> can accept only two lists as arguments.
 
+=item B<ordered_union_columns>
+
+ordered_union_columns is an elaboration on ordered_union. It takes the 
+following named parameters, which may be specified in a hash or as a hash 
+reference. (L<Params::Validate|Params::Validate> is used for validating 
+parameters.)
+
+=over
+
+=item sets
+
+This must be an array reference, containing references to other arrays which
+are the sets that are unified. It is required.
+
+=item ids
+
+This is another array reference. It should contain a unique ID for each set
+that is passed. This is used in the columns_of return value. If it is not
+specified, the lists are assigned the ids ( 0, 1, 2, ... ) and so on.
+
+=item tiebreaker
+
+When there is a sequence that differs between the two lists (such as the 
+qw/5 1 a/ and qw/p @/ seqeuences from the example above), there is no way for
+the algorithm to know which goes first. The tiebreaker parameter allows the user
+to pass in a function that will determine whether a first list or second list
+will go first. It should return a value less than zero if the first list should 
+go first, zero if it can't make a determination, or a value greater than zero if
+the second list should go first. (The values are chosen to be similar to the
+blocks in the sort function, and to allow easy use of the <=> and cmp operators.
+
+An example:
+
+ tiebreaker => sub { 
+     my @a = @{+shift};
+     my @b = @{+shift};
+     return @a <=> @b;
+ };
+ 
+That would put the longest sequence first.
+
+Four arguments are passed to the tiebreaker function: a reference to the first
+sequence, a reference to the second sequence, the value in the combined list 
+that would come before the two sequences (or undef if there is none), and the
+value in the combined list that would come after the two sequences.
+
+=back
+
+The return values are passed in a hash reference, which has the following 
+values:
+
+=over
+
+=item union
+
+This contains the new unified list, the same as that which would be 
+returned by ordered_union (barring the effect of tiebreakers).
+
+=item markers
+
+This contains a set of markers such as that returned by comm() (see above). 
+The values are not meaningful unless exactly two lists were passed to the
+function.
+
+=item columns_of
+
+This is a hash reference. The keys are the id's for each of the lists, and the
+values are array references indicating what column in the unified list
+corresponds to each column in the passed lists.
+
+For example, suppose we take the union of the following lists:
+
+ ID 'A':  qw/m v c 6   f e w 5 ! a t       m/
+ ID 'B':  qw/m v c 6 z f   w p @   t r x y m/
+ 
+The union would be, with the column numbers below it:
+ union            =>  qw/m v c 6 z f e w 5 !  a  p  @  t  r  x  y  m/
+  (union columns)        0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+
+ 
+The columns_of hash would look like:
+
+ columns => { A => [0 1 2 3 5 6 7 8 9 10 13 17] ,
+#                qw/m v c 6 f e w 5 !  a  t  m/
+
+              B => [0 1 2 3 4 5 7 11 12 13 14 15 16 17 ] }
+#                qw/m v c 6 z f w  p  @  t  r  x  y m/
+ 
+The idea is that if I have a column of data that matches the headers in list
+B, that I can then put that column in the right place in the unified list.
+
+=back
+
+
+
 =item B<distinguish()>
 Takes a series of array references as arguments, and provides in turn the relevant
 elements from each list, in order to describe the differences between them.
@@ -402,14 +692,22 @@ other than two were passed to it.
 
 =item Algorithm::Diff
 
+=item Params::Validate
+
 =back
 
 =head1 BUGS AND LIMITATIONS
 
-There's no good way of determining whether the union of qw/M Q V/ and
-qw/M L V/ should be qw/M L Q V/ or qw/M Q L V/. I think this is insoluble
-without having more information (e.g., when the letters represent bus stops,
-which bus stops are closer).
+The ordered_union_columns routine was written later, and arguably all
+three of ordered_union, comm, and ordered_union_columns should be combined
+in some way (the way ordered_union and comm already are).
+
+The distingish routine needs better comments in the code.
+
+The comm routine could be redone so that instead of using symbols,
+it uses IDs -- this would allow more than one to be used. (In the simplest case,
+"<" would be "A", ">" would be "B", and "=" would be the combination of A and B,
+probably "A\tB").
 
 =head1 AUTHOR
 
