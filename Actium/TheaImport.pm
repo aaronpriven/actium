@@ -17,6 +17,8 @@ use Text::Trim;
 use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Sked::Days;
 
+use Actium::Union('ordered_union_columns');
+
 use Actium::Constants;
 
 use English '-no_match_vars';
@@ -67,13 +69,19 @@ sub START {
     my $signup     = Actium::Signup->new;
     my $theafolder = $signup->subfolder('thea');
 
-    my $patterns_r = get_patterns($theafolder);
+    my ($patterns_r, $patkeys_of_routedir_r) = get_patterns($theafolder);
     
     my ( $trip_of_tnum_r, $trips_of_patkey_r ) = get_trips($theafolder);
     
-    output_debugging_patterns($signup, $patterns_r);
- 
+    my $union_patterns_r = make_union_patterns ($patterns_r);
+    
 
+}
+
+sub make_union_patterns {
+   my $patterns_r = shift;
+   
+ 
 }
 
 sub output_debugging_patterns {
@@ -204,6 +212,7 @@ sub make_days_obj {
 sub get_patterns {
     my $theafolder = shift;
     my %patterns;
+    my %patkeys_of_routedir;
 
     emit 'Reading THEA trippattern files';
 
@@ -216,12 +225,16 @@ sub get_patterns {
         my $tpat_route     = $value_of_r->{tpat_route};
         my $tpat_id        = $value_of_r->{tpat_id};
         my $tpat_direction = $value_of_r->{tpat_direction};
+        my $routedir = "$tpat_route:$tpat_direction";
 
         my $key       = "$tpat_route:$tpat_id";
+        
+        push @{$patkeys_of_routedir{$routedir}} , $key;
         my $direction = $dircode_of_thea{$tpat_direction}
           or emit_text("Unknown direction: $tpat_direction");
 
         $patterns{$key}[ P_DIRECTION() ] = $direction;
+        
     };
 
     read_tab_files(
@@ -274,7 +287,7 @@ sub get_patterns {
 
     emit_done;
     
-    return \%patterns;
+    return \%patterns, \%patkeys_of_routedir;
 
 } ## tidy end: sub get_patterns
 
