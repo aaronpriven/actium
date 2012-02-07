@@ -43,8 +43,8 @@ EOF
 
 my $intro = "avl2skeds - reads stored AVL data and makes skeds files";
 
-use Actium::Signup;
-my $signup = Actium::Signup->new();
+use Actium::Folders::Signup;
+my $signup = Actium::Folders::Signup->new();
 chdir $signup->get_dir();
 
 # don't buffer terminal output

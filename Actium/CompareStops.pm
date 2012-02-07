@@ -19,7 +19,7 @@ use Actium::Sorting::Travel(qw<travelsort>);
 use Actium::Constants;
 use Actium::Term ('output_usage');
 use Actium::Options (qw<add_option option>);
-use Actium::Signup;
+use Actium::Folders::Signup;
 use Actium::Util (qw<jt jn>);
 
 use Algorithm::Diff;
@@ -64,8 +64,8 @@ HELP
 
 sub START {
 
-    my $newsignup = Actium::Signup->new();
-    my $oldsignup = Actium::Signup->new( { signup => option('oldsignup') } );
+    my $newsignup = Actium::Folders::Signup->new();
+    my $oldsignup = Actium::Folders::Signup->new( { signup => option('oldsignup') } );
 
     my $skipped_lines_r = [ split( /,/, option('skiplines') ) ];
 

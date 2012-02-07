@@ -14,7 +14,7 @@ package Actium::Patterns 0.001;
 use Actium::Constants;
 use Actium::Files::HastusASI;
 use Actium::Files::FMPXMLResult;
-use Actium::Signup;
+use Actium::Folders::Signup;
 use Actium::Term  (':all');
 use Actium::Union ('ordered_union');
 use Actium::Util qw(jk doe);
@@ -29,7 +29,7 @@ use English('-no_match_vars');
 
 sub START {
 
-    my $signup     = Actium::Signup->new();
+    my $signup     = Actium::Folders::Signup->new();
     my $flagfolder = $signup->subfolder('flags');
 
     my $xml_db  = $signup->load_xml;

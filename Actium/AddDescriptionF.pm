@@ -16,7 +16,7 @@ use warnings;
 
 use autodie;
 
-use Actium::Signup;
+use Actium::Folders::Signup;
 use Actium::Files::FMPXMLResult;
 use Actium::Term;
 
@@ -24,7 +24,7 @@ sub HELP { say "Help not implemented"; }
 
 sub START {
  
-   my $signup = Actium::Signup->new;
+   my $signup = Actium::Folders::Signup->new;
    
    my $xml_db = $signup->load_xml;
    $xml_db->ensure_loaded('Stops');

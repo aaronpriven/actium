@@ -27,12 +27,11 @@ use Actium::Union('ordered_union');
 use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 
 use List::MoreUtils('natatime');
-use Actium::Signup;
+use Actium::Folders::Signup;
 
 use File::Slurp;
 use Text::Trim;
 
-use Actium::Signup;
 use Actium::Options;
 
 use Actium::Points::Point;
@@ -59,7 +58,7 @@ EOF
 
 sub START {
 
-    my $signup = Actium::Signup->new();
+    my $signup = Actium::Folders::Signup->new();
     chdir $signup->path();
 
     my $pointdir = $signup->subfolder($IDPOINTFOLDER);

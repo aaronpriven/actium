@@ -11,11 +11,11 @@ use warnings;
 package Actium::Buildskeds 0.001;
 
 use Actium::Headways;
-use Actium::Signup;
+use Actium::Folders::Signup;
 
 sub START {
 
-   my $signup = Actium::Signup->new();
+   my $signup = Actium::Folders::Signup->new();
    
    my @skeds = build_skeds($signup);
    

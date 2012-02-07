@@ -30,8 +30,8 @@ add_option ('upcoming:s' , 'Upcoming signup');
 add_option ('current:s' , 'Current signup');
 
 use Actium::Term (qw<printq sayq>);
-use Actium::Signup;
-my $signupdir = Actium::Signup->new();
+use Actium::Folders::Signup;
+my $signupdir = Actium::Folders::Signup->new();
 chdir $signupdir->get_dir();
 
 my $signup = $signupdir->get_signup;

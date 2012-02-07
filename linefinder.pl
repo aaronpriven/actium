@@ -22,11 +22,11 @@ use Linelist('linelist');
 use Actium::Options (qw<option add_option init_options>);
 #add_option ('spec' , 'description');
 use Actium::Term (qw<printq sayq>);
-use Actium::Signup;
+use Actium::Folders::Signup;
 
 init_options;
 
-my $signupdir = Actium::Signup->new();
+my $signupdir = Actium::Folders::Signup->new();
 chdir $signupdir->path();
 my $signup = $signupdir->signup;
 

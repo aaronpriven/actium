@@ -50,8 +50,8 @@ readavl - reads AVL files from Hastus and stores them in an easier-
 to-read-form.
 EOF
 
-use Actium::Signup;
-my $signup = Actium::Signup->new();
+use Actium::Folders::Signup;
+my $signup = Actium::Folders::Signup->new();
 chdir $signup->get_dir();
 
 # set up row type hashes

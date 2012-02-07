@@ -8,13 +8,13 @@ use lib $Bin;
 
 use Actium::Options ('init_options');
 
-use Actium::Signup;
+use Actium::Folders::Signup;
 
 use Actium::Sked;
 
 init_options;
 
-my $skedsfolder = Actium::Signup->new(
+my $skedsfolder = Actium::Folders::Signup->new(
     {   base       => '/Users/aaron/Dev/signups/',
         signup     => 'sp11',
         subfolders => 'skeds',

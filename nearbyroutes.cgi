@@ -22,7 +22,7 @@ use English qw(-no_match_vars);
 
 use Actium::Options qw(add_option init_options option);
 
-use Actium::Signup;
+use Actium::Folders::Signup;
 
 use Actium::NearbyRoutes;
 
@@ -38,7 +38,7 @@ my $q = CGI->new();
 
 my $address = param(address);
 
-my $signup     = Actium::Signup->new();
+my $signup     = Actium::Folders::Signup->new();
 my $dbfilespec = $signup->make_filespec($dbname);
 
 Geo::Coder::US->set_db($dbfilespec);
