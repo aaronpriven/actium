@@ -11,7 +11,7 @@ use sort ('stable');
 use FindBin('$Bin');
 use lib ( $Bin, "$Bin/../bin" );
 
-use Actium::Sorting('sortbyline');
+use Actium::Sorting::Line ('sortbyline');
 use Actium::Constants;
 use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 

@@ -38,7 +38,7 @@ EOF
 
 my $intro = 'avl2patdest -- patterns and destinations';
 
-use Actium::Sorting('byline');
+use Actium::Sorting::Line('byline');
 use Actium::Options;
 use Actium::Signup;
 my $signup = Actium::Signup->new();

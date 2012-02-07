@@ -29,7 +29,7 @@ use Storable();
 use Actium::Util ('jt');
 use Actium::Constants;
 use Actium::Union('ordered_union');
-use Actium::Sorting (qw(sortbyline));
+use Actium::Sorting::Line (qw(sortbyline));
 use Actium::DaysDirections (':ALL');
 
 use Actium::Options;

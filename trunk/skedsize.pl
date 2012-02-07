@@ -27,7 +27,7 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 use Skedfile qw(Skedread );
-use Actium::Sorting ('sortbyline');
+use Actium::Sorting::Line ('sortbyline');
 use List::Util;
 
 ######################################################################
