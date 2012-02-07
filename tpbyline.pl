@@ -20,7 +20,7 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
-use Actium::Sorting 'byline';
+use Actium::Sorting::Line 'byline';
 use Data::Dumper;
 
 use Actium::Options (qw<option add_option>);

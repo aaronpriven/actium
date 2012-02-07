@@ -16,7 +16,7 @@ use MooseX::SemiAffordanceAccessor;
 use Moose::Util::TypeConstraints;
 
 use Actium::Constants;
-use Actium::Sorting (qw(byline sortbyline));
+use Actium::Sorting::Line (qw(byline sortbyline));
 use List::MoreUtils('natatime');
 
 use POSIX ();

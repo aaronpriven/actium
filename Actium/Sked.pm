@@ -23,7 +23,7 @@ use List::Util ('first');
 
 use Actium::Util(qw<:ALL>);
 use Actium::Time(qw<:all>);
-use Actium::Sorting qw<sortbyline linekeys>;
+use Actium::Sorting::Line qw<sortbyline linekeys>;
 use Actium::Constants;
 
 use Actium::Types (qw/DirCode HastusDirCode ActiumSkedDir ActiumSkedDays/);

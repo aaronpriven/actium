@@ -20,7 +20,7 @@ use POSIX ('ceil');
 #use Fatal qw(open close);
 use Storable();
 
-use Actium::Sorting ( qw<sortbyline>);
+use Actium::Sorting::Line ( qw<sortbyline>);
 use Actium::Constants;
 
 my $helptext = <<'EOF';

@@ -28,7 +28,7 @@ use POSIX ('ceil');
 use Storable();
 
 use Actium::Util(qw<jt>);
-use Actium::Sorting (qw[sortbyline]);
+use Actium::Sorting::Line (qw[sortbyline]);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 

@@ -15,7 +15,7 @@ use English '-no_match_vars';
 use autodie;
 use Text::Trim;
 use Actium::EffectiveDate ('effectivedate');
-use Actium::Sorting ( 'sortbyline', 'byline' );
+use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ('ems', 'char_width');

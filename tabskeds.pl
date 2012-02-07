@@ -28,7 +28,7 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 
-use Actium::Sorting ('sortbyline');
+use Actium::Sorting::Line ('sortbyline');
 use Skedfile qw(Skedread Skedwrite GETFILES_PUBLIC
                 getfiles GETFILES_PUBLIC_AND_DB trim_sked copy_sked);
 

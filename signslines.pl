@@ -32,7 +32,7 @@ use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 use IDTags;
 use Skedvars;
 use Skedtps qw(tphash tpxref);
-use Actium::Sorting ('byline');
+use Actium::Sorting::Line ('byline');
 
 $| = 1; # this shouldn't be necessary to a terminal, but apparently it is
 

@@ -14,7 +14,7 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
-use Actium::Sorting (qw(sortbyline));
+use Actium::Sorting::Line (qw(sortbyline));
 
 use Actium::Options (qw<option add_option>);
 use Actium::Term (qw<printq sayq>);

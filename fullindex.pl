@@ -27,7 +27,7 @@ use lib $Bin;
 use Skedfile qw(Skedread Skedwrite trim_sked copy_sked remove_blank_columns);
 use Storable;
 use Algorithm::Diff;
-use Actium::Sorting (qw(sortbyline));
+use Actium::Sorting::Line (qw(sortbyline));
 
 use Actium::Options (qw<option add_option>);
 

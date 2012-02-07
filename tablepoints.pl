@@ -49,7 +49,7 @@ use IDTags;
 use Skedfile qw(Skedread merge_columns);
 use Skedvars;
 use Skedtps qw(tphash tpxref);
-use Actium::Sorting 'byline';
+use Actium::Sorting::Line 'byline';
 
 use Actium::Options (qw<option add_option>);
 #add_option ('spec' , 'description');

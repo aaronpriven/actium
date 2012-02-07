@@ -24,7 +24,7 @@ use Storable();
 
 use Actium::Time (qw(timenum ));
     
-use Actium::Sorting('sortbyline');
+use Actium::Sorting::Line('sortbyline');
     
 use Actium::Util(qw<jk>);
 
