@@ -16,7 +16,7 @@ use Carp;
 use Storable();
 use English ('-no_match_vars');
 
-use Actium::Sorting(qw<travelsort>);
+use Actium::Sorting::Travel(qw<travelsort>);
 use Actium::Constants;
 use Actium::Term ('output_usage');
 use Actium::Options (qw<add_option option>);
@@ -120,7 +120,7 @@ uses specify options. See:
 
 =item L<OPTIONS in Actium::Signup|Actium::Signup/OPTIONS>
 
-=item L<OPTIONS in Actium::Sorting|Actium::Sorting/OPTIONS>
+=item L<OPTIONS in Actium::Sorting::Travel|Actium::Sorting::Travel/OPTIONS>
 
 =item L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
 
@@ -176,7 +176,7 @@ signup) or there may be some other error.
 
 =item Actium::Signup
 
-=item Actium::Sorting
+=item Actium::Sorting::Travel
 
 =back
 

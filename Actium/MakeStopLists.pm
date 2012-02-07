@@ -17,7 +17,7 @@ use Actium::Patterns::Route;
 
 use Actium::Stoplists::ByDirection;
 use Actium::Term;
-use Actium::Sorting('sortbyline');
+use Actium::Sorting::Line('sortbyline');
 use Actium::Sked::Dir;
 
 my $xml_db;

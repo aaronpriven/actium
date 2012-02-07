@@ -17,7 +17,7 @@ use Storable();
 
 use Actium::Term('sayq');
 
-use Actium::Sorting('byline');
+use Actium::Sorting::Line ('byline');
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils('uniq');

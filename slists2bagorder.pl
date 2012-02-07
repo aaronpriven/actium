@@ -19,7 +19,7 @@ use lib ($Bin , "$Bin/../bin");
 use Carp;
 use Storable();
 
-use Actium::Sorting( qw<byline>);
+use Actium::Sorting::Line( qw<byline>);
 use Actium::Constants;
 use List::Util (qw<max>);
 

@@ -40,7 +40,7 @@ my $signup = $signupdir->get_signup;
 use Skedfile qw(Skedread Skedwrite GETFILES_PUBLIC
                 getfiles GETFILES_PUBLIC_AND_DB trim_sked copy_sked);
 use Skedvars qw(%daydirhash %adjectivedaynames %bound %specdaynames);
-use Actium::Sorting (qw(sortbyline));
+use Actium::Sorting::Line (qw(sortbyline));
 use Skedtps qw(tphash TPXREF_FULL);
 use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 

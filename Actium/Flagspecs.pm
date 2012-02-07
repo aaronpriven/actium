@@ -12,7 +12,7 @@ package Actium::Flagspecs;
 our $VERSION = '0.001';
 $VERSION = eval $VERSION;    ## no critic (StringyEval)
 
-use Actium::Sorting (qw/sortbyline byline/);
+use Actium::Sorting::Line (qw/sortbyline byline/);
 use Actium::Util qw(sk jn j jk jt keyreadable);
 use Actium::Union (qw/ordered_union distinguish/);
 use Actium::DaysDirections(':ALL');

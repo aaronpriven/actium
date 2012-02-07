@@ -23,7 +23,7 @@ use lib $Bin;
 # libraries dependent on $Bin
 
 use Skedfile qw(Skedread Skedwrite remove_blank_columns);
-use Actium::Sorting (qw(sortbyline));
+use Actium::Sorting::Line (qw(sortbyline));
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory
