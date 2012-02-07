@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Patterns::Pattern 0.001;
+package Actium::Pattern 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;

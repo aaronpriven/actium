@@ -1,4 +1,4 @@
-# Actium/Patterns.pm
+# Actium/Cmd/Patterns.pm
 
 # Subversion: $Id$
 
@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Patterns 0.001;
+package Actium::Cmd::Patterns 0.001;
 
 use Actium::Constants;
 use Actium::Files::HastusASI;
@@ -19,7 +19,7 @@ use Actium::Term  (':all');
 use Actium::Union ('ordered_union');
 use Actium::Util qw(jk doe);
 
-use Actium::Patterns::Pattern;
+use Actium:::Pattern;
 use Actium::Patterns::Stop;
 use Actium::Patterns::Stop::PatternRelation;
 use Actium::Patterns::Route;
@@ -196,7 +196,7 @@ sub _build_pattern_obj {
 
     #$direction = $DIRCODES[$HASTUS_DIRS[$direction]];
 
-    my $pattern_obj = Actium::Patterns::Pattern->new(
+    my $pattern_obj = Actium:::Pattern->new(
         {
             route      => $route,
             direction  => $direction,

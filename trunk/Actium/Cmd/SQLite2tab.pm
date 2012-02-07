@@ -1,4 +1,4 @@
-# Actium/SQLite2tab.pm
+# Actium/Cmd/SQLite2tab.pm
 
 # File for getting tab-delimted files from Actium::Files::SQLite
 
@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::SQLite2tab 0.001;
+package Actium::Cmd::SQLite2tab 0.001;
 
 use Actium::Folders::Signup;
 use Actium::Util qw(jt );

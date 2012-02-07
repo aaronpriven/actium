@@ -387,7 +387,7 @@ sub format_columns {
         }    ## <perltidy> end foreach my $i ( 0 .. $column...)
 
         my $column_length
-          = $Actium::MakePoints::signtypes{$signtype}{TallColumnLines};
+          = $Actium::Cmd::MakePoints::signtypes{$signtype}{TallColumnLines};
         my $formatted_columns;
 
         if ($column_length) {
@@ -470,7 +470,7 @@ sub format_side {
     print $sidefh 'Light Face = a.m.', IDTags::softreturn;
     print $sidefh IDTags::bold('Bold Face = p.m.'), "\r";
 
-    my $sidenote = $Actium::MakePoints::signs{$signid}{Sidenote};
+    my $sidenote = $Actium::Cmd::MakePoints::signs{$signid}{Sidenote};
 
     if ( $sidenote and ( $sidenote !~ /^\s+$/ ) ) {
         $sidenote =~ s/\n/\r/g;
@@ -478,15 +478,15 @@ sub format_side {
         $sidenote =~ s/\r+$//;
         $sidenote =~ s/\0+$//;
         print $sidefh IDTags::bold(
-            $Actium::MakePoints::signs{$signid}{Sidenote} )
+            $Actium::Cmd::MakePoints::signs{$signid}{Sidenote} )
           . "\r";
     }
 
     print $sidefh $self->format_sidenotes;
 
-    my $thisproject = $Actium::MakePoints::signs{$signid}{Project};
-    if ( $Actium::MakePoints::projects{$thisproject}{'ProjectNote'} ) {
-        print $sidefh $Actium::MakePoints::projects{$thisproject}
+    my $thisproject = $Actium::Cmd::MakePoints::signs{$signid}{Project};
+    if ( $Actium::Cmd::MakePoints::projects{$thisproject}{'ProjectNote'} ) {
+        print $sidefh $Actium::Cmd::MakePoints::projects{$thisproject}
           {'ProjectNote'}, "\r";
     }
 
@@ -505,7 +505,7 @@ sub format_side {
     print $sidefh
 "See something wrong with this sign, or any other AC Transit sign? Let us know! Send email to signs\@actransit.org or call 511 to comment. Thanks!\r"
       if lc(
-        $Actium::MakePoints::signtypes{ $Actium::MakePoints::signs{$signid}
+        $Actium::Cmd::MakePoints::signtypes{ $Actium::Cmd::MakePoints::signs{$signid}
               {SignType} }{GenerateWrongText} ) eq "yes";
 
     close $sidefh;
@@ -567,7 +567,7 @@ sub format_sidenotes {
 
         if ( $attr{destination} ) {
             $dest
-              = $Actium::MakePoints::timepoints{ $attr{destination} }{TPName};
+              = $Actium::Cmd::MakePoints::timepoints{ $attr{destination} }{TPName};
             $dest =~ s/\.*$/\./;
         }
 
@@ -629,15 +629,15 @@ sub format_bottom {
     open my $botfh, '>', \$formatted_bottom;
 
     no warnings('once');
-    my $stop_r = $Actium::MakePoints::stops{$stopid};    # this is a reference
+    my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid};    # this is a reference
 
     print $botfh $stop_r->{DescriptionF}, ", ", $stop_r->{CityF};
 
     print $botfh ". Sign #$signid. Stop $stopid.";
 
     print $botfh " Shelter site #"
-      . $Actium::MakePoints::signs{$signid}{ShelterNum} . "."
-      if $Actium::MakePoints::signs{$signid}{ShelterNum};
+      . $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum} . "."
+      if $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum};
 
     close $botfh;
 
@@ -659,7 +659,7 @@ sub output {
     # output blank columns at beginning
 
     my $maxcolumns
-      = $Actium::MakePoints::signtypes{ $Actium::MakePoints::signs{$signid}
+      = $Actium::Cmd::MakePoints::signtypes{ $Actium::Cmd::MakePoints::signs{$signid}
           {SignType} }{TallColumnNum};
     my $break = IDTags::boxbreak;
 

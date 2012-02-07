@@ -19,7 +19,7 @@ use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 use Actium::Constants;
 use Actium::Term;
-use Actium::Sked::Sked;
+use Actium::Sked;
 use Text::Trim();
 use Actium::Sked::Trip;
 use Actium::Util qw<:ALL>;
@@ -135,7 +135,7 @@ sub sked {
             $day_obj = Actium::Sked::Days->new($self->days);
     }
     
-    my $sked = Actium::Sked::Sked->new(
+    my $sked = Actium::Sked->new(
         place8_r      => $self->place8_r(),
         origlinegroup => $self->origlinegroup(),
         linedescrip   => $self->linedescrip(),
@@ -156,18 +156,18 @@ __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
 =head1 NAME
 
-Actium::Headways::Page - Page objects for headway sheet processing
+Actium::HeadwayPage - Page objects for headway sheet processing
 
 =head1 VERSION
 
-This documentation refers to Actium::Headways::Page version 0.001
+This documentation refers to Actium::HeadwayPage version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Headways::Page;
+ use Actium::HeadwayPage;
 
    $headwayfileobject->add_page(
-      Actium::Headways::Page->new(
+      Actium::HeadwayPage->new(
          {   route_idx     => $self->route_idx(),
              direction_idx => $self->direction_idx(),
              lines         => [@lines_in_this_page],
@@ -180,7 +180,7 @@ This documentation refers to Actium::Headways::Page version 0.001
 This is a Moose class, representing each page of a headway sheet file. It is 
 an intermediate form used when processing pages in headway sheets.  
 
-For more information on headway sheets, see L<Actium::Headways>.
+For more information on headway sheets, see L<Actium::Cmd::Headways>.
 
 =head1 ATTRIBUTES
 

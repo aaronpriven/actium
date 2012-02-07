@@ -24,7 +24,8 @@ use Actium::Options qw(add_option init_options option);
 
 use Actium::Folders::Signup;
 
-use Actium::NearbyRoutes;
+use Actium::Cmd::NearbyRoutes;
+# TODO: move NearbyRoutes to a non-Cmd module
 
 my $dbname = 'geocoder.db';
 
@@ -43,7 +44,7 @@ my $dbfilespec = $signup->make_filespec($dbname);
 
 Geo::Coder::US->set_db($dbfilespec);
 
-my $stops_r = Actium::NearbyRoutes::load_stops($signup);
+my $stops_r = Actium::Cmd::NearbyRoutes::load_stops($signup);
 
 my @res = Geo::Coder::US->geocode($address);
 

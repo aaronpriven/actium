@@ -273,7 +273,7 @@ sub format_head_lines {
             }
             else {
                 $color
-                  = ( $Actium::MakePoints::lines{$line}{Color} or 'Grey80' );
+                  = ( $Actium::Cmd::MakePoints::lines{$line}{Color} or 'Grey80' );
             }
         }
         $color_of{$line}    = $color;
@@ -363,7 +363,7 @@ sub format_headdest {
     {
         no warnings 'once';
         use Data::Dumper;
-        $tpname = $Actium::MakePoints::timepoints{$desttp4}{TPName};
+        $tpname = $Actium::Cmd::MakePoints::timepoints{$desttp4}{TPName};
     }
 
     my $dest;

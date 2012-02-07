@@ -1,4 +1,4 @@
-# /Actium/CompareStops.pm
+# /Actium/Cmd/CompareStops.pm
 
 # Takes the old and new stops and produces comparison lists.
 
@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::CompareStops 0.001;
+package Actium::Cmd::CompareStops 0.001;
 
 use Carp;
 use English ('-no_match_vars');
