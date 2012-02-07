@@ -36,7 +36,7 @@ sub id {
 
 has 'patterns_r' => (
     is      => 'bare',
-    isa     => 'ArrayRef[Actium::Patterns::Pattern]',
+    isa     => 'ArrayRef[Actium:::Pattern]',
     default => sub { [] },
     traits  => ['Array'],
     handles => { patterns => 'elements', },

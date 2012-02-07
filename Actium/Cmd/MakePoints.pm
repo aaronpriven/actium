@@ -1,10 +1,10 @@
-# Actium/MakePoints.pm
+# Actium/Cmd/MakePoints.pm
 
 # Subversion: $Id$
 
 # legacy stage 4
 
-package Actium::MakePoints 0.001;
+package Actium::Cmd::MakePoints 0.001;
 
 use warnings;
 use strict;

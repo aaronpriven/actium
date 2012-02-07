@@ -10,7 +10,7 @@ use Actium::Options ('init_options');
 
 use Actium::Folders::Signup;
 
-use Actium::Sked::Sked;
+use Actium::Sked;
 
 init_options;
 
@@ -22,7 +22,7 @@ my $skedsfolder = Actium::Folders::Signup->new(
     }
 );
 
-my @skedobjs = Actium::Sked::Sked->load_prehistorics( $skedsfolder, undef , '3*' );
+my @skedobjs = Actium::Sked->load_prehistorics( $skedsfolder, undef , '3*' );
 
 use Data::Dumper;
 

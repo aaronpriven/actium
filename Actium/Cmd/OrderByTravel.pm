@@ -1,4 +1,4 @@
-# /Actium/OrderByTravel.pm
+# /Actium/Cmd/OrderByTravel.pm
 
 # Takes a list of stops and order it so that people can drive down a
 # particular bus route and hit as many stops as possible.
@@ -10,7 +10,7 @@
 use 5.012;
 use warnings;
 
-package Actium::OrderByTravel 0.001;
+package Actium::Cmd::OrderByTravel 0.001;
 
 use Carp;
 use Storable();

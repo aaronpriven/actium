@@ -175,7 +175,7 @@ This documentation refers to Actium::Sked::Trip.pm version 0.001
 
 This is a Moose class, representing each trip of a bus schedule. It contains
 information for each trip of a schedule. It is intended to be used by the 
-L<Actium::Sked::HeadwayPage> object and the L<Actium::Sked::Sked> object.
+L<Actium::Sked::HeadwayPage> object and the L<Actium::Sked> object.
 
 =head1 ATTRIBUTES
 

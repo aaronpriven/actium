@@ -8,9 +8,13 @@
 use 5.012;
 use warnings;
 
-package Actium::Buildskeds 0.001;
+package Actium::Cmd::Buildskeds 0.001;
 
-use Actium::Headways;
+use Actium::Cmd::Headways; 
+
+# TODO - Move Headways processing to a module not in Cmd. 
+# Or alternatively, delete this file which doesn't really do anything
+
 use Actium::Folders::Signup;
 
 sub START {
@@ -40,7 +44,7 @@ sub process_headway_sheets {
    my $headwaysdir = $signup->subfolder("headways");
    my @headwaysfiles = $headwaysdir->glob_plain_files('*.{prt,txt}');
 
-   my @skeds = Actium::Headways::read_headways(@headwaysfiles);
+   my @skeds = Actium::Cmd::Headways::read_headways(@headwaysfiles);
 
    return @skeds;
 
