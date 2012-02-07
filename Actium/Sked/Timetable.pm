@@ -1,7 +1,7 @@
 # Actium/Sked/Timetable.pm
 
 # Object representing the data in a timetable to be displayed to the user.
-# Designed to take an Actium::Sked object and make it displayable.
+# Designed to take an Actium::Sked::Sked object and make it displayable.
 
 # Subversion:  $Id$
 
@@ -22,7 +22,7 @@ my $timesub = Actium::Time::timestr_sub();
 # Uses default values. Someday it would be nice to make that configurable
 
 has sked_obj => (
-    isa      => 'Actium::Sked',
+    isa      => 'Actium::Sked::Sked',
     is       => 'ro',
     required => 1,
     handles  => {

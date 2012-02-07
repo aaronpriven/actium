@@ -19,7 +19,7 @@ use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 use Actium::Constants;
 use Actium::Term;
-use Actium::Sked;
+use Actium::Sked::Sked;
 use Text::Trim();
 use Actium::Sked::Trip;
 use Actium::Util qw<:ALL>;
@@ -135,7 +135,7 @@ sub sked {
             $day_obj = Actium::Sked::Days->new($self->days);
     }
     
-    my $sked = Actium::Sked->new(
+    my $sked = Actium::Sked::Sked->new(
         place8_r      => $self->place8_r(),
         origlinegroup => $self->origlinegroup(),
         linedescrip   => $self->linedescrip(),
