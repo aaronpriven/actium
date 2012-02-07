@@ -1,7 +1,7 @@
 # Folder.pm
 # Objects representing folders (directories) on disk
 
-# Subversion: $Id: Folder.pm 126 2012-01-28 00:55:36Z aaronpriven@gmail.com $
+# Subversion: $Id$
 
 # legacy stage 4
 
