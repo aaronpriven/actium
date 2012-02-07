@@ -19,7 +19,7 @@ use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ('ems', 'char_width');
-use Actium::Signup;
+use Actium::Folders::Signup;
 use Actium::Term;
 use Actium::Sked;
 use Actium::Sked::Timetable;
@@ -45,7 +45,7 @@ HELP
 
 sub START {
 
-    my $signup         = Actium::Signup->new();
+    my $signup         = Actium::Folders::Signup->new();
     my $tabulae_folder = $signup->subfolder('tabulae-test');
     my $pubtt_folder   = $tabulae_folder->subfolder('pubtt');
 

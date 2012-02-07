@@ -11,7 +11,7 @@ use warnings;
 
 package Actium::SQLite2tab 0.001;
 
-use Actium::Signup;
+use Actium::Folders::Signup;
 use Actium::Util qw(jt );
 use Actium::Term ('output_usage');
 use Actium::Constants;
@@ -31,11 +31,11 @@ sub START {
     my $type = option('type');
     given ( lc($type) ) {
         when ('f') {
-            $dir = Actium::Signup->new('xml');
+            $dir = Actium::Folders::Signup->new('xml');
             $db = Actium::Files::FMPXMLResult->new( $dir->get_dir() );
         }
         when ('h') {
-            $dir = Actium::Signup->new('hasi');
+            $dir = Actium::Folders::Signup->new('hasi');
             $db = Actium::Files::HastusASI->new( $dir->get_dir() );
         }
         default {
@@ -146,7 +146,7 @@ what kind of database to use: H for Hastus ASI or F for FileMaker FMPXMLResult.
 Other modules this subprogram uses specify several other options. See:
 
 =item L<OPTIONS in Actium::Files::SQLite|Actium::Files::SQLite/OPTIONS>
-=item L<OPTIONS in Actium::Signup|Actium::Signup/OPTIONS>
+=item L<OPTIONS in Actium::Folders::Signup|Actium::Folders::Signup/OPTIONS>
 =item L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
 
 A complete list of options can be found by running "actium.pl help sqlite2tab"
@@ -193,7 +193,7 @@ L<$KEY_SEPARATOR from Actium::Constants|Actium::Constants/$KEY_SEPARATOR>.
 
 =item perl 5.012
 
-=item Actium::Signup
+=item Actium::Folders::Signup
 
 =item Actium::Util
 

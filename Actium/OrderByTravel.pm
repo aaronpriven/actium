@@ -20,7 +20,7 @@ use Actium::Sorting::Travel(qw<travelsort>);
 use Actium::Constants;
 use Actium::Term ('output_usage');
 use Actium::Options (qw<add_option option>);
-use Actium::Signup;
+use Actium::Folders::Signup;
 
 sub HELP {
 
@@ -58,7 +58,7 @@ sub START {
         $description_of{$stop} = $description;
     }
 
-    my $slistsdir = Actium::Signup->new('slists');
+    my $slistsdir = Actium::Folders::Signup->new('slists');
 
     # retrieve data
     my $stops_of_r = $slistsdir->retrieve('line.storable')
@@ -118,7 +118,7 @@ uses specify options. See:
 
 =over
 
-=item L<OPTIONS in Actium::Signup|Actium::Signup/OPTIONS>
+=item L<OPTIONS in Actium::Folders::Signup|Actium::Folders::Signup/OPTIONS>
 
 =item L<OPTIONS in Actium::Sorting::Travel|Actium::Sorting::Travel/OPTIONS>
 
@@ -174,7 +174,7 @@ signup) or there may be some other error.
 
 =item Actium::Options 
 
-=item Actium::Signup
+=item Actium::Folders::Signup
 
 =item Actium::Sorting::Travel
 

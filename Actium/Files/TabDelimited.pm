@@ -15,7 +15,7 @@ use Text::Trim;
 
 use Params::Validate (':all');
 
-use Actium::Signup;
+use Actium::Folders::Signup;
 use Actium::Term;
 use Actium::Util('filename');
 

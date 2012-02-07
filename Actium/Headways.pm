@@ -18,7 +18,7 @@ $VERSION = eval $VERSION;
 use 5.010;
 
 use Actium::Term qw<:all>;
-use Actium::Signup;
+use Actium::Folders::Signup;
 use Actium::Constants;
 use Actium::Union(':all');
 use Actium::Sked::HeadwayPage;
@@ -53,8 +53,8 @@ sub START {
 
     emit 'Processing headway sheets';
 
-    my $signup      = Actium::Signup->new;
-    my $headwaysfolder = Actium::Signup->new('headways');
+    my $signup      = Actium::Folders::Signup->new;
+    my $headwaysfolder = Actium::Folders::Signup->new('headways');
 
     my @files = $headwaysfolder->glob_plain_files();
     

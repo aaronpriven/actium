@@ -1,14 +1,14 @@
 # Folder.pm
 # Objects representing folders (directories) on disk
 
-# Subversion: $Id$
+# Subversion: $Id: Folder.pm 126 2012-01-28 00:55:36Z aaronpriven@gmail.com $
 
 # legacy stage 4
 
 use 5.012;
 use strict;
 
-package Actium::Folder 0.001;
+package Actium::Folders::Folder 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
@@ -178,12 +178,12 @@ sub original_parameters {
 
 =begin comment
 
-The idea here is that Actium::Folder has a single list of folders,
+The idea here is that Actium::Folders::Folder has a single list of folders,
 "folderlist," which is specified in the new() constructor and
 subfolder() cloner. In the cloner, the specified folderlist is added to the
 old one to form the complete new folderlist.
 
-The Actium::Signup subclass, however, has a second list of folders 
+The Actium::Folders::Signup subclass, however, has a second list of folders 
 that is primary -- "subfolders". The idea is that the subfolders
 are kept separately from the base and signup folders.
 
@@ -553,7 +553,7 @@ __END__
 
 =head1 NAME
 
-Actium::Folder - Folder objects for the Actium system
+Actium::Folders::Folder - Folder objects for the Actium system
 
 =head1 VERSION
 
@@ -561,9 +561,9 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Folder;
+ use Actium::Folders::Folder;
 
- $folder = Actium::Folder->new('/path/to/folder');
+ $folder = Actium::Folders::Folder->new('/path/to/folder');
 
  $filespec = $folder->make_filespec('10_EB_WD.txt');
  # $filespec is something like /path/to/folder/10_EB_WD.txt
@@ -573,7 +573,7 @@ This documentation refers to version 0.001
 
 =head1 DESCRIPTION
 
-Actium::Folder provides an object-oriented interface to folders on disk.
+Actium::Folders::Folder provides an object-oriented interface to folders on disk.
 (They are referred to here as "folders" rather than "directories" mainly
 because "dir" is more commonly used within the Actium system as an 
 abbreviation for "direction", and I wanted to avoid ambiguity.)
@@ -582,17 +582,17 @@ This module is intended to make it easier to open files within folders and
 create new subfolders.
 
 It forms the base class used by 
-L<Actium::Signup|Actium::Signup>, which is more likely to be
+L<Actium::Folders::Signup|Actium::Folders::Signup>, which is more likely to be
 used directly in programs.
 
-As much as possible, Actium::Folder uses the L<File::Spec> module in order
+As much as possible, Actium::Folders::Folder uses the L<File::Spec> module in order
 to be platform-independent (although Actium is tested only under Mac OS X for 
 the moment).
 
 =head1 OBJECT CONSTRUCTION
 
-Actium::Folder objects are created using the B<new> constructor inherited from
-Moose. Alternatively, they can be cloned from an existing Actium::Folder object,
+Actium::Folders::Folder objects are created using the B<new> constructor inherited from
+Moose. Alternatively, they can be cloned from an existing Actium::Folders::Folder object,
 using B<subfolder>.
 
 For either method, if the first argument is a hash reference, 
@@ -600,11 +600,11 @@ it is taken as a reference to named
 arguments. If not, the arguments given are considered part of the 
 I<folderlist> argument. So this:
 
- my $folder = Actium::Folder->new($folder1, $folder2 )
+ my $folder = Actium::Folders::Folder->new($folder1, $folder2 )
  
 is a shortcut for this:
 
- my $folder = Actium::Folder->new({folderlist => [ $folder1, $folder2 ]})
+ my $folder = Actium::Folders::Folder->new({folderlist => [ $folder1, $folder2 ]})
 
 =head2 NAMED ARGUMENTS
 
@@ -618,10 +618,10 @@ reference to an array of strings, representing folders in a folder path.
 This can be a single string with an entire path ('/path/to/folder'), 
 a reference to a list containing that single string (['/path/to/folder']),
 a series of strings each with a folder name (['path' , 'to' , 'folder']),
-or a combination (['/path/to' , 'folder']). Actium::Folder splits the pieces
+or a combination (['/path/to' , 'folder']). Actium::Folders::Folder splits the pieces
 into individual folders for you.
 
-Actium::Folder ignores whether the path begins with a leading slash 
+Actium::Folders::Folder ignores whether the path begins with a leading slash 
 or other indication that the folder path is absolute (begins at the root). 
 Folder lists passed to B<new> are always treated as absolute. Folder lists
 passed to B<subfolder> are treated as relative to the folder
@@ -636,9 +636,9 @@ object to the new object.
 
 =item I<must_exist>
 
-This attribute, if set to a true value, will cause Actium::Folder to throw
+This attribute, if set to a true value, will cause Actium::Folders::Folder to throw
 an exception if the specified folder does not yet exist. If not set, 
-Actium::Folder will attempt to create this folder and, if necessary, its 
+Actium::Folders::Folder will attempt to create this folder and, if necessary, its 
 parents.
 
 Unless specified in the arguments to either B<new> or B<subfolder>, the
@@ -681,7 +681,7 @@ The values of the B<volume> and B<must_exist> attributes, respectively.
 Returns a path name to a specified subfolder under the folder -- that is,
 this:
 
- $folder = new Actium::Folder ('/Users');
+ $folder = new Actium::Folders::Folder ('/Users');
  $path = $folder->subfolder_path('apriven');
 
 will yield "/Users/apriven".
@@ -822,7 +822,7 @@ in the file.
 =item FILENAME
 
 The file name that the results of the method are to be saved in. It will 
-be saved in the folder represented by the Actium::Folder object.
+be saved in the folder represented by the Actium::Folders::Folder object.
 
 =back
 
@@ -860,7 +860,7 @@ a period.
 
 =item Folder "$path" not found
         
-In creating the Actium::Folder object, the must_exist attribute was given
+In creating the Actium::Folders::Folder object, the must_exist attribute was given
 as true, but the folder 
 
 =item Can't make folder "$path": $OS_ERROR

@@ -12,7 +12,7 @@ use warnings;
 package Actium::TheaImport 0.001;
 
 use Actium::Term ':all';
-use Actium::Signup;
+use Actium::Folders::Signup;
 use Text::Trim;
 use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Sked::Days;
@@ -66,7 +66,7 @@ my %required_headers = (
 
 sub START {
 
-    my $signup     = Actium::Signup->new;
+    my $signup     = Actium::Folders::Signup->new;
     my $theafolder = $signup->subfolder('thea');
 
     my ($patterns_r, $patkeys_of_routedir_r) = get_patterns($theafolder);
