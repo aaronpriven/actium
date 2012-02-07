@@ -1,4 +1,4 @@
-# /Actium/AddDescriptionF.pm
+# /Actium/Cmd/AddDescriptionF.pm
 
 # Adds the DescriptionF from the XML file to a stop list given, so that
 # <stopid>\t<arbitrarytext> 
@@ -9,7 +9,7 @@
 
 # Legacy status: well, 4, but not necessarily intended as a permanent thing
 
-package Actium::AddDescriptionF 0.001;
+package Actium::Cmd::AddDescriptionF 0.001;
 
 use 5.012;
 use warnings;

@@ -1,4 +1,4 @@
-# Actium::Headways.pm
+# Actium::Cmd::Headways.pm
 
 # Routines to read headway sheets
 
@@ -9,7 +9,7 @@
 use strict;
 use warnings;
 
-package Actium::Headways;
+package Actium::Cmd::Headways;
 
 use utf8;
 our $VERSION = '0.001';
@@ -24,7 +24,7 @@ use Actium::Union(':all');
 use Actium::Sked::HeadwayPage;
 use Actium::Sked::Trip;
 use Actium::Sked::Note;
-use Actium::Sked::Sked;
+use Actium::Sked;
 use Actium::Util qw<j filename>;
 
 # use Term::Emit qw/:all/, {-closestat => "ERROR"};
@@ -90,7 +90,7 @@ sub START {
 
     # this probably should be a separate program, but for now, isn't
 
-    Actium::Sked::Sked->write_prehistorics( $skeds_r, $signup );
+    Actium::Sked->write_prehistorics( $skeds_r, $signup );
 
     emit_done;
 

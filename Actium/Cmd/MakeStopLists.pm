@@ -1,4 +1,4 @@
-# Actium/MakeStopLists.pm
+# Actium/Cmd/MakeStopLists.pm
 
 # Program for making stop lists
 
@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::MakeStopLists 0.001;
+package Actium::Cmd::MakeStopLists 0.001;
 
 use Actium::Folders::Signup;
 use Actium::Patterns::Stop;

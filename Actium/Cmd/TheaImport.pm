@@ -1,4 +1,4 @@
-# /Actium/TheaImport.pm
+# /Actium/Cmd/TheaImport.pm
 
 # Takes the THEA files and imports them so Actium can use them.
 
@@ -9,7 +9,7 @@
 use 5.014;
 use warnings;
 
-package Actium::TheaImport 0.001;
+package Actium::Cmd::TheaImport 0.001;
 
 use Actium::Term ':all';
 use Actium::Folders::Signup;

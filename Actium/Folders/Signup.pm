@@ -19,7 +19,7 @@ use FindBin;
 use Moose;
 use MooseX::StrictConstructor;
 
-extends 'Actium::Folders::Folder';
+extends 'Actium::Folder';
 
 Readonly my $BASE_ENV   => 'ACTIUM_BASE';
 Readonly my $SIGNUP_ENV => 'ACTIUM_SIGNUP';
@@ -95,7 +95,7 @@ around BUILDARGS => sub {
         $params_r->{folderlist} = [ $base, $signup ];
         $params_r->{subfolders} = [];
     }
-    # all arrayrefs in folderlist will be flattened in the Actium::Folders::Folder
+    # all arrayrefs in folderlist will be flattened in the Actium::Folder
     # BUILDARGS
 
     return $class->$orig($params_r);
@@ -161,7 +161,7 @@ has subfolderlist_r => (
 # have elements that are the empty string. I don't think
 # this will matter.
 
-# for below, see big comment in Actium::Folders::Folder
+# for below, see big comment in Actium::Folder
 
 override 'original_parameters' => sub {
     my $self     = shift;
@@ -258,7 +258,7 @@ schedule files, files from the Hastus AVL Standard interface, and so
 forth).
 
 This module is designed to make it easier to locate the signup folders
-and the folders within them. It inherits from Actium::Folders::Folder and its objects
+and the folders within them. It inherits from Actium::Folder and its objects
 are different almost exclusively in object construction, and not in use.
 
 This module is where the base, signup, and cache options are set.
@@ -436,7 +436,7 @@ This is the signup folder, described above.
 This can be a single string with an entire path ('path/to/folder'), 
 a reference to a list containing that single string (['path/to/folder']),
 a series of strings each with a folder name (['path' , 'to' , 'folder']),
-or a combination (['path/to' , 'folder']). Actium::Folders::Folder splits the pieces
+or a combination (['path/to' , 'folder']). Actium::Folder splits the pieces
 into individual folders for you.
 
 If none is supplied, Actium::Folders::Signup will represent the signup folder
@@ -455,13 +455,13 @@ while storing the SQLite databases locally.
 
 =item I<must_exist>
 
-See L<Actium::Folders::Folder|Actium::Folders::Folder> .
+See L<Actium::Folder|Actium::Folder> .
 
 =back
 
 =head1 METHODS
 
-Most methods are inherited from L<Actium::Folders::Folder|Actium::Folders::Folder> and are 
+Most methods are inherited from L<Actium::Folder|Actium::Folder> and are 
 described in the documentation for that module.
 
 =over
@@ -472,7 +472,7 @@ described in the documentation for that module.
 
 =item B<$obj-E<gt>load_hasi()>
 
-Identical to their Actium::Folders::Folder counterparts, except that if present, the 
+Identical to their Actium::Folder counterparts, except that if present, the 
 Actium::Folders::Signup cache folder
 (specified on the command line, or in the cache argument to 
 Actium::Folders::Signup->new ) is used instead of the SQLite default.
@@ -487,7 +487,7 @@ subfolder and one needs the signup folder itself.
 
 =head1 DIAGNOSTICS
 
-See L<Actium::Folders::Folder|Actium::Folders::Folder> for most diagnostics.
+See L<Actium::Folder|Actium::Folder> for most diagnostics.
 
 =over
 
@@ -510,7 +510,7 @@ command line, in the environment, or in the method call.
 
 =item Readonly
 
-=item Actium::Folders::Folder
+=item Actium::Folder
 
 =back
 

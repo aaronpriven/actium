@@ -1,4 +1,4 @@
-# Actium/Flagspecs.pm
+# Actium/Cmd/Flagspecs.pm
 
 # Subversion: $Id$
 
@@ -7,7 +7,7 @@
 use warnings;
 use 5.012;
 
-package Actium::Flagspecs;
+package Actium::Cmd::Flagspecs;
 
 our $VERSION = '0.001';
 $VERSION = eval $VERSION;    ## no critic (StringyEval)

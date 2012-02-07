@@ -73,7 +73,7 @@ if ( not exists $module_of{$subcommand} ) {
     exit 1;
 }
 
-my $module = "Actium::$module_of{$subcommand}";
+my $module = "Actium::Cmd::$module_of{$subcommand}";
 
 require( modulefile($module) ) or die $OS_ERROR;
 
