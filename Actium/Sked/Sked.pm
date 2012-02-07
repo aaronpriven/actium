@@ -1,4 +1,4 @@
-# Actium/Sked.pm
+# Actium/Sked/Sked.pm
 
 # the Sked object, containing everything that is a schedule
 
@@ -6,7 +6,7 @@
 
 # legacy status 3
 
-package Actium::Sked 0.001;
+package Actium::Sked::Sked 0.001;
 
 use 5.012;
 use strict;
@@ -288,7 +288,7 @@ sub divide_sked {
             $value_of{$attrname} = $value;
         }    ## <perltidy> end foreach my $attribute ( $self...)
 
-        my $newsked = Actium::Sked->new(
+        my $newsked = Actium::Sked::Sked->new(
             trip_r    => $trips_of{$linegroup},
             linegroup => $linegroup,
             %value_of,
