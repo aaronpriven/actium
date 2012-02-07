@@ -11,7 +11,7 @@ use warnings;
 
 package Actium::MakeStopLists 0.001;
 
-use Actium::Signup;
+use Actium::Folders::Signup;
 use Actium::Patterns::Stop;
 use Actium::Patterns::Route;
 
@@ -24,7 +24,7 @@ my $xml_db;
 
 sub START {
 
-    my $signup                = Actium::Signup->new();
+    my $signup                = Actium::Folders::Signup->new();
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');
 

@@ -34,8 +34,8 @@ EOF
 my $intro = 'slists2bagorder -- makes order for bags';
 
 use Actium::Options;
-use Actium::Signup;
-my $signup = Actium::Signup->new();
+use Actium::Folders::Signup;
+my $signup = Actium::Folders::Signup->new();
 chdir $signup->get_dir();
 
 # retrieve data

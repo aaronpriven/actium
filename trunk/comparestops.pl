@@ -48,8 +48,8 @@ add_option('oldsignup=s'
    . 'specified by the "signup" option.'
    );
 
-use Actium::Signup;
-my $signup = Actium::Signup->new();
+use Actium::Folders::Signup;
+my $signup = Actium::Folders::Signup->new();
 chdir $signup->get_dir();
 
 my $comparedir = $signup->subfolder('compare') ;
@@ -63,7 +63,7 @@ open my $out, '>', 'compare/comparestops.txt' or die "$!";
 print $out
 "Change\tStopID\tStop Description\tNumAdded\tAdded\tNumRemoved\tRemoved\tNumUnchanged\tUnchanged\n";
 
-my $oldsignup = Actium::Signup->new({signup => option('oldsignup')});
+my $oldsignup = Actium::Folders::Signup->new({signup => option('oldsignup')});
 chdir $oldsignup->get_dir();
 
 my %oldstoplists = assemble_stoplists(qw(BSH 399));

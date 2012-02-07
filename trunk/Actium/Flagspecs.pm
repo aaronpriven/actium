@@ -19,7 +19,7 @@ use Actium::DaysDirections(':ALL');
 use Actium::Files::HastusASI;
 use Actium::Constants;
 use Actium::Term (':all');
-use Actium::Signup;
+use Actium::Folders::Signup;
 use Text::Trim;
 
 use Carp;
@@ -88,7 +88,7 @@ my %color_of;
 
 sub START {
 
-    my $signup     = Actium::Signup->new();
+    my $signup     = Actium::Folders::Signup->new();
     my $flagfolder = $signup->subfolder('flags');
 
     my $stopdata = $signup->mergeread('Stops.csv');
