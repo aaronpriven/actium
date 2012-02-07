@@ -21,7 +21,7 @@ use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ('ems', 'char_width');
 use Actium::Folders::Signup;
 use Actium::Term;
-use Actium::Sked;
+use Actium::Sked::Sked;
 use Actium::Sked::Timetable;
 use Readonly;
 use List::Util ('max');
@@ -60,7 +60,7 @@ sub START {
     emit "Loading prehistoric schedules";
 
     my @skeds
-      = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
+      = Actium::Sked::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
 
     emit_done;
 
