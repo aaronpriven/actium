@@ -32,6 +32,8 @@ use Actium::Util('filename');
 
 use Actium::Term ':all';
 
+my $DEFAULT_RESOLUTION = 288;
+
 ### SHARED PARAMETER SPECIFICATIONS
 
 my $import_to_repository_paramspec = {
@@ -41,15 +43,15 @@ my $import_to_repository_paramspec = {
 };
 
 my $make_web_maps_paramspec = {
-    new_web_folder => { can  => qw<path make_filespec> },
-    files          => { type => ARRAYREF },
-    resolution     => { type => SCALAR, default => 288 },
+    web_folder => { can  => qw<path make_filespec> },
+    files      => { type => ARRAYREF },
+    resolution => { type => SCALAR, default => $DEFAULT_RESOLUTION },
 };
 
 my $new_map_paramspec = {
     %{$import_to_repository_paramspec},
-    new_web_folder => { can  => qw<path make_filespec> },
-    resolution     => { type => SCALAR, default => 288 },
+    web_folder => { can  => qw<path make_filespec> },
+    resolution => { type => SCALAR, default => $DEFAULT_RESOLUTION },
 };
 
 ### IMPORTING NEW MAPS
@@ -57,8 +59,7 @@ my $new_map_paramspec = {
 sub new_maps {
     my %params = validate( @_, $import_to_repository_paramspec );
     my @files = import_to_repository(@_);
-    make_web_maps(
-        { new_web_folder => $params{new_web_folder}, files => \@files } );
+    make_web_maps( { web_folder => $params{web_folder}, files => \@files } );
 }
 
 sub import_to_repository {
@@ -104,7 +105,7 @@ sub import_to_repository {
         my $newfilespec = $linefolder->make_filespec($newfilename);
 
         if ( -e $newfilespec ) {
-            carp
+            emit_text
 "Can't move $filespec because $newfilespec already exists: skipped";
             next FILE;
         }
@@ -131,7 +132,7 @@ sub make_web_maps {
 
     my %params = validate( @_, $make_web_maps_paramspec );
 
-    my $output_folder = $params{new_web_folder};
+    my $output_folder = $params{web_folder};
     my $gsargs        = "-r $params{resolution} -sDEVICE=jpeg "
       . "-dGraphicsAlphaBits=4 -dTextAlphaBits=4";
 
@@ -261,147 +262,132 @@ my $copylatest_spec = {
     withdates  => { can => qw<path subfolder make_filespec>, optional => 1 },
     nodates    => { can => qw<path subfolder make_filespec>, optional => 1 },
     web        => { can => qw<path subfolder make_filespec>, optional => 1 },
+    resolution         => { type => SCALAR, default => $DEFAULT_RESOLUTION },
+    defining_extension => { type => SCALAR, default => 'eps' },
 };
 
 sub copylatest {
 
-    my %params = validate( @_, $copylatest_spec );
-    
-    my $repository = _repository($params{repository});
-    
-    my @foundfolders = $repository->glob_files;
-    # only lines separated by spaces
-    @foundfolders = grep { /\A
-                      [[:alpha:]\d]{1,3}  # three alphanumerics
-                      (?:[ ]               # with optional space and
-                      [[:alpha]]\d]{1,3}  #    three alphanums
-                      )*
-                      \z/ } @foundfolders;
-    # only folders
-    @foundfolders = grep { -d } @foundfolders;
-    
+    my %params             = validate( @_, $copylatest_spec );
+    my $nodates_folder     = $params{nodates};
+    my $withdates_folder   = $params{withdates};
+    my $web_folder         = $params{web};
+    my $defining_extension = $params{defining_extension};
+
+    my $repository = _repository( $params{repository} );
+
+    my @folder_objs = $repository->children;
+
     my %validlines = validlines($repository);
-    
-    use File::Basename(qw(fileparse));
+
+  FOLDER:
 
     my %latest_date_of;
     my %latest_ver_of;
 
-    # for the convenience of &wanted calls, including -eval statements:
-    use vars qw/*name *dir *prune/;
-    *name  = *File::Find::name;
-    *dir   = *File::Find::dir;
-    *prune = *File::Find::prune;
+    foreach my $folder_obj (@folder_objs) {
+        my $foldername = $folder_obj->folder;
+        next FOLDER unless $foldername =~ m{
+                      \A
+                      [[:alpha:]\d]{1,3}  # three alphanumerics
+                      (?:[ ]               # with optional space and
+                      [[:alpha]]\d]{1,3}  #    three alphanums
+                      )*
+                      \z
+                      }x;
 
-    File::Find::find( { wanted => \&wanted }, '.' );
+        next FOLDER unless $validlines{$foldername};
 
-    sub wanted {
+        my @filespecs = $folder_obj->glob_plain_files;
 
-        return if $dir =~ m{\A\./_};
-        # skip if first folder begins with _
+      FILE:
+        foreach my $filespec (@filespecs) {
+            next FILE unless $filespec =~ /\.$defining_extension\z/i;
+            my $filename = filename($filespec);
 
-        lstat($_);
-        unless ( -f _ ) {
-            # print "\nDIRECTORY: $_\n\n";
-            return;
-        }
+            my ( $lines_and_token, $date, $ver ) = split( /-/, $filename, 3 );
 
-        return if /^\./;
-        return unless /\.eps$/;
-
-        my ( $name, $path, $ext ) = fileparse( $_, (qr{\.[^.]+}) );
-
-        my ( $lines_and_token, $date, $ver ) = split( /-/, $name, 3 );
-
-        return
-          unless ( not $using_validlines )
-          or $validlines{$lines_and_token};
-
-        if (!exists( $latest_date_of{$lines_and_token} )  # if it doesn't exist,
-            or ( $latest_date_of{$lines_and_token}
-                lt $date ) # or the older date is earlier than the current date,
-            or ( $latest_ver_of{$lines_and_token}
-                lt $ver
-            )    # or the older version is earlier than the current version,
-          )
-        {
-            $latest_date_of{$lines_and_token}
-              = $date;    # make the current one the real one and return
-            $latest_ver_of{$lines_and_token} = $ver;
-            return;
-        }
-
-        # so it exists, but has a less than or equal date.
-
-        return if $latest_date_of{$lines_and_token} gt $date;
-        # if the old one is later than the current one, return
-
-        return if $latest_ver_of{$lines_and_token} le $ver;
-        # if the old version is less than or equal to the current one, return
-
-        # so the dates are the same but the version is later (ascii-wise)
-
-        $latest_date_of{$lines_and_token} = $date;
-        $latest_ver_of{$lines_and_token}  = $ver;
-
-    } ## tidy end: sub wanted
-
-    my @files;
-
-    foreach my $lines_and_token ( sort keys %latest_date_of ) {
-        $dir = $lines_and_token;
-        $dir =~ s/=.*//;
-        $dir =~ s/_/ /g;
-
-        my $latestdate = $latest_date_of{$lines_and_token};
-        my $latestver  = $latest_ver_of{$lines_and_token};
-        my $glob       = "$dir/$lines_and_token-$latestdate-$latestver.*";
-
-        @files = bsd_glob($glob);
-
-        foreach (@files) {
-            my $newfile = $_;
-            $newfile =~ s#.*/#$newdir/#;
-
-            if ( !$use_date ) {
-                $newfile =~ s#.*/##;
-                my $extension = $newfile;
-                $extension =~ s/.*\.//;
-                $newfile = "$newdir/$lines_and_token.$extension";
-            }
-            else {
-                $newfile =~ s#.*/#$newdir/#;
+            if (   !exists( $latest_date_of{$lines_and_token} )
+                or $latest_date_of{$lines_and_token} lt $date
+                or (    $latest_date_of{$lines_and_token} eq $date
+                    and $latest_ver_of{$lines_and_token} lt $ver )
+              )
+              # if there isn't a latest date for this line,
+              # or if it's an earlier date, or the same date but an earlier
+              # version,
+            {
+                $latest_date_of{$lines_and_token} = $date;
+                $latest_ver_of{$lines_and_token}  = $ver;
+                # mark the this file as the latest.
             }
 
-            print "$_   $newfile\n";
-            copy( $_, $newfile );
+        } ## tidy end: foreach my $filespec (@filespecs)
 
-        }
+        # process latest files
 
-    } ## tidy end: foreach my $lines_and_token...
+        foreach my $line_and_token ( keys %latest_date_of ) {
+            my $globpattern = join( "-",
+                $line_and_token,
+                $latest_date_of{$line_and_token},
+                $latest_ver_of{$line_and_token} )
+              . '.*';
+
+            my @filespecs = $folder_obj->glob_plain_files($globpattern);
+
+            foreach my $filespec (@filespecs) {
+                my $filename = filename($filespec);
+                my $ext      = file_ext($filename);
+
+                if ($nodates_folder) {
+                    my $newfilespec
+                      = $nodates_folder->make_filespec($line_and_token)
+                      . ".$ext";
+                    _copy_file( $filespec, $newfilespec );
+                }
+
+                if ($withdates_folder) {
+                    my $newfilespec
+                      = $withdates_folder->make_filespec($filename);
+                    _copy_file( $filespec, $newfilespec );
+                }
+
+                if ( $web_folder and lc($ext) eq 'pdf' ) {
+                    make_web_maps(
+                        {   web_folder => $web_folder,
+                            files      => [$filespec],
+                            resolution => $params{resolution},
+                        }
+                    );
+                }
+
+            } ## tidy end: foreach my $filespec (@filespecs)
+
+        } ## tidy end: foreach my $line_and_token ...
+
+    } ## tidy end: foreach my $folder_obj (@folder_objs)
 
 } ## tidy end: sub copylatest
 
 my $validlines_paramspec = {
-    repository   => { can  => qw<path subfolder make_filespec>, optional => 1 },
-    validfile => { type => SCALAR , default => '_validlines'}
+    repository => { can => qw<path subfolder make_filespec>, optional => 1 },
+    validfile => { type => SCALAR, default => '_validlines' }
 };
 
 sub validlines {
-	my %params = (@_, $validlines_paramspec)
-    my $repository = _repository($params{repository});
-    
-    open my $fh , '<' , $params{validfile}
-       or croak "Can't open $params{validfile} for reading: $!";
-       
+    my %params = ( @_, $validlines_paramspec );
+    my $repository = _repository( $params{repository} );
+
+    open my $fh, '<', $params{validfile}
+      or croak "Can't open $params{validfile} for reading: $!";
+
     my %validlines;
-       
+
     while (<$fh>) {
         chomp;
         $validlines{$_} = 1;
     }
-    
-    return %validlines;   
+
+    return %validlines;
 }
 
 ### PRIVATE UTILITY METHODS
