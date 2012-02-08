@@ -269,16 +269,20 @@ sub copylatest {
     
     my $repository = _repository($params{repository});
     
-    my @folders = $repository->glob_files;
+    my @foundfolders = $repository->glob_files;
     # only lines separated by spaces
-    @folders = grep { /\A
+    @foundfolders = grep { /\A
                       [[:alpha:]\d]{1,3}  # three alphanumerics
                       (?:[ ]               # with optional space and
                       [[:alpha]]\d]{1,3}  #    three alphanums
                       )*
-                      \z/ } @folders;
+                      \z/ } @foundfolders;
     # only folders
-    @folders = grep { -d } @folders;
+    @foundfolders = grep { -d } @foundfolders;
+    
+    my @validfolders = validlines(@foundfolders)
+    
+    
     
     
     ##############
@@ -401,6 +405,28 @@ sub copylatest {
     } ## tidy end: foreach my $lines_and_token...
 
 } ## tidy end: sub copylatest
+
+my $validlines_paramspec = {
+    repository   => { can  => qw<path subfolder make_filespec>, optional => 1 },
+    validfile => { type => SCALAR , default => '_validlines'}
+};
+
+sub validlines {
+	my %params = (@_, $validlines_paramspec)
+    my $repository = _repository($params{repository});
+    
+    open my $fh , '<' , $params{validfile}
+       or croak "Can't open $params{validfile} for reading: $!";
+       
+    my %validlines;
+       
+    while (<$fh>) {
+        chomp;
+        $validlines{$_} = 1;
+    }
+    
+    
+}
 
 ### PRIVATE UTILITY METHODS
 
