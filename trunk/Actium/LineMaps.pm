@@ -280,33 +280,9 @@ sub copylatest {
     # only folders
     @foundfolders = grep { -d } @foundfolders;
     
-    my @validfolders = validlines(@foundfolders)
+    my %validlines = validlines($repository);
     
-    
-    
-    
-    ##############
-    
-    my %validlines;
-
-    my $using_validlines = 0;
-
-    if ( -f "_validlines" ) {
-
-        print "Using _validlines\n";
-        open my $fh, '<', "_validlines" or die "Can't open _validlines: $!";
-
-        while (<$fh>) {
-            chomp;
-            $validlines{$_} = 1;
-        }
-        $using_validlines = 1;
-
-    }
-
     use File::Basename(qw(fileparse));
-
-    use File::Copy;
 
     my %latest_date_of;
     my %latest_ver_of;
@@ -425,7 +401,7 @@ sub validlines {
         $validlines{$_} = 1;
     }
     
-    
+    return %validlines;   
 }
 
 ### PRIVATE UTILITY METHODS
