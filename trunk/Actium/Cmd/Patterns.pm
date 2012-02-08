@@ -19,7 +19,7 @@ use Actium::Term  (':all');
 use Actium::Union ('ordered_union');
 use Actium::Util qw(jk doe);
 
-use Actium:::Pattern;
+use Actium::Pattern;
 use Actium::Patterns::Stop;
 use Actium::Patterns::Stop::PatternRelation;
 use Actium::Patterns::Route;
@@ -196,7 +196,7 @@ sub _build_pattern_obj {
 
     #$direction = $DIRCODES[$HASTUS_DIRS[$direction]];
 
-    my $pattern_obj = Actium:::Pattern->new(
+    my $pattern_obj = Actium::Pattern->new(
         {
             route      => $route,
             direction  => $direction,

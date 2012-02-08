@@ -22,6 +22,11 @@ use File::Spec;
 
 use Params::Validate qw(:all);
 
+use overload (
+    q[""]    => '_stringify',
+    fallback => 1,
+);
+
 # class or object methods
 
 has folderlist_r => (
@@ -73,6 +78,11 @@ has path => (
     builder  => '_build_path',
     lazy     => 1,
 );
+
+sub _stringify {
+    my $self = shift;
+    return $self->path;
+}
 
 sub _build_path {
     my $self = shift;
@@ -647,6 +657,17 @@ and does not copy the value from the original object.
 
 =back
 
+=head1 OVERLOADING
+
+Using an Actium::Folder object as a string will return the path() value.
+For example,
+
+ say "That file is in $folderobject";
+ 
+will result in something like
+
+ That file is in /Users/Shared/Folderpath
+
 =head1 ATTRIBUTES
 
 =over
@@ -931,6 +952,11 @@ The following are loaded only when necessary:
 =item Actium::Files::Merge::Mergefiles
 
 =back
+
+=head1 BUGS AND LIMITATIONS
+
+Arguably, this module should be a subclass of Path::Class, which provides 
+additional functionality for largely the same purpose.
 
 =head1 AUTHOR
 
