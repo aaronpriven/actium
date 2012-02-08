@@ -288,6 +288,20 @@ sub glob_plain_files {
     return grep { -f $_ } $self->glob_files(@_);
 }
 
+sub children {
+    # make subfolders
+    my $self = shift;
+    my $path = $self->path;
+    
+    my @folderpaths = grep { -d } $self->glob_files(@_);
+    my @foldernames = map { File::Spec->abs2rel ($_ , $path) } @folderpaths;
+    # removes $path from each @foldername. If the path is /a and the
+    # current folderpath is /a/b, returns b
+    
+    return map { $self->subfolder($_) } @foldernames;
+    
+}
+
 #######################
 ### READ OR WRITE MISC FILES IN THIS FOLDER
 
