@@ -167,6 +167,13 @@ sub filename : Export {
     return $filename;
 }
 
+sub file_ext : Export {
+   my $filespec = shift; # works on filespecs or filenames
+   my ($ext) = $filespec =~ /\.([^.]+)\z/;
+   return $ext;
+ 
+}
+
 sub flat_arrayref : Export {
 
     my @inputs = @_;
