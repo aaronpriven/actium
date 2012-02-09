@@ -49,6 +49,8 @@ my %module_of = (
     adddescriptionf => 'AddDescriptionF',
     makepoints      => 'MakePoints',
     nearbyroutes    => 'NearbyRoutes',
+    mr_import       => 'MRImport',
+    mr_copy         => 'MRCopy' ,
     # more to come
 );
 
@@ -90,10 +92,10 @@ if ( option('_stacktrace') ) {
 
 my $sub;
 if ( $help or option('help') ) {
-    $module->HELP();
+    $module->HELP(@ARGV);
 }
 else {
-    $module->START();
+    $module->START(@ARGV);
 }
 
 sub mainhelp {

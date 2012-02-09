@@ -19,7 +19,6 @@ use English ('-no_match_vars');
 use Actium::Sorting::Travel(qw<travelsort>);
 use Actium::Constants;
 use Actium::Term ('output_usage');
-use Actium::Options (qw<add_option option>);
 use Actium::Folders::Signup;
 
 sub HELP {
