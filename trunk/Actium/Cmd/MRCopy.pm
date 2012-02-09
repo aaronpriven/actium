@@ -2,8 +2,7 @@
 
 # Command-line access to copylatest in Actum::MapRepostory
 
-# Subversion:
-# $Id$
+# Subversion: $Id$
 
 # Legacy status: 4
 
@@ -29,11 +28,12 @@ add_option( 'web!',
     'Create web files of maps (on by default; turn off with -no-web)', 1 );
 add_option( 'fullnames!',
     'Copy files with their full names (on by default; turn off with -no-web)',
-    1 );
+    1, );
 add_option(
     'linesnames!',
-'Copy files using the lines and token as the name only (on by default; turn off with -no-web)',
-    1
+    'Copy files using the lines and token as the name only '
+      . '(on by default; turn off with -no-web)',
+    1,
 );
 
 add_option( 'webfolder|wf=s',
@@ -62,8 +62,6 @@ sub START {
     my $linesfolder
       = option_folder( 'linesnames', 'linesfolder', '_linesnames' );
 
-    my $webfolder_opt = option('webfolder');
-
     copylatest(
         repository => $repository,
         fullname   => $fullfolder,
@@ -73,7 +71,7 @@ sub START {
 
     return;
 
-} ## tidy end: sub START
+}
 
 sub option_folder {
     my ( $option, $folderoption, $default ) = @_;
