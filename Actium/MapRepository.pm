@@ -1,6 +1,11 @@
-#LineMaps.pm
+#MapRepository.pm
 
 # Routines for dealing with the filenames of line maps
+
+# Subversion:
+# $Id$
+
+# Legacy status: 4
 
 # The filename pattern is supposed to be
 
@@ -21,46 +26,37 @@
 use 5.014;
 use warnings;
 
-package Actium::LineMaps 0.001;
+package Actium::MapRepository 0.001;
+use Sub::Exporter -setup => {
+    exports => [
+        qw(import_to_repository  make_web_maps      copylatest
+          normalize_filename     filename_is_lines
+          )
+    ]
+};
 
 use Params::Validate ':all';
 use File::Copy();
 use Carp;
 use Actium::Folder;
+use English '-no_match_vars';
 
 use Actium::Util('filename');
 
 use Actium::Term ':all';
 
-my $DEFAULT_RESOLUTION = 288;
+use Readonly;
 
-### SHARED PARAMETER SPECIFICATIONS
-
-my $import_to_repository_paramspec = {
-    importfolder => { can  => qw<path glob_plain_files>, },
-    repository   => { can  => qw<path subfolder make_filespec>, optional => 1 },
-    move         => { type => BOOLEAN, optional => 1 },
-};
-
-my $make_web_maps_paramspec = {
-    web_folder => { can  => qw<path make_filespec> },
-    files      => { type => ARRAYREF },
-    resolution => { type => SCALAR, default => $DEFAULT_RESOLUTION },
-};
-
-my $new_map_paramspec = {
-    %{$import_to_repository_paramspec},
-    web_folder => { can  => qw<path make_filespec> },
-    resolution => { type => SCALAR, default => $DEFAULT_RESOLUTION },
-};
+Readonly my $DEFAULT_RESOLUTION => 288;
+Readonly my $LINE_NAME_RE       => '[[:upper:]\d]{1,3}';
 
 ### IMPORTING NEW MAPS
 
-sub new_maps {
-    my %params = validate( @_, $import_to_repository_paramspec );
-    my @files = import_to_repository(@_);
-    make_web_maps( { web_folder => $params{web_folder}, files => \@files } );
-}
+my $import_to_repository_paramspec = {
+    importfolder => { can  => [qw<path glob_plain_files>], },
+    repository   => { can  => [qw<path subfolder make_filespec>] },
+    move         => { type => BOOLEAN, optional => 1 },
+};
 
 sub import_to_repository {
 
@@ -70,10 +66,11 @@ sub import_to_repository {
     # in the spec, the default object would always be created whether or
     # not they were actually needed (which is bad)
 
-    my $repository = _repository( $params{repository} );
+    my $repository = $params{repository};
+    my $move       = $params{move};
 
     my $importfolder = $params{importfolder};
-    emit "Importing line maps from " . $importfolder->path;
+    emit 'Importing line maps from ' . $importfolder->path;
     my @files = $importfolder->glob_plain_files();
 
     my @copied_files;
@@ -85,21 +82,21 @@ sub import_to_repository {
 
         my $filename    = filename($filespec);
         my $newfilename = $filename;
+        emit_over $filename;
 
         # if newfilename isn't valid, first run it through normalize_filename.
         # Then if it's still not valid, carp and move on.
 
         $newfilename = normalize_filename($newfilename)
-          unless filename_is_valid($newfilename);
+          unless filename_is_lines($newfilename);
 
-        if ( not filename_is_valid($newfilename) ) {
+        if ( not filename_is_lines($newfilename) ) {
             emit_text
 "Can't find line, date, version or extension in $filename: skipped";
             next FILE;
         }
 
-        my $lines = _lines_from_filename($filename);
-        $lines =~ s/_/ /g;
+        my $lines      = _lines_from_filename($filename);
         my $linefolder = $repository->subfolder($lines);
 
         my $newfilespec = $linefolder->make_filespec($newfilename);
@@ -111,8 +108,7 @@ sub import_to_repository {
         }
 
         my $result;
-        my $verb;
-        if ( $params{move} ) {
+        if ($move) {
             _move_file( $filespec, $newfilespec );
         }
         else {
@@ -128,25 +124,31 @@ sub import_to_repository {
 
 ### COPYING/RASTERIZING WEB MAPS
 
+my $make_web_maps_paramspec = {
+    web_folder => { can  => [qw<path make_filespec>] },
+    files      => { type => ARRAYREF },
+    resolution => { type => SCALAR, default => $DEFAULT_RESOLUTION },
+};
+
 sub make_web_maps {
 
     my %params = validate( @_, $make_web_maps_paramspec );
 
     my $output_folder = $params{web_folder};
     my $gsargs        = "-r $params{resolution} -sDEVICE=jpeg "
-      . "-dGraphicsAlphaBits=4 -dTextAlphaBits=4";
+      . '-dGraphicsAlphaBits=4 -dTextAlphaBits=4';
 
-    emit "Making maps for web";
+    emit 'Making maps for web';
 
     foreach my $filespec ( @{ $params{files} } ) {
 
         my $filename = filename($filespec);
 
-        next unless $filename =~ /\.pdf\z/i;
+        next unless $filename =~ /[.]pdf\z/si;
 
         my $lines = _lines_from_filename($filename);
 
-        my @output_lines = split( /_/, $lines );
+        my @output_lines = split( /_/s, $lines );
 
         # copy PDFs
         foreach my $output_line (@output_lines) {
@@ -177,6 +179,8 @@ sub make_web_maps {
 
     emit_done;
 
+    return;
+
 } ## tidy end: sub make_web_maps
 
 ### FILENAME NORMALIZATION AND CHECKING
@@ -186,40 +190,40 @@ sub normalize_filename {
     # Eureka. Earlier versions handled the many, many irregular filenames
     # we received over the years...
 
-    my ( $filename, $ext ) = split( /\./, shift() );
-    my ( $lines, $date, $ver ) = split( /-/, $filename );
+    my ( $filename, $ext ) = split( /[.]/s, shift() );
+    my ( $lines, $date, $ver ) = split( /-/s, $filename );
 
-    $lines =~ s/,/_/g;
+    $lines =~ s/,/_/gs;
 
-    if ( $date =~ /\A[[:alpha:]]{3}\d{2}\z/ ) {
+    if ( $date =~ /\A [[:alpha:]]{3} \d{2} \z/sx ) {
         for ($date) {
             # Warning -- this has a Y2100 problem! Do not use after that! :)
 
             # there is probably a less repetitive way to write this, but
             # who cares
-            s/jan(\d\d)/20${1}_01/i;
-            s/feb(\d\d)/20${1}_02/i;
-            s/mar(\d\d)/20${1}_03/i;
-            s/apr(\d\d)/20${1}_04/i;
-            s/may(\d\d)/20${1}_05/i;
-            s/jun(\d\d)/20${1}_06/i;
-            s/jul(\d\d)/20${1}_07/i;
-            s/aug(\d\d)/20${1}_08/i;
-            s/sep(\d\d)/20${1}_09/i;
-            s/oct(\d\d)/20${1}_10/i;
-            s/nov(\d\d)/20${1}_11/i;
-            s/dec(\d\d)/20${1}_12/i;
+            s/jan(\d\d)/20${1}_01/sxi;
+            s/feb(\d\d)/20${1}_02/sxi;
+            s/mar(\d\d)/20${1}_03/sxi;
+            s/apr(\d\d)/20${1}_04/sxi;
+            s/may(\d\d)/20${1}_05/sxi;
+            s/jun(\d\d)/20${1}_06/sxi;
+            s/jul(\d\d)/20${1}_07/sxi;
+            s/aug(\d\d)/20${1}_08/sxi;
+            s/sep(\d\d)/20${1}_09/sxi;
+            s/oct(\d\d)/20${1}_10/sxi;
+            s/nov(\d\d)/20${1}_11/sxi;
+            s/dec(\d\d)/20${1}_12/sxi;
         }
-    } ## tidy end: if ( $date =~ /\A[[:alpha:]]{3}\d{2}\z/)
+    } ## tidy end: if ( $date =~ /\A [[:alpha:]]{3} \d{2} \z/sx)
 
     given ($ver) {
         when ( not( defined or $_ eq q{} ) ) {
             $ver = 'v1';
         }
-        when (/\A[[:alpha:]]+\z/) {
+        when (/\A [[:alpha:]]+ \z/sx) {
             $ver .= '1';
         }
-        when (/\A\d+\z/) {
+        when (/\A\d+\z/s) {
             $ver = "v$ver";
         }
     }
@@ -228,40 +232,48 @@ sub normalize_filename {
 
 } ## tidy end: sub normalize_filename
 
-sub filename_is_valid {
+sub filename_is_lines {
 
     my $filename = shift;
 
+    my $linename_re = '[[:upper:]\d]{1,3}';
+    # 1 to 3 ASCII letters or numbers
+    my $year_re = '(?:19[89]\d|20\d\d)';
+    # year - another Y2100 problem
+    my $month_re = '(?:0[123456789]|1[012])';
+    # numeric month
+
     return m{
-              [[:upper:]\d]{1,3}      
+              $LINE_NAME_RE
                   # one transit line ( 1 to 3 ASCII letters or numbers )
-              (?:_[[:upper]\d]{1,3})* 
+              (?:_$LINE_NAME_RE)* 
                   # zero or more transit lines, separated by _
               (?:=\w+)
                   # one token containing word characters
               -
                   # hyphen separating lines and date
-              (?:19[89]\d|20\d\d)
+              $year_re
                   # year (another Y2100 problem!)
-              _(?:0[123456789]|1[012])
+              _$month_re
                   # underscore followed by numeric month
               -
                   # hyphen separating date and version
               \w+
                   # version (arbitrary word characters)
-              \.\w+
+              [.]\w+
                   # extension
-              }x;
+              }sx;
 
-} ## tidy end: sub filename_is_valid
+} ## tidy end: sub filename_is_lines
 
 ### COPY LATEST FILES TO NEW DIRECTORY
 
 my $copylatest_spec = {
-    repository => { can => qw<path subfolder make_filespec>, optional => 1 },
-    withdates  => { can => qw<path subfolder make_filespec>, optional => 1 },
-    nodates    => { can => qw<path subfolder make_filespec>, optional => 1 },
-    web        => { can => qw<path subfolder make_filespec>, optional => 1 },
+    repository => { can => [qw<path subfolder make_filespec>] },
+    fullname   => { can => [qw<path subfolder make_filespec>], optional => 1 }
+    ,
+    linesname => { can => [qw<path subfolder make_filespec>], optional => 1 },
+    web       => { can => [qw<path subfolder make_filespec>], optional => 1 },
     resolution         => { type => SCALAR, default => $DEFAULT_RESOLUTION },
     defining_extension => { type => SCALAR, default => 'eps' },
 };
@@ -269,45 +281,58 @@ my $copylatest_spec = {
 sub copylatest {
 
     my %params             = validate( @_, $copylatest_spec );
-    my $nodates_folder     = $params{nodates};
-    my $withdates_folder   = $params{withdates};
+    my $fullname_folder     = $params{fullname};
+    my $linesname_folder   = $params{linesname};
     my $web_folder         = $params{web};
     my $defining_extension = $params{defining_extension};
 
-    my $repository = _repository( $params{repository} );
+    my $repository = $params{repository};
 
+    emit 'Copying latest map repository files';
+
+    emit 'Getting list of folders in map repository';
     my @folder_objs = $repository->children;
+    emit_done;
 
-    my %validlines = validlines($repository);
+    my %validmaps = _validmaps($repository);
 
   FOLDER:
 
     my %latest_date_of;
     my %latest_ver_of;
 
-    foreach my $folder_obj (@folder_objs) {
+    emit 'Copying files in repository folders';
+
+    foreach my $folder_obj ( sort { $_->folder } @folder_objs ) {
+
         my $foldername = $folder_obj->folder;
+        emit_over $foldername;
         next FOLDER unless $foldername =~ m{
                       \A
-                      [[:alpha:]\d]{1,3}  # three alphanumerics
-                      (?:[ ]               # with optional space and
-                      [[:alpha]]\d]{1,3}  #    three alphanums
+                      $LINE_NAME_RE       # three alphanumerics
+                      (?:[_]              # with optional underline and
+                      $LINE_NAME_RE       #    three alphanums
                       )*
                       \z
-                      }x;
+                      }sx;
 
-        next FOLDER unless $validlines{$foldername};
+        next FOLDER unless $validmaps{$foldername};
+
+        emit_over $foldername;
 
         my @filespecs = $folder_obj->glob_plain_files;
 
       FILE:
         foreach my $filespec (@filespecs) {
-            next FILE unless $filespec =~ /\.$defining_extension\z/i;
+            next FILE
+              unless $filespec =~ /[.] $defining_extension \z/isx;
             my $filename = filename($filespec);
 
-            my ( $lines_and_token, $date, $ver ) = split( /-/, $filename, 3 );
+            ## no critic (ProhibitMagicNumbers)
+            my ( $lines_and_token, $date, $ver ) = split( /-/s, $filename, 3 );
+            ## use critic
 
-            if (   !exists( $latest_date_of{$lines_and_token} )
+            if (   not( exists( $latest_date_of{$lines_and_token} ) )
                 or $latest_date_of{$lines_and_token} lt $date
                 or (    $latest_date_of{$lines_and_token} eq $date
                     and $latest_ver_of{$lines_and_token} lt $ver )
@@ -326,79 +351,80 @@ sub copylatest {
         # process latest files
 
         foreach my $line_and_token ( keys %latest_date_of ) {
-            my $globpattern = join( "-",
+            my $globpattern = join( '-',
                 $line_and_token,
                 $latest_date_of{$line_and_token},
                 $latest_ver_of{$line_and_token} )
               . '.*';
 
-            my @filespecs = $folder_obj->glob_plain_files($globpattern);
+            my @latest_filespecs = $folder_obj->glob_plain_files($globpattern);
 
-            foreach my $filespec (@filespecs) {
-                my $filename = filename($filespec);
+            foreach my $latest_filespec (@latest_filespecs) {
+                my $filename = filename($latest_filespec);
                 my $ext      = file_ext($filename);
 
-                if ($nodates_folder) {
+                if ($fullname_folder) {
                     my $newfilespec
-                      = $nodates_folder->make_filespec($line_and_token)
+                      = $fullname_folder->make_filespec($line_and_token)
                       . ".$ext";
-                    _copy_file( $filespec, $newfilespec );
+                    _copy_file( $latest_filespec, $newfilespec );
                 }
 
-                if ($withdates_folder) {
+                if ($linesname_folder) {
                     my $newfilespec
-                      = $withdates_folder->make_filespec($filename);
-                    _copy_file( $filespec, $newfilespec );
+                      = $linesname_folder->make_filespec($filename);
+                    _copy_file( $latest_filespec, $newfilespec );
                 }
 
                 if ( $web_folder and lc($ext) eq 'pdf' ) {
                     make_web_maps(
                         {   web_folder => $web_folder,
-                            files      => [$filespec],
+                            files      => [$latest_filespec],
                             resolution => $params{resolution},
                         }
                     );
                 }
 
-            } ## tidy end: foreach my $filespec (@filespecs)
+            } ## tidy end: foreach my $latest_filespec...
 
         } ## tidy end: foreach my $line_and_token ...
 
-    } ## tidy end: foreach my $folder_obj (@folder_objs)
+        emit_done;
+
+    } ## tidy end: foreach my $folder_obj ( sort...)
+
+    emit_done;
+    return;
 
 } ## tidy end: sub copylatest
 
-my $validlines_paramspec = {
-    repository => { can => qw<path subfolder make_filespec>, optional => 1 },
-    validfile => { type => SCALAR, default => '_validlines' }
+### PRIVATE UTILITY METHODS
+
+my $validmaps_paramspec = {
+    repository => { can  => [qw<path subfolder make_filespec>] },
+    validfile  => { type => SCALAR, default => '_validmaps' }
 };
 
-sub validlines {
-    my %params = ( @_, $validlines_paramspec );
-    my $repository = _repository( $params{repository} );
+sub _validmaps {
+
+    emit 'Getting list of valid maps';
+    my %params = ( @_, $validmaps_paramspec );
+    my $repository = $params{repository};
 
     open my $fh, '<', $params{validfile}
-      or croak "Can't open $params{validfile} for reading: $!";
+      or croak "Can't open $params{validfile} for reading: $OS_ERROR";
 
-    my %validlines;
+    my %validmaps;
 
     while (<$fh>) {
         chomp;
-        $validlines{$_} = 1;
+        $validmaps{$_} = 1;
     }
 
-    return %validlines;
-}
+    emit_done;
 
-### PRIVATE UTILITY METHODS
-
-sub _repository {
-
-    my $repository = shift()
-      // Actium::Folder::new('/Volumes/Bireme/Maps/Line Maps/');
-    return $repository;
-
-}
+    return %validmaps;
+} ## tidy end: sub _validmaps
 
 sub _copy_file {
     my ( $from, $to ) = shift;
@@ -406,8 +432,9 @@ sub _copy_file {
         emit_text "Copied: $from => $to";
     }
     else {
-        die "Couldn't copy: $from => $to\n$!";
+        die "Couldn't copy: $from => $to\n$OS_ERROR";
     }
+    return;
 }
 
 sub _move_file {
@@ -416,13 +443,18 @@ sub _move_file {
         emit_text "Moved: $from => $to";
     }
     else {
-        die "Couldn't move: $from => $to\n$!";
+        die "Couldn't move: $from => $to\n$OS_ERROR";
     }
+    return;
 }
 
 sub _lines_from_filename {
     my $filename = shift;
     my $lines    = $filename;
-    $lines =~ s/[-=].*//;
+    $lines =~ s/[-=].*//s;
     return $lines;
 }
+
+1;
+
+__END__
