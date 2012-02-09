@@ -50,11 +50,6 @@ sub add_option {
         my $optiontext = shift;
         my $callbackordefault   = shift;
         
-#        if ( $callback and ref($callback) ne 'CODE' ) {
-#            croak __PACKAGE__
-#              . ': Something other than a code reference was used as a callback';
-#        }
-
         my $caller = ( scalar( caller() ) ) || 'main';
 
         my @splitnames = _split_optionnames($option);
