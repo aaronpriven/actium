@@ -35,26 +35,31 @@ use Sub::Exporter -setup => {
     ]
 };
 
-use Params::Validate ':all';
-use File::Copy();
 use Carp;
-use Actium::Folder;
+use Const::Fast;
 use English '-no_match_vars';
+use File::Copy();
+use Params::Validate ':all';
 
-use Actium::Util('filename');
-
+use Actium::Folder;
+use Actium::Util(qw<filename file_ext remove_leading_path>);
+use Actium::Sorting::Line('sortbyline');
 use Actium::Term ':all';
 
-use Readonly;
+const my $DEFAULT_RESOLUTION => 288;
+const my $LINE_NAME_RE       => '[[:upper:]\d]{1,3}';
 
-Readonly my $DEFAULT_RESOLUTION => 288;
-Readonly my $LINE_NAME_RE       => '[[:upper:]\d]{1,3}';
+const my $CAN_ACTIUM_FOLDER =>
+  [qw<path children glob_plain_files subfolder make_filespec folder>];
+# these are all the methods that Params::Validate tests for to see if it's
+# a working folder object. Doing it with "can" rather than "isa" means we
+# can use subclasses such as Actium::Folders::Signup.
 
 ### IMPORTING NEW MAPS
 
 my $import_to_repository_paramspec = {
-    importfolder => { can  => [qw<path glob_plain_files>], },
-    repository   => { can  => [qw<path subfolder make_filespec>] },
+    importfolder => { can  => $CAN_ACTIUM_FOLDER },
+    repository   => { can  => $CAN_ACTIUM_FOLDER },
     move         => { type => BOOLEAN, optional => 1 },
 };
 
@@ -109,10 +114,10 @@ sub import_to_repository {
 
         my $result;
         if ($move) {
-            _move_file( $filespec, $newfilespec );
+            _move_file( $filespec, $newfilespec, $repository->path );
         }
         else {
-            _copy_file( $filespec, $newfilespec );
+            _copy_file( $filespec, $newfilespec, $repository->path );
         }
 
     } ## tidy end: foreach my $filespec (@files)
@@ -125,9 +130,10 @@ sub import_to_repository {
 ### COPYING/RASTERIZING WEB MAPS
 
 my $make_web_maps_paramspec = {
-    web_folder => { can  => [qw<path make_filespec>] },
+    web_folder => { can  => $CAN_ACTIUM_FOLDER },
     files      => { type => ARRAYREF },
     resolution => { type => SCALAR, default => $DEFAULT_RESOLUTION },
+    path_to_remove => { type => SCALAR, optional => 1 },
 };
 
 sub make_web_maps {
@@ -135,8 +141,9 @@ sub make_web_maps {
     my %params = validate( @_, $make_web_maps_paramspec );
 
     my $output_folder = $params{web_folder};
-    my $gsargs        = "-r $params{resolution} -sDEVICE=jpeg "
-      . '-dGraphicsAlphaBits=4 -dTextAlphaBits=4';
+    my $path_to_remove = $params{path_to_remove};
+    my $gsargs        = "-r$params{resolution} -sDEVICE=jpeg "
+      . '-dGraphicsAlphaBits=4 -dTextAlphaBits=4 -q';
 
     emit 'Making maps for web';
 
@@ -153,7 +160,7 @@ sub make_web_maps {
         # copy PDFs
         foreach my $output_line (@output_lines) {
             my $outfile = $output_folder->make_filespec("$output_line.pdf");
-            _copy_file( $filespec, $outfile );
+            _copy_file( $filespec, $outfile , $path_to_remove);
         }
 
         # copy JPGs
@@ -172,7 +179,7 @@ sub make_web_maps {
         }
         foreach my $output_line (@output_lines) {
             my $outfile = $output_folder->make_filespec("$output_line.jpeg");
-            _copy_file( $filespec, $outfile );
+            _copy_file( $filespec, $outfile , $path_to_remove);
         }
 
     } ## tidy end: foreach my $filespec ( @{ $params...})
@@ -269,11 +276,10 @@ sub filename_is_lines {
 ### COPY LATEST FILES TO NEW DIRECTORY
 
 my $copylatest_spec = {
-    repository => { can => [qw<path subfolder make_filespec>] },
-    fullname   => { can => [qw<path subfolder make_filespec>], optional => 1 }
-    ,
-    linesname => { can => [qw<path subfolder make_filespec>], optional => 1 },
-    web       => { can => [qw<path subfolder make_filespec>], optional => 1 },
+    repository         => { can  => $CAN_ACTIUM_FOLDER },
+    fullname           => { can  => $CAN_ACTIUM_FOLDER, optional => 1 },
+    linesname          => { can  => $CAN_ACTIUM_FOLDER, optional => 1 },
+    web                => { can  => $CAN_ACTIUM_FOLDER, optional => 1 },
     resolution         => { type => SCALAR, default => $DEFAULT_RESOLUTION },
     defining_extension => { type => SCALAR, default => 'eps' },
 };
@@ -281,32 +287,30 @@ my $copylatest_spec = {
 sub copylatest {
 
     my %params             = validate( @_, $copylatest_spec );
-    my $fullname_folder     = $params{fullname};
+    my $fullname_folder    = $params{fullname};
     my $linesname_folder   = $params{linesname};
     my $web_folder         = $params{web};
     my $defining_extension = $params{defining_extension};
 
     my $repository = $params{repository};
 
-    emit 'Copying latest map repository files';
-
     emit 'Getting list of folders in map repository';
     my @folder_objs = $repository->children;
     emit_done;
 
-    my %validmaps = _validmaps($repository);
-
-  FOLDER:
+    my %is_an_active_map = _active_maps($repository);
 
     my %latest_date_of;
     my %latest_ver_of;
 
     emit 'Copying files in repository folders';
 
-    foreach my $folder_obj ( sort { $_->folder } @folder_objs ) {
+    my %folder_obj_of;
+    $folder_obj_of{ $_->folder } = $_ foreach @folder_objs;
 
-        my $foldername = $folder_obj->folder;
-        emit_over $foldername;
+  FOLDER:
+    foreach my $foldername ( sortbyline keys %folder_obj_of ) {
+
         next FOLDER unless $foldername =~ m{
                       \A
                       $LINE_NAME_RE       # three alphanumerics
@@ -316,20 +320,22 @@ sub copylatest {
                       \z
                       }sx;
 
-        next FOLDER unless $validmaps{$foldername};
+        next FOLDER unless $is_an_active_map{$foldername};
 
         emit_over $foldername;
 
-        my @filespecs = $folder_obj->glob_plain_files;
+        my $folder_obj = $folder_obj_of{$foldername};
+        my @filespecs  = $folder_obj->glob_plain_files;
 
       FILE:
         foreach my $filespec (@filespecs) {
             next FILE
               unless $filespec =~ /[.] $defining_extension \z/isx;
             my $filename = filename($filespec);
+            my ( $filepart, $ext ) = file_ext($filespec);
 
             ## no critic (ProhibitMagicNumbers)
-            my ( $lines_and_token, $date, $ver ) = split( /-/s, $filename, 3 );
+            my ( $lines_and_token, $date, $ver ) = split( /-/s, $filepart, 3 );
             ## use critic
 
             if (   not( exists( $latest_date_of{$lines_and_token} ) )
@@ -361,26 +367,29 @@ sub copylatest {
 
             foreach my $latest_filespec (@latest_filespecs) {
                 my $filename = filename($latest_filespec);
-                my $ext      = file_ext($filename);
+                my ( undef, $ext ) = file_ext($filename);
 
-                if ($fullname_folder) {
+                if (defined $fullname_folder) {
                     my $newfilespec
-                      = $fullname_folder->make_filespec($line_and_token)
+                      = $fullname_folder->make_filespec($filename);
+                    _copy_file( $latest_filespec, $newfilespec,
+                        $repository->path );
+                }
+
+                if (defined $linesname_folder) {
+                    my $newfilespec
+                      = $linesname_folder->make_filespec($line_and_token)
                       . ".$ext";
-                    _copy_file( $latest_filespec, $newfilespec );
+                    _copy_file( $latest_filespec, $newfilespec,
+                        $repository->path );
                 }
 
-                if ($linesname_folder) {
-                    my $newfilespec
-                      = $linesname_folder->make_filespec($filename);
-                    _copy_file( $latest_filespec, $newfilespec );
-                }
-
-                if ( $web_folder and lc($ext) eq 'pdf' ) {
+                if ( defined $web_folder and lc($ext) eq 'pdf' ) {
                     make_web_maps(
                         {   web_folder => $web_folder,
                             files      => [$latest_filespec],
                             resolution => $params{resolution},
+                            path_to_remove => $repository->path,
                         }
                     );
                 }
@@ -389,9 +398,7 @@ sub copylatest {
 
         } ## tidy end: foreach my $line_and_token ...
 
-        emit_done;
-
-    } ## tidy end: foreach my $folder_obj ( sort...)
+    } ## tidy end: foreach my $foldername ( sortbyline...)
 
     emit_done;
     return;
@@ -400,52 +407,70 @@ sub copylatest {
 
 ### PRIVATE UTILITY METHODS
 
-my $validmaps_paramspec = {
-    repository => { can  => [qw<path subfolder make_filespec>] },
-    validfile  => { type => SCALAR, default => '_validmaps' }
-};
+sub _active_maps {
 
-sub _validmaps {
+    emit 'Getting list of active maps';
 
-    emit 'Getting list of valid maps';
-    my %params = ( @_, $validmaps_paramspec );
-    my $repository = $params{repository};
+    my $repository = shift;
+    my $filename = shift || '_active_maps.txt';
 
-    open my $fh, '<', $params{validfile}
-      or croak "Can't open $params{validfile} for reading: $OS_ERROR";
+    my $filespec = $repository->make_filespec($filename);
 
-    my %validmaps;
+    open my $fh, '<', $filespec
+      or croak "Can't open $filespec for reading: $OS_ERROR";
+
+    my %is_an_active_map;
 
     while (<$fh>) {
         chomp;
-        $validmaps{$_} = 1;
+        $is_an_active_map{$_} = 1;
     }
 
     emit_done;
 
-    return %validmaps;
-} ## tidy end: sub _validmaps
+    return %is_an_active_map;
+} ## tidy end: sub _active_maps
 
 sub _copy_file {
-    my ( $from, $to ) = shift;
+    my ($from, $to, $path) = @_;
+    my $display_path =  _display_path(@_);
+    
     if ( File::Copy::copy( $from, $to ) ) {
-        emit_text "Copied: $from => $to";
+        emit_text "Copied: $display_path";
     }
     else {
-        die "Couldn't copy: $from => $to\n$OS_ERROR";
+        die "Couldn't copy: $display_path\n$OS_ERROR";
     }
     return;
 }
 
 sub _move_file {
-    my ( $from, $to ) = shift;
+    my ($from, $to, $path) = @_;
+    my $display_path =  _display_path(@_);
+
     if ( File::Copy::move( $from, $to ) ) {
-        emit_text "Moved: $from => $to";
+        emit_text "Moved: $display_path";
     }
     else {
-        die "Couldn't move: $from => $to\n$OS_ERROR";
+        die "Couldn't move: $display_path\n$OS_ERROR";
     }
     return;
+}
+
+sub _display_path {
+    my ( $from, $to, $path ) = @_;
+    if ( defined $path ) {
+        foreach ( $from, $to ) {
+            my $new = remove_leading_path( $_, $path );
+            if ( $_ ne $new ) {
+                $_ = "<repos>/$new";
+            }
+        }
+
+    }
+    
+    return "$from => $to";
+
 }
 
 sub _lines_from_filename {
@@ -458,3 +483,83 @@ sub _lines_from_filename {
 1;
 
 __END__
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.001
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 OPTIONS
+
+A complete list of every available command-line option with which
+the application can be invoked, explaining what each does and listing
+any restrictions or interactions.
+
+If the application has no options, this section may be omitted.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties
+that can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2011
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
