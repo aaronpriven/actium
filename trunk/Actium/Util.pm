@@ -18,8 +18,10 @@ use Carp;
 sub positional : Export {
 
     my $argument_r = shift;
+    ## no critic (RequireInterpolationOfMetachars)
     croak 'First argument to positional must be a reference to @_'
       if not( ref($argument_r) eq 'ARRAY' );
+    ## use critic
 
     my @arguments = @{$argument_r};
     my @attrnames = @_;
@@ -60,8 +62,8 @@ sub _joinseries_with_x {
     my @things = @_;
     return $things[0] if @things == 1;
     return "$things[0] and $things[1]" if @things == 2;
-    my $last = pop @things;
-    return ( join( q{, }, @things ) . " $and $last" );
+    my $final = pop @things;
+    return ( join( q{, }, @things ) . " $and $final" );
 }
 
 sub joinseries : Export {
@@ -89,11 +91,11 @@ sub jn : Export {
 }
 
 sub sk : Export {
-    return split( /$KEY_SEPARATOR/, $_[0] );
+    return split( /$KEY_SEPARATOR/sx, $_[0] );
 }
 
 sub st : Export {
-    return split( /\t/, $_[0] );
+    return split( /\t/s, $_[0] );
 }
 
 # KEY SEPARATOR ADDING AND REMOVING
@@ -101,22 +103,22 @@ sub st : Export {
 sub keyreadable : Export {
     if (wantarray) {
         my @list = @_;
-        s/$KEY_SEPARATOR/_/g foreach @list;
+        s/$KEY_SEPARATOR/_/sxg foreach @list;
         return @list;
     }
     my $_ = shift;
-    s/$KEY_SEPARATOR/_/g;
+    s/$KEY_SEPARATOR/_/gxs;
     return $_;
 }
 
 sub keyunreadable : Export {
     if (wantarray) {
         my @list = @_;
-        s/_/$KEY_SEPARATOR/g foreach @list;
+        s/_/$KEY_SEPARATOR/sxg foreach @list;
         return @list;
     }
     my $_ = shift;
-    s/_/$KEY_SEPARATOR/g;
+    s/_/$KEY_SEPARATOR/gsx;
     return $_;
 }
 
@@ -126,7 +128,7 @@ sub even_tab_columns : Export {
     my @lengths;
     foreach my $line ( @{$list_r} ) {
         chomp $line;
-        my @fields = split( /\t/, $line );
+        my @fields = split( /\t/s, $line );
         for my $idx ( 0 .. $#fields ) {
             my $len = length( $fields[$idx] );
             if ( not $lengths[$idx] ) {
@@ -141,11 +143,11 @@ sub even_tab_columns : Export {
     my @returns;
 
     foreach my $line ( @{$list_r} ) {
-        my @fields = split( "\t", $line );
+        my @fields = split( /\t/s, $line );
         for my $idx ( 0 .. $#fields - 1 ) {
             $fields[$idx] = sprintf( '%-*s', $lengths[$idx], $fields[$idx] );
         }
-        push @returns, join( " ", @fields );
+        push @returns, join( $SPACE, @fields );
     }
 
     return \@returns;
@@ -163,15 +165,25 @@ sub filename : Export {
 
     my $filespec = shift;
     my $filename;
-    ( undef, undef, $filename ) = File::Spec->splitpath($filespec );
+    ( undef, undef, $filename ) = File::Spec->splitpath($filespec);
     return $filename;
 }
 
 sub file_ext : Export {
-   my $filespec = shift; # works on filespecs or filenames
-   my ($ext) = $filespec =~ /\.([^.]+)\z/;
-   return $ext;
- 
+    my $filespec = shift;                 # works on filespecs or filenames
+    my $filename = filename($filespec);
+    my ( $filepart, $ext )
+      = $filename =~ m{(.*)    # as many characters as possible
+                      [.]     # a dot
+                      ([^.]+) # one or more non-dot characters
+                      \z}sx;
+    return ( $filepart, $ext );
+}
+
+sub remove_leading_path : Export {
+    my ( $filespec, $path ) = @_;
+    require File::Spec;
+    return File::Spec->abs2rel( $filespec, $path );
 }
 
 sub flat_arrayref : Export {
@@ -180,7 +192,7 @@ sub flat_arrayref : Export {
     my @results;
     foreach my $input (@inputs) {
         if ( ref($input) eq 'ARRAY' ) {
-            push @results, @{flat_arrayref( @{$input} ) } ;
+            push @results, @{ flat_arrayref( @{$input} ) };
         }
         else {
             push @results, $input;
@@ -238,7 +250,7 @@ A quicker way to type "join ('' , @list)".
 =item B<jk()>
 
 Takes the list passed to it and joins it together, with each element separated 
-by the $KEY_SEPARATOR value from L<Actium::Constants>.
+by the $KEY_SEPARATOR value from L<Actium::Constants/Actium::Constants>.
 A quicker way to type "join ($KEY_SEPARATOR , @list)".
 
 =item B<jt()>
