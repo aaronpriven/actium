@@ -13,10 +13,10 @@
 
 # Subversion: $Id$
 
-## no critic (RequireLocalizedPunctuationVars)
-
 use 5.012;
 use warnings;
+
+our $VERSION = 0.001;
 
 # add the current program directory to list of files to include
 use FindBin qw($Bin);
@@ -29,8 +29,10 @@ use Actium::Options qw(add_option init_options option);
 
 {
     no warnings('once');
+    ## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
     if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
         @ARGV = Actium::Eclipse::get_command_line();
+    ## use critic
     }
 }
 
@@ -57,7 +59,7 @@ my %module_of = (
 my $help       = 0;
 my $subcommand = shift(@ARGV);
 
-if ( not $subcommand or ( lc($subcommand) eq "help" and ( @ARGV == 0 ) ) ) {
+if ( not $subcommand or ( lc($subcommand) eq 'help' and ( @ARGV == 0 ) ) ) {
     print mainhelp() or die "Can't print help text: $OS_ERROR";
     exit 0;
 }
@@ -81,16 +83,17 @@ require( modulefile($module) ) or die $OS_ERROR;
 
 add_option( 'help|?', 'Displays this help message.' );
 add_option( '_stacktrace',
-    'Force a stack trace if an error or warning is given ' );
+    'Provides lots of debugging information if there is an error. ' .
+    'Best ignored.');
 
 init_options();
 
 if ( option('_stacktrace') ) {
+## no critic (RequireLocalizedPunctuationVars)
     $SIG{'__WARN__'} = \&stacktrace;
     $SIG{'__DIE__'}  = \&stacktrace;
 }
 
-my $sub;
 if ( $help or option('help') ) {
     $module->HELP(@ARGV);
 }
@@ -100,9 +103,9 @@ else {
 
 sub mainhelp {
 
-    my $help = "$0 subcommands available:\n\n";
+    my $helptext = "$PROGRAM_NAME subcommands available:\n\n";
     foreach ( sort keys %module_of ) {
-        $help .= "$_\n";
+        $helptext .= "$_\n";
     }
 
     return $help;
