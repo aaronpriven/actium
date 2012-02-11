@@ -35,6 +35,8 @@ add_option(
       . '(on by default; turn off with -no-web)',
     1,
 );
+add_option( 'verbose!',
+    'Display detailed information on each file copied or rasterized.', 0 );
 
 add_option( 'webfolder|wf=s',
         'Folder where web files will be created. '
@@ -57,8 +59,7 @@ sub START {
 
     my $repository = Actium::Folder->new( option('repository') );
 
-    my $webfolder
-      = option_folder( $repository, 'web', 'webfolder', '_web' );
+    my $webfolder = option_folder( $repository, 'web', 'webfolder', '_web' );
     my $fullfolder
       = option_folder( $repository, 'fullnames', 'fullfolder', '_fullnames' );
     my $linesfolder = option_folder( $repository, 'linesnames', 'linesfolder',
@@ -69,8 +70,8 @@ sub START {
         fullname   => $fullfolder,
         linesname  => $linesfolder,
         web        => $webfolder,
+        verbose    => option('verbose'),
     );
-
     return;
 
 } ## tidy end: sub START
