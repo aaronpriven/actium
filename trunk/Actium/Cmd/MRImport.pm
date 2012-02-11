@@ -35,6 +35,10 @@ add_option(
       . '(on by default; turn off with -no-move)',
     1
 );
+
+add_option( 'verbose!',
+    'Display detailed information on each file copied or rasterized.', 0 );
+
 #add_option( 'rename!',
 #        'Rename the maps to have the same filenames as those '
 #      . 'in the repository. Has no effect when moving instead of copying.' );
@@ -57,6 +61,7 @@ sub START {
     my $move          = option('move');
     my $makeweb       = option('makeweb');
     my $webfolder_opt = option('webfolder');
+    my $verbose       = option('verbose');
 
     my $specified_webfolder_obj;
 
@@ -92,6 +97,7 @@ sub START {
                 web_folder     => $webfolder_obj,
                 files          => \@imported_files,
                 path_to_remove => $repository->path,
+                verbose        => $verbose,
             );
 
         }

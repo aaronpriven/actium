@@ -45,6 +45,7 @@ use Actium::Folder;
 use Actium::Util(qw<filename file_ext remove_leading_path>);
 use Actium::Sorting::Line('sortbyline');
 use Actium::Term ':all';
+use Actium::Constants;
 
 const my $DEFAULT_RESOLUTION => 288;
 const my $LINE_NAME_RE       => '[[:upper:]\d]{1,3}';
@@ -61,6 +62,7 @@ my $import_to_repository_paramspec = {
     importfolder => { can  => $CAN_ACTIUM_FOLDER },
     repository   => { can  => $CAN_ACTIUM_FOLDER },
     move         => { type => BOOLEAN, optional => 1 },
+    verbose      => { type => BOOLEAN, default => 0 },
 };
 
 sub import_to_repository {
@@ -73,6 +75,7 @@ sub import_to_repository {
 
     my $repository = $params{repository};
     my $move       = $params{move};
+    my $verbose    = $params{verbose};
 
     my $importfolder = $params{importfolder};
     emit 'Importing line maps from ' . $importfolder->path;
@@ -87,7 +90,7 @@ sub import_to_repository {
 
         my $filename    = filename($filespec);
         my $newfilename = $filename;
-        emit_over $filename;
+        emit_over $filename unless $verbose;
 
         # if newfilename isn't valid, first run it through normalize_filename.
         # Then if it's still not valid, carp and move on.
@@ -101,7 +104,9 @@ sub import_to_repository {
             next FILE;
         }
 
-        my $lines      = _lines_from_filename($filename);
+        my %nameparts = %{ _mapname_pieces($newfilename) };
+
+        my $lines      = $nameparts{lines};
         my $linefolder = $repository->subfolder($lines);
 
         my $newfilespec = $linefolder->make_filespec($newfilename);
@@ -114,12 +119,11 @@ sub import_to_repository {
 
         my $result;
         if ($move) {
-            _move_file( $filespec, $newfilespec, $repository->path );
+            _move_file( $filespec, $newfilespec, $repository->path, $verbose );
         }
         else {
-            _copy_file( $filespec, $newfilespec, $repository->path );
+            _copy_file( $filespec, $newfilespec, $repository->path, $verbose );
         }
-
     } ## tidy end: foreach my $filespec (@files)
     emit_done;
 
@@ -130,37 +134,49 @@ sub import_to_repository {
 ### COPYING/RASTERIZING WEB MAPS
 
 my $make_web_maps_paramspec = {
-    web_folder => { can  => $CAN_ACTIUM_FOLDER },
-    files      => { type => ARRAYREF },
-    resolution => { type => SCALAR, default => $DEFAULT_RESOLUTION },
+    web_folder     => { can  => $CAN_ACTIUM_FOLDER },
+    files          => { type => ARRAYREF },
+    resolution     => { type => SCALAR, default => $DEFAULT_RESOLUTION },
     path_to_remove => { type => SCALAR, optional => 1 },
+    verbose        => { type => BOOLEAN, default => 0 },
+    display        => { type => BOOLEAN, default => 1 },
 };
 
 sub make_web_maps {
 
     my %params = validate( @_, $make_web_maps_paramspec );
 
-    my $output_folder = $params{web_folder};
+    my $output_folder  = $params{web_folder};
+    my $display        = $params{display};
+    my $verbose        = $display ? $params{verbose} : 0;
     my $path_to_remove = $params{path_to_remove};
-    my $gsargs        = "-r$params{resolution} -sDEVICE=jpeg "
+    my $gsargs         = "-r$params{resolution} -sDEVICE=jpeg "
       . '-dGraphicsAlphaBits=4 -dTextAlphaBits=4 -q';
 
-    emit 'Making maps for web';
+    emit 'Making maps for web' if $display;
 
     foreach my $filespec ( @{ $params{files} } ) {
 
         my $filename = filename($filespec);
-
         next unless $filename =~ /[.]pdf\z/si;
 
-        my $lines = _lines_from_filename($filename);
+        emit_over $filename if $display and not $verbose;
 
-        my @output_lines = split( /_/s, $lines );
+        my %nameparts = %{ _mapname_pieces($filename) };
+
+        my @output_lines = $nameparts{line_r};
+        my $token        = $nameparts{token};
+
+        if ( defined $token) {
+            foreach (@output_lines) {
+                $_ .= "=$token";
+            }
+        }
 
         # copy PDFs
         foreach my $output_line (@output_lines) {
             my $outfile = $output_folder->make_filespec("$output_line.pdf");
-            _copy_file( $filespec, $outfile , $path_to_remove);
+            _copy_file( $filespec, $outfile, $path_to_remove, $verbose );
         }
 
         # copy JPGs
@@ -171,7 +187,8 @@ sub make_web_maps {
         my $result = system qq{gs $gsargs -o "$first_jpeg_spec" "$filespec"};
 
         if ( $result == 0 ) {
-            emit_text "Successfully rasterized $filespec to $first_jpeg_spec";
+            emit_text "Successfully rasterized $filespec to $first_jpeg_spec"
+              if $verbose;
         }
         else {
             die "Couldn't rasterize $filespec to $first_jpeg_spec:\n"
@@ -179,12 +196,12 @@ sub make_web_maps {
         }
         foreach my $output_line (@output_lines) {
             my $outfile = $output_folder->make_filespec("$output_line.jpeg");
-            _copy_file( $filespec, $outfile , $path_to_remove);
+            _copy_file( $filespec, $outfile, $path_to_remove, $verbose );
         }
 
     } ## tidy end: foreach my $filespec ( @{ $params...})
 
-    emit_done;
+    emit_done if $display;
 
     return;
 
@@ -208,6 +225,7 @@ sub normalize_filename {
 
             # there is probably a less repetitive way to write this, but
             # who cares
+
             s/jan(\d\d)/20${1}_01/sxi;
             s/feb(\d\d)/20${1}_02/sxi;
             s/mar(\d\d)/20${1}_03/sxi;
@@ -243,8 +261,6 @@ sub filename_is_lines {
 
     my $filename = shift;
 
-    my $linename_re = '[[:upper:]\d]{1,3}';
-    # 1 to 3 ASCII letters or numbers
     my $year_re = '(?:19[89]\d|20\d\d)';
     # year - another Y2100 problem
     my $month_re = '(?:0[123456789]|1[012])';
@@ -282,6 +298,7 @@ my $copylatest_spec = {
     web                => { can  => $CAN_ACTIUM_FOLDER, optional => 1 },
     resolution         => { type => SCALAR, default => $DEFAULT_RESOLUTION },
     defining_extension => { type => SCALAR, default => 'eps' },
+    verbose            => { type => BOOLEAN, default => 0 },
 };
 
 sub copylatest {
@@ -291,6 +308,7 @@ sub copylatest {
     my $linesname_folder   = $params{linesname};
     my $web_folder         = $params{web};
     my $defining_extension = $params{defining_extension};
+    my $verbose            = $params{verbose};
 
     my $repository = $params{repository};
 
@@ -298,7 +316,8 @@ sub copylatest {
     my @folder_objs = $repository->children;
     emit_done;
 
-    my %is_an_active_map = _active_maps($repository);
+    my ( $is_an_active_map_r, $is_an_active_line_r )
+      = _active_maps($repository);
 
     my %latest_date_of;
     my %latest_ver_of;
@@ -311,31 +330,41 @@ sub copylatest {
   FOLDER:
     foreach my $foldername ( sortbyline keys %folder_obj_of ) {
 
-        next FOLDER unless $foldername =~ m{
-                      \A
-                      $LINE_NAME_RE       # three alphanumerics
-                      (?:[_]              # with optional underline and
-                      $LINE_NAME_RE       #    three alphanums
-                      )*
-                      \z
-                      }sx;
+#        next FOLDER unless $foldername =~ m{
+#                      \A
+#                      $LINE_NAME_RE       # three alphanumerics
+#                      (?:[_]              # with optional underline and
+#                      $LINE_NAME_RE       #    three alphanums
+#                      )*
+#                      \z
+#                      }sx;
+# if we ever want to have an option to copy lines that are not active,
+# un-commenting that out will have a check against folders like _web,
+# _fullnames, etc.
 
-        next FOLDER unless $is_an_active_map{$foldername};
-
-        emit_over $foldername;
+        next FOLDER unless $is_an_active_line_r->{$foldername};
 
         my $folder_obj = $folder_obj_of{$foldername};
         my @filespecs  = $folder_obj->glob_plain_files;
+
+
+        emit_over $foldername unless $verbose;
 
       FILE:
         foreach my $filespec (@filespecs) {
             next FILE
               unless $filespec =~ /[.] $defining_extension \z/isx;
             my $filename = filename($filespec);
-            my ( $filepart, $ext ) = file_ext($filespec);
+            
+            my %nameparts = %{ _mapname_pieces($filename) };
+            
+            my $lines_and_token = $nameparts{lines_and_token};
+            my $date = $nameparts{date};
+            my $ver = $nameparts{ver};
+            my $ext = $nameparts{ext};
+            
+            next FILE unless $is_an_active_map_r->{$lines_and_token};
 
-            ## no critic (ProhibitMagicNumbers)
-            my ( $lines_and_token, $date, $ver ) = split( /-/s, $filepart, 3 );
             ## use critic
 
             if (   not( exists( $latest_date_of{$lines_and_token} ) )
@@ -369,27 +398,32 @@ sub copylatest {
                 my $filename = filename($latest_filespec);
                 my ( undef, $ext ) = file_ext($filename);
 
-                if (defined $fullname_folder) {
+                if ( defined $fullname_folder ) {
                     my $newfilespec
                       = $fullname_folder->make_filespec($filename);
-                    _copy_file( $latest_filespec, $newfilespec,
-                        $repository->path );
+                    _copy_file(
+                        $latest_filespec,  $newfilespec,
+                        $repository->path, $verbose
+                    );
                 }
 
-                if (defined $linesname_folder) {
+                if ( defined $linesname_folder ) {
                     my $newfilespec
                       = $linesname_folder->make_filespec($line_and_token)
                       . ".$ext";
-                    _copy_file( $latest_filespec, $newfilespec,
-                        $repository->path );
+                    _copy_file(
+                        $latest_filespec,  $newfilespec,
+                        $repository->path, $verbose
+                    );
                 }
 
                 if ( defined $web_folder and lc($ext) eq 'pdf' ) {
                     make_web_maps(
-                        {   web_folder => $web_folder,
-                            files      => [$latest_filespec],
-                            resolution => $params{resolution},
+                        {   web_folder     => $web_folder,
+                            files          => [$latest_filespec],
+                            resolution     => $params{resolution},
                             path_to_remove => $repository->path,
+                            display        => 0,
                         }
                     );
                 }
@@ -419,24 +453,27 @@ sub _active_maps {
     open my $fh, '<', $filespec
       or croak "Can't open $filespec for reading: $OS_ERROR";
 
-    my %is_an_active_map;
+    my ( %is_an_active_map, %is_an_active_line );
 
     while (<$fh>) {
         chomp;
         $is_an_active_map{$_} = 1;
+        s/=.*//;
+        $is_an_active_line{$_} = 1;
     }
 
     emit_done;
 
-    return %is_an_active_map;
+    return \%is_an_active_map, \%is_an_active_line;
 } ## tidy end: sub _active_maps
 
 sub _copy_file {
-    my ($from, $to, $path) = @_;
-    my $display_path =  _display_path(@_);
-    
+    my ( $from, $to, $path, $verbose ) = @_;
+    my $display_path;
+    $display_path = _display_path(@_) if $verbose;
+
     if ( File::Copy::copy( $from, $to ) ) {
-        emit_text "Copied: $display_path";
+        emit_text "Copied: $display_path" if $verbose;
     }
     else {
         die "Couldn't copy: $display_path\n$OS_ERROR";
@@ -445,11 +482,12 @@ sub _copy_file {
 }
 
 sub _move_file {
-    my ($from, $to, $path) = @_;
-    my $display_path =  _display_path(@_);
+    my ( $from, $to, $path, $verbose ) = @_;
+    my $display_path;
+    $display_path = _display_path(@_) if $verbose;
 
     if ( File::Copy::move( $from, $to ) ) {
-        emit_text "Moved: $display_path";
+        emit_text "Moved: $display_path" if $verbose;
     }
     else {
         die "Couldn't move: $display_path\n$OS_ERROR";
@@ -463,22 +501,40 @@ sub _display_path {
         foreach ( $from, $to ) {
             my $new = remove_leading_path( $_, $path );
             if ( $_ ne $new ) {
-                $_ = "<repos>/$new";
+                $_ = ".../$new";
             }
         }
 
     }
-    
+
     return "$from => $to";
 
 }
 
-sub _lines_from_filename {
+sub _mapname_pieces {
+    ## no critic (ProhibitMagicNumbers)
     my $filename = shift;
-    my $lines    = $filename;
-    $lines =~ s/[-=].*//s;
-    return $lines;
-}
+    my ( $filepart, $ext ) = file_ext($filename);
+    my ( $lines_and_token, $date, $ver ) = split( /-/s, $filepart, 3 );
+
+    my ( $lines, $token ) = split( /=/s, $lines_and_token );
+    
+    $token = $EMPTY_STR unless defined $token;
+
+    my @lines = split( /_/s, $lines );
+    return {
+        lines           => $lines,
+        lines_r         => \@lines,
+        lines_and_token => $lines_and_token,
+        token           => $token,
+        date            => $date,
+        ver             => $ver,
+        ext             => $ext,
+    };
+
+    ## use critic
+
+} ## tidy end: sub _mapname_pieces
 
 1;
 
