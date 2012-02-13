@@ -99,9 +99,9 @@ sub option_folder {
 __END__
 
 
-=head1 NAME
+=head1 Actium::MRCopy
 
-<name> - <brief description>
+MRCopy - Implements 
 
 =head1 VERSION
 
