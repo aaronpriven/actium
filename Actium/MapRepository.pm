@@ -139,7 +139,6 @@ my $make_web_maps_paramspec = {
     resolution     => { type => SCALAR, default => $DEFAULT_RESOLUTION },
     path_to_remove => { type => SCALAR, optional => 1 },
     verbose        => { type => BOOLEAN, default => 0 },
-    display        => { type => BOOLEAN, default => 1 },
 };
 
 sub make_web_maps {
@@ -147,27 +146,26 @@ sub make_web_maps {
     my %params = validate( @_, $make_web_maps_paramspec );
 
     my $output_folder  = $params{web_folder};
-    my $display        = $params{display};
-    my $verbose        = $display ? $params{verbose} : 0;
+    my $verbose        = $params{verbose};
     my $path_to_remove = $params{path_to_remove};
     my $gsargs         = "-r$params{resolution} -sDEVICE=jpeg "
       . '-dGraphicsAlphaBits=4 -dTextAlphaBits=4 -q';
 
-    emit 'Making maps for web' if $display;
+    emit 'Making maps for web';
 
     foreach my $filespec ( @{ $params{files} } ) {
 
         my $filename = filename($filespec);
         next unless $filename =~ /[.]pdf\z/si;
 
-        emit_over $filename if $display and not $verbose;
-
         my %nameparts = %{ _mapname_pieces($filename) };
 
-        my @output_lines = $nameparts{line_r};
+        emit_over $nameparts{lines} if not $verbose;
+
+        my @output_lines = @{ $nameparts{lines_r} };
         my $token        = $nameparts{token};
 
-        if ( defined $token) {
+        if ( $token ne $EMPTY_STR ) {
             foreach (@output_lines) {
                 $_ .= "=$token";
             }
@@ -184,16 +182,23 @@ sub make_web_maps {
         my $first_line      = shift @output_lines;
         my $first_jpeg_spec = $output_folder->make_filespec("$first_line.jpeg");
 
-        my $result = system qq{gs $gsargs -o "$first_jpeg_spec" "$filespec"};
+        my $result = system
+          qq{gs $gsargs -o "$first_jpeg_spec" "$filespec"};
 
         if ( $result == 0 ) {
-            emit_text "Successfully rasterized $filespec to $first_jpeg_spec"
-              if $verbose;
+            if ($verbose) {
+                my $display_path = _display_path( $first_jpeg_spec, $filespec,
+                    $path_to_remove );
+                emit_text "Successfully rasterized: $display_path";
+            }
         }
         else {
-            die "Couldn't rasterize $filespec to $first_jpeg_spec:\n"
+            my $display_path
+              = _display_path( $first_jpeg_spec, $filespec, $path_to_remove );
+            die "Couldn't rasterize: $display_path\n"
               . "system returned $result";
         }
+
         foreach my $output_line (@output_lines) {
             my $outfile = $output_folder->make_filespec("$output_line.jpeg");
             _copy_file( $filespec, $outfile, $path_to_remove, $verbose );
@@ -201,7 +206,7 @@ sub make_web_maps {
 
     } ## tidy end: foreach my $filespec ( @{ $params...})
 
-    emit_done if $display;
+    emit_done;
 
     return;
 
@@ -327,26 +332,27 @@ sub copylatest {
     my %folder_obj_of;
     $folder_obj_of{ $_->folder } = $_ foreach @folder_objs;
 
+    my @web_maps_to_process;
+
   FOLDER:
     foreach my $foldername ( sortbyline keys %folder_obj_of ) {
 
-#        next FOLDER unless $foldername =~ m{
-#                      \A
-#                      $LINE_NAME_RE       # three alphanumerics
-#                      (?:[_]              # with optional underline and
-#                      $LINE_NAME_RE       #    three alphanums
-#                      )*
-#                      \z
-#                      }sx;
-# if we ever want to have an option to copy lines that are not active,
-# un-commenting that out will have a check against folders like _web,
-# _fullnames, etc.
+        #        next FOLDER unless $foldername =~ m{
+        #                      \A
+        #                      $LINE_NAME_RE       # three alphanumerics
+        #                      (?:[_]              # with optional underline and
+        #                      $LINE_NAME_RE       #    three alphanums
+        #                      )*
+        #                      \z
+        #                      }sx;
+        # if we ever want to have an option to copy lines that are not active,
+        # un-commenting that out will have a check against folders like _web,
+        # _fullnames, etc.
 
         next FOLDER unless $is_an_active_line_r->{$foldername};
 
         my $folder_obj = $folder_obj_of{$foldername};
         my @filespecs  = $folder_obj->glob_plain_files;
-
 
         emit_over $foldername unless $verbose;
 
@@ -355,14 +361,14 @@ sub copylatest {
             next FILE
               unless $filespec =~ /[.] $defining_extension \z/isx;
             my $filename = filename($filespec);
-            
+
             my %nameparts = %{ _mapname_pieces($filename) };
-            
+
             my $lines_and_token = $nameparts{lines_and_token};
-            my $date = $nameparts{date};
-            my $ver = $nameparts{ver};
-            my $ext = $nameparts{ext};
-            
+            my $date            = $nameparts{date};
+            my $ver             = $nameparts{ver};
+            my $ext             = $nameparts{ext};
+
             next FILE unless $is_an_active_map_r->{$lines_and_token};
 
             ## use critic
@@ -418,14 +424,15 @@ sub copylatest {
                 }
 
                 if ( defined $web_folder and lc($ext) eq 'pdf' ) {
-                    make_web_maps(
-                        {   web_folder     => $web_folder,
-                            files          => [$latest_filespec],
-                            resolution     => $params{resolution},
-                            path_to_remove => $repository->path,
-                            display        => 0,
-                        }
-                    );
+                    push @web_maps_to_process, $latest_filespec;
+                    #      make_web_maps(
+                    #      {   web_folder     => $web_folder,
+                    #          files          => [$latest_filespec],
+                    #          resolution     => $params{resolution},
+                    #          path_to_remove => $repository->path,
+                    #          verbose        => $verbose,
+                    #       }
+                    #      );
                 }
 
             } ## tidy end: foreach my $latest_filespec...
@@ -435,6 +442,18 @@ sub copylatest {
     } ## tidy end: foreach my $foldername ( sortbyline...)
 
     emit_done;
+
+    if (@web_maps_to_process) {
+        make_web_maps(
+            {   web_folder     => $web_folder,
+                files          => \@web_maps_to_process,
+                resolution     => $params{resolution},
+                path_to_remove => $repository->path,
+                verbose        => $verbose,
+            }
+        );
+
+    }
     return;
 
 } ## tidy end: sub copylatest
@@ -467,49 +486,77 @@ sub _active_maps {
     return \%is_an_active_map, \%is_an_active_line;
 } ## tidy end: sub _active_maps
 
-sub _copy_file {
-    my ( $from, $to, $path, $verbose ) = @_;
-    my $display_path;
-    $display_path = _display_path(@_) if $verbose;
+sub _file_action {
 
-    if ( File::Copy::copy( $from, $to ) ) {
-        emit_text "Copied: $display_path" if $verbose;
+    my ( $from, $to, $path, $verbose, $action_r, $actionword ) = @_;
+
+    if ( $action_r->( $from, $to ) ) {
+        if ($verbose) {
+            my $display_path = _display_path( $from, $to, $path );
+            emit_text "Successful $actionword: $display_path";
+        }
     }
     else {
-        die "Couldn't copy: $display_path\n$OS_ERROR";
+        my $display_path = _display_path( $from, $to, $path );
+        die "Couldn't $actionword: $display_path\n$OS_ERROR";
     }
     return;
-}
 
-sub _move_file {
-    my ( $from, $to, $path, $verbose ) = @_;
-    my $display_path;
-    $display_path = _display_path(@_) if $verbose;
-
-    if ( File::Copy::move( $from, $to ) ) {
-        emit_text "Moved: $display_path" if $verbose;
-    }
-    else {
-        die "Couldn't move: $display_path\n$OS_ERROR";
-    }
-    return;
 }
 
 sub _display_path {
-    my ( $from, $to, $path ) = @_;
+    my ( $from, $to, $path ) = @_;    # making copies
     if ( defined $path ) {
-        foreach ( $from, $to ) {
+        foreach ( $from, $to ) {      # aliasing $_ to each in turn
             my $new = remove_leading_path( $_, $path );
             if ( $_ ne $new ) {
                 $_ = ".../$new";
             }
         }
-
     }
-
     return "$from => $to";
-
 }
+
+sub _copy_file {
+    my $action_r   = \&File::Copy::copy;
+    my $actionword = "copy";
+    return _file_action( @_, $action_r, $actionword );
+}
+
+sub _move_file {
+    my $action_r   = \&File::Copy::move;
+    my $actionword = "move";
+    return _file_action( @_, $action_r, $actionword );
+}
+
+#sub _copy_file {
+#
+#    my ( $from, $to, $path, $verbose ) = @_;
+#    my $display_path;
+#    $display_path = _display_path(@_) if $verbose;
+#
+#    if ( File::Copy::copy( $from, $to ) ) {
+#        emit_text "Copied: $display_path" if $verbose;
+#    }
+#    else {
+#        die "Couldn't copy: $display_path\n$OS_ERROR";
+#    }
+#    return;
+#}
+#
+#sub _move_file {
+#    my ( $from, $to, $path, $verbose ) = @_;
+#    my $display_path;
+#    $display_path = _display_path(@_) if $verbose;
+#
+#    if ( File::Copy::move( $from, $to ) ) {
+#        emit_text "Moved: $display_path" if $verbose;
+#    }
+#    else {
+#        die "Couldn't move: $display_path\n$OS_ERROR";
+#    }
+#    return;
+#}
 
 sub _mapname_pieces {
     ## no critic (ProhibitMagicNumbers)
@@ -518,7 +565,7 @@ sub _mapname_pieces {
     my ( $lines_and_token, $date, $ver ) = split( /-/s, $filepart, 3 );
 
     my ( $lines, $token ) = split( /=/s, $lines_and_token );
-    
+
     $token = $EMPTY_STR unless defined $token;
 
     my @lines = split( /_/s, $lines );
