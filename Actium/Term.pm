@@ -164,6 +164,7 @@ sub output_usage {
     my $width                  = get_width();
 
     foreach ( sort keys %{$messages_r} ) {
+        next if /^_/;
         my $optionname = sprintf '%*s -- ', $longest, "-$_";
 
         local ($Text::Wrap::columns) = $width - ($longest);
@@ -290,8 +291,12 @@ respectively.
 
 =item B<output_usage>
 
-This routine gets the help messages from B<Actium::Options::helpmessages()> and displays
-them in a pretty manner. It is intended to be used from HELP routines in modules.
+This routine gets the help messages from B<Actium::Options::helpmessages()> 
+and displays them in a pretty manner. It is intended to be used from HELP 
+routines in modules.
+
+Help messages of options beginning with underscores (e.g., -_stacktrace) 
+are not displayed.
 
 =item B<set_term_pos($position)>
 

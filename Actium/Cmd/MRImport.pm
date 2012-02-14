@@ -24,7 +24,7 @@ add_option(
     'Location of repository in file system',
     '/Volumes/Bireme/Maps/Repository'
 );
-add_option( 'makeweb|mw!',
+add_option( 'web!',
     'Create web files of maps (on by default; turn off with -no-makeweb)', 1 );
 add_option( 'webfolder|wf=s',
         'Folder where web files will be created. '

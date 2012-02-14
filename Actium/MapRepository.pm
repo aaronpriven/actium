@@ -47,8 +47,9 @@ use Actium::Sorting::Line('sortbyline');
 use Actium::Term ':all';
 use Actium::Constants;
 
+const my $LINE_NAME_LENGTH   => 4;
 const my $DEFAULT_RESOLUTION => 288;
-const my $LINE_NAME_RE       => '[[:upper:]\d]{1,3}';
+const my $LINE_NAME_RE       => '(?:[[:upper:]\d]+{1,4}|[[:alpha:]\d{5,})';
 
 const my $CAN_ACTIUM_FOLDER =>
   [qw<path children glob_plain_files subfolder make_filespec folder>];
@@ -182,8 +183,7 @@ sub make_web_maps {
         my $first_line      = shift @output_lines;
         my $first_jpeg_spec = $output_folder->make_filespec("$first_line.jpeg");
 
-        my $result = system
-          qq{gs $gsargs -o "$first_jpeg_spec" "$filespec"};
+        my $result = system qq{gs $gsargs -o "$first_jpeg_spec" "$filespec"};
 
         if ( $result == 0 ) {
             if ($verbose) {
@@ -223,6 +223,15 @@ sub normalize_filename {
     my ( $lines, $date, $ver ) = split( /-/s, $filename );
 
     $lines =~ s/,/_/gs;
+    
+    my @lines = split( /_/s, $lines );
+    foreach (@lines) {
+        $_ = lc($_) unless length($_) >= $LINE_NAME_LENGTH;
+    }
+    $lines = join( '_', @lines );
+    
+    # there's probably a simpler regexy way of writing that, but I don't know
+    # what it is right now
 
     if ( $date =~ /\A [[:alpha:]]{3} \d{2} \z/sx ) {
         for ($date) {
@@ -253,9 +262,9 @@ sub normalize_filename {
         when (/\A [[:alpha:]]+ \z/sx) {
             $ver .= '1';
         }
-        when (/\A\d+\z/s) {
-            $ver = "v$ver";
-        }
+#        when (/\A\d+\z/s) {
+#            $ver = "v$ver";
+#        }
     }
 
     return "$lines-$date-$ver.$ext";
@@ -273,7 +282,7 @@ sub filename_is_lines {
 
     return m{
               $LINE_NAME_RE
-                  # one transit line ( 1 to 3 ASCII letters or numbers )
+                  # one transit line 
               (?:_$LINE_NAME_RE)* 
                   # zero or more transit lines, separated by _
               (?:=\w+)
@@ -304,6 +313,7 @@ my $copylatest_spec = {
     resolution         => { type => SCALAR, default => $DEFAULT_RESOLUTION },
     defining_extension => { type => SCALAR, default => 'eps' },
     verbose            => { type => BOOLEAN, default => 0 },
+    active_map_file    => { type => SCALAR, default => 'active_maps.txt' },
 };
 
 sub copylatest {
@@ -322,7 +332,7 @@ sub copylatest {
     emit_done;
 
     my ( $is_an_active_map_r, $is_an_active_line_r )
-      = _active_maps($repository);
+      = _active_maps( $repository, $params{active_map_file} );
 
     my %latest_date_of;
     my %latest_ver_of;
@@ -339,9 +349,9 @@ sub copylatest {
 
         #        next FOLDER unless $foldername =~ m{
         #                      \A
-        #                      $LINE_NAME_RE       # three alphanumerics
+        #                      $LINE_NAME_RE       
         #                      (?:[_]              # with optional underline and
-        #                      $LINE_NAME_RE       #    three alphanums
+        #                      $LINE_NAME_RE       
         #                      )*
         #                      \z
         #                      }sx;
@@ -376,7 +386,7 @@ sub copylatest {
             if (   not( exists( $latest_date_of{$lines_and_token} ) )
                 or $latest_date_of{$lines_and_token} lt $date
                 or (    $latest_date_of{$lines_and_token} eq $date
-                    and $latest_ver_of{$lines_and_token} lt $ver )
+                    and lc($latest_ver_of{$lines_and_token}) lt lc($ver) )
               )
               # if there isn't a latest date for this line,
               # or if it's an earlier date, or the same date but an earlier
@@ -465,7 +475,7 @@ sub _active_maps {
     emit 'Getting list of active maps';
 
     my $repository = shift;
-    my $filename = shift || '_active_maps.txt';
+    my $filename   = shift;
 
     my $filespec = $repository->make_filespec($filename);
 

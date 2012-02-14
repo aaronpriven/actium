@@ -108,7 +108,7 @@ sub mainhelp {
         $helptext .= "$_\n";
     }
 
-    return $help;
+    return $helptext;
 
 }
 
