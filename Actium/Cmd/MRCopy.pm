@@ -24,15 +24,22 @@ add_option(
     'Location of repository in file system',
     '/Volumes/Bireme/Maps/Repository'
 );
+add_option(
+    'activemapfile=s',
+    'Name of file containing list of active maps. '
+      . 'Must be located in the repository.',
+    'active_maps.txt',
+);
 add_option( 'web!',
     'Create web files of maps (on by default; turn off with -no-web)', 1 );
 add_option( 'fullnames!',
-    'Copy files with their full names (on by default; turn off with -no-web)',
+    'Copy files with their full names ' . 
+    '(on by default; turn off with -no-fullnames)',
     1, );
 add_option(
     'linesnames!',
     'Copy files using the lines and token as the name only '
-      . '(on by default; turn off with -no-web)',
+      . '(on by default; turn off with -no-linesnames)',
     1,
 );
 add_option( 'verbose!',
@@ -66,11 +73,12 @@ sub START {
         '_linesnames' );
 
     copylatest(
-        repository => $repository,
-        fullname   => $fullfolder,
-        linesname  => $linesfolder,
-        web        => $webfolder,
-        verbose    => option('verbose'),
+        repository      => $repository,
+        fullname        => $fullfolder,
+        linesname       => $linesfolder,
+        web             => $webfolder,
+        verbose         => option('verbose'),
+        active_map_file => option('activemapfile'),
     );
     return;
 
@@ -99,39 +107,84 @@ sub option_folder {
 __END__
 
 
-=head1 Actium::MRCopy
+=head1 NAME
 
-MRCopy - Implements 
+Actium::Cmd::MRCopy - Copy latest map files from the map repository
 
 =head1 VERSION
 
-This documentation refers to <name> version 0.001
+This documentation refers to Actium::MRCopy version 0.001
 
 =head1 USAGE
 
- # brief working invocation example(s) using the most comman usage(s)
+From a shell:
 
-=head1 REQUIRED ARGUMENTS
+ actium.pl mr_copy
+ 
+=head1 DESCRIPTION
 
-A list of every argument that must appear on the command line when
-the application is invoked, explaining what each one does, any
-restrictions on where each one may appear (i.e., flags that must
-appear before or after filenames), and how the various arguments
-and options may interact (e.g., mutual exclusions, required
-combinations, etc.)
+The Actium::MRCopy module implements the mr_copy subcommand of actium.pl.
+The program goes through the map repository and copies the very latest 
+active map of each line and type to a separate folder. 
 
-If all of the application's arguments are optional, this section
-may be omitted entirely.
+Detailed documentation for users is in the separate document, "The Actium
+Maps Repository."
+
+See the separate document "About the Maps Repository" for background 
+information on the maps repository and how the files are stored.
+
+The program goes through each folder of the repository and determines which
+EPS (Encapsulated Postscript) file has the latest date and version.  It then
+copies all files of that date and version (whatever the extension) to the 
+destination folders.
+
+There are three separate destination folders:
+
+=over 
+
+=item fullnames
+
+Files in this folder have the full name of the map as they are called in the
+repository. This has the version and date information, so for example, files
+in this folder might be
+
+ 1_1R_801-2012_01-TT1.eps
+ 1_1R_801-2012_01-TT1.pdf
+ 7-2012_02-TT1.eps
+ 7-2012_02-TT1.pdf
+ 11-2010_08-TT2.eps
+ 11-2010_08-TT2.pdf
+ 
+=item linesnames
+
+Files in this folder have only the lines (and token, if present) as their 
+names. So, for example, the files described in fullnames would be present 
+here as
+
+ 1_1R_801.eps
+ 1_1R_801.pdf
+ 7.eps
+ 7.pdf
+ 11.eps
+ 11.pdf
+
+=item web
+
+This folder 
+
+=head1 COMMAND-LINE OPTIONS
 
 =over
 
-=item B<argument()>
+=item -repository
 
-Description of argument.
+This is the location of the repository in the file system. Defaults to 
+"/Volumes/Bireme/Maps/Repository."
 
-=back
+=item Other Options
 
-=head1 OPTIONS
+See L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
+
 
 A complete list of every available option with which the application
 can be invoked, explaining wha each does and listing any restrictions
@@ -139,9 +192,6 @@ or interactions.
 
 If the application has no options, this section may be omitted.
 
-=head1 DESCRIPTION
-
-A full description of the program and its features.
 
 =head1 DIAGNOSTICS
 
