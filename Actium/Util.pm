@@ -9,13 +9,29 @@ use 5.012;
 package Actium::Util 0.001;
 
 use Actium::Constants;
-use Perl6::Export::Attrs;
 use List::Util;
 use Carp;
+use File::Spec;
+
+use Sub::Exporter -setup => {
+    exports => [
+        qw<
+          positional          positional_around
+          joinseries          joinseries_ampersand
+          j                   jt
+          jk                  jn
+          sk                  st
+          keyreadable         keyunreadable
+          doe                 even_tab_columns
+          filename            file_ext
+          remove_leading_path flat_arrayref
+          >
+    ]
+};
 
 #### ACCEPTING POSITIONAL OR NAMED ARGUMENTS
 
-sub positional : Export {
+sub positional {
 
     my $argument_r = shift;
     ## no critic (RequireInterpolationOfMetachars)
@@ -46,9 +62,9 @@ sub positional : Export {
 
     return \%newargs;
 
-} ## tidy end: sub positional :
+} ## tidy end: sub positional
 
-sub positional_around : Export {
+sub positional_around {
     my $arguments_r = shift;
     my $orig        = shift @{$arguments_r};   # see Moose::Manual::Construction
     my $invocant    = shift @{$arguments_r};   # see Moose::Manual::Construction
@@ -66,41 +82,41 @@ sub _joinseries_with_x {
     return ( join( q{, }, @things ) . " $and $final" );
 }
 
-sub joinseries : Export {
+sub joinseries {
     return _joinseries_with_x( 'and', @_ );
 }
 
-sub joinseries_ampersand : Export {
+sub joinseries_ampersand {
     return _joinseries_with_x( '&', @_ );
 }
 
-sub j : Export {
+sub j {
     return join( $EMPTY_STR, map { $_ // $EMPTY_STR } @_ );
 }
 
-sub jt : Export {
+sub jt {
     return join( "\t", map { $_ // $EMPTY_STR } @_ );
 }
 
-sub jk : Export {
+sub jk {
     return join( $KEY_SEPARATOR, map { $_ // $EMPTY_STR } @_ );
 }
 
-sub jn : Export {
+sub jn {
     return join( "\n", map { $_ // $EMPTY_STR } @_ );
 }
 
-sub sk : Export {
+sub sk {
     return split( /$KEY_SEPARATOR/sx, $_[0] );
 }
 
-sub st : Export {
+sub st {
     return split( /\t/s, $_[0] );
 }
 
 # KEY SEPARATOR ADDING AND REMOVING
 
-sub keyreadable : Export {
+sub keyreadable {
     if (wantarray) {
         my @list = @_;
         s/$KEY_SEPARATOR/_/sxg foreach @list;
@@ -111,7 +127,7 @@ sub keyreadable : Export {
     return $_;
 }
 
-sub keyunreadable : Export {
+sub keyunreadable {
     if (wantarray) {
         my @list = @_;
         s/_/$KEY_SEPARATOR/sxg foreach @list;
@@ -122,7 +138,7 @@ sub keyunreadable : Export {
     return $_;
 }
 
-sub even_tab_columns : Export {
+sub even_tab_columns {
     my $list_r = shift;
 
     my @lengths;
@@ -152,16 +168,15 @@ sub even_tab_columns : Export {
 
     return \@returns;
 
-} ## tidy end: sub even_tab_columns :
+} ## tidy end: sub even_tab_columns
 
-sub doe : Export {
+sub doe {
     my @list = @_;
     $_ = $_ // $EMPTY_STR foreach @list;
     return wantarray ? @list : $list[0];
 }
 
-sub filename : Export {
-    require File::Spec;
+sub filename {
 
     my $filespec = shift;
     my $filename;
@@ -169,7 +184,7 @@ sub filename : Export {
     return $filename;
 }
 
-sub file_ext : Export {
+sub file_ext {
     my $filespec = shift;                 # works on filespecs or filenames
     my $filename = filename($filespec);
     my ( $filepart, $ext )
@@ -180,13 +195,79 @@ sub file_ext : Export {
     return ( $filepart, $ext );
 }
 
-sub remove_leading_path : Export {
+sub remove_leading_path {
     my ( $filespec, $path ) = @_;
-    require File::Spec;
+    
+    ############################
+    ## GET CANONICAL PATHS
+    
+    require Cwd;
+    $path = Cwd::abs_path($path);
+    $filespec = Cwd::abs_path($filespec);
+
+    ##############
+    ## FOLD CASE
+
+    # if a component of $filespec is the same except for upper/lowercase
+    # from a component of $path, use the upper/lowercase of $path
+
+    my ( $filevol, $filefolders_r, $file ) = _split_path_components($filespec);
+    my ( $pathvol, $pathfolders_r, $pathfile ) = 
+       _split_path_components($path, 1);
+
+    $file    = $pathfile if ( lc($file)    eq lc($pathfile) );
+    $filevol = $pathvol  if ( lc($filevol) eq lc($pathvol) );
+
+    # put each component into $case_of. But 
+    # if there is a conflict between folder names within $path --
+    # e.g., $path is "/Whatever/whatever/WHatEVer" -- use
+    # the first one
+    
+    my %case_of;
+    foreach ( @{$pathfolders_r} ) {
+        my $lower = lc($_);
+        if ( exists( $case_of{ $lower } ) ) {
+            $_ = $case_of{ $lower };
+        }
+        else {
+            $case_of{ $lower } = $_;
+        }
+    }
+
+    foreach my $component ( @{$filefolders_r} ) {
+        $component = $case_of{ lc($component) }
+          if $case_of{ lc($component) };
+    }
+
+    $filespec = _join_path_components( $filevol, $filefolders_r, $file );
+    $path     = _join_path_components( $pathvol, $pathfolders_r, $pathfile );
+    
+    ############################
+    ## REMOVE THE LEADING PATH
+
     return File::Spec->abs2rel( $filespec, $path );
+} ## tidy end: sub remove_leading_path
+
+# _split_path_components and _join_path_components 
+# might be worth making public if they are used again.
+# Originally written for the case-folding in remove_leading_path
+
+sub _split_path_components {
+    my $filespec = shift;
+    my $nofile = shift;
+    my ( $volume, $folders, $file ) = File::Spec->splitpath($filespec, $nofile);
+    my @folders = File::Spec->splitdir($folders);
+    return $volume, \@folders, $file;
 }
 
-sub flat_arrayref : Export {
+sub _join_path_components {
+    my ( $vol, $folders_r, $file ) = @_;
+    my $path
+      = File::Spec->catpath( $vol, File::Spec->catdir( @{$folders_r} ), $file );
+    return $path;
+}
+
+sub flat_arrayref {
 
     my @inputs = @_;
     my @results;
@@ -376,7 +457,7 @@ B<The following will not work:>
 
 =item Perl 5.12
 
-=item Perl6::Export::Attrs
+=item Sub::Exporter
 
 =back
 
