@@ -35,7 +35,7 @@ use Actium::DaysDirections (':ALL');
 use Actium::Options;
 use Actium::Folders::Signup;
 my $signup = Actium::Folders::Signup->new();
-chdir $signup->get_dir();
+chdir $signup->path();
 
 use List::Util ('max');
 

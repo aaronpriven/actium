@@ -38,13 +38,13 @@ use Actium::Options (qw<option add_option>);
 use Actium::Term (qw<printq sayq>);
 use Actium::Folders::Signup;
 my $signup = Actium::Folders::Signup->new();
-chdir $signup->get_dir();
+chdir $signup->path();
 
 $| = 1; # don't buffer terminal output
 
 sayq "cellpoints - create a set of text point schedules\n";
 
-sayq "Using signup $signup->get_signup";
+sayq "Using signup $signup->signup";
 
 # Takes the necessary options to change directories, plus 'quiet', and
 # then changes directories to the "actium/db/xxxx" base directory.

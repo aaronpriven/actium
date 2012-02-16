@@ -52,7 +52,7 @@ EOF
 
 use Actium::Folders::Signup;
 my $signup = Actium::Folders::Signup->new();
-chdir $signup->get_dir();
+chdir $signup->path();
 
 # set up row type hashes
 

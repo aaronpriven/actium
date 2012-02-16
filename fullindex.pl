@@ -36,9 +36,9 @@ add_option ('effectivedate:s' , 'Effective date of signup');
 use Actium::Term (qw<printq sayq>);
 use Actium::Folders::Signup;
 my $signupdir = Actium::Folders::Signup->new();
-chdir $signupdir->get_dir();
+chdir $signupdir->path();
 
-my $signup = $signupdir->get_signup;
+my $signup = $signupdir->signup;
 
 ######################################################################
 # initialize variables, command options, change to Skeds directory

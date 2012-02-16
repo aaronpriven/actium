@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/ActivePerl/bin/perl
 # vimcolor: #000030
 
 # makepoints
@@ -45,13 +45,16 @@ use Skedvars;
 use Skedtps qw(tphash tpxref);
 use Actium::Sorting::Line (qw(sortbyline byline));
 
-use Actium::Options (qw<option add_option>);
+use Actium::Options (qw<option add_option init_options>);
 #add_option ('spec' , 'description');
 use Actium::Term (qw<printq sayq>);
 use Actium::Folders::Signup;
+
+init_options();
+
 my $signupdir = Actium::Folders::Signup->new();
-chdir $signupdir->get_dir();
-my $signup = $signupdir->get_signup;
+chdir $signupdir->path();
+my $signup = $signupdir->signup;
 
 printq <<"EOF";
 makepoints - This is the makepoints program. It creates point schedules

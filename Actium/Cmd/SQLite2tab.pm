@@ -32,11 +32,11 @@ sub START {
     given ( lc($type) ) {
         when ('f') {
             $dir = Actium::Folders::Signup->new('xml');
-            $db = Actium::Files::FMPXMLResult->new( $dir->get_dir() );
+            $db = Actium::Files::FMPXMLResult->new( $dir->path() );
         }
         when ('h') {
             $dir = Actium::Folders::Signup->new('hasi');
-            $db = Actium::Files::HastusASI->new( $dir->get_dir() );
+            $db = Actium::Files::HastusASI->new( $dir->path() );
         }
         default {
             die "Don't know about type $type";
