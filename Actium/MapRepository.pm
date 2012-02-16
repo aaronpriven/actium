@@ -30,7 +30,7 @@ package Actium::MapRepository 0.001;
 use Sub::Exporter -setup => {
     exports => [
         qw(import_to_repository  make_web_maps      copylatest
-          normalize_filename     filename_is_lines
+          normalize_filename     filename_is_valid
           )
     ]
 };
@@ -49,7 +49,7 @@ use Actium::Constants;
 
 const my $LINE_NAME_LENGTH   => 4;
 const my $DEFAULT_RESOLUTION => 288;
-const my $LINE_NAME_RE       => '(?:[[:upper:]\d]+{1,4}|[[:alpha:]\d{5,})';
+const my $LINE_NAME_RE       => '(?:[[:upper:]\d]{1,4}|[[:alpha:]\d{5,})';
 
 const my $CAN_ACTIUM_FOLDER =>
   [qw<path children glob_plain_files subfolder make_filespec folder>];
@@ -97,9 +97,9 @@ sub import_to_repository {
         # Then if it's still not valid, carp and move on.
 
         $newfilename = normalize_filename($newfilename)
-          unless filename_is_lines($newfilename);
+          unless filename_is_valid($newfilename);
 
-        if ( not filename_is_lines($newfilename) ) {
+        if ( not filename_is_valid($newfilename) ) {
             emit_text
 "Can't find line, date, version or extension in $filename: skipped";
             next FILE;
@@ -118,13 +118,13 @@ sub import_to_repository {
             next FILE;
         }
 
-        my $result;
         if ($move) {
             _move_file( $filespec, $newfilespec, $repository->path, $verbose );
         }
         else {
             _copy_file( $filespec, $newfilespec, $repository->path, $verbose );
         }
+        push @copied_files, $newfilespec;
     } ## tidy end: foreach my $filespec (@files)
     emit_done;
 
@@ -223,13 +223,13 @@ sub normalize_filename {
     my ( $lines, $date, $ver ) = split( /-/s, $filename );
 
     $lines =~ s/,/_/gs;
-    
+
     my @lines = split( /_/s, $lines );
     foreach (@lines) {
         $_ = lc($_) unless length($_) >= $LINE_NAME_LENGTH;
     }
     $lines = join( '_', @lines );
-    
+
     # there's probably a simpler regexy way of writing that, but I don't know
     # what it is right now
 
@@ -262,16 +262,16 @@ sub normalize_filename {
         when (/\A [[:alpha:]]+ \z/sx) {
             $ver .= '1';
         }
-#        when (/\A\d+\z/s) {
-#            $ver = "v$ver";
-#        }
+        #        when (/\A\d+\z/s) {
+        #            $ver = "v$ver";
+        #        }
     }
 
     return "$lines-$date-$ver.$ext";
 
 } ## tidy end: sub normalize_filename
 
-sub filename_is_lines {
+sub filename_is_valid {
 
     my $filename = shift;
 
@@ -280,20 +280,20 @@ sub filename_is_lines {
     my $month_re = '(?:0[123456789]|1[012])';
     # numeric month
 
-    return m{
+    return $filename =~ m{
               $LINE_NAME_RE
                   # one transit line 
               (?:_$LINE_NAME_RE)* 
                   # zero or more transit lines, separated by _
               (?:=\w+)
-                  # one token containing word characters
-              -
+                  # one token starting with = and containing word characters
+              \-
                   # hyphen separating lines and date
               $year_re
                   # year (another Y2100 problem!)
               _$month_re
                   # underscore followed by numeric month
-              -
+              \-
                   # hyphen separating date and version
               \w+
                   # version (arbitrary word characters)
@@ -301,7 +301,7 @@ sub filename_is_lines {
                   # extension
               }sx;
 
-} ## tidy end: sub filename_is_lines
+} ## tidy end: sub filename_is_valid
 
 ### COPY LATEST FILES TO NEW DIRECTORY
 
@@ -349,9 +349,9 @@ sub copylatest {
 
         #        next FOLDER unless $foldername =~ m{
         #                      \A
-        #                      $LINE_NAME_RE       
+        #                      $LINE_NAME_RE
         #                      (?:[_]              # with optional underline and
-        #                      $LINE_NAME_RE       
+        #                      $LINE_NAME_RE
         #                      )*
         #                      \z
         #                      }sx;
@@ -385,8 +385,8 @@ sub copylatest {
 
             if (   not( exists( $latest_date_of{$lines_and_token} ) )
                 or $latest_date_of{$lines_and_token} lt $date
-                or (    $latest_date_of{$lines_and_token} eq $date
-                    and lc($latest_ver_of{$lines_and_token}) lt lc($ver) )
+                or ( $latest_date_of{$lines_and_token} eq $date
+                    and lc( $latest_ver_of{$lines_and_token} ) lt lc($ver) )
               )
               # if there isn't a latest date for this line,
               # or if it's an earlier date, or the same date but an earlier
@@ -515,6 +515,7 @@ sub _file_action {
 }
 
 sub _display_path {
+ 
     my ( $from, $to, $path ) = @_;    # making copies
     if ( defined $path ) {
         foreach ( $from, $to ) {      # aliasing $_ to each in turn

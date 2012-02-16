@@ -125,7 +125,23 @@ around BUILDARGS => sub {
         $hashref = { folderlist => [ $first_argument, @rest ], };
     }
 
-    $hashref->{folderlist} = $class->split_folderlist( $hashref->{folderlist} );
+    # If relative, add the current working directory to the beginning
+    # of the folder list
+
+    my @folders = @{ $class->split_folderlist( $hashref->{folderlist} ) };
+
+    my $volume = $EMPTY_STR;
+    $volume = $hashref->{volume} if exists $hashref->{volume};
+
+    my $temppath = File::Spec->catpath( $volume, File::Spec->catdir(@folders) );
+
+    if ( not File::Spec->file_name_is_absolute($temppath) ) {
+        # is relative
+        require Cwd;
+        unshift @folders, Cwd::getcwd();
+    }
+
+    $hashref->{folderlist} = $class->split_folderlist(@folders);
 
     return $class->$orig($hashref)
 
@@ -138,12 +154,26 @@ sub split_folderlist {
     my $self     = shift;
     my $folder_r = flat_arrayref(@_);
 
-    $folder_r = [ map { File::Spec->splitdir( File::Spec->canonpath($_) ) }
-          @{$folder_r} ];
+    my @new_folders;
+    foreach my $folder ( @{$folder_r} ) {
 
-    return $folder_r;
+        my $canon = File::Spec->canonpath($folder);
+        if ( $canon eq $EMPTY_STR ) {
+            push @new_folders, $EMPTY_STR;
+        }
+        else {
+            my @split = File::Spec->splitdir($canon);
+            push @new_folders, @split;
+        }
 
-}
+    }
+
+    return \@new_folders;
+
+#    $folder_r = [ map { File::Spec->splitdir( File::Spec->canonpath($_) ) } @{$folder_r} ];
+#    return $folder_r;
+
+} ## tidy end: sub split_folderlist
 
 sub BUILD {
     my $self = shift;
@@ -225,19 +255,21 @@ to set up the new object properly, so here we are.
 
 =cut
 
-sub subfolderlist_attribute {'folderlist'}
+sub subfolderlist_reader   {'_folderlist_r'}
+sub subfolderlist_init_arg {'folderlist'}
 
 sub subfolder {
     my $self = shift;
 
-    my $attribute = $self->subfolderlist_attribute;
+    my $init_arg = $self->subfolderlist_init_arg;
+    my $reader   = $self->subfolderlist_reader;
 
     my ( $params_r, @subfolders );
 
     if ( ref( $_[0] ) eq 'HASH' ) {
-        $params_r   = { %{ $_[0] } };            # new ref
-        @subfolders = $params_r->{$attribute};
-        delete $params_r->{$attribute};
+        $params_r   = { %{ $_[0] } };           # new ref
+        @subfolders = $params_r->{$init_arg};
+        delete $params_r->{$init_arg};
     }
     else {
         $params_r   = {};
@@ -249,10 +281,10 @@ sub subfolder {
 
     my $original_params_r = $self->original_parameters;
 
-    $params_r->{$attribute} = [ $original_params_r->{$attribute}, @subfolders ];
+    $params_r->{$init_arg} = [ $self->$reader, @subfolders ];
     # constructor will flatten the arrayrefs into an array
 
-    delete $original_params_r->{$attribute};
+    delete $original_params_r->{$init_arg};
 
     while ( my ( $key, $value ) = each %{$original_params_r} ) {
         $params_r->{$key} = $value unless exists $params_r->{$key};
@@ -292,14 +324,14 @@ sub children {
     # make subfolders
     my $self = shift;
     my $path = $self->path;
-    
-    my @folderpaths = grep { -d } $self->glob_files(@_);
-    my @foldernames = map { File::Spec->abs2rel ($_ , $path) } @folderpaths;
+
+    my @folderpaths = grep {-d} $self->glob_files(@_);
+    my @foldernames = map { File::Spec->abs2rel( $_, $path ) } @folderpaths;
     # removes $path from each @foldername. If the path is /a and the
     # current folderpath is /a/b, returns b
-    
+
     return map { $self->subfolder($_) } @foldernames;
-    
+
 }
 
 #######################
@@ -639,17 +671,19 @@ is a shortcut for this:
 This required attribute consists of a string representing a folder path, or a 
 reference to an array of strings, representing folders in a folder path.
 
-This can be a single string with an entire path ('/path/to/folder'), 
-a reference to a list containing that single string (['/path/to/folder']),
+This can be a single string with an entire path ('/path/to/folder'), or 
+an array reference. The array reference can point to an array
+containing that single string (['/path/to/folder']),
 a series of strings each with a folder name (['path' , 'to' , 'folder']),
 or a combination (['/path/to' , 'folder']). Actium::Folder splits the pieces
 into individual folders for you.
 
-Actium::Folder ignores whether the path begins with a leading slash 
-or other indication that the folder path is absolute (begins at the root). 
-Folder lists passed to B<new> are always treated as absolute. Folder lists
-passed to B<subfolder> are treated as relative to the folder
-represented by the original object.
+Actium::Folder's I<new> constructor accepts both relative paths and absolute 
+paths. If passed a relative path, adds the current working directory 
+(from L<Cwd/Cwd>) to the beginning of the path.
+
+Folder lists passed to B<subfolder> are always treated as relative to the 
+folder represented by the original object.
 
 =item I<volume>
 
@@ -707,7 +741,7 @@ The values of the B<volume> and B<must_exist> attributes, respectively.
 
 =back
 
-=head1 METHODS
+=head1 OBJECT METHODS
 
 =over
 
@@ -889,6 +923,19 @@ a period.
 
 =back
 
+=head1 CLASS METHOD
+
+=over
+
+=item B<< $class->split_foldernames(I<foldernames>) >>
+
+This class method takes a folder list and split it into component folders
+(e.g., "path/to" becomes qw<path to>). It flattens any nested array references 
+passed to it.
+
+Mainly useful in subclasses, which would want to have their own BUILDARGS 
+routines.
+
 =head1 DIAGNOSTICS
 
 =over
@@ -967,10 +1014,10 @@ The following are loaded only when necessary:
 
 =back
 
-=head1 BUGS AND LIMITATIONS
+=head1 NOTES
 
-Arguably, this module should be a subclass of Path::Class, which provides 
-additional functionality for largely the same purpose.
+Arguably, this module should be a subclass of Path::Class::Dir, which 
+provides additional functionality for largely the same purpose. 
 
 =head1 AUTHOR
 

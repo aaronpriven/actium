@@ -113,105 +113,133 @@ Actium::Cmd::MRCopy - Copy latest map files from the map repository
 
 =head1 VERSION
 
-This documentation refers to Actium::MRCopy version 0.001
+This documentation refers to Actium::Cmd::MRCopy version 0.001
 
 =head1 USAGE
 
 From a shell:
 
- actium.pl mr_copy
+ actium.pl mr_copy <options>
  
 =head1 DESCRIPTION
 
-The Actium::MRCopy module implements the mr_copy subcommand of actium.pl.
-The program goes through the map repository and copies the very latest 
+The Actium::Cmd::MRCopy module provides a command-line interface to the 
+B<copylatest> routine of Actium::MapRepository. It expects to be run by
+actium.pl. See the documentation to actium.pl for more information on the START
+and HELP methods.
+
+mr_copy goes through the map repository and copies the very latest 
 active map of each line and type to a separate folder. 
 
-Detailed documentation for users is in the separate document, "The Actium
-Maps Repository."
-
-See the separate document "About the Maps Repository" for background 
-information on the maps repository and how the files are stored.
-
-The program goes through each folder of the repository and determines which
-EPS (Encapsulated Postscript) file has the latest date and version.  It then
-copies all files of that date and version (whatever the extension) to the 
-destination folders.
-
-There are three separate destination folders:
-
-=over 
-
-=item fullnames
-
-Files in this folder have the full name of the map as they are called in the
-repository. This has the version and date information, so for example, files
-in this folder might be
-
- 1_1R_801-2012_01-TT1.eps
- 1_1R_801-2012_01-TT1.pdf
- 7-2012_02-TT1.eps
- 7-2012_02-TT1.pdf
- 11-2010_08-TT2.eps
- 11-2010_08-TT2.pdf
- 
-=item linesnames
-
-Files in this folder have only the lines (and token, if present) as their 
-names. So, for example, the files described in fullnames would be present 
-here as
-
- 1_1R_801.eps
- 1_1R_801.pdf
- 7.eps
- 7.pdf
- 11.eps
- 11.pdf
-
-=item web
-
-This folder 
+Detailed documentation on the maps repository and how to use mr_copy 
+can be found in the separate documents, "The Actium Maps Repository: 
+Quick Start Guide" and "The Actium Maps Repository: Extended Usage 
+and Technical Detail." 
 
 =head1 COMMAND-LINE OPTIONS
 
+The mr_copy program has several options that can be used on the command line. These should be placed after mr_import:
+
+ actium.pl mr_copy -no-web
+ 
+ actium.pl mr_copy -repository /Users/me/MyRepository
+ 
+ actium.pl mr_copy -help
+ 
+However, in practice only a few of them are actually useful.
+
 =over
+
+=item -activemapfile
+
+This allows the user to use a different file than active_maps.txt
+as the list of active maps. The file must, however, still be located
+in the repository folder.
+
+=item -fullfolder
+
+This allows you to change where copies with the full names are made. The default is "_fullnames" in the repository. Use "-fullfolder" to specify another location on the file system:
+
+ actium.pl mr_copy -fullfolder 
+    /Volumes/SHARE$/District Public Share/Apriven/CurrentLineMaps
+    
+"fullfolder" can be abbreviated "ff".
+
+=item -fullnames
+
+This option will copy the files into the "_fullnames" folder (or
+whatever the  fullfolder option specifies). This is on by default.
+To suppress copying of full names files, use "-no-fullnames" on the
+command line.
+
+=item -linesfolder
+
+This allows you to change where copies with just the line names are
+made. The default is "_linesnames" in the repository. Use "-linesfolder"
+to specify another location on the file system:
+
+ actium.pl mr_copy -linesfolder 
+    /Volumes/SHARE$/District Public Share/Apriven/LineMapsNoDates
+    
+"linesfolder" can be abbreviated "lf".
+
+=item -fullnames
+
+This option will copy the files into the "_linesnames" folder (or
+whatever the  linesfolder option specifies). This is on by default.
+To suppress copying of lines names files, use "-no-linesnames" on
+the command line.
 
 =item -repository
 
-This is the location of the repository in the file system. Defaults to 
-"/Volumes/Bireme/Maps/Repository."
+The repository is currently located at "/Volume/Bireme/Maps/Repository". To use another repository, specify its full path here. 
 
-=item Other Options
+=item -web
 
-See L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
+This option will copy the files into the "_web" folder (or whatever the -webfolder option specifies), and create the JPEG files. This is on by default. To suppress copying and rasterization of web files, use "-no-web" on the command line. 
 
+Rasterization takes the longest time so I suspect "-no-web" is the most likely option to be used.
 
-A complete list of every available option with which the application
-can be invoked, explaining wha each does and listing any restrictions
-or interactions.
+=item -webfolder
 
-If the application has no options, this section may be omitted.
+This allows you to change where web files made. The default is "_web" in the repository. Use "-webfolder" to specify another location on the file system:
 
+ actium.pl mr_copy -webfolder 
+    /Volumes/SHARE$/District Public Share/Apriven/MapsForWeb
+    
+=item -quiet, -verbose, and -progress
+
+These three options tell the program how much detail to display on screen. 
+
+"-quiet" eliminates all display except text that describes why the program quit unexpectedly. 
+
+"-verbose" displays on the screen a message indicating the names of each map copied or rasterized.
+
+"-progress" produces a running indication of which lines' maps are being 
+processed, when " verbose" is not in effect. This is on by default; use "-no-progress" to turn it off.
+
+=back
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
+Actium::Cmd::MRCopy issues no error messages on its own, but see its
+dependencies below.
 
 =head1 DEPENDENCIES
 
-List its dependencies.
+=over
+
+=item * Perl 5.14
+
+=item * Actium::MapRepository
+
+=item * Actium::Folder
+
+=item * Actium::Options
+
+=item * Actium::Term 
+
+=back
 
 =head1 AUTHOR
 
@@ -219,7 +247,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2011
+Copyright 2012
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
