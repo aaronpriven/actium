@@ -17,7 +17,7 @@ $VERSION = eval $VERSION;
 
 use Actium::Constants;
 
-use Term::Emit (qw<:all !emit_over !emit_prog> , { -fh => *STDERR });
+use Term::Emit ( qw<:all !emit_over !emit_prog>, { -fh => *STDERR } );
 
 use Actium::Options qw(option add_option);
 use Carp;
@@ -39,6 +39,9 @@ our @EXPORT_OK   = qw(sayq printq output_usage print_in_columns columnize);
 our %EXPORT_TAGS = ( all => [ @EXPORT_OK, @EXPORT ] );
 
 $SIG{'WINCH'} = \&set_width;
+$SIG{'INT'}   = \&_terminate;
+
+
 
 set_width();
 
@@ -56,7 +59,7 @@ sub emit_over {
 
     #no warnings('once');
     if ($Actium::Eclipse::is_under_eclipse) {
-        Term::Emit::emit_prog( join( $SPACE ,  @_ ) . $SPACE );
+        Term::Emit::emit_prog( join( $SPACE, @_ ) . $SPACE );
     }
     else {
         Term::Emit::emit_over(@_);
@@ -92,7 +95,7 @@ sub import {
 
     Actium::Term->export_to_level( 1, @_ );
 
-} ## <perltidy> end sub import
+}    ## <perltidy> end sub import
 
 add_option( 'quiet!', 'Does not display unnecessary information.',
     \&_option_quiet );
@@ -112,6 +115,13 @@ sub _option_quiet {
 sub set_width {
     my $width = get_width();
     Term::Emit::setopts( { -closestat => 'ERROR', -width => $width } );
+}
+
+sub _terminate {
+    my $signal = shift;
+    emit_text ("Caught SIG$signal... Aborting program.");
+    emit_done( 'ABORT' );
+    exit 1;
 }
 
 sub get_width {
@@ -178,46 +188,45 @@ sub output_usage {
     print "\n"
       or carp "Can't output help text: $!";
 
-} ## <perltidy> end sub output_usage
-
+}    ## <perltidy> end sub output_usage
 
 # TODO: Document columnize and print_in_columns
 sub columnize {
 
-   my $screenwidth = get_width();
-   my $padding = 1;
+    my $screenwidth = get_width();
+    my $padding     = 1;
 
-   if (reftype($_[0]) eq 'HASH' ) {
-      my %args = %{+shift};
-      $padding = $args{PADDING} || $padding;
-   }
+    if ( reftype( $_[0] ) eq 'HASH' ) {
+        my %args = %{ +shift };
+        $padding = $args{PADDING} || $padding;
+    }
 
-   my $results = '';
+    my $results = '';
 
-   my @list = @_;
-   
-   my $colwidth = $padding + max (map { length } @list);
-   
-   @list = map { sprintf ("%*s" , - ( $colwidth ),  $_) } @list;
+    my @list = @_;
 
-   my $cols = floor($screenwidth / ($colwidth)) || 1;
-   my $rows = ceil(@list / $cols);
+    my $colwidth = $padding + max( map {length} @list );
 
-   push @list , (" " x $colwidth) x ($cols*$rows - @list);
+    @list = map { sprintf( "%*s", -($colwidth), $_ ) } @list;
 
-   for my $y ( 0 .. $rows - 1 ) {
-      for my $x (0 .. $cols - 1) {
-         $results .= $list[$x * $rows + $y ] ;
-      }
-      $results .= "\n";
-   }
+    my $cols = floor( $screenwidth / ($colwidth) ) || 1;
+    my $rows = ceil( @list / $cols );
 
-   return $results;
-      
-}
+    push @list, ( " " x $colwidth ) x ( $cols * $rows - @list );
+
+    for my $y ( 0 .. $rows - 1 ) {
+        for my $x ( 0 .. $cols - 1 ) {
+            $results .= $list[ $x * $rows + $y ];
+        }
+        $results .= "\n";
+    }
+
+    return $results;
+
+} ## tidy end: sub columnize
 
 sub print_in_columns {
-   print columnize(@_);
+    print columnize(@_);
 }
 
 1;

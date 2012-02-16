@@ -176,7 +176,8 @@ override 'original_parameters' => sub {
 
 };
 
-override subfolderlist_attribute => sub {'subfolders'};
+override subfolderlist_reader => sub {'_subfolderlist_r'};
+override subfolderlist_init_arg => sub {'subfolders'};
 
 override display_path => sub {
     my $self       = shift;
