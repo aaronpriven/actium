@@ -26,7 +26,7 @@ chdir $signup->path();
 
 # open and load files
 
-printq STDERR "Using signup $signup->get_signup\n\n";
+printq STDERR "Using signup $signup->signup\n\n";
 
 printq STDERR <<"EOF";
 Now loading data...

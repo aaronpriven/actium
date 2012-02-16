@@ -52,7 +52,7 @@ my %height_of = (
 use Actium::Options;
 use Actium::Folders::Signup;
 my $signup = Actium::Folders::Signup->new();
-chdir $signup->get_dir();
+chdir $signup->path();
 
 my $bagtextdir = $signup->subfolder('bagtexts');
 

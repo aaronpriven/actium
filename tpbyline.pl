@@ -28,8 +28,8 @@ use Actium::Options (qw<option add_option>);
 use Actium::Term (qw<printq sayq>);
 use Actium::Folders::Signup;
 my $signupdir = Actium::Folders::Signup->new();
-chdir $signupdir->get_dir();
-my $signup = $signupdir->get_signup;
+chdir $signupdir->path();
+my $signup = $signupdir->signup;
 
 # open and load files
 
