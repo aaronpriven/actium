@@ -32,7 +32,7 @@ use Actium::Sorting::Line (qw(sortbyline));
 use Actium::Options;
 use Actium::Folders::Signup;
 my $signup = Actium::Folders::Signup->new();
-chdir $signup->get_dir();
+chdir $signup->path();
 
 $| = 1; # don't buffer terminal output; perl's not supposed to need this, but it does
 

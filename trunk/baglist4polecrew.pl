@@ -37,7 +37,7 @@ my $intro = 'baglist4polecrew -- makes bag list in route order for pole crew';
 use Actium::Options;
 use Actium::Folders::Signup;
 my $signup = Actium::Folders::Signup->new();
-chdir $signup->get_dir();
+chdir $signup->path();
 
 # retrieve data
 my ( @stops, %stops );
