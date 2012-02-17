@@ -21,7 +21,7 @@ use English '-no_match_vars';
 use List::MoreUtils qw<none>;
 use List::Util ('first');
 
-use Actium::Util(qw<:ALL>);
+use Actium::Util(qw<:all>);
 use Actium::Time(qw<:all>);
 use Actium::Sorting::Line qw<sortbyline linekeys>;
 use Actium::Constants;
