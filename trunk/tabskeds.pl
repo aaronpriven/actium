@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/ActivePerl/bin/perl
 # tabskeds
 
 # This is the program that creates the "tab files" that are used in the 
@@ -45,11 +45,15 @@ foreach (keys %specdaynames) {
 use Skedtps qw(tphash tpxref destination TPXREF_FULL);
 use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 
-use Actium::Options (qw<option add_option>);
+use Actium::Options (qw<option add_option init_options>);
 add_option ('upcoming=s' , 'Upcoming signup');
 add_option ('current!' , 'Current signup');
 use Actium::Term (qw<printq sayq>);
 use Actium::Folders::Signup;
+
+init_options;
+
+
 my $signupdir = Actium::Folders::Signup->new();
 chdir $signupdir->path();
 my $signup = $signupdir->signup;

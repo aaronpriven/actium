@@ -40,10 +40,15 @@ EOF
 
 my $intro = 'avl2stoplines -- make a list of stops with lines served from AVL data';
 
-use Actium::Options (qw<add_option option>);
+use Actium::Options (qw<add_option option init_options>);
 add_option ('random' , 'Give stops in random order instead of sorted');
 
 use Actium::Folders::Signup;
+
+
+init_options;
+
+
 my $signup = Actium::Folders::Signup->new();
 chdir $signup->path();
 

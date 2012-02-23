@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/ActivePerl/bin/perl
 # vimcolor: #001800
 
 # fullindex
@@ -7,9 +7,6 @@
 
 use strict;
 use warnings;
-
-@ARGV = qw(-s w07) if $ENV{RUNNING_UNDER_AFFRUS};
-
 
 ####################################################################
 #  load libraries
@@ -24,17 +21,29 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
+{
+    no warnings('once');
+    ## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
+    if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
+        @ARGV = Actium::Eclipse::get_command_line();
+    ## use critic
+    }
+}
+
 use Skedfile qw(Skedread Skedwrite trim_sked copy_sked remove_blank_columns);
 use Storable;
 use Algorithm::Diff;
 use Actium::Sorting::Line (qw(sortbyline));
 
-use Actium::Options (qw<option add_option>);
+use Actium::Options (qw<option add_option init_options>);
 
 add_option ('effectivedate:s' , 'Effective date of signup');
 
 use Actium::Term (qw<printq sayq>);
 use Actium::Folders::Signup;
+
+init_options;
+
 my $signupdir = Actium::Folders::Signup->new();
 chdir $signupdir->path();
 
@@ -150,6 +159,10 @@ sub skedidx_line {
       push @tps , $dataref->{TP}[$_] 
             if $thesetps[0] ne $thesetps[1];
    } # drop out duplicate arrival/departure timepoints (like merge_columns)
+   
+   if (not defined $tps[0]) {
+      print "not defined!\n";
+   }
 
    push @indexline, join("\035" , @tps);
 

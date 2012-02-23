@@ -23,7 +23,11 @@ use File::Copy;
 
 use Array::Transpose;
 
-use Actium::Util (':ALL');
+use Actium::Options (qw<option add_option init_options>);
+
+add_option('rawonly!' , 'Only create "rawskeds" and not "skeds".');
+
+use Actium::Util (':all');
 
 use Actium::Term ('sayq');
 use Actium::Constants;
@@ -32,9 +36,7 @@ use Actium::Time ('timenum');
 
 use Actium::DaysDirections (':ALL');
 
-use Actium::Options (qw<option add_option>);
-
-add_option('rawonly!' , 'Only create "rawskeds" and not "skeds".');
+init_options;
 
 my $helptext = <<'EOF';
 avl2skeds. Reads stored AVL data and makes skeds files.
@@ -52,9 +54,10 @@ $| = 1;
 
 # retrieve data
 
-my $skedsdir = $signup->subfolder('skeds');
+my $rawskedsdir = $signup->subfolder('rawskeds');
 
 if ( not option('rawonly') ) {
+   my $skedsdir = $signup->subfolder('skeds');
    my $rawskedsdir = $signup->subfolder('rawskeds');
 }              
 
@@ -616,12 +619,10 @@ sub make_skeds_pairs_of_hash {
       
       my $specdays = $tripinfo_of{SpecDays} || $EMPTY_STR;
       
-      my $days     = day_of_hasi ($tripinfo_of{OperatingDays});
-
-      unless ($days) {
-         print "*";
-      }
+      my $hasidays = $tripinfo_of{OperatingDays} =~ s/\*//gr;
       
+      my $days     = day_of_hasi($hasidays) || $hasidays;
+
       if ($days eq 'TT' or $days eq 'TF' or $days eq 'MZ') {
          $specdays = $days;
          $days = 'WD';
