@@ -52,8 +52,11 @@ EOF
 
 my $intro = 'avl2points -- makes list of times that buses pass each stop';
 
-use Actium::Options;
+use Actium::Options ('init_options');
 use Actium::Folders::Signup;
+
+init_options;
+
 my $signup = Actium::Folders::Signup->new();
 chdir $signup->path();
 

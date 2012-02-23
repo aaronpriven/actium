@@ -33,7 +33,7 @@ while (<$in>) {
 my $dump = 0;
 
 close $in
-  or die "Can't open $simplefile";
+  or die "Can't close $simplefile";
 
 foreach (@ARGV) {
     if ( $_ eq "-d" ) {
