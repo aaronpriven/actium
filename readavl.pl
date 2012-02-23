@@ -12,6 +12,8 @@
 #00000000111111111122222222223333333333444444444455555555556666666666777777777
 #23456789012345678901234567890123456789012345678901234567890123456789012345678
 
+use 5.014;
+
 use warnings;
 use strict;
 use Carp;
@@ -35,7 +37,7 @@ Readonly my $DELIMITER_LENGTH => length($DELIMITER);
 # don't buffer terminal output
 $| = 1;
 
-use Actium::Options (qw<add_option option>);
+use Actium::Options (qw<add_option option init_options>);
 
 add_option('skipsd!' , 'Skip processing school day additions in sdtrip.txt.');
 
@@ -50,9 +52,13 @@ readavl - reads AVL files from Hastus and stores them in an easier-
 to-read-form.
 EOF
 
+init_options;
+
 use Actium::Folders::Signup;
 my $signup = Actium::Folders::Signup->new();
 chdir $signup->path();
+
+say "Reading from $signup";
 
 # set up row type hashes
 
@@ -71,7 +77,7 @@ my %data_of;
 init_field_names();
 init_templates();
 
-my @files = glob ('avl/*');
+my @files = glob ('hasi/*');
 
 # read rows
 read_files(@files);

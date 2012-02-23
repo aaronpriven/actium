@@ -46,7 +46,7 @@ HELP
 sub START {
 
     my $signup         = Actium::Folders::Signup->new();
-    my $tabulae_folder = $signup->subfolder('tabulae-test');
+    my $tabulae_folder = $signup->subfolder('tabulae');
     my $pubtt_folder   = $tabulae_folder->subfolder('pubtt');
 
     my $xml_db = $signup->load_xml;
@@ -471,7 +471,7 @@ sub _make_length {
     
     my $ems = max( (map { ems($_) } @lines) );
     
-    if ($lines[0] eq '621') {
+    if (not defined $lines[0] or $lines[0] eq '621') {
        emit_prog ".";
     }
     

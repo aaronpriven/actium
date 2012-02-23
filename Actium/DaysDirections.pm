@@ -29,6 +29,7 @@ Readonly my %DAY_OF_HASI => {
       6       SA
       7       SU
       67      WE
+      56      FS
       24      TT
       25      TF
       35      WF
