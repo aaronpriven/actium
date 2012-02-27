@@ -168,7 +168,8 @@ foreach my $stop ( keys %stopinfo ) {
 
 print "Sorting times and merging days...\n";
 
-my @nolocals = qw<FS L NX NX1 NX2 NX3 U W>;
+#my @nolocals = qw<FS L NX NX1 NX2 NX3 OX U W>;
+my @nolocals = @TRANSBAY_NOLOCALS; # from Actium::Constants
 my %is_a_nolocal_route;
 $is_a_nolocal_route{$_} = 1 foreach @nolocals;
 
