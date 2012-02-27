@@ -38,7 +38,8 @@ Readonly my $PLAIN_OVERRIDE_FILENAME => 'plain_override.txt';
 Readonly my $STOP_SPEC_FILENAME      => 'stop-decals.txt';
 Readonly my $DECAL_SPEC_FILENAME     => 'decalspec.txt';
 
-Readonly my @TRANSBAY_NOLOCALS => qw/FS L NX NX1 NX2 NX3 U W/;
+#Readonly my @TRANSBAY_NOLOCALS => qw/FS L NX NX1 NX2 NX3 U W/;
+# Transbay_nolocals comes from Actium::Constants
 Readonly my $DROPOFFONLY       => 'Drop off only';
 Readonly my $LASTSTOP          => $DROPOFFONLY;                  #'Last stop';
 Readonly my $OVERRIDE_STRING   => 'Override:';
