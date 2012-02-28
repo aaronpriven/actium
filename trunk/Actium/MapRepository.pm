@@ -221,7 +221,7 @@ sub normalize_filename {
 
     my $filename = shift;
     
-    my ( $filepart, $ext ) = split( /[.]/s, shift() );
+    my ( $filepart, $ext ) = split( /[.]/s, $filename );
     my ( $lines, $date, $ver ) = split( /-/s, $filepart );
     
     return $filename unless defined $date and defined $ver;
@@ -230,7 +230,7 @@ sub normalize_filename {
 
     my @lines = split( /_/s, $lines );
     foreach (@lines) {
-        $_ = lc($_) unless length($_) >= $LINE_NAME_LENGTH;
+        $_ = uc($_) unless length($_) >= $LINE_NAME_LENGTH;
     }
     $lines = join( '_', @lines );
 
