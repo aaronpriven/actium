@@ -22,7 +22,7 @@ use Actium::Term;
 use Actium::Sked;
 use Text::Trim();
 use Actium::Sked::Trip;
-use Actium::Util qw<:ALL>;
+use Actium::Util qw<:all>;
 
 use List::MoreUtils ('uniq');
 
