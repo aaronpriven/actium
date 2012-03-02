@@ -635,8 +635,10 @@ sub delete_a_last_stop {
     my ( $pat_infos, $routes_r, $routedir, $pat_ident, $stop, $route ) = @_;
 
     return
-      unless exists $pat_infos->{$routedir}{$pat_ident}{Last};
-
+      unless exists $pat_infos->{$routedir}{$pat_ident}{Last}
+         or exists $pat_infos->{$routedir}{$pat_ident}{DropOffOnly};
+         #### The last line added very late, needs testing!
+      
     return if $routes_r->{$route} == 1;
 
     delete $pat_infos->{$routedir}{$pat_ident};

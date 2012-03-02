@@ -13,6 +13,8 @@ package Actium::Sorting::Travel 0.001;
 use Storable;
 use Actium::Options (qw(add_option option));
 
+use Actium::Sorting::Line ('byline');
+
 use Actium::Constants;
 
 use Exporter qw( import );

@@ -51,6 +51,9 @@ my %height_of = (
 
 use Actium::Options;
 use Actium::Folders::Signup;
+
+Actium::Options::init_options();
+
 my $signup = Actium::Folders::Signup->new();
 chdir $signup->path();
 
