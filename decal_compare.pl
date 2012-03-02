@@ -15,7 +15,6 @@ use Actium::Util('even_tab_columns');
 
 init_options;
 
-
 my $firstfile = shift(@ARGV);
 
 my %line_of;

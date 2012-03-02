@@ -35,6 +35,7 @@ while ( my $line = <> ) {
 
     next unless $line_of{$first_column};
 
-    say "< $line_of{$first_column}\n> $line";
+    #say "< $line_of{$first_column}\n> $line";
+    say "$line_of{$first_column}\t$line";
 
 }

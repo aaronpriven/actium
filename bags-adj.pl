@@ -65,7 +65,7 @@ my %output_dispatch = (
     RS => \&rs_output,
 );
 
-my $date = 'December' . IDTags::nbsp() . '18';
+my $date = 'March' . IDTags::nbsp() . '25';
 
 my ( @pink, @notpink );
 
