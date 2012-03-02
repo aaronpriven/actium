@@ -50,6 +50,7 @@ sub START {
        chomp;
     
        my ($stopid, $text) = split (/\t/, $_, 2);
+       $text //= q[];
        my $desc = $stops_row_of_r->{$stopid}{DescriptionCityF};
        say "$stopid\t$desc\t$text";
        

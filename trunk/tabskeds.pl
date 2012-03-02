@@ -193,7 +193,7 @@ foreach my $route (sortbyline keys %skednamesbyroute) {
        foreach (@allroutes) {
           my $colorref = $colors{$lines{$linegroup}{Color}};
           outtab ($_ , $lines{$_}{Description}, $lines{$_}{DirectionFile}, $lines{$_}{StopListFile}, 
-                  $lines{$_}{MapFileName} , $lines{$_}{FullWebNote} , $lines{$_}{TimetableDate},
+                  $lines{$_}{MapFileName} , '', , $lines{$_}{TimetableDate},
                   $colorref->{"Cyan"} , $colorref->{"Magenta"} , $colorref->{"Yellow"}, $colorref->{"Black"}, 
                   $colorref->{"RGB"} )
 
