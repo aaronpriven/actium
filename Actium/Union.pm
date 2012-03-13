@@ -6,7 +6,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Union 0.001;
+package Actium::Union 0.002;
 
 use Carp;
 
@@ -171,7 +171,7 @@ sub ordered_union_columns {
 
     ### INITIALIZE LOOP OF ARRAYS
 
-    my $union_set_r  = shift @set_rs;
+    my $union_set_r  = shift @set_rs; # longest entry
     my $highest_col  = $#{$union_set_r};
     my $union_cols_r = [ 0 .. $highest_col ];
 
@@ -721,7 +721,7 @@ ordered_union problem, that it was a variant of the "diff" problem.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2011 
+Copyright 2012 
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:

@@ -458,7 +458,8 @@ sub _local_text {
     }
 
     if ( $linegroup eq '800' or $linegroup =~ /\A [A-Z]/sx ) {
-        return $IDT->parastyle('CoverLocalPax') . 'Local Passengers Permitted';
+        return $IDT->parastyle('CoverLocalPax') 
+        . 'Local Passengers Permitted for Local Fare';
     }
 
     return $EMPTY_STR;
