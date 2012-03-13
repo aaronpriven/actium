@@ -14,7 +14,7 @@
 foreach (glob ("*.eps") , glob ("*.EPS")) {
 
    @ary = `strings \'$_\'`;
-   @ary2 = grep (/\(Code:/ , @ary );
+   @ary2 = grep (/\(code->/ , @ary );
 
    $string = $ary2[0];
 
@@ -22,8 +22,8 @@ foreach (glob ("*.eps") , glob ("*.EPS")) {
 
    chomp($string);
 
-   $string =~ s/.*\(Code: //;
-   $string =~ s/\) .*//;
+   $string =~ s/.*\(code->//;
+   $string =~ s/\).*//;
 
    $string .= ".EPS";
 
