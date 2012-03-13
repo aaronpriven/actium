@@ -69,59 +69,63 @@ sub START {
     my $signup     = Actium::Folders::Signup->new;
     my $theafolder = $signup->subfolder('thea');
 
-    my ($patterns_r, $patkeys_of_routedir_r) = get_patterns($theafolder);
-    
+    my ( $patterns_r, $patkeys_of_routedir_r ) = get_patterns($theafolder);
+
+    my $union_patterns_r
+      = make_union_patterns( $patterns_r, $patkeys_of_routedir_r );
+
     my ( $trip_of_tnum_r, $trips_of_patkey_r ) = get_trips($theafolder);
-    
-    my $union_patterns_r = make_union_patterns ($patterns_r);
-    
 
 }
 
 sub make_union_patterns {
-   my $patterns_r = shift;
-   
- 
+    my ( $patterns_r, $patkeys_of_routedir_r ) = @_;
+    
+    foreach my $routedir (keys $patkeys_of_routedir_r ) {
+     
+     
+    }
+    
 }
 
 sub output_debugging_patterns {
-   my $signup = shift;
-   my $patterns_r = shift;
- 
-   my $fh = $signup->open_write('thea_patterns.txt');
-    
-    foreach my $patkey (sort keys $patterns_r) {
-     
+    my $signup     = shift;
+    my $patterns_r = shift;
+
+    my $fh = $signup->open_write('thea_patterns.txt');
+
+    foreach my $patkey ( sort keys $patterns_r ) {
+
         my $direction = $patterns_r->{$patkey}[P_DIRECTION];
-        
-        my @stopinfos = @{$patterns_r->{$patkey}[P_STOPS]};
+
+        my @stopinfos = @{ $patterns_r->{$patkey}[P_STOPS] };
         my @stops;
         foreach my $stopinfo (@stopinfos) {
-             my $text = shift $stopinfo;
-             if (scalar @$stopinfo) {
-                 my $plc = shift $stopinfo;
-                 my $seq = shift $stopinfo;
-                 $text .= ":$plc:$seq";
-             }
-             push @stops, $text;
-         
+            my $text = shift $stopinfo;
+            if ( scalar @$stopinfo ) {
+                my $plc = shift $stopinfo;
+                my $seq = shift $stopinfo;
+                $text .= ":$plc:$seq";
+            }
+            push @stops, $text;
+
         }
-        my $stops = join(" " , @stops);
-        
-        my %places = %{$patterns_r->{$patkey}[ P_PLACES() ]};
+        my $stops = join( " ", @stops );
+
+        my %places = %{ $patterns_r->{$patkey}[ P_PLACES() ] };
         my @places;
-        
-        foreach my $seq (sort { $a <=> $b } keys %places) {
+
+        foreach my $seq ( sort { $a <=> $b } keys %places ) {
             push @places, "$seq:$places{$seq}";
         }
-        my $places = join(" " , @places);
-         
+        my $places = join( " ", @places );
+
         say $fh "$patkey\t$direction\n$stops\n$places\n";
-        
-    }
-    
-    close $fh or die "Can't close thea_patterns.txt: $OS_ERROR"; 
-}
+
+    } ## tidy end: foreach my $patkey ( sort keys...)
+
+    close $fh or die "Can't close thea_patterns.txt: $OS_ERROR";
+} ## tidy end: sub output_debugging_patterns
 
 #my %is_a_valid_trip_type = { Regular => 1, Opportunity => 1 };
 
@@ -225,16 +229,16 @@ sub get_patterns {
         my $tpat_route     = $value_of_r->{tpat_route};
         my $tpat_id        = $value_of_r->{tpat_id};
         my $tpat_direction = $value_of_r->{tpat_direction};
-        my $routedir = "$tpat_route:$tpat_direction";
+        my $routedir       = "$tpat_route:$tpat_direction";
 
-        my $key       = "$tpat_route:$tpat_id";
-        
-        push @{$patkeys_of_routedir{$routedir}} , $key;
+        my $key = "$tpat_route:$tpat_id";
+
+        push @{ $patkeys_of_routedir{$routedir} }, $key;
         my $direction = $dircode_of_thea{$tpat_direction}
           or emit_text("Unknown direction: $tpat_direction");
 
         $patterns{$key}[ P_DIRECTION() ] = $direction;
-        
+
     };
 
     read_tab_files(
@@ -286,7 +290,7 @@ sub get_patterns {
     );
 
     emit_done;
-    
+
     return \%patterns, \%patkeys_of_routedir;
 
 } ## tidy end: sub get_patterns

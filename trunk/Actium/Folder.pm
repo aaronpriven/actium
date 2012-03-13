@@ -773,7 +773,8 @@ folder represented by the object. If no pattern is specified, uses
 
 =item B<$obj-E<gt>glob_plain_files(I<pattern>)>
 
-Like B<glob_files>, except returns only plain files (that is, where B<-f I<file>> is true).
+Like B<glob_files>, except returns only plain files 
+(that is, where B<-f I<file>> is true).
 
 =item B<$obj-E<gt>mergeread(F<filename>)>
 
