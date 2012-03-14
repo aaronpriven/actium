@@ -197,12 +197,12 @@ sub file_ext {
 
 sub remove_leading_path {
     my ( $filespec, $path ) = @_;
-    
+
     ############################
     ## GET CANONICAL PATHS
-    
+
     require Cwd;
-    $path = Cwd::abs_path($path);
+    $path     = Cwd::abs_path($path);
     $filespec = Cwd::abs_path($filespec);
 
     ##############
@@ -212,25 +212,25 @@ sub remove_leading_path {
     # from a component of $path, use the upper/lowercase of $path
 
     my ( $filevol, $filefolders_r, $file ) = _split_path_components($filespec);
-    my ( $pathvol, $pathfolders_r, $pathfile ) = 
-       _split_path_components($path, 1);
+    my ( $pathvol, $pathfolders_r, $pathfile )
+      = _split_path_components( $path, 1 );
 
     $file    = $pathfile if ( lc($file)    eq lc($pathfile) );
     $filevol = $pathvol  if ( lc($filevol) eq lc($pathvol) );
 
-    # put each component into $case_of. But 
+    # put each component into $case_of. But
     # if there is a conflict between folder names within $path --
     # e.g., $path is "/Whatever/whatever/WHatEVer" -- use
     # the first one
-    
+
     my %case_of;
     foreach ( @{$pathfolders_r} ) {
         my $lower = lc($_);
-        if ( exists( $case_of{ $lower } ) ) {
-            $_ = $case_of{ $lower };
+        if ( exists( $case_of{$lower} ) ) {
+            $_ = $case_of{$lower};
         }
         else {
-            $case_of{ $lower } = $_;
+            $case_of{$lower} = $_;
         }
     }
 
@@ -241,21 +241,22 @@ sub remove_leading_path {
 
     $filespec = _join_path_components( $filevol, $filefolders_r, $file );
     $path     = _join_path_components( $pathvol, $pathfolders_r, $pathfile );
-    
+
     ############################
     ## REMOVE THE LEADING PATH
 
     return File::Spec->abs2rel( $filespec, $path );
 } ## tidy end: sub remove_leading_path
 
-# _split_path_components and _join_path_components 
+# _split_path_components and _join_path_components
 # might be worth making public if they are used again.
 # Originally written for the case-folding in remove_leading_path
 
 sub _split_path_components {
     my $filespec = shift;
-    my $nofile = shift;
-    my ( $volume, $folders, $file ) = File::Spec->splitpath($filespec, $nofile);
+    my $nofile   = shift;
+    my ( $volume, $folders, $file )
+      = File::Spec->splitpath( $filespec, $nofile );
     my @folders = File::Spec->splitdir($folders);
     return $volume, \@folders, $file;
 }
