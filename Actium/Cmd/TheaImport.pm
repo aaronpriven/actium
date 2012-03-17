@@ -90,12 +90,28 @@ sub assemble_trips {
 
     my %trips_of_routedir;
     
-    foreach my $trip (@$trips_r) {
-     
+    foreach my $trip_r (@$trips_r) {
+        my $newtrip_r = [];
+        foreach my $field ( 0 .. $#{$trip_r} ) {
+           next if $field == T_TIMES;
+           my $newtrip_r->[$field] = $trip_r->[$field];
+        }
         
-     
-     
-     
+        # adjust T_TIMES for columns
+        
+        my @times = @{$trip_r->[T_TIMES]};
+        my $routeid = @{$trip_r->[T_ROUTEID]};
+        my @newtimes;
+        
+        foreach my $oldcolumn ( 0 .. $#times ) {
+            my $newcolumn = $uindex_of_r->{$routeid}[$oldcolumn];
+            $newtimes[$newcolumn] = $times[$oldcolumn];
+        }
+        
+        my $routedir = 'something';
+        ... ; # figure out how to get routedir!
+        
+        push @{$trips_of_routedir{$routedir}} , $newtrip_r;
      
     }
 
@@ -118,6 +134,8 @@ sub output_debugging_patterns {
     my $trips_of_routeid_r         = shift;
 
     my $subfolder = $signup->subfolder('thea_debug');
+    
+    ...; # modify for array $trips_ar instead of hash $trips_of_routeid_r
 
     my $tfh = $subfolder->open_write('thea_trips.txt');
 
