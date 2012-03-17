@@ -134,7 +134,7 @@ foreach my $key ( keys %pat ) {
     my $route = $pat{$key}{Route};
     next if $route eq '399';
 
-    #next if $route eq 'BSH';
+    next if $route =~ /BS[DNH]/;
 
     my $dir = dir_of_hasi ( $pat{$key}{DirectionValue} );
 
@@ -173,7 +173,7 @@ foreach my $stop ( sort keys %{ $disp_route_of{'r6dir'} } ) {
     foreach my $codekey (@code_order) {
         while ( my $disp = each %{ $disp_route_of{$codekey}{$stop} } ) {
 
-            if ( $disp =~ /\ABSH/ ) {
+            if ( $disp =~ /\ABS[DHN]/ ) {
                 delete $disp_route_of{$codekey}{$stop}{$disp};
                 $bsh = 1;
                 next;
