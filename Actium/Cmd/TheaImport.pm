@@ -24,7 +24,7 @@ use Actium::Constants;
 use English '-no_match_vars';
 
 use constant { P_DIRECTION => 0, P_STOPS   => 1, P_PLACES => 2 };
-use constant { T_DAYS      => 0, T_VEHICLE => 1, T_TIMES  => 2 };
+use constant { T_DAYS      => 0, T_VEHICLE => 1, T_TIMES  => 2 , T_ROUTEID   => 3 };
 
 sub HELP {
 
@@ -72,25 +72,32 @@ sub START {
     my ( $patterns_r, $pat_routeids_of_routedir_r, $upattern_of_r,
         $uindex_of_r ) = get_patterns($theafolder);
 
-    my $trips_of_routeid_r = get_trips($theafolder);
+    #my $trips_of_routeid_r = get_trips($theafolder);
+    my $trips_r = get_trips($theafolder);
 
-    output_debugging_patterns( $signup, $patterns_r,
-        $pat_routeids_of_routedir_r, $upattern_of_r, $uindex_of_r,
-        $trips_of_routeid_r );
+#    output_debugging_patterns( $signup, $patterns_r,
+#        $pat_routeids_of_routedir_r, $upattern_of_r, $uindex_of_r,
+#        $trips_of_routeid_r ); # modify for $trips_r
 
-    my $trips_of_routedir_r
-      = assemble_trips( $patterns_r, $trips_of_routeid_r, $uindex_of_r )
-      ;
-           # to do
+    my $trips_of_routedir_r = assemble_trips( $patterns_r, $trips_r , $uindex_of_r );
 
 } ## tidy end: sub START
 
 sub assemble_trips {
     my $patterns_r         = shift;
-    my $trips_of_routeid_r = shift;
+    my $trips_r = shift;
     my $uindex_of_r        = shift;
 
     my %trips_of_routedir;
+    
+    foreach my $trip (@$trips_r) {
+     
+        
+     
+     
+     
+     
+    }
 
     # so the idea here is to go through each trip, and create a new
     # trip struct in trips_of_routedir that has the various information,
@@ -203,6 +210,8 @@ sub get_trips {
             $value_of_r->{trp_event} );
 
         $trip_of_tnum{$tnum}[T_DAYS] = $days_obj;
+        
+        $trip_of_tnum{$tnum}[T_ROUTEID] = $routeid;
 
     };
 
@@ -238,15 +247,23 @@ sub get_trips {
     );
 
     emit_done;
-
-    my %trips_of_routeid;
-    foreach my $routeid ( keys %tnums_of_routeid ) {
-        foreach my $tnum ( @{ $tnums_of_routeid{$routeid} } ) {
-            push @{ $trips_of_routeid{$routeid} }, $trip_of_tnum{$tnum};
+    
+    my @trips;
+    
+        foreach my $tnum ( keys %trip_of_tnum ) {
+            push @trips, $trip_of_tnum{$tnum};
         }
-    }
+        
+        return \@trips;
 
-    return \%trips_of_routeid;
+#    my %trips_of_routeid;
+#    foreach my $routeid ( keys %tnums_of_routeid ) {
+#        foreach my $tnum ( @{ $tnums_of_routeid{$routeid} } ) {
+#            push @{ $trips_of_routeid{$routeid} }, $trip_of_tnum{$tnum};
+#        }
+#    }
+
+#    return \%trips_of_routeid;
 
 } ## tidy end: sub get_trips
 
