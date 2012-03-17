@@ -69,17 +69,17 @@ sub START {
     my $signup     = Actium::Folders::Signup->new;
     my $theafolder = $signup->subfolder('thea');
 
-    my ( $patterns_r, $pat_routeids_of_routedir_r, $upattern_of_r,
-        $uindex_of_r ) = get_patterns($theafolder);
+    my ( $patterns_r, $routeids_of_routedir_r, $upattern_of_r,
+        $uindex_of_r , $routedir_of_routeid_r) = get_patterns($theafolder);
 
     #my $trips_of_routeid_r = get_trips($theafolder);
     my $trips_r = get_trips($theafolder);
 
 #    output_debugging_patterns( $signup, $patterns_r,
-#        $pat_routeids_of_routedir_r, $upattern_of_r, $uindex_of_r,
+#        $routeids_of_routedir_r, $upattern_of_r, $uindex_of_r,
 #        $trips_of_routeid_r ); # modify for $trips_r
 
-    my $trips_of_routedir_r = assemble_trips( $patterns_r, $trips_r , $uindex_of_r );
+    my $trips_of_routedir_r = assemble_trips( $patterns_r, $trips_r , $uindex_of_r , $routedir_of_routeid_r);
 
 } ## tidy end: sub START
 
@@ -87,6 +87,7 @@ sub assemble_trips {
     my $patterns_r         = shift;
     my $trips_r = shift;
     my $uindex_of_r        = shift;
+    my $routedir_of_routeid_r = shift;
 
     my %trips_of_routedir;
     
@@ -108,8 +109,7 @@ sub assemble_trips {
             $newtimes[$newcolumn] = $times[$oldcolumn];
         }
         
-        my $routedir = 'something';
-        ... ; # figure out how to get routedir!
+        my $routedir = $routedir_of_routeid_r->{$routeid};
         
         push @{$trips_of_routedir{$routedir}} , $newtrip_r;
      
@@ -128,7 +128,7 @@ sub assemble_trips {
 sub output_debugging_patterns {
     my $signup                     = shift;
     my $patterns_r                 = shift;
-    my $pat_routeids_of_routedir_r = shift;
+    my $routeids_of_routedir_r = shift;
     my $upattern_of_r              = shift;
     my $uindex_of_r                = shift;
     my $trips_of_routeid_r         = shift;
@@ -152,8 +152,8 @@ sub output_debugging_patterns {
 
     my $ufh = $subfolder->open_write('thea_upatterns.txt');
 
-    foreach my $routedir ( keys $pat_routeids_of_routedir_r ) {
-        my @routeids = @{ $pat_routeids_of_routedir_r->{$routedir} };
+    foreach my $routedir ( keys $routeids_of_routedir_r ) {
+        my @routeids = @{ $routeids_of_routedir_r->{$routedir} };
         say $ufh "\n$routedir";
         say $ufh join( "\t", @{ $upattern_of_r->{$routedir} } );
         foreach my $routeid (@routeids) {
@@ -306,7 +306,8 @@ sub make_days_obj {
 sub get_patterns {
     my $theafolder = shift;
     my %patterns;
-    my %pat_routeids_of_routedir;
+    my %routeids_of_routedir;
+    my %routedir_of_routeid;
 
     emit 'Reading THEA trippattern files';
 
@@ -331,7 +332,8 @@ sub get_patterns {
         }
         my $routedir = "$tpat_route:$direction";
 
-        push @{ $pat_routeids_of_routedir{$routedir} }, $routeid;
+        push @{ $routeids_of_routedir{$routedir} }, $routeid;
+        $routedir_of_routeid{$routeid} = $routedir;
 
         $patterns{$routeid}[ P_DIRECTION() ] = $direction;
 
@@ -393,9 +395,9 @@ sub get_patterns {
 
     my ( %upattern_of, %uindex_of );
 
-    foreach my $routedir ( keys %pat_routeids_of_routedir ) {
+    foreach my $routedir ( keys %routeids_of_routedir ) {
 
-        my @routeids = @{ $pat_routeids_of_routedir{$routedir} };
+        my @routeids = @{ $routeids_of_routedir{$routedir} };
 
         my @stop_sets;
         foreach my $routeid (@routeids) {
@@ -422,7 +424,8 @@ sub get_patterns {
 
     emit_done;
 
-    return \%patterns, \%pat_routeids_of_routedir, \%upattern_of, \%uindex_of;
+    return \%patterns, \%routeids_of_routedir, \%upattern_of, \%uindex_of, 
+    \%routedir_of_routeid;
 
 } ## tidy end: sub get_patterns
 
