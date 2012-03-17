@@ -151,7 +151,8 @@ sub ordered_union_columns {
 
     my %params = validate( @_, $ordered_union_columns_validspec );
 
-    my ( @set_rs, @set_ids, $tiebreaker );
+    my $tiebreaker = $params{tiebreaker};
+    my ( @set_rs, @set_ids );
 
     @set_rs = @{ $params{sets} };
 
@@ -161,7 +162,7 @@ sub ordered_union_columns {
     else {
         @set_ids = ( 0 .. $#set_rs );
     }
-
+    
     @set_rs = reverse sort { @{$a} <=> @{$b} or "@{$a}" cmp "@{$b}" } @set_rs;
 
     # sort it so the list with the most entries is first,
@@ -176,7 +177,7 @@ sub ordered_union_columns {
     my $union_cols_r = [ 0 .. $highest_col ];
 
     my $first_set_id = shift @set_ids;
-    my %cols_of = { $first_set_id => [ 0 .. $highest_col ] };
+    my %cols_of = ( $first_set_id => [ 0 .. $highest_col ] );
 
     my $markers_r;
 
@@ -242,7 +243,7 @@ sub _columns_pair {
 
     my $only_in_b = sub {
         push @tempb, $b_r->[ $_[1] ];
-        my $thiscol = $highest_col++;
+        my $thiscol = ++$highest_col;
         push @tempb_col, $thiscol;
         push @b_col,     $thiscol;
 
@@ -283,13 +284,16 @@ sub _columns_pair {
     };
 
     my $match = sub {
+     
+        my $matching_idx = $_[0];
 
-        my $matching_value = $a_r->[ $_[0] ];
+        my $matching_value = $a_r->[ $matching_idx ];
         
         $add_temps_to_union_r->($matching_value);
 
         push @union,   $matching_value;
-        push @u_col,   $a_col_r->[ $_[0] ];
+        push @u_col,   $a_col_r->[ $matching_idx ];
+        push @b_col,   $a_col_r->[ $matching_idx ];
         push @markers, '=';
 
     };

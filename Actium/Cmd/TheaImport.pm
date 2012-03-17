@@ -69,36 +69,83 @@ sub START {
     my $signup     = Actium::Folders::Signup->new;
     my $theafolder = $signup->subfolder('thea');
 
-    my ( $patterns_r, $patkeys_of_routedir_r ) = get_patterns($theafolder);
+    my ( $patterns_r, $pat_routeids_of_routedir_r, $upattern_of_r,
+        $uindex_of_r ) = get_patterns($theafolder);
 
-    my $union_patterns_r
-      = make_union_patterns( $patterns_r, $patkeys_of_routedir_r );
+    my $trips_of_routeid_r = get_trips($theafolder);
 
-    my ( $trip_of_tnum_r, $trips_of_patkey_r ) = get_trips($theafolder);
+    output_debugging_patterns( $signup, $patterns_r,
+        $pat_routeids_of_routedir_r, $upattern_of_r, $uindex_of_r,
+        $trips_of_routeid_r );
 
-}
+    my $trips_of_routedir_r
+      = assemble_trips( $patterns_r, $trips_of_routeid_r, $uindex_of_r )
+      ;
+           # to do
 
-sub make_union_patterns {
-    my ( $patterns_r, $patkeys_of_routedir_r ) = @_;
+} ## tidy end: sub START
+
+sub assemble_trips {
+    my $patterns_r         = shift;
+    my $trips_of_routeid_r = shift;
+    my $uindex_of_r        = shift;
+
+    my %trips_of_routedir;
+
+    # so the idea here is to go through each trip, and create a new
+    # trip struct in trips_of_routedir that has the various information,
+    # putting the times in the correct column as in uindex_of_r
     
-    foreach my $routedir (keys $patkeys_of_routedir_r ) {
-     
-     
-    }
-    
+    ...;
+
+    return \%trips_of_routedir;
+
 }
 
 sub output_debugging_patterns {
-    my $signup     = shift;
-    my $patterns_r = shift;
+    my $signup                     = shift;
+    my $patterns_r                 = shift;
+    my $pat_routeids_of_routedir_r = shift;
+    my $upattern_of_r              = shift;
+    my $uindex_of_r                = shift;
+    my $trips_of_routeid_r         = shift;
 
-    my $fh = $signup->open_write('thea_patterns.txt');
+    my $subfolder = $signup->subfolder('thea_debug');
 
-    foreach my $patkey ( sort keys $patterns_r ) {
+    my $tfh = $subfolder->open_write('thea_trips.txt');
 
-        my $direction = $patterns_r->{$patkey}[P_DIRECTION];
+    foreach my $routeid ( keys $trips_of_routeid_r ) {
+        say $tfh "\n$routeid";
+        foreach my $trip ( @{ $trips_of_routeid_r->{$routeid} } ) {
+            say $tfh join( "\t",
+                $trip->[T_DAYS]->as_sortable,
+                $trip->[T_VEHICLE], join( " ", @{ $trip->[T_TIMES] } ) );
+        }
+    }
 
-        my @stopinfos = @{ $patterns_r->{$patkey}[P_STOPS] };
+    close $tfh or die "Can't close thea_trips.txt: $OS_ERROR";
+
+    my $ufh = $subfolder->open_write('thea_upatterns.txt');
+
+    foreach my $routedir ( keys $pat_routeids_of_routedir_r ) {
+        my @routeids = @{ $pat_routeids_of_routedir_r->{$routedir} };
+        say $ufh "\n$routedir";
+        say $ufh join( "\t", @{ $upattern_of_r->{$routedir} } );
+        foreach my $routeid (@routeids) {
+            say $ufh $routeid;
+            say $ufh join( "\t", @{ $uindex_of_r->{$routeid} } );
+        }
+    }
+
+    close $ufh or die "Can't close thea_upatterns.txt: $OS_ERROR";
+
+    my $fh = $subfolder->open_write('thea_patterns.txt');
+
+    foreach my $routeid ( sort keys $patterns_r ) {
+
+        my $direction = $patterns_r->{$routeid}[P_DIRECTION];
+
+        my @stopinfos = @{ $patterns_r->{$routeid}[P_STOPS] };
         my @stops;
         foreach my $stopinfo (@stopinfos) {
             my $text = shift $stopinfo;
@@ -112,7 +159,7 @@ sub output_debugging_patterns {
         }
         my $stops = join( " ", @stops );
 
-        my %places = %{ $patterns_r->{$patkey}[ P_PLACES() ] };
+        my %places = %{ $patterns_r->{$routeid}[ P_PLACES() ] };
         my @places;
 
         foreach my $seq ( sort { $a <=> $b } keys %places ) {
@@ -120,11 +167,12 @@ sub output_debugging_patterns {
         }
         my $places = join( " ", @places );
 
-        say $fh "$patkey\t$direction\n$stops\n$places\n";
+        say $fh "$routeid\t$direction\n$stops\n$places\n";
 
-    } ## tidy end: foreach my $patkey ( sort keys...)
+    } ## tidy end: foreach my $routeid ( sort ...)
 
     close $fh or die "Can't close thea_patterns.txt: $OS_ERROR";
+
 } ## tidy end: sub output_debugging_patterns
 
 #my %is_a_valid_trip_type = { Regular => 1, Opportunity => 1 };
@@ -134,7 +182,7 @@ sub get_trips {
     emit 'Reading THEA trip files';
 
     my %trip_of_tnum;
-    my %trips_of_patkey;
+    my %tnums_of_routeid;
 
     my $trip_callback = sub {
         my $value_of_r = shift;
@@ -143,10 +191,10 @@ sub get_trips {
         #        return unless $is_a_valid_trip_type{ $value_of_r->{trp_type} };
         my $tnum = $value_of_r->{trp_int_number};
 
-        my $patkey
+        my $routeid
           = $value_of_r->{trp_route} . ':' . $value_of_r->{trp_pattern};
 
-        push @{ $trips_of_patkey{$patkey} }, $tnum;
+        push @{ $tnums_of_routeid{$routeid} }, $tnum;
 
         my $vehicle = $value_of_r->{trp_veh_groups};
         $trip_of_tnum{$tnum}[T_VEHICLE] = $vehicle if $vehicle;
@@ -191,7 +239,14 @@ sub get_trips {
 
     emit_done;
 
-    return \%trip_of_tnum, \%trips_of_patkey;
+    my %trips_of_routeid;
+    foreach my $routeid ( keys %tnums_of_routeid ) {
+        foreach my $tnum ( @{ $tnums_of_routeid{$routeid} } ) {
+            push @{ $trips_of_routeid{$routeid} }, $trip_of_tnum{$tnum};
+        }
+    }
+
+    return \%trips_of_routeid;
 
 } ## tidy end: sub get_trips
 
@@ -216,7 +271,7 @@ sub make_days_obj {
 sub get_patterns {
     my $theafolder = shift;
     my %patterns;
-    my %patkeys_of_routedir;
+    my %pat_routeids_of_routedir;
 
     emit 'Reading THEA trippattern files';
 
@@ -226,18 +281,26 @@ sub get_patterns {
 
         return unless $value_of_r->{tpat_in_serv};
         return unless $value_of_r->{tpat_trips_match};
-        my $tpat_route     = $value_of_r->{tpat_route};
-        my $tpat_id        = $value_of_r->{tpat_id};
+
+        my $tpat_route = $value_of_r->{tpat_route};
+        my $tpat_id    = $value_of_r->{tpat_id};
+
+        my $routeid = "$tpat_route:$tpat_id";
+        return if exists $patterns{$routeid};    # duplicate
+
         my $tpat_direction = $value_of_r->{tpat_direction};
-        my $routedir       = "$tpat_route:$tpat_direction";
+        my $direction      = $dircode_of_thea{$tpat_direction};
+        if ( not defined $direction ) {
+            $direction = $tpat_direction;
+            emit_text("Unknown direction: $tpat_direction");
+        }
+        my $routedir = "$tpat_route:$direction";
 
-        my $key = "$tpat_route:$tpat_id";
+        push @{ $pat_routeids_of_routedir{$routedir} }, $routeid;
 
-        push @{ $patkeys_of_routedir{$routedir} }, $key;
-        my $direction = $dircode_of_thea{$tpat_direction}
-          or emit_text("Unknown direction: $tpat_direction");
+        $patterns{$routeid}[ P_DIRECTION() ] = $direction;
 
-        $patterns{$key}[ P_DIRECTION() ] = $direction;
+        return;
 
     };
 
@@ -259,9 +322,9 @@ sub get_patterns {
         my $tpat_route = $value_of_r->{'item tpat_route'};
         my $tpat_id    = $value_of_r->{'item tpat_id'};
 
-        my $key = "$tpat_route:$tpat_id";
+        my $routeid = "$tpat_route:$tpat_id";
 
-        return unless exists $patterns{$key};
+        return unless exists $patterns{$routeid};
 
         my @patinfo = $value_of_r->{stp_511_id};
 
@@ -274,9 +337,9 @@ sub get_patterns {
 
         my $tpat_stp_rank = $value_of_r->{tpat_stp_rank};
 
-        $patterns{$key}[ P_STOPS() ][$tpat_stp_rank] = \@patinfo;
+        $patterns{$routeid}[ P_STOPS() ][$tpat_stp_rank] = \@patinfo;
 
-        $patterns{$key}[ P_PLACES() ]{$tpat_stp_tp_sequence} = $tpat_stp_plc
+        $patterns{$routeid}[ P_PLACES() ]{$tpat_stp_tp_sequence} = $tpat_stp_plc
           if $tpat_stp_tp_sequence;
 
     };
@@ -291,7 +354,40 @@ sub get_patterns {
 
     emit_done;
 
-    return \%patterns, \%patkeys_of_routedir;
+    emit 'Making unified patterns for each direction';
+
+    my ( %upattern_of, %uindex_of );
+
+    foreach my $routedir ( keys %pat_routeids_of_routedir ) {
+
+        my @routeids = @{ $pat_routeids_of_routedir{$routedir} };
+
+        my @stop_sets;
+        foreach my $routeid (@routeids) {
+            my @set;
+            foreach my $stop ( @{ $patterns{$routeid}[P_STOPS] } ) {
+                push @set, join( ':', @{$stop} );
+            }
+            push @stop_sets, \@set;
+        }
+
+        my %returned = ordered_union_columns(
+            sets => \@stop_sets,
+            ids  => \@routeids
+        );
+
+        $upattern_of{$routedir} = $returned{union};
+        #$uindexes_of{$routedir} = $returned{columns_of};
+
+        foreach my $routeid (@routeids) {
+            $uindex_of{$routeid} = $returned{columns_of}{$routeid};
+        }
+
+    } ## tidy end: foreach my $routedir ( keys...)
+
+    emit_done;
+
+    return \%patterns, \%pat_routeids_of_routedir, \%upattern_of, \%uindex_of;
 
 } ## tidy end: sub get_patterns
 
