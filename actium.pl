@@ -53,6 +53,7 @@ my %module_of = (
     nearbyroutes    => 'NearbyRoutes',
     mr_import       => 'MRImport',
     mr_copy         => 'MRCopy' ,
+    mr_coffee       => 'Joke' ,
     # more to come
 );
 
