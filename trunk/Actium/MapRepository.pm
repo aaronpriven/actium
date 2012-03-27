@@ -201,7 +201,7 @@ sub make_web_maps {
 
         foreach my $output_line (@output_lines) {
             my $outfile = $output_folder->make_filespec("$output_line.jpeg");
-            _copy_file( $filespec, $outfile, $path_to_remove, $verbose );
+            _copy_file( $first_jpeg_spec, $outfile, $path_to_remove, $verbose );
         }
 
     } ## tidy end: foreach my $filespec ( @{ $params...})
