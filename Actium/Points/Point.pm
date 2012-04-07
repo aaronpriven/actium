@@ -461,10 +461,8 @@ sub format_side {
     $effdate =~ s/\s+$//;
     $effdate =~ s/\s/$nbsp/g;
 
-    my $stopid = "Stop${nbsp}ID: " . $self->stopid();
-
     print $sidefh IDTags::parastyle( 'sideeffective',
-        IDTags::color( $color, "$stopid\rEffective: $effdate" ) );
+        IDTags::color( $color, "Effective: $effdate" ) );
 
     print $sidefh "\r",                IDTags::parastyle('sidenotes');
     print $sidefh 'Light Face = a.m.', IDTags::softreturn;
@@ -505,8 +503,19 @@ sub format_side {
     print $sidefh
 "See something wrong with this sign, or any other AC Transit sign? Let us know! Send email to signs\@actransit.org or call 511 to comment. Thanks!\r"
       if lc(
-        $Actium::Cmd::MakePoints::signtypes{ $Actium::Cmd::MakePoints::signs{$signid}
-              {SignType} }{GenerateWrongText} ) eq "yes";
+        $Actium::Cmd::MakePoints::signtypes{
+            $Actium::Cmd::MakePoints::signs{$signid}{SignType} }
+          {GenerateWrongText} ) eq "yes";
+
+    ### new stop ID
+
+    print $sidefh IDTags::parastyle('depttimeside'), 'Call ',
+      IDTags::bold('511'), ' and say ', IDTags::bold('"Departure Times"'),
+      " for live bus predictions\r", IDTags::parastyle('stopid'),
+      "STOP ID\r", IDTags::parastyle('stopidnumber'),
+      $self->stopid();
+
+    ###
 
     close $sidefh;
 
@@ -566,8 +575,8 @@ sub format_sidenotes {
         $line = $attr{line} if $attr{line};
 
         if ( $attr{destination} ) {
-            $dest
-              = $Actium::Cmd::MakePoints::timepoints{ $attr{destination} }{TPName};
+            $dest = $Actium::Cmd::MakePoints::timepoints{ $attr{destination} }
+              {TPName};
             $dest =~ s/\.*$/\./;
         }
 
@@ -629,9 +638,10 @@ sub format_bottom {
     open my $botfh, '>', \$formatted_bottom;
 
     no warnings('once');
-    my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid};    # this is a reference
+    my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid}; # this is a reference
 
-    print $botfh $stop_r->{DescriptionF}, ", ", $stop_r->{CityF};
+    print $botfh IDTags::parastyle ('bottomnotes') , 
+       $stop_r->{DescriptionF}, ", ", $stop_r->{CityF};
 
     print $botfh ". Sign #$signid. Stop $stopid.";
 
@@ -658,9 +668,8 @@ sub output {
 
     # output blank columns at beginning
 
-    my $maxcolumns
-      = $Actium::Cmd::MakePoints::signtypes{ $Actium::Cmd::MakePoints::signs{$signid}
-          {SignType} }{TallColumnNum};
+    my $maxcolumns = $Actium::Cmd::MakePoints::signtypes{
+        $Actium::Cmd::MakePoints::signs{$signid}{SignType} }{TallColumnNum};
     my $break = IDTags::boxbreak;
 
     if ( $maxcolumns and $maxcolumns > $self->width )
