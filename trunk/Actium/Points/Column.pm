@@ -360,16 +360,18 @@ sub format_headdest {
     my $self    = shift;
     my $desttp4 = $self->primary_destination;
     my $tpname;
+    my $tpdest;
     {
         no warnings 'once';
         use Data::Dumper;
         $tpname = $Actium::Cmd::MakePoints::timepoints{$desttp4}{TPName};
+        $tpdest = $Actium::Cmd::MakePoints::timepoints{$desttp4}{DestinationF};
     }
 
     my $dest;
 
     if ($tpname) {
-        $dest = " to $tpname";
+        $dest = " to $tpdest";
     }
     else {
         $dest = $desttp4;

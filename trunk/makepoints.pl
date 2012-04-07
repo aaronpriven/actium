@@ -35,6 +35,7 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
+my $IDPOINTFOLDER = 'indesign_points';
 
 use Data::Dumper;
 
@@ -611,13 +612,10 @@ sub output_points {
 
    @markdefs = ();
 
-   mkdir "kidpoints" or die 'Can\'t make directory "kidpoints"'  
-                  unless -d "kidpoints";
+   mkdir $IDPOINTFOLDER or die "Can't make directory '$IDPOINTFOLDER'" 
+                  unless -d $IDPOINTFOLDER;
 
-#   open OUT, ">kidpoints/$signid-" . $signs{$signid}{SignType} . "-" . 
-#                  scalar (@points) . ".txt";
-
-   open OUT, ">kidpoints/$signid.txt";
+   open OUT, ">$IDPOINTFOLDER/$signid.txt";
 
    print OUT IDTags::start;
    # print OUT IDTags::parastyle("Normal");
@@ -1136,7 +1134,8 @@ sub output_points {
        $color = "Rapid Red";
     }
     
-    print OUT IDTags::color($color , "Stop ID: $phoneid\rEffective: $effdate");
+    #print OUT IDTags::color($color , "Stop ID: $phoneid\rEffective: $effdate");
+    print OUT IDTags::color($color , "Effective: $effdate");
     print OUT "\r" , IDTags::parastyle('sidenotes');
     print OUT 'Light Face = a.m.' , IDTags::softreturn;
     print OUT IDTags::bold ('Bold Face = p.m.') , "\r"; 
@@ -1209,6 +1208,12 @@ sub output_points {
 
 
     print OUT "See something wrong with this sign, or any other AC Transit sign? Let us know! Send email to signs\@actransit.org or call 511 to comment. Thanks!\r" if lc($signtypes{$signs{$signid}{SignType}}{GenerateWrongText}) eq "yes";
+    
+    print OUT IDTags::parastyle('depttimeside'), 'Call ',
+      IDTags::bold('511'), ' and say ', IDTags::bold('"Departure Times"'),
+      " for live bus predictions\r", IDTags::parastyle('stopid'),
+      "STOP ID\r", IDTags::parastyle('stopidnumber'),
+      $phoneid;
 
     print OUT IDTags::boxbreak , IDTags::parastyle('bottomnotes');
     print OUT signdescription($signid) , ". ";
