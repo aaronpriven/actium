@@ -115,30 +115,45 @@ sub _comm_unchecked {
 
 } ## tidy end: sub _comm_unchecked
 
-my $sets_callback = {
-    'not a list of lists' => sub {
-        my $sets_r = shift;
-        foreach ( @{$sets_r} ) {
-            my $reftype = reftype($_);
+my $sethash_callback = {
+
+    'not a hash of lists' => sub {
+        my $sethash_r = shift;
+        while ( my ( $id, $set_r ) = each %{$sethash_r} ) {
+            my $reftype = reftype($set_r);
             if ( not( $reftype and $reftype eq 'ARRAYREF' ) ) {
                 return 0;
             }
-            return 1;
         }
+        return 1;
       }
+
 };
 
-my $set_ids_callback = {
-    'different number of set IDs as sets' => sub {
-        my $set_ids_r = shift;
-        my $sets_r    = $_[0]->{sets};
-        return ( scalar @$set_ids_r == scalar @$sets_r );
-      }
-};
+#my $sets_callback = {
+#    'not a list of lists' => sub {
+#        my $sets_r = shift;
+#        foreach ( @{$sets_r} ) {
+#            my $reftype = reftype($_);
+#            if ( not( $reftype and $reftype eq 'ARRAYREF' ) ) {
+#                return 0;
+#            }
+#            return 1;
+#        }
+#      }
+#};
+#
+#my $set_ids_callback = {
+#    'different number of set IDs as sets' => sub {
+#        my $set_ids_r = shift;
+#        my $sets_r    = $_[0]->{sets};
+#        return ( scalar @$set_ids_r == scalar @$sets_r );
+#      }
+#};
 
 my $ordered_union_columns_validspec = {
-    sets => { type => ARRAYREF, callback => $sets_callback, },
-    ids  => { type => ARRAYREF, optional => 1, callback => $set_ids_callback },
+    sethash => { type => HASHREF, callback => $sethash_callback, },
+#    ids  => { type => ARRAYREF, optional => 1, callback => $set_ids_callback },
     tiebreaker => {
         type    => CODEREF,
         default => sub { return 0 }
@@ -152,38 +167,36 @@ sub ordered_union_columns {
     my %params = validate( @_, $ordered_union_columns_validspec );
 
     my $tiebreaker = $params{tiebreaker};
-    my ( @set_rs, @set_ids );
-
-    @set_rs = @{ $params{sets} };
-
-    if ( $params{ids} ) {
-        @set_ids = @{ $params{ids} };
-    }
-    else {
-        @set_ids = ( 0 .. $#set_rs );
-    }
     
-    @set_rs = reverse sort { @{$a} <=> @{$b} or "@{$a}" cmp "@{$b}" } @set_rs;
-
+    my %set_of = %{ $params{sethash} };
+    
+    my @ordered_ids = map  { $_->[0] }
+          reverse sort {
+               @{$a->[1]} <=> @{$b->[1]} or "@{$a->[1]}" cmp "@{$b->[1]}" 
+          }
+          map  { [$_, $set_of{$_} ] }
+          keys %set_of;
+    
     # sort it so the list with the most entries is first,
     # or alternatively the one that sorts alphabetically latest.
     # The latter test is arbitrary, just to make sure the
     # result is the same each time.
 
     ### INITIALIZE LOOP OF ARRAYS
-
-    my $union_set_r  = shift @set_rs; # longest entry
+    
+    my $first_set_id = shift @ordered_ids;
+    
+    my $union_set_r  = $set_of{$first_set_id};        # longest entry
     my $highest_col  = $#{$union_set_r};
     my $union_cols_r = [ 0 .. $highest_col ];
 
-    my $first_set_id = shift @set_ids;
     my %cols_of = ( $first_set_id => [ 0 .. $highest_col ] );
 
     my $markers_r;
 
-    while (@set_rs) {
-        my $set_r  = shift @set_rs;
-        my $set_id = shift @set_ids;
+    while (@ordered_ids) {
+        my $set_id = shift @ordered_ids;
+        my $set_r = $set_of{$set_id};
         my $set_cols;
 
         ( $union_set_r, $union_cols_r, $markers_r, $set_cols )
@@ -195,7 +208,7 @@ sub ordered_union_columns {
     }
 
     ### CONVERT COLUMN IDS TO COLUMN INDEXES
-    # previous column IDs aren't in numeric order. 
+    # previous column IDs aren't in numeric order.
     # This makes indexes that are in order.
 
     # go through the list of column id, and identify the index of that id
@@ -259,11 +272,14 @@ sub _columns_pair {
 
     my $add_temps_to_union_r = sub {
         my $following_value = shift;
-        
+
         my $previous_value = @union ? $union[-1] : undef;
-        
-        my $afirst = ( $tiebreaker->( \@tempa, \@tempb , 
-             $previous_value, $following_value) <= 0 );
+
+        my $afirst = (
+            $tiebreaker->(
+                \@tempa, \@tempb, $previous_value, $following_value
+              ) <= 0
+        );
 
         if ($afirst) {
             push @union, @tempa,     @tempb;
@@ -284,16 +300,16 @@ sub _columns_pair {
     };
 
     my $match = sub {
-     
+
         my $matching_idx = $_[0];
 
-        my $matching_value = $a_r->[ $matching_idx ];
-        
+        my $matching_value = $a_r->[$matching_idx];
+
         $add_temps_to_union_r->($matching_value);
 
         push @union,   $matching_value;
-        push @u_col,   $a_col_r->[ $matching_idx ];
-        push @b_col,   $a_col_r->[ $matching_idx ];
+        push @u_col,   $a_col_r->[$matching_idx];
+        push @b_col,   $a_col_r->[$matching_idx];
         push @markers, '=';
 
     };

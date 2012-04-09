@@ -15,6 +15,7 @@ use Actium::Term ':all';
 use Actium::Folders::Signup;
 use Text::Trim;
 use Actium::Files::TabDelimited 'read_tab_files';
+use Actium::Time ('timenum');
 use Actium::Sked::Days;
 
 use Actium::Union('ordered_union_columns');
@@ -22,6 +23,8 @@ use Actium::Union('ordered_union_columns');
 use Actium::Constants;
 
 use English '-no_match_vars';
+use List::Util ('min');
+use List::MoreUtils (qw<each_arrayref>);
 
 use constant { P_DIRECTION => 0, P_STOPS   => 1, P_PLACES => 2 };
 use constant { T_DAYS      => 0, T_VEHICLE => 1, T_TIMES  => 2 };
@@ -108,16 +111,11 @@ sub _assemble_trips {
                     my $new_column_idx
                       = $uindex_of_r->{$routeid}[$old_column_idx];
 
-                    unless ( defined $new_column_idx ) {
-                        say "found bug!";
-                        
-                        # problem seems to be that ordered_union_columns
-                        # is returning the wrong ids... not sure about that
-                    }
-
                     $unified_times[$new_column_idx] = $times[$old_column_idx];
 
                 }
+
+                $unified_trip_r->[T_TIMES] = \@unified_times;
 
                 push @unified_trips, $unified_trip_r;
 
@@ -141,14 +139,83 @@ sub _assemble_trips {
 
 sub _sort_trips {
 
-    my $unified_trips_r = shift;
+    my @trips = @{ +shift };
+    
+    # first, find the first stop of the schedule that they all have in common
+    # (if any)
 
-    # sort the trips by time
+    my $common_stop;
+    my $last_to_search = min( map { $#{ $_->[T_TIMES] } } @trips );
 
-    # at the moment, do nothing since I haven't written this yet
+  SORTBY_STOP:
+    for my $stop ( 0 .. $last_to_search ) {
+      SORTBY_TRIP:
+        for my $trip (@trips) {
+            next SORTBY_STOP if not defined $trip->[T_TIMES][$stop];
+        }
+        $common_stop = $stop;
+        last SORTBY_STOP;
+    }
 
-    return $unified_trips_r;
+    # so $common_stop is undef if there's no stop in common, or
+    # the stop to sort by if there is one
 
+    if ( defined $common_stop ) {
+        @trips = sort
+          map { $_->[2] }
+          sort { $a->[0] <=> $b->[0] or $a->[1] <=> $b->[1] }
+          map {
+            [   timenum( $_->[T_TIMES][$common_stop] ), # 0
+                _get_avg( $_->[T_TIMES] ), # 1
+                $_, # 2
+            ]
+          } @trips;
+          
+          # a schwartzian transform with two criteria -- 
+          # either the common stop, or if those times are the same,
+          # the average.
+          
+    }
+    else {
+
+        # compares each trip; compares the first time of each trip if there
+        # is a valid comparison, otherwise uses the average
+
+        @trips
+          = sort {
+    #        my $ea = each_arrayref( $a->[T_TIMES], $b->[T_TIMES] );
+    #        # Establishes an iterator, like "each" over hashes.
+    #        while ( my ( $a_time, $b_time ) = $ea->() ) {
+    #         # so $a_time and $b_time are paired entries of each array, in turn.
+#
+#                if ( defined $a_time and defined $b_time ) {
+#                    # if there are two times present,
+#                    my $comparison = timenum($a_time) <=> timenum($b_time);
+#                    return $comparison if $comparison;
+#                    #return the comparison of the two times,
+#                    # if there is a difference and there are two times present
+#                }
+#            } 
+
+# The commented-out part segfaults for some mysterious reason
+
+#            return 
+              _get_avg( $a->[T_TIMES] ) <=> _get_avg( $b->[T_TIMES] );
+            # none in common; return the average
+          } @trips;
+
+    } ## tidy end: else [ if ( defined $common_stop)]
+
+    return \@trips;
+
+} ## tidy end: sub _sort_trips
+
+sub _get_avg {
+ 
+    my @elems
+      = map { timenum($_) }
+      grep  {$_} @{ +shift };    # get timenums of elems that are true
+    return ( List::Util::sum(@elems) / scalar @elems );
 }
 
 sub _output_debugging_patterns {
@@ -169,7 +236,7 @@ sub _output_debugging_patterns {
         say $rdfh "\n$routedir";
         foreach my $trip ( @{ $trips_of_routedir_r->{$routedir} } ) {
 
-            my @times = $trip->[T_TIMES];
+            my @times = @{ $trip->[T_TIMES] };
             foreach (@times) {
                 $_ = '--' unless defined;
             }
@@ -434,18 +501,28 @@ sub _get_patterns {
 
         my @routeids = @{ $pat_routeids_of_routedir{$routedir} };
 
-        my @stop_sets;
+        my %stop_set_of_routeid;
         foreach my $routeid (@routeids) {
             my @set;
             foreach my $stop ( @{ $patterns{$routeid}[P_STOPS] } ) {
                 push @set, join( ':', @{$stop} );
             }
-            push @stop_sets, \@set;
+            $stop_set_of_routeid{$routeid} = \@set;
         }
 
+        #        my @stop_sets;
+        #        foreach my $routeid (@routeids) {
+        #            my @set;
+        #            foreach my $stop ( @{ $patterns{$routeid}[P_STOPS] } ) {
+        #                push @set, join( ':', @{$stop} );
+        #            }
+        #            push @stop_sets, \@set;
+        #        }
+
         my %returned = ordered_union_columns(
-            sets => \@stop_sets,
-            ids  => \@routeids,
+            sethash => \%stop_set_of_routeid,
+            #            sets => \@stop_sets,
+            #            ids  => \@routeids,
         );
 
         $upattern_of{$routedir} = $returned{union};
