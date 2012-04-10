@@ -70,6 +70,8 @@ sub thea_import {
     my $trips_of_routedir_r
       = _assemble_trips( $patterns_r, $pat_routeids_of_routedir_r,
         $trips_of_routeid_r, $uindex_of_r );
+        
+    # figure out what to do about days...
 
     _output_debugging_patterns( $signup, $patterns_r,
         $pat_routeids_of_routedir_r, $upattern_of_r, $uindex_of_r,
@@ -125,6 +127,8 @@ sub _assemble_trips {
 
         $trips_of_routedir{$routedir} = _sort_trips( \@unified_trips );
 
+        emit_over ".";
+
     } ## tidy end: foreach my $routedir ( sort...)
 
     # so the idea here is to go through each trip, and create a new
@@ -140,10 +144,66 @@ sub _assemble_trips {
 sub _sort_trips {
 
     my @trips = @{ +shift };
-    
-    # first, find the first stop of the schedule that they all have in common
-    # (if any)
 
+    my $common_stop = _common_stop(@trips);
+
+    if ( defined $common_stop ) {
+
+        # sort trips with a common stop
+
+        @trips = map { $_->[2] }
+          sort { $a->[0] <=> $b->[0] or $a->[1] <=> $b->[1] }
+          map {
+            [   timenum( $_->[T_TIMES][$common_stop] ),    # 0
+                _get_avg_time( $_->[T_TIMES] ),            # 1
+                $_,                                        # 2
+            ]
+          } @trips;
+        # a schwartzian transform with two criteria --
+        # either the common stop, or if those times are the same,
+        # the average.
+
+    }
+    else {
+        # sort trips without a common stop for all of them
+
+        @trips = sort {
+
+            my $common = _common_stop( $a, $b );
+
+            defined $common
+              ?
+
+              ( timenum( $a->[T_TIMES][$common] )
+                  <=> timenum( $b->[T_TIMES][$common] )
+                  or _get_avg_time( $a->[T_TIMES] )
+                  <=> _get_avg_time( $b->[T_TIMES] )
+              )
+
+              :
+
+              ( _get_avg_time( $a->[T_TIMES] )
+                  <=> _get_avg_time( $b->[T_TIMES] ) );
+
+            # if these two trips have a common stop, sort first
+            # on those common times, and then by the average.
+
+            # if they don't, just sort by the average.
+
+        } @trips;
+
+    } ## tidy end: else [ if ( defined $common_stop)]
+
+    return \@trips;
+
+} ## tidy end: sub _sort_trips
+
+sub _common_stop {
+
+    # returns undef if there's no stop in common, or
+    # the stop to sort by if there is one
+
+    my @trips = @_;
     my $common_stop;
     my $last_to_search = min( map { $#{ $_->[T_TIMES] } } @trips );
 
@@ -157,64 +217,13 @@ sub _sort_trips {
         last SORTBY_STOP;
     }
 
-    # so $common_stop is undef if there's no stop in common, or
-    # the stop to sort by if there is one
+    return $common_stop;
 
-    if ( defined $common_stop ) {
-        @trips = sort
-          map { $_->[2] }
-          sort { $a->[0] <=> $b->[0] or $a->[1] <=> $b->[1] }
-          map {
-            [   timenum( $_->[T_TIMES][$common_stop] ), # 0
-                _get_avg( $_->[T_TIMES] ), # 1
-                $_, # 2
-            ]
-          } @trips;
-          
-          # a schwartzian transform with two criteria -- 
-          # either the common stop, or if those times are the same,
-          # the average.
-          
-    }
-    else {
+} ## tidy end: sub _common_stop
 
-        # compares each trip; compares the first time of each trip if there
-        # is a valid comparison, otherwise uses the average
-
-        @trips
-          = sort {
-    #        my $ea = each_arrayref( $a->[T_TIMES], $b->[T_TIMES] );
-    #        # Establishes an iterator, like "each" over hashes.
-    #        while ( my ( $a_time, $b_time ) = $ea->() ) {
-    #         # so $a_time and $b_time are paired entries of each array, in turn.
-#
-#                if ( defined $a_time and defined $b_time ) {
-#                    # if there are two times present,
-#                    my $comparison = timenum($a_time) <=> timenum($b_time);
-#                    return $comparison if $comparison;
-#                    #return the comparison of the two times,
-#                    # if there is a difference and there are two times present
-#                }
-#            } 
-
-# The commented-out part segfaults for some mysterious reason
-
-#            return 
-              _get_avg( $a->[T_TIMES] ) <=> _get_avg( $b->[T_TIMES] );
-            # none in common; return the average
-          } @trips;
-
-    } ## tidy end: else [ if ( defined $common_stop)]
-
-    return \@trips;
-
-} ## tidy end: sub _sort_trips
-
-sub _get_avg {
- 
-    my @elems
-      = map { timenum($_) }
-      grep  {$_} @{ +shift };    # get timenums of elems that are true
+sub _get_avg_time {
+    my @elems = map { timenum($_) }
+      grep { defined $_ } @{ +shift };  # get timenums of elems that are defined
     return ( List::Util::sum(@elems) / scalar @elems );
 }
 
@@ -231,7 +240,7 @@ sub _output_debugging_patterns {
 
     my $rdfh = $subfolder->open_write('thea_unifiedtrips.txt');
 
-    foreach my $routedir ( keys $trips_of_routedir_r ) {
+    foreach my $routedir ( sort keys $trips_of_routedir_r ) {
 
         say $rdfh "\n$routedir";
         foreach my $trip ( @{ $trips_of_routedir_r->{$routedir} } ) {

@@ -60,5 +60,7 @@ sub START {
 
 }
 
+1;
+
 __END__
 # TODO: Add POD
