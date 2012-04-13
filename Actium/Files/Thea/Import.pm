@@ -38,9 +38,10 @@ my %dircode_of_thea = (
     Westbound        => 'WB',
     Counterclockwise => 'CC',
     Clockwise        => 'CW',
+    A                => 'A',    # sigh
+    B                => 'B',
     '1'              => 'D1',
 );
-
 my %required_headers = (
     trippatterns => [
         qw<tpat_route tpat_id tpat_direction
@@ -70,14 +71,14 @@ sub thea_import {
     my $trips_of_routedir_r
       = _assemble_trips( $patterns_r, $pat_routeids_of_routedir_r,
         $trips_of_routeid_r, $uindex_of_r );
-        
+
     # figure out what to do about days...
 
     _output_debugging_patterns( $signup, $patterns_r,
         $pat_routeids_of_routedir_r, $upattern_of_r, $uindex_of_r,
         $trips_of_routeid_r, $trips_of_routedir_r );
 
-}
+} ## tidy end: sub thea_import
 
 sub _assemble_trips {
     my $patterns_r                 = shift;
@@ -248,6 +249,7 @@ sub _output_debugging_patterns {
             my @times = @{ $trip->[T_TIMES] };
             foreach (@times) {
                 $_ = '--' unless defined;
+                $_ = sprintf( "%-5s", $_ );
             }
 
             say $rdfh join( "\t",
