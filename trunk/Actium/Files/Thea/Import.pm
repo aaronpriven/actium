@@ -18,6 +18,8 @@ use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Time ('timenum');
 use Actium::Sked::Days;
 
+use Actium::Util ('jk');
+
 use Actium::Union('ordered_union_columns');
 
 use Actium::Constants;
@@ -143,6 +145,7 @@ sub _assemble_trips {
 } ## tidy end: sub _assemble_trips
 
 sub _sort_trips {
+    # sorts. Once sorted, puts trips with the same days together.
 
     my @trips = @{ +shift };
 
@@ -195,9 +198,89 @@ sub _sort_trips {
 
     } ## tidy end: else [ if ( defined $common_stop)]
 
-    return \@trips;
+    #### MERGE IDENTICAL TRIPS (INCLUDING ACROSS DAYS)
+
+    my @newtrips = shift @trips;
+
+  TRIP_TO_MERGE:
+    while (@trips) {
+        my $thistrip = shift @trips;
+        my $prevtrip = $newtrips[-1];
+
+        if (jk( @{ $thistrip->[T_TIMES] } ) ne jk( @{ $prevtrip->[T_TIMES] } ) )
+        {
+            push @newtrips, shift @trips;
+            next TRIP_TO_MERGE;
+        }
+
+        my $times = $thistrip->[T_TIMES];
+
+        my $days = Actium::Sked::Days->union( $thistrip->[T_DAYS],
+            $prevtrip->[T_DAYS] );
+
+        my $this_vehicle = $thistrip->[T_VEHICLE];
+        my $prev_vehicle = $prevtrip->[T_VEHICLE];
+        my $vehicle;
+
+        if ( $this_vehicle eq $prev_vehicle ) {
+            $vehicle = $this_vehicle;
+        }
+        else {
+            $vehicle = _merge_conflicting(
+                [ $thistrip->[T_DAYS], $this_vehicle ],
+                [ $prevtrip->[T_DAYS], $prev_vehicle ]
+            );
+        }
+
+    } ## tidy end: while (@trips)
+
+    return \@newtrips;
 
 } ## tidy end: sub _sort_trips
+
+sub _merge_conflicting {
+    # takes conflicting string values and puts them in a single string
+    # That string always begins with $KEY_SEPARATOR
+    
+    # fix this to treat the old one specially
+    
+    my @day_and_strings = @_;
+    
+    # @day_and_strings is an anonymous array. First value is
+    # an Actium::Sked::Days object. Second value is a string value
+    
+    # It is possible that the string value passed to _merge_conflicting
+    # is the result of a previous merge, so this next bit de-merges
+    # the parts that were previously merged.
+    
+    my @to_merge;
+
+    foreach my $day_and_string (@day_and_strings) {
+        if ( $day_and_string->[1] !~ /^$KEY_SEPARATOR/ ) {
+            push @to_merge, $_;
+        }
+        else {
+            my @previously_merged
+              = grep { $_ ne $EMPTY_STR }
+              split( /$KEY_SEPARATOR/, $day_and_string->[1] )
+              ;
+            foreach my $string (@previously_merged) {
+                my ( $daypart, $valuepart ) = split( / /, $string, 2 );
+                push @to_merge,
+                  [ Actium::Sked::Days->new_from_string($daypart), $valuepart ];
+            }
+        }
+    }
+    
+    # so to_merge consists of day objects and non-merged strings
+    
+    
+    
+    
+    
+    
+
+} ## tidy end: sub _merge_conflicting
 
 sub _common_stop {
 
