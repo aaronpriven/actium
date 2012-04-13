@@ -74,7 +74,7 @@ sub thea_import {
       = _assemble_trips( $patterns_r, $pat_routeids_of_routedir_r,
         $trips_of_routeid_r, $uindex_of_r );
 
-    # figure out what to do about days...
+    # trips are combined. Now, re-divide into days that make sense
 
     _output_debugging_patterns( $signup, $patterns_r,
         $pat_routeids_of_routedir_r, $upattern_of_r, $uindex_of_r,
@@ -231,6 +231,13 @@ sub _sort_trips {
                 [ $prevtrip->[T_DAYS], $prev_vehicle ]
             );
         }
+        
+        my @newtrip;
+        $newtrip[T_TIMES] = $times;
+        $newtrip[T_DAYS] = $days;
+        $newtrip[T_VEHICLE] = $vehicle;
+        
+        push @newtrips, \@newtrip;
 
     } ## tidy end: while (@trips)
 
@@ -274,12 +281,26 @@ sub _merge_conflicting {
     
     # so to_merge consists of day objects and non-merged strings
     
+    my %days_of;
     
+    foreach my $day_and_string (@to_merge) {
+        my ($day, $string) = @{$day_and_string};
+        if (not exists $days_of{$string}) {
+            $days_of{$string} = $day;
+        }
+        else {
+            $days_of{$string} = 
+               Actium::Sked::Days->union($days_of{$string},$day);
+        }
+    }
     
-    
-    
-    
-
+    my $merged = $EMPTY_STR;
+    foreach my $string (keys %days_of) {
+       $merged .= $KEY_SEPARATOR . "$days_of{$string} $string";
+    }
+     
+    return $merged;   
+     
 } ## tidy end: sub _merge_conflicting
 
 sub _common_stop {
