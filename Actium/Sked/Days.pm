@@ -82,14 +82,21 @@ has 'schooldaycode' => (
 );
 # D = school days only, H = school holidays only, B = both
 
-has '_composite_code' => (
+sub new_from_string {
+    my $class = shift;
+    my $string = shift;
+    my ($daycode, $schooldaycode) = split(/-/ , $string);
+    return $class->new($daycode, $schooldaycode);
+}
+
+has 'as_string' => (
     is       => 'ro',
     init_arg => undef,
-    builder  => '_build_composite_code',
+    builder  => '_build_as_string',
     lazy     => 1,
 );
 
-sub _build_composite_code {
+sub _build_as_string {
     my $self          = shift;
     my $daycode       = $self->daycode;
     my $schooldaycode = $self->schooldaycode;
@@ -100,29 +107,29 @@ sub _build_composite_code {
 
 sub as_sortable {
     my $self = shift;
-    return $self->_composite_code;
+    return $self->as_string;
 }
-# composite_code not guaranteed to remain sortable in the future,
+# as_string not guaranteed to remain sortable in the future,
 # so we put this stub in so that we can make a sortable version
 
 sub as_transitinfo {
 
     my $self      = shift;
-    my $composite = $self->_composite_code;
+    my $as_string = $self->as_string;
 
     state %cache;
-    return $cache{$composite} if $cache{$composite};
+    return $cache{$as_string} if $cache{$as_string};
 
     my $daycode       = $self->daycode;
     my $schooldaycode = $self->schooldaycode;
 
-    return $cache{$composite} = "SD" if $self->_is_SD;
-    return $cache{$composite} = "SH" if $self->_is_SH;
+    return $cache{$as_string} = "SD" if $self->_is_SD;
+    return $cache{$as_string} = "SH" if $self->_is_SH;
 
     my $transitinfo = $TRANSITINFO_DAYS_OF{$daycode};
 
-    return $cache{$composite} = $transitinfo if $transitinfo;
-    return $cache{$composite} = $self->_invalid_transitinfo_daycode;
+    return $cache{$as_string} = $transitinfo if $transitinfo;
+    return $cache{$as_string} = $self->_invalid_transitinfo_daycode;
 
 } ## tidy end: sub as_transitinfo
 
@@ -172,10 +179,10 @@ sub as_adjectives {
 
     my $self = shift;
 
-    my $composite = $self->_composite_code;
+    my $as_string = $self->as_string;
 
     state %cache;
-    return $cache{$composite} if $cache{$composite};
+    return $cache{$as_string} if $cache{$as_string};
 
     my $daycode = $self->daycode;
     $daycode =~ s/1234567H/D/;    # every day
@@ -190,7 +197,7 @@ sub as_adjectives {
     my $results
       = joinseries(@as_adjectives) . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
 
-    return $cache{$composite} = $results;
+    return $cache{$as_string} = $results;
 
 } ## tidy end: sub as_adjectives
 
@@ -209,10 +216,10 @@ Readonly my %PLURAL_SCHOOL_OF => (
 sub as_plurals {
 
     my $self      = shift;
-    my $composite = $self->_composite_code;
+    my $as_string = $self->as_string;
 
     state %cache;
-    return $cache{$composite} if $cache{$composite};
+    return $cache{$as_string} if $cache{$as_string};
 
     my $daycode    = $self->daycode;
     my $seriescode = $daycode;
@@ -233,7 +240,7 @@ sub as_plurals {
         $results .= ' except holidays' unless $daycode =~ /H/;
     }
 
-    return $cache{$composite} = ucfirst($results);
+    return $cache{$as_string} = ucfirst($results);
 
 } ## tidy end: sub as_plurals
 Readonly my @ABBREVS =>
@@ -249,10 +256,10 @@ Readonly my %ABBREV_SCHOOL_OF => (
 sub as_abbrevs {
 
     my $self      = shift;
-    my $composite = $self->_composite_code;
+    my $as_string = $self->as_string;
 
     state %cache;
-    return $cache{$composite} if $cache{$composite};
+    return $cache{$as_string} if $cache{$as_string};
 
     my $daycode = $self->daycode;
     $daycode =~ s/1234567H/D/;    # every day
@@ -270,7 +277,7 @@ sub as_abbrevs {
     my $results
       = join( $SPACE, @as_abbrevs ) . $ABBREV_SCHOOL_OF{$schooldaycode};
 
-    return $cache{$composite} = $results;
+    return $cache{$as_string} = $results;
 
 } ## tidy end: sub as_abbrevs
 
@@ -377,6 +384,17 @@ whether school normally operates on that day -- weekend trips will
 still have "B" as the school day flag, unless there is a situation where
 some school service is operated on a Saturday.)
 
+=item B<< Actium::Sked::Days->new_from_string (I<string>) >>
+
+This is an alternative constructor. It uses a single string, rather than
+the separate daycode and schooldaycode, to construct an object and return it.
+
+The only way to get a valid string is by using the I<as_string> object method.
+The format of the string is internal and not guaranteed to remain the same
+across versions of Actium::Sked::Days. The purpose of this is to allow a
+single string to contain day information without requiring it to have all
+the object overhead.
+
 =item B<< Actium::Sked::Days->union(I<days_obj> , ... >>
 
 Another constructor. It takes one or more Actium::Sked::Days objects and 
@@ -410,6 +428,11 @@ by "B".)
 
 Returns a version of the day code / schoolday code that can be sorted using 
 perl's cmp operator to be in order.
+
+=item B<< $obj->as_string >>
+
+Returns a version of the day code / schoolday code that can be used to create
+a new object using B<new_from_string>.
 
 =item B<< $obj->as_transitinfo >>
 
