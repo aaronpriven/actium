@@ -18,7 +18,7 @@ use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Time ('timenum');
 use Actium::Sked::Days;
 
-use Actium::Util ('jk');
+use Actium::Util (qw<jk jt>);
 
 use Actium::Union('ordered_union_columns');
 
@@ -209,7 +209,7 @@ sub _sort_trips {
 
         if (jk( @{ $thistrip->[T_TIMES] } ) ne jk( @{ $prevtrip->[T_TIMES] } ) )
         {
-            push @newtrips, shift @trips;
+            push @newtrips, $thistrip;
             next TRIP_TO_MERGE;
         }
 
@@ -237,7 +237,7 @@ sub _sort_trips {
         $newtrip[T_DAYS] = $days;
         $newtrip[T_VEHICLE] = $vehicle;
         
-        push @newtrips, \@newtrip;
+        $newtrips[-1] = \@newtrip;
 
     } ## tidy end: while (@trips)
 
@@ -264,7 +264,7 @@ sub _merge_conflicting {
 
     foreach my $day_and_string (@day_and_strings) {
         if ( $day_and_string->[1] !~ /^$KEY_SEPARATOR/ ) {
-            push @to_merge, $_;
+            push @to_merge, $day_and_string;
         }
         else {
             my @previously_merged
@@ -296,7 +296,7 @@ sub _merge_conflicting {
     
     my $merged = $EMPTY_STR;
     foreach my $string (keys %days_of) {
-       $merged .= $KEY_SEPARATOR . "$days_of{$string} $string";
+       $merged .= $KEY_SEPARATOR . $days_of{$string}->as_string . " $string";
     }
      
     return $merged;   
@@ -349,6 +349,12 @@ sub _output_debugging_patterns {
 
         say $rdfh "\n$routedir";
         foreach my $trip ( @{ $trips_of_routedir_r->{$routedir} } ) {
+         
+            unless ($trip->[T_TIMES]) {
+               say $rdfh  "INVALID TRIP";
+                
+                next;
+            }
 
             my @times = @{ $trip->[T_TIMES] };
             foreach (@times) {
