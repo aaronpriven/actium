@@ -102,7 +102,7 @@ sub _build_as_string {
     my $schooldaycode = $self->schooldaycode;
 
     return $self->daycode unless $schooldaycode;
-    return $self->schooldaycode . q{-} . $self->daycode;
+    return $self->daycode . q{-} . $self->schooldaycode;
 }
 
 sub as_sortable {
