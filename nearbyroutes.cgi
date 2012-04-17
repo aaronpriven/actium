@@ -20,7 +20,7 @@ use FindBin qw($Bin);
 use lib $Bin;
 use English qw(-no_match_vars);
 
-use Actium::Options qw(add_option init_options option);
+use Actium::Options qw(init_options );
 
 use Actium::Folders::Signup;
 
