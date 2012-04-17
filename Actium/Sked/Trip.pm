@@ -25,7 +25,7 @@ use Actium::Time qw<timestr timestr_sub>;
 use Actium::Util 'jt';
 use Actium::Constants;
 
-use Actium::Types qw<ArrayRefOfTimeNums TimeNum>;
+use Actium::Types qw<ArrayRefOfTimeNums TimeNum ActiumSkedDays>;
 
 ###################
 ###
@@ -45,6 +45,22 @@ has [
     isa => 'Str',
   );
 
+# generated from Thea, if nowhere else
+has 'days_obj' => (
+    required => 0,
+    coerce   => 1,
+    init_arg => 'days',
+    is       => 'ro',
+    isa      => ActiumSkedDays,
+    handles  => {
+        daycode       => 'daycode',
+        schooldaycode => 'schooldaycode',
+        sortable_days => 'as_sortable',
+        days_as_string => 'as_string',
+    }
+);
+
+
 # from headways
 has 'stopleave' => (
     is     => 'rw',
@@ -61,6 +77,11 @@ has 'stoptime_r' => (
     coerce  => 1,
     handles => { stoptimes => 'elements', stoptimes_are_empty => 'is_empty',},
 );
+
+sub stoptimes_comparison_str {
+   my $self = shift;
+   return join ("\t" , grep { defined } $self->stoptimes);
+}
 
 # from either
 has 'placetime_r' => (
@@ -184,6 +205,10 @@ setter methods are "set-I<attribute>()" but getter methods are just
 "I<attribute>()."
 
 =over
+
+=item B<days_obj>
+
+...not written yet...
 
 =item B<daysexceptions>
 
