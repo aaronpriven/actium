@@ -41,8 +41,6 @@ our %EXPORT_TAGS = ( all => [ @EXPORT_OK, @EXPORT ] );
 $SIG{'WINCH'} = \&set_width;
 $SIG{'INT'}   = \&_terminate;
 
-
-
 set_width();
 
 {
@@ -57,7 +55,7 @@ sub emit_over {
 
     return unless option('progress');
 
-    #no warnings('once');
+    no warnings('once');
     if ($Actium::Eclipse::is_under_eclipse) {
         Term::Emit::emit_prog( join( $SPACE, @_ ) . $SPACE );
     }
