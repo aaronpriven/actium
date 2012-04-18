@@ -6,6 +6,7 @@
 
 # Legacy status: 4 (still in progress...)
 
+
 use 5.014;
 use warnings;
 
@@ -16,7 +17,11 @@ use Actium::Constants;
 use Actium::Sked::Days;
 use Actium::Time('timenum');
 use Actium::Sked::Trip;
+
 use List::Util;
+use List::MoreUtils ('uniq');
+
+use List::Compare::Functional ('is_LdisjointR');
 
 use Sub::Exporter -setup => { exports => ['thea_trips'] };
 
@@ -43,9 +48,9 @@ sub thea_trips {
       = _pad_trip_columns( $pat_routeids_of_routedir_r,
         $tripstructs_of_routeid_r, $uindex_of_r );
 
-    my $trip_objs_of_r = _make_trip_objs($tripstructs_of_routedir_r);
+    my $trips_of_routedir_r = _make_trip_objs($tripstructs_of_routedir_r);
 
-    $trip_objs_of_r = _merge_trip_objs($trip_objs_of_r);
+    my $trips_of_sked_r = _merge_trips($trips_of_routedir_r);
 
 }
 
@@ -315,16 +320,16 @@ sub _get_avg_time {
 sub _make_trip_objs {
     my $tripstructs_of_routedir_r = shift;
 
-    my %tripobjs_of;
+    my %trips_of;
 
     foreach my $routedir ( keys %{$tripstructs_of_routedir_r} ) {
 
-        my @trip_objs;
+        my @trips;
 
         foreach my $tripstruct ( @{ $tripstructs_of_routedir_r->{$routedir} } )
         {
 
-            push @trip_objs, Actium::Sked::Trip->new(
+            push @trips, Actium::Sked::Trip->new(
                 {   days           => $tripstruct->[T_DAYS],
                     vehicletype    => $tripstruct->[T_VEHICLE],
                     stoptimes      => $tripstruct->[T_TIMES],
@@ -338,20 +343,32 @@ sub _make_trip_objs {
 
         }
 
-        $tripobjs_of{$routedir} = \@trip_objs;
+        $trips_of{$routedir} = \@trips;
 
     } ## tidy end: foreach my $routedir ( keys...)
 
-    return \%tripobjs_of;
+    return \%trips_of;
 
 } ## tidy end: sub _make_trip_objs
 
-sub _merge_trip_objs {
-    my $trip_objs_of_r = shift;
+sub _merge_trips {
 
-    foreach my $routedir ( keys %{$trip_objs_of_r} ) {
+    my $trips_of_routedir_r = shift;
 
-        my @trips = @{ $trip_objs_of_r->{$routedir} };
+    $trips_of_routedir_r = _merge_identical_trips($trips_of_routedir_r);
+
+    my $trips_of_skedid_r = _break_out_days($trips_of_routedir_r);
+
+    return $trips_of_skedid_r;
+
+}
+
+sub _merge_identical_trips {
+    my $trips_of_routedir_r = shift;
+
+    foreach my $routedir ( keys %{$trips_of_routedir_r} ) {
+
+        my @trips = @{ $trips_of_routedir_r->{$routedir} };
 
         my @merged = shift @trips;
 
@@ -362,34 +379,110 @@ sub _merge_trip_objs {
             if ( $thistrip->stoptimes_comparison_str ne
                 $prevtrip->stoptimes_comparison_str )
             {
-
                 push @merged, $thistrip;
                 next;
-
             }
 
             $merged[-1]
-              = Actium::Sked::Trip->merge_trips( $thistrip, $prevtrip )
-              ;
+              = Actium::Sked::Trip->merge_trips( $thistrip, $prevtrip );
 
         }
-        
-    # so now all trips have been merged into @merged
-    # Now divide them into weekday/saturday/sunday or whatever
-    # seems most likely.
-    
-    # haven't figured out how to do this yet...
-    
-        
-        #$trip_objs_of_r->{$routedir} = \@something;
+
+        $trips_of_routedir_r->{$routedir} = \@merged;
 
     } ## tidy end: foreach my $routedir ( keys...)
-   
+
+    return $trips_of_routedir_r;
+
+} ## tidy end: sub _merge_identical_trips
+
+sub _break_out_days {
+    my $trips_of_routedir_r = shift;
+    my %trips_of_skedid;
+
+    foreach my $routedir ( keys %{$trips_of_routedir_r} ) {
+
+        my @trips = @{ $trips_of_routedir_r->{$routedir} };
+
+        my %sked_days_of = _days_of_trips(@trips);
+
+        foreach my $trip (@trips) {
+            my @sked_days_sets = @{ $sked_days_of{ $trip->daycode } };
+            foreach my $sked_days (@sked_days_sets) {
+                # incomplete -- must also un-merge the merged days
+                ...;
+                my $skedid = $routedir . "_$sked_days";
+                push @{ $trips_of_skedid{$skedid} }, $trip;
+            }
+        }
+
+    }
+
     # return the result
 
-    return $trip_objs_of_r;
+    return \%trips_of_skedid;
 
-} ## tidy end: sub _merge_trip_objs
+} ## tidy end: sub _break_out_days
+
+sub _days_of_trips {
+    my @trips = @_;
+
+    my %seendays;
+    $seendays{ $_->daycode }++ foreach @trips;
+
+    my @daycodes = sort { length($a) <=> length($b) } keys %seendays;
+    my %skeddays_of;
+    $skeddays_of{$_} = $_ foreach @daycodes;
+
+    if (@daycodes != 1 ) {
+     
+    my $start_at = 0;
+    while ( my @indices = _get_first_intersection( $start_at, @daycodes ) ) {
+     
+        my (@thesecodes, @counts);
+        
+        for my $i (@indices) {
+            $thesecodes[$i] = splice( @daycodes, $i,  1 ) ;
+            $counts[$i] = $seendays{$thesecodes[$i]};
+        }
+        
+        ## apply rule as to whether they should be combined or split or what,
+        ## and re-do
+        ...;
+
+
+        $start_at = $indices[0];
+    }
+    
+    }
+    
+    return %skeddays_of;
+
+} ## tidy end: sub _days_of_trips
+
+sub _get_first_intersection {
+    my $start = shift;
+    my @daycodes = @_[ $start .. $#_ ];
+
+    for my $i ( 0 .. $#daycodes ) {
+        for my $j ( $i .. $#daycodes ) {
+            return ( $i, $j )
+              if _has_an_intersection( $daycodes[$i], $daycodes[$j] );
+        }
+    }
+    return;    # no intersection
+}
+
+sub _has_an_intersection {
+    my ($first, $second) = @_;
+    return is_LdisjointR( [ _chars_of($first) , _chars_of($second) ] ) 
+}
+
+sub _chars_of {
+    my $string = shift;
+    state %cache;
+    return $cache{$string} //= [ split( //, $string ) ];
+}
 
 1;
 
