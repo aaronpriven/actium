@@ -194,7 +194,7 @@ sub _get_patterns {
         my $tpat_route = $value_of_r->{tpat_route};
         my $tpat_id    = $value_of_r->{tpat_id};
 
-        my $routeid = "$tpat_route:$tpat_id";
+        my $routeid = $tpat_route . "_$tpat_id";
         return if exists $patterns{$routeid};    # duplicate
 
         my $tpat_direction = $value_of_r->{tpat_direction};
@@ -203,7 +203,7 @@ sub _get_patterns {
             $direction = $tpat_direction;
             emit_text("Unknown direction: $tpat_direction");
         }
-        my $routedir = "$tpat_route:$direction";
+        my $routedir = ${tpat_route} . "_$direction";
 
         push @{ $pat_routeids_of_routedir{$routedir} }, $routeid;
 

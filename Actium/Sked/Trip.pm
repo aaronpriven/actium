@@ -53,13 +53,12 @@ has 'days_obj' => (
     is       => 'ro',
     isa      => ActiumSkedDays,
     handles  => {
-        daycode       => 'daycode',
-        schooldaycode => 'schooldaycode',
-        sortable_days => 'as_sortable',
+        daycode        => 'daycode',
+        schooldaycode  => 'schooldaycode',
+        sortable_days  => 'as_sortable',
         days_as_string => 'as_string',
     }
 );
-
 
 # from headways
 has 'stopleave' => (
@@ -75,12 +74,12 @@ has 'stoptime_r' => (
     isa     => ArrayRefOfTimeNums,
     default => sub { [] },
     coerce  => 1,
-    handles => { stoptimes => 'elements', stoptimes_are_empty => 'is_empty',},
+    handles => { stoptimes => 'elements', stoptimes_are_empty => 'is_empty', },
 );
 
 sub stoptimes_comparison_str {
-   my $self = shift;
-   return join ("\t" , grep { defined } $self->stoptimes);
+    my $self = shift;
+    return join( "\t", grep {defined} $self->stoptimes );
 }
 
 # from either
@@ -93,9 +92,9 @@ has 'placetime_r' => (
     handles => {
         placetimes           => 'elements',
         splice_placetimes    => 'splice',
-        placetime_count => 'count',
+        placetime_count      => 'count',
         placetimes_are_empty => 'is_empty',
-        placetime => 'get',
+        placetime            => 'get',
     },
 );
 
@@ -143,6 +142,12 @@ sub merge_trips {
                 # assumed to be equal
                 $merged_value_of{$attrname} = $firsttrip->$attrname;
             }
+            when ('days_obj') {
+                $merged_value_of{$attrname}
+                  = Actium::Sked::Days->union(
+                    $firsttrip->$attrname, $secondtrip->$attrname
+                  );
+            }
             default {
                 my $firstattr  = $firsttrip->$attrname;
                 my $secondattr = $secondtrip->$attrname;
@@ -154,19 +159,19 @@ sub merge_trips {
                     $merged_value_of{$attrname} = $firstattr;
                 }
                 # if they're identical, set the array to the value
-                elsif ($attrname ~~ ['daysexceptions'] ) {
+                elsif ( $attrname ~~ ['daysexceptions'] ) {
                     $merged_value_of{$attrname} = '';
                 }
                 # otherwise, if the attribute name is one of the those, then
                 # set it to nothing. (If it isn't listed, the attribute will
                 # be blank.)
-                
-                # TODO - special days merging should probably merge 
+
+                # TODO - special days merging should probably merge
                 # daysexceptions specially, although currently -- with the
-                # only possible values SD and SH -- it would't make 
+                # only possible values SD and SH -- it would't make
                 # a difference
 
-            }
+            } ## tidy end: default
         }    ## <perltidy> end given
 
     }    ## <perltidy> end foreach my $attribute ( $class...)
