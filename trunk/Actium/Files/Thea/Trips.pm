@@ -21,7 +21,7 @@ use Actium::Sked::Trip;
 use List::Util;
 use List::MoreUtils ('uniq');
 
-use List::Compare::Functional ('is_LdisjointR');
+use List::Compare::Functional qw(is_LdisjointR get_unique get_complement);
 
 use Sub::Exporter -setup => { exports => ['thea_trips'] };
 
@@ -430,30 +430,49 @@ sub _days_of_trips {
     my %seendays;
     $seendays{ $_->daycode }++ foreach @trips;
 
-    my @daycodes = sort { length($a) <=> length($b) } keys %seendays;
-    my %skeddays_of;
-    $skeddays_of{$_} = $_ foreach @daycodes;
+    my @daycodes = sort { $seendays{$a} <=> $seendays{$b} } keys %seendays;
 
-    if (@daycodes != 1 ) {
-     
-    my $start_at = 0;
-    while ( my @indices = _get_first_intersection( $start_at, @daycodes ) ) {
+    my %skeddays_of;
+    $skeddays_of{$_} = [$_] foreach @daycodes;
+        
+    while ( @daycodes > 1 and my @indices = _get_first_intersection( @daycodes ) ) {
      
         my (@thesecodes, @counts);
         
         for my $i (@indices) {
+         
+            # remove these from the lists, to be added back later
+            ...;
+            
             $thesecodes[$i] = splice( @daycodes, $i,  1 ) ;
             $counts[$i] = $seendays{$thesecodes[$i]};
+            delete $seendays{$thesecodes[$i]};
         }
         
-        ## apply rule as to whether they should be combined or split or what,
-        ## and re-do
-        ...;
+        if ($counts[0] < 4 and $counts[0] * 5 < $counts[1] 
+            and _less_frequent_one_is_subset (@thesecodes)  ) {
+           # if the code with the lower count is less than 4,
+           # and it is less than 20% of the code with the higher count,
+           # and one is a subset of the other
+           
+           # merge lower days into higher days
 
-
-        $start_at = $indices[0];
-    }
-    
+           $skeddays_of{$thesecodes[0]} = $thesecodes[1];
+           # ^^^ broken -- what if one or the other is merged?
+           ...;
+           
+           $seendays{$thesecodes[1]} = $counts[0] + $counts[1];
+           push @daycodes, $thesecodes[1]; # returns it to the list
+           
+        }
+        else {
+           
+           # divide higher days into portions
+           ...;
+        }
+        
+        @daycodes = sort { $seendays{$a} <=> $seendays{$b}}  @daycodes;
+        
     }
     
     return %skeddays_of;
@@ -461,8 +480,7 @@ sub _days_of_trips {
 } ## tidy end: sub _days_of_trips
 
 sub _get_first_intersection {
-    my $start = shift;
-    my @daycodes = @_[ $start .. $#_ ];
+    my @daycodes = @_;
 
     for my $i ( 0 .. $#daycodes ) {
         for my $j ( $i .. $#daycodes ) {
@@ -482,6 +500,16 @@ sub _chars_of {
     my $string = shift;
     state %cache;
     return $cache{$string} //= [ split( //, $string ) ];
+}
+
+sub _less_frequent_one_is_subset {
+   my @arrays = map { [_chars_of($_)] } @_;
+   my $only_in_first = scalar(get_unique ( @arrays ));
+   
+   return 1 if $only_in_first == 0;
+   # so we know first one is a subset of the other
+   
+   return;
 }
 
 1;
