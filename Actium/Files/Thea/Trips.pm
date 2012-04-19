@@ -279,25 +279,34 @@ sub _get_trips_by_day {
 
 sub _assemble_skeddays {
     my $trips_of_day_r = shift;
-
     my @days = sort keys $trips_of_day_r;
-
-    my %trips_of_skedday;
+    my %skedday_of_day;
     
-    my @done;
-    
-    # figure this out, dammit
-    
-    for my $i ( 0 .. $#days - 1) {
+    foreach my $i ( 0 .. $#days ) {
+       my $outer_day = $days[$i];
+       my @found_days = $outer_day;
+       
        for my $j ( $i + 1 .. $#days) {
+            my $inner_day = $days[$j];
+            next if $skedday_of_day{$inner_day};
+            
+            my @inner_trips  = @{ $trips_of_day_r->{$inner_day} };
+            my @outer_trips  = @{ $trips_of_day_r->{$outer_day} }; 
         
-        
-        
+            if (_triplists_are_identical (\@inner_trips, \@outer_trips)) {
+                push @found_days, $inner_day;
+            }
        }
        
-    }
+       my $skedday = join($EMPTY_STR, @found_days);
+       $skedday_of_day{$_} = $skedday foreach @found_days;
        
+    }
     
+    # so now we know that $skedday_of_day{$_} is the appropriate
+    # skedday for all days in @days
+       
+    # merge all trips...
     
     
     
