@@ -16,6 +16,7 @@ use Actium::Constants;
 use Actium::Sked::Days;
 use Actium::Time('timenum');
 use Actium::Sked::Trip;
+use Actium::Util ('j');
 
 use List::Util;
 use List::MoreUtils ('uniq');
@@ -150,7 +151,7 @@ sub _make_days_obj {
 
     $day_digits =~ s/0/7H/;
     # Thea uses 0 instead of 7 for Sunday, as Hastus Standard AVL did.
-    $day_digits = join( '', sort ( split( //, $day_digits ) ) );
+    $day_digits = j( sort ( split( //, $day_digits ) ) );
     # sort $theaday by characters - putting 7 at end
 
     my $schooldaycode
@@ -309,7 +310,7 @@ sub _assemble_skeddays {
             }
         }
 
-        my $skedday = join( $EMPTY_STR, @found_days );
+        my $skedday = j( @found_days );
         $skedday_of_day{$_}         = $skedday foreach @found_days;
         $chars_of_skedday{$skedday} = \@found_days;
         $trips_of_skedday{$skedday} = $found_trips_r;
@@ -318,6 +319,8 @@ sub _assemble_skeddays {
 
     # so now we know that $skedday_of_day{$_} is the appropriate
     # skedday for all days in @days
+    
+    ...;
 
 } ## tidy end: sub _assemble_skeddays
 
@@ -368,8 +371,8 @@ sub _merge_if_appropriate {
     
     
     # merge close-but-not-identical here?
-    # 
     
+    ...;
     
     my $in_both    = scalar( $compare->intersection );
     
