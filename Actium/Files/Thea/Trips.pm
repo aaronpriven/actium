@@ -6,7 +6,6 @@
 
 # Legacy status: 4 (still in progress...)
 
-
 use 5.014;
 use warnings;
 
@@ -44,13 +43,11 @@ sub thea_trips {
 
     my $tripstructs_of_routeid_r = _load_trips_from_file($theafolder);
 
-    my $tripstructs_of_routedir_r
-      = _pad_trip_columns( $pat_routeids_of_routedir_r,
-        $tripstructs_of_routeid_r, $uindex_of_r );
+    my $trips_of_routedir_r
+      = _make_trip_objs( $pat_routeids_of_routedir_r, $tripstructs_of_routeid_r,
+        $uindex_of_r );
 
-    my $trips_of_routedir_r = _make_trip_objs($tripstructs_of_routedir_r);
-
-    my $trips_of_sked_r = _merge_trips($trips_of_routedir_r);
+    my $trips_of_sked_r = _get_trips_of_sked($trips_of_routedir_r);
 
 }
 
@@ -163,12 +160,18 @@ sub _make_days_obj {
     return Actium::Sked::Days->new( $day_digits, $schooldaycode );
 }
 
-sub _pad_trip_columns {
+sub _make_trip_objs {
     my $pat_routeids_of_routedir_r = shift;
     my $trips_of_routeid_r         = shift;
     my $uindex_of_r                = shift;
 
     my %trips_of_routedir;
+
+    # so the idea here is to go through each trip, and create a new
+    # trip struct in trips_of_routedir that has the various information,
+    # putting the times in the correct column as in uindex_of_r.
+
+    # Then we turn them into objects, and sort the objects.
 
     emit 'Padding out blank columns of trips';
 
@@ -183,9 +186,8 @@ sub _pad_trip_columns {
 
             foreach my $trip_r ( @{ $trips_of_routeid_r->{$routeid} } ) {
 
-                my $unified_trip_r = [];
-                $unified_trip_r->[T_DAYS]    = $trip_r->[T_DAYS];
-                $unified_trip_r->[T_VEHICLE] = $trip_r->[T_VEHICLE];
+                my $unified_trip_r = [ @{$trip_r} ];
+                # copy everything
 
                 my @times = @{ $trip_r->[T_TIMES] };
 
@@ -202,166 +204,216 @@ sub _pad_trip_columns {
 
                 $unified_trip_r->[T_TIMES] = \@unified_times;
 
-                push @unified_trips, $unified_trip_r;
+                push @unified_trips, _tripstruct_to_tripobj($unified_trip_r);
 
             } ## tidy end: foreach my $trip_r ( @{ $trips_of_routeid_r...})
 
         } ## tidy end: foreach my $routeid (@routeids)
 
-        $trips_of_routedir{$routedir} = _sort_trips( \@unified_trips );
-
-        emit_over ".";
+        $trips_of_routedir{$routedir}
+          = Actium::Sked::Trip->stoptimes_sort( \@unified_trips );
 
     } ## tidy end: foreach my $routedir ( sort...)
-
-    # so the idea here is to go through each trip, and create a new
-    # trip struct in trips_of_routedir that has the various information,
-    # putting the times in the correct column as in uindex_of_r
 
     emit_done;
 
     return \%trips_of_routedir;
 
-} ## tidy end: sub _pad_trip_columns
-
-sub _sort_trips {
-    # sorts. Once sorted, puts trips with the same days together.
-
-    my @trips = @{ +shift };
-
-    my $common_stop = _common_stop(@trips);
-
-    if ( defined $common_stop ) {
-
-        # sort trips with a common stop
-
-        @trips = map { $_->[2] }
-          sort { $a->[0] <=> $b->[0] or $a->[1] <=> $b->[1] }
-          map {
-            [   timenum( $_->[T_TIMES][$common_stop] ),    # 0
-                _get_avg_time( $_->[T_TIMES] ),            # 1
-                $_,                                        # 2
-            ]
-          } @trips;
-        # a schwartzian transform with two criteria --
-        # either the common stop, or if those times are the same,
-        # the average.
-
-    }
-    else {
-        # sort trips without a common stop for all of them
-
-        @trips = sort {
-
-            my $common = _common_stop( $a, $b );
-
-            defined $common
-              ?
-
-              ( timenum( $a->[T_TIMES][$common] )
-                  <=> timenum( $b->[T_TIMES][$common] )
-                  or _get_avg_time( $a->[T_TIMES] )
-                  <=> _get_avg_time( $b->[T_TIMES] )
-              )
-
-              :
-
-              ( _get_avg_time( $a->[T_TIMES] )
-                  <=> _get_avg_time( $b->[T_TIMES] ) );
-
-            # if these two trips have a common stop, sort first
-            # on those common times, and then by the average.
-
-            # if they don't, just sort by the average.
-
-        } @trips;
-
-    } ## tidy end: else [ if ( defined $common_stop)]
-
-    #### MERGE IDENTICAL TRIPS (INCLUDING ACROSS DAYS)
-    # obsolete - now merge trip objects, not raw trips
-
-    #my @newtrips = _merge_raw_trips(@trips);
-    #return \@newtrips;
-
-    return \@trips;
-
-} ## tidy end: sub _sort_trips
-
-sub _common_stop {
-
-    # returns undef if there's no stop in common, or
-    # the stop to sort by if there is one
-
-    my @trips = @_;
-    my $common_stop;
-    my $last_to_search = min( map { $#{ $_->[T_TIMES] } } @trips );
-
-  SORTBY_STOP:
-    for my $stop ( 0 .. $last_to_search ) {
-      SORTBY_TRIP:
-        for my $trip (@trips) {
-            next SORTBY_STOP if not defined $trip->[T_TIMES][$stop];
-        }
-        $common_stop = $stop;
-        last SORTBY_STOP;
-    }
-
-    return $common_stop;
-
-} ## tidy end: sub _common_stop
-
-sub _get_avg_time {
-    my @elems = map { timenum($_) }
-      grep { defined $_ } @{ +shift };  # get timenums of elems that are defined
-    return ( List::Util::sum(@elems) / scalar @elems );
-}
-
-sub _make_trip_objs {
-    my $tripstructs_of_routedir_r = shift;
-
-    my %trips_of;
-
-    foreach my $routedir ( keys %{$tripstructs_of_routedir_r} ) {
-
-        my @trips;
-
-        foreach my $tripstruct ( @{ $tripstructs_of_routedir_r->{$routedir} } )
-        {
-
-            push @trips, Actium::Sked::Trip->new(
-                {   days           => $tripstruct->[T_DAYS],
-                    vehicletype    => $tripstruct->[T_VEHICLE],
-                    stoptimes      => $tripstruct->[T_TIMES],
-                    daysexceptions => $tripstruct->[T_DAYSEXCEPTIONS],
-                    type           => $tripstruct->[T_TYPE],
-                    pattern        => $tripstruct->[T_PATTERN],
-                    routenum       => $tripstruct->[T_ROUTE],
-                    # DAYSDIGITS - no attribute in Actium::Sked::Trips
-                }
-            );
-
-        }
-
-        $trips_of{$routedir} = \@trips;
-
-    } ## tidy end: foreach my $routedir ( keys...)
-
-    return \%trips_of;
-
 } ## tidy end: sub _make_trip_objs
 
-sub _merge_trips {
+sub _tripstruct_to_tripobj {
+    my $tripstruct = shift;
+
+    return Actium::Sked::Trip->new(
+        {   days           => $tripstruct->[T_DAYS],
+            vehicletype    => $tripstruct->[T_VEHICLE],
+            stoptimes      => $tripstruct->[T_TIMES],
+            daysexceptions => $tripstruct->[T_DAYSEXCEPTIONS],
+            type           => $tripstruct->[T_TYPE],
+            pattern        => $tripstruct->[T_PATTERN],
+            routenum       => $tripstruct->[T_ROUTE],
+            # DAYSDIGITS - no attribute in Actium::Sked::Trips,
+            # but incorporated in days
+        }
+    );
+
+}
+
+sub _get_trips_of_sked {
 
     my $trips_of_routedir_r = shift;
 
-    $trips_of_routedir_r = _merge_identical_trips($trips_of_routedir_r);
+    foreach my $routedir ( keys $trips_of_routedir_r ) {
 
-    my $trips_of_skedid_r = _break_out_days($trips_of_routedir_r);
+        # first, this separates them out by individual days.
+        # then, it reassembles them in groups.
+        # The reason for this is that sometimes we end up getting
+        # weird sets of days across the schedules we receive
+        # (e.g., same trips Fridays and Saturdays)
+        # and it's easier to do it this way if that's the case.
 
-    return $trips_of_skedid_r;
+        my $trips_of_day_r
+          = _get_trips_by_day( $trips_of_routedir_r->{$routedir} );
 
+        my $trips_of_skedday = _assemble_skeddays($trips_of_day_r);
+
+        ...;
+
+    }
+
+} ## tidy end: sub _get_trips_of_sked
+
+sub _get_trips_by_day {
+
+    my $trips_r = shift;
+    my %trips_of_day;
+
+    foreach my $trip ( @{$trips_r} ) {
+        my @days = split( //, $trip->daycode );
+        foreach my $day (@days) {
+            push @{ $trips_of_day{$day} }, $trip;
+        }
+    }
+    return \%trips_of_day;
 }
+
+sub _assemble_skeddays {
+    my $trips_of_day_r = shift;
+
+    my @days = sort keys $trips_of_day_r;
+
+    my %trips_of_skedday;
+    
+    my @done;
+    
+    # figure this out, dammit
+    
+    for my $i ( 0 .. $#days - 1) {
+       for my $j ( $i + 1 .. $#days) {
+        
+        
+        
+       }
+       
+    }
+       
+    
+    
+    
+    
+    
+    
+    
+    
+}
+
+1;
+
+__END__
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    my @current_days = @original_days;
+    my $current_skedday = shift @current_days;
+    my @future_days;
+    
+    while (@current_days) {
+     
+            my $current_day         = shift @current_days;
+            my @previous_skedtrips = @{ $trips_of_day_r->{$current_skedday} };
+            my @these_trips      = @{ $trips_of_day_r->{$this_day} };
+
+            if ( my $new_trips_r = _merge_identical_triplists( \@previous_trips, \@these_trips ) ) {
+
+                # merge $day_to_compare and $this_day
+                # in $trips_of_day_r
+
+                delete $trips_of_day_r->{$previous_day};
+                delete $trips_of_day_r->{$this_day};
+                $previous_day .= $this_day;
+                $trips_of_day_r->{$previous_day} = $new_trips_r;
+
+            } 
+            else {
+             push @not_compared , $this_day;
+            }
+       }
+       
+       @to_compare = @not_compared;
+       
+    }
+             
+              
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    while (@days) {
+        
+        foreach my $i ( 0 .. $#days ) {
+
+        } ## tidy end: foreach my $i ( 0 .. $#days)
+        
+         # none were identical, so save this one in $trips_of_skedday
+
+        $trips_of_skedday{$day_to_compare} = $trips_of_day_r->{$day_to_compare};
+        
+    } ## tidy end: while (@days)
+
+} ## tidy end: sub _assemble_skeddays
+
+1;
+
+__END__
+
+
+# all this stuff is not used anymore but is here in case I want to mine the 
+# code for something
+
 
 sub _merge_identical_trips {
     my $trips_of_routedir_r = shift;
@@ -456,6 +508,8 @@ sub _days_of_trips {
            # and one is a subset of the other
            
            # merge lower days into higher days
+           
+           
 
            $skeddays_of{$thesecodes[0]} = $thesecodes[1];
            # ^^^ broken -- what if one or the other is merged?
