@@ -20,7 +20,8 @@ use Actium::Sked::Trip;
 use List::Util;
 use List::MoreUtils ('uniq');
 
-use List::Compare::Functional qw(is_LdisjointR get_unique get_complement);
+#use List::Compare::Functional qw(is_LdisjointR get_unique get_complement);
+use List::Compare;
 
 use Sub::Exporter -setup => { exports => ['thea_trips'] };
 
@@ -279,44 +280,119 @@ sub _get_trips_by_day {
 
 sub _assemble_skeddays {
     my $trips_of_day_r = shift;
-    my @days = sort keys $trips_of_day_r;
-    my %skedday_of_day;
-    
+    my @days           = sort keys $trips_of_day_r;
+    my ( %skedday_of_day, %chars_of_skedday, %trips_of_skedday );
+
+    # Go through list of days. Compare the first one to the subsequent ones.
+    # If any of the subsequent ones are identical to the first day, mark them
+    # as such, and put them as part of the original list.
+
     foreach my $i ( 0 .. $#days ) {
-       my $outer_day = $days[$i];
-       my @found_days = $outer_day;
-       
-       for my $j ( $i + 1 .. $#days) {
+        my $outer_day = $days[$i];
+        next if $skedday_of_day{$outer_day};
+        my @found_days = $outer_day;
+
+        my $found_trips_r = $trips_of_day_r->{$outer_day};
+
+        for my $j ( $i + 1 .. $#days ) {
             my $inner_day = $days[$j];
             next if $skedday_of_day{$inner_day};
-            
-            my @inner_trips  = @{ $trips_of_day_r->{$inner_day} };
-            my @outer_trips  = @{ $trips_of_day_r->{$outer_day} }; 
-        
-            if (_triplists_are_identical (\@inner_trips, \@outer_trips)) {
+
+            my $inner_trips_r = $trips_of_day_r->{$inner_day};
+            my $outer_trips_r = $trips_of_day_r->{$outer_day};
+
+            if ( my $merged_trips_r
+                = _merge_if_appropriate( $outer_trips_r, $inner_trips_r ) )
+            {
                 push @found_days, $inner_day;
+                $found_trips_r = $merged_trips_r;
             }
-       }
-       
-       my $skedday = join($EMPTY_STR, @found_days);
-       $skedday_of_day{$_} = $skedday foreach @found_days;
-       
-    }
-    
+        }
+
+        my $skedday = join( $EMPTY_STR, @found_days );
+        $skedday_of_day{$_}         = $skedday foreach @found_days;
+        $chars_of_skedday{$skedday} = \@found_days;
+        $trips_of_skedday{$skedday} = $found_trips_r;
+
+    } ## tidy end: foreach my $i ( 0 .. $#days)
+
     # so now we know that $skedday_of_day{$_} is the appropriate
     # skedday for all days in @days
-       
-    # merge all trips...
-    
-    
-    
-    
-    
-    
-    
-}
 
-1;
+} ## tidy end: sub _assemble_skeddays
+
+sub _merge_if_appropriate {
+
+    my $outer_trips_r = shift;
+    my $inner_trips_r = shift;
+
+    # first, check to see if all the trips themselves are the same object.
+    # This will frequently be the case
+
+    return $outer_trips_r
+      if _trips_are_identical( $outer_trips_r, $inner_trips_r );
+      
+    ## now check if times are the same even if trips are not
+    ## identical (as with Saturday/Sunday). First, make lists of times
+
+    my @outer_times = map { $_->stoptimes_comparison_str } @{$outer_trips_r};
+    my @inner_times = map { $_->stoptimes_comparison_str } @{$inner_trips_r};
+    
+    # Then compare them using List::Compare
+
+    my $compare = List::Compare->new(
+        {   lists    => [ \@outer_times, \@inner_times ],
+            unsorted => 1,
+        }
+    );
+
+    my $only_outer = scalar( $compare->get_unique );
+    my $only_inner = scalar( $compare->get_complement );
+    
+    # if all the trips have identical times, then merge them
+
+    if ( $only_inner == 0 and $only_outer == 0 ) {
+        
+        my @merged_trips;
+        for my $i ( 0 .. $#outer_times ) {
+
+            push @merged_trips,
+              $outer_trips_r->[$i]->merge_trips( $inner_trips_r->[$i] )
+              ;
+
+        }
+        
+        return \@merged_trips;
+
+    }
+    
+    
+    # merge close-but-not-identical here?
+    # 
+    
+    
+    my $in_both    = scalar( $compare->intersection );
+    
+    
+    # no merging
+    
+    return;
+
+} ## tidy end: sub _merge_if_appropriate
+
+sub _trips_are_identical {
+    my $outer_trips_r = shift;
+    my $inner_trips_r = shift;
+
+    return if $#{$outer_trips_r} != $#{$inner_trips_r};
+
+    for my $i ( 0 .. $#{$outer_trips_r} ) {
+        return unless $outer_trips_r->[$i] == $inner_trips_r->[$i];
+    }
+
+    return 1;
+
+}
 
 __END__
     
