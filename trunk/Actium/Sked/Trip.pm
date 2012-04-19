@@ -25,6 +25,9 @@ use Actium::Time qw<timestr timestr_sub>;
 use Actium::Util 'jt';
 use Actium::Constants;
 
+use List::Util ('min');
+
+
 use Actium::Types qw<ArrayRefOfTimeNums TimeNum ActiumSkedDays>;
 
 ###################
@@ -74,12 +77,29 @@ has 'stoptime_r' => (
     isa     => ArrayRefOfTimeNums,
     default => sub { [] },
     coerce  => 1,
-    handles => { stoptimes => 'elements', stoptimes_are_empty => 'is_empty', },
+    handles => {
+        stoptime            => 'get',
+        stoptimes           => 'elements',
+        stoptime_count      => 'count',
+        stoptimes_are_empty => 'is_empty',
+    },
 );
 
 sub stoptimes_comparison_str {
     my $self = shift;
     return join( "\t", grep {defined} $self->stoptimes );
+}
+
+sub average_stoptime {
+    my $self = shift;
+    my @times = grep { defined $_ } $self->stoptimes;
+    return ( List::Util::sum(@times) / scalar @times );
+}
+
+sub stoptimes_equals {
+    my $self = shift;
+    my $secondtrip = shift;
+    return $self->stoptimes_comparison_str eq $secondtrip->stoptimes_comparison_str;
 }
 
 # from either
@@ -113,15 +133,31 @@ sub dump {    ## no critic (ProhibitBuiltinHomonyms)
     return Data::Dumper::Dumper($self);
 }
 
+
+ 
+### CLASS METHODS
+
 sub merge_trips {
+    
+    my $class;
+    if (blessed $_[0]) {
+       $class = blessed $_[0];
+    } else {
+       $class = shift;
+    }
+       
+    # allows calling as object method or class method
+    # calling as a class method should be deprecated...
 
-    my $class = shift;
-
-    my $firsttrip  = shift;
+    my $self  = shift;
     my $secondtrip = shift;
+    
+    return $self if $self == $secondtrip;
+    # if they are the same exact object, then don't do anything else,
+    # just return it
 
     my @mergedtrips;
-    foreach my $trip ( $firsttrip, $secondtrip ) {
+    foreach my $trip ( $self, $secondtrip ) {
         if ( $trip->mergedtrip_count ) {
             push @mergedtrips, $trip->mergedtrips;
         }
@@ -140,21 +176,20 @@ sub merge_trips {
             when ( [ 'placetime_r', 'stoptime_r' ] ) {
 
                 # assumed to be equal
-                $merged_value_of{$attrname} = $firsttrip->$attrname;
+                $merged_value_of{$attrname} = $self->$attrname;
             }
             when ('days_obj') {
                 $merged_value_of{$attrname}
-                  = Actium::Sked::Days->union(
-                    $firsttrip->$attrname, $secondtrip->$attrname
-                  );
+                  = Actium::Sked::Days->union( $self->$attrname,
+                    $secondtrip->$attrname );
             }
             default {
-                my $firstattr  = $firsttrip->$attrname;
+                my $firstattr  = $self->$attrname;
                 my $secondattr = $secondtrip->$attrname;
 
                 if (    defined($firstattr)
                     and defined($secondattr)
-                    and $firsttrip->$attrname eq $secondtrip->$attrname )
+                    and $self->$attrname eq $secondtrip->$attrname )
                 {
                     $merged_value_of{$attrname} = $firstattr;
                 }
@@ -178,6 +213,79 @@ sub merge_trips {
     return $class->new(%merged_value_of);
 
 }    ## <perltidy> end sub merge_trips
+
+my $common_stop_cr = sub {
+
+    # returns undef if there's no stop in common, or
+    # the stop to sort by if there is one
+
+    my @trips = @_;
+    my $common_stop;
+    my $last_to_search
+      = ( List::Util::min( map { $_->stoptime_count } @trips ) ) - 1;
+
+  SORTBY_STOP:
+    for my $stop ( 0 .. $last_to_search ) {
+      SORTBY_TRIP:
+        for my $trip (@trips) {
+            next SORTBY_STOP if not defined $trip->stoptime( [$stop] );
+        }
+        $common_stop = $stop;
+        last SORTBY_STOP;
+    }
+
+    return $common_stop;
+
+};
+
+sub stoptimes_sort {
+
+    my $class = shift;
+    my @trips = @_;
+
+    my $common_stop = $common_stop_cr->(@trips);
+
+    if ( defined $common_stop ) {
+
+        # sort trips with a common stop
+
+        @trips = map { $_->[2] }
+          sort { $a->[0] <=> $b->[0] or $a->[1] <=> $b->[1] }
+          map {
+            [   $_->stoptime($common_stop),    # 0
+                $_->average_stoptime,          # 1
+                $_,,                           # 2
+            ]
+          } @trips;
+        # a schwartzian transform with two criteria --
+        # either the common stop, or if those times are the same,
+        # the average.
+
+    }
+    else {
+        # sort trips without a common stop for all of them
+
+        @trips = sort {
+
+            my $common = $common_stop_cr->( $a, $b );
+
+            defined $common
+              ? ( $a->stoptime($common) <=> $b->stoptime($common)
+                  or $a->average_stoptime <=> $b->average_stoptime )
+              : $a->average_stoptime <=> $b->average_stoptime;
+
+            # if these two trips have a common stop, sort first
+            # on those common times, and then by the average.
+
+            # if they don't, just sort by the average.
+
+        } @trips;
+
+    } ## tidy end: else [ if ( defined $common_stop)]
+
+    return \@trips;
+
+} ## tidy end: sub stoptimes_sort
 
 no Moose;
 
@@ -314,7 +422,7 @@ The number of elements in the mergedtrip array.
 
 =back
 
-=head1 CLASS METHOD
+=head1 CLASS METHODS
 
 =over
 
@@ -351,6 +459,10 @@ All other attributes are set as follows: if the value of an attribute is the sam
 the two trips, they are set with that value. Otherwise the attribute is not set.
 
 =back
+
+=item B<stoptimes_sort()>
+
+To be written
 
 =back
 
