@@ -250,16 +250,19 @@ sub stoptimes_sort {
         # sort trips with a common stop
 
         @trips = map { $_->[2] }
-          sort { $a->[0] <=> $b->[0] or $a->[1] <=> $b->[1] }
+          sort { $a->[0] <=> $b->[0] or $a->[1] <=> $b->[1]  or
+                 $a->sortable_days cmp $b->sortable_days }
           map {
             [   $_->stoptime($common_stop),    # 0
                 $_->average_stoptime,          # 1
-                $_,,                           # 2
+                $_,                            # 2
             ]
           } @trips;
         # a schwartzian transform with two criteria --
         # either the common stop, or if those times are the same,
         # the average.
+        # if both of those tie, use sortable_days (not put into the
+        # cache because will be used very very rarely)
 
     }
     else {
@@ -271,8 +274,10 @@ sub stoptimes_sort {
 
             defined $common
               ? ( $a->stoptime($common) <=> $b->stoptime($common)
-                  or $a->average_stoptime <=> $b->average_stoptime )
-              : $a->average_stoptime <=> $b->average_stoptime;
+                  or $a->average_stoptime <=> $b->average_stoptime 
+                  or $a->sortable_days cmp $b->sortable_days)
+              : $a->average_stoptime <=> $b->average_stoptime
+                 or $a->sortable_days cmp $b->sortable_days;
 
             # if these two trips have a common stop, sort first
             # on those common times, and then by the average.
@@ -286,6 +291,40 @@ sub stoptimes_sort {
     return \@trips;
 
 } ## tidy end: sub stoptimes_sort
+
+sub merge_trips_if_same {
+   my $class = shift;
+   my %params = %{+shift};
+   
+   my @trips = @{$params{trips}};
+   my @methods = @{$params{methods_to_compare}};
+   
+   
+  my @newtrips = shift @trips;
+
+  TRIP_TO_MERGE:
+    while (@trips) {
+        my $thistrip = shift @trips;
+        my $prevtrip = $newtrips[-1];
+        
+        my @methods_to_test = @methods;
+        
+        while (@methods_to_test) {
+           my $this_test = shift @methods_to_test;
+           if ( $thistrip->$this_test ne $prevtrip->$this_test ) {
+            push @newtrips, $thistrip;
+            next TRIP_TO_MERGE;
+           }
+        }
+        # so now we know they are the same
+        
+        $newtrips[-1] = $prevtrip->merge_trips($thistrip);
+
+    } ## tidy end: while (@trips)
+
+    return @newtrips;
+ 
+}
 
 no Moose;
 
