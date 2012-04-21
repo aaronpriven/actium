@@ -9,7 +9,7 @@
 use 5.014;
 use warnings;
 
-package Actium::Files::Thea::Import 0.002;
+package Actium::Files::Thea::Trips 0.002;
 
 use Actium::Term;
 use Actium::Constants;
@@ -20,12 +20,12 @@ use Actium::Util ('j');
 
 use List::Util;
 use List::MoreUtils ('uniq');
-
-#use List::Compare::Functional qw(is_LdisjointR get_unique get_complement);
 use List::Compare;
+use Const::Fast;
 
 use Sub::Exporter -setup => { exports => ['thea_trips'] };
 
+## no critic (ProhibitConstantPragma)
 use constant {
     T_DAYS           => 0,
     T_VEHICLE        => 1,
@@ -36,6 +36,7 @@ use constant {
     T_TYPE           => 6,
     T_DAYDIGITS      => 7,
 };
+## use critic
 
 sub thea_trips {
 
@@ -50,6 +51,9 @@ sub thea_trips {
         $uindex_of_r );
 
     my $trips_of_sked_r = _get_trips_of_sked($trips_of_routedir_r);
+
+    ...;
+    return;
 
 }
 
@@ -149,9 +153,9 @@ sub _make_days_obj {
     my $day_digits = shift;
     my $trp_event  = shift;
 
-    $day_digits =~ s/0/7H/;
+    $day_digits =~ s/0/7H/s;
     # Thea uses 0 instead of 7 for Sunday, as Hastus Standard AVL did.
-    $day_digits = j( sort ( split( //, $day_digits ) ) );
+    $day_digits = j( sort ( split( //s, $day_digits ) ) );
     # sort $theaday by characters - putting 7 at end
 
     my $schooldaycode
@@ -175,13 +179,13 @@ sub _make_trip_objs {
 
     # Then we turn them into objects, and sort the objects.
 
-    emit 'Padding out blank columns of trips';
+    emit 'Making objects (padding out columns, merging double trips)';
 
     foreach my $routedir ( sort keys $pat_routeids_of_routedir_r ) {
 
         emit_over $routedir;
 
-        my @unified_trips;
+        my @trip_objs;
         my @routeids = @{ $pat_routeids_of_routedir_r->{$routedir} };
 
         foreach my $routeid (@routeids) {
@@ -206,14 +210,25 @@ sub _make_trip_objs {
 
                 $unified_trip_r->[T_TIMES] = \@unified_times;
 
-                push @unified_trips, _tripstruct_to_tripobj($unified_trip_r);
+                push @trip_objs, _tripstruct_to_tripobj($unified_trip_r);
 
             } ## tidy end: foreach my $trip_r ( @{ $trips_of_routeid_r...})
 
         } ## tidy end: foreach my $routeid (@routeids)
 
-        $trips_of_routedir{$routedir}
-          = Actium::Sked::Trip->stoptimes_sort( \@unified_trips );
+        @trip_objs = Actium::Sked::Trip->stoptimes_sort(@trip_objs);
+
+        @trip_objs = Actium::Sked::Trip->merge_trips_if_same(
+            {   trips => \@trip_objs,
+                methods_to_compare =>
+                  [qw <stoptimes_comparison_str sortable_days>]
+            }
+        );
+        # merges double trips -- some trips (mostly school trips) have so many
+        # passengers we send two buses out. Scheduling system has to have these
+        # twice, but we only want to display them once
+
+        $trips_of_routedir{$routedir} = \@trip_objs;
 
     } ## tidy end: foreach my $routedir ( sort...)
 
@@ -257,11 +272,13 @@ sub _get_trips_of_sked {
         my $trips_of_day_r
           = _get_trips_by_day( $trips_of_routedir_r->{$routedir} );
 
-        my $trips_of_skedday = _assemble_skeddays($trips_of_day_r);
+        my $trips_of_skedday_r = _assemble_skeddays($trips_of_day_r);
 
         ...;
 
     }
+
+    return;
 
 } ## tidy end: sub _get_trips_of_sked
 
@@ -271,7 +288,7 @@ sub _get_trips_by_day {
     my %trips_of_day;
 
     foreach my $trip ( @{$trips_r} ) {
-        my @days = split( //, $trip->daycode );
+        my @days = split( //s, $trip->daycode );
         foreach my $day (@days) {
             push @{ $trips_of_day{$day} }, $trip;
         }
@@ -300,85 +317,118 @@ sub _assemble_skeddays {
             next if $skedday_of_day{$inner_day};
 
             my $inner_trips_r = $trips_of_day_r->{$inner_day};
-            my $outer_trips_r = $trips_of_day_r->{$outer_day};
 
             if ( my $merged_trips_r
-                = _merge_if_appropriate( $outer_trips_r, $inner_trips_r ) )
+                = _merge_if_appropriate( $found_trips_r, $inner_trips_r ) )
             {
                 push @found_days, $inner_day;
                 $found_trips_r = $merged_trips_r;
             }
         }
 
-        my $skedday = j( @found_days );
-        $skedday_of_day{$_}         = $skedday foreach @found_days;
-        $chars_of_skedday{$skedday} = \@found_days;
+        # so @found_days now has all the days that are identical to
+        # the outer day
+
+        my $skedday = j(@found_days);
         $trips_of_skedday{$skedday} = $found_trips_r;
 
     } ## tidy end: foreach my $i ( 0 .. $#days)
 
-    # so now we know that $skedday_of_day{$_} is the appropriate
-    # skedday for all days in @days
-    
-    ...;
+    return \%trips_of_skedday;
 
 } ## tidy end: sub _assemble_skeddays
+
+const my $MAXIMUM_DIFFERING_TIMES  => 4;
+const my $MINIMUM_TIMES_MULTIPLIER => 5;
 
 sub _merge_if_appropriate {
 
     my $outer_trips_r = shift;
     my $inner_trips_r = shift;
 
-    # first, check to see if all the trips themselves are the same object.
+    my $outer_count = scalar @{$outer_trips_r};
+    my $inner_count = scalar @{$inner_trips_r};
+
+    # Are the quantities so different that there's no point comparing them?
+
+    my $difference = abs( $outer_count - $inner_count );
+
+    return if $difference > $MAXIMUM_DIFFERING_TIMES;
+
+    # check to see if all the trips themselves are the same object.
     # This will frequently be the case
 
     return $outer_trips_r
-      if _trips_are_identical( $outer_trips_r, $inner_trips_r );
-      
+      if ( not $difference
+        and _trips_are_identical( $outer_trips_r, $inner_trips_r ) );
+
     ## now check if times are the same even if trips are not
     ## identical (as with Saturday/Sunday). First, make lists of times
 
     my @outer_times = map { $_->stoptimes_comparison_str } @{$outer_trips_r};
     my @inner_times = map { $_->stoptimes_comparison_str } @{$inner_trips_r};
-    
+
     # Then compare them using List::Compare
 
     my $compare = List::Compare->new(
-        {   lists    => [ \@outer_times, \@inner_times ],
-            unsorted => 1,
+        {   lists       => [ \@outer_times, \@inner_times ],
+            unsorted    => 1,
+            accelerated => 1,
         }
     );
 
-    my $only_outer = scalar( $compare->get_unique );
-    my $only_inner = scalar( $compare->get_complement );
-    
+    my $only_either = scalar( $compare->get_symmetric_difference );
+
     # if all the trips have identical times, then merge them
 
-    if ( $only_inner == 0 and $only_outer == 0 ) {
-        
+    if ($only_either) {
+
         my @merged_trips;
         for my $i ( 0 .. $#outer_times ) {
 
             push @merged_trips,
-              $outer_trips_r->[$i]->merge_trips( $inner_trips_r->[$i] )
-              ;
+              $outer_trips_r->[$i]->merge_trips( $inner_trips_r->[$i] );
 
         }
-        
+
         return \@merged_trips;
 
     }
-    
-    
-    # merge close-but-not-identical here?
-    
-    ...;
-    
-    my $in_both    = scalar( $compare->intersection );
-    
-    
+
+    # if they are *almost* identical -- that is, 4 or fewer differing
+    # times, and the number of times is at least 5 times the number of
+    # differing ones, then merge them
+
+    # In weird situations where, for example, you have several different sets
+    # 30 trips that are every day, plus two separate ones on Monday,
+    # two separate ones on Tuesday, two separate ones on Wednesday,
+    # etc. -- this will give inconsistent results, with Monday's
+    # and Tuesday's trips combined but Wednesday's not.
+    # To do that you'd need to compare them all to each other simultaneously,
+    # which code I am not prepared to write at this point.
+
+    my $in_both = ( $inner_count + $outer_count ) - $only_either;
+
+    if (    $only_either <= $MAXIMUM_DIFFERING_TIMES
+        and $in_both > ( $MINIMUM_TIMES_MULTIPLIER * $only_either ) )
+    {
+        my @trips_to_merge = Actium::Sked::Trip->stoptimes_sort(
+            @{$outer_trips_r},
+            @{$inner_trips_r}
+        );
+
+        return [
+            Actium::Sked::Trip->merge_trips_if_same(
+                {   trips              => @trips_to_merge,
+                    methods_to_compare => 'stoptimes_comparison_str',
+                }
+            )
+        ];
+
+    }
+
     # no merging
-    
+
     return;
 
 } ## tidy end: sub _merge_if_appropriate
@@ -387,8 +437,6 @@ sub _trips_are_identical {
     my $outer_trips_r = shift;
     my $inner_trips_r = shift;
 
-    return if $#{$outer_trips_r} != $#{$inner_trips_r};
-
     for my $i ( 0 .. $#{$outer_trips_r} ) {
         return unless $outer_trips_r->[$i] == $inner_trips_r->[$i];
     }
@@ -396,6 +444,8 @@ sub _trips_are_identical {
     return 1;
 
 }
+
+1;
 
 __END__
     
@@ -657,57 +707,6 @@ sub _less_frequent_one_is_subset {
 1;
 
 __END__
-
-
-sub _merge_raw_trips {
-    # obsolete, since we will be merging not raw trips but trip objects
-
-    my @trips = @_;
-
-    my @newtrips = shift @trips;
-
-  TRIP_TO_MERGE:
-    while (@trips) {
-        my $thistrip = shift @trips;
-        my $prevtrip = $newtrips[-1];
-
-        if (jk( @{ $thistrip->[T_TIMES] } ) ne jk( @{ $prevtrip->[T_TIMES] } ) )
-        {
-            push @newtrips, $thistrip;
-            next TRIP_TO_MERGE;
-        }
-
-        my $times = $thistrip->[T_TIMES];
-
-        my $days = Actium::Sked::Days->union( $thistrip->[T_DAYS],
-            $prevtrip->[T_DAYS] );
-
-        my $this_vehicle = $thistrip->[T_VEHICLE];
-        my $prev_vehicle = $prevtrip->[T_VEHICLE];
-        my $vehicle;
-
-        if ( $this_vehicle eq $prev_vehicle ) {
-            $vehicle = $this_vehicle;
-        }
-        else {
-            $vehicle = _merge_conflicting(
-                [ $thistrip->[T_DAYS], $this_vehicle ],
-                [ $prevtrip->[T_DAYS], $prev_vehicle ]
-            );
-        }
-
-        my @newtrip;
-        $newtrip[T_TIMES]   = $times;
-        $newtrip[T_DAYS]    = $days;
-        $newtrip[T_VEHICLE] = $vehicle;
-
-        $newtrips[-1] = \@newtrip;
-
-    } ## tidy end: while (@trips)
-
-    return \@newtrips;
-
-} ## tidy end: sub _merge_raw_trips
 
 sub _merge_conflicting {
     # takes conflicting string values and puts them in a single string
