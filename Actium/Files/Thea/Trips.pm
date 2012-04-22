@@ -52,8 +52,7 @@ sub thea_trips {
 
     my $trips_of_sked_r = _get_trips_of_sked($trips_of_routedir_r);
 
-    ...;
-    return;
+    return $trips_of_sked_r;
 
 }
 
@@ -259,6 +258,7 @@ sub _tripstruct_to_tripobj {
 sub _get_trips_of_sked {
 
     my $trips_of_routedir_r = shift;
+    my %trips_of_sked;
 
     foreach my $routedir ( keys $trips_of_routedir_r ) {
 
@@ -274,11 +274,16 @@ sub _get_trips_of_sked {
 
         my $trips_of_skedday_r = _assemble_skeddays($trips_of_day_r);
 
-        ...;
+        for my $skedday ( keys $trips_of_skedday_r ) {
 
-    }
+            my $skedid = "${routedir}_$skedday";
+            $trips_of_sked{$skedid} = $trips_of_skedday_r->{$skedday};
 
-    return;
+        }
+
+    } ## tidy end: foreach my $routedir ( keys...)
+
+    return \%trips_of_sked;
 
 } ## tidy end: sub _get_trips_of_sked
 
@@ -299,7 +304,7 @@ sub _get_trips_by_day {
 sub _assemble_skeddays {
     my $trips_of_day_r = shift;
     my @days           = sort keys $trips_of_day_r;
-    my ( %skedday_of_day, %chars_of_skedday, %trips_of_skedday );
+    my ( %already_found_day, %trips_of_skedday );
 
     # Go through list of days. Compare the first one to the subsequent ones.
     # If any of the subsequent ones are identical to the first day, mark them
@@ -307,14 +312,14 @@ sub _assemble_skeddays {
 
     foreach my $i ( 0 .. $#days ) {
         my $outer_day = $days[$i];
-        next if $skedday_of_day{$outer_day};
+        next if $already_found_day{$outer_day};
         my @found_days = $outer_day;
 
         my $found_trips_r = $trips_of_day_r->{$outer_day};
 
         for my $j ( $i + 1 .. $#days ) {
             my $inner_day = $days[$j];
-            next if $skedday_of_day{$inner_day};
+            next if $already_found_day{$inner_day};
 
             my $inner_trips_r = $trips_of_day_r->{$inner_day};
 
@@ -323,6 +328,7 @@ sub _assemble_skeddays {
             {
                 push @found_days, $inner_day;
                 $found_trips_r = $merged_trips_r;
+                $already_found_day{$inner_day} = $outer_day;
             }
         }
 
@@ -412,10 +418,9 @@ sub _merge_if_appropriate {
     if (    $only_either <= $MAXIMUM_DIFFERING_TIMES
         and $in_both > ( $MINIMUM_TIMES_MULTIPLIER * $only_either ) )
     {
-        my @trips_to_merge = Actium::Sked::Trip->stoptimes_sort(
-            @{$outer_trips_r},
-            @{$inner_trips_r}
-        );
+        my @trips_to_merge
+          = Actium::Sked::Trip->stoptimes_sort( @{$outer_trips_r},
+            @{$inner_trips_r} );
 
         return [
             Actium::Sked::Trip->merge_trips_if_same(
@@ -446,326 +451,3 @@ sub _trips_are_identical {
 }
 
 1;
-
-__END__
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    my @current_days = @original_days;
-    my $current_skedday = shift @current_days;
-    my @future_days;
-    
-    while (@current_days) {
-     
-            my $current_day         = shift @current_days;
-            my @previous_skedtrips = @{ $trips_of_day_r->{$current_skedday} };
-            my @these_trips      = @{ $trips_of_day_r->{$this_day} };
-
-            if ( my $new_trips_r = _merge_identical_triplists( \@previous_trips, \@these_trips ) ) {
-
-                # merge $day_to_compare and $this_day
-                # in $trips_of_day_r
-
-                delete $trips_of_day_r->{$previous_day};
-                delete $trips_of_day_r->{$this_day};
-                $previous_day .= $this_day;
-                $trips_of_day_r->{$previous_day} = $new_trips_r;
-
-            } 
-            else {
-             push @not_compared , $this_day;
-            }
-       }
-       
-       @to_compare = @not_compared;
-       
-    }
-             
-              
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    while (@days) {
-        
-        foreach my $i ( 0 .. $#days ) {
-
-        } ## tidy end: foreach my $i ( 0 .. $#days)
-        
-         # none were identical, so save this one in $trips_of_skedday
-
-        $trips_of_skedday{$day_to_compare} = $trips_of_day_r->{$day_to_compare};
-        
-    } ## tidy end: while (@days)
-
-} ## tidy end: sub _assemble_skeddays
-
-1;
-
-__END__
-
-
-# all this stuff is not used anymore but is here in case I want to mine the 
-# code for something
-
-
-sub _merge_identical_trips {
-    my $trips_of_routedir_r = shift;
-
-    foreach my $routedir ( keys %{$trips_of_routedir_r} ) {
-
-        my @trips = @{ $trips_of_routedir_r->{$routedir} };
-
-        my @merged = shift @trips;
-
-        while (@trips) {
-            my $thistrip = shift @trips;
-            my $prevtrip = $merged[-1];
-
-            if ( $thistrip->stoptimes_comparison_str ne
-                $prevtrip->stoptimes_comparison_str )
-            {
-                push @merged, $thistrip;
-                next;
-            }
-
-            $merged[-1]
-              = Actium::Sked::Trip->merge_trips( $thistrip, $prevtrip );
-
-        }
-
-        $trips_of_routedir_r->{$routedir} = \@merged;
-
-    } ## tidy end: foreach my $routedir ( keys...)
-
-    return $trips_of_routedir_r;
-
-} ## tidy end: sub _merge_identical_trips
-
-sub _break_out_days {
-    my $trips_of_routedir_r = shift;
-    my %trips_of_skedid;
-
-    foreach my $routedir ( keys %{$trips_of_routedir_r} ) {
-
-        my @trips = @{ $trips_of_routedir_r->{$routedir} };
-
-        my %sked_days_of = _days_of_trips(@trips);
-
-        foreach my $trip (@trips) {
-            my @sked_days_sets = @{ $sked_days_of{ $trip->daycode } };
-            foreach my $sked_days (@sked_days_sets) {
-                # incomplete -- must also un-merge the merged days
-                ...;
-                my $skedid = $routedir . "_$sked_days";
-                push @{ $trips_of_skedid{$skedid} }, $trip;
-            }
-        }
-
-    }
-
-    # return the result
-
-    return \%trips_of_skedid;
-
-} ## tidy end: sub _break_out_days
-
-sub _days_of_trips {
-    my @trips = @_;
-
-    my %seendays;
-    $seendays{ $_->daycode }++ foreach @trips;
-
-    my @daycodes = sort { $seendays{$a} <=> $seendays{$b} } keys %seendays;
-
-    my %skeddays_of;
-    $skeddays_of{$_} = [$_] foreach @daycodes;
-        
-    while ( @daycodes > 1 and my @indices = _get_first_intersection( @daycodes ) ) {
-     
-        my (@thesecodes, @counts);
-        
-        for my $i (@indices) {
-         
-            # remove these from the lists, to be added back later
-            ...;
-            
-            $thesecodes[$i] = splice( @daycodes, $i,  1 ) ;
-            $counts[$i] = $seendays{$thesecodes[$i]};
-            delete $seendays{$thesecodes[$i]};
-        }
-        
-        if ($counts[0] < 4 and $counts[0] * 5 < $counts[1] 
-            and _less_frequent_one_is_subset (@thesecodes)  ) {
-           # if the code with the lower count is less than 4,
-           # and it is less than 20% of the code with the higher count,
-           # and one is a subset of the other
-           
-           # merge lower days into higher days
-           
-           
-
-           $skeddays_of{$thesecodes[0]} = $thesecodes[1];
-           # ^^^ broken -- what if one or the other is merged?
-           ...;
-           
-           $seendays{$thesecodes[1]} = $counts[0] + $counts[1];
-           push @daycodes, $thesecodes[1]; # returns it to the list
-           
-        }
-        else {
-           
-           # divide higher days into portions
-           ...;
-        }
-        
-        @daycodes = sort { $seendays{$a} <=> $seendays{$b}}  @daycodes;
-        
-    }
-    
-    return %skeddays_of;
-
-} ## tidy end: sub _days_of_trips
-
-sub _get_first_intersection {
-    my @daycodes = @_;
-
-    for my $i ( 0 .. $#daycodes ) {
-        for my $j ( $i .. $#daycodes ) {
-            return ( $i, $j )
-              if _has_an_intersection( $daycodes[$i], $daycodes[$j] );
-        }
-    }
-    return;    # no intersection
-}
-
-sub _has_an_intersection {
-    my ($first, $second) = @_;
-    return is_LdisjointR( [ _chars_of($first) , _chars_of($second) ] ) 
-}
-
-sub _chars_of {
-    my $string = shift;
-    state %cache;
-    return $cache{$string} //= [ split( //, $string ) ];
-}
-
-sub _less_frequent_one_is_subset {
-   my @arrays = map { [_chars_of($_)] } @_;
-   my $only_in_first = scalar(get_unique ( @arrays ));
-   
-   return 1 if $only_in_first == 0;
-   # so we know first one is a subset of the other
-   
-   return;
-}
-
-1;
-
-__END__
-
-sub _merge_conflicting {
-    # takes conflicting string values and puts them in a single string
-    # That string always begins with $KEY_SEPARATOR
-
-    # fix this to treat the old one specially
-
-    my @day_and_strings = @_;
-
-    # @day_and_strings is an anonymous array. First value is
-    # an Actium::Sked::Days object. Second value is a string value
-
-    # It is possible that the string value passed to _merge_conflicting
-    # is the result of a previous merge, so this next bit de-merges
-    # the parts that were previously merged.
-
-    my @to_merge;
-
-    foreach my $day_and_string (@day_and_strings) {
-        if ( $day_and_string->[1] !~ /^$KEY_SEPARATOR/ ) {
-            push @to_merge, $day_and_string;
-        }
-        else {
-            my @previously_merged = grep { $_ ne $EMPTY_STR }
-              split( /$KEY_SEPARATOR/, $day_and_string->[1] );
-            foreach my $string (@previously_merged) {
-                my ( $daypart, $valuepart ) = split( / /, $string, 2 );
-                push @to_merge,
-                  [ Actium::Sked::Days->new_from_string($daypart), $valuepart ];
-            }
-        }
-    }
-
-    # so to_merge consists of day objects and non-merged strings
-
-    my %days_of;
-
-    foreach my $day_and_string (@to_merge) {
-        my ( $day, $string ) = @{$day_and_string};
-        if ( not exists $days_of{$string} ) {
-            $days_of{$string} = $day;
-        }
-        else {
-            $days_of{$string}
-              = Actium::Sked::Days->union( $days_of{$string}, $day );
-        }
-    }
-
-    my $merged = $EMPTY_STR;
-    foreach my $string ( keys %days_of ) {
-        $merged .= $KEY_SEPARATOR . $days_of{$string}->as_string . " $string";
-    }
-
-    return $merged;
-
-} ## tidy end: sub _merge_conflicting
-
-
-
-
-1;
-
