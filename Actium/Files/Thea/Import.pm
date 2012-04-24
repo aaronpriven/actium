@@ -17,10 +17,11 @@ use Text::Trim;
 use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Time ('timenum');
 use Actium::Sked::Days;
+use Actium::Sked::Dir;
 
 use Actium::Files::Thea::Trips('thea_trips');
 
-use Actium::Util (qw<jk jt>);
+use Actium::Util (qw<jk jt doe>);
 
 use Actium::Union('ordered_union_columns');
 
@@ -28,10 +29,16 @@ use Actium::Constants;
 
 use English '-no_match_vars';
 use List::Util ('min');
-use List::MoreUtils (qw<each_arrayref>);
+use List::MoreUtils (qw<each_arrayref uniq>);
 
 ## no critic (ProhibitConstantPragma)
 use constant { P_DIRECTION => 0, P_STOPS => 1, P_PLACES => 2 };
+use constant {
+    PL_DESCRIP   => 0,
+    PL_REFERENCE => 1,
+    PL_CITYCODE  => 2,
+    PL_PLACE8    => 3,
+};
 ## use critic
 
 use Sub::Exporter -setup => { exports => ['thea_import'] };
@@ -56,6 +63,10 @@ my %required_headers = (
         qw<stp_511_id tpat_stp_rank tpat_stp_plc tpat_stp_tp_sequence>,
         'item tpat_id', 'item tpat_route',
     ],
+    places => [
+        qw[plc_identifier      plc_description
+          plc_reference_place plc_district plc_number],
+    ],
 );
 
 sub thea_import {
@@ -68,15 +79,17 @@ sub thea_import {
     my $trips_of_skedid_r
       = thea_trips( $theafolder, $pat_routeids_of_routedir_r, $uindex_of_r );
 
-    my @skeds = _make_skeds( $trips_of_skedid_r, $upattern_of_r );
+    my $places_info_of_r = _load_places($theafolder);
 
-    #    _output_debugging_patterns( $signup, $patterns_r,
-    #        $pat_routeids_of_routedir_r, $upattern_of_r, $uindex_of_r,
-    #        $trips_of_routeid_r, $trips_of_routedir_r );
+    my @skeds
+      = _make_skeds( $trips_of_skedid_r, $upattern_of_r, $places_info_of_r );
+
+    _output_debugging_patterns( $signup, $patterns_r,
+        $pat_routeids_of_routedir_r, $upattern_of_r, $uindex_of_r, \@skeds );
 
     return @skeds;
 
-}
+} ## tidy end: sub thea_import
 
 sub _output_debugging_patterns {
 
@@ -88,12 +101,17 @@ sub _output_debugging_patterns {
     my $pat_routeids_of_routedir_r = shift;
     my $upattern_of_r              = shift;
     my $uindex_of_r                = shift;
-    my $trips_of_routeid_r         = shift;
-    my $trips_of_routedir_r        = shift;
+    my $skeds_r                    = shift;
 
-    my $subfolder = $signup->subfolder('thea_debug');
+    my $debugfolder = $signup->subfolder('thea_debug');
 
-    #    my $rdfh = $subfolder->open_write('thea_unifiedtrips.txt');
+    $signup->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'dump',
+        EXTENSION => 'dump',
+    );
+
+    #    my $rdfh = $debugfolder->open_write('thea_unifiedtrips.txt');
     #
     #    foreach my $routedir ( sort keys $trips_of_routedir_r ) {
     #
@@ -121,7 +139,7 @@ sub _output_debugging_patterns {
     #
     #    close $rdfh or die "Can't close thea_unifiedtrips.txt: $OS_ERROR";
 
-    #    my $tfh = $subfolder->open_write('thea_trips.txt');
+    #    my $tfh = $debugfolder->open_write('thea_trips.txt');
     #
     #    foreach my $routeid ( keys $trips_of_routeid_r ) {
     #        say $tfh "\n$routeid";
@@ -134,7 +152,7 @@ sub _output_debugging_patterns {
     #
     #    close $tfh or die "Can't close thea_trips.txt: $OS_ERROR";
 
-    my $ufh = $subfolder->open_write('thea_upatterns.txt');
+    my $ufh = $debugfolder->open_write('thea_upatterns.txt');
 
     foreach my $routedir ( keys $pat_routeids_of_routedir_r ) {
         my @routeids = @{ $pat_routeids_of_routedir_r->{$routedir} };
@@ -148,7 +166,7 @@ sub _output_debugging_patterns {
 
     close $ufh or die "Can't close thea_upatterns.txt: $OS_ERROR";
 
-    my $fh = $subfolder->open_write('thea_patterns.txt');
+    my $fh = $debugfolder->open_write('thea_patterns.txt');
 
     foreach my $routeid ( sort keys $patterns_r ) {
 
@@ -189,6 +207,31 @@ sub _output_debugging_patterns {
 } ## tidy end: sub _output_debugging_patterns
 
 #my %is_a_valid_trip_type = { Regular => 1, Opportunity => 1 };
+
+my $stop_tiebreaker = sub {
+
+    my @lists = @_;
+
+    my @first_timepoint_rank;
+
+  TIEBREAKER_LIST:
+    foreach my $i ( 0, 1 ) {
+        foreach my $stop ( @{ $lists[$i] } ) {
+            my ( $stopid, $placeid, $placerank ) = split( /:/s, $stop );
+            if ( defined $placerank ) {
+                $first_timepoint_rank[$i] = $placerank;
+                next TIEBREAKER_LIST;
+            }
+        }
+        # no timepoints for this list.
+        # Can't break the tie, so just return 0 ("equal").
+        return 0;
+
+    }
+
+    return $first_timepoint_rank[0] <=> $first_timepoint_rank[1];
+
+};
 
 sub _get_patterns {
     my $theafolder = shift;
@@ -260,10 +303,12 @@ sub _get_patterns {
 
         my $tpat_stp_rank = $value_of_r->{tpat_stp_rank};
 
-        $patterns{$routeid}[ P_STOPS() ][$tpat_stp_rank] = \@stop;
+        $patterns{$routeid}[P_STOPS][$tpat_stp_rank] = \@stop;
 
-        $patterns{$routeid}[ P_PLACES() ]{$tpat_stp_tp_sequence} = $tpat_stp_plc
+        $patterns{$routeid}[P_PLACES]{$tpat_stp_tp_sequence} = $tpat_stp_plc
           if $tpat_stp_tp_sequence;
+
+        return;
 
     };
 
@@ -294,19 +339,9 @@ sub _get_patterns {
             $stop_set_of_routeid{$routeid} = \@stop_set;
         }
 
-        #        my @stop_sets;
-        #        foreach my $routeid (@routeids) {
-        #            my @set;
-        #            foreach my $stop ( @{ $patterns{$routeid}[P_STOPS] } ) {
-        #                push @set, join( ':', @{$stop} );
-        #            }
-        #            push @stop_sets, \@set;
-        #        }
-
         my %returned = ordered_union_columns(
-            sethash => \%stop_set_of_routeid,
-            #            sets => \@stop_sets,
-            #            ids  => \@routeids,
+            sethash    => \%stop_set_of_routeid,
+            tiebreaker => $stop_tiebreaker,
         );
 
         $upattern_of{$routedir} = $returned{union};
@@ -323,24 +358,86 @@ sub _get_patterns {
 
 } ## tidy end: sub _get_patterns
 
+sub _load_places {
+    my $theafolder = shift;
+    my %place_info_of;
+
+    emit 'Reading THEA place files';
+
+    my $place_callback = sub {
+        my $value_of_r   = shift;
+        my $this_place_r = [];
+
+        $this_place_r->[PL_DESCRIP]   = $value_of_r->{plc_description};
+        $this_place_r->[PL_REFERENCE] = $value_of_r->{plc_reference_place};
+        $this_place_r->[PL_CITYCODE]  = $value_of_r->{plc_district};
+        $this_place_r->[PL_PLACE8]    = $value_of_r->{plc_number};
+        $place_info_of{ $value_of_r->{plc_identifier} } = $this_place_r;
+
+        return;
+    };
+
+    read_tab_files(
+        {   globpatterns     => ['*places.txt'],
+            folder           => $theafolder,
+            required_headers => $required_headers{'places'},
+            callback         => $place_callback,
+        }
+    );
+
+    emit_done;
+
+    return \%place_info_of;
+
+} ## tidy end: sub _load_places
+
 sub _make_skeds {
     my $trips_of_skedid_r = shift;
     my $upattern_of_r     = shift;
-    
-    foreach my $skedid (keys $trips_of_skedid_r) {
-        my ($route, $dir, $days) = split( /_/ , $skedid);
+    my $places_r          = shift;
+
+    my @skeds;
+
+    foreach my $skedid ( keys $trips_of_skedid_r ) {
+        my ( $route, $dir, $days ) = split( /_/s, $skedid );
         my $routedir = "${route}_$dir";
         my $upattern = $upattern_of_r->{$routedir};
-     
-     
-    }
+        my ( @stops, @place4s, @stopplaces );
 
-    ...;
+        foreach my $stop ( @{$upattern} ) {
+            my ( $stopid, $placeid, $placerank )
+              = split( /:/s, $stop );
+            push @stops, $stopid;
+            push @stopplaces, ( doe($placeid) );
+            push @place4s, $placeid if $placeid;
+        }
 
-    return;
+        @place4s = uniq @place4s;
+        my @place8s = map { $places_r->{$_}[PL_PLACE8] } @place4s;
 
-}
+        my $sked_attributes = {
+            linegroup   => $route,         # TODO - real linegroup combinations
+            place4_r    => \@place4s,
+            place8_r    => \@place8s,
+            stopid_r    => \@stops,
+            stopplace_r => \@stopplaces,
+            dir_obj  => Actium::Sked::Dir->new($dir),
+            days_obj => Actium::Sked::Days->new($days),
+            trip_r   => $trips_of_skedid_r->{$skedid},
+        };
+
+        push @skeds, $sked_attributes;
+
+    } ## tidy end: foreach my $skedid ( keys $trips_of_skedid_r)
+
+    return @skeds;
+
+} ## tidy end: sub _make_skeds
 
 1;
 
 __END__
+
+BUGS AND LIMITATIONS
+
+Still to do: linegroup combining

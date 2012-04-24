@@ -17,6 +17,7 @@ use Actium::Sked::Days;
 use Actium::Time('timenum');
 use Actium::Sked::Trip;
 use Actium::Util ('j');
+use Actium::Files::TabDelimited 'read_tab_files';
 
 use List::Util;
 use List::MoreUtils ('uniq');
@@ -34,7 +35,6 @@ use constant {
     T_PATTERN        => 4,
     T_ROUTE          => 5,
     T_TYPE           => 6,
-    T_DAYDIGITS      => 7,
 };
 ## use critic
 
@@ -92,14 +92,18 @@ sub _load_trips_from_file {
 
         my $daydigits = $value_of_r->{trp_blkng_day_digits};
 
+        if ( $daydigits =~ s/0/7/sg ) {
+            $daydigits = j( sort split( //s, $daydigits ) );
+        }
+
         my $days_obj = _make_days_obj( $daydigits, $event );
 
         $trip_of_tnum{$tnum}[T_DAYSEXCEPTIONS] = $event;
 
-        $trip_of_tnum{$tnum}[T_PATTERN]   = $pattern;
-        $trip_of_tnum{$tnum}[T_ROUTE]     = $route;
-        $trip_of_tnum{$tnum}[T_TYPE]      = $value_of_r->{trp_type};
-        $trip_of_tnum{$tnum}[T_DAYDIGITS] = $daydigits;
+        $trip_of_tnum{$tnum}[T_PATTERN] = $pattern;
+        $trip_of_tnum{$tnum}[T_ROUTE]   = $route;
+        $trip_of_tnum{$tnum}[T_TYPE]    = $value_of_r->{trp_type};
+        $trip_of_tnum{$tnum}[T_DAYS]    = $days_obj;
 
     };
 
