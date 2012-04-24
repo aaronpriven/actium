@@ -58,7 +58,7 @@ BEGIN {
         # Weekdays, Saturdays, Sundays, Weekdays-and-Saturdays,
         # Weekdays-and-Sundays, Weekends, Daily
 
-        DIRCODES => [qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN )],
+        DIRCODES => [qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN A B )],
 
         #        DAYS_FROM_TRANSITINFO => { reverse
         #                 qw(
