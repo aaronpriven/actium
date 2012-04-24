@@ -18,6 +18,7 @@ use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Time ('timenum');
 use Actium::Sked::Days;
 use Actium::Sked::Dir;
+use Actium::Sked;
 
 use Actium::Files::Thea::Trips('thea_trips');
 
@@ -426,7 +427,7 @@ sub _make_skeds {
             trip_r   => $trips_of_skedid_r->{$skedid},
         };
 
-        push @skeds, $sked_attributes;
+        push @skeds, Actium::Sked->new($sked_attributes);
 
     } ## tidy end: foreach my $skedid ( keys $trips_of_skedid_r)
 

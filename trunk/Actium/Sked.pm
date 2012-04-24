@@ -174,7 +174,7 @@ sub _build_earliest_timenum {
 sub routes {
 
     # It would be nice to make this a lazy attribute, but the Trip objects
-    # would change.
+    # can change.
 
     # Trips are kept read-write so that AVL and headways can be merged --
     # would it be better to have them be readonly,
