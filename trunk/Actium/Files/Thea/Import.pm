@@ -289,7 +289,7 @@ sub _get_patterns {
         my $tpat_route = $value_of_r->{'item tpat_route'};
         my $tpat_id    = $value_of_r->{'item tpat_id'};
 
-        my $routeid = "$tpat_route:$tpat_id";
+        my $routeid = $tpat_route . "_$tpat_id";
 
         return unless exists $patterns{$routeid};
 

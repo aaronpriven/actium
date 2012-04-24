@@ -27,7 +27,6 @@ use Actium::Constants;
 
 use List::Util ('min');
 
-
 use Actium::Types qw<ArrayRefOfTimeNums TimeNum ActiumSkedDays>;
 
 ###################
@@ -97,9 +96,10 @@ sub average_stoptime {
 }
 
 sub stoptimes_equals {
-    my $self = shift;
+    my $self       = shift;
     my $secondtrip = shift;
-    return $self->stoptimes_comparison_str eq $secondtrip->stoptimes_comparison_str;
+    return $self->stoptimes_comparison_str eq
+      $secondtrip->stoptimes_comparison_str;
 }
 
 # from either
@@ -133,25 +133,24 @@ sub dump {    ## no critic (ProhibitBuiltinHomonyms)
     return Data::Dumper::Dumper($self);
 }
 
-
- 
 ### CLASS METHODS
 
 sub merge_trips {
-    
+
     my $class;
-    if (blessed $_[0]) {
-       $class = blessed $_[0];
-    } else {
-       $class = shift;
+    if ( blessed $_[0] ) {
+        $class = blessed $_[0];
     }
-       
+    else {
+        $class = shift;
+    }
+
     # allows calling as object method or class method
     # calling as a class method should be deprecated...
 
-    my $self  = shift;
+    my $self       = shift;
     my $secondtrip = shift;
-    
+
     return $self if $self == $secondtrip;
     # if they are the same exact object, then don't do anything else,
     # just return it
@@ -169,17 +168,20 @@ sub merge_trips {
     my %merged_value_of = ( mergedtrip_r => \@mergedtrips );
 
     foreach my $attribute ( $class->meta->get_all_attributes ) {
+
         my $attrname = $attribute->name;
+        my $init_arg = $attribute->init_arg // $attrname;
+
         given ($attrname) {
             when ('mergedtrip_r') {
             }    # do nothing
             when ( [ 'placetime_r', 'stoptime_r' ] ) {
 
                 # assumed to be equal
-                $merged_value_of{$attrname} = $self->$attrname;
+                $merged_value_of{$init_arg} = $self->$attrname;
             }
             when ('days_obj') {
-                $merged_value_of{$attrname}
+                $merged_value_of{$init_arg}
                   = Actium::Sked::Days->union( $self->$attrname,
                     $secondtrip->$attrname );
             }
@@ -191,11 +193,11 @@ sub merge_trips {
                     and defined($secondattr)
                     and $self->$attrname eq $secondtrip->$attrname )
                 {
-                    $merged_value_of{$attrname} = $firstattr;
+                    $merged_value_of{$init_arg} = $firstattr;
                 }
                 # if they're identical, set the array to the value
                 elsif ( $attrname ~~ ['daysexceptions'] ) {
-                    $merged_value_of{$attrname} = '';
+                    $merged_value_of{$init_arg} = '';
                 }
                 # otherwise, if the attribute name is one of the those, then
                 # set it to nothing. (If it isn't listed, the attribute will
@@ -228,7 +230,7 @@ my $common_stop_cr = sub {
     for my $stop ( 0 .. $last_to_search ) {
       SORTBY_TRIP:
         for my $trip (@trips) {
-            next SORTBY_STOP if not defined $trip->stoptime( [$stop] );
+            next SORTBY_STOP if not defined $trip->stoptime($stop);
         }
         $common_stop = $stop;
         last SORTBY_STOP;
@@ -250,8 +252,11 @@ sub stoptimes_sort {
         # sort trips with a common stop
 
         @trips = map { $_->[2] }
-          sort { $a->[0] <=> $b->[0] or $a->[1] <=> $b->[1]  or
-                 $a->sortable_days cmp $b->sortable_days }
+          sort {
+                 $a->[0] <=> $b->[0]
+              or $a->[1] <=> $b->[1]
+              or $a->[2]->sortable_days cmp $b->[2]->sortable_days
+          }
           map {
             [   $_->stoptime($common_stop),    # 0
                 $_->average_stoptime,          # 1
@@ -264,7 +269,7 @@ sub stoptimes_sort {
         # if both of those tie, use sortable_days (not put into the
         # cache because will be used very very rarely)
 
-    }
+    } ## tidy end: if ( defined $common_stop)
     else {
         # sort trips without a common stop for all of them
 
@@ -274,10 +279,10 @@ sub stoptimes_sort {
 
             defined $common
               ? ( $a->stoptime($common) <=> $b->stoptime($common)
-                  or $a->average_stoptime <=> $b->average_stoptime 
-                  or $a->sortable_days cmp $b->sortable_days)
+                  or $a->average_stoptime <=> $b->average_stoptime
+                  or $a->sortable_days cmp $b->sortable_days )
               : $a->average_stoptime <=> $b->average_stoptime
-                 or $a->sortable_days cmp $b->sortable_days;
+              or $a->sortable_days cmp $b->sortable_days;
 
             # if these two trips have a common stop, sort first
             # on those common times, and then by the average.
@@ -293,38 +298,34 @@ sub stoptimes_sort {
 } ## tidy end: sub stoptimes_sort
 
 sub merge_trips_if_same {
-   my $class = shift;
-   my %params = %{+shift};
-   
-   my @trips = @{$params{trips}};
-   my @methods = @{$params{methods_to_compare}};
-   
-   
-  my @newtrips = shift @trips;
+    my $class  = shift;
+    my %params = %{ +shift };
+
+    my @trips   = @{ $params{trips} };
+    my @methods = @{ $params{methods_to_compare} };
+
+    my @newtrips = shift @trips;
 
   TRIP_TO_MERGE:
     while (@trips) {
         my $thistrip = shift @trips;
         my $prevtrip = $newtrips[-1];
-        
-        my @methods_to_test = @methods;
-        
-        while (@methods_to_test) {
-           my $this_test = shift @methods_to_test;
-           if ( $thistrip->$this_test ne $prevtrip->$this_test ) {
-            push @newtrips, $thistrip;
-            next TRIP_TO_MERGE;
-           }
+
+        foreach my $this_test (@methods) {
+            if ( $thistrip->$this_test ne $prevtrip->$this_test ) {
+                push @newtrips, $thistrip;
+                next TRIP_TO_MERGE;
+            }
         }
         # so now we know they are the same
-        
+
         $newtrips[-1] = $prevtrip->merge_trips($thistrip);
 
-    } ## tidy end: while (@trips)
+    }
 
-    return @newtrips;
- 
-}
+    return \@newtrips;
+
+} ## tidy end: sub merge_trips_if_same
 
 no Moose;
 
