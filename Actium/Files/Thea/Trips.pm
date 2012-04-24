@@ -81,7 +81,7 @@ sub _load_trips_from_file {
         my $route   = $value_of_r->{trp_route};
         my $pattern = $value_of_r->{trp_pattern};
 
-        my $routeid = $route . ':' . $pattern;
+        my $routeid = $route . '_' . $pattern;
 
         push @{ $tnums_of_routeid{$routeid} }, $tnum;
 
@@ -219,9 +219,9 @@ sub _make_trip_objs {
 
         } ## tidy end: foreach my $routeid (@routeids)
 
-        @trip_objs = Actium::Sked::Trip->stoptimes_sort(@trip_objs);
+        my $trip_objs_r = Actium::Sked::Trip->stoptimes_sort(@trip_objs);
 
-        @trip_objs = Actium::Sked::Trip->merge_trips_if_same(
+        $trip_objs_r = Actium::Sked::Trip->merge_trips_if_same(
             {   trips => \@trip_objs,
                 methods_to_compare =>
                   [qw <stoptimes_comparison_str sortable_days>]
@@ -231,7 +231,7 @@ sub _make_trip_objs {
         # passengers we send two buses out. Scheduling system has to have these
         # twice, but we only want to display them once
 
-        $trips_of_routedir{$routedir} = \@trip_objs;
+        $trips_of_routedir{$routedir} = $trip_objs_r;
 
     } ## tidy end: foreach my $routedir ( sort...)
 
@@ -247,7 +247,7 @@ sub _tripstruct_to_tripobj {
     return Actium::Sked::Trip->new(
         {   days           => $tripstruct->[T_DAYS],
             vehicletype    => $tripstruct->[T_VEHICLE],
-            stoptimes      => $tripstruct->[T_TIMES],
+            stoptime_r     => $tripstruct->[T_TIMES],
             daysexceptions => $tripstruct->[T_DAYSEXCEPTIONS],
             type           => $tripstruct->[T_TYPE],
             pattern        => $tripstruct->[T_PATTERN],
@@ -260,11 +260,15 @@ sub _tripstruct_to_tripobj {
 }
 
 sub _get_trips_of_sked {
-
+ 
     my $trips_of_routedir_r = shift;
     my %trips_of_sked;
-
-    foreach my $routedir ( keys $trips_of_routedir_r ) {
+    
+    emit "Assembling trips into schedules by day";
+    
+    foreach my $routedir ( sort keys $trips_of_routedir_r ) {
+     
+        emit_over $routedir;
 
         # first, this separates them out by individual days.
         # then, it reassembles them in groups.
@@ -286,9 +290,11 @@ sub _get_trips_of_sked {
         }
 
     } ## tidy end: foreach my $routedir ( keys...)
+    
+    emit_done;
 
     return \%trips_of_sked;
-
+    
 } ## tidy end: sub _get_trips_of_sked
 
 sub _get_trips_by_day {
@@ -387,11 +393,11 @@ sub _merge_if_appropriate {
         }
     );
 
-    my $only_either = scalar( $compare->get_symmetric_difference );
+    my $only_in_either = scalar( $compare->get_symmetric_difference );
 
     # if all the trips have identical times, then merge them
 
-    if ($only_either) {
+    if (not $only_in_either) {
 
         my @merged_trips;
         for my $i ( 0 .. $#outer_times ) {
@@ -417,10 +423,10 @@ sub _merge_if_appropriate {
     # To do that you'd need to compare them all to each other simultaneously,
     # which code I am not prepared to write at this point.
 
-    my $in_both = ( $inner_count + $outer_count ) - $only_either;
+    my $in_both = ( $inner_count + $outer_count ) - $only_in_either;
 
-    if (    $only_either <= $MAXIMUM_DIFFERING_TIMES
-        and $in_both > ( $MINIMUM_TIMES_MULTIPLIER * $only_either ) )
+    if (    $only_in_either <= $MAXIMUM_DIFFERING_TIMES
+        and $in_both > ( $MINIMUM_TIMES_MULTIPLIER * $only_in_either ) )
     {
         my @trips_to_merge
           = Actium::Sked::Trip->stoptimes_sort( @{$outer_trips_r},
@@ -429,7 +435,7 @@ sub _merge_if_appropriate {
         return [
             Actium::Sked::Trip->merge_trips_if_same(
                 {   trips              => @trips_to_merge,
-                    methods_to_compare => 'stoptimes_comparison_str',
+                    methods_to_compare => ['stoptimes_comparison_str'],
                 }
             )
         ];
