@@ -4,12 +4,12 @@
 
 # Subversion: $Id$
 
-# Legacy status: 4 (still in progress...)
+# Legacy status: 4
 
 use 5.014;
 use warnings;
 
-package Actium::Cmd::TheaImport 0.001;
+package Actium::Cmd::TheaImport 0.002;
 
 use Actium::Files::Thea::Import ('thea_import');
 
