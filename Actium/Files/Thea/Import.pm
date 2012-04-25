@@ -105,53 +105,13 @@ sub _output_debugging_patterns {
     my $skeds_r                    = shift;
 
     my $debugfolder = $signup->subfolder('thea_debug');
+    my $dumpfolder = $debugfolder->subfolder('dump');
 
-    $signup->write_files_with_method(
+    $dumpfolder->write_files_with_method(
         OBJECTS   => $skeds_r,
         METHOD    => 'dump',
         EXTENSION => 'dump',
     );
-
-    #    my $rdfh = $debugfolder->open_write('thea_unifiedtrips.txt');
-    #
-    #    foreach my $routedir ( sort keys $trips_of_routedir_r ) {
-    #
-    #        say $rdfh "\n$routedir";
-    #        foreach my $trip ( @{ $trips_of_routedir_r->{$routedir} } ) {
-    #
-    #            unless ( $trip->[T_TIMES] ) {
-    #                say $rdfh "INVALID TRIP";
-    #
-    #                next;
-    #            }
-    #
-    #            my @times = @{ $trip->[T_TIMES] };
-    #            foreach (@times) {
-    #                $_ = '--' unless defined;
-    #                $_ = sprintf( "%-5s", $_ );
-    #            }
-    #
-    #            say $rdfh join( "\t",
-    #                $trip->[T_DAYS]->as_sortable,
-    #                $trip->[T_VEHICLE], join( " ", @times ) );
-    #        }
-    #
-    #    } ## tidy end: foreach my $routedir ( sort...)
-    #
-    #    close $rdfh or die "Can't close thea_unifiedtrips.txt: $OS_ERROR";
-
-    #    my $tfh = $debugfolder->open_write('thea_trips.txt');
-    #
-    #    foreach my $routeid ( keys $trips_of_routeid_r ) {
-    #        say $tfh "\n$routeid";
-    #        foreach my $trip ( @{ $trips_of_routeid_r->{$routeid} } ) {
-    #            say $tfh join( "\t",
-    #                $trip->[T_DAYS]->as_sortable,
-    #                $trip->[T_VEHICLE], join( " ", @{ $trip->[T_TIMES] } ) );
-    #        }
-    #    }
-    #
-    #    close $tfh or die "Can't close thea_trips.txt: $OS_ERROR";
 
     my $ufh = $debugfolder->open_write('thea_upatterns.txt');
 
@@ -398,8 +358,13 @@ sub _make_skeds {
     my $places_r          = shift;
 
     my @skeds;
+    
+    emit "Making Actium::Sked objects";
 
-    foreach my $skedid ( keys $trips_of_skedid_r ) {
+    foreach my $skedid ( sort keys $trips_of_skedid_r ) {
+     
+        emit_over $skedid;
+        
         my ( $route, $dir, $days ) = split( /_/s, $skedid );
         my $routedir = "${route}_$dir";
         my $upattern = $upattern_of_r->{$routedir};
@@ -415,21 +380,23 @@ sub _make_skeds {
 
         @place4s = uniq @place4s;
         my @place8s = map { $places_r->{$_}[PL_PLACE8] } @place4s;
-
-        my $sked_attributes = {
+        
+        my $sked_attributes_r = {
             linegroup   => $route,         # TODO - real linegroup combinations
             place4_r    => \@place4s,
             place8_r    => \@place8s,
             stopid_r    => \@stops,
             stopplace_r => \@stopplaces,
-            dir_obj  => Actium::Sked::Dir->new($dir),
-            days_obj => Actium::Sked::Days->new($days),
+            direction  => Actium::Sked::Dir->new($dir),
+            days => Actium::Sked::Days->new($days),
             trip_r   => $trips_of_skedid_r->{$skedid},
         };
 
-        push @skeds, Actium::Sked->new($sked_attributes);
+        push @skeds, Actium::Sked->new($sked_attributes_r);
 
     } ## tidy end: foreach my $skedid ( keys $trips_of_skedid_r)
+    
+    emit_done;
 
     return @skeds;
 

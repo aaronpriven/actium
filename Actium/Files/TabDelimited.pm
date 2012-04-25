@@ -74,8 +74,13 @@ sub read_tab_files {
             if ( not $linenum % $progress_lines ) {
                 emit_over( sprintf( ' %.0f%%', tell($fh) / $size * 100 ) );
             }
+            
+            my @values = ( split( "\t", $line ) );
+            foreach (@values) {
+                s/\A\s+//;
+                s/\s+\z//;
+            }
 
-            my @values = trim( split( "\t", $line ) );
             my %value_of;
             @value_of{@headers} = @values;
 
@@ -84,16 +89,16 @@ sub read_tab_files {
                 \%value_of, \@values, \@headers, $line, $file, $linenum
             );
 
-        }
+        } ## tidy end: while ( my $line = <$fh> )
 
         emit_over ' 100%';
 
         close $fh;
 
         emit_done;
-        
+
     } ## tidy end: foreach my $file (@files)
-    
+
     return;
 
 } ## tidy end: sub read_tab_files
