@@ -13,7 +13,6 @@ use Carp;
 use English '-no_match_vars';
 use autodie;
 
-use Text::Trim;
 use Params::Validate (':all');
 
 use Actium::Term;
@@ -36,6 +35,7 @@ sub read_tab_files {
             required_headers => { type => ARRAYREF, default => [] },
             callback         => { type => CODEREF },
             progress_lines   => { type => SCALAR,   default => 5000 },
+            trim             => { type => BOOLEAN,  default => 0 },
         },
 
     );
@@ -43,6 +43,7 @@ sub read_tab_files {
     my $folder         = $params{folder};
     my $passed_files_r = $params{files};
     my $globpatterns_r = $params{globpatterns};
+    my $trim           = $params{trim};
 
     unless ( $passed_files_r or $globpatterns_r ) {
         croak 'Must specify either files or globpatterns to read_tab_files';
@@ -74,11 +75,13 @@ sub read_tab_files {
             if ( not $linenum % $progress_lines ) {
                 emit_over( sprintf( ' %.0f%%', tell($fh) / $size * 100 ) );
             }
-            
+
             my @values = ( split( "\t", $line ) );
-            foreach (@values) {
-                s/\A\s+//;
-                s/\s+\z//;
+            if ($trim) {
+                foreach (@values) {
+                    s/\A\s+//;
+                    s/\s+\z//;
+                }
             }
 
             my %value_of;
@@ -128,8 +131,13 @@ sub _verify_headers {
     my $file             = shift;
     my @required_headers = @{ +shift };
 
-    my $headerline = trim( scalar(<$fh>) );
+    my $headerline = ( scalar(<$fh>) );
     my @headers = split( "\t", $headerline );
+
+    foreach (@headers) {
+        s/\A\s+//;
+        s/\s+\z//;
+    }
 
     if ( scalar @required_headers ) {
         foreach my $required_header (@required_headers) {
@@ -274,6 +282,11 @@ indicator (percentages) are updated. The default is 5000.
 This mandatory parameter must be a code reference. For each line read, this
 code reference is invoked, as described above.
 
+=item trim
+
+If present and true, this will trim whitespace from the beginning and end 
+of each field. This can be time-consuming in a large file.
+
 =back
 
 =head1 DIAGNOSTICS
@@ -318,10 +331,6 @@ Params::Validate
 =item *
 
 Sub::Exporter
-
-=item *
-
-Text::Trim
 
 =back
 
