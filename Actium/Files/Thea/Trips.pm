@@ -19,7 +19,7 @@ use Actium::Sked::Trip;
 use Actium::Util ('j');
 use Actium::Files::TabDelimited 'read_tab_files';
 
-use List::Util;
+use List::Util('max');
 use List::MoreUtils ('uniq');
 use List::Compare;
 use Const::Fast;
@@ -222,7 +222,7 @@ sub _make_trip_objs {
         my $trip_objs_r = Actium::Sked::Trip->stoptimes_sort(@trip_objs);
 
         $trip_objs_r = Actium::Sked::Trip->merge_trips_if_same(
-            {   trips => \@trip_objs,
+            {   trips => $trip_objs_r,
                 methods_to_compare =>
                   [qw <stoptimes_comparison_str sortable_days>]
             }
@@ -260,15 +260,19 @@ sub _tripstruct_to_tripobj {
 }
 
 sub _get_trips_of_sked {
- 
+
     my $trips_of_routedir_r = shift;
     my %trips_of_sked;
-    
+
     emit "Assembling trips into schedules by day";
-    
+
     foreach my $routedir ( sort keys $trips_of_routedir_r ) {
-     
+
         emit_over $routedir;
+
+        if ( $routedir eq "800_EB" ) {
+            emit_over "yup";
+        }
 
         # first, this separates them out by individual days.
         # then, it reassembles them in groups.
@@ -289,12 +293,12 @@ sub _get_trips_of_sked {
 
         }
 
-    } ## tidy end: foreach my $routedir ( keys...)
-    
+    } ## tidy end: foreach my $routedir ( sort...)
+
     emit_done;
 
     return \%trips_of_sked;
-    
+
 } ## tidy end: sub _get_trips_of_sked
 
 sub _get_trips_by_day {
@@ -397,7 +401,7 @@ sub _merge_if_appropriate {
 
     # if all the trips have identical times, then merge them
 
-    if (not $only_in_either) {
+    if ( not $only_in_either ) {
 
         my @merged_trips;
         for my $i ( 0 .. $#outer_times ) {
@@ -423,22 +427,20 @@ sub _merge_if_appropriate {
     # To do that you'd need to compare them all to each other simultaneously,
     # which code I am not prepared to write at this point.
 
-    my $in_both = ( $inner_count + $outer_count ) - $only_in_either;
+    my $in_both = ( max( $inner_count, $outer_count ) ) - $only_in_either;
 
     if (    $only_in_either <= $MAXIMUM_DIFFERING_TIMES
         and $in_both > ( $MINIMUM_TIMES_MULTIPLIER * $only_in_either ) )
     {
-        my @trips_to_merge
+        my $trips_to_merge_r
           = Actium::Sked::Trip->stoptimes_sort( @{$outer_trips_r},
             @{$inner_trips_r} );
 
-        return [
-            Actium::Sked::Trip->merge_trips_if_same(
-                {   trips              => @trips_to_merge,
-                    methods_to_compare => ['stoptimes_comparison_str'],
-                }
-            )
-        ];
+        return Actium::Sked::Trip->merge_trips_if_same(
+            {   trips              => $trips_to_merge_r,
+                methods_to_compare => ['stoptimes_comparison_str'],
+            }
+        );
 
     }
 

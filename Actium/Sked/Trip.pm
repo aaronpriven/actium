@@ -27,6 +27,9 @@ use Actium::Constants;
 
 use List::Util ('min');
 
+#use overload q{""} => \&stoptimes_comparison_str;
+# only for debugging - remove in production
+
 use Actium::Types qw<ArrayRefOfTimeNums TimeNum ActiumSkedDays>;
 
 ###################
@@ -250,19 +253,23 @@ sub stoptimes_sort {
     if ( defined $common_stop ) {
 
         # sort trips with a common stop
-
-        @trips = map { $_->[2] }
-          sort {
-                 $a->[0] <=> $b->[0]
-              or $a->[1] <=> $b->[1]
-              or $a->[2]->sortable_days cmp $b->[2]->sortable_days
-          }
-          map {
+        
+        my @cache = map {
             [   $_->stoptime($common_stop),    # 0
                 $_->average_stoptime,          # 1
                 $_,                            # 2
             ]
-          } @trips;
+          } @trips; 
+          
+        @cache = sort {
+                 $a->[0] <=> $b->[0]
+              or $a->[1] <=> $b->[1]
+              or $a->[2]->sortable_days cmp $b->[2]->sortable_days
+          } @cache;
+          
+        @trips = map { $_->[2] } @cache;
+          
+
         # a schwartzian transform with two criteria --
         # either the common stop, or if those times are the same,
         # the average.
