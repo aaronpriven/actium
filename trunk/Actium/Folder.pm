@@ -487,14 +487,11 @@ sub write_files_with_method {
     );
 
     my @objects = @{ $params{OBJECTS} };
-    my $extension;
+    my $extension = $EMPTY_STR;
     if ( exists $params{EXTENSION} ) {
         $extension = $params{EXTENSION};
-        $extension =~ s/\A\.+//;
-        # eliminate leading periods
-    }
-    else {
-        $extension = $EMPTY_STR;
+        $extension =~ s/\A\.*/./;
+        # make sure there's only one a leading period
     }
 
     my $method    = $params{METHOD};
@@ -525,8 +522,7 @@ sub write_files_with_method {
 
         $id .= "_$seen_id{$id}" unless $seen_id{$id} == 1;
         
-        my $filename = $id;
-        $filename .= ".extension" if $extension ne $EMPTY_STR;
+        my $filename = $id . $extension;
         
         $folder->write_file_with_method(
             {   OBJECT   => $obj,
