@@ -322,6 +322,8 @@ sub union {
 
 } ## tidy end: sub union
 
+__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
+
 1;
 
 __END__

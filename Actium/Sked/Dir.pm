@@ -85,6 +85,8 @@ sub as_to_text {
 
 }
 
+__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
+
 1;
 
 __END__
