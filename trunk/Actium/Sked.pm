@@ -47,8 +47,10 @@ has 'place4_r' => (
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
     handles => {
-        place4s     => 'elements',
-        place_count => 'count',
+        place4s           => 'elements',
+        place_count       => 'count',
+        place4s_are_empty => 'is_empty',
+        delete_place4 => 'delete',
     },
 );
 
@@ -58,7 +60,9 @@ has 'place8_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { place8s => 'elements', },
+    handles => { place8s => 'elements', place8s_are_empty => 'is_empty' ,
+        delete_place8 => 'delete',
+    },
 );
 
 # from AVL or headways
@@ -75,8 +79,9 @@ has 'dir_obj' => (
     is       => 'ro',
     isa      => ActiumSkedDir,
     handles  => {
-        'dircode' => 'dircode',
-        'to_text' => 'as_to_text'
+        'direction' => 'dircode',
+        'dircode'   => 'dircode',
+        'to_text'   => 'as_to_text'
     },
 );
 
@@ -122,7 +127,7 @@ has 'stopid_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { stopids => 'elements', },
+    handles => { stopids => 'elements', delete_stopid => 'delete'},
 );
 
 has 'stopplace_r' => (
@@ -130,7 +135,7 @@ has 'stopplace_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { stopplaces => 'elements', },
+    handles => { stopplaces => 'elements', delete_stopplace => 'delete'},
 );
 
 has 'earliest_timenum' => (
@@ -167,6 +172,28 @@ sub _build_earliest_timenum {
     return $timenum;
 
 }
+
+sub build_placetimes_from_stoptimes {
+    my $self  = shift;
+    my @trips = $self->trips;
+
+    my @stopplaces = $self->stopplaces;
+
+    foreach my $trip (@trips) {
+        next unless $trip->placetimes_are_empty;
+        my @stoptimes = $trip->stoptimes;
+        my @placetimes;
+
+        for my $i ( 0 .. $#stoptimes ) {
+            if ( $stopplaces[$i] ) {
+                push @placetimes, $stoptimes[$i];
+            }
+        }
+
+        $trip->set_placetime_r( \@placetimes );
+    }
+
+} ## tidy end: sub build_placetimes_from_stoptimes
 
 #################################
 ## METHODS
@@ -331,45 +358,49 @@ sub stoptime_columns {
 sub delete_blank_columns {
     my $self = shift;
 
-    my @columns_to_delete;
-
     if ( not $self->trip(0)->placetimes_are_empty ) {
+        my @placetime_cols_to_delete;
 
         my @columns_of_times = $self->placetime_columns;
+        my $has_place8s      = not $self->place8s_are_empty;
+        my $has_place4s      = not $self->place4s_are_empty;
+
         for my $i ( reverse( 0 .. $#columns_of_times ) ) {
             if ( none { defined($_) } @{ $columns_of_times[$i] } ) {
-                push @columns_to_delete, $i;
-                $self->delete_place8($i) if ( not $self->place8s_are_empty );
-                $self->delete_place4($i) if ( not $self->place4s_are_empty );
+                push @placetime_cols_to_delete, $i;
+                $self->delete_place8($i) if ($has_place8s);
+                $self->delete_place4($i) if ($has_place4s);
 
             }
         }
 
         foreach my $trip ( $self->trips ) {
-            foreach my $i (@columns_to_delete) {
+            foreach my $i (@placetime_cols_to_delete) {
                 $trip->delete_placetime($i);
             }
         }
-    }
+    } ## tidy end: if ( not $self->trip(0...))
 
     if ( not $self->trip(0)->stoptimes_are_empty ) {
+
+        my @stoptimes_cols_to_delete;
 
         my @columns_of_times = $self->stoptime_columns;
         for my $i ( reverse( 0 .. $#columns_of_times ) ) {
             if ( none { defined($_) } @{ $columns_of_times[$i] } ) {
-                push @columns_to_delete, $i;
-                $self->delete_stopid($i)    if ( $self->stopid_r );
-                $self->delete_stopplace($i) if ( $self->stopplace_r );
+                push @stoptimes_cols_to_delete, $i;
+                $self->delete_stopid($i);
+                $self->delete_stopplace($i);
             }
         }
 
         foreach my $trip ( $self->trips ) {
-            foreach my $i (@columns_to_delete) {
+            foreach my $i (@stoptimes_cols_to_delete) {
                 $trip->delete_stoptime($i);
             }
         }
 
-    }
+    } ## tidy end: if ( not $self->trip(0...))
 
     return;
 

@@ -76,12 +76,18 @@ sub read_tab_files {
                 emit_over( sprintf( ' %.0f%%', tell($fh) / $size * 100 ) );
             }
 
-            my @values = ( split( "\t", $line ) );
+            my @values;
             if ($trim) {
+                @values = ( split( "\t", $line ) );
                 foreach (@values) {
                     s/\A\s+//;
                     s/\s+\z//;
                 }
+            }
+            else
+            {    # always remove final whitespace, for line endings
+                $line =~ s/\s+\z//;
+                @values = ( split( /\t/, $line ) );
             }
 
             my %value_of;

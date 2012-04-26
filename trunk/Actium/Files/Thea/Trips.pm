@@ -18,6 +18,7 @@ use Actium::Time('timenum');
 use Actium::Sked::Trip;
 use Actium::Util ('j');
 use Actium::Files::TabDelimited 'read_tab_files';
+use Actium::Sorting::Line 'sortbyline';
 
 use List::Util('max');
 use List::MoreUtils ('uniq');
@@ -39,6 +40,8 @@ use constant {
 ## use critic
 
 sub thea_trips {
+ 
+    emit "Loading THEA trips into trip objects";
 
     my $theafolder                 = shift;
     my $pat_routeids_of_routedir_r = shift;
@@ -51,6 +54,8 @@ sub thea_trips {
         $uindex_of_r );
 
     my $trips_of_sked_r = _get_trips_of_sked($trips_of_routedir_r);
+    
+    emit_done;
 
     return $trips_of_sked_r;
 
@@ -182,13 +187,13 @@ sub _make_trip_objs {
 
     # Then we turn them into objects, and sort the objects.
 
-    emit 'Making objects (padding out columns, merging double trips)';
+    emit 'Making Trip objects (padding out columns, merging double trips)';
 
-    foreach my $routedir ( sort keys $pat_routeids_of_routedir_r ) {
+    foreach my $routedir ( sortbyline keys $pat_routeids_of_routedir_r ) {
 
         emit_over $routedir;
 
-        my @trip_objs;
+        my $trip_objs_r;
         my @routeids = @{ $pat_routeids_of_routedir_r->{$routedir} };
 
         foreach my $routeid (@routeids) {
@@ -213,13 +218,13 @@ sub _make_trip_objs {
 
                 $unified_trip_r->[T_TIMES] = \@unified_times;
 
-                push @trip_objs, _tripstruct_to_tripobj($unified_trip_r);
+                push @{$trip_objs_r}, _tripstruct_to_tripobj($unified_trip_r);
 
             } ## tidy end: foreach my $trip_r ( @{ $trips_of_routeid_r...})
 
         } ## tidy end: foreach my $routeid (@routeids)
 
-        my $trip_objs_r = Actium::Sked::Trip->stoptimes_sort(@trip_objs);
+        $trip_objs_r = Actium::Sked::Trip->stoptimes_sort(@{$trip_objs_r});
 
         $trip_objs_r = Actium::Sked::Trip->merge_trips_if_same(
             {   trips => $trip_objs_r,
@@ -266,13 +271,9 @@ sub _get_trips_of_sked {
 
     emit "Assembling trips into schedules by day";
 
-    foreach my $routedir ( sort keys $trips_of_routedir_r ) {
+    foreach my $routedir ( sortbyline keys $trips_of_routedir_r ) {
 
         emit_over $routedir;
-
-        if ( $routedir eq "800_EB" ) {
-            emit_over "yup";
-        }
 
         # first, this separates them out by individual days.
         # then, it reassembles them in groups.
