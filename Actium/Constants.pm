@@ -80,7 +80,13 @@ BEGIN {
               123457H  WU
               123456   WA
               12345    WD
+              1        MY
+              2        TY
+              3        WY
+              4        TH
+              5        FY
               6        SA
+              56       FS
               7H       SU
               67H      WE
               24       TT

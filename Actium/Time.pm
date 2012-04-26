@@ -60,6 +60,8 @@ sub timenum {
 sub _single_timenum {
 
     my $time = shift;
+    state %cache;
+    return $cache{$time} if exists $cache{$time};
 
     if ( $time !~ /[0-9]/ ) {
         return undef;
@@ -81,10 +83,10 @@ sub _single_timenum {
               or (/^   1       [0-2] [0-5] [0-9] [apxb] $/sx)
           )
         {    # 12 hours
-            return _ampm_to_num($time);
+            return $cache{$time} = _ampm_to_num($time);
         }
         when (/^ \-?       [0-9]+ [0-5] [0-9] $/sx) {    # 24 hour
-            return _24h_to_num($time);
+            return $cache{$time} = _24h_to_num($time);
         }
         when (
                  (/^   [01]?  [0-9] \' [0-5] [0-9] $/sx)
@@ -92,7 +94,7 @@ sub _single_timenum {
           )
         {    # before-midnight military
             $time =~ s/\'//g;
-            return ( _24h_to_num($time) - ( 2 * $MINS_IN_12HRS ) )
+            return $cache{$time} = ( _24h_to_num($time) - ( 2 * $MINS_IN_12HRS ) )
 
               # treat as 24 hours, but subtract a day so it refers to yesterday
         }
