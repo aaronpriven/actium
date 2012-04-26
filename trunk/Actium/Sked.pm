@@ -50,7 +50,7 @@ has 'place4_r' => (
         place4s           => 'elements',
         place_count       => 'count',
         place4s_are_empty => 'is_empty',
-        delete_place4 => 'delete',
+        delete_place4     => 'delete',
     },
 );
 
@@ -60,8 +60,10 @@ has 'place8_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { place8s => 'elements', place8s_are_empty => 'is_empty' ,
-        delete_place8 => 'delete',
+    handles => {
+        place8s           => 'elements',
+        place8s_are_empty => 'is_empty',
+        delete_place8     => 'delete',
     },
 );
 
@@ -127,7 +129,7 @@ has 'stopid_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { stopids => 'elements', delete_stopid => 'delete'},
+    handles => { stopids => 'elements', delete_stopid => 'delete' },
 );
 
 has 'stopplace_r' => (
@@ -135,7 +137,7 @@ has 'stopplace_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { stopplaces => 'elements', delete_stopplace => 'delete'},
+    handles => { stopplaces => 'elements', delete_stopplace => 'delete' },
 );
 
 has 'earliest_timenum' => (
@@ -177,21 +179,37 @@ sub build_placetimes_from_stoptimes {
     my $self  = shift;
     my @trips = $self->trips;
 
-    my @stopplaces = $self->stopplaces;
+    my @stopplaces         = $self->stopplaces;
 
     foreach my $trip (@trips) {
+     
         next unless $trip->placetimes_are_empty;
+
         my @stoptimes = $trip->stoptimes;
+        my $previous_stopplace = $EMPTY_STR;
         my @placetimes;
 
         for my $i ( 0 .. $#stoptimes ) {
-            if ( $stopplaces[$i] ) {
-                push @placetimes, $stoptimes[$i];
+
+            my $stopplace = $stopplaces[$i];
+            my $stoptime  = $stoptimes[$i];
+
+            if ($stopplace) {
+                push @placetimes, $stoptime;
+             
+            #    if ( $stopplace ne $previous_stopplace ) {
+            #        push @placetimes, $stoptime;
+            #        $previous_stopplace = $stopplace;
+            #    }
+            #    elsif ($stoptime) {
+            #        $placetimes[-1] = $stoptime;
+            #    }
+
             }
         }
 
         $trip->set_placetime_r( \@placetimes );
-    }
+    } ## tidy end: foreach my $trip (@trips)
 
 } ## tidy end: sub build_placetimes_from_stoptimes
 
@@ -432,9 +450,24 @@ sub sortable_id {
 
 sub dump {
     my $self = shift;
-    require Data::Dumper;
-    return Data::Dumper::Dumper($self);
+    require Data::Dump;
+    my $dumped = Data::Dump::dump($self);
+
+    #require Perl::Tidy;
+    #my $tidy;
+    #Perl::Tidy::perltidy(
+    #    source      => \$dumped,
+    #    destination => \$tidy,
+    #    argv        => '',
+    #);
+    #return $tidy;
+    # the perltidy thing is cool but very slow
+
+    return $dumped;
+
 }
+
+__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
 

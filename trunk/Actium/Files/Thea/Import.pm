@@ -107,12 +107,12 @@ sub _output_debugging_patterns {
 
     my $debugfolder = $signup->subfolder('thea_debug');
 
-    #my $dumpfolder = $debugfolder->subfolder('dump');
-    #$dumpfolder->write_files_with_method(
-    #    OBJECTS   => $skeds_r,
-    #    METHOD    => 'dump',
-    #    EXTENSION => 'dump',
-    #);
+    my $dumpfolder = $debugfolder->subfolder('dump');
+    $dumpfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'dump',
+        EXTENSION => 'dump',
+    );
     
     Actium::Sked->write_prehistorics($skeds_r , $debugfolder);
 
@@ -204,6 +204,8 @@ sub _get_patterns {
     my $theafolder = shift;
     my %patterns;
     my %pat_routeids_of_routedir;
+    
+    emit 'Loading and assembling THEA patterns';
 
     emit 'Reading THEA trippattern files';
 
@@ -320,6 +322,8 @@ sub _get_patterns {
     } ## tidy end: foreach my $routedir ( keys...)
 
     emit_done;
+    
+    emit_done;
 
     return \%patterns, \%pat_routeids_of_routedir, \%upattern_of, \%uindex_of;
 
@@ -380,11 +384,10 @@ sub _make_skeds {
             my ( $stopid, $placeid, $placerank )
               = split( /:/s, $stop );
             push @stops, $stopid;
-            push @stopplaces, ( doe($placeid) );
+            push @stopplaces, doe($placeid);
             push @place4s, $placeid if $placeid;
         }
 
-        @place4s = uniq @place4s;
         my @place8s = map { $places_r->{$_}[PL_PLACE8] } @place4s;
         
         my $sked_attributes_r = {
@@ -400,7 +403,7 @@ sub _make_skeds {
 
         my $sked = Actium::Sked->new($sked_attributes_r);
         $sked->build_placetimes_from_stoptimes;
-        #$sked->delete_blank_columns;
+        $sked->delete_blank_columns;
         push @skeds, $sked;
 
     } ## tidy end: foreach my $skedid ( keys $trips_of_skedid_r)
