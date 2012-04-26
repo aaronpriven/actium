@@ -134,8 +134,8 @@ has 'mergedtrip_r' => (
 
 sub dump {    ## no critic (ProhibitBuiltinHomonyms)
     my $self = shift;
-    require Data::Dumper;
-    return Data::Dumper::Dumper($self);
+    require Data::Dump;
+    return Data::Dump::dump($self);
 }
 
 ### CLASS METHODS
