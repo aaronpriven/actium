@@ -21,6 +21,8 @@ use List::MoreUtils qw<uniq none>;
 
 use Text::Trim;
 use English '-no_match_vars';
+use Actium::Util ('jt');
+use Actium::Time ('timestr_sub');
 
 use Moose::Role;
 
@@ -249,6 +251,7 @@ sub _new_from_prehistoric {
 
 sub write_prehistorics {
 
+    my $class = shift;
     my $skeds_r = shift;
     my $signup  = shift;
 

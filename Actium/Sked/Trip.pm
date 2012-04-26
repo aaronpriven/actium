@@ -84,6 +84,7 @@ has 'stoptime_r' => (
         stoptimes           => 'elements',
         stoptime_count      => 'count',
         stoptimes_are_empty => 'is_empty',
+        delete_stoptime => 'delete',
     },
 );
 
@@ -108,7 +109,7 @@ sub stoptimes_equals {
 # from either
 has 'placetime_r' => (
     traits  => ['Array'],
-    is      => 'ro',
+    is      => 'rw',
     isa     => ArrayRefOfTimeNums,
     default => sub { [] },
     coerce  => 1,
@@ -118,6 +119,7 @@ has 'placetime_r' => (
         placetime_count      => 'count',
         placetimes_are_empty => 'is_empty',
         placetime            => 'get',
+        delete_placetime => 'delete',
     },
 );
 

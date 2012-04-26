@@ -19,6 +19,7 @@ use Actium::Time ('timenum');
 use Actium::Sked::Days;
 use Actium::Sked::Dir;
 use Actium::Sked;
+use Actium::Sorting::Line 'sortbyline';
 
 use Actium::Files::Thea::Trips('thea_trips');
 
@@ -29,7 +30,7 @@ use Actium::Union('ordered_union_columns');
 use Actium::Constants;
 
 use English '-no_match_vars';
-use List::Util ('min');
+use List::Util (qw<min sum>);
 use List::MoreUtils (qw<each_arrayref uniq>);
 
 ## no critic (ProhibitConstantPragma)
@@ -105,17 +106,19 @@ sub _output_debugging_patterns {
     my $skeds_r                    = shift;
 
     my $debugfolder = $signup->subfolder('thea_debug');
-    my $dumpfolder = $debugfolder->subfolder('dump');
 
-    $dumpfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'dump',
-        EXTENSION => 'dump',
-    );
+    #my $dumpfolder = $debugfolder->subfolder('dump');
+    #$dumpfolder->write_files_with_method(
+    #    OBJECTS   => $skeds_r,
+    #    METHOD    => 'dump',
+    #    EXTENSION => 'dump',
+    #);
+    
+    Actium::Sked->write_prehistorics($skeds_r , $debugfolder);
 
     my $ufh = $debugfolder->open_write('thea_upatterns.txt');
 
-    foreach my $routedir ( keys $pat_routeids_of_routedir_r ) {
+    foreach my $routedir ( sortbyline keys $pat_routeids_of_routedir_r ) {
         my @routeids = @{ $pat_routeids_of_routedir_r->{$routedir} };
         say $ufh "\n$routedir\t",
           join( "\t", @{ $upattern_of_r->{$routedir} } );
@@ -129,7 +132,7 @@ sub _output_debugging_patterns {
 
     my $fh = $debugfolder->open_write('thea_patterns.txt');
 
-    foreach my $routeid ( sort keys $patterns_r ) {
+    foreach my $routeid ( sortbyline keys $patterns_r ) {
 
         my $direction = $patterns_r->{$routeid}[P_DIRECTION];
 
@@ -170,27 +173,30 @@ sub _output_debugging_patterns {
 #my %is_a_valid_trip_type = { Regular => 1, Opportunity => 1 };
 
 my $stop_tiebreaker = sub {
+ 
+    # tiebreaks by using the average rank of the timepoints involved.
 
     my @lists = @_;
+    my @avg_ranks;
 
-    my @first_timepoint_rank;
-
-  TIEBREAKER_LIST:
     foreach my $i ( 0, 1 ) {
+     
+        my @ranks;
         foreach my $stop ( @{ $lists[$i] } ) {
             my ( $stopid, $placeid, $placerank ) = split( /:/s, $stop );
             if ( defined $placerank ) {
-                $first_timepoint_rank[$i] = $placerank;
-                next TIEBREAKER_LIST;
+                push @ranks , $placerank;
             }
         }
-        # no timepoints for this list.
-        # Can't break the tie, so just return 0 ("equal").
-        return 0;
+        return 0 unless @ranks; 
+        # if either list has no timepoints, return 0 indicating we can't break
+        # the tie
+        
+        $avg_ranks[$i] = sum(@ranks) / @ranks;
 
     }
 
-    return $first_timepoint_rank[0] <=> $first_timepoint_rank[1];
+    return $avg_ranks[0] <=> $avg_ranks[1];
 
 };
 
@@ -288,9 +294,9 @@ sub _get_patterns {
     my ( %upattern_of, %uindex_of );
 
     foreach my $routedir ( keys %pat_routeids_of_routedir ) {
-
+     
         my @routeids = @{ $pat_routeids_of_routedir{$routedir} };
-
+        
         my %stop_set_of_routeid;
         foreach my $routeid (@routeids) {
             my @stop_set;
@@ -361,7 +367,7 @@ sub _make_skeds {
     
     emit "Making Actium::Sked objects";
 
-    foreach my $skedid ( sort keys $trips_of_skedid_r ) {
+    foreach my $skedid ( sortbyline keys $trips_of_skedid_r ) {
      
         emit_over $skedid;
         
@@ -392,7 +398,10 @@ sub _make_skeds {
             trip_r   => $trips_of_skedid_r->{$skedid},
         };
 
-        push @skeds, Actium::Sked->new($sked_attributes_r);
+        my $sked = Actium::Sked->new($sked_attributes_r);
+        $sked->build_placetimes_from_stoptimes;
+        #$sked->delete_blank_columns;
+        push @skeds, $sked;
 
     } ## tidy end: foreach my $skedid ( keys $trips_of_skedid_r)
     
