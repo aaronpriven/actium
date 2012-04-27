@@ -19,7 +19,7 @@ use Moose::Util::TypeConstraints;
 use English '-no_match_vars';
 
 use List::MoreUtils qw<none>;
-use List::Util ('first');
+use List::Util ( 'first', 'max' );
 
 use Actium::Util(qw<:all>);
 use Actium::Time(qw<:all>);
@@ -63,6 +63,7 @@ has 'place8_r' => (
     handles => {
         place8s           => 'elements',
         place8s_are_empty => 'is_empty',
+        _place8_count     => 'count',
         delete_place8     => 'delete',
     },
 );
@@ -129,7 +130,11 @@ has 'stopid_r' => (
     is      => 'bare',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
-    handles => { stopids => 'elements', delete_stopid => 'delete' },
+    handles => {
+        stop_count    => 'count',
+        stopids       => 'elements',
+        delete_stopid => 'delete'
+    },
 );
 
 has 'stopplace_r' => (
@@ -179,13 +184,13 @@ sub build_placetimes_from_stoptimes {
     my $self  = shift;
     my @trips = $self->trips;
 
-    my @stopplaces         = $self->stopplaces;
+    my @stopplaces = $self->stopplaces;
 
     foreach my $trip (@trips) {
-     
+
         next unless $trip->placetimes_are_empty;
 
-        my @stoptimes = $trip->stoptimes;
+        my @stoptimes          = $trip->stoptimes;
         my $previous_stopplace = $EMPTY_STR;
         my @placetimes;
 
@@ -196,14 +201,14 @@ sub build_placetimes_from_stoptimes {
 
             if ($stopplace) {
                 push @placetimes, $stoptime;
-             
-            #    if ( $stopplace ne $previous_stopplace ) {
-            #        push @placetimes, $stoptime;
-            #        $previous_stopplace = $stopplace;
-            #    }
-            #    elsif ($stoptime) {
-            #        $placetimes[-1] = $stoptime;
-            #    }
+
+                #    if ( $stopplace ne $previous_stopplace ) {
+                #        push @placetimes, $stoptime;
+                #        $previous_stopplace = $stopplace;
+                #    }
+                #    elsif ($stoptime) {
+                #        $placetimes[-1] = $stoptime;
+                #    }
 
             }
         }
@@ -373,6 +378,30 @@ sub stoptime_columns {
     return @columns;
 }
 
+sub attribute_columns {
+
+    my $self    = shift;
+    my @readers = @_;
+    # reader method, generally the same as the attribute name
+    my %column_of;
+
+    my @trips = $self->trips;
+
+    foreach my $trip ( $self->trips ) {
+        foreach my $reader (@readers) {
+            push @{ $column_of{$reader} }, $trip->$reader;
+        }
+    }
+
+    foreach my $reader (@readers) {
+        if ( none { defined and $_ ne $EMPTY_STR } @{ $column_of{$reader} } ) {
+            delete $column_of{$reader};
+        }
+    }
+    return \%column_of;
+
+} ## tidy end: sub attribute_columns
+
 sub delete_blank_columns {
     my $self = shift;
 
@@ -383,9 +412,13 @@ sub delete_blank_columns {
         my $has_place8s      = not $self->place8s_are_empty;
         my $has_place4s      = not $self->place4s_are_empty;
 
-        for my $i ( reverse( 0 .. $#columns_of_times ) ) {
+        my $place_id_count = $self->place_count;
+        my $placecount = max( $place_id_count, $#columns_of_times );
+
+        for my $i ( reverse( 0 .. $placecount ) ) {
             if ( none { defined($_) } @{ $columns_of_times[$i] } ) {
                 push @placetime_cols_to_delete, $i;
+                next                     if $i > $place_id_count;
                 $self->delete_place8($i) if ($has_place8s);
                 $self->delete_place4($i) if ($has_place4s);
 
@@ -393,7 +426,9 @@ sub delete_blank_columns {
         }
 
         foreach my $trip ( $self->trips ) {
+            my $placetime_count = $trip->placetime_count;
             foreach my $i (@placetime_cols_to_delete) {
+                next if $i > $placetime_count;
                 $trip->delete_placetime($i);
             }
         }
@@ -404,16 +439,22 @@ sub delete_blank_columns {
         my @stoptimes_cols_to_delete;
 
         my @columns_of_times = $self->stoptime_columns;
-        for my $i ( reverse( 0 .. $#columns_of_times ) ) {
+        my $stopid_count     = $self->stop_count;
+        my $stopcount        = max( $stopid_count, $#columns_of_times );
+
+        for my $i ( reverse( 0 .. $stopcount ) ) {
             if ( none { defined($_) } @{ $columns_of_times[$i] } ) {
                 push @stoptimes_cols_to_delete, $i;
+                next if $i > $stopid_count;
                 $self->delete_stopid($i);
                 $self->delete_stopplace($i);
             }
         }
 
         foreach my $trip ( $self->trips ) {
+            my $stoptime_count = $trip->stoptime_count;
             foreach my $i (@stoptimes_cols_to_delete) {
+                next if $i > $stoptime_count;
                 $trip->delete_stoptime($i);
             }
         }
@@ -466,6 +507,100 @@ sub dump {
     return $dumped;
 
 }
+
+sub spaced {
+    my $self = shift;
+
+    my $outdata;
+    open( my $out, '>', \$outdata );
+
+    say $out $self->id;
+
+    my @simplefields;
+    my %value_of_simplefield = (
+        dir           => $self->dircode,
+        days          => $self->sortable_days,
+        linegroup     => $self->linegroup,
+        origlinegroup => $self->origlinegroup,
+        linedescrip   => $self->linedescrip,
+    );
+
+    while ( my ( $field, $value ) = each %value_of_simplefield ) {
+        next unless defined($value);
+        push @simplefields, "$field:$value";
+    }
+
+    say $out "@simplefields";
+
+    my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR );
+
+    my @place_records;
+
+    my %title_of = qw(
+      blockid        BLK
+      daysexceptions EXC
+      from           FM
+      noteletter     NOTE
+      pattern        PAT
+      runid          RUN
+      to             TO
+      type           TYPE
+      typevalue      TYPVAL
+      vehicledisplay VDISP
+      via            VIA
+      viadescription VIADESC
+      sortable_days  DAY
+      vehicletype    VT
+      routenum       -LN
+      internal_num   INTNUM
+    );
+
+    my %column_of = %{ $self->attribute_columns( sort keys %title_of ) };
+
+    my @fields = sort { $title_of{$a} cmp $title_of{$b} } keys %column_of;
+
+    push @place_records, [ ($EMPTY_STR) x scalar @fields, $self->place4s ];
+    push @place_records, [ @title_of{@fields}, $self->place8s ];
+
+    my @trips = $self->trips;
+
+    foreach my $trip (@trips) {
+        push @place_records,
+          [ (map { $trip->$_ } @fields) , $timesub->( $trip->placetimes ) ];
+    }
+
+    say $out jn( @{ tabulate_arrayrefs(@place_records) } ) , "\n";
+    # extra \n for a blank line to separate places and stops
+
+    my @stop_records;
+
+    push @stop_records, [ $self->stopids ];
+    push @stop_records, [ $self->stopplaces ];
+
+    foreach my $trip (@trips) {
+        push @stop_records, [ $timesub->( $trip->stoptimes ) ];
+    }
+
+    say $out jn( @{ tabulate_arrayrefs(@stop_records) } );
+#
+#    my @tripfields = qw<blockid daysexceptions from noteletter pattern runid to
+#      type typevalue vehicledisplay via viadescription>;
+#
+#    foreach my $trip (@trips) {
+#        my @tripfield_outs;
+#        foreach my $field (@tripfields) {
+#            my $value = $trip->$field;
+#            next unless defined($value);
+#            push @tripfield_outs, "$field:$value";
+#        }
+#        say $out "@tripfield_outs";
+#    }
+
+    close $out;
+
+    return $outdata;
+
+} ## tidy end: sub spaced
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
