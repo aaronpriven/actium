@@ -40,9 +40,9 @@ use Actium::Types qw<ArrayRefOfTimeNums TimeNum ActiumSkedDays>;
 
 # daysexceptions, from , to, vehicletype from headways
 # pattern, type, typevalue, vehicledisplay, via, viadescription from HSA
-# routenum, runid, blockid from either
+# line, runid, blockid from either
 has [
-    qw<daysexceptions routenum runid blockid noteletter pattern type typevalue
+    qw<daysexceptions line runid blockid noteletter pattern type typevalue
       from to vehicletype internal_num
       vehicledisplay via viadescription>
   ] => (
@@ -386,9 +386,9 @@ setter methods are "set-I<attribute>()" but getter methods are just
 The "Exceptions" field from the headway sheet (usually "SD" for school days,
 "SH" for school holidays, or blank).
 
-=item B<routenum>
+=item B<line>
 
-The route number for this trip.
+The line number for this trip.
 
 =item B<runid>
 
