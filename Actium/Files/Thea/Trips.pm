@@ -45,16 +45,16 @@ sub thea_trips {
     emit "Loading THEA trips into trip objects";
 
     my $theafolder               = shift;
-    my $pat_lineids_of_linedir_r = shift;
+    my $pat_lineids_of_lgdir_r = shift;
     my $uindex_of_r              = shift;
 
     my $tripstructs_of_lineid_r = _load_trips_from_file($theafolder);
 
-    my $trips_of_linedir_r
-      = _make_trip_objs( $pat_lineids_of_linedir_r, $tripstructs_of_lineid_r,
+    my $trips_of_lgdir_r
+      = _make_trip_objs( $pat_lineids_of_lgdir_r, $tripstructs_of_lineid_r,
         $uindex_of_r );
 
-    my $trips_of_sked_r = _get_trips_of_sked($trips_of_linedir_r);
+    my $trips_of_sked_r = _get_trips_of_sked($trips_of_lgdir_r);
 
     emit_done;
 
@@ -177,26 +177,26 @@ sub _make_days_obj {
 }
 
 sub _make_trip_objs {
-    my $pat_lineids_of_linedir_r = shift;
+    my $pat_lineids_of_lgdir_r = shift;
     my $trips_of_lineid_r        = shift;
     my $uindex_of_r              = shift;
 
-    my %trips_of_linedir;
+    my %trips_of_lgdir;
 
     # so the idea here is to go through each trip, and create a new
-    # trip struct in trips_of_linedir that has the various information,
+    # trip struct in trips_of_lgdir that has the various information,
     # putting the times in the correct column as in uindex_of_r.
 
     # Then we turn them into objects, and sort the objects.
 
     emit 'Making Trip objects (padding out columns, merging double trips)';
 
-    foreach my $linedir ( sortbyline keys $pat_lineids_of_linedir_r ) {
+    foreach my $lgdir ( sortbyline keys $pat_lineids_of_lgdir_r ) {
 
-        emit_over $linedir;
+        emit_over $lgdir;
 
         my $trip_objs_r;
-        my @lineids = @{ $pat_lineids_of_linedir_r->{$linedir} };
+        my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
 
         foreach my $lineid (@lineids) {
 
@@ -237,13 +237,13 @@ sub _make_trip_objs {
         # passengers we send two buses out. Scheduling system has to have these
         # twice, but we only want to display them once
 
-        $trips_of_linedir{$linedir} = $trip_objs_r;
+        $trips_of_lgdir{$lgdir} = $trip_objs_r;
 
-    } ## tidy end: foreach my $linedir ( sortbyline...)
+    } ## tidy end: foreach my $lgdir ( sortbyline...)
 
     emit_done;
 
-    return \%trips_of_linedir;
+    return \%trips_of_lgdir;
 
 } ## tidy end: sub _make_trip_objs
 
@@ -268,14 +268,14 @@ sub _tripstruct_to_tripobj {
 
 sub _get_trips_of_sked {
 
-    my $trips_of_linedir_r = shift;
+    my $trips_of_lgdir_r = shift;
     my %trips_of_sked;
 
     emit "Assembling trips into schedules by day";
 
-    foreach my $linedir ( sortbyline keys $trips_of_linedir_r ) {
+    foreach my $lgdir ( sortbyline keys $trips_of_lgdir_r ) {
 
-        emit_over $linedir;
+        emit_over $lgdir;
 
         # first, this separates them out by individual days.
         # then, it reassembles them in groups.
@@ -285,18 +285,18 @@ sub _get_trips_of_sked {
         # and it's easier to do it this way if that's the case.
 
         my $trips_of_day_r
-          = _get_trips_by_day( $trips_of_linedir_r->{$linedir} );
+          = _get_trips_by_day( $trips_of_lgdir_r->{$lgdir} );
 
         my $trips_of_skedday_r = _assemble_skeddays($trips_of_day_r);
 
         for my $skedday ( keys $trips_of_skedday_r ) {
 
-            my $skedid = "${linedir}_$skedday";
+            my $skedid = "${lgdir}_$skedday";
             $trips_of_sked{$skedid} = $trips_of_skedday_r->{$skedday};
 
         }
 
-    } ## tidy end: foreach my $linedir ( sortbyline...)
+    } ## tidy end: foreach my $lgdir ( sortbyline...)
 
     emit_done;
 

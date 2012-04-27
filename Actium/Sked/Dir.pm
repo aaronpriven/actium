@@ -77,7 +77,7 @@ sub as_to_text {
    my $self = shift;
    my $dircode = $self->dircode;
    
-   if ($dircode eq '8' or $dircode eq '9') {
+   if ($IS_A_LOOP_DIRECTION{$dircode}) {
        return $self->as_direction . " to";
    }
    

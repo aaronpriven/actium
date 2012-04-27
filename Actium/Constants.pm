@@ -8,12 +8,9 @@
 use strict;
 use warnings;
 
-package Actium::Constants;
+package Actium::Constants 0.002;
 
-use 5.010;
-
-our $VERSION = "0.001";
-$VERSION = eval $VERSION;
+use 5.014;
 
 # Constants.pm
 # ACTium shared constants
@@ -22,10 +19,6 @@ $VERSION = eval $VERSION;
 
 my %constants;
 my ( $name, $value );
-
-# In /OldActium/Constants are: DAY_OF and DIR_OF
-# (which I moved to HastusASI/Util, although this may change)
-# and MINS_IN_12HRS which got moved to Actium::Time
 
 ## no critic (ProhibitMagicNumbers)
 
@@ -47,7 +40,6 @@ BEGIN {
             '72M' => '72',
             'DB1' => 'DB',
             'DB3' => 'DB',
-#            '83'  => '86',
             '386' => '86',
             'NC'  => 'NX4',
             'NXC' => 'NX4',
@@ -73,6 +65,8 @@ BEGIN {
         #              135      MZ
         #              )
         #        },
+        
+        LOOP_DIRECTIONS => [ qw( CW CC A B ) ],
 
         TRANSITINFO_DAYS_OF => {
             qw(
@@ -96,8 +90,8 @@ BEGIN {
               )
         },
 
-        TRANSBAY_NOLOCALS => [qw/FS L NX NX1 NX2 NX3 OX U W/],
-        LINE_SHOULD_BE_SKIPPED => {399 => 1},
+        TRANSBAY_NOLOCALS   => [qw/FS L NX NX1 NX2 NX3 OX U W/],
+        LINES_TO_BE_SKIPPED => [399],
 
         SIDE_OF => {
             ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
@@ -105,6 +99,12 @@ BEGIN {
         },
 
     );
+    
+     $constants{IS_A_LOOP_DIRECTION}{$_} = 1
+      foreach @{ $constants{LOOP_DIRECTIONS} };
+      
+    $constants{LINE_SHOULD_BE_SKIPPED}{$_} = 1
+      foreach @{ $constants{LINES_TO_BE_SKIPPED} };
 
     $constants{HASTUS_DIRS}
       = [ 0, 1, 3, 2, 4 .. scalar @{ $constants{DIRCODES} } ];
