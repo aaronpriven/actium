@@ -9,7 +9,7 @@ use 5.012;
 package Actium::Util 0.001;
 
 use Actium::Constants;
-use List::Util;
+use List::Util ('max');
 use Carp;
 use File::Spec;
 
@@ -20,9 +20,11 @@ use Sub::Exporter -setup => {
           joinseries          joinseries_ampersand
           j                   jt
           jk                  jn
+          jspaced
           sk                  st
           keyreadable         keyunreadable
-          doe                 even_tab_columns
+          doe
+          tabulate_strings    tabulate_arrayrefs
           filename            file_ext
           remove_leading_path flat_arrayref
           >
@@ -106,6 +108,11 @@ sub jn {
     return join( "\n", map { $_ // $EMPTY_STR } @_ );
 }
 
+sub jspaced {
+    my $spaces = shift;
+    return map { sprintf( "%-${spaces}s", $_ // $EMPTY_STR ) } @_;
+}
+
 sub sk {
     return split( /$KEY_SEPARATOR/sx, $_[0] );
 }
@@ -138,37 +145,54 @@ sub keyunreadable {
     return $_;
 }
 
-sub even_tab_columns {
-    my $list_r = shift;
+sub tabulate_strings {
 
-    my @lengths;
-    foreach my $line ( @{$list_r} ) {
-        chomp $line;
-        my @fields = split( /\t/s, $line );
-        for my $idx ( 0 .. $#fields ) {
-            my $len = length( $fields[$idx] );
-            if ( not $lengths[$idx] ) {
-                $lengths[$idx] = $len;
+    my @lines = @_;
+    chomp @lines;
+    my @record_rs = map { [ split(/\t/) ] } @lines;
+    return tabulate_arrayrefs(@record_rs);
+
+}
+
+sub tabulate_arrayrefs {
+
+    my @record_rs = @_;
+
+    my @length_of_column;
+
+    foreach my $record_r (@record_rs) {
+
+        my @fields = @{$record_r};
+        for my $this_column ( 0 .. $#fields ) {
+            my $thislength = length( $fields[$this_column] ) // 0;
+            if ( not $length_of_column[$this_column] ) {
+                $length_of_column[$this_column] = $thislength;
             }
             else {
-                $lengths[$idx] = List::Util::max( $lengths[$idx], $len );
+                $length_of_column[$this_column]
+                  = max( $length_of_column[$this_column], $thislength )
+                  ;
             }
         }
     }
 
-    my @returns;
+    my @lines;
 
-    foreach my $line ( @{$list_r} ) {
-        my @fields = split( /\t/s, $line );
-        for my $idx ( 0 .. $#fields - 1 ) {
-            $fields[$idx] = sprintf( '%-*s', $lengths[$idx], $fields[$idx] );
+    foreach my $record_r (@record_rs) {
+        my @fields = @{$record_r};
+
+        for my $this_column ( 0 .. $#fields - 1 ) {
+            $fields[$this_column] = sprintf( '%-*s',
+                $length_of_column[$this_column],
+                ($fields[$this_column] // $EMPTY_STR) );
         }
-        push @returns, join( $SPACE, @fields );
+        push @lines, join( $SPACE, @fields );
+
     }
 
-    return \@returns;
+    return \@lines;
 
-} ## tidy end: sub even_tab_columns
+} ## tidy end: sub tabulate_arrayrefs
 
 sub doe {
     my @list = @_;

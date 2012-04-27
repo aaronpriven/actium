@@ -36,6 +36,7 @@ use constant {
     T_PATTERN        => 4,
     T_ROUTE          => 5,
     T_TYPE           => 6,
+    T_INTNUM        => 7,
 };
 ## use critic
 
@@ -109,6 +110,7 @@ sub _load_trips_from_file {
         $trip_of_tnum{$tnum}[T_ROUTE]   = $route;
         $trip_of_tnum{$tnum}[T_TYPE]    = $value_of_r->{trp_type};
         $trip_of_tnum{$tnum}[T_DAYS]    = $days_obj;
+        $trip_of_tnum{$tnum}[T_INTNUM]  = $tnum;
 
     };
 
@@ -257,6 +259,7 @@ sub _tripstruct_to_tripobj {
             type           => $tripstruct->[T_TYPE],
             pattern        => $tripstruct->[T_PATTERN],
             routenum       => $tripstruct->[T_ROUTE],
+            internal_num  => $tripstruct->[T_INTNUM],
             # DAYSDIGITS - no attribute in Actium::Sked::Trips,
             # but incorporated in days
         }

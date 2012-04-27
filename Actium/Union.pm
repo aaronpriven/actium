@@ -153,7 +153,6 @@ my $sethash_callback = {
 
 my $ordered_union_columns_validspec = {
     sethash => { type => HASHREF, callback => $sethash_callback, },
-#    ids  => { type => ARRAYREF, optional => 1, callback => $set_ids_callback },
     tiebreaker => {
         type    => CODEREF,
         default => sub { return 0 }
@@ -200,7 +199,7 @@ sub ordered_union_columns {
         my $set_cols;
 
         ( $union_set_r, $union_cols_r, $markers_r, $set_cols )
-          = _columns_pair( $union_set_r, $union_cols_r, $set_r, $highest_col,
+          = _columns_pair( $union_set_r, $union_cols_r, $set_r,
             $tiebreaker );
 
         $cols_of{$set_id} = $set_cols;
@@ -236,7 +235,9 @@ sub ordered_union_columns {
 
 sub _columns_pair {
 
-    my ( $a_r, $a_col_r, $b_r, $highest_col, $tiebreaker ) = @_;
+    my ( $a_r, $a_col_r, $b_r, $tiebreaker ) = @_;
+    
+    my $highest_col = $#{$a_r};
 
     my ( @union, @u_col, @b_col,     @markers );
     my ( @tempa, @tempb, @tempa_col, @tempb_col );
@@ -271,6 +272,9 @@ sub _columns_pair {
     };
 
     my $add_temps_to_union_r = sub {
+     
+        return unless @tempa or @tempb;
+        
         my $following_value = shift;
 
         my $previous_value = @union ? $union[-1] : undef;

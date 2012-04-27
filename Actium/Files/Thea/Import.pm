@@ -114,29 +114,29 @@ sub _output_debugging_patterns {
         EXTENSION => 'dump',
     );
     
+    
+    my $spacedfolder = $debugfolder->subfolder('spaced');
+    $spacedfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'spaced',
+        EXTENSION => 'txt',
+    );
+    
     Actium::Sked->write_prehistorics($skeds_r , $debugfolder);
 
     my $ufh = $debugfolder->open_write('thea_upatterns.txt');
 
     foreach my $routedir ( sortbyline keys $pat_routeids_of_routedir_r ) {
         my @routeids = @{ $pat_routeids_of_routedir_r->{$routedir} };
-        say $ufh "\n$routedir\t",
+        say $ufh "\n$routedir";
+        say $ufh 
           join( "\t", @{ $upattern_of_r->{$routedir} } );
         foreach my $routeid (@routeids) {
-            say $ufh '"', $routeid, '"';
+            say $ufh $routeid;
             say $ufh join( "\t", @{ $uindex_of_r->{$routeid} } );
-        }
-    }
-
-    close $ufh or die "Can't close thea_upatterns.txt: $OS_ERROR";
-
-    my $fh = $debugfolder->open_write('thea_patterns.txt');
-
-    foreach my $routeid ( sortbyline keys $patterns_r ) {
-
-        my $direction = $patterns_r->{$routeid}[P_DIRECTION];
-
-        my @stopinfos = @{ $patterns_r->{$routeid}[P_STOPS] };
+            
+            
+            my @stopinfos = @{ $patterns_r->{$routeid}[P_STOPS] };
         my @stops;
         foreach my $stopinfo (@stopinfos) {
             my $text = shift $stopinfo;
@@ -148,7 +148,7 @@ sub _output_debugging_patterns {
             push @stops, $text;
 
         }
-        my $stops = join( $SPACE, @stops );
+        my $stops = join( "\t", @stops );
 
         my %places = %{ $patterns_r->{$routeid}[ P_PLACES() ] };
         my @places;
@@ -156,13 +156,51 @@ sub _output_debugging_patterns {
         foreach my $seq ( sort { $a <=> $b } keys %places ) {
             push @places, "$seq:$places{$seq}";
         }
-        my $places = join( $SPACE, @places );
+        my $places = join( "\t", @places );
+        
+        say $ufh "$stops\n$places";
+            
+            
+            
+        }
+        
+    }
 
-        say $fh "$routeid\t$direction\n$stops\n$places\n";
+    close $ufh or die "Can't close thea_upatterns.txt: $OS_ERROR";
 
-    } ## tidy end: foreach my $routeid ( sort ...)
-
-    close $fh or die "Can't close thea_patterns.txt: $OS_ERROR";
+#    my $fh = $debugfolder->open_write('thea_patterns.txt');
+#
+#    foreach my $routeid ( sortbyline keys $patterns_r ) {
+#
+#        my $direction = $patterns_r->{$routeid}[P_DIRECTION];
+#
+#        my @stopinfos = @{ $patterns_r->{$routeid}[P_STOPS] };
+#        my @stops;
+#        foreach my $stopinfo (@stopinfos) {
+#            my $text = shift $stopinfo;
+#            if ( scalar @{$stopinfo} ) {
+#                my $plc = shift $stopinfo;
+#                my $seq = shift $stopinfo;
+#                $text .= ":$plc:$seq";
+#            }
+#            push @stops, $text;
+#
+#        }
+#        my $stops = join( $SPACE, @stops );
+#
+#        my %places = %{ $patterns_r->{$routeid}[ P_PLACES() ] };
+#        my @places;
+#
+#        foreach my $seq ( sort { $a <=> $b } keys %places ) {
+#            push @places, "$seq:$places{$seq}";
+#        }
+#        my $places = join( $SPACE, @places );
+#
+#        say $fh "$routeid\t$direction\n$stops\n$places\n";
+#
+#    } ## tidy end: foreach my $routeid ( sort ...)
+#
+#    close $fh or die "Can't close thea_patterns.txt: $OS_ERROR";
 
     return;
 
