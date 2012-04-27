@@ -32,7 +32,7 @@ use List::MoreUtils ('mesh');
 
 Readonly my @DIRECTIONS => (
    qw(North South West East In Out Go Return Clockwise Counterclockwise),
-   'Direction One' , 'Direction Two' , qw(Up Down) ,
+   'Direction One' , 'Direction Two' , qw(Up Down) , 'A Loop' , 'B Loop',
 );
 
 Readonly my @BOUND => (
@@ -57,7 +57,7 @@ around BUILDARGS => sub {
 
 sub as_bound {
     my $self      = shift;
-    my $dir = $self->dir;
+    my $dir = $self->dircode;
     return $BOUND_OF{$dir};
 }
 

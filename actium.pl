@@ -39,6 +39,7 @@ use Actium::Options qw(add_option init_options option);
 ### Get subcommand, and run subcommand
 
 my %module_of = (
+    slists2html     => 'Slists2HTML',
     theaimport      => 'TheaImport',
     makestoplists   => 'MakeStopLists',
     headways        => 'Headways',

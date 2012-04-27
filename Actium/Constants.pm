@@ -97,6 +97,7 @@ BEGIN {
         },
 
         TRANSBAY_NOLOCALS => [qw/FS L NX NX1 NX2 NX3 OX U W/],
+        LINE_SHOULD_BE_SKIPPED => {399 => 1},
 
         SIDE_OF => {
             ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
