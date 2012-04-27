@@ -45,7 +45,16 @@ add_option( 'verbose!',
 # never implemented
 
 sub HELP {
-    say 'actium.pl mr_import _folder_ _folder_...'
+ 
+    my $usage = <<'EOF';
+actium.pl mr_import _folder_ _folder_...
+
+  The mr_import command is used for importing maps into the map repository.
+  See the document "The Actium Maps Repository: Quick Start Guide"
+  for more information.
+EOF
+
+    say $usage 
       or die "Can't display usage: $OS_ERROR";
     output_usage;
     return;
