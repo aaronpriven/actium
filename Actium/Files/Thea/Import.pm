@@ -75,11 +75,11 @@ sub thea_import {
 
     my $signup     = shift;
     my $theafolder = shift;
-    my ( $patterns_r, $pat_routeids_of_routedir_r, $upattern_of_r,
+    my ( $patterns_r, $pat_lineids_of_linedir_r, $upattern_of_r,
         $uindex_of_r ) = _get_patterns($theafolder);
 
     my $trips_of_skedid_r
-      = thea_trips( $theafolder, $pat_routeids_of_routedir_r, $uindex_of_r );
+      = thea_trips( $theafolder, $pat_lineids_of_linedir_r, $uindex_of_r );
 
     my $places_info_of_r = _load_places($theafolder);
 
@@ -87,7 +87,7 @@ sub thea_import {
       = _make_skeds( $trips_of_skedid_r, $upattern_of_r, $places_info_of_r );
 
     _output_debugging_patterns( $signup, $patterns_r,
-        $pat_routeids_of_routedir_r, $upattern_of_r, $uindex_of_r, \@skeds );
+        $pat_lineids_of_linedir_r, $upattern_of_r, $uindex_of_r, \@skeds );
 
     return @skeds;
 
@@ -100,7 +100,7 @@ sub _output_debugging_patterns {
 
     my $signup                     = shift;
     my $patterns_r                 = shift;
-    my $pat_routeids_of_routedir_r = shift;
+    my $pat_lineids_of_linedir_r = shift;
     my $upattern_of_r              = shift;
     my $uindex_of_r                = shift;
     my $skeds_r                    = shift;
@@ -126,17 +126,17 @@ sub _output_debugging_patterns {
 
     my $ufh = $debugfolder->open_write('thea_upatterns.txt');
 
-    foreach my $routedir ( sortbyline keys $pat_routeids_of_routedir_r ) {
-        my @routeids = @{ $pat_routeids_of_routedir_r->{$routedir} };
-        say $ufh "\n$routedir";
+    foreach my $linedir ( sortbyline keys $pat_lineids_of_linedir_r ) {
+        my @lineids = @{ $pat_lineids_of_linedir_r->{$linedir} };
+        say $ufh "\n$linedir";
         say $ufh 
-          join( "\t", @{ $upattern_of_r->{$routedir} } );
-        foreach my $routeid (@routeids) {
-            say $ufh $routeid;
-            say $ufh join( "\t", @{ $uindex_of_r->{$routeid} } );
+          join( "\t", @{ $upattern_of_r->{$linedir} } );
+        foreach my $lineid (@lineids) {
+            say $ufh $lineid;
+            say $ufh join( "\t", @{ $uindex_of_r->{$lineid} } );
             
             
-            my @stopinfos = @{ $patterns_r->{$routeid}[P_STOPS] };
+            my @stopinfos = @{ $patterns_r->{$lineid}[P_STOPS] };
         my @stops;
         foreach my $stopinfo (@stopinfos) {
             my $text = shift $stopinfo;
@@ -150,7 +150,7 @@ sub _output_debugging_patterns {
         }
         my $stops = join( "\t", @stops );
 
-        my %places = %{ $patterns_r->{$routeid}[ P_PLACES() ] };
+        my %places = %{ $patterns_r->{$lineid}[ P_PLACES() ] };
         my @places;
 
         foreach my $seq ( sort { $a <=> $b } keys %places ) {
@@ -170,11 +170,11 @@ sub _output_debugging_patterns {
 
 #    my $fh = $debugfolder->open_write('thea_patterns.txt');
 #
-#    foreach my $routeid ( sortbyline keys $patterns_r ) {
+#    foreach my $lineid ( sortbyline keys $patterns_r ) {
 #
-#        my $direction = $patterns_r->{$routeid}[P_DIRECTION];
+#        my $direction = $patterns_r->{$lineid}[P_DIRECTION];
 #
-#        my @stopinfos = @{ $patterns_r->{$routeid}[P_STOPS] };
+#        my @stopinfos = @{ $patterns_r->{$lineid}[P_STOPS] };
 #        my @stops;
 #        foreach my $stopinfo (@stopinfos) {
 #            my $text = shift $stopinfo;
@@ -188,7 +188,7 @@ sub _output_debugging_patterns {
 #        }
 #        my $stops = join( $SPACE, @stops );
 #
-#        my %places = %{ $patterns_r->{$routeid}[ P_PLACES() ] };
+#        my %places = %{ $patterns_r->{$lineid}[ P_PLACES() ] };
 #        my @places;
 #
 #        foreach my $seq ( sort { $a <=> $b } keys %places ) {
@@ -196,9 +196,9 @@ sub _output_debugging_patterns {
 #        }
 #        my $places = join( $SPACE, @places );
 #
-#        say $fh "$routeid\t$direction\n$stops\n$places\n";
+#        say $fh "$lineid\t$direction\n$stops\n$places\n";
 #
-#    } ## tidy end: foreach my $routeid ( sort ...)
+#    } ## tidy end: foreach my $lineid ( sort ...)
 #
 #    close $fh or die "Can't close thea_patterns.txt: $OS_ERROR";
 
@@ -241,7 +241,7 @@ my $stop_tiebreaker = sub {
 sub _get_patterns {
     my $theafolder = shift;
     my %patterns;
-    my %pat_routeids_of_routedir;
+    my %pat_lineids_of_linedir;
     
     emit 'Loading and assembling THEA patterns';
 
@@ -255,11 +255,11 @@ sub _get_patterns {
         return unless $value_of_r->{tpat_trips_match};
         # skip if this trip isn't in service, or if it has no active trips
 
-        my $tpat_route = $value_of_r->{tpat_route};
+        my $tpat_line = $value_of_r->{tpat_route};
         my $tpat_id    = $value_of_r->{tpat_id};
 
-        my $routeid = $tpat_route . "_$tpat_id";
-        return if exists $patterns{$routeid};    # duplicate
+        my $lineid = $tpat_line . "_$tpat_id";
+        return if exists $patterns{$lineid};    # duplicate
 
         my $tpat_direction = $value_of_r->{tpat_direction};
         my $direction      = $dircode_of_thea{$tpat_direction};
@@ -267,11 +267,11 @@ sub _get_patterns {
             $direction = $tpat_direction;
             emit_text("Unknown direction: $tpat_direction");
         }
-        my $routedir = ${tpat_route} . "_$direction";
+        my $linedir = ${tpat_line} . "_$direction";
 
-        push @{ $pat_routeids_of_routedir{$routedir} }, $routeid;
+        push @{ $pat_lineids_of_linedir{$linedir} }, $lineid;
 
-        $patterns{$routeid}[ P_DIRECTION() ] = $direction;
+        $patterns{$lineid}[ P_DIRECTION() ] = $direction;
 
         return;
 
@@ -292,12 +292,12 @@ sub _get_patterns {
     my $patstopfile_callback = sub {
         my $value_of_r = shift;
 
-        my $tpat_route = $value_of_r->{'item tpat_route'};
+        my $tpat_line = $value_of_r->{'item tpat_route'};
         my $tpat_id    = $value_of_r->{'item tpat_id'};
 
-        my $routeid = $tpat_route . "_$tpat_id";
+        my $lineid = $tpat_line . "_$tpat_id";
 
-        return unless exists $patterns{$routeid};
+        return unless exists $patterns{$lineid};
 
         my @stop = $value_of_r->{stp_511_id};
 
@@ -310,9 +310,9 @@ sub _get_patterns {
 
         my $tpat_stp_rank = $value_of_r->{tpat_stp_rank};
 
-        $patterns{$routeid}[P_STOPS][$tpat_stp_rank] = \@stop;
+        $patterns{$lineid}[P_STOPS][$tpat_stp_rank] = \@stop;
 
-        $patterns{$routeid}[P_PLACES]{$tpat_stp_tp_sequence} = $tpat_stp_plc
+        $patterns{$lineid}[P_PLACES]{$tpat_stp_tp_sequence} = $tpat_stp_plc
           if $tpat_stp_tp_sequence;
 
         return;
@@ -333,37 +333,37 @@ sub _get_patterns {
 
     my ( %upattern_of, %uindex_of );
 
-    foreach my $routedir ( keys %pat_routeids_of_routedir ) {
+    foreach my $linedir ( keys %pat_lineids_of_linedir ) {
      
-        my @routeids = @{ $pat_routeids_of_routedir{$routedir} };
+        my @lineids = @{ $pat_lineids_of_linedir{$linedir} };
         
-        my %stop_set_of_routeid;
-        foreach my $routeid (@routeids) {
+        my %stop_set_of_lineid;
+        foreach my $lineid (@lineids) {
             my @stop_set;
-            foreach my $stop ( @{ $patterns{$routeid}[P_STOPS] } ) {
+            foreach my $stop ( @{ $patterns{$lineid}[P_STOPS] } ) {
                 push @stop_set, join( ':', @{$stop} );
             }
-            $stop_set_of_routeid{$routeid} = \@stop_set;
+            $stop_set_of_lineid{$lineid} = \@stop_set;
         }
 
         my %returned = ordered_union_columns(
-            sethash    => \%stop_set_of_routeid,
+            sethash    => \%stop_set_of_lineid,
             tiebreaker => $stop_tiebreaker,
         );
 
-        $upattern_of{$routedir} = $returned{union};
+        $upattern_of{$linedir} = $returned{union};
 
-        foreach my $routeid (@routeids) {
-            $uindex_of{$routeid} = $returned{columns_of}{$routeid};
+        foreach my $lineid (@lineids) {
+            $uindex_of{$lineid} = $returned{columns_of}{$lineid};
         }
 
-    } ## tidy end: foreach my $routedir ( keys...)
+    } ## tidy end: foreach my $linedir ( keys...)
 
     emit_done;
     
     emit_done;
 
-    return \%patterns, \%pat_routeids_of_routedir, \%upattern_of, \%uindex_of;
+    return \%patterns, \%pat_lineids_of_linedir, \%upattern_of, \%uindex_of;
 
 } ## tidy end: sub _get_patterns
 
@@ -413,9 +413,9 @@ sub _make_skeds {
      
         emit_over $skedid;
         
-        my ( $route, $dir, $days ) = split( /_/s, $skedid );
-        my $routedir = "${route}_$dir";
-        my $upattern = $upattern_of_r->{$routedir};
+        my ( $line, $dir, $days ) = split( /_/s, $skedid );
+        my $linedir = "${line}_$dir";
+        my $upattern = $upattern_of_r->{$linedir};
         my ( @stops, @place4s, @stopplaces );
 
         foreach my $stop ( @{$upattern} ) {
@@ -429,7 +429,7 @@ sub _make_skeds {
         my @place8s = map { $places_r->{$_}[PL_PLACE8] } @place4s;
         
         my $sked_attributes_r = {
-            linegroup   => $route,         # TODO - real linegroup combinations
+            linegroup   => $line,         # TODO - real linegroup combinations
             place4_r    => \@place4s,
             place8_r    => \@place8s,
             stopid_r    => \@stops,

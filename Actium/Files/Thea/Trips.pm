@@ -34,33 +34,33 @@ use constant {
     T_TIMES          => 2,
     T_DAYSEXCEPTIONS => 3,
     T_PATTERN        => 4,
-    T_ROUTE          => 5,
+    T_LINE           => 5,
     T_TYPE           => 6,
-    T_INTNUM        => 7,
+    T_INTNUM         => 7,
 };
 ## use critic
 
 sub thea_trips {
- 
+
     emit "Loading THEA trips into trip objects";
 
-    my $theafolder                 = shift;
-    my $pat_routeids_of_routedir_r = shift;
-    my $uindex_of_r                = shift;
+    my $theafolder               = shift;
+    my $pat_lineids_of_linedir_r = shift;
+    my $uindex_of_r              = shift;
 
-    my $tripstructs_of_routeid_r = _load_trips_from_file($theafolder);
+    my $tripstructs_of_lineid_r = _load_trips_from_file($theafolder);
 
-    my $trips_of_routedir_r
-      = _make_trip_objs( $pat_routeids_of_routedir_r, $tripstructs_of_routeid_r,
+    my $trips_of_linedir_r
+      = _make_trip_objs( $pat_lineids_of_linedir_r, $tripstructs_of_lineid_r,
         $uindex_of_r );
 
-    my $trips_of_sked_r = _get_trips_of_sked($trips_of_routedir_r);
-    
+    my $trips_of_sked_r = _get_trips_of_sked($trips_of_linedir_r);
+
     emit_done;
 
     return $trips_of_sked_r;
 
-}
+} ## tidy end: sub thea_trips
 
 my %required_headers = (
     trips => [
@@ -75,7 +75,7 @@ sub _load_trips_from_file {
     emit 'Reading THEA trip files';
 
     my %trip_of_tnum;
-    my %tnums_of_routeid;
+    my %tnums_of_lineid;
 
     my $trip_callback = sub {
         my $value_of_r = shift;
@@ -84,12 +84,12 @@ sub _load_trips_from_file {
         #        return unless $is_a_valid_trip_type{ $value_of_r->{trp_type} };
         my $tnum = $value_of_r->{trp_int_number};
 
-        my $route   = $value_of_r->{trp_route};
+        my $line    = $value_of_r->{trp_route};
         my $pattern = $value_of_r->{trp_pattern};
 
-        my $routeid = $route . '_' . $pattern;
+        my $lineid = $line . '_' . $pattern;
 
-        push @{ $tnums_of_routeid{$routeid} }, $tnum;
+        push @{ $tnums_of_lineid{$lineid} }, $tnum;
 
         my $vehicle = $value_of_r->{trp_veh_groups};
         $trip_of_tnum{$tnum}[T_VEHICLE] = $vehicle if $vehicle;
@@ -107,7 +107,7 @@ sub _load_trips_from_file {
         $trip_of_tnum{$tnum}[T_DAYSEXCEPTIONS] = $event;
 
         $trip_of_tnum{$tnum}[T_PATTERN] = $pattern;
-        $trip_of_tnum{$tnum}[T_ROUTE]   = $route;
+        $trip_of_tnum{$tnum}[T_LINE]    = $line;
         $trip_of_tnum{$tnum}[T_TYPE]    = $value_of_r->{trp_type};
         $trip_of_tnum{$tnum}[T_DAYS]    = $days_obj;
         $trip_of_tnum{$tnum}[T_INTNUM]  = $tnum;
@@ -147,14 +147,14 @@ sub _load_trips_from_file {
 
     emit_done;
 
-    my %trips_of_routeid;
-    foreach my $routeid ( keys %tnums_of_routeid ) {
-        foreach my $tnum ( @{ $tnums_of_routeid{$routeid} } ) {
-            push @{ $trips_of_routeid{$routeid} }, $trip_of_tnum{$tnum};
+    my %trips_of_lineid;
+    foreach my $lineid ( keys %tnums_of_lineid ) {
+        foreach my $tnum ( @{ $tnums_of_lineid{$lineid} } ) {
+            push @{ $trips_of_lineid{$lineid} }, $trip_of_tnum{$tnum};
         }
     }
 
-    return \%trips_of_routeid;
+    return \%trips_of_lineid;
 
 } ## tidy end: sub _load_trips_from_file
 
@@ -177,30 +177,30 @@ sub _make_days_obj {
 }
 
 sub _make_trip_objs {
-    my $pat_routeids_of_routedir_r = shift;
-    my $trips_of_routeid_r         = shift;
-    my $uindex_of_r                = shift;
+    my $pat_lineids_of_linedir_r = shift;
+    my $trips_of_lineid_r        = shift;
+    my $uindex_of_r              = shift;
 
-    my %trips_of_routedir;
+    my %trips_of_linedir;
 
     # so the idea here is to go through each trip, and create a new
-    # trip struct in trips_of_routedir that has the various information,
+    # trip struct in trips_of_linedir that has the various information,
     # putting the times in the correct column as in uindex_of_r.
 
     # Then we turn them into objects, and sort the objects.
 
     emit 'Making Trip objects (padding out columns, merging double trips)';
 
-    foreach my $routedir ( sortbyline keys $pat_routeids_of_routedir_r ) {
+    foreach my $linedir ( sortbyline keys $pat_lineids_of_linedir_r ) {
 
-        emit_over $routedir;
+        emit_over $linedir;
 
         my $trip_objs_r;
-        my @routeids = @{ $pat_routeids_of_routedir_r->{$routedir} };
+        my @lineids = @{ $pat_lineids_of_linedir_r->{$linedir} };
 
-        foreach my $routeid (@routeids) {
+        foreach my $lineid (@lineids) {
 
-            foreach my $trip_r ( @{ $trips_of_routeid_r->{$routeid} } ) {
+            foreach my $trip_r ( @{ $trips_of_lineid_r->{$lineid} } ) {
 
                 my $unified_trip_r = [ @{$trip_r} ];
                 # copy everything
@@ -212,7 +212,7 @@ sub _make_trip_objs {
                 for my $old_column_idx ( 0 .. $#times ) {
 
                     my $new_column_idx
-                      = $uindex_of_r->{$routeid}[$old_column_idx];
+                      = $uindex_of_r->{$lineid}[$old_column_idx];
 
                     $unified_times[$new_column_idx] = $times[$old_column_idx];
 
@@ -222,11 +222,10 @@ sub _make_trip_objs {
 
                 push @{$trip_objs_r}, _tripstruct_to_tripobj($unified_trip_r);
 
-            } ## tidy end: foreach my $trip_r ( @{ $trips_of_routeid_r...})
+            } ## tidy end: foreach my $trip_r ( @{ $trips_of_lineid_r...})
 
-        } ## tidy end: foreach my $routeid (@routeids)
-
-        $trip_objs_r = Actium::Sked::Trip->stoptimes_sort(@{$trip_objs_r});
+        } ## tidy end: foreach my $lineid (@lineids)
+        $trip_objs_r = Actium::Sked::Trip->stoptimes_sort( @{$trip_objs_r} );
 
         $trip_objs_r = Actium::Sked::Trip->merge_trips_if_same(
             {   trips => $trip_objs_r,
@@ -238,13 +237,13 @@ sub _make_trip_objs {
         # passengers we send two buses out. Scheduling system has to have these
         # twice, but we only want to display them once
 
-        $trips_of_routedir{$routedir} = $trip_objs_r;
+        $trips_of_linedir{$linedir} = $trip_objs_r;
 
-    } ## tidy end: foreach my $routedir ( sort...)
+    } ## tidy end: foreach my $linedir ( sortbyline...)
 
     emit_done;
 
-    return \%trips_of_routedir;
+    return \%trips_of_linedir;
 
 } ## tidy end: sub _make_trip_objs
 
@@ -258,8 +257,8 @@ sub _tripstruct_to_tripobj {
             daysexceptions => $tripstruct->[T_DAYSEXCEPTIONS],
             type           => $tripstruct->[T_TYPE],
             pattern        => $tripstruct->[T_PATTERN],
-            routenum       => $tripstruct->[T_ROUTE],
-            internal_num  => $tripstruct->[T_INTNUM],
+            line           => $tripstruct->[T_LINE],
+            internal_num   => $tripstruct->[T_INTNUM],
             # DAYSDIGITS - no attribute in Actium::Sked::Trips,
             # but incorporated in days
         }
@@ -269,14 +268,14 @@ sub _tripstruct_to_tripobj {
 
 sub _get_trips_of_sked {
 
-    my $trips_of_routedir_r = shift;
+    my $trips_of_linedir_r = shift;
     my %trips_of_sked;
 
     emit "Assembling trips into schedules by day";
 
-    foreach my $routedir ( sortbyline keys $trips_of_routedir_r ) {
+    foreach my $linedir ( sortbyline keys $trips_of_linedir_r ) {
 
-        emit_over $routedir;
+        emit_over $linedir;
 
         # first, this separates them out by individual days.
         # then, it reassembles them in groups.
@@ -286,18 +285,18 @@ sub _get_trips_of_sked {
         # and it's easier to do it this way if that's the case.
 
         my $trips_of_day_r
-          = _get_trips_by_day( $trips_of_routedir_r->{$routedir} );
+          = _get_trips_by_day( $trips_of_linedir_r->{$linedir} );
 
         my $trips_of_skedday_r = _assemble_skeddays($trips_of_day_r);
 
         for my $skedday ( keys $trips_of_skedday_r ) {
 
-            my $skedid = "${routedir}_$skedday";
+            my $skedid = "${linedir}_$skedday";
             $trips_of_sked{$skedid} = $trips_of_skedday_r->{$skedday};
 
         }
 
-    } ## tidy end: foreach my $routedir ( sort...)
+    } ## tidy end: foreach my $linedir ( sortbyline...)
 
     emit_done;
 

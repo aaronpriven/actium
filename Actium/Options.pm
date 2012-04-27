@@ -222,7 +222,7 @@ any used modules to set particular command-line options.
 The idea is that the main program can set options that apply to the main
 program, and any modules can set other options that apply to that module. 
 For example, the Actium::Sorting::Line module has a -lettersfirst option 
-that changes the sort order of routes. This
+that changes the sort order of lines. This
 is independent of the -quiet option in Actium::Term, which turns off 
 unnecessary text.
 
