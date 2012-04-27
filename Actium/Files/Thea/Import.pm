@@ -23,7 +23,7 @@ use Actium::Sorting::Line 'sortbyline';
 
 use Actium::Files::Thea::Trips('thea_trips');
 
-use Actium::Util (qw<jk jt doe>);
+use Actium::Util (qw<jk jt doe linegroup_of>);
 
 use Actium::Union('ordered_union_columns');
 
@@ -75,11 +75,11 @@ sub thea_import {
 
     my $signup     = shift;
     my $theafolder = shift;
-    my ( $patterns_r, $pat_lineids_of_linedir_r, $upattern_of_r,
+    my ( $patterns_r, $pat_lineids_of_lgdir_r, $upattern_of_r,
         $uindex_of_r ) = _get_patterns($theafolder);
 
     my $trips_of_skedid_r
-      = thea_trips( $theafolder, $pat_lineids_of_linedir_r, $uindex_of_r );
+      = thea_trips( $theafolder, $pat_lineids_of_lgdir_r, $uindex_of_r );
 
     my $places_info_of_r = _load_places($theafolder);
 
@@ -87,7 +87,7 @@ sub thea_import {
       = _make_skeds( $trips_of_skedid_r, $upattern_of_r, $places_info_of_r );
 
     _output_debugging_patterns( $signup, $patterns_r,
-        $pat_lineids_of_linedir_r, $upattern_of_r, $uindex_of_r, \@skeds );
+        $pat_lineids_of_lgdir_r, $upattern_of_r, $uindex_of_r, \@skeds );
 
     return @skeds;
 
@@ -100,7 +100,7 @@ sub _output_debugging_patterns {
 
     my $signup                     = shift;
     my $patterns_r                 = shift;
-    my $pat_lineids_of_linedir_r = shift;
+    my $pat_lineids_of_lgdir_r = shift;
     my $upattern_of_r              = shift;
     my $uindex_of_r                = shift;
     my $skeds_r                    = shift;
@@ -126,11 +126,11 @@ sub _output_debugging_patterns {
 
     my $ufh = $debugfolder->open_write('thea_upatterns.txt');
 
-    foreach my $linedir ( sortbyline keys $pat_lineids_of_linedir_r ) {
-        my @lineids = @{ $pat_lineids_of_linedir_r->{$linedir} };
-        say $ufh "\n$linedir";
+    foreach my $lgdir ( sortbyline keys $pat_lineids_of_lgdir_r ) {
+        my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
+        say $ufh "\n$lgdir";
         say $ufh 
-          join( "\t", @{ $upattern_of_r->{$linedir} } );
+          join( "\t", @{ $upattern_of_r->{$lgdir} } );
         foreach my $lineid (@lineids) {
             say $ufh $lineid;
             say $ufh join( "\t", @{ $uindex_of_r->{$lineid} } );
@@ -241,7 +241,7 @@ my $stop_tiebreaker = sub {
 sub _get_patterns {
     my $theafolder = shift;
     my %patterns;
-    my %pat_lineids_of_linedir;
+    my %pat_lineids_of_lgdir;
     
     emit 'Loading and assembling THEA patterns';
 
@@ -267,9 +267,9 @@ sub _get_patterns {
             $direction = $tpat_direction;
             emit_text("Unknown direction: $tpat_direction");
         }
-        my $linedir = ${tpat_line} . "_$direction";
+        my $lgdir = linegroup_of(${tpat_line}) . "_$direction";
 
-        push @{ $pat_lineids_of_linedir{$linedir} }, $lineid;
+        push @{ $pat_lineids_of_lgdir{$lgdir} }, $lineid;
 
         $patterns{$lineid}[ P_DIRECTION() ] = $direction;
 
@@ -333,9 +333,9 @@ sub _get_patterns {
 
     my ( %upattern_of, %uindex_of );
 
-    foreach my $linedir ( keys %pat_lineids_of_linedir ) {
+    foreach my $lgdir ( keys %pat_lineids_of_lgdir ) {
      
-        my @lineids = @{ $pat_lineids_of_linedir{$linedir} };
+        my @lineids = @{ $pat_lineids_of_lgdir{$lgdir} };
         
         my %stop_set_of_lineid;
         foreach my $lineid (@lineids) {
@@ -351,19 +351,19 @@ sub _get_patterns {
             tiebreaker => $stop_tiebreaker,
         );
 
-        $upattern_of{$linedir} = $returned{union};
+        $upattern_of{$lgdir} = $returned{union};
 
         foreach my $lineid (@lineids) {
             $uindex_of{$lineid} = $returned{columns_of}{$lineid};
         }
 
-    } ## tidy end: foreach my $linedir ( keys...)
+    } ## tidy end: foreach my $lgdir ( keys...)
 
     emit_done;
     
     emit_done;
 
-    return \%patterns, \%pat_lineids_of_linedir, \%upattern_of, \%uindex_of;
+    return \%patterns, \%pat_lineids_of_lgdir, \%upattern_of, \%uindex_of;
 
 } ## tidy end: sub _get_patterns
 
@@ -413,9 +413,9 @@ sub _make_skeds {
      
         emit_over $skedid;
         
-        my ( $line, $dir, $days ) = split( /_/s, $skedid );
-        my $linedir = "${line}_$dir";
-        my $upattern = $upattern_of_r->{$linedir};
+        my ( $lg, $dir, $days ) = split( /_/s, $skedid );
+        my $lgdir = "${lg}_$dir";
+        my $upattern = $upattern_of_r->{$lgdir};
         my ( @stops, @place4s, @stopplaces );
 
         foreach my $stop ( @{$upattern} ) {
@@ -429,7 +429,7 @@ sub _make_skeds {
         my @place8s = map { $places_r->{$_}[PL_PLACE8] } @place4s;
         
         my $sked_attributes_r = {
-            linegroup   => $line,         # TODO - real linegroup combinations
+            linegroup   => $lg,
             place4_r    => \@place4s,
             place8_r    => \@place8s,
             stopid_r    => \@stops,

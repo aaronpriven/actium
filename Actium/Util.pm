@@ -27,6 +27,7 @@ use Sub::Exporter -setup => {
           tabulate_strings    tabulate_arrayrefs
           filename            file_ext
           remove_leading_path flat_arrayref
+          linegroup_of
           >
     ]
 };
@@ -306,6 +307,15 @@ sub flat_arrayref {
     }
 
     return \@results;
+}
+
+# this should be moved to a more general 
+# "information from the filemaker database" section
+# when LINES_TO_COMBINE gets moved there
+
+sub linegroup_of {
+   my $line = shift;
+   return $LINES_TO_COMBINE{$line} // $line;
 }
 
 1;
