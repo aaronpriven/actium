@@ -43,7 +43,7 @@ use Actium::Types qw<ArrayRefOfTimeNums TimeNum ActiumSkedDays>;
 # routenum, runid, blockid from either
 has [
     qw<daysexceptions routenum runid blockid noteletter pattern type typevalue
-      from to vehicletype
+      from to vehicletype internal_num
       vehicledisplay via viadescription>
   ] => (
     is  => 'rw',
@@ -84,7 +84,7 @@ has 'stoptime_r' => (
         stoptimes           => 'elements',
         stoptime_count      => 'count',
         stoptimes_are_empty => 'is_empty',
-        delete_stoptime => 'delete',
+        delete_stoptime     => 'delete',
     },
 );
 
@@ -119,7 +119,7 @@ has 'placetime_r' => (
         placetime_count      => 'count',
         placetimes_are_empty => 'is_empty',
         placetime            => 'get',
-        delete_placetime => 'delete',
+        delete_placetime     => 'delete',
     },
 );
 
@@ -167,6 +167,16 @@ sub merge_trips {
         }
         else {
             push @mergedtrips, $trip;
+        }
+    }
+
+    #delete duplicate merged trips
+    for my $i ( reverse (0 .. $#mergedtrips) ) {
+        for my $j ( reverse (0 .. ($i - 1)) ) {
+            if ( $mergedtrips[$i] == $mergedtrips[$j] ) {
+                pop @mergedtrips; # delete $mergedtrips[$i]
+                last;
+            }
         }
     }
 
@@ -255,22 +265,21 @@ sub stoptimes_sort {
     if ( defined $common_stop ) {
 
         # sort trips with a common stop
-        
+
         my @cache = map {
             [   $_->stoptime($common_stop),    # 0
                 $_->average_stoptime,          # 1
                 $_,                            # 2
             ]
-          } @trips; 
-          
+        } @trips;
+
         @cache = sort {
                  $a->[0] <=> $b->[0]
               or $a->[1] <=> $b->[1]
               or $a->[2]->sortable_days cmp $b->[2]->sortable_days
-          } @cache;
-          
+        } @cache;
+
         @trips = map { $_->[2] } @cache;
-          
 
         # a schwartzian transform with two criteria --
         # either the common stop, or if those times are the same,
