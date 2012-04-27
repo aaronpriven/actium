@@ -86,7 +86,7 @@ sub prehistoric_skedsfile {
         my $times = $timesub->( $trip->placetimes );
 
         say $out jt( $trip->daysexceptions, $EMPTY_STR, $EMPTY_STR,
-            $trip->routenum, $times );
+            $trip->line, $times );
     }
 
     close $out;
@@ -199,7 +199,7 @@ sub _new_from_prehistoric {
 
         $tripspec{noteletter}  = shift @fields;
         $tripspec{vehicletype} = shift @fields;
-        $tripspec{routenum}    = shift @fields;
+        $tripspec{line}    = shift @fields;
 
         $#fields = $#place8s;
 

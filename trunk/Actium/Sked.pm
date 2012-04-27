@@ -221,7 +221,7 @@ sub build_placetimes_from_stoptimes {
 #################################
 ## METHODS
 
-sub routes {
+sub lines {
 
     # It would be nice to make this a lazy attribute, but the Trip objects
     # can change.
@@ -232,21 +232,21 @@ sub routes {
 
     my $self = shift;
 
-    my $route_r;
-    my %seen_route;
+    my $line_r;
+    my %seen_line;
 
     foreach my $trip ( $self->trips() ) {
-        $seen_route{ $trip->routenum() } = 1;
+        $seen_line{ $trip->line() } = 1;
     }
 
-    return sortbyline( keys %seen_route );
+    return sortbyline( keys %seen_line );
 
-} ## tidy end: sub routes
+} ## tidy end: sub lines
 
-sub has_multiple_routes {
+sub has_multiple_lines {
     my $self   = shift;
-    my @routes = $self->routes;
-    return @routes > 1;
+    my @lines = $self->lines;
+    return @lines > 1;
 }
 
 sub daysexceptions {
@@ -272,10 +272,10 @@ sub has_multiple_daysexceptions {
 sub divide_sked {
     my $self = shift;
 
-    my @routes = $self->routes();
+    my @lines = $self->lines();
 
     my %linegroup_of;
-    foreach (@routes) {
+    foreach (@lines) {
         $linegroup_of{$_} = ( $LINES_TO_COMBINE{$_} || $_ );
 
         #        $linegroup_of{$_} = ( $_ );
@@ -286,7 +286,7 @@ sub divide_sked {
     my @linegroups = keys %linegroups;
 
     if ( scalar(@linegroups) == 1 ) {  # there's just one linegroup, return self
-        $self->set_linegroup( $routes[0] );
+        $self->set_linegroup( $lines[0] );
 
         if ( $linegroups{'97'} ) {
             print '';                  # DEBUG - breakpoint
@@ -294,7 +294,7 @@ sub divide_sked {
 
         $self->delete_blank_columns;
 
-        # override Scheduling's linegroup with the first route
+        # override Scheduling's linegroup with the first line
         return $self;
     }
 
@@ -304,7 +304,7 @@ sub divide_sked {
 
     # collect trips for each one in %trips_of
     foreach my $trip ( $self->trips ) {
-        my $linegroup = $linegroup_of{ $trip->routenum };
+        my $linegroup = $linegroup_of{ $trip->line };
         push @{ $trips_of{$linegroup} }, $trip;
     }
 
@@ -551,7 +551,7 @@ sub spaced {
       viadescription VIADESC
       sortable_days  DAY
       vehicletype    VT
-      routenum       -LN
+      line           -LN
       internal_num   INTNUM
     );
 
