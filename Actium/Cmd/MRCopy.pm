@@ -56,7 +56,17 @@ add_option( 'fullfolder|ff=s',
       . 'Default is "_fullnames" in the repository' );
 
 sub HELP {
-    say 'actium.pl mr_copy (options) ...'
+ 
+    my $usage = <<'EOF';
+actium.pl mr_copy (options) ...
+
+  The mr_copy command is used for determining what the latest version
+  of each map in the map repository is, and making copies of it. 
+  See the document "The Actium Maps Repository: Quick Start Guide"
+  for more information.
+EOF
+
+    say $usage 
       or die "Can't display usage: $OS_ERROR";
     output_usage;
     return;
