@@ -16,7 +16,7 @@ use constant { PHONEID => 0, STOPID => 1, DESC => 2, LAT => 3, LONG => 4 };
 
 my ( %of_phoneid, %of_stopid );
 
-die "Usage: $0 [-n] id [ id ] ...\nid can be a phoneid or stopid.\n"
+die "Usage: $0 [-d] id [ id ] ...\nid can be a phoneid or stopid.\n"
   unless @ARGV;
 
 while (<$in>) {
@@ -56,21 +56,21 @@ foreach (@ARGV) {
         next;
     }
 
-    if ($dump) {
-            say "0||||";
-    } else {
+    #if ($dump) {
+    #        say "0||||";
+    #} else {
        #warn "Unknown id type: $_\n";
       foreach my $fields_r (values %of_stopid) {
        
           my $desc = $fields_r ->[DESC];
           display($fields_r)  if $desc =~ /$_/i;
        
-      } 
+     } 
        
        
        
        
-    } 
+    #} 
 
 } ## tidy end: foreach (@ARGV)
 

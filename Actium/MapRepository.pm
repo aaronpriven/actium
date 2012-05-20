@@ -49,7 +49,6 @@ use Actium::Constants;
 
 const my $LINE_NAME_LENGTH   => 4;
 const my $DEFAULT_RESOLUTION => 288;
-const my $LINE_NAME_RE       => '(?:[[:upper:]\d]{1,4}|[[:alpha:]\d{5,})';
 
 const my $CAN_ACTIUM_FOLDER =>
   [qw<path children glob_plain_files subfolder make_filespec folder>];
@@ -85,7 +84,7 @@ sub import_to_repository {
     my @copied_files;
 
   FILE:
-    foreach my $filespec (@files) {
+    foreach my $filespec (sort @files) {
 
         next FILE if -d $filespec;
 
@@ -96,10 +95,14 @@ sub import_to_repository {
         # if newfilename isn't valid, first run it through normalize_filename.
         # Then if it's still not valid, carp and move on.
 
+        my $filename_is_valid = filename_is_valid($newfilename);
+
         $newfilename = normalize_filename($newfilename)
-          unless filename_is_valid($newfilename);
+          unless $filename_is_valid;
 
         if ( not filename_is_valid($newfilename) ) {
+            # check of the newly normalized name - not a duplicate call
+
             emit_text
 "Can't find line, date, version or extension in $filename: skipped";
             next FILE;
@@ -220,17 +223,17 @@ sub normalize_filename {
     # we received over the years...
 
     my $filename = shift;
-    
+
     my ( $filepart, $ext ) = split( /[.]/s, $filename );
     my ( $lines, $date, $ver ) = split( /-/s, $filepart );
-    
+
     return $filename unless defined $date and defined $ver;
 
     $lines =~ s/,/_/gs;
 
     my @lines = split( /_/s, $lines );
     foreach (@lines) {
-        $_ = uc($_) unless length($_) >= $LINE_NAME_LENGTH;
+        $_ = uc($_) unless length($_) > $LINE_NAME_LENGTH;
     }
     $lines = join( '_', @lines );
 
@@ -270,34 +273,36 @@ sub normalize_filename {
         #            $ver = "v$ver";
         #        }
     }
-    
+
     my $newfilename = "$lines-$date-$ver";
     $newfilename .= ".$ext" if defined $ext;
     return $newfilename;
 
 } ## tidy end: sub normalize_filename
 
+const my $LINE_NAME_RE       => qr/(?:[[:upper:]\d]{1,4}|[[:alpha:]\d]{5,})/;
+const    my $YEAR_RE => '(?:19[89]\d|20\d\d)';
+    # year - another Y2100 problem
+const    my $MONTH_RE => '(?:0[123456789]|1[012])';
+    # numeric month
+
 sub filename_is_valid {
 
     my $filename = shift;
 
-    my $year_re = '(?:19[89]\d|20\d\d)';
-    # year - another Y2100 problem
-    my $month_re = '(?:0[123456789]|1[012])';
-    # numeric month
-
-    return $filename =~ m{
+    my $result = $filename =~ m{
+              \A
               $LINE_NAME_RE
                   # one transit line 
               (?:_$LINE_NAME_RE)* 
                   # zero or more transit lines, separated by _
-              (?:=\w+)
-                  # one token starting with = and containing word characters
+              (?:=\w+)?
+                  # zero or one token starting with = and containing word characters
               \-
                   # hyphen separating lines and date
-              $year_re
+              $YEAR_RE
                   # year (another Y2100 problem!)
-              _$month_re
+              _$MONTH_RE
                   # underscore followed by numeric month
               \-
                   # hyphen separating date and version
@@ -305,7 +310,10 @@ sub filename_is_valid {
                   # version (arbitrary word characters)
               [.]\w+
                   # extension
+              \z
               }sx;
+
+    return $result;
 
 } ## tidy end: sub filename_is_valid
 
@@ -521,7 +529,7 @@ sub _file_action {
 }
 
 sub _display_path {
- 
+
     my ( $from, $to, $path ) = @_;    # making copies
     if ( defined $path ) {
         foreach ( $from, $to ) {      # aliasing $_ to each in turn
