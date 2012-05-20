@@ -13,9 +13,8 @@ package Actium::Files::Thea::Import 0.002;
 
 use Actium::Term ':all';
 use Actium::Folders::Signup;
-use Text::Trim;
 use Actium::Files::TabDelimited 'read_tab_files';
-use Actium::Time ('timenum');
+use Actium::Time 'timenum';
 use Actium::Sked::Days;
 use Actium::Sked::Dir;
 use Actium::Sked;
@@ -30,7 +29,7 @@ use Actium::Union('ordered_union_columns');
 use Actium::Constants;
 
 use English '-no_match_vars';
-use List::Util (qw<min sum>);
+use List::Util      (qw<min sum>);
 use List::MoreUtils (qw<each_arrayref uniq>);
 
 ## no critic (ProhibitConstantPragma)
@@ -75,8 +74,8 @@ sub thea_import {
 
     my $signup     = shift;
     my $theafolder = shift;
-    my ( $patterns_r, $pat_lineids_of_lgdir_r, $upattern_of_r,
-        $uindex_of_r ) = _get_patterns($theafolder);
+    my ( $patterns_r, $pat_lineids_of_lgdir_r, $upattern_of_r, $uindex_of_r )
+      = _get_patterns($theafolder);
 
     my $trips_of_skedid_r
       = thea_trips( $theafolder, $pat_lineids_of_lgdir_r, $uindex_of_r );
@@ -86,8 +85,8 @@ sub thea_import {
     my @skeds
       = _make_skeds( $trips_of_skedid_r, $upattern_of_r, $places_info_of_r );
 
-    _output_debugging_patterns( $signup, $patterns_r,
-        $pat_lineids_of_lgdir_r, $upattern_of_r, $uindex_of_r, \@skeds );
+    _output_debugging_patterns( $signup, $patterns_r, $pat_lineids_of_lgdir_r,
+        $upattern_of_r, $uindex_of_r, \@skeds );
 
     return @skeds;
 
@@ -98,12 +97,12 @@ sub _output_debugging_patterns {
     use autodie;
     ## no critic (RequireCheckedSyscalls)
 
-    my $signup                     = shift;
-    my $patterns_r                 = shift;
+    my $signup                 = shift;
+    my $patterns_r             = shift;
     my $pat_lineids_of_lgdir_r = shift;
-    my $upattern_of_r              = shift;
-    my $uindex_of_r                = shift;
-    my $skeds_r                    = shift;
+    my $upattern_of_r          = shift;
+    my $uindex_of_r            = shift;
+    my $skeds_r                = shift;
 
     my $debugfolder = $signup->subfolder('thea_debug');
 
@@ -113,94 +112,89 @@ sub _output_debugging_patterns {
         METHOD    => 'dump',
         EXTENSION => 'dump',
     );
-    
-    
+
     my $spacedfolder = $debugfolder->subfolder('spaced');
     $spacedfolder->write_files_with_method(
         OBJECTS   => $skeds_r,
         METHOD    => 'spaced',
         EXTENSION => 'txt',
     );
-    
-    Actium::Sked->write_prehistorics($skeds_r , $debugfolder);
+
+    Actium::Sked->write_prehistorics( $skeds_r, $debugfolder );
 
     my $ufh = $debugfolder->open_write('thea_upatterns.txt');
 
     foreach my $lgdir ( sortbyline keys $pat_lineids_of_lgdir_r ) {
         my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
         say $ufh "\n$lgdir";
-        say $ufh 
-          join( "\t", @{ $upattern_of_r->{$lgdir} } );
+        say $ufh join( "\t", @{ $upattern_of_r->{$lgdir} } );
         foreach my $lineid (@lineids) {
             say $ufh $lineid;
             say $ufh join( "\t", @{ $uindex_of_r->{$lineid} } );
-            
-            
+
             my @stopinfos = @{ $patterns_r->{$lineid}[P_STOPS] };
-        my @stops;
-        foreach my $stopinfo (@stopinfos) {
-            my $text = shift $stopinfo;
-            if ( scalar @{$stopinfo} ) {
-                my $plc = shift $stopinfo;
-                my $seq = shift $stopinfo;
-                $text .= ":$plc:$seq";
+            my @stops;
+            foreach my $stopinfo (@stopinfos) {
+                my $text = shift $stopinfo;
+                if ( scalar @{$stopinfo} ) {
+                    my $plc = shift $stopinfo;
+                    my $seq = shift $stopinfo;
+                    $text .= ":$plc:$seq";
+                }
+                push @stops, $text;
+
             }
-            push @stops, $text;
+            my $stops = join( "\t", @stops );
 
-        }
-        my $stops = join( "\t", @stops );
+            my %places = %{ $patterns_r->{$lineid}[ P_PLACES() ] };
+            my @places;
 
-        my %places = %{ $patterns_r->{$lineid}[ P_PLACES() ] };
-        my @places;
+            foreach my $seq ( sort { $a <=> $b } keys %places ) {
+                push @places, "$seq:$places{$seq}";
+            }
+            my $places = join( "\t", @places );
 
-        foreach my $seq ( sort { $a <=> $b } keys %places ) {
-            push @places, "$seq:$places{$seq}";
-        }
-        my $places = join( "\t", @places );
-        
-        say $ufh "$stops\n$places";
-            
-            
-            
-        }
-        
-    }
+            say $ufh "$stops\n$places";
+
+        } ## tidy end: foreach my $lineid (@lineids)
+
+    } ## tidy end: foreach my $lgdir ( sortbyline...)
 
     close $ufh or die "Can't close thea_upatterns.txt: $OS_ERROR";
 
-#    my $fh = $debugfolder->open_write('thea_patterns.txt');
-#
-#    foreach my $lineid ( sortbyline keys $patterns_r ) {
-#
-#        my $direction = $patterns_r->{$lineid}[P_DIRECTION];
-#
-#        my @stopinfos = @{ $patterns_r->{$lineid}[P_STOPS] };
-#        my @stops;
-#        foreach my $stopinfo (@stopinfos) {
-#            my $text = shift $stopinfo;
-#            if ( scalar @{$stopinfo} ) {
-#                my $plc = shift $stopinfo;
-#                my $seq = shift $stopinfo;
-#                $text .= ":$plc:$seq";
-#            }
-#            push @stops, $text;
-#
-#        }
-#        my $stops = join( $SPACE, @stops );
-#
-#        my %places = %{ $patterns_r->{$lineid}[ P_PLACES() ] };
-#        my @places;
-#
-#        foreach my $seq ( sort { $a <=> $b } keys %places ) {
-#            push @places, "$seq:$places{$seq}";
-#        }
-#        my $places = join( $SPACE, @places );
-#
-#        say $fh "$lineid\t$direction\n$stops\n$places\n";
-#
-#    } ## tidy end: foreach my $lineid ( sort ...)
-#
-#    close $fh or die "Can't close thea_patterns.txt: $OS_ERROR";
+    #    my $fh = $debugfolder->open_write('thea_patterns.txt');
+    #
+    #    foreach my $lineid ( sortbyline keys $patterns_r ) {
+    #
+    #        my $direction = $patterns_r->{$lineid}[P_DIRECTION];
+    #
+    #        my @stopinfos = @{ $patterns_r->{$lineid}[P_STOPS] };
+    #        my @stops;
+    #        foreach my $stopinfo (@stopinfos) {
+    #            my $text = shift $stopinfo;
+    #            if ( scalar @{$stopinfo} ) {
+    #                my $plc = shift $stopinfo;
+    #                my $seq = shift $stopinfo;
+    #                $text .= ":$plc:$seq";
+    #            }
+    #            push @stops, $text;
+    #
+    #        }
+    #        my $stops = join( $SPACE, @stops );
+    #
+    #        my %places = %{ $patterns_r->{$lineid}[ P_PLACES() ] };
+    #        my @places;
+    #
+    #        foreach my $seq ( sort { $a <=> $b } keys %places ) {
+    #            push @places, "$seq:$places{$seq}";
+    #        }
+    #        my $places = join( $SPACE, @places );
+    #
+    #        say $fh "$lineid\t$direction\n$stops\n$places\n";
+    #
+    #    } ## tidy end: foreach my $lineid ( sort ...)
+    #
+    #    close $fh or die "Can't close thea_patterns.txt: $OS_ERROR";
 
     return;
 
@@ -211,25 +205,25 @@ sub _output_debugging_patterns {
 #my %is_a_valid_trip_type = { Regular => 1, Opportunity => 1 };
 
 my $stop_tiebreaker = sub {
- 
+
     # tiebreaks by using the average rank of the timepoints involved.
 
     my @lists = @_;
     my @avg_ranks;
 
     foreach my $i ( 0, 1 ) {
-     
+
         my @ranks;
         foreach my $stop ( @{ $lists[$i] } ) {
             my ( $stopid, $placeid, $placerank ) = split( /:/s, $stop );
             if ( defined $placerank ) {
-                push @ranks , $placerank;
+                push @ranks, $placerank;
             }
         }
-        return 0 unless @ranks; 
+        return 0 unless @ranks;
         # if either list has no timepoints, return 0 indicating we can't break
         # the tie
-        
+
         $avg_ranks[$i] = sum(@ranks) / @ranks;
 
     }
@@ -242,7 +236,7 @@ sub _get_patterns {
     my $theafolder = shift;
     my %patterns;
     my %pat_lineids_of_lgdir;
-    
+
     emit 'Loading and assembling THEA patterns';
 
     emit 'Reading THEA trippattern files';
@@ -256,7 +250,7 @@ sub _get_patterns {
         # skip if this trip isn't in service, or if it has no active trips
 
         my $tpat_line = $value_of_r->{tpat_route};
-        my $tpat_id    = $value_of_r->{tpat_id};
+        my $tpat_id   = $value_of_r->{tpat_id};
 
         my $lineid = $tpat_line . "_$tpat_id";
         return if exists $patterns{$lineid};    # duplicate
@@ -267,7 +261,7 @@ sub _get_patterns {
             $direction = $tpat_direction;
             emit_text("Unknown direction: $tpat_direction");
         }
-        my $lgdir = linegroup_of(${tpat_line}) . "_$direction";
+        my $lgdir = linegroup_of( ${tpat_line} ) . "_$direction";
 
         push @{ $pat_lineids_of_lgdir{$lgdir} }, $lineid;
 
@@ -293,7 +287,7 @@ sub _get_patterns {
         my $value_of_r = shift;
 
         my $tpat_line = $value_of_r->{'item tpat_route'};
-        my $tpat_id    = $value_of_r->{'item tpat_id'};
+        my $tpat_id   = $value_of_r->{'item tpat_id'};
 
         my $lineid = $tpat_line . "_$tpat_id";
 
@@ -334,9 +328,9 @@ sub _get_patterns {
     my ( %upattern_of, %uindex_of );
 
     foreach my $lgdir ( keys %pat_lineids_of_lgdir ) {
-     
+
         my @lineids = @{ $pat_lineids_of_lgdir{$lgdir} };
-        
+
         my %stop_set_of_lineid;
         foreach my $lineid (@lineids) {
             my @stop_set;
@@ -357,10 +351,10 @@ sub _get_patterns {
             $uindex_of{$lineid} = $returned{columns_of}{$lineid};
         }
 
-    } ## tidy end: foreach my $lgdir ( keys...)
+    } ## tidy end: foreach my $lgdir ( keys %pat_lineids_of_lgdir)
 
     emit_done;
-    
+
     emit_done;
 
     return \%patterns, \%pat_lineids_of_lgdir, \%upattern_of, \%uindex_of;
@@ -406,46 +400,57 @@ sub _make_skeds {
     my $places_r          = shift;
 
     my @skeds;
-    
+
     emit "Making Actium::Sked objects";
 
     foreach my $skedid ( sortbyline keys $trips_of_skedid_r ) {
-     
+
         emit_over $skedid;
-        
+
         my ( $lg, $dir, $days ) = split( /_/s, $skedid );
-        my $lgdir = "${lg}_$dir";
+        my $lgdir    = "${lg}_$dir";
         my $upattern = $upattern_of_r->{$lgdir};
         my ( @stops, @place4s, @stopplaces );
 
         foreach my $stop ( @{$upattern} ) {
-            my ( $stopid, $placeid, $placerank )
-              = split( /:/s, $stop );
+            my ( $stopid, $placeid, $placerank ) = split( /:/s, $stop );
+
             push @stops, $stopid;
-            push @stopplaces, doe($placeid);
-            push @place4s, $placeid if $placeid;
+
+            if ($placeid) {
+                push @stopplaces, $placeid;
+                my $reference_place = $places_r->{$placeid}[PL_REFERENCE];
+                $placeid = $reference_place if $reference_place;
+                push @place4s, $placeid;
+            }
+            else {
+                push @stopplaces, $EMPTY_STR;
+            }
+
         }
 
         my @place8s = map { $places_r->{$_}[PL_PLACE8] } @place4s;
-        
+
         my $sked_attributes_r = {
             linegroup   => $lg,
             place4_r    => \@place4s,
             place8_r    => \@place8s,
             stopid_r    => \@stops,
             stopplace_r => \@stopplaces,
-            direction  => Actium::Sked::Dir->new($dir),
-            days => Actium::Sked::Days->new($days),
-            trip_r   => $trips_of_skedid_r->{$skedid},
+            direction   => Actium::Sked::Dir->new($dir),
+            days        => Actium::Sked::Days->new($days),
+            trip_r      => $trips_of_skedid_r->{$skedid},
         };
 
         my $sked = Actium::Sked->new($sked_attributes_r);
         $sked->build_placetimes_from_stoptimes;
         $sked->delete_blank_columns;
+
+        $sked->combine_duplicate_timepoints;
         push @skeds, $sked;
 
-    } ## tidy end: foreach my $skedid ( keys $trips_of_skedid_r)
-    
+    } ## tidy end: foreach my $skedid ( sortbyline...)
+
     emit_done;
 
     return @skeds;

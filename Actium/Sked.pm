@@ -18,7 +18,7 @@ use Moose::Util::TypeConstraints;
 
 use English '-no_match_vars';
 
-use List::MoreUtils qw<none>;
+use List::MoreUtils qw<none any>;
 use List::Util ( 'first', 'max' );
 
 use Actium::Util(qw<:all>);
@@ -47,10 +47,12 @@ has 'place4_r' => (
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
     handles => {
+        place4            => 'get',
         place4s           => 'elements',
         place_count       => 'count',
         place4s_are_empty => 'is_empty',
         delete_place4     => 'delete',
+        splice_place4s    => 'splice',
     },
 );
 
@@ -61,10 +63,12 @@ has 'place8_r' => (
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
     handles => {
+        place8            => 'get',
         place8s           => 'elements',
         place8s_are_empty => 'is_empty',
         _place8_count     => 'count',
         delete_place8     => 'delete',
+        splice_place8s    => 'splice',
     },
 );
 
@@ -244,7 +248,7 @@ sub lines {
 } ## tidy end: sub lines
 
 sub has_multiple_lines {
-    my $self   = shift;
+    my $self  = shift;
     my @lines = $self->lines;
     return @lines > 1;
 }
@@ -268,6 +272,68 @@ sub has_multiple_daysexceptions {
     my @daysexceptions = $self->daysexceptions;
     return @daysexceptions > 1;
 }
+
+sub id {
+    my $self = shift;
+    return $self->skedid;
+}
+
+sub skedid {
+    my $self = shift;
+    my $linegroup = $self->linegroup || $self->oldlinegroup;
+    return ( join( '_', $linegroup, $self->dircode, $self->daycode ) );
+}
+
+sub sortable_id {
+    my $self = shift;
+    my $linegroup = linekeys( $self->linegroup || $self->oldlinegroup );
+    $linegroup =~ s/\0/ /g;
+    my $dir = $self->dir_obj->as_sortable;
+
+    my $earliest_timenum = $self->earliest_timenum;
+    $earliest_timenum = 0 if $earliest_timenum < 0;
+    $earliest_timenum = linekeys( $self->earliest_timenum );
+
+    return join( "\t", $linegroup, $self->daycode, $earliest_timenum, $dir );
+}
+
+sub stoptime_columns {
+    my $self = shift;
+    my @columns;
+    foreach my $trip ( $self->trips ) {
+        foreach my $i ( 0 .. $trip->stoptime_count - 1 ) {
+            push @{ $columns[$i] }, $trip->stoptime($i);
+        }
+    }
+
+    return @columns;
+}
+
+sub attribute_columns {
+
+    my $self    = shift;
+    my @readers = @_;
+    # reader method, generally the same as the attribute name
+    my %column_of;
+
+    my @trips = $self->trips;
+
+    foreach my $trip ( $self->trips ) {
+        foreach my $reader (@readers) {
+            push @{ $column_of{$reader} }, $trip->$reader;
+        }
+    }
+
+    foreach my $reader (@readers) {
+        if ( none { defined and $_ ne $EMPTY_STR } @{ $column_of{$reader} } ) {
+            delete $column_of{$reader};
+        }
+    }
+    return \%column_of;
+
+} ## tidy end: sub attribute_columns
+
+### METHODS THAT ALTER SKEDS
 
 sub divide_sked {
     my $self = shift;
@@ -366,42 +432,6 @@ sub placetime_columns {
     return @columns;
 }
 
-sub stoptime_columns {
-    my $self = shift;
-    my @columns;
-    foreach my $trip ( $self->trips ) {
-        foreach my $i ( 0 .. $trip->stoptime_count - 1 ) {
-            push @{ $columns[$i] }, $trip->stoptime($i);
-        }
-    }
-
-    return @columns;
-}
-
-sub attribute_columns {
-
-    my $self    = shift;
-    my @readers = @_;
-    # reader method, generally the same as the attribute name
-    my %column_of;
-
-    my @trips = $self->trips;
-
-    foreach my $trip ( $self->trips ) {
-        foreach my $reader (@readers) {
-            push @{ $column_of{$reader} }, $trip->$reader;
-        }
-    }
-
-    foreach my $reader (@readers) {
-        if ( none { defined and $_ ne $EMPTY_STR } @{ $column_of{$reader} } ) {
-            delete $column_of{$reader};
-        }
-    }
-    return \%column_of;
-
-} ## tidy end: sub attribute_columns
-
 sub delete_blank_columns {
     my $self = shift;
 
@@ -465,44 +495,168 @@ sub delete_blank_columns {
 
 }    ## <perltidy> end sub delete_blank_columns
 
-sub id {
+sub combine_duplicate_timepoints {
+
     my $self = shift;
-    return $self->skedid;
-}
 
-sub skedid {
-    my $self = shift;
-    my $linegroup = $self->linegroup || $self->oldlinegroup;
-    return ( join( '_', $linegroup, $self->dircode, $self->daycode ) );
-}
+    my @places = $self->place4s;
 
-sub sortable_id {
-    my $self = shift;
-    my $linegroup = linekeys( $self->linegroup || $self->oldlinegroup );
-    $linegroup =~ s/\0/ /g;
-    my $dir = $self->dir_obj->as_sortable;
+    # assemble runs of identical times
 
-    my $earliest_timenum = $self->earliest_timenum;
-    $earliest_timenum = 0 if $earliest_timenum < 0;
-    $earliest_timenum = linekeys( $self->earliest_timenum );
+    my $prevplace         = $places[0];
+    my $in_a_run_of_dupes = 0;
 
-    return join( "\t", $linegroup, $self->daycode, $earliest_timenum, $dir );
+    my @runs_of_dupes;
+
+  PLACE:
+    for my $i ( 1 .. $#places ) {
+        if ( $places[$i] ne $prevplace ) {
+            $in_a_run_of_dupes = 0;
+            $prevplace         = $places[$i];
+            next PLACE;
+        }
+
+        if ( not $in_a_run_of_dupes ) {
+            push @runs_of_dupes, { FIRSTCOL => $i - 1, LASTCOL => $i };
+        }
+        else {
+            $runs_of_dupes[-1]{LASTCOL} = $i;
+        }
+
+        $in_a_run_of_dupes = 1;
+    }
+
+    foreach my $run ( reverse @runs_of_dupes ) {
+
+        my $firstcolumn = $run->{FIRSTCOL};
+        my $lastcolumn  = $run->{LASTCOL};
+        my $numcolumns  = $lastcolumn - $firstcolumn + 1;
+
+        my $place4 = $self->place4($firstcolumn);
+        my $place8 = $self->place8($firstcolumn);
+
+        my $has_double = 0;
+
+        my ( @single_list, @double_list );
+
+      TRIP:
+        foreach my $trip ( $self->trips ) {
+
+            my @alltimes = $trip->placetimes();
+
+            my @thesetimes = sort { $a <=> $b }
+              grep { defined($_) } @alltimes[ $firstcolumn .. $lastcolumn ];
+
+            # so @thesetimes contains all the nonblank times
+            # for this timepoint
+
+            if ( not scalar @thesetimes ) {
+
+                # no valid times
+                push @single_list, undef;
+                push @double_list, [ undef, undef ];
+                next TRIP;
+            }
+
+            if ( scalar @thesetimes != 1 ) {
+
+                @thesetimes
+                  = @thesetimes[ 0, -1 ];    ## no critic 'ProhibitMagicNumbers'
+                     # first and last only -- discard any middle times.
+                     # Unlikely to actually happen
+
+                if ( $thesetimes[0] == $thesetimes[1] ) {
+                    @thesetimes = ( $thesetimes[0] );
+
+                    # if they're the same, just keep one.
+                }
+
+            }
+
+            # now @thesetimes contains one time
+            # or two times that are different.
+
+            if ( scalar @thesetimes == 2 ) {
+                push @single_list, $thesetimes[1];
+                push @double_list, [@thesetimes];
+                $has_double = 1;
+                next TRIP;
+            }
+
+            push @single_list, $thesetimes[0];
+
+            # if this isn't the last column, and there are any times
+            # defined later...
+            if ( $#alltimes > $lastcolumn
+                and any { defined($_) }
+                @alltimes[ $lastcolumn + 1 .. $#alltimes ] )
+            {
+
+                # Then set the single time to be the departure time
+                @thesetimes = ( undef, $thesetimes[0] );
+            }
+            else {
+
+                # otherwise set it to be the arrival time
+                @thesetimes = ( $thesetimes[0], undef );
+            }
+
+            push @double_list, [@thesetimes];
+
+        }    ## <perltidy> end foreach my $trip ( $page->trips)
+
+        if ($has_double) {
+            $self->splice_place4s( $firstcolumn, $numcolumns, $place4,
+                $place4 );
+            $self->splice_place8s( $firstcolumn, $numcolumns, $place8,
+                $place8 );
+            foreach my $trip ( $self->trips ) {
+                my $thesetimes_r = shift @double_list;
+                my @thesetimes   = @{$thesetimes_r};
+                next if $trip->placetime_count < $firstcolumn;
+                $trip->splice_placetimes( $firstcolumn, $numcolumns,
+                    @thesetimes );
+            }
+        }
+        else {
+            $self->splice_place4s( $firstcolumn, $numcolumns, $place4 );
+            $self->splice_place8s( $firstcolumn, $numcolumns, $place8 );
+            foreach my $trip ( $self->trips ) {
+                my $thistime = shift @single_list;
+                next if $trip->placetime_count < $firstcolumn;
+                # otherwise will splice off the end...
+                $trip->splice_placetimes( $firstcolumn, $numcolumns, $thistime );
+            }
+        }
+
+    }    ## <perltidy> end foreach my $run ( reverse @runs)
+
+    return;
+
+}    ## <perltidy> end sub shrink_duplicate_timepoint_runs
+
+#### OUTPUT METHODS
+
+sub tidydump {
+    # cool, but very slow
+    my $self   = shift;
+    my $dumped = $self->dump;
+
+    require Perl::Tidy;
+    my $tidy;
+    Perl::Tidy::perltidy(
+        source      => \$dumped,
+        destination => \$tidy,
+        argv        => '',
+    );
+    return $tidy;
+
 }
 
 sub dump {
     my $self = shift;
     require Data::Dump;
     my $dumped = Data::Dump::dump($self);
-
-    #require Perl::Tidy;
-    #my $tidy;
-    #Perl::Tidy::perltidy(
-    #    source      => \$dumped,
-    #    destination => \$tidy,
-    #    argv        => '',
-    #);
-    #return $tidy;
-    # the perltidy thing is cool but very slow
 
     return $dumped;
 
@@ -566,10 +720,10 @@ sub spaced {
 
     foreach my $trip (@trips) {
         push @place_records,
-          [ (map { $trip->$_ } @fields) , $timesub->( $trip->placetimes ) ];
+          [ ( map { $trip->$_ } @fields ), $timesub->( $trip->placetimes ) ];
     }
 
-    say $out jn( @{ tabulate_arrayrefs(@place_records) } ) , "\n";
+    say $out jn( @{ tabulate_arrayrefs(@place_records) } ), "\n";
     # extra \n for a blank line to separate places and stops
 
     my @stop_records;
