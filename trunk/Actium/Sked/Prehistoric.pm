@@ -84,6 +84,8 @@ sub prehistoric_skedsfile {
 
     foreach my $trip ( $self->trips ) {
         my $times = $timesub->( $trip->placetimes );
+        
+        $times =~ s/\s+\z//;
 
         say $out jt( $trip->daysexceptions, $EMPTY_STR, $EMPTY_STR,
             $trip->line, $times );

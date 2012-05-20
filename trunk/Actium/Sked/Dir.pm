@@ -6,10 +6,10 @@
 
 # legacy stage 4
 
-use 5.012;
+use 5.014;
 use warnings;
 
-package Actium::Sked::Dir 0.001;
+package Actium::Sked::Dir 0.002;
 
 use Moose;
 use MooseX::StrictConstructor;
