@@ -168,6 +168,12 @@ foreach my $route (sortbyline keys %skednamesbyroute) {
        elsif ($dir eq 'CW') {
           $destination = "Clockwise to $destination,";
        }
+       elsif ($dir eq 'A') {
+          $destination = "A Loop to $destination,";
+       }
+       elsif ($dir eq 'B') {
+          $destination = "B Loop to $destination,";
+       }
        else {
           $destination = "To $destination,";
        }
