@@ -46,6 +46,7 @@ Readonly my %DIR_OF_HASI => {
       8 CW    9 CC
       10 1    11 2
       12 UP   13 DN
+      14 A    15 B
       )
 };
 

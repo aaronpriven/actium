@@ -28,8 +28,8 @@ has sked_obj => (
     handles  => {
         linegroup        => 'linegroup',
         has_note_col     => 'has_multiple_daysexceptions',
-        has_route_col    => 'has_multiple_routes',
-        header_routes    => 'routes',
+        has_route_col    => 'has_multiple_lines',
+        header_routes    => 'lines',
         sortable_id      => 'sortable_id',
         earliest_timenum => 'earliest_timenum',
         days_obj         => 'days_obj',
@@ -120,7 +120,7 @@ sub new_from_sked {
 
     # ASCERTAIN COLUMNS
 
-    my $has_multiple_routes         = $sked->has_multiple_routes;
+    my $has_multiple_lines         = $sked->has_multiple_lines;
     my $has_multiple_daysexceptions = $sked->has_multiple_daysexceptions;
 
     # TODO allow for other timepoint notes
@@ -128,7 +128,7 @@ sub new_from_sked {
     my @place9s = $sked->place9s;
 
     my $halfcols = 0;
-    $halfcols++ if $has_multiple_routes;
+    $halfcols++ if $has_multiple_lines;
 
     my @note_definitions;
 
@@ -168,7 +168,7 @@ sub new_from_sked {
     my %timepoint_row_of  = %{ $timepoint_structs[2] };    # Abbrev9
     my @header_columntexts;
 
-    push @header_columntexts, 'Line' if $has_multiple_routes;
+    push @header_columntexts, 'Line' if $has_multiple_lines;
     push @header_columntexts, 'Note' if $has_multiple_daysexceptions;
 
     # TODO - allow for place4 or at least place8 instead of place9
@@ -203,8 +203,8 @@ sub new_from_sked {
 
     foreach my $trip ( $sked->trips ) {
         my @row;
-        if ($has_multiple_routes) {
-            push @row, $trip->routenum;
+        if ($has_multiple_lines) {
+            push @row, $trip->line;
         }
 
         if ($has_multiple_daysexceptions) {

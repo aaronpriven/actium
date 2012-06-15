@@ -38,6 +38,14 @@ has 'note600' => (
     handles => { set_note600 => 'set', },
 );
 
+has 'has_ab' => (
+    traits  => ['Bool'],
+    is      => 'ro',
+    isa     => 'Bool',
+    default => '0',
+    handles => { set_has_ab => 'set', },
+);
+
 has 'column_r' => (
     traits  => ['Array'],
     is      => 'rw',
@@ -91,7 +99,7 @@ has 'width' => (
     default => 0,
 );
 
-has 'is_bsh' => (
+has [qw<is_bsh is_db>] => (
     isa     => 'Bool',
     is      => 'rw',
     default => 0,
@@ -104,13 +112,14 @@ sub add_to_width {
 }
 
 sub new_from_kpoints {
-    my ( $class, $stopid, $signid, $effdate, $bsh ) = @_;
+    my ( $class, $stopid, $signid, $effdate, $special_type ) = @_;
 
     my $self = $class->new(
         stopid  => $stopid,
         signid  => $signid,
         effdate => $effdate,
-        is_bsh  => ( $bsh eq 'bsh' ),
+        is_bsh  => ( $special_type eq 'bsh' ),
+        is_db  => ( $special_type eq 'db' ),
     );
 
     my $citycode = substr( $stopid, 0, 2 );
@@ -126,18 +135,30 @@ sub new_from_kpoints {
 
         my $linegroup = $column->linegroup;
 
-        if ( $bsh eq 'bsh' ) {
+        if ( $special_type eq 'bsh' ) {
             if ( $linegroup =~ /^BS[DNH]$/ ) {
                 $self->push_columns($column);
             }
             next;
         }
 
+        if ( $special_type eq 'db' ) {
+            if ( $linegroup =~ /^DB/ ) {
+                $self->push_columns($column);
+            }
+            next;
+        }
+        
         if ( $linegroup !~ /^6\d\d/ ) {
             $self->push_columns($column);
         }    # skip 600-series lines
         else {
             $self->set_note600;
+        }
+        
+        my $dircode = $column->dircode;
+        if ($dircode eq '14' or $dircode eq '15') {
+            $self->set_has_ab;
         }
 
     } ## tidy end: while (<$kpoint>)
@@ -431,7 +452,7 @@ sub format_side {
     my $color;
     if ( $effdate =~ /Dec|Jan|Feb/ ) {
         if ($is_bsh) {
-            $color = "BSD";
+            $color = "BSH";
         }
         else {
             $color = "H101-Purple";    # if it looks crummy change it to H3-Blue
@@ -450,7 +471,7 @@ sub format_side {
     }
     else {    # Aug, Sept, Oct, Nov
         if ($is_bsh) {
-            $color = "BSD";
+            $color = "Black";
         }
         else {
             $color = "Rapid Red";
@@ -467,6 +488,15 @@ sub format_side {
     print $sidefh "\r",                IDTags::parastyle('sidenotes');
     print $sidefh 'Light Face = a.m.', IDTags::softreturn;
     print $sidefh IDTags::bold('Bold Face = p.m.'), "\r";
+    
+    if ($self->has_ab) {
+     print $sidefh  
+     'Lines that have <0x201C>A Loop<0x201D> and <0x201C>B Loop<0x201D> travel in a circle, beginning '
+     , 'and ending at the same point. The A Loop operates in the clockwise '
+     , 'direction. The B Loop operates in the counterclockwise direction. '
+     , 'Look for <0x201C>A<0x201D> or <0x201C>B<0x201D> at the right end of the headsign on the bus. '
+     , "\r";
+    }
 
     my $sidenote = $Actium::Cmd::MakePoints::signs{$signid}{Sidenote};
 
@@ -509,12 +539,13 @@ sub format_side {
 
     ### new stop ID
 
+    if (not $self->is_bsh) {
     print $sidefh IDTags::parastyle('depttimeside'), 'Call ',
       IDTags::bold('511'), ' and say ', IDTags::bold('"Departure Times"'),
       " for live bus predictions\r", IDTags::parastyle('stopid'),
       "STOP ID\r", IDTags::parastyle('stopidnumber'),
       $self->stopid();
-
+    }
     ###
 
     close $sidefh;
