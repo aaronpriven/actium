@@ -212,12 +212,6 @@ sub format_header {
 
 }
 
-my %longname_of = (
-    BSH => 'Broadway Shuttle',
-    BSD => 'DAY',
-    BSN => 'NIGHT',
-);
-
 sub format_head_lines {
 
     my $self = shift;
@@ -268,7 +262,16 @@ sub format_head_lines {
             no warnings 'once';
             if ( $line =~ /BS[DNH]/ ) {
                 $color = $line;
-                $line = $longname_of{$line};
+                
+                if ($line eq 'BSN') {
+                   my $days = $self->days;
+                   $line = 'FRI NIGHT' if $days eq '5';
+                   $line = 'SAT NIGHT' if $days eq '6';
+                }
+                elsif ($line eq 'BSD') {
+                   $line = 'WEEKDAY';
+                }
+                
                 $pstyle = 'dropcapheadbsh';
             }
             else {
@@ -348,6 +351,11 @@ sub format_headdays {
         my $last = pop @days;
         $days = join( q{, }, @days ) . " & $last";
     }
+    
+    my $dircode = $self->dircode;
+    if ($dircode eq '14' or $dircode eq '15') {
+        $days .= ". ";
+    }
 
     $self->append_to_formatted_header( IDTags::bold( ucfirst($days) ) );
 
@@ -385,6 +393,10 @@ sub format_headdest {
     }
     elsif ( $dir eq '9' ) {
         $dest .= ' (Counterclockwise loop)';
+    } elsif ($dir eq '14') {
+        $dest = "<0x201C>A Loop<0x201D> $dest";
+    } elsif ($dir eq '15') {
+        $dest = "<0x201C>B Loop<0x201D> $dest";
     }
 
     $dest =~ s{\.*\z}{\.}sx;    # put exactly one period at the end

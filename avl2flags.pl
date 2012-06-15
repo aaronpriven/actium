@@ -83,7 +83,7 @@ foreach my $key (keys %pat) {
    my $routedir = "$route-$dir";
 
    my $routecdir;
-   if ($dir eq "CW" or $dir eq 'CC') {
+   if ($dir eq "CW" or $dir eq 'CC' or $dir eq 'A' or $dir eq 'B') {
       $routecdir = $routedir;
    }
    else {

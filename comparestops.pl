@@ -41,12 +41,14 @@ EOF
 
 my $intro = 'comparestops -- compare old and new stops from AVL data';
 
-use Actium::Options (qw<add_option option>);
+use Actium::Options (qw<add_option option init_options>);
 
 add_option('oldsignup=s'
    , 'The older signup. The program compares data from the this signup to the one'
    . 'specified by the "signup" option.'
    );
+
+init_options;
 
 use Actium::Folders::Signup;
 my $signup = Actium::Folders::Signup->new();
@@ -71,6 +73,13 @@ my %oldstoplists = assemble_stoplists(qw(BSH 399));
 my @stopids = uniq( sort ( keys %newstoplists, keys %oldstoplists ) );
 
 my %changes;
+
+foreach my $type (qw<ADDED REMOVED UNCHANGED>) {
+    $changes{$type} = {};
+}
+foreach my $type (qw<ADDEDSTOPS DELETEDSTOPS>) {
+    $changes{$type} = [];
+}
 
 STOPID:
 foreach my $stopid (@stopids) {
