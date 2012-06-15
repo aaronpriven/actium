@@ -8,6 +8,8 @@
 
 # Makes tab-delimited but public versions of the skeds in /skeds
 
+use 5.014;
+
 @ARGV = qw(-s w07) if $ENV{RUNNING_UNDER_AFFRUS};
 
 use strict;
@@ -27,6 +29,7 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
+use Storable;
 
 use Actium::Sorting::Line ('sortbyline');
 use Skedfile qw(Skedread Skedwrite GETFILES_PUBLIC
@@ -35,6 +38,7 @@ use Skedfile qw(Skedread Skedwrite GETFILES_PUBLIC
 use Skedvars qw(%longerdaynames %longdaynames %longdirnames
                  %dayhash        %dirhash      %daydirhash
                  %adjectivedaynames %bound %specdaynames
+                 %onechar_directions
                 );
  
 my @specdaynames;
@@ -54,9 +58,9 @@ use Actium::Folders::Signup;
 init_options;
 
 
-my $signupdir = Actium::Folders::Signup->new();
-chdir $signupdir->path();
-my $signup = $signupdir->signup;
+my $signupfolder = Actium::Folders::Signup->new();
+chdir $signupfolder->path();
+my $signup = $signupfolder->signup;
 
 use Actium::Constants;
 
@@ -136,6 +140,27 @@ print "\n";
 
 # write files
 
+#### STUPIDITY TO DEAL WITH WRONG CODE ON THE PHP SIDE
+#
+my %destination_code_of;
+my $highest_destcode;
+
+my $basefolder = $signupfolder->base_obj;
+
+my $commonfolder = $basefolder->subfolder('common');
+
+my $destcode_file = 'destcodes.storable';
+
+if (-e $commonfolder->make_filespec($destcode_file)) {
+   %destination_code_of = %{$commonfolder->retrieve($destcode_file)};
+   $highest_destcode = (reverse sort values %destination_code_of)[0];
+} else {
+ say 'No destination code file found.'
+ }
+ 
+
+# write files
+
 foreach my $route (sortbyline keys %skednamesbyroute) {
 
    next if $second{$route};
@@ -177,11 +202,29 @@ foreach my $route (sortbyline keys %skednamesbyroute) {
        else {
           $destination = "To $destination,";
        }
-
-
+       
+       # they want a different direction code for each destination. Sigh.
+       
+       if (not exists $destination_code_of{$destination} ) {
+          if ($highest_destcode) {
+             $highest_destcode++;
+          } else { 
+           $highest_destcode = 'A';
+          }
+          $destination_code_of{$destination} = $highest_destcode;
+       }
+       
        #outtab($dir, $longdirnames{$dir},$skedadds{$skedname}{"DirectionText"});
-       outtab ($dir, $longdirnames{$dir} , $destination);
-
+       
+       outtab ($onechar_directions{$dir} . $destination_code_of{$destination}
+       , $bound{$dir} , $destination);
+       
+       #my $code_destination = uc($destination);
+       #$code_destination =~ s/[^A-Z0-9]//g;
+       
+       #$code_destination = scalar reverse $code_destination;
+       #outtab ($code_destination, $bound{$dir} , $destination);
+       
        # LINEGROUP FIELDS
 
        outtab ("U" , $linegroup , $lines{$linegroup}{LineGroupWebNote} , $lines{$linegroup}{LineGroupType} , 
@@ -311,6 +354,8 @@ foreach my $route (sortbyline keys %skednamesbyroute) {
 }
 
 print "\n";
+
+$commonfolder->store(\%destination_code_of , $destcode_file);
 
 sub outtab { 
    my @fields = @_;

@@ -58,7 +58,11 @@ Readonly my %ICON_OF => (
     'VTA Light Rail' => 'V',
     Clockwise        => 'W',
     Counterclockwise => 'X',
+    'A Loop' => 'Y',
+    'B Loop' => 'Z' ,
+    # A and B were taken for Amtrak and BART
 );
+
 
 Readonly my %SIDE_OF => (
     ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
@@ -400,6 +404,7 @@ sub cull_placepats {
 
         # delete subset place patterns, if possible
         my $threshold = $num_trips_of_routedir{$routedir} / $CULL_THRESHOLD;
+        
         my @placelists = sort { length $b <=> length $a }
           keys %{ $num_trips_of_pat{$routedir} };
 
@@ -408,14 +413,16 @@ sub cull_placepats {
         while (@placelists) {
             foreach my $idx ( 0 .. $#placelists ) {
                 my $thislist = $placelists[$idx];
-
+                
                 if ($longest =~ /$thislist$/sx
-                    or ( index( $longest, $thislist ) != -1
-                        and $num_trips_of_pat{$routedir}{$thislist}
+                    or ( index( $longest, $thislist ) != -1 and
+                        $num_trips_of_pat{$routedir}{$thislist}
                         < $threshold )
+                # it culls from the threshold only if it's a short turn,
+                # not a branch. Hmm.
                   )
                 {
-             #say keyreadable("DELETING: [[$routedir\n$thislist\n$longest\n]]");
+                 
                     delete_placelist_from_lists( $routedir, $thislist,
                         $longest );
                     undef $placelists[$idx];
@@ -978,6 +985,8 @@ sub relevant_places {
         $destination = (
               $dir eq '8' ? 'Clockwise to '
             : $dir eq '9' ? 'Counterclockwise to '
+            : $dir eq '14' ? 'A Loop to '
+            : $dir eq '15' ? 'B Loop to '
             : 'To '
         ) . $destination;
 
@@ -1132,6 +1141,12 @@ sub make_decal_spec {
         }
         when ('9') {
             $icons .= $ICON_OF{Counterclockwise};
+        }
+        when ('14') {
+            $icons .= $ICON_OF{'A Loop'};
+        }
+        when ('15') {
+            $icons .= $ICON_OF{'A Loop'};
         }
     }
 

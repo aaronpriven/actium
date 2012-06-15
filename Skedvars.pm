@@ -22,7 +22,7 @@ use Exporter;
 @EXPORT_OK = qw(%longerdaynames %longdaynames %longdirnames
                 %dayhash        %dirhash      %daydirhash
                 %adjectivedaynames %bound %specdaynames
-                %shortdaynames
+                %shortdaynames %onechar_directions
                );
 
    our %specdaynames =
@@ -41,7 +41,22 @@ use Exporter;
           NB => 'Northbound' ,
           CW => 'Clockwise' ,
           CC => 'Counterclockwise' ,
+          A => 'A Loop',
+          B => 'B Loop',
         );
+
+   our %onechar_directions = 
+          qw( 
+          EB  E
+          SB  S
+          WB  W
+          NB  N
+          CW  8
+          CC  9
+          A   A
+          B   B
+          );
+ 
 
    our %adjectivedaynames = 
         ( WD => "Weekday" ,
@@ -84,8 +99,12 @@ use Exporter;
           W => "west" ,
           SW => "southwest" ,
           SE => "southeast" ,
-          'NE' => "northeast" ,
+          NE => "northeast" ,
           NW => "northwest" ,
+          CC => 'counterclockwise',
+          CW => 'clockwise',
+          A => 'A loop',
+          B => 'B loop',
         );
 
    our %dayhash = 

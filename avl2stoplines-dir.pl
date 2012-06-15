@@ -58,6 +58,8 @@ init_options;
 my $signup = Actium::Folders::Signup->new();
 chdir $signup->path();
 
+my $stopdata = $signup->mergeread('Stops.csv');
+
 # retrieve data
 
 my %pat;
@@ -87,7 +89,7 @@ my %code_of = (
     r6cdir => \&r6cdir,
 );
 
-my @opp = qw( EB WB NB SB CC CW);
+my @opp = qw( EB WB NB SB CC CW A B);
 my %opposite_of = ( @opp, reverse @opp );
 
 my @code_order = qw/route rdir rcdir r6dir r6cdir/;
@@ -159,6 +161,8 @@ my (%with_routes);
 
 my $max = 0;
 
+my $desc_col = $stopdata->column_order_of('DescriptionCityF');
+
 my %stoplines;
 
 foreach my $stop ( sort keys %{ $disp_route_of{'r6dir'} } ) {
@@ -196,7 +200,14 @@ foreach my $stop ( sort keys %{ $disp_route_of{'r6dir'} } ) {
     #print $stoplines "$stop\t$desc\t$district\t", join( " ", @routes );
 
     #push @{$stoplines{$stop}} , $stop, $desc, $district , join( " ", @routes );
-    $stoplines{$stop}{DESC} = $desc;
+#    $stoplines{$stop}{DESC} = $desc;
+
+    my @stopsrows =  $stopdata->rows_where('PhoneID' , $stop);
+
+
+
+    $stoplines{$stop}{DESC} = $stopsrows[0][$desc_col];
+
     $stoplines{$stop}{DISTRICT} = $district;
     $stoplines{$stop}{ROUTES} = join( " ", @routes );
 

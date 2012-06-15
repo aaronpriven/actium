@@ -199,7 +199,7 @@ sub _make_trip_objs {
         my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
 
         foreach my $lineid (@lineids) {
-
+         
             foreach my $trip_r ( @{ $trips_of_lineid_r->{$lineid} } ) {
 
                 my $unified_trip_r = [ @{$trip_r} ];

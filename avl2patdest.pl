@@ -119,6 +119,12 @@ foreach my $key ( keys %pat ) {
        when (9) {
           $dest = "Counterclockwise to $dest";
        }
+       when (14) {
+          $dest = "A Loop to $dest";
+       }
+       when (15) {
+          $dest = "B Loop to $dest";
+       }
        default {
           $dest = "To $dest";
        }

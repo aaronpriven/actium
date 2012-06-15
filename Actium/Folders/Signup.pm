@@ -13,24 +13,26 @@ package Actium::Folders::Signup 0.001;
 use Actium::Options qw(add_option option is_an_option);
 use Carp;
 use File::Spec;
-use Readonly;
+use Const::Fast;
 use FindBin;
 
 use Moose;
 use MooseX::StrictConstructor;
 
-extends 'Actium::Folder';
+const my $base_class => 'Actium::Folder';
 
-Readonly my $BASE_ENV   => 'ACTIUM_BASE';
-Readonly my $SIGNUP_ENV => 'ACTIUM_SIGNUP';
-Readonly my $CACHE_ENV  => 'ACTIUM_CACHE';
+extends $base_class;
 
-Readonly my $LAST_RESORT_BASE =>
+const my $BASE_ENV   => 'ACTIUM_BASE';
+const my $SIGNUP_ENV => 'ACTIUM_SIGNUP';
+const my $CACHE_ENV  => 'ACTIUM_CACHE';
+
+const my $LAST_RESORT_BASE =>
   File::Spec->catdir( $FindBin::Bin, File::Spec->updir(), 'signups' );
-Readonly my $DEFAULT_HSA_FILENAME => 'hsa.storable';
+const my $DEFAULT_HSA_FILENAME => 'hsa.storable';
 
-Readonly my $DEFAULT_BASE   => ( $ENV{$BASE_ENV}   // $LAST_RESORT_BASE );
-Readonly my $DEFAULT_SIGNUP => ( $ENV{$SIGNUP_ENV} // 'none' );
+const my $DEFAULT_BASE   => ( $ENV{$BASE_ENV}   // $LAST_RESORT_BASE );
+const my $DEFAULT_SIGNUP => ( $ENV{$SIGNUP_ENV} // 'none' );
 
 add_option( 'base=s',
     'Base folder (normally [something]/Actium/signups); current default is "'
@@ -176,7 +178,7 @@ override 'original_parameters' => sub {
 
 };
 
-override subfolderlist_reader => sub {'_subfolderlist_r'};
+override subfolderlist_reader   => sub {'_subfolderlist_r'};
 override subfolderlist_init_arg => sub {'subfolders'};
 
 override display_path => sub {
@@ -198,6 +200,17 @@ sub signup_obj {
         {   base   => $self->base,
             signup => $self->signup,
             cache  => $self->cache,
+            volume => $self->volume,
+        }
+    );
+
+}
+
+sub base_obj {
+    my $self = shift;
+
+    return $base_class->new(
+        {   folderlist   => $self->base,
             volume => $self->volume,
         }
     );
@@ -477,6 +490,13 @@ Identical to their Actium::Folder counterparts, except that if present, the
 Actium::Folders::Signup cache folder
 (specified on the command line, or in the cache argument to 
 Actium::Folders::Signup->new ) is used instead of the SQLite default.
+
+=item B<$obj-E<gt>base_obj()>
+
+Returns an object representing the base folder of this object. Since the base
+folder is, by definition, not a signup folder, this is not an 
+Actium::Folders::Signup object, but instead an L<Actium::Folder|Actium::Folder>  
+object.
 
 =item B<$obj-E<gt>signup_obj()>
 

@@ -642,6 +642,8 @@ sub output_points {
    my $pointtext = "";
 
    my $columncount = 0;
+   
+   my $has_ab;
 
    foreach my $point (@points) {
 
@@ -700,16 +702,29 @@ sub output_points {
   
       # end of numbers
       # beginning of days & destinations
+      
+      my $headdays = $point->{HEADDAYS};
+      if ($point->{DIR} eq 'A' or $point->{DIR} eq 'B') {
+         $headdays .= '.' ;
+         $has_ab = 1;
+      }
 
-      $pointtext .= IDTags::bold($point->{HEADDAYS});
+      $pointtext .= IDTags::bold($headdays);
 
       unless ($point-{'NO'} eq "l") { # unless it's a "last stop" note,
 
          # add destination
          if ($point->{DestinationNote} ) {
-           $pointtext .= " to " .  $point->{HEADDEST} . " " . notrailingperiod ($point->{DestinationNote}) . ".";
+           $pointtext .= " to " .  $point->{HEADDEST} . " " 
+               . notrailingperiod ($point->{DestinationNote}) . ".";
          } elsif ($point->{DIR} eq "CW") {
             $pointtext .= " to " .  $point->{HEADDEST} . " (Clockwise loop).";
+         } elsif ($point->{DIR} eq "A") {
+            $pointtext .= " <0x201C>A Loop<0x201D> to " 
+               .  notrailingperiod($point->{HEADDEST}) . ".";
+         } elsif ($point->{DIR} eq "B") {
+            $pointtext .= " <0x201C>B Loop<0x201D> to " 
+               .  notrailingperiod($point->{HEADDEST}) . ".";
          } elsif ($point->{DIR} eq "CC") {
             $pointtext .= " to " .  $point->{HEADDEST} . " (Counterclockwise loop).";
          } else {
@@ -1142,6 +1157,18 @@ sub output_points {
 
     print OUT IDTags::color ("Rapid Red" , "Times shown in red are only approximations. Buses may come somewhat earlier or later than the time shown.\r") 
           if $addminsflag;
+          
+          
+   if ($has_ab) {
+    
+   print OUT  
+       'Lines that have <0x201C>A Loop<0x201D> and <0x201C>B Loop<0x201D> travel in a circle, beginning '
+     , 'and ending at the same point. The A Loop operates in the clockwise '
+     , 'direction. The B Loop operates in the counterclockwise direction. '
+     , 'Look for <0x201C>A<0x201D> or <0x201C>B<0x201D> at the right end of the headsign on the bus. '
+     , "\r"; 
+    
+   }
 
 =comment
 # Old put-the-default-timepoint-above-the-notes bit
@@ -1209,11 +1236,15 @@ sub output_points {
 
     print OUT "See something wrong with this sign, or any other AC Transit sign? Let us know! Send email to signs\@actransit.org or call 511 to comment. Thanks!\r" if lc($signtypes{$signs{$signid}{SignType}}{GenerateWrongText}) eq "yes";
     
+    
+    
     print OUT IDTags::parastyle('depttimeside'), 'Call ',
       IDTags::bold('511'), ' and say ', IDTags::bold('"Departure Times"'),
-      " for live bus predictions\r", IDTags::parastyle('stopid'),
-      "STOP ID\r", IDTags::parastyle('stopidnumber'),
-      $phoneid;
+      " for live bus predictions\r", ;
+      
+    # print OUT IDTags::parastyle('stopid'),
+    #"STOP ID\r", IDTags::parastyle('stopidnumber'),
+    #$phoneid;
 
     print OUT IDTags::boxbreak , IDTags::parastyle('bottomnotes');
     print OUT signdescription($signid) , ". ";

@@ -248,6 +248,7 @@ sub _get_patterns {
         return unless $value_of_r->{tpat_in_serv};
         return unless $value_of_r->{tpat_trips_match};
         # skip if this trip isn't in service, or if it has no active trips
+        # tpat_trips_match is unreliable!!!
 
         my $tpat_line = $value_of_r->{tpat_route};
         my $tpat_id   = $value_of_r->{tpat_id};
@@ -333,6 +334,12 @@ sub _get_patterns {
 
         my %stop_set_of_lineid;
         foreach my $lineid (@lineids) {
+         
+            next unless $patterns{$lineid}[P_STOPS];
+            
+            # skip making the pattern if there aren't any stops for that 
+            # pattern
+            
             my @stop_set;
             foreach my $stop ( @{ $patterns{$lineid}[P_STOPS] } ) {
                 push @stop_set, join( ':', @{$stop} );
