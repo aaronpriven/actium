@@ -38,8 +38,8 @@ BEGIN {
 
         LINES_TO_COMBINE => {
             '72M' => '72',
-            'DB1' => 'DB',
-            'DB3' => 'DB',
+#            'DB1' => 'DB',
+#            'DB3' => 'DB',
             '386' => '86',
             'NC'  => 'NX4',
             'NXC' => 'NX4',

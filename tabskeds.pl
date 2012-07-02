@@ -64,9 +64,11 @@ my $signup = $signupfolder->signup;
 
 use Actium::Constants;
 
-our %second = ( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
-                386  => '86' , DB3 => 'DB' , DB1 => 'DB' ,
-               ); # , '51S' => '51' );
+our %second = %LINES_TO_COMBINE;
+
+#( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
+              #  386  => '86' , LC => 'L' , NXC => 'NX4' ,
+              # ); # , '51S' => '51' );
 
 
 our %first = reverse %second; # create a reverse hash, with values of %second as keys and 
