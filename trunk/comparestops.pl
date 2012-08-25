@@ -35,7 +35,7 @@ $| = 1;
 }
 
 my $helptext = <<'EOF';
-avl2stoplists reads the data written by readavl.
+comparestops reads the data written by readavl.
 It then assembles a list of stops and the routes that stop at each one.
 Finally, it displays a list of new, deleted, and changed stops.
 EOF
