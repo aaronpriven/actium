@@ -5,7 +5,7 @@ use warnings;
 
 # Takes old assignments.txt and adds new stops from stoplines-dir to it
 
-@ARGV = qw(-s su12 -b /Volumes/Bireme/Actium/db -c /tmp/c);
+@ARGV = qw(-s f12 -b /Volumes/Bireme/Actium/db -c /tmp/c);
 
 use FindBin('$Bin');
 use lib ($Bin );
@@ -19,7 +19,7 @@ init_options;
 my $signup = Actium::Folders::Signup->new();
 
 
-#$/ = "\r";
+$/ = "\r";
 
 my $flagfolder = $signup->subfolder('flags');
 
@@ -36,9 +36,15 @@ my %assignment_of;
 
 while (<$old>) {
    chomp;
-   my ($stopid, $text) = split (/\t/ , $_);
+   my @fields = split (/\t/);
    
-   $old_assignment_of{$stopid} = $_;
+   my $stopid = shift @fields;
+   my @use_new = splice (@fields, 0, 5); 
+   # use new values for these fields, so throw these away
+   my $text = join("\t" , @fields);
+#   my ($stopid, $text) = split (/\t/ , $_);
+   
+   $old_assignment_of{$stopid} = $text;
  
 }
 
@@ -55,11 +61,26 @@ my $newheaders = <$new>;
 
 while (<$new>) {
    chomp;
-   my ($stopid, $text) = split (/\t/ , $_);
+   
+   my @fields = split(/\t/);
+   
+   $fields[6] = ''; # blank out "size" field
+   $fields[10] = 'New ' . $signup->signup;
+   
+   foreach (@fields) {
+      $_ = '' unless defined $_ ;
+   }
+   
+   my $stopid = $fields[0];
+   my $use_new = join("\t" , @fields[1..5] );
+   my $text = join("\t" , @fields[6 .. $#fields] );
+   
    if (exists $old_assignment_of{$stopid}) {
-      $assignment_of{$stopid} = $old_assignment_of{$stopid};
+      $assignment_of{$stopid} = 
+         "$stopid\t$use_new\t$old_assignment_of{$stopid}";
    } else {
-      $assignment_of{$stopid} = $_;
+      $assignment_of{$stopid} = 
+         "$stopid\t$use_new\t$text";
    }
  
 }

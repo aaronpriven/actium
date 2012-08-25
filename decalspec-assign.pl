@@ -8,7 +8,7 @@ use autodie;
 use FileCache;
 
 use Readonly;
-Readonly my $FLAGDIR => '/Volumes/Bireme/Actium/db/su12/flags';
+Readonly my $FLAGDIR => '/Volumes/Bireme/Actium/db/f12/flags';
 Readonly my $ASSIGNDIR => "$FLAGDIR/assignments";
 Readonly my $ASSIGNFILE => "$FLAGDIR/assignments.txt";
 Readonly my $STOPDECALFILE => "$FLAGDIR/stop-decals.txt";
@@ -20,11 +20,26 @@ open my $assignments , '<' , $ASSIGNFILE;
 
 my %output_of_source = ( qw(
 
-P-D-3  19.5x17-P
+F-F12-2  F-F12
+F-F12-3  F-F12
+F-F12-4  F-F12
+F-F12-5  F-F12
 
 ) );
 
+#R-G2-3   19.5x17-RG2
+#R-G2-4N  14x26-RG2
+#R-G2-5N  14x34-RG2
+
 #R-E-9 19.5x32.75-R
+
+
+#C-E-10 19.5x35.25-CE
+#C-E-10R 19.5x45.75-CE-R
+#C-E-4 19.5x19.5-CE
+#C-E-6 19.5x24.75-CE
+#C-E-6R 19.5x35.25-CE-R
+#C-E-7W 28x19.5-CE
 
 my %source_for;
 my %sourcenum_of;
