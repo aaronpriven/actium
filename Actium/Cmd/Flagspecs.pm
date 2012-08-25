@@ -1076,7 +1076,7 @@ sub output_specs {
       or die "Can't open $file for writing: $OS_ERROR";
     my $oldfh = select $out;
 
-    my $descripcolumn = $stopdata->column_order_of('DescriptionF');
+    my $descripcolumn = $stopdata->column_order_of('DescriptionCityF');
 
     foreach my $stop ( sort keys %routes_of_stop ) {
         my ($row) = $stopdata->rows_where( 'PhoneID', $stop );

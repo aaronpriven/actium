@@ -70,7 +70,7 @@ sub as_direction {
 sub as_sortable {
     my $self      = shift;
     my $dircode = $self->dircode;
-    return ('A' .. 'N')[$ORDER_OF{$dircode}];
+    return ('A' .. 'Z')[$ORDER_OF{$dircode}];
 }
 
 sub as_to_text {

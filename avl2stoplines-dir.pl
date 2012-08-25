@@ -101,6 +101,11 @@ my %known_black_flags = (
     54484 => 'Seminary @ Division 4',
     59055 => 'Seminary @ Division 4',
     56611 => 'MacArthur @ Coolidge, westbound',
+50269 => 'Jackson St. & Ohlone, Albany, NS',
+50239 => 'Chabot College',
+50238 => 'Chabot College',
+    
+    
 );
 
 my %alameda_shuttle_flags = (
@@ -347,23 +352,25 @@ foreach my $stop ( sort keys %{ $disp_route_of{'r6dir'} } ) {
 open my $stoplines, '>', 'stoplines-dir.txt' or die "$!";
 
 say $stoplines jt( "StopID\tDescription\tCityCode\tLines\tNumLines\tNumBoxes", 
-    'Size' , 'Priority');
+    'Priority');
 
 my %priority_sizecount;
 my %sizes;
 
-foreach my $stop (sort { 
-        (($stoplines{$a}{PRIORITY} eq '') - ($stoplines{$b}{PRIORITY} eq ''))
-        or
-        $stoplines{$b}{SIZE} <=> $stoplines{$a}{SIZE} or
-        $stoplines{$a}{PRIORITY} cmp $stoplines{$b}{PRIORITY} or
-        $stoplines{$b}{r6dir} <=> $stoplines{$a}{r6dir} or
-        $stoplines{$a}{DISTRICT} <=> $stoplines{$b}{DISTRICT} or
-        $stoplines{$a}{DESC} cmp $stoplines{$b}{DESC} 
-                 } keys %stoplines ) {
+#foreach my $stop (sort { 
+#        (($stoplines{$a}{PRIORITY} eq '') - ($stoplines{$b}{PRIORITY} eq ''))
+#        or
+#        $stoplines{$b}{SIZE} <=> $stoplines{$a}{SIZE} or
+#        $stoplines{$a}{PRIORITY} cmp $stoplines{$b}{PRIORITY} or
+#        $stoplines{$b}{r6dir} <=> $stoplines{$a}{r6dir} or
+#        $stoplines{$a}{DISTRICT} <=> $stoplines{$b}{DISTRICT} or
+#        $stoplines{$a}{DESC} cmp $stoplines{$b}{DESC} 
+#                 } keys %stoplines ) {
+ 
+ foreach my $stop (sort keys %stoplines) {
 
     my @row = ($stop);
-    foreach (qw/DESC DISTRICT ROUTES route r6dir SIZE PRIORITY/) {
+    foreach (qw/DESC DISTRICT ROUTES route r6dir PRIORITY/) {
        push @row, $stoplines{$stop}{$_};
     }
     say $stoplines jt(@row);
