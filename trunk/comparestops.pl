@@ -22,6 +22,7 @@ use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils('uniq');
 use Actium::DaysDirections (':ALL');
+use Algorithm::Diff('sdiff');
 
 # don't buffer terminal output
 $| = 1;
@@ -52,13 +53,14 @@ init_options;
 
 use Actium::Folders::Signup;
 my $signup = Actium::Folders::Signup->new();
-chdir $signup->path();
+chdir $signup->path;
 
 my $comparedir = $signup->subfolder('compare') ;
 
-my %newstoplists = assemble_stoplists(qw(BSH 399));
+my %newstoplists = assemble_stoplists($signup, qw(BSH 399));
 
 open my $out, '>', 'compare/comparestops.txt' or die "$!";
+
 # done here so as to make sure the file is saved in the *new*
 # signup directory
 
@@ -66,9 +68,8 @@ print $out
 "Change\tStopID\tStop Description\tNumAdded\tAdded\tNumRemoved\tRemoved\tNumUnchanged\tUnchanged\n";
 
 my $oldsignup = Actium::Folders::Signup->new({signup => option('oldsignup')});
-chdir $oldsignup->path();
 
-my %oldstoplists = assemble_stoplists(qw(BSH 399));
+my %oldstoplists = assemble_stoplists($oldsignup, qw(BSH 399));
 
 my @stopids = uniq( sort ( keys %newstoplists, keys %oldstoplists ) );
 
@@ -224,6 +225,8 @@ sub output_stops {
 
 sub assemble_stoplists {
 
+    my $signup = shift;
+    
     my %stoplist = ();
 
     my %skipped;

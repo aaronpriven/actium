@@ -30,7 +30,7 @@ my $signupdir = Actium::Folders::Signup->new();
 chdir $signupdir->path();
 my $signup = $signupdir->signup;
 
-my $current_version = '17';
+my $current_version = '20';
 
 use autodie;
 
