@@ -3,7 +3,8 @@
 
 # signslines
 #
-# This program lists the signs and what lines are associated with each one in Skedspec.pm
+# This program lists the signs and what lines are associated with each one in 
+# Skedspec table of Actium.fp7
 
 
 use strict;
