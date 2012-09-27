@@ -843,7 +843,7 @@ probably composing the Actium::Files::SQLite role.
 The named arguments are the same as those of the B<load_xml> and B<load_hasi> 
 methods, above.
 
-=item B<$obj-E<gt>write_files_with_method({I<named arguments>>)>
+=item B<$obj-E<gt>write_files_with_method({I<named arguments>})>
 
 This routine takes a list of objects passed to it, takes the result of
 an object method applied to each of those objects, and saves that result
