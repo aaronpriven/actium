@@ -18,6 +18,8 @@ use MooseX::StrictConstructor;
 use Actium::Time;
 use Actium::Constants;
 
+use HTML::Entities;
+
 my $timesub = Actium::Time::timestr_sub();
 # Uses default values. Someday it would be nice to make that configurable
 
@@ -31,11 +33,12 @@ has sked_obj => (
         has_route_col    => 'has_multiple_lines',
         header_routes    => 'lines',
         sortable_id      => 'sortable_id',
+        id => 'id',
         earliest_timenum => 'earliest_timenum',
         days_obj         => 'days_obj',
         dircode          => 'dircode',
         linedir          => 'linedir',
-        linedays    => 'linedays',
+        linedays         => 'linedays',
 
       }
 
@@ -120,7 +123,7 @@ sub new_from_sked {
 
     # ASCERTAIN COLUMNS
 
-    my $has_multiple_lines         = $sked->has_multiple_lines;
+    my $has_multiple_lines          = $sked->has_multiple_lines;
     my $has_multiple_daysexceptions = $sked->has_multiple_daysexceptions;
 
     # TODO allow for other timepoint notes
@@ -190,7 +193,7 @@ sub new_from_sked {
     $spec{header_columntext_r} = \@header_columntexts;
 
     $spec{header_dirtext}
-      = $sked->to_text 
+      = $sked->to_text
       . $SPACE
       . $timepoint_row_of{ $place9s[-1] }{DestinationF};
 
@@ -232,16 +235,16 @@ my $idt = 'Actium::Text::InDesignTags';
 sub as_indesign {
 
     my $self = shift;
-    
+
     my $minimum_columns  = shift || 0;
     my $minimum_halfcols = shift || 0;
-    
+
     my $columns  = $self->columns;
     my $halfcols = $self->half_columns;
-    
-    my ($trailing_columns , $trailing_halves)  =
-      _minimums ($columns, $halfcols, $minimum_columns, $minimum_halfcols);
-    
+
+    my ( $trailing_columns, $trailing_halves )
+      = _minimums( $columns, $halfcols, $minimum_columns, $minimum_halfcols );
+
     my $trailing = $trailing_columns + $trailing_halves;
     my @trailers = ($EMPTY_STR) x $trailing;
 
@@ -277,8 +280,8 @@ sub as_indesign {
     my $bullet
       = '<0x2009><CharStyle:SmallRoundBullet><0x2022><CharStyle:><0x2009>';
     my $routetext = join( $bullet, @routes );
-    
-    my $header_style = _get_header_style($routes[0]);
+
+    my $header_style = _get_header_style( $routes[0] );
 
     print $th '<RowStart:<tRowAttrHeight:43.128692626953125>>';
     print $th "<CellStyle:$header_style><StylePriority:2>";
@@ -300,7 +303,7 @@ sub as_indesign {
     ##############
     # Column Header Row (line, note, timepoints)
 
-    my $has_route_col = $self->has_route_col;
+    my $has_line_col = $self->has_route_col;
     my $has_note_col  = $self->has_note_col;
 
     my @header_columntexts = ( $self->header_columntexts, @trailers );
@@ -311,7 +314,7 @@ sub as_indesign {
     # The following is written this way so that in future, we can decide to
     # treat Note and Line with special graphic treatment (italics, color, etc.)
 
-    if ($has_route_col) {
+    if ($has_line_col) {
         my $header = shift @header_columntexts;
         print $th
 "<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:Timepoints>$header<CellEnd:>";
@@ -338,7 +341,7 @@ sub as_indesign {
 
         print $th '<RowStart:<tRowAttrHeight:10.5159912109375>>';
 
-        if ($has_route_col) {
+        if ($has_line_col) {
             my $route = shift @body_row;
 
             print $th
@@ -393,45 +396,160 @@ sub as_indesign {
 } ## tidy end: sub as_indesign
 
 sub _get_header_style {
- 
-   # TODO - this shouldn't be here, it should be specified in a database
-   # or something
- 
-   my $route = shift;
-   
-   return 'ColorHeader' if $route =~ /\A DB /;
-   
-   return 'GreyHeader' if $route =~ /\A 6\d\d \z/sx;
-   return 'TransbayHeader' if $route =~ /\A [A-Z] /sx or $route eq '800';
-   
-   return 'ColorHeader';
- 
+
+    # TODO - this shouldn't be here, it should be specified in a database
+    # or something
+
+    my $route = shift;
+
+    return 'ColorHeader' if $route =~ /\A DB /;
+
+    return 'GreyHeader' if $route =~ /\A 6\d\d \z/sx;
+    return 'TransbayHeader' if $route =~ /\A [A-Z] /sx or $route eq '800';
+
+    return 'ColorHeader';
+
 }
 
 sub _minimums {
- 
-    my ($columns, $halfcols, $minimum_columns, $minimum_halfcols) = @_;
-    
+
+    my ( $columns, $halfcols, $minimum_columns, $minimum_halfcols ) = @_;
+
     # adjust so it's a proper fraction (no more than one halfcol)
-    
+
     #$minimum_columns += int($minimum_halfcols/2);
     #$minimum_halfcols = $minimum_halfcols % 2;
-    
+
     #$columns += int($halfcols/2);
     #$halfcols = $halfcols % 2;
-    
-    my $length = $columns*2 + $halfcols;
-    my $minimum_length = $minimum_columns*2 + $minimum_halfcols;
-    
-    return (0, 0) unless $minimum_length > $length;
-    
+
+    my $length         = $columns * 2 + $halfcols;
+    my $minimum_length = $minimum_columns * 2 + $minimum_halfcols;
+
+    return ( 0, 0 ) unless $minimum_length > $length;
+
     my $length_to_add = $minimum_length - $length;
+
+    my $trailing_halves  = $length_to_add % 2;
+    my $trailing_columns = int( $length_to_add / 2 );
+
+    return ( $trailing_columns, $trailing_halves );
+
+} ## tidy end: sub _minimums
+
+sub as_html {
+    my $self = shift;
+
+    my $columns  = $self->columns;
+    my $halfcols = $self->half_columns;
     
-    my $trailing_halves = $length_to_add % 2;
-    my $trailing_columns = int($length_to_add/2);
+    my $all_columns = $columns + $halfcols;
     
-    return ($trailing_columns, $trailing_halves);
+    my $tabletext;
+    open my $th, '>', \$tabletext
+      or die "Can't open table scalar for writing: $!";
+      
+    print $th '<table class="sked"><thead>';
+      
+    ### ROUTE NUMBERS
+
+    print $th qq{<tr\n><th class="skedhead" colspan=$all_columns>};
+    print $th '<div class="skedheaddiv">';
+    print $th '<div class="skedroute">';
     
+    my @routes = map { encode_entities ($_) } $self->header_routes;
+    print $th join (' &bull; ' , @routes) ;
+    print $th '</div>';
+    
+    print $th '<div class="skeddest">';
+    
+    # ROUTE DESTINATION AND DIRECTION
+    
+    print $th encode_entities( $self->header_daytext);
+    print $th '<br />';
+    print $th encode_entities( $self->header_dirtext);
+    print $th "</div></th></tr></thead><tbody\n>";
+    
+    ##############
+    # Column Header Row (line, note, timepoints)
+
+    my $has_line_col = $self->has_route_col;
+    my $has_note_col  = $self->has_note_col;
+
+    my @header_columntexts = map {encode_entities $_} ( $self->header_columntexts);
+
+    print $th "<tr\n>";
+
+    # The following is written this way so that in future, we can decide to
+    # treat Note and Line with special graphic treatment (italics, color, etc.)
+
+    if ($has_line_col) {
+        my $header = shift @header_columntexts;
+        print $th qq{<th class="lineheader">$header</th>};
+    }
+
+    if ($has_note_col) {
+        my $header = shift @header_columntexts;
+        print $th qq{<th class="noteheader">$header</th>};
+    }
+
+    for my $headertext (@header_columntexts) {
+        print $th qq{<th class="timepointheader">$headertext</th>};
+    }
+
+    print $th "</tr\n>";
+
+    ##############
+    # Time Rows
+
+    for my $body_row_r ( $self->body_row_rs ) {
+        my @body_row = map {encode_entities($_) } @{$body_row_r};
+
+        print $th "<tr\n>";
+
+        if ($has_line_col) {
+            my $line = shift @body_row;
+
+            print $th qq{<td class="line">$line</td>};
+
+        }
+        if ($has_note_col) {
+            my $note = shift @body_row;
+            print $th qq{<td class="note">$note</td>};
+        }
+
+        for my $time (@body_row) {
+
+            if ( !$time ) {
+                $time      = '&mdash;';
+            }
+            
+            if ( $time =~ /p\z/ ) {
+                print $th "<td class='pmtime'>$time";
+            }
+            else {
+                print $th "<td class='amtime'>$time";
+            }
+            print $th '</td>';
+        }
+
+        print $th "</tr\n>";
+
+    } ## tidy end: for my $body_row_r ( $self...)
+
+    ###############
+    # Table End
+
+    print $th "</tbody></table>\n";
+
+    foreach my $note_definition ( $self->note_definitions ) {
+        print $th "<p>$note_definition</p>";
+    }
+
+    close $th;
+      
+    return $tabletext;
+
 }
 
 1;
