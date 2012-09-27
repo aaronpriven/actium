@@ -55,6 +55,7 @@ my %module_of = (
     mr_import       => 'MRImport',
     mr_copy         => 'MRCopy' ,
     mr_coffee       => 'Joke' ,
+    htmltables => 'HTMLTables',
     # more to come
 );
 

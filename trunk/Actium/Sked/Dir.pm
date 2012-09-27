@@ -37,7 +37,7 @@ Readonly my @DIRECTIONS => (
 
 Readonly my @BOUND => (
    qw(Northbound Southbound Westbound Eastbound Inbound Outbound), 
-   @DIRECTIONS[ 7 .. $#DIRCODES ],
+   @DIRECTIONS[ 6 .. $#DIRCODES ],
 );
 
 Readonly my %DIRECTION_OF => mesh (@DIRCODES, @DIRECTIONS);
