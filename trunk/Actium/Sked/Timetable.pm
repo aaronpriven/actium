@@ -18,6 +18,9 @@ use MooseX::StrictConstructor;
 use Actium::Time;
 use Actium::Constants;
 
+use Actium::Text::InDesignTags;
+my $idt = 'Actium::Text::InDesignTags';
+
 use HTML::Entities;
 
 my $timesub = Actium::Time::timestr_sub();
@@ -228,9 +231,7 @@ sub new_from_sked {
 
 } ## tidy end: sub new_from_sked
 
-use Actium::Text::InDesignTags;
 
-my $idt = 'Actium::Text::InDesignTags';
 
 sub as_indesign {
 
@@ -438,6 +439,7 @@ sub _minimums {
 } ## tidy end: sub _minimums
 
 sub as_html {
+ 
     my $self = shift;
 
     my $columns  = $self->columns;

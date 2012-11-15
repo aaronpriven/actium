@@ -90,7 +90,7 @@ BEGIN {
               )
         },
 
-        TRANSBAY_NOLOCALS   => [qw/FS L NX NX1 NX2 NX3 OX U W/],
+        TRANSBAY_NOLOCALS   => [qw/FS L NX NX1 NX2 NX3 U W/],
         LINES_TO_BE_SKIPPED => [399],
 
         SIDE_OF => {

@@ -310,9 +310,6 @@ sub _output_pubtt_front_matter {
     my $per_line_texts_r = _make_per_line_texts( $tables_r, \@lines );
 
     # COVER MATERIALS
-    if ($lines[0] eq '604') {
-       emit_prog ".";
-    }
     foreach my $front_text (@front_matter) {
 
         print $ttfh $IDT->hardreturn;
