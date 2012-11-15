@@ -1,8 +1,9 @@
 # /Actium/Files/Thea/Import.pm
 
 # Takes the THEA files and imports them so Actium can use them.
+# THEA is "Tab-Delimited Hastus Export for Actium"
 
-# Subversion: $Id:$
+# Subversion: $Id$
 
 # Legacy status: 4 (still in progress...)
 

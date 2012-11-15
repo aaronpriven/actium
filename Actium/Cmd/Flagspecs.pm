@@ -1146,7 +1146,7 @@ sub make_decal_spec {
             $icons .= $ICON_OF{'A Loop'};
         }
         when ('15') {
-            $icons .= $ICON_OF{'A Loop'};
+            $icons .= $ICON_OF{'B Loop'};
         }
     }
 

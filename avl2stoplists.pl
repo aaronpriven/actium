@@ -54,6 +54,7 @@ chdir $signup->path();
 my $slistsfolder = $signup->subfolder('slists');
 my $patfolder = $slistsfolder->subfolder('pat');
 my $linefolder = $slistsfolder->subfolder('line');
+my $linewinfolder = $slistsfolder->subfolder('line-win');
 
 my %pat;
 my %stp;
@@ -133,12 +134,23 @@ foreach my $route (keys %liststomerge) {
       my @union = @{ ordered_union(@{$liststomerge{$route}{$dir}}) };
       $stops_of_line{"$route-$dir"} = \@union;
       
+      {
       open my $fh , '>' , "slists/line/$route-$dir.txt" or die "Cannot open slists/line/$route-$dir.txt for output";
       print $fh jt( $route , $dir ) , "\n" ;
       foreach (@union) {
          print $fh jt($_, $stp{$_}{Description}) , "\n";
       }
       close $fh;
+      }
+      
+            {
+      open my $fh , '>' , "slists/line-win/$route-$dir.txt" or die "Cannot open slists/line-win/$route-$dir.txt for output";
+      print $fh jt( $route , $dir ) , "\r\n" ;
+      foreach (@union) {
+         print $fh jt($_, $stp{$_}{Description}) , "\r\n";
+      }
+      close $fh;
+      }
       
    
    }
@@ -147,6 +159,7 @@ foreach my $route (keys %liststomerge) {
 print "\n\n";
 
 Storable::nstore (\%stops_of_line , "slists/line.storable");
+
 
 =head1 NAME
 

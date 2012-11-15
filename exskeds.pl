@@ -6,11 +6,11 @@
 
 # Legacy stage 1
 
-$signup1 = "f05";
-$signup2 = "w05";
+$signup1 = "f12";
+$signup2 = "w12";
 
-$dir1 = $ENV{SKEDSDIR} . "/db/$signup1/skeds/";
-$dir2 = $ENV{SKEDSDIR} . "/db/$signup2/skeds/";
+$dir1 = $ENV{SKEDSDIR} . "/db/$signup1/rawskeds/";
+$dir2 = $ENV{SKEDSDIR} . "/db/$signup2/rawskeds/";
 
 $_ = $ARGV[0];
 
