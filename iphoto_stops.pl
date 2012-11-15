@@ -8,7 +8,7 @@ use warnings;
 use Math::Trig qw(deg2rad pi great_circle_distance asin acos);
 use Scalar::Util 'looks_like_number';
 
-my $simplefile = '/volumes/bireme/actium/db/sp12/SimpleStops.tab';
+my $simplefile = '/volumes/bireme/actium/db/f12/SimpleStops-all.tab';
 
 open my $simplefh, '<', $simplefile
   or die "Can't open $simplefile";
@@ -20,7 +20,8 @@ use constant {
     S_STOPID  => 1,
     S_DESC    => 2,
     S_LAT     => 3,
-    S_LONG    => 4
+    S_LONG    => 4,
+    S_ACTIVE => 5,
 };
 use constant {
     IP_ID            => 0,
@@ -151,6 +152,40 @@ while (<$readscriptfh>) {
 
     next PHOTO unless ( $lat and $long ) or ($possible_id);
 
+    if ($possible_id) {
+
+        my $length = length($possible_id);
+        my $stop_data;
+        if ( $length == 5 ) {
+            $stop_data = $of_phoneid{$possible_id};
+        }
+        else {
+            $possible_id = "0$possible_id" if $length == 6;
+            $stop_data = $of_stopid{$possible_id};
+        }
+
+        if ($stop_data) { # yay, it found it
+
+            my $newname = newname( $stop_data, $name );
+
+            push @photos_to_process,
+              { id   => $iphoto_id,
+                name => $newname,
+                comment =>
+                  newcomment( \@iphoto_fields, $possible_id, $newname ),
+                latitude  => $stop_data->[S_LAT],
+                longitude => $stop_data->[S_LONG]
+              };
+
+            next PHOTO;
+
+        }
+
+    } ## tidy end: if ($possible_id)
+    
+    # if no possible id, then check lat and long. This allows people to
+    # override computerized id
+
     if ( $lat and $long ) {
 
         my $stop_data = get_nearest_stop( $lat, $long );
@@ -165,33 +200,8 @@ while (<$readscriptfh>) {
           };
 
     }
-    else {
 
-        my $length = length($possible_id);
-        my $stop_data;
-        if ( $length == 5 ) {
-            $stop_data = $of_phoneid{$possible_id};
-        }
-        else {
-            $possible_id = "0$possible_id" if $length == 6;
-            $stop_data = $of_stopid{$possible_id};
-        }
-
-        next PHOTO unless $stop_data;
-
-        my $newname = newname( $stop_data, $name );
-
-        push @photos_to_process,
-          { id        => $iphoto_id,
-            name      => $newname,
-            comment   => newcomment( \@iphoto_fields, $possible_id, $newname ),
-            latitude  => $stop_data->[S_LAT],
-            longitude => $stop_data->[S_LONG]
-          };
-
-    } ## tidy end: else [ if ( $lat and $long ) ]
-
-} ## tidy end: while (<$readscriptfh>)
+} ## tidy end: PHOTO: while (<$readscriptfh>)
 
 close $readscriptfh;
 
@@ -357,11 +367,11 @@ sub escape_applescript_values {
         # That's perl's idea of a number, not Applescript's, but maybe
         # it will be OK
 
-        s{ "  }{ \\ "  }gx;
-        s{ \\ }{ \\ \\ }gx;
-        s{ \t }{ \\ t  }gx;
-        s{ \n }{ \\ n  }gx;
-        s{ \r }{ \\ r  }gx;
+        s{ "  }{\\"}gx;
+        s{ \\ }{\\\\}gx;
+        s{ \t }{\\t}gx;
+        s{ \n }{\\n}gx;
+        s{ \r }{\\r}gx;
 
         $_ = qq{"$_"};
 
