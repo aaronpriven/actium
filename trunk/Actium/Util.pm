@@ -27,7 +27,7 @@ use Sub::Exporter -setup => {
           tabulate_strings    tabulate_arrayrefs
           filename            file_ext
           remove_leading_path flat_arrayref
-          linegroup_of
+          linegroup_of        flat_list
           >
     ]
 };
@@ -309,6 +309,10 @@ sub flat_arrayref {
     return \@results;
 }
 
+sub flat_list {
+    return @{flat_arrayref(@_)};
+}
+
 # this should be moved to a more general 
 # "information from the filemaker database" section
 # when LINES_TO_COMBINE gets moved there
@@ -415,6 +419,10 @@ So
  # $list_ref = [ 'A', 'B1', 'B2', 'B3A', 'B3B' ]
 
 Always returns its result as a list reference.
+
+=item B<flat_list(I<list>)>
+
+Just like I<flat_arrayref>, but returns its result as a flattened list.
 
 =item B<positional(C<\@_> , I<arguments>)>
 
