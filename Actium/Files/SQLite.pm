@@ -30,6 +30,7 @@ use Moose::Role;
 
 use Actium::Constants;
 use Actium::Term;
+use Actium::Util('flat_list');
 
 use Carp;
 use DBI;
@@ -141,11 +142,12 @@ has 'dbh' => (
 # allows a single "flats_folder" argument, or a hash or hashref with full
 # attribute specifications
 around BUILDARGS => sub {
-    my $orig     = shift;
-    my $class    = shift;
+    my $orig           = shift;
+    my $class          = shift;
     my $first_argument = shift;
-    my @rest     = @_;
-    return $class->$orig( $first_argument, @rest ) if ( ref $first_argument or @rest );
+    my @rest           = @_;
+    return $class->$orig( $first_argument, @rest )
+      if ( ref $first_argument or @rest );
     return $class->$orig( flats_folder => $first_argument );
 };
 
@@ -191,7 +193,7 @@ sub _connect {
 
     return $dbh;
 
-}    ## tidy end: sub _connect
+} ## tidy end: sub _connect
 
 # DBI does the same thing, so this disconnection routine is not needed here.
 
@@ -264,8 +266,8 @@ sub ensure_loaded {
         if ( $stored_mtimes ne $current_mtimes ) {
 
             foreach my $table ( $self->_tables_of_filetype($filetype) ) {
-                my $table_sth =
-                  $dbh->table_info( undef, undef, $table, 'TABLE' );
+                my $table_sth
+                  = $dbh->table_info( undef, undef, $table, 'TABLE' );
                 my $ary_ref = $table_sth->fetchrow_arrayref();
                 $dbh->do("DROP TABLE $table") if $ary_ref;
             }
@@ -281,11 +283,11 @@ sub ensure_loaded {
         # now that we've checked, mark them as loaded
         $self->_mark_loaded($filetype);
 
-    }    ## tidy end: foreach my $filetype (@filetypes)
+    } ## tidy end: foreach my $filetype (@filetypes)
 
     return;
 
-}    ## tidy end: sub ensure_loaded
+} ## tidy end: sub ensure_loaded
 
 sub _check_table {
     my ( $self, $table ) = @_;
@@ -347,74 +349,119 @@ sub each_row_where {
         $sth->finish() if not $result;
         return $result;
     };
-}    ## tidy end: sub each_row_where
+} ## tidy end: sub each_row_where
 
 #sub all_in_columns_key {
 #    my $self    = shift;
 #    my $table   = shift;
 #    my @columns = @_;
-#    
+#
 #    $self->ensure_loaded($table);
 #    $self->_check_columns($table, @columns);
-#    
+#
 #    my $key = $self->key_of_table($table);
 #    unshift @columns, $key;
 #    @columns = uniq(@columns);
-#    
+#
 #    my $dbh = $self->dbh;
 #
 #    #my %column_index_of = map { $columns[$_] => $_ } ( 0 .. $#columns );
 #
 #    my $selection_cmd =
 #      "SELECT " . join( q{ , }, @columns ) . " FROM $table";
-#      
+#
 #    my $rows_r = $dbh->selectall_hashref($selection_cmd, $key);
 #    return $rows_r;
 #
 #}
 
-sub all_in_columns_key {
-    my $self    = shift;
-    
+sub all_in_column_key {
+
+    my $self     = shift;
     my $firstarg = shift;
-    
-    my ($table, @columns, $where, @bind_values); 
-    
-    if ( ref($table) eq 'HASH' ) {
-        $table   = $firstarg->{TABLE} ;
-        @columns = @{$firstarg->{COLUMNS}};
-        $where = $firstarg->{WHERE} ;
-        
+
+    my ( $table, $column, $where, @bind_values );
+
+    if ( ref($firstarg) eq 'HASH' ) {
+        $table = $firstarg->{TABLE};
+
+        $column = $firstarg->{COLUMN};
+
+        $where = $firstarg->{WHERE};
+
         my $bindval_r = $firstarg->{BIND_VALUES};
         @bind_values = @{$bindval_r}
-           if defined $bindval_r;
-        
+          if defined $bindval_r;
+
     }
     else {
-       $table = $firstarg;
-       @columns = @_;
+        $table  = $firstarg;
+        $column = shift;
     }
-    
+
     $self->ensure_loaded($table);
-    $self->_check_columns($table, @columns);
-    
+    $self->_check_columns( $table, $column );
+
+    my $key = $self->key_of_table($table);
+
+    my $dbh = $self->dbh;
+
+    my $selection_cmd = "SELECT $key, $column FROM $table";
+    $selection_cmd .= " WHERE $where" if defined $where;
+
+    my $list_r
+      = $dbh->selectcol_arrayref( $selection_cmd, { Columns => [ 1, 2 ] },
+        @bind_values );
+
+    my %value_of = @{$list_r};
+    return \%value_of;
+
+} ## tidy end: sub all_in_column_key
+
+sub all_in_columns_key {
+    my $self = shift;
+
+    my $firstarg = shift;
+
+    my ( $table, @columns, $where, @bind_values );
+
+    if ( ref($firstarg) eq 'HASH' ) {
+        $table = $firstarg->{TABLE};
+
+        @columns = flat_list( $firstarg->{COLUMNS} );
+
+        $where = $firstarg->{WHERE};
+
+        my $bindval_r = $firstarg->{BIND_VALUES};
+        @bind_values = @{$bindval_r}
+          if defined $bindval_r;
+
+    }
+    else {
+        $table   = $firstarg;
+        @columns = flat_list(@_);
+    }
+
+    $self->ensure_loaded($table);
+    $self->_check_columns( $table, @columns );
+
     my $key = $self->key_of_table($table);
     unshift @columns, $key;
     @columns = uniq(@columns);
-    
+
     my $dbh = $self->dbh;
 
     #my %column_index_of = map { $columns[$_] => $_ } ( 0 .. $#columns );
 
-    my $selection_cmd =
-      "SELECT " . join( q{ , }, @columns ) . " FROM $table" ;
-     
+    my $selection_cmd = "SELECT " . join( q{ , }, @columns ) . " FROM $table";
+
     $selection_cmd .= " WHERE $where" if defined $where;
-      
-    my $rows_r = $dbh->selectall_hashref($selection_cmd, $key, {} , @bind_values);
+
+    my $rows_r
+      = $dbh->selectall_hashref( $selection_cmd, $key, {}, @bind_values );
     return $rows_r;
 
-}
+} ## tidy end: sub all_in_columns_key
 
 sub _check_columns {
     my ( $self, $table, @input_columns ) = @_;
@@ -640,6 +687,80 @@ LIKE|http://www.sqlite.org/lang_expr.html#like> for details.)
 each_row_where is more flexible, allowing the user to specify any
 L<SQLite WHERE clause|http://www.sqlite.org/lang_select.html#whereclause>.
 It accepts multiple values for matching.
+
+
+=item B<all_in_column_key(I<table>, I<column> )
+
+=item B<all_in_column_key(I<hashref_of_arguments>)
+
+all_in_columns_key provides a convenient way of getting data in a hash.
+It is used where only one field is required from the database, and where the 
+amount of data desired can be loaded into memory. It is normally used this way:
+
+ my $hashref = $database->all_in_column_key(qw/table column/);
+ $value = $hashref->{$row_value};
+
+The method returns a hashref. The keys are the key value from the
+column, and the values are the values of the column specified.
+
+The results are undefined if there is no valid key for this table.
+
+Normally, it is invoked with a flat list of arguments: the first argument is
+the table and the remaining argument is a column from the table. 
+Alternatively, it can be invoked with named arguments in a hash reference:
+
+ my $hashref = $database->all_in_column_key( {
+      TABLE => 'table' ,
+      COLUMN => 'column' ,
+      WHERE => 'WHERE COLUMN EQ ?',
+      BIND_VALUES => [ $value ] ,
+      });
+
+TABLE is the name of the table. COLUMN is the column from the table.
+WHERE is optional, and allows
+specifying a subset of rows using an SQLite WHERE clause. BIND_VALUES
+is also optional, but if present must be an array reference of one
+or more values, which will be passed through to SQLite unchanged.
+It is only useful if the WHERE clause will take advantage of the
+bound values.
+
+=item B<all_in_columns_key(I<table>, I<column>, I<column> , ... )
+
+=item B<all_in_columns_key(I<hashref_of_arguments>)
+
+all_in_columns_key provides a convenient way of getting data in a two-level
+hash structure, and is commonly used where the amount of data desired 
+can be loaded into memory. It is normally used this way:
+
+ my $hashref = $database->all_in_columns_key(qw/table column_one column_two/);
+ $column_one_value = $hashref->{$row_value}{'column_one'}
+
+The method returns a hashref. The keys are the key value from the
+column, and the values are themselves hashrefs. In that second layer hashref, 
+the keys are the column names, and the values are the values. It can be
+thought of as a two-dimensional hash, where the first dimension is the key
+value of the row, and the second dimension the column name.
+
+The results are undefined if there is no valid key for this table.
+
+Normally, it is invoked with a flat list of arguments: the first argument is
+the table and the remaining arguments are columns from the table. 
+Alternatively, it can be invoked with named arguments in a hash reference:
+
+ my $hashref = $database->all_in_columns_key( {
+      TABLE => 'table' ,
+      COLUMNS => [ qw/column_one column_two/ ] ,
+      WHERE => 'WHERE COLUMN EQ ?',
+      BIND_VALUES => [ $value ] ,
+      });
+
+TABLE is the name of the table. COLUMNS must be an array reference
+with a list of columns from the table. WHERE is optional, and allows
+specifying a subset of rows using an SQLite WHERE clause. BIND_VALUES
+is also optional, but if present must be an array reference of one
+or more values, which will be passed through to SQLite unchanged.
+It is only useful if the WHERE clause will take advantage of the
+bound values.
 
 =item B<begin_transaction>
 

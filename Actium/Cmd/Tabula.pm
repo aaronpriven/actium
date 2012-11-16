@@ -18,17 +18,17 @@ use Actium::EffectiveDate ('effectivedate');
 use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Constants;
 use Actium::Text::InDesignTags;
-use Actium::Text::CharWidth ('ems', 'char_width');
+use Actium::Text::CharWidth ( 'ems', 'char_width' );
 use Actium::Folders::Signup;
 use Actium::Term;
 use Actium::Sked;
 use Actium::Sked::Timetable;
-use Readonly;
+use Const::Fast;
 use List::Util ('max');
 use List::MoreUtils ( 'uniq', 'each_arrayref' );
 
-Readonly my $IDT => 'Actium::Text::InDesignTags';
-Readonly my $SOFTRETURN => $IDT->softreturn;
+const my $IDT        => 'Actium::Text::InDesignTags';
+const my $SOFTRETURN => $IDT->softreturn;
 
 # saves typing
 
@@ -44,6 +44,12 @@ HELP
 }
 
 sub START {
+      my @list = START2(@_);
+     _output_pubtts(@list);
+     
+}
+
+sub START2 {
 
     my $signup         = Actium::Folders::Signup->new();
     my $tabulae_folder = $signup->subfolder('tabulae');
@@ -52,18 +58,22 @@ sub START {
     my $xml_db = $signup->load_xml;
 
     my $prehistorics_folder = $signup->subfolder('skeds');
-
+    
     chdir( $signup->path );
 
-    my %front_matter = _get_configuration($signup);
+    # my %front_matter = _get_configuration($signup);
 
     emit "Loading prehistoric schedules";
 
     my @skeds
       = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
 
-    emit_done;
+    my @all_lines = map { $_->lines } @skeds;
 
+    @all_lines = sortbyline uniq @all_lines;
+    my $pubtt_contents_r = _get_pubtt_contents( $xml_db, \@all_lines );
+
+    emit_done;
     @skeds = map { $_->[0] }
       sort { $a->[1] cmp $b->[1] }
       map { [ $_, $_->sortable_id() ] } @skeds;
@@ -88,7 +98,8 @@ sub START {
     emit_done;
 
     _output_all_tables( $tabulae_folder, \@alltables );
-    _output_pubtts( $pubtt_folder, \%front_matter, \%tables_of, $signup );
+    #_output_pubtts( $pubtt_folder, \@pubtt_contents, \%tables_of, $signup );
+    return ( $pubtt_folder, $pubtt_contents_r, \%tables_of, $signup );
 
 } ## tidy end: sub START
 
@@ -105,7 +116,7 @@ sub _output_all_tables {
 
     print $allfh $IDT->start;
     foreach my $table ( @{$alltables_r} ) {
-        print $allfh $table->as_indesign(4,0), $IDT->boxbreak;
+        print $allfh $table->as_indesign( 4, 0 ), $IDT->boxbreak;
     }
     # minimum 4 columns, no half columns
 
@@ -115,50 +126,82 @@ sub _output_all_tables {
 
 } ## tidy end: sub _output_all_tables
 
-sub _get_configuration {
+sub _get_pubtt_contents {
+    my $xml_db  = shift;
+    my $lines_r = shift;
 
-    my $signup   = shift;
-    my $filespec = $signup->make_filespec('tabula-config.txt');
+    $xml_db->ensure_loaded('Lines');
+    my $on_timetable_from_db_r
+      = $xml_db->all_in_column_key(qw/Lines OnTimetable/);
 
-    open my $config_h, '<', $filespec
-      or die "Can't open $filespec for reading: $OS_ERROR";
+    my %on_timetable_of;
 
-    my %front_matter;
-    my $timetable;
-
-  LINE:
-    while ( my $line = <$config_h> ) {
-        chomp $line;
-        next LINE unless $line;
-        if ( substr( $line, 0, 1 ) eq '[' ) {
-            $timetable = ( substr( $line, 1 ) );
+    foreach my $line (@$lines_r) {
+        my $fromdb = $on_timetable_from_db_r->{$line};
+        if ( defined $fromdb and $fromdb ne $EMPTY_STR ) {
+            push @{ $on_timetable_of{$fromdb} }, $line;
         }
         else {
-            next LINE unless $timetable;
-            push @{ $front_matter{$timetable} }, $line;
+            push @{ $on_timetable_of{$line} }, $line;
         }
     }
 
-    close $config_h
-      or die "Can't close $filespec for writing: $OS_ERROR";
+    my @pubtt_contents;
 
-    return %front_matter;
+    for my $lines_r ( values %on_timetable_of ) {
+        push @pubtt_contents, [ sortbyline @{$lines_r} ];
+    }
+    
+    @pubtt_contents = sort { byline($a->[0] , $b->[0] ) } @pubtt_contents;
+    
+    return \@pubtt_contents;
 
-} ## tidy end: sub _get_configuration
+} ## tidy end: sub _get_pubtt_contents
+
+#sub _get_configuration {
+#
+#    my $signup   = shift;
+#    my $filespec = $signup->make_filespec('tabula-config.txt');
+#
+#    open my $config_h, '<', $filespec
+#      or die "Can't open $filespec for reading: $OS_ERROR";
+#
+#    my %front_matter;
+#    my $timetable;
+#
+#  LINE:
+#    while ( my $line = <$config_h> ) {
+#        chomp $line;
+#        next LINE unless $line;
+#        if ( substr( $line, 0, 1 ) eq '[' ) {
+#            $timetable = ( substr( $line, 1 ) );
+#        }
+#        else {
+#            next LINE unless $timetable;
+#            push @{ $front_matter{$timetable} }, $line;
+#        }
+#    }
+#
+#    close $config_h
+#      or die "Can't close $filespec for writing: $OS_ERROR";
+#
+#    return %front_matter;
+#
+#} ## tidy end: sub _get_configuration
 
 sub _output_pubtts {
 
     emit "Outputting public timetable files";
 
-    my $pubtt_folder = shift;
-    my %front_matter = %{ +shift };
-    my %tables_of    = %{ +shift };
-    my $signup       = shift;
+    my $pubtt_folder    = shift;
+    my @pubtt_contents = @{ +shift };
+    my %tables_of       = %{ +shift };
+    my $signup          = shift;
 
     my $effectivedate = effectivedate($signup);
 
-    foreach my $pubtt ( sortbyline( keys %front_matter ) ) {
-
+    foreach my $pubtt ( @pubtt_contents ) {
+     
         my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
 
         my $file = join( "_", @{$lines_r} );
@@ -169,20 +212,22 @@ sub _output_pubtts {
 
         print $ttfh Actium::Text::InDesignTags->start;
 
+#        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r,
+#            $front_matter{$pubtt}, $effectivedate );
         _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r,
-            $front_matter{$pubtt}, $effectivedate );
+            [], $effectivedate );
 
         my $minimum_of_r = _minimums($tables_r);
 
         print $ttfh $IDT->boxbreak;
 
         my @tabletexts;
-        
+
         my $tablecount = scalar @{$tables_r};
 
         foreach my $table ( @{$tables_r} ) {
 
-            my $linedays          = $table->linedays;
+            my $linedays         = $table->linedays;
             my $min_half_columns = $minimum_of_r->{$linedays}{half_columns};
             my $min_columns      = $minimum_of_r->{$linedays}{columns};
 
@@ -192,28 +237,29 @@ sub _output_pubtts {
                 $min_columns      = 4;
 
             }
-            
-            if ($tablecount <= 2 or $table->linegroup() =~ /\A 6 \d \d \z/sx ){
+
+            if ( $tablecount <= 2 or $table->linegroup() =~ /\A 6 \d \d \z/sx )
+            {
                 $min_half_columns = 0;
-                $min_columns = 10;
+                $min_columns      = 10;
             }
 
             push @tabletexts,
               $table->as_indesign( $min_columns, $min_half_columns );
-        }
+        } ## tidy end: foreach my $table ( @{$tables_r...})
 
         #print $ttfh join( ( $IDT->hardreturn x 2 ), @tabletexts );
-        
+
         print $ttfh $tabletexts[0];
-        
-        for my $i (1 .. $#tabletexts) {
-           #my $break = ($i % 2) ? ($IDT->hardreturn x 2) : $IDT->boxbreak;
-           my $break = ($IDT->hardreturn x 2);
-           print $ttfh $break , $tabletexts[$i];
+
+        for my $i ( 1 .. $#tabletexts ) {
+            #my $break = ($i % 2) ? ($IDT->hardreturn x 2) : $IDT->boxbreak;
+            my $break = ( $IDT->hardreturn x 2 );
+            print $ttfh $break, $tabletexts[$i];
         }
         # print two returns in between each pair of schedules
         # print a box break after each pair
-        
+
         # End matter, if there is any, goes here
 
         close $ttfh;
@@ -253,8 +299,9 @@ sub _tables_and_lines {
 
     my $pubtt     = shift;
     my %tables_of = %{ +shift };
-
-    my @linegroups = sortbyline( split( ' ', $pubtt ) );
+    
+    my @linegroups = @{$pubtt};
+    #my @linegroups = sortbyline( split( ' ', $pubtt ) );
 
     my ( @tables, @lines );
 
@@ -296,8 +343,8 @@ sub _output_pubtt_front_matter {
 
     # ROUTES
 
-    my $length = _make_length(@lines); 
-    
+    my $length = _make_length(@lines);
+
     print $ttfh $IDT->parastyle("CoverLine$length");
     print $ttfh join( $IDT->hardreturn, @lines ), $IDT->boxbreak;
 
@@ -357,28 +404,27 @@ sub _make_per_line_texts {
     {
 
         my @texts;
-        
-        if ($days_of_r->{$line}) {
-         
-         my $daytext = $days_of_r->{$line}->as_plurals;
-         
-         $daytext =~ s/\(/${SOFTRETURN}\(/g;
-        
-        push @texts, $IDT->parastyle('CoverNoteBold'). $daytext;
-          
+
+        if ( $days_of_r->{$line} ) {
+
+            my $daytext = $days_of_r->{$line}->as_plurals;
+
+            $daytext =~ s/\(/${SOFTRETURN}\(/g;
+
+            push @texts, $IDT->parastyle('CoverNoteBold') . $daytext;
+
         }
 
-          
         my $local_line = $line || $lines_r->[0];
-        
-        if ($locals_of_r->{$line}) {
-           my $local_text = _local_text($local_line) ;
-           push @texts, $local_text if $local_text;
+
+        if ( $locals_of_r->{$line} ) {
+            my $local_text = _local_text($local_line);
+            push @texts, $local_text if $local_text;
         }
-        
+
         $per_line_texts{$line} = join( $IDT->hardreturn, @texts );
 
-    }
+    } ## tidy end: foreach my $line ( uniq( sort...))
 
     return \%per_line_texts;
 
@@ -455,8 +501,8 @@ sub _local_text {
     }
 
     if ( $linegroup eq '800' or $linegroup =~ /\A [A-Z]/sx ) {
-        return $IDT->parastyle('CoverLocalPax') 
-        . 'Local Passengers Permitted for Local Fare';
+        return $IDT->parastyle('CoverLocalPax')
+          . 'Local Passengers Permitted for Local Fare';
     }
 
     return $EMPTY_STR;
@@ -464,34 +510,30 @@ sub _local_text {
 }
 
 sub _make_length {
- 
+
     my @lines = @_;
-    
-    my $ems = max( (map { ems($_) } @lines) );
-    
-    if (not defined $lines[0] or $lines[0] eq '621') {
-       emit_prog ".";
-    }
-    
+
+    my $ems = max( ( map { ems($_) } @lines ) );
+
     my $length;
     given ($ems) {
-        when ($_ <= .9 ) { # two digits are .888
-         $length = 1;
+        when ( $_ <= .9 ) {    # two digits are .888
+            $length = 1;
         }
-        when ($_ <= 1.2 ) { # three digits are 1.332
-           $length = 2;
+        when ( $_ <= 1.2 ) {    # three digits are 1.332
+            $length = 2;
         }
-        when ($_ <= 1.5 ) { # N66 is 1.555
-           $length = 3;
+        when ( $_ <= 1.5 ) {    # N66 is 1.555
+            $length = 3;
         }
         default {
-         $length = 4;
-        };
-        
+            $length = 4;
+        }
+
     }
-        
-    return max ($length, scalar @lines);
-}
+
+    return max( $length, scalar @lines );
+} ## tidy end: sub _make_length
 
 1;
 
