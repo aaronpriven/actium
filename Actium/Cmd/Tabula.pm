@@ -44,9 +44,10 @@ HELP
 }
 
 sub START {
-      my @list = START2(@_);
-     _output_pubtts(@list);
-     
+ 
+    my @list = START2();
+    _output_pubtts(@list);
+    
 }
 
 sub START2 {
@@ -68,18 +69,32 @@ sub START2 {
     my @skeds
       = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
 
-    my @all_lines = map { $_->lines } @skeds;
+    #my @all_lines = map { $_->lines } @skeds;
+    my @all_lines = _get_all_lines(@skeds);
 
     @all_lines = sortbyline uniq @all_lines;
     my $pubtt_contents_r = _get_pubtt_contents( $xml_db, \@all_lines );
 
     emit_done;
-    @skeds = map { $_->[0] }
-      sort { $a->[1] cmp $b->[1] }
-      map { [ $_, $_->sortable_id() ] } @skeds;
+    
+    @skeds = _sort_skeds (@skeds);
 
+    my ($alltables_r , $tables_of_r) = _create_timetable_texts ($xml_db, @skeds);
+
+    _output_all_tables( $tabulae_folder, $alltables_r );
+    #_output_pubtts( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
+    #return;
+    return ( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
+
+} ## tidy end: sub START
+
+sub _create_timetable_texts {
+ 
     emit "Creating timetable texts";
-
+    
+    my $xml_db = shift;
+    my @skeds = @_;
+ 
     my ( %tables_of, @alltables );
     my $prev_linegroup = $EMPTY_STR;
     foreach my $sked (@skeds) {
@@ -89,19 +104,32 @@ sub START2 {
             emit_over "$linegroup ";
             $prev_linegroup = $linegroup;
         }
+        
 
         my $table = Actium::Sked::Timetable->new_from_sked( $sked, $xml_db );
         push @{ $tables_of{$linegroup} }, $table;
         push @alltables, $table;
     }
-
+    
     emit_done;
+    
+    return \@alltables, \%tables_of;
+ 
+ 
+}
 
-    _output_all_tables( $tabulae_folder, \@alltables );
-    #_output_pubtts( $pubtt_folder, \@pubtt_contents, \%tables_of, $signup );
-    return ( $pubtt_folder, $pubtt_contents_r, \%tables_of, $signup );
+sub _get_all_lines {
+    my @skeds = @_;
+    my @all_lines = map { $_->lines } @skeds;
+    return @all_lines;
+}
 
-} ## tidy end: sub START
+sub _sort_skeds {
+    my @skeds = map { $_->[0] }
+      sort { $a->[1] cmp $b->[1] }
+      map { [ $_, $_->sortable_id() ] } @_;
+    return @skeds;
+}
 
 sub _output_all_tables {
 
@@ -189,6 +217,12 @@ sub _get_pubtt_contents {
 #
 #} ## tidy end: sub _get_configuration
 
+#sub _debug_remove_all_but_l {
+# 
+#    return grep { $_->[0] =~ /^L/} @_;
+# 
+#}
+
 sub _output_pubtts {
 
     emit "Outputting public timetable files";
@@ -199,7 +233,9 @@ sub _output_pubtts {
     my $signup          = shift;
 
     my $effectivedate = effectivedate($signup);
-
+    
+    #@pubtt_contents = _debug_remove_all_but_l (@pubtt_contents);
+    
     foreach my $pubtt ( @pubtt_contents ) {
      
         my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
@@ -340,6 +376,9 @@ sub _output_pubtt_front_matter {
     my @lines         = @{ +shift };
     my @front_matter  = @{ +shift };
     my $effectivedate = shift;
+    
+    # @front_matter is currently unused, but I am leaving the code in here
+    # for now
 
     # ROUTES
 
