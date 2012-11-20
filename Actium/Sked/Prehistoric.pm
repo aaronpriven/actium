@@ -110,8 +110,10 @@ sub load_prehistorics {
     }
     
     $xml_db->ensure_loaded('Timepoints');
-
+    
     my $xml_dbh = $xml_db->dbh;
+    
+    emit "Loading prehistoric schedules";
 
     my %tp4_of_tp8;
 
@@ -133,7 +135,12 @@ sub load_prehistorics {
         @files = $folder->glob_plain_files;
     }
 
-    return map { $class->_new_from_prehistoric( $_, \%tp4_of_tp8 ) } @files;
+    my @skeds = map { $class->_new_from_prehistoric( $_, \%tp4_of_tp8 ) } @files;
+    
+    emit_over $EMPTY_STR;
+    emit_done;
+    
+    return @skeds;
 
 } ## tidy end: sub load_prehistorics
 
