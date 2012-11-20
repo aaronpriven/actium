@@ -22,6 +22,7 @@ our $VERSION = 0.001;
 use FindBin qw($Bin);
 use lib $Bin;
 use English qw(-no_match_vars);
+use Scalar::Util('reftype');
 
 use Actium::Options qw(add_option init_options option);
 
@@ -32,7 +33,7 @@ use Actium::Options qw(add_option init_options option);
     ## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
     if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
         @ARGV = Actium::Eclipse::get_command_line();
-    ## use critic
+        ## use critic
     }
 }
 
@@ -47,18 +48,22 @@ my %module_of = (
     sqlite2tab      => 'SQLite2tab',
     flagspecs       => 'Flagspecs',
     tabula          => 'Tabula',
+    tabulae         => \'tabula',
     orderbytravel   => 'OrderByTravel',
     patterns        => 'Patterns',
     adddescriptionf => 'AddDescriptionF',
     k2id            => 'MakePoints',
     nearbyroutes    => 'NearbyRoutes',
     mr_import       => 'MRImport',
-    mr_copy         => 'MRCopy' ,
-    mr_coffee       => 'Joke' ,
-    htmltables => 'HTMLTables',
+    mr_copy         => 'MRCopy',
+    mr_coffee       => 'Joke',
+    joke            => \'mr_coffee',
+    htmltables      => 'HTMLTables',
     # more to come
 );
 
+# a reference is an alias, so tabulae => \'tabula' means if you type
+# "tabulae" it will treat it as though you typed "tabula"
 my $help       = 0;
 my $subcommand = shift(@ARGV);
 
@@ -74,6 +79,12 @@ if ( lc($subcommand) eq 'help' ) {
 
 $subcommand = lc($subcommand);
 
+while ( exists( $module_of{$subcommand} )
+    and defined( reftype( $module_of{$subcommand} ) ) )
+{
+    $subcommand = ${ $module_of{$subcommand} };
+}
+
 if ( not exists $module_of{$subcommand} ) {
     print "Unrecognized subcommand $subcommand.\n\n" . mainhelp()
       or die "Can't print help text: $OS_ERROR";
@@ -86,8 +97,8 @@ require( modulefile($module) ) or die $OS_ERROR;
 
 add_option( 'help|?', 'Displays this help message.' );
 add_option( '_stacktrace',
-    'Provides lots of debugging information if there is an error. ' .
-    'Best ignored.');
+        'Provides lots of debugging information if there is an error. '
+      . 'Best ignored.' );
 
 init_options();
 
@@ -107,8 +118,9 @@ else {
 sub mainhelp {
 
     my $helptext = "$PROGRAM_NAME subcommands available:\n\n";
-    foreach ( sort keys %module_of ) {
-        $helptext .= "$_\n";
+    foreach my $subcommand ( sort keys %module_of ) {
+        next if defined( reftype( $module_of{$subcommand} ) );
+        $helptext .= "$subcommand\n";
     }
 
     return $helptext;

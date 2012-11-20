@@ -10,6 +10,8 @@ package Actium::Util 0.001;
 
 use Actium::Constants;
 use List::Util ('max');
+use List::MoreUtils('any');
+use Scalar::Util('reftype');
 use Carp;
 use File::Spec;
 
@@ -28,6 +30,7 @@ use Sub::Exporter -setup => {
           filename            file_ext
           remove_leading_path flat_arrayref
           linegroup_of        flat_list
+          in
           >
     ]
 };
@@ -171,8 +174,7 @@ sub tabulate_arrayrefs {
             }
             else {
                 $length_of_column[$this_column]
-                  = max( $length_of_column[$this_column], $thislength )
-                  ;
+                  = max( $length_of_column[$this_column], $thislength );
             }
         }
     }
@@ -185,7 +187,7 @@ sub tabulate_arrayrefs {
         for my $this_column ( 0 .. $#fields - 1 ) {
             $fields[$this_column] = sprintf( '%-*s',
                 $length_of_column[$this_column],
-                ($fields[$this_column] // $EMPTY_STR) );
+                ( $fields[$this_column] // $EMPTY_STR ) );
         }
         push @lines, join( $SPACE, @fields );
 
@@ -310,16 +312,32 @@ sub flat_arrayref {
 }
 
 sub flat_list {
-    return @{flat_arrayref(@_)};
+    return @{ flat_arrayref(@_) };
 }
 
-# this should be moved to a more general 
+# this should be moved to a more general
 # "information from the filemaker database" section
 # when LINES_TO_COMBINE gets moved there
 
 sub linegroup_of {
-   my $line = shift;
-   return $LINES_TO_COMBINE{$line} // $line;
+    my $line = shift;
+    return $LINES_TO_COMBINE{$line} // $line;
+}
+
+sub in {
+    # is-an-element-of (stringwise)
+    
+    # if I could, I would add this to perl as an operator: 
+    # e.g., $scalar in @array. Sadly this is not possible
+
+    my $item = shift;
+    my $reftype = reftype($_[0]);
+    if ( defined $reftype and $reftype eq 'ARRAY' ) {
+        return any { $item eq $_ } @{ $_[0] };
+    }
+
+    return any { $item eq $_ } @_;
+
 }
 
 1;
