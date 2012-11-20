@@ -23,6 +23,7 @@ use Actium::Folders::Signup;
 use Actium::Term;
 use Actium::Sked;
 use Actium::Sked::Timetable;
+use Actium::Util(qw/doe in/);
 use Const::Fast;
 use List::Util ('max');
 use List::MoreUtils ( 'uniq', 'each_arrayref' );
@@ -44,13 +45,6 @@ HELP
 }
 
 sub START {
- 
-    my @list = START2();
-    _output_pubtts(@list);
-    
-}
-
-sub START2 {
 
     my $signup         = Actium::Folders::Signup->new();
     my $tabulae_folder = $signup->subfolder('tabulae');
@@ -59,12 +53,11 @@ sub START2 {
     my $xml_db = $signup->load_xml;
 
     my $prehistorics_folder = $signup->subfolder('skeds');
-    
+
     chdir( $signup->path );
 
     # my %front_matter = _get_configuration($signup);
 
-    emit "Loading prehistoric schedules";
 
     my @skeds
       = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
@@ -75,26 +68,26 @@ sub START2 {
     @all_lines = sortbyline uniq @all_lines;
     my $pubtt_contents_r = _get_pubtt_contents( $xml_db, \@all_lines );
 
-    emit_done;
-    
-    @skeds = _sort_skeds (@skeds);
 
-    my ($alltables_r , $tables_of_r) = _create_timetable_texts ($xml_db, @skeds);
+    @skeds = _sort_skeds(@skeds);
+
+    my ( $alltables_r, $tables_of_r )
+      = _create_timetable_texts( $xml_db, @skeds );
 
     _output_all_tables( $tabulae_folder, $alltables_r );
-    #_output_pubtts( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
-    #return;
-    return ( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
+    _output_pubtts( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
+
+    return;
 
 } ## tidy end: sub START
 
 sub _create_timetable_texts {
- 
+
     emit "Creating timetable texts";
-    
+
     my $xml_db = shift;
-    my @skeds = @_;
- 
+    my @skeds  = @_;
+
     my ( %tables_of, @alltables );
     my $prev_linegroup = $EMPTY_STR;
     foreach my $sked (@skeds) {
@@ -104,19 +97,18 @@ sub _create_timetable_texts {
             emit_over "$linegroup ";
             $prev_linegroup = $linegroup;
         }
-        
 
         my $table = Actium::Sked::Timetable->new_from_sked( $sked, $xml_db );
         push @{ $tables_of{$linegroup} }, $table;
         push @alltables, $table;
     }
-    
+
+    emit_over $EMPTY_STR;
     emit_done;
-    
+
     return \@alltables, \%tables_of;
- 
- 
-}
+
+} ## tidy end: sub _create_timetable_texts
 
 sub _get_all_lines {
     my @skeds = @_;
@@ -179,8 +171,10 @@ sub _get_pubtt_contents {
     for my $lines_r ( values %on_timetable_of ) {
         push @pubtt_contents, [ sortbyline @{$lines_r} ];
     }
+
+    @pubtt_contents = sort { byline( $a->[0], $b->[0] ) } @pubtt_contents;
     
-    @pubtt_contents = sort { byline($a->[0] , $b->[0] ) } @pubtt_contents;
+    require Data::Dumper;
     
     return \@pubtt_contents;
 
@@ -218,27 +212,27 @@ sub _get_pubtt_contents {
 #} ## tidy end: sub _get_configuration
 
 #sub _debug_remove_all_but_l {
-# 
+#
 #    return grep { $_->[0] =~ /^L/} @_;
-# 
+#
 #}
 
 sub _output_pubtts {
 
     emit "Outputting public timetable files";
 
-    my $pubtt_folder    = shift;
+    my $pubtt_folder   = shift;
     my @pubtt_contents = @{ +shift };
-    my %tables_of       = %{ +shift };
-    my $signup          = shift;
+    my %tables_of      = %{ +shift };
+    my $signup         = shift;
 
     my $effectivedate = effectivedate($signup);
-    
-    #@pubtt_contents = _debug_remove_all_but_l (@pubtt_contents);
-    
-    foreach my $pubtt ( @pubtt_contents ) {
-     
+
+    foreach my $pubtt (@pubtt_contents) {
+
         my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
+        
+        next unless @$tables_r;
 
         my $file = join( "_", @{$lines_r} );
 
@@ -248,10 +242,10 @@ sub _output_pubtts {
 
         print $ttfh Actium::Text::InDesignTags->start;
 
-#        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r,
-#            $front_matter{$pubtt}, $effectivedate );
-        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r,
-            [], $effectivedate );
+        #        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r,
+        #            $front_matter{$pubtt}, $effectivedate );
+        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r, [],
+            $effectivedate );
 
         my $minimum_of_r = _minimums($tables_r);
 
@@ -300,7 +294,7 @@ sub _output_pubtts {
 
         close $ttfh;
 
-    } ## tidy end: foreach my $pubtt ( sortbyline...)
+    } ## tidy end: foreach my $pubtt (@pubtt_contents)
 
     emit_done;
 
@@ -335,7 +329,7 @@ sub _tables_and_lines {
 
     my $pubtt     = shift;
     my %tables_of = %{ +shift };
-    
+
     my @linegroups = @{$pubtt};
     #my @linegroups = sortbyline( split( ' ', $pubtt ) );
 
@@ -353,7 +347,7 @@ sub _tables_and_lines {
         $is_a_line{$_} = 1 foreach ( $table->header_routes );
     }
     @lines = sortbyline( keys %is_a_line );
-
+    
     return \@tables, \@lines;
 
 } ## tidy end: sub _tables_and_lines
@@ -376,7 +370,7 @@ sub _output_pubtt_front_matter {
     my @lines         = @{ +shift };
     my @front_matter  = @{ +shift };
     my $effectivedate = shift;
-    
+
     # @front_matter is currently unused, but I am leaving the code in here
     # for now
 
@@ -508,8 +502,9 @@ sub _make_locals {
 
     my %local_of;
     foreach my $line (@lines) {
+
         if ( $line =~ /\A [A-Z]/sx or $line eq '800' ) {
-            if ( @TRANSBAY_NOLOCALS ~~ $line ) {
+            if ( in( $line, @TRANSBAY_NOLOCALS ) ) {
                 $local_of{$line} = 0;
             }
             else {
@@ -533,13 +528,13 @@ sub _make_locals {
 } ## tidy end: sub _make_locals
 
 sub _local_text {
-    my $linegroup = shift;
+    my $line = shift;
 
-    if ( $linegroup ~~ @TRANSBAY_NOLOCALS ) {
+    if ( in( $line, @TRANSBAY_NOLOCALS ) ) {
         return $IDT->parastyle('CoverLocalPax') . 'No Local Passengers Allowed';
     }
 
-    if ( $linegroup eq '800' or $linegroup =~ /\A [A-Z]/sx ) {
+    if ( $line eq '800' or $line =~ /\A [A-Z]/sx ) {
         return $IDT->parastyle('CoverLocalPax')
           . 'Local Passengers Permitted for Local Fare';
     }
@@ -553,9 +548,13 @@ sub _make_length {
     my @lines = @_;
 
     my $ems = max( ( map { ems($_) } @lines ) );
+    
+    #if ( $lines[0] =~ /72/ ) {
+    #    emit_over '[' . doe($ems) . ']';
+    #}
 
     my $length;
-    given ($ems) {
+    for ($ems) {
         when ( $_ <= .9 ) {    # two digits are .888
             $length = 1;
         }
