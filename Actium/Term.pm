@@ -169,13 +169,12 @@ sub output_usage {
     $longest++;    # add one for the hyphen in front
 
     my $HANGING_INDENT_PADDING = 4;
-    my $width                  = get_width();
+    local ($Text::Wrap::columns) = get_width();
 
     foreach ( sort keys %{$messages_r} ) {
         next if /^_/;
         my $optionname = sprintf '%*s -- ', $longest, "-$_";
 
-        local ($Text::Wrap::columns) = $width - ($longest);
         say Text::Wrap::wrap (
             $EMPTY_STR,
             q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
