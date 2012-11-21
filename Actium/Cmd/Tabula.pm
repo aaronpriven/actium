@@ -385,6 +385,10 @@ sub _output_pubtt_front_matter {
     print $ttfh $IDT->parastyle('CoverEffectiveBlack'), 'Effective:',
       $IDT->hardreturn;
     print $ttfh $IDT->parastyle('CoverDate'), $effectivedate;
+    
+    if ($lines[0] eq 'FS') {
+       emit_prog '.'; ## DEBUG
+    }
 
     my $per_line_texts_r = _make_per_line_texts( $tables_r, \@lines );
 
@@ -449,7 +453,7 @@ sub _make_per_line_texts {
 
         my $local_line = $line || $lines_r->[0];
 
-        if ( $locals_of_r->{$line} ) {
+        if ( exists $locals_of_r->{$line} ) {
             my $local_text = _local_text($local_line);
             push @texts, $local_text if $local_text;
         }
