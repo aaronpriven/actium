@@ -20,7 +20,7 @@ our @EXPORT_OK = qw(byline sortbyline linekeys );
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
 add_option( 'lettersfirst!',
-        'When lines are sorted, sort letters ahead of numbers '
+        'When line designations are sorted, sort letters ahead of numbers '
       . '(like Muni, not AC)' );
 
 ########################

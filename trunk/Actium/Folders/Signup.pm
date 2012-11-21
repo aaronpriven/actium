@@ -11,6 +11,8 @@ use warnings;
 package Actium::Folders::Signup 0.001;
 
 use Actium::Options qw(add_option option is_an_option);
+use Actium::Constants;
+
 use Carp;
 use File::Spec;
 use Const::Fast;
@@ -32,17 +34,19 @@ const my $LAST_RESORT_BASE =>
 const my $DEFAULT_HSA_FILENAME => 'hsa.storable';
 
 const my $DEFAULT_BASE   => ( $ENV{$BASE_ENV}   // $LAST_RESORT_BASE );
-const my $DEFAULT_SIGNUP => ( $ENV{$SIGNUP_ENV} // 'none' );
+const my $DEFAULT_SIGNUP => ( $ENV{$SIGNUP_ENV} // '' );
 
 add_option( 'base=s',
-    'Base folder (normally [something]/Actium/signups); current default is "'
-      . $DEFAULT_BASE
-      . '"' );
+    'Base folder (normally [something]/Actium/signups). ' .
+      qq<Current default is "$DEFAULT_BASE"> );
+      
+my $signup_default_text = $DEFAULT_SIGNUP eq $EMPTY_STR ? '' : 
+       qq< Current default is "$DEFAULT_SIGNUP"> ;
 
 add_option( 'signup=s',
-        'Signup. This is the subfolder under the base folder. Typically'
-      . qq<something like "f08" (meaning Fall 2008). >
-      . qq<Current default is "$DEFAULT_SIGNUP"> );
+        'Signup. This is the subfolder under the base folder. Typically '
+      . qq<something like "f08" (meaning Fall 2008).$signup_default_text>
+      );
 
 add_option( 'cache=s',
         'Cache folder. Files (like SQLite files) that cannot be stored '

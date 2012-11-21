@@ -59,8 +59,7 @@ sub START {
     # my %front_matter = _get_configuration($signup);
 
 
-    my @skeds
-      = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
+    my @skeds = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
 
     #my @all_lines = map { $_->lines } @skeds;
     my @all_lines = _get_all_lines(@skeds);
