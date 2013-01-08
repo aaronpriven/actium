@@ -136,7 +136,7 @@ sub START {
           or die "Can't open memory location as file: $OS_ERROR";
 
         say $ofh <<"EOT";
-<h3><a name="$route">$route</a></h3>
+<h3><span id="$route">$route</span></h3>
 <table border="1" cellspacing="0" cellpadding="6">
 <colgroup><col width="50%" /> <col width="50%" /></colgroup>
 <tbody>

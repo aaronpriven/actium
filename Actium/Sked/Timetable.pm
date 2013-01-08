@@ -36,7 +36,7 @@ has sked_obj => (
         has_route_col    => 'has_multiple_lines',
         header_routes    => 'lines',
         sortable_id      => 'sortable_id',
-        id => 'id',
+        id               => 'id',
         earliest_timenum => 'earliest_timenum',
         days_obj         => 'days_obj',
         dircode          => 'dircode',
@@ -231,8 +231,6 @@ sub new_from_sked {
 
 } ## tidy end: sub new_from_sked
 
-
-
 sub as_indesign {
 
     my $self = shift;
@@ -305,7 +303,7 @@ sub as_indesign {
     # Column Header Row (line, note, timepoints)
 
     my $has_line_col = $self->has_route_col;
-    my $has_note_col  = $self->has_note_col;
+    my $has_note_col = $self->has_note_col;
 
     my @header_columntexts = ( $self->header_columntexts, @trailers );
 
@@ -439,46 +437,47 @@ sub _minimums {
 } ## tidy end: sub _minimums
 
 sub as_html {
- 
+
     my $self = shift;
 
     my $columns  = $self->columns;
     my $halfcols = $self->half_columns;
-    
+
     my $all_columns = $columns + $halfcols;
-    
+
     my $tabletext;
     open my $th, '>', \$tabletext
       or die "Can't open table scalar for writing: $!";
-      
+
     print $th '<table class="sked"><thead>';
-      
+
     ### ROUTE NUMBERS
 
     print $th qq{<tr\n><th class="skedhead" colspan=$all_columns>};
     print $th '<div class="skedheaddiv">';
     print $th '<div class="skedroute">';
-    
-    my @routes = map { encode_entities ($_) } $self->header_routes;
-    print $th join (' &bull; ' , @routes) ;
+
+    my @routes = map { encode_entities($_) } $self->header_routes;
+    print $th join( ' &bull; ', @routes );
     print $th '</div>';
-    
+
     print $th '<div class="skeddest">';
-    
+
     # ROUTE DESTINATION AND DIRECTION
-    
-    print $th encode_entities( $self->header_daytext);
+
+    print $th encode_entities( $self->header_daytext );
     print $th '<br />';
-    print $th encode_entities( $self->header_dirtext);
+    print $th encode_entities( $self->header_dirtext );
     print $th "</div></th></tr></thead><tbody\n>";
-    
+
     ##############
     # Column Header Row (line, note, timepoints)
 
     my $has_line_col = $self->has_route_col;
-    my $has_note_col  = $self->has_note_col;
+    my $has_note_col = $self->has_note_col;
 
-    my @header_columntexts = map {encode_entities $_} ( $self->header_columntexts);
+    my @header_columntexts
+      = map { encode_entities $_} ( $self->header_columntexts );
 
     print $th "<tr\n>";
 
@@ -505,7 +504,7 @@ sub as_html {
     # Time Rows
 
     for my $body_row_r ( $self->body_row_rs ) {
-        my @body_row = map {encode_entities($_) } @{$body_row_r};
+        my @body_row = map { encode_entities($_) } @{$body_row_r};
 
         print $th "<tr\n>";
 
@@ -523,9 +522,9 @@ sub as_html {
         for my $time (@body_row) {
 
             if ( !$time ) {
-                $time      = '&mdash;';
+                $time = '&mdash;';
             }
-            
+
             if ( $time =~ /p\z/ ) {
                 print $th "<td class='pmtime'>$time";
             }
@@ -549,10 +548,52 @@ sub as_html {
     }
 
     close $th;
-      
+
     return $tabletext;
 
-}
+} ## tidy end: sub as_html
+
+sub as_public_json {
+    # Public JSON needs access to the Timepoint table in Actium.fp7,
+    # so has to be here in Timetable, even though most of the data comes from
+    # the Actium::Sked object.
+
+    my $self = shift;
+    my $sked = $self->sked_obj;
+
+    my @lines;
+    my @notes;
+    my @times;
+
+    foreach my $trip ( $sked->trips ) {
+
+        push @lines, $trip->line;
+        push @notes, $trip->daysexceptions;
+        push @times, [ $trip->placetimes ];
+
+    }
+
+    my @columntexts = $self->header_columntexts;
+    while ( $columntexts[0] eq 'Line' or $columntexts[0] eq 'Name' ) {
+        shift @columntexts;
+    }
+
+    my %json_data = (
+        header_daytext     => $self->header_daytext,
+        header_dirtext     => $self->header_dirtext,
+        header_columntexts => \@columntexts,
+        lines              => \@lines,
+        notes              => \@notes,
+        times              => \@times,
+    );
+    
+    require JSON;
+    
+    my $json_text = JSON::encode_json (\%json_data);
+    
+    return $json_text;
+
+} ## tidy end: sub as_public_json
 
 1;
 
