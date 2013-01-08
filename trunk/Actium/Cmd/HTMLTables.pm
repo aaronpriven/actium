@@ -21,6 +21,7 @@ sub HELP {
 
     say <<'HELP' or die q{Can't write to STDOUT};
 htmltables. Reads schedules and makes HTML tables out of them.
+Also writes JSON structs, just for fun.
 HELP
 
     Actium::Term::output_usage();
@@ -75,7 +76,18 @@ sub START {
     });
     
     emit_done;
-
+    
+    emit 'Writing JSON struct files';
+    
+    $signup->write_files_with_method({
+     OBJECTS => \@tables,
+     METHOD => 'as_public_json',
+     EXTENSION => 'json',
+     SUBFOLDER => 'public_json',
+    });
+    
+    emit_done;
+    
 }
 
 1;

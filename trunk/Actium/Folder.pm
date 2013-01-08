@@ -347,6 +347,69 @@ sub mergeread {
     return Actium::Files::Merge::Mergefiles->mergeread($filespec);
 }
 
+sub json_retrieve {
+    my $self     = shift;
+    my $filename = shift;
+    my $filespec = $self->make_filespec($filename);
+
+    croak "$filespec does not exist"
+      unless -e $filespec;
+
+    emit("Retrieving $filename");
+    
+    require File::Slurp;
+    
+    my $json_text = File::Slurp::read_file($filespec);
+    
+    require JSON;
+    
+    my $data_r = JSON::from_json($json_text);
+
+    emit_done;
+
+    return $data_r;
+
+}
+
+sub json_store {
+ 
+    my $self     = shift;
+    my $data_r   = shift;
+    my $filename = shift;
+    my $filespec = $self->make_filespec($filename);
+
+    emit("Storing $filename...");
+
+    require JSON;
+    my $json_text = JSON::to_json($data_r);
+    require File::Slurp;
+    
+    File::Slurp::write_file($filespec, $json_text);
+    
+    emit_done; 
+ 
+}
+
+sub json_store_pretty {
+ 
+    my $self     = shift;
+    my $data_r   = shift;
+    my $filename = shift;
+    my $filespec = $self->make_filespec($filename);
+
+    emit("Storing $filename...");
+
+    require JSON;
+    my $json_text = JSON::to_json($data_r, { pretty => 1, canonical=>1});
+    
+    require File::Slurp;
+    File::Slurp::write_file($filespec, $json_text);
+    
+    emit_done; 
+  
+ 
+}
+
 sub retrieve {
     my $self     = shift;
     my $filename = shift;

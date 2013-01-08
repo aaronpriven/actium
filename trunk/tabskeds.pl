@@ -151,11 +151,14 @@ my $basefolder = $signupfolder->base_obj;
 
 my $commonfolder = $basefolder->subfolder('common');
 
-my $destcode_file = 'destcodes.storable';
+my $destcode_file = 'destcodes.json';
 
 if (-e $commonfolder->make_filespec($destcode_file)) {
-   %destination_code_of = %{$commonfolder->retrieve($destcode_file)};
-   $highest_destcode = (reverse sort values %destination_code_of)[0];
+   %destination_code_of = %{$commonfolder->json_retrieve($destcode_file)};
+   { # scoping
+      my @sorted_codes = sort { length($b) <=> length($a) || $b cmp $a } values %destination_code_of;
+      $highest_destcode = $sorted_codes[0];
+   }
 } else {
  say 'No destination code file found.'
  }
@@ -211,7 +214,7 @@ foreach my $route (sortbyline keys %skednamesbyroute) {
           if ($highest_destcode) {
              $highest_destcode++;
           } else { 
-           $highest_destcode = 'A';
+           $highest_destcode = 'GA'; # higher than any in use when system reset
           }
           $destination_code_of{$destination} = $highest_destcode;
        }
@@ -357,7 +360,7 @@ foreach my $route (sortbyline keys %skednamesbyroute) {
 
 print "\n";
 
-$commonfolder->store(\%destination_code_of , $destcode_file);
+$commonfolder->json_store_pretty(\%destination_code_of , $destcode_file);
 
 sub outtab { 
    my @fields = @_;
