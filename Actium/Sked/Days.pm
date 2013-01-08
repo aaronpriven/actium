@@ -202,7 +202,7 @@ sub as_adjectives {
 } ## tidy end: sub as_adjectives
 
 Readonly my @PLURALS => (
-    @SEVENDAYPLURALS, 'holidays', 'Mondays through Fridays',
+    @SEVENDAYPLURALS, 'holidays', 'Monday through Friday',
     'Weekends', 'Every day', "Every day except holidays"
 );
 
@@ -476,7 +476,9 @@ The form is "Days, Days and Days" . The days used are as follows:
 
  Mondays     Thursdays   Sundays    Every day
  Tuesdays    Fridays     Holidays
- Wednesdays  Saturdays   Weekdays
+ Wednesdays  Saturdays   
+ 
+"Monday through Friday" is given instead of "Weekdays."
  
 (Saturdays and Sundays are not combined into weekends here.)
  
