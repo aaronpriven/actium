@@ -25,7 +25,7 @@ use Actium::Sked;
 use Actium::Sked::Timetable;
 use Actium::Util(qw/doe in/);
 use Const::Fast;
-use List::Util ('max');
+use List::Util ( 'max', 'sum' );
 use List::MoreUtils ( 'uniq', 'each_arrayref' );
 
 const my $IDT        => 'Actium::Text::InDesignTags';
@@ -46,9 +46,10 @@ HELP
 
 sub START {
 
-    my $signup         = Actium::Folders::Signup->new();
-    my $tabulae_folder = $signup->subfolder('tabulae');
-    my $pubtt_folder   = $tabulae_folder->subfolder('pubtt');
+    my $signup            = Actium::Folders::Signup->new();
+    my $tabulae_folder    = $signup->subfolder('tabulae');
+    my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
+    my $multipubtt_folder = $tabulae_folder->subfolder('m-pubtt');
 
     my $xml_db = $signup->load_xml;
 
@@ -58,15 +59,12 @@ sub START {
 
     # my %front_matter = _get_configuration($signup);
 
+    my @skeds
+      = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
 
-    my @skeds = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
-
-    #my @all_lines = map { $_->lines } @skeds;
-    my @all_lines = _get_all_lines(@skeds);
-
-    @all_lines = sortbyline uniq @all_lines;
+    my @all_lines = map { $_->lines } @skeds;
+    @all_lines = uniq sortbyline @all_lines;
     my $pubtt_contents_r = _get_pubtt_contents( $xml_db, \@all_lines );
-
 
     @skeds = _sort_skeds(@skeds);
 
@@ -74,7 +72,9 @@ sub START {
       = _create_timetable_texts( $xml_db, @skeds );
 
     _output_all_tables( $tabulae_folder, $alltables_r );
-    _output_pubtts( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
+    #_output_pubtts( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
+    _output_m_pubtts( $multipubtt_folder, $pubtt_contents_r, $tables_of_r,
+        $signup );
 
     return;
 
@@ -108,12 +108,6 @@ sub _create_timetable_texts {
     return \@alltables, \%tables_of;
 
 } ## tidy end: sub _create_timetable_texts
-
-sub _get_all_lines {
-    my @skeds = @_;
-    my @all_lines = map { $_->lines } @skeds;
-    return @all_lines;
-}
 
 sub _sort_skeds {
     my @skeds = map { $_->[0] }
@@ -171,11 +165,7 @@ sub _get_pubtt_contents {
         push @pubtt_contents, [ sortbyline @{$lines_r} ];
     }
 
-    @pubtt_contents = sort { byline( $a->[0], $b->[0] ) } @pubtt_contents;
-    
-    require Data::Dumper;
-    
-    return \@pubtt_contents;
+    return [ sort { byline( $a->[0], $b->[0] ) } @pubtt_contents ];
 
 } ## tidy end: sub _get_pubtt_contents
 
@@ -230,7 +220,7 @@ sub _output_pubtts {
     foreach my $pubtt (@pubtt_contents) {
 
         my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
-        
+
         next unless @$tables_r;
 
         my $file = join( "_", @{$lines_r} );
@@ -247,8 +237,6 @@ sub _output_pubtts {
             $effectivedate );
 
         my $minimum_of_r = _minimums($tables_r);
-
-        print $ttfh $IDT->boxbreak;
 
         my @tabletexts;
 
@@ -346,7 +334,7 @@ sub _tables_and_lines {
         $is_a_line{$_} = 1 foreach ( $table->header_routes );
     }
     @lines = sortbyline( keys %is_a_line );
-    
+
     return \@tables, \@lines;
 
 } ## tidy end: sub _tables_and_lines
@@ -385,10 +373,6 @@ sub _output_pubtt_front_matter {
     print $ttfh $IDT->parastyle('CoverEffectiveBlack'), 'Effective:',
       $IDT->hardreturn;
     print $ttfh $IDT->parastyle('CoverDate'), $effectivedate;
-    
-    if ($lines[0] eq 'FS') {
-       emit_prog '.'; ## DEBUG
-    }
 
     my $per_line_texts_r = _make_per_line_texts( $tables_r, \@lines );
 
@@ -421,6 +405,8 @@ sub _output_pubtt_front_matter {
 
     print $ttfh $per_line_texts_r->{$EMPTY_STR}
       if exists $per_line_texts_r->{$EMPTY_STR};
+
+    print $ttfh $IDT->boxbreak;
 
     return;
 
@@ -551,7 +537,7 @@ sub _make_length {
     my @lines = @_;
 
     my $ems = max( ( map { ems($_) } @lines ) );
-    
+
     #if ( $lines[0] =~ /72/ ) {
     #    emit_over '[' . doe($ems) . ']';
     #}
@@ -575,6 +561,218 @@ sub _make_length {
 
     return max( $length, scalar @lines );
 } ## tidy end: sub _make_length
+
+sub _output_m_pubtts {
+
+    emit "Outputting multipage public timetable files";
+
+    my $pubtt_folder   = shift;
+    my @pubtt_contents = @{ +shift };
+    my %tables_of      = %{ +shift };
+    my $signup         = shift;
+
+    my $effectivedate = effectivedate($signup);
+
+    foreach my $pubtt (@pubtt_contents) {
+
+        my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
+
+        next unless @$tables_r;
+
+        my $file = join( "_", @{$lines_r} );
+
+        emit_prog " $file";
+
+        #if ($file eq '85') {
+        #    # DEBUG
+        #    emit_prog "@";
+        #}
+
+        open my $ttfh, '>', $pubtt_folder->make_filespec("$file.txt");
+
+        print $ttfh Actium::Text::InDesignTags->start;
+
+        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r, [],
+            $effectivedate );
+
+        my @table_assignments = _assign_frames($tables_r);
+
+        if ( not @table_assignments ) {
+            emit_prog "*";
+            next;
+        }
+
+        my $firsttable    = 1;
+        my $current_frame = 0;
+
+        foreach my $table_assignment (@table_assignments) {
+
+            my $table     = $table_assignment->{table};
+            my $width     = $table_assignment->{width};
+            my $frame     = $table_assignment->{frame};
+            my $pagebreak = $table_assignment->{pagebreak};
+
+            if ( $frame == $current_frame and not $pagebreak ) {
+                # if it's in the same frame
+                if ( not $firsttable ) {
+                    print $ttfh $IDT->hardreturn x 2;
+                }
+            }
+            else {
+                # otherwise it's in a different frame
+                if ( $pagebreak or $current_frame > $frame ) {
+                    print $ttfh $IDT->pagebreak;
+                    $current_frame = 0;
+                }
+                my $framebreaks = $frame - $current_frame;
+                print $ttfh ( $IDT->boxbreak x $framebreaks );
+                $current_frame += $framebreaks;
+            }
+            print $ttfh $table->as_indesign( @{$width} );
+            $firsttable = 0;
+
+        } ## tidy end: foreach my $table_assignment...
+
+        # End matter, if there is any, goes here
+
+        close $ttfh;
+
+    } ## tidy end: foreach my $pubtt (@pubtt_contents)
+
+    emit_done;
+
+} ## tidy end: sub _output_m_pubtts
+
+my @one_frame_test = (
+    { widthpair => [ 10, 0 ], height => 42, shortpage => 1, frame => 0 },
+    { widthpair => [ 11, 0 ], height => 36, shortpage => 1, frame => 4 },
+    { widthpair => [ 15, 0 ], height => 42, shortpage => 0, frame => 0 },
+    { widthpair => [ 11, 0 ], height => 59, shortpage => 0, frame => 4 },
+);
+
+const my $EXTRA_TABLE_HEIGHT => 9;
+# add 9 for each additional table in a stack -- 1 for blank line, 
+# 4 for timepoints and 4 for # the color bar. This is inexact and can mess up...
+# not sure how to fix it at this point, I'd need to measure the headers
+
+sub _assign_frames {
+
+    my (@tables) = @{ +shift };    # copy
+    my ( $heights_r, $widths_in_halfcols_r ) = _get_table_sizes( \@tables );
+
+    ## CHECK TO SEE IF ALL FIT IN SINGLE FRAME
+
+    my $max_width_in_halfcols = max @{$widths_in_halfcols_r};
+    my $sum_height = sum( @{$heights_r} );
+    
+    $sum_height += $#{$heights_r} * $EXTRA_TABLE_HEIGHT;
+
+    foreach my $test_r (@one_frame_test) {
+
+        my $test_widthpair         = $test_r->{widthpair};
+        my $test_width_in_halfcols = _width_in_halfcols($test_widthpair);
+        my $test_height            = $test_r->{height};
+        next
+          if $test_width_in_halfcols < $max_width_in_halfcols
+          or $test_height < $sum_height;
+
+        my $firsttable = shift @tables;
+        my $frame      = $test_r->{frame};
+        my @frames     = (
+            {   table     => $firsttable,
+                width     => $test_widthpair,
+                pagebreak => not( $test_r->{shortpage} ),
+                frame     => $frame,
+            }
+        );
+
+        foreach my $table (@tables) {
+            push @frames,
+              { table     => $table,
+                width     => $test_widthpair,
+                pagebreak => 0,
+                frame     => $frame,
+              };
+        }
+
+        return @frames;
+
+    } ## tidy end: foreach my $test_r (@one_frame_test)
+
+    ## TODO - ASSIGN TO MULTIPLE FRAMES
+
+    return;
+
+} ## tidy end: sub _assign_frames
+
+sub _width_in_halfcols {
+    my $width = shift;
+    return $width->[0] * 2 + $width->[1];
+}
+
+sub _get_table_sizes {
+    my $tables_r = shift;
+
+    my ( @heights, @widths_in_halfcols );
+
+    foreach my $table (@$tables_r) {
+        push @heights,            $table->height;
+        push @widths_in_halfcols, $table->width_in_halfcols;
+
+    }
+
+    return \@heights, \@widths_in_halfcols;
+
+}
+
+#sub _get_table_sizes {
+#    my $tables_r = shift;
+#
+#  # So, what this does is take the tables and makes a new struct with size info.
+#  # Each struct has a reference to the tables, and the sizes needed for the
+#  # tables
+#
+#    my %tables_of;
+#    my %highest_of;    # assumes highest side by side value
+#
+#    foreach my $table (@$tables_r) {
+#        my $linedays = $table->linedays;
+#        my $height   = $table->height;
+#
+#        push @{ $tables_of{$linedays} }, $table;
+#        $highest_of{$linedays} = $height
+#          if not exists $highest_of{$linedays}
+#          or $highest_of{$linedays} < $height;
+#    }
+#
+#    my @linedays
+#      = sort { $highest_of{$b} <=> $highest_of{$a} } keys %highest_of;
+#
+#    my @sizes;
+#    foreach my $linedays (@linedays) {
+#
+#        my @tables = sort { $a->sortable_id cmp $b->sortable_id }
+#          @{ $tables_of{$linedays} };
+#
+#        my @heights = map { $_->height } @tables;
+#        my @widths = map { $_->width } @tables;
+#
+#        # I think, since the only values are halves, we won't run into
+#        # floating point rounding error, and it's easier to think about
+#        # this way
+#
+#        push @sizes,
+#          { tables     => \@tables,
+#            widths     => \@widths,
+#            sidebyside => max(@heights),
+#            stacked    => sum(@heights),
+#          };
+#
+#    } ## tidy end: foreach my $linedays (@linedays)
+#
+#    return @sizes;
+#
+#} ## tidy end: sub _get_table_sizes
 
 1;
 
@@ -628,5 +826,79 @@ __END__
 } ## tidy end: sub make_table
 
 
+=====
+
+sub _get_table_sizes_old {
+
+  # So, what this does is take the tables and makes a new struct with size info.
+  # Each struct has a reference to the table, and the size of each table,
+  # when stacked vertically or when set side by side
+
+    my $tables_r = shift;
+
+    my %highest_of;
+    my @structs;
+
+    foreach my $table (@$tables_r) {
+
+        my $height   = $table->height;
+        my $linedays = $table->linedays;
+        my $width    = $table->half_columns / 2 + $table->columns;
+        # I think, since the only values are halves, we won't run into
+        # floating point rounding error, and it's easier to think about
+        # this way
+
+        my $struct = {
+            table       => $table,
+            height      => $height,
+            linedays    => $linedays,
+            width       => $width,
+            sortable_id => $table->sortable_id,
+        };
+
+        push @structs, $struct;
+
+        $highest_of{$linedays} = $height
+          if not exists $highest_of{$linedays}
+          or $highest_of{$linedays} < $height;
+
+    } ## tidy end: foreach my $table (@$tables_r)
+
+    foreach my $struct (@structs) {
+        my $linedays = $struct->{linedays};
+        $struct->{height} = $highest_of{$linedays};
+    }
+
+    @structs = sort {
+             $b->{most_rows} <=> $a->{most_rows}
+          || $a->{linedays} cmp $b->{linedays}
+          || $a->{sortable_id} cmp $b->{sortable_id}
+    } @structs;
+
+    my @sizes;
+
+    my $prev = $EMPTY_STR;
+    foreach my $struct (@structs) {
+        my $linedays = $struct->{linedays};
+        if ( $linedays ne $prev ) {
+            push @sizes,
+              { table1           => $struct->{table},
+                stackheight      => $struct->{height},
+                sidebysideheight => $struct->{height},
+                width1           => $struct->{width}
+              };
+        }
+        else {    # TODO - add stacked or side by side width
+            $sizes[-1]{width2} = $struct->{width};
+            $sizes[-1]{table2} = $struct->{table};
+            my $height = $struct->{height};
+            $sizes[-1]{stackheight} += $height;
+        }
+    }
+
+    return @sizes;
+
+} ## tidy end: sub _get_table_sizes_old
+1;
 
 

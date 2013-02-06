@@ -21,6 +21,7 @@ use constant {
     thinspace        => '<0x2009>',
     bullet           => '<0x2022>',
     boxbreak         => "<cNextXChars:Box>\r<cNextXChars:>",
+    pagebreak         => "<cNextXChars:Page>\r<cNextXChars:>",
     nbsp             => '<0x00A0>',
     endash           => '<0x2013>',
     emdash           => '<0x2014>',
