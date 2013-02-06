@@ -42,7 +42,7 @@ has sked_obj => (
         dircode          => 'dircode',
         linedir          => 'linedir',
         linedays         => 'linedays',
-
+        daycode         => 'daycode',
       }
 
 );
@@ -108,6 +108,33 @@ has body_rowtext_rs => (
         body_row_count => 'count',
     },
 );
+
+has height => (
+   is => 'ro',
+   isa => 'Int',
+   lazy => 1,
+   builder => '_build_height',
+);
+
+sub _build_height {
+    my $self = shift;
+    return $self->body_row_count;
+    # TODO - add rows for each note of whatever type...
+}
+
+has width_in_halfcols => (
+   is => 'ro',
+   isa => 'Int',
+   lazy => 1,
+   builder => '_build_width_in_halfcols'
+);
+
+sub _build_width_in_halfcols {
+    my $self = shift;
+    return (2 * $self->columns + $self->half_columns );
+}
+
+   
 
 #has [qw<sortable_id earliest_timenum days_obj>] => (
 #   is => 'ro',

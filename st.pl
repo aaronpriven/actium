@@ -6,11 +6,18 @@ use strict;
 use warnings;
 
 my $dump = 0;
+my $divider = '  ';
 
 if ( defined $ARGV[0] and $ARGV[0] eq '-d' ) {
     $dump = 1;
     shift @ARGV;
 }
+
+if ( defined $ARGV[0] and $ARGV[0] eq '-t' ) {
+    $divider = "\t";
+    shift @ARGV;
+}
+
 
 my $simplefile = '/volumes/bireme/actium/db/current/SimpleStops.tab';
 
@@ -140,7 +147,7 @@ sub display {
 
     }
     else {
-        print( $fields_r->[PHONEID], '  ', $fields_r->[STOPID], '  ' );
+        print( $fields_r->[PHONEID], $divider, $fields_r->[STOPID], $divider );
         say( $active ? '' : "*" , $fields_r->[DESC]);
     }
 

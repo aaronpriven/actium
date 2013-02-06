@@ -39,7 +39,7 @@ sub START {
     emit_done;
 
  
-   my $file = shift @ARGV || '/b/actium/db/f11/compare/removals.txt';
+   my $file = shift @ARGV || '-' ; # stdin
    
    
    open my $in, '<' , $file;
@@ -52,6 +52,10 @@ sub START {
        my ($stopid, $text) = split (/\t/, $_, 2);
        $text //= q[];
        my $desc = $stops_row_of_r->{$stopid}{DescriptionCityF};
+       if (not defined $desc) {
+          $desc = "** NOT FOUND **";
+          warn "No description found for $stopid";
+       }
        say "$stopid\t$desc\t$text";
        
    }

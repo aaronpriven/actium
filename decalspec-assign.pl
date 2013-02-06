@@ -20,10 +20,15 @@ open my $assignments , '<' , $ASSIGNFILE;
 
 my %output_of_source = ( qw(
 
-R-K-3 19.5x19.5-RK
-R-K-5N 14x34-RK
+R-L-3 19.5x17-RL
+R-L-4N 14x26-RL
+R-L-5 19.5x22.25-RL
+R-L-5N 14x34-RL
 
 ) );
+
+#R-K-3 19.5x19.5-RK
+#R-K-5N 14x34-RK
 
 #F-F12-2  F-F12
 #F-F12-3  F-F12
