@@ -112,7 +112,7 @@ printq scalar(@lines) , " records.\n" ;
 mkdir "tabxchange" or die "Can't make directory 'tabxchange': $!"
                unless -d "tabxchange";
 
-my @files = getfiles(GETFILES_PUBLIC_AND_DB);
+my @files = getfiles(GETFILES_PUBLIC);
 
 my %skednamesbyroute = ();
 my %skeds;

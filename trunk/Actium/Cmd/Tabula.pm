@@ -72,7 +72,7 @@ sub START {
       = _create_timetable_texts( $xml_db, @skeds );
 
     _output_all_tables( $tabulae_folder, $alltables_r );
-    #_output_pubtts( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
+    _output_pubtts( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
     _output_m_pubtts( $multipubtt_folder, $pubtt_contents_r, $tables_of_r,
         $signup );
 

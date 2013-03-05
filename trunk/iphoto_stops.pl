@@ -8,7 +8,7 @@ use warnings;
 use Math::Trig qw(deg2rad pi great_circle_distance asin acos);
 use Scalar::Util 'looks_like_number';
 
-my $simplefile = '/volumes/bireme/actium/db/f12/SimpleStops-all.tab';
+my $simplefile = '/volumes/bireme/actium/db/w12/SimpleStops.tab';
 
 open my $simplefh, '<', $simplefile
   or die "Can't open $simplefile";
