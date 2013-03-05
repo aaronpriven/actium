@@ -609,6 +609,7 @@ sub as_public_json {
         header_daytext     => $self->header_daytext,
         header_dirtext     => $self->header_dirtext,
         header_columntexts => \@columntexts,
+        linegroup => $self->linegroup,
         lines              => \@lines,
         notes              => \@notes,
         times              => \@times,
