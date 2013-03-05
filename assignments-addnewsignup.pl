@@ -5,7 +5,7 @@ use warnings;
 
 # Takes old assignments.txt and adds new stops from stoplines-dir to it
 
-@ARGV = qw(-s w12 -b /Volumes/Bireme/Actium/db -c /tmp/c);
+#@ARGV = qw(-s sp13 -b /Volumes/Bireme/Actium/db -c /tmp/c);
 
 use FindBin('$Bin');
 use lib ($Bin );
