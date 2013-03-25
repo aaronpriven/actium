@@ -3,7 +3,6 @@
 use 5.012;
 use warnings;
 
-use List::MoreUtils('natatime');
 use autodie;
 use FindBin('$Bin');
 use lib ($Bin);
