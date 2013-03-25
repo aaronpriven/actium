@@ -356,23 +356,23 @@ sub json_retrieve {
       unless -e $filespec;
 
     emit("Retrieving $filename");
-    
+
     require File::Slurp;
-    
+
     my $json_text = File::Slurp::read_file($filespec);
-    
+
     require JSON;
-    
+
     my $data_r = JSON::from_json($json_text);
 
     emit_done;
 
     return $data_r;
 
-}
+} ## tidy end: sub json_retrieve
 
 sub json_store {
- 
+
     my $self     = shift;
     my $data_r   = shift;
     my $filename = shift;
@@ -383,15 +383,15 @@ sub json_store {
     require JSON;
     my $json_text = JSON::to_json($data_r);
     require File::Slurp;
-    
-    File::Slurp::write_file($filespec, $json_text);
-    
-    emit_done; 
- 
+
+    File::Slurp::write_file( $filespec, $json_text );
+
+    emit_done;
+
 }
 
 sub json_store_pretty {
- 
+
     my $self     = shift;
     my $data_r   = shift;
     my $filename = shift;
@@ -400,14 +400,13 @@ sub json_store_pretty {
     emit("Storing $filename...");
 
     require JSON;
-    my $json_text = JSON::to_json($data_r, { pretty => 1, canonical=>1});
-    
+    my $json_text = JSON::to_json( $data_r, { pretty => 1, canonical => 1 } );
+
     require File::Slurp;
-    File::Slurp::write_file($filespec, $json_text);
-    
-    emit_done; 
-  
- 
+    File::Slurp::write_file( $filespec, $json_text );
+
+    emit_done;
+
 }
 
 sub retrieve {
@@ -549,7 +548,7 @@ sub write_files_with_method {
         }
     );
 
-    my @objects = @{ $params{OBJECTS} };
+    my @objects   = @{ $params{OBJECTS} };
     my $extension = $EMPTY_STR;
     if ( exists $params{EXTENSION} ) {
         $extension = $params{EXTENSION};
@@ -584,9 +583,9 @@ sub write_files_with_method {
         $seen_id{$id}++;
 
         $id .= "_$seen_id{$id}" unless $seen_id{$id} == 1;
-        
+
         my $filename = $id . $extension;
-        
+
         $folder->write_file_with_method(
             {   OBJECT   => $obj,
                 METHOD   => $method,
@@ -594,7 +593,7 @@ sub write_files_with_method {
             }
         );
 
-    }
+    } ## tidy end: foreach my $obj (@objects)
 
     emit_done;
 
@@ -614,6 +613,12 @@ sub write_file_with_method {
     unless ( open $out, '>', $file ) {
         emit_error;
         croak "Can't open $file for writing: $OS_ERROR";
+    }
+
+    my $layermethod = $method . '_layers';
+    if ( $obj->can($layermethod) ) {
+        my $layers = $obj->$layermethod;
+        binmode( $out, $layers );
     }
 
     print $out $obj->$method() or croak "Can't print to $file: $OS_ERROR";
@@ -926,6 +931,13 @@ as well as the method passed in the METHOD argument.
 The name of a method the object is to perform. The results are saved
 in the file.
 
+Also, this name is used to determine the I/O layers used on the file. 
+The routine looks to see whether a method 
+"METHOD_layers" is implemented on the object (e.g., for a method "spaced", 
+it looks for the additional method "spaced_layers"). If that method exists,
+it is called, and the return value is passed to perl's binmode function.
+See L<perlfunc/binmode>.
+
 =item EXTENSION
 
 An optional argument indicating a file extension to be appended to the 
@@ -953,6 +965,13 @@ An object that can perform the method passed in the METHOD argument.
 
 The name of a method the object is to perform. The results are saved
 in the file.
+
+Also, this name is used to determine the I/O layers used on the file. 
+The routine looks to see whether a method 
+"METHOD_layers" is implemented on the object (e.g., for a method "spaced", 
+it looks for the additional method "spaced_layers"). If that method exists,
+it is called, and the return value is passed to perl's binmode function.
+See L<perlfunc/binmode>.
 
 =item FILENAME
 

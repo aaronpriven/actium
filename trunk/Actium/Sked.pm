@@ -310,6 +310,7 @@ sub stoptime_columns {
 }
 
 sub attribute_columns {
+    # return only non-empty attributes of trips
 
     my $self    = shift;
     my @readers = @_;
@@ -625,7 +626,8 @@ sub combine_duplicate_timepoints {
                 my $thistime = shift @single_list;
                 next if $trip->placetime_count < $firstcolumn;
                 # otherwise will splice off the end...
-                $trip->splice_placetimes( $firstcolumn, $numcolumns, $thistime );
+                $trip->splice_placetimes( $firstcolumn, $numcolumns,
+                    $thistime );
             }
         }
 
@@ -662,6 +664,27 @@ sub dump {
 
 }
 
+{
+
+    my %title_of = qw(
+      blockid        BLK
+      daysexceptions EXC
+      from           FM
+      noteletter     NOTE
+      pattern        PAT
+      runid          RUN
+      to             TO
+      type           TYPE
+      typevalue      TYPVAL
+      vehicledisplay VDISP
+      via            VIA
+      viadescription VIADESC
+      sortable_days  DAY
+      vehicletype    VT
+      line           -LN
+      internal_num   INTNUM
+    );
+
 sub spaced {
     my $self = shift;
 
@@ -689,26 +712,7 @@ sub spaced {
     my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR );
 
     my @place_records;
-
-    my %title_of = qw(
-      blockid        BLK
-      daysexceptions EXC
-      from           FM
-      noteletter     NOTE
-      pattern        PAT
-      runid          RUN
-      to             TO
-      type           TYPE
-      typevalue      TYPVAL
-      vehicledisplay VDISP
-      via            VIA
-      viadescription VIADESC
-      sortable_days  DAY
-      vehicletype    VT
-      line           -LN
-      internal_num   INTNUM
-    );
-
+    
     my %column_of = %{ $self->attribute_columns( sort keys %title_of ) };
 
     my @fields = sort { $title_of{$a} cmp $title_of{$b} } keys %column_of;
@@ -756,9 +760,96 @@ sub spaced {
 
 } ## tidy end: sub spaced
 
+sub xlsx {
+    my $self = shift;
+    my $timesub = timestr_sub();
+    
+    require Excel::Writer::XLSX;
+
+    my $outdata;
+    open( my $out, '>', \$outdata ) or die "$!";
+
+    my $workbook = Excel::Writer::XLSX->new($out);
+    my $textformat = $workbook->add_format( num_format => 0x31 );    # text only
+
+    ### INTRO
+    
+    my $intro = $workbook->add_worksheet('intro');
+
+    my @all_attributes
+      = qw(id sortable_days dircode linegroup origlinegroup linedescrip);
+    my @all_output_names = qw(id days dir linegroup origlinegroup linedescrip);
+
+    my @output_names;
+    my @output_values;
+
+    foreach my $i ( 0 .. $#all_attributes ) {
+        my $output_name = $all_output_names[$i];
+        my $attribute   = $all_attributes[$i];
+        my $value       = $self->$attribute;
+        
+        if ( defined $value ) {
+            push @output_names,  $output_name;
+            push @output_values, $value;
+        }
+    }
+
+    $intro->write_col( 0, 0, \@output_names,  $textformat );
+    $intro->write_col( 0, 1, \@output_values, $textformat );
+
+    ### TPSKED
+    
+    my $tpsked   = $workbook->add_worksheet('tpsked');
+    
+    my @place_records;
+    
+    my %column_of = %{ $self->attribute_columns( sort keys %title_of ) };
+    my @fields = sort { $title_of{$a} cmp $title_of{$b} } keys %column_of;
+
+    push @place_records, [ ($EMPTY_STR) x scalar @fields, $self->place4s ];
+    push @place_records, [ @title_of{@fields}, $self->place8s ];
+
+    my @trips = $self->trips;
+
+    foreach my $trip (@trips) {
+        push @place_records,
+          [ ( map { $trip->$_ } @fields ), $timesub->( $trip->placetimes ) ];
+    }
+    
+    $tpsked->write_col (0,0,\@place_records, $textformat);
+    $tpsked->freeze_panes(2,0);
+    $tpsked->set_zoom(125);
+    
+    ### STOPSKED
+    
+    my $stopsked = $workbook->add_worksheet('stopsked');
+    
+    my @stop_records;
+
+    push @stop_records, [ $self->stopids ];
+    push @stop_records, [ $self->stopplaces ];
+
+    foreach my $trip (@trips) {
+        push @stop_records, [ $timesub->( $trip->stoptimes ) ];
+    }
+    
+    $stopsked->write_col (0,0,\@stop_records, $textformat);
+    $stopsked->freeze_panes(2,0);
+    
+    $tpsked->activate();
+
+    $workbook->close();
+    close $out;
+    return $outdata;
+
+} ## tidy end: sub xlsx
+
+}
+
+sub xls_layers {':raw'}
+
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
 
 __END__
-
