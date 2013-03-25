@@ -86,12 +86,29 @@ sub thea_import {
     my @skeds
       = _make_skeds( $trips_of_skedid_r, $upattern_of_r, $places_info_of_r );
 
-    _output_debugging_patterns( $signup, $patterns_r, $pat_lineids_of_lgdir_r,
+     _output_debugging_patterns( $signup, $patterns_r, $pat_lineids_of_lgdir_r,
         $upattern_of_r, $uindex_of_r, \@skeds );
+
+    _output_xlsx( $signup, \@skeds );
 
     return @skeds;
 
 } ## tidy end: sub thea_import
+
+sub _output_xlsx {
+
+    use autodie;
+    my $signup  = shift;
+    my $skeds_r = shift;
+
+    my $xlsxfolder = $signup->subfolder('xlsx_sked');
+    $xlsxfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'xlsx',
+        EXTENSION => 'xlsx',
+    );
+
+}
 
 sub _output_debugging_patterns {
 
@@ -335,12 +352,12 @@ sub _get_patterns {
 
         my %stop_set_of_lineid;
         foreach my $lineid (@lineids) {
-         
+
             next unless $patterns{$lineid}[P_STOPS];
-            
-            # skip making the pattern if there aren't any stops for that 
+
+            # skip making the pattern if there aren't any stops for that
             # pattern
-            
+
             my @stop_set;
             foreach my $stop ( @{ $patterns{$lineid}[P_STOPS] } ) {
                 push @stop_set, join( ':', @{$stop} );
