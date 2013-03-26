@@ -86,20 +86,27 @@ sub thea_import {
     my @skeds
       = _make_skeds( $trips_of_skedid_r, $upattern_of_r, $places_info_of_r );
 
-     _output_debugging_patterns( $signup, $patterns_r, $pat_lineids_of_lgdir_r,
-        $upattern_of_r, $uindex_of_r, \@skeds );
+    #_output_debugging_patterns( $signup, $patterns_r, $pat_lineids_of_lgdir_r,
+    #   $upattern_of_r, $uindex_of_r, \@skeds );
 
-    _output_xlsx( $signup, \@skeds );
+    _output_skeds( $signup, \@skeds );
 
     return @skeds;
 
 } ## tidy end: sub thea_import
 
-sub _output_xlsx {
+sub _output_skeds {
 
     use autodie;
     my $signup  = shift;
     my $skeds_r = shift;
+
+    my $objfolder = $signup->subfolder('json_obj');
+    $objfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'json',
+        EXTENSION => 'json',
+    );
 
     my $xlsxfolder = $signup->subfolder('xlsx_sked');
     $xlsxfolder->write_files_with_method(
@@ -108,7 +115,14 @@ sub _output_xlsx {
         EXTENSION => 'xlsx',
     );
 
-}
+    my $spacedfolder = $signup->subfolder( 'thea_debug', 'spaced' );
+    $spacedfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'spaced',
+        EXTENSION => 'txt',
+    );
+
+} ## tidy end: sub _output_skeds
 
 sub _output_debugging_patterns {
 
@@ -129,13 +143,6 @@ sub _output_debugging_patterns {
         OBJECTS   => $skeds_r,
         METHOD    => 'dump',
         EXTENSION => 'dump',
-    );
-
-    my $spacedfolder = $debugfolder->subfolder('spaced');
-    $spacedfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'spaced',
-        EXTENSION => 'txt',
     );
 
     Actium::Sked->write_prehistorics( $skeds_r, $debugfolder );

@@ -13,6 +13,9 @@ package Actium::Sked::Days 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
+use MooseX::Storage;
+with Storage( 'format' => 'JSON' );
+
 
 use Actium::Types qw<DayCode SchoolDayCode>;
 use Actium::Util qw<positional_around joinseries>;
