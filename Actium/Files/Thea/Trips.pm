@@ -165,8 +165,12 @@ sub _make_days_obj {
 
     $day_digits =~ s/0/7H/s;
     # Thea uses 0 instead of 7 for Sunday, as Hastus Standard AVL did.
+    # TODO - Figure out more universal way of determining holidays
+    
     $day_digits = j( sort ( split( //s, $day_digits ) ) );
     # sort $theaday by characters - putting 7 at end
+    
+
 
     my $schooldaycode
       = $trp_event eq 'SD' ? 'D'

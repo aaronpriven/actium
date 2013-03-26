@@ -13,6 +13,8 @@ package Actium::Sked::Dir 0.002;
 
 use Moose;
 use MooseX::StrictConstructor;
+use MooseX::Storage;
+with Storage( 'format' => 'JSON' );
 
 use Actium::Types qw<DirCode>;
 use Actium::Util qw<positional_around>;
