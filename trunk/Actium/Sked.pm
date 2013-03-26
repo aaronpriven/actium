@@ -16,6 +16,9 @@ use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
+use MooseX::Storage;
+with Storage( 'format' => 'JSON' );
+
 use English '-no_match_vars';
 
 use List::MoreUtils qw<none any>;
@@ -685,61 +688,62 @@ sub dump {
       internal_num   INTNUM
     );
 
-sub spaced {
-    my $self = shift;
+    sub spaced {
+        my $self = shift;
 
-    my $outdata;
-    open( my $out, '>', \$outdata );
+        my $outdata;
+        open( my $out, '>', \$outdata );
 
-    say $out $self->id;
+        say $out $self->id;
 
-    my @simplefields;
-    my %value_of_simplefield = (
-        dir           => $self->dircode,
-        days          => $self->sortable_days,
-        linegroup     => $self->linegroup,
-        origlinegroup => $self->origlinegroup,
-        linedescrip   => $self->linedescrip,
-    );
+        my @simplefields;
+        my %value_of_simplefield = (
+            dir           => $self->dircode,
+            days          => $self->sortable_days,
+            linegroup     => $self->linegroup,
+            origlinegroup => $self->origlinegroup,
+            linedescrip   => $self->linedescrip,
+        );
 
-    while ( my ( $field, $value ) = each %value_of_simplefield ) {
-        next unless defined($value);
-        push @simplefields, "$field:$value";
-    }
+        while ( my ( $field, $value ) = each %value_of_simplefield ) {
+            next unless defined($value);
+            push @simplefields, "$field:$value";
+        }
 
-    say $out "@simplefields";
+        say $out "@simplefields";
 
-    my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR );
+        my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR );
 
-    my @place_records;
-    
-    my %column_of = %{ $self->attribute_columns( sort keys %title_of ) };
+        my @place_records;
 
-    my @fields = sort { $title_of{$a} cmp $title_of{$b} } keys %column_of;
+        my %column_of = %{ $self->attribute_columns( sort keys %title_of ) };
 
-    push @place_records, [ ($EMPTY_STR) x scalar @fields, $self->place4s ];
-    push @place_records, [ @title_of{@fields}, $self->place8s ];
+        my @fields = sort { $title_of{$a} cmp $title_of{$b} } keys %column_of;
 
-    my @trips = $self->trips;
+        push @place_records, [ ($EMPTY_STR) x scalar @fields, $self->place4s ];
+        push @place_records, [ @title_of{@fields}, $self->place8s ];
 
-    foreach my $trip (@trips) {
-        push @place_records,
-          [ ( map { $trip->$_ } @fields ), $timesub->( $trip->placetimes ) ];
-    }
+        my @trips = $self->trips;
 
-    say $out jn( @{ tabulate_arrayrefs(@place_records) } ), "\n";
-    # extra \n for a blank line to separate places and stops
+        foreach my $trip (@trips) {
+            push @place_records,
+              [ ( map { $trip->$_ } @fields ),
+                $timesub->( $trip->placetimes ) ];
+        }
 
-    my @stop_records;
+        say $out jn( @{ tabulate_arrayrefs(@place_records) } ), "\n";
+        # extra \n for a blank line to separate places and stops
 
-    push @stop_records, [ $self->stopids ];
-    push @stop_records, [ $self->stopplaces ];
+        my @stop_records;
 
-    foreach my $trip (@trips) {
-        push @stop_records, [ $timesub->( $trip->stoptimes ) ];
-    }
+        push @stop_records, [ $self->stopids ];
+        push @stop_records, [ $self->stopplaces ];
 
-    say $out jn( @{ tabulate_arrayrefs(@stop_records) } );
+        foreach my $trip (@trips) {
+            push @stop_records, [ $timesub->( $trip->stoptimes ) ];
+        }
+
+        say $out jn( @{ tabulate_arrayrefs(@stop_records) } );
 #
 #    my @tripfields = qw<blockid daysexceptions from noteletter pattern runid to
 #      type typevalue vehicledisplay via viadescription>;
@@ -754,99 +758,127 @@ sub spaced {
 #        say $out "@tripfield_outs";
 #    }
 
-    close $out;
+        close $out;
 
-    return $outdata;
+        return $outdata;
 
-} ## tidy end: sub spaced
+    } ## tidy end: sub spaced
 
-sub xlsx {
-    my $self = shift;
-    my $timesub = timestr_sub();
-    
-    require Excel::Writer::XLSX;
+    sub xlsx {
+        my $self = shift;
+        my $timesub = timestr_sub( XB => 1 );
 
-    my $outdata;
-    open( my $out, '>', \$outdata ) or die "$!";
+        require Excel::Writer::XLSX;
 
-    my $workbook = Excel::Writer::XLSX->new($out);
-    my $textformat = $workbook->add_format( num_format => 0x31 );    # text only
+        my $outdata;
+        open( my $out, '>', \$outdata ) or die "$!";
 
-    ### INTRO
-    
-    my $intro = $workbook->add_worksheet('intro');
+        my $workbook = Excel::Writer::XLSX->new($out);
+        my $textformat
+          = $workbook->add_format( num_format => 0x31 );    # text only
 
-    my @all_attributes
-      = qw(id sortable_days dircode linegroup origlinegroup linedescrip);
-    my @all_output_names = qw(id days dir linegroup origlinegroup linedescrip);
+        ### INTRO
 
-    my @output_names;
-    my @output_values;
+        my $intro = $workbook->add_worksheet('intro');
 
-    foreach my $i ( 0 .. $#all_attributes ) {
-        my $output_name = $all_output_names[$i];
-        my $attribute   = $all_attributes[$i];
-        my $value       = $self->$attribute;
-        
-        if ( defined $value ) {
-            push @output_names,  $output_name;
-            push @output_values, $value;
+        my @all_attributes
+          = qw(id sortable_days dircode linegroup origlinegroup linedescrip md5);
+        my @all_output_names
+          = qw(id days dir linegroup origlinegroup linedescrip md5);
+
+        my @output_names;
+        my @output_values;
+
+        foreach my $i ( 0 .. $#all_attributes ) {
+            my $output_name = $all_output_names[$i];
+            my $attribute   = $all_attributes[$i];
+            my $value       = $self->$attribute;
+
+            if ( defined $value ) {
+                push @output_names,  $output_name;
+                push @output_values, $value;
+            }
         }
-    }
 
-    $intro->write_col( 0, 0, \@output_names,  $textformat );
-    $intro->write_col( 0, 1, \@output_values, $textformat );
+        $intro->write_col( 0, 0, \@output_names,  $textformat );
+        $intro->write_col( 0, 1, \@output_values, $textformat );
 
-    ### TPSKED
-    
-    my $tpsked   = $workbook->add_worksheet('tpsked');
-    
-    my @place_records;
-    
-    my %column_of = %{ $self->attribute_columns( sort keys %title_of ) };
-    my @fields = sort { $title_of{$a} cmp $title_of{$b} } keys %column_of;
+        ### TPSKED
 
-    push @place_records, [ ($EMPTY_STR) x scalar @fields, $self->place4s ];
-    push @place_records, [ @title_of{@fields}, $self->place8s ];
+        my $tpsked = $workbook->add_worksheet('tpsked');
 
-    my @trips = $self->trips;
+        my @place_records;
 
-    foreach my $trip (@trips) {
-        push @place_records,
-          [ ( map { $trip->$_ } @fields ), $timesub->( $trip->placetimes ) ];
-    }
-    
-    $tpsked->write_col (0,0,\@place_records, $textformat);
-    $tpsked->freeze_panes(2,0);
-    $tpsked->set_zoom(125);
-    
-    ### STOPSKED
-    
-    my $stopsked = $workbook->add_worksheet('stopsked');
-    
-    my @stop_records;
+        my %column_of = %{ $self->attribute_columns( sort keys %title_of ) };
+        my @fields = sort { $title_of{$a} cmp $title_of{$b} } keys %column_of;
 
-    push @stop_records, [ $self->stopids ];
-    push @stop_records, [ $self->stopplaces ];
+        push @place_records, [ ($EMPTY_STR) x scalar @fields, $self->place4s ];
+        push @place_records, [ @title_of{@fields}, $self->place8s ];
 
-    foreach my $trip (@trips) {
-        push @stop_records, [ $timesub->( $trip->stoptimes ) ];
-    }
-    
-    $stopsked->write_col (0,0,\@stop_records, $textformat);
-    $stopsked->freeze_panes(2,0);
-    
-    $tpsked->activate();
+        my @trips = $self->trips;
 
-    $workbook->close();
-    close $out;
-    return $outdata;
+        foreach my $trip (@trips) {
+            push @place_records,
+              [ ( map { $trip->$_ } @fields ),
+                $timesub->( $trip->placetimes ) ];
+        }
 
-} ## tidy end: sub xlsx
+        $tpsked->write_col( 0, 0, \@place_records, $textformat );
+        $tpsked->freeze_panes( 2, 0 );
+        $tpsked->set_zoom(125);
+
+        ### STOPSKED
+
+        my $stopsked = $workbook->add_worksheet('stopsked');
+
+        my @stop_records;
+
+        push @stop_records, [ $self->stopids ];
+        push @stop_records, [ $self->stopplaces ];
+
+        foreach my $trip (@trips) {
+            push @stop_records, [ $timesub->( $trip->stoptimes ) ];
+        }
+
+        $stopsked->write_col( 0, 0, \@stop_records, $textformat );
+        $stopsked->freeze_panes( 2, 0 );
+
+        $tpsked->activate();
+
+        $workbook->close();
+        close $out;
+        return $outdata;
+
+    } ## tidy end: sub xlsx
 
 }
 
-sub xls_layers {':raw'}
+sub xlsx_layers {':raw'}
+
+sub md5 {
+    # If I ever go through this and make it readonly, then
+    # this should be a lazy attribute
+
+    my $self = shift;
+    # build an MD5 digest from the placetimes, stoptimes, places, and stops
+    require Digest::MD5;
+
+    my @data = ( jt( $self->place4s ), jt( $self->stopids ) );
+
+    foreach my $trip ( $self->trips ) {
+        push @data, jt( $trip->stoptimes );
+        push @data, jt( $trip->placetimes );
+    }
+
+    my $digest = Digest::MD5::md5_hex( jk(@data) );
+    return $digest;
+
+}
+
+sub json {
+    my $self = shift;
+    return $self->freeze;    # uses MooseX::Storage;
+}
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 

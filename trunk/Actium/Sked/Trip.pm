@@ -4,21 +4,21 @@
 
 # Subversion: $Id$
 
-# legacy status 3
+# legacy status 4
 
 package Actium::Sked::Trip;
 
-use Moose;
-
-use 5.010;
+use 5.016;
 
 use utf8;
-our $VERSION = '0.001';
-$VERSION = eval $VERSION;
+our $VERSION = '0.002';
 
+use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
-use Moose;
+
+use MooseX::Storage;
+with Storage( 'format' => 'JSON' );
 
 #use Moose::Util::TypeConstraints;
 use Actium::Time qw<timestr timestr_sub>;

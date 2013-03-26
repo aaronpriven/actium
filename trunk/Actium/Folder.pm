@@ -941,7 +941,7 @@ See L<perlfunc/binmode>.
 =item EXTENSION
 
 An optional argument indicating a file extension to be appended to the 
-filename, after a period. 
+filename, after a period.  (If omitted, no extension is used.)
 
 =item SUBFOLDER
 
