@@ -235,7 +235,7 @@ sub lines {
 
     # Trips are kept read-write so that AVL and headways can be merged --
     # would it be better to have them be readonly,
-    # and create new sked objects each time?
+    # and create new sked objects each time? -- YES. I am doing this now.
 
     my $self = shift;
 
