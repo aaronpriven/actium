@@ -14,7 +14,7 @@ use utf8;
 our $VERSION = '0.002';
 
 use Moose;
-use MooseX::SemiAffordanceAccessor;
+#use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
 use MooseX::Storage;
@@ -24,13 +24,27 @@ with Storage( 'format' => 'JSON' );
 use Actium::Time qw<timestr timestr_sub>;
 use Actium::Util 'jt';
 use Actium::Constants;
+use Carp;
 
-use List::Util ('min');
+use List::Util   ('min');
+use Scalar::Util ('reftype');
 
 #use overload q{""} => \&stoptimes_comparison_str;
 # only for debugging - remove in production
 
 use Actium::Types qw<ArrayRefOfTimeNums TimeNum ActiumSkedDays>;
+
+sub BUILD {
+    my $self = shift;
+
+    if ( $self->stoptimes_are_empty and $self->placetimes_are_empty ) {
+
+        croak 'Neither placetimes nor stoptimes specified in constructing '
+          . 'Actium::Sked::Trip object: '
+
+    }
+
+}
 
 ###################
 ###
@@ -46,7 +60,7 @@ has [
       from to vehicletype internal_num
       vehicledisplay via viadescription>
   ] => (
-    is  => 'rw',
+    is  => 'ro',
     isa => 'Str',
   );
 
@@ -67,7 +81,7 @@ has 'days_obj' => (
 
 # from headways
 has 'stopleave' => (
-    is     => 'rw',
+    is     => 'ro',
     isa    => TimeNum,
     coerce => 1,
 );
@@ -88,12 +102,24 @@ has 'stoptime_r' => (
     },
 );
 
-sub stoptimes_comparison_str {
+has stoptimes_comparison_str => (
+    is      => 'ro',
+    builder => '_build_stoptimes_comparison_str',
+    lazy    => 1,
+);
+
+sub _build_stoptimes_comparison_str {
     my $self = shift;
     return join( "\t", grep {defined} $self->stoptimes );
 }
 
-sub average_stoptime {
+has average_stoptime => (
+    is      => 'ro',
+    builder => '_build_average_stoptime',
+    lazy    => 1,
+);
+
+sub _build_average_stoptime {
     my $self = shift;
     my @times = grep { defined $_ } $self->stoptimes;
     return ( List::Util::sum(@times) / scalar @times );
@@ -107,11 +133,11 @@ sub stoptimes_equals {
 }
 
 # from either
-has 'placetime_r' => (
+has placetime_r => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'ro',
     isa     => ArrayRefOfTimeNums,
-    default => sub { [] },
+    default => sub { [] } ,
     coerce  => 1,
     handles => {
         placetimes           => 'elements',
@@ -171,10 +197,10 @@ sub merge_trips {
     }
 
     #delete duplicate merged trips
-    for my $i ( reverse (0 .. $#mergedtrips) ) {
-        for my $j ( reverse (0 .. ($i - 1)) ) {
+    for my $i ( reverse( 0 .. $#mergedtrips ) ) {
+        for my $j ( reverse( 0 .. ( $i - 1 ) ) ) {
             if ( $mergedtrips[$i] == $mergedtrips[$j] ) {
-                pop @mergedtrips; # delete $mergedtrips[$i]
+                pop @mergedtrips;    # delete $mergedtrips[$i]
                 last;
             }
         }
@@ -371,9 +397,7 @@ L<Actium::Sked::HeadwayPage> object and the L<Actium::Sked> object.
 
 =head1 ATTRIBUTES
 
-Methods to get and set attributes are named in a semi-affordance fashion: 
-setter methods are "set-I<attribute>()" but getter methods are just 
-"I<attribute>()."
+All attributes are read-only.
 
 =over
 
@@ -534,9 +558,9 @@ See L<Moose>.
 
 =item Moose
 
-=item MooseX::SemiAffordanceAccessor
-
 =item MooseX::StrictConstructor
+
+=item MooseX::Storage
 
 =item Actium::Constants
 
