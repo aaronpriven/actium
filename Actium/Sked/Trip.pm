@@ -22,7 +22,7 @@ with Storage( 'format' => 'JSON' );
 
 #use Moose::Util::TypeConstraints;
 use Actium::Time qw<timestr timestr_sub>;
-use Actium::Util 'jt';
+use Actium::Util qw<jt in>;
 use Actium::Constants;
 use Carp;
 
@@ -38,13 +38,43 @@ sub BUILD {
     my $self = shift;
 
     if ( $self->stoptimes_are_empty and $self->placetimes_are_empty ) {
+        my $class = blessed $self;
 
         croak 'Neither placetimes nor stoptimes specified in constructing '
-          . 'Actium::Sked::Trip object: '
+          . "$class object: "
 
     }
 
 }
+
+# The following is invoked only from the BUILD routine in Actium::Sked 
+# It requires knowledge of the stopplaces which is in the Sked object
+
+sub _add_placetimes_from_stoptimes {
+    my $self = shift;
+    return unless $self->placetimes_are_empty;
+    my $class = blessed $self;
+
+    my @stopplaces = @_;
+
+    my @stoptimes = $self->stoptimes;
+    my @placetimes;
+
+    for my $i ( 0 .. $#stoptimes ) {
+
+        my $stopplace = $stopplaces[$i];
+        my $stoptime  = $stoptimes[$i];
+
+        if ($stopplace) {
+            push @placetimes, $stoptime;
+        }
+    }
+    
+    $self->_set_placetime_r(\@placetimes);
+
+    return;
+
+} ## tidy end: sub with_placetimes
 
 ###################
 ###
@@ -98,7 +128,7 @@ has 'stoptime_r' => (
         stoptimes           => 'elements',
         stoptime_count      => 'count',
         stoptimes_are_empty => 'is_empty',
-        delete_stoptime     => 'delete',
+        _delete_stoptime     => 'delete',
     },
 );
 
@@ -136,16 +166,18 @@ sub stoptimes_equals {
 has placetime_r => (
     traits  => ['Array'],
     is      => 'ro',
+    writer => '_set_placetime_r',
     isa     => ArrayRefOfTimeNums,
-    default => sub { [] } ,
+    default => sub { [] },
     coerce  => 1,
     handles => {
         placetimes           => 'elements',
-        splice_placetimes    => 'splice',
         placetime_count      => 'count',
         placetimes_are_empty => 'is_empty',
         placetime            => 'get',
-        delete_placetime     => 'delete',
+        _splice_placetimes    => 'splice',
+        _delete_placetime     => 'delete', 
+        # only from BUILD in Actium::Sked
     },
 );
 
@@ -158,15 +190,17 @@ has 'mergedtrip_r' => (
 
 );
 
-sub dump {    ## no critic (ProhibitBuiltinHomonyms)
-    my $self = shift;
-    require Data::Dump;
-    return Data::Dump::dump($self);
-}
+#sub dump {    ## no critic (ProhibitBuiltinHomonyms)
+#    my $self = shift;
+#    require Data::Dump;
+#    return Data::Dump::dump($self);
+#}
 
-### CLASS METHODS
+### OBJECT METHODS
 
 sub merge_trips {
+    # allows calling as object method or class method
+    # but calling as a class method is deprecated
 
     my $class;
     if ( blessed $_[0] ) {
@@ -174,6 +208,8 @@ sub merge_trips {
     }
     else {
         $class = shift;
+        warn 'Called merge_trips as a class method; '
+          . 'this should be changed to an object call';
     }
 
     # allows calling as object method or class method
@@ -237,7 +273,7 @@ sub merge_trips {
                     $merged_value_of{$init_arg} = $firstattr;
                 }
                 # if they're identical, set the array to the value
-                elsif ( $attrname ~~ ['daysexceptions'] ) {
+                elsif ( in( $attrname, ['daysexceptions'] ) ) {
                     $merged_value_of{$init_arg} = '';
                 }
                 # otherwise, if the attribute name is one of the those, then
@@ -371,6 +407,8 @@ sub merge_trips_if_same {
 
 } ## tidy end: sub merge_trips_if_same
 
+
+
 no Moose;
 
 #no Moose::Util::TypeConstraints;
@@ -483,11 +521,7 @@ The number of elements in the placetime array.
 
 =item B<placetime(I<index>)>
 
-Returns the value of the placetime of the given index ( beginning at 0).
-
-=item B<splice_placetimes(I<offset>, I<length>, I<values>)>
-
-Like the perl builtin L<splice|perlfunc/splice>.
+Returns the value of the placetime of the given index (beginning at 0).
 
 =item B<mergedtrip_r>
 

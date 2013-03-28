@@ -4,7 +4,7 @@
 
 # Subversion: $Id$
 
-# legacy status 3
+# legacy status 4
 
 package Actium::Sked 0.002;
 
@@ -12,7 +12,7 @@ use 5.012;
 use strict;
 
 use Moose;
-use MooseX::SemiAffordanceAccessor;
+#use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
@@ -37,394 +37,97 @@ use Actium::Sked::Days;
 
 use Actium::Term;
 
+use Const::Fast;
+
 with 'Actium::Sked::Prehistoric';
 # allows prehistoric skeds files to be read and written.
 
 ###################################
-## MOOSE ATTRIBUTES
+## CONSTRUCTION
 
-# comes from AVL, not headways
-has 'place4_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Str]',
-    default => sub { [] },
-    handles => {
-        place4            => 'get',
-        place4s           => 'elements',
-        place_count       => 'count',
-        place4s_are_empty => 'is_empty',
-        delete_place4     => 'delete',
-        splice_place4s    => 'splice',
-    },
-);
-
-# comes from AVL or headways
-has 'place8_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Str]',
-    default => sub { [] },
-    handles => {
-        place8            => 'get',
-        place8s           => 'elements',
-        place8s_are_empty => 'is_empty',
-        _place8_count     => 'count',
-        delete_place8     => 'delete',
-        splice_place8s    => 'splice',
-    },
-);
-
-# from AVL or headways
-has [qw<origlinegroup linegroup linedescrip>] => (
-    is  => 'rw',
-    isa => 'Str',
-);
-
-# direction
-has 'dir_obj' => (
-    required => 1,
-    coerce   => 1,
-    init_arg => 'direction',
-    is       => 'ro',
-    isa      => ActiumSkedDir,
-    handles  => {
-        'direction' => 'dircode',
-        'dircode'   => 'dircode',
-        'to_text'   => 'as_to_text'
-    },
-);
-
-has 'linedir' => (
-    lazy    => 1,
-    builder => '_build_linedir',
-    is      => 'ro',
-);
-
-has 'linedays' => (
-    lazy    => 1,
-    builder => '_build_linedays',
-    is      => 'ro',
-);
-
-# days
-has 'days_obj' => (
-    required => 1,
-    coerce   => 1,
-    init_arg => 'days',
-    is       => 'ro',
-    isa      => ActiumSkedDays,
-    handles  => {
-        daycode       => 'daycode',
-        schooldaycode => 'schooldaycode',
-        sortable_days => 'as_sortable',
-    }
-);
-
-# from AVL or headways, but specific data in trips varies
-has 'trip_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Actium::Sked::Trip]',
-    default => sub { [] },
-    handles => { trips => 'elements', trip => 'get', trip_count => 'count' },
-);
-
-# from AVL only
-
-has 'stopid_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Str]',
-    default => sub { [] },
-    handles => {
-        stop_count    => 'count',
-        stopids       => 'elements',
-        delete_stopid => 'delete'
-    },
-);
-
-has 'stopplace_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Str]',
-    default => sub { [] },
-    handles => { stopplaces => 'elements', delete_stopplace => 'delete' },
-);
-
-has 'earliest_timenum' => (
-    is       => 'ro',
-    lazy     => 1,
-    builder  => '_build_earliest_timenum',
-    required => 0,
-    init_arg => undef,
-);
-
-#### BUILDERS
-
-sub _build_linedir {
+sub BUILD {
 
     my $self = shift;
-    return jk( $self->linegroup, $self->dircode );
+
+    $self->_add_placetimes_from_stoptimes;
+    $self->_delete_blank_columns;
+    $self->_combine_duplicate_timepoints;
 
 }
 
-sub _build_linedays {
-
-    my $self = shift;
-    return jk( $self->linegroup, $self->sortable_days );
-
-}
-
-sub _build_earliest_timenum {
-
-    my $self  = shift;
-    my $trip  = $self->trip(0);
-    my @times = $trip->placetimes;
-
-    my $timenum = first { defined $_ } @times;
-    return $timenum;
-
-}
-
-sub build_placetimes_from_stoptimes {
-    my $self  = shift;
-    my @trips = $self->trips;
-
+sub _add_placetimes_from_stoptimes {
+    my $self       = shift;
+    my @trips      = $self->trips;
     my @stopplaces = $self->stopplaces;
+    $_->_add_placetimes_from_stoptimes(@stopplaces) foreach @trips;
 
-    foreach my $trip (@trips) {
+    return;
+}
 
-        next unless $trip->placetimes_are_empty;
+sub _delete_blank_columns {
+    my $self = shift;
 
-        my @stoptimes          = $trip->stoptimes;
-        my $previous_stopplace = $EMPTY_STR;
-        my @placetimes;
+    if ( not $self->trip(0)->placetimes_are_empty ) {
+        my @placetime_cols_to_delete;
 
-        for my $i ( 0 .. $#stoptimes ) {
+        my @columns_of_times = $self->_placetime_columns;
+        my $has_place8s      = not $self->place8s_are_empty;
+        my $has_place4s      = not $self->place4s_are_empty;
 
-            my $stopplace = $stopplaces[$i];
-            my $stoptime  = $stoptimes[$i];
+        my $place_id_count = $self->place_count;
+        my $placecount = max( $place_id_count, $#columns_of_times );
 
-            if ($stopplace) {
-                push @placetimes, $stoptime;
-
-                #    if ( $stopplace ne $previous_stopplace ) {
-                #        push @placetimes, $stoptime;
-                #        $previous_stopplace = $stopplace;
-                #    }
-                #    elsif ($stoptime) {
-                #        $placetimes[-1] = $stoptime;
-                #    }
+        for my $i ( reverse( 0 .. $placecount ) ) {
+            if ( none { defined($_) } @{ $columns_of_times[$i] } ) {
+                push @placetime_cols_to_delete, $i;
+                next                      if $i > $place_id_count;
+                $self->_delete_place8($i) if ($has_place8s);
+                $self->_delete_place4($i) if ($has_place4s);
 
             }
         }
 
-        $trip->set_placetime_r( \@placetimes );
-    } ## tidy end: foreach my $trip (@trips)
-
-} ## tidy end: sub build_placetimes_from_stoptimes
-
-#################################
-## METHODS
-
-sub lines {
-
-    # It would be nice to make this a lazy attribute, but the Trip objects
-    # can change.
-
-    # Trips are kept read-write so that AVL and headways can be merged --
-    # would it be better to have them be readonly,
-    # and create new sked objects each time? -- YES. I am doing this now.
-
-    my $self = shift;
-
-    my $line_r;
-    my %seen_line;
-
-    foreach my $trip ( $self->trips() ) {
-        $seen_line{ $trip->line() } = 1;
-    }
-
-    return sortbyline( keys %seen_line );
-
-} ## tidy end: sub lines
-
-sub has_multiple_lines {
-    my $self  = shift;
-    my @lines = $self->lines;
-    return @lines > 1;
-}
-
-sub daysexceptions {
-
-    my $self = shift;
-
-    my %seen_daysexceptions;
-
-    foreach my $trip ( $self->trips() ) {
-        $seen_daysexceptions{ $trip->daysexceptions } = 1;
-    }
-
-    return sort keys %seen_daysexceptions;
-
-}
-
-sub has_multiple_daysexceptions {
-    my $self           = shift;
-    my @daysexceptions = $self->daysexceptions;
-    return @daysexceptions > 1;
-}
-
-sub id {
-    my $self = shift;
-    return $self->skedid;
-}
-
-sub skedid {
-    my $self = shift;
-    my $linegroup = $self->linegroup || $self->oldlinegroup;
-    return ( join( '_', $linegroup, $self->dircode, $self->daycode ) );
-}
-
-sub sortable_id {
-    my $self = shift;
-    my $linegroup = linekeys( $self->linegroup || $self->oldlinegroup );
-    $linegroup =~ s/\0/ /g;
-    my $dir = $self->dir_obj->as_sortable;
-
-    my $earliest_timenum = $self->earliest_timenum;
-    $earliest_timenum = 0 if $earliest_timenum < 0;
-    $earliest_timenum = linekeys( $self->earliest_timenum );
-
-    return join( "\t", $linegroup, $self->daycode, $earliest_timenum, $dir );
-}
-
-sub stoptime_columns {
-    my $self = shift;
-    my @columns;
-    foreach my $trip ( $self->trips ) {
-        foreach my $i ( 0 .. $trip->stoptime_count - 1 ) {
-            push @{ $columns[$i] }, $trip->stoptime($i);
-        }
-    }
-
-    return @columns;
-}
-
-sub attribute_columns {
-    # return only non-empty attributes of trips
-
-    my $self    = shift;
-    my @readers = @_;
-    # reader method, generally the same as the attribute name
-    my %column_of;
-
-    my @trips = $self->trips;
-
-    foreach my $trip ( $self->trips ) {
-        foreach my $reader (@readers) {
-            push @{ $column_of{$reader} }, $trip->$reader;
-        }
-    }
-
-    foreach my $reader (@readers) {
-        if ( none { defined and $_ ne $EMPTY_STR } @{ $column_of{$reader} } ) {
-            delete $column_of{$reader};
-        }
-    }
-    return \%column_of;
-
-} ## tidy end: sub attribute_columns
-
-### METHODS THAT ALTER SKEDS
-
-sub divide_sked {
-    my $self = shift;
-
-    my @lines = $self->lines();
-
-    my %linegroup_of;
-    foreach (@lines) {
-        $linegroup_of{$_} = ( $LINES_TO_COMBINE{$_} || $_ );
-
-        #        $linegroup_of{$_} = ( $_ );
-    }
-
-    my %linegroups;
-    $linegroups{$_} = 1 foreach ( values %linegroup_of );
-    my @linegroups = keys %linegroups;
-
-    if ( scalar(@linegroups) == 1 ) {  # there's just one linegroup, return self
-        $self->set_linegroup( $lines[0] );
-
-        if ( $linegroups{'97'} ) {
-            print '';                  # DEBUG - breakpoint
-        }
-
-        $self->delete_blank_columns;
-
-        # override Scheduling's linegroup with the first line
-        return $self;
-    }
-
-    # More than one linegroup! Split apart
-
-    my ( %trips_of, @newskeds );
-
-    # collect trips for each one in %trips_of
-    foreach my $trip ( $self->trips ) {
-        my $linegroup = $linegroup_of{ $trip->line };
-        push @{ $trips_of{$linegroup} }, $trip;
-    }
-
-    foreach my $linegroup (@linegroups) {
-
-        my %value_of;
-
-        # collect all other attribute values in %values_of
-        # This is a really primitive clone routine and might arguably
-        # be better replaced by something based on MooseX::Clone or some other
-        # "real" deep clone routine.
-
-        foreach my $attribute ( $self->meta->get_all_attributes ) {
-
-            # meta-objects! woohoo! screw you, Mouse!
-
-            my $attrname = $attribute->name;
-            next if $attrname eq 'trip_r' or $attrname eq 'linegroup';
-
-            my $value = $self->$attrname;
-            if ( ref($value) eq 'ARRAY' ) {
-                $value = [ @{$value} ];
+        foreach my $trip ( $self->trips ) {
+            my $placetime_count = $trip->placetime_count;
+            foreach my $i (@placetime_cols_to_delete) {
+                next if $i > $placetime_count;
+                $trip->_delete_placetime($i);
             }
-            elsif ( ref($value) eq 'HASH' ) {
-                $value = { %{$value} };
-            }    # purely speculative as there are no hash attributes right now
+        }
+    } ## tidy end: if ( not $self->trip(0...))
 
-            # use of "ref" rather than "reftype" is intentional here. We don't
-            # want to clone objects this way.
+    if ( not $self->trip(0)->stoptimes_are_empty ) {
 
-            $value_of{$attrname} = $value;
-        }    ## <perltidy> end foreach my $attribute ( $self...)
+        my @stoptimes_cols_to_delete;
 
-        my $newsked = Actium::Sked->new(
-            trip_r    => $trips_of{$linegroup},
-            linegroup => $linegroup,
-            %value_of,
-        );
+        my @columns_of_times = $self->_stoptime_columns;
+        my $stopid_count     = $self->stop_count;
+        my $stopcount        = max( $stopid_count, $#columns_of_times );
 
-        $newsked->delete_blank_columns;
+        for my $i ( reverse( 0 .. $stopcount ) ) {
+            if ( none { defined($_) } @{ $columns_of_times[$i] } ) {
+                push @stoptimes_cols_to_delete, $i;
+                next if $i > $stopid_count;
+                $self->_delete_stopid($i);
+                $self->_delete_stopplace($i);
+            }
+        }
 
-        push @newskeds, $newsked;
+        foreach my $trip ( $self->trips ) {
+            my $stoptime_count = $trip->stoptime_count;
+            foreach my $i (@stoptimes_cols_to_delete) {
+                next if $i > $stoptime_count;
+                $trip->_delete_stoptime($i);
+            }
+        }
 
-    }    ## <perltidy> end foreach my $linegroup (@linegroups)
+    } ## tidy end: if ( not $self->trip(0...))
 
-    return @newskeds;
+    return;
 
-}    ## <perltidy> end sub divide_sked
+}    ## <perltidy> end sub delete_blank_columns
 
-sub placetime_columns {
+sub _placetime_columns {
     my $self = shift;
     my @columns;
     foreach my $trip ( $self->trips ) {
@@ -436,70 +139,19 @@ sub placetime_columns {
     return @columns;
 }
 
-sub delete_blank_columns {
+sub _stoptime_columns {
     my $self = shift;
-
-    if ( not $self->trip(0)->placetimes_are_empty ) {
-        my @placetime_cols_to_delete;
-
-        my @columns_of_times = $self->placetime_columns;
-        my $has_place8s      = not $self->place8s_are_empty;
-        my $has_place4s      = not $self->place4s_are_empty;
-
-        my $place_id_count = $self->place_count;
-        my $placecount = max( $place_id_count, $#columns_of_times );
-
-        for my $i ( reverse( 0 .. $placecount ) ) {
-            if ( none { defined($_) } @{ $columns_of_times[$i] } ) {
-                push @placetime_cols_to_delete, $i;
-                next                     if $i > $place_id_count;
-                $self->delete_place8($i) if ($has_place8s);
-                $self->delete_place4($i) if ($has_place4s);
-
-            }
+    my @columns;
+    foreach my $trip ( $self->trips ) {
+        foreach my $i ( 0 .. $trip->stoptime_count - 1 ) {
+            push @{ $columns[$i] }, $trip->stoptime($i);
         }
+    }
 
-        foreach my $trip ( $self->trips ) {
-            my $placetime_count = $trip->placetime_count;
-            foreach my $i (@placetime_cols_to_delete) {
-                next if $i > $placetime_count;
-                $trip->delete_placetime($i);
-            }
-        }
-    } ## tidy end: if ( not $self->trip(0...))
+    return @columns;
+}
 
-    if ( not $self->trip(0)->stoptimes_are_empty ) {
-
-        my @stoptimes_cols_to_delete;
-
-        my @columns_of_times = $self->stoptime_columns;
-        my $stopid_count     = $self->stop_count;
-        my $stopcount        = max( $stopid_count, $#columns_of_times );
-
-        for my $i ( reverse( 0 .. $stopcount ) ) {
-            if ( none { defined($_) } @{ $columns_of_times[$i] } ) {
-                push @stoptimes_cols_to_delete, $i;
-                next if $i > $stopid_count;
-                $self->delete_stopid($i);
-                $self->delete_stopplace($i);
-            }
-        }
-
-        foreach my $trip ( $self->trips ) {
-            my $stoptime_count = $trip->stoptime_count;
-            foreach my $i (@stoptimes_cols_to_delete) {
-                next if $i > $stoptime_count;
-                $trip->delete_stoptime($i);
-            }
-        }
-
-    } ## tidy end: if ( not $self->trip(0...))
-
-    return;
-
-}    ## <perltidy> end sub delete_blank_columns
-
-sub combine_duplicate_timepoints {
+sub _combine_duplicate_timepoints {
 
     my $self = shift;
 
@@ -610,26 +262,26 @@ sub combine_duplicate_timepoints {
         }    ## <perltidy> end foreach my $trip ( $page->trips)
 
         if ($has_double) {
-            $self->splice_place4s( $firstcolumn, $numcolumns, $place4,
+            $self->_splice_place4s( $firstcolumn, $numcolumns, $place4,
                 $place4 );
-            $self->splice_place8s( $firstcolumn, $numcolumns, $place8,
+            $self->_splice_place8s( $firstcolumn, $numcolumns, $place8,
                 $place8 );
             foreach my $trip ( $self->trips ) {
                 my $thesetimes_r = shift @double_list;
                 my @thesetimes   = @{$thesetimes_r};
                 next if $trip->placetime_count < $firstcolumn;
-                $trip->splice_placetimes( $firstcolumn, $numcolumns,
+                $trip->_splice_placetimes( $firstcolumn, $numcolumns,
                     @thesetimes );
             }
         }
         else {
-            $self->splice_place4s( $firstcolumn, $numcolumns, $place4 );
-            $self->splice_place8s( $firstcolumn, $numcolumns, $place8 );
+            $self->_splice_place4s( $firstcolumn, $numcolumns, $place4 );
+            $self->_splice_place8s( $firstcolumn, $numcolumns, $place8 );
             foreach my $trip ( $self->trips ) {
                 my $thistime = shift @single_list;
                 next if $trip->placetime_count < $firstcolumn;
                 # otherwise will splice off the end...
-                $trip->splice_placetimes( $firstcolumn, $numcolumns,
+                $trip->_splice_placetimes( $firstcolumn, $numcolumns,
                     $thistime );
             }
         }
@@ -638,7 +290,367 @@ sub combine_duplicate_timepoints {
 
     return;
 
-}    ## <perltidy> end sub shrink_duplicate_timepoint_runs
+} ## tidy end: sub _combine_duplicate_timepoints
+
+###################################
+## MOOSE ATTRIBUTES
+
+# comes from AVL, not headways
+has 'place4_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => {
+        place4            => 'get',
+        place4s           => 'elements',
+        place_count       => 'count',
+        place4s_are_empty => 'is_empty',
+        _delete_place4    => 'delete',
+        _splice_place4s   => 'splice',
+    },
+);
+
+# comes from AVL or headways
+has 'place8_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => {
+        place8            => 'get',
+        place8s           => 'elements',
+        place8s_are_empty => 'is_empty',
+        place8_count      => 'count',
+        _delete_place8    => 'delete',
+        _splice_place8s   => 'splice',
+    },
+);
+
+# from AVL or headways
+has [qw<origlinegroup linegroup linedescrip>] => (
+    is  => 'ro',
+    isa => 'Str',
+);
+
+# direction
+has 'dir_obj' => (
+    required => 1,
+    coerce   => 1,
+    init_arg => 'direction',
+    is       => 'ro',
+    isa      => ActiumSkedDir,
+    handles  => {
+        'direction' => 'dircode',
+        'dircode'   => 'dircode',
+        'to_text'   => 'as_to_text'
+    },
+);
+
+has 'linedir' => (
+    lazy    => 1,
+    builder => '_build_linedir',
+    is      => 'ro',
+);
+
+has 'linedays' => (
+    lazy    => 1,
+    builder => '_build_linedays',
+    is      => 'ro',
+);
+
+has 'lines_r' => (
+    lazy    => 1,
+    builder => '_build_lines',
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    handles => { lines => 'elements' },
+);
+
+has 'daysexceptions_r' => (
+    lazy    => 1,
+    builder => '_build_daysexceptions',
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    handles => { daysexceptions => 'elements' },
+);
+
+# days
+has 'days_obj' => (
+    required => 1,
+    coerce   => 1,
+    init_arg => 'days',
+    is       => 'ro',
+    isa      => ActiumSkedDays,
+    handles  => {
+        daycode       => 'daycode',
+        schooldaycode => 'schooldaycode',
+        sortable_days => 'as_sortable',
+    }
+);
+
+# from AVL or headways, but specific data in trips varies
+has 'trip_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Actium::Sked::Trip]',
+    default => sub { [] },
+    handles => { trips => 'elements', trip => 'get', trip_count => 'count' },
+);
+
+# from AVL only
+
+has 'stopid_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => {
+        stop_count     => 'count',
+        stopids        => 'elements',
+        _delete_stopid => 'delete'
+    },
+);
+
+has 'stopplace_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => { stopplaces => 'elements', _delete_stopplace => 'delete' },
+);
+
+has 'earliest_timenum' => (
+    is       => 'ro',
+    lazy     => 1,
+    builder  => '_build_earliest_timenum',
+    init_arg => undef,
+);
+
+has 'has_multiple_lines' => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_has_multiple_lines',
+);
+
+has 'has_multiple_daysexceptions' => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_has_multiple_daysexceptions',
+);
+
+has 'skedid' => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_skedid',
+);
+
+has 'sortable_id' => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_sortable_id',
+);
+
+################################
+#### BUILDERS
+
+sub _build_linedir {
+    my $self = shift;
+    return jk( $self->linegroup, $self->dircode );
+}
+
+sub _build_linedays {
+    my $self = shift;
+    return jk( $self->linegroup, $self->sortable_days );
+}
+
+sub _build_earliest_timenum {
+    my $self    = shift;
+    my $trip    = $self->trip(0);
+    my @times   = $trip->placetimes;
+    my $timenum = first { defined $_ } @times;
+    return $timenum;
+}
+
+sub _build_lines {
+    my $self = shift;
+
+    my $line_r;
+    my %seen_line;
+
+    foreach my $trip ( $self->trips() ) {
+        $seen_line{ $trip->line() } = 1;
+    }
+
+    return [ sortbyline( keys %seen_line ) ];
+
+}
+
+sub _build_has_multiple_lines {
+    my $self  = shift;
+    my @lines = $self->lines;
+    return @lines > 1;
+}
+
+sub _build_daysexceptions {
+
+    my $self = shift;
+
+    my %seen_daysexceptions;
+
+    foreach my $trip ( $self->trips() ) {
+        $seen_daysexceptions{ $trip->daysexceptions } = 1;
+    }
+
+    return [ sort keys %seen_daysexceptions ];
+
+}
+
+sub _build_has_multiple_daysexceptions {
+    my $self           = shift;
+    my @daysexceptions = $self->daysexceptions;
+    return @daysexceptions > 1;
+}
+
+sub _build_skedid {
+    my $self = shift;
+    my $linegroup = $self->linegroup || $self->oldlinegroup;
+    return ( join( '_', $linegroup, $self->dircode, $self->daycode ) );
+}
+
+sub _build_sortable_id {
+    my $self = shift;
+    my $linegroup = linekeys( $self->linegroup || $self->oldlinegroup );
+    $linegroup =~ s/\0/ /g;
+    my $dir = $self->dir_obj->as_sortable;
+
+    my $earliest_timenum = $self->earliest_timenum;
+    $earliest_timenum = 0 if $earliest_timenum < 0;
+    $earliest_timenum = linekeys( $self->earliest_timenum );
+
+    return join( "\t", $linegroup, $self->daycode, $earliest_timenum, $dir );
+}
+
+#################################
+## METHODS
+
+sub id {
+    my $self = shift;
+    return $self->skedid;
+}
+
+sub attribute_columns {
+    # return only non-empty attributes of trips
+
+    my $self    = shift;
+    my @readers = @_;
+    # reader method, generally the same as the attribute name
+    my %column_of;
+
+    my @trips = $self->trips;
+
+    foreach my $trip ( $self->trips ) {
+        foreach my $reader (@readers) {
+            push @{ $column_of{$reader} }, $trip->$reader;
+        }
+    }
+
+    foreach my $reader (@readers) {
+        if ( none { defined and $_ ne $EMPTY_STR } @{ $column_of{$reader} } ) {
+            delete $column_of{$reader};
+        }
+    }
+    return \%column_of;
+
+} ## tidy end: sub attribute_columns
+
+### METHODS THAT ALTER SKEDS
+
+# This is commented out because it is only used in Headways,
+# and alters the existing sked object, which I don't want to do
+
+#sub divide_sked {
+#    my $self = shift;
+#
+#    my @lines = $self->lines();
+#
+#    my %linegroup_of;
+#    foreach (@lines) {
+#        $linegroup_of{$_} = ( $LINES_TO_COMBINE{$_} || $_ );
+#
+#        #        $linegroup_of{$_} = ( $_ );
+#    }
+#
+#    my %linegroups;
+#    $linegroups{$_} = 1 foreach ( values %linegroup_of );
+#    my @linegroups = keys %linegroups;
+#
+#    if ( scalar(@linegroups) == 1 ) {  # there's just one linegroup, return self
+#        $self->set_linegroup( $lines[0] );
+#
+#        $self->delete_blank_columns;
+#
+#        # override Scheduling's linegroup with the first line
+#        return $self;
+#    }
+#
+#    # More than one linegroup! Split apart
+#
+#    my ( %trips_of, @newskeds );
+#
+#    # collect trips for each one in %trips_of
+#    foreach my $trip ( $self->trips ) {
+#        my $linegroup = $linegroup_of{ $trip->line };
+#        push @{ $trips_of{$linegroup} }, $trip;
+#    }
+#
+#    foreach my $linegroup (@linegroups) {
+#
+#        my %value_of;
+#
+#        # collect all other attribute values in %values_of
+#        # This is a really primitive clone routine and might arguably
+#        # be better replaced by something based on MooseX::Clone or some other
+#        # "real" deep clone routine.
+#
+#        foreach my $attribute ( $self->meta->get_all_attributes ) {
+#
+#            # meta-objects! woohoo! screw you, Mouse!
+#
+#            my $attrname = $attribute->name;
+#            next if $attrname eq 'trip_r' or $attrname eq 'linegroup';
+#
+#            my $value = $self->$attrname;
+#            if ( ref($value) eq 'ARRAY' ) {
+#                $value = [ @{$value} ];
+#            }
+#            elsif ( ref($value) eq 'HASH' ) {
+#                $value = { %{$value} };
+#            }    # purely speculative as there are no hash attributes right now
+#
+#            # use of "ref" rather than "reftype" is intentional here. We don't
+#            # want to clone objects this way.
+#
+#            $value_of{$attrname} = $value;
+#        }    ## <perltidy> end foreach my $attribute ( $self...)
+#
+#        my $newsked = Actium::Sked->new(
+#            trip_r    => $trips_of{$linegroup},
+#            linegroup => $linegroup,
+#            %value_of,
+#        );
+#
+#        $newsked->delete_blank_columns;
+#
+#        push @newskeds, $newsked;
+#
+#    }    ## <perltidy> end foreach my $linegroup (@linegroups)
+#
+#    return @newskeds;
+#
+#}    ## <perltidy> end sub divide_sked
 
 #### OUTPUT METHODS
 
@@ -764,6 +776,9 @@ sub dump {
 
     } ## tidy end: sub spaced
 
+    const my $window_height => 950 * 20;    # 20 twips to the point
+    const my $window_width  => 1200 * 20;
+
     sub xlsx {
         my $self = shift;
         my $timesub = timestr_sub( XB => 1 );
@@ -774,6 +789,14 @@ sub dump {
         open( my $out, '>', \$outdata ) or die "$!";
 
         my $workbook = Excel::Writer::XLSX->new($out);
+
+        ### kludgy, but works to change the window size
+
+        $workbook->{_window_height} = $window_height;
+        $workbook->{_window_width}  = $window_height;
+
+        ####
+
         my $textformat
           = $workbook->add_format( num_format => 0x31 );    # text only
 
