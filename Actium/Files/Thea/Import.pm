@@ -100,27 +100,29 @@ sub _output_skeds {
     use autodie;
     my $signup  = shift;
     my $skeds_r = shift;
-
-    my $objfolder = $signup->subfolder('json_obj');
+    
+    my $objfolder = $signup->subfolder('s/json_obj');
     $objfolder->write_files_with_method(
         OBJECTS   => $skeds_r,
         METHOD    => 'json',
         EXTENSION => 'json',
     );
 
-    my $xlsxfolder = $signup->subfolder('xlsx_sked');
+    my $xlsxfolder = $signup->subfolder('s/xlsx');
     $xlsxfolder->write_files_with_method(
         OBJECTS   => $skeds_r,
         METHOD    => 'xlsx',
         EXTENSION => 'xlsx',
     );
 
-    my $spacedfolder = $signup->subfolder( 'thea_debug', 'spaced' );
+    my $spacedfolder = $signup->subfolder( 's/spaced' );
     $spacedfolder->write_files_with_method(
         OBJECTS   => $skeds_r,
         METHOD    => 'spaced',
         EXTENSION => 'txt',
     );
+    
+    Actium::Sked->write_prehistorics( $skeds_r, $signup );
 
 } ## tidy end: sub _output_skeds
 
@@ -144,8 +146,6 @@ sub _output_debugging_patterns {
         METHOD    => 'dump',
         EXTENSION => 'dump',
     );
-
-    Actium::Sked->write_prehistorics( $skeds_r, $debugfolder );
 
     my $ufh = $debugfolder->open_write('thea_upatterns.txt');
 
@@ -475,10 +475,7 @@ sub _make_skeds {
         };
 
         my $sked = Actium::Sked->new($sked_attributes_r);
-        $sked->build_placetimes_from_stoptimes;
-        $sked->delete_blank_columns;
-
-        $sked->combine_duplicate_timepoints;
+        
         push @skeds, $sked;
 
     } ## tidy end: foreach my $skedid ( sortbyline...)

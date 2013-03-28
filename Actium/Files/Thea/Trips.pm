@@ -44,9 +44,9 @@ sub thea_trips {
 
     emit "Loading THEA trips into trip objects";
 
-    my $theafolder               = shift;
+    my $theafolder             = shift;
     my $pat_lineids_of_lgdir_r = shift;
-    my $uindex_of_r              = shift;
+    my $uindex_of_r            = shift;
 
     my $tripstructs_of_lineid_r = _load_trips_from_file($theafolder);
 
@@ -166,11 +166,9 @@ sub _make_days_obj {
     $day_digits =~ s/0/7H/s;
     # Thea uses 0 instead of 7 for Sunday, as Hastus Standard AVL did.
     # TODO - Figure out more universal way of determining holidays
-    
+
     $day_digits = j( sort ( split( //s, $day_digits ) ) );
     # sort $theaday by characters - putting 7 at end
-    
-
 
     my $schooldaycode
       = $trp_event eq 'SD' ? 'D'
@@ -182,8 +180,8 @@ sub _make_days_obj {
 
 sub _make_trip_objs {
     my $pat_lineids_of_lgdir_r = shift;
-    my $trips_of_lineid_r        = shift;
-    my $uindex_of_r              = shift;
+    my $trips_of_lineid_r      = shift;
+    my $uindex_of_r            = shift;
 
     my %trips_of_lgdir;
 
@@ -203,7 +201,7 @@ sub _make_trip_objs {
         my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
 
         foreach my $lineid (@lineids) {
-         
+
             foreach my $trip_r ( @{ $trips_of_lineid_r->{$lineid} } ) {
 
                 my $unified_trip_r = [ @{$trip_r} ];
@@ -288,10 +286,21 @@ sub _get_trips_of_sked {
         # (e.g., same trips Fridays and Saturdays)
         # and it's easier to do it this way if that's the case.
 
-        my $trips_of_day_r
-          = _get_trips_by_day( $trips_of_lgdir_r->{$lgdir} );
+        #my $trips_of_day_r
+        #  = _get_trips_by_day( $trips_of_lgdir_r->{$lgdir} );
 
-        my $trips_of_skedday_r = _assemble_skeddays($trips_of_day_r);
+        my $trips_r = $trips_of_lgdir_r->{$lgdir};
+
+        my %trips_of_day;
+
+        foreach my $trip ( @{$trips_r} ) {
+            my @days = split( //s, $trip->daycode );
+            foreach my $day (@days) {
+                push @{ $trips_of_day{$day} }, $trip;
+            }
+        }
+
+        my $trips_of_skedday_r = _assemble_skeddays( \%trips_of_day );
 
         for my $skedday ( keys $trips_of_skedday_r ) {
 
@@ -307,20 +316,6 @@ sub _get_trips_of_sked {
     return \%trips_of_sked;
 
 } ## tidy end: sub _get_trips_of_sked
-
-sub _get_trips_by_day {
-
-    my $trips_r = shift;
-    my %trips_of_day;
-
-    foreach my $trip ( @{$trips_r} ) {
-        my @days = split( //s, $trip->daycode );
-        foreach my $day (@days) {
-            push @{ $trips_of_day{$day} }, $trip;
-        }
-    }
-    return \%trips_of_day;
-}
 
 sub _assemble_skeddays {
     my $trips_of_day_r = shift;
@@ -426,8 +421,8 @@ sub _merge_if_appropriate {
     # times, and the number of times is at least 5 times the number of
     # differing ones, then merge them
 
-    # In weird situations where, for example, you have several different sets
-    # 30 trips that are every day, plus two separate ones on Monday,
+    # In weird situations where, for example, you have several different sets --
+    # -- 30 trips that are every day, plus two separate ones on Monday,
     # two separate ones on Tuesday, two separate ones on Wednesday,
     # etc. -- this will give inconsistent results, with Monday's
     # and Tuesday's trips combined but Wednesday's not.
