@@ -254,7 +254,7 @@ sub _new_from_prehistoric {
 
     close $skedsfh or die "Can't close $filespec for reading: $OS_ERROR";
 
-    $class->new(%spec);
+    return $class->new(%spec);
 
 } ## tidy end: sub _new_from_prehistoric
 
