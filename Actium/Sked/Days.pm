@@ -136,7 +136,7 @@ sub _build_as_shortcode {
             $shortcode = 'WD';
         }
         when ('67H') {
-            $shortcode = 'SSH'
+            $shortcode = 'WE';
         }
     }
 
