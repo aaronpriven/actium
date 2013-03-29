@@ -100,14 +100,13 @@ sub _output_skeds {
     use autodie;
     my $signup  = shift;
     my $skeds_r = shift;
-    
-#    TOGGLED FOR DEBUGGING
-#    my $objfolder = $signup->subfolder('s/json_obj');
-#    $objfolder->write_files_with_method(
-#        OBJECTS   => $skeds_r,
-#        METHOD    => 'json',
-#        EXTENSION => 'json',
-#    );
+
+    my $objfolder = $signup->subfolder('s/json_obj');
+    $objfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'json',
+        EXTENSION => 'json',
+    );
 
     my $xlsxfolder = $signup->subfolder('s/xlsx');
     $xlsxfolder->write_files_with_method(
@@ -116,13 +115,13 @@ sub _output_skeds {
         EXTENSION => 'xlsx',
     );
 
-    my $spacedfolder = $signup->subfolder( 's/spaced' );
+    my $spacedfolder = $signup->subfolder('s/spaced');
     $spacedfolder->write_files_with_method(
         OBJECTS   => $skeds_r,
         METHOD    => 'spaced',
         EXTENSION => 'txt',
     );
-    
+
     Actium::Sked->write_prehistorics( $skeds_r, $signup );
 
 } ## tidy end: sub _output_skeds
@@ -476,7 +475,7 @@ sub _make_skeds {
         };
 
         my $sked = Actium::Sked->new($sked_attributes_r);
-        
+
         push @skeds, $sked;
 
     } ## tidy end: foreach my $skedid ( sortbyline...)
