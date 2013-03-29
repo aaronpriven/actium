@@ -17,7 +17,7 @@ use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
 use MooseX::Storage;
-with Storage( 'format' => 'JSON' );
+with Storage( traits=>['OnlyWhenBuilt'], 'format' => 'JSON' );
 
 use English '-no_match_vars';
 
@@ -30,7 +30,6 @@ use Actium::Sorting::Line qw<sortbyline linekeys>;
 use Actium::Constants;
 
 use Actium::Types (qw/DirCode HastusDirCode ActiumSkedDir ActiumSkedDays/);
-
 use Actium::Sked::Trip;
 use Actium::Sked::Dir;
 use Actium::Sked::Days;
@@ -453,8 +452,31 @@ has 'sortable_id' => (
     builder => '_build_sortable_id',
 );
 
+has 'md5' => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_md5',
+);
+
 ################################
 #### BUILDERS
+
+sub _build_md5 {
+    my $self = shift;
+    # build an MD5 digest from the placetimes, stoptimes, places, and stops
+    require Digest::MD5;
+
+    my @data = ( jt( $self->place4s ), jt( $self->stopids ) );
+
+    foreach my $trip ( $self->trips ) {
+        push @data, jt( $trip->stoptimes );
+        push @data, jt( $trip->placetimes );
+    }
+
+    my $digest = Digest::MD5::md5_hex( jk(@data) );
+    return $digest;
+
+}
 
 sub _build_linedir {
     my $self = shift;
@@ -542,27 +564,66 @@ sub id {
 }
 
 sub attribute_columns {
-    # return only non-empty attributes of trips
+        # return only non-empty attributes of trips, for creating 
+        # columnar output
 
-    my $self    = shift;
-    my @readers = @_;
-    # reader method, generally the same as the attribute name
-    my %column_of;
+    my $self           = shift;
+    my @arg_attributes = @_;
 
     my @trips = $self->trips;
+    my $meta  = $trips[0]->meta;
 
-    foreach my $trip ( $self->trips ) {
-        foreach my $reader (@readers) {
-            push @{ $column_of{$reader} }, $trip->$reader;
+    my %shortcol_of;
+    my @attributes_to_search;
+
+    my $day;
+
+    if ( not @arg_attributes ) {
+        @attributes_to_search = $meta->get_all_attributes;
+        $day                  = 1;
+    }
+    else {
+        foreach my $attrname (@arg_attributes) {
+            if ( $attrname eq 'day' ) {
+                $day = 1;
+            }
+            else {
+                my $attr = $meta->find_attribute_by_name($attrname);
+                push @attributes_to_search, $attr if defined $attr;
+            }
         }
     }
 
-    foreach my $reader (@readers) {
-        if ( none { defined and $_ ne $EMPTY_STR } @{ $column_of{$reader} } ) {
-            delete $column_of{$reader};
+  ATTRIBUTE:
+    foreach my $attr (@attributes_to_search) {
+        #next unless $attr->does('Actium::MOP::WithShortColumn');
+        next unless $attr->meta->find_attribute_by_name('short_column');
+        next unless $attr->has_read_method;
+        my $reader = $attr->get_read_method;
+
+        my $anydefined = 0;
+        for my $trip (@trips) {
+            my $value = $trip->$reader;
+            next if (not defined $value) or ($value eq $EMPTY_STR);
+            $anydefined = 1;
+            last;
         }
+        next ATTRIBUTE unless $anydefined;
+
+        $shortcol_of{$reader}
+          = $attr->has_short_column ? $attr->short_column : $attr->name;
+
     }
-    return \%column_of;
+
+    my @colorder = grep { $_ ne 'line' } (sort keys %shortcol_of) ;
+    unshift @colorder, 'line' if exists $shortcol_of{line};
+
+    if ($day) {
+        splice( @colorder, 1, 0, 'sortable_days' );
+        $shortcol_of{sortable_days} = 'DAY';
+    }
+
+    return \@colorder, \%shortcol_of;
 
 } ## tidy end: sub attribute_columns
 
@@ -679,83 +740,61 @@ sub dump {
 
 }
 
-{
+sub spaced {
+    my $self = shift;
 
-    my %title_of = qw(
-      blockid        BLK
-      daysexceptions EXC
-      from           FM
-      noteletter     NOTE
-      pattern        PAT
-      runid          RUN
-      to             TO
-      type           TYPE
-      typevalue      TYPVAL
-      vehicledisplay VDISP
-      via            VIA
-      viadescription VIADESC
-      sortable_days  DAY
-      vehicletype    VT
-      line           -LN
-      internal_num   INTNUM
+    my $outdata;
+    open( my $out, '>', \$outdata );
+
+    say $out $self->id;
+
+    my @simplefields;
+    my %value_of_simplefield = (
+        dir           => $self->dircode,
+        days          => $self->sortable_days,
+        linegroup     => $self->linegroup,
+        origlinegroup => $self->origlinegroup,
+        linedescrip   => $self->linedescrip,
     );
 
-    sub spaced {
-        my $self = shift;
+    while ( my ( $field, $value ) = each %value_of_simplefield ) {
+        next unless defined($value);
+        push @simplefields, "$field:$value";
+    }
 
-        my $outdata;
-        open( my $out, '>', \$outdata );
+    say $out "@simplefields";
 
-        say $out $self->id;
+    my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR, XB => 1 );
 
-        my @simplefields;
-        my %value_of_simplefield = (
-            dir           => $self->dircode,
-            days          => $self->sortable_days,
-            linegroup     => $self->linegroup,
-            origlinegroup => $self->origlinegroup,
-            linedescrip   => $self->linedescrip,
-        );
+    my @place_records;
+    
+    my ($columns_r , $shortcol_of_r) = $self->attribute_columns;
+    my @columns = @{$columns_r};
+    my %shortcol_of = %{$shortcol_of_r};
 
-        while ( my ( $field, $value ) = each %value_of_simplefield ) {
-            next unless defined($value);
-            push @simplefields, "$field:$value";
-        }
+    push @place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
+    push @place_records, [ @shortcol_of{@columns}, $self->place8s ];
 
-        say $out "@simplefields";
+    my @trips = $self->trips;
 
-        my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR );
+    foreach my $trip (@trips) {
+        push @place_records,
+          [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
+    }
 
-        my @place_records;
+    say $out jn( @{ tabulate_arrayrefs(@place_records) } ), "\n";
+    # extra \n for a blank line to separate places and stops
 
-        my %column_of = %{ $self->attribute_columns( sort keys %title_of ) };
+    my @stop_records;
 
-        my @fields = sort { $title_of{$a} cmp $title_of{$b} } keys %column_of;
+    push @stop_records, [ $self->stopids ];
+    push @stop_records, [ $self->stopplaces ];
 
-        push @place_records, [ ($EMPTY_STR) x scalar @fields, $self->place4s ];
-        push @place_records, [ @title_of{@fields}, $self->place8s ];
+    foreach my $trip (@trips) {
+        push @stop_records, [ $timesub->( $trip->stoptimes ) ];
+    }
 
-        my @trips = $self->trips;
-
-        foreach my $trip (@trips) {
-            push @place_records,
-              [ ( map { $trip->$_ } @fields ),
-                $timesub->( $trip->placetimes ) ];
-        }
-
-        say $out jn( @{ tabulate_arrayrefs(@place_records) } ), "\n";
-        # extra \n for a blank line to separate places and stops
-
-        my @stop_records;
-
-        push @stop_records, [ $self->stopids ];
-        push @stop_records, [ $self->stopplaces ];
-
-        foreach my $trip (@trips) {
-            push @stop_records, [ $timesub->( $trip->stoptimes ) ];
-        }
-
-        say $out jn( @{ tabulate_arrayrefs(@stop_records) } );
+    say $out jn( @{ tabulate_arrayrefs(@stop_records) } );
 #
 #    my @tripfields = qw<blockid daysexceptions from noteletter pattern runid to
 #      type typevalue vehicledisplay via viadescription>;
@@ -770,133 +809,113 @@ sub dump {
 #        say $out "@tripfield_outs";
 #    }
 
-        close $out;
+    close $out;
 
-        return $outdata;
+    return $outdata;
 
-    } ## tidy end: sub spaced
+} ## tidy end: sub spaced
 
-    const my $window_height => 950 * 20;    # 20 twips to the point
-    const my $window_width  => 1200 * 20;
+const my $xlsx_window_height => 950 * 20;    # 20 twips to the point
+const my $xlsx_window_width  => 1200 * 20;
 
-    sub xlsx {
-        my $self = shift;
-        my $timesub = timestr_sub( XB => 1 );
-
-        require Excel::Writer::XLSX;
-
-        my $outdata;
-        open( my $out, '>', \$outdata ) or die "$!";
-
-        my $workbook = Excel::Writer::XLSX->new($out);
-
-        ### kludgy, but works to change the window size
-
-        $workbook->{_window_height} = $window_height;
-        $workbook->{_window_width}  = $window_height;
-
-        ####
-
-        my $textformat
-          = $workbook->add_format( num_format => 0x31 );    # text only
-
-        ### INTRO
-
-        my $intro = $workbook->add_worksheet('intro');
-
-        my @all_attributes
-          = qw(id sortable_days dircode linegroup origlinegroup linedescrip md5);
-        my @all_output_names
-          = qw(id days dir linegroup origlinegroup linedescrip md5);
-
-        my @output_names;
-        my @output_values;
-
-        foreach my $i ( 0 .. $#all_attributes ) {
-            my $output_name = $all_output_names[$i];
-            my $attribute   = $all_attributes[$i];
-            my $value       = $self->$attribute;
-
-            if ( defined $value ) {
-                push @output_names,  $output_name;
-                push @output_values, $value;
-            }
-        }
-
-        $intro->write_col( 0, 0, \@output_names,  $textformat );
-        $intro->write_col( 0, 1, \@output_values, $textformat );
-
-        ### TPSKED
-
-        my $tpsked = $workbook->add_worksheet('tpsked');
-
-        my @place_records;
-
-        my %column_of = %{ $self->attribute_columns( sort keys %title_of ) };
-        my @fields = sort { $title_of{$a} cmp $title_of{$b} } keys %column_of;
-
-        push @place_records, [ ($EMPTY_STR) x scalar @fields, $self->place4s ];
-        push @place_records, [ @title_of{@fields}, $self->place8s ];
-
-        my @trips = $self->trips;
-
-        foreach my $trip (@trips) {
-            push @place_records,
-              [ ( map { $trip->$_ } @fields ),
-                $timesub->( $trip->placetimes ) ];
-        }
-
-        $tpsked->write_col( 0, 0, \@place_records, $textformat );
-        $tpsked->freeze_panes( 2, 0 );
-        $tpsked->set_zoom(125);
-
-        ### STOPSKED
-
-        my $stopsked = $workbook->add_worksheet('stopsked');
-
-        my @stop_records;
-
-        push @stop_records, [ $self->stopids ];
-        push @stop_records, [ $self->stopplaces ];
-
-        foreach my $trip (@trips) {
-            push @stop_records, [ $timesub->( $trip->stoptimes ) ];
-        }
-
-        $stopsked->write_col( 0, 0, \@stop_records, $textformat );
-        $stopsked->freeze_panes( 2, 0 );
-
-        $tpsked->activate();
-
-        $workbook->close();
-        close $out;
-        return $outdata;
-
-    } ## tidy end: sub xlsx
-
-}
-
-sub xlsx_layers {':raw'}
-
-sub md5 {
-    # If I ever go through this and make it readonly, then
-    # this should be a lazy attribute
-
+sub xlsx {
     my $self = shift;
-    # build an MD5 digest from the placetimes, stoptimes, places, and stops
-    require Digest::MD5;
+    my $timesub = timestr_sub( XB => 1 );
 
-    my @data = ( jt( $self->place4s ), jt( $self->stopids ) );
+    require Excel::Writer::XLSX;
 
-    foreach my $trip ( $self->trips ) {
-        push @data, jt( $trip->stoptimes );
-        push @data, jt( $trip->placetimes );
+    my $outdata;
+    open( my $out, '>', \$outdata ) or die "$!";
+
+    my $workbook = Excel::Writer::XLSX->new($out);
+
+    ### horrible breaking encapsulation of object,
+    ### but there are no accessors for some reason, and
+    ### this works to change the window size
+
+    $workbook->{_window_height} = $xlsx_window_height;
+    $workbook->{_window_width}  = $xlsx_window_height;
+
+    ####
+
+    my $textformat = $workbook->add_format( num_format => 0x31 );    # text only
+
+    ### INTRO
+
+    my $intro = $workbook->add_worksheet('intro');
+
+    my @all_attributes
+      = qw(id sortable_days dircode linegroup origlinegroup linedescrip md5);
+    my @all_output_names
+      = qw(id days dir linegroup origlinegroup linedescrip md5);
+
+    my @output_names;
+    my @output_values;
+
+    foreach my $i ( 0 .. $#all_attributes ) {
+        my $output_name = $all_output_names[$i];
+        my $attribute   = $all_attributes[$i];
+        my $value       = $self->$attribute;
+
+        if ( defined $value ) {
+            push @output_names,  $output_name;
+            push @output_values, $value;
+        }
     }
 
-    my $digest = Digest::MD5::md5_hex( jk(@data) );
-    return $digest;
+    $intro->write_col( 0, 0, \@output_names,  $textformat );
+    $intro->write_col( 0, 1, \@output_values, $textformat );
 
-}
+    ### TPSKED
+
+    my $tpsked = $workbook->add_worksheet('tpsked');
+
+    my @place_records;
+
+    my ($columns_r , $shortcol_of_r) = 
+       $self->attribute_columns (qw(line day vehicletype));
+    my @columns = @{$columns_r};
+    my %shortcol_of = %{$shortcol_of_r};
+    
+    push @place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
+    push @place_records, [ @shortcol_of{@columns}, $self->place8s ];
+
+    my @trips = $self->trips;
+    
+    foreach my $trip (@trips) {
+        push @place_records,
+          [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
+    }
+
+    $tpsked->write_col( 0, 0, \@place_records, $textformat );
+    $tpsked->freeze_panes( 2, 0 );
+    $tpsked->set_zoom(125);
+
+    ### STOPSKED
+
+    my $stopsked = $workbook->add_worksheet('stopsked');
+
+    my @stop_records;
+
+    push @stop_records, [ $self->stopids ];
+    push @stop_records, [ $self->stopplaces ];
+
+    foreach my $trip (@trips) {
+        push @stop_records, [ $timesub->( $trip->stoptimes ) ];
+    }
+
+    $stopsked->write_col( 0, 0, \@stop_records, $textformat );
+    $stopsked->freeze_panes( 2, 0 );
+
+    $tpsked->activate();
+
+    $workbook->close();
+    close $out;
+    return $outdata;
+
+} ## tidy end: sub xlsx
+
+sub xlsx_layers {':raw'}
 
 sub json {
     my $self = shift;
