@@ -101,12 +101,13 @@ sub _output_skeds {
     my $signup  = shift;
     my $skeds_r = shift;
     
-    my $objfolder = $signup->subfolder('s/json_obj');
-    $objfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'json',
-        EXTENSION => 'json',
-    );
+#    TOGGLED FOR DEBUGGING
+#    my $objfolder = $signup->subfolder('s/json_obj');
+#    $objfolder->write_files_with_method(
+#        OBJECTS   => $skeds_r,
+#        METHOD    => 'json',
+#        EXTENSION => 'json',
+#    );
 
     my $xlsxfolder = $signup->subfolder('s/xlsx');
     $xlsxfolder->write_files_with_method(

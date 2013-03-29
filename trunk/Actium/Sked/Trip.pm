@@ -18,13 +18,15 @@ use Moose;
 use MooseX::StrictConstructor;
 
 use MooseX::Storage;
-with Storage( 'format' => 'JSON' );
+with Storage(traits => ['OnlyWhenBuilt'] , 'format' => 'JSON' );
 
 #use Moose::Util::TypeConstraints;
 use Actium::Time qw<timestr timestr_sub>;
 use Actium::Util qw<jt in>;
 use Actium::Constants;
 use Carp;
+
+use Const::Fast;
 
 use List::Util   ('min');
 use Scalar::Util ('reftype');
@@ -47,7 +49,7 @@ sub BUILD {
 
 }
 
-# The following is invoked only from the BUILD routine in Actium::Sked 
+# The following is invoked only from the BUILD routine in Actium::Sked
 # It requires knowledge of the stopplaces which is in the Sked object
 
 sub _add_placetimes_from_stoptimes {
@@ -69,12 +71,12 @@ sub _add_placetimes_from_stoptimes {
             push @placetimes, $stoptime;
         }
     }
-    
-    $self->_set_placetime_r(\@placetimes);
+
+    $self->_set_placetime_r( \@placetimes );
 
     return;
 
-} ## tidy end: sub with_placetimes
+} ## tidy end: sub _add_placetimes_from_stoptimes
 
 ###################
 ###
@@ -82,17 +84,45 @@ sub _add_placetimes_from_stoptimes {
 ###
 ###################
 
+const my %shortcol_of_attribute => qw(
+  blockid        BLK
+  daysexceptions EXC
+  from           FM
+  noteletter     NOTE
+  pattern        PAT
+  runid          RUN
+  to             TO
+  type           TYPE
+  typevalue      TYPVAL
+  vehicledisplay VDISP
+  via            VIA
+  viadescription VIADESC
+  vehicletype    VT
+  line           LN
+  internal_num   INTNUM
+);
+
 # daysexceptions, from , to, vehicletype from headways
 # pattern, type, typevalue, vehicledisplay, via, viadescription from HSA
 # line, runid, blockid from either
-has [
-    qw<daysexceptions line runid blockid noteletter pattern type typevalue
-      from to vehicletype internal_num
-      vehicledisplay via viadescription>
-  ] => (
-    is  => 'ro',
-    isa => 'Str',
-  );
+
+foreach my $attrname ( keys %shortcol_of_attribute ) {
+    has $attrname => (
+        is           => 'ro',
+        isa          => 'Str',
+        traits       => ['Actium::MOP::WithShortColumn'],
+        short_column => $shortcol_of_attribute{$attrname},
+    );
+}
+
+#has [
+#    qw<daysexceptions line runid blockid noteletter pattern type typevalue
+#      from to vehicletype internal_num
+#      vehicledisplay via viadescription>
+#  ] => (
+#    is  => 'ro',
+#    isa => 'Str',
+#  );
 
 # generated from Thea, if nowhere else
 has 'days_obj' => (
@@ -128,7 +158,7 @@ has 'stoptime_r' => (
         stoptimes           => 'elements',
         stoptime_count      => 'count',
         stoptimes_are_empty => 'is_empty',
-        _delete_stoptime     => 'delete',
+        _delete_stoptime    => 'delete',
     },
 );
 
@@ -166,7 +196,7 @@ sub stoptimes_equals {
 has placetime_r => (
     traits  => ['Array'],
     is      => 'ro',
-    writer => '_set_placetime_r',
+    writer  => '_set_placetime_r',
     isa     => ArrayRefOfTimeNums,
     default => sub { [] },
     coerce  => 1,
@@ -175,8 +205,8 @@ has placetime_r => (
         placetime_count      => 'count',
         placetimes_are_empty => 'is_empty',
         placetime            => 'get',
-        _splice_placetimes    => 'splice',
-        _delete_placetime     => 'delete', 
+        _splice_placetimes   => 'splice',
+        _delete_placetime    => 'delete',
         # only from BUILD in Actium::Sked
     },
 );
@@ -406,8 +436,6 @@ sub merge_trips_if_same {
     return \@newtrips;
 
 } ## tidy end: sub merge_trips_if_same
-
-
 
 no Moose;
 

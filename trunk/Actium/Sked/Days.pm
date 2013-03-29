@@ -14,8 +14,7 @@ package Actium::Sked::Days 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 use MooseX::Storage;
-with Storage( 'format' => 'JSON' );
-
+with Storage( traits => ['OnlyWhenBuilt'] , 'format' => 'JSON' );
 
 use Actium::Types qw<DayCode SchoolDayCode>;
 use Actium::Util qw<positional_around joinseries>;
@@ -86,10 +85,10 @@ has 'schooldaycode' => (
 # D = school days only, H = school holidays only, B = both
 
 sub new_from_string {
-    my $class = shift;
+    my $class  = shift;
     my $string = shift;
-    my ($daycode, $schooldaycode) = split(/-/ , $string);
-    return $class->new($daycode, $schooldaycode);
+    my ( $daycode, $schooldaycode ) = split( /-/, $string );
+    return $class->new( $daycode, $schooldaycode );
 }
 
 has 'as_string' => (
@@ -114,6 +113,43 @@ sub as_sortable {
 }
 # as_string not guaranteed to remain sortable in the future,
 # so we put this stub in so that we can make a sortable version
+
+has 'as_shortcode' => (
+    is       => 'ro',
+    init_arg => 'undef',
+    builder  => '_build_as_shortcode',
+    lazy     => 1,
+);
+
+sub _build_as_shortcode {
+    my $self          = shift;
+    my $daycode       = $self->daycode;
+    my $schooldaycode = $self->schooldaycode;
+
+    my $shortcode = $daycode;
+
+    for ($daycode) {
+        when ('1234567H') {
+            $shortcode = 'DA';
+        }
+        when ('12345') {
+            $shortcode = 'WD';
+        }
+        when ('67H') {
+            $shortcode = 'SSH'
+        }
+    }
+
+    if ( $shortcode eq 'WD' and $schooldaycode eq 'D' ) {
+        $shortcode = 'SD';
+    }
+    elsif ( $schooldaycode ne 'B' ) {
+        $shortcode .= "-$schooldaycode";
+    }
+
+    return $shortcode;
+
+} ## tidy end: sub _build_as_shortcode
 
 sub as_transitinfo {
 
@@ -303,7 +339,7 @@ sub union {
 
         next
           if $daycode eq $union_daycode
-              and $schooldaycode eq $union_schooldaycode;
+          and $schooldaycode eq $union_schooldaycode;
 
         if ( $schooldaycode ne $union_schooldaycode ) {
             $union_schooldaycode = 'B';
@@ -313,11 +349,10 @@ sub union {
 
             $union_daycode = join( $EMPTY_STR,
                 ( uniq sort ( split //, $union_daycode . $daycode ) ) );
-                
+
         }
 
         $union_obj = $class->new( $union_daycode, $union_schooldaycode );
-
 
     } ## tidy end: foreach my $obj (@objs)
 
