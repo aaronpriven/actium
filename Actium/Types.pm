@@ -10,10 +10,9 @@ use warnings;
 
 package Actium::Types;
 
-use 5.010;    # turns on features
+use 5.016;    # turns on features
 
-our $VERSION = '0.001';
-$VERSION = eval $VERSION;
+our $VERSION = '0.002';
 
 ## no critic (ProhibitMagicNumbers)
 
@@ -24,6 +23,7 @@ use MooseX::Types -declare => [
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
       Str4                Str8
       FolderComponent     FolderList
+      ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
       >
 ];
 
@@ -63,6 +63,13 @@ coerce ActiumSkedDays,
   from DayCode, via { Actium::Sked::Days->new(to_DaySpec($_)) },
   from TransitInfoDays, via { Actium::Sked::Days->new(to_DaySpec($_)) },
   ;
+  
+#########################
+### SCHEDULE STOP TIMES
+
+subtype ActiumSkedStopTime, as class_type('Actium::Sked::Stop::Time');
+
+subtype ArrayRefOfActiumSkedStopTime , as ArrayRef [ActiumSkedStopTime];
 
 #########################
 ### SCHEDULE DIRECTIONS

@@ -21,7 +21,7 @@ use Actium::Util qw<positional_around>;
 use Actium::Constants;
 
 use Carp;
-use Readonly;
+use Const::Fast;
 use List::MoreUtils ('mesh');
 
 ###################################
@@ -32,19 +32,19 @@ use List::MoreUtils ('mesh');
 #Readonly my @HASTUS_DIRS => ( 0, 1, 3, 2, 4.. $#DIRCODES);
 # now defined in Actium::Constants
 
-Readonly my @DIRECTIONS => (
+const my @DIRECTIONS => (
    qw(North South West East In Out Go Return Clockwise Counterclockwise),
    'Direction One' , 'Direction Two' , qw(Up Down) , 'A Loop' , 'B Loop',
 );
 
-Readonly my @BOUND => (
+const my @BOUND => (
    qw(Northbound Southbound Westbound Eastbound Inbound Outbound), 
    @DIRECTIONS[ 6 .. $#DIRCODES ],
 );
 
-Readonly my %DIRECTION_OF => mesh (@DIRCODES, @DIRECTIONS);
-Readonly my %BOUND_OF => mesh (@DIRCODES, @BOUND);
-Readonly my %ORDER_OF => mesh @DIRCODES , @{ [ 0 .. $#DIRCODES ] };
+const my %DIRECTION_OF => mesh (@DIRCODES, @DIRECTIONS);
+const my %BOUND_OF => mesh (@DIRCODES, @BOUND);
+const my %ORDER_OF => mesh @DIRCODES , @{ [ 0 .. $#DIRCODES ] };
 
 use Moose::Util::TypeConstraints;
 
