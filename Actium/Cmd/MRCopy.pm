@@ -12,7 +12,7 @@ use 5.014;
 use warnings;
 
 use Actium::MapRepository (':all');
-use Actium::Folder;
+use Actium::O::Folder;
 
 use Actium::Options(qw<add_option option>);
 use Actium::Term ('output_usage');
@@ -74,7 +74,7 @@ EOF
 
 sub START {
 
-    my $repository = Actium::Folder->new( option('repository') );
+    my $repository = Actium::O::Folder->new( option('repository') );
 
     my $webfolder = option_folder( $repository, 'web', 'webfolder', '_web' );
     my $fullfolder
@@ -101,7 +101,7 @@ sub option_folder {
 
     if ( option($option) ) {
         if ( option($folderoption) ) {
-            $folder_obj = Actium::Folder->new( option($folderoption) );
+            $folder_obj = Actium::O::Folder->new( option($folderoption) );
         }
         else {
             $folder_obj = $repository->subfolder($default);
