@@ -16,10 +16,10 @@ use Actium::Sorting::Line (qw/sortbyline byline/);
 use Actium::Util qw(sk jn j jk jt keyreadable);
 use Actium::Union (qw/ordered_union distinguish/);
 use Actium::DaysDirections(':ALL');
-use Actium::Files::HastusASI;
+use Actium::O::Files::HastusASI;
 use Actium::Constants;
 use Actium::Term (':all');
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 use Text::Trim;
 
 use Carp;
@@ -93,7 +93,7 @@ my %color_of;
 
 sub START {
 
-    my $signup     = Actium::Folders::Signup->new();
+    my $signup     = Actium::O::Folders::Signup->new();
     my $flagfolder = $signup->subfolder('flags');
 
     my $stopdata = $signup->mergeread('Stops.csv');
@@ -101,7 +101,7 @@ sub START {
     {
         my $hasi_db = $signup->load_hasi();
 #        my $hasidir = $signup->subfolder('hasi');
-#        my $hasi_db = Actium::Files::HastusASI->new( $hasidir->path());
+#        my $hasi_db = Actium::O::Files::HastusASI->new( $hasidir->path());
         $hasi_db->ensure_loaded(qw(PAT TRP));
         build_place_and_stop_lists( $hasi_db, $stopdata );
 

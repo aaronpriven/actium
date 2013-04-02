@@ -12,7 +12,7 @@ use 5.014;
 use warnings;
 
 use Actium::MapRepository (':all');
-use Actium::Folder;
+use Actium::O::Folder;
 
 use Actium::Options(qw<add_option option>);
 use Actium::Term ('output_usage');
@@ -76,12 +76,12 @@ sub START {
     my $specified_webfolder_obj;
 
     if ( $web and $webfolder_opt ) {
-        $specified_webfolder_obj = Actium::Folder->new( option('webfolder') );
+        $specified_webfolder_obj = Actium::O::Folder->new( option('webfolder') );
     }
 
     my $repository_opt = option('repository');
 
-    my $repository = Actium::Folder->new(
+    my $repository = Actium::O::Folder->new(
         {   folderlist => $repository_opt,
             must_exist => 1,
         }
@@ -89,7 +89,7 @@ sub START {
     foreach my $folderspec (@importfolders) {
 
         # import to repository
-        my $importfolder = Actium::Folder->new(
+        my $importfolder = Actium::O::Folder->new(
             {   folderlist => $folderspec,
                 must_exist => 1,
             }
@@ -236,7 +236,7 @@ dependencies below.
 
 =item * Actium::MapRepository
 
-=item * Actium::Folder
+=item * Actium::O::Folder
 
 =item * Actium::Options
 

@@ -12,10 +12,10 @@ use 5.014;
 package Actium::Cmd::HTMLTables 0.001;
 
 use Actium::Constants;
-use Actium::Sked;
-use Actium::Sked::Timetable;
+use Actium::O::Sked;
+use Actium::O::Sked::Timetable;
 use Actium::Term;
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 sub HELP {
 
@@ -33,7 +33,7 @@ sub START {
  
    my $class = shift;
    
-   my $signup         = Actium::Folders::Signup->new();
+   my $signup         = Actium::O::Folders::Signup->new();
    my $html_folder = $signup->subfolder('html'); 
    
    my $xml_db = $signup->load_xml;
@@ -44,7 +44,7 @@ sub START {
      emit "Loading prehistoric schedules";
 
     my @skeds
-      = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
+      = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
 
     emit_done;
     
@@ -60,7 +60,7 @@ sub START {
             $prev_linegroup = $linegroup;
         }
 
-        push @tables, Actium::Sked::Timetable->new_from_sked( $sked, $xml_db );
+        push @tables, Actium::O::Sked::Timetable->new_from_sked( $sked, $xml_db );
         
     }
 
