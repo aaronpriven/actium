@@ -9,7 +9,7 @@ use Geo::Coder::US;
 use strict;
 use warnings;
 
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Term;
 use Math::Trig qw(deg2rad pi great_circle_distance asin acos);
@@ -26,7 +26,7 @@ my $threshold = 5280 / 3;    # 1/3 mile
 
 sub START {
 
-    my $signup     = Actium::Folders::Signup->new();
+    my $signup     = Actium::O::Folders::Signup->new();
     my $dbfilespec = $signup->make_filespec($dbname);
 
     Geo::Coder::US->set_db($dbfilespec);

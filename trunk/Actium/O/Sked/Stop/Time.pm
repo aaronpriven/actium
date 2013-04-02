@@ -6,7 +6,7 @@
 
 # legacy status 4
 
-package Actium::Sked::Stop::Time 0.002;
+package Actium::O::Sked::Stop::Time 0.002;
 
 use 5.016;
 use strict;

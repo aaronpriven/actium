@@ -42,11 +42,11 @@ my $intro = 'avl2stoplists -- make stop lists by pattern and route from AVL data
 use Actium::Options (qw<add_option option init_options>);
 add_option ('random' , 'Give stops in random order instead of sorted');
 
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 init_options;
 
-my $signup = Actium::Folders::Signup->new();
+my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
 # retrieve data

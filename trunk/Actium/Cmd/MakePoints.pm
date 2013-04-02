@@ -27,18 +27,18 @@ use Actium::Union('ordered_union');
 use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 
 use List::MoreUtils('natatime');
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 use File::Slurp;
 use Text::Trim;
 
 use Actium::Options;
 
-use Actium::Points::Point;
+use Actium::O::Points::Point;
 
-use Readonly;
+use Const::Fast;
 
-Readonly my $IDPOINTFOLDER => 'indesign_points';
+const my $IDPOINTFOLDER => 'indesign_points';
 
 sub HELP {
 
@@ -58,7 +58,7 @@ EOF
 
 sub START {
 
-    my $signup = Actium::Folders::Signup->new();
+    my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path();
 
     my $pointdir = $signup->subfolder($IDPOINTFOLDER);
@@ -139,7 +139,7 @@ sub START {
         # 1) Read kpoints from file
 
         my $point
-          = Actium::Points::Point->new_from_kpoints( $stopid, $signid,
+          = Actium::O::Points::Point->new_from_kpoints( $stopid, $signid,
             $effdate , $old_makepoints);
 
         # 2) Change kpoints to the kind of data that's output in

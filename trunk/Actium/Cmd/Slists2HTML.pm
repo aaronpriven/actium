@@ -9,8 +9,8 @@ use warnings;
 
 package Actium::Cmd::Slists2HTML 0.002;
 
-use Actium::Folders::Signup;
-use Actium::Sked::Dir;
+use Actium::O::Folders::Signup;
+use Actium::O::Dir;
 use Actium::Constants;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util('filename');
@@ -28,7 +28,7 @@ my %order_of = map { $_ => $count++ } @DIRCODES;
 
 sub START {
 
-    my $signup                = Actium::Folders::Signup->new();
+    my $signup                = Actium::O::Folders::Signup->new();
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');
     #    my $linehtml_folder       = $stoplists_folder->subfolder('linehtml');
@@ -119,7 +119,7 @@ sub START {
 
         } ## tidy end: foreach my $dir (@dirs)
 
-        my @dir_objs  = map { Actium::Sked::Dir->new($_) } @dirs;
+        my @dir_objs  = map { Actium::O::Dir->new($_) } @dirs;
         my @dir_bound = map { $_->as_bound } @dir_objs;
 
         # make dummy stop list if there's only one direction

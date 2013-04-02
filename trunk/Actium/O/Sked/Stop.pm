@@ -1,4 +1,4 @@
-# Actium/Sked/Stop/Time.pm
+# Actium/O/Sked/Stop.pm
 
 # the stop time object, containing all the info for each time of a schedule
 
@@ -6,7 +6,7 @@
 
 # legacy status 4
 
-package Actium::Sked::Stop::Time 0.002;
+package Actium::O::Sked::Stop 0.002;
 
 use 5.016;
 use strict;
@@ -16,7 +16,7 @@ use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
 use Actium::Types (
-    qw(ActiumSkedDir ActiumSkedDays ArrayRefOfActiumSkedStopTime));
+    qw(ActiumDir ActiumDays ArrayRefOfActiumSkedStopTime));
 
 use MooseX::Storage;
 with Storage( traits => ['OnlyWhenBuilt'] );

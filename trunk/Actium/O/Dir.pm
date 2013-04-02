@@ -1,4 +1,4 @@
-# Actium/Sked/Dir.pm
+# Actium/O/Dir.pm
 
 # Object representing the scheduled direction (of a trip, or set of trips)
 
@@ -9,7 +9,7 @@
 use 5.014;
 use warnings;
 
-package Actium::Sked::Dir 0.002;
+package Actium::O::Dir 0.002;
 
 use Moose;
 use MooseX::StrictConstructor;
@@ -27,10 +27,6 @@ use List::MoreUtils ('mesh');
 ###################################
 #### ENGLISH NAMES FOR DAYS CONSTANTS
 ###################################
-
-#Readonly my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN ) ;
-#Readonly my @HASTUS_DIRS => ( 0, 1, 3, 2, 4.. $#DIRCODES);
-# now defined in Actium::Constants
 
 const my @DIRECTIONS => (
    qw(North South West East In Out Go Return Clockwise Counterclockwise),
@@ -95,7 +91,7 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::Dir - Object for holding scheduled direction
+Actium::O::Dir - Object for holding scheduled direction
 
 =head1 VERSION
 
@@ -103,9 +99,9 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Sked::Dir;
+ use Actium::O::Dir;
  
- my $dir = Actium::Sked::Dir->new ('WB');
+ my $dir = Actium::O::Dir->new ('WB');
  
  say $dir->as_direction; # "West"
  say $days->as_bound; # "Westbound"
@@ -119,9 +115,9 @@ Trips, or timetables, are assigned to particular scheduled directions.
 
 =over
 
-=item B<< Actium::Sked::Dir->new(I<dircode>) >>
+=item B<< Actium::O::Dir->new(I<dircode>) >>
 
-The object is constructed using "Actium::Sked::Dir->new".  
+The object is constructed using "Actium::O::Dir->new".  
 
 It accepts a direction specification, in one of two ways.  As a string:
 
@@ -184,7 +180,7 @@ west before east.
 
 =item MooseX::Types
 
-=item Readonly
+=item Const::Fast
 
 =item Actium::Constants
 

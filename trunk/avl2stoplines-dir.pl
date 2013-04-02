@@ -50,12 +50,12 @@ my $intro
   = 'avl2stoplines -- make a list of stops with lines served from AVL data';
   
 use Actium::Options ('init_options');
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 init_options;
 
 
-my $signup = Actium::Folders::Signup->new();
+my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
 my $stopdata = $signup->mergeread('Stops.csv');

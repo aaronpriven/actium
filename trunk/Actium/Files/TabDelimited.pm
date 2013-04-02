@@ -250,12 +250,12 @@ The named parameters are:
 
 =item folder
 
-This mandatory parameter 
-is intended to be an Actium::Folder object (or a subclass such
-as Actium::Folders::Signup). However, any object representing a folder will 
-work if it implements the methods "make_filespec", "glob_plain_files", 
-"open_read", and "display_path." See L<Actium::Folder|Actium::Folder> for
-details of these methods.
+This mandatory parameter is intended to be an Actium::O::Folder
+object (or a subclass such as Actium::O::Folders::Signup). However,
+any object representing a folder will work if it implements the
+methods "make_filespec", "glob_plain_files", "open_read", and
+"display_path." See L<Actium::O::Folder|Actium::O::Folder> for details
+of these methods.
 
 =item files
 

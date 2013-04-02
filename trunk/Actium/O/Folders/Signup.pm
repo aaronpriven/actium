@@ -8,7 +8,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Folders::Signup 0.001;
+package Actium::O::Folders::Signup 0.001;
 
 use Actium::Options qw(add_option option is_an_option);
 use Actium::Constants;
@@ -21,7 +21,7 @@ use FindBin;
 use Moose;
 use MooseX::StrictConstructor;
 
-const my $base_class => 'Actium::Folder';
+const my $base_class => 'Actium::O::Folder';
 
 extends $base_class;
 
@@ -101,7 +101,7 @@ around BUILDARGS => sub {
         $params_r->{folderlist} = [ $base, $signup ];
         $params_r->{subfolders} = [];
     }
-    # all arrayrefs in folderlist will be flattened in the Actium::Folder
+    # all arrayrefs in folderlist will be flattened in the Actium::O::Folder
     # BUILDARGS
 
     return $class->$orig($params_r);
@@ -167,7 +167,7 @@ has subfolderlist_r => (
 # have elements that are the empty string. I don't think
 # this will matter.
 
-# for below, see big comment in Actium::Folder
+# for below, see big comment in Actium::O::Folder
 
 override 'original_parameters' => sub {
     my $self     = shift;
@@ -227,7 +227,7 @@ __END__
 
 =head1 NAME
 
-Actium::Folders::Signup - Signup folder objects for the Actium system
+Actium::O::Folders::Signup - Signup folder objects for the Actium system
 
 =head1 VERSION
 
@@ -235,16 +235,16 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Folders::Signup;
+ use Actium::O::Folders::Signup;
 
- $signup = Actium::Folders::Signup->new();
+ $signup = Actium::O::Folders::Signup->new();
  $skeds = $signup->subfolder('skeds');
  # or alternatively
- $skeds = Actium::Folders::Signup->new('skeds') # same thing
+ $skeds = Actium::O::Folders::Signup->new('skeds') # same thing
 
- $rawskeds = Actium::Folders::Signup->subfolder('rawskeds');
+ $rawskeds = Actium::O::Folders::Signup->subfolder('rawskeds');
 
- $oldsignup = Actium::Folders::Signup->new({signup => 'f08'});
+ $oldsignup = Actium::O::Folders::Signup->new({signup => 'f08'});
  $oldskeds = $oldsignup->subfolder('skeds');
 
  $filespec = $oldskeds->make_filespec('10_EB_WD.txt');
@@ -258,16 +258,16 @@ This documentation refers to version 0.001
 
 =head2 Introduction
 
-Actium::Folders::Signup provides an object-oriented interface to the system of
-signup folders.
+Actium::O::Folders::Signup provides an object-oriented interface
+to the system of signup folders.
 
-(They are referred to here as "folders" rather than "directories" mainly
-because "dir" is more commonly used within the Actium system as an 
-abbreviation for "direction", and I wanted to avoid ambiguity.)
+(They are referred to here as "folders" rather than "directories"
+mainly because "dir" is more commonly used within the Actium system
+as an abbreviation for "direction", and I wanted to avoid ambiguity.)
 
-A "signup" is the period that a particular set of transit schedules is in 
-effect.  (It is named after the drivers' activity of "signing up" for a new
-piece of work for that period.) 
+A "signup" is the period that a particular set of transit schedules
+is in effect.  (It is named after the drivers' activity of "signing
+up" for a new piece of work for that period.)
 
 Actium uses a series of folders for storing data about each signup.
 Each signup has a folder, and then within that there is a series of
@@ -275,9 +275,10 @@ subfolders containing different types of data (e.g., processed
 schedule files, files from the Hastus AVL Standard interface, and so
 forth).
 
-This module is designed to make it easier to locate the signup folders
-and the folders within them. It inherits from Actium::Folder and its objects
-are different almost exclusively in object construction, and not in use.
+This module is designed to make it easier to locate the signup
+folders and the folders within them. It inherits from Actium::O::Folder
+and its objects are different almost exclusively in object construction,
+and not in use.
 
 This module is where the base, signup, and cache options are set.
 
@@ -344,14 +345,14 @@ By the environment variable "ACTIUM_BASE".
 
 =back
 
-If none of these are set, Actium::Folders::Signup uses L<FindBin|FindBin> to 
-find the folder 
-where the script is running (in the above example, /Actium/bin), and 
-sets the base folder to "signups" in the script folder's parent folder. 
-In other words, it's something like "/Actium/bin/../signups". In the normal
-case where the "bin" folder is in the same folder as the Actium data
-this means it will all work fine without any specification of the base 
-folder. If not, then it will croak. 
+If none of these are set, Actium::O::Folders::Signup uses
+L<FindBin|FindBin> to find the folder where the script is running
+(in the above example, /Actium/bin), and sets the base folder to
+"signups" in the script folder's parent folder.  In other words,
+it's something like "/Actium/bin/../signups". In the normal case
+where the "bin" folder is in the same folder as the Actium data
+this means it will all work fine without any specification of the
+base folder. If not, then it will croak.
 
 =item Signup folder
 
@@ -375,18 +376,19 @@ By the environment variable "ACTIUM_SIGNUP".
 
 =back
 
-If none of these are present, then Actium::Folders::Signup 
+If none of these are present, then Actium::O::Folders::Signup 
 will croak "No signup folder specified."
 
 =item Subfolder
 
-Subfolders are found under the signup folder. Most of the input
-and output files used by Actium are stored in these subfolders. 
-This is generally equivalent to a subset of data for that particular signup:
-the data from the Hastus AVL Standard Interface in "hasi", HTML schedules in 
-"html", and so forth. Occasionally some data will be found further down in the
-folder tree, so several different subfolders will be needed. The 
-new() and subfolder() calls both can take a series of folder names.
+Subfolders are found under the signup folder. Most of the input and
+output files used by Actium are stored in these subfolders.  This
+is generally equivalent to a subset of data for that particular
+signup: the data from the Hastus AVL Standard Interface in "hasi",
+HTML schedules in "html", and so forth. Occasionally some data will
+be found further down in the folder tree, so several different
+subfolders will be needed. The new() and subfolder() calls both can
+take a series of folder names.
 
 Subfolders are specified in the arguments to the "new" class method
 or the "subfolder" object method call.
@@ -422,20 +424,22 @@ specify one. See the method "cache" below.
 
 =head1 OBJECT CONSTRUCTION
 
-Actium::Folders::Signup objects are created using the B<new> constructor 
-inherited from Moose. Alternatively, they can be cloned from an existing 
-Actium::Folders::Signup object, using B<subfolder>.
+Actium::O::Folders::Signup objects are created using the B<new>
+constructor inherited from Moose. Alternatively, they can be cloned
+from an existing Actium::O::Folders::Signup object, using B<subfolder>.
 
-For either method, if the first argument is a hash reference, 
-it is taken as a reference to named
-arguments. If not, the arguments given are considered part of the 
-I<subfolders> argument. So this:
+For either method, if the first argument is a hash reference, it
+is taken as a reference to named arguments. If not, the arguments
+given are considered part of the I<subfolders> argument. So this:
 
- my $folder = Actium::Folders::Signup->new($folder1, $folder2 )
+ my $folder = Actium::O::Folders::Signup->new($folder1, $folder2 )
  
 is a shortcut for this:
 
- my $folder = Actium::Folders::Signup->new({subfolders => [ $folder1, $folder2 ]})
+ my $folder = 
+   Actium::O::Folders::Signup->new(
+     {subfolders => [ $folder1, $folder2 ]}
+   );
 
 =head2 NAMED ARGUMENTS
 
@@ -451,36 +455,36 @@ This is the signup folder, described above.
 
 =item I<subfolders>
 
-This can be a single string with an entire path ('path/to/folder'), 
+This can be a single string with an entire path ('path/to/folder'),
 a reference to a list containing that single string (['path/to/folder']),
-a series of strings each with a folder name (['path' , 'to' , 'folder']),
-or a combination (['path/to' , 'folder']). Actium::Folder splits the pieces
-into individual folders for you.
+a series of strings each with a folder name (['path' , 'to' ,
+'folder']), or a combination (['path/to' , 'folder']). Actium::O::Folder
+splits the pieces into individual folders for you.
 
-If none is supplied, Actium::Folders::Signup will represent the signup folder
-itself.
+If none is supplied, Actium::O::Folders::Signup will represent the
+signup folder itself.
 
 =item I<cache>
 
-If supplied, specifies a default folder where SQLite databases are to
-be stored.
+If supplied, specifies a default folder where SQLite databases are
+to be stored.
 
-SQLite will not work if its database is on a networked filesystem. This option
-is provided to allow the signup folder to be on a networked filesystem
-while storing the SQLite databases locally.
+SQLite will not work if its database is on a networked filesystem.
+This option is provided to allow the signup folder to be on a
+networked filesystem while storing the SQLite databases locally.
 
 =item I<volume>
 
 =item I<must_exist>
 
-See L<Actium::Folder|Actium::Folder> .
+See L<Actium::O::Folder|Actium::O::Folder> .
 
 =back
 
 =head1 METHODS
 
-Most methods are inherited from L<Actium::Folder|Actium::Folder> and are 
-described in the documentation for that module.
+Most methods are inherited from L<Actium::O::Folder|Actium::O::Folder>
+and are described in the documentation for that module.
 
 =over
 
@@ -490,29 +494,31 @@ described in the documentation for that module.
 
 =item B<$obj-E<gt>load_hasi()>
 
-Identical to their Actium::Folder counterparts, except that if present, the 
-Actium::Folders::Signup cache folder
-(specified on the command line, or in the cache argument to 
-Actium::Folders::Signup->new ) is used instead of the SQLite default.
+Identical to their Actium::O::Folder counterparts, except that if
+present, the Actium::O::Folders::Signup cache folder (specified on
+the command line, or in the cache argument to
+Actium::O::Folders::Signup->new ) is used instead of the SQLite
+default.
 
 =item B<$obj-E<gt>base_obj()>
 
-Returns an object representing the base folder of this object. Since the base
-folder is, by definition, not a signup folder, this is not an 
-Actium::Folders::Signup object, but instead an L<Actium::Folder|Actium::Folder>  
-object.
+Returns an object representing the base folder of this object. Since
+the base folder is, by definition, not a signup folder, this is not
+an Actium::O::Folders::Signup object, but instead an
+L<Actium::O::Folder|Actium::O::Folder> object.
 
 =item B<$obj-E<gt>signup_obj()>
 
-Returns an object representing the signup folder of this object. Useful if, 
-in a method or subroutine, one is only passed an object representing a signup
-subfolder and one needs the signup folder itself.
+Returns an object representing the signup folder of this object.
+Useful if, in a method or subroutine, one is only passed an object
+representing a signup subfolder and one needs the signup folder
+itself.
 
 =back
 
 =head1 DIAGNOSTICS
 
-See L<Actium::Folder|Actium::Folder> for most diagnostics.
+See L<Actium::O::Folder|Actium::O::Folder> for most diagnostics.
 
 =over
 
@@ -533,9 +539,9 @@ command line, in the environment, or in the method call.
 
 =item MooseX::StrictConstructor
 
-=item Readonly
+=item Const::Fast
 
-=item Actium::Folder
+=item Actium::O::Folder
 
 =back
 

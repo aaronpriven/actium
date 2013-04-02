@@ -6,7 +6,7 @@
 
 # legacy status 4
 
-package Actium::Sked 0.002;
+package Actium::O::Sked 0.002;
 
 use 5.012;
 use strict;
@@ -30,17 +30,17 @@ use Actium::Sorting::Line qw<sortbyline linekeys>;
 use Actium::Constants;
 
 use Actium::Types (qw/DirCode HastusDirCode ActiumSkedDir ActiumSkedDays/);
-use Actium::Sked::Trip;
-use Actium::Sked::Dir;
-use Actium::Sked::Days;
-use Actium::Sked::Stop;
-use Actium::Sked::Stop::Time;
+use Actium::O::Sked::Trip;
+use Actium::O::Dir;
+use Actium::O::Days;
+use Actium::O::Sked::Stop;
+use Actium::O::Sked::Stop::Time;
 
 use Actium::Term;
 
 use Const::Fast;
 
-with 'Actium::Sked::Prehistoric';
+with 'Actium::O::Sked::Prehistoric';
 # allows prehistoric skeds files to be read and written.
 
 ###################################
@@ -396,7 +396,7 @@ has 'days_obj' => (
 has 'trip_r' => (
     traits  => ['Array'],
     is      => 'bare',
-    isa     => 'ArrayRef[Actium::Sked::Trip]',
+    isa     => 'ArrayRef[Actium::O::Sked::Trip]',
     default => sub { [] },
     handles => { trips => 'elements', trip => 'get', trip_count => 'count' },
 );
@@ -599,7 +599,6 @@ sub attribute_columns {
 
   ATTRIBUTE:
     foreach my $attr (@attributes_to_search) {
-        #next unless $attr->does('Actium::MOP::WithShortColumn');
         next unless $attr->meta->find_attribute_by_name('short_column');
         next unless $attr->has_read_method;
         my $reader = $attr->get_read_method;
@@ -700,7 +699,7 @@ sub attribute_columns {
 #            $value_of{$attrname} = $value;
 #        }    ## <perltidy> end foreach my $attribute ( $self...)
 #
-#        my $newsked = Actium::Sked->new(
+#        my $newsked = Actium::O::Sked->new(
 #            trip_r    => $trips_of{$linegroup},
 #            linegroup => $linegroup,
 #            %value_of,
@@ -988,7 +987,7 @@ sub stop_objects {
 
         for my $stop_idx ( 0 .. $stopcount ) {
             push @{ $time_objs[$stop_idx] },
-              Actium::Sked::Stop::Time->new(
+              Actium::O::Sked::Stop::Time->new(
                 {   origin      => $origin,
                     destination => $destination,
                     follower    => $followers[$stop_idx],
@@ -1004,7 +1003,7 @@ sub stop_objects {
     } ## tidy end: foreach my $trip ( $self->trips)
 
     for my $stop_idx ( 0 .. $stopcount ) {
-        push @stop_objs, Actium::Sked::Stop->new({
+        push @stop_objs, Actium::O::Sked::Stop->new({
          time_objs => $time_objs[$stop_idx] ,
          direction => $self->dir_obj,
          days => $self->days_obj,

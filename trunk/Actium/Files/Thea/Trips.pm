@@ -13,9 +13,9 @@ package Actium::Files::Thea::Trips 0.002;
 
 use Actium::Term;
 use Actium::Constants;
-use Actium::Sked::Days;
+use Actium::O::Days;
 use Actium::Time('timenum');
-use Actium::Sked::Trip;
+use Actium::O::Sked::Trip;
 use Actium::Util ('j');
 use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Sorting::Line 'sortbyline';
@@ -175,7 +175,7 @@ sub _make_days_obj {
       : $trp_event eq 'SH' ? 'H'
       :                      'B';
 
-    return Actium::Sked::Days->new( $day_digits, $schooldaycode );
+    return Actium::O::Days->new( $day_digits, $schooldaycode );
 }
 
 sub _make_trip_objs {
@@ -227,9 +227,9 @@ sub _make_trip_objs {
             } ## tidy end: foreach my $trip_r ( @{ $trips_of_lineid_r...})
 
         } ## tidy end: foreach my $lineid (@lineids)
-        $trip_objs_r = Actium::Sked::Trip->stoptimes_sort( @{$trip_objs_r} );
+        $trip_objs_r = Actium::O::Sked::Trip->stoptimes_sort( @{$trip_objs_r} );
 
-        $trip_objs_r = Actium::Sked::Trip->merge_trips_if_same(
+        $trip_objs_r = Actium::O::Sked::Trip->merge_trips_if_same(
             {   trips => $trip_objs_r,
                 methods_to_compare =>
                   [qw <stoptimes_comparison_str sortable_days>]
@@ -252,7 +252,7 @@ sub _make_trip_objs {
 sub _tripstruct_to_tripobj {
     my $tripstruct = shift;
 
-    return Actium::Sked::Trip->new(
+    return Actium::O::Sked::Trip->new(
         {   days           => $tripstruct->[T_DAYS],
             vehicletype    => $tripstruct->[T_VEHICLE],
             stoptime_r     => $tripstruct->[T_TIMES],
@@ -261,7 +261,7 @@ sub _tripstruct_to_tripobj {
             pattern        => $tripstruct->[T_PATTERN],
             line           => $tripstruct->[T_LINE],
             internal_num   => $tripstruct->[T_INTNUM],
-            # DAYSDIGITS - no attribute in Actium::Sked::Trips,
+            # DAYSDIGITS - no attribute in Actium::O::Sked::Trip,
             # but incorporated in days
         }
     );
@@ -435,10 +435,10 @@ sub _merge_if_appropriate {
         and $in_both > ( $MINIMUM_TIMES_MULTIPLIER * $only_in_either ) )
     {
         my $trips_to_merge_r
-          = Actium::Sked::Trip->stoptimes_sort( @{$outer_trips_r},
+          = Actium::O::Sked::Trip->stoptimes_sort( @{$outer_trips_r},
             @{$inner_trips_r} );
 
-        return Actium::Sked::Trip->merge_trips_if_same(
+        return Actium::O::Sked::Trip->merge_trips_if_same(
             {   trips              => $trips_to_merge_r,
                 methods_to_compare => ['stoptimes_comparison_str'],
             }

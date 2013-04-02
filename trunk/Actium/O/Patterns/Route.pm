@@ -1,6 +1,6 @@
 #!/ActivePerl/bin/perl
 
-#/Actium/Patterns/Route.pm
+#/Actium/O/Patterns/Route.pm
 
 # Subversion: $Id$
 
@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Patterns::Route 0.001;
+package Actium::O::Patterns::Route 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
@@ -36,7 +36,7 @@ sub id {
 
 has 'patterns_r' => (
     is      => 'bare',
-    isa     => 'ArrayRef[Actium:::Pattern]',
+    isa     => 'ArrayRef[Actium::O::Pattern]',
     default => sub { [] },
     traits  => ['Array'],
     handles => { patterns => 'elements', },
@@ -45,7 +45,7 @@ has 'patterns_r' => (
 has 'dir_obj_of' => (
     is      => 'bare',
     traits  => ['Hash'],
-    isa     => 'HashRef[Actium::Sked::Dir]',
+    isa     => 'HashRef[Actium::O::Dir]',
     builder => '_build_dir_objs_of',
     lazy    => 1,
     handles => {
@@ -79,7 +79,7 @@ sub _build_dir_objs_of {
 
 has 'pattern_of_placelist_r' => (
     is      => 'bare',
-    isa     => 'HashRef[ArrayRef[Actium::Patterns::Pattern]]',
+    isa     => 'HashRef[ArrayRef[Actium::O::Patterns::Pattern]]',
     builder => '_build_pattern_of_placelist_r',
     lazy    => 1,
     traits  => ['Hash'],
@@ -108,7 +108,7 @@ sub patterns_of_placelist {
 
 has 'pattern_of_dir_r' => (
     is      => 'bare',
-    isa     => 'HashRef[ArrayRef[Actium::Patterns::Pattern]]',
+    isa     => 'HashRef[ArrayRef[Actium::O::Patterns::Pattern]]',
     builder => '_build_pattern_of_dir_r',
     lazy    => 1,
     traits  => ['Hash'],

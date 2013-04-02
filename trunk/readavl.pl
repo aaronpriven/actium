@@ -3,7 +3,7 @@
 # Legacy stage 2
 
 # All the programs that use the 'avl.storable' file depend on this one.
-# This shouild ultimately be replaced with Actium::Files::HastusASI
+# This shouild ultimately be replaced with Actium::O::Files::HastusASI
 
 @ARGV = qw(-s f08) if $ENV{RUNNING_UNDER_AFFRUS};
 
@@ -54,8 +54,8 @@ EOF
 
 init_options;
 
-use Actium::Folders::Signup;
-my $signup = Actium::Folders::Signup->new();
+use Actium::O::Folders::Signup;
+my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
 say "Reading from $signup";

@@ -4,14 +4,14 @@
 # Subversion: $Id$
 
 # legacy stage 2, mostly
-# should be eliminated in favor of Actium::Sked::Days and Actium::Sked::Dir
+# should be eliminated in favor of Actium::O::Days and Actium::O::Dir
 
 use 5.012;
 use warnings;
 
 package Actium::DaysDirections 0.001;
 
-use Readonly;
+use Const::Fast;
 
 use Perl6::Export::Attrs;
 
@@ -22,7 +22,7 @@ use Perl6::Export::Attrs;
 # H - Holidays
 # J - Z reserved for future use
 
-Readonly my %DAY_OF_HASI => {
+const my %DAY_OF_HASI => {
     qw(
       1234567 DA
       12345   WD
@@ -37,7 +37,7 @@ Readonly my %DAY_OF_HASI => {
       )
 };
 
-Readonly my %DIR_OF_HASI => {
+const my %DIR_OF_HASI => {
     qw(
       0 NB    1 SB
       2 EB    3 WB
@@ -282,7 +282,7 @@ Perl 5.010 and the standard distribution.
 
 =item *
 
-Readonly.
+Const::Fast
 
 =back
 

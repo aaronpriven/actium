@@ -18,8 +18,8 @@ our $VERSION = '0.002';
 
 use MooseX::Types -declare => [
     qw <TransitInfoDays   DayCode     SchoolDayCode
-      DaySpec             ActiumSkedDays
-      HastusDirCode       DirCode     ActiumSkedDir
+      DaySpec             ActiumDays
+      HastusDirCode       DirCode     ActiumDir
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
       Str4                Str8
       FolderComponent     FolderList
@@ -56,18 +56,18 @@ subtype DaySpec, as ArrayRef, where {
 coerce DaySpec, from DayCode, via { [ $_, 'B' ] },
   from TransitInfoDays, via { [ to_DayCode($_), 'B' ] };
 
-subtype ActiumSkedDays, as class_type('Actium::Sked::Days');
+subtype ActiumDays, as class_type('Actium::O::Days');
 
-coerce ActiumSkedDays,
-  from DaySpec, via { Actium::Sked::Days->new($_) },
-  from DayCode, via { Actium::Sked::Days->new(to_DaySpec($_)) },
-  from TransitInfoDays, via { Actium::Sked::Days->new(to_DaySpec($_)) },
+coerce ActiumDays,
+  from DaySpec, via { Actium::O::Days->new($_) },
+  from DayCode, via { Actium::O::Days->new(to_DaySpec($_)) },
+  from TransitInfoDays, via { Actium::O::Days->new(to_DaySpec($_)) },
   ;
   
 #########################
 ### SCHEDULE STOP TIMES
 
-subtype ActiumSkedStopTime, as class_type('Actium::Sked::Stop::Time');
+subtype ActiumSkedStopTime, as class_type('Actium::O::Sked::Stop::Time');
 
 subtype ArrayRefOfActiumSkedStopTime , as ArrayRef [ActiumSkedStopTime];
 
@@ -80,12 +80,12 @@ subtype HastusDirCode, as Int, where { $_ >= 0 and $_ <= $#DIRCODES };
 
 coerce DirCode, from HastusDirCode, via { $DIRCODES[ $HASTUS_DIRS[$_] ] };
 
-subtype ActiumSkedDir, as class_type('Actium::Sked::Dir');
+subtype ActiumDir, as class_type('Actium::O::Dir');
 
-coerce( ActiumSkedDir,
+coerce( ActiumDir,
     from HastusDirCode,
-    via               { Actium::Sked::Dir->new( to_DirCode($_) ) },
-    from DirCode, via { Actium::Sked::Dir->new($_) },
+    via               { Actium::O::Dir->new( to_DirCode($_) ) },
+    from DirCode, via { Actium::O::Dir->new($_) },
 );
 
 ######################
@@ -182,17 +182,17 @@ A character representing whether the scheduled days run during school days
 =item B<HastusDirCode>
 
 A number from 0 to 13, representing the various direction codes used in the 
-Hastus AVL Standard Interface. It can be coerced into DirCode or ActiumSkedDir.
+Hastus AVL Standard Interface. It can be coerced into DirCode or ActiumODir.
 
 =item B<DirCode>
 
 An enumeration of the elements of @Actium::Constants::DIRCODES. 
 See L<Actium::Constants/Actium::Constants>. It can be coerced into 
-ActiumSkedDir.
+ActiumODir.
 
-=item B<ActiumSkedDir>
+=item B<ActiumODir>
 
-A type representing the Actium::Sked::Dir class.
+A type representing the Actium::O::Dir class.
 
 =back
 

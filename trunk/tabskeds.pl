@@ -53,12 +53,12 @@ use Actium::Options (qw<option add_option init_options>);
 add_option ('upcoming=s' , 'Upcoming signup');
 add_option ('current!' , 'Current signup');
 use Actium::Term (qw<printq sayq>);
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 init_options;
 
 
-my $signupfolder = Actium::Folders::Signup->new();
+my $signupfolder = Actium::O::Folders::Signup->new();
 chdir $signupfolder->path();
 my $signup = $signupfolder->signup;
 

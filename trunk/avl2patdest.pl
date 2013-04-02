@@ -40,11 +40,11 @@ my $intro = 'avl2patdest -- patterns and destinations';
 
 use Actium::Sorting::Line('byline');
 use Actium::Options ('init_options');
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 init_options;
 
-my $signup = Actium::Folders::Signup->new();
+my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
 my %stoplist = ();

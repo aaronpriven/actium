@@ -4,7 +4,7 @@
 
 # Subversion: $Id$
 
-package Actium::Sked::HeadwayPage;
+package Actium::O::Sked::HeadwayPage;
 
 use 5.010;
 
@@ -19,9 +19,9 @@ use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 use Actium::Constants;
 use Actium::Term;
-use Actium::Sked;
+use Actium::O::Sked;
 use Text::Trim();
-use Actium::Sked::Trip;
+use Actium::O::Sked::Trip;
 use Actium::Util qw<:all>;
 
 use List::MoreUtils ('uniq');
@@ -58,7 +58,7 @@ has [qw<linedescrip origlinegroup direction days>] => (
 has 'trip_r' => (
     traits  => ['Array'],
     is      => 'ro',
-    isa     => 'ArrayRef[Actium::Sked::Trip]',
+    isa     => 'ArrayRef[Actium::O::Sked::Trip]',
     default => sub { [] },
     handles => {
         push_trips  => 'push',
@@ -111,7 +111,7 @@ around BUILDARGS => sub {
 sub sked {
     my $self = shift;
 
-    # Convert day strings with exceptions to # Actium::Sked::Day objects
+    # Convert day strings with exceptions to # Actium::O::Day objects
     
     my ($day_obj, @daysexceptions );
     
@@ -121,21 +121,21 @@ sub sked {
     if (@daysexceptions == 1 ) {
         given ($daysexceptions[0]) {
          when ('SD') {
-            $day_obj = Actium::Sked::Days->new($self->days, 'D');
+            $day_obj = Actium::O::Days->new($self->days, 'D');
          }
          when ('SH') {
-            $day_obj = Actium::Sked::Days->new($self->days, 'H');
+            $day_obj = Actium::O::Days->new($self->days, 'H');
          }
          default {
-            $day_obj = Actium::Sked::Days->new($self->days);
+            $day_obj = Actium::O::Days->new($self->days);
          }
         }
     }
     else {
-            $day_obj = Actium::Sked::Days->new($self->days);
+            $day_obj = Actium::O::Days->new($self->days);
     }
     
-    my $sked = Actium::Sked->new(
+    my $sked = Actium::O::Sked->new(
         place8_r      => $self->place8_r(),
         origlinegroup => $self->origlinegroup(),
         linedescrip   => $self->linedescrip(),
@@ -156,18 +156,18 @@ __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
 =head1 NAME
 
-Actium::HeadwayPage - Page objects for headway sheet processing
+Actium::O::HeadwayPage - Page objects for headway sheet processing
 
 =head1 VERSION
 
-This documentation refers to Actium::HeadwayPage version 0.001
+This documentation refers to Actium::O::HeadwayPage version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::HeadwayPage;
+ use Actium::O::HeadwayPage;
 
    $headwayfileobject->add_page(
-      Actium::HeadwayPage->new(
+      Actium::O::HeadwayPage->new(
          {   route_idx     => $self->route_idx(),
              direction_idx => $self->direction_idx(),
              lines         => [@lines_in_this_page],

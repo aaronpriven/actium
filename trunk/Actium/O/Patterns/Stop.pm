@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Patterns::Stop 0.001;
+package Actium::O::Patterns::Stop 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
@@ -52,7 +52,7 @@ has 'side' => (
 
 has '_relation_list_of_r' => (
     is      => 'bare',
-    isa     => 'HashRef[ArrayRef[Actium::Patterns::Stop::PatternRelation]]',
+    isa     => 'HashRef[ArrayRef[Actium::O::Patterns::Stop::PatternRelation]]',
     default => sub { {} },
     traits => ['Hash'],
     handles => {

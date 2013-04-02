@@ -5,14 +5,14 @@
 # This object is used for *display*, and should probably be called something
 # that relates to that.
 
-# The object Actium::Sked::Points is used to hold unformatted data.
+# The object Actium::O::Points is used to hold unformatted data.
 
 use warnings;
 use strict;
 
 use 5.010;
 
-package Actium::Points::Point;
+package Actium::O::Points::Point;
 
 use sort ('stable');
 
@@ -26,7 +26,7 @@ use List::MoreUtils('natatime');
 
 use POSIX ();
 
-use Actium::Points::Column;
+use Actium::O::Points::Column;
 
 use IDTags;
 
@@ -54,7 +54,7 @@ has 'has_ab' => (
 has 'column_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Actium::Points::Column]',
+    isa     => 'ArrayRef[Actium::O::Points::Column]',
     default => sub { [] },
     handles => {
         columns      => 'elements',
@@ -136,7 +136,7 @@ sub new_from_kpoints {
 
     while (<$kpoint>) {
         chomp;
-        my $column = Actium::Points::Column->new($_);
+        my $column = Actium::O::Points::Column->new($_);
 
         my $linegroup = $column->linegroup;
 
@@ -561,7 +561,7 @@ sub format_side {
 
 } ## tidy end: sub format_side
 
-# TODO - allow all values in Actium::Sked::Days
+# TODO - allow all values in Actium::O::Days
 my %text_of_exception = (
     SD     => 'school days only',
     SH     => 'school holidays only',
@@ -616,7 +616,7 @@ sub format_sidenotes {
             $dest =~ s/\.*$/\./;
         }
 
-        # TODO - Update to allow all values in Actium::Sked::Days
+        # TODO - Update to allow all values in Actium::O::Days
         if ( $attr{exception} ) {
             $exc = $text_of_exception{ $attr{exception} };
         }

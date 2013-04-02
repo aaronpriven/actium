@@ -31,8 +31,8 @@ add_option ('1' , 'One-column output');
 
 init_options();
 
-use Actium::Folders::Signup;
-my $signupdir = Actium::Folders::Signup->new();
+use Actium::O::Folders::Signup;
+my $signupdir = Actium::O::Folders::Signup->new();
 chdir $signupdir->path();
 
 my $signup = $signupdir->signup;
