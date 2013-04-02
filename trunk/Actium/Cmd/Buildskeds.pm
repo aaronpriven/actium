@@ -15,11 +15,11 @@ use Actium::Cmd::Headways;
 # TODO - Move Headways processing to a module not in Cmd. 
 # Or alternatively, delete this file which doesn't really do anything
 
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 sub START {
 
-   my $signup = Actium::Folders::Signup->new();
+   my $signup = Actium::O::Folders::Signup->new();
    
    my @skeds = build_skeds($signup);
    

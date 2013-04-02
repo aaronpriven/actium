@@ -18,13 +18,13 @@ $VERSION = eval $VERSION;
 use 5.010;
 
 use Actium::Term qw<:all>;
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 use Actium::Constants;
 use Actium::Union(':all');
-use Actium::Sked::HeadwayPage;
-use Actium::Sked::Trip;
-use Actium::Sked::Note;
-use Actium::Sked;
+use Actium::O::Sked::HeadwayPage;
+use Actium::O::Sked::Trip;
+use Actium::O::Sked::Note;
+use Actium::O::Sked;
 use Actium::Util qw<j filename>;
 
 # use Term::Emit qw/:all/, {-closestat => "ERROR"};
@@ -54,8 +54,8 @@ sub START {
 
     emit 'Processing headway sheets';
 
-    my $signup      = Actium::Folders::Signup->new;
-    my $headwaysfolder = Actium::Folders::Signup->new('headways');
+    my $signup      = Actium::O::Folders::Signup->new;
+    my $headwaysfolder = Actium::O::Folders::Signup->new('headways');
 
     my @files = $headwaysfolder->glob_plain_files();
     
@@ -90,7 +90,7 @@ sub START {
 
     # this probably should be a separate program, but for now, isn't
 
-    Actium::Sked->write_prehistorics( $skeds_r, $signup );
+    Actium::O::Sked->write_prehistorics( $skeds_r, $signup );
 
     emit_done;
 
@@ -199,7 +199,7 @@ sub read_headways {
     sub new_page {
         my @lines_in_this_page = @_;
 
-        my $newpage = Actium::Sked::HeadwayPage->new(@lines_in_this_page);
+        my $newpage = Actium::O::Sked::HeadwayPage->new(@lines_in_this_page);
 
         # set origlinegroup , line description , days
 
@@ -547,7 +547,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
                 next LINE
                   if ( true {/\d/} @times ) < 2;
 
-                my $trip = Actium::Sked::Trip->new(
+                my $trip = Actium::O::Sked::Trip->new(
                     { placetime_r => \@times, %fields } );
 
                 $page->push_trips($trip);
@@ -601,7 +601,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
         }
 
         foreach my $noteletter ( keys %thispages_notes ) {
-            my $note_obj = Actium::Sked::Note->new(
+            my $note_obj = Actium::O::Sked::Note->new(
                 {   origlinegroup => $page->origlinegroup(),
                     days          => $days,
                     noteletter    => $noteletter,
@@ -753,7 +753,7 @@ sub combine_identical_trips {
                 # are the same, the trip is the same.
 
                 my $combined_trip
-                  = Actium::Sked::Trip->merge_trips( $prevtrip, $trip );
+                  = Actium::O::Sked::Trip->merge_trips( $prevtrip, $trip );
                 $page->set_trip( $i - 1, $combined_trip );
                 $page->delete_trip($i);
 
