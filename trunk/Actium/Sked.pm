@@ -17,7 +17,7 @@ use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
 use MooseX::Storage;
-with Storage( traits=>['OnlyWhenBuilt'], 'format' => 'JSON' );
+with Storage( traits => ['OnlyWhenBuilt'], 'format' => 'JSON' );
 
 use English '-no_match_vars';
 
@@ -33,6 +33,8 @@ use Actium::Types (qw/DirCode HastusDirCode ActiumSkedDir ActiumSkedDays/);
 use Actium::Sked::Trip;
 use Actium::Sked::Dir;
 use Actium::Sked::Days;
+use Actium::Sked::Stop;
+use Actium::Sked::Stop::Time;
 
 use Actium::Term;
 
@@ -407,6 +409,7 @@ has 'stopid_r' => (
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
     handles => {
+        stopid         => 'get',
         stop_count     => 'count',
         stopids        => 'elements',
         _delete_stopid => 'delete'
@@ -564,8 +567,8 @@ sub id {
 }
 
 sub attribute_columns {
-        # return only non-empty attributes of trips, for creating 
-        # columnar output
+    # return only non-empty attributes of trips, for creating
+    # columnar output
 
     my $self           = shift;
     my @arg_attributes = @_;
@@ -604,7 +607,7 @@ sub attribute_columns {
         my $anydefined = 0;
         for my $trip (@trips) {
             my $value = $trip->$reader;
-            next if (not defined $value) or ($value eq $EMPTY_STR);
+            next if ( not defined $value ) or ( $value eq $EMPTY_STR );
             $anydefined = 1;
             last;
         }
@@ -615,7 +618,7 @@ sub attribute_columns {
 
     }
 
-    my @colorder = grep { $_ ne 'line' } (sort keys %shortcol_of) ;
+    my @colorder = grep { $_ ne 'line' } ( sort keys %shortcol_of );
     unshift @colorder, 'line' if exists $shortcol_of{line};
 
     if ($day) {
@@ -767,9 +770,9 @@ sub spaced {
     my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR, XB => 1 );
 
     my @place_records;
-    
-    my ($columns_r , $shortcol_of_r) = $self->attribute_columns;
-    my @columns = @{$columns_r};
+
+    my ( $columns_r, $shortcol_of_r ) = $self->attribute_columns;
+    my @columns     = @{$columns_r};
     my %shortcol_of = %{$shortcol_of_r};
 
     push @place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
@@ -872,16 +875,16 @@ sub xlsx {
 
     my @place_records;
 
-    my ($columns_r , $shortcol_of_r) = 
-       $self->attribute_columns (qw(line day vehicletype));
-    my @columns = @{$columns_r};
+    my ( $columns_r, $shortcol_of_r )
+      = $self->attribute_columns(qw(line day vehicletype));
+    my @columns     = @{$columns_r};
     my %shortcol_of = %{$shortcol_of_r};
-    
+
     push @place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
     push @place_records, [ @shortcol_of{@columns}, $self->place8s ];
 
     my @trips = $self->trips;
-    
+
     foreach my $trip (@trips) {
         push @place_records,
           [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
@@ -921,6 +924,97 @@ sub json {
     my $self = shift;
     return $self->freeze;    # uses MooseX::Storage;
 }
+
+sub stop_objects {
+    my $self = shift;
+
+    my @stopplaces = $self->stopplaces;
+    my $stopcount  = $self->stop_count;
+
+    my (@stop_objs, @time_objs);
+
+    foreach my $trip ( $self->trips ) {
+
+        my $tripdays = $trip->days_obj;
+
+        my @times = $trip->stoptimes;
+
+        my ( $origin, $destination, $previous_place );
+        my ( @previouses, @followers );
+        my $previous_place_idx = 0;
+
+        for my $stop_idx ( 0 .. $stopcount ) {
+            my $time = $times[$stop_idx];
+            next if isblank($time);
+
+            my $stopplace = $stopplaces[$stop_idx];
+            if ( isblank($stopplace) ) {
+                # Not a timepoint
+
+                $previouses[$stop_idx] = $previous_place;
+
+            }
+            else {
+                # Is a timepoint
+
+                my $place = $stopplace;
+                $previouses[$stop_idx] = $place;
+                $followers[$stop_idx]  = $place;
+
+                if ( defined $origin ) {
+                    # Timepoint after the origin
+                    $destination = $place;
+                    # That gets set for every place until the last one
+
+                    my @followers_to_set
+                      = ( $previous_place_idx + 1 .. $stop_idx - 1 );
+                    foreach my $j (@followers_to_set) {
+                        next unless $previouses[$j];
+                        $followers[$j] = $place;
+                    }
+
+                    $previous_place_idx = $stop_idx;
+
+                }
+                else {
+                    # Origin timepoint
+                    $origin         = $place;
+                    $previous_place = $place;
+                }
+
+            } ## tidy end: else [ if ( isblank($stopplace...))]
+
+        } ## tidy end: for my $stop_idx ( 0 .....)
+
+        for my $stop_idx ( 0 .. $stopcount ) {
+            push @{ $time_objs[$stop_idx] },
+              Actium::Sked::Stop::Time->new(
+                {   origin      => $origin,
+                    destination => $destination,
+                    follower    => $followers[$stop_idx],
+                    previous    => $previouses[$stop_idx],
+                    days        => $self->days_obj,
+                    times  => $times[$stop_idx],
+                    line        => $self->line,
+                    stop_index  => $stop_idx,
+                }
+              );
+        }
+
+    } ## tidy end: foreach my $trip ( $self->trips)
+
+    for my $stop_idx ( 0 .. $stopcount ) {
+        push @stop_objs, Actium::Sked::Stop->new({
+         time_objs => $time_objs[$stop_idx] ,
+         direction => $self->dir_obj,
+         days => $self->days_obj,
+         linegroup => $self->linegroup,
+        });
+    }
+
+    return @stop_objs;
+
+} ## tidy end: sub stop_objects
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 

@@ -2,6 +2,11 @@
 
 # legacy stages 2 and 3
 
+# This object is used for *display*, and should probably be called something
+# that relates to that.
+
+# The object Actium::Sked::Points is used to hold unformatted data.
+
 use warnings;
 use strict;
 
