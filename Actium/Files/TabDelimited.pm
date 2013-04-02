@@ -1,6 +1,6 @@
 # Actium/Files/TabDelimited.pm
 
-# Class for reading Tab-Delimited files and returning them to the caller.
+# Procedural routines for reading Tab-Delimited files and returning them to the caller.
 
 # Subversion: $Id$
 
