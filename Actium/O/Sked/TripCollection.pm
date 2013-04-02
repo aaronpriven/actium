@@ -6,7 +6,7 @@
 
 # legacy status 4
 
-package Actium::Sked::TripCollection;
+package Actium::O::Sked::TripCollection;
 
 # This is a collection of trips. It is convenient to have a collection of trips
 # object (separate from the Sked object) for two reasons. First, the collection
@@ -30,7 +30,7 @@ has 'trip_r' => (
     traits  => ['Array'],
     is      => 'ro',
     writer => '_set_trip_r',
-    isa     => 'ArrayRef[Actium::Sked::Trip]',
+    isa     => 'ArrayRef[Actium::O::Sked::Trip]',
     required => 1,
     handles => { trips => 'elements', trip => 'get', trip_count => 'count' },
 );

@@ -1,7 +1,7 @@
-# Actium/Sked/Timetable.pm
+# Actium/O/Sked/Timetable.pm
 
 # Object representing the data in a timetable to be displayed to the user.
-# Designed to take an Actium::Sked object and make it displayable.
+# Designed to take an Actium::O::Sked object and make it displayable.
 
 # Subversion:  $Id$
 
@@ -10,7 +10,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Sked::Timetable 0.001;
+package Actium::O::Sked::Timetable 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
@@ -27,7 +27,7 @@ my $timesub = Actium::Time::timestr_sub();
 # Uses default values. Someday it would be nice to make that configurable
 
 has sked_obj => (
-    isa      => 'Actium::Sked',
+    isa      => 'Actium::O::Sked',
     is       => 'ro',
     required => 1,
     handles  => {
@@ -583,7 +583,7 @@ sub as_html {
 sub as_public_json {
     # Public JSON needs access to the Timepoint table in Actium.fp7,
     # so has to be here in Timetable, even though most of the data comes from
-    # the Actium::Sked object.
+    # the Actium::O::Sked object.
 
     my $self = shift;
     my $sked = $self->sked_obj;

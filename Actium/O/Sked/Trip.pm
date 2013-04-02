@@ -6,7 +6,7 @@
 
 # legacy status 4
 
-package Actium::Sked::Trip;
+package Actium::O::Sked::Trip;
 
 use 5.016;
 
@@ -49,7 +49,7 @@ sub BUILD {
 
 }
 
-# The following is invoked only from the BUILD routine in Actium::Sked
+# The following is invoked only from the BUILD routine in Actium::O::Sked
 # It requires knowledge of the stopplaces which is in the Sked object
 
 sub _add_placetimes_from_stoptimes {
@@ -110,7 +110,7 @@ foreach my $attrname ( keys %shortcol_of_attribute ) {
     has $attrname => (
         is           => 'ro',
         isa          => 'Str',
-        traits       => ['Actium::MOP::WithShortColumn'],
+        traits       => ['Actium::O::Traits::WithShortColumn'],
         short_column => $shortcol_of_attribute{$attrname},
         required => ($attrname eq 'line'),
     );
@@ -229,14 +229,14 @@ has placetime_r => (
         placetime            => 'get',
         _splice_placetimes   => 'splice',
         _delete_placetime    => 'delete',
-        # only from BUILD in Actium::Sked
+        # only from BUILD in Actium::O::Sked
     },
 );
 
 has 'mergedtrip_r' => (
     traits  => ['Array'],
     is      => 'bare',
-    isa     => 'ArrayRef[Actium::Sked::Trip]',
+    isa     => 'ArrayRef[Actium::O::Sked::Trip]',
     default => sub { [] },
     handles => { mergedtrips => 'elements', mergedtrip_count => 'count', },
 
@@ -311,7 +311,7 @@ sub merge_trips {
             }
             when ('days_obj') {
                 $merged_value_of{$init_arg}
-                  = Actium::Sked::Days->union( $self->$attrname,
+                  = Actium::O::Days->union( $self->$attrname,
                     $secondtrip->$attrname );
             }
             default {
@@ -471,17 +471,17 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::Trip.pm - Object representing a trip in a schedule
+Actium::O::Sked::Trip.pm - Object representing a trip in a schedule
 
 =head1 VERSION
 
-This documentation refers to Actium::Sked::Trip.pm version 0.001
+This documentation refers to Actium::O::Sked::Trip.pm version 0.001
 
 =head1 DESCRIPTION
 
 This is a Moose class, representing each trip of a bus schedule. It contains
 information for each trip of a schedule. It is intended to be used by the 
-L<Actium::Sked::HeadwayPage> object and the L<Actium::Sked> object.
+L<Actium::O::Sked::HeadwayPage> object and the L<Actium::O::Sked> object.
 
 =head1 ATTRIBUTES
 
@@ -534,7 +534,7 @@ L<Actium::Time::timenum|Actium::Time/"timenum ($time)">
 =item B<noteletter>
 
 The letter(s) representing the note for this trip. The full note is contained in 
-an L<Actium::Sked::Note> object.
+an L<Actium::O::Sked::Note> object.
 
 =item B<stoptime_r>
 
@@ -576,7 +576,7 @@ Returns the value of the placetime of the given index (beginning at 0).
 =item B<mergedtrip_r>
 
 After trips are  merged using I<merge_trips()>, this array holds all the 
-Actium::Sked::Trip objects that were originally merged.  
+Actium::O::Sked::Trip objects that were originally merged.  
 
 =item B<mergedtrips>
 
@@ -599,9 +599,9 @@ and placetimes. (The purpose is to allow two trips that are scheduled identicall
 two buses that are designed to run at the same time to allow an extra heavy load to be
 carried -- to appear only once in the schedule.)
 
- Actium::Sked::Trip->merge_trips($trip1, $trip2);
+ Actium::O::Sked::Trip->merge_trips($trip1, $trip2);
 
-A new Actium::Sked::Trip object is created, with attributes as follows:
+A new Actium::O::Sked::Trip object is created, with attributes as follows:
 
 =over
 
@@ -611,11 +611,11 @@ The stoptimes and placetimes for the first trip are used.
 
 =item mergedtrips
 
-This attribute contains the Actium::Sked::Trip objects for all the parent trips. 
-In the simplest case, it contains the two Actium::Sked::Trip objects passed to merge_trips.
+This attribute contains the Actium::O::Sked::Trip objects for all the parent trips. 
+In the simplest case, it contains the two Actium::O::Sked::Trip objects passed to merge_trips.
 
-However, if either of the Actium::Sked::Trip objects passed to merge_trips already has a
-mergedtrips attribute, then instead of saving the current Actium::Sked::Trip object, it saves
+However, if either of the Actium::O::Sked::Trip objects passed to merge_trips already has a
+mergedtrips attribute, then instead of saving the current Actium::O::Sked::Trip object, it saves
 the contents of mergedtrips. The upshot is that mergedtrips contains all the trips 
 that are parents of this merged trip.
 

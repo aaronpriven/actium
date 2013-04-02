@@ -18,11 +18,11 @@ use Actium::Sorting::Line (qw(sortbyline));
 
 use Actium::Options (qw<option add_option init_options>);
 #add_option ('spec' , 'description');
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 init_options();
 
-my $signupdir = Actium::Folders::Signup->new();
+my $signupdir = Actium::O::Folders::Signup->new();
 chdir $signupdir->path();
 my $signup = $signupdir->signup;
 

@@ -26,8 +26,8 @@ use Data::Dumper;
 use Actium::Options (qw<option add_option>);
 #add_option ('spec' , 'description');
 use Actium::Term (qw<printq sayq>);
-use Actium::Folders::Signup;
-my $signupdir = Actium::Folders::Signup->new();
+use Actium::O::Folders::Signup;
+my $signupdir = Actium::O::Folders::Signup->new();
 chdir $signupdir->path();
 my $signup = $signupdir->signup;
 

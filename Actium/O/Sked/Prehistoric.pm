@@ -13,7 +13,7 @@
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::Sked::Prehistoric 0.001;
+package Actium::O::Sked::Prehistoric 0.001;
 
 use Actium::Constants;
 use Actium::Term;
@@ -218,7 +218,7 @@ sub _new_from_prehistoric {
         # the number timepoint columns -- discarding any extras and
         # padding out empty ones with undef values
 
-        push @trips, Actium::Sked::Trip->new(%tripspec);
+        push @trips, Actium::O::Sked::Trip->new(%tripspec);
 
     } ## tidy end: while (<$skedsfh>)
 
@@ -227,24 +227,24 @@ sub _new_from_prehistoric {
     if ( @daysexceptions == 1 and $linegroup !~ /\A 6 \d \d \z/sx) {
         given ( $daysexceptions[0] ) {
             when ('SD') {
-                $days = Actium::Sked::Days->new( $days, 'D' );
+                $days = Actium::O::Days->new( $days, 'D' );
             }
             when ('SH') {
-                $days = Actium::Sked::Days->new( $days, 'H' );
+                $days = Actium::O::Days->new( $days, 'H' );
             }
             when ( exists $DAYS_FROM_TRANSITINFO{$_} ) {
-                $days = Actium::Sked::Days->new( $DAYS_FROM_TRANSITINFO{$_} );
+                $days = Actium::O::Days->new( $DAYS_FROM_TRANSITINFO{$_} );
             }
             default {
-                $days = Actium::Sked::Days->new($days);
+                $days = Actium::O::Days->new($days);
             }
         }
     }
     else {
         if ($linegroup =~ /\A 6 \d \d \z/sx) {
-        $days = Actium::Sked::Days->new($days, 'D');
+        $days = Actium::O::Days->new($days, 'D');
         } else {
-        $days = Actium::Sked::Days->new($days);
+        $days = Actium::O::Days->new($days);
         }
     }
 

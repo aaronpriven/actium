@@ -10,13 +10,13 @@ use warnings;
 use FindBin('$Bin');
 use lib ($Bin );
 
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 use Actium::Options ('init_options');
 
 init_options;
 
-my $signup = Actium::Folders::Signup->new();
+my $signup = Actium::O::Folders::Signup->new();
 
 
 $/ = "\r";

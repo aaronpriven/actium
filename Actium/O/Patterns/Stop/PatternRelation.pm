@@ -1,6 +1,6 @@
 #!/ActivePerl/bin/perl
 
-#/Actium/Patterns/Stop/PatternRelation.pm
+#/Actium/O/Patterns/Stop/PatternRelation.pm
 
 # Subversion: $Id$
 
@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Patterns::Stop::PatternRelation 0.001;
+package Actium::O::Patterns::Stop::PatternRelation 0.001;
 
 use Moose;
 use MooseX::SemiAffordanceAccessor;
@@ -24,7 +24,7 @@ has 'pattern_unique_id' => (
 has 'stop_obj' => (
     required => 1,
     is       => 'ro',
-    isa      => 'Actium::Patterns::Stop',
+    isa      => 'Actium::O::Patterns::Stop',
     weak_ref => 1,
 );
 

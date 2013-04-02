@@ -9,15 +9,15 @@
 use 5.012;
 use warnings;
 
-package Actium::Pattern 0.001;
+package Actium::O::Pattern 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
 use Actium::Constants;
-use Actium::Types (qw/DirCode HastusDirCode ActiumSkedDir/);
-use Actium::Sked::Dir;
+use Actium::Types (qw/DirCode HastusDirCode ActiumDir/);
+use Actium::O::Dir;
 use Actium::Util ('jk');
 
 has 'route' => (
@@ -31,7 +31,7 @@ has 'dir_obj' => (
     coerce => 1,
     init_arg => 'direction',
     is       => 'ro',
-    isa      => ActiumSkedDir,
+    isa      => ActiumDir,
     handles  => ['dircode' ],
 );
 

@@ -1,6 +1,6 @@
 # Actium/Cmd/SQLite2tab.pm
 
-# File for getting tab-delimted files from Actium::Files::SQLite
+# File for getting tab-delimted files from Actium::O::Files::SQLite
 
 # Subversion: $Id$
 
@@ -11,12 +11,12 @@ use warnings;
 
 package Actium::Cmd::SQLite2tab 0.001;
 
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 use Actium::Util qw(jt );
 use Actium::Term ('output_usage');
 use Actium::Constants;
-use Actium::Files::FMPXMLResult;
-use Actium::Files::HastusASI;
+use Actium::O::Files::FMPXMLResult;
+use Actium::O::Files::HastusASI;
 
 
 use Actium::Options(qw<add_option option>);
@@ -31,12 +31,12 @@ sub START {
     my $type = option('type');
     given ( lc($type) ) {
         when ('f') {
-            $dir = Actium::Folders::Signup->new('xml');
-            $db = Actium::Files::FMPXMLResult->new( $dir->path() );
+            $dir = Actium::O::Folders::Signup->new('xml');
+            $db = Actium::O::Files::FMPXMLResult->new( $dir->path() );
         }
         when ('h') {
-            $dir = Actium::Folders::Signup->new('hasi');
-            $db = Actium::Files::HastusASI->new( $dir->path() );
+            $dir = Actium::O::Folders::Signup->new('hasi');
+            $db = Actium::O::Files::HastusASI->new( $dir->path() );
         }
         default {
             die "Don't know about type $type";
@@ -81,7 +81,7 @@ sub START {
 sub HELP {
 
     say <<'HELP' or die q{Can't open STDOUT for writing};
-actium sqlite2tab -- convert Actium::Files::SQLite data to tab file
+actium sqlite2tab -- convert Actium::O::Files::SQLite data to tab file
 
 Usage:
 
@@ -145,23 +145,23 @@ what kind of database to use: H for Hastus ASI or F for FileMaker FMPXMLResult.
 
 Other modules this subprogram uses specify several other options. See:
 
-=item L<OPTIONS in Actium::Files::SQLite|Actium::Files::SQLite/OPTIONS>
-=item L<OPTIONS in Actium::Folders::Signup|Actium::Folders::Signup/OPTIONS>
+=item L<OPTIONS in Actium::O::Files::SQLite|Actium::O::Files::SQLite/OPTIONS>
+=item L<OPTIONS in Actium::O::Folders::Signup|Actium::O::Folders::Signup/OPTIONS>
 =item L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
 
 A complete list of options can be found by running "actium.pl help sqlite2tab"
 
 =head1 DESCRIPTION
 
-Outputs to standard output text consisting of the ROWTYPE from the Hastus
-AVL Standard Interface files, or the FileMaker Pro FMPXMLRESULT XML files
-of the specified signup, converted to 
-tab-delimited files. Its purpose is primarily to test Actium::Files::SQLite
-and classes that compose it, but may have other uses.
+Outputs to standard output text consisting of the ROWTYPE from the
+Hastus AVL Standard Interface files, or the FileMaker Pro FMPXMLRESULT
+XML files of the specified signup, converted to tab-delimited files.
+Its purpose is primarily to test Actium::O::Files::SQLite and classes
+that compose it, but may have other uses.
 
-For Hastus ASI, it includes the data from the Hastus ASI files as documented in the Hastus 
-AVL Standard Interface documentation.  For FileMaker, it includes whatever
-data was exported.
+For Hastus ASI, it includes the data from the Hastus ASI files as
+documented in the Hastus AVL Standard Interface documentation.  For
+FileMaker, it includes whatever data was exported.
 
 It will also have one or more additional columns:
 
@@ -193,15 +193,15 @@ L<$KEY_SEPARATOR from Actium::Constants|Actium::Constants/$KEY_SEPARATOR>.
 
 =item perl 5.012
 
-=item Actium::Folders::Signup
+=item Actium::O::Folders::Signup
 
 =item Actium::Util
 
 =item Actium::Term 
 
-=item Actium::Files::HastusASI 
+=item Actium::O::Files::HastusASI 
 
-=item Actium::Files::FMPXMLResult
+=item Actium::O::Files::FMPXMLResult
 
 =item Actium::Constants
 

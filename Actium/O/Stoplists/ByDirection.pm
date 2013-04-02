@@ -1,12 +1,12 @@
 #!/ActivePerl/bin/perl
 
-#/Actium/Stoplists/ByDirection.pm
+#/Actium/O/Stoplists/ByDirection.pm
 
 # Subversion: $Id$
 
 # legacy stage 4
 
-package Actium::Stoplists::ByDirection 0.001;
+package Actium::O::Stoplists::ByDirection 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;

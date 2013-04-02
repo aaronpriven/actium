@@ -18,8 +18,8 @@ use Data::Dumper;
 
 use Actium::Options (qw<option add_option>);
 use Actium::Term;
-use Actium::Folders::Signup;
-my $signup = Actium::Folders::Signup->new();
+use Actium::O::Folders::Signup;
+my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
 # open and load files

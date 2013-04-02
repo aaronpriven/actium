@@ -1,4 +1,4 @@
-# Actium/Sked/Days.pm
+# Actium/O/Days.pm
 
 # Object representing the scheduled days (of a trip, or set of trips)
 
@@ -9,19 +9,19 @@
 use 5.012;
 use warnings;
 
-package Actium::Sked::Days 0.001;
+package Actium::O::Days 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
 use MooseX::Storage;
-with Storage( traits => ['OnlyWhenBuilt'] , 'format' => 'JSON' );
+with Storage( traits => ['OnlyWhenBuilt'] );
 
 use Actium::Types qw<DayCode SchoolDayCode>;
 use Actium::Util qw<positional_around joinseries>;
 use Actium::Constants;
 
 use Carp;
-use Readonly;
+use Const::Fast;
 use List::MoreUtils (qw<mesh uniq>);
 
 use Data::Dumper;
@@ -30,16 +30,16 @@ use Data::Dumper;
 #### ENGLISH NAMES FOR DAYS CONSTANTS
 ###################################
 
-Readonly my @DAYLETTERS => qw(1 2 3 4 5 6 7 H W E D X);
+const my @DAYLETTERS => qw(1 2 3 4 5 6 7 H W E D X);
 
 # 1 = Monday, 2 = Tuesday, ... 7 = Sunday
 # H = holidays, W = Weekdays, E = Weekends, D = Daily,
 # X = every day except holidays
 
-Readonly my @SEVENDAYNAMES =>
+const my @SEVENDAYNAMES =>
   qw(Monday Tuesday Wednesday Thursday Friday Saturday Sunday);
-Readonly my @SEVENDAYPLURALS => ( map {"${_}s"} @SEVENDAYNAMES );
-Readonly my @SEVENDAYABBREVS => map { substr( $_, 0, 3 ) } @SEVENDAYNAMES;
+const my @SEVENDAYPLURALS => ( map {"${_}s"} @SEVENDAYNAMES );
+const my @SEVENDAYABBREVS => map { substr( $_, 0, 3 ) } @SEVENDAYNAMES;
 
 ###################################
 #### ATTRIBUTES AND CONSTRUCTION
@@ -205,10 +205,10 @@ sub _is_SH {
     return;
 }
 
-Readonly my @ADJECTIVES => ( @SEVENDAYNAMES, qw(Holiday Weekday Weekend Daily),
+const my @ADJECTIVES => ( @SEVENDAYNAMES, qw(Holiday Weekday Weekend Daily),
     "Daily except holidays" );
-Readonly my %ADJECTIVE_OF => mesh( @DAYLETTERS, @ADJECTIVES );
-Readonly my %ADJECTIVE_SCHOOL_OF => (
+const my %ADJECTIVE_OF => mesh( @DAYLETTERS, @ADJECTIVES );
+const my %ADJECTIVE_SCHOOL_OF => (
     B => $EMPTY_STR,
     D => ' (except school holidays)',
     H => ' (except school days)',
@@ -240,13 +240,13 @@ sub as_adjectives {
 
 } ## tidy end: sub as_adjectives
 
-Readonly my @PLURALS => (
+const my @PLURALS => (
     @SEVENDAYPLURALS, 'holidays', 'Monday through Friday',
     'Weekends', 'Every day', "Every day except holidays"
 );
 
-Readonly my %PLURAL_OF => mesh( @DAYLETTERS, @PLURALS );
-Readonly my %PLURAL_SCHOOL_OF => (
+const my %PLURAL_OF => mesh( @DAYLETTERS, @PLURALS );
+const my %PLURAL_SCHOOL_OF => (
     B => $EMPTY_STR,
     D => ' (School days only)',
     H => ' (School holidays only)',
@@ -282,11 +282,11 @@ sub as_plurals {
     return $cache{$as_string} = ucfirst($results);
 
 } ## tidy end: sub as_plurals
-Readonly my @ABBREVS =>
+const my @ABBREVS =>
   ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
 
-Readonly my %ABBREV_OF => mesh( @DAYLETTERS, @PLURALS );
-Readonly my %ABBREV_SCHOOL_OF => (
+const my %ABBREV_OF => mesh( @DAYLETTERS, @PLURALS );
+const my %ABBREV_SCHOOL_OF => (
     B => $EMPTY_STR,
     D => ' (Sch days)',
     H => ' (Sch hols)',
@@ -368,7 +368,7 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::Days - Object for holding scheduled days
+Actium::O::Days - Object for holding scheduled days
 
 =head1 VERSION
 
@@ -376,9 +376,9 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Sked::Days;
+ use Actium::O::Days;
  
- my $days = Actium::Sked::Days->new ('135');
+ my $days = Actium::O::Days->new ('135');
  
  say $days->as_plurals; # "Mondays, Wednesdays, and Fridays"
  say $days->as_adjectives; # "Monday, Wednesday, and Friday"
@@ -399,9 +399,9 @@ Some trips run only a few weekdays (e.g., Mondays, Wednesdays, and Fridays).
 
 =over
 
-=item B<< Actium::Sked::Days->new(I<daycode> , I<schooldaycode>) >>
+=item B<< Actium::O::Days->new(I<daycode> , I<schooldaycode>) >>
 
-The object is constructed using "Actium::Sked::Days->new".  
+The object is constructed using "Actium::O::Days->new".  
 
 It accepts a day specification 
 as a string, containing any or all of the numbers 1 through 7 and optionally H.
@@ -424,20 +424,20 @@ whether school normally operates on that day -- weekend trips will
 still have "B" as the school day flag, unless there is a situation where
 some school service is operated on a Saturday.)
 
-=item B<< Actium::Sked::Days->new_from_string (I<string>) >>
+=item B<< Actium::O::Days->new_from_string (I<string>) >>
 
 This is an alternative constructor. It uses a single string, rather than
 the separate daycode and schooldaycode, to construct an object and return it.
 
 The only way to get a valid string is by using the I<as_string> object method.
 The format of the string is internal and not guaranteed to remain the same
-across versions of Actium::Sked::Days. The purpose of this is to allow a
+across versions of Actium::O::Days. The purpose of this is to allow a
 single string to contain day information without requiring it to have all
 the object overhead.
 
-=item B<< Actium::Sked::Days->union(I<days_obj> , ... >>
+=item B<< Actium::O::Days->union(I<days_obj> , ... >>
 
-Another constructor. It takes one or more Actium::Sked::Days objects and 
+Another constructor. It takes one or more Actium::O::Days objects and 
 returns a new object representing the union of those objects. For example,
 if passed an object representing Saturday and an object representing Sunday, 
 will return an object representing both Saturday and Sunday.
@@ -555,7 +555,7 @@ a Saturday rather than Sunday schedule on holidays.
 
 =item MooseX::StrictConstructor
 
-=item Readonly
+=item Const::Fast
 
 =item Actium::Constants
 
