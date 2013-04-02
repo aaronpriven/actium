@@ -25,7 +25,8 @@ use Sub::Exporter -setup => {
           jspaced
           sk                  st
           keyreadable         keyunreadable
-          doe
+          doe                 
+          isblank             isnotblank
           tabulate_strings    tabulate_arrayrefs
           filename            file_ext
           remove_leading_path flat_arrayref
@@ -201,6 +202,16 @@ sub doe {
     my @list = @_;
     $_ = $_ // $EMPTY_STR foreach @list;
     return wantarray ? @list : $list[0];
+}
+
+sub isnotblank {
+    my $value = shift;
+    return (defined $value and $value ne $EMPTY_STR);
+}
+
+sub isblank {
+    my $value = shift;
+    return (not (defined $value and $value ne $EMPTY_STR));
 }
 
 sub filename {

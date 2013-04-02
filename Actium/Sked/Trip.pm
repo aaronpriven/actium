@@ -112,6 +112,7 @@ foreach my $attrname ( keys %shortcol_of_attribute ) {
         isa          => 'Str',
         traits       => ['Actium::MOP::WithShortColumn'],
         short_column => $shortcol_of_attribute{$attrname},
+        required => ($attrname eq 'line'),
     );
 }
 
@@ -177,12 +178,33 @@ has average_stoptime => (
     is      => 'ro',
     builder => '_build_average_stoptime',
     lazy    => 1,
+   init_arg => undef,
 );
 
 sub _build_average_stoptime {
     my $self = shift;
     my @times = grep { defined $_ } $self->stoptimes;
     return ( List::Util::sum(@times) / scalar @times );
+}
+
+has destination_stoptime_idx => (
+   is => 'ro',
+   builder => '_build_final_stoptime_idx',
+   lazy => 1,
+   init_arg => undef,
+);
+
+sub _build_final_stoptime_idx {
+  my $self = shift;
+  my $idx;
+  for my $i (reverse (0 .. $self->stopcount)) {
+      my $time = $self->stoptime($i);
+      if (defined $time and $time ne $EMPTY_STR) {
+          $idx = $i;
+          last;
+      }
+  }
+  return $idx;
 }
 
 sub stoptimes_equals {
