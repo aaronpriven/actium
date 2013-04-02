@@ -243,7 +243,7 @@ dependencies below.
 
 =item * Actium::MapRepository
 
-=item * Actium::Folder
+=item * Actium::O::Folder
 
 =item * Actium::Options
 

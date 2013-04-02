@@ -11,7 +11,7 @@
 use warnings;
 use strict;
 
-package Actium::HiddenHash;
+package Actium::O::HiddenHash;
 
 our $VERSION = '0.001';
 $VERSION = eval $VERSION;    ## no critic (StringyEval)
@@ -98,25 +98,25 @@ __END__
 
 =head1 NAME
 
-Actium::HiddenHash - Simple inside-out class embodying a hash
+Actium::O::HiddenHash - Simple inside-out class embodying a hash
 
 =head1 VERSION
 
-This documentation refers to Actium::HiddenHash version 0.001
+This documentation refers to Actium::O::HiddenHash version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::HiddenHash;
- my $hh = Actium::HiddenHash->new(a => 1, b => 2);
+ use Actium::O::HiddenHash;
+ my $hh = Actium::O::HiddenHash->new(a => 1, b => 2);
  my $value = $hh->get('a') ; # $value = 1
  $hh->set(b => 3, c => 5); # overrides old b and adds c
  $hh->delete('a'); # deletes 'a'
 
 =head1 DESCRIPTION
 
-HiddenHash is a simple inside-out class implementing a hash. This is, for almost all 
-purposes, a complete waste. Why use a fancy class when you can use standard
-perl hash syntax?
+HiddenHash is a simple inside-out class implementing a hash. This
+is, for almost all purposes, a complete waste. Why use a fancy class
+when you can use standard perl hash syntax?
 
 =over
 
@@ -130,15 +130,17 @@ I<Deep in the fundamental heart of mind and Universe, there is a reason.>
 
 =back
 
-I use Eclipse with EPIC as my development environment. When debugging the program,
-at each breakpoint (or line, if it's stepping through line-by-line) Eclipse will go
-through all the variables in the current lexical scope, and display them in the Variables
-window. This is exceptionally useful. Unless you have a huge gigantic hash with lots
-and lots of data, in which case EPIC can take forever to follow all the references...
-and possibly run out of memory and crash.  Bad, bad.
+I use Eclipse with EPIC as my development environment. When debugging
+the program, at each breakpoint (or line, if it's stepping through
+line-by-line) Eclipse will go through all the variables in the
+current lexical scope, and display them in the Variables window.
+This is exceptionally useful. Unless you have a huge gigantic hash
+with lots and lots of data, in which case EPIC can take forever to
+follow all the references...  and possibly run out of memory and
+crash.  Bad, bad.
 
-So making an inside-out class seemed like the obvious way of hiding the data from
-Eclipse while still making it available to the program.
+So making an inside-out class seemed like the obvious way of hiding
+the data from Eclipse while still making it available to the program.
 
 =head1 METHODS
 
@@ -148,12 +150,13 @@ Eclipse while still making it available to the program.
 
 =item B<new>(I<key, value, ...>)
 
-Creates a new Actium::HiddenHash object. 
+Creates a new Actium::O::HiddenHash object. 
 
-If it is passed a single parameter, and that parameter is a hash reference, 
-will store that hash reference as the hidden hash, without creating a new hash reference.  
-Otherwise it will create a new, empty hash reference, and store any passed parameters 
-as keys and values in it. Returns an anonymous scalar reference.
+If it is passed a single parameter, and that parameter is a hash
+reference, will store that hash reference as the hidden hash, without
+creating a new hash reference.  Otherwise it will create a new,
+empty hash reference, and store any passed parameters as keys and
+values in it. Returns an anonymous scalar reference.
 
 =item B<set>(I<key, value ...>)
 
@@ -170,13 +173,13 @@ Deletes the entries for the specified keys.
 
 =item B<exists>(I<key>)
 
-Returns whether the element specified by key in the hash has ever been initialized.
-(A simple wrapper of the perl function I<exists>.)
+Returns whether the element specified by key in the hash has ever
+been initialized.  (A simple wrapper of the perl function I<exists>.)
 
 =item B<hr>()
 
-Returns the hash reference for this object. This provides a way of using ordinary hash 
-functions on the object, e.g.,
+Returns the hash reference for this object. This provides a way of
+using ordinary hash functions on the object, e.g.,
 
  my @keys = keys %{$hh->hr()};
  

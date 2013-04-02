@@ -13,12 +13,12 @@ use warnings;
 package Actium::Files::Thea::Import 0.002;
 
 use Actium::Term ':all';
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Time 'timenum';
-use Actium::Sked::Days;
-use Actium::Sked::Dir;
-use Actium::Sked;
+use Actium::O::Days;
+use Actium::O::Dir;
+use Actium::O::Sked;
 use Actium::Sorting::Line 'sortbyline';
 
 use Actium::Files::Thea::Trips('thea_trips');
@@ -122,7 +122,7 @@ sub _output_skeds {
         EXTENSION => 'txt',
     );
 
-    Actium::Sked->write_prehistorics( $skeds_r, $signup );
+    Actium::O::Sked->write_prehistorics( $skeds_r, $signup );
 
 } ## tidy end: sub _output_skeds
 
@@ -433,7 +433,7 @@ sub _make_skeds {
 
     my @skeds;
 
-    emit "Making Actium::Sked objects";
+    emit "Making Actium::O::Sked objects";
 
     foreach my $skedid ( sortbyline keys $trips_of_skedid_r ) {
 
@@ -469,12 +469,12 @@ sub _make_skeds {
             place8_r    => \@place8s,
             stopid_r    => \@stops,
             stopplace_r => \@stopplaces,
-            direction   => Actium::Sked::Dir->new($dir),
-            days        => Actium::Sked::Days->new($days),
+            direction   => Actium::O::Dir->new($dir),
+            days        => Actium::O::Days->new($days),
             trip_r      => $trips_of_skedid_r->{$skedid},
         };
 
-        my $sked = Actium::Sked->new($sked_attributes_r);
+        my $sked = Actium::O::Sked->new($sked_attributes_r);
 
         push @skeds, $sked;
 

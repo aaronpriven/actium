@@ -5,7 +5,7 @@
 
 # Legacy status: 3
 
-# Should be eliminated in favor of Actium::Files::FMPXMLResult
+# Should be eliminated in favor of Actium::O::Files::FMPXMLResult
 
 use strict;
 use warnings;

@@ -6,7 +6,7 @@
 
 # legacy stage 2
 
-# obsolete - replace with Actium::Files::FMPXMLResult
+# obsolete - replace with Actium::O::Files::FMPXMLResult
 
 package Actium::Files::Merge::FPMerge;
 

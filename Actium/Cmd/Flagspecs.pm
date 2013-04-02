@@ -29,22 +29,22 @@ use List::MoreUtils(qw/any uniq/);
 use File::Spec;
 use Text::Trim;
 
-use Readonly;
+use Const::Fast;
 
-Readonly my $CULL_THRESHOLD          => 10;
-Readonly my $OVERRIDE_FILENAME       => 'flagspec_override.txt';
-Readonly my $TP_OVERRIDE_FILENAME    => 'flagspec_tp_override.txt';
-Readonly my $PLAIN_OVERRIDE_FILENAME => 'plain_override.txt';
-Readonly my $STOP_SPEC_FILENAME      => 'stop-decals.txt';
-Readonly my $DECAL_SPEC_FILENAME     => 'decalspec.txt';
+const my $CULL_THRESHOLD          => 10;
+const my $OVERRIDE_FILENAME       => 'flagspec_override.txt';
+const my $TP_OVERRIDE_FILENAME    => 'flagspec_tp_override.txt';
+const my $PLAIN_OVERRIDE_FILENAME => 'plain_override.txt';
+const my $STOP_SPEC_FILENAME      => 'stop-decals.txt';
+const my $DECAL_SPEC_FILENAME     => 'decalspec.txt';
 
-#Readonly my @TRANSBAY_NOLOCALS => qw/FS L NX NX1 NX2 NX3 U W/;
+#const my @TRANSBAY_NOLOCALS => qw/FS L NX NX1 NX2 NX3 U W/;
 # Transbay_nolocals comes from Actium::Constants
-Readonly my $DROPOFFONLY       => 'Drop off only';
-Readonly my $LASTSTOP          => $DROPOFFONLY;                  #'Last stop';
-Readonly my $OVERRIDE_STRING   => 'Override:';
+const my $DROPOFFONLY       => 'Drop off only';
+const my $LASTSTOP          => $DROPOFFONLY;                  #'Last stop';
+const my $OVERRIDE_STRING   => 'Override:';
 
-Readonly my %ICON_OF => (
+const my %ICON_OF => (
     Amtrak           => 'A',
     BART             => 'B',
     'Amtrak/ACE'     => 'C',
@@ -64,7 +64,7 @@ Readonly my %ICON_OF => (
 );
 
 
-Readonly my %SIDE_OF => (
+const my %SIDE_OF => (
     ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
     ( map { $_ => 'W' } (qw/14 18 19 22 24 25 26 97/) ),
 );
@@ -754,7 +754,7 @@ sub delete_placelist_from_lists {
 
     } ## tidy end: sub process_combo_overrides
 
-    Readonly my $ENTRY_DIVIDER => ( q{=} x 78 );
+    const my $ENTRY_DIVIDER => ( q{=} x 78 );
 
     sub write_combo_overrides {
         my $file = shift;
@@ -763,7 +763,7 @@ sub delete_placelist_from_lists {
 
         open my $out, '>', $file or die "Can't open $file for writing";
 
-        Readonly my $PATTERNPAD => $SPACE x 7;
+        const my $PATTERNPAD => $SPACE x 7;
 
         my $oldfh = select($out);
 

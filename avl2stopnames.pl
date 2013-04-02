@@ -33,8 +33,8 @@ EOF
 my $intro = 'avl2stoplists -- make more readable stop names from AVL data';
 
 use Actium::Options;
-use Actium::Folders::Signup;
-my $signup = Actium::Folders::Signup->new();
+use Actium::O::Folders::Signup;
+my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
 # retrieve data

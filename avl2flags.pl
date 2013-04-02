@@ -33,8 +33,8 @@ use Actium::Sorting::Line (qw(sortbyline));
 use Actium::DaysDirections (':ALL');
 
 use Actium::Options;
-use Actium::Folders::Signup;
-my $signup = Actium::Folders::Signup->new();
+use Actium::O::Folders::Signup;
+my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
 use List::Util ('max');

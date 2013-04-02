@@ -34,11 +34,11 @@ my $intro =
 
 use Actium::Options (qw<add_option option init_options>);
 
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 init_options();
 
-my $signup = Actium::Folders::Signup->new();
+my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
 # retrieve data

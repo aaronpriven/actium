@@ -41,7 +41,7 @@ use English '-no_match_vars';
 use File::Copy();
 use Params::Validate ':all';
 
-use Actium::Folder;
+use Actium::O::Folder;
 use Actium::Util(qw<filename file_ext remove_leading_path>);
 use Actium::Sorting::Line('sortbyline');
 use Actium::Term ':all';
@@ -54,7 +54,7 @@ const my $CAN_ACTIUM_FOLDER =>
   [qw<path children glob_plain_files subfolder make_filespec folder>];
 # these are all the methods that Params::Validate tests for to see if it's
 # a working folder object. Doing it with "can" rather than "isa" means we
-# can use subclasses such as Actium::Folders::Signup.
+# can use subclasses such as Actium::O::Folders::Signup.
 
 ### IMPORTING NEW MAPS
 
@@ -624,9 +624,9 @@ This documentation refers to version 0.001
 
  use Actium::MapsRepository;
  
- $repository = Actium::Folder->new('/path/to/repository');
- $import = Actium::Folder->new('/path/to/maps/for/importing');
- $webfolder = Actium::Folder->new('/path/to/maps/for/web');
+ $repository = Actium::O::Folder->new('/path/to/repository');
+ $import = Actium::O::Folder->new('/path/to/maps/for/importing');
+ $webfolder = Actium::O::Folder->new('/path/to/maps/for/web');
  
  my @imported_files = import_to_repository(
     repository   => $repository,
@@ -660,7 +660,7 @@ and Technical Detail."
 
 Folders passed to any of Actium::MapRepository's routines must be in the form
 of an object, not just a string file specification.  Generally, this will
-be an Actium::Folder object or a subclass. Specifically, the object must
+be an Actium::O::Folder object or a subclass. Specifically, the object must
 handle the following methods:
 
 =over
@@ -679,7 +679,7 @@ handle the following methods:
 
 =back
 
-See L<Actium::Folder/Actium::Folder> for information on what these methods
+See L<Actium::O::Folder/Actium::O::Folder> for information on what these methods
 should do.
 
 =head1 SUBROUTINES
@@ -897,7 +897,7 @@ Attempting to move or copy returned a system error.
 
 =item * Actium::Constants
 
-=item * Actium::Folder
+=item * Actium::O::Folder
 
 =item * Actium::Sorting::Line
 

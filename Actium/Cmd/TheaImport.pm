@@ -13,7 +13,7 @@ package Actium::Cmd::TheaImport 0.002;
 
 use Actium::Files::Thea::Import ('thea_import');
 
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
 sub HELP {
 
@@ -29,7 +29,7 @@ HELP
 
 sub START {
 
-    my $signup     = Actium::Folders::Signup->new;
+    my $signup     = Actium::O::Folders::Signup->new;
     my $theafolder = $signup->subfolder('thea');
     
     thea_import ($signup, $theafolder);

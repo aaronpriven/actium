@@ -12,24 +12,24 @@ use warnings;
 package Actium::Cmd::Patterns 0.001;
 
 use Actium::Constants;
-use Actium::Files::HastusASI;
-use Actium::Files::FMPXMLResult;
-use Actium::Folders::Signup;
+use Actium::O::Files::HastusASI;
+use Actium::O::Files::FMPXMLResult;
+use Actium::O::Folders::Signup;
 use Actium::Term  (':all');
 use Actium::Union ('ordered_union');
 use Actium::Util qw(jk doe);
 
-use Actium::Pattern;
-use Actium::Patterns::Stop;
-use Actium::Patterns::Stop::PatternRelation;
-use Actium::Patterns::Route;
+use Actium::O::Pattern;
+use Actium::O::Patterns::Stop;
+use Actium::O::Patterns::Stop::PatternRelation;
+use Actium::O::Patterns::Route;
 
 use Carp;
 use English('-no_match_vars');
 
 sub START {
 
-    my $signup     = Actium::Folders::Signup->new();
+    my $signup     = Actium::O::Folders::Signup->new();
     my $flagfolder = $signup->subfolder('flags');
 
     my $xml_db  = $signup->load_xml;
@@ -133,7 +133,7 @@ sub process_patterns {
                 @intermediate_relation_objs = ();
             }
 
-            my $relation_obj = Actium::Patterns::Stop::PatternRelation->new(
+            my $relation_obj = Actium::O::Patterns::Stop::PatternRelation->new(
                 {
                     place             => $place,
                     is_at_place       => $is_at_place,
@@ -196,7 +196,7 @@ sub _build_pattern_obj {
 
     #$direction = $DIRCODES[$HASTUS_DIRS[$direction]];
 
-    my $pattern_obj = Actium::Pattern->new(
+    my $pattern_obj = Actium::O::Pattern->new(
         {
             route      => $route,
             direction  => $direction,
@@ -216,7 +216,7 @@ sub _build_stop_obj {
     my ( $side, $district ) =
       _get_district( $stop_ident, $hasi_db, $stops_row_r );
 
-    my $stop_obj = Actium::Patterns::Stop->new(
+    my $stop_obj = Actium::O::Patterns::Stop->new(
         id       => $stop_ident,
         district => $district,
         side     => $side
@@ -343,7 +343,7 @@ sub _build_route_objs {
     foreach my $route ( keys %$patterns_of_r ) {
 
         $route_obj_of{$route} =
-          Actium::Patterns::Route->new( $route, $patterns_of_r->{$route} );
+          Actium::O::Patterns::Route->new( $route, $patterns_of_r->{$route} );
 
     }
 

@@ -1,7 +1,7 @@
 # Actium/Files/FMPXMLResult.pm
 
 # Class for reading and processing FileMaker Pro FMPXMLRESULT XML exports
-# and storing in an SQLite database using Actium::Files::SQLite
+# and storing in an SQLite database using Actium::O::Files::SQLite
 
 # Subversion: $Id$
 
@@ -10,7 +10,7 @@
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::Files::FMPXMLResult 0.001;
+package Actium::O::Files::FMPXMLResult 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
@@ -18,10 +18,10 @@ use MooseX::StrictConstructor;
 use POSIX ();
 
 use Actium::Constants;
-use Actium::Files::SQLite::Table;
+use Actium::O::Files::SQLite::Table;
 use Actium::Term;
 use Actium::Util(qw<jk filename>);
-use Readonly;
+use Const::Fast;
 use File::Glob qw(:glob);
 use Carp;
 use English '-no_match_vars';
@@ -29,7 +29,7 @@ use Storable;
 use DBI (':sql_types');
 use XML::Parser;
 
-Readonly my $EXTENSION => '.xml';
+const my $EXTENSION => '.xml';
 
 #requires(
 #    qw/db_type key_of_table columns_of_table tables
@@ -44,7 +44,7 @@ sub db_type { return 'FileMaker' }
 sub parent_of_table { return undef };    ## no critic (RequireFinalReturn)
 
 # TODO: Move to a configuration file of some kind
-Readonly my %KEY_OF => (
+const my %KEY_OF => (
     Cities        => 'Code',
     Colors        => 'ColorID',
     Lines         => 'Line',
@@ -135,7 +135,7 @@ has '_table_obj_of_r' => (
     init_arg => undef,
     is       => 'ro',
     traits   => ['Hash'],
-    isa      => 'HashRef[Actium::Files::SQLite::Table]',
+    isa      => 'HashRef[Actium::O::Files::SQLite::Table]',
     default  => sub { {} },
     handles  => {
         _table_obj_of     => 'get',
@@ -216,7 +216,7 @@ sub _insert_spec {
     return;
 }
 
-with 'Actium::Files::SQLite';
+with 'Actium::O::Files::SQLite';
 
 after 'ensure_loaded' => sub {
     my $self   = shift;
@@ -224,7 +224,7 @@ after 'ensure_loaded' => sub {
 
     foreach my $table (@tables) {
         my $spec_r    = Storable::thaw( $self->_stored_spec($table) );
-        my $table_obj = Actium::Files::SQLite::Table->new($spec_r);
+        my $table_obj = Actium::O::Files::SQLite::Table->new($spec_r);
         $self->_set_table_obj_of( $table, $table_obj );
     }
     return;
@@ -359,7 +359,7 @@ End of ROW - Save row_buffer into SQLite database
             @row_buffer = ();
         } ## tidy end: elsif ( $element eq 'ROW')
         elsif ( $element eq 'METADATA' ) {
-            $table_obj = Actium::Files::SQLite::Table->new( \%spec );
+            $table_obj = Actium::O::Files::SQLite::Table->new( \%spec );
             $self->_set_table_obj_of( $table, $table_obj );
             $has_composite_key = $table_obj->has_composite_key;
 
@@ -441,7 +441,7 @@ __END__
 
 =head1 NAME
 
-Actium::Files::FMPXMLResult - Routines for SQLite storage of
+Actium::O::Files::FMPXMLResult - Routines for SQLite storage of
 FileMaker Pro "FMPXMLRESULT" files
 
 =head1 NOTE
@@ -455,9 +455,9 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Files::FMPXMLResult;
+ use Actium::O::Files::FMPXMLResult;
  
- my $hasi_db = Actium::Files::FMPXMLResult->new(
+ my $hasi_db = Actium::O::Files::FMPXMLResult->new(
      flats_folder => $xml_folder,
      db_folder    => $db_folder,
      db_filename  => $db_filename,
@@ -469,10 +469,10 @@ This documentation refers to version 0.001
 =head1 DESCRIPTION
 
 This is a series of routines that store FileMaker Pro FMPXMLRESULT files
-using the Actium::Files::SQLite role. This documentation describes the
+using the Actium::O::Files::SQLite role. This documentation describes the
 specifics of the FMPXMLRESULT routines; for general information about the
 database access and structure, see
-L<Actium::Files::SQLite|Actium::Files::SQLite>.
+L<Actium::O::Files::SQLite|Actium::O::Files::SQLite>.
 
 For more information about the FMPXMLRESULT format, see 
 L<FileMaker's help 
@@ -481,34 +481,35 @@ or the "fmpxmlresult_dtd.htm" file that comes with FileMaker Pro 10.
 
 =head1 PUBLIC GENERAL METHODS 
 
-The first three are all required by the Actium::Files::SQLite role.
+The first three are all required by the Actium::O::Files::SQLite role.
 
 =over
 
 =item B<db_type()>
 
 Returns 'FileMaker'.  This distinguishes this type from other databases
-using Actium::Files::SQLite.
+using Actium::O::Files::SQLite.
 
 =item B<columns_of_table>
 
 Returns the columns of the table, from the 
-L<Actium::Files::SQLite::Table|Actium::Files::SQLite::Table> object.
+L<Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table> object.
 The columns of each table are not known until after the table is loaded into
 SQLite, so asking for the columns will load the data.
 
 =item B<key_of_table>
 
 Returns the key column of the table, which are stored in 
-L<Actium::Files::SQLite::Table|Actium::Files::SQLite::Table> objects. At the 
-moment the keys of each column are hard coded into the program, but eventually
-this will be moved to some sort of configuration system.
+L<Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table> 
+objects. At the moment the keys of each column are hard coded into
+the program, but eventually this will be moved to some sort of
+configuration system.
 
 =item B<tables>
 
-Returns the list of tables, which is to say, the list of "*.xml" files it found
-in the 
-L<Actium::Files::SQLite/flats_folder|Actium::Files::SQLite/flats_folder>.
+Returns the list of tables, which is to say, the list of "*.xml" files 
+it found in the 
+L<Actium::O::Files::SQLite/flats_folder|Actium::O::Files::SQLite/flats_folder>.
 
 =item B<is_a_table(I<table>)>
 
@@ -550,18 +551,18 @@ except it uses 'Abbrev9' as the key instead of 'Abbrev4'.
 =item B<_tables_of_filetype(I<filetype>)>
 
 Always returns the table name, since filetypes and table names in FMPXMLResult
-are identical. These are required by Actium::Files::SQLite.
+are identical. These are required by Actium::O::Files::SQLite.
 
 =item B<_files_of_filetype(I<filetype>)>
 
 Returns whatever is passed to it with ".xml" added to the end.
-This method is required by Actium::Files::SQLite. 
+This method is required by Actium::O::Files::SQLite. 
 
 =item B<_load(I<filetype>,I<file>)>
 
 This reads the file specified and saves the data into the database.
 
-This method is required by Actium::Files::SQLite. 
+This method is required by Actium::O::Files::SQLite. 
 
 =back
 
@@ -595,17 +596,15 @@ folder was specified?
 
 =item MooseX::StrictConstructor
 
-=item Readonly
+=item Const::Fast
 
 =item XML::Parser
 
 =item Actium::Constants
 
-=item Actium::Files
+=item Actium::O::Files::SQLite
 
-=item Actium::Files::SQLite
-
-=item Actium::Files::SQLite::Table
+=item Actium::O::Files::SQLite::Table
 
 =item Actium::Term
 

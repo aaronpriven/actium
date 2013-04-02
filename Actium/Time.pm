@@ -18,7 +18,7 @@ $VERSION = eval $VERSION;
 use Carp;
 use Actium::Constants;
 use Params::Validate qw(:all);
-use Readonly;
+use Const::Fast;
 use Scalar::Util (qw<reftype looks_like_number>);
 use Memoize;
 
@@ -26,9 +26,9 @@ use List::MoreUtils (qw<firstidx>);
 
 ## no critic (ProhibitMagicNumbers)
 
-Readonly my $MINS_IN_12HRS => ( 12 * 60 );
+const my $MINS_IN_12HRS => ( 12 * 60 );
 
-Readonly my %AMPM_OFFSETS => {
+const my %AMPM_OFFSETS => {
     'a' => 0,
     'p' => $MINS_IN_12HRS,
     'b' => -$MINS_IN_12HRS,

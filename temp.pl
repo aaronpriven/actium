@@ -8,13 +8,13 @@ use lib $Bin;
 
 use Actium::Options ('init_options');
 
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 
-use Actium::Sked;
+use Actium::O::Sked;
 
 init_options;
 
-my $skedsfolder = Actium::Folders::Signup->new(
+my $skedsfolder = Actium::O::Folders::Signup->new(
     {   base       => '/Users/aaron/Dev/signups/',
         signup     => 'sp11',
         subfolders => 'skeds',
@@ -22,7 +22,7 @@ my $skedsfolder = Actium::Folders::Signup->new(
     }
 );
 
-my @skedobjs = Actium::Sked->load_prehistorics( $skedsfolder, undef , '3*' );
+my @skedobjs = Actium::O::Sked->load_prehistorics( $skedsfolder, undef , '3*' );
 
 use Data::Dumper;
 

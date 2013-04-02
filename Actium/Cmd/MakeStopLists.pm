@@ -11,20 +11,19 @@ use warnings;
 
 package Actium::Cmd::MakeStopLists 0.001;
 
-use Actium::Folders::Signup;
-use Actium::Patterns::Stop;
-use Actium::Patterns::Route;
+use Actium::O::Folders::Signup;
+use Actium::O::Patterns::Stop;
+use Actium::O::Patterns::Route;
 
-use Actium::Stoplists::ByDirection;
+use Actium::O::Stoplists::ByDirection;
 use Actium::Term;
 use Actium::Sorting::Line('sortbyline');
-use Actium::Sked::Dir;
 
 my $xml_db;
 
 sub START {
 
-    my $signup                = Actium::Folders::Signup->new();
+    my $signup                = Actium::O::Folders::Signup->new();
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');
 
@@ -88,7 +87,7 @@ sub stop_lists {
             # for the storable file
 
             push @stoplist_objs,
-              Actium::Stoplists::ByDirection->new(
+              Actium::O::Stoplists::ByDirection->new(
                 route          => $route,
                 dir            => $dir,
                 stops          => \@stops,

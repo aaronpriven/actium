@@ -19,10 +19,10 @@ use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
-use Actium::Folders::Signup;
+use Actium::O::Folders::Signup;
 use Actium::Term;
-use Actium::Sked;
-use Actium::Sked::Timetable;
+use Actium::O::Sked;
+use Actium::O::Sked::Timetable;
 use Actium::Util(qw/doe in/);
 use Const::Fast;
 use List::Util ( 'max', 'sum' );
@@ -46,7 +46,7 @@ HELP
 
 sub START {
 
-    my $signup            = Actium::Folders::Signup->new();
+    my $signup            = Actium::O::Folders::Signup->new();
     my $tabulae_folder    = $signup->subfolder('tabulae');
     my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
     my $multipubtt_folder = $tabulae_folder->subfolder('m-pubtt');
@@ -60,7 +60,7 @@ sub START {
     # my %front_matter = _get_configuration($signup);
 
     my @skeds
-      = Actium::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
+      = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
 
     my @all_lines = map { $_->lines } @skeds;
     @all_lines = uniq sortbyline @all_lines;
@@ -97,7 +97,7 @@ sub _create_timetable_texts {
             $prev_linegroup = $linegroup;
         }
 
-        my $table = Actium::Sked::Timetable->new_from_sked( $sked, $xml_db );
+        my $table = Actium::O::Sked::Timetable->new_from_sked( $sked, $xml_db );
         push @{ $tables_of{$linegroup} }, $table;
         push @alltables, $table;
     }
@@ -467,7 +467,7 @@ sub _make_days {
 
     my %days_obj_of;
     while ( my ( $line, $days_objs_r ) = each %all_days_objs_of ) {
-        $days_obj_of{$line} = Actium::Sked::Days->union( @{$days_objs_r} );
+        $days_obj_of{$line} = Actium::O::Days->union( @{$days_objs_r} );
     }
 
     if ( @lines == 1 ) {

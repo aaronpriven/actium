@@ -26,13 +26,13 @@ use Algorithm::Diff;
 
 use Actium::O::Patterns::Stop;
 
-use Readonly;
+use Const::Fast;
 
-Readonly my $DEFAULT_SKIPLINES => '399,51S,BSH,BSD,BSN';
+const my $DEFAULT_SKIPLINES => '399,51S,BSH,BSD,BSN';
 
 add_option( 'oldsignup', 'Previous signup to compare this signup to' );
 
-Readonly my $SKIPLINES_DESC => <<"EOT";
+const my $SKIPLINES_DESC => <<"EOT";
 Lines to skip during comparison. Separate lines with commas but without
 spaces, e.g., -skiplines 40,M,382. The default is "$DEFAULT_SKIPLINES"
 EOT

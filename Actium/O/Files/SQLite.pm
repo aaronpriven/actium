@@ -1,4 +1,4 @@
-# Actium/Files/SQLite.pm
+# Actium/O/Files/SQLite.pm
 
 # Role for reading and processing flat files and storing in an SQLite database
 
@@ -24,7 +24,7 @@
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::Files::SQLite 0.001;
+package Actium::O::Files::SQLite 0.001;
 
 use Moose::Role;
 
@@ -37,11 +37,11 @@ use DBI;
 use English '-no_match_vars';
 use File::Spec;
 use List::MoreUtils('uniq');
-use Readonly;
+use Const::Fast;
 
 # set some constants
-Readonly my $STAT_MTIME   => 9;
-Readonly my $DB_EXTENSION => '.SQLite';
+const my $STAT_MTIME   => 9;
+const my $DB_EXTENSION => '.SQLite';
 
 # Required methods in consuming classes:
 
@@ -504,7 +504,7 @@ __END__
 
 head1 NAME
 
-Actium::Files::SQLite - role for reading flat files and storing the data
+Actium::O::Files::SQLite - role for reading flat files and storing the data
 in an SQLite database
 
 =head1 VERSION
@@ -513,9 +513,9 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Files::RoleComposer;
+ use Actium::O::Files::RoleComposer;
             
- my $db = Actium::Files::RoleComposer->new(
+ my $db = Actium::O::Files::RoleComposer->new(
      flats_folder => $flats_folder,
      db_folder    => $cache,
      db_filename  => $db_filename,
@@ -526,7 +526,7 @@ This documentation refers to version 0.001
    
 =head1 DESCRIPTION
 
-Actium::Files::SQLite is a role for storing data from flat files
+Actium::O::Files::SQLite is a role for storing data from flat files
 in an SQLite database, using L<DBI|DBI> and L<DBD::SQLite|DBD::SQLite>.
 
 The SQLite database acts as a cache, allowing quicker access
@@ -619,7 +619,7 @@ or a composite key column which is created by the consuming class.
 
 =back
 
-=head2 Methods in Actium::Files::SQLite
+=head2 Methods in Actium::O::Files::SQLite
 
 =over
 

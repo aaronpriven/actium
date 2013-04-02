@@ -8,7 +8,7 @@
 use 5.012;
 use strict;
 
-package Actium::Folder 0.001;
+package Actium::O::Folder 0.001;
 
 use Moose;
 use MooseX::StrictConstructor;
@@ -218,12 +218,12 @@ sub original_parameters {
 
 =begin comment
 
-The idea here is that Actium::Folder has a single list of folders,
+The idea here is that Actium::O::Folder has a single list of folders,
 "folderlist," which is specified in the new() constructor and
 subfolder() cloner. In the cloner, the specified folderlist is added to the
 old one to form the complete new folderlist.
 
-The Actium::Folders::Signup subclass, however, has a second list of folders 
+The Actium::O::Folders::Signup subclass, however, has a second list of folders 
 that is primary -- "subfolders". The idea is that the subfolders
 are kept separately from the base and signup folders.
 
@@ -339,7 +339,7 @@ sub children {
 
 sub mergeread {
 
-    # should be obsolete with Actium::Files::FMPXMLResult
+    # should be obsolete with Actium::O::Files::FMPXMLResult
     my $self     = shift;
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
@@ -525,12 +525,12 @@ sub load_sqlite {
 
 sub load_xml {
     my $self = shift;
-    $self->load_sqlite( 'xml', 'Actium::Files::FMPXMLResult', @_ );
+    $self->load_sqlite( 'xml', 'Actium::O::Files::FMPXMLResult', @_ );
 }
 
 sub load_hasi {
     my $self = shift;
-    $self->load_sqlite( 'hasi', 'Actium::Files::HastusASI', @_ );
+    $self->load_sqlite( 'hasi', 'Actium::O::Files::HastusASI', @_ );
 }
 
 ################################################
@@ -679,7 +679,7 @@ __END__
 
 =head1 NAME
 
-Actium::Folder - Folder objects for the Actium system
+Actium::O::Folder - Folder objects for the Actium system
 
 =head1 VERSION
 
@@ -687,9 +687,9 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::Folder;
+ use Actium::O::Folder;
 
- $folder = Actium::Folder->new('/path/to/folder');
+ $folder = Actium::O::Folder->new('/path/to/folder');
 
  $filespec = $folder->make_filespec('10_EB_WD.txt');
  # $filespec is something like /path/to/folder/10_EB_WD.txt
@@ -699,7 +699,7 @@ This documentation refers to version 0.001
 
 =head1 DESCRIPTION
 
-Actium::Folder provides an object-oriented interface to folders on disk.
+Actium::O::Folder provides an object-oriented interface to folders on disk.
 (They are referred to here as "folders" rather than "directories" mainly
 because "dir" is more commonly used within the Actium system as an 
 abbreviation for "direction", and I wanted to avoid ambiguity.)
@@ -708,17 +708,17 @@ This module is intended to make it easier to open files within folders and
 create new subfolders.
 
 It forms the base class used by 
-L<Actium::Folders::Signup|Actium::Folders::Signup>, which is more likely to be
+L<Actium::O::Folders::Signup|Actium::O::Folders::Signup>, which is more likely to be
 used directly in programs.
 
-As much as possible, Actium::Folder uses the L<File::Spec> module in order
+As much as possible, Actium::O::Folder uses the L<File::Spec> module in order
 to be platform-independent (although Actium is tested only under Mac OS X for 
 the moment).
 
 =head1 OBJECT CONSTRUCTION
 
-Actium::Folder objects are created using the B<new> constructor inherited from
-Moose. Alternatively, they can be cloned from an existing Actium::Folder object,
+Actium::O::Folder objects are created using the B<new> constructor inherited from
+Moose. Alternatively, they can be cloned from an existing Actium::O::Folder object,
 using B<subfolder>.
 
 For either method, if the first argument is a hash reference, 
@@ -726,11 +726,11 @@ it is taken as a reference to named
 arguments. If not, the arguments given are considered part of the 
 I<folderlist> argument. So this:
 
- my $folder = Actium::Folder->new($folder1, $folder2 )
+ my $folder = Actium::O::Folder->new($folder1, $folder2 )
  
 is a shortcut for this:
 
- my $folder = Actium::Folder->new({folderlist => [ $folder1, $folder2 ]})
+ my $folder = Actium::O::Folder->new({folderlist => [ $folder1, $folder2 ]})
 
 =head2 NAMED ARGUMENTS
 
@@ -745,10 +745,10 @@ This can be a single string with an entire path ('/path/to/folder'), or
 an array reference. The array reference can point to an array
 containing that single string (['/path/to/folder']),
 a series of strings each with a folder name (['path' , 'to' , 'folder']),
-or a combination (['/path/to' , 'folder']). Actium::Folder splits the pieces
+or a combination (['/path/to' , 'folder']). Actium::O::Folder splits the pieces
 into individual folders for you.
 
-Actium::Folder's I<new> constructor accepts both relative paths and absolute 
+Actium::O::Folder's I<new> constructor accepts both relative paths and absolute 
 paths. If passed a relative path, adds the current working directory 
 (from L<Cwd/Cwd>) to the beginning of the path.
 
@@ -764,9 +764,9 @@ object to the new object.
 
 =item I<must_exist>
 
-This attribute, if set to a true value, will cause Actium::Folder to throw
+This attribute, if set to a true value, will cause Actium::O::Folder to throw
 an exception if the specified folder does not yet exist. If not set, 
-Actium::Folder will attempt to create this folder and, if necessary, its 
+Actium::O::Folder will attempt to create this folder and, if necessary, its 
 parents.
 
 Unless specified in the arguments to either B<new> or B<subfolder>, the
@@ -777,7 +777,7 @@ and does not copy the value from the original object.
 
 =head1 OVERLOADING
 
-Using an Actium::Folder object as a string will return the path() value.
+Using an Actium::O::Folder object as a string will return the path() value.
 For example,
 
  say "That file is in $folderobject";
@@ -820,7 +820,7 @@ The values of the B<volume> and B<must_exist> attributes, respectively.
 Returns a path name to a specified subfolder under the folder -- that is,
 this:
 
- $folder = new Actium::Folder ('/Users');
+ $folder = new Actium::O::Folder ('/Users');
  $path = $folder->subfolder_path('apriven');
 
 will yield "/Users/apriven".
@@ -851,7 +851,7 @@ Like B<glob_files>, except returns only plain files
 Returns an L<Actium::Files::Merge::Mergefiles> object representing the data in 
 F<filename> in the folder represented by this object. 
 
-This is an obsolete feature and will be removed. Actium::Files::FMPXMLResult 
+This is an obsolete feature and will be removed. Actium::O::Files::FMPXMLResult 
 should be used to read FileMaker exports.
 
 =item B<$obj-E<gt>store($data_r , F<filename>)>
@@ -875,7 +875,7 @@ encoding.
  
 =item B<$obj-E<gt>load_hasi({I<named arguments>>)>
 
-Returns an Actium::Files::FMPXMLResult object, or an Actium::Files::HastusASI 
+Returns an Actium::O::Files::FMPXMLResult object, or an Actium::O::Files::HastusASI 
 object. The named arguments are:
 
 =over
@@ -892,7 +892,7 @@ by the string or strings provided, or the default: 'xml' for load_xml, or
 
 =item db_folder
 
-An optional item passed to Actium::Files::SQLite: the folder where the SQLite 
+An optional item passed to Actium::O::Files::SQLite: the folder where the SQLite 
 database will be stored.
 
 =back
@@ -906,7 +906,7 @@ The default subfolder is a string or reference to a list of strings representing
 subfolders of the folder of the current object.
 
 The database class will be some perl class to be "require"d by this method,
-probably composing the Actium::Files::SQLite role.
+probably composing the Actium::O::Files::SQLite role.
 
 The named arguments are the same as those of the B<load_xml> and B<load_hasi> 
 methods, above.
@@ -976,7 +976,7 @@ See L<perlfunc/binmode>.
 =item FILENAME
 
 The file name that the results of the method are to be saved in. It will 
-be saved in the folder represented by the Actium::Folder object.
+be saved in the folder represented by the Actium::O::Folder object.
 
 =back
 
@@ -1027,7 +1027,7 @@ routines.
 
 =item Folder "$path" not found
         
-In creating the Actium::Folder object, the must_exist attribute was given
+In creating the Actium::O::Folder object, the must_exist attribute was given
 as true, but the folder 
 
 =item Can't make folder "$path": $OS_ERROR
@@ -1075,7 +1075,7 @@ L<write_files_from_hash> routines.
 
 =item MooseX::StrictConstructor
 
-=item Readonly
+=item Const::Fast
 
 =item Params::Validate
 
@@ -1091,9 +1091,9 @@ The following are loaded only when necessary:
 
 =over
 
-=item Actium::Files::FMPXMLResult
+=item Actium::O::Files::FMPXMLResult
 
-=item Actium::Files::HastusASI
+=item Actium::O::Files::HastusASI
 
 =item Actium::Files::Merge::Mergefiles
 
