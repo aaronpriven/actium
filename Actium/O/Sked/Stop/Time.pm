@@ -18,7 +18,7 @@ use Moose::Util::TypeConstraints;
 use MooseX::Storage;
 with Storage( traits => ['OnlyWhenBuilt'] );
 
-use Actium::Types qw(Str4 TimeNum ActiumSkedDays);
+use Actium::Types qw(Str4 TimeNum ActiumDays);
 
 has [qw(origin destination follower previous)] => (
     is       => 'ro',
@@ -37,7 +37,7 @@ has days_obj => (
     coerce   => 1,
     init_arg => 'days',
     is       => 'ro',
-    isa      => ActiumSkedDays,
+    isa      => ActiumDays,
     handles  => {
         daycode       => 'daycode',
         schooldaycode => 'schooldaycode',
