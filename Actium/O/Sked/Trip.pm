@@ -34,7 +34,7 @@ use Scalar::Util ('reftype');
 #use overload q{""} => \&stoptimes_comparison_str;
 # only for debugging - remove in production
 
-use Actium::Types qw<ArrayRefOfTimeNums TimeNum ActiumSkedDays>;
+use Actium::Types qw<ArrayRefOfTimeNums TimeNum ActiumDays>;
 
 sub BUILD {
     my $self = shift;
@@ -131,7 +131,7 @@ has 'days_obj' => (
     coerce   => 1,
     init_arg => 'days',
     is       => 'ro',
-    isa      => ActiumSkedDays,
+    isa      => ActiumDays,
     handles  => {
         daycode        => 'daycode',
         schooldaycode  => 'schooldaycode',

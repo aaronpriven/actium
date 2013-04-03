@@ -22,7 +22,7 @@ use Perl6::Export::Attrs;
 # H - Holidays
 # J - Z reserved for future use
 
-const my %DAY_OF_HASI => {
+const my %DAY_OF_HASI => (
     qw(
       1234567 DA
       12345   WD
@@ -35,9 +35,9 @@ const my %DAY_OF_HASI => {
       35      WF
       135     MZ
       )
-};
+);
 
-const my %DIR_OF_HASI => {
+const my %DIR_OF_HASI => (
     qw(
       0 NB    1 SB
       2 EB    3 WB
@@ -48,7 +48,7 @@ const my %DIR_OF_HASI => {
       12 UP   13 DN
       14 A    15 B
       )
-};
+);
 
 
 sub day_of_hasi : Export {

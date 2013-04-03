@@ -29,7 +29,7 @@ use Actium::Time(qw<:all>);
 use Actium::Sorting::Line qw<sortbyline linekeys>;
 use Actium::Constants;
 
-use Actium::Types (qw/DirCode HastusDirCode ActiumSkedDir ActiumSkedDays/);
+use Actium::Types (qw/DirCode HastusDirCode ActiumDir ActiumDays/);
 use Actium::O::Sked::Trip;
 use Actium::O::Dir;
 use Actium::O::Days;
@@ -340,7 +340,7 @@ has 'dir_obj' => (
     coerce   => 1,
     init_arg => 'direction',
     is       => 'ro',
-    isa      => ActiumSkedDir,
+    isa      => ActiumDir,
     handles  => {
         'direction' => 'dircode',
         'dircode'   => 'dircode',
@@ -384,7 +384,7 @@ has 'days_obj' => (
     coerce   => 1,
     init_arg => 'days',
     is       => 'ro',
-    isa      => ActiumSkedDays,
+    isa      => ActiumDays,
     handles  => {
         daycode       => 'daycode',
         schooldaycode => 'schooldaycode',
