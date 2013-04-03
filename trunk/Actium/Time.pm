@@ -28,12 +28,12 @@ use List::MoreUtils (qw<firstidx>);
 
 const my $MINS_IN_12HRS => ( 12 * 60 );
 
-const my %AMPM_OFFSETS => {
+const my %AMPM_OFFSETS => (
     'a' => 0,
     'p' => $MINS_IN_12HRS,
     'b' => -$MINS_IN_12HRS,
     'x' => 2 * $MINS_IN_12HRS,
-};
+);
 
 use Exporter qw( import );
 our @EXPORT_OK = qw(timenum timestr timestr_sub);
