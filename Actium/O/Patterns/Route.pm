@@ -14,6 +14,8 @@ package Actium::O::Patterns::Route 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
 use Actium::Union('ordered_union');
 use Actium::Util('positional_around');
 
@@ -205,3 +207,6 @@ sub _build_stoplist_r {
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
+
+__END__
+

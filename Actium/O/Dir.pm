@@ -14,7 +14,9 @@ package Actium::O::Dir 0.002;
 use Moose;
 use MooseX::StrictConstructor;
 use MooseX::Storage;
-with Storage( traits => ['OnlyWhenBuilt'] , 'format' => 'JSON' );
+with Storage( traits => ['OnlyWhenBuilt'] );
+
+use namespace::autoclean;
 
 use Actium::Types qw<DirCode>;
 use Actium::Util qw<positional_around>;

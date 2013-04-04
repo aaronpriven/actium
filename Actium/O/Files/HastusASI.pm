@@ -15,6 +15,8 @@ package Actium::O::Files::HastusASI 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
 use Actium::Constants;
 use Actium::Term;
 use Actium::Util qw(j jk filename);

@@ -15,11 +15,16 @@ package Actium::O::Sked::Timetable 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
 use Actium::Time;
 use Actium::Constants;
 
 use Actium::Text::InDesignTags;
-my $idt = 'Actium::Text::InDesignTags';
+
+use Const::Fast;
+
+const my $idt => 'Actium::Text::InDesignTags';
 
 use HTML::Entities;
 

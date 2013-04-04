@@ -20,6 +20,8 @@ use Moose;
 use MooseX::SemiAffordanceAccessor;
 use Moose::Util::TypeConstraints;
 
+use namespace::autoclean;
+
 use Actium::Constants;
 use Actium::Sorting::Line (qw(byline sortbyline));
 use List::MoreUtils('natatime');
@@ -730,7 +732,5 @@ sub output {
 
 } ## tidy end: sub output
 
-no Moose::Util::TypeConstraints;
-no Moose;
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 

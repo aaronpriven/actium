@@ -14,6 +14,8 @@ package Actium::O::Files::SQLite::Table 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
 use Actium::Constants;
 
 #########################

@@ -15,6 +15,8 @@ use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
 has 'pattern_unique_id' => (
     required => 1,
     is       => 'ro',

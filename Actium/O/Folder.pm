@@ -13,6 +13,8 @@ package Actium::O::Folder 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
 use Actium::Constants;
 use Actium::Term(':all');
 use Actium::Util('flat_arrayref');
@@ -672,6 +674,8 @@ sub write_files_from_hash {
     emit_done;
 
 } ## tidy end: sub write_files_from_hash
+
+__PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
 
 1;
 

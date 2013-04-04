@@ -15,8 +15,10 @@ use Moose;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
-use Actium::Types (
-    qw(ActiumDir ActiumDays ArrayRefOfActiumSkedStopTime));
+use namespace::autoclean;
+
+use Actium::Types (qw(ActiumDir ActiumDays ArrayRefOfActiumSkedStopTime));
+use Actium::Time;
 
 use MooseX::Storage;
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -26,7 +28,8 @@ has 'time_obj_r' => (
     is       => 'bare',
     isa      => ArrayRefOfActiumSkedStopTime,
     init_arg => 'time_objs',
-    default  => sub { [] },
+    #default  => sub { [] },
+    required => 1,
     handles  => {
         time_obj   => 'get',
         time_objs  => 'elements',
@@ -67,12 +70,17 @@ has days_obj => (
 );
 
 sub as_kpoint {
- 
-    
- 
- 
- 
+
+    my $self = shift;
+
+    my @kpoint_data = $self->linegroup, $self->dircode, $self->daycode,
+      map { $_->for_kpoint } $self->time_objs;
+
+    return jt(@kpoint_data);
+
 }
+
+__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
 

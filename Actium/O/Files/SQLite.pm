@@ -28,6 +28,8 @@ package Actium::O::Files::SQLite 0.001;
 
 use Moose::Role;
 
+use namespace::autoclean;
+
 use Actium::Constants;
 use Actium::Term;
 use Actium::Util('flat_list');
