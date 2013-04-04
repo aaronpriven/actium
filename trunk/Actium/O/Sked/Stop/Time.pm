@@ -14,6 +14,10 @@ use strict;
 use Moose;
 #use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
+use Actium::O::Days;
+use Actium::Constants;
+
+use namespace::autoclean;
 
 use MooseX::Storage;
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -25,6 +29,22 @@ has [qw(origin destination follower previous)] => (
     isa      => Str4,
     required => 1,
 );
+
+has at_place => (
+is => 'bare',
+isa => Str4 ,
+lazy => 1,
+builder => '_build_at_place',
+);
+
+sub _build_at_place {
+   my $self = shift;
+   my $previous = $self->previous;
+   my $follower = $self->follower;
+   
+   return $previous eq $follower ? $previous : $EMPTY_STR;
+
+}
 
 has line => (
     is       => 'ro',
@@ -56,6 +76,19 @@ has stop_index => (
    is => 'ro',
    isa => 'Int',
 );
+
+my $kpoint_timestr_sub = Actium::Time::timestr_sub( SEPARATOR => '', XB => 1 );
+
+sub for_kpoint {
+    my $self = shift;
+    
+    my @kpoint_time = $kpoint_timestr_sub->($self->time), $self->line,
+    $self->destination,$self->place,$self->daysexc
+ 
+ 
+}
+
+__PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
 
 1;
 

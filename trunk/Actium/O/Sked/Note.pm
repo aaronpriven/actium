@@ -10,9 +10,11 @@ use 5.010;
 
 use utf8;
 
+use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
-use Moose;
+
+use namespace::autoclean;
 
 our $VERSION = '0.001';
 $VERSION = eval $VERSION;
@@ -39,7 +41,6 @@ sub dump {
     return Data::Dumper::Dumper ($self);
 }
     
-no Moose;
 __PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
 
 1;

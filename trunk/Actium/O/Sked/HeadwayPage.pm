@@ -17,6 +17,9 @@ use Moose;
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
+
+use namespace::autoclean;
+
 use Actium::Constants;
 use Actium::Term;
 use Actium::O::Sked;
@@ -148,8 +151,6 @@ sub sked {
 
 } ## tidy end: sub sked
 
-no Moose::Util::TypeConstraints;
-no Moose;
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
 1;

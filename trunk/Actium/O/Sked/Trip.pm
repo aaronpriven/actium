@@ -17,8 +17,11 @@ use Moose;
 #use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
+
 use MooseX::Storage;
-with Storage(traits => ['OnlyWhenBuilt'] , 'format' => 'JSON' );
+with Storage(traits => ['OnlyWhenBuilt'] );
 
 #use Moose::Util::TypeConstraints;
 use Actium::Time qw<timestr timestr_sub>;
@@ -458,10 +461,6 @@ sub merge_trips_if_same {
     return \@newtrips;
 
 } ## tidy end: sub merge_trips_if_same
-
-no Moose;
-
-#no Moose::Util::TypeConstraints;
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 

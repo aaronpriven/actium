@@ -16,6 +16,8 @@ use Moose;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
+use namespace::autoclean;
+
 use MooseX::Storage;
 with Storage( traits => ['OnlyWhenBuilt'], 'format' => 'JSON' );
 
@@ -927,10 +929,11 @@ sub json {
 sub stop_objects {
     my $self = shift;
 
-    my @stopplaces = $self->stopplaces;
+    my @stopplaces = map {s/-[AD12]$//} $self->stopplaces;
+    my @stopids    = $self->stopids;
     my $stopcount  = $self->stop_count;
 
-    my (@stop_objs, @time_objs);
+    my ( @stop_objs, @time_objs );
 
     foreach my $trip ( $self->trips ) {
 
@@ -938,20 +941,69 @@ sub stop_objects {
 
         my @times = $trip->stoptimes;
 
-        my ( $origin, $destination, $previous_place );
-        my ( @previouses, @followers );
+        my ( $origin,     $destination, $previous_place );
+        my ( @previouses, @followers,   @newtimes );
         my $previous_place_idx = 0;
 
         for my $stop_idx ( 0 .. $stopcount ) {
-            my $time = $times[$stop_idx];
-            next if isblank($time);
 
-            my $stopplace = $stopplaces[$stop_idx];
+            my $time         = $times[$stop_idx];
+            my $stopid       = $stopids[$stop_idx];
+            my $previous_idx = $stop_idx - 1;
+            my $stopplace    = $stopplaces[$stop_idx];
+
+            #### Check -- same stop as last time? 
+            #### If so, and last entry has values, copy them over.
+
+            if (    $stop_idx
+                and $newtimes[$previous_idx]
+                and $stopid eq $stopids[$previous_idx] )
+            {
+                # This stop has the same stop id as the previous stop, and
+                # the previous time was valid.
+
+                if ( not defined $time ) {
+                    # if only the previous stop had a time, move that entry
+                    # forward to this entry, and go to the next one.
+                    splice( @newtimes,   -1, 0, undef );
+                    splice( @previouses, -1, 0, undef );
+                    if ( $followers[$previous_idx] ) {
+                        splice( @followers, -1, 0, undef );
+                    }
+                    next;
+                }
+
+                if ( isblank($stopplace) ) {
+                    # If this stop has a time but no place, and the previous
+                    # stop had a place,
+                    # use the previous place and go to the next stop.
+                    splice( @previouses, -1, 0, undef );
+                    if ( $followers[$previous_idx] ) {
+                        splice( @followers, -1, 0, undef );
+                    }
+                    undef $newtimes[$previous_idx];
+                    $newtimes[$stop_idx] = $time;
+                    next;
+                }
+                
+                # otherwise, just null out the previous entry as though
+                # it was never there.
+
+                undef $previouses[$previous_idx];
+                undef $followers[$previous_idx];
+                undef $newtimes[$previous_idx];
+
+            } ## tidy end: if ( $stop_idx and $newtimes...)
+            
+            ### 
+
+            next unless defined($time);
+            
+            $newtimes[$stop_idx] = $time;
+
             if ( isblank($stopplace) ) {
                 # Not a timepoint
-
                 $previouses[$stop_idx] = $previous_place;
-
             }
             else {
                 # Is a timepoint
@@ -986,6 +1038,7 @@ sub stop_objects {
         } ## tidy end: for my $stop_idx ( 0 .....)
 
         for my $stop_idx ( 0 .. $stopcount ) {
+            next unless $newtimes[$stop_idx];
             push @{ $time_objs[$stop_idx] },
               Actium::O::Sked::Stop::Time->new(
                 {   origin      => $origin,
@@ -993,7 +1046,7 @@ sub stop_objects {
                     follower    => $followers[$stop_idx],
                     previous    => $previouses[$stop_idx],
                     days        => $self->days_obj,
-                    times  => $times[$stop_idx],
+                    times       => $newtimes[$stop_idx],
                     line        => $self->line,
                     stop_index  => $stop_idx,
                 }
@@ -1003,12 +1056,15 @@ sub stop_objects {
     } ## tidy end: foreach my $trip ( $self->trips)
 
     for my $stop_idx ( 0 .. $stopcount ) {
-        push @stop_objs, Actium::O::Sked::Stop->new({
-         time_objs => $time_objs[$stop_idx] ,
-         direction => $self->dir_obj,
-         days => $self->days_obj,
-         linegroup => $self->linegroup,
-        });
+        next unless $time_objs[$stop_idx];
+        push @stop_objs,
+          Actium::O::Sked::Stop->new(
+            {   time_objs => $time_objs[$stop_idx],
+                direction => $self->dir_obj,
+                days      => $self->days_obj,
+                linegroup => $self->linegroup,
+            }
+          );
     }
 
     return @stop_objs;

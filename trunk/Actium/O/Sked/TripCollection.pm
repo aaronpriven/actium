@@ -23,6 +23,8 @@ package Actium::O::Sked::TripCollection;
 use 5.014;
 use Moose;
 
+use namespace::autoclean;
+
 use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
@@ -159,3 +161,7 @@ sub merge_trips_if_same {
     return \@newtrips;
 
 } ## tidy end: sub merge_trips_if_same
+
+__PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
+
+1;

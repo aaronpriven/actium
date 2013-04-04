@@ -11,6 +11,8 @@ package Actium::O::Stoplists::ByDirection 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
 has [ 'dir', 'route' ] => (
     is       => 'ro',
     isa      => 'Str',
