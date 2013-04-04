@@ -10,6 +10,11 @@ use warnings;
 
 package Actium::O::Folders::Signup 0.001;
 
+use Moose;
+use MooseX::StrictConstructor;
+
+use namespace::autoclean;
+
 use Actium::Options qw(add_option option is_an_option);
 use Actium::Constants;
 
@@ -17,9 +22,6 @@ use Carp;
 use File::Spec;
 use Const::Fast;
 use FindBin;
-
-use Moose;
-use MooseX::StrictConstructor;
 
 const my $base_class => 'Actium::O::Folder';
 
@@ -222,6 +224,8 @@ sub base_obj {
 }
 
 1;
+
+__PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
 
 __END__
 

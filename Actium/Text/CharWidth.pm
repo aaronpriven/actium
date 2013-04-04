@@ -11,11 +11,11 @@ use 5.012;    # turns on features
 
 package Actium::Text::CharWidth 0.001;
 
+use Sub::Exporter -setup => { exports => [qw( ems twelfths char_width )] };
+
 use List::Util ('sum');
 use Carp;
 use POSIX ('ceil');
-
-use Perl6::Export::Attrs;
 
 # the following are character widths for a few fonts, derived from the AFM
 # files
@@ -34,6 +34,9 @@ use Perl6::Export::Attrs;
 my %warned_font;
 
 my %widths;
+
+# TODO - get widths for Frutiger, which are probably close to Univers
+# but not exactly
 
 $widths{Univers_CondensedBold} = [
     0,     0,     0,     0,     0,     0,     0,     0,
@@ -155,19 +158,19 @@ foreach (qw/1/) {
 
 my $default = ord('M');
 
-sub ems : Export {
+sub ems {
     my $text = shift;
     my $font = _check_font(shift);
     return _calc_ems( $text, $font );
 }
 
-sub twelfths : Export {
+sub twelfths {
     my $text = shift;
     my $font = _check_font(shift);
     return ceil( _calc_ems( $text, $font ) / $widths{$font}[$default] * 12 );
 }
 
-sub char_width : Export {
+sub char_width {
     my $text = shift;
     my $font = _check_font(shift);
     return ceil( _calc_ems( $text, $font ) / $widths{$font}[$default] );

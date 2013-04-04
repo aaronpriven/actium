@@ -15,6 +15,8 @@ use Moose;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
+use namespace::autoclean;
+
 use Actium::Constants;
 use Actium::Types (qw/DirCode HastusDirCode ActiumDir/);
 use Actium::O::Dir;

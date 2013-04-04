@@ -14,6 +14,8 @@ package Actium::O::Files::HastusASI::Filetype 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
 has 'id' => (
     is       => 'ro',
     isa      => 'Str',

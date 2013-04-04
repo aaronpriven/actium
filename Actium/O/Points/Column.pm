@@ -17,6 +17,8 @@ use Moose;
 use MooseX::SemiAffordanceAccessor;
 use Moose::Util::TypeConstraints;
 
+use namespace::autoclean;
+
 use Actium::Constants;
 use Actium::Time ('timenum');
 use IDTags;
@@ -423,8 +425,6 @@ sub format_approxflag {
 
 }
 
-no Moose::Util::TypeConstraints;
-no Moose;
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
 1;

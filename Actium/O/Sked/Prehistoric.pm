@@ -15,6 +15,9 @@ use 5.012;    # turns on features
 
 package Actium::O::Sked::Prehistoric 0.001;
 
+use Moose::Role;
+use namespace::autoclean;
+
 use Actium::Constants;
 use Actium::Term;
 use List::MoreUtils qw<uniq none>;
@@ -23,8 +26,6 @@ use Text::Trim;
 use English '-no_match_vars';
 use Actium::Util ('jt');
 use Actium::Time ('timestr_sub');
-
-use Moose::Role;
 
 # comes from prehistorics
 has 'place9_r' => (

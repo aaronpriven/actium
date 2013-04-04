@@ -16,6 +16,8 @@ use MooseX::StrictConstructor;
 use MooseX::Storage;
 with Storage( traits => ['OnlyWhenBuilt'] );
 
+use namespace::autoclean;
+
 use Actium::Types qw<DayCode SchoolDayCode>;
 use Actium::Util qw<positional_around joinseries>;
 use Actium::Constants;

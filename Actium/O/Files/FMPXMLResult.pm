@@ -15,6 +15,8 @@ package Actium::O::Files::FMPXMLResult 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
 use POSIX ();
 
 use Actium::Constants;
@@ -434,6 +436,8 @@ sub _build_timepoints_structs {
 
     return [ $rows_r, \%rows_of_place4, \%rows_of_place9 ];
 } ## tidy end: sub _build_timepoints
+
+__PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
 
 1;
 

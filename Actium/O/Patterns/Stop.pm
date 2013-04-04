@@ -14,6 +14,8 @@ package Actium::O::Patterns::Stop 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use namespace::autoclean;
+
 has 'id' => (
     required => 1,
     is       => 'ro',
