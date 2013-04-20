@@ -169,43 +169,6 @@ sub _get_pubtt_contents {
 
 } ## tidy end: sub _get_pubtt_contents
 
-#sub _get_configuration {
-#
-#    my $signup   = shift;
-#    my $filespec = $signup->make_filespec('tabula-config.txt');
-#
-#    open my $config_h, '<', $filespec
-#      or die "Can't open $filespec for reading: $OS_ERROR";
-#
-#    my %front_matter;
-#    my $timetable;
-#
-#  LINE:
-#    while ( my $line = <$config_h> ) {
-#        chomp $line;
-#        next LINE unless $line;
-#        if ( substr( $line, 0, 1 ) eq '[' ) {
-#            $timetable = ( substr( $line, 1 ) );
-#        }
-#        else {
-#            next LINE unless $timetable;
-#            push @{ $front_matter{$timetable} }, $line;
-#        }
-#    }
-#
-#    close $config_h
-#      or die "Can't close $filespec for writing: $OS_ERROR";
-#
-#    return %front_matter;
-#
-#} ## tidy end: sub _get_configuration
-
-#sub _debug_remove_all_but_l {
-#
-#    return grep { $_->[0] =~ /^L/} @_;
-#
-#}
-
 sub _output_pubtts {
 
     emit "Outputting public timetable files";
@@ -583,11 +546,6 @@ sub _output_m_pubtts {
 
         emit_prog " $file";
 
-        #if ($file eq '85') {
-        #    # DEBUG
-        #    emit_prog "@";
-        #}
-
         open my $ttfh, '>', $pubtt_folder->make_filespec("$file.txt");
 
         print $ttfh Actium::Text::InDesignTags->start;
@@ -643,28 +601,184 @@ sub _output_m_pubtts {
 
 } ## tidy end: sub _output_m_pubtts
 
-my @one_frame_test = (
-    { widthpair => [ 10, 0 ], height => 42, shortpage => 1, frame => 0 },
-    { widthpair => [ 11, 0 ], height => 36, shortpage => 1, frame => 4 },
-    { widthpair => [ 15, 0 ], height => 42, shortpage => 0, frame => 0 },
-    { widthpair => [ 11, 0 ], height => 59, shortpage => 0, frame => 4 },
+my @orientation = ( "landscape" x 4, "portrait" x 2 );
+# so $orientation[0..4] is landscape, 5 and 6 => portrait
+
+my @shortpage_framesets = (
+    [ 'Landscape full', { widthpair => [ 10, 0 ], height => 42, frame => 0 }, ],
+    [   'Landscape halves',
+        { widthpair => [ 4, 1 ], height => 42, frame => 0 },
+        { widthpair => [ 5, 0 ], height => 42, frame => 2 },
+    ],
+    [ 'Portrait full', { widthpair => [ 11, 0 ], height => 36, frame => 4 }, ],
+    [   'Portrait halves',
+        { widthpair => [ 5, 1 ], height => 36, frame => 4 },
+        { widthpair => [ 5, 0 ], height => 36, frame => 5 },
+    ],
 );
 
+my @page_framesets = (
+    [ 'Landscape full', { widthpair => [ 15, 0 ], height => 42, frame => 0 }, ],
+    [   'Landscape halves',
+        { widthpair => [ 7, 0 ], height => 42, frame => 0 },
+        { widthpair => [ 7, 0 ], height => 42, frame => 1 },
+    ],
+    [   'Landscape thirds',
+        { widthpair => [ 4, 1 ], height => 42, frame => 0 },
+        { widthpair => [ 5, 0 ], height => 42, frame => 2 },
+        { widthpair => [ 4, 1 ], height => 42, frame => 3 },
+    ],
+    [   'Landscape 1/3 - 2/3',
+        { widthpair => [ 4,  1 ], height => 42, frame => 0 },
+        { widthpair => [ 10, 0 ], height => 42, frame => 2 },
+    ],
+    [   'Landscape 2/3 - 1/3',
+        { widthpair => [ 10, 0 ], height => 42, frame => 0 },
+        { widthpair => [ 4,  1 ], height => 42, frame => 3 },
+    ],
+    [ 'Portrait full', { widthpair => [ 11, 0 ], height => 59, frame => 4 }, ],
+    [   'Portrait halves',
+        { widthpair => [ 5, 1 ], height => 59, frame => 4 },
+        { widthpair => [ 5, 0 ], height => 59, frame => 5 },
+    ],
+
+);
+my @maximum_table_dimensions = (
+    { width => _width_in_halfcols( 15, 0 ), height => 42 },
+    { width => _width_in_halfcols( 11, 0 ), height => 59 }
+);
+
+for my $frameset_r ( @shortpage_framesets, @page_framesets ) {
+    shift @{$frameset_r};    # remove the description
+    for my $frame_r ( @{$frameset_r} ) {
+        $frame_r->{width} = _width_in_halfcols { $frame_r->{widthpair} };
+    }
+}
+
+sub _width_in_halfcols {
+    my $width = shift;
+    return $width->[0] * 2 + $width->[1];
+}
+
 const my $EXTRA_TABLE_HEIGHT => 9;
-# add 9 for each additional table in a stack -- 1 for blank line, 
-# 4 for timepoints and 4 for # the color bar. This is inexact and can mess up...
+# add 9 for each additional table in a stack -- 1 for blank line,
+# 4 for timepoints and 4 for the color bar. This is inexact and can mess up...
 # not sure how to fix it at this point, I'd need to measure the headers
 
 sub _assign_frames {
 
     my (@tables) = @{ +shift };    # copy
-    my ( $heights_r, $widths_in_halfcols_r ) = _get_table_sizes( \@tables );
 
-    ## CHECK TO SEE IF ALL FIT IN SINGLE FRAME
+    return unless _every_table_fits_on_a_page(@tables);
+
+    my @chunks = [ \@tables ] ; # first chunk: everything together
+
+    # then a chunk divided by day, then one divided by direction
+
+    foreach my $codetype ( qw(daycode dircode)) {
+        my $index = 0;
+        my %order;
+        my %tables_of;
+        my @thischunk;
+        
+        foreach my $table (@tables) {
+
+            my $code = $table->$codetype;
+
+            if ( not exists $order{$code} ) {
+                $order{$code} = ++$index;
+            }
+
+            push @{ $tables_of{$code} }, $table;
+        }
+        
+        foreach my $code ( sort { $order{$a} <=> $order{$b} } keys %order ) {
+           push @thischunk, $tables_of{$code};
+        }
+        
+        push @chunks, \@thischunk;
+        
+    }
+
+    push @chunks, [ map { [$_] } @tables ]; # finally, one chunk per table
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    return;
+
+} ## tidy end: sub _assign_frames
+
+sub _every_table_fits_on_a_page {
+    my @tables = @_;
+
+    foreach my $table ( 0 .. $#tables ) {
+        my ( $height, $width ) = ( $table->height, $table->width_in_halfcols );
+
+        my $fits_on_a_page;
+        for my $maximum (@maximum_table_dimensions) {
+            if ( $maximum->{width} <= $width and $maximum->{height} <= $height )
+            {
+                $fits_on_a_page = 1;
+                last;
+            }
+        }
+        if ( not $fits_on_a_page ) {
+            emit_text $table->id . " does not fit on a single page";
+            return;
+        }
+
+    }
+
+    return 1;
+
+} ## tidy end: sub _every_table_fits_on_a_page
+
+1;
+
+__END__
+
+removed from _assign_frames
+
+my @one_frame_test = (
+    { widthpair => [ 10, 0 ], height => 42, shortpage => 1, frame => 0 },
+    { widthpair => [ 11, 0 ], height => 36, shortpage => 1, frame => 4 },
+    { widthpair => [ 15, 0 ], height => 42, shortpage => 0, frame => 0 },
+    { widthpair => [ 11, 0 ], height => 59, shortpage => 0, frame => 4 }
+    ,
+);
+
+ ## CHECK TO SEE IF ALL FIT IN SINGLE FRAME
 
     my $max_width_in_halfcols = max @{$widths_in_halfcols_r};
-    my $sum_height = sum( @{$heights_r} );
-    
+    my $sum_height            = sum( @{$heights_r} );
+
     $sum_height += $#{$heights_r} * $EXTRA_TABLE_HEIGHT;
 
     foreach my $test_r (@one_frame_test) {
@@ -675,6 +789,9 @@ sub _assign_frames {
         next
           if $test_width_in_halfcols < $max_width_in_halfcols
           or $test_height < $sum_height;
+
+        # if it fits on a single frame -- either on the first short page,
+        # or on the first regular page -- it will go here
 
         my $firsttable = shift @tables;
         my $frame      = $test_r->{frame};
@@ -698,18 +815,8 @@ sub _assign_frames {
         return @frames;
 
     } ## tidy end: foreach my $test_r (@one_frame_test)
-
-    ## TODO - ASSIGN TO MULTIPLE FRAMES
-
-    return;
-
-} ## tidy end: sub _assign_frames
-
-sub _width_in_halfcols {
-    my $width = shift;
-    return $width->[0] * 2 + $width->[1];
-}
-
+    
+    
 sub _get_table_sizes {
     my $tables_r = shift;
 
@@ -724,181 +831,3 @@ sub _get_table_sizes {
     return \@heights, \@widths_in_halfcols;
 
 }
-
-#sub _get_table_sizes {
-#    my $tables_r = shift;
-#
-#  # So, what this does is take the tables and makes a new struct with size info.
-#  # Each struct has a reference to the tables, and the sizes needed for the
-#  # tables
-#
-#    my %tables_of;
-#    my %highest_of;    # assumes highest side by side value
-#
-#    foreach my $table (@$tables_r) {
-#        my $linedays = $table->linedays;
-#        my $height   = $table->height;
-#
-#        push @{ $tables_of{$linedays} }, $table;
-#        $highest_of{$linedays} = $height
-#          if not exists $highest_of{$linedays}
-#          or $highest_of{$linedays} < $height;
-#    }
-#
-#    my @linedays
-#      = sort { $highest_of{$b} <=> $highest_of{$a} } keys %highest_of;
-#
-#    my @sizes;
-#    foreach my $linedays (@linedays) {
-#
-#        my @tables = sort { $a->sortable_id cmp $b->sortable_id }
-#          @{ $tables_of{$linedays} };
-#
-#        my @heights = map { $_->height } @tables;
-#        my @widths = map { $_->width } @tables;
-#
-#        # I think, since the only values are halves, we won't run into
-#        # floating point rounding error, and it's easier to think about
-#        # this way
-#
-#        push @sizes,
-#          { tables     => \@tables,
-#            widths     => \@widths,
-#            sidebyside => max(@heights),
-#            stacked    => sum(@heights),
-#          };
-#
-#    } ## tidy end: foreach my $linedays (@linedays)
-#
-#    return @sizes;
-#
-#} ## tidy end: sub _get_table_sizes
-
-1;
-
-__END__
-
-# initialization
-
-    my $boxwidth  = 4.5;        # table columns in box
-    my $boxheight = 49 * 12;    # points in box
-
-    
-        my $size = 'small';
-
-        given ( scalar @heights ) {
-            when (1) {
-                $size = 'big'
-                  if $heights[0] > $boxheight
-                      or $widths[0] > $boxwidth;
-            }
-            when (2) {
-
-                $size = 'big'
-                  unless $heights[0] + $heights[1] + 18 < $boxheight
-                      and $widths[0] < $boxwidth * 2
-                      and $widths[1] < $boxwidth * 2
-
-                      # they fit up and down
-                      or $widths[0] + $widths[1] < $boxwidth
-                      and $heights[0] < $boxheight
-                      and $heights[1] < $boxheight;
-
-                # or they fit side by side
-            }
-            default {    # TODO - figure out for larger sizes
-                $size = 'big';
-            }
-        } ## tidy end: given
-
-    $maxheight = $maxheight / 72;    # inches instead of points
-
-    say "Maximum height in inches: $maxheight; maximum columns: $maxwidth";
-
-} ## tidy end: sub START
-
-
-    $table{HEIGHT} = ( 3 * 12 ) + 6.136    # 3p6.136 height of color header
-      + ( 3 * 12 ) + 10.016                # 3p10.016 four-line timepoint header
-      + ( $timerows * 10.516 );            # p10.516 time cell
-
-    return \%table;
-} ## tidy end: sub make_table
-
-
-=====
-
-sub _get_table_sizes_old {
-
-  # So, what this does is take the tables and makes a new struct with size info.
-  # Each struct has a reference to the table, and the size of each table,
-  # when stacked vertically or when set side by side
-
-    my $tables_r = shift;
-
-    my %highest_of;
-    my @structs;
-
-    foreach my $table (@$tables_r) {
-
-        my $height   = $table->height;
-        my $linedays = $table->linedays;
-        my $width    = $table->half_columns / 2 + $table->columns;
-        # I think, since the only values are halves, we won't run into
-        # floating point rounding error, and it's easier to think about
-        # this way
-
-        my $struct = {
-            table       => $table,
-            height      => $height,
-            linedays    => $linedays,
-            width       => $width,
-            sortable_id => $table->sortable_id,
-        };
-
-        push @structs, $struct;
-
-        $highest_of{$linedays} = $height
-          if not exists $highest_of{$linedays}
-          or $highest_of{$linedays} < $height;
-
-    } ## tidy end: foreach my $table (@$tables_r)
-
-    foreach my $struct (@structs) {
-        my $linedays = $struct->{linedays};
-        $struct->{height} = $highest_of{$linedays};
-    }
-
-    @structs = sort {
-             $b->{most_rows} <=> $a->{most_rows}
-          || $a->{linedays} cmp $b->{linedays}
-          || $a->{sortable_id} cmp $b->{sortable_id}
-    } @structs;
-
-    my @sizes;
-
-    my $prev = $EMPTY_STR;
-    foreach my $struct (@structs) {
-        my $linedays = $struct->{linedays};
-        if ( $linedays ne $prev ) {
-            push @sizes,
-              { table1           => $struct->{table},
-                stackheight      => $struct->{height},
-                sidebysideheight => $struct->{height},
-                width1           => $struct->{width}
-              };
-        }
-        else {    # TODO - add stacked or side by side width
-            $sizes[-1]{width2} = $struct->{width};
-            $sizes[-1]{table2} = $struct->{table};
-            my $height = $struct->{height};
-            $sizes[-1]{stackheight} += $height;
-        }
-    }
-
-    return @sizes;
-
-} ## tidy end: sub _get_table_sizes_old
-1;
-
-
