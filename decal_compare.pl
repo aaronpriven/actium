@@ -11,7 +11,6 @@ use lib ($Bin );
 use Actium::Options('init_options');
 
 use Actium::Sorting::Line ('sortbyline');
-use Actium::Util('tabulate_strings');
 
 init_options;
 
@@ -112,6 +111,4 @@ while ( my $line = <> ) {
 } ## tidy end: while ( my $line = <> )
 
 my @results = sort { $results{$a} cmp $results{$b} } keys %results;
-#my $even_columns_r = tabulate_strings(\@results);
-#say join("\n" , @{$even_columns_r});
 say join ("\n" , @results);
