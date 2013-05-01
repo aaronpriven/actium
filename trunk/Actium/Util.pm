@@ -10,7 +10,7 @@ package Actium::Util 0.001;
 
 use Actium::Constants;
 use List::Util ('max');
-use List::MoreUtils('any');
+use List::MoreUtils(qw<natatime any>);
 use Scalar::Util('reftype');
 use Carp;
 use File::Spec;
@@ -25,13 +25,15 @@ use Sub::Exporter -setup => {
           jspaced
           sk                  st
           keyreadable         keyunreadable
-          doe                 
+          doe
           isblank             isnotblank
-          tabulate_strings    tabulate_arrayrefs
+          tabulate
           filename            file_ext
           remove_leading_path flat_arrayref
           linegroup_of        flat_list
           in
+          chunks
+          is_odd              is_even
           >
     ]
 };
@@ -150,18 +152,19 @@ sub keyunreadable {
     return $_;
 }
 
-sub tabulate_strings {
+sub tabulate {
 
-    my @lines = @_;
-    chomp @lines;
-    my @record_rs = map { [ split(/\t/) ] } @lines;
-    return tabulate_arrayrefs(@record_rs);
+    my @record_rs;
 
-}
-
-sub tabulate_arrayrefs {
-
-    my @record_rs = @_;
+    my $rt = reftype( $_[0] );
+    if ( not defined $rt ) {
+        my @lines = @_;
+        chomp @lines;
+        @record_rs = map { [ split(/\t/) ] } @lines;
+    }
+    else {
+        @record_rs = @_;
+    }
 
     my @length_of_column;
 
@@ -196,7 +199,7 @@ sub tabulate_arrayrefs {
 
     return \@lines;
 
-} ## tidy end: sub tabulate_arrayrefs
+} ## tidy end: sub tabulate
 
 sub doe {
     my @list = @_;
@@ -206,12 +209,12 @@ sub doe {
 
 sub isnotblank {
     my $value = shift;
-    return (defined $value and $value ne $EMPTY_STR);
+    return ( defined $value and $value ne $EMPTY_STR );
 }
 
 sub isblank {
     my $value = shift;
-    return (not (defined $value and $value ne $EMPTY_STR));
+    return ( not( defined $value and $value ne $EMPTY_STR ) );
 }
 
 sub filename {
@@ -337,12 +340,12 @@ sub linegroup_of {
 
 sub in {
     # is-an-element-of (stringwise)
-    
-    # if I could, I would add this to perl as an operator: 
+
+    # if I could, I would add this to perl as an operator:
     # e.g., $scalar in @array. Sadly this is not possible
 
-    my $item = shift;
-    my $reftype = reftype($_[0]);
+    my $item    = shift;
+    my $reftype = reftype( $_[0] );
     if ( defined $reftype and $reftype eq 'ARRAY' ) {
         return any { $item eq $_ } @{ $_[0] };
     }
@@ -351,7 +354,26 @@ sub in {
 
 }
 
+sub chunks {
+    my $n      = shift;
+    my @values = @_;
+    my @chunks;
+    my $it = natatime( $n, @values );
+    while ( my @vals = $it->() ) {
+        push @chunks, [@vals];
+    }
+    return @chunks;
+}
+
 1;
+
+sub is_odd {
+   return $_[0] % 2; 
+}
+
+sub is_even {
+   return not($_[0] % 2);
+}
 
 __END__
 

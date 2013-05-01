@@ -23,10 +23,11 @@ use Actium::O::Folders::Signup;
 use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
-use Actium::Util(qw/doe in/);
+use Actium::Util(qw/doe in chunks/);
 use Const::Fast;
 use List::Util ( 'max', 'sum' );
-use List::MoreUtils ( 'uniq', 'each_arrayref' );
+use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);
+use Algorithm::Combinatorics ('combinations');
 
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
@@ -671,69 +672,161 @@ sub _assign_frames {
 
     return unless _every_table_fits_on_a_page(@tables);
 
-    my @chunks = [ \@tables ] ; # first chunk: everything together
+    # @page_permutations consists of all the valid ways of breaking up
+    # the various tables into valid pages, in order of preference.
+    # A simple example might be:
+    #   [ [ All tables on one page ] ] ,
+    #   [ [ Table 1, Table 2] , [ Table 3, Table 4 ] ],
+    #   [ [ Table 1 ] , [Table 2] , [Table 3 ], [ Table 4] ]
 
-    # then a chunk divided by day, then one divided by direction
+    my @page_permutations = _page_permutations(@tables);
 
-    foreach my $codetype ( qw(daycode dircode)) {
-        my $index = 0;
-        my %order;
-        my %tables_of;
-        my @thischunk;
-        
-        foreach my $table (@tables) {
+    # go through each possible page set.
+    # For this page set, does each possible page fit on one of the framesets?
+    # If all pages fit, use it! if not, go to the next page set
 
-            my $code = $table->$codetype;
+  PAGESET:
+    foreach my $page_permutation (@page_permutations) {
+        foreach my $tables_on_this_page_r ( @{$page_permutation} ) {
+          FRAMESET:
+            foreach my $frameset (@page_framesets) {
+                my $fits = _check_page( $frameset, $tables_on_this_page_r );
 
-            if ( not exists $order{$code} ) {
-                $order{$code} = ++$index;
             }
-
-            push @{ $tables_of{$code} }, $table;
         }
-        
-        foreach my $code ( sort { $order{$a} <=> $order{$b} } keys %order ) {
-           push @thischunk, $tables_of{$code};
-        }
-        
-        push @chunks, \@thischunk;
-        
     }
 
-    push @chunks, [ map { [$_] } @tables ]; # finally, one chunk per table
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    return;
+    ...;
 
 } ## tidy end: sub _assign_frames
+
+sub _check_page {
+
+    my @frames = @{ +shift };
+    my @tables = @{ +shift };
+
+    return 0 if ( @frames > @tables );
+    # If there are more frames than there are tables,
+    # this cannot be the best fit
+
+    # will this set of tables fit on this page?
+
+    if ( @frames == 1 ) {
+        my ( $height, $width ) = _get_stacked_measurement(@tables);
+        return (  $height <= $frames[0]{height}
+              and $width <= $frames[0]{width} );
+    }
+
+    if ( @frames == @tables ) {
+        for my $i ( 0 .. @frames ) {
+            return 0
+              if $frames[$i]{height} < $tables[$i]->height
+              or $frames[$i]{width} < $tables[$i]->width_in_halfcols;
+            # doesn't fit if frame's height or width aren't big enough
+        }
+        return 1;    # all frames fit
+    }
+    
+    
+    
+       #### FIX HERE NEXT
+       
+       
+       
+       
+
+    # more tables than frames. Divide tables up into appropriate sets,
+    # and then try them
+
+} ## tidy end: sub _check_page
+
+sub _table_permutations {
+ 
+    # The idea here is that permutations are identified by a combination
+    # of numbers representing the breaks between items.
+    
+    # So if you have items qw<a b c d e> then the possible breaks are 
+    # after a, after b, after c, or after d --
+    # numbered 0, 1, 2 and 3.
+    
+    # If you have two frames, then you have one break between them.
+    # If you have three frames, then you have two breaks between them.
+    
+    # This gets all the combinations of breaks between them and 
+    # then creates the subsets that correspond to those breaks,
+    # and returns the subsets.
+
+    my $num_frames = shift;
+    my @tables     = shift;
+
+    my @indices = ( 0 .. $#tables - 1 );
+    my @break_after_idx_sets = combinations( \@indices, $num_frames - 1 );
+
+    my @table_permutations;
+
+    foreach my $break_after_idx_set (@break_after_idx_sets) {
+        my @permutation;
+        my @break_after_idx = @$break_after_idx_set;
+
+        push @permutation, [ @tables[ 0 .. $break_after_idx[0] ] ];
+
+        for my $i ( 1 .. $#break_after_idx ) {
+            my $first = $break_after_idx[ $i - 1 ] + 1;
+            my $last  = $break_after_idx[$i];
+            push @permutation, [ @tables[ $first .. $last ] ];
+        }
+
+        push @permutation, [ @tables[ $break_after_idx[-1] .. $#tables ] ];
+
+        push @table_permutations, \@permutation;
+
+    }
+
+    return @table_permutations;
+
+} ## tidy end: sub _table_permutations
+
+sub _get_stacked_measurement {
+    my @tables = @_;
+
+    my @widths  = map { $_->width_in_halfcols } @tables;
+    my @heights = map { $_->height } @tables;
+
+    my $maxwidth = max(@widths);
+    my $sumheight = sum(@heights) + ( $EXTRA_TABLE_HEIGHT * $#heights );
+
+    return ( $sumheight, $maxwidth );
+
+}
+
+sub _page_permutations {
+    # This creates the sets of tables that could possibly fit across pages
+
+    my @tables = @_;
+    my @page_permutations;
+
+    # for now I am just going to add these in groups of two,
+    # from the sortable order
+    # eventually this will need to be much more thorough
+
+    if ( @tables > 2 ) {
+        @page_permutations = [ chunks( 2, @tables ) ];    # each chunk is a page
+           # This is just one possible set, where each page has exactly two items
+           # This will probably be OK for three- or four-table timetables, but for
+           # larger ones, more combinations will be necessary
+
+    }
+
+    # plus all tables on a single page, and each table on its own page
+
+    unshift @page_permutations, [ map { [$_] } @tables ];
+    push @page_permutations, [ \@tables ];
+
+    return @page_permutations;
+
+} ## tidy end: sub _page_permutations
+
+#
 
 sub _every_table_fits_on_a_page {
     my @tables = @_;
@@ -743,7 +836,8 @@ sub _every_table_fits_on_a_page {
 
         my $fits_on_a_page;
         for my $maximum (@maximum_table_dimensions) {
-            if ( $maximum->{width} <= $width and $maximum->{height} <= $height )
+            if (    $maximum->{width} <= $width
+                and $maximum->{height} <= $height )
             {
                 $fits_on_a_page = 1;
                 last;
@@ -831,3 +925,73 @@ sub _get_table_sizes {
     return \@heights, \@widths_in_halfcols;
 
 }
+
+## stuff that assigns them into chunks
+
+    my @chunks = [ \@tables ] ; # first chunk: everything together
+
+    # then a chunk divided by day, then one divided by direction
+
+    foreach my $codetype ( qw(daycode dircode)) {
+        my $index = 0;
+        my %order;
+        my %tables_of;
+        my @thischunk;
+        
+        foreach my $table (@tables) {
+
+            my $code = $table->$codetype;
+
+            if ( not exists $order{$code} ) {
+                $order{$code} = ++$index;
+            }
+
+            push @{ $tables_of{$code} }, $table;
+        }
+        
+        foreach my $code ( sort { $order{$a} <=> $order{$b} } keys %order ) {
+           push @thischunk, $tables_of{$code};
+        }
+        
+        push @chunks, \@thischunk;
+        
+    }
+
+    push @chunks, [ map { [$_] } @tables ]; # finally, one chunk per table
+    
+    
+    
+    ### another attempt
+    
+        my @chunksets;
+#    foreach my $count ( reverse( 2 .. @tables ) ) {
+#        next if is_odd($count) and is_even( scalar @tables );
+#        push @chunksets, [ chunks( $count, @tables ) ];
+#    }
+#    push @chunksets,
+#      [ map { [$_] } @tables ];    # one at a time
+#    # those are always the sortable order, from greatest to smallest
+#    # TODO: add acceptable permutations of the original order
+#
+#    foreach my $chunks_r (@chunksets) {
+#
+#        my @chunks;
+#        foreach my $chunk ( chunks( 2, @tables ) ) {
+#            my @thesetables = @{$chunk};
+#            my @heights     = map { $_->height } @thesetables;
+#            my @widths      = map { $_->width_in_halfcols } @thesetables;
+#
+#            my $maxwidth  = max(@widths);
+#            my $maxheight = max(@heights);
+#            my $sumheight = sum(@heights) + ( $EXTRA_TABLE_HEIGHT * $#heights );
+#
+#            push @chunks,
+#              { tables    => \@thesetables,
+#                maxwidth  => max(@widths),
+#                maxheight => max(@heights),
+#                sumheight => sum(@heights) + ( $EXTRA_TABLE_HEIGHT * $#heights )
+#              };
+#        }
+#
+#    } ## tidy end: foreach my $chunks_r (@chunksets)
+#
