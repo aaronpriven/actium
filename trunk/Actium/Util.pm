@@ -9,7 +9,7 @@ use 5.012;
 package Actium::Util 0.001;
 
 use Actium::Constants;
-use List::Util ('max');
+use List::Util (qw<max sum>);
 use List::MoreUtils(qw<natatime any>);
 use Scalar::Util('reftype');
 use Carp;
@@ -34,6 +34,7 @@ use Sub::Exporter -setup => {
           in
           chunks
           is_odd              is_even
+          mean                population_stdev
           >
     ]
 };
@@ -368,11 +369,32 @@ sub chunks {
 1;
 
 sub is_odd {
-   return $_[0] % 2; 
+    return $_[0] % 2;
 }
 
 sub is_even {
-   return not($_[0] % 2);
+    return not( $_[0] % 2 );
+}
+
+sub mean {
+ 
+    if ( ref( $_[0] ) eq 'ARRAY' ) {
+        return sum( @{ $_[0] } ) / scalar( @{ $_[0] } );
+    }
+
+    return sum(@_) / scalar(@_);
+}
+
+sub population_stdev {
+    my $themean;
+    
+    if ( ref( $_[0] ) eq 'ARRAY' ) {
+        $themean = mean(@{$_[0]});
+        return sqrt( mean( [ map $_**2, @{$_[0]} ] ) - ( $themean**2 ) );
+    }
+
+    $themean = mean(@_);
+    return sqrt( mean( [ map $_**2, @_ ] ) - ( $themean**2 ) );
 }
 
 __END__

@@ -23,7 +23,7 @@ use Actium::O::Folders::Signup;
 use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
-use Actium::Util(qw/doe in chunks/);
+use Actium::Util(qw/doe in chunks population_stdev/);
 use Const::Fast;
 use List::Util ( 'max', 'sum' );
 use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);
@@ -554,7 +554,7 @@ sub _output_m_pubtts {
         _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r, [],
             $effectivedate );
 
-        my @table_assignments = _assign_frames($tables_r);
+        my @table_assignments = _assign_tables_to_pages_and_frames($tables_r);
 
         if ( not @table_assignments ) {
             emit_prog "*";
@@ -666,7 +666,7 @@ const my $EXTRA_TABLE_HEIGHT => 9;
 # 4 for timepoints and 4 for the color bar. This is inexact and can mess up...
 # not sure how to fix it at this point, I'd need to measure the headers
 
-sub _assign_frames {
+sub _assign_tables_to_pages_and_frames {
 
     my (@tables) = @{ +shift };    # copy
 
@@ -690,8 +690,8 @@ sub _assign_frames {
         foreach my $tables_on_this_page_r ( @{$page_permutation} ) {
           FRAMESET:
             foreach my $frameset (@page_framesets) {
-                my $fits = _check_page( $frameset, $tables_on_this_page_r );
-
+                my $frame_assignment = _get_frame_assignment( $frameset, $tables_on_this_page_r );
+                next PAGESET if not defined $frame_assignment;
             }
         }
     }
@@ -700,12 +700,12 @@ sub _assign_frames {
 
 } ## tidy end: sub _assign_frames
 
-sub _check_page {
+sub _get_frame_assignment {
 
     my @frames = @{ +shift };
     my @tables = @{ +shift };
 
-    return 0 if ( @frames > @tables );
+    if ( @frames > @tables ) { return }
     # If there are more frames than there are tables,
     # this cannot be the best fit
 
@@ -713,30 +713,52 @@ sub _check_page {
 
     if ( @frames == 1 ) {
         my ( $height, $width ) = _get_stacked_measurement(@tables);
-        return (  $height <= $frames[0]{height}
-              and $width <= $frames[0]{width} );
+        if (not (  $height <= $frames[0]{height}
+              and $width <= $frames[0]{width} ) )
+              
+              {
+                return;
+               
+              }
+              return [ \@tables ];
     }
 
     if ( @frames == @tables ) {
         for my $i ( 0 .. @frames ) {
-            return 0
+            return 
               if $frames[$i]{height} < $tables[$i]->height
               or $frames[$i]{width} < $tables[$i]->width_in_halfcols;
             # doesn't fit if frame's height or width aren't big enough
         }
-        return 1;    # all frames fit
+        return [ map { [ $_ ] } @tables ];
+        # all frames fit
     }
     
-    
-    
-       #### FIX HERE NEXT
-       
-       
-       
-       
-
     # more tables than frames. Divide tables up into appropriate sets,
     # and then try them
+    
+    my @table_permutations = _table_permutations((scalar @frames), @tables);
+    
+    TABLE_PERMUTATION:
+    foreach my $table_permutation (@table_permutations) {
+       foreach my $i (0 .. $#frames) {
+           my @tables = @{$table_permutation->[$i]};
+           my ( $height, $width ) = _get_stacked_measurement(@tables);
+           next TABLE_PERMUTATION
+                     if $frames[$i]{height} < $tables[$i]->height
+              or $frames[$i]{width} < $tables[$i]->width_in_halfcols;
+            # doesn't fit if frame's height or width aren't big enough 
+       }
+       
+       # it got here, so the tables fit within the frames
+       
+       return $table_permutation;
+       
+    }
+    
+    return;
+    # finished all the permutations, but nothing fit everything
+    
 
 } ## tidy end: sub _check_page
 
@@ -747,14 +769,20 @@ sub _table_permutations {
     
     # So if you have items qw<a b c d e> then the possible breaks are 
     # after a, after b, after c, or after d --
-    # numbered 0, 1, 2 and 3.
+    # numbered 0, 1, 2 and 3. 
     
     # If you have two frames, then you have one break between them.
     # If you have three frames, then you have two breaks between them.
     
     # This gets all the combinations of breaks between them and 
     # then creates the subsets that correspond to those breaks,
-    # and returns the subsets.
+    # and returns the subsets. So, if you have two frames, the results are
+    # [ a] [ b c d e] , [ a b ] [ c d e] , [a b c] [ d e ], [a b c d] [e].
+    
+    # These sorted by which one we'd want to use first
+    # (primarily, which combination yields even results, and then
+    # if it can't be even, having the extra one at the front rather than
+    # at the back or the middle)
 
     my $num_frames = shift;
     my @tables     = shift;
@@ -779,12 +807,49 @@ sub _table_permutations {
         push @permutation, [ @tables[ $break_after_idx[-1] .. $#tables ] ];
 
         push @table_permutations, \@permutation;
+        
+        my @sort_values = map { scalar @{$_} } @permutation; 
+        # count of tables in each frame
+        
+        unshift @sort_values, population_stdev(@sort_values);
+        # standard deviation -- so makes them as close to the same 
+        # number of tables as possible
+        
+        push @table_permutations, [ \@permutation, \@sort_values ];
 
     }
-
-    return @table_permutations;
-
+    
+    
+    @table_permutations = sort _permutationsort @table_permutations;
+    
+    return map { $_->[0] } @table_permutations;
+    
 } ## tidy end: sub _table_permutations
+
+sub _permutationsort {
+ 
+   my @a = @$a;
+   my @b = @$b;
+   
+   # first, return the comparison of the standard deviations of the
+   # count of tables in each frame
+   
+   my $result = $a[1] <=> $b[1];
+   return $result if $result;
+   
+   # If those are the same, go through the remaining values,
+   # which are the counts of the tables in each frame.
+   # Return the one that's highest first -- so it will
+   # prefer [2, 1] over [1, 2]
+   for my $i (2 .. $#a) {
+      my $result = $b[$i] <=> $a[$i];
+      return $result if $result;
+   }
+   
+   return 0; # the same...
+ 
+}
+
 
 sub _get_stacked_measurement {
     my @tables = @_;
@@ -808,6 +873,16 @@ sub _page_permutations {
     # for now I am just going to add these in groups of two,
     # from the sortable order
     # eventually this will need to be much more thorough
+    
+    
+    # what I think I will have to do is this: create every possible 
+    # permutation.  Then sort the page combinations depending on how many things 
+    # they have in common.
+    # if everything on a page has lines in common, that page gets 4 points
+    # if everything has days in common, it gets 2 points
+    # if everything has directions in common, it gets 1 point
+    
+    # Then sort them in order, first by fewest pages, then by number of points.
 
     if ( @tables > 2 ) {
         @page_permutations = [ chunks( 2, @tables ) ];    # each chunk is a page
