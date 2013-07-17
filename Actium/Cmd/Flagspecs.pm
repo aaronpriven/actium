@@ -144,7 +144,7 @@ sub build_place_and_stop_lists {
     emit 'Building lists of places and stops';
 
     my $eachpat = $hasi_db->each_row_where( 'PAT',
-        q{WHERE NOT IsInService = '' ORDER BY Route} );
+        q{WHERE IsInService <> '' AND IsInService <> '0' ORDER BY Route} );
 
     my $dbh = $hasi_db->dbh();
     my $tps_sth
@@ -345,7 +345,8 @@ sub build_trip_quantity_lists {
 
     emit 'Building lists of trip quantities';
 
-    my $next_trp = $hasi_db->each_row_eq(qw(TRP IsPublic X));
+    my $next_trp = $hasi_db->each_row_where('TRP' ,  
+      q{WHERE IsPublic = 'X' OR IsPublic = '1'});
 
   TRP:
     while ( my $trp = $next_trp->() ) {

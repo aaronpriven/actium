@@ -29,8 +29,8 @@ use Sub::Exporter -setup => {
           isblank             isnotblank
           tabulate
           filename            file_ext
-          remove_leading_path flat_arrayref
-          linegroup_of        flat_list
+          remove_leading_path flatten
+          linegroup_of        
           in
           chunks
           is_odd              is_even
@@ -310,24 +310,21 @@ sub _join_path_components {
     return $path;
 }
 
-sub flat_arrayref {
+sub flatten {
 
     my @inputs = @_;
     my @results;
     foreach my $input (@inputs) {
         if ( ref($input) eq 'ARRAY' ) {
-            push @results, @{ flat_arrayref( @{$input} ) };
+            push @results, flatten( @{$input} );
         }
         else {
             push @results, $input;
         }
     }
 
-    return \@results;
-}
+    return wantarray ? @results : \@results;
 
-sub flat_list {
-    return @{ flat_arrayref(@_) };
 }
 
 # this should be moved to a more general
@@ -366,8 +363,6 @@ sub chunks {
     return @chunks;
 }
 
-1;
-
 sub is_odd {
     return $_[0] % 2;
 }
@@ -396,6 +391,8 @@ sub population_stdev {
     $themean = mean(@_);
     return sqrt( mean( [ map $_**2, @_ ] ) - ( $themean**2 ) );
 }
+
+1;
 
 __END__
 
@@ -430,6 +427,14 @@ This module contains some simple routines for use in other modules.
 
 =over
 
+=item B<chunks(I<integer>,I<values>)>
+
+Returns a list of lists, breaking I<values> up into chunks of I<integer>.
+So
+
+  @list = chunks(2, qw/a b c d e f/);
+  # @list = ( [a , b ] , [ c , d ] , [e , f ] )
+  
 =item B<doe()>
 
 This stands for "defined-or-empty." For each value passed to it, returns either 
@@ -479,7 +484,7 @@ value from Actium::Constants is replaced by an underline (_),
 making it readable. (An easier way to type "s/$KEY_SEPARATOR/_/g foreach 
 @list;".)
 
-=item B<flat_arrayref(I<list>)>
+=item B<flatten(I<list>)>
 
 Takes a list and flattens it, ensuring that the contents of any lists of lists
 are returned as individual items.
@@ -488,14 +493,13 @@ So
 
  @list =  ( 'A' , [ 'B1' , 'B2', [ 'B3A' , 'B3B' ], ] ) ; 
 
- $list_ref = flat_arrayref(@list);
+ $array_ref = flatten(@list);
+ @flatarray = flatten(@list);
  # $list_ref = [ 'A', 'B1', 'B2', 'B3A', 'B3B' ]
+ # @flatarray = ('A', 'B1', 'B2', 'B3A', 'B3B') 
 
-Always returns its result as a list reference.
-
-=item B<flat_list(I<list>)>
-
-Just like I<flat_arrayref>, but returns its result as a flattened list.
+Returns its result as an array reference in scalar context, but as a
+list in list context.
 
 =item B<positional(C<\@_> , I<arguments>)>
 

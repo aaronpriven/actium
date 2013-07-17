@@ -17,7 +17,7 @@ use namespace::autoclean;
 
 use Actium::Constants;
 use Actium::Term(':all');
-use Actium::Util('flat_arrayref');
+use Actium::Util('flatten');
 use Carp;
 use English '-no_match_vars';
 use File::Spec;
@@ -154,7 +154,7 @@ sub split_folderlist {
     # Takes either an array of strings, or an arrayref of strings.
 
     my $self     = shift;
-    my $folder_r = flat_arrayref(@_);
+    my $folder_r = flatten(@_);
 
     my @new_folders;
     foreach my $folder ( @{$folder_r} ) {
