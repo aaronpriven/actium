@@ -58,7 +58,7 @@ use Actium::O::Folders::Signup;
 my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
-say "Reading from $signup";
+say "Reading from " , $signup->path();
 
 # set up row type hashes
 
@@ -390,6 +390,11 @@ readable in perl.
 Generally ignores the delimiters and treats the data as fixed-width, but 
 uses the delimiter to determine the record type.
 
+As of Summer 2013, the RouteMainPlacePatternDirection field in the PPAT record
+has apparently been changed to 10 characters instead of 6. (I assume this has
+to do with a Hastus upgrade.) Using this program on old records will need to
+have it changed back again.
+
 =head1 AUTHOR
 
 Aaron Priven
@@ -452,7 +457,7 @@ __DATA__
  5 Route!
 10 Direction
  2 DirectionValue!
- 6 RouteMainPlacePatternDirection
+10 RouteMainPlacePatternDirection
  6 RouteMainPlacePatternPlace*
 
  3 DIS

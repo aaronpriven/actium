@@ -32,7 +32,7 @@ use namespace::autoclean;
 
 use Actium::Constants;
 use Actium::Term;
-use Actium::Util('flat_list');
+use Actium::Util('flatten');
 
 use Carp;
 use DBI;
@@ -430,7 +430,7 @@ sub all_in_columns_key {
     if ( ref($firstarg) eq 'HASH' ) {
         $table = $firstarg->{TABLE};
 
-        @columns = flat_list( $firstarg->{COLUMNS} );
+        @columns = flatten( $firstarg->{COLUMNS} );
 
         $where = $firstarg->{WHERE};
 
@@ -441,7 +441,7 @@ sub all_in_columns_key {
     }
     else {
         $table   = $firstarg;
-        @columns = flat_list(@_);
+        @columns = flatten(@_);
     }
 
     $self->ensure_loaded($table);
@@ -688,7 +688,8 @@ LIKE|http://www.sqlite.org/lang_expr.html#like> for details.)
 
 each_row_where is more flexible, allowing the user to specify any
 L<SQLite WHERE clause|http://www.sqlite.org/lang_select.html#whereclause>.
-It accepts multiple values for matching.
+It accepts multiple values for matching. It is necessary to specify the WHERE
+keyword in the SQL.
 
 
 =item B<all_in_column_key(I<table>, I<column> )

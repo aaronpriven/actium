@@ -12,6 +12,7 @@ use warnings;
 package Actium::DaysDirections 0.001;
 
 use Const::Fast;
+use Actium::Constants;
 
 use Perl6::Export::Attrs;
 
@@ -54,11 +55,12 @@ const my %DIR_OF_HASI => (
 sub day_of_hasi : Export {
     my $days = shift;
     $days =~ s/[^\d]//g;
-    return $DAY_OF_HASI{ $days };
+    return exists $DAY_OF_HASI{ $days } ? $DAY_OF_HASI{$days} : $EMPTY_STR;
 }
 
 sub dir_of_hasi : Export {
-    return $DIR_OF_HASI{ $_[0] };
+    my $dir = shift;
+    return exists $DIR_OF_HASI{ $dir } ? $DIR_OF_HASI{$dir} : $EMPTY_STR;
 }
 
 1;
