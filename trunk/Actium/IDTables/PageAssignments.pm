@@ -29,7 +29,7 @@ use Algorithm::Combinatorics ('combinations');
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
 
-my @orientation = ( "landscape" x 4, "portrait" x 2 );
+const my @orientation => ( "landscape" x 4, "portrait" x 2 );
 # so $orientation[0..4] is landscape, 5 and 6 => portrait
 
 my @shortpage_framesets = (
@@ -75,98 +75,199 @@ my @page_framesets = (
 for my $frameset_r ( @shortpage_framesets, @page_framesets ) {
     shift @{$frameset_r};    # remove the description
     for my $frame_r ( @{$frameset_r} ) {
-        $frame_r->{width} = _width_in_halfcols ( $frame_r->{widthpair} );
+        $frame_r->{width} = _width_in_halfcols( $frame_r->{widthpair} );
     }
 }
 
-sub _width_in_halfcols {
-    my @widths = flatten(@_);
-    return ($widths[0] * 2 + $widths[1]);
-}
-
-const my $EXTRA_TABLE_HEIGHT => 9;
-# add 9 for each additional table in a stack -- 1 for blank line,
-# 4 for timepoints and 4 for the color bar. This is inexact and can mess up...
-# not sure how to fix it at this point, I'd need to measure the headers
-
-sub assign_tables_to_pages_and_frames {
+sub assign {
 
     my (@tables) = @{ +shift };    # copy
 
     return unless _every_table_fits_on_a_page(@tables);
+    # If any timetable is so big that it won't fit on any page,
+    # we return, skipping it for now.
+    # TODO - figure out how to deal with big timetables.
 
-    # @page_permutations consists of all the valid ways of breaking up
-    # the various tables into valid pages, in order of preference.
-    # A simple example might be:
-    #   [ [ All tables on one page ] ] ,
-    #   [ [ Table 1, Table 2] , [ Table 3, Table 4 ] ],
-    #   [ [ Table 1 ] , [Table 2] , [Table 3 ], [ Table 4] ]
+    # So the set of tables first needs to be divided up into pages,
+    # and then needs to be divided up into frames within those pages.
+    # Page(s) contains Frame(s) contains Table(s)
 
-    my @page_permutations = _page_permutations(@tables);
+    # Then, the pages need to be examined, and if any of them can fit as a
+    # short page, make that first page a short page.
+    # (Short pages are the pages with the covers on them.)
 
-    # go through each possible page set.
-    # For this page set, does each possible page fit on one of the framesets?
+    # First, we get all the possible sets of timetables on each page.
+
+    # @possible_page_assignments consists of all the valid ways of
+    # breaking up the various tables into valid pages,
+    # in order of preference.
+
+ # A simple example might be:
+ #   @possible_page_assignments =
+ #   [ [ Table 1, Table 2, Table 3, Table 4 ] ] ,         # all on one page
+ #   [ [ Table 1, Table 2] , [ Table 3, Table 4 ] ],      # Two pages
+ #   [ [ Table 1 ] , [Table 2] , [Table 3 ], [ Table 4] ] # Each on its own page
+
+    my @possible_page_assignments = _possible_page_assignments(@tables);
+
+    # So now we know every possible way the tables can be divided into pages.
+
+    # go through each possible page assignment
+    # For this page assignment, does each possible page fit on
+    # one of the framesets?
     # If all pages fit, use it! if not, go to the next page set
 
-  PAGESET:
-    foreach my $page_permutation (@page_permutations) {
-        foreach my $tables_on_this_page_r ( @{$page_permutation} ) {
-          FRAMESET:
-            foreach my $frameset (@page_framesets) {
-                my $frame_assignment
-                  = _get_frame_assignment( $frameset, $tables_on_this_page_r );
-                next PAGESET if not defined $frame_assignment;
+    my @frame_assignments;
+    my @selected_page_assignment;
+
+  POSSIBLE_PAGE_ASSIGNMENT:
+    foreach my $page_assignment_r (@possible_page_assignments) {
+        @selected_page_assignment = @{$page_assignment_r};
+
+       # so now we have a single grouping of tables into one or more pages.
+       # For example,
+       # @selected_page_assignment = ([ Table 1, Table 2] , [Table 3 , Table 4])
+       # But this page assignment may not fit. For each page, check to
+       # see if it fits.
+
+      PAGE:
+        foreach my $tables_on_this_page_r (@selected_page_assignment) {
+
+            # And now we have a single page:
+            # $tables_on_this_page_r = [ Table 1, Table 2 ]
+
+            # Now we check to see whether this page fits!
+
+            my $frame_assignment_r
+              = _choose_frameset( { tables => $tables_on_this_page_r, framesets => \@page_framesets } );
+
+            # $frame_assignment_r->{tables} = [ [ Table 1, Table 2] ,[Table 3] ]
+            # $frame_assignment_r->{frameset} = [ Frameset 1, Frameset 2]
+
+            if ( not defined $frame_assignment_r ) {
+                # This page does not fit any frameset, so we have to
+                # give up on this page assignment and try the next one
+
+                @frame_assignments = ();    # reset assignments
+                next POSSIBLE_PAGE_ASSIGNMENT;
+
             }
+
+            # It did fit a frame assignment, so save it
+            push @frame_assignments, $frame_assignment_r;
+            
+        } ## tidy end: PAGE: foreach my $tables_on_this_page_r...
+        
+        last if @frame_assignments;
+
+    } ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_assignment_r...
+
+    return unless @frame_assignments;
+    # If we went through all the possible page assignments and couldn't
+    # find one that works, return nothing
+
+    ###
+    # Replace assigned frameset with a short frameset if it fits
+
+    # Check the first page, then the last page,
+    # only then any intermediate pages
+
+    my @order = ( 0 .. $#frame_assignments );
+    if ( @order > 2 ) {
+        my $final = pop @order;
+        splice( @order, 1, 0, $final );
+    }
+
+    my $has_shortpage = 0;
+
+    # First add blank short page
+
+  FRAMESET_TO_REPLACE:
+    for my $i (@order) {
+        my $assignment = $frame_assignments[$i];
+        my $tables_r   = flatten($assignment->{tables});
+        my $frameset   = $assignment->{frameset};
+
+        my $short_frameset
+          = _choose_frameset( { tables => $tables_r, framesets => \@shortpage_framesets } );
+
+        if ( defined $short_frameset ) {
+            splice( @frame_assignments, $i, 1 );
+            unshift @frame_assignments, $assignment;
+            $has_shortpage = 1;
+            last FRAMESET_TO_REPLACE;
         }
     }
 
-    ...;
+    # convert to table assignments
 
-} ## tidy end: sub _assign_tables_to_pages_and_frames
+    my @table_assignments;
 
-sub _page_permutations {
-    # This creates the sets of tables that could possibly fit across pages
+    my $prev_frame;
 
-    my @tables = @_;
-    my @page_permutations;
+    for my $frame_assignment_r (@frame_assignments) {
+     
+     
+     ###### @frame_assignments represents pages, there are multiple
+     ###### frames within each $frame_assignment_r, so I
+     ###### have to iterate over those as well!
+     
+        my @tables = @{ $frame_assignment_r->{tables} };
+        my ( $height, $width ) = _get_stacked_measurement(@tables);
+        my $frame = $frame_assignment_r->{frameset}{frame};
 
-    # for now I am just going to add these in groups of two,
-    # from the sortable order
-    # eventually this will need to be much more thorough
+        my $pagebreak;
+        $pagebreak = 1
+          if $prev_frame < $frame
+          or ( not defined $prev_frame and not $has_shortpage );
 
-    # what I think I will have to do is this: create every possible
-    # permutation.  Then sort the page combinations depending on how many things
-    # they have in common.
-    # if everything on a page has lines in common, that page gets 4 points
-    # if everything has days in common, it gets 2 points
-    # if everything has directions in common, it gets 1 point
+        $prev_frame = $frame;
 
-    # Then sort them in order, first by fewest pages, then by number of points.
+        for my $table (@tables) {
+            push @table_assignments,
+              { table     => $table,
+                width     => $width,
+                frame     => $frame,
+                pagebreak => $pagebreak
+              };
+        }
 
-    if ( @tables > 2 ) {
-        @page_permutations = [ chunks( 2, @tables ) ];    # each chunk is a page
-        
-           # This is just one possible set, where each page has exactly two items
-           # This will probably be OK for three- or four-table timetables, but for
-           # larger ones, more combinations will be necessary
+        return @table_assignments;
+
+    } ## tidy end: for my $frame_assignment_r...
+
+} ## tidy end: sub assign
+
+sub _choose_frameset {
+ 
+    my $args_r = shift;
+    my $tables_on_this_page_r = $args_r->{tables};
+    my @framesets = @{$args_r->{framesets}};
+
+    foreach my $frameset (@framesets) {
+
+        my $tables_in_each_frame_r
+          = _assign_tables_on_this_page_to_frames( $frameset,
+            $tables_on_this_page_r );
+
+        return { tables => $tables_in_each_frame_r, frameset => $frameset }
+          if $tables_in_each_frame_r;
 
     }
 
-    # plus all tables on a single page, and each table on its own page
+    return;
 
-    unshift @page_permutations, [ map { [$_] } @tables ];
-    push @page_permutations, [ \@tables ];
+}
 
-    return @page_permutations;
+# if it got here, it successfully placed all tables
+# on all pages!
 
-} ## tidy end: sub _page_permutations
-
-sub _get_frame_assignment {
+sub _assign_tables_on_this_page_to_frames {
 
     my @frames = @{ +shift };
     my @tables = @{ +shift };
 
-    if ( @frames > @tables ) {return}
+    return if ( @frames > @tables );
     # If there are more frames than there are tables,
     # this cannot be the best fit
 
@@ -186,7 +287,7 @@ sub _get_frame_assignment {
     }
 
     if ( @frames == @tables ) {
-        for my $i ( 0 .. @frames ) {
+        for my $i ( 0 .. $#frames ) {
             return
               if $frames[$i]{height} < $tables[$i]->height
               or $frames[$i]{width} < $tables[$i]->width_in_halfcols;
@@ -203,6 +304,7 @@ sub _get_frame_assignment {
 
   TABLE_PERMUTATION:
     foreach my $table_permutation (@table_permutations) {
+
         foreach my $i ( 0 .. $#frames ) {
             my @tables = @{ $table_permutation->[$i] };
             my ( $height, $width ) = _get_stacked_measurement(@tables);
@@ -221,7 +323,7 @@ sub _get_frame_assignment {
     return;
     # finished all the permutations, but nothing fit everything
 
-} ## tidy end: sub _get_frame_assignment
+} ## tidy end: sub _assign_tables_on_this_page_to_frames
 
 sub _table_permutations {
 
@@ -246,7 +348,7 @@ sub _table_permutations {
     # at the back or the middle)
 
     my $num_frames = shift;
-    my @tables     = shift;
+    my @tables     = @_;
 
     my @indices = ( 0 .. $#tables - 1 );
     my @break_after_idx_sets = combinations( \@indices, $num_frames - 1 );
@@ -265,9 +367,9 @@ sub _table_permutations {
             push @permutation, [ @tables[ $first .. $last ] ];
         }
 
-        push @permutation, [ @tables[ $break_after_idx[-1] .. $#tables ] ];
+        push @permutation, [ @tables[ 1+$break_after_idx[-1] .. $#tables ] ];
 
-        push @table_permutations, \@permutation;
+        #push @table_permutations, \@permutation;
 
         my @sort_values = map { scalar @{$_} } @permutation;
         # count of tables in each frame
@@ -280,52 +382,95 @@ sub _table_permutations {
 
     } ## tidy end: foreach my $break_after_idx_set...
 
-    @table_permutations = sort _permutationsort @table_permutations;
+    @table_permutations = sort _table_permutationsort @table_permutations;
 
     return map { $_->[0] } @table_permutations;
 
 } ## tidy end: sub _table_permutations
 
-sub _permutationsort {
+sub _table_permutationsort {
 
-    my @a = @$a;
-    my @b = @$b;
+    my @a = @{$a->[1]};
+    my @b = @{$b->[1]};
 
     # first, return the comparison of the standard deviations of the
     # count of tables in each frame
 
-    my $result = $a[1] <=> $b[1];
+    my $result = $a[0] <=> $b[0];
     return $result if $result;
 
     # If those are the same, go through the remaining values,
     # which are the counts of the tables in each frame.
     # Return the one that's highest first -- so it will
     # prefer [2, 1] over [1, 2]
-    for my $i ( 2 .. $#a ) {
+    for my $i ( 1 .. $#a ) {
         my $result = $b[$i] <=> $a[$i];
         return $result if $result;
     }
 
     return 0;    # the same...
 
-} ## tidy end: sub _permutationsort
+} ## tidy end: sub _table_permutationsort
 
-sub _get_stacked_measurement {
+sub _possible_page_assignments {
+    # This creates the sets of tables that could possibly fit across pages
+
     my @tables = @_;
+    my @possible_page_assignments;
 
-    my @widths  = map { $_->width_in_halfcols } @tables;
-    my @heights = map { $_->height } @tables;
+    # for now I am just going to add these in groups of two,
+    # from the sortable order
+    # eventually this will need to be much more thorough
 
-    my $maxwidth = max(@widths);
-    my $sumheight = sum(@heights) + ( $EXTRA_TABLE_HEIGHT * $#heights );
+    # what I think I will have to do is this: create every possible
+    # permutation.  Then sort the page combinations depending on how many things
+    # they have in common.
+    # if everything on a page has lines in common, that page gets 4 points
+    # if everything has days in common, it gets 2 points
+    # if everything has directions in common, it gets 1 point
 
-    return ( $sumheight, $maxwidth );
+    # Then sort them in order, first by fewest pages, then by number of points.
+
+    if ( @tables > 2 ) {
+        @possible_page_assignments
+          = [ chunks( 2, @tables ) ];    # each chunk is a page
+
+        # This is just one possible set, where each page has exactly two items
+        # This will probably be OK for three- or four-table timetables, but for
+        # larger ones, more combinations will be necessary
+
+    }
+
+    # plus all tables on a single page, and each table on its own page
+
+    unshift @possible_page_assignments, [ \@tables ];
+    push @possible_page_assignments, [ map { [$_] } @tables ];
+
+    return @possible_page_assignments;
+
+} ## tidy end: sub _possible_page_assignments
+
+{
+
+    const my $EXTRA_TABLE_HEIGHT => 9;
+  # add 9 for each additional table in a stack -- 1 for blank line,
+  # 4 for timepoints and 4 for the color bar. This is inexact and can mess up...
+  # not sure how to fix it at this point, I'd need to measure the headers
+
+    sub _get_stacked_measurement {
+        my @tables = @_;
+
+        my @widths  = map { $_->width_in_halfcols } @tables;
+        my @heights = map { $_->height } @tables;
+
+        my $maxwidth = max(@widths);
+        my $sumheight = sum(@heights) + ( $EXTRA_TABLE_HEIGHT * $#heights );
+
+        return ( $sumheight, $maxwidth );
+
+    }
 
 }
-
-
-
-#
 
 {
     my @maximum_table_dimensions = (
@@ -336,14 +481,14 @@ sub _get_stacked_measurement {
     sub _every_table_fits_on_a_page {
         my @tables = @_;
 
-        foreach my $table ( 0 .. $#tables ) {
+        foreach my $table ( @tables ) {
             my ( $height, $width )
               = ( $table->height, $table->width_in_halfcols );
 
             my $fits_on_a_page;
             for my $maximum (@maximum_table_dimensions) {
-                if (    $maximum->{width} <= $width
-                    and $maximum->{height} <= $height )
+                if (    $maximum->{width} >= $width
+                    and $maximum->{height} >= $height )
                 {
                     $fits_on_a_page = 1;
                     last;
@@ -359,6 +504,11 @@ sub _get_stacked_measurement {
         return 1;
 
     } ## tidy end: sub _every_table_fits_on_a_page
+}
+
+sub _width_in_halfcols {
+    my @widths = flatten(@_);
+    return ( $widths[0] * 2 + $widths[1] );
 }
 
 1;
