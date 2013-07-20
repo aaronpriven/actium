@@ -63,7 +63,7 @@ sub create_timetable_texts {
 
     return \@alltables, \%tables_of;
 
-} ## tidy end: sub _create_timetable_texts
+} ## tidy end: sub create_timetable_texts
 
 sub output_all_tables {
 
@@ -86,9 +86,9 @@ sub output_all_tables {
 
     emit_done;
 
-} ## tidy end: sub _output_all_tables
+} ## tidy end: sub output_all_tables
 
-sub _get_pubtt_contents {
+sub get_pubtt_contents {
     my $xml_db  = shift;
     my $lines_r = shift;
 
@@ -197,7 +197,7 @@ sub output_pubtts {
 
     emit_done;
 
-} ## tidy end: sub _output_pubtts
+} ## tidy end: sub output_pubtts
 
 sub _minimums {
     my @tables = @{ +shift };
@@ -502,7 +502,8 @@ sub output_m_pubtts {
         _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r, [],
             $effectivedate );
 
-        my @table_assignments = _assign_tables_to_pages_and_frames($tables_r);
+        my @table_assignments
+          = Actium::IDTables::PageAssignments::assign( $tables_r);
 
         if ( not @table_assignments ) {
             emit_prog "*";
@@ -548,9 +549,7 @@ sub output_m_pubtts {
 
     emit_done;
 
-} ## tidy end: sub _output_m_pubtts
-
-
+} ## tidy end: sub output_m_pubtts
 
 1;
 
