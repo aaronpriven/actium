@@ -203,25 +203,20 @@ sub assign {
 
     my @table_assignments;
 
-    my $prev_frame;
+    my $pagebreak = not($has_shortpage);
 
     for my $frame_assignment_r (@frame_assignments) {
+     
+     for my $page (@{$frame_assignment_r}) {
      
      
      ###### @frame_assignments represents pages, there are multiple
      ###### frames within each $frame_assignment_r, so I
      ###### have to iterate over those as well!
      
-        my @tables = @{ $frame_assignment_r->{tables} };
+        my @tables = @{ $page->{tables} };
         my ( $height, $width ) = _get_stacked_measurement(@tables);
-        my $frame = $frame_assignment_r->{frameset}{frame};
-
-        my $pagebreak;
-        $pagebreak = 1
-          if $prev_frame < $frame
-          or ( not defined $prev_frame and not $has_shortpage );
-
-        $prev_frame = $frame;
+        my $frame = $page->{frameset}{frame};
 
         for my $table (@tables) {
             push @table_assignments,
@@ -231,10 +226,17 @@ sub assign {
                 pagebreak => $pagebreak
               };
         }
+        
+        $pagebreak = 0;
+        
+     }
+     
+     $pagebreak = 1;
 
-        return @table_assignments;
 
     } ## tidy end: for my $frame_assignment_r...
+    
+        return @table_assignments;
 
 } ## tidy end: sub assign
 
@@ -382,13 +384,13 @@ sub _table_permutations {
 
     } ## tidy end: foreach my $break_after_idx_set...
 
-    @table_permutations = sort _table_permutationsort @table_permutations;
+    @table_permutations = sort _table_permutation_sort @table_permutations;
 
     return map { $_->[0] } @table_permutations;
 
 } ## tidy end: sub _table_permutations
 
-sub _table_permutationsort {
+sub _table_permutation_sort {
 
     my @a = @{$a->[1]};
     my @b = @{$b->[1]};
