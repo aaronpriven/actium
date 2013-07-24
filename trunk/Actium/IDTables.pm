@@ -494,6 +494,14 @@ sub output_m_pubtts {
         my $file = join( "_", @{$lines_r} );
 
         emit_prog " $file";
+        
+          my @table_assignments
+          = Actium::IDTables::PageAssignments::assign( $tables_r);
+
+        if ( not @table_assignments ) {
+            emit_prog "*";
+            next;
+        }
 
         open my $ttfh, '>', $pubtt_folder->make_filespec("$file.txt");
 
@@ -502,13 +510,7 @@ sub output_m_pubtts {
         _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r, [],
             $effectivedate );
 
-        my @table_assignments
-          = Actium::IDTables::PageAssignments::assign( $tables_r);
-
-        if ( not @table_assignments ) {
-            emit_prog "*";
-            next;
-        }
+      
 
         my $firsttable    = 1;
         my $current_frame = 0;
