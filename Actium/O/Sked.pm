@@ -42,6 +42,8 @@ use Actium::Term;
 
 use Const::Fast;
 
+use overload '""' => \&id;
+
 with 'Actium::O::Sked::Prehistoric';
 # allows prehistoric skeds files to be read and written.
 
