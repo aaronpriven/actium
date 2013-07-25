@@ -19,7 +19,7 @@ with Storage( traits => ['OnlyWhenBuilt'] );
 use namespace::autoclean;
 
 use Actium::Types qw<DirCode>;
-use Actium::Util qw<positional_around>;
+use Actium::Util qw<positional_around in>;
 use Actium::Constants;
 
 use Carp;
@@ -83,6 +83,14 @@ sub as_to_text {
    
    return "To";
 
+}
+
+sub should_preserve_direction_order {
+    my $self = shift;
+    my $dircode = $self->dircode;
+ 
+   return not in($self->dircode, qw/NB SB EB WB/) ;
+   
 }
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)

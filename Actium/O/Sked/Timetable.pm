@@ -28,8 +28,6 @@ const my $idt => 'Actium::Text::InDesignTags';
 
 use HTML::Entities;
 
-use overload '""' => \&id;
-
 my $timesub = Actium::Time::timestr_sub();
 # Uses default values. Someday it would be nice to make that configurable
 
@@ -48,6 +46,7 @@ has sked_obj => (
         earliest_timenum => 'earliest_timenum',
         days_obj         => 'days_obj',
         dircode          => 'dircode',
+        should_preserve_direction_order  => 'should_preserve_direction_order',
         linedir          => 'linedir',
         linedays         => 'linedays',
         daycode         => 'daycode',

@@ -42,8 +42,6 @@ use Actium::Term;
 
 use Const::Fast;
 
-use overload '""' => \&id;
-
 with 'Actium::O::Sked::Prehistoric';
 # allows prehistoric skeds files to be read and written.
 
@@ -346,9 +344,10 @@ has 'dir_obj' => (
     is       => 'ro',
     isa      => ActiumDir,
     handles  => {
-        'direction' => 'dircode',
-        'dircode'   => 'dircode',
-        'to_text'   => 'as_to_text'
+        direction => 'dircode',
+        dircode   => 'dircode',
+        to_text   => 'as_to_text',
+        should_preserve_direction_order  => 'should_preserve_direction_order',
     },
 );
 
