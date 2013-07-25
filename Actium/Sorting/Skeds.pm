@@ -18,6 +18,8 @@ use Params::Validate;
 use Actium::Sorting::Line (qw(byline linekeys));
 use Actium::Constants;
 
+use List::Util(qw/min/);
+
 my $required_methods = [qw( daycode earliest_timenum dircode linegroup )];
 
 # can take Actium::Sked objects, or Actium::Sked::Timetable objects
@@ -49,19 +51,29 @@ sub skedsort {
     }
 
     foreach my $linegroupkey ( keys %idxs_of_lg ) {
-        my @idxs = @{ $idxs_of_lg{$linegroupkey} };
-
-        if ( $objs_with_values[ $idxs[0] ]{obj}
-            ->should_preserve_direction_order )
+        my @idxs                   = @{ $idxs_of_lg{$linegroupkey} };
+        my @these_objs_with_values = @objs_with_values[@idxs];
+        if ( $these_objs_with_values[0]{obj}->should_preserve_direction_order )
         {
             next;
         }
-        
-        # add stuff here
-        
-        
+        # so don't reorder Clockwise/Counterclockwise, A/B, Up/Down, etc.
 
-    }
+        my %earliest_timenum_of_dir;
+        foreach my $ov (@these_objs_with_values) {
+            my $dircode          = $ov->{dircode};
+            my $earliest_timenum = $ov->{timenum};
+            if ( exists $earliest_timenum_of_dir{dir} ) {
+                $earliest_timenum_of_dir{dircode}
+                  = min( $earliest_timenum_of_dir{dircode}, $earliest_timenum );
+            }
+            else {
+                $earliest_timenum_of_dir{dircode} = $earliest_timenum;
+            }
+
+        }
+
+    } ## tidy end: foreach my $linegroupkey ( ...)
 
     return map { $_->{obj} } @objs_with_values;
 
