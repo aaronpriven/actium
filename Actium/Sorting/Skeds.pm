@@ -31,17 +31,25 @@ sub skedsort {
 
     my @objs_with_values;
     foreach my $obj (@_) {
+     
         push @objs_with_values,
           { obj          => $obj,
             dircode      => $obj->dircode,
             daycode      => $obj->daycode,
-            timenum      => $obj->earliest_timenum,
+            timenum      => $obj->should_preserve_direction_order ? 0 : $obj->earliest_timenum,
             linegroupkey => linekeys( $obj->linegroup ),
           };
 
     }
 
     @objs_with_values = sort _dircode_ordering (@objs_with_values);
+    
+    # So now tables are in order first by linegroup,
+    # then by days, then by direction code.
+    
+    # However, for north, south, east, and west, we don't care about those
+    # direction orders. Instead, we want to use the earliest time to sort
+    # between the directions. 
 
     my %idxs_of_lg;
 
@@ -51,7 +59,7 @@ sub skedsort {
     }
 
     foreach my $linegroupkey ( keys %idxs_of_lg ) {
-        my @idxs                   = @{ $idxs_of_lg{$linegroupkey} };
+        my @idxs  = @{ $idxs_of_lg{$linegroupkey} };
         my @these_objs_with_values = @objs_with_values[@idxs];
         if ( $these_objs_with_values[0]{obj}->should_preserve_direction_order )
         {
