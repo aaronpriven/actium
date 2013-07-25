@@ -344,10 +344,10 @@ has 'dir_obj' => (
     is       => 'ro',
     isa      => ActiumDir,
     handles  => {
-        direction => 'dircode',
-        dircode   => 'dircode',
-        to_text   => 'as_to_text',
-        should_preserve_direction_order  => 'should_preserve_direction_order',
+        direction                       => 'dircode',
+        dircode                         => 'dircode',
+        to_text                         => 'as_to_text',
+        should_preserve_direction_order => 'should_preserve_direction_order',
     },
 );
 
@@ -555,8 +555,14 @@ sub _build_sortable_id {
     my $dir = $self->dir_obj->as_sortable;
 
     my $earliest_timenum = $self->earliest_timenum;
-    $earliest_timenum = 0 if $earliest_timenum < 0;
-    $earliest_timenum = linekeys( $self->earliest_timenum );
+    $earliest_timenum = 0
+      if $earliest_timenum < 0
+      or $self->should_preserve_direction_order;
+      # if earliest timenum is before midnight, just call it midnight
+      # or, if this is a direction where we want to keep the direction order,
+      # (e.g., always use A before B, clockwise before counterclockwise,
+      # up before down), treat that as midnight too.
+    $earliest_timenum = linekeys($earliest_timenum);
 
     return join( "\t", $linegroup, $self->daycode, $earliest_timenum, $dir );
 }
@@ -953,7 +959,7 @@ sub stop_objects {
             my $previous_idx = $stop_idx - 1;
             my $stopplace    = $stopplaces[$stop_idx];
 
-            #### Check -- same stop as last time? 
+            #### Check -- same stop as last time?
             #### If so, and last entry has values, copy them over.
 
             if (    $stop_idx
@@ -986,7 +992,7 @@ sub stop_objects {
                     $newtimes[$stop_idx] = $time;
                     next;
                 }
-                
+
                 # otherwise, just null out the previous entry as though
                 # it was never there.
 
@@ -995,11 +1001,11 @@ sub stop_objects {
                 undef $newtimes[$previous_idx];
 
             } ## tidy end: if ( $stop_idx and $newtimes...)
-            
-            ### 
+
+            ###
 
             next unless defined($time);
-            
+
             $newtimes[$stop_idx] = $time;
 
             if ( isblank($stopplace) ) {
