@@ -10,7 +10,7 @@ use warnings;
 
 package Actium::Sorting::Line 0.001;
 
-use Storable;
+#use Storable;
 use Actium::Options (qw(add_option option));
 
 use Actium::Constants;
