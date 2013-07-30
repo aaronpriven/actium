@@ -50,6 +50,7 @@ has sked_obj => (
         linedir          => 'linedir',
         linedays         => 'linedays',
         daycode         => 'daycode',
+        sortable_id_with_timenum => 'sortable_id_with_timenum',
       }
 
 );

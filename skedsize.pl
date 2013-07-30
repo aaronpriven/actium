@@ -35,10 +35,14 @@ use List::Util;
 ######################################################################
 
 
-use Actium::Options (qw<option add_option>);
+use Actium::Options (qw<option add_option init_options>);
 #add_option ('spec' , 'description');
+
 use Actium::Term (qw<printq sayq>);
 use Actium::O::Folders::Signup;
+
+init_options;
+
 my $signupdir = Actium::O::Folders::Signup->new();
 chdir $signupdir->path();
 my $signup = $signupdir->signup;
