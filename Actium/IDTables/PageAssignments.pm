@@ -255,6 +255,12 @@ sub _assign_page {
     my $tables_on_this_page_r = $args_r->{tables};
     my @framesets             = @{ $args_r->{framesets} };
 
+    if (    @$tables_on_this_page_r == 1
+        and $args_r->{tables}->[0]->id eq '26_EB_12345' )
+    {
+        emit_over " [26] ";
+    }
+
     foreach my $frameset (@framesets) {
 
         my $tables_in_each_frame_r
@@ -471,7 +477,7 @@ sub _partition_tables_into_pages_old {
 
     return @page_partitions;
 
-} ## tidy end: sub _partition_tables_into_pages
+} ## tidy end: sub _partition_tables_into_pages_old
 
 sub _partition_tables_into_pages {
     # This creates the sets of tables that could possibly fit across pages
@@ -519,8 +525,8 @@ sub _partition_tables_into_pages {
 
             if ($all_eq_lines) {
                 $pagepoints += 8;
-                
-                # should this be 12, since if all lines are equal, 
+
+                # should this be 12, since if all lines are equal,
                 # one line must be in common?
                 # whatever, distinction without difference
             }
@@ -529,7 +535,7 @@ sub _partition_tables_into_pages {
             }
             $pagepoints += 2 if all_eq(@daycodes);
             $pagepoints += 1 if all_eq(@dircodes);
-            
+
             $partitions_with_values{points} += $pagepoints;
 
         } ## tidy end: PAGE: foreach my $page ( @{$partition...})
@@ -547,15 +553,15 @@ sub _partition_tables_into_pages {
 
     return @page_partitions;
 
-} ## tidy end: sub _partition_tables_into_pages_new
+} ## tidy end: sub _partition_tables_into_pages
 
 sub _page_partition_sort {
-    
-    return $a->{num_pages} <=> $b->{num_pages} ||
-           $a->{deviation} <=> $b->{deviation} ||
-           $b->{points} <=> $a->{points};
- 
- 
+
+    return
+         $a->{num_pages} <=> $b->{num_pages}
+      || $a->{deviation} <=> $b->{deviation}
+      || $b->{points} <=> $a->{points};
+
 }
 
 sub _one_line_in_common {
@@ -575,7 +581,7 @@ sub _one_line_in_common {
         foreach my $list_r (@lol) {
             next ELEMENT unless in( $element, $list_r );
         }
-        return 1; # matches all elements
+        return 1;    # matches all elements
     }
 
     return;
