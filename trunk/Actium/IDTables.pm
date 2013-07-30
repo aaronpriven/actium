@@ -16,6 +16,7 @@ use autodie;
 use Text::Trim;
 use Actium::EffectiveDate ('effectivedate');
 use Actium::Sorting::Line ( 'sortbyline', 'byline' );
+use Actium::Sorting::Skeds('skedsort');
 use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
@@ -239,7 +240,10 @@ sub _tables_and_lines {
         push @tables, @{ $tables_of{$linegroup} };
     }
 
-    @tables = sort { $a->sortable_id cmp $b->sortable_id } @tables;
+    #@tables = sort { $a->sortable_id cmp $b->sortable_id } @tables;
+    @tables = skedsort @tables;
+    # skedsort makes sure that all timetables with same line & direction
+    # are sorted the same way
 
     my %is_a_line;
     foreach my $table (@tables) {
