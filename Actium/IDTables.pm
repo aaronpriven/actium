@@ -79,7 +79,11 @@ sub output_all_tables {
 
     print $allfh $IDT->start;
     foreach my $table ( @{$alltables_r} ) {
-        print $allfh $table->as_indesign( 4, 0 ), $IDT->boxbreak;
+        print $allfh $table->as_indesign(
+            minimum_columns  => 4,
+            minimum_halfcols => 0
+          ),
+          $IDT->boxbreak;
     }
     # minimum 4 columns, no half columns
 
@@ -117,7 +121,7 @@ sub get_pubtt_contents {
 
     return [ sort { byline( $a->[0], $b->[0] ) } @pubtt_contents ];
 
-} ## tidy end: sub _get_pubtt_contents
+} ## tidy end: sub get_pubtt_contents
 
 sub output_pubtts {
 
@@ -175,7 +179,10 @@ sub output_pubtts {
             }
 
             push @tabletexts,
-              $table->as_indesign( $min_columns, $min_half_columns );
+              $table->as_indesign(
+                minimum_columns  => $min_columns,
+                minimum_halfcols => $min_half_columns
+              );
         } ## tidy end: foreach my $table ( @{$tables_r...})
 
         #print $ttfh join( ( $IDT->hardreturn x 2 ), @tabletexts );
@@ -498,9 +505,9 @@ sub output_m_pubtts {
         my $file = join( "_", @{$lines_r} );
 
         emit_prog " $file";
-        
-          my @table_assignments
-          = Actium::IDTables::PageAssignments::assign( $tables_r);
+
+        my @table_assignments
+          = Actium::IDTables::PageAssignments::assign($tables_r);
 
         if ( not @table_assignments ) {
             emit_prog "*";
@@ -514,8 +521,6 @@ sub output_m_pubtts {
         _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r, [],
             $effectivedate );
 
-      
-
         my $firsttable    = 1;
         my $current_frame = 0;
 
@@ -525,6 +530,7 @@ sub output_m_pubtts {
             my $width     = $table_assignment->{width};
             my $frame     = $table_assignment->{frame};
             my $pagebreak = $table_assignment->{pagebreak};
+            my $narrow    = $table_assignment->{narrow};
 
             if ( $frame == $current_frame and not $pagebreak ) {
                 # if it's in the same frame
@@ -542,7 +548,13 @@ sub output_m_pubtts {
                 print $ttfh ( $IDT->boxbreak x $framebreaks );
                 $current_frame += $framebreaks;
             }
-            print $ttfh $table->as_indesign( @{$width} );
+
+            print $ttfh $table->as_indesign(
+                minimum_columns  => $width->[0],
+                minimum_halfcols => $width->[1],
+                narrow           => $narrow,
+            );
+
             $firsttable = 0;
 
         } ## tidy end: foreach my $table_assignment...
