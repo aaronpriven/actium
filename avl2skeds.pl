@@ -34,7 +34,7 @@ use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Time ('timenum');
 
-use Actium::DaysDirections (':ALL');
+use Actium::DaysDirections (':all');
 
 init_options;
 

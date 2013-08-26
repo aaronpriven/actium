@@ -21,7 +21,7 @@ use Actium::Sorting::Line ('byline');
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils('uniq');
-use Actium::DaysDirections (':ALL');
+use Actium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');
 
 # don't buffer terminal output
