@@ -30,7 +30,7 @@ use Actium::Util ('jt');
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Sorting::Line (qw(sortbyline));
-use Actium::DaysDirections (':ALL');
+use Actium::DaysDirections (':all');
 
 use Actium::Options;
 use Actium::O::Folders::Signup;
