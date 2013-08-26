@@ -35,7 +35,7 @@ use Actium::Union('ordered_union');
 use List::Util ('max');
 use List::MoreUtils ('any');
 
-use Actium::DaysDirections (':ALL');
+use Actium::DaysDirections (':all');
 
 # don't buffer terminal output
 $| = 1;
