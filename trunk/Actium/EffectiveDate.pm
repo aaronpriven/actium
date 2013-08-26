@@ -9,9 +9,9 @@ use warnings;
 
 package Actium::EffectiveDate 0.001;
 
-use Perl6::Export::Attrs;
+use Sub::Exporter -setup => { exports => [qw(effectivedate)] };
 
-sub effectivedate :Export {
+sub effectivedate {
 
     my $signup = shift;
     my $filespec = $signup->make_filespec('effectivedate.txt');
