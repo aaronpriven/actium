@@ -80,6 +80,14 @@ my @page_framesets = (
 
 );
 
+my @narrow_framesets = (
+    [   'Landscape full',
+        { widthpair => [ 18, 0 ], height => 40, frame_idx => 0 },
+    ],
+);
+# deliberately reduced height by two, in order to allow for two more lines
+# of timepoint names.  This is a guess
+
 for my $frameset_r ( @shortpage_framesets, @page_framesets ) {
     shift @{$frameset_r};    # remove the description
     for my $frame_r ( @{$frameset_r} ) {
