@@ -14,7 +14,7 @@ package Actium::DaysDirections 0.001;
 use Const::Fast;
 use Actium::Constants;
 
-use Perl6::Export::Attrs;
+use Sub::Exporter -setup => { exports => [qw<day_of_hasi dir_of_hasi>] };
 
 # New day codes have a character for each set of days that are used.
 
@@ -52,13 +52,13 @@ const my %DIR_OF_HASI => (
 );
 
 
-sub day_of_hasi : Export {
+sub day_of_hasi {
     my $days = shift;
     $days =~ s/[^\d]//g;
     return exists $DAY_OF_HASI{ $days } ? $DAY_OF_HASI{$days} : $EMPTY_STR;
 }
 
-sub dir_of_hasi : Export {
+sub dir_of_hasi  {
     my $dir = shift;
     return exists $DIR_OF_HASI{ $dir } ? $DIR_OF_HASI{$dir} : $EMPTY_STR;
 }

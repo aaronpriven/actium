@@ -15,7 +15,7 @@ $VERSION = eval $VERSION;    ## no critic (StringyEval)
 use Actium::Sorting::Line (qw/sortbyline byline/);
 use Actium::Util qw(sk jn j jk jt keyreadable);
 use Actium::Union (qw/ordered_union distinguish/);
-use Actium::DaysDirections(':ALL');
+use Actium::DaysDirections(':all');
 use Actium::O::Files::HastusASI;
 use Actium::Constants;
 use Actium::Term (':all');
