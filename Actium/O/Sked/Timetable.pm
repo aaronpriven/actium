@@ -15,6 +15,7 @@ package Actium::O::Sked::Timetable 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use Params::Validate (':all');
 use namespace::autoclean;
 
 use Actium::Time;
@@ -36,21 +37,21 @@ has sked_obj => (
     is       => 'ro',
     required => 1,
     handles  => {
-        linegroup        => 'linegroup',
-        has_note_col     => 'has_multiple_daysexceptions',
-        has_route_col    => 'has_multiple_lines',
-        header_routes    => 'lines',
-        lines => 'lines' ,
-        sortable_id      => 'sortable_id',
-        id               => 'id',
-        earliest_timenum => 'earliest_timenum',
-        days_obj         => 'days_obj',
-        dircode          => 'dircode',
-        should_preserve_direction_order  => 'should_preserve_direction_order',
-        linedir          => 'linedir',
-        linedays         => 'linedays',
-        daycode         => 'daycode',
-        sortable_id_with_timenum => 'sortable_id_with_timenum',
+        linegroup                       => 'linegroup',
+        has_note_col                    => 'has_multiple_daysexceptions',
+        has_route_col                   => 'has_multiple_lines',
+        header_routes                   => 'lines',
+        lines                           => 'lines',
+        sortable_id                     => 'sortable_id',
+        id                              => 'id',
+        earliest_timenum                => 'earliest_timenum',
+        days_obj                        => 'days_obj',
+        dircode                         => 'dircode',
+        should_preserve_direction_order => 'should_preserve_direction_order',
+        linedir                         => 'linedir',
+        linedays                        => 'linedays',
+        daycode                         => 'daycode',
+        sortable_id_with_timenum        => 'sortable_id_with_timenum',
       }
 
 );
@@ -118,10 +119,10 @@ has body_rowtext_rs => (
 );
 
 has height => (
-   is => 'ro',
-   isa => 'Int',
-   lazy => 1,
-   builder => '_build_height',
+    is      => 'ro',
+    isa     => 'Int',
+    lazy    => 1,
+    builder => '_build_height',
 );
 
 sub _build_height {
@@ -131,18 +132,16 @@ sub _build_height {
 }
 
 has width_in_halfcols => (
-   is => 'ro',
-   isa => 'Int',
-   lazy => 1,
-   builder => '_build_width_in_halfcols'
+    is      => 'ro',
+    isa     => 'Int',
+    lazy    => 1,
+    builder => '_build_width_in_halfcols'
 );
 
 sub _build_width_in_halfcols {
     my $self = shift;
-    return (2 * $self->columns + $self->half_columns );
+    return ( 2 * $self->columns + $self->half_columns );
 }
-
-   
 
 #has [qw<sortable_id earliest_timenum days_obj>] => (
 #   is => 'ro',
@@ -270,8 +269,21 @@ sub as_indesign {
 
     my $self = shift;
 
-    my $minimum_columns  = shift || 0;
-    my $minimum_halfcols = shift || 0;
+    my %params = validate(
+        @_,
+        {   minimum_columns  => 1,
+            minimum_halfcols => 1,
+            narrow           => { type => BOOLEAN, default => 0 },
+        }
+    );
+
+    my $minimum_columns  = $params{minimum_columns};
+    my $minimum_halfcols = $params{minimum_halfcols};
+    my $narrow           = $params{narrow};
+
+    my $halfcol_points = $narrow ? 20           : 24;
+    my $col_points     = $narrow ? 40           : 48;
+    my $timestyle      = $narrow ? 'NarrowTime' : 'Time';
 
     my $columns  = $self->columns;
     my $halfcols = $self->half_columns;
@@ -297,10 +309,12 @@ sub as_indesign {
     print $th '<TableStart:';
     print $th join( ',', $rowcount, $colcount, 2, 0 );
     print $th '<tCellDefaultCellType:Text>>';
-    print $th '<ColStart:<tColAttrWidth:24>>' for ( 1 .. $halfcols );
-    print $th '<ColStart:<tColAttrWidth:48>>'
+    print $th "<ColStart:<tColAttrWidth:$halfcol_points>>"
+      for ( 1 .. $halfcols );
+    print $th "<ColStart:<tColAttrWidth:$col_points>>"
       for ( 1 .. $columns + $trailing_columns );
-    print $th '<ColStart:<tColAttrWidth:24>>' for ( 1 .. $trailing_halves );
+    print $th '<ColStart:<tColAttrWidth:$halfcol_points>>'
+      for ( 1 .. $trailing_halves );
 
     ##############
     # Header Row (line, days, dest)
@@ -389,11 +403,15 @@ sub as_indesign {
 
         for my $time (@body_row) {
 
-            my $parastyle = 'Time';
+            my $parastyle;
             if ( !$time ) {
                 $time      = $idt->emdash;
                 $parastyle = 'LineNote';
             }
+            else {
+                $parastyle = $timestyle;
+            }
+
             print $th
 "<CellStyle:Time><StylePriority:20><CellStart:1,1><ParaStyle:$parastyle>";
             if ( $time =~ /p\z/ ) {
@@ -403,7 +421,7 @@ sub as_indesign {
                 print $th $time;
             }
             print $th '<CellEnd:>';
-        }
+        } ## tidy end: for my $time (@body_row)
 
         for ( 1 .. $trailing ) {
             print $th
@@ -617,16 +635,16 @@ sub as_public_json {
         header_daytext     => $self->header_daytext,
         header_dirtext     => $self->header_dirtext,
         header_columntexts => \@columntexts,
-        linegroup => $self->linegroup,
+        linegroup          => $self->linegroup,
         lines              => \@lines,
         notes              => \@notes,
         times              => \@times,
     );
-    
+
     require JSON;
-    
-    my $json_text = JSON::encode_json (\%json_data);
-    
+
+    my $json_text = JSON::encode_json( \%json_data );
+
     return $json_text;
 
 } ## tidy end: sub as_public_json
