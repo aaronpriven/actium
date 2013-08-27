@@ -526,11 +526,11 @@ sub output_m_pubtts {
 
         foreach my $table_assignment (@table_assignments) {
 
-            my $table     = $table_assignment->{table};
-            my $width     = $table_assignment->{width};
-            my $frame     = $table_assignment->{frame};
-            my $pagebreak = $table_assignment->{pagebreak};
-            my $narrow    = $table_assignment->{narrow};
+            my $table      = $table_assignment->{table};
+            my $width      = $table_assignment->{width};
+            my $frame      = $table_assignment->{frame};
+            my $pagebreak  = $table_assignment->{pagebreak};
+            my $compressed = $table_assignment->{compressed};
 
             if ( $frame == $current_frame and not $pagebreak ) {
                 # if it's in the same frame
@@ -552,7 +552,7 @@ sub output_m_pubtts {
             print $ttfh $table->as_indesign(
                 minimum_columns  => $width->[0],
                 minimum_halfcols => $width->[1],
-                narrow           => $narrow,
+                compressed       => $compressed,
             );
 
             $firsttable = 0;
