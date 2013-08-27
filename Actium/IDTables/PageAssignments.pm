@@ -23,8 +23,8 @@ use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::Util(qw/doe in chunks flatten population_stdev jk all_eq/);
 use Const::Fast;
-use List::Util               (qw/max sum/);
-use Algorithm::Combinatorics (qw/combinations partitions/);
+use List::Util (qw/max sum/);
+use Algorithm::Combinatorics;
 
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
@@ -62,14 +62,15 @@ my @page_framesets = (
         { widthpair => [ 5, 0 ], height => 42, frame_idx => 2 },
         { widthpair => [ 4, 1 ], height => 42, frame_idx => 3 },
     ],
-    [   'Landscape 1/3 - 2/3',
-        { widthpair => [ 4,  1 ], height => 42, frame_idx => 0 },
-        { widthpair => [ 10, 0 ], height => 42, frame_idx => 2 },
-    ],
     [   'Landscape 2/3 - 1/3',
         { widthpair => [ 10, 0 ], height => 42, frame_idx => 0 },
         { widthpair => [ 4,  1 ], height => 42, frame_idx => 3 },
     ],
+    [   'Landscape 1/3 - 2/3',
+        { widthpair => [ 4,  1 ], height => 42, frame_idx => 0 },
+        { widthpair => [ 10, 0 ], height => 42, frame_idx => 2 },
+    ],
+
     [   'Portrait full',
         { widthpair => [ 11, 0 ], height => 59, frame_idx => 4 },
     ],
@@ -80,7 +81,7 @@ my @page_framesets = (
 
 );
 
-my @narrow_framesets = (
+my @compressed_framesets = (
     [   'Landscape full',
         { widthpair => [ 18, 0 ], height => 40, frame_idx => 0 },
     ],
@@ -99,11 +100,20 @@ sub assign {
 
     my (@tables) = @{ +shift };    # copy
 
-    return unless _every_table_fits_on_a_page(@tables);
-    # If any timetable is so big that it won't fit on any page,
-    # we return, skipping it for now.
-    # TODO - figure out how to deal with big timetables.
+    #return unless _every_table_fits_on_a_page(@tables);
 
+    my @oversize = _is_each_table_oversize(@tables);
+    return unless @oversize;
+
+    # If any timetable is so big that it won't fit on any page,
+    # we return, having warned about it.
+    
+    ##### 
+    
+    # HERE IS WHERE TO DIVIDE TABLES INTO SUBTABLES
+    
+    #####
+    
     # So the set of tables first needs to be divided up into pages,
     # and then needs to be divided up into frames within those pages.
     # Page(s) contains Frame(s) contains Table(s)
@@ -124,7 +134,7 @@ sub assign {
  #   [ [ Table 1, Table 2] , [ Table 3, Table 4 ] ],      # Two pages
  #   [ [ Table 1 ] , [Table 2] , [Table 3 ], [ Table 4] ] # Each on its own page
 
-    my @page_partitions = _partition_tables_into_pages(@tables);
+    my @page_partitions = _partition_tables_into_pages( @tables );
 
     # So now we know every possible way the tables can be divided into pages.
 
@@ -263,12 +273,6 @@ sub _assign_page {
     my $tables_on_this_page_r = $args_r->{tables};
     my @framesets             = @{ $args_r->{framesets} };
 
-    if (    @$tables_on_this_page_r == 1
-        and $args_r->{tables}->[0]->id eq '26_EB_12345' )
-    {
-        emit_over " [26] ";
-    }
-
     foreach my $frameset (@framesets) {
 
         my $tables_in_each_frame_r
@@ -389,7 +393,8 @@ sub _table_permutations {
     my @tables     = @_;
 
     my @indices = ( 0 .. $#tables - 1 );
-    my @break_after_idx_sets = combinations( \@indices, $num_frames - 1 );
+    my @break_after_idx_sets
+      = Algorithm::Combinatorics::combinations( \@indices, $num_frames - 1 );
 
     my @table_permutations;
 
@@ -450,55 +455,20 @@ sub _table_permutation_sort {
 
 } ## tidy end: sub _table_permutation_sort
 
-sub _partition_tables_into_pages_old {
-    # This creates the sets of tables that could possibly fit across pages
-
-    my @tables = @_;
-    my @page_partitions;
-
-    # for now I am just going to add these in groups of two,
-    # from the sortable order
-    # eventually this will need to be much more thorough
-
-    # what I think I will have to do is this: create every possible
-    # permutation.  Then sort the page combinations depending on how many things
-    # they have in common.
-    # if everything on a page has lines in common, that page gets 4 points
-    # if everything has days in common, it gets 2 points
-    # if everything has directions in common, it gets 1 point
-
-    # Then sort them in order, first by fewest pages, then by number of points.
-
-    if ( @tables > 2 ) {
-        @page_partitions = [ chunks( 2, @tables ) ];    # each chunk is a page
-
-        # This is just one possible set, where each page has exactly two items
-        # This will probably be OK for three- or four-table timetables, but for
-        # larger ones, more combinations will be necessary
-
-    }
-
-    # plus all tables on a single page, and each table on its own page
-
-    unshift @page_partitions, [ \@tables ];
-    push @page_partitions, [ map { [$_] } @tables ];
-
-    return @page_partitions;
-
-} ## tidy end: sub _partition_tables_into_pages_old
-
 sub _partition_tables_into_pages {
     # This creates the sets of tables that could possibly fit across pages
 
     my @all_tables = @_;
+
     my @page_partitions;
 
-    foreach my $partition ( partitions( \@all_tables ) ) {
+    foreach my $partition
+      ( Algorithmics::Combinatorics::partitions( \@all_tables ) ) {
 
         my %partitions_with_values = (
-            partition => $partition,
-            num_pages => ( scalar @{$partition} ),
-            points    => 0,
+            partition        => $partition,
+            num_pages        => ( scalar @{$partition} ),
+            pointsforsorting => 0,
         );
 
         my @tablecounts;
@@ -510,7 +480,7 @@ sub _partition_tables_into_pages {
             push @tablecounts, $numtables;
 
             if ( $numtables == 1 ) {
-                $partitions_with_values{points} = 15;
+                $partitions_with_values{pointsforsorting} = 15;
                 # one table: maximum value
                 next PAGE;
             }
@@ -544,7 +514,7 @@ sub _partition_tables_into_pages {
             $pagepoints += 2 if all_eq(@daycodes);
             $pagepoints += 1 if all_eq(@dircodes);
 
-            $partitions_with_values{points} += $pagepoints;
+            $partitions_with_values{pointsforsorting} += $pagepoints;
 
         } ## tidy end: PAGE: foreach my $page ( @{$partition...})
 
@@ -552,7 +522,7 @@ sub _partition_tables_into_pages {
 
         push @page_partitions, \%partitions_with_values;
 
-    } ## tidy end: foreach my $partition ( partitions...)
+    } ## tidy end: foreach my $partition  ( ...)
 
     @page_partitions = sort _page_partition_sort @page_partitions;
 
@@ -568,7 +538,7 @@ sub _page_partition_sort {
     return
          $a->{num_pages} <=> $b->{num_pages}
       || $a->{deviation} <=> $b->{deviation}
-      || $b->{points} <=> $a->{points};
+      || $b->{pointsforsorting} <=> $a->{pointsforsorting};
 
 }
 
@@ -619,6 +589,53 @@ sub _one_line_in_common {
 }
 
 {
+    my %maximum_table_dimensions = (
+        widest     => { width => _width_in_halfcols( 15, 0 ), height => 42 },
+        tallest    => { width => _width_in_halfcols( 11, 0 ), height => 59 },
+        compressed => { width => _width_in_halfcols( 18, 0 ), height => 40 },
+    );
+
+    my $widest_width = $maximum_table_dimensions{widest}{width};
+
+    sub _is_each_table_oversize {
+        my @tables = @_;
+        my @oversize;
+
+      TABLE:
+        foreach my $table (@tables) {
+            my ( $height, $width )
+              = ( $table->height, $table->width_in_halfcols );
+
+            if ( $maximum_table_dimensions{compressed}{width} < $width ) {
+
+                emit_text $table->id
+                  . " does not fit on a single page: $width x $height";
+                return;    # no value - indicates no valid page assignments
+            }
+
+            for my $dimensiontype ( keys %maximum_table_dimensions ) {
+
+                my $maximum = $maximum_table_dimensions{$dimensiontype};
+                if (    $maximum->{width} >= $width
+                    and $maximum->{height} >= $height )
+                {
+                    # fits!
+                    push @oversize,
+                      $dimensiontype eq 'compressed' ? 'wide' : $EMPTY_STR;
+                    next TABLE;
+                }
+            }
+
+            # so we know it must be tall
+
+            push @oversize, $width <= $widest_width ? 'tall' : 'both';
+
+        } ## tidy end: TABLE: foreach my $table (@tables)
+
+        return @oversize;
+
+    } ## tidy end: sub _is_each_table_oversize
+
     my @maximum_table_dimensions = (
         { width => _width_in_halfcols( 15, 0 ), height => 42 },
         { width => _width_in_halfcols( 11, 0 ), height => 59 }
