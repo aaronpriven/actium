@@ -273,17 +273,17 @@ sub as_indesign {
         @_,
         {   minimum_columns  => 1,
             minimum_halfcols => 1,
-            narrow           => { type => BOOLEAN, default => 0 },
+            compressed       => { type => BOOLEAN, default => 0 },
         }
     );
 
     my $minimum_columns  = $params{minimum_columns};
     my $minimum_halfcols = $params{minimum_halfcols};
-    my $narrow           = $params{narrow};
+    my $compressed       = $params{compressed};
 
-    my $halfcol_points = $narrow ? 20           : 24;
-    my $col_points     = $narrow ? 40           : 48;
-    my $timestyle      = $narrow ? 'NarrowTime' : 'Time';
+    my $halfcol_points = $compressed ? 20               : 24;
+    my $col_points     = $compressed ? 40               : 48;
+    my $timestyle      = $compressed ? 'CompressedTime' : 'Time';
 
     my $columns  = $self->columns;
     my $halfcols = $self->half_columns;
