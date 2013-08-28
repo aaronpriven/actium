@@ -65,26 +65,6 @@ has [qw <half_columns columns>] => (
     required => 1,
 );
 
-#has 'linegroup' => (
-#    isa => 'Str',
-#    is => 'ro',
-#    required => 1,
-#    );
-
-#has 'header_route_r' => (
-#    traits   => ['Array'],
-#    is       => 'bare',
-#    isa      => 'ArrayRef[Str]',
-#    required => 1,
-#    handles  => { header_routes => 'elements', },
-#);
-#
-#has [qw <has_route_col has_note_col>] => (
-#    is       => 'ro',
-#    isa      => 'Bool',
-#    required => 1,
-#);
-
 has [qw <header_dirtext header_daytext>] => (
     is       => 'ro',
     isa      => 'Str',
@@ -274,8 +254,12 @@ sub as_indesign {
         {   minimum_columns  => 1,
             minimum_halfcols => 1,
             compressed       => { type => BOOLEAN, default => 0 },
+            lower_bound => { default => 0 },
+            upper_bound => { default => ($self->body_row_count -1 ) },
         }
     );
+    
+    # TODo - actually do something with the bounds
 
     my $minimum_columns  = $params{minimum_columns};
     my $minimum_halfcols = $params{minimum_halfcols};
