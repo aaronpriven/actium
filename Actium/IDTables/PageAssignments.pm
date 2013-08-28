@@ -29,9 +29,6 @@ use Algorithm::Combinatorics;
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
 
-const my @orientation => ( "landscape" x 4, "portrait" x 2 );
-# so $orientation[0..4] is landscape, 5 and 6 => portrait
-
 my @shortpage_framesets = (
     [   'Landscape full',
         { widthpair => [ 10, 0 ], height => 42, frame_idx => 0 },
@@ -89,31 +86,189 @@ my @compressed_framesets = (
 # deliberately reduced height by two, in order to allow for two more lines
 # of timepoint names.  This is a guess
 
-for my $frameset_r ( @shortpage_framesets, @page_framesets ) {
+for my $frameset_r ( @shortpage_framesets, @page_framesets,
+    @compressed_framesets )
+{
     shift @{$frameset_r};    # remove the description
     for my $frame_r ( @{$frameset_r} ) {
         $frame_r->{width} = _width_in_halfcols( $frame_r->{widthpair} );
     }
 }
 
+my ( @heights, @compressed_heights );
+my $widest            = 0;
+my $widest_compressed = 0;
+
+{
+    my ( %height_seen, %compressed_height_seen );
+
+    for my $frameset_r (@page_framesets) {
+        $height_seen{ $frameset_r->{height} } = 1;
+        $widest = max( $widest, $frameset_r->{width} );
+    }
+
+    for my $frameset_r (@compressed_framesets) {
+        $compressed_height_seen{ $frameset_r->{height} } = 1;
+        $widest_compressed = max( $widest_compressed, $frameset_r->{width} );
+    }
+
+    @heights            = keys %height_seen;
+    @compressed_heights = keys %compressed_height_seen;
+
+}
+
 sub assign {
 
     my (@tables) = @{ +shift };    # copy
 
-    #return unless _every_table_fits_on_a_page(@tables);
-
-    my @oversize = _is_each_table_oversize(@tables);
-    return unless @oversize;
+    return unless _every_table_fits_on_a_page(@tables);
 
     # If any timetable is so big that it won't fit on any page,
     # we return, having warned about it.
-    
-    ##### 
-    
-    # HERE IS WHERE TO DIVIDE TABLES INTO SUBTABLES
-    
+
+    my @page_assignments = _make_page_assignments(@tables);
+    return unless @page_assignments;
+    # If we went through all the possible page assignments and couldn't
+    # find one that works, return nothing
+
+    my $has_shortpage;
+    ( $has_shortpage, @page_assignments )
+      = _reassign_short_page(@page_assignments);
+
+    # @page_assignments is organized by page, but want to return
+    # table_assignments, organized by table
+
+    return _make_table_assignments_from_page_assignments( $has_shortpage,
+        @page_assignments );
+
+} ## tidy end: sub assign
+
+sub _make_table_assignments_from_page_assignments {
+
+    my $has_shortpage    = shift;
+    my @page_assignments = @_;
+
+    my @table_assignments;
+
+    my $pagebreak = not($has_shortpage);
+    # initial break for blank shortpage only
+
+    for my $page_assignment_r (@page_assignments) {
+
+        my @tables_of_frames_of_page = @{ $page_assignment_r->{tables} };
+        my @frameset                 = @{ $page_assignment_r->{frameset} };
+
+        for my $frame_idx ( 0 .. $#frameset ) {
+            my $frame           = $frameset[$frame_idx];
+            my @tables_of_frame = @{ $tables_of_frames_of_page[$frame_idx] };
+
+            my $widthpair = $frame->{widthpair};
+            my $frame_idx = $frame->{frame_idx};
+
+            foreach my $table (@tables_of_frame) {
+                push @table_assignments,
+                  { table     => $table,
+                    width     => $widthpair,
+                    frame     => $frame_idx,
+                    pagebreak => $pagebreak,
+                  };
+                $pagebreak = 0;
+                # no pagebreak after tables, except at end of page
+            }
+
+        }
+
+        $pagebreak = 1;    # end of page
+
+    } ## tidy end: for my $page_assignment_r...
+
+    return @table_assignments;
+
+} ## tidy end: sub _make_table_assignments_from_page_assignments
+
+sub _reassign_short_page {
+
+    my @page_assignments = @_;
+
+    ###
+    # Replace assigned frameset with a short frameset if it fits
+
+    # Check the first page, then the last page,
+    # only then any intermediate pages
+
+    my @page_order = ( 0 .. $#page_assignments );
+    if ( @page_order > 2 ) {
+        my $final = pop @page_order;
+        splice( @page_order, 1, 0, $final );
+    }
+
+    my $has_shortpage = 0;
+
+    # First add blank short page
+
+  FRAMESET_TO_REPLACE:
+    for my $page_idx (@page_order) {
+        my $page_assignment_r = $page_assignments[$page_idx];
+        my $tables_r          = flatten( $page_assignment_r->{tables} );
+        my $frameset          = $page_assignment_r->{frameset};
+
+        my $short_page_assignment = _assign_page(
+            { tables => $tables_r, framesets => \@shortpage_framesets } );
+
+        if ( defined $short_page_assignment ) {
+            splice( @page_assignments, $page_idx, 1 );
+            unshift @page_assignments, $short_page_assignment;
+            $has_shortpage = 1;
+            last FRAMESET_TO_REPLACE;
+        }
+    }
+
+    return $has_shortpage, @page_assignments;
+
+} ## tidy end: sub _reassign_short_page
+
+sub _make_page_assignments {
+
+    my @tables = @_;
+    my @tables_with_overage;
+
+  TABLE:
+    foreach my $table (@tables) {
+        my $table_width  = $table->width_in_halfcols;
+        my $table_height = $table->height;
+
+        foreach my $frameset (@page_framesets) {
+
+            if (    $table_width <= $frameset->{width}
+                and $table_height <= $frameset->{height} )
+            {
+                push @tables_with_overage, [ $table, 0 ];
+                next TABLE;
+            }
+
+            # so we know it's too wide, or too tall, or both
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+        }
+
+    }
+
     #####
-    
+
     # So the set of tables first needs to be divided up into pages,
     # and then needs to be divided up into frames within those pages.
     # Page(s) contains Frame(s) contains Table(s)
@@ -128,22 +283,26 @@ sub assign {
     # breaking up the various tables into valid pages,
     # in order of preference.
 
- # A simple example might be:
- #   @page_partitions =
- #   [ [ Table 1, Table 2, Table 3, Table 4 ] ] ,         # all on one page
- #   [ [ Table 1, Table 2] , [ Table 3, Table 4 ] ],      # Two pages
- #   [ [ Table 1 ] , [Table 2] , [Table 3 ], [ Table 4] ] # Each on its own page
+    # A simple example might be:
+    #   @page_partitions =
+    #   [ [ Table 1, Table 2, Table 3, Table 4 ] ] ,     # all on one page
+    #   [ [ Table 1, Table 2] , [ Table 3, Table 4 ] ],  # Two pages
+    #   [ [ Table 1, Table 3] , [ Table 2, Table 4 ] ],  # Two other pages
+    #   [ [Table 1], [Table 2], [Table 3], [Table 4] ]   # Each on its own page
 
-    my @page_partitions = _partition_tables_into_pages( @tables );
+    # At this point _partition_tables_into_pages returns *every* possible
+    # partition in *every* order, but is sorted into most likely order for use.
+
+    my @page_partitions = _partition_tables_into_pages(@tables);
 
     # So now we know every possible way the tables can be divided into pages.
+
+    my @page_assignments;
 
     # go through each possible page assignment
     # For this page assignment, does each possible page fit on
     # one of the framesets?
     # If all pages fit, use it! if not, go to the next page set
-
-    my @page_assignments;
 
   POSSIBLE_PAGE_ASSIGNMENT:
     foreach my $page_permutation_r (@page_partitions) {
@@ -189,83 +348,9 @@ sub assign {
 
     } ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_permutation_r...
 
-    return unless @page_assignments;
-    # If we went through all the possible page assignments and couldn't
-    # find one that works, return nothing
+    return @page_assignments;
 
-    ###
-    # Replace assigned frameset with a short frameset if it fits
-
-    # Check the first page, then the last page,
-    # only then any intermediate pages
-
-    my @page_order = ( 0 .. $#page_assignments );
-    if ( @page_order > 2 ) {
-        my $final = pop @page_order;
-        splice( @page_order, 1, 0, $final );
-    }
-
-    my $has_shortpage = 0;
-
-    # First add blank short page
-
-  FRAMESET_TO_REPLACE:
-    for my $page_idx (@page_order) {
-        my $page_assignment_r = $page_assignments[$page_idx];
-        my $tables_r          = flatten( $page_assignment_r->{tables} );
-        my $frameset          = $page_assignment_r->{frameset};
-
-        my $short_page_assignment = _assign_page(
-            { tables => $tables_r, framesets => \@shortpage_framesets } );
-
-        if ( defined $short_page_assignment ) {
-            splice( @page_assignments, $page_idx, 1 );
-            unshift @page_assignments, $short_page_assignment;
-            $has_shortpage = 1;
-            last FRAMESET_TO_REPLACE;
-        }
-    }
-
-    # @page_assignments is organized by page, but want to return
-    # table_assignments, organized by table
-
-    my @table_assignments;
-
-    my $pagebreak = not($has_shortpage);
-    # initial break for blank shortpage only
-
-    for my $page_assignment_r (@page_assignments) {
-
-        my @tables_of_frames_of_page = @{ $page_assignment_r->{tables} };
-        my @frameset                 = @{ $page_assignment_r->{frameset} };
-
-        for my $frame_idx ( 0 .. $#frameset ) {
-            my $frame           = $frameset[$frame_idx];
-            my @tables_of_frame = @{ $tables_of_frames_of_page[$frame_idx] };
-
-            my $widthpair = $frame->{widthpair};
-            my $frame_idx = $frame->{frame_idx};
-
-            foreach my $table (@tables_of_frame) {
-                push @table_assignments,
-                  { table     => $table,
-                    width     => $widthpair,
-                    frame     => $frame_idx,
-                    pagebreak => $pagebreak,
-                  };
-                $pagebreak = 0;
-                # no pagebreak after tables, except at end of page
-            }
-
-        }
-
-        $pagebreak = 1;    # end of page
-
-    } ## tidy end: for my $page_assignment_r...
-
-    return @table_assignments;
-
-} ## tidy end: sub assign
+} ## tidy end: sub _make_page_assignments
 
 sub _assign_page {
 
@@ -462,8 +547,9 @@ sub _partition_tables_into_pages {
 
     my @page_partitions;
 
-    foreach my $partition
-      ( Algorithmics::Combinatorics::partitions( \@all_tables ) ) {
+    foreach
+      my $partition ( Algorithm::Combinatorics::partitions( \@all_tables ) )
+    {
 
         my %partitions_with_values = (
             partition        => $partition,
@@ -522,7 +608,7 @@ sub _partition_tables_into_pages {
 
         push @page_partitions, \%partitions_with_values;
 
-    } ## tidy end: foreach my $partition  ( ...)
+    } ## tidy end: foreach my $partition ( Algorithm::Combinatorics::partitions...)
 
     @page_partitions = sort _page_partition_sort @page_partitions;
 
@@ -588,6 +674,35 @@ sub _one_line_in_common {
 
 }
 
+sub _width_in_halfcols {
+    my @widths = flatten(@_);
+    return ( $widths[0] * 2 + $widths[1] );
+}
+
+sub every_table_fits_on_a_page {
+    my @tables = @_;
+
+    foreach my $table (@tables) {
+        my $width = ( $table->width_in_halfcols );
+
+        if ( $width > $widest ) {
+            my $displaywidth = sprintf( '%.1f', $width / 2 );
+            emit_text $table->id
+              . " does not fit on a single page: $displaywidth columns";
+
+            return;
+        }
+
+    }
+
+    return 1;
+
+}
+
+1;
+
+__END__
+
 {
     my %maximum_table_dimensions = (
         widest     => { width => _width_in_halfcols( 15, 0 ), height => 42 },
@@ -641,7 +756,7 @@ sub _one_line_in_common {
         { width => _width_in_halfcols( 11, 0 ), height => 59 }
     );
 
-    sub _every_table_fits_on_a_page {
+    sub _old_every_table_fits_on_a_page {
         my @tables = @_;
 
         foreach my $table (@tables) {
@@ -669,11 +784,6 @@ sub _one_line_in_common {
         return 1;
 
     } ## tidy end: sub _every_table_fits_on_a_page
-}
-
-sub _width_in_halfcols {
-    my @widths = flatten(@_);
-    return ( $widths[0] * 2 + $widths[1] );
 }
 
 1;
