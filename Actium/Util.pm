@@ -36,6 +36,7 @@ use Sub::Exporter -setup => {
           is_odd              is_even
           mean                population_stdev
           all_eq
+          halves
           >
     ]
 };
@@ -395,6 +396,11 @@ sub all_eq {
     return all { $_ eq $first } @rest;
 }
 
+sub halves {
+    my ($wholes, $halves) = (flatten(@_));
+    return ( $wholes*2 + $halves );
+}
+
 1;
 
 __END__
@@ -442,6 +448,10 @@ So
 
 This stands for "defined-or-empty." For each value passed to it, returns either 
 that value, if defined, or the empty string, if not.
+
+=item B<halves()>
+
+This takes two values 
 
 =item B<j()>
 
