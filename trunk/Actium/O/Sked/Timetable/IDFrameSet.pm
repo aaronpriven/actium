@@ -11,21 +11,28 @@ package Actium::O::Sked::Timetable::IDFrameSet 0.002;
 
 use Moose;
 use MooseX::StrictConstructor;
-use Scalar::Util('reftype');
+use Actium::Util 'hashref';
+use Scalar::Util 'reftype';
 use Carp;
+use namespace::autoclean;
+use Actium::O::Sked::Timetable::IDFrame;
 
-has 'description' => (
+has description => (
     isa => 'Str',
     is  => 'ro',
 );
 
-has framesets => (
+has frames_r => (
     traits   => ['Array'],
     is       => 'bare',
-    isa      => 'ArrayRef[Actium::O:Sked::Timetable::IDFrame]',
+    isa      => 'ArrayRef[Actium::O::Sked::Timetable::IDFrame]',
     required => 1,
-    init_arg => 'framesets',
-    handles  => { framesets => 'elements', },
+    init_arg => 'frames',
+    handles  => {
+        frames      => 'elements',
+        frame       => 'get',
+        frame_count => 'count',
+    },
 );
 
 has compression_level => (
@@ -38,15 +45,159 @@ around BUILDARGS => sub {
     my $orig  = shift;
     my $class = shift;
 
-    my %args = reftype( $_[0] ) eq 'HASH ' ? %{ $_[0] } : @_;
-    # hash or hashref
+    my $params_r = hashref(@_);
 
-    unless ( exists $args{framesets} and reftype( $args{framesets} ) eq 'ARRAY' ) {
-        return $class->$orig(@_);
+    # run through each frame -- if it's not already an object,
+    # instantiate the appropriate object and place it back in list
+
+    return $class->$orig(@_)
+      unless exists $params_r->{frame}
+      and reftype( $params_r->{frame} ) eq 'ARRAY';
+
+    my $frames_r = $params_r->{frame};
+
+    foreach my $i ( 0 .. $#{$frames_r} ) {
+        my $frame_r = $frames_r->[$i];
+
+        next if blessed($frame_r);
+
+        croak 'Frame passed to '
+          . __PACKAGE__
+          . '->new must be reference to hash of attribute specifications'
+          unless reftype($frame_r) eq 'HASH';
+
+        $frames_r->[$i] = Actium::O::Sked::Timetable::IDFrame->new($frame_r);
+
     }
 
+    return $class->$orig($params_r);
+
 };
+
+__PACKAGE__->meta->make_immutable;
 
 1;
 
 __END__
+
+
+head1 NAME
+
+Actium::O::Sked::Timetable::IDFrameSet - Object representing a set of 
+InDesign timetable frames
+
+=head1 VERSION
+
+This documentation refers to version 0.002
+
+=head1 SYNOPSIS
+
+ use Actium::O::Sked::Timetable::IDFrameSet;
+ my $frameset = Actium::O::Sked::Timetable::IDFrameSet->new(
+     description       => 'Landscape halves',
+     compression_level => 0,
+     frames            => [
+         {   widthpair => [ 4, 1 ],
+             height    => 42,
+             frame_idx => 0,
+         },
+         {   widthpair => [ 5, 0 ],
+             height    => 42,
+             frame_idx => 2,
+         },
+     ],
+ );
+
+ 
+=head1 DESCRIPTION
+
+Each page of an Actium timetable document in InDesign consists of a series 
+of text frames that are linked to each other, and to the pages before 
+and after. 
+
+These frames overlap, and the actual text is placed in an appropriate frame
+depending on the specific size of the timetable and what other timetables are
+placed with it on the same page.
+
+This object represents a set of frames, and contains the frame objects and
+the compression level.
+
+=head1 ATTRIBUTES
+
+=over
+
+=item B<description>
+
+An optional text description of this frame (usually something like 
+"Portrait halves" for two frames representing two halves of a portrait page).
+At this point it's not used for anything, but it's convenient to have a place
+for it in I<new()> calls.
+
+=item B<frames>
+
+Required during construction, it consists of the frames that make up the 
+frameset. Frames are described in 
+L<Actium::O::Sked::Timetable::IDFrame|Actium::O::Sked::Timetable::IDFrame>.
+In the constructor, it should be passed as an array reference; it will be 
+returned as a plain list of objects.
+
+If any of the values passed in the I<frames> entry is an unblessed hash 
+reference, Actium::O::Sked::Timetable::IDFrameSet will pass it to 
+Actium::O::Sked::Timetable::IDFrame->new() and use the result. 
+(So, you don't have to explicitly create the IDFrame objects; this module
+will do it for you.)
+
+=item B<compression_level>
+
+An integer, it represents the amount of shrinkage this timetable will be 
+subjected to. Compression level 0 is full size; compression level 1 is smaller;
+compression level 2 is smaller yet; etc.
+
+The idea is that timetables that are small can be printed with bigger type or 
+with bigger table cells, while timetables that are large might need to be
+shrunk ("compressed") to fit on a page.  The various IDFrame objects are 
+designed to allow different sizes to be used in different circumstances.
+
+=back
+
+=head1 DEPENDENCIES
+
+=over 
+
+=item Perl 5.016
+
+=item Moose
+
+=item MooseX::StrictConstructor
+
+=item namespace::autoclean
+
+=item Actium::Util
+
+=item Scalar::Util
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2013
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
+
