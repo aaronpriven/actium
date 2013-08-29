@@ -19,14 +19,6 @@ use Scalar::Util('reftype');
 
 use namespace::autoclean;
 
-has framesets => (
-    traits   => ['Array'],
-    is       => 'bare',
-    isa      => 'ArrayRef[Actium::O:Sked::Timetable::IDFrame]',
-    required => 1,
-    init_arg => 'framesets',
-    handles  => { framesets => 'elements', },
-);
 
 sub BUILDARGS {
     my $class = shift;
