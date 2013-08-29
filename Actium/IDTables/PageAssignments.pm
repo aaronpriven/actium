@@ -21,7 +21,7 @@ use Actium::O::Folders::Signup;
 use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
-use Actium::Util(qw/doe in chunks flatten population_stdev jk all_eq/);
+use Actium::Util(qw/doe in chunks flatten population_stdev jk all_eq halves/);
 use Const::Fast;
 use List::Util (qw/max sum/);
 use Algorithm::Combinatorics;
@@ -83,7 +83,7 @@ my @compressed_framesets = (
         { widthpair => [ 18, 0 ], height => 40, frame_idx => 0 },
     ],
 );
-# deliberately reduced height by two, in order to allow for two more lines
+# reduced height by two, in order to allow for two more lines
 # of timepoint names.  This is a guess
 
 for my $frameset_r ( @shortpage_framesets, @page_framesets,
@@ -91,7 +91,7 @@ for my $frameset_r ( @shortpage_framesets, @page_framesets,
 {
     shift @{$frameset_r};    # remove the description
     for my $frame_r ( @{$frameset_r} ) {
-        $frame_r->{width} = _width_in_halfcols( $frame_r->{widthpair} );
+        $frame_r->{width} = halves( $frame_r->{widthpair} );
     }
 }
 
@@ -99,23 +99,41 @@ my ( @heights, @compressed_heights );
 my $widest            = 0;
 my $widest_compressed = 0;
 
-{
-    my ( %height_seen, %compressed_height_seen );
+my %widest_frameset_of;
+my %widest_compressed_frameset_of;
 
-    for my $frameset_r (@page_framesets) {
-        $height_seen{ $frameset_r->{height} } = 1;
-        $widest = max( $widest, $frameset_r->{width} );
+for my $frameset_r (@page_framesets) {
+
+    my $height = $frameset_r->{height};
+    my $width  = $frameset_r->{width};
+
+    if ( not exists $widest_frameset_of{$height}
+        or $width > $widest_frameset_of{$height}{width} )
+    {
+        $widest_frameset_of{$height} = $frameset_r;
     }
 
-    for my $frameset_r (@compressed_framesets) {
-        $compressed_height_seen{ $frameset_r->{height} } = 1;
-        $widest_compressed = max( $widest_compressed, $frameset_r->{width} );
-    }
-
-    @heights            = keys %height_seen;
-    @compressed_heights = keys %compressed_height_seen;
+    $widest = max( $widest, $frameset_r->{width} );
 
 }
+
+for my $frameset_r (@compressed_framesets) {
+
+    my $height = $frameset_r->{height};
+    my $width  = $frameset_r->{width};
+
+    if ( not exists $widest_compressed_frameset_of{$height}
+        or $width > $widest_compressed_frameset_of{$height}{width} )
+    {
+        $widest_compressed_frameset_of{$height} = $frameset_r;
+    }
+
+    $widest_compressed = max( $widest, $frameset_r->{width} );
+
+}
+
+@heights            = keys %widest_frameset_of;
+@compressed_heights = keys %widest_compressed_frameset_of;
 
 sub assign {
 
@@ -237,37 +255,27 @@ sub _make_page_assignments {
         my $table_width  = $table->width_in_halfcols;
         my $table_height = $table->height;
 
-        foreach my $frameset (@page_framesets) {
+        my $compressed = $table_width > $widest;
+
+        foreach my $frameset (
+            $compressed ? (@compressed_framesets) : (@page_framesets) )
+        {
 
             if (    $table_width <= $frameset->{width}
                 and $table_height <= $frameset->{height} )
             {
-                push @tables_with_overage, [ $table, 0 ];
+                # fits in at least one frame
+                push @tables_with_overage,
+                  { table => $table, compressed => 0, multipage => 0 };
                 next TABLE;
             }
-
-            # so we know it's too wide, or too tall, or both
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-
         }
 
-    }
+        # so now we know it's too tall
 
-    #####
+    } ## tidy end: TABLE: foreach my $table (@tables)
+
+#####
 
     # So the set of tables first needs to be divided up into pages,
     # and then needs to be divided up into frames within those pages.
@@ -672,11 +680,6 @@ sub _one_line_in_common {
 
     }
 
-}
-
-sub _width_in_halfcols {
-    my @widths = flatten(@_);
-    return ( $widths[0] * 2 + $widths[1] );
 }
 
 sub every_table_fits_on_a_page {
