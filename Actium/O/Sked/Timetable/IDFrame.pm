@@ -12,12 +12,10 @@ package Actium::O::Sked::Timetable::IDFrame 0.002;
 use warnings;
 use 5.016;
 
-use Actium::Util('halves');
-
 use Moose;
 use MooseX::StrictConstructor;
-
 use namespace::autoclean;
+use Actium::Util qw/halves/;
 
 has widthpair_r => (
     # columns and half columns
@@ -45,8 +43,10 @@ sub _build_width {
 has [qw/height frame_idx/] => (
     is       => 'ro',
     isa      => 'Int',
-    required => 1
+    required => 1,
 );
+
+__PACKAGE__->meta->make_immutable;
 
 1;
 
@@ -63,9 +63,8 @@ This documentation refers to version 0.002
 
 =head1 SYNOPSIS
 
- use Actium::O::Sked::Timetable::IDFrameSet;
- my $frameset = Actium::O::Sked::Timetable::IDFrameSet->new (
-    description => 'Landscape full',
+ use Actium::O::Sked::Timetable::IDFrame;
+ my $frameset = Actium::O::Sked::Timetable::IDFrame->new (
     widthpair => [10, 0],
     height => 42,
     frame_idx => 0,

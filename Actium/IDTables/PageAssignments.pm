@@ -21,7 +21,7 @@ use Actium::O::Folders::Signup;
 use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
-use Actium::Util(qw/doe in chunks flatten population_stdev jk all_eq halves/);
+use Actium::Util qw/doe in chunks flatten population_stdev jk all_eq halves/;
 use Const::Fast;
 use List::Util (qw/max sum/);
 use Algorithm::Combinatorics;
@@ -29,111 +29,80 @@ use Algorithm::Combinatorics;
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
 
-my @shortpage_framesets = (
-    [   'Landscape full',
-        { widthpair => [ 10, 0 ], height => 42, frame_idx => 0 },
+my $shortpage_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
+    [   description => 'Landscape full',
+        frames => [ { widthpair => [ 10, 0 ], height => 42, frame_idx => 0 } ],
     ],
-    [   'Landscape halves',
-        { widthpair => [ 4, 1 ], height => 42, frame_idx => 0 },
-        { widthpair => [ 5, 0 ], height => 42, frame_idx => 2 },
+    [   description => 'Landscape halves',
+        frames      => [
+            { widthpair => [ 4, 1 ], height => 42, frame_idx => 0 },
+            { widthpair => [ 5, 0 ], height => 42, frame_idx => 2 },
+        ],
     ],
-    [   'Portrait full',
-        { widthpair => [ 11, 0 ], height => 36, frame_idx => 4 },
+    [   description => 'Portrait full',
+        frames => [ { widthpair => [ 11, 0 ], height => 36, frame_idx => 4 } ],
     ],
-    [   'Portrait halves',
-        { widthpair => [ 5, 1 ], height => 36, frame_idx => 4 },
-        { widthpair => [ 5, 0 ], height => 36, frame_idx => 5 },
+    [   description => 'Portrait halves',
+        frames      => [
+            { widthpair => [ 5, 1 ], height => 36, frame_idx => 4 },
+            { widthpair => [ 5, 0 ], height => 36, frame_idx => 5 },
+        ]
     ],
 );
 
-my @page_framesets = (
-    [   'Landscape full',
-        { widthpair => [ 15, 0 ], height => 42, frame_idx => 0 },
+my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
+    [   description       => 'Landscape full',
+        compression_level => 0,
+        frames => [ { widthpair => [ 15, 0 ], height => 42, frame_idx => 0 }, ]
     ],
-    [   'Landscape halves',
-        { widthpair => [ 7, 0 ], height => 42, frame_idx => 0 },
-        { widthpair => [ 7, 0 ], height => 42, frame_idx => 1 },
+    [   description       => 'Landscape halves',
+        compression_level => 0,
+        frames            => [
+            { widthpair => [ 7, 0 ], height => 42, frame_idx => 0 },
+            { widthpair => [ 7, 0 ], height => 42, frame_idx => 1 },
+        ]
     ],
-    [   'Landscape thirds',
-        { widthpair => [ 4, 1 ], height => 42, frame_idx => 0 },
-        { widthpair => [ 5, 0 ], height => 42, frame_idx => 2 },
-        { widthpair => [ 4, 1 ], height => 42, frame_idx => 3 },
+    [   description       => 'Landscape thirds',
+        compression_level => 0,
+        frames            => [
+            { widthpair => [ 4, 1 ], height => 42, frame_idx => 0 },
+            { widthpair => [ 5, 0 ], height => 42, frame_idx => 2 },
+            { widthpair => [ 4, 1 ], height => 42, frame_idx => 3 },
+        ]
     ],
-    [   'Landscape 2/3 - 1/3',
-        { widthpair => [ 10, 0 ], height => 42, frame_idx => 0 },
-        { widthpair => [ 4,  1 ], height => 42, frame_idx => 3 },
+    [   description       => 'Landscape 2/3 - 1/3',
+        compression_level => 0,
+        frames            => [
+            { widthpair => [ 10, 0 ], height => 42, frame_idx => 0 },
+            { widthpair => [ 4,  1 ], height => 42, frame_idx => 3 },
+        ]
     ],
-    [   'Landscape 1/3 - 2/3',
-        { widthpair => [ 4,  1 ], height => 42, frame_idx => 0 },
-        { widthpair => [ 10, 0 ], height => 42, frame_idx => 2 },
+    [   description       => 'Landscape 1/3 - 2/3',
+        compression_level => 0,
+        frames            => [
+            { widthpair => [ 4,  1 ], height => 42, frame_idx => 0 },
+            { widthpair => [ 10, 0 ], height => 42, frame_idx => 2 },
+        ]
     ],
 
-    [   'Portrait full',
-        { widthpair => [ 11, 0 ], height => 59, frame_idx => 4 },
+    [   description       => 'Portrait full',
+        compression_level => 0,
+        frames => [ { widthpair => [ 11, 0 ], height => 59, frame_idx => 4 }, ]
     ],
-    [   'Portrait halves',
-        { widthpair => [ 5, 1 ], height => 59, frame_idx => 4 },
-        { widthpair => [ 5, 0 ], height => 59, frame_idx => 5 },
+    [   description       => 'Portrait halves',
+        compression_level => 0,
+        frames            => [
+            { widthpair => [ 5, 1 ], height => 59, frame_idx => 4 },
+            { widthpair => [ 5, 0 ], height => 59, frame_idx => 5 },
+        ]
     ],
-
-);
-
-my @compressed_framesets = (
-    [   'Landscape full',
-        { widthpair => [ 18, 0 ], height => 40, frame_idx => 0 },
+    [   description       => 'Landscape full, narrow columns',
+        compression_level => 1,
+        frames => [ { widthpair => [ 18, 0 ], height => 40, frame_idx => 0 } ],
     ],
 );
 # reduced height by two, in order to allow for two more lines
 # of timepoint names.  This is a guess
-
-for my $frameset_r ( @shortpage_framesets, @page_framesets,
-    @compressed_framesets )
-{
-    shift @{$frameset_r};    # remove the description
-    for my $frame_r ( @{$frameset_r} ) {
-        $frame_r->{width} = halves( $frame_r->{widthpair} );
-    }
-}
-
-my ( @heights, @compressed_heights );
-my $widest            = 0;
-my $widest_compressed = 0;
-
-my %widest_frameset_of;
-my %widest_compressed_frameset_of;
-
-for my $frameset_r (@page_framesets) {
-
-    my $height = $frameset_r->{height};
-    my $width  = $frameset_r->{width};
-
-    if ( not exists $widest_frameset_of{$height}
-        or $width > $widest_frameset_of{$height}{width} )
-    {
-        $widest_frameset_of{$height} = $frameset_r;
-    }
-
-    $widest = max( $widest, $frameset_r->{width} );
-
-}
-
-for my $frameset_r (@compressed_framesets) {
-
-    my $height = $frameset_r->{height};
-    my $width  = $frameset_r->{width};
-
-    if ( not exists $widest_compressed_frameset_of{$height}
-        or $width > $widest_compressed_frameset_of{$height}{width} )
-    {
-        $widest_compressed_frameset_of{$height} = $frameset_r;
-    }
-
-    $widest_compressed = max( $widest, $frameset_r->{width} );
-
-}
-
-@heights            = keys %widest_frameset_of;
-@compressed_heights = keys %widest_compressed_frameset_of;
 
 sub assign {
 
@@ -161,89 +130,23 @@ sub assign {
 
 } ## tidy end: sub assign
 
-sub _make_table_assignments_from_page_assignments {
+sub every_table_fits_on_a_page {
+    my @tables = @_;
 
-    my $has_shortpage    = shift;
-    my @page_assignments = @_;
+    foreach my $table (@tables) {
+        my $width = $table->width_in_halfcols;
+        if ( $page_framesets->no_frame_is_wide_enough($width) ) {
+            my $displaywidth = sprintf( '%.1f', $width / 2 );
+            emit_text $table->id
+              . " does not fit on a single page: $displaywidth columns";
 
-    my @table_assignments;
-
-    my $pagebreak = not($has_shortpage);
-    # initial break for blank shortpage only
-
-    for my $page_assignment_r (@page_assignments) {
-
-        my @tables_of_frames_of_page = @{ $page_assignment_r->{tables} };
-        my @frameset                 = @{ $page_assignment_r->{frameset} };
-
-        for my $frame_idx ( 0 .. $#frameset ) {
-            my $frame           = $frameset[$frame_idx];
-            my @tables_of_frame = @{ $tables_of_frames_of_page[$frame_idx] };
-
-            my $widthpair = $frame->{widthpair};
-            my $frame_idx = $frame->{frame_idx};
-
-            foreach my $table (@tables_of_frame) {
-                push @table_assignments,
-                  { table     => $table,
-                    width     => $widthpair,
-                    frame     => $frame_idx,
-                    pagebreak => $pagebreak,
-                  };
-                $pagebreak = 0;
-                # no pagebreak after tables, except at end of page
-            }
-
-        }
-
-        $pagebreak = 1;    # end of page
-
-    } ## tidy end: for my $page_assignment_r...
-
-    return @table_assignments;
-
-} ## tidy end: sub _make_table_assignments_from_page_assignments
-
-sub _reassign_short_page {
-
-    my @page_assignments = @_;
-
-    ###
-    # Replace assigned frameset with a short frameset if it fits
-
-    # Check the first page, then the last page,
-    # only then any intermediate pages
-
-    my @page_order = ( 0 .. $#page_assignments );
-    if ( @page_order > 2 ) {
-        my $final = pop @page_order;
-        splice( @page_order, 1, 0, $final );
-    }
-
-    my $has_shortpage = 0;
-
-    # First add blank short page
-
-  FRAMESET_TO_REPLACE:
-    for my $page_idx (@page_order) {
-        my $page_assignment_r = $page_assignments[$page_idx];
-        my $tables_r          = flatten( $page_assignment_r->{tables} );
-        my $frameset          = $page_assignment_r->{frameset};
-
-        my $short_page_assignment = _assign_page(
-            { tables => $tables_r, framesets => \@shortpage_framesets } );
-
-        if ( defined $short_page_assignment ) {
-            splice( @page_assignments, $page_idx, 1 );
-            unshift @page_assignments, $short_page_assignment;
-            $has_shortpage = 1;
-            last FRAMESET_TO_REPLACE;
+            return;
         }
     }
 
-    return $has_shortpage, @page_assignments;
+    return 1;
 
-} ## tidy end: sub _reassign_short_page
+}
 
 sub _make_page_assignments {
 
@@ -255,25 +158,44 @@ sub _make_page_assignments {
         my $table_width  = $table->width_in_halfcols;
         my $table_height = $table->height;
 
-        my $compressed = $table_width > $widest;
+        my $level = $page_framesets->level_that_fits_whole_table(
+            height => $table_height,
+            width  => $table_width
+        );
 
-        foreach my $frameset (
-            $compressed ? (@compressed_framesets) : (@page_framesets) )
-        {
-
-            if (    $table_width <= $frameset->{width}
-                and $table_height <= $frameset->{height} )
-            {
-                # fits in at least one frame
-                push @tables_with_overage,
-                  { table => $table, compressed => 0, multipage => 0 };
-                next TABLE;
-            }
+        if ( defined $level ) {
+            push @tables_with_overage,
+              { table            => $table,
+                compressed_level => $level,
+                multipage        => 0,
+              };
+            next TABLE;
         }
 
         # so now we know it's too tall
 
-    } ## tidy end: TABLE: foreach my $table (@tables)
+        $level = $page_framesets->level_that_fits_partial_table($table_width);
+
+        if ( not defined $level ) {
+            emit_text q{Couldn't find even a partial table that fit }
+              . $table->id;
+
+            push @tables_with_overage,
+              { table            => $table,
+                compressed_level => $level,
+                multipage        => 1,
+              };
+
+        }
+
+    }
+    
+    
+    
+    #### TODO
+    
+    #### Here is where I need to figure out how to break up the multipage
+    # tables into partial tables, so they can be assigned separately.
 
 #####
 
@@ -682,25 +604,89 @@ sub _one_line_in_common {
 
 }
 
-sub every_table_fits_on_a_page {
-    my @tables = @_;
+sub _reassign_short_page {
 
-    foreach my $table (@tables) {
-        my $width = ( $table->width_in_halfcols );
+    my @page_assignments = @_;
 
-        if ( $width > $widest ) {
-            my $displaywidth = sprintf( '%.1f', $width / 2 );
-            emit_text $table->id
-              . " does not fit on a single page: $displaywidth columns";
+    ###
+    # Replace assigned frameset with a short frameset if it fits
 
-            return;
-        }
+    # Check the first page, then the last page,
+    # only then any intermediate pages
 
+    my @page_order = ( 0 .. $#page_assignments );
+    if ( @page_order > 2 ) {
+        my $final = pop @page_order;
+        splice( @page_order, 1, 0, $final );
     }
 
-    return 1;
+    my $has_shortpage = 0;
 
-}
+    # First add blank short page
+
+  FRAMESET_TO_REPLACE:
+    for my $page_idx (@page_order) {
+        my $page_assignment_r = $page_assignments[$page_idx];
+        my $tables_r          = flatten( $page_assignment_r->{tables} );
+        my $frameset          = $page_assignment_r->{frameset};
+
+        my $short_page_assignment = _assign_page(
+            { tables => $tables_r, framesets => \@shortpage_framesets } );
+
+        if ( defined $short_page_assignment ) {
+            splice( @page_assignments, $page_idx, 1 );
+            unshift @page_assignments, $short_page_assignment;
+            $has_shortpage = 1;
+            last FRAMESET_TO_REPLACE;
+        }
+    }
+
+    return $has_shortpage, @page_assignments;
+
+} ## tidy end: sub _reassign_short_page
+
+sub _make_table_assignments_from_page_assignments {
+
+    my $has_shortpage    = shift;
+    my @page_assignments = @_;
+
+    my @table_assignments;
+
+    my $pagebreak = not($has_shortpage);
+    # initial break for blank shortpage only
+
+    for my $page_assignment_r (@page_assignments) {
+
+        my @tables_of_frames_of_page = @{ $page_assignment_r->{tables} };
+        my @frameset                 = @{ $page_assignment_r->{frameset} };
+
+        for my $frame_idx ( 0 .. $#frameset ) {
+            my $frame           = $frameset[$frame_idx];
+            my @tables_of_frame = @{ $tables_of_frames_of_page[$frame_idx] };
+
+            my $widthpair = $frame->{widthpair};
+            my $frame_idx = $frame->{frame_idx};
+
+            foreach my $table (@tables_of_frame) {
+                push @table_assignments,
+                  { table     => $table,
+                    width     => $widthpair,
+                    frame     => $frame_idx,
+                    pagebreak => $pagebreak,
+                  };
+                $pagebreak = 0;
+                # no pagebreak after tables, except at end of page
+            }
+
+        }
+
+        $pagebreak = 1;    # end of page
+
+    } ## tidy end: for my $page_assignment_r...
+
+    return @table_assignments;
+
+} ## tidy end: sub _make_table_assignments_from_page_assignments
 
 1;
 
