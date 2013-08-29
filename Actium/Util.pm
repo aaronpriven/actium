@@ -37,6 +37,7 @@ use Sub::Exporter -setup => {
           mean                population_stdev
           all_eq
           halves
+          hashref
           >
     ]
 };
@@ -310,6 +311,10 @@ sub _join_path_components {
     my $path
       = File::Spec->catpath( $vol, File::Spec->catdir( @{$folders_r} ), $file );
     return $path;
+}
+
+sub hashref {
+    return reftype( $_[0] ) eq 'HASH ' ? $_[0]  : { @_ };
 }
 
 sub flatten {
