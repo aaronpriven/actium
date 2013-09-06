@@ -5,7 +5,7 @@
 
 # Subversion:  $Id$
 
-# legacy status: 4 (mostly)
+# legacy status: 4 
 
 use 5.012;
 use warnings;
@@ -105,6 +105,8 @@ has height => (
     builder => '_build_height',
 );
 
+
+
 sub _build_height {
     my $self = shift;
     return $self->body_row_count;
@@ -127,6 +129,14 @@ sub _build_width_in_halfcols {
 #   is => 'ro',
 #   required => 1,
 #   );
+
+sub dimensions_for_display {
+   my $self = shift;
+   my $displaywidth = sprintf( '%.1f', $self->width_in_halfcols / 2 );
+   my $displayheight = $self->height;
+   return "$displaywidth columns x $displayheight rows";
+}
+
 
 sub new_from_sked {
 

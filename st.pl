@@ -26,9 +26,6 @@ open my $in, '<', $simplefile
 
 my ( %of_phoneid, %of_stopid );
 
-{
-    local $/ = "\r";    # FileMaker exports CRs
-
     use constant {
         PHONEID => 0,
         STOPID  => 1,
@@ -37,6 +34,10 @@ my ( %of_phoneid, %of_stopid );
         LONG    => 4,
         ACTIVE  => 5
     };
+
+
+{
+    local $/ = "\r";    # FileMaker exports CRs
 
     while (<$in>) {
 
@@ -89,10 +90,6 @@ else {
     say "Exiting.";
 } ## tidy end: else [ if (@ARGV) ]
 
-sub prompt {
-    print "\x{A7} ";
-}
-
 sub use_argument {
     local $_ = shift;
 
@@ -118,7 +115,11 @@ sub use_argument {
     foreach my $fields_r ( values %of_stopid ) {
 
         my $desc = $fields_r->[DESC];
-        display($fields_r) if $desc =~ /$_/i;
+
+        s{/}{.*}g; 
+        # slash is easier to type, doesn't need to be quoted,
+        # not a regexp char normally
+        display($fields_r) if $desc =~ m{$_}i;
 
     }
 
@@ -140,7 +141,8 @@ sub display {
         return;
     }
     
-    my $active = $fields_r->[ACTIVE] eq 'Yes';
+    my $active = (defined $fields_r->[ACTIVE] and
+                 $fields_r->[ACTIVE] eq 'Yes');
     
     if ($dump) {
         say( join( q{|}, @{$fields_r} ) );
