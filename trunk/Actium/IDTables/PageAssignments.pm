@@ -21,6 +21,7 @@ use Actium::O::Folders::Signup;
 use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
+use Actium::O::Sked::Timetable::IDTimetable;
 use Actium::Util qw/doe in chunks flatten population_stdev jk all_eq halves/;
 use Const::Fast;
 use List::Util (qw/max sum/);
@@ -108,12 +109,26 @@ sub assign {
 
     my (@tables) = @{ +shift };    # copy
 
-    return unless _every_table_fits_on_a_page(@tables);
+    my ( $fit_failure, @idtables )
+      = $page_framesets->make_idtables(@tables);
+
+    if ($fit_failure) {
+        foreach my $idtable (@idtables) {
+            next unless $idtable->failure;
+
+            emit_text $idtable->id
+              . " could not be fit in the pages available: "
+              . $idtable->dimensions_for_display;
+
+        }
+
+        return;
+    }
 
     # If any timetable is so big that it won't fit on any page,
     # we return, having warned about it.
 
-    my @page_assignments = _make_page_assignments(@tables);
+    my @page_assignments = _make_page_assignments(@idtables);
     return unless @page_assignments;
     # If we went through all the possible page assignments and couldn't
     # find one that works, return nothing
@@ -130,70 +145,12 @@ sub assign {
 
 } ## tidy end: sub assign
 
-sub every_table_fits_on_a_page {
-    my @tables = @_;
-
-    foreach my $table (@tables) {
-        my $width = $table->width_in_halfcols;
-        if ( $page_framesets->no_frame_is_wide_enough($width) ) {
-            my $displaywidth = sprintf( '%.1f', $width / 2 );
-            emit_text $table->id
-              . " does not fit on a single page: $displaywidth columns";
-
-            return;
-        }
-    }
-
-    return 1;
-
-}
-
 sub _make_page_assignments {
 
-    my @tables = @_;
-    my @tables_with_overage;
+    my @idtables = @_;
 
-  TABLE:
-    foreach my $table (@tables) {
-        my $table_width  = $table->width_in_halfcols;
-        my $table_height = $table->height;
-
-        my $level = $page_framesets->level_that_fits_whole_table(
-            height => $table_height,
-            width  => $table_width
-        );
-
-        if ( defined $level ) {
-            push @tables_with_overage,
-              { table            => $table,
-                compressed_level => $level,
-                multipage        => 0,
-              };
-            next TABLE;
-        }
-
-        # so now we know it's too tall
-
-        $level = $page_framesets->level_that_fits_partial_table($table_width);
-
-        if ( not defined $level ) {
-            emit_text q{Couldn't find even a partial table that fit }
-              . $table->id;
-
-            push @tables_with_overage,
-              { table            => $table,
-                compressed_level => $level,
-                multipage        => 1,
-              };
-
-        }
-
-    }
-    
-    
-    
     #### TODO
-    
+
     #### Here is where I need to figure out how to break up the multipage
     # tables into partial tables, so they can be assigned separately.
 
@@ -223,7 +180,7 @@ sub _make_page_assignments {
     # At this point _partition_tables_into_pages returns *every* possible
     # partition in *every* order, but is sorted into most likely order for use.
 
-    my @page_partitions = _partition_tables_into_pages(@tables);
+    my @page_partitions = _partition_tables_into_pages(@idtables);
 
     # So now we know every possible way the tables can be divided into pages.
 
@@ -692,87 +649,3 @@ sub _make_table_assignments_from_page_assignments {
 
 __END__
 
-{
-    my %maximum_table_dimensions = (
-        widest     => { width => _width_in_halfcols( 15, 0 ), height => 42 },
-        tallest    => { width => _width_in_halfcols( 11, 0 ), height => 59 },
-        compressed => { width => _width_in_halfcols( 18, 0 ), height => 40 },
-    );
-
-    my $widest_width = $maximum_table_dimensions{widest}{width};
-
-    sub _is_each_table_oversize {
-        my @tables = @_;
-        my @oversize;
-
-      TABLE:
-        foreach my $table (@tables) {
-            my ( $height, $width )
-              = ( $table->height, $table->width_in_halfcols );
-
-            if ( $maximum_table_dimensions{compressed}{width} < $width ) {
-
-                emit_text $table->id
-                  . " does not fit on a single page: $width x $height";
-                return;    # no value - indicates no valid page assignments
-            }
-
-            for my $dimensiontype ( keys %maximum_table_dimensions ) {
-
-                my $maximum = $maximum_table_dimensions{$dimensiontype};
-                if (    $maximum->{width} >= $width
-                    and $maximum->{height} >= $height )
-                {
-                    # fits!
-                    push @oversize,
-                      $dimensiontype eq 'compressed' ? 'wide' : $EMPTY_STR;
-                    next TABLE;
-                }
-            }
-
-            # so we know it must be tall
-
-            push @oversize, $width <= $widest_width ? 'tall' : 'both';
-
-        } ## tidy end: TABLE: foreach my $table (@tables)
-
-        return @oversize;
-
-    } ## tidy end: sub _is_each_table_oversize
-
-    my @maximum_table_dimensions = (
-        { width => _width_in_halfcols( 15, 0 ), height => 42 },
-        { width => _width_in_halfcols( 11, 0 ), height => 59 }
-    );
-
-    sub _old_every_table_fits_on_a_page {
-        my @tables = @_;
-
-        foreach my $table (@tables) {
-            my ( $height, $width )
-              = ( $table->height, $table->width_in_halfcols );
-
-            my $fits_on_a_page;
-            for my $maximum (@maximum_table_dimensions) {
-                if (    $maximum->{width} >= $width
-                    and $maximum->{height} >= $height )
-                {
-                    $fits_on_a_page = 1;
-                    last;
-                }
-            }
-            if ( not $fits_on_a_page ) {
-                emit_text $table->id
-                  . " does not fit on a single page: $width x $height";
-
-                return;
-            }
-
-        } ## tidy end: foreach my $table (@tables)
-
-        return 1;
-
-    } ## tidy end: sub _every_table_fits_on_a_page
-}
-
-1;

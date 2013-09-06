@@ -16,9 +16,15 @@ use Moose;
 use MooseX::StrictConstructor;
 use namespace::autoclean;
 use Actium::O::Sked::Timetable::IDFrameSet;
+use Actium::O::Sked::Timetable::IDTimetable;
+
 use Params::Validate ':all';
 
 use Scalar::Util 'reftype';
+
+use Const::Fast;
+
+const my $IDTABLE => 'Actium::O::Sked::Timetable::IDTimetable';
 
 has frameset_r => (
     traits   => ['Array'],
@@ -61,70 +67,88 @@ sub _build_compression_levels_r {
     return sort { $a <=> $b } keys %seen_levels;
 }
 
-has all_frames_r => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Actium::O::Sked::Timetable::IDFrame]',
-    lazy    => 1,
-    builder => '_build_all_frames_r',
-    handles => { all_frames => 'elements', },
-);
+#has all_frames_r => (
+#    traits  => ['Array'],
+#    is      => 'bare',
+#    isa     => 'ArrayRef[Actium::O::Sked::Timetable::IDFrame]',
+#    lazy    => 1,
+#    builder => '_build_all_frames_r',
+#    handles => { all_frames => 'elements', },
+#);
+#
+#sub _build_all_frames_r {
+#    my $self = shift;
+#    return map { $_->frames } $self->framesets;
+#}
 
-sub _build_all_frames_r {
-    my $self = shift;
-    return map { $_->frames } $self->framesets;
-}
+sub make_idtables {
 
-sub no_frame_is_wide_enough {
-    my $self  = shift;
-    my $width = shift;
-
-    foreach my $frame ( $self->all_frames ) {
-        return 0 if $width <= $frame->width;
-    }
-    return 1;
-}
-
-sub level_that_fits_whole_table {
     my $self   = shift;
-    my %params = validate(
-        @_,
-        {   height => 1,
-            width  => 1,
+    my @tables = @_;
+    my @idtables;
+    my $seen_a_failure;
+
+  TABLE:
+    foreach my $table (@tables) {
+
+        my $table_width  = $table->width_in_halfcols;
+        my $table_height = $table->height;
+        my $partial_level;
+
+        foreach my $frameset ( $self->framesets ) {
+            my $compression_level = $frameset->compression_level;
+
+            # does it fit entirely? if so, push it to the list, and next table
+            foreach my $frame ( $frameset->frames ) {
+                my $frame_height = $frame->height;
+                my $frame_width  = $frame->width;
+
+                if (    $table_height <= $frame_height
+                    and $table_width <= $frame_width )
+                {
+                    push @idtables,
+                      $IDTABLE->new(
+                       table             => $table,
+                        compression_level => $compression_level,
+                        multipage         => 0,
+                      );
+
+                    next TABLE;
+                }
+
+                # if not, and we haven't defined a partial level already,
+                # save the level
+
+                $partial_level = $compression_level
+                  if ( not defined $partial_level
+                    and $table_width <= $frame_width );
+
+            } ## tidy end: foreach my $frame ( $frameset...)
+
+        } ## tidy end: foreach my $frameset ( $self...)
+
+        if ( defined $partial_level ) {
+            # if there's a partial level, save it to the list
+            
+            push @idtables,
+              $IDTABLE->new(
+               table             => $table,
+                compression_level => $partial_level,
+                multipage         => 1
+              );
+            next TABLE;
         }
-    );
 
-    foreach my $frameset ( $self->framesets ) {
-        my $compression_level = $frameset->compression_level;
-        foreach my $frame ( $frameset->frames ) {
-            return $compression_level
-              if $params{height} <= $frame->height
-              and $params{width} <= $frame->width;
-        }
+        # otherwise, save it as failed
 
-    }
+        push @idtables, $IDTABLE->new( table => $table, failed => 1 );
+        $seen_a_failure = 1;
 
-    return;
+    } ## tidy end: TABLE: foreach my $table (@tables)
 
-} ## tidy end: sub level_that_fits_whole_table
+    return $seen_a_failure, @idtables;
 
-sub level_that_fits_partial_table {
-    my $self   = shift;
-    my $width = shift;
-
-    foreach my $frameset ( $self->framesets ) {
-
-        next if $frameset->frame_count > 1;
-        my $compression_level = $frameset->compression_level;
-
-        return $compression_level
-          if $width <= $frameset->frame(0)->width;
-
-    }
-
-    return;
-
-} ## tidy end: sub level_that_fits_partial_table
+} ## tidy end: sub tables_with_overage
 
 __PACKAGE__->meta->make_immutable;
 
