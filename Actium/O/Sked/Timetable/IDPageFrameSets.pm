@@ -61,10 +61,73 @@ has compression_levels_r => (
 
 sub _build_compression_levels_r {
     my $self = shift;
-    my %seen_levels;
 
-    $seen_levels{ $_->compression_level } = 1 foreach $self->framesets;
-    return sort { $a <=> $b } keys %seen_levels;
+    return sort { $a <=> $b } $self->_unsorted_compression_levels;
+
+    # my %seen_levels;
+
+    # $seen_levels{ $_->compression_level } = 1 foreach $self->framesets;
+    # return [ sort { $a <=> $b } keys %seen_levels ];
+}
+
+has framesets_of_compression_level_r => (
+    traits  => ['Hash'],
+    is      => 'bare',
+    isa     => 'HashRef[ArrayRef[Actium::O::Sked::Timetable::IDFrameSet]]',
+    lazy    => 1,
+    builder => '_build_framesets_of_compression_level_r',
+    handles => {
+        _framesets_of_compression_level_r => 'get',
+        _unsorted_compression_levels      => 'keys',
+    },
+);
+
+sub _build_framesets_of_compression_level_r {
+    my $self = shift;
+    my %framesets_of;
+    foreach my $frameset ( $self->framesets ) {
+        my $level = $frameset->compression_level;
+        push @{ $framesets_of{$level} }, $frameset;
+    }
+    return \%framesets_of;
+}
+
+sub framesets_of_compression_level {
+    my $self  = shift;
+    my $level = shift;
+    return @{ $self->_framesets_of_compression_level_r($level) };
+}
+
+has heights_of_compression_level_r => (
+    traits  => ['Hash'],
+    is      => 'bare',
+    isa     => 'HashRef[ArrayRef[Int]]',
+    lazy    => 1,
+    builder => '_build_heights_of_compression_level_r',
+    handles => { _heights_of_compression_level_r => 'get', },
+);
+
+sub _build_heights_of_compression_level_r {
+    my $self = shift;
+    my %heights_of;
+    
+    foreach my $frameset ( $self->framesets ) {
+        my $level  = $frameset->compression_level;
+        my $height = $frameset->height;
+        push @{ $heights_of{$level} }, $height;
+    }
+
+    foreach my $level ( keys %heights_of ) {
+        $heights_of{$level} = [ sort { $b <=> $a } @{ $heights_of{$level} } ];
+    }
+    
+    return \%heights_of;
+}
+
+sub heights_of_compression_level {
+    my $self  = shift;
+    my $level = shift;
+    return @{ $self->_heights_of_compression_level_r($level) };
 }
 
 #has all_frames_r => (
@@ -99,16 +162,17 @@ sub make_idtables {
             my $compression_level = $frameset->compression_level;
 
             # does it fit entirely? if so, push it to the list, and next table
+            my $frame_height = $frameset->height;
+
             foreach my $frame ( $frameset->frames ) {
-                my $frame_height = $frame->height;
-                my $frame_width  = $frame->width;
+                my $frame_width = $frame->width;
 
                 if (    $table_height <= $frame_height
                     and $table_width <= $frame_width )
                 {
                     push @idtables,
                       $IDTABLE->new(
-                       table             => $table,
+                        table             => $table,
                         compression_level => $compression_level,
                         multipage         => 0,
                       );
@@ -129,10 +193,10 @@ sub make_idtables {
 
         if ( defined $partial_level ) {
             # if there's a partial level, save it to the list
-            
+
             push @idtables,
               $IDTABLE->new(
-               table             => $table,
+                table             => $table,
                 compression_level => $partial_level,
                 multipage         => 1
               );
@@ -148,7 +212,7 @@ sub make_idtables {
 
     return $seen_a_failure, @idtables;
 
-} ## tidy end: sub tables_with_overage
+} ## tidy end: sub make_idtables
 
 __PACKAGE__->meta->make_immutable;
 
