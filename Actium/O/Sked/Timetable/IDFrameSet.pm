@@ -35,6 +35,12 @@ has frames_r => (
     },
 );
 
+has frame_idx => (
+    is       => 'ro',
+    isa      => 'Int',
+    required => 1,
+);
+
 has compression_level => (
     is       => 'ro',
     isa      => 'Int',
@@ -96,13 +102,12 @@ This documentation refers to version 0.002
  my $frameset = Actium::O::Sked::Timetable::IDFrameSet->new(
      description       => 'Landscape halves',
      compression_level => 0,
+     height            => 42,
      frames            => [
          {   widthpair => [ 4, 1 ],
-             height    => 42,
              frame_idx => 0,
          },
          {   widthpair => [ 5, 0 ],
-             height    => 42,
              frame_idx => 2,
          },
      ],
@@ -147,6 +152,13 @@ Actium::O::Sked::Timetable::IDFrame->new() and use the result.
 (So, you don't have to explicitly create the IDFrame objects; this module
 will do it for you.)
 
+=item B<height>
+
+Requiretd during construction, this is the height 
+of these frames in terms of rows in the table. It should be specified
+excluding the number of rows used for the header (line name, direction, days,
+and timepoint names).
+
 =item B<compression_level>
 
 An integer, it represents the amount of shrinkage this timetable will be 
@@ -172,9 +184,11 @@ designed to allow different sizes to be used in different circumstances.
 
 =item namespace::autoclean
 
+=item Scalar::Util
+
 =item Actium::Util
 
-=item Scalar::Util
+=item Actium::O::Sked::Timetable::IDFrame
 
 =head1 AUTHOR
 

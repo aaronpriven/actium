@@ -40,7 +40,7 @@ sub _build_width {
     return halves( $self->widthpair );
 }
 
-has [qw/height frame_idx/] => (
+has frame_idx => (
     is       => 'ro',
     isa      => 'Int',
     required => 1,
@@ -66,7 +66,6 @@ This documentation refers to version 0.002
  use Actium::O::Sked::Timetable::IDFrame;
  my $frameset = Actium::O::Sked::Timetable::IDFrame->new (
     widthpair => [10, 0],
-    height => 42,
     frame_idx => 0,
     );
  
@@ -80,8 +79,9 @@ These frames overlap, and the actual text is placed in an appropriate frame
 depending on the specific size of the timetable and what other timetables are
 placed with it on the same page.
 
-This object represents a single frame: generally, its height, width, and 
-where it is in the order of linked pages.
+This object represents a single frame: generally, its width, and 
+where it is in the order of linked pages. (Its height is stored as part of its 
+frame set.)
 
 =head1 ATTRIBUTES
 
@@ -99,11 +99,6 @@ Automatically generated from B<widthpair>, the width is simply the total
 number of half columns (so, twice the number of columns, plus the number of
 half columns).  Used for comparisons.
 
-=item B<height>
-
-Height of this frame in terms of rows in the table. It should be specified
-excluding the number of rows used for the header (line name, direction, days,
-and timepoint names).
 
 =item B<frame_idx>
 

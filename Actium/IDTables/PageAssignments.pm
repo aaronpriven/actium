@@ -32,74 +32,86 @@ const my $SOFTRETURN => $IDT->softreturn;
 
 my $shortpage_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
     [   description => 'Landscape full',
-        frames => [ { widthpair => [ 10, 0 ], height => 42, frame_idx => 0 } ],
+        frames      => [ { widthpair => [ 10, 0 ], frame_idx => 0 } ],
+        height      => 42,
     ],
     [   description => 'Landscape halves',
         frames      => [
-            { widthpair => [ 4, 1 ], height => 42, frame_idx => 0 },
-            { widthpair => [ 5, 0 ], height => 42, frame_idx => 2 },
+            { widthpair => [ 4, 1 ], frame_idx => 0 },
+            { widthpair => [ 5, 0 ], frame_idx => 2 },
         ],
+        height => 42,
     ],
     [   description => 'Portrait full',
-        frames => [ { widthpair => [ 11, 0 ], height => 36, frame_idx => 4 } ],
+        frames      => [ { widthpair => [ 11, 0 ], frame_idx => 4 } ],
+        height      => 36,
     ],
     [   description => 'Portrait halves',
         frames      => [
-            { widthpair => [ 5, 1 ], height => 36, frame_idx => 4 },
-            { widthpair => [ 5, 0 ], height => 36, frame_idx => 5 },
-        ]
+            { widthpair => [ 5, 1 ], frame_idx => 4 },
+            { widthpair => [ 5, 0 ], frame_idx => 5 },
+        ],
+        height => 36,
     ],
 );
 
 my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
     [   description       => 'Landscape full',
         compression_level => 0,
-        frames => [ { widthpair => [ 15, 0 ], height => 42, frame_idx => 0 }, ]
+        frames            => [ { widthpair => [ 15, 0 ], frame_idx => 0 }, ],
+        height            => 42,
     ],
     [   description       => 'Landscape halves',
         compression_level => 0,
         frames            => [
-            { widthpair => [ 7, 0 ], height => 42, frame_idx => 0 },
-            { widthpair => [ 7, 0 ], height => 42, frame_idx => 1 },
-        ]
+            { widthpair => [ 7, 0 ], frame_idx => 0 },
+            { widthpair => [ 7, 0 ], frame_idx => 1 },
+        ],
+        height => 42,
     ],
     [   description       => 'Landscape thirds',
         compression_level => 0,
         frames            => [
-            { widthpair => [ 4, 1 ], height => 42, frame_idx => 0 },
-            { widthpair => [ 5, 0 ], height => 42, frame_idx => 2 },
-            { widthpair => [ 4, 1 ], height => 42, frame_idx => 3 },
-        ]
+            { widthpair => [ 4, 1 ], frame_idx => 0 },
+            { widthpair => [ 5, 0 ], frame_idx => 2 },
+            { widthpair => [ 4, 1 ], frame_idx => 3 },
+        ],
+        height => 42,
     ],
     [   description       => 'Landscape 2/3 - 1/3',
         compression_level => 0,
         frames            => [
-            { widthpair => [ 10, 0 ], height => 42, frame_idx => 0 },
-            { widthpair => [ 4,  1 ], height => 42, frame_idx => 3 },
-        ]
+            { widthpair => [ 10, 0 ], frame_idx => 0 },
+            { widthpair => [ 4,  1 ], frame_idx => 3 },
+        ],
+        height => 42,
     ],
     [   description       => 'Landscape 1/3 - 2/3',
         compression_level => 0,
         frames            => [
-            { widthpair => [ 4,  1 ], height => 42, frame_idx => 0 },
-            { widthpair => [ 10, 0 ], height => 42, frame_idx => 2 },
-        ]
+            { widthpair => [ 4,  1 ], frame_idx => 0 },
+            { widthpair => [ 10, 0 ], frame_idx => 2 },
+        ],
+        height => 42,
     ],
 
     [   description       => 'Portrait full',
         compression_level => 0,
-        frames => [ { widthpair => [ 11, 0 ], height => 59, frame_idx => 4 }, ]
+        frames            => [ { widthpair => [ 11, 0 ], frame_idx => 4 }, ],
+        height            => 59,
     ],
     [   description       => 'Portrait halves',
         compression_level => 0,
         frames            => [
-            { widthpair => [ 5, 1 ], height => 59, frame_idx => 4 },
-            { widthpair => [ 5, 0 ], height => 59, frame_idx => 5 },
-        ]
+            { widthpair => [ 5, 1 ], frame_idx => 4 },
+            { widthpair => [ 5, 0 ], frame_idx => 5 },
+        ],
+        height => 59,
     ],
     [   description       => 'Landscape full, narrow columns',
         compression_level => 1,
-        frames => [ { widthpair => [ 18, 0 ], height => 40, frame_idx => 0 } ],
+        frames            => [ { widthpair => [ 18, 0 ], frame_idx => 0 } ],
+        height            => 40,
     ],
 );
 # reduced height by two, in order to allow for two more lines
@@ -108,9 +120,7 @@ my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
 sub assign {
 
     my (@tables) = @{ +shift };    # copy
-
-    my ( $fit_failure, @idtables )
-      = $page_framesets->make_idtables(@tables);
+    my ( $fit_failure, @idtables ) = $page_framesets->make_idtables(@tables);
 
     if ($fit_failure) {
         foreach my $idtable (@idtables) {
@@ -238,6 +248,86 @@ sub _make_page_assignments {
     return @page_assignments;
 
 } ## tidy end: sub _make_page_assignments
+
+
+sub _partition_tables_into_pages {
+    # This creates the sets of tables that could possibly fit across pages
+
+    my @all_tables = @_;
+
+    my @page_partitions;
+
+    foreach
+      my $partition ( Algorithm::Combinatorics::partitions( \@all_tables ) )
+    {
+
+        my %partitions_with_values = (
+            partition        => $partition,
+            num_pages        => ( scalar @{$partition} ),
+            pointsforsorting => 0,
+        );
+
+        my @tablecounts;
+
+      PAGE:
+        foreach my $page ( @{$partition} ) {
+
+            my $numtables = scalar( @{$page} );
+            push @tablecounts, $numtables;
+
+            if ( $numtables == 1 ) {
+                $partitions_with_values{pointsforsorting} = 15;
+                # one table: maximum value
+                next PAGE;
+            }
+
+            my $pagepoints = 0;
+
+            my ( @lines, @all_lines, @dircodes, @daycodes );
+
+            foreach my $table ( @{$page} ) {
+                my @lines_of_this_table = $table->lines;
+                push @lines,     \@lines_of_this_table;
+                push @all_lines, jk(@lines_of_this_table);
+
+                push @dircodes, $table->dircode;
+                push @daycodes, $table->daycode;
+
+            }
+
+            my $all_eq_lines = all_eq(@all_lines);
+
+            if ($all_eq_lines) {
+                $pagepoints += 8;
+
+                # should this be 12, since if all lines are equal,
+                # one line must be in common?
+                # whatever, distinction without difference
+            }
+            else {
+                $pagepoints += 4 if _one_line_in_common(@lines);
+            }
+            $pagepoints += 2 if all_eq(@daycodes);
+            $pagepoints += 1 if all_eq(@dircodes);
+
+            $partitions_with_values{pointsforsorting} += $pagepoints;
+
+        } ## tidy end: PAGE: foreach my $page ( @{$partition...})
+
+        $partitions_with_values{deviation} = population_stdev(@tablecounts);
+
+        push @page_partitions, \%partitions_with_values;
+
+    } ## tidy end: foreach my $partition ( Algorithm::Combinatorics::partitions...)
+
+    @page_partitions = sort _page_partition_sort @page_partitions;
+
+    @page_partitions = map { $_->{partition} } @page_partitions;
+    # drop sort_values from partition;
+
+    return @page_partitions;
+
+} ## tidy end: sub _partition_tables_into_pages
 
 sub _assign_page {
 
@@ -427,84 +517,6 @@ sub _table_permutation_sort {
 
 } ## tidy end: sub _table_permutation_sort
 
-sub _partition_tables_into_pages {
-    # This creates the sets of tables that could possibly fit across pages
-
-    my @all_tables = @_;
-
-    my @page_partitions;
-
-    foreach
-      my $partition ( Algorithm::Combinatorics::partitions( \@all_tables ) )
-    {
-
-        my %partitions_with_values = (
-            partition        => $partition,
-            num_pages        => ( scalar @{$partition} ),
-            pointsforsorting => 0,
-        );
-
-        my @tablecounts;
-
-      PAGE:
-        foreach my $page ( @{$partition} ) {
-
-            my $numtables = scalar( @{$page} );
-            push @tablecounts, $numtables;
-
-            if ( $numtables == 1 ) {
-                $partitions_with_values{pointsforsorting} = 15;
-                # one table: maximum value
-                next PAGE;
-            }
-
-            my $pagepoints = 0;
-
-            my ( @lines, @all_lines, @dircodes, @daycodes );
-
-            foreach my $table ( @{$page} ) {
-                my @lines_of_this_table = $table->lines;
-                push @lines,     \@lines_of_this_table;
-                push @all_lines, jk(@lines_of_this_table);
-
-                push @dircodes, $table->dircode;
-                push @daycodes, $table->daycode;
-
-            }
-
-            my $all_eq_lines = all_eq(@all_lines);
-
-            if ($all_eq_lines) {
-                $pagepoints += 8;
-
-                # should this be 12, since if all lines are equal,
-                # one line must be in common?
-                # whatever, distinction without difference
-            }
-            else {
-                $pagepoints += 4 if _one_line_in_common(@lines);
-            }
-            $pagepoints += 2 if all_eq(@daycodes);
-            $pagepoints += 1 if all_eq(@dircodes);
-
-            $partitions_with_values{pointsforsorting} += $pagepoints;
-
-        } ## tidy end: PAGE: foreach my $page ( @{$partition...})
-
-        $partitions_with_values{deviation} = population_stdev(@tablecounts);
-
-        push @page_partitions, \%partitions_with_values;
-
-    } ## tidy end: foreach my $partition ( Algorithm::Combinatorics::partitions...)
-
-    @page_partitions = sort _page_partition_sort @page_partitions;
-
-    @page_partitions = map { $_->{partition} } @page_partitions;
-    # drop sort_values from partition;
-
-    return @page_partitions;
-
-} ## tidy end: sub _partition_tables_into_pages
 
 sub _page_partition_sort {
 
