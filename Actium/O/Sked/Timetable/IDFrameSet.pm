@@ -35,13 +35,13 @@ has frames_r => (
     },
 );
 
-has frame_idx => (
-    is       => 'ro',
-    isa      => 'Int',
-    required => 1,
+has compression_level => (
+    is      => 'ro',
+    isa     => 'Int',
+    default => 0,
 );
 
-has compression_level => (
+has height => (
     is       => 'ro',
     isa      => 'Int',
     required => 1,
@@ -57,10 +57,10 @@ around BUILDARGS => sub {
     # instantiate the appropriate object and place it back in list
 
     return $class->$orig(@_)
-      unless exists $params_r->{frame}
-      and reftype( $params_r->{frame} ) eq 'ARRAY';
+      unless exists $params_r->{frames}
+      and reftype( $params_r->{frames} ) eq 'ARRAY';
 
-    my $frames_r = $params_r->{frame};
+    my $frames_r = $params_r->{frames};
 
     foreach my $i ( 0 .. $#{$frames_r} ) {
         my $frame_r = $frames_r->[$i];

@@ -17,6 +17,7 @@ use MooseX::StrictConstructor;
 use namespace::autoclean;
 use Actium::O::Sked::Timetable::IDFrameSet;
 use Actium::O::Sked::Timetable::IDTimetable;
+use Actium::Combinatorics(':all');
 
 use Params::Validate ':all';
 
@@ -25,6 +26,24 @@ use Scalar::Util 'reftype';
 use Const::Fast;
 
 const my $IDTABLE => 'Actium::O::Sked::Timetable::IDTimetable';
+
+const my $EXTRA_TABLE_HEIGHT => 9;
+# add 9 for each additional table in a stack -- 1 for blank line,
+# 4 for timepoints and 4 for the color bar. This is inexact and can mess up...
+# not sure how to fix it at this point, I'd need to measure the headers
+
+my $get_stacked_measurement_cr = sub {
+    my @tables = @_;
+
+    my @widths  = map { $_->width_in_halfcols } @tables;
+    my @heights = map { $_->height } @tables;
+
+    my $maxwidth = max(@widths);
+    my $sumheight = sum(@heights) + ( $EXTRA_TABLE_HEIGHT * $#heights );
+
+    return ( $sumheight, $maxwidth );
+
+};
 
 has frameset_r => (
     traits   => ['Array'],
@@ -37,11 +56,11 @@ has frameset_r => (
 
 around BUILDARGS => sub {
 
-    my $class = shift;
     my $orig  = shift;
+    my $class = shift;
 
     my @framesets = map { Actium::O::Sked::Timetable::IDFrameSet->new($_) } @_;
-
+    
     return $class->$orig( framesets => \@framesets );
 
 };
@@ -110,7 +129,7 @@ has heights_of_compression_level_r => (
 sub _build_heights_of_compression_level_r {
     my $self = shift;
     my %heights_of;
-    
+
     foreach my $frameset ( $self->framesets ) {
         my $level  = $frameset->compression_level;
         my $height = $frameset->height;
@@ -120,7 +139,7 @@ sub _build_heights_of_compression_level_r {
     foreach my $level ( keys %heights_of ) {
         $heights_of{$level} = [ sort { $b <=> $a } @{ $heights_of{$level} } ];
     }
-    
+
     return \%heights_of;
 }
 
@@ -215,6 +234,79 @@ sub make_idtables {
     return $seen_a_failure, $any_multipage, @idtables;
 
 } ## tidy end: sub make_idtables
+
+sub assign_page {
+
+    my $self   = shift;
+    my @tables = @_;
+
+    foreach my $frameset ( $self->framesets ) {
+
+        my @frames = $frameset->frames;
+
+        next if ( @frames > @tables );
+        # If there are more frames than there are tables,
+        # this cannot be the best fit
+
+        # will this set of tables fit on this page?
+
+        if ( @frames == 1 ) {
+            my ( $height, $width ) = $get_stacked_measurement_cr->(@tables);
+            if (not(    $height <= $frames[0]{height}
+                    and $width <= $frames[0]{width} )
+              )
+
+            {
+                next;
+
+            }
+            return { tables => [ \@tables ], frameset => $frameset };
+        }
+
+        if ( @frames == @tables ) {
+            for my $i ( 0 .. $#frames ) {
+                return
+                  if $frames[$i]{height} < $tables[$i]->height
+                  or $frames[$i]{width} < $tables[$i]->width_in_halfcols;
+                # doesn't fit if frame's height or width aren't big enough
+            }
+            return { tables => [ map { [$_] } @tables ], frameset => $frameset  };
+            # all frames fit
+        }
+
+        # more tables than frames. Divide tables up into appropriate sets,
+        # and then try them
+
+        my @table_permutations
+          = ordered_partitions( \@tables , scalar @frames);
+
+      TABLE_PERMUTATION:
+        foreach my $table_permutation (@table_permutations) {
+
+            foreach my $i ( 0 .. $#frames ) {
+                my @tables = @{ $table_permutation->[$i] };
+                my ( $height, $width ) = $get_stacked_measurement_cr->(@tables);
+                next TABLE_PERMUTATION
+                  if $frames[$i]{height} < $height
+                  or $frames[$i]{width} < $width;
+                # doesn't fit if frame's height or width aren't big enough
+            }
+
+            # it got here, so the tables fit within the frames
+
+            return { tables => $table_permutation, frameset => $frameset };
+
+        }
+
+        # finished all the permutations for this page, but nothing fit
+
+    } ## tidy end: foreach my $frameset ( $self...)
+    
+    return;
+    # finished all the permutations for this page set, but nothing fit
+
+} ## tidy end: sub assign_page
+
 
 __PACKAGE__->meta->make_immutable;
 

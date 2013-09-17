@@ -20,7 +20,7 @@ use Actium::Util qw/halves/;
 has widthpair_r => (
     # columns and half columns
     traits   => ['Array'],
-    is       => 'bare',
+    is       => 'ro',
     isa      => 'ArrayRef[Int]',
     required => 1,
     init_arg => 'widthpair',
