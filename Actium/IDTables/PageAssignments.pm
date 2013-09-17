@@ -120,7 +120,8 @@ my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
 sub assign {
 
     my (@tables) = @{ +shift };    # copy
-    my ( $fit_failure, @idtables ) = $page_framesets->make_idtables(@tables);
+    my ( $fit_failure, $has_multipage, @idtables )
+      = $page_framesets->make_idtables(@tables);
 
     if ($fit_failure) {
         foreach my $idtable (@idtables) {
@@ -138,31 +139,50 @@ sub assign {
     # If any timetable is so big that it won't fit on any page,
     # we return, having warned about it.
 
-    my @page_assignments = _make_page_assignments(@idtables);
-    return unless @page_assignments;
-    # If we went through all the possible page assignments and couldn't
-    # find one that works, return nothing
+    my @partitions_to_test;
+    my $heights_of_level_r = $page_framesets->heights_of_compression_level_r;
 
-    my $has_shortpage;
-    ( $has_shortpage, @page_assignments )
-      = _reassign_short_page(@page_assignments);
+    if ($has_multipage) {
+        my @table_expansions;
+        foreach my $table (@idtables) {
+            if ( not $table->multipage ) {
+                push @table_expansions, [ [$table] ];
+            }
+            else {
+                my @heights
+                  = @{ $heights_of_level_r->{ $table->compression_level } };
+                push @table_expansions, $table->expand_multipage(@heights);
+            }
 
-    # @page_assignments is organized by page, but want to return
-    # table_assignments, organized by table
+        }
 
-    return _make_table_assignments_from_page_assignments( $has_shortpage,
-        @page_assignments );
+       # @table_expansions =
+       # [ # first table
+       #   [ Table1_0-19  Table1_20-34 ], # if height is 20 - remainder at end
+       #   [ Table1_0-14  Table1_15-34 ], # if height is 20 - remainder at start
+       # ] ,
+       # [ # second table
+       #   [ Table2 ]   # not multipage
+       # ]
 
-} ## tidy end: sub assign
+        my @combinations = _odometer_combinations(@table_expansions);
 
-sub _make_page_assignments {
+        foreach my $combination_of_tables (@combinations) {
+            push @partitions_to_test,
+              Algorithm::Combinatorics::partitions($combination_of_tables);
+        }
+        
+        
+        ## TODO - delete any partition with non-consecutive multipage items
+        
 
-    my @idtables = @_;
+    } ## tidy end: if ($has_multipage)
+    else {
 
-    #### TODO
+        @partitions_to_test
+          = Algorithm::Combinatorics::partitions( \@idtables );
 
-    #### Here is where I need to figure out how to break up the multipage
-    # tables into partial tables, so they can be assigned separately.
+    }
 
 #####
 
@@ -190,76 +210,9 @@ sub _make_page_assignments {
     # At this point _partition_tables_into_pages returns *every* possible
     # partition in *every* order, but is sorted into most likely order for use.
 
-    my @page_partitions = _partition_tables_into_pages(@idtables);
-
-    # So now we know every possible way the tables can be divided into pages.
-
-    my @page_assignments;
-
-    # go through each possible page assignment
-    # For this page assignment, does each possible page fit on
-    # one of the framesets?
-    # If all pages fit, use it! if not, go to the next page set
-
-  POSSIBLE_PAGE_ASSIGNMENT:
-    foreach my $page_permutation_r (@page_partitions) {
-
-        # so now we have a single grouping of tables into one or more pages.
-        # For example,
-        # @page_permutation_r = ([ Table 1, Table 2] , [Table 3 , Table 4])
-        # But this page assignment may not fit. For each page, check to
-        # see if it fits.
-
-      PAGE:
-        foreach my $tables_on_this_page_r ( @{$page_permutation_r} ) {
-
-            # And now we have a single page:
-            # $tables_on_this_page_r = [ Table 1, Table 2 ]
-
-            # Now we check to see whether this page fits!
-
-            my $page_assignment_r = _assign_page(
-                {   tables    => $tables_on_this_page_r,
-                    framesets => \@page_framesets
-                }
-            );
-
-            # $page_assignment_r->{tables} = [ [ Table 1, Table 2] ,[Table 3] ]
-            # $page_assignment_r->{frameset} = [ Frame 1, Frame 2]
-
-            if ( not defined $page_assignment_r ) {
-                # This page does not fit any frameset, so we have to give up
-                # on this possible page assignment and try the next one
-
-                @page_assignments = ();    # reset assignments
-                next POSSIBLE_PAGE_ASSIGNMENT;
-
-            }
-
-            # It did fit a frame assignment, so save it
-            push @page_assignments, $page_assignment_r;
-
-        } ## tidy end: PAGE: foreach my $tables_on_this_page_r...
-
-        last if @page_assignments;
-
-    } ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_permutation_r...
-
-    return @page_assignments;
-
-} ## tidy end: sub _make_page_assignments
-
-
-sub _partition_tables_into_pages {
-    # This creates the sets of tables that could possibly fit across pages
-
-    my @all_tables = @_;
-
     my @page_partitions;
 
-    foreach
-      my $partition ( Algorithm::Combinatorics::partitions( \@all_tables ) )
-    {
+    foreach my $partition (@partitions_to_test) {
 
         my %partitions_with_values = (
             partition        => $partition,
@@ -318,16 +271,81 @@ sub _partition_tables_into_pages {
 
         push @page_partitions, \%partitions_with_values;
 
-    } ## tidy end: foreach my $partition ( Algorithm::Combinatorics::partitions...)
+    } ## tidy end: foreach my $partition (@partitions_to_test)
 
     @page_partitions = sort _page_partition_sort @page_partitions;
 
     @page_partitions = map { $_->{partition} } @page_partitions;
     # drop sort_values from partition;
 
-    return @page_partitions;
+    # So now we know every possible way the tables can be divided into pages.
 
-} ## tidy end: sub _partition_tables_into_pages
+    my @page_assignments;
+
+    # go through each possible page assignment
+    # For this page assignment, does each possible page fit on
+    # one of the framesets?
+    # If all pages fit, use it! if not, go to the next page set
+
+  POSSIBLE_PAGE_ASSIGNMENT:
+    foreach my $page_permutation_r (@page_partitions) {
+
+        # so now we have a single grouping of tables into one or more pages.
+        # For example,
+        # @page_permutation_r = ([ Table 1, Table 2] , [Table 3 , Table 4])
+        # But this page assignment may not fit. For each page, check to
+        # see if it fits.
+
+      PAGE:
+        foreach my $tables_on_this_page_r ( @{$page_permutation_r} ) {
+
+            # And now we have a single page:
+            # $tables_on_this_page_r = [ Table 1, Table 2 ]
+
+            # Now we check to see whether this page fits!
+
+            my $page_assignment_r = _assign_page(
+                {   tables    => $tables_on_this_page_r,
+                    framesets => \@page_framesets
+                }
+            );
+
+            # $page_assignment_r->{tables} = [ [ Table 1, Table 2] ,[Table 3] ]
+            # $page_assignment_r->{frameset} = [ Frame 1, Frame 2]
+
+            if ( not defined $page_assignment_r ) {
+                # This page does not fit any frameset, so we have to give up
+                # on this possible page assignment and try the next one
+
+                @page_assignments = ();    # reset assignments
+                next POSSIBLE_PAGE_ASSIGNMENT;
+
+            }
+
+            # It did fit a frame assignment, so save it
+            push @page_assignments, $page_assignment_r;
+
+        } ## tidy end: PAGE: foreach my $tables_on_this_page_r...
+
+        last if @page_assignments;
+
+    } ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_permutation_r...
+
+    return unless @page_assignments;
+    # If we went through all the possible page assignments and couldn't
+    # find one that works, return nothing
+
+    my $has_shortpage;
+    ( $has_shortpage, @page_assignments )
+      = _reassign_short_page(@page_assignments);
+
+    # @page_assignments is organized by page, but want to return
+    # table_assignments, organized by table
+
+    return _make_table_assignments_from_page_assignments( $has_shortpage,
+        @page_assignments );
+
+} ## tidy end: sub assign
 
 sub _assign_page {
 
@@ -517,7 +535,6 @@ sub _table_permutation_sort {
 
 } ## tidy end: sub _table_permutation_sort
 
-
 sub _page_partition_sort {
 
     return
@@ -656,6 +673,46 @@ sub _make_table_assignments_from_page_assignments {
     return @table_assignments;
 
 } ## tidy end: sub _make_table_assignments_from_page_assignments
+
+sub _odometer_combinations {
+
+    my @list_of_lists = @_;
+
+    my ( @combinations, $odometer_r, $maxes_r );
+
+    foreach my $i ( 0 .. $#list_of_lists ) {
+        $odometer_r->[$i] = 0;
+        $odometer_r->[$i] = $#{ $list_of_lists[$i] };
+    }
+
+    while ($odometer_r) {
+        my @combination
+          = map { $list_of_lists[ $odometer_r->[$_] ] } 0 .. $#list_of_lists;
+        push @combinations, \@combination;
+        $odometer_r = _odometer_increment( $odometer_r, $maxes_r );
+    }
+    return @combinations;
+
+} ## tidy end: sub _odometer_combinations
+
+sub _odometer_increment {
+    my $odometer_r = shift;
+    my $maxes_r    = shift;
+
+    my $wheel = $#{$odometer_r};    # start at rightmost wheel
+
+    until ( $odometer_r->[$wheel] < $maxes_r->[$wheel] || $wheel < 0 ) {
+        $odometer_r->[$wheel] = 0;
+        $wheel--;                   # next wheel to the left
+    }
+    if ( $wheel < 0 ) {
+        return;                     # fell off the left end; no more sequences
+    }
+    else {
+        ( $odometer_r->[$wheel] )++;    # this wheel now turns one notch
+        return $odometer_r;
+    }
+}
 
 1;
 

@@ -100,7 +100,7 @@ sub framesets_of_compression_level {
 
 has heights_of_compression_level_r => (
     traits  => ['Hash'],
-    is      => 'bare',
+    is      => 'ro',
     isa     => 'HashRef[ArrayRef[Int]]',
     lazy    => 1,
     builder => '_build_heights_of_compression_level_r',
@@ -150,6 +150,7 @@ sub make_idtables {
     my @tables = @_;
     my @idtables;
     my $seen_a_failure;
+    my $any_multipage;
 
   TABLE:
     foreach my $table (@tables) {
@@ -200,6 +201,7 @@ sub make_idtables {
                 compression_level => $partial_level,
                 multipage         => 1
               );
+            $any_multipage = 1;
             next TABLE;
         }
 
@@ -210,7 +212,7 @@ sub make_idtables {
 
     } ## tidy end: TABLE: foreach my $table (@tables)
 
-    return $seen_a_failure, @idtables;
+    return $seen_a_failure, $any_multipage, @idtables;
 
 } ## tidy end: sub make_idtables
 
