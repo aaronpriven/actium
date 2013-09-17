@@ -6,10 +6,10 @@
 
 # legacy status: 4
 
-use warnings;
-use 5.012;
-
 package Actium::IDTables::PageAssignments 0.001;
+
+use 5.016;
+use warnings;
 
 use English '-no_match_vars';
 use autodie;
@@ -26,50 +26,53 @@ use Actium::Util qw/doe in chunks flatten population_stdev jk all_eq halves/;
 use Const::Fast;
 use List::Util (qw/max sum/);
 use Algorithm::Combinatorics;
+use Actium::Combinatorics ('odometer_combinations');
+
+use Actium::O::Sked::Timetable::IDPageFrameSets;
 
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
 
 my $shortpage_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
-    [   description => 'Landscape full',
+    {   description => 'Landscape full',
         frames      => [ { widthpair => [ 10, 0 ], frame_idx => 0 } ],
         height      => 42,
-    ],
-    [   description => 'Landscape halves',
+    },
+    {   description => 'Landscape halves',
         frames      => [
             { widthpair => [ 4, 1 ], frame_idx => 0 },
             { widthpair => [ 5, 0 ], frame_idx => 2 },
         ],
         height => 42,
-    ],
-    [   description => 'Portrait full',
+    },
+    {   description => 'Portrait full',
         frames      => [ { widthpair => [ 11, 0 ], frame_idx => 4 } ],
         height      => 36,
-    ],
-    [   description => 'Portrait halves',
+    },
+    {   description => 'Portrait halves',
         frames      => [
             { widthpair => [ 5, 1 ], frame_idx => 4 },
             { widthpair => [ 5, 0 ], frame_idx => 5 },
         ],
         height => 36,
-    ],
+    },
 );
 
 my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
-    [   description       => 'Landscape full',
+    {   description       => 'Landscape full',
         compression_level => 0,
         frames            => [ { widthpair => [ 15, 0 ], frame_idx => 0 }, ],
         height            => 42,
-    ],
-    [   description       => 'Landscape halves',
+    },
+    {   description       => 'Landscape halves',
         compression_level => 0,
         frames            => [
             { widthpair => [ 7, 0 ], frame_idx => 0 },
             { widthpair => [ 7, 0 ], frame_idx => 1 },
         ],
         height => 42,
-    ],
-    [   description       => 'Landscape thirds',
+    },
+    {   description       => 'Landscape thirds',
         compression_level => 0,
         frames            => [
             { widthpair => [ 4, 1 ], frame_idx => 0 },
@@ -77,42 +80,42 @@ my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
             { widthpair => [ 4, 1 ], frame_idx => 3 },
         ],
         height => 42,
-    ],
-    [   description       => 'Landscape 2/3 - 1/3',
+    },
+    {   description       => 'Landscape 2/3 - 1/3',
         compression_level => 0,
         frames            => [
             { widthpair => [ 10, 0 ], frame_idx => 0 },
             { widthpair => [ 4,  1 ], frame_idx => 3 },
         ],
         height => 42,
-    ],
-    [   description       => 'Landscape 1/3 - 2/3',
+    },
+    {   description       => 'Landscape 1/3 - 2/3',
         compression_level => 0,
         frames            => [
             { widthpair => [ 4,  1 ], frame_idx => 0 },
             { widthpair => [ 10, 0 ], frame_idx => 2 },
         ],
         height => 42,
-    ],
+    },
 
-    [   description       => 'Portrait full',
+    {   description       => 'Portrait full',
         compression_level => 0,
         frames            => [ { widthpair => [ 11, 0 ], frame_idx => 4 }, ],
         height            => 59,
-    ],
-    [   description       => 'Portrait halves',
+    },
+    {   description       => 'Portrait halves',
         compression_level => 0,
         frames            => [
             { widthpair => [ 5, 1 ], frame_idx => 4 },
             { widthpair => [ 5, 0 ], frame_idx => 5 },
         ],
         height => 59,
-    ],
-    [   description       => 'Landscape full, narrow columns',
+    },
+    {   description       => 'Landscape full, narrow columns',
         compression_level => 1,
         frames            => [ { widthpair => [ 18, 0 ], frame_idx => 0 } ],
         height            => 40,
-    ],
+    },
 );
 # reduced height by two, in order to allow for two more lines
 # of timepoint names.  This is a guess
@@ -165,16 +168,45 @@ sub assign {
        #   [ Table2 ]   # not multipage
        # ]
 
-        my @combinations = _odometer_combinations(@table_expansions);
+        my @combinations = odometer_combinations(@table_expansions);
 
         foreach my $combination_of_tables (@combinations) {
-            push @partitions_to_test,
-              Algorithm::Combinatorics::partitions($combination_of_tables);
-        }
-        
-        
-        ## TODO - delete any partition with non-consecutive multipage items
-        
+
+            my $iter
+              = Algoritm::Combinatorics::partitions($combination_of_tables);
+          PARTITION:
+            while ( my $partition = $iter->next ) {
+
+                my @tables = flatten($partition);
+                my $prev_id;
+                my $prev_order;
+              TABLE:
+                foreach my $table (@tables) {
+                    my $page_order = $table->page_order;
+                    my $id         = $table->id;
+
+                    if ( not $table->multipage or $page_order == 0 ) {
+                        $prev_id    = $id;
+                        $prev_order = $page_order;
+                        next TABLE;
+                        # not multipage, or beginning of an order
+                    }
+
+                    next PARTITION
+                      if ( $id ne $prev_id
+                        or $page_order != ( $prev_order - 1 ) );
+                    # out of order
+
+                    $prev_id    = $id;
+                    $prev_order = $page_order;
+                    # in order
+
+                } ## tidy end: TABLE: foreach my $table (@tables)
+
+                push @partitions_to_test, $partition;
+            } ## tidy end: PARTITION: while ( my $partition = $iter...)
+
+        } ## tidy end: foreach my $combination_of_tables...
 
     } ## tidy end: if ($has_multipage)
     else {
@@ -306,7 +338,7 @@ sub assign {
 
             my $page_assignment_r = _assign_page(
                 {   tables    => $tables_on_this_page_r,
-                    framesets => \@page_framesets
+                    framesets => $page_framesets
                 }
             );
 
@@ -347,194 +379,6 @@ sub assign {
 
 } ## tidy end: sub assign
 
-sub _assign_page {
-
-    my $args_r                = shift;
-    my $tables_on_this_page_r = $args_r->{tables};
-    my @framesets             = @{ $args_r->{framesets} };
-
-    foreach my $frameset (@framesets) {
-
-        my $tables_in_each_frame_r
-          = _assign_tables_to_frames( $frameset, $tables_on_this_page_r );
-
-        next unless $tables_in_each_frame_r;
-        my $page_assignment_r = {
-            tables   => $tables_in_each_frame_r,
-            frameset => $frameset
-        };
-
-        return $page_assignment_r;
-
-    }
-
-    return;
-
-} ## tidy end: sub _assign_page
-
-# if it got here, it successfully placed all tables
-# on all pages!
-
-sub _assign_tables_to_frames {
-
-    my @frames = @{ +shift };
-    my @tables = @{ +shift };
-
-    return if ( @frames > @tables );
-    # If there are more frames than there are tables,
-    # this cannot be the best fit
-
-    # will this set of tables fit on this page?
-
-    if ( @frames == 1 ) {
-        my ( $height, $width ) = _get_stacked_measurement(@tables);
-        if (not(    $height <= $frames[0]{height}
-                and $width <= $frames[0]{width} )
-          )
-
-        {
-            return;
-
-        }
-        return [ \@tables ];
-    }
-
-    if ( @frames == @tables ) {
-        for my $i ( 0 .. $#frames ) {
-            return
-              if $frames[$i]{height} < $tables[$i]->height
-              or $frames[$i]{width} < $tables[$i]->width_in_halfcols;
-            # doesn't fit if frame's height or width aren't big enough
-        }
-        return [ map { [$_] } @tables ];
-        # all frames fit
-    }
-
-    # more tables than frames. Divide tables up into appropriate sets,
-    # and then try them
-
-    my @table_permutations = _table_permutations( ( scalar @frames ), @tables );
-
-  TABLE_PERMUTATION:
-    foreach my $table_permutation (@table_permutations) {
-
-        foreach my $i ( 0 .. $#frames ) {
-            my @tables = @{ $table_permutation->[$i] };
-            my ( $height, $width ) = _get_stacked_measurement(@tables);
-            next TABLE_PERMUTATION
-              if $frames[$i]{height} < $height
-              or $frames[$i]{width} < $width;
-            # doesn't fit if frame's height or width aren't big enough
-        }
-
-        # it got here, so the tables fit within the frames
-
-        return $table_permutation;
-
-    }
-
-    return;
-    # finished all the permutations, but nothing fit everything
-
-} ## tidy end: sub _assign_tables_to_frames
-
-sub _table_permutations {
-
-    # The idea here is that permutations are identified by a combination
-    # of numbers representing the breaks between items.
-
-    # So if you have items qw<a b c d e> then the possible breaks are
-    # after a, after b, after c, or after d --
-    # numbered 0, 1, 2 and 3.
-
-    # If you have two frames, then you have one break between them.
-    # If you have three frames, then you have two breaks between them.
-
-    # This gets all the combinations of breaks between them and
-    # then creates the subsets that correspond to those breaks,
-    # and returns the subsets. So, if you have two frames, the results are
-    # [ a] [ b c d e] , [ a b ] [ c d e] , [a b c] [ d e ], [a b c d] [e].
-
-    # These sorted by which one we'd want to use first
-    # (primarily, which combination yields even results, and then
-    # if it can't be even, having the extra one at the front rather than
-    # at the back or the middle)
-
-    # This differs from
-    # Algorithm::Combinatorics::partitions(\@tables, $num_frames)
-    # only that it preserves the order. partitions could return
-    # [ b] [ a c d e]
-    # but this routine will never do that.
-    # I am not sure whether this is actually good or not.  Wouldn't
-    # it be weird to have a big NX1 table followed by small NX and NX2 tables?
-    # If not, then this could be replaced with partitions, as above.
-
-    my $num_frames = shift;
-    my @tables     = @_;
-
-    my @indices = ( 0 .. $#tables - 1 );
-    my @break_after_idx_sets
-      = Algorithm::Combinatorics::combinations( \@indices, $num_frames - 1 );
-
-    my @table_permutations;
-
-    foreach my $break_after_idx_set (@break_after_idx_sets) {
-        my @permutation;
-        my @break_after_idx = @$break_after_idx_set;
-
-        push @permutation, [ @tables[ 0 .. $break_after_idx[0] ] ];
-
-        for my $i ( 1 .. $#break_after_idx ) {
-            my $first = $break_after_idx[ $i - 1 ] + 1;
-            my $last  = $break_after_idx[$i];
-            push @permutation, [ @tables[ $first .. $last ] ];
-        }
-
-        push @permutation, [ @tables[ 1 + $break_after_idx[-1] .. $#tables ] ];
-
-        #push @table_permutations, \@permutation;
-
-        my @sort_values = map { scalar @{$_} } @permutation;
-        # count of tables in each frame
-
-        unshift @sort_values, population_stdev(@sort_values);
-        # standard deviation -- so makes them as close to the same
-        # number of tables as possible
-
-        push @table_permutations, [ \@permutation, \@sort_values ];
-
-    } ## tidy end: foreach my $break_after_idx_set...
-
-    @table_permutations = sort _table_permutation_sort @table_permutations;
-
-    return map { $_->[0] } @table_permutations;
-
-} ## tidy end: sub _table_permutations
-
-sub _table_permutation_sort {
-
-    my @a = @{ $a->[1] };
-    my @b = @{ $b->[1] };
-
-    # first, return the comparison of the standard deviations of the
-    # count of tables in each frame
-
-    my $result = $a[0] <=> $b[0];
-    return $result if $result;
-
-    # If those are the same, go through the remaining values,
-    # which are the counts of the tables in each frame.
-    # Return the one that's highest first -- so it will
-    # prefer [2, 1] over [1, 2]
-    for my $i ( 1 .. $#a ) {
-        my $result = $b[$i] <=> $a[$i];
-        return $result if $result;
-    }
-
-    return 0;    # the same...
-
-} ## tidy end: sub _table_permutation_sort
-
 sub _page_partition_sort {
 
     return
@@ -568,27 +412,6 @@ sub _one_line_in_common {
 
 } ## tidy end: sub _one_line_in_common
 
-{
-
-    const my $EXTRA_TABLE_HEIGHT => 9;
-  # add 9 for each additional table in a stack -- 1 for blank line,
-  # 4 for timepoints and 4 for the color bar. This is inexact and can mess up...
-  # not sure how to fix it at this point, I'd need to measure the headers
-
-    sub _get_stacked_measurement {
-        my @tables = @_;
-
-        my @widths  = map { $_->width_in_halfcols } @tables;
-        my @heights = map { $_->height } @tables;
-
-        my $maxwidth = max(@widths);
-        my $sumheight = sum(@heights) + ( $EXTRA_TABLE_HEIGHT * $#heights );
-
-        return ( $sumheight, $maxwidth );
-
-    }
-
-}
 
 sub _reassign_short_page {
 
@@ -614,10 +437,10 @@ sub _reassign_short_page {
     for my $page_idx (@page_order) {
         my $page_assignment_r = $page_assignments[$page_idx];
         my $tables_r          = flatten( $page_assignment_r->{tables} );
-        my $frameset          = $page_assignment_r->{frameset};
+        #my $frameset          = $page_assignment_r->{frameset};
 
-        my $short_page_assignment = _assign_page(
-            { tables => $tables_r, framesets => \@shortpage_framesets } );
+        my $short_page_assignment = 
+         $shortpage_framesets->assign_page(@{$tables_r});
 
         if ( defined $short_page_assignment ) {
             splice( @page_assignments, $page_idx, 1 );
@@ -644,14 +467,15 @@ sub _make_table_assignments_from_page_assignments {
     for my $page_assignment_r (@page_assignments) {
 
         my @tables_of_frames_of_page = @{ $page_assignment_r->{tables} };
-        my @frameset                 = @{ $page_assignment_r->{frameset} };
+        my $frameset                 = $page_assignment_r->{frameset} ;
+        my @frames = $frameset->frames;
 
-        for my $frame_idx ( 0 .. $#frameset ) {
-            my $frame           = $frameset[$frame_idx];
+        for my $frame_idx ( 0 .. $#frames ) {
+            my $frame           = $frames[$frame_idx];
             my @tables_of_frame = @{ $tables_of_frames_of_page[$frame_idx] };
 
-            my $widthpair = $frame->{widthpair};
-            my $frame_idx = $frame->{frame_idx};
+            my $widthpair = $frame->widthpair_r;
+            my $frame_idx = $frame->frame_idx;
 
             foreach my $table (@tables_of_frame) {
                 push @table_assignments,
@@ -674,47 +498,6 @@ sub _make_table_assignments_from_page_assignments {
 
 } ## tidy end: sub _make_table_assignments_from_page_assignments
 
-sub _odometer_combinations {
-
-    my @list_of_lists = @_;
-
-    my ( @combinations, $odometer_r, $maxes_r );
-
-    foreach my $i ( 0 .. $#list_of_lists ) {
-        $odometer_r->[$i] = 0;
-        $odometer_r->[$i] = $#{ $list_of_lists[$i] };
-    }
-
-    while ($odometer_r) {
-        my @combination
-          = map { $list_of_lists[ $odometer_r->[$_] ] } 0 .. $#list_of_lists;
-        push @combinations, \@combination;
-        $odometer_r = _odometer_increment( $odometer_r, $maxes_r );
-    }
-    return @combinations;
-
-} ## tidy end: sub _odometer_combinations
-
-sub _odometer_increment {
-    my $odometer_r = shift;
-    my $maxes_r    = shift;
-
-    my $wheel = $#{$odometer_r};    # start at rightmost wheel
-
-    until ( $odometer_r->[$wheel] < $maxes_r->[$wheel] || $wheel < 0 ) {
-        $odometer_r->[$wheel] = 0;
-        $wheel--;                   # next wheel to the left
-    }
-    if ( $wheel < 0 ) {
-        return;                     # fell off the left end; no more sequences
-    }
-    else {
-        ( $odometer_r->[$wheel] )++;    # this wheel now turns one notch
-        return $odometer_r;
-    }
-}
-
-1;
 
 __END__
 

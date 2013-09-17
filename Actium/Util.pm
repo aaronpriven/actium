@@ -3,10 +3,10 @@
 
 # Subversion: $Id$
 
-use warnings;
-use 5.012;
+package Actium::Util 0.002;
 
-package Actium::Util 0.001;
+use 5.016;
+use warnings;
 
 use Actium::Constants;
 use List::Util (qw<max sum>);
@@ -314,7 +314,10 @@ sub _join_path_components {
 }
 
 sub hashref {
-    return reftype( $_[0] ) eq 'HASH ' ? $_[0]  : { @_ };
+    return $_[0] if reftype($_[0]) eq 'HASH' and @_ == 1;
+    croak 'Odd number of elements passed to ' . __PACKAGE__ . '::hashref' 
+       if @_ % 2;
+    return { @_ };
 }
 
 sub flatten {

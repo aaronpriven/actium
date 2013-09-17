@@ -105,8 +105,6 @@ has height => (
     builder => '_build_height',
 );
 
-
-
 sub _build_height {
     my $self = shift;
     return $self->body_row_count;

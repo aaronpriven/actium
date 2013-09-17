@@ -32,10 +32,9 @@ use Algorithm::Combinatorics ('combinations');
 
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
+# saves typing
 
 use Actium::IDTables::PageAssignments;
-
-# saves typing
 
 sub create_timetable_texts {
 
