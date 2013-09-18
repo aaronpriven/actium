@@ -141,10 +141,150 @@ sub assign {
 
     # If any timetable is so big that it won't fit on any page,
     # we return, having warned about it.
+    
+    my @page_partitions = _page_partitions($has_multipage, @idtables);
 
-    my @partitions_to_test;
-    my $heights_of_level_r = $page_framesets->heights_of_compression_level_r;
+    # So now we know every possible way the tables can be divided into pages.
 
+    my @page_assignments;
+
+    # go through each possible page assignment
+    # For this page assignment, does each possible page fit on
+    # one of the framesets?
+    # If all pages fit, use it! if not, go to the next page set
+
+  POSSIBLE_PAGE_ASSIGNMENT:
+    foreach my $page_permutation_r (@page_partitions) {
+
+        # so now we have a single grouping of tables into one or more pages.
+        # For example,
+        # @page_permutation_r = ([ Table 1, Table 2] , [Table 3 , Table 4])
+        # But this page assignment may not fit. For each page, check to
+        # see if it fits.
+
+      PAGE:
+        foreach my $tables_on_this_page_r ( @{$page_permutation_r} ) {
+
+            # And now we have a single page:
+            # $tables_on_this_page_r = [ Table 1, Table 2 ]
+
+            # Now we check to see whether this page fits!
+
+            my $page_assignment_r = _assign_page(
+                {   tables    => $tables_on_this_page_r,
+                    framesets => $page_framesets
+                }
+            );
+
+            # $page_assignment_r->{tables} = [ [ Table 1, Table 2] ,[Table 3] ]
+            # $page_assignment_r->{frameset} = [ Frame 1, Frame 2]
+
+            if ( not defined $page_assignment_r ) {
+                # This page does not fit any frameset, so we have to give up
+                # on this possible page assignment and try the next one
+
+                @page_assignments = ();    # reset assignments
+                next POSSIBLE_PAGE_ASSIGNMENT;
+
+            }
+
+            # It did fit a frame assignment, so save it
+            push @page_assignments, $page_assignment_r;
+
+        } ## tidy end: PAGE: foreach my $tables_on_this_page_r...
+
+        last if @page_assignments;
+
+    } ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_permutation_r...
+
+    return unless @page_assignments;
+    # If we went through all the possible page assignments and couldn't
+    # find one that works, return nothing
+
+    my $has_shortpage;
+    ( $has_shortpage, @page_assignments )
+      = _reassign_short_page(@page_assignments);
+
+    # @page_assignments is organized by page, but want to return
+    # table_assignments, organized by table
+
+    return _make_table_assignments_from_page_assignments( $has_shortpage,
+        @page_assignments );
+
+} ## tidy end: sub assign
+
+
+
+sub _one_line_in_common {
+    my @lol = @_;
+
+    # if only one element, dereference it.
+    # No point in passing only one element to this list
+    if ( @lol == 1 ) {
+        @lol = @{ $lol[0] };
+    }
+
+    my @first_elements = @{ shift @lol };
+    my $match          = 0;
+
+  ELEMENT:
+    foreach my $element (@first_elements) {
+        foreach my $list_r (@lol) {
+            next ELEMENT unless in( $element, $list_r );
+        }
+        return 1;    # matches all elements
+    }
+
+    return;
+
+} ## tidy end: sub _one_line_in_common
+
+sub _reassign_short_page {
+
+    my @page_assignments = @_;
+
+    ###
+    # Replace assigned frameset with a short frameset if it fits
+
+    # Check the first page, then the last page,
+    # only then any intermediate pages
+
+    my @page_order = ( 0 .. $#page_assignments );
+    if ( @page_order > 2 ) {
+        my $final = pop @page_order;
+        splice( @page_order, 1, 0, $final );
+    }
+
+    my $has_shortpage = 0;
+
+    # First add blank short page
+
+  FRAMESET_TO_REPLACE:
+    for my $page_idx (@page_order) {
+        my $page_assignment_r = $page_assignments[$page_idx];
+        my $tables_r          = flatten( $page_assignment_r->{tables} );
+        #my $frameset          = $page_assignment_r->{frameset};
+
+        my $short_page_assignment
+          = $shortpage_framesets->assign_page( @{$tables_r} );
+
+        if ( defined $short_page_assignment ) {
+            splice( @page_assignments, $page_idx, 1 );
+            unshift @page_assignments, $short_page_assignment;
+            $has_shortpage = 1;
+            last FRAMESET_TO_REPLACE;
+        }
+    }
+
+    return $has_shortpage, @page_assignments;
+
+} ## tidy end: sub _reassign_short_page
+
+sub _page_partitions {
+    my $has_multipage = shift;
+    my @idtables = @_;
+ 
+     my @partitions_to_test;
     if ($has_multipage) {
         my @table_expansions;
         foreach my $table (@idtables) {
@@ -152,8 +292,9 @@ sub assign {
                 push @table_expansions, [ [$table] ];
             }
             else {
-                my @heights
-                  = @{ $heights_of_level_r->{ $table->compression_level } };
+                my @heights = $page_framesets->heights_of_compression_level(
+                    $table->compression_level );
+
                 push @table_expansions, $table->expand_multipage(@heights);
             }
 
@@ -309,75 +450,11 @@ sub assign {
 
     @page_partitions = map { $_->{partition} } @page_partitions;
     # drop sort_values from partition;
-
-    # So now we know every possible way the tables can be divided into pages.
-
-    my @page_assignments;
-
-    # go through each possible page assignment
-    # For this page assignment, does each possible page fit on
-    # one of the framesets?
-    # If all pages fit, use it! if not, go to the next page set
-
-  POSSIBLE_PAGE_ASSIGNMENT:
-    foreach my $page_permutation_r (@page_partitions) {
-
-        # so now we have a single grouping of tables into one or more pages.
-        # For example,
-        # @page_permutation_r = ([ Table 1, Table 2] , [Table 3 , Table 4])
-        # But this page assignment may not fit. For each page, check to
-        # see if it fits.
-
-      PAGE:
-        foreach my $tables_on_this_page_r ( @{$page_permutation_r} ) {
-
-            # And now we have a single page:
-            # $tables_on_this_page_r = [ Table 1, Table 2 ]
-
-            # Now we check to see whether this page fits!
-
-            my $page_assignment_r = _assign_page(
-                {   tables    => $tables_on_this_page_r,
-                    framesets => $page_framesets
-                }
-            );
-
-            # $page_assignment_r->{tables} = [ [ Table 1, Table 2] ,[Table 3] ]
-            # $page_assignment_r->{frameset} = [ Frame 1, Frame 2]
-
-            if ( not defined $page_assignment_r ) {
-                # This page does not fit any frameset, so we have to give up
-                # on this possible page assignment and try the next one
-
-                @page_assignments = ();    # reset assignments
-                next POSSIBLE_PAGE_ASSIGNMENT;
-
-            }
-
-            # It did fit a frame assignment, so save it
-            push @page_assignments, $page_assignment_r;
-
-        } ## tidy end: PAGE: foreach my $tables_on_this_page_r...
-
-        last if @page_assignments;
-
-    } ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_permutation_r...
-
-    return unless @page_assignments;
-    # If we went through all the possible page assignments and couldn't
-    # find one that works, return nothing
-
-    my $has_shortpage;
-    ( $has_shortpage, @page_assignments )
-      = _reassign_short_page(@page_assignments);
-
-    # @page_assignments is organized by page, but want to return
-    # table_assignments, organized by table
-
-    return _make_table_assignments_from_page_assignments( $has_shortpage,
-        @page_assignments );
-
-} ## tidy end: sub assign
+    
+    return @page_partitions;
+ 
+ 
+}
 
 sub _page_partition_sort {
 
@@ -387,72 +464,6 @@ sub _page_partition_sort {
       || $b->{pointsforsorting} <=> $a->{pointsforsorting};
 
 }
-
-sub _one_line_in_common {
-    my @lol = @_;
-
-    # if only one element, dereference it.
-    # No point in passing only one element to this list
-    if ( @lol == 1 ) {
-        @lol = @{ $lol[0] };
-    }
-
-    my @first_elements = @{ shift @lol };
-    my $match          = 0;
-
-  ELEMENT:
-    foreach my $element (@first_elements) {
-        foreach my $list_r (@lol) {
-            next ELEMENT unless in( $element, $list_r );
-        }
-        return 1;    # matches all elements
-    }
-
-    return;
-
-} ## tidy end: sub _one_line_in_common
-
-
-sub _reassign_short_page {
-
-    my @page_assignments = @_;
-
-    ###
-    # Replace assigned frameset with a short frameset if it fits
-
-    # Check the first page, then the last page,
-    # only then any intermediate pages
-
-    my @page_order = ( 0 .. $#page_assignments );
-    if ( @page_order > 2 ) {
-        my $final = pop @page_order;
-        splice( @page_order, 1, 0, $final );
-    }
-
-    my $has_shortpage = 0;
-
-    # First add blank short page
-
-  FRAMESET_TO_REPLACE:
-    for my $page_idx (@page_order) {
-        my $page_assignment_r = $page_assignments[$page_idx];
-        my $tables_r          = flatten( $page_assignment_r->{tables} );
-        #my $frameset          = $page_assignment_r->{frameset};
-
-        my $short_page_assignment = 
-         $shortpage_framesets->assign_page(@{$tables_r});
-
-        if ( defined $short_page_assignment ) {
-            splice( @page_assignments, $page_idx, 1 );
-            unshift @page_assignments, $short_page_assignment;
-            $has_shortpage = 1;
-            last FRAMESET_TO_REPLACE;
-        }
-    }
-
-    return $has_shortpage, @page_assignments;
-
-} ## tidy end: sub _reassign_short_page
 
 sub _make_table_assignments_from_page_assignments {
 
@@ -467,8 +478,8 @@ sub _make_table_assignments_from_page_assignments {
     for my $page_assignment_r (@page_assignments) {
 
         my @tables_of_frames_of_page = @{ $page_assignment_r->{tables} };
-        my $frameset                 = $page_assignment_r->{frameset} ;
-        my @frames = $frameset->frames;
+        my $frameset                 = $page_assignment_r->{frameset};
+        my @frames                   = $frameset->frames;
 
         for my $frame_idx ( 0 .. $#frames ) {
             my $frame           = $frames[$frame_idx];
@@ -497,7 +508,6 @@ sub _make_table_assignments_from_page_assignments {
     return @table_assignments;
 
 } ## tidy end: sub _make_table_assignments_from_page_assignments
-
 
 __END__
 

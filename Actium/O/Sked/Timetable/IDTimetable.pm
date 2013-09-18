@@ -21,8 +21,7 @@ has timetable_obj => (
     isa      => 'Actium::O::Sked::Timetable',
     is       => 'ro',
     required => 1,
-    handles =>
-      [qw(lines dircode daycode height width id dimensions_for_display)],
+    handles  => [qw(lines dircode daycode width id dimensions_for_display)],
 );
 
 has compression_level => (
@@ -37,11 +36,57 @@ has [qw<multipage failed>] => (
     default => 0,
 );
 
-has [qw<lower_bound upper_bound page_order>] => (
+has [qw<firstpage finalpage>] => (
+    is      => 'ro',
+    isa     => 'Bool',
+    default => 1,
+);
+
+has [qw<lower_bound upper_bound>] => (
     is      => 'ro',
     isa     => 'Int',
     default => 0,
 );
+
+sub height {
+
+    my $self        = shift;
+    my $upper_bound = $self->upper_bound;
+    return $self->timetable_obj->height unless defined $upper_bound;
+
+    return $upper_bound - $self->lower_bound;
+
+}
+
+my $height_adjustment = 1;
+# number of lines that the "continued" at the bottom takes up
+
+sub _multipage_clones {
+    my $self          = shift;
+    my @rows_on_pages = @_;
+    my @clonespecs;
+    my $start = 0;
+
+    foreach my $page_rows (@rows_on_pages) {
+
+        push @clonespecs,
+          { lower_bound => $start,
+            upper_bound => $start + $page_rows - 1,
+            firstpage   => 0,
+            finalpage   => 0,
+          };
+
+        $start = $start + $page_rows;
+    }
+
+    $clonespecs[0]{firstpage}  = 1;
+    $clonespecs[-1]{finalpage} = 1;
+
+    # see Class::MOP::Class for clone_object
+    my @clones = map { $self->meta->clone_object( $self, %{$_} ) } @clonespecs;
+    return \@clones;
+
+} ## tidy end: sub _multipage_clones
 
 sub expand_multipage {
     my $self         = shift;
@@ -53,57 +98,28 @@ sub expand_multipage {
 
     foreach my $page_height (@page_heights) {
 
-        my @newtables;
+        my @rows_on_pages;
 
-        my $start = 0;
-        my $count = 0;
-        while ( $start < $table_height ) {
-            my $end = $start + $page_height - 1;
-            $end = $table_lastrow if $end > $table_lastrow;
-            push @{ $newtables[0] },
-              $self->_clone_with_rows( $start, $end, $count );
-            $count++;
-            $start = $start + $page_height;
+        my $rest            = $table_height;
+        my $adjusted_height = $page_height - $height_adjustment;
+
+        while ( $rest > $page_height ) {
+            push @rows_on_pages, $adjusted_height;
+            $rest = $rest - $adjusted_height;
         }
+        push @rows_on_pages, $rest;
 
-        if ( $table_height % $page_height ) {
-            # if the table height isn't an exact multiple of the page height,
+        # so @rows_on_pages contains $adjusted_height for each page,
+        # plus the remainder on the last page
 
-            $count = 0;
-
-            my $end = $table_lastrow;
-            while ( $end > 0 ) {
-                my $start = $end - $page_height + 1;
-                $start = $0 if $start < 0;
-                push @{ $newtables[1] },
-                  $self->_clone_with_rows( $start, $end, $count );
-                $end = $end - $page_height;
-                $count++;
-            }
-
-        }
-
-        push @table_sets, @newtables;
+        push @table_sets, $self->_multipage_clones(@rows_on_pages);
+        push @table_sets, $self->_multipage_clones( reverse @rows_on_pages );
 
     } ## tidy end: foreach my $page_height (@page_heights)
 
     return @table_sets;
 
 } ## tidy end: sub expand_multipage
-
-sub _clone_with_rows {
-    my $self       = shift;
-    my $start      = shift;
-    my $end        = shift;
-    my $page_order = shift;
-
-    my %params = ( lower_bound => $start, upper_bound => $end,
-        page_order => $page_order );
-
-    return $self->meta->clone_object( $self, %params );
-    # see Class::MOP::Class
-
-}
 
 sub as_indesign {
     my $self = shift;
@@ -112,9 +128,10 @@ sub as_indesign {
 
     $params{lower_bound} = $self->lower_bound;
     $params{upper_bound} = $self->upper_bound;
+    $params{firstpage}   = $self->firstpage;
+    $params{finalpage}   = $self->finalpage;
 
     return $self->timetable_obj->as_indesign( \%params );
-
 }
 
 __PACKAGE__->meta->make_immutable;
