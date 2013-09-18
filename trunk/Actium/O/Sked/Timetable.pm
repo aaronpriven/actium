@@ -5,7 +5,7 @@
 
 # Subversion:  $Id$
 
-# legacy status: 4 
+# legacy status: 4
 
 use 5.012;
 use warnings;
@@ -129,12 +129,11 @@ sub _build_width_in_halfcols {
 #   );
 
 sub dimensions_for_display {
-   my $self = shift;
-   my $displaywidth = sprintf( '%.1f', $self->width_in_halfcols / 2 );
-   my $displayheight = $self->height;
-   return "$displaywidth columns x $displayheight rows";
+    my $self          = shift;
+    my $displaywidth  = sprintf( '%.1f', $self->width_in_halfcols / 2 );
+    my $displayheight = $self->height;
+    return "$displaywidth columns x $displayheight rows";
 }
-
 
 sub new_from_sked {
 
@@ -263,11 +262,11 @@ sub as_indesign {
             minimum_halfcols => 1,
             compressed       => { type => BOOLEAN, default => 0 },
             lower_bound => { default => 0 },
-            upper_bound => { default => ($self->body_row_count -1 ) },
+            upper_bound => { default => ( $self->body_row_count - 1 ) },
+            firstpage   => { default => 1 },
+            finalpage   => { default => 1 },
         }
     );
-    
-    # TODo - actually do something with the bounds
 
     my $minimum_columns  = $params{minimum_columns};
     my $minimum_halfcols = $params{minimum_halfcols};
@@ -326,14 +325,24 @@ sub as_indesign {
     print $th '<RowStart:<tRowAttrHeight:43.128692626953125>>';
     print $th "<CellStyle:$header_style><StylePriority:2>";
     print $th "<CellStart:1,$colcount>";
-    print $th $idt->parastyle('dropcaphead');
-    print $th "<pDropCapCharacters:$routechars>$routetext ";
-    print $th $idt->charstyle('DropCapHeadDays');
-    print $th "\cG", $self->header_daytext;
-    print $th $idt->nocharstyle, '<0x000A>';
-    print $th $idt->charstyle('DropCapHeadDest'),
-      , $self->header_dirtext;    # control-G is "Indent to Here"
-    print $th $idt->nocharstyle, '<CellEnd:>';
+
+    if ( $params{firstpage} ) {
+        print $th $idt->parastyle('dropcaphead');
+        print $th "<pDropCapCharacters:$routechars>$routetext ";
+        print $th $idt->charstyle('DropCapHeadDays');
+        print $th "\cG", $self->header_daytext;
+        print $th $idt->nocharstyle, '<0x000A>';
+        print $th $idt->charstyle('DropCapHeadDest'),
+          , $self->header_dirtext;    # control-G is "Indent to Here"
+        print $th $idt->nocharstyle;
+    }
+    else {
+        print $th $idt->parastyle('nodrophead1');
+        print $th "$routetext (continued)\r";
+        print $th $idt->parastyle('nodrophead2');
+        print $th $self->header_daytext, " ", $self->header_dirtext;
+    }
+    print $th '<CellEnd:>';
 
     #    for ( 2 .. $colcount ) {
     #        print $th '<CellStyle:$header_style><CellStart:1,1><CellEnd:>';
@@ -428,6 +437,10 @@ sub as_indesign {
     # Table End
 
     print $th "<TableEnd:>";
+    
+    unless ( $params{finalpage} ) {
+       print $th "\rContinued...";
+    }
 
     foreach my $note_definition ( $self->note_definitions ) {
         print $th "\r$note_definition";
