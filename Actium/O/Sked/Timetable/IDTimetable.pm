@@ -15,13 +15,19 @@ use warnings;
 use Moose;
 use MooseX::StrictConstructor;
 
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
+use overload '""'                   => sub {
+    my $self = shift;
+    $self->id . ":" . $self->lower_bound . '-' . $self->upper_bound;
+};
 
 has timetable_obj => (
     isa      => 'Actium::O::Sked::Timetable',
     is       => 'ro',
     required => 1,
-    handles  => [qw(lines dircode daycode width id dimensions_for_display)],
+    handles =>
+      [qw(lines dircode daycode width_in_halfcols id dimensions_for_display)]
+    ,
 );
 
 has compression_level => (
@@ -42,7 +48,7 @@ has [qw<firstpage finalpage>] => (
     default => 1,
 );
 
-has [qw<lower_bound upper_bound>] => (
+has [qw<lower_bound page_order upper_bound>] => (
     is      => 'ro',
     isa     => 'Int',
     default => 0,
@@ -52,9 +58,9 @@ sub height {
 
     my $self        = shift;
     my $upper_bound = $self->upper_bound;
-    return $self->timetable_obj->height unless defined $upper_bound;
-
-    return $upper_bound - $self->lower_bound;
+    my $lower_bound = $self->lower_bound;
+    return $self->timetable_obj->height if $upper_bound == $lower_bound;
+    return $upper_bound - $lower_bound +1;
 
 }
 
@@ -65,7 +71,8 @@ sub _multipage_clones {
     my $self          = shift;
     my @rows_on_pages = @_;
     my @clonespecs;
-    my $start = 0;
+    my $start      = 0;
+    my $page_order = 0;
 
     foreach my $page_rows (@rows_on_pages) {
 
@@ -74,9 +81,11 @@ sub _multipage_clones {
             upper_bound => $start + $page_rows - 1,
             firstpage   => 0,
             finalpage   => 0,
+            page_order  => $page_order,
           };
 
         $start = $start + $page_rows;
+        $page_order++;
     }
 
     $clonespecs[0]{firstpage}  = 1;
@@ -117,7 +126,7 @@ sub expand_multipage {
 
     } ## tidy end: foreach my $page_height (@page_heights)
 
-    return @table_sets;
+    return \@table_sets;
 
 } ## tidy end: sub expand_multipage
 

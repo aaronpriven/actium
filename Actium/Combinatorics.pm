@@ -54,15 +54,15 @@ sub ordered_partitions {
     # it be weird to have a big NX1 table followed by small NX and NX2 tables?
     # If not, then this could be replaced with partitions, as above.
 
-    my $data_r     = shift;
+    my @data     = @{+shift};
     my $num_frames = shift;
 
-    my $final_idx = $#{$data_r};
+    my $final_idx = $#data;
 
     if ( not defined $num_frames ) {
         my @all_partitions;
         for ( 1 .. $final_idx ) {
-            push @all_partitions, ordered_partitions( $data_r, $_ );
+            push @all_partitions, ordered_partitions( \@data, $_ );
         }
         return @all_partitions;
     }
@@ -76,16 +76,16 @@ sub ordered_partitions {
         my @partition;
         my @break_after_idx = @$break_after_idx_set;
 
-        push @partition, [ $data_r->[ 0 .. $break_after_idx[0] ] ];
+        push @partition, [ @data[ 0 .. $break_after_idx[0] ] ];
 
         for my $i ( 1 .. $#break_after_idx ) {
             my $first = $break_after_idx[ $i - 1 ] + 1;
             my $last  = $break_after_idx[$i];
-            push @partition, [ $data_r->[ $first .. $last ] ];
+            push @partition, [ @data[ $first .. $last ] ];
         }
 
         push @partition,
-          [ $data_r->[ 1 + $break_after_idx[-1] .. $final_idx ] ];
+          [ @data[ 1 + $break_after_idx[-1] .. $final_idx ] ];
 
         my @sort_values = map { scalar @{$_} } @partition;
         # count of tables in each frame
@@ -140,16 +140,24 @@ sub odometer_combinations {
 
     my @list_of_lists = @_;
 
-    my ( @combinations, $odometer_r, $maxes_r );
+    my ( @combinations);
+    my $odometer_r = [];
+    my $maxes_r = [];
 
     foreach my $i ( 0 .. $#list_of_lists ) {
         $odometer_r->[$i] = 0;
-        $odometer_r->[$i] = $#{ $list_of_lists[$i] };
+        $maxes_r->[$i] = $#{ $list_of_lists[$i] };
     }
 
     while ($odometer_r) {
-        my @combination
-          = map { $list_of_lists[ $odometer_r->[$_] ] } 0 .. $#list_of_lists;
+     
+        #my @combination;
+        #for my $wheel (0 .. $#list_of_lists) {
+        #   push @combination, $list_of_lists[$wheel][$odometer_r->[$wheel]];
+        #}
+           
+         my @combination
+          = map { $list_of_lists[$_][ $odometer_r->[$_] ] } 0 .. $#list_of_lists;
         push @combinations, \@combination;
         $odometer_r = _odometer_increment( $odometer_r, $maxes_r );
     }
