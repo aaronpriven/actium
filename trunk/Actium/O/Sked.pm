@@ -16,7 +16,8 @@ use Moose;
 use MooseX::StrictConstructor;
 use Moose::Util::TypeConstraints;
 
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
+use overload '""' => sub { shift->id };
 
 use MooseX::Storage;
 with Storage( traits => ['OnlyWhenBuilt'], 'format' => 'JSON' );

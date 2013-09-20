@@ -25,7 +25,7 @@ use Actium::O::Sked::Timetable::IDTimetable;
 use Actium::Util qw/doe in chunks flatten population_stdev jk all_eq halves/;
 use Const::Fast;
 use List::Util (qw/max sum/);
-use Algorithm::Combinatorics;
+use Algorithm::Combinatorics('partitions');
 use Actium::Combinatorics ('odometer_combinations');
 
 use Actium::O::Sked::Timetable::IDPageFrameSets;
@@ -141,10 +141,34 @@ sub assign {
 
     # If any timetable is so big that it won't fit on any page,
     # we return, having warned about it.
-    
-    my @page_partitions = _page_partitions($has_multipage, @idtables);
+
+    my @page_partitions = _page_partitions( $has_multipage, @idtables );
+
+    @page_partitions = _sort_page_partitions(@page_partitions);
 
     # So now we know every possible way the tables can be divided into pages.
+
+    my @page_assignments = _make_page_assignments(@page_partitions);
+
+    return unless @page_assignments;
+    # If we went through all the possible page assignments and couldn't
+    # find one that works, return nothing
+
+    my $has_shortpage;
+    ( $has_shortpage, @page_assignments )
+      = _reassign_short_page(@page_assignments);
+
+    # @page_assignments is organized by page, but want to return
+    # table_assignments, organized by table
+
+    return _make_table_assignments_from_page_assignments( $has_shortpage,
+        @page_assignments );
+
+} ## tidy end: sub assign
+
+sub _make_page_assignments {
+
+    my @page_partitions = @_;
 
     my @page_assignments;
 
@@ -170,11 +194,14 @@ sub assign {
 
             # Now we check to see whether this page fits!
 
-            my $page_assignment_r = _assign_page(
-                {   tables    => $tables_on_this_page_r,
-                    framesets => $page_framesets
-                }
-            );
+            my $page_assignment_r
+              = $page_framesets->assign_page($tables_on_this_page_r);
+
+            # my $page_assignment_r = _assign_page(
+            #   {   tables    => $tables_on_this_page_r,
+            #       framesets => $page_framesets
+            #   }
+            #;
 
             # $page_assignment_r->{tables} = [ [ Table 1, Table 2] ,[Table 3] ]
             # $page_assignment_r->{frameset} = [ Frame 1, Frame 2]
@@ -197,23 +224,9 @@ sub assign {
 
     } ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_permutation_r...
 
-    return unless @page_assignments;
-    # If we went through all the possible page assignments and couldn't
-    # find one that works, return nothing
+    return @page_assignments;
 
-    my $has_shortpage;
-    ( $has_shortpage, @page_assignments )
-      = _reassign_short_page(@page_assignments);
-
-    # @page_assignments is organized by page, but want to return
-    # table_assignments, organized by table
-
-    return _make_table_assignments_from_page_assignments( $has_shortpage,
-        @page_assignments );
-
-} ## tidy end: sub assign
-
-
+} ## tidy end: sub _make_page_assignments
 
 sub _one_line_in_common {
     my @lol = @_;
@@ -266,7 +279,7 @@ sub _reassign_short_page {
         #my $frameset          = $page_assignment_r->{frameset};
 
         my $short_page_assignment
-          = $shortpage_framesets->assign_page( @{$tables_r} );
+          = $shortpage_framesets->assign_page( $tables_r );
 
         if ( defined $short_page_assignment ) {
             splice( @page_assignments, $page_idx, 1 );
@@ -282,9 +295,9 @@ sub _reassign_short_page {
 
 sub _page_partitions {
     my $has_multipage = shift;
-    my @idtables = @_;
- 
-     my @partitions_to_test;
+    my @idtables      = @_;
+
+    my @partitions_to_test;
     if ($has_multipage) {
         my @table_expansions;
         foreach my $table (@idtables) {
@@ -312,9 +325,9 @@ sub _page_partitions {
         my @combinations = odometer_combinations(@table_expansions);
 
         foreach my $combination_of_tables (@combinations) {
+            $combination_of_tables = flatten($combination_of_tables);
 
-            my $iter
-              = Algoritm::Combinatorics::partitions($combination_of_tables);
+            my $iter = partitions($combination_of_tables);
           PARTITION:
             while ( my $partition = $iter->next ) {
 
@@ -335,7 +348,7 @@ sub _page_partitions {
 
                     next PARTITION
                       if ( $id ne $prev_id
-                        or $page_order != ( $prev_order - 1 ) );
+                        or $page_order != ( $prev_order + 1 ) );
                     # out of order
 
                     $prev_id    = $id;
@@ -352,10 +365,14 @@ sub _page_partitions {
     } ## tidy end: if ($has_multipage)
     else {
 
-        @partitions_to_test
-          = Algorithm::Combinatorics::partitions( \@idtables );
+        @partitions_to_test = partitions( \@idtables );
 
     }
+
+    return @partitions_to_test;
+} ## tidy end: sub _page_partitions
+
+sub _sort_page_partitions {
 
 #####
 
@@ -383,9 +400,11 @@ sub _page_partitions {
     # At this point _partition_tables_into_pages returns *every* possible
     # partition in *every* order, but is sorted into most likely order for use.
 
+    my @partitions_to_sort = @_;
+
     my @page_partitions;
 
-    foreach my $partition (@partitions_to_test) {
+    foreach my $partition (@partitions_to_sort) {
 
         my %partitions_with_values = (
             partition        => $partition,
@@ -444,17 +463,16 @@ sub _page_partitions {
 
         push @page_partitions, \%partitions_with_values;
 
-    } ## tidy end: foreach my $partition (@partitions_to_test)
+    } ## tidy end: foreach my $partition (@partitions_to_sort)
 
     @page_partitions = sort _page_partition_sort @page_partitions;
 
     @page_partitions = map { $_->{partition} } @page_partitions;
     # drop sort_values from partition;
-    
+
     return @page_partitions;
- 
- 
-}
+
+} ## tidy end: sub _sort_page_partitions
 
 sub _page_partition_sort {
 
