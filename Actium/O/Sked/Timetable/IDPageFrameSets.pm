@@ -22,6 +22,8 @@ use Actium::Combinatorics(':all');
 use Params::Validate ':all';
 
 use Scalar::Util 'reftype';
+use List::MoreUtils ('uniq');
+use List::Util(qw<max sum>);
 
 use Const::Fast;
 
@@ -137,7 +139,8 @@ sub _build_heights_of_compression_level_r {
     }
 
     foreach my $level ( keys %heights_of ) {
-        $heights_of{$level} = [ sort { $b <=> $a } @{ $heights_of{$level} } ];
+        my @heights = uniq( sort { $b <=> $a } @{ $heights_of{$level} });
+        $heights_of{$level} = \@heights;
     }
 
     return \%heights_of;
@@ -192,7 +195,7 @@ sub make_idtables {
                 {
                     push @idtables,
                       $IDTABLE->new(
-                        table             => $table,
+                        timetable_obj             => $table,
                         compression_level => $compression_level,
                         multipage         => 0,
                       );
@@ -216,7 +219,7 @@ sub make_idtables {
 
             push @idtables,
               $IDTABLE->new(
-                table             => $table,
+                timetable_obj     => $table,
                 compression_level => $partial_level,
                 multipage         => 1
               );
@@ -226,7 +229,7 @@ sub make_idtables {
 
         # otherwise, save it as failed
 
-        push @idtables, $IDTABLE->new( table => $table, failed => 1 );
+        push @idtables, $IDTABLE->new( timetable_obj => $table, failed => 1 );
         $seen_a_failure = 1;
 
     } ## tidy end: TABLE: foreach my $table (@tables)
@@ -238,9 +241,11 @@ sub make_idtables {
 sub assign_page {
 
     my $self   = shift;
-    my @tables = @_;
+    my @tables = @{+shift};
 
     foreach my $frameset ( $self->framesets ) {
+     
+        my $frame_height = $frameset->height;
 
         my @frames = $frameset->frames;
 
@@ -252,8 +257,8 @@ sub assign_page {
 
         if ( @frames == 1 ) {
             my ( $height, $width ) = $get_stacked_measurement_cr->(@tables);
-            if (not(    $height <= $frames[0]{height}
-                    and $width <= $frames[0]{width} )
+            if (not(    $height <= $frame_height 
+                    and $width <= $frames[0]->width )
               )
 
             {
@@ -266,8 +271,8 @@ sub assign_page {
         if ( @frames == @tables ) {
             for my $i ( 0 .. $#frames ) {
                 return
-                  if $frames[$i]{height} < $tables[$i]->height
-                  or $frames[$i]{width} < $tables[$i]->width_in_halfcols;
+                  if $frame_height  < $tables[$i]->height
+                  or $frames[$i]->width < $tables[$i]->width_in_halfcols;
                 # doesn't fit if frame's height or width aren't big enough
             }
             return { tables => [ map { [$_] } @tables ], frameset => $frameset  };
@@ -287,8 +292,8 @@ sub assign_page {
                 my @tables = @{ $table_permutation->[$i] };
                 my ( $height, $width ) = $get_stacked_measurement_cr->(@tables);
                 next TABLE_PERMUTATION
-                  if $frames[$i]{height} < $height
-                  or $frames[$i]{width} < $width;
+                  if $frame_height < $height
+                  or $frames[$i]->width < $width;
                 # doesn't fit if frame's height or width aren't big enough
             }
 

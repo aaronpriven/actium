@@ -15,8 +15,10 @@ package Actium::O::Sked::Timetable 0.001;
 use Moose;
 use MooseX::StrictConstructor;
 
+use MooseX::MarkAsMethods autoclean => 1;
+use overload '""' => sub { shift->id };
+
 use Params::Validate (':all');
-use namespace::autoclean;
 
 use Actium::Time;
 use Actium::Constants;
