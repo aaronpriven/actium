@@ -30,8 +30,7 @@ has timetable_obj => (
     ,
 );
 
-has compression_level => (
-    default => 0,
+has [qw(upper_bound lower_bound)] => (
     is      => 'ro',
     isa     => 'Int',
 );
@@ -48,20 +47,19 @@ has [qw<firstpage finalpage>] => (
     default => 1,
 );
 
-has [qw<lower_bound page_order upper_bound>] => (
+has [qw<compression_level page_order>] => (
     is      => 'ro',
     isa     => 'Int',
     default => 0,
 );
 
 sub height {
-
     my $self        = shift;
     my $upper_bound = $self->upper_bound;
     my $lower_bound = $self->lower_bound;
-    return $self->timetable_obj->height if $upper_bound == $lower_bound;
+    return $self->timetable_obj->height 
+       if not defined $upper_bound or not defined $lower_bound;
     return $upper_bound - $lower_bound +1;
-
 }
 
 my $height_adjustment = 1;
@@ -134,12 +132,13 @@ sub as_indesign {
     my $self = shift;
 
     my %params = ref( $_[0] ) eq 'HASH' ? %{ $_[0] } : @_;
-
-    $params{lower_bound} = $self->lower_bound;
-    $params{upper_bound} = $self->upper_bound;
-    $params{firstpage}   = $self->firstpage;
-    $params{finalpage}   = $self->finalpage;
-
+    
+    foreach my $attribute (qw(lower_bound upper_bound firstpage finalpage)) {
+        my $value = $self->$attribute;
+        next unless defined $value;
+        $params{$attribute} = $value;
+    }
+        
     return $self->timetable_obj->as_indesign( \%params );
 }
 

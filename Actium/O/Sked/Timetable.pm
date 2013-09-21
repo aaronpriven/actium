@@ -270,9 +270,9 @@ sub as_indesign {
         }
     );
 
-    my $minimum_columns  = $params{minimum_columns};
-    my $minimum_halfcols = $params{minimum_halfcols};
-    my $compressed       = $params{compressed};
+    #my $minimum_columns  = $params{minimum_columns};
+    #my $minimum_halfcols = $params{minimum_halfcols};
+    my $compressed = $params{compressed};
 
     my $halfcol_points = $compressed ? 20               : 24;
     my $col_points     = $compressed ? 40               : 48;
@@ -281,13 +281,20 @@ sub as_indesign {
     my $columns  = $self->columns;
     my $halfcols = $self->half_columns;
 
-    my ( $trailing_columns, $trailing_halves )
-      = _minimums( $columns, $halfcols, $minimum_columns, $minimum_halfcols );
+    my ( $trailing_columns, $trailing_halves ) = _minimums(
+        $columns, $halfcols,
+        $params{minimum_columns},
+        $params{minimum_halfcols}
+    );
 
     my $trailing = $trailing_columns + $trailing_halves;
     my @trailers = ($EMPTY_STR) x $trailing;
 
-    my $rowcount = $self->body_row_count + 2;          # 2 header rows
+    #my $rowcount = $self->body_row_count + 2;          # 2 header rows
+    my $header_rows = 2;
+    my $rowcount
+      = $header_rows + $params{upper_bound} - $params{lower_bound} + 1;
+
     my $colcount = $columns + $halfcols + $trailing;
 
     ##############
@@ -387,7 +394,9 @@ sub as_indesign {
     ##############
     # Time Rows
 
-    for my $body_row_r ( $self->body_row_rs ) {
+    for my $body_row_r (
+        ( $self->body_row_rs )[ $params{lower_bound} .. $params{upper_bound} ] )
+    {
         my @body_row = @{$body_row_r};
 
         print $th '<RowStart:<tRowAttrHeight:10.5159912109375>>';
@@ -433,15 +442,15 @@ sub as_indesign {
 
         print $th '<RowEnd:>';
 
-    } ## tidy end: for my $body_row_r ( $self...)
+    } ## tidy end: for my $body_row_r ( ( ...))
 
     ###############
     # Table End
 
     print $th "<TableEnd:>";
-    
+
     unless ( $params{finalpage} ) {
-       print $th "\rContinued...";
+        print $th "\rContinued...";
     }
 
     foreach my $note_definition ( $self->note_definitions ) {
