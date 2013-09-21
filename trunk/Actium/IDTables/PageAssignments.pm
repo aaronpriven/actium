@@ -6,7 +6,7 @@
 
 # legacy status: 4
 
-package Actium::IDTables::PageAssignments 0.001;
+package Actium::IDTables::PageAssignments 0.002;
 
 use 5.016;
 use warnings;
@@ -25,6 +25,7 @@ use Actium::O::Sked::Timetable::IDTimetable;
 use Actium::Util qw/doe in chunks flatten population_stdev jk all_eq halves/;
 use Const::Fast;
 use List::Util (qw/max sum/);
+use List::MoreUtils ('any');
 use Algorithm::Combinatorics('partitions');
 use Actium::Combinatorics ('odometer_combinations');
 
@@ -48,13 +49,15 @@ my $shortpage_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
     {   description => 'Portrait full',
         frames      => [ { widthpair => [ 11, 0 ], frame_idx => 4 } ],
         height      => 36,
+        is_portrait => 1,
     },
     {   description => 'Portrait halves',
         frames      => [
             { widthpair => [ 5, 1 ], frame_idx => 4 },
             { widthpair => [ 5, 0 ], frame_idx => 5 },
         ],
-        height => 36,
+        is_portrait => 1,
+        height      => 36,
     },
 );
 
@@ -99,11 +102,13 @@ my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
     },
 
     {   description       => 'Portrait full',
+        is_portrait       => 1,
         compression_level => 0,
         frames            => [ { widthpair => [ 11, 0 ], frame_idx => 4 }, ],
         height            => 59,
     },
     {   description       => 'Portrait halves',
+        is_portrait       => 1,
         compression_level => 0,
         frames            => [
             { widthpair => [ 5, 1 ], frame_idx => 4 },
@@ -144,8 +149,6 @@ sub assign {
 
     my @page_partitions = _page_partitions( $has_multipage, @idtables );
 
-    @page_partitions = _sort_page_partitions(@page_partitions);
-
     # So now we know every possible way the tables can be divided into pages.
 
     my @page_assignments = _make_page_assignments(@page_partitions);
@@ -172,6 +175,8 @@ sub _make_page_assignments {
 
     my @page_assignments;
 
+    my $prefer_portrait = 0;
+
     # go through each possible page assignment
     # For this page assignment, does each possible page fit on
     # one of the framesets?
@@ -195,13 +200,8 @@ sub _make_page_assignments {
             # Now we check to see whether this page fits!
 
             my $page_assignment_r
-              = $page_framesets->assign_page($tables_on_this_page_r);
-
-            # my $page_assignment_r = _assign_page(
-            #   {   tables    => $tables_on_this_page_r,
-            #       framesets => $page_framesets
-            #   }
-            #;
+              = $page_framesets->assign_page( $tables_on_this_page_r,
+                $prefer_portrait );
 
             # $page_assignment_r->{tables} = [ [ Table 1, Table 2] ,[Table 3] ]
             # $page_assignment_r->{frameset} = [ Frame 1, Frame 2]
@@ -211,12 +211,14 @@ sub _make_page_assignments {
                 # on this possible page assignment and try the next one
 
                 @page_assignments = ();    # reset assignments
+                $prefer_portrait  = 0;     # reset portrait preference
                 next POSSIBLE_PAGE_ASSIGNMENT;
 
             }
 
             # It did fit a frame assignment, so save it
             push @page_assignments, $page_assignment_r;
+            $prefer_portrait = $page_assignment_r->{frameset}->is_portrait;
 
         } ## tidy end: PAGE: foreach my $tables_on_this_page_r...
 
@@ -224,9 +226,24 @@ sub _make_page_assignments {
 
     } ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_permutation_r...
 
+    _slide_up_multipage_tables(@page_assignments)
+      if @page_assignments;
+
     return @page_assignments;
 
 } ## tidy end: sub _make_page_assignments
+
+sub _slide_up_multipage_tables {
+
+    my @page_assignments = @_;
+
+    for my $i ( 0 .. $#page_assignments ) {
+
+    }
+
+    return @page_assignments;
+
+}
 
 sub _one_line_in_common {
     my @lol = @_;
@@ -278,8 +295,19 @@ sub _reassign_short_page {
         my $tables_r          = flatten( $page_assignment_r->{tables} );
         #my $frameset          = $page_assignment_r->{frameset};
 
+        # don't move part of a multipage table to the short page,
+        # unless this is either the first or last page
+        if ( $page_idx != 0 and $page_idx != $#page_assignments ) {
+            foreach my $table (@$tables_r) {
+                next FRAMESET_TO_REPLACE
+                  if $table->multipage;
+            }
+        }
+
+        my $prefer_portrait = $page_assignment_r->{frameset}->is_portrait;
+
         my $short_page_assignment
-          = $shortpage_framesets->assign_page( $tables_r );
+          = $shortpage_framesets->assign_page( $tables_r, $prefer_portrait );
 
         if ( defined $short_page_assignment ) {
             splice( @page_assignments, $page_idx, 1 );
@@ -287,7 +315,7 @@ sub _reassign_short_page {
             $has_shortpage = 1;
             last FRAMESET_TO_REPLACE;
         }
-    }
+    } ## tidy end: FRAMESET_TO_REPLACE: for my $page_idx (@page_order)
 
     return $has_shortpage, @page_assignments;
 
@@ -369,7 +397,7 @@ sub _page_partitions {
 
     }
 
-    return @partitions_to_test;
+    return _sort_page_partitions(@partitions_to_test);
 } ## tidy end: sub _page_partitions
 
 sub _sort_page_partitions {
@@ -499,9 +527,10 @@ sub _make_table_assignments_from_page_assignments {
         my $frameset                 = $page_assignment_r->{frameset};
         my @frames                   = $frameset->frames;
 
-        for my $frame_idx ( 0 .. $#frames ) {
-            my $frame           = $frames[$frame_idx];
-            my @tables_of_frame = @{ $tables_of_frames_of_page[$frame_idx] };
+        for my $frame_of_frameset_idx ( 0 .. $#frames ) {
+            my $frame = $frames[$frame_of_frameset_idx];
+            my @tables_of_frame
+              = @{ $tables_of_frames_of_page[$frame_of_frameset_idx] };
 
             my $widthpair = $frame->widthpair_r;
             my $frame_idx = $frame->frame_idx;
@@ -517,7 +546,7 @@ sub _make_table_assignments_from_page_assignments {
                 # no pagebreak after tables, except at end of page
             }
 
-        }
+        } ## tidy end: for my $frame_of_frameset_idx...
 
         $pagebreak = 1;    # end of page
 
