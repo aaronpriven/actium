@@ -14,8 +14,10 @@ use MooseX::StrictConstructor;
 use Actium::Util 'hashref';
 use Scalar::Util 'reftype';
 use Carp;
-use namespace::autoclean;
 use Actium::O::Sked::Timetable::IDFrame;
+
+use MooseX::MarkAsMethods autoclean => 1;
+use overload '""'                   => sub { shift->description };
 
 has description => (
     isa => 'Str',
@@ -45,6 +47,12 @@ has height => (
     is       => 'ro',
     isa      => 'Int',
     required => 1,
+);
+
+has is_portrait => (
+    is  => 'ro',
+    isa => 'Bool',
+    default => 0,
 );
 
 around BUILDARGS => sub {

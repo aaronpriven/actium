@@ -24,6 +24,7 @@ use Params::Validate ':all';
 use Scalar::Util 'reftype';
 use List::MoreUtils ('uniq');
 use List::Util(qw<max sum>);
+use Actium::Util('flatten');
 
 use Const::Fast;
 
@@ -56,13 +57,38 @@ has frameset_r => (
     handles  => { framesets => 'elements', },
 );
 
+has portrait_preferred_frameset_r => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Actium::O::Sked::Timetable::IDFrameSet]',
+    lazy    => 1,
+    builder => '_build_portrait_preferred_frameset_r',
+    handles => { portrait_preferred_framesets => 'elements', },
+);
+
+sub _build_portrait_preferred_frameset_r {
+    my $self = shift;
+
+    my @divided_framesets;
+
+    foreach my $frameset ( $self->framesets ) {
+        my $portrait = $frameset->is_portrait ? 0 : 1;
+        # avoids non-zero false values
+
+        push @{ $divided_framesets[$portrait] }, $frameset;
+    }
+
+    return scalar flatten(@divided_framesets);
+
+}
+
 around BUILDARGS => sub {
 
     my $orig  = shift;
     my $class = shift;
 
     my @framesets = map { Actium::O::Sked::Timetable::IDFrameSet->new($_) } @_;
-    
+
     return $class->$orig( framesets => \@framesets );
 
 };
@@ -139,7 +165,7 @@ sub _build_heights_of_compression_level_r {
     }
 
     foreach my $level ( keys %heights_of ) {
-        my @heights = uniq( sort { $b <=> $a } @{ $heights_of{$level} });
+        my @heights = uniq( sort { $b <=> $a } @{ $heights_of{$level} } );
         $heights_of{$level} = \@heights;
     }
 
@@ -195,7 +221,7 @@ sub make_idtables {
                 {
                     push @idtables,
                       $IDTABLE->new(
-                        timetable_obj             => $table,
+                        timetable_obj     => $table,
                         compression_level => $compression_level,
                         multipage         => 0,
                       );
@@ -240,11 +266,17 @@ sub make_idtables {
 
 sub assign_page {
 
-    my $self   = shift;
-    my @tables = @{+shift};
+    my $self            = shift;
+    my @tables          = @{ +shift };
+    my $prefer_portrait = shift;
 
-    foreach my $frameset ( $self->framesets ) {
-     
+    my @framesets
+      = $prefer_portrait
+      ? $self->portrait_preferred_framesets
+      : $self->framesets;
+      
+    foreach my $frameset (@framesets) {
+
         my $frame_height = $frameset->height;
 
         my @frames = $frameset->frames;
@@ -257,7 +289,7 @@ sub assign_page {
 
         if ( @frames == 1 ) {
             my ( $height, $width ) = $get_stacked_measurement_cr->(@tables);
-            if (not(    $height <= $frame_height 
+            if (not(    $height <= $frame_height
                     and $width <= $frames[0]->width )
               )
 
@@ -271,19 +303,21 @@ sub assign_page {
         if ( @frames == @tables ) {
             for my $i ( 0 .. $#frames ) {
                 return
-                  if $frame_height  < $tables[$i]->height
+                  if $frame_height < $tables[$i]->height
                   or $frames[$i]->width < $tables[$i]->width_in_halfcols;
                 # doesn't fit if frame's height or width aren't big enough
             }
-            return { tables => [ map { [$_] } @tables ], frameset => $frameset  };
+            return {
+                tables   => [ map { [$_] } @tables ],
+                frameset => $frameset
+            };
             # all frames fit
         }
 
         # more tables than frames. Divide tables up into appropriate sets,
         # and then try them
 
-        my @table_permutations
-          = ordered_partitions( \@tables , scalar @frames);
+        my @table_permutations = ordered_partitions( \@tables, scalar @frames );
 
       TABLE_PERMUTATION:
         foreach my $table_permutation (@table_permutations) {
@@ -305,13 +339,12 @@ sub assign_page {
 
         # finished all the permutations for this page, but nothing fit
 
-    } ## tidy end: foreach my $frameset ( $self...)
-    
+    } ## tidy end: foreach my $frameset (@framesets)
+
     return;
     # finished all the permutations for this page set, but nothing fit
 
 } ## tidy end: sub assign_page
-
 
 __PACKAGE__->meta->make_immutable;
 
