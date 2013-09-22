@@ -30,23 +30,7 @@ use Const::Fast;
 
 const my $IDTABLE => 'Actium::O::Sked::Timetable::IDTimetable';
 
-const my $EXTRA_TABLE_HEIGHT => 9;
-# add 9 for each additional table in a stack -- 1 for blank line,
-# 4 for timepoints and 4 for the color bar. This is inexact and can mess up...
-# not sure how to fix it at this point, I'd need to measure the headers
 
-my $get_stacked_measurement_cr = sub {
-    my @tables = @_;
-
-    my @widths  = map { $_->width_in_halfcols } @tables;
-    my @heights = map { $_->height } @tables;
-
-    my $maxwidth = max(@widths);
-    my $sumheight = sum(@heights) + ( $EXTRA_TABLE_HEIGHT * $#heights );
-
-    return ( $sumheight, $maxwidth );
-
-};
 
 has frameset_r => (
     traits   => ['Array'],
@@ -288,7 +272,7 @@ sub assign_page {
         # will this set of tables fit on this page?
 
         if ( @frames == 1 ) {
-            my ( $height, $width ) = $get_stacked_measurement_cr->(@tables);
+            my ( $height, $width ) = $IDTABLE->get_stacked_measurements(@tables);
             if (not(    $height <= $frame_height
                     and $width <= $frames[0]->width )
               )
@@ -324,7 +308,7 @@ sub assign_page {
 
             foreach my $i ( 0 .. $#frames ) {
                 my @tables = @{ $table_permutation->[$i] };
-                my ( $height, $width ) = $get_stacked_measurement_cr->(@tables);
+                my ( $height, $width ) = $IDTABLE->get_stacked_measurements(@tables);
                 next TABLE_PERMUTATION
                   if $frame_height < $height
                   or $frames[$i]->width < $width;
