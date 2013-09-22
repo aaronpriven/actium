@@ -14,6 +14,7 @@ use warnings;
 
 use Moose;
 use MooseX::StrictConstructor;
+use Const::Fast;
 
 use MooseX::MarkAsMethods autoclean => 1;
 use overload '""'                   => sub {
@@ -140,6 +141,29 @@ sub as_indesign {
     }
         
     return $self->timetable_obj->as_indesign( \%params );
+}
+
+#### CLASS METHOD
+
+const my $EXTRA_TABLE_HEIGHT => 9;
+
+sub get_stacked_measurements {
+
+# add 9 for each additional table in a stack -- 1 for blank line,
+# 4 for timepoints and 4 for the color bar. This is inexact and can mess up...
+# not sure how to fix it at this point, I'd need to measure the headers
+
+    my $class = shift;
+    my @tables = @_;
+
+    my @widths  = map { $_->width_in_halfcols } @tables;
+    my @heights = map { $_->height } @tables;
+
+    my $maxwidth = max(@widths);
+    my $sumheight = sum(@heights) + ( $EXTRA_TABLE_HEIGHT * $#heights );
+
+    return ( $sumheight, $maxwidth );
+ 
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -204,7 +204,7 @@ sub _make_page_assignments {
                 $prefer_portrait );
 
             # $page_assignment_r->{tables} = [ [ Table 1, Table 2] ,[Table 3] ]
-            # $page_assignment_r->{frameset} = [ Frame 1, Frame 2]
+            # $page_assignment_r->{frameset} = frameset object
 
             if ( not defined $page_assignment_r ) {
                 # This page does not fit any frameset, so we have to give up
@@ -226,21 +226,45 @@ sub _make_page_assignments {
 
     } ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_permutation_r...
 
-    _slide_up_multipage_tables(@page_assignments)
+    _slide_up_multiframe_tables(@page_assignments)
       if @page_assignments;
 
     return @page_assignments;
 
 } ## tidy end: sub _make_page_assignments
 
-sub _slide_up_multipage_tables {
+sub _slide_up_multiframe_tables {
+ 
+    # for the last table of each frame, if this table extends to the
+    # following frame, move as many lines as possible up from the 
+    # following frame to this frame
 
     my @page_assignments = @_;
-
-    for my $i ( 0 .. $#page_assignments ) {
-
+    my @heights;
+    my @initial_tables;
+    my @final_tables;
+    
+    for my $page_assignment_r (@page_assignments) {
+       my $height = $page_assignment_r->{frameset}->height;
+       foreach my $tables_of_frame_r ( @{$page_assignment_r->{tables}} ) {
+           push @heights, $height;
+           push @initial_tables, $tables_of_frame_r->[0];
+           push @final_tables, $tables_of_frame_r->[-1];
+       }
     }
-
+    
+    for my $i (1 .. $#initial_tables) {
+       my $bottom_table = $final_tables[$i-1];
+       my $top_table = $initial_tables[$i];
+       my $bottom_height = $heights[$i-1];
+       my $top_height = $heights[$i];
+       
+       next unless $bottom_table->id eq $top_table->id;
+       
+       # slide here
+       
+    }
+       
     return @page_assignments;
 
 }
