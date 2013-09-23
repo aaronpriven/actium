@@ -140,9 +140,9 @@ sub keyreadable {
         s/$KEY_SEPARATOR/_/sxg foreach @list;
         return @list;
     }
-    my $_ = shift;
-    s/$KEY_SEPARATOR/_/gxs;
-    return $_;
+    my $value = shift;
+    $value =~ s/$KEY_SEPARATOR/_/gxs;
+    return $value;
 }
 
 sub keyunreadable {
@@ -151,9 +151,9 @@ sub keyunreadable {
         s/_/$KEY_SEPARATOR/sxg foreach @list;
         return @list;
     }
-    my $_ = shift;
-    s/_/$KEY_SEPARATOR/gsx;
-    return $_;
+    my $value = shift;
+    $value =~ s/_/$KEY_SEPARATOR/gsx;
+    return $value;
 }
 
 sub tabulate {
@@ -457,9 +457,11 @@ So
 This stands for "defined-or-empty." For each value passed to it, returns either 
 that value, if defined, or the empty string, if not.
 
-=item B<halves()>
+=item B<halves( I<wholes> , I<halves> )>
 
-This takes two values 
+This takes two values, "wholes" and "halves", and returns the number of halves
+(that is, it multiples wholes by two, and adds the results to halves,
+and returns that).
 
 =item B<j()>
 
@@ -476,6 +478,16 @@ A quicker way to type "join ($KEY_SEPARATOR , @list)".
 
 Takes the list passed to it and joins it together, with each element separated 
 by tabs. A quicker way to type 'join ("\t" , @list)'.
+
+=item B<jn()>
+
+Takes the list passed to it and joins it together, with each element separated 
+by line feeds. A quicker way to type 'join ("\n" , @list)'.
+
+=item B<jspaced()>
+
+Takes the list passed to it and joins it together, with each element separated 
+by spaces. A quicker way to type 'join (" " , @list)'.
 
 =item B<joinseries(I<list>)>
 
