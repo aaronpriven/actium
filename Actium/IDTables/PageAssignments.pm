@@ -234,40 +234,54 @@ sub _make_page_assignments {
 } ## tidy end: sub _make_page_assignments
 
 sub _slide_up_multiframe_tables {
- 
+
     # for the last table of each frame, if this table extends to the
-    # following frame, move as many lines as possible up from the 
+    # following frame, move as many lines as possible up from the
     # following frame to this frame
 
     my @page_assignments = @_;
-    my @heights;
-    my @initial_tables;
-    my @final_tables;
-    
+
+    my @data_of_frame;
+
     for my $page_assignment_r (@page_assignments) {
-       my $height = $page_assignment_r->{frameset}->height;
-       foreach my $tables_of_frame_r ( @{$page_assignment_r->{tables}} ) {
-           push @heights, $height;
-           push @initial_tables, $tables_of_frame_r->[0];
-           push @final_tables, $tables_of_frame_r->[-1];
-       }
+        my $height = $page_assignment_r->{frameset}->height;
+        foreach my $tables_of_frame_r ( @{ $page_assignment_r->{tables} } ) {
+            my ( $table_height, $table_width )
+              = Actium::O::Sked::Timetable::IDTimetable
+              ->get_stacked_measurement( @{$tables_of_frame_r} );
+
+            push @data_of_frame,
+              { frame_height  => $height,
+                first_table   => $tables_of_frame_r->[0],
+                final_table   => $tables_of_frame_r->[-1],
+                tables_height => $table_height,
+              };
+
+        }
     }
-    
-    for my $i (1 .. $#initial_tables) {
-       my $bottom_table = $final_tables[$i-1];
-       my $top_table = $initial_tables[$i];
-       my $bottom_height = $heights[$i-1];
-       my $top_height = $heights[$i];
-       
-       next unless $bottom_table->id eq $top_table->id;
-       
-       # slide here
-       
+
+    for my $i ( 1 .. $#data_of_frame ) {
+
+        my $follower       = $data_of_frame[$i];
+        my $follower_table = $follower->{first_table};
+        my $leader         = $data_of_frame[ $i - 1 ];
+        my $leader_table   = $leader->{fiinal_table};
+
+        next unless $follower_table->id eq $leader_table->id;
+        next if $leader->{tables_height} == $leader->{frame_height};   # no room
+             # not the same table, so can't move individual items
+
+        my $rows_to_move = $leader->{frame_height} - $leader->{tables_height};
+        $leader_table->set_upper_bound(
+            $leader_table->upper_bound + $rows_to_move );
+        $follower_table->set_lower_bound(
+            $follower_table->lower_bound - $rows_to_move );
+
     }
-       
+
     return @page_assignments;
 
-}
+} ## tidy end: sub _slide_up_multiframe_tables
 
 sub _one_line_in_common {
     my @lol = @_;
@@ -310,8 +324,6 @@ sub _reassign_short_page {
     }
 
     my $has_shortpage = 0;
-
-    # First add blank short page
 
   FRAMESET_TO_REPLACE:
     for my $page_idx (@page_order) {

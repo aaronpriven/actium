@@ -32,7 +32,7 @@ has timetable_obj => (
 );
 
 has [qw(upper_bound lower_bound)] => (
-    is      => 'ro',
+    is      => 'rw',
     isa     => 'Int',
 );
 
@@ -54,17 +54,19 @@ has [qw<compression_level page_order>] => (
     default => 0,
 );
 
+const my $height_adjustment = 1;
+# number of lines that the "continued" at the bottom takes up
+
 sub height {
     my $self        = shift;
     my $upper_bound = $self->upper_bound;
     my $lower_bound = $self->lower_bound;
     return $self->timetable_obj->height 
        if not defined $upper_bound or not defined $lower_bound;
-    return $upper_bound - $lower_bound +1;
+    my $height = $upper_bound - $lower_bound +1;
+    $height += $height_adjustment if $upper_bound != ($self->body_rows_count -1);
+    return $height;
 }
-
-my $height_adjustment = 1;
-# number of lines that the "continued" at the bottom takes up
 
 sub _multipage_clones {
     my $self          = shift;
