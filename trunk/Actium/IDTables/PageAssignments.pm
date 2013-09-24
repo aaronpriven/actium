@@ -248,7 +248,7 @@ sub _slide_up_multiframe_tables {
         foreach my $tables_of_frame_r ( @{ $page_assignment_r->{tables} } ) {
             my ( $table_height, $table_width )
               = Actium::O::Sked::Timetable::IDTimetable
-              ->get_stacked_measurement( @{$tables_of_frame_r} );
+              ->get_stacked_measurements( @{$tables_of_frame_r} );
 
             push @data_of_frame,
               { frame_height  => $height,
@@ -265,7 +265,7 @@ sub _slide_up_multiframe_tables {
         my $follower       = $data_of_frame[$i];
         my $follower_table = $follower->{first_table};
         my $leader         = $data_of_frame[ $i - 1 ];
-        my $leader_table   = $leader->{fiinal_table};
+        my $leader_table   = $leader->{final_table};
 
         next unless $follower_table->id eq $leader_table->id;
         next if $leader->{tables_height} == $leader->{frame_height};   # no room
@@ -275,7 +275,7 @@ sub _slide_up_multiframe_tables {
         $leader_table->set_upper_bound(
             $leader_table->upper_bound + $rows_to_move );
         $follower_table->set_lower_bound(
-            $follower_table->lower_bound - $rows_to_move );
+            $follower_table->lower_bound + $rows_to_move );
 
     }
 
