@@ -14,7 +14,10 @@ use warnings;
 
 use Moose;
 use MooseX::StrictConstructor;
+use MooseX::SemiAffordanceAccessor;
 use Const::Fast;
+
+use List::Util(qw<max sum>);
 
 use MooseX::MarkAsMethods autoclean => 1;
 use overload '""'                   => sub {
@@ -54,7 +57,7 @@ has [qw<compression_level page_order>] => (
     default => 0,
 );
 
-const my $height_adjustment = 1;
+const my $height_adjustment => 1;
 # number of lines that the "continued" at the bottom takes up
 
 sub height {
@@ -64,7 +67,7 @@ sub height {
     return $self->timetable_obj->height 
        if not defined $upper_bound or not defined $lower_bound;
     my $height = $upper_bound - $lower_bound +1;
-    $height += $height_adjustment if $upper_bound != ($self->body_rows_count -1);
+    $height += $height_adjustment if $upper_bound != ($self->timetable_obj->body_row_count -1);
     return $height;
 }
 
