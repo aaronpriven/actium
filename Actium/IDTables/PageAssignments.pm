@@ -323,7 +323,7 @@ sub _reassign_short_page {
         splice( @page_order, 1, 0, $final );
     }
 
-    my $has_shortpage = 0;
+    #my $has_shortpage = 0;
 
   FRAMESET_TO_REPLACE:
     for my $page_idx (@page_order) {
@@ -348,12 +348,14 @@ sub _reassign_short_page {
         if ( defined $short_page_assignment ) {
             splice( @page_assignments, $page_idx, 1 );
             unshift @page_assignments, $short_page_assignment;
-            $has_shortpage = 1;
-            last FRAMESET_TO_REPLACE;
+            #$has_shortpage = 1;
+            return 1, @page_assignments;
+            #last FRAMESET_TO_REPLACE;
         }
     } ## tidy end: FRAMESET_TO_REPLACE: for my $page_idx (@page_order)
 
-    return $has_shortpage, @page_assignments;
+    #return $has_shortpage, @page_assignments;
+    return 0, @page_assignments;
 
 } ## tidy end: sub _reassign_short_page
 
