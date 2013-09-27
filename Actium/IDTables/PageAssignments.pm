@@ -26,8 +26,9 @@ use Actium::Util qw/doe in chunks flatten population_stdev jk all_eq halves/;
 use Const::Fast;
 use List::Util (qw/max sum/);
 use List::MoreUtils ('any');
-use Algorithm::Combinatorics('partitions');
-use Actium::Combinatorics ('odometer_combinations');
+use List::Compare::Functional(qw/get_intersection/);
+use Algorithm::Combinatorics(qw/partitions permutations/);
+use Actium::Combinatorics (qw/odometer_combinations ordered_partitions/);
 
 use Actium::O::Sked::Timetable::IDPageFrameSets;
 
@@ -128,7 +129,7 @@ my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
 sub assign {
 
     my (@tables) = @{ +shift };    # copy
-    my ( $fit_failure, $has_multipage, @idtables )
+    my ( $fit_failure, $has_overlong, @idtables )
       = $page_framesets->make_idtables(@tables);
 
     if ($fit_failure) {
@@ -147,11 +148,13 @@ sub assign {
     # If any timetable is so big that it won't fit on any page,
     # we return, having warned about it.
 
-    my @page_partitions = _page_partitions( $has_multipage, @idtables );
-
-    # So now we know every possible way the tables can be divided into pages.
-
-    my @page_assignments = _make_page_assignments(@page_partitions);
+    my @page_assignments;
+    if ( not $has_overlong ) {
+        @page_assignments = _assign_pages(@idtables);
+    }
+    else {
+        @page_assignments = _overlong_assign_pages(@idtables);
+    }
 
     return unless @page_assignments;
     # If we went through all the possible page assignments and couldn't
@@ -168,6 +171,269 @@ sub assign {
         @page_assignments );
 
 } ## tidy end: sub assign
+
+sub _assign_pages {
+    my @idtables = @_;
+
+    for my $numpages ( 1 .. @idtables ) {
+        my @page_partitions
+          = _sort_page_partitions( partitions( \@idtables, $numpages ) );
+        my @page_assignments = _make_page_assignments(@page_partitions);
+        return @page_assignments if @page_assignments;
+    }
+    return;
+
+}
+
+sub _overlong_assign_pages {
+    my @idtables = @_;
+
+    # first, get the heights that all overlong has in common
+    my @all_heights;
+    foreach my $table (@idtables) {
+        next unless $table->overlong;
+        my @these_heights = $page_framesets->heights_of_compression_level(
+            $table->compression_level );
+        push @all_heights, \@these_heights;
+    }
+    my @common_heights = get_intersection( \@all_heights );
+
+    my @expanded_table_sets;
+
+    # @table_expansions =
+    # [ # first table
+    #   [ Table1_0-19  Table1_20-34 ], # if height is 20 - remainder at end
+    #   [ Table1_0-14  Table1_15-34 ], # if height is 20 - remainder at start
+    # ] ,
+    # [ # second table
+    #   [ Table2 ]   # not overlong
+    # ]
+
+    # @expanded_table_sets =
+    # [ # first combination
+    #   [ Table1_0-19 Table1_20-34 ], [ Table2 ], # Table1 remainder at end
+    # ],
+    # [ # second combination
+    #   [ Table1_0-14 Table1_15_34 ], [ Table2 ], # Table1 remainder at start
+    # ]
+
+    if (@common_heights) {
+        foreach my $height (@common_heights) {
+            my @table_expansions;
+            foreach my $table (@idtables) {
+                if ( not $table->overlong ) {
+                    push @table_expansions, [ [$table] ];
+                }
+                else {
+                    push @table_expansions, $table->expand_overlong($height);
+                }
+
+            }
+
+            push @expanded_table_sets,
+              odometer_combinations( @table_expansions );
+
+        }
+
+    }
+    else {
+        # No height in common, so ignore that and just put any possible
+        # combination together.
+        my @table_expansions;
+
+        foreach my $table (@idtables) {
+            if ( not $table->overlong ) {
+                push @table_expansions, [ [$table] ];
+            }
+            else {
+                my @heights = $page_framesets->heights_of_compression_level(
+                    $table->compression_level );
+
+                push @table_expansions, $table->expand_overlong(@heights);
+
+            }
+
+        }
+
+        push @expanded_table_sets, odometer_combinations( @table_expansions );
+
+    } ## tidy end: else [ if (@common_heights) ]
+
+    my $pages = $page_framesets->minimum_pages(@idtables);
+
+
+    my @page_partitions = ('true');
+    while ( @page_partitions ) {
+
+        @page_partitions = ();
+            my $debugcount;
+
+        my $table_order_iter = permutations( [ 0 .. $#idtables ] );
+        while ( my $table_order = $table_order_iter->next ) {
+            my @table_order = @{$table_order};
+
+            foreach my $table_set (@expanded_table_sets) {
+                my @tables_in_set = @{$table_set};
+
+                @tables_in_set = @tables_in_set[ @$table_order ];
+                # slice to put set in the currently permuted order
+
+                @tables_in_set = flatten(@tables_in_set);
+
+                next if $pages > @tables_in_set;
+
+                # can never be more pages than there are tables...
+
+                push @page_partitions, ordered_partitions( \@tables_in_set, $pages );
+
+            }
+
+        } ## tidy end: while ( my $table_order =...)
+
+        @page_partitions = _sort_page_partitions(@page_partitions);
+        my @page_assignments = _make_page_assignments(@page_partitions);
+        return @page_assignments if @page_assignments;
+        
+        
+        $pages++;
+
+    } ## tidy end: while ( not $should_stop )
+
+    return;
+
+} ## tidy end: sub _overlong_assign_pages
+
+sub _sort_page_partitions {
+
+#####
+
+    # So the set of tables first needs to be divided up into pages,
+    # and then needs to be divided up into frames within those pages.
+    # Page(s) contains Frame(s) contains Table(s)
+
+    # Then, the pages need to be examined, and if any of them can fit as a
+    # short page, make that first page a short page.
+    # (Short pages are the pages with the covers on them.)
+
+    # First, we get all the possible sets of timetables on each page.
+
+    # @page_partitions consists of all the valid ways of
+    # breaking up the various tables into valid pages,
+    # in order of preference.
+
+    # A simple example might be:
+    #   @page_partitions =
+    #   [ [ Table 1, Table 2, Table 3, Table 4 ] ] ,     # all on one page
+    #   [ [ Table 1, Table 2] , [ Table 3, Table 4 ] ],  # Two pages
+    #   [ [ Table 1, Table 3] , [ Table 2, Table 4 ] ],  # Two other pages
+    #   [ [Table 1], [Table 2], [Table 3], [Table 4] ]   # Each on its own page
+
+    my @partitions_to_sort = @_;
+
+    my @page_partitions;
+
+    foreach my $partition (@partitions_to_sort) {
+
+        my %partitions_with_values = (
+            partition        => $partition,
+            num_pages        => ( scalar @{$partition} ),
+            pointsforsorting => 0,
+        );
+
+        my @tablecounts;
+
+      PAGE:
+        foreach my $page ( @{$partition} ) {
+
+            my $numtables = scalar( @{$page} );
+            push @tablecounts, $numtables;
+
+            if ( $numtables == 1 ) {
+                $partitions_with_values{pointsforsorting} = 15;
+                # one table: maximum value
+                next PAGE;
+            }
+
+            my $pagepoints = 0;
+
+            my ( @lines, @all_lines, @dircodes, @daycodes );
+
+            foreach my $table ( @{$page} ) {
+                my @lines_of_this_table = $table->lines;
+                push @lines,     \@lines_of_this_table;
+                push @all_lines, jk(@lines_of_this_table);
+
+                push @dircodes, $table->dircode;
+                push @daycodes, $table->daycode;
+
+            }
+
+            my $all_eq_lines = all_eq(@all_lines);
+
+            if ($all_eq_lines) {
+                $pagepoints += 8;
+
+                # should this be 12, since if all lines are equal,
+                # one line must be in common?
+                # whatever, distinction without difference
+            }
+            else {
+                $pagepoints += 4 if _one_line_in_common(@lines);
+            }
+            $pagepoints += 2 if all_eq(@daycodes);
+            $pagepoints += 1 if all_eq(@dircodes);
+
+            $partitions_with_values{pointsforsorting} += $pagepoints;
+
+        } ## tidy end: PAGE: foreach my $page ( @{$partition...})
+
+        $partitions_with_values{deviation} = population_stdev(@tablecounts);
+
+        push @page_partitions, \%partitions_with_values;
+
+    } ## tidy end: foreach my $partition (@partitions_to_sort)
+
+    @page_partitions = sort _page_partition_sort @page_partitions;
+
+    @page_partitions = map { $_->{partition} } @page_partitions;
+    # drop sort_values from partition;
+
+    return @page_partitions;
+
+} ## tidy end: sub _sort_page_partitions
+
+sub _page_partition_sort {
+
+    return
+         $a->{num_pages} <=> $b->{num_pages}
+      || $a->{deviation} <=> $b->{deviation}
+      || $b->{pointsforsorting} <=> $a->{pointsforsorting};
+
+}
+
+sub _one_line_in_common {
+    my @lol = @_;
+
+    # if only one element, dereference it.
+    # No point in passing only one element to this list
+    if ( @lol == 1 ) {
+        @lol = @{ $lol[0] };
+    }
+
+    my @first_elements = @{ shift @lol };
+    my $match          = 0;
+
+  ELEMENT:
+    foreach my $element (@first_elements) {
+        foreach my $list_r (@lol) {
+            next ELEMENT unless in( $element, $list_r );
+        }
+        return 1;    # matches all elements
+    }
+
+    return;
+
+} ## tidy end: sub _one_line_in_common
 
 sub _make_page_assignments {
 
@@ -268,8 +534,9 @@ sub _slide_up_multiframe_tables {
         my $leader_table   = $leader->{final_table};
 
         next unless $follower_table->id eq $leader_table->id;
-        next if $leader->{tables_height} == $leader->{frame_height};   # no room
-             # not the same table, so can't move individual items
+        next
+          if $leader->{tables_height} == $leader->{frame_height};    # no room
+            # not the same table, so can't move individual items
 
         my $rows_to_move = $leader->{frame_height} - $leader->{tables_height};
         $leader_table->set_upper_bound(
@@ -282,30 +549,6 @@ sub _slide_up_multiframe_tables {
     return @page_assignments;
 
 } ## tidy end: sub _slide_up_multiframe_tables
-
-sub _one_line_in_common {
-    my @lol = @_;
-
-    # if only one element, dereference it.
-    # No point in passing only one element to this list
-    if ( @lol == 1 ) {
-        @lol = @{ $lol[0] };
-    }
-
-    my @first_elements = @{ shift @lol };
-    my $match          = 0;
-
-  ELEMENT:
-    foreach my $element (@first_elements) {
-        foreach my $list_r (@lol) {
-            next ELEMENT unless in( $element, $list_r );
-        }
-        return 1;    # matches all elements
-    }
-
-    return;
-
-} ## tidy end: sub _one_line_in_common
 
 sub _reassign_short_page {
 
@@ -331,12 +574,12 @@ sub _reassign_short_page {
         my $tables_r          = flatten( $page_assignment_r->{tables} );
         #my $frameset          = $page_assignment_r->{frameset};
 
-        # don't move part of a multipage table to the short page,
+        # don't move part of a overlong table to the short page,
         # unless this is either the first or last page
         if ( $page_idx != 0 and $page_idx != $#page_assignments ) {
             foreach my $table (@$tables_r) {
                 next FRAMESET_TO_REPLACE
-                  if $table->multipage;
+                  if $table->overlong;
             }
         }
 
@@ -358,196 +601,6 @@ sub _reassign_short_page {
     return 0, @page_assignments;
 
 } ## tidy end: sub _reassign_short_page
-
-sub _page_partitions {
-    my $has_multipage = shift;
-    my @idtables      = @_;
-
-    my @partitions_to_test;
-    if ($has_multipage) {
-        my @table_expansions;
-        foreach my $table (@idtables) {
-            if ( not $table->multipage ) {
-                push @table_expansions, [ [$table] ];
-            }
-            else {
-                my @heights = $page_framesets->heights_of_compression_level(
-                    $table->compression_level );
-
-                push @table_expansions, $table->expand_multipage(@heights);
-            }
-
-        }
-
-       # @table_expansions =
-       # [ # first table
-       #   [ Table1_0-19  Table1_20-34 ], # if height is 20 - remainder at end
-       #   [ Table1_0-14  Table1_15-34 ], # if height is 20 - remainder at start
-       # ] ,
-       # [ # second table
-       #   [ Table2 ]   # not multipage
-       # ]
-
-        my @combinations = odometer_combinations(@table_expansions);
-
-        foreach my $combination_of_tables (@combinations) {
-            $combination_of_tables = flatten($combination_of_tables);
-
-            my $iter = partitions($combination_of_tables);
-          PARTITION:
-            while ( my $partition = $iter->next ) {
-
-                my @tables = flatten($partition);
-                my $prev_id;
-                my $prev_order;
-              TABLE:
-                foreach my $table (@tables) {
-                    my $page_order = $table->page_order;
-                    my $id         = $table->id;
-
-                    if ( not $table->multipage or $page_order == 0 ) {
-                        $prev_id    = $id;
-                        $prev_order = $page_order;
-                        next TABLE;
-                        # not multipage, or beginning of an order
-                    }
-
-                    next PARTITION
-                      if ( $id ne $prev_id
-                        or $page_order != ( $prev_order + 1 ) );
-                    # out of order
-
-                    $prev_id    = $id;
-                    $prev_order = $page_order;
-                    # in order
-
-                } ## tidy end: TABLE: foreach my $table (@tables)
-
-                push @partitions_to_test, $partition;
-            } ## tidy end: PARTITION: while ( my $partition = $iter...)
-
-        } ## tidy end: foreach my $combination_of_tables...
-
-    } ## tidy end: if ($has_multipage)
-    else {
-
-        @partitions_to_test = partitions( \@idtables );
-
-    }
-
-    return _sort_page_partitions(@partitions_to_test);
-} ## tidy end: sub _page_partitions
-
-sub _sort_page_partitions {
-
-#####
-
-    # So the set of tables first needs to be divided up into pages,
-    # and then needs to be divided up into frames within those pages.
-    # Page(s) contains Frame(s) contains Table(s)
-
-    # Then, the pages need to be examined, and if any of them can fit as a
-    # short page, make that first page a short page.
-    # (Short pages are the pages with the covers on them.)
-
-    # First, we get all the possible sets of timetables on each page.
-
-    # @page_partitions consists of all the valid ways of
-    # breaking up the various tables into valid pages,
-    # in order of preference.
-
-    # A simple example might be:
-    #   @page_partitions =
-    #   [ [ Table 1, Table 2, Table 3, Table 4 ] ] ,     # all on one page
-    #   [ [ Table 1, Table 2] , [ Table 3, Table 4 ] ],  # Two pages
-    #   [ [ Table 1, Table 3] , [ Table 2, Table 4 ] ],  # Two other pages
-    #   [ [Table 1], [Table 2], [Table 3], [Table 4] ]   # Each on its own page
-
-    # At this point _partition_tables_into_pages returns *every* possible
-    # partition in *every* order, but is sorted into most likely order for use.
-
-    my @partitions_to_sort = @_;
-
-    my @page_partitions;
-
-    foreach my $partition (@partitions_to_sort) {
-
-        my %partitions_with_values = (
-            partition        => $partition,
-            num_pages        => ( scalar @{$partition} ),
-            pointsforsorting => 0,
-        );
-
-        my @tablecounts;
-
-      PAGE:
-        foreach my $page ( @{$partition} ) {
-
-            my $numtables = scalar( @{$page} );
-            push @tablecounts, $numtables;
-
-            if ( $numtables == 1 ) {
-                $partitions_with_values{pointsforsorting} = 15;
-                # one table: maximum value
-                next PAGE;
-            }
-
-            my $pagepoints = 0;
-
-            my ( @lines, @all_lines, @dircodes, @daycodes );
-
-            foreach my $table ( @{$page} ) {
-                my @lines_of_this_table = $table->lines;
-                push @lines,     \@lines_of_this_table;
-                push @all_lines, jk(@lines_of_this_table);
-
-                push @dircodes, $table->dircode;
-                push @daycodes, $table->daycode;
-
-            }
-
-            my $all_eq_lines = all_eq(@all_lines);
-
-            if ($all_eq_lines) {
-                $pagepoints += 8;
-
-                # should this be 12, since if all lines are equal,
-                # one line must be in common?
-                # whatever, distinction without difference
-            }
-            else {
-                $pagepoints += 4 if _one_line_in_common(@lines);
-            }
-            $pagepoints += 2 if all_eq(@daycodes);
-            $pagepoints += 1 if all_eq(@dircodes);
-
-            $partitions_with_values{pointsforsorting} += $pagepoints;
-
-        } ## tidy end: PAGE: foreach my $page ( @{$partition...})
-
-        $partitions_with_values{deviation} = population_stdev(@tablecounts);
-
-        push @page_partitions, \%partitions_with_values;
-
-    } ## tidy end: foreach my $partition (@partitions_to_sort)
-
-    @page_partitions = sort _page_partition_sort @page_partitions;
-
-    @page_partitions = map { $_->{partition} } @page_partitions;
-    # drop sort_values from partition;
-
-    return @page_partitions;
-
-} ## tidy end: sub _sort_page_partitions
-
-sub _page_partition_sort {
-
-    return
-         $a->{num_pages} <=> $b->{num_pages}
-      || $a->{deviation} <=> $b->{deviation}
-      || $b->{pointsforsorting} <=> $a->{pointsforsorting};
-
-}
 
 sub _make_table_assignments_from_page_assignments {
 
@@ -596,3 +649,47 @@ sub _make_table_assignments_from_page_assignments {
 
 __END__
 
+#        my @expansions_with_heights;
+#        my %seen_heights;
+
+#        foreach my $table (@idtables) {
+#            if ( not $table->overlong ) {
+#                push @expansions_with_heights, { 0 => [ [$table] ] } ;
+#            }
+#            else {
+#                my @heights = $page_framesets->heights_of_compression_level(
+#                    $table->compression_level );
+#
+#                my %expansions_of_height;
+#
+#                foreach my $height (@heights) {
+#                    $seen_heights{$height} = 1;
+#                    $expansions_of_height{$height} = expand_overlong($height);
+#
+#                }
+#                push @expansions_with_heights, \%expansions_of_height;
+#            }
+#
+#        }
+#
+#        my @table_expansions;
+#
+#        HEIGHT:
+#        foreach my $height ( keys %seen_heights ) {
+#            my @expansions_of_this_height;
+#            foreach my $expansion_with_heights (@expansions_with_heights) {
+#                if (exists $expansion_with_heights->{0}) {
+#                    push @expansions_of_this_height,
+#                       $expansion_with_heights->{0};
+#                    next;
+#                } elsif (exists $expansion_with_heights->{$height} ) {
+#                    push @expansions_of_this_height,
+#                       $expansion_with_heights->{$height};
+#                    next;
+#                }
+#                # no valid entry for this height
+#
+#
+#
+#            }
+#        }

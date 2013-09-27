@@ -64,7 +64,7 @@ sub START {
     my ( $alltables_r, $tables_of_r )
       = Actium::IDTables::create_timetable_texts( $xml_db, @skeds );
 
-    Actium::IDTables::output_all_tables( $tabulae_folder, $alltables_r );
+    #Actium::IDTables::output_all_tables( $tabulae_folder, $alltables_r );
     #Actium::IDTables::output_pubtts( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
     Actium::IDTables::output_m_pubtts( $multipubtt_folder, $pubtt_contents_r,
         $tables_of_r, $signup );

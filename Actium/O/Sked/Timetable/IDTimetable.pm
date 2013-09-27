@@ -20,10 +20,10 @@ use Const::Fast;
 use List::Util(qw<max sum>);
 
 use MooseX::MarkAsMethods autoclean => 1;
-use overload '""'                   => sub {
-    my $self = shift;
-    $self->id . ":" . $self->lower_bound . '-' . $self->upper_bound;
-};
+#use overload '""'                   => sub {
+#    my $self = shift;
+#    $self->id . ":" . $self->lower_bound . '-' . $self->upper_bound;
+#};
 
 has timetable_obj => (
     isa      => 'Actium::O::Sked::Timetable',
@@ -39,7 +39,7 @@ has [qw(upper_bound lower_bound)] => (
     isa     => 'Int',
 );
 
-has [qw<multipage failed>] => (
+has [qw<overlong failed>] => (
     is      => 'ro',
     isa     => 'Bool',
     default => 0,
@@ -71,7 +71,7 @@ sub height {
     return $height;
 }
 
-sub _multipage_clones {
+sub _overlong_clones {
     my $self          = shift;
     my @rows_on_pages = @_;
     my @clonespecs;
@@ -99,9 +99,9 @@ sub _multipage_clones {
     my @clones = map { $self->meta->clone_object( $self, %{$_} ) } @clonespecs;
     return \@clones;
 
-} ## tidy end: sub _multipage_clones
+} ## tidy end: sub _overlong_clones
 
-sub expand_multipage {
+sub expand_overlong {
     my $self         = shift;
     my @page_heights = @_;
 
@@ -125,14 +125,14 @@ sub expand_multipage {
         # so @rows_on_pages contains $adjusted_height for each page,
         # plus the remainder on the last page
 
-        push @table_sets, $self->_multipage_clones(@rows_on_pages);
-        push @table_sets, $self->_multipage_clones( reverse @rows_on_pages );
+        push @table_sets, $self->_overlong_clones(@rows_on_pages);
+        push @table_sets, $self->_overlong_clones( reverse @rows_on_pages );
 
     } ## tidy end: foreach my $page_height (@page_heights)
 
     return \@table_sets;
 
-} ## tidy end: sub expand_multipage
+} ## tidy end: sub expand_overlong
 
 sub as_indesign {
     my $self = shift;
