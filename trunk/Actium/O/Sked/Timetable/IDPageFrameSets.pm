@@ -18,19 +18,18 @@ use namespace::autoclean;
 use Actium::O::Sked::Timetable::IDFrameSet;
 use Actium::O::Sked::Timetable::IDTimetable;
 use Actium::Combinatorics(':all');
+use POSIX('ceil');
 
 use Params::Validate ':all';
 
 use Scalar::Util 'reftype';
 use List::MoreUtils ('uniq');
-use List::Util(qw<max sum>);
+use List::Util(qw<max sum min>);
 use Actium::Util('flatten');
 
 use Const::Fast;
 
 const my $IDTABLE => 'Actium::O::Sked::Timetable::IDTimetable';
-
-
 
 has frameset_r => (
     traits   => ['Array'],
@@ -135,7 +134,7 @@ has heights_of_compression_level_r => (
     isa     => 'HashRef[ArrayRef[Int]]',
     lazy    => 1,
     builder => '_build_heights_of_compression_level_r',
-    handles => { _heights_of_compression_level_r => 'get', },
+    handles => { _heights_of_compression_level => 'get' },
 );
 
 sub _build_heights_of_compression_level_r {
@@ -159,7 +158,46 @@ sub _build_heights_of_compression_level_r {
 sub heights_of_compression_level {
     my $self  = shift;
     my $level = shift;
-    return @{ $self->_heights_of_compression_level_r($level) };
+    return @{ $self->_heights_of_compression_level($level) };
+}
+
+has _smallest_frame_height => (
+    is      => 'ro',
+    lazy    => 1,
+    isa     => 'Int',
+    builder => '_build_smallest_frame_height',
+);
+
+sub _build_smallest_frame_height {
+    my $self = shift;
+    my $min;
+    foreach my $frameset ( $self->framesets ) {
+        if ( defined $min ) {
+            $min = min( $min, $frameset->height );
+        }
+        else {
+            $min = $frameset->height;
+        }
+    }
+
+    return $min;
+}
+
+has _maximum_frame_count => (
+    is      => 'ro',
+    lazy    => 1,
+    isa     => 'Int',
+    builder => '_build_maximum_frame_count',
+);
+
+sub _build_maximum_frame_count {
+    my $self = shift;
+    my $max  = 0;
+    foreach my $frameset ( $self->framesets ) {
+        $max = max( $max, $frameset->frame_count );
+    }
+    return $max;
+
 }
 
 #has all_frames_r => (
@@ -182,7 +220,7 @@ sub make_idtables {
     my @tables = @_;
     my @idtables;
     my $seen_a_failure;
-    my $any_multipage;
+    my $any_overlong;
 
   TABLE:
     foreach my $table (@tables) {
@@ -207,7 +245,7 @@ sub make_idtables {
                       $IDTABLE->new(
                         timetable_obj     => $table,
                         compression_level => $compression_level,
-                        multipage         => 0,
+                        overlong          => 0,
                       );
 
                     next TABLE;
@@ -231,9 +269,9 @@ sub make_idtables {
               $IDTABLE->new(
                 timetable_obj     => $table,
                 compression_level => $partial_level,
-                multipage         => 1
+                overlong          => 1
               );
-            $any_multipage = 1;
+            $any_overlong = 1;
             next TABLE;
         }
 
@@ -244,9 +282,29 @@ sub make_idtables {
 
     } ## tidy end: TABLE: foreach my $table (@tables)
 
-    return $seen_a_failure, $any_multipage, @idtables;
+    return $seen_a_failure, $any_overlong, @idtables;
 
 } ## tidy end: sub make_idtables
+
+sub minimum_pages {
+    my $self     = shift;
+    my @idtables = @_;
+    
+    my $overlong = 0;
+    foreach my $idtable (@idtables) {
+        $overlong++ if ($idtable->overlong);
+    }
+    
+    return 1 if ($overlong == 0);
+    # if not overlong, could fit on one page
+    
+    my $minimum_frames = ceil($overlong*1.5);
+    
+    # Each overlong table can only be paired with one other overlong table.
+    # So it takes at least 1.5 frames per overlong one.
+    
+    return ceil ($minimum_frames / $self->_maximum_frame_count) ;
+}
 
 sub assign_page {
 
@@ -258,7 +316,7 @@ sub assign_page {
       = $prefer_portrait
       ? $self->portrait_preferred_framesets
       : $self->framesets;
-      
+
     foreach my $frameset (@framesets) {
 
         my $frame_height = $frameset->height;
@@ -272,7 +330,8 @@ sub assign_page {
         # will this set of tables fit on this page?
 
         if ( @frames == 1 ) {
-            my ( $height, $width ) = $IDTABLE->get_stacked_measurements(@tables);
+            my ( $height, $width )
+              = $IDTABLE->get_stacked_measurements(@tables);
             if (not(    $height <= $frame_height
                     and $width <= $frames[0]->width )
               )
@@ -301,14 +360,16 @@ sub assign_page {
         # more tables than frames. Divide tables up into appropriate sets,
         # and then try them
 
-        my @table_permutations = ordered_partitions( \@tables, scalar @frames );
+        my @table_permutations = _sort_table_permutations(
+            ordered_partitions( \@tables, scalar @frames ) );
 
       TABLE_PERMUTATION:
         foreach my $table_permutation (@table_permutations) {
 
             foreach my $i ( 0 .. $#frames ) {
                 my @tables = @{ $table_permutation->[$i] };
-                my ( $height, $width ) = $IDTABLE->get_stacked_measurements(@tables);
+                my ( $height, $width )
+                  = $IDTABLE->get_stacked_measurements(@tables);
                 next TABLE_PERMUTATION
                   if $frame_height < $height
                   or $frames[$i]->width < $width;
@@ -329,6 +390,53 @@ sub assign_page {
     # finished all the permutations for this page set, but nothing fit
 
 } ## tidy end: sub assign_page
+
+sub _sort_table_permutations {
+
+    my @partitions_to_sort;
+
+    foreach my $partition_r (@_) {
+        my @partition = @{$partition_r};
+
+        my @sort_values = map { scalar @{$_} } @partition;
+        # count of tables in each frame
+
+        unshift @sort_values, population_stdev(@sort_values);
+        # standard deviation -- so makes them as close to the same
+        # number of tables as possible
+
+        push @partitions_to_sort, [ \@partition, \@sort_values ];
+
+    }
+
+    my @partitions = sort _by_table_permutation_sort @partitions_to_sort;
+
+    return map { $_->[0] } @partitions;
+
+} ## tidy end: sub _sort_table_permutations
+
+sub _by_table_permutation_sort {
+    my @a = @{ $a->[1] };
+    my @b = @{ $b->[1] };
+
+    # first, return the comparison of the standard deviations of the
+    # count of tables in each frame
+
+    my $result = $a[0] <=> $b[0];
+    return $result if $result;
+
+    # If those are the same, go through the remaining values,
+    # which are the counts of the tables in each frame.
+    # Return the one that's highest first -- so it will
+    # prefer [2, 1] over [1, 2]
+    for my $i ( 1 .. $#a ) {
+        my $result = $b[$i] <=> $a[$i];
+        return $result if $result;
+    }
+
+    return 0;    # the same...
+
+} ## tidy end: sub _by_table_permutation_sort
 
 __PACKAGE__->meta->make_immutable;
 
