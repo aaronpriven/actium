@@ -86,46 +86,30 @@ sub ordered_partitions {
 
         push @partition,
           [ @data[ 1 + $break_after_idx[-1] .. $final_idx ] ];
+          
+        push @partitions, \@partition;
 
-        my @sort_values = map { scalar @{$_} } @partition;
-        # count of tables in each frame
+#        my @sort_values = map { scalar @{$_} } @partition;
+#        # count of tables in each frame
+#
+#        unshift @sort_values, population_stdev(@sort_values);
+#        # standard deviation -- so makes them as close to the same
+#        # number of tables as possible
+#
+#        push @partitions, [ \@partition, \@sort_values ];
+#
+#    } ## tidy end: foreach my $break_after_idx_set...
+#
+#    @partitions = sort _ordered_partition_sort @partitions;
+#
+#    return map { $_->[0] } @partitions;
 
-        unshift @sort_values, population_stdev(@sort_values);
-        # standard deviation -- so makes them as close to the same
-        # number of tables as possible
-
-        push @partitions, [ \@partition, \@sort_values ];
-
-    } ## tidy end: foreach my $break_after_idx_set...
-
-    @partitions = sort _ordered_partition_sort @partitions;
-
-    return map { $_->[0] } @partitions;
+    }
+    
+    return @partitions;
 
 } ## tidy end: sub ordered_partitions
 
-sub _ordered_partition_sort {
-    my @a = @{ $a->[1] };
-    my @b = @{ $b->[1] };
-
-    # first, return the comparison of the standard deviations of the
-    # count of tables in each frame
-
-    my $result = $a[0] <=> $b[0];
-    return $result if $result;
-
-    # If those are the same, go through the remaining values,
-    # which are the counts of the tables in each frame.
-    # Return the one that's highest first -- so it will
-    # prefer [2, 1] over [1, 2]
-    for my $i ( 1 .. $#a ) {
-        my $result = $b[$i] <=> $a[$i];
-        return $result if $result;
-    }
-
-    return 0;    # the same...
-
-} ## tidy end: sub _ordered_partition_sort
 
 sub odometer_combinations {
  
