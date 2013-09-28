@@ -13,6 +13,7 @@ use warnings;
 
 use Algorithm::Combinatorics(':all');
 use Actium::Util('population_stdev');
+use Actium::Term(':all');
 
 use Sub::Exporter -setup => {
     exports => [
@@ -61,15 +62,22 @@ sub ordered_partitions {
 
     if ( not defined $num_frames ) {
         my @all_partitions;
-        for ( 1 .. $final_idx ) {
+        for ( 1 .. @data ) {
             push @all_partitions, ordered_partitions( \@data, $_ );
         }
         return @all_partitions;
     }
-
+    
+    if ($num_frames == @data ) {
+        return [ map { [ $_ ] } @data ];
+    }
+    if ($num_frames == 1 ) {
+        return [ \@data ];
+    }
+    
     my @indices = ( 0 .. $final_idx - 1 );
     my @break_after_idx_sets = combinations( \@indices, $num_frames - 1 );
-
+    
     my @partitions;
 
     foreach my $break_after_idx_set (@break_after_idx_sets) {

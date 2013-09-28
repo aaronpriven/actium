@@ -22,10 +22,11 @@ use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::O::Sked::Timetable::IDTimetable;
+use Actium::O::Sked::Timetable::IDTimetableSet;
 use Actium::Util qw/doe in chunks flatten population_stdev jk all_eq halves/;
 use Const::Fast;
-use List::Util (qw/max sum/);
-use List::MoreUtils ('any');
+use List::Util      (qw/max sum/);
+use List::MoreUtils (qw[any natatime]);
 use List::Compare::Functional(qw/get_intersection/);
 use Algorithm::Combinatorics(qw/partitions permutations/);
 use Actium::Combinatorics (qw/odometer_combinations ordered_partitions/);
@@ -188,15 +189,53 @@ sub _assign_pages {
 sub _overlong_assign_pages {
     my @idtables = @_;
 
-    # first, get the heights that all overlong has in common
-    my @all_heights;
-    foreach my $table (@idtables) {
-        next unless $table->overlong;
-        my @these_heights = $page_framesets->heights_of_compression_level(
-            $table->compression_level );
-        push @all_heights, \@these_heights;
+    my @table_sets = Actium::O::Sked::Timetable::IDTimetableSet->new;
+
+    for my $idtable (@idtables) {
+
+        my $endmost_set                     = $table_sets[-1];
+        my $number_of_tables_in_endmost_set = $endmost_set->timetable_count;
+
+        if ( $number_of_tables_in_endmost_set < 2
+            or not( $idtable->overlong or $endmost_set->overlong ) )
+        {
+
+            $endmost_set->add_timetable($idtable);
+            # add this one to the set if the set will be less than two tables,
+            # or there are no overlongs in this one or in the set
+
+        }
+        else {
+            # make a new set
+            my $set = Actium::O::Sked::Timetable::IDTimetableSet->new;
+            $set->add_timetable($idtable);
+            push @table_sets, $set;
+        }
+
+    } ## tidy end: for my $idtable (@idtables)
+
+    my @page_assignments;
+    foreach my $table_set (@table_sets) {
+        my @timetables = $table_set->timetables;
+
+        if ( $table_set->overlong ) {
+            push @page_assignments,
+              _overlong_set_assign_pages (@timetables);
+
+        }
+        else {
+            push @page_assignments, _assign_pages(@timetables);
+        }
+
     }
-    my @common_heights = get_intersection( \@all_heights );
+
+    return @page_assignments;
+
+} ## tidy end: sub _overlong_assign_pages
+
+sub _overlong_set_assign_pages {
+
+    my @idtables = @_;
 
     my @expanded_table_sets;
 
@@ -217,91 +256,108 @@ sub _overlong_assign_pages {
     #   [ Table1_0-14 Table1_15_34 ], [ Table2 ], # Table1 remainder at start
     # ]
 
-    if (@common_heights) {
-        foreach my $height (@common_heights) {
-            my @table_expansions;
-            foreach my $table (@idtables) {
-                if ( not $table->overlong ) {
-                    push @table_expansions, [ [$table] ];
-                }
-                else {
-                    push @table_expansions, $table->expand_overlong($height);
-                }
+    my @table_expansions;
 
-            }
+    foreach my $table (@idtables) {
+        if ( not $table->overlong ) {
+            push @table_expansions, [ [$table] ];
+        }
+        else {
+            my @heights = $page_framesets->heights_of_compression_level(
+                $table->compression_level );
 
-            push @expanded_table_sets,
-              odometer_combinations( @table_expansions );
+            push @table_expansions, $table->expand_overlong(@heights);
 
         }
 
     }
-    else {
-        # No height in common, so ignore that and just put any possible
-        # combination together.
-        my @table_expansions;
 
-        foreach my $table (@idtables) {
-            if ( not $table->overlong ) {
-                push @table_expansions, [ [$table] ];
-            }
-            else {
-                my @heights = $page_framesets->heights_of_compression_level(
-                    $table->compression_level );
+    push @expanded_table_sets, odometer_combinations(@table_expansions);
+    
+    my @page_partitions;
+    
+    foreach my $table_set (@expanded_table_sets) {
+       my @tables = flatten ($table_set);
+       my @these_partitions = ordered_partitions (\@tables);
+       push @page_partitions, @these_partitions;
+    }
+    
+#    my $pages               = $page_framesets->minimum_pages(@idtables);
+#    my $maximum_frame_count = $page_framesets->maximum_frame_count;
+#
+#    my $all_pages_le_tables = 1;
+#    while ($all_pages_le_tables) {
+#        $all_pages_le_tables = 0;
+#
+#        my @page_partitions;
+#
+#        #my $table_order_iter = permutations( [ 0 .. $#idtables ] );
+#        #while ( my $table_order = $table_order_iter->next ) {
+#        #    my @table_order = @{$table_order};
+#
+#        foreach my $table_set (@expanded_table_sets) {
+#            my @tables_in_set = @{$table_set};
+#
+#            #@tables_in_set = @tables_in_set[@$table_order] ;
+#            @tables_in_set = flatten(@tables_in_set);
+#            # slice to put set in the currently permuted order
+#
+#            # can never be more pages than there are tables...
+#            next if $pages > @tables_in_set;
+#            $all_pages_le_tables = 1;
+#            # found at least one entry pages <= tables
+#
+#            my @these_partitions
+#              = ordered_partitions( \@tables_in_set, $pages );
+#
+#          PARTITION:
+#            for my $partition_idx ( reverse 0 .. $#these_partitions ) {
+#                for my $tables_r ( @{ $these_partitions[$partition_idx] } ) {
+#
+#                    my $full_frame = _count_full_frame_idtables($tables_r);
+#
+#                    if ($full_frame > $maximum_frame_count
+#                        or ( $full_frame == $maximum_frame_count
+#                            and @{$tables_r} > $full_frame )
+#                      )
+#                    {
+#
+#                        splice( @these_partitions, $partition_idx, 1 );
+#                        next PARTITION;
+#                    }
+#
+#                }
+#            }
+#
+#            push @page_partitions, @these_partitions;
+#
+#        } ## tidy end: foreach my $table_set (@expanded_table_sets)
 
-                push @table_expansions, $table->expand_overlong(@heights);
+        #} ## tidy end: while ( my $table_order =...)
 
-            }
+    #    if (@page_partitions) {
+            @page_partitions = _sort_page_partitions(@page_partitions);
+            my @page_assignments = _make_page_assignments(@page_partitions);
+            return @page_assignments if @page_assignments;
+    #    }
 
-        }
+    #    $pages++;
 
-        push @expanded_table_sets, odometer_combinations( @table_expansions );
-
-    } ## tidy end: else [ if (@common_heights) ]
-
-    my $pages = $page_framesets->minimum_pages(@idtables);
-
-
-    my @page_partitions = ('true');
-    while ( @page_partitions ) {
-
-        @page_partitions = ();
-            my $debugcount;
-
-        my $table_order_iter = permutations( [ 0 .. $#idtables ] );
-        while ( my $table_order = $table_order_iter->next ) {
-            my @table_order = @{$table_order};
-
-            foreach my $table_set (@expanded_table_sets) {
-                my @tables_in_set = @{$table_set};
-
-                @tables_in_set = @tables_in_set[ @$table_order ];
-                # slice to put set in the currently permuted order
-
-                @tables_in_set = flatten(@tables_in_set);
-
-                next if $pages > @tables_in_set;
-
-                # can never be more pages than there are tables...
-
-                push @page_partitions, ordered_partitions( \@tables_in_set, $pages );
-
-            }
-
-        } ## tidy end: while ( my $table_order =...)
-
-        @page_partitions = _sort_page_partitions(@page_partitions);
-        my @page_assignments = _make_page_assignments(@page_partitions);
-        return @page_assignments if @page_assignments;
-        
-        
-        $pages++;
-
-    } ## tidy end: while ( not $should_stop )
+    #} ## tidy end: while ($all_pages_le_tables)
 
     return;
 
-} ## tidy end: sub _overlong_assign_pages
+} ## tidy end: sub _overlong_set_assign_pages
+
+
+sub _count_full_frame_idtables {
+    my $full_frame = 0;
+    foreach my $idtable ( ref $_[0] eq 'ARRAY' ? @{ $_[0] } : @_ ) {
+        $full_frame++ if $idtable->full_frame;
+    }
+
+    return $full_frame;
+}
 
 sub _sort_page_partitions {
 
@@ -347,18 +403,18 @@ sub _sort_page_partitions {
 
             my $numtables = scalar( @{$page} );
             push @tablecounts, $numtables;
+            
+            #if ( $numtables == 1 ) {
+            #    $partitions_with_values{pointsforsorting} = 15;
+            #    # one table: maximum value
+            #    next PAGE;
+            #}
 
-            if ( $numtables == 1 ) {
-                $partitions_with_values{pointsforsorting} = 15;
-                # one table: maximum value
-                next PAGE;
-            }
-
-            my $pagepoints = 0;
-
-            my ( @lines, @all_lines, @dircodes, @daycodes );
+            my ( @ids, @lines, @all_lines, @dircodes, @daycodes );
 
             foreach my $table ( @{$page} ) {
+                push @ids, $table->id;
+                
                 my @lines_of_this_table = $table->lines;
                 push @lines,     \@lines_of_this_table;
                 push @all_lines, jk(@lines_of_this_table);
@@ -367,6 +423,14 @@ sub _sort_page_partitions {
                 push @daycodes, $table->daycode;
 
             }
+            
+            if (all_eq(@ids)) {
+                $partitions_with_values{pointsforsorting} = 15;
+                next PAGE;
+                # one ID; maximum value
+            }
+            
+            my $pagepoints = 0;
 
             my $all_eq_lines = all_eq(@all_lines);
 
