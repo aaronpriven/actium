@@ -25,7 +25,7 @@ use Params::Validate ':all';
 use Scalar::Util 'reftype';
 use List::MoreUtils ('uniq');
 use List::Util(qw<max sum min>);
-use Actium::Util('flatten');
+use Actium::Util(qw<flatten population_stdev>);
 
 use Const::Fast;
 
@@ -183,7 +183,7 @@ sub _build_smallest_frame_height {
     return $min;
 }
 
-has _maximum_frame_count => (
+has maximum_frame_count => (
     is      => 'ro',
     lazy    => 1,
     isa     => 'Int',
@@ -303,7 +303,7 @@ sub minimum_pages {
     # Each overlong table can only be paired with one other overlong table.
     # So it takes at least 1.5 frames per overlong one.
     
-    return ceil ($minimum_frames / $self->_maximum_frame_count) ;
+    return ceil ($minimum_frames / $self->maximum_frame_count) ;
 }
 
 sub assign_page {
