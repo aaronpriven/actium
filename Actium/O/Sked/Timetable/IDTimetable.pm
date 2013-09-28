@@ -39,7 +39,7 @@ has [qw(upper_bound lower_bound)] => (
     isa     => 'Int',
 );
 
-has [qw<overlong failed>] => (
+has [qw<overlong failed full_frame>] => (
     is      => 'ro',
     isa     => 'Bool',
     default => 0,
@@ -73,6 +73,7 @@ sub height {
 
 sub _overlong_clones {
     my $self          = shift;
+    my $final_frame_is_remainder = shift;
     my @rows_on_pages = @_;
     my @clonespecs;
     my $start      = 0;
@@ -85,6 +86,7 @@ sub _overlong_clones {
             upper_bound => $start + $page_rows - 1,
             firstpage   => 0,
             finalpage   => 0,
+            full_frame => 1,
             page_order  => $page_order,
           };
 
@@ -94,6 +96,12 @@ sub _overlong_clones {
 
     $clonespecs[0]{firstpage}  = 1;
     $clonespecs[-1]{finalpage} = 1;
+    
+    if ($final_frame_is_remainder) {
+       $clonespecs[-1]{full_frame} = 0;
+    } else {
+       $clonespecs[0]{full_frame} = 0;
+    }
 
     # see Class::MOP::Class for clone_object
     my @clones = map { $self->meta->clone_object( $self, %{$_} ) } @clonespecs;
@@ -125,8 +133,8 @@ sub expand_overlong {
         # so @rows_on_pages contains $adjusted_height for each page,
         # plus the remainder on the last page
 
-        push @table_sets, $self->_overlong_clones(@rows_on_pages);
-        push @table_sets, $self->_overlong_clones( reverse @rows_on_pages );
+        push @table_sets, $self->_overlong_clones( 0, @rows_on_pages);
+        push @table_sets, $self->_overlong_clones( 1, reverse @rows_on_pages );
 
     } ## tidy end: foreach my $page_height (@page_heights)
 
