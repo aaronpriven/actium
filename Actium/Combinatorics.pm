@@ -16,12 +16,7 @@ use Actium::Util('population_stdev');
 use Actium::Term(':all');
 
 use Sub::Exporter -setup => {
-    exports => [
-        qw<
-          ordered_partitions
-          odometer_combinations
-          >
-    ]
+    exports => [ qw< ordered_partitions odometer_combinations > ]
 };
 
 sub ordered_partitions {
