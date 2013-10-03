@@ -39,7 +39,7 @@ sub START {
     my $signup            = Actium::O::Folders::Signup->new();
     my $tabulae_folder    = $signup->subfolder('timetables');
     my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
-    my $multipubtt_folder = $tabulae_folder->subfolder('m-pubtt');
+    my $multipubtt_folder = $tabulae_folder->subfolder('pub-idtags');
 
     my $xml_db = $signup->load_xml;
 
