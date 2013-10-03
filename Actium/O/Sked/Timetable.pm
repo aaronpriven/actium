@@ -313,7 +313,7 @@ sub as_indesign {
       for ( 1 .. $halfcols );
     print $th "<ColStart:<tColAttrWidth:$col_points>>"
       for ( 1 .. $columns + $trailing_columns );
-    print $th '<ColStart:<tColAttrWidth:$halfcol_points>>'
+    print $th "<ColStart:<tColAttrWidth:$halfcol_points>>"
       for ( 1 .. $trailing_halves );
 
     ##############
