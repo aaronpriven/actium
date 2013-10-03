@@ -51,6 +51,7 @@ const my %KEY_OF => (
     Colors        => 'ColorID',
     Lines         => 'Line',
     Neighborhoods => 'Neighborhood',
+    PubTimetables => 'PubTimetableID',
     Projects      => 'Project',
     SignTypes     => 'SignType',
     Signs         => 'SignID',

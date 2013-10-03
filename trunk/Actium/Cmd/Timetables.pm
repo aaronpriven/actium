@@ -13,7 +13,7 @@ package Actium::Cmd::Timetables 0.001;
 
 use Actium::O::Folders::Signup;
 use Actium::O::Sked;
-use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);
+use List::MoreUtils       (qw<uniq pairwise natatime each_arrayref>);
 use Actium::Sorting::Line (qw(sortbyline byline));
 use Actium::IDTables;
 
@@ -53,9 +53,14 @@ sub START {
       = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
 
     my @all_lines = map { $_->lines } @skeds;
+    @all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN'} @all_lines;
     @all_lines = uniq sortbyline @all_lines;
-    my $pubtt_contents_r
-      = Actium::IDTables::get_pubtt_contents( $xml_db, \@all_lines );
+    
+    #my $pubtt_contents_r
+    #  = Actium::IDTables::get_pubtt_contents( $xml_db, \@all_lines );
+
+    my ($pubtt_contents_with_dates_r , $pubtimetables_r) 
+      = Actium::IDTables::get_pubtt_contents_with_dates( $xml_db, \@all_lines );
 
     @skeds = map { $_->[0] }
       sort { $a->[1] cmp $b->[1] }
@@ -64,10 +69,12 @@ sub START {
     my ( $alltables_r, $tables_of_r )
       = Actium::IDTables::create_timetable_texts( $xml_db, @skeds );
 
-    #Actium::IDTables::output_all_tables( $tabulae_folder, $alltables_r );
-    #Actium::IDTables::output_pubtts( $pubtt_folder, $pubtt_contents_r, $tables_of_r, $signup );
-    Actium::IDTables::output_m_pubtts( $multipubtt_folder, $pubtt_contents_r,
-        $tables_of_r, $signup );
+ #Actium::IDTables::output_all_tables( $tabulae_folder, $alltables_r );
+ #Actium::IDTables::output_pubtts( $pubtt_folder, $pubtt_contents_r,
+ #   $tables_of_r, $signup );
+
+    Actium::IDTables::output_a_pubtts( $multipubtt_folder,
+        $pubtt_contents_with_dates_r, $pubtimetables_r, $tables_of_r, $signup );
 
     return;
 

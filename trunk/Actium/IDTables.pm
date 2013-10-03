@@ -14,7 +14,7 @@ package Actium::IDTables 0.001;
 use English '-no_match_vars';
 use autodie;
 use Text::Trim;
-use Actium::EffectiveDate ('effectivedate');
+use Actium::EffectiveDate (qw[effectivedate long_date file_date newest_date]);
 use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Sorting::Skeds('skedsort');
 use Actium::Constants;
@@ -24,7 +24,7 @@ use Actium::O::Folders::Signup;
 use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
-use Actium::Util(qw/doe in chunks population_stdev/);
+use Actium::Util(qw/doe in jt chunks population_stdev/);
 use Const::Fast;
 use List::Util ( 'max', 'sum' );
 use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);
@@ -121,6 +121,57 @@ sub get_pubtt_contents {
     return [ sort { byline( $a->[0], $b->[0] ) } @pubtt_contents ];
 
 } ## tidy end: sub get_pubtt_contents
+
+sub get_pubtt_contents_with_dates {
+    my $xml_db  = shift;
+    my $lines_r = shift;
+
+    $xml_db->ensure_loaded('Lines');
+    my $on_timetable_from_db_r
+      = $xml_db->all_in_columns_key(qw/Lines PubTimetable TimetableDate/);
+
+    my %on_timetable_of;
+
+    foreach my $line (@$lines_r) {
+        my $fromdb = $on_timetable_from_db_r->{$line}{'PubTimetable'};
+        if ( defined $fromdb and $fromdb ne $EMPTY_STR ) {
+            push @{ $on_timetable_of{$fromdb} }, $line;
+        }
+        else {
+            push @{ $on_timetable_of{$line} }, $line;
+        }
+    }
+
+    my @pubtt_contents_with_dates;
+
+    for my $lines_r ( values %on_timetable_of ) {
+        my @lines = @{$lines_r};
+
+        my @datestrs
+          = map { $on_timetable_from_db_r->{$_}{'TimetableDate'} } @lines;
+        my $date_obj  = newest_date(@datestrs);
+        my $date      = long_date($date_obj);
+        my $file_date = file_date($date_obj);
+        #my ( $date, $filedate ) = newest_date(@datestrs);
+        push @pubtt_contents_with_dates,
+          { lines     => [ sortbyline @lines ],
+            date      => $date,
+            file_date => $file_date
+          };
+
+    }
+
+    $xml_db->ensure_loaded('PubTimetables');
+
+    my @pubtimetable_cols = $xml_db->columns_of_table('PubTimetables');
+
+    my $pubtimetables_r
+      = $xml_db->all_in_columns_key( 'PubTimetables', @pubtimetable_cols );
+
+    return [ sort { byline( $a->{lines}->[0], $b->{lines}->[0] ) }
+          @pubtt_contents_with_dates ], $pubtimetables_r;
+
+} ## tidy end: sub get_pubtt_contents_with_dates
 
 sub output_pubtts {
 
@@ -278,7 +329,7 @@ sub _output_pubtt_front_matter {
     my $tables_r      = shift;
     my @lines         = @{ +shift };
     my @front_matter  = @{ +shift };
-    my $effectivedate = shift;
+    my $effectivedate = shift // $EMPTY_STR;
 
     # @front_matter is currently unused, but I am leaving the code in here
     # for now
@@ -567,6 +618,120 @@ sub output_m_pubtts {
     emit_done;
 
 } ## tidy end: sub output_m_pubtts
+
+sub output_a_pubtts {
+
+    emit "Outputting public timetable files for Applescript";
+
+    my $pubtt_folder              = shift;
+    my @pubtt_contents_with_dates = @{ +shift };
+    my $pubtimetables_r           = shift;
+    my %tables_of                 = %{ +shift };
+    my $signup                    = shift;
+
+    my %script_entries;
+
+    foreach my $pubtt_content_r (@pubtt_contents_with_dates) {
+        my $pubtt         = $pubtt_content_r->{lines};
+        my $linegroup     = $pubtt->[0];
+        my $effectivedate = $pubtt_content_r->{date} // $EMPTY_STR;
+        my $file_date     = $pubtt_content_r->{file_date} // $EMPTY_STR;
+
+        my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
+
+        next unless @$tables_r;
+
+        my $file = join( "_", @{$lines_r} );
+
+        emit_prog " $file";
+
+        my @table_assignments
+          = Actium::IDTables::PageAssignments::assign($tables_r);
+
+        if ( not @table_assignments ) {
+            emit_prog "*";
+            next;
+        }
+
+        open my $ttfh, '>', $pubtt_folder->make_filespec("$file.txt");
+
+        print $ttfh $IDT->start;
+
+        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r, [],
+            $effectivedate );
+
+        my $firsttable      = 1;
+        my $current_frame   = 0;
+        my $pagebreak_count = 0;
+
+        foreach my $table_assignment (@table_assignments) {
+
+            my $table      = $table_assignment->{table};
+            my $width      = $table_assignment->{width};
+            my $frame      = $table_assignment->{frame};
+            my $pagebreak  = $table_assignment->{pagebreak};
+            my $compressed = $table_assignment->{compressed};
+
+            $pagebreak_count++ if $pagebreak;
+
+            if ( $frame == $current_frame and not $pagebreak ) {
+                # if it's in the same frame
+                if ( not $firsttable ) {
+                    print $ttfh $IDT->hardreturn x 2;
+                }
+            }
+            else {
+                # otherwise it's in a different frame
+                if ( $pagebreak or $current_frame > $frame ) {
+                    print $ttfh $IDT->pagebreak;
+                    $current_frame = 0;
+                }
+                my $framebreaks = $frame - $current_frame;
+                print $ttfh ( $IDT->boxbreak x $framebreaks );
+                $current_frame += $framebreaks;
+            }
+
+            print $ttfh $table->as_indesign(
+                minimum_columns  => $width->[0],
+                minimum_halfcols => $width->[1],
+                compressed       => $compressed,
+            );
+
+            $firsttable = 0;
+
+        } ## tidy end: foreach my $table_assignment...
+
+        # End matter, if there is any, goes here
+
+        close $ttfh;
+
+        my $dbentry = $pubtimetables_r->{$linegroup};
+
+        $script_entries{$linegroup} = {
+            file          => $file,
+            effectivedate => $file_date,
+            pages         => $pagebreak_count,
+            MapFile           => $dbentry->{MapFile} // $EMPTY_STR,
+            MapFitsSmallPage => ( ( $dbentry->{MapFitsSmallPage} // 'No' ) eq 'Yes' ),
+            CoverPage    => $dbentry->{CoverPage}            // $EMPTY_STR,
+            MasterPage   => $dbentry->{MasterPage}           // $EMPTY_STR,
+            has_short_page => not($table_assignments[0]{pagebreak}),
+        };
+
+    } ## tidy end: foreach my $pubtt_content_r...
+
+    my $listfh  = $pubtt_folder->open_write('_ttlist.txt');
+    my @columns = qw<file effectivedate pages MapFile MapFitsSmallPage
+                     CoverPage MasterPage has_short_page>;
+    say $listfh jt(@columns);
+    for my $linegroup ( sortbyline keys %script_entries ) {
+        say $listfh jt( @{ $script_entries{$linegroup} }{@columns} );
+    }
+    close $listfh;
+
+    emit_done;
+
+} ## tidy end: sub output_a_pubtts
 
 1;
 
