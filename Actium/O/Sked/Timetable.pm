@@ -262,7 +262,7 @@ sub as_indesign {
         @_,
         {   minimum_columns  => 1,
             minimum_halfcols => 1,
-            compressed       => { type => BOOLEAN, default => 0 },
+            compression       => { type => BOOLEAN, default => 0 },
             lower_bound => { default => 0 },
             upper_bound => { default => ( $self->body_row_count - 1 ) },
             firstpage   => { default => 1 },
@@ -272,11 +272,12 @@ sub as_indesign {
 
     #my $minimum_columns  = $params{minimum_columns};
     #my $minimum_halfcols = $params{minimum_halfcols};
-    my $compressed = $params{compressed};
+    my $compression = $params{compression};
 
-    my $halfcol_points = $compressed ? 20               : 24;
-    my $col_points     = $compressed ? 40               : 48;
-    my $timestyle      = $compressed ? 'CompressedTime' : 'Time';
+    my $halfcol_points = $compression ? 20               : 24;
+    my $col_points     = $compression ? 40               : 48;
+    my $timestyle      = $compression ? 'CompressedTime' : 'Time';
+    my $timepointstyle = $compression ? 'CompressedTimepoints' : 'Timepoints';
 
     my $columns  = $self->columns;
     my $halfcols = $self->half_columns;
@@ -349,7 +350,7 @@ sub as_indesign {
         print $th $idt->parastyle('nodrophead1');
         print $th "$routetext (continued)\r";
         print $th $idt->parastyle('nodrophead2');
-        print $th $self->header_daytext, " ", $self->header_dirtext;
+        print $th $self->header_daytext, ". ", $self->header_dirtext;
     }
     print $th '<CellEnd:>';
 
@@ -371,22 +372,23 @@ sub as_indesign {
 
     # The following is written this way so that in future, we can decide to
     # treat Note and Line with special graphic treatment (italics, color, etc.)
+    # But I haven't created special styles for them yet.
 
     if ($has_line_col) {
         my $header = shift @header_columntexts;
         print $th
-"<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:Timepoints>$header<CellEnd:>";
+"<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:$timepointstyle>$header<CellEnd:>";
     }
 
     if ($has_note_col) {
         my $header = shift @header_columntexts;
         print $th
-"<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:Timepoints>$header<CellEnd:>";
+"<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:$timepointstyle>$header<CellEnd:>";
     }
 
     for my $headertext (@header_columntexts) {
         print $th
-"<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:Timepoints>$headertext<CellEnd:>";
+"<CellStyle:Timepoints><StylePriority:20><CellStart:1,1><ParaStyle:$timepointstyle>$headertext<CellEnd:>";
     }
 
     print $th '<RowEnd:>';

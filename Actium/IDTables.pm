@@ -441,20 +441,24 @@ sub output_a_pubtts {
         my $linegroup     = $pubtt->[0];
         my $effectivedate = $pubtt_content_r->{date} // $EMPTY_STR;
         my $file_date     = $pubtt_content_r->{file_date} // $EMPTY_STR;
+        my $dbentry = $pubtimetables_r->{$linegroup};
+        my $leave_cover_for_map = 
+        ( ( $dbentry->{LeaveCoverForMap} // 'No' ) eq 'Yes' );
 
         my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
-
         next unless @$tables_r;
 
         my $file = join( "_", @{$lines_r} );
-
-        emit_prog " $file";
+        emit_over " $file";
+        if ($file eq '32') {
+           emit_over "#";
+        }
 
         my @table_assignments
-          = Actium::IDTables::PageAssignments::assign($tables_r);
+          = Actium::IDTables::PageAssignments::assign($tables_r, $leave_cover_for_map);
 
         if ( not @table_assignments ) {
-            emit_prog "*";
+            emit_text "Can't place $file on pages (too many timepoints?)";
             next;
         }
 
@@ -475,7 +479,7 @@ sub output_a_pubtts {
             my $width      = $table_assignment->{width};
             my $frame      = $table_assignment->{frame};
             my $pagebreak  = $table_assignment->{pagebreak};
-            my $compressed = $table_assignment->{compressed};
+            my $compression = $table_assignment->{compression};
 
             $pagebreak_count++ if $pagebreak;
 
@@ -499,7 +503,7 @@ sub output_a_pubtts {
             print $ttfh $table->as_indesign(
                 minimum_columns  => $width->[0],
                 minimum_halfcols => $width->[1],
-                compressed       => $compressed,
+                compression       => $compression,
             );
 
             $firsttable = 0;
@@ -510,15 +514,13 @@ sub output_a_pubtts {
 
         close $ttfh;
 
-        my $dbentry = $pubtimetables_r->{$linegroup};
 
         $script_entries{$linegroup} = {
             file          => $file,
             effectivedate => $file_date,
             pages         => $pagebreak_count,
             MapFile           => $dbentry->{MapFile} // $EMPTY_STR,
-            MapFitsSmallPage => ( ( $dbentry->{MapFitsSmallPage} // 'No' ) eq 'Yes' ),
-            CoverPage    => $dbentry->{CoverPage}            // $EMPTY_STR,
+            LeaveCoverForMap => $leave_cover_for_map ,
             MasterPage   => $dbentry->{MasterPage}           // $EMPTY_STR,
             has_short_page => not($table_assignments[0]{pagebreak}),
         };
@@ -526,14 +528,15 @@ sub output_a_pubtts {
     } ## tidy end: foreach my $pubtt_content_r...
 
     my $listfh  = $pubtt_folder->open_write('_ttlist.txt');
-    my @columns = qw<file effectivedate pages MapFile MapFitsSmallPage
-                     CoverPage MasterPage has_short_page>;
+    my @columns = qw<file effectivedate pages MapFile LeaveCoverForMap
+                     MasterPage has_short_page>;
     say $listfh jt(@columns);
     for my $linegroup ( sortbyline keys %script_entries ) {
         say $listfh jt( @{ $script_entries{$linegroup} }{@columns} );
     }
     close $listfh;
-
+    
+    emit_over '';
     emit_done;
 
 } ## tidy end: sub output_a_pubtts
@@ -542,202 +545,3 @@ sub output_a_pubtts {
 
 __END__
 
-sub output_pubtts {
-
-    emit "Outputting public timetable files";
-
-    my $pubtt_folder   = shift;
-    my @pubtt_contents = @{ +shift };
-    my %tables_of      = %{ +shift };
-    my $signup         = shift;
-
-    my $effectivedate = effectivedate($signup);
-
-    foreach my $pubtt (@pubtt_contents) {
-
-        my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
-
-        next unless @$tables_r;
-
-        my $file = join( "_", @{$lines_r} );
-
-        emit_prog "$file ";
-
-        open my $ttfh, '>', $pubtt_folder->make_filespec("$file.txt");
-
-        print $ttfh Actium::Text::InDesignTags->start;
-
-        #        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r,
-        #            $front_matter{$pubtt}, $effectivedate );
-        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r, [],
-            $effectivedate );
-
-        my $minimum_of_r = _minimums($tables_r);
-
-        my @tabletexts;
-
-        my $tablecount = scalar @{$tables_r};
-
-        foreach my $table ( @{$tables_r} ) {
-
-            my $linedays         = $table->linedays;
-            my $min_half_columns = $minimum_of_r->{$linedays}{half_columns};
-            my $min_columns      = $minimum_of_r->{$linedays}{columns};
-
-            if ( $min_columns * 2 + $min_half_columns <= 9 ) {
-
-                $min_half_columns = 1;
-                $min_columns      = 4;
-
-            }
-
-            if ( $tablecount <= 2 or $table->linegroup() =~ /\A 6 \d \d \z/sx )
-            {
-                $min_half_columns = 0;
-                $min_columns      = 10;
-            }
-
-            push @tabletexts,
-              $table->as_indesign(
-                minimum_columns  => $min_columns,
-                minimum_halfcols => $min_half_columns
-              );
-        } ## tidy end: foreach my $table ( @{$tables_r...})
-
-        #print $ttfh join( ( $IDT->hardreturn x 2 ), @tabletexts );
-
-        print $ttfh $tabletexts[0];
-
-        for my $i ( 1 .. $#tabletexts ) {
-            #my $break = ($i % 2) ? ($IDT->hardreturn x 2) : $IDT->boxbreak;
-            my $break = ( $IDT->hardreturn x 2 );
-            print $ttfh $break, $tabletexts[$i];
-        }
-        # print two returns in between each pair of schedules
-        # print a box break after each pair
-
-        # End matter, if there is any, goes here
-
-        close $ttfh;
-
-    } ## tidy end: foreach my $pubtt (@pubtt_contents)
-
-    emit_done;
-
-} ## tidy end: sub output_pubtts
-
-
-sub output_m_pubtts {
-
-    emit "Outputting multipage public timetable files";
-
-    my $pubtt_folder   = shift;
-    my @pubtt_contents = @{ +shift };
-    my %tables_of      = %{ +shift };
-    my $signup         = shift;
-
-    my $effectivedate = effectivedate($signup);
-
-    foreach my $pubtt (@pubtt_contents) {
-
-        my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
-
-        next unless @$tables_r;
-
-        my $file = join( "_", @{$lines_r} );
-
-        emit_prog " $file";
-
-        my @table_assignments
-          = Actium::IDTables::PageAssignments::assign($tables_r);
-
-        if ( not @table_assignments ) {
-            emit_prog "*";
-            next;
-        }
-
-        open my $ttfh, '>', $pubtt_folder->make_filespec("$file.txt");
-
-        print $ttfh $IDT->start;
-
-        _output_pubtt_front_matter( $ttfh, $tables_r, $lines_r, [],
-            $effectivedate );
-
-        my $firsttable    = 1;
-        my $current_frame = 0;
-
-        foreach my $table_assignment (@table_assignments) {
-
-            my $table      = $table_assignment->{table};
-            my $width      = $table_assignment->{width};
-            my $frame      = $table_assignment->{frame};
-            my $pagebreak  = $table_assignment->{pagebreak};
-            my $compressed = $table_assignment->{compressed};
-
-            if ( $frame == $current_frame and not $pagebreak ) {
-                # if it's in the same frame
-                if ( not $firsttable ) {
-                    print $ttfh $IDT->hardreturn x 2;
-                }
-            }
-            else {
-                # otherwise it's in a different frame
-                if ( $pagebreak or $current_frame > $frame ) {
-                    print $ttfh $IDT->pagebreak;
-                    $current_frame = 0;
-                }
-                my $framebreaks = $frame - $current_frame;
-                print $ttfh ( $IDT->boxbreak x $framebreaks );
-                $current_frame += $framebreaks;
-            }
-
-            print $ttfh $table->as_indesign(
-                minimum_columns  => $width->[0],
-                minimum_halfcols => $width->[1],
-                compressed       => $compressed,
-            );
-
-            $firsttable = 0;
-
-        } ## tidy end: foreach my $table_assignment...
-
-        # End matter, if there is any, goes here
-
-        close $ttfh;
-
-    } ## tidy end: foreach my $pubtt (@pubtt_contents)
-
-    emit_done;
-
-} ## tidy end: sub output_m_pubtts
-
-
-sub get_pubtt_contents {
-    my $xml_db  = shift;
-    my $lines_r = shift;
-
-    $xml_db->ensure_loaded('Lines');
-    my $on_timetable_from_db_r
-      = $xml_db->all_in_column_key(qw/Lines OnTimetable/);
-
-    my %on_timetable_of;
-
-    foreach my $line (@$lines_r) {
-        my $fromdb = $on_timetable_from_db_r->{$line};
-        if ( defined $fromdb and $fromdb ne $EMPTY_STR ) {
-            push @{ $on_timetable_of{$fromdb} }, $line;
-        }
-        else {
-            push @{ $on_timetable_of{$line} }, $line;
-        }
-    }
-
-    my @pubtt_contents;
-
-    for my $lines_r ( values %on_timetable_of ) {
-        push @pubtt_contents, [ sortbyline @{$lines_r} ];
-    }
-
-    return [ sort { byline( $a->[0], $b->[0] ) } @pubtt_contents ];
-
-} ## tidy end: sub get_pubtt_contents
