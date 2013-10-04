@@ -316,6 +316,8 @@ sub assign_page {
       = $prefer_portrait
       ? $self->portrait_preferred_framesets
       : $self->framesets;
+      
+   FRAMESET:
 
     foreach my $frameset (@framesets) {
 
@@ -345,7 +347,7 @@ sub assign_page {
 
         if ( @frames == @tables ) {
             for my $i ( 0 .. $#frames ) {
-                return
+                next FRAMESET
                   if $frame_height < $tables[$i]->height
                   or $frames[$i]->width < $tables[$i]->width_in_halfcols;
                 # doesn't fit if frame's height or width aren't big enough
