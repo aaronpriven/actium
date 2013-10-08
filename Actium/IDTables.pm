@@ -454,7 +454,7 @@ sub output_a_pubtts {
            emit_over "#";
         }
 
-        my @table_assignments
+        my ($portrait_chars , @table_assignments)
           = Actium::IDTables::PageAssignments::assign($tables_r, $leave_cover_for_map);
 
         if ( not @table_assignments ) {
@@ -523,13 +523,14 @@ sub output_a_pubtts {
             LeaveCoverForMap => $leave_cover_for_map ,
             MasterPage   => $dbentry->{MasterPage}           // $EMPTY_STR,
             has_short_page => not($table_assignments[0]{pagebreak}),
+            portrait_chars => $portrait_chars,
         };
 
     } ## tidy end: foreach my $pubtt_content_r...
 
     my $listfh  = $pubtt_folder->open_write('_ttlist.txt');
     my @columns = qw<file effectivedate pages MapFile LeaveCoverForMap
-                     MasterPage has_short_page>;
+                     MasterPage has_short_page portrait_chars>;
     say $listfh jt(@columns);
     for my $linegroup ( sortbyline keys %script_entries ) {
         say $listfh jt( @{ $script_entries{$linegroup} }{@columns} );
