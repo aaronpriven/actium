@@ -146,6 +146,10 @@ An optional text description of this frame (usually something like
 At this point it's not used for anything, but it's convenient to have a place
 for it in I<new()> calls.
 
+=item B<is_portrait>
+
+True if this frameset represents a portrait page. Defaults to false.
+
 =item B<frames>
 
 Required during construction, it consists of the frames that make up the 

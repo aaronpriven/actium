@@ -48,7 +48,7 @@ sub positional {
 
     my $argument_r = shift;
     ## no critic (RequireInterpolationOfMetachars)
-    croak 'First argument to positional must be a reference to @_'
+    croak 'First argument to' . __PACKAGE__ . '::positional must be a reference to @_'
       if not( ref($argument_r) eq 'ARRAY' );
     ## use critic
 
@@ -90,16 +90,20 @@ sub _joinseries_with_x {
     my $and    = shift;
     my @things = @_;
     return $things[0] if @things == 1;
-    return "$things[0] and $things[1]" if @things == 2;
+    return "$things[0] $and $things[1]" if @things == 2;
     my $final = pop @things;
     return ( join( q{, }, @things ) . " $and $final" );
 }
 
 sub joinseries {
+    croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries' 
+       unless @_;
     return _joinseries_with_x( 'and', @_ );
 }
-
+ 
 sub joinseries_ampersand {
+    croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries_ampersand'
+       unless @_;
     return _joinseries_with_x( '&', @_ );
 }
 

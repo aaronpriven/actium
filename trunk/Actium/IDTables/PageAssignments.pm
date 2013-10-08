@@ -23,7 +23,7 @@ use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::O::Sked::Timetable::IDTimetable;
 use Actium::O::Sked::Timetable::IDTimetableSet;
-use Actium::Util qw/doe in chunks flatten population_stdev jk all_eq halves/;
+use Actium::Util qw/doe in chunks flatten population_stdev j jk all_eq halves/;
 use Const::Fast;
 use List::Util      (qw/max sum/);
 use List::MoreUtils (qw[any natatime]);
@@ -173,11 +173,34 @@ sub assign {
 
     # @page_assignments is organized by page, but want to return
     # table_assignments, organized by table
+    
+    my $portrait_chars = _make_portrait_chars($has_shortpage , @page_assignments);
 
-    return _make_table_assignments_from_page_assignments( $has_shortpage,
+    return $portrait_chars, 
+           _make_table_assignments_from_page_assignments( $has_shortpage,
         @page_assignments );
 
 } ## tidy end: sub assign
+
+sub _make_portrait_chars {
+   my $has_shortpage = shift;
+   my @page_assignments = @_;
+   
+   shift @page_assignments if $has_shortpage;
+   
+   return j(
+   map { $_->{frameset}->is_portrait ? 'P' : 'L' } @page_assignments
+   );
+       
+   #my @portrait_chars;
+   #foreach my $page_assignment_r (@page_assignments) {
+   #    push @portrait_chars, 
+   #    ($page_assignment_r->{frameset}->is_portrait ? 'P' : 'L');
+   #}
+   
+   #return j(@portrait_chars);
+
+}
 
 sub _assign_pages {
     my @idtables = @_;
