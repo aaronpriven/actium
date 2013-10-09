@@ -5,13 +5,15 @@
 
 package Actium::Util 0.002;
 
+# Cannot use Actium::Preamble since that module uses this one
+
 use 5.016;
 use warnings;
 
 use Actium::Constants;
-use List::Util (qw<max sum>);
-use List::MoreUtils(qw<natatime any all>);
-use Scalar::Util('reftype');
+use List::Util ( qw[first max min maxstr minstr sum] );
+use List::MoreUtils( qw[any all none notall natatime uniq] );
+use Scalar::Util(qw[blessed reftype looks_like_number] );
 use Carp;
 use File::Spec;
 
