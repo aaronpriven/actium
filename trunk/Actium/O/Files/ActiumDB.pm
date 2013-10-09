@@ -3,7 +3,7 @@
 # Class holding routines related to the Actium database 
 # (the FileMaker database used by Actium users). 
 
-# Subversion: $Id: FMPXMLResult.pm 238 2013-04-04 00:30:06Z aaronpriven@gmail.com $
+# Subversion: $Id$
 
 # Legacy stage 4
 
