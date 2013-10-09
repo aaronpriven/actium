@@ -1,41 +1,11 @@
 #!/ActivePerl/bin/perl
 
-use strict;
-use 5.012;
+use 5.016;
+use Actium::Preamble;
 
-use FindBin qw($Bin);
-use lib $Bin;
+say jt(qw/a b c/);
 
-use Actium::Options ('init_options');
+use List::MoreUtils('true');
 
-use Actium::O::Folders::Signup;
-
-use Actium::O::Sked;
-
-init_options;
-
-my $skedsfolder = Actium::O::Folders::Signup->new(
-    {   base       => '/Users/aaron/Dev/signups/',
-        signup     => 'sp11',
-        subfolders => 'skeds',
-        cache => '/tmp/apriven/',
-    }
-);
-
-my @skedobjs = Actium::O::Sked->load_prehistorics( $skedsfolder, undef , '3*' );
-
-use Data::Dumper;
-
-open my $outfh, '>', '/tmp/dumpy.txt' or die $!;
-
-foreach my $object ( @skedobjs ) {
-
-    my $id = "OBJ_" . $object->id;
-
-    say $outfh Data::Dumper->Dump( [ \$object ], [$id] );
-
-
-}
-
-close $outfh;
+say true {$_ == 0 } (1,1,0,0,1);
 
