@@ -20,7 +20,7 @@ my ( @module_rs, @nomodule_rs );
 BEGIN {
     @module_rs = (
         [qw[Actium::Constants]],
-        [qw[Actium::Util j jt jk jn doe in isblank isnotblank flatten all_eq]],
+        [qw[Actium::Util all_eq doe flatten in isblank isnotblank j jt jk jn]],
         [qw[Carp]],
         [qw[Const::Fast]],
         [qw[Data::Dumper]],

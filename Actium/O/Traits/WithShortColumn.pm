@@ -1,4 +1,4 @@
-# Actium/MOP/ShortColumn.pm
+# Actium/O/Traits/ShortColumn.pm
 
 # Trait for adding short column names to attributes
 
