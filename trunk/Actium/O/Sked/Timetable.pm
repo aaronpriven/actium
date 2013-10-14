@@ -667,5 +667,7 @@ sub as_public_json {
 
 } ## tidy end: sub as_public_json
 
+with 'Actium::O::Skedlike';
+
 1;
 

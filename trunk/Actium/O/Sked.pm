@@ -1,4 +1,4 @@
-# Actium/Sked/Sked.pm
+# Actium/O/Sked/Sked.pm
 
 # the Sked object, containing everything that is a schedule
 
@@ -1103,6 +1103,8 @@ sub stop_objects {
     return @stop_objs;
 
 } ## tidy end: sub stop_objects
+
+with 'Actium::O::Skedlike';
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 

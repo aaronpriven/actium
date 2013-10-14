@@ -17,6 +17,7 @@ use Moose();
 use MooseX::StrictConstructor();
 use MooseX::SemiAffordanceAccessor();
 use MooseX::MarkAsMethods();
+use Moose::Util::TypeConstraints();
 use Actium::Preamble();
 use Actium::Types;
 use Import::Into;
@@ -33,6 +34,7 @@ sub init_meta {
     MooseX::MarkAsMethods->import( {into => $for_class } , autoclean => 1);
     MooseX::StrictConstructor->import( { into => $for_class } );
     MooseX::SemiAffordanceAccessor->import( { into => $for_class } );
+    Moose::Util::TypeConstraints->import( { into => $for_class } );
 }
 
 1;
