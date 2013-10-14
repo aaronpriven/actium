@@ -40,7 +40,7 @@ EOF
 
 sub HELP {
  
- START();
+ START(@_);
  
 }
 

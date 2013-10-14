@@ -36,7 +36,8 @@ use Actium::Constants;
 ### SCHEDULE DAYS
 
 subtype DayCode, as Str, where {/\A1?2?3?4?5?6?7?H?\z/}, message {
-qq<"$_" is not a valid day code\n  (one or more of the characters 1-7 plus H, in order>;
+    qq<"$_" is not a valid day code\n> .
+      qq<  (one or more of the characters 1-7 plus H, in order>;
 };
 # It uses question marks instead of [1-7H]+ because
 # the numbers have to be in order, and not repeated
@@ -59,17 +60,17 @@ coerce DaySpec, from DayCode, via { [ $_, 'B' ] },
 subtype ActiumDays, as class_type('Actium::O::Days');
 
 coerce ActiumDays,
-  from DaySpec, via { Actium::O::Days->new($_) },
-  from DayCode, via { Actium::O::Days->new(to_DaySpec($_)) },
-  from TransitInfoDays, via { Actium::O::Days->new(to_DaySpec($_)) },
+  from DaySpec,         via { Actium::O::Days->new($_) },
+  from DayCode,         via { Actium::O::Days->new( to_DaySpec($_) ) },
+  from TransitInfoDays, via { Actium::O::Days->new( to_DaySpec($_) ) },
   ;
-  
+
 #########################
 ### SCHEDULE STOP TIMES
 
 subtype ActiumSkedStopTime, as class_type('Actium::O::Sked::Stop::Time');
 
-subtype ArrayRefOfActiumSkedStopTime , as ArrayRef [ActiumSkedStopTime];
+subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 
 #########################
 ### SCHEDULE DIRECTIONS
@@ -95,11 +96,11 @@ subtype TimeNum, as Maybe [Int];
 
 subtype ArrayRefOrTimeNum, as TimeNum | ArrayRef [TimeNum];
 
-coerce TimeNum, from Str, via { Actium::Time::timenum($_) }; 
+coerce TimeNum, from Str, via { Actium::Time::timenum($_) };
 
 subtype ArrayRefOfTimeNums, as ArrayRef [ Maybe [TimeNum] ];
 
-subtype _ArrayRefOfStrs, as ArrayRef [Maybe[Str]];
+subtype _ArrayRefOfStrs, as ArrayRef [ Maybe [Str] ];
 # _ArrayRefOfStrs only exists to make ArrayRefOfTimeNums
 # and other coercions work.
 
@@ -108,7 +109,7 @@ subtype _ArrayRefOfStrs, as ArrayRef [Maybe[Str]];
 # But I'm not sure, and this is working, so...
 
 coerce ArrayRefOfTimeNums, from _ArrayRefOfStrs, via {
-    my @array = map { defined ($_) ? to_TimeNum($_) : undef } @{$_};
+    my @array = map { defined($_) ? to_TimeNum($_) : undef } @{$_};
     return ( \@array );
 };
 
@@ -120,6 +121,11 @@ subtype Str8, as Str, where { length == 8 },
 
 subtype Str4, as Str, where { length == 4 },
   message {qq<The entry "$_" is not an four-character-long string>};
+  
+##########################
+### CLASS AND ROLE TYPES
+
+role_type 'Skedlike', { role => 'Actium::O::Skedlike' };
 
 1;
 __END__
