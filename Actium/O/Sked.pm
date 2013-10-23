@@ -992,7 +992,8 @@ sub stop_objects {
                 and $newtimes[$previous_idx]
                 and $stopid eq $stopids[$previous_idx] )
             {
-                # This stop has the same stop id as the previous stop, and
+                # This stop has the same stop id 
+                # as the previous stop, and
                 # the previous time was valid.
 
                 if ( not defined $time ) {

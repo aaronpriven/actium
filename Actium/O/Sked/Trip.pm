@@ -14,7 +14,6 @@ use utf8;
 our $VERSION = '0.002';
 
 use Moose;
-#use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
 use namespace::autoclean;
@@ -23,7 +22,6 @@ use namespace::autoclean;
 use MooseX::Storage;
 with Storage(traits => ['OnlyWhenBuilt'] );
 
-#use Moose::Util::TypeConstraints;
 use Actium::Time qw<timestr timestr_sub>;
 use Actium::Util qw<jt in>;
 use Actium::Constants;
@@ -58,7 +56,6 @@ sub BUILD {
 sub _add_placetimes_from_stoptimes {
     my $self = shift;
     return unless $self->placetimes_are_empty;
-    my $class = blessed $self;
 
     my @stopplaces = @_;
 
