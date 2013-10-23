@@ -13,9 +13,9 @@ package Actium::O::Skedlike 0.003;
 use Moose::Role;
 
 requires(
-    [   qw[ earliest_timenum id linedir should_preserve_direction_order
+       qw[ earliest_timenum id linedir should_preserve_direction_order
           sortable_id sortable_id_with_timenum ]
-    ]
+    
 );
 
 no Moose::Role;
