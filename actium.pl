@@ -2,7 +2,7 @@
 
 # actium.pl - command-line access to Actium system
 
-# Legacy Stages 3 and 4
+# Legacy Stage 3
 
 # This is the single executable file that allows access to various Actium
 # commands. There are a couple of reasons for this. The main one is that I
@@ -13,15 +13,18 @@
 
 # Subversion: $Id$
 
-use 5.016;
+use 5.012;
+use warnings;
 
+our $VERSION = 0.001;
+
+# add the current program directory to list of files to include
 use FindBin qw($Bin);
 use lib $Bin;
-use Actium::Preamble;
-#use Module::Runtime('require_module');
-use Getopt::Long;
+use English qw(-no_match_vars);
+use Scalar::Util('reftype');
 
-our $VERSION = 0.003;
+use Actium::Options qw(add_option init_options option);
 
 # Ask user for a command line, if running under Eclipse.
 
@@ -34,12 +37,7 @@ our $VERSION = 0.003;
     }
 }
 
-# make sure UTF-8 in @ARGV is recognized
-if ( grep /\P{ASCII}/ , @ARGV ) {
-    @ARGV = map { decode( "UTF-8", $_ ) } @ARGV;
-}
-
-### Get command, and run command
+### Get subcommand, and run subcommand
 
 my %module_of = (
     slists2html     => 'Slists2HTML',
@@ -67,52 +65,36 @@ my %module_of = (
 
 # a reference is an alias, so tabulae => \'tabula' means if you type
 # "tabulae" it will treat it as though you typed "tabula"
+my $help       = 0;
+my $subcommand = shift(@ARGV);
 
-my ( $command, $help );
-foreach my $i ( 0 .. $#ARGV ) {
-    my $this_command = $ARGV[$i];
-    if ( $this_command eq 'help' ) {
-        $help = $i;
-        next;
-    }
-    if ( exists $module_of{$this_command} ) {
-        $command = $this_command;
-        splice @ARGV, $i, 1;
-        last;
-    }
-}
-
-if ( @ARGV == 0 or ( $help and @ARGV == 1 ) ) {
+if ( not $subcommand or ( lc($subcommand) eq 'help' and ( @ARGV == 0 ) ) ) {
     print mainhelp() or die "Can't print help text: $OS_ERROR";
     exit 0;
 }
 
-if ( not exists $module_of{$command} ) {
-    print "No recognized command in \n   @ARGV\n\n" . mainhelp()
+if ( lc($subcommand) eq 'help' ) {
+    $help       = 1;
+    $subcommand = shift(@ARGV);
+}
+
+$subcommand = lc($subcommand);
+
+while ( exists( $module_of{$subcommand} )
+    and defined( reftype( $module_of{$subcommand} ) ) )
+{
+    $subcommand = ${ $module_of{$subcommand} };
+}
+
+if ( not exists $module_of{$subcommand} ) {
+    print "Unrecognized subcommand $subcommand.\n\n" . mainhelp()
       or die "Can't print help text: $OS_ERROR";
     exit 1;
 }
 
-while ( exists( $module_of{$command} )
-    and defined( reftype( $module_of{$command} ) ) )
-{
-    $command = ${ $module_of{$command} };
-}
+my $module = "Actium::Cmd::$module_of{$subcommand}";
 
-my $module = "Actium::Cmd::$module_of{$command}";
-require_module $module or die "Can't load module $module: $OS_ERROR";
-
-my ( %optionspecs, %callback_of, %options, $inited );
-
-no strict 'refs';
-
-if ( *{"${module}::OPTIONS"}{CODE} ) {
-    &{"${module}::OPTIONS"}( \&add_option );
-}
-
-# if there is an OPTIONS sub in each calling package,
-# run it, passing a reference to the add_option routine,
-# which can be called to add options.
+require( modulefile($module) ) or die $OS_ERROR;
 
 add_option( 'help|?', 'Displays this help message.' );
 add_option( '_stacktrace',
@@ -128,341 +110,34 @@ if ( option('_stacktrace') ) {
 }
 
 if ( $help or option('help') ) {
-    &{"${module}::HELP"}( \%options, @ARGV );
-    #$module->HELP(@ARGV);
+    $module->HELP(@ARGV);
 }
 else {
-    &{"${module}::START"}( \%options, @ARGV );
-    #$module->START(@ARGV);
+    $module->START(@ARGV);
 }
 
 sub mainhelp {
 
-    my $helptext = "$PROGRAM_NAME commands available:\n\n";
-    foreach my $command ( sort keys %module_of ) {
-        next if defined( reftype( $module_of{$command} ) );
-        $helptext .= "$command\n";
+    my $helptext = "$PROGRAM_NAME subcommands available:\n\n";
+    foreach my $subcommand ( sort keys %module_of ) {
+        next if defined( reftype( $module_of{$subcommand} ) );
+        $helptext .= "$subcommand\n";
     }
 
     return $helptext;
 
 }
 
+sub modulefile {
+    my $name = shift;
+    $name =~ s{::|'}{/}gs;
+    return "$name.pm";
+}
+
 sub stacktrace {
+    require Carp;
     Carp::confess(@_);
 }
-
-sub add_option {
-
-    croak ': Attempt to add option after initialization'
-      if $inited;
-
-    state %caller_of;
-
-    while (@_) {
-
-        my $option            = lc( +shift );
-        my $optiontext        = shift;
-        my $callbackordefault = shift;
-
-        my $caller = ( scalar( caller() ) ) || 'main';
-
-        my @splitnames = split_optionnames($option);
-
-        my $mainname = $splitnames[0];
-
-        if ( ref($callbackordefault) eq 'CODE' ) {
-            # it's a callback
-            $callback_of{ $splitnames[0] } = $callbackordefault;
-
-        }
-        else {
-            # it's a default value
-            $options{$mainname} = $callbackordefault;
-        }
-
-        # check to see that there are no duplicate options
-
-        foreach my $optionname (@splitnames) {
-            if ( exists $caller_of{$optionname} ) {
-                croak "Attempt to add duplicate option $optionname. "
-                  . "Set by $caller_of{$optionname} and $caller";
-            }
-            $caller_of{$optionname} = $caller;
-        }
-        $optionspecs{$option} = $optiontext;
-    } ## tidy end: while (@_)
-
-    return;
-
-} ## tidy end: sub add_option
-
-sub split_optionnames {
-
-    # This routine takes an option (in the form used in Getopt::Long)
-    # and returns a list of the aliases.
-    my $option = shift;
-    $option =~ s/( [\w \? \- \| ] + ) .*/$1/sx;
-
-    # names can contain word characters, question marks or hyphens.
-    # Vertical bars separate aliases.
-    return split( /\|/s, $option );
-}
-
-sub init_options {
-
-    $inited = 1;
-
-    my $returnvalue = GetOptions( \%options, keys %optionspecs );
-
-    if ($returnvalue) {
-        foreach my $thisoption ( keys %options ) {
-            if ( exists $callback_of{$thisoption} ) {
-                &{ $callback_of{$thisoption} }( $options{$thisoption} );
-            }
-        }
-    }
-
-    return $returnvalue;
-
-    # TODO - allow overrides by environment variables (some or all)
-
-}
-
-sub helpmessages {
-
-    my %helpmessages;
-
-    foreach my $spec ( keys %optionspecs ) {
-        my (@optionnames) = split_optionnames($spec);
-
-        my $first = shift @optionnames;
-
-        $helpmessages{$first} = $optionspecs{$spec};
-        $helpmessages{$_} = "Same as -$first." foreach @optionnames;
-
-    }
-
-    return \%helpmessages;
-
-}
-
-1;
-
-__END__
-
-=head1 NAME
-
-Actium::Options - command-line options for the Actium system
-
-=head1 VERSION
-
-This documentation refers to Actium::Options version 0.001
-
-=head1 SYNOPSIS
-
-In a module:
-
- use Actium::Options qw(option add_option);
- 
- add_option ('sad'    , 'Makes the output sad'  );
- add_option ('angry!' , 'Makes the output angry');
- 
- sub emotion {
-  say 'Grr!!!' if option ('angry');
-  say 'Waa!!!' if option ('sad');
- }
-
-In a main program:
-
- use Actium::Options qw(add_option option init_options);
- add_option('verbose!','Unnecessary output will be presented');
- init_options() or croak 'Options could not be processed';
- print "Now processing..." if option('verbose');
- 
-=head1 DESCRIPTION
-
-Actium::Options is a wrapper for L<Getopt::Long>. 
-It contains routines designed to allow both main programs and 
-any used modules to set particular command-line options.
-
-The idea is that the main program can set options that apply to the main
-program, and any modules can set other options that apply to that module. 
-For example, the Actium::Sorting::Line module has a -lettersfirst option 
-that changes the sort order of lines. This
-is independent of the -quiet option in Actium::Term, which turns off 
-unnecessary text.
-
-Note that the default configuration for Getopt::Long is used, so (for
-example) bundling is off and options can be abbreviated to their shortest
-unique abbreviation. See L<Getopt::Long/"Configuring Getopt::Long">.
-
-=head1 SUBROUTINES
-
-No subroutine names are exported by default, but most can be imported.
-
-=over
-
-=item B<add_option($optionspec, $description, $callbackordefault)>
-
-To add an option for processing, use B<add_option()>.
-
-$optionspec is an
-option specification as defined in L<Getopt::Long>. Note that to specify
-options that take list or hash values, it is necessary to indicate this
-by appending an "@" or "%" sign after the type. See L<Getopt::Long/"Summary 
-of Option Specifications"> for more information.
-
-B<add_option()> will accept alternate names in the $optionspec, as described in 
-L<Getopt::Long>.  Other subroutines (B<option()>, B<set_option()>, etc.) require that
-the primary name be used.
-
-$description is a human-readable short description to be used in
-displaying lists of options to users.
-
-If $callbackordefault is present, and is a code reference, the code referred to will 
-be executed if the option is set. The value of the option will be the 
-first element of the @_ passed to the code.
-
-If $callbackordefault is present but not a code reference, it will be treated as
-the default value for the option.
-
-All calls to add_option must run prior to the time the command line is
-processed. Place add_option calls in the main part of your module.
-
-=for comment
-All calls to add_option must run prior to the time the command line is
-processed. For this purpose, you can put your add_option calls in a 
-subroutine called OPTIONS. This subroutine (if present) is called 
-by init_options just before the command line is processed. You can 
-think of it as a specialized sort of INIT block. (You can also do them in real
-INIT blocks, if you know that your INIT blocks will run. The  
-'eval "require $module"' syntax for requiring modules at runtime
-does not, like all string eval's, run INIT blocks. This syntax has been
-used in actium.pl for loading primary modules.) --- THIS ROUTINE NO LONGER EXISTS
-
-=item B<is_an_option($optionname)>
-
-Returns true if an option $optionname has been defined (whether as
-a primary name or as an alias).
-
-=item B<init_options()>
-
-This is the routine that actually processes the options. It should be called
-from the main program (not from any modules, although this is not enforced).
-
-=for comment
-<This has been commented out in the code>
-Before processing the options, it checks to see if a subroutine called OPTIONS
-exists in the module that added the option, and if so, runs it. This is designed
-to allow options to be added by support modules.
-
-After processing the options, for each option that is actually set, it calls
-the callback routine as specified in the add_option call.
-This replaces the callback feature of Getopt::Long.
-
-=item B<option($optionname)>
-
-The B<option()> subroutine returns the value of the option. This can be
-the value, or a reference to a hash or array if that was in the option
-specification. 
-
-
-=item B<set_option()>
-
-This routine sets the value for an option. It is used to override options
-set by users (for whatever reason).
-
-=item B<helpmessages()>
-
-This routine returns a reference to a hash. The keys of the hash are the
-option names, and the values are the human-readable help descriptions. Aliases
-for option names are given separately. The help text for these is simply 
-"Same as -primaryoption."  So:
-
- add_option ('height|width|h=f' , "Height of box")
-will result in
-
- h => "Same as -height."
- height => "Height of box."
- width => "Same as -height."
-
-In no particular order, of course.
-
-=back
-
-
-=head1 DIAGNOSTICS
-
-=over
-
-=item Attempt to add option after initialization
-
-This means that add_option was called after init_options was already run.
-
-=item Attempt to set an option before initaliztion
-
-This means that set_option was called before init_options was run.
-
-=for comment
-#=item Something other than a code reference was used as a callback
-
-=for comment
-When using add_options, something was provided as a callback routine 
-that was not actually a code reference.
-
-=item Attempt to add duplicate option $optionname. 
-
-A module tried to add an option that had already been added 
-(presumably by another module).
-
-=item Attempt to access option before initialization
-
-A module tried to access an option through option() before init_options 
-had been called.
-
-=item Attempt to set an option before initaliztion
-
-A module tried to set an option through set_option() before init_options 
-had been called.
-
-=item Attempt to initialize options more than once
-
-Something called init_options after init_options had already been called.
-
-=back
-
-=head1 DEPENDENCIES
-
-perl 5.010.
-
-=head1 BUGS AND LIMITATIONS
-
-Actium::Options does not support all the features of Getopt::Long. Only the
-default configuration can be used, and subroutines cannot be specified as the
-destinations for non-option arguments. (Callbacks are implemented for options
-in another way.)
-
-Arguments currently cannot be shared; there's no way to specify an argument like
-"quiet" that might be usable across several different modules, because the
-add_option will fail. (You can still access the option, just not specify it, so
-you can still use an option if you use the module first.)
-
-=head1 AUTHOR
-
-Aaron Priven <apriven@actransit.org>
-
-=head1 LICENSE AND COPYRIGHT
-
-This module is free software; you can redistribute it and/or modify it under 
-the same terms as Perl itself. See L<perlartistic>.
-
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
-
-
-
 
 __END__
 
