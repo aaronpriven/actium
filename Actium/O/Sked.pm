@@ -549,25 +549,6 @@ sub _build_skedid {
     return ( join( '_', $linegroup, $self->dircode, $self->daycode ) );
 }
 
-#sub _build_sortable_id {
-#    my $self = shift;
-#    my $linegroup = linekeys( $self->linegroup || $self->oldlinegroup );
-#    $linegroup =~ s/\0/ /g;
-#    my $dir = $self->dir_obj->as_sortable;
-#
-#    my $earliest_timenum = $self->earliest_timenum;
-#    $earliest_timenum = 0
-#      if $earliest_timenum < 0
-#      or $self->should_preserve_direction_order;
-#      # if earliest timenum is before midnight, just call it midnight
-#      # or, if this is a direction where we want to keep the direction order,
-#      # (e.g., always use A before B, clockwise before counterclockwise,
-#      # up before down), treat that as midnight too.
-#    $earliest_timenum = linekeys($earliest_timenum);
-#
-#    return join( "\t", $linegroup, $self->daycode, $earliest_timenum, $dir );
-#}
-
 sub _build_sortable_id {
     my $self = shift;
 
