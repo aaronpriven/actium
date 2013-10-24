@@ -5,13 +5,12 @@ use Actium::Preamble;
 use Actium::O::Sked;
 use Actium::O::Sked::Trip;
 use Actium::Util('joinseries');
-use List::MoreUtils('mesh');
 
 use Spreadsheet::XLSX;
 use List::Compare::Functional (qw/is_LsubsetR/);
 
-const my @used_sheets      => qw[intro tpsked stopsked];
-const my @mandatory_intros => qw[id days dir];
+const my @used_sheets         => qw[intro tpsked stopsked];
+const my @mandatory_intros    => qw[id days dir];
 const my $mandatory_introtext => joinseries(@mandatory_intros);
 
 my $file = '/Users/apriven/Dev/signups/su12/s/xlsx/P_WB_12345.xlsx';
@@ -26,14 +25,31 @@ my @trips = _get_trips($xlsx);
 
 sub _get_trips {
     my $xlsx = shift;
-    my $tpsheet = $xlsx->worksheet('tpsked');
-    my $stopsheet = $xlsx->worksheet('stopsked');
+
+    my @tp_rows   = _get_rows('tpsked');
+    my @stop_rows = _get_rows('stopsked');
     
     
- 
- 
+
 }
 
+sub _get_rows {
+    my $sheetname = shift;
+    my @rows;
+
+    my $sheet = $xlsx->worksheet($sheetname);
+    my ( $top,  $bottom ) = $sheet->row_range();
+    my ( $left, $right )  = $sheet->col_range();
+
+    for my $row_idx ( $top .. $bottom ) {
+        my @row = map { $sheet->get_cell( $row_idx, $_ ) } ( $left .. $right );
+        next unless any { isnotblank($_) } @row;
+        # skip blank rows
+        push @rows, \@row;
+    }
+
+    return @rows;
+}
 
 sub _get_intros {
     my $xlsx = shift;
@@ -70,9 +86,9 @@ sub _get_intros {
 
     }
 
-    unless (is_LsubsetR [ \@mandatory_intros, [ keys %intros ] ] ) {
-        croak "Did not find all the mandatory attributes" . 
-              "($mandatory_introtext) in intro sheet of file $file";
+    unless ( is_LsubsetR [ \@mandatory_intros, [ keys %intros ] ] ) {
+        croak "Did not find all the mandatory attributes"
+          . "($mandatory_introtext) in intro sheet of file $file";
     }
 
     return %intros;
