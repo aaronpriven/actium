@@ -4,7 +4,7 @@ use 5.016;
 use Actium::Preamble;
 use Actium::O::Sked;
 use Actium::O::Sked::Trip;
-use Actium::Util('joinseries');
+use Actium::Util(qw[joinseries tabulate]);
 
 use Spreadsheet::XLSX;
 use List::Compare::Functional (qw/is_LsubsetR/);
@@ -13,8 +13,8 @@ const my @used_sheets         => qw[intro tpsked stopsked];
 const my @mandatory_intros    => qw[id days dir];
 const my $mandatory_introtext => joinseries(@mandatory_intros);
 
-my $file = '/Users/apriven/Dev/signups/su12/s/xlsx/P_WB_12345.xlsx';
-
+#my $file = '/Users/apriven/Dev/signups/su12/s/xlsx/P_WB_12345.xlsx';
+my $file = '/Users/apriven/Desktop/P_WB_12345.xlsx';
 my $xlsx = Spreadsheet::XLSX->new($file);
 
 _check_sheets($xlsx);
@@ -28,8 +28,14 @@ sub _get_trips {
 
     my @tp_rows   = _get_rows('tpsked');
     my @stop_rows = _get_rows('stopsked');
-    
-    
+
+    croak q{Different number of rows in the "tpsked" sheet than the }
+      . qq{ "stopsked" sheet in file $file}
+      unless @tp_rows == @stop_rows;
+
+    say jn( @{ tabulate(@tp_rows) } );
+    say $EMPTY_STR;
+    say jn( @{ tabulate(@stop_rows) } );
 
 }
 
@@ -43,13 +49,50 @@ sub _get_rows {
 
     for my $row_idx ( $top .. $bottom ) {
         my @row = map { $sheet->get_cell( $row_idx, $_ ) } ( $left .. $right );
+
+        for my $cell (@row) {
+            my $value = defined $cell ? $cell->value : $EMPTY_STR;
+
+            $value = _excel_to_timestr( $cell->unformatted )
+              if (  Scalar::Util::looks_like_number $value
+                and $value >= -.5
+                and $value <= 1.5 );
+            # Excel time fraction
+
+            $cell = $value;
+
+        }
+
         next unless any { isnotblank($_) } @row;
         # skip blank rows
         push @rows, \@row;
-    }
+    } ## tidy end: for my $row_idx ( $top ...)
 
     return @rows;
-}
+} ## tidy end: sub _get_rows
+
+sub _excel_to_timestr {
+
+    my $timefraction = shift;
+    my $ampm         = $EMPTY_STR;
+
+    if ( $timefraction < 0 ) {
+        $timefraction += 0.5;
+        $ampm = "b";
+    }
+
+    require Spreadsheet::ParseExcel::Utility;
+
+    my ( $minutes, $hours )
+      = ( Spreadsheet::ParseExcel::Utility::ExcelLocaltime($timefraction) )
+      [ 1, 2 ];
+#    my @localtimes = Spreadsheet::ParseExcel::Utility::ExcelLocaltime($timefraction);
+#    my $minutes = $localtimes[1];
+#    my $hours = $localtimes[2];
+
+    return $hours . sprintf( "%02d", $minutes ) . $ampm;
+
+} ## tidy end: sub _excel_to_timestr
 
 sub _get_intros {
     my $xlsx = shift;

@@ -18,9 +18,8 @@ use MooseX::StrictConstructor;
 
 use namespace::autoclean;
 
-
 use MooseX::Storage;
-with Storage(traits => ['OnlyWhenBuilt'] );
+with Storage( traits => ['OnlyWhenBuilt'] );
 
 use Actium::Time qw<timestr timestr_sub>;
 use Actium::Util qw<jt in>;
@@ -80,7 +79,7 @@ sub _add_placetimes_from_stoptimes {
 
 ###################
 ###
-### TRIP
+### ATTRIBUTES
 ###
 ###################
 
@@ -102,9 +101,17 @@ const my %shortcol_of_attribute => qw(
   internal_num   INTNUM
 );
 
+const my %attribute_of_shortcol => reverse %shortcol_of_attribute;
+
 # daysexceptions, from , to, vehicletype from headways
 # pattern, type, typevalue, vehicledisplay, via, viadescription from HSA
 # line, runid, blockid from either
+
+sub attribute_of_short_column {    # class method
+    my $invocant = shift;
+    my $shortcol = shift;
+    return $attribute_of_shortcol{$shortcol};
+}
 
 foreach my $attrname ( keys %shortcol_of_attribute ) {
     has $attrname => (
@@ -112,7 +119,7 @@ foreach my $attrname ( keys %shortcol_of_attribute ) {
         isa          => 'Str',
         traits       => ['Actium::O::Traits::WithShortColumn'],
         short_column => $shortcol_of_attribute{$attrname},
-        required => ($attrname eq 'line'),
+        required     => ( $attrname eq 'line' ),
     );
 }
 
@@ -175,10 +182,10 @@ sub _build_stoptimes_comparison_str {
 }
 
 has average_stoptime => (
-    is      => 'ro',
-    builder => '_build_average_stoptime',
-    lazy    => 1,
-   init_arg => undef,
+    is       => 'ro',
+    builder  => '_build_average_stoptime',
+    lazy     => 1,
+    init_arg => undef,
 );
 
 sub _build_average_stoptime {
@@ -188,23 +195,23 @@ sub _build_average_stoptime {
 }
 
 has destination_stoptime_idx => (
-   is => 'ro',
-   builder => '_build_final_stoptime_idx',
-   lazy => 1,
-   init_arg => undef,
+    is       => 'ro',
+    builder  => '_build_final_stoptime_idx',
+    lazy     => 1,
+    init_arg => undef,
 );
 
 sub _build_final_stoptime_idx {
-  my $self = shift;
-  my $idx;
-  for my $i (reverse (0 .. $self->stopcount)) {
-      my $time = $self->stoptime($i);
-      if (defined $time and $time ne $EMPTY_STR) {
-          $idx = $i;
-          last;
-      }
-  }
-  return $idx;
+    my $self = shift;
+    my $idx;
+    for my $i ( reverse( 0 .. $self->stopcount ) ) {
+        my $time = $self->stoptime($i);
+        if ( defined $time and $time ne $EMPTY_STR ) {
+            $idx = $i;
+            last;
+        }
+    }
+    return $idx;
 }
 
 sub stoptimes_equals {
