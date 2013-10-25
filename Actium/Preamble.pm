@@ -50,12 +50,14 @@ sub import {
     my $caller = caller;
 
     foreach my $module_r (@module_rs) {
-        my $module = shift @{$module_r};
-        $module->import::into( $caller, @{$module_r} );
+        my @args = @{$module_r};
+        my $module = shift @args;
+        $module->import::into( $caller, @args );
     }
     foreach my $module_r (@nomodule_rs) {
-        my $module = shift @{$module_r};
-        $module->unimport::out_of( $caller, @{$module_r} );
+        my @args = @{$module_r};
+        my $module = shift @args;
+        $module->unimport::out_of( $caller, @args );
     }
 }
 
