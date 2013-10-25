@@ -7,10 +7,13 @@
 use warnings;
 use 5.016;    # turns on features
 
-package Actium::O::Traits::WithShortColumn 0.002;
+package Actium::O::Traits::WithShortColumn 0.003;
 
-use Moose::Role;
-use namespace::autoclean;
+use Actium::MooseRole;
+
+#use Moose::Role;
+#use MooseX::SemiAffordanceAccessor;
+#use namespace::autoclean;
 
 has short_column => (
     is  => 'rw',
