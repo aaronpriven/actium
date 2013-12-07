@@ -40,14 +40,14 @@ const my $DECAL_SPEC_FILENAME     => 'decalspec.txt';
 
 #const my @TRANSBAY_NOLOCALS => qw/FS L NX NX1 NX2 NX3 U W/;
 # Transbay_nolocals comes from Actium::Constants
-const my $DROPOFFONLY       => 'Drop off only';
-const my $LASTSTOP          => $DROPOFFONLY;                  #'Last stop';
-const my $OVERRIDE_STRING   => 'Override:';
+const my $DROPOFFONLY     => 'Drop off only';
+const my $LASTSTOP        => $DROPOFFONLY;      #'Last stop';
+const my $OVERRIDE_STRING => 'Override:';
 
 const my %ICON_OF => (
     Amtrak           => 'A',
     BART             => 'B',
-    'Amtrak/ACE'     => 'C',
+    'ACE'     => 'C',
     'Ferry'          => 'F',
     DB               => 'D',
     Caltrain         => 'L',
@@ -58,11 +58,10 @@ const my %ICON_OF => (
     'VTA Light Rail' => 'V',
     Clockwise        => 'W',
     Counterclockwise => 'X',
-    'A Loop' => 'Y',
-    'B Loop' => 'Z' ,
+    'A Loop'         => 'Y',
+    'B Loop'         => 'Z',
     # A and B were taken for Amtrak and BART
 );
-
 
 const my %SIDE_OF => (
     ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
@@ -100,8 +99,8 @@ sub START {
 
     {
         my $hasi_db = $signup->load_hasi();
-#        my $hasidir = $signup->subfolder('hasi');
-#        my $hasi_db = Actium::O::Files::HastusASI->new( $hasidir->path());
+     #        my $hasidir = $signup->subfolder('hasi');
+     #        my $hasi_db = Actium::O::Files::HastusASI->new( $hasidir->path());
         $hasi_db->ensure_loaded(qw(PAT TRP));
         build_place_and_stop_lists( $hasi_db, $stopdata );
 
@@ -131,7 +130,7 @@ sub START {
 
     return;
 
-} ## tidy end: sub flagspecs_START
+} ## tidy end: sub START
 
 sub build_place_and_stop_lists {
 
@@ -161,13 +160,13 @@ sub build_place_and_stop_lists {
             $prevroute = $route;
         }
 
-        next PAT if $route ~~ [ 'BSH' , 'BSD' , 'BSN' , '399'];
+        next PAT if $route ~~ [ 'BSH', 'BSD', 'BSN', '399' ];
         # skip Broadway Shuttle
 
         my @tps = @{
             $dbh->selectall_arrayref( $tps_sth, { Slice => {} },
                 $pat->{PAT_id} )
-          };
+        };
 
         # SKIP 600 ROUTES
         if ( $route =~ /\A 6\d\d \z/sx ) {
@@ -197,6 +196,10 @@ sub build_place_and_stop_lists {
             my $place = $tps_row->{Place};
             $place =~ s/-[AD12]\z//sx;
             my $stop_ident = $tps_row->{StopIdentifier};
+            
+            if ($stop_ident eq '56666' and $route eq '800') {
+                #emit_over '*';
+            }
 
             if ( $stop_ident eq $prevstop ) {    # same stop
                 next TPS if ( not $place ) or ( $place eq $prevplace );
@@ -212,10 +215,10 @@ sub build_place_and_stop_lists {
 
                 next TPS;
             }
-            
+
             my $patinfo = {};
-            
-            if ( $place and ($place ne $prevplace) ) {    # different place
+
+            if ( $place and ( $place ne $prevplace ) ) {    # different place
                 push @places, $place;
                 $prevplace = $place;
                 $patinfo->{AtPlace} = 1;
@@ -258,7 +261,7 @@ sub build_place_and_stop_lists {
 
             # references to the same anonymous hash
 
-        } ## tidy end: for my $tps_row (@tps)
+        } ## tidy end: TPS: for my $tps_row (@tps)
         $all_stops[-1]->{Last} = 1;
 
         # connections and Transbay info
@@ -275,7 +278,7 @@ sub build_place_and_stop_lists {
         # now we have cross-indexed the pattern ident
         # and its place listing
 
-    } ## tidy end: while ( my $pat = $eachpat...)
+    } ## tidy end: PAT: while ( my $pat = $eachpat...)
 
     emit_done;
 
@@ -345,8 +348,8 @@ sub build_trip_quantity_lists {
 
     emit 'Building lists of trip quantities';
 
-    my $next_trp = $hasi_db->each_row_where('TRP' ,  
-      q{WHERE IsPublic = 'X' OR IsPublic = '1'});
+    my $next_trp = $hasi_db->each_row_where( 'TRP',
+        q{WHERE IsPublic = 'X' OR IsPublic = '1'} );
 
   TRP:
     while ( my $trp = $next_trp->() ) {
@@ -405,7 +408,7 @@ sub cull_placepats {
 
         # delete subset place patterns, if possible
         my $threshold = $num_trips_of_routedir{$routedir} / $CULL_THRESHOLD;
-        
+
         my @placelists = sort { length $b <=> length $a }
           keys %{ $num_trips_of_pat{$routedir} };
 
@@ -414,16 +417,16 @@ sub cull_placepats {
         while (@placelists) {
             foreach my $idx ( 0 .. $#placelists ) {
                 my $thislist = $placelists[$idx];
-                
+
                 if ($longest =~ /$thislist$/sx
-                    or ( index( $longest, $thislist ) != -1 and
-                        $num_trips_of_pat{$routedir}{$thislist}
+                    or ( index( $longest, $thislist ) != -1
+                        and $num_trips_of_pat{$routedir}{$thislist}
                         < $threshold )
-                # it culls from the threshold only if it's a short turn,
-                # not a branch. Hmm.
+                    # it culls from the threshold only if it's a short turn,
+                    # not a branch. Hmm.
                   )
                 {
-                 
+
                     delete_placelist_from_lists( $routedir, $thislist,
                         $longest );
                     undef $placelists[$idx];
@@ -526,6 +529,15 @@ sub cull_placepats {
         my $nextplace  = shift;
 
         my @patinfos = patinfos_of( $stop_ident, $routedir );
+        
+        my $skip_it = 1;
+        foreach my $patinfo (@patinfos) {
+            if (not (exists $patinfo->{Last} or $patinfo->{DropOffOnly})) {
+            	 $skip_it = 0;
+            	 last;
+            }
+        }
+        return if $skip_it;
 
         if ( $nextplace eq $place ) {
             foreach my $patinfo (@patinfos) {
@@ -534,13 +546,27 @@ sub cull_placepats {
             }
             return;
         }
-
+        
         foreach my $patinfo (@patinfos) {
-            {
+             
+             if ( not defined $patinfo->{Place} ) {
+                my $q = exists $pats_of_stop{$stop_ident};
+                my $disp_rd = keyreadable($routedir);
+                emit_text "P ${disp_rd} ${stop_ident} " . join(' ' , keys %$patinfo);
+                return;
+             }
+             
+                return if $patinfo->{Place} ne $place;
+
+            if ( not defined $patinfo->{NextPlace} ) {
+                my $q = exists $pats_of_stop{$stop_ident};
+                my $disp_rd = keyreadable($routedir);
+                emit_text "NP ${disp_rd} ${stop_ident} " . join(' ' , keys %$patinfo);
+                return;
+             }
+
                 return 1
-                  if $patinfo->{Place} eq $place
-                      and $patinfo->{NextPlace} eq $nextplace;
-            }
+                  if $patinfo->{NextPlace} eq $nextplace;
 
         }
 
@@ -644,9 +670,9 @@ sub delete_a_last_stop {
 
     return
       unless exists $pat_infos->{$routedir}{$pat_ident}{Last}
-         or exists $pat_infos->{$routedir}{$pat_ident}{DropOffOnly};
-         #### The last line added very late, needs testing!
-      
+      or exists $pat_infos->{$routedir}{$pat_ident}{DropOffOnly};
+    #### The last line added very late, needs testing!
+
     return if $routes_r->{$route} == 1;
 
     delete $pat_infos->{$routedir}{$pat_ident};
@@ -687,6 +713,11 @@ sub delete_placelist_from_lists {
         emit 'Building pattern combinations';
 
         foreach my $stop ( keys_pats_of_stop() ) {
+
+            #                if ($stop eq '51287' ) {
+            #                   emit_over '*'
+            #                }
+
             foreach my $routedir ( routedirs_of_stop($stop) ) {
 
                 my ( $route, $dir ) = routedir($routedir);
@@ -984,11 +1015,11 @@ sub relevant_places {
         #       8 CW    9 CC
 
         $destination = (
-              $dir eq '8' ? 'Clockwise to '
-            : $dir eq '9' ? 'Counterclockwise to '
+              $dir eq '8'  ? 'Clockwise to '
+            : $dir eq '9'  ? 'Counterclockwise to '
             : $dir eq '14' ? 'A Loop to '
             : $dir eq '15' ? 'B Loop to '
-            : 'To '
+            :                'To '
         ) . $destination;
 
         $destination_of{ jt( $routedir, $combokey ) } = $destination;
@@ -1070,8 +1101,7 @@ sub output_specs {
 
     emit "Writing stop decal file $STOP_SPEC_FILENAME";
 
-    my $file
-      = File::Spec->catfile( $flagfolder->path(), $STOP_SPEC_FILENAME );
+    my $file = File::Spec->catfile( $flagfolder->path(), $STOP_SPEC_FILENAME );
 
     open my $out, '>', $file
       or die "Can't open $file for writing: $OS_ERROR";
@@ -1173,15 +1203,16 @@ sub make_decal_spec {
 
             $icons .= connection_icons( $stop, $routedir )
               unless $icons =~ /$ICON_OF{'All Nighter'}/;
-            $icons = "A$icons" if $icons =~ /C/;
+            #$icons = "A$icons" if $icons =~ /C/;
+            # no longer define Amtrak as Amtrak/ACE
         }
     }
 
     if ( $destination =~ /\ALimited (?:weekday )hours\z/ ) {
         $icons = $EMPTY_STR;
     }
-    
-    $icons = j( sort split (//, $icons) );
+
+    $icons = j( sort split( //, $icons ) );
 
     my $spec = jk( $route, $destination, $icons );
     return $spec;
@@ -1208,13 +1239,14 @@ sub make_decal_spec {
 
         while (<$in>) {
             chomp;
-            my ( $decal, $route, $color, $style, $destination, $icons ) = split(/\t/);
+            my ( $decal, $route, $color, $style, $destination, $icons )
+              = split(/\t/);
             next unless $decal =~ /-/;
-            my (undef, $letter) = split (/\-/ , $decal);
+            my ( undef, $letter ) = split( /\-/, $decal );
             $next_decal_of{$route} = ++$letter;
-            
-            $icons = j( sort split (//, $icons) );
-            
+
+            $icons = j( sort split( //, $icons ) );
+
             $decal_of{ jk( $route, $destination, $icons ) } = $decal;
         }
 
@@ -1250,7 +1282,7 @@ sub make_decal_spec {
         my ( $stop, $route ) = @_;
 
         my @decals;
-        
+
       ROUTEDIR:
         for my $routedir ( grep {/\A $route $KEY_SEPARATOR/sx}
             routedirs_of_stop($stop) )
@@ -1452,9 +1484,9 @@ sub mydump {
 sub HELP {
     say 'actium.pl flagspecs';
     say '  (takes no arguments)';
-    
+
     Actium::Term::output_usage();
-    
+
     return;
 }
 
