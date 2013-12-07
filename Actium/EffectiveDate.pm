@@ -59,6 +59,11 @@ sub newest_date {
 
 sub long_date {
     my $date_obj = shift;
+    
+    unless (defined $date_obj) {
+    	print ".";
+    }
+
     return
       $date_obj->month_name
       . $SPACE

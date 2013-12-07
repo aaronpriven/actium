@@ -53,8 +53,12 @@ sub START {
        $text //= q[];
        my $desc = $stops_row_of_r->{$stopid}{DescriptionCityF};
        if (not defined $desc) {
+          if ( $stopid =~ /Stop\s*ID/i) {
+              $desc = "DescriptionCityF";
+          } else {
           $desc = "** NOT FOUND **";
           warn "No description found for $stopid";
+           }
        }
        say "$stopid\t$desc\t$text";
        
