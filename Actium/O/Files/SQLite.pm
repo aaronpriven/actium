@@ -696,7 +696,7 @@ keyword in the SQL.
 
 =item B<all_in_column_key(I<hashref_of_arguments>)
 
-all_in_columns_key provides a convenient way of getting data in a hash.
+all_in_column_key provides a convenient way of getting data in a hash.
 It is used where only one field is required from the database, and where the 
 amount of data desired can be loaded into memory. It is normally used this way:
 
@@ -715,7 +715,7 @@ Alternatively, it can be invoked with named arguments in a hash reference:
  my $hashref = $database->all_in_column_key( {
       TABLE => 'table' ,
       COLUMN => 'column' ,
-      WHERE => 'WHERE COLUMN EQ ?',
+      WHERE => 'WHERE COLUMN = ?',
       BIND_VALUES => [ $value ] ,
       });
 
@@ -753,7 +753,7 @@ Alternatively, it can be invoked with named arguments in a hash reference:
  my $hashref = $database->all_in_columns_key( {
       TABLE => 'table' ,
       COLUMNS => [ qw/column_one column_two/ ] ,
-      WHERE => 'WHERE COLUMN EQ ?',
+      WHERE => 'WHERE COLUMN = ?',
       BIND_VALUES => [ $value ] ,
       });
 

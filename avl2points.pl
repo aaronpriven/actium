@@ -173,7 +173,8 @@ my @nolocals = @TRANSBAY_NOLOCALS; # from Actium::Constants
 my %is_a_nolocal_route;
 $is_a_nolocal_route{$_} = 1 foreach @nolocals;
 
-my @routenotes = qw<1R 72R>;
+#my @routenotes = qw<1R 72R>;
+my @routenotes = ();
 my %is_a_routenote;
 $is_a_routenote{$_} = 1 foreach @routenotes;
 

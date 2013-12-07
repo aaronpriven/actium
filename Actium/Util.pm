@@ -131,6 +131,7 @@ sub jspaced {
 }
 
 sub sk {
+    croak "Null argument specified to sk" unless $_[0];
     return split( /$KEY_SEPARATOR/sx, $_[0] );
 }
 

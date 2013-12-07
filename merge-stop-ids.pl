@@ -3,8 +3,15 @@
 
 use 5.014;
 use warnings;
+use autodie;
 
-open my $new, '<', 'new-assignments.txt';
+my $firstfile = shift @ARGV;
+my $secondfile = shift @ARGV;
+
+open my $new, '<', $secondfile ;
+
+my $headers = <$new>;
+chomp $headers;
 
 my %text_of;
 
@@ -16,16 +23,25 @@ while (<$new>) {
 
 close $new;
 
-open my $old, '<', 'assignments-sp12.txt';
+#$/ = "\r";
+open my $old, '<', $firstfile;
+
+
+my $newheaders  = <$old>;
+chomp $newheaders;
+
+my ($headerid, $headerrest) = split (/\t/ ,$newheaders);
+
+$headers .= "\t" . $headerrest;
 
 while (<$old>) {
    chomp;
-   my ($id) = split("\t" , $_, 2);
+   my ($id, $rest) = split("\t" , $_);
    next unless exists $text_of{$id};
-   $text_of{$id} .= "\t$_";
+   $text_of{$id} .= "\t$rest";
 }
    
-
-foreach (keys %text_of) {
+say $headers;
+foreach (sort keys %text_of) {
    say $text_of{$_};
 }
