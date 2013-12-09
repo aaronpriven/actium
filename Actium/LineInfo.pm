@@ -10,6 +10,7 @@ use warnings;
 use Actium::Preamble;
 use Actium::Sorting::Line('sortbyline');
 use Actium::EffectiveDate('effectivedate');
+use HTML::Entities;
 
 use Sub::Exporter -setup =>
   { exports => [qw(line_descriptions line_classification line_descrip_html )] };
@@ -21,13 +22,12 @@ sub line_descriptions {
     my $descrip_of_r = $xml_db->all_in_column_key(
         {   TABLE       => 'Lines',
             COLUMN      => 'Description',
-            WHERE       => 'WHERE Active = ?',
+            WHERE       => 'Active = ?',
             BIND_VALUES => ['Yes'],
         }
     );
 
     return $descrip_of_r;
-
 }
 
 sub line_descrips_by_class {
@@ -46,9 +46,17 @@ sub line_descrips_by_class {
 
 sub line_descrip_html {
 
-    my $xml_db          = shift;
-    my $signup          = shift;
-    my $current_version = shift;
+    my %params = validate(
+        @_,
+        {   database => 1,
+            signup   => 1,
+            version  => 1,
+        }
+    );
+
+    my $xml_db          = $params{database};
+    my $signup          = $params{signup};
+    my $current_version = $params{version};
 
     my $effdate = effectivedate($signup);
 
@@ -59,15 +67,19 @@ sub line_descrip_html {
       . "It is automatically generated from a program.\n-->"
       . _ldh_header($effdate);
 
-    foreach my $class ( qw/Local Transbay Supplementary/, 'All Nighter' ) {
+    foreach my $class ( qw/Local Transbay/, 'All Nighter', 'Supplementary' ) {
         # heading
         my $pub = "$class Lines";
+        my $anchor = $class eq 'All Nighter' ? 'AllNighter' : $class;
 
         $html
-          .= qq{<table style="border-collapse: collapse;" border="1"><caption style="padding-top: 1.2em;"><strong><a name="$_">$pub</a></strong></caption>};
+          .= qq{<table style="border-collapse: collapse;" border="1">}
+          . qq{<caption style="padding-top: 1.2em;"><strong><a name="$anchor">}
+          . qq{$pub</a></strong></caption>};
 
         $html
-          .= '<thead><tr><th style="background-color: silver;">Lines</th><th style="background-color: silver;">Description</th>';
+          .= '<thead><tr><th style="background-color: silver;">Lines</th>'
+          . '<th style="background-color: silver;">Description</th>';
 
         $html
           .= "\n" . '<th style="background-color: silver;">Links</th></thead>';
@@ -94,9 +106,11 @@ sub line_descrip_html {
 
         $html .= '</tbody></table>' . "\n";
 
-    } ## tidy end: foreach my $class ( qw/Local Transbay Supplementary/...)
+    } ## tidy end: foreach my $class ( qw/Local Transbay/...)
 
     $html .= _ldh_footer();
+
+    return $html;
 
 } ## tidy end: sub line_descrip_html
 
@@ -114,6 +128,7 @@ EOF
     return $footer;
 
 }
+
 sub _ldh_header {
 
     my $effdate = shift;
@@ -132,7 +147,7 @@ evenings and weekends as well. Lines 200-299 serve the areas of
 Fremont and Newark, while other lines serve other parts of the East
 Bay from Richmond to Hayward.</p>
 
-<p>Lines 300&ndash399 do not operate during the commute period. They
+<p>Lines 300&ndash;399 do not operate during the commute period. They
 operate at other times of the day: for example, mid-days only,
 weekends only, or evenings only. Some lines operate only a few days
 per week (for example, Tuesdays and Thursdays).</p>

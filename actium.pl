@@ -29,12 +29,12 @@ use Actium::Options qw(add_option init_options option);
 # Ask user for a command line, if running under Eclipse.
 
 {
-	no warnings('once');
-	## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
-	if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
-		@ARGV = Actium::Eclipse::get_command_line();
-		## use critic
-	}
+    no warnings('once');
+    ## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
+    if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
+        @ARGV = Actium::Eclipse::get_command_line();
+        ## use critic
+    }
 }
 
 # Someday, if I want to allow these to run as CGI, rather than
@@ -45,28 +45,29 @@ use Actium::Options qw(add_option init_options option);
 ### Get subcommand, and run subcommand
 
 my %module_of = (
-	slists2html     => 'Slists2HTML',
-	theaimport      => 'TheaImport',
-	makestoplists   => 'MakeStopLists',
-	headways        => 'Headways',
-	time            => 'Time',
-	sqlite2tab      => 'SQLite2tab',
-	flagspecs       => 'Flagspecs',
-	timetables      => 'Timetables',
-	tabula          => \'timetables',
-	tabulae         => \'timetables',
-	orderbytravel   => 'OrderByTravel',
-	patterns        => 'Patterns',
-	adddescriptionf => 'AddDescriptionF',
-	k2id            => 'MakePoints',
-	nearbyroutes    => 'NearbyRoutes',
-	mr_import       => 'MRImport',
-	mr_copy         => 'MRCopy',
-	mr_coffee       => 'Joke',
-	joke            => \'mr_coffee',
-	htmltables      => 'HTMLTables',
-	kmlunite        => 'KmlUnite',
-	# more to come
+    slists2html     => 'Slists2HTML',
+    theaimport      => 'TheaImport',
+    makestoplists   => 'MakeStopLists',
+    headways        => 'Headways',
+    time            => 'Time',
+    sqlite2tab      => 'SQLite2tab',
+    flagspecs       => 'Flagspecs',
+    timetables      => 'Timetables',
+    tabula          => \'timetables',
+    tabulae         => \'timetables',
+    orderbytravel   => 'OrderByTravel',
+    patterns        => 'Patterns',
+    adddescriptionf => 'AddDescriptionF',
+    k2id            => 'MakePoints',
+    nearbyroutes    => 'NearbyRoutes',
+    mr_import       => 'MRImport',
+    mr_copy         => 'MRCopy',
+    mr_coffee       => 'Joke',
+    joke            => \'mr_coffee',
+    htmltables      => 'HTMLTables',
+    kmlunite        => 'KmlUnite',
+    linedescrip     => 'LineDescrip',
+                                            # more to come
 );
 
 # a reference is an alias, so tabulae => \'tabula' means if you type
@@ -75,27 +76,27 @@ my $help       = 0;
 my $subcommand = shift(@ARGV);
 
 if ( not $subcommand or ( lc($subcommand) eq 'help' and ( @ARGV == 0 ) ) ) {
-	print mainhelp() or die "Can't print help text: $OS_ERROR";
-	exit 0;
+    print mainhelp() or die "Can't print help text: $OS_ERROR";
+    exit 0;
 }
 
 if ( lc($subcommand) eq 'help' ) {
-	$help       = 1;
-	$subcommand = shift(@ARGV);
+    $help       = 1;
+    $subcommand = shift(@ARGV);
 }
 
 $subcommand = lc($subcommand);
 
 while ( exists( $module_of{$subcommand} )
-	and defined( reftype( $module_of{$subcommand} ) ) )
+    and defined( reftype( $module_of{$subcommand} ) ) )
 {
-	$subcommand = ${ $module_of{$subcommand} };
+    $subcommand = ${ $module_of{$subcommand} };
 }
 
 if ( not exists $module_of{$subcommand} ) {
-	print "Unrecognized subcommand $subcommand.\n\n" . mainhelp()
-	  or die "Can't print help text: $OS_ERROR";
-	exit 1;
+    print "Unrecognized subcommand $subcommand.\n\n" . mainhelp()
+      or die "Can't print help text: $OS_ERROR";
+    exit 1;
 }
 
 my $module = "Actium::Cmd::$module_of{$subcommand}";
@@ -104,45 +105,45 @@ require( modulefile($module) ) or die $OS_ERROR;
 
 add_option( 'help|?', 'Displays this help message.' );
 add_option( '_stacktrace',
-	    'Provides lots of debugging information if there is an error. '
-	  . 'Best ignored.' );
+        'Provides lots of debugging information if there is an error. '
+      . 'Best ignored.' );
 
 init_options();
 
 if ( option('_stacktrace') ) {
 ## no critic (RequireLocalizedPunctuationVars)
-	$SIG{'__WARN__'} = \&stacktrace;
-	$SIG{'__DIE__'}  = \&stacktrace;
+    $SIG{'__WARN__'} = \&stacktrace;
+    $SIG{'__DIE__'}  = \&stacktrace;
 }
 
 if ( $help or option('help') ) {
-	$module->HELP(@ARGV);
+    $module->HELP(@ARGV);
 }
 else {
-	$module->START(@ARGV);
+    $module->START(@ARGV);
 }
 
 sub mainhelp {
 
-	my $helptext = "$PROGRAM_NAME subcommands available:\n\n";
-	foreach my $subcommand ( sort keys %module_of ) {
-		next if defined( reftype( $module_of{$subcommand} ) );
-		$helptext .= "$subcommand\n";
-	}
+    my $helptext = "$PROGRAM_NAME subcommands available:\n\n";
+    foreach my $subcommand ( sort keys %module_of ) {
+        next if defined( reftype( $module_of{$subcommand} ) );
+        $helptext .= "$subcommand\n";
+    }
 
-	return $helptext;
+    return $helptext;
 
 }
 
 sub modulefile {
-	my $name = shift;
-	$name =~ s{::|'}{/}gs;
-	return "$name.pm";
+    my $name = shift;
+    $name =~ s{::|'}{/}gs;
+    return "$name.pm";
 }
 
 sub stacktrace {
-	require Carp;
-	Carp::confess(@_);
+    require Carp;
+    Carp::confess(@_);
 }
 
 __END__
