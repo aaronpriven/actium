@@ -660,29 +660,35 @@ sub make_skeds_pairs_of_hash {
          my $initial_time = $pairs[0]{TIME};
          if ($initial_time =~ /\d+ x/x ) { # if first time is an "x" time (am next day)
             $_->{TIME} =~ tr/x/a/ foreach @pairs;
-            given ($days) { 
-               when ('SU') {
+            for ($days) { 
+               if ($_ eq 'SU') {
                   @days = 'MO';
+                  next;
                }
-               when ('SA') {
+               if ($_ eq 'SA') {
                   @days = 'SU';
+                  next;
                }
-               when ('WD') {
+               if ($_ eq 'WD') {
                   @days = qw(TWT FR SA);
+                  next;
                }
             }
          }
          elsif ($initial_time =~ /\d+ p/x ) { # if first time is an "p" time (pm that day)
             $_->{TIME} =~ tr/px/ba/ foreach @pairs;
-            given ($days) { 
-               when ('SU') {
+            for ($days) { 
+               if ($_ eq 'SU') {
                   @days = 'SA';
+                  next;
                }
-               when ('SA') {
+               if ($_ eq 'SA') {
                   @days = 'FR';
+                  next;
                }
-               when ('WD') {
+               if ($_ eq 'WD') {
                   @days = qw(SU MO TWT);
+                  next;
                }
             }
          }

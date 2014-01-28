@@ -19,7 +19,7 @@ with Storage( traits => ['OnlyWhenBuilt'] );
 use namespace::autoclean;
 
 use Actium::Types qw<DayCode SchoolDayCode>;
-use Actium::Util qw<positional_around joinseries>;
+use Actium::Util qw<positional_around joinseries in>;
 use Actium::Constants;
 
 use Carp;
@@ -131,14 +131,17 @@ sub _build_as_shortcode {
     my $shortcode = $daycode;
 
     for ($daycode) {
-        when ('1234567H') {
+        if ($_ eq '1234567H') {
             $shortcode = 'DA';
+            next;
         }
-        when ('12345') {
+        if ($_ eq '12345') {
             $shortcode = 'WD';
+            next;
         }
-        when ('67H') {
+        if ($_ eq '67H') {
             $shortcode = 'WE';
+            next;
         }
     }
 
@@ -182,7 +185,7 @@ sub for_prehistoric {
 
     my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
 
-    return 'WD' unless $transitinfo ~~ @valid_prehistorics;
+    return 'WD' unless in($transitinfo , @valid_prehistorics);
     return $transitinfo;
 
 }

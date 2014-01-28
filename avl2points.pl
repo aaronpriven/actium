@@ -497,30 +497,36 @@ sub makestoptimes {
 
                 tr/x/a/ foreach @{ $tripinfo_of{PTS} };
 
-                given ($days_input) {
-                    when ('7') {
+                for ($days_input) {
+                    if ($_ eq '7') {
                         @days = '1';
+                        next;
                     }
-                    when ('6') {
+                    if ($_ eq '6') {
                         @days = '7';
+                        next;
                     }
-                    when ('12345') {
+                    if ($_ eq '12345') {
                         @days = qw(234 5 6 );
+                        next;
                     }
                 }
             }
             elsif ( $initial_time =~ /\d+ p/x )
             {    # if first time is an "p" time (pm that day)
                 tr/px/ba/ foreach @{ $tripinfo_of{PTS} };
-                given ($days_input) {
-                    when ('7') {
+                for ($days_input) {
+                    if ($_ eq '7') {
                         @days = '6';
+                        next;
                     }
-                    when ('6') {
+                    if ($_ eq '6') {
                         @days = '5';
+                        next;
                     }
-                    when ('12345') {
+                    if ($_ eq '12345') {
                         @days = qw(7 1 234);
+                        next;
                     }
                 }
             }

@@ -22,6 +22,7 @@ use Storable();
 
 use Actium::Sorting::Line ( qw<sortbyline>);
 use Actium::Constants;
+use Actium::Util('in');
 
 my $helptext = <<'EOF';
 avl2stops_of_each_line reads the data written by readavl and turns it into a 
@@ -78,7 +79,7 @@ say $stopsfh "Route\tStops\tDecals\tInventory\tPer set";
 
 foreach my $route (sortbyline keys %seen_stops_of) {
  
-    next if $route ~~ [ qw/BSD BSH BSN 399 51S/];
+    next if (in($route ,  qw/BSD BSH BSN 399 51S/ ));
  
     my $numstops = scalar keys %{$seen_stops_of{$route}};
 

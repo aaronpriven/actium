@@ -4,6 +4,13 @@ use 5.012;
 
 package Actium::Cmd::NearbyRoutes 0.001;
 
+1;
+
+__END__
+
+THIS IS BROKEN BECAUSE Geo::Coder::US requires Geo::StreetAddress::US
+which does not work with perl 5.18 due to regex issues
+
 use Geo::Coder::US;
 
 use strict;

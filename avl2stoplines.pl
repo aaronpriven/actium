@@ -111,22 +111,23 @@ foreach my $stop (sort keys %routes_of) {
    
    my ($twodigit, $school, $allnighter, $threedigit) = (0,0,0,0);
 
-   for my $line (@lines) {
-      given ($line) {
-         when (length ($_) < 3) {
+   for (@lines) {
+         if (length ($_) < 3) {
             $twodigit++;
+            next;
          }
-         when (/^6/) {
+         if (/^6/) {
             $school++;
+            next;
          }
-         when (/^8/) {
+         if (/^8/) {
             $allnighter++;
-         }
-         default {
-            $threedigit++;
+            next;
          }
 
-     }
+            $threedigit++;
+
+
 
    }
 

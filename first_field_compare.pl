@@ -31,10 +31,17 @@ while ( my $line = <> ) {
     }
 
     my ($first_column) = split( /\t/, $line );
+    my $firstline;
 
-    next unless $line_of{$first_column};
+    #next unless $line_of{$first_column};
+    if (not $line_of{$first_column}) {
+        $firstline = "(NUL)\t0";
+    }
+    else {
+        $firstline = $line_of{$first_column};
+    }
 
     #say "< $line_of{$first_column}\n> $line";
-    say "$line_of{$first_column}\t$line";
+    say "$firstline\t$line";
 
 }

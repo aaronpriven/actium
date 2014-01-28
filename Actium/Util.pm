@@ -3,7 +3,7 @@
 
 # Subversion: $Id$
 
-package Actium::Util 0.002;
+package Actium::Util 0.003;
 
 # Cannot use Actium::Preamble since that module uses this one
 
@@ -24,7 +24,7 @@ use Sub::Exporter -setup => {
           joinseries          joinseries_ampersand
           j                   jt
           jk                  jn
-          jspaced
+          jspaced             js
           sk                  st
           keyreadable         keyunreadable
           doe
@@ -123,6 +123,10 @@ sub jk {
 
 sub jn {
     return join( "\n", map { $_ // $EMPTY_STR } @_ );
+}
+
+sub js {
+    return join( $SPACE, map { $_ // $EMPTY_STR } @_ );
 }
 
 sub jspaced {
@@ -491,10 +495,15 @@ by tabs. A quicker way to type 'join ("\t" , @list)'.
 Takes the list passed to it and joins it together, with each element separated 
 by line feeds. A quicker way to type 'join ("\n" , @list)'.
 
-=item B<jspaced()>
+=item B<js()>
 
 Takes the list passed to it and joins it together, with each element separated 
-by spaces. A quicker way to type 'join (" " , @list)'.
+by a single space. A quicker way to type 'join (" " , @list)'.
+
+=item B<jspaced(I<num_spaces>, I<list>)>
+
+Takes the list passed to it and joins it together, with each element padded out
+to the given number of spaces.
 
 =item B<joinseries(I<list>)>
 
