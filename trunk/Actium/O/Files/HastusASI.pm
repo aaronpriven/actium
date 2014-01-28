@@ -213,7 +213,7 @@ sub _load {
                 }
             }
 
-            my ( $table, $_ ) = split( /$DELIMITER/sx, $_, 2 );
+            my ( $table, $rest ) = split( /$DELIMITER/sx, $_, 2 );
             unless ( $self->is_a_table($table)
                 and ( $self->_filetype_of_table($table) eq $filetype ) )
             {
@@ -226,7 +226,7 @@ sub _load {
 
             $previous_seq_of{$table} = $sequence;
 
-            my @columns = unpack( $template_of{$table}, $_ );
+            my @columns = unpack( $template_of{$table}, $rest );
             s/\A\s+//s foreach @columns;
 
             if ( $has_repeating_final_column{$table} ) {

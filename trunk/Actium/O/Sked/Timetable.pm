@@ -165,12 +165,14 @@ sub new_from_sked {
         $halfcols++;
         foreach my $daysexceptions ( $sked->daysexceptions ) {
 
-            given ($daysexceptions) {
-                when ('SD') {
+            for ($daysexceptions) {
+                if ($_ eq 'SD') {
                     push @note_definitions, 'SD - School days only';
+                    next;
                 }
-                when ('SH') {
+                if ($_ eq 'SH') {
                     push @note_definitions, 'SH - School holidays only';
+                    next;
                 }
 
             }

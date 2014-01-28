@@ -126,7 +126,7 @@ sub new_from_kpoints {
         signid  => $signid,
         effdate => $effdate,
         is_bsh  => ( $special_type eq 'bsh' ),
-        is_db  => ( $special_type eq 'db' ),
+        is_db   => ( $special_type eq 'db' ),
     );
 
     my $citycode = substr( $stopid, 0, 2 );
@@ -155,16 +155,16 @@ sub new_from_kpoints {
             }
             next;
         }
-        
+
         if ( $linegroup !~ /^6\d\d/ ) {
             $self->push_columns($column);
         }    # skip 600-series lines
         else {
             $self->set_note600;
         }
-        
+
         my $dircode = $column->dircode;
-        if ($dircode eq '14' or $dircode eq '15') {
+        if ( $dircode eq '14' or $dircode eq '15' ) {
             $self->set_has_ab;
         }
 
@@ -323,21 +323,24 @@ sub format_columns {
 
             my $notetext;
 
-            given ( $column->note ) {
-                when ('LASTSTOP') {
+            for ( $column->note ) {
+                if ( $_ eq 'LASTSTOP' ) {
                     $notetext = "Last Stop";
+                    next;
                 }
-                when ('DROPOFF') {
+                if ( $_ eq 'DROPOFF' ) {
                     $notetext = "Drop Off Only";
+                    next;
                 }
-                when ('72R') {
+                if ( $_ eq '72R' ) {
                     $notetext
                       = 'Buses arrive about every 12 minutes '
                       . IDTags::emdash
                       . IDTags::softreturn
                       . 'See information elsewhere on this sign.';
+                    next;
                 }
-                when ('1R-MIXED') {
+                if ( $_ eq '1R-MIXED' ) {
 
                     $notetext
                       = 'Buses arrive about every 12 minutes weekdays, and 15 minutes weekends.'
@@ -345,30 +348,32 @@ sub format_columns {
                       . IDTags::softreturn
                       . 'See information elsewhere on this sign.';
 
+                    next;
                 }
 
-                when ('1R') {
-                    given ( $column->days ) {
-                        when ('12345') {
-                            $notetext
-                              = 'Buses arrive about every 12 minutes '
-                              . IDTags::emdash
-                              . IDTags::softreturn
-                              . 'See information elsewhere on this sign.';
-                        }
-                        #when ('1234567') {
-                        default {
-                            $notetext
-                              = 'Buses arrive about every 12 minutes weekdays, 15 minutes weekends '
-                              . IDTags::emdash
-                              . IDTags::softreturn
-                              . 'See information elsewhere on this sign.';
-                        }
+                if ( $_ eq '1R' ) {
+
+                    if ( $column->days eq '12345' ) {
+                        $notetext
+                          = 'Buses arrive about every 12 minutes '
+                          . IDTags::emdash
+                          . IDTags::softreturn
+                          . 'See information elsewhere on this sign.';
+                    }
+                    else {
+
+                        $notetext
+                          = 'Buses arrive about every 12 minutes weekdays, 15 minutes weekends '
+                          . IDTags::emdash
+                          . IDTags::softreturn
+                          . 'See information elsewhere on this sign.';
                     }
 
-                } ## tidy end: when ('1R')
+                    next;
 
-            } ## tidy end: given
+                } ## tidy end: if ( $_ eq '1R' )
+
+            } ## tidy end: for ( $column->note )
 
             $column->set_formatted_column( $column->formatted_header
                   . IDTags::boxbreak
@@ -495,14 +500,14 @@ sub format_side {
     print $sidefh "\r",                IDTags::parastyle('sidenotes');
     print $sidefh 'Light Face = a.m.', IDTags::softreturn;
     print $sidefh IDTags::bold('Bold Face = p.m.'), "\r";
-    
-    if ($self->has_ab) {
-     print $sidefh  
-     'Lines that have <0x201C>A Loop<0x201D> and <0x201C>B Loop<0x201D> travel in a circle, beginning '
-     , 'and ending at the same point. The A Loop operates in the clockwise '
-     , 'direction. The B Loop operates in the counterclockwise direction. '
-     , 'Look for <0x201C>A<0x201D> or <0x201C>B<0x201D> at the right end of the headsign on the bus. '
-     , "\r";
+
+    if ( $self->has_ab ) {
+        print $sidefh
+'Lines that have <0x201C>A Loop<0x201D> and <0x201C>B Loop<0x201D> travel in a circle, beginning ',
+          'and ending at the same point. The A Loop operates in the clockwise ',
+          'direction. The B Loop operates in the counterclockwise direction. ',
+'Look for <0x201C>A<0x201D> or <0x201C>B<0x201D> at the right end of the headsign on the bus. ',
+          "\r";
     }
 
     my $sidenote = $Actium::Cmd::MakePoints::signs{$signid}{Sidenote};
@@ -541,17 +546,17 @@ sub format_side {
 "See something wrong with this sign, or any other AC Transit sign? Let us know! Send email to signs\@actransit.org or call 511 to comment. Thanks!\r"
       if lc(
         $Actium::Cmd::MakePoints::signtypes{
-            $Actium::Cmd::MakePoints::signs{$signid}{SignType} }
-          {GenerateWrongText} ) eq "yes";
+            $Actium::Cmd::MakePoints::signs{$signid}{SignType}
+        }{GenerateWrongText} ) eq "yes";
 
     ### new stop ID
 
-    if (not $self->is_bsh) {
-    print $sidefh IDTags::parastyle('depttimeside'), 'Call ',
-      IDTags::bold('511'), ' and say ', IDTags::bold('"Departure Times"'),
-      " for live bus predictions\r", IDTags::parastyle('stopid'),
-      "STOP ID\r", IDTags::parastyle('stopidnumber'),
-      $self->stopid();
+    if ( not $self->is_bsh ) {
+        print $sidefh IDTags::parastyle('depttimeside'), 'Call ',
+          IDTags::bold('511'), ' and say ', IDTags::bold('"Departure Times"'),
+          " for live bus predictions\r", IDTags::parastyle('stopid'),
+          "STOP ID\r",                   IDTags::parastyle('stopidnumber'),
+          $self->stopid();
     }
     ###
 
@@ -634,25 +639,45 @@ sub format_sidenotes {
           : 'scheduled departure time'
           if $attr{approxflag};
 
-        given ($attrcode) {
-            when ('a')   { print $sidefh "\u$app."; }
-            when ('ad')  { print $sidefh "\u$app, to $dest"; }
-            when ('ade') { print $sidefh "\u$app. Operates $exc to $dest"; }
-            when ('adel') {
+        for ($attrcode) {
+            if ( $_ eq 'a' )  { print $sidefh "\u$app.";          next; }
+            if ( $_ eq 'ad' ) { print $sidefh "\u$app, to $dest"; next; }
+            if ( $_ eq 'ade' ) {
+                print $sidefh "\u$app. Operates $exc to $dest";
+                next;
+            }
+            if ( $_ eq 'adel' ) {
                 print $sidefh "\u$app for Line $line. Operates $exc to $dest";
+                next;
             }
-            when ('ae') { print $sidefh "\u$app. Operates $exc."; }
-            when ('ael') {
+            if ( $_ eq 'ae' ) {
+                print $sidefh "\u$app. Operates $exc.";
+                next;
+            }
+            if ( $_ eq 'ael' ) {
                 print $sidefh "\u$app for Line $line. Operates $exc.";
+                next;
             }
-            when ('al')  { print $sidefh "\u$app for Line $line."; }
-            when ('d')   { print $sidefh "To $dest"; }
-            when ('de')  { print $sidefh "Operates $exc to $dest"; }
-            when ('del') { print $sidefh "Line $line. Operates $exc to $dest"; }
-            when ('dl')  { print $sidefh "Line $line, to $dest"; }
-            when ('e')   { print $sidefh "Operates $exc." }
-            when ('el')  { print $sidefh "Line $line. Operates $exc."; }
-            when ('l')   { print $sidefh "Line $line."; }
+            if ( $_ eq 'al' ) {
+                print $sidefh "\u$app for Line $line.";
+                next;
+            }
+            if ( $_ eq 'd' ) { print $sidefh "To $dest"; next; }
+            if ( $_ eq 'de' ) {
+                print $sidefh "Operates $exc to $dest";
+                next;
+            }
+            if ( $_ eq 'del' ) {
+                print $sidefh "Line $line. Operates $exc to $dest";
+                next;
+            }
+            if ( $_ eq 'dl' ) { print $sidefh "Line $line, to $dest"; next; }
+            if ( $_ eq 'e' )  { print $sidefh "Operates $exc.";       next; }
+            if ( $_ eq 'el' ) {
+                print $sidefh "Line $line. Operates $exc.";
+                next;
+            }
+            if ( $_ eq 'l' ) { print $sidefh "Line $line."; next; }
         }    ## <perltidy> end given
 
         print $sidefh "\r";
@@ -678,8 +703,8 @@ sub format_bottom {
     no warnings('once');
     my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid}; # this is a reference
 
-    print $botfh IDTags::parastyle ('bottomnotes') , 
-       $stop_r->{DescriptionF}, ", ", $stop_r->{CityF};
+    print $botfh IDTags::parastyle('bottomnotes'),
+      $stop_r->{DescriptionF}, ", ", $stop_r->{CityF};
 
     print $botfh ". Sign #$signid. Stop $stopid.";
 
@@ -706,8 +731,10 @@ sub output {
 
     # output blank columns at beginning
 
-    my $maxcolumns = $Actium::Cmd::MakePoints::signtypes{
-        $Actium::Cmd::MakePoints::signs{$signid}{SignType} }{TallColumnNum};
+    my $maxcolumns
+      = $Actium::Cmd::MakePoints::signtypes{
+        $Actium::Cmd::MakePoints::signs{$signid}{SignType}
+      }{TallColumnNum};
     my $break = IDTags::boxbreak;
 
     if ( $maxcolumns and $maxcolumns > $self->width )

@@ -54,11 +54,11 @@ sub START {
 
     emit 'Processing headway sheets';
 
-    my $signup      = Actium::O::Folders::Signup->new;
+    my $signup         = Actium::O::Folders::Signup->new;
     my $headwaysfolder = Actium::O::Folders::Signup->new('headways');
 
     my @files = $headwaysfolder->glob_plain_files();
-    
+
     die "No headway files found" unless @files;
 
     #### DEBUG ONLY
@@ -218,17 +218,17 @@ sub read_headways {
         my $directionline = $newpage->line( $indexes{direction} );
 
         my $dir;
-        given ($directionline) {
-            when (/North/is)            { $dir = '0'; }    # NB
-            when (/South/is)            { $dir = '1'; }    # SB
-            when (/West/is)             { $dir = '3'; }    # WB
-            when (/East/is)             { $dir = '2'; }    # EB
-            when (/Counterclockwise/is) { $dir = '9'; }    # CC
-            when (/Clockwise/is)        { $dir = '8'; }    # CW
-            default {
-                $dir = '10';
-                # Hastus "Direction One"
-            }
+        for ($directionline) {
+            if (/North/is)            { $dir = '0'; next; }    # NB
+            if (/South/is)            { $dir = '1'; next; }    # SB
+            if (/West/is)             { $dir = '3'; next; }    # WB
+            if (/East/is)             { $dir = '2'; next; }    # EB
+            if (/Counterclockwise/is) { $dir = '9'; next; }    # CC
+            if (/Clockwise/is)        { $dir = '8'; next; }    # CW
+
+            $dir = '10';
+            # Hastus "Direction One"
+
         }
 
         $newpage->set_direction($dir);
@@ -321,11 +321,11 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         my $line = $lines[ $indexes{schedule} ];
 
-        given ($line) {
-            when (/Saturday/s) { $days = '6'; }
-            when (/Sunday/s)   { $days = '7H'; }
-            when (/Weekday/s)  { $days = '12345'; }
-            default            { $days = 'DEFAULT'; }
+        for ($line) {
+            if (/Saturday/s) { $days = '6';     next; }
+            if (/Sunday/s)   { $days = '7H';    next; }
+            if (/Weekday/s)  { $days = '12345'; next; }
+            $days = 'DEFAULT';
         }
 
         if ( $days eq 'DEFAULT' ) {
@@ -361,21 +361,22 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
         my $totest = substr( $line, 13, 3 );
 
-        given ($totest) {
-            when ('RUN') {
+        for ($totest) {
+            if ($_ eq 'RUN') {
                 $reporttype = 'Crew';
+                next;
             }
 
-            when ('LOC') {    # from "BLOCK"
+            if ($_ eq 'LOC') {    # from "BLOCK"
                 $reporttype = 'Vehicle';
+                next;
             }
 
-            default {
-                emit_fatal {
-                    -reason => "Unknown report type: unable to parse $dispfile"
-                };
+
+                emit_fatal { -reason =>
+                      "Unknown report type: unable to parse $dispfile" };
                 die("Couldn't parse $file");
-            }
+
         }
 
         if ( $reporttype eq 'Crew' ) {
@@ -676,7 +677,7 @@ qq{Can't identify the route, schedule, direction, and column header lines at "$f
 
                 next EXPANDTPS
                   if join( $EMPTY_STR, @theseplace8s ) eq
-                      join( $EMPTY_STR, @union_place8s );
+                  join( $EMPTY_STR, @union_place8s );
 
                 my $current_place8_idx = 0;
                 my $final_place8_idx   = $#theseplace8s;
@@ -953,7 +954,5 @@ sub shrink_duplicate_timepoint_runs {
     return;
 
 }    ## <perltidy> end sub shrink_duplicate_timepoint_runs
-
-
 
 1;

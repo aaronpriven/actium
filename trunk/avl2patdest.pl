@@ -112,22 +112,26 @@ foreach my $key ( keys %pat ) {
 
     $seen{$lasttp} = $dest;
 
-    given ($dir) {
-       when (8) {
+    for ($dir) {
+       if ($_ == 8) {
           $dest = "Clockwise to $dest";
+          next;
        }
-       when (9) {
+       if ($_ == 9) {
           $dest = "Counterclockwise to $dest";
+          next;
        }
-       when (14) {
+       if ($_ == 14) {
           $dest = "A Loop to $dest";
+          next;
        }
-       when (15) {
+       if ($_ == 15) {
           $dest = "B Loop to $dest";
+          next;
        }
-       default {
-          $dest = "To $dest";
-       }
+
+       $dest = "To $dest";
+
     }
 
     #$dest .= ", $city" if $usecity =~ /^y/i;

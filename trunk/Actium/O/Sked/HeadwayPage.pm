@@ -122,16 +122,18 @@ sub sked {
     
     
     if (@daysexceptions == 1 ) {
-        given ($daysexceptions[0]) {
-         when ('SD') {
+        for ($daysexceptions[0]) {
+         if ($_ eq 'SD') {
             $day_obj = Actium::O::Days->new($self->days, 'D');
+            next;
          }
-         when ('SH') {
+         if ($_ eq 'SH') {
             $day_obj = Actium::O::Days->new($self->days, 'H');
+            next;
          }
-         default {
+
             $day_obj = Actium::O::Days->new($self->days);
-         }
+
         }
     }
     else {

@@ -32,7 +32,7 @@ use namespace::autoclean;
 
 use Actium::Constants;
 use Actium::Term;
-use Actium::Util('flatten');
+use Actium::Util(qw/flatten in/);
 
 use Carp;
 use DBI;
@@ -470,7 +470,7 @@ sub _check_columns {
     my @columns = $self->columns_of_table($table);
     foreach my $input (@input_columns) {
         croak "Invalid column $input for table $table"
-          if not $input ~~ @columns;
+          if not in($input , @columns);
     }
     return;
 }

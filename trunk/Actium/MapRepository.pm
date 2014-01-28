@@ -262,12 +262,14 @@ sub normalize_filename {
         }
     } ## tidy end: if ( $date =~ /\A [[:alpha:]]{3} \d{2} \z/sx)
 
-    given ($ver) {
-        when ( not( defined or $_ eq q{} ) ) {
+    for ($ver) {
+        if ( not( defined or $_ eq q{} ) ) {
             $ver = 'v1';
+            next;
         }
-        when (/\A [[:alpha:]]+ \z/sx) {
+        if (/\A [[:alpha:]]+ \z/sx) {
             $ver .= '1';
+            next;
         }
         #        when (/\A\d+\z/s) {
         #            $ver = "v$ver";

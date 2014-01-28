@@ -240,55 +240,65 @@ foreach my $stop ( sort keys %{ $disp_route_of{'r6dir'} } ) {
 
     if ( $has_route{'1R'} or $has_route{'72R'} ) {
         $priority = 'A-RAPID';
-        given ($numboxes) {
-            when ( $_ >= 11 ) {
+        for ($numboxes) {
+            if ( $_ >= 11 ) {
                 $note = "CUSTOM-RAPID";
                 $size = '45.75';
+                next;
             }
-            when ( $_ >= 6 ) {
+            if ( $_ >= 6 ) {
                 $note = "TEN-RAPID";
                 $size = '45.75';
+                next;
             }
-            when ( $_ >= 2 ) {
+            if ( $_ >= 2 ) {
                 $note = "SIX-RAPID";
                 $size = '35.25';
+                next;
             }
-            default {
+
                 $note = "TWO-RAPID";
                 $size = '24.75';
-            }
+
         }
     } ## #tidy# end if ( $has_route{'1R'} ...)
     else {
-        given ($numboxes) {
-            when ( $_ >= 11 ) {
+        for ($numboxes) {
+            if ( $_ >= 11 ) {
                 $note = "CUSTOM";
                 $size = '35.25';
                 $priority = 'B-BIG';
+                next;
             }
-            when ( $_ >= 7 ) {
+            if ( $_ >= 7 ) {
                 $note = "TEN";
                 $size = '35.25';
                 $priority = 'B-BIG';
+                next;
             }
-            when (6) {
+            if ($_ == 6) {
                 $note = "NINE";
                 $size = '32.75';
                 $priority = 'B-BIG';
+                next;
             }
-            when (5) {
+            if ($_ == 5) {
                 $note = "SIX";
                 $size = '24.75';
                 $priority = 'B-BIG';
+                next;
             }
-            when (4) {
+            if ($_ == 4) {
                 $size = '22.25';
+                next;
             }
-            when (3) {
+            if ($_ == 3) {
                 $size = '17.26';
+                next;
             }
-            when ( [ 1, 2 ] ) {
+            if ($_ == 1 or $_ == 2 ) {
                 $size = '17';
+                next;
             }
 
         } ## #tidy# end given

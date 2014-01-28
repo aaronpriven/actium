@@ -85,7 +85,7 @@ sub prehistoric_skedsfile {
 
     foreach my $trip ( $self->trips ) {
         my $times = $timesub->( $trip->placetimes );
-        
+
         $times =~ s/\s+\z//;
 
         say $out jt( $trip->daysexceptions, $EMPTY_STR, $EMPTY_STR,
@@ -102,18 +102,18 @@ sub load_prehistorics {
 
     my $class     = shift;
     my $folder    = shift;
-    my $xml_db = shift;
+    my $xml_db    = shift;
     my @filespecs = @_;
 
-    if (not defined $xml_db) {
-       my $signup = $folder->signup_obj;
-       $xml_db = $signup->load_xml;
+    if ( not defined $xml_db ) {
+        my $signup = $folder->signup_obj;
+        $xml_db = $signup->load_xml;
     }
-    
+
     $xml_db->ensure_loaded('Timepoints');
-    
+
     my $xml_dbh = $xml_db->dbh;
-    
+
     emit "Loading prehistoric schedules";
 
     my %tp4_of_tp8;
@@ -136,11 +136,12 @@ sub load_prehistorics {
         @files = $folder->glob_plain_files;
     }
 
-    my @skeds = map { $class->_new_from_prehistoric( $_, \%tp4_of_tp8 ) } @files;
-    
+    my @skeds
+      = map { $class->_new_from_prehistoric( $_, \%tp4_of_tp8 ) } @files;
+
     emit_over $EMPTY_STR;
     emit_done;
-    
+
     return @skeds;
 
 } ## tidy end: sub load_prehistorics
@@ -164,9 +165,9 @@ sub _new_from_prehistoric {
     my ( $linegroup, $direction, $days ) = split(/_/);
     $spec{linegroup} = $linegroup;
     $spec{direction} = $direction;
-    
+
     state %seen_linegroup;
-    if (not $seen_linegroup{$linegroup}) {
+    if ( not $seen_linegroup{$linegroup} ) {
         emit_over $linegroup unless $seen_linegroup{$linegroup};
         $seen_linegroup{$linegroup} = 1;
     }
@@ -178,16 +179,16 @@ sub _new_from_prehistoric {
     trim;
 
     my @place9s;
-    ( undef, undef, undef, undef, @place9s ) = split(/\t/) ;
-   
+    ( undef, undef, undef, undef, @place9s ) = split(/\t/);
+
     s/=[0-9]+\z//sx foreach @place9s;
-    
-    my @place8s = _tp9_to_tp8( @place9s) ;
-    
+
+    my @place8s = _tp9_to_tp8(@place9s);
+
     # the first four columns are always
     # "SPEC DAYS", "NOTE" , "VT" , and "RTE NUM"
-    
-    s/=.*// foreach @place8s; # get rid of =2, =3, etc.
+
+    s/=.*// foreach @place8s;    # get rid of =2, =3, etc.
 
     $spec{place9_r} = \@place9s;
     $spec{place8_r} = \@place8s;
@@ -196,7 +197,7 @@ sub _new_from_prehistoric {
     my $last_tp_idx = $#place8s;
 
     my @trips;
-    
+
     while (<$skedsfh>) {
         rtrim;
 
@@ -209,7 +210,7 @@ sub _new_from_prehistoric {
 
         $tripspec{noteletter}  = shift @fields;
         $tripspec{vehicletype} = shift @fields;
-        $tripspec{line}    = shift @fields;
+        $tripspec{line}        = shift @fields;
 
         $#fields = $#place8s;
 
@@ -224,28 +225,30 @@ sub _new_from_prehistoric {
     } ## tidy end: while (<$skedsfh>)
 
     my @daysexceptions = uniq( map { $_->daysexceptions } @trips );
-    
-    if ( @daysexceptions == 1 and $linegroup !~ /\A 6 \d \d \z/sx) {
-        given ( $daysexceptions[0] ) {
-            when ('SD') {
+
+    if ( @daysexceptions == 1 and $linegroup !~ /\A 6 \d \d \z/sx ) {
+        for ( $daysexceptions[0] ) {
+            if ( $_ eq 'SD' ) {
                 $days = Actium::O::Days->new( $days, 'D' );
+                next;
             }
-            when ('SH') {
+            if ( $_ eq 'SH' ) {
                 $days = Actium::O::Days->new( $days, 'H' );
+                next;
             }
-            when ( exists $DAYS_FROM_TRANSITINFO{$_} ) {
+            if ( exists $DAYS_FROM_TRANSITINFO{$_} ) {
                 $days = Actium::O::Days->new( $DAYS_FROM_TRANSITINFO{$_} );
+                next;
             }
-            default {
-                $days = Actium::O::Days->new($days);
-            }
+            $days = Actium::O::Days->new($days);
         }
     }
     else {
-        if ($linegroup =~ /\A 6 \d \d \z/sx) {
-        $days = Actium::O::Days->new($days, 'D');
-        } else {
-        $days = Actium::O::Days->new($days);
+        if ( $linegroup =~ /\A 6 \d \d \z/sx ) {
+            $days = Actium::O::Days->new( $days, 'D' );
+        }
+        else {
+            $days = Actium::O::Days->new($days);
         }
     }
 
@@ -261,7 +264,7 @@ sub _new_from_prehistoric {
 
 sub write_prehistorics {
 
-    my $class = shift;
+    my $class   = shift;
     my $skeds_r = shift;
     my $signup  = shift;
 
@@ -301,7 +304,7 @@ sub write_prehistorics {
 
             next
               unless $prehistorics_of{$group_dir}{$first_days}
-                  and $prehistorics_of{$group_dir}{$second_days};
+              and $prehistorics_of{$group_dir}{$second_days};
 
             my $prefirst  = $prehistorics_of{$group_dir}{$first_days};
             my $presecond = $prehistorics_of{$group_dir}{$second_days};

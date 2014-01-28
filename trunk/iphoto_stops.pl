@@ -8,7 +8,7 @@ use warnings;
 use Math::Trig qw(deg2rad pi great_circle_distance asin acos);
 use Scalar::Util 'looks_like_number';
 
-my $simplefile = '/volumes/bireme/actium/db/w12/SimpleStops.tab';
+my $simplefile = '/volumes/bireme/actium/db/w13/SimpleStops.tab';
 
 open my $simplefh, '<', $simplefile
   or die "Can't open $simplefile";
@@ -108,7 +108,7 @@ ENDSCRIPT
 
 use IPC::Open2;
 
-my $pid = open2( my $readscriptfh, my $writescriptfh, "osascript -" );
+my $pid = open2( my $readscriptfh, my $writescriptfh, 'osascript -' );
 
 print $writescriptfh $get_selected_script;
 close $writescriptfh;

@@ -16,7 +16,7 @@ use autodie;
 use Params::Validate (':all');
 
 use Actium::Term;
-use Actium::Util('filename');
+use Actium::Util(qw/filename in/);
 
 use Sub::Exporter -setup => { exports => [qw(read_tab_files)] };
 
@@ -147,7 +147,7 @@ sub _verify_headers {
 
     if ( scalar @required_headers ) {
         foreach my $required_header (@required_headers) {
-            if ( not $required_header ~~ @headers ) {
+            if ( not in($required_header, @headers )) {
                 croak
                   "Required header $required_header not found in file $file";
             }
