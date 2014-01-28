@@ -53,7 +53,7 @@ sub START {
     while (<$input_h>) {
         chomp;
         my ( $stop, $description ) = split( /\t/, $_, 2 );
-        next if ( $stop ~~ [qw<StopID PhoneID stop_id_1>]);    # header line
+        next if ( $stop eq 'StopID' or $stop eq 'PhoneID' or $stop eq 'stop_id_1' );    # header line
         $description_of{$stop} = $description;
     }
 

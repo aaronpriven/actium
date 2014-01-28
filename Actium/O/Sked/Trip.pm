@@ -308,20 +308,22 @@ sub merge_trips {
         my $attrname = $attribute->name;
         my $init_arg = $attribute->init_arg // $attrname;
 
-        given ($attrname) {
-            when ('mergedtrip_r') {
+        for ($attrname) {
+            if ($_ eq 'mergedtrip_r') {
+                next;
             }    # do nothing
-            when ( [ 'placetime_r', 'stoptime_r' ] ) {
-
+            if ( in ($_,  'placetime_r', 'stoptime_r' )) {
                 # assumed to be equal
                 $merged_value_of{$init_arg} = $self->$attrname;
+                next;
             }
-            when ('days_obj') {
+            if ($_ eq 'days_obj') {
                 $merged_value_of{$init_arg}
                   = Actium::O::Days->union( $self->$attrname,
                     $secondtrip->$attrname );
+                    next;
             }
-            default {
+      
                 my $firstattr  = $self->$attrname;
                 my $secondattr = $secondtrip->$attrname;
 
@@ -344,7 +346,7 @@ sub merge_trips {
                 # only possible values SD and SH -- it would't make
                 # a difference
 
-            } ## tidy end: default
+      
         }    ## <perltidy> end given
 
     }    ## <perltidy> end foreach my $attribute ( $class...)

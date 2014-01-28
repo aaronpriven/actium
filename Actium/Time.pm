@@ -77,18 +77,18 @@ sub _single_timenum {
 
     # strip everything except numbers, digits, apostrophe, and apxb
 
-    given ($time) {
-        when (
+    for ($time) {
+        if (
                  (/^   0?      [1-9] [0-5] [0-9] [apxb] $/sx)
               or (/^   1       [0-2] [0-5] [0-9] [apxb] $/sx)
           )
         {    # 12 hours
             return $cache{$time} = _ampm_to_num($time);
         }
-        when (/^ \-?       [0-9]+ [0-5] [0-9] $/sx) {    # 24 hour
+        if (/^ \-?       [0-9]+ [0-5] [0-9] $/sx) {    # 24 hour
             return $cache{$time} = _24h_to_num($time);
         }
-        when (
+        if (
                  (/^   [01]?  [0-9] \' [0-5] [0-9] $/sx)
               or (/^    2     [0-3] \' [0-5] [0-9] $/sx)
           )
@@ -98,7 +98,7 @@ sub _single_timenum {
 
               # treat as 24 hours, but subtract a day so it refers to yesterday
         }
-        default { croak "Invalid time [$origtime] [$time]" }
+        croak "Invalid time [$origtime] [$time]" ;
     };
 
     return;    # this will never be executed because of the default croak
@@ -294,16 +294,17 @@ sub timestr {
 
     # REGULARIZE TIME
 
-    given ( ref( $_[0] ) ) {    # The first parameter
+    for ( ref( $_[0] ) ) {    # The first parameter
 
-        when ('ARRAY') {
+        if ($_ eq 'ARRAY') {
             unshift @_, 'TIME';
 
      # when the first parameter is an arrayref, take it to be an array of times,
      # and put TIME in front of it so Params::Validate will see it as a name
+     next;
         }
 
-        when ( $_ ne 'HASH' ) {
+        if ( $_ ne 'HASH' ) {
 
             # so first parameter is (presumably) a scalar
 
@@ -334,6 +335,7 @@ sub timestr {
             # assume the TIME entry is somewhere later in the list, and
             # hope Params::Validate can deal with it
 
+        next;
         }    ## <perltidy> end when ( $_ ne 'HASH' )
 
     }    ## <perltidy> end given

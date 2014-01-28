@@ -13,7 +13,7 @@ our $VERSION = '0.001';
 $VERSION = eval $VERSION;    ## no critic (StringyEval)
 
 use Actium::Sorting::Line (qw/sortbyline byline/);
-use Actium::Util qw(sk jn j jk jt keyreadable);
+use Actium::Util qw(in sk jn j jk jt keyreadable);
 use Actium::Union (qw/ordered_union distinguish/);
 use Actium::DaysDirections(':all');
 use Actium::O::Files::HastusASI;
@@ -160,7 +160,7 @@ sub build_place_and_stop_lists {
             $prevroute = $route;
         }
 
-        next PAT if $route ~~ [ 'BSH', 'BSD', 'BSN', '399' ];
+        next PAT if in($route, 'BSH', 'BSD', 'BSN', '399');
         # skip Broadway Shuttle
 
         my @tps = @{
@@ -318,7 +318,7 @@ sub transbay_and_connections {
         }
     } ## tidy end: for my $patinfo ( reverse...)
 
-    if ( $route ~~ @TRANSBAY_NOLOCALS ) {
+    if ( in($route , @TRANSBAY_NOLOCALS )) {
         my $dropoff;
         undef $prev_side;
         for my $patinfo (@all_stops) {
@@ -1151,33 +1151,41 @@ sub make_decal_spec {
     # Transbay and All_Nighter icons are used even
     # when no connection icons are used
     my $transbay_debug;
-    given ($route) {
-        when (/\A F \z/sx) {
+    for ($route) {
+        if (/\A F \z/sx) {
             $transbay_debug = 1;
+            next;
         }
-        when (/\A 8\d\d/sx) {
+        if (/\A 8\d\d/sx) {
             $icons .= $ICON_OF{'All Nighter'};
+            next;
         }
-        when (/\A DB/sx) {
+        if (/\A DB/sx) {
             $icons .= $ICON_OF{'DB'};
+            next;
         }
-        when (/\d R \z/sx) {
+        if (/\d R \z/sx) {
             $icons .= $ICON_OF{'Rapid'};
+            next;
         }
     }
 
-    given ($dir) {
-        when ('8') {
+    for ($dir) {
+        if ($_ eq '8') {
             $icons .= $ICON_OF{Clockwise};
+            next;
         }
-        when ('9') {
+        if ($_ eq '9') {
             $icons .= $ICON_OF{Counterclockwise};
+            next;
         }
-        when ('14') {
+        if ($_ eq '14') {
             $icons .= $ICON_OF{'A Loop'};
+            next;
         }
-        when ('15') {
+        if ($_ eq '15') {
             $icons .= $ICON_OF{'B Loop'};
+            next;
         }
     }
 
@@ -1365,37 +1373,43 @@ sub style_of_route {
     my $val = 0;
     my @chars = split( //, $route );
     foreach my $char (@chars) {
-        given ($char) {
-            when ( [qw/ 3 4 8 0 A B C D /] ) {
+        for ($char) {
+            if ( in($_, qw/ 3 4 8 0 A B C D /) ) {
                 $val += 15;    # 1 1/4
+                next;
             }
-            when ( [qw/ N O X R /] ) {
+            if ( in($_, qw/ N O X R /) ) {
                 $val += 18;    # 1 1/2
+                next;
             }
-            when ( [qw/M W/] ) {
+            if ( in($_, qw/M W/) ) {
                 $val += 24;    # 2
+                next;
             }
-            default {
+
                 $val += 12;    # 1
-            }
+
 
         }
     }
 
     my $style;
-    given ($val) {
-        when ( $_ < 36 ) {     # 3
+    for ($val) {
+        if ( $_ < 36 ) {     # 3
             $style = 'Route';
+            next;
         }
-        when ( $_ < 42 ) {     # 3.5
+        if ( $_ < 42 ) {     # 3.5
             $style = 'RouteCon';
+            next;
         }
-        when ( $_ < 48 ) {     # 4
+        if ( $_ < 48 ) {     # 4
             $style = 'RouteExCon';
+            next;
         }
-        default {
-            $style = 'RouteUltCon';
-        }
+
+        $style = 'RouteUltCon';
+
     }
 
     $cache{$route} = $style;

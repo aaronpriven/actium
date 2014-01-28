@@ -13,7 +13,7 @@ use lib ( $Bin, "$Bin/../bin" );
 
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Constants;
-use Actium::Util('joinseries');
+use Actium::Util(qw/joinseries in/);
 #use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 
 use autodie;
@@ -187,7 +187,7 @@ foreach my $stopid (
     my %unchanged = prepary(@unchanged);
     my %allnew    = prepary(@allnew);
 
-    next unless ( $type ~~ [qw(AS RS AL RL CL XL)] );
+    next unless ( in($type , qw(AS RS AL RL CL XL) ));
 
     my ( $text, $length )
       = $output_dispatch{$type}->( \%added, \%removed, \%unchanged, \%allnew );

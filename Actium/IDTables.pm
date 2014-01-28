@@ -92,7 +92,6 @@ sub output_all_tables {
 
 } ## tidy end: sub output_all_tables
 
-
 sub get_pubtt_contents_with_dates {
     my $xml_db  = shift;
     my $lines_r = shift;
@@ -143,7 +142,6 @@ sub get_pubtt_contents_with_dates {
           @pubtt_contents_with_dates ], $pubtimetables_r;
 
 } ## tidy end: sub get_pubtt_contents_with_dates
-
 
 sub _minimums {
     my @tables = @{ +shift };
@@ -405,24 +403,25 @@ sub _make_length {
 
     my $length;
     for ($ems) {
-        when ( $_ <= .9 ) {    # two digits are .888
+        if ( $_ <= .9 ) {    # two digits are .888
             $length = 1;
+            next;
         }
-        when ( $_ <= 1.2 ) {    # three digits are 1.332
+        if ( $_ <= 1.2 ) {    # three digits are 1.332
             $length = 2;
+            next;
         }
-        when ( $_ <= 1.5 ) {    # N66 is 1.555
+        if ( $_ <= 1.5 ) {    # N66 is 1.555
             $length = 3;
+            next;
         }
-        default {
-            $length = 4;
-        }
+
+        $length = 4;
 
     }
 
     return max( $length, scalar @lines );
 } ## tidy end: sub _make_length
-
 
 sub output_a_pubtts {
 
@@ -441,21 +440,22 @@ sub output_a_pubtts {
         my $linegroup     = $pubtt->[0];
         my $effectivedate = $pubtt_content_r->{date} // $EMPTY_STR;
         my $file_date     = $pubtt_content_r->{file_date} // $EMPTY_STR;
-        my $dbentry = $pubtimetables_r->{$linegroup};
-        my $leave_cover_for_map = 
-        ( ( $dbentry->{LeaveCoverForMap} // 'No' ) eq 'Yes' );
+        my $dbentry       = $pubtimetables_r->{$linegroup};
+        my $leave_cover_for_map
+          = ( ( $dbentry->{LeaveCoverForMap} // 'No' ) eq 'Yes' );
 
         my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
         next unless @$tables_r;
 
         my $file = join( "_", @{$lines_r} );
         emit_over " $file";
-        if ($file eq '32') {
-           emit_over "#";
+        if ( $file eq '32' ) {
+            emit_over "#";
         }
 
-        my ($portrait_chars , @table_assignments)
-          = Actium::IDTables::PageAssignments::assign($tables_r, $leave_cover_for_map);
+        my ( $portrait_chars, @table_assignments )
+          = Actium::IDTables::PageAssignments::assign( $tables_r,
+            $leave_cover_for_map );
 
         if ( not @table_assignments ) {
             emit_text "Can't place $file on pages (too many timepoints?)";
@@ -475,10 +475,10 @@ sub output_a_pubtts {
 
         foreach my $table_assignment (@table_assignments) {
 
-            my $table      = $table_assignment->{table};
-            my $width      = $table_assignment->{width};
-            my $frame      = $table_assignment->{frame};
-            my $pagebreak  = $table_assignment->{pagebreak};
+            my $table       = $table_assignment->{table};
+            my $width       = $table_assignment->{width};
+            my $frame       = $table_assignment->{frame};
+            my $pagebreak   = $table_assignment->{pagebreak};
             my $compression = $table_assignment->{compression};
 
             $pagebreak_count++ if $pagebreak;
@@ -503,7 +503,7 @@ sub output_a_pubtts {
             print $ttfh $table->as_indesign(
                 minimum_columns  => $width->[0],
                 minimum_halfcols => $width->[1],
-                compression       => $compression,
+                compression      => $compression,
             );
 
             $firsttable = 0;
@@ -514,29 +514,28 @@ sub output_a_pubtts {
 
         close $ttfh;
 
-
         $script_entries{$linegroup} = {
-            file          => $file,
-            effectivedate => $file_date,
-            pages         => $pagebreak_count,
-            MapFile           => $dbentry->{MapFile} // $EMPTY_STR,
-            LeaveCoverForMap => $leave_cover_for_map ,
-            MasterPage   => $dbentry->{MasterPage}           // $EMPTY_STR,
-            has_short_page => not($table_assignments[0]{pagebreak}),
-            portrait_chars => $portrait_chars,
+            file             => $file,
+            effectivedate    => $file_date,
+            pages            => $pagebreak_count,
+            MapFile          => $dbentry->{MapFile} // $EMPTY_STR,
+            LeaveCoverForMap => $leave_cover_for_map,
+            MasterPage       => $dbentry->{MasterPage} // $EMPTY_STR,
+            has_short_page   => not( $table_assignments[0]{pagebreak} ),
+            portrait_chars   => $portrait_chars,
         };
 
     } ## tidy end: foreach my $pubtt_content_r...
 
     my $listfh  = $pubtt_folder->open_write('_ttlist.txt');
     my @columns = qw<file effectivedate pages MapFile LeaveCoverForMap
-                     MasterPage has_short_page portrait_chars>;
+      MasterPage has_short_page portrait_chars>;
     say $listfh jt(@columns);
     for my $linegroup ( sortbyline keys %script_entries ) {
         say $listfh jt( @{ $script_entries{$linegroup} }{@columns} );
     }
     close $listfh;
-    
+
     emit_over '';
     emit_done;
 

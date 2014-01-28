@@ -67,6 +67,7 @@ my %module_of = (
     htmltables      => 'HTMLTables',
     kmlunite        => 'KmlUnite',
     linedescrip     => 'LineDescrip',
+    decalcount => 'DecalCount',
                                             # more to come
 );
 

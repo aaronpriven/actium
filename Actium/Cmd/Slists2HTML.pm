@@ -157,28 +157,32 @@ EOT
         $table_of{$route} = $outdata;
 
         my $type;
-        given ($route) {
-            when (/BS[DHN]/) {
+        for ($route) {
+            if (/BS[DHN]/) {
                 $type = 'Broadway Shuttle';
+                next;
             }
-            when ('800') {
+            if ($_ eq '800') {
                 $type = 'Transbay';
+                next;
             }
-            when (/^DB/) {
+            if (/^DB/) {
                 $type = 'Dumbarton Express';
+                next;
             }
-            when (/^[A-Z].*/) {
+            if (/^[A-Z].*/) {
                 $type = 'Transbay';
+                next;
             }
-            when (/6\d\d/) {
+            if (/6\d\d/) {
                 $type = 'Supplementary';
+                next;
             }
-            when (/8\d\d/) {
+            if (/8\d\d/) {
                 $type = 'All Nighter';
+                next;
             }
-            default {
                 $type = 'Local';
-            }
         } ## tidy end: given
 
         push @{ $routes_of_type{$type} }, $route;

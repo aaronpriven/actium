@@ -29,18 +29,17 @@ sub START {
     my $db;
 
     my $type = option('type');
-    given ( lc($type) ) {
-        when ('f') {
+    for ( lc($type) ) {
+        if ($_ eq 'f') {
             $dir = Actium::O::Folders::Signup->new('xml');
             $db = Actium::O::Files::FMPXMLResult->new( $dir->path() );
-        }
-        when ('h') {
+            next;
+        } elsif ($_ eq 'h') {
             $dir = Actium::O::Folders::Signup->new('hasi');
             $db = Actium::O::Files::HastusASI->new( $dir->path() );
+            next;
         }
-        default {
-            die "Don't know about type $type";
-        }
+        die "Don't know about type $type";
     }
 
     my $table = $ARGV[0];

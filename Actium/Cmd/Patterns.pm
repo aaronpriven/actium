@@ -17,7 +17,7 @@ use Actium::O::Files::FMPXMLResult;
 use Actium::O::Folders::Signup;
 use Actium::Term  (':all');
 use Actium::Union ('ordered_union');
-use Actium::Util qw(jk doe);
+use Actium::Util qw(jk doe in);
 
 use Actium::O::Pattern;
 use Actium::O::Patterns::Stop;
@@ -308,7 +308,7 @@ sub _transbay_and_connections {
 
     # next block sets either Transbay only or Drop Off only
 
-    if ( $route ~~ @TRANSBAY_NOLOCALS ) {
+    if ( in ($route , @TRANSBAY_NOLOCALS )) {
         my $dropoff;
         undef $prev_side;
         for my $relation_obj (@all_relation_objs) {
