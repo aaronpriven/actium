@@ -68,6 +68,7 @@ my %module_of = (
     kmlunite        => 'KmlUnite',
     linedescrip     => 'LineDescrip',
     decalcount => 'DecalCount',
+    xml2thea        => 'Xml2Thea',
                                             # more to come
 );
 
