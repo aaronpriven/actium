@@ -21,6 +21,7 @@ use Actium::Util('flatten');
 use Carp;
 use English '-no_match_vars';
 use File::Spec;
+use File::Glob ('bsd_glob');
 
 use Params::Validate qw(:all);
 
@@ -314,7 +315,12 @@ sub make_filespec {
 sub glob_files {
     my $self = shift;
     my $pattern = shift || q{*};
-    return glob( File::Spec->catfile( $self->path, $pattern ) );
+    my @results = bsd_glob( File::Spec->catfile( $self->path, $pattern ) );
+    
+    return @results unless File::Glob::GLOB_ERROR;
+    
+    croak "Error while globbing pattern '$pattern': $!";
+    
 }
 
 sub glob_plain_files {
