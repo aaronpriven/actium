@@ -1234,7 +1234,7 @@ sub output_points {
     }
 
 
-    print OUT "See something wrong with this sign, or any other AC Transit sign? Let us know! Send email to signs\@actransit.org or call 511 to comment. Thanks!\r" if lc($signtypes{$signs{$signid}{SignType}}{GenerateWrongText}) eq "yes";
+    print OUT "See something wrong with this sign, or any other AC Transit sign? Let us know! Leave a comment at www.actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r" if lc($signtypes{$signs{$signid}{SignType}}{GenerateWrongText}) eq "yes";
     
     
     
