@@ -543,7 +543,7 @@ sub format_side {
 #}
 
     print $sidefh
-"See something wrong with this sign, or any other AC Transit sign? Let us know! Send email to signs\@actransit.org or call 511 to comment. Thanks!\r"
+"See something wrong with this sign, or any other AC Transit sign? Let us know! Leave a comment at www.actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
       if lc(
         $Actium::Cmd::MakePoints::signtypes{
             $Actium::Cmd::MakePoints::signs{$signid}{SignType}
