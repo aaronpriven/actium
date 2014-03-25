@@ -49,7 +49,14 @@ FPread_simple ("Skedidx.csv" , \@idx, \%idx, 'SkedID');
 my %seen;
 foreach my $idx (@idx) {
    my @lines = split ("\c]" , $idx->{Lines});
-   $seen{$_} = 1 foreach @lines;
+   foreach (@lines) {
+      if (defined($_) and $_ ne '') {
+      $seen{$_} = 1;
+      
+#      } else {
+#          say "Bad lines: @lines";
+      }
+   }
 }
 
 my @lines = sortbyline keys %seen;
