@@ -10,16 +10,25 @@ package Actium::Files::Hxml2tsv 0.003;
 use Actium::Preamble;
 use XML::Parser;
 
+use Actium::Term;
+
 my %xml_file_info = (
     stops => {
-        old_fieldname_of => {
-            qw(
-              loca_latitude        stp_avl_lat
-              loca_longitude       stp_avl_long
-              stp_is_inservice     stp_in_service
-              )
-        },
+        old_fieldname_of => {},
+        #   I never used stops in thea import
+        #   so I don't need to maintain old fieldnames
+        #        old_fieldname_of => {
+        #            qw(
+        #              loca_latitude        stp_avl_lat
+        #              loca_longitude       stp_avl_long
+        #              stp_is_inservice     stp_in_service
+        #              )
+        #        },
         record_element => 'stop',
+    },
+    places => {
+        old_fieldname_of => {},
+        record_element   => 'place',
     },
 );
 
@@ -36,11 +45,14 @@ sub convert_xml_in_folder {
     my %results;
 
     foreach my $xmlfile (@xmlfiles) {
+        
+        emit "Processing $xmlfile";
+
         my ( $filenamepart, $ext ) = Actium::Util::file_ext($xmlfile);
 
         my $xml_file_info = $xml_file_info{$filenamepart};
         next unless $xml_file_info;
-
+        
         my ( $headers_r, $records_r )
           = _parse_xml_file( $xmlfile, $xml_file_info );
 
@@ -48,11 +60,13 @@ sub convert_xml_in_folder {
             headers => $headers_r,
             records => $records_r,
         };
+        
+        emit_done;
 
     }
 
     return %results;
-} ## tidy end: sub convert_xml
+} ## tidy end: sub convert_xml_in_folder
 
 sub _parse_xml_file {
 
@@ -143,9 +157,10 @@ End of $record_element - mark end of record.
                 expat        => $expat,
             );
         }
-        
+
         if ( $data_buffer ne $EMPTY_STR and $data_buffer !~ /\A\s+\z/ ) {
-            croak "Character data [$data_buffer] found inside $record_element element at "
+            croak
+"Character data [$data_buffer] found inside $record_element element at "
               . _error_loc( $expat, $xmlfile );
         }
 
@@ -234,6 +249,8 @@ End of $record_element - mark end of record.
         }
 
         if ( defined $current_fieldnum ) {
+            $data_buffer =~ s/\A\s+//;
+            $data_buffer =~ s/\s+\z//;
             $this_record[$current_fieldnum] = $data_buffer;
             $data_buffer = $EMPTY_STR;
             undef $current_fieldnum;
@@ -251,18 +268,18 @@ End of $record_element - mark end of record.
         return;
     };
 
-     my $parser = XML::Parser->new(
+    my $parser = XML::Parser->new(
         Handlers => {
             Start => $start_of_tag_handler,
             End   => $end_of_tag_handler,
             Char  => $char_handler,
         }
-    );  
-    
+    );
+
     $parser->parsefile($xmlfile);
-    
-    return \@fields,\@records;
-    
+
+    return \@fields, \@records;
+
 } ## tidy end: sub _parse_xml_file
 
 sub _error_tag {

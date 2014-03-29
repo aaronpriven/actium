@@ -35,6 +35,8 @@ BEGIN {
         [qw[Scalar::Util blessed reftype looks_like_number]],
         [qw[autodie]],
         [qw[feature :5.16]],
+        ['open' ,  IO => ':encoding(utf-8)'],
+        [qw[open :std]],
         [qw[strict]],
         [qw[utf8]],
         [qw[warnings]],
