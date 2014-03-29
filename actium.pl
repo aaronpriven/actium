@@ -69,6 +69,7 @@ my %module_of = (
     linedescrip     => 'LineDescrip',
     decalcount => 'DecalCount',
     xml2thea        => 'Xml2Thea',
+    xheaimport => 'XheaImport',
                                             # more to come
 );
 
