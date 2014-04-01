@@ -12,6 +12,7 @@ use Actium::Preamble;
 use Actium::Term;
 
 use Actium::Util('file_ext');
+use List::MoreUtils('pairwise');
 
 use XML::Pastor;
 
@@ -46,48 +47,111 @@ sub load_into_objs {
 
         my $model = ( $newprefix . '::Pastor::Meta' )->Model;
 
-        my %element_obj_of = %{$model->element};
-        
+        my %element_obj_of = %{ $model->element };
+
         emit "Building element tree";
-        
-        my @tree_display;
-        
-        while ( my ( $top_element, $top_element_obj ) = each %element_obj_of ) {
-            
-            my $top_class = $model->xml_item_class($top_element);
-            
-            
-                    #         emit "Loading $top_class from file $filename.xml";
-        # my $xml_data = $top_class->from_xml_file($xml);
-        # emit_done;
 
-            my $top_type = $top_element_obj->type;
+        my ( @queue, %tree );
 
-            my %type_of_subelement = _subelements( $model, $top_type );
-            
-            push @tree_display, "$top_element: $top_type";
+        foreach my $element ( keys %element_obj_of ) {
+            push @queue, [ $element, $element_obj_of{$element}, \%tree ];
+        }
 
-            while ( my ( $container, $containertype )
-                = each %type_of_subelement )
-            {
+        while (@queue) {
+            my ( $element, $element_obj, $parent_hr ) = @{ shift @queue };
 
-                push @tree_display, "    $container: $containertype";
+            my $type     = $element_obj->type;
+            my $type_obj = $model->type->{$type};
+            # FIX -- ONLY NON-BASE CLASSES HAVE TYPE OBJECTS
+            my $base     = $type_obj->base;
 
-                my %type_of_simple = _subelements( $model, $containertype );
+            if ( $type_obj->contentType eq 'complex' ) {
+                my $children_hr = {};
+                $parent_hr->{$element} = {
+                    complex  => 1,
+                    base     => $base,
+                    type     => $type,
+                    children => $children_hr
+                };
 
-                while ( my ( $simple, $simpletype ) = each %type_of_simple ) {
-                    push @tree_display, "        $simple: $simpletype";
+                my %elementInfo_of = %{$type_obj->effectiveElementInfo};
+
+                foreach my $subelement ( keys %elementInfo_of ) {
+                    push @queue,
+                      [ $subelement, $elementInfo_of{$subelement}, $children_hr ];
                 }
 
             }
+            else {
+                $parent_hr->{$element}
+                  = { complex => 0, base => $base, type => $type };
+            }
 
-        } ## tidy end: while ( my ( $top_element...))
+        } ## tidy end: while (@queue)
 
-        emit_text jn(@tree_display);
+#
+#        my $value_of_element_cr = sub {
+#
+#            my ($element_obj) = shift;
+#            my $type          = $element_obj->type;
+#            my $type_obj      = $model->type->{$type};
+#            my $base          = $type_obj->base;
+#
+#            my $content;
+#            if ( $type_obj->contentType eq 'complex' ) {
+#
+#                my %elementinfo_of = $type_obj->effectiveElementInfo;
+#
+#                while ( my ( $element, $element_obj ) = each %elementinfo_of ) {
+#                    $content = __SUB__->( $element_obj );
+#                }
+#
+#            }
+#            else {
+#                $content = 'simple - real data to go here';
+#            }
+#
+#            return { type => $type, base => $base, content => $content };
+#
+#        };
+#
+#        while ( my ( $top_element, $top_element_obj ) = each %element_obj_of ) {
+#            my $value = _value_of_element( $model, $top_element_obj );
+#            push @tree, { $top_element => $value };
+#        }
+
+#        my @tree_display;
+#        while ( my ( $top_element, $top_element_obj ) = each %element_obj_of ) {
+#
+#            my $top_class = $model->xml_item_class($top_element);
+#
+#            my $top_type = $top_element_obj->type;
+#
+#            my %type_of_subelement = _subelements( $model, $top_type );
+#
+#            push @tree_display, "$top_element: $top_type";
+#
+#            while ( my ( $container, $containertype )
+#                = each %type_of_subelement )
+#            {
+#
+#                push @tree_display, "    $container: $containertype";
+#
+#                my %type_of_simple = _subelements( $model, $containertype );
+#
+#                while ( my ( $simple, $simpletype ) = each %type_of_simple ) {
+#                    push @tree_display, "        $simple: $simpletype";
+#                }
+#
+#            }
+#
+#        } ## tidy end: while ( my ( $top_element...))
+#        emit_text jn(@tree_display);
+
+require Data::Dumper;
+say Dumper(\%tree);
 
         emit_done;
-
-
 
         emit_done;
 
@@ -100,11 +164,11 @@ sub _subelements {
 
     my ( $model, $type ) = @_;
     my $elementInfo = $model->type->{$type}->elementInfo;
-    
+
     my %type_of_subelement;
-    
-    while ( my ($subelement, $subelementinfo) = each %{$elementInfo} ) {
-        
+
+    while ( my ( $subelement, $subelementinfo ) = each %{$elementInfo} ) {
+
         $type_of_subelement{$subelement} = $subelementinfo->type;
     }
 
