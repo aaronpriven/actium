@@ -10,6 +10,8 @@ use warnings;
 use Actium::Preamble;
 use Actium::Sorting::Line('sortbyline');
 use Actium::EffectiveDate('effectivedate');
+
+use Params::Validate;
 use HTML::Entities;
 
 use Sub::Exporter -setup =>
@@ -45,7 +47,7 @@ sub line_descrips_by_class {
 }
 
 sub line_descrip_html {
-
+    
     my %params = validate(
         @_,
         {   database => 1,
@@ -53,10 +55,13 @@ sub line_descrip_html {
             version  => 1,
         }
     );
+    
+    my ($xml_db, $signup, $current_version) = 
+       @params{qw[database signup version]};
 
-    my $xml_db          = $params{database};
-    my $signup          = $params{signup};
-    my $current_version = $params{version};
+    #my $xml_db          = $params{database};
+    #my $signup          = $params{signup};
+    #my $current_version = $params{version};
 
     my $effdate = effectivedate($signup);
 

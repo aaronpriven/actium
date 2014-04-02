@@ -29,7 +29,8 @@ BEGIN {
         [qw[List::MoreUtils any all none notall natatime uniq]],
         [qw[List::Util first max min maxstr minstr sum]],
         [qw[POSIX ceil floor]],
-        [qw[Params::Validate :all]],
+#       [qw[Params::Validate :all]], 
+# Params::Validate was removed -- too many constants imported
         [qw[Module::Runtime require_module]],
         [qw[Unicode::Normalize NFC NFD]],
         [qw[Scalar::Util blessed reftype looks_like_number]],
