@@ -313,14 +313,14 @@ sub make_filespec {
 }
 
 sub glob_files {
-    my $self = shift;
+    my $self    = shift;
     my $pattern = shift || q{*};
     my @results = bsd_glob( File::Spec->catfile( $self->path, $pattern ) );
-    
+
     return @results unless File::Glob::GLOB_ERROR;
-    
+
     croak "Error while globbing pattern '$pattern': $!";
-    
+
 }
 
 sub glob_plain_files {
@@ -355,6 +355,23 @@ sub mergeread {
     return Actium::Files::Merge::Mergefiles->mergeread($filespec);
 }
 
+sub slurp_write {
+
+    my $self     = shift;
+    my $string   = shift;
+    my $filename = shift;
+    my $filespec = $self->make_filespec($filename);
+
+    emit("Writing $filename...");
+
+    require File::Slurp::Tiny;
+    File::Slurp::Tiny::write_file( $filespec, $string,
+         binmode => ':encoding(UTF-8)'  );
+
+    emit_done;
+
+}
+
 sub json_retrieve {
     my $self     = shift;
     my $filename = shift;
@@ -365,12 +382,11 @@ sub json_retrieve {
 
     emit("Retrieving $filename");
 
-    require File::Slurp;
-
-    my $json_text = File::Slurp::read_file($filespec);
+    require File::Slurp::Tiny;
+    my $json_text = File::Slurp::Tiny::read_file( $filespec,
+         binmode => ':encoding(UTF-8)'  );
 
     require JSON;
-
     my $data_r = JSON::from_json($json_text);
 
     emit_done;
@@ -390,9 +406,10 @@ sub json_store {
 
     require JSON;
     my $json_text = JSON::to_json($data_r);
-    require File::Slurp;
 
-    File::Slurp::write_file( $filespec, $json_text );
+    require File::Slurp::Tiny;
+    File::Slurp::Tiny::write_file( $filespec, $json_text,
+         binmode => ':encoding(UTF-8)'  );
 
     emit_done;
 
@@ -410,8 +427,9 @@ sub json_store_pretty {
     require JSON;
     my $json_text = JSON::to_json( $data_r, { pretty => 1, canonical => 1 } );
 
-    require File::Slurp;
-    File::Slurp::write_file( $filespec, $json_text );
+    require File::Slurp::Tiny;
+    File::Slurp::Tiny::write_file( $filespec, $json_text,
+         binmode => ':encoding(UTF-8)' );
 
     emit_done;
 
@@ -681,7 +699,7 @@ sub write_files_from_hash {
 
 } ## tidy end: sub write_files_from_hash
 
-__PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
+__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
 

@@ -19,14 +19,16 @@ use XML::Pastor;
 
 const my $prefix => 'Actium::O::Files::Xhea';
 
-sub load_into_objs {
+sub load {
 
-    my $xheafolder     = shift;
+    my $xheafolder = shift;
+    my $tfolder    = $xheafolder->subfolder('t');
+
     my @xhea_filenames = _get_xhea_filenames($xheafolder);
 
     my $pastor = XML::Pastor->new();
 
-    my %results;
+    my ( %fields_of, %values_of );
 
     foreach my $filename (@xhea_filenames) {
 
@@ -49,31 +51,126 @@ sub load_into_objs {
         my $model  = ( $newprefix . '::Pastor::Meta' )->Model;
         my $tree_r = _build_tree($model);
 
-        _check_tree( $tree_r, $filename );
+        my ( $records_of_r, $fields_of_r )
+          = _records_and_fields( $tree_r, $filename );
 
-        %results = (
-            %results,
-            _get_values(
-                xmlfile  => $xml,
-                filename => $filename,
-                model    => $model,
-                tree     => $tree_r
-            )
+        %fields_of = ( %fields_of, %{$fields_of_r} );
+
+        my $newvalues_r = _load_values(
+            tree       => $tree_r,
+            model      => $model,
+            xmlfile    => $xml,
+            records_of => $records_of_r,
+            fields_of  => $fields_of_r,
+            filename   => $filename,
+            tfolder    => $tfolder,
         );
+
+        %values_of = ( %values_of, %{$newvalues_r} );
 
         emit_done;
 
     } ## tidy end: foreach my $filename (@xhea_filenames)
 
-    return %results;
-} ## tidy end: sub load_into_objs
+    #$tfolder->json_store_pretty( \%fields_of, 'records.json' );
+    
+    
+   emit "Dumping fields to fields.dump";
+   $tfolder->slurp_write( _dumped(\%fields_of), "fields.dump" );
+   emit_done;
 
-sub _check_tree {
+   emit "Dumping values to values.dump";
+   $tfolder->slurp_write( _dumped(\%values_of), "values.dump" );
+   emit_done;
+
+    return ( \%fields_of, \%values_of );
+
+} ## tidy end: sub load
+
+sub _load_values {
+
+    my %p = validate(
+        @_,
+        {   tree       => 1,
+            model      => 1,
+            fields_of  => 1,
+            records_of => 1,
+            xmlfile    => 1,
+            filename   => 1,
+            tfolder    => 1,
+        }
+    );
+
+    my %values_of;
+
+    for my $table_name ( keys %{ $p{tree} } ) {
+        my $table_class = $p{model}->xml_item_class($table_name);
+        emit "Loading $table_name from $p{filename}.xml";
+        my $table = $table_class->from_xml_file( $p{xmlfile} );
+        emit_done;
+
+        #emit "Dumping $table_name objects to ${table_name}-obj.dump";
+        #$p{tfolder}->slurp_write( _dumped($table), "${table_name}-obj.dump" );
+        #emit_done;
+        
+        emit "Processing $table_name into records";
+
+        for my $record_name ( @{ $p{records_of}{$table_name} } ) {
+            
+            say $record_name;
+
+            my @field_names = sort keys %{ $p{fields_of}{$record_name} };
+
+            my %index_of;
+            $index_of{$_} = $p{fields_of}{$record_name}{$_}{idx}
+              foreach @field_names;
+
+            my @record_objs = @{ $table->$record_name }  ;
+
+            foreach my $record_obj ( @record_objs ) {
+                my @record_data;
+                while ( my ( $field_name, $idx ) = each %index_of ) {
+                    $record_data[$idx] = $record_obj->$field_name->__value();
+                }
+                push @{ $values_of{$record_name} }, \@record_data;
+            }
+
+        }
+        
+        #emit "Dumping $table_name values to ${table_name}-values.dump";
+        #$p{tfolder}->slurp_write( _dumped(\%values_of), "${table_name}-values.dump" );
+        #emit_done;
+
+        emit_done;
+
+    } ## tidy end: for my $table_name ( keys...)
+
+    
+    return \%values_of;
+
+} ## tidy end: sub _load_values
+
+sub _records_and_fields {
+
+    # Hastus exports XML files with three levels:
+    # table level (contains records)
+    # record level (contains fields), and field level (contains field data).
+    # So far there has been only one table per table level
+    # and one type of record per record level.
+    # This allows more than table and more than one kind of
+    # record per table (although names of all record types must be unique
+    # across all tables ).
+    # However, it does not allow any variations on what the levels are.
+
     my ( $tree_r, $filename ) = @_;
 
     $filename = "$filename.xsd";
 
+    my %fields_of;
+    my %records_of;
+
     for my $table ( keys %{$tree_r} ) {
+        emit_over "table: $table";
 
         if ( not $tree_r->{$table}{has_subelements} ) {
             _unexpected_croak(
@@ -83,51 +180,71 @@ sub _check_tree {
                     filename     => $filename,
                 }
             );
+        }
 
-            my %info_of_record = %{ $tree_r->{children} };
-            for my $record ( keys %info_of_record ) {
+        my %info_of_record = %{ $tree_r->{$table}{children} };
 
-                if ( not $info_of_record{$record}{has_subelements} ) {
+        for my $record ( keys %info_of_record ) {
+            emit_over "record: $record";
+
+            if ( not $info_of_record{$record}{has_subelements} ) {
+
+                _unexpected_croak(
+                    {   foundtype    => 'data field',
+                        foundname    => $record,
+                        expectedtype => 'record',
+                        filename     => $filename,
+                    }
+                );
+
+                croak qq[Unexpected data field "$record" ]
+                  . qq[where record expected in $filename];
+            }
+
+            push @{ $records_of{$table} }, $record;
+
+            my %info_of_field = %{ $info_of_record{$record}{children} };
+
+            my $field_idx = 0;
+
+            for my $field ( sort keys %info_of_field ) {
+                emit_over "field: $field";
+
+                if ( $info_of_record{$field}{has_subelements} ) {
 
                     _unexpected_croak(
-                        {   foundtype    => 'data field',
-                            foundname    => $record,
-                            expectedtype => 'record',
+                        {   foundtype    => 'record',
+                            foundname    => $field,
+                            expectedtype => 'field',
                             filename     => $filename,
                         }
                     );
 
-                    croak qq[Unexpected data field "$record" ]
-                      . qq[where record expected in $filename];
                 }
 
-                my %info_of_field = %{ $info_of_record{children} };
+                my %info_of_field
+                  = %{ $info_of_record{$record}{children}{$field} };
 
-                for my $field ( keys %info_of_field ) {
+                my $base = $info_of_field{base} // $info_of_field{type};
+                my $type = $info_of_field{type};
 
-                    if ( $info_of_record{$field}{has_subelements} ) {
-
-                        _unexpected_croak(
-                            {   foundtype    => 'record',
-                                foundname    => $field,
-                                expectedtype => 'field',
-                                filename     => $filename,
-                            }
-                        );
-
-                    }
-
+                for ( $base, $type ) {
+                    s{\Q|http://www.w3.org/2001/XMLSchema\E\z}{};
                 }
 
-            } ## tidy end: for my $record ( keys %info_of_record)
+                $fields_of{$record}{$field}
+                  = { base => $base, type => $type, idx => $field_idx };
 
-        } ## tidy end: if ( not $tree_r->{$table...})
+                $field_idx++;
+            } ## tidy end: for my $field ( sort keys...)
 
-        return;
+        } ## tidy end: for my $record ( keys %info_of_record)
 
     } ## tidy end: for my $table ( keys %{...})
 
-}
+    return \%records_of, \%fields_of;
+
+} ## tidy end: sub _records_and_fields
 
 sub _unexpected_croak {
 
@@ -144,78 +261,15 @@ sub _unexpected_croak {
       . qq[where $p{expectedtype} expected in $p{filename}];
 }
 
-#sub _get_values {
-#
-#    # Hastus exports XML files with three levels:
-#    # table level (contains records)
-#    # record level (contains fields), and field level (contains field data).
-#    # So far there has been only one table per table level
-#    # and one type of record per record level.
-#    # This allows more than table and more than one kind of
-#    # record per table (although names of all record types must be unique
-#    # across all xml files read).
-#    # However, it does not allow any variations on what the levels are.
-#
-#    my %p = validate(
-#        @_,
-#        {   tree     => { type => HASHREF },
-#            model    => { type => HASHREF },
-#            xmlfile  => { type => SCALAR },
-#            filename => { type => SCALAR },
-#        }
-#    );
-#
-#    my %tree = %{ $p{tree} };
-#
-#    my %results;
-#
-#    foreach my $table ( keys %tree ) {         # normally juse one
-#        my $table_class    = $p{model}->xml_item_class($table);
-#        my %info_of_record = %{ $tree{children} };
-#
-#        my $value_tree = $table_class->from_xml_file( $p{xmlfile} );
-#
-#        my %index_of_field;
-#        foreach my $record ( keys %info_of_record ) {
-#
-#            if ( not exists $index_of_field{$record} ) {
-#
-#               if ($info_of_record{has_subelements}) {
-#                croak qq[Unexpected data field "$record" ] . qq[where record expected in $p{filename}.xsd];
-#               }
-#
-#               $index_of_field{$record} = {};
-#
-#
-#                my ( @fields, @basetypes );
-#                my %info_of_field = %{$info_of_record{$field}{children} };
-#
-#                foreach
-#                  my $field ( keys %info_of_field )
-#                {
-#
-#
-#
-#
-#                  }
-#
-#
-#
-#            }
-#
-#        }
-#
-#    }
-#
-#    return %results;
-#
-#} ## tidy end: sub _get_values
-
-sub _mydump {
+sub _dumped {
     require Data::Dumper;
     local $Data::Dumper::Indent   = 1;
     local $Data::Dumper::Sortkeys = 1;
-    say Dumper (@_);
+    return Dumper(@_);
+}
+
+sub _mydump {
+    say _dumped(@_);
 }
 
 sub _build_tree {
@@ -382,3 +436,56 @@ __END__
 #
 #        } ## tidy end: while ( my ( $top_element...))
 #        emit_text jn(@tree_display);
+
+
+
+
+#sub _get_values {
+#
+
+#
+#    my %tree = %{ $p{tree} };
+#
+#    my %results;
+#
+#    foreach my $table ( keys %tree ) {         # normally juse one
+#        my $table_class    = $p{model}->xml_item_class($table);
+#        my %info_of_record = %{ $tree{children} };
+#
+#        my $value_tree = $table_class->from_xml_file( $p{xmlfile} );
+#
+#        my %index_of_field;
+#        foreach my $record ( keys %info_of_record ) {
+#
+#            if ( not exists $index_of_field{$record} ) {
+#
+#               if ($info_of_record{has_subelements}) {
+#                croak qq[Unexpected data field "$record" ] . qq[where record expected in $p{filename}.xsd];
+#               }
+#
+#               $index_of_field{$record} = {};
+#
+#
+#                my ( @fields, @basetypes );
+#                my %info_of_field = %{$info_of_record{$field}{children} };
+#
+#                foreach
+#                  my $field ( keys %info_of_field )
+#                {
+#
+#
+#
+#
+#                  }
+#
+#
+#
+#            }
+#
+#        }
+#
+#    }
+#
+#    return %results;
+#
+#} ## tidy end: sub _get_values
