@@ -29,7 +29,7 @@ use Sub::Exporter -setup => {
           keyreadable         keyunreadable
           doe
           isblank             isnotblank
-          tabulate
+          tabulate            aoa2tsv
           filename            file_ext
           remove_leading_path flatten
           linegroup_of        
@@ -215,6 +215,26 @@ sub tabulate {
     return \@lines;
 
 } ## tidy end: sub tabulate
+
+sub aoa2tsv {
+    # array of arrays to a single string of tab-separated-values,
+    # suitable for something like File::Slurp::write_file
+    
+    my $aoa_r = shift;
+    my @headers = flatten(@_);
+    
+    my @lines;
+    push @lines, jt (@headers);
+    
+    foreach my $array (@{$aoa_r}) {
+        push @lines, jt(@{$array});   
+    }
+    
+    my $str = jn(@lines) . "\n";
+    
+    return $str;
+
+}
 
 sub doe {
     my @list = @_;
