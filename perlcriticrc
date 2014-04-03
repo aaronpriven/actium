@@ -7,6 +7,12 @@ allow_includes = 1
 [ErrorHandling::RequireCarping]
 allow_in_main_unless_in_subroutine = 1
 
+[TestingAndDebugging::RequireUseWarnings]
+equivalent_modules = Actium::Preamble
+
+[TestingAndDebugging::RequireUseStrict]
+equivalent_modules = Actium::Preamble
+
 [TestingAndDebugging::ProhibitNoStrict]
 allow = vars subs refs
 
@@ -19,6 +25,9 @@ minimum_regex_length_to_complain_about = 9
 [ValuesAndExpressions::ProhibitMagicNumbers]
 allowed_values = 0 1 2 -1
 severity = 1
+
+[InputOutput::RequireCheckedSyscalls]
+exclude_functions = print say
 
 [Subroutines::ProhibitExcessComplexity]
 severity = 1

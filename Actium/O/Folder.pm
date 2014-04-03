@@ -670,8 +670,6 @@ sub write_files_from_hash {
         $extension = $EMPTY_STR;
     }
 
-    my $count;
-
     emit( "Writing $filetype files to " . $self->display_path );
 
     foreach my $key ( sort keys %hash ) {
