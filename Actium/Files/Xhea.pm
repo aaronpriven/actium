@@ -8,72 +8,101 @@
 
 package Actium::Files::Xhea 0.003;
 
+## no critic (ProhibitAmbiguousNames)
+
 use Actium::Preamble;
 use Actium::Term;
 
 use Params::Validate(':all');
-use Actium::Util('file_ext');
+use Actium::Util(qw/file_ext aoa2tsv/);
 use List::MoreUtils('pairwise');
 
 use XML::Pastor;
 
-const my $prefix => 'Actium::O::Files::Xhea';
+const my $PREFIX => 'Actium::O::Files::Xhea';
+
+sub tab_strings {
+
+    my ( $fieldnames_of_r, $fields_of_r, $values_of_r ) = (@_);
+    my %tab_of;
+
+    emit 'Processing XHEA data into tab-delimited text';
+
+    foreach my $record_name ( keys %{$fields_of_r} ) {
+        
+        my $fieldnames_r = $fieldnames_of_r->{$record_name};
+        
+        my $records_r = $values_of_r->{$record_name};
+        
+        $tab_of{$record_name} = aoa2tsv($records_r, $fieldnames_r);
+
+    }
+
+    emit_done;
+
+    return \%tab_of;
+
+} ## tidy end: sub tab_strings
 
 sub load_adjusted {
 
-    my ($fields_of_r , $values_of_r )= load(@_);
-    my $adjusted_values_of_r = adjust_for_basetype($fields_of_r, $values_of_r);
-    return ($fields_of_r, $adjusted_values_of_r);
-    
+    my ( $fieldnames_of_r , $fields_of_r, $values_of_r ) = load(@_);
+    my $adjusted_values_of_r
+      = adjust_for_basetype( $fields_of_r, $values_of_r );
+    return ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r );
+
 }
 
 sub adjust_for_basetype {
-    
-    my ($fields_of_r , $values_of_r )= (@_);
+
+    my ( $fields_of_r, $values_of_r ) = (@_);
     my %adjusted_values_of;
-    
-    foreach my $record_name (keys %{$fields_of_r}) {
-        
-        foreach my $record (@{$values_of_r->{$record_name}}) {
-            
+
+    emit 'Adjusting XHEA data for its base type';
+
+    foreach my $record_name ( keys %{$fields_of_r} ) {
+
+        foreach my $record ( @{ $values_of_r->{$record_name} } ) {
+
             my @adjusted_record;
-            
-            foreach my $field_name (sort keys %{$fields_of_r->{$record_name}}) {
-                
-                my $idx = $fields_of_r->{$record_name}{$field_name}{idx};
+
+            foreach
+              my $field_name ( sort keys %{ $fields_of_r->{$record_name} } )
+            {
+
+                my $idx      = $fields_of_r->{$record_name}{$field_name}{idx};
                 my $adjusted = $record->[$idx];
-                
+
                 my $base = $fields_of_r->{$record_name}{$field_name}{base};
 
-                if ($base eq 'string' or $base eq 'normalizedString') {
-                    $adjusted =~ s/\A\s+//;
-                    $adjusted =~ s/\s+\z//;
+                if ( $base eq 'string' or $base eq 'normalizedString' ) {
+                    $adjusted =~ s/\A\s+//s;
+                    $adjusted =~ s/\s+\z//s;
                 }
-                elsif ($base eq 'boolean') {
-                    if ($adjusted eq 'true') {
+                elsif ( $base eq 'boolean' ) {
+                    if ( $adjusted eq 'true' ) {
                         $adjusted = 1;
-                    } elsif ($adjusted eq 'false') {
+                    }
+                    elsif ( $adjusted eq 'false' ) {
                         $adjusted = 0;
                     }
                 }
-                
+
                 $adjusted_record[$idx] = $adjusted;
-                
-            }
-            
-            push @{$adjusted_values_of{$record_name}}, \@adjusted_record;
-            
-        }
-        
-    }
-    
-   #emit "Dumping adjusted values to adjusted.dump";
-   #$tfolder->slurp_write( _dumped(\%adjusted_values_of), "adjusted.dump" );
-   #emit_done;
+
+            } ## tidy end: foreach my $field_name ( sort...)
+
+            push @{ $adjusted_values_of{$record_name} }, \@adjusted_record;
+
+        } ## tidy end: foreach my $record ( @{ $values_of_r...})
+
+    } ## tidy end: foreach my $record_name ( keys...)
+
+    emit_done;
 
     return \%adjusted_values_of;
-    
-}
+
+} ## tidy end: sub adjust_for_basetype
 
 sub load {
 
@@ -84,17 +113,19 @@ sub load {
 
     my $pastor = XML::Pastor->new();
 
-    my ( %fields_of, %values_of );
+    my ( %fieldnames_of , %fields_of, %values_of );
+
+    emit 'Loading XHEA files';
 
     foreach my $filename (@xhea_filenames) {
 
         emit "Processing $filename";
 
-        emit "Generating classes from XSD";
+        emit 'Generating classes from XSD';
 
         my $xsd       = $xheafolder->make_filespec("$filename.xsd");
         my $xml       = $xheafolder->make_filespec("$filename.xml");
-        my $newprefix = $prefix . "::$filename";
+        my $newprefix = $PREFIX . "::$filename";
 
         $pastor->generate(
             mode         => 'eval',
@@ -107,9 +138,10 @@ sub load {
         my $model  = ( $newprefix . '::Pastor::Meta' )->Model;
         my $tree_r = _build_tree($model);
 
-        my ( $records_of_r, $fields_of_r )
+        my ( $fieldnames_of_r, $records_of_r, $fields_of_r )
           = _records_and_fields( $tree_r, $filename );
 
+        %fieldnames_of = ( %fieldnames_of, %{$fieldnames_of_r} );
         %fields_of = ( %fields_of, %{$fields_of_r} );
 
         my $newvalues_r = _load_values(
@@ -129,16 +161,10 @@ sub load {
     } ## tidy end: foreach my $filename (@xhea_filenames)
 
     #$tfolder->json_store_pretty( \%fields_of, 'records.json' );
-    
-   #emit "Dumping fields to fields.dump";
-   #$tfolder->slurp_write( _dumped(\%fields_of), "fields.dump" );
-   #emit_done;
 
-   #emit "Dumping values to values.dump";
-   #$tfolder->slurp_write( _dumped(\%values_of), "values.dump" );
-   #emit_done;
+    emit_done;
 
-    return ( \%fields_of, \%values_of );
+    return ( \%fieldnames_of , \%fields_of, \%values_of );
 
 } ## tidy end: sub load
 
@@ -167,12 +193,10 @@ sub _load_values {
         #emit "Dumping $table_name objects to ${table_name}-obj.dump";
         #$p{tfolder}->slurp_write( _dumped($table), "${table_name}-obj.dump" );
         #emit_done;
-        
+
         emit "Processing $table_name into records";
 
         for my $record_name ( @{ $p{records_of}{$table_name} } ) {
-            
-            say $record_name;
 
             my @field_names = sort keys %{ $p{fields_of}{$record_name} };
 
@@ -180,9 +204,9 @@ sub _load_values {
             $index_of{$_} = $p{fields_of}{$record_name}{$_}{idx}
               foreach @field_names;
 
-            my @record_objs = @{ $table->$record_name }  ;
+            my @record_objs = @{ $table->$record_name };
 
-            foreach my $record_obj ( @record_objs ) {
+            foreach my $record_obj (@record_objs) {
                 my @record_data;
                 while ( my ( $field_name, $idx ) = each %index_of ) {
                     $record_data[$idx] = $record_obj->$field_name->__value();
@@ -191,21 +215,22 @@ sub _load_values {
             }
 
         }
-        
-        #emit "Dumping $table_name values to ${table_name}-values.dump";
-        #$p{tfolder}->slurp_write( _dumped(\%values_of), "${table_name}-values.dump" );
-        #emit_done;
+
+ #emit "Dumping $table_name values to ${table_name}-values.dump";
+ #$p{tfolder}->slurp_write( _dumped(\%values_of), "${table_name}-values.dump" );
+ #emit_done;
 
         emit_done;
 
     } ## tidy end: for my $table_name ( keys...)
 
-    
     return \%values_of;
 
 } ## tidy end: sub _load_values
 
 sub _records_and_fields {
+
+    emit 'Processing XSD into record and field information';
 
     # Hastus exports XML files with three levels:
     # table level (contains records)
@@ -223,6 +248,7 @@ sub _records_and_fields {
 
     my %fields_of;
     my %records_of;
+    my %fieldnames_of;
 
     for my $table ( keys %{$tree_r} ) {
         emit_over "table: $table";
@@ -259,8 +285,11 @@ sub _records_and_fields {
             my %info_of_field = %{ $info_of_record{$record}{children} };
 
             my $field_idx = 0;
+            
+            my @fieldnames = sort keys %info_of_field;
+            $fieldnames_of{$record} = \@fieldnames;
 
-            for my $field ( sort keys %info_of_field ) {
+            for my $field ( @fieldnames) {
                 emit_over "field: $field";
 
                 if ( $info_of_record{$field}{has_subelements} ) {
@@ -275,14 +304,15 @@ sub _records_and_fields {
 
                 }
 
-                my %info_of_field
+                my %info_of_this_field
                   = %{ $info_of_record{$record}{children}{$field} };
 
-                my $base = $info_of_field{base} // $info_of_field{type};
-                my $type = $info_of_field{type};
+                my $base = $info_of_this_field{base}
+                  // $info_of_this_field{type};
+                my $type = $info_of_this_field{type};
 
                 for ( $base, $type ) {
-                    s{\Q|http://www.w3.org/2001/XMLSchema\E\z}{};
+                    s{\Q|http://www.w3.org/2001/XMLSchema\E\z}{}sx;
                 }
 
                 $fields_of{$record}{$field}
@@ -295,7 +325,9 @@ sub _records_and_fields {
 
     } ## tidy end: for my $table ( keys %{...})
 
-    return \%records_of, \%fields_of;
+    emit_done;
+
+    return \%fieldnames_of , \%records_of, \%fields_of;
 
 } ## tidy end: sub _records_and_fields
 
@@ -323,13 +355,14 @@ sub _dumped {
 
 sub _mydump {
     say _dumped(@_);
+    return;
 }
 
 sub _build_tree {
 
     my $model = shift;
 
-    emit " Building element tree ";
+    emit 'Building element tree';
 
     my %element_obj_of = %{ $model->element };
 
@@ -362,11 +395,11 @@ sub _build_tree {
                 children        => $children_hr
             };
 
-            my %elementInfo_of = %{ $type_obj->effectiveElementInfo };
+            my %element_info_of = %{ $type_obj->effectiveElementInfo };
 
-            foreach my $subelement ( keys %elementInfo_of ) {
+            foreach my $subelement ( keys %element_info_of ) {
                 push @queue,
-                  [ $subelement, $elementInfo_of{$subelement}, $children_hr ];
+                  [ $subelement, $element_info_of{$subelement}, $children_hr ];
             }
 
         }
@@ -404,7 +437,7 @@ sub _get_xhea_filenames {
     # so @xhea_filenames contains filename piece of all filenames where
     # there is both an .xsd and .xml file
 
-    croak " No xsd / xml file pairs found when trying to import xhea files "
+    croak 'No xsd / xml file pairs found when trying to import xhea files'
       unless @xhea_filenames;
 
     return @xhea_filenames;
@@ -557,6 +590,13 @@ or possibly other adjustments should that prove necessary.
 
 Equivalent to adjust_for_basetype(load(...))
 
+=item B<tab_strings(I<$fields_r>, I<$values_r>)>
+
+Takes the result of I<load> or I<load_adjusted> and changes them into 
+a hash, where the keys are the record types and the values are 
+strings. Records are separated by line feeds and fields are separated by tabs.
+The first record contains the field names.
+
 =back
 
 =head1 DIAGNOSTICS
@@ -576,7 +616,7 @@ deal with this more complicated schema.
 
 =item No xsd / xml file pairs found when trying to import xhea files
 
-No pairs of XSD and XML files were found in the appropriate folders.
+No pairs of XSD and XML files were found in the appropriate folder.
 Check that the folder is correct and that the files are present.
 
 =back
@@ -604,6 +644,10 @@ Actium::Util
 =item *
 
 List::MoreUtils
+
+=item *
+
+XML::Pastor
 
 =back
 
