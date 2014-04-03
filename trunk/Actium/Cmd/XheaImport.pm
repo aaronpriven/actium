@@ -20,7 +20,7 @@ sub START {
     my $xhea_folder = $signup->subfolder('xhea');
 
     my %results_of
-      = Actium::Files::Xhea::load_into_objs($xhea_folder);
+      = Actium::Files::Xhea::load($xhea_folder);
 
     return;
 
