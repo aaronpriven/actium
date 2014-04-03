@@ -19,8 +19,8 @@ sub START {
     my $signup      = Actium::O::Folders::Signup->new();
     my $xhea_folder = $signup->subfolder('xhea');
 
-    my %results_of
-      = Actium::Files::Xhea::load($xhea_folder);
+    my ($fields_of_r, %adjusted_values_of_r) = 
+       Actium::Files::Xhea::load_adjusted($xhea_folder);
 
     return;
 
