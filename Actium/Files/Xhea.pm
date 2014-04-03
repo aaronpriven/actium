@@ -19,6 +19,57 @@ use XML::Pastor;
 
 const my $prefix => 'Actium::O::Files::Xhea';
 
+sub load_adjusted {
+    
+    #my $xheafolder = $_[0];
+    #my $tfolder    = $xheafolder->subfolder('t');
+    
+    my ($fields_of_r , $values_of_r )= load(@_);
+    my %adjusted_values_of;
+    
+    foreach my $record_name (keys %{$fields_of_r}) {
+        
+        foreach my $record (@{$values_of_r->{$record_name}}) {
+            
+            my @adjusted_record;
+            
+            foreach my $field_name (sort keys %{$fields_of_r->{$record_name}}) {
+                
+                my $idx = $fields_of_r->{$record_name}{$field_name}{idx};
+                my $adjusted = $record->[$idx];
+                
+                my $base = $fields_of_r->{$record_name}{$field_name}{base};
+
+                if ($base eq 'string') {
+                    $adjusted =~ s/\A\s+//;
+                    $adjusted =~ s/\s+\z//;
+                }
+                elsif ($base eq 'boolean') {
+                    if ($adjusted eq 'true') {
+                        $adjusted = 1;
+                    } elsif ($adjusted eq 'false') {
+                        $adjusted = 0;
+                    }
+                }
+                
+                $adjusted_record[$idx] = $adjusted;
+                
+            }
+            
+            push @{$adjusted_values_of{$record_name}}, \@adjusted_record;
+            
+        }
+        
+    }
+    
+   #emit "Dumping adjusted values to adjusted.dump";
+   #$tfolder->slurp_write( _dumped(\%adjusted_values_of), "adjusted.dump" );
+   #emit_done;
+
+    return $fields_of_r, %adjusted_values_of;
+    
+}
+
 sub load {
 
     my $xheafolder = shift;
@@ -74,14 +125,13 @@ sub load {
 
     #$tfolder->json_store_pretty( \%fields_of, 'records.json' );
     
-    
-   emit "Dumping fields to fields.dump";
-   $tfolder->slurp_write( _dumped(\%fields_of), "fields.dump" );
-   emit_done;
+   #emit "Dumping fields to fields.dump";
+   #$tfolder->slurp_write( _dumped(\%fields_of), "fields.dump" );
+   #emit_done;
 
-   emit "Dumping values to values.dump";
-   $tfolder->slurp_write( _dumped(\%values_of), "values.dump" );
-   emit_done;
+   #emit "Dumping values to values.dump";
+   #$tfolder->slurp_write( _dumped(\%values_of), "values.dump" );
+   #emit_done;
 
     return ( \%fields_of, \%values_of );
 
@@ -362,130 +412,3 @@ sub _get_xhea_filenames {
 
 __END__
 
-#sub _subelements {
-#
-#    my ( $model, $type ) = @_;
-#    my $elementInfo = $model->type->{$type}->elementInfo;
-#
-#    my %type_of_subelement;
-#
-#    while ( my ( $subelement, $subelementinfo ) = each %{$elementInfo} ) {
-#
-#        $type_of_subelement{$subelement} = $subelementinfo->type;
-#    }
-#
-#    return %type_of_subelement;
-#
-#}
-
-#
-#        my $value_of_element_cr = sub {
-#
-#            my ($element_obj) = shift;
-#            my $type          = $element_obj->type;
-#            my $type_obj      = $model->type->{$type};
-#            my $base          = $type_obj->base;
-#
-#            my $content;
-#            if ( $type_obj->contentType eq 'complex' ) {
-#
-#                my %elementinfo_of = $type_obj->effectiveElementInfo;
-#
-#                while ( my ( $element, $element_obj ) = each %elementinfo_of ) {
-#                    $content = __SUB__->( $element_obj );
-#                }
-#
-#            }
-#            else {
-#                $content = 'simple - real data to go here';
-#            }
-#
-#            return { type => $type, base => $base, content => $content };
-#
-#        };
-#
-#        while ( my ( $top_element, $top_element_obj ) = each %element_obj_of ) {
-#            my $value = _value_of_element( $model, $top_element_obj );
-#            push @tree, { $top_element => $value };
-#        }
-
-#        my @tree_display;
-#        while ( my ( $top_element, $top_element_obj ) = each %element_obj_of ) {
-#
-#            my $top_class = $model->xml_item_class($top_element);
-#
-#            my $top_type = $top_element_obj->type;
-#
-#            my %type_of_subelement = _subelements( $model, $top_type );
-#
-#            push @tree_display, "$top_element : $top_type ";
-#
-#            while ( my ( $container, $containertype )
-#                = each %type_of_subelement )
-#            {
-#
-#                push @tree_display, " $container : $containertype ";
-#
-#                my %type_of_simple = _subelements( $model, $containertype );
-#
-#                while ( my ( $simple, $simpletype ) = each %type_of_simple ) {
-#                    push @tree_display, " $simple : $simpletype ";
-#                }
-#
-#            }
-#
-#        } ## tidy end: while ( my ( $top_element...))
-#        emit_text jn(@tree_display);
-
-
-
-
-#sub _get_values {
-#
-
-#
-#    my %tree = %{ $p{tree} };
-#
-#    my %results;
-#
-#    foreach my $table ( keys %tree ) {         # normally juse one
-#        my $table_class    = $p{model}->xml_item_class($table);
-#        my %info_of_record = %{ $tree{children} };
-#
-#        my $value_tree = $table_class->from_xml_file( $p{xmlfile} );
-#
-#        my %index_of_field;
-#        foreach my $record ( keys %info_of_record ) {
-#
-#            if ( not exists $index_of_field{$record} ) {
-#
-#               if ($info_of_record{has_subelements}) {
-#                croak qq[Unexpected data field "$record" ] . qq[where record expected in $p{filename}.xsd];
-#               }
-#
-#               $index_of_field{$record} = {};
-#
-#
-#                my ( @fields, @basetypes );
-#                my %info_of_field = %{$info_of_record{$field}{children} };
-#
-#                foreach
-#                  my $field ( keys %info_of_field )
-#                {
-#
-#
-#
-#
-#                  }
-#
-#
-#
-#            }
-#
-#        }
-#
-#    }
-#
-#    return %results;
-#
-#} ## tidy end: sub _get_values
