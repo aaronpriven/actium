@@ -76,7 +76,45 @@ BEGIN {
             ( map { $_ => 'W' } (qw/14 18 19 22 24 25 26 97/) ),
         },
 
+        HASTUS_CITY_OF => {
+            "01" => "Alameda",
+            "02" => "Albany",
+            "03" => "Berkeley",
+            "04" => "Castro Valley",
+            "05" => "El Cerrito",
+            "06" => "Emeryville",
+            "07" => "Fremont",
+            "08" => "Hayward",
+            "09" => "Newark",
+            "10" => "Oakland",
+            "11" => "Piedmont",
+            "12" => "Pinole",
+            "13" => "Richmond",
+            "14" => "San Francisco",
+            "15" => "San Leandro",
+            "16" => "San Pablo",
+            "17" => "Union City",
+            "18" => "Foster City",
+            "19" => "San Mateo",
+            "20" => "San Lorenzo",
+            "21" => "Orinda",
+            "22" => "Palo Alto",
+            "23" => "Milpitas",
+            "24" => "Menlo Park",
+            "25" => "Redwood City",
+            "26" => "East Palo Alto",
+            "97" => "Santa Clara County",
+            "98" => "Alameda County",
+            "99" => "Contra Costa County",
+
+        },
+
     );
+    
+    foreach (1 .. 9) {
+        $constants{HASTUS_CITY_OF}{$_} = 
+        $constants{HASTUS_CITY_OF}{"0$_"};
+    } # add single-digit versions as well
 
     $constants{IS_A_LOOP_DIRECTION}{$_} = 1
       foreach @{ $constants{LOOP_DIRECTIONS} };
@@ -196,7 +234,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2013
+Copyright 2014
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:

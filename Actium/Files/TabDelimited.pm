@@ -18,7 +18,48 @@ use Params::Validate (':all');
 use Actium::Term;
 use Actium::Util(qw/filename in/);
 
-use Sub::Exporter -setup => { exports => [qw(read_tab_files)] };
+use Sub::Exporter -setup => { exports => [qw(read_aoas read_tab_files)] };
+
+sub read_aoas {
+    my %params = validate(
+        @_,
+        {   folder => {
+                can => [
+                    'make_filespec', 'glob_plain_files',
+                    'open_read',     'display_path'
+                ]
+            },
+            files            => { type => ARRAYREF, default => [] },
+            globpatterns     => { type => ARRAYREF, default => [] },
+            required_headers => { type => ARRAYREF, default => [] },
+            progress_lines   => { type => SCALAR,   default => 5000 },
+            trim             => { type => BOOLEAN,  default => 0 },
+        },
+
+    );
+
+    my %headers_of;
+    my %records_of;
+
+    my $callback = sub {
+        
+        my ($value_of_r, $values_r, $headers_r, $line, $file, $linenum) = @_;
+        
+        unless (exists $headers_of{$file}) {
+            $headers_of{$file} = \@{$headers_r};
+        }
+
+        push @{$records_of{$file}}, $values_r;
+
+    };
+    
+    $params{callback} = $callback;
+    
+    read_tab_files(\%params);
+    
+    return \%headers_of, \%records_of;
+    
+} ## tidy end: sub read_aoas
 
 sub read_tab_files {
 
@@ -84,8 +125,7 @@ sub read_tab_files {
                     s/\s+\z//;
                 }
             }
-            else
-            {    # always remove final whitespace, for line endings
+            else {    # always remove final whitespace, for line endings
                 $line =~ s/\s+\z//;
                 @values = ( split( /\t/, $line ) );
             }
@@ -147,7 +187,7 @@ sub _verify_headers {
 
     if ( scalar @required_headers ) {
         foreach my $required_header (@required_headers) {
-            if ( not in($required_header, @headers )) {
+            if ( not in( $required_header, @headers ) ) {
                 croak
                   "Required header $required_header not found in file $file";
             }
@@ -178,24 +218,44 @@ This documentation refers to version 0.002
  my %data;
  
  my $callback = sub {
-     $hashref = shift;
-     while ( my ($key, $value) = each %{$hashref}) {
+     my $hashref = shift;
+     foreach my $key (keys %{$hashref}) {
+        $value = $hashref->{$key};
         push @{$data{$key}} , $value;
      }
  };
      
  read_tab_files(
-    {   files     => ['*.txt'],
+    {   globfiles        => ['*.txt'],
         folder           => $folder_obj,
         required_headers => ['ID','Name'],
         callback         => $callback,
     }
  );
+ 
+Or:
+
+ use Actium::Files::TabDelimited ('read_aoas');
+ 
+ my ($headers_of_r, $values_of_r)  = read_aoas(
+    {   globfiles        => ['*.txt'],
+        folder           => $folder_obj,
+        required_headers => ['ID','Name'],
+    }
+ );
+ 
+ say ".txt headers: " , join(",", @{$headers_of{'stop.txt'}});
+ my $count=0;
+ foreach my $record_r (@{values_of{'stop.txt'}}) {
+     say $count++, ": " , join("," , @{$record_r});
+ }
+ 
    
 =head1 DESCRIPTION
 
-Actium::Files::TabDelimited contains a routine to read tab-delimited files
-from a directory, and return the data to the caller via a callback function.
+Actium::Files::TabDelimited contains routines to read tab-delimited files
+from a directory. I<read_tab_files> returns the data to the caller via a 
+callback function. I<read_aoas> returns the data as arrays of arrays.
 
 It is designed to encapsulate some of the more tedious aspects of reading
 tab-delimited files, such as determining the headers and providing terminal
@@ -204,41 +264,11 @@ feedback.
 The program assumes that the first line of each file is a set of column
 headings, and that values are separated by tabs.
 
-The routine calls the callback on each line read. The callback is given
-a series of arguments:
 
-=over
 
-=item * 
+=head1 SUBROUTINES
 
-A reference to a hash whose keys are the column headers and whose values
-are the values of each column.
-
-=item *
-
-A reference to an array of the values of each column.
-
-=item *
-
-A reference to an array of the column headers.
-
-=item *
-
-The line as read from the file.
-
-=item * 
-
-The file name of the current file.
-
-=item *
-
-The number of the current line being read in the file (beginning with 1).
-
-=back
-
-This allows the caller to save the data from the line in a variety of ways.
-
-=head1 SUBROUTINE: read_tab_files()
+=head2 read_tab_files()
 
 The read_tab_files takes a series of named parameters. Parameter processing is
 performed using Params::Validate, so the parameters can either be passed as
@@ -286,7 +316,7 @@ indicator (percentages) are updated. The default is 5000.
 =item callback
 
 This mandatory parameter must be a code reference. For each line read, this
-code reference is invoked, as described above.
+code reference is invoked, as described below.
 
 =item trim
 
@@ -295,7 +325,56 @@ of each field. This can be time-consuming in a large file.
 
 =back
 
+=head3 Callback 
+
+The routine calls the callback on each line read. The callback is given
+a series of arguments:
+
+=over
+
+=item * 
+
+A reference to a hash whose keys are the column headers and whose values
+are the values of each column.
+
+=item *
+
+A reference to an array of the values of each column.
+
+=item *
+
+A reference to an array of the column headers.
+
+=item *
+
+The line as read from the file.
+
+=item * 
+
+The file name of the current file.
+
+=item *
+
+The number of the current line being read in the file (beginning with 1).
+
+=back
+
+This allows the caller to save the data from the line in a variety of ways.
+
+=head2 read_aoas()
+
+This routine simplifies reading simple files by simply returning the data
+in two complex data structures. Each is a hash where the keys are the names of 
+the files that was read.  The values of the first hash are references to an 
+array containing the names of the headers.  The values of the second hash are 
+references to an array of records, each containing an array of data fields.
+
+It accepts all the same parameters as read_tab_files (see above), except
+"callback."
+
 =head1 DIAGNOSTICS
+
+=over
 
 =item 'Must specify either files or globpatterns to read_tab_files'
 
