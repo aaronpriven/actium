@@ -31,15 +31,15 @@ use Sub::Exporter -setup => {
           isblank             isnotblank
           tabulate            aoa2tsv
           filename            file_ext
-          remove_leading_path flatten
+          remove_leading_path 
           linegroup_of        
-          in
           chunks
           is_odd              is_even
           mean                population_stdev
-          all_eq
+          all_eq              in
           halves
-          hashref
+          flatten             hashref
+          dumpstr
           >
     ]
 };
@@ -439,6 +439,15 @@ sub halves {
     my ($wholes, $halves) = (flatten(@_));
     return ( $wholes*2 + $halves );
 }
+
+sub dumpstr {
+    require Data::Dumper;
+    no warnings 'once';
+    local $Data::Dumper::Indent = 1;
+    local $Data::Dumper::Sortkeys = 1;
+    return Data::Dumper::Dumper(@_);
+}
+
 
 1;
 
