@@ -39,12 +39,10 @@ sub hastus_places_import {
 		@field{@place_headers} = @{$place_record};
 
 		my $city = $HASTUS_CITY_OF{ $field{plc_district} };
+		
+		my $abbrev9 = _abbrev9 ($field{plc_number}, $field{plc_identifier});
 
-		my $number = $field{plc_number};
-		my $first = substr( $number, 0, 4 );
-		my $second = substr( $number, 4 );
-		trim( $first, $second );
-		my $abbrev9 = "$first $second";
+
 
 		my $description = titlecase( $field{plc_description} );
 
@@ -55,8 +53,28 @@ sub hastus_places_import {
 
 	} ## tidy end: foreach my $place_record (@place_records)
 
+	emit_over '100%';
 	emit_done;
+	
+	return \@returned_headers, \@returned_records;
+
 } ## tidy end: sub hastus_places_import
+
+sub _abbrev9 {
+ 		my $number = shift;
+ 		my $identifier = shift;
+ 		
+ 		$number = $identifier if not defined $number or $number eq $EMPTY_STR;
+ 		
+ 		return $number if length($number) <= 4;
+ 		
+		my $first = substr( $number, 0, 4 );
+		my $second = substr( $number, 4 );
+		trim( $first, $second );
+		my $abbrev9 = "$first $second";   
+    
+    
+}
 
 sub hastus_stops_import {
 

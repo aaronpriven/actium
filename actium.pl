@@ -69,7 +69,6 @@ my %module_of = (
     decalcount => 'DecalCount',
     xml2thea        => 'Xml2Thea',
     xheaimport => 'XheaImport',
-    cftest => 'CalculateFieldsTest',
                                             # more to come
 );
 
