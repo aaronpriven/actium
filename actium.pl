@@ -65,11 +65,11 @@ my %module_of = (
     mr_coffee       => 'Joke',
     joke            => \'mr_coffee',
     htmltables      => 'HTMLTables',
-    kmlunite        => 'KmlUnite',
     linedescrip     => 'LineDescrip',
     decalcount => 'DecalCount',
     xml2thea        => 'Xml2Thea',
     xheaimport => 'XheaImport',
+    cftest => 'CalculateFieldsTest',
                                             # more to come
 );
 
