@@ -15,7 +15,10 @@ sub HELP {
     say "Help not implemented.";
 }
 
-const my $STOPS => 'stop';
+const my $STOPS     => 'stop';
+const my $STOPS_PC  => 'stop_pc';
+const my $PLACES    => 'place';
+const my $PLACES_PC => 'place_pc';
 
 sub START {
 
@@ -29,13 +32,21 @@ sub START {
       = Actium::Files::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
         $adjusted_values_of_r );
 
-    my ( $newheads_r, $newrecords_r )
+    my ( $new_s_heads_r, $new_s_records_r )
       = Actium::Import::CalculateFields::hastus_stops_import(
         $fieldnames_of_r->{$STOPS},
         $adjusted_values_of_r->{$STOPS} );
 
-    $tab_strings_r->{stops_calc}
-      = Actium::Util::aoa2tsv( $newrecords_r, $newheads_r );
+    $tab_strings_r->{$STOPS_PC}
+      = Actium::Util::aoa2tsv( $new_s_records_r, $new_s_heads_r );
+
+    my ( $new_p_heads_r, $new_p_records_r )
+      = Actium::Import::CalculateFields::hastus_places_import(
+        $fieldnames_of_r->{$PLACES},
+        $adjusted_values_of_r->{$PLACES} );
+
+    $tab_strings_r->{$PLACES_PC}
+      = Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
 
     my $tab_folder = $xhea_folder->subfolder('tab');
 
