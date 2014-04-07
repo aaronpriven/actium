@@ -32,11 +32,15 @@ use warnings;
 use strict;
 
 no warnings('redefine');
-
 # without which, Eclipse complains because it sees this module twice when
 # debugging this module
 
 our $is_under_eclipse = 1;
+
+$ENV{LINES} = 25;
+$ENV{COLUMNS} = 80;
+# at least sometimes, Term::Readkey complains if it doesn't have anything
+# to set the window size by
 
 sub get_command_line {
 
