@@ -42,8 +42,6 @@ sub hastus_places_import {
 		
 		my $abbrev9 = _abbrev9 ($field{plc_number}, $field{plc_identifier});
 
-
-
 		my $description = titlecase( $field{plc_description} );
 
 		my @new_record
@@ -281,3 +279,39 @@ sub _direction {
 1;
 
 __END__
+
+
+=encoding utf8
+
+=head1 NAME
+
+Actium::Import::CaclulateFields - Routines for adding fields based on 
+Hastus exports
+
+=head1 FIELDS
+
+Builds the following fields:
+
+==> place_pc.txt <==
+
+plc_pc_city	
+
+Takes the numeric district code and returns the city.
+
+plc_pc_abbrev9	
+
+Takes the eight-character place abbreviation (confusingly called
+plc_number in the Hastus export) and adds a space in the middle
+to make it nine characters. This is primarily for compatibility
+with old actium programs and routines that use this.
+Ideally it should be phased out and the plc_identifier used instead.
+
+plc_pc_description
+
+A titlecased version (using Lingua::EN::Titlecase::Simple) of
+the provided description.
+
+==> stop_pc.txt <==
+stp_511_id	stp_pc_on	stp_pc_at	stp_pc_stnum	stp_pc_comment	stp_pc_city	stp_pc_direction
+
+

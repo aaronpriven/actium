@@ -29,12 +29,12 @@ sub tab_strings {
     emit 'Processing XHEA data into tab-delimited text';
 
     foreach my $record_name ( keys %{$fields_of_r} ) {
-        
+
         my $fieldnames_r = $fieldnames_of_r->{$record_name};
-        
+
         my $records_r = $values_of_r->{$record_name};
-        
-        $tab_of{$record_name} = aoa2tsv($records_r, $fieldnames_r);
+
+        $tab_of{$record_name} = aoa2tsv( $records_r, $fieldnames_r );
 
     }
 
@@ -46,12 +46,18 @@ sub tab_strings {
 
 sub load_adjusted {
 
-    my ( $fieldnames_of_r , $fields_of_r, $values_of_r ) = load(@_);
+    my ( $fieldnames_of_r, $fields_of_r, $values_of_r ) = load(@_);
     my $adjusted_values_of_r
       = adjust_for_basetype( $fields_of_r, $values_of_r );
     return ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r );
 
 }
+
+my %basetype_adjust = (
+    string            => \&_adjust_string,
+    normalized_string => \&_adjust_string,
+    boolean           => \&_adjust_boolean,
+);
 
 sub adjust_for_basetype {
 
@@ -62,35 +68,40 @@ sub adjust_for_basetype {
 
     foreach my $record_name ( keys %{$fields_of_r} ) {
 
+        my %adjustments;
+
+        foreach my $field_name ( keys %{ $fields_of_r->{$record_name} } ) {
+
+            my $base = $fields_of_r->{$record_name}{$field_name}{base};
+
+            if ( exists $basetype_adjust{$base} ) {
+                $adjustments{$field_name} = $basetype_adjust{$base};
+            }
+
+        }
+
+        next unless scalar keys %adjustments;
+
         foreach my $record ( @{ $values_of_r->{$record_name} } ) {
 
             my @adjusted_record;
 
-            foreach
-              my $field_name ( sort keys %{ $fields_of_r->{$record_name} } )
-            {
+            foreach my $field_name ( keys %{ $fields_of_r->{$record_name} } ) {
 
                 my $idx      = $fields_of_r->{$record_name}{$field_name}{idx};
-                my $adjusted = $record->[$idx];
+                my $as_given = $record->[$idx];
 
-                my $base = $fields_of_r->{$record_name}{$field_name}{base};
-
-                if ( $base eq 'string' or $base eq 'normalizedString' ) {
-                    $adjusted =~ s/\A\s+//s;
-                    $adjusted =~ s/\s+\z//s;
+                my $adjusted;
+                if ( exists $adjustments{$field_name} ) {
+                    $adjusted = $adjustments{$field_name}->($as_given);
                 }
-                elsif ( $base eq 'boolean' ) {
-                    if ( $adjusted eq 'true' ) {
-                        $adjusted = 1;
-                    }
-                    elsif ( $adjusted eq 'false' ) {
-                        $adjusted = 0;
-                    }
+                else {
+                    $adjusted = $as_given;
                 }
 
                 $adjusted_record[$idx] = $adjusted;
 
-            } ## tidy end: foreach my $field_name ( sort...)
+            }
 
             push @{ $adjusted_values_of{$record_name} }, \@adjusted_record;
 
@@ -104,16 +115,88 @@ sub adjust_for_basetype {
 
 } ## tidy end: sub adjust_for_basetype
 
+sub _adjust_string {
+    my $adjusted = shift;
+    $adjusted =~ s/\A\s+//s;
+    $adjusted =~ s/\s+\z//s;
+    return $adjusted;
+}
+
+sub _adjust_boolean {
+    my $adjusted = shift;
+
+    if ( $adjusted eq 'true' ) {
+        $adjusted = 1;
+    }
+    elsif ( $adjusted eq 'false' ) {
+        $adjusted = 0;
+    }
+
+    return $adjusted;
+
+}
+
+#sub adjust_for_basetype {
+#
+#    my ( $fields_of_r, $values_of_r ) = (@_);
+#    my %adjusted_values_of;
+#
+#    emit 'Adjusting XHEA data for its base type';
+#
+#    foreach my $record_name ( keys %{$fields_of_r} ) {
+#
+#        foreach my $record ( @{ $values_of_r->{$record_name} } ) {
+#
+#            my @adjusted_record;
+#
+#            foreach
+#              my $field_name ( sort keys %{ $fields_of_r->{$record_name} } )
+#            {
+#
+#                my $idx      = $fields_of_r->{$record_name}{$field_name}{idx};
+#                my $adjusted = $record->[$idx];
+#
+#                my $base = $fields_of_r->{$record_name}{$field_name}{base};
+#
+#                if ( $base eq 'string' or $base eq 'normalizedString' ) {
+#                    $adjusted =~ s/\A\s+//s;
+#                    $adjusted =~ s/\s+\z//s;
+#                }
+#                elsif ( $base eq 'boolean' ) {
+#                    if ( $adjusted eq 'true' ) {
+#                        $adjusted = 1;
+#                    }
+#                    elsif ( $adjusted eq 'false' ) {
+#                        $adjusted = 0;
+#                    }
+#                }
+#
+#                $adjusted_record[$idx] = $adjusted;
+#
+#            } ## tidy end: foreach my $field_name ( sort...)
+#
+#            push @{ $adjusted_values_of{$record_name} }, \@adjusted_record;
+#
+#        } ## tidy end: foreach my $record ( @{ $values_of_r...})
+#
+#    } ## tidy end: foreach my $record_name ( keys...)
+#
+#    emit_done;
+#
+#    return \%adjusted_values_of;
+#
+#} ## tidy end: sub adjust_for_basetype
+
 sub load {
 
     my $xheafolder = shift;
-    my $tfolder    = $xheafolder->subfolder('t');
+    #my $tfolder    = $xheafolder->subfolder('t');
 
     my @xhea_filenames = _get_xhea_filenames($xheafolder);
 
     my $pastor = XML::Pastor->new();
 
-    my ( %fieldnames_of , %fields_of, %values_of );
+    my ( %fieldnames_of, %fields_of, %values_of );
 
     emit 'Loading XHEA files';
 
@@ -142,7 +225,7 @@ sub load {
           = _records_and_fields( $tree_r, $filename );
 
         %fieldnames_of = ( %fieldnames_of, %{$fieldnames_of_r} );
-        %fields_of = ( %fields_of, %{$fields_of_r} );
+        %fields_of     = ( %fields_of,     %{$fields_of_r} );
 
         my $newvalues_r = _load_values(
             tree       => $tree_r,
@@ -151,7 +234,7 @@ sub load {
             records_of => $records_of_r,
             fields_of  => $fields_of_r,
             filename   => $filename,
-            tfolder    => $tfolder,
+            #tfolder    => $tfolder,
         );
 
         %values_of = ( %values_of, %{$newvalues_r} );
@@ -164,7 +247,7 @@ sub load {
 
     emit_done;
 
-    return ( \%fieldnames_of , \%fields_of, \%values_of );
+    return ( \%fieldnames_of, \%fields_of, \%values_of );
 
 } ## tidy end: sub load
 
@@ -178,7 +261,7 @@ sub _load_values {
             records_of => 1,
             xmlfile    => 1,
             filename   => 1,
-            tfolder    => 1,
+            #tfolder    => 1,
         }
     );
 
@@ -187,6 +270,7 @@ sub _load_values {
     for my $table_name ( keys %{ $p{tree} } ) {
         my $table_class = $p{model}->xml_item_class($table_name);
         emit "Loading $table_name from $p{filename}.xml";
+        emit_text '(This can take quite a while; be patient)';
         my $table = $table_class->from_xml_file( $p{xmlfile} );
         emit_done;
 
@@ -285,11 +369,11 @@ sub _records_and_fields {
             my %info_of_field = %{ $info_of_record{$record}{children} };
 
             my $field_idx = 0;
-            
+
             my @fieldnames = sort keys %info_of_field;
             $fieldnames_of{$record} = \@fieldnames;
 
-            for my $field ( @fieldnames) {
+            for my $field (@fieldnames) {
                 emit_over "field: $field";
 
                 if ( $info_of_record{$field}{has_subelements} ) {
@@ -319,7 +403,7 @@ sub _records_and_fields {
                   = { base => $base, type => $type, idx => $field_idx };
 
                 $field_idx++;
-            } ## tidy end: for my $field ( sort keys...)
+            } ## tidy end: for my $field (@fieldnames)
 
         } ## tidy end: for my $record ( keys %info_of_record)
 
@@ -327,7 +411,7 @@ sub _records_and_fields {
 
     emit_done;
 
-    return \%fieldnames_of , \%records_of, \%fields_of;
+    return \%fieldnames_of, \%records_of, \%fields_of;
 
 } ## tidy end: sub _records_and_fields
 
