@@ -1,4 +1,4 @@
-# Actium/Files/FMPXMLResult.pm
+# Actium/O/Files/FMPXMLResult.pm
 
 # Class for reading and processing FileMaker Pro FMPXMLRESULT XML exports
 # and storing in an SQLite database using Actium::O::Files::SQLite
@@ -6,6 +6,8 @@
 # Subversion: $Id$
 
 # Legacy stage 4
+
+# TO BE REPLACED BY Actium::O::Files::FileMaker_ODBC
 
 use warnings;
 use 5.012;    # turns on features
