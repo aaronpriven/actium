@@ -1,13 +1,15 @@
-# Actium/Files/ActiumDB.pm
+# Actium/O/Files/ActiumDB.pm
 
 # Class holding routines related to the Actium database 
-# (the FileMaker database used by Actium users). 
+# (the FileMaker database used by Actium users), exported. 
+# in FMPXMLResult form.
 
 # Subversion: $Id$
 
 # Legacy stage 4
 
-# not used at the moment.
+# will probably never be used, because replaced by
+# Actium::O::Files::ActiumFM
 
 package Actium::O::Files::ActiumDB;
 
