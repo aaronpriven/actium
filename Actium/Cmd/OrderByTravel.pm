@@ -42,8 +42,12 @@ HELP
 }
 
 sub START {
+	
+	my %params = @_;
 
-    my $inputfilespec = shift @ARGV;
+	my @argv = @{$params{argv}};
+  
+    my $inputfilespec = shift @argv;
     die "No input file given" unless $inputfilespec;
     
     open my $input_h, '<', $inputfilespec
