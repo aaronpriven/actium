@@ -16,7 +16,7 @@
 use 5.012;
 use warnings;
 
-our $VERSION = 0.001;
+our $VERSION = 0.003;
 
 # add the current program directory to list of files to include
 use FindBin qw($Bin);
@@ -25,6 +25,9 @@ use English qw(-no_match_vars);
 use Scalar::Util('reftype');
 
 use Actium::Options qw(add_option init_options option);
+
+use Actium::O::Files::Ini;
+my $config = Actium::O::Files::Ini::->new('.actium.ini');
 
 # Ask user for a command line, if running under Eclipse.
 
@@ -57,6 +60,7 @@ my %module_of = (
     tabulae         => \'timetables',
     orderbytravel   => 'OrderByTravel',
     patterns        => 'Patterns',
+    
     adddescriptionf => 'AddDescriptionF',
     k2id            => 'MakePoints',
     nearbyroutes    => 'NearbyRoutes',
@@ -122,7 +126,7 @@ if ( $help or option('help') ) {
     $module->HELP(@ARGV);
 }
 else {
-    $module->START(@ARGV);
+    $module->START(argv => [ @ARGV ], config => $config);
 }
 
 sub mainhelp {
