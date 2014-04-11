@@ -42,11 +42,11 @@ subtype DayCode, as Str, where {/\A1?2?3?4?5?6?7?H?\z/}, message {
 # It uses question marks instead of [1-7H]+ because
 # the numbers have to be in order, and not repeated
 
-enum( TransitInfoDays, values %TRANSITINFO_DAYS_OF );
+enum( TransitInfoDays, [ values %TRANSITINFO_DAYS_OF ] );
 
 coerce DayCode, from TransitInfoDays, via { $DAYS_FROM_TRANSITINFO{$_} };
 
-enum( SchoolDayCode, 'B', 'D', 'H' );
+enum( SchoolDayCode, [ 'B', 'D', 'H' ] );
 
 subtype DaySpec, as ArrayRef, where {
     $#{$_} == 1
@@ -75,7 +75,7 @@ subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 #########################
 ### SCHEDULE DIRECTIONS
 
-enum( DirCode, @DIRCODES );
+enum( DirCode, \@DIRCODES );
 
 subtype HastusDirCode, as Int, where { $_ >= 0 and $_ <= $#DIRCODES };
 
