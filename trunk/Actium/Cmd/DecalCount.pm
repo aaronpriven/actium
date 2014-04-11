@@ -27,10 +27,14 @@ const my $EPSFOLDER =>
 sub HELP { say "Count the decals listed in a file." }
 
 sub START {
+	
+	my %params = @_;
+
+	my @argv = @{$params{argv}};
     
     my $countonly = option('countonly');
 
-    my $inputfilespec = shift @ARGV;
+    my $inputfilespec = shift @argv;
     die "No input file given" unless $inputfilespec;
 
     open my $input_h, '<', $inputfilespec
