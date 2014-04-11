@@ -22,8 +22,8 @@ use MooseX::Types -declare => [
       HastusDirCode       DirCode     ActiumDir
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
       Str4                Str8
-      FolderComponent     FolderList
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
+      ActiumFolderLike
       >
 ];
 
@@ -126,6 +126,18 @@ subtype Str4, as Str, where { length == 4 },
 ### CLASS AND ROLE TYPES
 
 role_type 'Skedlike', { role => 'Actium::O::Skedlike' };
+
+#########################
+## FOLDER
+
+duck_type ActiumFolderLike, [ qw[ path ] ]; # maybe make a folderlike role...
+
+coerce ActiumFolderLike, from Str, via (\&_make_actium_o_folder) , from ArrayRef[Str], via \&_make_actium_o_folder ;
+
+sub _make_actium_o_folder  {
+	require Actium::O::Folder;
+	Actium::O::Folder::->new($_) 
+};
 
 1;
 __END__
