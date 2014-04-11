@@ -44,9 +44,13 @@ HELP
 
 sub START {
 
+my %params = @_;
+
+	my @argv = @{$params{argv}};
+  
     my $timestr_sub = timestr_sub( { XB    => 1 } );
     my $timestr_24  = timestr_sub( { HOURS => 24 } );
-    foreach my $time (@ARGV) {
+    foreach my $time (@argv) {
         if ( $time =~ m/\A [-n] ? \d+ \z/sx ) {
             $time =~ s/n/-/g;
             say "$time -> ", $timestr_sub->($time), " or ",

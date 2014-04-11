@@ -25,7 +25,11 @@ add_option( 'type=s', 'Database type -- H for Hastus or F for FileMaker' );
 
 sub START {
 
-    my $dir;
+    my %params = @_;
+
+	my @argv = @{$params{argv}};
+
+  my $dir;
     my $db;
 
     my $type = option('type');
@@ -42,7 +46,7 @@ sub START {
         die "Don't know about type $type";
     }
 
-    my $table = $ARGV[0];
+    my $table = $argv[0];
 
     my $iterator = $db->each_row($table);
 
