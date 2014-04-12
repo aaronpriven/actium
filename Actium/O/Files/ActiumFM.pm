@@ -11,31 +11,47 @@
 package Actium::O::Files::ActiumFM;
 
 use Actium::Moose;
-use MooseX::StrictConstructor;
 
 const my $KEYFIELD_TABLE        => 'FMTableKeys';
 const my $KEY_OF_KEYFIELD_TABLE => 'FMTableKey';
 
-extends 'Actium::O::Files::FileMaker_ODBC';
+#around BUILDARGS => sub {
+#    my $orig  = shift;
+#    my $class = shift;
+#
+#    my $args_r = $class->$orig(@_);
+#
+#    for (qw(user password)) {
+#        my $db = "db_$_";
+#        if ( exists $args_r->{$_} and not exists $args_r->{$db} ) {
+#            $args_r->{$db} = $args_r->{$_};
+#            delete $args_r->{$_};
+#        }
+#    }
+#
+#    return $args_r;
+#
+#};
 
 has 'db_name' => (
-    is     => 'ro',
-    isa    => 'Str',
+    is  => 'ro',
+    isa => 'Str',
 );
 
 has 'db_user' => (
-    is     => 'ro',
-    isa    => 'Str',
+    is  => 'ro',
+    isa => 'Str',
 );
 
-has 'db_password ' => (
-    is     => 'ro',
-    isa    => 'Str',
+has 'db_password' => (
+    is  => 'ro',
+    isa => 'Str',
 );
 
 has '_keys_of_r' => (
     traits  => ['Hash'],
     is      => 'bare',
+    init_arg => undef,
     isa     => 'HashRef[Str]',
     handles => { key_of_table => 'get', },
     builder => '_build_keys_of',
@@ -53,6 +69,8 @@ sub _build_keys_of {
     return $key_of_r;
 
 }
+
+with 'Actium::O::Files::FileMaker_ODBC';
 
 1;
 
