@@ -43,6 +43,7 @@ HELP
 
 sub START {
 	
+    my $class = shift;
 	my %params = @_;
 
 	my @argv = @{$params{argv}};

@@ -13,51 +13,55 @@ package Actium::O::Files::Ini 0.003;
 use Actium::Moose;
 use Actium::Types ('ActiumFolderLike');
 
+use File::HomeDir;
 use Config::Tiny;
 
-has 'filename' => (
-	isa => 'Str',
-	is  => 'ro',
-);
 
 around BUILDARGS => sub {
 	my $orig  = shift;
 	my $class = shift;
-
+	
 	my %args;
 
 	# one arg, hashref: args are in hashref
 	# one arg, not hashref: one arg is filename
 	# more than one arg: args are hash
-
+	
 	if ( @_ == 1 ) {
-		if ( reftype $_[0] eq 'HASH' ) {
+		if ( reftype $_[0] and reftype $_[0] eq 'HASH' ) {
 			%args = %{ $_[0] };
 		}
 		else {
-			%args = ( file => $_[0] );
+			%args = ( filename => $_[0] );
 		}
 	}
 	else {
 		%args = (@_);
 	}
 
-	$args{folder} //= $ENV{HOME};
+	#$args{folder} //= $ENV{HOME};
+	$args{folder} //= File::HomeDir->my_home;
 
 	return $class->$orig(%args);
 
 };
 
+has 'filename' => (
+   isa => 'Str',
+   is => 'ro',
+);
+
 has 'folder' => (
-	isa    => 'ActiumFolderLike',
+	isa    => ActiumFolderLike,
 	is     => 'ro',
-	#coerce => 1,
+	coerce => 1,
 );
 
 has 'filespec' => (
 	is       => 'ro',
 	init_arg => undef,
 	builder  => '_build_filespec',
+	lazy => 1,
 );
 
 sub _build_filespec {
@@ -76,7 +80,10 @@ has '_values_r' => (
 
 sub _build_values {
 	my $self    = shift;
-	my $ini_hoh = Config::Tiny->read( $self->filespec );
+	my $config = Config::Tiny->read( $self->filespec );
+	my $ini_hoh = { %{$config} };
+	# shallow clone, in order to get an unblessed copy, otherwise
+	# it doesn't pass validation
 	return $ini_hoh;
 }
 
@@ -93,7 +100,7 @@ sub section {
 	my $section = shift // '_';
 	my $ini_hoh = $self->_values_r;
 	if ( exists $ini_hoh->{$section} ) {
-		return %{ $ini_hoh->{$section} };
+		return wantarray ? %{ $ini_hoh->{$section} } : $ini_hoh->{$section};
 	}
 	return;
 }

@@ -60,7 +60,7 @@ my %module_of = (
     tabulae         => \'timetables',
     orderbytravel   => 'OrderByTravel',
     patterns        => 'Patterns',
-    
+    prepareflags => 'PrepareFlags',
     adddescriptionf => 'AddDescriptionF',
     k2id            => 'MakePoints',
     nearbyroutes    => 'NearbyRoutes',

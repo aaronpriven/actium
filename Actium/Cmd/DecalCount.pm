@@ -27,6 +27,7 @@ const my $EPSFOLDER =>
 sub HELP { say "Count the decals listed in a file." }
 
 sub START {
+    my $class = shift;
 	
 	my %params = @_;
 
