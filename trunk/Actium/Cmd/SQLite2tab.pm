@@ -25,6 +25,7 @@ add_option( 'type=s', 'Database type -- H for Hastus or F for FileMaker' );
 
 sub START {
 
+    my $class = shift;
     my %params = @_;
 
 	my @argv = @{$params{argv}};

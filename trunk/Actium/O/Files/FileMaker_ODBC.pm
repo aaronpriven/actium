@@ -67,6 +67,7 @@ has '_tables_r' => (
         tables     => 'keys',
         is_a_table => 'get',
     },
+    lazy => 1,
 );
 
 sub _tables {
@@ -84,7 +85,7 @@ sub _tables {
 
 }
 
-has '_columns_of_r' => (
+has '_column_cache_r' => (
     traits  => ['Hash'],
     is      => 'bare',
     isa     => 'HashRef[HashRef[Str]]',
