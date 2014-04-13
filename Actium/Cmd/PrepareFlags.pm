@@ -10,6 +10,7 @@ package Actium::Cmd::PrepareFlags 0.003;
 
 use Actium::Preamble;
 use Actium::O::Files::ActiumFM;
+use Params::Validate (':all');
 
 const my $CONFIG_SECTION => 'ActiumFM';
 const my %IS_A_CONFIG_KEY => ( db_user => 1, db_password => 1, db_name => 1 );
@@ -34,10 +35,20 @@ sub START {
               . $config->filespec;
         }
     }
+    
+    foreach my $key (keys %IS_A_CONFIG_KEY) {
+        unless ( exists $db_config{$key} ) {
+            croak
+              "Missing key $key in section $CONFIG_SECTION in config file\n"
+              . $config->filespec;
+        }
+    }
 
     my $actiumdb = Actium::O::Files::ActiumFM::->new(%db_config);
     
 } ## tidy end: sub START
+
+	
 
 1;
 
