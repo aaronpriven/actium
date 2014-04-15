@@ -34,16 +34,23 @@ sub flag_assignments {
     my $sth = $actium_dbh->prepare($query);
     $sth->execute();
 
-    my @rows;
+    my %rows_of_file;
 
     while ( my $row_r = $sth->fetchrow_arrayref ) {
-        push @rows, [@$row_r];
+    	my ($file, @rest) = @{$row_r};
         # DBI reuses the same hashref over and over, so have to make that
         # copy each time
+        push @{$rows_of_file{$file}}, \@rest;
     }
     $sth->finish();
+    
+    my @rows_by_file;
+    foreach my $file (keys %rows_of_file) {
+    	push @rows_by_file, FILE => $file;
+    	push @rows_by_file, @{$rows_of_file{$file}};
+    }
 
-    return \@rows;
+    return \@rows_by_file;
 
 } ## tidy end: sub flag_assignments
 
