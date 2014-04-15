@@ -33,9 +33,10 @@ use English qw<-no_match_vars>;
 # Fix documentation, which is incorrect on this
 
 use Exporter;
-our @ISA         = qw<Exporter>;
-our @EXPORT      = qw<emit_over emit_prog>;
-our @EXPORT_OK   = qw(sayq printq output_usage print_in_columns columnize);
+our @ISA    = qw<Exporter>;
+our @EXPORT = qw<emit_over emit_prog>;
+our @EXPORT_OK
+  = qw(term_readline sayq printq output_usage print_in_columns columnize);
 our %EXPORT_TAGS = ( all => [ @EXPORT_OK, @EXPORT ] );
 
 $SIG{'WINCH'} = \&set_width;
@@ -117,8 +118,8 @@ sub set_width {
 
 sub _terminate {
     my $signal = shift;
-    emit_text ("Caught SIG$signal... Aborting program.");
-    emit_done( 'ABORT' );
+    emit_text("Caught SIG$signal... Aborting program.");
+    emit_done('ABORT');
     exit 1;
 }
 
@@ -152,6 +153,27 @@ sub printq {
       or carp "Can't print: $!";
     return;
 }
+
+sub term_readline {
+
+    require IO::Prompter;
+
+    my $prompt = shift;
+    my $hide   = shift;
+
+    my $val;
+
+    if ($hide) {
+        $val = IO::Prompter::prompt( $prompt, -echo => '*' , -hNONE);
+    }
+    else {
+
+        $val = IO::Prompter::prompt($prompt);
+    }
+
+    return $val;
+
+} ## tidy end: sub term_readline
 
 sub output_usage {
 

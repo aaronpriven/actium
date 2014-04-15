@@ -9,46 +9,34 @@
 package Actium::Cmd::PrepareFlags 0.003;
 
 use Actium::Preamble;
-use Actium::O::Files::ActiumFM;
-use Params::Validate (':all');
-
-const my $CONFIG_SECTION => 'ActiumFM';
-const my %IS_A_CONFIG_KEY => ( db_user => 1, db_password => 1, db_name => 1 );
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Flags;
+use Actium::O::Folders::Signup;
+use Actium::Term;
 
 sub HELP {
     say "Help not implemented.";
 }
 
 sub START {
-
-    my $class = shift;
-
-    my %params = @_;
-    my $config = $params{config};
-
-    my %db_config = $config->section($CONFIG_SECTION);
-
-    foreach my $key ( keys %db_config ) {
-        unless ( exists $IS_A_CONFIG_KEY{$key} ) {
-            croak
-              "Invalid key $key in section $CONFIG_SECTION in config file\n"
-              . $config->filespec;
-        }
-    }
     
-    foreach my $key (keys %IS_A_CONFIG_KEY) {
-        unless ( exists $db_config{$key} ) {
-            croak
-              "Missing key $key in section $CONFIG_SECTION in config file\n"
-              . $config->filespec;
-        }
-    }
+    emit 'Creating flag assignments from Actium FileMaker database';
 
-    my $actiumdb = Actium::O::Files::ActiumFM::->new(%db_config);
+    my $class      = shift;
+    my %params     = @_;
+    my $config_obj = $params{config};
+
+    my $signup = Actium::O::Folders::Signup->new();
+
+    my $actiumdb = actiumdb($config_obj);
+
+    my $tabbed = Actium::Flags::flag_assignments_tabbed ($actiumdb);
     
-} ## tidy end: sub START
+    $signup->slurp_write ($tabbed, 'flag_assignments.txt');
 
-	
+    emit_done;
+
+}
 
 1;
 
