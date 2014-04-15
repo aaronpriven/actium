@@ -280,6 +280,15 @@ sub _check_columns {
     return;
 }
 
+sub DEMOLISH { }
+
+before DEMOLISH => sub {
+    my $self = shift;
+    my $dbh  = $self->dbh;
+    $dbh->disconnect();
+    return;
+};
+
 1;
 
 __END__
@@ -304,7 +313,7 @@ This documentation refers to version 0.003
    
 =head1 DESCRIPTION
 
-Actium::O::Files::SQLite is a role for reading data from a FileMaker database,
+Actium::O::Files::FileMaker_ODBC is a role for reading data from a FileMaker database,
 over the network using ODBC. It uses L<DBI|DBI> and L<DBD::ODBC|DBD::ODBC>.
 
 =head1 METHODS
