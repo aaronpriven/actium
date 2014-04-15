@@ -440,6 +440,52 @@ sub _build_timepoints_structs {
     return [ $rows_r, \%rows_of_place4, \%rows_of_place9 ];
 } ## tidy end: sub _build_timepoints
 
+#### These routines are not used currently, but I don't want to delete them
+#### and then forget they exist.
+#
+#
+#
+#use DateTime;
+#use DateTime::Format::Strptime;
+#
+#    my $strp_slashes = DateTime::Format::Strptime->new(
+#        pattern   => '%D',
+#        locale => 'en_US',
+#    );
+#
+#sub lines_effective_obj {
+#    my $self = shift;
+#    my @lines  = @_;
+#
+#    $self->ensure_loaded('Lines');
+#
+#    my %datestr_of = $self->all_in_column_key(qw[Lines TimetableDate]);
+#
+#    my $newest_date;
+#    foreach my $datestr ( @datestr_of{@lines} ) {
+#        
+#        my $this_date = $strp_slashes->new($datestr);
+#        if ( not defined $newest_date
+#            or DateTime->compare( $newest_date, $this_date ) == -1 )
+#        {
+#            $newest_date = $this_date;
+#        }
+#    }
+#    
+#    return $newest_date;
+#
+#} ## tidy end: sub lines_effective
+#
+#sub lines_effective {
+#   my $self = shift;
+#   my $newest_date = $self->lines_effective_obj(@_);
+#   
+#   return $newest_date->month_name . $SPACE . 
+#          $newest_date->day . ', ' .
+#          $newest_date->year;
+# 
+#}
+
 __PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
 
 1;
