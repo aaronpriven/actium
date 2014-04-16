@@ -47,9 +47,9 @@ sub flag_assignments {
     $sth->finish();
     
     unless (scalar %rows_of_file) {
-        emit_text "No flags marked as to print in database.";
-        emit_fatal;
-        die "No flags marked as to print in database.";
+        #emit_text "No flags marked as to print in database.";
+        emit_error;
+        die "Error: No flags marked as to print in database.\n";
     }
     
     my @rows_by_file;
