@@ -16,7 +16,6 @@ use Actium::Types ('ActiumFolderLike');
 use File::HomeDir;
 use Config::Tiny;
 
-
 around BUILDARGS => sub {
 	my $orig  = shift;
 	my $class = shift;
@@ -40,7 +39,7 @@ around BUILDARGS => sub {
 	}
 
 	#$args{folder} //= $ENV{HOME};
-	$args{folder} //= File::HomeDir->my_home;
+	$args{folder} //= File::HomeDir::->my_home;
 
 	return $class->$orig(%args);
 
@@ -80,10 +79,16 @@ has '_values_r' => (
 
 sub _build_values {
 	my $self    = shift;
-	my $config = Config::Tiny->read( $self->filespec );
+	my $config = Config::Tiny::->read( $self->filespec );
+	if (not defined $config) {
+	    my $errstr = Config::Tiny::->errstr ;
+	    if ($errstr =~ /does not exist/) {
+	       return +{ '_' => +{} }
+	    }
+	    croak $errstr;
+	}
 	my $ini_hoh = { %{$config} };
-	# shallow clone, in order to get an unblessed copy, otherwise
-	# it doesn't pass validation
+	# shallow clone, in order to get an unblessed copy
 	return $ini_hoh;
 }
 
@@ -114,3 +119,7 @@ sub sections {
 1;
 
 __END__
+
+=head1 BUGS
+
+Sections and keys are case-sensitive.
