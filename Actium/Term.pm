@@ -162,14 +162,20 @@ sub term_readline {
     my $hide   = shift;
 
     my $val;
+    
+    my $emit = Term::Emit::base();
+    # have to break Term::Emit encapsulation to get position...
 
+    print "\n" if $emit->{pos}; # new line unless position is 0
+    
     if ($hide) {
         $val = IO::Prompter::prompt( $prompt, -echo => '*' , -hNONE);
     }
     else {
-
         $val = IO::Prompter::prompt($prompt);
     }
+    
+    Term::Emit::setopts (-pos => 0);
 
     return $val;
 
