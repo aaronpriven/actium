@@ -9,6 +9,7 @@
 package Actium::Flags 0.003;
 
 use Actium::Preamble;
+use Actium::Term;
 
 const my @COLUMNS =>
   qw[ flagtype_filename    flagtype_master_page    Flags.stp_511_id
@@ -38,15 +39,22 @@ sub flag_assignments {
 
     while ( my $row_r = $sth->fetchrow_arrayref ) {
     	my ($file, @rest) = @{$row_r};
+    	$file =~ s/\.indd\z//;
         # DBI reuses the same hashref over and over, so have to make that
         # copy each time
         push @{$rows_of_file{$file}}, \@rest;
     }
     $sth->finish();
     
+    unless (scalar %rows_of_file) {
+        emit_text "No flags marked as to print in database.";
+        emit_fatal;
+        die "No flags marked as to print in database.";
+    }
+    
     my @rows_by_file;
     foreach my $file (keys %rows_of_file) {
-    	push @rows_by_file, FILE => $file;
+    	push @rows_by_file, [ FILE => $file ];
     	push @rows_by_file, @{$rows_of_file{$file}};
     }
 
@@ -58,7 +66,7 @@ sub flag_assignments_tabbed {
     my $actiumdb        = shift;
     my $assignments_aoa = Actium::Flags::flag_assignments($actiumdb);
 
-    my $tabbed = Actium::Util::aoa2tsv( $assignments_aoa, @COLUMNS );
+    my $tabbed = Actium::Util::aoa2tsv( $assignments_aoa );
 
     return $tabbed;
 
