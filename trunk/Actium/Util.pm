@@ -224,7 +224,7 @@ sub aoa2tsv {
     my @headers = flatten(@_);
     
     my @lines;
-    push @lines, jt (@headers);
+    push @lines, jt (@headers) if @headers;
     
     foreach my $array (@{$aoa_r}) {
         push @lines, jt(@{$array});   
