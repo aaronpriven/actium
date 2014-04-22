@@ -1,0 +1,49 @@
+# Actium/Cmd/PrepareFlags.pm
+
+# Prepare artwork so that flags are built
+
+# Subversion: $Id$
+
+# legacy stage 4
+
+package Actium::Cmd::PrepareFlags 0.003;
+
+use Actium::Preamble;
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Flags;
+use Actium::O::Folders::Signup;
+use Actium::Term;
+
+sub HELP {
+    say "Help not implemented.";
+}
+
+sub START {
+    
+    emit 'Creating flag assignments from Actium FileMaker database';
+
+    my $class      = shift;
+    my %params     = @_;
+    my $config_obj = $params{config};
+
+    my $signup = Actium::O::Folders::Signup->new();
+
+    my $actiumdb = actiumdb($config_obj);
+
+    my $tabbed = Actium::Flags::flag_assignments_tabbed ($actiumdb);
+    
+    $signup->slurp_write ($tabbed, 'flag_assignments.txt');
+
+    emit_done;
+
+}
+
+1;
+
+__END__
+
+(these are tabs)
+
+% more 19.5x17-RW13 
+53315   Washington Blvd. at Fremont Blvd., Fremont, near side, going west       210-c   215-a
+55969   Washington Blvd. at Fremont Blvd., Fremont, far side, going east        210-a   215-c
