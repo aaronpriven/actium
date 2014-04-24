@@ -6,7 +6,7 @@
 
 # Subversion: $Id$
 
-package Actium::Files::Xhea 0.003;
+package Actium::Files::Xhea 0.004;
 
 ## no critic (ProhibitAmbiguousNames)
 
@@ -540,7 +540,7 @@ Actium::Files::Xhea - Routines for loading and processing XML Hastus exports
 
 =head1 VERSION
 
-This documentation refers to version 0.003
+This documentation refers to version 0.004
 
 =head1 SYNOPSIS
 
