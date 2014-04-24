@@ -598,21 +598,29 @@ It does not allow any variations of
 the levels (so there can't be nested record types or anything like that).
 Names of all record types across all XML files loaded much be unique. 
 
- my ($fields_r, $values_r) = Actium::Files::Xhea::load($folder);
+ my ($fieldnames_r, $fields_r, $values_r) = 
+    Actium::Files::Xhea::load($folder);
+
+The structure of $fieldnames_r will be:
+
+ $fieldnames_r = 
+   { recordname => 
+       [ "fieldname", "fieldname", ... ]
+   };
 
 The structure of $fields_r will be:
  
  $fields_r =
-   { I<recordname> => 
-      { I<fieldname> => 
+   { recordname => 
+      { fieldname => 
           {
-          base => I<basetype>,
-          type => I<type>,
-          idx => I<idx>,
+          base => "basetype",
+          type => "type",
+          idx => "idx",
           },
-       I<fieldname> => I<etc...>
+       fieldname => I<etc...>
       },
-    I<recordname> => I<etc...>
+    recordname => I<etc...>
    };
       
 It contains a hash whose keys are the record names. The values of that hash
