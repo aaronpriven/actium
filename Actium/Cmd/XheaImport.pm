@@ -4,7 +4,7 @@
 
 # Subversion: $Id$
 
-package Actium::Cmd::XheaImport 0.003;
+package Actium::Cmd::XheaImport 0.004;
 
 use Actium::Preamble;
 use Actium::Files::Xhea;
@@ -16,9 +16,9 @@ sub HELP {
 }
 
 const my $STOPS     => 'stop';
-const my $STOPS_PC  => 'stop_pc';
+const my $STOPS_PC  => 'stop_with_i';
 const my $PLACES    => 'place';
-const my $PLACES_PC => 'place_pc';
+const my $PLACES_PC => 'place_with_i';
 
 sub START {
 
