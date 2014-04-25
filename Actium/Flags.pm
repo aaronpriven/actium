@@ -6,14 +6,14 @@
 
 # legacy stage 4
 
-package Actium::Flags 0.003;
+package Actium::Flags 0.004;
 
 use Actium::Preamble;
 use Actium::Term;
 
 const my @COLUMNS =>
-  qw[ flagtype_filename    flagtype_master_page    Flags.stp_511_id
-  FullDescription      decals  ];
+  qw[ flagtype_filename    flagtype_master_page    stp_511_id
+  c_description_full      p_decals  ];
 
 const my $COLUMNS_SQL => join( ', ', @COLUMNS );
 
@@ -24,11 +24,8 @@ sub flag_assignments {
 
     my $query = qq[
     SELECT $COLUMNS_SQL 
-    FROM Flags INNER JOIN Stops_Hastus 
-       ON Flags.stp_511_id = Stops_Hastus.stp_511_id 
-       LEFT JOIN Stops_User ON Flags.stp_511_id = Stops_User.stp_511_id 
-       LEFT JOIN Stops_Perl ON Flags.stp_511_id = Stops_Perl.stp_511_id 
-       LEFT JOIN Flagtypes on Flags.flagtype_id = Flagtypes.flagtype_id
+    FROM Stops_Neue 
+       LEFT JOIN Flagtypes ON Stops.u_flagtype_id = Flagtypes.flagtype_id
     WHERE Flags.flag_to_print_next_run = 1
     ];
 
