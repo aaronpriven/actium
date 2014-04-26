@@ -12,8 +12,10 @@ use Actium::Preamble;
 use Actium::Term;
 
 const my @COLUMNS =>
-  qw[ flagtype_filename    flagtype_master_page    stp_511_id
-  c_description_full      p_decals  ];
+  qw[ 
+  flagtype_filename    flagtype_master_page    h_stp_511_id
+  c_description_full   p_decals  
+  ];
 
 const my $COLUMNS_SQL => join( ', ', @COLUMNS );
 

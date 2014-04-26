@@ -86,7 +86,8 @@ sub hastus_stops_import {
 
     my @returned_headers = (
         (map { $ORIG_PREFIX . $_ } @stop_headers),
-        (map { $CALC_PREFIX . $_ } (qw[on at stnum comment city direction])),
+        (map { $CALC_PREFIX . $_ } 
+           (qw[on at street_num comment city direction])),
     );
 
     my @returned_records;
