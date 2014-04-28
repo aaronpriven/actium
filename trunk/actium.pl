@@ -16,7 +16,7 @@
 use 5.012;
 use warnings;
 
-our $VERSION = 0.003;
+our $VERSION = 0.005;
 
 # add the current program directory to list of files to include
 use FindBin qw($Bin);
@@ -66,8 +66,6 @@ my %module_of = (
     nearbyroutes    => 'NearbyRoutes',
     mr_import       => 'MRImport',
     mr_copy         => 'MRCopy',
-    mr_coffee       => 'Joke',
-    joke            => \'mr_coffee',
     htmltables      => 'HTMLTables',
     linedescrip     => 'LineDescrip',
     decalcount => 'DecalCount',
