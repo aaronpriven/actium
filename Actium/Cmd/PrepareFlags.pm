@@ -6,7 +6,7 @@
 
 # legacy stage 4
 
-package Actium::Cmd::PrepareFlags 0.003;
+package Actium::Cmd::PrepareFlags 0.004;
 
 use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
@@ -32,6 +32,8 @@ sub START {
 
     my $tabbed = Actium::Flags::flag_assignments_tabbed ($actiumdb);
     
+    return unless $tabbed; # there was an error
+    
     $signup->slurp_write ($tabbed, 'flag_assignments.txt');
 
     emit_done;
@@ -41,9 +43,3 @@ sub START {
 1;
 
 __END__
-
-(these are tabs)
-
-% more 19.5x17-RW13 
-53315   Washington Blvd. at Fremont Blvd., Fremont, near side, going west       210-c   215-a
-55969   Washington Blvd. at Fremont Blvd., Fremont, far side, going east        210-a   215-c
