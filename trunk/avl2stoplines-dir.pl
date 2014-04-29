@@ -58,7 +58,26 @@ init_options;
 my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
-my $stopdata = $signup->mergeread('Stops.csv');
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+
+my (@stops, %desc_of);
+
+load_tables(
+    requests => {
+        Stops_Neue => {
+            array        => \@stops,
+            index_field => 'h_stp_511_id',
+            fields => [ qw/h_stp_511_id c_description_full/ ],
+        },
+    }
+);
+
+foreach my $stop_row (@stops) {
+     my $id = $stop_row->{h_stp_511_id};
+     my $desc =  $stop_row->{c_description_full};
+     $desc_of{$id} = $desc;
+}
+
 
 # retrieve data
 
@@ -166,7 +185,7 @@ my (%with_routes);
 
 my $max = 0;
 
-my $desc_col = $stopdata->column_order_of('DescriptionCityF');
+#my $desc_col = $stopdata->column_order_of('DescriptionCityF');
 
 my %stoplines;
 
@@ -207,11 +226,9 @@ foreach my $stop ( sort keys %{ $disp_route_of{'r6dir'} } ) {
     #push @{$stoplines{$stop}} , $stop, $desc, $district , join( " ", @routes );
 #    $stoplines{$stop}{DESC} = $desc;
 
-    my @stopsrows =  $stopdata->rows_where('PhoneID' , $stop);
+    #my @stopsrows =  $stopdata->rows_where('PhoneID' , $stop);
 
-
-
-    $stoplines{$stop}{DESC} = $stopsrows[0][$desc_col];
+    $stoplines{$stop}{DESC} = $desc_of{$stop}; 
 
     $stoplines{$stop}{DISTRICT} = $district;
     $stoplines{$stop}{ROUTES} = join( " ", @routes );
@@ -359,7 +376,7 @@ foreach my $stop ( sort keys %{ $disp_route_of{'r6dir'} } ) {
 
 } ## #tidy# end foreach my $stop ( sort keys...)
 
-open my $stoplines, '>', 'stoplines-dir.txt' or die "$!";
+open my $stoplines, '>', 'stoplines-dir-new.txt' or die "$!";
 
 say $stoplines jt( "StopID\tDescription\tCityCode\tLines\tNumLines\tNumBoxes", 
     'Priority');
