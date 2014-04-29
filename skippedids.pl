@@ -13,31 +13,30 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
-use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
+use Actium::Options (qw<option init_options add_option>);
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
-use Actium::Options (qw<option add_option>);
-#add_option ('spec' , 'description');
-use Actium::Term (qw<printq sayq>);
-use Actium::O::Folders::Signup;
-my $signupdir = Actium::O::Folders::Signup->new();
-chdir $signupdir->path();
-my $signup = $signupdir->signup;
+init_options();
 
 # open and load files
 
-printq "Using signup $signup\n\n";
-
-printq <<"EOF" ;
-Now loading data...
-EOF
-
 # read in FileMaker Pro data into variables in package main
 
-our (@signs, %signs);
-FPread_simple ("Signs.csv" , \@signs , \%signs , 'SignID');
-printq scalar(@signs) , " signs.\n" ;
+my %signs;
+
+load_tables(
+    requests => {
+        Signs => { hash => \%signs, index_field => 'SignID',
+           fields => [qw[
+           SignID stp_511_id 
+           ]], 
+             },
+        },
+);
 
 my $last = (sort {$b <=> $a} keys %signs)[0];
+
+print "Skipped signs:";
 
 for ( 1 .. $last ) {
 

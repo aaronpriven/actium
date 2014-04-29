@@ -24,7 +24,6 @@ use Actium::Term (qw<output_usage printq sayq>);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 
-#use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
 use List::MoreUtils('natatime');
