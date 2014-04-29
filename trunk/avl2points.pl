@@ -60,15 +60,13 @@ init_options;
 my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
-my ( @signs, @stops, @lines, @signtypes, @skedspec, @projects );
-my ( %signs, %stops, %lines, %signtypes, %skedspec, %projects );
+my ( @signs, @stops, @lines, @signtypes, @skedspec, );
+my ( %signs, %stops, %lines, %signtypes, %skedspec, );
 
 print "SignTypes... ";
 
 FPread_simple( "SignTypes.csv", \@signtypes, \%signtypes, 'SignType' );
-print scalar(@signtypes), " records.\nProjects... ";
-FPread_simple( "Projects.csv", \@projects, \%projects, 'Project' );
-print scalar(@projects), " records.\nSigns... ";
+print scalar(@signtypes), " records.\nSigns... ";
 FPread_simple( "Signs.csv", \@signs, \%signs, 'SignID' );
 print scalar(@signs), " records.\nSkedspec... ";
 FPread( "SkedSpec.csv", \@skedspec, \%skedspec, 'SignID', 1, 0 );

@@ -76,8 +76,8 @@ EOF
 
 # read in FileMaker Pro data into variables in package main
 
-our (@signs, @stops, @lines, @signtypes, @skedspec, @projects);
-our (%signs, %stops, %lines, %signtypes, %skedspec, %projects);
+our (@signs, @stops, @lines, @signtypes, @skedspec, );
+our (%signs, %stops, %lines, %signtypes, %skedspec, );
 
 our ($schooldayflag, $anysecondflag,$addminsflag);
 
@@ -86,9 +86,7 @@ my $vals = Skedtps::initialize;
 printq "$vals timepoints.\nSignTypes... " ;
 
 FPread_simple ("SignTypes.csv" , \@signtypes, \%signtypes, 'SignType');
-printq scalar(@signtypes) , " records.\nProjects... " ;
-FPread_simple ("Projects.csv" , \@projects, \%projects, 'Project');
-printq scalar(@projects) , " records.\nSigns... " ;
+printq scalar(@signtypes) , " records.\nSigns... " ;
 FPread_simple ("Signs.csv" , \@signs, \%signs, 'SignID');
 printq scalar(@signs) , " records.\nSkedspec... " ;
 FPread ("SkedSpec.csv" , \@skedspec, \%skedspec, 'SignID' , 1, 0);
@@ -1213,10 +1211,10 @@ sub output_points {
 
     }
 
-    my $thisproject = $signs{$signid}{Project};
-    if ($projects{$thisproject}{'ProjectNote'}) {
-       print OUT $projects{$thisproject}{'ProjectNote'} , "\r";
-    }
+    #my $thisproject = $signs{$signid}{Project};
+    #if ($projects{$thisproject}{'ProjectNote'}) {
+    #   print OUT $projects{$thisproject}{'ProjectNote'} , "\r";
+    #}
 
 
     if ($signs{$signid}{Note600s} =~ /^[Yy]/ ) {
