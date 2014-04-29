@@ -1,7 +1,7 @@
 # /Actium/Cmd/AddDescriptionF.pm
 
 # Adds the DescriptionF from the XML file to a stop list given, so that
-# <stopid>\t<arbitrarytext> 
+# <stopid>\t<arbitrarytext>
 # turns to
 # <stopid>\t<DescriptionF>\t<arbitrarytext>
 
@@ -9,7 +9,7 @@
 
 # Legacy status: well, 4, but not necessarily intended as a permanent thing
 
-package Actium::Cmd::AddDescriptionF 0.001;
+package Actium::Cmd::AddDescriptionF 0.005;
 
 use 5.012;
 use warnings;
@@ -17,56 +17,53 @@ use warnings;
 use autodie;
 
 use Actium::O::Folders::Signup;
-use Actium::O::Files::FMPXMLResult;
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Term;
 
 sub HELP { say "Help not implemented"; }
 
 sub START {
- 
-   my $signup = Actium::O::Folders::Signup->new;
-   
-   my $xml_db = $signup->load_xml;
-   $xml_db->ensure_loaded('Stops');
-   
-    emit 'Getting stop descriptions from FileMaker export';
 
-    my $dbh = $xml_db->dbh;
+    my $class  = shift;
+    my %params = @_;
 
-    my $stops_row_of_r =
-      $xml_db->all_in_columns_key(qw/Stops DescriptionCityF/);
+    my $config_obj = $params{config};
+
+    my $signup   = Actium::O::Folders::Signup->new;
+    my $actiumdb = actiumdb($config_obj);
+
+    emit 'Getting stop descriptions from FileMaker';
+
+    my $stops_row_of_r
+      = $actiumdb->all_in_columns_key(qw/Stops_Neue c_description_full/);
 
     emit_done;
 
- 
-   my $file = shift @ARGV || '-' ; # stdin
-   
-   
-   open my $in, '<' , $file;
-   
-   binmode STDOUT, ":utf8";
-   
-   while (<$in>) {
-       chomp;
-    
-       my ($stopid, $text) = split (/\t/, $_, 2);
-       $text //= q[];
-       my $desc = $stops_row_of_r->{$stopid}{DescriptionCityF};
-       if (not defined $desc) {
-          if ( $stopid =~ /Stop\s*ID/i) {
-              $desc = "DescriptionCityF";
-          } else {
-          $desc = "** NOT FOUND **";
-          warn "No description found for $stopid";
-           }
-       }
-       say "$stopid\t$desc\t$text";
-       
-   }
-   
-   
- 
- 
-}
+    my $file = shift @ARGV || '-';    # stdin
+
+    open my $in, '<', $file;
+
+    binmode STDOUT, ":utf8";
+
+    while (<$in>) {
+        chomp;
+
+        my ( $stopid, $text ) = split( /\t/, $_, 2 );
+        $text //= q[];
+        my $desc = $stops_row_of_r->{$stopid}{c_description_full};
+        if ( not defined $desc ) {
+            if ( $stopid =~ /Stop\s*ID/i ) {
+                $desc = "DescriptionCityF";
+            }
+            else {
+                $desc = "** NOT FOUND **";
+                warn "No description found for $stopid";
+            }
+        }
+        say "$stopid\t$desc\t$text";
+
+    }
+
+} ## tidy end: sub START
 
 1;
