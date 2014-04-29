@@ -704,7 +704,7 @@ sub format_bottom {
     my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid}; # this is a reference
 
     print $botfh IDTags::parastyle('bottomnotes'),
-      $stop_r->{DescriptionF}, ", ", $stop_r->{CityF};
+      $stop_r->{c_description_full} ;
 
     print $botfh ". Sign #$signid. Stop $stopid.";
 
