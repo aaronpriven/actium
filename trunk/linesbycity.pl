@@ -13,7 +13,8 @@ use lib $Bin;
 
 # libraries dependent on $Bin
 
-use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+
 use Actium::Sorting::Line (qw(sortbyline));
 
 use Actium::Options (qw<option add_option init_options>);
@@ -22,40 +23,39 @@ use Actium::O::Folders::Signup;
 
 init_options();
 
-my $signupdir = Actium::O::Folders::Signup->new();
-chdir $signupdir->path();
-my $signup = $signupdir->signup;
+#my $signupdir = Actium::O::Folders::Signup->new();
+#chdir $signupdir->path();
+#my $signup = $signupdir->signup;
 
 # open and load files
 
-print STDERR "Using signup $signup\n\n";
-
-print STDERR <<"EOF" ;
-Now loading data...
-EOF
-
 # read in FileMaker Pro data into variables in package main
 
-our (@stops, %stops);
+our ( @stops);
 
-FPread_simple ("Stops.csv" , \@stops , \%stops , 'stop_id_1');
-
-print STDERR scalar(@stops) , " stops.\n";
-
-# fields - stop_id_1,STOPROUTES,UNSHOWNROU,ERRSHOWNRO,POLENUM,SHELTR,TIMEPOINT,SignID,MyNeighborhood,MyPoleType,MyDescription,CityF,OnF,AtF,StNumF,CommentF,CornerF,SiteF,DirectionF,NotesForR_P
+load_tables(
+    requests => {
+        Stops_Neue => {
+            array => \@stops,
+            fields => [qw[
+            h_stp_511_id p_active p_lines c_city
+            ]],
+        },
+    }
+);
 
 my %lines_of;
 my %cities_of;
 
 foreach my $stop (@stops) {
 
-   next if $stop->{In_last_update} =~ /no/i;
+   next unless $stop->{p_active};
 
-   my @routes = split(' ' , $stop->{ud_stp_FlagRoute});
+   my @routes = split(' ' , $stop->{p_lines});
    foreach (@routes) {
 
       next if /NULL/;
-      my $city = $stop->{CityF};
+      my $city = $stop->{c_city};
       $city =~ s/^\s+//;
       $city =~ s/\s+$//;
       $lines_of{$city}{$_}++;
@@ -66,16 +66,6 @@ foreach my $stop (@stops) {
 my @cities = sort keys %lines_of;
 
 my @lines = sortbyline keys %cities_of;
-
-#foreach my $city (@cities) {
-
-#   print "$city: ";
-#   print join ( ", " , sort byroutes keys (%{$lines_of{$city}} ) );
-#   print "\n";
-#
-#}
-
-# build matrix
 
 foreach my $line (@lines) {
    print "\t$line";

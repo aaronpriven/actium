@@ -18,7 +18,6 @@ use lib ( $Bin, "$Bin/../bin" );
 
 use Actium::Util(qw<jt jn>);
 use Actium::Constants;
-use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 use Actium::Sorting::Line ('sortbyline');
 
 use List::MoreUtils ('natatime');
@@ -46,14 +45,27 @@ my %height_of = (
     RS      => 16.375,
 );
 
-use Actium::Options;
+use Actium::Options (qw[init_options]);
 use Actium::O::Folders::Signup;
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+
+init_options();
+
 my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
 # retrieve data
-my ( @stops, %stops );
-FPread_simple( 'Stops.csv', \@stops, \%stops, 'stop_id_1' );
+my %stops;
+
+load_tables(
+    requests => {
+        Stops_Neue => {
+            hash        => \%stops,
+            index_field => 'h_stp_511_id',
+            fields => [qw[h_stp_511_id c_description_nocity c_city ]],
+        },
+    }
+);
 
 my %compare;
 open my $comp, '<', 'comparestops-x.txt' or die $!;
@@ -71,14 +83,6 @@ while (<$comp>) {
 }
 
 close $comp;
-
-my %output_dispatch = (
-    AL => \&al_output,
-    RL => \&rl_output,
-    CL => \&cl_output,
-    AS => \&as_output,
-    RS => \&rs_output,
-);
 
 my $stopcount = 0;
 my $filecount = 0;
@@ -103,7 +107,7 @@ foreach my $file (keys %type_of) {
     open my $crewlist, '>' , "crewlist-$type.txt" or die $!;
     open my $baglist, '<', $file or die $!;
 
-    print $crewlist "InstallRoute\tInstallNum\tInstallOrder\tStopID\tPhoneID\tDescription\tCity\tAdded\tRemoved\tUnchanged\n";
+    print $crewlist "InstallRoute\tInstallNum\tInstallOrder\tStopID\tDescription\tCity\tAdded\tRemoved\tUnchanged\n";
 
     while (<$baglist>) {
 
@@ -117,14 +121,12 @@ foreach my $file (keys %type_of) {
             my $type  = $compare{$stopid}{Type}; 
             next unless $type;
 
-            my $desc   = $stops{$stopid}{DescriptionF}
+            my $desc   = $stops{$stopid}{c_description_nocity}
               || die "No description for $stopid";
-            my $city = $stops{$stopid}{CityF} || die "No city for $stopid";
-            my $phoneid = $stops{$stopid}{PhoneID}
-              || die "No phone for $stopid";
+            my $city = $stops{$stopid}{c_city} || die "No city for $stopid";
 
             print $crewlist "$routedir\t", $i + 1, "\t" , $i + 1 , " of $numstops";
-            print $crewlist "\t$stopid\t$phoneid\t$desc\t$city";
+            print $crewlist "\t$stopid\t$desc\t$city";
 
 #            my $type  = $compare{$stopid}{Type}  || die "No type for $stopid";
             my $added = $compare{$stopid}{Added} || $EMPTY_STR;

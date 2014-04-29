@@ -38,7 +38,6 @@ my $IDPOINTFOLDER = 'indesign_points';
 
 use Data::Dumper;
 
-#use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use IDTags;
 use Skedfile qw(Skedread merge_columns);
@@ -112,35 +111,10 @@ load_tables(
             fields => [qw[h_stp_511_id h_stp_identifier c_on c_at c_direction 
                       c_street_num c_city]],
         },
-#        Stops => {
-#            hash        => \%stops,
-#            index_field => 'stop_id_1',
-#            fields => [qw[PhoneID stop_id_1 OnF AtF DirectionF StNumF CityF]],
-#        },
     }
 );
 
 Skedtps::initialize( \@timepoints, \%timepoints );
-
-#FPread_simple ('Timepoints.csv' , \@timepoints, \%timepoints, 'Abbrev9');
-#
-#printq "Timepoints and timepoint names... " ;
-#my $vals = Skedtps::initialize (\@timepoints, \%timepoints);
-#printq "$vals timepoints.\nSignTypes... " ;
-#
-#FPread_simple ("SignTypes.csv" , \@signtypes, \%signtypes, 'SignType');
-#printq scalar(@signtypes) , " records.\nSigns... " ;
-#FPread_simple ("Signs.csv" , \@signs, \%signs, 'SignID');
-#printq scalar(@signs) , " records.\nSkedspec... " ;
-#FPread ("SkedSpec.csv" , \@skedspec, \%skedspec, 'SignID' , 1, 0);
-## ignores repeating fields, but works with non-unique SignIDs
-## BUG - rest of program will break if there are *not* non-unique SignIDs.
-## Not a problem in real life, but may break simple test runs.
-#printq scalar(@skedspec) , " records.\nLines... " ;
-#FPread_simple ("Lines.csv" , \@lines, \%lines, 'Line');
-#printq scalar(@lines) , " records.\nStops (be patient, please)... " ;
-#FPread_simple ("Stops.csv" , \@stops , \%stops , 'stop_id_1');
-#printq scalar(@stops) , " records.\nLoaded.\n\n" ;
 
 open DATE, "<effectivedate.txt"
   or die "Can't open effectivedate.txt for input";

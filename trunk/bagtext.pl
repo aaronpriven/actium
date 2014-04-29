@@ -14,7 +14,6 @@ use lib ( $Bin, "$Bin/../bin" );
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Constants;
 use Actium::Util(qw/joinseries in/);
-#use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 
 use autodie;
 
@@ -62,10 +61,6 @@ my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
 
 my $bagtextdir = $signup->subfolder('bagtexts');
-
-# retrieve data
-#my ( @stops, %stops );
-#FPread_simple( 'Stops.csv', \@stops, \%stops, 'PhoneID' );
 
 my %compare;
 open my $comp, '<', 'compare/compare2.txt';
