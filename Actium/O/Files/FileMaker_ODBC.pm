@@ -1,4 +1,4 @@
-# Actium/O/Files/FMPXMLResult.pm
+# Actium/O/Files/FileMaker_ODBC.pm
 
 # Class for reading and processing FileMaker Pro databases via ODBC
 

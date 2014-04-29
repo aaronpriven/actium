@@ -303,7 +303,7 @@ foreach my $route ( sortbyline keys %skednamesbyroute ) {
                 tphash($tp),
                 $Skedtps::timepoints{$tp_lookup}{City},
                 $Skedtps::timepoints{$tp_lookup}{UseCity},
-                $Skedtps::timepoints{$tp_lookup}{Neighborhood},
+                "", # $Skedtps::timepoints{$tp_lookup}{Neighborhood},
                 $Skedtps::timepoints{$tp_lookup}{TPNote},
                 $faketimepointnote
             );

@@ -65,16 +65,14 @@ sub START {
 
     my $effdate = read_file('effectivedate.txt');
 
-    our ( @signs, @stops, @lines, @signtypes, @projects, @timepoints );
-    our ( %signs, %stops, %lines, %signtypes, %projects, %timepoints );
+    our ( @signs, @stops, @lines, @signtypes, @timepoints );
+    our ( %signs, %stops, %lines, %signtypes, %timepoints );
     our ( %stops_by_oldstopid, @stops_by_oldstopid );
 
     # retrieve data
 
     FPread_simple( "SignTypes.csv", \@signtypes, \%signtypes, 'SignType' );
-    printq scalar(@signtypes), " records.\nProjects... ";
-    FPread_simple( "Projects.csv", \@projects, \%projects, 'Project' );
-    printq scalar(@projects), " records.\nTimepoints... ";
+    printq scalar(@signtypes), " records.\nTimepoints... ";
     FPread_simple( "Timepoints.csv", \@timepoints, \%timepoints, 'Abbrev4' );
     printq scalar(@timepoints), " records.\nSigns... ";
     FPread_simple( "Signs.csv", \@signs, \%signs, 'SignID' );
