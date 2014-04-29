@@ -31,7 +31,6 @@ use Actium::Util(qw<jk>);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils (qw<any all>);
-use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
 
 use Readonly;
 
@@ -59,25 +58,6 @@ init_options;
 
 my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
-
-my ( @signs, @stops, @lines, @signtypes, @skedspec, );
-my ( %signs, %stops, %lines, %signtypes, %skedspec, );
-
-print "SignTypes... ";
-
-FPread_simple( "SignTypes.csv", \@signtypes, \%signtypes, 'SignType' );
-print scalar(@signtypes), " records.\nSigns... ";
-FPread_simple( "Signs.csv", \@signs, \%signs, 'SignID' );
-print scalar(@signs), " records.\nSkedspec... ";
-FPread( "SkedSpec.csv", \@skedspec, \%skedspec, 'SignID', 1, 0 );
-# ignores repeating fields, but works with non-unique SignIDs
-# BUG - rest of program will break if there are *not* non-unique SignIDs.
-# Not a problem in real life, but may break simple test runs.
-print scalar(@skedspec), " records.\nLines... ";
-FPread_simple( "Lines.csv", \@lines, \%lines, 'Line' );
-print scalar(@lines), " records.\nStops (be patient, please)... ";
-FPread_simple( "Stops.csv", \@stops, \%stops, 'stop_id_1' );
-print scalar(@stops), " records.\nLoaded.\n\n";
 
 # retrieve data
 
