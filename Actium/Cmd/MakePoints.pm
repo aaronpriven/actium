@@ -24,7 +24,8 @@ use Actium::Term (qw<output_usage printq sayq>);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 
-use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
+#use Actium::Files::Merge::FPMerge (qw(FPread FPread_simple));
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
 use List::MoreUtils('natatime');
 use Actium::O::Folders::Signup;
@@ -57,6 +58,12 @@ EOF
 }
 
 sub START {
+    
+    my $class = shift;
+    
+    my %params = @_;
+    my $config = $params{config};
+    
 
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path();
@@ -67,23 +74,36 @@ sub START {
 
     our ( @signs, @stops, @lines, @signtypes, @timepoints );
     our ( %signs, %stops, %lines, %signtypes, %timepoints );
-    our ( %stops_by_oldstopid, @stops_by_oldstopid );
 
     # retrieve data
 
-    FPread_simple( "SignTypes.csv", \@signtypes, \%signtypes, 'SignType' );
-    printq scalar(@signtypes), " records.\nTimepoints... ";
-    FPread_simple( "Timepoints.csv", \@timepoints, \%timepoints, 'Abbrev4' );
-    printq scalar(@timepoints), " records.\nSigns... ";
-    FPread_simple( "Signs.csv", \@signs, \%signs, 'SignID' );
-    printq scalar(@signs), " records.\nSkedspec... ";
-    FPread_simple( "Lines.csv", \@lines, \%lines, 'Line' );
-    printq scalar(@lines), " records.\nStops (be patient, please)... ";
-
-    FPread_simple( "Stops.csv", \@stops, \%stops, 'PhoneID' );
-    FPread_simple( "Stops.csv", \@stops_by_oldstopid, \%stops_by_oldstopid,
-        'stop_id_1' );
-    printq scalar(@stops), " records.\nLoaded.\n\n";
+    load_tables(
+    requests => {
+        Timepoints => {
+            array       => \@timepoints,
+            hash        => \%timepoints,
+            index_field => 'Abbrev4'
+        },
+        SignTypes => {
+            array       => \@signtypes,
+            hash        => \%signtypes,
+            index_field => 'SignType'
+        },
+        Signs => { array => \@signs, hash => \%signs, index_field => 'SignID',
+           fields => [qw[
+           SignID Active stp_511_id Status SignType Sidenote UseOldMakepoints 
+           ShelterNum UNIQUEID
+           ]], 
+            
+             },
+        Lines => { array => \@lines, hash => \%lines, index_field => 'Line' },
+        Stops_Neue => {
+            hash        => \%stops,
+            index_field => 'h_stp_511_id',
+            fields => [qw[h_stp_511_id c_description_full ]],
+        },
+    }
+);
 
     my $effectivedate = trim( read_file('effectivedate.txt') );
 
@@ -105,7 +125,7 @@ sub START {
     foreach my $signid ( sort { $a <=> $b } @signstodo ) {
 
         my $ostopid = $signs{$signid}{UNIQUEID};
-        my $stopid  = $stops_by_oldstopid{$ostopid}{PhoneID};
+        my $stopid  = $signs{$signid}{stp_511_id};
 
         my $sign_is_active = lc( $signs{$signid}{Active} ) ;
 

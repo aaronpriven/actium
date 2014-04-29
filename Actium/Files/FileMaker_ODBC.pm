@@ -21,6 +21,7 @@ use Sub::Exporter -setup => { exports => [qw(load_tables)] };
 
 sub load_tables {
     my %params     = @_;
+    
     my $config_obj = $params{config};
 
     # this bit not necessary for actium.pl based commands
@@ -34,13 +35,37 @@ sub load_tables {
     my %request_of = %{ $params{requests} };
     my $actium_dbh = $actium_db->dbh;
 
-    foreach my $table ( keys %request_of ) {
+    foreach my $table ( sort keys %request_of ) {
+        
+        emit "Loading from $table";
+        
+        emit "Selecting data from table $table";
+        
+        my $fields;
+
+        if (exists($request_of{$table}{fields})) {
+            $fields = join(', ', @{$request_of{$table}{fields}});
+        } else {
+            $fields = '*';
+        }
+        
+        emit_text "Fields: $fields";
 
         my $result_ref
-          = $actium_dbh->selectall_arrayref( "SELECT * FROM $table",
-            { Slice => {} } );
-
-        my $process_dupe = not ($request_of{$table}{ignoredupe} //= 0);
+          = $actium_dbh->selectall_arrayref( "SELECT $fields FROM $table",
+            { Slice => {} } 
+            );
+            
+        emit_done;
+        
+        if ( exists $request_of{$table}{array} ) {
+            
+            emit "Processing $table into array";
+            @{ $request_of{$table}{array} } = @{$result_ref};
+            # this is to make sure the same array that was passed in
+            # gets the results
+            emit_done;
+        }
 
         # process into hash
 
@@ -48,16 +73,29 @@ sub load_tables {
             and exists $request_of{$table}{hash} )
         {
 
+            my $ignoredupe = $request_of{$table}{ignoredupe};
+            $ignoredupe //= 1;
+            my $process_dupe = not $ignoredupe;
+            
+            emit "Processing $table into hash";
+
             my $hashref     = $request_of{$table}{hash};
             my $index_field = $request_of{$table}{index_field};
 
             if ($process_dupe) {
-                my @all_indexes = $actium_dbh->selectcol_arrayref(
-                    "SELECT $index_field from $table");
+                
+                emit "Determining whether duplicate index field ($index_field) entries";
+                
+                my @all_indexes = @{$actium_dbh->selectcol_arrayref(
+                    "SELECT $index_field from $table")};
 
                 if ( ( uniq @all_indexes ) == @all_indexes ) {
                     # indexes are all unique
                     $process_dupe = 0;
+                    emit_no;
+                }
+                else {
+                    emit_yes;
                 }
             }
 
@@ -65,21 +103,19 @@ sub load_tables {
 
                 my $index_value = $row_hr->{$index_field};
                 if ($process_dupe) {
-                    push @{ $hashref->{$index_field} }, $row_hr;
+                    push @{ $hashref->{$index_value} }, $row_hr;
                 }
                 else {
-                    $hashref->{$index_field} = $row_hr;
+                    $hashref->{$index_value} = $row_hr;
                 }
 
             }
+            
+            emit_done;
 
         } ## tidy end: if ( exists $request_of...)
 
-        if ( exists $request_of{array} ) {
-            @{ $request_of{array} } = @{$result_ref};
-            # this is to make sure the same array that was passed in
-            # gets the results
-        }
+        emit_done;
 
     } ## tidy end: foreach my $table ( keys %request_of)
 
@@ -93,7 +129,7 @@ call with
 
 load_tables (
    config => $config_obj, # Actium::O::Files::Ini object, optional
-   requests => [
+   requests => {
       table1 => { 
            index_field => 'index_field',
            array => \@array,
@@ -101,5 +137,5 @@ load_tables (
            ignoredupe => 0, # or 1
       },
       table2 => { etc. },
-   ],
+   },
 )

@@ -47,7 +47,8 @@ foreach ( keys %specdaynames ) {
 }
 
 use Skedtps qw(tphash tpxref destination TPXREF_FULL);
-use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+#use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 
 use Actium::Options (qw<option add_option init_options>);
 add_option( 'upcoming=s', 'Upcoming signup' );
@@ -97,17 +98,39 @@ my $prepdate;
     $prepdate = "$mon $mday, $year";
 }
 
-our ( @lines, %lines, @skedadds, %skedadds, %colors, @colors );
+our ( @lines, %lines, @skedadds, %skedadds,
+    %colors, @colors, %timepoints, @timepoints );
 
-printq "Timepoints and timepoint names... ";
-my $vals = Skedtps::initialize(TPXREF_FULL);
-printq "$vals timepoints.\nLines... ";
-FPread_simple( "Lines.csv", \@lines, \%lines, 'Line' );
-printq scalar(@lines), " records. Colors...\n";
-FPread_simple( "Colors.csv", \@colors, \%colors, 'ColorID' );
-printq scalar(@lines), " records. SkedAdds...\n";
-FPread_simple( "SkedAdds.csv", \@skedadds, \%skedadds, 'SkedID' );
-printq scalar(@lines), " records.\n";
+load_tables(
+    requests => {
+        Timepoints => {
+            array       => \@timepoints,
+            hash        => \%timepoints,
+            index_field => 'Abbrev9'
+        },
+        SkedAdds => {
+            array       => \@skedadds,
+            hash        => \%skedadds,
+            index_field => 'SkedID'
+        },
+        Lines => { array => \@lines, hash => \%lines, index_field => 'Line' },
+        Colors =>
+          { array => \@colors, hash => \%colors, index_field => 'ColorID' },
+    }
+);
+
+Skedtps::initialize( \@timepoints, \%timepoints, TPXREF_FULL );
+
+#FPread_simple ('Timepoints.csv' , \@timepoints, \%timepoints, 'Abbrev9');
+#printq "Timepoints and timepoint names... ";
+#my $vals = Skedtps::initialize(TPXREF_FULL);
+#printq "$vals timepoints.\nLines... ";
+#FPread_simple( "Lines.csv", \@lines, \%lines, 'Line' );
+#printq scalar(@lines), " records. Colors...\n";
+#FPread_simple( "Colors.csv", \@colors, \%colors, 'ColorID' );
+#printq scalar(@lines), " records. SkedAdds...\n";
+#FPread_simple( "SkedAdds.csv", \@skedadds, \%skedadds, 'SkedID' );
+#printq scalar(@lines), " records.\n";
 
 mkdir "tabxchange"
   or die "Can't make directory 'tabxchange': $!"
@@ -303,7 +326,7 @@ foreach my $route ( sortbyline keys %skednamesbyroute ) {
                 tphash($tp),
                 $Skedtps::timepoints{$tp_lookup}{City},
                 $Skedtps::timepoints{$tp_lookup}{UseCity},
-                "", # $Skedtps::timepoints{$tp_lookup}{Neighborhood},
+                "",    # $Skedtps::timepoints{$tp_lookup}{Neighborhood},
                 $Skedtps::timepoints{$tp_lookup}{TPNote},
                 $faketimepointnote
             );
@@ -387,9 +410,8 @@ foreach my $route ( sortbyline keys %skednamesbyroute ) {
               .= '<p>'
               . q{<a href="https://public.govdelivery.com/}
               . q{accounts/ACTRANSIT/subscriber/new?topic_id=}
-              . $govtopic 
-              . q{">} 
-              . 'Get timely, specific updates about ' 
+              . $govtopic . q{">}
+              . 'Get timely, specific updates about '
               . "Line $route from AC Transit eNews."
               . '</a></p>';
         }
