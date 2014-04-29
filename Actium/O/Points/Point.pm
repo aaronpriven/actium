@@ -524,11 +524,11 @@ sub format_side {
 
     print $sidefh $self->format_sidenotes;
 
-    my $thisproject = $Actium::Cmd::MakePoints::signs{$signid}{Project};
-    if ( $Actium::Cmd::MakePoints::projects{$thisproject}{'ProjectNote'} ) {
-        print $sidefh $Actium::Cmd::MakePoints::projects{$thisproject}
-          {'ProjectNote'}, "\r";
-    }
+    #my $thisproject = $Actium::Cmd::MakePoints::signs{$signid}{Project};
+    #if ( $Actium::Cmd::MakePoints::projects{$thisproject}{'ProjectNote'} ) {
+    #    print $sidefh $Actium::Cmd::MakePoints::projects{$thisproject}
+    #      {'ProjectNote'}, "\r";
+    #}
 
     if ( $self->note600 ) {
         print $sidefh
