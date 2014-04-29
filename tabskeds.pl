@@ -48,7 +48,6 @@ foreach ( keys %specdaynames ) {
 
 use Skedtps qw(tphash tpxref destination TPXREF_FULL);
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
-#use Actium::Files::Merge::FPMerge qw(FPread FPread_simple);
 
 use Actium::Options (qw<option add_option init_options>);
 add_option( 'upcoming=s', 'Upcoming signup' );
@@ -120,17 +119,6 @@ load_tables(
 );
 
 Skedtps::initialize( \@timepoints, \%timepoints, TPXREF_FULL );
-
-#FPread_simple ('Timepoints.csv' , \@timepoints, \%timepoints, 'Abbrev9');
-#printq "Timepoints and timepoint names... ";
-#my $vals = Skedtps::initialize(TPXREF_FULL);
-#printq "$vals timepoints.\nLines... ";
-#FPread_simple( "Lines.csv", \@lines, \%lines, 'Line' );
-#printq scalar(@lines), " records. Colors...\n";
-#FPread_simple( "Colors.csv", \@colors, \%colors, 'ColorID' );
-#printq scalar(@lines), " records. SkedAdds...\n";
-#FPread_simple( "SkedAdds.csv", \@skedadds, \%skedadds, 'SkedID' );
-#printq scalar(@lines), " records.\n";
 
 mkdir "tabxchange"
   or die "Can't make directory 'tabxchange': $!"
