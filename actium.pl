@@ -51,7 +51,6 @@ my %module_of = (
     slists2html     => 'Slists2HTML',
     theaimport      => 'TheaImport',
     makestoplists   => 'MakeStopLists',
-    headways        => 'Headways',
     time            => 'Time',
     sqlite2tab      => 'SQLite2tab',
     flagspecs       => 'Flagspecs',
