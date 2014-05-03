@@ -5,37 +5,121 @@
 
 package Actium::O::Emit 0.005;
 use Actium::Moose;
-use Scalar::Util('openhandle');
+use Scalar::Util(qw[openhandle reftype]);
+
+sub _fh_or_scalar {
+    my $class = shift;
+    my $arg   = shift;
+
+    return $arg if defined openhandle($arg);
+
+    if ( reftype($arg) eq 'SCALAR' ) {
+        open( my $fh, '>', \$_[0] );
+        return $fh;
+    }
+
+    return;
+
+}
 
 around BUILDARGS => sub {
     my $orig  = shift;
     my $class = shift;
 
+    # ->new()
     if ( @_ == 0 ) {
         return $class->$orig( fh => *STDERR{IO} );
     }
 
+    # ->new($fh)
+    # or ->new(\$scalar)
+    # or ->new({ option => option1, ... })
     if ( @_ == 1 ) {
-        if ( defined openhandle $_[0] ) {
-            return $class->$orig( fh => $_[0] );
+        my $handle = $class->_fh_or_scalar->( $_[0] );
+        if ( defined $handle ) {
+            return $class->$orig( fh => $handle );
         }
-        my $reftype = reftype( $_[0] );
-        if ( $reftype eq 'SCALAR' ) {
-            open( my $fh, '>', \$_[0] );
-            return $class->$orig( fh => $fh );
-        }
-        if ( $reftype eq 'HASH' ) {
-            return $class->$orig(@_);
-        }
-        croak "Invalid reference $reftype in call to" . __PACKAGE__;
+        return $class->$orig(@_);
     }
 
-    return $class->$orig(@_);
+    my $firstarg = shift;
+
+    # ->new($fh_or_scalar, { opt => 'option1', ... } );
+    if ( @_ == 1 and reftype( $_[0] ) eq 'HASH' ) {
+        my %args = %{ $_[0] };
+        my $fh   = $class->fh_or_scalar($firstarg);
+        return $class->$orig( fh => $fh, %args );
+    }
+
+    # ->new( option => option1, ... )
+    return $class->$orig( $firstarg, @_ );
+
 };
 
-has 'fh' => (
+has fh => (
     is  => 'ro',
     isa => 'FileHandle',
+);
+
+has 'pos' => (
+    is      => 'rw',
+    isa     => 'Int',
+    default => 0,
+);
+
+has 'bullet_r' => (
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    traits  => ['Array'],
+    handles => { bullets => 'elements' },
+);
+
+has 'ellipsis' => (
+    is      => 'rw',
+    isa     => 'Str',
+    default => '...',
+);
+
+has 'use_color' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => '0',
+);
+
+has 'env_base' => (
+    is      => 'ro',
+    isa     => 'Str',
+    default => 'actium_emit_',
+);
+
+has 'maxdepth' => (
+    is      => 'rw',
+    isa     => 'Maybe[Int]',
+    default => 'actium_emit_',
+);
+
+has 'step' => (
+    is      => 'rw',
+    isa     => 'Int',
+    default => 2,
+);
+
+has 'timestamp' => (
+    is      => 'rw',
+    default => 0,
+);
+
+has 'trailer' => (
+    is      => 'rw',
+    isa     => 'Str',
+    default => '.',
+);
+
+has 'width' => (
+    is      => 'rw',
+    isa     => 'Int',
+    default => 80,
 );
 
 __END__
