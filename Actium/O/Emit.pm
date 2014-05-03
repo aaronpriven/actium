@@ -43,15 +43,20 @@ around BUILDARGS => sub {
     }
 
     my $firstarg = shift;
+    my $fh       = $class->_fh_or_scalar($firstarg);
 
-    # ->new($fh_or_scalar, { opt => 'option1', ... } );
-    if ( @_ == 1 and reftype( $_[0] ) eq 'HASH' ) {
-        my %args = %{ $_[0] };
-        my $fh   = $class->fh_or_scalar($firstarg);
-        return $class->$orig( fh => $fh, %args );
+    if ( defined $fh ) {
+        # ->new($fh, {option => option1, ...})
+        if ( @_ == 1 and reftype( $_[0] ) eq 'HASH' ) {
+            return $class->$orig( fh => $fh, %{ $_[0] } );
+        }
+        else {
+            # ->new($fh, option => option1 ,...)
+            return $class->$orig( fh => $fh, @_ );
+        }
     }
 
-    # ->new( option => option1, ... )
+    # ->new(option => option1 ,...)
     return $class->$orig( $firstarg, @_ );
 
 };
@@ -73,7 +78,7 @@ has 'bullet_r' => (
     default => sub { [] },
     traits  => ['Array'],
     handles => { bullets => 'elements' },
-);
+);    # need to coerce single string to arrayref of strings
 
 has 'ellipsis' => (
     is      => 'rw',
@@ -96,7 +101,13 @@ has 'env_base' => (
 has 'maxdepth' => (
     is      => 'rw',
     isa     => 'Maybe[Int]',
-    default => 'actium_emit_',
+    default => undef,
+);
+
+has '_progwid' => (
+    is      => 'rw',
+    isa     => 'Int',
+    default => 0,
 );
 
 has 'step' => (
@@ -107,6 +118,7 @@ has 'step' => (
 
 has 'timestamp' => (
     is      => 'rw',
+    isa     => 'Bool | CodeRef',
     default => 0,
 );
 
