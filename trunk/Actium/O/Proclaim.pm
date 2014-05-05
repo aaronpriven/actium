@@ -1,13 +1,51 @@
-# Actium/O/Emit - Print with indentation, status, and closure
+# Actium/O/Proclaim - Print with indentation, status, and closure
 # Forked from Term::Emit by Steve Roscio
 #
 #  Subversion: $Id$
 
-package Actium::O::Emit 0.005;
+package Actium::O::Proclaim 0.005;
 use Actium::Moose;
 use Scalar::Util(qw[openhandle reftype]);
 
-sub _fh_or_scalar {
+use Actium::Types (qw<ArrayRefOfProclaimBullets ProclaimBullet>);
+
+use constant MIN_SEV => 0;
+use constant MAX_SEV => 15;
+
+{
+
+    my %SEVLEV = (
+        EMERG => 15,
+        ALERT => 13,
+        CRIT  => 11,
+        FAIL  => 11,
+        FATAL => 11,
+        ERROR => 9,
+        WARN  => 7,
+        NOTE  => 6,
+        INFO  => 5,
+        OK    => 5,
+        DEBUG => 4,
+        NOTRY => 3,
+        UNK   => 2,
+        OTHER => 1,
+        YES   => 1,
+        NO    => 0,
+    );
+
+    sub severity_level {
+        my $invocant = shift;
+        my $sev      = shift;
+        my $sevlev
+          = defined $SEVLEV{ uc $sev } ? $SEVLEV{ uc $sev } : $SEVLEV{'OTHER'};
+
+        return $sevlev;
+
+    }
+
+}
+
+sub _fh_or_scalarref {
     my $class = shift;
     my $arg   = shift;
 
@@ -26,6 +64,12 @@ around BUILDARGS => sub {
     my $orig  = shift;
     my $class = shift;
 
+    # if first argument is handle or reference to scalar,
+    # use it as argument to "fh" .
+    # Pass everything else through to Moose.
+
+    # If no arguments, make fh be the handle for STDERR
+
     # ->new()
     if ( @_ == 0 ) {
         return $class->$orig( fh => *STDERR{IO} );
@@ -35,7 +79,7 @@ around BUILDARGS => sub {
     # or ->new(\$scalar)
     # or ->new({ option => option1, ... })
     if ( @_ == 1 ) {
-        my $handle = $class->_fh_or_scalar->( $_[0] );
+        my $handle = $class->_fh_or_scalarref->( $_[0] );
         if ( defined $handle ) {
             return $class->$orig( fh => $handle );
         }
@@ -43,7 +87,7 @@ around BUILDARGS => sub {
     }
 
     my $firstarg = shift;
-    my $fh       = $class->_fh_or_scalar($firstarg);
+    my $fh       = $class->_fh_or_scalarref($firstarg);
 
     if ( defined $fh ) {
         # ->new($fh, {option => option1, ...})
@@ -62,8 +106,9 @@ around BUILDARGS => sub {
 };
 
 has fh => (
-    is  => 'ro',
-    isa => 'FileHandle',
+    is       => 'ro',
+    isa      => 'FileHandle',
+    required => 1,
 );
 
 has 'pos' => (
@@ -72,13 +117,36 @@ has 'pos' => (
     default => 0,
 );
 
-has 'bullet_r' => (
-    is      => 'bare',
-    isa     => 'ArrayRef[Str]',
-    default => sub { [] },
-    traits  => ['Array'],
-    handles => { bullets => 'elements' },
-);    # need to coerce single string to arrayref of strings
+has 'bullets_r' => (
+    is       => 'bare',
+    isa      => 'ArrayRefOfProclaimBullets',
+    init_arg => 'bullets',
+    reader   => '_bullets_r',
+    default  => sub { [] },
+    traits   => ['Array'],
+    coerce   => 1,
+    handles  => { bullets => 'elements' },
+    trigger  => \&_build_bullet_width,
+);
+
+has '_bullet_width' => (
+    is      => 'rw',
+    isa     => 'Int',
+    builder => \&_build_bullet_width,
+    lazy    => 1,
+);
+
+sub _build_bullet_width {
+    my $self = shift;
+    my $bullets_r = shift // $self->_bullets_r();
+    # $bullets_r is passed when called as trigger,
+    # but not when called as builder
+
+    return 0 if @{$bullets_r} == 0;
+
+    my $width = max( map {length} @{$bullets_r} );
+    return $width;
+}
 
 has 'ellipsis' => (
     is      => 'rw',
@@ -102,6 +170,10 @@ has 'maxdepth' => (
     is      => 'rw',
     isa     => 'Maybe[Int]',
     default => undef,
+);
+
+has 'showseverity' => (
+
 );
 
 has '_progwid' => (
@@ -133,6 +205,14 @@ has 'width' => (
     isa     => 'Int',
     default => 80,
 );
+
+has '_message_stack_r' -> (
+   is => 'bare',
+   isa => 'ArrayRef[Actium::Proclaim::Proclamation]',
+   handles  => { messages => 'elements' },
+   );
+   
+   
 
 __END__
 
