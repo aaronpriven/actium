@@ -23,7 +23,8 @@ use MooseX::Types -declare => [
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
       Str4                Str8
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
-      ActiumFolderLike
+      ActiumFolderLike    
+      ProclaimBullet          ArrayRefOfProclaimBullets
       >
 ];
 
@@ -88,6 +89,15 @@ coerce( ActiumDir,
     via               { Actium::O::Dir->new( to_DirCode($_) ) },
     from DirCode, via { Actium::O::Dir->new($_) },
 );
+
+######################
+## EMIT
+
+subtype ProclaimBullet, as Str;
+
+subtype ArrayRefOfProclaimBullets, as ArrayRef [ ProclaimBullet ];
+
+coerce ArrayRefOfProclaimBullets, from ProclaimBullet, via { [ $_ ] };
 
 ######################
 ## SCHEDULE TIMES
