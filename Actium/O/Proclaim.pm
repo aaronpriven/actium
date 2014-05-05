@@ -14,7 +14,7 @@ use constant MAX_SEV => 15;
 
 {
 
-    my %SEVLEV = (
+    const my %SEVLEV => (
         EMERG => 15,
         ALERT => 13,
         CRIT  => 11,
@@ -160,12 +160,6 @@ has 'use_color' => (
     default => '0',
 );
 
-has 'env_base' => (
-    is      => 'ro',
-    isa     => 'Str',
-    default => 'actium_emit_',
-);
-
 has 'maxdepth' => (
     is      => 'rw',
     isa     => 'Maybe[Int]',
@@ -206,83 +200,14 @@ has 'width' => (
     default => 80,
 );
 
-has '_message_stack_r' -> (
+has '_proclamation_stack_r' -> (
    is => 'bare',
    isa => 'ArrayRef[Actium::Proclaim::Proclamation]',
-   handles  => { messages => 'elements' },
+   handles  => { proclamations => 'elements' },
+   default => sub { [] },
    );
    
-   
-
 __END__
-
-use constant MIN_SEV => 0;
-use constant MAX_SEV => 15;
-our %SEVLEV = (
-    EMERG => 15,
-    ALERT => 13,
-    CRIT  => 11,
-    FAIL  => 11,
-    FATAL => 11,
-    ERROR => 9,
-    WARN  => 7,
-    NOTE  => 6,
-    INFO  => 5,
-    OK    => 5,
-    DEBUG => 4,
-    NOTRY => 3,
-    UNK   => 2,
-    OTHER => 1,
-    YES   => 1,
-    NO    => 0,
-);
-our %BASE_OBJECT = ();
-
-sub new {
-    my $proto = shift;
-    my $class = ref($proto) || $proto;    # Get the class name
-    my $this  = {
-        pos     => 0,                     # Current output column number
-        progwid => 0,                     # Width of last progress message emitted
-        msgs    => []
-    };    # Closing message stack
-    bless $this, $class;
-    $this->setopts(@_);
-    return $this;
-}
-
-sub base {
-    my ($this) = _process_args(@_);
-    return $this;
-}
-
-sub clone {
-    my $this = shift;    # Object to clone
-    return Term::Emit->new(%{$this}, _clean_opts(@_));
-}
-
-sub import {
-    my $class = shift;
-
-    # Yank option sets, if any, out from the arguments
-    my %opts = ();
-    my @args = ();
-    while (@_) {
-        my $arg = shift;
-        if (ref($arg) eq 'HASH') {
-            %opts = (%opts, %{$arg});    #merge
-            next;
-        }
-        push @args, $arg;
-    }
-    %opts = _clean_opts(%opts);
-
-    # Create the default base object
-    $BASE_OBJECT{0} ||= new Term::Emit(%opts);
-
-    # Continue exporter's work
-    return $class->export_to_level(1, $class, @args);
-}
 
 #
 # Set options
