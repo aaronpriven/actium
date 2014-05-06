@@ -37,7 +37,7 @@ sub _wrap {
 
     }
 
-    @lines = map { s/\s+\Z// } @lines;
+    @lines = map {s/\s+\Z//} @lines;
 
     return @lines;
 
@@ -80,6 +80,15 @@ has 'adjust_level' => (
     isa     => 'Int',
     is      => 'rw',
     default => 0,
+);
+
+has 'is_opened' => (
+    isa      => 'Bool',
+    init_arg => undef,
+    is       => 'ro',
+    default  => 0,
+    traits   => ['Bool'],
+    handles  => { mark_opened => 'set', },
 );
 
 has 'closetext' => (
@@ -156,6 +165,9 @@ has 'is_closed' => (
     handles  => { mark_closed => 'set', },
 );
 
+const my $PROCLAIM_RIGHT_PAD => 10;
+const my $MIN_SPAN_FACTOR    => 2 / 3;
+
 sub _open_proclamation {
 
     my $self = shift;
@@ -168,33 +180,43 @@ sub _open_proclamation {
         return $succeeded unless $succeeded;
     }
 
-    $self->set_pos(0);
-    $self->_set_progwid(0);
-
     # Timestamp
     my $timestamp = $self->_timestamp_now;
 
     my $level = $self->level + $self->adjust_level;
 
-    my $bullet     = $self->bullet;
-    my $indent     = $SPACE x ( $self->step * ( $level - 1 ) );
-    my $leading    = $timestamp . $bullet . $indent;
-    my $leading_width = $self->uwidth($leading);
+    my $bullet         = $self->bullet;
+    my $indent         = $SPACE x ( $self->step * ( $level - 1 ) );
+    my $leading        = $timestamp . $bullet . $indent;
+    my $leading_width  = $self->uwidth($leading);
     my $leading_spaces = $SPACE x $leading_width;
-    my $span_max = $self->term_width - $leading_width - 10;
-    my $span_min = int($span_max * 2 / 3);
-    
-    my $text = $self->opentext;
-    
-    my @lines = $self->_wrap($text, $span_min, $span_max);
-    
-    $lines[0] = $leading . $lines[0] ;
-    if (@lines > 1) {
-       $_ = $leading_spaces . $_ foreach (1 .. $#lines);
+    my $span_max = $self->term_width - $leading_width - $PROCLAIM_RIGHT_PAD;
+    my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
+
+    my $text = $self->opentext . $self->ellipsis;
+
+    my @lines = $self->_wrap( $text, $span_min, $span_max );
+    my $final_width = $self->uwidth( $lines[-1] );
+
+    $lines[0] = $leading . $lines[0];
+    if ( @lines > 1 ) {
+        $_ = "\n" . $leading_spaces . $_ foreach ( 1 .. $#lines );
     }
-    $lines[-1] .= $self->ellipsis;
-    
-    # print and save pos
+
+    my $maxdepth = $self->maxdepth;
+    if ( defined $maxdepth and $level >= $maxdepth ) {
+
+        for my $line (@lines) {
+            my $succeeded = print $fh "$line";
+            return $succeeded unless $succeeded;
+        }
+
+        $self->set_pos( $leading_width + $final_width );
+        $self->_set_progwid(0);
+        $self->mark_opened;
+    }
+
+    return $self;
 
 } ## tidy end: sub _open_proclamation
 
