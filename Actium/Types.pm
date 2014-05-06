@@ -91,7 +91,7 @@ coerce( ActiumDir,
 );
 
 ######################
-## EMIT
+## PROCLAIM
 
 subtype ProclaimBullet, as Str;
 
