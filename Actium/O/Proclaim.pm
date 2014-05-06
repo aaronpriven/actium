@@ -382,36 +382,6 @@ sub close_proclamation {
 
 __END__
 
-#
-# Emit a message, starting a new level
-#
-    # Filtering by level?
-    return 1
-        if defined($this->{maxdepth}) && $level >= $this->{maxdepth};
-
-    # Start back at the left
-
-    # The message
-    my $bullet = $this->_bullet($level);
-    my $indent = q{ } x ($this->{step} * $level);
-    my $tlen   = 0;
-    my $span   = 
-       $this->{width} - length($ts) - length($bullet) - ($this->{step} * $level) - 10;
-    my @mlines = _wrap($msg, int($span * 2 / 3), $span);
-    while (defined(my $txt = shift @mlines)) {
-        $s = $this->_spew($ts . $bullet . $indent . $txt);
-        return $s unless $s;
-        $s = $this->_spew(@mlines ? "\n" : $this->{ellipsis});
-        return $s unless $s;
-        $tlen   = length($txt);
-        $bullet = q{ } x $this->{bullet_width};    # Only bullet the first line
-        $ts     = q{ } x length($ts);              # Only timestamp the first line
-    }
-    $this->{pos} += 
-       length($ts) + ($this->{step} * $level) + length($bullet) + 
-          $tlen + length($this->{ellipsis});
-    return 1;
-}
 
 #
 # Complete the current level, with status
