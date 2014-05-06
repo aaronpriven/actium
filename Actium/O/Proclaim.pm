@@ -5,45 +5,23 @@
 
 package Actium::O::Proclaim 0.005;
 use Actium::Moose;
-use Scalar::Util(qw[openhandle reftype]);
+use Scalar::Util(qw[openhandle weaken reftype]);
 
 use Actium::Types (qw<ArrayRefOfProclaimBullets ProclaimBullet>);
+use Unicode::GCString;
+use Unicode::LineBreak;
 
-use constant MIN_SEV => 0;
-use constant MAX_SEV => 15;
+const my $PROCLAMATION_CLASS => 'Actium::O::Proclaim::Proclamation';
+const my $FALLBACK_CLOSESTAT => 'DONE';
 
-{
+#####################################################################
+## FILEHANDLE, AND OBJECT CONSTRUCTION SETTING FILEHANDLE SPECIALLY
 
-    const my %SEVLEV => (
-        EMERG => 15,
-        ALERT => 13,
-        CRIT  => 11,
-        FAIL  => 11,
-        FATAL => 11,
-        ERROR => 9,
-        WARN  => 7,
-        NOTE  => 6,
-        INFO  => 5,
-        OK    => 5,
-        DEBUG => 4,
-        NOTRY => 3,
-        UNK   => 2,
-        OTHER => 1,
-        YES   => 1,
-        NO    => 0,
-    );
-
-    sub severity_level {
-        my $invocant = shift;
-        my $sev      = shift;
-        my $sevlev
-          = defined $SEVLEV{ uc $sev } ? $SEVLEV{ uc $sev } : $SEVLEV{'OTHER'};
-
-        return $sevlev;
-
-    }
-
-}
+has fh => (
+    is       => 'ro',
+    isa      => 'FileHandle',
+    required => 1,
+);
 
 sub _fh_or_scalarref {
     my $class = shift;
@@ -75,14 +53,16 @@ around BUILDARGS => sub {
         return $class->$orig( fh => *STDERR{IO} );
     }
 
-    # ->new($fh)
-    # or ->new(\$scalar)
-    # or ->new({ option => option1, ... })
     if ( @_ == 1 ) {
+
+        # ->new($fh)
+        # or ->new(\$scalar)
         my $handle = $class->_fh_or_scalarref->( $_[0] );
         if ( defined $handle ) {
             return $class->$orig( fh => $handle );
         }
+
+        # ->new({ option => option1, ... })
         return $class->$orig(@_);
     }
 
@@ -105,11 +85,58 @@ around BUILDARGS => sub {
 
 };
 
-has fh => (
-    is       => 'ro',
-    isa      => 'FileHandle',
-    required => 1,
+#########################
+## SEVERITY
+
+sub minimum_severity {0}
+
+sub maximum_severity {15}
+
+{
+
+    # copied straight out of Term::Emit.
+    # I don't know why the values are what they are
+    const my %SEVERITY_OF => (
+        EMERG => 15,
+        ALERT => 13,
+        CRIT  => 11,
+        FAIL  => 11,
+        FATAL => 11,
+        ERROR => 9,
+        WARN  => 7,
+        NOTE  => 6,
+        INFO  => 5,
+        OK    => 5,
+        DEBUG => 4,
+        NOTRY => 3,
+        UNK   => 2,
+        OTHER => 1,
+        YES   => 1,
+        NO    => 0,
+    );
+
+    sub severity {
+        my $self = shift;
+        my $sevtext  = uc(shift);
+        return $SEVERITY_OF{$sevtext} // $SEVERITY_OF{'OTHER'};
+    }
+
+}
+
+has 'showseverity' => (
+    is      => 'ro',
+    isa     => 'Int',
+    default => 0,
 );
+
+has 'default_closestat' => (
+    is      => 'rw',
+    isa     => 'Str',
+    default => 'DONE',
+);
+
+######################
+## WIDTH AND POSITION
 
 has 'pos' => (
     is      => 'rw',
@@ -117,23 +144,134 @@ has 'pos' => (
     default => 0,
 );
 
+has '_progwid' => (
+    is      => 'rw',
+    isa     => 'Int',
+    default => 0,
+);
+
+has 'width' => (
+    is      => 'rw',
+    isa     => 'Int',
+    default => 80,
+    trigger => \&_width_change,
+);
+
+sub _width_change {
+    my $self = shift;
+    return unless $self->_has_breaker;
+
+    my $new_width = shift;
+    my $breaker   = $self->_breaker;
+    _breaker->config( ColMax => $new_width );
+
+    return;
+
+}
+
+has _breaker => (
+    is        => 'ro',
+    predicate => '_has_breaker',
+    init_arg  => undef,
+    isa       => 'Unicode::LineBreak',
+    lazy      => 1,
+    builder   => \&_build_breaker,
+);
+
+sub _build_breaker {
+    my $self = shift;
+    return Unicode::LineBreak->new( ColMax => $self->width );
+}
+
+sub uwidth {
+    my $self = shift;
+    my $str  = shift;
+
+    my $gcs  = Unicode::GCString->new($str);
+    my $cols = $gcs->width;
+
+    return $cols;
+
+}
+
+#############################
+### DISPLAY FEATURES
+
+has 'ellipsis' => (
+    is      => 'ro',
+    isa     => 'Str',
+    default => '...',
+);
+
+has 'colorize' => (
+    is      => 'ro',
+    isa     => 'Bool',
+    default => '0',
+);
+
+has 'step' => (
+    is      => 'ro',
+    isa     => 'Int',
+    default => 2,
+);
+
+has 'timestamp' => (
+    is      => 'ro',
+    isa     => 'Bool | CodeRef',
+    default => 0,
+);
+
+has 'trailer' => (
+    is      => 'ro',
+    isa     => 'Str',
+    default => '.',
+);
+
+#########################
+## BULLETS
+
 has 'bullets_r' => (
     is       => 'bare',
     isa      => 'ArrayRefOfProclaimBullets',
     init_arg => 'bullets',
     reader   => '_bullets_r',
+    writer   => '_set_bullets_r',
     default  => sub { [] },
     traits   => ['Array'],
     coerce   => 1,
-    handles  => { bullets => 'elements' },
-    trigger  => \&_build_bullet_width,
+    handles  => {
+        bullets      => 'elements',
+        bullet_count => 'count',
+        bullet       => 'get',
+    },
+    trigger => \&_build_bullet_width,
 );
 
-has '_bullet_width' => (
-    is      => 'rw',
-    isa     => 'Int',
-    builder => \&_build_bullet_width,
-    lazy    => 1,
+sub set_bullets {
+    my $self    = shift;
+    my @bullets = flatten(@_);
+    $self->_set_bullets_r->( \@bullets );
+}
+
+sub _bullet_for_level {
+    my $self  = shift;
+    my $count = $self->bullet_count;
+
+    return $EMPTY_STR unless $count;
+
+    my $level = shift;
+    $level = $count if $level > $count;
+
+    return $self->bullet($level);
+
+}
+
+has 'bullet_width' => (
+    is       => 'ro',
+    isa      => 'Int',
+    init_arg => undef,
+    builder  => \&_build_bullet_width,
+    lazy     => 1,
 );
 
 sub _build_bullet_width {
@@ -144,206 +282,117 @@ sub _build_bullet_width {
 
     return 0 if @{$bullets_r} == 0;
 
-    my $width = max( map {length} @{$bullets_r} );
+    my $width = max( map { $self->uwidth($_) } @{$bullets_r} );
     return $width;
 }
 
-has 'ellipsis' => (
-    is      => 'rw',
-    isa     => 'Str',
-    default => '...',
-);
-
-has 'use_color' => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => '0',
-);
+###########################
+### PROCLAMATIONS
 
 has 'maxdepth' => (
-    is      => 'rw',
+    is      => 'ro',
     isa     => 'Maybe[Int]',
     default => undef,
 );
 
-has 'showseverity' => (
-
+has '_proclamations_r' => (
+    is      => 'ro',
+    isa     => 'ArrayRef[Actium::Proclaim::Proclamation]',
+    handles => {
+        proclamations      => 'elements',
+        _pop_proclamation  => 'pop',
+        proclamation_level => 'count',
+    },
+    default => sub { [] },
 );
 
-has '_progwid' => (
-    is      => 'rw',
-    isa     => 'Int',
-    default => 0,
-);
+sub _push_proclamation {
+    my $self         = shift;
+    my $proclamation = shift;
 
-has 'step' => (
-    is      => 'rw',
-    isa     => 'Int',
-    default => 2,
-);
+    my $proclamations_r = $self->_proclamations_r;
 
-has 'timestamp' => (
-    is      => 'rw',
-    isa     => 'Bool | CodeRef',
-    default => 0,
-);
+    weaken($proclamation);
+    push @{$proclamations_r}, $proclamation;
 
-has 'trailer' => (
-    is      => 'rw',
-    isa     => 'Str',
-    default => '.',
-);
+}
 
-has 'width' => (
-    is      => 'rw',
-    isa     => 'Int',
-    default => 80,
-);
-
-has '_proclamation_stack_r' -> (
-   is => 'bare',
-   isa => 'ArrayRef[Actium::Proclaim::Proclamation]',
-   handles  => { proclamations => 'elements' },
-   default => sub { [] },
-   );
-   
-__END__
-
-#
-# Set options
-#
-sub setopts {
-    my ($this, $opts, %args) = _process_args(@_);
-
-    # Merge & clean 'em
-    %args = (%{$opts}, %args);
-    %args = _clean_opts(%args);    ###why does this not work here?? -fh vs fh
-
-    # Process args
-    my $deffh = select();
-    no strict 'refs';
-    $this->{fh} 
-        = $args{fh}
-        || $this->{fh}
-        || \*{$deffh};
-    use strict 'refs';
-    $this->{envbase} 
-        = $args{envbase}
-        || $this->{envbase}
-        || 'term_emit_fd';    ### TODO: apply to all envvars we use, not just _fd
-    $this->{bullets}
-        = exists $ENV{term_emit_bullets} ? $ENV{term_emit_bullets}
-        : exists $args{bullets}          ? $args{bullets}
-        : exists $this->{bullets}        ? $this->{bullets}
-        :                                  0;
-    $this->{closestat} 
-        = $args{closestat}
-        || $this->{closestat}
-        || 'DONE';
-    $this->{color}
-        = exists $ENV{term_emit_color}
-        ? $ENV{term_emit_color}
-        : $args{color}
-        || $this->{color}
-        || 0;
-    $this->{ellipsis}
-        = exists $ENV{term_emit_ellipsis}
-        ? $ENV{term_emit_ellipsis}
-        : $args{ellipsis}
-        || $this->{ellipsis}
-        || '...';
-    $this->{maxdepth}
-        = exists $ENV{term_emit_maxdepth} ? $ENV{term_emit_maxdepth}
-        : exists $args{maxdepth}          ? $args{maxdepth}
-        :   $this->{maxdepth};    #undef=all, 0=none, 3=just first 3 levels, etc
-    $this->{showseverity}
-        = exists $ENV{term_emit_showseverity} ? $ENV{term_emit_showseverity}
-        : exists $args{showseverity}          ? $args{showseverity}
-        :                                  $this->{showseverity};
-    $this->{step}
-        = exists $ENV{term_emit_step} ? $ENV{term_emit_step}
-        : exists $args{step}          ? $args{step}
-        : defined $this->{step}       ? $this->{step}
-        :                               2;
-    $this->{timestamp} = $args{timestamp}
-        || $this->{timestamp}
-        || 0;
-    $this->{trailer}
-        = exists $ENV{term_emit_trailer}
-        ? $ENV{term_emit_trailer}
-        : $args{trailer}
-        || $this->{trailer}
-        || q{.};
-    $this->{width}
-        = exists $ENV{term_emit_width}
-        ? $ENV{term_emit_width}
-        : $args{width}
-        || $this->{width}
-        || 80;
-
-    #    $this->{timefmt}   = $args{timefmt}   || $this->{timefmt}   || undef;   # Timestamp format
-    #    $this->{pos} = $args{pos}
-    #        if defined $args{pos};
-
-    # Recompute a few things
-    # TODO: Allow bullets to be given as CSV:  "* ,+ ,- ,  " for example.
-    # TODO: Put this in a sub of its own.
-    $this->{bullet_width} = 0;
-    if (ref $this->{bullets} eq 'ARRAY') {
-        foreach my $b (@{$this->{bullets}}) {
-            $this->{bullet_width} = length($b)
-                if length($b) > $this->{bullet_width};
+sub proclaim {
+    my $self = shift;
+    
+    my (%opts, @args);
+    
+    foreach (@_) {
+        if (reftype($_) eq 'HASH') {
+            %opts = (%opts, %{$_});
+        } else {
+        push @args, $_;
         }
     }
-    elsif ($this->{bullets}) {
-        $this->{bullet_width} = length($this->{bullets});
-
-        return 0;
+            
+    if (@args == 1 and reftype($args[0]) eq 'ARRAY') {
+        my @pair = @{+shift};
+        $opts{opentext} = $pair[0];
+        $opts{closetext} = $pair[1];
     }
+    else {
+        my $separator = doe($OUTPUT_FIELD_SEPARATOR);
+        $opts{opentext} = join($separator, @args);
+    }
+    
+    my $level     = $self->proclamation_level + 1;
+    my $opentext  = $opts{opentext};
+
+    unless ( defined $opentext ) {
+        $opentext = ( caller(1) )[3];    # subroutine name;
+        $opentext =~ s{\Amain::}{}sxm;
+    }
+
+    my $proclamation = $PROCLAMATION_CLASS->new(
+        proclaimer   => $self,
+        level        => $level,
+        bullet       => $self->_bullet_for_level($level),
+        bullet_width => $self->_bullet_width,
+        closestat    => $opts{closestat} // $self->default_closestat,
+        opentext     => $opentext,
+        closetext    => $opts{closetext} // $opentext,
+        timestamp => $opts{timestamp} // $self->timestamp,
+    );
+
+    return $proclamation unless reftype($proclamation); 
+    # if not a reference, there was an error
+
+    $self->_push_proclamation($proclamation);
+
+    return $proclamation;
+
+} ## tidy end: sub proclaim
+
+sub close_proclamation {
+    my $self         = shift;
+    my $proclamation = shift;
+    $self->_pop_proclamation();
+
+    # my $error = $proclamation->declaim(whatever, whatever);
+
+    #return $error if $error;
+    #return;
+
 }
+
+# Default timestamp 
+#
+sub _default_timestamp {
+    my $self = shift;
+    my ($s, $m, $h) = localtime(time());
+    return sprintf "%2.2d:%2.2d:%2.2d ", $h, $m, $s;
+}
+
+__END__
 
 #
 # Emit a message, starting a new level
 #
-sub emit {
-    my ($this, $opts, @args) = _process_args(@_);
-    my $jn = defined $, ? $, : q{};
-    if (@args && ref($args[0]) eq 'ARRAY') {
-
-        # Using [opentext, closetext] notation
-        my $pair  = shift @args;
-        my $otext = $pair->[0] || '';
-        my $ctext = $pair->[1] || $otext;
-        unshift @args, $otext;
-        $opts->{closetext} = $ctext;
-    }
-    my $msg = join $jn, @args;
-    if (!@args) {
-
-        # Use our caller's subroutine name as the message
-        (undef, undef, undef, $msg) = caller(1);
-        $msg =~ s{^main::}{}sxm;
-    }
-
-    #  Tied closure:
-    #   If we're returning into a list context,
-    #   then we're tying closure to the scope of the caller's list element.
-    return Term::Emit::TiedClosure->new($this, $opts, $msg)
-        if wantarray;
-
-    # Store context
-    my $cmsg
-        = defined $opts->{closetext}
-        ? $opts->{closetext}
-        : $msg;
-    push @{$this->{msgs}}, [$msg, $cmsg];
-    my $level = $ENV{$this->_envvar()}++ || 0;
-
-    # Setup the scope reaper for autoclosure
-    reap sub {
-        $this->emit_done({%{$opts}, want_level => $level}, $this->{closestat});
-    } => SCOPE(1);
-
     # Filtering by level?
     return 1
         if defined($this->{maxdepth}) && $level >= $this->{maxdepth};
