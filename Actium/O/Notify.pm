@@ -1,19 +1,20 @@
-# Actium/O/Proclaim - Print with indentation, status, and closure
-# Forked from Term::Emit by Steve Roscio
+# Actium/O/Notify - Print with indentation, status, and closure
+# Based on Term::Emit by Steve Roscio
 #
 #  Subversion: $Id$
 
-package Actium::O::Proclaim 0.005;
+package Actium::O::Notify 0.005;
 use Actium::Moose;
-use Scalar::Util(qw[openhandle weaken reftype]);
+use Scalar::Util(qw[openhandle weaken refaddr reftype]);
 
-use Actium::Types (qw<ArrayRefOfProclaimBullets ProclaimBullet>);
+use Actium::Types (qw<ArrayRefOfNotifyBullets NotifyBullet>);
 use Unicode::GCString;
 use Unicode::LineBreak;
 
-const my $PROCLAMATION_CLASS => 'Actium::O::Proclaim::Proclamation';
+const my $NOTIFICATION_CLASS => 'Actium::O::Notify::Notification';
 const my $FALLBACK_CLOSESTAT => 'DONE';
 const my $DEFAULT_TERM_WIDTH => 80;
+const my $DEFAULT_STEP       => 2;
 
 #####################################################################
 ## FILEHANDLE, AND OBJECT CONSTRUCTION SETTING FILEHANDLE SPECIALLY
@@ -86,56 +87,6 @@ around BUILDARGS => sub {
 
 };
 
-#########################
-## SEVERITY
-
-sub minimum_severity {0}
-
-sub maximum_severity {15}
-
-{
-
-    # copied straight out of Term::Emit.
-    # I don't know why the values are what they are
-    const my %SEVERITY_OF => (
-        EMERG => 15,
-        ALERT => 13,
-        CRIT  => 11,
-        FAIL  => 11,
-        FATAL => 11,
-        ERROR => 9,
-        WARN  => 7,
-        NOTE  => 6,
-        INFO  => 5,
-        OK    => 5,
-        DEBUG => 4,
-        NOTRY => 3,
-        UNK   => 2,
-        OTHER => 1,
-        YES   => 1,
-        NO    => 0,
-    );
-
-    sub severity {
-        my $self    = shift;
-        my $sevtext = uc(shift);
-        return $SEVERITY_OF{$sevtext} // $SEVERITY_OF{'OTHER'};
-    }
-
-}
-
-has 'showseverity' => (
-    is      => 'ro',
-    isa     => 'Int',
-    default => 0,
-);
-
-has 'default_closestat' => (
-    is      => 'rw',
-    isa     => 'Str',
-    default => 'DONE',
-);
-
 ######################
 ## WIDTH AND POSITION
 
@@ -157,56 +108,44 @@ has 'term_width' => (
     default => $DEFAULT_TERM_WIDTH,
 );
 
-sub uwidth {
-    my $self = shift;
-    my $str  = shift;
-
-    my $gcs  = Unicode::GCString->new($str);
-    my $uwidth = $gcs->columns;
-
-    return $uwidth;
-
-}
-
 #############################
 ### DISPLAY FEATURES
 
 has 'ellipsis' => (
-    is      => 'ro',
+    is      => 'rw',
     isa     => 'Str',
     default => '...',
 );
 
 has 'colorize' => (
-    is      => 'ro',
     isa     => 'Bool',
-    default => '0',
-);
-
-has 'step' => (
     is      => 'ro',
-    isa     => 'Int',
-    default => 2,
+    default => 0,
+    traits  => ['Bool'],
+    handles => {
+        use_color => 'set',
+        no_color  => 'unset',
+    },
 );
 
 has 'timestamp' => (
-    is      => 'ro',
+    is      => 'rw',
     isa     => 'Bool | CodeRef',
     default => 0,
 );
 
 has 'trailer' => (
-    is      => 'ro',
+    is      => 'rw',
     isa     => 'Str',
     default => '.',
 );
 
 #########################
-## BULLETS
+## BULLETS, INDENTATION, LEVELS
 
 has 'bullets_r' => (
     is       => 'bare',
-    isa      => 'ArrayRefOfProclaimBullets',
+    isa      => 'ArrayRefOfNotifyBullets',
     init_arg => 'bullets',
     reader   => '_bullets_r',
     writer   => '_set_bullets_r',
@@ -275,8 +214,11 @@ sub _alter_bullet_width {
 
 }
 
-###########################
-### PROCLAMATIONS
+has 'step' => (
+    is      => 'rw',
+    isa     => 'Int',
+    default => $DEFAULT_STEP,
+);
 
 has 'maxdepth' => (
     is      => 'ro',
@@ -284,29 +226,83 @@ has 'maxdepth' => (
     default => undef,
 );
 
-has '_proclamations_r' => (
+#########################
+## SEVERITY
+
+sub minimum_severity() {0}
+sub maximum_severity() {15}
+
+# not using 'constant' to signal that these are methods...
+
+{
+
+    # copied straight out of Term::Emit.
+    # I don't know why the values are what they are
+    const my %SEVERITY_NUM_OF => (
+        EMERG => 15,
+        ALERT => 13,
+        CRIT  => 11,
+        FAIL  => 11,
+        FATAL => 11,
+        ERROR => 9,
+        WARN  => 7,
+        NOTE  => 6,
+        INFO  => 5,
+        OK    => 5,
+        DEBUG => 4,
+        NOTRY => 3,
+        UNK   => 2,
+        OTHER => 1,
+        YES   => 1,
+        NO    => 0,
+    );
+
+    sub severity_num {
+        my $self    = shift;
+        my $sevtext = uc(shift);
+        return $SEVERITY_NUM_OF{$sevtext} // $SEVERITY_NUM_OF{'OTHER'};
+    }
+
+}
+
+has 'showseverity' => (
     is      => 'ro',
-    isa     => 'ArrayRef[Actium::Proclaim::Proclamation]',
+    isa     => 'Int',
+    default => 0,
+);
+
+has 'default_closestat' => (
+    is      => 'rw',
+    isa     => 'Str',
+    default => $FALLBACK_CLOSESTAT,
+);
+
+###########################
+### NOTIFICATIONS AND LEVELS
+
+has '_notifications_r' => (
+    is      => 'ro',
+    isa     => 'ArrayRef[Actium::O::Notify::Notification]',
     handles => {
-        proclamations      => 'elements',
-        _pop_proclamation  => 'pop',
-        proclamation_level => 'count',
+        notifications      => 'elements',
+        _pop_notification  => 'pop',
+        notification_level => 'count',
     },
     default => sub { [] },
 );
 
-sub _push_proclamation {
+sub _push_notification {
     my $self         = shift;
-    my $proclamation = shift;
+    my $notification = shift;
 
-    my $proclamations_r = $self->_proclamations_r;
+    my $notifications_r = $self->_notifications_r;
 
-    weaken($proclamation);
-    push @{$proclamations_r}, $proclamation;
+    weaken($notification);
+    push @{$notifications_r}, $notification;
 
 }
 
-sub proclaim {
+sub notify {
     my $self = shift;
 
     my ( %opts, @args );
@@ -330,55 +326,76 @@ sub proclaim {
         $opts{opentext} = join( $separator, @args );
     }
 
-    my $level    = $self->proclamation_level + 1;
-    my $opentext = $opts{opentext};
+    my $level = $self->notification_level + 1;
 
-    unless ( defined $opentext ) {
-        $opentext = ( caller(1) )[3];    # subroutine name;
-        $opentext =~ s{\Amain::}{}sxm;
+    unless ( defined $opts{opentext} ) {
+        $opts{opentext} = ( caller(1) )[3];    # subroutine name;
+        $opts{opentext} =~ s{\Amain::}{}sxm;
     }
 
-    my $bullet;
-    if ( $opts{bullet} ) {
-     $bullet = $opts{bullet};
-     $self->_alter_bullet_width($bullet);
-
+    if ( defined $opts{bullet} ) {
+        $self->_alter_bullet_width( $opts{bullet} );
     }
     else {
-        $bullet = $self->_bullet_for_level($level);
+        $opts{bullet} = $self->_bullet_for_level($level);
     }
 
-    my $proclamation = $PROCLAMATION_CLASS->new(
-        proclaimer   => $self,
-        level        => $level,
-        bullet       => $self->_bullet_for_level($level),
-        bullet_width => $self->_bullet_width,
-        closestat    => $opts{closestat} // $self->default_closestat,
-        opentext     => $opentext,
-        closetext    => $opts{closetext} // $opentext,
-        timestamp    => $opts{timestamp} // $self->timestamp,
+    my $notification = $NOTIFICATION_CLASS->new(
+        %opts,
+        notifier => $self,
+        level      => $level,
     );
 
-    return $proclamation unless reftype($proclamation);
-    # if not a reference, there was an error
+    my $success = $notification->_built_without_error;
+    return $success unless $success;
 
-    $self->_push_proclamation($proclamation);
+    $self->_push_notification($notification);
 
-    return $proclamation;
+    return $notification if defined wantarray;
 
-} ## tidy end: sub proclaim
+    $notification->d_unk(
+        { reason => 'Notification error (notification object not saved)' } )
+      ;
 
-sub close_proclamation {
+    # void context - close immediately
+
+} 
+
+sub _close_up_to {
     my $self         = shift;
-    my $proclamation = shift;
-    $self->_pop_proclamation();
+    my $notification = shift;
+    my $severity     = shift;
 
-    # my $error = $proclamation->declaim(whatever, whatever);
+    my $this_notification = $self->_pop_notification;
+    my $success;
 
-    #return $error if $error;
-    #return;
+    while ( $this_notification
+        and ( refaddr($this_notification) != refaddr($notification) ) )
+    {
+        $success = $this_notification->done;    # default severity
+        return $success unless $success;
+        $this_notification = $self->_pop_notification;
+    }
+
+    return $notification->done($severity);
 
 }
+
+#####################
+### utility methods
+
+sub uwidth {
+    my $self = shift;
+    my $str  = shift;
+
+    my $gcs    = Unicode::GCString->new($str);
+    my $uwidth = $gcs->columns;
+
+    return $uwidth;
+
+}
+
+1;
 
 __END__
 
