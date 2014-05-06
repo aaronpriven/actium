@@ -41,6 +41,12 @@ has 'opentext' => (
     required => 1,
 );
 
+has 'adjust_level' => (
+    isa      => 'Int',
+    is       => 'rw',
+    default => 0,
+);
+
 has 'closetext' => (
     is       => 'ro',
     isa      => 'Str',
@@ -98,7 +104,11 @@ sub _open_proclamation {
 
     # Timestamp
     my $timestamp = $self->_timestamp_now;
-    
+
+    my $level = $self->level + $self->adjust_level;
+    my $bullet = $self->bullet;
+
+    my $indent = $SPACE x ($self->step * ($level - 1 ) );
     
 
 

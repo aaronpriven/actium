@@ -409,11 +409,6 @@ __END__
     $level += $opts->{adjust_level}
         if $opts->{adjust_level} && $opts->{adjust_level} =~ m{^-?\d+$}sxm;
 
-    # Timestamp
-    my $tsr = defined $opts->{timestamp}? $opts->{timestamp} : $this->{timestamp};
-    $tsr = \&_timestamp if $tsr && !ref($tsr);
-    my $ts = $tsr? &$tsr($level) : q{};
-
     # The message
     my $bullet = $this->_bullet($level);
     my $indent = q{ } x ($this->{step} * $level);
