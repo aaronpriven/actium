@@ -13,6 +13,7 @@ use Unicode::LineBreak;
 
 const my $PROCLAMATION_CLASS => 'Actium::O::Proclaim::Proclamation';
 const my $FALLBACK_CLOSESTAT => 'DONE';
+const my $DEFAULT_TERM_WIDTH => 80;
 
 #####################################################################
 ## FILEHANDLE, AND OBJECT CONSTRUCTION SETTING FILEHANDLE SPECIALLY
@@ -116,8 +117,8 @@ sub maximum_severity {15}
     );
 
     sub severity {
-        my $self = shift;
-        my $sevtext  = uc(shift);
+        my $self    = shift;
+        my $sevtext = uc(shift);
         return $SEVERITY_OF{$sevtext} // $SEVERITY_OF{'OTHER'};
     }
 
@@ -150,47 +151,20 @@ has '_progwid' => (
     default => 0,
 );
 
-has 'width' => (
+has 'term_width' => (
     is      => 'rw',
     isa     => 'Int',
-    default => 80,
-    trigger => \&_width_change,
+    default => $DEFAULT_TERM_WIDTH,
 );
-
-sub _width_change {
-    my $self = shift;
-    return unless $self->_has_breaker;
-
-    my $new_width = shift;
-    my $breaker   = $self->_breaker;
-    _breaker->config( ColMax => $new_width );
-
-    return;
-
-}
-
-has _breaker => (
-    is        => 'ro',
-    predicate => '_has_breaker',
-    init_arg  => undef,
-    isa       => 'Unicode::LineBreak',
-    lazy      => 1,
-    builder   => \&_build_breaker,
-);
-
-sub _build_breaker {
-    my $self = shift;
-    return Unicode::LineBreak->new( ColMax => $self->width );
-}
 
 sub uwidth {
     my $self = shift;
     my $str  = shift;
 
     my $gcs  = Unicode::GCString->new($str);
-    my $cols = $gcs->width;
+    my $uwidth = $gcs->columns;
 
-    return $cols;
+    return $uwidth;
 
 }
 
@@ -266,8 +240,8 @@ sub _bullet_for_level {
 
 }
 
-has 'bullet_width' => (
-    is       => 'ro',
+has '_bullet_width' => (
+    is       => 'rw',
     isa      => 'Int',
     init_arg => undef,
     builder  => \&_build_bullet_width,
@@ -284,6 +258,21 @@ sub _build_bullet_width {
 
     my $width = max( map { $self->uwidth($_) } @{$bullets_r} );
     return $width;
+}
+
+sub _alter_bullet_width {
+    my $self            = shift;
+    my $newbullet       = shift;
+    my $newbullet_width = $self->uwidth($newbullet);
+
+    my $bullet_width = $self->bullet_width;
+
+    return if $newbullet_width <= $bullet_width;
+
+    $self->_set_bullet_width($newbullet_width);
+
+    return;
+
 }
 
 ###########################
@@ -319,33 +308,44 @@ sub _push_proclamation {
 
 sub proclaim {
     my $self = shift;
-    
-    my (%opts, @args);
-    
+
+    my ( %opts, @args );
+
     foreach (@_) {
-        if (reftype($_) eq 'HASH') {
-            %opts = (%opts, %{$_});
-        } else {
-        push @args, $_;
+        if ( reftype($_) eq 'HASH' ) {
+            %opts = ( %opts, %{$_} );
+        }
+        else {
+            push @args, $_;
         }
     }
-            
-    if (@args == 1 and reftype($args[0]) eq 'ARRAY') {
-        my @pair = @{+shift};
-        $opts{opentext} = $pair[0];
+
+    if ( @args == 1 and reftype( $args[0] ) eq 'ARRAY' ) {
+        my @pair = @{ +shift };
+        $opts{opentext}  = $pair[0];
         $opts{closetext} = $pair[1];
     }
     else {
         my $separator = doe($OUTPUT_FIELD_SEPARATOR);
-        $opts{opentext} = join($separator, @args);
+        $opts{opentext} = join( $separator, @args );
     }
-    
-    my $level     = $self->proclamation_level + 1;
-    my $opentext  = $opts{opentext};
+
+    my $level    = $self->proclamation_level + 1;
+    my $opentext = $opts{opentext};
 
     unless ( defined $opentext ) {
         $opentext = ( caller(1) )[3];    # subroutine name;
         $opentext =~ s{\Amain::}{}sxm;
+    }
+
+    my $bullet;
+    if ( $opts{bullet} ) {
+     $bullet = $opts{bullet};
+     $self->_alter_bullet_width($bullet);
+
+    }
+    else {
+        $bullet = $self->_bullet_for_level($level);
     }
 
     my $proclamation = $PROCLAMATION_CLASS->new(
@@ -356,10 +356,10 @@ sub proclaim {
         closestat    => $opts{closestat} // $self->default_closestat,
         opentext     => $opentext,
         closetext    => $opts{closetext} // $opentext,
-        timestamp => $opts{timestamp} // $self->timestamp,
+        timestamp    => $opts{timestamp} // $self->timestamp,
     );
 
-    return $proclamation unless reftype($proclamation); 
+    return $proclamation unless reftype($proclamation);
     # if not a reference, there was an error
 
     $self->_push_proclamation($proclamation);
@@ -380,14 +380,6 @@ sub close_proclamation {
 
 }
 
-# Default timestamp 
-#
-sub _default_timestamp {
-    my $self = shift;
-    my ($s, $m, $h) = localtime(time());
-    return sprintf "%2.2d:%2.2d:%2.2d ", $h, $m, $s;
-}
-
 __END__
 
 #
@@ -398,22 +390,13 @@ __END__
         if defined($this->{maxdepth}) && $level >= $this->{maxdepth};
 
     # Start back at the left
-    my $s = 1;
-    $s = $this->_spew("\n")
-        if $this->{pos};
-    return $s unless $s;
-    $this->{pos}     = 0;
-    $this->{progwid} = 0;
-
-    # Level adjust?
-    $level += $opts->{adjust_level}
-        if $opts->{adjust_level} && $opts->{adjust_level} =~ m{^-?\d+$}sxm;
 
     # The message
     my $bullet = $this->_bullet($level);
     my $indent = q{ } x ($this->{step} * $level);
     my $tlen   = 0;
-    my $span   = $this->{width} - length($ts) - length($bullet) - ($this->{step} * $level) - 10;
+    my $span   = 
+       $this->{width} - length($ts) - length($bullet) - ($this->{step} * $level) - 10;
     my @mlines = _wrap($msg, int($span * 2 / 3), $span);
     while (defined(my $txt = shift @mlines)) {
         $s = $this->_spew($ts . $bullet . $indent . $txt);
@@ -424,7 +407,9 @@ __END__
         $bullet = q{ } x $this->{bullet_width};    # Only bullet the first line
         $ts     = q{ } x length($ts);              # Only timestamp the first line
     }
-    $this->{pos} += length($ts) + ($this->{step} * $level) + length($bullet) + $tlen + length($this->{ellipsis});
+    $this->{pos} += 
+       length($ts) + ($this->{step} * $level) + length($bullet) + 
+          $tlen + length($this->{ellipsis});
     return 1;
 }
 
@@ -661,43 +646,6 @@ sub emit_none  {emit_done {-silent => 1}, @_, "NONE"}
 # *Special* closes level quietly (prints no wrapup severity)
 
 #
-# Return the bullet string for the given level
-#
-sub _bullet {
-    my ($this, $level) = @_;
-    my $bullet = q{};
-    if (ref($this->{bullets}) eq 'ARRAY') {
-        my $pmax = $#{$this->{bullets}};
-        $bullet = $this->{bullets}->[$level > $pmax ? $pmax : $level];
-    }
-
-    # TODO: Allow bullets to be given as CSV:  "* ,+ ,- ,  " for example.
-    elsif ($this->{bullets}) {
-        $bullet = $this->{bullets};
-    }
-    else {
-        return q{};
-    }
-    my $pad = q{ } x ($this->{bullet_width} - length($bullet));
-    return $bullet . $pad;
-}
-
-#
-# Clean option keys
-#
-sub _clean_opts {
-    my %in  = @_;
-    my %out = ();
-    foreach my $k (keys %in) {
-        my $v = $in{$k};
-        delete $in{$k};
-        $k =~ s{^\s*-?(\w+)\s*}{$1}sxm;
-        $out{lc $k} = $v;
-    }
-    return %out;
-}
-
-#
 # Add ANSI color to a string, if ANSI is enabled
 ### TODO:  use Term::ANSIColor, a standard module (verify what perl version introduced it, tho)
 #
@@ -794,84 +742,6 @@ sub _process_args {
     return ($this, $opts, @_);
 }
 
-#
-# Emit output to filehandle, string, whatever...
-#
-sub _spew {
-    my $this = shift;
-    my $out  = shift;
-    my $fh   = $this->{fh};
-    return ref($fh) eq 'SCALAR' ? ${$fh} .= $out : print {$fh} $out;
-}
-
-#
-# Default timestamp 
-#
-sub _timestamp {
-    my $level = shift; #fwiw
-    my ($s, $m, $h) = localtime(time());
-    return sprintf "%2.2d:%2.2d:%2.2d ", $h, $m, $s;
-}
-
-#
-# Wrap text to fit within line lengths
-#   (Do we want to delete this and add a dependency to Text::Wrap ??)
-#
-sub _wrap {
-    my ($msg, $min, $max) = @_;
-    return ($msg)
-        if !defined $msg
-            || $max < 3
-            || $min > $max;
-
-    # First split on newlines
-    my @lines = ();
-    foreach my $line (split(/\n/, $msg)) {
-        my $split = $line;
-
-        # Then if each segment is more than the width, wrap it
-        while (length($split) > $max) {
-
-            # Look backwards for whitespace to split on
-            my $pos = $max;
-            while ($pos >= $min) {
-                if (substr($split, $pos, 1) =~ m{\s}sxm) {
-                    $pos++;
-                    last;
-                }
-                $pos--;
-            }
-            $pos = $max if $pos < $min;    #no good place to break, use the max
-
-            # Break it
-            my $chunk = substr($split, 0, $pos);
-            $chunk =~ s{\s+$}{}sxm;
-            push @lines, $chunk;
-            $split = substr($split, $pos, length($split) - $pos);
-        }
-        $split =~ s{\s+$}{}sxm;            #trim
-        push @lines, $split;
-    }
-    return @lines;
-}
-
-### O ###
-
-package Term::Emit::TiedClosure;
-
-sub new {
-    my ($proto, $base, @args) = @_;
-    my $class = ref($proto) || $proto;     # Get the class name
-    my $this = {-base => $base};
-    bless($this, $class);
-    $base->emit(@args);
-    return $this;
-}
-
-sub DESTROY {
-    my $this = shift;
-    return $this->{-base}->emit_done();
-}
 
 1;                                         # EOM
 __END__
