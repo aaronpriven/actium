@@ -90,7 +90,7 @@ around BUILDARGS => sub {
 ######################
 ## WIDTH AND POSITION
 
-has 'pos' => (
+has 'position' => (
     is      => 'rw',
     isa     => 'Int',
     default => 0,
@@ -265,7 +265,7 @@ sub maximum_severity() {15}
 
 }
 
-has 'showseverity' => (
+has 'override_severity' => (
     is      => 'ro',
     isa     => 'Int',
     default => 0,
@@ -405,46 +405,6 @@ __END__
 #
 sub emit_done {
     my ($this, $opts, @args) = _process_args(@_);
-    my $want_level = $opts->{want_level};
-    my $sev        = shift @args || 'DONE';
-    my $sevlev     = defined $SEVLEV{uc $sev}? $SEVLEV{uc $sev} : $SEVLEV{'OTHER'};
-
-    # Test that we're at the right level - do this BEFORE changing the envvar
-    my $ret_level = ($ENV{$this->_envvar()} || 0) - 1;
-    return
-        if defined $want_level && $ret_level != $want_level;
-
-    # Decrement level
-    return $sevlev
-        if !$ENV{$this->_envvar()};
-    my $level = --$ENV{$this->_envvar()};
-    delete $ENV{$this->_envvar()}
-        if $level <= 0;
-
-    # Filtering - level & severity
-    my $showseverity
-        = defined $opts->{showseverity}  ? $opts->{showseverity}
-        : defined($this->{showseverity}) ? $this->{showseverity}
-        :                             MAX_SEV;
-    if (   $sevlev < $showseverity
-        && defined($this->{maxdepth})
-        && $level >= $this->{maxdepth})
-    {
-        pop @{$this->{msgs}};    # discard it
-        return $sevlev;
-    }
-
-    # Are we silently closing this level?
-    if ($opts->{silent}) {
-        my $s = 1;
-        $s = $this->_spew("\n")
-            if $this->{pos};
-        return $s unless $s;
-        $this->{pos}     = 0;
-        $this->{progwid} = 0;
-        pop @{$this->{msgs}};    # discard it
-        return $sevlev;
-    }
 
     # Make the severity text
     my $sevstr = " [$sev]\n";
