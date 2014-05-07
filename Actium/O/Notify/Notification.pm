@@ -21,8 +21,8 @@ has 'notifier' => (
         qw[
           fh
           minimum_severity maximum_severity severity_num
-          step             maxdepth         showseverity
-          term_width       pos              set_pos
+          step             maxdepth         override_severity
+          term_width       position         set_position
           _progwid         _set_progwid
           _bullet_width    _alter_bullet_width
           _close_up_to
@@ -48,7 +48,7 @@ has 'level' => (
 
 has 'adjust_level' => (
     isa     => 'Int',
-    is      => 'rw',
+    is      => 'ro',
     default => 0,
 );
 
@@ -153,7 +153,10 @@ has '_is_opened' => (
     is       => 'ro',
     default  => 0,
     traits   => ['Bool'],
-    handles  => { _mark_opened => 'set', },
+    handles  => {
+        _mark_opened => 'set',
+        _not_opened  => 'not',
+    },
 );
 
 has '_is_closed' => (
@@ -191,41 +194,17 @@ sub _open {
     my $level = shift // $self->level + $self->adjust_level;
 
     my $fh  = $self->fh;
-    my $pos = $self->pos;
+    my $pos = $self->position;
 
     # start back at the left
     if ($pos) {
         my $succeeded = print $fh "\n";
-        return $succeeded unless $succeeded;
+        return unless $succeeded;
     }
 
-    # Timestamp
-    my $timestamp = $self->_timestamp_now;
+    my $succeeded = _print_left_text( $self->opentext );
+    return unless $succeeded;
 
-    my $bullet = $self->_spaced( $self->bullet, $self->_bullet_width );
-    my $indent         = $SPACE x ( $self->step * ( $level - 1 ) );
-    my $leading        = $timestamp . $bullet . $indent;
-    my $leading_width  = $self->uwidth($leading);
-    my $leading_spaces = $SPACE x $leading_width;
-    my $span_max       = $self->term_width - $leading_width - $NOTIFY_RIGHT_PAD;
-    my $span_min       = int( $span_max * $MIN_SPAN_FACTOR );
-
-    my $text = $self->opentext . $self->ellipsis;
-
-    my @lines = $self->_wrap( $text, $span_min, $span_max );
-    my $final_width = $self->uwidth( $lines[-1] );
-    $lines[0] = $leading . $lines[0];
-    if ( @lines > 1 ) {
-        $_ = "\n" . $leading_spaces . $_ foreach ( 1 .. $#lines );
-    }
-
-    for my $line (@lines) {
-        my $succeeded = print $fh "$line";
-        return $succeeded unless $succeeded;
-    }
-
-    $self->set_pos( $leading_width + $final_width );
-    $self->_set_progwid(0);
     $self->_mark_opened;
 
     return $self;
@@ -250,6 +229,43 @@ sub BUILD {
 
 }
 
+sub _print_left_text {
+    my $self  = shift;
+    my $fh    = $self->fh;
+    my $text  = shift;
+    my $level = shift;
+
+    # Timestamp
+    my $timestamp = $self->_timestamp_now;
+
+    my $bullet = $self->_spaced( $self->bullet, $self->_bullet_width );
+    my $indent         = $SPACE x ( $self->step * ( $level - 1 ) );
+    my $leading        = $timestamp . $bullet . $indent;
+    my $leading_width  = $self->uwidth($leading);
+    my $leading_spaces = $SPACE x $leading_width;
+    my $span_max       = $self->term_width - $leading_width - $NOTIFY_RIGHT_PAD;
+    my $span_min       = int( $span_max * $MIN_SPAN_FACTOR );
+
+    $text .= $self->ellipsis;
+
+    my @lines = $self->_wrap( $text, $span_min, $span_max );
+    my $final_width = $self->uwidth( $lines[-1] );
+    $lines[0] = $leading . $lines[0];
+    if ( @lines > 1 ) {
+        $_ = "\n" . $leading_spaces . $_ foreach ( 1 .. $#lines );
+    }
+
+    for my $line (@lines) {
+        my $succeeded = print $fh "$line";
+        return unless $succeeded;
+    }
+
+    $self->set_position( $leading_width + $final_width );
+    $self->_set_progwid(0);
+
+    return $self;
+} ## tidy end: sub _print_left_text
+
 ###########################
 ### close
 
@@ -266,11 +282,72 @@ sub done {
             push @args, $_;
         }
     }
-    
-    my $severity = shift @args // $opts{closestat} // $self->closestat;
+
+    my $fh           = $self->fh;
+    my $severity     = shift @args // $opts{closestat} // $self->closestat;
     my $severity_num = $self->severity_num($severity);
 
-}
+    if ( $opts{silent} ) {
+        if ( $self->position ) {
+            my $succeeded = print $fh "\n";
+            return unless $succeeded;
+            $self->set_position(0);
+        }
+        return $severity_num;
+    }
+
+    my $override_severity = $self->override_severity;
+    my $maxdepth          = $self->maxdepth;
+    my $level             = $self->level + $self->adjust_level;
+
+    if ( defined $maxdepth and $level > $maxdepth ) {
+        # skip printing, unless there's a severity override
+
+        if ( $severity_num < $override_severity ) {
+            return $severity_num;
+            # less than the override severity, so return
+        }
+
+        # here severity is overriding the max depth
+
+    }
+
+    # Make the severity text
+
+    my $severity_output;
+    if ( $self->colorize ) {
+        $severity_output = $self->_add_color($severity);
+    }
+    else {
+        $severity_output = $severity;
+    }
+    $severity_output = " [$severity_output]\n";
+
+    my $closetext = $opts{closetext} // $self->closetext;
+    my $position = $self->position;
+
+    if
+      (    $position != 0
+        or $self->opentext ne $closetext
+        or $self->_not_opened
+      )
+    {
+        if ( $position != 0 ) {
+            my $succeeded = print $fh "\n";
+            return unless $succeeded;
+        }
+
+        my $succeeded = _print_left_text($closetext);
+        return unless $succeeded;
+        
+        $position = 0;
+
+    }
+    
+    
+    # here print trailers and closing text
+
+} ## tidy end: sub done
 
 sub d_emerg { my $self = shift; $self->done( @_, "EMERG" ) }
 # syslog: Off the scale!
@@ -385,6 +462,32 @@ sub _timestamp_now {
 
     return $EMPTY_STR;
 }
+
+sub _add_color {
+    my $self = shift;
+    my ( $str, $sev ) = @_;
+    my $zon  = q{};
+    my $zoff = q{};
+    $zon = chr(27) . '[1;31;40m'
+      if $sev =~ m{\bEMERG(ENCY)?}i;    #bold red on black
+    $zon = chr(27) . '[1;35m' if $sev =~ m{\bALERT\b}i;            #bold magenta
+    $zon = chr(27) . '[1;31m' if $sev =~ m{\bCRIT(ICAL)?\b}i;      #bold red
+    $zon = chr(27) . '[1;31m' if $sev =~ m{\bFAIL(URE)?\b}i;       #bold red
+    $zon = chr(27) . '[1;31m' if $sev =~ m{\bFATAL\b}i;            #bold red
+    $zon = chr(27) . '[31m'   if $sev =~ m{\bERR(OR)?\b}i;         #red
+    $zon = chr(27) . '[33m'   if $sev =~ m{\bWARN(ING)?\b}i;       #yellow
+    $zon = chr(27) . '[36m'   if $sev =~ m{\bNOTE\b}i;             #cyan
+    $zon = chr(27) . '[32m'   if $sev =~ m{\bINFO(RMATION)?\b}i;   #green
+    $zon = chr(27) . '[1;32m' if $sev =~ m{\bOK\b}i;               #bold green
+    $zon = chr(27) . '[37;43m' if $sev =~ m{\bDEBUG\b}i;    #grey on yellow
+    $zon = chr(27) . '[30;47m' if $sev =~ m{\bNOTRY\b}i;    #black on grey
+    $zon = chr(27) . '[1;37;47m'
+      if $sev =~ m{\bUNK(OWN)?\b}i;                         #bold white on gray
+    $zon  = chr(27) . '[32m' if $sev =~ m{\bYES\b}i;        #green
+    $zon  = chr(27) . '[31m' if $sev =~ m{\bNO\b}i;         #red
+    $zoff = chr(27) . '[0m'  if $zon;
+    return $zon . $str . $zoff;
+} ## tidy end: sub _add_color
 
 1;
 __END__
