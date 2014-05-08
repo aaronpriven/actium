@@ -1,54 +1,57 @@
-#!perl -w
+#!/ActivePerl/bin/perl
 use strict;
 use warnings;
-use Term::Emit qw/:all/, {-color => 1,
-                    -fh => *STDERR};
+use Actium::O::Notify;
 
-{   emit "Watch the percentage climb";
+my $n = Actium::O::Notify::->new(colorize => 1);
+
+sub emit { $n->note(@_) };
+
+{   my $nf = emit "Watch the percentage climb";
     for (1..10) {
-        emit_over " " . ($_ * 10) . "%";
+        $nf->over (" " . ($_ * 10) . "%");
         select(undef,undef,undef, 0.100);
     }
-    emit_over ""; # erase the percentage
+    $nf->over (""); # erase the percentage
 }
 
-{   emit "Watch the dots move";
+{   my $nf = emit "Watch the dots move";
     for (1..40) {
-        emit_prog $_%10?q:.::':'; # just being difficult...ha!
+        $nf->prog ($_%10?q:.::':'); # just being difficult...ha!
         select(undef,undef,undef, 0.100);
     }
 }
 
-{   emit "Here's a spinner";
+{   my $nf = emit "Here's a spinner";
     my @spin = qw{| / - \\ | / - \\};
     for (1..64) {
-        emit_over $spin[$_ % @spin];
+        $nf->over ($spin[$_ % @spin]);
         select(undef,undef,undef, 0.125);
     }
-    emit_over;  # remove spinner
+    $nf->over;  # remove spinner
 }
 
-{   emit "Zig zags on parade";
+{   my $nf = emit "Zig zags on parade";
     for (1..200) {
-        emit_prog $_%2? '/' : '\\';
+        $nf->prog ($_%2? '/' : '\\');
         select(undef,undef,undef, 0.025);
     }
 }
 
 
-{   emit "Making progress";
+{   my $nf = emit "Making progress";
     for (1..10) {
-        emit_over " $_/10";
+        $nf->over( " $_/10");
         select(undef,undef,undef, 0.100);
     }
 }
 
-{   emit "Engines on";
+{   my $nf = emit "Engines on";
     for (reverse(1..5)) {
-        emit_prog " $_ ";
+        $nf->prog( " $_ ");
         select(undef,undef,undef, 1.000);
     }
-    emit_done "Gone!";
+    $nf->done( "Gone!");
 }
 
 exit 0;
