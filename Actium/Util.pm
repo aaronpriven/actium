@@ -11,9 +11,9 @@ use 5.016;
 use warnings;
 
 use Actium::Constants;
-use List::Util ( qw[first max min maxstr minstr sum] );
-use List::MoreUtils( qw[any all none notall natatime uniq] );
-use Scalar::Util(qw[blessed reftype looks_like_number] );
+use List::Util (qw[first max min maxstr minstr sum]);
+use List::MoreUtils(qw[any all none notall natatime uniq]);
+use Scalar::Util(qw[blessed reftype looks_like_number]);
 use Carp;
 use File::Spec;
 
@@ -24,15 +24,14 @@ use Sub::Exporter -setup => {
           joinseries          joinseries_ampersand
           j                   jt
           jk                  jn
-          jspaced             js
           sk                  st
           keyreadable         keyunreadable
           doe
           isblank             isnotblank
           tabulate            aoa2tsv
           filename            file_ext
-          remove_leading_path 
-          linegroup_of        
+          remove_leading_path
+          linegroup_of
           chunks
           is_odd              is_even
           mean                population_stdev
@@ -40,6 +39,8 @@ use Sub::Exporter -setup => {
           halves
           flatten             hashref
           dumpstr
+          u_wrap              u_columns
+          u_trim_to_columns   u_pad
           >
     ]
 };
@@ -50,7 +51,9 @@ sub positional {
 
     my $argument_r = shift;
     ## no critic (RequireInterpolationOfMetachars)
-    croak 'First argument to' . __PACKAGE__ . '::positional must be a reference to @_'
+    croak 'First argument to'
+      . __PACKAGE__
+      . '::positional must be a reference to @_'
       if not( ref($argument_r) eq 'ARRAY' );
     ## use critic
 
@@ -80,10 +83,10 @@ sub positional {
 } ## tidy end: sub positional
 
 sub positional_around {
-    my $arguments_r = shift;
-    my $orig        = shift @{$arguments_r};   # see Moose::Manual::Construction
-    my $invocant    = shift @{$arguments_r};   # see Moose::Manual::Construction
-    return $invocant->$orig( positional( $arguments_r, @_ ) );
+    my $args_r   = shift;
+    my $orig     = shift @{$args_r};  # see Moose::Manual::Construction
+    my $invocant = shift @{$args_r};  # see Moose::Manual::Construction
+    return $invocant->$orig( positional( $args_r, @_ ) );
 }
 
 # JOINING AND SPLITTING
@@ -98,14 +101,14 @@ sub _joinseries_with_x {
 }
 
 sub joinseries {
-    croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries' 
-       unless @_;
+    croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries'
+      unless @_;
     return _joinseries_with_x( 'and', @_ );
 }
- 
+
 sub joinseries_ampersand {
     croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries_ampersand'
-       unless @_;
+      unless @_;
     return _joinseries_with_x( '&', @_ );
 }
 
@@ -125,21 +128,13 @@ sub jn {
     return join( "\n", map { $_ // $EMPTY_STR } @_ );
 }
 
-sub js {
-    return join( $SPACE, map { $_ // $EMPTY_STR } @_ );
-}
-
-sub jspaced {
-    my $spaces = shift;
-    return map { sprintf( "%-${spaces}s", $_ // $EMPTY_STR ) } @_;
-}
-
 sub sk {
-    croak "Null argument specified to sk" unless $_[0];
+    croak 'Null argument specified to ' . __PACKAGE__ . 'sk' unless $_[0];
     return split( /$KEY_SEPARATOR/sx, $_[0] );
 }
 
 sub st {
+    croak 'Null argument specified to ' . __PACKAGE__ . 'st' unless $_[0];
     return split( /\t/s, $_[0] );
 }
 
@@ -168,6 +163,8 @@ sub keyunreadable {
 }
 
 sub tabulate {
+
+    # TODO: rewrite using Unicode::GCString for column widths
 
     my @record_rs;
 
@@ -219,19 +216,19 @@ sub tabulate {
 sub aoa2tsv {
     # array of arrays to a single string of tab-separated-values,
     # suitable for something like File::Slurp::write_file
-    
-    my $aoa_r = shift;
+
+    my $aoa_r   = shift;
     my @headers = flatten(@_);
-    
+
     my @lines;
-    push @lines, jt (@headers) if @headers;
-    
-    foreach my $array (@{$aoa_r}) {
-        push @lines, jt(@{$array});   
+    push @lines, jt(@headers) if @headers;
+
+    foreach my $array ( @{$aoa_r} ) {
+        push @lines, jt( @{$array} );
     }
-    
+
     my $str = jn(@lines) . "\n";
-    
+
     return $str;
 
 }
@@ -291,7 +288,7 @@ sub remove_leading_path {
     my ( $pathvol, $pathfolders_r, $pathfile )
       = _split_path_components( $path, 1 );
 
-    $file    = $pathfile if ( lc($file)    eq lc($pathfile) );
+    $file    = $pathfile if ( lc($file) eq lc($pathfile) );
     $filevol = $pathvol  if ( lc($filevol) eq lc($pathvol) );
 
     # put each component into $case_of. But
@@ -345,10 +342,10 @@ sub _join_path_components {
 }
 
 sub hashref {
-    return $_[0] if reftype($_[0]) eq 'HASH' and @_ == 1;
-    croak 'Odd number of elements passed to ' . __PACKAGE__ . '::hashref' 
-       if @_ % 2;
-    return { @_ };
+    return $_[0] if reftype( $_[0] ) eq 'HASH' and @_ == 1;
+    croak 'Odd number of elements passed to ' . __PACKAGE__ . '::hashref'
+      if @_ % 2;
+    return {@_};
 }
 
 sub flatten {
@@ -413,7 +410,7 @@ sub is_even {
 }
 
 sub mean {
- 
+
     if ( ref( $_[0] ) eq 'ARRAY' ) {
         return sum( @{ $_[0] } ) / scalar( @{ $_[0] } );
     }
@@ -422,32 +419,104 @@ sub mean {
 }
 
 sub population_stdev {
- 
-    my @popul = ref $_[0] ? @{$_[0]} : @_;
- 
+
+    my @popul = ref $_[0] ? @{ $_[0] } : @_;
+
     my $themean = mean(@popul);
     return sqrt( mean( [ map $_**2, @popul ] ) - ( $themean**2 ) );
 }
 
 sub all_eq {
     my $first = shift;
-    my @rest = @_;
+    my @rest  = @_;
     return all { $_ eq $first } @rest;
 }
 
 sub halves {
-    my ($wholes, $halves) = (flatten(@_));
-    return ( $wholes*2 + $halves );
+    my ( $wholes, $halves ) = ( flatten(@_) );
+    return ( $wholes * 2 + $halves );
 }
 
 sub dumpstr {
     require Data::Dumper;
     no warnings 'once';
-    local $Data::Dumper::Indent = 1;
+    local $Data::Dumper::Indent   = 1;
     local $Data::Dumper::Sortkeys = 1;
     return Data::Dumper::Dumper(@_);
 }
 
+##########################
+## Unicode column utilities
+
+sub u_columns {
+    my $str = shift;
+    require Unicode::GCString;
+    return Unicode::GCString->new($str)->columns;
+}
+
+sub u_pad {
+    my $text  = shift;
+    my $width = shift;
+
+    my $textwidth = u_columns($text);
+
+    return $text unless $textwidth < $width;
+
+    my $spaces = ( $SPACE x ( $width - $textwidth ) );
+
+    return ( $text . $spaces );
+
+}
+
+sub u_wrap {
+    my ( $msg, $min, $max ) = @_;
+
+    return unless defined $msg;
+
+    return $msg
+      if $max < 3 or $min > $max;
+
+    require Unicode::LineBreak;
+
+    state $breaker = Unicode::LineBreak::->new();
+    $breaker->config( ColMax => $max, ColMin => $min );
+
+    # First split on newlines
+    my @lines = ();
+    foreach my $line ( split( /\n/, $msg ) ) {
+
+        my $linewidth = u_columns($line);
+
+        if ( $linewidth <= $max ) {
+            push @lines, $line;
+        }
+        else {
+            push @lines, $breaker->break($line);
+        }
+
+    }
+
+    @lines = map {s/\s+\Z//} @lines;
+
+    return @lines;
+
+} ## tidy end: sub u_wrap
+
+sub u_trim_to_columns {
+    my $text        = shift;
+    my $num_columns = shift;
+
+    require Unicode::GCString;
+
+    my $gc = Unicode::GCString::->new($text);
+
+    while ( $gc->columns > $num_columns ) {
+        $gc->substr( -1, 1, $EMPTY_STR );
+    }
+
+    return $gc->as_string;
+
+}
 
 1;
 
@@ -523,16 +592,6 @@ by tabs. A quicker way to type 'join ("\t" , @list)'.
 
 Takes the list passed to it and joins it together, with each element separated 
 by line feeds. A quicker way to type 'join ("\n" , @list)'.
-
-=item B<js()>
-
-Takes the list passed to it and joins it together, with each element separated 
-by a single space. A quicker way to type 'join (" " , @list)'.
-
-=item B<jspaced(I<num_spaces>, I<list>)>
-
-Takes the list passed to it and joins it together, with each element padded out
-to the given number of spaces.
 
 =item B<joinseries(I<list>)>
 
