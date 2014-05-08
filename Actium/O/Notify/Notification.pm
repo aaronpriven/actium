@@ -26,8 +26,9 @@ const my $MIN_SPAN_FACTOR         => 2 / 3;
 
 has 'notifier' => (
     isa     => 'Actium::O::Notify',
-    is      => 'bare',
-    weakref => 1,
+    is      => 'ro',
+    weak_ref => 1,
+    required => 1,
     handles => [
         qw[
           fh
@@ -82,7 +83,7 @@ sub _build_closetext {
 }
 
 has 'bullet' => (
-    isa     => 'NotifyBullet',
+    isa     => NotifyBullet,
     default => $EMPTY_STR,
     is      => 'ro',
     writer  => '_set_bullet',
@@ -104,6 +105,7 @@ sub set_bullet {
 has 'closestat' => (
     is      => 'rw',
     isa     => 'Str',
+    lazy => 1,
     builder => '_reset_closestat',
 );
 
@@ -115,6 +117,7 @@ sub _reset_closestat {
 has 'timestamp' => (
     is      => 'rw',
     isa     => 'Bool | CodeRef',
+    lazy => 1,
     builder => '_reset_timestamp',
 );
 
@@ -141,6 +144,7 @@ sub _timestamp_now {
 has 'ellipsis' => (
     is      => 'rw',
     isa     => 'Str',
+    lazy => 1,
     builder => '_reset_ellipsis',
 );
 
@@ -151,7 +155,8 @@ sub _reset_ellipsis {
 
 has 'trailer' => (
     is      => 'rw',
-    isa     => 'NotifyTrailer',
+    isa     => NotifyTrailer,
+    lazy => 1,
     builder => '_reset_trailer',
 );
 
@@ -163,6 +168,7 @@ sub _reset_trailer {
 has 'colorize' => (
     isa     => 'Bool',
     is      => 'ro',
+    lazy => 1,
     builder => '_reset_colorize',
     traits  => ['Bool'],
     handles => {
@@ -277,7 +283,7 @@ sub _print_left_text {
     my $bullet = u_pad( $self->bullet, $self->_bullet_width );
     my $indent         = $SPACE x ( $self->step * ( $level - 1 ) );
     my $leading        = $timestamp . $bullet . $indent;
-    my $leading_width  = uwidth($leading);
+    my $leading_width  = u_columns($leading);
     my $leading_spaces = $SPACE x $leading_width;
     my $span_max       = $self->term_width - $leading_width - $NOTIFY_RIGHT_PAD;
     my $span_min       = int( $span_max * $MIN_SPAN_FACTOR );
@@ -285,7 +291,7 @@ sub _print_left_text {
     $text .= $self->ellipsis;
 
     my @lines = u_wrap( $text, $span_min, $span_max );
-    my $final_width = uwidth( $lines[-1] );
+    my $final_width = u_columns( $lines[-1] );
     $lines[0] = $leading . $lines[0];
     if ( @lines > 1 ) {
         $_ = "\n" . $leading_spaces . $_ foreach ( 1 .. $#lines );
@@ -308,13 +314,13 @@ sub _print_left_text {
 sub _close {
     my $self = shift;
 
-    return if $self->is_closed;
+    return if $self->_is_closed;
 
     my ( %opts, @args );
 
     # process arguments
     foreach (@_) {
-        if ( reftype($_) eq 'HASH' ) {
+        if ( defined(reftype($_)) and reftype($_) eq 'HASH' ) {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -355,7 +361,7 @@ sub _close {
 
     # Make the severity text
 
-    my $severity_output = u_trim_to_columns($severity);
+    my $severity_output = u_trim_to_columns($severity, $MAX_SEVERITY_TEXT_WIDTH);
     if ( $self->colorize ) {
         $severity_output = $self->add_color($severity_output);
     }
@@ -373,7 +379,7 @@ sub _close {
             return unless $succeeded;
         }
 
-        my $succeeded = $self->_print_left_text($closetext);
+        my $succeeded = $self->_print_left_text($closetext, $level);
         return unless $succeeded;
 
         $position = $self->position;
@@ -464,7 +470,7 @@ sub DEMOLISH {
     my $self                  = shift;
     my $in_global_destruction = shift;
 
-    return if $self->is_closed;
+    return if $self->_is_closed;
 
     $self->_close_up_to($self);
 
@@ -547,7 +553,7 @@ sub text {
 
     # process arguments
     foreach (@_) {
-        if ( reftype($_) eq 'HASH' ) {
+        if ( defined(reftype($_)) and reftype($_) eq 'HASH' ) {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -596,7 +602,7 @@ sub text {
 #### COLORIZE
 
 {
-    const my %DARK_BG_COLORS_OF => {
+    const my %DARK_BG_COLORS_OF => (
         EMERG => 'black on_bright_red',
         ALERT => 'black on_bright_yellow',
         CRIT  => 'red on_bright_white',
@@ -613,9 +619,9 @@ sub text {
         UNK   => 'yellow',
         YES   => 'green',
         NO    => 'red',
-    };
+    );
     
-    const my %LIGHT_BG_COLORS_OF => {
+    const my %LIGHT_BG_COLORS_OF => (
         EMERG => 'black on_bright_red',
         ALERT => 'black on_bright_yellow',
         CRIT  => 'bright_red on_black',
@@ -632,7 +638,7 @@ sub text {
         UNK   => 'yellow',
         YES   => 'bright_green',
         NO    => 'bright_red',
-    };
+    );
 
     sub add_color {
 

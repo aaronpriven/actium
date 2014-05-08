@@ -7,8 +7,10 @@ package Actium::O::Notify 0.005;
 use Actium::Moose;
 use Scalar::Util(qw[openhandle weaken refaddr reftype]);
 
-use Actium::Types (qw<ArrayRefOfNotifyBullets NotifyBullet NotifyTrailer>);
+use Actium::Types (qw<ARNotifyBullets NotifyBullet NotifyTrailer>);
 use Actium::Util ('u_columns');
+
+use Actium::O::Notify::Notification;
 
 const my $NOTIFICATION_CLASS => 'Actium::O::Notify::Notification';
 const my $FALLBACK_CLOSESTAT => 'DONE';
@@ -150,7 +152,7 @@ has 'timestamp' => (
 
 has 'trailer' => (
     is      => 'rw',
-    isa     => 'NotifyTrailer',
+    isa     => NotifyTrailer,
     default => '.',
 );
 
@@ -159,13 +161,13 @@ has 'trailer' => (
 
 has 'bullets_r' => (
     is       => 'bare',
-    isa      => 'ArrayRefOfNotifyBullets',
+    isa      => ARNotifyBullets,
     init_arg => 'bullets',
     reader   => '_bullets_r',
     writer   => '_set_bullets_r',
+    #coerce   => 1,
     default  => sub { [] },
     traits   => ['Array'],
-    coerce   => 1,
     handles  => {
         bullets      => 'elements',
         bullet_count => 'count',
@@ -197,7 +199,7 @@ has '_bullet_width' => (
     is       => 'rw',
     isa      => 'Int',
     init_arg => undef,
-    builder  => \&_build_bullet_width,
+    builder  => '_build_bullet_width',
     lazy     => 1,
 );
 
@@ -270,7 +272,8 @@ has 'maxdepth' => (
     sub severity_num {
         my $self    = shift;
         my $sevtext = uc(shift);
-        return $SEVERITY_NUM_OF{$sevtext} // $SEVERITY_NUM_OF{'OTHER'};
+        return $SEVERITY_NUM_OF{OTHER} unless exists $SEVERITY_NUM_OF{$sevtext};
+        return $SEVERITY_NUM_OF{$sevtext};
     }
     
     sub minimum_severity {
@@ -305,7 +308,8 @@ has 'default_closestat' => (
 
 has '_notifications_r' => (
     is      => 'ro',
-    isa     => 'ArrayRef[Actium::O::Notify::Notification]',
+    isa     => "ArrayRef[$NOTIFICATION_CLASS]",
+    traits => ['Array'],
     handles => {
         notifications      => 'elements',
         _pop_notification  => 'pop',
@@ -331,7 +335,7 @@ sub notify {
     my ( %opts, @args );
 
     foreach (@_) {
-        if ( reftype($_) eq 'HASH' ) {
+        if ( defined(reftype($_)) and reftype($_) eq 'HASH' ) {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -339,7 +343,7 @@ sub notify {
         }
     }
 
-    if ( @args == 1 and reftype( $args[0] ) eq 'ARRAY' ) {
+    if ( @args == 1 and defined(reftype($args[0])) and reftype( $args[0] ) eq 'ARRAY' ) {
         my @pair = @{ +shift };
         $opts{opentext}  = $pair[0];
         $opts{closetext} = $pair[1];
