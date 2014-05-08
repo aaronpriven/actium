@@ -23,8 +23,9 @@ use MooseX::Types -declare => [
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
       Str4                Str8
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
-      ActiumFolderLike    
+      ActiumFolderLike
       NotifyBullet          ArrayRefOfNotifyBullets
+      NotifyTrailer
       >
 ];
 
@@ -32,13 +33,14 @@ use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
 
 use Actium::Time;
 use Actium::Constants;
+use Unicode::GCString;
 
 ##################
 ### SCHEDULE DAYS
 
 subtype DayCode, as Str, where {/\A1?2?3?4?5?6?7?H?\z/}, message {
-    qq<"$_" is not a valid day code\n> .
-      qq<  (one or more of the characters 1-7 plus H, in order>;
+    qq<"$_" is not a valid day code\n>
+      . qq<  (one or more of the characters 1-7 plus H, in order>;
 };
 # It uses question marks instead of [1-7H]+ because
 # the numbers have to be in order, and not repeated
@@ -91,13 +93,17 @@ coerce( ActiumDir,
 );
 
 ######################
-## PROCLAIM
+## NOTIFY
 
 subtype NotifyBullet, as Str;
 
-subtype ArrayRefOfNotifyBullets, as ArrayRef [ NotifyBullet ];
+subtype NotifyTrailer, as Str,
+  where { Unicode::GCString::->new($_)->columns == 1 },
+  message {"The trailer you provided ($_) is not exactly one column wide"},
+  ;
 
-coerce ArrayRefOfNotifyBullets, from NotifyBullet, via { [ $_ ] };
+subtype ArrayRefOfNotifyBullets, as ArrayRef [NotifyBullet];
+coerce ArrayRefOfNotifyBullets, from NotifyBullet, via { [$_] };
 
 ######################
 ## SCHEDULE TIMES
@@ -131,7 +137,7 @@ subtype Str8, as Str, where { length == 8 },
 
 subtype Str4, as Str, where { length == 4 },
   message {qq<The entry "$_" is not an four-character-long string>};
-  
+
 ##########################
 ### CLASS AND ROLE TYPES
 
@@ -140,14 +146,15 @@ role_type 'Skedlike', { role => 'Actium::O::Skedlike' };
 #########################
 ## FOLDER
 
-duck_type ActiumFolderLike, [ qw[ path ] ]; # maybe make a folderlike role...
+duck_type ActiumFolderLike, [qw[ path ]];    # maybe make a folderlike role...
 
-coerce ActiumFolderLike, from Str, via (\&_make_actium_o_folder) , from ArrayRef[Str], via \&_make_actium_o_folder ;
+coerce ActiumFolderLike, from Str, via( \&_make_actium_o_folder ),
+  from ArrayRef [Str], via \&_make_actium_o_folder;
 
-sub _make_actium_o_folder  {
-	require Actium::O::Folder;
-	Actium::O::Folder::->new($_) 
-};
+sub _make_actium_o_folder {
+    require Actium::O::Folder;
+    Actium::O::Folder::->new($_);
+}
 
 1;
 __END__

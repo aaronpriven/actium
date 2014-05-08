@@ -9,6 +9,17 @@ package Actium::O::Notify::Notification 0.005;
 
 use Actium::Moose;
 use Unicode::LineBreak;
+use Unicode::GCString;
+
+use Actium::Types (qw<NotifyBullet NotifyTrailer>);
+use Actium::Util  (qw<u_columns u_pad u_wrap u_trim_to_columns>);
+
+use Term::ANSIColor;
+
+const my $MAX_SEVERITY_TEXT_WIDTH => 5;
+const my $SEVERITY_MARKER_WIDTH   => 8;    # text width, plus space and brackets
+const my $NOTIFY_RIGHT_PAD        => 10;
+const my $MIN_SPAN_FACTOR         => 2 / 3;
 
 ###############################
 ## Attributes set via constructor
@@ -23,10 +34,10 @@ has 'notifier' => (
           minimum_severity maximum_severity severity_num
           step             maxdepth         override_severity
           term_width       position         set_position
-          _progwid         _set_progwid
+          _prog_cols      _set_prog_cols
           _bullet_width    _alter_bullet_width
           _close_up_to
-          uwidth
+          light_background 
           ]
     ]
 );
@@ -35,6 +46,12 @@ has 'opentext' => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
+);
+
+has 'silent' => (
+    is      => 'ro',
+    isa     => 'Bool',
+    default => 0,
 );
 
 has 'level' => (
@@ -48,12 +65,12 @@ has 'level' => (
 
 has 'adjust_level' => (
     isa     => 'Int',
-    is      => 'ro',
+    is      => 'rw',
     default => 0,
 );
 
 has 'closetext' => (
-    is      => 'ro',
+    is      => 'rw',
     isa     => 'Str',
     lazy    => 1,
     builder => '_build_closetext',
@@ -65,7 +82,7 @@ sub _build_closetext {
 }
 
 has 'bullet' => (
-    isa     => 'Str',
+    isa     => 'NotifyBullet',
     default => $EMPTY_STR,
     is      => 'ro',
     writer  => '_set_bullet',
@@ -106,6 +123,21 @@ sub _reset_timestamp {
     return $self->notifier->timestamp;
 }
 
+sub _timestamp_now {
+    my $self = shift;
+
+    my $tsr = $self->timestamp;
+    if ($tsr) {
+        if ( reftype($tsr) eq 'CODE' ) {
+            return &{$tsr};
+        }
+        my ( $s, $m, $h ) = localtime( time() );
+        return sprintf "%2.2d:%2.2d:%2.2d ", $h, $m, $s;
+    }
+
+    return $EMPTY_STR;
+}
+
 has 'ellipsis' => (
     is      => 'rw',
     isa     => 'Str',
@@ -119,7 +151,7 @@ sub _reset_ellipsis {
 
 has 'trailer' => (
     is      => 'rw',
-    isa     => 'Str',
+    isa     => 'NotifyTrailer',
     builder => '_reset_trailer',
 );
 
@@ -158,6 +190,9 @@ has '_is_opened' => (
         _not_opened  => 'not',
     },
 );
+# is_opened is used to indicate that the opentext does not need to be
+# displayed again.  Something might be built successfully but not displayed
+# if it is silenced by the maxdepth attribute
 
 has '_is_closed' => (
     is       => 'ro',
@@ -167,6 +202,10 @@ has '_is_closed' => (
     traits   => ['Bool'],
     handles  => { _mark_closed => 'set', },
 );
+
+# used to indicate that we've already closed this notification,
+# so that it is not closed twice -- once when it is explicitly closed
+# and once when the DEMOLISH triggers
 
 has '_built_without_error' => (
     is       => 'ro',
@@ -184,9 +223,6 @@ has '_built_without_error' => (
 ###########################
 ### open
 
-const my $NOTIFY_RIGHT_PAD => 10;
-const my $MIN_SPAN_FACTOR  => 2 / 3;
-
 sub _open {
 
     my $self = shift;
@@ -203,11 +239,8 @@ sub _open {
     }
 
     my $succeeded = _print_left_text( $self->opentext );
-    return unless $succeeded;
-
     $self->_mark_opened;
-
-    return $self;
+    return $succeeded;
 
 } ## tidy end: sub _open
 
@@ -218,16 +251,19 @@ sub BUILD {
     my $maxdepth = $self->maxdepth;
 
     if ( defined $maxdepth and $level <= $maxdepth ) {
+        # if not s not hidden by maxdepth
         my $success = $self->_open($level);
         $self->_mark_built_without_error if $success;
     }
     else {
         $self->_mark_built_without_error;
     }
+    # the built_without_error attribute is used because we cannot
+    # return a status here (new() returns the object no matter what)
 
     return;
 
-}
+} ## tidy end: sub BUILD
 
 sub _print_left_text {
     my $self  = shift;
@@ -238,30 +274,30 @@ sub _print_left_text {
     # Timestamp
     my $timestamp = $self->_timestamp_now;
 
-    my $bullet = $self->_spaced( $self->bullet, $self->_bullet_width );
+    my $bullet = u_pad( $self->bullet, $self->_bullet_width );
     my $indent         = $SPACE x ( $self->step * ( $level - 1 ) );
     my $leading        = $timestamp . $bullet . $indent;
-    my $leading_width  = $self->uwidth($leading);
+    my $leading_width  = uwidth($leading);
     my $leading_spaces = $SPACE x $leading_width;
     my $span_max       = $self->term_width - $leading_width - $NOTIFY_RIGHT_PAD;
     my $span_min       = int( $span_max * $MIN_SPAN_FACTOR );
 
     $text .= $self->ellipsis;
 
-    my @lines = $self->_wrap( $text, $span_min, $span_max );
-    my $final_width = $self->uwidth( $lines[-1] );
+    my @lines = u_wrap( $text, $span_min, $span_max );
+    my $final_width = uwidth( $lines[-1] );
     $lines[0] = $leading . $lines[0];
     if ( @lines > 1 ) {
         $_ = "\n" . $leading_spaces . $_ foreach ( 1 .. $#lines );
     }
 
     for my $line (@lines) {
-        my $succeeded = print $fh "$line";
+        my $succeeded = print $fh $line;
         return unless $succeeded;
     }
 
     $self->set_position( $leading_width + $final_width );
-    $self->_set_progwid(0);
+    $self->_set_prog_cols(0);
 
     return $self;
 } ## tidy end: sub _print_left_text
@@ -269,11 +305,14 @@ sub _print_left_text {
 ###########################
 ### close
 
-sub done {
+sub _close {
     my $self = shift;
+
+    return if $self->is_closed;
 
     my ( %opts, @args );
 
+    # process arguments
     foreach (@_) {
         if ( reftype($_) eq 'HASH' ) {
             %opts = ( %opts, %{$_} );
@@ -286,8 +325,10 @@ sub done {
     my $fh           = $self->fh;
     my $severity     = shift @args // $opts{closestat} // $self->closestat;
     my $severity_num = $self->severity_num($severity);
+    my $silent       = $opts{silent} // $self->silent;
 
-    if ( $opts{silent} ) {
+    # skip printing if silent
+    if ($silent) {
         if ( $self->position ) {
             my $succeeded = print $fh "\n";
             return unless $succeeded;
@@ -300,8 +341,8 @@ sub done {
     my $maxdepth          = $self->maxdepth;
     my $level             = $self->level + $self->adjust_level;
 
+    # skip printing, unless there's a severity override
     if ( defined $maxdepth and $level > $maxdepth ) {
-        # skip printing, unless there's a severity override
 
         if ( $severity_num < $override_severity ) {
             return $severity_num;
@@ -314,71 +355,105 @@ sub done {
 
     # Make the severity text
 
-    my $severity_output;
+    my $severity_output = u_trim_to_columns($severity);
     if ( $self->colorize ) {
-        $severity_output = $self->_add_color($severity);
-    }
-    else {
-        $severity_output = $severity;
+        $severity_output = $self->add_color($severity_output);
     }
     $severity_output = " [$severity_output]\n";
 
     my $closetext = $opts{closetext} // $self->closetext;
     my $position = $self->position;
 
-    if
-      (    $position != 0
+    if (   $position != 0
         or $self->opentext ne $closetext
-        or $self->_not_opened
-      )
+        or $self->_not_opened )
     {
         if ( $position != 0 ) {
             my $succeeded = print $fh "\n";
             return unless $succeeded;
         }
 
-        my $succeeded = _print_left_text($closetext);
+        my $succeeded = $self->_print_left_text($closetext);
         return unless $succeeded;
-        
-        $position = 0;
+
+        $position = $self->position;
+        # altered by _print_left_text
 
     }
-    
-    
+
     # here print trailers and closing text
 
-} ## tidy end: sub done
+    my $trailer = $self->trailer;
+    # trailer set to be a single column wide by attribute type
+
+    my $num_trailers = $self->term_width - $position - $SEVERITY_MARKER_WIDTH;
+    my $succeeded = print $fh ( $trailer x $num_trailers, $severity_output );
+    return unless $succeeded;
+
+    $self->_mark_closed;
+
+    my $reason = $opts{reason};
+    if ( defined $reason ) {
+        $opts{force} = 1;
+        # bypass level check if it got here
+        my $succeeded = $self->text( \%opts, $reason );
+        return unless $succeeded;
+    }
+
+    return $severity_num;
+
+} ## tidy end: sub _close
+
+sub done {
+    my $self = shift;
+    return $self->_close_up_to( $self, @_ );
+}
 
 sub d_emerg { my $self = shift; $self->done( @_, "EMERG" ) }
 # syslog: Off the scale!
+
 sub d_alert { my $self = shift; $self->done( @_, "ALERT" ) }
 # syslog: A major subsystem is unusable.
+
 sub d_crit { my $self = shift; $self->done( @_, "CRIT" ) }
 # syslog: a critical subsystem is not working entirely.
+
 sub d_fail { my $self = shift; $self->done( @_, "FAIL" ) }
 # Failure
+
 sub d_fatal { my $self = shift; $self->done( @_, "FATAL" ) }
 # Fatal error
+
 sub d_error { my $self = shift; $self->done( @_, "ERROR" ) }
 # syslog 'err': Bugs, bad data, files not found, ...
+
 sub d_warn { my $self = shift; $self->done( @_, "WARN" ) }
 # syslog 'warning'
+
 sub d_note { my $self = shift; $self->done( @_, "NOTE" ) }
 # syslog 'notice'
+
 sub d_info { my $self = shift; $self->done( @_, "INFO" ) }
 # syslog 'info'
+
 sub d_ok { my $self = shift; $self->done( @_, "OK" ) }
 # copacetic
+
 sub d_debug { my $self = shift; $self->done( @_, "DEBUG" ) }
 # syslog: Really boring diagnostic output.
+
 sub d_notry { my $self = shift; $self->done( @_, "NOTRY" ) }
 # Untried
+
 sub d_unk { my $self = shift; $self->done( @_, "UNK" ) }
-# Unknown
+# Unknown. Also, if notification object wasn't saved
+
 sub d_yes { my $self = shift; $self->done( @_, "YES" ) }
 # Yes
+
 sub d_no { my $self = shift; $self->done( @_, "NO" ) }
 # No
+
 sub d_none {
     my $self = shift;
     $self->done( { -silent => 1 }, @_, "NONE" );
@@ -397,97 +472,195 @@ sub DEMOLISH {
 
 }
 
-########################
-### UTILITY METHODS
+#######################
+### PROGRESS AND TEXT
 
-sub _spaced {
-    my $self  = shift;
-    my $text  = shift;
-    my $width = shift;
+sub prog {
 
-    my $textwidth = $self->uwidth($text);
-
-    return $text unless $textwidth < $width;
-
-    my $spaces = ( $SPACE x ( $width - $textwidth ) );
-
-    return ( $text . $spaces );
-
-}
-
-sub _wrap {
     my $self = shift;
-    my ( $msg, $min, $max ) = @_;
 
-    return unless defined $msg;
+    my $separator = doe($OUTPUT_FIELD_SEPARATOR);
+    my $msg = join( $separator, @_ );
 
-    return $msg
-      if $max < 3 or $min > $max;
+    my $level = $self->level;
+    return 1 if defined( $self->maxdepth ) and $level > $self->maxdepth;
 
-    state $breaker = Unicode::LineBreak::->new();
-    $breaker->config( ColMax => $max, ColMin => $min );
+    # Start a new line?
+    my $avail   = $self->termwidth - $self->position - $NOTIFY_RIGHT_PAD;
+    my $columns = u_columns($msg);
+    my $fh      = $self->fh;
 
-    # First split on newlines
-    my @lines = ();
-    foreach my $line ( split( /\n/, $msg ) ) {
+    my $position = $self->position;
+    my $progcols = $self->_prog_cols;
 
-        my $linewidth = $self->uwidth($line);
+    if ( $columns > $avail ) {
 
-        if ( $linewidth <= $max ) {
-            push @lines, $line;
+        my $bspace    = q{ } x $self->_bullet_width;
+        my $indent    = q{ } x ( $self->step * $level );
+        my $succeeded = print $fh "\n", $bspace, $indent;
+        return unless $succeeded;
+
+        $position = length($bspace) + length($indent);
+        $progcols = 0;
+        $self->set_position($position);
+        $self->_set_prog_cols($progcols);
+    }
+
+    # the text
+    my $succeeded = print $fh "\n", $msg;
+    return unless $succeeded;
+
+    $self->set_position( $position + $columns );
+    $self->_set_prog_cols( $progcols + $columns );
+
+    return 1;
+
+} ## tidy end: sub prog
+
+sub over {
+    my $self = shift;
+
+    # filtering by level
+    my $level    = $self->level;
+    my $maxdepth = $self->maxdepth;
+    return 1 if defined($maxdepth) and $level > $maxdepth;
+
+    my $fh = $self->fh;
+
+    my $prog_cols  = $self->_prog_cols;
+    my $backspaces = "\b" x $prog_cols;
+    my $spaces     = $SPACE x $prog_cols;
+
+    my $succeeded = print $fh $backspaces, $spaces, $backspaces;
+    return unless $succeeded;
+
+    $self->set_position( $self->position - $prog_cols );
+    $self->_set_prog_cols(0);
+
+    return $self->prog(@_);
+} ## tidy end: sub over
+
+sub text {
+    my $self = shift;
+
+    my ( %opts, @args );
+
+    # process arguments
+    foreach (@_) {
+        if ( reftype($_) eq 'HASH' ) {
+            %opts = ( %opts, %{$_} );
         }
         else {
-            push @lines, $breaker->break($line);
+            push @args, $_;
         }
+    }
+
+    my $level    = $self->level;
+    my $maxdepth = $self->maxdepth;
+    return 1
+      if ( not $opts{force} )
+      and defined($maxdepth)
+      and $level > $maxdepth;
+
+    my $separator = doe($OUTPUT_FIELD_SEPARATOR);
+    my $text = join( $separator, @args );
+
+    my $fh = $self->fh;
+
+    my $succeeded = print $fh "\n";
+    return unless $succeeded;
+
+    my $bullet_width = $self->_bullet_width;
+
+    my $adjust_level = $opts{adjust_level} // $self->adjust_level;
+    my $indent_level = 1 + $level + $adjust_level;
+    # over by one by default
+    my $indent_cols = $self->step * $indent_level + $bullet_width;
+    my $indentspace = $SPACE x $indent_cols;
+
+    my $span_max = $self->term_width - $indent_cols - $NOTIFY_RIGHT_PAD;
+    my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
+
+    my @lines = u_wrap( $text, $span_min, $span_max );
+
+    foreach my $line (@lines) {
+        my $succeeded = print $fh $indentspace, $line, "\n";
+        return unless $succeeded;
+        $self->set_position(0);
+    }
+
+    return 1;
+} ## tidy end: sub text
+
+#######################
+#### COLORIZE
+
+{
+    const my %DARK_BG_COLORS_OF => {
+        EMERG => 'black on_bright_red',
+        ALERT => 'black on_bright_yellow',
+        CRIT  => 'red on_bright_white',
+        FAIL  => 'red on_bright_white',
+        FATAL => 'red on_bright_white',
+        ERR   => 'bright_red',
+        ERROR => \'ERR',
+        WARN  => 'bright_yellow',
+        NOTE  => 'green',
+        INFO  => 'bright_green',
+        OK    => 'bright_green',
+        DEBUG => 'black on_yellow',
+        NOTRY => 'black on_white',
+        UNK   => 'yellow',
+        YES   => 'green',
+        NO    => 'red',
+    };
+    
+    const my %LIGHT_BG_COLORS_OF => {
+        EMERG => 'black on_bright_red',
+        ALERT => 'black on_bright_yellow',
+        CRIT  => 'bright_red on_black',
+        FAIL  => 'bright_red on_black',
+        FATAL => 'bright_red on_black',
+        ERR   => 'red',
+        ERROR => \'ERR',
+        WARN  => 'yellow',
+        NOTE  => 'bright_green',
+        INFO  => 'green',
+        OK    => 'green',
+        DEBUG => 'black on_yellow',
+        NOTRY => 'black on_white',
+        UNK   => 'yellow',
+        YES   => 'bright_green',
+        NO    => 'bright_red',
+    };
+
+    sub add_color {
+
+        my $self    = shift;
+        my $sev     = shift;
+        my $sev_key = uc($sev);
+        
+        my $color_hr;
+        if ($self->light_background) {
+            $color_hr = \%LIGHT_BG_COLORS_OF;
+        } else {
+            $color_hr = \%DARK_BG_COLORS_OF;
+        }
+
+        while ( exists( $color_hr->{$sev_key} )
+            and defined( reftype( $color_hr->{$sev_key} ) ) )
+        {
+            $sev_key = ${ $color_hr->{$sev_key} };
+        }
+
+        return $sev unless exists $color_hr->{$sev_key};
+
+        require Term::ANSIColor;
+        return Term::AnsiColor::colored( $sev, $color_hr->{$sev_key} );
 
     }
 
-    @lines = map {s/\s+\Z//} @lines;
-
-    return @lines;
-
-} ## tidy end: sub _wrap
-
-sub _timestamp_now {
-    my $self = shift;
-
-    my $tsr = $self->timestamp;
-    if ($tsr) {
-        if ( reftype($tsr) eq 'CODE' ) {
-            return &{$tsr};
-        }
-        my ( $s, $m, $h ) = localtime( time() );
-        return sprintf "%2.2d:%2.2d:%2.2d ", $h, $m, $s;
-    }
-
-    return $EMPTY_STR;
 }
-
-sub _add_color {
-    my $self = shift;
-    my ( $str, $sev ) = @_;
-    my $zon  = q{};
-    my $zoff = q{};
-    $zon = chr(27) . '[1;31;40m'
-      if $sev =~ m{\bEMERG(ENCY)?}i;    #bold red on black
-    $zon = chr(27) . '[1;35m' if $sev =~ m{\bALERT\b}i;            #bold magenta
-    $zon = chr(27) . '[1;31m' if $sev =~ m{\bCRIT(ICAL)?\b}i;      #bold red
-    $zon = chr(27) . '[1;31m' if $sev =~ m{\bFAIL(URE)?\b}i;       #bold red
-    $zon = chr(27) . '[1;31m' if $sev =~ m{\bFATAL\b}i;            #bold red
-    $zon = chr(27) . '[31m'   if $sev =~ m{\bERR(OR)?\b}i;         #red
-    $zon = chr(27) . '[33m'   if $sev =~ m{\bWARN(ING)?\b}i;       #yellow
-    $zon = chr(27) . '[36m'   if $sev =~ m{\bNOTE\b}i;             #cyan
-    $zon = chr(27) . '[32m'   if $sev =~ m{\bINFO(RMATION)?\b}i;   #green
-    $zon = chr(27) . '[1;32m' if $sev =~ m{\bOK\b}i;               #bold green
-    $zon = chr(27) . '[37;43m' if $sev =~ m{\bDEBUG\b}i;    #grey on yellow
-    $zon = chr(27) . '[30;47m' if $sev =~ m{\bNOTRY\b}i;    #black on grey
-    $zon = chr(27) . '[1;37;47m'
-      if $sev =~ m{\bUNK(OWN)?\b}i;                         #bold white on gray
-    $zon  = chr(27) . '[32m' if $sev =~ m{\bYES\b}i;        #green
-    $zon  = chr(27) . '[31m' if $sev =~ m{\bNO\b}i;         #red
-    $zoff = chr(27) . '[0m'  if $zon;
-    return $zon . $str . $zoff;
-} ## tidy end: sub _add_color
 
 1;
 __END__

@@ -7,9 +7,8 @@ package Actium::O::Notify 0.005;
 use Actium::Moose;
 use Scalar::Util(qw[openhandle weaken refaddr reftype]);
 
-use Actium::Types (qw<ArrayRefOfNotifyBullets NotifyBullet>);
-use Unicode::GCString;
-use Unicode::LineBreak;
+use Actium::Types (qw<ArrayRefOfNotifyBullets NotifyBullet NotifyTrailer>);
+use Actium::Util ('u_columns');
 
 const my $NOTIFICATION_CLASS => 'Actium::O::Notify::Notification';
 const my $FALLBACK_CLOSESTAT => 'DONE';
@@ -96,11 +95,15 @@ has 'position' => (
     default => 0,
 );
 
-has '_progwid' => (
+has '_prog_cols' => (
     is      => 'rw',
     isa     => 'Int',
     default => 0,
 );
+# backs over this many columns during $notification->over
+# this means will send two backspaces for each double-wide character
+# This seems to be the right thing in Mac oS X Terminal; 
+# not sure about other terminals
 
 has 'term_width' => (
     is      => 'rw',
@@ -128,6 +131,17 @@ has 'colorize' => (
     },
 );
 
+has 'light_background' => (
+    isa     => 'Bool',
+    is      => 'ro',
+    default => 0,
+    traits  => ['Bool'],
+    handles => {
+        set_light_background => 'set',
+        set_dark_background => 'unset',
+    },
+);
+
 has 'timestamp' => (
     is      => 'rw',
     isa     => 'Bool | CodeRef',
@@ -136,7 +150,7 @@ has 'timestamp' => (
 
 has 'trailer' => (
     is      => 'rw',
-    isa     => 'Str',
+    isa     => 'NotifyTrailer',
     default => '.',
 );
 
@@ -195,14 +209,14 @@ sub _build_bullet_width {
 
     return 0 if @{$bullets_r} == 0;
 
-    my $width = max( map { $self->uwidth($_) } @{$bullets_r} );
+    my $width = max( map { u_columns($_) } @{$bullets_r} );
     return $width;
 }
 
 sub _alter_bullet_width {
     my $self            = shift;
     my $newbullet       = shift;
-    my $newbullet_width = $self->uwidth($newbullet);
+    my $newbullet_width = u_columns($newbullet);
 
     my $bullet_width = $self->bullet_width;
 
@@ -229,11 +243,6 @@ has 'maxdepth' => (
 #########################
 ## SEVERITY
 
-sub minimum_severity() {0}
-sub maximum_severity() {15}
-
-# not using 'constant' to signal that these are methods...
-
 {
 
     # copied straight out of Term::Emit.
@@ -244,6 +253,7 @@ sub maximum_severity() {15}
         CRIT  => 11,
         FAIL  => 11,
         FATAL => 11,
+        ERR   => 9,
         ERROR => 9,
         WARN  => 7,
         NOTE  => 6,
@@ -261,6 +271,19 @@ sub maximum_severity() {15}
         my $self    = shift;
         my $sevtext = uc(shift);
         return $SEVERITY_NUM_OF{$sevtext} // $SEVERITY_NUM_OF{'OTHER'};
+    }
+    
+    sub minimum_severity {
+        state $cached;
+        $cached = min(values %SEVERITY_NUM_OF) unless defined $cached;
+        return $cached;
+    }
+        
+        
+    sub maximum_severity {
+        state $cached;
+        $cached = max(values %SEVERITY_NUM_OF) unless defined $cached;
+        return $cached;
     }
 
 }
@@ -356,341 +379,34 @@ sub notify {
     $notification->d_unk(
         { reason => 'Notification error (notification object not saved)' } )
       ;
-
     # void context - close immediately
+    return; # only to make perlcritic happy
 
 } 
 
 sub _close_up_to {
     my $self         = shift;
     my $notification = shift;
-    my $severity     = shift;
-
+    my @original_args = @_;
+    
     my $this_notification = $self->_pop_notification;
     my $success;
 
     while ( $this_notification
         and ( refaddr($this_notification) != refaddr($notification) ) )
     {
-        $success = $this_notification->done;    # default severity
+        $success = $this_notification->_close; # default severity and options
         return $success unless $success;
         $this_notification = $self->_pop_notification;
     }
 
-    return $notification->done($severity);
+    return $notification->_close(@original_args);
 
 }
 
-#####################
-### utility methods
-
-sub uwidth {
-    my $self = shift;
-    my $str  = shift;
-
-    my $gcs    = Unicode::GCString->new($str);
-    my $uwidth = $gcs->columns;
-
-    return $uwidth;
-
-}
 
 1;
 
-__END__
-
-
-#
-# Complete the current level, with status
-#
-sub emit_done {
-    my ($this, $opts, @args) = _process_args(@_);
-
-    # Make the severity text
-    my $sevstr = " [$sev]\n";
-    my $slen   = 8;              # make left justified within max width 3+5
-    $sevstr = " [" . _colorize($sev, $sev) . "]\n"
-        if $this->{color};
-
-    # Re-issue message if needed
-    my $msgs = pop @{$this->{msgs}};
-    my ($omsg, $cmsg) = @{$msgs};    # Opening and closing messages
-                                     # -(if not the same, force a re-issue)-
-    if ($this->{pos} && ($omsg ne $cmsg)) {
-        # Closing differs from opening, so we need to re-issue with the closing
-        my $s = $this->_spew("\n");
-        return $s unless $s;
-        $this->{pos} = 0;
-    }
-    if ($this->{pos} 
-        && defined($this->{maxdepth})
-        && $level >= $this->{maxdepth}) {
-        # This would be level-filtered, but severity overrode it, so we need to re-issue
-        my $s = $this->_spew("\n");
-        return $s unless $s;
-        $this->{pos} = 0;
-    }
-    if ($this->{pos} == 0) {
-        # Timestamp
-        my $tsr = defined $opts->{timestamp}? $opts->{timestamp} : $this->{timestamp};
-        $tsr = \&_timestamp if $tsr && !ref($tsr);
-        my $ts = $tsr? &$tsr($level) : q{};
-
-        my $bullet = $this->_bullet($level);
-        my $indent = q{ } x ($this->{step} * $level);
-        my $tlen   = 0;
-        my $span   = $this->{width} - length($ts) - ($this->{step} * $level) - 10;
-        my @mlines = _wrap($cmsg, int($span * 2 / 3), $span);
-        while (defined(my $txt = shift @mlines)) {
-            my $s;
-            $s = $this->_spew($ts . $bullet . $indent . $txt);
-            return $s unless $s;
-            $s = $this->_spew("\n")
-                if @mlines;
-            return $s unless $s;
-            $tlen   = length($txt);
-            $bullet = q{ } x $this->{bullet_width};    # Only bullet the first line
-            $ts     = q{ } x length($ts);              # Only timestamp the first line
-        }
-        $this->{pos} += length($ts) + length($bullet) + ($this->{step} * $level) + $tlen;
-    }
-
-    # Trailer
-    my $ndots = $this->{width} - $this->{pos} - $slen;
-    my $s     = 1;
-    $s = $this->_spew($this->{trailer} x $ndots)
-        if $ndots > 0;
-    return $s unless $s;
-
-    # Severity
-    $s = $this->_spew($sevstr);
-    return $s unless $s;
-    $this->{pos} = 0;
-
-    # Reason option?
-    my $reason = $opts->{reason};
-    $opts->{force} = 1; # Always give reason if we got thru above level filtering
-    $s = emit_text($opts, $reason)
-        if $reason;
-    return $s unless $s;
-
-    # Return with a severity value
-    return $sevlev;
-}
-
-#
-# Progress output
-#
-sub emit_over {
-    my ($this, $opts, @args) = _process_args(@_);
-
-    # Filtering by level?
-    my $level = $ENV{$this->_envvar()} || 0;
-    return 1
-        if defined($this->{maxdepth}) && $level > $this->{maxdepth};
-
-    # Erase prior progress output
-    my $s = 1;
-    $s = $this->_spew(qq{\b} x $this->{progwid});
-    return $s unless $s;
-    $s = $this->_spew(q{ } x $this->{progwid});
-    return $s unless $s;
-    $s = $this->_spew(qq{\b} x $this->{progwid});
-    return $s unless $s;
-    $this->{pos} -= $this->{progwid};
-    $this->{progwid} = 0;
-
-    return $this->emit_prog(@args);
-}
-
-sub emit_prog {
-    my ($this, $opts, @args) = _process_args(@_);
-    my $jn = defined $, ? $, : q{};
-    my $msg = join $jn, @args;
-    my $s;
-
-    # Filtering by level?
-    my $level = $ENV{$this->_envvar()} || 0;
-    return 1
-        if defined($this->{maxdepth}) && $level > $this->{maxdepth};
-
-    # Start a new line?
-    my $avail = $this->{width} - $this->{pos} - 10;
-    if (length($msg) > $avail) {
-        my $level  = $ENV{$this->_envvar()};
-        my $bspace = q{ } x $this->{bullet_width};
-        my $indent = q{ } x ($this->{step} * $level);
-        $s = $this->_spew("\n");
-        return $s unless $s;
-        $s = $this->_spew($bspace . $indent);
-        return $s unless $s;
-        $this->{pos}     = length($bspace) + length($indent);
-        $this->{progwid} = 0;
-    }
-
-    # The text
-    $s = $this->_spew($msg);
-    return $s unless $s;
-    $this->{pos}     += length($msg);
-    $this->{progwid} += length($msg);
-
-    return 1;
-}
-
-#
-# Issue additional info at the current level
-#
-sub emit_text {
-    my ($this, $opts, @args) = _process_args(@_);
-    my $jn = defined $, ? $, : q{};
-    my $msg = join $jn, @args;
-
-    # Filtering by level?
-    my $level = $ENV{$this->_envvar()} || 0;
-    return 1
-        if !$opts->{force} && defined($this->{maxdepth}) && $level > $this->{maxdepth};
-
-    # Start a new line
-    my $s = 1;
-    $s = $this->_spew("\n")
-        if $this->{pos};
-    return $s unless $s;
-
-    # Level adjust?
-    $level++;    # We're over by one by default
-    $level += $opts->{adjust_level}
-        if $opts->{adjust_level} && $opts->{adjust_level} =~ m{^-?\d+$}sxm;
-
-    # Emit the text
-    my $indent = q{ } x ($this->{step} * $level);
-    my $span = $this->{width} - ($this->{step} * $level) - 10;
-    my @mlines = _wrap($msg, int($span * 2 / 3), $span);
-    while (defined(my $txt = shift @mlines)) {
-        my $bspace = q{ } x $this->{bullet_width};
-        $s = $this->_spew($bspace . $indent . $txt . "\n");
-        return $s unless $s;
-        $this->{pos} = 0;
-    }
-    return 1;
-}
-
-sub emit_emerg {emit_done @_, "EMERG"};    # syslog: Off the scale!
-sub emit_alert {emit_done @_, "ALERT"};    # syslog: A major subsystem is unusable.
-sub emit_crit  {emit_done @_, "CRIT"};     # syslog: a critical subsystem is not working entirely.
-sub emit_fail  {emit_done @_, "FAIL"};     # Failure
-sub emit_fatal {emit_done @_, "FATAL"};    # Fatal error
-sub emit_error {emit_done @_, "ERROR"};    # syslog 'err': Bugs, bad data, files not found, ...
-sub emit_warn  {emit_done @_, "WARN"};     # syslog 'warning'
-sub emit_note  {emit_done @_, "NOTE"};     # syslog 'notice'
-sub emit_info  {emit_done @_, "INFO"};     # syslog 'info'
-sub emit_ok    {emit_done @_, "OK"};       # copacetic
-sub emit_debug {emit_done @_, "DEBUG"};    # syslog: Really boring diagnostic output.
-sub emit_notry {emit_done @_, "NOTRY"};    # Untried
-sub emit_unk   {emit_done @_, "UNK"};      # Unknown
-sub emit_yes   {emit_done @_, "YES"};      # Yes
-sub emit_no    {emit_done @_, "NO"};       # No
-sub emit_none  {emit_done {-silent => 1}, @_, "NONE"}
-# *Special* closes level quietly (prints no wrapup severity)
-
-#
-# Add ANSI color to a string, if ANSI is enabled
-### TODO:  use Term::ANSIColor, a standard module (verify what perl version introduced it, tho)
-#
-sub _colorize {
-    my ($str, $sev) = @_;
-    my $zon  = q{};
-    my $zoff = q{};
-    $zon = chr(27) . '[1;31;40m' if $sev =~ m{\bEMERG(ENCY)?}i;        #bold red on black
-    $zon = chr(27) . '[1;35m'    if $sev =~ m{\bALERT\b}i;             #bold magenta
-    $zon = chr(27) . '[1;31m'    if $sev =~ m{\bCRIT(ICAL)?\b}i;       #bold red
-    $zon = chr(27) . '[1;31m'    if $sev =~ m{\bFAIL(URE)?\b}i;        #bold red
-    $zon = chr(27) . '[1;31m'    if $sev =~ m{\bFATAL\b}i;             #bold red
-    $zon = chr(27) . '[31m'      if $sev =~ m{\bERR(OR)?\b}i;          #red
-    $zon = chr(27) . '[33m'      if $sev =~ m{\bWARN(ING)?\b}i;        #yellow
-    $zon = chr(27) . '[36m'      if $sev =~ m{\bNOTE\b}i;              #cyan
-    $zon = chr(27) . '[32m'      if $sev =~ m{\bINFO(RMATION)?\b}i;    #green
-    $zon = chr(27) . '[1;32m'    if $sev =~ m{\bOK\b}i;                #bold green
-    $zon = chr(27) . '[37;43m'   if $sev =~ m{\bDEBUG\b}i;             #grey on yellow
-    $zon = chr(27) . '[30;47m'   if $sev =~ m{\bNOTRY\b}i;             #black on grey
-    $zon = chr(27) . '[1;37;47m' if $sev =~ m{\bUNK(OWN)?\b}i;         #bold white on gray
-    $zon = chr(27) . '[32m'      if $sev =~ m{\bYES\b}i;               #green
-    $zon = chr(27) . '[31m'      if $sev =~ m{\bNO\b}i;                #red
-    $zoff = chr(27) . '[0m' if $zon;
-    return $zon . $str . $zoff;
-}
-
-#
-# The level's envvar for this filehandle
-#
-sub _envvar {
-    my $this = shift;
-    return $this->{envbase} . _oid($this->{fh});
-}
-
-# Return an output identifier for the filehandle
-#
-sub _oid {
-    my $fh = shift;
-    return 'str' if ref($fh) eq 'SCALAR';
-    return 0 if ref($fh);
-    return fileno($fh || q{}) || 0;
-}
-
-#
-# Figure out what was passed to us
-#
-#   Each $BASE_OBJECT in the hash is associated with one output ID (the oid).
-#    The oid is just the fileno() of the file handle for normal output,
-#    or the special text "str" when output is to a scalar string reference.
-#    That's why we use a base object _hash_ instead of an array.
-#   The $BASE_OBJECT{0} is the default one.  It's equivalent to whatever
-#    oid was specified in the "use Term::Emit ... {-fh=>$blah}" which typically
-#    is STDOUT (oid=1) but may be anything.
-#
-#   So what're we doing here?  We have to figure out which base object to use.
-#   Our subs can be called four ways:
-#       A) emit "blah";
-#       B) emit *LOG, "blah";
-#       C) $tobj->emit "blah";
-#       D) $tobj->emit *LOG, "blah";
-#   Also note that "emit {-fh=>*LOG},..." is considered equivalent to case B,
-#   while "$tobj->emit {-fh=>*LOG},..." is considered equivalent to case D.
-#
-#   In case A, we simply use the default base object $BASE_OBJECT{0}.
-#   In case B, we get the oid of *LOG and use that base object.
-#       If the base object does not exist, then we make one,
-#       cloning it from base object 0 but overriding with the file handle.
-#   In case C, we use the base object $tobj - this is classic OO perl.
-#   In case D, it's like case B except that if we have to make a new
-#       base object, we clone from $tobj instead of base object 0.
-#
-sub _process_args {
-    my $this = ref($_[0]) eq __PACKAGE__ ? shift : $BASE_OBJECT{0};
-    my $oid = _oid($_[0]);
-    if ($oid) {
-
-        # We're given a filehandle or scalar ref for output.
-        #   Find the associated base object or make a new one for it
-        my $fh = shift;
-        if ($fh eq $BASE_OBJECT{0}->{fh}) {
-
-            # Use base object 0, 'cuz it matches
-            $oid = 0;
-        }
-        elsif (!exists $BASE_OBJECT{$oid}) {
-            $BASE_OBJECT{$oid} = $this->clone(-fh => $fh);
-        }
-        $this = $BASE_OBJECT{$oid};
-    }
-    my $opts = {};
-    if (ref($_[0]) eq 'HASH') {
-        $opts = {_clean_opts(%{shift()})};
-    }
-    return ($this, $opts, @_);
-}
-
-
-1;                                         # EOM
 __END__
 
 =head1 NAME
