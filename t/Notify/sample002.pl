@@ -1,33 +1,37 @@
 #!perl -w
 use strict;
 use warnings;
-use Term::Emit qw/:all/, {-step => 3};
+use Actium::O::Notify;
 
-emit "Updating Configuration";
+my $n = Actium::O::Notify->new({step => 3});
 
-  emit "System parameter updates";
-    emit "CLOCK_UTC";
-    emit_ok;
-    emit "NTP Servers";
-    emit_ok;
-    emit "DNS Servers";
-    emit_warn;
-  emit_done;
+sub emit {$n->note(@_)};
 
-  emit "Application parameter settings";
-    emit "Administrative email contacts";
-    emit_error;
-    emit "Hop server settings";
-    emit_ok;
-  emit_done;
+my $nf_config = $n->note("Updating Configuration");
 
-  emit "Web server primary page";
-  emit_ok;
+  my $nf_parameter = $n->note ("System parameter updates");
+    my $nf_clock = $n->note("CLOCK_UTC");
+    $nf_clock->d_ok;
+    my $nf_servers = $n->note( "NTP Servers");
+    $nf_servers->d_ok;
+    my $nf_dns = $n->note ("DNS Servers");
+    $nf_dns->d_warn;
+  $nf_parameter->done;
 
-  emit "Updating crontab jobs";
-  emit_ok;
+  my $nf_app = emit "Application parameter settings";
+    my $nf_adm = emit "Administrative email contacts";
+    $nf_adm->d_error;
+    my $nf_hop = emit "Hop server settings";
+    $nf_hop->d_ok;
+  $nf_app->done;
 
-  emit "Restarting web server";
-  emit_done;
+  my $nf_web = emit "Web server primary page";
+  $nf_web->d_ok;
+
+  my $nf_crontab = emit "Updating crontab jobs";
+  $nf_crontab->d_ok;
+
+  my $nf_restart = emit "Restarting web server";
+  $nf_restart->done;
 
 exit 0;

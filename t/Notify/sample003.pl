@@ -1,16 +1,16 @@
 #!perl -w
 use strict;
 use warnings;
-use Term::Emit qw/:all/, {-bullets => ["* ", "+ ", "- "],
-                          -color => 1,
-                          -width => 70};
+use Actium::O::Notify;
 
-emit "Testing ANSI color escapes for severity levels";
+my $n = Actium::O::Notify::->new( bullets => ["* ", "+ ", "- "], colorize => 1, term_width => 70);
 
-foreach (qw/EMERG ALERT CRIT FAIL FATAL ERROR WARN NOTE INFO OK DEBUG NOTRY UNK/) {
-    emit "This  is the $_ severity";
-    emit_done($_);
+my $nf_test = $n->note( "Testing ANSI color escapes for severity levels");
+
+foreach (qw/EMERG ALERT CRIT FAIL FATAL ERR ERROR WARN NOTE INFO OK DEBUG NOTRY UNK YES NO/) {
+    my $nf_sev = $n->note( "This  is the $_ severity");
+    $nf_sev->done($_);
 }
 
-emit_done;
+$nf_test->done;
 exit 0;
