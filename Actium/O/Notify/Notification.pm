@@ -490,21 +490,22 @@ sub prog {
     my $self = shift;
 
     my $separator = doe($OUTPUT_FIELD_SEPARATOR);
-    my $msg = join( $separator, @_ );
+    my $msg = join( $separator, doe(@_) );
 
     my $level = $self->level;
     return 1 if defined( $self->maxdepth ) and $level > $self->maxdepth;
 
     # Start a new line?
-    my $avail   = $self->termwidth - $self->position - $NOTIFY_RIGHT_PAD;
+    my $avail   = $self->term_width - $self->position - $NOTIFY_RIGHT_PAD;
     my $columns = u_columns($msg);
     my $fh      = $self->fh;
 
     my $position = $self->position;
     my $progcols = $self->_prog_cols;
+    
 
     if ( $columns > $avail ) {
-
+     
         my $bspace    = q{ } x $self->_bullet_width;
         my $indent    = q{ } x ( $self->step * $level );
         my $succeeded = print $fh "\n", $bspace, $indent;
@@ -517,7 +518,7 @@ sub prog {
     }
 
     # the text
-    my $succeeded = print $fh "\n", $msg;
+    my $succeeded = print $fh $msg;
     return unless $succeeded;
 
     $self->set_position( $position + $columns );
