@@ -329,6 +329,8 @@ sub _push_notification {
 
 }
 
+sub note { goto &notify; }
+
 sub notify {
     my $self = shift;
 
@@ -355,8 +357,10 @@ sub notify {
 
     my $level = $self->notification_level + 1;
 
-    unless ( defined $opts{opentext} ) {
-        $opts{opentext} = ( caller(1) )[3];    # subroutine name;
+    unless ( defined $opts{opentext} and $opts{opentext}) {
+        my $msg;
+        (undef, undef, undef, $msg ) = caller(1);
+        $opts{opentext} = $msg;
         $opts{opentext} =~ s{\Amain::}{}sxm;
     }
 
