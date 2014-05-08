@@ -244,7 +244,7 @@ sub _open {
         return unless $succeeded;
     }
 
-    my $succeeded = _print_left_text( $self->opentext );
+    my $succeeded = $self->_print_left_text( $self->opentext , $level);
     $self->_mark_opened;
     return $succeeded;
 
@@ -255,8 +255,8 @@ sub BUILD {
 
     my $level    = $self->level + $self->adjust_level;
     my $maxdepth = $self->maxdepth;
-
-    if ( defined $maxdepth and $level <= $maxdepth ) {
+    
+    if ( (not defined $maxdepth) or $level <= $maxdepth ) {
         # if not s not hidden by maxdepth
         my $success = $self->_open($level);
         $self->_mark_built_without_error if $success;
@@ -294,7 +294,7 @@ sub _print_left_text {
     my $final_width = u_columns( $lines[-1] );
     $lines[0] = $leading . $lines[0];
     if ( @lines > 1 ) {
-        $_ = "\n" . $leading_spaces . $_ foreach ( 1 .. $#lines );
+        $lines[$_] = "\n" . $leading_spaces . $lines[$_] foreach ( 1 .. $#lines );
     }
 
     for my $line (@lines) {
@@ -370,11 +370,11 @@ sub _close {
     my $closetext = $opts{closetext} // $self->closetext;
     my $position = $self->position;
 
-    if (   $position != 0
+    if (   $position == 0
         or $self->opentext ne $closetext
         or $self->_not_opened )
     {
-        if ( $position != 0 ) {
+        if ( $position == 0 ) {
             my $succeeded = print $fh "\n";
             return unless $succeeded;
         }
