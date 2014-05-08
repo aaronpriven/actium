@@ -133,17 +133,6 @@ has 'colorize' => (
     },
 );
 
-has 'light_background' => (
-    isa     => 'Bool',
-    is      => 'ro',
-    default => 0,
-    traits  => ['Bool'],
-    handles => {
-        set_light_background => 'set',
-        set_dark_background => 'unset',
-    },
-);
-
 has 'timestamp' => (
     is      => 'rw',
     isa     => 'Bool | CodeRef',
