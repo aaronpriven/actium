@@ -493,10 +493,12 @@ sub u_wrap {
         else {
             push @lines, $breaker->break($line);
         }
+        
 
     }
-
-    @lines = map {s/\s+\Z//} @lines;
+    foreach (@lines) {
+       s/\s+\z//;
+    }
 
     return @lines;
 
