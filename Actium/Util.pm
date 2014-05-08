@@ -505,7 +505,7 @@ sub u_wrap {
 sub u_trim_to_columns {
     my $text        = shift;
     my $num_columns = shift;
-
+    
     require Unicode::GCString;
 
     my $gc = Unicode::GCString::->new($text);

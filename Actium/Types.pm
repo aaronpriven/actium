@@ -8,11 +8,9 @@
 use strict;
 use warnings;
 
-package Actium::Types;
+package Actium::Types 0.005;
 
 use 5.016;    # turns on features
-
-our $VERSION = '0.002';
 
 ## no critic (ProhibitMagicNumbers)
 
@@ -24,7 +22,7 @@ use MooseX::Types -declare => [
       Str4                Str8
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
       ActiumFolderLike
-      NotifyBullet          ArrayRefOfNotifyBullets
+      NotifyBullet          ARNotifyBullets
       NotifyTrailer
       >
 ];
@@ -98,12 +96,12 @@ coerce( ActiumDir,
 subtype NotifyBullet, as Str;
 
 subtype NotifyTrailer, as Str,
-  where { Unicode::GCString::->new($_)->columns == 1 },
-  message {"The trailer you provided ($_) is not exactly one column wide"},
+  #where { (Unicode::GCString::->new($_)->columns) == 1 },
+  #message {"The trailer you provided ($_) is not exactly one column wide"},
   ;
 
-subtype ArrayRefOfNotifyBullets, as ArrayRef [NotifyBullet];
-coerce ArrayRefOfNotifyBullets, from NotifyBullet, via { [$_] };
+subtype ARNotifyBullets, as ArrayRef [NotifyBullet];
+coerce ARNotifyBullets, from NotifyBullet, via { [$_] };
 
 ######################
 ## SCHEDULE TIMES
