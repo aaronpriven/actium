@@ -374,7 +374,7 @@ sub _close {
         or $self->opentext ne $closetext
         or $self->_not_opened )
     {
-        if ( $position == 0 ) {
+        if ( $position != 0 ) {
             my $succeeded = print $fh "\n";
             return unless $succeeded;
         }
@@ -395,6 +395,8 @@ sub _close {
     my $num_trailers = $self->term_width - $position - $SEVERITY_MARKER_WIDTH;
     my $succeeded = print $fh ( $trailer x $num_trailers, $severity_output );
     return unless $succeeded;
+    
+    $self->set_position(0);
 
     $self->_mark_closed;
 
@@ -469,7 +471,9 @@ sub d_none {
 sub DEMOLISH {
     my $self                  = shift;
     my $in_global_destruction = shift;
-
+    
+    my $fh = $self->fh;
+    
     return if $self->_is_closed;
 
     $self->_close_up_to($self);
@@ -573,8 +577,10 @@ sub text {
 
     my $fh = $self->fh;
 
-    my $succeeded = print $fh "\n";
-    return unless $succeeded;
+    if ($self->position != 0) {
+       my $succeeded = print $fh "\n";
+       return unless $succeeded;
+    }
 
     my $bullet_width = $self->_bullet_width;
 
@@ -603,22 +609,22 @@ sub text {
 
 {
     const my %DARK_BG_COLORS_OF => (
-        EMERG => 'black on_bright_red',
-        ALERT => 'black on_bright_yellow',
-        CRIT  => 'red on_bright_white',
-        FAIL  => 'red on_bright_white',
-        FATAL => 'red on_bright_white',
-        ERR   => 'bright_red',
+        EMERG => 'bold bright_white on_red',
+        ALERT => 'bold bright_white on_bright_magenta',
+        CRIT  => 'bold red on_bright_white',
+        FAIL  => 'bold red on_bright_white',
+        FATAL => 'bold red on_bright_white',
+        ERR   => 'bold bright_red',
         ERROR => \'ERR',
-        WARN  => 'bright_yellow',
-        NOTE  => 'green',
+        WARN  => 'bold bright_yellow',
+        NOTE  => 'bright_cyan',
         INFO  => 'bright_green',
         OK    => 'bright_green',
-        DEBUG => 'black on_yellow',
-        NOTRY => 'black on_white',
-        UNK   => 'yellow',
-        YES   => 'green',
-        NO    => 'red',
+        DEBUG => 'bold black on_yellow',
+        NOTRY => 'bold bright_yellow on_blue',
+        UNK   => 'bold bright_white on_blue',
+        YES   => 'bright_green',
+        NO    => 'bright_red',
     );
     
     const my %LIGHT_BG_COLORS_OF => (
@@ -662,7 +668,7 @@ sub text {
         return $sev unless exists $color_hr->{$sev_key};
 
         require Term::ANSIColor;
-        return Term::AnsiColor::colored( $sev, $color_hr->{$sev_key} );
+        return Term::ANSIColor::colored( $sev, $color_hr->{$sev_key} );
 
     }
 

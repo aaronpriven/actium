@@ -43,6 +43,7 @@ sub foundation {
     my $found_nf = $notifier->notify();
     sleep 1;  #simulate doing something
     # Omit closing, will automatically be closed
+    undef $found_nf;
 }
 
 sub framing {
