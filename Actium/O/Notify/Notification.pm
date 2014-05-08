@@ -609,67 +609,41 @@ sub text {
 #### COLORIZE
 
 {
-    const my %DARK_BG_COLORS_OF => (
-        EMERG => 'bold bright_white on_red',
-        ALERT => 'bold bright_white on_bright_magenta',
-        CRIT  => 'bold red on_bright_white',
-        FAIL  => 'bold red on_bright_white',
-        FATAL => 'bold red on_bright_white',
-        ERR   => 'bold bright_red',
+    const my %COLORS_OF => (
+        EMERG => 'bold blink bright_white on_red',
+        ALERT => 'bold blink bright_yellow on_red',
+        CRIT  => 'bold bright_white on_red',
+        FAIL  => \'CRIT',
+        FATAL => \'CRIT',
+        ERR   => 'bold bright_yellow on_red',
         ERROR => \'ERR',
-        WARN  => 'bold bright_yellow',
-        NOTE  => 'bright_cyan',
-        INFO  => 'bright_green',
-        OK    => 'bright_green',
-        DEBUG => 'bold black on_yellow',
-        NOTRY => 'bold bright_yellow on_blue',
-        UNK   => 'bold bright_white on_blue',
-        YES   => 'bright_green',
+        WARN  => 'bold black on_bright_yellow',
+        NOTE  => 'bold bright_white on_blue',
+        INFO  => 'bold bright_white on_green',
+        OK    => \'INFO',
+        DEBUG => 'bright_white on_bright_black', #  'bold black on_yellow',
+        NOTRY => 'bold bright_white on_magenta',
+        UNK   => 'bold bright_yellow on_magenta',
+        YES   => 'green',
         NO    => 'bright_red',
-    );
+    ); # OTHER and DONE explicitly omitted
     
-    const my %LIGHT_BG_COLORS_OF => (
-        EMERG => 'black on_bright_red',
-        ALERT => 'black on_bright_yellow',
-        CRIT  => 'bright_red on_black',
-        FAIL  => 'bright_red on_black',
-        FATAL => 'bright_red on_black',
-        ERR   => 'red',
-        ERROR => \'ERR',
-        WARN  => 'yellow',
-        NOTE  => 'bright_green',
-        INFO  => 'green',
-        OK    => 'green',
-        DEBUG => 'black on_yellow',
-        NOTRY => 'black on_white',
-        UNK   => 'yellow',
-        YES   => 'bright_green',
-        NO    => 'bright_red',
-    );
-
     sub add_color {
 
         my $self    = shift;
         my $sev     = shift;
         my $sev_key = uc($sev);
-        
-        my $color_hr;
-        if ($self->light_background) {
-            $color_hr = \%LIGHT_BG_COLORS_OF;
-        } else {
-            $color_hr = \%DARK_BG_COLORS_OF;
-        }
-
-        while ( exists( $color_hr->{$sev_key} )
-            and defined( reftype( $color_hr->{$sev_key} ) ) )
+    
+        while ( exists( $COLORS_OF{$sev_key} )
+            and defined( reftype( $COLORS_OF{$sev_key} ) ) )
         {
-            $sev_key = ${ $color_hr->{$sev_key} };
+            $sev_key = ${ $COLORS_OF{$sev_key} };
         }
 
-        return $sev unless exists $color_hr->{$sev_key};
+        return $sev unless exists $COLORS_OF{$sev_key};
 
         require Term::ANSIColor;
-        return Term::ANSIColor::colored( $sev, $color_hr->{$sev_key} );
+        return Term::ANSIColor::colored( $sev, $COLORS_OF{$sev_key} );
 
     }
 
