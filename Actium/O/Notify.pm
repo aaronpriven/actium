@@ -23,7 +23,7 @@ const my $DEFAULT_STEP       => 2;
 has fh => (
     is       => 'ro',
     isa      => 'FileHandle',
-    required => 1,
+    default => sub {*STDERR{IO}},
 );
 
 sub _fh_or_scalarref {
@@ -32,7 +32,7 @@ sub _fh_or_scalarref {
 
     return $arg if defined openhandle($arg);
 
-    if ( reftype($arg) eq 'SCALAR' ) {
+    if ( defined reftype($arg) and reftype($arg) eq 'SCALAR' ) {
         open( my $fh, '>', \$_[0] );
         return $fh;
     }
@@ -60,7 +60,7 @@ around BUILDARGS => sub {
 
         # ->new($fh)
         # or ->new(\$scalar)
-        my $handle = $class->_fh_or_scalarref->( $_[0] );
+        my $handle = $class->_fh_or_scalarref( $_[0] );
         if ( defined $handle ) {
             return $class->$orig( fh => $handle );
         }
@@ -165,7 +165,7 @@ has 'bullets_r' => (
     init_arg => 'bullets',
     reader   => '_bullets_r',
     writer   => '_set_bullets_r',
-    #coerce   => 1,
+    coerce   => 1,
     default  => sub { [] },
     traits   => ['Array'],
     handles  => {
@@ -191,7 +191,8 @@ sub _bullet_for_level {
     my $level = shift;
     $level = $count if $level > $count;
 
-    return $self->bullet($level);
+    return $self->bullet($level - 1);
+    # zero-based array
 
 }
 
@@ -324,8 +325,9 @@ sub _push_notification {
 
     my $notifications_r = $self->_notifications_r;
 
-    weaken($notification);
+    #weaken($notification);
     push @{$notifications_r}, $notification;
+    weaken ${$notifications_r}[-1];
 
 }
 

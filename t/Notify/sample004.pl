@@ -1,10 +1,14 @@
-#!perl -w
+#!/ActivePerl/bin/perl
 use strict;
 use warnings;
-use Term::Emit qw/:all/, {-bullets   => ' * ',
-                          -color     => 1,
-                          -fh        => *STDERR,
-                          -closestat => "OK"};
+use Actium::O::Notify;
 
-emit "This should have color, bullets, and go to STDERR";
+my $n = Actium::O::Notify::->new(
+    bullets  => ' * ',
+    colorize     => 1,
+    fh        => *STDOUT{IO},
+    default_closestat => "OK"
+);
+
+my $nf = $n->note("This should have color, bullets, and go to STDOUT");
 exit 0;
