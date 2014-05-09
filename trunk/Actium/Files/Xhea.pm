@@ -3,6 +3,8 @@
 # Using XML::Pastor, reads XML Hastus Exports for Actium files
 # (exports from Hastus) and imports them into Actium.
 #
+# Also other routines with Xhea files or results from them, such as
+# creating mock HASI files
 
 # Subversion: $Id$
 
@@ -16,8 +18,6 @@ use Actium::Term;
 use Params::Validate(':all');
 use Actium::Util(qw/file_ext aoa2tsv/);
 use List::MoreUtils('pairwise');
-
-use XML::Pastor;
 
 const my $PREFIX => 'Actium::O::Files::Xhea';
 
@@ -136,63 +136,14 @@ sub _adjust_boolean {
 
 }
 
-#sub adjust_for_basetype {
-#
-#    my ( $fields_of_r, $values_of_r ) = (@_);
-#    my %adjusted_values_of;
-#
-#    emit 'Adjusting XHEA data for its base type';
-#
-#    foreach my $record_name ( keys %{$fields_of_r} ) {
-#
-#        foreach my $record ( @{ $values_of_r->{$record_name} } ) {
-#
-#            my @adjusted_record;
-#
-#            foreach
-#              my $field_name ( sort keys %{ $fields_of_r->{$record_name} } )
-#            {
-#
-#                my $idx      = $fields_of_r->{$record_name}{$field_name}{idx};
-#                my $adjusted = $record->[$idx];
-#
-#                my $base = $fields_of_r->{$record_name}{$field_name}{base};
-#
-#                if ( $base eq 'string' or $base eq 'normalizedString' ) {
-#                    $adjusted =~ s/\A\s+//s;
-#                    $adjusted =~ s/\s+\z//s;
-#                }
-#                elsif ( $base eq 'boolean' ) {
-#                    if ( $adjusted eq 'true' ) {
-#                        $adjusted = 1;
-#                    }
-#                    elsif ( $adjusted eq 'false' ) {
-#                        $adjusted = 0;
-#                    }
-#                }
-#
-#                $adjusted_record[$idx] = $adjusted;
-#
-#            } ## tidy end: foreach my $field_name ( sort...)
-#
-#            push @{ $adjusted_values_of{$record_name} }, \@adjusted_record;
-#
-#        } ## tidy end: foreach my $record ( @{ $values_of_r...})
-#
-#    } ## tidy end: foreach my $record_name ( keys...)
-#
-#    emit_done;
-#
-#    return \%adjusted_values_of;
-#
-#} ## tidy end: sub adjust_for_basetype
-
 sub load {
 
     my $xheafolder = shift;
     #my $tfolder    = $xheafolder->subfolder('t');
 
     my @xhea_filenames = _get_xhea_filenames($xheafolder);
+
+    require XML::Pastor;
 
     my $pastor = XML::Pastor->new();
 
@@ -274,10 +225,6 @@ sub _load_values {
         my $table = $table_class->from_xml_file( $p{xmlfile} );
         emit_done;
 
-        #emit "Dumping $table_name objects to ${table_name}-obj.dump";
-        #$p{tfolder}->slurp_write( _dumped($table), "${table_name}-obj.dump" );
-        #emit_done;
-
         emit "Processing $table_name into records";
 
         for my $record_name ( @{ $p{records_of}{$table_name} } ) {
@@ -299,10 +246,6 @@ sub _load_values {
             }
 
         }
-
- #emit "Dumping $table_name values to ${table_name}-values.dump";
- #$p{tfolder}->slurp_write( _dumped(\%values_of), "${table_name}-values.dump" );
- #emit_done;
 
         emit_done;
 
@@ -408,8 +351,8 @@ sub _records_and_fields {
         } ## tidy end: for my $record ( keys %info_of_record)
 
     } ## tidy end: for my $table ( keys %{...})
-    
-    emit_over ($EMPTY_STR);
+
+    emit_over($EMPTY_STR);
 
     emit_done;
 
@@ -430,18 +373,6 @@ sub _unexpected_croak {
 
     croak qq[Unexpected $p{foundtype} "$p{foundname}" ]
       . qq[where $p{expectedtype} expected in $p{filename}];
-}
-
-sub _dumped {
-    require Data::Dumper;
-    local $Data::Dumper::Indent   = 1;
-    local $Data::Dumper::Sortkeys = 1;
-    return Dumper(@_);
-}
-
-sub _mydump {
-    say _dumped(@_);
-    return;
 }
 
 sub _build_tree {
@@ -529,6 +460,215 @@ sub _get_xhea_filenames {
     return @xhea_filenames;
 
 } ## tidy end: sub _get_xhea_filenames
+
+{
+
+    my %HASI_DIR_OF_XHEA = (
+        DIR1       => 1,
+        DIRA       => 'A',
+        DIRB       => 'B',
+        CCW        => 'Counterclo',
+        CW         => 'Clockwise',
+        EAST       => 'Eastbound',
+        WEST       => 'Westbound',
+        NORTH      => 'Northbound',
+        SOUTH      => 'Southbound',
+        $EMPTY_STR => $EMPTY_STR,
+    );
+
+    my %HASI_DIRVALUE_OF_XHEA = (
+        DIR1       => 10,
+        DIRA       => 14,
+        DIRB       => 15,
+        CCW        => 9,
+        CW         => 8,
+        EAST       => 2,
+        WEST       => 3,
+        NORTH      => 0,
+        SOUTH      => 1,
+        $EMPTY_STR => $EMPTY_STR,
+    );
+
+    sub to_hasi {
+        my ( $xhea_tab_folder, $hasi_folder ) = @_;
+
+        emit "Loading XHEA files to memory";
+
+        require Actium::Files::TabDelimited;
+
+        my ( %trp, %pat, %tps, %pts );
+
+        my $pattern_callback = sub {
+            my $hr = shift;
+
+            my $id        = $hr->{tpat_id};
+            my $direction = $HASI_DIR_OF_XHEA{ $hr->{tpat_direction} };
+            my $dirvalue  = $HASI_DIRVALUE_OF_XHEA{ $hr->{tpat_direction} };
+            my $in_serv   = $hr->{tpat_in_serv};
+            my $route     = $hr->{tpat_route};
+            my $display   = $hr->{tpat_veh_display};
+            my $via       = $hr->{tpat_via};
+
+            my $patid = "$route\t$id";
+
+            $pat{Direction}{$patid}      = $direction;
+            $pat{DirectionValue}{$patid} = $dirvalue;
+            $pat{IsInService}{$patid}    = $in_serv;
+            $pat{Route}{$patid}          = $route;
+            $pat{VehicleDIsplay}{$patid} = $display;
+            $pat{Via}{$patid}            = $via;
+            $pat{Identifier}{$patid}     = $id;
+
+        };
+
+        Actium::Files::TabDelimited::read_tab_files(
+            {   files    => ['trip_pattern.txt'],
+                folder   => $xhea_tab_folder,
+                callback => $pattern_callback,
+            }
+        );
+
+        my $trip_callback = sub {
+            my $hr = shift;
+
+            my $days = $EMPTY_STR;
+            $days .= '1' if $hr->{trp_operates_mon};
+            $days .= '2' if $hr->{trp_operates_tue};
+            $days .= '3' if $hr->{trp_operates_wed};
+            $days .= '4' if $hr->{trp_operates_thu};
+            $days .= '5' if $hr->{trp_operates_fri};
+            $days .= '6' if $hr->{trp_operates_sat};
+            $days .= '7' if $hr->{trp_operates_sun};
+
+            my $route   = $hr->{tpat_route};
+            my $tripnum = $hr->{trp_int_number};
+            my $pattern = $hr->{trp_pattern};
+
+            $trp{InternalNumber}{$tripnum}     = $tripnum;
+            $trp{OperatingDays}{$tripnum}      = $days;
+            $trp{RouteForStatistics}{$tripnum} = $route;
+            $trp{Pattern}{$tripnum}            = $pattern;
+
+        };
+
+        Actium::Files::TabDelimited::read_tab_files(
+            {   files    => ['trip.txt'],
+                folder   => $xhea_tab_folder,
+                callback => $trip_callback,
+            }
+        );
+
+        my $stop_callback = sub {
+            my $hr = shift;
+
+            my %this_row;
+
+            my $stopid   = $hr->{stp_511_id};
+            my $tripnum  = $hr->{trp_int_number};
+            my $place    = $hr->{tstp_place};
+            my $position = $hr->{tstp_position} - 1;
+            # we are zero-based, this is one-based
+            my $passing_time = $hr->{tstp_passing_time};
+
+            my $route   = $trp{RouteForStatistics}{$tripnum};
+            my $pattern = $trp{Pattern}{$tripnum};
+            my $patid   = "$route\t$pattern";
+
+            $tps{$patid}[$position]{StopIdentifier} = $stopid;
+            $tps{$patid}[$position]{Place}          = $place;
+            $tps{$patid}[$position]{IsATimingPoint} = $place ? 1 : 0;
+
+            my ($htime) = $passing_time =~ m/T(\d\d:\d\d)/;
+
+            $pts{$tripnum}[$position] = $htime;
+
+        };
+
+        Actium::Files::TabDelimited::read_tab_files(
+            {   files    => ['trip_stop.txt'],
+                folder   => $xhea_tab_folder,
+                callback => $stop_callback,
+            }
+        );
+
+        my $signup = $hasi_folder->signup;
+
+        #my $dump_fh = $hasi_folder->open_write("$signup.dump");
+        #say $dump_fh dumpstr (\%pat, \%tps, \%trp, \%pts);
+        #close $dump_fh;
+
+        emit_done;
+
+        emit "Writing HASI files";
+
+        emit "Writing $signup.PAT";
+
+        my $pat_fh = $hasi_folder->open_write("$signup.PAT");
+
+        emit_prog( ( scalar keys %{ $pat{Route} } ) . ' records' );
+
+        foreach my $patid ( keys %{ $pat{Route} } ) {
+
+            printf $pat_fh "PAT,%5s,%4s,%10s,%2s,%8s,%1s,%8s,%40s$CRLF",
+              $pat{Route}{$patid},             # Route
+              $pat{Identifier}{$patid},        # Identifier
+              $pat{Direction}{$patid},         # Direction
+              $pat{DirectionValue}{$patid},    # DirectionValue
+              $pat{VehicleDIsplay}{$patid},    # VehicleDisplay
+              $pat{IsInService}{$patid},       # IsInService
+              $pat{Via}{$patid},               # Via
+              $EMPTY_STR,                      # ViaDescription
+              ;
+
+            for my $tps_hr ( @{ $tps{$patid} } ) {
+                printf $pat_fh "TPS,%5s,%6s,%8s,%1s,%1s$CRLF",
+                  $tps_hr->{StopIdentifier},    # StopIdentifier
+                  $tps_hr->{Place},             # Place
+                  $EMPTY_STR,                   # VehicleDisplay
+                  $tps_hr->{IsATimingPoint},    # IsATimingPoint
+                  0,                            # IsAARoutingPoint
+                  ;
+            }
+
+        } ## tidy end: foreach my $patid ( keys %{...})
+
+        close $pat_fh;
+
+        emit_done;
+
+        emit "Writing $signup.TRP";
+        emit_prog( ( scalar keys %{ $trp{InternalNumber} } ) . ' records' );
+
+        my $trp_fh = $hasi_folder->open_write("$signup.TRP");
+
+        foreach my $tripnum ( keys %{ $trp{InternalNumber} } ) {
+            printf $trp_fh "TRP,%10s,%8s,%7s,%5s,%4s,%15s,%2s,%1s,%1s$CRLF",
+              $trp{InternalNumber}{$tripnum},        # InternalNumber
+              $EMPTY_STR,                            # Number
+              $trp{OperatingDays}{$tripnum},         # OperatingDays
+              $trp{RouteForStatistics}{$tripnum},    # RouteForStatistics
+              $trp{Pattern}{$tripnum},               # Pattern
+              $EMPTY_STR,                            # Type
+              $EMPTY_STR,                            # TypeValue
+              $EMPTY_STR,                            # IsSpecial
+              1,                                     # IsPublic
+              ;
+
+            foreach my $passing_time ( @{ $pts{$tripnum} } ) {
+                printf $trp_fh "PTS,%8s$CRLF", $passing_time;
+            }
+
+        }
+
+        close $trp_fh;
+
+        emit_done;
+
+        emit_done;
+
+    } ## tidy end: sub to_hasi
+
+}
 
 1;
 

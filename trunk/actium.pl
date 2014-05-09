@@ -59,7 +59,7 @@ my %module_of = (
     tabulae         => \'timetables',
     orderbytravel   => 'OrderByTravel',
     patterns        => 'Patterns',
-    prepareflags => 'PrepareFlags',
+    prepareflags    => 'PrepareFlags',
     adddescriptionf => 'AddDescriptionF',
     k2id            => 'MakePoints',
     nearbyroutes    => 'NearbyRoutes',
@@ -67,9 +67,10 @@ my %module_of = (
     mr_copy         => 'MRCopy',
     htmltables      => 'HTMLTables',
     linedescrip     => 'LineDescrip',
-    decalcount => 'DecalCount',
+    decalcount      => 'DecalCount',
     xml2thea        => 'Xml2Thea',
-    xheaimport => 'XheaImport',
+    xheaimport      => 'XheaImport',
+    xhea2hasi       => 'Xhea2Hasi',
                                             # more to come
 );
 
@@ -123,7 +124,7 @@ if ( $help or option('help') ) {
     $module->HELP(@ARGV);
 }
 else {
-    $module->START(argv => [ @ARGV ], config => $config);
+    $module->START( argv => [@ARGV], config => $config );
 }
 
 sub mainhelp {
