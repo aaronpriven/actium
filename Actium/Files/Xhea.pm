@@ -408,6 +408,8 @@ sub _records_and_fields {
         } ## tidy end: for my $record ( keys %info_of_record)
 
     } ## tidy end: for my $table ( keys %{...})
+    
+    emit_over ($EMPTY_STR);
 
     emit_done;
 
