@@ -9,34 +9,18 @@ my $n = Actium::O::Notify::->new(
     term_width => 70
 );
 
-my $nf_test = $n->note("Testing ANSI color escapes for severity levels: dark");
+my $nf_test = $n->note("Testing ANSI color escapes for severity levels");
 
-output();
-
-$nf_test->done;
-
-sub output {
-
-    foreach (
-        qw/EMERG ALERT CRIT FAIL FATAL ERR ERROR
-        WARN NOTE INFO OK DEBUG NOTRY UNK YES NO/
-      )
-    {
-        my $nf_sev = $n->note("This  is the $_ severity");
-        $nf_sev->done($_);
-    }
-
+foreach (
+    qw/EMERG ALERT CRIT FAIL FATAL ERR ERROR
+    WARN NOTE INFO OK DEBUG NOTRY UNK YES NO/
+  )
+{
+    my $nf_sev = $n->note("This  is the $_ severity");
+    $nf_sev->done($_);
 }
 
-__END__
-
-# separate set of colors for light background eliminated
-
-$n->set_light_background;
-
-$nf_test = $n->note( "Testing ANSI color escapes for severity levels: light");
-
-output();
-
 $nf_test->done;
-exit 0;
+1;
+
+__END__

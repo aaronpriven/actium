@@ -25,11 +25,11 @@ const my $MIN_SPAN_FACTOR         => 2 / 3;
 ## Attributes set via constructor
 
 has 'notifier' => (
-    isa     => 'Actium::O::Notify',
-    is      => 'ro',
+    isa      => 'Actium::O::Notify',
+    is       => 'ro',
     weak_ref => 1,
     required => 1,
-    handles => [
+    handles  => [
         qw[
           fh
           minimum_severity maximum_severity severity_num
@@ -38,7 +38,7 @@ has 'notifier' => (
           _prog_cols      _set_prog_cols
           _bullet_width    _alter_bullet_width
           _close_up_to
-          light_background 
+          backspace
           ]
     ]
 );
@@ -105,7 +105,7 @@ sub set_bullet {
 has 'closestat' => (
     is      => 'rw',
     isa     => 'Str',
-    lazy => 1,
+    lazy    => 1,
     builder => '_reset_closestat',
 );
 
@@ -117,7 +117,7 @@ sub _reset_closestat {
 has 'timestamp' => (
     is      => 'rw',
     isa     => 'Bool | CodeRef',
-    lazy => 1,
+    lazy    => 1,
     builder => '_reset_timestamp',
 );
 
@@ -144,7 +144,7 @@ sub _timestamp_now {
 has 'ellipsis' => (
     is      => 'rw',
     isa     => 'Str',
-    lazy => 1,
+    lazy    => 1,
     builder => '_reset_ellipsis',
 );
 
@@ -156,7 +156,7 @@ sub _reset_ellipsis {
 has 'trailer' => (
     is      => 'rw',
     isa     => NotifyTrailer,
-    lazy => 1,
+    lazy    => 1,
     builder => '_reset_trailer',
 );
 
@@ -168,7 +168,7 @@ sub _reset_trailer {
 has 'colorize' => (
     isa     => 'Bool',
     is      => 'ro',
-    lazy => 1,
+    lazy    => 1,
     builder => '_reset_colorize',
     traits  => ['Bool'],
     handles => {
@@ -244,7 +244,7 @@ sub _open {
         return unless $succeeded;
     }
 
-    my $succeeded = $self->_print_left_text( $self->opentext , $level);
+    my $succeeded = $self->_print_left_text( $self->opentext, $level );
     $self->_mark_opened;
     return $succeeded;
 
@@ -255,8 +255,8 @@ sub BUILD {
 
     my $level    = $self->level + $self->adjust_level;
     my $maxdepth = $self->maxdepth;
-    
-    if ( (not defined $maxdepth) or $level <= $maxdepth ) {
+
+    if ( ( not defined $maxdepth ) or $level <= $maxdepth ) {
         # if not s not hidden by maxdepth
         my $success = $self->_open($level);
         $self->_mark_built_without_error if $success;
@@ -294,7 +294,8 @@ sub _print_left_text {
     my $final_width = u_columns( $lines[-1] );
     $lines[0] = $leading . $lines[0];
     if ( @lines > 1 ) {
-        $lines[$_] = "\n" . $leading_spaces . $lines[$_] foreach ( 1 .. $#lines );
+        $lines[$_] = "\n" . $leading_spaces . $lines[$_]
+          foreach ( 1 .. $#lines );
     }
 
     for my $line (@lines) {
@@ -320,7 +321,7 @@ sub _close {
 
     # process arguments
     foreach (@_) {
-        if ( defined(reftype($_)) and reftype($_) eq 'HASH' ) {
+        if ( defined( reftype($_) ) and reftype($_) eq 'HASH' ) {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -361,7 +362,8 @@ sub _close {
 
     # Make the severity text
 
-    my $severity_output = u_trim_to_columns($severity, $MAX_SEVERITY_TEXT_WIDTH);
+    my $severity_output
+      = u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
     if ( $self->colorize ) {
         $severity_output = $self->add_color($severity_output);
     }
@@ -379,7 +381,7 @@ sub _close {
             return unless $succeeded;
         }
 
-        my $succeeded = $self->_print_left_text($closetext, $level);
+        my $succeeded = $self->_print_left_text( $closetext, $level );
         return unless $succeeded;
 
         $position = $self->position;
@@ -395,7 +397,7 @@ sub _close {
     my $num_trailers = $self->term_width - $position - $SEVERITY_MARKER_WIDTH;
     my $succeeded = print $fh ( $trailer x $num_trailers, $severity_output );
     return unless $succeeded;
-    
+
     $self->set_position(0);
 
     $self->_mark_closed;
@@ -471,9 +473,9 @@ sub d_none {
 sub DEMOLISH {
     my $self                  = shift;
     my $in_global_destruction = shift;
-    
+
     my $fh = $self->fh;
-    
+
     return if $self->_is_closed;
 
     $self->_close_up_to($self);
@@ -502,10 +504,9 @@ sub prog {
 
     my $position = $self->position;
     my $progcols = $self->_prog_cols;
-    
 
     if ( $columns > $avail ) {
-     
+
         my $bspace    = q{ } x $self->_bullet_width;
         my $indent    = q{ } x ( $self->step * $level );
         my $succeeded = print $fh "\n", $bspace, $indent;
@@ -531,22 +532,28 @@ sub prog {
 sub over {
     my $self = shift;
 
-    # filtering by level
-    my $level    = $self->level;
-    my $maxdepth = $self->maxdepth;
-    return 1 if defined($maxdepth) and $level > $maxdepth;
+    # if no backspace (in braindead consoles like Eclipse's),
+    # then treats everything as a forward-progress.
+    if ( $self->backspace ) {
 
-    my $fh = $self->fh;
+        # filtering by level
+        my $level    = $self->level;
+        my $maxdepth = $self->maxdepth;
+        return 1 if defined($maxdepth) and $level > $maxdepth;
 
-    my $prog_cols  = $self->_prog_cols;
-    my $backspaces = "\b" x $prog_cols;
-    my $spaces     = $SPACE x $prog_cols;
+        my $fh = $self->fh;
 
-    my $succeeded = print $fh $backspaces, $spaces, $backspaces;
-    return unless $succeeded;
+        my $prog_cols  = $self->_prog_cols;
+        my $backspaces = "\b" x $prog_cols;
+        my $spaces     = $SPACE x $prog_cols;
 
-    $self->set_position( $self->position - $prog_cols );
-    $self->_set_prog_cols(0);
+        my $succeeded = print $fh $backspaces, $spaces, $backspaces;
+        return unless $succeeded;
+
+        $self->set_position( $self->position - $prog_cols );
+        $self->_set_prog_cols(0);
+
+    } ## tidy end: if ( $self->backspace )
 
     return $self->prog(@_);
 } ## tidy end: sub over
@@ -558,7 +565,7 @@ sub text {
 
     # process arguments
     foreach (@_) {
-        if ( defined(reftype($_)) and reftype($_) eq 'HASH' ) {
+        if ( defined( reftype($_) ) and reftype($_) eq 'HASH' ) {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -578,9 +585,9 @@ sub text {
 
     my $fh = $self->fh;
 
-    if ($self->position != 0) {
-       my $succeeded = print $fh "\n";
-       return unless $succeeded;
+    if ( $self->position != 0 ) {
+        my $succeeded = print $fh "\n";
+        return unless $succeeded;
     }
 
     my $bullet_width = $self->_bullet_width;
@@ -619,21 +626,21 @@ sub text {
         ERROR => \'ERR',
         WARN  => 'bold black on_bright_yellow',
         NOTE  => 'bold bright_white on_blue',
-        INFO  => 'bold bright_white on_green',
+        INFO  => 'green',
         OK    => \'INFO',
-        DEBUG => 'bright_white on_bright_black', #  'bold black on_yellow',
+        DEBUG => 'bright_white on_bright_black',      #  'bold black on_yellow',
         NOTRY => 'bold bright_white on_magenta',
         UNK   => 'bold bright_yellow on_magenta',
         YES   => 'green',
         NO    => 'bright_red',
-    ); # OTHER and DONE explicitly omitted
-    
+    );    # OTHER and DONE explicitly omitted
+
     sub add_color {
 
         my $self    = shift;
         my $sev     = shift;
         my $sev_key = uc($sev);
-    
+
         while ( exists( $COLORS_OF{$sev_key} )
             and defined( reftype( $COLORS_OF{$sev_key} ) ) )
         {

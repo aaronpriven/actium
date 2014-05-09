@@ -145,6 +145,17 @@ has 'trailer' => (
     default => '.',
 );
 
+has 'backspace' => (
+    isa     => 'Bool',
+    is      => 'ro',
+    default => 1,
+    traits  => ['Bool'],
+    handles => {
+        use_backspace => 'set',
+        no_backspace  => 'unset',
+    },
+);
+
 #########################
 ## BULLETS, INDENTATION, LEVELS
 
@@ -168,7 +179,7 @@ has 'bullets_r' => (
 sub set_bullets {
     my $self    = shift;
     my @bullets = flatten(@_);
-    $self->_set_bullets_r->( \@bullets );
+    $self->_set_bullets_r( @bullets );
 }
 
 sub _bullet_for_level {
