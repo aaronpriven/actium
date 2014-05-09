@@ -18,6 +18,7 @@ use Actium::Term;
 use Params::Validate(':all');
 use Actium::Util(qw/file_ext aoa2tsv/);
 use List::MoreUtils('pairwise');
+use Actium::Time(qw[timestr_sub timenum]);
 
 const my $PREFIX => 'Actium::O::Files::Xhea';
 
@@ -557,6 +558,8 @@ sub _get_xhea_filenames {
                 callback => $trip_callback,
             }
         );
+        
+        my $timestr_sub = timestr_sub(XB => 1, HOURS => 12);
 
         my $stop_callback = sub {
             my $hr = shift;
@@ -578,7 +581,22 @@ sub _get_xhea_filenames {
             $tps{$patid}[$position]{Place}          = $place;
             $tps{$patid}[$position]{IsATimingPoint} = $place ? 1 : 0;
 
-            my ($htime) = $passing_time =~ m/T(\d\d:\d\d)/;
+            #my ($htime) = $passing_time =~ m/T(\d\d:\d\d)/;
+            
+            my ($day, $hours, $mins ) = $passing_time =~ m/(\d\d)T(\d\d):(\d\d)/;
+            
+            my $xtime;
+            if ($day eq '31') {
+                $xtime = "$hours`$mins";
+            } elsif ($day eq '02') {
+                $hours += 24;
+            }
+            else {
+             $xtime = "$hours:mins";
+            }
+            
+            my $timenum = timenum($xtime);
+            my $htime = $timestr_sub->($timenum);
 
             $pts{$tripnum}[$position] = $htime;
 
