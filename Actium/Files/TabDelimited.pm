@@ -129,6 +129,9 @@ sub read_tab_files {
                 $line =~ s/\s+\z//;
                 @values = ( split( /\t/, $line ) );
             }
+            
+            push @values, (q{}) x (scalar @headers - scalar @values);
+            # pad out with empty strings...
 
             my %value_of;
             @value_of{@headers} = @values;
