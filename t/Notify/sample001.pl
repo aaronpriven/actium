@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Actium::O::Notify;
 
-my $notifier = Actium::O::Notify::->new();
+my $notifier = Actium::O::Notify::->new(colorize=>1);
 
 my $notification = $notifier->notify("Contract to build house");
 build_house();
@@ -16,9 +16,13 @@ sub build_house {
     sitework();
     shell();
     $build_nf->text( "
-Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 Vestibulum varius libero nec emitus. Mauris eget ipsum eget quam sodales ornare. Suspendisse nec nibh. Duis lobortis mi at augue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
-");
+"); 
+
+# line feed at the top of text yields blank line, 
+# but this was present in original Term::Emit sample
+
     mechanical();
     finish();
     $build_nf->done;
