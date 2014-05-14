@@ -497,10 +497,11 @@ sub _get_xhea_filenames {
 
         require Actium::Files::TabDelimited;
 
-        my ( %trp, %pat, %tps, %pts );
+        my ( %trp, %pat, %tps, %pts, %plc );
 
         my $pattern_callback = sub {
             my $hr = shift;
+            return unless $hr->{tpat_direction};
 
             my $id        = $hr->{tpat_id};
             my $direction = $HASI_DIR_OF_XHEA{ $hr->{tpat_direction} };
@@ -558,8 +559,8 @@ sub _get_xhea_filenames {
                 callback => $trip_callback,
             }
         );
-        
-        my $timestr_sub = timestr_sub(XB => 1, HOURS => 12);
+
+        my $timestr_sub = timestr_sub( XB => 1, SEPARATOR => '', HOURS => 12 );
 
         my $stop_callback = sub {
             my $hr = shift;
@@ -582,21 +583,24 @@ sub _get_xhea_filenames {
             $tps{$patid}[$position]{IsATimingPoint} = $place ? 1 : 0;
 
             #my ($htime) = $passing_time =~ m/T(\d\d:\d\d)/;
-            
-            my ($day, $hours, $mins ) = $passing_time =~ m/(\d\d)T(\d\d):(\d\d)/;
-            
+
+            my ( $day, $hours, $mins )
+              = $passing_time =~ m/(\d\d)T(\d\d):(\d\d)/;
+
             my $xtime;
-            if ($day eq '31') {
-                $xtime = "$hours`$mins";
-            } elsif ($day eq '02') {
+            if ( $day eq '31' ) {
+                $xtime = "$hours'$mins";
+            }
+            elsif ( $day eq '02' ) {
                 $hours += 24;
+                $xtime = "$hours:$mins";
             }
             else {
-             $xtime = "$hours:mins";
+                $xtime = "$hours:$mins";
             }
-            
+
             my $timenum = timenum($xtime);
-            my $htime = $timestr_sub->($timenum);
+            my $htime   = $timestr_sub->($timenum);
 
             $pts{$tripnum}[$position] = $htime;
 
@@ -606,6 +610,25 @@ sub _get_xhea_filenames {
             {   files    => ['trip_stop.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $stop_callback,
+            }
+        );
+
+        my $place_callback = sub {
+            my $hr = shift;
+
+            my $place = $hr->{plc_identifier};
+            $plc{Place}{$place}           = $place;
+            $plc{Description}{$place}     = $hr->{plc_description};
+            $plc{ReferencePlace}{$place}  = $hr->{plc_reference_place};
+            $plc{District}{$place}        = $hr->{plc_district};
+            $plc{AlternateNumber}{$place} = $hr->{plc_number};
+
+        };
+
+        Actium::Files::TabDelimited::read_tab_files(
+            {   files    => ['place.txt'],
+                folder   => $xhea_tab_folder,
+                callback => $place_callback,
             }
         );
 
@@ -627,7 +650,7 @@ sub _get_xhea_filenames {
 
         foreach my $patid ( keys %{ $pat{Route} } ) {
 
-            printf $pat_fh "PAT,%5s,%4s,%10s,%2s,%8s,%1s,%8s,%40s$CRLF",
+            printf $pat_fh "PAT,%-5s,%-4s,%-10s,%-2s,%-8s,%-1s,%-8s,%-40s$CRLF",
               $pat{Route}{$patid},             # Route
               $pat{Identifier}{$patid},        # Identifier
               $pat{Direction}{$patid},         # Direction
@@ -639,7 +662,7 @@ sub _get_xhea_filenames {
               ;
 
             for my $tps_hr ( @{ $tps{$patid} } ) {
-                printf $pat_fh "TPS,%5s,%6s,%8s,%1s,%1s$CRLF",
+                printf $pat_fh "TPS,%-5s,%-6s,%-8s,%-1s,%-1s$CRLF",
                   $tps_hr->{StopIdentifier},    # StopIdentifier
                   $tps_hr->{Place},             # Place
                   $EMPTY_STR,                   # VehicleDisplay
@@ -660,7 +683,7 @@ sub _get_xhea_filenames {
         my $trp_fh = $hasi_folder->open_write("$signup.TRP");
 
         foreach my $tripnum ( keys %{ $trp{InternalNumber} } ) {
-            printf $trp_fh "TRP,%10s,%8s,%7s,%5s,%4s,%15s,%2s,%1s,%1s$CRLF",
+            printf $trp_fh "TRP,%-10s,%-8s,%-7s,%-5s,%-4s,%-15s,%-2s,%-1s,%-1s$CRLF",
               $trp{InternalNumber}{$tripnum},        # InternalNumber
               $EMPTY_STR,                            # Number
               $trp{OperatingDays}{$tripnum},         # OperatingDays
@@ -673,12 +696,34 @@ sub _get_xhea_filenames {
               ;
 
             foreach my $passing_time ( @{ $pts{$tripnum} } ) {
-                printf $trp_fh "PTS,%8s$CRLF", $passing_time;
+                printf $trp_fh "PTS,%-8s$CRLF", $passing_time;
             }
 
         }
 
-        close $trp_fh;
+        emit_done;
+
+        emit "Writing $signup.PLC";
+        emit_prog( ( scalar keys %{ $plc{Place} } ) . ' records' );
+
+        my $plc_fh = $hasi_folder->open_write("$signup.PLC");
+
+        foreach my $place ( sort keys %{ $plc{Place} } ) {
+            printf $plc_fh "PLC,%-6s,%-40s,%-6s,%-6s,%-8s,%-20s,%-10s,%-10s$CRLF",
+              $plc{Place}{$place},              # Identifier
+              $plc{Description}{$place},        # Description
+              $plc{ReferencePlace}{$place},     # Reference place
+              $plc{District}{$place},           # District
+              $plc{AlternateNumber}{$place},    # AlternateNumber
+              $EMPTY_STR,                       # AlternatteName
+              $EMPTY_STR,                       # XCoordinate
+              $EMPTY_STR,                       # YCoordinate
+              ;
+
+        }
+
+        close $plc_fh;
+        
 
         emit_done;
 

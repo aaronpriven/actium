@@ -7,13 +7,10 @@
 use warnings;
 use 5.012;
 
-package Actium::Cmd::Flagspecs;
-
-our $VERSION = '0.001';
-$VERSION = eval $VERSION;    ## no critic (StringyEval)
+package Actium::Cmd::Flagspecs 0.005;
 
 use Actium::Sorting::Line (qw/sortbyline byline/);
-use Actium::Util qw(in sk jn j jk jt keyreadable);
+use Actium::Util qw(in jn j jt );
 use Actium::Union (qw/ordered_union distinguish/);
 use Actium::DaysDirections(':all');
 use Actium::O::Files::HastusASI;
@@ -30,6 +27,28 @@ use File::Spec;
 use Text::Trim;
 
 use Const::Fast;
+
+const my $NEW_KEY_SEPARATOR => '_';
+
+sub sk {
+    croak 'Null argument specified to ' . __PACKAGE__ . '::sk' unless defined $_[0];
+    return split( /$NEW_KEY_SEPARATOR/sx, $_[0] );
+}
+
+sub jk {
+    return join( $NEW_KEY_SEPARATOR, map { $_ // $EMPTY_STR } @_ );
+}
+
+sub keyreadable {
+    if (wantarray) {
+        my @list = @_;
+        #s/$KEY_SEPARATOR/_/sxg foreach @list;
+        return @list;
+    }
+    my $value = shift;
+    #$value =~ s/$KEY_SEPARATOR/_/gxs;
+    return $value;
+}
 
 const my $CULL_THRESHOLD          => 10;
 const my $OVERRIDE_FILENAME       => 'flagspec_override.txt';
@@ -159,7 +178,7 @@ sub build_place_and_stop_lists {
             emit_over $route ;
             $prevroute = $route;
         }
-
+        
         next PAT if in($route, 'BSH', 'BSD', 'BSN', '399');
         # skip Broadway Shuttle
 
@@ -197,10 +216,6 @@ sub build_place_and_stop_lists {
             $place =~ s/-[AD12]\z//sx;
             my $stop_ident = $tps_row->{StopIdentifier};
             
-            if ($stop_ident eq '56666' and $route eq '800') {
-                #emit_over '*';
-            }
-
             if ( $stop_ident eq $prevstop ) {    # same stop
                 next TPS if ( not $place ) or ( $place eq $prevplace );
 
@@ -230,9 +245,9 @@ sub build_place_and_stop_lists {
             }
 
             my ($row) = $stopdata->rows_where( 'PhoneID', $stop_ident );
-
+            
             $patinfo->{Place} = $prevplace;
-
+            
             foreach my $connection ( split( /\n/sx, $row->[$connections_col] ) )
             {
                 $patinfo->{Connections}{$connection} = 1;
@@ -356,7 +371,10 @@ sub build_trip_quantity_lists {
 
         my $pat_ident = $trp->{Pattern};
         my $route     = $trp->{RouteForStatistics};
-        my $pat       = $hasi_db->row( 'PAT', jk( $route, $pat_ident ) );
+        #my $pat       = $hasi_db->row( 'PAT', jk( $route, $pat_ident ) );
+        my $pat       
+           = $hasi_db->row( 'PAT', join ("\c]" ,  $route, $pat_ident ));
+        # I redefined jk
         my $dir       = $pat->{DirectionValue};
         my $routedir  = jk( $route, $dir );
         my $pat_rdi   = jk( $route, $dir, $pat_ident );
@@ -384,6 +402,11 @@ sub cull_placepats {
         # combine placelists with more than one identifier
 
         my @placelists = keys %{ $num_trips_of_pat{$routedir} };
+        
+           @placelists =  
+                  sort { length ($b) <=> length ($a) || $a cmp $b } 
+                  @placelists
+                  ;
 
         for my $placelist (@placelists) {
             my @pat_rdis = @{ $pats_of{$routedir}{$placelist} };
@@ -409,7 +432,7 @@ sub cull_placepats {
         # delete subset place patterns, if possible
         my $threshold = $num_trips_of_routedir{$routedir} / $CULL_THRESHOLD;
 
-        my @placelists = sort { length $b <=> length $a }
+        my @placelists = sort { length $b <=> length $a || $a cmp $b }
           keys %{ $num_trips_of_pat{$routedir} };
 
         my $longest = shift @placelists;
@@ -418,7 +441,7 @@ sub cull_placepats {
             foreach my $idx ( 0 .. $#placelists ) {
                 my $thislist = $placelists[$idx];
 
-                if ($longest =~ /$thislist$/sx
+                if ($longest =~ /$thislist\z/sx
                     or ( index( $longest, $thislist ) != -1
                         and $num_trips_of_pat{$routedir}{$thislist}
                         < $threshold )
@@ -478,8 +501,8 @@ sub cull_placepats {
     }
 
     sub routedirs_of_stop {
-        my $routedir = shift;
-        return sortbyline( keys %{ $pats_of_stop{$routedir} } );
+        my $stop = shift;
+        return sortbyline( keys %{ $pats_of_stop{$stop} } );
     }
 
     sub patternflag {    # if *any* pattern has the flag
@@ -584,6 +607,10 @@ sub cull_placepats {
 
             push @results, $patinfo;
         }
+        
+        if (@results == 0 ) {
+            emit_text "No results: $stop_ident $routedir";
+        }
 
         return @results;
     }
@@ -595,12 +622,12 @@ sub cull_placepats {
         my ( $route, $dir ) = routedir($routedir);
 
         my $replacement_ident = $replacement_rdi;
-        $replacement_ident =~ s/.*$KEY_SEPARATOR//sx;
+        $replacement_ident =~ s/.*$NEW_KEY_SEPARATOR//sx;
 
         # %placelist_of, %stops_of_pat, %pats_of_stop
         foreach my $pat_rdi (@pat_rdis) {
             my $pat_ident = $pat_rdi;
-            $pat_ident =~ s/.*$KEY_SEPARATOR//sx;
+            $pat_ident =~ s/.*$NEW_KEY_SEPARATOR//sx;
             my @stops = @{ $stops_of_pat{$pat_rdi} };
             delete $placelist_of{$pat_rdi};
             delete $stops_of_pat{$pat_rdi};
@@ -712,20 +739,27 @@ sub delete_placelist_from_lists {
     sub build_pat_combos {
         emit 'Building pattern combinations';
 
+STOP:
         foreach my $stop ( keys_pats_of_stop() ) {
-
-            #                if ($stop eq '51287' ) {
-            #                   emit_over '*'
-            #                }
-
+            
             foreach my $routedir ( routedirs_of_stop($stop) ) {
 
                 my ( $route, $dir ) = routedir($routedir);
-
+                
                 my @pat_idents = pat_idents_of( $stop, $routedir );
-
+                
                 my @placelists
                   = map { $placelist_of{ jk( $routedir, $_ ) } } @pat_idents;
+                  
+                  if (not defined $placelists[0]){
+                      emit_text "No placelist for $stop, $route, $dir, [@pat_idents]";
+                      next STOP;
+                  }
+
+                  @placelists =  uniq(
+                  sort { length ($b) <=> length ($a) || $a cmp $b } 
+                  @placelists
+                  );
 
                 my $combokey = jt(@placelists);
                 my $shortkey = jt( $routedir, $combokey );
@@ -989,8 +1023,11 @@ sub relevant_places {
 
         my %destinations;
         my @place_arys;
-
+        
         foreach my $placelist (@placelists) {
+            if (not defined $placelist) {
+                emit_over "!!!";
+            }
             push @place_arys, [ sk($placelist) ];
         }
 
@@ -1003,7 +1040,7 @@ sub relevant_places {
 
         foreach my $placelist (@placelists) {
             my $place = $placelist;
-            $place =~ s/.*$KEY_SEPARATOR//sx;
+            $place =~ s/.*$NEW_KEY_SEPARATOR//sx;
             my $row = $timepoint_data->rows_where( 'Abbrev4', $place );
             $destinations{ $row->[$column] } = $order{$place};
         }
@@ -1292,7 +1329,7 @@ sub make_decal_spec {
         my @decals;
 
       ROUTEDIR:
-        for my $routedir ( grep {/\A $route $KEY_SEPARATOR/sx}
+        for my $routedir ( grep {/\A $route $NEW_KEY_SEPARATOR/sx}
             routedirs_of_stop($stop) )
         {
             if ( exists $tp_override_of{$routedir} ) {
@@ -1300,7 +1337,7 @@ sub make_decal_spec {
                     if ( places_match( $stop, $routedir, sk($placepair) ) ) {
                         $tp_overridden{$stop} = 1;
                         my $spec = $tp_override_of{$routedir}{$placepair};
-                        if ( not $spec =~ /${KEY_SEPARATOR}\@DELETE/ ) {
+                        if ( not $spec =~ /${NEW_KEY_SEPARATOR}\@DELETE/ ) {
                             push @decals, make_decal_from_spec( $spec, $route );
                         }
                         next ROUTEDIR;
