@@ -75,7 +75,7 @@ sub mergeread {    # constructor
         my @columns = $csv->fields();
 
         foreach (@columns) {
-            s/$VERTICALTAB/\n/sx;
+            s/\cK/\n/gsx;
         }
         push @array, \@columns;
 

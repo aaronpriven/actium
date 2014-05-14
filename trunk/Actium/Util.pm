@@ -129,12 +129,12 @@ sub jn {
 }
 
 sub sk {
-    croak 'Null argument specified to ' . __PACKAGE__ . 'sk' unless $_[0];
+    croak 'Null argument specified to ' . __PACKAGE__ . '::sk' unless defined $_[0];
     return split( /$KEY_SEPARATOR/sx, $_[0] );
 }
 
 sub st {
-    croak 'Null argument specified to ' . __PACKAGE__ . 'st' unless $_[0];
+    croak 'Null argument specified to ' . __PACKAGE__ . '::st' unless defined $_[0];
     return split( /\t/s, $_[0] );
 }
 

@@ -9,10 +9,11 @@
 use 5.012;
 use warnings;
 
-package Actium::DaysDirections 0.001;
+package Actium::DaysDirections 0.005;
 
 use Const::Fast;
 use Actium::Constants;
+use Carp;
 
 use Sub::Exporter -setup => { exports => [qw<day_of_hasi dir_of_hasi>] };
 
@@ -54,12 +55,14 @@ const my %DIR_OF_HASI => (
 
 sub day_of_hasi {
     my $days = shift;
+    croak "Uninitialized direction" if not defined $days;
     $days =~ s/[^\d]//g;
     return exists $DAY_OF_HASI{ $days } ? $DAY_OF_HASI{$days} : $EMPTY_STR;
 }
 
 sub dir_of_hasi  {
     my $dir = shift;
+    croak "Uninitialized direction" if not defined $dir;
     return exists $DIR_OF_HASI{ $dir } ? $DIR_OF_HASI{$dir} : $EMPTY_STR;
 }
 

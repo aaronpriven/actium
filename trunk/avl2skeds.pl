@@ -7,6 +7,10 @@
 # This is one of the most important programs: it produces the skeds files from 
 # the avl files.
 
+if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
+   @ARGV = qw(-s su14 -b /Users/apriven/Dev/signups);
+}
+
 use warnings;
 use 5.012;
 
@@ -630,7 +634,15 @@ sub make_skeds_pairs_of_hash {
       
       my $pattern  = $tripinfo_of{Pattern};
       my $patkey   = jk ($line, $pattern);
-      my $dir_code = dir_of_hasi ($avldata{PAT}{$patkey}{DirectionValue});
+      if (not exists $avldata{PAT}{$patkey}) {
+          next TRIP;
+      }
+      
+      my $dirval = $avldata{PAT}{$patkey}{DirectionValue};
+      if ($dirval eq $EMPTY_STR) {
+          next TRIP;
+      }
+      my $dir_code = dir_of_hasi ($dirval);
 
       my @pairs = ();
       TIMEIDX:
