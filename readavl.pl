@@ -78,6 +78,7 @@ init_field_names();
 init_templates();
 
 my @files = glob ('hasi/*');
+@files = grep { not (/\.dump/i || /\.sqlite\z/i ) } @files;
 
 # read rows
 read_files(@files);
@@ -169,7 +170,7 @@ sub read_files {
    ROW:
 	while (<>) {
 	   chomp;
-
+	   
       # DEBUG - print filenames
 	   if (! option('quiet') and $prevfile ne $ARGV) {
 	      print "$ARGV\n" ;
