@@ -102,16 +102,16 @@ sub xhea2skeds {
  
  
     my $fieldnames_r = $params{fieldnames};
+    my $fields_r = $params{fields};
+    my $values_r = $params{'values'};
     
-    # finish from here
-
     my ( $patterns_r, $pat_lineids_of_lgdir_r, $upattern_of_r, $uindex_of_r )
-      = _get_patterns($xheafolder);
+      = _get_patterns($fieldnames_r, $fields_r, $values_r);
 
     my $trips_of_skedid_r
-      = xhea_trips( $xheafolder, $pat_lineids_of_lgdir_r, $uindex_of_r );
+      = xhea_trips( $fieldnames_r, $fields_r, $values_r, $pat_lineids_of_lgdir_r, $uindex_of_r );
 
-    my $places_info_of_r = _load_places($xheafolder);
+    my $places_info_of_r = _load_places($fieldnames_r, $fields_r, $values_r);
 
     my @skeds
       = _make_skeds( $trips_of_skedid_r, $upattern_of_r, $places_info_of_r );
@@ -119,13 +119,14 @@ sub xhea2skeds {
     #_output_debugging_patterns( $signup, $patterns_r, $pat_lineids_of_lgdir_r,
     #   $upattern_of_r, $uindex_of_r, \@skeds );
 
-    _output_skeds( $signup, \@skeds );
+    #_output_skeds( $signup, \@skeds );
 
     return @skeds;
 
 } ## tidy end: sub xhea_import
 
 sub _output_skeds {
+ # should be moved to a SkedCollection object
 
     use autodie;
     my $signup  = shift;
