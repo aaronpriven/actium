@@ -786,8 +786,9 @@ No subroutines are exported. Use the fully qualified name to invoke them.
 
 This routine takes a folder object (such as an 
 Actium::O::Folder or Actium::O::Folders::Signup object ), looks for paired
-xml and xsd files in that folder, and returns two structs: one contains
-information about the records and fields, and the ohter contains the values
+xml and xsd files in that folder, and returns three structs: one contains a summary
+of the fields and records, one contains further
+information about the records and fields, and the other contains the values
 from the file.
 
 The XML and XSD structure is somewhat limited and assumes the sort of XML 
