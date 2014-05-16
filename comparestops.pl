@@ -24,6 +24,9 @@ use List::MoreUtils('uniq');
 use Actium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');
 
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+
+
 # don't buffer terminal output
 $| = 1;
 
@@ -54,6 +57,18 @@ init_options;
 use Actium::O::Folders::Signup;
 my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path;
+
+my %stops;
+
+load_tables(
+    requests => {
+        Stops_Neue => {
+            hash        => \%stops,
+            index_field => 'h_stp_511_id',
+            fields => [qw[h_stp_511_id c_description_full ]],
+        },
+    }
+);
 
 my $comparedir = $signup->subfolder('compare') ;
 
@@ -232,7 +247,7 @@ sub assemble_stoplists {
     my %skipped;
     $skipped{$_} = 1 foreach @_;
 
-    my ( %pat, %stp );
+    my ( %pat );
 
     {    # scoping
          # the reason to do this is to release the %avldata structure, so Affrus
@@ -243,8 +258,6 @@ my $avldata_r = $signup->retrieve('avl.storable');
 
 
         %pat = %{ $avldata_r->{PAT} };
-
-        %stp = %{ $avldata_r->{STP} };
 
     }
 
@@ -266,7 +279,8 @@ my $avldata_r = $signup->retrieve('avl.storable');
 
             #$stoplist{$stopid}{Routes}{"$route-$dir"} = 1;
             $stoplist{$stopid}{Routes}{$route} = 1;
-            $stoplist{$stopid}{Description} = $stp{$stopid}{Description};
+            #$stoplist{$stopid}{Description} = $stp{$stopid}{Description};
+            $stoplist{$stopid}{Description} = $stops{$stopid}{c_description_full};
 
         }
 
