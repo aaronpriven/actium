@@ -49,16 +49,16 @@ sub make_bags {
             actium_db => 1,
         }
     );
-    
-    my %signup;
-    
-    $signup{NEW} = $params{signup};
-    $signup{OLD} = $params{oldsignup};
+
+    my %signup_of;
+
+    $signup_of{NEW} = $params{signup};
+    $signup_of{OLD} = $params{oldsignup};
     my $actium_db = $params{actium_db};
 
-    my $bagtextdir = $signup{NEW}->subfolder('bagtexts');
+    my $bagtextdir = $signup_of{NEW}->subfolder('bagtexts');
 
-    my $effectivedate = Actium::EffectiveDate::effectivedate($signup{NEW});
+    my $effectivedate = Actium::EffectiveDate::effectivedate( $signup_of{NEW} );
     s/,? \s* \d{2,4} \s* \z//sx;    # trim year and trailing white space
 
     my $each_stop = $actium_db->each_columns_in_row_where(
@@ -88,8 +88,9 @@ sub make_bags {
           : $num_added                                     ? 'AS'
           :                                                  'RS';
         #>>>
-        
+
         my %this_stop = (
+            Stop      => $stopid,
             Action    => $action,
             Added     => $added,
             Removed   => $removed,
@@ -97,16 +98,38 @@ sub make_bags {
             Desc      => $desc,
             Note      => $bagtext,
         );
-        
-        if ($action eq 'AS') {
+
+        if ( $action eq 'AS' ) {
             $compare{NEW}{$stopid} = \%this_stop;
-        } 
+        }
         else {
             $compare{OLD}{$stopid} = \%this_stop;
         }
 
     } ## tidy end: while ( my $stop_r = $each_stop...)
-    
+
+    my %stops_sorted;
+
+    for my $list (qw(OLD NEW)) {
+        my $slistsdir  = $signup_of{$list}->('slists');
+        my $stops_of_r = $slistsdir->retrieve('line.storable');
+        my @sorted = travelsort( [ keys %{ $compare{$list} } ], $stops_of_r );
+
+        while ( my $ref = shift @sorted ) {
+            my ( $linedir, @stopids ) = @{$ref};
+            my $num_stopids = scalar @stopids;
+            foreach my $i ( 1 .. $num_stopids ) {
+                my $stopid = $stopids[ $i - 1 ];
+                $compare{$list}{$stopid}{Group}   = $linedir;
+                $compare{$list}{$stopid}{Order}   = $i;
+                $compare{$list}{$stopid}{OrderOf} = "$i of $num_stopids";
+
+                push @{ $stops_sorted{$list} }, $compare{$list}{$stopid};
+            }
+
+        }
+
+    } ## tidy end: for my $list (qw(OLD NEW))
 
 } ## tidy end: sub make_bags
 
