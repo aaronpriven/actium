@@ -27,6 +27,8 @@ use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::DaysDirections ('dir_of_hasi');
 
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+
 # don't buffer terminal output
 $| = 1;
 
@@ -57,8 +59,19 @@ my $linefolder = $slistsfolder->subfolder('line');
 my $linewinfolder = $slistsfolder->subfolder('line-win');
 
 my %pat;
-my %stp;
 my %tps;
+
+my %stops;
+
+load_tables(
+    requests => {
+        Stops_Neue => {
+            hash        => \%stops,
+            index_field => 'h_stp_511_id',
+            fields => [qw[h_stp_511_id c_description_full ]],
+        },
+    }
+);
 
 { # scoping
 # the reason to do this is to release the %avldata structure, so Affrus 
@@ -68,8 +81,6 @@ my %tps;
 my $avldata_r = $signup->retrieve('avl.storable');
 
 %pat = %{$avldata_r->{PAT}};
-
-%stp = %{$avldata_r->{STP}};
 
 }
 
@@ -107,7 +118,7 @@ foreach my $key (keys %pat) {
        
        push @thesestops , $stopid;
        
-       print $fh $stopid , "\t" , $stp{$stopid}{Description} , "\n";
+       print $fh $stopid , "\t" , $stops{$stopid}{c_description_full} , "\n";
    }
 
    push @{$liststomerge{$route}{$dir}} , \@thesestops;
@@ -138,7 +149,7 @@ foreach my $route (keys %liststomerge) {
       open my $fh , '>' , "slists/line/$route-$dir.txt" or die "Cannot open slists/line/$route-$dir.txt for output";
       print $fh jt( $route , $dir ) , "\n" ;
       foreach (@union) {
-         print $fh jt($_, $stp{$_}{Description}) , "\n";
+         print $fh jt($_, $stops{$_}{c_description_full}) , "\n";
       }
       close $fh;
       }
@@ -147,7 +158,7 @@ foreach my $route (keys %liststomerge) {
       open my $fh , '>' , "slists/line-win/$route-$dir.txt" or die "Cannot open slists/line-win/$route-$dir.txt for output";
       print $fh jt( $route , $dir ) , "\r\n" ;
       foreach (@union) {
-         print $fh jt($_, $stp{$_}{Description}) , "\r\n";
+         print $fh jt($_, $stops{$_}{c_description_full}) , "\r\n";
       }
       close $fh;
       }

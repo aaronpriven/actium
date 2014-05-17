@@ -10,6 +10,8 @@ package Actium::O::Files::FileMaker_ODBC 0.003;
 
 use Actium::MooseRole;
 
+use Params::Validate(':all');
+
 use Actium::Term;
 
 use Carp;
@@ -43,7 +45,7 @@ has 'dbh' => (
 sub _connect {
     my $self = shift;
 
-    my $db_name  = $self->db_name;
+    my $db_name     = $self->db_name;
     my $db_user     = $self->db_user;
     my $db_password = $self->db_password;
 
@@ -62,7 +64,7 @@ has '_tables_r' => (
     traits  => ['Hash'],
     is      => 'bare',
     isa     => 'HashRef[Str]',
-    builder => '_tables',
+    builder => '_build_tables',
     handles => {
         tables     => 'keys',
         is_a_table => 'get',
@@ -70,7 +72,7 @@ has '_tables_r' => (
     lazy => 1,
 );
 
-sub _tables {
+sub _build_tables {
     my $self = shift;
     my $dbh  = $self->dbh;
 
@@ -86,45 +88,80 @@ sub _tables {
 }
 
 has '_column_cache_r' => (
-    traits  => ['Hash'],
-    is      => 'bare',
-    isa     => 'HashRef[HashRef[Str]]',
+    traits => ['Hash'],
+    is     => 'bare',
+    isa    => 'HashRef[HashRef[Str]]',
+    # { table => { column1 => 1, ...} , ... }
     handles => {
-        _columns_loaded => 'exists',
-        _is_a_column_hr => 'get',
-        _set_column_hr  => 'set',
+        _columns_loaded            => 'exists',
+        _column_cache_of_table     => 'get',
+        _set_column_cache_of_table => 'set',
     },
 
 );
 
 sub _ensure_loaded {
     my ( $self, $table ) = @_;
-    return if $self->is_a_table($table);
+
+    if ( $self->is_a_table($table) ) {
+
+        if ( not $self->_columns_loaded($table) ) {
+            $self->_load_column_cache($table);
+        }
+
+        return;
+    }
 
     my $db_name = $self->db_name;
     croak "Invalid table $table for database $db_name";
 
 }
 
+sub _load_column_cache {
+    my $self  = shift;
+    my $table = shift;
+
+    my $dbh = $self->dbh;
+
+    my $query   = "SELECT FieldName from $META_FIELDS WHERE TableName = $table";
+    my $ary_ref = $dbh->selectall_arrayref($query);
+    my @columns = flatten $ary_ref;
+
+    my %is_a_column = map { $_, 1 } @columns;
+    $self->_set_column_cache_of_table->( $table, \%is_a_column );
+
+    return;
+
+}
+
+sub columns_of_table {
+    my $self  = shift;
+    my $table = shift;
+
+    $self->_ensure_loaded($table);
+
+    my $cacheref = $self->_column_cache_of_table($table);
+    return @{ keys %{$cacheref} };
+}
+
 sub is_a_column {
     my ( $self, $table, $column ) = @_;
     $self->_ensure_loaded($table);
 
-    if ( $self->_columns_loaded($table) ) {
-        return $self->_is_a_column_hr($table)->{$column};
+    my $cacheref = $self->_column_cache_of_table($table);
+    return exists $cacheref->{$column};
+}
+
+sub _check_columns {
+    my ( $self, $table, @input_columns ) = @_;
+    $self->_ensure_loaded($table);
+    my $cacheref = $self->_column_cache_of_table($table);
+    foreach my $input (@input_columns) {
+        croak "Invalid column $input for table $table"
+          if not exists $cacheref->{$input};
     }
-
-    my $dbh = $self->dbh;
-
-    my $query = "SELECT FieldName from $META_FIELDS WHERE TableName = $table";
-    my $ary_ref     = $dbh->selectall_arrayref($query);
-    my @columns     = flatten $ary_ref;
-    my %is_a_column = map { $_, 1 } @columns;
-    $self->_set_column_hr->( $table, \%is_a_column );
-
-    return exists $is_a_column{$column};
-
-} ## tidy end: sub is_a_column
+    return;
+}
 
 #########################################
 ### SQL -- PROVIDE ROWS TO CALLERS, OTHER SQL
@@ -158,8 +195,7 @@ sub each_row_like {
 sub each_row_eq {
     my ( $self, $table, $column, $value ) = @_;
     $self->_check_columns( $table, $column );
-    return $self->each_row_where( $table, "WHERE $column = ? ORDER BY $column",
-        $value );
+    return $self->each_row_where( $table, "WHERE $column = ?", $value );
 }
 
 sub each_row_where {
@@ -181,6 +217,49 @@ sub each_row_where {
         return $result;
     };
 }
+
+sub each_columns_in_row_where {
+
+    my $self = shift;
+
+    my %params = validate(
+        @_,
+        {   table   => 1,
+            columns => { type => ARRAYREF, required => 1 },
+            where       => { default => '' },
+            bind_values => { type    => ARRAYREF, default => [] },
+        }
+    );
+
+    my $table       = $params{table};
+    my @columns     = @{ $params{columns} };
+    my $where       = $params{where};
+    my @bind_values = @{ $params{bind_values} };
+
+    my $columns_list;
+    if (@columns) {
+        _check_columns(@columns);
+        $columns_list = join( " , ", @columns );
+
+    }
+    else {
+        $columns_list = ' * ';
+    }
+
+    $self->ensure_loaded($table);
+    my $dbh   = $self->dbh();
+    my $query = "SELECT $columns_list FROM $table $where";
+
+    my $sth = $dbh->prepare($query);
+    $sth->execute(@bind_values);
+
+    return sub {
+        my $result = $sth->fetchrow_arrayref;
+        $sth->finish() if not $result;
+        return $result;
+    };
+
+} ## tidy end: sub each_columns_in_row_where
 
 sub all_in_column_key {
 
@@ -269,16 +348,6 @@ sub all_in_columns_key {
     return $rows_r;
 
 } ## tidy end: sub all_in_columns_key
-
-sub _check_columns {
-    my ( $self, $table, @input_columns ) = @_;
-    my @columns = $self->columns_of_table($table);
-    foreach my $input (@input_columns) {
-        croak "Invalid column $input for table $table"
-          if not in( $input, @columns );
-    }
-    return;
-}
 
 sub DEMOLISH { }
 
@@ -372,7 +441,7 @@ column names and the values are the values for this row.
 
 =item B<each_row_like(I<table>, I<column>, I<match>)>
 
-=item B<each_row_where(I<table>, I<column>, I<where>, I<match> ...)>
+=item B<each_row_where(I<table>, I<where>, I<match> ...)>
 
 The each_row routines return an subroutine reference allowing iteration 
 through each row. Intended for use in C<while> loops:
@@ -399,9 +468,44 @@ WHERE clause.
 It accepts multiple values for matching. It is necessary to specify the WHERE
 keyword in the SQL.
 
-=item B<all_in_column_key(I<table>, I<column> )
+=item B<each_columns_in_row_where(I<...>)>
 
-=item B<all_in_column_key(I<hashref_of_arguments>)
+Similar to the other I<each_> routines, I<each_columns_in_row_where> 
+returns a subroutine referenceu allowing iteration through each row.
+
+Unlike those routines, this allows the specification of specific columns, 
+and returns an array reference
+instead of a hash reference. (Note: the array reference is B<the same for each
+row>, so to retain the data between calls you must copy the data and not merely
+keep the a reference.)
+
+It takes a hash or a hashref of named parameters:
+
+=over
+
+=item table
+
+The required name of the SQL table.
+
+=item where
+
+An optional SQL "WHERE" clause. It accepts multiple values for matching. 
+It is necessary to specify the WHERE keyword in the SQL.
+
+=item columns
+
+A (required) reference to an array of column names.
+
+=item bind_values
+
+Optional reference to array of values to be put into placeholders in the SQL
+WHERE statement.
+
+=back
+
+=item B<all_in_column_key(I<table>, I<column> )>
+
+=item B<all_in_column_key(I<hashref_of_arguments>)>
 
 all_in_column_key provides a convenient way of getting data in a hash.
 It is used where only one field is required from the database, and where the 

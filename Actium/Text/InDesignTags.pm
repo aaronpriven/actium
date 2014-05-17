@@ -6,16 +6,19 @@
 
 # Legacy stage 4
 
-package Actium::Text::InDesignTags;
+package Actium::Text::InDesignTags 0.005;
 
 use warnings;
-use 5.012;
+use 5.016;
+
+use Sub::Exporter -setup => { exports => [ qw(itag) ] };
 
 # Simple tags
 
 use Carp;
 
 use constant {
+    itag             => __PACKAGE__ ,
     start            => "<ASCII-MAC>\r<Version:6><FeatureSet:InDesign-Roman>",
     punctuationspace => '<0x2008>',
     thinspace        => '<0x2009>',
@@ -92,13 +95,13 @@ sub combichar {
 
     my $invocant = shift;
     my $num      = shift;
-    if ( $num < 1 or $num > 99 or $num != int($num) ) {
+    if ( $num < 0 or $num > 99 or $num != int($num) ) {
         croak "invalid footnote '$num'";
     }
 
     if ( $num < 20 ) {
         $num = (qw(p q w e r t y u i o a s d f g h j k l ;))[$num];
-        # 1 through 19
+        # 0 through 19
     }
     else {
         my @chars = split( //, $num );
