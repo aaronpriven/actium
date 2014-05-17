@@ -3,7 +3,7 @@
 # Takes the XHEA files and imports them so Actium can use them.
 # XHEA is "XML Hastus Export for Actium"
 
-# Subversion: $Id: Import.pm 236 2013-04-02 23:42:24Z aaronpriven@gmail.com $
+# Subversion: $Id$
 
 # Legacy status: 4 (still in progress...)
 
