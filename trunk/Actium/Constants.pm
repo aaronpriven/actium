@@ -1,6 +1,8 @@
 # Actium/Constants.pm
 # Various constants
 
+# Should this be combined with Actium::Preamble?
+
 # Subversion: $Id$
 
 # legacy stages 3 and 4
@@ -21,8 +23,6 @@ my %constants;
 BEGIN {
 
     %constants = (
-        FALSE       => \0,
-        TRUE        => \( not 0 ),
         EMPTY_STR   => \q{},
         CRLF        => \qq{\cM\cJ},
         SPACE       => \q{ },
@@ -110,11 +110,25 @@ BEGIN {
         },
 
     );
-    
-    foreach (1 .. 9) {
-        $constants{HASTUS_CITY_OF}{$_} = 
-        $constants{HASTUS_CITY_OF}{"0$_"};
-    } # add single-digit versions as well
+
+    {
+        require Params::Validate;
+        my %pv_type;
+
+        my @pv = @{ $Params::Validate::EXPORT_TAGS{'types'} };
+        foreach (@pv) {
+            my $name = 'Params::Validate::' . $_;
+            no strict 'refs';
+            my $value = &$name;
+            $pv_type{$_} = $value;
+        }
+
+        $constants{PV_TYPE} = \%pv_type;
+    }
+
+    foreach ( 1 .. 9 ) {
+        $constants{HASTUS_CITY_OF}{$_} = $constants{HASTUS_CITY_OF}{"0$_"};
+    }    # add single-digit versions as well
 
     $constants{IS_A_LOOP_DIRECTION}{$_} = 1
       foreach @{ $constants{LOOP_DIRECTIONS} };
@@ -131,10 +145,16 @@ BEGIN {
     no warnings 'once';
     no strict 'refs';
 
-    while ( my ( $name, $value ) = each(%constants) ) {
+    foreach my $name ( keys %constants ) {
+        my $value = $constants{$name};
         #*{$name} = $value;    # supports <sigil>__PACKAGE__::<variable>
         my $qualname = __PACKAGE__ . q{::} . $name;
         my $reftype  = ref($value);
+
+        if ( not $reftype ) {
+            $value = \$value;    # non-references turn to references
+        }
+
         if ( $reftype eq 'HASH' ) {
             const %{$qualname}, %{$value};
         }
@@ -145,9 +165,10 @@ BEGIN {
             const ${$qualname}, ${$value};
         }
         else {
-            const ${$qualname}, $value;
+            die "Can't make $reftype into a constant";
+            #const ${$qualname}, $value;
         }
-    }
+    } ## tidy end: foreach my $name ( keys %constants)
 
 } ## tidy end: BEGIN
 
@@ -170,7 +191,7 @@ Actium::Constants - constants used across Actium modules
 
 =head1 VERSION
 
-This documentation refers to Actium::Constants version 0.001
+This documentation refers to Actium::Constants version 0.005
 
 =head1 SYNOPSIS
 
@@ -186,10 +207,27 @@ $Actium::Constants::CRLF .
 
 =head1 CONSTANTS
 
-See the code for the values of the constants. Most are obvious.
-Some exceptions:
-
 =over
+
+=item $EMPTY_STR
+
+The empty string.
+
+=item $CRLF
+
+A carriage return followed by a line feed ("\r\n").
+
+=item $SPACE
+
+A space.
+
+=item $DQUOTE
+
+A double quote (useful for interpolation).
+
+=item $VERTICALTAB
+
+A vertical tab, used to separate multiline fields in FileMaker.
 
 =item $KEY_SEPARATOR
 
@@ -221,6 +259,73 @@ or Sundays (SU). Sometimes these can be combined, so we have
 combinations: weekends (WE), and every day (DA). For completeness
 we also have weekdays and Saturdays (WA) and weekdays and Sundays
 (WU), although usage is expected to be extremely rare.
+
+These originate from the old transitinfo.org web site, which many years ago
+helped parse the schedules. That went away a long time ago, but the codes
+live on.
+
+=item @DIRCODES
+
+Direction codes (northbound, southbound, etc.)  The original few were
+based on transitinfo.org directions, but have been extended to include kinds
+of directions that didn't exist back then.
+
+=item @HASTUS_DIRS
+
+Numeric directions from Hastus, in the same order as @DIRCODES (so @DIRCODES[5]
+is the same direction as @HASTUS_DIRS[5]).
+
+=item @LOOP_DIRECTIONS
+
+=item %IS_A_LOOP_DIRECTION
+
+Those directions that are loops: counterclockwise and clockwise, and A and B.
+The hash version just allows an easy "is this a loop direction" lookup.
+
+=item @TRANSBAY_NOLOCALS
+
+Transbay lines where local riding is prohibited. This should be moved 
+to a database.
+
+=item @LINES_TO_BE_SKIPPED
+
+=item %LINE_SHOULD_BE_SKIPPED
+
+Lines that should not be used at all. This should be moved to a database. 
+The hash version just allows an easy "should this line be skipped" lookup.
+
+=item %TRANSITINFO_DAYS_OF
+=item %DAYS_FROM_TRANSIITNFO
+
+These provide mappings between operating days with digits (1 = Monday, 2 = 
+Tuesday, etc., through 7 = Sunday, plus H = holidays) and the abbreviated
+days used by the old transitinfo.org style schedule files. Theose short 
+(generally two-letter) abbreviations are not that useful these days and should
+be phased out.
+
+=item @SIDE_OF
+
+Of city codes, "E" if it's in the East Bay, "W" for the West Bay. Used for 
+determining whether "Transbay Passengers Only" needs to be 
+put on flags, among other things. Should be replaced with the "Side" value in 
+the "Cities" table in the Actium database. (Perhaps should even be replaced 
+by a more general fare-zone value associated with stops...)
+
+=item @HASTUS_CITY_OF
+
+City codes associated with Hastus. Should be replaced with the "Code" value
+in the "Cities" table in the Actium database.
+
+=item %PV_TYPE
+
+A hash whose keys are all the various type values that are part of
+Params::Validate's ":types" export tag (SCALAR, ARRAYREF, HASHREF, etc.).
+This way it avoids polluting the namespace with all those very generic 
+values, while still allowing the use of Params::Validate types.
+(Which are not at all related to Moose types.)
+
+See L<Params::Validate|Params::Validate> for details on the values and their 
+meanings.
 
 =back
 
