@@ -174,7 +174,7 @@ sub row {
     my $key = $self->key_of_table($table);
     croak "Can't use row() on table $table with no key"
       unless $key;
-    $self->ensure_loaded($table);
+    $self->_ensure_loaded($table);
     my $dbh   = $self->dbh();
     my $query = "SELECT * FROM $table WHERE $key = ?";
     return $dbh->selectrow_hashref( $query, {}, $keyvalue );
@@ -201,7 +201,7 @@ sub each_row_eq {
 sub each_row_where {
     my ( $self, $table, $where, @bind_values ) = @_;
 
-    $self->ensure_loaded($table);
+    $self->_ensure_loaded($table);
     my $dbh   = $self->dbh();
     my $query = "SELECT * FROM $table ";
     if ($where) {
@@ -285,7 +285,7 @@ sub all_in_column_key {
         $column = shift;
     }
 
-    $self->ensure_loaded($table);
+    $self->_ensure_loaded($table);
     $self->_check_columns( $table, $column );
 
     my $key = $self->key_of_table($table);
@@ -328,7 +328,7 @@ sub all_in_columns_key {
         @columns = flatten(@_);
     }
 
-    $self->ensure_loaded($table);
+    $self->_ensure_loaded($table);
     $self->_check_columns( $table, @columns );
 
     my $key = $self->key_of_table($table);

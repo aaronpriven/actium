@@ -301,7 +301,7 @@ the value, or a reference to a hash or array if that was in the option
 specification. 
 
 
-=item B<set_option()>
+=item B<set_option($optionname, $value)>
 
 This routine sets the value for an option. It is used to override options
 set by users (for whatever reason).
