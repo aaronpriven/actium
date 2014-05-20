@@ -55,9 +55,9 @@ sub get_command_line {
     else {
         $history = "";
     }
-
+    
     my $script
-      = qq[osascript -e 'tell application "Eclipse" to get text returned of ( display dialog "$0\rCommand line:" default answer "$history" buttons "OK" default button "OK" with title "Command line entry" ) '];
+      = qq[osascript -e 'tell application "System Events" to get text returned of ( display dialog "$0\rCommand line:" default answer "$history" buttons "OK" default button "OK" with title "Command line entry" ) '];
 
     my $newargs = `$script`;
     chomp $newargs;
