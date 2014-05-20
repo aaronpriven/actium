@@ -1,4 +1,4 @@
-# Actium/Flags.pm
+# Actium/Bags.pm
 
 # Routines for dealing with bag artwork
 
@@ -10,14 +10,18 @@ package Actium::Bags 0.004;
 
 use Actium::Preamble;
 use Actium::Term;
-use Actium::Util(qw/joinseries/);
+#use Actium::Util(qw/joinseries/);
 
 use Actium::Text::InDesignTags;
 use Actium::EffectiveDate;
 
+use Actium::Sorting::Travel ('travelsort');
+
+const my $IDT => 'Actium::Text::InDesignTags';
+
 const my $CR => "\r";
 
-const my %HEIGHT_OF = (
+const my %HEIGHT_OF => (
     numbers => 2.5,
     AL      => 7.6,
     AS      => 11.9,
@@ -28,11 +32,17 @@ const my %HEIGHT_OF = (
     RS      => 12.75,
 );
 
+const my %OUTPUT_DISPATCH => _output_dispatch();
+
+const my $OLD     => 'change';
+const my $NEW     => 'add';
+const my $REMOVED => 'remove';
+
 const my @COLUMNS => qw[
   h_stp_511_id         c_description_full
-  p_added_lines        p_added_lines_count
-  p_removed_lines      p_removed_lines_count
-  p_unchanged_lines    p_unchanged_lines_count
+  p_added_lines        p_added_line_count
+  p_removed_lines      p_removed_line_count
+  p_unch_lines         p_unch_line_count
   u_bagtext
 ];
 
@@ -44,22 +54,41 @@ sub make_bags {
 
     my %params = validate(
         @_,
-        {   signup    => { can => [qw (subfolder retrieve)] },
-            oldsignup => { can => [qw (subfolder retrieve)] },
+        #        {   signup    => { can => [qw (subfolder retrieve)] },
+        #            oldsignup => { can => [qw (subfolder retrieve)] },
+        {   signup    => { isa => 'Actium::O::Folder' },
+            oldsignup => { isa => 'Actium::O::Folder' },
             actium_db => 1,
         }
     );
 
-    my %signup_of;
-
-    $signup_of{NEW} = $params{signup};
-    $signup_of{OLD} = $params{oldsignup};
+    my $signup_of_r;
+    $signup_of_r->{$NEW} = $params{signup};
+    $signup_of_r->{$OLD} = $params{oldsignup};
     my $actium_db = $params{actium_db};
 
-    my $bagtextdir = $signup_of{NEW}->subfolder('bagtexts');
+    my $effectivedate
+      = Actium::EffectiveDate::effectivedate( $signup_of_r->{$NEW} );
+    $effectivedate =~ s/,? \s* \d{2,4} \s* \z//sx;
+    # trim year and trailing white space
+    my $nbsp = $IDT->nbsp; # non breaking space
+    $effectivedate =~ s/ +/$nbsp/g;
 
-    my $effectivedate = Actium::EffectiveDate::effectivedate( $signup_of{NEW} );
-    s/,? \s* \d{2,4} \s* \z//sx;    # trim year and trailing white space
+    my $of_stop_r = _make_stop_info($actium_db);
+
+    $of_stop_r = _sort_stops( $of_stop_r, $signup_of_r );
+
+    my ($bagtexts_r , $counts_r) = _bagtexts( $of_stop_r, $effectivedate );
+    
+    my $para_r = _para();
+    my $final_height_r = _final_height();
+
+    return $bagtexts_r, $counts_r, $final_height_r; 
+
+} ## tidy end: sub make_bags
+
+sub _make_stop_info {
+    my $actium_db = shift;
 
     my $each_stop = $actium_db->each_columns_in_row_where(
         table   => 'Stops_Neue',
@@ -75,7 +104,10 @@ sub make_bags {
             $unchanged, $num_unchanged, $bagtext
         ) = @{$stop_r};
 
-        $bagtext = q{} if $bagtext eq q{-} or $bagtext eq q{.};
+        $bagtext = q{}
+          if not defined $bagtext
+          or $bagtext eq q{-}
+          or $bagtext eq q{.};
 
         # determine action
 
@@ -90,7 +122,7 @@ sub make_bags {
         #>>>
 
         my %this_stop = (
-            Stop      => $stopid,
+            StopID    => $stopid,
             Action    => $action,
             Added     => $added,
             Removed   => $removed,
@@ -100,400 +132,137 @@ sub make_bags {
         );
 
         if ( $action eq 'AS' ) {
-            $compare{NEW}{$stopid} = \%this_stop;
+            $compare{$NEW}{$stopid} = \%this_stop;
         }
         else {
-            $compare{OLD}{$stopid} = \%this_stop;
+            $compare{$OLD}{$stopid} = \%this_stop;
         }
 
     } ## tidy end: while ( my $stop_r = $each_stop...)
 
+    return \%compare;
+
+} ## tidy end: sub _make_stop_info
+
+sub _sort_stops {
+    my ( $of_stop_r, $signup_of_r ) = @_;
+
     my %stops_sorted;
 
-    for my $list (qw(OLD NEW)) {
-        my $slistsdir  = $signup_of{$list}->('slists');
+    for my $list ( $OLD, $NEW ) {
+        my $slistsdir  = $signup_of_r->{$list}->subfolder('slists');
         my $stops_of_r = $slistsdir->retrieve('line.storable');
-        my @sorted = travelsort( [ keys %{ $compare{$list} } ], $stops_of_r );
+        my @sorted
+          = travelsort( [ keys %{ $of_stop_r->{$list} } ], $stops_of_r );
 
         while ( my $ref = shift @sorted ) {
             my ( $linedir, @stopids ) = @{$ref};
             my $num_stopids = scalar @stopids;
             foreach my $i ( 1 .. $num_stopids ) {
                 my $stopid = $stopids[ $i - 1 ];
-                $compare{$list}{$stopid}{Group}   = $linedir;
-                $compare{$list}{$stopid}{Order}   = $i;
-                $compare{$list}{$stopid}{OrderOf} = "$i of $num_stopids";
+                $of_stop_r->{$list}{$stopid}{Group}   = $linedir;
+                $of_stop_r->{$list}{$stopid}{Order}   = $i;
+                $of_stop_r->{$list}{$stopid}{OrderOf} = "$i of $num_stopids";
 
-                push @{ $stops_sorted{$list} }, $compare{$list}{$stopid};
+                push @{ $stops_sorted{$list} }, $of_stop_r->{$list}{$stopid};
             }
 
         }
 
-    } ## tidy end: for my $list (qw(OLD NEW))
+    } ## tidy end: for my $list ( $OLD, $NEW)
 
-} ## tidy end: sub make_bags
+    return \%stops_sorted;
 
-1;
+} ## tidy end: sub _sort_stops
 
-__END__
+sub _bagtexts {
+    my $of_stop_r     = shift;
+    my $effectivedate = shift;
 
-my %output_dispatch = (
-    AL => \&al_output,
-    RL => \&rl_output,
-    CL => \&cl_output,
-    XL => \&xl_output,
-    AS => \&as_output,
-    RS => \&rs_output,
-);
+    my %bagtexts;
 
-my $stopcount = 0;
-my $filecount = 0;
+    for my $list ( $OLD, $NEW ) {
+        for my $stop_r ( @{ $of_stop_r->{$list} } ) {
+            my ( $text, $height ) = _bagtext_of_stop( $stop_r, $effectivedate );
+            my $outlist = $stop_r->{Action} eq 'RS' ? $REMOVED : $list;
 
-my ( %texts_of, %texts_of_action, %paras );
-
-my %seen_length;
-
-my $date = 'December' . IDTags::nbsp() . '15';
-
-foreach my $stopid ( 
-   sort {$compare{$a}{Count} <=> $compare{$b}{Count}} keys %compare 
-   ) {
-
-    my $action = $compare{$stopid}{Action} || die "No action for $stopid";
-
-    my $thistext = '';
-
-    open my $bagtext, '>', \$thistext or die $!;
-
-    $stopcount++;
-    #my $desc   = $stops{$stopid}{DescriptionF}
-    #  || die "No description for $stopid";
-    my $desc  = $compare{$stopid}{Desc};
-    my $group = $compare{$stopid}{Group};
-    my $order = $compare{$stopid}{Order};
-
-    if ( not( $desc and $group and $order ) ) {
-        say '';
-        require Data::Dumper;
-        say Data::Dumper::Dumper( \%compare );
-        #say Data::Dumper::Dumper($compare{$stopid});
-        die "Not complete description for $stopid";
+            my $outheight = sprintf('%2d', _final_height($height));
+            
+            my $filename = "$outheight-$outlist";
+            $text =~ s/__file__/$outheight $outlist/g;
+            push @{ $bagtexts{ $filename } }, $text;
+        }
     }
+    
+    my %counts;
+    foreach (keys %bagtexts) {
+       $counts{$_} = scalar @{$bagtexts{$_}};
+       $bagtexts{$_} = $IDT->start . join( $IDT->boxbreak, @{$bagtexts{$_}});
 
-    print $bagtext para('Teeny');
+    }
+    
+    return \%bagtexts, \%counts;
+}
 
-    print $bagtext "$group ($order)";
-    print $bagtext IDTags::emspace, $desc;
-    print $bagtext IDTags::emspace, "Stop $stopid" ;
-    #print $bagtext IDTags::emspace,  $action;
-    print $bagtext $CR;
+sub _bagtext_of_stop {
+    my %of_stop       = %{ +shift };
+    my $effectivedate = shift;
 
-    my $added     = $compare{$stopid}{Added}     || $EMPTY_STR;
-    my $removed   = $compare{$stopid}{Removed}   || $EMPTY_STR;
-    my $unchanged = $compare{$stopid}{Unchanged} || $EMPTY_STR;
+    my $thistext;
+    open my $fh, '>', \$thistext or die $!;
 
-    my ( @added, @removed, @unchanged );
+    print $fh _para('Teeny'),
+      "$of_stop{Group} ($of_stop{OrderOf})",
+      $IDT->emspace,
+      $of_stop{Desc}, $IDT->emspace, "Stop $of_stop{StopID}",
+      $IDT->emspace() x 8, '__file__',
+      $CR;
 
-    @added     = split( /,/, $added )     if $added;
-    @removed   = split( /,/, $removed )   if $removed;
-    @unchanged = split( /,/, $unchanged ) if $unchanged;
-    my @allnew = ( @added, @unchanged );
+    my %list_of;
 
-    my %added     = prepary(@added);
-    my %removed   = prepary(@removed);
-    my %unchanged = prepary(@unchanged);
-    my %allnew    = prepary(@allnew);
+    $list_of{Added}     = _prepare_lines( $of_stop{Added} );
+    $list_of{Removed}   = _prepare_lines( $of_stop{Removed} );
+    $list_of{Unchanged} = _prepare_lines( $of_stop{Unchanged} );
 
-    next unless ( in($action , qw(AS RS AL RL CL XL) ));
+    my ( $linestext, $height )
+      = $OUTPUT_DISPATCH{ $of_stop{Action} }->( \%list_of, $effectivedate );
 
-    my ( $text, $length )
-      = $output_dispatch{$action}->( \%added, \%removed, \%unchanged, \%allnew );
+    print $fh $linestext;
 
-    print $bagtext $text;
-
-    my $note = $compare{$stopid}{Note};
-
+    my $note = $of_stop{Note};
     if ($note) {
-        print $bagtext para('Note') . $note . $CR;
+        print $fh _para('Note') . $note . $CR;
+        $height += _note_height($note);
     }
 
-    # figure length of note
-    $length += note_length($note);
+    print $fh _para('Questions'),
+      'Want more info? Visit www.actransit.org or call 511 ',
+      '(and say, <0x201C>AC Transit.<0x201D>)';
 
-    print $bagtext para( 'Questions',
-'Want more info? Visit www.actransit.org or call 511 (and say, <0x201C>AC Transit.<0x201D>)'
-    );
+    close $fh;
 
-    close $bagtext;
+    $height += $HEIGHT_OF{margin};
 
-    $length += $height_of{margin};
+    return $thistext, $height;
 
-    my $outaction = $action;
+} ## tidy end: sub _bagtext_of_stop
 
-    #if ( $action eq 'AL' or $action eq 'RL' or $action eq 'CL' or $action eq 'XL' ) {
-    if ( $action ne 'RS' ) {
-        $outaction = 'C';
-    }
+const my $BIGSEP   => $IDT->enspace . $IDT->discretionary_lf;
+const my $SMALLSEP => $IDT->thirdspace
+  . ( $IDT->hairspace() x 2 )
+  . $IDT->discretionary_lf;
 
-    # IGNORE HEIGHTS FOR PRINTING ON BAGS
-    #$length = 36;
+sub _prepare_lines {
 
-    $length = ceil ($length/2) * 2;
+    my $unprepared = shift;
+    return if ( not defined $unprepared or $unprepared eq $EMPTY_STR );
 
-    # round
-
-    $seen_length{"$length-$outaction"}++;
-
-    push @{ $texts_of{$outaction}{$length} }, $thistext;
-
-    push @{ $texts_of_action{$action} }, $thistext;
-
-}    ## <perltidy> end foreach my $file (...)
-
-my $number_in_a_group = 1e6;
-
-while ( my ( $outaction, $lengths_of_r ) = each %texts_of ) {
-
-    while ( my ( $length, $texts_r ) = each %{$lengths_of_r} ) {
-
-        my $texts_count = scalar @$texts_r;
-
-        my $fname = "$outaction-$length";
-
-        if ( $texts_count > $number_in_a_group ) {
-
-            my $suffix = 'a';
-
-            my $it = natatime $number_in_a_group, @$texts_r;
-            while ( my @texts = $it->() ) {
-
-                open my $bagtext, '>', "bagtexts/$fname-$suffix.txt" or die $!;
-                print $bagtext start();
-                #foreach (@texts) {
-                #    print $bagtext $_, IDTags::boxbreak ;
-                #}
-                print $bagtext join( IDTags::boxbreak, @texts );
-                close $bagtext;
-
-                $suffix++;    # alphabetic auto-increment
-
-            }
-
-        } ## tidy end: if ( $texts_count > $number_in_a_group)
-        else {
-
-            open my $bagtext, '>', "bagtexts/$fname.txt" or die $!;
-
-            print $bagtext start();
-            print $bagtext join( IDTags::boxbreak, @{$texts_r} );
-            #foreach ( @{$texts_r} ) {
-            #    print $bagtext $_, IDTags::boxbreak;
-            #}
-
-            close $bagtext;
-        }
-
-    }    ## <perltidy> end while ( my ( $length, $texts_r...))
-
-}    ## <perltidy> end while ( my ( $outaction, $lengths_of_r...))
-
-# end of main
-
-{
-    no warnings 'numeric';
-
-    foreach ( sort { $a <=> $b } keys %seen_length ) {
-        say $_ , ": ", $seen_length{$_};
-    }
-    say '---';
-    foreach ( sort keys %paras ) {
-        say $_ , ": ", $paras{$_};
-    }
-
-}
-
-sub al_output {
-    my %added     = %{ +shift };
-    my %removed   = %{ +shift };
-    my %unchanged = %{ +shift };
-    my %allnew    = %{ +shift };
-
-    my $r
-      = para('FirstLineIntro')
-      . ucfirst( $unchanged{thesestop} )
-      . " here:$CR"
-      . para( 'CurrentLines', $unchanged{lines} )
-      . $CR
-      . para('LineIntro')
-      . "Effective $date, $added{these} will "
-      . IDTags::underline('also')
-      . " stop here:$CR"
-      . para( 'AddedLines', $added{lines} )
-      . $CR;
-
-    my $length = $added{len} + $unchanged{len} + $height_of{AL};
-
-    return $r, $length;
-
-} ## tidy end: sub al_output
-
-sub rl_output {
-    my %added     = %{ +shift };
-    my %removed   = %{ +shift };
-    my %unchanged = %{ +shift };
-    my %allnew    = %{ +shift };
-
-    my $r
-      = para('FirstLineIntro')
-      . ucfirst( $unchanged{thesestop} )
-      . " here:" . $CR
-      . para( 'CurrentLines', $unchanged{lines} ) . $CR
-      . para('LineIntro')
-      . "Effective $date, $removed{these} will "
-      . IDTags::underline('not')
-      . " stop here:$CR"
-      . para( 'RemovedLines', $removed{lines} )
-      . $CR;
-
-    my $length = $removed{len} + $unchanged{len} + $height_of{RL};
-
-    return $r, $length;
-
-} ## tidy end: sub rl_output
-
-sub xl_output {
-    my %added     = %{ +shift };
-    my %removed   = %{ +shift };
-    my %unchanged = %{ +shift };
-    my %allnew    = %{ +shift };
-
-    my $length = $added{len} + $removed{len} + $height_of{XL};
-
-    my $r = para('FirstLineIntroSm');
-        $r .=
-
-          "Effective $date, $added{these} will "
-          . IDTags::underline('begin')
-          . " stopping here:$CR";
-
-
-    $r
-      .= para( 'AddedLines', $added{lines} )
-      . $CR
-      . para('LineIntroSm')
-      . "\u$removed{these} will "
-      . IDTags::underline('not')
-      . " stop here:$CR"
-      . para( 'RemovedLines', $removed{lines} )
-      . $CR;
-
-    return $r, $length;
-
-} ## tidy end: sub cl_output
-
-
-
-sub cl_output {
-    my %added     = %{ +shift };
-    my %removed   = %{ +shift };
-    my %unchanged = %{ +shift };
-    my %allnew    = %{ +shift };
-
-    my $length = $added{len} + $removed{len} + $height_of{CL};
-
-    my $r = para('FirstLineIntro');
-    if ( scalar keys %unchanged ) {
-        $length += $unchanged{len};
-
-        $r
-          .= "\u$unchanged{thesestop} here:"
-          . $CR
-          . para( 'CurrentLines', $unchanged{lines} )
-          . $CR
-          . para('LineIntro')
-          . "Effective $date, $added{these} will "
-          . IDTags::underline('also')
-          . " stop here:$CR"
-
-    }
-    else {
-        $r .=
-
-          "Effective $date, $added{these} will "
-          . IDTags::underline('begin')
-          . " stopping here:$CR"
-
-    }
-
-    $r
-      .= para( 'AddedLines', $added{lines} )
-      . $CR
-      . para('LineIntro')
-      . "\u$removed{these} will "
-      . IDTags::underline('not')
-      . " stop here:$CR"
-      . para( 'RemovedLines', $removed{lines} )
-      . $CR;
-
-    return $r, $length;
-
-} ## tidy end: sub cl_output
-
-sub as_output {
-    my %added     = %{ +shift };
-    my %removed   = %{ +shift };
-    my %unchanged = %{ +shift };
-
-    my $r = para( 'NewBusStop', "NEW " . IDTags::softreturn . "BUS STOP$CR" );
-    $r .= para('FirstLineIntro');
-    $r .= "Effective $date, $added{these} will stop here:$CR";
-    $r .= para( 'AddedLines', $added{lines} ) . $CR;
-    my $length = $added{len} + $height_of{AS};
-    return $r, $length;
-
-}
-
-sub rs_output {
-    my %added     = %{ +shift };
-    my %removed   = %{ +shift };
-    my %unchanged = %{ +shift };
-    my $length    = $removed{len} + $height_of{RS};
-
-    my $r
-      = current(%removed)
-      . para( 'Removed', "Effective $date, this bus stop will be removed." )
-      . $CR;
-
-    return $r, $length;
-
-}
-
-sub para {
-    $paras{ $_[0] }++;
-    return IDTags::parastyle(@_);
-}
-
-sub current {
-    my %current = @_;
-    my $r = para( 'Current', "Current $current{word} at this stop:$CR" );
-    $r .= para( 'CurrentLines', $current{lines} ) . $CR;
-    return $r;
-}
-
-sub allnew {
-    my %allnew = @_;
-    my $r = para( 'Current', ucfirst("$allnew{these} will stop here:$CR") );
-    $r .= para( 'CurrentLines', $allnew{lines} ) . $CR;
-    return $r;
-}
-
-sub prepary {
-
-    return if @_ == 0;
+    my @lines = split( ' ', $unprepared );
+    @lines = grep { $_ ne $EMPTY_STR } @lines;
 
     my %return;
 
-    if ( scalar(@_) == 1 ) {
+    if ( @lines == 1 ) {
         $return{word}      = 'line';
         $return{these}     = 'this line';
         $return{thesestop} = 'this line stops';
@@ -504,33 +273,16 @@ sub prepary {
         $return{thesestop} = 'these lines stop';
     }
 
-    #my $chars = join( $EMPTY_STR, @_ );
-    #my $numbers = ( $chars =~ tr/0-9// );
-    #my $letters = ( $chars =~ tr/A-Z// );
-    #my $charwidth = $numbers + $letters * 1.33 + $#_;
-    #my $textlines = ceil( $charwidth / 10 ) - 1;    # starts with 0
-
-    #my $sum       = 0;
-    #my $textlines = 0;    # one line of numbers is assumed in
-    #                      # $height{AL}, $height{RL}, etc.
-
-    my $bigsep = IDTags::enspace . IDTags::discretionary_lf;
-    #my $smallsep = $bigsep;
-    my $smallsep
-      = IDTags::thirdspace
-      . ( IDTags::hairspace() x 2 )
-      . IDTags::discretionary_lf;
-
     my @textlines;
     my $thisline = $EMPTY_STR;
 
     my $line_width = 11;
 
-    foreach my $i ( 0 .. $#_ - 1 ) {
+    foreach my $i ( 0 .. $#lines - 1 ) {
 
-        my $chars = $_[$i];
+        my $chars = $lines[$i];
 
-        if ( charwidth( $thisline . $chars ) <= $line_width ) {
+        if ( _charwidth( $thisline . $chars ) <= $line_width ) {
             # less than or equal to than line length
             $thisline .= $chars . $SPACE;
         }
@@ -543,9 +295,9 @@ sub prepary {
 
     # last item
 
-    my $chars = $_[-1] || $EMPTY_STR;
+    my $chars = $lines[-1] || $EMPTY_STR;
 
-    if ( charwidth( $thisline . $chars ) <= ($line_width) ) {
+    if ( _charwidth( $thisline . $chars ) <= ($line_width) ) {
         # less than or equal to than line length
         push @textlines, $thisline . $chars;
     }
@@ -553,13 +305,13 @@ sub prepary {
         push @textlines, $thisline, $chars;
     }
 
-    $return{'len'} = (scalar @textlines) * $height_of{numbers};
+    $return{'len'} = ( scalar @textlines ) * $HEIGHT_OF{numbers};
 
-    my $sep = $bigsep;
+    my $sep = $BIGSEP;
 
     foreach (@textlines) {
-        if ( charwidth($_) >= $line_width - 1 ) {
-            $sep = $smallsep;
+        if ( _charwidth($_) >= $line_width - 1 ) {
+            $sep = $SMALLSEP;
             last;
         }
     }
@@ -568,17 +320,220 @@ sub prepary {
     $lines =~ s/$SPACE/$sep/g;
     $return{lines} = $lines;
 
-    $return{simplelines} = joinseries(@_);
+    #$return{simplelines} = joinseries(@lines);
 
-    return (%return);
+    return \%return;
 
-}    ## <perltidy> end sub prepary
+} ## tidy end: sub _prepare_lines
 
-sub start {
-    return "<ASCII-MAC>$CR<Version:6><FeatureSet:InDesign-Roman>";
+sub _para {
+    state %paras;
+    if ( defined $_[0] ) {
+        my $para = shift;
+        $paras{ $para }++;
+        return $IDT->parastyle($para) . join($EMPTY_STR, @_);
+    }
+
+    return \%paras;
+
 }
 
-sub charwidth {
+const my $HEIGHT_INTERVAL => 2;
+
+sub _final_height {
+    state %heights;
+    my $height = shift;
+
+    if ($height) {
+        my $rounded = ceil( $height / $HEIGHT_INTERVAL ) * $HEIGHT_INTERVAL;
+        $heights{$height}{count}++;
+        $heights{$height}{rounded} = $rounded;
+        return $rounded;
+    }
+
+    return \%heights;
+}
+
+sub _output_dispatch {
+
+    my $al_output = sub {
+        my $list_of_r = shift;
+        my %added     = %{ $list_of_r->{Added} };
+        my %unchanged = %{ $list_of_r->{Unchanged} };
+        my $date      = shift;
+
+        my $r
+          = _para('FirstLineIntro')
+          . ucfirst( $unchanged{thesestop} )
+          . " here:$CR"
+          . _para( 'CurrentLines', $unchanged{lines} )
+          . $CR
+          . _para('LineIntro')
+          . "Effective $date, $added{these} will "
+          . $IDT->underline_word('also')
+          . " stop here:$CR"
+          . _para( 'AddedLines', $added{lines} )
+          . $CR;
+
+        my $length = $added{len} + $unchanged{len} + $HEIGHT_OF{AL};
+
+        return $r, $length;
+
+    };    ## tidy end: sub al_output
+
+    my $rl_output = sub {
+        my $list_of_r = shift;
+        my %removed   = %{ $list_of_r->{Removed} };
+        my %unchanged = %{ $list_of_r->{Unchanged} };
+        my $date      = shift;
+
+        my $r
+          = _para('FirstLineIntro')
+          . ucfirst( $unchanged{thesestop} )
+          . " here:"
+          . $CR
+          . _para( 'CurrentLines', $unchanged{lines} )
+          . $CR
+          . _para('LineIntro')
+          . "Effective $date, $removed{these} will "
+          . $IDT->underline_word('not')
+          . " stop here:$CR"
+          . _para( 'RemovedLines', $removed{lines} )
+          . $CR;
+
+        my $length = $removed{len} + $unchanged{len} + $HEIGHT_OF{RL};
+
+        return $r, $length;
+
+    };    ## tidy end: sub rl_output
+
+    my $xl_output = sub {
+        my $list_of_r = shift;
+        my %added     = %{ $list_of_r->{Added} };
+        my %removed   = %{ $list_of_r->{Removed} };
+        my $date      = shift;
+
+        my $length = $added{len} + $removed{len} + $HEIGHT_OF{XL};
+
+        my $r = _para('FirstLineIntroSm');
+        $r .=
+
+          "Effective $date, $added{these} will "
+          . $IDT->underline_word('begin')
+          . " stopping here:$CR";
+
+        $r
+          .= _para( 'AddedLines', $added{lines} )
+          . $CR
+          . _para('LineIntroSm')
+          . "\u$removed{these} will "
+          . $IDT->underline_word('not')
+          . " stop here:$CR"
+          . _para( 'RemovedLines', $removed{lines} )
+          . $CR;
+
+        return $r, $length;
+
+    };    ## tidy end: sub xl_output
+
+    my $cl_output = sub {
+        my $list_of_r = shift;
+        my %added     = %{ $list_of_r->{Added} };
+        my %removed   = %{ $list_of_r->{Removed} };
+        my %unchanged = %{ $list_of_r->{Unchanged} };
+        my $date      = shift;
+
+        my $length = $added{len} + $removed{len} + $HEIGHT_OF{CL};
+
+        my $r = _para('FirstLineIntro');
+        if ( scalar keys %unchanged ) {
+            $length += $unchanged{len};
+
+            $r
+              .= "\u$unchanged{thesestop} here:"
+              . $CR
+              . _para( 'CurrentLines', $unchanged{lines} )
+              . $CR
+              . _para('LineIntro')
+              . "Effective $date, $added{these} will "
+              . $IDT->underline_word('also')
+              . " stop here:$CR"
+
+        }
+        else {
+            $r .=
+
+              "Effective $date, $added{these} will "
+              . $IDT->underline_word('begin')
+              . " stopping here:$CR"
+
+        }
+
+        $r
+          .= _para( 'AddedLines', $added{lines} )
+          . $CR
+          . _para('LineIntro')
+          . "\u$removed{these} will "
+          . $IDT->underline_word('not')
+          . " stop here:$CR"
+          . _para( 'RemovedLines', $removed{lines} )
+          . $CR;
+
+        return $r, $length;
+
+    };    ## tidy end: sub cl_output
+
+    my $as_output = sub {
+        my $list_of_r = shift;
+        my %added     = %{ $list_of_r->{Added} };
+        my $date      = shift;
+
+        my $r
+          = _para( 'NewBusStop', "NEW " . $IDT->softreturn . "BUS STOP$CR" );
+        $r .= _para('FirstLineIntro');
+        $r .= "Effective $date, $added{these} will stop here:$CR";
+        $r .= _para( 'AddedLines', $added{lines} ) . $CR;
+        my $length = $added{len} + $HEIGHT_OF{AS};
+        return $r, $length;
+
+    };
+
+    my $rs_output = sub {
+        my $list_of_r = shift;
+        my %removed   = %{ $list_of_r->{Removed} };
+        my $date      = shift;
+
+        my $length = $removed{len} + $HEIGHT_OF{RS};
+
+        my $r
+          = _current(%removed)
+          . _para( 'Removed',
+            "Effective $date, this bus stop will be removed." )
+          . $CR;
+
+        return $r, $length;
+
+    };
+
+    return (
+        AL => $al_output,
+        RL => $rl_output,
+        CL => $cl_output,
+        XL => $xl_output,
+        AS => $as_output,
+        RS => $rs_output,
+    );
+
+} ## tidy end: sub _output_dispatch
+
+sub _current {
+    my %current = @_;
+    my $r = _para( 'Current', "Current $current{word} at this stop:$CR" );
+    $r .= _para( 'CurrentLines', $current{lines} ) . $CR;
+    return $r;
+}
+
+sub _charwidth {
     my $chars = shift;
     return 0 unless $chars;
 
@@ -590,11 +545,15 @@ sub charwidth {
 
 }
 
-sub note_length {
+sub _note_height {
     my $note = shift;
     return 0 unless $note;
-    my $width = charwidth($note);
+    my $width = _charwidth($note);
     return 1.2 * ceil( $width / 34 );
-    # 1.2 is approx height of note line. 32 is approximate characters per line. 
+    # 1.2 is approx height of note line. 32 is approximate characters per line.
     # Just guesses...
 }
+
+1;
+
+__END__
