@@ -51,6 +51,7 @@ my %module_of = (
     slists2html     => 'Slists2HTML',
     theaimport      => 'TheaImport',
     makestoplists   => 'MakeStopLists',
+    makebags        => 'MakeBags',
     time            => 'Time',
     sqlite2tab      => 'SQLite2tab',
     flagspecs       => 'Flagspecs',
@@ -71,7 +72,7 @@ my %module_of = (
     xml2thea        => 'Xml2Thea',
     xheaimport      => 'XheaImport',
     xhea2hasi       => 'Xhea2Hasi',
-                                            # more to come
+    # more to come
 );
 
 # a reference is an alias, so tabulae => \'tabula' means if you type
