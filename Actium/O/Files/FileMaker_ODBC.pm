@@ -123,12 +123,12 @@ sub _load_column_cache {
 
     my $dbh = $self->dbh;
 
-    my $query   = "SELECT FieldName from $META_FIELDS WHERE TableName = $table";
+    my $query   = "SELECT FieldName from $META_FIELDS WHERE TableName = '$table'";
     my $ary_ref = $dbh->selectall_arrayref($query);
     my @columns = flatten $ary_ref;
 
     my %is_a_column = map { $_, 1 } @columns;
-    $self->_set_column_cache_of_table->( $table, \%is_a_column );
+    $self->_set_column_cache_of_table( $table, \%is_a_column );
 
     return;
 
@@ -238,7 +238,7 @@ sub each_columns_in_row_where {
 
     my $columns_list;
     if (@columns) {
-        _check_columns(@columns);
+        $self->_check_columns($table, @columns);
         $columns_list = join( " , ", @columns );
 
     }
@@ -246,7 +246,7 @@ sub each_columns_in_row_where {
         $columns_list = ' * ';
     }
 
-    $self->ensure_loaded($table);
+    $self->_ensure_loaded($table);
     my $dbh   = $self->dbh();
     my $query = "SELECT $columns_list FROM $table $where";
 
