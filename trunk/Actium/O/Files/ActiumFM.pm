@@ -15,6 +15,7 @@ use Params::Validate(':all');
 
 const my $KEYFIELD_TABLE        => 'FMTableKeys';
 const my $KEY_OF_KEYFIELD_TABLE => 'FMTableKey';
+const my $TABLE_OF_KEYFIELD_TABLE => 'FMTable';
 
 has 'db_name' => (
     is  => 'ro',
@@ -47,9 +48,14 @@ sub _build_keys_of {
 
     my $dbh = $self->dbh;
 
-    my $query = "SELECT $KEY_OF_KEYFIELD_TABLE FROM $KEYFIELD_TABLE";
-    my $key_of_r = $dbh->selectall_hashref( $query, $KEY_OF_KEYFIELD_TABLE );
-    return $key_of_r;
+    my $query =
+      "SELECT $TABLE_OF_KEYFIELD_TABLE, $KEY_OF_KEYFIELD_TABLE FROM $KEYFIELD_TABLE"
+      ;
+    my $rows_r = $dbh->selectall_arrayref( $query );
+    my %keys_of = flatten ($rows_r);
+
+    return \%keys_of;
+    # copy of returned hashref
 
 }
 
