@@ -11,14 +11,11 @@ package Actium::Text::InDesignTags 0.005;
 use warnings;
 use 5.016;
 
-use Sub::Exporter -setup => { exports => [ qw(itag) ] };
-
 # Simple tags
 
 use Carp;
 
 use constant {
-    itag             => __PACKAGE__ ,
     start            => "<ASCII-MAC>\r<Version:6><FeatureSet:InDesign-Roman>",
     punctuationspace => '<0x2008>',
     thinspace        => '<0x2009>',
@@ -77,6 +74,18 @@ sub charstyle {
 
 sub dropcapchars {
     return _parameter( @_, 'pdcc' );
+}
+
+sub underline_word {
+    my $invocant = shift;
+    my $word = shift;
+    return char_underline . $word . nocharstyle;
+}
+
+sub bold_word {
+    my $invocant = shift;
+    my $word = shift;
+    return char_bold . $word . nocharstyle;
 }
 
 sub combi_side {
@@ -152,3 +161,8 @@ sub encode_high_chars {
 } ## tidy end: sub encode_high_chars
 
 1;
+
+__END__
+
+Note that underline_word and bold_word will return to null the character
+style -- it doesn't just override current word with underlining or bold 
