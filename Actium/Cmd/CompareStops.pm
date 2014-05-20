@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Cmd::CompareStops 0.001;
+package Actium::Cmd::CompareStops 0.005;
 
 use Carp;
 use English ('-no_match_vars');
@@ -30,7 +30,7 @@ use Const::Fast;
 
 const my $DEFAULT_SKIPLINES => '399,51S,BSH,BSD,BSN';
 
-add_option( 'oldsignup', 'Previous signup to compare this signup to' );
+add_option( 'oldsignup=s', 'Previous signup to compare this signup to' );
 
 const my $SKIPLINES_DESC => <<"EOT";
 Lines to skip during comparison. Separate lines with commas but without
