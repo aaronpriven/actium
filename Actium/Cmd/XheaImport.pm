@@ -32,6 +32,7 @@ sub START {
       = Actium::Files::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
         $adjusted_values_of_r );
 
+    if (exists ($fieldnames_of_r->{$STOPS})) {
     my ( $new_s_heads_r, $new_s_records_r )
       = Actium::Import::CalculateFields::hastus_stops_import(
         $fieldnames_of_r->{$STOPS},
@@ -39,6 +40,10 @@ sub START {
 
     $tab_strings_r->{$STOPS_PC}
       = Actium::Util::aoa2tsv( $new_s_records_r, $new_s_heads_r );
+      
+    }
+      
+    if (exists ($fieldnames_of_r->{$PLACES})) {
 
     my ( $new_p_heads_r, $new_p_records_r )
       = Actium::Import::CalculateFields::hastus_places_import(
@@ -47,6 +52,7 @@ sub START {
 
     $tab_strings_r->{$PLACES_PC}
       = Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
+    }
 
     my $tab_folder = $xhea_folder->subfolder('tab');
 
