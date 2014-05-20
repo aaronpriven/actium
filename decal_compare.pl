@@ -25,9 +25,10 @@ open my $in, '<', $firstfile;
 
 while ( my $line = <$in> ) {
 	chomp $line;
-	my ( $id, $olddesc, $decals ) = split( /\t/, $line, 3 );
+	#my ( $id, $olddesc, $decals ) = split( /\t/, $line, 3 );
+	my ( $id, $decals ) = split( /\t/, $line, 2 );
 	$decals_of{$id}  = $decals;
-	$olddesc_of{$id} = $olddesc;
+	#$olddesc_of{$id} = $olddesc;
 }
 
 close $in;
@@ -39,11 +40,11 @@ my %results_of;
 while ( my $line = <$comparefh> ) {
 	chomp $line;
 
-	my ( $id, $description, $new_decals_text ) = split( /\t/, $line, 3 );
+	#my ( $id, $description, $new_decals_text ) = split( /\t/, $line, 3 );
+	my ( $id, $new_decals_text ) = split( /\t/, $line, 2 );
 
 	if ( not exists $decals_of{$id} ) {
 		$results_of{$id} = {
-			description      => $description,
 			change           => 'AS',
 			new_line         => [ sortbyline( split /\t/, $new_decals_text ) ],
 			old_line         => [],
@@ -60,7 +61,6 @@ while ( my $line = <$comparefh> ) {
 	my ( $new_lines, $old_lines, $unchanged_lines )
 	  = add_drop_unchanged( [ keys %old_decals_of_line ], [ keys %new_decals_of_line ] );
 
-	$results_of{$id}{description} = $description;
 	$results_of{$id}{new_line}
 	  = [ sortbyline( map { @{ $new_decals_of_line{$_} } } @{$new_lines} ) ];
 	$results_of{$id}{old_line}
@@ -100,7 +100,7 @@ foreach my $id ( keys %decals_of ) {
 }
 
 say
-"StopID\tChange\tDescription\tOld Line\tNew Line\tOld Decal\tNew Decal\tUnchanged";
+"StopID\tChange\tOld Line\tNew Line\tOld Decal\tNew Decal\tUnchanged";
 
 $| = 1;
 
@@ -131,7 +131,7 @@ foreach my $id ( sort keys %results_of ) {
 		$change = $change_of_changecode{$changecode};
 	}
 
-	#next if $change eq 'U';
+	next if $change eq 'U';
 
 	#   my $count;
 	#   foreach my $group (qw(old_line new_line old_decals new_decals)) {
@@ -139,7 +139,8 @@ foreach my $id ( sort keys %results_of ) {
 	#   }
 	#   next unless $count;
 
-	print "$id\t$change\t", $r->{description};
+	print "$id\t$change";
+	#print "$id\t$change\t", $r->{description};
 	#   say Data::Dumper::Dumper($r);
 
 	for (qw(old_line new_line old_decals new_decals unchanged_decals)) {
