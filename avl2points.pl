@@ -26,15 +26,24 @@ use Actium::Time (qw(timenum ));
     
 use Actium::Sorting::Line('sortbyline');
     
-use Actium::Util(qw<jk>);
+use Actium::Util(qw<jk keyreadable>);
 
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use List::MoreUtils (qw<any all>);
 
-use Readonly;
+use Const::Fast;
 
-Readonly my @COMBOS_TO_PROCESS => (
+{
+    no warnings('once');
+    ## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
+    if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
+        @ARGV = Actium::Eclipse::get_command_line();
+        ## use critic
+    }
+}
+
+const my @COMBOS_TO_PROCESS => (
     [qw( 1 234 1234 )], [qw( 1234 5 12345 )],
     [qw( 234 5 2345 )], [qw( 6 7 67 )],
     [qw( 12345 67 1234567 )],
@@ -95,21 +104,21 @@ my %combo_of = ( '-', '--' );
 my %is_combo;
 $is_combo{$_}++ foreach values %combo_of;
 
-foreach my $stop ( keys %stopinfo ) {
+foreach my $stop ( sort keys %stopinfo ) {
 
-    foreach my $combolg ( keys %{ $stopinfo{$stop} } ) {
+    foreach my $combolg ( sort keys %{ $stopinfo{$stop} } ) {
 
         if ( $is_combo{$combolg} ) {
-            foreach my $singlelg ( keys %{ $stopinfo{$stop} } ) {
+            foreach my $singlelg ( sort keys %{ $stopinfo{$stop} } ) {
                 if (    $combo_of{$singlelg}
                     and $combo_of{$singlelg} eq $combolg )
                 {
 
                     foreach
-                      my $dir_code ( keys %{ $stopinfo{$stop}{$combolg} } )
+                      my $dir_code ( sort keys %{ $stopinfo{$stop}{$combolg} } )
                     {
                         foreach my $days (
-                            keys %{ $stopinfo{$stop}{$combolg}{$dir_code} } )
+                            sort keys %{ $stopinfo{$stop}{$combolg}{$dir_code} } )
                         {
                             foreach my $time_r (
                                 @{  $stopinfo{$stop}{$combolg}{$dir_code}{$days}
@@ -156,19 +165,19 @@ my @routenotes = ();
 my %is_a_routenote;
 $is_a_routenote{$_} = 1 foreach @routenotes;
 
-foreach my $stop ( keys %stopinfo ) {
+foreach my $stop ( sort keys %stopinfo ) {
 
-    foreach my $linegroup ( keys %{ $stopinfo{$stop} } ) {
+    foreach my $linegroup ( sort keys %{ $stopinfo{$stop} } ) {
 
         my ( %has_last_stop, %has_non_last_stop );
 
         # processing times within each day
-        foreach my $dir_code ( keys %{ $stopinfo{$stop}{$linegroup} } ) {
+        foreach my $dir_code ( sort keys %{ $stopinfo{$stop}{$linegroup} } ) {
 
             my %concatenated;
 
             foreach
-              my $days ( keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
+              my $days ( sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
             {
 
                 my @times_hr
@@ -220,7 +229,7 @@ foreach my $stop ( keys %stopinfo ) {
 
           DAYS_NOTESLOOP:
             foreach
-              my $days ( keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
+              my $days ( sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
             {
 
                 # loop - deal with final stops. Add notes
@@ -351,10 +360,10 @@ foreach my $stop ( keys %stopinfo ) {
      # if there are both last-stop and non-last-stop columns for this linegroup,
      # delete the last-stop columns
 
-            foreach my $dir_code ( keys %{ $stopinfo{$stop}{$linegroup} } ) {
+            foreach my $dir_code ( sort keys %{ $stopinfo{$stop}{$linegroup} } ) {
 
                 foreach
-                  my $days ( keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
+                  my $days ( sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
                 {
 
                     if (    $note_of{"$stop:$linegroup:$dir_code:$days"}
@@ -381,7 +390,7 @@ my $kpointdir = $signup->subfolder('kpoints');
 
 my $count = 0;
 
-foreach my $stop ( keys %stopinfo ) {
+foreach my $stop ( sort keys %stopinfo ) {
 
     $count++;
     print '.' unless $count % 100;
@@ -447,7 +456,9 @@ sub makestoptimes {
     my %stopinfo;
 
   TRIP:
-    while ( my ( $trip_number, $trip_of_r ) = each %{ $avldata{TRP} } ) {
+#    while ( my ( $trip_number, $trip_of_r ) = each %{ $avldata{TRP} } ) {
+        foreach my $trip_number (sort keys %{$avldata{TRP}} ) {
+            my $trip_of_r = $avldata{TRP}{$trip_number};
         my %tripinfo_of = %{$trip_of_r};
         next TRIP unless $tripinfo_of{IsPublic};
 
@@ -523,7 +534,7 @@ sub makestoptimes {
         # END OF 800/801 day-changing code
 
         my $dir_code = $avldata{PAT}{$patkey}{DirectionValue};
-
+        
         my @tps = @{ $avldata{PAT}{$patkey}{TPS} };
 
         #my $final_tps   = $tps[-1];
