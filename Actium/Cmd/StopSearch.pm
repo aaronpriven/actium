@@ -13,13 +13,9 @@ use Actium::Cmd::Config::ActiumFM;
 use Actium::Options(qw/set_option option/);
 use Actium::Term;
 
-use Actium::Files::FM_StopCache (qw(get_stops search));
-
 sub HELP {
     say "Help not implemented.";
 }
-
-const my $CACHEFILENAME => 'actium-ss.cache';
 
 sub START {
 
@@ -28,22 +24,16 @@ sub START {
     my $config_obj = $params{config};
     
     my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb($config_obj);
-    # that just sets up the object - does not connect to database until necessary
 
     set_option( 'quiet', 1 );
     Actium::Term::_option_quiet(1);
     # sigh - need to rewrite Actium::Term
 
-    my $folder   = Actium::O::Folder->new('/tmp');
-    my $tempfile = $folder->make_filespec($CACHEFILENAME);
-    
-    my ( $of_511_id, $of_hastus_id ) = _get_stops($actium_db, $folder, $tempfile);
-
     my @args = @{ $params{argv} };
 
     if (@args) {
         foreach (@args) {
-            my @rows = _search($_, $of_511_id, $of_hastus_id);
+            my @rows = $actium_db->search_ss($_);
             _display(@rows);
         }
 
@@ -61,7 +51,7 @@ sub START {
         my $prompt = "st.pl >";
         while ( defined( $_ = $term->readline($prompt) ) ) {
             last if ( not $_ );
-            my @rows = _search($_, $of_511_id, $of_hastus_id);
+            my @rows = $actium_db->search_ss($_);
             _display(@rows);
             say '';
         }
@@ -97,6 +87,4 @@ sub _display {
 1;
 
 __END__
-
-
 
