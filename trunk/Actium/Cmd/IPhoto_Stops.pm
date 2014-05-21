@@ -1,28 +1,25 @@
-#!/usr/bin/perl
+# /Actium/Cmd/IPhoto_Stops.pm
+#
+# Command-line program to modify iPhoto stop information
 
-use 5.010;
+# Subversion: $Id$
 
-use strict;
+package Actium::Cmd::IPhoto_Stops 0.005;
+
+use 5.016;
+
 use warnings;
+
+# add the current program directory to list of files to include
+
+use Actium::Preamble;
+use Actium::Cmd::Config::ActiumFM;
 
 use Math::Trig qw(deg2rad pi great_circle_distance asin acos);
 use Scalar::Util 'looks_like_number';
 
-my $simplefile = '/volumes/bireme/actium/db/current/SimpleStops.tab';
+use constant { RADIUS => 3956.6 * 5280 };    # feet
 
-open my $simplefh, '<', $simplefile
-  or die "Can't open $simplefile";
-
-$/ = "\r";    # FileMaker exports CRs
-
-use constant {
-    S_PHONEID => 0,
-    S_STOPID  => 1,
-    S_DESC    => 2,
-    S_LAT     => 3,
-    S_LONG    => 4,
-    S_ACTIVE => 5,
-};
 use constant {
     IP_ID            => 0,
     IP_NAME          => 1,
@@ -33,28 +30,20 @@ use constant {
     IP_LONG          => 6
 };
 
-use constant { RADIUS => 3956.6 * 5280 };    # feet
+my @dropped_info;
 
-my ( %of_phoneid, %of_stopid );
-
-while (<$simplefh>) {
-
-    chomp;
-    next unless $_;
-    my @stop_fields = split(/\t/);
-    foreach (@stop_fields) {
-        s/\A\s+//;
-        s/\s+\z//;
-    }
-    my $stopid  = $stop_fields[S_STOPID];
-    my $phoneid = $stop_fields[S_PHONEID];
-    $of_phoneid{$phoneid} = \@stop_fields;
-    $of_stopid{$stopid}   = \@stop_fields;
+sub HELP {
+    say "Help not implemented.";
 }
 
-close $simplefh or die "Can't close $simplefile";
+sub START {
+    my $class      = shift;
+    my %params     = @_;
+    my $config_obj = $params{config};
 
-my $get_selected_script = <<'ENDSCRIPT';
+    my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb($config_obj);
+
+    my $get_selected_script = <<'ENDSCRIPT';
 
 -- je parle Applescript aussi
 
@@ -106,65 +95,84 @@ get photoInfo as text
 
 ENDSCRIPT
 
-use IPC::Open2;
+    use IPC::Open2;
 
-my $pid = open2( my $readscriptfh, my $writescriptfh, 'osascript -' );
+    my $pid = open2( my $readscriptfh, my $writescriptfh, 'osascript -' );
 
-print $writescriptfh $get_selected_script;
-close $writescriptfh;
+    print $writescriptfh $get_selected_script;
+    close $writescriptfh;
 
-local $/ = "\x1e";
+    local $/ = "\x1e";
 
-my @photos_to_process;
+    my @photos_to_process;
 
-my @dropped_info;
+  PHOTO:
+    while (<$readscriptfh>) {
+        chomp;
+        s/\s+\z//g;
+        next unless $_;
 
-PHOTO:
-while (<$readscriptfh>) {
-    chomp;
-    s/\s+\z//g;
-    next unless $_;
+        my @iphoto_fields = split("\x1f");
 
-    my @iphoto_fields = split("\x1f");
+        # say join("\t" , @iphoto_fields);
 
-    # say join("\t" , @iphoto_fields);
-
-    foreach (@iphoto_fields) {
-        s/\A\s+//;
-        s/\s+\z//;
-        $_ = '' if $_ and $_ eq 'missing value';
-    }
-
-    my ( $iphoto_id, $name, $comment, $filename, $thumbfilename, $lat, $long )
-      = @iphoto_fields;
-
-    next PHOTO if $name =~ /\*\z/;
-
-    my $possible_id;
-
-  FIELD:
-    foreach ( $name, $comment, $filename, $thumbfilename ) {
-        if (/\A(^\d{5,8})/) {
-            $possible_id = $1;
-            last FIELD;
-        }
-    }
-
-    next PHOTO unless ( $lat and $long ) or ($possible_id);
-
-    if ($possible_id) {
-
-        my $length = length($possible_id);
-        my $stop_data;
-        if ( $length == 5 ) {
-            $stop_data = $of_phoneid{$possible_id};
-        }
-        else {
-            $possible_id = "0$possible_id" if $length == 6;
-            $stop_data = $of_stopid{$possible_id};
+        foreach (@iphoto_fields) {
+            s/\A\s+//;
+            s/\s+\z//;
+            $_ = '' if $_ and $_ eq 'missing value';
         }
 
-        if ($stop_data) { # yay, it found it
+        my ( $iphoto_id, $name, $comment, $filename, $thumbfilename, $lat,
+            $long )
+          = @iphoto_fields;
+
+        next PHOTO if $name =~ /\*\z/;
+
+        my $possible_id;
+
+      FIELD:
+        foreach ( $name, $comment, $filename, $thumbfilename ) {
+            if (/\A(^\d{5,8})/) {
+                $possible_id = $1;
+                last FIELD;
+            }
+        }
+
+        next PHOTO unless ( $lat and $long ) or ($possible_id);
+
+        if ($possible_id) {
+            if ( length($possible_id) == 6 ) {
+                $possible_id = "0$possible_id";
+            }
+
+            my $stop_data = $actium_db->ss($possible_id);
+
+            if ($stop_data) {    # yay, it found it
+
+                my $newname = newname( $stop_data, $name );
+
+                push @photos_to_process,
+                  { id   => $iphoto_id,
+                    name => $newname,
+                    comment =>
+                      newcomment( \@iphoto_fields, $possible_id, $newname ),
+                    latitude  => $stop_data->{h_loca_latitude},
+                    longitude => $stop_data->{h_loca_longitude},
+                  };
+
+                next PHOTO;
+
+            }
+
+        } ## tidy end: if ($possible_id)
+
+        # if no possible id, then check lat and long. This allows people to
+        # override computerized id
+
+        if ( $lat and $long ) {
+
+            my $stop_data = get_nearest_stop( $actium_db, $lat, $long );
+            next unless $stop_data;
 
             my $newname = newname( $stop_data, $name );
 
@@ -173,82 +181,58 @@ while (<$readscriptfh>) {
                 name => $newname,
                 comment =>
                   newcomment( \@iphoto_fields, $possible_id, $newname ),
-                latitude  => $stop_data->[S_LAT],
-                longitude => $stop_data->[S_LONG]
               };
-
-            next PHOTO;
 
         }
 
-    } ## tidy end: if ($possible_id)
-    
-    # if no possible id, then check lat and long. This allows people to
-    # override computerized id
+    } ## tidy end: PHOTO: while (<$readscriptfh>)
 
-    if ( $lat and $long ) {
+    close $readscriptfh;
 
-        my $stop_data = get_nearest_stop( $lat, $long );
-        next unless $stop_data;
+    waitpid( $pid, 0 );
 
-        my $newname = newname( $stop_data, $name );
+    my @photo_commands;
 
-        push @photos_to_process,
-          { id      => $iphoto_id,
-            name    => $newname,
-            comment => newcomment( \@iphoto_fields, $possible_id, $newname ),
-          };
+    foreach my $photo_r (@photos_to_process) {
+
+        my %property = %{$photo_r};
+        my $id       = $property{id};
+        delete $property{id};
+        my @these_commands;
+      PROPERTY:
+        foreach ( keys %property ) {
+            my $value = $property{$_};
+            next PROPERTY unless defined $value;
+            $value = escape_applescript_values($value);
+            push @these_commands, qq{      set $_ to $value\n};
+        }
+
+        push @photo_commands, "   tell photo id $id\n", @these_commands,
+          "   end tell\n"
+          if @these_commands;
 
     }
 
-} ## tidy end: PHOTO: while (<$readscriptfh>)
+    if (@photo_commands) {
+        my $all_commands = join( '',
+            qq{tell application "iPhoto"\n},
+            @photo_commands, 'end tell' );
 
-close $readscriptfh;
+        open my $changescript, "| osascript"
+          or die "Can't open script for writing";
+        say $changescript $all_commands;
+        close $changescript;
 
-waitpid( $pid, 0 );
+        say $all_commands;
 
-#use Data::Dumper;
-#say Dumper (@photos_to_process);
+        say "\nDropped info:\n", join( "\n", @dropped_info );
 
-my @photo_commands;
-
-foreach my $photo_r (@photos_to_process) {
-
-    my %property = %{$photo_r};
-    my $id       = $property{id};
-    delete $property{id};
-    my @these_commands;
-  PROPERTY:
-    foreach ( keys %property ) {
-        my $value = $property{$_};
-        next PROPERTY unless defined $value;
-        $value = escape_applescript_values($value);
-        push @these_commands, qq{      set $_ to $value\n};
+    }
+    else {
+        say "No commands issued.";
     }
 
-    push @photo_commands, "   tell photo id $id\n", @these_commands,
-      "   end tell\n"
-      if @these_commands;
-
-}
-
-if (@photo_commands) {
-    my $all_commands
-      = join( '', qq{tell application "iPhoto"\n}, @photo_commands,
-        'end tell' );
-
-    open my $changescript, "| osascript" or die "Can't open script for writing";
-    say $changescript $all_commands;
-    close $changescript;
-
-    say $all_commands;
-
-    say "\nDropped info:\n", join( "\n", @dropped_info );
-
-}
-else {
-    say "No commands issued.";
-}
+} ## tidy end: sub START
 
 #### END OF MAIN
 
@@ -256,7 +240,8 @@ sub newname {
 
     my $stop_data = shift;
     my $oldname   = shift;
-    my $newname   = $stop_data->[S_PHONEID] . " " . $stop_data->[S_DESC];
+    my $newname
+      = $stop_data->{h_stp_511_id} . " " . $stop_data->{c_description_full};
 
     return undef if $oldname eq $newname;
     return $newname;
@@ -275,7 +260,7 @@ sub newcomment {
     $filename =~ s/\..*//;
     my $nametocompare = $name;
 
-    $filename      =~ s/[\W_]]//g;
+    $filename =~ s/[\W_]]//g;
     $nametocompare =~ s/[\W_]]//g;
 
     if ( lc($filename) eq lc($nametocompare) ) {
@@ -315,15 +300,18 @@ sub drop {
 
 sub get_nearest_stop {
 
+    my $actium_db = shift;
+    my $cache_r   = $actium_db->_ss_cache_r;
+
     my ( $thislat, $thislong ) = @_;
 
     my $nearest_dist = 1500;
     my $nearest;
 
-    foreach my $stop_data ( values %of_phoneid ) {
+    foreach my $stop_data ( values %{$cache_r} ) {
 
-        my $stoplat  = $stop_data->[S_LAT];
-        my $stoplong = $stop_data->[S_LONG];
+        my $stoplat  = $stop_data->{h_loca_latitude};
+        my $stoplong = $stop_data->{h_loca_longitude};
 
         my $dist = distance( $thislat, $thislong, $stoplat, $stoplong );
 
@@ -380,3 +368,7 @@ sub escape_applescript_values {
     return wantarray ? @values : $values[0];
 
 } ## tidy end: sub escape_applescript_values
+
+1;
+
+__END__
