@@ -54,6 +54,7 @@ my %module_of = (
     makebags        => 'MakeBags',
     time            => 'Time',
     ss              => 'StopSearch',
+    stopsearch      => \'ss',
     sqlite2tab      => 'SQLite2tab',
     flagspecs       => 'Flagspecs',
     timetables      => 'Timetables',
