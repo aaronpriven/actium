@@ -26,14 +26,14 @@ sub START {
     my $config_obj = $params{config};
     
     my $oldsignup_option = option('oldsignup');
-    die "No signup option specified" unless $oldsignup_option;
+    die "No oldsignup option specified" unless $oldsignup_option;
 
     my $signup = Actium::O::Folders::Signup->new();
     my $oldsignup
       = Actium::O::Folders::Signup->new( { signup => option('oldsignup') } );
     my $actium_db = actiumdb($config_obj);
 
-    my ($bagtexts_r , $counts_r, $final_heights_r) = Actium::Bags::make_bags(
+    my ($bagtexts_r , $baglist_r, $counts_r, $final_heights_r) = Actium::Bags::make_bags(
         signup    => $signup,
         oldsignup => $oldsignup,
         actium_db => $actium_db
@@ -43,6 +43,9 @@ sub START {
 
     $bagtextdir->write_files_from_hash( $bagtexts_r, 'service change bag',
         'txt' );
+        
+    my $baglist = Actium::Util::aoa2tsv($baglist_r);
+    $bagtextdir->slurp_write($baglist, 'baglist.txt');
         
     my @counts_rs;
     foreach (sort keys %{$counts_r} ) {

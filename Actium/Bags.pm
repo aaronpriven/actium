@@ -71,21 +71,54 @@ sub make_bags {
       = Actium::EffectiveDate::effectivedate( $signup_of_r->{$NEW} );
     $effectivedate =~ s/,? \s* \d{2,4} \s* \z//sx;
     # trim year and trailing white space
-    my $nbsp = $IDT->nbsp; # non breaking space
+    my $nbsp = $IDT->nbsp;    # non breaking space
     $effectivedate =~ s/ +/$nbsp/g;
 
     my $of_stop_r = _make_stop_info($actium_db);
 
     $of_stop_r = _sort_stops( $of_stop_r, $signup_of_r );
 
-    my ($bagtexts_r , $counts_r) = _bagtexts( $of_stop_r, $effectivedate );
-    
-    my $para_r = _para();
+    my $baglist_r = _make_baglist($of_stop_r);
+
+    my ( $bagtexts_r, $counts_r ) = _bagtexts( $of_stop_r, $effectivedate );
+
+    my $para_r         = _para();
     my $final_height_r = _final_height();
 
-    return $bagtexts_r, $counts_r, $final_height_r; 
+    return $bagtexts_r, $baglist_r, $counts_r, $final_height_r;
 
 } ## tidy end: sub make_bags
+
+sub _make_baglist {
+
+    my $of_stop_r = shift;
+    my @baglist;
+
+    for my $list ( $OLD, $NEW ) {
+
+        my @thislist;
+
+        for my $stop_r ( @{ $of_stop_r->{$list} } ) {
+
+            my $outlist = $list eq $OLD ? $EMPTY_STR : "-add";
+
+            push @thislist,
+              [ $stop_r->{StopID}, $stop_r->{Group} . $outlist,
+                @{$stop_r}{qw/Order Of Desc/}
+              ];
+
+        }
+
+        push @baglist,
+           sort { $a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] } @thislist ;
+
+    }
+
+    unshift @baglist, [ (qw/h_stp_511_id Group Order Of c_description_full/) ];
+
+    return \@baglist;
+
+} ## tidy end: sub _make_baglist
 
 sub _make_stop_info {
     my $actium_db = shift;
@@ -162,6 +195,7 @@ sub _sort_stops {
                 my $stopid = $stopids[ $i - 1 ];
                 $of_stop_r->{$list}{$stopid}{Group}   = $linedir;
                 $of_stop_r->{$list}{$stopid}{Order}   = $i;
+                $of_stop_r->{$list}{$stopid}{Of}      = $num_stopids;
                 $of_stop_r->{$list}{$stopid}{OrderOf} = "$i of $num_stopids";
 
                 push @{ $stops_sorted{$list} }, $of_stop_r->{$list}{$stopid};
@@ -186,23 +220,24 @@ sub _bagtexts {
             my ( $text, $height ) = _bagtext_of_stop( $stop_r, $effectivedate );
             my $outlist = $stop_r->{Action} eq 'RS' ? $REMOVED : $list;
 
-            my $outheight = sprintf('%2d', _final_height($height));
-            
+            my $outheight = sprintf( '%2d', _final_height($height) );
+
             my $filename = "$outheight-$outlist";
             $text =~ s/__file__/$outheight $outlist/g;
-            push @{ $bagtexts{ $filename } }, $text;
+            push @{ $bagtexts{$filename} }, $text;
         }
     }
-    
+
     my %counts;
-    foreach (keys %bagtexts) {
-       $counts{$_} = scalar @{$bagtexts{$_}};
-       $bagtexts{$_} = $IDT->start . join( $IDT->boxbreak, @{$bagtexts{$_}});
+    foreach ( keys %bagtexts ) {
+        $counts{$_} = scalar @{ $bagtexts{$_} };
+        $bagtexts{$_}
+          = $IDT->start . join( $IDT->boxbreak, @{ $bagtexts{$_} } );
 
     }
-    
+
     return \%bagtexts, \%counts;
-}
+} ## tidy end: sub _bagtexts
 
 sub _bagtext_of_stop {
     my %of_stop       = %{ +shift };
@@ -330,8 +365,8 @@ sub _para {
     state %paras;
     if ( defined $_[0] ) {
         my $para = shift;
-        $paras{ $para }++;
-        return $IDT->parastyle($para) . join($EMPTY_STR, @_);
+        $paras{$para}++;
+        return $IDT->parastyle($para) . join( $EMPTY_STR, @_ );
     }
 
     return \%paras;
