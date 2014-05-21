@@ -463,6 +463,45 @@ sub _get_xhea_filenames {
 } ## tidy end: sub _get_xhea_filenames
 
 {
+    
+
+# From trip_pattern.txt
+#
+#  PAT PAT noparent
+#  5 Route!               tpat_route
+#  4 Identifier!          tpat_id
+# 10 Direction            map from tpat_direction
+#  2 DirectionValue       map from tpat_direction
+#  8 VehicleDisplay       tpat_veh_display
+#  1 IsInService          tpat_in_serv
+#  8 Via                  tpat_via
+# 40 ViaDescription       [not available...]
+# 
+# from trip_stop.txt 
+# 
+#  TPS PAT PAT
+#  5 StopIdentifier       stp_511_id
+#  6 Place                tstp_place
+#  8 VehicleDisplay       [not available, doesn't matter]
+#  1 IsATimingPoint       if there's a tstp_place, this is 1
+#  1 IsRoutingPoint       not available, doesn't matter
+# 
+# from trip_stop.txt
+# 
+#  TRP TRP noparent
+# 10 InternalNumber!      trp_int_number
+#  8 Number               (not used)
+#  7 OperatingDays        available from all those trp_operates_xxx fields
+#  5 RouteForStatistics   get from tpat_route in trip.txt
+#  4 Pattern              trp_pattern
+# 15 Type                 (not used)
+#  2 TypeValue            (not used)
+#  1 IsSpecial            (not used)
+#  1 IsPublic             (apparently no private trips...)
+# 
+#  PTS TRP TRP
+#  8 PassingTime           Not important for Flagspecs
+
 
     my %HASI_DIR_OF_XHEA = (
         DIR1       => 1,
