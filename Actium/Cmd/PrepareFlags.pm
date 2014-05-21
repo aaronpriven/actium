@@ -32,7 +32,10 @@ sub START {
 
     my $tabbed = Actium::Flags::flag_assignments_tabbed ($actiumdb);
     
-    return unless $tabbed; # there was an error
+    unless ($tabbed) {
+        emit_error;
+        return;
+    }
     
     $signup->slurp_write ($tabbed, 'flag_assignments.txt');
 
