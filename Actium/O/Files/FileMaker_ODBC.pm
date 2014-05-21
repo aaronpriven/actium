@@ -35,11 +35,12 @@ const my $META_FIELDS => 'FileMaker_Fields';
 ######################################
 
 has 'dbh' => (
-    init_arg => undef,
-    is       => 'ro',
-    isa      => 'DBI::db',
-    builder  => '_connect',
-    lazy     => 1,
+    init_arg  => undef,
+    is        => 'ro',
+    predicate => 'has_connected',
+    isa       => 'DBI::db',
+    builder   => '_connect',
+    lazy      => 1,
 );
 
 sub _connect {
@@ -123,7 +124,7 @@ sub _load_column_cache {
 
     my $dbh = $self->dbh;
 
-    my $query   = "SELECT FieldName from $META_FIELDS WHERE TableName = '$table'";
+    my $query = "SELECT FieldName from $META_FIELDS WHERE TableName = '$table'";
     my $ary_ref = $dbh->selectall_arrayref($query);
     my @columns = flatten $ary_ref;
 
@@ -238,7 +239,7 @@ sub each_columns_in_row_where {
 
     my $columns_list;
     if (@columns) {
-        $self->_check_columns($table, @columns);
+        $self->_check_columns( $table, @columns );
         $columns_list = join( " , ", @columns );
 
     }
@@ -353,7 +354,8 @@ sub DEMOLISH { }
 
 before DEMOLISH => sub {
     my $self = shift;
-    my $dbh  = $self->dbh;
+    return unless $self->has_connected;
+    my $dbh = $self->dbh;
     $dbh->disconnect();
     return;
 };
