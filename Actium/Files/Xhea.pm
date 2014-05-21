@@ -462,9 +462,6 @@ sub _get_xhea_filenames {
 
 } ## tidy end: sub _get_xhea_filenames
 
-{
-    
-
 # From trip_pattern.txt
 #
 #  PAT PAT noparent
@@ -476,18 +473,18 @@ sub _get_xhea_filenames {
 #  1 IsInService          tpat_in_serv
 #  8 Via                  tpat_via
 # 40 ViaDescription       [not available...]
-# 
-# from trip_stop.txt 
-# 
+#
+# from trip_stop.txt
+#
 #  TPS PAT PAT
 #  5 StopIdentifier       stp_511_id
 #  6 Place                tstp_place
 #  8 VehicleDisplay       [not available, doesn't matter]
 #  1 IsATimingPoint       if there's a tstp_place, this is 1
 #  1 IsRoutingPoint       not available, doesn't matter
-# 
+#
 # from trip_stop.txt
-# 
+#
 #  TRP TRP noparent
 # 10 InternalNumber!      trp_int_number
 #  8 Number               (not used)
@@ -498,12 +495,13 @@ sub _get_xhea_filenames {
 #  2 TypeValue            (not used)
 #  1 IsSpecial            (not used)
 #  1 IsPublic             (apparently no private trips...)
-# 
+#
 #  PTS TRP TRP
 #  8 PassingTime           Not important for Flagspecs
 
+{
 
-    my %HASI_DIR_OF_XHEA = (
+    const my %HASI_DIR_OF_XHEA => (
         DIR1       => 1,
         DIRA       => 'A',
         DIRB       => 'B',
@@ -516,7 +514,7 @@ sub _get_xhea_filenames {
         $EMPTY_STR => $EMPTY_STR,
     );
 
-    my %HASI_DIRVALUE_OF_XHEA = (
+    const my %HASI_DIRVALUE_OF_XHEA => (
         DIR1       => 10,
         DIRA       => 14,
         DIRB       => 15,
@@ -540,7 +538,7 @@ sub _get_xhea_filenames {
 
         my $pattern_callback = sub {
             my $hr = shift;
-            return unless $hr->{tpat_direction};
+            #return unless $hr->{tpat_direction};
 
             my $id        = $hr->{tpat_id};
             my $direction = $HASI_DIR_OF_XHEA{ $hr->{tpat_direction} };
@@ -585,10 +583,16 @@ sub _get_xhea_filenames {
             my $tripnum = $hr->{trp_int_number};
             my $pattern = $hr->{trp_pattern};
 
+            my $patid = "$route\t$pattern";
+            my $is_public = $patid eq "\t" ? 0 : $pat{IsInService}{$patid};
+            # if trip has no route or pattern, then make it non-public
+            # I don't know why trips without routes or patterns exist...
+
             $trp{InternalNumber}{$tripnum}     = $tripnum;
             $trp{OperatingDays}{$tripnum}      = $days;
             $trp{RouteForStatistics}{$tripnum} = $route;
             $trp{Pattern}{$tripnum}            = $pattern;
+            $trp{IsPublic}{$tripnum}           = $is_public;
 
         };
 
@@ -722,7 +726,13 @@ sub _get_xhea_filenames {
         my $trp_fh = $hasi_folder->open_write("$signup.TRP");
 
         foreach my $tripnum ( keys %{ $trp{InternalNumber} } ) {
-            printf $trp_fh "TRP,%-10s,%-8s,%-7s,%-5s,%-4s,%-15s,%-2s,%-1s,%-1s$CRLF",
+
+            unless ( defined $trp{IsPublic}{$tripnum} ) {
+                emit_text $tripnum;
+            }
+
+            printf $trp_fh
+              "TRP,%-10s,%-8s,%-7s,%-5s,%-4s,%-15s,%-2s,%-1s,%-1s$CRLF",
               $trp{InternalNumber}{$tripnum},        # InternalNumber
               $EMPTY_STR,                            # Number
               $trp{OperatingDays}{$tripnum},         # OperatingDays
@@ -731,14 +741,14 @@ sub _get_xhea_filenames {
               $EMPTY_STR,                            # Type
               $EMPTY_STR,                            # TypeValue
               $EMPTY_STR,                            # IsSpecial
-              1,                                     # IsPublic
+              $trp{IsPublic}{$tripnum},              # IsPublic
               ;
 
             foreach my $passing_time ( @{ $pts{$tripnum} } ) {
                 printf $trp_fh "PTS,%-8s$CRLF", $passing_time;
             }
 
-        }
+        } ## tidy end: foreach my $tripnum ( keys ...)
 
         emit_done;
 
@@ -748,7 +758,8 @@ sub _get_xhea_filenames {
         my $plc_fh = $hasi_folder->open_write("$signup.PLC");
 
         foreach my $place ( sort keys %{ $plc{Place} } ) {
-            printf $plc_fh "PLC,%-6s,%-40s,%-6s,%-6s,%-8s,%-20s,%-10s,%-10s$CRLF",
+            printf $plc_fh
+              "PLC,%-6s,%-40s,%-6s,%-6s,%-8s,%-20s,%-10s,%-10s$CRLF",
               $plc{Place}{$place},              # Identifier
               $plc{Description}{$place},        # Description
               $plc{ReferencePlace}{$place},     # Reference place
@@ -762,7 +773,6 @@ sub _get_xhea_filenames {
         }
 
         close $plc_fh;
-        
 
         emit_done;
 
