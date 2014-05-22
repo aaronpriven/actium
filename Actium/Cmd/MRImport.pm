@@ -6,7 +6,7 @@
 
 # Legacy status: 4
 
-package Actium::Cmd::MRImport 0.001;
+package Actium::Cmd::MRImport 0.005;
 
 use 5.014;
 use warnings;
@@ -63,8 +63,9 @@ EOF
 sub START {
 
     my $class = shift;
+    my %params = @_;
 
-    my @importfolders = @_;
+    my @importfolders = $params{argv};
     unless (@importfolders) {
         $class->HELP();
         return;
