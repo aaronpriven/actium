@@ -16,6 +16,7 @@ use Actium::O::Sked;
 use List::MoreUtils       (qw<uniq pairwise natatime each_arrayref>);
 use Actium::Sorting::Line (qw(sortbyline byline));
 use Actium::IDTables;
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 use English '-no_match_vars';
 use autodie;
@@ -35,6 +36,12 @@ HELP
 }
 
 sub START {
+    
+    my $class      = shift;
+    my %params     = @_;
+    my $config_obj = $params{config};
+
+    my $actiumdb = actiumdb($config_obj);
 
     my $signup            = Actium::O::Folders::Signup->new();
     my $tabulae_folder    = $signup->subfolder('timetables');
@@ -42,6 +49,7 @@ sub START {
     my $multipubtt_folder = $tabulae_folder->subfolder('pub-idtags');
 
     my $xml_db = $signup->load_xml;
+    # my $xml_db = $actiumdb; # testy test test. Can this work?
 
     my $prehistorics_folder = $signup->subfolder('skeds');
 
