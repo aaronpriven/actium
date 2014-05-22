@@ -101,6 +101,10 @@ has '_column_cache_r' => (
 
 );
 
+sub ensure_loaded {
+    goto &_ensure_loaded;
+}
+
 sub _ensure_loaded {
     my ( $self, $table ) = @_;
 
