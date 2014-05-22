@@ -48,7 +48,7 @@ chdir $signup->path();
 
 my %stoplist = ();
 
-my ( %pat, %vdc );
+my ( %pat );
 
 {    # scoping
      # the reason to do this is to release the %avldata structure, so Affrus
@@ -59,7 +59,6 @@ my ( %pat, %vdc );
     my $avldata_r = $signup->retrieve('avl.storable');
 
     %pat = %{ $avldata_r->{PAT} };
-    %vdc = %{ $avldata_r->{VDC} };
 
 }
 
@@ -80,7 +79,7 @@ open my $nbdest, ">", "nextbus-destinations.txt";
 print $nbdest "Route\tPattern\tDirection\tDestination\n";
 
 my @results;
-my ( %seen, %messages_of );
+my ( %seen );
 
 foreach my $key ( keys %pat ) {
 
@@ -102,19 +101,6 @@ foreach my $key ( keys %pat ) {
     my $usecity = $timepoints{$lasttp}{UseCity};
 
     $dest ||= $lasttp;
-
-    # GET DATA FROM VDCS
-
-    my $vdccode = $pat{$key}{VehicleDisplay};
-
-    my @messages;
-    foreach (qw(Message1 Message2 Message3 Message4)) {
-        my $message = $vdc{$vdccode}{$_};
-        next unless $message;
-        push @messages, $vdc{$vdccode}{$_};
-    }
-    my $messages = join( "/", @messages );
-    push @{ $messages_of{$lasttp} }, $messages;
 
     # SAVE FOR RESULTS
 
@@ -171,8 +157,5 @@ close $nbdest;
 
 foreach ( sort keys %seen ) {
     say "$_\t$seen{$_}";
-    foreach my $message ( @{ $messages_of{$_} } ) {
-        say "_\t\t\L$message";
-    }
 }
 
