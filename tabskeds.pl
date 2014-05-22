@@ -10,8 +10,6 @@
 
 use 5.014;
 
-@ARGV = qw(-s w07) if $ENV{RUNNING_UNDER_AFFRUS};
-
 use strict;
 use warnings;
 no warnings 'uninitialized';
@@ -124,7 +122,7 @@ mkdir "tabxchange"
   or die "Can't make directory 'tabxchange': $!"
   unless -d "tabxchange";
 
-my @files = getfiles(GETFILES_PUBLIC);
+my @files = getfiles(GETFILES_PUBLIC_AND_DB);
 
 my %skednamesbyroute = ();
 my %skeds;
