@@ -45,6 +45,10 @@ EOT
     my ( %rows_of_file, %skipped_because );
 
     while ( my $row_r = $sth->fetchrow_arrayref ) {
+        
+        foreach (@{$row_r}) {
+            s/\s+\z//; # trim trailing white space
+        }
 
         my ( $flagtype, $file, $master, $stopid, $description, $decals )
           = @{$row_r};

@@ -6,18 +6,19 @@
 use strict;
 use warnings;
 
-package Actium::Options;
-
-our $VERSION = "0.001";
-$VERSION = eval $VERSION;
+package Actium::Options 0.005;
 
 use 5.010;    # turns on features
 
-use base qw(Exporter);
-our @EXPORT_OK = qw(
-  add_option option init_options is_an_option set_option helpmessages
-);
-our %EXPORT_TAGS = (all => \@EXPORT_OK);
+use Sub::Exporter -setup => { exports => 
+  [ qw(add_option option init_options is_an_option set_option helpmessages) ]
+};
+
+#use base qw(Exporter);
+#our @EXPORT_OK = qw(
+#  add_option option init_options is_an_option set_option helpmessages
+#);
+#our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
 use Carp;
 use Getopt::Long;
