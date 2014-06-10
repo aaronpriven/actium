@@ -23,6 +23,15 @@
 
 use strict;
 
+our $VERSION = 0.005;
+
+{
+    no warnings('once');
+    if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
+        @ARGV = Actium::Eclipse::get_command_line();
+    }
+}
+
 # initialization
 
 use FindBin('$Bin');
@@ -258,7 +267,7 @@ sub build_point {
         }
     }
 
-    $point->{ROUTES2USE} = [ ( split "\n", $point->{Lines} ) ];
+    $point->{ROUTES2USE} = [ ( split /\R/, $point->{Lines} ) ];
 
     $point->{NOTEKEYS} = note_definitions($point);
     # now all the routes and note keys are in the hash
