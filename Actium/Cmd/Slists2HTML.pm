@@ -28,6 +28,8 @@ my $count;
 my %order_of = map { $_ => $count++ } @DIRCODES;
 
 sub START {
+    
+    emit "Making HTML files of stop lists";
 
     my $signup                = Actium::O::Folders::Signup->new();
     my $stoplists_folder      = $signup->subfolder('slists');
@@ -77,6 +79,8 @@ sub START {
 
             my $file = "$route-$dir.txt";
             my $ifh  = $stoplists_line_folder->open_read($file);
+            binmode $ifh, ':encoding(MacRoman)';
+            # HORRIBLE KLUDGE BECAUSE I CAN'T GET ODBC TO READ UTF8 DATA
 
             my $headerline = readline($ifh);    # thrown away
 
@@ -314,6 +318,8 @@ EOT
 
     close $indexfh or die "Can't close stop_index.html: $OS_ERROR";
 
+    emit_done;
+    
     emit_done;
 
 } ## tidy end: sub START
