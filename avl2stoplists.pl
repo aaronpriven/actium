@@ -100,7 +100,7 @@ foreach my $key (keys %pat) {
    my $filekey;
    ($filekey = $key) =~ s/$KEY_SEPARATOR/-$dir-/g;
 
-   open my $fh , '>' , "slists/pat/$filekey.txt" or die "Cannot open slists/pat/$filekey.txt for output";
+   open my $fh , '>:utf8' , "slists/pat/$filekey.txt" or die "Cannot open slists/pat/$filekey.txt for output";
 
    unless (option(qw(quiet))) {
 	   printf "%13s" , $filekey;
@@ -146,7 +146,7 @@ foreach my $route (keys %liststomerge) {
       $stops_of_line{"$route-$dir"} = \@union;
       
       {
-      open my $fh , '>' , "slists/line/$route-$dir.txt" or die "Cannot open slists/line/$route-$dir.txt for output";
+      open my $fh , '>:utf8' , "slists/line/$route-$dir.txt" or die "Cannot open slists/line/$route-$dir.txt for output";
       print $fh jt( $route , $dir ) , "\n" ;
       foreach (@union) {
          print $fh jt($_, $stops{$_}{c_description_full}) , "\n";
@@ -155,7 +155,7 @@ foreach my $route (keys %liststomerge) {
       }
       
             {
-      open my $fh , '>' , "slists/line-win/$route-$dir.txt" or die "Cannot open slists/line-win/$route-$dir.txt for output";
+      open my $fh , '>:utf8' , "slists/line-win/$route-$dir.txt" or die "Cannot open slists/line-win/$route-$dir.txt for output";
       print $fh jt( $route , $dir ) , "\r\n" ;
       foreach (@union) {
          print $fh jt($_, $stops{$_}{c_description_full}) , "\r\n";
