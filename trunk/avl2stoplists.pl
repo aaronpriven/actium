@@ -149,7 +149,12 @@ foreach my $route (keys %liststomerge) {
       open my $fh , '>:utf8' , "slists/line/$route-$dir.txt" or die "Cannot open slists/line/$route-$dir.txt for output";
       print $fh jt( $route , $dir ) , "\n" ;
       foreach (@union) {
-         print $fh jt($_, $stops{$_}{c_description_full}) , "\n";
+          
+         my $desc = $stops{$_}{c_description_full} ;
+         #utf8::decode($desc);
+          
+         print $fh "$_\t$desc\n";
+         #print $fh jt($_, $stops{$_}{c_description_full}) , "\n";
       }
       close $fh;
       }

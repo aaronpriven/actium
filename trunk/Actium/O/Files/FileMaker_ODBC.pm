@@ -54,6 +54,9 @@ sub _connect {
 
     my $dbh = DBI->connect( "dbi:ODBC:$db_name", $db_user, $db_password,
         { RaiseError => 1, PrintError => 1, AutoCommit => 0 } );
+        
+    $dbh->{odbc_utf8_on} = 1;
+    # ODBC driver has to be set to return utf-8
 
     emit_done;
 
