@@ -32,8 +32,9 @@ Converts times (found on the command line) between a time number
 to a time string (hours:minutes), or vice versa.  Any integers are
 treated as time numbers; anything else is treated as a time string.
 
-Because command-line options are preceded by a hyphen, negative numbers
-require special treatment. Either precede all times with a double dash ("--"),
+Because command-line options are preceded by a hyphen, 
+negative numbers require special treatment. 
+Either precede all times with a double dash ("--"),
 which indicates that following command-line arguments will not be processed
 as options, or alternatively enter negative numbers with an "n" instead
 of a minus sign ("n10" will be treated as -10).
