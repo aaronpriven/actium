@@ -40,7 +40,10 @@ sub START {
 
     my $version = option('version');
 
-    die "No version specified" unless $version or $version eq '0';
+    unless ( $version or $version eq '0' ) {
+        die "No version specified.\n"
+          . 'You must provide a version number for inclusion in map links\n';
+    }
 
     my $html_descrips = line_descrip_html(
         {   signup   => $signup,
@@ -48,11 +51,11 @@ sub START {
             version  => $version,
         }
     );
-    
+
     my $outfh = $signup->open_write('line_descriptions.html');
 
     say $outfh $html_descrips;
-    
+
     close $outfh;
 
     return;
