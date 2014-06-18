@@ -23,9 +23,9 @@ use Actium::Util('filename');
 use Text::CSV;
 use Carp;
 
-use Readonly;
+use Const::Fast;
 
-Readonly my $TELL_INCREMENT => 100_000;
+const my $TELL_INCREMENT => 100_000;
 
 sub mergeread {    # constructor
     my $class = shift;
