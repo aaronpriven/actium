@@ -15,9 +15,7 @@ use Actium::Options (qw(add_option option));
 
 use Actium::Constants;
 
-use Exporter qw( import );
-our @EXPORT_OK = qw(byline sortbyline linekeys );
-our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+use Sub::Exporter -setup => { exports => [qw(byline sortbyline linekeys)] };
 
 add_option( 'lettersfirst!',
         'When line designations are sorted, sort letters ahead of numbers '

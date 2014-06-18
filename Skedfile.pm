@@ -15,11 +15,10 @@ package Skedfile;
 use strict;
 our ( @ISA, @EXPORT_OK );
 
-use Exporter;
-@ISA       = ('Exporter');
-@EXPORT_OK = qw(Skedread Skedwrite merge_columns Skedwrite_anydir
+use Sub::Exporter -setup => { exports => [qw(
+   Skedread Skedwrite merge_columns Skedwrite_anydir
   remove_blank_columns trim_sked copy_sked times_column
-  getfiles GETFILES_ALL GETFILES_PUBLIC GETFILES_PUBLIC_AND_DB);
+  getfiles GETFILES_ALL GETFILES_PUBLIC GETFILES_PUBLIC_AND_DB)] };
 
 use constant GETFILES_PUBLIC_AND_DB => 3;
 

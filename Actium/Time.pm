@@ -35,9 +35,7 @@ const my %AMPM_OFFSETS => (
     'x' => 2 * $MINS_IN_12HRS,
 );
 
-use Exporter qw( import );
-our @EXPORT_OK = qw(timenum timestr timestr_sub);
-our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+use Sub::Exporter -setup => { exports => [qw(timenum timestr timestr_sub)] };
 
 ###########################################
 ## TIMENUM

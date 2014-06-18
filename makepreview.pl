@@ -3,11 +3,11 @@
 use 5.012;
 use warnings;
 
-use Readonly;
+use Const::Fast;
 use File::Basename;
 use File::Spec;
 
-Readonly my $COMMAND =>
+const my $COMMAND =>
   '/opt/local/bin/epstool --add-tiff6p-preview --dpi 72 --gs-args '
   . quotemeta("-dTextAlphaBits=4 -dGraphicsAlphaBits=4 -dUseCIEColor");
 #  $1 preview-$1 >& $1.log &

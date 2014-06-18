@@ -13,9 +13,10 @@ use Carp;
 use Algorithm::Diff qw(sdiff traverse_sequences);
 use Scalar::Util ('reftype');
 
-use Exporter qw( import );
-our @EXPORT_OK = qw(ordered_union distinguish comm ordered_union_columns);
-our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+use Sub::Exporter 
+   -setup => 
+   { exports => [qw(ordered_union distinguish comm ordered_union_columns)] }
+;
 
 use Params::Validate (':all');
 
