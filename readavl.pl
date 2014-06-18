@@ -29,10 +29,10 @@ use Text::Trim;
 use Storable();
 
 # set some constants
-use Readonly;
-Readonly my $NO_PARENT => q{top};
-Readonly my $DELIMITER => q{,};
-Readonly my $DELIMITER_LENGTH => length($DELIMITER);
+use Const::Fast;
+const my $NO_PARENT => q{top};
+const my $DELIMITER => q{,};
+const my $DELIMITER_LENGTH => length($DELIMITER);
 
 # don't buffer terminal output
 $| = 1;

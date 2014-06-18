@@ -17,9 +17,7 @@ use Actium::Sorting::Line ('byline');
 
 use Actium::Constants;
 
-use Exporter qw( import );
-our @EXPORT_OK = qw(travelsort);
-our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+use Sub::Exporter -setup => { exports => [qw(travelsort)] };
 
 add_option( 'promote=s',
         'When sorting by travel, give a list of lines to be sorted first, '
