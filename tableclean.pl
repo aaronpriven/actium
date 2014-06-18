@@ -3,7 +3,7 @@
 use 5.014;
 use warnings;
 
-use File::Slurp;
+use File::Slurp::Tiny('read_file');
 
 my $file = $ARGV[0];
 
