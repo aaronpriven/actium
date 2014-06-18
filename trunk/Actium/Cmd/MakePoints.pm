@@ -29,7 +29,7 @@ use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use List::MoreUtils('natatime');
 use Actium::O::Folders::Signup;
 
-use File::Slurp;
+use File::Slurp::Tiny('read_file');
 use Text::Trim;
 
 use Actium::Options;
