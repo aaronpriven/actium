@@ -158,22 +158,27 @@ sub search_ss {
     if (/\A\d{6}\z/) {
         return ( $ss_cache_r->{"0$argument"} // $argument );
     }
-
-    my @rows;
+    
+    my %row_of_stopid;
+    # saving in hash avoids duplicate entries
+    # (because rows saved twice, once under Hastus ID, once under 511 ID)
 
     foreach my $fields_r ( values %{$ss_cache_r} ) {
+        
+        my $stopid = $fields_r->{h_stp_511_id};
+        next if $row_of_stopid{$stopid};
 
         my $desc = $fields_r->{c_description_full};
 
         $argument =~ s{/}{.*}g;
         # slash is easier to type, doesn't need to be quoted,
         # not a regexp char normally, not usually found in descriptions
-        push @rows, $fields_r
+        $row_of_stopid{$stopid} = $fields_r
           if $desc =~ m{$argument}i;
 
     }
 
-    return @rows;
+    return values %row_of_stopid;
 
 } ## tidy end: sub search_ss
 
