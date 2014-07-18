@@ -118,7 +118,7 @@ foreach my $key (keys %pat) {
        
        push @thesestops , $stopid;
        
-       print $fh $stopid , "\t" , $stops{$stopid}{c_description_full} , "\n";
+       print $fh $stopid , "\t" , $stops{$stopid}{c_description_full} // $EMPTY_STR, "\n";
    }
 
    push @{$liststomerge{$route}{$dir}} , \@thesestops;
@@ -150,7 +150,7 @@ foreach my $route (keys %liststomerge) {
       print $fh jt( $route , $dir ) , "\n" ;
       foreach (@union) {
           
-         my $desc = $stops{$_}{c_description_full} ;
+         my $desc = $stops{$_}{c_description_full}  // $EMPTY_STR;
          #utf8::decode($desc);
           
          print $fh "$_\t$desc\n";
