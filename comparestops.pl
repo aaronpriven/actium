@@ -163,7 +163,7 @@ foreach my $added_stopid ( sort @{ $changes{ADDEDSTOPS} } ) {
     next if dummy($description);
     my @list = sort byline keys %{ $newstoplists{$added_stopid}{Routes} };
     print $out "AS\t", $added_stopid, "\t$description\t", scalar @list, "\t",
-      join( ',', @list ), "\n";
+      '"' , join( ' ', @list ), '"' , "\n";
 }
 
 foreach my $deleted_stopid ( sort @{ $changes{DELETEDSTOPS} } ) {
@@ -172,7 +172,7 @@ foreach my $deleted_stopid ( sort @{ $changes{DELETEDSTOPS} } ) {
     my @list = sort byline keys %{ $oldstoplists{$deleted_stopid}{Routes} };
     print $out "RS\t", $deleted_stopid, "\t$description\t\t\t",
       scalar @list, "\t",
-      join( ',', @list ), "\n";
+      '"' , join( ' ', @list ), '"' , "\n";
 }
 
 output_stops( 'AL', $out, 'ADDLINES' );
@@ -207,7 +207,7 @@ sub output_stops {
 
         if ( exists $changes{$type}{$stopid}{ADDED} ) {
             my @added = sort byline @{ $changes{$type}{$stopid}{ADDED} };
-            print $fh "\t", scalar @added, "\t", join( ',', @added );
+            print $fh "\t", scalar @added, "\t", '"' , join( ' ', @added ), '"';
         }
         else {
             print $fh "\t\t";
@@ -215,7 +215,7 @@ sub output_stops {
 
         if ( exists $changes{$type}{$stopid}{REMOVED} ) {
             my @removed = sort byline @{ $changes{$type}{$stopid}{REMOVED} };
-            print $fh "\t", scalar @removed, "\t", join( ',', @removed );
+            print $fh "\t", scalar @removed, "\t", '"', join( ' ', @removed ), '"';
         }
         else {
             print $fh "\t\t";
@@ -224,7 +224,7 @@ sub output_stops {
         if ( exists $changes{$type}{$stopid}{UNCHANGED} ) {
             my @unchanged
               = sort byline @{ $changes{$type}{$stopid}{UNCHANGED} };
-            print $fh "\t", scalar @unchanged, "\t", join( ',', @unchanged );
+            print $fh "\t", scalar @unchanged, "\t", '"', join( ' ', @unchanged ), '"';
         }
         #      else {
         #         print $fh "\t\t";

@@ -107,7 +107,7 @@ foreach my $stop (sort keys %routes_of) {
    print $stoplines "$stop\t";
    my @lines = sortbyline keys %{$routes_of{$stop}} ;
    my $numlines = scalar(@lines);
-   print $stoplines join (" " , @lines);
+   print $stoplines '"' , join (" " , @lines), '"';
    
    my ($twodigit, $school, $allnighter, $threedigit) = (0,0,0,0);
 
