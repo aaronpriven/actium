@@ -448,6 +448,11 @@ sub _get_xhea_filenames {
     my @xhea_filenames;
 
     foreach my $filename (@xmlfiles) {
+        
+        next if fc($filename) eq fc('PlacePatterns');
+        # skip PlacePatterns, which has a different XML structure
+        # than the simple one this program can deal with
+        
         push @xhea_filenames, $filename
           if in( $filename, @xsdfiles );
     }
