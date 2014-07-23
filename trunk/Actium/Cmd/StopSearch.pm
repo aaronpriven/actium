@@ -10,12 +10,16 @@ use Actium::Preamble;
 use Actium::O::Folder;
 use Actium::Util('tabulate');
 use Actium::Cmd::Config::ActiumFM;
-use Actium::Options(qw/set_option option/);
+use Actium::Options(qw/set_option add_option option/);
 use Actium::Term;
+
+add_option ('tab', 'Uses tabs instead of spaces to separate text');
 
 sub HELP {
     say "Help not implemented.";
 }
+
+my $divider;
 
 sub START {
 
@@ -24,7 +28,9 @@ sub START {
     my $config_obj = $params{config};
     
     my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb($config_obj);
-
+    
+    $divider = option('tab') ? "\t" : '  ';
+    
     set_option( 'quiet', 1 );
     Actium::Term::_option_quiet(1);
     # sigh - need to rewrite Actium::Term
@@ -62,7 +68,7 @@ sub START {
 
 } ## tidy end: sub START
 
-const my $DIVIDER => '  ';
+#const my $DIVIDER => '  ';
 
 sub _display {
 
@@ -76,8 +82,8 @@ sub _display {
         }
         my $active = $fields_r->{p_active};
 
-        print $fields_r->{h_stp_511_id}, $DIVIDER,
-          $fields_r->{h_stp_identifier}, $DIVIDER;
+        print $fields_r->{h_stp_511_id}, $divider,
+          $fields_r->{h_stp_identifier}, $divider;
         say( $active ? '' : "*", $fields_r->{c_description_full} );
 
     }
