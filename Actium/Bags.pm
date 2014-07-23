@@ -130,7 +130,14 @@ sub _make_stop_info {
     );
 
     my %compare;
-
+      # =  (
+      # $OLD => {} ,
+      # $NEW => {} ,
+      # $REMOVED => {},
+      # )
+      #  ;
+      # if doesn't autoviv because no bag of that type, gives errors
+        
     while ( my $stop_r = $each_stop->() ) {
         my ($stopid,    $desc,          $added,
             $num_added, $removed,       $num_removed,
