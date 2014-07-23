@@ -25,12 +25,15 @@ use namespace::autoclean;
 use Actium::Constants;
 use Actium::Sorting::Line (qw(byline sortbyline));
 use List::MoreUtils('natatime');
+use Const::Fast;
 
 use POSIX ();
 
 use Actium::O::Points::Column;
 
 use IDTags;
+use Actium::Text::InDesignTags;
+const my $IDT => 'Actium::Text::InDesignTags';
 
 has [qw/effdate stopid signid/] => (
     is  => 'ro',
@@ -702,9 +705,14 @@ sub format_bottom {
 
     no warnings('once');
     my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid}; # this is a reference
-
-    print $botfh IDTags::parastyle('bottomnotes'),
+    
+    my $description = 
       $stop_r->{c_description_full} ;
+      
+    $IDT->encode_high_chars($description);
+
+    print $botfh IDTags::parastyle('bottomnotes'), $description;
+      #$stop_r->{c_description_full} ;
 
     print $botfh ". Sign #$signid. Stop $stopid.";
 
