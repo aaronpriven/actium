@@ -149,7 +149,7 @@ sub _output_debugging_patterns {
 
     my $ufh = $debugfolder->open_write('thea_upatterns.txt');
 
-    foreach my $lgdir ( sortbyline keys $pat_lineids_of_lgdir_r ) {
+    foreach my $lgdir ( sortbyline keys %{$pat_lineids_of_lgdir_r} ) {
         my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
         say $ufh "\n$lgdir";
         say $ufh join( "\t", @{ $upattern_of_r->{$lgdir} } );
@@ -160,10 +160,10 @@ sub _output_debugging_patterns {
             my @stopinfos = @{ $patterns_r->{$lineid}[P_STOPS] };
             my @stops;
             foreach my $stopinfo (@stopinfos) {
-                my $text = shift $stopinfo;
+                my $text = shift @{$stopinfo};
                 if ( scalar @{$stopinfo} ) {
-                    my $plc = shift $stopinfo;
-                    my $seq = shift $stopinfo;
+                    my $plc = shift @{$stopinfo};
+                    my $seq = shift @{$stopinfo};
                     $text .= ":$plc:$seq";
                 }
                 push @stops, $text;
@@ -435,7 +435,7 @@ sub _make_skeds {
 
     emit "Making Actium::O::Sked objects";
 
-    foreach my $skedid ( sortbyline keys $trips_of_skedid_r ) {
+    foreach my $skedid ( sortbyline keys %{$trips_of_skedid_r} ) {
 
         emit_over $skedid;
 
