@@ -193,7 +193,7 @@ sub _make_trip_objs {
 
     emit 'Making Trip objects (padding out columns, merging double trips)';
 
-    foreach my $lgdir ( sortbyline keys $pat_lineids_of_lgdir_r ) {
+    foreach my $lgdir ( sortbyline keys %{$pat_lineids_of_lgdir_r} ) {
 
         emit_over $lgdir;
 
@@ -275,7 +275,7 @@ sub _get_trips_of_sked {
 
     emit "Assembling trips into schedules by day";
 
-    foreach my $lgdir ( sortbyline keys $trips_of_lgdir_r ) {
+    foreach my $lgdir ( sortbyline keys %{$trips_of_lgdir_r } ) {
 
         emit_over $lgdir;
 
@@ -302,7 +302,7 @@ sub _get_trips_of_sked {
 
         my $trips_of_skedday_r = _assemble_skeddays( \%trips_of_day );
 
-        for my $skedday ( keys $trips_of_skedday_r ) {
+        for my $skedday ( keys %{ $trips_of_skedday_r } ) {
 
             my $skedid = "${lgdir}_$skedday";
             $trips_of_sked{$skedid} = $trips_of_skedday_r->{$skedday};
@@ -319,7 +319,7 @@ sub _get_trips_of_sked {
 
 sub _assemble_skeddays {
     my $trips_of_day_r = shift;
-    my @days           = sort keys $trips_of_day_r;
+    my @days           = sort keys %{ $trips_of_day_r} ;
     my ( %already_found_day, %trips_of_skedday );
 
     # Go through list of days. Compare the first one to the subsequent ones.
