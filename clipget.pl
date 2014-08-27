@@ -51,7 +51,10 @@ my %westbays = map { $_ => 1 } (
 #if (0) {
 const my $URL => 'https://www.clippercard.com/ClipperWeb/goSearch.do';
 my $response = HTTP::Tiny->new->get($URL);
-die "Failed!\n" unless $response->{success};
+if (not $response->{success}) {
+   say $response->{content};
+   die "Failed!\n";
+}
 $content = $response->{content};
 #} else {
 #   $content = read_file('stores.html');
