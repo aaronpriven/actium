@@ -42,24 +42,33 @@ HELP
 }
 
 sub START {
-	
-    my $class = shift;
-	my %params = @_;
 
-	my @argv = @{$params{argv}};
-  
+    my $class  = shift;
+    my %params = @_;
+
+    my @argv = @{ $params{argv} };
+
     my $inputfilespec = shift @argv;
     die "No input file given" unless $inputfilespec;
-    
+
     open my $input_h, '<', $inputfilespec
       or die "Can't open file $inputfilespec: $OS_ERROR";
 
     my (%description_of);
-    while (<$input_h>) {
-        chomp;
-        my ( $stop, $description ) = split( /\t/, $_, 2 );
-        next if ( $stop eq 'StopID' or $stop eq 'PhoneID' or $stop eq 'stop_id_1' );    # header line
-        $description_of{$stop} = $description;
+
+    {
+        local $/ = "\r";
+        while (<$input_h>) {
+            chomp;
+            next if /\A\t*\z/;
+            my ( $stop, $description ) = split( /\t/, $_, 2 );
+            next
+              if ( $stop eq 'StopID'
+                or $stop eq 'PhoneID'
+                or $stop eq 'stop_id_1' );    # header line
+            $description_of{$stop} = $description;
+        }
+
     }
 
     my $slistsdir = Actium::O::Folders::Signup->new('slists');
@@ -72,10 +81,10 @@ sub START {
 
     binmode STDOUT, ':utf8';
     while ( my $ref = shift @sorted ) {
-    my ($linedir, @stops) = @{$ref};
+        my ( $linedir, @stops ) = @{$ref};
         my $numstops = scalar @stops;
         foreach my $i ( 1 .. $numstops ) {
-            my $stop = $stops[$i - 1];
+            my $stop = $stops[ $i - 1 ];
             say "$linedir\t$i of $numstops\t$stop\t$description_of{$stop}";
         }
     }
