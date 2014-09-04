@@ -14,6 +14,7 @@ package Actium::Cmd::LineDescrip 0.003;
 use Actium::Preamble;
 
 use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::LineInfo ('line_descrip_html');
 
 use Actium::Options(qw<add_option option>);
@@ -34,9 +35,16 @@ HELP
 }
 
 sub START {
+    
+    my $class = shift;
+    my %params = @_;
+    
+    my $config_obj = $params{config};
 
     my $signup = Actium::O::Folders::Signup->new();
-    my $xml_db = $signup->load_xml;
+    my $actiumdb = actiumdb($config_obj);
+    
+    #my $xml_db = $signup->load_xml;
 
     my $version = option('version');
 
@@ -47,7 +55,7 @@ sub START {
 
     my $html_descrips = line_descrip_html(
         {   signup   => $signup,
-            database => $xml_db,
+            database => $actiumdb,
             version  => $version,
         }
     );
