@@ -48,6 +48,7 @@ my $config = Actium::O::Files::Ini::->new('.actium.ini');
 ### Get subcommand, and run subcommand
 
 my %module_of = (
+    dbexport        => 'ActiumDBExport',
     slists2html     => 'Slists2HTML',
     theaimport      => 'TheaImport',
     makestoplists   => 'MakeStopLists',
