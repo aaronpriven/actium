@@ -831,6 +831,7 @@ The same as the last element of I<< $self->folders() >>.
 The full path name of the folder represented by this object, as a string.
 
 =item B<< $self->volume() >>
+
 =item B<< $self->must_exist() >>
 
 The values of the B<volume> and B<must_exist> attributes, respectively.
@@ -1054,7 +1055,7 @@ routines.
 =item Folder "$path" not found
         
 In creating the Actium::O::Folder object, the must_exist attribute was given
-as true, but the folder 
+as true, but the folder was not found.
 
 =item Can't make folder "$path": $OS_ERROR
 
