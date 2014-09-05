@@ -43,8 +43,9 @@ my @specdaynames;
 foreach ( keys %specdaynames ) {
     push @specdaynames, $_ . "\035" . $specdaynames{$_};
 }
+@specdaynames = sort @specdaynames;
 
-use Skedtps qw(tphash tpxref destination TPXREF_FULL);
+#use Skedtps qw(tphash tpxref destination TPXREF_FULL);
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
 use Actium::Options (qw<option add_option init_options>);
@@ -95,15 +96,15 @@ my $prepdate;
     $prepdate = "$mon $mday, $year";
 }
 
-our ( @lines, %lines, @skedadds, %skedadds,
-    %colors, @colors, %timepoints, @timepoints );
+our ( @lines, %lines, @skedadds, %skedadds, %places,
+    %colors, @colors, @places );
 
 load_tables(
     requests => {
-        Timepoints => {
-            array       => \@timepoints,
-            hash        => \%timepoints,
-            index_field => 'Abbrev9'
+        Places_Neue => {
+            array => \@places ,
+            hash => \%places,
+            index_field => 'c_abbrev9', 
         },
         SkedAdds => {
             array       => \@skedadds,
@@ -115,8 +116,6 @@ load_tables(
           { array => \@colors, hash => \%colors, index_field => 'ColorID' },
     }
 );
-
-Skedtps::initialize( \@timepoints, \%timepoints, TPXREF_FULL );
 
 mkdir "tabxchange"
   or die "Can't make directory 'tabxchange': $!"
@@ -205,8 +204,8 @@ foreach my $route ( sortbyline keys %skednamesbyroute ) {
         my $dir = $skedref->{DIR};
 
         my @tp = ( @{ $skedref->{TP} } );
-
-        my $destination = destination( $tp[-1] );
+        
+        my $destination = $places{$tp[-1]}{c_destination} ;
 
         if ( $dir eq 'CC' ) {
             $destination = "Counterclockwise to $destination,";
@@ -289,8 +288,8 @@ foreach my $route ( sortbyline keys %skednamesbyroute ) {
         my ( @tp4, @tp_lookup );
         @tp_lookup = @tp;
         s/=\d+\z// foreach @tp_lookup;
-        Skedtps::delete_punctuation(@tp_lookup);
-        push @tp4, $Skedtps::timepoints{$_}{Abbrev4} foreach @tp_lookup;
+
+        push @tp4, $places{$_}{h_plc_identifier} foreach @tp_lookup;
 
         outtab(@tp4);
 
@@ -306,14 +305,15 @@ foreach my $route ( sortbyline keys %skednamesbyroute ) {
      #    if $tp eq "SHAY BART" and $skedname eq "91_SB_WD";
 
             warn "Not 4 characters: [$tp4/$tp_lookup/$tp]" if length($tp4) != 4;
+            warn "Blank tp [$tp4/$tp_lookup/$tp]" if $tp_lookup eq '' or $tp eq ''; 
 
             outtab(
                 $tp4,
-                tphash($tp),
-                $Skedtps::timepoints{$tp_lookup}{City},
-                $Skedtps::timepoints{$tp_lookup}{UseCity},
+                $places{$tp_lookup}{c_description},
+                $places{$tp_lookup}{c_city},
+                $places{$tp_lookup}{ux_usecity_description} ? 'Yes' : 'No' ,
                 "",    # $Skedtps::timepoints{$tp_lookup}{Neighborhood},
-                $Skedtps::timepoints{$tp_lookup}{TPNote},
+                "", # $Skedtps::timepoints{$tp_lookup}{TPNote},
                 $faketimepointnote
             );
 # When you add a way to have "Notes associated with a timepoint (column) in this schedule alone",
