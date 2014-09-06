@@ -71,16 +71,17 @@ sub START {
 
     my $effdate = read_file('effectivedate.txt');
 
-    our ( @signs, @stops, @lines, @signtypes, @timepoints );
-    our ( %signs, %stops, %lines, %signtypes, %timepoints );
+    our ( @signs, @stops, @lines, @signtypes );
+    our ( %signs, %stops, %lines, %signtypes );
+    our (@places, %places);
 
     # retrieve data
 
     load_tables(
     requests => {
-        Timepoints => {
-            array       => \@timepoints,
-            hash        => \%timepoints,
+        Places_Neue => {
+            array       => \@places,
+            hash        => \%places,
             index_field => 'Abbrev4'
         },
         SignTypes => {
