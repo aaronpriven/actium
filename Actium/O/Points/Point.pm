@@ -621,8 +621,8 @@ sub format_sidenotes {
         $line = $attr{line} if $attr{line};
 
         if ( $attr{destination} ) {
-            $dest = $Actium::Cmd::MakePoints::timepoints{ $attr{destination} }
-              {TPName};
+            $dest = $Actium::Cmd::MakePoints::places{ $attr{destination} }
+              {c_destination};
             $dest =~ s/\.*$/\./;
         }
 

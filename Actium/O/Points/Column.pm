@@ -374,8 +374,8 @@ sub format_headdest {
     {
         no warnings 'once';
         use Data::Dumper;
-        $tpname = $Actium::Cmd::MakePoints::timepoints{$desttp4}{TPName};
-        $tpdest = $Actium::Cmd::MakePoints::timepoints{$desttp4}{DestinationF};
+        $tpname = $Actium::Cmd::MakePoints::places{$desttp4}{c_description};
+        $tpdest = $Actium::Cmd::MakePoints::places{$desttp4}{c_destination};
     }
 
     my $dest;
