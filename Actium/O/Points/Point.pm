@@ -40,6 +40,11 @@ has [qw/effdate stopid signid/] => (
     isa => 'Str',
 );
 
+has 'nonstoplocation' => (
+    is => 'ro',
+    isa => 'Maybe[Str]',
+    );
+
 has 'note600' => (
     traits  => ['Bool'],
     is      => 'ro',
@@ -122,7 +127,8 @@ sub add_to_width {
 }
 
 sub new_from_kpoints {
-    my ( $class, $stopid, $signid, $effdate, $special_type ) = @_;
+    my ( $class, $stopid, $signid, $effdate, $special_type, $allstopids_r, $nonstoplocation )
+      = @_;
 
     my $self = $class->new(
         stopid  => $stopid,
@@ -130,50 +136,55 @@ sub new_from_kpoints {
         effdate => $effdate,
         is_bsh  => ( $special_type eq 'bsh' ),
         is_db   => ( $special_type eq 'db' ),
+        nonstoplocation => $nonstoplocation,
     );
 
-    my $citycode = substr( $stopid, 0, 2 );
+    foreach my $stop_to_import ( @{$allstopids_r} ) {
 
-    my $kpointfile = "kpoints/$citycode/$stopid.txt";
+        my $citycode = substr( $stop_to_import, 0, 2 );
 
-    open my $kpoint, '<', $kpointfile
-      or die "Can't open $kpointfile: $!";
+        my $kpointfile = "kpoints/$citycode/$stop_to_import.txt";
 
-    while (<$kpoint>) {
-        chomp;
-        my $column = Actium::O::Points::Column->new($_);
+        open my $kpoint, '<', $kpointfile
+          or die "Can't open $kpointfile: $!";
 
-        my $linegroup = $column->linegroup;
+        while (<$kpoint>) {
+            chomp;
+            my $column = Actium::O::Points::Column->new($_);
 
-        if ( $special_type eq 'bsh' ) {
-            if ( $linegroup =~ /^BS[DNH]$/ ) {
-                $self->push_columns($column);
+            my $linegroup = $column->linegroup;
+
+            if ( $special_type eq 'bsh' ) {
+                if ( $linegroup =~ /^BS[DNH]$/ ) {
+                    $self->push_columns($column);
+                }
+                next;
             }
-            next;
-        }
 
-        if ( $special_type eq 'db' ) {
-            if ( $linegroup =~ /^DB/ ) {
-                $self->push_columns($column);
+            if ( $special_type eq 'db' ) {
+                if ( $linegroup =~ /^DB/ ) {
+                    $self->push_columns($column);
+                }
+                next;
             }
-            next;
-        }
 
-        if ( $linegroup !~ /^6\d\d/ ) {
-            $self->push_columns($column);
-        }    # skip 600-series lines
-        else {
-            $self->set_note600;
-        }
+            if ( $linegroup !~ /^6\d\d/ ) {
+                $self->push_columns($column);
+            }    # skip 600-series lines
+            else {
+                $self->set_note600;
+            }
 
-        my $dircode = $column->dircode;
-        if ( $dircode eq '14' or $dircode eq '15' ) {
-            $self->set_has_ab;
-        }
+            my $dircode = $column->dircode;
+            if ( $dircode eq '14' or $dircode eq '15' ) {
+                $self->set_has_ab;
+            }
 
-    } ## tidy end: while (<$kpoint>)
+        } ## tidy end: while (<$kpoint>)
 
-    close $kpoint or die "Can't close $kpointfile: $!";
+        close $kpoint or die "Can't close $kpointfile: $!";
+
+    }
 
     return $self;
 
@@ -706,15 +717,18 @@ sub format_bottom {
     no warnings('once');
     my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid}; # this is a reference
     
-    my $description = 
-      $stop_r->{c_description_full} ;
-      
+    my $nonstoplocation = $self->nonstoplocation;
+
+    my $description = $nonstoplocation || $stop_r->{c_description_full};
+
     $IDT->encode_high_chars($description);
 
     print $botfh IDTags::parastyle('bottomnotes'), $description;
-      #$stop_r->{c_description_full} ;
+    #$stop_r->{c_description_full} ;
 
-    print $botfh ". Sign #$signid. Stop $stopid.";
+    print $botfh ". Sign #$signid.";
+    
+    print $botfh " Stop $stopid." unless $nonstoplocation;
 
     print $botfh " Shelter site #"
       . $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum} . "."
