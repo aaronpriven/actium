@@ -57,12 +57,11 @@ EOF
 }
 
 sub START {
-    
+
     my $class = shift;
-    
+
     my %params = @_;
     my $config = $params{config};
-    
 
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path();
@@ -73,37 +72,51 @@ sub START {
 
     our ( @signs, @stops, @lines, @signtypes );
     our ( %signs, %stops, %lines, %signtypes );
-    our (@places, %places);
+    our ( @places, %places );
+    our (@ssj);
 
     # retrieve data
 
     load_tables(
-    requests => {
-        Places_Neue => {
-            array       => \@places,
-            hash        => \%places,
-            index_field => 'Abbrev4'
-        },
-        SignTypes => {
-            array       => \@signtypes,
-            hash        => \%signtypes,
-            index_field => 'SignType'
-        },
-        Signs => { array => \@signs, hash => \%signs, index_field => 'SignID',
-           fields => [qw[
-           SignID Active stp_511_id Status SignType Sidenote UseOldMakepoints 
-           ShelterNum UNIQUEID
-           ]], 
-            
-             },
-        Lines => { array => \@lines, hash => \%lines, index_field => 'Line' },
-        Stops_Neue => {
-            hash        => \%stops,
-            index_field => 'h_stp_511_id',
-            fields => [qw[h_stp_511_id c_description_full ]],
-        },
+        requests => {
+            Places_Neue => {
+                array       => \@places,
+                hash        => \%places,
+                index_field => 'Abbrev4'
+            },
+            SignTypes => {
+                array       => \@signtypes,
+                hash        => \%signtypes,
+                index_field => 'SignType'
+            },
+            Signs => {
+                array       => \@signs,
+                hash        => \%signs,
+                index_field => 'SignID',
+                fields      => [
+                    qw[
+                      SignID Active stp_511_id Status SignType Sidenote UseOldMakepoints
+                      ShelterNum NonStopLocation NonStopCity
+                      ]
+                ],
+            },
+            Signs_Stops_Join => { array => \@ssj },
+            Lines =>
+              { array => \@lines, hash => \%lines, index_field => 'Line' },
+            Stops_Neue => {
+                hash        => \%stops,
+                index_field => 'h_stp_511_id',
+                fields      => [qw[h_stp_511_id c_description_full ]],
+            },
+        }
+    );
+
+    my %stops_of_sign;
+    foreach my $ssj (@ssj) {
+        my $ssj_stop = $ssj->{h_stp_511_id};
+        my $ssj_sign = $ssj->{SignID};
+        push @{ $stops_of_sign{$ssj_sign} }, $ssj_stop;
     }
-);
 
     my $effectivedate = trim( read_file('effectivedate.txt') );
 
@@ -124,32 +137,49 @@ sub START {
   SIGN:
     foreach my $signid ( sort { $a <=> $b } @signstodo ) {
 
-        my $ostopid = $signs{$signid}{UNIQUEID};
-        my $stopid  = $signs{$signid}{stp_511_id};
+        my $stopid = $signs{$signid}{stp_511_id};
 
-        my $sign_is_active = lc( $signs{$signid}{Active} ) ;
+        my $nonstoplocation;
+        if ( not ($stopid) ) {
+           $nonstoplocation = $signs{$signid}{NonStopLocation} . ', ' 
+           . $signs{$signid}{NonStopCity};
+        }
+
+        my @allstopids = @{ $stops_of_sign{$signid} };
+
+        if ( @allstopids and not $stopid ) {
+            $stopid = $allstopids[0];
+        }
+        elsif ( $stopid and not @allstopids ) {
+            @allstopids = ($stopid);
+        }
+
+        my $sign_is_active = lc( $signs{$signid}{Active} );
 
         next SIGN
           unless $stopid
-              and $sign_is_active eq 'yes'
-              and $signs{$signid}{Status} !~ /no service/i;
+          and $sign_is_active eq 'yes'
+          and $signs{$signid}{Status} !~ /no service/i;
         # skip inactive signs and those without stop IDs
-        
-        my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints});
+
+        my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints} );
 
         next SIGN if $old_makepoints eq 'yes';
 
         #####################
         # Following steps
 
-        # skip stop if file not found
-        my $citycode = substr( $stopid, 0, 2 );
-        my $kpointfile = "kpoints/$citycode/$stopid.txt";
+        foreach my $stoptotest (@allstopids) {
 
-        unless ( -e $kpointfile ) {
-            $skipped_stops{$signid} = "$ostopid:$stopid";
-          #print "\nSkipped sign ID $signid: no file found for stop $stopid.\n";
-            next SIGN;
+            # skip stop if file not found
+            my $citycode = substr( $stoptotest, 0, 2 );
+            my $kpointfile = "kpoints/$citycode/$stoptotest.txt";
+
+            unless ( -e $kpointfile ) {
+                $skipped_stops{$signid} = "$stoptotest";
+                next SIGN;
+            }
+
         }
 
         print "$signid ";
@@ -158,7 +188,7 @@ sub START {
 
         my $point
           = Actium::O::Points::Point->new_from_kpoints( $stopid, $signid,
-            $effdate , $old_makepoints);
+            $effdate, $old_makepoints, \@allstopids, $nonstoplocation );
 
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header
