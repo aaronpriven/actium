@@ -19,6 +19,8 @@ use Actium::Term (':all');
 use Actium::O::Folders::Signup;
 use Text::Trim;
 
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
+
 use Carp;
 use English('-no_match_vars');
 use Text::Wrap ('wrap');
@@ -105,15 +107,19 @@ my %tp_override_of;
 my %plain_override_of;
 my %tp_overridden;
 
-#my $stopdata;
-
 my %color_of;
 
 sub START {
+ 
+    my $class = shift;
+    my %params = @_;
+    
+    my $config_obj = $params{config};
 
     my $signup     = Actium::O::Folders::Signup->new();
     my $flagfolder = $signup->subfolder('flags');
-
+    my $actiumdb = actiumdb($config_obj);
+    
     my $stopdata = $signup->mergeread('Stops.csv');
 
     {
