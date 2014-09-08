@@ -35,13 +35,20 @@ sub newest_date {
         pattern => '%m/%d/%Y',    # not %D which uses two-digit year
         locale  => 'en_US',
     );
+    
+    state $strp_dashes = DateTime::Format::Strptime->new(
+        pattern => '%Y-%m-%d',    # not %D which uses two-digit year
+        locale  => 'en_US',
+        );
 
     my @datestrs = @_;
 
     my $newest_date;
     foreach my $datestr (@datestrs) {
+        
+        my $strp = $datestr =~ m{/} ? $strp_slashes : $strp_dashes;
 
-        my $this_date = $strp_slashes->parse_datetime($datestr);
+        my $this_date = $strp->parse_datetime($datestr);
         if (not defined $newest_date
             or ( defined $this_date
                 and DateTime->compare( $newest_date, $this_date ) == -1 )
