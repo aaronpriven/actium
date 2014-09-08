@@ -8,6 +8,13 @@ use Const::Fast;
 use File::Slurp::Tiny ('read_file');
 use Data::Dumper;
 
+if (exists $ENV{GATEWAY_INTERFACE} ) {
+    print "Content-type: text/html\r\n",
+          "Content-Disposition: attachment; " ,
+                 "filename=clipper-retail-locations.html\r\n" ,
+          "\r\n";
+}
+
 my $content;
 
 my %begin = (
