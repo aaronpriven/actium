@@ -147,9 +147,10 @@ sub columns_of_table {
     my $table = shift;
 
     $self->_ensure_loaded($table);
-
+    
     my $cacheref = $self->_column_cache_of_table($table);
-    return @{ keys %{$cacheref} };
+    
+    return keys %{$cacheref} ;
 }
 
 sub is_a_column {
