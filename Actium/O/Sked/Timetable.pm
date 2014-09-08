@@ -155,6 +155,7 @@ sub new_from_sked {
     # TODO allow for other timepoint notes
 
     my @place9s = $sked->place9s;
+    my @place4s = $sked->place4s;
 
     my $halfcols = 0;
     $halfcols++ if $has_multiple_lines;
@@ -194,24 +195,25 @@ sub new_from_sked {
     #$spec{linegroup} = $sked->linegroup;
 
     $spec{header_daytext} = $sked->days_obj->as_plurals;
+    
+    
+     my $places_r = $xml_db->all_in_columns_key(
+        qw/Places_Neue c_description c_destination /
+        );
 
-    my @timepoint_structs = $xml_db->timepoints_structs;
-    my %timepoint_row_of  = %{ $timepoint_structs[2] };    # Abbrev9
     my @header_columntexts;
 
     push @header_columntexts, 'Line' if $has_multiple_lines;
     push @header_columntexts, 'Note' if $has_multiple_daysexceptions;
 
-    # TODO - allow for place4 or at least place8 instead of place9
+    for my $i ( 0 .. $#place4s ) {
+        my $place4 = $place4s[$i];
+        my $tpname = $places_r->{$place4}{c_description};
 
-    for my $i ( 0 .. $#place9s ) {
-        my $place9 = $place9s[$i];
-        my $tpname = $timepoint_row_of{$place9}{TPName};
-
-        if ( $i != 0 and $place9s[ $i - 1 ] eq $place9 ) {
+        if ( $i != 0 and $place4s[ $i - 1 ] eq $place4 ) {
             $tpname = "Leaves $tpname";
         }
-        elsif ( $i != $#place9s and $place9s[ $i + 1 ] eq $place9 ) {
+        elsif ( $i != $#place4s and $place4s[ $i + 1 ] eq $place4 ) {
             $tpname = "Arrives $tpname";
         }
         push @header_columntexts, $tpname;
@@ -223,7 +225,7 @@ sub new_from_sked {
     $spec{header_dirtext}
       = $sked->to_text
       . $SPACE
-      . $timepoint_row_of{ $place9s[-1] }{DestinationF};
+      . $places_r->{ $place4s[-1] }{c_destination};
 
     # BODY
 
