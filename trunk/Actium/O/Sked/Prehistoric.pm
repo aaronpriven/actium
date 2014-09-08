@@ -18,13 +18,15 @@ package Actium::O::Sked::Prehistoric 0.001;
 use Moose::Role;
 use namespace::autoclean;
 
+use warnings 'FATAL';
+
 use Actium::Constants;
 use Actium::Term;
 use List::MoreUtils qw<uniq none>;
 
 use Text::Trim;
 use English '-no_match_vars';
-use Actium::Util ('jt');
+use Actium::Util (qw/jt dumpstr/);
 use Actium::Time ('timestr_sub');
 
 # comes from prehistorics
@@ -110,7 +112,7 @@ sub load_prehistorics {
         $xml_db = $signup->load_xml;
     }
 
-    $xml_db->ensure_loaded('Timepoints');
+    $xml_db->ensure_loaded('Places_Neue');
 
     my $xml_dbh = $xml_db->dbh;
 
@@ -120,14 +122,15 @@ sub load_prehistorics {
 
     {
         my $rows_r = $xml_dbh->selectall_arrayref(
-            'SELECT Abbrev9 , Abbrev4 FROM Timepoints');
+            'SELECT c_abbrev9 , h_plc_identifier FROM Places_Neue');
+            
         foreach my $row_r ( @{$rows_r} ) {
             my ( $tp9, $tp4 ) = @{$row_r};
             my $tp8 = _tp9_to_tp8($tp9);
             $tp4_of_tp8{$tp8} = $tp4;
         }
     }
-
+    
     my @files;
     if (@filespecs) {
         @files = map { $folder->glob_plain_files($_) } @filespecs;
@@ -135,7 +138,7 @@ sub load_prehistorics {
     else {
         @files = $folder->glob_plain_files;
     }
-
+    
     my @skeds
       = map { $class->_new_from_prehistoric( $_, \%tp4_of_tp8 ) } @files;
 
@@ -257,6 +260,11 @@ sub _new_from_prehistoric {
     $spec{trip_r} = \@trips;
 
     close $skedsfh or die "Can't close $filespec for reading: $OS_ERROR";
+    
+    #if ($filespec =~ /26_EB_WD/ ) {
+    #    say dumpstr $spec{place4_r};
+    #    say dumpstr $spec{place8_r};
+    #}
 
     return $class->new(%spec);
 
