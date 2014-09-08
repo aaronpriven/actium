@@ -409,37 +409,6 @@ End of ROW - Save row_buffer into SQLite database
 
 } ## tidy end: sub _load_xml_parser
 
-has timepoints_structs_r => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef',
-    lazy    => 1,
-    builder => '_build_timepoints_structs',
-    handles => { timepoints_structs => 'elements' },
-);
-
-sub _build_timepoints_structs {
-
-    my ( $rows_r, %rows_of_place4, %rows_of_place9 );
-
-    my $self = shift;
-    my $dbh  = $self->dbh;
-
-    $self->ensure_loaded('Timepoints');
-
-    $rows_r = $dbh->selectall_arrayref(
-        'SELECT * FROM Timepoints',
-        { Slice => {} }
-    );
-
-    foreach my $row ( @{$rows_r} ) {
-        $rows_of_place4{ $row->{Abbrev4} } = $row;
-        $rows_of_place9{ $row->{Abbrev9} } = $row;
-    }
-
-    return [ $rows_r, \%rows_of_place4, \%rows_of_place9 ];
-} ## tidy end: sub _build_timepoints
-
 #### These routines are not used currently, but I don't want to delete them
 #### and then forget they exist.
 #
@@ -579,21 +548,6 @@ Always returns undef, since FileMaker tables have no parents.
 These methods provide a convenient way of loading common tables.
 
 =over
-
-=item B<timepoints_structs>
-
-Since Timepoints is a frequenly used database and yet one that is reasonably 
-small, this returns the entire Timepoints database in perl data structures.
-
-Each row is a hash, where the keys are the field names and the values are the
-values.
-
-Returns three references. The first is an array reference, with references
-to each row.  The second is a hash reference, with the 'Abbrev4' values
-as the keys, and the row references as the values. The third is like the second,
-except it uses 'Abbrev9' as the key instead of 'Abbrev4'.
-
-=back
 
 =head1 PRIVATE METHODS
 
