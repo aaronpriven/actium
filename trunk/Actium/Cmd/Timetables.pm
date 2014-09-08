@@ -48,8 +48,8 @@ sub START {
     my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
     my $multipubtt_folder = $tabulae_folder->subfolder('pub-idtags');
 
-    my $xml_db = $signup->load_xml;
-    # my $xml_db = $actiumdb; # testy test test. Can this work?
+    #my $xml_db = $signup->load_xml;
+    my $xml_db = $actiumdb; # testy test test. Can this work?
 
     my $prehistorics_folder = $signup->subfolder('skeds');
 
