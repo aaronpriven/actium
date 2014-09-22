@@ -30,21 +30,29 @@ my %order_of = map { $_ => $count++ } @DIRCODES;
 sub START {
     
     emit "Making HTML files of stop lists";
+    
+    my $class  = shift;
+    my %params = @_;
 
-    my $signup                = Actium::O::Folders::Signup->new();
+    my $config_obj = $params{config};
+
+    my $signup   = Actium::O::Folders::Signup->new;
+    my $actiumdb = actiumdb($config_obj);
+    
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');
     #    my $linehtml_folder       = $stoplists_folder->subfolder('linehtml');
 
-    my $xml_db = $signup->load_xml;
-    $xml_db->ensure_loaded('Stops');
+    $actiumdb->ensure_loaded('Stops');
 
     emit 'Getting stop descriptions from FileMaker export';
 
-    my $dbh = $xml_db->dbh;
+    my $dbh = $actiumdb->dbh;
 
     my $stops_row_of_r
-      = $xml_db->all_in_columns_key(qw/Stops DescriptionListF GoogleURL CityF/);
+      = $actiumdb->all_in_columns_key
+      (qw/Stops_Neue c_description_short h_loca_latitude h_loca_longtitude 
+          c_city/);
 
     emit_done;
 
@@ -93,11 +101,16 @@ sub START {
                 next if $scheduling_desc =~ /^Virtual/;
 
                 my $desc = encode_entities(
-                    $stops_row_of_r->{$stopid}{DescriptionListF} );
-                my $url  = $stops_row_of_r->{$stopid}{GoogleURL};
-                $url =~ tr/\(/\[/;
-                $url =~ tr/\)/\]/;
-                my $city = encode_entities( $stops_row_of_r->{$stopid}{CityF} );
+                    $stops_row_of_r->{$stopid}{c_description_short} );
+                    
+                    
+                my $latlong = 
+                    $stops_row_of_r->{$stopid}{h_loca_latitude} . ',' . 
+                    $stops_row_of_r->{$stopid}{h_loca_longitude} 
+                     ;
+                my $url =  'http://maps.google.com/maps?q=@' . $latlong . "&z=18";
+                    
+                my $city = encode_entities( $stops_row_of_r->{$stopid}{c_city} );
 
                 my $citytext = $EMPTY_STR;
 
