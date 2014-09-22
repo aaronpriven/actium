@@ -141,7 +141,7 @@ sub new_from_sked {
 
     my $class  = shift;
     my $sked   = shift;
-    my $xml_db = shift;
+    my $actiumdb = shift;
 
     my %spec;
 
@@ -197,7 +197,7 @@ sub new_from_sked {
     $spec{header_daytext} = $sked->days_obj->as_plurals;
     
     
-     my $places_r = $xml_db->all_in_columns_key(
+     my $places_r = $actiumdb->all_in_columns_key(
         qw/Places_Neue c_description c_destination /
         );
 
