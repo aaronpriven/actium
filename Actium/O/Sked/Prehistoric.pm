@@ -19,6 +19,7 @@ use Moose::Role;
 use namespace::autoclean;
 
 use warnings 'FATAL';
+use Carp;
 
 use Actium::Constants;
 use Actium::Term;
@@ -104,24 +105,23 @@ sub load_prehistorics {
 
     my $class     = shift;
     my $folder    = shift;
-    my $xml_db    = shift;
+    my $actiumdb    = shift;
     my @filespecs = @_;
 
-    if ( not defined $xml_db ) {
-        my $signup = $folder->signup_obj;
-        $xml_db = $signup->load_xml;
+    if ( not defined $actiumdb ) {
+        croak "No Actium database defined";
     }
 
-    $xml_db->ensure_loaded('Places_Neue');
+    $actiumdb->ensure_loaded('Places_Neue');
 
-    my $xml_dbh = $xml_db->dbh;
+    my $actium_dbh = $actiumdb->dbh;
 
     emit "Loading prehistoric schedules";
 
     my %tp4_of_tp8;
 
     {
-        my $rows_r = $xml_dbh->selectall_arrayref(
+        my $rows_r = $actium_dbh->selectall_arrayref(
             'SELECT c_abbrev9 , h_plc_identifier FROM Places_Neue');
             
         foreach my $row_r ( @{$rows_r} ) {
