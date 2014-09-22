@@ -33,10 +33,14 @@ sub START {
  
    my $class = shift;
    
-   my $signup         = Actium::O::Folders::Signup->new();
-   my $html_folder = $signup->subfolder('html'); 
+   my %params = @_;
+
+    my $config_obj = $params{config};
+
+    my $signup   = Actium::O::Folders::Signup->new;
+    my $actiumdb = actiumdb($config_obj);
    
-   my $xml_db = $signup->load_xml;
+   my $html_folder = $signup->subfolder('html'); 
    
  
    my $prehistorics_folder = $signup->subfolder('skeds');
@@ -44,7 +48,7 @@ sub START {
      emit "Loading prehistoric schedules";
 
     my @skeds
-      = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $xml_db );
+      = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
 
     emit_done;
     
@@ -60,7 +64,7 @@ sub START {
             $prev_linegroup = $linegroup;
         }
 
-        push @tables, Actium::O::Sked::Timetable->new_from_sked( $sked, $xml_db );
+        push @tables, Actium::O::Sked::Timetable->new_from_sked( $sked, $actiumdb );
         
     }
 
