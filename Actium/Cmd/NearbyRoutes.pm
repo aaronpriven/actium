@@ -32,13 +32,20 @@ my $addressname = 'addresses.txt';
 my $threshold = 5280 / 3;    # 1/3 mile
 
 sub START {
+    
+    my $class  = shift;
+    my %params = @_;
+
+    my $config_obj = $params{config};
+
+    my $actiumdb = actiumdb($config_obj);
 
     my $signup     = Actium::O::Folders::Signup->new();
     my $dbfilespec = $signup->make_filespec($dbname);
 
     Geo::Coder::US->set_db($dbfilespec);
 
-    my $stops_r = load_stops($signup);
+    my $stops_r = load_stops($signup, $actiumdb);
 
     open my $in, '<', $signup->make_filespec($addressname);
 
@@ -88,12 +95,12 @@ sub START {
 sub load_stops {
 
     my $signup = shift;
+    my $actiumdb = shift;
 
-    my $xml_db = $signup->load_xml;
-    $xml_db->ensure_loaded('Stops');
+    $actiumdb->ensure_loaded('Stops');
 
     emit 'Getting stop descriptions from FileMaker export';
-    my $dbh = $xml_db->dbh;
+    my $dbh = $actiumdb->dbh;
 
     my $stops_rows_r
       = $dbh->selectall_arrayref(
