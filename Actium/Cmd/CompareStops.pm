@@ -22,6 +22,8 @@ use Actium::Options (qw<add_option option>);
 use Actium::O::Folders::Signup;
 use Actium::Util (qw<jt jn>);
 
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
+
 use Algorithm::Diff;
 
 use Actium::O::Patterns::Stop;
@@ -64,12 +66,18 @@ HELP
 
 sub START {
 
+    my $class      = shift;
+    my %params     = @_;
+    my $config_obj = $params{config};
+    
+    my $actiumdb = actiumdb($config_obj);
+    
     my $newsignup = Actium::O::Folders::Signup->new();
     my $oldsignup = Actium::O::Folders::Signup->new( { signup => option('oldsignup') } );
 
     my $skipped_lines_r = [ split( /,/, option('skiplines') ) ];
 
-    my $stops_row_of_r = get_xml_stops($newsignup);
+    my $stops_row_of_r = get_stops($actiumdb);
 
     my ( $comparisons_r, $stops_of_change_r )
       = compare_stops( $oldsignup, $newsignup, $skipped_lines_r );
@@ -90,16 +98,17 @@ sub START {
 
 sub get_xml_stops {
 
-    my $signup = shift;
+    my $actiumdb = shift;
 
-    my $xml_db = $signup->load_xml;
-    $xml_db->ensure_loaded('Stops');
+    $actiumdb->ensure_loaded('Stops_Neue');
 
     emit 'Getting stop descriptions from FileMaker export';
-    my $dbh = $xml_db->dbh;
+    my $dbh = $actiumdb->dbh;
 
     my $stops_row_of_r
-      = $xml_db->all_in_columns_key(qw/Stops CityF OnF AtF DescriptionCityF/);
+      #= $actiumdb->all_in_columns_key(qw/Stops CityF OnF AtF DescriptionCityF/);
+      = $actiumdb->all_in_columns_key
+           (qw/Stops_Neue c_city c_on c_at c_description_city/);
 
     emit_done;
 
@@ -222,7 +231,11 @@ sub make_comparetext {
 
         my @columns = (
             $comparison_r->{'?'}, $stop_id,
-            $stops_row_of_r->{PhoneID}{DescriptionCityF}
+#            $stops_row_of_r->{h_stp_511_id}{c_description_city}
+# Not sure why this had the field *name* when it should have had the *value*.
+# I fixed it, but if it breaks, this might be why
+            $stops_row_of_r->{$stop_id}{c_description_city}
+
         );
 
         push @columns, route_columns($comparison_r);
@@ -260,9 +273,9 @@ sub output_comparetext {
     my ( $newsignup, $stops_row, $lines_of_stop_r ) = @_;
 
     my @stopids = sort {
-             lc( $stops_row->{$a}{CityF} ) cmp lc( $stops_row->{$b}{CityF} )
-          or lc( $stops_row->{$a}{OnF} ) cmp lc( $stops_row->{$b}{OnF} )
-          or lc( $stops_row->{$a}{AtF} ) cmp lc( $stops_row->{$b}{AtF} )
+             lc( $stops_row->{$a}{c_city} ) cmp lc( $stops_row->{$b}{c_city} )
+          or lc( $stops_row->{$a}{c_on} ) cmp lc( $stops_row->{$b}{c_on} )
+          or lc( $stops_row->{$a}{c_at} ) cmp lc( $stops_row->{$b}{c_at} )
           or $a cmp $b
     } keys %{$lines_of_stop_r};
 
@@ -316,7 +329,7 @@ sub make_comparetravel {
                     $stop_id,
                     "$linedir-$change",
                     "$idx of $#thesestops",
-                    $stops_row_of_r->{DescriptionCityF},
+                    $stops_row_of_r->{c_description_city},
                     route_columns( $comparisons_r->{$stop_id} ),
                 );
                 push @results, jt(@columns);
