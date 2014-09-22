@@ -95,6 +95,8 @@ sub START {
                 my $desc = encode_entities(
                     $stops_row_of_r->{$stopid}{DescriptionListF} );
                 my $url  = $stops_row_of_r->{$stopid}{GoogleURL};
+                $url =~ tr/\(/\[/;
+                $url =~ tr/\)/\]/;
                 my $city = encode_entities( $stops_row_of_r->{$stopid}{CityF} );
 
                 my $citytext = $EMPTY_STR;
