@@ -73,10 +73,6 @@ sub line_descrip_html {
     my ( $actiumdb, $signup, $current_version )
       = @params{qw[database signup version]};
 
-    #my $xml_db          = $params{database};
-    #my $signup          = $params{signup};
-    #my $current_version = $params{version};
-
     my $effdate = effectivedate($signup);
 
     my $linedescrip_of_class_r = line_descrips_by_class($actiumdb);
