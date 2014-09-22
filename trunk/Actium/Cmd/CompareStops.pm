@@ -96,7 +96,7 @@ sub START {
 
 } ## tidy end: sub START
 
-sub get_xml_stops {
+sub get_stops {
 
     my $actiumdb = shift;
 
