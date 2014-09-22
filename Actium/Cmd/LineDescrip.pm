@@ -44,8 +44,6 @@ sub START {
     my $signup = Actium::O::Folders::Signup->new();
     my $actiumdb = actiumdb($config_obj);
     
-    #my $xml_db = $signup->load_xml;
-
     my $version = option('version');
 
     unless ( $version or $version eq '0' ) {
