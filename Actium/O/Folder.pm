@@ -345,15 +345,6 @@ sub children {
 #######################
 ### READ OR WRITE MISC FILES IN THIS FOLDER
 
-sub mergeread {
-
-    # should be obsolete 
-    my $self     = shift;
-    my $filename = shift;
-    my $filespec = $self->make_filespec($filename);
-    require Actium::Files::Merge::Mergefiles;
-    return Actium::Files::Merge::Mergefiles->mergeread($filespec);
-}
 
 sub slurp_write {
 
@@ -868,13 +859,6 @@ folder represented by the object. If no pattern is specified, uses
 Like B<glob_files>, except returns only plain files 
 (that is, where B<-f I<file>> is true).
 
-=item B<$obj-E<gt>mergeread(F<filename>)>
-
-Returns an L<Actium::Files::Merge::Mergefiles> object representing the data in 
-F<filename> in the folder represented by this object. 
-
-This is an obsolete feature and will be removed. 
-
 =item B<$obj-E<gt>store($data_r , F<filename>)>
 
 =item B<$obj-E<gt>retrieve(F<filename>)>
@@ -1109,8 +1093,6 @@ The following are loaded only when necessary:
 =over
 
 =item Actium::O::Files::HastusASI
-
-=item Actium::Files::Merge::Mergefiles
 
 =back
 
