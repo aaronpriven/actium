@@ -15,13 +15,8 @@ use Actium::O::Folders::Signup;
 use Actium::Util qw(jt );
 use Actium::Term ('output_usage');
 use Actium::Constants;
-use Actium::O::Files::FMPXMLResult;
 use Actium::O::Files::HastusASI;
 
-
-use Actium::Options(qw<add_option option>);
-
-add_option( 'type=s', 'Database type -- H for Hastus or F for FileMaker' );
 
 sub START {
 
@@ -33,19 +28,8 @@ sub START {
   my $dir;
     my $db;
 
-    my $type = option('type');
-    for ( lc($type) ) {
-        if ($_ eq 'f') {
-            $dir = Actium::O::Folders::Signup->new('xml');
-            $db = Actium::O::Files::FMPXMLResult->new( $dir->path() );
-            next;
-        } elsif ($_ eq 'h') {
             $dir = Actium::O::Folders::Signup->new('hasi');
             $db = Actium::O::Files::HastusASI->new( $dir->path() );
-            next;
-        }
-        die "Don't know about type $type";
-    }
 
     my $table = $argv[0];
 
@@ -89,9 +73,7 @@ actium sqlite2tab -- convert Actium::O::Files::SQLite data to tab file
 
 Usage:
 
-actium sqlite2tab --type <type> <table>
-
-<type> must be either H for Hastus or F for FileMaker.
+actium sqlite2tab <table>
 
 Outputs to standard output text consisting of the table from the 
 specified database, delimited by tabs. It is primarily for testing the 
@@ -121,7 +103,7 @@ This documentation refers to version 0.001
 
 From a shell:
 
- actium.pl sqlite2tab -type <type> <table>
+ actium.pl sqlite2tab <table>
    
 =head1 REQUIRED ARGUMENTS
 
@@ -131,21 +113,11 @@ From a shell:
 
 This is the table name. From the Hastus AVL Standard Interface data,
 it is the same as "Record" -- in the Hastus AVL Standard Interface 
-documentation -- e.g., "STP" for the stop records. For FileMaker data, 
-it is the name of the file (e.g., "Timepoints" for "Timepoints.xml").
+documentation -- e.g., "STP" for the stop records.
 
 =back
 
 =head1 OPTIONS
-
-=over
-
-=item B<-type>
-
-"type" is a required option (not really an option, then, I guess), specifying
-what kind of database to use: H for Hastus ASI or F for FileMaker FMPXMLResult.
-
-=back
 
 Other modules this subprogram uses specify several other options. See:
 
@@ -158,14 +130,14 @@ A complete list of options can be found by running "actium.pl help sqlite2tab"
 =head1 DESCRIPTION
 
 Outputs to standard output text consisting of the ROWTYPE from the
-Hastus AVL Standard Interface files, or the FileMaker Pro FMPXMLRESULT
-XML files of the specified signup, converted to tab-delimited files.
+Hastus AVL Standard Interface files, converted to tab-delimited files.
+(Older versions also output text
+from the FileMaker Pro FMPXMLRESULT XML files, but this is no longer supported.)
 Its purpose is primarily to test Actium::O::Files::SQLite and classes
 that compose it, but may have other uses.
 
 For Hastus ASI, it includes the data from the Hastus ASI files as
-documented in the Hastus AVL Standard Interface documentation.  For
-FileMaker, it includes whatever data was exported.
+documented in the Hastus AVL Standard Interface documentation.  
 
 It will also have one or more additional columns:
 
@@ -180,7 +152,7 @@ A serial number for each line in the file, called "${table}_id" (e.g.,
 
 The serial number the for the parent row of this row, in the parent table,
 if this table has a parent.  For example, the TPS table will have a column 
-PAT_id, containing the ID for the parent's row. (Hastus only)
+PAT_id, containing the ID for the parent's row. 
 
 =item TABLE_key
 
@@ -217,7 +189,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2011
+Copyright 2011-2014
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
