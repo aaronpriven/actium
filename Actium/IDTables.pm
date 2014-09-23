@@ -40,7 +40,7 @@ sub create_timetable_texts {
 
     emit "Creating timetable texts";
 
-    my $xml_db = shift;
+    my $db_obj = shift;
     my @skeds  = @_;
 
     my ( %tables_of, @alltables );
@@ -53,7 +53,7 @@ sub create_timetable_texts {
             $prev_linegroup = $linegroup;
         }
 
-        my $table = Actium::O::Sked::Timetable->new_from_sked( $sked, $xml_db );
+        my $table = Actium::O::Sked::Timetable->new_from_sked( $sked, $db_obj );
         push @{ $tables_of{$linegroup} }, $table;
         push @alltables, $table;
     }
@@ -93,12 +93,12 @@ sub output_all_tables {
 } ## tidy end: sub output_all_tables
 
 sub get_pubtt_contents_with_dates {
-    my $xml_db  = shift;
+    my $db_obj  = shift;
     my $lines_r = shift;
 
-    $xml_db->ensure_loaded('Lines');
+    $db_obj->ensure_loaded('Lines');
     my $on_timetable_from_db_r
-      = $xml_db->all_in_columns_key(qw/Lines PubTimetable TimetableDate/);
+      = $db_obj->all_in_columns_key(qw/Lines PubTimetable TimetableDate/);
 
     my %on_timetable_of;
 
@@ -131,12 +131,12 @@ sub get_pubtt_contents_with_dates {
 
     }
 
-    $xml_db->ensure_loaded('PubTimetables');
+    $db_obj->ensure_loaded('PubTimetables');
 
-    my @pubtimetable_cols = $xml_db->columns_of_table('PubTimetables');
+    my @pubtimetable_cols = $db_obj->columns_of_table('PubTimetables');
 
     my $pubtimetables_r
-      = $xml_db->all_in_columns_key( 'PubTimetables', @pubtimetable_cols );
+      = $db_obj->all_in_columns_key( 'PubTimetables', @pubtimetable_cols );
 
     return [ sort { byline( $a->{lines}->[0], $b->{lines}->[0] ) }
           @pubtt_contents_with_dates ], $pubtimetables_r;
