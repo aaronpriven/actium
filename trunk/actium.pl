@@ -72,7 +72,6 @@ my %module_of = (
     htmltables      => 'HTMLTables',
     linedescrip     => 'LineDescrip',
     decalcount      => 'DecalCount',
-    xml2thea        => 'Xml2Thea',
     xheaimport      => 'XheaImport',
     xhea2hasi       => 'Xhea2Hasi',
     # more to come

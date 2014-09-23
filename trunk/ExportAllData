@@ -1,6 +1,0 @@
-#!/bin/tcsh
-osascript <<EOF
-tell application "FileMaker Pro"
-  do script "ExportAllData"
-end tell
-EOF
