@@ -17,26 +17,20 @@ use sort ('stable');
 use FindBin qw($Bin);
 use lib $Bin;
 
-use Carp;
-use POSIX ('ceil');
+use Actium::Preamble;
 
 use Actium::Term (qw<output_usage printq sayq>);
-use Actium::Constants;
 use Actium::Union('ordered_union');
 
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
-use List::MoreUtils('natatime');
 use Actium::O::Folders::Signup;
 
 use File::Slurp::Tiny('read_file');
 use Text::Trim;
 
 use Actium::Options;
-
 use Actium::O::Points::Point;
-
-use Const::Fast;
 
 const my $IDPOINTFOLDER => 'indesign_points';
 
@@ -82,7 +76,7 @@ sub START {
             Places_Neue => {
                 array       => \@places,
                 hash        => \%places,
-                index_field => 'Abbrev4'
+                index_field => 'h_plc_identifier'
             },
             SignTypes => {
                 array       => \@signtypes,
@@ -95,8 +89,8 @@ sub START {
                 index_field => 'SignID',
                 fields      => [
                     qw[
-                      SignID Active stp_511_id Status SignType Sidenote UseOldMakepoints
-                      ShelterNum NonStopLocation NonStopCity
+                      SignID Active stp_511_id Status SignType Sidenote
+                      UseOldMakepoints ShelterNum NonStopLocation NonStopCity
                       ]
                 ],
             },
@@ -140,18 +134,26 @@ sub START {
         my $stopid = $signs{$signid}{stp_511_id};
 
         my $nonstoplocation;
-        if ( not ($stopid) ) {
-           $nonstoplocation = $signs{$signid}{NonStopLocation} . ', ' 
-           . $signs{$signid}{NonStopCity};
+        if ( not($stopid) ) {
+            $nonstoplocation = $signs{$signid}{NonStopLocation} . ', '
+              . $signs{$signid}{NonStopCity};
         }
 
-        my @allstopids = @{ $stops_of_sign{$signid} };
+        my @allstopids;
+        if ( exists $stops_of_sign{$signid} ) {
 
-        if ( @allstopids and not $stopid ) {
-            $stopid = $allstopids[0];
+            @allstopids = @{ $stops_of_sign{$signid} };
+
+            if ($stopid) {
+                @allstopids = uniq sort ( $stopid, @allstopids );
+            }
+            else {
+                $stopid = $allstopids[0];
+            }
+
         }
-        elsif ( $stopid and not @allstopids ) {
-            @allstopids = ($stopid);
+        else {
+            @allstopids = ($signid);
         }
 
         my $sign_is_active = lc( $signs{$signid}{Active} );
@@ -163,7 +165,7 @@ sub START {
         # skip inactive signs and those without stop IDs
 
         my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints} );
-
+        
         next SIGN if $old_makepoints eq 'yes';
 
         #####################
@@ -176,7 +178,7 @@ sub START {
             my $kpointfile = "kpoints/$citycode/$stoptotest.txt";
 
             unless ( -e $kpointfile ) {
-                $skipped_stops{$signid} = "$stoptotest";
+                $skipped_stops{$signid} = $stoptotest;
                 next SIGN;
             }
 
