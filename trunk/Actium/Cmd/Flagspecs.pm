@@ -119,7 +119,8 @@ sub START {
     my $signup     = Actium::O::Folders::Signup->new();
     my $flagfolder = $signup->subfolder('flags');
     
-   my (%places, %stops, %lines);
+   my (%places, %stops);
+   #my %lines;
    
    load_tables(
         requests => {
@@ -127,12 +128,13 @@ sub START {
                 hash        => \%places,
                 index_field => 'h_plc_identifier'
             },
-            Lines =>
-              { hash => \%lines, index_field => 'Line' },
+            #Lines =>
+            #  { hash => \%lines, index_field => 'Line' },
             Stops_Neue => {
                 hash        => \%stops,
                 index_field => 'h_stp_511_id',
-                fields      => [qw[h_stp_511_id c_description_full u_connections h_stp_district ]],
+                fields      => [qw[h_stp_511_id c_description_full 
+                   u_connections h_stp_district ]],
             },
         }
     ); 
@@ -267,9 +269,14 @@ sub build_place_and_stop_lists {
             
             $patinfo->{Place} = $prevplace;
             
-            foreach my $connection ( split( /\n/sx, $row->{u_connections}  ) )
+            my $connections = $row->{u_connections};
+            if ($connections) {
+            
+            foreach my $connection ( split( /[\n\r]/sx, $row->{u_connections}  ) )
             {
                 $patinfo->{Connections}{$connection} = 1;
+            }
+            
             }
 
             my $district = $row->{h_stp_district};
@@ -559,7 +566,7 @@ sub cull_placepats {
         {
             $conn_icon{$_} = 1 foreach keys %{ $patinfo->{ConnIcons} };
         }
-
+        
         return j( map { $ICON_OF{$_} } keys %conn_icon );
 
     }
@@ -1155,13 +1162,13 @@ sub output_specs {
 
     my $file = File::Spec->catfile( $flagfolder->path(), $STOP_SPEC_FILENAME );
 
-    open my $out, '>', $file
+    open my $out, '>encoding(UTF-8)', $file
       or die "Can't open $file for writing: $OS_ERROR";
     my $oldfh = select $out;
 
     foreach my $stop ( sort keys %routes_of_stop ) {
         my $row = $stops_r->{$stop} ;
-        my $stopdesc = $row->{c_description_city};
+        my $stopdesc = $row->{c_description_full};
 
         next if $stopdesc =~ /Virtual Stop/si;
         next if $stopdesc =~ /^Transbay Terminal/si;
