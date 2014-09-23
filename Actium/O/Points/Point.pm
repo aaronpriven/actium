@@ -44,6 +44,16 @@ has 'nonstoplocation' => (
     is => 'ro',
     isa => 'Maybe[Str]',
     );
+    
+has 'allstopids_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => {
+        allstopids   => 'elements',
+    },
+);
 
 has 'note600' => (
     traits  => ['Bool'],
@@ -127,7 +137,8 @@ sub add_to_width {
 }
 
 sub new_from_kpoints {
-    my ( $class, $stopid, $signid, $effdate, $special_type, $allstopids_r, $nonstoplocation )
+    my ( $class, $stopid, $signid, $effdate, $special_type, 
+         $allstopids_r, $nonstoplocation )
       = @_;
 
     my $self = $class->new(
@@ -137,6 +148,7 @@ sub new_from_kpoints {
         is_bsh  => ( $special_type eq 'bsh' ),
         is_db   => ( $special_type eq 'db' ),
         nonstoplocation => $nonstoplocation,
+        allstopids_r => $allstopids_r,
     );
 
     foreach my $stop_to_import ( @{$allstopids_r} ) {
