@@ -58,8 +58,8 @@ has sked_obj => (
 
 );
 # At one point I thought this object could be contained by the sked object
-# rather than the other way around, but it can't because I need the xml
-# data to make this object, and the sked object doesn't know it.
+# rather than the other way around, but it can't because I need info from the
+# Actium database to make this object, and the sked object doesn't know it.
 
 has [qw <half_columns columns>] => (
     isa      => 'Int',
