@@ -494,8 +494,6 @@ and are described in the documentation for that module.
 
 =item B<$obj-E<gt>load_sqlite()>
 
-=item B<$obj-E<gt>load_xml()>
-
 =item B<$obj-E<gt>load_hasi()>
 
 Identical to their Actium::O::Folder counterparts, except that if

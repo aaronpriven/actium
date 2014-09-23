@@ -347,7 +347,7 @@ sub children {
 
 sub mergeread {
 
-    # should be obsolete with Actium::O::Files::FMPXMLResult
+    # should be obsolete 
     my $self     = shift;
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
@@ -548,11 +548,6 @@ sub load_sqlite {
     return $database_class->new(%params);
 
 } ## tidy end: sub load_sqlite
-
-sub load_xml {
-    my $self = shift;
-    $self->load_sqlite( 'xml', 'Actium::O::Files::FMPXMLResult', @_ );
-}
 
 sub load_hasi {
     my $self = shift;
@@ -878,8 +873,7 @@ Like B<glob_files>, except returns only plain files
 Returns an L<Actium::Files::Merge::Mergefiles> object representing the data in 
 F<filename> in the folder represented by this object. 
 
-This is an obsolete feature and will be removed. Actium::O::Files::FMPXMLResult 
-should be used to read FileMaker exports.
+This is an obsolete feature and will be removed. 
 
 =item B<$obj-E<gt>store($data_r , F<filename>)>
 
@@ -898,11 +892,9 @@ in the object's folder with the current filename, throwing an exception
 upon failure. Returns the open file handle. In either case, uses UTF-8
 encoding.
 
-=item B<$obj-E<gt>load_xml({I<named arguments>>)>
- 
 =item B<$obj-E<gt>load_hasi({I<named arguments>>)>
 
-Returns an Actium::O::Files::FMPXMLResult object, or an Actium::O::Files::HastusASI 
+Returns an Actium::O::Files::HastusASI 
 object. The named arguments are:
 
 =over
@@ -914,8 +906,7 @@ either a string, or an array to a list of one or more strings.
 
 If the empty string is provided, then the folder of the object itself is used.
 Otherwise, a subfolder of the object's folder is used: either one specified
-by the string or strings provided, or the default: 'xml' for load_xml, or
-'hasi' for load_hasi.
+by the string or strings provided, or the default: 'hasi' for load_hasi.
 
 =item db_folder
 
@@ -935,8 +926,7 @@ subfolders of the folder of the current object.
 The database class will be some perl class to be "require"d by this method,
 probably composing the Actium::O::Files::SQLite role.
 
-The named arguments are the same as those of the B<load_xml> and B<load_hasi> 
-methods, above.
+The named arguments are the same as those of the B<load_hasi> method, above.
 
 =item B<$obj-E<gt>write_files_with_method({I<named arguments>})>
 
@@ -1117,8 +1107,6 @@ L<write_files_from_hash> routines.
 The following are loaded only when necessary:
 
 =over
-
-=item Actium::O::Files::FMPXMLResult
 
 =item Actium::O::Files::HastusASI
 

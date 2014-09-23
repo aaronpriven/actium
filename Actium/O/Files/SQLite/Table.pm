@@ -320,7 +320,8 @@ Actium::O::Files::SQLite role.
 All objects are read-only and are expected to be set during object construction.
 
 It is intended to be used only from within another class, such as 
-Actium::O::Files::HastusASI::Definition or Actium::O::Files::FMPXMLresult. All 
+Actium::O::Files::HastusASI::Definition or (formerly) 
+Actium::O::Files::FMPXMLresult. All 
 attributes and methods should be considered private to that class.
 
 =head1 ATTRIBUTES and METHODS
