@@ -19,7 +19,7 @@ use Actium::Term (':all');
 use Actium::O::Folders::Signup;
 use Text::Trim;
 
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
 use Carp;
 use English('-no_match_vars');
@@ -118,16 +118,32 @@ sub START {
 
     my $signup     = Actium::O::Folders::Signup->new();
     my $flagfolder = $signup->subfolder('flags');
-    my $actiumdb = actiumdb($config_obj);
     
-    my $stopdata = $signup->mergeread('Stops.csv');
-
+   my (%places, %stops, %lines);
+   
+   load_tables(
+        requests => {
+            Places_Neue => {
+                hash        => \%places,
+                index_field => 'h_plc_identifier'
+            },
+            Lines =>
+              { hash => \%lines, index_field => 'Line' },
+            Stops_Neue => {
+                hash        => \%stops,
+                index_field => 'h_stp_511_id',
+                fields      => [qw[h_stp_511_id c_description_full u_connections h_stp_district ]],
+            },
+        }
+    ); 
+    
+    
     {
         my $hasi_db = $signup->load_hasi();
      #        my $hasidir = $signup->subfolder('hasi');
      #        my $hasi_db = Actium::O::Files::HastusASI->new( $hasidir->path());
         $hasi_db->ensure_loaded(qw(PAT TRP));
-        build_place_and_stop_lists( $hasi_db, $stopdata );
+        build_place_and_stop_lists( $hasi_db, \%stops );
 
         build_trip_quantity_lists($hasi_db);
     }
@@ -141,7 +157,7 @@ sub START {
 
     delete_last_stops();
 
-    load_timepoint_data($signup);
+    load_timepoint_data(\%places);
     build_placelist_descriptions();
 
     build_pat_combos();
@@ -151,7 +167,7 @@ sub START {
 
     build_color_of($signup);
 
-    output_specs( $flagfolder, $stopdata );
+    output_specs( $flagfolder, \%stops );
 
     return;
 
@@ -160,10 +176,7 @@ sub START {
 sub build_place_and_stop_lists {
 
     my $hasi_db  = shift;
-    my $stopdata = shift;
-
-    my ( $connections_col, $district_col )
-      = $stopdata->column_order_of( 'Connections', 'calc_district_id' );
+    my $stops_r = shift;
 
     emit 'Building lists of places and stops';
 
@@ -250,16 +263,16 @@ sub build_place_and_stop_lists {
                 @intermediate_stops = ();
             }
 
-            my ($row) = $stopdata->rows_where( 'PhoneID', $stop_ident );
+            my $row = $stops_r->{$stop_ident};
             
             $patinfo->{Place} = $prevplace;
             
-            foreach my $connection ( split( /\n/sx, $row->[$connections_col] ) )
+            foreach my $connection ( split( /\n/sx, $row->{u_connections}  ) )
             {
                 $patinfo->{Connections}{$connection} = 1;
             }
 
-            my $district = $row->[$district_col];
+            my $district = $row->{h_stp_district};
             $district =~ s/\A 0//sx;
             $patinfo->{District} = $district;
             next TPS if $district =~ /\A D/sx;    # dummy stop
@@ -1006,11 +1019,10 @@ sub relevant_places {
 
 {
 
-    my $timepoint_data;
+    my $places_r;
 
     sub load_timepoint_data {
-        my $signup = shift;
-        $timepoint_data = $signup->mergeread('Timepoints.csv');
+        $places_r = shift;
         return;
     }
 
@@ -1025,7 +1037,6 @@ sub relevant_places {
         my ( $route, $dir ) = routedir($routedir);
         my $combokey   = shift;
         my @placelists = @_;
-        my $column     = $timepoint_data->column_order_of('DestinationF');
 
         my %destinations;
         my @place_arys;
@@ -1047,8 +1058,8 @@ sub relevant_places {
         foreach my $placelist (@placelists) {
             my $place = $placelist;
             $place =~ s/.*$NEW_KEY_SEPARATOR//sx;
-            my $row = $timepoint_data->rows_where( 'Abbrev4', $place );
-            $destinations{ $row->[$column] } = $order{$place};
+            my $dest = $places_r->{$place}{c_destination};
+            $destinations{ $dest }  = $order{$place};
         }
 
         my $destination = join( q{ / },
@@ -1097,9 +1108,7 @@ sub relevant_places {
 
                 my @descriptions;
                 foreach my $place ( sk($relevant) ) {
-                    my $row = $timepoint_data->rows_where( 'Abbrev4', $place );
-                    $row = $timepoint_data->hashrow($row);
-                    push @descriptions, $row->{TPName};
+                    push @descriptions, $places_r->{$place}{c_description};
                 }
 
                 $description_of{$routedir}{$placelist}
@@ -1138,7 +1147,7 @@ sub relevant_places {
 
 sub output_specs {
     my $flagfolder = shift;
-    my $stopdata   = shift;
+    my $stops_r = shift;
 
     emit 'Writing stop and decal info';
 
@@ -1150,11 +1159,9 @@ sub output_specs {
       or die "Can't open $file for writing: $OS_ERROR";
     my $oldfh = select $out;
 
-    my $descripcolumn = $stopdata->column_order_of('DescriptionCityF');
-
     foreach my $stop ( sort keys %routes_of_stop ) {
-        my ($row) = $stopdata->rows_where( 'PhoneID', $stop );
-        my $stopdesc = $row->[$descripcolumn];
+        my $row = $stops_r->{$stop} ;
+        my $stopdesc = $row->{c_description_city};
 
         next if $stopdesc =~ /Virtual Stop/si;
         next if $stopdesc =~ /^Transbay Terminal/si;
@@ -1462,14 +1469,18 @@ sub style_of_route {
 
 sub build_color_of {
     my $signup   = shift;
-    my $linedata = $signup->mergeread('Lines.csv');
-
-    my $line_r       = $linedata->array();
-    my $color_column = $linedata->column_order_of('Color');
-    my $line_column  = $linedata->column_order_of('Line');
-
-    foreach my $line (@$line_r) {
-        $color_of{ $line->[$line_column] } = $line->[$color_column];
+    
+    my %lines;
+    
+    load_tables(
+        requests => {
+            Lines =>
+              { hash => \%lines, index_field => 'Line' },
+        }
+    ); 
+    
+    foreach my $line (keys %lines) {
+        $color_of{ $lines{$line}{Line} } = $lines{$line}{Color};
     }
 
 }
