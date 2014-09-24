@@ -145,7 +145,8 @@ sub START {
             @allstopids = @{ $stops_of_sign{$signid} };
 
             if ($stopid) {
-                @allstopids = uniq sort ( $stopid, @allstopids );
+            #    @allstopids = uniq sort ( $stopid, @allstopids );
+            # have to include main stop manually
             }
             else {
                 $stopid = $allstopids[0];
@@ -153,7 +154,7 @@ sub START {
 
         }
         else {
-            @allstopids = ($signid);
+            @allstopids = ($stopid);
         }
 
         my $sign_is_active = lc( $signs{$signid}{Active} );
@@ -164,9 +165,10 @@ sub START {
           and $signs{$signid}{Status} !~ /no service/i;
         # skip inactive signs and those without stop IDs
 
-        my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints} );
-        
-        next SIGN if $old_makepoints eq 'yes';
+        my $old_makepoints = 'no';
+        #my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints} );
+        #next SIGN if $old_makepoints eq 'yes';
+        ## Old makepoints no longer used
 
         #####################
         # Following steps

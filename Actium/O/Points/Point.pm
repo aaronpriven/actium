@@ -52,8 +52,17 @@ has 'allstopids_r' => (
     default => sub { [] },
     handles => {
         allstopids   => 'elements',
+        _allstopid_count => 'count',
+        _get_allstopid => 'get',
     },
 );
+
+sub is_simple_stopid {
+    my $self = shift;
+    return 0 if $self->_allstopid_count > 1;
+    return 0 if $self->_get_allstopid(0) ne $self->stopid;
+    return 1;
+}
 
 has 'note600' => (
     traits  => ['Bool'],
@@ -307,7 +316,7 @@ sub sort_columns_by_route_etc {
                  byline( $aa->head_line(0), $bb->head_line(0) )
               or $ewreplace->( $aa->dircode ) <=> $ewreplace->( $bb->dircode )
               or $aa->days cmp $bb->days
-              or $aa->dest cmp $bb->dest
+              or $aa->primary_destination cmp $bb->primary_destination
         );
 
     };
@@ -577,7 +586,7 @@ sub format_side {
 
     ### new stop ID
 
-    if ( not $self->is_bsh ) {
+    if ( not $self->is_bsh and $self->is_simple_stopid) {
         print $sidefh IDTags::parastyle('depttimeside'), 'Call ',
           IDTags::bold('511'), ' and say ', IDTags::bold('"Departure Times"'),
           " for live bus predictions\r", IDTags::parastyle('stopid'),
