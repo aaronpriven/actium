@@ -45,11 +45,11 @@ sub load_tables {
 
         if (exists($request_of{$table}{fields})) {
             $fields = join(', ', @{$request_of{$table}{fields}});
+            emit_text "Fields: $fields";
         } else {
             $fields = '*';
         }
         
-        emit_text "Fields: $fields";
 
         my $result_ref
           = $actium_dbh->selectall_arrayref( "SELECT $fields FROM $table",

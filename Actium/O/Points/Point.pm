@@ -21,11 +21,15 @@ use MooseX::SemiAffordanceAccessor;
 use Moose::Util::TypeConstraints;
 
 use namespace::autoclean;
+use Actium::Term;
+
+use Actium::Util('joinseries');
 
 use Actium::Constants;
 use Actium::Sorting::Line (qw(byline sortbyline));
 use List::MoreUtils('natatime');
 use Const::Fast;
+use List::Compare::Functional('get_unique');
 
 use POSIX ();
 
@@ -41,26 +45,28 @@ has [qw/effdate stopid signid/] => (
 );
 
 has 'nonstoplocation' => (
-    is => 'ro',
+    is  => 'ro',
     isa => 'Maybe[Str]',
-    );
-    
-has 'allstopids_r' => (
-    traits  => ['Array'],
+);
+
+has 'omitted_of_stop_r' => (
+    traits  => ['Hash'],
     is      => 'bare',
-    isa     => 'ArrayRef[Str]',
-    default => sub { [] },
+    isa     => 'HashRef[ArrayRef[Str]]',
+    default => sub { {} },
     handles => {
-        allstopids   => 'elements',
+        allstopids       => 'keys',
+        omitted_of       => 'get',
         _allstopid_count => 'count',
-        _get_allstopid => 'get',
+        _get_allstopid   => 'get',
     },
 );
 
 sub is_simple_stopid {
     my $self = shift;
     return 0 if $self->_allstopid_count > 1;
-    return 0 if $self->_get_allstopid(0) ne $self->stopid;
+    my $only_multi_stopid = ( $self->allstopids )[0];
+    return 0 if $only_multi_stopid ne $self->stopid;
     return 1;
 }
 
@@ -146,22 +152,26 @@ sub add_to_width {
 }
 
 sub new_from_kpoints {
-    my ( $class, $stopid, $signid, $effdate, $special_type, 
-         $allstopids_r, $nonstoplocation )
+    my ( $class, $stopid, $signid, $effdate, $special_type,
+        $omitted_of_stop_r, $nonstoplocation )
       = @_;
 
     my $self = $class->new(
-        stopid  => $stopid,
-        signid  => $signid,
-        effdate => $effdate,
-        is_bsh  => ( $special_type eq 'bsh' ),
-        is_db   => ( $special_type eq 'db' ),
-        nonstoplocation => $nonstoplocation,
-        allstopids_r => $allstopids_r,
+        stopid            => $stopid,
+        signid            => $signid,
+        effdate           => $effdate,
+        is_bsh            => ( $special_type eq 'bsh' ),
+        is_db             => ( $special_type eq 'db' ),
+        nonstoplocation   => $nonstoplocation,
+        omitted_of_stop_r => $omitted_of_stop_r,
     );
 
-    foreach my $stop_to_import ( @{$allstopids_r} ) {
+    foreach my $stop_to_import ( $self->allstopids ) {
 
+        my %do_omit_line
+          = map { $_, 1 } @{ $self->omitted_of($stop_to_import) };
+        my ( @found_lines, @found_linedirs );
+        
         my $citycode = substr( $stop_to_import, 0, 2 );
 
         my $kpointfile = "kpoints/$citycode/$stop_to_import.txt";
@@ -174,11 +184,19 @@ sub new_from_kpoints {
             my $column = Actium::O::Points::Column->new($_);
 
             my $linegroup = $column->linegroup;
+            push @found_lines, $linegroup;
+            my $dircode = $column->dircode;
 
-            if ( $special_type eq 'bsh' ) {
-                if ( $linegroup =~ /^BS[DNH]$/ ) {
-                    $self->push_columns($column);
-                }
+            my $transitinfo_dir = $DIRCODES[ $HASTUS_DIRS[$dircode] ];
+
+            my $linedir = "$linegroup-$transitinfo_dir";
+            push @found_lines, $linedir;
+
+            next if $do_omit_line{$linedir};
+            next if $do_omit_line{$linegroup};
+            
+            if ( $linegroup =~ /^BS[DNH]$/ ) {
+                $self->push_columns($column) if $special_type eq 'bsh';
                 next;
             }
 
@@ -196,7 +214,6 @@ sub new_from_kpoints {
                 $self->set_note600;
             }
 
-            my $dircode = $column->dircode;
             if ( $dircode eq '14' or $dircode eq '15' ) {
                 $self->set_has_ab;
             }
@@ -205,7 +222,17 @@ sub new_from_kpoints {
 
         close $kpoint or die "Can't close $kpointfile: $!";
 
-    }
+        my @notfound = get_unique( [ [ keys %do_omit_line ], \@found_lines ] );
+
+        if (@notfound) {
+            my $linetext = @notfound > 1 ? 'Lines' : 'Line';
+            my $lines = joinseries(@notfound);
+            emit_text
+              "\x{1f4A5}  Warning! $linetext $lines found in omit list for "
+              . "stop $stop_to_import, but not found in stop schedule data.";
+        }
+
+    } ## tidy end: foreach my $stop_to_import ...
 
     return $self;
 
@@ -566,8 +593,9 @@ sub format_side {
     #}
 
     if ( $self->note600 ) {
+        my $stoporarea = $self->is_simple_stopid ? 'stop' : 'area';
         print $sidefh
-          "This stop may also be served by supplementary lines (Lines 600"
+"This $stoporarea may also be served by supplementary lines (Lines 600"
           . IDTags::endash
           . "699), which operate school days only, at times that may vary from day to day. Call 511 or visit www.actransit.org for more information. This service is available to everyone at regular fares.\r";
     }
@@ -586,7 +614,7 @@ sub format_side {
 
     ### new stop ID
 
-    if ( not $self->is_bsh and $self->is_simple_stopid) {
+    if ( not $self->is_bsh and $self->is_simple_stopid ) {
         print $sidefh IDTags::parastyle('depttimeside'), 'Call ',
           IDTags::bold('511'), ' and say ', IDTags::bold('"Departure Times"'),
           " for live bus predictions\r", IDTags::parastyle('stopid'),
@@ -653,8 +681,8 @@ sub format_sidenotes {
         $line = $attr{line} if $attr{line};
 
         if ( $attr{destination} ) {
-            $dest = $Actium::Cmd::MakePoints::places{ $attr{destination} }
-              {c_destination};
+ #$dest = $Actium::Cmd::MakePoints::places{ $attr{destination} }{c_destination};
+            $dest = $attr{destination};
             $dest =~ s/\.*$/\./;
         }
 
@@ -737,7 +765,7 @@ sub format_bottom {
 
     no warnings('once');
     my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid}; # this is a reference
-    
+
     my $nonstoplocation = $self->nonstoplocation;
 
     my $description = $nonstoplocation || $stop_r->{c_description_full};
@@ -748,7 +776,7 @@ sub format_bottom {
     #$stop_r->{c_description_full} ;
 
     print $botfh ". Sign #$signid.";
-    
+
     print $botfh " Stop $stopid." unless $nonstoplocation;
 
     print $botfh " Shelter site #"
