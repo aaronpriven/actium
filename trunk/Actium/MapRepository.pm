@@ -26,7 +26,7 @@
 use 5.014;
 use warnings;
 
-package Actium::MapRepository 0.001;
+package Actium::MapRepository 0.003;
 use Sub::Exporter -setup => {
     exports => [
         qw(import_to_repository  make_web_maps      copylatest

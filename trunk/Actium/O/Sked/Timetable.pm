@@ -10,7 +10,7 @@
 use 5.012;
 use warnings;
 
-package Actium::O::Sked::Timetable 0.001;
+package Actium::O::Sked::Timetable 0.006;
 
 use Moose;
 use MooseX::StrictConstructor;

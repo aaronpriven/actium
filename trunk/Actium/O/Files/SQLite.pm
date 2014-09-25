@@ -24,7 +24,7 @@
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::O::Files::SQLite 0.001;
+package Actium::O::Files::SQLite 0.003;
 
 use Moose::Role;
 

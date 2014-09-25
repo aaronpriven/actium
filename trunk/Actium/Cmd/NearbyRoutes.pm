@@ -2,7 +2,7 @@
 
 use 5.012;
 
-package Actium::Cmd::NearbyRoutes 0.001;
+package Actium::Cmd::NearbyRoutes 0.006;
 
 1;
 

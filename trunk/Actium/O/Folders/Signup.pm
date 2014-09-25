@@ -8,7 +8,7 @@
 use 5.012;
 use warnings;
 
-package Actium::O::Folders::Signup 0.001;
+package Actium::O::Folders::Signup 0.006;
 
 use Moose;
 use MooseX::StrictConstructor;

@@ -4,7 +4,7 @@
 
 # legacy status 3
 
-package Actium::O::Sked::Note;
+package Actium::O::Sked::Note 0.002;
 
 use 5.010;
 

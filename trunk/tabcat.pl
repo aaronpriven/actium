@@ -3,6 +3,8 @@
 use 5.016;
 use warnings;
 
+our $VERSION = 0.002;
+
 binmode STDERR, ':encoding(UTF-8)';
 binmode STDOUT, ':encoding(UTF-8)';
 binmode STDIN,  ':encoding(UTF-8)';

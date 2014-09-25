@@ -2,7 +2,7 @@
 
 # Subversion: $Id$
 
-package Actium::LineInfo 0.003;
+package Actium::LineInfo 0.006;
 
 use 5.016;
 use warnings;

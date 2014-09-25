@@ -9,7 +9,7 @@
 use warnings;
 use 5.012;
 
-package Actium::Cmd::Timetables 0.001;
+package Actium::Cmd::Timetables 0.006;
 
 use Actium::O::Folders::Signup;
 use Actium::O::Sked;

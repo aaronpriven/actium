@@ -6,7 +6,7 @@
 
 # Legacy status: 4
 
-package Actium::Cmd::MRCopy 0.001;
+package Actium::Cmd::MRCopy 0.002;
 
 use 5.014;
 use warnings;

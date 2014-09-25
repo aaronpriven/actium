@@ -4,7 +4,7 @@
 
 # legacy stage 4
 
-package Actium::Cmd::MakePoints 0.001;
+package Actium::Cmd::MakePoints 0.006;
 
 use warnings;
 use strict;

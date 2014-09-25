@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Cmd::SQLite2tab 0.001;
+package Actium::Cmd::SQLite2tab 0.006;
 
 use Actium::O::Folders::Signup;
 use Actium::Util qw(jt );

@@ -8,12 +8,9 @@
 use strict;
 use warnings;
 
-package Actium::Term;
+package Actium::Term 0.003;
 
 use 5.010;    # turns on features
-
-our $VERSION = '0.001';
-$VERSION = eval $VERSION;
 
 use Actium::Constants;
 

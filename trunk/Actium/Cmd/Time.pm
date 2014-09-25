@@ -8,7 +8,7 @@
 use warnings;
 use strict;
 
-package Actium::Cmd::Time 0.001;
+package Actium::Cmd::Time 0.006;
 
 use 5.014;
 

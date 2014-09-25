@@ -10,7 +10,7 @@
 # (and it shows... irrelevant subroutine prototypes... C-style for loops...
 # etc., etc.)
 
-package Skedfile;
+package Skedfile 0.006;
 
 use strict;
 our ( @ISA, @EXPORT_OK );

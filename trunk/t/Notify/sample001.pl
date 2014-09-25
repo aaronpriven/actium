@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use Actium::O::Notify;
 
+our $VERSION = 0.005;
+
 my $notifier = Actium::O::Notify::->new(colorize=>1);
 
 my $notification = $notifier->notify("Contract to build house");

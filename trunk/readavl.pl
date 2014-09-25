@@ -5,8 +5,6 @@
 # All the programs that use the 'avl.storable' file depend on this one.
 # This shouild ultimately be replaced with Actium::O::Files::HastusASI
 
-@ARGV = qw(-s f08) if $ENV{RUNNING_UNDER_AFFRUS};
-
 # readavl - see POD documentation below
 
 #00000000111111111122222222223333333333444444444455555555556666666666777777777
@@ -16,6 +14,9 @@ use 5.014;
 
 use warnings;
 use strict;
+
+our $VERSION = 0.006;
+
 use Carp;
 #use Fatal qw (open close);
 

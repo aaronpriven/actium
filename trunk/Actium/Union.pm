@@ -6,7 +6,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Union 0.002;
+package Actium::Union 0.006;
 
 use Carp;
 

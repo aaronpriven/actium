@@ -8,7 +8,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Sorting::Travel 0.001;
+package Actium::Sorting::Travel 0.006;
 
 use Storable;
 use Actium::Options (qw(add_option option));

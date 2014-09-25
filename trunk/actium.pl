@@ -16,7 +16,7 @@
 use 5.012;
 use warnings;
 
-our $VERSION = 0.005;
+our $VERSION = 0.006;
 
 # add the current program directory to list of files to include
 use FindBin qw($Bin);

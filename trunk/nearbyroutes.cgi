@@ -7,6 +7,8 @@
 use 5.012;
 use warnings;
 
+our $VERSION = 0.002;
+
 BEGIN {
  
 print "Content-type: text/plain\r\n\r\n";

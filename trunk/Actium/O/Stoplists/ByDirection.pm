@@ -6,7 +6,7 @@
 
 # legacy stage 4
 
-package Actium::O::Stoplists::ByDirection 0.001;
+package Actium::O::Stoplists::ByDirection 0.002;
 
 use Moose;
 use MooseX::StrictConstructor;

@@ -4,6 +4,8 @@ use strict;
 
 # initialization
 
+our $VERSION = 0.005;
+
 use FindBin('$Bin'); 
    # so $Bin is the location of the very file we're in now
 

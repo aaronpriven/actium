@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use Actium::O::Notify;
 
+our $VERSION = 0.005;
+
 my $n = Actium::O::Notify::->new(
     bullets  => ' * ',
     colorize     => 1,
