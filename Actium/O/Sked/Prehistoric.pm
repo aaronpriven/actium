@@ -13,7 +13,7 @@
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::O::Sked::Prehistoric 0.001;
+package Actium::O::Sked::Prehistoric 0.006;
 
 use Moose::Role;
 use namespace::autoclean;

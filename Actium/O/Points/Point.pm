@@ -12,7 +12,7 @@ use strict;
 
 use 5.010;
 
-package Actium::O::Points::Point;
+package Actium::O::Points::Point 0.006;
 
 use sort ('stable');
 

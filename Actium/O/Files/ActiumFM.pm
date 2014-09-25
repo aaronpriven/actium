@@ -8,7 +8,7 @@
 
 # Legacy stage 4
 
-package Actium::O::Files::ActiumFM;
+package Actium::O::Files::ActiumFM 0.006;
 
 use Actium::Moose;
 

@@ -6,12 +6,11 @@
 
 # legacy status 4
 
-package Actium::O::Sked::Trip;
+package Actium::O::Sked::Trip 0.003;
 
 use 5.016;
 
 use utf8;
-our $VERSION = '0.002';
 
 use Moose;
 use MooseX::StrictConstructor;

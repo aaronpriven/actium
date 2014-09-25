@@ -5,7 +5,7 @@
 use 5.012;
 use warnings;
 
-package Actium::EffectiveDate 0.001;
+package Actium::EffectiveDate 0.006;
 use Actium::Constants;
 
 use Sub::Exporter -setup =>

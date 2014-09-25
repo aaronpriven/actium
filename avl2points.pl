@@ -10,6 +10,8 @@
 use warnings;
 use 5.012;
 
+our $VERSION = 0.005;
+
 use sort ('stable');
 
 # add the current program directory to list of files to include

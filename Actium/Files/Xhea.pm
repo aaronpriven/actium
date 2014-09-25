@@ -8,7 +8,7 @@
 
 # Subversion: $Id$
 
-package Actium::Files::Xhea 0.004;
+package Actium::Files::Xhea 0.006;
 
 ## no critic (ProhibitAmbiguousNames)
 

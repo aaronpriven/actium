@@ -9,7 +9,7 @@
 use 5.012;
 use warnings;
 
-package Actium::O::Days 0.001;
+package Actium::O::Days 0.003;
 
 use Moose;
 use MooseX::StrictConstructor;

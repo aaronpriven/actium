@@ -9,6 +9,8 @@ use strict;
 
 use 5.010;
 
+our $VERSION = 0.003;
+
 use sort ('stable');
 
 # add the current program directory to list of files to include

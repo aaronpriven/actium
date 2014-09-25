@@ -6,7 +6,7 @@
 
 # legacy stage 4
 
-package Actium::Bags 0.004;
+package Actium::Bags 0.006;
 
 use Actium::Preamble;
 use Actium::Term;

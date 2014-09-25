@@ -11,7 +11,7 @@ use 5.010;
 
 use sort ('stable');
 
-package Actium::O::Points::Column;
+package Actium::O::Points::Column 0.006;
 
 use Moose;
 use MooseX::SemiAffordanceAccessor;

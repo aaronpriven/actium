@@ -9,7 +9,7 @@
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::Text::CharWidth 0.001;
+package Actium::Text::CharWidth 0.002;
 
 use Sub::Exporter -setup => { exports => [qw( ems twelfths char_width )] };
 

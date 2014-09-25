@@ -2,6 +2,8 @@
 
 use strict;
 
+our $VERSION = 0.005;
+
 # initialization
 
 use FindBin('$Bin'); 

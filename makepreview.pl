@@ -3,6 +3,8 @@
 use 5.012;
 use warnings;
 
+our $VERSION = 0.006;
+
 use Const::Fast;
 use File::Basename;
 use File::Spec;

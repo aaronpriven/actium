@@ -6,7 +6,7 @@
 
 # legacy status 4
 
-package Actium::O::Sked::TripCollection;
+package Actium::O::Sked::TripCollection 0.002;
 
 # This is a collection of trips. It is convenient to have a collection of trips
 # object (separate from the Sked object) for two reasons. First, the collection

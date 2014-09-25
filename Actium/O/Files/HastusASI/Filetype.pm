@@ -9,7 +9,7 @@
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::O::Files::HastusASI::Filetype 0.001;
+package Actium::O::Files::HastusASI::Filetype 0.002;
 
 use Moose;
 use MooseX::StrictConstructor;

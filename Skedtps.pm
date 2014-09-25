@@ -3,7 +3,7 @@
 
 # This is Skedtps.pm, a module to deal with the timepoint stuff.
 
-package Skedtps;
+package Skedtps 0.005;
 
 use strict;
 our (@ISA ,@EXPORT_OK ,%EXPORT_TAGS);

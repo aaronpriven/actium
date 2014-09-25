@@ -9,7 +9,7 @@
 use warnings;
 use 5.012;
 
-package Actium::IDTables 0.001;
+package Actium::IDTables 0.006;
 
 use English '-no_match_vars';
 use autodie;
