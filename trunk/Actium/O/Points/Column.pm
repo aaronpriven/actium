@@ -21,7 +21,25 @@ use namespace::autoclean;
 
 use Actium::Constants;
 use Actium::Time ('timenum');
+use Actium::Term;
 use IDTags;
+
+my $get_tp_value = sub {
+
+    my $tp4 = shift;
+
+    no warnings 'once';
+    my $tpdest = $Actium::Cmd::MakePoints::places{$tp4}{c_destination};
+
+    if ($tpdest) {
+        return $tpdest;
+    }
+    else {
+        warn "No timepoint found for $tp4";
+        return $tp4;
+    }
+
+};
 
 around BUILDARGS => sub {
 
@@ -31,11 +49,16 @@ around BUILDARGS => sub {
     my ( $linegroup, $dircode, $days, @entries ) = split( /\t/, $_[0] );
 
     if ( $entries[0] =~ /^\#/s ) {
-        my ( $note, $head_lines, $destinations ) = @entries;
+        my ( $note, $head_lines, $desttp4s ) = @entries;
         $note =~ s/^\#//s;
-        my @head_lines   = split( /:/, $head_lines );
-        my @destinations = split( /:/, $destinations );
+        my @head_lines = split( /:/, $head_lines );
+        my @desttp4s   = split( /:/, $desttp4s );
 
+        my @destinations;
+        foreach my $desttp4 (@desttp4s) {
+            push @destinations, $get_tp_value->($desttp4);
+        }
+        
         return $class->$orig(
             linegroup           => $linegroup,
             days                => $days,
@@ -46,7 +69,7 @@ around BUILDARGS => sub {
             primary_destination => $destinations[0],
             primary_exception   => '',
         );
-    }
+    } ## tidy end: if ( $entries[0] =~ /^\#/s)
 
     my ( @times, @lines, @destinations, @places, @exceptions, @approxflags );
 
@@ -64,6 +87,7 @@ around BUILDARGS => sub {
         my ( $time, $line, $destination, $place, $exception ) = split(/:/);
         push @times,        $time;
         push @lines,        $line;
+        $destination = $get_tp_value->($destination);
         push @destinations, $destination;
         push @places,       $place;
         push @approxflags, ( $place ? 0 : 1 );
@@ -258,33 +282,34 @@ sub format_head_lines {
  #        }
 
     my $pstyle = $#head_lines ? 'dropcapheadmany' : 'dropcaphead';
-    
+
     foreach my $line (@head_lines) {
         {
             no warnings 'once';
             if ( $line =~ /BS[DNH]/ ) {
                 $color = $line;
-                
-                if ($line eq 'BSN') {
-                   my $days = $self->days;
-                   $line = 'FRI NIGHT' if $days eq '5';
-                   $line = 'SAT NIGHT' if $days eq '6';
+
+                if ( $line eq 'BSN' ) {
+                    my $days = $self->days;
+                    $line = 'FRI NIGHT' if $days eq '5';
+                    $line = 'SAT NIGHT' if $days eq '6';
                 }
-                elsif ($line eq 'BSD') {
-                   $line = 'WEEKDAY';
+                elsif ( $line eq 'BSD' ) {
+                    $line = 'WEEKDAY';
                 }
-                
+
                 $pstyle = 'dropcapheadbsh';
             }
             else {
-                $color
-                  = ( $Actium::Cmd::MakePoints::lines{$line}{Color} or 'Grey80' );
+                $color = (
+                    $Actium::Cmd::MakePoints::lines{$line}{Color}
+                      or 'Grey80'
+                );
             }
         }
         $color_of{$line}    = $color;
         $seen_color{$color} = 1;
-    }
-
+    } ## tidy end: foreach my $line (@head_lines)
 
     my $length_head_lines
       = length( join( $head_line_separator, @head_lines ) ) + 1;
@@ -353,9 +378,9 @@ sub format_headdays {
         my $last = pop @days;
         $days = join( q{, }, @days ) . " & $last";
     }
-    
+
     my $dircode = $self->dircode;
-    if ($dircode eq '14' or $dircode eq '15') {
+    if ( $dircode eq '14' or $dircode eq '15' ) {
         $days .= ". ";
     }
 
@@ -367,26 +392,8 @@ sub format_headdays {
 
 sub format_headdest {
 
-    my $self    = shift;
-    my $desttp4 = $self->primary_destination;
-    my $tpname;
-    my $tpdest;
-    {
-        no warnings 'once';
-        use Data::Dumper;
-        $tpname = $Actium::Cmd::MakePoints::places{$desttp4}{c_description};
-        $tpdest = $Actium::Cmd::MakePoints::places{$desttp4}{c_destination};
-    }
-
-    my $dest;
-
-    if ($tpname) {
-        $dest = " to $tpdest";
-    }
-    else {
-        $dest = $desttp4;
-        warn "No timepoint found for $desttp4";
-    }
+    my $self = shift;
+    my $dest = ' to ' . $self->primary_destination;
 
     my $dir = $self->dircode;
 
@@ -395,9 +402,11 @@ sub format_headdest {
     }
     elsif ( $dir eq '9' ) {
         $dest .= ' (Counterclockwise loop)';
-    } elsif ($dir eq '14') {
+    }
+    elsif ( $dir eq '14' ) {
         $dest = "<0x201C>A Loop<0x201D> $dest";
-    } elsif ($dir eq '15') {
+    }
+    elsif ( $dir eq '15' ) {
         $dest = "<0x201C>B Loop<0x201D> $dest";
     }
 
