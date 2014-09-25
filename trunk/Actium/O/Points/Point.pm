@@ -62,7 +62,13 @@ has 'omitted_of_stop_r' => (
     },
 );
 
-sub is_simple_stopid {
+has 'is_simple_stopid' => (
+    is => 'ro',
+    builder => '_build_is_simple_stopid',
+    lazy => 1,
+);
+
+sub _build_is_simple_stopid {
     my $self = shift;
     return 0 if $self->_allstopid_count > 1;
     my $only_multi_stopid = ( $self->allstopids )[0];
@@ -165,13 +171,17 @@ sub new_from_kpoints {
         nonstoplocation   => $nonstoplocation,
         omitted_of_stop_r => $omitted_of_stop_r,
     );
+    
+    my $is_simple = $self->is_simple_stopid;
 
     foreach my $stop_to_import ( $self->allstopids ) {
-
+        
+        my $column_stopid = $is_simple ? $EMPTY_STR : $stop_to_import;
+        
         my %do_omit_line
           = map { $_, 1 } @{ $self->omitted_of($stop_to_import) };
         my ( @found_lines, @found_linedirs );
-        
+
         my $citycode = substr( $stop_to_import, 0, 2 );
 
         my $kpointfile = "kpoints/$citycode/$stop_to_import.txt";
@@ -181,7 +191,7 @@ sub new_from_kpoints {
 
         while (<$kpoint>) {
             chomp;
-            my $column = Actium::O::Points::Column->new($_);
+            my $column = Actium::O::Points::Column->new( $_, $column_stopid );
 
             my $linegroup = $column->linegroup;
             push @found_lines, $linegroup;
@@ -194,7 +204,7 @@ sub new_from_kpoints {
 
             next if $do_omit_line{$linedir};
             next if $do_omit_line{$linegroup};
-            
+
             if ( $linegroup =~ /^BS[DNH]$/ ) {
                 $self->push_columns($column) if $special_type eq 'bsh';
                 next;
@@ -437,9 +447,14 @@ sub format_columns {
 
             } ## tidy end: for ( $column->note )
 
-            $column->set_formatted_column( $column->formatted_header
+            $column->set_formatted_column(
+                    $column->formatted_header
                   . IDTags::boxbreak
-                  . IDTags::parastyle( 'noteonly', $notetext ) );
+                  . IDTags::parastyle(
+                    'noteonly',
+                    $notetext 
+                  )
+            );
 
             $self->add_to_width(1);
             next COLUMN;
