@@ -13,7 +13,7 @@ use Sub::Exporter -setup => {
     exports => [
         qw<start start_with_tables underline bold parastyle charstyle 
            nocharstyle dropcapchars punctuationspace thinspace bullet 
-           boxbreak superscript nbsp endash emdash softreturn color 
+           boxbreak superscript nbsp endash emdash softreturn hardreturn color 
            emspace enspace nonjoiner  thirdspace hairspace discretionary_lf 
            combiside combifootnote combichar>
     ]
@@ -145,6 +145,10 @@ sub emdash {
 }
 
 sub softreturn {
+    return "\n";    # this really is an \n, as opposed to the usual \r
+}
+
+sub hardreturn {
     return "\n";    # this really is an \n, as opposed to the usual \r
 }
 
