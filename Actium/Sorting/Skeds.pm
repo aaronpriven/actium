@@ -8,7 +8,7 @@
 use 5.016;
 use warnings;
 
-package Actium::Sorting::Skeds 0.001;
+package Actium::Sorting::Skeds 0.002;
 
 #use Storable;
 

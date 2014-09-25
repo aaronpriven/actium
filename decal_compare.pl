@@ -3,6 +3,8 @@
 use 5.012;
 use warnings;
 
+our $VERSION = 0.005;
+
 use List::MoreUtils(qw(uniq natatime));
 use autodie;
 use FindBin('$Bin');

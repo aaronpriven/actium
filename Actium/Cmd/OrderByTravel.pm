@@ -10,7 +10,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Cmd::OrderByTravel 0.001;
+package Actium::Cmd::OrderByTravel 0.006;
 
 use Carp;
 use Storable();

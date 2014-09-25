@@ -5,6 +5,8 @@
 
 # This program regenerates the index files from the files in /skeds
 
+our $VERSION = 0.002;
+
 use strict;
 use warnings;
 

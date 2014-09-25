@@ -6,7 +6,7 @@
 
 # legacy stage 4
 
-package Actium::Cmd::PrepareFlags 0.004;
+package Actium::Cmd::PrepareFlags 0.005;
 
 use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');

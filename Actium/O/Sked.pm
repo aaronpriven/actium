@@ -6,7 +6,7 @@
 
 # legacy status 4
 
-package Actium::O::Sked 0.002;
+package Actium::O::Sked 0.003;
 
 use 5.012;
 use strict;

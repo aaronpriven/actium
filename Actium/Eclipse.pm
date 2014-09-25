@@ -25,7 +25,7 @@
 
 # Legacy stage 4.
 
-package Actium::Eclipse;
+package Actium::Eclipse 0.005;
 
 use 5.010;
 use warnings;

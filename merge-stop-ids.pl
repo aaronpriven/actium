@@ -5,6 +5,8 @@ use 5.014;
 use warnings;
 use autodie;
 
+our $VERSION = 0.003;
+
 my $firstfile = shift @ARGV;
 my $secondfile = shift @ARGV;
 

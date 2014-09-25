@@ -7,7 +7,7 @@
 use warnings;
 use 5.014;    # turns on features
 
-package Actium::Files::TabDelimited 0.002;
+package Actium::Files::TabDelimited 0.005;
 
 use Carp;
 use English '-no_match_vars';

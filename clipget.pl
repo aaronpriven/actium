@@ -3,6 +3,8 @@
 use 5.016;
 use warnings;
 
+our $VERSION = 0.006;
+
 use HTTP::Tiny;
 use Const::Fast;
 use File::Slurp::Tiny ('read_file');

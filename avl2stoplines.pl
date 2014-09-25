@@ -7,6 +7,8 @@
 # There are a number of variants of this program, including avl2flags, 
 # avl2stoplines-dir, etc. They should be combined
 
+our $VERSION = 0.006;
+
 use warnings;
 use strict;
 

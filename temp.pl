@@ -6,6 +6,8 @@ use Actium::O::Sked;
 use Actium::O::Sked::Trip;
 use Actium::Util(qw[joinseries tabulate]);
 
+our $VERSION = 0.003;
+
 use Spreadsheet::XLSX;
 use List::Compare::Functional (qw/is_LsubsetR/);
 

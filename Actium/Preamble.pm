@@ -9,7 +9,7 @@
 
 # legacy status: 4
 
-package Actium::Preamble 0.003;
+package Actium::Preamble 0.005;
 
 use 5.016;
 use Module::Runtime (qw(require_module));

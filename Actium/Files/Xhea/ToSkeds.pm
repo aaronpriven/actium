@@ -10,7 +10,7 @@
 use 5.016;
 use warnings;
 
-package Actium::Files::Xhea::ToSkeds 0.005;
+package Actium::Files::Xhea::ToSkeds 0.006;
 
 use Actium::Preamble;
 

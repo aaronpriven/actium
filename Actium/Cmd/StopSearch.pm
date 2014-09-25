@@ -4,7 +4,7 @@
 
 # Subversion: $Id$
 
-package Actium::Cmd::StopSearch 0.005;
+package Actium::Cmd::StopSearch 0.006;
 
 use Actium::Preamble;
 use Actium::O::Folder;

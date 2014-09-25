@@ -5,7 +5,7 @@
 
 # Legacy status: 4
 
-package Actium::Files::FileMaker_ODBC;
+package Actium::Files::FileMaker_ODBC 0.006;
 
 use Actium::Preamble;
 use Actium::Term;

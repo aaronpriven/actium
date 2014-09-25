@@ -7,7 +7,7 @@
 use warnings;
 use 5.012;
 
-package Actium::Cmd::Flagspecs 0.005;
+package Actium::Cmd::Flagspecs 0.006;
 
 use Actium::Sorting::Line (qw/sortbyline byline/);
 use Actium::Util qw(in jn j jt );

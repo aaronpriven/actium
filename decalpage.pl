@@ -11,6 +11,8 @@
 # This would probably be better done as a script, telling InDesign to save 
 # each page with the code from that page.
 
+our $VERSION = 0.002;
+
 foreach (glob ("*.eps") , glob ("*.EPS")) {
 
    @ary = `strings \'$_\'`;

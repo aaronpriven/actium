@@ -9,7 +9,7 @@
 use 5.014;
 use warnings;
 
-package Actium::Files::Thea::Trips 0.002;
+package Actium::Files::Thea::Trips 0.006;
 
 use Actium::Term;
 use Actium::Constants;

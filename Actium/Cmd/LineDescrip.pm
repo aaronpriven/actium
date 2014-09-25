@@ -9,7 +9,7 @@
 use warnings;
 use 5.016;
 
-package Actium::Cmd::LineDescrip 0.003;
+package Actium::Cmd::LineDescrip 0.006;
 
 use Actium::Preamble;
 

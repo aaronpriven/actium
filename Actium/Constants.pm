@@ -10,7 +10,7 @@
 use strict;
 use warnings;
 
-package Actium::Constants 0.003;
+package Actium::Constants 0.005;
 # Cannot use Actium::Preamble since that module depends on this one
 
 use 5.016;

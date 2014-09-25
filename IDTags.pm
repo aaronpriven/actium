@@ -5,7 +5,7 @@
 
 # Obsolete. Use Actium::Text::InDesignTags.pm instead
 
-package IDTags;
+package IDTags 0.006;
 
 use strict;
 

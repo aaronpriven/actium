@@ -8,12 +8,9 @@
 use warnings;
 use strict;
 
-package Actium::Time;
+package Actium::Time 0.006;
 
 use 5.010;
-
-our $VERSION = "0.001";
-$VERSION = eval $VERSION;
 
 use Carp;
 use Actium::Constants;

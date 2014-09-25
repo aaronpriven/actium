@@ -4,6 +4,8 @@
 # since Excel doesn't like to have two files of the same name opened at the
 # same time.
 
+our $VERSION = 0.002;
+
 # Legacy stage 1
 
 $signup1 = "f12";

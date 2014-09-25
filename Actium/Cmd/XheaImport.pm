@@ -4,7 +4,7 @@
 
 # Subversion: $Id$
 
-package Actium::Cmd::XheaImport 0.004;
+package Actium::Cmd::XheaImport 0.005;
 
 use Actium::Preamble;
 use Actium::Files::Xhea;

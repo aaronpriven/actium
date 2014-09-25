@@ -12,6 +12,8 @@ use 5.010;
 use warnings;
 use strict;
 
+our $VERSION = 0.005;
+
 # add the current program directory to list of files to include
 use FindBin('$Bin');
 use lib ( $Bin, "$Bin/../bin" );
