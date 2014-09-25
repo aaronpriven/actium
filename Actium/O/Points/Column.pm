@@ -46,9 +46,12 @@ around BUILDARGS => sub {
     my $orig  = shift;
     my $class = shift;
 
-    my ( $linegroup, $dircode, $days, @entries ) = split( /\t/, $_[0] );
+    my $kpoint         = shift;
+    my $display_stopid = shift;
 
-    if ( $entries[0] =~ /^\#/s ) {
+    my ( $linegroup, $dircode, $days, @entries ) = split( /\t/, $kpoint );
+
+    if ( $entries[0] =~ /^\#/s ) {    # entries like "LAST STOP"
         my ( $note, $head_lines, $desttp4s ) = @entries;
         $note =~ s/^\#//s;
         my @head_lines = split( /:/, $head_lines );
@@ -58,7 +61,7 @@ around BUILDARGS => sub {
         foreach my $desttp4 (@desttp4s) {
             push @destinations, $get_tp_value->($desttp4);
         }
-        
+
         return $class->$orig(
             linegroup           => $linegroup,
             days                => $days,
@@ -68,6 +71,7 @@ around BUILDARGS => sub {
             primary_line        => $head_lines[0],
             primary_destination => $destinations[0],
             primary_exception   => '',
+            display_stopid      => $display_stopid,
         );
     } ## tidy end: if ( $entries[0] =~ /^\#/s)
 
@@ -85,8 +89,8 @@ around BUILDARGS => sub {
 
     foreach (@entries) {
         my ( $time, $line, $destination, $place, $exception ) = split(/:/);
-        push @times,        $time;
-        push @lines,        $line;
+        push @times, $time;
+        push @lines, $line;
         $destination = $get_tp_value->($destination);
         push @destinations, $destination;
         push @places,       $place;
@@ -95,15 +99,16 @@ around BUILDARGS => sub {
     }
 
     return $class->$orig(
-        {   linegroup     => $linegroup,
-            days          => $days,
-            dircode       => $dircode,
-            time_r        => \@times,
-            line_r        => \@lines,
-            destination_r => \@destinations,
-            exception_r   => \@exceptions,
-            place_r       => \@places,
-            approxflag_r  => \@approxflags,
+        {   linegroup      => $linegroup,
+            days           => $days,
+            dircode        => $dircode,
+            time_r         => \@times,
+            line_r         => \@lines,
+            destination_r  => \@destinations,
+            exception_r    => \@exceptions,
+            place_r        => \@places,
+            approxflag_r   => \@approxflags,
+            display_stopid => $display_stopid,
         }
     );
 
@@ -112,7 +117,7 @@ around BUILDARGS => sub {
 #my $head_line_separator = $SPACE . IDTags::bullet . $SPACE;
 my $head_line_separator = q</>;
 
-has [qw/linegroup days dircode/] => (
+has [qw/linegroup display_stopid days dircode/] => (
     is  => 'ro',
     isa => 'Str',
 );
@@ -420,19 +425,37 @@ sub format_headdest {
 sub format_approxflag {
     my $self = shift;
 
-    return if $self->has_note;
+    my $display_stopid = $self->display_stopid;
+    if ( $self->has_note ) {
+
+        return unless $display_stopid;
+
+        $self->append_to_formatted_header( " (Stop $display_stopid)" );
+        return;
+    }
 
     my $primary_approxflag = $self->primary_approxflag;
 
-    $self->append_to_formatted_header(
-        $primary_approxflag
-        ? ' Approximate departure times:'
-        : ' Scheduled departure times:'
-    );
+    if ($display_stopid) {
+
+        $self->append_to_formatted_header(
+            $primary_approxflag
+            ? " Approximate departure times from stop $display_stopid:"
+            : " Scheduled departure times from stop $display_stopid:"
+        );
+
+    }
+    else {
+        $self->append_to_formatted_header(
+            $primary_approxflag
+            ? ' Approximate departure times:'
+            : ' Scheduled departure times:'
+        );
+    }
 
     return;
 
-}
+} ## tidy end: sub format_approxflag
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
