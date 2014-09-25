@@ -19,7 +19,7 @@ use lib $Bin;
 
 use Actium::Preamble;
 
-use Actium::Term (qw<output_usage printq sayq>);
+use Actium::Term (':all');
 use Actium::Union('ordered_union');
 
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
@@ -64,9 +64,9 @@ sub START {
 
     my $effdate = read_file('effectivedate.txt');
 
-    our ( @signs, @stops, @lines, @signtypes );
-    our ( %signs, %stops, %lines, %signtypes );
-    our ( @places, %places );
+    #our ( @signs, @stops, @lines, @signtypes );
+    our ( %places, %signs, %stops, %lines, %signtypes );
+    #our ( @places );
     our (@ssj);
 
     # retrieve data
@@ -74,17 +74,17 @@ sub START {
     load_tables(
         requests => {
             Places_Neue => {
-                array       => \@places,
+                #array       => \@places,
                 hash        => \%places,
                 index_field => 'h_plc_identifier'
             },
             SignTypes => {
-                array       => \@signtypes,
+                #array       => \@signtypes,
                 hash        => \%signtypes,
                 index_field => 'SignType'
             },
             Signs => {
-                array       => \@signs,
+                #array       => \@signs,
                 hash        => \%signs,
                 index_field => 'SignID',
                 fields      => [
@@ -96,7 +96,10 @@ sub START {
             },
             Signs_Stops_Join => { array => \@ssj },
             Lines =>
-              { array => \@lines, hash => \%lines, index_field => 'Line' },
+              { 
+                  # array => \@lines, 
+                  hash => \%lines, 
+                  index_field => 'Line' },
             Stops_Neue => {
                 hash        => \%stops,
                 index_field => 'h_stp_511_id',
@@ -105,16 +108,22 @@ sub START {
         }
     );
 
-    my %stops_of_sign;
+    my (%stops_of_sign);
     foreach my $ssj (@ssj) {
         my $ssj_stop = $ssj->{h_stp_511_id};
         my $ssj_sign = $ssj->{SignID};
-        push @{ $stops_of_sign{$ssj_sign} }, $ssj_stop;
+        
+        my $ssj_omit_lines = $ssj->{OmitLines};
+        my @ssj_omitted; 
+        if ($ssj_omit_lines) { 
+           @ssj_omitted = split(' ' , $ssj->{OmitLines});
+        }
+        $stops_of_sign{$ssj_sign}{$ssj_stop} = \@ssj_omitted ;
     }
 
     my $effectivedate = trim( read_file('effectivedate.txt') );
 
-    sayq "Now processing point schedules for sign number:\n";
+    emit "Now processing point schedules for sign number:";
 
     my $displaycolumns = 0;
     my @signstodo;
@@ -139,22 +148,19 @@ sub START {
               . $signs{$signid}{NonStopCity};
         }
 
-        my @allstopids;
+        my $omitted_of_stop_r;
         if ( exists $stops_of_sign{$signid} ) {
+            
+            $omitted_of_stop_r = $stops_of_sign{$signid};
 
-            @allstopids = @{ $stops_of_sign{$signid} };
-
-            if ($stopid) {
-            #    @allstopids = uniq sort ( $stopid, @allstopids );
-            # have to include main stop manually
-            }
-            else {
+            if (not $stopid) {
+                my @allstopids = sort keys %{$omitted_of_stop_r};
                 $stopid = $allstopids[0];
             }
 
         }
-        else {
-            @allstopids = ($stopid);
+        elsif ($stopid) {
+            $omitted_of_stop_r = { $stopid => [] };
         }
 
         my $sign_is_active = lc( $signs{$signid}{Active} );
@@ -164,16 +170,20 @@ sub START {
           and $sign_is_active eq 'yes'
           and $signs{$signid}{Status} !~ /no service/i;
         # skip inactive signs and those without stop IDs
+        
+        if (not $stopid) {
+            emit_text 'yowza';
+        }
 
-        my $old_makepoints = 'no';
-        #my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints} );
+        my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints} );
         #next SIGN if $old_makepoints eq 'yes';
-        ## Old makepoints no longer used
+        ## Old makepoints no longer used, but that field also specifies
+        # BSH or DB
 
         #####################
         # Following steps
 
-        foreach my $stoptotest (@allstopids) {
+        foreach my $stoptotest (keys %{$omitted_of_stop_r} ) {
 
             # skip stop if file not found
             my $citycode = substr( $stoptotest, 0, 2 );
@@ -186,13 +196,13 @@ sub START {
 
         }
 
-        print "$signid ";
+        emit_over( "$signid ");
 
         # 1) Read kpoints from file
 
         my $point
           = Actium::O::Points::Point->new_from_kpoints( $stopid, $signid,
-            $effdate, $old_makepoints, \@allstopids, $nonstoplocation );
+            $effdate, $old_makepoints, $omitted_of_stop_r, $nonstoplocation );
 
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header
@@ -236,8 +246,10 @@ sub START {
         $point->output;
 
     }    ## <perltidy> end foreach my $signid ( sort {...})
+    
+    emit_done;
 
-    print "\n\n", scalar keys %skipped_stops,
+    print "\n", scalar keys %skipped_stops,
       " skipped signs because stop file not found.\n";
 
     my $iterator = natatime( 3, sort { $a <=> $b } keys %skipped_stops );
