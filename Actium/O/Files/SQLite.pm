@@ -62,7 +62,7 @@ requires(
 
 # _tables_of_filetype yields the different tables that go with filetype
 # -- e.g., for HastusASI it would be 'PAT' , 'TPS' for filetype 'PAT'
-# For FPmerge it would be just the name of the file ('Timepoints')
+# For FPmerge it would be just the name of the file ('Signs')
 
 # _filetype_of_table yields the filetype to which a table belongs.
 # For HastusASI "TPS" would yield "PAT", for example. For anything
