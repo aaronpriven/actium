@@ -97,15 +97,15 @@ sub load_stops {
     my $signup = shift;
     my $actiumdb = shift;
 
-    $actiumdb->ensure_loaded('Stops');
+    $actiumdb->ensure_loaded('Stops_Neue');
 
     emit 'Getting stop descriptions from FileMaker export';
     my $dbh = $actiumdb->dbh;
 
     my $stops_rows_r
       = $dbh->selectall_arrayref(
-"SELECT PhoneID, ud_stop_Lat, ud_stop_Long, ud_stp_Flagroute FROM Stops WHERE In_last_update IS 'Yes'"
-      );
+"SELECT h_stp_511_id, h_loca_latitude, h_loca_longitude, p_lines FROM Stops_Neue WHERE p_active IS 1"
+      ); 
 
     emit_done;
 
