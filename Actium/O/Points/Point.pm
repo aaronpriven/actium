@@ -35,7 +35,6 @@ use POSIX ();
 
 use Actium::O::Points::Column;
 
-use IDTags;
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
 
@@ -385,7 +384,7 @@ sub format_columns {
             }
 
             $column->append_to_formatted_header(
-                $SPACE . IDTags::combifootnote($marker) );
+                $SPACE . $IDT->combi_foot($marker) );
 
         }
 
@@ -407,8 +406,8 @@ sub format_columns {
                 if ( $_ eq '72R' ) {
                     $notetext
                       = 'Buses arrive about every 12 minutes '
-                      . IDTags::emdash
-                      . IDTags::softreturn
+                      . $IDT->emdash
+                      . $IDT->softreturn
                       . 'See information elsewhere on this sign.';
                     next;
                 }
@@ -417,7 +416,7 @@ sub format_columns {
                     $notetext
                       = 'Buses arrive about every 12 minutes weekdays, and 15 minutes weekends.'
                       . ' (Weekend service to downtown Oakland only.) '
-                      . IDTags::softreturn
+                      . $IDT->softreturn
                       . 'See information elsewhere on this sign.';
 
                     next;
@@ -428,16 +427,16 @@ sub format_columns {
                     if ( $column->days eq '12345' ) {
                         $notetext
                           = 'Buses arrive about every 12 minutes '
-                          . IDTags::emdash
-                          . IDTags::softreturn
+                          . $IDT->emdash
+                          . $IDT->softreturn
                           . 'See information elsewhere on this sign.';
                     }
                     else {
 
                         $notetext
                           = 'Buses arrive about every 12 minutes weekdays, 15 minutes weekends '
-                          . IDTags::emdash
-                          . IDTags::softreturn
+                          . $IDT->emdash
+                          . $IDT->softreturn
                           . 'See information elsewhere on this sign.';
                     }
 
@@ -449,11 +448,9 @@ sub format_columns {
 
             $column->set_formatted_column(
                     $column->formatted_header
-                  . IDTags::boxbreak
-                  . IDTags::parastyle(
-                    'noteonly',
-                    $notetext 
-                  )
+                  . $IDT->boxbreak
+                  . $IDT->parastyle('noteonly') 
+                  . $notetext 
             );
 
             $self->add_to_width(1);
@@ -478,7 +475,7 @@ sub format_columns {
             my $pstyle = $ampm eq 'a' ? 'amtimes' : 'pmtimes';
             if ( $prev_pstyle ne $pstyle ) {
                 $prev_pstyle = $pstyle;
-                $time = IDTags::parastyle( $pstyle, $time );
+                $time = $IDT->parastyle($pstyle) . $time ;
             }
 
             if ($foot) {
@@ -489,7 +486,7 @@ sub format_columns {
                     $self->set_marker_of_footnote( $foot, $marker );
                 }
 
-                $time .= IDTags::hairspace . IDTags::combifootnote($marker);
+                $time .= $IDT->hairspace . $IDT->combi_foot($marker);
             }
 
             $column->set_formatted_time( $i, $time );
@@ -514,7 +511,7 @@ sub format_columns {
 
             $self->add_to_width( scalar @ft );
 
-            $formatted_columns = join( ( IDTags::boxbreak() x 2 ), @ft );
+            $formatted_columns = join( ( $IDT->boxbreak() x 2 ), @ft );
         }
         else {    # no entry for TallColumnLines in Signtype table
             $formatted_columns = join( "\r", $column->formatted_times );
@@ -522,7 +519,7 @@ sub format_columns {
         }
 
         $column->set_formatted_column(
-            $column->formatted_header . IDTags::boxbreak . $formatted_columns );
+            $column->formatted_header . $IDT->boxbreak . $formatted_columns );
 
     }    ## <perltidy> end foreach my $column ( $self->columns)
 
@@ -567,16 +564,16 @@ sub format_side {
         }
     }
 
-    my $nbsp = IDTags::nbsp;
+    my $nbsp = $IDT->nbsp;
     $effdate =~ s/\s+$//;
     $effdate =~ s/\s/$nbsp/g;
 
-    print $sidefh IDTags::parastyle( 'sideeffective',
-        IDTags::color( $color, "Effective: $effdate" ) );
+    print $sidefh $IDT->parastyle( 'sideeffective') ,
+        $IDT->color( $color),  "Effective: $effdate"  ;
 
-    print $sidefh "\r",                IDTags::parastyle('sidenotes');
-    print $sidefh 'Light Face = a.m.', IDTags::softreturn;
-    print $sidefh IDTags::bold('Bold Face = p.m.'), "\r";
+    print $sidefh "\r",                $IDT->parastyle('sidenotes'),
+    'Light Face = a.m.', $IDT->softreturn;
+    print $sidefh $IDT->bold_word('Bold Face = p.m.'), "\r";
 
     if ( $self->has_ab ) {
         print $sidefh
@@ -594,7 +591,7 @@ sub format_side {
         $sidenote =~ s/\r+/\r/g;
         $sidenote =~ s/\r+$//;
         $sidenote =~ s/\0+$//;
-        print $sidefh IDTags::bold(
+        print $sidefh $IDT->bold_word(
             $Actium::Cmd::MakePoints::signs{$signid}{Sidenote} )
           . "\r";
     }
@@ -611,7 +608,7 @@ sub format_side {
         my $stoporarea = $self->is_simple_stopid ? 'stop' : 'area';
         print $sidefh
 "This $stoporarea may also be served by supplementary lines (Lines 600"
-          . IDTags::endash
+          . $IDT->endash
           . "699), which operate school days only, at times that may vary from day to day. Call 511 or visit www.actransit.org for more information. This service is available to everyone at regular fares.\r";
     }
 
@@ -630,10 +627,10 @@ sub format_side {
     ### new stop ID
 
     if ( not $self->is_bsh and $self->is_simple_stopid ) {
-        print $sidefh IDTags::parastyle('depttimeside'), 'Call ',
-          IDTags::bold('511'), ' and say ', IDTags::bold('"Departure Times"'),
-          " for live bus predictions\r", IDTags::parastyle('stopid'),
-          "STOP ID\r",                   IDTags::parastyle('stopidnumber'),
+        print $sidefh $IDT->parastyle('depttimeside'), 'Call ',
+          $IDT->bold_word('511'), ' and say ', $IDT->bold_word('"Departure Times"'),
+          " for live bus predictions\r", $IDT->parastyle('stopid'),
+          "STOP ID\r",                   $IDT->parastyle('stopidnumber'),
           $self->stopid();
     }
     ###
@@ -664,7 +661,7 @@ sub format_sidenotes {
   NOTE:
     for my $i ( 1 .. $self->highest_footnote ) {
 
-        print $sidefh IDTags::combiside($i), $SPACE;
+        print $sidefh $IDT->combi_side($i), $SPACE;
 
         my $foot = $foot_of{$i};
 
@@ -787,7 +784,7 @@ sub format_bottom {
 
     $IDT->encode_high_chars($description);
 
-    print $botfh IDTags::parastyle('bottomnotes'), $description;
+    print $botfh $IDT->parastyle('bottomnotes'), $description;
     #$stop_r->{c_description_full} ;
 
     print $botfh ". Sign #$signid.";
@@ -813,7 +810,7 @@ sub output {
     open my $fh, '>', "indesign_points/$signid.txt"
       or die "Can't open $signid.txt for writing: $!";
 
-    print $fh IDTags::start;
+    print $fh $IDT->start;
 
     # output blank columns at beginning
 
@@ -821,13 +818,13 @@ sub output {
       = $Actium::Cmd::MakePoints::signtypes{
         $Actium::Cmd::MakePoints::signs{$signid}{SignType}
       }{TallColumnNum};
-    my $break = IDTags::boxbreak;
+    my $break = $IDT->boxbreak;
 
     if ( $maxcolumns and $maxcolumns > $self->width )
     {    # if there's an entry in SignTypes
         my $columns = $maxcolumns - ( $self->width );
         #print "[[$maxcolumns:" , $self->width , ":$columns]]";
-        print $fh ( IDTags::parastyle('amtimes'), $break x ( $columns * 2 ) );
+        print $fh ( $IDT->parastyle('amtimes'), $break x ( $columns * 2 ) );
     }
 
     # output real columns
