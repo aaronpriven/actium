@@ -22,7 +22,10 @@ use namespace::autoclean;
 use Actium::Constants;
 use Actium::Time ('timenum');
 use Actium::Term;
-use IDTags;
+use Const::Fast;
+
+use Actium::Text::InDesignTags;
+const my $IDT => 'Actium::Text::InDesignTags';
 
 my $get_tp_value = sub {
 
@@ -114,7 +117,6 @@ around BUILDARGS => sub {
 
 };
 
-#my $head_line_separator = $SPACE . IDTags::bullet . $SPACE;
 my $head_line_separator = q</>;
 
 has [qw/linegroup display_stopid days dircode/] => (
@@ -251,41 +253,6 @@ sub format_head_lines {
     my @head_lines = $self->head_lines;
     my ( $color, $head_lines );
 
-    # old formatting for very long names
-
-    # override if @head_lines contains BSD or BSN
-    #
-    #if ( @head_lines == 1 and @head_lines ~~ qr/BS[DNH]/ ) {
-    #    my $line = $head_lines[0];
-    #    $color = $line;    # colors in InDesign file are BSD, BSN, and BSH
-    #    $head_lines = IDTags::color( $color, $longname_of{$line} );
-    #    $head_lines = IDTags::parastyle( 'bsh-name', $head_lines ) . "\r"
-    #      . IDTags::parastyle('days-dest');
-    #    $self->append_to_formatted_header($head_lines);
-    #    return;
-    #}
-
-    # new formatting for just "Day" and "Night". Crashes InDesign -- I've
-    # no idea why at this point
-
- #        if ( @head_lines == 1 and @head_lines ~~ qr/BS[DNH]/ ) {
- #
- #            my $line = $head_lines[0];
- #            $color = $line;    # colors in InDesign file are BSD, BSN, and BSH
- #
- #            $head_lines = $longname_of{$line} . $SPACE;
- #            my $length_head_lines = length($head_lines);
- #
- #            $head_lines = IDTags::color( $color, $longname_of{$line} );
- #
- #            $head_lines = IDTags::parastyle( 'dropcapbsh',
- #                IDTags::dropcapchars($length_head_lines), $head_lines );
- #
- #            $self->append_to_formatted_header($head_lines);
- #            return;
- #
- #        }
-
     my $pstyle = $#head_lines ? 'dropcapheadmany' : 'dropcaphead';
 
     foreach my $line (@head_lines) {
@@ -321,20 +288,20 @@ sub format_head_lines {
 
     if ( scalar( keys %seen_color ) == 1 ) {
         $head_lines
-          = IDTags::color( $color, join( $head_line_separator, @head_lines ) );
-        $head_lines = IDTags::parastyle( $pstyle,
-            IDTags::dropcapchars($length_head_lines), $head_lines );
+          = $IDT->color( $color) . join( $head_line_separator, @head_lines ) ;
+        $head_lines = $IDT->parastyle( $pstyle) . 
+            $IDT->dropcapchars($length_head_lines) .  $head_lines ;
 
     }
     else {
         my @color_head_lines = map { color( $color_of{$_}, $_ ) } @head_lines;
         $head_lines = join(
-            IDTags::color( 'Grey80', $head_line_separator ),
+            $IDT->color( 'Grey80') . $head_line_separator ,
             @color_head_lines
         );
 
-        $head_lines = IDTags::parastyle( $pstyle,
-            IDTags::dropcapchars($length_head_lines), $head_lines );
+        $head_lines = $IDT->parastyle( $pstyle) . 
+            $IDT->dropcapchars($length_head_lines) . $head_lines ;
 
     }
     $self->append_to_formatted_header( $head_lines . $SPACE );
@@ -389,7 +356,7 @@ sub format_headdays {
         $days .= ". ";
     }
 
-    $self->append_to_formatted_header( IDTags::bold( ucfirst($days) ) );
+    $self->append_to_formatted_header( $IDT->bold_word( ucfirst($days) ) );
 
     return;
 

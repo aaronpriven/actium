@@ -90,13 +90,13 @@ sub bold_word {
 
 sub combi_side {
     my $invocant = shift;
-    my $num      = $invocant->_combichar( +shift );
+    my $num      = $invocant->combichar( +shift );
     return $invocant->charstyle( 'sidenum', $num ) . nocharstyle;
 }
 
 sub combi_foot {
     my $invocant = shift;
-    my $num      = $invocant->_combichar( +shift );
+    my $num      = $invocant->combichar( +shift );
     return $invocant->charstyle( 'footnum', $num ) . nocharstyle;
 }
 
