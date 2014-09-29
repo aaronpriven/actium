@@ -476,7 +476,7 @@ sub _get_header_style {
 
     my $route = shift;
 
-    return 'ColorHeader' if $route =~ /\A DB /;
+    return 'ColorHeader' if $route =~ /\A DB /sx;
 
     return 'GreyHeader' if $route =~ /\A 6\d\d \z/sx;
     return 'TransbayHeader' if $route =~ /\A [A-Z] /sx or $route eq '800';
