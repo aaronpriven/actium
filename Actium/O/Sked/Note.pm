@@ -4,7 +4,7 @@
 
 # legacy status 3
 
-package Actium::O::Sked::Note 0.002;
+package Actium::O::Sked::Note 0.007;
 
 use 5.010;
 
@@ -15,10 +15,6 @@ use MooseX::SemiAffordanceAccessor;
 use MooseX::StrictConstructor;
 
 use namespace::autoclean;
-
-our $VERSION = '0.001';
-$VERSION = eval $VERSION;
-
 
 has [ qw<origlinegroup noteletter note days> ] => (
    is => 'rw' ,
