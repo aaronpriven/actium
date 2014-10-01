@@ -43,7 +43,7 @@ sub START {
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');
     #    my $linehtml_folder       = $stoplists_folder->subfolder('linehtml');
 
-    $actiumdb->ensure_loaded('Stops');
+    $actiumdb->ensure_loaded('Stops_Neue');
 
     emit 'Getting stop descriptions from FileMaker export';
 
