@@ -12,7 +12,7 @@ use 5.010;
 use warnings;
 use strict;
 
-our $VERSION = 0.005;
+our $VERSION = 0.007;
 
 # add the current program directory to list of files to include
 use FindBin('$Bin');
@@ -64,14 +64,13 @@ my ( %pat );
 
 }
 
-my ( @timepoints, %timepoints );
+my ( %places );
 
 load_tables(
     requests => {
-        Timepoints => {
-            array       => \@timepoints,
-            hash        => \%timepoints,
-            index_field => 'Abbrev4'
+        Places_Neue => {
+            hash        => \%places,
+            index_field => 'h_plc_identifier'
         },
     }
 );
@@ -97,10 +96,9 @@ foreach my $key ( keys %pat ) {
 
     $lasttp =~ s/-[21AD]$//;
 
-    my $dest = $timepoints{$lasttp}{DestinationF};
+    my $dest = $places{$lasttp}{c_destination};
 
-    my $city    = $timepoints{$lasttp}{City};
-    my $usecity = $timepoints{$lasttp}{UseCity};
+    my $city    = $places{$lasttp}{c_city};
 
     $dest ||= $lasttp;
 
@@ -129,8 +127,6 @@ foreach my $key ( keys %pat ) {
         $dest = "To $dest";
 
     } ## tidy end: for ($dir)
-
-    #$dest .= ", $city" if $usecity =~ /^y/i;
 
     push @results,
       { ROUTE  => $route,
