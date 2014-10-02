@@ -8,7 +8,7 @@
 
 # Legacy status: 4
 
-package Actium::O::Files::Ini 0.003;
+package Actium::O::Files::Ini 0.007;
 
 use Actium::Moose;
 use Actium::Types ('ActiumFolderLike');
@@ -82,7 +82,7 @@ sub _build_values {
 	my $config = Config::Tiny::->read( $self->filespec );
 	if (not defined $config) {
 	    my $errstr = Config::Tiny::->errstr ;
-	    if ($errstr =~ /does not exist/) {
+	    if ($errstr =~ /does not exist/i or $errstr =~ /no such file/i) {
 	       return +{ '_' => +{} }
 	    }
 	    croak $errstr;
