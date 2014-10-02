@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-package Actium::Term 0.003;
+package Actium::Term 0.007;
 
 use 5.010;    # turns on features
 
@@ -166,15 +166,17 @@ sub term_readline {
     print "\n" if $emit->{pos}; # new line unless position is 0
     
     if ($hide) {
-        $val = IO::Prompter::prompt( $prompt, -echo => '*' , -hNONE);
+        $val = IO::Prompter::prompt( $prompt, -echo => '*' , '-hNONE', '-stdio');
     }
     else {
-        $val = IO::Prompter::prompt($prompt);
+        $val = IO::Prompter::prompt($prompt, '-stdio' );
     }
     
     Term::Emit::setopts (-pos => 0);
 
-    return $val;
+    return "$val"; 
+    # stringify what would otherwise be a weird Contextual::Return value,
+    # thank you Mr. Conway
 
 } ## tidy end: sub term_readline
 
