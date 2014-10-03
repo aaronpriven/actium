@@ -10,7 +10,7 @@
 use warnings;
 use 5.012;
 
-our $VERSION = 0.005;
+our $VERSION = 0.007;
 
 use sort ('stable');
 
@@ -397,11 +397,11 @@ foreach my $stop ( sort keys %stopinfo ) {
     $count++;
     print '.' unless $count % 100;
 
-    my $citycode = substr( $stop, 0, 2 );
+    my $firstdigits = substr( $stop, 0, 3 );
     
-    my $citydir = $kpointdir->subfolder($citycode);
+    my $citydir = $kpointdir->subfolder("${firstdigits}xx");
 
-    open my $out, '>', "kpoints/$citycode/$stop.txt" or die $!;
+    open my $out, '>', "kpoints/$firstdigits/$stop.txt" or die $!;
 
     foreach my $linegroup ( sortbyline  keys %{ $stopinfo{$stop} } ) {
 

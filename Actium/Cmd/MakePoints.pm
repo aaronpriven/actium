@@ -4,7 +4,7 @@
 
 # legacy stage 4
 
-package Actium::Cmd::MakePoints 0.006;
+package Actium::Cmd::MakePoints 0.007;
 
 use warnings;
 use strict;
@@ -186,8 +186,8 @@ sub START {
         foreach my $stoptotest (keys %{$omitted_of_stop_r} ) {
 
             # skip stop if file not found
-            my $citycode = substr( $stoptotest, 0, 2 );
-            my $kpointfile = "kpoints/$citycode/$stoptotest.txt";
+            my $firstdigits = substr( $stoptotest, 0, 3 );
+            my $kpointfile = "kpoints/${firstdigits}xx/$stoptotest.txt";
 
             unless ( -e $kpointfile ) {
                 $skipped_stops{$signid} = $stoptotest;
