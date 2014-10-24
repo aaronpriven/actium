@@ -6,7 +6,7 @@
 
 # Subversion: $Id$
 
-package Actium::Import::CalculateFields 0.004;
+package Actium::Import::CalculateFields 0.007;
 
 use Actium::Preamble;
 use Text::Trim;
