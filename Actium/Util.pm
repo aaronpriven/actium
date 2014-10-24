@@ -84,8 +84,8 @@ sub positional {
 
 sub positional_around {
     my $args_r   = shift;
-    my $orig     = shift @{$args_r};  # see Moose::Manual::Construction
-    my $invocant = shift @{$args_r};  # see Moose::Manual::Construction
+    my $orig     = shift @{$args_r};    # see Moose::Manual::Construction
+    my $invocant = shift @{$args_r};    # see Moose::Manual::Construction
     return $invocant->$orig( positional( $args_r, @_ ) );
 }
 
@@ -129,12 +129,14 @@ sub jn {
 }
 
 sub sk {
-    croak 'Null argument specified to ' . __PACKAGE__ . '::sk' unless defined $_[0];
+    croak 'Null argument specified to ' . __PACKAGE__ . '::sk'
+      unless defined $_[0];
     return split( /$KEY_SEPARATOR/sx, $_[0] );
 }
 
 sub st {
-    croak 'Null argument specified to ' . __PACKAGE__ . '::st' unless defined $_[0];
+    croak 'Null argument specified to ' . __PACKAGE__ . '::st'
+      unless defined $_[0];
     return split( /\t/s, $_[0] );
 }
 
@@ -216,6 +218,10 @@ sub tabulate {
 sub aoa2tsv {
     # array of arrays to a single string of tab-separated-values,
     # suitable for something like File::Slurp::write_file
+    
+    # converts line feeds, tabs, and carriage returns to the Unicode
+    # visible symbols for these characters. Which is probably wrong, but 
+    # why would you feed those in then...
 
     my $aoa_r   = shift;
     my @headers = flatten(@_);
@@ -224,14 +230,23 @@ sub aoa2tsv {
     push @lines, jt(@headers) if @headers;
 
     foreach my $array ( @{$aoa_r} ) {
+        foreach ( @{$array} ) {
+            $_ //= $EMPTY_STR;
+            s/\t/\x{2409}/g;    # visible symbol for tab
+        }
         push @lines, jt( @{$array} );
+    }
+
+    foreach (@lines) {
+        s/\n/\x{240A}/g;        # visible symbol for line feed
+        s/\r/\x{240D}/g;        # visible symbol for carriage return
     }
 
     my $str = jn(@lines) . "\n";
 
     return $str;
 
-}
+} ## tidy end: sub aoa2tsv
 
 sub doe {
     my @list = @_;
@@ -493,11 +508,10 @@ sub u_wrap {
         else {
             push @lines, $breaker->break($line);
         }
-        
 
     }
     foreach (@lines) {
-       s/\s+\z//;
+        s/\s+\z//;
     }
 
     return @lines;
@@ -507,7 +521,7 @@ sub u_wrap {
 sub u_trim_to_columns {
     my $text        = shift;
     my $num_columns = shift;
-    
+
     require Unicode::GCString;
 
     my $gc = Unicode::GCString::->new($text);
