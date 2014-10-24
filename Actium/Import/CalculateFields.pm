@@ -24,7 +24,7 @@ sub hastus_places_import {
     my @place_records = @{ +shift };
 
     my @returned_headers = (
-        map { $ORIG_PREFIX . $_ } @place_headers,
+        ( map { $ORIG_PREFIX . $_ } @place_headers) ,
         map { $CALC_PREFIX . $_ } (qw (city abbrev9 description ))
     );
 
