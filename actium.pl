@@ -16,7 +16,7 @@
 use 5.012;
 use warnings;
 
-our $VERSION = 0.006;
+our $VERSION = 0.007;
 
 # add the current program directory to list of files to include
 use FindBin qw($Bin);
@@ -48,6 +48,7 @@ my $config = Actium::O::Files::Ini::->new('.actium.ini');
 ### Get subcommand, and run subcommand
 
 my %module_of = (
+    flickr          => 'Flickr_Stops',
     dbexport        => 'ActiumDBExport',
     slists2html     => 'Slists2HTML',
     theaimport      => 'TheaImport',
@@ -74,7 +75,8 @@ my %module_of = (
     decalcount      => 'DecalCount',
     xheaimport      => 'XheaImport',
     xhea2hasi       => 'Xhea2Hasi',
-    # more to come
+    headwaytimes    => 'HeadwayTimes',
+                                            # more to come
 );
 
 # a reference is an alias, so tabulae => \'tabula' means if you type
