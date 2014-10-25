@@ -660,15 +660,11 @@ sub write_files_from_hash {
 
     foreach my $key ( sort keys %hash ) {
 
-        my $out;
         emit_over $key;
 
         my $file = $self->make_filespec( $key . $extension );
-
-        unless ( open $out, '>', $file ) {
-            emit_error;
-            die "Can't open $file for writing: $OS_ERROR";
-        }
+        
+        my $out = $self->open_write($key . $extension);
 
         print $out $hash{$key} or die "Can't print to $file: $OS_ERROR";
 
