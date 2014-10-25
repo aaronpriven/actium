@@ -448,11 +448,11 @@ sub _get_xhea_filenames {
     my @xhea_filenames;
 
     foreach my $filename (@xmlfiles) {
-        
+
         next if fc($filename) eq fc('PlacePatterns');
         # skip PlacePatterns, which has a different XML structure
         # than the simple one this program can deal with
-        
+
         push @xhea_filenames, $filename
           if in( $filename, @xsdfiles );
     }
@@ -506,30 +506,57 @@ sub _get_xhea_filenames {
 
 {
 
-    const my %HASI_DIR_OF_XHEA => (
-        DIR1       => 1,
-        DIRA       => 'A',
-        DIRB       => 'B',
-        CCW        => 'Counterclo',
-        CW         => 'Clockwise',
-        EAST       => 'Eastbound',
-        WEST       => 'Westbound',
-        NORTH      => 'Northbound',
-        SOUTH      => 'Southbound',
-        $EMPTY_STR => $EMPTY_STR,
+    # originally the XHEA files got the capitalized set of directions,
+    # but this changed at one point to use the older HASI directions
+    # instead, except that it spelled out "Counterclockwise" since
+    # the field didn't have the length limit of HASI.
+
+    # So all these are put in, just in case.
+
+    const my %DIRECTION_MAP => (
+        '1'              => 1,
+        A                => 'A',
+        B                => 'B',
+        Counterclo       => 'Counterclo',
+        Counterclockwise => 'Counterclo',
+        Clockwise        => 'Clockwise',
+        Eastbound        => 'Eastbound',
+        Westbound        => 'Westbound',
+        Northbound       => 'Northbound',
+        Southbound       => 'Southbound',
+        DIR1             => 1,
+        DIRA             => 'A',
+        DIRB             => 'B',
+        CCW              => 'Counterclo',
+        CW               => 'Clockwise',
+        EAST             => 'Eastbound',
+        WEST             => 'Westbound',
+        NORTH            => 'Northbound',
+        SOUTH            => 'Southbound',
+        $EMPTY_STR       => $EMPTY_STR,
     );
 
-    const my %HASI_DIRVALUE_OF_XHEA => (
-        DIR1       => 10,
-        DIRA       => 14,
-        DIRB       => 15,
-        CCW        => 9,
-        CW         => 8,
-        EAST       => 2,
-        WEST       => 3,
-        NORTH      => 0,
-        SOUTH      => 1,
-        $EMPTY_STR => $EMPTY_STR,
+    const my %DIRECTION_VALUE_MAP => (
+        DIR1             => 10,
+        DIRA             => 14,
+        DIRB             => 15,
+        CCW              => 9,
+        CW               => 8,
+        EAST             => 2,
+        WEST             => 3,
+        NORTH            => 0,
+        SOUTH            => 1,
+        '1'              => 10,
+        A                => 14,
+        B                => 15,
+        Counterclo       => 9,
+        Counterclockwise => 9,
+        Clockwise        => 8,
+        Eastbound        => 2,
+        Westbound        => 3,
+        Northbound       => 0,
+        Southbound       => 1,
+        $EMPTY_STR       => $EMPTY_STR,
     );
 
     sub to_hasi {
@@ -546,8 +573,8 @@ sub _get_xhea_filenames {
             #return unless $hr->{tpat_direction};
 
             my $id        = $hr->{tpat_id};
-            my $direction = $HASI_DIR_OF_XHEA{ $hr->{tpat_direction} };
-            my $dirvalue  = $HASI_DIRVALUE_OF_XHEA{ $hr->{tpat_direction} };
+            my $direction = $DIRECTION_MAP{ $hr->{tpat_direction} };
+            my $dirvalue  = $DIRECTION_VALUE_MAP{ $hr->{tpat_direction} };
             my $in_serv   = $hr->{tpat_in_serv};
             my $route     = $hr->{tpat_route};
             my $display   = $hr->{tpat_veh_display};
