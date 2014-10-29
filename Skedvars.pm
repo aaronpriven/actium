@@ -32,6 +32,7 @@ use Exporter;
           "TF" => "Tuesdays and Fridays only" ,
           "WF" => "Wednesdays and Fridays only" ,
 	  "MZ" => "Mondays, Wednesdays, and Fridays only" ,
+          'F' => 'Fridays only',
         );
 
    our %bound = 
