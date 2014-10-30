@@ -401,7 +401,7 @@ foreach my $stop ( sort keys %stopinfo ) {
     
     my $citydir = $kpointdir->subfolder("${firstdigits}xx");
 
-    open my $out, '>', "kpoints/$firstdigits/$stop.txt" or die $!;
+    open my $out, '>', "kpoints/${firstdigits}xx/$stop.txt" or die $!;
 
     foreach my $linegroup ( sortbyline  keys %{ $stopinfo{$stop} } ) {
 
