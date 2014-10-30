@@ -181,9 +181,9 @@ sub new_from_kpoints {
           = map { $_, 1 } @{ $self->omitted_of($stop_to_import) };
         my ( @found_lines, @found_linedirs );
 
-        my $citycode = substr( $stop_to_import, 0, 2 );
+        my $kpointdir = substr( $stop_to_import, 0, 3 ) . 'xx';
 
-        my $kpointfile = "kpoints/$citycode/$stop_to_import.txt";
+        my $kpointfile = "kpoints/$kpointdir/$stop_to_import.txt";
 
         open my $kpoint, '<', $kpointfile
           or die "Can't open $kpointfile: $!";
