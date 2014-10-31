@@ -53,7 +53,7 @@ sub _parameter {
 }
 
 sub color {
-    return _parameter( @_, 'Color' );
+    return _parameter( @_, 'cColor' );
 }
 
 sub parastyle {
