@@ -305,7 +305,8 @@ sub getfiles {
     my $status = shift;
 
     return
-      grep ( ( !/=/ and !m@^skeds/I@ and !m@^skeds/DB@ and !m@^skeds/BS[DNH]@ ),
+      grep ( ( !/=/ and !m@^skeds/I@ and !m@^skeds/DB@ ),
+#      grep ( ( !/=/ and !m@^skeds/I@ and !m@^skeds/DB@ and !m@^skeds/BS[DNH]@ ),
         glob('skeds/*.txt') )
       if ( not $status )
       or ( $status == GETFILES_PUBLIC );
@@ -313,7 +314,8 @@ sub getfiles {
     # internal ones start with the letter I or with DB, or are NC or LC
 
     return
-      grep ( ( !/=/ and !m@^skeds/I@ and !m@^skeds/BS[DNH]@ ),
+      grep ( ( !/=/ and !m@^skeds/I@ ),
+#      grep ( ( !/=/ and !m@^skeds/I@ and !m@^skeds/BS[DNH]@ ),
         glob('skeds/*.txt') )
       if $status == GETFILES_PUBLIC_AND_DB;
 
@@ -323,6 +325,7 @@ sub getfiles {
     die "Invalid parameter to getfiles: $status";
 
     # I can't imagine a time when I will want the equals signs ones
+    # which have been gone for years now anyway...
 
 }    ## tidy end: sub getfiles
 
