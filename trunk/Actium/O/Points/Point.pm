@@ -486,7 +486,8 @@ sub format_columns {
                     $self->set_marker_of_footnote( $foot, $marker );
                 }
 
-                $time .= $IDT->hairspace . $IDT->combi_foot($marker);
+                #$time .= $IDT->hairspace . $IDT->combi_foot($marker);
+                $time .= $IDT->combi_foot($marker);
             }
 
             $column->set_formatted_time( $i, $time );
