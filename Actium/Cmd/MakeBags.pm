@@ -4,7 +4,7 @@
 
 # Subversion: $Id$
 
-package Actium::Cmd::MakeBags 0.005;
+package Actium::Cmd::MakeBags 0.008;
 
 use Actium::Preamble;
 use Actium::Bags;
@@ -24,7 +24,7 @@ sub START {
     my $class      = shift;
     my %params     = @_;
     my $config_obj = $params{config};
-    
+
     my $oldsignup_option = option('oldsignup');
     die "No oldsignup option specified" unless $oldsignup_option;
 
@@ -33,33 +33,34 @@ sub START {
       = Actium::O::Folders::Signup->new( { signup => option('oldsignup') } );
     my $actium_db = actiumdb($config_obj);
 
-    my ($bagtexts_r , $baglist_r, $counts_r, $final_heights_r) = Actium::Bags::make_bags(
+    my ( $bagtexts_r, $baglist_r, $counts_r, $final_heights_r )
+      = Actium::Bags::make_bags(
         signup    => $signup,
         oldsignup => $oldsignup,
         actium_db => $actium_db
-    );
+      );
 
     my $bagtextdir = $signup->subfolder('bagtexts');
 
     $bagtextdir->write_files_from_hash( $bagtexts_r, 'service change bag',
         'txt' );
-        
+
     my $baglist = Actium::Util::aoa2tsv($baglist_r);
-    $bagtextdir->slurp_write($baglist, 'baglist.txt');
-        
+    $bagtextdir->slurp_write( $baglist, 'baglist.txt' );
+
     my @counts_rs;
-    foreach (sort keys %{$counts_r} ) {
-        push @counts_rs, [$_, $counts_r->{$_}];
+    foreach ( sort keys %{$counts_r} ) {
+        push @counts_rs, [ $_, $counts_r->{$_} ];
     }
-    say jn (@{tabulate(@counts_rs)});
-    
+    say jn ( @{ tabulate(@counts_rs) } );
+
     say "---";
-    
+
     my @heights_rs;
-    foreach (sort { $a <=> $b } keys %{$final_heights_r} ) {
-        push @heights_rs, [ $_, $final_heights_r->{$_}{count}] ;
+    foreach ( sort { $a <=> $b } keys %{$final_heights_r} ) {
+        push @heights_rs, [ $_, $final_heights_r->{$_}{count} ];
     }
-    say jn(@{tabulate(@heights_rs)});
+    say jn( @{ tabulate(@heights_rs) } );
 
 } ## tidy end: sub START
 
