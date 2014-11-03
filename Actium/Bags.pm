@@ -6,7 +6,7 @@
 
 # legacy stage 4
 
-package Actium::Bags 0.006;
+package Actium::Bags 0.008;
 
 use Actium::Preamble;
 use Actium::Term;
@@ -110,7 +110,7 @@ sub _make_baglist {
         }
 
         push @baglist,
-           sort { $a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] } @thislist ;
+          sort { $a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] } @thislist;
 
     }
 
@@ -130,14 +130,14 @@ sub _make_stop_info {
     );
 
     my %compare;
-      # =  (
-      # $OLD => {} ,
-      # $NEW => {} ,
-      # $REMOVED => {},
-      # )
-      #  ;
-      # if doesn't autoviv because no bag of that type, gives errors
-        
+    # =  (
+    # $OLD => {} ,
+    # $NEW => {} ,
+    # $REMOVED => {},
+    # )
+    #  ;
+    # if doesn't autoviv because no bag of that type, gives errors
+
     while ( my $stop_r = $each_stop->() ) {
         my ($stopid,    $desc,          $added,
             $num_added, $removed,       $num_removed,

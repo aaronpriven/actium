@@ -6,7 +6,7 @@
 
 # legacy stage 4
 
-package Actium::Flags 0.005;
+package Actium::Flags 0.008;
 
 use Actium::Preamble;
 use Actium::Term;
@@ -47,6 +47,7 @@ EOT
     while ( my $row_r = $sth->fetchrow_arrayref ) {
         
         foreach (@{$row_r}) {
+            next unless defined;
             s/\s+\z//; # trim trailing white space
         }
 
