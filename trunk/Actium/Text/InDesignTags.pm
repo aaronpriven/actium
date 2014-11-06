@@ -25,8 +25,9 @@ use constant {
     nbsp             => '<0x00A0>',
     endash           => '<0x2013>',
     emdash           => '<0x2014>',
-    hardreturn       => "\r",
-    softreturn       => "\n",
+    hardreturn       => "\r", # 0x000D
+    softreturn       => "\n", # 0x000A
+    end_nested_style => '<0x0003>', # actually is exported as 0x03
     emspace          => '<0x2003>',
     enspace          => '<0x2002>',
     thirdspace       => '<0x2004>',
@@ -41,6 +42,7 @@ use constant {
     subscript        => '<cPosition:Subscript>',
     char_underline   => '<CharStyle:Underline>',
     char_bold        => '<CharStyle:Bold>',
+
 };
 
 # Tags that have parameters
@@ -131,6 +133,7 @@ sub encode_high_chars {
     my $invocant = shift;
 
     @_ = @_ ? @_ : $_ if defined wantarray;
+    
     # set @_ to be a copy of itself, or of $_, if not in void context
 
     # allows it to work on copies in any but void context, or on
@@ -139,21 +142,23 @@ sub encode_high_chars {
     for ( @_ ? @_ : $_ ) {    # alias $_ to each entry of @_, or if none, $_
         next unless defined;
         my @chars = split(//);
-        for my $i ( 0 .. $#chars ) {
+        for my $i ( reverse 0 .. $#chars ) {
             my $ord = ord( $chars[$i] );
-            if ( $ord > 0x7F ) {
-                substr( $_, $i, 1, sprintf( '<0x%X>', $ord ) );
+            if ( $ord == ord('<') or $ord == ord('>') or $ord > 0x7F ) {
+                substr( $_, $i, 1, sprintf( '<0x%04X>', $ord ) );
             }
 
         }
     }
-
-    return @_ if wantarray || !defined wantarray;
+    
+    return if not defined wantarray;
+    return @_ if wantarray;
 
     # return concatenation of defined values, if any
-    if ( my @def = grep defined, @_ ) {
-        local $" = q{};
-        return "@def";
+    my @defined_vals = grep { defined($_) } @_;
+    if ( @defined_vals ) {
+        my $joined = join('', @defined_vals);
+        return $joined;
     }
 
     return;
