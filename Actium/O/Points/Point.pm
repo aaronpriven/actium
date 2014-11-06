@@ -12,7 +12,7 @@ use strict;
 
 use 5.010;
 
-package Actium::O::Points::Point 0.007;
+package Actium::O::Points::Point 0.008;
 
 use sort ('stable');
 
@@ -62,9 +62,9 @@ has 'omitted_of_stop_r' => (
 );
 
 has 'is_simple_stopid' => (
-    is => 'ro',
+    is      => 'ro',
     builder => '_build_is_simple_stopid',
-    lazy => 1,
+    lazy    => 1,
 );
 
 sub _build_is_simple_stopid {
@@ -170,13 +170,13 @@ sub new_from_kpoints {
         nonstoplocation   => $nonstoplocation,
         omitted_of_stop_r => $omitted_of_stop_r,
     );
-    
+
     my $is_simple = $self->is_simple_stopid;
 
     foreach my $stop_to_import ( $self->allstopids ) {
-        
+
         my $column_stopid = $is_simple ? $EMPTY_STR : $stop_to_import;
-        
+
         my %do_omit_line
           = map { $_, 1 } @{ $self->omitted_of($stop_to_import) };
         my ( @found_lines, @found_linedirs );
@@ -188,7 +188,10 @@ sub new_from_kpoints {
         open my $kpoint, '<', $kpointfile
           or die "Can't open $kpointfile: $!";
 
+        my (%bsn_columns);
+
         while (<$kpoint>) {
+
             chomp;
             my $column = Actium::O::Points::Column->new( $_, $column_stopid );
 
@@ -204,8 +207,15 @@ sub new_from_kpoints {
             next if $do_omit_line{$linedir};
             next if $do_omit_line{$linegroup};
 
-            if ( $linegroup =~ /^BS[DNH]$/ ) {
-                $self->push_columns($column) if $special_type eq 'bsh';
+            # BSH handling
+
+            if ( $special_type eq 'bsh' ) {
+                if ( $linegroup eq 'BSD' or $linegroup eq 'BSH' ) {
+                    $self->push_columns($column);
+                }
+                elsif ( $linegroup eq 'BSN' ) {
+                    $bsn_columns{ $column->days } = $column;
+                }
                 next;
             }
 
@@ -230,6 +240,33 @@ sub new_from_kpoints {
         } ## tidy end: while (<$kpoint>)
 
         close $kpoint or die "Can't close $kpointfile: $!";
+
+        # ugly kludge for BSH weekday/Friday/Saturday skeds
+
+        if ( scalar keys %bsn_columns ) {
+            my $weekday  = $bsn_columns{'12345'};
+            my $friday   = $bsn_columns{'5'};
+            my $saturday = $bsn_columns{'6'};
+
+            $self->push_columns($weekday);
+         # the header formatting is changed so it changes it to "M-TH only"
+         # This will really screw up if there are any day exceptions in it later
+
+            my %is_a_fri_time
+              = map { $_ => 1 } ( $weekday->times, $friday->times );
+
+            my @sat_exceptions;
+
+            foreach my $i ( 0 .. $saturday->time_count - 1 ) {
+                my $sat_time = $saturday->time($i);
+                push @sat_exceptions, $is_a_fri_time{$sat_time} ? '' : '6';
+            }
+
+            $saturday->_set_exception_r( \@sat_exceptions );
+
+            $self->push_columns($saturday);
+
+        } ## tidy end: if ( scalar keys %bsn_columns)
 
         my @notfound = get_unique( [ [ keys %do_omit_line ], \@found_lines ] );
 
@@ -446,12 +483,10 @@ sub format_columns {
 
             } ## tidy end: for ( $column->note )
 
-            $column->set_formatted_column(
-                    $column->formatted_header
+            $column->set_formatted_column( $column->formatted_header
                   . $IDT->boxbreak
-                  . $IDT->parastyle('noteonly') 
-                  . $notetext 
-            );
+                  . $IDT->parastyle('noteonly')
+                  . $notetext );
 
             $self->add_to_width(1);
             next COLUMN;
@@ -475,7 +510,7 @@ sub format_columns {
             my $pstyle = $ampm eq 'a' ? 'amtimes' : 'pmtimes';
             if ( $prev_pstyle ne $pstyle ) {
                 $prev_pstyle = $pstyle;
-                $time = $IDT->parastyle($pstyle) . $time ;
+                $time        = $IDT->parastyle($pstyle) . $time;
             }
 
             if ($foot) {
@@ -533,34 +568,25 @@ sub format_side {
     my $is_bsh  = $self->is_bsh;
 
     my $formatted_side;
-    open my $sidefh, '>', \$formatted_side;
+    open my $sidefh, '>:utf8', \$formatted_side;
 
     # EFFECTIVE DATE and colors
     my $color;
-    if ( $effdate =~ /Dec|Jan|Feb/ ) {
-        if ($is_bsh) {
-            $color = "BSH";
-        }
-        else {
+
+    if ($is_bsh) {
+        $color = 'Black';
+    }
+    else {
+        if ( $effdate =~ /Dec|Jan|Feb/ ) {
             $color = "H101-Purple";    # if it looks crummy change it to H3-Blue
         }
-    }
-    elsif ( $effdate =~ /Mar|Apr|May/ ) {
-        if ($is_bsh) {
-            $color = "BSH";
-        }
-        else {
+        elsif ( $effdate =~ /Mar|Apr|May/ ) {
             $color = "New AC Green";
         }
-    }
-    elsif ( $effdate =~ /Jun|Jul/ ) {
-        $color = "Black";
-    }
-    else {    # Aug, Sept, Oct, Nov
-        if ($is_bsh) {
+        elsif ( $effdate =~ /Jun|Jul/ ) {
             $color = "Black";
         }
-        else {
+        else {                         # Aug, Sept, Oct, Nov
             $color = "Rapid Red";
         }
     }
@@ -569,15 +595,15 @@ sub format_side {
     $effdate =~ s/\s+$//;
     $effdate =~ s/\s/$nbsp/g;
 
-    print $sidefh $IDT->parastyle( 'sideeffective') ,
-        $IDT->color( $color),  "Effective: $effdate"  ;
-
-    print $sidefh "\r",                $IDT->parastyle('sidenotes'),
-    'Light Face = a.m.', $IDT->softreturn;
+    print $sidefh $IDT->parastyle('sideeffective'),
+      $IDT->color($color), "Effective: $effdate";
+      
+    print $sidefh "\r", $IDT->parastyle('sidenotes'),
+      'Light Face = a.m.', $IDT->softreturn;
     print $sidefh $IDT->bold_word('Bold Face = p.m.'), "\r";
 
     if ( $self->has_ab ) {
-        print $sidefh
+        print $sidefh 
 'Lines that have <0x201C>A Loop<0x201D> and <0x201C>B Loop<0x201D> travel in a circle, beginning ',
           'and ending at the same point. The A Loop operates in the clockwise ',
           'direction. The B Loop operates in the counterclockwise direction. ',
@@ -586,24 +612,29 @@ sub format_side {
     }
 
     my $sidenote = $Actium::Cmd::MakePoints::signs{$signid}{Sidenote};
-
+    
     if ( $sidenote and ( $sidenote !~ /^\s+$/ ) ) {
         $sidenote =~ s/\n/\r/g;
         $sidenote =~ s/\r+/\r/g;
         $sidenote =~ s/\r+$//;
         $sidenote =~ s/\0+$//;
-        print $sidefh $IDT->bold_word(
-            $Actium::Cmd::MakePoints::signs{$signid}{Sidenote} )
-          . "\r";
+        
+        $sidenote = $IDT->encode_high_chars($sidenote);
+
+        if ($is_bsh) {
+            print $sidefh $IDT->parastyle('BSHsidenotes'), $sidenote,
+              "\r", $IDT->parastyle('sidenotes');
+        }
+        else {
+
+            print $sidefh $IDT->bold_word(
+                $sidenote)
+                #$Actium::Cmd::MakePoints::signs{$signid}{Sidenote} )
+              . "\r";
+        }
     }
 
     print $sidefh $self->format_sidenotes;
-
-    #my $thisproject = $Actium::Cmd::MakePoints::signs{$signid}{Project};
-    #if ( $Actium::Cmd::MakePoints::projects{$thisproject}{'ProjectNote'} ) {
-    #    print $sidefh $Actium::Cmd::MakePoints::projects{$thisproject}
-    #      {'ProjectNote'}, "\r";
-    #}
 
     if ( $self->note600 ) {
         my $stoporarea = $self->is_simple_stopid ? 'stop' : 'area';
@@ -629,7 +660,8 @@ sub format_side {
 
     if ( not $self->is_bsh and $self->is_simple_stopid ) {
         print $sidefh $IDT->parastyle('depttimeside'), 'Call ',
-          $IDT->bold_word('511'), ' and say ', $IDT->bold_word('"Departure Times"'),
+          $IDT->bold_word('511'), ' and say ',
+          $IDT->bold_word('"Departure Times"'),
           " for live bus predictions\r", $IDT->parastyle('stopid'),
           "STOP ID\r",                   $IDT->parastyle('stopidnumber'),
           $self->stopid();
@@ -649,6 +681,8 @@ my %text_of_exception = (
     SD     => 'school days only',
     SH     => 'school holidays only',
     '1234' => 'weekdays except Fridays',
+    '5'    => 'Fridays only',
+    '6'    => 'Saturdays only',
 );
 
 sub format_sidenotes {
@@ -657,7 +691,7 @@ sub format_sidenotes {
     my %foot_of = reverse $self->elements_marker_of_footnote;
 
     my $formatted_sidenotes = '';
-    open my $sidefh, '>', \$formatted_sidenotes;
+    open my $sidefh, '>:utf8', \$formatted_sidenotes;
 
   NOTE:
     for my $i ( 1 .. $self->highest_footnote ) {
@@ -747,8 +781,11 @@ sub format_sidenotes {
                 print $sidefh "Line $line. Operates $exc to $dest";
                 next;
             }
-            if ( $_ eq 'dl' ) { print $sidefh "Line $line, to $dest"; next; }
-            if ( $_ eq 'e' )  { print $sidefh "Operates $exc.";       next; }
+            if ( $_ eq 'dl' ) {
+                print $sidefh "Line $line, to $dest";
+                next;
+            }
+            if ( $_ eq 'e' ) { print $sidefh "Operates $exc."; next; }
             if ( $_ eq 'el' ) {
                 print $sidefh "Line $line. Operates $exc.";
                 next;
@@ -768,13 +805,14 @@ sub format_sidenotes {
 
 sub format_bottom {
 
-    my $self = shift;
+    my $self   = shift;
+    my $is_bsh = $self->is_bsh;
 
     my $signid = $self->signid;
     my $stopid = $self->stopid;
 
     my $formatted_bottom;
-    open my $botfh, '>', \$formatted_bottom;
+    open my $botfh, '>:utf8', \$formatted_bottom;
 
     no warnings('once');
     my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid}; # this is a reference
@@ -796,6 +834,10 @@ sub format_bottom {
       . $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum} . "."
       if $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum};
 
+    if ( $is_bsh and not $nonstoplocation ) {
+        print $botfh $IDT->boxbreak, $IDT->parastyle('BSHInfoStopID'), $stopid;
+    }
+
     close $botfh;
 
     $self->set_formatted_bottom($formatted_bottom);
@@ -808,7 +850,7 @@ sub output {
 
     my $signid = $self->signid;
 
-    open my $fh, '>', "indesign_points/$signid.txt"
+    open my $fh, '>:encoding(ascii)', "indesign_points/$signid.txt"
       or die "Can't open $signid.txt for writing: $!";
 
     print $fh $IDT->start;
@@ -838,7 +880,7 @@ sub output {
     print $fh $self->formatted_side;
     print $fh $break;
     print $fh $self->formatted_bottom;
-
+    
     close $fh;
 
 } ## tidy end: sub output
