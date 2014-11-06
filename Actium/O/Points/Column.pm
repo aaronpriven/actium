@@ -11,7 +11,7 @@ use 5.010;
 
 use sort ('stable');
 
-package Actium::O::Points::Column 0.007;
+package Actium::O::Points::Column 0.008;
 
 use Moose;
 use MooseX::SemiAffordanceAccessor;
@@ -49,7 +49,12 @@ around BUILDARGS => sub {
     my $orig  = shift;
     my $class = shift;
 
-    my $kpoint         = shift;
+    my $kpoint = shift;
+
+    if ( ref $kpoint ) {
+        return $class->$orig(@_);
+    }
+
     my $display_stopid = shift;
 
     my ( $linegroup, $dircode, $days, @entries ) = split( /\t/, $kpoint );
@@ -181,6 +186,7 @@ has destination_r => (
 has exception_r => (
     traits  => ['Array'],
     is      => 'ro',
+    writer  => '_set_exception_r',    # only for stupid BSN kludge
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
     handles => { exception => 'get', exceptions => 'elements' },
@@ -264,14 +270,30 @@ sub format_head_lines {
                 if ( $line eq 'BSN' ) {
                     my $days = $self->days;
                     $line = 'FRI NIGHT' if $days eq '5';
-                    $line = 'SAT NIGHT' if $days eq '6';
+                    #$line = 'SAT NIGHT'       if $days eq '6';
+                    $line = 'FRI & SAT NIGHT' if $days eq '6';
+                    $line = 'FRI & SAT NIGHT' if $days eq '56';
+                    $line = 'MON' . $IDT->endash . 'THU NIGHT'
+                      if $days eq '12345';    # ugly ugly ugly hack,
+                                              # I should really fix the data
                 }
-                elsif ( $line eq 'BSD' ) {
+                elsif ( $line eq 'BSD' or $line eq 'BSH' ) {
                     $line = 'WEEKDAY';
                 }
 
-                $pstyle = 'dropcapheadbsh';
-            }
+                #$pstyle = 'dropcapheadbsh';
+
+                $self->append_to_formatted_header(
+                    $IDT->parastyle('BSHdays-dest'),
+                    $IDT->color($color),
+                    $line,
+                    #$IDT->thirdspace,
+                    $IDT->end_nested_style,
+                    $IDT->softreturn,
+                );
+                return;
+
+            } ## tidy end: if ( $line =~ /BS[DNH]/)
             else {
                 $color = (
                     $Actium::Cmd::MakePoints::lines{$line}{Color}
@@ -284,24 +306,31 @@ sub format_head_lines {
     } ## tidy end: foreach my $line (@head_lines)
 
     my $length_head_lines
-      = length( join( $head_line_separator, @head_lines ) ) + 1;
+      = calc_length_head_lines( $head_line_separator, @head_lines );
+
+    #my $length_head_lines
+    #  = length( join( $head_line_separator, @head_lines ) ) + 1;
 
     if ( scalar( keys %seen_color ) == 1 ) {
         $head_lines
-          = $IDT->color( $color) . join( $head_line_separator, @head_lines ) ;
-        $head_lines = $IDT->parastyle( $pstyle) . 
-            $IDT->dropcapchars($length_head_lines) .  $head_lines ;
+          = $IDT->color($color) . join( $head_line_separator, @head_lines );
+        $head_lines
+          = $IDT->parastyle($pstyle)
+          . $IDT->dropcapchars($length_head_lines)
+          . $head_lines;
 
     }
     else {
         my @color_head_lines = map { color( $color_of{$_}, $_ ) } @head_lines;
         $head_lines = join(
-            $IDT->color( 'Grey80') . $head_line_separator ,
+            $IDT->color('Grey80') . $head_line_separator,
             @color_head_lines
         );
 
-        $head_lines = $IDT->parastyle( $pstyle) . 
-            $IDT->dropcapchars($length_head_lines) . $head_lines ;
+        $head_lines
+          = $IDT->parastyle($pstyle)
+          . $IDT->dropcapchars($length_head_lines)
+          . $head_lines;
 
     }
     $self->append_to_formatted_header( $head_lines . $SPACE );
@@ -312,6 +341,14 @@ sub format_head_lines {
     return;
 
 }    ## <perltidy> end sub format_head_lines
+
+sub calc_length_head_lines {
+    my $separator  = shift;
+    my @head_lines = @_;
+    my $text       = join( $head_line_separator, @head_lines );
+    $text =~ s/<0x[0-9A-F]+>/ /g; # replace InDesign character tags with a space
+    return length($text) + 1;
+}
 
 my %weekdays = (
     1 => 'Mondays',
@@ -331,6 +368,9 @@ my %weekdays = (
 sub format_headdays {
 
     my $self = shift;
+
+    return if $self->linegroup =~ /\A BS[DSN] \z/sx;
+
     my $days = $self->days;
 
     # TODO add code for exceptions
@@ -365,7 +405,13 @@ sub format_headdays {
 sub format_headdest {
 
     my $self = shift;
-    my $dest = ' to ' . $self->primary_destination;
+    my $dest;
+    if ( $self->linegroup =~ /\A BS[DSN] \z/sx ) {
+        $dest = $IDT->nocolor . 'To ' . $self->primary_destination;
+    }
+    else {
+        $dest = ' to ' . $self->primary_destination;
+    }
 
     my $dir = $self->dircode;
 
@@ -397,7 +443,7 @@ sub format_approxflag {
 
         return unless $display_stopid;
 
-        $self->append_to_formatted_header( " (Stop $display_stopid)" );
+        $self->append_to_formatted_header(" (Stop $display_stopid)");
         return;
     }
 

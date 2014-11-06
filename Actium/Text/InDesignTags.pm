@@ -6,7 +6,7 @@
 
 # Legacy stage 4
 
-package Actium::Text::InDesignTags 0.007;
+package Actium::Text::InDesignTags 0.008;
 
 use warnings;
 use 5.016;
