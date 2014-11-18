@@ -25,16 +25,23 @@ use POSIX ('ceil');
 use Storable();
 
 use Actium::Time (qw(timenum ));
-    
+
 use Actium::Sorting::Line('sortbyline');
-    
+
 use Actium::Util(qw<jk keyreadable>);
 
 use Actium::Constants;
 use Actium::Union('ordered_union');
+
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+
+use Actium::Options (qw<add_option option init_options>);
+
 use List::MoreUtils (qw<any all>);
 
 use Const::Fast;
+
+my ( %stops, %cities );
 
 {
     no warnings('once');
@@ -62,10 +69,24 @@ EOF
 
 my $intro = 'avl2points -- makes list of times that buses pass each stop';
 
-use Actium::Options ('init_options');
 use Actium::O::Folders::Signup;
 
 init_options;
+
+load_tables(
+    requests => {
+        Cities => {
+            hash        => \%cities,
+            index_field => 'City',
+            fields      => [qw[City Side]],
+        },
+        Stops_Neue => {
+            hash        => \%stops,
+            index_field => 'h_stp_511_id',
+            fields      => [qw[h_stp_511_id c_city ]],
+        },
+    }
+);
 
 my $signup = Actium::O::Folders::Signup->new();
 chdir $signup->path();
@@ -79,9 +100,8 @@ my ( %stopinfo, %note_of );
     my $somedata_r;
 
     {    # scoping
-    
-my $avldata_r = $signup->retrieve('avl.storable');
 
+        my $avldata_r = $signup->retrieve('avl.storable');
 
         foreach (qw<PAT TRP>) {
             $somedata_r->{$_} = $avldata_r->{$_};
@@ -120,10 +140,13 @@ foreach my $stop ( sort keys %stopinfo ) {
                       my $dir_code ( sort keys %{ $stopinfo{$stop}{$combolg} } )
                     {
                         foreach my $days (
-                            sort keys %{ $stopinfo{$stop}{$combolg}{$dir_code} } )
+                            sort
+                            keys %{ $stopinfo{$stop}{$combolg}{$dir_code} }
+                          )
                         {
                             foreach my $time_r (
-                                @{  $stopinfo{$stop}{$combolg}{$dir_code}{$days}
+                                @{
+                                    $stopinfo{$stop}{$combolg}{$dir_code}{$days}
                                 }
                               )
                             {
@@ -139,7 +162,7 @@ foreach my $stop ( sort keys %stopinfo ) {
 
                             }
 
-                        } ## tidy end: foreach my $days ( keys %{ ...})
+                        }    ## tidy end: foreach my $days ( keys %{ ...})
 
                     }    ## <perltidy> end foreach my $dir_code ( keys...)
 
@@ -158,7 +181,7 @@ foreach my $stop ( sort keys %stopinfo ) {
 print "Sorting times and merging days...\n";
 
 #my @nolocals = qw<FS L NX NX1 NX2 NX3 OX U W>;
-my @nolocals = @TRANSBAY_NOLOCALS; # from Actium::Constants
+my @nolocals = @TRANSBAY_NOLOCALS;    # from Actium::Constants
 my %is_a_nolocal_route;
 $is_a_nolocal_route{$_} = 1 foreach @nolocals;
 
@@ -178,26 +201,25 @@ foreach my $stop ( sort keys %stopinfo ) {
 
             my %concatenated;
 
-            foreach
-              my $days ( sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
+            foreach my $days (
+                sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
             {
 
-                my @times_hr
-                  = @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} };
+                my @times_hr =
+                  @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} };
 
                 # sort @times_hr first by time, then by line, then by dest
 
                 @times_hr = sort {
-                    ( timenum( $a->{TIME} )
-                          <=> timenum( $b->{TIME} ) )
+                         ( timenum( $a->{TIME} ) <=> timenum( $b->{TIME} ) )
                       or $a->{LINE} cmp $b->{LINE}
                       or $a->{DESTINATION} cmp $b->{DESTINATION}
                 } @times_hr;
 
                 $stopinfo{$stop}{$linegroup}{$dir_code}{$days} = \@times_hr;
 
-                my @each_time_concat
-                  = map { join( ':', $_->{TIME}, $_->{LINE}, $_->{DESTINATION} ) }
+                my @each_time_concat =
+                  map { join( ':', $_->{TIME}, $_->{LINE}, $_->{DESTINATION} ) }
                   @times_hr;
 
                 $concatenated{$days} = join( ':', @each_time_concat );
@@ -215,8 +237,8 @@ foreach my $stop ( sort keys %stopinfo ) {
                 {
 
                     $concatenated{$to} = $concatenated{$from1};
-                    $stopinfo{$stop}{$linegroup}{$dir_code}{$to}
-                      = $stopinfo{$stop}{$linegroup}{$dir_code}{$from1};
+                    $stopinfo{$stop}{$linegroup}{$dir_code}{$to} =
+                      $stopinfo{$stop}{$linegroup}{$dir_code}{$from1};
 
                     delete $concatenated{$from1};
                     delete $concatenated{$from2};
@@ -225,13 +247,13 @@ foreach my $stop ( sort keys %stopinfo ) {
 
                 }
 
-            } ## tidy end: foreach my $combo (@COMBOS_TO_PROCESS)
+            }    ## tidy end: foreach my $combo (@COMBOS_TO_PROCESS)
 
             # LAST STOP PROCESSING
 
           DAYS_NOTESLOOP:
-            foreach
-              my $days ( sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
+            foreach my $days (
+                sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
             {
 
                 # loop - deal with final stops. Add notes
@@ -241,10 +263,11 @@ foreach my $stop ( sort keys %stopinfo ) {
                 # LASTSTOP
 
                 if ( all { $_->{LASTSTOP} } @{$times_r} ) {
+
                   #if ( all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
                     $has_last_stop{$linegroup} = 1;
-                    $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
-                      = "LASTSTOP";
+                    $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE} =
+                      "LASTSTOP";
                 }
                 else {
 
@@ -262,18 +285,35 @@ foreach my $stop ( sort keys %stopinfo ) {
 
                 # DROPOFF
 
-                if ( $is_a_nolocal_route{$linegroup} and $dir_code eq '2' ) {
+                if ( $is_a_nolocal_route{$linegroup} ) {
 
-                    #eastbound
-                    $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
-                      = "DROPOFF";
+                    my $city = $stops{$stop}{c_city};
+                    my $side = $cities{$city}{Side};
+
+                    if ( not defined $side and fc($city) ne fc('Virtual')) {
+
+                        warn "No side for city $city";
+
+                    }
+                    else {
+
+                        if (   $side eq 'E' and $dir_code eq '2'
+                            or $side eq 'W' and $dir_code eq '3' )
+                        {
+
+                            $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
+                              = "DROPOFF";
+
+                        }
+                    }
+
                 }
 
                 # TODO - figure out how to do line U
 
                 if ( $is_a_routenote{$linegroup} ) {
-                    $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
-                      = $linegroup;
+                    $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE} =
+                      $linegroup;
                 }
 
                 if ( $note_of{"$stop:$linegroup:$dir_code:$days"} ) {
@@ -287,15 +327,15 @@ foreach my $stop ( sort keys %stopinfo ) {
                     }
 
                     my @lines = sortbyline keys %lines;
-                    my @destinations
-                      = sort { $destinations{$b} <=> $destinations{$a} }
+                    my @destinations =
+                      sort { $destinations{$b} <=> $destinations{$a} }
                       keys %destinations;
 
-                    $note_of{"$stop:$linegroup:$dir_code:$days"}{INFO}
-                      = join( ":", @lines ) . "\t" . join( ":", @destinations );
+                    $note_of{"$stop:$linegroup:$dir_code:$days"}{INFO} =
+                      join( ":", @lines ) . "\t" . join( ":", @destinations );
 
-                    $note_of{"$stop:$linegroup:$dir_code:$days"}{COMP}
-                      = $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
+                    $note_of{"$stop:$linegroup:$dir_code:$days"}{COMP} =
+                        $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
                       . join( ":", @lines )
                       . "\t$destinations[0]";
 
@@ -314,10 +354,10 @@ foreach my $stop ( sort keys %stopinfo ) {
                     $note_of{"$stop:$linegroup:$dir_code:$from2"}{COMP} )
                 {
 
-                    $stopinfo{$stop}{$linegroup}{$dir_code}{$to}
-                      = $stopinfo{$stop}{$linegroup}{$dir_code}{$from1};
-                    $note_of{"$stop:$linegroup:$dir_code:$to"}
-                      = $note_of{"$stop:$linegroup:$dir_code:$from1"};
+                    $stopinfo{$stop}{$linegroup}{$dir_code}{$to} =
+                      $stopinfo{$stop}{$linegroup}{$dir_code}{$from1};
+                    $note_of{"$stop:$linegroup:$dir_code:$to"} =
+                      $note_of{"$stop:$linegroup:$dir_code:$from1"};
 
                     delete $note_of{"$stop:$linegroup:$dir_code:$from1"};
                     delete $note_of{"$stop:$linegroup:$dir_code:$from2"};
@@ -326,7 +366,7 @@ foreach my $stop ( sort keys %stopinfo ) {
 
                 }
 
-            } ## tidy end: foreach my $combo (@COMBOS_TO_PROCESS)
+            }    ## tidy end: foreach my $combo (@COMBOS_TO_PROCESS)
 
             # above handles all of 1R except the parts heading northbound
             # to downtown Oakland (which has mixed destinations)
@@ -340,20 +380,20 @@ foreach my $stop ( sort keys %stopinfo ) {
           # we know they are different destinations because otherwise they would
           # already be merged
 
-                $stopinfo{$stop}{$linegroup}{$dir_code}{'1234567'}
-                  = $stopinfo{$stop}{$linegroup}{$dir_code}{'12345'};
-                $note_of{"$stop:$linegroup:$dir_code:1234567"}
-                  = $note_of{"$stop:$linegroup:$dir_code:12345"};
+                $stopinfo{$stop}{$linegroup}{$dir_code}{'1234567'} =
+                  $stopinfo{$stop}{$linegroup}{$dir_code}{'12345'};
+                $note_of{"$stop:$linegroup:$dir_code:1234567"} =
+                  $note_of{"$stop:$linegroup:$dir_code:12345"};
 
-                $note_of{"$stop:$linegroup:$dir_code:1234567"}{NOTE}
-                  = '1R-MIXED';
+                $note_of{"$stop:$linegroup:$dir_code:1234567"}{NOTE} =
+                  '1R-MIXED';
 
                 delete $note_of{"$stop:$linegroup:$dir_code:12345"};
                 delete $note_of{"$stop:$linegroup:$dir_code:67"};
                 delete $stopinfo{$stop}{$linegroup}{$dir_code}{'12345'};
                 delete $stopinfo{$stop}{$linegroup}{$dir_code}{'67'};
 
-            } ## tidy end: if ( $note_of{"$stop:$linegroup:$dir_code:67"...})
+            }    ## tidy end: if ( $note_of{"$stop:$linegroup:$dir_code:67"...})
 
         }    ## <perltidy> end foreach my $dir_code ( keys...)
 
@@ -362,10 +402,11 @@ foreach my $stop ( sort keys %stopinfo ) {
      # if there are both last-stop and non-last-stop columns for this linegroup,
      # delete the last-stop columns
 
-            foreach my $dir_code ( sort keys %{ $stopinfo{$stop}{$linegroup} } ) {
+            foreach my $dir_code ( sort keys %{ $stopinfo{$stop}{$linegroup} } )
+            {
 
-                foreach
-                  my $days ( sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
+                foreach my $days (
+                    sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
                 {
 
                     if (    $note_of{"$stop:$linegroup:$dir_code:$days"}
@@ -398,12 +439,12 @@ foreach my $stop ( sort keys %stopinfo ) {
     print '.' unless $count % 100;
 
     my $firstdigits = substr( $stop, 0, 3 );
-    
+
     my $citydir = $kpointdir->subfolder("${firstdigits}xx");
 
     open my $out, '>', "kpoints/${firstdigits}xx/$stop.txt" or die $!;
 
-    foreach my $linegroup ( sortbyline  keys %{ $stopinfo{$stop} } ) {
+    foreach my $linegroup ( sortbyline keys %{ $stopinfo{$stop} } ) {
 
         foreach my $dir_code (
             sort { $a <=> $b }
@@ -458,9 +499,10 @@ sub makestoptimes {
     my %stopinfo;
 
   TRIP:
-#    while ( my ( $trip_number, $trip_of_r ) = each %{ $avldata{TRP} } ) {
-        foreach my $trip_number (sort keys %{$avldata{TRP}} ) {
-            my $trip_of_r = $avldata{TRP}{$trip_number};
+
+    #    while ( my ( $trip_number, $trip_of_r ) = each %{ $avldata{TRP} } ) {
+    foreach my $trip_number ( sort keys %{ $avldata{TRP} } ) {
+        my $trip_of_r   = $avldata{TRP}{$trip_number};
         my %tripinfo_of = %{$trip_of_r};
         next TRIP unless $tripinfo_of{IsPublic};
 
@@ -476,7 +518,7 @@ sub makestoptimes {
         $days_input =~ tr/0-9//cd;      # strip everything but digits
 
         my @days;
-        
+
         ### the following changes 800 and 801 times that start on the
         ### following day to the current day
 
@@ -489,15 +531,15 @@ sub makestoptimes {
                 tr/x/a/ foreach @{ $tripinfo_of{PTS} };
 
                 for ($days_input) {
-                    if ($_ eq '7') {
+                    if ( $_ eq '7' ) {
                         @days = '1';
                         next;
                     }
-                    if ($_ eq '6') {
+                    if ( $_ eq '6' ) {
                         @days = '7';
                         next;
                     }
-                    if ($_ eq '12345') {
+                    if ( $_ eq '12345' ) {
                         @days = qw(234 5 6 );
                         next;
                     }
@@ -507,20 +549,21 @@ sub makestoptimes {
             {    # if first time is an "p" time (pm that day)
                 tr/px/ba/ foreach @{ $tripinfo_of{PTS} };
                 for ($days_input) {
-                    if ($_ eq '7') {
+                    if ( $_ eq '7' ) {
                         @days = '6';
                         next;
                     }
-                    if ($_ eq '6') {
+                    if ( $_ eq '6' ) {
                         @days = '5';
                         next;
                     }
-                    if ($_ eq '12345') {
+                    if ( $_ eq '12345' ) {
                         @days = qw(7 1 234);
                         next;
                     }
                 }
             }
+
             #         elsif ($days_input eq '12345') {
             #            @days = qw(1 234 5);
             #         }
@@ -532,11 +575,11 @@ sub makestoptimes {
         else {
             @days = ($days_input);
         }
-        
+
         # END OF 800/801 day-changing code
 
         my $dir_code = $avldata{PAT}{$patkey}{DirectionValue};
-        
+
         my @tps = @{ $avldata{PAT}{$patkey}{TPS} };
 
         #my $final_tps   = $tps[-1];
