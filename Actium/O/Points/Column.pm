@@ -278,7 +278,7 @@ sub format_head_lines {
                                               # I should really fix the data
                 }
                 elsif ( $line eq 'BSD' or $line eq 'BSH' ) {
-                    $line = 'WEEKDAY';
+                    $line = 'MON' . $IDT->endash . 'FRI DAY'
                 }
 
                 #$pstyle = 'dropcapheadbsh';
