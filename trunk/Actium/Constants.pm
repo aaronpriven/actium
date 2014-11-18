@@ -303,7 +303,7 @@ days used by the old transitinfo.org style schedule files. Theose short
 (generally two-letter) abbreviations are not that useful these days and should
 be phased out.
 
-=item @SIDE_OF
+=item %SIDE_OF
 
 Of city codes, "E" if it's in the East Bay, "W" for the West Bay. Used for 
 determining whether "Transbay Passengers Only" needs to be 
