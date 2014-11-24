@@ -125,6 +125,11 @@ sub odometer_combinations {
     # [ A , D , E ] , [ B , D , E ], [ C, D, E ],
     # [ A , D , F ] , [ B , D , F ], [ C, D, F ]
 
+    # Note that the CPAN module Iterator::Array::Jagged may do the same thing,
+    # in which case it might be better to use that code instead.  I just 
+    # looked at that module briefly without looking to see whether it 
+    # made sense.
+
     my @list_of_lists = @_;
 
     my ( @combinations);
