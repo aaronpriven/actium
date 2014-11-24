@@ -894,7 +894,7 @@ sub output_points {
                     $temp                    = tphash($_);
                     $markdefs[$thismark]
                       = "Lines that operate school days only operate at times that "
-                      . "may vary from day to day. Call 511 or visit www.actransit.org for more "
+                      . "may vary from day to day. Call 511 or visit actransit.org for more "
                       . "information. Supplementary service is available to "
                       . "everyone at regular fares.";
                 }
@@ -1293,7 +1293,7 @@ sub output_points {
         print OUT
           "This stop may also be served by supplementary lines (Lines 600"
           . IDTags::endash
-          . "699), which operate school days only, at times that may vary from day to day. Call 511 or visit www.actransit.org for more information. This service is available to everyone at regular fares.\r";
+          . "699), which operate school days only, at times that may vary from day to day. Call 511 or visit actransit.org for more information. This service is available to everyone at regular fares.\r";
     }
 
     #   SCHOOLDAYS
@@ -1305,7 +1305,7 @@ sub output_points {
     }
 
     print OUT
-"See something wrong with this sign, or any other AC Transit sign? Let us know! Leave a comment at www.actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
+"See something wrong with this sign, or any other AC Transit sign? Let us know! Leave a comment at actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
       if lc( $signtypes{ $signs{$signid}{SignType} }{GenerateWrongText} ) eq
       "yes";
 
