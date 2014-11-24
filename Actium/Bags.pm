@@ -278,7 +278,7 @@ sub _bagtext_of_stop {
     }
 
     print $fh _para('Questions'),
-      'Want more info? Visit www.actransit.org or call 511 ',
+      'Want more info? Visit actransit.org or call 511 ',
       '(and say, <0x201C>AC Transit.<0x201D>)';
 
     close $fh;
