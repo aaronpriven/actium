@@ -641,7 +641,7 @@ sub format_side {
         print $sidefh
 "This $stoporarea may also be served by supplementary lines (Lines 600"
           . $IDT->endash
-          . "699), which operate school days only, at times that may vary from day to day. Call 511 or visit www.actransit.org for more information. This service is available to everyone at regular fares.\r";
+          . "699), which operate school days only, at times that may vary from day to day. Call 511 or visit actransit.org for more information. This service is available to everyone at regular fares.\r";
     }
 
 # TODO - will have to make this work if exception processing is added
@@ -650,7 +650,7 @@ sub format_side {
 #}
 
     print $sidefh
-"See something wrong with this sign, or any other AC Transit sign? Let us know! Leave a comment at www.actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
+"See something wrong with this sign, or any other AC Transit sign? Let us know! Leave a comment at actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
       if lc(
         $Actium::Cmd::MakePoints::signtypes{
             $Actium::Cmd::MakePoints::signs{$signid}{SignType}
