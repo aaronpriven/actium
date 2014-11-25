@@ -15,7 +15,7 @@ use Actium::Preamble;
 
 use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::LineInfo ('line_descrip_html');
+#use Actium::LineInfo ('line_descrip_html');
 
 use Actium::Options(qw<add_option option>);
 
@@ -46,17 +46,23 @@ sub START {
     
     my $version = option('version');
 
-    unless ( $version or $version eq '0' ) {
+    if ( not ( defined $version) or not ($version or $version eq '0') ) {
         die "No version specified.\n"
           . 'You must provide a version number for inclusion in map links\n';
     }
-
-    my $html_descrips = line_descrip_html(
+    
+    my $html_descrips = $actiumdb->line_descrip_html(
         {   signup   => $signup,
-            database => $actiumdb,
             version  => $version,
         }
     );
+
+    #my $html_descrips = line_descrip_html(
+    #    {   signup   => $signup,
+    #        database => $actiumdb,
+    #        version  => $version,
+    #    }
+    #);
 
     my $outfh = $signup->open_write('line_descriptions.html');
 
