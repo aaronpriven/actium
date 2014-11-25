@@ -1,6 +1,6 @@
 # Actium/O/Files/FileMaker_ODBC.pm
 
-# Class for reading and processing FileMaker Pro databases via ODBC
+# Role for reading and processing FileMaker Pro databases via ODBC
 
 # Subversion: $Id$
 
@@ -456,8 +456,8 @@ column names and the values are the values for this row.
 The each_row routines return an subroutine reference allowing iteration 
 through each row. Intended for use in C<while> loops:
 
- my $eachtable = each_row("table");
- while ($row_hr = $eachtable->() ) {
+ my $eachtable = $database->each_row("table");
+ while (my $row_hr = $eachtable->() ) {
     do_something_with_value($row_hr->{SomeColumn});
  }
 
@@ -548,9 +548,9 @@ or more values, which will be passed through to SQLite unchanged.
 It is only useful if the WHERE clause will take advantage of the
 bound values.
 
-=item B<all_in_columns_key(I<table>, I<column>, I<column> , ... )
+=item B<all_in_columns_key>(I<table>, I<column>, I<column> , ... )
 
-=item B<all_in_columns_key(I<hashref_of_arguments>)
+=item B<all_in_columns_key>(I<hashref_of_arguments>)
 
 all_in_columns_key provides a convenient way of getting data in a two-level
 hash structure, and is commonly used where the amount of data desired 
