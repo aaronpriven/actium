@@ -187,6 +187,66 @@ sub search_ss {
 }    ## tidy end: sub search_ss
 
 #########################
+### AGENCY ATTRIBUTES
+
+has _agency_cache_r => (
+    traits   => ['Hash'],
+    is       => 'ro',
+    init_arg => undef,
+    isa      => 'HashRef[HashRef]',
+    handles  => { agencyrow_r => 'get', agencies => 'keys' },
+    builder  => '_build_agency_cache',
+    lazy     => 1,
+);
+
+sub _build_agency_cache {
+    my $self    = shift;
+    my $dbh     = $self->dbh;
+    my $cache_r = $self->all_in_columns_key(
+        {
+            TABLE   => 'Agency',
+            COLUMNS => [
+                qw(
+                  agency_fare_url      agency_id           agency_lang
+                  agency_linemap_url   agency_url
+                  agency_linesked_url  agency_mapversion   agency_name
+                  agency_phone         agency_timezone
+                  )
+            ],
+        }
+    );
+}
+
+my $url_make_cr = sub {
+    
+    my $self = shift;
+    my $line = shift;
+    my $field = shift;
+    
+    my $linerow_r = $self->linerow_r($line);
+    my $agency = $linerow_r->{agency_id};
+    my $version = $linerow_r->{agency_mapversion};
+    
+    my $agencyrow_r = $self->agencyrow_r($agency);
+    my $url = $agencyrow_r->{$field};
+    
+    $url =~ s/ \[ actium_version \] / $version /sx;
+    $url =~ s/ \[ actium_line \] / $line /sx;
+    
+    return $url;
+    
+};
+
+sub linemap_url {
+    return $url_make_cr->(@_ , 'agency_linemap_url');
+}
+
+sub linesked_url {
+    return $url_make_cr->(@_ , 'agency_linesked_url');
+
+}
+
+#########################
 ### LINES ATTRIBUTES
 
 has _lines_cache_r => (
@@ -207,9 +267,9 @@ sub _build_lines_cache {
             TABLE   => 'Lines',
             COLUMNS => [
                 qw(
-                  Branding      Color     Description
-                  GovDeliveryTopic        PubTimetable 
-                  LineGroupType           LineGroup 
+                  agency_id      Color     Description
+                  GovDeliveryTopic        PubTimetable
+                  LineGroupType           LineGroup
                   TimetableDate           NoLocalsOnTransbay
                   )
             ],
@@ -271,11 +331,10 @@ sub line_descrip_html {
         @_,
         {
             signup  => 1,
-            version => 1,
         }
     );
 
-    my ( $signup, $current_version ) = @params{qw[signup version]};
+    my $signup = $params{signup};
 
     my $effdate = Actium::EffectiveDate::effectivedate($signup);
 
@@ -309,23 +368,27 @@ sub line_descrip_html {
             '<thead><tr><th style="background-color: silver;">Lines</th>'
           . '<th style="background-color: silver;">Description</th>';
 
-        $html .= "\n" . '<th style="background-color: silver;">Links</th></thead>';
+        $html .=
+          "\n" . '<th style="background-color: silver;">Links</th></thead>';
 
         $html .= '<tbody>';
 
         foreach my $line (@lines) {
             my $desc = HTML::Entities::encode_entities(
                 ${ $self->linerow_r($line) }{Description} );
+                
+            my $mapurl = $self->linemap_url($line);
+            my $skedurl = $self->linesked_url($line);
 
-            $html .= qq{<tr><td style="text-align: center;">$line</ td >
-            };
+            $html .=
+qq{<tr><td style="text-align: center;vertical-align:middle;">$line</ td >};
             $html .= qq{<td style="padding: 2pt;">$desc</td>};
             $html .= '<td style="text-align: center;">';
-            $html .=
-qq{<a href="http://www.actransit.org/maps/maps_results.php?ms_view_type=2&maps_line=$line&version_id=$current_version&map_submit=Get+Map">Map</a>};
+            $html .= qq{<a href="$mapurl">Map</a>};
+#qq{<a href="http://www.actransit.org/maps/maps_results.php?ms_view_type=2&maps_line=$line&version_id=$current_version&map_submit=Get+Map">Map</a>};
             $html .= "<br>";
-            $html .=
-qq{<a href="http://www.actransit.org/maps/schedule_results.php?quick_line=$line&Go=Go">Schedule</a>};
+            $html .= qq{<a href="$skedurl">Schedule</a>};
+#qq{<a href="http://www.actransit.org/maps/schedule_results.php?quick_line=$line&Go=Go">Schedule</a>};
             $html .= '</td></tr>' . "\n";
 
         }
@@ -372,9 +435,9 @@ sub _ldh_header {
 <p>AC Transit's numbered lines serve the East Bay. </p>
 
 <p>Lines 1&ndash;299 operate normal hours. Normal hours are, at a minimum,
-the commute periods, 6 a.m. – 9 a.m. and 4 p.m. – 6 p.m., weekdays.
+the commute periods, 6 a.m.&ndash;9 a.m. and 4 p.m.&ndash;6 p.m., weekdays.
 Almost all operate all day on weekdays and many operate weekday
-evenings and weekends as well. Lines 200-299 serve the areas of
+evenings and weekends as well. Lines 200&ndash;299 serve the areas of
 Fremont and Newark, while other lines serve other parts of the East
 Bay from Richmond to Hayward.</p>
 
@@ -389,11 +452,11 @@ have altered schedules when local schools have minimum day or
 alternative schedules. These lines are open to all passengers at
 regular fares.</p>
 
-<p>Lines 800&ndash;899 are All Nighter lines, operating from 1 a.m. – 5
+<p>Lines 800&ndash;899 are All Nighter lines, operating from 1 a.m.&ndash;5
 a.m. daily. Some may operate somewhat earlier or later (especially
 on weekends).</p>
 
-<p>Lettered lines (A-Z) are Transbay routes, connecting the East
+<p>Lettered lines (A&ndash;Z) are Transbay routes, connecting the East
 Bay to San Francisco or the Peninsula.</p>
 
 <hr/>
