@@ -44,16 +44,16 @@ sub START {
     my $signup = Actium::O::Folders::Signup->new();
     my $actiumdb = actiumdb($config_obj);
     
-    my $version = option('version');
-
-    if ( not ( defined $version) or not ($version or $version eq '0') ) {
-        die "No version specified.\n"
-          . 'You must provide a version number for inclusion in map links\n';
-    }
-    
+    #my $version = option('version');
+#
+    #if ( not ( defined $version) or not ($version or $version eq '0') ) {
+    #    die "No version specified.\n"
+    #      . 'You must provide a version number for inclusion in map links\n';
+    #}
+   # 
     my $html_descrips = $actiumdb->line_descrip_html(
         {   signup   => $signup,
-            version  => $version,
+    #        version  => $version,
         }
     );
 
