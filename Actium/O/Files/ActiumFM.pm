@@ -60,6 +60,94 @@ sub _build_keys_of {
 }
 
 ##############################
+### CACHED TABLES
+
+# commented out ones are just things I haven't used yet
+
+my %table_of_item = (
+    agency => 'Agencies',
+    line   => 'Lines',
+
+    #city => 'Cities',
+    #color => 'Colors',
+    #flagtype => 'Flagtypes',
+    #pubtimetable => 'PubTimetables',
+    #signtype => 'SignTypes',
+    transithub => 'TransitHubs',
+);
+
+foreach my $item ( keys %table_of_item ) {
+    my $table = $table_of_item{$item};
+
+    has "_${item}_cache_r" => (
+        traits   => ['Hash'],
+        is       => 'ro',
+        init_arg => undef,
+        isa      => 'HashRef[HashRef]',
+        handles  => { "${item}_row_r" => 'get', lc($table) => 'keys' },
+        builder  => "_build_${item}_cache",
+        lazy     => 1,
+    );
+
+}
+
+sub _build_table_cache_ {
+    my $self    = shift;
+    my $item    = shift;
+    my $table   = $table_of_item{$item};
+    my @columns = @_;
+
+    my $dbh = $self->dbh;
+
+    my $cache_r = $self->all_in_columns_key(
+        {
+            TABLE   => $table,
+            COLUMNS => \@columns,
+        }
+    );
+    return $cache_r;
+}
+
+sub _build_agency_cache {
+    my $self = shift;
+    return $self->_build_table_cache(
+        'agency',
+        qw(
+          agency_fare_url      agency_id           agency_lang
+          agency_linemap_url   agency_url
+          agency_linesked_url  agency_mapversion   agency_name
+          agency_phone         agency_timezone
+          )
+    );
+}
+
+sub _build_transithub_cache {
+    my $self = shift;
+    return $self->_build_table_cache( 'transithub', qw<City Name ShortName> );
+}
+
+sub _build_lines_cache {
+    my $self    = shift;
+    my $dbh     = $self->dbh;
+    my $cache_r = $self->all_in_columns_key(
+        {
+            TABLE   => 'Lines',
+            COLUMNS => [
+                qw(
+                  agency_id      Color     Description
+                  GovDeliveryTopic        PubTimetable
+                  LineGroupType           LineGroup
+                  TimetableDate           NoLocalsOnTransbay
+                  TransitHubs
+                  )
+            ],
+            WHERE       => 'Active = ?',
+            BIND_VALUES => ['Yes'],
+        }
+    );
+}
+
+##############################
 ### SS CACHE
 
 const my $DEFAULT_CACHE_FOLDER => '/tmp/actium_db_cache/';
@@ -189,95 +277,37 @@ sub search_ss {
 #########################
 ### AGENCY ATTRIBUTES
 
-has _agency_cache_r => (
-    traits   => ['Hash'],
-    is       => 'ro',
-    init_arg => undef,
-    isa      => 'HashRef[HashRef]',
-    handles  => { agencyrow_r => 'get', agencies => 'keys' },
-    builder  => '_build_agency_cache',
-    lazy     => 1,
-);
-
-sub _build_agency_cache {
-    my $self    = shift;
-    my $dbh     = $self->dbh;
-    my $cache_r = $self->all_in_columns_key(
-        {
-            TABLE   => 'Agency',
-            COLUMNS => [
-                qw(
-                  agency_fare_url      agency_id           agency_lang
-                  agency_linemap_url   agency_url
-                  agency_linesked_url  agency_mapversion   agency_name
-                  agency_phone         agency_timezone
-                  )
-            ],
-        }
-    );
-}
-
 my $url_make_cr = sub {
-    
-    my $self = shift;
-    my $line = shift;
+
+    my $self  = shift;
+    my $line  = shift;
     my $field = shift;
-    
-    my $linerow_r = $self->linerow_r($line);
-    my $agency = $linerow_r->{agency_id};
-    my $version = $linerow_r->{agency_mapversion};
-    
+
+    my $line_row_r = $self->line_row_r($line);
+    my $agency     = $line_row_r->{agency_id};
+    my $version    = $line_row_r->{agency_mapversion};
+
     my $agencyrow_r = $self->agencyrow_r($agency);
-    my $url = $agencyrow_r->{$field};
-    
+    my $url         = $agencyrow_r->{$field};
+
     $url =~ s/ \[ actium_version \] / $version /sx;
     $url =~ s/ \[ actium_line \] / $line /sx;
-    
+
     return $url;
-    
+
 };
 
 sub linemap_url {
-    return $url_make_cr->(@_ , 'agency_linemap_url');
+    return $url_make_cr->( @_, 'agency_linemap_url' );
 }
 
 sub linesked_url {
-    return $url_make_cr->(@_ , 'agency_linesked_url');
+    return $url_make_cr->( @_, 'agency_linesked_url' );
 
 }
 
 #########################
 ### LINES ATTRIBUTES
-
-has _lines_cache_r => (
-    traits   => ['Hash'],
-    is       => 'ro',
-    init_arg => undef,
-    isa      => 'HashRef[HashRef]',
-    handles  => { linerow_r => 'get', lines => 'keys' },
-    builder  => '_build_lines_cache',
-    lazy     => 1,
-);
-
-sub _build_lines_cache {
-    my $self    = shift;
-    my $dbh     = $self->dbh;
-    my $cache_r = $self->all_in_columns_key(
-        {
-            TABLE   => 'Lines',
-            COLUMNS => [
-                qw(
-                  agency_id      Color     Description
-                  GovDeliveryTopic        PubTimetable
-                  LineGroupType           LineGroup
-                  TimetableDate           NoLocalsOnTransbay
-                  )
-            ],
-            WHERE       => 'Active = ?',
-            BIND_VALUES => ['Yes'],
-        }
-    );
-}
 
 has _lines_of_linegrouptype_r => (
     traits   => ['Hash'],
@@ -301,8 +331,8 @@ sub _build_lines_of_linegrouptype {
     my %lines_of_linegrouptype;
 
     foreach my $line ( $self->lines ) {
-        my $linerow_r     = $self->linerow_r($line);
-        my $linegrouptype = $linerow_r->{LineGroupType};
+        my $line_row_r    = $self->line_row_r($line);
+        my $linegrouptype = $line_row_r->{LineGroupType};
         push @{ $lines_of_linegrouptype{$linegrouptype} }, $line;
     }
 
@@ -314,6 +344,97 @@ sub _build_lines_of_linegrouptype {
     }
 
     return \%lines_of_linegrouptype;
+
+}
+
+##############################
+### TRANSIT HUBS ATTRIBUTES
+
+has _transithubs_of_cities_r => (
+    traits   => ['Hash'],
+    is       => 'ro',
+    init_arg => undef,
+    isa      => 'HashRef[ArrayRef]',
+    handles => { _transithubs_of_city_r => 'get', transithub_cities => 'keys' },
+    builder => '_build_transithubs_of_city',
+    lazy    => 1,
+);
+
+sub _transithubs_of_city {
+    my $self = shift;
+    my $city = shift;
+    return @{ $self->_transithubs_of_city_r($city) };
+}
+
+sub _build_transithubs_of_city {
+    my $self = shift;
+
+    my %transithubs_of_city;
+    foreach my $transithub ( $self->transithubs ) {
+        my $city = $self->transithub_row_r($transithub)->{City};
+        push @{ $transithubs_of_city{$city} }, $transithub;
+    }
+
+    return \%transithubs_of_city;
+
+}
+
+has _lines_of_transithub_r => (
+    traits   => ['Hash'],
+    is       => 'ro',
+    init_arg => undef,
+    isa      => 'HashRef[ArrayRef]',
+    handles  => { _lines_of_transithub => 'get' },
+    builder  => '_build_lines_of_transithubs',
+    lazy     => 1,
+);
+
+sub _build_lines_of_transithub {
+    my $self = shift;
+
+    my %lines_of_transithub;
+
+    foreach my $line ( $self->lines ) {
+        my $transithubs_field = $self->line_row_r->{TransitHubs};
+        next unless $transithubs_field;
+        my @transithubs =
+          split( /\r/, $transithubs_field );    # check - is \r correct?
+        foreach my $transithub (@transithubs) {
+            push @{ $lines_of_transithub{$transithub} }, $line;
+        }
+
+    }
+
+    return \%lines_of_transithub;
+}
+
+#########################
+### TRANSIT HUBS HTML OUTPUT
+
+sub lines_at_transit_hubs_html {
+    my $self = shift;
+
+    my $text = $EMPTY_STR;
+
+    foreach my $city ( sort $self->transithub_cities ) {
+        $text .= "<h2>$city</h2><table>";
+        foreach my $hub ( sort $self->_transithubs_of_city($city) ) {
+            $text .= "<tr><td>$hub</td>";
+
+            my @lines = sortbyline( $self->_lines_of_transithub($hub) );
+            next unless @lines;
+            foreach my $line (@lines) {
+                $line =
+                  qq{<a href="} . $self->linesked_url($line) . qq{">$line</a>};
+            }
+
+            $text .= '<td>' . join( " &bull; ", @lines ) . '</td></tr>'
+
+        }
+
+        $text .= '</table>';
+
+    }
 
 }
 
@@ -330,7 +451,7 @@ sub line_descrip_html {
     my %params = validate(
         @_,
         {
-            signup  => 1,
+            signup => 1,
         }
     );
 
@@ -375,9 +496,9 @@ sub line_descrip_html {
 
         foreach my $line (@lines) {
             my $desc = HTML::Entities::encode_entities(
-                ${ $self->linerow_r($line) }{Description} );
-                
-            my $mapurl = $self->linemap_url($line);
+                ${ $self->line_row_r($line) }{Description} );
+
+            my $mapurl  = $self->linemap_url($line);
             my $skedurl = $self->linesked_url($line);
 
             $html .=
@@ -385,9 +506,11 @@ qq{<tr><td style="text-align: center;vertical-align:middle;">$line</ td >};
             $html .= qq{<td style="padding: 2pt;">$desc</td>};
             $html .= '<td style="text-align: center;">';
             $html .= qq{<a href="$mapurl">Map</a>};
+
 #qq{<a href="http://www.actransit.org/maps/maps_results.php?ms_view_type=2&maps_line=$line&version_id=$current_version&map_submit=Get+Map">Map</a>};
             $html .= "<br>";
             $html .= qq{<a href="$skedurl">Schedule</a>};
+
 #qq{<a href="http://www.actransit.org/maps/schedule_results.php?quick_line=$line&Go=Go">Schedule</a>};
             $html .= '</td></tr>' . "\n";
 
