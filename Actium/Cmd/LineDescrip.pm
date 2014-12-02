@@ -65,10 +65,14 @@ sub START {
     #);
 
     my $outfh = $signup->open_write('line_descriptions.html');
-
     say $outfh $html_descrips;
-
     close $outfh;
+    
+    my $html_hubs = $actiumdb->lines_at_transit_hubs;
+    
+    my $outhubs = $signup->open_write('line_descriptions.html');
+    say $outhubs $html_hubs;
+    close $outhubs;
 
     return;
 
