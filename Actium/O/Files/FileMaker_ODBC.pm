@@ -6,7 +6,7 @@
 
 # Legacy stage 4
 
-package Actium::O::Files::FileMaker_ODBC 0.006;
+package Actium::O::Files::FileMaker_ODBC 0.008;
 
 use Actium::MooseRole;
 

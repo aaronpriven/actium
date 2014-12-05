@@ -23,7 +23,7 @@
 
 use strict;
 
-our $VERSION = 0.005;
+our $VERSION = 0.008;
 
 {
     no warnings('once');
