@@ -17,6 +17,8 @@ use Actium::O::Dir;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util('filename');
 use Actium::Term;
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
+
 
 use HTML::Entities;
 
@@ -51,7 +53,7 @@ sub START {
 
     my $stops_row_of_r
       = $actiumdb->all_in_columns_key
-      (qw/Stops_Neue c_description_short h_loca_latitude h_loca_longtitude 
+      (qw/Stops_Neue c_description_short h_loca_latitude h_loca_longitude 
           c_city/);
 
     emit_done;
@@ -181,10 +183,10 @@ EOT
                 $type = 'Broadway Shuttle';
                 next;
             }
-            if ($_ eq '800') {
-                $type = 'Transbay';
-                next;
-            }
+            #if ($_ eq '800') {
+            #    $type = 'Transbay';
+            #    next;
+            #}
             if (/^DB/) {
                 $type = 'Dumbarton Express';
                 next;
