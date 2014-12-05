@@ -9,7 +9,7 @@
 use warnings;
 use 5.016;
 
-package Actium::Cmd::LineDescrip 0.006;
+package Actium::Cmd::LineDescrip 0.008;
 
 use Actium::Preamble;
 
@@ -68,9 +68,9 @@ sub START {
     say $outfh $html_descrips;
     close $outfh;
     
-    my $html_hubs = $actiumdb->lines_at_transit_hubs;
+    my $html_hubs = $actiumdb->lines_at_transit_hubs_html;
     
-    my $outhubs = $signup->open_write('line_descriptions.html');
+    my $outhubs = $signup->open_write('transithubs.html');
     say $outhubs $html_hubs;
     close $outhubs;
 
