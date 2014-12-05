@@ -10,7 +10,7 @@
 use warnings;
 use 5.012;
 
-our $VERSION = 0.007;
+our $VERSION = 0.008;
 
 use sort ('stable');
 

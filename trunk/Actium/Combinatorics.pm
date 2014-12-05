@@ -6,7 +6,7 @@
 
 # legacy status: 4
 
-package Actium::Combinatorics 0.002;
+package Actium::Combinatorics 0.008;
 
 use 5.016;
 use warnings;
