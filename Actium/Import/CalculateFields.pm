@@ -192,7 +192,7 @@ sub _street_name {
         s/Caltrain Station/Caltrain/i;
         s/N Berkeley BART/North Berkeley BART/i;
         s/BART Station/BART/i;
-        s/Bart/BART/i;
+        s/\bBart\b/BART/i;
         s/Martin Luther King Jrway/Martin Luther King Jr. Way/i;
         s/\AMlk Jr\z/Martin Luther King Jr. Way/i;
         s/\AMlk Way\z/Martin Luther King Jr. Way/i;
