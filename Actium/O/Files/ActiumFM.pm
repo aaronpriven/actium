@@ -549,7 +549,7 @@ sub line_descrip_html {
             my $skedurl = $self->linesked_url($line);
 
             $html .=
-qq{<tr><td style="text-align: center;vertical-align:middle;">$line</ td >};
+qq{<tr><td style="text-align: center;vertical-align:middle;">$line</td>};
             $html .= qq{<td style="padding: 2pt;">$desc</td>};
             $html .= '<td style="text-align: center;">';
             $html .= qq{<a href="$mapurl">Map</a>};
