@@ -144,7 +144,7 @@ const my %ENDING_OF => (
     Cir  => 'Cir.',
     Cr   => 'Cr.',          # this one is ambiguous
     Ct   => 'Ct.',
-    Com  => 'Commons',
+    Com  => 'Com.', # Common or Commons?
     Dr   => 'Dr.',
     E    => 'East',
     Ext  => 'Extension',
@@ -199,7 +199,7 @@ sub _street_name {
         s/\AFwy /Highway /i;
         s/\b(Mc) ([A-Z])/$1$2/i;
         s/\bAlvarado Niles\b/Alvarado-Niles/i;
-        s/P\s*\&\s*R/Park and Ride/i;
+        s/P\s*\&\s*R/Park & Ride/i;
         # changes “P&R” or “P & R” to “Park and Ride”
         s/Bayfair BART/Bay Fair BART/i;
         s/\ADel Norte BART/El Cerrito del Norte BART/i;
