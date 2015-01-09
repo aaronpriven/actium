@@ -32,6 +32,7 @@ const my $idt => 'Actium::Text::InDesignTags';
 use HTML::Entities;
 
 my $timesub = Actium::Time::timestr_sub();
+
 # Uses default values. Someday it would be nice to make that configurable
 
 has sked_obj => (
@@ -57,6 +58,7 @@ has sked_obj => (
       }
 
 );
+
 # At one point I thought this object could be contained by the sked object
 # rather than the other way around, but it can't because I need info from the
 # Actium database to make this object, and the sked object doesn't know it.
@@ -110,6 +112,7 @@ has height => (
 sub _build_height {
     my $self = shift;
     return $self->body_row_count;
+
     # TODO - add rows for each note of whatever type...
 }
 
@@ -137,10 +140,20 @@ sub dimensions_for_display {
     return "$displaywidth columns x $displayheight rows";
 }
 
+my %note_definition_of = (
+
+    MZ => 'MZ - Mondays, Wednesdays, and Fridays only',
+    TT => 'TT - Tuesdays and Thursdays only',
+    F  => 'F - Fridays only',
+    SD => 'SD - School days only',
+    SH => 'SH - School holidays only',
+
+);
+
 sub new_from_sked {
 
-    my $class  = shift;
-    my $sked   = shift;
+    my $class    = shift;
+    my $sked     = shift;
     my $actiumdb = shift;
 
     my %spec;
@@ -166,17 +179,21 @@ sub new_from_sked {
         $halfcols++;
         foreach my $daysexceptions ( $sked->daysexceptions ) {
 
-            for ($daysexceptions) {
-                if ($_ eq 'SD') {
-                    push @note_definitions, 'SD - School days only';
-                    next;
-                }
-                if ($_ eq 'SH') {
-                    push @note_definitions, 'SH - School holidays only';
-                    next;
-                }
-
+            if ( exists( $note_definition_of{$daysexceptions} ) ) {
+                push @note_definitions, $note_definition_of{$daysexceptions};
             }
+
+       #            for ($daysexceptions) {
+       #                if ($_ eq 'SD') {
+       #                    push @note_definitions, 'SD - School days only';
+       #                    next;
+       #                }
+       #                if ($_ eq 'SH') {
+       #                    push @note_definitions, 'SH - School holidays only';
+       #                    next;
+       #                }
+       #
+       #            }
 
         }
 
@@ -195,11 +212,9 @@ sub new_from_sked {
     #$spec{linegroup} = $sked->linegroup;
 
     $spec{header_daytext} = $sked->days_obj->as_plurals;
-    
-    
-     my $places_r = $actiumdb->all_in_columns_key(
-        qw/Places_Neue c_description c_destination /
-        );
+
+    my $places_r = $actiumdb->all_in_columns_key(
+        qw/Places_Neue c_description c_destination /);
 
     my @header_columntexts;
 
@@ -222,10 +237,8 @@ sub new_from_sked {
 
     $spec{header_columntext_r} = \@header_columntexts;
 
-    $spec{header_dirtext}
-      = $sked->to_text
-      . $SPACE
-      . $places_r->{ $place4s[-1] }{c_destination};
+    $spec{header_dirtext} =
+      $sked->to_text . $SPACE . $places_r->{ $place4s[-1] }{c_destination};
 
     # BODY
 
@@ -256,7 +269,7 @@ sub new_from_sked {
 
     return $class->new( \%spec );
 
-} ## tidy end: sub new_from_sked
+}    ## tidy end: sub new_from_sked
 
 sub as_indesign {
 
@@ -264,9 +277,10 @@ sub as_indesign {
 
     my %params = validate(
         @_,
-        {   minimum_columns  => 1,
+        {
+            minimum_columns  => 1,
             minimum_halfcols => 1,
-            compression       => { type => BOOLEAN, default => 0 },
+            compression      => { type => BOOLEAN, default => 0 },
             lower_bound => { default => 0 },
             upper_bound => { default => ( $self->body_row_count - 1 ) },
             firstpage   => { default => 1 },
@@ -278,9 +292,9 @@ sub as_indesign {
     #my $minimum_halfcols = $params{minimum_halfcols};
     my $compression = $params{compression};
 
-    my $halfcol_points = $compression ? 20               : 24;
-    my $col_points     = $compression ? 40               : 48;
-    my $timestyle      = $compression ? 'CompressedTime' : 'Time';
+    my $halfcol_points = $compression ? 20                     : 24;
+    my $col_points     = $compression ? 40                     : 48;
+    my $timestyle      = $compression ? 'CompressedTime'       : 'Time';
     my $timepointstyle = $compression ? 'CompressedTimepoints' : 'Timepoints';
 
     my $columns  = $self->columns;
@@ -297,8 +311,8 @@ sub as_indesign {
 
     #my $rowcount = $self->body_row_count + 2;          # 2 header rows
     my $header_rows = 2;
-    my $rowcount
-      = $header_rows + $params{upper_bound} - $params{lower_bound} + 1;
+    my $rowcount =
+      $header_rows + $params{upper_bound} - $params{lower_bound} + 1;
 
     my $colcount = $columns + $halfcols + $trailing;
 
@@ -330,8 +344,8 @@ sub as_indesign {
     # number of characters in routes, plus three characters -- space bullet
     # space -- for each route except the first one, plus a final space
 
-    my $bullet
-      = '<0x2009><CharStyle:SmallRoundBullet><0x2022><CharStyle:><0x2009>';
+    my $bullet =
+      '<0x2009><CharStyle:SmallRoundBullet><0x2022><CharStyle:><0x2009>';
     my $routetext = join( $bullet, @routes );
 
     my $header_style = _get_header_style( $routes[0] );
@@ -439,7 +453,7 @@ sub as_indesign {
                 print $th $time;
             }
             print $th '<CellEnd:>';
-        } ## tidy end: for my $time (@body_row)
+        }    ## tidy end: for my $time (@body_row)
 
         for ( 1 .. $trailing ) {
             print $th
@@ -448,7 +462,7 @@ sub as_indesign {
 
         print $th '<RowEnd:>';
 
-    } ## tidy end: for my $body_row_r ( ( ...))
+    }    ## tidy end: for my $body_row_r ( ( ...))
 
     ###############
     # Table End
@@ -467,7 +481,7 @@ sub as_indesign {
 
     return $tabletext;
 
-} ## tidy end: sub as_indesign
+}    ## tidy end: sub as_indesign
 
 sub _get_header_style {
 
@@ -479,8 +493,10 @@ sub _get_header_style {
     return 'ColorHeader' if $route =~ /\A DB /sx;
 
     return 'GreyHeader' if $route =~ /\A 6\d\d \z/sx;
-    return 'TransbayHeader' if $route =~ /\A [A-Z] /sx 
-      or $route eq '800' or $route eq '822';
+    return 'TransbayHeader'
+      if $route =~ /\A [A-Z] /sx
+      or $route eq '800'
+      or $route eq '822';
 
     return 'ColorHeader';
 
@@ -510,7 +526,13 @@ sub _minimums {
 
     return ( $trailing_columns, $trailing_halves );
 
-} ## tidy end: sub _minimums
+}    ## tidy end: sub _minimums
+
+my %name_of_bsh = (
+    BSH => 'Broadway Shuttle',
+    BSN => 'Broadway Shuttle (Nights)',
+    BSD => 'Broadway Shuttle (Days)',
+);
 
 sub as_html {
 
@@ -529,22 +551,38 @@ sub as_html {
 
     ### ROUTE NUMBERS
 
+    my @header_routes = $self->header_routes;
+
     print $th qq{<tr\n><th class="skedhead" colspan=$all_columns>};
-    print $th '<div class="skedheaddiv">';
-    print $th '<div class="skedroute">';
 
-    my @routes = map { encode_entities($_) } $self->header_routes;
-    print $th join( ' &bull; ', @routes );
-    print $th '</div>';
+    if ( $header_routes[0] =~ /^BS[DNH]/ ) {
+        my $header_name = $name_of_bsh{$header_routes[0]};
+        print $th qq{<p class="bshtitle">$header_name</p>};
+        print $th encode_entities( $self->header_daytext );
+        print $th '<br />';
+        print $th encode_entities( $self->header_dirtext );
+    }
+    else {
 
-    print $th '<div class="skeddest">';
+        print $th '<div class="skedheaddiv">';
+        print $th '<div class="skedroute">';
 
-    # ROUTE DESTINATION AND DIRECTION
+        my @routes = map { encode_entities($_) } @header_routes ;
+        print $th join( ' &bull; ', @routes );
+        print $th '</div>';
+        # ROUTE DESTINATION AND DIRECTION
 
-    print $th encode_entities( $self->header_daytext );
-    print $th '<br />';
-    print $th encode_entities( $self->header_dirtext );
-    print $th "</div></th></tr></thead><tbody\n>";
+        print $th '<div class="skeddest">';
+
+        print $th encode_entities( $self->header_daytext );
+        print $th '<br />';
+        print $th encode_entities( $self->header_dirtext );
+        print $th '</div>';
+
+    }
+
+    print $th "</th></tr>";
+    print $th "</thead><tbody\n>";
 
     ##############
     # Column Header Row (line, note, timepoints)
@@ -552,8 +590,8 @@ sub as_html {
     my $has_line_col = $self->has_route_col;
     my $has_note_col = $self->has_note_col;
 
-    my @header_columntexts
-      = map { encode_entities $_} ( $self->header_columntexts );
+    my @header_columntexts =
+      map { encode_entities $_} ( $self->header_columntexts );
 
     print $th "<tr\n>";
 
@@ -612,7 +650,7 @@ sub as_html {
 
         print $th "</tr\n>";
 
-    } ## tidy end: for my $body_row_r ( $self...)
+    }    ## tidy end: for my $body_row_r ( $self...)
 
     ###############
     # Table End
@@ -627,9 +665,10 @@ sub as_html {
 
     return $tabletext;
 
-} ## tidy end: sub as_html
+}    ## tidy end: sub as_html
 
 sub as_public_json {
+
     # Public JSON needs access to the Timepoint table in Actium.fp7,
     # so has to be here in Timetable, even though most of the data comes from
     # the Actium::O::Sked object.
@@ -670,7 +709,7 @@ sub as_public_json {
 
     return $json_text;
 
-} ## tidy end: sub as_public_json
+}    ## tidy end: sub as_public_json
 
 with 'Actium::O::Skedlike';
 
