@@ -16,6 +16,8 @@ use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::Term;
 use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
+
 
 sub HELP {
 
