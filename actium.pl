@@ -73,6 +73,7 @@ my %module_of = (
     htmltables      => 'HTMLTables',
     linedescrip     => 'LineDescrip',
     decalcount      => 'DecalCount',
+    customdecalcount => 'CustomDecalCount',
     xheaimport      => 'XheaImport',
     xhea2hasi       => 'Xhea2Hasi',
     headwaytimes    => 'HeadwayTimes',
