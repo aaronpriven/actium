@@ -7,10 +7,13 @@
 package Actium::Cmd::CustomDecalCount 0.008;
 
 use Actium::Preamble;
+use Actium::Sorting::Line         ('sortbyline');
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use File::Spec;
 use File::Basename;
 use Spreadsheet::ParseXLSX;
+use Excel::Writer::XLSX;
+use Excel::Writer::XLSX::Utility;
 
 sub HELP {
     say "Help not implemented.";
@@ -26,14 +29,14 @@ sub START {
 
     my ( $input_file, $output_file ) = get_paths( $params{argv} );
 
-    my %lines_of = read_input_xlsx($input_file);
+    my %lines_of = %{ read_input_xlsx($input_file) };
 
     my $db_decals_of_r = $actium_db->all_in_column_key(qw/Stops_Neue p_decals/);
 
     my ( $decals_of_r, $found_decals_of_r ) =
       figure_decals( \%lines_of, $db_decals_of_r );
 
-    my $count_of_r = count_stops_with_decals($found_decals_of_r);
+    my $count_of_r = count_decals($found_decals_of_r);
 
     write_xlsx(
         output_file     => $output_file,
@@ -52,16 +55,47 @@ sub write_xlsx {
     my %decals_of       = %{ $params{decals_of} };
     my %found_decals_of = %{ $params{found_decals_of} };
     my %count_of        = %{ $params{count_of} };
-    
-    my $workbook = Excel::Writer::XLSX->new($output_file);
+
+    my $workbook    = Excel::Writer::XLSX->new($output_file);
     my $count_sheet = $workbook->add_worksheet('Count');
-    my $stop_sheet = $workbook->add_worksheet('Stops');
-    
-    # do some sheet->writes here   
-    
-    
-    
-    return;
+    my $stop_sheet  = $workbook->add_worksheet('Stops');
+
+    my $text_format = $workbook->add_format( num_format => '@' );
+
+    my @decals = sortbyline keys %count_of;
+
+    $count_sheet->write_row( 0, 0, [ 'Decal', '# stops', '# to print' ] );
+
+    foreach my $idx ( 0 .. $#decals ) {
+        my $decal      = $decals[$idx];
+        my $stops_cell = xl_rowcol_to_cell( $idx + 1, 1 );
+        my $formula    = "=CEILING($stops_cell*2.1,1)";
+        my $row        = $idx + 1;
+        $count_sheet->write_string( $row, 0, $decal, $text_format );
+        $count_sheet->write_number( $row, 1, $count_of{$decal} );
+        $count_sheet->write_formula( $row, 2, $formula );
+
+    }
+
+    $stop_sheet->write_row( 0, 0,
+        [ 'Stop ID', 'Decals to use', 'All decals' ] );
+
+    my @stopids = sort keys %decals_of;
+
+    foreach my $row ( 1 .. @stopids ) {
+        my $stopid = $stopids[ $row - 1 ];
+        my @items  = (
+            $stopid,
+            join( " ", @{ $found_decals_of{$stopid} } ),
+            join( " ", @{ $decals_of{$stopid} } )
+        );
+
+        for my $col ( 0 .. @items ) {
+            $stop_sheet->write( $row, $col, $items[$col], $text_format );
+        }
+    }
+
+    return $workbook->close();
 
 }
 
