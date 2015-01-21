@@ -139,6 +139,7 @@ around BUILDARGS => sub {
     my $temppath = File::Spec->catpath( $volume, File::Spec->catdir(@folders) );
 
     if ( not File::Spec->file_name_is_absolute($temppath) ) {
+
         # is relative
         require Cwd;
         unshift @folders, Cwd::getcwd();
@@ -151,6 +152,7 @@ around BUILDARGS => sub {
 };
 
 sub split_folderlist {
+
     # splits folder list into components (e.g., "path/to" becomes qw<path to>).
     # Takes either an array of strings, or an arrayref of strings.
 
@@ -176,7 +178,7 @@ sub split_folderlist {
 #    $folder_r = [ map { File::Spec->splitdir( File::Spec->canonpath($_) ) } @{$folder_r} ];
 #    return $folder_r;
 
-} ## tidy end: sub split_folderlist
+}    ## tidy end: sub split_folderlist
 
 sub BUILD {
     my $self = shift;
@@ -199,7 +201,7 @@ sub BUILD {
 
     return;
 
-} ## tidy end: sub BUILD
+}    ## tidy end: sub BUILD
 
 #######################
 ### CLONING
@@ -258,8 +260,8 @@ to set up the new object properly, so here we are.
 
 =cut
 
-sub subfolderlist_reader   {'_folderlist_r'}
-sub subfolderlist_init_arg {'folderlist'}
+sub subfolderlist_reader   { '_folderlist_r' }
+sub subfolderlist_init_arg { 'folderlist' }
 
 sub subfolder {
     my $self = shift;
@@ -285,6 +287,7 @@ sub subfolder {
     my $original_params_r = $self->original_parameters;
 
     $params_r->{$init_arg} = [ $self->$reader, @subfolders ];
+
     # constructor will flatten the arrayrefs into an array
 
     delete $original_params_r->{$init_arg};
@@ -296,7 +299,21 @@ sub subfolder {
     my $class = blessed($self);
     return $class->new($params_r);
 
-} ## tidy end: sub subfolder
+}    ## tidy end: sub subfolder
+
+sub new_from_file {
+
+    # takes a filename and creates a new Actium::O::Folder from the path part
+    # must_exist is not implemented yet
+    my $class    = shift;
+    my $filespec = shift;
+    $filespec = File::Spec->rel2abs($filespec);
+    my ( $volume, $path, $filename ) = File::Spec->splitpath($filespec);
+    
+    my $folder = $class->new( { folderlist => $path, volume => $volume } );
+    return ( $folder, $filename );
+
+}
 
 ########################
 ### FILE NAMES, GLOBBING FILES, ETC.
@@ -329,12 +346,14 @@ sub glob_plain_files {
 }
 
 sub children {
+
     # make subfolders
     my $self = shift;
     my $path = $self->path;
 
-    my @folderpaths = grep {-d} $self->glob_files(@_);
+    my @folderpaths = grep { -d } $self->glob_files(@_);
     my @foldernames = map { File::Spec->abs2rel( $_, $path ) } @folderpaths;
+
     # removes $path from each @foldername. If the path is /a and the
     # current folderpath is /a/b, returns b
 
@@ -344,7 +363,6 @@ sub children {
 
 #######################
 ### READ OR WRITE MISC FILES IN THIS FOLDER
-
 
 sub slurp_write {
 
@@ -357,7 +375,7 @@ sub slurp_write {
 
     require File::Slurp::Tiny;
     File::Slurp::Tiny::write_file( $filespec, $string,
-         binmode => ':encoding(UTF-8)'  );
+        binmode => ':encoding(UTF-8)' );
 
     emit_done;
 
@@ -374,8 +392,8 @@ sub json_retrieve {
     emit("Retrieving $filename");
 
     require File::Slurp::Tiny;
-    my $json_text = File::Slurp::Tiny::read_file( $filespec,
-         binmode => ':encoding(UTF-8)'  );
+    my $json_text =
+      File::Slurp::Tiny::read_file( $filespec, binmode => ':encoding(UTF-8)' );
 
     require JSON;
     my $data_r = JSON::from_json($json_text);
@@ -384,7 +402,7 @@ sub json_retrieve {
 
     return $data_r;
 
-} ## tidy end: sub json_retrieve
+}    ## tidy end: sub json_retrieve
 
 sub json_store {
 
@@ -400,7 +418,7 @@ sub json_store {
 
     require File::Slurp::Tiny;
     File::Slurp::Tiny::write_file( $filespec, $json_text,
-         binmode => ':encoding(UTF-8)'  );
+        binmode => ':encoding(UTF-8)' );
 
     emit_done;
 
@@ -420,7 +438,7 @@ sub json_store_pretty {
 
     require File::Slurp::Tiny;
     File::Slurp::Tiny::write_file( $filespec, $json_text,
-         binmode => ':encoding(UTF-8)' );
+        binmode => ':encoding(UTF-8)' );
 
     emit_done;
 
@@ -447,7 +465,7 @@ sub retrieve {
     emit_done;
 
     return $data_r;
-} ## tidy end: sub retrieve
+}    ## tidy end: sub retrieve
 
 sub store {
     my $self     = shift;
@@ -501,7 +519,8 @@ sub load_sqlite {
     my $database_class    = shift;
     my %params            = validate(
         @_,
-        {   subfolder => 0,
+        {
+            subfolder => 0,
             db_folder => 0,
         }
     );
@@ -538,7 +557,7 @@ sub load_sqlite {
 
     return $database_class->new(%params);
 
-} ## tidy end: sub load_sqlite
+}    ## tidy end: sub load_sqlite
 
 sub load_hasi {
     my $self = shift;
@@ -553,7 +572,8 @@ sub write_files_with_method {
 
     my %params = validate(
         @_,
-        {   OBJECTS   => { type => ARRAYREF },
+        {
+            OBJECTS   => { type => ARRAYREF },
             METHOD    => 1,
             EXTENSION => 0,
             SUBFOLDER => 0,
@@ -565,6 +585,7 @@ sub write_files_with_method {
     if ( exists $params{EXTENSION} ) {
         $extension = $params{EXTENSION};
         $extension =~ s/\A\.*/./;
+
         # make sure there's only one a leading period
     }
 
@@ -599,17 +620,18 @@ sub write_files_with_method {
         my $filename = $id . $extension;
 
         $folder->write_file_with_method(
-            {   OBJECT   => $obj,
+            {
+                OBJECT   => $obj,
                 METHOD   => $method,
                 FILENAME => $filename,
             }
         );
 
-    } ## tidy end: foreach my $obj (@objects)
+    }    ## tidy end: foreach my $obj (@objects)
 
     emit_done;
 
-} ## tidy end: sub write_files_with_method
+}    ## tidy end: sub write_files_with_method
 
 sub write_file_with_method {
     my $self     = shift;
@@ -640,7 +662,7 @@ sub write_file_with_method {
         croak "Can't close $file for writing: $OS_ERROR";
     }
 
-} ## tidy end: sub write_file_with_method
+}    ## tidy end: sub write_file_with_method
 
 sub write_files_from_hash {
 
@@ -663,8 +685,8 @@ sub write_files_from_hash {
         emit_over $key;
 
         my $file = $self->make_filespec( $key . $extension );
-        
-        my $out = $self->open_write($key . $extension);
+
+        my $out = $self->open_write( $key . $extension );
 
         print $out $hash{$key} or die "Can't print to $file: $OS_ERROR";
 
@@ -673,11 +695,77 @@ sub write_files_from_hash {
             die "Can't close $file for writing: $OS_ERROR";
         }
 
-    } ## tidy end: foreach my $key ( sort keys...)
+    }    ## tidy end: foreach my $key ( sort keys...)
 
     emit_done;
 
-} ## tidy end: sub write_files_from_hash
+}    ## tidy end: sub write_files_from_hash
+
+sub load_sheet {
+
+    my $self     = shift;
+    my $filename = shift;
+
+    my %lines_of;
+
+    if ( $filename =~ /\.xlsx\z/ ) {
+        return $self->load_excel_sheet($filename);
+    }
+    
+    # these are not implemented yet...
+
+    #elsif ( $filename =~ /\.csv\z/ ) {
+    # return load_csv_sheet ($filename);
+    #else {
+    #    return $self->load_tab_sheet($filename);
+    #}
+
+}
+
+sub load_excel_sheet {
+    my $self     = shift;
+    my $filename = shift;
+    my $filespec = $self->make_filespec($filename);
+
+    # read from Excel
+
+    my $parser   = Spreadsheet::ParseXLSX->new;
+    my $workbook = $parser->parse($filespec);
+
+    my $sheet = $workbook->worksheet(0);
+
+    if ( !defined $workbook ) {
+        croak $parser->error(), ".\n";
+    }
+
+    my ( $minrow, $maxrow ) = $sheet->row_range();
+    my ( $mincol, $maxcol ) = $sheet->col_range();
+
+    my @lines;
+    my (%lines_of);
+
+    foreach my $row ( $minrow .. $maxrow ) {
+
+        my @cells =
+          map { $sheet->get_cell( $row, $_ ) } $mincol, $mincol + 1;
+
+        foreach (@cells) {
+            if ( defined $_ ) {
+                $_ = $_->value;
+            }
+            else {
+                $_ = $EMPTY_STR;
+            }
+        }
+
+        push @lines, \@cells;
+
+    }
+    
+    require Actium::O::2DArray;
+    return Actium::O::2DArray->new(\@lines);
+
+}
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
@@ -727,9 +815,9 @@ the moment).
 
 Actium::O::Folder objects are created using the B<new> constructor inherited from
 Moose. Alternatively, they can be cloned from an existing Actium::O::Folder object,
-using B<subfolder>.
+using B<subfolder>, or from a file path using B<new_from_file>.
 
-For either method, if the first argument is a hash reference, 
+For either B<new> or B<subfolder>, if the first argument is a hash reference, 
 it is taken as a reference to named
 arguments. If not, the arguments given are considered part of the 
 I<folderlist> argument. So this:
@@ -739,7 +827,14 @@ I<folderlist> argument. So this:
 is a shortcut for this:
 
  my $folder = Actium::O::Folder->new({folderlist => [ $folder1, $folder2 ]})
-
+ 
+The B<new_from_file> method takes only a single argument, a file specification.
+It drops the file part, if any, and creates the appropriate folder list 
+(and volume). It uses File::Spec->splitpath to split the path; see 
+that documentation for specifics on when the last component is treated as a
+file and when it is treated as a folder. It returns a two-item list: the 
+folder object and the filename portion of the file specification.
+ 
 =head2 NAMED ARGUMENTS
 
 =over
