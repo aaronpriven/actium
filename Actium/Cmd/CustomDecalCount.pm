@@ -34,7 +34,7 @@ sub START {
     my $db_decals_of_r = $actium_db->all_in_column_key(qw/Stops_Neue p_decals/);
 
     my ( $decals_of_r, $found_decals_of_r ) =
-      figure_decals( \%lines_of, $db_decals_of_r );
+      decals_of_stop( \%lines_of, $db_decals_of_r );
 
     my $count_of_r = count_decals($found_decals_of_r);
 
@@ -64,23 +64,34 @@ sub write_xlsx {
 
     my @decals = sortbyline keys %count_of;
 
-    $count_sheet->write_row( 0, 0, [ 'Decal', '# stops', '# to print' ] );
+    my @columntypes = (qw[Decal Print Stops Adjust]);
+    $count_sheet->write_row( 0, 0, \@columntypes );
 
-    foreach my $idx ( 0 .. $#decals ) {
-        my $decal      = $decals[$idx];
-        my $stops_cell = xl_rowcol_to_cell( $idx + 1, 1 );
-        my $formula    = "=CEILING($stops_cell*2.1,1)";
-        my $row        = $idx + 1;
-        $count_sheet->write_string( $row, 0, $decal, $text_format );
-        $count_sheet->write_number( $row, 1, $count_of{$decal} );
-        $count_sheet->write_formula( $row, 2, $formula );
-
+    my %column_num_of;
+    for my $col ( 0 .. $#columntypes ) {
+        my $columntype = $columntypes[$col];
+        $column_num_of{$columntype} = $col;
     }
 
-    my $start_sum = xl_rowcol_to_cell( 1, 2 );
-    my $end_sum = xl_rowcol_to_cell( scalar @decals, 2 );
-    my $sumformula = "=SUM($start_sum:$end_sum)";
-    $count_sheet->write_formula( 1+ scalar @decals, 2, $sumformula );
+    foreach my $idx ( 0 .. $#decals ) {
+        my $row = $idx + 1;
+        my %celladdr_of;
+        for my $columntype (@columntypes) {
+            my $col = $column_num_of{$columntype};
+            $celladdr_of{ $columntypes[$col] } =
+              xl_rowcol_to_cell( $row, $col );
+        }
+
+        my $formula =
+          "=CEILING( $celladdr_of{Stops}*2.1 + $celladdr_of{Adjust} , 1)";
+
+        my $decal = $decals[$idx];
+        $count_sheet->write_string( $celladdr_of{Decal}, $decal, $text_format );
+        $count_sheet->write_formula( $celladdr_of{Print}, $formula );
+        $count_sheet->write_number( $celladdr_of{Stops},  $count_of{$decal} );
+        $count_sheet->write_number( $celladdr_of{Adjust}, 0 );
+
+    }
 
     $stop_sheet->write_row( 0, 0,
         [ 'Stop ID', 'Decals to use', 'All decals' ] );
@@ -99,6 +110,12 @@ sub write_xlsx {
             $stop_sheet->write( $row, $col, $items[$col], $text_format );
         }
     }
+
+    my $start_sum = xl_rowcol_to_cell( 1, $column_num_of{Print} );
+    my $end_sum = xl_rowcol_to_cell( scalar @decals, $column_num_of{Print} );
+    my $sumformula = "=SUM($start_sum:$end_sum)";
+    $count_sheet->write_formula( 1 + scalar @decals,
+        $column_num_of{Print}, $sumformula );
 
     return $workbook->close();
 
@@ -120,7 +137,7 @@ sub count_decals {
 
 }
 
-sub figure_decals {
+sub decals_of_stop {
 
     my %lines_of       = %{ +shift };
     my $db_decals_of_r = shift;
