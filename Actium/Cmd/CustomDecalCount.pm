@@ -77,6 +77,11 @@ sub write_xlsx {
 
     }
 
+    my $start_sum = xl_rowcol_to_cell( 1, 2 );
+    my $end_sum = xl_rowcol_to_cell( scalar @decals, 2 );
+    my $sumformula = "=SUM($start_sum:$end_sum)";
+    $count_sheet->write_formula( 1+ scalar @decals, 2, $sumformula );
+
     $stop_sheet->write_row( 0, 0,
         [ 'Stop ID', 'Decals to use', 'All decals' ] );
 
