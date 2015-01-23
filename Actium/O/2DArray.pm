@@ -76,7 +76,6 @@ sub new_from_tsv {
     return $self;
 }
 
-
 ##################################################
 ### find the last index, or the number of elements
 ### (like scalar @array or $#array for 1D arrays)
@@ -105,7 +104,7 @@ sub last_col {
 ### Accessors for elements, rows and columns
 
 sub element {
-    my $self = shift;
+    my $self   = shift;
     my $colidx = shift;
     my $rowidx = shift;
     return $self->[$rowidx][$colidx];
@@ -140,15 +139,31 @@ sub cols {
 ##############################
 ### push, pop, shift, unshift
 
+sub shift_row {
+    my $self = shift;
+    return shift @{$self};
+}
+
 sub shift_col {
     my $self = shift;
     return map { shift @{$_} } @{$self};
+}
+
+sub pop_row {
+    my $self = shift;
+    return pop @{$self};
 }
 
 sub pop_col {
     my $self     = shift;
     my $last_col = $self->last_col;
     return $self->del_col($last_col);
+}
+
+sub push_row {
+    my $self       = shift;
+    my @col_values = @_;
+    return push @{$self}, \@col_values;
 }
 
 sub push_col {
@@ -158,45 +173,17 @@ sub push_col {
     return $self->ins_col( $col_idx, @col_values );
 }
 
+sub push_rows {
+    my $self = shift;
+    my @cols = @_;
+    return push @{$self}, @cols;
+}
+
 sub push_cols {
     my $self    = shift;
     my @cols    = @_;
     my $col_idx = $self->last_col;
     return $self->ins_cols( $col_idx, @cols );
-}
-
-sub unshift_col {
-    my $self       = shift;
-    my @col_values = @_;
-    return $self->ins_col( 0, @col_values );
-}
-
-sub unshift_cols {
-    my $self = shift;
-    my @cols = @_;
-    return $self->ins_cols( 0, @cols );
-}
-
-sub shift_row {
-    my $self = shift;
-    return shift @{$self};
-}
-
-sub pop_row {
-    my $self = shift;
-    return pop @{$self};
-}
-
-sub push_row {
-    my $self       = shift;
-    my @col_values = @_;
-    return push @{$self}, \@col_values;
-}
-
-sub push_rows {
-    my $self = shift;
-    my @cols = @_;
-    return push @{$self}, @cols;
 }
 
 sub unshift_row {
@@ -205,10 +192,22 @@ sub unshift_row {
     return unshift @{$self}, \@col_values;
 }
 
+sub unshift_col {
+    my $self       = shift;
+    my @col_values = @_;
+    return $self->ins_col( 0, @col_values );
+}
+
 sub unshift_rows {
     my $self = shift;
     my @cols = @_;
     return unshift @{$self}, @cols;
+}
+
+sub unshift_cols {
+    my $self = shift;
+    my @cols = @_;
+    return $self->ins_cols( 0, @cols );
 }
 
 #################################
@@ -220,15 +219,6 @@ sub ins_row {
     my @row     = @_;
 
     splice( @{$self}, $row_idx, 0, \@row );
-    return scalar @{$self};
-}
-
-sub ins_rows {
-    my $self    = shift;
-    my $row_idx = shift;
-    my @rows    = @{+shift};
-
-    splice( @{$self}, $row_idx, 0, @rows );
     return scalar @{$self};
 }
 
@@ -246,10 +236,19 @@ sub ins_col {
     return $self->width;
 }
 
+sub ins_rows {
+    my $self    = shift;
+    my $row_idx = shift;
+    my @rows    = @{ +shift };
+
+    splice( @{$self}, $row_idx, 0, @rows );
+    return scalar @{$self};
+}
+
 sub ins_cols {
     my $self    = shift;
     my $col_idx = shift;
-    my @cols    = @{+shift};
+    my @cols    = @{ +shift };
 
     my $last_row = max( $self->last_row, map { $#{$_} } @cols );
 
@@ -279,23 +278,6 @@ sub del_row {
     return;
 }
 
-sub del_rows {
-    my $self     = shift;
-    my @row_idxs = @_;
-
-    my $deleted;
-    if ( defined wantarray ) {
-        $deleted = $self->rows(@row_idxs);
-    }
-
-    foreach my $row_idx (@row_idxs) {
-        splice( @{$self}, $row_idx, 1 );
-    }
-
-    return $deleted if defined wantarray;
-    return;
-}
-
 sub del_col {
     my $self    = shift;
     my $col_idx = @_;
@@ -307,6 +289,23 @@ sub del_col {
 
     foreach my $row ( @{$self} ) {
         splice( @{$row}, $col_idx, 1 );
+    }
+
+    return $deleted if defined wantarray;
+    return;
+}
+
+sub del_rows {
+    my $self     = shift;
+    my @row_idxs = @_;
+
+    my $deleted;
+    if ( defined wantarray ) {
+        $deleted = $self->rows(@row_idxs);
+    }
+
+    foreach my $row_idx (@row_idxs) {
+        splice( @{$self}, $row_idx, 1 );
     }
 
     return $deleted if defined wantarray;
@@ -367,7 +366,6 @@ sub slice {
 
 }
 
-
 sub transpose {
 
     my $self = shift;
@@ -391,14 +389,14 @@ sub transpose {
 
 sub prune {
     my $self = shift;
-    my $callback = sub { !defined $_[0] };
-    return $self->prune_callback( $callback, @_ );
+    my $callback = sub { !defined $_ };
+    return $self->prune_callback( $callback );
 }
 
 sub prune_empty {
     my $self = shift;
-    my $callback = sub { !defined $_[0] or $_[0] eq $EMPTY_STR };
-    return $self->prune_callback( $callback, @_ );
+    my $callback = sub { !defined $_ or $_ eq $EMPTY_STR };
+    return $self->prune_callback( $callback );
 }
 
 sub prune_callback {
@@ -414,7 +412,7 @@ sub prune_callback {
     }
 
     # remove final blank rows
-    while ( @{$self} and all { $callback->($_) } $self->[-1] ) {
+    while ( @{$self} and all { $callback->() } $self->[-1] ) {
         pop @{$self};
     }
 
@@ -429,7 +427,7 @@ sub prune_callback {
     # does not use the last_col method because that method calls this one
     my $last_col = max( map { $#{$_} } @{$self} );
 
-    while ( $last_col > -1 and all { $callback->($_) } $self->col($last_col) ) {
+    while ( $last_col > -1 and all { $callback->() } $self->col($last_col) ) {
         $last_col--;
 
         # set index of the last item of each row to the new $last_col
@@ -455,7 +453,10 @@ sub apply {
 
     for my $row ( @{$self} ) {
         for my $idx ( 0 .. $#{$row} ) {
-            $row->[$idx] = $callback->( $row->[$idx] );
+            for ($row->[$idx] ) {  
+                # localize $_ to $row->[$idx]. Autovivifies.
+                $callback->();
+            }
         }
     }
     return $self;
@@ -471,7 +472,7 @@ sub trim {
         return $str;
     };
 
-    return $self->apply ($callback);
+    return $self->apply($callback);
 }
 
 sub trim_right {
@@ -483,7 +484,7 @@ sub trim_right {
         return $str;
     };
 
-    return $self->apply ($callback);
+    return $self->apply($callback);
 }
 
 sub undef2empty {
@@ -495,9 +496,8 @@ sub undef2empty {
         return $str;
     };
 
-    return $self->apply ($callback);
+    return $self->apply($callback);
 }
-
 
 #################################################
 ### Transforming the object into something else
@@ -554,6 +554,8 @@ sub hash_of_row_elements {
 sub tabulate {
 
     my $self = undef2empty(shift);
+    
+    my $separator = shift // $SPACE;
 
     my @length_of_col;
 
@@ -582,7 +584,7 @@ sub tabulate {
                 $length_of_col[$this_col],
                 ( $fields[$this_col] // $EMPTY_STR ) );
         }
-        push @lines, join( $SPACE, @fields );
+        push @lines, join( $separator, @fields );
 
     }
 
@@ -607,11 +609,12 @@ sub tsv {
     push @lines, jt(@headers) if @headers;
 
     foreach my $row ( @{$self} ) {
-        foreach ( @{$row} ) {
+        my @rowcopy = @{$row};
+        foreach ( @rowcopy ) {
             $_ //= $EMPTY_STR;
             s/\t/\x{2409}/g;    # visible symbol for tab
         }
-        push @lines, jt( @{$row} );
+        push @lines, jt( @rowcopy );
     }
 
     foreach (@lines) {
@@ -773,7 +776,27 @@ to fill out the column with undefined values. In other words, if there are five
 rows in the object, a requested column will always return five values,
 although some of them might be undefined.
 
-=head1 CLASS METHODS
+=head1 METHODS
+
+Some general notes:
+
+=over 
+
+=item *
+
+In all cases where an array of arrays is specified (I<$aoa_ref>), this can be
+either an Actium::O::2DArray object or an array of arrays data structure 
+that is not an object.
+
+=item *
+
+Where rows are columns are removed from the object (as with any of the 
+C<pop_*>, C<shift_*>, C<del_*> methods), time-consuming assemblage of return
+values is ommitted in void context.
+
+=back
+
+=head2 CLASS METHODS
 
 =over
 
@@ -781,8 +804,6 @@ although some of them might be undefined.
 
 Returns a new Actium::O::2DArray object.  It accepts a list of array 
 references as arguments, which become the rows of the object.
-
-=over
 
 =item B<bless(I<$aoa_ref>)>
 
@@ -792,9 +813,11 @@ Actium::O::2DArray object. Returns the new object.
 Note that this blesses the original array, so any other references to this 
 data structures will become a reference to the object, too.
 
-=over
+=back
 
-=head1 OBJECT METHODS
+=head2 OBJECT METHODS
+
+=over
 
 =item B<clone(I<$array2d>)>
 
@@ -802,8 +825,6 @@ Returns new object which has copies of the data in the 2D array object.
 The 2D array will be different, but if any of the elements of the 2D array are 
 themselves references, they will refer to the same things as in the original
 2D array.
-
-=over
 
 =item B<clone_unblessed(I<$array2d>)>
 
@@ -813,22 +834,16 @@ object-ness of any object and access the data inside, but sometimes certain
 modules don't like to break object encapsulation, and this will allow getting
 around that.
 
-=over
-
 =item B<new_from_tsv(I<$tsv_string>, I<$tsv_string> ...)>
 
 Returns a new object from a list of strings containing tab-delimited values. 
 There will be one row per string, and the elements of each row will be the
 values delimited by tabs.
 
-=over
-
 =item B<height()>
 
 Returns the number of rows in the object.  Here for completeness, as 
 C<@{$object}> works just as well.
-
-=over
 
 =item B<width()>
 
@@ -840,386 +855,329 @@ longest row.)
 Returns the index of the last row of the object. Like C<height()>, this is here 
 mainly for completeness, as C<$#{$object}> works just as well.
 
-=over
-
 =item B<last_col()>
 
 Returns the index of the last column of the object. (The index of the last
 element in the longest row.)
 
-=back
-
-=over
-
 =item B<element(I<$row_idx, $col_idx>)>
 
 Returns the element in the given row and column. Just a slower way of saying
-C<$array2d->[$row_idx][$col_idx]>.
-
-=back
-
-=over
+C<< $array2d->[$row_idx][$col_idx] >>.
 
 =item B<row(I<$row_idx>)>
 
 Returns the elements in the given row.  A slower way of saying 
 C<< @{$array2d->[$row_idx]} >>.
 
-=back
-
-=over
-
 =item B<col(I<$col_idx>)>
 
 Returns the elements in the given column.
 
-=back
+=item B<< rows(I<$row_idx>, I<$row_idx>...) >>
 
-=over
-
-=item B<rows(I<$row_idx>, I<$row_idx>...)>
-
-Returns a new Actium::O::2DArray object with all the columns of the specified rows.
-
-=back
-
-=over
+Returns a new Actium::O::2DArray object with all the columns of the 
+specified rows.
 
 =item B<cols(I<$col_idx>, I<$col_idx>...)>
 
-Returns a new Actium::O::2DArray object with all the rows of the specified columns.
-
-=back
-
-=over
+Returns a new Actium::O::2DArray object with all the 
+rows of the specified columns.
 
 =item B<shift_row()>
 
-Removes the first row of the object and returns a list of the elements.
-
-=back
-
-=over
+Removes the first row of the object and returns a list 
+of the elements of that row.
 
 =item B<shift_col()>
 
-Removes the first column of the object and returns a list of the elements.
-
-=back
-
-
-=over
+Removes the first column of the object and returns a list 
+of the elements of that column.
 
 =item B<pop_row()>
 
-Removes the last row of the object and returns a list of the elements.
-
-=back
-
-=over 
+Removes the last row of the object and returns
+a list of the elements of that row.
 
 =item B<pop_col()>
 
-Removes the last column of the object and returns a list of the elements.
-
-=back
-
-=over
+Removes the last column of the object and returns 
+a list of the elements of that column.
 
 =item B<push_row(I<@elements>)>
 
-Adds the specified elements as the new final row . Returns the new 
+Adds the specified elements as the new final row. Returns the new 
 number of rows.
-
-=back
-
-=over
 
 =item B<push_col(I<@elements>)>
 
 Adds the specified elements as the new final column. Returns the new 
 number of columns.
 
-=back
+=item B<push_rows(I<$aoa_ref>)>
 
-=over
+Takes the specified array of arrays and adds them as new rows
+after the end of the existing rows. Returns the new number of rows.
+
+=item B<push_cols(I<$aoa_ref>)>
+
+Takes the specified array of arrays and adds them as new columns,
+after the end of the existing columns. Returns the new number of columns.
 
 =item B<unshift_row(I<@elements>)>
 
 Adds the specified elements as the new first row. Returns the new 
 number of rows.
 
-=back
-
-=over
-
 =item B<unshift_col(I<@elements>)>
 
 Adds the specified elements as the new first column. Returns the new 
 number of columns.
 
-=back
+=item B<unshift_rows(I<$aoa_ref>)>
 
-=over
+Takes the specified array of arrays and adds them as new rows
+before the beginning of the existing rows. Returns the new number of rows.
 
-=item B<push_rows(I<$aoa_ref>)>
+=item B<unshift_cols(I<$aoa_ref>)>
 
-The argument is an array of arrays data structure -- it can be 
+Takes the specified array of arrays and adds them as new columns,
+before the beginning of the existing columns. Returns the new number of columns.
 
-Takes the specified array of arrays and adds them as new rows, or columns,
-after the end of the existing rows or columns. Returns the new number of rows or columns.
+=item B<ins_row(I<row_idx>, I<@elements>)>
 
-=back
+Adds the specified elements as a new row at the given index.
+Returns the new number of rows.
 
-=over
+=item B<ins_col(I<col_idx>, <@elements>)>
 
-=item B<push_cols(I<$aoa_ref>)>
+Adds the specified elements as a new column at the given index.
+Returns the new number of columns.
 
-Takes the specified array of arrays and adds them as new rows, or columns,
-after the end of the existing rows or columns. Returns the new number of rows or columns.
+=item B<ins_rows(I<row_idx>, I<@aoa_ref>)>
 
-=back
+Takes the specified array of arrays and inserts them as new rows at the
+given index. 
+Returns the new number of rows.
 
-=over
+=item B<ins_cols(I<col_idx>, <@elements>)>
 
-=item B<unshift_row(I<$array2d>)>
+Takes the specified array of arrays and inserts them as new columns at the
+given index. 
+Returns the new number of columns.
 
-=item B<unshift_col(I<$array2d>)>
+=item B<del_row(I<row_idx>)>
 
-Adds the specified elements as the new first row or column. Returns the new 
-number of rows or columns.
+Removes the row of the object specified by the index and returns a list of
+the elements of that row.
 
-=back
+=item B<del_col(I<col_idx>)>
 
-=over
+Removes the column of the object specified by the index and returns a list of
+the elements of that column.
 
-=item B<subroutine()>
+=item B<del_rows(I<row_idx>, I<row_idx>...)>
 
-Description of subroutine.
+Removes the rows of the object specified by the indices.
+Returns an Actium::O::2DArray object of those rows.
 
-=back
+=item B<del_cols(I<col_idx>, I<col_idx>...)>
 
-=over
+Removes the columns of the object specified by the indices.
+Returns an Actium::O::2DArray object of those columns.
 
-=item B<subroutine()>
+=item B<slice(I<$firstcol>, I<lastcol>, I<$firstrow>, I<lastrow>)>
 
-Description of subroutine.
+Takes a two-dimensional slice of the object; like cutting a rectangle out of
+the object. 
 
-=back
+In void context, alters the original object, which then will 
+contain only the area specified; otherwise, creates a new Actium::O::2DArray 
+object and returns the object.
 
-=over
+=item B<transpose()>
 
-=item B<subroutine()>
+Transposes the object: the elements that used to be in rows are now in columns,
+and vice versa.
 
-Description of subroutine.
+In void context, alters the original object.
+Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=back
+=item B<prune()>
 
-=over
+Occasionally an array of arrays can end up with rows or columns that are
+entirely undefined. For example:
 
-=item B<subroutine()>
+ my $obj = Actium::O::2DArray->new ( [ qw/a b c/]  , [ qw/f g h/ ]);
+ $obj->[0][4] = 'e';
+ $obj->[3][0] = 'k';
+ 
+ # a b c undef e
+ # f g h
+ # (empty)
+ # k
+ 
+ $obj->pop_row();
+ $obj->pop_col();
+ 
+ # a b c undef
+ # f g h
+ # (empty)
+  
+That would yield an object with four columns, but last column (with index 3)
+consisted of only undefined values.
 
-Description of subroutine.
+The C<prune> method eliminates these entirely undefined or empty columns 
+and rows at the end of the object.
 
-=back
+In void context, alters the original object.
+Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=over
+=item B<prune_blank()>
 
-=item B<subroutine()>
+Like C<prune>, but treats not only undefined values as blank, but also 
+empty strings.
 
-Description of subroutine.
+In void context, alters the original object.
+Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=back
+=item B<prune_callback(I<$code_ref>)>
 
-=over
+Like C<prune>, but calls the C<$code_ref> for each element, setting $_ to 
+each element. If the callback code returns true, the value is considered
+blank.
 
-=item B<subroutine()>
+For example, this would prune values that were undefined, 
+the empty string, or zero:
 
-Description of subroutine.
+ my $callback = sub { 
+     my $val = shift;
+     ! defined $val or $val eq $EMPTY_STR  or $val == 0;
+ }
+ $obj->prune_callback($callback);
 
-=back
+In void context, alters the original object.
+Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=over
+=item B<apply(I<$coderef>)>
 
-=item B<subroutine()>
+Calls the C<$code_ref> for each element, aliasing $_ to each element in turn.
+This allows an operation to be performed on every element.
 
-Description of subroutine.
+For example, this would lowercase every element in the array (assuming all
+values are defined):
 
-=back
+ $obj->apply(sub {lc});
 
-=over
+In void context, alters the original object.
+Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=item B<subroutine()>
+=item B<trim()>
 
-Description of subroutine.
+Removes white space, if present, from the beginning and end 
+of each element in the array.
 
-=back
+In void context, alters the original object.
+Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=over
+=item B<trim_right()>
 
-=item B<subroutine()>
+Removes white space from the end of each element in the array.
 
-Description of subroutine.
+In void context, alters the original object.
+Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=back
+=item B<undef2empty()>
 
-=over
+Replaces undefined values with the empty string.
 
-=item B<subroutine()>
+In void context, alters the original object.
+Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-Description of subroutine.
+=item B<hash_of_rows(I<$col_idx>)>
 
-=back
+Creates a hash reference. 
+The keys are the values in the specified column of the array.
+The values are arrayrefs containing the elements of the rows of the array,
+with the value in the key column removed.  
 
-=over
+If the key column is not specified,
+the first column is used for the keys.
 
-=item B<subroutine()>
+So:
 
-Description of subroutine.
+ $obj = Actium::O::2DArray->new([qw/a 1 2/],[qw/b 3 4/]);
+ $hashref = $obj->hash_of_rows(0);
+ # $hashref = { a => [ '1' , '2' ]  , b => [ '3' , '4' ] }
 
-=back
+=item B<hash_of_row_elements(I<$key_column_idx>, I<$value_column_idx>)>
 
-=over
+Like C<hash_of_rows>, but accepts a key column and a value column,
+and the values are not whole rows but only single elements.
 
-=item B<subroutine()>
+So:
 
-Description of subroutine.
+ $obj = Actium::O::2DArray->new([qw/a 1 2/],[qw/b 3 4/]);
+ $hashref = $obj->hash_of_row_elements(0, 1);
+ # $hashref = { a => '1' , b => '3' }
+ 
+If neither key column nor value column are specified, column 0
+will be used for the key and the column 1 will be used for the value. 
 
-=back
+If the key column is specified but the value column is not, then the first
+column that is not the key column will be used as the value column. (In other
+words, if the key column is column 0, then column 1 will be used as the value;
+otherwise column 0 will be used as the value.)
 
-=over
+=item B<tabulate(I<$separator>)>
 
-=item B<subroutine()>
+Returns an arrayref of strings, where each string consists of the elements of each
+row, padded with enough spaces to ensure that each column is the same width.
 
-Description of subroutine.
+The columns will be separated by whatever string is passed to C<tabulate()>. 
+If nothing is passed, a single space will be used.
 
-=back
+So, for example,
 
-=over
+ $obj = Actium::O::2DArray->new([qw/a bbb cc/],[qw/dddd e f/]);
+ $arrayref = $obj->tabulate();
+ 
+ # $arrayref = [ 'a    bbb cc' ,
+                 'dddd e   f'] ;
+                 
+The width of each element is determined using the 
+C<Unicode::GCString->columns()> method, so it will treat composed accented
+characters and double-width Asian characters correctly.
 
-=item B<subroutine()>
+=item B<tsv()>
 
-Description of subroutine.
+Returns a single string with the elements of each row delimited by tabs, 
+and rows delimited by line feeds.
 
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
+If tabs, carriage returns, or line feeds are present in any element, they
+will be replaced by the Unicode visible symbols for tabs (U+2409), line
+feeds (U+240A), or carriage returns (U+240A).
 
 =back
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
+=over
 
-=head1 CONFIGURATION AND ENVIRONMENT
+=item Arguments to Actium::O::2DArray->new must be arrayrefs (rows)
 
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
+=item Cannot re-bless existing object
+
+An object of another class was passed to the bless() method. Only pass
+unblessed (non-object) data structures to bless().
+
+=item Arguments to Actium::O::2DArray->slice must not be negative
+
+A negative row or column index was 
 
 =head1 DEPENDENCIES
 
-List its dependencies.
+None, other than those required by other Actium modules.
 
 =head1 AUTHOR
 
@@ -1227,7 +1185,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2014
+Copyright 2015
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
