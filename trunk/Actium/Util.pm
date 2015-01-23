@@ -166,8 +166,7 @@ sub keyunreadable {
 
 sub tabulate {
 
-    # TODO: rewrite using Unicode::GCString for column widths
-
+    # TODO: remove in favor of Actium::O::2DArray
     my @record_rs;
 
     my $rt = reftype( $_[0] );
@@ -222,6 +221,8 @@ sub aoa2tsv {
     # converts line feeds, tabs, and carriage returns to the Unicode
     # visible symbols for these characters. Which is probably wrong, but 
     # why would you feed those in then...
+    
+    # TODO: remove in favor of Actium::O::2DArray
 
     my $aoa_r   = shift;
     my @headers = flatten(@_);
