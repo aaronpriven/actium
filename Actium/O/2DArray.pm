@@ -17,8 +17,8 @@ use Actium::Util ('u_columns');
 # The object can be treated as an ordinary array of arrays,
 # or have methods invoked on it
 
-####################
-### Construction
+#################
+### Class methods
 
 sub new {
 
@@ -47,13 +47,18 @@ sub bless {
     my $self  = shift;
 
     my $selfclass = blessed($self);
-    return $self if $selfclass eq $class;
 
-    croak 'Cannot re-bless existing object' if ( defined $selfclass );
+    if ( defined $selfclass ) {
+        return $self if $selfclass eq $class;
+        croak 'Cannot re-bless existing object';
+    }
 
     CORE::bless $self, $class;
     return $self;
 }
+
+#################################
+### Object methods - construction
 
 sub clone {
     my $self = shift;
@@ -390,13 +395,13 @@ sub transpose {
 sub prune {
     my $self = shift;
     my $callback = sub { !defined $_ };
-    return $self->prune_callback( $callback );
+    return $self->prune_callback($callback);
 }
 
 sub prune_empty {
     my $self = shift;
     my $callback = sub { !defined $_ or $_ eq $EMPTY_STR };
-    return $self->prune_callback( $callback );
+    return $self->prune_callback($callback);
 }
 
 sub prune_callback {
@@ -453,7 +458,8 @@ sub apply {
 
     for my $row ( @{$self} ) {
         for my $idx ( 0 .. $#{$row} ) {
-            for ($row->[$idx] ) {  
+            for ( $row->[$idx] ) {
+
                 # localize $_ to $row->[$idx]. Autovivifies.
                 $callback->();
             }
@@ -554,9 +560,8 @@ sub hash_of_row_elements {
 sub tabulate {
 
     my $self = undef2empty(shift);
-    
-    my $separator = shift // $SPACE;
 
+    my $separator = shift // $SPACE;
     my @length_of_col;
 
     foreach my $row ( @{$self} ) {
@@ -592,7 +597,20 @@ sub tabulate {
 
 }    ## tidy end: sub tabulate
 
+my $charcarp = sub {
+    my $character  = shift;
+    my $methodname = shift;
+    carp "$character character found in array during $methodname; "
+      . 'converted to visible symbol.';
+    return;
+};
+
+# I didn't put that inside the tsv method because I thought maybe someday
+# there might be ->csv or something else.
+
 sub tsv {
+
+    state $methodname = __PACKAGE__ . '->tsv';
 
     # tab-separated-values,
     # suitable for something like File::Slurp::write_file
@@ -610,16 +628,23 @@ sub tsv {
 
     foreach my $row ( @{$self} ) {
         my @rowcopy = @{$row};
-        foreach ( @rowcopy ) {
+        foreach (@rowcopy) {
             $_ //= $EMPTY_STR;
-            s/\t/\x{2409}/g;    # visible symbol for tab
+            if (s/\t/\x{2409}/g) {    # visible symbol for tab
+                $charcarp->( "Tab", $methodname );
+            }
+
         }
-        push @lines, jt( @rowcopy );
+        push @lines, jt(@rowcopy);
     }
 
     foreach (@lines) {
-        s/\n/\x{240A}/g;        # visible symbol for line feed
-        s/\r/\x{240D}/g;        # visible symbol for carriage return
+        if (s/\n/\x{240A}/g) {        # visible symbol for line feed
+            $charcarp->( "Line feed", $methodname );
+        }
+        if (s/\r/\x{240D}/g) {        # visible symbol for carriage return
+            $charcarp->( "Carriage return", $methodname );
+        }
     }
 
     my $str = jn(@lines) . "\n";
@@ -630,94 +655,13 @@ sub tsv {
 
 1;
 
-### old code to be deleted
-
-################
-### Prune blank rows/columns at the end
-
-#sub prune {
-#
-#    my $orig = shift;
-#    my $self;
-#
-#    if (defined wantarray) {
-#        $self = $orig->clone($self);
-#    }
-#
-#    # remove final blank rows
-#    while ( @{$self} and all { not defined $_ } $self->[-1] ) {
-#        pop @{$self};
-#    }
-#
-#    # if it's all blank, make it an empty AoA and return it
-#    unless ( @{$self} ) {
-#        @{$self} = ( [] );
-#        return $self;
-#    }
-#
-#    # remove final blank columns
-#
-#    # does not use the last_col method because that method calls this one
-#    my $last_col = max( map { $#{$_} } @{$self} );
-#
-#    while ( $last_col > -1 and all { not defined $_ } $self->col($last_col) ) {
-#        $last_col--;
-#
-#        # set index of the last item of each row to the new $last_col
-#        $#{$_} = $last_col for @{$self};
-#
-#    }
-#
-#    return $self;
-#
-#}
-#
-#sub prune_empty {
-#
-#    # like prune, only treats the empty string as a blank
-#
-#    my $self = shift;
-#
-#    # remove final blank rows
-#    while ( @{$self}
-#        and all { not defined $_ or $_ eq $EMPTY_STR } $self->[-1] )
-#    {
-#        pop @{$self};
-#    }
-#
-#    # if it's all blank, make it an empty AoA and return it
-#    unless ( @{$self} ) {
-#        @{$self} = ( [] );
-#        return $self;
-#    }
-#
-#    # remove final blank columns
-#
-#    my $last_col = max( map { $#{$_} } @{$self} );
-#
-#    # does not use the last_col method because that method calls this one
-#
-#    while ( $last_col > -1
-#        and all { not defined $_ or $_ eq $EMPTY_STR } $self->col($last_col) )
-#    {
-#        $last_col--;
-#
-#        # set index of the last item of each row to the new $last_col
-#        $#{$_} = $last_col for @{$self};
-#
-#    }
-#
-#    return $self;
-#
-#}
-
 __END__
 
 =encoding utf8
 
 =head1 NAME
 
-Actium::O::2DArray - Simple 2D array objects
+Actium::O::2DArray - Methods for simple array-of-arrays data structures
 
 =head1 VERSION
 
@@ -784,7 +728,7 @@ Some general notes:
 
 =item *
 
-In all cases where an array of arrays is specified (I<$aoa_ref>), this can be
+In all cases where an array of arrays is specified (I<aoa_ref>), this can be
 either an Actium::O::2DArray object or an array of arrays data structure 
 that is not an object.
 
@@ -800,12 +744,12 @@ values is ommitted in void context.
 
 =over
 
-=item B<new( I<$row_ref>, I<$row_ref>...)>
+=item B<new( I<row_ref>, I<row_ref>...)>
 
 Returns a new Actium::O::2DArray object.  It accepts a list of array 
 references as arguments, which become the rows of the object.
 
-=item B<bless(I<$aoa_ref>)>
+=item B<bless(I<aoa_ref>)>
 
 Takes an existing non-object array of arrays and returns an 
 Actium::O::2DArray object. Returns the new object. 
@@ -819,14 +763,14 @@ data structures will become a reference to the object, too.
 
 =over
 
-=item B<clone(I<$array2d>)>
+=item B<clone()>
 
 Returns new object which has copies of the data in the 2D array object.
 The 2D array will be different, but if any of the elements of the 2D array are 
 themselves references, they will refer to the same things as in the original
 2D array.
 
-=item B<clone_unblessed(I<$array2d>)>
+=item B<clone_unblessed()>
 
 Returns a new, unblessed, array of arrays containing copies of the data in the
 2D array object.  This is usually pointless, as Perl lets you ignore the 
@@ -834,7 +778,7 @@ object-ness of any object and access the data inside, but sometimes certain
 modules don't like to break object encapsulation, and this will allow getting
 around that.
 
-=item B<new_from_tsv(I<$tsv_string>, I<$tsv_string> ...)>
+=item B<<< new_from_tsv(I<tsv_string, tsv_string...>) >>>
 
 Returns a new object from a list of strings containing tab-delimited values. 
 There will be one row per string, and the elements of each row will be the
@@ -860,26 +804,26 @@ mainly for completeness, as C<$#{$object}> works just as well.
 Returns the index of the last column of the object. (The index of the last
 element in the longest row.)
 
-=item B<element(I<$row_idx, $col_idx>)>
+=item B<element(I<row_idx, col_idx>)>
 
 Returns the element in the given row and column. Just a slower way of saying
-C<< $array2d->[$row_idx][$col_idx] >>.
+C<< $array2d->[I<row_idx>][I<col_idx>] >>.
 
-=item B<row(I<$row_idx>)>
+=item B<row(I<row_idx>)>
 
 Returns the elements in the given row.  A slower way of saying 
-C<< @{$array2d->[$row_idx]} >>.
+C<< @{$array2d->[I<row_idx>]} >>.
 
-=item B<col(I<$col_idx>)>
+=item B<col(I<col_idx>)>
 
 Returns the elements in the given column.
 
-=item B<< rows(I<$row_idx>, I<$row_idx>...) >>
+=item B<< rows(I<row_idx, row_idx...>) >>
 
 Returns a new Actium::O::2DArray object with all the columns of the 
 specified rows.
 
-=item B<cols(I<$col_idx>, I<$col_idx>...)>
+=item B<cols(I<col_idx>, <col_idx>...)>
 
 Returns a new Actium::O::2DArray object with all the 
 rows of the specified columns.
@@ -904,63 +848,63 @@ a list of the elements of that row.
 Removes the last column of the object and returns 
 a list of the elements of that column.
 
-=item B<push_row(I<@elements>)>
+=item B<push_row(I<element, element...>)>
 
 Adds the specified elements as the new final row. Returns the new 
 number of rows.
 
-=item B<push_col(I<@elements>)>
+=item B<push_col(I<element, element...>)>
 
 Adds the specified elements as the new final column. Returns the new 
 number of columns.
 
-=item B<push_rows(I<$aoa_ref>)>
+=item B<push_rows(I<aoa_ref>)>
 
 Takes the specified array of arrays and adds them as new rows
 after the end of the existing rows. Returns the new number of rows.
 
-=item B<push_cols(I<$aoa_ref>)>
+=item B<push_cols(I<aoa_ref>)>
 
 Takes the specified array of arrays and adds them as new columns,
 after the end of the existing columns. Returns the new number of columns.
 
-=item B<unshift_row(I<@elements>)>
+=item B<unshift_row(I<element, element...>)>
 
 Adds the specified elements as the new first row. Returns the new 
 number of rows.
 
-=item B<unshift_col(I<@elements>)>
+=item B<unshift_col(I<element, element...>)>
 
 Adds the specified elements as the new first column. Returns the new 
 number of columns.
 
-=item B<unshift_rows(I<$aoa_ref>)>
+=item B<unshift_rows(I<aoa_ref>)>
 
 Takes the specified array of arrays and adds them as new rows
 before the beginning of the existing rows. Returns the new number of rows.
 
-=item B<unshift_cols(I<$aoa_ref>)>
+=item B<unshift_cols(I<aoa_ref>)>
 
 Takes the specified array of arrays and adds them as new columns,
 before the beginning of the existing columns. Returns the new number of columns.
 
-=item B<ins_row(I<row_idx>, I<@elements>)>
+=item B<ins_row(I<row_idx, element, element...>)>
 
 Adds the specified elements as a new row at the given index.
 Returns the new number of rows.
 
-=item B<ins_col(I<col_idx>, <@elements>)>
+=item B<ins_col(I<col_idx, element, element...>)>
 
 Adds the specified elements as a new column at the given index.
 Returns the new number of columns.
 
-=item B<ins_rows(I<row_idx>, I<@aoa_ref>)>
+=item B<ins_rows(I<row_idx, aoa_ref>)>
 
 Takes the specified array of arrays and inserts them as new rows at the
 given index. 
 Returns the new number of rows.
 
-=item B<ins_cols(I<col_idx>, <@elements>)>
+=item B<ins_cols(I<col_idx, element, element...>)>
 
 Takes the specified array of arrays and inserts them as new columns at the
 given index. 
@@ -986,7 +930,7 @@ Returns an Actium::O::2DArray object of those rows.
 Removes the columns of the object specified by the indices.
 Returns an Actium::O::2DArray object of those columns.
 
-=item B<slice(I<$firstcol>, I<lastcol>, I<$firstrow>, I<lastrow>)>
+=item B<slice(I<firstcol_idx>, I<lastcol_idx>, I<firstrow_idx>, I<lastrow_idx>)>
 
 Takes a two-dimensional slice of the object; like cutting a rectangle out of
 the object. 
@@ -1041,9 +985,9 @@ empty strings.
 In void context, alters the original object.
 Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=item B<prune_callback(I<$code_ref>)>
+=item B<prune_callback(I<code_ref>)>
 
-Like C<prune>, but calls the C<$code_ref> for each element, setting $_ to 
+Like C<prune>, but calls the <code_ref> for each element, setting $_ to 
 each element. If the callback code returns true, the value is considered
 blank.
 
@@ -1059,7 +1003,7 @@ the empty string, or zero:
 In void context, alters the original object.
 Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=item B<apply(I<$coderef>)>
+=item B<apply(I<coderef>)>
 
 Calls the C<$code_ref> for each element, aliasing $_ to each element in turn.
 This allows an operation to be performed on every element.
@@ -1094,7 +1038,7 @@ Replaces undefined values with the empty string.
 In void context, alters the original object.
 Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=item B<hash_of_rows(I<$col_idx>)>
+=item B<hash_of_rows(I<col_idx>)>
 
 Creates a hash reference. 
 The keys are the values in the specified column of the array.
@@ -1110,7 +1054,7 @@ So:
  $hashref = $obj->hash_of_rows(0);
  # $hashref = { a => [ '1' , '2' ]  , b => [ '3' , '4' ] }
 
-=item B<hash_of_row_elements(I<$key_column_idx>, I<$value_column_idx>)>
+=item B<hash_of_row_elements(I<key_column_idx, value_column_idx>)>
 
 Like C<hash_of_rows>, but accepts a key column and a value column,
 and the values are not whole rows but only single elements.
@@ -1129,7 +1073,7 @@ column that is not the key column will be used as the value column. (In other
 words, if the key column is column 0, then column 1 will be used as the value;
 otherwise column 0 will be used as the value.)
 
-=item B<tabulate(I<$separator>)>
+=item B<tabulate(I<separator>)>
 
 Returns an arrayref of strings, where each string consists of the elements of each
 row, padded with enough spaces to ensure that each column is the same width.
@@ -1156,15 +1100,19 @@ and rows delimited by line feeds.
 
 If tabs, carriage returns, or line feeds are present in any element, they
 will be replaced by the Unicode visible symbols for tabs (U+2409), line
-feeds (U+240A), or carriage returns (U+240A).
+feeds (U+240A), or carriage returns (U+240A). This generates a warning.
 
 =back
 
 =head1 DIAGNOSTICS
 
+=head2 ERRORS
+
 =over
 
 =item Arguments to Actium::O::2DArray->new must be arrayrefs (rows)
+
+A non-arrayref was passed to the new constructor.
 
 =item Cannot re-bless existing object
 
@@ -1173,11 +1121,37 @@ unblessed (non-object) data structures to bless().
 
 =item Arguments to Actium::O::2DArray->slice must not be negative
 
-A negative row or column index was 
+A negative row or column index was provided. This routine does not handle that.
+
+=back
+
+=head2 WARNINGS
+
+=over
+
+=item Tab character found in array during Actium::O::2Darray->tsv; converted to visible symbol
+
+=item Line feed character found in array during Actium::O::2Darray->tsv; converted to visible symbol
+
+=item Carriage return character found in array during Actium::O::2Darray->tsv; converted to visible symbol
+
+An invalid character for TSV data was found in the array when creating 
+TSV data. It was converted to the Unicode visible symbol for that character,
+but this warning was issued.
+
+=back
 
 =head1 DEPENDENCIES
 
-None, other than those required by other Actium modules.
+=over
+
+=item Perl 5.20
+
+=item Actium::Preamble
+
+=item Actium::Util
+
+=back
 
 =head1 AUTHOR
 
@@ -1203,11 +1177,3 @@ later version, or
 This program is distributed in the hope that it will be useful, but WITHOUT 
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
 FITNESS FOR A PARTICULAR PURPOSE.
-
-
-
-
-
-
-
-
