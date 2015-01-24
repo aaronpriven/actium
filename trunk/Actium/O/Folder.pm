@@ -719,6 +719,9 @@ sub load_sheet {
     #else {
     #    return $self->load_tab_sheet($filename);
     #}
+    
+    croak "Filetype not recognized in $filename";
+    return;
 
 }
 
@@ -763,7 +766,7 @@ sub load_excel_sheet {
     }
     
     require Actium::O::2DArray;
-    return Actium::O::2DArray->new(\@lines);
+    return Actium::O::2DArray->bless(\@lines);
 
 }
 
