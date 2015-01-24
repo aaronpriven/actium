@@ -35,7 +35,7 @@ sub START {
     my ($folder, $filename) = Actium::O::Folder->new_from_file($filespec);
     
     my $sheet = $folder->load_sheet($filename);
-    my @decals = sortbyline $sheet->column(0);
+    my @decals = sortbyline $sheet->col(0);
     
     my $zipobj = Archive::Zip->new();
     
