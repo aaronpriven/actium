@@ -765,12 +765,16 @@ This documentation refers to version 0.008
 
 Actium::O::2DArray is a module that adds useful methods to Perl's standard
 array of arrays ("AoA") data structure, as described in 
-L<Perl's perldsc page|perldsc>. That is, an array that contains other arrays:
+L<Perl's perldsc documentation|perldsc>. 
+That is, an array that contains other arrays:
 
- [ [ 1, 2, 3 ] , [ 4, 5, 6 ] ]
+ [ 
+   [ 1, 2, 3 ] , 
+   [ 4, 5, 6 ] ,
+ ]
 
 Most of the time, it's good practice to avoid having programs that use a module
-know about the internal construction of a module. However, this module is not
+know about the internal construction of an object. However, this module is not
 like that. It exists purely to give methods to a standard construction in Perl,
 and will never change the data structure to include anything else. Therefore,
 it is perfectly reasonable to use the normal reference syntax to access
@@ -778,7 +782,8 @@ items inside the array. A construction like C<< $array2d->[0][1] >>
 for accessing a single element, or C<< @{$array2d} >> to get the list of
 rows, is perfectly acceptable. This module exists because the reference-based 
 implementation of multidimensional arrays in Perl makes it difficult to access,
-for example, a single column, or a two-dimensional slice.
+for example, a single column, or a two-dimensional slice, without writing
+lots of extra code.
 
 Actium::O::2DArray uses "row" for the first dimension, and "column" or "col" 
 for the second dimension.
