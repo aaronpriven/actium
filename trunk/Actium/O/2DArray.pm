@@ -10,7 +10,7 @@ use warnings;
 package Actium::O::2DArray 0.008;
 
 use Actium::Preamble;
-use Actium::Util ('u_columns');
+use Actium::Util (qw/file_ext u_columns/);
 
 # this is a deliberately non-encapsulated object that is just
 # an array of arrays (AoA).
@@ -75,10 +75,85 @@ sub clone_unblessed {
 
 sub new_from_tsv {
     my $class = shift;
-    my $self = [ map { [ split(/\t/) ] } @_ ];
+    my @lines = map { split(/\R/) } @_;
+    my $self  = [ map { [ split(/\t/) ] } @lines ];
 
     CORE::bless $self, $class;
     return $self;
+}
+
+sub new_from_xlsx {
+    my $class           = shift;
+    my $xlsx            = shift;
+    my $sheet_requested = shift || 0;
+
+    # || handles empty strings
+
+    require Spreadsheet::ParseXLSX;
+
+    my $parser   = Spreadsheet::ParseXLSX->new;
+    my $workbook = $parser->parse($xlsx);
+
+    if ( !defined $workbook ) {
+        croak $parser->error();
+    }
+
+    my $sheet = $workbook->worksheet($sheet_requested);
+
+    if ( !defined $sheet ) {
+        croak "Sheet $sheet_requested not found in $xlsx in "
+          . __PACKAGE__
+          . '->new_from_xlsx';
+    }
+
+    my ( $minrow, $maxrow ) = $sheet->row_range();
+    my ( $mincol, $maxcol ) = $sheet->col_range();
+
+    my @rows;
+
+    foreach my $row ( $minrow .. $maxrow ) {
+
+        my @cells =
+          map { $sheet->get_cell( $row, $_ ) } $mincol, $mincol + 1;
+
+        foreach (@cells) {
+            if ( defined $_ ) {
+                $_ = $_->value;
+            }
+            else {
+                $_ = $EMPTY_STR;
+            }
+        }
+
+        push @rows, \@cells;
+
+    }
+
+    return $class->bless( \@rows );
+
+}
+
+sub new_from_file {
+    my $class    = shift;
+    my $filespec = shift;
+
+    my ( $filename, $ext ) = file_ext($filespec);
+    my $fext = fc($ext);
+
+    if ( $fext eq fc('xlsx') ) {
+        return $class->new_from_xlsx($filespec);
+    }
+
+    if ( $fext eq fc('txt') or $fext eq fc('tsv') or $fext eq fc('tab') ) {
+        require File::Slurp::Tiny;
+        my $tsv = File::Slurp::Tiny::read_file($filespec);
+        return $class->new_from_tsv($tsv);
+    }
+
+    croak "File type unrecognized in $filename passed to "
+      . __PACKAGE__
+      . '->new_from_file';
+
 }
 
 ##################################################
@@ -780,9 +855,32 @@ around that.
 
 =item B<<< new_from_tsv(I<tsv_string, tsv_string...>) >>>
 
-Returns a new object from a list of strings containing tab-delimited values. 
-There will be one row per string, and the elements of each row will be the
-values delimited by tabs.
+Returns a new object from a string containing tab-delimited values. 
+The string is first split into lines (delimited by carriage returns,
+line feeds, a CR/LF pair, or other characters matching Perl's \R) and then
+split into values by tabs.
+
+If multiple strings are provided, they will be considered additional lines.
+So, one can pass the contents of an entire TSV file, the series of lines
+in the TSV file, or a combination of two.
+
+=item B<<< new_from_xlsx(I<xlsx_filespec>, I<sheet_requested>) >>>
+
+Returns a new object from a worksheet in an Excel XLSX file, consisting
+of the rows and columns of that sheet. The I<sheet_requested> parameter
+is passed directly to the C<< ->worksheet >> method of 
+C<Spreadsheet::ParseXLSX>, which accepts a name or an index. If nothing
+is passed, it requests sheet 0 (the first sheet).
+
+=item B<<< new_from_file(I<filespec>) >>>
+
+Returns a new object from a file on disk. If the file has the extension
+.xlsx, passes that file to C<new_from_xlsx>. If the file has the extension
+.txt, .tab, or .tsv, slurps the file in memory and passes the result
+to C<new_from_tsv>.
+
+(Future versions might accept CSV files as well, and test the contents of .txt 
+files to see whether they are comma-delimited or tab-delimited.)
 
 =item B<height()>
 
@@ -1123,6 +1221,16 @@ unblessed (non-object) data structures to bless().
 
 A negative row or column index was provided. This routine does not handle that.
 
+=item Sheet $sheet_requested not found in $xlsx in Actium::O::2DArray->new_from_xlsx
+
+Spreadsheet::ParseExcel returned an error indicating that the sheet
+requested was not found.
+
+=item File type unrecognized in $filename passed to Actium::O::2DArray->new_from_file
+
+A file other than an Excel (XLSX) or tab-delimited text files (with tab, 
+tsv, or txt extensions) are recognized in ->new_from_file.
+
 =back
 
 =head2 WARNINGS
@@ -1141,6 +1249,12 @@ but this warning was issued.
 
 =back
 
+=head1 TO DO
+
+=item *
+
+Add CSV (and possibly other file type) support to new_from_file.
+
 =head1 DEPENDENCIES
 
 =over
@@ -1150,6 +1264,10 @@ but this warning was issued.
 =item Actium::Preamble
 
 =item Actium::Util
+
+=item File::Slurp::Tiny
+
+=item Spreadsheet::ParseXLSX
 
 =back
 
