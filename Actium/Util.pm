@@ -30,7 +30,7 @@ use Sub::Exporter -setup => {
           isblank             isnotblank
           tabulate            aoa2tsv
           filename            file_ext
-          remove_leading_path
+          remove_leading_path add_before_extension
           linegroup_of
           chunks
           is_odd              is_even
@@ -80,7 +80,7 @@ sub positional {
 
     return \%newargs;
 
-} ## tidy end: sub positional
+}    ## tidy end: sub positional
 
 sub positional_around {
     my $args_r   = shift;
@@ -190,8 +190,8 @@ sub tabulate {
                 $length_of_column[$this_column] = $thislength;
             }
             else {
-                $length_of_column[$this_column]
-                  = max( $length_of_column[$this_column], $thislength );
+                $length_of_column[$this_column] =
+                  max( $length_of_column[$this_column], $thislength );
             }
         }
     }
@@ -212,16 +212,17 @@ sub tabulate {
 
     return \@lines;
 
-} ## tidy end: sub tabulate
+}    ## tidy end: sub tabulate
 
 sub aoa2tsv {
+
     # array of arrays to a single string of tab-separated-values,
     # suitable for something like File::Slurp::write_file
-    
+
     # converts line feeds, tabs, and carriage returns to the Unicode
-    # visible symbols for these characters. Which is probably wrong, but 
+    # visible symbols for these characters. Which is probably wrong, but
     # why would you feed those in then...
-    
+
     # TODO: remove in favor of Actium::O::2DArray
 
     my $aoa_r   = shift;
@@ -247,12 +248,19 @@ sub aoa2tsv {
 
     return $str;
 
-} ## tidy end: sub aoa2tsv
+}    ## tidy end: sub aoa2tsv
 
 sub doe {
-    my @list = @_;
-    $_ = $_ // $EMPTY_STR foreach @list;
-    return wantarray ? @list : $list[0];
+    if (wantarray) {
+        my @list = @_;
+        $_ = $_ // $EMPTY_STR foreach @list;
+        return @list;
+    }
+    else {
+        local $_ = shift;
+        $_ = $_ // $EMPTY_STR;
+        return $_;
+    }
 }
 
 sub isnotblank {
@@ -276,12 +284,27 @@ sub filename {
 sub file_ext {
     my $filespec = shift;                 # works on filespecs or filenames
     my $filename = filename($filespec);
-    my ( $filepart, $ext )
-      = $filename =~ m{(.*)    # as many characters as possible
+    my ( $filepart, $ext ) =
+      $filename =~ m{(.*)    # as many characters as possible
                       [.]     # a dot
                       ([^.]+) # one or more non-dot characters
                       \z}sx;
     return ( $filepart, $ext );
+}
+
+sub add_before_extension {
+
+    my $input_path = shift;
+    my $addition   = shift;
+
+    my ( $volume, $folders, $filename ) = File::Spec->splitpath($input_path);
+    my ( $filepart, $ext ) = file_ext($filename);
+
+    my $output_path =
+      File::Spec->catpath( $volume, $folders, "$filepart-$addition.$ext" );
+
+    return ($output_path);
+
 }
 
 sub remove_leading_path {
@@ -301,8 +324,8 @@ sub remove_leading_path {
     # from a component of $path, use the upper/lowercase of $path
 
     my ( $filevol, $filefolders_r, $file ) = _split_path_components($filespec);
-    my ( $pathvol, $pathfolders_r, $pathfile )
-      = _split_path_components( $path, 1 );
+    my ( $pathvol, $pathfolders_r, $pathfile ) =
+      _split_path_components( $path, 1 );
 
     $file    = $pathfile if ( lc($file) eq lc($pathfile) );
     $filevol = $pathvol  if ( lc($filevol) eq lc($pathvol) );
@@ -335,7 +358,7 @@ sub remove_leading_path {
     ## REMOVE THE LEADING PATH
 
     return File::Spec->abs2rel( $filespec, $path );
-} ## tidy end: sub remove_leading_path
+}    ## tidy end: sub remove_leading_path
 
 # _split_path_components and _join_path_components
 # might be worth making public if they are used again.
@@ -344,16 +367,16 @@ sub remove_leading_path {
 sub _split_path_components {
     my $filespec = shift;
     my $nofile   = shift;
-    my ( $volume, $folders, $file )
-      = File::Spec->splitpath( $filespec, $nofile );
+    my ( $volume, $folders, $file ) =
+      File::Spec->splitpath( $filespec, $nofile );
     my @folders = File::Spec->splitdir($folders);
     return $volume, \@folders, $file;
 }
 
 sub _join_path_components {
     my ( $vol, $folders_r, $file ) = @_;
-    my $path
-      = File::Spec->catpath( $vol, File::Spec->catdir( @{$folders_r} ), $file );
+    my $path =
+      File::Spec->catpath( $vol, File::Spec->catdir( @{$folders_r} ), $file );
     return $path;
 }
 
@@ -391,6 +414,7 @@ sub linegroup_of {
 }
 
 sub in {
+
     # is-an-element-of (stringwise)
 
     # if I could, I would add this to perl as an operator:
@@ -517,7 +541,7 @@ sub u_wrap {
 
     return @lines;
 
-} ## tidy end: sub u_wrap
+}    ## tidy end: sub u_wrap
 
 sub u_trim_to_columns {
     my $text        = shift;
