@@ -4,11 +4,10 @@
 
 # Subversion: $Id$
 
-package Actium::Cmd::StopSearch 0.006;
+package Actium::Cmd::StopSearch 0.008;
 
 use Actium::Preamble;
 use Actium::O::Folder;
-use Actium::Util('tabulate');
 use Actium::Cmd::Config::ActiumFM;
 use Actium::Options(qw/set_option add_option option/);
 use Actium::Term;
