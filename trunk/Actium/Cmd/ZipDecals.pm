@@ -18,7 +18,7 @@ use Spreadsheet::ParseXLSX;
 use Archive::Zip qw(:ERROR_CODES);
 
 const my $EPSFOLDER =>
-  '/Volumes/Bireme/Flag Projects/Flags 2011-02/Decals/export_eps_bleed';
+  '/Volumes/Bireme/Actium/flagart/Decals/export_eps_bleed';
 
 sub HELP { say "Make an archive of the decals in an Excel file." }
 
