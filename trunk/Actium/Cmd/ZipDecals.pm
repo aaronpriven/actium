@@ -7,7 +7,7 @@
 use 5.016;
 use warnings;
 
-package Actium::Cmd::ZipDecals 0.003;
+package Actium::Cmd::ZipDecals 0.008;
 
 use Actium::Preamble;
 use Actium::O::Folder;

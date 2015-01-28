@@ -7,7 +7,7 @@
 use 5.016;
 use warnings;
 
-package Actium::Cmd::Slists2HTML 0.007;
+package Actium::Cmd::Slists2HTML 0.008;
 
 use Actium::Preamble;
 

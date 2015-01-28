@@ -3,7 +3,7 @@
 
 # Subversion: $Id$
 
-package Actium::Util 0.005;
+package Actium::Util 0.008;
 
 # Cannot use Actium::Preamble since that module uses this one
 
