@@ -4,7 +4,7 @@
 
 # Subversion: $Id$
 
-use 5.020;
+use 5.016;
 use warnings;
 
 package Actium::O::2DArray 0.008;
