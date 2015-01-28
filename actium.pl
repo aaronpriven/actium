@@ -16,7 +16,7 @@
 use 5.016;
 use warnings;
 
-our $VERSION = 0.008;
+our $VERSION = 0.009;
 
 # add the current program directory to list of files to include
 use FindBin qw($Bin);
@@ -78,6 +78,7 @@ my %module_of = (
     xhea2hasi       => 'Xhea2Hasi',
     headwaytimes    => 'HeadwayTimes',
     zipdecals       => 'ZipDecals',
+    zipcodes => 'ZipCodes',
 
     # more to come
 );
