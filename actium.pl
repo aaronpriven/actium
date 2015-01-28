@@ -13,10 +13,10 @@
 
 # Subversion: $Id$
 
-use 5.012;
+use 5.016;
 use warnings;
 
-our $VERSION = 0.007;
+our $VERSION = 0.008;
 
 # add the current program directory to list of files to include
 use FindBin qw($Bin);
