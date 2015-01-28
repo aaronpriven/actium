@@ -728,6 +728,28 @@ sub tsv {
 
 }
 
+sub xlsx {
+    my $self        = shift;
+    my $output_file = shift;
+    my @headers = flatten(@_);
+
+    require Excel::Writer::XLSX;
+
+    my $workbook = Excel::Writer::XLSX->new($output_file);
+    my $sheet    = $workbook->add_worksheet();
+
+    if (@headers) {
+        $sheet->write_row( 0, 0, \@headers );
+        $sheet->write_col( 1, 0, $self );
+    }
+    else {
+        $sheet->write_col( 0, 0, $self );
+    }
+
+    return $workbook->close();
+
+}
+
 1;
 
 __END__
@@ -1196,14 +1218,31 @@ The width of each element is determined using the
 C<Unicode::GCString->columns()> method, so it will treat composed accented
 characters and double-width Asian characters correctly.
 
-=item B<tsv()>
+=item B<< tsv(I<headers>) >>
 
 Returns a single string with the elements of each row delimited by tabs, 
 and rows delimited by line feeds.
 
+If there are any arguments, they will be used first row of text. 
+The idea is that these will be the headers of the columns. It's not really
+any different than putting the column headers as the first element of the
+data, but frequently these are stored separately.
+
 If tabs, carriage returns, or line feeds are present in any element, they
 will be replaced by the Unicode visible symbols for tabs (U+2409), line
 feeds (U+240A), or carriage returns (U+240A). This generates a warning.
+
+=item B<< xlsx(I<filespec>, I<headers>) >>
+
+Accepts a file specification and creates a new Excel XLSX file at that 
+location, with one sheet, containing the data in the 2D array.
+
+If there are any arguments beyond the file specification, those arguments
+will be used first row of text. 
+The idea is that these will be the headers of the columns. It's not really
+any different than putting the column headers as the first element of the
+data, but frequently these are stored separately. At this point no attempt
+is made to make them bold or anything like that.
 
 =back
 
@@ -1273,6 +1312,8 @@ Add CSV (and possibly other file type) support to new_from_file.
 =item File::Slurp::Tiny
 
 =item Spreadsheet::ParseXLSX
+
+=item Excel::Writer::XLSX
 
 =back
 
