@@ -8,7 +8,7 @@
 use 5.012;
 use strict;
 
-package Actium::O::Folder 0.006;
+package Actium::O::Folder 0.008;
 
 use Moose;
 use MooseX::StrictConstructor;
