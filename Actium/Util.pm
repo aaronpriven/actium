@@ -442,6 +442,9 @@ sub in {
 }
 
 sub chunks {
+    
+    # deprecate in favor of Actium::O::2DArray->new_in_chunks
+    
     my $n      = shift;
     my @values = @_;
     my @chunks;

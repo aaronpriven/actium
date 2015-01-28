@@ -42,6 +42,23 @@ sub new {
 
 }
 
+sub new_in_chunks {
+    my $class = shift;
+
+    my $quantity = shift;
+    my @values   = @_;
+
+    my $self;
+    my $it = natatime( $quantity, @values );
+    while ( my @vals = $it->() ) {
+        push @{$self}, [@vals];
+    }
+
+    CORE::bless $self, $class;
+    return $self;
+
+}
+
 sub bless {
     my $class = shift;
     my $self  = shift;
@@ -67,6 +84,12 @@ sub clone {
     return $new;
 }
 
+sub unblessed {
+    my $self = shift;
+    my $new  = [ @{$self} ];
+    return $new;
+}
+
 sub clone_unblessed {
     my $self = shift;
     my $new = [ map { [ @{$_} ] } @{$self} ];
@@ -84,15 +107,18 @@ sub new_from_tsv {
 
 sub new_from_xlsx {
     my $class           = shift;
-    my $xlsx            = shift;
+    my $xlsx_filespec   = shift;
     my $sheet_requested = shift || 0;
 
     # || handles empty strings
 
+    croak "No file specified in " . __PACKAGE__ . '->new_from_xlsx'
+      unless $xlsx_filespec;
+
     require Spreadsheet::ParseXLSX;
 
     my $parser   = Spreadsheet::ParseXLSX->new;
-    my $workbook = $parser->parse($xlsx);
+    my $workbook = $parser->parse($xlsx_filespec);
 
     if ( !defined $workbook ) {
         croak $parser->error();
@@ -101,7 +127,7 @@ sub new_from_xlsx {
     my $sheet = $workbook->worksheet($sheet_requested);
 
     if ( !defined $sheet ) {
-        croak "Sheet $sheet_requested not found in $xlsx in "
+        croak "Sheet $sheet_requested not found in $xlsx_filespec in "
           . __PACKAGE__
           . '->new_from_xlsx';
     }
@@ -114,7 +140,7 @@ sub new_from_xlsx {
     foreach my $row ( $minrow .. $maxrow ) {
 
         my @cells =
-          map { $sheet->get_cell( $row, $_ ) } $mincol, $mincol + 1;
+          map { $sheet->get_cell( $row, $_ ) } ( $mincol .. $maxcol );
 
         foreach (@cells) {
             if ( defined $_ ) {
@@ -136,6 +162,9 @@ sub new_from_xlsx {
 sub new_from_file {
     my $class    = shift;
     my $filespec = shift;
+
+    croak "No file specified in " . __PACKAGE__ . '->new_from_file'
+      unless $filespec;
 
     my ( $filename, $ext ) = file_ext($filespec);
     my $fext = fc($ext);
@@ -729,21 +758,46 @@ sub tsv {
 }
 
 sub xlsx {
-    my $self        = shift;
-    my $output_file = shift;
-    my @headers = flatten(@_);
+    my $self   = shift;
+    my %params = validate(
+        @_,
+        {
+            headers     => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
+            format      => { type => $PV_TYPE{HASHREF},  optional => 1 },
+            output_file => 1,
+        }
+    );
+
+    my $output_file       = $params{output_file};
+    my $format_properties = $params{format};
+    my @headers;
+    if ( $params{headers} ) {
+        @headers = @{ $params{headers} };
+    }
 
     require Excel::Writer::XLSX;
 
     my $workbook = Excel::Writer::XLSX->new($output_file);
     my $sheet    = $workbook->add_worksheet();
+    my @format;
+
+    if ( defined $format_properties ) {
+        push @format, $workbook->add_format(%$format_properties);
+    }
+
+    # an array is used because if it were a scalar, it would be undef,
+    # where what we want if it is empty is no value at all
+
+    my $unblessed = $self->unblessed;
+
+    # Excel::Writer::XLSX checks 'ref' and not 'reftype'
 
     if (@headers) {
-        $sheet->write_row( 0, 0, \@headers );
-        $sheet->write_col( 1, 0, $self );
+        $sheet->write_row( 0, 0, \@headers, @format );
+        $sheet->write_col( 1, 0, $unblessed, @format );
     }
     else {
-        $sheet->write_col( 0, 0, $self );
+        $sheet->write_col( 0, 0, $unblessed, @format );
     }
 
     return $workbook->close();
@@ -872,13 +926,38 @@ The 2D array will be different, but if any of the elements of the 2D array are
 themselves references, they will refer to the same things as in the original
 2D array.
 
-=item B<clone_unblessed()>
+item B<unblessed()>
 
-Returns a new, unblessed, array of arrays containing copies of the data in the
-2D array object.  This is usually pointless, as Perl lets you ignore the 
+Returns a new, unblessed array, containing the same rows as
+the 2D array object. 
+
+This is usually pointless, as Perl lets you ignore the 
 object-ness of any object and access the data inside, but sometimes certain
 modules don't like to break object encapsulation, and this will allow getting
 around that.
+
+Note that while modifying the elements inside the rows will modify the 
+original 2D array, modifying the outer arrayref will not. So:
+
+ my $unblessed = $array2d->unblessed;
+
+ $unblessed->[0][0] = 'Up in the corner'; 
+     # modifies original object
+
+ $unblessed->[0] = [ 'Up in the corner ' , 'Yup']; 
+    # does not modify original object
+ 
+This can be confusing, so it's best to avoid modifying the result of
+C<unblessed>.
+
+=item B<clone_unblessed()>
+
+Returns a new, unblessed, array of arrays containing copies of the data in the
+2D array object. 
+
+The array of arrays will be different, but if any of the elements of the 
+2D array are themselves references, they will refer to the same things 
+as in the original 2D array.
 
 =item B<<< new_from_tsv(I<tsv_string, tsv_string...>) >>>
 
@@ -1232,17 +1311,33 @@ If tabs, carriage returns, or line feeds are present in any element, they
 will be replaced by the Unicode visible symbols for tabs (U+2409), line
 feeds (U+240A), or carriage returns (U+240A). This generates a warning.
 
-=item B<< xlsx(I<filespec>, I<headers>) >>
+=item B<< xlsx(...) >>
 
 Accepts a file specification and creates a new Excel XLSX file at that 
 location, with one sheet, containing the data in the 2D array.
 
-If there are any arguments beyond the file specification, those arguments
-will be used first row of text. 
+This method uses named parameters. 
+
+=over
+
+=item output_file
+
+This mandatory parameter contains the file specification.
+
+=item headers
+
+This parameter is optional. If present, it contains an array reference to be
+used as the first row in the Excel file.
+
 The idea is that these will be the headers of the columns. It's not really
 any different than putting the column headers as the first element of the
 data, but frequently these are stored separately. At this point no attempt
 is made to make them bold or anything like that.
+
+=item format
+
+This parameter is optional. If present, it contains a hash reference,
+with format parameters as specified by Excel::Writer::XLSX. 
 
 =back
 
@@ -1274,6 +1369,12 @@ requested was not found.
 
 A file other than an Excel (XLSX) or tab-delimited text files (with tab, 
 tsv, or txt extensions) are recognized in ->new_from_file.
+
+=item No file specified in Actium::O::2DArray->new_from_file'
+
+=item No file specified in Actium::O::2DArray->new_from_xlsx'
+
+No filename, or a blank filename, was passed to these methods.
 
 =back
 
@@ -1314,6 +1415,9 @@ Add CSV (and possibly other file type) support to new_from_file.
 =item Spreadsheet::ParseXLSX
 
 =item Excel::Writer::XLSX
+
+The last three are required only by those methods that use them 
+(C<new_from_tsv>, C<new_from_xlsx>, and C<xlsx> respectively).
 
 =back
 
