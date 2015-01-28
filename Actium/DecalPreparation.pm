@@ -9,30 +9,108 @@ package Actium::DecalPreparation 0.008;
 use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::O::2DArray;
-use Spreadsheet::ParseXLSX;
 use Excel::Writer::XLSX;
 use Excel::Writer::XLSX::Utility;
-use Actium::Util('folded_in');
+use Actium::Util(qw[folded_in joinseries_ampersand]);
 
 use Sub::Exporter -setup => {
     exports => [
         qw(
-          make_decal_count write_decalcount_xlsx
+          make_decal_count   make_labels
+          write_decalcount_xlsx
           count_decals decals_of_stop read_decal_list
           )
     ]
 };
 
+sub make_labels {
+    my ( $input_file, $output_file, $actium_db ) = @_;
+
+    my $in_sheet          = Actium::O::2DArray->new_from_file($input_file);
+    my $lines_of_r        = $in_sheet->hash_of_row_elements( 0, 1 );
+    my $instructions_of_r = $in_sheet->hash_of_row_elements( 0, 3 );
+    my $db_decals_of_r = $actium_db->all_in_column_key(qw/Stops_Neue p_decals/);
+    my $desc_of_r =
+      $actium_db->all_in_column_key(qw/Stops_Neue c_description_fullabbr/);
+
+    my ( $decals_of_r, $found_decals_of_r ) =
+      decals_of_stop( $lines_of_r, $db_decals_of_r );
+
+    my @labels;
+    foreach my $stopid ( sort keys %{$lines_of_r} ) {
+
+        my $instructions = $instructions_of_r->{$stopid};
+        my $desc         = $desc_of_r->{$stopid};
+
+        if ( not $desc ) {
+            next if folded_in( $stopid => 'id', 'stop id', 'stopid' );
+            $desc = '[NO DESCRIPTION FOUND]';
+        }
+        
+        if ( not $instructions or $instructions =~ /\A\&/) {
+            
+            my $originstructions = $instructions;
+
+            my @found_decals =
+              grep { m/-/ } @{ $found_decals_of_r->{$stopid} };
+
+            if ( not @found_decals ) {
+                $instructions = "(NO DECALS FOUND)";
+            }
+            else {
+                $instructions = "Replace generic decals with "
+                  . joinseries_ampersand(@found_decals);
+
+                if ( @found_decals < @{ $decals_of_r->{$stopid} } ) {
+
+                    $instructions .= ". Leave other decals";
+
+                }
+            }
+            
+            if ($originstructions) {
+                $originstructions =~ s/^\&\s+//;
+                $instructions .= ". $originstructions";
+            }
+
+        }
+        elsif ( $instructions eq 'P' ) {
+            my @found_decals = @{ $found_decals_of_r->{$stopid} };
+            my $decal_pluralized = @found_decals > 1 ? 'decals' : 'decal';
+            $instructions =
+                "Place $decal_pluralized "
+              . joinseries_ampersand(@found_decals)
+              . " on the flag";
+        }
+        
+        push @labels, "$stopid   $desc\n$instructions";
+
+    }
+
+    my $out_sheet = Actium::O::2DArray->new_in_chunks( 2, @labels );
+    $out_sheet->ins_col( 1, $EMPTY_STR );
+
+    # blank column for space in the mdidle of the label
+    
+    my $format = { valign => 'vcenter'  };
+
+    return $out_sheet->xlsx(output_file => $output_file, format => $format );
+
+}
+
 sub make_decal_count {
 
     my ( $input_file, $output_file, $actium_db ) = @_;
 
-    my %lines_of = %{ read_decal_list($input_file) };
+    my $lines_of_r = Actium::O::2DArray->new_from_file($input_file)
+      ->hash_of_row_elements( 0, 1 );
+
+    # stop ID column, lines column
 
     my $db_decals_of_r = $actium_db->all_in_column_key(qw/Stops_Neue p_decals/);
 
     my ( $decals_of_r, $found_decals_of_r ) =
-      decals_of_stop( \%lines_of, $db_decals_of_r );
+      decals_of_stop( $lines_of_r, $db_decals_of_r );
 
     my $count_of_r = count_decals($found_decals_of_r);
 
@@ -149,7 +227,7 @@ sub decals_of_stop {
         next
           if $decals eq $EMPTY_STR
           and folded_in( $stopid => 'id', 'stop id', 'stopid' );
-          
+
         my ( @decals, @found_decals, @lines );
         @decals = split( /\s+/, $decals );
 
@@ -183,16 +261,6 @@ sub decals_of_stop {
     return ( \%decals_of, \%found_decals_of );
 
 }    ## tidy end: sub START
-
-sub read_decal_list {
-
-    my $input_file = shift;
-    return Actium::O::2DArray->new_from_file($input_file)
-      ->hash_of_row_elements( 0, 1 );
-
-    # stop ID column, lines column
-
-}
 
 1;
 
