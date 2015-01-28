@@ -35,7 +35,8 @@ use Sub::Exporter -setup => {
           chunks
           is_odd              is_even
           mean                population_stdev
-          all_eq              in
+          all_eq              
+          in                  folded_in
           halves
           flatten             hashref
           dumpstr
@@ -411,6 +412,16 @@ sub flatten {
 sub linegroup_of {
     my $line = shift;
     return $LINES_TO_COMBINE{$line} // $line;
+}
+
+sub folded_in {
+    
+    my $item    = fc(shift);
+    my $reftype = reftype( $_[0] );
+    if ( defined $reftype and $reftype eq 'ARRAY' ) {
+        return any { $item eq fc($_) } @{ $_[0] };
+    }
+    return any { $item eq fc($_) } @_;
 }
 
 sub in {

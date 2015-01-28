@@ -8,13 +8,44 @@ package Actium::DecalPreparation 0.008;
 
 use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');
+use Actium::O::2DArray;
 use Spreadsheet::ParseXLSX;
 use Excel::Writer::XLSX;
 use Excel::Writer::XLSX::Utility;
+use Actium::Util('folded_in');
 
-use Sub::Exporter -setup => { exports =>
-      [qw(write_decalcount_xlsx  count_decals decals_of_stop read_decal_list)]
+use Sub::Exporter -setup => {
+    exports => [
+        qw(
+          make_decal_count write_decalcount_xlsx
+          count_decals decals_of_stop read_decal_list
+          )
+    ]
 };
+
+sub make_decal_count {
+
+    my ( $input_file, $output_file, $actium_db ) = @_;
+
+    my %lines_of = %{ read_decal_list($input_file) };
+
+    my $db_decals_of_r = $actium_db->all_in_column_key(qw/Stops_Neue p_decals/);
+
+    my ( $decals_of_r, $found_decals_of_r ) =
+      decals_of_stop( \%lines_of, $db_decals_of_r );
+
+    my $count_of_r = count_decals($found_decals_of_r);
+
+    write_decalcount_xlsx(
+        output_file     => $output_file,
+        decals_of       => $decals_of_r,
+        found_decals_of => $found_decals_of_r,
+        count_of        => $count_of_r
+    );
+
+    return;
+
+}
 
 sub write_decalcount_xlsx {
     my %params          = @_;
@@ -114,6 +145,11 @@ sub decals_of_stop {
     foreach my $stopid ( sort keys %lines_of ) {
 
         my $decals = $db_decals_of_r->{$stopid} // $EMPTY_STR;
+
+        next
+          if $decals eq $EMPTY_STR
+          and folded_in( $stopid => 'id', 'stop id', 'stopid' );
+          
         my ( @decals, @found_decals, @lines );
         @decals = split( /\s+/, $decals );
 
@@ -151,43 +187,11 @@ sub decals_of_stop {
 sub read_decal_list {
 
     my $input_file = shift;
+    return Actium::O::2DArray->new_from_file($input_file)
+      ->hash_of_row_elements( 0, 1 );
 
-    my $parser   = Spreadsheet::ParseXLSX->new;
-    my $workbook = $parser->parse($input_file);
+    # stop ID column, lines column
 
-    my $sheet = $workbook->worksheet(0);
-
-    if ( !defined $workbook ) {
-        die $parser->error(), ".\n";
-    }
-
-    my ( $minrow, $maxrow ) = $sheet->row_range();
-    my ( $mincol, $maxcol ) = $sheet->col_range();
-
-    my (%lines_of);
-
-    foreach my $row ( $minrow .. $maxrow ) {
-
-        my @cells =
-          map { $sheet->get_cell( $row, $_ ) } $mincol, $mincol + 1;
-
-        foreach (@cells) {
-            if ( defined $_ ) {
-                $_ = $_->value;
-            }
-            else {
-                $_ = $EMPTY_STR;
-            }
-        }
-
-        my ( $stopid, $lines ) = @cells;
-        next if $stopid !~ /\d+/;
-
-        $lines_of{$stopid} = $lines;
-
-    }
-
-    return \%lines_of;
 }
 
 1;
