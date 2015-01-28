@@ -9,7 +9,7 @@
 use warnings;
 use 5.014;
 
-package Actium::Cmd::HTMLTables 0.006;
+package Actium::Cmd::HTMLTables 0.008;
 
 use Actium::Constants;
 use Actium::O::Sked;
