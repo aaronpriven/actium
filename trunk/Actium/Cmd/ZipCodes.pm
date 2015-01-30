@@ -1,5 +1,9 @@
 # /Actium/Cmd/ZipCodes.pm
 
+# Gets zip codes for stops from geonames.org
+
+# Subversion: $Id$
+
 package Actium::Cmd::ZipCodes 0.009;
 
 use Actium::Preamble;
@@ -25,23 +29,27 @@ sub START {
     my $client = REST::Client->new();
 
     my $stopinfo_r = $actium_db->all_in_columns_key(
-        qw/Stops_Neue p_zip_code h_loca_latitude h_loca_longitude/);
+        qw/Stops_Neue c_city p_zip_code h_loca_latitude h_loca_longitude/);
 
     #my $count = 0;
+    
+    say "h_stp_511_id\tp_zip_code";
+    
     foreach my $stopid ( keys %$stopinfo_r ) {
         next if $stopinfo_r->{$stopid}{p_zip_code};
+        #next if $stopinfo_r->{$stopid}{c_city} ne 'Oakland';
 
         my $lat  = $stopinfo_r->{$stopid}{h_loca_latitude};
-        my $long = $stopinfo_r->{$stopid}{h_loca_longitude};
-        next unless $lat and $long;
+        my $lng = $stopinfo_r->{$stopid}{h_loca_longitude};
+        next unless $lat and $lng;
 
         #$count++;
-        #last if $count > 5;    # testing
+        #last if $count > 700;    # testing
 
         my $request = 'http://api.geonames.org/findNearbyPostalCodesJSON?';
 
         my @args =
-          ( "lat=$lat", "lng=$long", 'maxRows=1', "username=$username" );
+          ( "lat=$lat", "lng=$lng", 'maxRows=1', "username=$username" );
 
         $request .= join( "&", @args );
 
@@ -50,12 +58,13 @@ sub START {
         $client->GET($request);
         my $json   = $client->responseContent();
         my $struct = decode_json($json);
-
+        
         my $zipcode = $struct->{postalCodes}[0]{postalCode};
+        
+        say "$stopid\t$zipcode"
+           if $zipcode;
 
-        say "$stopid\t$zipcode";
-
-        sleep( int( 1 + rand(2) ) );
+        sleep(6);
 
     }
 
