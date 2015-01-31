@@ -3,7 +3,7 @@
 #
 #  Subversion: $Id$
 
-package Actium::O::Notify 0.005;
+package Actium::O::Notify 0.009;
 use Actium::Moose;
 use Scalar::Util(qw[openhandle weaken refaddr reftype]);
 
@@ -278,15 +278,17 @@ has 'maxdepth' => (
     }
     
     sub minimum_severity {
-        state $cached;
-        $cached = min(values %SEVERITY_NUM_OF) unless defined $cached;
+        #state $cached;
+        #$cached = min(values %SEVERITY_NUM_OF) unless defined $cached;
+        state $cached = min(values %SEVERITY_NUM_OF);
         return $cached;
     }
         
         
     sub maximum_severity {
-        state $cached;
-        $cached = max(values %SEVERITY_NUM_OF) unless defined $cached;
+        #state $cached;
+        #$cached = max(values %SEVERITY_NUM_OF) unless defined $cached;
+        state $cached = max(values %SEVERITY_NUM_OF);
         return $cached;
     }
 
@@ -315,6 +317,7 @@ has '_notifications_r' => (
         notifications      => 'elements',
         _pop_notification  => 'pop',
         notification_level => 'count',
+        _first_notification => [ get => 0 ],
     },
     default => sub { [] },
 );
@@ -325,7 +328,6 @@ sub _push_notification {
 
     my $notifications_r = $self->_notifications_r;
 
-    #weaken($notification);
     push @{$notifications_r}, $notification;
     weaken ${$notifications_r}[-1];
 
@@ -414,130 +416,158 @@ sub _close_up_to {
 
 }
 
+sub DEMOLISH {
+    my $self = shift;
+    
+    my @notifications = $self->notifications;
+    if (@notifications) {
+        $self->_close_up_to($notifications[0]);
+    }
+    
+    return;
+    
+}
+
 
 1;
 
 __END__
 
+=encoding utf8
+
 =head1 NAME
 
-Term::Emit - Print with indentation, status, and closure
+Actium::O::Notify - Terminal notification with indentation, status, and closure
 
 =head1 VERSION
 
-This document describes Term::Emit version 0.0.4
+This documentation refers to version 0.009
 
 =head1 SYNOPSIS
 
-For a script like this:
+ use Actium::O::Notify;
+ 
+ my $notifier = Actium::O::Notify::->new();
+ 
+ my $task_note = $notifier->notify("Main Task");
+ ...
+ my $subtask_note = $notifier->notify("First Subtask");
+ ...
+ $subtask_note->done;
+ ...
+ my $another_subtask_note = $notifier->notify("Second Subtask");
+ ...
+ $another_subtask_note->done;
+ ...
+ $task_note->done;
+ 
+This results in this output:
 
-    use Term::Emit qw/:all/;
-    emit "System parameter updates";
-      emit "CLOCK_UTC";
-      #...do_something();
-      emit_ok;
+ Main task...
+     First Subtask..............................................[DONE]
+     Second Subtask.............................................[DONE]
+ Main task......................................................[DONE]
+ 
 
-      emit "NTP Servers";
-      #...do_something();
-      emit_error;
-
-      emit "DNS Servers";
-      #...do_something();
-      emit_warn;
-
-You get this output:
-
-   System parameter updates...
-     CLOCK_UTC................................................. [OK]
-     NTP Servers............................................... [ERROR]
-     DNS Servers............................................... [WARN]
-   System parameter updates.................................... [DONE]
-
+ 
 =head1 DESCRIPTION
 
-The C<Term::Emit> package is used to print balanced and nested messages
+Actium::O::Notify is used to to print balanced and nested messages
 with a completion status.  These messages indent easily within each other,
-autocomplete on scope exit, are easily parsed, may be bulleted, can be filtered,
+are easily parsed, may be bulleted, can be filtered,
 and even can show status in color.
 
 For example, you write code like this:
 
-    use Term::Emit qw/:all/;
-    emit "Reconfiguring the grappolator";
-    do_whatchamacallit();
-    do_something_else();
-
+    use Actium::O::Notify;
+    my $notifier = Actium::O::Notify::->new()
+    my $notification = $notifer->notify("Performing the task");
+    first_subtask($notifier);
+    second_subtask($notifier);
+    $notification->done;
+    
 It begins by printing:
 
-    Reconfiguring the grappolator...
+    Performing the task...
 
-Then it does "whatchamacallit" and "something else".  When these are complete
+Then it does the first subtask and the second subtask. When these are complete,
 it adds the rest of the line: a bunch of dots and the [DONE].
 
-    Reconfiguring the grappolator............................... [DONE]
-
-Your do_whatchamacallit() and do_something_else() subroutines may also C<emit>
+    Performing the task......................................... [DONE]
+    
+Your subroutines first_subtask() and second_subtasks() subroutines may also 
+issue a notification about
 what they're doing, and indicate success or failure or whatever, so you
 can get nice output like this:
 
-    Reconfiguring the grappolator...
-      Processing whatchamacallit................................ [WARN]
-      Fibulating something else...
-        Fibulation phase one.................................... [OK]
-        Fibulation phase two.................................... [ERROR]
-        Wrapup of fibulation.................................... [OK]
-    Reconfiguring the grappolator............................... [DONE]
+    Performing the task...
+      Performing a subtask ..................................... [WARN]
+      A second subtask...
+        Second subtask, phase one............................... [OK]
+        Second subtask, phase two............................... [ERROR]
+      Wrapup of second subtask.................................. [OK]
+    Performing the task......................................... [DONE]
 
-
-A series of examples will make I<Term::Emit> easier to understand.
+A series of examples will make Actium::O::Notify easier to understand.
 
 =head2 Basics
 
-    use Term::Emit ':all';
-    emit "Frobnicating the biffolator";
-    sleep 1; # simulate the frobnication process
-    emit_done;
+    use Actium::O::Notify;
+    my $notifier = Actium::O::Notify::->new();
+    my $notification = $notifier->notify("Performing a task");
+    sleep 1; # simulate task performance
+    $notification->done;
 
 First this prints:
 
-    Frobnicating the biffolator...
+    Performing a task...
 
-Then after the "frobnication" process is complete, the line is
+Then after the task process is complete, the line is
 continued so it looks like this:
 
-    Frobnicating the biffolator................................ [DONE]
+    Performing a task........................................... [DONE]
+    
+Actium::O::Notify works by creating two sets of objects. 
+The I<notifier> represents
+the destination of the notifications, such as the terminal, or an output file.
+The I<notification> object represents a single note, such as a note about
+one particular task or subtask. Methods on these objects are used to issue
+notifications and complete them.
+    
+=head2 Completion upon destruction
 
-=head2 Autocompletion
-
-In the above example, we end with a I<emit_done> call to indicate that
-the thing we told about (I<Frobnicating the biffolator>) is now done.
-We don't need to do the C<emit_done>.  It will be called automatically
-for us when the current scope is exited (for this example: when the program ends).
+In the above example, we end with a I<< ->done > call to indicate that
+the thing we told about (I<Performing a task>) is now done.
+We don't need to do the C<< ->done >.  It will be called automatically
+for us when the notification object (in this example, held in the variable 
+C<$notification>) is destroyed, such as when the variable goes out of scope 
+(for this example: when the program ends).
 So the code example could be just this:
 
-    use Term::Emit ':all';
-    emit "Frobnicating the biffolator";
-    sleep 1; # simulate the frobnication process
+    use Actium::O::Notify;
+    my $notifier = Actium::O::Notify::->new();
+    my $notification = $notifier->notify("Performing a task");
+    sleep 1; # simulate task performance
 
-and we'd get the same results.  
+and we'd get the same results (assuming the program ends there).  
 
-Yeah, autocompletion may not seem so useful YET,
-but hang in there and you'll soon see how wonderful it is.
+Completion upon destruction is useful especially in circumstances where the
+program exits less than cleanly, but also simply when it is convenient to avoid
+additional method calls at the end of a function.
 
 =head2 Completion Severity
 
 There's many ways a task can complete.  It can be simply DONE, or it can
 complete with an ERROR, or it can be OK, etc.  These completion codes are
-called the I<severity code>s.  C<Term::Emit> defines many different severity codes.
-The severity codes are borrowed from the UNIX syslog subsystem,
-plus a few from VMS and other sources.  They should be familiar to you.
+called the I<severity code>s.  C<Actium::O::Notify> defines many different 
+severity codes.
 
 Severity codes also have an associated numerical value.
-This value is called the I<severity level>.
-It's useful for comparing severities to eachother or filtering out
+This value is called the I<severity number>.
+It's useful for comparing severities to each other or filtering out
 severities you don't want to be bothered with.
 
-Here are the severity codes and their severity values.
+Here are the severity codes and their severity numbers.
 Those on the same line are considered equal in severity:
 
     EMERG => 15,
@@ -557,91 +587,102 @@ You may make up your own severities if what you want is not listed.
 Please keep the length to 5 characters or less, otherwise the text may wrap.
 Any severity not listed is given the value 1.
 
-To complete with a different severity, call C<emit_done> with the
+To complete with a different severity, call C<< ->done >> with the
 severity code like this:
 
-    emit_done "WARN";
+    $notifier->done("WARN");
 
-C<emit_done> returns with the severity value from the above table,
-otherwise it returns 1, unless there's an error in which case it
+C<done> and its equivalents return with the severity number from the above 
+table, otherwise it returns 1, unless there's an error in which case it
 returns false.
 
-As a convienence, it's easier to use these functions which do the same thing,
+As a convienence, it's easier to use these methods which do the same thing,
 only simpler:
 
-     Function          Equivalent                       Usual Meaning
-    ----------      -----------------      -----------------------------------------------------
-    emit_emerg      emit_done "EMERG";     syslog: Off the scale!
-    emit_alert      emit_done "ALERT";     syslog: A major subsystem is unusable.
-    emit_crit       emit_done "CRIT";      syslog: a critical subsystem is not working entirely.
-    emit_fail       emit_done "FAIL";      Failure
-    emit_fatal      emit_done "FATAL";     Fatal error
-    emit_error      emit_done "ERROR";     syslog 'err': Bugs, bad data, files not found, ...
-    emit_warn       emit_done "WARN";      syslog 'warning'
-    emit_note       emit_done "NOTE";      syslog 'notice'
-    emit_info       emit_done "INFO";      syslog 'info'
-    emit_ok         emit_done "OK";        copacetic
-    emit_debug      emit_done "DEBUG";     syslog: Really boring diagnostic output.
-    emit_notry      emit_done "NOTRY";     Untried
-    emit_unk        emit_done "UNK";       Unknown
-    emit_yes        emit_done "YES";       Yes
-    emit_no         emit_done "NO";        No
+ Method    Equivalent      Usual Meaning
+ -------   -------------   -----------------------------------------------------
+ d_emerg   done "EMERG";   syslog: Off the scale!
+ d_alert   done "ALERT";   syslog: A major subsystem is unusable.
+ d_crit    done "CRIT";    syslog: a critical subsystem is not working entirely.
+ d_fail    done "FAIL";    Failure
+ d_fatal   done "FATAL";   Fatal error
+ d_error   done "ERROR";   syslog 'err': Bugs, bad data, files not found, ...
+ d_warn    done "WARN";    syslog 'warning'
+ d_note    done "NOTE";    syslog 'notice'
+ d_info    done "INFO";    syslog 'info'
+ d_ok      done "OK";      copacetic
+ d_debug   done "DEBUG";   syslog: Really boring diagnostic output.
+ d_notry   done "NOTRY";   tried
+ d_unk     done "UNK";     Unknown
+ d_yes     done "YES";     Yes
+ d_no      done "NO";      No
 
 We'll change our simple example to give a FATAL completion:
 
-    use Term::Emit ':all';
-    emit "Frobnicating the biffolator";
-    sleep 1; # simulate the frobnication process
-    emit_fatal;
+    use Actium::O::Notify;
+    my $notifier = Actium::O::Notify::->new();
+    my $notification = $notifier->notify("Performing a task");
+    sleep 1; # simulate task performance
+    $notification->d_fatal;
 
 Here's how it looks:
 
-    Frobnicating the biffolator................................ [FATAL]
+    Performing a task........................................... [FATAL]
 
 =head3 Severity Colors
 
-A spiffy little feature of C<Term::Emit> is that you can enable colorization of the
+One feature of C<Actium::O::Notify> is that you can enable colorization of the
 severity codes.  That means that the severity code inside the square brackets
-is printed in color, so it's easy to see.  The standard ANSI color escape sequences
-are used to do the colorization.
+is printed in color, so it's easy to see.  
+The module Term::ANSIColor is used to do the colorization.
 
 Here's the colors:
 
-    EMERG    bold red on black
-    ALERT    bold magenta
-    CRIT     bold red
-    FAIL     bold red
-    FATAL    bold red
-    ERROR    red
-    WARN     yellow (usually looks orange)
-    NOTE     cyan
-    INFO     green
-    OK       bold green
-    DEBUG    grey on yellow/orange
-    NOTRY    black on grey
-    UNK      bold white on grey
-    DONE     default font color (unchanged)
-    YES      green
-    NO       red
+        EMERG    bold blink bright white on red
+        ALERT    bold blink bright yellow on red
+        CRIT     bold bright white on red
+        FAIL     bold bright white on red
+        FATAL    bold bright white on red
+        ERR      bold bright yellow on red
+        ERROR    bold bright yellow on red
+        WARN     bold black on bright yellow
+        NOTE     bold bright white on blue
+        INFO     green
+        OK       green
+        DEBUG    bright white on bright black
+        NOTRY    bold bright white on magenta
+        UNK      bold bright yellow on magenta
+        YES      green
+        NO       bright red
+        
+("Bold black" is ANSI for gray.)
 
-To use colors, do this when you I<use> Term::Emit:
+To use colors on all notifications, pass 'colorize => 1' as an argument 
+to the C<< ->new >> call:
 
-    use Term::Emit ":all", {-color => 1};
-        -or-
-    Term::Emit::setopts(-color => 1);
+    my $notifier = Actium::O::Notify::->new({colorize => 1});
 
-Run sample003.pl, included with this module, to see how it looks on
+Or, invoke the set_color method on the notifier, once it's created:
+
+    $notifier->set_color;
+    
+Notifications also accept the colorize argument or the set_color method,
+so that individual notifications can be colorized or not.
+
+Run sample003.pl, included with this module, to see how the colors look on
 your terminal.
+
 
 =head2 Nested Messages
 
-Nested calls to C<emit> will automatically indent with eachother.
+Nested notifications will automatically indent with each other.
 You do this:
 
-    use Term::Emit ":all";
-    emit "Aaa";
-    emit "Bbb";
-    emit "Ccc";
+    use Actium::O::Notify;
+    my $notifier = Actium::O::Notify::->new();
+    my $aaa = $notifier->notify("Aaa")
+    my $bbb = $notifier->notify("Bbb")
+    my $ccc = $notifier->notify("Ccc")
 
 and you'll get output like this:
 
@@ -655,183 +696,178 @@ Notice how "Bbb" is indented within the "Aaa" item, and that "Ccc" is
 within the "Bbb" item.  Note too how the Bbb and Aaa items were repeated
 because their initial lines were interrupted by more-inner tasks.
 
-You can control the indentation with the I<-step> attribute,
+You can control the indentation with the I<step> attribute,
 and you may turn off or alter the repeated text (Bbb and Aaa) as you wish.
-
-=head3 Nesting Across Processes
-
-If you write a Perl script that uses Term::Emit, and this script invokes other
-scripts that also use Term::Emit, some nice magic happens.  The inner scripts become
-aware of the outer, and they "nest" their indentation levels appropriately.
-Pretty cool, eh?
 
 =head3 Filtering-out Deeper Levels (Verbosity)
 
 Often a script will have a verbosity option (-v usually), that allows
-a user to control how much output to see.  Term::Emit makes this easy
-with the -maxdepth option.
+a user to control how much output to see.  Actium::O::Notify handles this
+with the I<maxdepth> attribute and C<set_maxdepth> method.
 
 Suppose your script has the verbose option in $opts{verbose}, where 0 means
 no output, 1 means some output, 2 means more output, etc.  In your script,
 do this:
 
-    Term::Emit::setopts(-maxdepth => $opts{verbose});
+    my $notifier = Actium::O::Notify::->new(maxdepth => $opts[verbose});
+
+or this:
+
+    $notifier->set_maxdepth ($opts{verbose});
 
 Then output will be filtered from nothing to full-on based on the verbosity setting.
 
 =head4 ...But Show Severe Messages
 
-If you're using -maxdepth to filter messages, sometimes you still want 
+If you're using maxdepth to filter messages, sometimes you still want 
 to see a message regardless of the depth filtering - for example, a severe error.
-To set this, use the -showseverity option.  All messages that have
+To set this, use the override_severity option.  All messages that have
 at least that severity value or higher will be shown, regardless of the depth 
 filtering.  Thus, a better filter would look like:
 
-    Term::Emit::setopts(-maxdepth     => $opts{verbose},
-                        -showseverity => 7);
+    my $notifier = Actium::O::Notify::->new(
+        maxdepth          => $opts[verbose} ,
+        override_severity => 7,
+      );
 
 See L</Completion Severity> above for the severity numbers.
-Note that the severity is rolled up to the deepest message filtered by
-the -maxdepth setting; any -reason text is hooked to that level.
 
 =head2 Closing with Different Text
 
 Suppose you want the opening and closing messages to be different.
-Such as I<"Starting gompchomper"> and I<"End of the gomp">.
+Such as I<"Beginning task"> and I<"Ending task">.
 
-To do this, use the C<-closetext> option, like this:
+To do this, use the I<closetext> attribute or C<set_closetext> method:
 
-    emit {-closetext => "End of the gomp"}, "Starting gompchomper";
+    $notification = $notifier->notify(
+         "Beginning task" ,
+         {closetext => "Ending task"},
+      );
+      
+Or:
+      
+    $notify->set_closetext("Ending task");
+    
+Or:
+    
+    $notify->done({closetext => "Ending task"});
 
 Now, instead of the start message being repeated at the end, you get
 custom end text.
 
-A convienent shorthand notation for I<-closetext> is to instead call
-C<emit> with a pair of strings as an array reference, like this:
+A convienent shorthand notation for I<closetext> is to instead call
+C<notify> with a pair of strings as an array reference, like this:
 
-    emit ["Start text", "End text"];
+    $notification=$notifier->notify( ["Start text", "End text"] );
 
 Using the array reference notation is easier, and it will override
-the -closetext option if you use both.  So don't use both.
+the closetext option if you use both.  So don't use both.
 
-=head3 Changing the 'close text' afterwards
-
-*** TODO:  Provide an easy way to do this! ***
-
-OK, you got me!  I didn't think of this case when I built this module.
-
-It's not easy to do now, even with access to the base object.
-For now, I recommend you use -reason and give extra reason text.
-When I fix it, it'll probably take the form of setopts(-closetext => "blah")
-and emit_done {-closetext=>"blah"};
-
-=head2 Closing with Different Severities, or... Why Autocompletion is Nice
+=head2 Closing with Different Severities (Completion Upon Destruction)
 
 So far our examples have been rather boring.  They're not vey real-world.
 In a real script, you'll be doing various steps, checking status as you go,
 and bailing out with an error status on each failed check.  It's only when
 you get to the bottom of all the steps that you know it's succeeded.
-Here's where emit becomes more useful:
+Here's where completion upon destruction becomes more useful:
 
-    use Term::Emit qw/:all/, {-closestat => "ERROR"};
-    emit "Juxquolating the garfibnotor";
-    return
-        if !do_kibvoration();
-    return
-        if !do_rumbalation();
-    $fail_reason = do_major_cleanup();
-    return emit_warn {-reason => $fail_reason}
-         if $fail_reason;
-    emit_ok;
+    #!/usr/bin/env perl
+    # example.pl
 
-In this example, we set C<-closestat> to "ERROR".  This means that if we
-exit scope without doing a emit_done() (or its equivalents), a emit_error()
-will automatically be called.
+    use warnings; 
+    use strict;
 
-Next we do_kibvoration and do_runbalation (whatever these are!).
-If either fails, we simply return.  Automatically then, the emit_error()
+    use Actium::O::Notify;
+    
+    my $notifier = Actium::O::Notify::->new({default_closestat => "ERROR");
+    primary_task();
+    
+    sub primary_task {
+
+       $note_main = $notifier->notify( "Primary task");
+       return
+           if !do_a_subtask();
+       return
+           if !do_another_subtask();
+       $fail_reason = do_major_cleanup();
+       return $note_main->d_warn ({reason => $fail_reason})
+            if $fail_reason;
+       $note_main->d_ok;
+    
+    }
+    
+(Note that "$notifier" is set at file scope, which means it is available to
+subroutines further in the same file.)
+
+In this example, we set C<default_closestat> to "ERROR".  This means that if any
+notification object is destroyed, presumably because the notification variable
+went out of scope without doing a C<< ->done >> (or its equivalents), 
+a C << ->d_error >> will automatically be called.
+
+Next we do_a_subtask and do_another_subtask (whatever these are!).
+If either fails, we simply return.  Automatically then, the C<< ->d_error >>
 will be called to close out the context.
 
 In the third step, we do_major_cleanup().  If that fails, we explicitly
-close out with a warning (the emit_warn), and we pass some reason text.
+close out with a warning (the C<< ->d_warn >>), and we pass some reason text.
 
-If we get thru all three steps, we close out with an OK.
-
+If we get through all three steps, we close out with an OK.
 
 =head2 Output to Other File Handles
 
-By default, C<Term::Emit> writes its output to STDOUT (or whatever select()
-is set to).  You can tell C<Term::Emit> to use another file handle like this:
+By default, Actium::O::Notify writes its output to STDERR 
+You can tell it to use another file handle like this:
 
-    use Term::Emit qw/:all/, {-fh => *LOG};
-        -or-
-    Term::Emit::setopts(-fh => *LOG);
+    open ($fh, '>', 'some_file.txt') or die;
+    my $notifier = Actium::O::Notify::->new({fh => $fh});
+    
+Alternatively, if you pass a scalar reference in the fh attribute, 
+the output will be appended to the string at the reference:
 
-Individual "emit" lines may also take a file handle as the first
-argument, in a manner similar to a print statement:
+    my $output = "Notification output:\n";
+    my $notifier = Actium::O::Notify::->new({fh => \$output});
+    
+If there is only one argument to new(), it is taken as the "fh" attribute:
 
-    emit *LOG, "this", " and ", "that";
+    open ($fh, '>', 'some_file.txt') or die;
+    my $notifier = Actium::O::Notify::->new($fh);
+    # same as ->new({ fh => $fh })
+    
+The output destination is determined at the creation of the notifier, and
+cannot be changed.
 
-Note the required comma after the C<*LOG> -- if it was a C<print> you
-would omit the comma.
+=head2 Return Status
 
-=head3 Output to Strings
-
-If you give Term::Emit a scalar (string) reference instead of a file handle,
-then Term::Emit's output will be appended to this string.
-
-For example:
-
-    my $out = "";
-    use Term::Emit qw/:all/, {-fh => \$out};
-        -or-
-    Term::Emit::setopts(-fh => \$out);
-
-Individual "emit" lines may also take a scalar reference as the first
-argument:
-
-    emit \$out, "this ", " and ", "that";
-
-=head2 Output Independence
-
-C<Term::Emit> separates output contexts by file handle.  That means the
-indentation, autoclosure, bullet style, width, etc. for any output told
-to STDERR is independent of output told to STDOUT, and independent
-of output told to a string.  All output to a string is lumped together
-into one context.
-
-=head3 Return Status
-
-Like C<print>, the C<emit> function returns a true value on success
-and false on failure.  Failure can occur, for example, when attempting
-to emit to a closed filehandle.
-
-To get the return status, you must assign into a scalar context,
-not a list context:
-
-      my $stat;
-      $stat = emit "Whatever";      # OK. This puts status into $stat
-      ($stat) = emit "Whatever";    # NOT what it looks like!
-
-In list context, the closure for C<emit> is bound to the list variable's
-scope and autoclosure is disabled.  Probably not what you wanted.
+Methods that attempt to write to the output (including C<< ->notify >> and
+C<< ->done >> and its equivalents) return
+a true value on success and false on failure.  Failure can occur, 
+for example, when attempting to write to a closed filehandle.
 
 =head2 Message Bullets
 
 You may preceed each message with a bullet.
 A bullet is usually a single character
-such as a dash or an asterix, but may be multiple characters.
+such as a dash or an asterisk, but may be multiple characters.
 You probably want to include a space after each bullet, too.
 
 You may have a different bullet for each nesting level.
 Levels deeper than the number of defined bulelts will use the last bullet.
 
-Define bullets by passing an array reference of the bullet strings
-with C<-bullet>.  If you want the bullet to be the same for all levels,
+Bullets can be set by passing an array reference of the bullet strings
+as the I<bullets> attribute, or to the C<set_bullets> method, to the notifier.
+
+If you want the bullet to be the same for all levels,
 just pass the string.  Here's some popular bullet definitions:
 
-    -bullets => "* "
-    -bullets => [" * ", " + ", " - ", "   "]
+If you want the bullet to be the same for all levels,
+just pass the string.  Here's some popular bullet definitions:
+
+    bullets => "* "
+    bullets => [" * ", " + ", " - ", "   "]
+    
+Also, a bullet can be changed for a particular notification with the 
+I<bullet> attribute to C<< ->notify >> or the C<< ->set_bullet >> method 
+on the notification object.
 
 Here's an example with bullets turned on:
 
@@ -857,27 +893,119 @@ Here's an example with bullets turned on:
  +   Loading crontab jobs...remcon............................ [OK]
  * RDA CAS Setup 8.10-2....................................... [DONE]
 
-=head2 Mixing Term::Emit with print'ed Output
+If not all bullets are the same width (according to the Unicode::GCString 
+module), the bullets will be made the same width by adding spaces to the right.
 
-Internally, Term::Emit keeps track of the output cursor position.  It only
-knows about what it has spewed to the screen (or logfile or string...).
-If you intermix C<print> statements with your C<emit> output, then things
-will likely get screwy.  So, you'll need to tell Term::Emit where you've
+=head2 Mixing Actium::O::Notify with other output
+
+Internally, Actium::O::Notify keeps track of the output cursor position.  
+It only
+knows about what it has sent to the output destination. 
+If you mix C<print> or C<say> statements, or other output methods, with your 
+Actium::O::Notify output, then things
+will likely get screwy.  So, you'll need to tell Actium::O::Notify where you've
 left the cursor.  Do this by setting the I<-pos> option:
 
-    emit "Skrawning all xyzons";
+    $note = $notifier->notify("Doing something");
     print "\nHey, look at me, I'm printed output!\n";
-    Term::Emit::setopts (-pos => 0);  # Tell where we left the cursor
+    $note->set_position(0);  # Tell where we left the cursor
+
+=head1 CLASS METHOD
+
+=over
+
+=item B<Actium::O::Notify::->new(...)>
+
+This is the new() constructor inherited from Moose by Actium::O::Notify. 
+It creates a new Notify object: the object associated
+with a particular output.  
+
+It accepts various attributes, which are listed below along with the methods
+that access them.  Attributes can be specified as hash or hash reference.
+However, if the first argument is a file handle or reference to a scalar,
+that will be taken as the output destination for this notifier.
+If no arguments are passed, it will use STDERR as the output.
+
+=back
+
+=head2 Attributes
+
+=over
 
 
-=head1 EXPORTS
 
-Nothing is exported by default.  You'll want to do one of these:
+=back
 
-    use Term::Emit qw/emit emit_done/;    # To get just these two functions
-    use Term::Emit qw/:all/;              # To get all functions
+=head1 DIAGNOSTICS
 
-Most of the time, you'll want the :all form.
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties
+that can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 PROGRAM NOTES
+
+Actium::O::Notify is basically a rewrite of Term::Emit, by Steve Roscio. 
+Term::Emit is great, but it is dependent on Scope::Upper, which hasn't always
+compiled cleanly in my installation, and also Term::Emit uses a number of
+global variables, which save typing but mean that its objects aren't 
+self-contained. Actium::O::Notify is designed to do a lot of what 
+Term::Emit does, but in a somewhat cleaner way, even if it means there's a bit
+more typing involved.
+
+Actium::O::Notify does use Moose, which probably would seem odd for a
+command-line program. Since many other Actium programs also use Moose,
+this is a relatively small loss in this case. If this ever becomes 
+a standalone module it should probably use something else.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2015
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
+
+
+
+
+
+
+
+
+
+
+
 
 
 =head1 SUBROUTINES/METHODS
@@ -1237,63 +1365,7 @@ to determine your device's width:
       .
       .
 
-=head1 CONFIGURATION AND ENVIRONMENT
 
-I<Term::Emit> requires no configuration files or environment variables.
-However, it does set environment variables with this form of name:
-
-    term_emit_fd#_th#
-
-This envvar holds the current level of messages (represented
-visually by indentation), so that indentation can be smoothly
-maintained across process contexts.
-
-In this envvar's name, fd# is the fileno() of the output file handle to which
-the messages are written.  By default output is to STDERR,
-which has a fileno of 2, so the envvar would be C<term_emit_fd2>.
-If output is being written to a string (C<<-fh => \$some_string>>),
-then fd# is the string "str", for example C<term_emit_fdstr>
-
-When Term::Emit is used with threads, the thread ID is placed
-in th# in the envvar.
-Thus for thread #7, writing Term::Emit messages to STDERR, the envvar
-would be C<term_emit_fd2_th7>.
-For the main thread, th# and the leading underscore are omitted.
-
-Under normal operation, this environment variable is deleted
-before the program exits, so generally you won't see it.
-
-Note: If your program's output seems excessively indented, it may be
-that this envvar has been left over from some other aborted run.
-Check for it and delete it if found.
-
-=head1 DEPENDENCIES
-
-This pure-Perl module depends upon Scope::Upper.
-
-=head1 DIAGNOSTICS
-
-None.
-
-=head1 INCOMPATIBILITIES
-
-None reported.
-
-
-=head1 BUGS AND LIMITATIONS
-
-=for author to fill in:
-    A list of known problems with the module, together with some
-    indication Whether they are likely to be fixed in an upcoming
-    release. Also a list of restrictions on the features the module
-    does provide: data types that cannot be handled, performance issues
-    and the circumstances in which they may arise, practical
-    limitations on the size of data sets, special cases that are not
-    (yet) handled, etc.
-
-Limitation:  Output in a threaded environment isn't always pretty.
-It works OK and won't blow up, but indentation may get a bit screwy.
-I'm workin' on it.
 
 Bugs: No bugs have been reported.
 
@@ -1335,69 +1407,3 @@ L<Term::ProgressBar|Term::ProgressBar>
 =head1 AUTHOR
 
 Steve Roscio  C<< <roscio@cpan.org> >>
-
-=head1 ACKNOWLEDGEMENTS
-
-Thanx to Paul Vencel for his review of this package, and to Jimmy Maguire
-for his namespace advice.
-
-=head1 LICENSE AND COPYRIGHT
-
-Copyright (c) 2009-2012, Steve Roscio C<< <roscio@cpan.org> >>.  All rights reserved.
-
-This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See L<perlartistic>.
-
-
-=head1 DISCLAIMER OF WARRANTY
-
-Because this software is licensed free of charge, there is no warranty
-for the software, to the extent permitted by applicable law.  Except when
-otherwise stated in writing the copyright holders and/or other parties
-provide the software "as is" without warranty of any kind, either
-expressed or implied, including, but not limited to, the implied
-warranties of merchantability and fitness for a particular purpose.  The
-entire risk as to the quality and performance of the software is with
-you.  Should the software prove defective, you assume the cost of all
-necessary servicing, repair, or correction.
-
-In no event unless required by applicable law or agreed to in writing
-will any copyright holder, or any other party who may modify and/or
-redistribute the software as permitted by the above licence, be
-liable to you for damages, including any general, special, incidental,
-or consequential damages arising out of the use or inability to use
-the software (including but not limited to loss of data or data being
-rendered inaccurate or losses sustained by you or third parties or a
-failure of the software to operate with any other software), even if
-such holder or other party has been advised of the possibility of
-such damages.
-
-=for me to do:
-    * Get this to work back at 5.006
-    * Validate any given options
-    * Fixup anonymous literals
-    * Hmmm... how to setopts() the default -fh  vs. setopts() for a particular -fh?
-    * Make a 'print' wrapper to keep track of position,
-       and POD about interaction with print
-       then a function to reset the internal position (or use a setopts() attr)
-    * Make emit() use indirect object notation so it's a drop-in for print
-        ** But do we want the overhead of IO::Handle?
-    * Timestamps - maybe do in another module?
-        Allow timestamps in something akin to sprintf format within the strings.
-        IE, solve this problem:
-            emit ["Starting Frobnication process at %T",
-                  "Frobnication process complete at %T"];
-    * emit_more : another emit at the same level as the prior?
-       for example:
-           emit "yomama";
-           emit_more "yopapa";  # does not start a new context, like emit_text
-             but at upper level (or call it "yell"?)
-    * Thread support
-    * Add a "Closing Silently" section up around the closing w/diff text section.
-    * Read envvars for secondary defaults, so qx() wrapping looks consistent.
-    * Envvars for color, width, maxdepth, etc...
-       ** export the envvars (in setopts()) so wrapped scripts pick 'em up
-       ** clean up the envvars, iff we set 'em
-       ** make 'em work by fd# as well, not just default.  IE, have
-            term_emit_color apply to the default fd, but
-            term_emit_fd2_color applies to stdout.  And so on.
