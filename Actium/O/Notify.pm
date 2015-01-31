@@ -17,6 +17,48 @@ const my $FALLBACK_CLOSESTAT => 'DONE';
 const my $DEFAULT_TERM_WIDTH => 80;
 const my $DEFAULT_STEP       => 2;
 
+#########################################################
+### EXPORTS
+
+use Sub::Exporter -setup => {
+  exports => [ notify => \'_build_notify' ,
+             note => \'_build_notify' 
+           , 'default_notifier'  
+]};
+
+my $default_notifier;
+
+sub _build_notify {
+   my ($class, $name, $arg) = @_;
+
+   if (defined $arg and scalar keys %$arg) {
+      if ($default_notifier) { 
+         croak 
+          qq[Arguments given in "use Actium::O::Notify (notify => {args})"] 
+          . qq[but the default notifier has already been initialized];
+     
+         } 
+
+         $default_notifier = __PACKAGE__->new($arg);
+         return sub {
+              return $default_notifier->notify(@_);
+         };
+   }
+
+   return sub {
+      $default_notifier = __PACKAGE__->new()
+          if not $default_notifier;
+      return $default_notifier->notify(@_);
+   }
+
+}
+
+sub default_notifier {
+   $default_notifier = __PACKAGE__->new()
+       if not $default_notifier;
+   return $default_notifier;
+}
+
 #####################################################################
 ## FILEHANDLE, AND OBJECT CONSTRUCTION SETTING FILEHANDLE SPECIALLY
 
@@ -461,15 +503,31 @@ This documentation refers to version 0.009
  ...
  $task_note->done;
  
-This results in this output:
+This results in this output to STDOUT:
 
  Main task...
      First Subtask..............................................[DONE]
      Second Subtask.............................................[DONE]
  Main task......................................................[DONE]
- 
 
- 
+There are procedural shortcuts for output to a default destination:
+
+ use Actium::O::Notify(notify);
+
+ my $task_note = notify("Main Task");
+ ...
+ my $subtask_note = notify("First Subtask");
+ ...
+ $subtask_note->done;
+ ...
+ my $another_subtask_note = notify("Second Subtask");
+ ...
+ $another_subtask_note->done;
+ ...
+ $task_note->done;
+
+This produces the same output as before.
+
 =head1 DESCRIPTION
 
 Actium::O::Notify is used to to print balanced and nested messages
@@ -512,6 +570,8 @@ A series of examples will make Actium::O::Notify easier to understand.
 
 =head2 Basics
 
+Here is a basic example of usage:
+
     use Actium::O::Notify;
     my $notifier = Actium::O::Notify::->new();
     my $notification = $notifier->notify("Performing a task");
@@ -531,9 +591,46 @@ Actium::O::Notify works by creating two sets of objects.
 The I<notifier> represents
 the destination of the notifications, such as the terminal, or an output file.
 The I<notification> object represents a single note, such as a note about
-one particular task or subtask. Methods on these objects are used to issue
+one particular task or subtask.  Methods on these objects are used to issue
 notifications and complete them.
-    
+
+The notifier object is created by the C<new> class method of C<Actium::O::Notify>.
+The notification object is created by object methods of the notifier object:
+C<< $notifier->notify >> or C<< $notifier->note >> (these are identical).
+
+=head2 Exported subroutines: shortcut to a default output destination
+
+Since most output from Actium::O::Notify is to a single default
+output destination for that process (typically STDERR), some
+procedural shortcuts exist to make it easier to send notifications to a
+default output.
+
+The C<notify> or C<note> routines (two names for the same routine)
+establish the default notification object, and call the ->notify
+method on that object with your arguments.
+
+To use the shortcut, specify it in the import list in the C<use
+Actium::O::Notify> call.  
+C<< "use Actium::O::Notify ( qw(notify))" >> 
+will establish a notifier object with STDERR as the output,
+and install a sub called C<notify> in your package that will create
+the notification object. Therefore,
+
+ use Actium::O::Notify ( qw(notify) );
+ my $note = notify ("Doing a task");
+
+works basically the same as
+
+ use Actium::O::Notify;
+ my $notifier = Actium::O::Notify::->new();
+ my $note = $notifier->notify ("Doing a task");
+
+except that in the former case, the notifier object is stored in
+the Actium::O::Notify class and will be reused by other calls to
+C<notify>, from this module or any other. 
+This avoids the need to pass the notifier object as an
+argument to routines in other modules.
+ 
 =head2 Completion upon destruction
 
 In the above example, we end with a I<< ->done > call to indicate that
@@ -599,23 +696,23 @@ returns false.
 As a convienence, it's easier to use these methods which do the same thing,
 only simpler:
 
- Method    Equivalent      Usual Meaning
- -------   -------------   -----------------------------------------------------
- d_emerg   done "EMERG";   syslog: Off the scale!
- d_alert   done "ALERT";   syslog: A major subsystem is unusable.
- d_crit    done "CRIT";    syslog: a critical subsystem is not working entirely.
- d_fail    done "FAIL";    Failure
- d_fatal   done "FATAL";   Fatal error
- d_error   done "ERROR";   syslog 'err': Bugs, bad data, files not found, ...
- d_warn    done "WARN";    syslog 'warning'
- d_note    done "NOTE";    syslog 'notice'
- d_info    done "INFO";    syslog 'info'
- d_ok      done "OK";      copacetic
- d_debug   done "DEBUG";   syslog: Really boring diagnostic output.
- d_notry   done "NOTRY";   tried
- d_unk     done "UNK";     Unknown
- d_yes     done "YES";     Yes
- d_no      done "NO";      No
+ Method   Equivalent     Usual Meaning
+ -------  -------------  -----------------------------------------------------
+ d_emerg  done "EMERG";  syslog: Off the scale!
+ d_alert  done "ALERT";  syslog: A major subsystem is unusable.
+ d_crit   done "CRIT";   syslog: a critical subsystem is not working entirely.
+ d_fail   done "FAIL";   Failure
+ d_fatal  done "FATAL";  Fatal error
+ d_error  done "ERROR";  syslog 'err': Bugs, bad data, files not found, ...
+ d_warn   done "WARN";   syslog 'warning'
+ d_note   done "NOTE";   syslog 'notice'
+ d_info   done "INFO";   syslog 'info'
+ d_ok     done "OK";     copacetic
+ d_debug  done "DEBUG";  syslog: Really boring diagnostic output.
+ d_notry  done "NOTRY";  tried
+ d_unk    done "UNK";    Unknown
+ d_yes    done "YES";    Yes
+ d_no     done "NO";     No
 
 We'll change our simple example to give a FATAL completion:
 
@@ -672,7 +769,6 @@ so that individual notifications can be colorized or not.
 Run sample003.pl, included with this module, to see how the colors look on
 your terminal.
 
-
 =head2 Nested Messages
 
 Nested notifications will automatically indent with each other.
@@ -715,12 +811,14 @@ or this:
 
     $notifier->set_maxdepth ($opts{verbose});
 
-Then output will be filtered from nothing to full-on based on the verbosity setting.
+Then output will be filtered from nothing to full-on based on 
+the verbosity setting.
 
-=head4 ...But Show Severe Messages
+=head3 ...But Show Severe Messages
 
 If you're using maxdepth to filter messages, sometimes you still want 
-to see a message regardless of the depth filtering - for example, a severe error.
+to see a message regardless of the depth 
+filtering -- for example, a severe error.
 To set this, use the override_severity option.  All messages that have
 at least that severity value or higher will be shown, regardless of the depth 
 filtering.  Thus, a better filter would look like:
@@ -758,7 +856,7 @@ custom end text.
 A convienent shorthand notation for I<closetext> is to instead call
 C<notify> with a pair of strings as an array reference, like this:
 
-    $notification=$notifier->notify( ["Start text", "End text"] );
+    my $notification=$notifier->notify( ["Start text", "End text"] );
 
 Using the array reference notation is easier, and it will override
 the closetext option if you use both.  So don't use both.
@@ -772,7 +870,6 @@ you get to the bottom of all the steps that you know it's succeeded.
 Here's where completion upon destruction becomes more useful:
 
     #!/usr/bin/env perl
-    # example.pl
 
     use warnings; 
     use strict;
@@ -833,8 +930,8 @@ If there is only one argument to new(), it is taken as the "fh" attribute:
     my $notifier = Actium::O::Notify::->new($fh);
     # same as ->new({ fh => $fh })
     
-The output destination is determined at the creation of the notifier, and
-cannot be changed.
+The output destination is determined at the creation of the notifier object, 
+and cannot be changed.
 
 =head2 Return Status
 
@@ -851,7 +948,7 @@ such as a dash or an asterisk, but may be multiple characters.
 You probably want to include a space after each bullet, too.
 
 You may have a different bullet for each nesting level.
-Levels deeper than the number of defined bulelts will use the last bullet.
+Levels deeper than the number of defined bullets will use the last bullet.
 
 Bullets can be set by passing an array reference of the bullet strings
 as the I<bullets> attribute, or to the C<set_bullets> method, to the notifier.
@@ -910,13 +1007,58 @@ left the cursor.  Do this by setting the I<-pos> option:
     print "\nHey, look at me, I'm printed output!\n";
     $note->set_position(0);  # Tell where we left the cursor
 
+=head1 SUBROUTINES
+
+Two subroutines can be exported from Actium::O::Notify.
+
+=over 
+
+=item B<notify>
+
+The notify subroutine is a shortcut to allow a default output notifier
+object to be easily accessed. See 
+L</Exported subroutines: shortcut to a default output destination> above.
+
+Install it using C<use>:
+
+ use Actium::O::Notify (qw(notify));
+
+To specify a different filehandle, or any other argument, provide
+them as a hashref of arguments in the C<use> call:
+
+ use Actium::O::Notify ( notify => { fh => *STDOUT{IO} , bullets => ' * ' );
+
+Behind the scenes, it is passing these arguments to the 
+C<< Actium::O::Notify::->new >> class method, 
+so the import routine accepts all the same arguments as that
+class method.  In addition, the
+"-as" argument can be used to give the installed subroutine another name:
+
+ use Actium::O::Notify ( notify => { -as => 'bawl' } );
+
+This will install the routine into the caller's namespace as C<bawl>.
+
+The import routine for C<notify> will accept arguments from only
+one caller.  If two callers attempt to set the attributes of the
+object via the import routine, an exception will be thrown.
+
+=item B<default_notifier>
+
+The B<default_notifier> subroutine returns the default notifier
+object, allowing it to be accessed directly. This allows most
+attributes to be set (although not the filehandle).
+
+ use Actium::O::Notify ( qw(notify default_notifier) );
+ $notifier = default_notifier();
+ $notifier->bullets( ' + ' );
+
 =head1 CLASS METHOD
 
 =over
 
-=item B<Actium::O::Notify::->new(...)>
+=item B<< Actium::O::Notify::->new(...) >>
 
-This is the new() constructor inherited from Moose by Actium::O::Notify. 
+This is the C<new> constructor inherited from Moose by Actium::O::Notify. 
 It creates a new Notify object: the object associated
 with a particular output.  
 
@@ -928,11 +1070,42 @@ If no arguments are passed, it will use STDERR as the output.
 
 =back
 
-=head2 Attributes
+=head1 Attributes, Object Methods, Options
+
+There are several ways that attributes can be set: as the argument to the 
+B<new> class method, as methods on the notifier object, as arguments to 
+the B<notify> object method, as methods on the notification object, or
+as options to B<done> and its equivalents. Some are acceptable
+in all those places!  Rather than list them separately for each type, 
+all the attributes, methods and options are listed together here, with 
+information as to where it can be used.
 
 =over
 
+=item B<fh> 
 
+=over 
+
+=item Argument to C<new>
+
+=item Object method to the notifier and notification objects
+
+=back
+
+This attribute contains a reference to the file handle to 
+which output is sent. It cannot be changed once the notifier object
+is created.
+
+=item 
+
+          fh
+          minimum_severity maximum_severity severity_num
+          step             maxdepth         override_severity
+          term_width       position         set_position
+          _prog_cols      _set_prog_cols
+          _bullet_width    _alter_bullet_width
+          _close_up_to
+          backspace
 
 =back
 
