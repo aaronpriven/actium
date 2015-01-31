@@ -5,7 +5,7 @@
 #
 #  Subversion: $Id$
 
-package Actium::O::Notify::Notification 0.005;
+package Actium::O::Notify::Notification 0.009;
 
 use Actium::Moose;
 use Unicode::LineBreak;
@@ -658,3 +658,43 @@ sub text {
 
 1;
 __END__
+
+=encoding utf-8
+
+=head1 NAME
+
+Actium::O::Notify::Notification - An instance of an Actium::O::Notify notification
+
+=head1 VERSION
+
+This documentation refers to version 0.009o
+
+=head1 SEE
+
+All documentation for this module is found in 
+L<the documentation for Actium::O::Notify/Actium::O::Notify>.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2015
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
