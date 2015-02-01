@@ -22,8 +22,8 @@ use MooseX::Types -declare => [
       Str4                Str8
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
       ActiumFolderLike
-      NotifyBullet          ARNotifyBullets
-      NotifyTrailer
+      CrierBullet          ARCrierBullets
+      CrierTrailer
       >
 ];
 
@@ -93,15 +93,15 @@ coerce( ActiumDir,
 ######################
 ## NOTIFY
 
-subtype NotifyBullet, as Str;
+subtype CrierBullet, as Str;
 
-subtype NotifyTrailer, as Str,
+subtype CrierTrailer, as Str,
   #where { (Unicode::GCString::->new($_)->columns) == 1 },
   #message {"The trailer you provided ($_) is not exactly one column wide"},
   ;
 
-subtype ARNotifyBullets, as ArrayRef [NotifyBullet];
-coerce ARNotifyBullets, from NotifyBullet, via { [$_] };
+subtype ARCrierBullets, as ArrayRef [CrierBullet];
+coerce ARCrierBullets, from CrierBullet, via { [$_] };
 
 ######################
 ## SCHEDULE TIMES
