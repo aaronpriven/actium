@@ -1,17 +1,17 @@
-# Actium/O/Notify/Notification -
-# One output from Actium::O::Notify::Notification
+# Actium/O/Crier/Cry -
+# One output from Actium::O::Crier::Cry
 #
 # Based on Term::Emit by Steve Roscio
 #
 #  Subversion: $Id$
 
-package Actium::O::Notify::Notification 0.009;
+package Actium::O::Crier::Cry 0.009;
 
 use Actium::Moose;
 use Unicode::LineBreak;
 use Unicode::GCString;
 
-use Actium::Types (qw<NotifyBullet NotifyTrailer>);
+use Actium::Types (qw<CrierBullet CrierTrailer>);
 use Actium::Util  (qw<u_columns u_pad u_wrap u_trim_to_columns>);
 
 use Term::ANSIColor;
@@ -24,8 +24,8 @@ const my $MIN_SPAN_FACTOR         => 2 / 3;
 ###############################
 ## Attributes set via constructor
 
-has 'notifier' => (
-    isa      => 'Actium::O::Notify',
+has 'crier' => (
+    isa      => 'Actium::O::Crier',
     is       => 'ro',
     weak_ref => 1,
     required => 1,
@@ -83,7 +83,7 @@ sub _build_closetext {
 }
 
 has 'bullet' => (
-    isa     => NotifyBullet,
+    isa     => CrierBullet,
     default => $EMPTY_STR,
     is      => 'ro',
     writer  => '_set_bullet',
@@ -99,7 +99,7 @@ sub set_bullet {
 }
 
 #############################
-## These attributes are copies of those in the notifier, but can
+## These attributes are copies of those in the crier, but can
 ## be overridden in cosntructor
 
 has 'closestat' => (
@@ -111,7 +111,7 @@ has 'closestat' => (
 
 sub _reset_closestat {
     my $self = shift;
-    return $self->notifier->default_closestat;
+    return $self->crier->default_closestat;
 }
 
 has 'timestamp' => (
@@ -123,7 +123,7 @@ has 'timestamp' => (
 
 sub _reset_timestamp {
     my $self = shift;
-    return $self->notifier->timestamp;
+    return $self->crier->timestamp;
 }
 
 sub _timestamp_now {
@@ -150,19 +150,19 @@ has 'ellipsis' => (
 
 sub _reset_ellipsis {
     my $self = shift;
-    return $self->notifier->ellipsis;
+    return $self->crier->ellipsis;
 }
 
 has 'trailer' => (
     is      => 'rw',
-    isa     => NotifyTrailer,
+    isa     => CrierTrailer,
     lazy    => 1,
     builder => '_reset_trailer',
 );
 
 sub _reset_trailer {
     my $self = shift;
-    return $self->notifier->trailer;
+    return $self->crier->trailer;
 }
 
 has 'colorize' => (
@@ -179,7 +179,7 @@ has 'colorize' => (
 
 sub _reset_colorize {
     my $self = shift;
-    return $self->notifier->colorize;
+    return $self->crier->colorize;
 }
 
 ##########################
@@ -209,7 +209,7 @@ has '_is_closed' => (
     handles  => { _mark_closed => 'set', },
 );
 
-# used to indicate that we've already closed this notification,
+# used to indicate that we've already closed this cry,
 # so that it is not closed twice -- once when it is explicitly closed
 # and once when the DEMOLISH triggers
 
@@ -456,7 +456,7 @@ sub d_notry { my $self = shift; $self->done( @_, "NOTRY" ) }
 # Untried
 
 sub d_unk { my $self = shift; $self->done( @_, "UNK" ) }
-# Unknown. Also, if notification object wasn't saved
+# Unknown. Also, if cry object wasn't saved
 
 sub d_yes { my $self = shift; $self->done( @_, "YES" ) }
 # Yes
@@ -663,16 +663,16 @@ __END__
 
 =head1 NAME
 
-Actium::O::Notify::Notification - An instance of an Actium::O::Notify notification
+Actium::O::Crier::Cry - An instance of an Actium::O::Crier cry
 
 =head1 VERSION
 
-This documentation refers to version 0.009o
+This documentation refers to version 0.009
 
 =head1 SEE
 
 All documentation for this module is found in 
-L<the documentation for Actium::O::Notify/Actium::O::Notify>.
+L<the documentation for Actium::O::Crier/Actium::O::Crier>.
 
 =head1 AUTHOR
 
