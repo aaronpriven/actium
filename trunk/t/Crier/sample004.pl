@@ -1,16 +1,16 @@
 #!/ActivePerl/bin/perl
 use strict;
 use warnings;
-use Actium::O::Notify;
+use Actium::O::Crier;
 
 our $VERSION = 0.005;
 
-my $n = Actium::O::Notify::->new(
+my $crier = Actium::O::Crier::->new(
     bullets  => ' * ',
     colorize     => 1,
     fh        => *STDOUT{IO},
     default_closestat => "OK"
 );
 
-my $nf = $n->note("This should have color, bullets, and go to STDOUT");
+my $cry = $crier->cry("This should have color, bullets, and go to STDOUT");
 exit 0;

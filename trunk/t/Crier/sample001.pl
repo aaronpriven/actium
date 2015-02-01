@@ -1,23 +1,23 @@
 #!/ActivePerl/bin/perl
 use strict;
 use warnings;
-use Actium::O::Notify;
+use Actium::O::Crier;
 
 our $VERSION = 0.005;
 
-my $notifier = Actium::O::Notify::->new(colorize=>1);
+my $crier = Actium::O::Crier::->new(colorize=>1);
 
-my $notification = $notifier->notify("Contract to build house");
+my $cry = $crier->cry("Contract to build house");
 build_house();
-$notification->done;
+$cry->done;
 
 exit 0;
 
 sub build_house {
-    my $build_nf = $notifier->notify ("Building house");
+    my $build_cry = $crier->cry ("Building house");
     sitework();
     shell();
-    $build_nf->text( "
+    $build_cry->text( "
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 Vestibulum varius libero nec emitus. Mauris eget ipsum eget quam sodales ornare. Suspendisse nec nibh. Duis lobortis mi at augue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
 "); 
@@ -27,71 +27,71 @@ Vestibulum varius libero nec emitus. Mauris eget ipsum eget quam sodales ornare.
 
     mechanical();
     finish();
-    $build_nf->done;
+    $build_cry->done;
 }
 
 sub sitework {
-    my $site_nf = $notifier->notify();
+    my $site_cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $site_nf->d_ok;
+    $site_cry->d_ok;
 }
 
 
 sub shell {
-    my $shell_nf = $notifier->notify();
+    my $shell_cry = $crier->cry();
     foundation();
     framing();
     roofing();
-    $shell_nf->d_ok;
+    $shell_cry->d_ok;
 }
 
 sub foundation {
-    my $found_nf = $notifier->notify();
+    my $found_cry = $crier->cry();
     sleep 1;  #simulate doing something
     # Omit closing, will automatically be closed
-    undef $found_nf;
+    undef $found_cry;
 }
 
 sub framing {
-    my $framing_nf = $notifier->notify( "Now we do the framing task, which has a really long text title that should wrap nicely in the space we give it");
+    my $framing_cry = $crier->cry( "Now we do the framing task, which has a really long text title that should wrap nicely in the space we give it");
     sleep 1;  #simulate doing something
-    $framing_nf->d_warn;
+    $framing_cry->d_warn;
 }
 
 sub roofing {
-    my $roof_nf = $notifier->notify();
+    my $roof_cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $roof_nf->d_ok;
+    $roof_cry->d_ok;
 }
 
 sub mechanical {
-    my $mech_nf = $notifier->notify( "The MECHANICAL task is also a lengthy one so this is a bunch of text that should also wrap");
+    my $mech_cry = $crier->cry( "The MECHANICAL task is also a lengthy one so this is a bunch of text that should also wrap");
     electrical();
     plumbing();
     hvac();
-    $mech_nf->d_fail;
+    $mech_cry->d_fail;
 }
 
 sub electrical {
-    my $nf = $notifier->notify();
+    my $cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $nf->d_ok;
+    $cry->d_ok;
 }
 
 sub plumbing {
-    my $nf = $notifier->notify();
+    my $cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $nf->d_ok;
+    $cry->d_ok;
 }
 
 sub hvac {
-    my $nf = $notifier->notify();
+    my $cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $nf->d_ok;
+    $cry->d_ok;
 }
 
 sub finish {
-    my $nf = $notifier->notify();
+    my $cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $nf->d_ok;
+    $cry->d_ok;
 }
