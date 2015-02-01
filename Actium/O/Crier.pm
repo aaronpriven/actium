@@ -1,18 +1,18 @@
-# Actium/O/Notify - Print with indentation, status, and closure
+# Actium/O/Crier - Print with indentation, status, and closure
 # Based on Term::Emit by Steve Roscio
 #
 #  Subversion: $Id$
 
-package Actium::O::Notify 0.009;
+package Actium::O::Crier 0.009;
 use Actium::Moose;
 use Scalar::Util(qw[openhandle weaken refaddr reftype]);
 
-use Actium::Types (qw<ARNotifyBullets NotifyBullet NotifyTrailer>);
+use Actium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
 use Actium::Util ('u_columns');
 
-use Actium::O::Notify::Notification;
+use Actium::O::Crier::Cry;
 
-const my $NOTIFICATION_CLASS => 'Actium::O::Notify::Notification';
+const my $CRY_CLASS => 'Actium::O::Crier::Cry';
 const my $FALLBACK_CLOSESTAT => 'DONE';
 const my $DEFAULT_TERM_WIDTH => 80;
 const my $DEFAULT_STEP       => 2;
@@ -21,42 +21,41 @@ const my $DEFAULT_STEP       => 2;
 ### EXPORTS
 
 use Sub::Exporter -setup => {
-  exports => [ notify => \'_build_notify' ,
-             note => \'_build_notify' 
-           , 'default_notifier'  
+  exports => [ cry => \'_build_cry' 
+           , 'default_crier'  
 ]};
 
-my $default_notifier;
+my $default_crier;
 
-sub _build_notify {
+sub _build_cry {
    my ($class, $name, $arg) = @_;
 
    if (defined $arg and scalar keys %$arg) {
-      if ($default_notifier) { 
+      if ($default_crier) { 
          croak 
-          qq[Arguments given in "use Actium::O::Notify (notify => {args})"] 
-          . qq[but the default notifier has already been initialized];
+          qq[Arguments given in "use Actium::O::Crier (cry => {args})"] 
+          . qq[but the default crier has already been initialized];
      
          } 
 
-         $default_notifier = __PACKAGE__->new($arg);
+         $default_crier = __PACKAGE__->new($arg);
          return sub {
-              return $default_notifier->notify(@_);
+              return $default_crier->cry(@_);
          };
    }
 
    return sub {
-      $default_notifier = __PACKAGE__->new()
-          if not $default_notifier;
-      return $default_notifier->notify(@_);
+      $default_crier = __PACKAGE__->new()
+          if not $default_crier;
+      return $default_crier->cry(@_);
    }
 
 }
 
-sub default_notifier {
-   $default_notifier = __PACKAGE__->new()
-       if not $default_notifier;
-   return $default_notifier;
+sub default_crier {
+   $default_crier = __PACKAGE__->new()
+       if not $default_crier;
+   return $default_crier;
 }
 
 #####################################################################
@@ -144,7 +143,7 @@ has '_prog_cols' => (
     isa     => 'Int',
     default => 0,
 );
-# backs over this many columns during $notification->over
+# backs over this many columns during $cry->over
 # this means will send two backspaces for each double-wide character
 # This seems to be the right thing in Mac oS X Terminal; 
 # not sure about other terminals
@@ -183,7 +182,7 @@ has 'timestamp' => (
 
 has 'trailer' => (
     is      => 'rw',
-    isa     => NotifyTrailer,
+    isa     => CrierTrailer,
     default => '.',
 );
 
@@ -203,7 +202,7 @@ has 'backspace' => (
 
 has 'bullets_r' => (
     is       => 'bare',
-    isa      => ARNotifyBullets,
+    isa      => ARCrierBullets,
     init_arg => 'bullets',
     reader   => '_bullets_r',
     writer   => '_set_bullets_r',
@@ -349,35 +348,33 @@ has 'default_closestat' => (
 );
 
 ###########################
-### NOTIFICATIONS AND LEVELS
+### CRIES AND LEVELS
 
-has '_notifications_r' => (
+has '_cries_r' => (
     is      => 'ro',
-    isa     => "ArrayRef[$NOTIFICATION_CLASS]",
+    isa     => "ArrayRef[$CRY_CLASS]",
     traits => ['Array'],
     handles => {
-        notifications      => 'elements',
-        _pop_notification  => 'pop',
-        notification_level => 'count',
-        _first_notification => [ get => 0 ],
+        cries      => 'elements',
+        _pop_cry  => 'pop',
+        cry_level => 'count',
+        _first_cry => [ get => 0 ],
     },
     default => sub { [] },
 );
 
-sub _push_notification {
+sub _push_cry {
     my $self         = shift;
-    my $notification = shift;
+    my $cry = shift;
 
-    my $notifications_r = $self->_notifications_r;
+    my $cries_r = $self->_cries_r;
 
-    push @{$notifications_r}, $notification;
-    weaken ${$notifications_r}[-1];
+    push @{$cries_r}, $cry;
+    weaken ${$cries_r}[-1];
 
 }
 
-sub note { goto &notify; }
-
-sub notify {
+sub cry {
     my $self = shift;
 
     my ( %opts, @args );
@@ -401,7 +398,7 @@ sub notify {
         $opts{opentext} = join( $separator, @args );
     }
 
-    my $level = $self->notification_level + 1;
+    my $level = $self->cry_level + 1;
 
     unless ( defined $opts{opentext} and $opts{opentext}) {
         my $msg;
@@ -417,21 +414,21 @@ sub notify {
         $opts{bullet} = $self->_bullet_for_level($level);
     }
 
-    my $notification = $NOTIFICATION_CLASS->new(
+    my $cry = $CRY_CLASS->new(
         %opts,
-        notifier => $self,
+        crier => $self,
         level      => $level,
     );
 
-    my $success = $notification->_built_without_error;
+    my $success = $cry->_built_without_error;
     return $success unless $success;
 
-    $self->_push_notification($notification);
+    $self->_push_cry($cry);
 
-    return $notification if defined wantarray;
+    return $cry if defined wantarray;
 
-    $notification->d_unk(
-        { reason => 'Notification error (notification object not saved)' } )
+    $cry->d_unk(
+        { reason => 'Cry error (cry object not saved)' } )
       ;
     # void context - close immediately
     return; # only to make perlcritic happy
@@ -440,30 +437,30 @@ sub notify {
 
 sub _close_up_to {
     my $self         = shift;
-    my $notification = shift;
+    my $cry = shift;
     my @original_args = @_;
     
-    my $this_notification = $self->_pop_notification;
+    my $this_cry = $self->_pop_cry;
     my $success;
 
-    while ( $this_notification
-        and ( refaddr($this_notification) != refaddr($notification) ) )
+    while ( $this_cry
+        and ( refaddr($this_cry) != refaddr($cry) ) )
     {
-        $success = $this_notification->_close; # default severity and options
+        $success = $this_cry->_close; # default severity and options
         return $success unless $success;
-        $this_notification = $self->_pop_notification;
+        $this_cry = $self->_pop_cry;
     }
 
-    return $notification->_close(@original_args);
+    return $cry->_close(@original_args);
 
 }
 
 sub DEMOLISH {
     my $self = shift;
     
-    my @notifications = $self->notifications;
-    if (@notifications) {
-        $self->_close_up_to($notifications[0]);
+    my @cries = $self->cries;
+    if (@cries) {
+        $self->_close_up_to($cries[0]);
     }
     
     return;
@@ -479,7 +476,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Notify - Terminal notification with indentation, status, and closure
+Actium::O::Crier - Terminal notification with indentation, status, and closure
 
 =head1 VERSION
 
@@ -487,21 +484,21 @@ This documentation refers to version 0.009
 
 =head1 SYNOPSIS
 
- use Actium::O::Notify;
+ use Actium::O::Crier;
  
- my $notifier = Actium::O::Notify::->new();
+ my $crier = Actium::O::Crier::->new();
  
- my $task_note = $notifier->notify("Main Task");
+ my $task_cry = $crier->cry("Main Task");
  ...
- my $subtask_note = $notifier->notify("First Subtask");
+ my $subtask_cry = $crier->cry("First Subtask");
  ...
- $subtask_note->done;
+ $subtask_cry->done;
  ...
- my $another_subtask_note = $notifier->notify("Second Subtask");
+ my $another_subtask_cry = $crier->cry("Second Subtask");
  ...
- $another_subtask_note->done;
+ $another_subtask_cry->done;
  ...
- $task_note->done;
+ $task_cry->done;
  
 This results in this output to STDOUT:
 
@@ -512,37 +509,37 @@ This results in this output to STDOUT:
 
 There are procedural shortcuts for output to a default destination:
 
- use Actium::O::Notify(notify);
+ use Actium::O::Crier(cry);
 
- my $task_note = notify("Main Task");
+ my $task_cry = cry("Main Task");
  ...
- my $subtask_note = notify("First Subtask");
+ my $subtask_cry = cry("First Subtask");
  ...
- $subtask_note->done;
+ $subtask_cry->done;
  ...
- my $another_subtask_note = notify("Second Subtask");
+ my $another_subtask_cry = cry("Second Subtask");
  ...
- $another_subtask_note->done;
+ $another_subtask_cry->done;
  ...
- $task_note->done;
+ $task_cry->done;
 
 This produces the same output as before.
 
 =head1 DESCRIPTION
 
-Actium::O::Notify is used to to print balanced and nested messages
+Actium::O::Crier is used to to print balanced and nested messages
 with a completion status.  These messages indent easily within each other,
 are easily parsed, may be bulleted, can be filtered,
 and even can show status in color.
 
 For example, you write code like this:
 
-    use Actium::O::Notify;
-    my $notifier = Actium::O::Notify::->new()
-    my $notification = $notifer->notify("Performing the task");
-    first_subtask($notifier);
-    second_subtask($notifier);
-    $notification->done;
+    use Actium::O::Crier;
+    my $crier = Actium::O::Crier::->new()
+    my $cry = $crier->cry("Performing the task");
+    first_subtask($crier);
+    second_subtask($crier);
+    $cry->done;
     
 It begins by printing:
 
@@ -554,7 +551,7 @@ it adds the rest of the line: a bunch of dots and the [DONE].
     Performing the task......................................... [DONE]
     
 Your subroutines first_subtask() and second_subtasks() subroutines may also 
-issue a notification about
+issue a cry about
 what they're doing, and indicate success or failure or whatever, so you
 can get nice output like this:
 
@@ -566,17 +563,17 @@ can get nice output like this:
       Wrapup of second subtask.................................. [OK]
     Performing the task......................................... [DONE]
 
-A series of examples will make Actium::O::Notify easier to understand.
+A series of examples will make Actium::O::Crier easier to understand.
 
 =head2 Basics
 
 Here is a basic example of usage:
 
-    use Actium::O::Notify;
-    my $notifier = Actium::O::Notify::->new();
-    my $notification = $notifier->notify("Performing a task");
+    use Actium::O::Crier;
+    my $crier = Actium::O::Crier::->new();
+    my $cry = $crier->cry("Performing a task");
     sleep 1; # simulate task performance
-    $notification->done;
+    $cry->done;
 
 First this prints:
 
@@ -587,48 +584,47 @@ continued so it looks like this:
 
     Performing a task........................................... [DONE]
     
-Actium::O::Notify works by creating two sets of objects. 
-The I<notifier> represents
-the destination of the notifications, such as the terminal, or an output file.
-The I<notification> object represents a single note, such as a note about
+Actium::O::Crier works by creating two sets of objects. 
+The I<crier> represents
+the destination of the cries, such as the terminal, or an output file.
+The I<cry> object represents a single cry, such as a cry about
 one particular task or subtask.  Methods on these objects are used to issue
-notifications and complete them.
+cries and complete them.
 
-The notifier object is created by the C<new> class method of C<Actium::O::Notify>.
-The notification object is created by object methods of the notifier object:
-C<< $notifier->notify >> or C<< $notifier->note >> (these are identical).
+The crier object is created by the C<new> class method of C<Actium::O::Crier>.
+The cry object is created by the C<<cry>> object method of the crier object.
 
 =head2 Exported subroutines: shortcut to a default output destination
 
-Since most output from Actium::O::Notify is to a single default
+Since most output from Actium::O::Crier is to a single default
 output destination for that process (typically STDERR), some
-procedural shortcuts exist to make it easier to send notifications to a
+procedural shortcuts exist to make it easier to send cries to a
 default output.
 
-The C<notify> or C<note> routines (two names for the same routine)
-establish the default notification object, and call the ->notify
+The C<cry> routine 
+establishes the default cry object, and calls the ->cry
 method on that object with your arguments.
 
 To use the shortcut, specify it in the import list in the C<use
-Actium::O::Notify> call.  
-C<< "use Actium::O::Notify ( qw(notify))" >> 
-will establish a notifier object with STDERR as the output,
-and install a sub called C<notify> in your package that will create
-the notification object. Therefore,
+Actium::O::Crier> call.  
+C<< "use Actium::O::Crier ( qw(cry))" >> 
+will establish a crier object with STDERR as the output,
+and install a sub called C<cry> in your package that will create
+the cry object. Therefore,
 
- use Actium::O::Notify ( qw(notify) );
- my $note = notify ("Doing a task");
+ use Actium::O::Crier ( qw(cry) );
+ my $cry = cry ("Doing a task");
 
 works basically the same as
 
- use Actium::O::Notify;
- my $notifier = Actium::O::Notify::->new();
- my $note = $notifier->notify ("Doing a task");
+ use Actium::O::Crier;
+ my $crier = Actium::O::Crier::->new();
+ my $cry = $crier->cry ("Doing a task");
 
-except that in the former case, the notifier object is stored in
-the Actium::O::Notify class and will be reused by other calls to
-C<notify>, from this module or any other. 
-This avoids the need to pass the notifier object as an
+except that in the former case, the crier object is stored in
+the Actium::O::Crier class and will be reused by other calls to
+C<cry>, from this module or any other. 
+This avoids the need to pass the crier object as an
 argument to routines in other modules.
  
 =head2 Completion upon destruction
@@ -636,14 +632,14 @@ argument to routines in other modules.
 In the above example, we end with a I<< ->done > call to indicate that
 the thing we told about (I<Performing a task>) is now done.
 We don't need to do the C<< ->done >.  It will be called automatically
-for us when the notification object (in this example, held in the variable 
-C<$notification>) is destroyed, such as when the variable goes out of scope 
+for us when the cry object (in this example, held in the variable 
+C<$cry>) is destroyed, such as when the variable goes out of scope 
 (for this example: when the program ends).
 So the code example could be just this:
 
-    use Actium::O::Notify;
-    my $notifier = Actium::O::Notify::->new();
-    my $notification = $notifier->notify("Performing a task");
+    use Actium::O::Crier;
+    my $crier = Actium::O::Crier::->new();
+    my $cry = $crier->cry("Performing a task");
     sleep 1; # simulate task performance
 
 and we'd get the same results (assuming the program ends there).  
@@ -656,7 +652,7 @@ additional method calls at the end of a function.
 
 There's many ways a task can complete.  It can be simply DONE, or it can
 complete with an ERROR, or it can be OK, etc.  These completion codes are
-called the I<severity code>s.  C<Actium::O::Notify> defines many different 
+called the I<severity code>s.  C<Actium::O::Crier> defines many different 
 severity codes.
 
 Severity codes also have an associated numerical value.
@@ -687,7 +683,7 @@ Any severity not listed is given the value 1.
 To complete with a different severity, call C<< ->done >> with the
 severity code like this:
 
-    $notifier->done("WARN");
+    $crier->done("WARN");
 
 C<done> and its equivalents return with the severity number from the above 
 table, otherwise it returns 1, unless there's an error in which case it
@@ -716,11 +712,11 @@ only simpler:
 
 We'll change our simple example to give a FATAL completion:
 
-    use Actium::O::Notify;
-    my $notifier = Actium::O::Notify::->new();
-    my $notification = $notifier->notify("Performing a task");
+    use Actium::O::Crier;
+    my $crier = Actium::O::Crier::->new();
+    my $cry = $crier->cry("Performing a task");
     sleep 1; # simulate task performance
-    $notification->d_fatal;
+    $cry->d_fatal;
 
 Here's how it looks:
 
@@ -728,7 +724,7 @@ Here's how it looks:
 
 =head3 Severity Colors
 
-One feature of C<Actium::O::Notify> is that you can enable colorization of the
+One feature of C<Actium::O::Crier> is that you can enable colorization of the
 severity codes.  That means that the severity code inside the square brackets
 is printed in color, so it's easy to see.  
 The module Term::ANSIColor is used to do the colorization.
@@ -754,31 +750,31 @@ Here's the colors:
         
 ("Bold black" is ANSI for gray.)
 
-To use colors on all notifications, pass 'colorize => 1' as an argument 
+To use colors on all cries, pass 'colorize => 1' as an argument 
 to the C<< ->new >> call:
 
-    my $notifier = Actium::O::Notify::->new({colorize => 1});
+    my $crier = Actium::O::Crier::->new({colorize => 1});
 
-Or, invoke the set_color method on the notifier, once it's created:
+Or, invoke the set_color method on the crier, once it's created:
 
-    $notifier->set_color;
+    $crier->set_color;
     
-Notifications also accept the colorize argument or the set_color method,
-so that individual notifications can be colorized or not.
+Cries also accept the colorize argument or the set_color method,
+so that individual cries can be colorized or not.
 
 Run sample003.pl, included with this module, to see how the colors look on
 your terminal.
 
 =head2 Nested Messages
 
-Nested notifications will automatically indent with each other.
+Nested cries will automatically indent with each other.
 You do this:
 
-    use Actium::O::Notify;
-    my $notifier = Actium::O::Notify::->new();
-    my $aaa = $notifier->notify("Aaa")
-    my $bbb = $notifier->notify("Bbb")
-    my $ccc = $notifier->notify("Ccc")
+    use Actium::O::Crier;
+    my $crier = Actium::O::Crier::->new();
+    my $aaa = $crier->cry("Aaa")
+    my $bbb = $crier->cry("Bbb")
+    my $ccc = $crier->cry("Ccc")
 
 and you'll get output like this:
 
@@ -798,18 +794,18 @@ and you may turn off or alter the repeated text (Bbb and Aaa) as you wish.
 =head3 Filtering-out Deeper Levels (Verbosity)
 
 Often a script will have a verbosity option (-v usually), that allows
-a user to control how much output to see.  Actium::O::Notify handles this
+a user to control how much output to see.  Actium::O::Crier handles this
 with the I<maxdepth> attribute and C<set_maxdepth> method.
 
 Suppose your script has the verbose option in $opts{verbose}, where 0 means
 no output, 1 means some output, 2 means more output, etc.  In your script,
 do this:
 
-    my $notifier = Actium::O::Notify::->new(maxdepth => $opts[verbose});
+    my $crier = Actium::O::Crier::->new(maxdepth => $opts[verbose});
 
 or this:
 
-    $notifier->set_maxdepth ($opts{verbose});
+    $crier->set_maxdepth ($opts{verbose});
 
 Then output will be filtered from nothing to full-on based on 
 the verbosity setting.
@@ -823,7 +819,7 @@ To set this, use the override_severity option.  All messages that have
 at least that severity value or higher will be shown, regardless of the depth 
 filtering.  Thus, a better filter would look like:
 
-    my $notifier = Actium::O::Notify::->new(
+    my $crier = Actium::O::Crier::->new(
         maxdepth          => $opts[verbose} ,
         override_severity => 7,
       );
@@ -837,26 +833,26 @@ Such as I<"Beginning task"> and I<"Ending task">.
 
 To do this, use the I<closetext> attribute or C<set_closetext> method:
 
-    $notification = $notifier->notify(
+    $cry = $crier->cry(
          "Beginning task" ,
          {closetext => "Ending task"},
       );
       
 Or:
       
-    $notify->set_closetext("Ending task");
+    $cry->set_closetext("Ending task");
     
 Or:
     
-    $notify->done({closetext => "Ending task"});
+    $cry->done({closetext => "Ending task"});
 
 Now, instead of the start message being repeated at the end, you get
 custom end text.
 
 A convienent shorthand notation for I<closetext> is to instead call
-C<notify> with a pair of strings as an array reference, like this:
+C<cry> with a pair of strings as an array reference, like this:
 
-    my $notification=$notifier->notify( ["Start text", "End text"] );
+    my $cry=$crier->cry( ["Start text", "End text"] );
 
 Using the array reference notation is easier, and it will override
 the closetext option if you use both.  So don't use both.
@@ -874,30 +870,30 @@ Here's where completion upon destruction becomes more useful:
     use warnings; 
     use strict;
 
-    use Actium::O::Notify;
+    use Actium::O::Crier;
     
-    my $notifier = Actium::O::Notify::->new({default_closestat => "ERROR");
+    my $crier = Actium::O::Crier::->new({default_closestat => "ERROR");
     primary_task();
     
     sub primary_task {
 
-       $note_main = $notifier->notify( "Primary task");
+       $cry_main = $crier->cry( "Primary task");
        return
            if !do_a_subtask();
        return
            if !do_another_subtask();
        $fail_reason = do_major_cleanup();
-       return $note_main->d_warn ({reason => $fail_reason})
+       return $cry_main->d_warn ({reason => $fail_reason})
             if $fail_reason;
-       $note_main->d_ok;
+       $cry_main->d_ok;
     
     }
     
-(Note that "$notifier" is set at file scope, which means it is available to
+(Note that "$crier" is set at file scope, which means it is available to
 subroutines further in the same file.)
 
 In this example, we set C<default_closestat> to "ERROR".  This means that if any
-notification object is destroyed, presumably because the notification variable
+cry object is destroyed, presumably because the cry variable
 went out of scope without doing a C<< ->done >> (or its equivalents), 
 a C << ->d_error >> will automatically be called.
 
@@ -912,30 +908,30 @@ If we get through all three steps, we close out with an OK.
 
 =head2 Output to Other File Handles
 
-By default, Actium::O::Notify writes its output to STDERR 
+By default, Actium::O::Crier writes its output to STDERR 
 You can tell it to use another file handle like this:
 
     open ($fh, '>', 'some_file.txt') or die;
-    my $notifier = Actium::O::Notify::->new({fh => $fh});
+    my $crier = Actium::O::Crier::->new({fh => $fh});
     
 Alternatively, if you pass a scalar reference in the fh attribute, 
 the output will be appended to the string at the reference:
 
-    my $output = "Notification output:\n";
-    my $notifier = Actium::O::Notify::->new({fh => \$output});
+    my $output = "Cry output:\n";
+    my $crier = Actium::O::Crier::->new({fh => \$output});
     
 If there is only one argument to new(), it is taken as the "fh" attribute:
 
     open ($fh, '>', 'some_file.txt') or die;
-    my $notifier = Actium::O::Notify::->new($fh);
+    my $crier = Actium::O::Crier::->new($fh);
     # same as ->new({ fh => $fh })
     
-The output destination is determined at the creation of the notifier object, 
+The output destination is determined at the creation of the crier object, 
 and cannot be changed.
 
 =head2 Return Status
 
-Methods that attempt to write to the output (including C<< ->notify >> and
+Methods that attempt to write to the output (including C<< ->cry >> and
 C<< ->done >> and its equivalents) return
 a true value on success and false on failure.  Failure can occur, 
 for example, when attempting to write to a closed filehandle.
@@ -951,7 +947,7 @@ You may have a different bullet for each nesting level.
 Levels deeper than the number of defined bullets will use the last bullet.
 
 Bullets can be set by passing an array reference of the bullet strings
-as the I<bullets> attribute, or to the C<set_bullets> method, to the notifier.
+as the I<bullets> attribute, or to the C<set_bullets> method, to the crier.
 
 If you want the bullet to be the same for all levels,
 just pass the string.  Here's some popular bullet definitions:
@@ -962,9 +958,9 @@ just pass the string.  Here's some popular bullet definitions:
     bullets => "* "
     bullets => [" * ", " + ", " - ", "   "]
     
-Also, a bullet can be changed for a particular notification with the 
-I<bullet> attribute to C<< ->notify >> or the C<< ->set_bullet >> method 
-on the notification object.
+Also, a bullet can be changed for a particular cry with the 
+I<bullet> attribute to C<< ->cry >> or the C<< ->set_bullet >> method 
+on the cry object.
 
 Here's an example with bullets turned on:
 
@@ -993,79 +989,79 @@ Here's an example with bullets turned on:
 If not all bullets are the same width (according to the Unicode::GCString 
 module), the bullets will be made the same width by adding spaces to the right.
 
-=head2 Mixing Actium::O::Notify with other output
+=head2 Mixing Actium::O::Crier with other output
 
-Internally, Actium::O::Notify keeps track of the output cursor position.  
+Internally, Actium::O::Crier keeps track of the output cursor position.  
 It only
 knows about what it has sent to the output destination. 
 If you mix C<print> or C<say> statements, or other output methods, with your 
-Actium::O::Notify output, then things
-will likely get screwy.  So, you'll need to tell Actium::O::Notify where you've
+Actium::O::Crier output, then things
+will likely get screwy.  So, you'll need to tell Actium::O::Crier where you've
 left the cursor.  Do this by setting the I<-pos> option:
 
-    $note = $notifier->notify("Doing something");
+    $cry = $crier->cry("Doing something");
     print "\nHey, look at me, I'm printed output!\n";
-    $note->set_position(0);  # Tell where we left the cursor
+    $cry->set_position(0);  # Tell where we left the cursor
 
 =head1 SUBROUTINES
 
-Two subroutines can be exported from Actium::O::Notify.
+Two subroutines can be exported from Actium::O::Crier.
 
 =over 
 
-=item B<notify>
+=item B<cry>
 
-The notify subroutine is a shortcut to allow a default output notifier
+The cry subroutine is a shortcut to allow a default output crier
 object to be easily accessed. See 
 L</Exported subroutines: shortcut to a default output destination> above.
 
 Install it using C<use>:
 
- use Actium::O::Notify (qw(notify));
+ use Actium::O::Crier (qw(cry));
 
 To specify a different filehandle, or any other argument, provide
 them as a hashref of arguments in the C<use> call:
 
- use Actium::O::Notify ( notify => { fh => *STDOUT{IO} , bullets => ' * ' );
+ use Actium::O::Crier ( cry => { fh => *STDOUT{IO} , bullets => ' * ' );
 
 Behind the scenes, it is passing these arguments to the 
-C<< Actium::O::Notify::->new >> class method, 
+C<< Actium::O::Crier::->new >> class method, 
 so the import routine accepts all the same arguments as that
 class method.  In addition, the
 "-as" argument can be used to give the installed subroutine another name:
 
- use Actium::O::Notify ( notify => { -as => 'bawl' } );
+ use Actium::O::Crier ( cry => { -as => 'bawl' } );
 
 This will install the routine into the caller's namespace as C<bawl>.
 
-The import routine for C<notify> will accept arguments from only
+The import routine for C<cry> will accept arguments from only
 one caller.  If two callers attempt to set the attributes of the
 object via the import routine, an exception will be thrown.
 
-=item B<default_notifier>
+=item B<default_crier>
 
-The B<default_notifier> subroutine returns the default notifier
+The B<default_crier> subroutine returns the default crier
 object, allowing it to be accessed directly. This allows most
 attributes to be set (although not the filehandle).
 
- use Actium::O::Notify ( qw(notify default_notifier) );
- $notifier = default_notifier();
- $notifier->bullets( ' + ' );
+ use Actium::O::Crier ( qw(cry default_crier) );
+ $crier = default_crier();
+ $crier->bullets( ' + ' );
 
 =head1 CLASS METHOD
 
 =over
 
-=item B<< Actium::O::Notify::->new(...) >>
+=item B<< Actium::O::Crier::->new(...) >>
 
-This is the C<new> constructor inherited from Moose by Actium::O::Notify. 
-It creates a new Notify object: the object associated
+This is the C<new> constructor inherited from Moose by Actium::O::Crier. 
+It creates a new Crier object: the object associated
 with a particular output.  
 
 It accepts various attributes, which are listed below along with the methods
 that access them.  Attributes can be specified as hash or hash reference.
 However, if the first argument is a file handle or reference to a scalar,
-that will be taken as the output destination for this notifier.
+that will be taken as the output destination for this crier.
 If no arguments are passed, it will use STDERR as the output.
 
 =back
@@ -1073,8 +1069,8 @@ If no arguments are passed, it will use STDERR as the output.
 =head1 Attributes, Object Methods, Options
 
 There are several ways that attributes can be set: as the argument to the 
-B<new> class method, as methods on the notifier object, as arguments to 
-the B<notify> object method, as methods on the notification object, or
+B<new> class method, as methods on the crier object, as arguments to 
+the B<cry> object method, as methods on the cry object, or
 as options to B<done> and its equivalents. Some are acceptable
 in all those places!  Rather than list them separately for each type, 
 all the attributes, methods and options are listed together here, with 
@@ -1088,12 +1084,12 @@ information as to where it can be used.
 
 =item Argument to C<new>
 
-=item Object method to the notifier and notification objects
+=item Object method to the crier and cry objects
 
 =back
 
 This attribute contains a reference to the file handle to 
-which output is sent. It cannot be changed once the notifier object
+which output is sent. It cannot be changed once the crier object
 is created.
 
 =item 
@@ -1131,15 +1127,15 @@ List its dependencies.
 
 =head1 PROGRAM NOTES
 
-Actium::O::Notify is basically a rewrite of Term::Emit, by Steve Roscio. 
+Actium::O::Crier is basically a rewrite of Term::Emit, by Steve Roscio. 
 Term::Emit is great, but it is dependent on Scope::Upper, which hasn't always
 compiled cleanly in my installation, and also Term::Emit uses a number of
 global variables, which save typing but mean that its objects aren't 
-self-contained. Actium::O::Notify is designed to do a lot of what 
+self-contained. Actium::O::Crier is designed to do a lot of what 
 Term::Emit does, but in a somewhat cleaner way, even if it means there's a bit
 more typing involved.
 
-Actium::O::Notify does use Moose, which probably would seem odd for a
+Actium::O::Crier does use Moose, which probably would seem odd for a
 command-line program. Since many other Actium programs also use Moose,
 this is a relatively small loss in this case. If this ever becomes 
 a standalone module it should probably use something else.
