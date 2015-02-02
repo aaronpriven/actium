@@ -14,7 +14,7 @@ use Actium::O::Crier::Cry;
 
 const my $CRY_CLASS => 'Actium::O::Crier::Cry';
 const my $FALLBACK_CLOSESTAT => 'DONE';
-const my $DEFAULT_TERM_WIDTH => 80;
+const my $DEFAULT_COLUMN_WIDTH => 80;
 const my $DEFAULT_STEP       => 2;
 
 #########################################################
@@ -148,10 +148,10 @@ has '_prog_cols' => (
 # This seems to be the right thing in Mac oS X Terminal; 
 # not sure about other terminals
 
-has 'term_width' => (
+has 'column_width' => (
     is      => 'rw',
     isa     => 'Int',
-    default => $DEFAULT_TERM_WIDTH,
+    default => $DEFAULT_COLUMN_WIDTH,
 );
 
 #############################
@@ -214,7 +214,7 @@ has 'bullets_r' => (
         bullet_count => 'count',
         bullet       => 'get',
     },
-    trigger => \&_build_bullet_width,
+    trigger => \&_alter_bullet_width,
 );
 
 sub set_bullets {
@@ -259,10 +259,11 @@ sub _build_bullet_width {
 
 sub _alter_bullet_width {
     my $self            = shift;
-    my $newbullet       = shift;
-    my $newbullet_width = u_columns($newbullet);
+    my $bullets_r       = shift;
 
-    my $bullet_width = $self->bullet_width;
+    my $bullet_width = $self->_bullet_width;
+    
+    my $newbullet_width = max( map { u_columns($_) } @{$bullets_r} );
 
     return if $newbullet_width <= $bullet_width;
 
@@ -279,7 +280,7 @@ has 'step' => (
 );
 
 has 'maxdepth' => (
-    is      => 'ro',
+    is      => 'rw',
     isa     => 'Maybe[Int]',
     default => undef,
 );
@@ -289,10 +290,12 @@ has 'maxdepth' => (
 
 {
 
-    # copied straight out of Term::Emit.
-    # I don't know why the values are what they are
+    # copied straight out of Term::Emit, except for "HAVOC" and "PANIC"
+    # I don't know why the values are what they are. 
     const my %SEVERITY_NUM_OF => (
         EMERG => 15,
+        PANIC => 15,
+        HAVOC => 14,
         ALERT => 13,
         CRIT  => 11,
         FAIL  => 11,
@@ -311,34 +314,19 @@ has 'maxdepth' => (
         NO    => 0,
     );
 
-    sub severity_num {
+    sub _severity_num {
         my $self    = shift;
         my $sevtext = uc(shift);
         return $SEVERITY_NUM_OF{OTHER} unless exists $SEVERITY_NUM_OF{$sevtext};
         return $SEVERITY_NUM_OF{$sevtext};
     }
     
-    sub minimum_severity {
-        #state $cached;
-        #$cached = min(values %SEVERITY_NUM_OF) unless defined $cached;
-        state $cached = min(values %SEVERITY_NUM_OF);
-        return $cached;
-    }
-        
-        
-    sub maximum_severity {
-        #state $cached;
-        #$cached = max(values %SEVERITY_NUM_OF) unless defined $cached;
-        state $cached = max(values %SEVERITY_NUM_OF);
-        return $cached;
-    }
-
 }
 
 has 'override_severity' => (
     is      => 'ro',
     isa     => 'Int',
-    default => 0,
+    default => -1,
 );
 
 has 'default_closestat' => (
@@ -410,14 +398,14 @@ sub cry {
     if ( defined $opts{bullet} ) {
         $self->_alter_bullet_width( $opts{bullet} );
     }
-    else {
-        $opts{bullet} = $self->_bullet_for_level($level);
-    }
+    #else {
+    #    $opts{bullet} = $self->_bullet_for_level($level);
+    #}
 
     my $cry = $CRY_CLASS->new(
         %opts,
-        crier => $self,
-        level      => $level,
+        _crier => $self,
+        _level      => $level,
     );
 
     my $success = $cry->_built_without_error;
@@ -485,9 +473,9 @@ This documentation refers to version 0.009
 =head1 SYNOPSIS
 
  use Actium::O::Crier;
- 
+
  my $crier = Actium::O::Crier::->new();
- 
+
  my $task_cry = $crier->cry("Main Task");
  ...
  my $subtask_cry = $crier->cry("First Subtask");
@@ -499,7 +487,7 @@ This documentation refers to version 0.009
  $another_subtask_cry->done;
  ...
  $task_cry->done;
- 
+
 This results in this output to STDOUT:
 
  Main task...
@@ -527,7 +515,7 @@ This produces the same output as before.
 
 =head1 DESCRIPTION
 
-Actium::O::Crier is used to to print balanced and nested messages
+Actium::O::Crier is used to to output balanced and nested messages
 with a completion status.  These messages indent easily within each other,
 are easily parsed, may be bulleted, can be filtered,
 and even can show status in color.
@@ -540,8 +528,8 @@ For example, you write code like this:
     first_subtask($crier);
     second_subtask($crier);
     $cry->done;
-    
-It begins by printing:
+
+It begins by outputting:
 
     Performing the task...
 
@@ -549,8 +537,8 @@ Then it does the first subtask and the second subtask. When these are complete,
 it adds the rest of the line: a bunch of dots and the [DONE].
 
     Performing the task......................................... [DONE]
-    
-Your subroutines first_subtask() and second_subtasks() subroutines may also 
+
+Your subroutines first_subtask() and second_subtasks() may also
 issue a cry about
 what they're doing, and indicate success or failure or whatever, so you
 can get nice output like this:
@@ -575,7 +563,7 @@ Here is a basic example of usage:
     sleep 1; # simulate task performance
     $cry->done;
 
-First this prints:
+First this outputs:
 
     Performing a task...
 
@@ -583,8 +571,8 @@ Then after the task process is complete, the line is
 continued so it looks like this:
 
     Performing a task........................................... [DONE]
-    
-Actium::O::Crier works by creating two sets of objects. 
+
+Actium::O::Crier works by creating two sets of objects.
 The I<crier> represents
 the destination of the cries, such as the terminal, or an output file.
 The I<cry> object represents a single cry, such as a cry about
@@ -592,7 +580,7 @@ one particular task or subtask.  Methods on these objects are used to issue
 cries and complete them.
 
 The crier object is created by the C<new> class method of C<Actium::O::Crier>.
-The cry object is created by the C<<cry>> object method of the crier object.
+The cry object is created by the C<cry> object method of the crier object.
 
 =head2 Exported subroutines: shortcut to a default output destination
 
@@ -601,13 +589,13 @@ output destination for that process (typically STDERR), some
 procedural shortcuts exist to make it easier to send cries to a
 default output.
 
-The C<cry> routine 
-establishes the default cry object, and calls the ->cry
+Importing the C<cry> routine establishes the default cry object,
+and calling the routine calls the C<cry>
 method on that object with your arguments.
 
 To use the shortcut, specify it in the import list in the C<use
-Actium::O::Crier> call.  
-C<< "use Actium::O::Crier ( qw(cry))" >> 
+Actium::O::Crier> call.
+C<< "use Actium::O::Crier ( qw(cry))" >>
 will establish a crier object with STDERR as the output,
 and install a sub called C<cry> in your package that will create
 the cry object. Therefore,
@@ -623,17 +611,17 @@ works basically the same as
 
 except that in the former case, the crier object is stored in
 the Actium::O::Crier class and will be reused by other calls to
-C<cry>, from this module or any other. 
+C<cry>, from this module or any other.
 This avoids the need to pass the crier object as an
 argument to routines in other modules.
- 
+
 =head2 Completion upon destruction
 
-In the above example, we end with a I<< ->done > call to indicate that
+In the above example, we end with a C<done> call to indicate that
 the thing we told about (I<Performing a task>) is now done.
-We don't need to do the C<< ->done >.  It will be called automatically
-for us when the cry object (in this example, held in the variable 
-C<$cry>) is destroyed, such as when the variable goes out of scope 
+But we don't need to do the C<done>.  It will be called automatically
+for us when the cry object (in this example, held in the variable
+C<$cry>) is destroyed, such as when the variable goes out of scope
 (for this example: when the program ends).
 So the code example could be just this:
 
@@ -642,7 +630,7 @@ So the code example could be just this:
     my $cry = $crier->cry("Performing a task");
     sleep 1; # simulate task performance
 
-and we'd get the same results (assuming the program ends there).  
+and we'd get the same results (assuming the program ends there).
 
 Completion upon destruction is useful especially in circumstances where the
 program exits less than cleanly, but also simply when it is convenient to avoid
@@ -652,7 +640,7 @@ additional method calls at the end of a function.
 
 There's many ways a task can complete.  It can be simply DONE, or it can
 complete with an ERROR, or it can be OK, etc.  These completion codes are
-called the I<severity code>s.  C<Actium::O::Crier> defines many different 
+called the I<severity code>s.  C<Actium::O::Crier> defines many different
 severity codes.
 
 Severity codes also have an associated numerical value.
@@ -664,28 +652,29 @@ Here are the severity codes and their severity numbers.
 Those on the same line are considered equal in severity:
 
     EMERG => 15,
+    HAVOC => 14,
     ALERT => 13,
     CRIT  => 11, FAIL => 11, FATAL => 11,
-    ERROR => 9,
+    ERROR => 9, ERR => 9,
     WARN  => 7,
     NOTE  => 6,
     INFO  => 5, OK => 5,
     DEBUG => 4,
     NOTRY => 3,
     UNK   => 2,
-    YES   => 1,
+    YES   => 1, PASS  => 1,
     NO    => 0,
 
 You may make up your own severities if what you want is not listed.
 Please keep the length to 5 characters or less, otherwise the text may wrap.
 Any severity not listed is given the value 1.
 
-To complete with a different severity, call C<< ->done >> with the
+To complete with a different severity, call C<done> with the
 severity code like this:
 
     $crier->done("WARN");
 
-C<done> and its equivalents return with the severity number from the above 
+C<done> and its equivalents return with the severity number from the above
 table, otherwise it returns 1, unless there's an error in which case it
 returns false.
 
@@ -695,11 +684,13 @@ only simpler:
  Method   Equivalent     Usual Meaning
  -------  -------------  -----------------------------------------------------
  d_emerg  done "EMERG";  syslog: Off the scale!
+ d_havoc  done "HAVOC";  the dogs of war are let loose
  d_alert  done "ALERT";  syslog: A major subsystem is unusable.
  d_crit   done "CRIT";   syslog: a critical subsystem is not working entirely.
  d_fail   done "FAIL";   Failure
  d_fatal  done "FATAL";  Fatal error
  d_error  done "ERROR";  syslog 'err': Bugs, bad data, files not found, ...
+ d_err    done "ERR";    syslog 'err': Bugs, bad data, files not found, ...
  d_warn   done "WARN";   syslog 'warning'
  d_note   done "NOTE";   syslog 'notice'
  d_info   done "INFO";   syslog 'info'
@@ -708,6 +699,7 @@ only simpler:
  d_notry  done "NOTRY";  tried
  d_unk    done "UNK";    Unknown
  d_yes    done "YES";    Yes
+ d_pass   done "PASS";   Passed a test
  d_no     done "NO";     No
 
 We'll change our simple example to give a FATAL completion:
@@ -726,7 +718,7 @@ Here's how it looks:
 
 One feature of C<Actium::O::Crier> is that you can enable colorization of the
 severity codes.  That means that the severity code inside the square brackets
-is printed in color, so it's easy to see.  
+is output in color, so it's easy to see.
 The module Term::ANSIColor is used to do the colorization.
 
 Here's the colors:
@@ -740,26 +732,25 @@ Here's the colors:
         ERROR    bold bright yellow on red
         WARN     bold black on bright yellow
         NOTE     bold bright white on blue
-        INFO     green
-        OK       green
+        INFO     bold black on green
+        OK       bold black on green
         DEBUG    bright white on bright black
         NOTRY    bold bright white on magenta
         UNK      bold bright yellow on magenta
         YES      green
+        PASS     green
         NO       bright red
-        
-("Bold black" is ANSI for gray.)
 
-To use colors on all cries, pass 'colorize => 1' as an argument 
-to the C<< ->new >> call:
+To use colors on all cries, pass 'colorize => 1' as an option
+to the C<new> method call:
 
     my $crier = Actium::O::Crier::->new({colorize => 1});
 
-Or, invoke the set_color method on the crier, once it's created:
+Or, invoke the use_color method on the crier, once it's created:
 
-    $crier->set_color;
-    
-Cries also accept the colorize argument or the set_color method,
+    $crier->use_color;
+
+Cries also accept the colorize argument or the use_color method,
 so that individual cries can be colorized or not.
 
 Run sample003.pl, included with this module, to see how the colors look on
@@ -807,16 +798,16 @@ or this:
 
     $crier->set_maxdepth ($opts{verbose});
 
-Then output will be filtered from nothing to full-on based on 
+Then output will be filtered from nothing to full-on based on
 the verbosity setting.
 
 =head3 ...But Show Severe Messages
 
-If you're using maxdepth to filter messages, sometimes you still want 
-to see a message regardless of the depth 
+If you're using maxdepth to filter messages, sometimes you still want
+to see a message regardless of the depth
 filtering -- for example, a severe error.
 To set this, use the override_severity option.  All messages that have
-at least that severity value or higher will be shown, regardless of the depth 
+at least that severity value or higher will be shown, regardless of the depth
 filtering.  Thus, a better filter would look like:
 
     my $crier = Actium::O::Crier::->new(
@@ -837,13 +828,13 @@ To do this, use the I<closetext> attribute or C<set_closetext> method:
          "Beginning task" ,
          {closetext => "Ending task"},
       );
-      
+
 Or:
-      
+
     $cry->set_closetext("Ending task");
-    
+
 Or:
-    
+
     $cry->done({closetext => "Ending task"});
 
 Now, instead of the start message being repeated at the end, you get
@@ -867,14 +858,14 @@ Here's where completion upon destruction becomes more useful:
 
     #!/usr/bin/env perl
 
-    use warnings; 
+    use warnings;
     use strict;
 
     use Actium::O::Crier;
-    
+
     my $crier = Actium::O::Crier::->new({default_closestat => "ERROR");
     primary_task();
-    
+
     sub primary_task {
 
        $cry_main = $crier->cry( "Primary task");
@@ -886,54 +877,54 @@ Here's where completion upon destruction becomes more useful:
        return $cry_main->d_warn ({reason => $fail_reason})
             if $fail_reason;
        $cry_main->d_ok;
-    
+
     }
-    
+
 (Note that "$crier" is set at file scope, which means it is available to
 subroutines further in the same file.)
 
 In this example, we set C<default_closestat> to "ERROR".  This means that if any
 cry object is destroyed, presumably because the cry variable
-went out of scope without doing a C<< ->done >> (or its equivalents), 
-a C << ->d_error >> will automatically be called.
+went out of scope without doing a C<done> (or its equivalents),
+a C<d_error> will automatically be called.
 
 Next we do_a_subtask and do_another_subtask (whatever these are!).
-If either fails, we simply return.  Automatically then, the C<< ->d_error >>
+If either fails, we simply return.  Automatically then, the C<d_error>
 will be called to close out the context.
 
 In the third step, we do_major_cleanup().  If that fails, we explicitly
-close out with a warning (the C<< ->d_warn >>), and we pass some reason text.
+close out with a warning (the C<d_warn>), and we pass some reason text.
 
 If we get through all three steps, we close out with an OK.
 
 =head2 Output to Other File Handles
 
-By default, Actium::O::Crier writes its output to STDERR 
+By default, Actium::O::Crier writes its output to STDERR
 You can tell it to use another file handle like this:
 
     open ($fh, '>', 'some_file.txt') or die;
     my $crier = Actium::O::Crier::->new({fh => $fh});
-    
-Alternatively, if you pass a scalar reference in the fh attribute, 
+
+Alternatively, if you pass a scalar reference in the fh attribute,
 the output will be appended to the string at the reference:
 
     my $output = "Cry output:\n";
     my $crier = Actium::O::Crier::->new({fh => \$output});
-    
-If there is only one argument to new(), it is taken as the "fh" attribute:
+
+If there is only one argument to C<new>, it is taken as the "fh" attribute:
 
     open ($fh, '>', 'some_file.txt') or die;
     my $crier = Actium::O::Crier::->new($fh);
     # same as ->new({ fh => $fh })
-    
-The output destination is determined at the creation of the crier object, 
+
+The output destination is determined at the creation of the crier object,
 and cannot be changed.
 
 =head2 Return Status
 
-Methods that attempt to write to the output (including C<< ->cry >> and
-C<< ->done >> and its equivalents) return
-a true value on success and false on failure.  Failure can occur, 
+Methods that attempt to write to the output (including C<cry> and
+C<done> and its equivalents) return
+a true value on success and false on failure.  Failure can occur,
 for example, when attempting to write to a closed filehandle.
 
 =head2 Message Bullets
@@ -942,6 +933,10 @@ You may preceed each message with a bullet.
 A bullet is usually a single character
 such as a dash or an asterisk, but may be multiple characters.
 You probably want to include a space after each bullet, too.
+
+The width used for bullets is the same for all bullets, whatever
+is specified. If bullets are shorter than the maximum width,
+they are padded out with spaces.
 
 You may have a different bullet for each nesting level.
 Levels deeper than the number of defined bullets will use the last bullet.
@@ -952,14 +947,11 @@ as the I<bullets> attribute, or to the C<set_bullets> method, to the crier.
 If you want the bullet to be the same for all levels,
 just pass the string.  Here's some popular bullet definitions:
 
-If you want the bullet to be the same for all levels,
-just pass the string.  Here's some popular bullet definitions:
-
     bullets => "* "
     bullets => [" * ", " + ", " - ", "   "]
-    
-Also, a bullet can be changed for a particular cry with the 
-I<bullet> attribute to C<< ->cry >> or the C<< ->set_bullet >> method 
+
+Also, a bullet can be changed for a particular cry with the
+I<bullet> attribute to C<cry> or the C<set_bullet> method
 on the cry object.
 
 Here's an example with bullets turned on:
@@ -986,15 +978,15 @@ Here's an example with bullets turned on:
  +   Loading crontab jobs...remcon............................ [OK]
  * RDA CAS Setup 8.10-2....................................... [DONE]
 
-If not all bullets are the same width (according to the Unicode::GCString 
+If not all bullets are the same width (according to the Unicode::GCString
 module), the bullets will be made the same width by adding spaces to the right.
 
 =head2 Mixing Actium::O::Crier with other output
 
-Internally, Actium::O::Crier keeps track of the output cursor position.  
+Internally, Actium::O::Crier keeps track of the output cursor position.
 It only
-knows about what it has sent to the output destination. 
-If you mix C<print> or C<say> statements, or other output methods, with your 
+knows about what it has sent to the output destination.
+If you mix C<print> or C<say> statements, or other output methods, with your
 Actium::O::Crier output, then things
 will likely get screwy.  So, you'll need to tell Actium::O::Crier where you've
 left the cursor.  Do this by setting the I<-pos> option:
@@ -1003,30 +995,30 @@ left the cursor.  Do this by setting the I<-pos> option:
     print "\nHey, look at me, I'm printed output!\n";
     $cry->set_position(0);  # Tell where we left the cursor
 
-=head1 SUBROUTINES
+=head1 SUBROUTINES, METHODS, ATTRIBUTES REFERENCE
+
+=head2 Subroutines
 
 Two subroutines can be exported from Actium::O::Crier.
 
-=over 
-
-=item B<cry>
+=head3 B<cry>
 
 The cry subroutine is a shortcut to allow a default output crier
-object to be easily accessed. See 
+object to be easily accessed. See
 L</Exported subroutines: shortcut to a default output destination> above.
 
 Install it using C<use>:
 
  use Actium::O::Crier (qw(cry));
 
-To specify a different filehandle, or any other argument, provide
-them as a hashref of arguments in the C<use> call:
+To specify a different filehandle, or any other options, provide
+them as a hashref in the C<use> call:
 
  use Actium::O::Crier ( cry => { fh => *STDOUT{IO} , bullets => ' * ' );
 
-Behind the scenes, it is passing these arguments to the 
-C<< Actium::O::Crier::->new >> class method, 
-so the import routine accepts all the same arguments as that
+Behind the scenes, it is passing these arguments to the
+C<< Actium::O::Crier::->new >> class method,
+so the import routine accepts all the same options as that
 class method.  In addition, the
 "-as" argument can be used to give the installed subroutine another name:
 
@@ -1034,11 +1026,12 @@ class method.  In addition, the
 
 This will install the routine into the caller's namespace as C<bawl>.
 
-The import routine for C<cry> will accept arguments from only
+The import routine for C<cry> will accept arguments (other than "-as")
+from only
 one caller.  If two callers attempt to set the attributes of the
 object via the import routine, an exception will be thrown.
 
-=item B<default_crier>
+=head3 B<default_crier>
 
 The B<default_crier> subroutine returns the default crier
 object, allowing it to be accessed directly. This allows most
@@ -1046,266 +1039,157 @@ attributes to be set (although not the filehandle).
 
  use Actium::O::Crier ( qw(cry default_crier) );
  $crier = default_crier();
- $crier->bullets( ' + ' );
+ $crier->set_bullets( ' + ' );
 
-=head1 CLASS METHOD
+=head2 Class Method
 
-=over
+=head3 Actium::O::Crier::->new()
 
-=item B<< Actium::O::Crier::->new(...) >>
-
-This is the C<new> constructor inherited from Moose by Actium::O::Crier. 
+This is the C<new> constructor inherited from Moose by Actium::O::Crier.
 It creates a new Crier object: the object associated
-with a particular output.  
+with a particular output.
 
-It accepts various attributes, which are listed below along with the methods
-that access them.  Attributes can be specified as hash or hash reference.
+It accepts various attributes as options, which are listed
+in L<Attributes|/Attributes> below.
+Attributes can be specified
+in the arguments to C<new> as a list of keys and values or as
+a hash reference.
+
 However, if the first argument is a file handle or reference to a scalar,
 that will be taken as the output destination for this crier.
+
 If no arguments are passed, it will use STDERR as the output.
 
-=back
+=head2 Crier Object Method
 
-=head1 Attributes, Object Methods, Options
+=head3 $crier->cry()
 
-There are several ways that attributes can be set: as the argument to the 
-B<new> class method, as methods on the crier object, as arguments to 
-the B<cry> object method, as methods on the cry object, or
-as options to B<done> and its equivalents. Some are acceptable
-in all those places!  Rather than list them separately for each type, 
-all the attributes, methods and options are listed together here, with 
-information as to where it can be used.
+This creates a new cry. Specifically, it creates a new C<Actium::O::Crier::Cry>
+object, and then that object outputs the opening text and the ellipsis:
 
-=over
+ my $cry = $crier->cry('Starting a task');
 
-=item B<fh> 
+produces the output
 
-=over 
+ Starting a task...
 
-=item Argument to C<new>
+It accepts various attributes as options, which are listed
+in L<Attributes|/Attributes> below.
+Attributes
+must be provided in hashrefs. If more than one hashref is provided to C<cry>,
+then they will all be used as options. If there are conflicts, later items
+will take priority over earlier items in the argument list.
 
-=item Object method to the crier and cry objects
+Non-reference arguments are taken to be texts, which are concatenated together
+(with texts separated by the value of perl's C<$,> variable;
+see L<$, in the perlvar man page|perlvar/"$,">) and used as the opening text
+of the cry.
 
-=back
+If there is only one non-hashref argument, and it is an array reference, then
+the first two entries of the array will be used as the opening and closing
+text of the cry. In other words,
 
-This attribute contains a reference to the file handle to 
-which output is sent. It cannot be changed once the crier object
-is created.
+ $cry = $crier->cry( ['Open text', 'Close text'] );
 
-=item 
+is the same as
 
-          fh
-          minimum_severity maximum_severity severity_num
-          step             maxdepth         override_severity
-          term_width       position         set_position
-          _prog_cols      _set_prog_cols
-          _bullet_width    _alter_bullet_width
-          _close_up_to
-          backspace
+ $cry = $crier->cry(
+      { -opentext => 'Open text', -closetext => 'Close text'}
+   );
 
-=back
+If the open text is not provided using any of these ways, then the
+name of the calling subroutine will be used as the opening text.
 
-=head1 DIAGNOSTICS
+It is not correct to call C<cry> in void context:
 
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
+  $crier->cry("Doing something")
 
-=head1 CONFIGURATION AND ENVIRONMENT
+Since C<cry> creates a cry object, calling it in void context leaves noplace
+to store it. If it is called in void context, the cry will immediately close
+with "UNK" severity, and will display 'Cry error (cry object not saved)'.
 
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
+=head2 Cry Object Methods
 
-=head1 DEPENDENCIES
+=head3 $cry->done()
 
-List its dependencies.
+This closes the cry, either re-outputting the open text
+(if it's not on the same line) or outputting the close text,
+padding out with the trailer character, and then outputting the severity.
 
-=head1 PROGRAM NOTES
+    Closing text.........................................[OK]
 
-Actium::O::Crier is basically a rewrite of Term::Emit, by Steve Roscio. 
-Term::Emit is great, but it is dependent on Scope::Upper, which hasn't always
-compiled cleanly in my installation, and also Term::Emit uses a number of
-global variables, which save typing but mean that its objects aren't 
-self-contained. Actium::O::Crier is designed to do a lot of what 
-Term::Emit does, but in a somewhat cleaner way, even if it means there's a bit
-more typing involved.
+It accepts various attributes as options, which are listed
+in L<Attributes|/Attributes> below.
 
-Actium::O::Crier does use Moose, which probably would seem odd for a
-command-line program. Since many other Actium programs also use Moose,
-this is a relatively small loss in this case. If this ever becomes 
-a standalone module it should probably use something else.
+Attributes
+must be provided in hashrefs. If more than one hashref is provided,
+then they will all be used as options. If there are conflicts, later items
+will take priority over earlier items in the argument list.
 
-=head1 AUTHOR
+The first non-reference argument is taken to be the closing severity.
+If none is provided, it will use the severity that is in the I<closestat>
+attribute (whether specified in this call, or earlier as an option in the
+constructor or via a method).
 
-Aaron Priven <apriven@actransit.org>
+One attribute, I<reason>, is only applicable from within a C<done> call
+(or its equivalents).
 
-=head1 COPYRIGHT & LICENSE
+=head3 $cry->d_emerg(), $cry->d_ok, etc.
 
-Copyright 2015
+For convenience, several methods exist to abbreviate the
+C<< $cry->done >> method, for the built-in severities:
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+ d_emerg  done "EMERG";  syslog: Off the scale!
+ d_havoc  done "HAVOC";  the dogs of war are let loose
+ d_alert  done "ALERT";  syslog: A major subsystem is unusable.
+ d_crit   done "CRIT";   syslog: a critical subsystem is not working entirely.
+ d_fail   done "FAIL";   Failure
+ d_fatal  done "FATAL";  Fatal error
+ d_error  done "ERROR";  syslog 'err': Bugs, bad data, files not found, ...
+ d_err    done "ERR";    syslog 'err': Bugs, bad data, files not found, ...
+ d_warn   done "WARN";   syslog 'warning'
+ d_note   done "NOTE";   syslog 'notice'
+ d_info   done "INFO";   syslog 'info'
+ d_ok     done "OK";     copacetic
+ d_debug  done "DEBUG";  syslog: Really boring diagnostic output.
+ d_notry  done "NOTRY";  tried
+ d_unk    done "UNK";    Unknown
+ d_yes    done "YES";    Yes
+ d_pass   done "PASS";   Passed a test
+ d_no     done "NO";     No
 
-=over 4
+=head3 $cry->d_none()
 
-=item * the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any
-later version, or
-
-=item * the Artistic License version 2.0.
-
-=back
-
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
-
-
-
-
-
-
-
-
-
-
-
-
-
-=head1 SUBROUTINES/METHODS
-
-Although an object-oriented interface exists for I<Term::Emit>, it is uncommon
-to use it that way.  The recommended interface is to use the class methods
-in a procedural fashion.
-Use C<emit()> similar to how you would use C<print()>.
-
-=head2 Methods
-
-The following subsections list the methods available:
-
-=head3 C<base>
-
-Internal base object accessor.  Called with no arguments, it returns
-the Term::Emit object associated with the default output filehandle.
-When called with a filehandle, it returns the Term::Emit object associated
-with that filehandle.
-
-=head3 C<clone>
-
-Clones the current I<Term::Emit> object and returns a new copy.
-Any given attributes override the cloned object.
-In most cases you will NOT need to clone I<Term::Emit> objects yourself.
-
-=head3 C<new>
-
-Constructor for a Term::Emit object.
-In most cases you will B<NOT> need to create I<Term::Emit> objects yourself.
-
-=head3 C<setopts>
-
-Sets options on a Term::Emit object. For example to enable colored severities,
-or to set the indentation step size.  Call it like this:
-
-        Term::Emit::setopts(-fh    => *MYLOG,
-                            -step  => 3,
-                            -color => 1);
-
-See L</Options>.
-
-=head3 C<emit>
-
-Use C<emit> to emit a message similar to how you would use C<print>.
-
-Procedural call syntax:
-
-    emit LIST
-    emit *FH, LIST
-    emit \$out, LIST
-    emit {ATTRS}, LIST
-
-Object-oriented call syntax:
-
-    $tobj->emit (LIST)
-    $tobj->emit (*FH, LIST)
-    $tobj->emit (\$out, LIST)
-    $tobj->emit ({ATTRS}, LIST)
-
-=head3 C<emit_done>
-
-Closes the current message level, re-printing the message
-if necessary, printing dot-dot trailers to get proper alignment,
-and the given completion severity.
-
-=head3 C<emit_alert>
-
-=head3 C<emit_crit>
-
-=head3 C<emit_debug>
-
-=head3 C<emit_emerg>
-
-=head3 C<emit_error>
-
-=head3 C<emit_fail>
-
-=head3 C<emit_fatal>
-
-=head3 C<emit_info>
-
-=head3 C<emit_no>
-
-=head3 C<emit_note>
-
-=head3 C<emit_notry>
-
-=head3 C<emit_ok>
-
-=head3 C<emit_unk>
-
-=head3 C<emit_warn>
-
-=head3 C<emit_yes>
-
-All these are convienence methods that call C<emit_done()>
-with the indicated severity.  For example, C<emit_fail()> is
-equivalent to C<emit_done "FAIL">.  See L</Completion Severity>.
-
-=head3 C<emit_none>
-
-This is equivalent to emit_done, except that it does NOT print
+This is equivalent to C<done>, except that it does NOT output
 a wrapup line or a completion severity.  It simply closes out
 the current level with no message.
 
-=head3 C<emit_over>
+=head3 $cry->prog() and $cry->over()
 
-=head3 C<emit_prog>
-
-Emits a progress indication, such as a percent or M/N or whatever
+Outputs a progress indication, such as a percent or M/N or whatever
 you devise.  In fact, this simply puts *any* string on the same line
 as the original message (for the current level).
 
-Using C<emit_over> will first backspace over a prior progress string
+Using C<over> will first backspace over a prior progress string
 (if any) to clear it, then it will write the progress string.
-The prior progress string could have been emitted by emit_over
-or emit_prog; it doesn't matter.
+The prior progress string could have been emitted by C<over> or C<prog>;
+it doesn't matter.
 
-C<emit_prog> does not backspace, it simply puts the string out there.
+The C<prog> method does not backspace, it simply puts the string out there.
+
+If the I<backspace> attribute is false, then C<over> behaves identically to
+C<prog>.
 
 For example,
 
-  use Term::Emit qw/:all/;
-  emit "Varigating the shaft";
-  emit_prog '10%...';
-  emit_prog '20%...';
+  use Actium::O::Crier('cry');
+  my $cry = cry "Performing a task";
+  $cry->prog '10%...';
+  $cry->prog '20%...';
 
 gives this output:
 
-  Varigating the shaft...10%...20%...
+  Performing a task...10%...20%...
 
 Keep your progress string small!  The string is treated as an indivisible
 entity and won't be split.  If the progress string is too big to fit on the
@@ -1328,129 +1212,369 @@ Here's some styles to get you thinking:
                             (liftoff!)
 
 
-=head3 C<emit_text>
+=head3 C<text>
 
-This prints the given text without changing the current level.
+This outputs the given text without changing the current level.
 Use it to give additional information, such as a blob of description.
-Lengthy lines will be wrapped to fit nicely in the given width.
+Lengthy lines will be wrapped to fit nicely in the given width, using
+Unicode definitions of column width (to allow for composed or double-wide
+characters).
 
-=head2 Options
+=head2 Attributes
 
-The I<emit*> functions, the I<setopts()> function, and I<use Term::Emit> take the following
-optional attributes.  Supply options and their values as a hash reference,
-like this:
+There are several ways that attributes can be set: as the argument to the
+B<new> class method, as methods on the crier object, as arguments to
+the B<cry> object method, as methods on the cry object, or
+as options to B<done> and its equivalents. Some are acceptable
+in all those places!  Rather than list them separately for each type,
+all the attributes are listed together here, with
+information as to how they can be set and/or used.
 
-    use Term::Emit ':all', {-fh => \$out,
-                            -step => 1,
-                            -color => 1};
-    emit {-fh => *LOG}, "This and that";
-    emit {-color => 1}, "Severities in living color";
+=head3 adjust_level
 
-The leading dash on the option name is optional, but encouraged;
-and the option name may be any letter case, but all lowercase is preferred.
+=over
 
-=head3 -adjust_level
+=item I<adjust_level> option to C<cry> or C<text>
 
-Only valid for C<emit> and C<emit_text>.  Supply an integer value.
+=back
+
+Supply an integer value.
 
 This adjusts the indentation level of the message inwards (positive) or
-outwards (negative) for just this message.  It does not affect filtering
-via the I<maxdepth> attribute.  But it does affect the bullet character(s)
-if bullets are enabled.
+outwards (negative).
 
-=head3 -bullets
+This can be applied to a cry, in which case it applies to the cry and
+any subsequent messages (C<prog>, C<over>, C<text>) associated with it,
+or to just a C<text>, in which case it applies to just that text.
+
+When it is applied to a cry, it affects filtering
+via the I<maxdepth> attribute and the bullet character(s) if bullets
+are enabled.
+
+=head3 backspace
+
+=over
+
+=item I<backspace> option to C<new>
+
+=item get method: C<< $crier->backspace() >>
+
+=item set methods: C<< $crier->use_backspace >>> and C<< $crier->no_backspace >>
+
+=back
+
+This attribute determines whether C<< $cry->over >> attempts to send backspace characters
+to the terminal or not. Some IDE consoles don't properly deal with backspaces
+(I'm looking at you, Eclipse) and so this attribute turns that off.
+
+=head3 bullet
+
+=over
+
+=item I<bullet> option to C<cry>, or C<done> or its equivalents
+
+=item get method: C<< $cry->bullet() >>
+
+=item set method: C<< $cry->set_bullet() >>
+
+=back
+
+Normally, the bullet
+for a cry is derived from the I<bullets> attribute of the crier object.
+This attribute allows this to be overridden for this particular cry.
+
+The program makes all bullets take up the same width.
+When a custom bullet is used, and that bullet is wider than earlier
+bullets, the bullet width for the entire crier is made the width
+of the widest bullet.
+
+=head3 bullets
+
+=over
+
+=item I<bullets> option to C<new>
+
+=item get method: C<< $crier->bullets() >>
+
+=item set method: C<< $crier->set_bullets() >>
+
+=back
 
 Enables or disables the use of bullet characters in front of messages.
-Set to a false value to disable the use of bullets - this is the default.
-Set to a scalar character string to enable that character(s) as the bullet.
-Set to an array reference of strings to use different characters for each
-nesting level.  See L</Message Bullets>.
+Set to a reference to n empty array to disable the use of bullets,
+which is the default.  Set to a scalar character string to enable
+that character(s) as the bullet.  Set to an array reference of
+strings to use different characters for each nesting level.  See
+L</Message Bullets>.
 
-=head3 -closestat
+The program makes all bullets take up the same width.
+When bullets are altered, the bullet width is made the width
+of the widest bullet ever provided. The bullet width is never reduced.
 
-Sets the severity code to use when autocompleting a message.
-This is set to "DONE" by default.  See
-L</Closing with Different Severities, or... Why Autocompletion is Nice> above.
+=head3 closestat
 
-=head3 -closetext
+=over
 
-Valid only for C<emit>.
+=item I<closestat> option to C<cry>, or C<done> or its equivalents
+
+=item get method: C<< $cry->closestat() >>
+
+=item set method: C<< $cry->set_closestat() >>
+
+=back
+
+Sets the severity code to use when completing a cry.
+This is set to the value of the I<default_closestat> option
+if not specified in the C<cry> or C<done> call.
+
+See L</"Closing with Different Severities (Completion Upon Destruction)">.
+
+=head3 closetext
+
+=over
+
+=item I<closetext> option to C<cry>, or C<done> or its equivalents
+
+=item get method: C<< $cry->closetext() >>
+
+=item set method: C<< $cry->set_closetext() >>
+
+=back
 
 Supply a string to be used as the closing text that's paired
-with this level.  Normally, the text you use when you emit() a message
+with this level.  Normally, the same text you use when you
+issue a C<cry>
 is the text used to close it out.  This option lets you specify
 different closing text.  See L</Closing with Different Text>.
 
-=head3 -color
+=head3 colorize
+
+=over
+
+=item I<colorize> option to C<new>, C<cry>, or C<done> or equivalents
+
+=item get methods: C<colorize> (on either $crier or $cry)
+
+=item set methods: C<use_color> and C<no_color> (on either $crier or $cry)
+
+=back
 
 Set to a true value to render the completion severities in color.
 ANSI escape sequences are used for the colors.  The default is
 to not use colors.  See L</Severity Colors> above.
 
-=head3 -ellipsis
+Setting the colorize attribute on a cry will affect only that cry.
+Setting it in a C<done> call or equivalent, or using a C<use_color>
+or C<no_color> on an already opened cry, will affect only the close
+of that cry.
+
+Setting the colorize attribute on a crier will affect all
+future cries.
+
+=head3 column_width
+
+=over
+
+=item I<column_width> option to C<new>
+
+=item get method: C<< $crier->column_width() >>
+
+=item set method: C<< $crier->set_column_width() >>
+
+=back
+
+Sets the column width of your output.  C<Actium::O::Crier>> doesn't
+try to determine how wide your terminal screen is, so use this
+option to indicate the width.  The default is 80.
+
+You may want to use L<Term::Size::Any|Term::Size::Any>
+to determine your device's width:
+
+    use Term::Size::Any 'chars';
+    my ($cols, $rows) = chars();
+    my $crier = Actium::O::Crier::->new({column_width => $cols});
+    ...
+
+One cool trick is to have it set
+when the program receives a window change signal:
+
+    my $crier = Actium::O::Crier::->new();
+    use Term::Size::Any 'chars';
+    local $SIG{WINCH} = \&set_width;
+    sub set_width {
+       my ($cols, $rows) = chars();
+       $crier->set_column_width($cols);
+    }
+
+Assuming your system sends the proper signal,
+the width of the lines will grow and shrink as the window changes
+size.
+
+=head3 default_closestat
+
+=over
+
+=item I<default_closestat> option to C<new>
+
+=item get method: C<< $crier->default_closestat() >>
+
+=item set method: C<< $crier->set_default_closestat() >>
+
+=back
+
+Sets the severity code to use when completing a cry, if none
+is specified in the C<cry> or any C<done> call. Useful when
+cries are closed because the object gets destroyed.
+
+=head3 ellipsis
+
+=over
+
+=item I<ellipsis> option to C<new>, C<cry>, or C<done> or equivalents
+
+=item get methods: C<ellipsis> (on either $crier or $cry)
+
+=item set methods: C<set_ellipsis> (on either $crier or $cry)
+
+=back
 
 Sets the string to use for the ellipsis at the end of a message.
 The default is "..." (three periods).  Set it to a short string.
-This option is often used in combination with I<-trailer>.
+This option is often used in combination with I<trailer>.
 
-    Frobnicating the bellfrey...
-                             ^^^_____ These dots are the ellipsis
+    Performing a task...
+                     ^^^_____ These dots are the ellipsis
 
-=head3 -envbase
+Setting the ellipsis attribute on a cry will affect only that cry.
+Setting it in a C<done> call or equivalent, or using a C<set_ellipsis>
+on an already opened cry, will affect only the close of that cry.
 
-May only be set before making the first I<emit()> call.
+Setting the ellipsis attribute on a crier will affect all
+future cries.
 
-Sets the base part of the environment variable used to maintain
-level-context across process calls.  The default is "term_emit_".
-See L</CONFIGURATION AND ENVIRONMENT>.
+=head3 fh
 
-=head3 -fh
+=over
 
-Designates the filehandle or scalar to receive output.  You may alter
-the default output, or specify it on individual emit* calls.
+=item I<fh> option to C<new>
 
-    use Term::Emit ':all', {-fh => *STDERR};  # Change default output to STDERR
-    emit "Now this goes to STDERR instead of STDOUT";
-    emit {-fh => *STDOUT}, "This goes to STDOUT";
-    emit {-fh => \$outstr}, "This goes to a string";
+=item get method: C<< $crier->fh() >>
 
-The emit* methods have a shorthand notation for the filehandle.
-If the first argument is a filehandle or a scalar reference, it is
-presumed to be the -fh attribute.  So the last two lines of the above
-example could be written like this:
+=back
 
-    emit *STDOUT, "This goes to STDOUT";
-    emit \$outstr, "This goes to a string";
+This attribute contains a reference to the file handle to
+which output is sent. It cannot be changed once the crier object
+is created, so is specified in the argument to C<new>.
 
-The default filehandle is whatever was C<select()>'ed, which
-is typically STDOUT.
+=head3 maxdepth
 
-=head3 -maxdepth
+=over
 
-Only valid with C<setopts()> and I<use Term::Emit>.
+=item I<maxdepth> option to C<new>
 
-Filters messages by setting the maximum depth of messages tha will be printed.
-Set to undef (the default) to see all messages.
-Set to 0 to disable B<all> messages from Term::Emit.
-Set to a positive integer to see only messages at that depth and less.
+=item get method: C<< $crier->maxdepth() >>
 
-=head3 -pos
+=item set method: C<< $crier->set_maxdepth() >>
 
-Used to reset what Term::Emit thinks the cursor position is.
-You may have to do this is you mix ordinary print statements
-with emit's.
+=back
 
-Set this to 0 to indicate we're at the start of a new line
-(as in, just after a print "\n").  See L</Mixing Term::Emit with print'ed Output>.
+Filters messages by setting the maximum depth of messages that will
+be output.  (This is how many levels of sub-task, not the severity
+level.) Set to undef (the default) to see all messages.  Set to 0
+to disable B<all> messages from the crier.  Set to a positive
+integer to see only messages at that depth and less.
 
-=head3 -reason
+=head3 muted
 
-Only valid for emit_done (and its equivalents like emit_warn,
-emit_error, etc.).
+=over
 
-Causes emit_done() to emit the given reason string on the following line(s),
-indented underneath the completed message.  This is useful to supply additional
-failure text to explain to a user why a certain task failed.
+=item I<muted> option to C<cry>, or C<done> or equivalents
+
+=item get method: C<< $cry->muted >>
+
+=item set methods: C<< $cry->mute >> and C<< $cry->unmute >>
+
+=back
+
+Set this option to a true value to have the cry close out silently.
+This means that the severity code, the trailer (dot dots), and
+the possible repeat of the message are turned off.
+
+The return status from the call is will still be the appropriate
+value for the severity code.
+
+=head3 opentext
+
+=over
+
+=item I<opentext> option to C<cry>
+
+=back
+
+A string to be used as the opening text, output when the
+cry is created.
+
+Normally, this is implicit rather than explicit:
+
+ my $cry = $crier->cry({opentext => 'Doing something'});
+
+is the same as
+
+ my $cry = $crier->cry('Doing something');
+
+See L<< /$crier->cry() >>.
+
+=head3 override_severity
+
+=over
+
+=item I<override_severity> option to C<new>
+
+=item get method: C<< $crier->override_severity() >>
+
+=item set method: C<< $crier->override_severity() >>
+
+=back
+
+Specifies a severity number that will always be shown, even if
+it is so deep that it would otherwise be filtered by the I<maxdepth>
+attribute. So, for example, if I<override_severity> is 15, then "EMERG"
+and "PANIC" messages will be printed, no matter what depth is used.
+
+If I<override_severity> is negative, I<maxdepth> will always be honored.
+
+See L</...But Show Severe Messages>.
+
+=head3 position
+
+=over
+
+=item get methods: C<position> (on either $crier or $cry)
+
+=item set methods: C<set_position> (on either $crier or $cry)
+
+=back
+
+Used to reset what Actium::O::Crier thinks the cursor position is.
+You may have to do this if you mix ordinary print statements
+with cries.
+
+Set this to 0 to indicate that the position is at the start of a
+new line (as in, just after a C<print "\n"> or C<say>).
+See L</Mixing Actium::O::Crier with other output>.
+
+=head3 reason
+
+=over
+
+=item I<reason> option to C<done> or equivalents
+
+=back
+
+After the closing, it will output the given reason string on the
+following line(s), indented underneath the completed message.  This
+is useful to supply additional failure text to explain to a user
+why a certain task failed.
 
 This programming metaphor is commonly used:
 
@@ -1464,115 +1588,147 @@ This programming metaphor is commonly used:
     .
     .
 
-=head3 -silent
 
-Only valid for emit(), emit_done(), and it's equivalents, like emit_ok, emit_warn, etc.
+=head3 step
 
-Set this option to a true value to make an emit_done() close out silently.
-This means that the severity code, the trailer (dot dots), and
-the possible repeat of the message are turned off.
+=over
 
-The return status from the call is will still be the appropriate
-value for the severity code.
+=item I<step> option to C<new>
 
-=head3 -step
+=item get methods: C<< $crier->step >>
+
+=item set methods: C<< $crier->set_step >>
+
+=back
 
 Sets the indentation step size (number of spaces) for nesting messages.
 The default is 2.
 Set to 0 to disable indentation - all messages will be left justified.
 Set to a small positive integer to use that step size.
 
-=head3 -timestamp
 
-If false (the default), emitted lines are not prefixed with a timestamp.
-If true, the default local timestamp HH::MM::SS is prefixed to each emit line.
-If it's a coderef, then that function is called to get the timestamp string.
-The function is passed the current indent level, for what it's worth.
-Note that no delimiter is provided between the timestamp string and the 
-emitted line, so you should provide your own (a space or colon or whatever).
-Also, emit_text() output is NOT timestamped, just that from emit() and 
-its closure.
+=head3 timestamp
 
-=head3 -trailer
+=over
 
-The B<single> character used to trail after a message up to the
-completion severity.
+=item I<timestamp> option to C<new>, C<cry>, or C<done> or equivalents
+
+=item get methods: C<timestamp> (on either $crier or $cry)
+
+=item set methods: C<set_timestamp> (on either $crier or $cry)
+
+=back
+
+If false (the default), output lines are not prefixed with a
+timestamp.  If true, the default local timestamp HH::MM::SS is
+prefixed to each line.  If it's a coderef, then that function is
+called to get the timestamp string.  The function is passed the
+current indent level, for what it's worth.  Note that no delimiter
+is provided between the timestamp string and the emitted line, so
+you should provide your own (a space or colon or whatever).  Also,
+C<text> output is NOT timestamped, just the opening and closing
+text.
+
+=head3 trailer
+
+=over
+
+=item I<trailer> option to C<new>, C<cry>, or C<done> or equivalents
+
+=item get methods: C<trailer> (on either $crier or $cry)
+
+=item set methods: C<set_trailer> (on either $crier or $cry)
+
+=back
+
+The single character used to trail after a message up to the
+completion severity. It must be one column wide.
+
 The default is the dot (the period, ".").  Here's what messages
 look like if you change it to an underscore:
 
   The code:
-    use Term::Emit ':all', {-trailer => '_'};
-    emit "Xerikineting";
+    my $crier = Actium::O::Crier::->new({trailer =>'_'});
+    $crier->cry("Doing something");
 
   The output:
-    Xerikineting...______________________________ [DONE]
+    Doing something...______________________________ [DONE]
 
 Note that the ellipsis after the message is still "...";
-use -ellipsis to change that string as well.
+use I<ellipsis> to change that string as well.
 
-=head3 -want_level
+Setting the trailer attribute on a cry will affect only that cry.
+Setting it in a C<done> call or equivalent, or using a C<set_trailer>
+on an already opened cry, will affect only the close of that cry.
 
-Indicates the needed matching scope level for an autoclosure call
-to emit_done().  This is really an internal option and you should
-not use it.  If you do, I'll bet your output would get all screwy.
-So don't use it.
+Setting the trailer attribute on a crier will affect all
+future cries.
 
-=head3 -width
+=head1 DIAGNOSTICS
 
-Sets the terminal width of your output device.  I<Term::Emit> has no
-idea how wide your terminal screen is, so use this option to
-indicate the width.  The default is 80.
+=head2 'Cry error (cry object not saved)'
 
-You may want to use L<Term::Size::Any|Term::Size::Any>
-to determine your device's width:
+The C<cry> method was called in void context. This creates
+an object which should be saved to a variable.
+See L<< /$crier->cry() >>.
 
-    use Term::Emit ':all';
-    use Term::Size::Any 'chars';
-    my ($cols, $rows) = chars();
-    Term::Emit::setopts(-width => $cols);
-      .
-      .
-      .
+=head1 DEPENDENCIES
 
+At the moment, it relies on a number of Actium modules
+as well as core modules in Perl 5.016.
+Other dependencies include:
 
+=over
 
-Bugs: No bugs have been reported.
+=item Moose
 
-Please report any bugs or feature requests to
-C<bug-term-emit@rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org>.
+=item Sub::Exporter
 
-=head1 SEE ALSO
+=item Term::ANSIColor (only when colorizing)
 
-To format C<Term::Emit> output to HTML, use
-L<Term::Emit::Format::HTML|Term::Emit::Format::HTML> .
+=item Unicode::LineBreak
 
-Other modules like C<Term::Emit> but not quite the same:
-
-=over 4
-
-=item *
-
-L<Debug::Message|Debug::Message>
-
-=item *
-
-L<Log::Dispatch|Log::Dispatch>
-
-=item *
-
-L<PTools::Debug|PTools::Debug>
-
-=item *
-
-L<Term::Activity|Term::Activity>
-
-=item *
-
-L<Term::ProgressBar|Term::ProgressBar>
+=item Unicode::GCString
 
 =back
 
+=head1 PROGRAM NOTES
+
+Actium::O::Crier is a fork of Term::Emit, by Steve Roscio.
+Term::Emit is great, but it is dependent on Scope::Upper, which hasn't always
+compiled cleanly in my installation, and also Term::Emit uses a number of
+global variables, which save typing but mean that its objects aren't
+self-contained. Actium::O::Crier is designed to do a lot of what
+Term::Emit does, but in a somewhat cleaner way, even if it means there's a bit
+more typing involved.
+
+Actium::O::Crier does use Moose, which is somewhat odd for a
+command-line program. Since many other Actium programs also use Moose,
+this is a relatively small loss in this case. If this ever becomes
+a separate distribution it should probably use something else, such as Moo.
+
 =head1 AUTHOR
 
-Steve Roscio  C<< <roscio@cpan.org> >>
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2015
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.
+
