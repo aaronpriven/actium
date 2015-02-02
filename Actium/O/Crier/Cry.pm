@@ -1,4 +1,3 @@
-# Actium/O/Crier/Cry -
 # One output from Actium::O::Crier::Cry
 #
 # Based on Term::Emit by Steve Roscio
@@ -14,8 +13,6 @@ use Unicode::GCString;
 use Actium::Types (qw<CrierBullet CrierTrailer>);
 use Actium::Util  (qw<u_columns u_pad u_wrap u_trim_to_columns>);
 
-use Term::ANSIColor;
-
 const my $MAX_SEVERITY_TEXT_WIDTH => 5;
 const my $SEVERITY_MARKER_WIDTH   => 8;    # text width, plus space and brackets
 const my $NOTIFY_RIGHT_PAD        => 10;
@@ -24,23 +21,26 @@ const my $MIN_SPAN_FACTOR         => 2 / 3;
 ###############################
 ## Attributes set via constructor
 
-has 'crier' => (
+has '_crier' => (
     isa      => 'Actium::O::Crier',
     is       => 'ro',
     weak_ref => 1,
     required => 1,
-    handles  => [
-        qw[
-          fh
-          minimum_severity maximum_severity severity_num
-          step             maxdepth         override_severity
-          term_width       position         set_position
-          _prog_cols      _set_prog_cols
-          _bullet_width    _alter_bullet_width
-          _close_up_to
-          backspace
-          ]
-    ]
+    handles  => {
+        map ( { ( '_' . $_ ) => $_ } (
+                qw( backspace
+                  maxdepth      step  override_severity
+                  column_width  fh    default_closestat )
+              ) ),
+        map { $_ => $_ }
+          qw(
+          position            set_position
+          _close_up_to        _severity_num
+          _prog_cols          _set_prog_cols
+          _bullet_width       _alter_bullet_width
+          _bullet_for_level
+          ),
+    },
 );
 
 has 'opentext' => (
@@ -49,26 +49,32 @@ has 'opentext' => (
     required => 1,
 );
 
-has 'silent' => (
-    is      => 'ro',
+has 'muted' => (
     isa     => 'Bool',
+    is      => 'ro',
     default => 0,
+    traits  => ['Bool'],
+    handles => {
+        mute   => 'set',
+        unmute => 'unset',
+    },
 );
 
-has 'level' => (
+has '_level' => (
     isa      => 'Int',
     is       => 'ro',
     required => 1,
 );
 
-##########################
-### Attributes set in constructor, but with special features
-
 has 'adjust_level' => (
     isa     => 'Int',
-    is      => 'rw',
+    reader  => '_adjust_level',
+    is      => 'ro',
     default => 0,
 );
+
+##########################
+### Attributes set in constructor, but with special features
 
 has 'closetext' => (
     is      => 'rw',
@@ -84,16 +90,26 @@ sub _build_closetext {
 
 has 'bullet' => (
     isa     => CrierBullet,
-    default => $EMPTY_STR,
+    builder => '_build_bullet',
+    lazy    => 1,
     is      => 'ro',
     writer  => '_set_bullet',
 );
+
+sub _build_bullet {
+    my $self = shift;
+    my $bullet =
+      $self->_crier->_bullet_for_level( $self->_level + $self->_adjust_level );
+
+    return $bullet;
+
+}
 
 sub set_bullet {
     my $self   = shift;
     my $bullet = shift;
 
-    $self->_alter_bullet_width($bullet);
+    $self->_alter_bullet_width( [$bullet] );
     $self->_set_bullet($bullet);
     return;
 }
@@ -111,7 +127,7 @@ has 'closestat' => (
 
 sub _reset_closestat {
     my $self = shift;
-    return $self->crier->default_closestat;
+    return $self->_default_closestat;
 }
 
 has 'timestamp' => (
@@ -123,16 +139,18 @@ has 'timestamp' => (
 
 sub _reset_timestamp {
     my $self = shift;
-    return $self->crier->timestamp;
+    return $self->_crier->timestamp;
 }
 
 sub _timestamp_now {
     my $self = shift;
 
-    my $tsr = $self->timestamp;
+    my $level = shift;
+    my $tsr = shift // $self->timestamp;
+
     if ($tsr) {
         if ( reftype($tsr) eq 'CODE' ) {
-            return &{$tsr};
+            return &{$tsr}($level);
         }
         my ( $s, $m, $h ) = localtime( time() );
         return sprintf "%2.2d:%2.2d:%2.2d ", $h, $m, $s;
@@ -150,7 +168,7 @@ has 'ellipsis' => (
 
 sub _reset_ellipsis {
     my $self = shift;
-    return $self->crier->ellipsis;
+    return $self->_crier->ellipsis;
 }
 
 has 'trailer' => (
@@ -162,7 +180,7 @@ has 'trailer' => (
 
 sub _reset_trailer {
     my $self = shift;
-    return $self->crier->trailer;
+    return $self->_crier->trailer;
 }
 
 has 'colorize' => (
@@ -179,7 +197,7 @@ has 'colorize' => (
 
 sub _reset_colorize {
     my $self = shift;
-    return $self->crier->colorize;
+    return $self->_crier->colorize;
 }
 
 ##########################
@@ -196,6 +214,7 @@ has '_is_opened' => (
         _not_opened  => 'not',
     },
 );
+
 # is_opened is used to indicate that the opentext does not need to be
 # displayed again.  Something might be built successfully but not displayed
 # if it is silenced by the maxdepth attribute
@@ -233,9 +252,9 @@ sub _open {
 
     my $self = shift;
 
-    my $level = shift // $self->level + $self->adjust_level;
+    my $level = shift // ( $self->_level + $self->_adjust_level );
 
-    my $fh  = $self->fh;
+    my $fh  = $self->_fh;
     my $pos = $self->position;
 
     # start back at the left
@@ -244,19 +263,25 @@ sub _open {
         return unless $succeeded;
     }
 
-    my $succeeded = $self->_print_left_text( $self->opentext, $level );
+    my $ellipsis  = $self->ellipsis;
+    my $timestamp = $self->timestamp;
+
+    my $succeeded =
+      $self->_print_left_text( $self->opentext, $level, $ellipsis, $timestamp );
+
     $self->_mark_opened;
     return $succeeded;
 
-} ## tidy end: sub _open
+}    ## tidy end: sub _open
 
 sub BUILD {
     my $self = shift;
 
-    my $level    = $self->level + $self->adjust_level;
-    my $maxdepth = $self->maxdepth;
+    my $level    = $self->_level + $self->_adjust_level;
+    my $maxdepth = $self->_maxdepth;
 
     if ( ( not defined $maxdepth ) or $level <= $maxdepth ) {
+
         # if not s not hidden by maxdepth
         my $success = $self->_open($level);
         $self->_mark_built_without_error if $success;
@@ -264,31 +289,34 @@ sub BUILD {
     else {
         $self->_mark_built_without_error;
     }
+
     # the built_without_error attribute is used because we cannot
     # return a status here (new() returns the object no matter what)
 
     return;
 
-} ## tidy end: sub BUILD
+}    ## tidy end: sub BUILD
 
 sub _print_left_text {
-    my $self  = shift;
-    my $fh    = $self->fh;
-    my $text  = shift;
-    my $level = shift;
+    my $self      = shift;
+    my $fh        = $self->_fh;
+    my $text      = shift;
+    my $level     = shift;
+    my $ellipsis  = shift;
+    my $timestamp = shift;
 
     # Timestamp
-    my $timestamp = $self->_timestamp_now;
+    $timestamp = $self->_timestamp_now( $level, $timestamp );
 
     my $bullet = u_pad( $self->bullet, $self->_bullet_width );
-    my $indent         = $SPACE x ( $self->step * ( $level - 1 ) );
+    my $indent         = $SPACE x ( $self->_step * ( $level - 1 ) );
     my $leading        = $timestamp . $bullet . $indent;
     my $leading_width  = u_columns($leading);
     my $leading_spaces = $SPACE x $leading_width;
-    my $span_max       = $self->term_width - $leading_width - $NOTIFY_RIGHT_PAD;
-    my $span_min       = int( $span_max * $MIN_SPAN_FACTOR );
+    my $span_max = $self->_column_width - $leading_width - $NOTIFY_RIGHT_PAD;
+    my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
 
-    $text .= $self->ellipsis;
+    $text .= $ellipsis;
 
     my @lines = u_wrap( $text, $span_min, $span_max );
     my $final_width = u_columns( $lines[-1] );
@@ -307,7 +335,7 @@ sub _print_left_text {
     $self->_set_prog_cols(0);
 
     return $self;
-} ## tidy end: sub _print_left_text
+}    ## tidy end: sub _print_left_text
 
 ###########################
 ### close
@@ -329,13 +357,15 @@ sub _close {
         }
     }
 
-    my $fh           = $self->fh;
+    my $fh           = $self->_fh;
     my $severity     = shift @args // $opts{closestat} // $self->closestat;
-    my $severity_num = $self->severity_num($severity);
-    my $silent       = $opts{silent} // $self->silent;
+    my $severity_num = $self->_severity_num($severity);
+    my $muted        = $opts{muted} // $self->muted;
+    my $ellipsis     = $opts{ellipsis} // $self->ellipsis;
+    my $timestamp    = $opts{timestamp} // $self->timestamp;
 
-    # skip printing if silent
-    if ($silent) {
+    # skip printing if muted
+    if ($muted) {
         if ( $self->position ) {
             my $succeeded = print $fh "\n";
             return unless $succeeded;
@@ -344,28 +374,25 @@ sub _close {
         return $severity_num;
     }
 
-    my $override_severity = $self->override_severity;
-    my $maxdepth          = $self->maxdepth;
-    my $level             = $self->level + $self->adjust_level;
+    my $override_severity = $self->_override_severity;
+    my $maxdepth          = $self->_maxdepth;
+    my $level             = $self->_level + $self->_adjust_level;
 
     # skip printing, unless there's a severity override
-    if ( defined $maxdepth and $level > $maxdepth ) {
-
-        if ( $severity_num < $override_severity ) {
-            return $severity_num;
-            # less than the override severity, so return
-        }
-
-        # here severity is overriding the max depth
-
+    if (    defined $maxdepth
+        and $level > $maxdepth
+        and $severity_num > -1
+        and $severity_num < $override_severity )
+    {
+        return $severity_num;
     }
 
     # Make the severity text
 
-    my $severity_output
-      = u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
+    my $severity_output =
+      u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
     if ( $self->colorize ) {
-        $severity_output = $self->add_color($severity_output);
+        $severity_output = $self->_add_color($severity_output);
     }
     $severity_output = " [$severity_output]\n";
 
@@ -381,20 +408,29 @@ sub _close {
             return unless $succeeded;
         }
 
-        my $succeeded = $self->_print_left_text( $closetext, $level );
+        my $succeeded =
+          $self->_print_left_text( $closetext, $level, $ellipsis, $timestamp );
         return unless $succeeded;
 
         $position = $self->position;
+
         # altered by _print_left_text
 
     }
 
     # here print trailers and closing text
 
+    $self->set_trailer( $opts{trailer} )
+      if $opts{trailer};
+
+    # use the method so it will check the width
+
     my $trailer = $self->trailer;
+
     # trailer set to be a single column wide by attribute type
 
-    my $num_trailers = $self->term_width - $position - $SEVERITY_MARKER_WIDTH;
+    my $num_trailers =
+      $self->_column_width - $position - $SEVERITY_MARKER_WIDTH;
     my $succeeded = print $fh ( $trailer x $num_trailers, $severity_output );
     return unless $succeeded;
 
@@ -404,7 +440,8 @@ sub _close {
 
     my $reason = $opts{reason};
     if ( defined $reason ) {
-        $opts{force} = 1;
+        $opts{_force} = 1;
+
         # bypass level check if it got here
         my $succeeded = $self->text( \%opts, $reason );
         return unless $succeeded;
@@ -412,7 +449,7 @@ sub _close {
 
     return $severity_num;
 
-} ## tidy end: sub _close
+}    ## tidy end: sub _close
 
 sub done {
     my $self = shift;
@@ -420,61 +457,87 @@ sub done {
 }
 
 sub d_emerg { my $self = shift; $self->done( @_, "EMERG" ) }
+
 # syslog: Off the scale!
 
+sub d_panic { my $self = shift; $self->done( @_, "PANIC" ) }
+
+sub d_havoc { my $self = shift; $self->done( @_, "HAVOC" ) }
+
+# the dogs of war are loose
+
 sub d_alert { my $self = shift; $self->done( @_, "ALERT" ) }
+
 # syslog: A major subsystem is unusable.
 
 sub d_crit { my $self = shift; $self->done( @_, "CRIT" ) }
+
 # syslog: a critical subsystem is not working entirely.
 
 sub d_fail { my $self = shift; $self->done( @_, "FAIL" ) }
+
 # Failure
 
 sub d_fatal { my $self = shift; $self->done( @_, "FATAL" ) }
+
 # Fatal error
 
 sub d_error { my $self = shift; $self->done( @_, "ERROR" ) }
+
+sub d_err { my $self = shift; $self->done( @_, "ERR" ) }
+
 # syslog 'err': Bugs, bad data, files not found, ...
 
 sub d_warn { my $self = shift; $self->done( @_, "WARN" ) }
+
 # syslog 'warning'
 
 sub d_note { my $self = shift; $self->done( @_, "NOTE" ) }
+
 # syslog 'notice'
 
 sub d_info { my $self = shift; $self->done( @_, "INFO" ) }
+
 # syslog 'info'
 
 sub d_ok { my $self = shift; $self->done( @_, "OK" ) }
+
 # copacetic
 
 sub d_debug { my $self = shift; $self->done( @_, "DEBUG" ) }
+
 # syslog: Really boring diagnostic output.
 
 sub d_notry { my $self = shift; $self->done( @_, "NOTRY" ) }
+
 # Untried
 
 sub d_unk { my $self = shift; $self->done( @_, "UNK" ) }
+
 # Unknown. Also, if cry object wasn't saved
 
+sub d_pass { my $self = shift; $self->done( @_, "PASS" ) }
+
 sub d_yes { my $self = shift; $self->done( @_, "YES" ) }
+
 # Yes
 
 sub d_no { my $self = shift; $self->done( @_, "NO" ) }
+
 # No
 
 sub d_none {
     my $self = shift;
-    $self->done( { -silent => 1 }, @_, "NONE" );
+    $self->done( { muted => 1 }, @_, "NONE" );
 }
+
 # *Special* closes level quietly (prints no wrapup severity)
 
 sub DEMOLISH {
     my $self                  = shift;
     my $in_global_destruction = shift;
 
-    my $fh = $self->fh;
+    my $fh = $self->_fh;
 
     return if $self->_is_closed;
 
@@ -494,13 +557,13 @@ sub prog {
     my $separator = doe($OUTPUT_FIELD_SEPARATOR);
     my $msg = join( $separator, doe(@_) );
 
-    my $level = $self->level;
-    return 1 if defined( $self->maxdepth ) and $level > $self->maxdepth;
+    my $level = $self->_level;
+    return 1 if defined( $self->_maxdepth ) and $level > $self->_maxdepth;
 
     # Start a new line?
-    my $avail   = $self->term_width - $self->position - $NOTIFY_RIGHT_PAD;
+    my $avail   = $self->_column_width - $self->position - $NOTIFY_RIGHT_PAD;
     my $columns = u_columns($msg);
-    my $fh      = $self->fh;
+    my $fh      = $self->_fh;
 
     my $position = $self->position;
     my $progcols = $self->_prog_cols;
@@ -508,7 +571,7 @@ sub prog {
     if ( $columns > $avail ) {
 
         my $bspace    = q{ } x $self->_bullet_width;
-        my $indent    = q{ } x ( $self->step * $level );
+        my $indent    = q{ } x ( $self->_step * $level );
         my $succeeded = print $fh "\n", $bspace, $indent;
         return unless $succeeded;
 
@@ -527,21 +590,21 @@ sub prog {
 
     return 1;
 
-} ## tidy end: sub prog
+}    ## tidy end: sub prog
 
 sub over {
     my $self = shift;
 
     # if no backspace (in braindead consoles like Eclipse's),
     # then treats everything as a forward-progress.
-    if ( $self->backspace ) {
+    if ( $self->_backspace ) {
 
         # filtering by level
-        my $level    = $self->level;
-        my $maxdepth = $self->maxdepth;
+        my $level    = $self->_level;
+        my $maxdepth = $self->_maxdepth;
         return 1 if defined($maxdepth) and $level > $maxdepth;
 
-        my $fh = $self->fh;
+        my $fh = $self->_fh;
 
         my $prog_cols  = $self->_prog_cols;
         my $backspaces = "\b" x $prog_cols;
@@ -553,10 +616,10 @@ sub over {
         $self->set_position( $self->position - $prog_cols );
         $self->_set_prog_cols(0);
 
-    } ## tidy end: if ( $self->backspace )
+    }    ## tidy end: if ( $self->backspace )
 
     return $self->prog(@_);
-} ## tidy end: sub over
+}    ## tidy end: sub over
 
 sub text {
     my $self = shift;
@@ -573,17 +636,17 @@ sub text {
         }
     }
 
-    my $level    = $self->level;
-    my $maxdepth = $self->maxdepth;
+    my $level    = $self->_level;
+    my $maxdepth = $self->_maxdepth;
     return 1
-      if ( not $opts{force} )
+      if ( not $opts{_force} )
       and defined($maxdepth)
       and $level > $maxdepth;
 
     my $separator = doe($OUTPUT_FIELD_SEPARATOR);
     my $text = join( $separator, @args );
 
-    my $fh = $self->fh;
+    my $fh = $self->_fh;
 
     if ( $self->position != 0 ) {
         my $succeeded = print $fh "\n";
@@ -592,13 +655,14 @@ sub text {
 
     my $bullet_width = $self->_bullet_width;
 
-    my $adjust_level = $opts{adjust_level} // $self->adjust_level;
+    my $adjust_level = $opts{adjust_level} // $self->_adjust_level;
     my $indent_level = 1 + $level + $adjust_level;
+
     # over by one by default
-    my $indent_cols = $self->step * $indent_level + $bullet_width;
+    my $indent_cols = $self->_step * $indent_level + $bullet_width;
     my $indentspace = $SPACE x $indent_cols;
 
-    my $span_max = $self->term_width - $indent_cols - $NOTIFY_RIGHT_PAD;
+    my $span_max = $self->_column_width - $indent_cols - $NOTIFY_RIGHT_PAD;
     my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
 
     my @lines = u_wrap( $text, $span_min, $span_max );
@@ -610,7 +674,7 @@ sub text {
     }
 
     return 1;
-} ## tidy end: sub text
+}    ## tidy end: sub text
 
 #######################
 #### COLORIZE
@@ -618,6 +682,8 @@ sub text {
 {
     const my %COLORS_OF => (
         EMERG => 'bold blink bright_white on_red',
+        PANIC => \'EMERG',
+        HAVOC => 'bold blink black on_bright_yellow',
         ALERT => 'bold blink bright_yellow on_red',
         CRIT  => 'bold bright_white on_red',
         FAIL  => \'CRIT',
@@ -626,16 +692,17 @@ sub text {
         ERROR => \'ERR',
         WARN  => 'bold black on_bright_yellow',
         NOTE  => 'bold bright_white on_blue',
-        INFO  => 'green',
+        INFO  => 'bold black on_green',
         OK    => \'INFO',
         DEBUG => 'bright_white on_bright_black',      #  'bold black on_yellow',
         NOTRY => 'bold bright_white on_magenta',
         UNK   => 'bold bright_yellow on_magenta',
         YES   => 'green',
+        PASS  => \'YES',
         NO    => 'bright_red',
     );    # OTHER and DONE explicitly omitted
 
-    sub add_color {
+    sub _add_color {
 
         my $self    = shift;
         my $sev     = shift;
