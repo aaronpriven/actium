@@ -84,6 +84,10 @@ sub add_option {
 
 }
 
+sub _optionhash {
+   return \%options;
+}
+
 sub is_an_option {
     my $optionname = shift;
     return 1 if $caller_of{$optionname};
