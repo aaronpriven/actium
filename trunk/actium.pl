@@ -80,7 +80,7 @@ my %module_of = (
     xhea2hasi       => 'Xhea2Hasi',
     headwaytimes    => 'HeadwayTimes',
     zipdecals       => 'ZipDecals',
-    zipcodes => 'ZipCodes',
+    zipcodes        => 'ZipCodes',
 
     # more to come
 );
@@ -118,10 +118,30 @@ my $module = "Actium::Cmd::$module_of{$subcommand}";
 
 require_module($module) or die "Couldn't load module $module: $OS_ERROR";
 
-add_option( 'help|?', 'Displays this help message.' );
-add_option( '_stacktrace',
-        'Provides lots of debugging information if there is an error. '
-      . 'Best ignored.' );
+my @options;
+
+{
+    no strict 'refs';
+    @options = @{ $module . '::' . 'OPTIONS' };
+}
+
+push @options, [ 'help|?', 'Displays this help message.' ],
+  [
+    '_stacktrace',
+    'Provides lots of debugging information if there is an error. '
+      . 'Best ignored.'
+  ],
+  ;
+
+while (@options) {
+    my $option_r = shift(@options);
+    add_option( @{$option_r} );
+}
+
+#add_option( 'help|?', 'Displays this help message.' );
+#add_option( '_stacktrace',
+#        'Provides lots of debugging information if there is an error. '
+#      . 'Best ignored.' );
 
 init_options();
 
