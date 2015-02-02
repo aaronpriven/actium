@@ -9,7 +9,6 @@ package Actium::Cmd::MakeBags 0.008;
 use Actium::Preamble;
 use Actium::Bags;
 use Actium::O::Folders::Signup;
-use Actium::Options(qw[add_option option]);
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Util('tabulate');
 
@@ -17,24 +16,27 @@ sub HELP {
     say "Help not implemented.";
 }
 
-add_option( 'oldsignup=s', 'Previous signup to compare this signup to' );
+
+our @OPTIONS =
+  ( [ 'oldsignup=s', 'Previous signup to compare this signup to' ] );
 
 sub START {
 
     my $class      = shift;
     my %params     = @_;
     my $config_obj = $params{config};
+    my $options_r = $params{options};
 
-    my $oldsignup_option = option('oldsignup');
+    my $oldsignup_option = $options_r->{'oldsignup'};
     die "No oldsignup option specified" unless $oldsignup_option;
 
     my $signup = Actium::O::Folders::Signup->new();
-    my $oldsignup
-      = Actium::O::Folders::Signup->new( { signup => option('oldsignup') } );
+    my $oldsignup =
+      Actium::O::Folders::Signup->new( { signup => $oldsignup_option } );
     my $actium_db = actiumdb($config_obj);
 
-    my ( $bagtexts_r, $baglist_r, $counts_r, $final_heights_r )
-      = Actium::Bags::make_bags(
+    my ( $bagtexts_r, $baglist_r, $counts_r, $final_heights_r ) =
+      Actium::Bags::make_bags(
         signup    => $signup,
         oldsignup => $oldsignup,
         actium_db => $actium_db
@@ -62,7 +64,7 @@ sub START {
     }
     say jn( @{ tabulate(@heights_rs) } );
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

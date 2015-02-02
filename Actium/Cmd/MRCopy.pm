@@ -6,7 +6,7 @@
 
 # Legacy status: 4
 
-package Actium::Cmd::MRCopy 0.002;
+package Actium::Cmd::MRCopy 0.009;
 
 use 5.014;
 use warnings;
@@ -14,49 +14,62 @@ use warnings;
 use Actium::MapRepository (':all');
 use Actium::O::Folder;
 
-use Actium::Options(qw<add_option option>);
 use Actium::Term ('output_usage');
 
 use English '-no_match_vars';
 
-add_option(
-    'repository=s',
-    'Location of repository in file system',
-    '/Volumes/Bireme/Maps/Repository'
-);
-add_option(
-    'activemapfile=s',
-    'Name of file containing list of active maps. '
-      . 'Must be located in the repository.',
-    'active_maps.txt',
-);
-add_option( 'web!',
-    'Create web files of maps (on by default; turn off with -no-web)', 1 );
-add_option( 'fullnames!',
-    'Copy files with their full names ' . 
-    '(on by default; turn off with -no-fullnames)',
-    1, );
-add_option(
-    'linesnames!',
-    'Copy files using the lines and token as the name only '
-      . '(on by default; turn off with -no-linesnames)',
-    1,
-);
-add_option( 'verbose!',
-    'Display detailed information on each file copied or rasterized.', 0 );
+our @OPTIONS = (
+    [
+        'repository=s',
+        'Location of repository in file system',
+        '/Volumes/Bireme/Maps/Repository'
+    ],
+    [
+        'activemapfile=s',
+        'Name of file containing list of active maps. '
+          . 'Must be located in the repository.',
+        'active_maps.txt',
+    ],
+    [
+        'web!',
+        'Create web files of maps (on by default; turn off with -no-web)', 1
+    ],
+    [
+        'fullnames!',
+        'Copy files with their full names '
+          . '(on by default; turn off with -no-fullnames)',
+        1,
+    ],
+    [
+        'linesnames!',
+        'Copy files using the lines and token as the name only '
+          . '(on by default; turn off with -no-linesnames)',
+        1,
+    ],
+    [
+        'verbose!',
+        'Display detailed information on each file copied or rasterized.', 0
+    ],
 
-add_option( 'webfolder|wf=s',
+    [
+        'webfolder|wf=s',
         'Folder where web files will be created. '
-      . 'Default is "_web" in the repository' );
-add_option( 'linesfolder|lf=s',
+          . 'Default is "_web" in the repository'
+    ],
+    [
+        'linesfolder|lf=s',
         'Folder to where lines and tokens files will be copied. '
-      . 'Default is "_linesnames" in the repository' );
-add_option( 'fullfolder|ff=s',
+          . 'Default is "_linesnames" in the repository'
+    ],
+    [
+        'fullfolder|ff=s',
         'Folder to where full names will be copied. '
-      . 'Default is "_fullnames" in the repository' );
+          . 'Default is "_fullnames" in the repository'
+    ],
+);
 
 sub HELP {
- 
+
     my $usage = <<'EOF';
 actium.pl mr_copy (options) ...
 
@@ -66,49 +79,57 @@ actium.pl mr_copy (options) ...
   for more information.
 EOF
 
-    say $usage 
+    say $usage
       or die "Can't display usage: $OS_ERROR";
     output_usage;
     return;
 }
 
-sub START {
+{
 
-    my $repository = Actium::O::Folder->new( option('repository') );
+    my ( %options, $repository );
 
-    my $webfolder = option_folder( $repository, 'web', 'webfolder', '_web' );
-    my $fullfolder
-      = option_folder( $repository, 'fullnames', 'fullfolder', '_fullnames' );
-    my $linesfolder = option_folder( $repository, 'linesnames', 'linesfolder',
-        '_linesnames' );
+    sub START {
+        my %params = @_;
+        %options = %{ $params{options} };
 
-    copylatest(
-        repository      => $repository,
-        fullname        => $fullfolder,
-        linesname       => $linesfolder,
-        web             => $webfolder,
-        verbose         => option('verbose'),
-        active_map_file => option('activemapfile'),
-    );
-    return;
+        $repository = Actium::O::Folder->new( option('repository') );
 
-} ## tidy end: sub START
+        my $webfolder = option_folder( 'web', 'webfolder', '_web' );
+        my $fullfolder =
+          option_folder( 'fullnames', 'fullfolder', '_fullnames' );
+        my $linesfolder =
+          option_folder( 'linesnames', 'linesfolder', '_linesnames' );
 
-sub option_folder {
-    my ( $repository, $option, $folderoption, $default ) = @_;
+        copylatest(
+            repository      => $repository,
+            fullname        => $fullfolder,
+            linesname       => $linesfolder,
+            web             => $webfolder,
+            verbose         => $options{'verbose'},
+            active_map_file => $options{'activemapfile'},
+        );
+        return;
 
-    my $folder_obj;
+    }    ## tidy end: sub START
 
-    if ( option($option) ) {
-        if ( option($folderoption) ) {
-            $folder_obj = Actium::O::Folder->new( option($folderoption) );
+    sub option_folder {
+        my ( $option, $folderoption, $default ) = @_;
+
+        my $folder_obj;
+
+        if ( $options{$option} ) {
+            if ( $options{$folderoption} ) {
+                $folder_obj = Actium::O::Folder->new( $options{$folderoption} );
+            }
+            else {
+                $folder_obj = $repository->subfolder($default);
+            }
         }
-        else {
-            $folder_obj = $repository->subfolder($default);
-        }
+
+        return $folder_obj;
+
     }
-
-    return $folder_obj;
 
 }
 
@@ -148,7 +169,8 @@ and Technical Detail."
 
 =head1 COMMAND-LINE OPTIONS
 
-The mr_copy program has several options that can be used on the command line. These should be placed after mr_import:
+The mr_copy program has several options that can be used on the command line. 
+These should be placed after mr_import:
 
  actium.pl mr_copy -no-web
  
@@ -245,8 +267,6 @@ dependencies below.
 
 =item * Actium::O::Folder
 
-=item * Actium::Options
-
 =item * Actium::Term 
 
 =back
@@ -257,7 +277,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2012
+Copyright 2015
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
