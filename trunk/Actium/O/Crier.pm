@@ -8,63 +8,60 @@ use Actium::Moose;
 use Scalar::Util(qw[openhandle weaken refaddr reftype]);
 
 use Actium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
-use Actium::Util ('u_columns');
+use Actium::Util  ('u_columns');
 
 use Actium::O::Crier::Cry;
 
-const my $CRY_CLASS => 'Actium::O::Crier::Cry';
-const my $FALLBACK_CLOSESTAT => 'DONE';
+const my $CRY_CLASS            => 'Actium::O::Crier::Cry';
+const my $FALLBACK_CLOSESTAT   => 'DONE';
 const my $DEFAULT_COLUMN_WIDTH => 80;
-const my $DEFAULT_STEP       => 2;
+const my $DEFAULT_STEP         => 2;
 
 #########################################################
 ### EXPORTS
 
-use Sub::Exporter -setup => {
-  exports => [ cry => \'_build_cry' 
-           , 'default_crier'  
-]};
+use Sub::Exporter -setup =>
+  { exports => [ cry => \'_build_cry', 'default_crier', ] };
 
 my $default_crier;
 
 sub _build_cry {
-   my ($class, $name, $arg) = @_;
+    my ( $class, $name, $arg ) = @_;
 
-   if (defined $arg and scalar keys %$arg) {
-      if ($default_crier) { 
-         croak 
-          qq[Arguments given in "use Actium::O::Crier (cry => {args})"] 
-          . qq[but the default crier has already been initialized];
-     
-         } 
+    if ( defined $arg and scalar keys %$arg ) {
+        if ($default_crier) {
+            croak qq[Arguments given in "use Actium::O::Crier (cry => {args})"]
+              . qq[but the default crier has already been initialized];
 
-         $default_crier = __PACKAGE__->new($arg);
-         return sub {
-              return $default_crier->cry(@_);
-         };
-   }
+        }
 
-   return sub {
-      $default_crier = __PACKAGE__->new()
+        $default_crier = __PACKAGE__->new($arg);
+        return sub {
+            return $default_crier->cry(@_);
+        };
+    }
+
+    return sub {
+        $default_crier = __PACKAGE__->new()
           if not $default_crier;
-      return $default_crier->cry(@_);
-   }
+        return $default_crier->cry(@_);
+      }
 
 }
 
 sub default_crier {
-   $default_crier = __PACKAGE__->new()
-       if not $default_crier;
-   return $default_crier;
+    $default_crier = __PACKAGE__->new()
+      if not $default_crier;
+    return $default_crier;
 }
 
 #####################################################################
 ## FILEHANDLE, AND OBJECT CONSTRUCTION SETTING FILEHANDLE SPECIALLY
 
 has fh => (
-    is       => 'ro',
-    isa      => 'FileHandle',
-    default => sub {*STDERR{IO}},
+    is      => 'ro',
+    isa     => 'FileHandle',
+    default => sub { *STDERR{IO} },
 );
 
 sub _fh_or_scalarref {
@@ -114,6 +111,7 @@ around BUILDARGS => sub {
     my $fh       = $class->_fh_or_scalarref($firstarg);
 
     if ( defined $fh ) {
+
         # ->new($fh, {option => option1, ...})
         if ( @_ == 1 and reftype( $_[0] ) eq 'HASH' ) {
             return $class->$orig( fh => $fh, %{ $_[0] } );
@@ -143,9 +141,10 @@ has '_prog_cols' => (
     isa     => 'Int',
     default => 0,
 );
+
 # backs over this many columns during $cry->over
 # this means will send two backspaces for each double-wide character
-# This seems to be the right thing in Mac oS X Terminal; 
+# This seems to be the right thing in Mac oS X Terminal;
 # not sure about other terminals
 
 has 'column_width' => (
@@ -220,7 +219,7 @@ has 'bullets_r' => (
 sub set_bullets {
     my $self    = shift;
     my @bullets = flatten(@_);
-    $self->_set_bullets_r( @bullets );
+    $self->_set_bullets_r(@bullets);
 }
 
 sub _bullet_for_level {
@@ -232,7 +231,8 @@ sub _bullet_for_level {
     my $level = shift;
     $level = $count if $level > $count;
 
-    return $self->bullet($level - 1);
+    return $self->bullet( $level - 1 );
+
     # zero-based array
 
 }
@@ -248,6 +248,7 @@ has '_bullet_width' => (
 sub _build_bullet_width {
     my $self = shift;
     my $bullets_r = shift // $self->_bullets_r();
+
     # $bullets_r is passed when called as trigger,
     # but not when called as builder
 
@@ -258,11 +259,11 @@ sub _build_bullet_width {
 }
 
 sub _alter_bullet_width {
-    my $self            = shift;
-    my $bullets_r       = shift;
+    my $self      = shift;
+    my $bullets_r = shift;
 
     my $bullet_width = $self->_bullet_width;
-    
+
     my $newbullet_width = max( map { u_columns($_) } @{$bullets_r} );
 
     return if $newbullet_width <= $bullet_width;
@@ -291,7 +292,7 @@ has 'maxdepth' => (
 {
 
     # copied straight out of Term::Emit, except for "HAVOC" and "PANIC"
-    # I don't know why the values are what they are. 
+    # I don't know why the values are what they are.
     const my %SEVERITY_NUM_OF => (
         EMERG => 15,
         PANIC => 15,
@@ -320,7 +321,7 @@ has 'maxdepth' => (
         return $SEVERITY_NUM_OF{OTHER} unless exists $SEVERITY_NUM_OF{$sevtext};
         return $SEVERITY_NUM_OF{$sevtext};
     }
-    
+
 }
 
 has 'override_severity' => (
@@ -341,19 +342,19 @@ has 'default_closestat' => (
 has '_cries_r' => (
     is      => 'ro',
     isa     => "ArrayRef[$CRY_CLASS]",
-    traits => ['Array'],
+    traits  => ['Array'],
     handles => {
         cries      => 'elements',
-        _pop_cry  => 'pop',
-        cry_level => 'count',
+        _pop_cry   => 'pop',
+        cry_level  => 'count',
         _first_cry => [ get => 0 ],
     },
     default => sub { [] },
 );
 
 sub _push_cry {
-    my $self         = shift;
-    my $cry = shift;
+    my $self = shift;
+    my $cry  = shift;
 
     my $cries_r = $self->_cries_r;
 
@@ -368,7 +369,7 @@ sub cry {
     my ( %opts, @args );
 
     foreach (@_) {
-        if ( defined(reftype($_)) and reftype($_) eq 'HASH' ) {
+        if ( defined( reftype($_) ) and reftype($_) eq 'HASH' ) {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -376,7 +377,10 @@ sub cry {
         }
     }
 
-    if ( @args == 1 and defined(reftype($args[0])) and reftype( $args[0] ) eq 'ARRAY' ) {
+    if (    @args == 1
+        and defined( reftype( $args[0] ) )
+        and reftype( $args[0] ) eq 'ARRAY' )
+    {
         my @pair = @{ +shift };
         $opts{opentext}  = $pair[0];
         $opts{closetext} = $pair[1];
@@ -388,9 +392,9 @@ sub cry {
 
     my $level = $self->cry_level + 1;
 
-    unless ( defined $opts{opentext} and $opts{opentext}) {
+    unless ( defined $opts{opentext} and $opts{opentext} ) {
         my $msg;
-        (undef, undef, undef, $msg ) = caller(1);
+        ( undef, undef, undef, $msg ) = caller(1);
         $opts{opentext} = $msg;
         $opts{opentext} =~ s{\Amain::}{}sxm;
     }
@@ -398,6 +402,7 @@ sub cry {
     if ( defined $opts{bullet} ) {
         $self->_alter_bullet_width( $opts{bullet} );
     }
+
     #else {
     #    $opts{bullet} = $self->_bullet_for_level($level);
     #}
@@ -405,7 +410,7 @@ sub cry {
     my $cry = $CRY_CLASS->new(
         %opts,
         _crier => $self,
-        _level      => $level,
+        _level => $level,
     );
 
     my $success = $cry->_built_without_error;
@@ -415,26 +420,25 @@ sub cry {
 
     return $cry if defined wantarray;
 
-    $cry->d_unk(
-        { reason => 'Cry error (cry object not saved)' } )
-      ;
-    # void context - close immediately
-    return; # only to make perlcritic happy
+    $cry->d_unk( { reason => 'Cry error (cry object not saved)' } );
 
-} 
+    # void context - close immediately
+    return;    # only to make perlcritic happy
+
+}
 
 sub _close_up_to {
-    my $self         = shift;
-    my $cry = shift;
+    my $self          = shift;
+    my $cry           = shift;
     my @original_args = @_;
-    
+
     my $this_cry = $self->_pop_cry;
     my $success;
 
     while ( $this_cry
         and ( refaddr($this_cry) != refaddr($cry) ) )
     {
-        $success = $this_cry->_close; # default severity and options
+        $success = $this_cry->_close;    # default severity and options
         return $success unless $success;
         $this_cry = $self->_pop_cry;
     }
@@ -445,16 +449,15 @@ sub _close_up_to {
 
 sub DEMOLISH {
     my $self = shift;
-    
+
     my @cries = $self->cries;
     if (@cries) {
-        $self->_close_up_to($cries[0]);
+        $self->_close_up_to( $cries[0] );
     }
-    
-    return;
-    
-}
 
+    return;
+
+}
 
 1;
 
@@ -1671,6 +1674,13 @@ future cries.
 The C<cry> method was called in void context. This creates
 an object which should be saved to a variable.
 See L<< /$crier->cry() >>.
+
+=head2 Arguments given in "use Actium::O::Crier (cry => {args})" but the default crier has already been initialized
+
+A module attempted to set attributes to the default crier in the import
+process, but the default crier can only be created once. 
+(You can use methods to set all attributes to the default crier, with the
+exception of the filehandle.)
 
 =head1 DEPENDENCIES
 
