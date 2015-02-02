@@ -29,7 +29,6 @@ use Actium::O::Folders::Signup;
 use File::Slurp::Tiny('read_file');
 use Text::Trim;
 
-use Actium::Options;
 use Actium::O::Points::Point;
 
 const my $IDPOINTFOLDER => 'indesign_points';
