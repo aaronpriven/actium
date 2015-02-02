@@ -24,6 +24,8 @@ use lib $Bin;
 use English qw(-no_match_vars);
 use Scalar::Util('reftype');
 
+use Module::Runtime (qw(require_module));
+
 use Actium::Options qw(add_option init_options option);
 
 use Actium::O::Files::Ini;
@@ -114,7 +116,7 @@ if ( not exists $module_of{$subcommand} ) {
 
 my $module = "Actium::Cmd::$module_of{$subcommand}";
 
-require( modulefile($module) ) or die $OS_ERROR;
+require_module($module) or die "Couldn't load module $module: $OS_ERROR";
 
 add_option( 'help|?', 'Displays this help message.' );
 add_option( '_stacktrace',
@@ -122,6 +124,8 @@ add_option( '_stacktrace',
       . 'Best ignored.' );
 
 init_options();
+
+my $options_r = Actium::Options::_optionhash();
 
 if ( option('_stacktrace') ) {
 ## no critic (RequireLocalizedPunctuationVars)
@@ -133,7 +137,7 @@ if ( $help or option('help') ) {
     $module->HELP(@ARGV);
 }
 else {
-    $module->START( argv => [@ARGV], config => $config );
+    $module->START( options => $options_r, argv => [@ARGV], config => $config );
 }
 
 sub mainhelp {
@@ -146,12 +150,6 @@ sub mainhelp {
 
     return $helptext;
 
-}
-
-sub modulefile {
-    my $name = shift;
-    $name =~ s{::|'}{/}gs;
-    return "$name.pm";
 }
 
 sub stacktrace {
