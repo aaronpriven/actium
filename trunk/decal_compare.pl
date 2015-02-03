@@ -13,9 +13,7 @@ use lib ($Bin);
 use Data::Dumper;
 
 use Actium::Util('jt');
-use Actium::Options('init_options');    # only for sortbyline
 use Actium::Sorting::Line ('sortbyline');
-init_options;
 
 my $firstfile  = shift(@ARGV);
 my $secondfile = shift(@ARGV);
