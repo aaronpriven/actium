@@ -8,10 +8,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Sorting::Travel 0.006;
-
-use Storable;
-use Actium::Options (qw(add_option option));
+package Actium::Sorting::Travel 0.009;
 
 use Actium::Sorting::Line ('byline');
 
@@ -19,30 +16,32 @@ use Actium::Constants;
 
 use Sub::Exporter -setup => { exports => [qw(travelsort)] };
 
-add_option( 'promote=s',
-        'When sorting by travel, give a list of lines to be sorted first, '
-      . 'separated by commas. For example, -promote 26,A,58' );
-
-add_option( 'demote600s!',
-    'When sorting by travel, lower the priority of 600-series lines. ' );
-
 ###################################
 ### SORTING BY TRAVEL ROUTES
 ###################################
 
 sub travelsort {
 
-    my %stop_is_used;
-    $stop_is_used{$_} = 1 foreach @{ +shift };
+    my %params = validate(
+        @_,
+        {
+            stops            => { type => $PV_TYPE{ARRAYREF} },
+            stops_of_linedir => { type => $PV_TYPE{HASHREF}, optional => 1 },
+            promote          => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
+            demote600s       => { type => $PV_TYPE{BOOLEAN}, default => 0 },
+        }
+    );
 
-    my %allstops_of_linedir = %{ +shift };
+    my %stop_is_used;
+    $stop_is_used{$_} = 1 foreach @{ $params{stops} };
+
+    my %allstops_of_linedir = %{ $params{stops_of_linedir} };
 
     # keys: travel lines. values: array ref of stops
 
     my %is_priority_line;
-    if ( option('promote') ) {
-        my @prioritylines = split /,/, option('promote');
-        $is_priority_line{$_} = 1 foreach @prioritylines;
+    if ( $params{promote} ) {
+        $is_priority_line{$_} = 1 foreach @{ $params{promote} };
     }
 
     # Make new %used_stops_of_linedir with only stops
@@ -69,8 +68,9 @@ sub travelsort {
 
     while ( scalar keys %used_stops_of_linedir ) {
 
-        my $max_linedir
-          = _get_max_linedir( \%used_stops_of_linedir, \%is_priority_linedir );
+        my $max_linedir =
+          _get_max_linedir( \%used_stops_of_linedir, \%is_priority_linedir,
+            $params{demote600s} );
 
         # $max_linedir is now the line/dir combination with the most stops
 
@@ -105,18 +105,19 @@ sub travelsort {
             }
         }
 
-    } ## tidy end: while ( scalar keys %used_stops_of_linedir)
+    }    ## tidy end: while ( scalar keys %used_stops_of_linedir)
     return @results;
-} ## tidy end: sub travelsort
+}    ## tidy end: sub travelsort
 
 sub _get_max_linedir {
 
     my $stops_of_linedir_r    = shift;
     my $is_priority_linedir_r = shift;
+    my $demote600s = shift;
 
     my $max_linedir;
 
-    if ( option('demote600s') ) {
+    if ( $demote600s ) {
 
         $max_linedir = (
             sort {
@@ -126,10 +127,10 @@ sub _get_max_linedir {
                   or
 
                   ( $a =~ /^6\d\d/ <=> $b =~ /^6\d\d/ )
-                  or ( @{ $stops_of_linedir_r->{$b} } <=>
-                    @{ $stops_of_linedir_r->{$a} } )
+                  or ( @{ $stops_of_linedir_r->{$b} }
+                    <=> @{ $stops_of_linedir_r->{$a} } )
                   or byline( $a, $b )
-              } keys %{$stops_of_linedir_r}
+            } keys %{$stops_of_linedir_r}
         )[0];
 
     }
@@ -143,16 +144,16 @@ sub _get_max_linedir {
                   or
 
                   #( $a =~ /^6\d\d/ <=> $b =~ /^6\d\d/ ) or
-                  ( @{ $stops_of_linedir_r->{$b} } <=>
-                    @{ $stops_of_linedir_r->{$a} } )
+                  ( @{ $stops_of_linedir_r->{$b} }
+                    <=> @{ $stops_of_linedir_r->{$a} } )
                   or byline( $a, $b )
-              } keys %{$stops_of_linedir_r}
+            } keys %{$stops_of_linedir_r}
         )[0];
 
     }
 
     return $max_linedir;
-} ## tidy end: sub _get_max_linedir
+}    ## tidy end: sub _get_max_linedir
 
 1;
 
@@ -173,30 +174,38 @@ This documentation refers to version 0.001.
 
 =head1 DESCRIPTION
 
-Actium::Sorting::Travel is a module that provides special sorting routines
+Actium::Sorting::Travel is a module that provides special sorting routine
 for the Actium system. It sorts by travel line. The purpose is to provide
 lists of stops ordered in a way that makes it easier for a maintenance
 worker or surveyor to travel down a bus line and visit all the stops,
-but without duplicates.
+but without duplication.
 
 The result is a list of routings, with the affected stops, with all duplicates
 removed. It is designed so that the longest lists possible are given.
 
-=head1 SUBROUTINES
+=head1 SUBROUTINE
 
 Nothing is exported by default, but travelsort() may be requested by 
 the calling module.
 
+=head2 travelsort
+The travelsort routine provides the sorted list of stops.
+
+It takes two mandatory and two optional named arguments.
+
 =over
 
-=item travelsort( I<stops> , I<stops_of_linedir> )
+=item stops
 
-The routine requires two arguments. The first is a reference to an array
+The mandatory stops argument is a reference to an array
 of the stops that are to be sorted. 
 
  [qw<stop_1 stop_2 stop_3>] ...
+ 
+=item stops_of_linedir
 
-The second is a hash ref. The keys are the routings and and the 
+The stops_of_linedir argument must be a hash ref, where the 
+keys are the routings and and the 
 values are the stops that it uses, in order.
 
  $ref->{1-Northbound}->[qw<stop_2 stop_1>]
@@ -204,8 +213,22 @@ values are the stops that it uses, in order.
  $ref->{6-Counterclockwise}->[qw<stop_2>]
  ...
  
-Stops on the second list but not on the first list are ignored, allowing 
+Stops in stops_of_linedir list but not in stops are ignored, allowing 
 users to pass (for example) the full set of stops-by-line to the routine.
+
+=item promote
+
+This optional parameter, if present, must be a reference to an array of lines. 
+These lines will be given precedence when choosing which line to use for a
+particular stop, even if another line has more stops.
+
+=item demote600s
+
+This optional parameter is a boolean. If it is true, all other lines
+will be given precedence over lines 600-699, even if a 600-series line has more
+stops.
+
+=back
  
 The result is a list of arrayrefs. The first element of each arrayref
 is the routing, and the following elements are the stops.
@@ -214,22 +237,6 @@ is the routing, and the following elements are the stops.
  [qw(1-Northbound stop_2 stop_1 stop_5)]
  ...
  
-=back
-
-=head1 OPTIONS
-
-This module uses the Actium::Options module to allow users to control
-it from the command line.
-
-=over
-
-=item B<-promote>
-=item B<-demote600s>
-
-(more to come)
-
-=back
-
 =head1 DEPENDENCIES
 
 =over
@@ -240,7 +247,7 @@ perl 5.12
 
 =item *
 
-Actium::Options
+Sub::Exporter
 
 =back
 
@@ -248,10 +255,22 @@ Actium::Options
 
 Aaron Priven <apriven@actransit.org>
 
-=head1 LICENSE AND COPYRIGHT
+=head1 COPYRIGHT & LICENSE
 
-This module is free software; you can redistribute it and/or modify it under 
-the same terms as Perl itself. See L<perlartistic>.
+Copyright 2011-2015
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
 
 This program is distributed in the hope that it will be useful, but WITHOUT 
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 

@@ -21,6 +21,19 @@ use Actium::Constants;
 use Actium::Term ('output_usage');
 use Actium::O::Folders::Signup;
 
+sub OPTIONS {
+    return [
+        'promote=s',
+        'When sorting by travel, give a list of lines to be sorted first, '
+          . 'separated by commas. For example, -promote 26,A,58'
+      ],
+      [
+        'demote600s!',
+        'When sorting by travel, lower the priority of 600-series lines. '
+      ];
+
+}
+
 sub HELP {
 
     say <<'HELP' or die q{Can't open STDOUT for writing};
@@ -43,10 +56,18 @@ HELP
 
 sub START {
 
-    my $class  = shift;
-    my %params = @_;
+    my $class   = shift;
+    my %params  = @_;
+    my %options = %{ $params{options} };
 
     my @argv = @{ $params{argv} };
+
+    my @promote_parameter;
+    if ( $options{promote} ) {
+        @promote_parameter = ( promote => [ split m/,/, $options{promote} ] );
+    }
+    # this is written as a list because promote => undef or whatever will
+    # not pass validation
 
     my $inputfilespec = shift @argv;
     die "No input file given" unless $inputfilespec;
@@ -77,7 +98,12 @@ sub START {
     my $stops_of_r = $slistsdir->retrieve('line.storable')
       or die "Can't open line.storable file: $OS_ERROR";
 
-    my @sorted = travelsort( [ keys %description_of ], $stops_of_r );
+    my @sorted = travelsort(
+        stops            => [ keys %description_of ],
+        stops_of_linedir => $stops_of_r,
+        @promote_parameter,
+        demote600s => $options{demote600s},
+    );
 
     binmode STDOUT, ':utf8';
     while ( my $ref = shift @sorted ) {
@@ -89,7 +115,7 @@ sub START {
         }
     }
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 
@@ -102,7 +128,7 @@ orderbytravel - produce ordered list of stops by travel along bus routes
 
 =head1 VERSION
 
-This documentation refers to version 0.001
+This documentation refers to version 0.009
 
 =head1 USAGE
 
@@ -126,14 +152,34 @@ the line is skipped (since it probably contains column names).
 
 =head1 OPTIONS
 
-This program specifies no options itself, but several modules this subprogram 
+This program specifies two options itself.
+
+=over
+
+=item B<-promote>
+
+If present, this option must be followed by a list of lines, separated by
+commas (and no spaces). For example, 
+
+  actium orderbytravel -promote 26,A,58 file.txt
+
+These lines will be given precedence when choosing which line to use for a
+particular stop, even if another line has more stops.
+
+=item B<-demote600s>
+
+If this option is given, all other lines
+will be given precedence over lines 600-699, even if a 600-series line has more
+stops.
+
+=back
+
+Also, several modules this subprogram 
 uses specify options. See:
 
 =over
 
 =item L<OPTIONS in Actium::O::Folders::Signup|Actium::O::Folders::Signup/OPTIONS>
-
-=item L<OPTIONS in Actium::Sorting::Travel|Actium::Sorting::Travel/OPTIONS>
 
 =item L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
 
@@ -197,7 +243,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2011
+Copyright 2011-2015
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
