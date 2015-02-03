@@ -6,7 +6,7 @@
 
 # Legacy status: 4
 
-package Actium::Cmd::MRImport 0.005;
+package Actium::Cmd::MRImport 0.009;
 
 use 5.014;
 use warnings;
@@ -14,38 +14,43 @@ use warnings;
 use Actium::MapRepository (':all');
 use Actium::O::Folder;
 
-use Actium::Options(qw<add_option option>);
 use Actium::Term ('output_usage');
 
 use English '-no_match_vars';
 
-add_option(
-    'repository=s',
-    'Location of repository in file system',
-    '/Volumes/Bireme/Maps/Repository'
-);
-add_option( 'web!',
-    'Create web files of maps (on by default; turn off with -no-web)', 1 );
-add_option( 'webfolder|wf=s',
-        'Folder where web files will be created. '
-      . 'Default is "web" in the folder where the maps already are' );
-add_option(
-    'move|mv!',
-    'Move files into repository instead of copying '
-      . '(on by default; turn off with -no-move)',
-    1
-);
-
-add_option( 'verbose!',
-    'Display detailed information on each file copied or rasterized.', 0 );
-
-#add_option( 'rename!',
-#        'Rename the maps to have the same filenames as those '
-#      . 'in the repository. Has no effect when moving instead of copying.' );
-# never implemented
+sub OPTIONS {
+    return (
+        [
+            'repository=s',
+            'Location of repository in file system',
+            '/Volumes/Bireme/Maps/Repository'
+        ],
+        [
+            'web!',
+            'Create web files of maps (on by default; turn off with -no-web)',
+            1
+        ],
+        [
+            'webfolder|wf=s',
+            'Folder where web files will be created. '
+              . 'Default is "web" in the folder where the maps already are'
+        ],
+        [
+            'move|mv!',
+            'Move files into repository instead of copying '
+              . '(on by default; turn off with -no-move)',
+            1
+        ],
+        [
+            'verbose!',
+            'Display detailed information on each file copied or rasterized.',
+            0
+        ],
+    );
+}
 
 sub HELP {
- 
+
     my $usage = <<'EOF';
 actium.pl mr_import _folder_ _folder_...
 
@@ -54,7 +59,7 @@ actium.pl mr_import _folder_ _folder_...
   for more information.
 EOF
 
-    say $usage 
+    say $usage
       or die "Can't display usage: $OS_ERROR";
     output_usage;
     return;
@@ -62,28 +67,31 @@ EOF
 
 sub START {
 
-    my $class = shift;
-    my %params = @_;
+    my $class   = shift;
+    my %params  = @_;
+    my %options = %{ $params{options} };
 
     my @importfolders = $params{argv};
     unless (@importfolders) {
         $class->HELP();
         return;
     }
-    my $web           = option('web');
-    my $webfolder_opt = option('webfolder');
-    my $verbose       = option('verbose');
+    my $web           = $options{web};
+    my $webfolder_opt = $options{webfolder};
+    my $verbose       = $options{verbose};
 
     my $specified_webfolder_obj;
 
     if ( $web and $webfolder_opt ) {
-        $specified_webfolder_obj = Actium::O::Folder->new( option('webfolder') );
+        $specified_webfolder_obj =
+          Actium::O::Folder->new( $options{webfolder} );
     }
 
-    my $repository_opt = option('repository');
+    my $repository_opt = $options{repository};
 
     my $repository = Actium::O::Folder->new(
-        {   folderlist => $repository_opt,
+        {
+            folderlist => $repository_opt,
             must_exist => 1,
         }
     );
@@ -91,13 +99,14 @@ sub START {
 
         # import to repository
         my $importfolder = Actium::O::Folder->new(
-            {   folderlist => $folderspec,
+            {
+                folderlist => $folderspec,
                 must_exist => 1,
             }
         );
         my @imported_files = import_to_repository(
             repository   => $repository,
-            move         => option('move'),
+            move         => $options{move},
             verbose      => $verbose,
             importfolder => $importfolder
         );
@@ -123,11 +132,11 @@ sub START {
 
         }
 
-    } ## tidy end: foreach my $folderspec (@importfolders)
+    }    ## tidy end: foreach my $folderspec (@importfolders)
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 
@@ -239,8 +248,6 @@ dependencies below.
 
 =item * Actium::O::Folder
 
-=item * Actium::Options
-
 =item * Actium::Term 
 
 =back
@@ -251,7 +258,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2012
+Copyright 2012-2015
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:

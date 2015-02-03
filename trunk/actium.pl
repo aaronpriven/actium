@@ -118,30 +118,20 @@ my $module = "Actium::Cmd::$module_of{$subcommand}";
 
 require_module($module) or die "Couldn't load module $module: $OS_ERROR";
 
-my @options;
-
-{
-    no strict 'refs';
-    @options = @{ $module . '::' . 'OPTIONS' };
-}
-
-push @options, [ 'help|?', 'Displays this help message.' ],
+my @options = ( [ 'help|?', 'Displays this help message.' ],
   [
     '_stacktrace',
     'Provides lots of debugging information if there is an error. '
       . 'Best ignored.'
-  ],
+  ], )
   ;
+  
+unshift @options, $module->OPTIONS if $module->can('OPTIONS');
 
 while (@options) {
     my $option_r = shift(@options);
     add_option( @{$option_r} );
 }
-
-#add_option( 'help|?', 'Displays this help message.' );
-#add_option( '_stacktrace',
-#        'Provides lots of debugging information if there is an error. '
-#      . 'Best ignored.' );
 
 init_options();
 
