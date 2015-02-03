@@ -10,7 +10,7 @@
 use 5.012;
 use warnings;
 
-package Actium::Cmd::OrderByTravel 0.006;
+package Actium::Cmd::OrderByTravel 0.009;
 
 use Carp;
 use Storable();
@@ -184,8 +184,6 @@ signup) or there may be some other error.
 =item Actium::Constants
 
 =item Actium::Term 
-
-=item Actium::Options 
 
 =item Actium::O::Folders::Signup
 

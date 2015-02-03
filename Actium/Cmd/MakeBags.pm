@@ -16,9 +16,9 @@ sub HELP {
     say "Help not implemented.";
 }
 
-
-our @OPTIONS =
-  ( [ 'oldsignup=s', 'Previous signup to compare this signup to' ] );
+sub OPTIONS {
+   return  ( [ 'oldsignup=s', 'Previous signup to compare this signup to' ] );
+}
 
 sub START {
 

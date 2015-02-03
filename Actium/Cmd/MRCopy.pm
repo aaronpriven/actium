@@ -18,55 +18,59 @@ use Actium::Term ('output_usage');
 
 use English '-no_match_vars';
 
-our @OPTIONS = (
-    [
-        'repository=s',
-        'Location of repository in file system',
-        '/Volumes/Bireme/Maps/Repository'
-    ],
-    [
-        'activemapfile=s',
-        'Name of file containing list of active maps. '
-          . 'Must be located in the repository.',
-        'active_maps.txt',
-    ],
-    [
-        'web!',
-        'Create web files of maps (on by default; turn off with -no-web)', 1
-    ],
-    [
-        'fullnames!',
-        'Copy files with their full names '
-          . '(on by default; turn off with -no-fullnames)',
-        1,
-    ],
-    [
-        'linesnames!',
-        'Copy files using the lines and token as the name only '
-          . '(on by default; turn off with -no-linesnames)',
-        1,
-    ],
-    [
-        'verbose!',
-        'Display detailed information on each file copied or rasterized.', 0
-    ],
+sub OPTIONS {
+    return (
+        [
+            'repository=s',
+            'Location of repository in file system',
+            '/Volumes/Bireme/Maps/Repository'
+        ],
+        [
+            'activemapfile=s',
+            'Name of file containing list of active maps. '
+              . 'Must be located in the repository.',
+            'active_maps.txt',
+        ],
+        [
+            'web!',
+            'Create web files of maps (on by default; turn off with -no-web)',
+            1
+        ],
+        [
+            'fullnames!',
+            'Copy files with their full names '
+              . '(on by default; turn off with -no-fullnames)',
+            1,
+        ],
+        [
+            'linesnames!',
+            'Copy files using the lines and token as the name only '
+              . '(on by default; turn off with -no-linesnames)',
+            1,
+        ],
+        [
+            'verbose!',
+            'Display detailed information on each file copied or rasterized.',
+            0,
+        ],
 
-    [
-        'webfolder|wf=s',
-        'Folder where web files will be created. '
-          . 'Default is "_web" in the repository'
-    ],
-    [
-        'linesfolder|lf=s',
-        'Folder to where lines and tokens files will be copied. '
-          . 'Default is "_linesnames" in the repository'
-    ],
-    [
-        'fullfolder|ff=s',
-        'Folder to where full names will be copied. '
-          . 'Default is "_fullnames" in the repository'
-    ],
-);
+        [
+            'webfolder|wf=s',
+            'Folder where web files will be created. '
+              . 'Default is "_web" in the repository'
+        ],
+        [
+            'linesfolder|lf=s',
+            'Folder to where lines and tokens files will be copied. '
+              . 'Default is "_linesnames" in the repository'
+        ],
+        [
+            'fullfolder|ff=s',
+            'Folder to where full names will be copied. '
+              . 'Default is "_fullnames" in the repository'
+        ],
+    );
+}
 
 sub HELP {
 
