@@ -10,16 +10,9 @@ use warnings;
 
 package Actium::Sorting::Line 0.006;
 
-#use Storable;
-use Actium::Options (qw(add_option option));
-
 use Actium::Constants;
 
 use Sub::Exporter -setup => { exports => [qw(byline sortbyline linekeys)] };
-
-add_option( 'lettersfirst!',
-        'When line designations are sorted, sort letters ahead of numbers '
-      . '(like Muni, not AC)' );
 
 ########################
 ### SORTING BY LINE NAME
@@ -28,12 +21,7 @@ add_option( 'lettersfirst!',
 sub linekeys {
     my @keys;
     foreach my $line (@_) {
-        if ( option('lettersfirst') ) {
-            push @keys, _letters_first($line);
-        }
-        else {
-            push @keys, _numbers_first($line);
-        }
+       push @keys, _numbers_first($line);
     }
     if (@keys == 1 ) { return $keys[0] };
     return @keys;
@@ -92,12 +80,12 @@ sub _numbers_first {
 
 }    ## <perltidy> end sub _numbers_first
 
-sub _letters_first {
-    my $key = _numbers_first(@_);
-    $key =~ s/\0(\d)/\cA$1/g;
-    $key = "\1" . $key if $key =~ m/^[[:alpha:]]/;
-    return $key;
-}
+#sub _letters_first {
+#    my $key = _numbers_first(@_);
+#    $key =~ s/\0(\d)/\cA$1/g;
+#    $key = "\1" . $key if $key =~ m/^[[:alpha:]]/;
+#    return $key;
+#}
 
 sub byline ($$) {    ## no critic (ProhibitSubroutinePrototypes)
     my ( $a, $b ) = linekeys(@_);
@@ -165,8 +153,7 @@ This module can sort lines of arbitrary length and complexity, with very long
 line names (AAAAAAAA...) and/or very high numbers of subline
 designations (A1B2C3D4...).
 
-Unless the B<-lettersfirst> option is specified on the command line, 
-line designations beginning with numbers
+Line designations beginning with numbers
 are sorted before lines beginning with letters. The module is 
 case-insensitive.
 
@@ -218,23 +205,6 @@ sort the lines that were given, using "cmp" or another stringwise operator.
 In this way you can use the values for
 sorting in another program, or what have you.
 
-=head1 OPTIONS
-
-This module uses the Actium::Options module to allow users to control
-it from the command line.
-
-=over
-
-=item B<-lettersfirst>
-
-B<-lettersfirst> changes the sort order so that lines beginning with letters
-are sorted before numbers, instead of the other way around.  This yields
-"A, A1, B, 1, 10" instead of "1, 10, A, A1, B".
-
-This does not affect sorting beyond the first character.
-
-=back
-
 =head1 DEPENDENCIES
 
 =over
@@ -242,10 +212,6 @@ This does not affect sorting beyond the first character.
 =item * 
 
 perl 5.12
-
-=item *
-
-Actium::Options
 
 =back
 
