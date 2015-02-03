@@ -20,39 +20,55 @@ const my $DEFAULT_STEP         => 2;
 #########################################################
 ### EXPORTS
 
-use Sub::Exporter -setup =>
-  { exports => [ cry => \'_build_cry', 'default_crier', ] };
+use Sub::Exporter -setup => {
+    exports => [
+        'cry' => \'_build_cry',
+        'cry_text',
+        'default_crier' => \'_build_default_crier',
+    ]
+};
 
 my $default_crier;
 
-sub _build_cry {
+sub _build_default_crier {
     my ( $class, $name, $arg ) = @_;
 
     if ( defined $arg and scalar keys %$arg ) {
         if ($default_crier) {
-            croak qq[Arguments given in "use Actium::O::Crier (cry => {args})"]
-              . qq[but the default crier has already been initialized];
-
+            croak 'Arguments given in '
+              . q{"use Actium::O::Crier (default_crier => {args})"}
+              . q{but the default crier has already been initialized};
         }
 
         $default_crier = __PACKAGE__->new($arg);
         return sub {
-            return $default_crier->cry(@_);
+            return $default_crier;
         };
     }
 
     return sub {
         $default_crier = __PACKAGE__->new()
           if not $default_crier;
-        return $default_crier->cry(@_);
+        return $default_crier;
       }
 
 }
 
-sub default_crier {
+sub _build_cry {
+    return sub {
+        $default_crier = __PACKAGE__->new()
+          if not $default_crier;
+        return $default_crier->cry(@_);
+      }
+}
+
+# that is only necessary because we have a cry subroutine and a cry object
+# method and we want them to do different things
+
+sub cry_text {
     $default_crier = __PACKAGE__->new()
       if not $default_crier;
-    return $default_crier;
+    return $default_crier->text(@_);
 }
 
 #####################################################################
@@ -318,7 +334,8 @@ has 'maxdepth' => (
     sub _severity_num {
         my $self    = shift;
         my $sevtext = uc(shift);
-        return $SEVERITY_NUM_OF{OTHER} unless exists $SEVERITY_NUM_OF{$sevtext};
+        return $SEVERITY_NUM_OF{OTHER}
+          unless exists $SEVERITY_NUM_OF{$sevtext};
         return $SEVERITY_NUM_OF{$sevtext};
     }
 
@@ -328,6 +345,12 @@ has 'override_severity' => (
     is      => 'ro',
     isa     => 'Int',
     default => -1,
+);
+
+has 'minimum_severity' => (
+    is      => 'ro',
+    isa     => 'Int',
+    default => 0,
 );
 
 has 'default_closestat' => (
@@ -348,6 +371,7 @@ has '_cries_r' => (
         _pop_cry   => 'pop',
         cry_level  => 'count',
         _first_cry => [ get => 0 ],
+        _last_cry  => [ get => -1 ],
     },
     default => sub { [] },
 );
@@ -444,6 +468,24 @@ sub _close_up_to {
     }
 
     return $cry->_close(@original_args);
+
+}
+
+sub text {
+
+    my $self = shift;
+    my @args = @_;
+    my $cry;
+    if ( $default_crier->cry_level == 0 ) {
+
+        # caller's subroutine name
+        $cry = $default_crier->cry( { muted => 1, closestat => 'UNK' } );
+    }
+    else {
+        $cry = $default_crier->_last_cry;
+    }
+
+    return $cry->text(@_);
 
 }
 
@@ -592,16 +634,12 @@ output destination for that process (typically STDERR), some
 procedural shortcuts exist to make it easier to send cries to a
 default output.
 
-Importing the C<cry> routine establishes the default cry object,
-and calling the routine calls the C<cry>
-method on that object with your arguments.
-
-To use the shortcut, specify it in the import list in the C<use
-Actium::O::Crier> call.
+To use the shortcuts, specify them in the import list in the 
+C<use Actium::O::Crier> call.
 C<< "use Actium::O::Crier ( qw(cry))" >>
-will establish a crier object with STDERR as the output,
-and install a sub called C<cry> in your package that will create
-the cry object. Therefore,
+will install a sub called C<cry> in your package that will call
+the C<cry> method on the default crier object.
+Therefore,
 
  use Actium::O::Crier ( qw(cry) );
  my $cry = cry ("Doing a task");
@@ -617,6 +655,8 @@ the Actium::O::Crier class and will be reused by other calls to
 C<cry>, from this module or any other.
 This avoids the need to pass the crier object as an
 argument to routines in other modules.
+
+See L</Subroutines> below.
 
 =head2 Completion upon destruction
 
@@ -1002,47 +1042,63 @@ left the cursor.  Do this by setting the I<-pos> option:
 
 =head2 Subroutines
 
-Two subroutines can be exported from Actium::O::Crier.
+Three subroutines can be exported from Actium::O::Crier.
 
-=head3 B<cry>
+These subroutines are exported using C<Sub::Exporter>, so if you prefer a
+different name for a subroutine, 
+you can specify that using an I<-as> option in a hashref of options after the 
+subroutine name.
 
-The cry subroutine is a shortcut to allow a default output crier
-object to be easily accessed. See
-L</Exported subroutines: shortcut to a default output destination> above.
+  use Actium::O::Crier (cry => { -as => 'bellow' } , 
+                        default_crier => { -as => 'bellower'} ,
+                        cry_text => { -as => {bellow_text} } );
 
-Install it using C<use>:
+will install the routines using the those names. See L<Sub::Exporter> for more 
+detail on I<-as>.
 
- use Actium::O::Crier (qw(cry));
+Note that several of these routines are built during the import process,
+so cannot be called using a fully-qualified package name. 
+Actium::O::Crier::cry("some text") will not do what you want. 
+(It will call the method C<cry>, not the subroutine C<cry>.)
 
-To specify a different filehandle, or any other options, provide
-them as a hashref in the C<use> call:
+=head3 B<default_crier>
 
- use Actium::O::Crier ( cry => { fh => *STDOUT{IO} , bullets => ' * ' );
+Importing B<default_crier> does two things.
+First, it creates a C<default_crier> subroutine in your package that returns
+the default crier object, allowing it to be accessed directly. This allows most
+attributes to be set (although not the filehandle).
+
+ use Actium::O::Crier ( qw(default_crier) );
+ $crier = default_crier();
+ $crier->set_bullets( ' + ' );
+ 
+If a hashref of options is present after default_crier in the import list,
+during the import process, the default crier object will be created with those
+options.  
+This is the only way to set the filehandle of the default crier object.
 
 Behind the scenes, it is passing these arguments to the
 C<< Actium::O::Crier::->new >> class method,
 so the import routine accepts all the same options as that
-class method.  In addition, the
-"-as" argument can be used to give the installed subroutine another name:
+class method.  For example:
 
- use Actium::O::Crier ( cry => { -as => 'bawl' } );
-
-This will install the routine into the caller's namespace as C<bawl>.
-
-The import routine for C<cry> will accept arguments (other than "-as")
-from only
+ use Actium::O::Crier ( default_crier => { fh => \$myvar , backspace => 0 } );
+ 
+The import routine for C<default_crier> will accept options 
+(other than "-as") from only
 one caller.  If two callers attempt to set the attributes of the
 object via the import routine, an exception will be thrown.
 
-=head3 B<default_crier>
+=head3 B<cry>
 
-The B<default_crier> subroutine returns the default crier
-object, allowing it to be accessed directly. This allows most
-attributes to be set (although not the filehandle).
+The C<cry> subroutine will have the default crier object create a new cry.
+It accepts all the same arguments as the object method C<< $crier->cry() >>.
 
- use Actium::O::Crier ( qw(cry default_crier) );
- $crier = default_crier();
- $crier->set_bullets( ' + ' );
+=head3 B<cry_text>
+
+The C<cry_text> subroutine will have the most recent cry issue text underneath
+it. It works the same as, and accepts all the same arguments as,
+the object method C<< $cry->text() >>.
 
 =head2 Class Method
 
@@ -1063,7 +1119,7 @@ that will be taken as the output destination for this crier.
 
 If no arguments are passed, it will use STDERR as the output.
 
-=head2 Crier Object Method
+=head2 Crier Object Methods
 
 =head3 $crier->cry()
 
@@ -1110,6 +1166,11 @@ It is not correct to call C<cry> in void context:
 Since C<cry> creates a cry object, calling it in void context leaves noplace
 to store it. If it is called in void context, the cry will immediately close
 with "UNK" severity, and will display 'Cry error (cry object not saved)'.
+
+=head3 $crier->text()
+
+This invokes the C<text> object method on the deepest open cry.
+If no cry is open, opens one 
 
 =head2 Cry Object Methods
 
@@ -1215,7 +1276,7 @@ Here's some styles to get you thinking:
                             (liftoff!)
 
 
-=head3 C<text>
+=head3 C<$cry->text>
 
 This outputs the given text without changing the current level.
 Use it to give additional information, such as a blob of description.
@@ -1675,7 +1736,7 @@ The C<cry> method was called in void context. This creates
 an object which should be saved to a variable.
 See L<< /$crier->cry() >>.
 
-=head2 Arguments given in "use Actium::O::Crier (cry => {args})" but the default crier has already been initialized
+=head2 Arguments given in "use Actium::O::Crier (default_crier => {args})" but the default crier has already been initialized
 
 A module attempted to set attributes to the default crier in the import
 process, but the default crier can only be created once. 
@@ -1694,7 +1755,7 @@ Other dependencies include:
 
 =item Sub::Exporter
 
-=item Term::ANSIColor (only when colorizing)
+=item Term::ANSIColor (required only if colorizing)
 
 =item Unicode::LineBreak
 
@@ -1702,7 +1763,7 @@ Other dependencies include:
 
 =back
 
-=head1 PROGRAM NOTES
+=head1 NOTES
 
 Actium::O::Crier is a fork of Term::Emit, by Steve Roscio.
 Term::Emit is great, but it is dependent on Scope::Upper, which hasn't always

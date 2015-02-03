@@ -9,10 +9,13 @@ package Actium::Cmd::StopSearch 0.008;
 use Actium::Preamble;
 use Actium::O::Folder;
 use Actium::Cmd::Config::ActiumFM;
-use Actium::Options(qw/set_option add_option option/);
+use Actium::Options(qw/set_option/);
 use Actium::Term;
 
-add_option ('tab', 'Uses tabs instead of spaces to separate text');
+sub OPTIONS {
+    return ( [ 'tab', 'Uses tabs instead of spaces to separate text' ] )
+      ;
+}
 
 sub HELP {
     say "Help not implemented.";
@@ -25,13 +28,15 @@ sub START {
     my $class      = shift;
     my %params     = @_;
     my $config_obj = $params{config};
-    
+    my $options_r = $params{options};
+
     my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb($config_obj);
-    
-    $divider = option('tab') ? "\t" : '  ';
-    
+
+    $divider = $options_r->{tab} ? "\t" : '  ';
+
     set_option( 'quiet', 1 );
     Actium::Term::_option_quiet(1);
+
     # sigh - need to rewrite Actium::Term
 
     my @args = @{ $params{argv} };
@@ -63,11 +68,9 @@ sub START {
 
         say "Exiting.";
 
-    } ## tidy end: else [ if (@args) ]
+    }    ## tidy end: else [ if (@args) ]
 
-} ## tidy end: sub START
-
-#const my $DIVIDER => '  ';
+}    ## tidy end: sub START
 
 sub _display {
 
@@ -87,9 +90,8 @@ sub _display {
 
     }
 
-} ## tidy end: sub _display
+}    ## tidy end: sub _display
 
 1;
 
 __END__
-
