@@ -72,7 +72,7 @@ sub make_labels {
                 }
 
             if ($originstructions) {
-                $originstructions =~ s/^\&\s+//;
+                $originstructions =~ s/^\&\s*//;
                 $instructions .= ". $originstructions";
             }
 
