@@ -65,7 +65,8 @@ sub make_labels {
 
             my $originstructions = $instructions;
 
-                $instructions = "Replace generic decals with $custom_list";
+            my $decal_pluralized = @found_custom > 1 ? 'decals' : 'decal';
+                $instructions = "Replace generic $decal_pluralized with $custom_list";
 
                 if ( @found_custom < @{ $decals_of_r->{$stopid} } ) {
                     $instructions .= ". Leave other decals";
@@ -78,8 +79,7 @@ sub make_labels {
 
         }
         elsif ( $instructions eq 'P' ) {
-            my @found_decals = @{ $found_decals_of_r->{$stopid} };
-            my $decal_pluralized = @found_decals > 1 ? 'decals' : 'decal';
+            my $decal_pluralized = @found_all > 1 ? 'decals' : 'decal';
             $instructions =
                 "Place $decal_pluralized $all_list on the flag";
         }
@@ -89,7 +89,7 @@ sub make_labels {
     }
 
     my $out_sheet = Actium::O::2DArray->new_in_chunks( 2, @labels );
-    $out_sheet->ins_col( 1, $EMPTY_STR );
+    $out_sheet->ins_col( 1, ($SPACE) x scalar @{$out_sheet});
 
     # blank column for space in the mdidle of the label
 
