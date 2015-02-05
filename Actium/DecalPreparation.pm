@@ -46,28 +46,31 @@ sub make_labels {
             next if folded_in( $stopid => 'id', 'stop id', 'stopid' );
             $desc = '[NO DESCRIPTION FOUND]';
         }
-        
-        if ( not $instructions or $instructions =~ /\A\&/) {
-            
+
+        my @found_all = @{ $found_decals_of_r->{$stopid} };
+        my @found_custom = grep { m/-/ } @found_all;
+        my $all_list =
+          @found_all
+          ? joinseries_ampersand(@found_all)
+          : '(NO DECALS FOUND)';
+        my $custom_list =
+          @found_custom
+          ? joinseries_ampersand(@found_custom)
+          : '(NO CUSTOM DECALS FOUND)';
+          
+        $instructions =~ s/%c/$custom_list/;
+        $instructions =~ s/%d/$all_list/;
+          
+        if ( not $instructions or $instructions =~ /\A\&/ ) {
+
             my $originstructions = $instructions;
 
-            my @found_decals =
-              grep { m/-/ } @{ $found_decals_of_r->{$stopid} };
+                $instructions = "Replace generic decals with $custom_list";
 
-            if ( not @found_decals ) {
-                $instructions = "(NO DECALS FOUND)";
-            }
-            else {
-                $instructions = "Replace generic decals with "
-                  . joinseries_ampersand(@found_decals);
-
-                if ( @found_decals < @{ $decals_of_r->{$stopid} } ) {
-
+                if ( @found_custom < @{ $decals_of_r->{$stopid} } ) {
                     $instructions .= ". Leave other decals";
-
                 }
-            }
-            
+
             if ($originstructions) {
                 $originstructions =~ s/^\&\s+//;
                 $instructions .= ". $originstructions";
@@ -78,11 +81,9 @@ sub make_labels {
             my @found_decals = @{ $found_decals_of_r->{$stopid} };
             my $decal_pluralized = @found_decals > 1 ? 'decals' : 'decal';
             $instructions =
-                "Place $decal_pluralized "
-              . joinseries_ampersand(@found_decals)
-              . " on the flag";
+                "Place $decal_pluralized $all_list on the flag";
         }
-        
+
         push @labels, "$stopid   $desc\n$instructions";
 
     }
@@ -91,10 +92,10 @@ sub make_labels {
     $out_sheet->ins_col( 1, $EMPTY_STR );
 
     # blank column for space in the mdidle of the label
-    
-    my $format = { valign => 'vcenter'  };
 
-    return $out_sheet->xlsx(output_file => $output_file, format => $format );
+    my $format = { valign => 'vcenter' };
+
+    return $out_sheet->xlsx( output_file => $output_file, format => $format );
 
 }
 
