@@ -40,3 +40,7 @@ severity = 5
 
 [Miscellanea::RequireRcsKeywords]
 keywords = Id
+
+# Distributions that this uses:
+# Perl-Critic-Deprecated
+# Perl-Critic-StricterSubs

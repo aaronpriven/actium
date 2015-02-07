@@ -81,6 +81,7 @@ my %module_of = (
     headwaytimes    => 'HeadwayTimes',
     zipdecals       => 'ZipDecals',
     zipcodes        => 'ZipCodes',
+    crewlist        => 'CrewList',
 
     # more to come
 );
@@ -118,14 +119,15 @@ my $module = "Actium::Cmd::$module_of{$subcommand}";
 
 require_module($module) or die "Couldn't load module $module: $OS_ERROR";
 
-my @options = ( [ 'help|?', 'Displays this help message.' ],
-  [
-    '_stacktrace',
-    'Provides lots of debugging information if there is an error. '
-      . 'Best ignored.'
-  ], )
-  ;
-  
+my @options = (
+    [ 'help|?', 'Displays this help message.' ],
+    [
+        '_stacktrace',
+        'Provides lots of debugging information if there is an error. '
+          . 'Best ignored.'
+    ],
+);
+
 unshift @options, $module->OPTIONS if $module->can('OPTIONS');
 
 while (@options) {
