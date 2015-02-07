@@ -536,7 +536,7 @@ Alternatively, it can be invoked with named arguments in a hash reference:
  my $hashref = $database->all_in_column_key( {
       TABLE => 'table' ,
       COLUMN => 'column' ,
-      WHERE => 'WHERE COLUMN = ?',
+      WHERE => 'COLUMN = ?',
       BIND_VALUES => [ $value ] ,
       });
 
@@ -574,7 +574,7 @@ Alternatively, it can be invoked with named arguments in a hash reference:
  my $hashref = $database->all_in_columns_key( {
       TABLE => 'table' ,
       COLUMNS => [ qw/column_one column_two/ ] ,
-      WHERE => 'WHERE COLUMN = ?',
+      WHERE => 'COLUMN = ?',
       BIND_VALUES => [ $value ] ,
       });
 
