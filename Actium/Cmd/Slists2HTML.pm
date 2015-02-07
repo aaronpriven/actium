@@ -49,8 +49,6 @@ sub START {
 
     emit 'Getting stop descriptions from FileMaker export';
 
-    my $dbh = $actiumdb->dbh;
-
     my $stops_row_of_r
       = $actiumdb->all_in_columns_key
       (qw/Stops_Neue c_description_short h_loca_latitude h_loca_longitude 
