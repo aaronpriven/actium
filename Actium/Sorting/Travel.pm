@@ -12,7 +12,7 @@ package Actium::Sorting::Travel 0.009;
 
 use Actium::Sorting::Line ('byline');
 
-use Actium::Constants;
+use Actium::Preamble;
 
 use Sub::Exporter -setup => { exports => [qw(travelsort)] };
 
@@ -26,7 +26,7 @@ sub travelsort {
         @_,
         {
             stops            => { type => $PV_TYPE{ARRAYREF} },
-            stops_of_linedir => { type => $PV_TYPE{HASHREF}, optional => 1 },
+            stops_of_linedir => { type => $PV_TYPE{HASHREF}  },
             promote          => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
             demote600s       => { type => $PV_TYPE{BOOLEAN}, default => 0 },
         }
@@ -58,7 +58,7 @@ sub travelsort {
           if $is_priority_line{$line};
 
         my @usedstops;
-        foreach my $stop ( @{$stops_r} ) {
+        foreach my $stop ( uniq @{$stops_r} ) {
             push @usedstops, $stop if $stop_is_used{$stop};
         }
         $used_stops_of_linedir{$linedir} = \@usedstops;
