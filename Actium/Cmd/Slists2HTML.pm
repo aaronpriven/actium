@@ -13,12 +13,12 @@ use Actium::Preamble;
 
 use Actium::O::Folders::Signup;
 use Actium::O::Dir;
+
 #use Actium::Constants;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util('filename');
 use Actium::Term;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
-
 
 use HTML::Entities;
 
@@ -30,9 +30,9 @@ my $count;
 my %order_of = map { $_ => $count++ } @DIRCODES;
 
 sub START {
-    
+
     emit "Making HTML files of stop lists";
-    
+
     my $class  = shift;
     my %params = @_;
 
@@ -40,21 +40,25 @@ sub START {
 
     my $signup   = Actium::O::Folders::Signup->new;
     my $actiumdb = actiumdb($config_obj);
-    
+
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');
+
     #    my $linehtml_folder       = $stoplists_folder->subfolder('linehtml');
 
     $actiumdb->ensure_loaded('Stops_Neue');
 
     emit 'Getting stop descriptions from FileMaker export';
 
-    my $stops_row_of_r
-      = $actiumdb->all_in_columns_key
-      (qw/Stops_Neue c_description_short h_loca_latitude h_loca_longitude 
-          c_city/);
+    my $stops_row_of_r = $actiumdb->all_in_columns_key(
+        qw/Stops_Neue c_description_short h_loca_latitude h_loca_longitude
+          c_city/
+    );
 
     emit_done;
+
+    my $linegrouptype_of_r =
+      $actiumdb->all_in_column_key(qw/Lines LineGroupType/);
 
     emit "Creating HTML versions of stop lists";
 
@@ -88,6 +92,7 @@ sub START {
             my $file = "$route-$dir.txt";
             my $ifh  = $stoplists_line_folder->open_read($file);
             binmode $ifh, ':encoding(MacRoman)';
+
             # HORRIBLE KLUDGE BECAUSE I CAN'T GET ODBC TO READ UTF8 DATA
 
             my $headerline = readline($ifh);    # thrown away
@@ -102,21 +107,21 @@ sub START {
 
                 my $desc = encode_entities(
                     $stops_row_of_r->{$stopid}{c_description_short} );
-                    
-                    
-                my $latlong = 
-                    $stops_row_of_r->{$stopid}{h_loca_latitude} . ',' . 
-                    $stops_row_of_r->{$stopid}{h_loca_longitude} 
-                     ;
-                my $url =  'http://maps.google.com/maps?q=@' . $latlong . "&z=18";
-                    
-                my $city = encode_entities( $stops_row_of_r->{$stopid}{c_city} );
+
+                my $latlong =
+                    $stops_row_of_r->{$stopid}{h_loca_latitude} . ','
+                  . $stops_row_of_r->{$stopid}{h_loca_longitude};
+                my $url =
+                  'http://maps.google.com/maps?q=@' . $latlong . "&z=18";
+
+                my $city =
+                  encode_entities( $stops_row_of_r->{$stopid}{c_city} );
 
                 my $citytext = $EMPTY_STR;
 
                 if ( $prevcity ne $city ) {
-                    $citytext
-                      = '<span style="text-decoration: underline; font-weight: bold;">'
+                    $citytext =
+'<span style="text-decoration: underline; font-weight: bold;">'
                       . $city
                       . '</span><br />';
                     $citytext = '</p><p>' . $citytext if $prevcity;
@@ -130,13 +135,14 @@ sub START {
                   . qq{$desc (<a href="$url" target="_blank">$stopid</a>)};
 
                 push @{ $stops_of{$dir} }, $stopid;
+
                 #my $savedline = $stopline =~ s/\t/ =&gt; /r;
                 #push @{ $stoplines_of{$dir} }, $savedline;
-            } ## tidy end: while ( defined( my $stopline...))
+            }    ## tidy end: while ( defined( my $stopline...))
 
             close $ifh or die "Can't close $file: $OS_ERROR";
 
-        } ## tidy end: foreach my $dir (@dirs)
+        }    ## tidy end: foreach my $dir (@dirs)
 
         my @dir_objs  = map { Actium::O::Dir->new($_) } @dirs;
         my @dir_bound = map { $_->as_bound } @dir_objs;
@@ -176,91 +182,39 @@ EOT
         $table_of{$route} = $outdata;
 
         my $type;
-        for ($route) {
-            if (/BS[DHN]/) {
-                $type = 'Broadway Shuttle';
-                next;
+        $type = $linegrouptype_of_r->{$route};
+
+        if ( $type eq 'Local' ) {
+            no warnings 'numeric';
+            if ( $_ <= 70 ) {
+                $type = 'Local1';
             }
-            #if ($_ eq '800') {
-            #    $type = 'Transbay';
-            #    next;
-            #}
-            if (/^DB/) {
-                $type = 'Dumbarton Express';
-                next;
+            else {
+                $type = 'Local2';
             }
-            if (/^[A-Z].*/) {
-                $type = 'Transbay';
-                next;
-            }
-            if (/6\d\d/) {
-                $type = 'Supplementary';
-                next;
-            }
-            if (/8\d\d/) {
-                $type = 'All Nighter';
-                next;
-            }
-                $type = 'Local';
-        } ## tidy end: given
+        }
 
         push @{ $routes_of_type{$type} }, $route;
         push @{ $tables_of_type{$type} }, $outdata;
 
-    } ## tidy end: foreach my $route ( sortbyline...)
+    }    ## tidy end: foreach my $route ( sortbyline...)
 
     my %display_type_of = map { $_, $_ } keys %routes_of_type;
     my %subtypes_of = map { $_, [$_] } keys %routes_of_type;
+    delete $subtypes_of{Local1};
+    delete $subtypes_of{Local2};
+    $subtypes_of{Local} = [qw/Local1 Local2/];
 
     # display and group type same as type, for now
-
-    foreach my $type ( keys %routes_of_type ) {
-        my $final_idx = $#{ $routes_of_type{$type} };
-        my $total     = $final_idx + 1;
-        next unless ( $total > 50 );
-
-        $subtypes_of{$type} = [];    # clear subtypes
-
-        my @routes = @{ $routes_of_type{$type} };
-        my @tables = @{ $tables_of_type{$type} };
-
-        my $num_pages = ceil( $total / 40 );
-
-        my $lists_per_page = ceil( $total / $num_pages );
-
-        my $count = 0;
-        my $it = natatime $lists_per_page, ( 0 .. $final_idx );
-        while ( my @indexes = $it->() ) {
-            my $initial_route = $routes[ $indexes[0] ];
-            my $final_route   = $routes[ $indexes[-1] ];
-            $count++;
-
-            my $newtype = "${type}$count";
-            $display_type_of{$newtype}
-              = encode_entities("$type (${initial_route}\x{2013}$final_route)");
-            # 2013 is en dash
-
-            $routes_of_type{$newtype} = [ @routes[@indexes] ];
-            $tables_of_type{$newtype} = [ @tables[@indexes] ];
-            push @{ $subtypes_of{$type} }, $newtype;
-
-        }
-
-        delete $routes_of_type{$type};
-        delete $tables_of_type{$type};
-        #delete $display_type_of{$type};
-
-    } ## tidy end: foreach my $type ( keys %routes_of_type)
 
     foreach my $type ( keys %tables_of_type ) {
 
         my $ofh = $stoplists_folder->open_write("$type.html");
 
-        my @routes_and_urls
-          = map {"<a href='#$_'>$_</a>"} @{ $routes_of_type{$type} };
+        my @routes_and_urls =
+          map { "<a href='#$_'>$_</a>" } @{ $routes_of_type{$type} };
 
         say $ofh contents(@routes_and_urls);
-
 
 =for comment
         say $ofh '<table border="0" cellspacing="0" cellpadding="10">';
@@ -282,35 +236,32 @@ EOT
 
         say $ofh join( "\n", @{ $tables_of_type{$type} } );
         close $ofh or die "Can't close $type.html: $OS_ERROR";
-    } ## tidy end: foreach my $type ( keys %tables_of_type)
+    }    ## tidy end: foreach my $type ( keys %tables_of_type)
 
     my $indexfh = $stoplists_folder->open_write("stop_index.html");
-    
-    
+
     #for my $type (keys %subtypes_of) {
-    for my $type ('Local', 'All Nighter' , 'Transbay', 'Supplementary') {
-    my @links;
+    for my $type ( 'Local', 'All Nighter', 'Transbay', 'Supplementary' ) {
+        my @links;
+
         #next if ($type =~ /Broadway/ or $type =~ /Dumbarton/);
-         for my $subtype (@{$subtypes_of{$type}}) {
-             for my $route ( @{$routes_of_type{$subtype}} ) {
-                 
+        for my $subtype ( @{ $subtypes_of{$type} } ) {
+            for my $route ( @{ $routes_of_type{$subtype} } ) {
+
                 my $url_type = $subtype =~ s/ /-/gr;
-             
-                my $url = lc("/rider-info/stops/$url_type/#") . $route;
+
+                my $url  = lc("/rider-info/stops/$url_type/#") . $route;
                 my $link = qq{<a href="$url">$route</a>};
                 push @links, $link;
-                
-             }
-             
-         }
-         
-         say $indexfh "<p><strong>$type</strong></p>";
-         say $indexfh contents(@links);
+
+            }
+
+        }
+
+        say $indexfh "<p><strong>$type</strong></p>";
+        say $indexfh contents(@links);
 
     }
-    
-   
-    
 
 =for comment
     
@@ -334,10 +285,10 @@ EOT
     close $indexfh or die "Can't close stop_index.html: $OS_ERROR";
 
     emit_done;
-    
+
     emit_done;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 sub contents {
 
@@ -363,4 +314,4 @@ sub contents {
 
     return $contents_text;
 
-} ## tidy end: sub contents
+}    ## tidy end: sub contents
