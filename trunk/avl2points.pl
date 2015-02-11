@@ -8,9 +8,9 @@
 # some stage 3 modules.
 
 use warnings;
-use 5.012;
+use 5.016;
 
-our $VERSION = 0.008;
+our $VERSION = 0.009;
 
 use sort ('stable');
 
@@ -53,6 +53,7 @@ my ( %stops, %cities );
 }
 
 const my @COMBOS_TO_PROCESS => (
+    [qw( 5 6 56 ) ],
     [qw( 1 234 1234 )], [qw( 1234 5 12345 )],
     [qw( 234 5 2345 )], [qw( 6 7 67 )],
     [qw( 12345 67 1234567 )],
@@ -128,6 +129,7 @@ $is_combo{$_}++ foreach values %combo_of;
 
 foreach my $stop ( sort keys %stopinfo ) {
 
+
     foreach my $combolg ( sort keys %{ $stopinfo{$stop} } ) {
 
         if ( $is_combo{$combolg} ) {
@@ -191,6 +193,8 @@ my %is_a_routenote;
 $is_a_routenote{$_} = 1 foreach @routenotes;
 
 foreach my $stop ( sort keys %stopinfo ) {
+    
+    next if ($stops{$stop}{c_city} =~ /Virtual/i);
 
     foreach my $linegroup ( sort keys %{ $stopinfo{$stop} } ) {
 
@@ -290,7 +294,8 @@ foreach my $stop ( sort keys %stopinfo ) {
                     my $city = $stops{$stop}{c_city};
                     my $side = $cities{$city}{Side};
 
-                    if ( not defined $side and fc($city) ne fc('Virtual')) {
+                    #if ( (not (defined $side)) and (fc($city) ne fc('Virtual'))) {
+                    if (not defined $side) {
 
                         warn "No side for city $city";
 
