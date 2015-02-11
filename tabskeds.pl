@@ -33,7 +33,7 @@ use lib $Bin;
 
 use Actium::Sorting::Line ('sortbyline');
 
-use Actium::Util('joinseries');
+use Actium::Util(qw/joinseries/);
 
 ####################################################################
 #  Old Skedfile.pm is loaded here, ahead of main program.
@@ -141,7 +141,9 @@ our %specdaynames = (
     "TF" => "Tuesdays and Fridays only",
     "WF" => "Wednesdays and Fridays only",
     "MZ" => "Mondays, Wednesdays, and Fridays only",
+    "MT" => "Mondays through Thursdays",
     'F'  => 'Fridays only',
+    'SA' => 'Saturdays only',
 );
 
 our %bound = (
@@ -637,11 +639,11 @@ foreach my $route ( sortbyline keys %skednamesbyroute ) {
             '<p>The times provided are for '
           . 'important landmarks along the route.';
 
-        my @stoplist_links;
+        my %stoplist_url_of;
         foreach my $route ( sortbyline @allroutes ) {
-
+            
             my $linegrouptype = lc( $lines{$route}{LineGroupType} );
-            $linegrouptype = s/ /-/g;    # converted to dashes by wordpress
+            $linegrouptype =~ s/ /-/g;    # converted to dashes by wordpress
             if ($linegrouptype) {
                 if ( $linegrouptype eq 'local' ) {
                     no warnings 'numeric';
@@ -653,30 +655,36 @@ foreach my $route ( sortbyline keys %skednamesbyroute ) {
                     }
                 }
 
-                push @stoplist_links,
-                    qq{<a href="}
-                  . qq{http://www.actransit.org/riderinfo/stops/$linegrouptype/#$route}
-                  . qq{">$route</a>};
-            }
-
-        }
-
-        for ( scalar @stoplist_links ) {
-            next if $_ == 0;
-            if ( $_ == 1 ) {
-                $fullnote .=
-qq{ A complete list of stops for Line $stoplist_links[0] is also available.};
+                $stoplist_url_of{$route} = qq{http://www.actransit.org/riderinfo/stops/$linegrouptype/#$route}
             }
             else {
-                $fullnote .=
-                    qq{ Complete lists of stops for lines }
-                  . joinseries(@stoplist_links)
-                  . ' is also available.';
+                warn "No linegroup type for line $route";
             }
 
-            $fullnote .= '</p>';
-
         }
+
+        my @linkroutes = sortbyline keys %stoplist_url_of;
+        my $numlinks = scalar @linkroutes;
+
+        if ( $numlinks == 1 ) {
+            my $linkroute = $linkroutes[0];
+            
+            $fullnote .= $SPACE . qq{<a href="$stoplist_url_of{$linkroute}">} .
+qq{A complete list of stops for Line $linkroute is also available.};
+        }
+        elsif ( $numlinks != 0 ) {
+            
+            my @stoplist_links = map {
+                qq{<a href="$stoplist_url_of{$_}">$_</a>} }
+                @linkroutes;
+            
+            $fullnote .=
+                qq{ Complete lists of stops for lines }
+              . joinseries(@stoplist_links)
+              . ' is also available.';
+        }
+
+        $fullnote .= '</p>';
 
         outtab( $fullnote, $lines{$linegroup}{LineGroupNote} );
 
