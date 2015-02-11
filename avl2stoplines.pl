@@ -2,7 +2,7 @@
 
 @ARGV = qw(-s sp09) if $ENV{RUNNING_UNDER_AFFRUS};
 
-# avl2stoplines-dir
+# avl2stoplines
 
 # Another variant of avl2stoplines, this one lists directions as well as routes
 # legacy stage 2
@@ -120,7 +120,7 @@ my (%with_routes);
 
 my $max = 0;
 
-open my $stoplines, '>', 'stoplines-dir.txt' or die "$!";
+open my $stoplines, '>', 'stoplines.txt' or die "$!";
 say $stoplines join(
     "\t",
     qw[
@@ -135,8 +135,10 @@ foreach my $stopid ( sort keys(%stops) ) {
         next;
     }
 
+
+    my $active = 1;
     my $hastusid = $stops{$stopid}{h_stp_identifier};
-    next if $hastusid =~ /\AD/i;    # skip virtual stops
+    $active = 0 if $hastusid =~ /\AD/i;    # mark virtual stops inactive
 
     my @routes = keys %{ $routes_of{$stopid} };
     my @routedirs;
@@ -162,7 +164,7 @@ foreach my $stopid ( sort keys(%stops) ) {
     next unless @routes;    # eliminate BSH-only stops
 
     say $stoplines join( "\t",
-        $stopid, 1,
+        $stopid, $active,
         join( " ", sortbyline(@routes) ),
         scalar @routes,
         join( " ", sortbyline(@routedirs) ),
