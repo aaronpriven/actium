@@ -40,7 +40,7 @@ $| = 1;
 
 use Actium::Options (qw<add_option option init_options>);
 
-add_option('skipsd!' , 'Skip processing school day additions in sdtrip.txt.');
+#add_option('skipsd!' , 'Skip processing school day additions in sdtrip.txt.');
 
 my $helptext = <<'EOF';
 readavl reads the files transmitted in the Hastus AVL Standard Interface format,
@@ -81,6 +81,10 @@ init_templates();
 my @files = glob ('hasi/*');
 @files = grep { not (/\.dump/i || /\.sqlite\z/i ) } @files;
 
+unless (@files) {
+   die 'No files found in ' . $signup->path;
+}
+
 # read rows
 read_files(@files);
 
@@ -90,7 +94,7 @@ read_files(@files);
 #}
 #close $fh;
 
-read_sd() unless option('skipsd');
+#read_sd() unless option('skipsd');
 
 $signup->store(\%data_of, 'avl.storable');
 
