@@ -275,7 +275,7 @@ sub new_from_kpoints {
             my $lines = joinseries(@notfound);
             emit_text
               "\x{1f4A5}  Warning! $linetext $lines found in omit list for "
-              . "stop $stop_to_import, but not found in stop schedule data.";
+              . "stop $stop_to_import, sign $signid, but not found in " . "stop schedule data.";
         }
 
     } ## tidy end: foreach my $stop_to_import ...
