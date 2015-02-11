@@ -32,6 +32,7 @@ sub make_labels {
     my $db_decals_of_r = $actium_db->all_in_column_key(qw/Stops_Neue p_decals/);
     my $desc_of_r =
       $actium_db->all_in_column_key(qw/Stops_Neue c_description_fullabbr/);
+   my $assignment_of_r = all_in_column_key(qw/Stops_Neue c_crew_assignment/);
 
     my ( $decals_of_r, $found_decals_of_r ) =
       decals_of_stop( $lines_of_r, $db_decals_of_r );
@@ -41,6 +42,7 @@ sub make_labels {
 
         my $instructions = $instructions_of_r->{$stopid};
         my $desc         = $desc_of_r->{$stopid};
+        my $assignment = $assignment_of_r->{$stopid};
 
         if ( not $desc ) {
             next if folded_in( $stopid => 'id', 'stop id', 'stopid' );
@@ -84,7 +86,7 @@ sub make_labels {
                 "Place $decal_pluralized $all_list on the flag";
         }
 
-        push @labels, "$stopid   $desc\n$instructions";
+        push @labels, "[Crew area $assignment] $stopid   $desc\n$instructions";
 
     }
 
