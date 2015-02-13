@@ -69,6 +69,7 @@ my %module_of = (
     prepareflags    => 'PrepareFlags',
     adddescriptionf => 'AddDescriptionF',
     makepoints      => 'MakePoints',
+    stops2kml       => 'Stops2KML',
     k2id            => \'makepoints',
     nearbyroutes    => 'NearbyRoutes',
     mr_import       => 'MRImport',
