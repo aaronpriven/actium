@@ -307,7 +307,7 @@ has 'maxdepth' => (
 
 {
 
-    # copied straight out of Term::Emit, except for "HAVOC" and "PANIC"
+    # copied straight out of Term::Emit, except for HAVOC, PANIC, and PASS
     # I don't know why the values are what they are.
     const my %SEVERITY_NUM_OF => (
         EMERG => 15,
@@ -328,6 +328,7 @@ has 'maxdepth' => (
         UNK   => 2,
         OTHER => 1,
         YES   => 1,
+        PASS  => 1,
         NO    => 0,
     );
 
