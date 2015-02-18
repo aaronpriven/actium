@@ -701,8 +701,11 @@ Those on the same line are considered equal in severity:
     EMERG => 15,
     HAVOC => 14,
     ALERT => 13,
+    DARN  => 12,
     CRIT  => 11, FAIL => 11, FATAL => 11,
+    ARGH  => 10,
     ERROR => 9, ERR => 9,
+    OOPS  => 8,
     WARN  => 7,
     NOTE  => 6,
     INFO  => 5, OK => 5,
@@ -725,29 +728,10 @@ C<done> and its equivalents return with the severity number from the above
 table, otherwise it returns 1, unless there's an error in which case it
 returns false.
 
-As a convienence, it's easier to use these methods which do the same thing,
-only simpler:
-
- Method   Equivalent     Usual Meaning
- -------  -------------  -----------------------------------------------------
- d_emerg  done "EMERG";  syslog: Off the scale!
- d_havoc  done "HAVOC";  the dogs of war are let loose
- d_alert  done "ALERT";  syslog: A major subsystem is unusable.
- d_crit   done "CRIT";   syslog: a critical subsystem is not working entirely.
- d_fail   done "FAIL";   Failure
- d_fatal  done "FATAL";  Fatal error
- d_error  done "ERROR";  syslog 'err': Bugs, bad data, files not found, ...
- d_err    done "ERR";    syslog 'err': Bugs, bad data, files not found, ...
- d_warn   done "WARN";   syslog 'warning'
- d_note   done "NOTE";   syslog 'notice'
- d_info   done "INFO";   syslog 'info'
- d_ok     done "OK";     copacetic
- d_debug  done "DEBUG";  syslog: Really boring diagnostic output.
- d_notry  done "NOTRY";  tried
- d_unk    done "UNK";    Unknown
- d_yes    done "YES";    Yes
- d_pass   done "PASS";   Passed a test
- d_no     done "NO";     No
+As a convienence, it's easier to use methods that incorporate the 
+severity level, such as C<d_ok> or C<d_fail>. See 
+L<Convenience methods for "done"|#Convenience methods for "done"> below for 
+a complete list.
 
 We'll change our simple example to give a FATAL completion:
 
@@ -771,12 +755,17 @@ The module Term::ANSIColor is used to do the colorization.
 Here's the colors:
 
         EMERG    bold blink bright white on red
+        PANIC    bold blink bright white on red
+        HAVOC    bold blink black on bright yellow
         ALERT    bold blink bright yellow on red
+        DARN     bold blink red on white
         CRIT     bold bright white on red
         FAIL     bold bright white on red
         FATAL    bold bright white on red
+        ARGH     bold red on white
         ERR      bold bright yellow on red
         ERROR    bold bright yellow on red
+        OOPS     bold bright yellow on bright black
         WARN     bold black on bright yellow
         NOTE     bold bright white on blue
         INFO     bold black on green
@@ -1202,7 +1191,9 @@ constructor or via a method).
 One attribute, I<reason>, is only applicable from within a C<done> call
 (or its equivalents).
 
-=head3 $cry->d_emerg(), $cry->d_ok, etc.
+=head3 Convenience methods for "done"
+
+These are called as C<< $cry->d_emerg() >>, C<< $cry->d_ok >>, etc.
 
 For convenience, several methods exist to abbreviate the
 C<< $cry->done >> method, for the built-in severities:
