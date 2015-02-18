@@ -14,8 +14,8 @@ my $crier = Actium::O::Crier::->new(
 my $cry_test = $crier->cry("Testing ANSI color escapes for severity levels");
 
 foreach (
-    qw/EMERG PANIC HAVOC ALERT CRIT FAIL FATAL ERR ERROR
-    WARN NOTE INFO OK DEBUG NOTRY UNK YES PASS NO/
+    qw/EMERG PANIC HAVOC ALERT DARN CRIT FAIL FATAL ARGH ERR ERROR
+    OOPS WARN NOTE INFO OK DEBUG NOTRY UNK YES PASS NO/
   )
 {
     my $cry_sev = $crier->cry("This  is the $_ severity");
