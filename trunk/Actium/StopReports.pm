@@ -223,7 +223,7 @@ sub _kml_stop_description {
     const my %KML_LINE_COLORS => (
         Rapid               => 'FF4040FF',
         Transbay            => 'FF00FF00',
-        'Dumbarton Express' => 'FFFF0000',
+        'Dumbarton Express' => 'FFFF6060',
         'Broadway Shuttle'  => 'FF00FFC0',
         'All Nighter'       => 'FFFFFF00',
         Local               => 'FFFFFF00',
