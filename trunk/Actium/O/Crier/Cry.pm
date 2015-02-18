@@ -470,6 +470,8 @@ sub d_alert { my $self = shift; $self->done( @_, "ALERT" ) }
 
 # syslog: A major subsystem is unusable.
 
+sub d_darn { my $self = shift; $self->done( @_, "DARN" ) }
+
 sub d_crit { my $self = shift; $self->done( @_, "CRIT" ) }
 
 # syslog: a critical subsystem is not working entirely.
@@ -480,6 +482,8 @@ sub d_fail { my $self = shift; $self->done( @_, "FAIL" ) }
 
 sub d_fatal { my $self = shift; $self->done( @_, "FATAL" ) }
 
+sub d_argh { my $self = shift; $self->done( @_, "ARGH" ) }
+
 # Fatal error
 
 sub d_error { my $self = shift; $self->done( @_, "ERROR" ) }
@@ -487,6 +491,8 @@ sub d_error { my $self = shift; $self->done( @_, "ERROR" ) }
 sub d_err { my $self = shift; $self->done( @_, "ERR" ) }
 
 # syslog 'err': Bugs, bad data, files not found, ...
+
+sub d_oops { my $self = shift; $self->done( @_, "OOPS" ) }
 
 sub d_warn { my $self = shift; $self->done( @_, "WARN" ) }
 
@@ -685,11 +691,14 @@ sub text {
         PANIC => \'EMERG',
         HAVOC => 'bold blink black on_bright_yellow',
         ALERT => 'bold blink bright_yellow on_red',
+        DARN  => 'bold blink red on_white',
         CRIT  => 'bold bright_white on_red',
         FAIL  => \'CRIT',
         FATAL => \'CRIT',
+        ARGH  => 'bold red on_white',
         ERR   => 'bold bright_yellow on_red',
         ERROR => \'ERR',
+        OOPS  => 'bold bright_yellow on_bright_black',
         WARN  => 'bold black on_bright_yellow',
         NOTE  => 'bold bright_white on_blue',
         INFO  => 'bold black on_green',
