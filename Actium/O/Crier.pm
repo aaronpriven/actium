@@ -307,18 +307,21 @@ has 'maxdepth' => (
 
 {
 
-    # copied straight out of Term::Emit, except for HAVOC, PANIC, and PASS
+    # copied straight out of Term::Emit, with a few additions
     # I don't know why the values are what they are.
     const my %SEVERITY_NUM_OF => (
         EMERG => 15,
         PANIC => 15,
         HAVOC => 14,
         ALERT => 13,
+        DARN  => 12,
         CRIT  => 11,
         FAIL  => 11,
         FATAL => 11,
+        ARGH  => 10,
         ERR   => 9,
         ERROR => 9,
+        OOPS  => 8,
         WARN  => 7,
         NOTE  => 6,
         INFO  => 5,
@@ -1205,13 +1208,17 @@ For convenience, several methods exist to abbreviate the
 C<< $cry->done >> method, for the built-in severities:
 
  d_emerg  done "EMERG";  syslog: Off the scale!
+ d_panic  done "PANIC";  Time to panic
  d_havoc  done "HAVOC";  the dogs of war are let loose
  d_alert  done "ALERT";  syslog: A major subsystem is unusable.
  d_crit   done "CRIT";   syslog: a critical subsystem is not working entirely.
+ d_darn   done "DARN";   Darn it, something happened
  d_fail   done "FAIL";   Failure
  d_fatal  done "FATAL";  Fatal error
+ d_argh   done "ARGH";   Argh, something I didn't want to happen happened
  d_error  done "ERROR";  syslog 'err': Bugs, bad data, files not found, ...
  d_err    done "ERR";    syslog 'err': Bugs, bad data, files not found, ...
+ d_oops   done "OOPS";   Oops, I did it again
  d_warn   done "WARN";   syslog 'warning'
  d_note   done "NOTE";   syslog 'notice'
  d_info   done "INFO";   syslog 'info'
