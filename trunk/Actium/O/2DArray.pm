@@ -576,10 +576,8 @@ sub trim {
     my $self = shift;
 
     my $callback = sub {
-        my $str = shift;
-        $str =~ s/\A\s+//;
-        $str =~ s/\s+\z//;
-        return $str;
+        s/\A\s+//;
+        s/\s+\z//;
     };
 
     return $self->apply($callback);
@@ -589,9 +587,7 @@ sub trim_right {
     my $self = shift;
 
     my $callback = sub {
-        my $str = shift;
-        $str =~ s/\s+\z//;
-        return $str;
+        s/\s+\z//;
     };
 
     return $self->apply($callback);
@@ -601,9 +597,7 @@ sub undef2empty {
     my $self = shift;
 
     my $callback = sub {
-        my $str = shift;
-        $str //= $EMPTY_STR;
-        return $str;
+        $_ //= $EMPTY_STR;
     };
 
     return $self->apply($callback);
