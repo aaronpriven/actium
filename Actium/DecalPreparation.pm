@@ -32,7 +32,7 @@ sub make_labels {
     my $db_decals_of_r = $actium_db->all_in_column_key(qw/Stops_Neue p_decals/);
     my $desc_of_r =
       $actium_db->all_in_column_key(qw/Stops_Neue c_description_fullabbr/);
-   my $assignment_of_r = all_in_column_key(qw/Stops_Neue c_crew_assignment/);
+   my $assignment_of_r = $actium_db->all_in_column_key(qw/Stops_Neue c_crew_assignment/);
 
     my ( $decals_of_r, $found_decals_of_r ) =
       decals_of_stop( $lines_of_r, $db_decals_of_r );
