@@ -53,7 +53,7 @@ sub START {
         my $desc = $stops_row_of_r->{$stopid}{c_description_full};
         if ( not defined $desc ) {
             if ( $stopid =~ /Stop\s*ID/i ) {
-                $desc = "DescriptionCityF";
+                $desc = "c_description_full";
             }
             else {
                 $desc = "** NOT FOUND **";
