@@ -14,7 +14,7 @@ use strict;
 use warnings;
 no warnings 'uninitialized';
 
-our $VERSION = 0.006;
+our $VERSION = 0.009;
 
 ####################################################################
 #  load libraries
@@ -670,7 +670,7 @@ foreach my $route ( sortbyline keys %skednamesbyroute ) {
             my $linkroute = $linkroutes[0];
             
             $fullnote .= $SPACE . qq{<a href="$stoplist_url_of{$linkroute}">} .
-qq{A complete list of stops for Line $linkroute is also available.};
+qq{A complete list of stops for Line $linkroute is also available.</a>};
         }
         elsif ( $numlinks != 0 ) {
             
