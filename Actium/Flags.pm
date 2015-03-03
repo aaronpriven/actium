@@ -6,7 +6,7 @@
 
 # legacy stage 4
 
-package Actium::Flags 0.008;
+package Actium::Flags 0.009;
 
 use Actium::Preamble;
 use Actium::Term;
