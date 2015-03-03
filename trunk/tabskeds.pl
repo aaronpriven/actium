@@ -681,7 +681,7 @@ qq{A complete list of stops for Line $linkroute is also available.</a>};
             $fullnote .=
                 qq{ Complete lists of stops for lines }
               . joinseries(@stoplist_links)
-              . ' is also available.';
+              . ' are also available.';
         }
 
         $fullnote .= '</p>';
