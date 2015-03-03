@@ -30,7 +30,25 @@ sub flag_assignments {
     my $actium_db  = shift;
     my $actium_dbh = $actium_db->dbh;
 
-    my $query = <<"EOT";
+    my @stopids = @_;
+    my $query;
+
+    if (@stopids) {
+
+        my $placeholders = ('?') x scalar @stopids;
+
+        $query = <<"EOT";
+
+    SELECT $COLUMNS_SQL 
+    FROM Stops_Neue 
+       LEFT JOIN Flagtypes ON Stops_Neue.u_flagtype_id = Flagtypes.flagtype_id
+       WHERE Stops_Neue.h_stp_511_id IN ($placeholders)
+EOT
+
+    }
+    else {
+
+        $query = <<"EOT";
 
     SELECT $COLUMNS_SQL 
     FROM Stops_Neue 
@@ -39,20 +57,22 @@ sub flag_assignments {
 
 EOT
 
+    }
+
     my $sth = $actium_dbh->prepare($query);
-    $sth->execute();
+    $sth->execute(@stopids);
 
     my ( %rows_of_file, %skipped_because );
 
     while ( my $row_r = $sth->fetchrow_arrayref ) {
-        
-        foreach (@{$row_r}) {
+
+        foreach ( @{$row_r} ) {
             next unless defined;
-            s/\s+\z//; # trim trailing white space
+            s/\s+\z//;    # trim trailing white space
         }
 
-        my ( $flagtype, $file, $master, $stopid, $description, $decals )
-          = @{$row_r};
+        my ( $flagtype, $file, $master, $stopid, $description, $decals ) =
+          @{$row_r};
 
         unless ($flagtype) {
             push @{ $skipped_because{no_flagtype} }, $stopid;
@@ -71,7 +91,7 @@ EOT
         push @{ $rows_of_file{$file} },
           [ $master, $stopid, $description, $decals ];
 
-    } ## tidy end: while ( my $row_r = $sth->...)
+    }    ## tidy end: while ( my $row_r = $sth->...)
     $sth->finish();
 
     foreach my $reason ( keys %skipped_because ) {
@@ -92,19 +112,22 @@ EOT
 
     return \@rows_by_file;
 
-} ## tidy end: sub flag_assignments
+}    ## tidy end: sub flag_assignments
 
 sub flag_assignments_tabbed {
-    my $actiumdb        = shift;
-    my $assignments_aoa = Actium::Flags::flag_assignments($actiumdb);
+    my $assignments_aoa = Actium::Flags::flag_assignments(@_);
 
     return unless $assignments_aoa;    # if there was an error
 
-    ## no critic (RequireExplicitInclusion)
-    my $tabbed = Actium::Util::aoa2tsv($assignments_aoa);
-    ## use critic
+    require Actium::O::2DArray;
+    my $assignments = Actium::O::2DArray->bless($assignments_aoa);
+    
+    return $assignments->tsv;
 
-    return $tabbed;
+    ### no critic (RequireExplicitInclusion)
+    #my $tabbed = Actium::Util::aoa2tsv($assignments_aoa);
+    #return $tabbed;
+    ### use critic
 
 }
 
