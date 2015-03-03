@@ -17,6 +17,8 @@ use Actium::Util (qw/file_ext u_columns/);
 # The object can be treated as an ordinary array of arrays,
 # or have methods invoked on it
 
+use namespace::autoclean; # don't allow imported functions as methods
+
 #################
 ### Class methods
 
