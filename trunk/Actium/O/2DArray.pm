@@ -252,7 +252,7 @@ sub cols {
 
 sub shift_row {
     my $self = shift;
-    return shift @{$self};
+    return @{ shift @{$self} };
 }
 
 sub shift_col {
@@ -262,7 +262,7 @@ sub shift_col {
 
 sub pop_row {
     my $self = shift;
-    return pop @{$self};
+    return @{ pop @{$self} };
 }
 
 sub pop_col {
@@ -507,6 +507,12 @@ sub prune {
 sub prune_empty {
     my $self = shift;
     my $callback = sub { !defined $_ or $_ eq $EMPTY_STR };
+    return $self->prune_callback($callback);
+}
+
+sub prune_space {
+    my $self = shift;
+    my $callback = sub { !defined $_ or m[\A \s* \z]x };
     return $self->prune_callback($callback);
 }
 
@@ -1177,13 +1183,15 @@ and rows at the end of the object.
 In void context, alters the original object.
 Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=item B<prune_blank()>
+=item B<prune_empty()>
 
 Like C<prune>, but treats not only undefined values as blank, but also 
 empty strings.
 
-In void context, alters the original object.
-Otherwise, creates a new Actium::O::2DArray object and returns the object.
+=item B<prune_space()>
+
+Like C<prune>, but treats not only undefined values as blank, but also 
+strings that are empty or that consist solely of white space.
 
 =item B<prune_callback(I<code_ref>)>
 
