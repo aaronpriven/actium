@@ -705,69 +705,14 @@ sub load_sheet {
 
     my $self     = shift;
     my $filename = shift;
-
-    my %lines_of;
-
-    if ( $filename =~ /\.xlsx\z/ ) {
-        return $self->load_excel_sheet($filename);
-    }
     
-    # these are not implemented yet...
-
-    #elsif ( $filename =~ /\.csv\z/ ) {
-    # return load_csv_sheet ($filename);
-    #else {
-    #    return $self->load_tab_sheet($filename);
-    #}
-    
-    croak "Filetype not recognized in $filename";
-    return;
-
-}
-
-sub load_excel_sheet {
-    my $self     = shift;
-    my $filename = shift;
     my $filespec = $self->make_filespec($filename);
-
-    # read from Excel
-
-    my $parser   = Spreadsheet::ParseXLSX->new;
-    my $workbook = $parser->parse($filespec);
-
-    my $sheet = $workbook->worksheet(0);
-
-    if ( !defined $workbook ) {
-        croak $parser->error(), ".\n";
-    }
-
-    my ( $minrow, $maxrow ) = $sheet->row_range();
-    my ( $mincol, $maxcol ) = $sheet->col_range();
-
-    my @lines;
-    my (%lines_of);
-
-    foreach my $row ( $minrow .. $maxrow ) {
-
-        my @cells =
-          map { $sheet->get_cell( $row, $_ ) } $mincol, $mincol + 1;
-
-        foreach (@cells) {
-            if ( defined $_ ) {
-                $_ = $_->value;
-            }
-            else {
-                $_ = $EMPTY_STR;
-            }
-        }
-
-        push @lines, \@cells;
-
-    }
     
     require Actium::O::2DArray;
-    return Actium::O::2DArray->bless(\@lines);
-
+    my $sheet = Actium::O::2DArray::->new_from_file($filespec);
+    
+    return $sheet;
+    
 }
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)

@@ -84,6 +84,7 @@ my %module_of = (
     zipdecals       => 'ZipDecals',
     zipcodes        => 'ZipCodes',
     crewlist        => 'CrewList',
+    matrix          => 'TimetableMatrixText',
 
     # more to come
 );
