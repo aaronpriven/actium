@@ -928,7 +928,7 @@ The 2D array will be different, but if any of the elements of the 2D array are
 themselves references, they will refer to the same things as in the original
 2D array.
 
-item B<unblessed()>
+=item B<unblessed()>
 
 Returns a new, unblessed array, containing the same rows as
 the 2D array object. 
@@ -1345,6 +1345,8 @@ with format parameters as specified by Excel::Writer::XLSX.
 
 =back
 
+=back
+
 =head1 DIAGNOSTICS
 
 =head2 ERRORS
@@ -1400,9 +1402,13 @@ but this warning was issued.
 
 =head1 TO DO
 
+=over
+
 =item *
 
 Add CSV (and possibly other file type) support to new_from_file.
+
+=back
 
 =head1 DEPENDENCIES
 
