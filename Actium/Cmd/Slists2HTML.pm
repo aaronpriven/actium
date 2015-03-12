@@ -7,7 +7,7 @@
 use 5.016;
 use warnings;
 
-package Actium::Cmd::Slists2HTML 0.008;
+package Actium::Cmd::Slists2HTML 0.009;
 
 use Actium::Preamble;
 
@@ -48,7 +48,7 @@ sub START {
 
     $actiumdb->ensure_loaded('Stops_Neue');
 
-    emit 'Getting stop descriptions from FileMaker export';
+    emit 'Getting stop descriptions from FileMaker';
 
     my $stops_row_of_r = $actiumdb->all_in_columns_key(
         qw/Stops_Neue c_description_short h_loca_latitude h_loca_longitude
@@ -68,28 +68,28 @@ sub START {
     my %dirs_of;
 
     foreach my $file (@files) {
-        my ( $route, $dir, $ext ) = split( /[-.]/, $file );
-        push @{ $dirs_of{$route} }, $dir;
+        my ( $line, $dir, $ext ) = split( /[-.]/, $file );
+        push @{ $dirs_of{$line} }, $dir;
     }
 
     my %table_of;
     my %tables_of_type;
-    my %routes_of_type;
+    my %lines_of_type;
 
-    foreach my $route ( sortbyline keys %dirs_of ) {
+    foreach my $line ( sortbyline keys %dirs_of ) {
 
-        next if $LINE_SHOULD_BE_SKIPPED{$route};
+        next if $LINE_SHOULD_BE_SKIPPED{$line};
 
-        emit_over $route;
+        emit_over $line;
 
-        my @dirs = @{ $dirs_of{$route} };
+        my @dirs = @{ $dirs_of{$line} };
         @dirs = sort { $order_of{$a} <=> $order_of{$b} } @dirs;
         my %stops_of;
         my %stoplines_of;
 
         foreach my $dir (@dirs) {
 
-            my $file = "$route-$dir.txt";
+            my $file = "$line-$dir.txt";
             my $ifh  = $stoplists_line_folder->open_read($file);
             binmode $ifh, ':encoding(MacRoman)';
 
@@ -161,7 +161,7 @@ sub START {
           or die "Can't open memory location as file: $OS_ERROR";
 
         say $ofh <<"EOT";
-<h3><span id="$route">$route</span></h3>
+<h3><span id="$line">$line</span></h3>
 <table border="1" cellspacing="0" cellpadding="6">
 <colgroup><col width="50%" /> <col width="50%" /></colgroup>
 <tbody>
@@ -179,14 +179,14 @@ EOT
 
         close $ofh or die "Can't close memory file: $OS_ERROR";
 
-        $table_of{$route} = $outdata;
-
+        $table_of{$line} = $outdata;
+        
         my $type;
-        $type = $linegrouptype_of_r->{$route};
+        $type = $linegrouptype_of_r->{$line};
 
         if ( $type eq 'Local' ) {
             no warnings 'numeric';
-            if ( $_ <= 70 ) {
+            if ( $line <= 70 ) {
                 $type = 'Local1';
             }
             else {
@@ -194,13 +194,13 @@ EOT
             }
         }
 
-        push @{ $routes_of_type{$type} }, $route;
+        push @{ $lines_of_type{$type} }, $line;
         push @{ $tables_of_type{$type} }, $outdata;
 
-    }    ## tidy end: foreach my $route ( sortbyline...)
+    }    ## tidy end: foreach my $line ( sortbyline...)
 
-    my %display_type_of = map { $_, $_ } keys %routes_of_type;
-    my %subtypes_of = map { $_, [$_] } keys %routes_of_type;
+    my %display_type_of = map { $_, $_ } keys %lines_of_type;
+    my %subtypes_of = map { $_, [$_] } keys %lines_of_type;
     delete $subtypes_of{Local1};
     delete $subtypes_of{Local2};
     $subtypes_of{Local} = [qw/Local1 Local2/];
@@ -211,20 +211,20 @@ EOT
 
         my $ofh = $stoplists_folder->open_write("$type.html");
 
-        my @routes_and_urls =
-          map { "<a href='#$_'>$_</a>" } @{ $routes_of_type{$type} };
+        my @lines_and_urls =
+          map { "<a href='#$_'>$_</a>" } @{ $lines_of_type{$type} };
 
-        say $ofh contents(@routes_and_urls);
+        say $ofh contents(@lines_and_urls);
 
 =for comment
         say $ofh '<table border="0" cellspacing="0" cellpadding="10">';
         say $ofh '<tr>';
 
-        my @routes = @{ $routes_of_type{$type} };
+        my @lines = @{ $lines_of_type{$type} };
 
-        for my $i ( 0 .. $#routes ) {
-            my $route = $routes[$i];
-            print $ofh "<td><a href='#$route'>$route</a></td>";
+        for my $i ( 0 .. $#lines ) {
+            my $line = $lines[$i];
+            print $ofh "<td><a href='#$line'>$line</a></td>";
             if ( not( ( $i + 1 ) % 10 ) ) {
                 print $ofh "</tr>\n<tr>";
             }
@@ -246,12 +246,12 @@ EOT
 
         #next if ($type =~ /Broadway/ or $type =~ /Dumbarton/);
         for my $subtype ( @{ $subtypes_of{$type} } ) {
-            for my $route ( @{ $routes_of_type{$subtype} } ) {
+            for my $line ( @{ $lines_of_type{$subtype} } ) {
 
                 my $url_type = $subtype =~ s/ /-/gr;
 
-                my $url  = lc("/rider-info/stops/$url_type/#") . $route;
-                my $link = qq{<a href="$url">$route</a>};
+                my $url  = lc("/rider-info/stops/$url_type/#") . $line;
+                my $link = qq{<a href="$url">$line</a>};
                 push @links, $link;
 
             }
@@ -263,25 +263,6 @@ EOT
 
     }
 
-=for comment
-    
-    say $indexfh '<ul>';
-    
-    foreach my $type (sort keys %display_type_of) {
-        
-        next if ($type =~ /Broadway/ or $type =~ /Dumbarton/);
-        
-        my $url_type = lc($type);
-        $url_type =~ s/ /-/g;
-        
-        print $indexfh qq{<li><a href="/rider-info/stops/$url_type/">};
-        say $indexfh qq{$display_type_of{$type}</a></li>};
-        
-    }
-    say $indexfh '</ul>';
-    
-=cut
-
     close $indexfh or die "Can't close stop_index.html: $OS_ERROR";
 
     emit_done;
@@ -292,7 +273,7 @@ EOT
 
 sub contents {
 
-    my @routes_and_urls = @_;
+    my @lines_and_urls = @_;
     my $contents_text;
     open my $ofh, '>', \$contents_text
       or die "Can't open memory location for writing: $OS_ERROR";
@@ -300,8 +281,8 @@ sub contents {
     say $ofh '<table border="0" cellspacing="0" cellpadding="10">';
     say $ofh '<tr>';
 
-    for my $i ( 0 .. $#routes_and_urls ) {
-        my $r_and_u = $routes_and_urls[$i];
+    for my $i ( 0 .. $#lines_and_urls ) {
+        my $r_and_u = $lines_and_urls[$i];
         print $ofh "<td>$r_and_u</td>";
         if ( not( ( $i + 1 ) % 10 ) ) {
             print $ofh "</tr>\n<tr>";
