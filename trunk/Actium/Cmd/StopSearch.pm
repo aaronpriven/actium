@@ -40,6 +40,10 @@ sub START {
     # sigh - need to rewrite Actium::Term
 
     my @args = @{ $params{argv} };
+    
+    # split arguments by commas as well as spaces
+    # (assumes we're not searching for commas...)
+    @args = map { split /,/ } @args;
 
     if (@args) {
         foreach (@args) {
