@@ -8,12 +8,13 @@
 
 # Subversion: $Id$
 
-package Actium::Files::Xhea 0.006;
+package Actium::Files::Xhea 0.009;
 
 ## no critic (ProhibitAmbiguousNames)
 
 use Actium::Preamble;
 use Actium::Term;
+use Actium::Import::CalculateFields;
 
 use Params::Validate(':all');
 use Actium::Util(qw/file_ext aoa2tsv/);
@@ -21,6 +22,64 @@ use List::MoreUtils('pairwise');
 use Actium::Time(qw[timestr_sub timenum]);
 
 const my $PREFIX => 'Actium::O::Files::Xhea';
+
+const my $STOPS     => 'stop';
+const my $STOPS_PC  => 'stop_with_i';
+const my $PLACES    => 'place';
+const my $PLACES_PC => 'place_with_i';
+
+sub xhea_import {
+
+    my %p = validate(
+        @_,
+        {
+            signup      => 1,
+            xhea_folder => 1,
+            tab_folder  => 1,
+        }
+    );
+
+    my $signup      = $p{signup};
+    my $xhea_folder = $p{xhea_folder};
+    my $tab_folder  = $p{tab_folder};
+
+    my ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r ) =
+      Actium::Files::Xhea::load_adjusted($xhea_folder);
+
+    my $tab_strings_r =
+      Actium::Files::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
+        $adjusted_values_of_r );
+
+    if ( exists( $fieldnames_of_r->{$STOPS} ) ) {
+        my ( $new_s_heads_r, $new_s_records_r ) =
+          Actium::Import::CalculateFields::hastus_stops_import(
+            $fieldnames_of_r->{$STOPS},
+            $adjusted_values_of_r->{$STOPS}
+          );
+
+        $tab_strings_r->{$STOPS_PC} =
+          Actium::Util::aoa2tsv( $new_s_records_r, $new_s_heads_r );
+
+    }
+
+    if ( exists( $fieldnames_of_r->{$PLACES} ) ) {
+
+        my ( $new_p_heads_r, $new_p_records_r ) =
+          Actium::Import::CalculateFields::hastus_places_import(
+            $fieldnames_of_r->{$PLACES},
+            $adjusted_values_of_r->{$PLACES} );
+
+        $tab_strings_r->{$PLACES_PC} =
+          Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
+    }
+
+    $tab_folder->write_files_from_hash( $tab_strings_r, qw(tab txt) );
+
+    $tab_folder->json_store_pretty( $fields_of_r, 'records.json' );
+
+    return;
+
+}
 
 sub tab_strings {
 
@@ -43,13 +102,13 @@ sub tab_strings {
 
     return \%tab_of;
 
-} ## tidy end: sub tab_strings
+}    ## tidy end: sub tab_strings
 
 sub load_adjusted {
 
     my ( $fieldnames_of_r, $fields_of_r, $values_of_r ) = load(@_);
-    my $adjusted_values_of_r
-      = adjust_for_basetype( $fields_of_r, $values_of_r );
+    my $adjusted_values_of_r =
+      adjust_for_basetype( $fields_of_r, $values_of_r );
     return ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r );
 
 }
@@ -106,15 +165,15 @@ sub adjust_for_basetype {
 
             push @{ $adjusted_values_of{$record_name} }, \@adjusted_record;
 
-        } ## tidy end: foreach my $record ( @{ $values_of_r...})
+        }    ## tidy end: foreach my $record ( @{ $values_of_r...})
 
-    } ## tidy end: foreach my $record_name ( keys...)
+    }    ## tidy end: foreach my $record_name ( keys...)
 
     emit_done;
 
     return \%adjusted_values_of;
 
-} ## tidy end: sub adjust_for_basetype
+}    ## tidy end: sub adjust_for_basetype
 
 sub _adjust_string {
     my $adjusted = shift;
@@ -140,6 +199,7 @@ sub _adjust_boolean {
 sub load {
 
     my $xheafolder = shift;
+
     #my $tfolder    = $xheafolder->subfolder('t');
 
     my @xhea_filenames = _get_xhea_filenames($xheafolder);
@@ -173,8 +233,8 @@ sub load {
         my $model  = ( $newprefix . '::Pastor::Meta' )->Model;
         my $tree_r = _build_tree($model);
 
-        my ( $fieldnames_of_r, $records_of_r, $fields_of_r )
-          = _records_and_fields( $tree_r, $filename );
+        my ( $fieldnames_of_r, $records_of_r, $fields_of_r ) =
+          _records_and_fields( $tree_r, $filename );
 
         %fieldnames_of = ( %fieldnames_of, %{$fieldnames_of_r} );
         %fields_of     = ( %fields_of,     %{$fields_of_r} );
@@ -186,6 +246,7 @@ sub load {
             records_of => $records_of_r,
             fields_of  => $fields_of_r,
             filename   => $filename,
+
             #tfolder    => $tfolder,
         );
 
@@ -193,7 +254,7 @@ sub load {
 
         emit_done;
 
-    } ## tidy end: foreach my $filename (@xhea_filenames)
+    }    ## tidy end: foreach my $filename (@xhea_filenames)
 
     #$tfolder->json_store_pretty( \%fields_of, 'records.json' );
 
@@ -201,18 +262,20 @@ sub load {
 
     return ( \%fieldnames_of, \%fields_of, \%values_of );
 
-} ## tidy end: sub load
+}    ## tidy end: sub load
 
 sub _load_values {
 
     my %p = validate(
         @_,
-        {   tree       => 1,
+        {
+            tree       => 1,
             model      => 1,
             fields_of  => 1,
             records_of => 1,
             xmlfile    => 1,
             filename   => 1,
+
             #tfolder    => 1,
         }
     );
@@ -250,11 +313,11 @@ sub _load_values {
 
         emit_done;
 
-    } ## tidy end: for my $table_name ( keys...)
+    }    ## tidy end: for my $table_name ( keys...)
 
     return \%values_of;
 
-} ## tidy end: sub _load_values
+}    ## tidy end: sub _load_values
 
 sub _records_and_fields {
 
@@ -283,7 +346,8 @@ sub _records_and_fields {
 
         if ( not $tree_r->{$table}{has_subelements} ) {
             _unexpected_croak(
-                {   foundtype    => 'data field',
+                {
+                    foundtype    => 'data field',
                     foundname    => $table,
                     expectedtype => 'table',
                     filename     => $filename,
@@ -299,7 +363,8 @@ sub _records_and_fields {
             if ( not $info_of_record{$record}{has_subelements} ) {
 
                 _unexpected_croak(
-                    {   foundtype    => 'data field',
+                    {
+                        foundtype    => 'data field',
                         foundname    => $record,
                         expectedtype => 'record',
                         filename     => $filename,
@@ -323,7 +388,8 @@ sub _records_and_fields {
                 if ( $info_of_record{$field}{has_subelements} ) {
 
                     _unexpected_croak(
-                        {   foundtype    => 'record',
+                        {
+                            foundtype    => 'record',
                             foundname    => $field,
                             expectedtype => 'data field',
                             filename     => $filename,
@@ -332,8 +398,8 @@ sub _records_and_fields {
 
                 }
 
-                my %info_of_this_field
-                  = %{ $info_of_record{$record}{children}{$field} };
+                my %info_of_this_field =
+                  %{ $info_of_record{$record}{children}{$field} };
 
                 my $base = $info_of_this_field{base}
                   // $info_of_this_field{type};
@@ -343,15 +409,15 @@ sub _records_and_fields {
                     s{\Q|http://www.w3.org/2001/XMLSchema\E\z}{}sx;
                 }
 
-                $fields_of{$record}{$field}
-                  = { base => $base, type => $type, idx => $field_idx };
+                $fields_of{$record}{$field} =
+                  { base => $base, type => $type, idx => $field_idx };
 
                 $field_idx++;
-            } ## tidy end: for my $field (@fieldnames)
+            }    ## tidy end: for my $field (@fieldnames)
 
-        } ## tidy end: for my $record ( keys %info_of_record)
+        }    ## tidy end: for my $record ( keys %info_of_record)
 
-    } ## tidy end: for my $table ( keys %{...})
+    }    ## tidy end: for my $table ( keys %{...})
 
     emit_over($EMPTY_STR);
 
@@ -359,13 +425,14 @@ sub _records_and_fields {
 
     return \%fieldnames_of, \%records_of, \%fields_of;
 
-} ## tidy end: sub _records_and_fields
+}    ## tidy end: sub _records_and_fields
 
 sub _unexpected_croak {
 
     my %p = validate(
         @_,
-        {   foundtype    => 1,
+        {
+            foundtype    => 1,
             foundname    => 1,
             expectedtype => 1,
             filename     => 1,
@@ -426,13 +493,13 @@ sub _build_tree {
             $parent_hr->{$element}{base} = $base if $base;
         }
 
-    } ## tidy end: while (@queue)
+    }    ## tidy end: while (@queue)
 
     emit_done;
 
     return \%tree;
 
-} ## tidy end: sub _build_tree
+}    ## tidy end: sub _build_tree
 
 sub _get_xhea_filenames {
 
@@ -450,6 +517,7 @@ sub _get_xhea_filenames {
     foreach my $filename (@xmlfiles) {
 
         next if fc($filename) eq fc('PlacePatterns');
+
         # skip PlacePatterns, which has a different XML structure
         # than the simple one this program can deal with
 
@@ -465,7 +533,7 @@ sub _get_xhea_filenames {
 
     return @xhea_filenames;
 
-} ## tidy end: sub _get_xhea_filenames
+}    ## tidy end: sub _get_xhea_filenames
 
 # From trip_pattern.txt
 #
@@ -570,6 +638,7 @@ sub _get_xhea_filenames {
 
         my $pattern_callback = sub {
             my $hr = shift;
+
             #return unless $hr->{tpat_direction};
 
             my $id        = $hr->{tpat_id};
@@ -593,7 +662,8 @@ sub _get_xhea_filenames {
         };
 
         Actium::Files::TabDelimited::read_tab_files(
-            {   files    => ['trip_pattern.txt'],
+            {
+                files    => ['trip_pattern.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $pattern_callback,
             }
@@ -617,6 +687,7 @@ sub _get_xhea_filenames {
 
             my $patid = "$route\t$pattern";
             my $is_public = $patid eq "\t" ? 0 : $pat{IsInService}{$patid};
+
             # if trip has no route or pattern, then make it non-public
             # I don't know why trips without routes or patterns exist...
 
@@ -629,7 +700,8 @@ sub _get_xhea_filenames {
         };
 
         Actium::Files::TabDelimited::read_tab_files(
-            {   files    => ['trip.txt'],
+            {
+                files    => ['trip.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $trip_callback,
             }
@@ -646,6 +718,7 @@ sub _get_xhea_filenames {
             my $tripnum  = $hr->{trp_int_number};
             my $place    = $hr->{tstp_place};
             my $position = $hr->{tstp_position} - 1;
+
             # we are zero-based, this is one-based
             my $passing_time = $hr->{tstp_passing_time};
 
@@ -659,8 +732,8 @@ sub _get_xhea_filenames {
 
             #my ($htime) = $passing_time =~ m/T(\d\d:\d\d)/;
 
-            my ( $day, $hours, $mins )
-              = $passing_time =~ m/(\d\d)T(\d\d):(\d\d)/;
+            my ( $day, $hours, $mins ) =
+              $passing_time =~ m/(\d\d)T(\d\d):(\d\d)/;
 
             my $xtime;
             if ( $day eq '31' ) {
@@ -682,7 +755,8 @@ sub _get_xhea_filenames {
         };
 
         Actium::Files::TabDelimited::read_tab_files(
-            {   files    => ['trip_stop.txt'],
+            {
+                files    => ['trip_stop.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $stop_callback,
             }
@@ -701,7 +775,8 @@ sub _get_xhea_filenames {
         };
 
         Actium::Files::TabDelimited::read_tab_files(
-            {   files    => ['place.txt'],
+            {
+                files    => ['place.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $place_callback,
             }
@@ -746,7 +821,7 @@ sub _get_xhea_filenames {
                   ;
             }
 
-        } ## tidy end: foreach my $patid ( keys %{...})
+        }    ## tidy end: foreach my $patid ( keys %{...})
 
         close $pat_fh;
 
@@ -780,7 +855,7 @@ sub _get_xhea_filenames {
                 printf $trp_fh "PTS,%-8s$CRLF", $passing_time;
             }
 
-        } ## tidy end: foreach my $tripnum ( keys ...)
+        }    ## tidy end: foreach my $tripnum ( keys ...)
 
         emit_done;
 
@@ -810,7 +885,7 @@ sub _get_xhea_filenames {
 
         emit_done;
 
-    } ## tidy end: sub to_hasi
+    }    ## tidy end: sub to_hasi
 
 }
 
@@ -826,7 +901,7 @@ Actium::Files::Xhea - Routines for loading and processing XML Hastus exports
 
 =head1 VERSION
 
-This documentation refers to version 0.004
+This documentation refers to version 0.009
 
 =head1 SYNOPSIS
 
@@ -862,6 +937,33 @@ No subroutines are exported. Use the fully qualified name to invoke them.
 (e.g., "Actium::Files::Xhea::load_adjusted($folder)") 
 
 =over
+
+=item B<xhea_import>
+
+This routine runs the other routines, performing a complete XHEA import process.
+First, it loads and then adjusts the XHEA files 
+(see load and adjust_for_basetype below). Then, using routines in 
+Actium::Import::CalculateFields, it creates the updated i_ fields. 
+Finally, it saves those files in the "tab" folder, and creates a "records.json" 
+file storing 
+
+It takes three named parameters, all of which should be folder objects.
+
+=over
+
+=item signup
+
+The signup folder.
+
+=item xhea_folder
+
+The folder with XHEA files.
+
+=item tab_folder
+
+The folder to store the tab files in.
+
+=back
 
 =item B<load(I<folderobj>)>
 
