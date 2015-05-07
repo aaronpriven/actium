@@ -56,15 +56,15 @@ sub START {
             next if $member->isDirectory;
 
             my $filename = filename( $member->fileName );
-            
-            emit_over ($filename . '...');
+
+            emit_over( $filename . '...' );
             my $filespec = $xhea_folder->make_filespec($filename);
 
             $member->extractToFileNamed("$filespec");
 
         }
-        
-        emit_over ('');
+
+        emit_over('');
 
         emit_done;
 
@@ -77,6 +77,12 @@ sub START {
             xhea_folder => $xhea_folder,
             tab_folder  => $tab_folder
         );
+
+        emit_done;
+
+        emit "Creating HASI files from XHEA files";
+
+        Actium::Files::Xhea::to_hasi( $tab_folder, $hasi_folder );
 
         emit_done;
 
