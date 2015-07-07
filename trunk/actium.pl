@@ -65,6 +65,7 @@ my %module_of = (
     timetables      => 'Timetables',
     tabula          => \'timetables',
     tabulae         => \'timetables',
+    ems             => 'Ems',
     orderbytravel   => 'OrderByTravel',
     prepareflags    => 'PrepareFlags',
     adddescriptionf => 'AddDescriptionF',
