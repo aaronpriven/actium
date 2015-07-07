@@ -3,7 +3,7 @@
 # Object representing Flickr authentication information (api key, & secret, 
 # OAuth user [consumer] keys and secrets )
 
-# Subversion: $Id$
+# Subversion: $Id: Auth.pm 483 2014-10-25 00:07:17Z aaronpriven $
 
 package Actium::O::Photos::Flickr::Auth 0.007;
 

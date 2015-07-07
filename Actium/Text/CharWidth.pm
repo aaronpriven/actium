@@ -2,7 +2,7 @@
 
 # character widths
 
-# Subversion: $Id$
+# Subversion: $Id: CharWidth.pm 592 2015-07-07 18:40:46Z aaronpriven $
 
 # Legacy stage 4
 

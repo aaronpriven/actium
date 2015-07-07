@@ -2,7 +2,7 @@
 
 # A collection of Sked objects (or similar objects such as Timetable objects)
 
-# Subversion: $Id$
+# Subversion: $Id: Collection.pm 319 2014-04-03 22:07:44Z aaronpriven $
 
 # legacy status 4
 

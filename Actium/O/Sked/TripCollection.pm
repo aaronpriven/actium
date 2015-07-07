@@ -2,7 +2,7 @@
 
 # Trip collection object (for schedules)
 
-# Subversion: $Id$
+# Subversion: $Id: TripCollection.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # legacy status 4
 

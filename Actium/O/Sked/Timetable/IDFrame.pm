@@ -3,7 +3,7 @@
 # Moose object representing a frame (one of a series of one or more frames used
 # on a page) for an InDesign timetable
 
-# Subversion: $Id$
+# Subversion: $Id: IDFrame.pm 267 2013-09-17 05:58:06Z aaronpriven@gmail.com $
 
 # legacy status: 4
 

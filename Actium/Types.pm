@@ -1,7 +1,7 @@
 # Actium/Types.pm
 # Moose types for Actium
 
-# Subversion: $Id$
+# Subversion: $Id: Types.pm 543 2015-02-01 21:29:38Z aaronpriven $
 
 # legacy status 4
 

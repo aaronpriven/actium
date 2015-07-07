@@ -2,7 +2,7 @@
 
 # Class for Hastus ASI filetypes
 
-# Subversion: $Id$
+# Subversion: $Id: Filetype.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # Legacy stage 4
 

@@ -4,7 +4,7 @@
 # Also produces transit hubs sheet, so should be renamed to something else.
 # Possibly combine with slists2html 
 
-# Subversion: $Id$
+# Subversion: $Id: LineDescrip.pm 546 2015-02-02 07:44:52Z aaronpriven $
 
 # legacy status: 4
 

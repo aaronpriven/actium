@@ -2,7 +2,7 @@
 
 # class providing routines and constants for InDesign tagged text
 
-# Subversion: $Id$
+# Subversion: $Id: InDesignTags.pm 494 2014-11-06 03:47:04Z aaronpriven $
 
 # Legacy stage 4
 

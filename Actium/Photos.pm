@@ -2,7 +2,7 @@
 
 # Library to work on photos
 
-# Subversion: $Id$
+# Subversion: $Id: Photos.pm 483 2014-10-25 00:07:17Z aaronpriven $
 
 package Actium::Photos 0.007;
 

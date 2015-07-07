@@ -2,7 +2,7 @@
 #
 # Command-line program to modify iPhoto stop information
 
-# Subversion: $Id$
+# Subversion: $Id: IPhoto_Stops.pm 428 2014-08-28 00:44:39Z aaronpriven@gmail.com $
 
 package Actium::Cmd::IPhoto_Stops 0.005;
 

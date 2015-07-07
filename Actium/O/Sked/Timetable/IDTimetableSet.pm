@@ -2,7 +2,7 @@
 
 # A set of timetables
 
-# Subversion: $Id$
+# Subversion: $Id: IDTimetableSet.pm 288 2013-10-09 03:37:25Z aaronpriven@gmail.com $
 
 # legacy status: 4
 

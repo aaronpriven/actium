@@ -2,7 +2,7 @@
 
 #/Actium/O/Stoplists/ByDirection.pm
 
-# Subversion: $Id$
+# Subversion: $Id: ByDirection.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # legacy stage 4
 

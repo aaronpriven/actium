@@ -1,7 +1,7 @@
 # Actium/Time.pm
 # Routines for formatting times and parsing formatted times
 
-# Subversion: $Id$
+# Subversion: $Id: Time.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # legacy status 3
 

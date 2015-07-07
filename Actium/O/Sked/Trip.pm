@@ -2,7 +2,7 @@
 
 # Trip object (for schedules and headways)
 
-# Subversion: $Id$
+# Subversion: $Id: Trip.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # legacy status 4
 

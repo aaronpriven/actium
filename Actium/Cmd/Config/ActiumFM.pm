@@ -2,7 +2,7 @@
 
 # Configuration and command-line options for ActiumFM
 
-# Subversion: $Id$
+# Subversion: $Id: ActiumFM.pm 474 2014-10-02 22:42:08Z aaronpriven $
 
 # legacy stage 4
 
