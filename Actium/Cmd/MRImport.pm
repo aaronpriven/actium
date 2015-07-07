@@ -2,11 +2,9 @@
 
 # Command-line access to import_to_repository in Actum::MapRepostory
 
-# Subversion: $Id: MRImport.pm 548 2015-02-03 01:21:51Z aaronpriven $
-
 # Legacy status: 4
 
-package Actium::Cmd::MRImport 0.009;
+package Actium::Cmd::MRImport 0.010;
 
 use 5.014;
 use warnings;

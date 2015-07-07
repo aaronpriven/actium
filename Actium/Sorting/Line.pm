@@ -1,14 +1,12 @@
 # Actium/Sorting/Line.pm
 # Sorting routines (by line designation)
 
-# Subversion: $Id: Line.pm 549 2015-02-03 18:37:31Z aaronpriven $
-
 # legacy status 4
 
 use 5.012;
 use warnings;
 
-package Actium::Sorting::Line 0.006;
+package Actium::Sorting::Line 0.010;
 
 use Actium::Constants;
 

@@ -3,11 +3,9 @@
 # Moose object representing a frame (one of a series of one or more frames used
 # on a page) for an InDesign timetable
 
-# Subversion: $Id: IDFrame.pm 267 2013-09-17 05:58:06Z aaronpriven@gmail.com $
-
 # legacy status: 4
 
-package Actium::O::Sked::Timetable::IDFrame 0.002;
+package Actium::O::Sked::Timetable::IDFrame 0.010;
 
 use warnings;
 use 5.016;

@@ -1,14 +1,12 @@
 # Actium/Term.pm
 # Terminal output routines for Actium
 
-# Subversion: $Id: Term.pm 474 2014-10-02 22:42:08Z aaronpriven $
-
 # legacy status 3
 
 use strict;
 use warnings;
 
-package Actium::Term 0.007;
+package Actium::Term 0.010;
 
 use 5.010;    # turns on features
 

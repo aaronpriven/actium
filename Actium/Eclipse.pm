@@ -21,11 +21,9 @@
 # Actium::Eclipse::get_command_line() gets the command line (using Applescript...
 # slowly) from Eclipse.
 
-# Subversion: $Id: Eclipse.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # Legacy stage 4.
 
-package Actium::Eclipse 0.005;
+package Actium::Eclipse 0.010;
 
 use 5.010;
 use warnings;

@@ -2,9 +2,7 @@
 
 # Exports data for Scheduling import
 
-# Subversion: $Id: ActiumDBExport.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
-package Actium::Cmd::ActiumDBExport 0.006;
+package Actium::Cmd::ActiumDBExport 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folder;

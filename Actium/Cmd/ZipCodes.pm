@@ -2,9 +2,7 @@
 
 # Gets zip codes for stops from geonames.org
 
-# Subversion: $Id$
-
-package Actium::Cmd::ZipCodes 0.009;
+package Actium::Cmd::ZipCodes 0.010;
 
 use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM     ('actiumdb');

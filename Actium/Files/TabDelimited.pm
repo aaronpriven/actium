@@ -2,12 +2,10 @@
 
 # Procedural routines for reading Tab-Delimited files and returning them to the caller.
 
-# Subversion: $Id: TabDelimited.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 use warnings;
 use 5.014;    # turns on features
 
-package Actium::Files::TabDelimited 0.005;
+package Actium::Files::TabDelimited 0.010;
 
 use Carp;
 use English '-no_match_vars';

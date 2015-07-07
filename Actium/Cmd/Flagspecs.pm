@@ -1,13 +1,11 @@
 # Actium/Cmd/Flagspecs.pm
 
-# Subversion: $Id: Flagspecs.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # This needs refactoring badly. Currently though it is still the version being used.
 
 use warnings;
 use 5.012;
 
-package Actium::Cmd::Flagspecs 0.006;
+package Actium::Cmd::Flagspecs 0.010;
 
 use Actium::Sorting::Line (qw/sortbyline byline/);
 use Actium::Util qw(in jn j jt );

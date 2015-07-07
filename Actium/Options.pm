@@ -1,12 +1,10 @@
 # Actium/Options.pm
 # command-line option handling for Actium system
 
-# Subversion: $Id: Options.pm 546 2015-02-02 07:44:52Z aaronpriven $
-
 use strict;
 use warnings;
 
-package Actium::Options 0.005;
+package Actium::Options 0.010;
 
 use 5.010;    # turns on features
 

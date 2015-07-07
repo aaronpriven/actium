@@ -2,14 +2,12 @@
 
 # File for getting tab-delimted files from Actium::O::Files::SQLite
 
-# Subversion: $Id: SQLite2tab.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy status: 4
 
 use 5.012;
 use warnings;
 
-package Actium::Cmd::SQLite2tab 0.006;
+package Actium::Cmd::SQLite2tab 0.010;
 
 use Actium::O::Folders::Signup;
 use Actium::Util qw(jt );

@@ -2,14 +2,12 @@
 
 # Creates KML output of stops
 
-# Subversion: $Id$
-
 # legacy stage 4
 
 use 5.016;
 use warnings;
 
-package Actium::Cmd::Stops2KML 0.009;
+package Actium::Cmd::Stops2KML 0.010;
 
 use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');

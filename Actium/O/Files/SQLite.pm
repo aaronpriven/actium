@@ -2,8 +2,6 @@
 
 # Role for reading and processing flat files and storing in an SQLite database
 
-# Subversion: $Id: SQLite.pm 467 2014-09-26 18:03:59Z aaronpriven $
-
 # Legacy stage 4
 
 #The idea is that classes for different types of files (HastusASI,
@@ -24,7 +22,7 @@
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::O::Files::SQLite 0.003;
+package Actium::O::Files::SQLite 0.010;
 
 use Moose::Role;
 

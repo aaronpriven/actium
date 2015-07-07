@@ -1,12 +1,10 @@
 # Actium/Cmd/Ems.pm
 # Print number of ems for text
 
-# Subversion: $Id: Time.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 use warnings;
 use strict;
 
-package Actium::Cmd::Ems 0.009;
+package Actium::Cmd::Ems 0.010;
 
 use 5.020;
 

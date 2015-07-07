@@ -3,11 +3,9 @@
 # Moose object representing all the frame sets (series of one or more frames
 # used on a page) for an InDesign timetable
 
-# Subversion: $Id: IDPageFrameSets.pm 283 2013-10-04 01:07:55Z aaronpriven@gmail.com $
-
 # legacy status: 4
 
-package Actium::O::Sked::Timetable::IDPageFrameSets 0.002;
+package Actium::O::Sked::Timetable::IDPageFrameSets 0.010;
 
 use warnings;
 use 5.016;

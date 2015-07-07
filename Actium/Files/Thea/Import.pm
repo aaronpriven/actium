@@ -3,14 +3,12 @@
 # Takes the THEA files and imports them so Actium can use them.
 # THEA is "Tab-Delimited Hastus Export for Actium"
 
-# Subversion: $Id: Import.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # Legacy status: 4 (still in progress...)
 
 use 5.014;
 use warnings;
 
-package Actium::Files::Thea::Import 0.006;
+package Actium::Files::Thea::Import 0.010;
 
 use Actium::Term ':all';
 use Actium::O::Folders::Signup;

@@ -1,14 +1,12 @@
 # Signup.pm
 # Object-oriented interface to the signup folder
 
-# Subversion: $Id: Signup.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy stage 4
 
 use 5.012;
 use warnings;
 
-package Actium::O::Folders::Signup 0.006;
+package Actium::O::Folders::Signup 0.010;
 
 use Moose;
 use MooseX::StrictConstructor;
