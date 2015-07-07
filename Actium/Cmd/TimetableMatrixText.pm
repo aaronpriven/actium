@@ -12,6 +12,7 @@ use 5.016;
 use Actium::Preamble;
 use Actium::Util('joinseries_ampersand');
 use Actium::O::Folder;
+use Actium::Sorting::Line('sortbyline');
 
 sub HELP {
 
@@ -51,16 +52,32 @@ sub START {
     my %notready_timetables_of;
     my %each_of;
 
+    my %centers_of;
+
+    my $type = ' BART';
+
     foreach my $row_r ( @{$sheet} ) {
         my @entries = @{$row_r};
         my $center  = $entries[0];
         next unless $center;
 
         my $each = $entries[1];
-        next unless $each;
 
-        my $done = $entries[-1];
-        next if $done;
+        if ( not $each ) {
+            if ( $center =~ /LIBRARIES/ ) {
+                $type = ' Library';
+            }
+            else {
+                $type = '';
+            }
+
+            next;
+        }
+        
+        $center = "$center$type";
+
+        #my $done = $entries[-1];
+        #next if $done;
 
         my @timetables;
         my $notready;
@@ -70,6 +87,8 @@ sub START {
             $notready = 1 if $columns_to_use[$idx] ne 'X';
             next unless $headers[$idx] ne '?';
             push @timetables, $headers[$idx];
+
+            push @{ $centers_of{ $headers[$idx] } }, $center;
         }
 
         unless ($notready) {
@@ -95,6 +114,21 @@ sub START {
         print "$each of these timetables: ";
         @timetables = 'None' unless @timetables;
         print joinseries_ampersand (@timetables), " (total: $total)\n\n";
+
+    }
+
+    say "\n";
+
+    foreach my $timetable ( sortbyline keys %centers_of ) {
+        my @centers = @{ $centers_of{$timetable} };
+        say "Timetable for $timetable:";
+
+        foreach my $center (@centers) {
+            unless ($each_of{$center} <100) {
+            say "$center: $each_of{$center}";
+            }
+        }
+        say "\n";
 
     }
 
