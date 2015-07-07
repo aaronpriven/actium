@@ -1,7 +1,7 @@
 # Signup.pm
 # Object-oriented interface to the signup folder
 
-# Subversion: $Id$
+# Subversion: $Id: Signup.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # legacy stage 4
 

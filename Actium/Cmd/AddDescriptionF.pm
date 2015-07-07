@@ -5,7 +5,7 @@
 # turns to
 # <stopid>\t<DescriptionF>\t<arbitrarytext>
 
-# Subversion: $Id$
+# Subversion: $Id: AddDescriptionF.pm 575 2015-02-19 19:54:51Z aaronpriven $
 
 # Legacy status: well, 4, but not necessarily intended as a permanent thing
 

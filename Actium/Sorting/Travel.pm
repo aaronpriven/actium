@@ -1,7 +1,7 @@
 # Actium/Sorting/Travel.pm
 # Sorting routines by travel line)
 
-# Subversion: $Id$
+# Subversion: $Id: Travel.pm 556 2015-02-07 01:44:11Z aaronpriven $
 
 # legacy status 4
 

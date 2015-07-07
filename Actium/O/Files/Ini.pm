@@ -4,7 +4,7 @@
 # At the moment, and possibly permanently, a thin wrapper around
 # Config::Tiny, but could be more later. Maybe.
 
-# Subversion: $Id$
+# Subversion: $Id: Ini.pm 474 2014-10-02 22:42:08Z aaronpriven $
 
 # Legacy status: 4
 

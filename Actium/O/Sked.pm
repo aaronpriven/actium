@@ -2,7 +2,7 @@
 
 # the Sked object, containing everything that is a schedule
 
-# Subversion: $Id$
+# Subversion: $Id: Sked.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # legacy status 4
 

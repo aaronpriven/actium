@@ -2,7 +2,7 @@
 
 # File for getting tab-delimted files from Actium::O::Files::SQLite
 
-# Subversion: $Id$
+# Subversion: $Id: SQLite2tab.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # legacy status: 4
 

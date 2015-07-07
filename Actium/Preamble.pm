@@ -5,7 +5,7 @@
 # Imports things that are common to (many) modules.
 # inspired by http://www.perladvent.org/2012/2012-12-16.html
 
-# Subversion: $Id$
+# Subversion: $Id: Preamble.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # legacy status: 4
 

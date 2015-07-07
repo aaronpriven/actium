@@ -3,7 +3,7 @@
 # Role for defining objects that do what skeds can do
 # (including such things as Timetables and IDTables)
 
-# Subversion: $Id$
+# Subversion: $Id: Skedlike.pm 319 2014-04-03 22:07:44Z aaronpriven $
 
 use warnings;
 use 5.016;    # turns on features

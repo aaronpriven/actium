@@ -2,7 +2,7 @@
 
 # Command-line access to copylatest in Actum::MapRepostory
 
-# Subversion: $Id$
+# Subversion: $Id: MRCopy.pm 548 2015-02-03 01:21:51Z aaronpriven $
 
 # Legacy status: 4
 

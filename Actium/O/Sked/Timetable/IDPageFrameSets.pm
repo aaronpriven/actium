@@ -3,7 +3,7 @@
 # Moose object representing all the frame sets (series of one or more frames
 # used on a page) for an InDesign timetable
 
-# Subversion: $Id$
+# Subversion: $Id: IDPageFrameSets.pm 283 2013-10-04 01:07:55Z aaronpriven@gmail.com $
 
 # legacy status: 4
 

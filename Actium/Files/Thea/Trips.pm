@@ -2,7 +2,7 @@
 
 # The part of the theaImport routine that reads the trips files
 
-# Subversion: $Id$
+# Subversion: $Id: Trips.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # Legacy status: 4 (still in progress...)
 

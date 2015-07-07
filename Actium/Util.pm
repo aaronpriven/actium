@@ -1,7 +1,7 @@
 # Actium/Util.pm
 # Utility routines
 
-# Subversion: $Id$
+# Subversion: $Id: Util.pm 535 2015-01-28 17:41:35Z aaronpriven $
 
 package Actium::Util 0.008;
 

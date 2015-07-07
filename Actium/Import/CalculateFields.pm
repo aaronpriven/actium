@@ -4,7 +4,7 @@
 # Does things like break up "description" into "on" and "at". Etc.
 # This is probably a terrible name for this.
 
-# Subversion: $Id$
+# Subversion: $Id: CalculateFields.pm 514 2015-01-09 23:51:05Z aaronpriven $
 
 package Actium::Import::CalculateFields 0.008;
 

@@ -2,7 +2,7 @@
 
 # the stop time object, containing all the info for each time of a schedule
 
-# Subversion: $Id$
+# Subversion: $Id: Time.pm 238 2013-04-04 00:30:06Z aaronpriven@gmail.com $
 
 # legacy status 4
 

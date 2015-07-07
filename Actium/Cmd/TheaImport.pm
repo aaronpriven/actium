@@ -2,7 +2,7 @@
 
 # Takes the THEA files and imports them so Actium can use them.
 
-# Subversion: $Id$
+# Subversion: $Id: TheaImport.pm 236 2013-04-02 23:42:24Z aaronpriven@gmail.com $
 
 # Legacy status: 4
 

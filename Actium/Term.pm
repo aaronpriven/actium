@@ -1,7 +1,7 @@
 # Actium/Term.pm
 # Terminal output routines for Actium
 
-# Subversion: $Id$
+# Subversion: $Id: Term.pm 474 2014-10-02 22:42:08Z aaronpriven $
 
 # legacy status 3
 

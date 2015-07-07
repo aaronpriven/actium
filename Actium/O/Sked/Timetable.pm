@@ -3,7 +3,7 @@
 # Object representing the data in a timetable to be displayed to the user.
 # Designed to take an Actium::O::Sked object and make it displayable.
 
-# Subversion:  $Id$
+# Subversion:  $Id: Timetable.pm 594 2015-07-07 18:52:58Z aaronpriven $
 
 # legacy status: 4
 
