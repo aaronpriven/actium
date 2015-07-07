@@ -358,6 +358,19 @@ sub as_indesign {
         print $th $idt->parastyle('dropcaphead');
         print $th "<pDropCapCharacters:$routechars>$routetext ";
         print $th $idt->charstyle('DropCapHeadDays');
+        print $th "\cG"; # control-G is "Indent to Here"
+        
+#        my $header_daytext = $self->header_daytext;
+#        
+#        if ($header_daytext =~ /except holidays/) {
+#            my $except = $idt->charstyle('DropCapHeadDaysSmall') . 
+#              'except holidays' . $idt->charstyle('DropCapHeadDays');
+#            $header_daytext =~ s/except holidays/$except/;
+#            
+#        }
+#        
+#        print $th $header_daytext;
+        
         print $th "\cG", $self->header_daytext;
         print $th $idt->nocharstyle, '<0x000A>';
         print $th $idt->charstyle('DropCapHeadDest'),
