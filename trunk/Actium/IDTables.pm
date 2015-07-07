@@ -403,15 +403,15 @@ sub _make_length {
 
     my $length;
     for ($ems) {
-        if ( $_ <= .9 ) {    # two digits are .888
+        if ( $_ <= 1 ) {    # two digits are 1.112
             $length = 1;
             next;
         }
-        if ( $_ <= 1.2 ) {    # three digits are 1.332
+        if ( $_ <= 1.5 ) {    # three digits are 1.332
             $length = 2;
             next;
         }
-        if ( $_ <= 1.5 ) {    # N66 is 1.555
+        if ( $_ <= 1.8 ) {    # NXC is 2, NX3 1.95 
             $length = 3;
             next;
         }
@@ -434,6 +434,7 @@ sub output_a_pubtts {
     my $signup                    = shift;
 
     my %script_entries;
+    my @over_eight_pages;
 
     foreach my $pubtt_content_r (@pubtt_contents_with_dates) {
         my $pubtt         = $pubtt_content_r->{lines};
@@ -513,6 +514,8 @@ sub output_a_pubtts {
         # End matter, if there is any, goes here
 
         close $ttfh;
+        
+        my $has_short_page = not( $table_assignments[0]{pagebreak} );
 
         $script_entries{$linegroup} = {
             file             => $file,
@@ -521,9 +524,10 @@ sub output_a_pubtts {
             MapFile          => $dbentry->{MapFile} // $EMPTY_STR,
             LeaveCoverForMap => $leave_cover_for_map,
             MasterPage       => $dbentry->{MasterPage} // $EMPTY_STR,
-            has_short_page   => not( $table_assignments[0]{pagebreak} ),
+            has_short_page   => $has_short_page,
             portrait_chars   => $portrait_chars,
         };
+        
 
     } ## tidy end: foreach my $pubtt_content_r...
 
@@ -538,6 +542,8 @@ sub output_a_pubtts {
 
     emit_over '';
     emit_done;
+    
+    #emit_text "Has more than eight pages: @over_eight_pages";
 
 } ## tidy end: sub output_a_pubtts
 
