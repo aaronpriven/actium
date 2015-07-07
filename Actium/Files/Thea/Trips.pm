@@ -2,14 +2,12 @@
 
 # The part of the theaImport routine that reads the trips files
 
-# Subversion: $Id: Trips.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # Legacy status: 4 (still in progress...)
 
 use 5.014;
 use warnings;
 
-package Actium::Files::Thea::Trips 0.006;
+package Actium::Files::Thea::Trips 0.010;
 
 use Actium::Term;
 use Actium::Constants;

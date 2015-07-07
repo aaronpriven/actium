@@ -3,12 +3,10 @@
 # Role for defining objects that do what skeds can do
 # (including such things as Timetables and IDTables)
 
-# Subversion: $Id: Skedlike.pm 319 2014-04-03 22:07:44Z aaronpriven $
-
 use warnings;
 use 5.016;    # turns on features
 
-package Actium::O::Skedlike 0.003;
+package Actium::O::Skedlike 0.010;
 
 use Moose::Role;
 

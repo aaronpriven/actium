@@ -2,11 +2,9 @@
 
 # Trip object (for schedules and headways)
 
-# Subversion: $Id: Trip.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy status 4
 
-package Actium::O::Sked::Trip 0.003;
+package Actium::O::Sked::Trip 0.010;
 
 use 5.016;
 

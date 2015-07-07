@@ -2,11 +2,9 @@
 
 # A set of timetables
 
-# Subversion: $Id: IDTimetableSet.pm 288 2013-10-09 03:37:25Z aaronpriven@gmail.com $
-
 # legacy status: 4
 
-package Actium::O::Sked::Timetable::IDTimetableSet 0.002;
+package Actium::O::Sked::Timetable::IDTimetableSet 0.010;
 
 use 5.016;
 use warnings;

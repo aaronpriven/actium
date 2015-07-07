@@ -2,11 +2,9 @@
 
 #/Actium/O/Stoplists/ByDirection.pm
 
-# Subversion: $Id: ByDirection.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy stage 4
 
-package Actium::O::Stoplists::ByDirection 0.002;
+package Actium::O::Stoplists::ByDirection 0.010;
 
 use Moose;
 use MooseX::StrictConstructor;

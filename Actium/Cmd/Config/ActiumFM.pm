@@ -2,11 +2,9 @@
 
 # Configuration and command-line options for ActiumFM
 
-# Subversion: $Id: ActiumFM.pm 474 2014-10-02 22:42:08Z aaronpriven $
-
 # legacy stage 4
 
-package Actium::Cmd::Config::ActiumFM 0.007;
+package Actium::Cmd::Config::ActiumFM 0.010;
 
 use Actium::Preamble;
 use Actium::O::Files::ActiumFM;

@@ -2,11 +2,9 @@
 
 # Produces the page assignments for the timetables
 
-# Subversion: $Id: PageAssignments.pm 284 2013-10-08 18:08:42Z aaronpriven@gmail.com $
-
 # legacy status: 4
 
-package Actium::IDTables::PageAssignments 0.002;
+package Actium::IDTables::PageAssignments 0.010;
 
 use 5.016;
 use warnings;

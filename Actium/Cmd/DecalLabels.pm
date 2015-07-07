@@ -2,9 +2,7 @@
 #
 # Makes spreadsheet to print decal labels
 
-# Subversion: $Id$
-
-package Actium::Cmd::DecalLabels 0.008;
+package Actium::Cmd::DecalLabels 0.010;
 
 use Actium::Preamble;
 use Actium::Util('add_before_extension');

@@ -2,14 +2,12 @@
 
 # Object representing the scheduled direction (of a trip, or set of trips)
 
-# Subversion: $Id: Dir.pm 246 2013-07-25 00:20:08Z aaronpriven@gmail.com $
-
 # legacy stage 4
 
 use 5.014;
 use warnings;
 
-package Actium::O::Dir 0.002;
+package Actium::O::Dir 0.010;
 
 use Moose;
 use MooseX::StrictConstructor;

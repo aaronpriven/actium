@@ -2,14 +2,12 @@
 
 # Produces HTML tables that represent timetables.
 
-# Subversion: $Id: HTMLTables.pm 535 2015-01-28 17:41:35Z aaronpriven $
-
 # legacy status: 4
 
 use warnings;
 use 5.014;
 
-package Actium::Cmd::HTMLTables 0.008;
+package Actium::Cmd::HTMLTables 0.010;
 
 use Actium::Constants;
 use Actium::O::Sked;

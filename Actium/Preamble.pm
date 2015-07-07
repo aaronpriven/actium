@@ -5,11 +5,9 @@
 # Imports things that are common to (many) modules.
 # inspired by http://www.perladvent.org/2012/2012-12-16.html
 
-# Subversion: $Id: Preamble.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy status: 4
 
-package Actium::Preamble 0.005;
+package Actium::Preamble 0.010;
 
 use 5.016;
 use Module::Runtime (qw(require_module));

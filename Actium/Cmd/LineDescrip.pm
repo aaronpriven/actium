@@ -4,14 +4,12 @@
 # Also produces transit hubs sheet, so should be renamed to something else.
 # Possibly combine with slists2html 
 
-# Subversion: $Id: LineDescrip.pm 546 2015-02-02 07:44:52Z aaronpriven $
-
 # legacy status: 4
 
 use warnings;
 use 5.016;
 
-package Actium::Cmd::LineDescrip 0.008;
+package Actium::Cmd::LineDescrip 0.010;
 
 use Actium::Preamble;
 

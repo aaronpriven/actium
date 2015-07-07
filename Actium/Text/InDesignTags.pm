@@ -2,11 +2,9 @@
 
 # class providing routines and constants for InDesign tagged text
 
-# Subversion: $Id: InDesignTags.pm 494 2014-11-06 03:47:04Z aaronpriven $
-
 # Legacy stage 4
 
-package Actium::Text::InDesignTags 0.008;
+package Actium::Text::InDesignTags 0.010;
 
 use warnings;
 use 5.016;

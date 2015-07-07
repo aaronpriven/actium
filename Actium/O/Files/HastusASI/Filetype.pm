@@ -2,14 +2,12 @@
 
 # Class for Hastus ASI filetypes
 
-# Subversion: $Id: Filetype.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # Legacy stage 4
 
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::O::Files::HastusASI::Filetype 0.002;
+package Actium::O::Files::HastusASI::Filetype 0.010;
 
 use Moose;
 use MooseX::StrictConstructor;

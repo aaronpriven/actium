@@ -3,14 +3,12 @@
 # Takes a list of stops and order it so that people can drive down a
 # particular bus route and hit as many stops as possible.
 
-# Subversion: $Id: OrderByTravel.pm 550 2015-02-03 19:54:50Z aaronpriven $
-
 # legacy stage 4
 
 use 5.012;
 use warnings;
 
-package Actium::Cmd::OrderByTravel 0.009;
+package Actium::Cmd::OrderByTravel 0.010;
 
 use Carp;
 use Storable();

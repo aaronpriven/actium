@@ -2,11 +2,9 @@
 
 # work with photos in flickr
 
-# Subversion: $Id: Flickr_Stops.pm 483 2014-10-25 00:07:17Z aaronpriven $
-
 # legacy stage 4
 
-package Actium::Cmd::Flickr_Stops 0.007;
+package Actium::Cmd::Flickr_Stops 0.010;
 
 use Actium::Preamble;
 use Actium::Photos;

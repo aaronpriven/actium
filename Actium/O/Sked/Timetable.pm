@@ -3,14 +3,12 @@
 # Object representing the data in a timetable to be displayed to the user.
 # Designed to take an Actium::O::Sked object and make it displayable.
 
-# Subversion:  $Id: Timetable.pm 594 2015-07-07 18:52:58Z aaronpriven $
-
 # legacy status: 4
 
 use 5.012;
 use warnings;
 
-package Actium::O::Sked::Timetable 0.008;
+package Actium::O::Sked::Timetable 0.010;
 
 use Moose;
 use MooseX::StrictConstructor;

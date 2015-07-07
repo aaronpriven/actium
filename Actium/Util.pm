@@ -1,9 +1,7 @@
 # Actium/Util.pm
 # Utility routines
 
-# Subversion: $Id: Util.pm 535 2015-01-28 17:41:35Z aaronpriven $
-
-package Actium::Util 0.008;
+package Actium::Util 0.010;
 
 # Cannot use Actium::Preamble since that module uses this one
 

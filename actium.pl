@@ -11,12 +11,10 @@
 # to do that. Also, littering the world with lots of little executables seems
 # like a bad idea.
 
-# Subversion: $Id: actium.pl 596 2015-07-07 18:55:08Z aaronpriven $
-
 use 5.016;
 use warnings;
 
-our $VERSION = 0.009;
+our $VERSION = 0.010;
 
 # add the current program directory to list of files to include
 use FindBin qw($Bin);

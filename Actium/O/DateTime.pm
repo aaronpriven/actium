@@ -3,11 +3,9 @@
 # Object representing a date and time
 # (a very, very thin wrapper around the DateTime module)
 
-# Subversion: $Id: DateTime.pm 319 2014-04-03 22:07:44Z aaronpriven $
-
 # legacy stage 4
 
-package Actium::O::DateTime 0.002;
+package Actium::O::DateTime 0.010;
 
 use 5.016;
 use warnings;

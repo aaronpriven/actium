@@ -3,14 +3,12 @@
 # Takes the XHEA files and imports them so Actium can use them.
 # XHEA is "XML Hastus Export for Actium"
 
-# Subversion: $Id: ToSkeds.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # Legacy status: 4 (still in progress...)
 
 use 5.016;
 use warnings;
 
-package Actium::Files::Xhea::ToSkeds 0.006;
+package Actium::Files::Xhea::ToSkeds 0.010;
 
 use Actium::Preamble;
 

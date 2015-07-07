@@ -5,13 +5,11 @@
 # inspired by
 # http://blogs.perl.org/users/ovid/2013/09/building-your-own-moose.html
 
-# Subversion: $Id: Moose.pm 331 2014-04-11 05:50:18Z aaronpriven $
-
 # legacy status: 4
 
 use 5.016;
 
-package Actium::Moose 0.003;
+package Actium::Moose 0.010;
 
 use Moose();
 use MooseX::StrictConstructor();

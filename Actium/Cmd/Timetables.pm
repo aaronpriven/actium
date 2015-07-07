@@ -2,14 +2,12 @@
 
 # Produces InDesign tag files that represent timetables.
 
-# Subversion: $Id: Timetables.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy status: 4
 
 use warnings;
 use 5.012;
 
-package Actium::Cmd::Timetables 0.006;
+package Actium::Cmd::Timetables 0.010;
 
 use Actium::O::Folders::Signup;
 use Actium::O::Sked;

@@ -2,11 +2,9 @@
 
 # the stop time object, containing all the info for each time of a schedule
 
-# Subversion: $Id: Stop.pm 238 2013-04-04 00:30:06Z aaronpriven@gmail.com $
-
 # legacy status 4
 
-package Actium::O::Sked::Stop 0.002;
+package Actium::O::Sked::Stop 0.010;
 
 use 5.016;
 use strict;

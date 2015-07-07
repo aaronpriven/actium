@@ -5,13 +5,11 @@
 # inspired by
 # http://blogs.perl.org/users/ovid/2013/09/building-your-own-moose.html
 
-# Subversion: $Id: MooseRole.pm 319 2014-04-03 22:07:44Z aaronpriven $
-
 # legacy status: 4
 
 use 5.016;
 
-package Actium::MooseRole 0.003;
+package Actium::MooseRole 0.010;
 
 use Moose::Role();
 use MooseX::StrictConstructor();

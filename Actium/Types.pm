@@ -1,14 +1,12 @@
 # Actium/Types.pm
 # Moose types for Actium
 
-# Subversion: $Id: Types.pm 543 2015-02-01 21:29:38Z aaronpriven $
-
 # legacy status 4
 
 use strict;
 use warnings;
 
-package Actium::Types 0.005;
+package Actium::Types 0.010;
 
 use 5.016;    # turns on features
 

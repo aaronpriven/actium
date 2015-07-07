@@ -2,9 +2,7 @@
 #
 # Prepares a new signup directory
 
-# Subversion: $Id$
-
-package Actium::Cmd::NewSignup 0.009;
+package Actium::Cmd::NewSignup 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folders::Signup;

@@ -6,9 +6,7 @@
 # Also other routines with Xhea files or results from them, such as
 # creating mock HASI files
 
-# Subversion: $Id: Xhea.pm 588 2015-05-07 01:18:34Z aaronpriven $
-
-package Actium::Files::Xhea 0.009;
+package Actium::Files::Xhea 0.010;
 
 ## no critic (ProhibitAmbiguousNames)
 
