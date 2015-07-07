@@ -2,12 +2,10 @@
 
 # Produces HTML tables of stop lists
 
-# Subversion: $Id: Slists2HTML.pm 585 2015-03-12 00:16:23Z aaronpriven $
-
 use 5.016;
 use warnings;
 
-package Actium::Cmd::Slists2HTML 0.009;
+package Actium::Cmd::Slists2HTML 0.010;
 
 use Actium::Preamble;
 

@@ -2,14 +2,12 @@
 
 # Class for SQLite tables
 
-# Subversion: $Id: Table.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # Legacy stage 4
 
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::O::Files::SQLite::Table 0.006;
+package Actium::O::Files::SQLite::Table 0.010;
 
 use Moose;
 use MooseX::StrictConstructor;

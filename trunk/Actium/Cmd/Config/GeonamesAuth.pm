@@ -2,9 +2,7 @@
 
 # Configuration and command-line options for Geonames authentification
 
-# Subversion: $Id$
-
-package Actium::Cmd::Config::GeonamesAuth 0.009;
+package Actium::Cmd::Config::GeonamesAuth 0.010;
 
 use Actium::Preamble;
 use Actium::Options qw(option add_option);

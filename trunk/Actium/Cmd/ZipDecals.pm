@@ -2,12 +2,10 @@
 
 # Creates a Zip archive of the relevant decals
 
-# Subversion: $Id$
-
 use 5.016;
 use warnings;
 
-package Actium::Cmd::ZipDecals 0.008;
+package Actium::Cmd::ZipDecals 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folder;

@@ -2,14 +2,12 @@
 
 # Takes the THEA files and imports them so Actium can use them.
 
-# Subversion: $Id: TheaImport.pm 236 2013-04-02 23:42:24Z aaronpriven@gmail.com $
-
 # Legacy status: 4
 
 use 5.014;
 use warnings;
 
-package Actium::Cmd::TheaImport 0.002;
+package Actium::Cmd::TheaImport 0.010;
 
 use Actium::Files::Thea::Import ('thea_import');
 

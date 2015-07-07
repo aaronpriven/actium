@@ -1,14 +1,12 @@
 # Folder.pm
 # Objects representing folders (directories) on disk
 
-# Subversion: $Id: Folder.pm 584 2015-03-10 22:01:26Z aaronpriven $
-
 # legacy stage 4
 
 use 5.012;
 use strict;
 
-package Actium::O::Folder 0.008;
+package Actium::O::Folder 0.010;
 
 use Moose;
 use MooseX::StrictConstructor;

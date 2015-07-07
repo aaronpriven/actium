@@ -2,11 +2,9 @@
 
 # Permutations, partitions, and combinations for Actium
 
-# Subversion: $Id: Combinatorics.pm 509 2014-12-05 19:11:13Z aaronpriven $
-
 # legacy status: 4
 
-package Actium::Combinatorics 0.008;
+package Actium::Combinatorics 0.010;
 
 use 5.016;
 use warnings;

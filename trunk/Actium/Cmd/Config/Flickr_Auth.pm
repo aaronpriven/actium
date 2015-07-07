@@ -2,11 +2,9 @@
 
 # Configuration and command-line options for Flickr authentification
 
-# Subversion: $Id: Flickr_Auth.pm 483 2014-10-25 00:07:17Z aaronpriven $
-
 # legacy stage 4
 
-package Actium::Cmd::Config::Flickr_Auth 0.007;
+package Actium::Cmd::Config::Flickr_Auth 0.010;
 
 use Actium::Preamble;
 use Actium::Options qw(option add_option);

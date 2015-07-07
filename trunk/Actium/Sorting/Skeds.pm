@@ -1,14 +1,12 @@
 # Actium/Sorting/Skeds.pm
 # Routines to sort schedule-type objects
 
-# Subversion: $Id: Skeds.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy status 4
 
 use 5.016;
 use warnings;
 
-package Actium::Sorting::Skeds 0.002;
+package Actium::Sorting::Skeds 0.010;
 
 #use Storable;
 

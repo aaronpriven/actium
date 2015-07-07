@@ -1,14 +1,12 @@
 # Actium/Sorting/Travel.pm
 # Sorting routines by travel line)
 
-# Subversion: $Id: Travel.pm 556 2015-02-07 01:44:11Z aaronpriven $
-
 # legacy status 4
 
 use 5.012;
 use warnings;
 
-package Actium::Sorting::Travel 0.009;
+package Actium::Sorting::Travel 0.010;
 
 use Actium::Sorting::Line ('byline');
 

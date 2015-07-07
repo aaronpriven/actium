@@ -2,9 +2,7 @@
 
 # Geocoding
 
-# Subversion: $Id$
-
-package Actium::Geo 0.009;
+package Actium::Geo 0.010;
 
 use Actium::Preamble;
 

@@ -2,14 +2,12 @@
 
 # Gets the active stops, by crew assignment, and create the stop list for it.
 
-# Subversion: $Id$
-
 # legacy stage 4
 
 use 5.016;
 use warnings;
 
-package Actium::Cmd::CrewList 0.009;
+package Actium::Cmd::CrewList 0.010;
 
 use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');

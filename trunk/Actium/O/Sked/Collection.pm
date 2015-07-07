@@ -2,11 +2,9 @@
 
 # A collection of Sked objects (or similar objects such as Timetable objects)
 
-# Subversion: $Id: Collection.pm 319 2014-04-03 22:07:44Z aaronpriven $
-
 # legacy status 4
 
-package Actium::O::Sked::Collection 0.003;
+package Actium::O::Sked::Collection 0.010;
 
 use Actium::Moose;
 

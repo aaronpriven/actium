@@ -2,11 +2,9 @@
 
 # Routines for dealing with bag artwork
 
-# Subversion: $Id: Bags.pm 550 2015-02-03 19:54:50Z aaronpriven $
-
 # legacy stage 4
 
-package Actium::Bags 0.008;
+package Actium::Bags 0.010;
 
 use Actium::Preamble;
 use Actium::Term;

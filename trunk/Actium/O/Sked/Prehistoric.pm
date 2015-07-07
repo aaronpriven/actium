@@ -6,14 +6,12 @@
 # This could just as easily be in the main Actium/Sked.pm file, but I decided
 # it would be better to separate it out this way
 
-# Subversion: $Id: Prehistoric.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy status 4
 
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::O::Sked::Prehistoric 0.006;
+package Actium::O::Sked::Prehistoric 0.010;
 
 use Moose::Role;
 use namespace::autoclean;

@@ -2,12 +2,10 @@
 
 # Convenience object for 2D array methods
 
-# Subversion: $Id$
-
 use 5.016;
 use warnings;
 
-package Actium::O::2DArray 0.009;
+package Actium::O::2DArray 0.010;
 
 use Actium::Preamble;
 use Actium::Util (qw/file_ext u_columns/);

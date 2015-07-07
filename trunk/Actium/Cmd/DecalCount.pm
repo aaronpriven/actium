@@ -2,9 +2,7 @@
 #
 # Makes spreadsheet to calculate decal count
 
-# Subversion: $Id$
-
-package Actium::Cmd::DecalCount 0.008;
+package Actium::Cmd::DecalCount 0.010;
 
 use Actium::Preamble;
 use Actium::Util('add_before_extension');

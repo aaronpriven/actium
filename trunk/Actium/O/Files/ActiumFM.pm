@@ -4,11 +4,9 @@
 # (the FileMaker database used by Actium users), accessed
 # thorugh ODBC.
 
-# Subversion: $Id: ActiumFM.pm 513 2015-01-09 23:50:08Z aaronpriven $
-
 # Legacy stage 4
 
-package Actium::O::Files::ActiumFM 0.008;
+package Actium::O::Files::ActiumFM 0.010;
 
 use Actium::Moose;
 use Actium::Sorting::Line('sortbyline');

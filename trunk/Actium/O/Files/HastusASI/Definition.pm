@@ -2,14 +2,12 @@
 
 # Definition of Hastus ASI tables and file types
 
-# Subversion: $Id: Definition.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # Legacy stage 4
 
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::O::Files::HastusASI::Definition 0.002;
+package Actium::O::Files::HastusASI::Definition 0.010;
 
 use MooseX::Singleton;
 

@@ -2,14 +2,12 @@
 
 # character widths
 
-# Subversion: $Id: CharWidth.pm 592 2015-07-07 18:40:46Z aaronpriven $
-
 # Legacy stage 4
 
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::Text::CharWidth 0.009;
+package Actium::Text::CharWidth 0.010;
 
 use Sub::Exporter -setup => { exports => [qw( ems twelfths char_width )] };
 

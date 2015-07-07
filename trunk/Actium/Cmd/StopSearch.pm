@@ -2,9 +2,7 @@
 #
 # Command-line utility to search for stps
 
-# Subversion: $Id: StopSearch.pm 587 2015-04-06 17:03:31Z aaronpriven $
-
-package Actium::Cmd::StopSearch 0.008;
+package Actium::Cmd::StopSearch 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folder;

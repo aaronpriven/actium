@@ -2,9 +2,7 @@
 
 # Create the crew list and other reports from stop database
 
-# Subversion: $Id$
-
-package Actium::StopReports 0.009;
+package Actium::StopReports 0.010;
 use Actium::Preamble;
 use Excel::Writer::XLSX;
 use Actium::Sorting::Travel(qw<travelsort>);

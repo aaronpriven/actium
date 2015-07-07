@@ -2,11 +2,9 @@
 
 # Role for reading and processing FileMaker Pro databases via ODBC
 
-# Subversion: $Id: FileMaker_ODBC.pm 557 2015-02-07 01:45:04Z aaronpriven $
-
 # Legacy stage 4
 
-package Actium::O::Files::FileMaker_ODBC 0.008;
+package Actium::O::Files::FileMaker_ODBC 0.010;
 
 use Actium::MooseRole;
 

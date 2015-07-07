@@ -2,9 +2,7 @@
 #
 # Takes tab files that are result of XheaImport, and mocks up hasi files
 
-# Subversion: $Id: Xhea2Hasi.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
-package Actium::Cmd::Xhea2Hasi 0.005;
+package Actium::Cmd::Xhea2Hasi 0.010;
 
 use Actium::Preamble;
 use Actium::Files::Xhea;

@@ -5,11 +5,9 @@
 # turns to
 # <stopid>\t<DescriptionF>\t<arbitrarytext>
 
-# Subversion: $Id: AddDescriptionF.pm 575 2015-02-19 19:54:51Z aaronpriven $
-
 # Legacy status: well, 4, but not necessarily intended as a permanent thing
 
-package Actium::Cmd::AddDescriptionF 0.005;
+package Actium::Cmd::AddDescriptionF 0.010;
 
 use 5.012;
 use warnings;

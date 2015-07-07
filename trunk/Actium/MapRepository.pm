@@ -2,9 +2,6 @@
 
 # Routines for dealing with the filenames of line maps
 
-# Subversion:
-# $Id: MapRepository.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # Legacy status: 4
 
 # The filename pattern is supposed to be
@@ -26,7 +23,8 @@
 use 5.014;
 use warnings;
 
-package Actium::MapRepository 0.003;
+package Actium::MapRepository 0.010;
+
 use Sub::Exporter -setup => {
     exports => [
         qw(import_to_repository  make_web_maps      copylatest

@@ -3,14 +3,12 @@
 # Class for reading and processing Hastus Standard AVL files
 # and storing in an SQLite database using Actium::O::Files::SQLite
 
-# Subversion: $Id: HastusASI.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # Legacy stage 4
 
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::O::Files::HastusASI 0.003;
+package Actium::O::Files::HastusASI 0.010;
 
 use Moose;
 use MooseX::StrictConstructor;

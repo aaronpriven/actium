@@ -2,14 +2,12 @@
 
 #/Actium/Patterns/Pattern.pm
 
-# Subversion: $Id: Pattern.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy stage 4
 
 use 5.012;
 use warnings;
 
-package Actium::O::Pattern 0.002;
+package Actium::O::Pattern 0.010;
 
 use Moose;
 use MooseX::StrictConstructor;

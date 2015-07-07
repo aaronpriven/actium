@@ -2,11 +2,9 @@
 
 # Routines for dealing with flag artwork
 
-# Subversion: $Id: Flags.pm 581 2015-03-03 23:48:20Z aaronpriven $
-
 # legacy stage 4
 
-package Actium::Flags 0.009;
+package Actium::Flags 0.010;
 
 use Actium::Preamble;
 use Actium::Term;

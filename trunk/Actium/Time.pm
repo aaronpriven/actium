@@ -1,14 +1,12 @@
 # Actium/Time.pm
 # Routines for formatting times and parsing formatted times
 
-# Subversion: $Id: Time.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy status 3
 
 use warnings;
 use strict;
 
-package Actium::Time 0.006;
+package Actium::Time 0.010;
 
 use 5.010;
 

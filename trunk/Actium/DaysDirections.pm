@@ -1,15 +1,13 @@
 # Actium/DaysDirections
 # Day and direction codes, conversion between in Hastus and legacy systems
 
-# Subversion: $Id: DaysDirections.pm 380 2014-05-14 05:10:06Z aaronpriven $
-
 # legacy stage 2, mostly
 # should be eliminated in favor of Actium::O::Days and Actium::O::Dir
 
 use 5.012;
 use warnings;
 
-package Actium::DaysDirections 0.005;
+package Actium::DaysDirections 0.010;
 
 use Const::Fast;
 use Actium::Constants;

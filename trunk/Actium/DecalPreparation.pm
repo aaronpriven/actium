@@ -2,9 +2,7 @@
 #
 # Routines for decal preparation.
 
-# Subversion: $Id$
-
-package Actium::DecalPreparation 0.008;
+package Actium::DecalPreparation 0.010;
 
 use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');

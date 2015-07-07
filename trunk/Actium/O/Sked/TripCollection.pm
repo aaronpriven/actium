@@ -2,11 +2,9 @@
 
 # Trip collection object (for schedules)
 
-# Subversion: $Id: TripCollection.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # legacy status 4
 
-package Actium::O::Sked::TripCollection 0.002;
+package Actium::O::Sked::TripCollection 0.010;
 
 # This is a collection of trips. It is convenient to have a collection of trips
 # object (separate from the Sked object) for two reasons. First, the collection

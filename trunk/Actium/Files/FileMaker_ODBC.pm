@@ -1,11 +1,9 @@
 # Actium/Files/FileMaker_ODBC.pm
 # Procedural interface to Actium/O/FileMaker_ODBC.pm, for use in converting old programs
 
-# Subversion: $Id: FileMaker_ODBC.pm 465 2014-09-25 22:25:14Z aaronpriven $
-
 # Legacy status: 4
 
-package Actium::Files::FileMaker_ODBC 0.006;
+package Actium::Files::FileMaker_ODBC 0.010;
 
 use Actium::Preamble;
 use Actium::Term;
