@@ -3,7 +3,7 @@
 # Object representing a date and time
 # (a very, very thin wrapper around the DateTime module)
 
-# Subversion: $Id$
+# Subversion: $Id: DateTime.pm 319 2014-04-03 22:07:44Z aaronpriven $
 
 # legacy stage 4
 

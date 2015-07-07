@@ -5,7 +5,7 @@
 # inspired by
 # http://blogs.perl.org/users/ovid/2013/09/building-your-own-moose.html
 
-# Subversion: $Id$
+# Subversion: $Id: MooseRole.pm 319 2014-04-03 22:07:44Z aaronpriven $
 
 # legacy status: 4
 

@@ -2,7 +2,7 @@
 
 # Object representing the scheduled direction (of a trip, or set of trips)
 
-# Subversion: $Id$
+# Subversion: $Id: Dir.pm 246 2013-07-25 00:20:08Z aaronpriven@gmail.com $
 
 # legacy stage 4
 

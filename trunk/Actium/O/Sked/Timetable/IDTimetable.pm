@@ -3,7 +3,7 @@
 # Object representing data in a timetable to be displayed to user,
 # specific to InDesign timetables. Mostly to do with frame information.
 
-# Subversion: $Id$
+# Subversion: $Id: IDTimetable.pm 277 2013-09-28 00:20:36Z aaronpriven@gmail.com $
 
 # legacy status: 4
 

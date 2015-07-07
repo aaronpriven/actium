@@ -2,7 +2,7 @@
 
 # Trait for adding short column names to attributes
 
-# Subversion: $Id$
+# Subversion: $Id: WithShortColumn.pm 299 2013-10-25 00:09:54Z aaronpriven@gmail.com $
 
 use warnings;
 use 5.016;    # turns on features

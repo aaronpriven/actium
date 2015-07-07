@@ -2,7 +2,7 @@
 #
 # Based on Term::Emit by Steve Roscio
 #
-#  Subversion: $Id$
+#  Subversion: $Id: Cry.pm 573 2015-02-18 02:30:39Z aaronpriven $
 
 package Actium::O::Crier::Cry 0.009;
 

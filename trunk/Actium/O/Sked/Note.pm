@@ -1,6 +1,6 @@
 # Actium/Sked/Note.pm
 
-# Subversion: $Id$
+# Subversion: $Id: Note.pm 471 2014-09-29 11:59:44Z aaronpriven $
 
 # legacy status 3
 

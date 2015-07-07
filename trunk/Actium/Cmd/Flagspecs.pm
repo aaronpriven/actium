@@ -1,6 +1,6 @@
 # Actium/Cmd/Flagspecs.pm
 
-# Subversion: $Id$
+# Subversion: $Id: Flagspecs.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 # This needs refactoring badly. Currently though it is still the version being used.
 

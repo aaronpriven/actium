@@ -2,7 +2,7 @@
 
 # Role for reading and processing flat files and storing in an SQLite database
 
-# Subversion: $Id$
+# Subversion: $Id: SQLite.pm 467 2014-09-26 18:03:59Z aaronpriven $
 
 # Legacy stage 4
 

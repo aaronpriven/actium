@@ -1,7 +1,7 @@
 # Actium/Union.pm
 # Ordered union of lists
 
-# Subversion: $Id$
+# Subversion: $Id: Union.pm 465 2014-09-25 22:25:14Z aaronpriven $
 
 use 5.012;
 use warnings;

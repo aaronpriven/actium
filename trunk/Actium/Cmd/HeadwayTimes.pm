@@ -1,6 +1,6 @@
 # Actium/Cmd/HeadwayTimes.pm
 
-# Subversion: $Id$
+# Subversion: $Id: HeadwayTimes.pm 480 2014-10-25 00:01:22Z aaronpriven $
 
 # This is intended to accept a tab-delimited text file and then display the
 # minutes between times in the list.

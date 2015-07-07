@@ -2,7 +2,7 @@
 
 # Routines for dealing with bag artwork
 
-# Subversion: $Id$
+# Subversion: $Id: Bags.pm 550 2015-02-03 19:54:50Z aaronpriven $
 
 # legacy stage 4
 

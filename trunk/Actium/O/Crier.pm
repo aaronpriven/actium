@@ -1,7 +1,7 @@
 # Actium/O/Crier - Print with indentation, status, and closure
 # Based on Term::Emit by Steve Roscio
 #
-#  Subversion: $Id$
+#  Subversion: $Id: Crier.pm 574 2015-02-18 02:49:27Z aaronpriven $
 
 package Actium::O::Crier 0.009;
 use Actium::Moose;

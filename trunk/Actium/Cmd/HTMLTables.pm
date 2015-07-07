@@ -2,7 +2,7 @@
 
 # Produces HTML tables that represent timetables.
 
-# Subversion: $Id$
+# Subversion: $Id: HTMLTables.pm 535 2015-01-28 17:41:35Z aaronpriven $
 
 # legacy status: 4
 

@@ -2,7 +2,7 @@
 #
 # Takes XML files exported from Hastus and imports them
 
-# Subversion: $Id$
+# Subversion: $Id: XheaImport.pm 588 2015-05-07 01:18:34Z aaronpriven $
 
 package Actium::Cmd::XheaImport 0.009;
 

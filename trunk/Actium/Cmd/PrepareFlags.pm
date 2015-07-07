@@ -2,7 +2,7 @@
 
 # Prepare artwork so that flags are built
 
-# Subversion: $Id$
+# Subversion: $Id: PrepareFlags.pm 581 2015-03-03 23:48:20Z aaronpriven $
 
 # legacy stage 4
 

@@ -2,7 +2,7 @@
 
 # Produces InDesign tag files that represent timetables.
 
-# Subversion: $Id$
+# Subversion: $Id: IDTables.pm 593 2015-07-07 18:51:01Z aaronpriven $
 
 # legacy status: 4
 
