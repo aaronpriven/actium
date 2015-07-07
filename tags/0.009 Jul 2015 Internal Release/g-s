@@ -1,0 +1,15 @@
+#!/usr/bin/env perl
+
+my $file;
+
+if ($0 =~ /g-s$/) {
+   $file = 'stop-decals.txt';
+} else {
+   $file = 'decalspec.txt';
+}
+
+my $tosearch = join("|" , @ARGV);
+my $tosearch = qq{"$tosearch"};
+
+die "No arguments!" unless $tosearch;
+system "egrep $tosearch /b/actium/db/current/flags/$file";
