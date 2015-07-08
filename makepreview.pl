@@ -3,11 +3,11 @@
 use 5.012;
 use warnings;
 
-our $VERSION = 0.006;
+our $VERSION = 0.010;
 
-use Const::Fast;
-use File::Basename;
-use File::Spec;
+use Const::Fast; ### DEP ###
+use File::Basename; ### DEP ###
+use File::Spec; ### DEP ###
 
 const my $COMMAND =>
   '/opt/local/bin/epstool --add-tiff6p-preview --dpi 72 --gs-args '

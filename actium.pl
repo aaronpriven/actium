@@ -20,9 +20,9 @@ our $VERSION = 0.010;
 use FindBin qw($Bin);
 use lib $Bin;
 use English qw(-no_match_vars);
-use Scalar::Util('reftype');
+use Scalar::Util('reftype'); ### DEP ###
 
-use Module::Runtime (qw(require_module));
+use Module::Runtime (qw(require_module)); ### DEP ###
 
 use Actium::Options qw(add_option init_options option);
 

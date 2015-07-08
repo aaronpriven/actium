@@ -11,7 +11,7 @@ use warnings;
 
 use English '-no_match_vars';
 use autodie;
-use Text::Trim;
+use Text::Trim; ### DEP ###
 use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
@@ -22,11 +22,11 @@ use Actium::O::Sked::Timetable;
 use Actium::O::Sked::Timetable::IDTimetable;
 use Actium::O::Sked::Timetable::IDTimetableSet;
 use Actium::Util qw/doe in chunks flatten population_stdev j jk all_eq halves/;
-use Const::Fast;
-use List::Util      (qw/max sum/);
-use List::MoreUtils (qw[any natatime]);
-use List::Compare::Functional(qw/get_intersection/);
-use Algorithm::Combinatorics(qw/partitions permutations/);
+use Const::Fast; ### DEP ###
+use List::Util      (qw/max sum/); ### DEP ###
+use List::MoreUtils (qw[any natatime]); ### DEP ###
+use List::Compare::Functional(qw/get_intersection/); ### DEP ###
+use Algorithm::Combinatorics(qw/partitions permutations/); ### DEP ###
 use Actium::Combinatorics (qw/odometer_combinations ordered_partitions/);
 
 use Actium::O::Sked::Timetable::IDPageFrameSets;

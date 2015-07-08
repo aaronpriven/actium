@@ -5,7 +5,7 @@
 package Actium::Photos 0.010;
 
 use Actium::Preamble;
-use Flickr::API2;
+use Flickr::API2; ### DEP ###
 use Actium::Term;
 
 sub flickr_stops {

@@ -7,24 +7,24 @@
 use 5.012;
 use warnings;
 
-our $VERSION = 0.006;
+our $VERSION = 0.010;
 
 # add the current program directory to list of files to include
 use FindBin('$Bin');
 use lib ( $Bin, "$Bin/../bin" );
 
-use Carp;
+use Carp; ### DEP ###
 #use Fatal qw(open close);
-use Storable();
+use Storable(); ### DEP ###
 
 use Actium::Term('sayq');
 
 use Actium::Sorting::Line ('byline');
 use Actium::Constants;
 use Actium::Union('ordered_union');
-use List::MoreUtils('uniq');
+use List::MoreUtils('uniq'); ### DEP ###
 use Actium::DaysDirections (':all');
-use Algorithm::Diff('sdiff');
+use Algorithm::Diff('sdiff'); ### DEP ###
 
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 

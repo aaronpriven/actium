@@ -13,17 +13,16 @@ use 5.012;    # turns on features
 
 package Actium::O::Sked::Prehistoric 0.010;
 
-use Moose::Role;
-use namespace::autoclean;
+use Moose::Role; ### DEP ###
+use namespace::autoclean; ### DEP ###
 
-use warnings 'FATAL';
 use Carp;
 
 use Actium::Constants;
 use Actium::Term;
-use List::MoreUtils qw<uniq none>;
+use List::MoreUtils qw<uniq none>; ### DEP ###
 
-use Text::Trim;
+use Text::Trim; ### DEP ###
 use English '-no_match_vars';
 use Actium::Util (qw/jt dumpstr/);
 use Actium::Time ('timestr_sub');

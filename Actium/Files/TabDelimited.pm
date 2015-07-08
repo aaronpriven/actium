@@ -11,12 +11,13 @@ use Carp;
 use English '-no_match_vars';
 use autodie;
 
-use Params::Validate (':all');
+use Params::Validate (':all'); ### DEP ###
 
 use Actium::Term;
 use Actium::Util(qw/filename in/);
 
 use Sub::Exporter -setup => { exports => [qw(read_aoas read_tab_files)] };
+# Sub::Exporter ### DEP ###
 
 sub read_aoas {
     my %params = validate(

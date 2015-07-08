@@ -24,8 +24,8 @@ use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
 use Actium::O::Folders::Signup;
 
-use File::Slurp::Tiny('read_file');
-use Text::Trim;
+use File::Slurp::Tiny('read_file'); ### DEP ###
+use Text::Trim; ### DEP ###
 
 use Actium::O::Points::Point;
 

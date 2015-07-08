@@ -9,11 +9,11 @@ use warnings;
 
 package Actium::DaysDirections 0.010;
 
-use Const::Fast;
+use Const::Fast; ### DEP ###
 use Actium::Constants;
 use Carp;
 
-use Sub::Exporter -setup => { exports => [qw<day_of_hasi dir_of_hasi>] };
+use Sub::Exporter (-setup => { exports => [qw<day_of_hasi dir_of_hasi>] }); ### DEP ###
 
 # New day codes have a character for each set of days that are used.
 

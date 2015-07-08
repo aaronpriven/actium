@@ -7,14 +7,14 @@
 
 package Actium::O::Sked::Timetable::IDFrameSet 0.010;
 
-use Moose;
-use MooseX::StrictConstructor;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
 use Actium::Util 'hashref';
-use Scalar::Util 'reftype';
-use Carp;
+use Scalar::Util 'reftype'; ### DEP ###
+use Carp; ### DEP ###
 use Actium::O::Sked::Timetable::IDFrame;
 
-use MooseX::MarkAsMethods autoclean => 1;
+use MooseX::MarkAsMethods (autoclean => 1); ### DEP ###
 use overload '""'                   => sub { shift->description };
 
 has description => (

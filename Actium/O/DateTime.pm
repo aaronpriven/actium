@@ -10,13 +10,13 @@ package Actium::O::DateTime 0.010;
 use 5.016;
 use warnings;
 
-use Moose;
-use MooseX::StrictConstructor;
-use DateTime;
-use DateTime::Format::Strptime;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
+use DateTime; ### DEP ###
+use DateTime::Format::Strptime; ### DEP ###
 
-use Scalar::Util('reftype');
-use Carp;
+use Scalar::Util('reftype'); ### DEP ###
+use Carp; ### DEP ###
 
 around BUILDARGS => sub {
 

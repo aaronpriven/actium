@@ -10,19 +10,19 @@ use 5.012;    # turns on features
 
 package Actium::O::Files::HastusASI 0.010;
 
-use Moose;
-use MooseX::StrictConstructor;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
 use Actium::Term;
 use Actium::Util qw(j jk filename);
-use Carp;
+use Carp; ### DEP ###
 use English '-no_match_vars';
-use File::Glob qw(:glob);
-use File::Spec;
-use Const::Fast;
+use File::Glob qw(:glob); ### DEP ###
+use File::Spec; ### DEP ###
+use Const::Fast; ### DEP ###
 
 use Actium::O::Files::HastusASI::Definition;
 
@@ -267,7 +267,7 @@ sub _build_templates {
 
 =begin comment
     
-    This requires a bit of explanation.  HSA rows are specified in the HSA
+This requires a bit of explanation.  HSA rows are specified in the HSA
 documentation as fixed-width records, with a delimiter -- practically
 always a comma -- inserted between each pair of fields.  The comma is
 not treated specially; it's just there to make the files easier to read.

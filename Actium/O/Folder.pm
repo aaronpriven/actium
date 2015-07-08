@@ -8,20 +8,20 @@ use strict;
 
 package Actium::O::Folder 0.010;
 
-use Moose;
-use MooseX::StrictConstructor;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
 use Actium::Term(':all');
 use Actium::Util('flatten');
-use Carp;
-use English '-no_match_vars';
-use File::Spec;
-use File::Glob ('bsd_glob');
+use Carp; ### DEP ###
+use English '-no_match_vars'; ### DEP ###
+use File::Spec; ### DEP ###
+use File::Glob ('bsd_glob'); ### DEP ###
 
-use Params::Validate qw(:all);
+use Params::Validate qw(:all); ### DEP ###
 
 use overload (
     q[""]    => '_stringify',
@@ -371,7 +371,7 @@ sub slurp_write {
 
     emit("Writing $filename...");
 
-    require File::Slurp::Tiny;
+    require File::Slurp::Tiny; ### DEP ###
     File::Slurp::Tiny::write_file( $filespec, $string,
         binmode => ':encoding(UTF-8)' );
 
@@ -389,11 +389,11 @@ sub json_retrieve {
 
     emit("Retrieving $filename");
 
-    require File::Slurp::Tiny;
+    require File::Slurp::Tiny; ### DEP ###
     my $json_text =
       File::Slurp::Tiny::read_file( $filespec, binmode => ':encoding(UTF-8)' );
 
-    require JSON;
+    require JSON; ### DEP ###
     my $data_r = JSON::from_json($json_text);
 
     emit_done;
@@ -411,10 +411,10 @@ sub json_store {
 
     emit("Storing $filename...");
 
-    require JSON;
+    require JSON; ### DEP ###
     my $json_text = JSON::to_json($data_r);
 
-    require File::Slurp::Tiny;
+    require File::Slurp::Tiny; ### DEP ###
     File::Slurp::Tiny::write_file( $filespec, $json_text,
         binmode => ':encoding(UTF-8)' );
 
@@ -431,10 +431,10 @@ sub json_store_pretty {
 
     emit("Storing $filename...");
 
-    require JSON;
+    require JSON; ### DEP ###
     my $json_text = JSON::to_json( $data_r, { pretty => 1, canonical => 1 } );
 
-    require File::Slurp::Tiny;
+    require File::Slurp::Tiny; ### DEP ###
     File::Slurp::Tiny::write_file( $filespec, $json_text,
         binmode => ':encoding(UTF-8)' );
 

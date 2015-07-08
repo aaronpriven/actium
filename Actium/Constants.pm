@@ -12,7 +12,7 @@ package Actium::Constants 0.010;
 # Cannot use Actium::Preamble since that module depends on this one
 
 use 5.016;
-use Const::Fast;
+use Const::Fast; ### DEP ###
 
 my %constants;
 
@@ -110,7 +110,7 @@ BEGIN {
     );
 
     {
-        require Params::Validate;
+        require Params::Validate; ### DEP ###
         my %pv_type;
 
         my @pv = @{ $Params::Validate::EXPORT_TAGS{'types'} };

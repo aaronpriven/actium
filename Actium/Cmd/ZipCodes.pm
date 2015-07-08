@@ -9,8 +9,8 @@ use Actium::Cmd::Config::ActiumFM     ('actiumdb');
 use Actium::Cmd::Config::GeonamesAuth ('geonames_username');
 use Actium::Geo('get_zip_for_stops');
 
-use REST::Client;
-use JSON;
+use REST::Client; ### DEP ###
+use JSON; ### DEP ###
 
 sub HELP {
     say "Using the geonames.org server, gets zip codes for stops"

@@ -10,7 +10,7 @@
 use warnings;
 use 5.016;
 
-our $VERSION = 0.009;
+our $VERSION = 0.010;
 
 use sort ('stable');
 
@@ -19,10 +19,10 @@ use FindBin('$Bin');
 use lib ( $Bin, "$Bin/../bin", );
 
 use Carp;
-use POSIX ('ceil');
+use POSIX ('ceil'); ### DEP ###
 
 #use Fatal qw(open close);
-use Storable();
+use Storable(); ### DEP ###
 
 use Actium::Time (qw(timenum ));
 
@@ -37,9 +37,9 @@ use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
 use Actium::Options (qw<add_option option init_options>);
 
-use List::MoreUtils (qw<any all>);
+use List::MoreUtils (qw<any all>); ### DEP ###
 
-use Const::Fast;
+use Const::Fast; ### DEP ###
 
 my ( %stops, %cities );
 

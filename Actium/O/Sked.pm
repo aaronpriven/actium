@@ -9,21 +9,21 @@ package Actium::O::Sked 0.010;
 use 5.012;
 use strict;
 
-use Moose;
+use Moose; ### DEP ###
 #use MooseX::SemiAffordanceAccessor;
-use MooseX::StrictConstructor;
-use Moose::Util::TypeConstraints;
+use MooseX::StrictConstructor; ### DEP ###
+use Moose::Util::TypeConstraints; ### DEP ###
 
 use MooseX::MarkAsMethods autoclean => 1;
 use overload '""' => sub { shift->id };
 
-use MooseX::Storage;
+use MooseX::Storage; ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'], 'format' => 'JSON' );
 
 use English '-no_match_vars';
 
-use List::MoreUtils qw<none any>;
-use List::Util ( 'first', 'max' );
+use List::MoreUtils (qw<none any>); ### DEP ###
+use List::Util ( 'first', 'max' ); ### DEP ###
 
 use Actium::Util(qw<:all>);
 use Actium::Time(qw<:all>);
@@ -39,7 +39,7 @@ use Actium::O::Sked::Stop::Time;
 
 use Actium::Term;
 
-use Const::Fast;
+use Const::Fast; ### DEP ###
 
 with 'Actium::O::Sked::Prehistoric';
 # allows prehistoric skeds files to be read and written.
@@ -469,7 +469,7 @@ has 'md5' => (
 sub _build_md5 {
     my $self = shift;
     # build an MD5 digest from the placetimes, stoptimes, places, and stops
-    require Digest::MD5;
+    require Digest::MD5; ### DEP ###
 
     my @data = ( jt( $self->place4s ), jt( $self->stopids ) );
 
@@ -736,7 +736,7 @@ sub tidydump {
     my $self   = shift;
     my $dumped = $self->dump;
 
-    require Perl::Tidy;
+    require Perl::Tidy; ### DEP ###
     my $tidy;
     Perl::Tidy::perltidy(
         source      => \$dumped,
@@ -749,7 +749,7 @@ sub tidydump {
 
 sub dump {
     my $self = shift;
-    require Data::Dump;
+    require Data::Dump; ### DEP ###
     my $dumped = Data::Dump::dump($self);
 
     return $dumped;
@@ -838,7 +838,7 @@ sub xlsx {
     my $self = shift;
     my $timesub = timestr_sub( XB => 1 );
 
-    require Excel::Writer::XLSX;
+    require Excel::Writer::XLSX; ### DEP ###
 
     my $outdata;
     open( my $out, '>', \$outdata ) or die "$!";

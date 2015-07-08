@@ -11,7 +11,7 @@ use Actium::Options qw(option add_option);
 use Actium::Term;
 use Actium::O::Photos::Flickr::Auth;
 
-use Sub::Exporter -setup => { exports => [qw(flickr_auth)] };
+use Sub::Exporter ( -setup => { exports => [qw(flickr_auth)] }); ### DEP ###
 
 my %description_of_option = (
     key    => 'Flickr API key',

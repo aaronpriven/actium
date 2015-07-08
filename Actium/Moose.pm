@@ -11,17 +11,17 @@ use 5.016;
 
 package Actium::Moose 0.010;
 
-use Moose();
-use MooseX::StrictConstructor();
-use MooseX::SemiAffordanceAccessor();
-use MooseX::MarkAsMethods();
-use Moose::Util::TypeConstraints();
+use Moose(); ### DEP ###
+use MooseX::StrictConstructor(); ### DEP ###
+use MooseX::SemiAffordanceAccessor(); ### DEP ###
+use MooseX::MarkAsMethods(); ### DEP ###
+use Moose::Util::TypeConstraints(); ### DEP ###
 use Actium::Preamble();
 #use Actium::Types; 
 # not included because not useful without importing specific types
-use Import::Into;
+use Import::Into; ### DEP ###
 
-use Moose::Exporter;
+use Moose::Exporter; ### DEP ###
 Moose::Exporter->setup_import_methods( also => ['Moose'] ); 
 
 sub init_meta {

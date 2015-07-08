@@ -10,14 +10,14 @@ package Actium::O::Sked::Timetable::IDTimetable 0.010;
 use 5.016;
 use warnings;
 
-use Moose;
-use MooseX::StrictConstructor;
-use MooseX::SemiAffordanceAccessor;
-use Const::Fast;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
+use MooseX::SemiAffordanceAccessor; ### DEP ###
+use Const::Fast; ### DEP ###
 
-use List::Util(qw<max sum>);
+use List::Util(qw<max sum>); ### DEP ###
 
-use MooseX::MarkAsMethods autoclean => 1;
+use MooseX::MarkAsMethods (autoclean => 1); ### DEP ###
 #use overload '""'                   => sub {
 #    my $self = shift;
 #    $self->id . ":" . $self->lower_bound . '-' . $self->upper_bound;

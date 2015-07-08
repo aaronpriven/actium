@@ -3,9 +3,9 @@
 use 5.014;
 use warnings;
 
-our $VERSION = 0.006;
+our $VERSION = 0.010;
 
-use File::Slurp::Tiny('read_file');
+use File::Slurp::Tiny('read_file'); ### DEP ###
 
 my $file = $ARGV[0];
 

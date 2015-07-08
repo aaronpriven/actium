@@ -1,6 +1,6 @@
-use Test::More tests => 1;
+use Test::More (tests => 1);  ### DEP ###
 
-our $VERSION = 0.005;
+our $VERSION = 0.010;
 
 BEGIN {
 use_ok( 'Actium::O::Crier' );

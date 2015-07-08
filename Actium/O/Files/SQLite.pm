@@ -24,20 +24,20 @@ use 5.012;    # turns on features
 
 package Actium::O::Files::SQLite 0.010;
 
-use Moose::Role;
+use Moose::Role; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
 use Actium::Term;
 use Actium::Util(qw/flatten in/);
 
-use Carp;
-use DBI;
-use English '-no_match_vars';
-use File::Spec;
-use List::MoreUtils('uniq');
-use Const::Fast;
+use Carp; ### DEP ###
+use DBI; ### DEP ###
+use English '-no_match_vars'; ### DEP ###
+use File::Spec; ### DEP ###
+use List::MoreUtils('uniq'); ### DEP ###
+use Const::Fast; ### DEP ###
 
 # set some constants
 const my $STAT_MTIME   => 9;

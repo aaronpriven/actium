@@ -9,11 +9,11 @@ use 5.016;
 use warnings;
 
 use Actium::Constants;
-use List::Util (qw[first max min maxstr minstr sum]);
-use List::MoreUtils(qw[any all none notall natatime uniq]);
+use List::Util (qw[first max min maxstr minstr sum]); ### DEP ###
+use List::MoreUtils(qw[any all none notall natatime uniq]); ### DEP ###
 use Scalar::Util(qw[blessed reftype looks_like_number]);
-use Carp;
-use File::Spec;
+use Carp; ### DEP ###
+use File::Spec; ### DEP ###
 
 use Sub::Exporter -setup => {
     exports => [
@@ -43,6 +43,7 @@ use Sub::Exporter -setup => {
           >
     ]
 };
+# Sub::Exporter ### DEP ###
 
 #### ACCEPTING POSITIONAL OR NAMED ARGUMENTS
 
@@ -312,7 +313,7 @@ sub remove_leading_path {
     ############################
     ## GET CANONICAL PATHS
 
-    require Cwd;
+    require Cwd; ### DEP ###
     $path     = Cwd::abs_path($path);
     $filespec = Cwd::abs_path($filespec);
 
@@ -490,7 +491,7 @@ sub halves {
 }
 
 sub dumpstr {
-    require Data::Dumper;
+    require Data::Dumper; ### DEP ###
     no warnings 'once';
     local $Data::Dumper::Indent   = 1;
     local $Data::Dumper::Sortkeys = 1;
@@ -502,7 +503,7 @@ sub dumpstr {
 
 sub u_columns {
     my $str = shift;
-    require Unicode::GCString;
+    require Unicode::GCString; ### DEP ###
     return Unicode::GCString->new($str)->columns;
 }
 
@@ -528,7 +529,7 @@ sub u_wrap {
     return $msg
       if $max < 3 or $min > $max;
 
-    require Unicode::LineBreak;
+    require Unicode::LineBreak; ### DEP ###
 
     state $breaker = Unicode::LineBreak::->new();
     $breaker->config( ColMax => $max, ColMin => $min );
@@ -559,7 +560,7 @@ sub u_trim_to_columns {
     my $text        = shift;
     my $num_columns = shift;
 
-    require Unicode::GCString;
+    require Unicode::GCString; ### DEP ###
 
     my $gc = Unicode::GCString::->new($text);
 

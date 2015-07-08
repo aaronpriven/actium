@@ -488,7 +488,7 @@ qq{<tr><td width='30%' style="vertical-align: middle; text-align: right;">}
 
 sub line_descrip_html {
 
-    require HTML::Entities;
+    require HTML::Entities; ### DEP ###
     require Actium::EffectiveDate;
 
     my $self = shift;

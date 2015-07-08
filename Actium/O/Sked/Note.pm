@@ -8,11 +8,11 @@ use 5.010;
 
 use utf8;
 
-use Moose;
-use MooseX::SemiAffordanceAccessor;
-use MooseX::StrictConstructor;
+use Moose; ### DEP ###
+use MooseX::SemiAffordanceAccessor; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
 has [ qw<origlinegroup noteletter note days> ] => (
    is => 'rw' ,

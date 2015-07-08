@@ -8,6 +8,7 @@ use Actium::Constants;
 
 use Sub::Exporter -setup =>
   { exports => [qw(long_date file_date effectivedate newest_date)] };
+# Sub::Exporter ### DEP ###
 
 sub effectivedate {
     # lame and should be replaced...
@@ -27,8 +28,8 @@ sub effectivedate {
 }
 
 sub newest_date {
-    require DateTime;
-    require DateTime::Format::Strptime;
+    require DateTime; ### DEP ###
+    require DateTime::Format::Strptime; ### DEP ###
     state $strp_slashes = DateTime::Format::Strptime->new(
         pattern => '%m/%d/%Y',    # not %D which uses two-digit year
         locale  => 'en_US',

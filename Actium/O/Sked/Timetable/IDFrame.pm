@@ -10,9 +10,9 @@ package Actium::O::Sked::Timetable::IDFrame 0.010;
 use warnings;
 use 5.016;
 
-use Moose;
-use MooseX::StrictConstructor;
-use namespace::autoclean;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
+use namespace::autoclean; ### DEP ###
 use Actium::Util qw/halves/;
 
 has widthpair_r => (

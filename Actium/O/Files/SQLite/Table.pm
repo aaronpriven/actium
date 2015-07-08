@@ -9,10 +9,10 @@ use 5.012;    # turns on features
 
 package Actium::O::Files::SQLite::Table 0.010;
 
-use Moose;
-use MooseX::StrictConstructor;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
 

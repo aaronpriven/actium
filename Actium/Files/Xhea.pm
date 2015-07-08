@@ -14,9 +14,9 @@ use Actium::Preamble;
 use Actium::Term;
 use Actium::Import::CalculateFields;
 
-use Params::Validate(':all');
+use Params::Validate(':all'); ### DEP ###
 use Actium::Util(qw/file_ext aoa2tsv/);
-use List::MoreUtils('pairwise');
+use List::MoreUtils('pairwise'); ### DEP ###
 use Actium::Time(qw[timestr_sub timenum]);
 
 const my $PREFIX => 'Actium::O::Files::Xhea';
@@ -202,7 +202,7 @@ sub load {
 
     my @xhea_filenames = _get_xhea_filenames($xheafolder);
 
-    require XML::Pastor;
+    require XML::Pastor; ### DEP ###
 
     my $pastor = XML::Pastor->new();
 

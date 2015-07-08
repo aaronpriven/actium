@@ -9,13 +9,14 @@ package Actium::Combinatorics 0.010;
 use 5.016;
 use warnings;
 
-use Algorithm::Combinatorics(':all');
+use Algorithm::Combinatorics(':all'); ### DEP ###
 use Actium::Util('population_stdev');
 use Actium::Term(':all');
 
 use Sub::Exporter -setup => {
     exports => [ qw< ordered_partitions odometer_combinations > ]
 };
+# Sub::Exporter ### DEP ###
 
 sub ordered_partitions {
 

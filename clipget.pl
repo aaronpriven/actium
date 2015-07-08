@@ -3,12 +3,12 @@
 use 5.016;
 use warnings;
 
-our $VERSION = 0.006;
+our $VERSION = 0.010;
 
-use HTTP::Tiny;
-use Const::Fast;
-use File::Slurp::Tiny ('read_file');
-use Data::Dumper;
+use HTTP::Tiny; ### DEP ###
+use Const::Fast; ### DEP ###
+use File::Slurp::Tiny ('read_file'); ### DEP ###
+use Data::Dumper; ### DEP ###
 
 if (exists $ENV{GATEWAY_INTERFACE} ) {
     print "Content-type: text/html\r\n",

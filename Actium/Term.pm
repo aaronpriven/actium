@@ -13,11 +13,12 @@ use 5.010;    # turns on features
 use Actium::Constants;
 
 use Term::Emit ( qw<:all !emit_over !emit_prog>, { -fh => *STDERR } );
+# Term::Emit ### DEP ###
 
 use Actium::Options qw(option add_option);
 use Carp;
-use Term::ReadKey;
-use Text::Wrap;
+use Term::ReadKey; ### DEP ###
+use Text::Wrap; ### DEP ###
 use List::Util('max');
 use POSIX qw(ceil floor);
 use Scalar::Util qw(reftype);
@@ -151,7 +152,7 @@ sub printq {
 
 sub term_readline {
 
-    require IO::Prompter;
+    require IO::Prompter; ### DEP ###
 
     my $prompt = shift;
     my $hide   = shift;

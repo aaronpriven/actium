@@ -25,11 +25,14 @@ use MooseX::Types -declare => [
       >
 ];
 
+# MooseX::Types ### DEP ###
+# MooseX::Types::Moose ### DEP ###
+
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
 
 use Actium::Time;
 use Actium::Constants;
-use Unicode::GCString;
+use Unicode::GCString; ### DEP ###
 
 ##################
 ### SCHEDULE DAYS
