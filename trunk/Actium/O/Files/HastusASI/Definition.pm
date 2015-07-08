@@ -9,9 +9,9 @@ use 5.012;    # turns on features
 
 package Actium::O::Files::HastusASI::Definition 0.010;
 
-use MooseX::Singleton;
+use MooseX::Singleton; ### DEP ###
 
-use English ('-no_match_vars');
+use English ('-no_match_vars'); ### DEP ###
 
 use Actium::O::Files::HastusASI::Filetype;
 use Actium::O::Files::SQLite::Table;

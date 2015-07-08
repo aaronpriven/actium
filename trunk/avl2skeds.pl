@@ -14,7 +14,7 @@ if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
 use warnings;
 use 5.012;
 
-our $VERSION = 0.005;
+our $VERSION = 0.010;
 
 use sort ('stable');
 
@@ -22,12 +22,12 @@ use sort ('stable');
 use FindBin('$Bin');
 use lib ($Bin , "$Bin/../bin");
 
-use List::Util;
-use List::MoreUtils (qw<all each_arrayref>);
+use List::Util; ### DEP ###
+use List::MoreUtils (qw<all each_arrayref>); ### DEP ###
 
-use File::Copy;
+use File::Copy; ### DEP ###
 
-use Array::Transpose;
+use Array::Transpose; ### DEP ###
 
 use Actium::Options (qw<option add_option init_options>);
 

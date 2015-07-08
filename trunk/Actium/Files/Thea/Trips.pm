@@ -18,12 +18,13 @@ use Actium::Util ('j');
 use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Sorting::Line 'sortbyline';
 
-use List::Util('max');
-use List::MoreUtils ('uniq');
-use List::Compare;
-use Const::Fast;
+use List::Util('max'); ### DEP ###
+use List::MoreUtils ('uniq'); ### DEP ###
+use List::Compare; ### DEP ###
+use Const::Fast; ### DEP ###
 
 use Sub::Exporter -setup => { exports => ['thea_trips'] };
+# Sub::Exporter ### DEP ###
 
 ## no critic (ProhibitConstantPragma)
 use constant {

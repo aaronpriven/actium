@@ -11,6 +11,7 @@ package Actium::Sorting::Line 0.010;
 use Actium::Constants;
 
 use Sub::Exporter -setup => { exports => [qw(byline sortbyline linekeys)] };
+# Sub::Exporter ### DEP ###
 
 ########################
 ### SORTING BY LINE NAME

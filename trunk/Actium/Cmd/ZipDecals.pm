@@ -11,9 +11,9 @@ use Actium::Preamble;
 use Actium::O::Folder;
 use Actium::Util('file_ext');
 use Actium::Sorting::Line ('sortbyline');
-use Spreadsheet::ParseXLSX;
+use Spreadsheet::ParseXLSX; ### DEP ###
 
-use Archive::Zip qw(:ERROR_CODES);
+use Archive::Zip qw(:ERROR_CODES); ### DEP ###
 
 const my $EPSFOLDER =>
   '/Volumes/Bireme/Actium/flagart/Decals/export_eps_bleed';

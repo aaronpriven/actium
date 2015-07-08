@@ -8,7 +8,7 @@ use 5.016;    # turns on features
 
 package Actium::O::Skedlike 0.010;
 
-use Moose::Role;
+use Moose::Role; ### DEP ###
 
 requires(
        qw[ earliest_timenum id linedir should_preserve_direction_order

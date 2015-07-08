@@ -8,12 +8,12 @@ package Actium::O::Files::FileMaker_ODBC 0.010;
 
 use Actium::MooseRole;
 
-use Params::Validate(':all');
+use Params::Validate(':all'); ### DEP ###
 
 use Actium::Term;
 
 use Carp;
-use DBI;
+use DBI; ### DEP ###
 
 # Required methods in consuming classes:
 

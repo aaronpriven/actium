@@ -11,16 +11,16 @@ use 5.016;
 
 package Actium::MooseRole 0.010;
 
-use Moose::Role();
-use MooseX::StrictConstructor();
-use MooseX::SemiAffordanceAccessor();
-use MooseX::MarkAsMethods();
-use Moose::Util::TypeConstraints();
+use Moose::Role(); ### DEP ###
+use MooseX::StrictConstructor(); ### DEP ###
+use MooseX::SemiAffordanceAccessor(); ### DEP ###
+use MooseX::MarkAsMethods(); ### DEP ###
+use Moose::Util::TypeConstraints(); ### DEP ###
 use Actium::Preamble();
 use Actium::Types;
-use Import::Into;
+use Import::Into; ### DEP ###
 
-use Moose::Exporter;
+use Moose::Exporter; ### DEP ###
 Moose::Exporter->setup_import_methods( also => ['Moose::Role'] ); 
 
 sub init_meta {

@@ -13,8 +13,9 @@ use warnings;
 use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM;
 
-use Math::Trig qw(deg2rad pi great_circle_distance asin acos);
-use Scalar::Util 'looks_like_number';
+use Math::Trig (qw(deg2rad pi great_circle_distance asin acos)); ### DEP ###
+use Scalar::Util ('looks_like_number'); ### DEP ###
+use IPC::Open2; ### DEP ###
 
 use constant { RADIUS => 3956.6 * 5280 };    # feet
 
@@ -92,8 +93,6 @@ set my text item delimiters to character id 30
 get photoInfo as text
 
 ENDSCRIPT
-
-    use IPC::Open2;
 
     my $pid = open2( my $readscriptfh, my $writescriptfh, 'osascript -' );
 

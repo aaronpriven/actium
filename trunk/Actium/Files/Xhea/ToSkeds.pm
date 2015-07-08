@@ -23,10 +23,10 @@ use Actium::Term ':all';
 use Actium::Time 'timenum';
 use Actium::Union('ordered_union_columns');
 use Actium::Util (qw<linegroup_of>);
-use List::Compare;
-use List::MoreUtils (qw<each_arrayref>);
+use List::Compare; ### DEP ###
+use List::MoreUtils (qw<each_arrayref>); ### DEP ###
 
-use Params::Validate;
+use Params::Validate; ### DEP ###
 
 ## no critic (ProhibitConstantPragma)
 use constant { P_DIRECTION => 0, P_STOPS => 1, P_PLACES => 2 };
@@ -52,6 +52,7 @@ use constant {
 ## use critic
 
 use Sub::Exporter -setup => { exports => ['xhea2skeds'] };
+# Sub::Exporter ### DEP ###
 
 my %dircode_of_xhea = (
     Northbound       => 'NB',

@@ -10,12 +10,12 @@ use 5.016;
 
 use utf8;
 
-use Moose;
-use MooseX::StrictConstructor;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
-use MooseX::Storage;
+use MooseX::Storage; ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
 use Actium::Time qw<timestr timestr_sub>;
@@ -23,10 +23,10 @@ use Actium::Util qw<jt in>;
 use Actium::Constants;
 use Carp;
 
-use Const::Fast;
+use Const::Fast; ### DEP ###
 
-use List::Util   ('min');
-use Scalar::Util ('reftype');
+use List::Util   ('min'); ### DEP ###
+use Scalar::Util ('reftype'); ### DEP ###
 
 #use overload q{""} => \&stoptimes_comparison_str;
 # only for debugging - remove in production
@@ -245,12 +245,6 @@ has 'mergedtrip_r' => (
     handles => { mergedtrips => 'elements', mergedtrip_count => 'count', },
 
 );
-
-#sub dump {    ## no critic (ProhibitBuiltinHomonyms)
-#    my $self = shift;
-#    require Data::Dump;
-#    return Data::Dump::dump($self);
-#}
 
 ### OBJECT METHODS
 

@@ -6,8 +6,8 @@ package Actium::Geo 0.010;
 
 use Actium::Preamble;
 
-use REST::Client;
-use JSON;
+use REST::Client; ### DEP ###
+use JSON; ### DEP ###
 
 use Sub::Exporter -setup => {
     exports => [
@@ -16,6 +16,7 @@ use Sub::Exporter -setup => {
           )
     ]
 };
+# Sub::Exporter ### DEP ###
 
 sub get_zip_for_stops {
 

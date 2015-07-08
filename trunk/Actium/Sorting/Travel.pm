@@ -13,10 +13,7 @@ use Actium::Sorting::Line ('byline');
 use Actium::Preamble;
 
 use Sub::Exporter -setup => { exports => [qw(travelsort)] };
-
-###################################
-### SORTING BY TRAVEL ROUTES
-###################################
+# Sub::Exporter ### DEP ###
 
 sub travelsort {
 

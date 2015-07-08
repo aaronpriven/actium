@@ -6,10 +6,10 @@ use Actium::O::Sked;
 use Actium::O::Sked::Trip;
 use Actium::Util(qw[joinseries tabulate]);
 
-our $VERSION = 0.003;
+our $VERSION = 0.010;
 
-use Spreadsheet::XLSX;
-use List::Compare::Functional (qw/is_LsubsetR/);
+use Spreadsheet::XLSX; ### DEP ###
+use List::Compare::Functional (qw/is_LsubsetR/); ### DEP ###
 
 const my @used_sheets         => qw[intro tpsked stopsked];
 const my @mandatory_intros    => qw[id days dir];
@@ -83,7 +83,7 @@ sub _excel_to_timestr {
         $ampm = "b";
     }
 
-    require Spreadsheet::ParseExcel::Utility;
+    require Spreadsheet::ParseExcel::Utility; ### DEP ###
 
     my ( $minutes, $hours )
       = ( Spreadsheet::ParseExcel::Utility::ExcelLocaltime($timefraction) )

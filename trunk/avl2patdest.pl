@@ -12,7 +12,7 @@ use 5.010;
 use warnings;
 use strict;
 
-our $VERSION = 0.007;
+our $VERSION = 0.010;
 
 # add the current program directory to list of files to include
 use FindBin('$Bin');
@@ -21,13 +21,13 @@ use lib ( $Bin, "$Bin/../bin" );
 use Carp;
 
 #use Fatal qw(open close);
-use Storable();
+use Storable(); ### DEP ###
 
 use Actium::Constants;
 use Actium::Union('ordered_union');
 
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
-use List::MoreUtils('uniq');
+use List::MoreUtils('uniq'); ### DEP ###
 
 # don't buffer terminal output
 $| = 1;

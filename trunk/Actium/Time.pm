@@ -12,12 +12,12 @@ use 5.010;
 
 use Carp;
 use Actium::Constants;
-use Params::Validate qw(:all);
-use Const::Fast;
+use Params::Validate qw(:all); ### DEP ###
+use Const::Fast; ### DEP ###
 use Scalar::Util (qw<reftype looks_like_number>);
-use Memoize;
+use Memoize; ### DEP ###
 
-use List::MoreUtils (qw<firstidx>);
+use List::MoreUtils (qw<firstidx>); ### DEP ###
 
 ## no critic (ProhibitMagicNumbers)
 
@@ -31,6 +31,8 @@ const my %AMPM_OFFSETS => (
 );
 
 use Sub::Exporter -setup => { exports => [qw(timenum timestr timestr_sub)] };
+
+# Sub::Exporter ### DEP ###
 
 ###########################################
 ## TIMENUM

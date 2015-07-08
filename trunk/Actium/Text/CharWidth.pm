@@ -10,6 +10,7 @@ use 5.012;    # turns on features
 package Actium::Text::CharWidth 0.010;
 
 use Sub::Exporter -setup => { exports => [qw( ems twelfths char_width )] };
+# Sub::Exporter ### DEP ###
 
 use List::Util ('sum');
 use Carp;

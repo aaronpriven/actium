@@ -56,7 +56,7 @@ sub START {
         say 'Enter a stop ID, phone ID, or pattern to match.';
         say 'Enter a blank line to quit.';
 
-        require Term::ReadLine;
+        require Term::ReadLine; ### DEP ###
 
         my $term = Term::ReadLine->new('st.pl');
         $term->ornaments(1);

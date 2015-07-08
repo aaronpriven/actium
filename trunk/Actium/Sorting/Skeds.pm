@@ -11,12 +11,13 @@ package Actium::Sorting::Skeds 0.010;
 #use Storable;
 
 use Sub::Exporter -setup => { exports => [qw(skedsort)] };
-use Params::Validate;
+# Sub::Exporter ### DEP ###
+use Params::Validate; ### DEP ###
 
 use Actium::Sorting::Line (qw(byline linekeys));
 use Actium::Constants;
 
-use List::Util(qw/min/);
+use List::Util(qw/min/); ### DEP ###
 
 my $required_methods
   = [qw( linedir earliest_timenum sortable_id sortable_id_with_timenum )];

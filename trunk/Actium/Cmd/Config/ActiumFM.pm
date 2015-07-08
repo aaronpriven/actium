@@ -11,7 +11,7 @@ use Actium::O::Files::ActiumFM;
 use Actium::Options qw(option add_option);
 use Actium::Term;
 
-use Sub::Exporter -setup => { exports => [qw(actiumdb)] };
+use Sub::Exporter ( -setup => { exports => [qw(actiumdb)] } ) ; ### DEP ###
 
 const my $CONFIG_SECTION => 'ActiumFM';
 const my $DEFAULT_DBNAME => 'ActiumFM';

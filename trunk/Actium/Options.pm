@@ -11,32 +11,12 @@ use 5.010;    # turns on features
 use Sub::Exporter -setup => { exports => 
   [ qw(add_option option init_options is_an_option set_option helpmessages) ]
 };
-
-#use base qw(Exporter);
-#our @EXPORT_OK = qw(
-#  add_option option init_options is_an_option set_option helpmessages
-#);
-#our %EXPORT_TAGS = (all => \@EXPORT_OK);
+# Sub::Exporter ### DEP ###
 
 use Carp;
-use Getopt::Long;
+use Getopt::Long; ### DEP ###
 
 my ( %optionspecs, %caller_of, %callback_of, %options, %caller_seen, $inited );
-
-#sub import {
-#
-#    my $caller = scalar caller();
-#
-#    $caller_seen{$caller} = 1
-#      if $caller;
-#
-#    Actium::Options->export_to_level( 1, @_ );
-#
-#    # use Exporter to export the appropriate symbols
-#
-#    return;
-#
-#}
 
 sub add_option {
 

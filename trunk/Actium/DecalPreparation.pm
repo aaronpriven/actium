@@ -7,8 +7,8 @@ package Actium::DecalPreparation 0.010;
 use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::O::2DArray;
-use Excel::Writer::XLSX;
-use Excel::Writer::XLSX::Utility;
+use Excel::Writer::XLSX; ### DEP ###
+use Excel::Writer::XLSX::Utility; ### DEP ###
 use Actium::Util(qw[folded_in joinseries_ampersand]);
 
 use Sub::Exporter -setup => {
@@ -20,6 +20,7 @@ use Sub::Exporter -setup => {
           )
     ]
 };
+# Sub::Exporter ### DEP ###
 
 sub make_labels {
     my ( $input_file, $output_file, $actium_db ) = @_;

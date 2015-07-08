@@ -28,8 +28,8 @@ use Actium::Union('ordered_union_columns');
 use Actium::Constants;
 
 use English '-no_match_vars';
-use List::Util      (qw<min sum>);
-use List::MoreUtils (qw<each_arrayref uniq>);
+use List::Util      (qw<min sum>); ### DEP ###
+use List::MoreUtils (qw<each_arrayref uniq>); ### DEP ###
 
 ## no critic (ProhibitConstantPragma)
 use constant { P_DIRECTION => 0, P_STOPS => 1, P_PLACES => 2 };
@@ -42,6 +42,7 @@ use constant {
 ## use critic
 
 use Sub::Exporter -setup => { exports => ['thea_import'] };
+# Sub::Exporter ### DEP ###
 
 my %dircode_of_thea = (
     Northbound       => 'NB',

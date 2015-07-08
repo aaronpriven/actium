@@ -9,11 +9,11 @@ use warnings;
 
 package Actium::O::Pattern 0.010;
 
-use Moose;
-use MooseX::StrictConstructor;
-use Moose::Util::TypeConstraints;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
+use Moose::Util::TypeConstraints; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
 use Actium::Types (qw/DirCode HastusDirCode ActiumDir/);

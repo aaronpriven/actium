@@ -11,7 +11,7 @@ package Actium::IDTables 0.010;
 
 use English '-no_match_vars';
 use autodie;
-use Text::Trim;
+use Text::Trim; ### DEP ###
 use Actium::EffectiveDate (qw[effectivedate long_date file_date newest_date]);
 use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Sorting::Skeds('skedsort');
@@ -23,10 +23,10 @@ use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::Util(qw/doe in jt chunks population_stdev/);
-use Const::Fast;
-use List::Util ( 'max', 'sum' );
-use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);
-use Algorithm::Combinatorics ('combinations');
+use Const::Fast; ### DEP ###
+use List::Util ( 'max', 'sum' ); ### DEP ###
+use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>); ### DEP ###
+use Algorithm::Combinatorics ('combinations'); ### DEP ###
 
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;

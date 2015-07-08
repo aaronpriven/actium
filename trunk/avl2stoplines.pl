@@ -1,19 +1,14 @@
 #!/ActivePerl/bin/perl
 
-@ARGV = qw(-s sp09) if $ENV{RUNNING_UNDER_AFFRUS};
-
 # avl2stoplines
 
 # Another variant of avl2stoplines, this one lists directions as well as routes
 # legacy stage 2
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
-
 use warnings;
 use strict;
 
-our $VERSION = 0.007;
+our $VERSION = 0.010;
 
 use 5.010;
 
@@ -26,7 +21,7 @@ use lib ( $Bin, "$Bin/../bin" );
 use Carp;
 use POSIX ('ceil');
 
-use Storable();
+use Storable(); ### DEP ###
 
 use Actium::Term;
 use Actium::Util(qw<jt>);
@@ -34,8 +29,8 @@ use Actium::Sorting::Line (qw[sortbyline]);
 use Actium::Constants;
 use Actium::Union('ordered_union');
 
-use List::Util      ('max');
-use List::MoreUtils ('any');
+use List::Util      ('max'); ### DEP ###
+use List::MoreUtils ('any'); ### DEP ###
 
 use Actium::DaysDirections (':all');
 
