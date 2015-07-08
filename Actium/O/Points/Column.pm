@@ -13,16 +13,16 @@ use sort ('stable');
 
 package Actium::O::Points::Column 0.008;
 
-use Moose;
-use MooseX::SemiAffordanceAccessor;
-use Moose::Util::TypeConstraints;
+use Moose; ### DEP ###
+use MooseX::SemiAffordanceAccessor; ### DEP ###
+use Moose::Util::TypeConstraints; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
 use Actium::Time ('timenum');
 use Actium::Term;
-use Const::Fast;
+use Const::Fast; ### DEP ###
 
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';

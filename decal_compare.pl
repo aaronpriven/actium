@@ -3,14 +3,14 @@
 use 5.012;
 use warnings;
 
-our $VERSION = 0.008;
+our $VERSION = 0.010;
 
-use List::MoreUtils(qw(uniq natatime));
+use List::MoreUtils(qw(uniq natatime)); ### DEP ###
 use autodie;
 use FindBin('$Bin');
 use lib ($Bin);
 
-use Data::Dumper;
+use Data::Dumper; ### DEP ###
 
 use Actium::Util('jt');
 use Actium::Sorting::Line ('sortbyline');
@@ -175,7 +175,7 @@ sub decals_of_line {
 
 sub add_drop_unchanged {
 
-    require List::Compare;
+    require List::Compare; ### DEP ###
 
     my @l  = sort @{ +shift };
     my @r  = sort @{ +shift };

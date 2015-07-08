@@ -6,10 +6,10 @@
 
 package Actium::O::Stoplists::ByDirection 0.010;
 
-use Moose;
-use MooseX::StrictConstructor;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
 has [ 'dir', 'route' ] => (
     is       => 'ro',

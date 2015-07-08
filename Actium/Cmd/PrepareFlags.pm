@@ -55,7 +55,7 @@ sub START {
     }
 
     if ( defined $output_file ) {
-        require File::Slurp::Tiny;
+        require File::Slurp::Tiny; ### DEP ###
         File::Slurp::Tiny::write_file( $output_file, $tabbed,
              binmode => ':utf8'  );
     }

@@ -8,11 +8,11 @@
 
 package Actium::O::Files::Ini 0.010;
 
-use Actium::Moose;
+use Actium::Moose; ### DEP ###
 use Actium::Types ('ActiumFolderLike');
 
-use File::HomeDir;
-use Config::Tiny;
+use File::HomeDir; ### DEP ###
+use Config::Tiny; ### DEP ###
 
 around BUILDARGS => sub {
 	my $orig  = shift;

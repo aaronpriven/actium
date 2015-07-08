@@ -18,7 +18,7 @@ use Actium::Util('filename');
 use Actium::Term;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
-use HTML::Entities;
+use HTML::Entities; ### DEP ###
 
 sub HELP {
     say 'No help yet, sorry.';

@@ -5,9 +5,11 @@
 use 5.012;
 use warnings;
 
-use Text::Trim;
-use Lingua::EN::NameCase ('nc');
-use Text::Wrap;
+our $VERSION = 0.010;
+
+use Text::Trim; ### DEP ###
+use Lingua::EN::NameCase ('nc'); ### DEP ###
+use Text::Wrap; ### DEP ###
 
 my @entries;
 

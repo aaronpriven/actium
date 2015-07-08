@@ -9,22 +9,22 @@ use warnings;
 
 package Actium::O::Days 0.010;
 
-use Moose;
-use MooseX::StrictConstructor;
-use MooseX::Storage;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
+use MooseX::Storage; ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
 use Actium::Types qw<DayCode SchoolDayCode>;
 use Actium::Util qw<positional_around joinseries in>;
 use Actium::Constants;
 
 use Carp;
-use Const::Fast;
-use List::MoreUtils (qw<mesh uniq>);
+use Const::Fast; ### DEP ###
+use List::MoreUtils (qw<mesh uniq>); ### DEP ###
 
-use Data::Dumper;
+use Data::Dumper; ### DEP ###
 
 ###################################
 #### ENGLISH NAMES FOR DAYS CONSTANTS

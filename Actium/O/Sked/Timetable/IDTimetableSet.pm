@@ -9,9 +9,9 @@ package Actium::O::Sked::Timetable::IDTimetableSet 0.010;
 use 5.016;
 use warnings;
 
-use Moose;
-use MooseX::StrictConstructor;
-use MooseX::SemiAffordanceAccessor;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
+use MooseX::SemiAffordanceAccessor; ### DEP ###
 
 has timetables_r => (
     traits   => ['Array'],

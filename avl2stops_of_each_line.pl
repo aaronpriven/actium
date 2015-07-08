@@ -9,7 +9,7 @@ use strict;
 
 use 5.010;
 
-our $VERSION = 0.003;
+our $VERSION = 0.010;
 
 use sort ('stable');
 
@@ -18,9 +18,9 @@ use FindBin('$Bin');
 use lib ($Bin , "$Bin/../bin");
 
 use Carp;
-use POSIX ('ceil');
+use POSIX ('ceil'); ### DEP ###
 #use Fatal qw(open close);
-use Storable();
+use Storable(); ### DEP ###
 
 use Actium::Sorting::Line ( qw<sortbyline>);
 use Actium::Constants;

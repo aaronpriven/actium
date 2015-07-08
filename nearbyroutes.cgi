@@ -7,7 +7,7 @@
 use 5.012;
 use warnings;
 
-our $VERSION = 0.002;
+our $VERSION = 0.010;
 
 BEGIN {
  
@@ -35,7 +35,7 @@ my $threshold = 5280 / 4;    # 1/3 mile
 
 init_options();
 
-use CGI qw(:standard);
+use CGI qw(:standard); ### DEP ###
 
 my $q = CGI->new();
 

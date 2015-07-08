@@ -10,22 +10,22 @@ package Actium::O::Sked::Timetable::IDPageFrameSets 0.010;
 use warnings;
 use 5.016;
 
-use Moose;
-use MooseX::StrictConstructor;
-use namespace::autoclean;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
+use namespace::autoclean; ### DEP ###
 use Actium::O::Sked::Timetable::IDFrameSet;
 use Actium::O::Sked::Timetable::IDTimetable;
-use Actium::Combinatorics(':all');
-use POSIX('ceil');
+use Actium::Combinatorics(':all'); ### DEP ###
+use POSIX('ceil'); ### DEP ###
 
-use Params::Validate ':all';
+use Params::Validate (':all'); ### DEP ###
 
-use Scalar::Util 'reftype';
-use List::MoreUtils ('uniq');
-use List::Util(qw<max sum min>);
+use Scalar::Util ('reftype'); ### DEP ###
+use List::MoreUtils ('uniq'); ### DEP ###
+use List::Util(qw<max sum min>); ### DEP ###
 use Actium::Util(qw<flatten population_stdev>);
 
-use Const::Fast;
+use Const::Fast; ### DEP ###
 
 const my $IDTABLE => 'Actium::O::Sked::Timetable::IDTimetable';
 

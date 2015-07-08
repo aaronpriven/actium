@@ -7,9 +7,9 @@
 package Actium::Import::CalculateFields 0.010;
 
 use Actium::Preamble;
-use Text::Trim;
+use Text::Trim; ### DEP ###
 use Actium::Term;
-use Lingua::EN::Titlecase::Simple('titlecase');
+use Lingua::EN::Titlecase::Simple('titlecase'); ### DEP ###
 
 const my $CALC_PREFIX => 'i_';
 const my $ORIG_PREFIX => 'h_';

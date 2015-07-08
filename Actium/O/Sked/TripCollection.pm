@@ -19,12 +19,12 @@ package Actium::O::Sked::TripCollection 0.010;
 ...;
 
 use 5.014;
-use Moose;
+use Moose; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
-use MooseX::SemiAffordanceAccessor;
-use MooseX::StrictConstructor;
+use MooseX::SemiAffordanceAccessor; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
 
 has 'trip_r' => (
     traits  => ['Array'],

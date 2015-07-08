@@ -4,12 +4,13 @@
 
 package Actium::StopReports 0.010;
 use Actium::Preamble;
-use Excel::Writer::XLSX;
+use Excel::Writer::XLSX; ### DEP ###
 use Actium::Sorting::Travel(qw<travelsort>);
 use Actium::Sorting::Line(qw/linekeys sortbyline/);
 use Actium::Util('joinseries_ampersand');
 
 use Sub::Exporter -setup => { exports => [qw(crewlist_xlsx stops2kml)] };
+# Sub::Exporter ### DEP ###
 
 ##################################################################
 ### KML output for Google Earth etc.
@@ -202,7 +203,7 @@ sub _kml_stop_description {
       . "${activestar}$desc</p>\n"
       . "$linetext" . "${connections_text}";
 
-    require HTML::Entities;
+    require HTML::Entities; ### DEP ###
     return HTML::Entities::encode_entities_numeric($text);
 
 }

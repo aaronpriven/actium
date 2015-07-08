@@ -9,7 +9,8 @@ use Actium::Options qw(option add_option);
 use Actium::Term;
 use Actium::O::Photos::Flickr::Auth;
 
-use Sub::Exporter -setup => { exports => [qw(geonames_username)] };
+use Sub::Exporter (-setup => { exports => [qw(geonames_username)] }); 
+# Sub::Exporter  ### DEP ###
 
 my %description_of_option = ( username => 'Geonames API username', );
 

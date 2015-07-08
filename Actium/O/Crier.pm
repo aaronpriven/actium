@@ -3,7 +3,7 @@
 
 package Actium::O::Crier 0.010;
 use Actium::Moose;
-use Scalar::Util(qw[openhandle weaken refaddr reftype]);
+use Scalar::Util(qw[openhandle weaken refaddr reftype]); ### DEP ###
 
 use Actium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
 use Actium::Util  ('u_columns');
@@ -25,6 +25,7 @@ use Sub::Exporter -setup => {
         'default_crier' => \'_build_default_crier',
     ]
 };
+# Sub::Exporter ### DEP ###
 
 my $default_crier;
 

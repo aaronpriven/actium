@@ -15,7 +15,7 @@ use 5.014;
 use warnings;
 use strict;
 
-our $VERSION = 0.006;
+our $VERSION = 0.010;
 
 use Carp;
 #use Fatal qw (open close);
@@ -26,11 +26,11 @@ use lib $Bin;
 
 use Actium::Constants;
 
-use Text::Trim;
-use Storable();
+use Text::Trim; ### DEP ###
+use Storable(); ### DEP ###
 
 # set some constants
-use Const::Fast;
+use Const::Fast; ### DEP ###
 const my $NO_PARENT => q{top};
 const my $DELIMITER => q{,};
 const my $DELIMITER_LENGTH => length($DELIMITER);

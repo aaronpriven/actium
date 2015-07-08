@@ -15,7 +15,8 @@ use Actium::Util (qw/file_ext u_columns/);
 # The object can be treated as an ordinary array of arrays,
 # or have methods invoked on it
 
-use namespace::autoclean; # don't allow imported functions as methods
+use namespace::autoclean;  ### DEP ###
+# don't allow imported functions as methods
 
 #################
 ### Class methods
@@ -115,7 +116,7 @@ sub new_from_xlsx {
     croak "No file specified in " . __PACKAGE__ . '->new_from_xlsx'
       unless $xlsx_filespec;
 
-    require Spreadsheet::ParseXLSX;
+    require Spreadsheet::ParseXLSX; ### DEP ###
 
     my $parser   = Spreadsheet::ParseXLSX->new;
     my $workbook = $parser->parse($xlsx_filespec);
@@ -174,7 +175,7 @@ sub new_from_file {
     }
 
     if ( $fext eq fc('txt') or $fext eq fc('tsv') or $fext eq fc('tab') ) {
-        require File::Slurp::Tiny;
+        require File::Slurp::Tiny; ### DEP ###
         my $tsv = File::Slurp::Tiny::read_file($filespec);
         return $class->new_from_tsv($tsv);
     }
@@ -775,7 +776,7 @@ sub xlsx {
         @headers = @{ $params{headers} };
     }
 
-    require Excel::Writer::XLSX;
+    require Excel::Writer::XLSX; ### DEP ###
 
     my $workbook = Excel::Writer::XLSX->new($output_file);
     my $sheet    = $workbook->add_worksheet();

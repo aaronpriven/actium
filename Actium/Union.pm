@@ -8,15 +8,16 @@ package Actium::Union 0.010;
 
 use Carp;
 
-use Algorithm::Diff qw(sdiff traverse_sequences);
-use Scalar::Util ('reftype');
+use Algorithm::Diff qw(sdiff traverse_sequences); ### DEP ###
+use Scalar::Util ('reftype'); ### DEP ###
 
 use Sub::Exporter 
    -setup => 
    { exports => [qw(ordered_union distinguish comm ordered_union_columns)] }
 ;
+# Sub::Exporter ### DEP ###
 
-use Params::Validate (':all');
+use Params::Validate (':all'); ### DEP ###
 
 sub ordered_union {
     my @array_rs = @_;

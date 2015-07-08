@@ -9,20 +9,20 @@ use warnings;
 
 package Actium::O::Dir 0.010;
 
-use Moose;
-use MooseX::StrictConstructor;
-use MooseX::Storage;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
+use MooseX::Storage; ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 
 use Actium::Types qw<DirCode>;
 use Actium::Util qw<positional_around in>;
 use Actium::Constants;
 
-use Carp;
-use Const::Fast;
-use List::MoreUtils ('mesh');
+use Carp; ### DEP ###
+use Const::Fast; ### DEP ###
+use List::MoreUtils ('mesh'); ### DEP ###
 
 ###################################
 #### ENGLISH NAMES FOR DAYS CONSTANTS

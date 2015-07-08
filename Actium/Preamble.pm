@@ -10,8 +10,8 @@
 package Actium::Preamble 0.010;
 
 use 5.016;
-use Module::Runtime (qw(require_module));
-use Import::Into;
+use Module::Runtime (qw(require_module)); ### DEP ###
+use Import::Into; ### DEP ###
 
 my ( @module_rs, @nomodule_rs );
 
@@ -23,15 +23,18 @@ BEGIN {
         ],
         [qw[Carp]],
         [qw[Const::Fast]],
-        #        [qw[Data::Dumper]], removed in lieu of dumpstr in Actium::Util
+# Const::Fast ### DEP ###
         [qw[Encode encode decode]],
         [qw[English -no-match-vars]],
         [qw[List::MoreUtils any all none notall natatime uniq]],
+# List::MoreUtils ### DEP ###
         [qw[List::Util first max min maxstr minstr sum]],
         [qw[POSIX ceil floor]],
         [qw[Params::Validate]],
+# Params::Validate ### DEP ###
         [qw[Module::Runtime require_module]],
         [qw[Unicode::Normalize NFC NFD]],
+# Unicode::Normalize ### DEP ###
         [qw[Scalar::Util blessed reftype looks_like_number]],
         [qw[autodie]],
         [qw[feature :5.16]],
@@ -42,6 +45,7 @@ BEGIN {
         [qw[warnings]],
     );
     @nomodule_rs = ( [qw[indirect]], );
+# indirect ### DEP ###
 
     foreach my $module_r ( @module_rs, @nomodule_rs ) {
         require_module( $module_r->[0] );

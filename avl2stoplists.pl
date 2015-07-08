@@ -1,16 +1,11 @@
 #!/ActivePerl/bin/perl
 
-@ARGV = qw(-s sp09) if $ENV{RUNNING_UNDER_AFFRUS};
-
 # avl2stoplists - see POD documentation below
-
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
 
 use warnings;
 use strict;
 
-our $VERSION = 0.006;
+our $VERSION = 0.010;
 
 use sort ('stable');
 
@@ -20,9 +15,9 @@ use lib ($Bin , "$Bin/../bin");
 
 use 5.012;
 
-use Carp;
+use Carp; ### DEP ###
 #use Fatal qw(open close);
-use Storable();
+use Storable(); ### DEP ###
 
 use Actium::Util (qw<jn jt>);
 use Actium::Constants;

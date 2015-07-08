@@ -5,8 +5,8 @@
 package Actium::O::Crier::Cry 0.010;
 
 use Actium::Moose;
-use Unicode::LineBreak;
-use Unicode::GCString;
+use Unicode::LineBreak; ### DEP ###
+use Unicode::GCString; ### DEP ###
 
 use Actium::Types (qw<CrierBullet CrierTrailer>);
 use Actium::Util  (qw<u_columns u_pad u_wrap u_trim_to_columns>);
@@ -723,7 +723,7 @@ sub text {
 
         return $sev unless exists $COLORS_OF{$sev_key};
 
-        require Term::ANSIColor;
+        require Term::ANSIColor; ### DEP ###
         return Term::ANSIColor::colored( $sev, $COLORS_OF{$sev_key} );
 
     }

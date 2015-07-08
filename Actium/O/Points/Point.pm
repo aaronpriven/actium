@@ -16,20 +16,20 @@ package Actium::O::Points::Point 0.008;
 
 use sort ('stable');
 
-use Moose;
-use MooseX::SemiAffordanceAccessor;
-use Moose::Util::TypeConstraints;
+use Moose; ### DEP ###
+use MooseX::SemiAffordanceAccessor; ### DEP ###
+use Moose::Util::TypeConstraints; ### DEP ###
 
-use namespace::autoclean;
+use namespace::autoclean; ### DEP ###
 use Actium::Term;
 
 use Actium::Util('joinseries');
 
 use Actium::Constants;
 use Actium::Sorting::Line (qw(byline sortbyline));
-use List::MoreUtils('natatime');
-use Const::Fast;
-use List::Compare::Functional('get_unique');
+use List::MoreUtils('natatime'); ### DEP ###
+use Const::Fast; ### DEP ###
+use List::Compare::Functional('get_unique'); ### DEP ###
 
 use POSIX ();
 

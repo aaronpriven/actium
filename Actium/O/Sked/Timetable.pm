@@ -10,24 +10,24 @@ use warnings;
 
 package Actium::O::Sked::Timetable 0.010;
 
-use Moose;
-use MooseX::StrictConstructor;
+use Moose; ### DEP ###
+use MooseX::StrictConstructor; ### DEP ###
 
-use MooseX::MarkAsMethods autoclean => 1;
+use MooseX::MarkAsMethods (autoclean => 1); ### DEP ###
 use overload '""' => sub { shift->id };
 
-use Params::Validate (':all');
+use Params::Validate (':all'); ### DEP ###
 
 use Actium::Time;
 use Actium::Constants;
 
 use Actium::Text::InDesignTags;
 
-use Const::Fast;
+use Const::Fast; ### DEP ###
 
 const my $idt => 'Actium::Text::InDesignTags';
 
-use HTML::Entities;
+use HTML::Entities; ### DEP ###
 
 my $timesub = Actium::Time::timestr_sub();
 
@@ -714,7 +714,7 @@ sub as_public_json {
         times              => \@times,
     );
 
-    require JSON;
+    require JSON; ### DEP ###
 
     my $json_text = JSON::encode_json( \%json_data );
 
