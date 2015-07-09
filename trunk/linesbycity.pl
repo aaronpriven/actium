@@ -4,23 +4,20 @@ use strict;
 
 # initialization
 
-our $VERSION = 0.005;
+our $VERSION = 0.010;
 
-use FindBin('$Bin'); 
+use FindBin('$Bin');  ### DEP ###
    # so $Bin is the location of the very file we're in now
 
-use lib $Bin; 
+use lib ($Bin);  ### DEP ###
    # there are few enough files that it makes sense to keep
    # main program and library in the same directory
-
-# libraries dependent on $Bin
 
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
 use Actium::Sorting::Line (qw(sortbyline));
 
 use Actium::Options (qw<option add_option init_options>);
-#add_option ('spec' , 'description');
 use Actium::O::Folders::Signup;
 
 init_options();

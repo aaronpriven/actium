@@ -15,10 +15,10 @@ use strict;
 our $VERSION = 0.010;
 
 # add the current program directory to list of files to include
-use FindBin('$Bin');
-use lib ( $Bin, "$Bin/../bin" );
+use FindBin('$Bin'); ### DEP ###
+use lib ( $Bin, "$Bin/../bin" ); ### DEP ###
 
-use Carp;
+use Carp; ### DEP ###
 
 #use Fatal qw(open close);
 use Storable(); ### DEP ###

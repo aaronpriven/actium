@@ -9,8 +9,8 @@ package Actium::IDTables::PageAssignments 0.010;
 use 5.016;
 use warnings;
 
-use English '-no_match_vars';
-use autodie;
+use English '-no_match_vars'; ### DEP ###
+use autodie; ### DEP ###
 use Text::Trim; ### DEP ###
 use Actium::Constants;
 use Actium::Text::InDesignTags;

@@ -11,7 +11,7 @@ use warnings;
 use Actium::Constants;
 use List::Util (qw[first max min maxstr minstr sum]); ### DEP ###
 use List::MoreUtils(qw[any all none notall natatime uniq]); ### DEP ###
-use Scalar::Util(qw[blessed reftype looks_like_number]);
+use Scalar::Util(qw[blessed reftype looks_like_number]); ### DEP ###
 use Carp; ### DEP ###
 use File::Spec; ### DEP ###
 

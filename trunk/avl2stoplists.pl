@@ -16,7 +16,6 @@ use lib ($Bin , "$Bin/../bin");
 use 5.012;
 
 use Carp; ### DEP ###
-#use Fatal qw(open close);
 use Storable(); ### DEP ###
 
 use Actium::Util (qw<jn jt>);

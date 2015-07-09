@@ -4,16 +4,14 @@
 
 package Actium::Cmd::MakePoints 0.010;
 
-use warnings;
-use strict;
+use warnings; ### DEP ###
+use strict; ### DEP ###
 
 use 5.014;
 
-use sort ('stable');
+use sort ('stable'); ### DEP ###
 
 # add the current program directory to list of files to include
-use FindBin qw($Bin);
-use lib $Bin;
 
 use Actium::Preamble;
 

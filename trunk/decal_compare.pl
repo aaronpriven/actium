@@ -6,9 +6,9 @@ use warnings;
 our $VERSION = 0.010;
 
 use List::MoreUtils(qw(uniq natatime)); ### DEP ###
-use autodie;
-use FindBin('$Bin');
-use lib ($Bin);
+use autodie; ### DEP ###
+use FindBin('$Bin'); ### DEP ###
+use lib ($Bin); ### DEP ###
 
 use Data::Dumper; ### DEP ###
 

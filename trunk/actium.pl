@@ -17,9 +17,9 @@ use warnings;
 our $VERSION = 0.010;
 
 # add the current program directory to list of files to include
-use FindBin qw($Bin);
-use lib $Bin;
-use English qw(-no_match_vars);
+use FindBin qw($Bin); ### DEP ###
+use lib ($Bin); ### DEP ###
+use English qw(-no_match_vars); ### DEP ###
 use Scalar::Util('reftype'); ### DEP ###
 
 use Module::Runtime (qw(require_module)); ### DEP ###

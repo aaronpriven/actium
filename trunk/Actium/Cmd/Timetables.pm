@@ -11,13 +11,13 @@ package Actium::Cmd::Timetables 0.010;
 
 use Actium::O::Folders::Signup;
 use Actium::O::Sked;
-use List::MoreUtils       (qw<uniq pairwise natatime each_arrayref>); ### DEP ###
+use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>); ### DEP ###
 use Actium::Sorting::Line (qw(sortbyline byline));
 use Actium::IDTables;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
-use English '-no_match_vars';
-use autodie;
+use English '-no_match_vars'; ### DEP ###
+use autodie; ### DEP ###
 use Actium::Constants;
 
 # saves typing

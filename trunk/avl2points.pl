@@ -15,10 +15,10 @@ our $VERSION = 0.010;
 use sort ('stable');
 
 # add the current program directory to list of files to include
-use FindBin('$Bin');
-use lib ( $Bin, "$Bin/../bin", );
+use FindBin('$Bin'); ### DEP ###
+use lib ( $Bin, "$Bin/../bin", ); ### DEP ###
 
-use Carp;
+use Carp; ### DEP ###
 use POSIX ('ceil'); ### DEP ###
 
 #use Fatal qw(open close);
