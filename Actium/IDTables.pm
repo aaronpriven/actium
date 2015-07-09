@@ -4,7 +4,7 @@
 
 # legacy status: 4
 
-use warnings;
+use warnings; ### DEP ###
 use 5.012;
 
 package Actium::IDTables 0.010;

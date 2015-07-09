@@ -11,7 +11,7 @@ use 5.016;
 
 # Simple tags
 
-use Carp;
+use Carp; ### DEP ###
 
 use constant {
     start            => "<ASCII-MAC>\r<Version:6><FeatureSet:InDesign-Roman>",

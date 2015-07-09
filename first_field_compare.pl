@@ -5,9 +5,9 @@ use warnings;
 
 our $VERSION = 0.003;
 
-use autodie;
-use FindBin('$Bin');
-use lib ($Bin);
+use autodie; ### DEP ###
+use FindBin('$Bin'); ### DEP ###
+use lib ($Bin); ### DEP ###
 
 my $firstfile = shift(@ARGV);
 

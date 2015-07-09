@@ -26,8 +26,8 @@
 package Actium::Eclipse 0.010;
 
 use 5.010;
-use warnings;
-use strict;
+use warnings;  ### DEP ###
+use strict;  ### DEP ###
 
 no warnings('redefine');
 # without which, Eclipse complains because it sees this module twice when

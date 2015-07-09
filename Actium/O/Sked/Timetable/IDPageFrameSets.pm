@@ -15,7 +15,7 @@ use MooseX::StrictConstructor; ### DEP ###
 use namespace::autoclean; ### DEP ###
 use Actium::O::Sked::Timetable::IDFrameSet;
 use Actium::O::Sked::Timetable::IDTimetable;
-use Actium::Combinatorics(':all'); ### DEP ###
+use Actium::Combinatorics(':all'); 
 use POSIX('ceil'); ### DEP ###
 
 use Params::Validate (':all'); ### DEP ###

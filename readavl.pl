@@ -12,8 +12,8 @@
 
 use 5.014;
 
-use warnings;
-use strict;
+use warnings; ### DEP ###
+use strict; ### DEP ###
 
 our $VERSION = 0.010;
 
@@ -21,8 +21,8 @@ use Carp;
 #use Fatal qw (open close);
 
 # add the current program directory to list of files to include
-use FindBin('$Bin');
-use lib $Bin;
+use FindBin('$Bin'); ### DEP ###
+use lib ($Bin); ### DEP ###
 
 use Actium::Constants;
 

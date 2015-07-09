@@ -10,21 +10,21 @@
 
 use 5.014;
 
-use strict;
-use warnings;
+use strict; ### DEP ###
+use warnings; ### DEP ###
 no warnings 'uninitialized';
 
-our $VERSION = 0.009;
+our $VERSION = 0.010;
 
 ####################################################################
 #  load libraries
 ####################################################################
 
-use FindBin('$Bin');
+use FindBin('$Bin'); ### DEP ###
 
 # so $Bin is the location of the very file we're in now
 
-use lib $Bin;
+use lib ($Bin); ### DEP ###
 
 # there are few enough files that it makes sense to keep
 # main program and library in the same directory

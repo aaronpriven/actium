@@ -16,6 +16,7 @@ use Actium::O::Sked::Timetable::IDFrame;
 
 use MooseX::MarkAsMethods (autoclean => 1); ### DEP ###
 use overload '""'                   => sub { shift->description };
+# overload ### DEP ###
 
 has description => (
     isa => 'Str',

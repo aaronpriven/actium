@@ -12,9 +12,9 @@ package Actium::Text::CharWidth 0.010;
 use Sub::Exporter -setup => { exports => [qw( ems twelfths char_width )] };
 # Sub::Exporter ### DEP ###
 
-use List::Util ('sum');
-use Carp;
-use POSIX ('ceil');
+use List::Util ('sum'); ### DEP ###
+use Carp; ### DEP ###
+use POSIX ('ceil'); ### DEP ###
 
 # the following are character widths for a few fonts, derived from the AFM
 # files

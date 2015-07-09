@@ -19,7 +19,7 @@
 #Each db_type (datbase type), has one or more filetypes,
 #which has one or more tables (aka rowtypes).
 
-use warnings;
+use warnings; ### DEP ###
 use 5.012;    # turns on features
 
 package Actium::O::Files::SQLite 0.010;
@@ -34,6 +34,7 @@ use Actium::Util(qw/flatten in/);
 
 use Carp; ### DEP ###
 use DBI; ### DEP ###
+# DBD::SQLite ### DEP ###
 use English '-no_match_vars'; ### DEP ###
 use File::Spec; ### DEP ###
 use List::MoreUtils('uniq'); ### DEP ###

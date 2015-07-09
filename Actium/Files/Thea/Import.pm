@@ -27,7 +27,7 @@ use Actium::Union('ordered_union_columns');
 
 use Actium::Constants;
 
-use English '-no_match_vars';
+use English '-no_match_vars';  ### DEP ###
 use List::Util      (qw<min sum>); ### DEP ###
 use List::MoreUtils (qw<each_arrayref uniq>); ### DEP ###
 

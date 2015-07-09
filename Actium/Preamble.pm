@@ -22,27 +22,40 @@ BEGIN {
               in isblank isnotblank j jt jk jn]
         ],
         [qw[Carp]],
+# Carp ### DEP ###
         [qw[Const::Fast]],
 # Const::Fast ### DEP ###
         [qw[Encode encode decode]],
+# Encode ### DEP ###
         [qw[English -no-match-vars]],
+# English ### DEP ###
         [qw[List::MoreUtils any all none notall natatime uniq]],
 # List::MoreUtils ### DEP ###
         [qw[List::Util first max min maxstr minstr sum]],
+# List::Util ### DEP ###
         [qw[POSIX ceil floor]],
+# POSIX ### DEP ###
         [qw[Params::Validate]],
 # Params::Validate ### DEP ###
         [qw[Module::Runtime require_module]],
+# Module::Runtime ### DEP ###
         [qw[Unicode::Normalize NFC NFD]],
 # Unicode::Normalize ### DEP ###
         [qw[Scalar::Util blessed reftype looks_like_number]],
+# Scalar::Util ### DEP ###
         [qw[autodie]],
+# autodie ### DEP ###
         [qw[feature :5.16]],
+# feature ### DEP ###
         #[ 'open', IO => ':encoding(utf-8)' ],
         [qw[open :std :utf8 ]],
+# open ### DEP ###
         [qw[strict]],
+# strict ### DEP ###
         [qw[utf8]],
+# utf8 ### DEP ###
         [qw[warnings]],
+# warnings ### DEP ###
     );
     @nomodule_rs = ( [qw[indirect]], );
 # indirect ### DEP ###

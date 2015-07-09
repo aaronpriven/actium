@@ -4,7 +4,7 @@
 # legacy stage 4
 
 use 5.012;
-use warnings;
+use warnings; ### DEP ###
 
 package Actium::O::Folders::Signup 0.010;
 
@@ -19,7 +19,7 @@ use Actium::Constants;
 use Carp; ### DEP ###
 use File::Spec; ### DEP ###
 use Const::Fast; ### DEP ###
-use FindBin;
+use FindBin; ### DEP ###
 
 const my $base_class => 'Actium::O::Folder';
 

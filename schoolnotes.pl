@@ -3,7 +3,7 @@
 # Process school notes
 
 use 5.012;
-use warnings;
+use warnings; ### DEP ###
 
 our $VERSION = 0.010;
 

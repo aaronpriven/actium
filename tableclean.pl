@@ -1,7 +1,7 @@
 #!/ActivePerl/bin/perl
 
 use 5.014;
-use warnings;
+use warnings; ### DEP ###
 
 our $VERSION = 0.010;
 
