@@ -15,6 +15,7 @@ use MooseX::StrictConstructor; ### DEP ###
 
 use MooseX::MarkAsMethods (autoclean => 1); ### DEP ###
 use overload '""' => sub { shift->id };
+# overload ### DEP ###
 
 use Params::Validate (':all'); ### DEP ###
 

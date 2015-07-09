@@ -4,7 +4,8 @@
 # legacy stage 4
 
 use 5.012;
-use strict;
+use strict; ### DEP ###
+use warnings; ### DEP ###
 
 package Actium::O::Folder 0.010;
 
@@ -139,7 +140,7 @@ around BUILDARGS => sub {
     if ( not File::Spec->file_name_is_absolute($temppath) ) {
 
         # is relative
-        require Cwd;
+        require Cwd; ### DEP ###
         unshift @folders, Cwd::getcwd();
     }
 

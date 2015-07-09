@@ -10,15 +10,15 @@ binmode STDOUT, ':encoding(UTF-8)';
 binmode STDIN,  ':encoding(UTF-8)';
 
 use utf8;
-use autodie;
-use open ':encoding(UTF-8)';
-use Encode;
+use autodie; ### DEP ###
+use open ':encoding(UTF-8)'; ### DEP ###
+use Encode; ### DEP ###
 my @args = map { decode( 'UTF-8', $_ ) } @ARGV;
 
 #@args = qw(StopID /Users/apriven/actium/db/sp13/compare/OX-Transbay
 #  /Users/apriven/actium/db/sp13/compare/comparestops-action.txt);
 
-use List::Util('max');
+use List::Util('max'); ### DEP ###
 
 my $fieldsep = "\t";
 my $nul      = q{};

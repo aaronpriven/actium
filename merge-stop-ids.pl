@@ -2,8 +2,8 @@
 
 
 use 5.014;
-use warnings;
-use autodie;
+use warnings; ### DEP ###
+use autodie; ### DEP ###
 
 our $VERSION = 0.003;
 

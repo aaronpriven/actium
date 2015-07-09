@@ -14,9 +14,9 @@ use Actium::Preamble;
 use Actium::Term;
 use Actium::Import::CalculateFields;
 
+use List::MoreUtils('pairwise'); ### DEP ###
 use Params::Validate(':all'); ### DEP ###
 use Actium::Util(qw/file_ext aoa2tsv/);
-use List::MoreUtils('pairwise'); ### DEP ###
 use Actium::Time(qw[timestr_sub timenum]);
 
 const my $PREFIX => 'Actium::O::Files::Xhea';

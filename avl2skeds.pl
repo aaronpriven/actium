@@ -19,8 +19,8 @@ our $VERSION = 0.010;
 use sort ('stable');
 
 # add the current program directory to list of files to include
-use FindBin('$Bin');
-use lib ($Bin , "$Bin/../bin");
+use FindBin('$Bin'); ### DEP ###
+use lib ($Bin , "$Bin/../bin"); ### DEP ###
 
 use List::Util; ### DEP ###
 use List::MoreUtils (qw<all each_arrayref>); ### DEP ###

@@ -12,7 +12,6 @@ use Actium::Preamble;
 use Actium::O::Folders::Signup;
 use Actium::O::Dir;
 
-#use Actium::Constants;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util('filename');
 use Actium::Term;

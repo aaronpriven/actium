@@ -20,7 +20,7 @@ use overload '""' => sub { shift->id };
 use MooseX::Storage; ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'], 'format' => 'JSON' );
 
-use English '-no_match_vars';
+use English '-no_match_vars'; ### DEP ###
 
 use List::MoreUtils (qw<none any>); ### DEP ###
 use List::Util ( 'first', 'max' ); ### DEP ###

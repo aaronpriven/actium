@@ -11,7 +11,7 @@ __END__
 THIS IS BROKEN BECAUSE Geo::Coder::US requires Geo::StreetAddress::US
 which does not work with perl 5.18 due to regex issues
 
-use Geo::Coder::US; ### DEP ###
+use Geo::Coder::US; ### DEP-BUT-BROKEN ###
 
 use strict;
 use warnings;

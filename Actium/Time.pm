@@ -3,18 +3,18 @@
 
 # legacy status 3
 
-use warnings;
-use strict;
+use warnings; ### DEP ###
+use strict; ### DEP ###
 
 package Actium::Time 0.010;
 
 use 5.010;
 
-use Carp;
+use Carp; ### DEP ###
 use Actium::Constants;
 use Params::Validate qw(:all); ### DEP ###
 use Const::Fast; ### DEP ###
-use Scalar::Util (qw<reftype looks_like_number>);
+use Scalar::Util (qw<reftype looks_like_number>); ### DEP ###
 use Memoize; ### DEP ###
 
 use List::MoreUtils (qw<firstidx>); ### DEP ###

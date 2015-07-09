@@ -3,8 +3,8 @@
 
 # legacy status 3
 
-use strict;
-use warnings;
+use strict; ### DEP ###
+use warnings; ### DEP ###
 
 package Actium::Term 0.010;
 
@@ -16,14 +16,14 @@ use Term::Emit ( qw<:all !emit_over !emit_prog>, { -fh => *STDERR } );
 # Term::Emit ### DEP ###
 
 use Actium::Options qw(option add_option);
-use Carp;
+use Carp; ### DEP ###
 use Term::ReadKey; ### DEP ###
 use Text::Wrap; ### DEP ###
-use List::Util('max');
-use POSIX qw(ceil floor);
-use Scalar::Util qw(reftype);
+use List::Util('max'); ### DEP ###
+use POSIX qw(ceil floor); ### DEP ###
+use Scalar::Util qw(reftype); ### DEP ###
 
-use English qw<-no_match_vars>;
+use English qw<-no_match_vars>; ### DEP ###
 
 # TODO - regularize when STDERR is used vs. STDOUT.
 # Fix documentation, which is incorrect on this

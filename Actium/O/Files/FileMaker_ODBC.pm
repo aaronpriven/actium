@@ -14,6 +14,7 @@ use Actium::Term;
 
 use Carp;
 use DBI; ### DEP ###
+# DBD::ODBC ### DEP ###
 
 # Required methods in consuming classes:
 

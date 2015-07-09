@@ -8,7 +8,7 @@
 
 package Actium::O::Files::Ini 0.010;
 
-use Actium::Moose; ### DEP ###
+use Actium::Moose; 
 use Actium::Types ('ActiumFolderLike');
 
 use File::HomeDir; ### DEP ###

@@ -31,7 +31,7 @@ use List::MoreUtils('natatime'); ### DEP ###
 use Const::Fast; ### DEP ###
 use List::Compare::Functional('get_unique'); ### DEP ###
 
-use POSIX ();
+use POSIX (); ### DEP ###
 
 use Actium::O::Points::Column;
 

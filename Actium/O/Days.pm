@@ -5,7 +5,7 @@
 # legacy stage 4
 
 use 5.012;
-use warnings;
+use warnings; ### DEP ###
 
 package Actium::O::Days 0.010;
 
