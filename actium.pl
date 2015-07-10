@@ -168,7 +168,7 @@ sub mainhelp {
 }
 
 sub stacktrace {
-    require Carp;
+    require Carp; ### DEP ###
     Carp::confess(@_);
 }
 
