@@ -4,4 +4,8 @@
 
 # and Mac stuff
 .DS_Store
+Icon
+
+# perl things
+nytprof.out
 
