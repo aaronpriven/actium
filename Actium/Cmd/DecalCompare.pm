@@ -1,163 +1,169 @@
-#!/ActivePerl/bin/perl
+#Actium/Cmd/DecalCompare.pm
 
-use 5.012;
-use warnings;
+package Actium::Cmd::DecalCompare 0.010;
 
-our $VERSION = 0.010;
-
-use List::MoreUtils(qw(uniq natatime)); ### DEP ###
-use autodie; ### DEP ###
-use FindBin('$Bin'); ### DEP ###
-use lib ($Bin); ### DEP ###
-
-use Data::Dumper; ### DEP ###
-
-use Actium::Util('jt');
+use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');
 
-my $firstfile  = shift(@ARGV);
-my $secondfile = shift(@ARGV);
+use autodie;         ### DEP ###
+use Data::Dumper;    ### DEP ###
 
-my %decals_of;
-my %olddesc_of;
+sub START {
 
-open my $in, '<', $firstfile;
+    my $class  = shift;
+    my %params = @_;
+    my @argv   = @{ $params{argv} };
 
-while ( my $line = <$in> ) {
-    chomp $line;
-    my ( $id, $olddesc, $decals ) = split( /\t/, $line, 3 );
+    my $firstfile  = shift(@argv);
+    my $secondfile = shift(@argv);
 
-    # drop DB lines
-    my @decals = grep { !/\ADB1?\-/ } split( "\t", $decals ) ;
-    next unless @decals;
+    my %decals_of;
+    my %olddesc_of;
 
-    $decals_of{$id}  = join("\t" , @decals);
-    $olddesc_of{$id} = $olddesc;
-}
+    open my $in, '<', $firstfile;
 
-close $in;
+    while ( my $line = <$in> ) {
+        chomp $line;
+        my ( $id, $olddesc, $decals ) = split( /\t/, $line, 3 );
 
-open my $comparefh, '<:utf8', $secondfile;
+        # drop DB lines
+        my @decals = grep { !/\ADB1?\-/ } split( /\t/, $decals );
+        next unless @decals;
 
-my %results_of;
+        $decals_of{$id} = join( "\t", @decals );
+        $olddesc_of{$id} = $olddesc;
+    }
 
-while ( my $line = <$comparefh> ) {
-    chomp $line;
+    close $in;
 
-    my ( $id, $description, $new_decals_text ) = split( /\t/, $line, 3 );
+    open my $comparefh, '<:encoding(UTF-8)', $secondfile;
 
-    if ( not exists $decals_of{$id} ) {
+    my %results_of;
+
+    while ( my $line = <$comparefh> ) {
+        chomp $line;
+
+        my ( $id, $description, $new_decals_text ) = split( /\t/, $line, 3 );
+
+        if ( not exists $decals_of{$id} ) {
+            $results_of{$id} = {
+                change      => 'AS',
+                description => $description,
+                new_line    => [ sortbyline( split /\t/, $new_decals_text ) ],
+                old_line    => [],
+                new_decals  => [],
+                old_decals  => [],
+                unchanged_decals => [],
+            };
+            next;
+        }
+
+        $results_of{$id}{description} = $description;
+
+        my %old_decals_of_line = decals_of_line( $decals_of{$id} );
+        my %new_decals_of_line = decals_of_line($new_decals_text);
+
+        my ( $new_lines, $old_lines, $unchanged_lines )
+          = add_drop_unchanged( [ keys %old_decals_of_line ],
+            [ keys %new_decals_of_line ] );
+
+        $results_of{$id}{new_line}
+          = [
+            sortbyline( map { @{ $new_decals_of_line{$_} } } @{$new_lines} )
+          ];
+        $results_of{$id}{old_line}
+          = [
+            sortbyline( map { @{ $old_decals_of_line{$_} } } @{$old_lines} )
+          ];
+
+        my @old_decals
+          = map { @{ $old_decals_of_line{$_} } } @{$unchanged_lines};
+
+        my @new_decals
+          = map { @{ $new_decals_of_line{$_} } } @{$unchanged_lines};
+
+        my ( $new_decals, $old_decals, $unchanged_decals )
+          = add_drop_unchanged( \@old_decals, \@new_decals );
+
+        move_insignificant_changes_to_unchanged( $new_decals, $old_decals,
+            $unchanged_decals );
+
+        $results_of{$id}{new_decals}       = $new_decals;
+        $results_of{$id}{old_decals}       = $old_decals;
+        $results_of{$id}{unchanged_decals} = $unchanged_decals;
+
+    } ## tidy end: while ( my $line = <$comparefh>)
+    close $comparefh;
+
+    foreach my $id ( keys %decals_of ) {
+        next if $results_of{$id};
         $results_of{$id} = {
-            change           => 'AS',
-            description      => $description,
-            new_line         => [ sortbyline( split /\t/, $new_decals_text ) ],
-            old_line         => [],
+            description      => $olddesc_of{$id},
+            change           => 'RS',
+            old_line         => [ sortbyline( split /\t/, $decals_of{$id} ) ],
+            new_line         => [],
             new_decals       => [],
             old_decals       => [],
             unchanged_decals => [],
         };
-        next;
-    }
-    
-    $results_of{$id}{description} = $description;
 
-    my %old_decals_of_line = decals_of_line( $decals_of{$id} );
-    my %new_decals_of_line = decals_of_line($new_decals_text);
-
-    my ( $new_lines, $old_lines, $unchanged_lines )
-      = add_drop_unchanged( [ keys %old_decals_of_line ],
-        [ keys %new_decals_of_line ] );
-
-    $results_of{$id}{new_line}
-      = [ sortbyline( map { @{ $new_decals_of_line{$_} } } @{$new_lines} ) ];
-    $results_of{$id}{old_line}
-      = [ sortbyline( map { @{ $old_decals_of_line{$_} } } @{$old_lines} ) ];
-
-    my @old_decals
-      = map { @{ $old_decals_of_line{$_} } } @{$unchanged_lines};
-
-    my @new_decals
-      = map { @{ $new_decals_of_line{$_} } } @{$unchanged_lines};
-
-    my ( $new_decals, $old_decals, $unchanged_decals )
-      = add_drop_unchanged( \@old_decals, \@new_decals );
-
-    move_insignificant_changes_to_unchanged( $new_decals, $old_decals,
-        $unchanged_decals );
-
-    $results_of{$id}{new_decals}       = $new_decals;
-    $results_of{$id}{old_decals}       = $old_decals;
-    $results_of{$id}{unchanged_decals} = $unchanged_decals;
-
-} ## tidy end: while ( my $line = <$comparefh>)
-close $comparefh;
-
-foreach my $id ( keys %decals_of ) {
-    next if $results_of{$id};
-    $results_of{$id} = {
-        description      => $olddesc_of{$id},
-        change           => 'RS',
-        old_line         => [ sortbyline( split /\t/, $decals_of{$id} ) ],
-        new_line         => [],
-        new_decals       => [],
-        old_decals       => [],
-        unchanged_decals => [],
-    };
-
-}
-
-say "StopID\tChange\tDescription\t"
-  . "Old Line\tNew Line\tOld Decal\tNew Decal\tUnchanged";
-
-$| = 1;
-
-my %change_of_changecode = qw (
-  U U
-  UO RL
-  UN AL
-  UOC RLD
-  UNC ALD
-  UON CL
-  UONC CLD
-  UC D
-);
-
-foreach my $id ( sort keys %results_of ) {
-
-    my $r = $results_of{$id};
-
-    my $change;
-    if ( exists $r->{change} ) {
-        $change = $r->{change};
-    }
-    else {
-        my $changecode = 'U';
-        $changecode .= 'O' if @{ $r->{old_line} };
-        $changecode .= 'N' if @{ $r->{new_line} };
-        $changecode .= 'C' if @{ $r->{old_decals} } || @{ $r->{new_decals} };
-        $change = $change_of_changecode{$changecode};
     }
 
-    next if $change eq 'U';
+    say "StopID\tChange\tDescription\t"
+      . "Old Line\tNew Line\tOld Decal\tNew Decal\tUnchanged";
 
-    #   my $count;
-    #   foreach my $group (qw(old_line new_line old_decals new_decals)) {
-    #   	  $count++ foreach @{$r->{$group}};
-    #   }
-    #   next unless $count;
+    my %change_of_changecode = qw (
+      U U
+      UO RL
+      UN AL
+      UOC RLD
+      UNC ALD
+      UON CL
+      UONC CLD
+      UC D
+    );
 
-    print "$id\t$change\t", $r->{description};
-    #   say Data::Dumper::Dumper($r);
+    foreach my $id ( sort keys %results_of ) {
 
-    for (qw(old_line new_line old_decals new_decals unchanged_decals)) {
-        die "Can't find $_ in $id" unless exists $r->{$_};
-        die "Undefined $_ in $id"  unless defined $r->{$_};
-        print "\t", join( " ", @{ $r->{$_} } );
-    }
+        my $r = $results_of{$id};
 
-    print "\n";
+        my $change;
+        if ( exists $r->{change} ) {
+            $change = $r->{change};
+        }
+        else {
+            my $changecode = 'U';
+            $changecode .= 'O' if @{ $r->{old_line} };
+            $changecode .= 'N' if @{ $r->{new_line} };
+            $changecode .= 'C'
+              if @{ $r->{old_decals} } || @{ $r->{new_decals} };
+            $change = $change_of_changecode{$changecode};
+        }
 
-} ## tidy end: foreach my $id ( sort keys ...)
+        next if $change eq 'U';
+
+        #   my $count;
+        #   foreach my $group (qw(old_line new_line old_decals new_decals)) {
+        #   	  $count++ foreach @{$r->{$group}};
+        #   }
+        #   next unless $count;
+
+        print "$id\t$change\t", $r->{description};
+        #   say Data::Dumper::Dumper($r);
+
+        for (qw(old_line new_line old_decals new_decals unchanged_decals)) {
+            die "Can't find $_ in $id" unless exists $r->{$_};
+            die "Undefined $_ in $id"  unless defined $r->{$_};
+            print "\t", join( $SPACE, @{ $r->{$_} } );
+        }
+
+        print "\n";
+
+    } ## tidy end: foreach my $id ( sort keys ...)
+
+    return;
+
+} ## tidy end: sub START
 
 sub decals_of_line {
 
@@ -175,7 +181,7 @@ sub decals_of_line {
 
 sub add_drop_unchanged {
 
-    require List::Compare; ### DEP ###
+    require List::Compare;    ### DEP ###
 
     my @l  = sort @{ +shift };
     my @r  = sort @{ +shift };
@@ -244,3 +250,4 @@ sub move_insignificant_changes_to_unchanged {
 
 } ## tidy end: sub move_insignificant_changes_to_unchanged
 
+1;
