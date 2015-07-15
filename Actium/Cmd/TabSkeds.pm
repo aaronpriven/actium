@@ -11,18 +11,21 @@ use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util(qw/joinseries/);
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
-use Actium::Options (qw<option add_option>);
-use Actium::Term (qw<printq sayq>);
+use Actium::Options               (qw<option add_option>);
+use Actium::Term                  (qw<printq sayq>);
 use Actium::O::Folders::Signup;
 
-use strict; ### DEP ###
-use warnings; ### DEP ###
+use strict;      ### DEP ###
+use warnings;    ### DEP ###
 no warnings 'uninitialized';
 
 sub OPTIONS {
-add_option( 'upcoming=s', 'Upcoming signup' );
-add_option( 'current!',   'Current signup' );
+    add_option( 'upcoming=s', 'Upcoming signup' );
+    add_option( 'current!',   'Current signup' );
 }
+
+my $out; 
+# filehandle, declared here so it can be shared between START() and outtab()
 
 ####################################################################
 #  Old Skedfile.pm is loaded here, ahead of main program.
@@ -99,10 +102,10 @@ sub Skedread {
         for ( my $col = 0 ; $col < scalar(@times) ; $col++ ) {
             push @{ $skedref->{TIMES}[$col] }, $times[$col];
         }
-    }    ## tidy end: while (<IN>)
+    } ## tidy end: while (<IN>)
     close IN;
     return $skedref;
-}    ## tidy end: sub Skedread
+} ## tidy end: sub Skedread
 
 sub getfiles {
 
@@ -268,7 +271,7 @@ our %daydirhash = (
 ###########################################################
 
 sub HELP {
-   say "Help not implemented.";
+    say "Help not implemented.";
 }
 
 sub START {
@@ -276,439 +279,451 @@ sub START {
     my $class      = shift;
     my %params     = @_;
     my $config_obj = $params{config};
- 
 
-my @specdaynames;
-foreach ( keys %specdaynames ) {
-    push @specdaynames, $_ . "\035" . $specdaynames{$_};
-}
-@specdaynames = sort @specdaynames;
-
-#use Skedtps qw(tphash tpxref destination TPXREF_FULL);
-
-my $signupfolder = Actium::O::Folders::Signup->new();
-chdir $signupfolder->path();
-my $signup = $signupfolder->signup;
-
-our %second = %LINES_TO_COMBINE;
-
-#( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
-#  386  => '86' , LC => 'L' , NXC => 'NX4' ,
-# ); # , '51S' => '51' );
-
-our %first =
-  reverse %second;   # create a reverse hash, with values of %second as keys and
-
-# keys of %second as values
-
-our (%maplines);
-
-$| = 1;              # don't buffer terminal output
-
-printq "tab - create a set of public tab-delimited files\n\n";
-
-printq "Using signup $signup\n";
-
-open DATE, "<effectivedate.txt"
-  or die "Can't open effectivedate.txt for input: $!";
-our $effdate = scalar <DATE>;
-close DATE;
-chomp $effdate;
-
-my $prepdate;
-
-{
-    my ( $mday, $mon, $year ) = ( localtime(time) )[ 3 .. 5 ];
-    $mon =
-      qw(Jan. Feb. March April May June July Aug. Sept. Oct. Nov. Dec.) [$mon];
-    $year += 1900;    # Y2K compliant
-    $prepdate = "$mon $mday, $year";
-}
-
-our ( @lines, %lines, %places, %colors, @colors, @places );
-
-load_tables(
-    requests => {
-        Places_Neue => {
-            array       => \@places,
-            hash        => \%places,
-            index_field => 'c_abbrev9',
-        },
-        Lines => { array => \@lines, hash => \%lines, index_field => 'Line' },
-        Colors =>
-          { array => \@colors, hash => \%colors, index_field => 'ColorID' },
+    my @specdaynames;
+    foreach ( keys %specdaynames ) {
+        push @specdaynames, $_ . "\035" . $specdaynames{$_};
     }
-);
+    @specdaynames = sort @specdaynames;
 
-mkdir "tabxchange"
-  or die "Can't make directory 'tabxchange': $!"
-  unless -d "tabxchange";
+    #use Skedtps qw(tphash tpxref destination TPXREF_FULL);
 
-my @files = getfiles(GETFILES_PUBLIC_AND_DB);
+    my $signupfolder = Actium::O::Folders::Signup->new();
+    chdir $signupfolder->path();
+    my $signup = $signupfolder->signup;
 
-my %skednamesbyroute = ();
-my %skeds;
-my %index;
+    our %second = %LINES_TO_COMBINE;
 
-# slurp all the files into memory and build hashes
-foreach my $file (@files) {
-    my $sked     = Skedread($file);
-    my $skedname = $sked->{SKEDNAME};
-    $skeds{$skedname} = $sked;
+    #( "40L" => '40' , "59A" => '59' , "72M" => '72' ,
+    #  386  => '86' , LC => 'L' , NXC => 'NX4' ,
+    # ); # , '51S' => '51' );
 
-    my %routes = ();
-    $routes{$_} = 1
-      foreach @{ $sked->{ROUTES} };    # remember "ROUTES" is one for each trip
-    @{ $sked->{ALLROUTES} } = keys %routes;
+    our %first = reverse
+      %second;    # create a reverse hash, with values of %second as keys and
 
-    foreach my $route ( @{ $sked->{ALLROUTES} } ) {
-        push @{ $skednamesbyroute{$route} }, $skedname;
+    # keys of %second as values
+
+    our (%maplines);
+
+    $| = 1;       # don't buffer terminal output
+
+    printq "tab - create a set of public tab-delimited files\n\n";
+
+    printq "Using signup $signup\n";
+
+    open my $date, "<effectivedate.txt"
+      or die "Can't open effectivedate.txt for input: $!";
+    our $effdate = scalar <$date>;
+    close $date;
+    chomp $effdate;
+
+    my $prepdate;
+
+    {
+        my ( $mday, $mon, $year ) = ( localtime(time) )[ 3 .. 5 ];
+        $mon = qw(Jan. Feb. March April May June July Aug. Sept. Oct. Nov. Dec.)
+          [$mon];
+        $year += 1900;    # Y2K compliant
+        $prepdate = "$mon $mday, $year";
     }
-}
 
-print "\n";
+    our ( @lines, %lines, %places, %colors, @colors, @places );
 
-# write files
+    load_tables(
+        requests => {
+            Places_Neue => {
+                array       => \@places,
+                hash        => \%places,
+                index_field => 'c_abbrev9',
+            },
+            Lines =>
+              { array => \@lines, hash => \%lines, index_field => 'Line' },
+            Colors =>
+              { array => \@colors, hash => \%colors, index_field => 'ColorID' },
+        }
+    );
+
+    mkdir "tabxchange"
+      or die "Can't make directory 'tabxchange': $!"
+      unless -d "tabxchange";
+
+    my @files = getfiles(GETFILES_PUBLIC_AND_DB);
+
+    my %skednamesbyroute = ();
+    my %skeds;
+    my %index;
+
+    # slurp all the files into memory and build hashes
+    foreach my $file (@files) {
+        my $sked     = Skedread($file);
+        my $skedname = $sked->{SKEDNAME};
+        $skeds{$skedname} = $sked;
+
+        my %routes = ();
+        $routes{$_} = 1
+          foreach @{ $sked->{ROUTES} }; # remember "ROUTES" is one for each trip
+        @{ $sked->{ALLROUTES} } = keys %routes;
+
+        foreach my $route ( @{ $sked->{ALLROUTES} } ) {
+            push @{ $skednamesbyroute{$route} }, $skedname;
+        }
+    }
+
+    print "\n";
+
+    # write files
 
 #### STUPIDITY TO DEAL WITH WRONG CODE ON THE PHP SIDE
-#
-my %destination_code_of;
-my $highest_destcode;
+    #
+    my %destination_code_of;
+    my $highest_destcode;
 
-my $basefolder = $signupfolder->base_obj;
+    my $basefolder = $signupfolder->base_obj;
 
-my $commonfolder = $basefolder->subfolder('common');
+    my $commonfolder = $basefolder->subfolder('common');
 
-my $destcode_file = 'destcodes.json';
+    my $destcode_file = 'destcodes.json';
 
-if ( -e $commonfolder->make_filespec($destcode_file) ) {
-    %destination_code_of = %{ $commonfolder->json_retrieve($destcode_file) };
-    {    # scoping
-        my @sorted_codes =
-          sort { length($b) <=> length($a) || $b cmp $a }
-          values %destination_code_of;
-        $highest_destcode = $sorted_codes[0];
+    if ( -e $commonfolder->make_filespec($destcode_file) ) {
+        %destination_code_of
+          = %{ $commonfolder->json_retrieve($destcode_file) };
+        {    # scoping
+            my @sorted_codes = sort { length($b) <=> length($a) || $b cmp $a }
+              values %destination_code_of;
+            $highest_destcode = $sorted_codes[0];
+        }
     }
-}
-else {
-    say 'No destination code file found.';
-}
+    else {
+        say 'No destination code file found.';
+    }
 
-# write files
+    # write files
 
-foreach my $route ( sortbyline keys %skednamesbyroute ) {
+    foreach my $route ( sortbyline keys %skednamesbyroute ) {
 
-    next if $second{$route};
+        next if $second{$route};
 
-    printf "%-4s", $route;
+        printf "%-4s", $route;
 
-    foreach
-      my $skedname ( sort bydaydirhash ( @{ $skednamesbyroute{$route} } ) )
-    {
+        foreach
+          my $skedname ( sort bydaydirhash ( @{ $skednamesbyroute{$route} } ) )
+        {
 
-        my $skedref = $skeds{$skedname};
+            my $skedref = $skeds{$skedname};
 
-        open OUT, ">", "tabxchange/" . $skedname . ".tab"
-          or die "can't open $skedname.tab for output";
+            undef $out; # clear any previous out file handles
+            open $out, ">", "tabxchange/" . $skedname . ".tab"
+              or die "can't open $skedname.tab for output";
 
-        my @allroutes = sortbyline( uniq( @{ $skedref->{ROUTES} } ) );
-        my $linegroup = $allroutes[0];
+            my @allroutes = sortbyline( uniq( @{ $skedref->{ROUTES} } ) );
+            my $linegroup = $allroutes[0];
 
-        # GENERAL SCHEDULE INFORMATION
+            # GENERAL SCHEDULE INFORMATION
 
-        outtab($skedname);
-        my $day = $skedref->{DAY};
-        outtab( $day, $adjectivedaynames{$day},
-            $longdaynames{$day}, $longerdaynames{$day} );
-        my $dir = $skedref->{DIR};
+            outtab($skedname);
+            my $day = $skedref->{DAY};
+            outtab( $day, $adjectivedaynames{$day},
+                $longdaynames{$day}, $longerdaynames{$day} );
+            my $dir = $skedref->{DIR};
 
-        my @tp = ( @{ $skedref->{TP} } );
+            my @tp = ( @{ $skedref->{TP} } );
 
-        my $final_tp    = $tp[-1] =~ s/=\d\z//r;
-        my $destination = $places{$final_tp}{c_destination};
+            my $final_tp    = $tp[-1] =~ s/=\d\z//r;
+            my $destination = $places{$final_tp}{c_destination};
 
-        if ( $dir eq 'CC' ) {
-            $destination = "Counterclockwise to $destination,";
-        }
-        elsif ( $dir eq 'CW' ) {
-            $destination = "Clockwise to $destination,";
-        }
-        elsif ( $dir eq 'A' ) {
-            $destination = "A Loop to $destination,";
-        }
-        elsif ( $dir eq 'B' ) {
-            $destination = "B Loop to $destination,";
-        }
-        else {
-            $destination = "To $destination,";
-        }
-
-        # they want a different direction code for each destination. Sigh.
-
-        if ( not exists $destination_code_of{$destination} ) {
-            if ($highest_destcode) {
-                $highest_destcode++;
+            if ( $dir eq 'CC' ) {
+                $destination = "Counterclockwise to $destination,";
+            }
+            elsif ( $dir eq 'CW' ) {
+                $destination = "Clockwise to $destination,";
+            }
+            elsif ( $dir eq 'A' ) {
+                $destination = "A Loop to $destination,";
+            }
+            elsif ( $dir eq 'B' ) {
+                $destination = "B Loop to $destination,";
             }
             else {
-                $highest_destcode =
-                  'GA';    # higher than any in use when system reset
+                $destination = "To $destination,";
             }
-            $destination_code_of{$destination} = $highest_destcode;
-        }
 
-        outtab( $onechar_directions{$dir} . $destination_code_of{$destination},
-            $bound{$dir}, $destination );
+            # they want a different direction code for each destination. Sigh.
 
-        #my $code_destination = uc($destination);
-        #$code_destination =~ s/[^A-Z0-9]//g;
+            if ( not exists $destination_code_of{$destination} ) {
+                if ($highest_destcode) {
+                    $highest_destcode++;
+                }
+                else {
+                    $highest_destcode
+                      = 'GA';    # higher than any in use when system reset
+                }
+                $destination_code_of{$destination} = $highest_destcode;
+            }
 
-        #$code_destination = scalar reverse $code_destination;
-        #outtab ($code_destination, $bound{$dir} , $destination);
-
-        # LINEGROUP FIELDS
-
-        outtab(
-            "U",
-            $linegroup,
-            $lines{$linegroup}{LineGroupWebNote},
-            $lines{$linegroup}{LineGroupType},
-            $lines{$linegroup}{UpcomingOrCurrentLineGroup}
-        );
-        outtab(@allroutes);
-
-        my @skednames;
-        foreach (@allroutes) {
-            push @skednames, ( @{ $skednamesbyroute{$linegroup} } );
-        }
-        outtab( sort +( uniq(@skednames) ) );
-
-        # LINE FIELDS
-
-        foreach (@allroutes) {
-            my $colorref = $colors{ $lines{$linegroup}{Color} };
             outtab(
-                $_,                        $lines{$_}{Description},
-                $lines{$_}{DirectionFile}, $lines{$_}{StopListFile},
-                $lines{$_}{MapFileName},   '',
-                ,                          $lines{$_}{TimetableDate},
-                $colorref->{"Cyan"},       $colorref->{"Magenta"},
-                $colorref->{"Yellow"},     $colorref->{"Black"},
-                $colorref->{"RGB"}
-              )
+                $onechar_directions{$dir} . $destination_code_of{$destination},
+                $bound{$dir}, $destination
+            );
 
-        }
+            #my $code_destination = uc($destination);
+            #$code_destination =~ s/[^A-Z0-9]//g;
 
-        # TIMEPOINT FIELDS
+            #$code_destination = scalar reverse $code_destination;
+            #outtab ($code_destination, $bound{$dir} , $destination);
 
-        #my @tp = (@{$skedref->{TP}});  # moved earlier
+            # LINEGROUP FIELDS
 
-        #outtab (@tp);
-        my ( @tp4, @tp_lookup );
-        @tp_lookup = @tp;
-        s/=\d+\z// foreach @tp_lookup;
+            outtab(
+                "U",
+                $linegroup,
+                $lines{$linegroup}{LineGroupWebNote},
+                $lines{$linegroup}{LineGroupType},
+                $lines{$linegroup}{UpcomingOrCurrentLineGroup}
+            );
+            outtab(@allroutes);
 
-        push @tp4, $places{$_}{h_plc_identifier} foreach @tp_lookup;
+            my @skednames;
+            foreach (@allroutes) {
+                push @skednames, ( @{ $skednamesbyroute{$linegroup} } );
+            }
+            outtab( sort +( uniq(@skednames) ) );
 
-        outtab(@tp4);
+            # LINE FIELDS
 
-        my $tpcol;
-        for $tpcol ( 0 .. $#tp ) {
+            foreach (@allroutes) {
+                my $colorref = $colors{ $lines{$linegroup}{Color} };
+                outtab(
+                    $_,                        $lines{$_}{Description},
+                    $lines{$_}{DirectionFile}, $lines{$_}{StopListFile},
+                    $lines{$_}{MapFileName},   '',
+                    ,                          $lines{$_}{TimetableDate},
+                    $colorref->{"Cyan"},       $colorref->{"Magenta"},
+                    $colorref->{"Yellow"},     $colorref->{"Black"},
+                    $colorref->{"RGB"}
+                  )
 
-            my $tp        = $tp[$tpcol];
-            my $tp_lookup = $tp_lookup[$tpcol];
-            my $tp4       = $tp4[$tpcol];
+            }
 
-            #my $tp = tpxref($tp[$tpcol]);
-            my $faketimepointnote;
+            # TIMEPOINT FIELDS
+
+            #my @tp = (@{$skedref->{TP}});  # moved earlier
+
+            #outtab (@tp);
+            my ( @tp4, @tp_lookup );
+            @tp_lookup = @tp;
+            s/=\d+\z// foreach @tp_lookup;
+
+            push @tp4, $places{$_}{h_plc_identifier} foreach @tp_lookup;
+
+            outtab(@tp4);
+
+            my $tpcol;
+            for $tpcol ( 0 .. $#tp ) {
+
+                my $tp        = $tp[$tpcol];
+                my $tp_lookup = $tp_lookup[$tpcol];
+                my $tp4       = $tp4[$tpcol];
+
+                #my $tp = tpxref($tp[$tpcol]);
+                my $faketimepointnote;
 
      #$faketimepointnote = "Waits six minutes for transferring BART passengers."
      #    if $tp eq "SHAY BART" and $skedname eq "91_SB_WD";
 
-            warn "Not 4 characters: [$tp4/$tp_lookup/$tp]" if length($tp4) != 4;
-            warn "Blank tp [$tp4/$tp_lookup/$tp]"
-              if $tp_lookup eq '' or $tp eq '';
+                warn "Not 4 characters: [$tp4/$tp_lookup/$tp]"
+                  if length($tp4) != 4;
+                warn "Blank tp [$tp4/$tp_lookup/$tp]"
+                  if $tp_lookup eq '' or $tp eq '';
 
-            outtab(
-                $tp4,
-                $places{$tp_lookup}{c_description},
-                $places{$tp_lookup}{c_city},
-                $places{$tp_lookup}{ux_usecity_description} ? 'Yes' : 'No',
-                "",    # $Skedtps::timepoints{$tp_lookup}{Neighborhood},
-                "",    # $Skedtps::timepoints{$tp_lookup}{TPNote},
-                $faketimepointnote
-            );
+                outtab(
+                    $tp4,
+                    $places{$tp_lookup}{c_description},
+                    $places{$tp_lookup}{c_city},
+                    $places{$tp_lookup}{ux_usecity_description} ? 'Yes' : 'No',
+                    "",    # $Skedtps::timepoints{$tp_lookup}{Neighborhood},
+                    "",    # $Skedtps::timepoints{$tp_lookup}{TPNote},
+                    $faketimepointnote
+                );
 
 # When you add a way to have "Notes associated with a timepoint (column) in this schedule alone",
 # replace $faketimepointnote with that.
 
-        }    ## tidy end: for $tpcol ( 0 .. $#tp )
+            } ## tidy end: for $tpcol ( 0 .. $#tp )
 
-        # SCHEDULE FIELDS
+            # SCHEDULE FIELDS
 
-        #outtab (@{$skedref->{NOTEDEFS}});
-        # Fake some NOTEDEFS
+            #outtab (@{$skedref->{NOTEDEFS}});
+            # Fake some NOTEDEFS
 
-        my @notedefs;
+            my @notedefs;
 
-        for ($skedname) {
-            if (/^43/) {
-                @notedefs = ( "F Serves Bulk Mail Center.",
-                    "G Serves Bulk Mail Center." );
-            }
-            elsif (/^51/) {
-                @notedefs = (
+            for ($skedname) {
+                if (/^43/) {
+                    @notedefs = (
+                        "F Serves Bulk Mail Center.",
+                        "G Serves Bulk Mail Center."
+                    );
+                }
+                elsif (/^51/) {
+                    @notedefs
+                      = (
 "B On school days, except Fridays, operates three minutes earlier between Broadway & Blanding Ave. and Atlantic Ave. & Webster St. Stops at College of Alameda administration building."
-                );
-            }
-            elsif (/^I81/) {   # never a line I81  -- serves to comment out code
-                @notedefs = (
-                    "D Serves Griffith St, Burroughs Ave., and Farallon Dr.",
-                    "E Serves Griffith St, Burroughs Ave., and Farallon Dr.",
-                    "K Serves Griffith St, Burroughs Ave., and Farallon Dr.",
-                    "L Serves Hayward Amtrak.",
-                    "M Serves Hayward Amtrak.",
+                      );
+                }
+                elsif (/^I81/)
+                {    # never a line I81  -- serves to comment out code
+                    @notedefs = (
+"D Serves Griffith St, Burroughs Ave., and Farallon Dr.",
+"E Serves Griffith St, Burroughs Ave., and Farallon Dr.",
+"K Serves Griffith St, Burroughs Ave., and Farallon Dr.",
+                        "L Serves Hayward Amtrak.",
+                        "M Serves Hayward Amtrak.",
 "Q Serves Griffith St, Burroughs Ave., and Farallon Dr., and also Hayward Amtrak.",
-                    "R Serves Hayward Amtrak.",
-                );
+                        "R Serves Hayward Amtrak.",
+                    );
 
-            }
-            elsif (/^I84/) {
-                @notedefs = (
+                }
+                elsif (/^I84/) {
+                    @notedefs = (
 "A Does not serve Fargo Ave.; operates via Lewelling Blvd. and Washington Ave.",
 "B Does not serve Fargo Ave.; operates via Washington Ave. and Lewelling Blvd."
-                );
-            }
-            elsif (/^LA?/) {
-                @notedefs = (
+                    );
+                }
+                elsif (/^LA?/) {
+                    @notedefs
+                      = (
 'LC This "L & LA" trip operates as Line L as far as El Portal Dr. & I-80, then continues and serves Line LA between Hilltop Park & Ride and Richmond Parkway Transit Center.'
-                );
-            }
-            elsif ( /^NX2/ or /^NX3/ ) {
-                @notedefs = (
+                      );
+                }
+                elsif ( /^NX2/ or /^NX3/ ) {
+                    @notedefs
+                      = (
 'NC This trip is an "NX2 and NX3" trip or "NX2 and NX3 and NX4" trip and serves all areas on Line NX2 before continuing on Line NX3 and Line NX4.'
-                );
-            }
-            elsif (/^NX4/) {
-                @notedefs = (
+                      );
+                }
+                elsif (/^NX4/) {
+                    @notedefs
+                      = (
 'NC This trip is an "NX2 and NX3 and NX4" trip and serves all areas on ines NX2 and NX3 before continuing on Line NX4.'
-                );
+                      );
+                }
+            } ## tidy end: for ($skedname)
+
+            for (@notedefs) {
+                s/ /$KEY_SEPARATOR/ unless /$KEY_SEPARATOR/;
             }
-        }    ## tidy end: for ($skedname)
 
-        for (@notedefs) {
-            s/ /$KEY_SEPARATOR/ unless /$KEY_SEPARATOR/;
-        }
+            outtab(@notedefs);
 
-        outtab(@notedefs);
+            my $fullnote = q{};
 
-        my $fullnote = q{};
+            if ( $lines{$linegroup}{schedule_note} ) {
+                $fullnote = "<p>$lines{$linegroup}{schedule_note}</p>";
+            }
 
-        if ( $lines{$linegroup}{schedule_note} ) {
-            $fullnote = "<p>$lines{$linegroup}{schedule_note}</p>";
-        }
+            my $govtopic = $lines{$route}{GovDeliveryTopic};
+            if ($govtopic) {
+                $fullnote
+                  .= '<p>'
+                  . q{<a href="https://public.govdelivery.com/}
+                  . q{accounts/ACTRANSIT/subscriber/new?topic_id=}
+                  . $govtopic . q{">}
+                  . 'Get timely, specific updates about '
+                  . "Line $route from AC Transit eNews."
+                  . '</a></p>';
+            }
 
-        my $govtopic = $lines{$route}{GovDeliveryTopic};
-        if ($govtopic) {
-            $fullnote .=
-                '<p>'
-              . q{<a href="https://public.govdelivery.com/}
-              . q{accounts/ACTRANSIT/subscriber/new?topic_id=}
-              . $govtopic . q{">}
-              . 'Get timely, specific updates about '
-              . "Line $route from AC Transit eNews."
-              . '</a></p>';
-        }
+            $fullnote .= '<p>The times provided are for '
+              . 'important landmarks along the route.';
 
-        $fullnote .=
-            '<p>The times provided are for '
-          . 'important landmarks along the route.';
+            my %stoplist_url_of;
+            foreach my $route ( sortbyline @allroutes ) {
 
-        my %stoplist_url_of;
-        foreach my $route ( sortbyline @allroutes ) {
-            
-            my $linegrouptype = lc( $lines{$route}{LineGroupType} );
-            $linegrouptype =~ s/ /-/g;    # converted to dashes by wordpress
-            if ($linegrouptype) {
-                if ( $linegrouptype eq 'local' ) {
-                    no warnings 'numeric';
-                    if ( $route <= 70 ) {
-                        $linegrouptype = 'local1';
+                my $linegrouptype = lc( $lines{$route}{LineGroupType} );
+                $linegrouptype =~ s/ /-/g;    # converted to dashes by wordpress
+                if ($linegrouptype) {
+                    if ( $linegrouptype eq 'local' ) {
+                        no warnings 'numeric';
+                        if ( $route <= 70 ) {
+                            $linegrouptype = 'local1';
+                        }
+                        else {
+                            $linegrouptype = 'local2';
+                        }
                     }
-                    else {
-                        $linegrouptype = 'local2';
-                    }
+
+                    $stoplist_url_of{$route}
+                      = qq{http://www.actransit.org/riderinfo/stops/$linegrouptype/#$route};
+                }
+                else {
+                    warn "No linegroup type for line $route";
                 }
 
-                $stoplist_url_of{$route} = qq{http://www.actransit.org/riderinfo/stops/$linegrouptype/#$route}
+            } ## tidy end: foreach my $route ( sortbyline...)
+
+            my @linkroutes = sortbyline keys %stoplist_url_of;
+            my $numlinks   = scalar @linkroutes;
+
+            if ( $numlinks == 1 ) {
+                my $linkroute = $linkroutes[0];
+
+                $fullnote
+                  .= $SPACE
+                  . qq{<a href="$stoplist_url_of{$linkroute}">}
+                  . qq{A complete list of stops for Line $linkroute is also available.</a>};
             }
-            else {
-                warn "No linegroup type for line $route";
+            elsif ( $numlinks != 0 ) {
+
+                my @stoplist_links
+                  = map {qq{<a href="$stoplist_url_of{$_}">$_</a>}} @linkroutes;
+
+                $fullnote
+                  .= qq{ Complete lists of stops for lines }
+                  . joinseries(@stoplist_links)
+                  . ' are also available.';
             }
 
-        }
+            $fullnote .= '</p>';
 
-        my @linkroutes = sortbyline keys %stoplist_url_of;
-        my $numlinks = scalar @linkroutes;
-
-        if ( $numlinks == 1 ) {
-            my $linkroute = $linkroutes[0];
-            
-            $fullnote .= $SPACE . qq{<a href="$stoplist_url_of{$linkroute}">} .
-qq{A complete list of stops for Line $linkroute is also available.</a>};
-        }
-        elsif ( $numlinks != 0 ) {
-            
-            my @stoplist_links = map {
-                qq{<a href="$stoplist_url_of{$_}">$_</a>} }
-                @linkroutes;
-            
-            $fullnote .=
-                qq{ Complete lists of stops for lines }
-              . joinseries(@stoplist_links)
-              . ' are also available.';
-        }
-
-        $fullnote .= '</p>';
-
-        outtab( $fullnote, $lines{$linegroup}{LineGroupNote} );
+            outtab( $fullnote, $lines{$linegroup}{LineGroupNote} );
 
    #outtab ($skedadds{$skedname}{FullNote} , $lines{$linegroup}{LineGroupNote});
 
-        outtab(q{});
+            outtab(q{});
 
-        # outtab( $skedadds{$skedname}{UpcomingOrCurrentSkedID} );
-        # Right now the line group fields are specified in the
-        # first line of each line group. This isn't ideal but
-        # might be OK
+            # outtab( $skedadds{$skedname}{UpcomingOrCurrentSkedID} );
+            # Right now the line group fields are specified in the
+            # first line of each line group. This isn't ideal but
+            # might be OK
 
-        outtab(@specdaynames);
+            outtab(@specdaynames);
 
-        outtab( @{ $skedref->{SPECDAYS} } );
-        outtab( @{ $skedref->{NOTES} } );
-        outtab( @{ $skedref->{ROUTES} } );
+            outtab( @{ $skedref->{SPECDAYS} } );
+            outtab( @{ $skedref->{NOTES} } );
+            outtab( @{ $skedref->{ROUTES} } );
 
-        for $tpcol ( 0 .. $#tp ) {
-            outtab( @{ $skedref->{TIMES}[$tpcol] } );
-        }
+            for $tpcol ( 0 .. $#tp ) {
+                outtab( @{ $skedref->{TIMES}[$tpcol] } );
+            }
 
-        close OUT;
+            close $out;
 
-    }    ## tidy end: foreach my $skedname ( sort...)
+        } ## tidy end: foreach my $skedname ( sort...)
 
-}    ## tidy end: foreach my $route ( sortbyline...)
+    } ## tidy end: foreach my $route ( sortbyline...)
 
-print "\n";
+    print "\n";
 
-$commonfolder->json_store_pretty( \%destination_code_of, $destcode_file );
+    $commonfolder->json_store_pretty( \%destination_code_of, $destcode_file );
 
-}
+} ## tidy end: sub START
 
 sub outtab {
     my @fields = @_;
     foreach (@fields) {
         s/\n/ /g;
     }
-    print OUT join( "\t", @fields, "\n" );
+    print $out join( "\t", @fields, "\n" );
 }
 
 #sub uniq {
@@ -721,3 +736,5 @@ sub bydaydirhash {
     ( my $bb = $b ) =~ s/.*?_//;    # minimal: it matches first _
     $daydirhash{$aa} cmp $daydirhash{$bb};
 }
+
+1;
