@@ -11,7 +11,7 @@ allow_in_main_unless_in_subroutine = 1
 variables = $( $) $< $> $; $& $` $' $% $- $: $= $^ $~
 
 [CodeLayout::RequireTidyCode]
-perltidyrc = /Users/apriven/Dev/Actium/perltidyrc
+perltidyrc = /Users/apriven/git/actium/perltidyrc
 
 [TestingAndDebugging::RequireUseWarnings]
 equivalent_modules = Actium::Preamble
@@ -44,9 +44,6 @@ severity = 2
 [Subroutines::ProhibitExportingUndeclaredSubs]
 severity = 5
 
-[Miscellanea::RequireRcsKeywords]
-keywords = Id
-
 # Distributions that this uses:
-# Perl-Critic-Deprecated
-# Perl-Critic-StricterSubs
+# Perl-Critic-Deprecated ### DEP ###
+# Perl-Critic-StricterSubs ### DEP ###

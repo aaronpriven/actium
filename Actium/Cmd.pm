@@ -9,7 +9,6 @@ use Actium::Options qw(add_option init_options option);
 # eventually merge that into this module
 
 use Actium::O::Files::Ini;
-my $config = Actium::O::Files::Ini::->new('.actium.ini');
 
 # Ask user for a command line, if running under Eclipse.
 
@@ -17,7 +16,10 @@ sub run {
 
     \my %module_of = shift;
 
+    ## no critic (RequireExplicitInclusion)
+    # bug in RequireExplicitInclusion
     my $config = Actium::O::Files::Ini::->new('.actium.ini');
+    ## use critic
 
     {
         no warnings('once');
@@ -54,9 +56,9 @@ sub run {
     {
         $subcommand = ${ $module_of{$subcommand} };
     }
-
     if ( not exists $module_of{$subcommand} ) {
-        print "Unrecognized subcommand $subcommand.\n\n" . mainhelp(\%module_of)
+        print "Unrecognized subcommand $subcommand.\n\n"
+          . mainhelp( \%module_of )
           or die "Can't print help text: $OS_ERROR";
         exit 1;
     }
@@ -82,12 +84,15 @@ sub run {
 
     init_options();
 
+    ## no critic (ProtectPrivateSubs)
     my $options_r = Actium::Options::_optionhash();
+    ## use critic
 
     if ( option('_stacktrace') ) {
-## no critic (RequireLocalizedPunctuationVars)
+        ## no critic (RequireLocalizedPunctuationVars)
         $SIG{'__WARN__'} = \&stacktrace;
         $SIG{'__DIE__'}  = \&stacktrace;
+        ## use critic
     }
 
     if ( $help or option('help') ) {
@@ -100,6 +105,8 @@ sub run {
             config  => $config
         );
     }
+
+    return;
 
 } ## tidy end: sub run
 
