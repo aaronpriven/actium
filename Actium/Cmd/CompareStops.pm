@@ -1,188 +1,176 @@
-#!/ActivePerl/bin/perl
+#/Actium/Cmd/CompareStops.pm
 
-# comparestops - see POD documentation below
+package Actium::Cmd::CompareStops 0.010;
 
-# Legacy stage 2
+use Actium::Preamble;
 
-use 5.012;
-use warnings;
-
-our $VERSION = 0.010;
-
-# add the current program directory to list of files to include
-use FindBin('$Bin'); ### DEP ###
-use lib ( $Bin, "$Bin/../bin" ); ### DEP ###
-
-use Carp; ### DEP ###
-use Storable(); ### DEP ###
-
+use Storable();    ### DEP ###
 use Actium::Term('sayq');
-
 use Actium::Sorting::Line ('byline');
-use Actium::Constants;
 use Actium::Union('ordered_union');
-use List::MoreUtils('uniq'); ### DEP ###
 use Actium::DaysDirections (':all');
-use Algorithm::Diff('sdiff'); ### DEP ###
-
+use Algorithm::Diff('sdiff');    ### DEP ###
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+use Actium::O::Folders::Signup;
 
+sub HELP {
 
-# don't buffer terminal output
-$| = 1;
-
-{
-    no warnings('once');
-    if ($Actium::Eclipse::is_under_eclipse) { ## no critic (ProhibitPackageVars)
-        @ARGV = Actium::Eclipse::get_command_line();
-    }
-}
-
-my $helptext = <<'EOF';
+    my $helptext = <<'EOF';
 comparestops reads the data written by readavl.
 It then assembles a list of stops and the routes that stop at each one.
 Finally, it displays a list of new, deleted, and changed stops.
 EOF
 
-my $intro = 'comparestops -- compare old and new stops from AVL data';
+    say $helptext;
+    return;
+}
 
 use Actium::Options (qw<add_option option init_options>);
 
-add_option('oldsignup=s'
-   , 'The older signup. The program compares data from the this signup to the one'
-   . 'specified by the "signup" option.'
-   );
+sub OPTIONS {
 
-init_options;
+    return (
+        [   'oldsignup=s',
+            'The older signup. The program compares data '
+              . 'from the this signup to the one '
+              . 'specified by the "signup" option.'
+        ]
+    );
 
-use Actium::O::Folders::Signup;
-my $signup = Actium::O::Folders::Signup->new();
-chdir $signup->path;
+}
 
-my %stops;
+my ( %changes, %oldstoplists, %stops );
 
-load_tables(
-    requests => {
-        Stops_Neue => {
-            hash        => \%stops,
-            index_field => 'h_stp_511_id',
-            fields => [qw[h_stp_511_id c_description_full ]],
-        },
-    }
-);
+sub START {
 
-my $comparedir = $signup->subfolder('compare') ;
+    my $signup = Actium::O::Folders::Signup->new();
+    chdir $signup->path;
 
-my %newstoplists = assemble_stoplists($signup, qw(BSH 399));
+    load_tables(
+        requests => {
+            Stops_Neue => {
+                hash        => \%stops,
+                index_field => 'h_stp_511_id',
+                fields      => [qw[h_stp_511_id c_description_full ]],
+            },
+        }
+    );
 
-open my $out, '>', 'compare/comparestops.txt' or die "$!";
+    my $comparedir = $signup->subfolder('compare');
 
-# done here so as to make sure the file is saved in the *new*
-# signup directory
+    my %newstoplists = assemble_stoplists( $signup, qw(BSH 399) );
 
-print $out
+    open my $out, '>', 'compare/comparestops.txt' or die $OS_ERROR;
+    # done here so as to make sure the file is saved in the *new*
+    # signup directory
+
+    print $out
 "Change\tStopID\tStop Description\tNumAdded\tAdded\tNumRemoved\tRemoved\tNumUnchanged\tUnchanged\n";
 
-my $oldsignup = Actium::O::Folders::Signup->new({signup => option('oldsignup')});
+    my $oldsignup
+      = Actium::O::Folders::Signup->new( { signup => option('oldsignup') } );
 
-my %oldstoplists = assemble_stoplists($oldsignup, qw(BSH 399));
+    %oldstoplists = assemble_stoplists( $oldsignup, qw(BSH 399) );
 
-my @stopids = uniq( sort ( keys %newstoplists, keys %oldstoplists ) );
+    my @stopids = uniq( sort ( keys %newstoplists, keys %oldstoplists ) );
 
-my %changes;
-
-foreach my $type (qw<ADDED REMOVED UNCHANGED>) {
-    $changes{$type} = {};
-}
-foreach my $type (qw<ADDEDSTOPS DELETEDSTOPS>) {
-    $changes{$type} = [];
-}
-
-STOPID:
-foreach my $stopid (@stopids) {
-
-    if ( not exists $oldstoplists{$stopid} ) {
-        push @{ $changes{ADDEDSTOPS} }, $stopid;
-        next STOPID;
+    foreach my $type (qw<ADDED REMOVED UNCHANGED>) {
+        $changes{$type} = {};
+    }
+    foreach my $type (qw<ADDEDSTOPS DELETEDSTOPS>) {
+        $changes{$type} = [];
     }
 
-    if ( not exists $newstoplists{$stopid} ) {
-        push @{ $changes{DELETEDSTOPS} }, $stopid;
-        next STOPID;
-    }
+  STOPID:
+    foreach my $stopid (@stopids) {
 
-    my @oldroutes = sort keys %{ $oldstoplists{$stopid}{Routes} };
-    my @newroutes = sort keys %{ $newstoplists{$stopid}{Routes} };
-
-    next STOPID if ( join( '', @oldroutes ) ) eq ( join( '', @newroutes ) );
-    # no changes
-
-    my ( @added, @removed, @unchanged );
-
-  COMPONENT:
-    foreach my $component ( Algorithm::Diff::sdiff( \@oldroutes, \@newroutes ) )
-    {
-
-        my ( $action, $a_elem, $b_elem ) = @$component;
-
-        if ( $action eq 'u' ) {
-            #push @{$changes{CHANGEDSTOPS}{$stopid}{UNCHANGED}} , $a_elem;
-            push @unchanged, $a_elem;
+        if ( not exists $oldstoplists{$stopid} ) {
+            push @{ $changes{ADDEDSTOPS} }, $stopid;
+            next STOPID;
         }
 
-        if ( $action eq 'c' or $action eq '-' ) {
-            #push @{$changes{CHANGEDSTOPS}{$stopid}{REMOVED}} , $a_elem;
-            push @removed, $a_elem;
+        if ( not exists $newstoplists{$stopid} ) {
+            push @{ $changes{DELETEDSTOPS} }, $stopid;
+            next STOPID;
         }
 
-        if ( $action eq 'c' or $action eq '+' ) {
-            #push @{$changes{CHANGEDSTOPS}{$stopid}{ADDED}}   , $b_elem;
-            push @added, $b_elem;
+        my @oldroutes = sort keys %{ $oldstoplists{$stopid}{Routes} };
+        my @newroutes = sort keys %{ $newstoplists{$stopid}{Routes} };
+
+        next STOPID if ( join( '', @oldroutes ) ) eq ( join( '', @newroutes ) );
+        # no changes
+
+        my ( @added, @removed, @unchanged );
+
+      COMPONENT:
+        foreach
+          my $component ( Algorithm::Diff::sdiff( \@oldroutes, \@newroutes ) )
+        {
+
+            my ( $action, $a_elem, $b_elem ) = @$component;
+
+            if ( $action eq 'u' ) {
+                #push @{$changes{CHANGEDSTOPS}{$stopid}{UNCHANGED}} , $a_elem;
+                push @unchanged, $a_elem;
+            }
+
+            if ( $action eq 'c' or $action eq '-' ) {
+                #push @{$changes{CHANGEDSTOPS}{$stopid}{REMOVED}} , $a_elem;
+                push @removed, $a_elem;
+            }
+
+            if ( $action eq 'c' or $action eq '+' ) {
+                #push @{$changes{CHANGEDSTOPS}{$stopid}{ADDED}}   , $b_elem;
+                push @added, $b_elem;
+            }
+
+        }    # COMPONENT
+
+        if ( not @removed ) {
+            $changes{ADDLINES}{$stopid}{ADDED}     = \@added;
+            $changes{ADDLINES}{$stopid}{UNCHANGED} = \@unchanged;
+        }
+        elsif ( not @added ) {
+            $changes{REMOVEDLINES}{$stopid}{REMOVED}   = \@removed;
+            $changes{REMOVEDLINES}{$stopid}{UNCHANGED} = \@unchanged;
+        }
+        else {
+            $changes{CHANGEDSTOPS}{$stopid}{ADDED}     = \@added;
+            $changes{CHANGEDSTOPS}{$stopid}{REMOVED}   = \@removed;
+            $changes{CHANGEDSTOPS}{$stopid}{UNCHANGED} = \@unchanged;
+
         }
 
-    }    # COMPONENT
+    }    # STOPID
 
-    if ( not @removed ) {
-        $changes{ADDLINES}{$stopid}{ADDED}     = \@added;
-        $changes{ADDLINES}{$stopid}{UNCHANGED} = \@unchanged;
-    }
-    elsif ( not @added ) {
-        $changes{REMOVEDLINES}{$stopid}{REMOVED}   = \@removed;
-        $changes{REMOVEDLINES}{$stopid}{UNCHANGED} = \@unchanged;
-    }
-    else {
-        $changes{CHANGEDSTOPS}{$stopid}{ADDED}     = \@added;
-        $changes{CHANGEDSTOPS}{$stopid}{REMOVED}   = \@removed;
-        $changes{CHANGEDSTOPS}{$stopid}{UNCHANGED} = \@unchanged;
-
+    foreach my $added_stopid ( sort @{ $changes{ADDEDSTOPS} } ) {
+        my $description = $newstoplists{$added_stopid}{Description};
+        next if dummy($description);
+        my @list = sort byline keys %{ $newstoplists{$added_stopid}{Routes} };
+        print $out "AS\t", $added_stopid, "\t$description\t", scalar @list,
+          "\t",
+          '"', join( ' ', @list ), '"', "\n";
     }
 
-}    # STOPID
+    foreach my $deleted_stopid ( sort @{ $changes{DELETEDSTOPS} } ) {
+        my $description = $oldstoplists{$deleted_stopid}{Description};
+        next if dummy($description);
+        my @list = sort byline keys %{ $oldstoplists{$deleted_stopid}{Routes} };
+        print $out "RS\t", $deleted_stopid, "\t$description\t\t\t",
+          scalar @list, "\t",
+          '"', join( ' ', @list ), '"', "\n";
+    }
 
-foreach my $added_stopid ( sort @{ $changes{ADDEDSTOPS} } ) {
-    my $description = $newstoplists{$added_stopid}{Description};
-    next if dummy($description);
-    my @list = sort byline keys %{ $newstoplists{$added_stopid}{Routes} };
-    print $out "AS\t", $added_stopid, "\t$description\t", scalar @list, "\t",
-      '"' , join( ' ', @list ), '"' , "\n";
-}
+    output_stops( 'AL', $out, 'ADDLINES' );
 
-foreach my $deleted_stopid ( sort @{ $changes{DELETEDSTOPS} } ) {
-    my $description = $oldstoplists{$deleted_stopid}{Description};
-    next if dummy($description);
-    my @list = sort byline keys %{ $oldstoplists{$deleted_stopid}{Routes} };
-    print $out "RS\t", $deleted_stopid, "\t$description\t\t\t",
-      scalar @list, "\t",
-      '"' , join( ' ', @list ), '"' , "\n";
-}
+    output_stops( 'RL', $out, 'REMOVEDLINES' );
 
-output_stops( 'AL', $out, 'ADDLINES' );
+    output_stops( 'CL', $out, 'CHANGEDSTOPS' );
 
-output_stops( 'RL', $out, 'REMOVEDLINES' );
+    sayq 'Completed comparison.';
 
-output_stops( 'CL', $out, 'CHANGEDSTOPS' );
-
-sayq "Completed comparison.";
+    return;
+} ## tidy end: sub START
 
 sub dummy {
     local $_ = shift;
@@ -208,7 +196,7 @@ sub output_stops {
 
         if ( exists $changes{$type}{$stopid}{ADDED} ) {
             my @added = sort byline @{ $changes{$type}{$stopid}{ADDED} };
-            print $fh "\t", scalar @added, "\t", '"' , join( ' ', @added ), '"';
+            print $fh "\t", scalar @added, "\t", '"', join( ' ', @added ), '"';
         }
         else {
             print $fh "\t\t";
@@ -216,7 +204,8 @@ sub output_stops {
 
         if ( exists $changes{$type}{$stopid}{REMOVED} ) {
             my @removed = sort byline @{ $changes{$type}{$stopid}{REMOVED} };
-            print $fh "\t", scalar @removed, "\t", '"', join( ' ', @removed ), '"';
+            print $fh "\t", scalar @removed, "\t", '"', join( ' ', @removed ),
+              '"';
         }
         else {
             print $fh "\t\t";
@@ -225,7 +214,8 @@ sub output_stops {
         if ( exists $changes{$type}{$stopid}{UNCHANGED} ) {
             my @unchanged
               = sort byline @{ $changes{$type}{$stopid}{UNCHANGED} };
-            print $fh "\t", scalar @unchanged, "\t", '"', join( ' ', @unchanged ), '"';
+            print $fh "\t", scalar @unchanged, "\t", '"',
+              join( ' ', @unchanged ), '"';
         }
         #      else {
         #         print $fh "\t\t";
@@ -242,21 +232,20 @@ sub output_stops {
 sub assemble_stoplists {
 
     my $signup = shift;
-    
+
     my %stoplist = ();
 
     my %skipped;
     $skipped{$_} = 1 foreach @_;
 
-    my ( %pat );
+    my (%pat);
 
     {    # scoping
          # the reason to do this is to release the %avldata structure, so Affrus
          # (or, presumably, another IDE)
          # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-my $avldata_r = $signup->retrieve('avl.storable');
-
+        my $avldata_r = $signup->retrieve('avl.storable');
 
         %pat = %{ $avldata_r->{PAT} };
 
@@ -281,15 +270,20 @@ my $avldata_r = $signup->retrieve('avl.storable');
             #$stoplist{$stopid}{Routes}{"$route-$dir"} = 1;
             $stoplist{$stopid}{Routes}{$route} = 1;
             #$stoplist{$stopid}{Description} = $stp{$stopid}{Description};
-            $stoplist{$stopid}{Description} = $stops{$stopid}{c_description_full};
+            $stoplist{$stopid}{Description}
+              = $stops{$stopid}{c_description_full};
 
         }
 
-    } ## tidy end: foreach my $key ( keys %pat)
+    } ## tidy end: PAT: foreach my $key ( keys %pat)
 
     return %stoplist;
 
 } ## tidy end: sub assemble_stoplists
+
+1;
+
+__END__
 
 =head1 NAME
 
