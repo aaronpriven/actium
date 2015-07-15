@@ -1,19 +1,19 @@
 #Actium/Cmd/StorableAVL.pm
 
 # All the programs that use the 'avl.storable' file depend on this one.
-# This shouild ultimately be replaced 
+# This shouild ultimately be replaced
 
-package Actium::Cmd::StorableAVL.pm 0.010;
+package Actium::Cmd::StorableAVL 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folders::Signup;
 
-use Text::Trim; ### DEP ###
-use Storable(); ### DEP ###
+use Text::Trim;    ### DEP ###
+use Storable();    ### DEP ###
 
 # set some constants
-const my $NO_PARENT => q{top};
-const my $DELIMITER => q{,};
+const my $NO_PARENT        => q{top};
+const my $DELIMITER        => q{,};
 const my $DELIMITER_LENGTH => length($DELIMITER);
 
 my %is_used;
@@ -30,268 +30,269 @@ my %data_of;
 
 sub HELP {
 
-my $helptext = <<'EOF';
+    my $helptext = <<'EOF';
 readavl reads the files transmitted in the Hastus AVL Standard Interface format,
 as described in the Hastus 2006 documentation, and collects it in a structure
 readable in perl. See "perldoc readavl" for more information.
 EOF
 
-say $helptext;
+    say $helptext;
+    return;
 
 }
 
-my $intro = <<'EOF';
-readavl - reads AVL files from Hastus and stores them in an easier-
-to-read-form.
-EOF
+sub START {
 
-sub START { 
+    my $signup = Actium::O::Folders::Signup->new();
+    chdir $signup->path();
 
-my $signup = Actium::O::Folders::Signup->new();
-chdir $signup->path();
+    say 'Reading from ', $signup->path();
 
-say "Reading from " , $signup->path();
+    # set up row type hashes
 
-# set up row type hashes
+    init_field_names();
+    init_templates();
 
+    my @files = glob('hasi/*');
+    @files = grep { not( /\.dump/ix || /\.sqlite\z/ix ) } @files;
 
-init_field_names();
-init_templates();
+    unless (@files) {
+        die 'No files found in ' . $signup->path;
+    }
 
-my @files = glob ('hasi/*');
-@files = grep { not (/\.dump/i || /\.sqlite\z/i ) } @files;
+    # read rows
+    read_files(@files);
 
-unless (@files) {
-   die 'No files found in ' . $signup->path;
-}
+    $signup->store( \%data_of, 'avl.storable' );
+    
+    return;
 
-# read rows
-read_files(@files);
-
-$signup->store(\%data_of, 'avl.storable');
-
-}
-
+} ## tidy end: sub START
 
 sub read_files {
 
-   local @ARGV = @_;
-   # set up @ARGV for <>;
+    local @ARGV = @_;
+    # set up @ARGV for <>;
 
-   # prepare $previous_of so we can add children to parents
-	my %previous_of_r;
+    # prepare $previous_of so we can add children to parents
+    my %previous_of_r;
 
-	local $/ = $CRLF;
-	my $prevfile = "";
+    local $/ = $CRLF;
+    my $prevfile = "";
 
-   ROW:
-	while (<>) {
-	   chomp;
-	   
-      # DEBUG - print filenames
-	   if ( $prevfile ne $ARGV) {
-	      print "$ARGV\n" ;
-   	   $prevfile = $ARGV;
-	   }
+  ROW:
+    while (<>) {
+        chomp;
 
-	   # get row type - everything up to the first delimiter
-      m/(.*?)$DELIMITER/;
-      my $row_type = $1;
-      
-	   next ROW if (not $is_used{$row_type});
-      
+        # DEBUG - print filenames
+        if ( $prevfile ne $ARGV ) {
+            print "$ARGV\n";
+            $prevfile = $ARGV;
+        }
 
-      #print $template_of{$row_type} , "\n";
-      my @fields = unpack ($template_of{$row_type}, $_);
-      trim(@fields);
-      my @field_names = @{$field_names_of{$row_type}};
+        # get row type - everything up to the first delimiter
+        m/(.*?)$DELIMITER/x
+          or die "Can't find delimiter in line $INPUT_LINE_NUMBER";
+        my $row_type = $1;
 
-	   my %this_row;
+        next ROW if ( not $is_used{$row_type} );
 
-	   # assign fields to hash, except 0th field  which is the same as $row_type
-	   
-	   if ($has_repeating_final_field{$row_type}) {
-	      	   
-	      my $final_field_idx = $#field_names;
-	      my $final_field = $field_names[-1];
-	     
-	      # assign all but first (0th) and last field
-		   foreach my $field_idx (1 .. $final_field_idx - 1) {
-		      $this_row{$field_names[$field_idx]} 
-		         = $fields[$field_idx];
-		   }
-		   
-		   # assign last field: array of remaining fields
-		   $this_row{$final_field} 
-		      = [ grep { $_ ne $EMPTY_STR} @fields[ $final_field_idx .. $#fields ] ];
-	      
-	   }
-	   
-	   else { # no final repeating field
-	   
-	   # assign all but 0th field
-		   foreach my $field_idx (1 .. $#fields) {
-		      $this_row{ $field_names[$field_idx] } 
-		         = $fields[$field_idx];
-		   }
-		}
+        #print $template_of{$row_type} , "\n";
+        my @fields = unpack( $template_of{$row_type}, $_ );
+        trim(@fields);
+        my @field_names = @{ $field_names_of{$row_type} };
 
-	   my $parent_row_type = $parent_of{$row_type};
+        my %this_row;
 
-	   # if there are key fields
-	   if ($uses_key{$row_type}) {
-	      
-	      # hash slice. Gets key fields of $this_row
-		   my $key = join( $KEY_SEPARATOR , 
-		                  @this_row{ @{$keys_of{$row_type}} } 
-		                ); 
-		                
-		   # save into parent's hash, or $data_of if no parent
-		   
-		   if ($parent_row_type eq $NO_PARENT) {
-		      $data_of{$row_type}{$key} = \%this_row;
-		   }
-		   else {
-		      $previous_of_r{$parent_row_type}{$row_type}{$key} = \%this_row;
-		   }
-	   
-	   } 
-	   else { # no key fields
-	   
-	      my $ref_to_save;
-	      # if there's only one field, and this isn't a parent row,
-	      if (scalar(keys(%this_row)) == 1 and not ($is_a_parent{$row_type})) {
-	         # save the values only
-	         $ref_to_save = $this_row{$field_names[1]}
-	      } else 
-	      {  
-	         # save the row
-	         $ref_to_save = \%this_row;
-	      }
-	      
-	      #$ref_to_save = \%this_row;
-	   
-		   # save thisrow to %data_of if no parent
-		   if ($parent_row_type  eq $NO_PARENT) {
-		      push @{$data_of{$row_type}}, $ref_to_save;
+       # assign fields to hash, except 0th field  which is the same as $row_type
 
-		   } 
-		   else { # has a parent
-		      # save to previous row's hash
-		      push @{$previous_of_r{$parent_row_type}{$row_type}}, $ref_to_save;
-		   }
-	   }
-	   
-	   # save this row so that if it is the parent of something,
-	   # its child can be saved in the right place
-	   $previous_of_r{$row_type} = \%this_row;
+        if ( $has_repeating_final_field{$row_type} ) {
 
-	} 
-continue {
-   # resets line numbering for errors
-   close ARGV if eof;
-}
-}
+            my $final_field_idx = $#field_names;
+            my $final_field     = $field_names[-1];
+
+            # assign all but first (0th) and last field
+            foreach my $field_idx ( 1 .. $final_field_idx - 1 ) {
+                $this_row{ $field_names[$field_idx] }
+                  = $fields[$field_idx];
+            }
+
+            # assign last field: array of remaining fields
+            $this_row{$final_field}
+              = [ grep { $_ ne $EMPTY_STR }
+                  @fields[ $final_field_idx .. $#fields ] ];
+
+        }
+
+        else {    # no final repeating field
+
+            # assign all but 0th field
+            foreach my $field_idx ( 1 .. $#fields ) {
+                $this_row{ $field_names[$field_idx] }
+                  = $fields[$field_idx];
+            }
+        }
+
+        my $parent_row_type = $parent_of{$row_type};
+
+        # if there are key fields
+        if ( $uses_key{$row_type} ) {
+
+            # hash slice. Gets key fields of $this_row
+            my $key
+              = join( $KEY_SEPARATOR, @this_row{ @{ $keys_of{$row_type} } } );
+
+            # save into parent's hash, or $data_of if no parent
+
+            if ( $parent_row_type eq $NO_PARENT ) {
+                $data_of{$row_type}{$key} = \%this_row;
+            }
+            else {
+                $previous_of_r{$parent_row_type}{$row_type}{$key} = \%this_row;
+            }
+
+        }
+        else {    # no key fields
+
+            my $ref_to_save;
+            # if there's only one field, and this isn't a parent row,
+            if ( scalar( keys(%this_row) ) == 1
+                and not( $is_a_parent{$row_type} ) )
+            {
+                # save the values only
+                $ref_to_save = $this_row{ $field_names[1] };
+            }
+            else {
+                # save the row
+                $ref_to_save = \%this_row;
+            }
+
+            #$ref_to_save = \%this_row;
+
+            # save thisrow to %data_of if no parent
+            if ( $parent_row_type eq $NO_PARENT ) {
+                push @{ $data_of{$row_type} }, $ref_to_save;
+
+            }
+            else {    # has a parent
+                      # save to previous row's hash
+                push @{ $previous_of_r{$parent_row_type}{$row_type} },
+                  $ref_to_save;
+            }
+        } ## tidy end: else [ if ( $uses_key{$row_type...})]
+
+        # save this row so that if it is the parent of something,
+        # its child can be saved in the right place
+        $previous_of_r{$row_type} = \%this_row;
+
+    } ## tidy end: ROW: while (<>)
+    continue {
+        # resets line numbering for errors
+        close ARGV if eof;
+    }
+    
+    return;
+
+} ## tidy end: sub read_files
 
 sub init_templates {
 
-   for my $row_type (keys %field_names_of) {
-   
-       $template_of{$row_type} = $EMPTY_STR;
-       my @template_pieces;
+    for my $row_type ( keys %field_names_of ) {
 
-       FIELD:
-       for my $field_length ( @{$field_lengths_of{$row_type}} ) {
-          push @template_pieces, 'A' . $field_length;
-       }
+        $template_of{$row_type} = $EMPTY_STR;
+        my @template_pieces;
 
-       # don't add the last piece of repeating fields --
-       # we'll handle that separately
-       if ($has_repeating_final_field{$row_type}) {
-          my $final_piece = pop @template_pieces;
-          $template_of{$row_type}
-             = jointemplate(@template_pieces)
-               . "x($final_piece" 
-               . q{x} x $DELIMITER_LENGTH
-               . ')*'
-               ;
-       }
-       else {
-          $template_of{$row_type} = jointemplate(@template_pieces);
-       }
-       
-   }      
+      FIELD:
+        for my $field_length ( @{ $field_lengths_of{$row_type} } ) {
+            push @template_pieces, 'A' . $field_length;
+        }
+        # don't add the last piece of repeating fields --
+        # we'll handle that separately
+        if ( $has_repeating_final_field{$row_type} ) {
+            my $final_piece = pop @template_pieces;
+            $template_of{$row_type}
+              = jointemplate(@template_pieces)
+              . "x($final_piece"
+              . q{x} x $DELIMITER_LENGTH . ')*';
+        }
+        else {
+            $template_of{$row_type} = jointemplate(@template_pieces);
+        }
 
-}
+    } ## tidy end: for my $row_type ( keys...)
+
+
+   return;
+
+} ## tidy end: sub init_templates
 
 sub jointemplate {
-    return join("x" x $DELIMITER_LENGTH , @_);
+    return join( "x" x $DELIMITER_LENGTH, @_ );
 }
 
 sub init_field_names {
 
-	local $/ = $EMPTY_STR; # paragraph mode
+    local $/ = $EMPTY_STR;    # paragraph mode
 
-	ROW_TYPE:
-	while (<DATA>) {
-	   my @entries = split;
-	   
-	   # get row type length and field type
-	   my ($row_type_length, $row_type, $use_this, $parent) = 
-	       splice (@entries, 0, 4);
-   
-      # is this row type used, and if not, skip it
-	   $is_used{$row_type}  = $use_this =~ /\A(?i)y/;
-      next ROW_TYPE unless $is_used{$row_type};
+  ROW_TYPE:
+    while (<DATA>) {
+        my @entries = split;
 
-	   # put field type length and field type into hashes
-	   $field_names_of{$row_type}[0] = $row_type;
-	   $field_positions_of{$row_type}[0] = 0;
-	   $field_lengths_of{$row_type}[0] = $row_type_length;
-	   
-	   # is this a child?
-	   $parent_of{$row_type} = $parent;
-	   $is_a_parent{$parent} = 1;
+        # get row type length and field type
+        my ( $row_type_length, $row_type, $use_this, $parent )
+          = splice( @entries, 0, 4 );
 
-	   my $position = $row_type_length + $DELIMITER_LENGTH;
+        # is this row type used, and if not, skip it
+        $is_used{$row_type} = $use_this =~ /\A(?i)y/;
+        next ROW_TYPE unless $is_used{$row_type};
 
-      my $count = 1;
-	   FIELDS:
-	   while (@entries) {
-	      # get items from entries
-	      my $field_length = shift @entries;
-	      my $field_name = shift @entries;
-	      
-	      if ($field_name =~ /!\z/) {
-	          $field_name =~ s/!\z//;
-             push @{$keys_of{$row_type}} , $field_name;
-	      }
-	      
-	      # put field type, length, and position into hashes
-		   $field_names_of{$row_type}[$count]     = $field_name;
-		   $field_positions_of{$row_type}[$count] = $position;
-		   $field_lengths_of{$row_type}[$count]   = $field_length;
+        # put field type length and field type into hashes
+        $field_names_of{$row_type}[0]     = $row_type;
+        $field_positions_of{$row_type}[0] = 0;
+        $field_lengths_of{$row_type}[0]   = $row_type_length;
 
-         $count++;
-	      $position = $position + $field_length + $DELIMITER_LENGTH;
-	      
-	   } # FIELDS
-	   
+        # is this a child?
+        $parent_of{$row_type} = $parent;
+        $is_a_parent{$parent} = 1;
 
-	   # if final field is repeating, save that
-	   if ($field_names_of{$row_type}[-1] =~ /\*\z/) {;
-	      $field_names_of{$row_type}[-1] =~ s/\*\z//; # remove * marker
-	      $has_repeating_final_field{$row_type} = 1;
-	   }
-	  
-	   # if row type has a key, save that too 
-	   $uses_key{$row_type} = exists $keys_of{$row_type};
+        my $position = $row_type_length + $DELIMITER_LENGTH;
 
-	} # FIELD_TYPE
-	
+        my $count = 1;
+      FIELDS:
+        while (@entries) {
+            # get items from entries
+            my $field_length = shift @entries;
+            my $field_name   = shift @entries;
 
-   return;
-}
+            if ( $field_name =~ /!\z/ ) {
+                $field_name =~ s/!\z//;
+                push @{ $keys_of{$row_type} }, $field_name;
+            }
+
+            # put field type, length, and position into hashes
+            $field_names_of{$row_type}[$count]     = $field_name;
+            $field_positions_of{$row_type}[$count] = $position;
+            $field_lengths_of{$row_type}[$count]   = $field_length;
+
+            $count++;
+            $position = $position + $field_length + $DELIMITER_LENGTH;
+
+        }    # FIELDS
+
+        # if final field is repeating, save that
+        if ( $field_names_of{$row_type}[-1] =~ /\*\z/ ) {
+            ;
+            $field_names_of{$row_type}[-1] =~ s/\*\z//;    # remove * marker
+            $has_repeating_final_field{$row_type} = 1;
+        }
+
+        # if row type has a key, save that too
+        $uses_key{$row_type} = exists $keys_of{$row_type};
+
+    }    # FIELD_TYPE
+
+    return;
+} ## tidy end: sub init_field_names
 
 =head1 NAME
 
@@ -318,6 +319,8 @@ have it changed back again.
 Aaron Priven
 
 =cut
+
+1;
 
 __DATA__
  3 CAL
