@@ -107,6 +107,11 @@ sub _option_quiet {
     return;
 }
 
+sub be_quiet {
+    set_option( 'quiet', 1 );
+    _option_quiet (1);
+}
+
 sub set_width {
     my $width = get_width();
     Term::Emit::setopts( { -closestat => 'ERROR', -width => $width } );
