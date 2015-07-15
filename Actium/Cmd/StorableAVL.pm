@@ -1,67 +1,20 @@
-#!/ActivePerl/bin/perl
-
-# Legacy stage 2
+#Actium/Cmd/StorableAVL.pm
 
 # All the programs that use the 'avl.storable' file depend on this one.
-# This shouild ultimately be replaced with Actium::O::Files::HastusASI
+# This shouild ultimately be replaced 
 
-# readavl - see POD documentation below
+package Actium::Cmd::StorableAVL.pm 0.010;
 
-#00000000111111111122222222223333333333444444444455555555556666666666777777777
-#23456789012345678901234567890123456789012345678901234567890123456789012345678
-
-use 5.014;
-
-use warnings; ### DEP ###
-use strict; ### DEP ###
-
-our $VERSION = 0.010;
-
-use Carp;
-#use Fatal qw (open close);
-
-# add the current program directory to list of files to include
-use FindBin('$Bin'); ### DEP ###
-use lib ($Bin); ### DEP ###
-
-use Actium::Constants;
+use Actium::Preamble;
+use Actium::O::Folders::Signup;
 
 use Text::Trim; ### DEP ###
 use Storable(); ### DEP ###
 
 # set some constants
-use Const::Fast; ### DEP ###
 const my $NO_PARENT => q{top};
 const my $DELIMITER => q{,};
 const my $DELIMITER_LENGTH => length($DELIMITER);
-
-# don't buffer terminal output
-$| = 1;
-
-use Actium::Options (qw<add_option option init_options>);
-
-#add_option('skipsd!' , 'Skip processing school day additions in sdtrip.txt.');
-
-my $helptext = <<'EOF';
-readavl reads the files transmitted in the Hastus AVL Standard Interface format,
-as described in the Hastus 2006 documentation, and collects it in a structure
-readable in perl. See "perldoc readavl" for more information.
-EOF
-
-my $intro = <<'EOF';
-readavl - reads AVL files from Hastus and stores them in an easier-
-to-read-form.
-EOF
-
-init_options;
-
-use Actium::O::Folders::Signup;
-my $signup = Actium::O::Folders::Signup->new();
-chdir $signup->path();
-
-say "Reading from " , $signup->path();
-
-# set up row type hashes
 
 my %is_used;
 my %is_a_parent;
@@ -74,6 +27,33 @@ my %uses_key;
 my %keys_of;
 my %template_of;
 my %data_of;
+
+sub HELP {
+
+my $helptext = <<'EOF';
+readavl reads the files transmitted in the Hastus AVL Standard Interface format,
+as described in the Hastus 2006 documentation, and collects it in a structure
+readable in perl. See "perldoc readavl" for more information.
+EOF
+
+say $helptext;
+
+}
+
+my $intro = <<'EOF';
+readavl - reads AVL files from Hastus and stores them in an easier-
+to-read-form.
+EOF
+
+sub START { 
+
+my $signup = Actium::O::Folders::Signup->new();
+chdir $signup->path();
+
+say "Reading from " , $signup->path();
+
+# set up row type hashes
+
 
 init_field_names();
 init_templates();
@@ -88,77 +68,9 @@ unless (@files) {
 # read rows
 read_files(@files);
 
-#open my $fh , ">internalnumbers.txt";
-#for my $internalnumber (keys %{$data_of{TRP}}) {
-#   print $fh $internalnumber , "\n";
-#}
-#close $fh;
-
-#read_sd() unless option('skipsd');
-
 $signup->store(\%data_of, 'avl.storable');
 
-############# end of main program #######################
-
-#
-#sub read_sd {
-#
-#   open my $fh, '<' , 'SD.txt';
-#
-#   local ($/) = "\r\n";
-#   
-#   TRIP:
-#   while (my $line = <$fh>) {
-#      chomp $line;
-#      
-#      my @fields = split (/,/ , $line);
-#      trim(@fields);
-#      my ($type,$blocknum,$sd,$line,$tripno,$internal_trip_no,$startplace,$starttime,$endtime,$endplace)
-#         = @fields;
-#         
-#      next TRIP unless exists($data_of{TRP}{$internal_trip_no});
-#      
-#      $data_of{TRP}{$internal_trip_no}{SpecDays} = $sd || $EMPTY_STR;
-#   
-#   }
-#   
-#   close $fh;
-#
-#}
-
-
-sub read_sd {
-
-   my $fh;
-   unless (open $fh, '<' , 'sdtrip.txt') {
-       warn "Can't open 'sdtrip.txt': $!. Skipping school day additions.\n";
-       return;
-   }
-
-   local ($/) = "\r\n";
-   
-   TRIP:
-   while (my $line = <$fh>) {
-      chomp $line;
-      
-      my @fields = split (/,/ , $line);
-      trim(@fields);
-      my ($type,$runnum, $blocknum,$blocknum_sd,$line,$internal_trip_no
-         ,$startplace,$starttime,$endtime,$endplace)
-         = @fields;
-         
-      next TRIP unless exists($data_of{TRP}{$internal_trip_no});
-      
-      my $sd = (substr($blocknum_sd,-2,2) eq 'SD') ? 'SD' : $EMPTY_STR;
-      
-      $data_of{TRP}{$internal_trip_no}{SpecDays} = $sd;
-   
-   }
-   
-   close $fh;
-
 }
-
 
 
 sub read_files {
@@ -177,7 +89,7 @@ sub read_files {
 	   chomp;
 	   
       # DEBUG - print filenames
-	   if (! option('quiet') and $prevfile ne $ARGV) {
+	   if ( $prevfile ne $ARGV) {
 	      print "$ARGV\n" ;
    	   $prevfile = $ARGV;
 	   }
