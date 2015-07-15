@@ -1,39 +1,28 @@
-#!/ActivePerl/bin/perl
-# tabskeds
+# Actium/Cmd/Tabskeds.pm
 
 # This is the program that creates the "tab files" that are used in the
 # Designtek-era web schedules
 
-# legacy stage 1
-
 # Makes tab-delimited but public versions of the skeds in /skeds
 
-use 5.014;
+package Actium::Cmd::Tabskeds 0.010;
+
+use Actium::Preamble;
+use Actium::Sorting::Line ('sortbyline');
+use Actium::Util(qw/joinseries/);
+use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+use Actium::Options (qw<option add_option>);
+use Actium::Term (qw<printq sayq>);
+use Actium::O::Folders::Signup;
 
 use strict; ### DEP ###
 use warnings; ### DEP ###
 no warnings 'uninitialized';
 
-our $VERSION = 0.010;
-
-####################################################################
-#  load libraries
-####################################################################
-
-use FindBin('$Bin'); ### DEP ###
-
-# so $Bin is the location of the very file we're in now
-
-use lib ($Bin); ### DEP ###
-
-# there are few enough files that it makes sense to keep
-# main program and library in the same directory
-
-# libraries dependent on $Bin
-
-use Actium::Sorting::Line ('sortbyline');
-
-use Actium::Util(qw/joinseries/);
+sub OPTIONS {
+add_option( 'upcoming=s', 'Upcoming signup' );
+add_option( 'current!',   'Current signup' );
+}
 
 ####################################################################
 #  Old Skedfile.pm is loaded here, ahead of main program.
@@ -278,6 +267,17 @@ our %daydirhash = (
 # End of Skedvars
 ###########################################################
 
+sub HELP {
+   say "Help not implemented.";
+}
+
+sub START {
+
+    my $class      = shift;
+    my %params     = @_;
+    my $config_obj = $params{config};
+ 
+
 my @specdaynames;
 foreach ( keys %specdaynames ) {
     push @specdaynames, $_ . "\035" . $specdaynames{$_};
@@ -285,21 +285,10 @@ foreach ( keys %specdaynames ) {
 @specdaynames = sort @specdaynames;
 
 #use Skedtps qw(tphash tpxref destination TPXREF_FULL);
-use Actium::Files::FileMaker_ODBC (qw[load_tables]);
-
-use Actium::Options (qw<option add_option init_options>);
-add_option( 'upcoming=s', 'Upcoming signup' );
-add_option( 'current!',   'Current signup' );
-use Actium::Term (qw<printq sayq>);
-use Actium::O::Folders::Signup;
-
-init_options;
 
 my $signupfolder = Actium::O::Folders::Signup->new();
 chdir $signupfolder->path();
 my $signup = $signupfolder->signup;
-
-use Actium::Constants;
 
 our %second = %LINES_TO_COMBINE;
 
@@ -360,11 +349,6 @@ my @files = getfiles(GETFILES_PUBLIC_AND_DB);
 my %skednamesbyroute = ();
 my %skeds;
 my %index;
-
-#use Data::Dumper;
-#open my $dump , '>' , "/tmp/timepoints.dump";
-#print $dump Data::Dumper::Dumper(\%Skedtps::timepoints);
-#close $dump;
 
 # slurp all the files into memory and build hashes
 foreach my $file (@files) {
@@ -717,6 +701,8 @@ print "\n";
 
 $commonfolder->json_store_pretty( \%destination_code_of, $destcode_file );
 
+}
+
 sub outtab {
     my @fields = @_;
     foreach (@fields) {
@@ -725,10 +711,10 @@ sub outtab {
     print OUT join( "\t", @fields, "\n" );
 }
 
-sub uniq {
-    my %seen;
-    return sortbyline grep { !$seen{$_}++ } @_;
-}
+#sub uniq {
+#    my %seen;
+#    return sortbyline grep { !$seen{$_}++ } @_;
+#}
 
 sub bydaydirhash {
     ( my $aa = $a ) =~ s/.*?_//;    # minimal: it matches first _
