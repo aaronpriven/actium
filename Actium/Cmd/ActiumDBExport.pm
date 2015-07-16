@@ -7,8 +7,8 @@ package Actium::Cmd::ActiumDBExport 0.010;
 use Actium::Preamble;
 use Actium::O::Folder;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Options('set_option');
 use Archive::Zip (qw( :ERROR_CODES :CONSTANTS )); ### DEP ###
+use Actium::Term;
 
 my %fields_of =
 
@@ -38,9 +38,7 @@ sub HELP { say "Help not implemented"; }
 
 sub START {
 
-    set_option( 'quiet', 1 );
-    Actium::Term::_option_quiet(1);
-    # sigh - need to rewrite Actium::Term
+    Actium::Term::be_quiet;
 
     local $/ = "\r\n";    # exporting for windoze
 
