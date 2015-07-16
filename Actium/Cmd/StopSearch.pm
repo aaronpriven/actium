@@ -87,7 +87,6 @@ sub _display {
         print $fields_r->{h_stp_511_id}, $divider,
           $fields_r->{h_stp_identifier}, $divider;
         say( $active ? $EMPTY_STR : '*', $fields_r->{c_description_full} );
-
     }
 
     return;

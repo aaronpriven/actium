@@ -15,23 +15,29 @@ use Actium::O::Files::HastusASI;
 use Actium::Constants;
 use Actium::Term (':all');
 use Actium::O::Folders::Signup;
-use Text::Trim; ### DEP ###
+use Text::Trim;    ### DEP ###
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
-use Carp; ### DEP ###
-use English('-no_match_vars'); ### DEP ###
-use Text::Wrap ('wrap'); ### DEP ###
-use List::MoreUtils(qw/any uniq/); ### DEP ###
-use File::Spec; ### DEP ###
-use Text::Trim; ### DEP ###
+use Carp;                         ### DEP ###
+use English('-no_match_vars');    ### DEP ###
+use Text::Wrap ('wrap');          ### DEP ###
+use List::MoreUtils(qw/any uniq/);    ### DEP ###
+use File::Spec;                       ### DEP ###
+use Text::Trim;                       ### DEP ###
 
-use Const::Fast; ### DEP ###
+use Const::Fast;                      ### DEP ###
 
 const my $NEW_KEY_SEPARATOR => '_';
 
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
+
 sub sk {
-    croak 'Null argument specified to ' . __PACKAGE__ . '::sk' unless defined $_[0];
+    croak 'Null argument specified to ' . __PACKAGE__ . '::sk'
+      unless defined $_[0];
     return split( /$NEW_KEY_SEPARATOR/sx, $_[0] );
 }
 
@@ -66,7 +72,7 @@ const my $OVERRIDE_STRING => 'Override:';
 const my %ICON_OF => (
     Amtrak           => 'A',
     BART             => 'B',
-    'ACE'     => 'C',
+    'ACE'            => 'C',
     'Ferry'          => 'F',
     DB               => 'D',
     Caltrain         => 'L',
@@ -108,19 +114,19 @@ my %tp_overridden;
 my %color_of;
 
 sub START {
- 
-    my $class = shift;
-    my %params = @_;
-    
-    my $config_obj = $params{config};
+
+    my $class    = shift;
+    my %params   = @_;
+    my $actiumdb = actiumdb(%params);
 
     my $signup     = Actium::O::Folders::Signup->new();
     my $flagfolder = $signup->subfolder('flags');
-    
-   my (%places, %stops);
-   #my %lines;
-   
-   load_tables(
+
+    my ( %places, %stops );
+    #my %lines;
+
+    load_tables(
+        actiumdb => $actiumdb,
         requests => {
             Places_Neue => {
                 hash        => \%places,
@@ -131,13 +137,14 @@ sub START {
             Stops_Neue => {
                 hash        => \%stops,
                 index_field => 'h_stp_511_id',
-                fields      => [qw[h_stp_511_id c_description_full 
-                   u_connections h_stp_district ]],
+                fields      => [
+                    qw[h_stp_511_id c_description_full
+                      u_connections h_stp_district ]
+                ],
             },
         }
-    ); 
-    
-    
+    );
+
     {
         my $hasi_db = $signup->load_hasi();
      #        my $hasidir = $signup->subfolder('hasi');
@@ -157,7 +164,7 @@ sub START {
 
     delete_last_stops();
 
-    load_timepoint_data(\%places);
+    load_timepoint_data( \%places );
     build_placelist_descriptions();
 
     build_pat_combos();
@@ -175,7 +182,7 @@ sub START {
 
 sub build_place_and_stop_lists {
 
-    my $hasi_db  = shift;
+    my $hasi_db = shift;
     my $stops_r = shift;
 
     emit 'Building lists of places and stops';
@@ -197,8 +204,8 @@ sub build_place_and_stop_lists {
             emit_over $route ;
             $prevroute = $route;
         }
-        
-        next PAT if in($route, 'BSH', 'BSD', 'BSN', '399');
+
+        next PAT if in( $route, 'BSH', 'BSD', 'BSN', '399' );
         # skip Broadway Shuttle
 
         my @tps = @{
@@ -234,7 +241,7 @@ sub build_place_and_stop_lists {
             my $place = $tps_row->{Place};
             $place =~ s/-[AD12]\z//sx;
             my $stop_ident = $tps_row->{StopIdentifier};
-            
+
             if ( $stop_ident eq $prevstop ) {    # same stop
                 next TPS if ( not $place ) or ( $place eq $prevplace );
 
@@ -264,17 +271,18 @@ sub build_place_and_stop_lists {
             }
 
             my $row = $stops_r->{$stop_ident};
-            
+
             $patinfo->{Place} = $prevplace;
-            
+
             my $connections = $row->{u_connections};
             if ($connections) {
-            
-            foreach my $connection ( split( /[\n\r]/sx, $row->{u_connections}  ) )
-            {
-                $patinfo->{Connections}{$connection} = 1;
-            }
-            
+
+                foreach
+                  my $connection ( split( /[\n\r]/sx, $row->{u_connections} ) )
+                {
+                    $patinfo->{Connections}{$connection} = 1;
+                }
+
             }
 
             my $district = $row->{h_stp_district};
@@ -357,7 +365,7 @@ sub transbay_and_connections {
         }
     } ## tidy end: for my $patinfo ( reverse...)
 
-    if ( in($route , @TRANSBAY_NOLOCALS )) {
+    if ( in( $route, @TRANSBAY_NOLOCALS ) ) {
         my $dropoff;
         undef $prev_side;
         for my $patinfo (@all_stops) {
@@ -378,7 +386,7 @@ sub transbay_and_connections {
 
         }
 
-    } ## tidy end: if ( $route ~~ @TRANSBAY_NOLOCALS)
+    } ## tidy end: if ( in( $route, @TRANSBAY_NOLOCALS...))
 
 } ## tidy end: sub transbay_and_connections
 
@@ -396,12 +404,11 @@ sub build_trip_quantity_lists {
         my $pat_ident = $trp->{Pattern};
         my $route     = $trp->{RouteForStatistics};
         #my $pat       = $hasi_db->row( 'PAT', jk( $route, $pat_ident ) );
-        my $pat       
-           = $hasi_db->row( 'PAT', join ("\c]" ,  $route, $pat_ident ));
+        my $pat = $hasi_db->row( 'PAT', join( "\c]", $route, $pat_ident ) );
         # I redefined jk
-        my $dir       = $pat->{DirectionValue};
-        my $routedir  = jk( $route, $dir );
-        my $pat_rdi   = jk( $route, $dir, $pat_ident );
+        my $dir      = $pat->{DirectionValue};
+        my $routedir = jk( $route, $dir );
+        my $pat_rdi  = jk( $route, $dir, $pat_ident );
         next TRP unless exists $placelist_of{$pat_rdi};
 
         my $placelist = $placelist_of{$pat_rdi};
@@ -426,11 +433,9 @@ sub cull_placepats {
         # combine placelists with more than one identifier
 
         my @placelists = keys %{ $num_trips_of_pat{$routedir} };
-        
-           @placelists =  
-                  sort { length ($b) <=> length ($a) || $a cmp $b } 
-                  @placelists
-                  ;
+
+        @placelists
+          = sort { length($b) <=> length($a) || $a cmp $b } @placelists;
 
         for my $placelist (@placelists) {
             my @pat_rdis = @{ $pats_of{$routedir}{$placelist} };
@@ -564,7 +569,7 @@ sub cull_placepats {
         {
             $conn_icon{$_} = 1 foreach keys %{ $patinfo->{ConnIcons} };
         }
-        
+
         return j( map { $ICON_OF{$_} } keys %conn_icon );
 
     }
@@ -576,12 +581,12 @@ sub cull_placepats {
         my $nextplace  = shift;
 
         my @patinfos = patinfos_of( $stop_ident, $routedir );
-        
+
         my $skip_it = 1;
         foreach my $patinfo (@patinfos) {
-            if (not (exists $patinfo->{Last} or $patinfo->{DropOffOnly})) {
-            	 $skip_it = 0;
-            	 last;
+            if ( not( exists $patinfo->{Last} or $patinfo->{DropOffOnly} ) ) {
+                $skip_it = 0;
+                last;
             }
         }
         return if $skip_it;
@@ -593,29 +598,31 @@ sub cull_placepats {
             }
             return;
         }
-        
+
         foreach my $patinfo (@patinfos) {
-             
-             if ( not defined $patinfo->{Place} ) {
-                my $q = exists $pats_of_stop{$stop_ident};
+
+            if ( not defined $patinfo->{Place} ) {
+                my $q       = exists $pats_of_stop{$stop_ident};
                 my $disp_rd = keyreadable($routedir);
-                emit_text "P ${disp_rd} ${stop_ident} " . join(' ' , keys %$patinfo);
+                emit_text "P ${disp_rd} ${stop_ident} "
+                  . join( ' ', keys %$patinfo );
                 return;
-             }
-             
-                return if $patinfo->{Place} ne $place;
+            }
+
+            return if $patinfo->{Place} ne $place;
 
             if ( not defined $patinfo->{NextPlace} ) {
-                my $q = exists $pats_of_stop{$stop_ident};
+                my $q       = exists $pats_of_stop{$stop_ident};
                 my $disp_rd = keyreadable($routedir);
-                emit_text "NP ${disp_rd} ${stop_ident} " . join(' ' , keys %$patinfo);
+                emit_text "NP ${disp_rd} ${stop_ident} "
+                  . join( ' ', keys %$patinfo );
                 return;
-             }
+            }
 
-                return 1
-                  if $patinfo->{NextPlace} eq $nextplace;
+            return 1
+              if $patinfo->{NextPlace} eq $nextplace;
 
-        }
+        } ## tidy end: foreach my $patinfo (@patinfos)
 
         return;
 
@@ -631,8 +638,8 @@ sub cull_placepats {
 
             push @results, $patinfo;
         }
-        
-        if (@results == 0 ) {
+
+        if ( @results == 0 ) {
             emit_text "No results: $stop_ident $routedir";
         }
 
@@ -763,27 +770,27 @@ sub delete_placelist_from_lists {
     sub build_pat_combos {
         emit 'Building pattern combinations';
 
-STOP:
+      STOP:
         foreach my $stop ( keys_pats_of_stop() ) {
-            
+
             foreach my $routedir ( routedirs_of_stop($stop) ) {
 
                 my ( $route, $dir ) = routedir($routedir);
-                
+
                 my @pat_idents = pat_idents_of( $stop, $routedir );
-                
+
                 my @placelists
                   = map { $placelist_of{ jk( $routedir, $_ ) } } @pat_idents;
-                  
-                  if (not defined $placelists[0]){
-                      emit_text "No placelist for $stop, $route, $dir, [@pat_idents]";
-                      next STOP;
-                  }
 
-                  @placelists =  uniq(
-                  sort { length ($b) <=> length ($a) || $a cmp $b } 
-                  @placelists
-                  );
+                if ( not defined $placelists[0] ) {
+                    emit_text
+                      "No placelist for $stop, $route, $dir, [@pat_idents]";
+                    next STOP;
+                }
+
+                @placelists
+                  = uniq( sort { length($b) <=> length($a) || $a cmp $b }
+                      @placelists );
 
                 my $combokey = jt(@placelists);
                 my $shortkey = jt( $routedir, $combokey );
@@ -793,8 +800,8 @@ STOP:
 
                 make_destination_of( $routedir, $combokey, @placelists );
 
-            }
-        } ## tidy end: foreach my $stop ( keys_pats_of_stop...)
+            } ## tidy end: foreach my $routedir ( routedirs_of_stop...)
+        } ## tidy end: STOP: foreach my $stop ( keys_pats_of_stop...)
 
         #say dump_destinations();
 
@@ -1045,9 +1052,9 @@ sub relevant_places {
 
         my %destinations;
         my @place_arys;
-        
+
         foreach my $placelist (@placelists) {
-            if (not defined $placelist) {
+            if ( not defined $placelist ) {
                 emit_over "!!!";
             }
             push @place_arys, [ sk($placelist) ];
@@ -1064,7 +1071,7 @@ sub relevant_places {
             my $place = $placelist;
             $place =~ s/.*$NEW_KEY_SEPARATOR//sx;
             my $dest = $places_r->{$place}{c_destination};
-            $destinations{ $dest }  = $order{$place};
+            $destinations{$dest} = $order{$place};
         }
 
         my $destination = join( q{ / },
@@ -1152,7 +1159,7 @@ sub relevant_places {
 
 sub output_specs {
     my $flagfolder = shift;
-    my $stops_r = shift;
+    my $stops_r    = shift;
 
     emit 'Writing stop and decal info';
 
@@ -1165,7 +1172,7 @@ sub output_specs {
     my $oldfh = select $out;
 
     foreach my $stop ( sort keys %routes_of_stop ) {
-        my $row = $stops_r->{$stop} ;
+        my $row      = $stops_r->{$stop};
         my $stopdesc = $row->{c_description_full};
 
         next if $stopdesc =~ /Virtual Stop/si;
@@ -1226,19 +1233,19 @@ sub make_decal_spec {
     }
 
     for ($dir) {
-        if ($_ eq '8') {
+        if ( $_ eq '8' ) {
             $icons .= $ICON_OF{Clockwise};
             next;
         }
-        if ($_ eq '9') {
+        if ( $_ eq '9' ) {
             $icons .= $ICON_OF{Counterclockwise};
             next;
         }
-        if ($_ eq '14') {
+        if ( $_ eq '14' ) {
             $icons .= $ICON_OF{'A Loop'};
             next;
         }
-        if ($_ eq '15') {
+        if ( $_ eq '15' ) {
             $icons .= $ICON_OF{'B Loop'};
             next;
         }
@@ -1429,36 +1436,35 @@ sub style_of_route {
     my @chars = split( //, $route );
     foreach my $char (@chars) {
         for ($char) {
-            if ( in($_, qw/ 3 4 8 0 A B C D /) ) {
+            if ( in( $_, qw/ 3 4 8 0 A B C D / ) ) {
                 $val += 15;    # 1 1/4
                 next;
             }
-            if ( in($_, qw/ N O X R /) ) {
+            if ( in( $_, qw/ N O X R / ) ) {
                 $val += 18;    # 1 1/2
                 next;
             }
-            if ( in($_, qw/M W/) ) {
+            if ( in( $_, qw/M W/ ) ) {
                 $val += 24;    # 2
                 next;
             }
 
-                $val += 12;    # 1
-
+            $val += 12;        # 1
 
         }
     }
 
     my $style;
     for ($val) {
-        if ( $_ < 36 ) {     # 3
+        if ( $_ < 36 ) {       # 3
             $style = 'Route';
             next;
         }
-        if ( $_ < 42 ) {     # 3.5
+        if ( $_ < 42 ) {       # 3.5
             $style = 'RouteCon';
             next;
         }
-        if ( $_ < 48 ) {     # 4
+        if ( $_ < 48 ) {       # 4
             $style = 'RouteExCon';
             next;
         }
@@ -1473,18 +1479,14 @@ sub style_of_route {
 } ## tidy end: sub style_of_route
 
 sub build_color_of {
-    my $signup   = shift;
-    
+    my $signup = shift;
+
     my %lines;
-    
+
     load_tables(
-        requests => {
-            Lines =>
-              { hash => \%lines, index_field => 'Line' },
-        }
-    ); 
-    
-    foreach my $line (keys %lines) {
+        requests => { Lines => { hash => \%lines, index_field => 'Line' }, } );
+
+    foreach my $line ( keys %lines ) {
         $color_of{ $lines{$line}{Line} } = $lines{$line}{Color};
     }
 
@@ -1549,7 +1551,7 @@ sub routedir {
 }
 
 sub mydump {
-    require Data::Dumper; ### DEP ###
+    require Data::Dumper;    ### DEP ###
     local $Data::Dumper::Indent = 1;
     return Data::Dumper::Dumper(@_);
 }

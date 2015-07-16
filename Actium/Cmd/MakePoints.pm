@@ -4,12 +4,12 @@
 
 package Actium::Cmd::MakePoints 0.010;
 
-use warnings; ### DEP ###
-use strict; ### DEP ###
+use warnings;    ### DEP ###
+use strict;      ### DEP ###
 
 use 5.014;
 
-use sort ('stable'); ### DEP ###
+use sort ('stable');    ### DEP ###
 
 # add the current program directory to list of files to include
 
@@ -19,11 +19,12 @@ use Actium::Term (':all');
 use Actium::Union('ordered_union');
 
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 use Actium::O::Folders::Signup;
 
-use File::Slurp::Tiny('read_file'); ### DEP ###
-use Text::Trim; ### DEP ###
+use File::Slurp::Tiny('read_file');    ### DEP ###
+use Text::Trim;                        ### DEP ###
 
 use Actium::O::Points::Point;
 
@@ -45,12 +46,14 @@ EOF
 
 }
 
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
+
 sub START {
 
-    my $class = shift;
-
-    my %params = @_;
-    my $config = $params{config};
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
 
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path();
@@ -67,6 +70,7 @@ sub START {
     # retrieve data
 
     load_tables(
+        actiumdb => $actiumdb,
         requests => {
             Places_Neue => {
                 #array       => \@places,
@@ -90,11 +94,11 @@ sub START {
                 ],
             },
             Signs_Stops_Join => { array => \@ssj },
-            Lines =>
-              { 
-                  # array => \@lines, 
-                  hash => \%lines, 
-                  index_field => 'Line' },
+            Lines            => {
+                # array => \@lines,
+                hash        => \%lines,
+                index_field => 'Line'
+            },
             Stops_Neue => {
                 hash        => \%stops,
                 index_field => 'h_stp_511_id',
@@ -107,13 +111,13 @@ sub START {
     foreach my $ssj (@ssj) {
         my $ssj_stop = $ssj->{h_stp_511_id};
         my $ssj_sign = $ssj->{SignID};
-        
+
         my $ssj_omit_lines = $ssj->{OmitLines};
-        my @ssj_omitted; 
-        if ($ssj_omit_lines) { 
-           @ssj_omitted = split(' ' , $ssj->{OmitLines});
+        my @ssj_omitted;
+        if ($ssj_omit_lines) {
+            @ssj_omitted = split( ' ', $ssj->{OmitLines} );
         }
-        $stops_of_sign{$ssj_sign}{$ssj_stop} = \@ssj_omitted ;
+        $stops_of_sign{$ssj_sign}{$ssj_stop} = \@ssj_omitted;
     }
 
     my $effectivedate = trim( read_file('effectivedate.txt') );
@@ -145,10 +149,10 @@ sub START {
 
         my $omitted_of_stop_r;
         if ( exists $stops_of_sign{$signid} ) {
-            
+
             $omitted_of_stop_r = $stops_of_sign{$signid};
 
-            if (not $stopid) {
+            if ( not $stopid ) {
                 my @allstopids = sort keys %{$omitted_of_stop_r};
                 $stopid = $allstopids[0];
             }
@@ -165,8 +169,8 @@ sub START {
           and $sign_is_active eq 'yes'
           and $signs{$signid}{Status} !~ /no service/i;
         # skip inactive signs and those without stop IDs
-        
-        if (not $stopid) {
+
+        if ( not $stopid ) {
             emit_text 'yowza';
         }
 
@@ -178,7 +182,7 @@ sub START {
         #####################
         # Following steps
 
-        foreach my $stoptotest (keys %{$omitted_of_stop_r} ) {
+        foreach my $stoptotest ( keys %{$omitted_of_stop_r} ) {
 
             # skip stop if file not found
             my $firstdigits = substr( $stoptotest, 0, 3 );
@@ -191,7 +195,7 @@ sub START {
 
         }
 
-        emit_over( "$signid ");
+        emit_over("$signid ");
 
         # 1) Read kpoints from file
 
@@ -241,7 +245,7 @@ sub START {
         $point->output;
 
     }    ## <perltidy> end foreach my $signid ( sort {...})
-    
+
     emit_done;
 
     print "\n", scalar keys %skipped_stops,

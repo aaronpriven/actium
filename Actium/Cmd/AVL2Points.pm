@@ -12,11 +12,16 @@ use Actium::Sorting::Line('sortbyline');
 use Actium::Util(qw<keyreadable>);
 use Actium::Union('ordered_union');
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 const my @COMBOS_TO_PROCESS => (
     [qw( 5 6 56 )],     [qw( 1 234 1234 )], [qw( 1234 5 12345 )],
     [qw( 234 5 2345 )], [qw( 6 7 67 )],     [qw( 12345 67 1234567 )],
 );
+
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
 
 sub HELP {
 
@@ -32,9 +37,13 @@ EOF
 
 sub START {
 
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
+
     my ( %stops, %cities );
 
     load_tables(
+        actiumdb => $actiumdb,
         requests => {
             Cities => {
                 hash        => \%cities,
