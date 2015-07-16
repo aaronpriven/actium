@@ -15,6 +15,10 @@ sub HELP {
     say "Help not implemented.";
 }
 
+sub OPTIONS {
+   return Actium::Cmd::Config::Flickr_Auth::OPTIONS;
+}
+
 sub START {
     
     emit 'Processing Flickr photos';
