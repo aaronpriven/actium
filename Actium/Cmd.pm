@@ -102,7 +102,8 @@ sub run {
         $module->START(
             options => $options_r,
             argv    => [@ARGV],
-            config  => $config
+            config  => $config,
+            env     => {%ENV},
         );
     }
 
