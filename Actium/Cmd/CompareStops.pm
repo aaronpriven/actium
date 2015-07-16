@@ -8,7 +8,6 @@ use Actium::Sorting::Line ('byline');
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');    ### DEP ###
-use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
@@ -51,8 +50,7 @@ sub START {
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path;
 
-    load_tables(
-        actiumdb => $actiumdb,
+    $actiumdb->load_tables(
         requests => {
             Stops_Neue => {
                 hash        => \%stops,

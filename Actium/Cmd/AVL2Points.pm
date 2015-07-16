@@ -11,7 +11,6 @@ use Actium::Time (qw(timenum ));
 use Actium::Sorting::Line('sortbyline');
 use Actium::Util(qw<keyreadable>);
 use Actium::Union('ordered_union');
-use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 const my @COMBOS_TO_PROCESS => (
@@ -42,8 +41,7 @@ sub START {
 
     my ( %stops, %cities );
 
-    load_tables(
-        actiumdb => $actiumdb,
+    $actiumdb->load_tables(
         requests => {
             Cities => {
                 hash        => \%cities,
