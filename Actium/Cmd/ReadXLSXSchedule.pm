@@ -1,6 +1,7 @@
-#!/ActivePerl/bin/perl
+package Actium::Cmd::ReadXLSXSchedule 0.010;
 
-use 5.016;
+# This is very much in progress and not a complete program yet.
+
 use Actium::Preamble;
 use Actium::O::Sked;
 use Actium::O::Sked::Trip;
@@ -8,22 +9,31 @@ use Actium::Util(qw[joinseries tabulate]);
 
 our $VERSION = 0.010;
 
-use Spreadsheet::XLSX; ### DEP ###
-use List::Compare::Functional (qw/is_LsubsetR/); ### DEP ###
+use Spreadsheet::XLSX;    ### DEP ###
+use List::Compare::Functional (qw/is_LsubsetR/);    ### DEP ###
 
 const my @used_sheets         => qw[intro tpsked stopsked];
 const my @mandatory_intros    => qw[id days dir];
 const my $mandatory_introtext => joinseries(@mandatory_intros);
 
-#my $file = '/Users/apriven/Dev/signups/su12/s/xlsx/P_WB_12345.xlsx';
-my $file = '/Users/apriven/Desktop/P_WB_12345.xlsx';
-my $xlsx = Spreadsheet::XLSX->new($file);
+my $file;
+my $xlsx;
 
-_check_sheets($xlsx);
+sub START {
 
-my %intros = _get_intros($xlsx);
+  #my $file = '/Users/apriven/Dev/signups/su12/s/xlsx/P_WB_12345.xlsx';
+    $file = '/Users/apriven/Desktop/P_WB_12345.xlsx';
+    $xlsx = Spreadsheet::XLSX->new($file);
 
-my @trips = _get_trips($xlsx);
+    _check_sheets($xlsx);
+
+    my %intros = _get_intros($xlsx);
+
+    my @trips = _get_trips($xlsx);
+
+    return;
+
+}
 
 sub _get_trips {
     my $xlsx = shift;
@@ -83,7 +93,7 @@ sub _excel_to_timestr {
         $ampm = "b";
     }
 
-    require Spreadsheet::ParseExcel::Utility; ### DEP ###
+    require Spreadsheet::ParseExcel::Utility;    ### DEP ###
 
     my ( $minutes, $hours )
       = ( Spreadsheet::ParseExcel::Utility::ExcelLocaltime($timefraction) )

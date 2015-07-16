@@ -1,105 +1,86 @@
-#!/ActivePerl/bin/perl
+#/Actium/Cmd/StopsOfEachLine.pm
 
-# avl2stops_of_each_line
+package Actium::Cmd::StopsOfEachLine 0.010;
 
-# legacy stage 2
+use Actium::Preamble;
+use Storable();    ### DEP ###
+use Actium::Sorting::Line (qw<sortbyline>);
+use Actium::O::Folders::Signup;
 
-use warnings;
-use strict;
+sub HELP {
 
-use 5.010;
-
-our $VERSION = 0.010;
-
-use sort ('stable');
-
-# add the current program directory to list of files to include
-use FindBin('$Bin'); ### DEP ###
-use lib ($Bin , "$Bin/../bin"); ### DEP ###
-
-use Carp; ### DEP ###
-use POSIX ('ceil'); ### DEP ###
-#use Fatal qw(open close);
-use Storable(); ### DEP ###
-
-use Actium::Sorting::Line ( qw<sortbyline>);
-use Actium::Constants;
-use Actium::Util('in');
-
-my $helptext = <<'EOF';
+    my $helptext = <<'EOF';
 avl2stops_of_each_line reads the data written by readavl and turns it into a 
 list of lines with the number of stops. It is saved in the file 
 "stops_of_each_line.txt" in the directory for that signup.
 EOF
 
-my $intro = 
-'avl2stops_of_each_line -- make a list of lines with the number of stops served';
+    say $helptext;
 
-use Actium::Options (qw<add_option option init_options>);
-
-use Actium::O::Folders::Signup;
-
-init_options();
-
-my $signup = Actium::O::Folders::Signup->new();
-chdir $signup->path();
-
-# retrieve data
-
-my %pat;
-my %stp;
-
-{ # scoping
-
-my $avldata_r = $signup->retrieve('avl.storable');
-
-%pat = %{$avldata_r->{PAT}};
+    return;
 
 }
 
-my %seen_stops_of;
+sub START {
 
-PAT:
-foreach my $key (keys %pat) {
+    my $signup = Actium::O::Folders::Signup->new();
+    chdir $signup->path();
 
-   next unless $pat{$key}{IsInService};
+    # retrieve data
 
-   my $route = $pat{$key}{Route};
+    my %pat;
 
-   foreach my $tps_r ( @{$pat{$key}{TPS}}) {
-       my $stopid = $tps_r->{StopIdentifier};
+    {    # scoping
 
-       $seen_stops_of{$route}{$stopid} = 1;
+        my $avldata_r = $signup->retrieve('avl.storable');
 
-   }
+        %pat = %{ $avldata_r->{PAT} };
 
-}
+    }
 
-open my $stopsfh , '>' , 'stops_of_each_line.txt' or die "$!";
+    my %seen_stops_of;
 
-say $stopsfh "Route\tStops\tDecals\tInventory\tPer set";
+  PAT:
+    foreach my $key ( keys %pat ) {
 
-foreach my $route (sortbyline keys %seen_stops_of) {
- 
-    next if (in($route ,  qw/BSD BSH BSN 399 51S/ ));
- 
-    my $numstops = scalar keys %{$seen_stops_of{$route}};
+        next unless $pat{$key}{IsInService};
 
-    my $numdecals = 2 * $numstops;
-    
-    print $stopsfh "$route\t$numstops\t$numdecals\t";
-    
-    my $threshold = ceil ($numdecals * .02 )  * 10; # 
-       # 20%, rounded up to a multiple of ten
-       
-    $threshold = 30 if $threshold < 30;
-    
-    my $perset = $threshold / 5;
-    
-    say $stopsfh "$threshold\t$perset";
-    
-}
-    
+        my $route = $pat{$key}{Route};
 
+        foreach my $tps_r ( @{ $pat{$key}{TPS} } ) {
+            my $stopid = $tps_r->{StopIdentifier};
 
+            $seen_stops_of{$route}{$stopid} = 1;
 
+        }
+
+    }
+
+    open my $stopsfh, '>', 'stops_of_each_line.txt' or die "$!";
+
+    say $stopsfh "Route\tStops\tDecals\tInventory\tPer set";
+
+    foreach my $route ( sortbyline keys %seen_stops_of ) {
+
+        next if ( in( $route, qw/BSD BSH BSN 399 51S/ ) );
+
+        my $numstops = scalar keys %{ $seen_stops_of{$route} };
+
+        my $numdecals = 2 * $numstops;
+
+        print $stopsfh "$route\t$numstops\t$numdecals\t";
+
+        my $threshold = ceil( $numdecals * .02 ) * 10;    #
+             # 20%, rounded up to a multiple of ten
+
+        $threshold = 30 if $threshold < 30;
+
+        my $perset = $threshold / 5;
+
+        say $stopsfh "$threshold\t$perset";
+
+    } ## tidy end: foreach my $route ( sortbyline...)
+
+} ## tidy end: sub START
+
+1;
