@@ -2,7 +2,7 @@
 
 # Produces line descriptions from the Lines database
 # Also produces transit hubs sheet, so should be renamed to something else.
-# Possibly combine with slists2html 
+# Possibly combine with slists2html
 
 # legacy status: 4
 
@@ -29,30 +29,28 @@ HELP
     return;
 }
 
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
+
 sub START {
-    
-    my $class = shift;
-    my %params = @_;
-    
-    my $config_obj = $params{config};
+
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
 
     my $signup = Actium::O::Folders::Signup->new();
-    my $actiumdb = actiumdb($config_obj);
-    
-    my $html_descrips = $actiumdb->line_descrip_html(
-        {   signup   => $signup,
-        }
-    );
+
+    my $html_descrips = $actiumdb->line_descrip_html( { signup => $signup, } );
 
     my $outfh = $signup->open_write('line_descriptions.html');
     say $outfh $html_descrips;
-    close $outfh;
-    
+    close $outfh or die $OS_ERROR;
+
     my $html_hubs = $actiumdb->lines_at_transit_hubs_html;
-    
+
     my $outhubs = $signup->open_write('transithubs.html');
     say $outhubs $html_hubs;
-    close $outhubs;
+    close $outhubs or die $OS_ERROR;
 
     return;
 

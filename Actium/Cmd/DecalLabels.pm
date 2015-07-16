@@ -11,14 +11,18 @@ use Actium::DecalPreparation(qw/make_labels/);
 
 sub HELP {
     say 'Makes spreadsheet with labels for decal envelopes.';
+    return;
+}
+
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
 }
 
 sub START {
 
-    my $class      = shift;
-    my %params     = @_;
-    my $config_obj = $params{config};
-    my $actium_db  = actiumdb($config_obj);
+    my $class     = shift;
+    my %params    = @_;
+    my $actium_db = actiumdb(@_);
 
     my $input_file = shift @{ $params{argv} };
     my $output_file = add_before_extension( $input_file, 'labels' );

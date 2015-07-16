@@ -17,26 +17,30 @@ use Actium::Util('filename');
 use Actium::Term;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
-use HTML::Entities; ### DEP ###
+use HTML::Entities;    ### DEP ###
 
 sub HELP {
     say 'No help yet, sorry.';
+    return;
+}
+
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
 }
 
 my $count;
 my %order_of = map { $_ => $count++ } @DIRCODES;
 
+const my $HIGHEST_LINE_IN_FIRST_LOCALPAGE => 70;
+
 sub START {
 
-    emit "Making HTML files of stop lists";
+    emit 'Making HTML files of stop lists';
 
-    my $class  = shift;
-    my %params = @_;
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
 
-    my $config_obj = $params{config};
-
-    my $signup   = Actium::O::Folders::Signup->new;
-    my $actiumdb = actiumdb($config_obj);
+    my $signup = Actium::O::Folders::Signup->new;
 
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');
@@ -54,10 +58,10 @@ sub START {
 
     emit_done;
 
-    my $linegrouptype_of_r =
-      $actiumdb->all_in_column_key(qw/Lines LineGroupType/);
+    my $linegrouptype_of_r
+      = $actiumdb->all_in_column_key(qw/Lines LineGroupType/);
 
-    emit "Creating HTML versions of stop lists";
+    emit 'Creating HTML versions of stop lists';
 
     my @files = $stoplists_line_folder->glob_plain_files('*.txt');
     @files = map { filename($_) } @files;
@@ -65,7 +69,7 @@ sub START {
     my %dirs_of;
 
     foreach my $file (@files) {
-        my ( $line, $dir, $ext ) = split( /[-.]/, $file );
+        my ( $line, $dir, $ext ) = split( /[-.]/s, $file );
         push @{ $dirs_of{$line} }, $dir;
     }
 
@@ -98,27 +102,26 @@ sub START {
 
             while ( defined( my $stopline = readline($ifh) ) ) {
                 chomp $stopline;
-                my ( $stopid, $scheduling_desc ) = split( /\t/, $stopline );
+                my ( $stopid, $scheduling_desc ) = split( /\t/s, $stopline );
 
-                next if $scheduling_desc =~ /^Virtual/;
+                next if $scheduling_desc =~ /^Virtual/s;
 
                 my $desc = encode_entities(
                     $stops_row_of_r->{$stopid}{c_description_short} );
 
-                my $latlong =
-                    $stops_row_of_r->{$stopid}{h_loca_latitude} . ','
+                my $latlong = $stops_row_of_r->{$stopid}{h_loca_latitude} . ','
                   . $stops_row_of_r->{$stopid}{h_loca_longitude};
-                my $url =
-                  'http://maps.google.com/maps?q=@' . $latlong . "&z=18";
+                my $url
+                  = 'http://maps.google.com/maps?q=@' . $latlong . '&z=18';
 
-                my $city =
-                  encode_entities( $stops_row_of_r->{$stopid}{c_city} );
+                my $city
+                  = encode_entities( $stops_row_of_r->{$stopid}{c_city} );
 
                 my $citytext = $EMPTY_STR;
 
                 if ( $prevcity ne $city ) {
-                    $citytext =
-'<span style="text-decoration: underline; font-weight: bold;">'
+                    $citytext
+                      = '<span style="text-decoration: underline; font-weight: bold;">'
                       . $city
                       . '</span><br />';
                     $citytext = '</p><p>' . $citytext if $prevcity;
@@ -135,11 +138,11 @@ sub START {
 
                 #my $savedline = $stopline =~ s/\t/ =&gt; /r;
                 #push @{ $stoplines_of{$dir} }, $savedline;
-            }    ## tidy end: while ( defined( my $stopline...))
+            } ## tidy end: while ( defined( my $stopline...))
 
             close $ifh or die "Can't close $file: $OS_ERROR";
 
-        }    ## tidy end: foreach my $dir (@dirs)
+        } ## tidy end: foreach my $dir (@dirs)
 
         my @dir_objs  = map { Actium::O::Dir->new($_) } @dirs;
         my @dir_bound = map { $_->as_bound } @dir_objs;
@@ -154,7 +157,7 @@ sub START {
         }
 
         my $outdata;
-        open( my $ofh, '>:utf8', \$outdata )
+        open( my $ofh, '>:encoding(UTF-8)', \$outdata )
           or die "Can't open memory location as file: $OS_ERROR";
 
         say $ofh <<"EOT";
@@ -168,22 +171,22 @@ EOT
 
         for my $dir (@dirs) {
             say $ofh q{<td valign=top><p>};
-            say $ofh join( "<br />", @{ $stoplines_of{$dir} } );
+            say $ofh join( '<br />', @{ $stoplines_of{$dir} } );
             say $ofh '</p></td>';
         }
 
-        say $ofh "</tr></tbody></table>";
+        say $ofh '</tr></tbody></table>';
 
         close $ofh or die "Can't close memory file: $OS_ERROR";
 
         $table_of{$line} = $outdata;
-        
+
         my $type;
         $type = $linegrouptype_of_r->{$line};
 
         if ( $type eq 'Local' ) {
             no warnings 'numeric';
-            if ( $line <= 70 ) {
+            if ( $line <= $HIGHEST_LINE_IN_FIRST_LOCALPAGE ) {
                 $type = 'Local1';
             }
             else {
@@ -191,13 +194,13 @@ EOT
             }
         }
 
-        push @{ $lines_of_type{$type} }, $line;
+        push @{ $lines_of_type{$type} },  $line;
         push @{ $tables_of_type{$type} }, $outdata;
 
-    }    ## tidy end: foreach my $line ( sortbyline...)
+    } ## tidy end: foreach my $line ( sortbyline...)
 
-    my %display_type_of = map { $_, $_ } keys %lines_of_type;
-    my %subtypes_of = map { $_, [$_] } keys %lines_of_type;
+    my %display_type_of = map { ( $_, $_ ) } keys %lines_of_type;
+    my %subtypes_of = map { ( $_, [$_] ) } keys %lines_of_type;
     delete $subtypes_of{Local1};
     delete $subtypes_of{Local2};
     $subtypes_of{Local} = [qw/Local1 Local2/];
@@ -208,8 +211,8 @@ EOT
 
         my $ofh = $stoplists_folder->open_write("$type.html");
 
-        my @lines_and_urls =
-          map { "<a href='#$_'>$_</a>" } @{ $lines_of_type{$type} };
+        my @lines_and_urls
+          = map {"<a href='#$_'>$_</a>"} @{ $lines_of_type{$type} };
 
         say $ofh contents(@lines_and_urls);
 
@@ -233,9 +236,9 @@ EOT
 
         say $ofh join( "\n", @{ $tables_of_type{$type} } );
         close $ofh or die "Can't close $type.html: $OS_ERROR";
-    }    ## tidy end: foreach my $type ( keys %tables_of_type)
+    } ## tidy end: foreach my $type ( keys %tables_of_type)
 
-    my $indexfh = $stoplists_folder->open_write("stop_index.html");
+    my $indexfh = $stoplists_folder->open_write('stop_index.html');
 
     #for my $type (keys %subtypes_of) {
     for my $type ( 'Local', 'All Nighter', 'Transbay', 'Supplementary' ) {
@@ -245,7 +248,7 @@ EOT
         for my $subtype ( @{ $subtypes_of{$type} } ) {
             for my $line ( @{ $lines_of_type{$subtype} } ) {
 
-                my $url_type = $subtype =~ s/ /-/gr;
+                my $url_type = $subtype =~ s/ /-/grs;
 
                 my $url  = lc("/rider-info/stops/$url_type/#") . $line;
                 my $link = qq{<a href="$url">$line</a>};
@@ -258,7 +261,7 @@ EOT
         say $indexfh "<p><strong>$type</strong></p>";
         say $indexfh contents(@links);
 
-    }
+    } ## tidy end: for my $type ( 'Local',...)
 
     close $indexfh or die "Can't close stop_index.html: $OS_ERROR";
 
@@ -266,7 +269,11 @@ EOT
 
     emit_done;
 
-}    ## tidy end: sub START
+    return;
+
+} ## tidy end: sub START
+
+const my $CONTENTS_COLUMNS => 10;
 
 sub contents {
 
@@ -281,15 +288,17 @@ sub contents {
     for my $i ( 0 .. $#lines_and_urls ) {
         my $r_and_u = $lines_and_urls[$i];
         print $ofh "<td>$r_and_u</td>";
-        if ( not( ( $i + 1 ) % 10 ) ) {
+        if ( not( ( $i + 1 ) % $CONTENTS_COLUMNS ) ) {
             print $ofh "</tr>\n<tr>";
         }
 
     }
-    say $ofh "</tr></table>";
+    say $ofh '</tr></table>';
 
-    close $ofh;
+    close $ofh or die $OS_ERROR;
 
     return $contents_text;
 
-}    ## tidy end: sub contents
+} ## tidy end: sub contents
+
+1;

@@ -11,13 +11,13 @@ package Actium::Cmd::Timetables 0.010;
 
 use Actium::O::Folders::Signup;
 use Actium::O::Sked;
-use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>); ### DEP ###
+use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);    ### DEP ###
 use Actium::Sorting::Line (qw(sortbyline byline));
 use Actium::IDTables;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
-use English '-no_match_vars'; ### DEP ###
-use autodie; ### DEP ###
+use English '-no_match_vars';                                      ### DEP ###
+use autodie;                                                       ### DEP ###
 use Actium::Constants;
 
 # saves typing
@@ -28,18 +28,16 @@ sub HELP {
 timetables. Reads schedules and makes timetables out of them.
 HELP
 
-    Actium::Term::output_usage();
-
     return;
 }
 
-sub START {
-    
-    my $class      = shift;
-    my %params     = @_;
-    my $config_obj = $params{config};
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
 
-    my $actiumdb = actiumdb($config_obj);
+sub START {
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
 
     my $signup            = Actium::O::Folders::Signup->new();
     my $tabulae_folder    = $signup->subfolder('timetables');
@@ -56,11 +54,12 @@ sub START {
       = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
 
     my @all_lines = map { $_->lines } @skeds;
-    @all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN'} @all_lines;
+    @all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN' } @all_lines;
     @all_lines = uniq sortbyline @all_lines;
-    
-    my ($pubtt_contents_with_dates_r , $pubtimetables_r) 
-      = Actium::IDTables::get_pubtt_contents_with_dates( $actiumdb, \@all_lines );
+
+    my ( $pubtt_contents_with_dates_r, $pubtimetables_r )
+      = Actium::IDTables::get_pubtt_contents_with_dates( $actiumdb,
+        \@all_lines );
 
     @skeds = map { $_->[0] }
       sort { $a->[1] cmp $b->[1] }

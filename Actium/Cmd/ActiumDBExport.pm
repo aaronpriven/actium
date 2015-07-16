@@ -7,7 +7,7 @@ package Actium::Cmd::ActiumDBExport 0.010;
 use Actium::Preamble;
 use Actium::O::Folder;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Archive::Zip (qw( :ERROR_CODES :CONSTANTS )); ### DEP ###
+use Archive::Zip (qw( :ERROR_CODES :CONSTANTS ));    ### DEP ###
 use Actium::Term;
 
 my %fields_of =
@@ -34,21 +34,22 @@ my %fields_of =
     ],
   );
 
-sub HELP { say "Help not implemented"; }
+sub HELP { say 'Help not implemented'; return; }
+
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
 
 sub START {
 
     Actium::Term::be_quiet;
 
-    local $/ = "\r\n";    # exporting for windoze
+    local $INPUT_RECORD_SEPARATOR = "\r\n";    # exporting for windoze
 
-    my $class  = shift;
-    my %params = @_;
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
 
-    my $config_obj = $params{config};
-
-    my $actiumdb = actiumdb($config_obj);
-    my $dbh      = $actiumdb->dbh;
+    my $dbh = $actiumdb->dbh;
 
     my $folder = Actium::O::Folder->new('/Volumes/Bireme/Actium/database');
     my $zip    = Archive::Zip->new();
@@ -64,7 +65,8 @@ sub START {
         #my $fh = $folder->open_write("$table.txt");
 
         my $result_text;
-        open my $fh, '>:encoding(UTF-8)', \$result_text;
+        open my $fh, '>:encoding(UTF-8)', \$result_text
+          or die $OS_ERROR;
 
         say $fh join( "\t", @columns );
 
@@ -77,13 +79,13 @@ sub START {
                     $value = $EMPTY_STR;
                     next VALUE;
                 }
-                $value =~ s/\r/\|/g;
+                $value =~ s/\r/\|/sg;
             }
             process_values(@values);
             say $fh join( "\t", @values );
         }
 
-        close $fh;
+        close $fh or die $OS_ERROR;
         $zip->addString( $result_text, "$table.txt",
             COMPRESSION_LEVEL_BEST_COMPRESSION );
 
@@ -94,18 +96,22 @@ sub START {
     unless ( $zip->writeToFileNamed($zipfile) == AZ_OK ) {
         die 'error writing zip file';
     }
-    
+
 } ## tidy end: sub START
 
 sub process_values {
 
   VALUE:
     foreach (@_) {
-        if ( not defined $_ ) {
+        if ( not defined ) {
             $_ = $EMPTY_STR;
             next VALUE;
         }
-        s/\r/\|/g;
+        s/\r/\|/gs;
     }
 
+    return;
+
 }
+
+1;

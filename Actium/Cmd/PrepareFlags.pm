@@ -15,28 +15,31 @@ use Actium::Util('file_ext');
 use Actium::O::2DArray;
 
 sub HELP {
-    say "Help not implemented.";
+    say 'Help not implemented.';
+    return;
+}
+
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
 }
 
 sub START {
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
 
     emit 'Creating flag assignments';
-
-    my $class      = shift;
-    my %params     = @_;
-    my $config_obj = $params{config};
 
     my $input_file = shift @{ $params{argv} };
     my ( $output_file, $signup, @stopids );
 
     if ( defined $input_file ) {
-        emit 'Getting stop IDs from file $input_file';
+        emit "Getting stop IDs from file $input_file";
         ( $output_file, undef ) = file_ext($input_file);
         $output_file .= '-assignments.txt';
 
         my $in_sheet = Actium::O::2DArray->new_from_file($input_file);
         @stopids = $in_sheet->col(0);
-        @stopids = grep { /\A \d+ \z/x } @stopids;
+        @stopids = grep {/\A \d+ \z/sx} @stopids;
         emit_ok;
     }
     else {
@@ -44,8 +47,6 @@ sub START {
         $signup = Actium::O::Folders::Signup->new();
         emit_ok;
     }
-
-    my $actiumdb = actiumdb($config_obj);
 
     my $tabbed = Actium::Flags::flag_assignments_tabbed( $actiumdb, @stopids );
 
@@ -55,17 +56,18 @@ sub START {
     }
 
     if ( defined $output_file ) {
-        require File::Slurp::Tiny; ### DEP ###
+        require File::Slurp::Tiny;    ### DEP ###
         File::Slurp::Tiny::write_file( $output_file, $tabbed,
-             binmode => ':utf8'  );
+            binmode => ':utf8' );
     }
     else {
         $signup->slurp_write( $tabbed, 'flag_assignments.txt' );
     }
 
     emit_done;
+    return;
 
-}
+} ## tidy end: sub START
 
 1;
 

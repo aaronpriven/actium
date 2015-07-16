@@ -34,12 +34,14 @@ HELP
 
 }
 
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
+
 sub START {
 
-    my $class      = shift;
-    my %params     = @_;
-    my $config_obj = $params{config};
-    my $actium_db  = actiumdb($config_obj);
+    my ( $class, %params ) = @_;
+    my $actiumdb   = actiumdb(%params);
     my $outputfile = shift @{ $params{argv} };
 
     unless ($outputfile) {
@@ -57,12 +59,13 @@ sub START {
 
     crewlist_xlsx(
         outputfile       => $outputfile,
-        actiumdb         => $actium_db,
+        actiumdb         => $actiumdb,
         stops_of_linedir => $stops_of_r,
         signup_display   => $signup_display,
     );
 
-}
+    return;
+} ## tidy end: sub START
 
 1;
 
