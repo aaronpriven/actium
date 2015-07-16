@@ -1,7 +1,3 @@
-#!/ActivePerl/bin/perl 
-
-use 5.012;
-
 package Actium::Cmd::NearbyRoutes 0.006;
 
 1;
@@ -10,6 +6,8 @@ __END__
 
 THIS IS BROKEN BECAUSE Geo::Coder::US requires Geo::StreetAddress::US
 which does not work with perl 5.18 due to regex issues
+
+Also, I have not yet converted it to be a Cmd module instead of a script
 
 use Geo::Coder::US; ### DEP-BUT-BROKEN ###
 
