@@ -1,5 +1,3 @@
-#/Actium/Cmd/CompareStops.pm
-
 package Actium::Cmd::CompareStops 0.010;
 
 use Actium::Preamble;
@@ -25,8 +23,6 @@ EOF
     return;
 }
 
-use Actium::Options (qw<add_option option init_options>);
-
 sub OPTIONS {
 
     return (
@@ -42,6 +38,11 @@ sub OPTIONS {
 my ( %changes, %oldstoplists, %stops );
 
 sub START {
+    
+    my ( $class, %params ) = @_;
+    \my %options = $params{options};
+    my $oldsignup_opt = $options{oldsignup};
+    
 
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path;
@@ -68,7 +69,7 @@ sub START {
 "Change\tStopID\tStop Description\tNumAdded\tAdded\tNumRemoved\tRemoved\tNumUnchanged\tUnchanged\n";
 
     my $oldsignup
-      = Actium::O::Folders::Signup->new( { signup => option('oldsignup') } );
+      = Actium::O::Folders::Signup->new( { signup => $oldsignup_opt } );
 
     %oldstoplists = assemble_stoplists( $oldsignup, qw(BSH 399) );
 

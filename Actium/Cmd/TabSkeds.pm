@@ -11,7 +11,6 @@ use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util(qw/joinseries/);
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
-use Actium::Options               (qw<option add_option>);
 use Actium::Term                  (qw<printq sayq>);
 use Actium::O::Folders::Signup;
 
@@ -20,11 +19,11 @@ use warnings;    ### DEP ###
 no warnings 'uninitialized';
 
 sub OPTIONS {
-    add_option( 'upcoming=s', 'Upcoming signup' );
-    add_option( 'current!',   'Current signup' );
+    return ( [ 'upcoming=s', 'Upcoming signup' ],
+        [ 'current!', 'Current signup' ] );
 }
 
-my $out; 
+my $out;
 # filehandle, declared here so it can be shared between START() and outtab()
 
 ####################################################################
@@ -411,7 +410,7 @@ sub START {
 
             my $skedref = $skeds{$skedname};
 
-            undef $out; # clear any previous out file handles
+            undef $out;    # clear any previous out file handles
             open $out, ">", "tabxchange/" . $skedname . ".tab"
               or die "can't open $skedname.tab for output";
 
