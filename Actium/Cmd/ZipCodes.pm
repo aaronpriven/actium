@@ -17,6 +17,11 @@ sub HELP {
       . q{that don't have them.};
 }
 
+sub OPTIONS {
+   return Actium::Cmd::Config::GeonamesAuth::OPTIONS;
+}
+
+
 sub START {
     my $class      = shift;
 
