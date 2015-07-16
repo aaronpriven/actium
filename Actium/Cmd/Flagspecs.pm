@@ -18,7 +18,6 @@ use Actium::O::Folders::Signup;
 use Text::Trim;    ### DEP ###
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
-use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 
 use Carp;                         ### DEP ###
 use English('-no_match_vars');    ### DEP ###
@@ -125,8 +124,7 @@ sub START {
     my ( %places, %stops );
     #my %lines;
 
-    load_tables(
-        actiumdb => $actiumdb,
+    $actiumdb->load_tables(
         requests => {
             Places_Neue => {
                 hash        => \%places,
@@ -172,7 +170,7 @@ sub START {
 
     read_decal_specs($flagfolder);
 
-    build_color_of($signup);
+    build_color_of($signup, $actiumdb);
 
     output_specs( $flagfolder, \%stops );
 
@@ -1480,10 +1478,11 @@ sub style_of_route {
 
 sub build_color_of {
     my $signup = shift;
+    my $actiumdb = shift;
 
     my %lines;
 
-    load_tables(
+    $actiumdb->load_tables(
         requests => { Lines => { hash => \%lines, index_field => 'Line' }, } );
 
     foreach my $line ( keys %lines ) {

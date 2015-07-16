@@ -13,7 +13,6 @@ use Storable();    ### DEP ###
 use Actium::Union('ordered_union');
 use Actium::DaysDirections ('dir_of_hasi');
 use Actium::O::Folders::Signup;
-use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Term;
 
@@ -61,8 +60,7 @@ sub START {
 
     my %stops;
 
-    load_tables(
-        actiumdb => $actiumdb,
+    $actiumdb->load_tables(
         requests => {
             Stops_Neue => {
                 hash        => \%stops,

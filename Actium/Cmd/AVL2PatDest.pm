@@ -5,7 +5,6 @@ use Actium::Preamble;
 use Storable();    ### DEP ###
 
 use Actium::Union('ordered_union');
-use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use Actium::Sorting::Line('byline');
 use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
@@ -44,8 +43,7 @@ sub START {
 
     my %places;
 
-    load_tables(
-        actiumdb => $actiumdb,
+    $actiumdb->load_tables(
         requests => {
             Places_Neue => {
                 hash        => \%places,
