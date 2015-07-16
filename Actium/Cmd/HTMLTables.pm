@@ -16,7 +16,6 @@ use Actium::Term;
 use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
-
 sub HELP {
 
     say <<'HELP' or die q{Can't write to STDOUT};
@@ -29,32 +28,30 @@ HELP
     return;
 }
 
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
+
 sub START {
- 
-   my $class = shift;
-   
-   my %params = @_;
 
-    my $config_obj = $params{config};
-
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
     my $signup   = Actium::O::Folders::Signup->new;
-    my $actiumdb = actiumdb($config_obj);
-   
-   my $html_folder = $signup->subfolder('html'); 
-   
- 
-   my $prehistorics_folder = $signup->subfolder('skeds');
- 
-     emit "Loading prehistoric schedules";
+
+    my $html_folder = $signup->subfolder('html');
+
+    my $prehistorics_folder = $signup->subfolder('skeds');
+
+    emit 'Loading prehistoric schedules';
 
     my @skeds
       = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
 
     emit_done;
-    
-    emit "Creating timetable texts";
 
-    my  @tables;
+    emit 'Creating timetable texts';
+
+    my @tables;
     my $prev_linegroup = $EMPTY_STR;
     foreach my $sked (@skeds) {
 
@@ -64,35 +61,40 @@ sub START {
             $prev_linegroup = $linegroup;
         }
 
-        push @tables, Actium::O::Sked::Timetable->new_from_sked( $sked, $actiumdb );
-        
+        push @tables,
+          Actium::O::Sked::Timetable->new_from_sked( $sked, $actiumdb );
+
     }
 
     emit_done;
-    
+
     emit 'Writing HTML files';
-    
-    $signup->write_files_with_method({
-     OBJECTS => \@tables,
-     METHOD => 'as_html',
-     EXTENSION => 'html',
-     SUBFOLDER => 'html',
-    });
-    
+
+    $signup->write_files_with_method(
+        {   OBJECTS   => \@tables,
+            METHOD    => 'as_html',
+            EXTENSION => 'html',
+            SUBFOLDER => 'html',
+        }
+    );
+
     emit_done;
-    
+
     emit 'Writing JSON struct files';
-    
-    $signup->write_files_with_method({
-     OBJECTS => \@tables,
-     METHOD => 'as_public_json',
-     EXTENSION => 'json',
-     SUBFOLDER => 'public_json',
-    });
-    
+
+    $signup->write_files_with_method(
+        {   OBJECTS   => \@tables,
+            METHOD    => 'as_public_json',
+            EXTENSION => 'json',
+            SUBFOLDER => 'public_json',
+        }
+    );
+
     emit_done;
-    
-}
+
+    return;
+
+} ## tidy end: sub START
 
 1;
 

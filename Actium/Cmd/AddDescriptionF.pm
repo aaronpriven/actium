@@ -18,17 +18,18 @@ use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Term;
 
-sub HELP { say "Help not implemented"; }
+sub HELP { say 'Help not implemented'; return; }
+
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
 
 sub START {
 
-    my $class  = shift;
-    my %params = @_;
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
 
-    my $config_obj = $params{config};
-
-    my $signup   = Actium::O::Folders::Signup->new;
-    my $actiumdb = actiumdb($config_obj);
+    my $signup = Actium::O::Folders::Signup->new;
 
     emit 'Getting stop descriptions from FileMaker';
 
@@ -41,26 +42,28 @@ sub START {
 
     open my $in, '<', $file;
 
-    binmode STDOUT, ":utf8";
+    binmode STDOUT, ':encoding(UTF-8)';
 
     while (<$in>) {
         chomp;
 
-        my ( $stopid, $text ) = split( /\t/, $_, 2 );
+        my ( $stopid, $text ) = split( /\t/s, $_, 2 );
         $text //= q[];
         my $desc = $stops_row_of_r->{$stopid}{c_description_full};
         if ( not defined $desc ) {
-            if ( $stopid =~ /Stop\s*ID/i ) {
-                $desc = "c_description_full";
+            if ( $stopid =~ /Stop\s*ID/is ) {
+                $desc = 'c_description_full';
             }
             else {
-                $desc = "** NOT FOUND **";
+                $desc = '** NOT FOUND **';
                 warn "No description found for $stopid";
             }
         }
         say "$stopid\t$desc\t$text";
 
     }
+
+    return;
 
 } ## tidy end: sub START
 
