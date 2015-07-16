@@ -10,6 +10,7 @@ use Actium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');    ### DEP ###
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 sub HELP {
 
@@ -30,7 +31,9 @@ sub OPTIONS {
             'The older signup. The program compares data '
               . 'from the this signup to the one '
               . 'specified by the "signup" option.'
-        ]
+        ],
+        Actium::Cmd::Config::ActiumFM::OPTIONS(),
+
     );
 
 }
@@ -38,16 +41,18 @@ sub OPTIONS {
 my ( %changes, %oldstoplists, %stops );
 
 sub START {
-    
+
     my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
+
     \my %options = $params{options};
     my $oldsignup_opt = $options{oldsignup};
-    
 
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path;
 
     load_tables(
+        actiumdb => $actiumdb,
         requests => {
             Stops_Neue => {
                 hash        => \%stops,
