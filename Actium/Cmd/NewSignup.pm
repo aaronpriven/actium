@@ -6,10 +6,9 @@ package Actium::Cmd::NewSignup 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folders::Signup;
-use Actium::Options('option');
 use Actium::Util('filename');
 use Actium::Files::Xhea;
-use Archive::Zip; ### DEP ###
+use Archive::Zip;    ### DEP ###
 use Actium::Term;
 
 sub OPTIONS {
@@ -30,6 +29,11 @@ HELP
 
 sub START {
 
+    my $class  = shift;
+    my %params = @_;
+    \my %option = $params{options};
+    my $xheazip = $option{xhea};
+
     emit "Making signup and subdirectories";
 
     my $signup      = Actium::O::Folders::Signup->new;
@@ -37,8 +41,6 @@ sub START {
     my $xhea_folder = $signup->subfolder('xhea');
 
     emit_done;
-
-    my $xheazip = option('xhea');
 
     if ($xheazip) {
 
@@ -84,8 +86,8 @@ sub START {
 
         emit_done;
 
-    }
+    } ## tidy end: if ($xheazip)
 
-}    ## tidy end: sub START
+} ## tidy end: sub START
 
 1;
