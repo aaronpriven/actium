@@ -6,7 +6,6 @@ use Actium::Sorting::Line (qw[sortbyline]);
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
 use Actium::O::Folders::Signup;
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 const my @opp = qw( EB WB NB SB CC CW A B);
 const my %opposite_of = ( @opp, reverse @opp );
@@ -41,11 +40,8 @@ sub START {
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path();
 
-    use Actium::Files::FileMaker_ODBC (qw[load_tables]);
-
     my %stops;
-    load_tables(
-        actiumdb => $actiumdb,
+    $actiumdb->load_tables(
         requests => {
             Stops_Neue => {
                 index_field => 'h_stp_511_id',

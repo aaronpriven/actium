@@ -18,7 +18,6 @@ use Actium::Preamble;
 use Actium::Term (':all');
 use Actium::Union('ordered_union');
 
-use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 use Actium::O::Folders::Signup;
@@ -69,8 +68,7 @@ sub START {
 
     # retrieve data
 
-    load_tables(
-        actiumdb => $actiumdb,
+    $actiumdb->load_tables(
         requests => {
             Places_Neue => {
                 #array       => \@places,

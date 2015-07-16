@@ -3,7 +3,6 @@
 package Actium::Cmd::LinesByCity 0.010;
 
 use Actium::Preamble;
-use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use Actium::Sorting::Line         (qw(sortbyline));
 use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
@@ -29,8 +28,7 @@ sub START {
 
     my (@stops);
 
-    load_tables(
-        actiumdb => $actiumdb,
+    $actiumdb->load_tables(
         requests => {
             Stops_Neue => {
                 array  => \@stops,

@@ -10,7 +10,6 @@ package Actium::Cmd::Tabskeds 0.010;
 use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util(qw/joinseries/);
-use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use Actium::Term                  (qw<printq sayq>);
 use Actium::O::Folders::Signup;
 
@@ -330,7 +329,7 @@ sub START {
 
     our ( @lines, %lines, %places, %colors, @colors, @places );
 
-    load_tables(
+    $actiumdb->load_tables(
         requests => {
             Places_Neue => {
                 array       => \@places,
