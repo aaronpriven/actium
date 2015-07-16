@@ -7,33 +7,42 @@
 package Actium::Cmd::Config::Flickr_Auth 0.010;
 
 use Actium::Preamble;
-use Actium::Options qw(option add_option);
 use Actium::Term;
 use Actium::O::Photos::Flickr::Auth;
 
-use Sub::Exporter ( -setup => { exports => [qw(flickr_auth)] }); ### DEP ###
+use Sub::Exporter ( -setup => { exports => [qw(flickr_auth)] } );    ### DEP ###
 
 my %description_of_option = (
     key    => 'Flickr API key',
     secret => 'Flickr API secret',
 );
 
-foreach ( keys %description_of_option ) {
-    add_option "flickr_$_=s", $description_of_option{$_};
+sub OPTIONS {
+    my @optionlist;
+
+    foreach ( keys %description_of_option ) {
+        push @optionlist, [ "flickr_$_=s", $description_of_option{$_} ];
+    }
+
+    return @optionlist;
+
 }
 
 const my $CONFIG_SECTION => 'Flickr';
 
 sub flickr_auth {
-
-    my $config_obj = shift;
-    my %config     = $config_obj->section($CONFIG_SECTION);
     
+    my %args = @_;
+    my $config_obj = $args{config};
+    \my %option = $args{options};
+
+    my %config     = $config_obj->section($CONFIG_SECTION);
+
     my %params;
     foreach ( keys %description_of_option ) {
 
         my $optname = "flickr_$_";
-        $params{$_} = option($optname) // $config{$_}
+        $params{$_} = $option{$optname} // $config{$_}
           // Actium::Term::term_readline( $description_of_option{$_} . ':' );
 
     }
