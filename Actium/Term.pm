@@ -15,7 +15,7 @@ use Actium::Constants;
 use Term::Emit ( qw<:all !emit_over !emit_prog>, { -fh => *STDERR } );
 # Term::Emit ### DEP ###
 
-use Actium::Options qw(option add_option);
+use Actium::Options qw(option set_option add_option);
 use Carp; ### DEP ###
 use Term::ReadKey; ### DEP ###
 use Text::Wrap; ### DEP ###
