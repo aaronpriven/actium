@@ -13,12 +13,13 @@ use warnings;
 use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM;
 
-use Math::Trig (qw(deg2rad pi great_circle_distance asin acos)); ### DEP ###
-use Scalar::Util ('looks_like_number'); ### DEP ###
-use IPC::Open2; ### DEP ###
+use Math::Trig   (qw(deg2rad pi great_circle_distance asin acos));   ### DEP ###
+use Scalar::Util ('looks_like_number');                              ### DEP ###
+use IPC::Open2;                                                      ### DEP ###
 
-use constant { RADIUS => 3956.6 * 5280 };    # feet
+const my $RADIUS => 3956.6 * 5280;                                   # feet
 
+## no critic (ProhibitConstantPragma)
 use constant {
     IP_ID            => 0,
     IP_NAME          => 1,
@@ -28,20 +29,25 @@ use constant {
     IP_LAT           => 5,
     IP_LONG          => 6
 };
+## use critic
 
 my @dropped_info;
 
 sub HELP {
-    say "Help not implemented.";
+    say 'Help not implemented.';
+    return;
+}
+
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
 }
 
 sub START {
-    my $class      = shift;
-    my %params     = @_;
-    my $config_obj = $params{config};
 
-    my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb($config_obj);
+    my ( $class, %params ) = @_;
+    my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb(%params);
 
+    ## no critic (ProhibitLongLines)
     my $get_selected_script = <<'ENDSCRIPT';
 
 -- je parle Applescript aussi
@@ -94,12 +100,13 @@ get photoInfo as text
 
 ENDSCRIPT
 
+    ## use critic
     my $pid = open2( my $readscriptfh, my $writescriptfh, 'osascript -' );
 
     print $writescriptfh $get_selected_script;
-    close $writescriptfh;
+    close $writescriptfh or die $OS_ERROR;
 
-    local $/ = "\x1e";
+    local $INPUT_RECORD_SEPARATOR = "\x1e";
 
     my @photos_to_process;
 
@@ -109,27 +116,27 @@ ENDSCRIPT
         s/\s+\z//g;
         next unless $_;
 
-        my @iphoto_fields = split("\x1f");
+        my @iphoto_fields = split(/\x1f/sx);
 
         # say join("\t" , @iphoto_fields);
 
         foreach (@iphoto_fields) {
             s/\A\s+//;
             s/\s+\z//;
-            $_ = '' if $_ and $_ eq 'missing value';
+            $_ = $EMPTY_STR if $_ and $_ eq 'missing value';
         }
 
         my ( $iphoto_id, $name, $comment, $filename, $thumbfilename, $lat,
             $long )
           = @iphoto_fields;
 
-        next PHOTO if $name =~ /\*\z/;
+        next PHOTO if $name =~ /[*]\z/;
 
         my $possible_id;
 
       FIELD:
         foreach ( $name, $comment, $filename, $thumbfilename ) {
-            if (/\A(^\d{5,8})/) {
+            if (/\A(^\d{5,8})/sx) {
                 $possible_id = $1;
                 last FIELD;
             }
@@ -184,7 +191,7 @@ ENDSCRIPT
 
     } ## tidy end: PHOTO: while (<$readscriptfh>)
 
-    close $readscriptfh;
+    close $readscriptfh or die $OS_ERROR;
 
     waitpid( $pid, 0 );
 
@@ -211,12 +218,12 @@ ENDSCRIPT
     }
 
     if (@photo_commands) {
-        my $all_commands = join( '',
+        my $all_commands = join( $EMPTY_STR,
             qq{tell application "iPhoto"\n},
             @photo_commands, 'end tell' );
 
-        open my $changescript, "| osascript"
-          or die "Can't open script for writing";
+        open my $changescript, '|-', 'osascript'
+          or die q{Can't open script for writing};
         say $changescript $all_commands;
         close $changescript;
 
@@ -229,6 +236,8 @@ ENDSCRIPT
         say "No commands issued.";
     }
 
+    return;
+
 } ## tidy end: sub START
 
 #### END OF MAIN
@@ -240,7 +249,7 @@ sub newname {
     my $newname
       = $stop_data->{h_stp_511_id} . " " . $stop_data->{c_description_full};
 
-    return undef if $oldname eq $newname;
+    return if $oldname eq $newname;
     return $newname;
 
 }
@@ -267,7 +276,7 @@ sub newcomment {
 
     if ($possible_id) {
         foreach ( $name, $comment ) {
-            if (/\A$possible_id/) {
+            if (/\A$possible_id/sx) {
                 drop( $iphoto_fields_r, $_ );
                 $_ = '';
             }
@@ -337,7 +346,7 @@ sub distance {
     my $a = sin( $dlat / 2 )**2
       + cos( deg2rad($lat1) ) * cos( deg2rad($lat2) ) * sin( $dlong / 2 )**2;
     my $c = 2 * ( asin( sqrt($a) ) );
-    my $dist = RADIUS * $c;
+    my $dist = $RADIUS * $c;
 
     return $dist;    # returns in feet
 

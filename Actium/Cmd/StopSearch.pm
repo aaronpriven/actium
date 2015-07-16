@@ -6,42 +6,42 @@ package Actium::Cmd::StopSearch 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folder;
-use Actium::Cmd::Config::ActiumFM;
+use Actium::Cmd::Config::ActiumFM('actiumdb');
 use Actium::Term;
 
 sub OPTIONS {
-    return ( [ 'tab', 'Uses tabs instead of spaces to separate text' ] )
-      ;
+    return ( Actium::Cmd::Config::ActiumFM::OPTIONS(),
+        [ 'tab', 'Uses tabs instead of spaces to separate text' ] );
 }
 
 sub HELP {
-    say "Help not implemented.";
+    say 'Help not implemented.';
+    return;
 }
 
 my $divider;
+const my $DEFAULT_DIVIDER => $SPACE x 2;
 
 sub START {
 
-    my $class      = shift;
-    my %params     = @_;
-    my $config_obj = $params{config};
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
+
     my $options_r = $params{options};
 
-    my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb($config_obj);
-
-    $divider = $options_r->{tab} ? "\t" : '  ';
+    $divider = $options_r->{tab} ? "\t" : $DEFAULT_DIVIDER;
 
     Actium::Term::be_quiet;
 
     my @args = @{ $params{argv} };
-    
+
     # split arguments by commas as well as spaces
     # (assumes we're not searching for commas...)
-    @args = map { split /,/ } @args;
+    @args = map { split /,/s } @args;
 
     if (@args) {
         foreach (@args) {
-            my @rows = $actium_db->search_ss($_);
+            my @rows = $actiumdb->search_ss($_);
             _display(@rows);
         }
 
@@ -52,23 +52,25 @@ sub START {
         say 'Enter a stop ID, phone ID, or pattern to match.';
         say 'Enter a blank line to quit.';
 
-        require Term::ReadLine; ### DEP ###
+        require Term::ReadLine;    ### DEP ###
 
         my $term = Term::ReadLine->new('st.pl');
         $term->ornaments(1);
-        my $prompt = "st.pl >";
+        my $prompt = 'st.pl >';
         while ( defined( $_ = $term->readline($prompt) ) ) {
             last if ( not $_ );
-            my @rows = $actium_db->search_ss($_);
+            my @rows = $actiumdb->search_ss($_);
             _display(@rows);
-            say '';
+            say $EMPTY_STR;
         }
 
-        say "Exiting.";
+        say 'Exiting.';
 
-    }    ## tidy end: else [ if (@args) ]
+    } ## tidy end: else [ if (@args) ]
 
-}    ## tidy end: sub START
+    return;
+
+} ## tidy end: sub START
 
 sub _display {
 
@@ -84,11 +86,12 @@ sub _display {
 
         print $fields_r->{h_stp_511_id}, $divider,
           $fields_r->{h_stp_identifier}, $divider;
-        say( $active ? '' : "*", $fields_r->{c_description_full} );
+        say( $active ? $EMPTY_STR : '*', $fields_r->{c_description_full} );
 
     }
 
-}    ## tidy end: sub _display
+    return;
+} ## tidy end: sub _display
 
 1;
 

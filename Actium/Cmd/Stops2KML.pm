@@ -12,7 +12,7 @@ package Actium::Cmd::Stops2KML 0.010;
 use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::StopReports('stops2kml');
-use File::Slurp::Tiny('write_file'); ### DEP ###
+use File::Slurp::Tiny('write_file');    ### DEP ###
 
 sub HELP {
 
@@ -33,12 +33,14 @@ HELP
 
 }
 
-sub START {
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
 
-    my $class      = shift;
-    my %params     = @_;
-    my $config_obj = $params{config};
-    my $actium_db  = actiumdb($config_obj);
+sub START {
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
+
     my $outputfile = shift @{ $params{argv} };
 
     unless ($outputfile) {
@@ -46,9 +48,11 @@ sub START {
         return;
     }
 
-    my $kml_text = stops2kml($actium_db);
+    my $kml_text = stops2kml($actiumdb);
 
-    write_file( $outputfile, $kml_text, binmode => ':utf8' )
+    write_file( $outputfile, $kml_text, binmode => ':utf8' );
+
+    return;
 
 }
 

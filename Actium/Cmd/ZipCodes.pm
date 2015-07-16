@@ -9,27 +9,29 @@ use Actium::Cmd::Config::ActiumFM     ('actiumdb');
 use Actium::Cmd::Config::GeonamesAuth ('geonames_username');
 use Actium::Geo('get_zip_for_stops');
 
-use REST::Client; ### DEP ###
-use JSON; ### DEP ###
+use REST::Client;    ### DEP ###
+use JSON;            ### DEP ###
 
 sub HELP {
-    say "Using the geonames.org server, gets zip codes for stops"
+    say 'Using the geonames.org server, gets zip codes for stops'
       . q{that don't have them.};
+    return;
 }
 
 sub OPTIONS {
-   return Actium::Cmd::Config::GeonamesAuth::OPTIONS;
+    return (
+        Actium::Cmd::Config::ActiumFM::OPTIONS(),
+        Actium::Cmd::Config::GeonamesAuth::OPTIONS(),
+    );
 }
 
-
 sub START {
-    my $class      = shift;
-
-    my $actium_db  = actiumdb(@_);
-    my $username   = geonames_username(@_);
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
+    my $username = geonames_username(%params);
 
     my $zip_code_of_r = get_zip_for_stops(
-        actiumdb => $actium_db,
+        actiumdb => $actiumdb,
         username => $username,
     );
 
@@ -43,6 +45,6 @@ sub START {
 
     return;
 
-}
+} ## tidy end: sub START
 
 1;
