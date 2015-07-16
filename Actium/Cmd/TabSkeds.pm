@@ -19,8 +19,11 @@ use warnings;    ### DEP ###
 no warnings 'uninitialized';
 
 sub OPTIONS {
-    return ( [ 'upcoming=s', 'Upcoming signup' ],
-        [ 'current!', 'Current signup' ] );
+    return (
+        [ 'upcoming=s', 'Upcoming signup' ],
+        [ 'current!',   'Current signup' ],
+        Actium::Cmd::Config::ActiumFM::OPTIONS(),
+    );
 }
 
 my $out;
@@ -274,10 +277,9 @@ sub HELP {
 }
 
 sub START {
-
-    my $class      = shift;
-    my %params     = @_;
-    my $config_obj = $params{config};
+    
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
 
     my @specdaynames;
     foreach ( keys %specdaynames ) {

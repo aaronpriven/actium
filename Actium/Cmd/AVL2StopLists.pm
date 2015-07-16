@@ -14,6 +14,8 @@ use Actium::Union('ordered_union');
 use Actium::DaysDirections ('dir_of_hasi');
 use Actium::O::Folders::Signup;
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Term;
 
 # don't buffer terminal output
 
@@ -30,11 +32,17 @@ EOF
     return;
 }
 
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
+
 my $quiet;
 
 sub START {
 
     my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
+
     \my %options = $params{options};
     $quiet = $options{quiet};
 
@@ -54,6 +62,7 @@ sub START {
     my %stops;
 
     load_tables(
+        actiumdb => $actiumdb,
         requests => {
             Stops_Neue => {
                 hash        => \%stops,
@@ -63,7 +72,7 @@ sub START {
         }
     );
 
-    {    # scoping
+    {                                                                  # scoping
 # the reason to do this is to release the %avldata structure, so Affrus
 # (or, presumably, another IDE)
 # doesn't have to display it when it's not being used. Of course it saves memory, too

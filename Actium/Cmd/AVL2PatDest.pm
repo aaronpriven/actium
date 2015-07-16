@@ -8,6 +8,7 @@ use Actium::Union('ordered_union');
 use Actium::Files::FileMaker_ODBC (qw[load_tables]);
 use Actium::Sorting::Line('byline');
 use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 sub HELP {
 
@@ -20,7 +21,14 @@ EOF
     return;
 }
 
+sub OPTIONS {
+    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+}
+
 sub START {
+
+    my ( $class, %params ) = @_;
+    my $actiumdb = actiumdb(%params);
 
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path();
@@ -37,6 +45,7 @@ sub START {
     my %places;
 
     load_tables(
+        actiumdb => $actiumdb,
         requests => {
             Places_Neue => {
                 hash        => \%places,
