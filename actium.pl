@@ -11,7 +11,9 @@ use Actium::Cmd;
 our $VERSION = 0.010;
 
 Actium::Cmd::run(
-    {   flickr          => 'Flickr_Stops',
+    system_name => 'actium',
+    commands    => {
+        flickr          => 'Flickr_Stops',
         dbexport        => 'ActiumDBExport',
         slists2html     => 'Slists2HTML',
         theaimport      => 'TheaImport',
@@ -50,7 +52,7 @@ Actium::Cmd::run(
         newsignup       => 'NewSignup',
 
         # more to come
-    }
+    },
 );
 
 # a reference is an alias, so tabulae => \'tabula' means if you type
