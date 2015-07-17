@@ -4,21 +4,11 @@ package Actium::Cmd::LinesByCity 0.010;
 
 use Actium::Preamble;
 use Actium::Sorting::Line         (qw(sortbyline));
-use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
-#my $signupdir = Actium::O::Folders::Signup->new();
-#chdir $signupdir->path();
-#my $signup = $signupdir->signup;
-
-# open and load files
-
-# read in FileMaker Pro data into variables in package main
-
-sub HELP { say 'Help not implemented.'; return; }
-
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env) );
 }
 
 sub START {
