@@ -3,12 +3,12 @@
 package Actium::Cmd::LinesByCity 0.010;
 
 use Actium::Preamble;
-use Actium::Sorting::Line         (qw(sortbyline));
+use Actium::Sorting::Line (qw(sortbyline));
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env) );
+    my ( $class, $env ) = @_;
+    return ( Actium::Cmd::Config::ActiumFM::OPTIONS($env) );
 }
 
 sub START {
@@ -22,7 +22,7 @@ sub START {
         requests => {
             Stops_Neue => {
                 array  => \@stops,
-                fields => [ qw[ h_stp_511_id p_active p_lines c_city ] ],
+                fields => [qw[ h_stp_511_id p_active p_lines c_city ]],
             },
         }
     );
