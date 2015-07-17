@@ -10,7 +10,6 @@ package Actium::Cmd::Tabskeds 0.010;
 use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util(qw/joinseries/);
-use Actium::Term                  (qw<printq sayq>);
 use Actium::Cmd::Config::Signup ('signup');
 
 use strict;      ### DEP ###
@@ -302,9 +301,9 @@ sub START {
 
     $| = 1;       # don't buffer terminal output
 
-    printq "tab - create a set of public tab-delimited files\n\n";
+    print "tab - create a set of public tab-delimited files\n\n";
 
-    printq "Using signup $signup\n";
+    print "Using signup $signup\n";
 
     open my $date, "<effectivedate.txt"
       or die "Can't open effectivedate.txt for input: $!";

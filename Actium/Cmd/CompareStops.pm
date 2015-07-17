@@ -3,7 +3,6 @@ package Actium::Cmd::CompareStops 0.010;
 use Actium::Preamble;
 
 use Storable();    ### DEP ###
-use Actium::Term('sayq');
 use Actium::Sorting::Line ('byline');
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
@@ -158,7 +157,7 @@ sub START {
 
     output_stops( 'CL', $out, 'CHANGEDSTOPS' );
 
-    sayq 'Completed comparison.';
+    say 'Completed comparison.';
 
     return;
 } ## tidy end: sub START
