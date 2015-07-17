@@ -1,9 +1,3 @@
-# Actium/IDTables/PageAssignments.pm
-
-# Produces the page assignments for the timetables
-
-# legacy status: 4
-
 package Actium::IDTables::PageAssignments 0.010;
 
 use 5.016;
@@ -15,7 +9,6 @@ use Text::Trim; ### DEP ###
 use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
-use Actium::O::Folders::Signup;
 use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
