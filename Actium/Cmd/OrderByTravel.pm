@@ -16,7 +16,6 @@ use English ('-no_match_vars');
 
 use Actium::Sorting::Travel(qw<travelsort>);
 use Actium::Constants;
-use Actium::Term ('output_usage');
 use Actium::Cmd::Config::Signup ('signup');
 
 sub OPTIONS {
@@ -47,8 +46,6 @@ Takes the file specified as input. Takes everything before the first tab
 as the Stop ID.  Reads the line.storable file from the specified signup and
 produces a list of the input stops ordered by travel along the bus stops.
 HELP
-
-    output_usage();
 
     return;
 

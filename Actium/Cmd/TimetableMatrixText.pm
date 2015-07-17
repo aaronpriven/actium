@@ -19,8 +19,6 @@ Reads a timetable matrix file specified on the command line and outputs
 the appropriate text.
 HELP
 
-    Actium::Term::output_usage();
-
     return;
 }
 

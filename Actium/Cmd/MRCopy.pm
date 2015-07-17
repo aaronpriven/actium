@@ -12,8 +12,6 @@ use warnings;
 use Actium::MapRepository (':all');
 use Actium::O::Folder;
 
-use Actium::Term ('output_usage');
-
 use English '-no_match_vars';    ### DEP ###
 
 sub OPTIONS {
@@ -74,7 +72,7 @@ EOF
 
     say $usage
       or die "Can't display usage: $OS_ERROR";
-    output_usage;
+
     return;
 }
 

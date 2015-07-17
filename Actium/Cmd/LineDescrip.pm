@@ -16,15 +16,11 @@ use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup ('signup');
 
-use Actium::Term ('output_usage');
-
 sub HELP {
 
     say <<'HELP' or die q{Can't write to STDOUT};
 linedescrip. Creates line description file.
 HELP
-
-    Actium::Term::output_usage();
 
     return;
 }
