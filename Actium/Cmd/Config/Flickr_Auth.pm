@@ -32,9 +32,8 @@ const my $CONFIG_SECTION => 'Flickr';
 
 sub flickr_auth {
     
-    my %args = @_;
-    my $config_obj = $args{config};
-    \my %option = $args{options};
+    my $env = shift;
+    my $config_obj = $env->config;
 
     my %config     = $config_obj->section($CONFIG_SECTION);
 
@@ -42,7 +41,7 @@ sub flickr_auth {
     foreach ( keys %description_of_option ) {
 
         my $optname = "flickr_$_";
-        $params{$_} = $option{$optname} // $config{$_}
+        $params{$_} = $env->option($optname) // $config{$_}
           // Actium::Term::term_readline( $description_of_option{$_} . ':' );
 
     }
