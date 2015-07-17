@@ -32,7 +32,7 @@ use Exporter;
 our @ISA    = qw<Exporter>;
 our @EXPORT = qw<emit_over emit_prog>;
 our @EXPORT_OK
-  = qw(term_readline output_usage print_in_columns columnize);
+  = qw(term_readline get_width print_in_columns columnize);
 our %EXPORT_TAGS = ( all => [ @EXPORT_OK, @EXPORT ] );
 
 $SIG{'WINCH'} = \&set_width;
@@ -170,40 +170,6 @@ sub term_readline {
 
 } ## tidy end: sub term_readline
 
-sub output_usage {
-
-    my $messages_r = Actium::Options::helpmessages;
-
-    say 'Options:'
-      or carp "Can't output help text: $!";
-
-    my $longest = 0;
-
-    foreach my $option ( keys %{$messages_r} ) {
-        $longest = length($option) if $longest < length($option);
-    }
-
-    $longest++;    # add one for the hyphen in front
-
-    my $HANGING_INDENT_PADDING = 4;
-    local ($Text::Wrap::columns) = get_width();
-
-    foreach ( sort keys %{$messages_r} ) {
-        next if /^_/;
-        my $optionname = sprintf '%*s -- ', $longest, "-$_";
-
-        say Text::Wrap::wrap (
-            $EMPTY_STR,
-            q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
-            $optionname . $messages_r->{$_}
-        );
-
-    }
-    print "\n"
-      or carp "Can't output help text: $!";
-
-}    ## <perltidy> end sub output_usage
-
 # TODO: Document columnize and print_in_columns
 sub columnize {
 
@@ -295,17 +261,6 @@ selected filehandle (setting the -maxdepth attribute to 0; see L<Term::Emit/-max
 =back
 
 =head1 SUBROUTINES
-
-=over
-
-=item B<output_usage>
-
-This routine gets the help messages from B<Actium::Options::helpmessages()> 
-and displays them in a pretty manner. It is intended to be used from HELP 
-routines in modules.
-
-Help messages of options beginning with underscores (e.g., -_stacktrace) 
-are not displayed.
 
 =item B<set_term_pos($position)>
 

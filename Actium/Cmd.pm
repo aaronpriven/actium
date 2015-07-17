@@ -3,6 +3,8 @@ package Actium::Cmd 0.010;
 use Actium::Preamble;
 use Actium::O::CmdEnv;
 use Actium::O::Crier ('default_crier');
+use Text::Wrap; # for output_usage
+use Actium::Term ('get_width');
 
 use Actium::Options qw(add_option init_options option);
 
@@ -11,7 +13,7 @@ use Actium::Options qw(add_option init_options option);
 # Ask user for a command line, if running under Eclipse.
 
 sub run {
-
+    
     my %params      = @_;
     my $system_name = $params{system_name};
     \my %module_of = $params{commands};
@@ -35,7 +37,7 @@ sub run {
     my $subcommand = shift(@ARGV);
 
     if ( not $subcommand or ( lc($subcommand) eq 'help' and ( @ARGV == 0 ) ) ) {
-        print mainhelp() or die "Can't print help text: $OS_ERROR";
+        print mainhelp(\%module_of) or die "Can't print help text: $OS_ERROR";
         exit 0;
     }
 
@@ -73,7 +75,8 @@ sub run {
     my $env = Actium::O::CmdEnv::->new(
         subcommand  => $subcommand,
         system_name => $system_name,
-        crier => default_crier(),
+        #crier => default_crier(), # not working for some mysterious reason
+        crier => Actium::O::Crier->new(),
     );
 
     unshift @options, $module->OPTIONS($env) if $module->can('OPTIONS');
@@ -87,8 +90,8 @@ sub run {
 
     ## no critic (ProtectPrivateSubs)
 
-    $env->_set_options( Actium::Options::_optionhash() );
-    $env->_set_argv( [@ARGV] );
+    $env->_set_options_r( Actium::Options::_optionhash() );
+    $env->_set_argv_r( [@ARGV] );
 
     if ( option('_stacktrace') ) {
         ## no critic (RequireLocalizedPunctuationVars)
@@ -108,6 +111,8 @@ sub run {
     else {
         $module->START($env);
     }
+    
+    output_usage();
 
     return;
 
@@ -131,6 +136,54 @@ sub stacktrace {
     Carp::confess(@_);
 }
 
+sub output_usage {
+
+    my $messages_r = Actium::Options::helpmessages;
+
+    say 'Options:'
+      or carp "Can't output help text: $!";
+
+    my $longest = 0;
+
+    foreach my $option ( keys %{$messages_r} ) {
+        $longest = length($option) if $longest < length($option);
+    }
+
+    $longest++;    # add one for the hyphen in front
+
+    my $HANGING_INDENT_PADDING = 4;
+    local ($Text::Wrap::columns) = get_width();
+
+    foreach ( sort keys %{$messages_r} ) {
+        next if /^_/;
+        my $optionname = sprintf '%*s -- ', $longest, "-$_";
+
+        say Text::Wrap::wrap (
+            $EMPTY_STR,
+            q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
+            $optionname . $messages_r->{$_}
+        );
+
+    }
+    print "\n"
+      or carp "Can't output help text: $!";
+
+}    ## <perltidy> end sub output_usage
 1;
 
 __END__
+
+Documentation originally from Actium::Term
+
+=over
+
+=item B<output_usage>
+
+This routine gets the help messages from B<Actium::Options::helpmessages()> 
+and displays them in a pretty manner. It is intended to be used from HELP 
+routines in modules.
+
+Help messages of options beginning with underscores (e.g., -_stacktrace) 
+are not displayed.
+
+
