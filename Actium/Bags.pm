@@ -7,7 +7,6 @@
 package Actium::Bags 0.010;
 
 use Actium::Preamble;
-use Actium::Term;
 
 #use Actium::Util(qw/joinseries/);
 
