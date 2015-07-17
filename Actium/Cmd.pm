@@ -1,9 +1,8 @@
-# Actium/Cmd.pm - command-line access to Actium system
-
 package Actium::Cmd 0.010;
 
 use Actium::Preamble;
 use Actium::O::CmdEnv;
+use Actium::O::Crier ('default_crier');
 
 use Actium::Options qw(add_option init_options option);
 
@@ -73,7 +72,8 @@ sub run {
 
     my $env = Actium::O::CmdEnv::->new(
         subcommand  => $subcommand,
-        system_name => $system_name
+        system_name => $system_name,
+        crier => default_crier(),
     );
 
     unshift @options, $module->OPTIONS($env) if $module->can('OPTIONS');
