@@ -11,7 +11,6 @@ use List::MoreUtils (qw<all each_arrayref>);    ### DEP ###
 use File::Copy;                                 ### DEP ###
 use Array::Transpose;                           ### DEP ###
 use Actium::Util (':all');
-use Actium::Term ('sayq');
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Time           ('timenum');
@@ -144,13 +143,13 @@ sub START {
         write_sked( $this_sked_key, 'rawskeds' );
     }
 
-    sayq("\n\nAveraged keys:");
+    say "\n\nAveraged keys:";
 
-    sayq( "   ", keyreadable($_) ) for (@averaged_keys);
+    say  "   ", keyreadable($_)  for (@averaged_keys);
 
     copy_exceptions($quiet) unless $rawonly;
 
-    sayq("\nEnd.");
+    say ("\nEnd.");
 
     return;
 
@@ -747,9 +746,9 @@ sub copy_exceptions {
 
     my @skeds = sort glob 'exceptions/*.txt';
 
-    sayq(
+    say 
 "\nAdding exceptional schedules (possibly overwriting previously processed ones)."
-    );
+    ;
 
     my $displaycolumns = 0;
 
