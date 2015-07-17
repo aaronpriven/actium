@@ -107,14 +107,15 @@ sub signup {
 
     $params{base}   //= ( $env->option('base')   // $defaults{BASE} );
     $params{signup} //= ( $env->option('signup') // $defaults{SIGNUP} );
-    
-    if (not defined $params{signup}) {
+    $params{cache}  //= ( $env->option('cache')  // $defaults{CACHE} );
+
+    if ( not defined $params{signup} ) {
         croak "No signup specified.";
     }
 
     return Actium::O::Folders::Signup->new(%params);
 
-}
+} ## tidy end: sub signup
 
 sub oldsignup {
 
@@ -130,12 +131,19 @@ sub oldsignup {
 
     $params{base}   //= ( $env->option('oldbase')   // $defaults{OLDBASE} );
     $params{signup} //= ( $env->option('oldsignup') // $defaults{OLDSIGNUP} );
-    
-    if (not defined $params{signup}) {
+
+    if ( not exists $params{cache} ) {
+        my $cache = ( $env->option('cache') // $defaults{CACHE} );
+        if ( defined $cache ) {
+            $params{cache} = $cache;
+        }
+    }
+
+    if ( not defined $params{signup} ) {
         croak "No old signup specified.";
     }
     return Actium::O::Folders::Signup->new(%params);
 
-}
+} ## tidy end: sub oldsignup
 
 1;
