@@ -82,11 +82,11 @@ sub options_with_old {
 
     return (
         options(@_),
-        [   'oldsignup=s',
+        [   'oldsignup|o=s',
             'The older signup, to be compared with the current signup.'
               . $oldsignup_default_text,
         ],
-        [   'oldbase=s',
+        [   'oldbase|ob=s',
             'The base folder to be used for the older signup.'
               . qq< If not specified, will use "$defaults{OLDBASE}">,
         ],
@@ -110,7 +110,7 @@ sub signup {
     $params{cache}  //= ( $env->option('cache')  // $defaults{CACHE} );
 
     if ( not defined $params{signup} ) {
-        croak "No signup specified.";
+        croak 'No signup specified in ' . $env->subcommand;
     }
 
     return Actium::O::Folders::Signup->new(%params);
@@ -126,10 +126,15 @@ sub oldsignup {
         \%params = $first_argument;
     }
     elsif ( defined($first_argument) ) {
-        \%params = { subfolders => [ $first_argument, @rest ] };
+        %params = ( subfolders => [ $first_argument, @rest ] );
     }
 
-    $params{base}   //= ( $env->option('oldbase')   // $defaults{OLDBASE} );
+    $params{base} //= (
+        $env->option('oldbase')
+          // $env->option('base') 
+          // $defaults{OLDBASE}
+    );
+
     $params{signup} //= ( $env->option('oldsignup') // $defaults{OLDSIGNUP} );
 
     if ( not exists $params{cache} ) {
@@ -138,12 +143,93 @@ sub oldsignup {
             $params{cache} = $cache;
         }
     }
-
     if ( not defined $params{signup} ) {
-        croak "No old signup specified.";
+        croak 'No old signup specified in ' . $env->subcommand;
     }
     return Actium::O::Folders::Signup->new(%params);
 
 } ## tidy end: sub oldsignup
 
 1;
+
+__END__
+
+Old documentation from Actium::O::Folders::Signup 
+
+The base folder is specified as follows (in the following order of
+precedence):
+
+=over
+
+=item *
+
+In the "base" argument to the "signup" method call
+
+=item *
+In the command line with the "-base" option
+
+=item *
+By the environment variable "ACTIUM_BASE".
+
+=back
+
+If none of these are set, Actium::O::Folders::Signup uses
+L<FindBin|FindBin> to find the folder where the script is running
+(in the above example, /Actium/bin), and sets the base folder to
+"signups" in the script folder's parent folder.  In other words,
+it's something like "/Actium/bin/../signups". In the normal case
+where the "bin" folder is in the same folder as the Actium data
+this means it will all work fine without any specification of the
+base folder. If not, then it will croak.
+
+=item Signup folder
+
+The data for each signup is stored in a subfolder of the base folder.
+This folder is usually named after the period of time when the signup
+becomes effective ("w08" meaning "Winter 2008", for example). 
+
+The signup folder is specified as follows (in the following order of
+precedence):
+
+=over
+
+=item *
+In the "signup" argument to the "signup" method call
+
+=item *
+In the command line with the "-signup" option
+
+=item *
+By the environment variable "ACTIUM_SIGNUP".
+
+=back
+
+If none of these are present, then Actium::O::Folders::Signup 
+will croak "No signup folder specified."
+
+=head1 COMMAND-LINE OPTIONS AND ENVIRONMENT VARIABLES
+
+=over
+
+=item -base (option)
+
+=item ACTIUM_BASE (environment variable)
+
+These supply a base folder used when the calling program doesn't
+specify one.
+
+=item -signup (option)
+
+=item ACTIUM_SIGNUP (environment variable)
+
+These supply a signup folder used when the calling program doesn't
+specify one.
+
+=item -cache (option)
+
+=item ACTIUM_CACHE (environment variable)
+
+These supply a cache folder used when the calling program doesn't
+specify one. See the method "cache" below.
+
+=back
