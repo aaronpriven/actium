@@ -33,15 +33,15 @@ sub OPTIONS {
 
 sub actiumdb {
     
-    my %args = @_;
-    my $config_obj = $args{config};
-    \my %option = $args{options};
+    my $env = shift;
+    
+    my $config_obj = $env->config;
 
     my %config     = $config_obj->section($CONFIG_SECTION);
 
     my %params;
     foreach (qw(db_user db_password db_name)) {
-        $params{$_} = $option{$_} // $config{$_};
+        $params{$_} = $env->option($_) // $config{$_};
     }
 
     $params{db_user}

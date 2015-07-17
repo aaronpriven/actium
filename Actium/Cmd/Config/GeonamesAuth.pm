@@ -8,11 +8,10 @@ use Actium::Preamble;
 use Actium::Term;
 use Actium::O::Photos::Flickr::Auth;
 
-use Sub::Exporter (-setup => { exports => [qw(geonames_username)] }); 
+use Sub::Exporter ( -setup => { exports => [qw(geonames_username)] } );
 # Sub::Exporter  ### DEP ###
 
 my %description_of_option = ( username => 'Geonames API username', );
-
 
 sub OPTIONS {
     my @optionlist;
@@ -29,23 +28,21 @@ const my $CONFIG_SECTION => 'Geonames';
 
 sub geonames_username {
 
-    my %args = @_;
-    my $config_obj = $args{config};
-    \my %option = $args{options};
-
-    my %config     = $config_obj->section($CONFIG_SECTION);
+    my $env = shift;
+    my $config_obj = $env->config;
+    my %config = $config_obj->section($CONFIG_SECTION);
 
     my %params;
     foreach ( keys %description_of_option ) {
 
         my $optname = "geonames_$_";
-        $params{$_} = $option{$optname} // $config{$_}
+        $params{$_} = $env->option($optname) // $config{$_}
           // Actium::Term::term_readline( $description_of_option{$_} . ':' );
     }
 
     return $params{username};
 
-}
+} ## tidy end: sub geonames_username
 
 1;
 
