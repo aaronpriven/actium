@@ -47,10 +47,10 @@ my %sked_override_order_of;
 sub START {
     
     my $class      = shift;
-    my %params     = @_;
-    \my %option = $params{options};
-    my $quiet = $option{quiet};
-    my $rawonly = $option{rawonly};
+    my $env = shift;
+
+    my $quiet = $env->option('quiet');
+    my $rawonly = $env->option('rawonly');
 
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path();

@@ -24,7 +24,9 @@ sub START {
     emit 'Processing Flickr photos';
 
     my $class      = shift;
-    my $flickr_auth = flickr_auth(@_);
+    my $env = shift;
+    
+    my $flickr_auth = flickr_auth($env);
     
     Actium::Photos::flickr_stops($flickr_auth);
     

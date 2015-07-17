@@ -38,10 +38,11 @@ sub OPTIONS {
 }
 
 sub START {
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
+    my @argv = $env->argv;
 
-    my $outputfile = shift @{ $params{argv} };
+    my $outputfile = shift @argv;
 
     unless ($outputfile) {
         HELP();

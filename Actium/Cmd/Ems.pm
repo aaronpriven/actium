@@ -23,10 +23,9 @@ say 'Not implemented.';
 sub START {
 
     my $class = shift;
-    my %params = @_;
+    my $env = shift;
+    my @argv = $env->argv;
 
-	my @argv = @{$params{argv}};
-  
     foreach my $chars (@argv) {
         
         say "$chars: " , ems($chars);

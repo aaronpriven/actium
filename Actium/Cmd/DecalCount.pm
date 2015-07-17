@@ -20,10 +20,11 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
+    my @argv = $env->argv;
 
-    my $input_file = shift @{ $params{argv} };
+    my $input_file = shift @argv;
     my $output_file = add_before_extension( $input_file, 'counted' );
 
     make_decal_count( $input_file, $output_file, $actiumdb );

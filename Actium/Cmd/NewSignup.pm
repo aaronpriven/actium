@@ -30,9 +30,8 @@ HELP
 sub START {
 
     my $class  = shift;
-    my %params = @_;
-    \my %option = $params{options};
-    my $xheazip = $option{xhea};
+    my $env = shift;
+    my $xheazip = $env->option('xhea');
 
     emit "Making signup and subdirectories";
 

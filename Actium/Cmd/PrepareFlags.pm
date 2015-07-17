@@ -24,12 +24,13 @@ sub OPTIONS {
 }
 
 sub START {
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
+    my @argv = $env->argv;
 
     emit 'Creating flag assignments';
 
-    my $input_file = shift @{ $params{argv} };
+    my $input_file = shift @argv; 
     my ( $output_file, $signup, @stopids );
 
     if ( defined $input_file ) {

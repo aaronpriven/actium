@@ -1,5 +1,3 @@
-#Actium/Cmd/AVL2Points.pm
-
 package Actium::Cmd::AVL2Points 0.010;
 
 use Actium::Preamble;
@@ -36,8 +34,8 @@ EOF
 
 sub START {
 
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
 
     my ( %stops, %cities );
 

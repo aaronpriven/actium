@@ -66,26 +66,25 @@ EOF
 sub START {
 
     my $class   = shift;
-    my %params  = @_;
-    my %options = %{ $params{options} };
+    my $env = shift;
 
-    my @importfolders = $params{argv};
+    my @importfolders = $env->argv;
     unless (@importfolders) {
         $class->HELP();
         return;
     }
-    my $web           = $options{web};
-    my $webfolder_opt = $options{webfolder};
-    my $verbose       = $options{verbose};
+    my $web           = $env->option('web');
+    my $webfolder_opt = $env->option('webfolder');
+    my $verbose       = $env->option('verbose');
 
     my $specified_webfolder_obj;
 
     if ( $web and $webfolder_opt ) {
         $specified_webfolder_obj =
-          Actium::O::Folder->new( $options{webfolder} );
+          Actium::O::Folder->new( $env->option('webfolder') );
     }
 
-    my $repository_opt = $options{repository};
+    my $repository_opt = $env->option('repository');
 
     my $repository = Actium::O::Folder->new(
         {
@@ -104,7 +103,7 @@ sub START {
         );
         my @imported_files = import_to_repository(
             repository   => $repository,
-            move         => $options{move},
+            move         => $env->option('move'),
             verbose      => $verbose,
             importfolder => $importfolder
         );

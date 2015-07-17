@@ -277,8 +277,8 @@ sub HELP {
 
 sub START {
     
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
 
     my @specdaynames;
     foreach ( keys %specdaynames ) {

@@ -25,11 +25,8 @@ HELP
 }
 
 sub START {
-    my $class = shift;
-
-    my %params = @_;
-
-    my @argv = @{ $params{argv} };
+    my ($class, $env) = @_;
+    my @argv = $env->argv;
 
     my $filespec = shift @argv;
     die "No input file given" unless $filespec;
