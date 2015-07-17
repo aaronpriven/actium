@@ -11,7 +11,6 @@ use warnings;
 
 use Algorithm::Combinatorics(':all'); ### DEP ###
 use Actium::Util('population_stdev');
-use Actium::Term(':all');
 
 use Sub::Exporter -setup => {
     exports => [ qw< ordered_partitions odometer_combinations > ]

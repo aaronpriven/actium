@@ -178,8 +178,6 @@ uses specify options. See:
 
 =item L<OPTIONS in Actium::Cmd::Config::Signup|Actium::Cmd::Config::Signup/OPTIONS>
 
-=item L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
-
 =back
 
 A complete list of options can be found by running 
@@ -225,8 +223,6 @@ signup) or there may be some other error.
 =over
 
 =item Actium::Constants
-
-=item Actium::Term 
 
 =item Actium::Cmd::Config::Signup
 

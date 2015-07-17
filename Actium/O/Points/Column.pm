@@ -21,7 +21,6 @@ use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
 use Actium::Time ('timenum');
-use Actium::Term;
 use Const::Fast; ### DEP ###
 
 use Actium::Text::InDesignTags;
