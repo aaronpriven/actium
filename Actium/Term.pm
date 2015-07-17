@@ -262,7 +262,7 @@ selected filehandle (setting the -maxdepth attribute to 0; see L<Term::Emit/-max
 
 =head1 SUBROUTINES
 
-=item B<set_term_pos($position)>
+==item B<set_term_pos($position)>
 
 This routine is designed to allow regular output (print, say, etc.) to be mixed with
 Actium::Term output. It tells Term::Emit to set the current cursor position to $position.
