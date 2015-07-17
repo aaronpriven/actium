@@ -37,8 +37,6 @@ use Actium::O::Days;
 use Actium::O::Sked::Stop;
 use Actium::O::Sked::Stop::Time;
 
-use Actium::Term;
-
 use Const::Fast; ### DEP ###
 
 with 'Actium::O::Sked::Prehistoric';

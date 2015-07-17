@@ -243,8 +243,6 @@ dependencies below.
 
 =item * Actium::O::Folder
 
-=item * Actium::Term 
-
 =back
 
 =head1 AUTHOR
