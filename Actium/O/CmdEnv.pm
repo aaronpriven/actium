@@ -39,6 +39,12 @@ has bin => (
     builder => '_build_bin',
 );
 
+has subcommand => (
+    isa => 'Str',
+    is => 'ro',
+    required => 1,
+);
+
 sub _build_bin {
     require Actium::O::Folder;
     return Actium::O::Folder::->new($Bin);
