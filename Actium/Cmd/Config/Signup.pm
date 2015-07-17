@@ -4,7 +4,8 @@ use Actium::Preamble;
 use File::Spec;
 use Actium::O::Folders::Signup;
 
-use Sub::Exporter ( -setup => { exports => [qw(signup)] } );    ### DEP ###
+use Sub::Exporter ( -setup => { exports => [qw(signup oldsignup)] } );
+# Sub::Exporter ### DEP ###
 
 const my $BASE_ENV      => 'ACTIUM_BASE';
 const my $SIGNUP_ENV    => 'ACTIUM_SIGNUP';
@@ -94,7 +95,15 @@ sub options_with_old {
 } ## tidy end: sub options_with_old
 
 sub signup {
-    my ( $env, %params ) = @_;
+    my ( $env, $first_argument, @rest ) = @_;
+
+    my %params;
+    if ( ref($first_argument) eq 'HASH' ) {
+        \%params = $first_argument;
+    }
+    elsif ( defined($first_argument) ) {
+        \%params = { subfolders => [ $first_argument, @rest ] };
+    }
 
     $params{base}   //= ( $env->option('base')   // $defaults{BASE} );
     $params{signup} //= ( $env->option('signup') // $defaults{SIGNUP} );
@@ -104,10 +113,20 @@ sub signup {
 }
 
 sub oldsignup {
-    my ( $env, %params ) = @_;
+
+    my ( $env, $first_argument, @rest ) = @_;
+
+    my %params;
+    if ( ref($first_argument) eq 'HASH' ) {
+        \%params = $first_argument;
+    }
+    elsif ( defined($first_argument) ) {
+        \%params = { subfolders => [ $first_argument, @rest ] };
+    }
 
     $params{base}   //= ( $env->option('oldbase')   // $defaults{OLDBASE} );
     $params{signup} //= ( $env->option('oldsignup') // $defaults{OLDSIGNUP} );
+    return Actium::O::Folders::Signup->new(%params);
 
 }
 
