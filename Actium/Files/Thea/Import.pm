@@ -11,7 +11,6 @@ use warnings;
 package Actium::Files::Thea::Import 0.010;
 
 use Actium::Term ':all';
-use Actium::O::Folders::Signup;
 use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Time 'timenum';
 use Actium::O::Days;

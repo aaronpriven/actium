@@ -1,13 +1,7 @@
-# Actium/IDTables.pm
-
-# Produces InDesign tag files that represent timetables.
-
-# legacy status: 4
-
-use warnings; ### DEP ###
-use 5.012;
-
 package Actium::IDTables 0.010;
+
+use 5.012;
+use warnings; ### DEP ###
 
 use English '-no_match_vars';
 use autodie;
@@ -18,7 +12,6 @@ use Actium::Sorting::Skeds('skedsort');
 use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
-use Actium::O::Folders::Signup;
 use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
