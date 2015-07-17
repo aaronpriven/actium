@@ -115,8 +115,8 @@ my %color_of;
 sub START {
 
     my $class    = shift;
-    my %params   = @_;
-    my $actiumdb = actiumdb(%params);
+    my $env   = shift;
+    my $actiumdb = actiumdb($env);
 
     my $signup     = Actium::O::Folders::Signup->new();
     my $flagfolder = $signup->subfolder('flags');

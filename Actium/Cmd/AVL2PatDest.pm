@@ -21,13 +21,14 @@ EOF
 }
 
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($self, $env) = @_;
+    return Actium::Cmd::Config::ActiumFM::OPTIONS($env);
 }
 
 sub START {
 
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
 
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path();

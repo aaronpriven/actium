@@ -14,61 +14,52 @@ use Actium::O::Folder;
 
 use Actium::Term ('output_usage');
 
-use English '-no_match_vars'; ### DEP ###
+use English '-no_match_vars';    ### DEP ###
 
 sub OPTIONS {
     return (
-        [
-            'repository=s',
+        [   'repository=s',
             'Location of repository in file system',
             '/Volumes/Bireme/Maps/Repository'
         ],
-        [
-            'activemapfile=s',
+        [   'activemapfile=s',
             'Name of file containing list of active maps. '
               . 'Must be located in the repository.',
             'active_maps.txt',
         ],
-        [
-            'web!',
+        [   'web!',
             'Create web files of maps (on by default; turn off with -no-web)',
             1
         ],
-        [
-            'fullnames!',
+        [   'fullnames!',
             'Copy files with their full names '
               . '(on by default; turn off with -no-fullnames)',
             1,
         ],
-        [
-            'linesnames!',
+        [   'linesnames!',
             'Copy files using the lines and token as the name only '
               . '(on by default; turn off with -no-linesnames)',
             1,
         ],
-        [
-            'verbose!',
+        [   'verbose!',
             'Display detailed information on each file copied or rasterized.',
             0,
         ],
 
-        [
-            'webfolder|wf=s',
+        [   'webfolder|wf=s',
             'Folder where web files will be created. '
               . 'Default is "_web" in the repository'
         ],
-        [
-            'linesfolder|lf=s',
+        [   'linesfolder|lf=s',
             'Folder to where lines and tokens files will be copied. '
               . 'Default is "_linesnames" in the repository'
         ],
-        [
-            'fullfolder|ff=s',
+        [   'fullfolder|ff=s',
             'Folder to where full names will be copied. '
               . 'Default is "_fullnames" in the repository'
         ],
     );
-}
+} ## tidy end: sub OPTIONS
 
 sub HELP {
 
@@ -89,40 +80,42 @@ EOF
 
 {
 
-    my ( %options, $repository );
+    my ( $env, $repository );
 
     sub START {
-        my %params = @_;
-        %options = %{ $params{options} };
+        my $class = shift;
+        $env = shift;
 
-        $repository = Actium::O::Folder->new( option('repository') );
+        $repository = Actium::O::Folder->new( $env->option('repository') );
 
         my $webfolder = option_folder( 'web', 'webfolder', '_web' );
-        my $fullfolder =
-          option_folder( 'fullnames', 'fullfolder', '_fullnames' );
-        my $linesfolder =
-          option_folder( 'linesnames', 'linesfolder', '_linesnames' );
+        my $fullfolder
+          = option_folder( 'fullnames', 'fullfolder', '_fullnames' );
+        my $linesfolder
+          = option_folder( 'linesnames', 'linesfolder', '_linesnames' );
 
         copylatest(
             repository      => $repository,
             fullname        => $fullfolder,
             linesname       => $linesfolder,
             web             => $webfolder,
-            verbose         => $options{'verbose'},
-            active_map_file => $options{'activemapfile'},
+            verbose         => $env->options('verbose'),
+            active_map_file => $env->options('activemapfile'),
         );
         return;
 
-    }    ## tidy end: sub START
+    } ## tidy end: sub START
 
     sub option_folder {
         my ( $option, $folderoption, $default ) = @_;
 
         my $folder_obj;
 
-        if ( $options{$option} ) {
-            if ( $options{$folderoption} ) {
-                $folder_obj = Actium::O::Folder->new( $options{$folderoption} );
+        if ( $env->option($option) ) {
+            if ( $env->option($folderoption) ) {
+                $folder_obj
+                  = Actium::O::Folder->new( $env->option($folderoption) )
+                  ;
             }
             else {
                 $folder_obj = $repository->subfolder($default);

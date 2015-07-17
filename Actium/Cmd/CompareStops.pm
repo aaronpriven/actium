@@ -41,11 +41,10 @@ my ( %changes, %oldstoplists, %stops );
 
 sub START {
 
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
 
-    \my %options = $params{options};
-    my $oldsignup_opt = $options{oldsignup};
+    my $oldsignup_opt = $env->option('oldsignup');
 
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path;

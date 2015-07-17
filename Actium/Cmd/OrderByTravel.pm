@@ -10,8 +10,8 @@ use warnings;
 
 package Actium::Cmd::OrderByTravel 0.010;
 
-use Carp; ### DEP ###
-use Storable(); ### DEP ###
+use Carp;          ### DEP ###
+use Storable();    ### DEP ###
 use English ('-no_match_vars');
 
 use Actium::Sorting::Travel(qw<travelsort>);
@@ -25,8 +25,7 @@ sub OPTIONS {
         'When sorting by travel, give a list of lines to be sorted first, '
           . 'separated by commas. For example, -promote 26,A,58'
       ],
-      [
-        'demote600s!',
+      [ 'demote600s!',
         'When sorting by travel, lower the priority of 600-series lines. '
       ];
 
@@ -54,15 +53,15 @@ HELP
 
 sub START {
 
-    my $class   = shift;
-    my %params  = @_;
-    my %options = %{ $params{options} };
+    my $class = shift;
+    my $env   = shift;
 
-    my @argv = @{ $params{argv} };
+    my @argv = $env->argv;
 
     my @promote_parameter;
-    if ( $options{promote} ) {
-        @promote_parameter = ( promote => [ split m/,/, $options{promote} ] );
+    if ( $env->option('promote') ) {
+        @promote_parameter
+          = ( promote => [ split m/,/, $env->option('promote') ] );
     }
     # this is written as a list because promote => undef or whatever will
     # not pass validation
@@ -100,7 +99,7 @@ sub START {
         stops            => [ keys %description_of ],
         stops_of_linedir => $stops_of_r,
         @promote_parameter,
-        demote600s => $options{demote600s},
+        demote600s => $env->option('demote600s'),
     );
 
     binmode STDOUT, ':utf8';
@@ -113,7 +112,7 @@ sub START {
         }
     }
 
-}    ## tidy end: sub START
+} ## tidy end: sub START
 
 1;
 

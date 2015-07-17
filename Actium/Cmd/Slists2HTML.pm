@@ -37,8 +37,8 @@ sub START {
 
     emit 'Making HTML files of stop lists';
 
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
 
     my $signup = Actium::O::Folders::Signup->new;
 

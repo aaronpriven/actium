@@ -36,8 +36,8 @@ sub OPTIONS {
 }
 
 sub START {
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
 
     my $signup            = Actium::O::Folders::Signup->new();
     my $tabulae_folder    = $signup->subfolder('timetables');

@@ -39,11 +39,10 @@ my $quiet;
 
 sub START {
 
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
 
-    \my %options = $params{options};
-    $quiet = $options{quiet};
+    $quiet = $env->option('quiet');
 
     my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path();

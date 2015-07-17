@@ -22,17 +22,16 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, %params ) = @_;
-    my $config_obj = $params{config};
-    my $options_r  = $params{options};
+    my ( $class, $env ) = @_;
+    my $config_obj = $env->config;
 
-    my $oldsignup_option = $options_r->{'oldsignup'};
+    my $oldsignup_option = $env->option('oldsignup');
     die 'No oldsignup option specified' unless $oldsignup_option;
 
     my $signup = Actium::O::Folders::Signup->new();
     my $oldsignup
       = Actium::O::Folders::Signup->new( { signup => $oldsignup_option } );
-    my $actium_db = actiumdb(%params);
+    my $actium_db = actiumdb($env);
 
     my ( $bagtexts_r, $baglist_r, $counts_r, $final_heights_r )
       = Actium::Bags::make_bags(

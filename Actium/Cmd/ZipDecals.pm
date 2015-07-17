@@ -23,10 +23,9 @@ sub HELP { say "Make an archive of the decals in an Excel file." }
 sub START {
     my $class = shift;
 	
-	my %params = @_;
+	my $env = shift;
+	my @argv = $env->argv;
 
-	my @argv = @{$params{argv}};
-    
     my $filespec = shift @argv;
     die "No input file given" unless $filespec;
     
@@ -59,4 +58,5 @@ sub START {
 } ## tidy end: sub START
 
 1; 
+
 __END__

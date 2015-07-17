@@ -32,8 +32,8 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
 
     emit 'Generating stoplines';
 

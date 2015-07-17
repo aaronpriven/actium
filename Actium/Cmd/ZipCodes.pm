@@ -26,9 +26,9 @@ sub OPTIONS {
 }
 
 sub START {
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
-    my $username = geonames_username(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
+    my $username = geonames_username($env);
 
     my $zip_code_of_r = get_zip_for_stops(
         actiumdb => $actiumdb,

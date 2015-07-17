@@ -11,8 +11,9 @@ use Data::Dumper;    ### DEP ###
 sub START {
 
     my $class  = shift;
-    my %params = @_;
-    my @argv   = @{ $params{argv} };
+    my $env = shift;
+    
+    my @argv   = $env->argv;
 
     my $firstfile  = shift(@argv);
     my $secondfile = shift(@argv);
