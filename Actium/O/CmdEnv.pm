@@ -40,9 +40,15 @@ has bin => (
 );
 
 has subcommand => (
-    isa => 'Str',
-    is => 'ro',
+    isa      => 'Str',
+    is       => 'ro',
     required => 1,
+);
+
+has crier => (
+    is       => 'ro',
+    required => 1,
+    isa => 'Actium::O::Crier',
 );
 
 sub _build_bin {
