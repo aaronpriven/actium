@@ -13,7 +13,7 @@ use Actium::Options qw(add_option init_options option);
 
 sub run {
 
-    my %params     = @_;
+    my %params      = @_;
     my $system_name = $params{system_name};
     \my %module_of = $params{commands};
 
@@ -71,7 +71,10 @@ sub run {
         ],
     );
 
-    my $env = Actium::O::CmdEnv::->new( system_name => $system_name );
+    my $env = Actium::O::CmdEnv::->new(
+        subcommand  => $subcommand,
+        system_name => $system_name
+    );
 
     unshift @options, $module->OPTIONS($env) if $module->can('OPTIONS');
 
@@ -95,9 +98,10 @@ sub run {
     }
 
     if ( $help or option('help') ) {
-        if ($module->can('HELP') ) {
-           $module->HELP($env);
-        } else {
+        if ( $module->can('HELP') ) {
+            $module->HELP($env);
+        }
+        else {
             say "Help not implemented for $subcommand";
         }
     }
