@@ -32,7 +32,7 @@ use Exporter;
 our @ISA    = qw<Exporter>;
 our @EXPORT = qw<emit_over emit_prog>;
 our @EXPORT_OK
-  = qw(term_readline sayq printq output_usage print_in_columns columnize);
+  = qw(term_readline output_usage print_in_columns columnize);
 our %EXPORT_TAGS = ( all => [ @EXPORT_OK, @EXPORT ] );
 
 $SIG{'WINCH'} = \&set_width;
@@ -140,20 +140,6 @@ sub get_width {
 }
 
 ### General stuff
-
-sub sayq {
-    return if option('quiet');
-    say STDERR @_
-      or carp "Can't say: $!";
-    return;
-}
-
-sub printq {
-    return if option('quiet');
-    print STDERR @_
-      or carp "Can't print: $!";
-    return;
-}
 
 sub term_readline {
 
@@ -271,12 +257,6 @@ This documentation refers to Actium::Term version 0.001
 =head1 SYNOPSIS
 
  use Actium::Term;
- sayq 'Now processing something important.';
- printq 'Wait just a minute...';
- # do something
- sayq 'done.';
-
- use Actium::Term;
  use Term::Emit qw(:all);
  emit 'Doing something cool...';
  # doing it
@@ -317,14 +297,6 @@ selected filehandle (setting the -maxdepth attribute to 0; see L<Term::Emit/-max
 =head1 SUBROUTINES
 
 =over
-
-=item B<printq>
-
-=item B<sayq>
-
-The routines B<sayq> and B<printq> check to see if the quiet option
-is set, and if not, they send their arguments to "say" or "print"
-respectively.
 
 =item B<output_usage>
 
