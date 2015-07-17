@@ -3,7 +3,7 @@
 
 package Actium::O::Crier 0.010;
 use Actium::Moose;
-use Scalar::Util(qw[openhandle weaken refaddr reftype]); ### DEP ###
+use Scalar::Util(qw[openhandle weaken refaddr reftype]);    ### DEP ###
 
 use Actium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
 use Actium::Util  ('u_columns');
@@ -20,9 +20,9 @@ const my $DEFAULT_STEP         => 2;
 
 use Sub::Exporter -setup => {
     exports => [
-        'cry' => \'_build_cry',
+        'cry' => \&_build_cry,
         'cry_text',
-        'default_crier' => \'_build_default_crier',
+        'default_crier' => \&_build_default_crier,
     ]
 };
 # Sub::Exporter ### DEP ###
@@ -31,7 +31,7 @@ my $default_crier;
 
 sub _build_default_crier {
     my ( $class, $name, $arg ) = @_;
-
+    
     if ( defined $arg and scalar keys %$arg ) {
         if ($default_crier) {
             croak 'Arguments given in '
@@ -51,7 +51,7 @@ sub _build_default_crier {
         return $default_crier;
       }
 
-}
+} ## tidy end: sub _build_default_crier
 
 sub _build_cry {
     return sub {
@@ -452,7 +452,7 @@ sub cry {
     # void context - close immediately
     return;    # only to make perlcritic happy
 
-}
+} ## tidy end: sub cry
 
 sub _close_up_to {
     my $self          = shift;

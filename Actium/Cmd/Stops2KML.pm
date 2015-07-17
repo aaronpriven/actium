@@ -27,8 +27,6 @@ Takes all stops in the database and produces a KML file
 with the bus stop information.
 HELP
 
-    output_usage();
-
     return;
 
 }

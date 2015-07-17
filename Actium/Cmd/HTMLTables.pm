@@ -23,8 +23,6 @@ htmltables. Reads schedules and makes HTML tables out of them.
 Also writes JSON structs, just for fun.
 HELP
 
-    Actium::Term::output_usage();
-
     return;
 }
 

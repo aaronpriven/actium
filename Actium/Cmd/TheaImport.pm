@@ -20,8 +20,6 @@ long-format Sked files for use by the rest of the Actium system,
 as well as processing stops and places files for import.
 HELP
 
-    Actium::Term::output_usage();
-
 }
 
 sub OPTIONS {
