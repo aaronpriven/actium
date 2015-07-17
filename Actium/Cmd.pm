@@ -3,23 +3,19 @@
 package Actium::Cmd 0.010;
 
 use Actium::Preamble;
+use Actium::O::CmdEnv;
 
 use Actium::Options qw(add_option init_options option);
 
 # eventually merge that into this module
 
-use Actium::O::Files::Ini;
-
 # Ask user for a command line, if running under Eclipse.
 
 sub run {
 
-    \my %module_of = shift;
-
-    ## no critic (RequireExplicitInclusion)
-    # bug in RequireExplicitInclusion
-    my $config = Actium::O::Files::Ini::->new('.actium.ini');
-    ## use critic
+    my %params     = @_;
+    my $system_name = $params{system_name};
+    \my %module_of = $params{commands};
 
     {
         no warnings('once');
@@ -75,7 +71,9 @@ sub run {
         ],
     );
 
-    unshift @options, $module->OPTIONS if $module->can('OPTIONS');
+    my $env = Actium::O::CmdEnv::->new( system_name => $system_name );
+
+    unshift @options, $module->OPTIONS($env) if $module->can('OPTIONS');
 
     while (@options) {
         my $option_r = shift(@options);
@@ -85,8 +83,9 @@ sub run {
     init_options();
 
     ## no critic (ProtectPrivateSubs)
-    my $options_r = Actium::Options::_optionhash();
-    ## use critic
+
+    $env->_set_options( Actium::Options::_optionhash() );
+    $env->_set_argv( [@ARGV] );
 
     if ( option('_stacktrace') ) {
         ## no critic (RequireLocalizedPunctuationVars)
@@ -96,15 +95,10 @@ sub run {
     }
 
     if ( $help or option('help') ) {
-        $module->HELP(@ARGV);
+        $module->HELP($env);
     }
     else {
-        $module->START(
-            options => $options_r,
-            argv    => [@ARGV],
-            config  => $config,
-            env     => {%ENV},
-        );
+        $module->START($env);
     }
 
     return;
