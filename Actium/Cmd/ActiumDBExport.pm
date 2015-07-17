@@ -46,8 +46,8 @@ sub START {
 
     local $INPUT_RECORD_SEPARATOR = "\r\n";    # exporting for windoze
 
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
 
     my $dbh = $actiumdb->dbh;
 

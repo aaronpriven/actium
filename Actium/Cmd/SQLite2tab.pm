@@ -15,26 +15,24 @@ use Actium::Term ('output_usage');
 use Actium::Constants;
 use Actium::O::Files::HastusASI;
 
-
 sub START {
 
     my $class = shift;
-    my %params = @_;
+    my $env   = shift;
 
-	my @argv = @{$params{argv}};
+    my @argv = $env->argv;
 
-  my $dir;
+    my $dir;
     my $db;
-
-            $dir = Actium::O::Folders::Signup->new('hasi');
-            $db = Actium::O::Files::HastusASI->new( $dir->path() );
+    $dir = Actium::O::Folders::Signup->new('hasi');
+    $db  = Actium::O::Files::HastusASI->new( $dir->path() );
 
     my $table = $argv[0];
 
     my $iterator = $db->each_row($table);
 
     emit "Sending tab-delimited $table data to STDOUT";
-    
+
     binmode STDOUT, ':utf8';
 
     my @columnnames = $db->columns_of_table($table);

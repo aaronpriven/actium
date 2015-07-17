@@ -44,10 +44,9 @@ HELP
 sub START {
 
     my $class = shift;
-my %params = @_;
+    my $env = shift;
+    my @argv = $env->argv;
 
-	my @argv = @{$params{argv}};
-  
     my $timestr_sub = timestr_sub( { XB    => 1 } );
     my $timestr_24  = timestr_sub( { HOURS => 24 } );
     foreach my $time (@argv) {

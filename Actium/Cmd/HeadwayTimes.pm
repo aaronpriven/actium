@@ -29,9 +29,8 @@ HELP
 sub START {
 
     my $class  = shift;
-    my %params = @_;
-
-    my @argv = @{ $params{argv} };
+    my $env = shift;
+    my @argv = $env->argv;
 
   FILE:
     foreach my $filename (@argv) {

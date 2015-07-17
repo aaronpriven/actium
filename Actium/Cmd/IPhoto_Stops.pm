@@ -44,8 +44,8 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, %params ) = @_;
-    my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb($env);
 
     ## no critic (ProhibitLongLines)
     my $get_selected_script = <<'ENDSCRIPT';

@@ -21,10 +21,12 @@ sub OPTIONS {
 sub START {
 
     my $class     = shift;
-    my %params    = @_;
-    my $actium_db = actiumdb(@_);
+    my $env = shift;
+    my $actium_db = actiumdb($env);
+    
+    my @argv = $env->argv;
 
-    my $input_file = shift @{ $params{argv} };
+    my $input_file = shift @argv;
     my $output_file = add_before_extension( $input_file, 'labels' );
 
     make_labels( $input_file, $output_file, $actium_db );

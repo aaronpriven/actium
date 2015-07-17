@@ -24,16 +24,14 @@ const my $DEFAULT_DIVIDER => $SPACE x 2;
 
 sub START {
 
-    my ( $class, %params ) = @_;
-    my $actiumdb = actiumdb(%params);
+    my ( $class, $env ) = @_;
+    my $actiumdb = actiumdb($env);
 
-    my $options_r = $params{options};
-
-    $divider = $options_r->{tab} ? "\t" : $DEFAULT_DIVIDER;
+    $divider = $env->option('tab') ? "\t" : $DEFAULT_DIVIDER;
 
     Actium::Term::be_quiet;
 
-    my @args = @{ $params{argv} };
+    my @args = $env->argv;
 
     # split arguments by commas as well as spaces
     # (assumes we're not searching for commas...)
