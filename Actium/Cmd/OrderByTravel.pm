@@ -17,17 +17,20 @@ use English ('-no_match_vars');
 use Actium::Sorting::Travel(qw<travelsort>);
 use Actium::Constants;
 use Actium::Term ('output_usage');
-use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::Signup ('signup');
 
 sub OPTIONS {
-    return [
-        'promote=s',
-        'When sorting by travel, give a list of lines to be sorted first, '
-          . 'separated by commas. For example, -promote 26,A,58'
-      ],
-      [ 'demote600s!',
-        'When sorting by travel, lower the priority of 600-series lines. '
-      ];
+    my ( $class, $env ) = @_;
+    return (
+        Actium::Cmd::Config::Signup::options($env),
+        [   'promote=s',
+            'When sorting by travel, give a list of lines to be sorted first, '
+              . 'separated by commas. For example, -promote 26,A,58'
+        ],
+        [   'demote600s!',
+            'When sorting by travel, lower the priority of 600-series lines. '
+        ]
+    );
 
 }
 
@@ -89,7 +92,7 @@ sub START {
 
     }
 
-    my $slistsdir = Actium::O::Folders::Signup->new('slists');
+    my $slistsdir = signup($env, 'slists');
 
     # retrieve data
     my $stops_of_r = $slistsdir->retrieve('line.storable')
@@ -176,7 +179,7 @@ uses specify options. See:
 
 =over
 
-=item L<OPTIONS in Actium::O::Folders::Signup|Actium::O::Folders::Signup/OPTIONS>
+=item L<OPTIONS in Actium::Cmd::Config::Signup|Actium::Cmd::Config::Signup/OPTIONS>
 
 =item L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
 
@@ -228,7 +231,7 @@ signup) or there may be some other error.
 
 =item Actium::Term 
 
-=item Actium::O::Folders::Signup
+=item Actium::Cmd::Config::Signup
 
 =item Actium::Sorting::Travel
 

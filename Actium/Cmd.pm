@@ -95,7 +95,11 @@ sub run {
     }
 
     if ( $help or option('help') ) {
-        $module->HELP($env);
+        if ($module->can('HELP') ) {
+           $module->HELP($env);
+        } else {
+            say "Help not implemented for $subcommand";
+        }
     }
     else {
         $module->START($env);

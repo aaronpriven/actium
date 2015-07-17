@@ -6,7 +6,7 @@
 package Actium::Cmd::StorableAVL 0.010;
 
 use Actium::Preamble;
-use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::Signup ('signup');
 
 use Text::Trim;    ### DEP ###
 use Storable();    ### DEP ###
@@ -28,6 +28,12 @@ my %keys_of;
 my %template_of;
 my %data_of;
 
+sub OPTIONS {
+    my ($class, $env) = @_;
+    return (
+    Actium::Cmd::Config::Signup::options($env));
+}
+
 sub HELP {
 
     my $helptext = <<'EOF';
@@ -42,8 +48,9 @@ EOF
 }
 
 sub START {
-
-    my $signup = Actium::O::Folders::Signup->new();
+    
+        my ( $class, $env ) = @_;
+    my $signup = signup($env);
     chdir $signup->path();
 
     say 'Reading from ', $signup->path();

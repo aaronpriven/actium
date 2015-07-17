@@ -9,11 +9,16 @@ use warnings;
 
 package Actium::Cmd::SQLite2tab 0.010;
 
-use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::Signup ('signup');
 use Actium::Util qw(jt );
 use Actium::Term ('output_usage');
 use Actium::Constants;
 use Actium::O::Files::HastusASI;
+
+sub OPTIONS {
+    my ( $class, $env ) = @_;
+    return ( Actium::Cmd::Config::Signup::options($env) );
+}
 
 sub START {
 
@@ -22,10 +27,8 @@ sub START {
 
     my @argv = $env->argv;
 
-    my $dir;
-    my $db;
-    $dir = Actium::O::Folders::Signup->new('hasi');
-    $db  = Actium::O::Files::HastusASI->new( $dir->path() );
+    my $dir = signup( $env, 'hasi' );
+    my $db = Actium::O::Files::HastusASI->new( $dir->path() );
 
     my $table = $argv[0];
 
@@ -118,7 +121,9 @@ documentation -- e.g., "STP" for the stop records.
 Other modules this subprogram uses specify several other options. See:
 
 =item L<OPTIONS in Actium::O::Files::SQLite|Actium::O::Files::SQLite/OPTIONS>
-=item L<OPTIONS in Actium::O::Folders::Signup|Actium::O::Folders::Signup/OPTIONS>
+
+=item L<OPTIONS in Actium::Cmd::Config::Signup|Actium::Cmd::Config::Signup/OPTIONS>
+
 =item L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
 
 A complete list of options can be found by running "actium.pl help sqlite2tab"
@@ -165,7 +170,7 @@ L<$KEY_SEPARATOR from Actium::Constants|Actium::Constants/$KEY_SEPARATOR>.
 
 =item perl 5.012
 
-=item Actium::O::Folders::Signup
+=item Actium::Cmd::Config::Signup
 
 =item Actium::Util
 

@@ -5,7 +5,7 @@ package Actium::Cmd::StopsOfEachLine 0.010;
 use Actium::Preamble;
 use Storable();    ### DEP ###
 use Actium::Sorting::Line (qw<sortbyline>);
-use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::Signup ('signup');
 
 sub HELP {
 
@@ -21,9 +21,15 @@ EOF
 
 }
 
-sub START {
+sub OPTIONS {
+    my ( $class, $env ) = @_;
+    return ( Actium::Cmd::Config::Signup::options($env) );
+}
 
-    my $signup = Actium::O::Folders::Signup->new();
+sub START {
+    my ( $class, $env ) = @_;
+    my $signup = signup($env);
+
     chdir $signup->path();
 
     # retrieve data
@@ -31,11 +37,8 @@ sub START {
     my %pat;
 
     {    # scoping
-
         my $avldata_r = $signup->retrieve('avl.storable');
-
         %pat = %{ $avldata_r->{PAT} };
-
     }
 
     my %seen_stops_of;

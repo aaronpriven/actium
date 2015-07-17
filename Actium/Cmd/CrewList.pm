@@ -12,7 +12,7 @@ package Actium::Cmd::CrewList 0.010;
 use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::StopReports('crewlist_xlsx');
-use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::Signup ('signup');
 
 sub HELP {
 
@@ -35,7 +35,9 @@ HELP
 }
 
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options($env));
 }
 
 sub START {
@@ -46,12 +48,12 @@ sub START {
     my $outputfile = shift @argv;
 
     unless ($outputfile) {
-        HELP();
+        $class->HELP($env);
         return;
     }
 
-    my $slistsdir = Actium::O::Folders::Signup->new('slists');
-
+    my $slistsdir = signup($env, 'slists');
+    
     # retrieve data
     my $stops_of_r = $slistsdir->retrieve('line.storable')
       or die "Can't open line.storable file: $OS_ERROR";
