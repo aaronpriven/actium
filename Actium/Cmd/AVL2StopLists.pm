@@ -14,7 +14,6 @@ use Actium::Union('ordered_union');
 use Actium::DaysDirections ('dir_of_hasi');
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup ('signup');
-use Actium::Term;
 
 # don't buffer terminal output
 
@@ -37,14 +36,12 @@ sub OPTIONS {
     Actium::Cmd::Config::Signup::options($env));
 }
 
-my $quiet;
 
 sub START {
 
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
 
-    $quiet = $env->option('quiet');
 
     my $signup = signup($env);
     chdir $signup->path();
@@ -101,11 +98,9 @@ sub START {
         open my $fh, '>:utf8', "slists/pat/$filekey.txt"
           or die "Cannot open slists/pat/$filekey.txt for output";
 
-        unless ($quiet) {
             printf "%13s", $filekey;
             $count++;
             print "\n" unless $count % 6;
-        }
 
         print $fh join( "\t",
             $route, $dir, $pat{$key}{Identifier},
@@ -138,11 +133,9 @@ sub START {
     foreach my $route ( keys %liststomerge ) {
         foreach my $dir ( keys %{ $liststomerge{$route} } ) {
 
-            unless ($quiet) {
                 printf "%13s", "$route-$dir";
                 $count++;
                 print "\n" unless $count % 6;
-            }
 
             my @union = @{ ordered_union( @{ $liststomerge{$route}{$dir} } ) };
             $stops_of_line{"$route-$dir"} = \@union;
