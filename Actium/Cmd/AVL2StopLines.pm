@@ -5,7 +5,7 @@ use Actium::Term;
 use Actium::Sorting::Line (qw[sortbyline]);
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
-use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::Signup ('signup');
 
 const my @opp = qw( EB WB NB SB CC CW A B);
 const my %opposite_of = ( @opp, reverse @opp );
@@ -25,7 +25,9 @@ EOF
 }
 
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options($env));
 }
 
 ##### Retrieve data from AVL and from database
@@ -37,7 +39,7 @@ sub START {
 
     emit 'Generating stoplines';
 
-    my $signup = Actium::O::Folders::Signup->new();
+    my $signup = signup($env);
     chdir $signup->path();
 
     my %stops;

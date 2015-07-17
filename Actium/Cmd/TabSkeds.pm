@@ -11,18 +11,16 @@ use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util(qw/joinseries/);
 use Actium::Term                  (qw<printq sayq>);
-use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::Signup ('signup');
 
 use strict;      ### DEP ###
 use warnings;    ### DEP ###
 no warnings 'uninitialized';
 
 sub OPTIONS {
-    return (
-        [ 'upcoming=s', 'Upcoming signup' ],
-        [ 'current!',   'Current signup' ],
-        Actium::Cmd::Config::ActiumFM::OPTIONS(),
-    );
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options_with_old($env));
 }
 
 my $out;
@@ -271,14 +269,12 @@ our %daydirhash = (
 # End of Skedvars
 ###########################################################
 
-sub HELP {
-    say "Help not implemented.";
-}
-
 sub START {
     
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
+    
+    my $signupfolder = signup($env);
 
     my @specdaynames;
     foreach ( keys %specdaynames ) {
@@ -288,7 +284,6 @@ sub START {
 
     #use Skedtps qw(tphash tpxref destination TPXREF_FULL);
 
-    my $signupfolder = Actium::O::Folders::Signup->new();
     chdir $signupfolder->path();
     my $signup = $signupfolder->signup;
 
@@ -298,8 +293,8 @@ sub START {
     #  386  => '86' , LC => 'L' , NXC => 'NX4' ,
     # ); # , '51S' => '51' );
 
-    our %first = reverse
-      %second;    # create a reverse hash, with values of %second as keys and
+    our %first = reverse %second;    
+    # create a reverse hash, with values of %second as keys and
 
     # keys of %second as values
 

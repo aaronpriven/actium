@@ -9,23 +9,19 @@ package Actium::Cmd::Slists2HTML 0.010;
 
 use Actium::Preamble;
 
-use Actium::O::Folders::Signup;
 use Actium::O::Dir;
-
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util('filename');
 use Actium::Term;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Cmd::Config::Signup ('signup');
 
 use HTML::Entities;    ### DEP ###
 
-sub HELP {
-    say 'No help yet, sorry.';
-    return;
-}
-
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options($env));
 }
 
 my $count;
@@ -39,8 +35,7 @@ sub START {
 
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
-
-    my $signup = Actium::O::Folders::Signup->new;
+    my $signup = signup($env);
 
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');

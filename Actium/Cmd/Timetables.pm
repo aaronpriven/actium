@@ -9,12 +9,12 @@ use 5.012;
 
 package Actium::Cmd::Timetables 0.010;
 
-use Actium::O::Folders::Signup;
 use Actium::O::Sked;
 use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);    ### DEP ###
 use Actium::Sorting::Line (qw(sortbyline byline));
 use Actium::IDTables;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Cmd::Config::Signup ('signup');
 
 use English '-no_match_vars';                                      ### DEP ###
 use autodie;                                                       ### DEP ###
@@ -32,14 +32,16 @@ HELP
 }
 
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options($env));
 }
 
 sub START {
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
-
-    my $signup            = Actium::O::Folders::Signup->new();
+    my $signup = signup($env);
+    
     my $tabulae_folder    = $signup->subfolder('timetables');
     my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
     my $multipubtt_folder = $tabulae_folder->subfolder('pub-idtags');

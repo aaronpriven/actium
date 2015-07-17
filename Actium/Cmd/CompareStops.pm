@@ -8,8 +8,8 @@ use Actium::Sorting::Line ('byline');
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');    ### DEP ###
-use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Cmd::Config::Signup (qw<signup oldsignup>);
 
 sub HELP {
 
@@ -24,17 +24,9 @@ EOF
 }
 
 sub OPTIONS {
-
-    return (
-        [   'oldsignup=s',
-            'The older signup. The program compares data '
-              . 'from the this signup to the one '
-              . 'specified by the "signup" option.'
-        ],
-        Actium::Cmd::Config::ActiumFM::OPTIONS(),
-
-    );
-
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options_with_old($env));
 }
 
 my ( %changes, %oldstoplists, %stops );
@@ -43,10 +35,9 @@ sub START {
 
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
+    my $signup = signup($env);
+    my $oldsignup = oldsignup($env);
 
-    my $oldsignup_opt = $env->option('oldsignup');
-
-    my $signup = Actium::O::Folders::Signup->new();
     chdir $signup->path;
 
     $actiumdb->load_tables(
@@ -69,9 +60,6 @@ sub START {
 
     print $out
 "Change\tStopID\tStop Description\tNumAdded\tAdded\tNumRemoved\tRemoved\tNumUnchanged\tUnchanged\n";
-
-    my $oldsignup
-      = Actium::O::Folders::Signup->new( { signup => $oldsignup_opt } );
 
     %oldstoplists = assemble_stoplists( $oldsignup, qw(BSH 399) );
 

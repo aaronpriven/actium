@@ -12,8 +12,8 @@ use Storable();    ### DEP ###
 
 use Actium::Union('ordered_union');
 use Actium::DaysDirections ('dir_of_hasi');
-use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Cmd::Config::Signup ('signup');
 use Actium::Term;
 
 # don't buffer terminal output
@@ -32,7 +32,9 @@ EOF
 }
 
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options($env));
 }
 
 my $quiet;
@@ -44,7 +46,7 @@ sub START {
 
     $quiet = $env->option('quiet');
 
-    my $signup = Actium::O::Folders::Signup->new();
+    my $signup = signup($env);
     chdir $signup->path();
 
     # retrieve data

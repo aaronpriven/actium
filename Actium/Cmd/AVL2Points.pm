@@ -1,7 +1,6 @@
 package Actium::Cmd::AVL2Points 0.010;
 
 use Actium::Preamble;
-use Actium::O::Folders::Signup;
 use sort ('stable');    ### DEP ###
 use Storable();         ### DEP ###
 
@@ -10,6 +9,7 @@ use Actium::Sorting::Line('sortbyline');
 use Actium::Util(qw<keyreadable>);
 use Actium::Union('ordered_union');
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Cmd::Config::Signup ('signup');
 
 const my @COMBOS_TO_PROCESS => (
     [qw( 5 6 56 )],     [qw( 1 234 1234 )], [qw( 1234 5 12345 )],
@@ -17,7 +17,9 @@ const my @COMBOS_TO_PROCESS => (
 );
 
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options($env));
 }
 
 sub HELP {
@@ -54,7 +56,7 @@ sub START {
         }
     );
 
-    my $signup = Actium::O::Folders::Signup->new();
+    my $signup = signup($env);
     chdir $signup->path();
 
     # retrieve data
