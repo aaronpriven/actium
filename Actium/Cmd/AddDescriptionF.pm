@@ -14,14 +14,16 @@ use warnings;
 
 use autodie;
 
-use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Cmd::Config::Signup ('signup');
 use Actium::Term;
 
 sub HELP { say 'Help not implemented'; return; }
 
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options($env));
 }
 
 sub START {
@@ -29,7 +31,7 @@ sub START {
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
 
-    my $signup = Actium::O::Folders::Signup->new;
+    my $signup = signup($env);
 
     emit 'Getting stop descriptions from FileMaker';
 

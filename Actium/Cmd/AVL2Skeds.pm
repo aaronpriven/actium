@@ -10,16 +10,21 @@ use sort ('stable');
 use List::MoreUtils (qw<all each_arrayref>);    ### DEP ###
 use File::Copy;                                 ### DEP ###
 use Array::Transpose;                           ### DEP ###
-use Actium::Util (':all'); 
+use Actium::Util (':all');
 use Actium::Term ('sayq');
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Time           ('timenum');
 use Actium::DaysDirections (':all');
-use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::Signup ('signup');
 
 sub OPTIONS {
-    return ( [ 'rawonly!', 'Only create "rawskeds" and not "skeds".' ] );
+    my ( $class, $env ) = @_;
+    return (
+        [ 'rawonly!', 'Only create "rawskeds" and not "skeds".' ],
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::Signup::options($env)
+    );
 }
 
 sub HELP {
@@ -45,14 +50,14 @@ my @averaged_keys;
 my %sked_override_order_of;
 
 sub START {
-    
-    my $class      = shift;
-    my $env = shift;
 
-    my $quiet = $env->option('quiet');
+    my $class = shift;
+    my $env   = shift;
+
+    my $quiet   = $env->option('quiet');
     my $rawonly = $env->option('rawonly');
 
-    my $signup = Actium::O::Folders::Signup->new();
+    my $signup = signup($env);
     chdir $signup->path();
 
     # retrieve data
@@ -99,7 +104,7 @@ sub START {
         my $line = $this_sked_key;
         $line =~ s/$KEY_SEPARATOR.*//;
 
-        unless ( $quiet ) {
+        unless ($quiet) {
             if ( $line ne $prev ) {
                 print "\n" unless $count % 18;
                 $count++;
@@ -732,7 +737,7 @@ sub linegroup {
 }
 
 sub copy_exceptions {
-    
+
     my $quiet = shift;
 
 ### read exception skeds
@@ -752,7 +757,7 @@ sub copy_exceptions {
     foreach my $file (@skeds) {
         next if $file =~ m/=/;    # skip file if it has a = in it
 
-        unless ( $quiet ) {
+        unless ($quiet) {
             my $linegroup = $file;
             $linegroup =~ s#^exceptions/##;
             $linegroup =~ s/_.*//;

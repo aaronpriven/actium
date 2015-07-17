@@ -8,30 +8,29 @@ package Actium::Cmd::PrepareFlags 0.010;
 
 use Actium::Preamble;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Cmd::Config::Signup   ('signup');
 use Actium::Flags;
-use Actium::O::Folders::Signup;
 use Actium::Term;
 use Actium::Util('file_ext');
 use Actium::O::2DArray;
 
-sub HELP {
-    say 'Help not implemented.';
-    return;
-}
-
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ( $class, $env ) = @_;
+    return (
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::Signup::options($env),
+    );
 }
 
 sub START {
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
-    my @argv = $env->argv;
+    my @argv     = $env->argv;
 
     emit 'Creating flag assignments';
 
-    my $input_file = shift @argv; 
-    my ( $output_file, $signup, @stopids );
+    my $input_file = shift @argv;
+    my ( $output_file, @stopids );
 
     if ( defined $input_file ) {
         emit "Getting stop IDs from file $input_file";
@@ -45,7 +44,6 @@ sub START {
     }
     else {
         emit 'Getting stop IDs from database';
-        $signup = Actium::O::Folders::Signup->new();
         emit_ok;
     }
 
@@ -62,6 +60,7 @@ sub START {
             binmode => ':utf8' );
     }
     else {
+        my $signup = signup($env);
         $signup->slurp_write( $tabbed, 'flag_assignments.txt' );
     }
 

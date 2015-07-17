@@ -13,8 +13,8 @@ use Actium::Constants;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::Term;
-use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Cmd::Config::Signup ('signup');
 
 sub HELP {
 
@@ -29,14 +29,17 @@ HELP
 }
 
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options($env));
 }
 
 sub START {
 
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
-    my $signup   = Actium::O::Folders::Signup->new;
+        my $signup = signup($env);
+    
 
     my $html_folder = $signup->subfolder('html');
 

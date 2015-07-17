@@ -107,6 +107,10 @@ sub signup {
 
     $params{base}   //= ( $env->option('base')   // $defaults{BASE} );
     $params{signup} //= ( $env->option('signup') // $defaults{SIGNUP} );
+    
+    if (not defined $params{signup}) {
+        croak "No signup specified.";
+    }
 
     return Actium::O::Folders::Signup->new(%params);
 
@@ -126,6 +130,10 @@ sub oldsignup {
 
     $params{base}   //= ( $env->option('oldbase')   // $defaults{OLDBASE} );
     $params{signup} //= ( $env->option('oldsignup') // $defaults{OLDSIGNUP} );
+    
+    if (not defined $params{signup}) {
+        croak "No old signup specified.";
+    }
     return Actium::O::Folders::Signup->new(%params);
 
 }

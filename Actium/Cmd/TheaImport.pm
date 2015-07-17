@@ -10,8 +10,7 @@ use warnings;
 package Actium::Cmd::TheaImport 0.010;
 
 use Actium::Files::Thea::Import ('thea_import');
-
-use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::Signup ('signup');
 
 sub HELP {
 
@@ -25,9 +24,15 @@ HELP
 
 }
 
-sub START {
+sub OPTIONS {
+    my ($class, $env) = @_;
+    return ( Actium::Cmd::Config::Signup::options($env));
+}
 
-    my $signup     = Actium::O::Folders::Signup->new;
+sub START {
+    my ( $class, $env ) = @_;
+    my $signup = signup($env);
+
     my $theafolder = $signup->subfolder('thea');
     
     thea_import ($signup, $theafolder);

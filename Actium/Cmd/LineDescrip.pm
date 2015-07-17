@@ -13,8 +13,8 @@ package Actium::Cmd::LineDescrip 0.010;
 
 use Actium::Preamble;
 
-use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Cmd::Config::Signup ('signup');
 
 use Actium::Term ('output_usage');
 
@@ -30,7 +30,9 @@ HELP
 }
 
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
+    Actium::Cmd::Config::Signup::options($env));
 }
 
 sub START {
@@ -38,7 +40,7 @@ sub START {
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
 
-    my $signup = Actium::O::Folders::Signup->new();
+    my $signup = signup($env);
 
     my $html_descrips = $actiumdb->line_descrip_html( { signup => $signup, } );
 

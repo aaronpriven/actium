@@ -6,18 +6,16 @@ package Actium::Cmd::MakeBags 0.010;
 
 use Actium::Preamble;
 use Actium::Bags;
-use Actium::O::Folders::Signup;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::Cmd::Config::Signup   (qw<signup oldsignup>);
 use Actium::Util('tabulate');
 
-sub HELP {
-    say 'Help not implemented.';
-    return;
-}
-
 sub OPTIONS {
-    return ( Actium::Cmd::Config::ActiumFM::OPTIONS(),
-        [ 'oldsignup=s', 'Previous signup to compare this signup to' ] );
+    my ( $class, $env ) = @_;
+    return (
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::Signup::options_with_old($env)
+    );
 }
 
 sub START {
@@ -25,12 +23,9 @@ sub START {
     my ( $class, $env ) = @_;
     my $config_obj = $env->config;
 
-    my $oldsignup_option = $env->option('oldsignup');
-    die 'No oldsignup option specified' unless $oldsignup_option;
+    my $signup    = signup($env);
+    my $oldsignup = oldsignup($env);
 
-    my $signup = Actium::O::Folders::Signup->new();
-    my $oldsignup
-      = Actium::O::Folders::Signup->new( { signup => $oldsignup_option } );
     my $actium_db = actiumdb($env);
 
     my ( $bagtexts_r, $baglist_r, $counts_r, $final_heights_r )

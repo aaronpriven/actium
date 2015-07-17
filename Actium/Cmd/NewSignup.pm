@@ -5,14 +5,19 @@
 package Actium::Cmd::NewSignup 0.010;
 
 use Actium::Preamble;
-use Actium::O::Folders::Signup;
+use Actium::Cmd::Config::Signup ('signup');
 use Actium::Util('filename');
 use Actium::Files::Xhea;
 use Archive::Zip;    ### DEP ###
 use Actium::Term;
 
 sub OPTIONS {
-    return ( [ 'xhea=s', 'ZIP file containing Xhea export ', ], );
+    my ( $class, $env ) = @_;
+    return (
+        [ 'xhea=s', 'ZIP file containing Xhea export ', ],
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::Signup::options($env)
+    );
 }
 
 sub HELP {
@@ -29,13 +34,13 @@ HELP
 
 sub START {
 
-    my $class  = shift;
-    my $env = shift;
+    my $class   = shift;
+    my $env     = shift;
     my $xheazip = $env->option('xhea');
 
     emit "Making signup and subdirectories";
 
-    my $signup      = Actium::O::Folders::Signup->new;
+    my $signup = signup($env);
     my $hasi_folder = $signup->subfolder('hasi');
     my $xhea_folder = $signup->subfolder('xhea');
 
