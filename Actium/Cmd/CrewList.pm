@@ -28,8 +28,6 @@ and produces a result file (in Excel) with the stops ordered by travel
 along the bus stops.
 HELP
 
-    output_usage();
-
     return;
 
 }

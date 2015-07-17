@@ -38,8 +38,6 @@ EOF
 
     say $helptext;
 
-    output_usage;
-
     return;
 
 }

@@ -11,9 +11,9 @@ package Actium::Cmd::SQLite2tab 0.010;
 
 use Actium::Cmd::Config::Signup ('signup');
 use Actium::Util qw(jt );
-use Actium::Term ('output_usage');
 use Actium::Constants;
 use Actium::O::Files::HastusASI;
+use Actium::Term;
 
 sub OPTIONS {
     my ( $class, $env ) = @_;
@@ -79,7 +79,6 @@ specified database, delimited by tabs. It is primarily for testing the
 database routines. 
 HELP
 
-    output_usage();
 
     return;
 

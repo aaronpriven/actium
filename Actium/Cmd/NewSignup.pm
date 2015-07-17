@@ -26,8 +26,6 @@ sub HELP {
 actium newsignup -- prepare new signup directories and extract files
 HELP
 
-    Actium::Term::output_usage();
-
     return;
 
 }

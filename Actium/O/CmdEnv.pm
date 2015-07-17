@@ -83,7 +83,7 @@ has argv_r => (
 
 has options_r => (
     traits  => ['Hash'],
-    isa     => 'HashRef[Str]',
+    isa     => 'HashRef',
     is      => 'bare',
     writer  => '_set_options_r',
     default => sub { {} },

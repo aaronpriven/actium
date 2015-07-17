@@ -1561,8 +1561,6 @@ sub HELP {
     say 'actium.pl flagspecs';
     say '  (takes no arguments)';
 
-    Actium::Term::output_usage();
-
     return;
 }
 
