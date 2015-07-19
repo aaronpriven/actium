@@ -15,7 +15,7 @@ use MooseX::StrictConstructor; ### DEP ###
 use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
-use Actium::Term(':all');
+use Actium::Crier;
 use Actium::Util('flatten');
 use Carp; ### DEP ###
 use English '-no_match_vars'; ### DEP ###
@@ -370,13 +370,13 @@ sub slurp_write {
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
 
-    emit("Writing $filename...");
+    my $cry = cry("Writing $filename...");
 
     require File::Slurp::Tiny; ### DEP ###
     File::Slurp::Tiny::write_file( $filespec, $string,
         binmode => ':encoding(UTF-8)' );
 
-    emit_done;
+    $cry->done;
 
 }
 
@@ -388,7 +388,7 @@ sub json_retrieve {
     croak "$filespec does not exist"
       unless -e $filespec;
 
-    emit("Retrieving $filename");
+    my $cry = cry("Retrieving $filename");
 
     require File::Slurp::Tiny; ### DEP ###
     my $json_text =
@@ -397,7 +397,7 @@ sub json_retrieve {
     require JSON; ### DEP ###
     my $data_r = JSON::from_json($json_text);
 
-    emit_done;
+    $cry->done;
 
     return $data_r;
 
@@ -410,7 +410,7 @@ sub json_store {
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
 
-    emit("Storing $filename...");
+    my $cry = cry("Storing $filename...");
 
     require JSON; ### DEP ###
     my $json_text = JSON::to_json($data_r);
@@ -419,7 +419,7 @@ sub json_store {
     File::Slurp::Tiny::write_file( $filespec, $json_text,
         binmode => ':encoding(UTF-8)' );
 
-    emit_done;
+    $cry->done;
 
 }
 
@@ -430,7 +430,7 @@ sub json_store_pretty {
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
 
-    emit("Storing $filename...");
+    my $cry = cry("Storing $filename...");
 
     require JSON; ### DEP ###
     my $json_text = JSON::to_json( $data_r, { pretty => 1, canonical => 1 } );
@@ -439,7 +439,7 @@ sub json_store_pretty {
     File::Slurp::Tiny::write_file( $filespec, $json_text,
         binmode => ':encoding(UTF-8)' );
 
-    emit_done;
+    $cry->done;
 
 }
 
@@ -451,17 +451,17 @@ sub retrieve {
     croak "$filespec does not exist"
       unless -e $filespec;
 
-    emit("Retrieving $filename");
+    my $cry=cry("Retrieving $filename");
 
     require Storable;
     my $data_r = Storable::retrieve($filespec);
 
     unless ($data_r) {
-        emit_error();
+        $cry->d_error();
         croak "Can't retreive $filespec: $OS_ERROR";
     }
 
-    emit_done;
+    $cry->done;
 
     return $data_r;
 }    ## tidy end: sub retrieve
@@ -472,17 +472,17 @@ sub store {
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
 
-    emit("Storing $filename...");
+    my $cry = cry ("Storing $filename...");
 
     require Storable;
     my $result = Storable::nstore( $data_r, $filespec );
 
     unless ($result) {
-        emit_error;
+        $cry->d_error;
         croak "Can't store $filespec: $OS_ERROR";
     }
 
-    emit_done;
+    $cry->done;
 }
 
 sub open_read {
@@ -601,7 +601,7 @@ sub write_files_with_method {
 
     my $count;
 
-    emit( "Writing $method files to " . $folder->display_path );
+    my $cry = ( "Writing $method files to " . $folder->display_path );
 
     my %seen_id;
 
@@ -610,7 +610,7 @@ sub write_files_with_method {
         my $out;
 
         my $id = $obj->id;
-        emit_over $id;
+        $cry->over($id . $SPACE);
 
         $seen_id{$id}++;
 
@@ -620,6 +620,7 @@ sub write_files_with_method {
 
         $folder->write_file_with_method(
             {
+                CRY => $cry,
                 OBJECT   => $obj,
                 METHOD   => $method,
                 FILENAME => $filename,
@@ -628,7 +629,7 @@ sub write_files_with_method {
 
     }    ## tidy end: foreach my $obj (@objects)
 
-    emit_done;
+    $cry->done;
 
 }    ## tidy end: sub write_files_with_method
 
@@ -638,13 +639,15 @@ sub write_file_with_method {
     my $obj      = $params{OBJECT};
     my $filename = $params{FILENAME};
     my $method   = $params{METHOD};
+    my $cry = $params{CRY} //
+       cry("Writing to $filename via $method");
 
     my $out;
 
     my $file = $self->make_filespec($filename);
 
     unless ( open $out, '>', $file ) {
-        emit_error;
+        $cry->d_error;
         croak "Can't open $file for writing: $OS_ERROR";
     }
 
@@ -657,8 +660,12 @@ sub write_file_with_method {
     print $out $obj->$method() or croak "Can't print to $file: $OS_ERROR";
 
     unless ( close $out ) {
-        emit_error;
+        $cry->d_error;
         croak "Can't close $file for writing: $OS_ERROR";
+    }
+    
+    if ($params{CRY}) {
+        $cry->done;
     }
 
 }    ## tidy end: sub write_file_with_method
@@ -677,11 +684,11 @@ sub write_files_from_hash {
         $extension = $EMPTY_STR;
     }
 
-    emit( "Writing $filetype files to " . $self->display_path );
+    my $cry = cry( "Writing $filetype files to " . $self->display_path );
 
     foreach my $key ( sort keys %hash ) {
 
-        emit_over $key;
+        $cry->over($key);
 
         my $file = $self->make_filespec( $key . $extension );
 
@@ -690,13 +697,13 @@ sub write_files_from_hash {
         print $out $hash{$key} or die "Can't print to $file: $OS_ERROR";
 
         unless ( close $out ) {
-            emit_error;
+            $cry->d_error;
             die "Can't close $file for writing: $OS_ERROR";
         }
 
     }    ## tidy end: foreach my $key ( sort keys...)
 
-    emit_done;
+    $cry->done;
 
 }    ## tidy end: sub write_files_from_hash
 
