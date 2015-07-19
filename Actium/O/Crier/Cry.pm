@@ -27,8 +27,9 @@ has '_crier' => (
     handles  => {
         map ( { ( '_' . $_ ) => $_ } (
                 qw( backspace
-                  maxdepth      step  override_severity
-                  column_width  fh    default_closestat )
+                  maxdepth        step  override_severity
+                  column_width    fh    default_closestat 
+                  shows_progress  )
               ) ),
         map { $_ => $_ }
           qw(
@@ -555,8 +556,9 @@ sub DEMOLISH {
 ### PROGRESS AND TEXT
 
 sub prog {
-
+    
     my $self = shift;
+    next unless $self->_shows_progress;
 
     my $separator = doe($OUTPUT_FIELD_SEPARATOR);
     my $msg = join( $separator, doe(@_) );
@@ -598,6 +600,7 @@ sub prog {
 
 sub over {
     my $self = shift;
+    next unless $self->shows_progress;
 
     # if no backspace (in braindead consoles like Eclipse's),
     # then treats everything as a forward-progress.
