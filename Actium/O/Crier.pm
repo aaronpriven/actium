@@ -8,6 +8,7 @@ use Scalar::Util(qw[openhandle weaken refaddr reftype]);    ### DEP ###
 use Actium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
 use Actium::Util  ('u_columns');
 
+
 use Actium::O::Crier::Cry;
 
 const my $CRY_CLASS            => 'Actium::O::Crier::Cry';
@@ -202,6 +203,17 @@ has 'trailer' => (
     default => '.',
 );
 
+has 'shows_progress' => (
+    isa     => 'Bool',
+    is      => 'ro',
+    default => 1,
+    traits  => ['Bool'],
+    handles => {
+        show_progress => 'set',
+        hide_progress  => 'unset',
+    },
+);
+
 has 'backspace' => (
     isa     => 'Bool',
     is      => 'ro',
@@ -392,7 +404,15 @@ sub _push_cry {
 
 }
 
-sub cry {
+{ no warnings 'redefine';
+    #eval {
+    sub cry { 
+        goto &cry_method 
+    }
+    #}
+}
+
+sub cry_method {
     my $self = shift;
 
     my ( %opts, @args );
@@ -1164,7 +1184,7 @@ with "UNK" severity, and will display 'Cry error (cry object not saved)'.
 =head3 $crier->text()
 
 This invokes the C<text> object method on the deepest open cry.
-If no cry is open, opens one 
+If no cry is open, opens a muted cry.
 
 =head2 Cry Object Methods
 
@@ -1242,7 +1262,7 @@ it doesn't matter.
 The C<prog> method does not backspace, it simply puts the string out there.
 
 If the I<backspace> attribute is false, then C<over> behaves identically to
-C<prog>.
+C<prog>. If the I<shows_progress> attribute is false, does nothing.
 
 For example,
 
@@ -1642,16 +1662,28 @@ why a certain task failed.
 
 This programming metaphor is commonly used:
 
-    .
-    .
-    .
+    ...
     my $fail_reason = do_something_that_may_fail();
     return emit_fail {-reason => $fail_reason}
         if $fail_reason;
-    .
-    .
-    .
+    ...
 
+=head3 shows_progress
+
+=over
+
+=item I<shows_progress> option to C<new>
+
+=item get method: C<< $crier->shows_progress() >>
+
+=item set methods: C<< $crier->show_progress >> and C<< $crier->hide_progress >>
+
+=back
+
+This attribute determines whether C<< $cry->over >> and C<< $cry->prog >> 
+display anything. If false, these don't do anything. This is useful
+for turning these off via the command line, especially in circumstances 
+where certain dumb IDE consoles can't backspace.
 
 =head3 step
 
