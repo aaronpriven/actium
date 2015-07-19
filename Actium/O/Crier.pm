@@ -18,57 +18,59 @@ const my $DEFAULT_STEP         => 2;
 #########################################################
 ### EXPORTS
 
-use Sub::Exporter -setup => {
-    exports => [
-        'cry' => \&_build_cry,
-        'cry_text',
-        'default_crier' => \&_build_default_crier,
-    ]
-};
-# Sub::Exporter ### DEP ###
+# Moved to Actium::Crier since this didn't seem to work
 
-my $default_crier;
-
-sub _build_default_crier {
-    my ( $class, $name, $arg ) = @_;
-    
-    if ( defined $arg and scalar keys %$arg ) {
-        if ($default_crier) {
-            croak 'Arguments given in '
-              . q{"use Actium::O::Crier (default_crier => {args})"}
-              . q{but the default crier has already been initialized};
-        }
-
-        $default_crier = __PACKAGE__->new($arg);
-        return sub {
-            return $default_crier;
-        };
-    }
-
-    return sub {
-        $default_crier = __PACKAGE__->new()
-          if not $default_crier;
-        return $default_crier;
-      }
-
-} ## tidy end: sub _build_default_crier
-
-sub _build_cry {
-    return sub {
-        $default_crier = __PACKAGE__->new()
-          if not $default_crier;
-        return $default_crier->cry(@_);
-      }
-}
-
-# that is only necessary because we have a cry subroutine and a cry object
-# method and we want them to do different things
-
-sub cry_text {
-    $default_crier = __PACKAGE__->new()
-      if not $default_crier;
-    return $default_crier->text(@_);
-}
+#use Sub::Exporter -setup => {
+#    exports => [
+#        'cry' => \&_build_cry,
+#        'cry_text',
+#        'default_crier' => \&_build_default_crier,
+#    ]
+#};
+## Sub::Exporter ### DEP ###
+#
+#my $default_crier;
+#
+#sub _build_default_crier {
+#    my ( $class, $name, $arg ) = @_;
+#    
+#    if ( defined $arg and scalar keys %$arg ) {
+#        if ($default_crier) {
+#            croak 'Arguments given in '
+#              . q{"use Actium::O::Crier (default_crier => {args})"}
+#              . q{but the default crier has already been initialized};
+#        }
+#
+#        $default_crier = __PACKAGE__->new($arg);
+#        return sub {
+#            return $default_crier;
+#        };
+#    }
+#
+#    return sub {
+#        $default_crier = __PACKAGE__->new()
+#          if not $default_crier;
+#        return $default_crier;
+#      }
+#
+#} ## tidy end: sub _build_default_crier
+#
+#sub _build_cry {
+#    return sub {
+#        $default_crier = __PACKAGE__->new()
+#          if not $default_crier;
+#        return $default_crier->cry(@_);
+#      }
+#}
+#
+## that is only necessary because we have a cry subroutine and a cry object
+## method and we want them to do different things
+#
+#sub cry_text {
+#    $default_crier = __PACKAGE__->new()
+#      if not $default_crier;
+#    return $default_crier->text(@_);
+#}
 
 #####################################################################
 ## FILEHANDLE, AND OBJECT CONSTRUCTION SETTING FILEHANDLE SPECIALLY
@@ -479,13 +481,13 @@ sub text {
     my $self = shift;
     my @args = @_;
     my $cry;
-    if ( $default_crier->cry_level == 0 ) {
+    if ( $self->cry_level == 0 ) {
 
         # caller's subroutine name
-        $cry = $default_crier->cry( { muted => 1, closestat => 'UNK' } );
+        $cry = $self->cry( { muted => 1, closestat => 'UNK' } );
     }
     else {
-        $cry = $default_crier->_last_cry;
+        $cry = $self->_last_cry;
     }
 
     return $cry->text(@_);
