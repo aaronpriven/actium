@@ -21,6 +21,7 @@ BEGIN {
         [   qw[Actium::Util all_eq doe dumpstr flatten
               in isblank isnotblank j jt jk jn]
         ],
+        [qw[Actium::Crier cry]],
         [qw[Carp]],
         # Carp ### DEP ###
         [qw[Const::Fast]],
@@ -59,7 +60,7 @@ BEGIN {
     );
     @nomodule_rs = (
         [qw[indirect]],
-        [qw[warnings experimental::refaliasing]]
+#        [qw[warnings experimental::refaliasing]]
     );
     # indirect ### DEP ###
 
