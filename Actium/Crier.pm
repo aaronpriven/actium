@@ -7,12 +7,12 @@ use warnings;
 
 use Const::Fast;
 use Carp;
-use Module::Runtime;
+use Module::Runtime ('require_module');
 
-# Actium::O::Crier is loaded at runtime to avoid a circular dependency
+# Actium::O::Crier is require'd at runtime to avoid a circular dependency
 # in Actium::Preamble, which is used by Actium::O::Crier.
 
-const my $CRIERCLASS = 'Actium::O::Crier';
+const my $CRIERCLASS => 'Actium::O::Crier';
 
 use Sub::Exporter -setup => {
     exports => [
