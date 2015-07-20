@@ -8,12 +8,10 @@ package Actium::O::Files::FileMaker_ODBC 0.010;
 
 use Actium::MooseRole;
 
-use Params::Validate(':all'); ### DEP ###
-
-use Actium::Term;
+use Params::Validate(':all');    ### DEP ###
 
 use Carp;
-use DBI; ### DEP ###
+use DBI;                         ### DEP ###
 # DBD::ODBC ### DEP ###
 
 # Required methods in consuming classes:
@@ -49,19 +47,19 @@ sub _connect {
     my $db_user     = $self->db_user;
     my $db_password = $self->db_password;
 
-    emit("Connecting to database $db_name");
+    my $cry = cry("Connecting to database $db_name");
 
     my $dbh = DBI->connect( "dbi:ODBC:$db_name", $db_user, $db_password,
         { RaiseError => 1, PrintError => 1, AutoCommit => 0 } );
-        
+
     $dbh->{odbc_utf8_on} = 1;
     # ODBC driver has to be set to return utf-8
 
-    emit_done;
+    $cry->done;
 
     return $dbh;
 
-}
+} ## tidy end: sub _connect
 
 has '_tables_r' => (
     traits  => ['Hash'],
@@ -146,10 +144,10 @@ sub columns_of_table {
     my $table = shift;
 
     $self->_ensure_loaded($table);
-    
+
     my $cacheref = $self->_column_cache_of_table($table);
-    
-    return keys %{$cacheref} ;
+
+    return keys %{$cacheref};
 }
 
 sub is_a_column {
@@ -367,9 +365,8 @@ before DEMOLISH => sub {
     return;
 };
 
-
 sub load_tables {
-    my $self = shift;
+    my $self   = shift;
     my %params = @_;
 
     my %request_of = %{ $params{requests} };
@@ -377,15 +374,15 @@ sub load_tables {
 
     foreach my $table ( sort keys %request_of ) {
 
-        emit "Loading from $table";
+        my $tablecry = cry("Loading from $table");
 
-        emit "Selecting data from table $table";
+        my $datacry = cry("Selecting data from table $table");
 
         my $fields;
 
         if ( exists( $request_of{$table}{fields} ) ) {
             $fields = join( ', ', @{ $request_of{$table}{fields} } );
-            emit_text "Fields: $fields";
+            $datacry->text("Fields: $fields");
         }
         else {
             $fields = '*';
@@ -395,15 +392,15 @@ sub load_tables {
           = $actium_dbh->selectall_arrayref( "SELECT $fields FROM $table",
             { Slice => {} } );
 
-        emit_done;
+        $datacry->done;
 
         if ( exists $request_of{$table}{array} ) {
 
-            emit "Processing $table into array";
+            my $arraycry = cry("Processing $table into array");
             @{ $request_of{$table}{array} } = @{$result_ref};
             # this is to make sure the same array that was passed in
             # gets the results
-            emit_done;
+            $arraycry->done;
         }
 
         # process into hash
@@ -416,15 +413,17 @@ sub load_tables {
             $ignoredupe //= 1;
             my $process_dupe = not $ignoredupe;
 
-            emit "Processing $table into hash";
+            my $hashcry = cry("Processing $table into hash");
 
             my $hashref     = $request_of{$table}{hash};
             my $index_field = $request_of{$table}{index_field};
 
             if ($process_dupe) {
 
-                emit
-"Determining whether duplicate index field ($index_field) entries";
+                my $dupecry
+                  = cry(
+"Determining whether duplicate index field ($index_field) entries"
+                  );
 
                 my @all_indexes = @{
                     $actium_dbh->selectcol_arrayref(
@@ -434,12 +433,12 @@ sub load_tables {
                 if ( ( uniq @all_indexes ) == @all_indexes ) {
                     # indexes are all unique
                     $process_dupe = 0;
-                    emit_no;
+                    $dupecry->d_no;
                 }
                 else {
-                    emit_yes;
+                    $dupecry->d_yes;
                 }
-            }
+            } ## tidy end: if ($process_dupe)
 
             foreach my $row_hr ( @{$result_ref} ) {
 
@@ -453,11 +452,11 @@ sub load_tables {
 
             }
 
-            emit_done;
+            $hashcry->done;
 
         } ## tidy end: if ( exists $request_of...)
 
-        emit_done;
+        $tablecry->done;
 
     } ## tidy end: foreach my $table ( sort keys...)
 
@@ -732,8 +731,6 @@ A request specified a table that was not found for the specified database type.
 =item DBD::ODBC
 
 =item Actium::MooseRole
-
-=item Actium::Term
 
 =item FileMaker Pro or FileMaker Server Advanced. Tested with version 12.
 

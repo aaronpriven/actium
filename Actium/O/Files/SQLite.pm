@@ -29,7 +29,7 @@ use Moose::Role; ### DEP ###
 use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
-use Actium::Term;
+use Actium::Crier(qw/cry last_cry/);
 use Actium::Util(qw/flatten in/);
 
 use Carp; ### DEP ###
@@ -178,7 +178,7 @@ sub _connect {
 
     my $db_filename = $self->db_filename;
 
-    emit(
+    my $cry = cry (
         $existed
         ? "Connecting to database $db_filename"
         : "Creating new database $db_filename"
@@ -190,7 +190,7 @@ sub _connect {
 'CREATE TABLE files ( files_id INTEGER PRIMARY KEY, filetype TEXT , mtimes TEXT )'
     ) if not $existed;
 
-    emit_done;
+    $cry->done;
 
     return $dbh;
 
@@ -222,7 +222,7 @@ sub _current_mtimes {
 
         my @stat = stat($filespec);
         unless ( scalar @stat ) {
-            emit_error;
+            last_cry()->d_error;
             croak "Could not get file status for $filespec";
         }
         $mtimes .= "$file\t$stat[$STAT_MTIME]\t";
@@ -811,8 +811,6 @@ A request specified a table that was not found for the specified database type.
 =item Moose::Role
 
 =item Actium::Constants
-
-=item Actium::Term
 
 =back
 

@@ -6,13 +6,13 @@ use warnings; ### DEP ###
 use English '-no_match_vars';
 use autodie;
 use Text::Trim; ### DEP ###
+use Actium::Crier(qw/cry last_cry/);
 use Actium::EffectiveDate (qw[effectivedate long_date file_date newest_date]);
 use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Sorting::Skeds('skedsort');
 use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
-use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::Util(qw/doe in jt chunks population_stdev/);
@@ -29,7 +29,7 @@ use Actium::IDTables::PageAssignments;
 
 sub create_timetable_texts {
 
-    emit "Creating timetable texts";
+    my $cry = cry( "Creating timetable texts");
 
     my $db_obj = shift;
     my @skeds  = @_;
@@ -40,7 +40,7 @@ sub create_timetable_texts {
 
         my $linegroup = $sked->linegroup;
         if ( $linegroup ne $prev_linegroup ) {
-            emit_over "$linegroup ";
+            $cry->over ("$linegroup ");
             $prev_linegroup = $linegroup;
         }
 
@@ -49,8 +49,8 @@ sub create_timetable_texts {
         push @alltables, $table;
     }
 
-    emit_over $EMPTY_STR;
-    emit_done;
+    $cry->over ($EMPTY_STR);
+    $cry->done;
 
     return \@alltables, \%tables_of;
 
@@ -58,7 +58,7 @@ sub create_timetable_texts {
 
 sub output_all_tables {
 
-    emit "Outputting all tables into all.txt";
+    my $cry = cry( "Outputting all tables into all.txt");
 
     my $tabulae_folder = shift;
     my $alltables_r    = shift;
@@ -79,7 +79,7 @@ sub output_all_tables {
 
     close $allfh;
 
-    emit_done;
+    $cry->done;
 
 } ## tidy end: sub output_all_tables
 
@@ -389,7 +389,7 @@ sub _make_length {
     my $ems = max( ( map { ems($_) } @lines ) );
 
     #if ( $lines[0] =~ /72/ ) {
-    #    emit_over '[' . doe($ems) . ']';
+    #    last_cry()->over '[' . doe($ems) . ']';
     #}
 
     my $length;
@@ -416,7 +416,7 @@ sub _make_length {
 
 sub output_a_pubtts {
 
-    emit "Outputting public timetable files for Applescript";
+    my $cry = cry( "Outputting public timetable files for Applescript");
 
     my $pubtt_folder              = shift;
     my @pubtt_contents_with_dates = @{ +shift };
@@ -440,9 +440,9 @@ sub output_a_pubtts {
         next unless @$tables_r;
 
         my $file = join( "_", @{$lines_r} );
-        emit_over " $file";
+        $cry->over (" $file");
         if ( $file eq '32' ) {
-            emit_over "#";
+            $cry->over ("#");
         }
 
         my ( $portrait_chars, @table_assignments )
@@ -450,7 +450,7 @@ sub output_a_pubtts {
             $leave_cover_for_map );
 
         if ( not @table_assignments ) {
-            emit_text "Can't place $file on pages (too many timepoints?)";
+            $cry->text ("Can't place $file on pages (too many timepoints?)");
             next;
         }
 
@@ -531,10 +531,11 @@ sub output_a_pubtts {
     }
     close $listfh;
 
-    emit_over '';
-    emit_done;
+    $cry->over ($EMPTY_STR);
+    $cry->done;
     
-    #emit_text "Has more than eight pages: @over_eight_pages";
+    # $cry->text( "Has more than eight pages: @over_eight_pages");
+    $cry->done;
 
 } ## tidy end: sub output_a_pubtts
 

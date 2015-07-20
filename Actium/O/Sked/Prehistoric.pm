@@ -19,7 +19,7 @@ use namespace::autoclean; ### DEP ###
 use Carp; ### DEP ###
 
 use Actium::Constants;
-use Actium::Term;
+use Actium::Crier (qw/cry last_cry/);
 use List::MoreUtils qw<uniq none>; ### DEP ###
 
 use Text::Trim; ### DEP ###
@@ -113,7 +113,7 @@ sub load_prehistorics {
 
     my $actium_dbh = $actiumdb->dbh;
 
-    emit "Loading prehistoric schedules";
+    my $cry = cry( "Loading prehistoric schedules");
 
     my %tp4_of_tp8;
 
@@ -139,8 +139,8 @@ sub load_prehistorics {
     my @skeds
       = map { $class->_new_from_prehistoric( $_, \%tp4_of_tp8 ) } @files;
 
-    emit_over $EMPTY_STR;
-    emit_done;
+    $cry->over ($EMPTY_STR);
+    $cry->done;
 
     return @skeds;
 
@@ -168,7 +168,7 @@ sub _new_from_prehistoric {
 
     state %seen_linegroup;
     if ( not $seen_linegroup{$linegroup} ) {
-        emit_over $linegroup unless $seen_linegroup{$linegroup};
+        last_cry()->over ($linegroup) unless $seen_linegroup{$linegroup};
         $seen_linegroup{$linegroup} = 1;
     }
 
@@ -273,20 +273,20 @@ sub write_prehistorics {
     my $skeds_r = shift;
     my $signup  = shift;
 
-    emit 'Preparing prehistoric sked files';
+    my $prepare_cry = cry ( 'Preparing prehistoric sked files');
 
     my %prehistorics_of;
 
-    emit 'Creating prehistoric file data';
+    my $create_cry = cry( 'Creating prehistoric file data');
 
     foreach my $sked ( @{$skeds_r} ) {
         my $group_dir = $sked->linegroup . q{_} . $sked->direction;
         my $days      = $sked->prehistoric_days();
-        emit_over "${group_dir}_$days";
+        $create_cry->over ("${group_dir}_$days");
         $prehistorics_of{$group_dir}{$days} = $sked->prehistoric_skedsfile();
     }
 
-    emit_done;
+    $create_cry->done;
 
     # so now %{$prehistorics_of{$group_dir}} is a hash:
     # keys are days (WD, SU, SA)
@@ -297,11 +297,11 @@ sub write_prehistorics {
     my @comparisons
       = ( [qw/SA SU WE/], [qw/WD SA WA/], [qw/WD SU WU/], [qw/WD WE DA/], );
 
-    emit 'Merging days';
+    my $merge_cry = cry( 'Merging days');
 
     foreach my $group_dir ( sort keys %prehistorics_of ) {
 
-        emit_over $group_dir;
+        $merge_cry->over ($group_dir);
 
         # merge days
         foreach my $comparison_r (@comparisons) {
@@ -335,11 +335,11 @@ sub write_prehistorics {
 
     }    ## <perltidy> end foreach my $group_dir ( sort...)
 
-    emit_done;
+    $merge_cry->done;
 
     $signup->subfolder('prehistoric')
       ->write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
-    emit_done;
+    $prepare_cry->done;
 
     return;
 

@@ -10,7 +10,7 @@ use warnings;
 
 package Actium::Files::Thea::Import 0.010;
 
-use Actium::Term ':all';
+use Actium::Crier(qw/cry last_cry/);
 use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Time 'timenum';
 use Actium::O::Days;
@@ -260,9 +260,9 @@ sub _get_patterns {
     my %patterns;
     my %pat_lineids_of_lgdir;
 
-    emit 'Loading and assembling THEA patterns';
+    my $loadcry = cry( 'Loading and assembling THEA patterns');
 
-    emit 'Reading THEA trippattern files';
+    my $trippat_cry = cry( 'Reading THEA trippattern files');
 
     my $patfile_callback = sub {
 
@@ -283,7 +283,7 @@ sub _get_patterns {
         my $direction      = $dircode_of_thea{$tpat_direction};
         if ( not defined $direction ) {
             $direction = $tpat_direction;
-            emit_text("Unknown direction: $tpat_direction");
+            $trippat_cry->text("Unknown direction: $tpat_direction");
         }
         my $lgdir = linegroup_of( ${tpat_line} ) . "_$direction";
 
@@ -303,9 +303,9 @@ sub _get_patterns {
         }
     );
 
-    emit_done;
+    last_cry()->done;
 
-    emit 'Reading THEA trippatternstops files';
+    my $trippatstops_cry = cry('Reading THEA trippatternstops files');
 
     my $patstopfile_callback = sub {
         my $value_of_r = shift;
@@ -345,9 +345,9 @@ sub _get_patterns {
         }
     );
 
-    emit_done;
+    last_cry()->done;
 
-    emit 'Making unified patterns for each direction';
+    my $unipat_cry = cry( 'Making unified patterns for each direction');
 
     my ( %upattern_of, %uindex_of );
 
@@ -383,9 +383,9 @@ sub _get_patterns {
 
     } ## tidy end: foreach my $lgdir ( keys %pat_lineids_of_lgdir)
 
-    emit_done;
+    last_cry()->done;
 
-    emit_done;
+    last_cry()->done;
 
     return \%patterns, \%pat_lineids_of_lgdir, \%upattern_of, \%uindex_of;
 
@@ -395,7 +395,7 @@ sub _load_places {
     my $theafolder = shift;
     my %place_info_of;
 
-    emit 'Reading THEA place files';
+    my $cry = cry( 'Reading THEA place files');
 
     my $place_callback = sub {
         my $value_of_r   = shift;
@@ -418,7 +418,7 @@ sub _load_places {
         }
     );
 
-    emit_done;
+    $cry->done;
 
     return \%place_info_of;
 
@@ -431,11 +431,11 @@ sub _make_skeds {
 
     my @skeds;
 
-    emit "Making Actium::O::Sked objects";
+    my $cry = cry( "Making Actium::O::Sked objects");
 
     foreach my $skedid ( sortbyline keys %{$trips_of_skedid_r} ) {
 
-        emit_over $skedid;
+        $cry->over( $skedid);
 
         my ( $lg, $dir, $days ) = split( /_/s, $skedid );
         my $lgdir    = "${lg}_$dir";
@@ -478,7 +478,7 @@ sub _make_skeds {
 
     } ## tidy end: foreach my $skedid ( sortbyline...)
 
-    emit_done;
+    $cry->done;
 
     return @skeds;
 

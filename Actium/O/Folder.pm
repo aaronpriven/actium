@@ -15,7 +15,7 @@ use MooseX::StrictConstructor; ### DEP ###
 use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
-use Actium::Crier;
+use Actium::Crier(qw/cry last_cry/);
 use Actium::Util('flatten');
 use Carp; ### DEP ###
 use English '-no_match_vars'; ### DEP ###
@@ -910,7 +910,6 @@ Like B<glob_files>, except returns only plain files
 
 Saves or retrieves a L<Storable|Storable> file (using Storable::nstore and 
 Storable::retrieve) in the folder represented by the object. 
-Uses Actium::Term to provide feedback to the terminal.
 
 =item B<open_read (F<filename>)>
 
@@ -1126,8 +1125,6 @@ L<write_files_from_hash> routines.
 =item Params::Validate
 
 =item Actium::Constants
-
-=item Actium::Term
 
 =item Actium::Util
 

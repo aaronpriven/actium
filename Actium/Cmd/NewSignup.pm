@@ -9,7 +9,6 @@ use Actium::Cmd::Config::Signup ('signup');
 use Actium::Util('filename');
 use Actium::Files::Xhea;
 use Archive::Zip;    ### DEP ###
-use Actium::Term;
 
 sub OPTIONS {
     my ( $class, $env ) = @_;
@@ -36,17 +35,17 @@ sub START {
     my $env     = shift;
     my $xheazip = $env->option('xhea');
 
-    emit "Making signup and subdirectories";
+    my $cry = cry( "Making signup and subdirectories");
 
     my $signup = signup($env);
     my $hasi_folder = $signup->subfolder('hasi');
     my $xhea_folder = $signup->subfolder('xhea');
 
-    emit_done;
+    $cry->done;
 
     if ($xheazip) {
 
-        emit "Extracting XHEA files";
+        my $xcry = cry( "Extracting XHEA files");
 
         unless ( -e $xheazip ) {
             die "Can't find xhea zip file $xheazip";
@@ -59,18 +58,18 @@ sub START {
 
             my $filename = filename( $member->fileName );
 
-            emit_over( $filename . '...' );
+            $xcry->over( $filename . '...' );
             my $filespec = $xhea_folder->make_filespec($filename);
 
             $member->extractToFileNamed("$filespec");
 
         }
 
-        emit_over('');
+        $xcry->over('');
 
-        emit_done;
+        $xcry->done;
 
-        emit "Importing xhea files";
+        my $impcry = cry( "Importing xhea files");
 
         my $tab_folder = $xhea_folder->subfolder('tab');
 
@@ -80,13 +79,13 @@ sub START {
             tab_folder  => $tab_folder
         );
 
-        emit_done;
+        $impcry->done;
 
-        emit "Creating HASI files from XHEA files";
+        my $hasicry = cry( "Creating HASI files from XHEA files");
 
         Actium::Files::Xhea::to_hasi( $tab_folder, $hasi_folder );
 
-        emit_done;
+        $hasicry->done;
 
     } ## tidy end: if ($xheazip)
 

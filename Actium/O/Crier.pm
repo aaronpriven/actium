@@ -496,10 +496,9 @@ sub _close_up_to {
 
 }
 
-sub text {
-
+sub last_cry {
     my $self = shift;
-    my @args = @_;
+    
     my $cry;
     if ( $self->cry_level == 0 ) {
 
@@ -508,7 +507,16 @@ sub text {
     }
     else {
         $cry = $self->_last_cry;
-    }
+    } 
+    
+    
+}
+
+sub text {
+
+    my $self = shift;
+    my @args = @_;
+    my $cry = $self->last_cry;
 
     return $cry->text(@_);
 

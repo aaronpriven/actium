@@ -6,10 +6,10 @@ use warnings;
 use English '-no_match_vars'; ### DEP ###
 use autodie; ### DEP ###
 use Text::Trim; ### DEP ###
+use Actium::Crier (qw/cry last_cry/);
 use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
-use Actium::Term;
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::O::Sked::Timetable::IDTimetable;
@@ -130,9 +130,9 @@ sub assign {
         foreach my $idtable (@idtables) {
             next unless $idtable->failure;
 
-            emit_text $idtable->id
+            last_cry()->text( $idtable->id
               . " could not be fit in the pages available: "
-              . $idtable->dimensions_for_display;
+              . $idtable->dimensions_for_display);
 
         }
 

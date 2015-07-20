@@ -15,7 +15,6 @@ use sort ('stable');    ### DEP ###
 
 use Actium::Preamble;
 
-use Actium::Term (':all');
 use Actium::Union('ordered_union');
 
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
@@ -119,7 +118,7 @@ sub START {
 
     my $effectivedate = trim( read_file('effectivedate.txt') );
 
-    emit "Now processing point schedules for sign number:";
+    my $cry = cry( "Now processing point schedules for sign number:");
 
     my $displaycolumns = 0;
     my @signstodo;
@@ -168,7 +167,7 @@ sub START {
         # skip inactive signs and those without stop IDs
 
         if ( not $stopid ) {
-            emit_text 'yowza';
+            $cry->text( 'yowza');
         }
 
         my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints} );
@@ -192,7 +191,7 @@ sub START {
 
         }
 
-        emit_over("$signid ");
+        $cry->over("$signid ");
 
         # 1) Read kpoints from file
 
@@ -243,7 +242,7 @@ sub START {
 
     }    ## <perltidy> end foreach my $signid ( sort {...})
 
-    emit_done;
+    $cry->done;
 
     print "\n", scalar keys %skipped_stops,
       " skipped signs because stop file not found.\n";

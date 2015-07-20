@@ -13,7 +13,6 @@ use autodie;
 
 use Params::Validate (':all'); ### DEP ###
 
-use Actium::Term;
 use Actium::Util(qw/filename in/);
 
 use Sub::Exporter -setup => { exports => [qw(read_aoas read_tab_files)] };
@@ -97,7 +96,7 @@ sub read_tab_files {
 
     foreach my $file (@files) {
 
-        emit "Loading $file";
+        my $file_cry = cry( "Loading $file");
 
         my $fh = $folder->open_read($file);
 
@@ -107,13 +106,13 @@ sub read_tab_files {
         #my $size    = -s $folder->make_filespec($file);
         my $linenum = 0;
 
-        emit_over ' 0%';
+        $file_cry->over( ' 0%');
 
         while ( my $line = <$fh> ) {
 
             $linenum++;
             if ( not $linenum % $progress_lines ) {
-                emit_over( sprintf( ' %.0f%%', tell($fh) / $size * 100 ) );
+                $file_cry->over( sprintf( ' %.0f%%', tell($fh) / $size * 100 ) );
             }
 
             my @values;
@@ -142,11 +141,11 @@ sub read_tab_files {
 
         } ## tidy end: while ( my $line = <$fh> )
 
-        emit_over ' 100%';
+        $file_cry->over( ' 100%');
 
         close $fh;
 
-        emit_done;
+        $file_cry->done;
 
     } ## tidy end: foreach my $file (@files)
 
@@ -402,10 +401,6 @@ in the file.
 =item *
 
 Perl 5.014
-
-=item *
-
-Actium::Term
 
 =item *
 

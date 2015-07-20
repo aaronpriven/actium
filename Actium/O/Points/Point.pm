@@ -21,10 +21,9 @@ use MooseX::SemiAffordanceAccessor; ### DEP ###
 use Moose::Util::TypeConstraints; ### DEP ###
 
 use namespace::autoclean; ### DEP ###
-use Actium::Term;
 
 use Actium::Util('joinseries');
-
+use Actium::Crier(qw/cry last_cry/);
 use Actium::Constants;
 use Actium::Sorting::Line (qw(byline sortbyline));
 use List::MoreUtils('natatime'); ### DEP ###
@@ -273,9 +272,9 @@ sub new_from_kpoints {
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
             my $lines = joinseries(@notfound);
-            emit_text
+            last_cry()->text(
               "\x{1f4A5}  Warning! $linetext $lines found in omit list for "
-              . "stop $stop_to_import, sign $signid, but not found in " . "stop schedule data.";
+              . "stop $stop_to_import, sign $signid, but not found in " . "stop schedule data.");
         }
 
     } ## tidy end: foreach my $stop_to_import ...

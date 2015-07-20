@@ -16,7 +16,6 @@ use warnings;
 
 use Actium::O::Folders::Signup;
 use Actium::Sorting::Line ('sortbyline');
-use Actium::Term;
 use Math::Trig qw(deg2rad pi great_circle_distance asin acos); ### DEP ###
 
 use List::MoreUtils('uniq'); ### DEP ###
