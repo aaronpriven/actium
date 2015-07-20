@@ -10,10 +10,6 @@ use Actium::Preamble;
 use Actium::Photos;
 use Actium::Cmd::Config::Flickr_Auth('flickr_auth');
 
-sub HELP {
-    say "Help not implemented.";
-}
-
 sub OPTIONS {
    return Actium::Cmd::Config::Flickr_Auth::OPTIONS;
 }
