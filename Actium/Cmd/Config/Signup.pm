@@ -99,10 +99,10 @@ sub signup {
 
     my %params;
     if ( ref($first_argument) eq 'HASH' ) {
-        \%params = $first_argument;
+        %params = %{ $first_argument };
     }
     elsif ( defined($first_argument) ) {
-        \%params = { subfolders => [ $first_argument, @rest ] };
+        %params = ( subfolders => [ $first_argument, @rest ] );
     }
 
     $params{base}   //= ( $env->option('base')   // $defaults{BASE} );
@@ -123,7 +123,7 @@ sub oldsignup {
 
     my %params;
     if ( ref($first_argument) eq 'HASH' ) {
-        \%params = $first_argument;
+        %params = %{ $first_argument };
     }
     elsif ( defined($first_argument) ) {
         %params = ( subfolders => [ $first_argument, @rest ] );
