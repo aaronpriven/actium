@@ -664,7 +664,7 @@ sub write_file_with_method {
         croak "Can't close $file for writing: $OS_ERROR";
     }
     
-    if ($params{CRY}) {
+    if (not $params{CRY}) {
         $cry->done;
     }
 
