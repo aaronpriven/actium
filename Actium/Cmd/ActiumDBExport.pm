@@ -8,7 +8,6 @@ use Actium::Preamble;
 use Actium::O::Folder;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Archive::Zip (qw( :ERROR_CODES :CONSTANTS ));    ### DEP ###
-use Actium::Term;
 
 my %fields_of =
 
@@ -42,11 +41,11 @@ sub OPTIONS {
 
 sub START {
 
-    Actium::Term::be_quiet;
-
-    local $INPUT_RECORD_SEPARATOR = "\r\n";    # exporting for windoze
-
     my ( $class, $env ) = @_;
+    $env->be_quiet;
+
+    local $OUTPUT_RECORD_SEPARATOR = "\r\n";    # exporting for windoze
+
     my $actiumdb = actiumdb($env);
 
     my $dbh = $actiumdb->dbh;

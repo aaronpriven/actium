@@ -48,7 +48,7 @@ has subcommand => (
 has crier => (
     is       => 'ro',
     required => 1,
-    isa => 'Actium::O::Crier',
+    isa      => 'Actium::O::Crier',
 );
 
 sub _build_bin {
@@ -87,7 +87,15 @@ has options_r => (
     is      => 'bare',
     writer  => '_set_options_r',
     default => sub { {} },
-    handles => { option => 'get', },
+    handles => { option => 'get', _set_option => 'set' },
 );
+
+sub be_quiet {
+    
+    my $self = shift;
+    $self->crier->set_maxdepth(0);
+    $self->_set_option('quiet', 1);
+
+}
 
 1;
