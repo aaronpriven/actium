@@ -8,7 +8,6 @@ package Actium::Cmd::Config::ActiumFM 0.010;
 
 use Actium::Preamble;
 use Actium::O::Files::ActiumFM;
-use Actium::Term;
 
 use Sub::Exporter ( -setup => { exports => [qw(actiumdb)] } );    ### DEP ###
 
@@ -45,10 +44,10 @@ sub actiumdb {
     }
 
     $params{db_user}
-      //= Actium::Term::term_readline('User name to access Actium database:');
+      //= Actium::Cmd::term_readline('User name to access Actium database:');
 
     $params{db_password}
-      //= Actium::Term::term_readline( 'Password to access Actium database:',
+      //= Actium::Cmd::term_readline( 'Password to access Actium database:',
         1 );
 
     $params{db_name} //= $DEFAULT_DBNAME;
