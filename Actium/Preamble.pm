@@ -21,7 +21,7 @@ BEGIN {
         [   qw[Actium::Util all_eq doe dumpstr flatten
               in isblank isnotblank j jt jk jn]
         ],
-        [qw[Actium::Crier cry]],
+        [qw[Actium::Crier cry last_cry]],
         [qw[Carp]],
         # Carp ### DEP ###
         [qw[Const::Fast]],

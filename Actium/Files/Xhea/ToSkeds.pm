@@ -18,7 +18,7 @@ use Actium::O::Dir;
 use Actium::O::Sked::Trip;
 use Actium::O::Sked;
 use Actium::Sorting::Line 'sortbyline';
-use Actium::Term ':all';
+use Actium::Crier qw/cry last_cry/;
 use Actium::Time 'timenum';
 use Actium::Union('ordered_union_columns');
 use Actium::Util (qw<linegroup_of>);
@@ -253,9 +253,9 @@ sub _get_patterns {
     my %patterns;
     my %pat_lineids_of_lgdir;
 
-    emit 'Loading and assembling XHEA patterns';
+    my $load_cry = cry( 'Loading and assembling XHEA patterns');
 
-    emit 'Reading XHEA trippattern files';
+    my $read_cry = cry('Reading XHEA trippattern files');
 
     my $patfile_callback = sub {
 
@@ -276,7 +276,7 @@ sub _get_patterns {
         my $direction      = $dircode_of_xhea{$tpat_direction};
         if ( not defined $direction ) {
             $direction = $tpat_direction;
-            emit_text("Unknown direction: $tpat_direction");
+            $read_cry->text("Unknown direction: $tpat_direction");
         }
         my $lgdir = linegroup_of( ${tpat_line} ) . "_$direction";
 
@@ -296,9 +296,9 @@ sub _get_patterns {
         }
     );
 
-    emit_done;
+    $read_cry->done;
 
-    emit 'Reading XHEA trippatternstops files';
+    my $tps_cry = cry( 'Reading XHEA trippatternstops files');
 
     my $patstopfile_callback = sub {
         my $value_of_r = shift;
@@ -338,9 +338,9 @@ sub _get_patterns {
         }
     );
 
-    emit_done;
+    $tps_cry->done;
 
-    emit 'Making unified patterns for each direction';
+    my $unipatcry = cry( 'Making unified patterns for each direction');
 
     my ( %upattern_of, %uindex_of );
 
@@ -376,9 +376,9 @@ sub _get_patterns {
 
     } ## tidy end: foreach my $lgdir ( keys %pat_lineids_of_lgdir)
 
-    emit_done;
+    $unipatcry->done;
 
-    emit_done;
+    $load_cry->done;
 
     return \%patterns, \%pat_lineids_of_lgdir, \%upattern_of, \%uindex_of;
 
@@ -388,7 +388,7 @@ sub _load_places {
     my $xheafolder = shift;
     my %place_info_of;
 
-    emit 'Reading XHEA place files';
+    my $cry = cry( 'Reading XHEA place files');
 
     my $place_callback = sub {
         my $value_of_r   = shift;
@@ -411,7 +411,7 @@ sub _load_places {
         }
     );
 
-    emit_done;
+    $cry->done;
 
     return \%place_info_of;
 
@@ -424,11 +424,11 @@ sub _make_skeds {
 
     my @skeds;
 
-    emit "Making Actium::O::Sked objects";
+    my $cry = cry( "Making Actium::O::Sked objects");
 
     foreach my $skedid ( sortbyline keys %{$trips_of_skedid_r} ) {
 
-        emit_over $skedid;
+        $cry->over( $skedid);
 
         my ( $lg, $dir, $days ) = split( /_/s, $skedid );
         my $lgdir    = "${lg}_$dir";
@@ -471,7 +471,7 @@ sub _make_skeds {
 
     } ## tidy end: foreach my $skedid ( sortbyline...)
 
-    emit_done;
+    $cry->done;
 
     return @skeds;
 
@@ -479,7 +479,7 @@ sub _make_skeds {
 
 sub xhea_trips {
 
-    emit "Loading XHEA trips into trip objects";
+    my $cry = cry( "Loading XHEA trips into trip objects");
 
     my $xheafolder             = shift;
     my $pat_lineids_of_lgdir_r = shift;
@@ -493,7 +493,7 @@ sub xhea_trips {
 
     my $trips_of_sked_r = _get_trips_of_sked($trips_of_lgdir_r);
 
-    emit_done;
+    $cry->done;
 
     return $trips_of_sked_r;
 
@@ -502,7 +502,7 @@ sub xhea_trips {
 
 sub _load_trips_from_file {
     my $xheafolder = shift;
-    emit 'Reading XHEA trip files';
+    my $cry = cry( 'Reading XHEA trip files');
 
     my %trip_of_tnum;
     my %tnums_of_lineid;
@@ -552,9 +552,9 @@ sub _load_trips_from_file {
         }
     );
 
-    emit_done;
+    $cry->done;
 
-    emit 'Reading XHEA trip stop (time) files';
+    my $tripstop_cry = cry( 'Reading XHEA trip stop (time) files');
 
     my $tripstops_callback = sub {
         my $value_of_r = shift;
@@ -575,7 +575,7 @@ sub _load_trips_from_file {
         }
     );
 
-    emit_done;
+    $cry->done;
 
     my %trips_of_lineid;
     foreach my $lineid ( keys %tnums_of_lineid ) {
@@ -621,11 +621,11 @@ sub _make_trip_objs {
 
     # Then we turn them into objects, and sort the objects.
 
-    emit 'Making Trip objects (padding out columns, merging double trips)';
+    my $cry = cry( 'Making Trip objects (padding out columns, merging double trips)');
 
     foreach my $lgdir ( sortbyline keys %{$pat_lineids_of_lgdir_r } ) {
 
-        emit_over $lgdir;
+        $cry->over( $lgdir);
 
         my $trip_objs_r;
         my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
@@ -673,7 +673,7 @@ sub _make_trip_objs {
 
     } ## tidy end: foreach my $lgdir ( sortbyline...)
 
-    emit_done;
+    $cry->done;
 
     return \%trips_of_lgdir;
 
@@ -703,11 +703,11 @@ sub _get_trips_of_sked {
     my $trips_of_lgdir_r = shift;
     my %trips_of_sked;
 
-    emit "Assembling trips into schedules by day";
+    my $cry = cry( "Assembling trips into schedules by day");
 
     foreach my $lgdir ( sortbyline keys %{ $trips_of_lgdir_r }) {
 
-        emit_over $lgdir;
+        $cry->over( $lgdir);
 
         # first, this separates them out by individual days.
         # then, it reassembles them in groups.
@@ -741,7 +741,7 @@ sub _get_trips_of_sked {
 
     } ## tidy end: foreach my $lgdir ( sortbyline...)
 
-    emit_done;
+    $cry->done;
 
     return \%trips_of_sked;
 

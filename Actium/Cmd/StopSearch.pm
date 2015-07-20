@@ -7,7 +7,6 @@ package Actium::Cmd::StopSearch 0.010;
 use Actium::Preamble;
 use Actium::O::Folder;
 use Actium::Cmd::Config::ActiumFM('actiumdb');
-use Actium::Term;
 
 sub OPTIONS {
     return ( Actium::Cmd::Config::ActiumFM::OPTIONS(),
@@ -29,7 +28,7 @@ sub START {
 
     $divider = $env->option('tab') ? "\t" : $DEFAULT_DIVIDER;
 
-    Actium::Term::be_quiet;
+    $env->be_quiet();
 
     my @args = $env->argv;
 

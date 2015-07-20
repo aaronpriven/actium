@@ -12,7 +12,6 @@ use Actium::Preamble;
 use Actium::O::Dir;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::Util('filename');
-use Actium::Term;
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup ('signup');
 
@@ -31,7 +30,7 @@ const my $HIGHEST_LINE_IN_FIRST_LOCALPAGE => 70;
 
 sub START {
 
-    emit 'Making HTML files of stop lists';
+    my $makehtml_cry = cry( 'Making HTML files of stop lists');
 
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
@@ -44,19 +43,19 @@ sub START {
 
     $actiumdb->ensure_loaded('Stops_Neue');
 
-    emit 'Getting stop descriptions from FileMaker';
+    my $stopdesc_cry = cry( 'Getting stop descriptions from FileMaker');
 
     my $stops_row_of_r = $actiumdb->all_in_columns_key(
         qw/Stops_Neue c_description_short h_loca_latitude h_loca_longitude
           c_city/
     );
 
-    emit_done;
+    $stopdesc_cry->done;
 
     my $linegrouptype_of_r
       = $actiumdb->all_in_column_key(qw/Lines LineGroupType/);
 
-    emit 'Creating HTML versions of stop lists';
+    my $htmlversion_cry = cry( 'Creating HTML versions of stop lists');
 
     my @files = $stoplists_line_folder->glob_plain_files('*.txt');
     @files = map { filename($_) } @files;
@@ -76,7 +75,7 @@ sub START {
 
         next if $LINE_SHOULD_BE_SKIPPED{$line};
 
-        emit_over $line;
+        $htmlversion_cry->over ($line);
 
         my @dirs = @{ $dirs_of{$line} };
         @dirs = sort { $order_of{$a} <=> $order_of{$b} } @dirs;
@@ -260,9 +259,9 @@ EOT
 
     close $indexfh or die "Can't close stop_index.html: $OS_ERROR";
 
-    emit_done;
+    $htmlversion_cry->done;
 
-    emit_done;
+    $makehtml_cry->done;
 
     return;
 

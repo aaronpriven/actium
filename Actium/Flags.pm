@@ -7,7 +7,6 @@
 package Actium::Flags 0.010;
 
 use Actium::Preamble;
-use Actium::Term;
 
 const my @COLUMNS => qw[
   u_flagtype_id        flagtype_filename    flagtype_master_page
@@ -24,7 +23,7 @@ const my %SKIPPED_EXPLANATION_OF => (
 );
 
 sub flag_assignments {
-
+    
     my $actium_db  = shift;
     my $actium_dbh = $actium_db->dbh;
 
@@ -94,11 +93,11 @@ EOT
 
     foreach my $reason ( keys %skipped_because ) {
         my @stops = join( $SPACE, @{ $skipped_because{$reason} } );
-        emit_text "$SKIPPED_EXPLANATION_OF{$reason}: @stops";
+        last_cry()->text( "$SKIPPED_EXPLANATION_OF{$reason}: @stops");
     }
 
     unless ( scalar %rows_of_file ) {
-        emit_error { -reason => 'Error: No flags to prepare.' };
+        last_cry()->d_error ( { -reason => 'Error: No flags to prepare.' });
         return;
     }
 

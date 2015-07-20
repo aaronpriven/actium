@@ -11,11 +11,10 @@ package Actium::Files::Xhea 0.010;
 ## no critic (ProhibitAmbiguousNames)
 
 use Actium::Preamble;
-use Actium::Term;
 use Actium::Import::CalculateFields;
 
-use List::MoreUtils('pairwise'); ### DEP ###
-use Params::Validate(':all'); ### DEP ###
+use List::MoreUtils('pairwise');    ### DEP ###
+use Params::Validate(':all');       ### DEP ###
 use Actium::Util(qw/file_ext aoa2tsv/);
 use Actium::Time(qw[timestr_sub timenum]);
 
@@ -30,8 +29,7 @@ sub xhea_import {
 
     my %p = validate(
         @_,
-        {
-            signup      => 1,
+        {   signup      => 1,
             xhea_folder => 1,
             tab_folder  => 1,
         }
@@ -41,34 +39,33 @@ sub xhea_import {
     my $xhea_folder = $p{xhea_folder};
     my $tab_folder  = $p{tab_folder};
 
-    my ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r ) =
-      Actium::Files::Xhea::load_adjusted($xhea_folder);
+    my ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r )
+      = Actium::Files::Xhea::load_adjusted($xhea_folder);
 
-    my $tab_strings_r =
-      Actium::Files::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
+    my $tab_strings_r
+      = Actium::Files::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
         $adjusted_values_of_r );
 
     if ( exists( $fieldnames_of_r->{$STOPS} ) ) {
-        my ( $new_s_heads_r, $new_s_records_r ) =
-          Actium::Import::CalculateFields::hastus_stops_import(
+        my ( $new_s_heads_r, $new_s_records_r )
+          = Actium::Import::CalculateFields::hastus_stops_import(
             $fieldnames_of_r->{$STOPS},
-            $adjusted_values_of_r->{$STOPS}
-          );
+            $adjusted_values_of_r->{$STOPS} );
 
-        $tab_strings_r->{$STOPS_PC} =
-          Actium::Util::aoa2tsv( $new_s_records_r, $new_s_heads_r );
+        $tab_strings_r->{$STOPS_PC}
+          = Actium::Util::aoa2tsv( $new_s_records_r, $new_s_heads_r );
 
     }
 
     if ( exists( $fieldnames_of_r->{$PLACES} ) ) {
 
-        my ( $new_p_heads_r, $new_p_records_r ) =
-          Actium::Import::CalculateFields::hastus_places_import(
+        my ( $new_p_heads_r, $new_p_records_r )
+          = Actium::Import::CalculateFields::hastus_places_import(
             $fieldnames_of_r->{$PLACES},
             $adjusted_values_of_r->{$PLACES} );
 
-        $tab_strings_r->{$PLACES_PC} =
-          Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
+        $tab_strings_r->{$PLACES_PC}
+          = Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
     }
 
     $tab_folder->write_files_from_hash( $tab_strings_r, qw(tab txt) );
@@ -77,14 +74,14 @@ sub xhea_import {
 
     return;
 
-}
+} ## tidy end: sub xhea_import
 
 sub tab_strings {
 
     my ( $fieldnames_of_r, $fields_of_r, $values_of_r ) = (@_);
     my %tab_of;
 
-    emit 'Processing XHEA data into tab-delimited text';
+    my $cry = cry('Processing XHEA data into tab-delimited text');
 
     foreach my $record_name ( keys %{$fields_of_r} ) {
 
@@ -96,17 +93,17 @@ sub tab_strings {
 
     }
 
-    emit_done;
+    $cry->done;
 
     return \%tab_of;
 
-}    ## tidy end: sub tab_strings
+} ## tidy end: sub tab_strings
 
 sub load_adjusted {
 
     my ( $fieldnames_of_r, $fields_of_r, $values_of_r ) = load(@_);
-    my $adjusted_values_of_r =
-      adjust_for_basetype( $fields_of_r, $values_of_r );
+    my $adjusted_values_of_r
+      = adjust_for_basetype( $fields_of_r, $values_of_r );
     return ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r );
 
 }
@@ -122,7 +119,7 @@ sub adjust_for_basetype {
     my ( $fields_of_r, $values_of_r ) = (@_);
     my %adjusted_values_of;
 
-    emit 'Adjusting XHEA data for its base type';
+    my $cry = cry('Adjusting XHEA data for its base type');
 
     foreach my $record_name ( keys %{$fields_of_r} ) {
 
@@ -163,15 +160,15 @@ sub adjust_for_basetype {
 
             push @{ $adjusted_values_of{$record_name} }, \@adjusted_record;
 
-        }    ## tidy end: foreach my $record ( @{ $values_of_r...})
+        } ## tidy end: foreach my $record ( @{ $values_of_r...})
 
-    }    ## tidy end: foreach my $record_name ( keys...)
+    } ## tidy end: foreach my $record_name ( keys...)
 
-    emit_done;
+    $cry->done;
 
     return \%adjusted_values_of;
 
-}    ## tidy end: sub adjust_for_basetype
+} ## tidy end: sub adjust_for_basetype
 
 sub _adjust_string {
     my $adjusted = shift;
@@ -202,19 +199,19 @@ sub load {
 
     my @xhea_filenames = _get_xhea_filenames($xheafolder);
 
-    require XML::Pastor; ### DEP ###
+    require XML::Pastor;    ### DEP ###
 
     my $pastor = XML::Pastor->new();
 
     my ( %fieldnames_of, %fields_of, %values_of );
 
-    emit 'Loading XHEA files';
+    my $load_cry = cry('Loading XHEA files');
 
     foreach my $filename (@xhea_filenames) {
 
-        emit "Processing $filename";
+        my $file_cry = cry("Processing $filename");
 
-        emit 'Generating classes from XSD';
+        my $class_cry = cry('Generating classes from XSD');
 
         my $xsd       = $xheafolder->make_filespec("$filename.xsd");
         my $xml       = $xheafolder->make_filespec("$filename.xml");
@@ -226,13 +223,13 @@ sub load {
             class_prefix => $newprefix,
         );
 
-        emit_done;    # generating classes
+        $class_cry->done;    # generating classes
 
         my $model  = ( $newprefix . '::Pastor::Meta' )->Model;
         my $tree_r = _build_tree($model);
 
-        my ( $fieldnames_of_r, $records_of_r, $fields_of_r ) =
-          _records_and_fields( $tree_r, $filename );
+        my ( $fieldnames_of_r, $records_of_r, $fields_of_r )
+          = _records_and_fields( $tree_r, $filename );
 
         %fieldnames_of = ( %fieldnames_of, %{$fieldnames_of_r} );
         %fields_of     = ( %fields_of,     %{$fields_of_r} );
@@ -250,24 +247,23 @@ sub load {
 
         %values_of = ( %values_of, %{$newvalues_r} );
 
-        emit_done;
+        $file_cry->done;
 
-    }    ## tidy end: foreach my $filename (@xhea_filenames)
+    } ## tidy end: foreach my $filename (@xhea_filenames)
 
     #$tfolder->json_store_pretty( \%fields_of, 'records.json' );
 
-    emit_done;
+    $load_cry->done;
 
     return ( \%fieldnames_of, \%fields_of, \%values_of );
 
-}    ## tidy end: sub load
+} ## tidy end: sub load
 
 sub _load_values {
 
     my %p = validate(
         @_,
-        {
-            tree       => 1,
+        {   tree       => 1,
             model      => 1,
             fields_of  => 1,
             records_of => 1,
@@ -282,12 +278,12 @@ sub _load_values {
 
     for my $table_name ( keys %{ $p{tree} } ) {
         my $table_class = $p{model}->xml_item_class($table_name);
-        emit "Loading $table_name from $p{filename}.xml";
-        emit_text '(This can take quite a while; be patient)';
+        my $load_cry    = cry("Loading $table_name from $p{filename}.xml");
+        $load_cry->text('(This can take quite a while; be patient)');
         my $table = $table_class->from_xml_file( $p{xmlfile} );
-        emit_done;
+        $load_cry->done;
 
-        emit "Processing $table_name into records";
+        my $record_cry = cry("Processing $table_name into records");
 
         for my $record_name ( @{ $p{records_of}{$table_name} } ) {
 
@@ -309,17 +305,17 @@ sub _load_values {
 
         }
 
-        emit_done;
+        $record_cry->done;
 
-    }    ## tidy end: for my $table_name ( keys...)
+    } ## tidy end: for my $table_name ( keys...)
 
     return \%values_of;
 
-}    ## tidy end: sub _load_values
+} ## tidy end: sub _load_values
 
 sub _records_and_fields {
 
-    emit 'Processing XSD into record and field information';
+    my $xsd_cry = cry('Processing XSD into record and field information');
 
     # Hastus exports XML files with three levels:
     # table level (contains records)
@@ -340,12 +336,11 @@ sub _records_and_fields {
     my %fieldnames_of;
 
     for my $table ( keys %{$tree_r} ) {
-        emit_over "table: $table";
+        $xsd_cry->over("table: $table");
 
         if ( not $tree_r->{$table}{has_subelements} ) {
             _unexpected_croak(
-                {
-                    foundtype    => 'data field',
+                {   foundtype    => 'data field',
                     foundname    => $table,
                     expectedtype => 'table',
                     filename     => $filename,
@@ -356,13 +351,12 @@ sub _records_and_fields {
         my %info_of_record = %{ $tree_r->{$table}{children} };
 
         for my $record ( keys %info_of_record ) {
-            emit_over "record: $record";
+            $xsd_cry->over("record: $record");
 
             if ( not $info_of_record{$record}{has_subelements} ) {
 
                 _unexpected_croak(
-                    {
-                        foundtype    => 'data field',
+                    {   foundtype    => 'data field',
                         foundname    => $record,
                         expectedtype => 'record',
                         filename     => $filename,
@@ -381,13 +375,12 @@ sub _records_and_fields {
             $fieldnames_of{$record} = \@fieldnames;
 
             for my $field (@fieldnames) {
-                emit_over "field: $field";
+                $xsd_cry->over("field: $field");
 
                 if ( $info_of_record{$field}{has_subelements} ) {
 
                     _unexpected_croak(
-                        {
-                            foundtype    => 'record',
+                        {   foundtype    => 'record',
                             foundname    => $field,
                             expectedtype => 'data field',
                             filename     => $filename,
@@ -396,8 +389,8 @@ sub _records_and_fields {
 
                 }
 
-                my %info_of_this_field =
-                  %{ $info_of_record{$record}{children}{$field} };
+                my %info_of_this_field
+                  = %{ $info_of_record{$record}{children}{$field} };
 
                 my $base = $info_of_this_field{base}
                   // $info_of_this_field{type};
@@ -407,30 +400,29 @@ sub _records_and_fields {
                     s{\Q|http://www.w3.org/2001/XMLSchema\E\z}{}sx;
                 }
 
-                $fields_of{$record}{$field} =
-                  { base => $base, type => $type, idx => $field_idx };
+                $fields_of{$record}{$field}
+                  = { base => $base, type => $type, idx => $field_idx };
 
                 $field_idx++;
-            }    ## tidy end: for my $field (@fieldnames)
+            } ## tidy end: for my $field (@fieldnames)
 
-        }    ## tidy end: for my $record ( keys %info_of_record)
+        } ## tidy end: for my $record ( keys %info_of_record)
 
-    }    ## tidy end: for my $table ( keys %{...})
+    } ## tidy end: for my $table ( keys %{...})
 
-    emit_over($EMPTY_STR);
+    $xsd_cry->over($EMPTY_STR);
 
-    emit_done;
+    $xsd_cry->done;
 
     return \%fieldnames_of, \%records_of, \%fields_of;
 
-}    ## tidy end: sub _records_and_fields
+} ## tidy end: sub _records_and_fields
 
 sub _unexpected_croak {
 
     my %p = validate(
         @_,
-        {
-            foundtype    => 1,
+        {   foundtype    => 1,
             foundname    => 1,
             expectedtype => 1,
             filename     => 1,
@@ -445,7 +437,7 @@ sub _build_tree {
 
     my $model = shift;
 
-    emit 'Building element tree';
+    my $cry = cry('Building element tree');
 
     my %element_obj_of = %{ $model->element };
 
@@ -491,13 +483,13 @@ sub _build_tree {
             $parent_hr->{$element}{base} = $base if $base;
         }
 
-    }    ## tidy end: while (@queue)
+    } ## tidy end: while (@queue)
 
-    emit_done;
+    $cry->done;
 
     return \%tree;
 
-}    ## tidy end: sub _build_tree
+} ## tidy end: sub _build_tree
 
 sub _get_xhea_filenames {
 
@@ -531,7 +523,7 @@ sub _get_xhea_filenames {
 
     return @xhea_filenames;
 
-}    ## tidy end: sub _get_xhea_filenames
+} ## tidy end: sub _get_xhea_filenames
 
 # From trip_pattern.txt
 #
@@ -628,7 +620,7 @@ sub _get_xhea_filenames {
     sub to_hasi {
         my ( $xhea_tab_folder, $hasi_folder ) = @_;
 
-        emit "Loading XHEA files to memory";
+        my $cry = cry("Loading XHEA files to memory");
 
         require Actium::Files::TabDelimited;
 
@@ -660,8 +652,7 @@ sub _get_xhea_filenames {
         };
 
         Actium::Files::TabDelimited::read_tab_files(
-            {
-                files    => ['trip_pattern.txt'],
+            {   files    => ['trip_pattern.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $pattern_callback,
             }
@@ -698,8 +689,7 @@ sub _get_xhea_filenames {
         };
 
         Actium::Files::TabDelimited::read_tab_files(
-            {
-                files    => ['trip.txt'],
+            {   files    => ['trip.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $trip_callback,
             }
@@ -730,8 +720,8 @@ sub _get_xhea_filenames {
 
             #my ($htime) = $passing_time =~ m/T(\d\d:\d\d)/;
 
-            my ( $day, $hours, $mins ) =
-              $passing_time =~ m/(\d\d)T(\d\d):(\d\d)/;
+            my ( $day, $hours, $mins )
+              = $passing_time =~ m/(\d\d)T(\d\d):(\d\d)/;
 
             my $xtime;
             if ( $day eq '31' ) {
@@ -753,8 +743,7 @@ sub _get_xhea_filenames {
         };
 
         Actium::Files::TabDelimited::read_tab_files(
-            {
-                files    => ['trip_stop.txt'],
+            {   files    => ['trip_stop.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $stop_callback,
             }
@@ -773,8 +762,7 @@ sub _get_xhea_filenames {
         };
 
         Actium::Files::TabDelimited::read_tab_files(
-            {
-                files    => ['place.txt'],
+            {   files    => ['place.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $place_callback,
             }
@@ -786,15 +774,15 @@ sub _get_xhea_filenames {
         #say $dump_fh dumpstr (\%pat, \%tps, \%trp, \%pts);
         #close $dump_fh;
 
-        emit_done;
+        $cry->done;
 
-        emit "Writing HASI files";
+        my $hasi_cry = cry("Writing HASI files");
 
-        emit "Writing $signup.PAT";
+        my $pat_cry = cry("Writing $signup.PAT");
 
         my $pat_fh = $hasi_folder->open_write("$signup.PAT");
 
-        emit_prog( ( scalar keys %{ $pat{Route} } ) . ' records' );
+        $pat_cry->prog( ( scalar keys %{ $pat{Route} } ) . ' records' );
 
         foreach my $patid ( keys %{ $pat{Route} } ) {
 
@@ -819,21 +807,22 @@ sub _get_xhea_filenames {
                   ;
             }
 
-        }    ## tidy end: foreach my $patid ( keys %{...})
+        } ## tidy end: foreach my $patid ( keys %{...})
 
         close $pat_fh;
 
-        emit_done;
+        $pat_cry->done;
 
-        emit "Writing $signup.TRP";
-        emit_prog( ( scalar keys %{ $trp{InternalNumber} } ) . ' records' );
+        my $trip_cry = cry("Writing $signup.TRP");
+        $trip_cry->prog(
+            ( scalar keys %{ $trp{InternalNumber} } ) . ' records' );
 
         my $trp_fh = $hasi_folder->open_write("$signup.TRP");
 
         foreach my $tripnum ( keys %{ $trp{InternalNumber} } ) {
 
             unless ( defined $trp{IsPublic}{$tripnum} ) {
-                emit_text $tripnum;
+                $trip_cry->text($tripnum);
             }
 
             printf $trp_fh
@@ -853,12 +842,12 @@ sub _get_xhea_filenames {
                 printf $trp_fh "PTS,%-8s$CRLF", $passing_time;
             }
 
-        }    ## tidy end: foreach my $tripnum ( keys ...)
+        } ## tidy end: foreach my $tripnum ( keys ...)
 
-        emit_done;
+        $trip_cry->done;
 
-        emit "Writing $signup.PLC";
-        emit_prog( ( scalar keys %{ $plc{Place} } ) . ' records' );
+        my $plc_cry = cry("Writing $signup.PLC");
+        $plc_cry->prog( ( scalar keys %{ $plc{Place} } ) . ' records' );
 
         my $plc_fh = $hasi_folder->open_write("$signup.PLC");
 
@@ -879,11 +868,11 @@ sub _get_xhea_filenames {
 
         close $plc_fh;
 
-        emit_done;
+        $plc_cry->done;
 
-        emit_done;
+        last_cry()->done;
 
-    }    ## tidy end: sub to_hasi
+    } ## tidy end: sub to_hasi
 
 }
 
@@ -1107,10 +1096,6 @@ Check that the folder is correct and that the files are present.
 =item *
 
 Actium::Preamble
-
-=item *
-
-Actium::Term
 
 =item *
 

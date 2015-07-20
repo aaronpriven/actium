@@ -13,7 +13,6 @@ use Actium::Cmd::Config::Signup ('signup');
 use Actium::Util qw(jt );
 use Actium::Constants;
 use Actium::O::Files::HastusASI;
-use Actium::Term;
 
 sub OPTIONS {
     my ( $class, $env ) = @_;
@@ -34,7 +33,7 @@ sub START {
 
     my $iterator = $db->each_row($table);
 
-    emit "Sending tab-delimited $table data to STDOUT";
+    my $cry = ( "Sending tab-delimited $table data to STDOUT");
 
     binmode STDOUT, ':utf8';
 
@@ -60,7 +59,7 @@ sub START {
         say jt(@values);
     }
 
-    emit_done;
+    $cry->done;
 
     return;
 } ## tidy end: sub START
@@ -123,8 +122,6 @@ Other modules this subprogram uses specify several other options. See:
 
 =item L<OPTIONS in Actium::Cmd::Config::Signup|Actium::Cmd::Config::Signup/OPTIONS>
 
-=item L<OPTIONS in Actium::Term|Actium::Term/OPTIONS>
-
 A complete list of options can be found by running "actium.pl help sqlite2tab"
 
 =head1 DESCRIPTION
@@ -172,8 +169,6 @@ L<$KEY_SEPARATOR from Actium::Constants|Actium::Constants/$KEY_SEPARATOR>.
 =item Actium::Cmd::Config::Signup
 
 =item Actium::Util
-
-=item Actium::Term 
 
 =item Actium::O::Files::HastusASI 
 
