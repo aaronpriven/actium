@@ -18,8 +18,6 @@ use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup ('signup');
 use Actium::Crier;
 
-sub HELP { say 'Help not implemented'; return; }
-
 sub OPTIONS {
     my ($class, $env) = @_;
     return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
