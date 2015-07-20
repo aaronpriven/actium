@@ -7,12 +7,6 @@ use Actium::Moose;
 use FindBin (qw($Bin));
 use Actium::O::Files::Ini;
 
-has system_name => (
-    isa      => 'Str',
-    is       => 'ro',
-    required => 1,
-);
-
 sub _build_config {
     my $self       = shift;
     my $systemname = $self->system_name;
@@ -39,7 +33,7 @@ has bin => (
     builder => '_build_bin',
 );
 
-has subcommand => (
+has [qw/subcommand system_name module/] => (
     isa      => 'Str',
     is       => 'ro',
     required => 1,
