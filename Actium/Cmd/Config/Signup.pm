@@ -36,9 +36,6 @@ sub build_defaults {
     $defaults{OLDSIGNUP}
       = ( $env->sysenv($OLDSIGNUP_ENV) // $config{OldSignup} );
 
-    $defaults{OLDBASE}
-      = ( $env->sysenv($OLDBASE_ENV) // $config{OldBase} // $defaults{BASE} );
-
     $defaults{CACHE} = $env->sysenv($CACHE_ENV);
     return;
 
@@ -49,9 +46,9 @@ sub options {
     build_defaults($env);
 
     my $signup_default_text
-      = $defaults{SIGNUP} eq $EMPTY_STR
+      = ( not defined( $defaults{SIGNUP} ) or $defaults{SIGNUP} eq $EMPTY_STR )
       ? $EMPTY_STR
-      : qq< If not specified, will use "$defaults{SIGNUP}">;
+      : qq<. If not specified, will use "$defaults{SIGNUP}">;
 
     return (
         [   'base=s',
@@ -60,35 +57,38 @@ sub options {
         ],
         [   'signup=s',
             'Signup. This is the subfolder under the base folder. Typically '
-              . qq<something like "f08" (meaning Fall 2008). >
+              . qq<something like "f08" (meaning Fall 2008)>
               . $signup_default_text
         ],
         [   'cache=s',
             'Cache folder. Files (like SQLite files) that cannot be stored '
               . 'on network filesystems are stored here. Defaults to the '
-              . 'location of the files being cached.'
+              . 'location of the files being cached'
         ],
     );
 } ## tidy end: sub options
 
 sub options_with_old {
-    my %params = @_;
-    build_defaults(%params);
+    my $env = shift;
+    build_defaults($env);
 
     my $oldsignup_default_text
-      = $defaults{OLDSIGNUP} eq $EMPTY_STR
+      = (
+        not defined( $defaults{OLDSIGNUP} )
+          or $defaults{OLDSIGNUP} eq $EMPTY_STR
+      )
       ? $EMPTY_STR
-      : qq< If not specified, will use "$defaults{OLDSIGNUP}">;
+      : qq<. If not specified, will use "$defaults{OLDSIGNUP}">;
 
     return (
         options(@_),
         [   'oldsignup|o=s',
-            'The older signup, to be compared with the current signup.'
+            'The older signup, to be compared with the current signup'
               . $oldsignup_default_text,
         ],
         [   'oldbase|ob=s',
             'The base folder to be used for the older signup.'
-              . qq< If not specified, will use "$defaults{OLDBASE}">,
+              . ' If not specified, will be the same as -base',
         ],
 
     );
@@ -99,7 +99,7 @@ sub signup {
 
     my %params;
     if ( ref($first_argument) eq 'HASH' ) {
-        %params = %{ $first_argument };
+        %params = %{$first_argument};
     }
     elsif ( defined($first_argument) ) {
         %params = ( subfolders => [ $first_argument, @rest ] );
@@ -123,17 +123,14 @@ sub oldsignup {
 
     my %params;
     if ( ref($first_argument) eq 'HASH' ) {
-        %params = %{ $first_argument };
+        %params = %{$first_argument};
     }
     elsif ( defined($first_argument) ) {
         %params = ( subfolders => [ $first_argument, @rest ] );
     }
 
-    $params{base} //= (
-        $env->option('oldbase')
-          // $env->option('base') 
-          // $defaults{OLDBASE}
-    );
+    $params{base} //= ( $env->option('oldbase') // $env->option('base')
+          // $defaults{OLDBASE} );
 
     $params{signup} //= ( $env->option('oldsignup') // $defaults{OLDSIGNUP} );
 

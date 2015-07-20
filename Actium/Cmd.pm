@@ -1,11 +1,11 @@
 package Actium::Cmd 0.010;
 
 use Actium::Preamble;
-use Getopt::Long;    ### DEP ###
+use Getopt::Long;             ### DEP ###
 use Actium::O::CmdEnv;
 use Actium::Crier('default_crier');
-use Text::Wrap;       ### DEP ###
-use Term::ReadKey;    ### DEP ###
+use Text::Wrap;               ### DEP ###
+use Term::ReadKey;            ### DEP ###
 
 my $crier;
 
@@ -84,7 +84,7 @@ sub output_usage {
 
     my %helpmessages = @_;
 
-    say 'Options:'
+    say "\nOptions:"
       or carp "Can't output help text : $OS_ERROR";
 
     my $longest = 0;
@@ -102,7 +102,7 @@ sub output_usage {
 
     foreach ( sort keys %helpmessages ) {
         next if /\A_/s;
-        my $optionname = sprintf '%*s -- ', $longest, " - $_ ";
+        my $optionname = sprintf '%*s -- ', $longest, "-$_";
 
         say Text::Wrap::wrap (
             $EMPTY_STR,
@@ -111,7 +111,7 @@ sub output_usage {
         );
 
     }
-    print " \n "
+    print "\n"
       or carp "Can't output help text : $OS_ERROR";
 
     return;
@@ -213,15 +213,15 @@ sub _process_options {
     my $module = $env->module;
 
     my @option_requests = (
-        [ 'help|?', 'Displays this help message.' ],
+        [ 'help|?', 'Displays this help message' ],
         [   '_stacktrace',
             'Provides lots of debugging information if there is an error. '
-              . 'Best ignored.'
+              . 'Best ignored'
         ],
-        [ 'quiet!', 'Does not display unnecessary information.' ],
+        [ 'quiet!', 'Does not display unnecessary information' ],
         [   'progress!',
             'May display dynamic progress indications. '
-              . 'On by default. Use -noprogress to turn off.',
+              . 'On by default. Use -noprogress to turn off',
             1,
         ],
     );
@@ -239,13 +239,13 @@ sub _process_options {
         my @splitnames = split( /[|]/s, $allnames );
         my $mainname   = shift @splitnames;
 
-        $helpmsg_of{$mainname} = $option_help;
-        $helpmsg_of{$_} = "Same as -$mainname." foreach @splitnames;
-
         foreach my $optionname ( $mainname, @splitnames ) {
-            croak "Attempt to add duplicate option or alias $optionname. "
+            die "Attempt to add duplicate option or alias $optionname."
               if ( exists $helpmsg_of{$optionname} );
         }
+
+        $helpmsg_of{$mainname} = $option_help;
+        $helpmsg_of{$_} = "Same as -$mainname" foreach @splitnames;
 
         if ( ref($callbackordefault) eq 'CODE' ) {
             # it's a callback
