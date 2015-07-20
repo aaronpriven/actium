@@ -13,7 +13,7 @@ use Actium::Union (qw/ordered_union distinguish/);
 use Actium::DaysDirections(':all');
 use Actium::O::Files::HastusASI;
 use Actium::Constants;
-use Actium::Term (':all');
+use Actium::Crier(qw/cry cry_text/);
 use Text::Trim;    ### DEP ###
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup ('signup');
@@ -185,7 +185,7 @@ sub build_place_and_stop_lists {
     my $hasi_db = shift;
     my $stops_r = shift;
 
-    emit 'Building lists of places and stops';
+    my $cry = cry( 'Building lists of places and stops');
 
     my $eachpat = $hasi_db->each_row_where( 'PAT',
         q{WHERE IsInService <> '' AND IsInService <> '0' ORDER BY Route} );
@@ -201,7 +201,7 @@ sub build_place_and_stop_lists {
         my $pat_ident = $pat->{Identifier};
         my $route     = $pat->{Route};
         if ( $route ne $prevroute ) {
-            emit_over $route ;
+            $cry->over( $route) ;
             $prevroute = $route;
         }
 
@@ -327,7 +327,7 @@ sub build_place_and_stop_lists {
 
     } ## tidy end: PAT: while ( my $pat = $eachpat...)
 
-    emit_done;
+    $cry->done;
 
     return;
 
@@ -393,7 +393,7 @@ sub transbay_and_connections {
 sub build_trip_quantity_lists {
     my $hasi_db = shift;
 
-    emit 'Building lists of trip quantities';
+    my $cry = cry( 'Building lists of trip quantities');
 
     my $next_trp = $hasi_db->each_row_where( 'TRP',
         q{WHERE IsPublic = 'X' OR IsPublic = '1'} );
@@ -418,7 +418,7 @@ sub build_trip_quantity_lists {
 
     }
 
-    emit_done;
+    $cry->done;
 
     return;
 
@@ -426,7 +426,7 @@ sub build_trip_quantity_lists {
 
 sub cull_placepats {
 
-    emit 'Combining duplicate place-patterns';
+    my $cry = cry ( 'Combining duplicate place-patterns');
 
     foreach my $routedir ( sortbyline( keys %num_trips_of_pat ) ) {
 
@@ -452,9 +452,9 @@ sub cull_placepats {
 
     } ## tidy end: foreach my $routedir ( sortbyline...)
 
-    emit_done;
+    $cry->done;
 
-    emit 'Culling place-patterns';
+    my $cullcry = cry( 'Culling place-patterns');
 
     foreach my $routedir ( sortbyline( keys %num_trips_of_pat ) ) {
 
@@ -491,7 +491,7 @@ sub cull_placepats {
 
     } ## tidy end: foreach my $routedir ( sortbyline...)
 
-    emit_done;
+    $cullcry->done;
 
     return;
 
@@ -604,8 +604,8 @@ sub cull_placepats {
             if ( not defined $patinfo->{Place} ) {
                 my $q       = exists $pats_of_stop{$stop_ident};
                 my $disp_rd = keyreadable($routedir);
-                emit_text "P ${disp_rd} ${stop_ident} "
-                  . join( ' ', keys %$patinfo );
+                cry_text ( "P ${disp_rd} ${stop_ident} "
+                  . join( ' ', keys %$patinfo ));
                 return;
             }
 
@@ -614,8 +614,8 @@ sub cull_placepats {
             if ( not defined $patinfo->{NextPlace} ) {
                 my $q       = exists $pats_of_stop{$stop_ident};
                 my $disp_rd = keyreadable($routedir);
-                emit_text "NP ${disp_rd} ${stop_ident} "
-                  . join( ' ', keys %$patinfo );
+                cry_text ( "NP ${disp_rd} ${stop_ident} "
+                  . join( ' ', keys %$patinfo ));
                 return;
             }
 
@@ -640,7 +640,7 @@ sub cull_placepats {
         }
 
         if ( @results == 0 ) {
-            emit_text "No results: $stop_ident $routedir";
+            cry_text( "No results: $stop_ident $routedir");
         }
 
         return @results;
@@ -686,7 +686,7 @@ sub cull_placepats {
 
     sub delete_last_stops {
 
-        emit 'Deleting final stops';
+        my $cry = cry( 'Deleting final stops');
 
         foreach my $stop ( keys %pats_of_stop ) {
 
@@ -715,7 +715,7 @@ sub cull_placepats {
                 } ## tidy end: foreach my $pat_ident ( keys...)
             } ## tidy end: foreach my $routedir ( keys...)
         } ## tidy end: foreach my $stop ( keys %pats_of_stop)
-        emit_done;
+        $cry->done;
 
         return;
 
@@ -768,7 +768,7 @@ sub delete_placelist_from_lists {
     #my %short_code_of;
 
     sub build_pat_combos {
-        emit 'Building pattern combinations';
+        my $cry = cry( 'Building pattern combinations');
 
       STOP:
         foreach my $stop ( keys_pats_of_stop() ) {
@@ -783,8 +783,9 @@ sub delete_placelist_from_lists {
                   = map { $placelist_of{ jk( $routedir, $_ ) } } @pat_idents;
 
                 if ( not defined $placelists[0] ) {
-                    emit_text
-                      "No placelist for $stop, $route, $dir, [@pat_idents]";
+                    $cry->text(
+                      "No placelist for $stop, $route, $dir, [@pat_idents]"
+                      );
                     next STOP;
                 }
 
@@ -798,14 +799,14 @@ sub delete_placelist_from_lists {
                 $combos{$routedir}{$combokey} = \@placelists;
                 push @{ $shortkeys_of_stop{$stop}{$routedir} }, $shortkey;
 
-                make_destination_of( $routedir, $combokey, @placelists );
+                make_destination_of( $cry, $routedir, $combokey, @placelists );
 
             } ## tidy end: foreach my $routedir ( routedirs_of_stop...)
         } ## tidy end: STOP: foreach my $stop ( keys_pats_of_stop...)
 
         #say dump_destinations();
 
-        emit_done;
+        $cry->done;
         return;
 
     } ## tidy end: sub build_pat_combos
@@ -856,7 +857,7 @@ sub delete_placelist_from_lists {
     sub write_combo_overrides {
         my $file = shift;
 
-        emit "Writing override file $OVERRIDE_FILENAME";
+        my $cry = cry( "Writing override file $OVERRIDE_FILENAME");
 
         open my $out, '>', $file or die "Can't open $file for writing";
 
@@ -921,7 +922,7 @@ sub delete_placelist_from_lists {
 
         select($oldfh);
 
-        emit_done;
+        $cry->done;
         return;
 
     } ## tidy end: sub write_combo_overrides
@@ -935,7 +936,7 @@ sub delete_placelist_from_lists {
         my %input_comments_of;
         my $chunk;
 
-        emit "Reading override file $OVERRIDE_FILENAME";
+        my $cry = cry( "Reading override file $OVERRIDE_FILENAME");
 
         open my $in, '<', $file
           or die "Can't open $file for input: $OS_ERROR";
@@ -1006,7 +1007,7 @@ sub delete_placelist_from_lists {
             $comments_of{ $shortkey_of{$short} } = $input_comments_of{$short};
         }
 
-        emit_done;
+        $cry->done;
 
         return;
 
@@ -1045,6 +1046,7 @@ sub relevant_places {
     }
 
     sub make_destination_of {
+        my $cry = shift;
         my $routedir = shift;
         my ( $route, $dir ) = routedir($routedir);
         my $combokey   = shift;
@@ -1055,7 +1057,7 @@ sub relevant_places {
 
         foreach my $placelist (@placelists) {
             if ( not defined $placelist ) {
-                emit_over "!!!";
+                $cry->over( '!!!');
             }
             push @place_arys, [ sk($placelist) ];
         }
@@ -1161,9 +1163,9 @@ sub output_specs {
     my $flagfolder = shift;
     my $stops_r    = shift;
 
-    emit 'Writing stop and decal info';
+    my $stop_decal_cry = cry( 'Writing stop and decal info');
 
-    emit "Writing stop decal file $STOP_SPEC_FILENAME";
+    my $decal_cry = cry ("Writing stop decal file $STOP_SPEC_FILENAME");
 
     my $file = File::Spec->catfile( $flagfolder->path(), $STOP_SPEC_FILENAME );
 
@@ -1197,9 +1199,9 @@ sub output_specs {
 
     close $out or die "Can't close $file for writing: $OS_ERROR";
 
-    emit_done;
+    $decal_cry->done;
     output_decal_specs($flagfolder);
-    emit_done;
+    $stop_decal_cry->done;
 
     return;
 
@@ -1383,7 +1385,7 @@ sub make_decal_spec {
 
         my $flagfolder = shift;
 
-        emit "Writing decal specification file $DECAL_SPEC_FILENAME";
+        my $cry = cry ( "Writing decal specification file $DECAL_SPEC_FILENAME");
 
         my $file
           = File::Spec->catfile( $flagfolder->path(), $DECAL_SPEC_FILENAME );
@@ -1417,7 +1419,7 @@ sub make_decal_spec {
         select $oldfh;
         close $out or die "Can't close $file for writing: $OS_ERROR";
 
-        emit_done;
+        $cry->done;
 
         return;
 
@@ -1499,7 +1501,7 @@ sub read_plain_overrides {
     my $file
       = File::Spec->catfile( $flagfolder->path(), $PLAIN_OVERRIDE_FILENAME );
 
-    emit "Reading plain override file $PLAIN_OVERRIDE_FILENAME";
+    my $cry = cry ("Reading plain override file $PLAIN_OVERRIDE_FILENAME");
 
     open my $in, '<', $file or die "Can't open $file for input: $OS_ERROR";
 
@@ -1513,7 +1515,7 @@ sub read_plain_overrides {
 
     close $in or die "Can't close $file for input: $OS_ERROR";
 
-    emit_done;
+    $cry->done;
 
 } ## tidy end: sub read_plain_overrides
 
@@ -1523,7 +1525,7 @@ sub read_tp_overrides {
     my $file
       = File::Spec->catfile( $flagfolder->path(), $TP_OVERRIDE_FILENAME );
 
-    emit "Reading timepoint override file $TP_OVERRIDE_FILENAME";
+    my $cry = cry( "Reading timepoint override file $TP_OVERRIDE_FILENAME");
 
     open my $in, '<', $file or die "Can't open $file for input: $OS_ERROR";
 
@@ -1541,7 +1543,7 @@ sub read_tp_overrides {
 
     close $in or die "Can't close $file for input: $OS_ERROR";
 
-    emit_done;
+    $cry->done;
 
 } ## tidy end: sub read_tp_overrides
 

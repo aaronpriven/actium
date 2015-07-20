@@ -16,7 +16,7 @@ use autodie;
 
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup ('signup');
-use Actium::Term;
+use Actium::Crier;
 
 sub HELP { say 'Help not implemented'; return; }
 
@@ -33,12 +33,12 @@ sub START {
 
     my $signup = signup($env);
 
-    emit 'Getting stop descriptions from FileMaker';
+    my $cry = cry( 'Getting stop descriptions from FileMaker');
 
     my $stops_row_of_r
       = $actiumdb->all_in_columns_key(qw/Stops_Neue c_description_full/);
 
-    emit_done;
+    $cry->done;
 
     my $file = shift @ARGV || '-';    # stdin
 
