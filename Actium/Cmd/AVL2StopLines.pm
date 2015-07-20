@@ -1,7 +1,6 @@
 package Actium::Cmd::AVL2StopLines 0.010;
 
 use Actium::Preamble;
-use Actium::Term;
 use Actium::Sorting::Line (qw[sortbyline]);
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
@@ -37,7 +36,7 @@ sub START {
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
 
-    emit 'Generating stoplines';
+    my $cry = cry( 'Generating stoplines');
 
     my $signup = signup($env);
     chdir $signup->path();
@@ -148,7 +147,7 @@ sub START {
 
     close $stoplines or die "Can't close stoplines file: $!";
 
-    emit_done;
+    $cry->done;
 
     return;
 
