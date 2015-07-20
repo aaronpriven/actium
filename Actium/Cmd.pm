@@ -5,15 +5,9 @@ use Getopt::Long; ### DEP ###
 use Actium::O::CmdEnv;
 use Actium::Crier('default_crier');
 use Text::Wrap;    ### DEP ###
-# for output_usage
 use Term::ReadKey;    ### DEP ###
 
-# eventually merge that into this module
-
-# Ask user for a command line, if running under Eclipse.
-
-my ( $system_name, $crier, $env , %options, %optionspecs, %callback_of);
-my %module_of;
+my $crier;
 
 const my $EX_USAGE    => 64;    # from "man sysexits"
 const my $EX_SOFTWARE => 70;
@@ -21,38 +15,39 @@ const my $EX_SOFTWARE => 70;
 sub run {
 
     my %params = @_;
-    $system_name = $params{system_name};
-    %module_of   = %{ $params{commands} };
+    my $system_name = $params{system_name};
+    my %module_of   = %{ $params{commands} };
 
     $crier = default_crier();
 
     _init_terminal();
 
     _eclipse_command_line();
-    my ( $help_requested, $subcommand ) = _get_subcommand( \%module_of );
-    my $module = _get_module($subcommand);
+    my ( $help_requested, $subcommand ) = 
+       _get_subcommand( \%module_of, $system_name);
+    my $module = _get_module($subcommand, \%module_of, $system_name);
 
     my $env = Actium::O::CmdEnv::->new(
         subcommand  => $subcommand,
         system_name => $system_name,
         crier       => $crier,
+        module      => $module,
     );
 
-    require_module($module) or die " Couldn't load module $module: $OS_ERROR ";
+    require_module($module) or die " Couldn't load module $module: $OS_ERROR";
 
-    _process_options($module);
+    my %helpmsg_of = _process_options($env);
 
     $env->_set_argv_r( [@ARGV] );
 
     if ( $help_requested or $env->option('help') ) {
         if ( $module->can('HELP') ) {
             $module->HELP($env);
-            output_usage();
         }
         else {
             say "Help not implemented for $subcommand.";
-            output_usage();
         }
+        output_usage(%helpmsg_of);
     }
     else {
         $module->START($env);
@@ -66,6 +61,7 @@ sub _mainhelp {
     my %params = @_;
     my $status = $params{status} // 0;
     my $error  = $params{error};
+    my $system_name = $params{system_name};
     my @helptext;
 
     if ($error) {
@@ -86,17 +82,7 @@ sub _mainhelp {
 
 sub output_usage {
 
-    my %helpmessages;
-
-    foreach my $spec ( keys %optionspecs ) {
-        my (@optionnames) = _split_optionnames($spec);
-
-        my $first = shift @optionnames;
-
-        $helpmessages{$first} = $optionspecs{$spec};
-        $helpmessages{$_} = "Same as -$first." foreach @optionnames;
-
-    }
+    my %helpmessages = @_;
 
     say 'Options:'
       or carp " Can't output help text : $! ";
@@ -139,7 +125,8 @@ sub _eclipse_command_line {
 
 sub _get_subcommand {
 
-    #\my %module_of = shift;
+    my %module_of = %{ +shift };
+    my $system_name = shift;
 
     my ( $help_arg, $help_requested, $subcommand );
 
@@ -164,6 +151,8 @@ sub _get_subcommand {
 
     if ( not $subcommand ) {
         _mainhelp(
+            module_of => \%module_of,
+            system_name => $system_name,
             #status => $EX_USAGE,
             #error  => (
             #    $help_requested
@@ -178,6 +167,9 @@ sub _get_subcommand {
 
 sub _get_module {
     my $subcommand = shift;
+    my %module_of = %{ +shift };
+    my $system_name = shift;
+
     my $referred;
     while ( exists( $module_of{$subcommand} )
         and defined( reftype( $module_of{$subcommand} ) ) )
@@ -188,6 +180,8 @@ sub _get_module {
     if ( not exists $module_of{$subcommand} ) {
         if ($referred) {
             _mainhelp(
+                module_of => \%module_of,
+                system_name => $system_name,
                 status => $EX_SOFTWARE,
                 error =>
                   "Internal error (bad reference) in subcommand $subcommand."
@@ -195,6 +189,8 @@ sub _get_module {
         }
         else {
             _mainhelp(
+                module_of => \%module_of,
+                system_name => $system_name,
                 status => $EX_USAGE,
                 error  => "Unrecognized subcommand $subcommand."
             );
@@ -208,9 +204,10 @@ sub _get_module {
 ##### PROCESS OPTIONS
 
 sub _process_options {
-    my $module = shift;
+    my $env = shift;
+    my $module = $env->module;
 
-    my @options = (
+    my @option_requests = (
         [ 'help|?', 'Displays this help message.' ],
         [ '_stacktrace',
             'Provides lots of debugging information if there is an error. '
@@ -224,12 +221,40 @@ sub _process_options {
         ],
     );
 
-    unshift @options, $module->OPTIONS($env) if $module->can('OPTIONS');
+    unshift @option_requests, $module->OPTIONS($env) if $module->can('OPTIONS');
 
-    _add_options(@options);
+    my (@option_specs, %callback_of, %helpmsg_of );
 
-    my $returnvalue = GetOptions( \%options, keys %optionspecs );
-    die "Errors returned from Getopt::Long" unless $returnvalue;
+    for my $optionrequest_r (@option_requests) {
+        my ($option_spec, $option_help, $callbackordefault) = 
+              @{$optionrequest_r};
+        push @option_specs, $option_spec;
+
+        my $allnames = $option =~ s/( [\w \? \- \| ] + ) .*/$1/rsx;
+        @splitnames = split( /\|/s, $allnames );
+        my $mainname = shift @splitnames;
+
+        $helpmsg_of{$mainname} = $option_help;
+        $helpmsg_of{$_} = "Same as -$first." foreach @splitnames;
+
+        foreach my $optionname ($mainname, @splitnames) {
+           croak "Attempt to add duplicate option or alias $optionname. "
+               if ( exists $helpmsg_of{$optionname} );
+        }
+
+        if (ref($callbackordefault) eq 'CODE') {
+            # it's a callback
+            $callback_of{ $mainname } = $callbackordefault;
+        }
+        else {
+            # it's a default value
+            $options{$mainname} = $callbackordefault;
+        }
+        
+    }
+
+    my $returnvalue = GetOptions( \my %options, @option_specs );
+    die "Errors returned from Getopt::Long\n" unless $returnvalue;
 
     foreach my $thisoption ( keys %options ) {
         if ( exists $callback_of{$thisoption} ) {
@@ -239,13 +264,9 @@ sub _process_options {
 
     $env->_set_options_r( \%options );
 
-    if ( $options{'quiet'} ) {
-        $crier->set_maxdepth(0);
-    }
+    $env->crier->set_maxdepth(0) if $options{'quiet'} ;
+    $env->crier->hide_progress unless $options{'progress'};
 
-    if ( not $options{'progress'} ) {
-        $crier->hide_progress;
-    }
     if ( $options{'_stacktrace'} ) {
         ## no critic (RequireLocalizedPunctuationVars)
         $SIG{'__WARN__'} = \&_stacktrace;
@@ -253,58 +274,9 @@ sub _process_options {
         ## use critic
     }
 
+   return %helpmsg_of;
+
 } ## tidy end: sub _process_my_options
-
-
-sub _add_options {
-
-    my %seen_option;
-
-    while (@_) {
-
-        my ($option, $optiontext, $callbackordefault) = @{+shift};
-
-        my @splitnames = _split_optionnames($option);
-        
-        my $mainname = $splitnames[0];
-        
-        if (ref($callbackordefault) eq 'CODE') {
-            # it's a callback
-            $callback_of{ $splitnames[0] } = $callbackordefault;
-            
-        }
-        else {
-            # it's a default value
-            $options{$mainname} = $callbackordefault;
-        }
-        
-        # check to see that there are no duplicate options
-
-        foreach my $optionname (@splitnames) {
-            if ( exists $seen_option{$optionname} ) {
-                croak "Attempt to add duplicate option $optionname. ";
-            }
-            $seen_option{$optionname} = 1;
-        }
-        $optionspecs{$option} = $optiontext;
-    }
-
-    return;
-
-}
-
-sub _split_optionnames {
-
-    # This routine takes an option (in the form used in Getopt::Long)
-    # and returns a list of the aliases.
-    my $option = shift;
-    $option =~ s/( [\w \? \- \| ] + ) .*/$1/sx;
-
-    # names can contain word characters, question marks or hyphens.
-    # Vertical bars separate aliases.
-    return split( /\|/s, $option );
-}
-
 
 
 ##### TERMINAL AND SIGNAL FUNCTIONS #####
@@ -338,7 +310,7 @@ sub _set_width {
 sub _get_width {
     my $width = (
         eval {
-            local ( $SIG{__DIE__} ) = 'IGNORE';
+            #local ( $SIG{__DIE__} ) = 'IGNORE';
             ( Term::ReadKey::GetTerminalSize() )[0];
 
             # Ignore errors from GetTerminalSize
