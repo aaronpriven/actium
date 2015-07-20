@@ -7,7 +7,6 @@
 package Actium::Cmd::Config::Flickr_Auth 0.010;
 
 use Actium::Preamble;
-use Actium::Term;
 use Actium::O::Photos::Flickr::Auth;
 
 use Sub::Exporter ( -setup => { exports => [qw(flickr_auth)] } );    ### DEP ###
@@ -42,7 +41,7 @@ sub flickr_auth {
 
         my $optname = "flickr_$_";
         $params{$_} = $env->option($optname) // $config{$_}
-          // Actium::Term::term_readline( $description_of_option{$_} . ':' );
+          // Actium::Cmd::term_readline( $description_of_option{$_} . ':' );
 
     }
 

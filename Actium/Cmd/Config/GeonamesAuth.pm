@@ -5,7 +5,6 @@
 package Actium::Cmd::Config::GeonamesAuth 0.010;
 
 use Actium::Preamble;
-use Actium::Term;
 use Actium::O::Photos::Flickr::Auth;
 
 use Sub::Exporter ( -setup => { exports => [qw(geonames_username)] } );
@@ -37,7 +36,7 @@ sub geonames_username {
 
         my $optname = "geonames_$_";
         $params{$_} = $env->option($optname) // $config{$_}
-          // Actium::Term::term_readline( $description_of_option{$_} . ':' );
+          // Actium::Cmd::term_readline( $description_of_option{$_} . ':' );
     }
 
     return $params{username};
