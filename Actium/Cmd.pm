@@ -12,7 +12,7 @@ use Term::ReadKey;    ### DEP ###
 
 # Ask user for a command line, if running under Eclipse.
 
-my ( $system_name, $crier, $env , %options);
+my ( $system_name, $crier, $env , %options, %optionspecs, %callback_of);
 my %module_of;
 
 const my $EX_USAGE    => 64;    # from "man sysexits"
@@ -40,7 +40,7 @@ sub run {
 
     require_module($module) or die " Couldn't load module $module: $OS_ERROR ";
 
-    _process_my_options($module);
+    _process_options($module);
 
     $env->_set_argv_r( [@ARGV] );
 
@@ -86,7 +86,7 @@ sub _mainhelp {
 
 sub output_usage {
 
-my %helpmessages;
+    my %helpmessages;
 
     foreach my $spec ( keys %optionspecs ) {
         my (@optionnames) = _split_optionnames($spec);
@@ -127,7 +127,6 @@ my %helpmessages;
       or carp " Can't output help text : $! ";
 
 }    ## <perltidy> end sub output_usage
-1;
 
 sub _eclipse_command_line {
     no warnings('once');
@@ -206,14 +205,14 @@ sub _get_module {
 
 } ## tidy end: sub _get_module
 
-##### PROCESS MY OPTIONS
+##### PROCESS OPTIONS
 
-sub _process_my_options {
+sub _process_options {
     my $module = shift;
 
     my @options = (
         [ 'help|?', 'Displays this help message.' ],
-        [   '_stacktrace',
+        [ '_stacktrace',
             'Provides lots of debugging information if there is an error. '
               . 'Best ignored.'
         ],
@@ -227,12 +226,16 @@ sub _process_my_options {
 
     unshift @options, $module->OPTIONS($env) if $module->can('OPTIONS');
 
-    while (@options) {
-        my $option_r = shift(@options);
-        _add_option( @{$option_r} );
-    }
+    _add_options(@options);
 
-    _init_options();
+    my $returnvalue = GetOptions( \%options, keys %optionspecs );
+    die "Errors returned from Getopt::Long" unless $returnvalue;
+
+    foreach my $thisoption ( keys %options ) {
+        if ( exists $callback_of{$thisoption} ) {
+            &{ $callback_of{$thisoption} }( $options{$thisoption} );
+        }
+    }
 
     $env->_set_options_r( \%options );
 
@@ -252,20 +255,14 @@ sub _process_my_options {
 
 } ## tidy end: sub _process_my_options
 
-{
 
+sub _add_options {
 
-my ( %optionspecs, %caller_of, %callback_of, %options, %caller_seen, $inited );
-
-sub _add_option {
+    my %seen_option;
 
     while (@_) {
 
-        my $option     = lc( +shift );
-        my $optiontext = shift;
-        my $callbackordefault   = shift;
-        
-        my $caller = ( scalar( caller() ) ) || 'main';
+        my ($option, $optiontext, $callbackordefault) = @{+shift};
 
         my @splitnames = _split_optionnames($option);
         
@@ -284,12 +281,10 @@ sub _add_option {
         # check to see that there are no duplicate options
 
         foreach my $optionname (@splitnames) {
-
-            if ( exists $caller_of{$optionname} ) {
-                croak "Attempt to add duplicate option $optionname. "
-                  . "Set by $caller_of{$optionname} and $caller";
+            if ( exists $seen_option{$optionname} ) {
+                croak "Attempt to add duplicate option $optionname. ";
             }
-            $caller_of{$optionname} = $caller;
+            $seen_option{$optionname} = 1;
         }
         $optionspecs{$option} = $optiontext;
     }
@@ -310,27 +305,7 @@ sub _split_optionnames {
     return split( /\|/s, $option );
 }
 
-sub _init_options {
 
-    my $returnvalue = GetOptions( \%options, keys %optionspecs );
-
-    if ($returnvalue) {
-        foreach my $thisoption ( keys %options ) {
-            if ( exists $callback_of{$thisoption} ) {
-                &{ $callback_of{$thisoption} }( $options{$thisoption} );
-            }
-        }
-    }
-
-    return $returnvalue;
-
-}
-
-}
-
-sub _stacktrace {
-    Carp::confess(@_);
-}
 
 ##### TERMINAL AND SIGNAL FUNCTIONS #####
 
@@ -343,6 +318,10 @@ sub _init_terminal {
 
     _set_width();
 
+}
+
+sub _stacktrace {
+    Carp::confess(@_);
 }
 
 sub _terminate {
