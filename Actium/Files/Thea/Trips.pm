@@ -9,7 +9,6 @@ use warnings;  ### DEP ###
 
 package Actium::Files::Thea::Trips 0.010;
 
-use Actium::Term;
 use Actium::Constants;
 use Actium::O::Days;
 use Actium::Time('timenum');
@@ -41,7 +40,7 @@ use constant {
 
 sub thea_trips {
 
-    emit "Loading THEA trips into trip objects";
+    my $cry = cry ( "Loading THEA trips into trip objects");
 
     my $theafolder             = shift;
     my $pat_lineids_of_lgdir_r = shift;
@@ -55,7 +54,7 @@ sub thea_trips {
 
     my $trips_of_sked_r = _get_trips_of_sked($trips_of_lgdir_r);
 
-    emit_done;
+    $cry->done;
 
     return $trips_of_sked_r;
 
@@ -71,7 +70,7 @@ my %required_headers = (
 
 sub _load_trips_from_file {
     my $theafolder = shift;
-    emit 'Reading THEA trip files';
+    my $cry = cry( 'Reading THEA trip files');
 
     my %trip_of_tnum;
     my %tnums_of_lineid;
@@ -121,9 +120,9 @@ sub _load_trips_from_file {
         }
     );
 
-    emit_done;
+    $cry->done;
 
-    emit 'Reading THEA trip stop (time) files';
+    my $time_cry = cry( 'Reading THEA trip stop (time) files');
 
     my $tripstops_callback = sub {
         my $value_of_r = shift;
@@ -144,7 +143,7 @@ sub _load_trips_from_file {
         }
     );
 
-    emit_done;
+    $time_cry->done;
 
     my %trips_of_lineid;
     foreach my $lineid ( keys %tnums_of_lineid ) {
@@ -190,11 +189,11 @@ sub _make_trip_objs {
 
     # Then we turn them into objects, and sort the objects.
 
-    emit 'Making Trip objects (padding out columns, merging double trips)';
+    my $cry = cry( 'Making Trip objects (padding out columns, merging double trips)');
 
     foreach my $lgdir ( sortbyline keys %{$pat_lineids_of_lgdir_r} ) {
 
-        emit_over $lgdir;
+        $cry->over( $lgdir);
 
         my $trip_objs_r;
         my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
@@ -242,7 +241,7 @@ sub _make_trip_objs {
 
     } ## tidy end: foreach my $lgdir ( sortbyline...)
 
-    emit_done;
+    $cry->done;
 
     return \%trips_of_lgdir;
 
@@ -272,11 +271,11 @@ sub _get_trips_of_sked {
     my $trips_of_lgdir_r = shift;
     my %trips_of_sked;
 
-    emit "Assembling trips into schedules by day";
+    my $cry = cry( "Assembling trips into schedules by day");
 
     foreach my $lgdir ( sortbyline keys %{$trips_of_lgdir_r } ) {
 
-        emit_over $lgdir;
+        $cry->over( $lgdir);
 
         # first, this separates them out by individual days.
         # then, it reassembles them in groups.
@@ -310,7 +309,7 @@ sub _get_trips_of_sked {
 
     } ## tidy end: foreach my $lgdir ( sortbyline...)
 
-    emit_done;
+    $cry->done;
 
     return \%trips_of_sked;
 

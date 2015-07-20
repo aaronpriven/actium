@@ -8,7 +8,6 @@ package Actium::Import::CalculateFields 0.010;
 
 use Actium::Preamble;
 use Text::Trim; ### DEP ###
-use Actium::Term;
 use Lingua::EN::Titlecase::Simple('titlecase'); ### DEP ###
 
 const my $CALC_PREFIX => 'i_';
@@ -16,7 +15,7 @@ const my $ORIG_PREFIX => 'h_';
 
 sub hastus_places_import {
 
-    emit 'Calculating fields derived from Hastus place data';
+    my $cry=cry( 'Calculating fields derived from Hastus place data');
 
     my @place_headers = @{ +shift };
     my @place_records = @{ +shift };
@@ -37,7 +36,7 @@ sub hastus_places_import {
     foreach my $place_record (@place_records) {
         $count++;
         if ( not $count % $increment ) {
-            emit_over( int( ( $count / $total ) * 100 ) . "%" );
+            $cry->over( int( ( $count / $total ) * 100 ) . "%" );
         }
 
         my %field;
@@ -56,8 +55,8 @@ sub hastus_places_import {
 
     }    ## tidy end: foreach my $place_record (@place_records)
 
-    emit_over '100%';
-    emit_done;
+    $cry->over ('100%');
+    $cry->done;
 
     return \@returned_headers, \@returned_records;
 
@@ -80,7 +79,7 @@ sub _abbrev9 {
 
 sub hastus_stops_import {
 
-    emit 'Calculating fields derived from Hastus stop data';
+    my $cry = ( 'Calculating fields derived from Hastus stop data');
 
     my @stop_headers = @{ +shift };
     my @stop_records = @{ +shift };
@@ -102,7 +101,7 @@ sub hastus_stops_import {
     foreach my $stop_record (@stop_records) {
         $count++;
         if ( not $count % $increment ) {
-            emit_over( int( ( $count / $total ) * 100 ) . "%" );
+            $cry->over( int( ( $count / $total ) * 100 ) . "%" );
         }
 
         my %field;
@@ -128,9 +127,9 @@ sub hastus_stops_import {
 
     }    ## tidy end: foreach my $stop_record (@stop_records)
 
-    emit_over '100%';
+    $cry->over ('100%');
 
-    emit_done;
+    $cry->done;
 
     return \@returned_headers, \@returned_records;
 

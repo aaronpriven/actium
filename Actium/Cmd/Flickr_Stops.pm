@@ -8,7 +8,6 @@ package Actium::Cmd::Flickr_Stops 0.010;
 
 use Actium::Preamble;
 use Actium::Photos;
-use Actium::Term;
 use Actium::Cmd::Config::Flickr_Auth('flickr_auth');
 
 sub HELP {
@@ -21,7 +20,7 @@ sub OPTIONS {
 
 sub START {
     
-    emit 'Processing Flickr photos';
+    my $cry = cry( 'Processing Flickr photos');
 
     my $class      = shift;
     my $env = shift;
@@ -30,7 +29,7 @@ sub START {
     
     Actium::Photos::flickr_stops($flickr_auth);
     
-    emit_done;
+    $cry->done;
 
 }
 

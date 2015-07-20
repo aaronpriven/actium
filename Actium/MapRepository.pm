@@ -43,8 +43,8 @@ use Params::Validate ':all'; ### DEP ###
 use Actium::O::Folder;
 use Actium::Util(qw<filename file_ext remove_leading_path>);
 use Actium::Sorting::Line('sortbyline');
-use Actium::Term ':all';
 use Actium::Constants;
+use Actium::Crier(qw/cry last_cry/);
 
 const my $LINE_NAME_LENGTH   => 4;
 const my $DEFAULT_RESOLUTION => 288;
@@ -77,7 +77,7 @@ sub import_to_repository {
     my $verbose    = $params{verbose};
 
     my $importfolder = $params{importfolder};
-    emit 'Importing line maps from ' . $importfolder->path;
+    my $cry = cry ( 'Importing line maps from ' . $importfolder->path);
     my @files = $importfolder->glob_plain_files();
 
     my @copied_files;
@@ -89,7 +89,7 @@ sub import_to_repository {
 
         my $filename    = filename($filespec);
         my $newfilename = $filename;
-        emit_over $filename unless $verbose;
+        $cry->over ($filename) unless $verbose;
 
         # if newfilename isn't valid, first run it through normalize_filename.
         # Then if it's still not valid, carp and move on.
@@ -102,8 +102,8 @@ sub import_to_repository {
         if ( not filename_is_valid($newfilename) ) {
             # check of the newly normalized name - not a duplicate call
 
-            emit_text
-"Can't find line, date, version or extension in $filename: skipped";
+            $cry->text (
+"Can't find line, date, version or " . "extension in $filename: skipped");
             next FILE;
         }
 
@@ -115,8 +115,8 @@ sub import_to_repository {
         my $newfilespec = $linefolder->make_filespec($newfilename);
 
         if ( -e $newfilespec ) {
-            emit_text
-"Can't move $filespec because $newfilespec already exists: skipped";
+            $cry->text (
+"Can't move $filespec " . "because $newfilespec already exists: skipped");
             next FILE;
         }
 
@@ -128,7 +128,7 @@ sub import_to_repository {
         }
         push @copied_files, $newfilespec;
     } ## tidy end: foreach my $filespec (@files)
-    emit_done;
+    $cry->done;
 
     return @copied_files;
 
@@ -154,7 +154,7 @@ sub make_web_maps {
     my $gsargs         = "-r$params{resolution} -sDEVICE=jpeg "
       . '-dGraphicsAlphaBits=4 -dTextAlphaBits=4 -q';
 
-    emit 'Making maps for web';
+    my $cry = cry( 'Making maps for web');
 
     foreach my $filespec ( @{ $params{files} } ) {
 
@@ -163,7 +163,7 @@ sub make_web_maps {
 
         my %nameparts = %{ _mapname_pieces($filename) };
 
-        emit_over $nameparts{lines} if not $verbose;
+        $cry->over ($nameparts{lines}) if not $verbose;
 
         my @output_lines = @{ $nameparts{lines_r} };
         my $token        = $nameparts{token};
@@ -191,7 +191,7 @@ sub make_web_maps {
             if ($verbose) {
                 my $display_path = _display_path( $first_jpeg_spec, $filespec,
                     $path_to_remove );
-                emit_text "Successfully rasterized: $display_path";
+                $cry->text ("Successfully rasterized: $display_path");
             }
         }
         else {
@@ -208,7 +208,7 @@ sub make_web_maps {
 
     } ## tidy end: foreach my $filespec ( @{ $params...})
 
-    emit_done;
+    $cry->done;
 
     return;
 
@@ -342,9 +342,9 @@ sub copylatest {
 
     my $repository = $params{repository};
 
-    emit 'Getting list of folders in map repository';
+    my $list_cry= cry( 'Getting list of folders in map repository');
     my @folder_objs = $repository->children;
-    emit_done;
+    $list_cry->done;
 
     my ( $is_an_active_map_r, $is_an_active_line_r )
       = _active_maps( $repository, $params{active_map_file} );
@@ -352,7 +352,7 @@ sub copylatest {
     my %latest_date_of;
     my %latest_ver_of;
 
-    emit 'Copying files in repository folders';
+    my $copy_cry = cry( 'Copying files in repository folders');
 
     my %folder_obj_of;
     $folder_obj_of{ $_->folder } = $_ foreach @folder_objs;
@@ -379,7 +379,7 @@ sub copylatest {
         my $folder_obj = $folder_obj_of{$foldername};
         my @filespecs  = $folder_obj->glob_plain_files;
 
-        emit_over $foldername unless $verbose;
+        $copy_cry->over ($foldername) unless $verbose;
 
       FILE:
         foreach my $filespec (@filespecs) {
@@ -466,7 +466,7 @@ sub copylatest {
 
     } ## tidy end: foreach my $foldername ( sortbyline...)
 
-    emit_done;
+    $copy_cry->done;
 
     if (@web_maps_to_process) {
         make_web_maps(
@@ -487,7 +487,7 @@ sub copylatest {
 
 sub _active_maps {
 
-    emit 'Getting list of active maps';
+    my $cry = cry( 'Getting list of active maps');
 
     my $repository = shift;
     my $filename   = shift;
@@ -506,7 +506,7 @@ sub _active_maps {
         $is_an_active_line{$_} = 1;
     }
 
-    emit_done;
+    $cry->done;
 
     return \%is_an_active_map, \%is_an_active_line;
 } ## tidy end: sub _active_maps
@@ -518,7 +518,7 @@ sub _file_action {
     if ( $action_r->( $from, $to ) ) {
         if ($verbose) {
             my $display_path = _display_path( $from, $to, $path );
-            emit_text "Successful $actionword: $display_path";
+            last_cry()->text ("Successful $actionword: $display_path");
         }
     }
     else {
@@ -554,35 +554,6 @@ sub _move_file {
     my $actionword = "move";
     return _file_action( @_, $action_r, $actionword );
 }
-
-#sub _copy_file {
-#
-#    my ( $from, $to, $path, $verbose ) = @_;
-#    my $display_path;
-#    $display_path = _display_path(@_) if $verbose;
-#
-#    if ( File::Copy::copy( $from, $to ) ) {
-#        emit_text "Copied: $display_path" if $verbose;
-#    }
-#    else {
-#        die "Couldn't copy: $display_path\n$OS_ERROR";
-#    }
-#    return;
-#}
-#
-#sub _move_file {
-#    my ( $from, $to, $path, $verbose ) = @_;
-#    my $display_path;
-#    $display_path = _display_path(@_) if $verbose;
-#
-#    if ( File::Copy::move( $from, $to ) ) {
-#        emit_text "Moved: $display_path" if $verbose;
-#    }
-#    else {
-#        die "Couldn't move: $display_path\n$OS_ERROR";
-#    }
-#    return;
-#}
 
 sub _mapname_pieces {
     ## no critic (ProhibitMagicNumbers)
@@ -901,8 +872,6 @@ Attempting to move or copy returned a system error.
 =item * Actium::O::Folder
 
 =item * Actium::Sorting::Line
-
-=item * Actium::Term
 
 =item * Actium::Util
 

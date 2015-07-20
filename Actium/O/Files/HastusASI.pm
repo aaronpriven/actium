@@ -16,7 +16,7 @@ use MooseX::StrictConstructor; ### DEP ###
 use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
-use Actium::Term;
+use Actium::Crier(qw/cry last_cry/);
 use Actium::Util qw(j jk filename);
 use Carp; ### DEP ###
 use English '-no_match_vars';
@@ -98,19 +98,17 @@ sub _build_files_list {
     my $self         = shift;
     my $flats_folder = $self->flats_folder();
 
-    #emit 'Assembling lists of filenames';
-
     my @all_files
       = bsd_glob( $self->_flat_filespec(q<*>), GLOB_NOCASE | GLOB_NOSORT );
 
     if (File::Glob::GLOB_ERROR) {
-        emit_error;
+        last_cry()->d_error;
         croak 'Error reading list of filenames in Hastus AVL Standard '
           . "folder $flats_folder: $OS_ERROR";
     }
 
     if ( not scalar @all_files ) {
-        emit_error;
+        last_cry()->d_error;
         croak "No files found in Hastus AVL Standard folder $flats_folder";
     }
 
@@ -121,8 +119,6 @@ sub _build_files_list {
         my @files = grep ( {/[.] $filetype /sx} @all_files );
         $files_of{$filetype} = \@files;
     }
-
-    #emit_done;
 
     return \%files_of;
 
@@ -141,7 +137,7 @@ sub _load {
 
     local $INPUT_RECORD_SEPARATOR = $CRLF;
 
-    emit "Reading HastusASI $filetype files";
+    my $cry = cry( "Reading HastusASI $filetype files");
 
     my ( %sth_of, %parent_of, %key_components_idxs, %has_composite_key,
         %has_repeating_final_column );
@@ -181,7 +177,7 @@ sub _load {
 
         my $result = open my $fh, '<', $filespec;
         if ( not $result ) {
-            emit_error;
+            $cry->d_error;
             croak "Can't open $filespec for reading: $OS_ERROR";
         }
 
@@ -191,7 +187,7 @@ sub _load {
         my $fraction = 0;
         my %previous_seq_of;
 
-        emit_over "$file: 0%";
+        $cry->over ("$file: 0%");
 
       ROW:
         while (<$fh>) {
@@ -205,8 +201,7 @@ sub _load {
                 if ( $fraction != $newfraction ) {
                     $fraction = $newfraction;
 
-                    #emit_over "${fraction}0%";
-                    emit_over( "$file: ",
+                    $cry->over( "$file: ",
                         $fraction * $DISPLAY_PERCENTAGE_FACTOR, '%' );
                 }
             }
@@ -246,17 +241,17 @@ sub _load {
 
         }    # ROW
         if ( not close $fh ) {
-            emit_error;
+            $cry->error;
             croak "Can't close $filespec for reading: $OS_ERROR";
         }
 
-        emit_over "$file: 100%";
+        $cry->over ("$file: 100%");
 
     }    # FILE
 
     $self->end_transaction;
 
-    emit_done;
+    $cry->done;
 
     return;
 
@@ -322,13 +317,13 @@ and end of each field.
 
         }
         if ( not $template_of{$table} ) {
-            emit_error;
+            last_cry()->d_error;
             croak "Unable to determine columns of $table in $filespec\n"
               . '(never found a line with the right number)';
         }
 
         if ( not seek $fh, 0, 0 ) {
-            emit_error;
+            last_cry()->d_error;
             croak
               "Couldn't return seek position to top of $filespec: $OS_ERROR";
         }
@@ -527,8 +522,6 @@ an HSA file.) This row will be skipped.
 =item Actium::Constants
 
 =item Actium::O::Files::SQLite
-
-=item Actium::Term
 
 =item Actium::Util
 

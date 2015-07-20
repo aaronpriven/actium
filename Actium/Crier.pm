@@ -16,7 +16,7 @@ const my $CRIERCLASS => 'Actium::O::Crier';
 
 use Sub::Exporter -setup => {
     exports => [
-        'cry',
+        'cry','last_cry',
         'cry_text',
         'default_crier' => \&_build_default_crier,
     ]
@@ -53,20 +53,25 @@ sub _build_default_crier {
 
 } ## tidy end: sub _build_default_crier
 
-sub cry {
-    if ( not $default_crier ) {
+sub _init_default_crier {
+    return if $default_crier;
         require_module($CRIERCLASS);
         $default_crier = $CRIERCLASS->new();
-    }
+}
+
+sub cry {
+    _init_default_crier;
     $default_crier->cry(@_);
 }
 
 sub cry_text {
-    if ( not $default_crier ) {
-        require_module($CRIERCLASS);
-        $default_crier = $CRIERCLASS->new();
-    }
+    _init_default_crier;
     return $default_crier->text(@_);
+}
+
+sub last_cry {
+    _init_default_crier;
+    return $default_crier->last_cry();
 }
 
 1;
