@@ -409,6 +409,9 @@ sub _push_cry {
     sub cry { 
         goto &cry_method 
     }
+    sub last_cry { 
+        goto &last_cry_method 
+    }
     #}
 }
 
@@ -496,7 +499,7 @@ sub _close_up_to {
 
 }
 
-sub last_cry {
+sub last_cry_method {
     my $self = shift;
     
     my $cry;
