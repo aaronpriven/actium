@@ -288,6 +288,33 @@ sub _get_width {
     return $width;
 }
 
+sub term_readline {
+
+    require IO::Prompter;    ### DEP ###
+
+    my $prompt = shift;
+    my $hide   = shift;
+
+    my $val;
+
+    print "\n";
+
+    if ($hide) {
+        $val
+          = IO::Prompter::prompt( $prompt, -echo => '*', '-hNONE', '-stdio' );
+    }
+    else {
+        $val = IO::Prompter::prompt( $prompt, '-stdio' );
+    }
+
+    $crier->set_position(0);
+
+    return "$val";
+    # stringify what would otherwise be a weird Contextual::Return value,
+    # thank you Mr. Conway
+
+} ## tidy end: sub term_readline
+
 __END__
 
 Documentation originally from Actium::Term
