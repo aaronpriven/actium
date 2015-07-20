@@ -13,11 +13,6 @@ sub OPTIONS {
         [ 'tab', 'Uses tabs instead of spaces to separate text' ] );
 }
 
-sub HELP {
-    say 'Help not implemented.';
-    return;
-}
-
 my $divider;
 const my $DEFAULT_DIVIDER => $SPACE x 2;
 
