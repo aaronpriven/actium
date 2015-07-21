@@ -33,8 +33,6 @@ my %fields_of =
     ],
   );
 
-sub HELP { say 'Help not implemented'; return; }
-
 sub OPTIONS {
     return Actium::Cmd::Config::ActiumFM::OPTIONS();
 }

@@ -18,7 +18,7 @@ It then assembles a list of stops and the routes that stop at each one.
 Finally, it displays a list of new, deleted, and changed stops.
 EOF
 
-    say $helptext;
+    print $helptext;
     return;
 }
 

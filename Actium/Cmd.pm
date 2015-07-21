@@ -1,11 +1,11 @@
 package Actium::Cmd 0.010;
 
 use Actium::Preamble;
-use Getopt::Long; ### DEP ###
+use Getopt::Long;             ### DEP ###
 use Actium::O::CmdEnv;
 use Actium::Crier('default_crier');
-use Text::Wrap;    ### DEP ###
-use Term::ReadKey;    ### DEP ###
+use Text::Wrap;               ### DEP ###
+use Term::ReadKey;            ### DEP ###
 
 my $crier;
 
@@ -14,7 +14,7 @@ const my $EX_SOFTWARE => 70;
 
 sub run {
 
-    my %params = @_;
+    my %params      = @_;
     my $system_name = $params{system_name};
     my %module_of   = %{ $params{commands} };
 
@@ -23,9 +23,9 @@ sub run {
     _init_terminal();
 
     _eclipse_command_line();
-    my ( $help_requested, $subcommand ) = 
-       _get_subcommand( \%module_of, $system_name);
-    my $module = _get_module($subcommand, \%module_of, $system_name);
+    my ( $help_requested, $subcommand )
+      = _get_subcommand( \%module_of, $system_name );
+    my $module = _get_module( $subcommand, \%module_of, $system_name );
 
     my $env = Actium::O::CmdEnv::->new(
         subcommand  => $subcommand,
@@ -58,9 +58,10 @@ sub run {
 } ## tidy end: sub run
 
 sub _mainhelp {
-    my %params = @_;
-    my $status = $params{status} // 0;
-    my $error  = $params{error};
+    my %params      = @_;
+    my %module_of   = %{ $params{module_of} };
+    my $status      = $params{status} // 0;
+    my $error       = $params{error};
     my $system_name = $params{system_name};
     my %module_of = %{ $params{module_of} };
     my @helptext;
@@ -69,7 +70,7 @@ sub _mainhelp {
         @helptext = ("$error\n");
     }
 
-    push @helptext, "$system_name subcommands available:\n";
+    push @helptext, "Subcommands available for $system_name:\n";
     foreach my $subcommand ( sort keys %module_of ) {
         next if defined( reftype( $module_of{$subcommand} ) );
         push @helptext, $subcommand;
@@ -78,15 +79,14 @@ sub _mainhelp {
     say jn(@helptext) or die "Can't output help text: $OS_ERROR";
 
     exit $status;
-
 } ## tidy end: sub _mainhelp
 
 sub output_usage {
 
     my %helpmessages = @_;
 
-    say 'Options:'
-      or carp " Can't output help text : $! ";
+    say "\nOptions:"
+      or carp "Can't output help text : $OS_ERROR";
 
     my $longest = 0;
 
@@ -96,12 +96,14 @@ sub output_usage {
 
     $longest++;    # add one for the hyphen in front
 
-    my $HANGING_INDENT_PADDING = 4;
+    const my $HANGING_INDENT_PADDING => 4;
+    ## no critic (Variables::ProhibitPackageVars)
     local ($Text::Wrap::columns) = _get_width();
+    ## use critic
 
     foreach ( sort keys %helpmessages ) {
-        next if /^_/;
-        my $optionname = sprintf '%*s -- ', $longest, " - $_ ";
+        next if /\A_/s;
+        my $optionname = sprintf '%*s -- ', $longest, "-$_";
 
         say Text::Wrap::wrap (
             $EMPTY_STR,
@@ -110,8 +112,10 @@ sub output_usage {
         );
 
     }
-    print " \n "
-      or carp " Can't output help text : $! ";
+    print "\n"
+      or carp "Can't output help text : $OS_ERROR";
+
+    return;
 
 }    ## <perltidy> end sub output_usage
 
@@ -122,18 +126,19 @@ sub _eclipse_command_line {
         @ARGV = Actium::Eclipse::get_command_line();
         ## use critic
     }
+    return;
 }
 
 sub _get_subcommand {
 
-    my %module_of = %{ +shift };
+    my %module_of   = %{ +shift };
     my $system_name = shift;
 
     my ( $help_arg, $help_requested, $subcommand );
 
     if (@ARGV) {
         for ( 0 .. $#ARGV ) {
-            if ( $ARGV[$_] =~ /\A help \z/isx ) {
+            if ( fc( $ARGV[$_] ) eq fc('help') ) {
                 $help_requested = 1;
                 $help_arg       = $_;
                 #splice( @ARGV, $_, 1 );
@@ -152,7 +157,7 @@ sub _get_subcommand {
 
     if ( not $subcommand ) {
         _mainhelp(
-            module_of => \%module_of,
+            module_of   => \%module_of,
             system_name => $system_name,
             #status => $EX_USAGE,
             #error  => (
@@ -167,8 +172,8 @@ sub _get_subcommand {
 } ## tidy end: sub _get_subcommand
 
 sub _get_module {
-    my $subcommand = shift;
-    my %module_of = %{ +shift };
+    my $subcommand  = shift;
+    my %module_of   = %{ +shift };
     my $system_name = shift;
 
     my $referred;
@@ -181,19 +186,19 @@ sub _get_module {
     if ( not exists $module_of{$subcommand} ) {
         if ($referred) {
             _mainhelp(
-                module_of => \%module_of,
+                module_of   => \%module_of,
                 system_name => $system_name,
-                status => $EX_SOFTWARE,
+                status      => $EX_SOFTWARE,
                 error =>
                   "Internal error (bad reference) in subcommand $subcommand."
             );
         }
         else {
             _mainhelp(
-                module_of => \%module_of,
+                module_of   => \%module_of,
                 system_name => $system_name,
-                status => $EX_USAGE,
-                error  => "Unrecognized subcommand $subcommand."
+                status      => $EX_USAGE,
+                error       => "Unrecognized subcommand $subcommand."
             );
         }
     }
@@ -205,19 +210,19 @@ sub _get_module {
 ##### PROCESS OPTIONS
 
 sub _process_options {
-    my $env = shift;
+    my $env    = shift;
     my $module = $env->module;
 
     my @option_requests = (
-        [ 'help|?', 'Displays this help message.' ],
-        [ '_stacktrace',
+        [ 'help|?', 'Displays this help message' ],
+        [   '_stacktrace',
             'Provides lots of debugging information if there is an error. '
-              . 'Best ignored.'
+              . 'Best ignored'
         ],
-        [ 'quiet!', 'Does not display unnecessary information.' ],
+        [ 'quiet!', 'Does not display unnecessary information' ],
         [   'progress!',
             'May display dynamic progress indications. '
-              . 'On by default. Use -noprogress to turn off.',
+              . 'On by default. Use -noprogress to turn off',
             1,
         ],
     );
@@ -227,34 +232,34 @@ sub _process_options {
     my (%options , @option_specs, %callback_of, %helpmsg_of );
 
     for my $optionrequest_r (@option_requests) {
-        my ($option_spec, $option_help, $callbackordefault) = 
-              @{$optionrequest_r};
+        my ( $option_spec, $option_help, $callbackordefault )
+          = @{$optionrequest_r};
         push @option_specs, $option_spec;
 
-        my $allnames = $option_spec =~ s/( [\w \? \- \| ] + ) .*/$1/rsx;
-        my @splitnames = split( /\|/s, $allnames );
-        my $mainname = shift @splitnames;
+        my $allnames   = $option_spec =~ s/( [\w ? \- | ] + ) .*/$1/rsx;
+        my @splitnames = split( /[|]/s, $allnames );
+        my $mainname   = shift @splitnames;
 
-        $helpmsg_of{$mainname} = $option_help;
-        $helpmsg_of{$_} = "Same as -$mainname." foreach @splitnames;
-
-        foreach my $optionname ($mainname, @splitnames) {
-           croak "Attempt to add duplicate option or alias $optionname. "
-               if ( exists $helpmsg_of{$optionname} );
+        foreach my $optionname ( $mainname, @splitnames ) {
+            die "Attempt to add duplicate option or alias $optionname."
+              if ( exists $helpmsg_of{$optionname} );
         }
 
-        if (ref($callbackordefault) eq 'CODE') {
+        $helpmsg_of{$mainname} = $option_help;
+        $helpmsg_of{$_} = "Same as -$mainname" foreach @splitnames;
+
+        if ( ref($callbackordefault) eq 'CODE' ) {
             # it's a callback
-            $callback_of{ $mainname } = $callbackordefault;
+            $callback_of{$mainname} = $callbackordefault;
         }
         else {
             # it's a default value
             $options{$mainname} = $callbackordefault;
         }
-        
-    }
 
-    my $returnvalue = GetOptions( %options, @option_specs );
+    } ## tidy end: for my $optionrequest_r...
+
+    my $returnvalue = GetOptions( \%options, @option_specs );
     die "Errors returned from Getopt::Long\n" unless $returnvalue;
 
     foreach my $thisoption ( keys %options ) {
@@ -265,7 +270,7 @@ sub _process_options {
 
     $env->_set_options_r( \%options );
 
-    $env->crier->set_maxdepth(0) if $options{'quiet'} ;
+    $env->crier->set_maxdepth(0) if $options{'quiet'};
     $env->crier->hide_progress unless $options{'progress'};
 
     if ( $options{'_stacktrace'} ) {
@@ -275,10 +280,9 @@ sub _process_options {
         ## use critic
     }
 
-   return %helpmsg_of;
+    return %helpmsg_of;
 
-} ## tidy end: sub _process_my_options
-
+} ## tidy end: sub _process_options
 
 ##### TERMINAL AND SIGNAL FUNCTIONS #####
 
@@ -290,11 +294,13 @@ sub _init_terminal {
     ## use critic
 
     _set_width();
+    return;
 
 }
 
 sub _stacktrace {
     Carp::confess(@_);
+    return;
 }
 
 sub _terminate {
@@ -306,7 +312,10 @@ sub _terminate {
 sub _set_width {
     my $width = _get_width();
     $crier->set_column_width($width);
+    return;
 }
+
+const my $FALLBACK_COLUMNS => 80;
 
 sub _get_width {
     my $width = (
@@ -318,7 +327,7 @@ sub _get_width {
         }
 
           #or $Actium::Eclipse::is_under_eclipse ? 132 : 80
-          or 80
+          or $FALLBACK_COLUMNS
     );
     return $width;
 }
@@ -349,6 +358,8 @@ sub term_readline {
     # thank you Mr. Conway
 
 } ## tidy end: sub term_readline
+
+1;
 
 __END__
 
@@ -398,7 +409,7 @@ In a main program:
  
 =head1 DESCRIPTION
 
-Actium::Options is a wrapper for L<Getopt::Long>. 
+Actium::Options is a wrapper for L<Getopt::Long|Getopt::Long>. 
 It contains routines designed to allow both main programs and 
 any used modules to set particular command-line options.
 
@@ -407,7 +418,8 @@ program, and any modules can set other options that apply to that module.
 
 Note that the default configuration for Getopt::Long is used, so (for
 example) bundling is off and options can be abbreviated to their shortest
-unique abbreviation. See L<Getopt::Long/"Configuring Getopt::Long">.
+unique abbreviation. See 
+L<Getopt::Long/"Configuring Getopt::Long"|"Configuring Getopt::Long" in Getopt::Long>.
 
 =head1 SUBROUTINES
 
@@ -420,13 +432,14 @@ No subroutine names are exported by default, but most can be imported.
 To add an option for processing, use B<add_option()>.
 
 $optionspec is an
-option specification as defined in L<Getopt::Long>. Note that to specify
+option specification as defined in L<Getopt::Long|Getopt::Long>. Note that to specify
 options that take list or hash values, it is necessary to indicate this
 by appending an "@" or "%" sign after the type. See L<Getopt::Long/"Summary 
 of Option Specifications"> for more information.
 
 B<add_option()> will accept alternate names in the $optionspec, as described in 
-L<Getopt::Long>.  Other subroutines (B<option()>, B<set_option()>, etc.) require that
+L<Getopt::Long/Getopt::Long>.  
+Other subroutines (B<option()>, B<set_option()>, etc.) require that
 the primary name be used.
 
 $description is a human-readable short description to be used in
@@ -567,7 +580,7 @@ Aaron Priven <apriven@actransit.org>
 =head1 LICENSE AND COPYRIGHT
 
 This module is free software; you can redistribute it and/or modify it under 
-the same terms as Perl itself. See L<perlartistic>.
+the same terms as Perl itself. See L<perlartistic|perlartistic>.
 
 This program is distributed in the hope that it will be useful, but WITHOUT 
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
