@@ -62,6 +62,7 @@ sub _mainhelp {
     my $status = $params{status} // 0;
     my $error  = $params{error};
     my $system_name = $params{system_name};
+    my %module_of = %{ $params{module_of} };
     my @helptext;
 
     if ($error) {
@@ -223,19 +224,19 @@ sub _process_options {
 
     unshift @option_requests, $module->OPTIONS($env) if $module->can('OPTIONS');
 
-    my (@option_specs, %callback_of, %helpmsg_of );
+    my (%options , @option_specs, %callback_of, %helpmsg_of );
 
     for my $optionrequest_r (@option_requests) {
         my ($option_spec, $option_help, $callbackordefault) = 
               @{$optionrequest_r};
         push @option_specs, $option_spec;
 
-        my $allnames = $option =~ s/( [\w \? \- \| ] + ) .*/$1/rsx;
-        @splitnames = split( /\|/s, $allnames );
+        my $allnames = $option_spec =~ s/( [\w \? \- \| ] + ) .*/$1/rsx;
+        my @splitnames = split( /\|/s, $allnames );
         my $mainname = shift @splitnames;
 
         $helpmsg_of{$mainname} = $option_help;
-        $helpmsg_of{$_} = "Same as -$first." foreach @splitnames;
+        $helpmsg_of{$_} = "Same as -$mainname." foreach @splitnames;
 
         foreach my $optionname ($mainname, @splitnames) {
            croak "Attempt to add duplicate option or alias $optionname. "
@@ -253,7 +254,7 @@ sub _process_options {
         
     }
 
-    my $returnvalue = GetOptions( \my %options, @option_specs );
+    my $returnvalue = GetOptions( %options, @option_specs );
     die "Errors returned from Getopt::Long\n" unless $returnvalue;
 
     foreach my $thisoption ( keys %options ) {
