@@ -20,7 +20,7 @@ sub _build_config {
 
 }
 
-has config_obj => (
+has config => (
     is      => 'ro',
     isa     => 'Actium::O::Files::Ini',
     builder => '_build_config',

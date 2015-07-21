@@ -20,10 +20,9 @@ sub OPTIONS {
 
         [ 'db_user=s',     'User name to access Actium database' ],
         [ 'db_password=s', 'Password to access Actium database' ],
-        [
-            'db_name=s',
+        [   'db_name=s',
             'Name of the database in the ODBC driver. '
-              . qq[The default is "$DEFAULT_DBNAME".],
+              . qq[The default is "$DEFAULT_DBNAME"],
             $DEFAULT_DBNAME,
         ]
     );
@@ -31,12 +30,12 @@ sub OPTIONS {
 }
 
 sub actiumdb {
-    
+
     my $env = shift;
-    
+
     my $config_obj = $env->config;
 
-    my %config     = $config_obj->section($CONFIG_SECTION);
+    my %config = $config_obj->section($CONFIG_SECTION);
 
     my %params;
     foreach (qw(db_user db_password db_name)) {

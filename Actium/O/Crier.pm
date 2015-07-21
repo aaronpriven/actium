@@ -409,8 +409,8 @@ sub _push_cry {
     sub cry { 
         goto &cry_method 
     }
-    sub last_cry {
-        goto &last_cry_method
+    sub last_cry { 
+        goto &last_cry_method 
     }
     #}
 }
