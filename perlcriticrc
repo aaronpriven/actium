@@ -48,5 +48,5 @@ severity = 2
 severity = 5
 
 # Distributions that this uses:
-# Perl-Critic-Deprecated ### DEP ###
-# Perl-Critic-StricterSubs ### DEP ###
+# Perl::Critic::Deprecated ### DEP ###
+# Perl::Critic::StricterSubs ### DEP ###

@@ -30,7 +30,7 @@ foreach (@deps) {
    s/(?:qw)?\(.*\)//g; # deliberately greedy
    s/qw<.*\>//g; 
    s/'.*'//g; 
-   s/^#//;
+   s/^#+//;
    s/^\s+//;
    s/\s+$//;
 
