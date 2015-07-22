@@ -15,6 +15,8 @@ use Scalar::Util(qw[blessed reftype looks_like_number]); ### DEP ###
 use Carp; ### DEP ###
 use File::Spec; ### DEP ###
 
+use constant DEBUG => 0;
+
 use Sub::Exporter -setup => {
     exports => [
         qw<
@@ -23,8 +25,11 @@ use Sub::Exporter -setup => {
           j                   jt
           jk                  jn
           sk                  st
+          join_empty          join_tab
+          join_key            join_lf
+          split_key           split_tab
           keyreadable         keyunreadable
-          doe
+          doe                 define
           isblank             isnotblank
           tabulate            aoa2tsv
           filename            file_ext
@@ -113,28 +118,58 @@ sub joinseries_ampersand {
 }
 
 sub j {
+    carp 'Call to "Actium::Util::j" remains' if DEBUG;
+    goto &join_empty;
+}
+
+sub join_empty {
     return join( $EMPTY_STR, map { $_ // $EMPTY_STR } @_ );
 }
 
 sub jt {
+    carp 'Call to "Actium::Util::jt" remains' if DEBUG;
+    goto &join_tab;
+}
+
+sub join_tab {
     return join( "\t", map { $_ // $EMPTY_STR } @_ );
 }
 
 sub jk {
+    carp 'Call to "Actium::Util::jk" remains' if DEBUG;
+    goto &join_key;
+}
+
+sub join_key {
     return join( $KEY_SEPARATOR, map { $_ // $EMPTY_STR } @_ );
 }
 
 sub jn {
+    carp 'Call to "Actium::Util::jn" remains' if DEBUG;
+    goto &join_lf;
+}
+
+sub join_lf {
     return join( "\n", map { $_ // $EMPTY_STR } @_ );
 }
 
 sub sk {
+    carp 'Call to "Actium::Util::sk" remains' if DEBUG;
+    goto &split_key;
+}
+
+sub split_key {
     croak 'Null argument specified to ' . __PACKAGE__ . '::sk'
       unless defined $_[0];
     return split( /$KEY_SEPARATOR/sx, $_[0] );
 }
 
 sub st {
+    carp 'Call to "Actium::Util::st" remains' if DEBUG;
+    goto &split_tab;
+}
+
+sub split_tab {
     croak 'Null argument specified to ' . __PACKAGE__ . '::st'
       unless defined $_[0];
     return split( /\t/s, $_[0] );
@@ -165,6 +200,7 @@ sub keyunreadable {
 }
 
 sub tabulate {
+    carp 'Call remains to Actium::Util::tabulate' if DEBUG;
 
     # TODO: remove in favor of Actium::O::2DArray
     my @record_rs;
@@ -225,6 +261,8 @@ sub aoa2tsv {
 
     # TODO: remove in favor of Actium::O::2DArray
 
+    carp 'Call remains to Actium::Util::aoa2tsv' if DEBUG;
+
     my $aoa_r   = shift;
     my @headers = flatten(@_);
 
@@ -251,6 +289,11 @@ sub aoa2tsv {
 }    ## tidy end: sub aoa2tsv
 
 sub doe {
+    carp 'Call to "Actium::Util::doe" remains' if DEBUG;
+    goto &define;
+}
+
+sub define {
     if (wantarray) {
         my @list = @_;
         $_ = $_ // $EMPTY_STR foreach @list;
@@ -442,6 +485,7 @@ sub in {
 
 sub chunks {
     
+    carp 'Call remains to Actium::Util::chunks' if DEBUG;
     # deprecate in favor of Actium::O::2DArray->new_in_chunks
     
     my $n      = shift;
