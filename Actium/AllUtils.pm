@@ -12,7 +12,7 @@ BEGIN {
 }
 
 use Actium::Constants;
-use Actium::Crier(':all');
+#use Actium::Crier(':all');
 use Actium::Sorting::Line(qw/byline sortbyline/);
 use Actium::Util(':all');
 use Carp qw(cluck longmess shortmess);    ### DEP ###
