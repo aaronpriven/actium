@@ -1,9 +1,9 @@
-#!/ActivePerl/bin/perl
+#!/usr/bin/env perl
 
 # actium.pl - command-line access to Actium system
 
 use FindBin qw($Bin);    ### DEP ###
-use lib ($Bin);          ### DEP ###
+use lib ("$Bin/../lib");          ### DEP ###
 
 use Actium::Preamble;
 use Actium::Cmd;

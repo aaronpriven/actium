@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # This simple script allows two files of the same name to be opened up in Excel
 # since Excel doesn't like to have two files of the same name opened at the
