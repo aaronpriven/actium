@@ -1,4 +1,4 @@
-#!/usr/bin/perl -pi -0777
+#!/usr/bin/env perl -pi -0777
 
 # legacy status: 1
 

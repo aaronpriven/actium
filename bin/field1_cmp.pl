@@ -1,4 +1,4 @@
-#!/ActivePerl/bin/perl
+#!/usr/bin/env perl
 
 use 5.012;
 use warnings;
@@ -7,7 +7,7 @@ our $VERSION = 0.003;
 
 use autodie; ### DEP ###
 use FindBin('$Bin'); ### DEP ###
-use lib ($Bin); ### DEP ###
+use lib ("$Bin/../lib"); ### DEP ###
 
 my $firstfile = shift(@ARGV);
 
