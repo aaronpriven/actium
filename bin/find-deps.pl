@@ -1,4 +1,4 @@
-#!/ActivePerl/bin/perl
+#!/usr/bin/env perl
 
 # find-deps.pl
 # Goes through the source code and finds everything marked with a dependency
