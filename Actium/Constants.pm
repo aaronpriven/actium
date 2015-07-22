@@ -22,6 +22,7 @@ BEGIN {
 
     %constants = (
         EMPTY_STR   => \q{},
+        EMPTY       => \q{},
         CRLF        => \qq{\cM\cJ},
         SPACE       => \q{ },
         DQUOTE      => \q{"},
@@ -208,6 +209,8 @@ $Actium::Constants::CRLF .
 =over
 
 =item $EMPTY_STR
+
+=item $EMPTY
 
 The empty string.
 
