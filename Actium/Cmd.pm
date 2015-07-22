@@ -63,7 +63,6 @@ sub _mainhelp {
     my $status      = $params{status} // 0;
     my $error       = $params{error};
     my $system_name = $params{system_name};
-    my %module_of = %{ $params{module_of} };
     my @helptext;
 
     if ($error) {
