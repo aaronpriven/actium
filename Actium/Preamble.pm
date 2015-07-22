@@ -13,21 +13,23 @@ use 5.022;
 use Module::Runtime (qw(require_module));    ### DEP ###
 use Import::Into;                            ### DEP ###
 
+use Actium::AllUtils; 
+# imports many routines into package 'u'
+
 my ( @module_rs, @nomodule_rs );
 
 BEGIN {
     @module_rs = (
         [qw[Actium::Constants]],
-        [   qw[Actium::Util all_eq doe dumpstr flatten
-              in isblank isnotblank j jt jk jn]
-        ],
         [qw[Actium::Crier cry last_cry]],
+        [   qw[Actium::Util all_eq doe dumpstr flatten
+              in isblank isnotblank j jt jk jn 
+              ]
+        ],
         [qw[Carp]],
         # Carp ### DEP ###
         [qw[Const::Fast]],
         # Const::Fast ### DEP ###
-        [qw[Encode encode decode]],
-        # Encode ### DEP ###
         [qw[English -no-match-vars]],
         # English ### DEP ###
         [qw[List::MoreUtils any all none notall natatime uniq]],
@@ -40,10 +42,9 @@ BEGIN {
         # Params::Validate ### DEP ###
         [qw[Module::Runtime require_module]],
         # Module::Runtime ### DEP ###
-        [qw[Unicode::Normalize NFC NFD]],
-        # Unicode::Normalize ### DEP ###
         [qw[Scalar::Util blessed reftype looks_like_number]],
         # Scalar::Util ### DEP ###
+        # Unicode::Normalize ### DEP ###
         [qw[autodie]],
         # autodie ### DEP ###
         [qw[feature :5.16 refaliasing]],
@@ -60,7 +61,7 @@ BEGIN {
     );
     @nomodule_rs = (
         [qw[indirect]],
-#        [qw[warnings experimental::refaliasing]]
+        #        [qw[warnings experimental::refaliasing]]
     );
     # indirect ### DEP ###
 
