@@ -9,11 +9,13 @@ use 5.016;
 use warnings;
 
 use Actium::Constants;
-use List::Util (qw[first max min sum]); ### DEP ###
-use List::MoreUtils(qw[any all none notall natatime uniq]); ### DEP ###
-use Scalar::Util(qw[blessed reftype looks_like_number]); ### DEP ###
-use Carp; ### DEP ###
-use File::Spec; ### DEP ###
+use List::Util (qw[first max min sum]);    ### DEP ###
+use List::MoreUtils(qw[any all none notall natatime uniq]);    ### DEP ###
+use Scalar::Util(qw[blessed reftype looks_like_number]);       ### DEP ###
+use Carp;                                                      ### DEP ###
+use File::Spec;                                                ### DEP ###
+
+use English '-no-match-vars';
 
 use constant DEBUG => 0;
 
@@ -38,7 +40,7 @@ use Sub::Exporter -setup => {
           chunks
           is_odd              is_even
           mean                population_stdev
-          all_eq              
+          all_eq
           in                  folded_in
           halves
           flatten             hashref
@@ -56,36 +58,61 @@ sub positional {
 
     my $argument_r = shift;
     ## no critic (RequireInterpolationOfMetachars)
-    croak 'First argument to'
-      . __PACKAGE__
-      . '::positional must be a reference to @_'
-      if not( ref($argument_r) eq 'ARRAY' );
+    my $qualsub = __PACKAGE __ . '::positional';
     ## use critic
+    croak 'First argument to ' . $qualsub . ' must be a reference to @_'
+      if not( ref($argument_r) eq 'ARRAY' );
 
     my @arguments = @{$argument_r};
     my @attrnames = @_;
 
+    # if the last attribute begins with @, package up all remaining
+    # positional arrguments into an arrayref and return that
+    my $finalarray;
+    if ( $attrnames[-1] =~ /\A @/sx ) {
+        $finalarray = 1;
+        $attrnames[-1] =~ s/\A @//sx;
+    }
+
+    for my $attrname (@attrnames) {
+        next unless /\A @/sx;
+        croak "Attribute $attrname specified.\n"
+          . "Only the last attribute specified in $qualsub in can be an array";
+    }
+
     my %newargs;
-    if ( ref( $arguments[-1] ) eq 'HASH' ) {
+    if ( reftype( $arguments[-1] ) eq 'HASH' ) {
         %newargs = %{ pop @arguments };
     }
-    if ( scalar @attrnames < scalar @arguments ) {
+    if ( not $finalarray and scalar @attrnames < scalar @arguments ) {
         croak 'Too many positional arguments in object construction';
     }
 
-    foreach my $i ( 0 .. $#arguments ) {
-        my $name  = $attrnames[$i];
-        my $value = $arguments[$i];
-        croak 'Conflicting values specified in object construction'
-          . " for attribute $name:\n"
-          . " (positional: [$value], by name: [$newargs{$name}]"
-          if $newargs{$name} and $newargs{$name} ne $value;
-        $newargs{$name} = $value;
+    while (@arguments) {
+        my $name = shift @attrnames;
+        if ( not @attrnames and $finalarray ) {
+            # if this is the last attribute name, and it originally had a @
+            $newargs{$name} = [@arguments];
+            @arguments = ();
+        }
+        else {
+            $newargs{$name} = shift @arguments;
+        }
     }
+
+    #    foreach my $i ( 0 .. $#arguments ) {
+    #        my $name  = $attrnames[$i];
+    #        my $value = $arguments[$i];
+    #        croak 'Conflicting values specified in object construction'
+    #          . " for attribute $name:\n"
+    #          . " (positional: [$value], by name: [$newargs{$name}]"
+    #          if $newargs{$name} and $newargs{$name} ne $value;
+    #        $newargs{$name} = $value;
+    #    }
 
     return \%newargs;
 
-}    ## tidy end: sub positional
+} ## tidy end: sub positional
 
 sub positional_around {
     my $args_r   = shift;
@@ -226,8 +253,8 @@ sub tabulate {
                 $length_of_column[$this_column] = $thislength;
             }
             else {
-                $length_of_column[$this_column] =
-                  max( $length_of_column[$this_column], $thislength );
+                $length_of_column[$this_column]
+                  = max( $length_of_column[$this_column], $thislength );
             }
         }
     }
@@ -248,7 +275,7 @@ sub tabulate {
 
     return \@lines;
 
-}    ## tidy end: sub tabulate
+} ## tidy end: sub tabulate
 
 sub aoa2tsv {
 
@@ -286,7 +313,7 @@ sub aoa2tsv {
 
     return $str;
 
-}    ## tidy end: sub aoa2tsv
+} ## tidy end: sub aoa2tsv
 
 sub doe {
     carp 'Call to "Actium::Util::doe" remains' if DEBUG;
@@ -327,8 +354,8 @@ sub filename {
 sub file_ext {
     my $filespec = shift;                 # works on filespecs or filenames
     my $filename = filename($filespec);
-    my ( $filepart, $ext ) =
-      $filename =~ m{(.*)    # as many characters as possible
+    my ( $filepart, $ext )
+      = $filename =~ m{(.*)    # as many characters as possible
                       [.]     # a dot
                       ([^.]+) # one or more non-dot characters
                       \z}sx;
@@ -343,8 +370,8 @@ sub add_before_extension {
     my ( $volume, $folders, $filename ) = File::Spec->splitpath($input_path);
     my ( $filepart, $ext ) = file_ext($filename);
 
-    my $output_path =
-      File::Spec->catpath( $volume, $folders, "$filepart-$addition.$ext" );
+    my $output_path
+      = File::Spec->catpath( $volume, $folders, "$filepart-$addition.$ext" );
 
     return ($output_path);
 
@@ -356,7 +383,7 @@ sub remove_leading_path {
     ############################
     ## GET CANONICAL PATHS
 
-    require Cwd; ### DEP ###
+    require Cwd;    ### DEP ###
     $path     = Cwd::abs_path($path);
     $filespec = Cwd::abs_path($filespec);
 
@@ -367,8 +394,8 @@ sub remove_leading_path {
     # from a component of $path, use the upper/lowercase of $path
 
     my ( $filevol, $filefolders_r, $file ) = _split_path_components($filespec);
-    my ( $pathvol, $pathfolders_r, $pathfile ) =
-      _split_path_components( $path, 1 );
+    my ( $pathvol, $pathfolders_r, $pathfile )
+      = _split_path_components( $path, 1 );
 
     $file    = $pathfile if ( lc($file) eq lc($pathfile) );
     $filevol = $pathvol  if ( lc($filevol) eq lc($pathvol) );
@@ -401,7 +428,7 @@ sub remove_leading_path {
     ## REMOVE THE LEADING PATH
 
     return File::Spec->abs2rel( $filespec, $path );
-}    ## tidy end: sub remove_leading_path
+} ## tidy end: sub remove_leading_path
 
 # _split_path_components and _join_path_components
 # might be worth making public if they are used again.
@@ -410,16 +437,16 @@ sub remove_leading_path {
 sub _split_path_components {
     my $filespec = shift;
     my $nofile   = shift;
-    my ( $volume, $folders, $file ) =
-      File::Spec->splitpath( $filespec, $nofile );
+    my ( $volume, $folders, $file )
+      = File::Spec->splitpath( $filespec, $nofile );
     my @folders = File::Spec->splitdir($folders);
     return $volume, \@folders, $file;
 }
 
 sub _join_path_components {
     my ( $vol, $folders_r, $file ) = @_;
-    my $path =
-      File::Spec->catpath( $vol, File::Spec->catdir( @{$folders_r} ), $file );
+    my $path
+      = File::Spec->catpath( $vol, File::Spec->catdir( @{$folders_r} ), $file );
     return $path;
 }
 
@@ -457,7 +484,7 @@ sub linegroup_of {
 }
 
 sub folded_in {
-    
+
     my $item    = fc(shift);
     my $reftype = reftype( $_[0] );
     if ( defined $reftype and $reftype eq 'ARRAY' ) {
@@ -484,10 +511,10 @@ sub in {
 }
 
 sub chunks {
-    
+
     carp 'Call remains to Actium::Util::chunks' if DEBUG;
     # deprecate in favor of Actium::O::2DArray->new_in_chunks
-    
+
     my $n      = shift;
     my @values = @_;
     my @chunks;
@@ -535,7 +562,7 @@ sub halves {
 }
 
 sub dumpstr {
-    require Data::Dumper; ### DEP ###
+    require Data::Dumper;    ### DEP ###
     no warnings 'once';
     local $Data::Dumper::Indent   = 1;
     local $Data::Dumper::Sortkeys = 1;
@@ -547,7 +574,7 @@ sub dumpstr {
 
 sub u_columns {
     my $str = shift;
-    require Unicode::GCString; ### DEP ###
+    require Unicode::GCString;    ### DEP ###
     return Unicode::GCString->new($str)->columns;
 }
 
@@ -573,7 +600,7 @@ sub u_wrap {
     return $msg
       if $max < 3 or $min > $max;
 
-    require Unicode::LineBreak; ### DEP ###
+    require Unicode::LineBreak;    ### DEP ###
 
     state $breaker = Unicode::LineBreak::->new();
     $breaker->config( ColMax => $max, ColMin => $min );
@@ -598,13 +625,13 @@ sub u_wrap {
 
     return @lines;
 
-}    ## tidy end: sub u_wrap
+} ## tidy end: sub u_wrap
 
 sub u_trim_to_columns {
     my $text        = shift;
     my $num_columns = shift;
 
-    require Unicode::GCString; ### DEP ###
+    require Unicode::GCString;    ### DEP ###
 
     my $gc = Unicode::GCString::->new($text);
 
@@ -768,12 +795,13 @@ Typical use for positional_around would be as follows:
 The first argument to I<positional> or I<positional_around> must always be 
 a reference to the arguments passed to the original routine. 
 The remaining arguments are the C<init_arg> values (usually, the same
-as the names) of attributes to be passed to Moose.
+as the names) of attributes to be passed to Moose. 
 
 When using these routines, the arguments to your method are 
 first, the optional positional arguments that you specify, followed by 
-an optional hashref of named arguments, which may be the same as the
-positional arguments if they do not conflict.
+an optional hashref of named arguments, which must be the last argument. 
+If named arguments in the hashref 
+conflict with the positional arguments, the positional arguments will be used.
 
 For example, the following are all valid in the above positional_around example:
 
@@ -787,9 +815,8 @@ For example, the following are all valid in the above positional_around example:
     # positional arguments followed by named arguments
  Class->new( 'foo_value' , { bar => 'bar_value', baz => 'baz_value'} );
     # Mixing it up will work also
- Class->new( foo => 'foo_value', { foo => 'foo_value'});
-    # Will be OK, because the specified values are the same, although
-    #  why you'd want to do this is unclear
+ Class->new( foo => 'foo_value', { foo => 'a_different_foo_value');
+    # will use 'foo_value'
 
 Note that if only named arguments are given, I<they must be given in a hash
 reference>. 
@@ -803,6 +830,35 @@ B<The following will not work:>
     # Will croak 'Too many positional arguments in object construction'
  Class->new( foo => 'foo_value', { foo => 'a_different_foo_value');
     # Will croak 'Conflicting values specified in object construction'
+
+If the name of the last argument to C<positional> or C<positional_around>
+begins with an at sign (@), then the at sign will be removed, and an arrayref 
+pointing to an array of the remaining arguments to your method.
+
+For example, given the following:
+
+ around BUILDARGS => sub {
+    return positional_around (\@_ , 'baz' , '@qux' );
+ };
+ 
+The following would be valid:
+
+ Class->new ('baz_value', 'qux_value_1', 'qux_value_2');
+   #  would return 
+   #     { baz => 'baz_value' , qux => [ 'qux_value_1' , 'qux_value_2' ] }
+
+ Class->new ('baz_value', 'qux_value_1' , {xyzzy => 'xyzzy_value' } );
+   #  would return 
+   #  { baz => 'baz_value' , qux => [ 'qux_value_1' ] , xyzzy => 'xyzzy_value' }
+
+ Class->new ('baz_value');
+    # would return { baz => 'baz_value' }
+
+ Class->new ('baz_value' , { qux => 'qux_value' } );
+    # would return { baz => 'baz_value' , qux => 'qux_value' }
+    
+Note that no change is made to any named arguments.
+
     
 =back
 
