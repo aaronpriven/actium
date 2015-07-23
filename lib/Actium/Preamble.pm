@@ -13,7 +13,7 @@ use 5.022;
 use Module::Runtime (qw(require_module));    ### DEP ###
 use Import::Into;                            ### DEP ###
 
-use Actium::AllUtils; 
+use Actium::AllUtils;
 # imports many routines into package 'u'
 
 my ( @module_rs, @nomodule_rs );
@@ -23,7 +23,7 @@ BEGIN {
         [qw[Actium::Constants]],
         [qw[Actium::Crier cry last_cry]],
         [   qw[Actium::Util doe flatten
-              in isblank isnotblank j jt jk jn 
+              in isblank isnotblank j jt jk jn
               ]
         ],
         [qw[Carp]],
@@ -59,11 +59,9 @@ BEGIN {
         [qw[warnings]],
         # warnings ### DEP ###
     );
-    @nomodule_rs = (
-        [qw[indirect]],
-        #        [qw[warnings experimental::refaliasing]]
-    );
-    # indirect ### DEP ###
+    @nomodule_rs
+      = ( [qw[indirect]], [qw[warnings experimental::refaliasing]] );
+          # indirect ### DEP ###
 
     foreach my $module_r ( @module_rs, @nomodule_rs ) {
         require_module( $module_r->[0] );
