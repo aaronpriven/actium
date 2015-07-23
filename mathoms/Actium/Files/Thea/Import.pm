@@ -10,6 +10,8 @@ use warnings;
 
 package Actium::Files::Thea::Import 0.010;
 
+__END__
+
 use Actium::Crier(qw/cry last_cry/);
 use Actium::Files::TabDelimited 'read_tab_files';
 use Actium::Time 'timenum';
