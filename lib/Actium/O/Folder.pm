@@ -264,20 +264,21 @@ sub subfolderlist_init_arg { 'folderlist' }
 
 sub subfolder {
     my $self = shift;
+    my @args = @_;
 
     my $init_arg = $self->subfolderlist_init_arg;
     my $reader   = $self->subfolderlist_reader;
 
     my ( $params_r, @subfolders );
 
-    if ( ref( $_[0] ) eq 'HASH' ) {
-        $params_r   = { %{ $_[0] } };           # new ref
+    if ( ref( $args[0] ) eq 'HASH' ) {
+        $params_r   = { %{ $args[0] } };           # new ref
         @subfolders = $params_r->{$init_arg};
         delete $params_r->{$init_arg};
     }
     else {
         $params_r   = {};
-        @subfolders = @_;
+        @subfolders = @args;
     }
 
     croak 'No folders passed to method "subfolder"'
@@ -331,7 +332,9 @@ sub make_filespec {
 sub glob_files {
     my $self    = shift;
     my $pattern = shift || q{*};
-    my @results = bsd_glob( File::Spec->catfile( $self->path, $pattern ) );
+    my $path = $self->path;
+    my $fullpattern = File::Spec->catfile( $path, $pattern ) ;
+    my @results = bsd_glob( $fullpattern  );
 
     return @results unless File::Glob::GLOB_ERROR;
 
