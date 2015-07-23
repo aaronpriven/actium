@@ -25,9 +25,9 @@ use Sub::Exporter -setup => {
           j                   jt
           jk                  jn
           sk                  st
-          join_empty          join_tab
-          join_key            join_lf
-          split_key           split_tab
+          joinempty          jointab
+          joinkey            joinlf
+          splitkey           splittab
           keyreadable         keyunreadable
           doe                 define
           isblank             isnotblank
@@ -119,46 +119,46 @@ sub joinseries_ampersand {
 
 sub j {
     carp 'Call to "Actium::Util::j" remains' if DEBUG;
-    goto &join_empty;
+    goto &joinempty;
 }
 
-sub join_empty {
+sub joinempty {
     return join( $EMPTY_STR, map { $_ // $EMPTY_STR } @_ );
 }
 
 sub jt {
     carp 'Call to "Actium::Util::jt" remains' if DEBUG;
-    goto &join_tab;
+    goto &jointab;
 }
 
-sub join_tab {
+sub jointab {
     return join( "\t", map { $_ // $EMPTY_STR } @_ );
 }
 
 sub jk {
     carp 'Call to "Actium::Util::jk" remains' if DEBUG;
-    goto &join_key;
+    goto &joinkey;
 }
 
-sub join_key {
+sub joinkey {
     return join( $KEY_SEPARATOR, map { $_ // $EMPTY_STR } @_ );
 }
 
 sub jn {
     carp 'Call to "Actium::Util::jn" remains' if DEBUG;
-    goto &join_lf;
+    goto &joinlf;
 }
 
-sub join_lf {
+sub joinlf {
     return join( "\n", map { $_ // $EMPTY_STR } @_ );
 }
 
 sub sk {
     carp 'Call to "Actium::Util::sk" remains' if DEBUG;
-    goto &split_key;
+    goto &splitkey;
 }
 
-sub split_key {
+sub splitkey {
     croak 'Null argument specified to ' . __PACKAGE__ . '::sk'
       unless defined $_[0];
     return split( /$KEY_SEPARATOR/sx, $_[0] );
@@ -166,10 +166,10 @@ sub split_key {
 
 sub st {
     carp 'Call to "Actium::Util::st" remains' if DEBUG;
-    goto &split_tab;
+    goto &splittab;
 }
 
-sub split_tab {
+sub splittab {
     croak 'Null argument specified to ' . __PACKAGE__ . '::st'
       unless defined $_[0];
     return split( /\t/s, $_[0] );
