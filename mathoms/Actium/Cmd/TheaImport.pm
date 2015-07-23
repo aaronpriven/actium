@@ -9,6 +9,8 @@ use warnings;
 
 package Actium::Cmd::TheaImport 0.010;
 
+__END__
+
 use Actium::Files::Thea::Import ('thea_import');
 use Actium::Cmd::Config::Signup ('signup');
 

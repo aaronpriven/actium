@@ -7,6 +7,8 @@
 use 5.012;
 use warnings;
 
+__END__
+
 our $VERSION = 0.010;
 
 BEGIN {
