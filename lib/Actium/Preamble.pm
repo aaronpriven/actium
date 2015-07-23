@@ -22,7 +22,7 @@ BEGIN {
     @module_rs = (
         [qw[Actium::Constants]],
         [qw[Actium::Crier cry last_cry]],
-        [   qw[Actium::Util all_eq doe dumpstr flatten
+        [   qw[Actium::Util doe flatten
               in isblank isnotblank j jt jk jn 
               ]
         ],
@@ -32,17 +32,17 @@ BEGIN {
         # Const::Fast ### DEP ###
         [qw[English -no-match-vars]],
         # English ### DEP ###
-        [qw[List::MoreUtils any all none notall natatime uniq]],
+        [qw[List::MoreUtils any all none natatime uniq]],
         # List::MoreUtils ### DEP ###
-        [qw[List::Util first max min maxstr minstr sum]],
+        [qw[List::Util first max min sum]],
         # List::Util ### DEP ###
-        [qw[POSIX ceil floor]],
+        [qw[POSIX ceil ]],
         # POSIX ### DEP ###
         [qw[Params::Validate]],
         # Params::Validate ### DEP ###
         [qw[Module::Runtime require_module]],
         # Module::Runtime ### DEP ###
-        [qw[Scalar::Util blessed reftype looks_like_number]],
+        [qw[Scalar::Util blessed reftype ]],
         # Scalar::Util ### DEP ###
         # Unicode::Normalize ### DEP ###
         [qw[autodie]],
