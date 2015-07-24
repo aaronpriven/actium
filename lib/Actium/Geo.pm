@@ -20,7 +20,7 @@ use Sub::Exporter -setup => {
 
 sub get_zip_for_stops {
 
-    my %params = validate(
+    my %params = u::validate(
         @_,
         {
             client   => { isa  => 'REST::Client',   optional => 1 },
@@ -75,7 +75,7 @@ sub get_zip_for_stops {
 }
 
 sub zip_code_request {
-    my %params = validate(
+    my %params = u::validate(
         @_,
         {
             client   => { isa  => 'REST::Client', optional => 1 },

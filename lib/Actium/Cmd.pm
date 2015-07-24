@@ -71,11 +71,11 @@ sub _mainhelp {
 
     push @helptext, "Subcommands available for $system_name:\n";
     foreach my $subcommand ( sort keys %module_of ) {
-        next if defined( reftype( $module_of{$subcommand} ) );
+        next if defined( u::reftype( $module_of{$subcommand} ) );
         push @helptext, $subcommand;
     }
 
-    say jn(@helptext) or die "Can't output help text: $OS_ERROR";
+    say u::joinlf(@helptext) or die "Can't output help text: $OS_ERROR";
 
     exit $status;
 } ## tidy end: sub _mainhelp
@@ -177,7 +177,7 @@ sub _get_module {
 
     my $referred;
     while ( exists( $module_of{$subcommand} )
-        and defined( reftype( $module_of{$subcommand} ) ) )
+        and defined( u::reftype( $module_of{$subcommand} ) ) )
     {
         $subcommand = ${ $module_of{$subcommand} };
         $referred   = 1;

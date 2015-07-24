@@ -8,7 +8,6 @@ use warnings;
 package Actium::O::2DArray 0.010;
 
 use Actium::Preamble;
-use Actium::Util (qw/file_ext u_columns/);
 
 # this is a deliberately non-encapsulated object that is just
 # an array of arrays (AoA).
@@ -31,7 +30,7 @@ sub new {
     if ( @rows == 0 ) {    # if no arguments, new anonymous AoA
         $self = [ [] ];
     }
-    elsif ( any { reftype($_) ne 'ARRAY' } @rows ) {
+    elsif ( u::any { u::reftype($_) ne 'ARRAY' } @rows ) {
         croak 'Arguments to ' . __PACKAGE__ . '->new must be arrayrefs (rows)';
     }
     else {
@@ -50,7 +49,7 @@ sub new_in_chunks {
     my @values   = @_;
 
     my $self;
-    my $it = natatime( $quantity, @values );
+    my $it = u::natatime( $quantity, @values );
     while ( my @vals = $it->() ) {
         push @{$self}, [@vals];
     }
@@ -64,7 +63,7 @@ sub bless {
     my $class = shift;
     my $self  = shift;
 
-    my $selfclass = blessed($self);
+    my $selfclass = u::blessed($self);
 
     if ( defined $selfclass ) {
         return $self if $selfclass eq $class;
@@ -81,7 +80,7 @@ sub bless {
 sub clone {
     my $self = shift;
     my $new = [ map { [ @{$_} ] } @{$self} ];
-    CORE::bless $new, ( blessed $self );
+    CORE::bless $new, ( u::blessed $self );
     return $new;
 }
 
@@ -167,7 +166,7 @@ sub new_from_file {
     croak "No file specified in " . __PACKAGE__ . '->new_from_file'
       unless $filespec;
 
-    my ( $filename, $ext ) = file_ext($filespec);
+    my ( $filename, $ext ) = u::file_ext($filespec);
     my $fext = fc($ext);
 
     if ( $fext eq fc('xlsx') ) {
@@ -197,7 +196,7 @@ sub height {
 
 sub width {
     my $self = shift;
-    return max( map { scalar @{$_} } @{$self} );
+    return u::max( map { scalar @{$_} } @{$self} );
 }
 
 sub last_row {
@@ -207,7 +206,7 @@ sub last_row {
 
 sub last_col {
     my $self = shift;
-    return max( map { $#{$_} } @{$self} );
+    return u::max( map { $#{$_} } @{$self} );
 }
 
 #########################################
@@ -234,14 +233,14 @@ sub col {
 
 sub rows {
     my $self     = shift;
-    my $class    = blessed $self;
+    my $class    = u::blessed $self;
     my @returned = map { $self->[$_] } @_;
     return $class->bless( \@returned );
 }
 
 sub cols {
     my $self     = shift;
-    my $class    = blessed $self;
+    my $class    = u::blessed $self;
     my @returned = map { [ $self->col($_) ] } @_;
     return $class->bless( \@returned );
 }
@@ -337,7 +336,7 @@ sub ins_col {
     my $col_idx = shift;
     my @col     = @_;
 
-    my $last_row = max( $self->last_row, $#col );
+    my $last_row = u::max( $self->last_row, $#col );
 
     for my $row_idx ( 0 .. $last_row ) {
         splice( @{ $self->[$row_idx] }, $col_idx, 0, $col[$row_idx] );
@@ -360,7 +359,7 @@ sub ins_cols {
     my $col_idx = shift;
     my @cols    = @{ +shift };
 
-    my $last_row = max( $self->last_row, map { $#{$_} } @cols );
+    my $last_row = u::max( $self->last_row, map { $#{$_} } @cols );
 
     for my $row_idx ( 0 .. $last_row ) {
         for my $col (@cols) {
@@ -451,7 +450,7 @@ sub slice {
     state $methodname = __PACKAGE__ . '->slice';
 
     croak "Arguments to $methodname must not be negative"
-      if any { $_ < 0 } ( $firstcol, $lastcol, $firstrow, $lastrow );
+      if u::any { $_ < 0 } ( $firstcol, $lastcol, $firstrow, $lastrow );
 
     ( $firstrow, $lastrow ) = ( $lastrow, $firstrow )
       if $firstrow > $lastrow;
@@ -462,8 +461,8 @@ sub slice {
     my $self_lastcol = $self->lastcol;
     my $self_lastrow = $#{$self};
 
-    $lastcol = min( $lastcol, $self_lastcol );
-    $lastrow = min( $lastrow, $self_lastrow );
+    $lastcol = u::min( $lastcol, $self_lastcol );
+    $lastrow = u::min( $lastrow, $self_lastrow );
 
     my $new =
       $self->col( $firstcol .. $lastcol )->rows( $firstrow .. $lastrow );
@@ -487,7 +486,7 @@ sub transpose {
 
     # non-void context: return new object
     if ( defined wantarray ) {
-        CORE::bless $new, ( blessed $self );
+        CORE::bless $new, ( u::blessed $self );
         return $new;
     }
 
@@ -528,7 +527,7 @@ sub prune_callback {
     }
 
     # remove final blank rows
-    while ( @{$self} and all { $callback->() } $self->[-1] ) {
+    while ( @{$self} and u::all { $callback->() } $self->[-1] ) {
         pop @{$self};
     }
 
@@ -541,9 +540,9 @@ sub prune_callback {
     # remove final blank columns
 
     # does not use the last_col method because that method calls this one
-    my $last_col = max( map { $#{$_} } @{$self} );
+    my $last_col = u::max( map { $#{$_} } @{$self} );
 
-    while ( $last_col > -1 and all { $callback->() } $self->col($last_col) ) {
+    while ( $last_col > -1 and u::all { $callback->() } $self->col($last_col) ) {
         $last_col--;
 
         # set index of the last item of each row to the new $last_col
@@ -673,13 +672,13 @@ sub tabulate {
 
         my @fields = @{$row};
         for my $this_col ( 0 .. $#fields ) {
-            my $thislength = u_columns( $fields[$this_col] ) // 0;
+            my $thislength = u::u_columns( $fields[$this_col] ) // 0;
             if ( not $length_of_col[$this_col] ) {
                 $length_of_col[$this_col] = $thislength;
             }
             else {
                 $length_of_col[$this_col] =
-                  max( $length_of_col[$this_col], $thislength );
+                  u::max( $length_of_col[$this_col], $thislength );
             }
         }
     }
@@ -726,10 +725,10 @@ sub tsv {
 
     my $self = undef2empty(shift);
 
-    my @headers = flatten(@_);
+    my @headers = u::flatten(@_);
 
     my @lines;
-    push @lines, jt(@headers) if @headers;
+    push @lines, u::jointab(@headers) if @headers;
 
     foreach my $row ( @{$self} ) {
         my @rowcopy = @{$row};
@@ -752,7 +751,7 @@ sub tsv {
         }
     }
 
-    my $str = jn(@lines) . "\n";
+    my $str = u::joinlf(@lines) . "\n";
 
     return $str;
 
@@ -760,7 +759,7 @@ sub tsv {
 
 sub xlsx {
     my $self   = shift;
-    my %params = validate(
+    my %params = u::validate(
         @_,
         {
             headers     => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
@@ -786,7 +785,7 @@ sub xlsx {
         push @format, $workbook->add_format(%$format_properties);
     }
 
-    # an array is used because if it were a scalar, it would be undef,
+    # an array @format is used because if it were a scalar, it would be undef,
     # where what we want if it is empty is no value at all
 
     my $unblessed = $self->unblessed;
@@ -1282,8 +1281,9 @@ otherwise column 0 will be used as the value.)
 
 =item B<tabulate(I<separator>)>
 
-Returns an arrayref of strings, where each string consists of the elements of each
-row, padded with enough spaces to ensure that each column is the same width.
+Returns an arrayref of strings, where each string consists of the
+elements of each row, padded with enough spaces to ensure that each
+column is the same width.
 
 The columns will be separated by whatever string is passed to C<tabulate()>. 
 If nothing is passed, a single space will be used.
@@ -1296,9 +1296,9 @@ So, for example,
  # $arrayref = [ 'a    bbb cc' ,
                  'dddd e   f'] ;
                  
-The width of each element is determined using the 
-C<Unicode::GCString->columns()> method, so it will treat composed accented
-characters and double-width Asian characters correctly.
+The width of each element is determined using the
+C<Unicode::GCString->columns()> method, so it will treat composed
+accented characters and double-width Asian characters correctly.
 
 =item B<< tsv(I<headers>) >>
 
@@ -1375,9 +1375,9 @@ requested was not found.
 A file other than an Excel (XLSX) or tab-delimited text files (with tab, 
 tsv, or txt extensions) are recognized in ->new_from_file.
 
-=item No file specified in Actium::O::2DArray->new_from_file'
+=item No file specified in Actium::O::2DArray->new_from_file
 
-=item No file specified in Actium::O::2DArray->new_from_xlsx'
+=item No file specified in Actium::O::2DArray->new_from_xlsx
 
 No filename, or a blank filename, was passed to these methods.
 

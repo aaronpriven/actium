@@ -235,9 +235,9 @@ sub START {
 
                     # LASTSTOP
 
-                    if ( all { $_->{LASTSTOP} } @{$times_r} ) {
+                    if ( u::all { $_->{LASTSTOP} } @{$times_r} ) {
 
-                  #if ( all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
+                  #if ( u::all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
                         $has_last_stop{$linegroup} = 1;
                         $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
                           = "LASTSTOP";

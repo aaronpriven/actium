@@ -3,11 +3,8 @@
 
 package Actium::O::Crier 0.010;
 use Actium::Moose;
-use Scalar::Util(qw[openhandle weaken refaddr reftype]);    ### DEP ###
 
 use Actium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
-use Actium::Util  ('u_columns');
-
 
 use Actium::O::Crier::Cry;
 
@@ -86,9 +83,9 @@ sub _fh_or_scalarref {
     my $class = shift;
     my $arg   = shift;
 
-    return $arg if defined openhandle($arg);
+    return $arg if defined u::openhandle($arg);
 
-    if ( defined reftype($arg) and reftype($arg) eq 'SCALAR' ) {
+    if ( defined u::reftype($arg) and u::reftype($arg) eq 'SCALAR' ) {
         open( my $fh, '>', \$_[0] );
         return $fh;
     }
@@ -131,7 +128,7 @@ around BUILDARGS => sub {
     if ( defined $fh ) {
 
         # ->new($fh, {option => option1, ...})
-        if ( @_ == 1 and reftype( $_[0] ) eq 'HASH' ) {
+        if ( @_ == 1 and u::reftype( $_[0] ) eq 'HASH' ) {
             return $class->$orig( fh => $fh, %{ $_[0] } );
         }
         else {
@@ -247,7 +244,7 @@ has 'bullets_r' => (
 
 sub set_bullets {
     my $self    = shift;
-    my @bullets = flatten(@_);
+    my @bullets = u::flatten(@_);
     $self->_set_bullets_r(@bullets);
 }
 
@@ -283,7 +280,7 @@ sub _build_bullet_width {
 
     return 0 if @{$bullets_r} == 0;
 
-    my $width = max( map { u_columns($_) } @{$bullets_r} );
+    my $width = u::max( map { u::u_columns($_) } @{$bullets_r} );
     return $width;
 }
 
@@ -293,7 +290,7 @@ sub _alter_bullet_width {
 
     my $bullet_width = $self->_bullet_width;
 
-    my $newbullet_width = max( map { u_columns($_) } @{$bullets_r} );
+    my $newbullet_width = u::max( map { u::u_columns($_) } @{$bullets_r} );
 
     return if $newbullet_width <= $bullet_width;
 
@@ -400,7 +397,7 @@ sub _push_cry {
     my $cries_r = $self->_cries_r;
 
     push @{$cries_r}, $cry;
-    weaken ${$cries_r}[-1];
+    u::weaken ${$cries_r}[-1];
 
 }
 
@@ -421,7 +418,7 @@ sub cry_method {
     my ( %opts, @args );
 
     foreach (@_) {
-        if ( defined( reftype($_) ) and reftype($_) eq 'HASH' ) {
+        if ( defined( u::reftype($_) ) and u::reftype($_) eq 'HASH' ) {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -430,15 +427,15 @@ sub cry_method {
     }
 
     if (    @args == 1
-        and defined( reftype( $args[0] ) )
-        and reftype( $args[0] ) eq 'ARRAY' )
+        and defined( u::reftype( $args[0] ) )
+        and u::reftype( $args[0] ) eq 'ARRAY' )
     {
         my @pair = @{ +shift };
         $opts{opentext}  = $pair[0];
         $opts{closetext} = $pair[1];
     }
     else {
-        my $separator = doe($OUTPUT_FIELD_SEPARATOR);
+        my $separator = u::define($OUTPUT_FIELD_SEPARATOR);
         $opts{opentext} = join( $separator, @args );
     }
 
@@ -488,7 +485,7 @@ sub _close_up_to {
     my $success;
 
     while ( $this_cry
-        and ( refaddr($this_cry) != refaddr($cry) ) )
+        and ( u::refaddr($this_cry) != u::refaddr($cry) ) )
     {
         $success = $this_cry->_close;    # default severity and options
         return $success unless $success;

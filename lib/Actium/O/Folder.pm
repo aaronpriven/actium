@@ -523,7 +523,7 @@ sub load_sqlite {
     my $self              = shift;
     my $default_subfolder = shift;
     my $database_class    = shift;
-    my %params            = validate(
+    my %params            = u::validate(
         @_,
         {   subfolder => 0,
             db_folder => 0,
@@ -575,7 +575,7 @@ sub load_hasi {
 sub write_files_with_method {
     my $self = shift;
 
-    my %params = validate(
+    my %params = u::validate(
         @_,
         {   OBJECTS   => { type => ARRAYREF },
             METHOD    => 1,

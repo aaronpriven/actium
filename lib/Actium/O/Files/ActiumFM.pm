@@ -493,7 +493,7 @@ sub line_descrip_html {
 
     my $self = shift;
 
-    my %params = validate(
+    my %params = u::validate(
         @_,
         {
             signup => 1,

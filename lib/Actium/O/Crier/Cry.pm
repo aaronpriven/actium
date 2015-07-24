@@ -148,7 +148,7 @@ sub _timestamp_now {
     my $tsr = shift // $self->timestamp;
 
     if ($tsr) {
-        if ( reftype($tsr) eq 'CODE' ) {
+        if ( u::reftype($tsr) eq 'CODE' ) {
             return &{$tsr}($level);
         }
         my ( $s, $m, $h ) = localtime( time() );
@@ -348,7 +348,7 @@ sub _close {
 
     # process arguments
     foreach (@_) {
-        if ( defined( reftype($_) ) and reftype($_) eq 'HASH' ) {
+        if ( defined( u::reftype($_) ) and u::reftype($_) eq 'HASH' ) {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -560,8 +560,8 @@ sub prog {
     my $self = shift;
     next unless $self->_shows_progress;
 
-    my $separator = doe($OUTPUT_FIELD_SEPARATOR);
-    my $msg = join( $separator, doe(@_) );
+    my $separator = u::define($OUTPUT_FIELD_SEPARATOR);
+    my $msg = join( $separator, u::define(@_) );
 
     my $level = $self->_level;
     return 1 if defined( $self->_maxdepth ) and $level > $self->_maxdepth;
@@ -635,7 +635,7 @@ sub text {
 
     # process arguments
     foreach (@_) {
-        if ( defined( reftype($_) ) and reftype($_) eq 'HASH' ) {
+        if ( defined( u::reftype($_) ) and u::reftype($_) eq 'HASH' ) {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -650,7 +650,7 @@ sub text {
       and defined($maxdepth)
       and $level > $maxdepth;
 
-    my $separator = doe($OUTPUT_FIELD_SEPARATOR);
+    my $separator = u::define($OUTPUT_FIELD_SEPARATOR);
     my $text = join( $separator, @args );
 
     my $fh = $self->_fh;
@@ -719,7 +719,7 @@ sub text {
         my $sev_key = uc($sev);
 
         while ( exists( $COLORS_OF{$sev_key} )
-            and defined( reftype( $COLORS_OF{$sev_key} ) ) )
+            and defined( u::reftype( $COLORS_OF{$sev_key} ) ) )
         {
             $sev_key = ${ $COLORS_OF{$sev_key} };
         }

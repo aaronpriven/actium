@@ -120,7 +120,7 @@ sub hastus_stops_import {
 
         my @new_record = (
             @field{@stop_headers},
-            doe( $on, $at, $stnum, $comment, $city, $direction )
+            u::define( $on, $at, $stnum, $comment, $city, $direction )
         );
         trim(@new_record);
         push @returned_records, \@new_record;
