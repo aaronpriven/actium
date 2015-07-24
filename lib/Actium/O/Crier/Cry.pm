@@ -600,7 +600,7 @@ sub prog {
 
 sub over {
     my $self = shift;
-    next unless $self->shows_progress;
+    next unless $self->_shows_progress;
 
     # if no backspace (in braindead consoles like Eclipse's),
     # then treats everything as a forward-progress.
