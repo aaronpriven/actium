@@ -27,6 +27,7 @@ use Sub::Exporter -setup => {
           j                   jt
           jk                  jn
           sk                  st
+          joinspace
           joinempty          jointab
           joinkey            joinlf
           splitkey           splittab
@@ -58,7 +59,7 @@ sub positional {
 
     my $argument_r = shift;
     ## no critic (RequireInterpolationOfMetachars)
-    my $qualsub = __PACKAGE __ . '::positional';
+    my $qualsub = __PACKAGE__ . '::positional';
     ## use critic
     croak 'First argument to ' . $qualsub . ' must be a reference to @_'
       if not( ref($argument_r) eq 'ARRAY' );
@@ -75,13 +76,15 @@ sub positional {
     }
 
     for my $attrname (@attrnames) {
-        next unless /\A @/sx;
+        next unless $attrname =~ /\A @/sx;
         croak "Attribute $attrname specified.\n"
           . "Only the last attribute specified in $qualsub in can be an array";
     }
 
     my %newargs;
-    if ( reftype( $arguments[-1] ) eq 'HASH' ) {
+    if ( defined reftype( $arguments[-1] )
+        and reftype( $arguments[-1] ) eq 'HASH' )
+    {
         %newargs = %{ pop @arguments };
     }
     if ( not $finalarray and scalar @attrnames < scalar @arguments ) {
@@ -160,6 +163,10 @@ sub jt {
 
 sub jointab {
     return join( "\t", map { $_ // $EMPTY_STR } @_ );
+}
+
+sub joinspace {
+    return join( $SPACE, map { $_ // $EMPTY_STR } @_ );
 }
 
 sub jk {
@@ -597,6 +604,9 @@ sub u_wrap {
 
     return unless defined $msg;
 
+    $min //= 0;
+    $max ||= 79;
+
     return $msg
       if $max < 3 or $min > $max;
 
@@ -623,7 +633,7 @@ sub u_wrap {
         s/\s+\z//;
     }
 
-    return @lines;
+    return wantarray ? @lines : joinlf(@lines);
 
 } ## tidy end: sub u_wrap
 
