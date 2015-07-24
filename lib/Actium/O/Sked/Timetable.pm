@@ -182,18 +182,6 @@ sub new_from_sked {
                 push @note_definitions, $note_definition_of{$daysexceptions};
             }
 
-       #            for ($daysexceptions) {
-       #                if ($_ eq 'SD') {
-       #                    push @note_definitions, 'SD - School days only';
-       #                    next;
-       #                }
-       #                if ($_ eq 'SH') {
-       #                    push @note_definitions, 'SH - School holidays only';
-       #                    next;
-       #                }
-       #
-       #            }
-
         }
 
     }
@@ -274,7 +262,7 @@ sub as_indesign {
 
     my $self = shift;
 
-    my %params = validate(
+    my %params = u::validate(
         @_,
         {
             minimum_columns  => 1,

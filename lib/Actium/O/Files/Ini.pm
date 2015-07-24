@@ -25,7 +25,7 @@ around BUILDARGS => sub {
 	# more than one arg: args are hash
 	
 	if ( @_ == 1 ) {
-		if ( reftype $_[0] and reftype $_[0] eq 'HASH' ) {
+		if ( u::reftype $_[0] and u::reftype $_[0] eq 'HASH' ) {
 			%args = %{ $_[0] };
 		}
 		else {

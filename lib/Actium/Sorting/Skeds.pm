@@ -27,7 +27,7 @@ my $required_methods
 
 sub skedsort {
 
-    validate_pos( @_, ( ( { can => $required_methods } ) x scalar(@_) ) );
+    u::validate_pos( @_, ( ( { can => $required_methods } ) x scalar(@_) ) );
 
     my %earliest_timenum_of;
     my @objs = @_;

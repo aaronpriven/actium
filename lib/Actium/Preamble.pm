@@ -22,29 +22,15 @@ BEGIN {
     @module_rs = (
         [qw[Actium::Constants]],
         [qw[Actium::Crier cry last_cry]],
-        [   qw[Actium::Util doe flatten
-              in isblank isnotblank j jt jk jn
-              ]
-        ],
+        [qw[Actium::Util in jt jk ] ],
         [qw[Carp]],
         # Carp ### DEP ###
         [qw[Const::Fast]],
         # Const::Fast ### DEP ###
         [qw[English -no-match-vars]],
         # English ### DEP ###
-        [qw[List::MoreUtils any all none natatime uniq]],
-        # List::MoreUtils ### DEP ###
-        [qw[List::Util first max min sum]],
-        # List::Util ### DEP ###
-        [qw[POSIX ceil ]],
-        # POSIX ### DEP ###
-        [qw[Params::Validate]],
-        # Params::Validate ### DEP ###
         [qw[Module::Runtime require_module]],
         # Module::Runtime ### DEP ###
-        [qw[Scalar::Util blessed reftype ]],
-        # Scalar::Util ### DEP ###
-        # Unicode::Normalize ### DEP ###
         [qw[autodie]],
         # autodie ### DEP ###
         [qw[feature :5.16 refaliasing]],

@@ -409,7 +409,7 @@ sub START {
             open $out, ">", "tabxchange/" . $skedname . ".tab"
               or die "can't open $skedname.tab for output";
 
-            my @allroutes = sortbyline( uniq( @{ $skedref->{ROUTES} } ) );
+            my @allroutes = sortbyline( u::uniq( @{ $skedref->{ROUTES} } ) );
             my $linegroup = $allroutes[0];
 
             # GENERAL SCHEDULE INFORMATION
@@ -480,7 +480,7 @@ sub START {
             foreach (@allroutes) {
                 push @skednames, ( @{ $skednamesbyroute{$linegroup} } );
             }
-            outtab( sort +( uniq(@skednames) ) );
+            outtab( sort +( u::uniq(@skednames) ) );
 
             # LINE FIELDS
 
@@ -719,11 +719,6 @@ sub outtab {
     }
     print $out join( "\t", @fields, "\n" );
 }
-
-#sub uniq {
-#    my %seen;
-#    return sortbyline grep { !$seen{$_}++ } @_;
-#}
 
 sub bydaydirhash {
     ( my $aa = $a ) =~ s/.*?_//;    # minimal: it matches first _

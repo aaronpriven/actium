@@ -163,7 +163,7 @@ sub ordered_union_columns {
 
     ### GET PARAMETERS
 
-    my %params = validate( @_, $ordered_union_columns_validspec );
+    my %params = u::validate( @_, $ordered_union_columns_validspec );
 
     my $tiebreaker = $params{tiebreaker};
     

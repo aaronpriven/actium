@@ -47,14 +47,14 @@ sub START {
     foreach ( sort keys %{$counts_r} ) {
         push @counts_rs, [ $_, $counts_r->{$_} ];
     }
-    say jn ( @{ tabulate(@counts_rs) } );
+    say u::joinlf ( @{ tabulate(@counts_rs) } );
 
     say '---';
     my @heights_rs;
     foreach ( sort { $a <=> $b } keys %{$final_heights_r} ) {
         push @heights_rs, [ $_, $final_heights_r->{$_}{count} ];
     }
-    say jn( @{ tabulate(@heights_rs) } );
+    say u::joinlf( @{ tabulate(@heights_rs) } );
 
     return;
 

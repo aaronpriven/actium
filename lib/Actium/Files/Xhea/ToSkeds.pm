@@ -89,7 +89,7 @@ my %required_headers = (
 
 sub xhea2skeds {
  
-  my %params = validate(
+  my %params = u::validate(
                    @_, {
                        signup => 1,    # mandatory
                        fieldnames => 1,
@@ -240,7 +240,7 @@ my $stop_tiebreaker = sub {
         # if either list has no timepoints, return 0 indicating we can't break
         # the tie
 
-        $avg_ranks[$i] = sum(@ranks) / @ranks;
+        $avg_ranks[$i] = u::sum(@ranks) / @ranks;
 
     }
 
@@ -859,7 +859,7 @@ sub _merge_if_appropriate {
     # To do that you'd need to compare them all to each other simultaneously,
     # which code I am not prepared to write at this point.
 
-    my $in_both = ( max( $inner_count, $outer_count ) ) - $only_in_either;
+    my $in_both = ( u::max( $inner_count, $outer_count ) ) - $only_in_either;
 
     if (    $only_in_either <= $MAXIMUM_DIFFERING_TIMES
         and $in_both > ( $MINIMUM_TIMES_MULTIPLIER * $only_in_either ) )

@@ -8,15 +8,15 @@
 package Actium::O::DateTime 0.010;
 
 use 5.016;
-use warnings; ### DEP ###
+use warnings;    ### DEP ###
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
-use DateTime; ### DEP ###
-use DateTime::Format::Strptime; ### DEP ###
+use Moose;                         ### DEP ###
+use MooseX::StrictConstructor;     ### DEP ###
+use DateTime;                      ### DEP ###
+use DateTime::Format::Strptime;    ### DEP ###
 
-use Scalar::Util('reftype'); ### DEP ###
-use Carp; ### DEP ###
+use Scalar::Util('reftype');       ### DEP ###
+use Carp;                          ### DEP ###
 
 around BUILDARGS => sub {
 
@@ -46,7 +46,8 @@ around BUILDARGS => sub {
     croak "Can't specify more than one of (@args) to " . __PACKAGE__ . '->new'
       if $argcount > 1;
 
-    if ( exists $args_r->{datetime} and not( blessed( $args_r->{datetime} ) ) )
+    if ( exists $args_r->{datetime}
+        and not( blessed( $args_r->{datetime} ) ) )
     {
         $args_r->{strptime} = $args_r->{datetime};
     }
@@ -72,18 +73,21 @@ around BUILDARGS => sub {
 };
 
 has datetime_obj => (
-   is => 'ro',
-   isa => 'DateTime',
-   init_arg => 'datetime',
-   handles => [qw(
-   doq doy iso8601 mday min mjd mon sec strftime time time_zone wday week
-week_number week_of_month week_year weekday_of_month ymd add clone datetime day
-day_abbr day_name day_of_month_0 day_of_quarter day_of_week day_of_year dmy
-epoch formatter hms hour is_leap_year mdy minute month month_0 month_abbr
-month_name quarter second set set_day set_formatter set_hour set_locale
-set_minute set_month set_nanosecond set_second set_time_zone set_year subtract
-year ymd
-   )],
+    is       => 'ro',
+    isa      => 'DateTime',
+    init_arg => 'datetime',
+    handles  => [
+        qw(
+          doq doy iso8601 mday min mjd mon sec strftime time time_zone
+          wday week week_number week_of_month week_year weekday_of_month
+          ymd add clone datetime day day_abbr day_name day_of_month_0
+          day_of_quarter day_of_week day_of_year dmy epoch formatter
+          hms hour is_leap_year mdy minute month month_0 month_abbr
+          month_name quarter second set set_day set_formatter
+          set_hour set_locale set_minute set_month set_nanosecond
+          set_second set_time_zone set_year subtract year ymd
+          )
+    ],
 );
 
 1;
