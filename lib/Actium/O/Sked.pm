@@ -796,7 +796,7 @@ sub spaced {
           [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
     }
 
-    say $out jn( @{ tabulate(@place_records) } ), "\n";
+    say $out joinlf( @{ tabulate(@place_records) } ), "\n";
     # extra \n for a blank line to separate places and stops
 
     my @stop_records;
@@ -808,7 +808,7 @@ sub spaced {
         push @stop_records, [ $timesub->( $trip->stoptimes ) ];
     }
 
-    say $out jn( @{ tabulate(@stop_records) } );
+    say $out joinlf( @{ tabulate(@stop_records) } );
 #
 #    my @tripfields = qw<blockid daysexceptions from noteletter pattern runid to
 #      type typevalue vehicledisplay via viadescription>;

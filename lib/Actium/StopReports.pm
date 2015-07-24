@@ -89,7 +89,7 @@ KMLEND
 sub stops2kml {
     my $actiumdb = shift;
 
-    #my %params   = validate(
+    #my %params   = u::validate(
     #    @_,
     #    {
     #        actiumdb => { can => 'all_in_columns_key' },
@@ -252,7 +252,7 @@ sub _kml_stop_description {
     sub _kml_color {
         my $lines_r  = shift;
         my @lines    = @_;
-        my $priority = min( map { _kml_priority( $lines_r, $_ ) } @lines );
+        my $priority = u::min( map { _kml_priority( $lines_r, $_ ) } @lines );
         return $color_of_priority{$priority};
     }
 
@@ -268,7 +268,7 @@ const my @COLUMN_WIDTHS => 6.5, 7.5, 5.5, 47.5, 14;
 
 sub crewlist_xlsx {
 
-    my %params = validate(
+    my %params = u::validate(
         @_,
         {
             actiumdb         => { can  => 'all_in_columns_key' },
@@ -361,7 +361,7 @@ sub crewlist_xlsx {
             my $numstops = scalar @stops;
             foreach my $i ( 1 .. $numstops ) {
                 my $stopid = $stops[ $i - 1 ];
-                my $decals = doe( $stops_r->{$stopid}{p_decals} );
+                my $decals = u::define( $stops_r->{$stopid}{p_decals} );
                 $decals =~ s/-/\x{2011}/g;
 
                 push @output_stops,

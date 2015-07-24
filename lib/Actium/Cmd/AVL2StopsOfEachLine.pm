@@ -73,7 +73,7 @@ sub START {
 
         print $stopsfh "$route\t$numstops\t$numdecals\t";
 
-        my $threshold = ceil( $numdecals * .02 ) * 10;    #
+        my $threshold = u::ceil( $numdecals * .02 ) * 10;    #
              # 20%, rounded up to a multiple of ten
 
         $threshold = 30 if $threshold < 30;

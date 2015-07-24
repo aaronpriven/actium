@@ -62,7 +62,7 @@ sub START {
 
     %oldstoplists = assemble_stoplists( $oldsignup, qw(BSH 399) );
 
-    my @stopids = uniq( sort ( keys %newstoplists, keys %oldstoplists ) );
+    my @stopids = u::uniq( sort ( keys %newstoplists, keys %oldstoplists ) );
 
     foreach my $type (qw<ADDED REMOVED UNCHANGED>) {
         $changes{$type} = {};

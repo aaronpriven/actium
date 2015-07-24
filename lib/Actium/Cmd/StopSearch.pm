@@ -70,7 +70,7 @@ sub _display {
 
     foreach my $fields_r (@rows) {
 
-        if ( not defined reftype($fields_r) ) {
+        if ( not defined u::reftype($fields_r) ) {
             say "Unknown id $fields_r";
             next;
         }

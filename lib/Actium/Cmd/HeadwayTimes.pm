@@ -52,7 +52,7 @@ sub START {
             my @prevtimes = timenum( split( "\t", $prev ) );
             my @times     = timenum( split( "\t", $line ) );
 
-            my $numfields = min( $#prevtimes, $#times );
+            my $numfields = u::min( $#prevtimes, $#times );
 
             my @headways;
 
@@ -73,7 +73,7 @@ sub START {
 
             }
 
-            if ( any {defined} @headways ) {
+            if ( u::any {defined} @headways ) {
                 say jt(@headways);
             }
 

@@ -7,7 +7,6 @@ use Actium::Preamble;
 
 use sort ('stable');
 
-use List::MoreUtils (qw<all each_arrayref>);    ### DEP ###
 use File::Copy;                                 ### DEP ###
 use Array::Transpose;                           ### DEP ###
 use Actium::Util (':all');
@@ -357,7 +356,7 @@ sub sort_rows {
 
   SORTBY:
     for my $i ( 0 .. $#{$transposed} ) {
-        if ( all { our $_; $_ } ( @{ $transposed->[$i] } ) ) {
+        if ( u::all { our $_; $_ } ( @{ $transposed->[$i] } ) ) {
             $sortby = $i;
             last SORTBY;
         }
@@ -377,7 +376,7 @@ sub sort_rows {
         #	      map  { [ get_avg($_->{TIMES}) , $_ ] } @{$sked};
 
         @{$sked} = sort {
-            my $ea = each_arrayref( $a->{TIMES}, $b->{TIMES} );
+            my $ea = u::each_arrayref( $a->{TIMES}, $b->{TIMES} );
             # Establishes an iterator, like "each" over hashes.
             while ( my ( $a_time, $b_time ) = $ea->() ) {
              # so $a_time and $b_time are paired entries of each array, in turn.

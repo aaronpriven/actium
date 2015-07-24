@@ -17,7 +17,7 @@ use Sub::Exporter -setup => { exports => [qw(travelsort)] };
 
 sub travelsort {
 
-    my %params = validate(
+    my %params = u::validate(
         @_,
         {
             stops            => { type => $PV_TYPE{ARRAYREF} },
@@ -53,7 +53,7 @@ sub travelsort {
           if $is_priority_line{$line};
 
         my @usedstops;
-        foreach my $stop ( uniq @{$stops_r} ) {
+        foreach my $stop ( u::uniq @{$stops_r} ) {
             push @usedstops, $stop if $stop_is_used{$stop};
         }
         $used_stops_of_linedir{$linedir} = \@usedstops;

@@ -50,7 +50,7 @@ const my $COLUMNS_SQL => join( ', ', @COLUMNS );
 
 sub make_bags {
 
-    my %params = validate(
+    my %params = u::validate(
         @_,
 
         #        {   signup    => { can => [qw (subfolder retrieve)] },
@@ -395,7 +395,7 @@ sub _final_height {
     my $height = shift;
 
     if ($height) {
-        my $rounded = ceil( $height / $HEIGHT_INTERVAL ) * $HEIGHT_INTERVAL;
+        my $rounded = u::ceil( $height / $HEIGHT_INTERVAL ) * $HEIGHT_INTERVAL;
         $heights{$height}{count}++;
         $heights{$height}{rounded} = $rounded;
         return $rounded;
@@ -599,7 +599,7 @@ sub _note_height {
     my $note = shift;
     return 0 unless $note;
     my $width = _charwidth($note);
-    return 1.2 * ceil( $width / 34 );
+    return 1.2 * u::ceil( $width / 34 );
 
     # 1.2 is approx height of note line. 32 is approximate characters per line.
     # Just guesses...

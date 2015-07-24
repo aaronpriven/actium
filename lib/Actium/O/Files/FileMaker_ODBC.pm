@@ -81,7 +81,7 @@ sub _build_tables {
       = "SELECT TableName from $META_TABLES WHERE TableName = BaseTableName";
 
     my $ary_ref    = $dbh->selectall_arrayref($statement);
-    my @tables     = flatten $ary_ref;
+    my @tables     = u::flatten $ary_ref;
     my %is_a_table = map { $_, 1 } @tables;
 
     return \%is_a_table;
@@ -130,7 +130,7 @@ sub _load_column_cache {
 
     my $query = "SELECT FieldName from $META_FIELDS WHERE TableName = '$table'";
     my $ary_ref = $dbh->selectall_arrayref($query);
-    my @columns = flatten $ary_ref;
+    my @columns = u::flatten $ary_ref;
 
     my %is_a_column = map { $_, 1 } @columns;
     $self->_set_column_cache_of_table( $table, \%is_a_column );
@@ -228,7 +228,7 @@ sub each_columns_in_row_where {
 
     my $self = shift;
 
-    my %params = validate(
+    my %params = u::validate(
         @_,
         {   table   => 1,
             columns => { type => ARRAYREF, required => 1 },
@@ -320,7 +320,7 @@ sub all_in_columns_key {
     if ( ref($firstarg) eq 'HASH' ) {
         $table = $firstarg->{TABLE};
 
-        @columns = flatten( $firstarg->{COLUMNS} );
+        @columns = u::flatten( $firstarg->{COLUMNS} );
 
         $where = $firstarg->{WHERE};
 
@@ -331,7 +331,7 @@ sub all_in_columns_key {
     }
     else {
         $table   = $firstarg;
-        @columns = flatten(@_);
+        @columns = u::flatten(@_);
     }
 
     $self->_ensure_loaded($table);
@@ -339,7 +339,7 @@ sub all_in_columns_key {
 
     my $key = $self->key_of_table($table);
     unshift @columns, $key;
-    @columns = uniq(@columns);
+    @columns = u::uniq(@columns);
 
     my $dbh = $self->dbh;
 
@@ -430,7 +430,7 @@ sub load_tables {
                         "SELECT $index_field from $table")
                 };
 
-                if ( ( uniq @all_indexes ) == @all_indexes ) {
+                if ( ( u::uniq @all_indexes ) == @all_indexes ) {
                     # indexes are all unique
                     $process_dupe = 0;
                     $dupecry->d_no;

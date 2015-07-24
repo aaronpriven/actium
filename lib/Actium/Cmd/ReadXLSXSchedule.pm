@@ -45,9 +45,9 @@ sub _get_trips {
       . qq{ "stopsked" sheet in file $file}
       unless @tp_rows == @stop_rows;
 
-    say jn( @{ tabulate(@tp_rows) } );
+    say u::joinlf( @{ tabulate(@tp_rows) } );
     say $EMPTY_STR;
-    say jn( @{ tabulate(@stop_rows) } );
+    say u::joinlf( @{ tabulate(@stop_rows) } );
 
 }
 
@@ -75,7 +75,7 @@ sub _get_rows {
 
         }
 
-        next unless any { isnotblank($_) } @row;
+        next unless u::any { u::isnotblank($_) } @row;
         # skip blank rows
         push @rows, \@row;
     } ## tidy end: for my $row_idx ( $top ...)
@@ -126,8 +126,8 @@ sub _get_intros {
         my $attribute = $introsheet->get_cell( $row, $col_min )->value;
         my $value     = $introsheet->get_cell( $row, $col_min + 1 )->value;
 
-        my $av = ( isblank($attribute) ? $EMPTY_STR : 'A' )
-          . ( isblank($value) ? $EMPTY_STR : 'V' );
+        my $av = ( u::isblank($attribute) ? $EMPTY_STR : 'A' )
+          . ( u::isblank($value) ? $EMPTY_STR : 'V' );
 
         if ( $av eq 'AV' ) {
             $intros{$attribute} = $value;

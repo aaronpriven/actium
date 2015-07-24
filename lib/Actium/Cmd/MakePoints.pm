@@ -247,7 +247,7 @@ sub START {
     print "\n", scalar keys %skipped_stops,
       " skipped signs because stop file not found.\n";
 
-    my $iterator = natatime( 3, sort { $a <=> $b } keys %skipped_stops );
+    my $iterator = u::natatime( 3, sort { $a <=> $b } keys %skipped_stops );
     while ( my @s = $iterator->() ) {
         print "Sign $s[0]: $skipped_stops{$s[0]}";
         print "\tSign $s[1]: $skipped_stops{$s[1]}" if $s[1];
