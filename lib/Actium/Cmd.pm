@@ -1,11 +1,11 @@
 package Actium::Cmd 0.010;
 
 use Actium::Preamble;
-use Getopt::Long;             ### DEP ###
+use Getopt::Long;    ### DEP ###
 use Actium::O::CmdEnv;
 use Actium::Crier('default_crier');
-use Text::Wrap;               ### DEP ###
-use Term::ReadKey;            ### DEP ###
+use Text::Wrap;       ### DEP ###
+use Term::ReadKey;    ### DEP ###
 
 my $crier;
 
@@ -219,6 +219,9 @@ sub _process_options {
               . 'Best ignored'
         ],
         [ 'quiet!', 'Does not display unnecessary information' ],
+        [   'termcolor!',
+            'May display colors in terminal output.'
+        ],
         [   'progress!',
             'May display dynamic progress indications. '
               . 'On by default. Use -noprogress to turn off',
@@ -228,7 +231,7 @@ sub _process_options {
 
     unshift @option_requests, $module->OPTIONS($env) if $module->can('OPTIONS');
 
-    my (%options , @option_specs, %callback_of, %helpmsg_of );
+    my ( %options, @option_specs, %callback_of, %helpmsg_of );
 
     for my $optionrequest_r (@option_requests) {
         my ( $option_spec, $option_help, $callbackordefault )
@@ -270,6 +273,7 @@ sub _process_options {
     $env->_set_options_r( \%options );
 
     $env->crier->set_maxdepth(0) if $options{'quiet'};
+    $env->crier->use_color if $options{'termcolor'};
     $env->crier->hide_progress unless $options{'progress'};
 
     if ( $options{'_stacktrace'} ) {
