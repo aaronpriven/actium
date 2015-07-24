@@ -95,15 +95,11 @@ sub options_with_old {
 } ## tidy end: sub options_with_old
 
 sub signup {
-    my ( $env, $first_argument, @rest ) = @_;
-
-    my %params;
-    if ( ref($first_argument) eq 'HASH' ) {
-        %params = %{$first_argument};
-    }
-    elsif ( defined($first_argument) ) {
-        %params = ( subfolders => [ $first_argument, @rest ] );
-    }
+    
+    my $env = shift;
+    
+    \my %params = u::positional(\@_ , '@subfolders') ;
+    #\my %params = _process_args(@_);
 
     $params{base}   //= ( $env->option('base')   // $defaults{BASE} );
     $params{signup} //= ( $env->option('signup') // $defaults{SIGNUP} );
@@ -113,21 +109,16 @@ sub signup {
         croak 'No signup specified in ' . $env->subcommand;
     }
 
-    return Actium::O::Folders::Signup->new(%params);
+    return Actium::O::Folders::Signup::->new(%params);
 
 } ## tidy end: sub signup
 
 sub oldsignup {
 
-    my ( $env, $first_argument, @rest ) = @_;
+    my $env = shift;
+    \my %params = u::positional(\@_ , '@subfolders') ;
 
-    my %params;
-    if ( ref($first_argument) eq 'HASH' ) {
-        %params = %{$first_argument};
-    }
-    elsif ( defined($first_argument) ) {
-        %params = ( subfolders => [ $first_argument, @rest ] );
-    }
+    #\my %params = _process_args(@_);
 
     $params{base} //= ( $env->option('oldbase') // $env->option('base')
           // $defaults{OLDBASE} );
@@ -143,9 +134,23 @@ sub oldsignup {
     if ( not defined $params{signup} ) {
         croak 'No old signup specified in ' . $env->subcommand;
     }
-    return Actium::O::Folders::Signup->new(%params);
+    return Actium::O::Folders::Signup::->new(%params);
 
 } ## tidy end: sub oldsignup
+
+#sub _process_args {
+#    my @args = @_;
+#
+#    my %params;
+#    while ( u::reftype( $args[-1] ) eq 'HASH' ) {
+#        my $theseparams = pop @args;
+#        %params = ( %params, %{ $theseparams } );
+#    }
+#    
+#    $params{subfolders} = u::flatten(@args);
+#    return \%params;
+#
+#}
 
 1;
 
