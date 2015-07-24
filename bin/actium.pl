@@ -3,7 +3,7 @@
 # actium.pl - command-line access to Actium system
 
 use FindBin qw($Bin);    ### DEP ###
-use lib ("$Bin/../lib");          ### DEP ###
+use lib ("$Bin/../lib"); ### DEP ###
 
 use Actium::Preamble;
 use Actium::Cmd;
@@ -15,7 +15,8 @@ Actium::Cmd::run(
     commands    => {
 
         adddescriptionf => 'AddDescriptionF',
-comparestops => 'CompareStops',
+        comparestops    => 'CompareStops',
+        compareskeds    => 'CompareSkeds',
         crewlist        => 'CrewList',
         dbexport        => 'ActiumDBExport',
         decalcount      => 'DecalCount',
