@@ -4,25 +4,25 @@
 # legacy stage 4
 
 use 5.012;
-use strict; ### DEP ###
-use warnings; ### DEP ###
+use strict;      ### DEP ###
+use warnings;    ### DEP ###
 
 package Actium::O::Folder 0.010;
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
+use Moose;                        ### DEP ###
+use MooseX::StrictConstructor;    ### DEP ###
 
-use namespace::autoclean; ### DEP ###
+use namespace::autoclean;         ### DEP ###
 
 use Actium::Constants;
 use Actium::Crier(qw/cry last_cry/);
-use Actium::Util('flatten');
-use Carp; ### DEP ###
-use English '-no_match_vars'; ### DEP ###
-use File::Spec; ### DEP ###
-use File::Glob ('bsd_glob'); ### DEP ###
+use Actium::Util(qw/flatten filename positional/);
+use Carp;                         ### DEP ###
+use English '-no_match_vars';     ### DEP ###
+use File::Spec;                   ### DEP ###
+use File::Glob ('bsd_glob');      ### DEP ###
 
-use Params::Validate qw(:all); ### DEP ###
+use Params::Validate qw(:all);    ### DEP ###
 
 use overload (
     q[""]    => '_stringify',
@@ -140,7 +140,7 @@ around BUILDARGS => sub {
     if ( not File::Spec->file_name_is_absolute($temppath) ) {
 
         # is relative
-        require Cwd; ### DEP ###
+        require Cwd;    ### DEP ###
         unshift @folders, Cwd::getcwd();
     }
 
@@ -177,7 +177,7 @@ sub split_folderlist {
 #    $folder_r = [ map { File::Spec->splitdir( File::Spec->canonpath($_) ) } @{$folder_r} ];
 #    return $folder_r;
 
-}    ## tidy end: sub split_folderlist
+} ## tidy end: sub split_folderlist
 
 sub BUILD {
     my $self = shift;
@@ -200,7 +200,7 @@ sub BUILD {
 
     return;
 
-}    ## tidy end: sub BUILD
+} ## tidy end: sub BUILD
 
 #######################
 ### CLONING
@@ -259,47 +259,38 @@ to set up the new object properly, so here we are.
 
 =cut
 
-sub subfolderlist_reader   { '_folderlist_r' }
-sub subfolderlist_init_arg { 'folderlist' }
+sub subfolderlist_reader   {'_folderlist_r'}
+sub subfolderlist_init_arg {'folderlist'}
 
 sub subfolder {
     my $self = shift;
-    my @args = @_;
 
     my $init_arg = $self->subfolderlist_init_arg;
     my $reader   = $self->subfolderlist_reader;
 
-    my ( $params_r, @subfolders );
+    my $params_r = positional( \@_, '@' . $init_arg );
 
-    if ( ref( $args[0] ) eq 'HASH' ) {
-        $params_r   = { %{ $args[0] } };           # new ref
-        @subfolders = $params_r->{$init_arg};
-        delete $params_r->{$init_arg};
-    }
-    else {
-        $params_r   = {};
-        @subfolders = @args;
-    }
+    my @subfolders = @{ $params_r->{$init_arg} };
 
     croak 'No folders passed to method "subfolder"'
       unless @subfolders;
-
-    my $original_params_r = $self->original_parameters;
 
     $params_r->{$init_arg} = [ $self->$reader, @subfolders ];
 
     # constructor will flatten the arrayrefs into an array
 
+    my $original_params_r = $self->original_parameters;
     delete $original_params_r->{$init_arg};
 
-    while ( my ( $key, $value ) = each %{$original_params_r} ) {
+    foreach my $key ( keys %{$original_params_r} ) {
+        my $value = $original_params_r->{$key};
         $params_r->{$key} = $value unless exists $params_r->{$key};
     }
 
     my $class = blessed($self);
     return $class->new($params_r);
 
-}    ## tidy end: sub subfolder
+} ## tidy end: sub subfolder
 
 sub new_from_file {
 
@@ -309,7 +300,7 @@ sub new_from_file {
     my $filespec = shift;
     $filespec = File::Spec->rel2abs($filespec);
     my ( $volume, $path, $filename ) = File::Spec->splitpath($filespec);
-    
+
     my $folder = $class->new( { folderlist => $path, volume => $volume } );
     return ( $folder, $filename );
 
@@ -330,11 +321,11 @@ sub make_filespec {
 }
 
 sub glob_files {
-    my $self    = shift;
-    my $pattern = shift || q{*};
-    my $path = $self->path;
-    my $fullpattern = File::Spec->catfile( $path, $pattern ) ;
-    my @results = bsd_glob( $fullpattern  );
+    my $self        = shift;
+    my $pattern     = shift || q{*};
+    my $path        = $self->path;
+    my $fullpattern = File::Spec->catfile( $path, $pattern );
+    my @results     = bsd_glob($fullpattern);
 
     return @results unless File::Glob::GLOB_ERROR;
 
@@ -347,13 +338,26 @@ sub glob_plain_files {
     return grep { -f $_ } $self->glob_files(@_);
 }
 
+sub glob_files_nopath {
+    my $self = shift;
+    my @files = $self->glob_files (@_);
+    return map { filename($_) } @files;
+}
+
+sub glob_plain_files_nopath {
+    my $self = shift;
+    my @files = $self->glob_plain_files (@_);
+    return map { filename($_) } @files;
+}
+    
+
 sub children {
 
     # make subfolders
     my $self = shift;
     my $path = $self->path;
 
-    my @folderpaths = grep { -d } $self->glob_files(@_);
+    my @folderpaths = grep {-d} $self->glob_files(@_);
     my @foldernames = map { File::Spec->abs2rel( $_, $path ) } @folderpaths;
 
     # removes $path from each @foldername. If the path is /a and the
@@ -375,7 +379,7 @@ sub slurp_write {
 
     my $cry = cry("Writing $filename...");
 
-    require File::Slurp::Tiny; ### DEP ###
+    require File::Slurp::Tiny;    ### DEP ###
     File::Slurp::Tiny::write_file( $filespec, $string,
         binmode => ':encoding(UTF-8)' );
 
@@ -393,18 +397,18 @@ sub json_retrieve {
 
     my $cry = cry("Retrieving $filename");
 
-    require File::Slurp::Tiny; ### DEP ###
-    my $json_text =
-      File::Slurp::Tiny::read_file( $filespec, binmode => ':encoding(UTF-8)' );
+    require File::Slurp::Tiny;    ### DEP ###
+    my $json_text = File::Slurp::Tiny::read_file( $filespec,
+        binmode => ':encoding(UTF-8)' );
 
-    require JSON; ### DEP ###
+    require JSON;                 ### DEP ###
     my $data_r = JSON::from_json($json_text);
 
     $cry->done;
 
     return $data_r;
 
-}    ## tidy end: sub json_retrieve
+} ## tidy end: sub json_retrieve
 
 sub json_store {
 
@@ -415,10 +419,10 @@ sub json_store {
 
     my $cry = cry("Storing $filename...");
 
-    require JSON; ### DEP ###
+    require JSON;    ### DEP ###
     my $json_text = JSON::to_json($data_r);
 
-    require File::Slurp::Tiny; ### DEP ###
+    require File::Slurp::Tiny;    ### DEP ###
     File::Slurp::Tiny::write_file( $filespec, $json_text,
         binmode => ':encoding(UTF-8)' );
 
@@ -435,10 +439,10 @@ sub json_store_pretty {
 
     my $cry = cry("Storing $filename...");
 
-    require JSON; ### DEP ###
+    require JSON;    ### DEP ###
     my $json_text = JSON::to_json( $data_r, { pretty => 1, canonical => 1 } );
 
-    require File::Slurp::Tiny; ### DEP ###
+    require File::Slurp::Tiny;    ### DEP ###
     File::Slurp::Tiny::write_file( $filespec, $json_text,
         binmode => ':encoding(UTF-8)' );
 
@@ -454,7 +458,7 @@ sub retrieve {
     croak "$filespec does not exist"
       unless -e $filespec;
 
-    my $cry=cry("Retrieving $filename");
+    my $cry = cry("Retrieving $filename");
 
     require Storable;
     my $data_r = Storable::retrieve($filespec);
@@ -467,7 +471,7 @@ sub retrieve {
     $cry->done;
 
     return $data_r;
-}    ## tidy end: sub retrieve
+} ## tidy end: sub retrieve
 
 sub store {
     my $self     = shift;
@@ -475,7 +479,7 @@ sub store {
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
 
-    my $cry = cry ("Storing $filename...");
+    my $cry = cry("Storing $filename...");
 
     require Storable;
     my $result = Storable::nstore( $data_r, $filespec );
@@ -521,8 +525,7 @@ sub load_sqlite {
     my $database_class    = shift;
     my %params            = validate(
         @_,
-        {
-            subfolder => 0,
+        {   subfolder => 0,
             db_folder => 0,
         }
     );
@@ -559,7 +562,7 @@ sub load_sqlite {
 
     return $database_class->new(%params);
 
-}    ## tidy end: sub load_sqlite
+} ## tidy end: sub load_sqlite
 
 sub load_hasi {
     my $self = shift;
@@ -574,8 +577,7 @@ sub write_files_with_method {
 
     my %params = validate(
         @_,
-        {
-            OBJECTS   => { type => ARRAYREF },
+        {   OBJECTS   => { type => ARRAYREF },
             METHOD    => 1,
             EXTENSION => 0,
             SUBFOLDER => 0,
@@ -613,7 +615,7 @@ sub write_files_with_method {
         my $out;
 
         my $id = $obj->id;
-        $cry->over($id . $SPACE);
+        $cry->over( $id . $SPACE );
 
         $seen_id{$id}++;
 
@@ -622,19 +624,18 @@ sub write_files_with_method {
         my $filename = $id . $extension;
 
         $folder->write_file_with_method(
-            {
-                CRY => $cry,
+            {   CRY      => $cry,
                 OBJECT   => $obj,
                 METHOD   => $method,
                 FILENAME => $filename,
             }
         );
 
-    }    ## tidy end: foreach my $obj (@objects)
+    } ## tidy end: foreach my $obj (@objects)
 
     $cry->done;
 
-}    ## tidy end: sub write_files_with_method
+} ## tidy end: sub write_files_with_method
 
 sub write_file_with_method {
     my $self     = shift;
@@ -642,8 +643,7 @@ sub write_file_with_method {
     my $obj      = $params{OBJECT};
     my $filename = $params{FILENAME};
     my $method   = $params{METHOD};
-    my $cry = $params{CRY} //
-       cry("Writing to $filename via $method");
+    my $cry      = $params{CRY} // cry("Writing to $filename via $method");
 
     my $out;
 
@@ -666,12 +666,12 @@ sub write_file_with_method {
         $cry->d_error;
         croak "Can't close $file for writing: $OS_ERROR";
     }
-    
-    if (not $params{CRY}) {
+
+    if ( not $params{CRY} ) {
         $cry->done;
     }
 
-}    ## tidy end: sub write_file_with_method
+} ## tidy end: sub write_file_with_method
 
 sub write_files_from_hash {
 
@@ -704,24 +704,24 @@ sub write_files_from_hash {
             die "Can't close $file for writing: $OS_ERROR";
         }
 
-    }    ## tidy end: foreach my $key ( sort keys...)
+    }
 
     $cry->done;
 
-}    ## tidy end: sub write_files_from_hash
+} ## tidy end: sub write_files_from_hash
 
 sub load_sheet {
 
     my $self     = shift;
     my $filename = shift;
-    
+
     my $filespec = $self->make_filespec($filename);
-    
+
     require Actium::O::2DArray;
     my $sheet = Actium::O::2DArray::->new_from_file($filespec);
-    
+
     return $sheet;
-    
+
 }
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
