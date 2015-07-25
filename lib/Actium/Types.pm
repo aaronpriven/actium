@@ -10,6 +10,8 @@ package Actium::Types 0.010;
 
 use 5.016;    # turns on features
 
+use Const::Fast;
+
 ## no critic (ProhibitMagicNumbers)
 
 use MooseX::Types -declare => [
@@ -32,7 +34,7 @@ use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
 
 use Actium::Time;
 use Actium::Constants;
-use Unicode::GCString; ### DEP ###
+use Unicode::GCString;    ### DEP ###
 
 ##################
 ### SCHEDULE DAYS
@@ -107,7 +109,14 @@ coerce ARCrierBullets, from CrierBullet, via { [$_] };
 ######################
 ## SCHEDULE TIMES
 
-subtype TimeNum, as Maybe [Int];
+const my $MINS_IN_12HRS => ( 12 * 60 );
+const my $NOON_YESTERDAY    => -$MINS_IN_12HRS;
+const my $NOON_TOMORROW     => 3 * $MINS_IN_12HRS;
+
+#subtype TimeNum, as Maybe [Int];
+subtype TimeNum, as Maybe [Int],
+  where { ( $_ >= $NOON_YESTERDAY ) && ( $_ <= $NOON_TOMORROW ) },
+  message {"Times must be between noon yesterday and noon tomorrow"};
 
 subtype ArrayRefOrTimeNum, as TimeNum | ArrayRef [TimeNum];
 
