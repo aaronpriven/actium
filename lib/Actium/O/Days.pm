@@ -1,30 +1,16 @@
-# Actium/O/Days.pm
-
+package Actium::O::Days 0.010;
 # Object representing the scheduled days (of a trip, or set of trips)
 
-# legacy stage 4
+use 5.022;
+use warnings;    ### DEP ###
 
-use 5.012;
-use warnings; ### DEP ###
+use Actium::Moose;
 
-package Actium::O::Days 0.010;
-
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
-use MooseX::Storage; ### DEP ###
+use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
-
-use namespace::autoclean; ### DEP ###
+with 'MooseX::Role::Flyweight';
 
 use Actium::Types qw<DayCode SchoolDayCode>;
-use Actium::Util qw<positional_around joinseries in>;
-use Actium::Constants;
-
-use Carp;
-use Const::Fast; ### DEP ###
-use List::MoreUtils (qw<mesh uniq>); ### DEP ###
-
-use Data::Dumper; ### DEP ###
 
 ###################################
 #### ENGLISH NAMES FOR DAYS CONSTANTS
@@ -46,7 +32,7 @@ const my @SEVENDAYABBREVS => map { substr( $_, 0, 3 ) } @SEVENDAYNAMES;
 ###################################
 
 around BUILDARGS => sub {
-    return positional_around( \@_, 'daycode', 'schooldaycode' );
+    return u::positional_around( \@_, 'daycode', 'schooldaycode' );
 };
 
 has 'daycode' => (
@@ -84,11 +70,11 @@ has 'schooldaycode' => (
 );
 # D = school days only, H = school holidays only, B = both
 
-sub new_from_string {
+sub instance_from_string {
     my $class  = shift;
     my $string = shift;
     my ( $daycode, $schooldaycode ) = split( /-/, $string );
-    return $class->new( $daycode, $schooldaycode );
+    return $class->instance( $daycode, $schooldaycode );
 }
 
 has 'as_string' => (
@@ -129,15 +115,15 @@ sub _build_as_shortcode {
     my $shortcode = $daycode;
 
     for ($daycode) {
-        if ($_ eq '1234567H') {
+        if ( $_ eq '1234567H' ) {
             $shortcode = 'DA';
             next;
         }
-        if ($_ eq '12345') {
+        if ( $_ eq '12345' ) {
             $shortcode = 'WD';
             next;
         }
-        if ($_ eq '67H') {
+        if ( $_ eq '67H' ) {
             $shortcode = 'WE';
             next;
         }
@@ -183,7 +169,7 @@ sub for_prehistoric {
 
     my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
 
-    return 'WD' unless in($transitinfo , @valid_prehistorics);
+    return 'WD' unless in( $transitinfo, @valid_prehistorics );
     return $transitinfo;
 
 }
@@ -210,7 +196,7 @@ sub _is_SH {
 
 const my @ADJECTIVES => ( @SEVENDAYNAMES, qw(Holiday Weekday Weekend Daily),
     "Daily except holidays" );
-const my %ADJECTIVE_OF => mesh( @DAYLETTERS, @ADJECTIVES );
+const my %ADJECTIVE_OF => u::mesh( @DAYLETTERS, @ADJECTIVES );
 const my %ADJECTIVE_SCHOOL_OF => (
     B => $EMPTY_STR,
     D => ' (except school holidays)',
@@ -237,7 +223,7 @@ sub as_adjectives {
     my @as_adjectives = map { $ADJECTIVE_OF{$_} } split( //, $daycode );
 
     my $results
-      = joinseries(@as_adjectives) . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
+      = u::joinseries(@as_adjectives) . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
 
     return $cache{$as_string} = $results;
 
@@ -248,7 +234,7 @@ const my @PLURALS => (
     'Weekends', 'Every day', "Every day except holidays"
 );
 
-const my %PLURAL_OF => mesh( @DAYLETTERS, @PLURALS );
+const my %PLURAL_OF => u::mesh( @DAYLETTERS, @PLURALS );
 const my %PLURAL_SCHOOL_OF => (
     B => $EMPTY_STR,
     D => ' (School days only)',
@@ -268,12 +254,12 @@ sub as_plurals {
     $seriescode =~ s/1234567H/D/;    # every day
     $seriescode =~ s/1234567/X/;     # every day except holidays
     $seriescode =~ s/12345/W/;       # weekdays
-         # $seriescode =~ s/67/E/;  # weekends intentionally omitted
+        # $seriescode =~ s/67/E/;  # weekends intentionally omitted
 
     my $schooldaycode = $self->schooldaycode;
 
     my @as_plurals = map { $PLURAL_OF{$_} } split( //, $seriescode );
-    my $results = joinseries(@as_plurals);
+    my $results = u::joinseries(@as_plurals);
 
     if ( $PLURAL_SCHOOL_OF{$schooldaycode} ) {
         $results .= $PLURAL_SCHOOL_OF{$schooldaycode};
@@ -288,7 +274,7 @@ sub as_plurals {
 const my @ABBREVS =>
   ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
 
-const my %ABBREV_OF => mesh( @DAYLETTERS, @PLURALS );
+const my %ABBREV_OF => u::mesh( @DAYLETTERS, @PLURALS );
 const my %ABBREV_SCHOOL_OF => (
     B => $EMPTY_STR,
     D => ' (Sch days)',
@@ -307,7 +293,7 @@ sub as_abbrevs {
     $daycode =~ s/1234567H/D/;    # every day
     $daycode =~ s/1234567/X/;     # every day except holidays
     $daycode =~ s/12345/W/;       # weekdays
-         # $daycode =~ s/67/E/;        # weekends intentionally omitted
+        # $daycode =~ s/67/E/;        # weekends intentionally omitted
 
     my $schooldaycode = $self->schooldaycode;
 
@@ -323,47 +309,53 @@ sub as_abbrevs {
 
 } ## tidy end: sub as_abbrevs
 
-sub union {
-    # take multiple day objects and return the union of them
-    # e.g., take one representing Saturday and one representing
-    # Sunday and turn it into one representing both Saturday and Sunday
+{
+    no warnings 'redefine';
+    # Otherwise it conflicts with Moose::Util::TypeConstraints::union()
 
-    my $class = shift;
-    my @objs  = @_;
+    sub union {
+        # take multiple day objects and return the union of them
+        # e.g., take one representing Saturday and one representing
+        # Sunday and turn it into one representing both Saturday and Sunday
 
-    my $union_obj           = shift @objs;
-    my $union_daycode       = $union_obj->daycode;
-    my $union_schooldaycode = $union_obj->schooldaycode;
+        my $class = shift;
+        my @objs  = @_;
 
-    foreach my $obj (@objs) {
+        my $union_obj           = shift @objs;
+        my $union_daycode       = $union_obj->daycode;
+        my $union_schooldaycode = $union_obj->schooldaycode;
 
-        my $daycode       = $obj->daycode;
-        my $schooldaycode = $obj->schooldaycode;
+        foreach my $obj (@objs) {
 
-        next
-          if $daycode eq $union_daycode
-          and $schooldaycode eq $union_schooldaycode;
+            my $daycode       = $obj->daycode;
+            my $schooldaycode = $obj->schooldaycode;
 
-        if ( $schooldaycode ne $union_schooldaycode ) {
-            $union_schooldaycode = 'B';
-        }
+            next
+              if $daycode eq $union_daycode
+              and $schooldaycode eq $union_schooldaycode;
 
-        if ( $daycode ne $union_daycode ) {
+            if ( $schooldaycode ne $union_schooldaycode ) {
+                $union_schooldaycode = 'B';
+            }
 
-            $union_daycode = join( $EMPTY_STR,
-                ( uniq sort ( split //, $union_daycode . $daycode ) ) );
+            if ( $daycode ne $union_daycode ) {
 
-        }
+                $union_daycode = join( $EMPTY_STR,
+                    ( u::uniq sort ( split //, $union_daycode . $daycode ) ) );
 
-        $union_obj = $class->new( $union_daycode, $union_schooldaycode );
+            }
 
-    } ## tidy end: foreach my $obj (@objs)
+            $union_obj
+              = $class->instance( $union_daycode, $union_schooldaycode );
 
-    return $union_obj;
+        } ## tidy end: foreach my $obj (@objs)
 
-} ## tidy end: sub union
+        return $union_obj;
 
-__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
+    } ## tidy end: sub union
+}
+
+u::immut();
 
 1;
 
@@ -375,13 +367,13 @@ Actium::O::Days - Object for holding scheduled days
 
 =head1 VERSION
 
-This documentation refers to version 0.001
+This documentation refers to version 0.010
 
 =head1 SYNOPSIS
 
  use Actium::O::Days;
  
- my $days = Actium::O::Days->new ('135');
+ my $days = Actium::O::Days->instance ('135');
  
  say $days->as_plurals; # "Mondays, Wednesdays, and Fridays"
  say $days->as_adjectives; # "Monday, Wednesday, and Friday"
@@ -398,22 +390,26 @@ or Sundays-and-Holidays.  However, there are lots of exceptions.
 Some trips run only school days, while others run only school holidays. 
 Some trips run only a few weekdays (e.g., Mondays, Wednesdays, and Fridays).
 
+This uses "flyweight" objects, meaning that it returns the same object
+every time you pass particular arguments to construct it.  These objects
+are immutable.
+
 =head1 CLASS METHODS
 
 =over
 
-=item B<< Actium::O::Days->new(I<daycode> , I<schooldaycode>) >>
+=item B<< Actium::O::Days->instance(I<daycode> , I<schooldaycode>) >>
 
-The object is constructed using "Actium::O::Days->new".  
+The object is constructed using "Actium::O::Days->instance".  
 
-It accepts a day specification 
-as a string, containing any or all of the numbers 1 through 7 and optionally H.
-If a 1 is present, it operates on Mondays; if 2, it operates on Tuesdays;
-and so on through 7 for Sundays.  (7 is used instead of 0 for two reasons:
-because Hastus provides it in this way, and because 0 is false in perl and it's
-convenient to allow simple truth tests.)  The H, if present, is used to
-indicate holidays. However, at this time the system will add an H to any 7
-specified.
+The ->instance method accepts a day specification as a string,
+containing any or all of the numbers 1 through 7 and optionally H.
+If a 1 is present, it operates on Mondays; if 2, it operates on
+Tuesdays; and so on through 7 for Sundays.  (7 is used instead of
+0 for two reasons: because Hastus provides it in this way, and
+because 0 is false in perl and it's convenient to allow simple truth
+tests.)  The H, if present, is used to indicate holidays. However,
+at this time the system will add an H to any 7 specified.
 
 As an alternative, the two-letter codes derived from those used by the old 
 www.transitinfo.org web site may be specified. See 
@@ -427,7 +423,15 @@ whether school normally operates on that day -- weekend trips will
 still have "B" as the school day flag, unless there is a situation where
 some school service is operated on a Saturday.)
 
-=item B<< Actium::O::Days->new_from_string (I<string>) >>
+=item B<< Actium::O::Days->new(I<daycode> , I<schooldaycode>) >>
+
+B<< Do not use this method. >>
+
+This method is used internally by Actium::O::Days to create a new object and
+insert it into the cache used by instance(). There should never be a reason
+to create more than one method with the same arguments.
+
+=item B<< Actium::O::Days->instance_from_string (I<string>) >>
 
 This is an alternative constructor. It uses a single string, rather than
 the separate daycode and schooldaycode, to construct an object and return it.
@@ -475,7 +479,7 @@ perl's cmp operator to be in order.
 =item B<< $obj->as_string >>
 
 Returns a version of the day code / schoolday code that can be used to create
-a new object using B<new_from_string>.
+a new object using B<instance_from_string>.
 
 =item B<< $obj->as_transitinfo >>
 
@@ -550,21 +554,7 @@ a Saturday rather than Sunday schedule on holidays.
 
 =over
 
-=item Perl 5.012 and the standard distribution.
-
-=item List::MoreUtils
-
-=item Moose
-
-=item MooseX::StrictConstructor
-
-=item Const::Fast
-
-=item Actium::Constants
-
-=item Actium::Types
-
-=item Actium::Util
+=item Actium::Moose
 
 =back
 

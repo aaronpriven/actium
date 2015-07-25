@@ -173,7 +173,7 @@ sub _make_days_obj {
       : $trp_event eq 'SH' ? 'H'
       :                      'B';
 
-    return Actium::O::Days->new( $day_digits, $schooldaycode );
+    return Actium::O::Days->instance( $day_digits, $schooldaycode );
 }
 
 sub _make_trip_objs {

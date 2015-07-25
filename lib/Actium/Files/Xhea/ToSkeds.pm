@@ -461,7 +461,7 @@ sub _make_skeds {
             stopid_r    => \@stops,
             stopplace_r => \@stopplaces,
             direction   => Actium::O::Dir->new($dir),
-            days        => Actium::O::Days->new($days),
+            days        => Actium::O::Days->instance($days),
             trip_r      => $trips_of_skedid_r->{$skedid},
         };
 
@@ -605,7 +605,7 @@ sub _make_days_obj {
       : $trp_event eq 'SH' ? 'H'
       :                      'B';
 
-    return Actium::O::Days->new( $day_digits, $schooldaycode );
+    return Actium::O::Days->instance( $day_digits, $schooldaycode );
 }
 
 sub _make_trip_objs {

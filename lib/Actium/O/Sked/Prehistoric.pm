@@ -229,26 +229,26 @@ sub _new_from_prehistoric {
     if ( @daysexceptions == 1 and $linegroup !~ /\A 6 \d \d \z/sx ) {
         for ( $daysexceptions[0] ) {
             if ( $_ eq 'SD' ) {
-                $days = Actium::O::Days->new( $days, 'D' );
+                $days = Actium::O::Days->instance( $days, 'D' );
                 next;
             }
             if ( $_ eq 'SH' ) {
-                $days = Actium::O::Days->new( $days, 'H' );
+                $days = Actium::O::Days->instance( $days, 'H' );
                 next;
             }
             if ( exists $DAYS_FROM_TRANSITINFO{$_} ) {
-                $days = Actium::O::Days->new( $DAYS_FROM_TRANSITINFO{$_} );
+                $days = Actium::O::Days->instance( $DAYS_FROM_TRANSITINFO{$_} );
                 next;
             }
-            $days = Actium::O::Days->new($days);
+            $days = Actium::O::Days->instance($days);
         }
     }
     else {
         if ( $linegroup =~ /\A 6 \d \d \z/sx ) {
-            $days = Actium::O::Days->new( $days, 'D' );
+            $days = Actium::O::Days->instance( $days, 'D' );
         }
         else {
-            $days = Actium::O::Days->new($days);
+            $days = Actium::O::Days->instance($days);
         }
     }
 
