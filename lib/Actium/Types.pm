@@ -87,8 +87,8 @@ subtype ActiumDir, as class_type('Actium::O::Dir');
 
 coerce( ActiumDir,
     from HastusDirCode,
-    via               { Actium::O::Dir->new( to_DirCode($_) ) },
-    from DirCode, via { Actium::O::Dir->new($_) },
+    via               { Actium::O::Dir->instance( to_DirCode($_) ) },
+    from DirCode, via { Actium::O::Dir->instance($_) },
 );
 
 ######################

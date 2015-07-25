@@ -138,7 +138,7 @@ sub START {
 
         } ## tidy end: foreach my $dir (@dirs)
 
-        my @dir_objs  = map { Actium::O::Dir->new($_) } @dirs;
+        my @dir_objs  = map { Actium::O::Dir->instance($_) } @dirs;
         my @dir_bound = map { $_->as_bound } @dir_objs;
 
         # make dummy stop list if there's only one direction
