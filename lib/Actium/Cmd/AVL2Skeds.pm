@@ -20,7 +20,6 @@ sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
         [ 'rawonly!', 'Only create "rawskeds" and not "skeds".' ],
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
         Actium::Cmd::Config::Signup::options($env)
     );
 }
@@ -780,6 +779,10 @@ sub copy_exceptions {
     } ## tidy end: foreach my $file (@skeds)
 
 } ## tidy end: sub copy_exceptions
+
+1;
+
+__END__
 
 =head1 NAME
 
