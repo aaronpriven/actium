@@ -15,6 +15,7 @@ Actium::Cmd::run(
     commands    => {
 
         adddescriptionf => 'AddDescriptionF',
+        avl2skeds       => 'AVL2Skeds',
         comparestops    => 'CompareStops',
         compareskeds    => 'CompareSkeds',
         crewlist        => 'CrewList',
