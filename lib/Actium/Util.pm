@@ -46,6 +46,7 @@ use Sub::Exporter -setup => {
           halves
           flatten             hashref
           dumpstr
+          immut
           u_wrap              u_columns
           u_trim_to_columns   u_pad
           >
@@ -653,6 +654,11 @@ sub u_trim_to_columns {
 
 }
 
+sub immut {
+    my $package = caller;
+    $package->meta->make_immutable;
+}
+
 1;
 
 __END__
@@ -869,6 +875,17 @@ The following would be valid:
     
 Note that no change is made to any named arguments.
 
+
+=item B<< immut() >>
+
+A function that makes a Moose class immutable. It is recommended that Moose
+classes be made immutable once they are defined because because 
+they are much faster that way. Normally one does this by putting
+
+ __PACKAGE__->meta->make_immutable
+
+at the end of the class. This function allows replacement of that unwieldy 
+code with something that's easier to type.
     
 =back
 

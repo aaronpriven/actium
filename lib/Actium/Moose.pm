@@ -1,6 +1,6 @@
 # Actium::Moose
 
-# The preamble to Moose Actium perl modules 
+# The preamble to Moose Actium perl modules
 # Imports things that are common to (many) modules.
 # inspired by
 # http://blogs.perl.org/users/ovid/2013/09/building-your-own-moose.html
@@ -11,18 +11,18 @@ use 5.016;
 
 package Actium::Moose 0.010;
 
-use Moose(); ### DEP ###
-use MooseX::StrictConstructor(); ### DEP ###
-use MooseX::SemiAffordanceAccessor(); ### DEP ###
-use MooseX::MarkAsMethods(); ### DEP ###
-use Moose::Util::TypeConstraints(); ### DEP ###
-use Actium::Preamble();
-#use Actium::Types; 
+use Moose();                             ### DEP ###
+use MooseX::StrictConstructor();         ### DEP ###
+use MooseX::SemiAffordanceAccessor();    ### DEP ###
+use MooseX::MarkAsMethods();             ### DEP ###
+use Moose::Util::TypeConstraints();      ### DEP ###
+#use Actium::Preamble();
+#use Actium::Types;
 # not included because not useful without importing specific types
-use Import::Into; ### DEP ###
+use Import::Into;    ### DEP ###
 
 use Moose::Exporter; ### DEP ###
-Moose::Exporter->setup_import_methods( also => ['Moose'] ); 
+Moose::Exporter->setup_import_methods( also => ['Moose'] );
 
 sub init_meta {
     my $class     = shift;
@@ -30,8 +30,8 @@ sub init_meta {
     my $for_class = $params{for_class};
     Moose->init_meta(@_);
     Actium::Preamble->import::into($for_class);
-#    Actium::Types->import::into($for_class);
-    MooseX::MarkAsMethods->import( {into => $for_class } , autoclean => 1);
+    #    Actium::Types->import::into($for_class);
+    MooseX::MarkAsMethods->import( { into => $for_class }, autoclean => 1 );
     MooseX::StrictConstructor->import( { into => $for_class } );
     MooseX::SemiAffordanceAccessor->import( { into => $for_class } );
     Moose::Util::TypeConstraints->import( { into => $for_class } );
