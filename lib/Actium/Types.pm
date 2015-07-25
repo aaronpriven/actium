@@ -62,9 +62,9 @@ coerce DaySpec, from DayCode, via { [ $_, 'B' ] },
 subtype ActiumDays, as class_type('Actium::O::Days');
 
 coerce ActiumDays,
-  from DaySpec,         via { Actium::O::Days->new($_) },
-  from DayCode,         via { Actium::O::Days->new( to_DaySpec($_) ) },
-  from TransitInfoDays, via { Actium::O::Days->new( to_DaySpec($_) ) },
+  from DaySpec,         via { Actium::O::Days->instance($_) },
+  from DayCode,         via { Actium::O::Days->instance( to_DaySpec($_) ) },
+  from TransitInfoDays, via { Actium::O::Days->instance( to_DaySpec($_) ) },
   ;
 
 #########################

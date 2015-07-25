@@ -470,7 +470,7 @@ sub _make_skeds {
             stopid_r    => \@stops,
             stopplace_r => \@stopplaces,
             direction   => Actium::O::Dir->new($dir),
-            days        => Actium::O::Days->new($days),
+            days        => Actium::O::Days->instance($days),
             trip_r      => $trips_of_skedid_r->{$skedid},
         };
 
