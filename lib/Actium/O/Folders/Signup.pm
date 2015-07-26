@@ -6,26 +6,26 @@
 package Actium::O::Folders::Signup 0.010;
 
 use 5.012;
-use warnings; ### DEP ###
+use warnings;    ### DEP ###
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
+use Moose;                        ### DEP ###
+use MooseX::StrictConstructor;    ### DEP ###
 
-use namespace::autoclean; ### DEP ###
+use namespace::autoclean;         ### DEP ###
 
 use Actium::Constants;
 
-use Carp; ### DEP ###
-use File::Spec; ### DEP ###
-use Const::Fast; ### DEP ###
+use Carp;                         ### DEP ###
+use File::Spec;                   ### DEP ###
+use Const::Fast;                  ### DEP ###
 
 const my $base_class => 'Actium::O::Folder';
 extends $base_class;
 
 around BUILDARGS => sub {
-    my $orig           = shift;
-    my $class          = shift;
-    
+    my $orig  = shift;
+    my $class = shift;
+
     my $first_argument = shift;
     my @rest           = @_;
 
@@ -36,21 +36,21 @@ around BUILDARGS => sub {
         $params_r = $first_argument;
     }
     else {
-        $params_r = {$first_argument, @rest};
+        $params_r = { $first_argument, @rest };
     }
 
     # build folderlist argument from base, signup, and subfolders
 
     my ( $base, $signup );
 
-    if ( exists $params_r->{base} ) {
+    if ( exists $params_r->{base} and defined $params_r->{base} ) {
         $base = $params_r->{base};
     }
     else {
         croak "No base specified to " . __PACKAGE__;
     }
 
-    if ( exists $params_r->{signup} ) {
+    if ( exists $params_r->{signup} and defined $params_r->{signup} ) {
         $signup = $params_r->{signup};
     }
     else {
@@ -95,8 +95,8 @@ around load_sqlite => sub {
 };
 
 has cache => (
-    is      => 'ro',
-    isa     => 'Maybe[Str]',
+    is  => 'ro',
+    isa => 'Maybe[Str]',
 );
 
 has subfolderlist_r => (
@@ -159,8 +159,8 @@ sub base_obj {
     my $self = shift;
 
     return $base_class->new(
-        {   folderlist   => $self->base,
-            volume => $self->volume,
+        {   folderlist => $self->base,
+            volume     => $self->volume,
         }
     );
 
@@ -168,7 +168,7 @@ sub base_obj {
 
 1;
 
-__PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
+__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 __END__
 
