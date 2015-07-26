@@ -274,7 +274,7 @@ Run the program
 
     actium.pl avl2patdest –s z00
 
-It will create the file Actium/db/z00/nextbus-destinations.txt. Email this file to Nextbus (presumably to rchun@nextbus.com).
+It will create the file Actium/db/z00/nextbus-destinations.txt. Email this file to Nextbus.
 
 ## 21. Get zip codes for new stops
 

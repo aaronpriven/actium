@@ -177,7 +177,7 @@ sub _new_from_prehistoric {
 
     $_ = <$skedsfh>;
     trim;
-
+    
     my @place9s;
     ( undef, undef, undef, undef, @place9s ) = split(/\t/);
 
