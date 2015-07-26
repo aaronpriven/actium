@@ -14,7 +14,9 @@ in the future. Including myself.
 The program newsignup is intended to encapsulate as much as possible
 of the routine work of creating a new signup.
 
-    cd /Volumes/Bireme/Actium/db –s z00 –x Z00.ZIP
+````Shell
+cd /Volumes/Bireme/Actium/db –s z00 –x Z00.ZIP
+````
 
 The -s argument should be the name of the signup, which will be
 created in the base directory (Actium/db).
@@ -45,7 +47,7 @@ Run the program "readavl". This takes the AVL files and processes
 them into Perl data structures, so they can be more easily read by
 the other programs that deal with the data.
 
-    readavl.pl -signup z00
+    actium.pl storeavl -signup z00
 
 ## 3. Download a copy of the Actium database, for backup
 
@@ -207,7 +209,9 @@ Click "Import."  On the "Import Options" box, click "Import" again (it doesn't m
 
 Create the file "effectivedate.txt" in the signup directory. This is a one-line file with the date the service change is effective. The easiest way is using the Unix shell
 
-    echo "August 28, 2000" >effectivedate.txt
+````Shell
+echo "August 28, 2000" >effectivedate.txt
+````
 
 But of course you can also use a text editor.
 
@@ -215,7 +219,7 @@ But of course you can also use a text editor.
 
 a) Run the avl2points command:
 
-    avl2points.pl -s z00
+    actium.pl avl2points -s z00
 
 This creates the files that have the actual times in them, one for each stop.  They are in an intermediate format not intended to be printed.
 
@@ -229,18 +233,22 @@ At the end it will say something like "20 skipped signs because stop file not fo
 
 There is a symbolic link "current" in /Volumes/Bireme/actium/db that points to the current signup. Replace it.
 
-    rm current
-    ln –s z00 current
+````Shell
+rm current
+ln –s z00 current
+````
 
 ## 17. Create web schedules
 
 Run the tabskeds program:
 
-    tabskeds.pl -s z00
+    actium.pl tabskeds -s z00
 
 This creates a bunch of tab files in the folder tabxchange . Send these to IS with a request that they be made the preview schedules effective of the effective date.  Usually I put them in a zip file called tabskeds.zip
 
-    zip -r tabskeds tabxchange/
+````Shell
+zip -r tabskeds tabxchange/
+````
 
 Then send that to the Help Desk with a request that it be made previews soon and active on the effective date.
 
@@ -252,11 +260,11 @@ See the separate make timetables document.
 
 a) create the stop lists in "slists"
 
-    avl2stoplists.pl –s z00
+    actium.pl avl2stoplists –s z00
 
 b) create the comparison lists
 
-    comparestops.pl –o y00 –s z00
+    actium.pl comparestops –o y00 –s z00
 
 That creates the comparestops.txt that has the added stops, removed stops, and changed lines for each changed stop. Open in Excel, save as .xlsx and distribute to interested parties.
 
@@ -264,7 +272,7 @@ That creates the comparestops.txt that has the added stops, removed stops, and c
 
 Run the program
 
-    avl2patdest.pl –s z00
+    actium.pl avl2patdest –s z00
 
 It will create the file Actium/db/z00/nextbus-destinations.txt. Email this file to Nextbus (presumably to rchun@nextbus.com).
 
@@ -286,7 +294,7 @@ Click "Import."  On the "Import Options" box, click "Import" again (it doesn't m
 
 Run the program
 
-actium.pl stops2kml <outputfile>
+    actium.pl stops2kml <outputfile>
 
 Replace "<outputfile>" with the name of the file, which should probably be something like "Z00-bystops.kml". Once it's done, copy that file where others can see it, such as to the District Public Share area.
 
