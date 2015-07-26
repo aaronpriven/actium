@@ -11,10 +11,19 @@ use Actium::O::Files::ActiumFM;
 
 use Sub::Exporter ( -setup => { exports => [qw(actiumdb)] } );    ### DEP ###
 
-const my $CONFIG_SECTION => 'ActiumFM';
-const my $DEFAULT_DBNAME => 'ActiumFM';
+const my $CONFIG_SECTION  => 'ActiumFM';
+const my $DBNAME_ENV      => 'ACTIUM_DBNAME';
+const my $FALLBACK_DBNAME => 'ActiumFM';
+my $default_dbname;
 
 sub OPTIONS {
+
+    my $env        = shift;
+    my $config_obj = $env->config;
+    my %config     = $config_obj->section($CONFIG_SECTION);
+
+    $default_dbname = $env->sysenv($DBNAME_ENV) // $config{db_name}
+      // $FALLBACK_DBNAME;
 
     return (
 
@@ -22,12 +31,12 @@ sub OPTIONS {
         [ 'db_password=s', 'Password to access Actium database' ],
         [   'db_name=s',
             'Name of the database in the ODBC driver. '
-              . qq[The default is "$DEFAULT_DBNAME"],
-            $DEFAULT_DBNAME,
+              . qq[If not specified, will use "$default_dbname"],
+            $default_dbname,
         ]
     );
 
-}
+} ## tidy end: sub OPTIONS
 
 sub actiumdb {
 
@@ -49,7 +58,7 @@ sub actiumdb {
       //= Actium::Cmd::term_readline( 'Password to access Actium database:',
         1 );
 
-    $params{db_name} //= $DEFAULT_DBNAME;
+    $params{db_name} //= $default_dbname;
 
     my $actium_db = Actium::O::Files::ActiumFM::->new(%params);
     return $actium_db;
