@@ -13,9 +13,12 @@ our $VERSION = 0.010;
 Actium::Cmd::run(
     system_name => 'actium',
     commands    => {
-
         adddescriptionf => 'AddDescriptionF',
+        avl2patdest     => 'AVL2PatDest',
+        avl2points      => 'AVL2Points',
         avl2skeds       => 'AVL2Skeds',
+        avl2stoplines   => 'AVL2StopLines',
+        avl2stoplists   => 'AVL2StopLists',
         comparestops    => 'CompareStops',
         compareskeds    => 'CompareSkeds',
         crewlist        => 'CrewList',
@@ -40,6 +43,7 @@ Actium::Cmd::run(
         newsignup       => 'NewSignup',
         orderbytravel   => 'OrderByTravel',
         prepareflags    => 'PrepareFlags',
+        storeavl        => 'StorableAVL',
         slists2html     => 'Slists2HTML',
         sqlite2tab      => 'SQLite2tab',
         ss              => 'StopSearch',
@@ -47,6 +51,7 @@ Actium::Cmd::run(
         stopsearch      => \'ss',
         tabula          => \'timetables',
         tabulae         => \'timetables',
+        tabskeds        => 'TabSkeds',
         theaimport      => 'TheaImport',
         time            => 'Time',
         timetables      => 'Timetables',

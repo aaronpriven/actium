@@ -97,8 +97,8 @@ EOF
             fullname        => $fullfolder,
             linesname       => $linesfolder,
             web             => $webfolder,
-            verbose         => $env->options('verbose'),
-            active_map_file => $env->options('activemapfile'),
+            verbose         => $env->option('verbose'),
+            active_map_file => $env->option('activemapfile'),
         );
         return;
 
