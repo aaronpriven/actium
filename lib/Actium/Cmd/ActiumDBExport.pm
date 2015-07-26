@@ -34,7 +34,8 @@ my %fields_of =
   );
 
 sub OPTIONS {
-    return Actium::Cmd::Config::ActiumFM::OPTIONS();
+    my ($class, $env) = @_;
+    return Actium::Cmd::Config::ActiumFM::OPTIONS($env);
 }
 
 sub START {
