@@ -8,7 +8,7 @@ use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');    ### DEP ###
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup (qw<signup oldsignup>);
+use Actium::Cmd::Config::Signup   (qw<signup oldsignup>);
 
 sub HELP {
 
@@ -23,9 +23,11 @@ EOF
 }
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options_with_old($env));
+    my ( $class, $env ) = @_;
+    return (
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::Signup::options_with_old($env)
+    );
 }
 
 my ( %changes, %oldstoplists, %stops );
@@ -33,12 +35,11 @@ my ( %changes, %oldstoplists, %stops );
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
-    my $signup = signup($env);
+    my $actiumdb  = actiumdb($env);
     my $oldsignup = oldsignup($env);
+    my $signup    = signup($env);
 
     chdir $signup->path;
-
     $actiumdb->load_tables(
         requests => {
             Stops_Neue => {
