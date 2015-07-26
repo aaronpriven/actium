@@ -208,6 +208,7 @@ sub make_web_maps {
 
     } ## tidy end: foreach my $filespec ( @{ $params...})
 
+    $cry->over($EMPTY) unless $verbose;
     $cry->done;
 
     return;
@@ -465,7 +466,8 @@ sub copylatest {
         } ## tidy end: foreach my $line_and_token ...
 
     } ## tidy end: foreach my $foldername ( sortbyline...)
-
+    
+    $copy_cry->over($EMPTY);
     $copy_cry->done;
 
     if (@web_maps_to_process) {
