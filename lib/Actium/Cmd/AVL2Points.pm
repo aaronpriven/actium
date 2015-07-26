@@ -5,8 +5,6 @@ use sort ('stable');    ### DEP ###
 use Storable();         ### DEP ###
 
 use Actium::Time (qw(timenum ));
-use Actium::Sorting::Line('sortbyline');
-use Actium::Util(qw<keyreadable>);
 use Actium::Union('ordered_union');
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup ('signup');
@@ -30,7 +28,7 @@ a list of times that buses pass each stop.
 It is saved in the directory "kpoints" in the directory for that signup.
 EOF
 
-    say $helptext;
+    print $helptext;
     return;
 }
 
@@ -301,7 +299,7 @@ sub START {
                             $destinations{ $time_r->{DESTINATION} }++;
                         }
 
-                        my @lines = sortbyline keys %lines;
+                        my @lines = u::sortbyline keys %lines;
                         my @destinations
                           = sort { $destinations{$b} <=> $destinations{$a} }
                           keys %destinations;
@@ -425,7 +423,7 @@ sub START {
 
         open my $out, '>', "kpoints/${firstdigits}xx/$stop.txt" or die $!;
 
-        foreach my $linegroup ( sortbyline keys %{ $stopinfo{$stop} } ) {
+        foreach my $linegroup ( u::sortbyline keys %{ $stopinfo{$stop} } ) {
 
             foreach my $dir_code (
                 sort { $a <=> $b }
@@ -627,6 +625,8 @@ sub remove_place_suffixes {
     $place =~ s/-[AD12]$//;
     return $place;
 }
+
+1;
 
 __END__
 

@@ -3,11 +3,12 @@ package Actium::Cmd::AVL2StopLines 0.010;
 use Actium::Preamble;
 use Actium::Sorting::Line (qw[sortbyline]);
 use Actium::Union('ordered_union');
-use Actium::DaysDirections (':all');
-use Actium::Cmd::Config::Signup ('signup');
+use Actium::DaysDirections        (':all');
+use Actium::Cmd::Config::Signup   ('signup');
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
-const my @opp = qw( EB WB NB SB CC CW A B);
-const my %opposite_of = ( @opp, reverse @opp );
+const my @opp => qw( EB WB NB SB CC CW A B);
+const my %opposite_of => ( @opp, reverse @opp );
 
 sub HELP {
 
@@ -24,9 +25,11 @@ EOF
 }
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options($env));
+    my ( $class, $env ) = @_;
+    return (
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::Signup::options($env)
+    );
 }
 
 ##### Retrieve data from AVL and from database
@@ -36,7 +39,7 @@ sub START {
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
 
-    my $cry = cry( 'Generating stoplines');
+    my $cry = cry('Generating stoplines');
 
     my $signup = signup($env);
     chdir $signup->path();
