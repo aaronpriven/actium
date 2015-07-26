@@ -19,9 +19,11 @@ sub HELP {
 }
 
 sub OPTIONS {
+
+    my ( $class, $env ) = @_;
     return (
-        Actium::Cmd::Config::ActiumFM::OPTIONS(),
-        Actium::Cmd::Config::GeonamesAuth::OPTIONS(),
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::GeonamesAuth::OPTIONS($env),
     );
 }
 
