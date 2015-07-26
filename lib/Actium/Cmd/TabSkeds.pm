@@ -1,25 +1,20 @@
-# Actium/Cmd/Tabskeds.pm
+package Actium::Cmd::TabSkeds 0.010;
 
 # This is the program that creates the "tab files" that are used in the
 # Designtek-era web schedules
 
 # Makes tab-delimited but public versions of the skeds in /skeds
 
-package Actium::Cmd::Tabskeds 0.010;
-
 use Actium::Preamble;
-use Actium::Sorting::Line ('sortbyline');
-use Actium::Util(qw/joinseries/);
 use Actium::Cmd::Config::Signup ('signup');
+use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
-use strict;      ### DEP ###
-use warnings;    ### DEP ###
 no warnings 'uninitialized';
 
 sub OPTIONS {
     my ($class, $env) = @_;
     return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options_with_old($env));
+    Actium::Cmd::Config::Signup::options($env));
 }
 
 my $out;
@@ -56,31 +51,31 @@ sub Skedread {
 
     my ($file) = shift;
 
-    open IN, $file
+    open my $in, $file
       or die "Can't open $file for input";
 
-    $_ = <IN>;
+    $_ = <$in>;
     chomp;
     s/\s+$//;
     $skedref->{SKEDNAME} = $_;
 
     ( $skedref->{LINEGROUP}, $skedref->{DIR}, $skedref->{DAY} ) = split(/_/);
 
-    $_ = <IN>;
+    $_ = <$in>;
     s/\s+$//;
     chomp;
     ( undef, @{ $skedref->{NOTEDEFS} } ) = split(/\t/);
 
     # first column is always "Note Definitions"
 
-    $_ = <IN>;
+    $_ = <$in>;
     chomp;
     s/\s+$//;
     ( undef, undef, undef, undef, @{ $skedref->{TP} } ) = split(/\t/);
 
   # the first four columns are always "SPEC DAYS", "NOTE" , "VT" , and "RTE NUM"
 
-    while (<IN>) {
+    while (<$in>) {
         chomp;
         s/\s+$//;
         next unless $_;    # skips blank lines
@@ -100,8 +95,8 @@ sub Skedread {
         for ( my $col = 0 ; $col < scalar(@times) ; $col++ ) {
             push @{ $skedref->{TIMES}[$col] }, $times[$col];
         }
-    } ## tidy end: while (<IN>)
-    close IN;
+    } ## tidy end: while (<$in>)
+    close $in;
     return $skedref;
 } ## tidy end: sub Skedread
 
@@ -393,7 +388,7 @@ sub START {
 
     # write files
 
-    foreach my $route ( sortbyline keys %skednamesbyroute ) {
+    foreach my $route ( u::sortbyline keys %skednamesbyroute ) {
 
         next if $second{$route};
 
@@ -409,7 +404,7 @@ sub START {
             open $out, ">", "tabxchange/" . $skedname . ".tab"
               or die "can't open $skedname.tab for output";
 
-            my @allroutes = sortbyline( u::uniq( @{ $skedref->{ROUTES} } ) );
+            my @allroutes = u::sortbyline( u::uniq( @{ $skedref->{ROUTES} } ) );
             my $linegroup = $allroutes[0];
 
             # GENERAL SCHEDULE INFORMATION
@@ -631,7 +626,7 @@ sub START {
               . 'important landmarks along the route.';
 
             my %stoplist_url_of;
-            foreach my $route ( sortbyline @allroutes ) {
+            foreach my $route ( u::sortbyline @allroutes ) {
 
                 my $linegrouptype = lc( $lines{$route}{LineGroupType} );
                 $linegrouptype =~ s/ /-/g;    # converted to dashes by wordpress
@@ -655,7 +650,7 @@ sub START {
 
             } ## tidy end: foreach my $route ( sortbyline...)
 
-            my @linkroutes = sortbyline keys %stoplist_url_of;
+            my @linkroutes = u::sortbyline keys %stoplist_url_of;
             my $numlinks   = scalar @linkroutes;
 
             if ( $numlinks == 1 ) {
@@ -673,7 +668,7 @@ sub START {
 
                 $fullnote
                   .= qq{ Complete lists of stops for lines }
-                  . joinseries(@stoplist_links)
+                  . u::joinseries(@stoplist_links)
                   . ' are also available.';
             }
 
