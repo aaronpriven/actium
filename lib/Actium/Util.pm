@@ -465,6 +465,44 @@ sub hashref {
     return {@_};
 }
 
+sub iterative_flatten {
+
+    # needs testing before replacing 'flatten'
+
+    my @results;
+    
+    while (@_) {
+        my $element = shift @_;
+        if (reftype($element) eq 'ARRAY') {
+            unshift @_, @{$element};
+        } else {
+            push @results, $element;
+        }
+    }
+
+    return wantarray ? @results : \@results;
+    
+    # other alternatives, which are untested
+    
+    #while ( any { reftype $_ eq 'ARRAY' } @array ) {
+    #    @array = map { reftype $_ eq 'ARRAY' ? @{$_} : $_ } @array
+    #}
+    
+    #my $continue = 1;
+    #while ($continue) {
+    #    @array = map {
+    #        if ( reftype $_ eq 'ARRAY' ) {
+    #            $continue = 0 unless any { reftype $_ eq 'ARRAY' } @{$_};
+    #            @{$_};
+    #        }
+    #        else {
+    #            $_;
+    #        }
+    #      } @array
+    #}
+
+} ## tidy end: sub iterative_flatten
+
 sub flatten {
 
     my @inputs = @_;
