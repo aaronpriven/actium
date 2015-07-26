@@ -9,7 +9,10 @@ use Actium::O::Folder;
 use Actium::Cmd::Config::ActiumFM('actiumdb');
 
 sub OPTIONS {
-    return ( Actium::Cmd::Config::ActiumFM::OPTIONS(),
+
+    my ($class, $env) = @_;
+
+    return ( Actium::Cmd::Config::ActiumFM::OPTIONS($env),
         [ 'tab', 'Uses tabs instead of spaces to separate text' ] );
 }
 
