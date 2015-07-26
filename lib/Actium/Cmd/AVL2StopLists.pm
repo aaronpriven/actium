@@ -1,4 +1,4 @@
-package Actium::Cmd::Avl2StopLists 0.010;
+package Actium::Cmd::AVL2StopLists 0.010;
 
 use Actium::Preamble;
 # avl2stoplists - see POD documentation below
@@ -23,10 +23,9 @@ sub HELP {
 avl2stoplists reads the data written by readavl and turns it into lists
 of stops in order for each pattern and each route. These routes are stored in
 the "slists" directory in the signup directory.
-See "perldoc avl2stoplists" for more information.
 EOF
 
-    say $helptext;
+    print $helptext;
     return;
 }
 
