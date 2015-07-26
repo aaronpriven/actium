@@ -22,11 +22,12 @@ const my $DEFAULT_DIVIDER => $SPACE x 2;
 sub START {
 
     my ( $class, $env ) = @_;
+
+    $env->be_quiet();
+
     my $actiumdb = actiumdb($env);
 
     $divider = $env->option('tab') ? "\t" : $DEFAULT_DIVIDER;
-
-    $env->be_quiet();
 
     my @args = $env->argv;
 
