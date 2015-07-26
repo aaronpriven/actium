@@ -28,15 +28,15 @@ sub build_defaults {
       = File::Spec->catdir( $env->bin->path, File::Spec->updir(), 'signups' );
 
     $defaults{BASE}
-      = ( $env->sysenv($BASE_ENV) // $config{Base} // $last_resort_base );
+      = ( $env->sysenv($BASE_ENV) // $config{base} // $last_resort_base );
 
     $defaults{SIGNUP}
-      = ( $env->sysenv($SIGNUP_ENV) // $config{Signup} );
+      = ( $env->sysenv($SIGNUP_ENV) // $config{signup} );
 
     $defaults{OLDSIGNUP}
-      = ( $env->sysenv($OLDSIGNUP_ENV) // $config{OldSignup} );
+      = ( $env->sysenv($OLDSIGNUP_ENV) // $config{oldsignup} );
 
-    $defaults{CACHE} = $env->sysenv($CACHE_ENV);
+    $defaults{CACHE} = $env->sysenv($CACHE_ENV) // $config{cache};
     return;
 
 } ## tidy end: sub build_defaults
@@ -50,6 +50,13 @@ sub options {
       ? $EMPTY_STR
       : qq<. If not specified, will use "$defaults{SIGNUP}">;
 
+    my $cache_default_text = ' If not specified, will use '
+      . (
+        defined( $defaults{CACHE} )
+        ? qq{"$defaults{CACHE}"}
+        : 'the location of the files being cached'
+      );
+
     return (
         [   'base=s',
             'Base folder (normally [something]/Actium/signups). '
@@ -62,8 +69,8 @@ sub options {
         ],
         [   'cache=s',
             'Cache folder. Files (like SQLite files) that cannot be stored '
-              . 'on network filesystems are stored here. Defaults to the '
-              . 'location of the files being cached'
+              . 'on network filesystems are stored here.'
+              . $cache_default_text,
         ],
     );
 } ## tidy end: sub options
@@ -95,10 +102,10 @@ sub options_with_old {
 } ## tidy end: sub options_with_old
 
 sub signup {
-    
+
     my $env = shift;
-    
-    \my %params = u::positional(\@_ , '@subfolders') ;
+
+    \my %params = u::positional( \@_, '@subfolders' );
     #\my %params = _process_args(@_);
 
     $params{base}   //= ( $env->option('base')   // $defaults{BASE} );
@@ -111,18 +118,19 @@ sub signup {
 
     return Actium::O::Folders::Signup::->new(%params);
 
-} ## tidy end: sub signup
+}
 
 sub oldsignup {
 
     my $env = shift;
-    \my %params = u::positional(\@_ , '@subfolders') ;
+    
+    \my %params = u::positional( \@_, '@subfolders' );
 
     #\my %params = _process_args(@_);
 
     $params{base} //= ( $env->option('oldbase') // $env->option('base')
-          // $defaults{OLDBASE} );
-
+          // $defaults{BASE} );
+          
     $params{signup} //= ( $env->option('oldsignup') // $defaults{OLDSIGNUP} );
 
     if ( not exists $params{cache} ) {
@@ -146,7 +154,7 @@ sub oldsignup {
 #        my $theseparams = pop @args;
 #        %params = ( %params, %{ $theseparams } );
 #    }
-#    
+#
 #    $params{subfolders} = u::flatten(@args);
 #    return \%params;
 #
