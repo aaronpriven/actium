@@ -86,6 +86,7 @@ sub START {
                     qw[
                       SignID Active stp_511_id Status SignType Sidenote
                       UseOldMakepoints ShelterNum NonStopLocation NonStopCity
+                      Delivery
                       ]
                 ],
             },
@@ -136,6 +137,7 @@ sub START {
     foreach my $signid ( sort { $a <=> $b } @signstodo ) {
 
         my $stopid = $signs{$signid}{stp_511_id};
+        my $delivery = $signs{$signid}{Delivery} // $EMPTY;
 
         my $nonstoplocation;
         if ( not($stopid) ) {
@@ -197,7 +199,8 @@ sub START {
 
         my $point
           = Actium::O::Points::Point->new_from_kpoints( $stopid, $signid,
-            $effdate, $old_makepoints, $omitted_of_stop_r, $nonstoplocation );
+            $effdate, $old_makepoints, $omitted_of_stop_r, $nonstoplocation , 
+            $delivery);
 
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header
