@@ -10,9 +10,9 @@
 use warnings;
 use strict;
 
-use 5.010;
+use 5.022;
 
-package Actium::O::Points::Point 0.008;
+package Actium::O::Points::Point 0.010;
 
 use sort ('stable');
 
@@ -37,7 +37,7 @@ use Actium::O::Points::Column;
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
 
-has [qw/effdate stopid signid/] => (
+has [qw/effdate stopid signid delivery/] => (
     is  => 'ro',
     isa => 'Str',
 );
@@ -157,7 +157,7 @@ sub add_to_width {
 
 sub new_from_kpoints {
     my ( $class, $stopid, $signid, $effdate, $special_type,
-        $omitted_of_stop_r, $nonstoplocation )
+        $omitted_of_stop_r, $nonstoplocation, $delivery )
       = @_;
 
     my $self = $class->new(
@@ -168,6 +168,7 @@ sub new_from_kpoints {
         is_db             => ( $special_type eq 'db' ),
         nonstoplocation   => $nonstoplocation,
         omitted_of_stop_r => $omitted_of_stop_r,
+        delivery => $delivery,
     );
 
     my $is_simple = $self->is_simple_stopid;
@@ -649,7 +650,8 @@ sub format_side {
 #}
 
     print $sidefh
-"See something wrong with this sign, or any other AC Transit sign? Let us know! Leave a comment at actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
+'See something wrong with this sign, or any other AC Transit sign?' . 
+" Let us know! Leave a comment at actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
       if lc(
         $Actium::Cmd::MakePoints::signtypes{
             $Actium::Cmd::MakePoints::signs{$signid}{SignType}
@@ -663,9 +665,14 @@ sub format_side {
           $IDT->bold_word('"Departure Times"'),
           " for live bus predictions\r", $IDT->parastyle('stopid'),
           "STOP ID\r",                   $IDT->parastyle('stopidnumber'),
-          $self->stopid();
+          $self->stopid() , "\r";
     }
-    ###
+
+    if ($self->delivery and fc($self->delivery) eq fc('Clear Channel')) {
+       print $sidefh   $IDT->parastyle('sidenotes'),
+       'Please report maintenance or safety issues at bus shelters ' . 
+       "by calling Clear Channel toll free 24/7: 1-888-ADSHEL1 (237-4351)\r";
+    }
 
     close $sidefh;
 
