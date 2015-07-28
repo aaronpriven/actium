@@ -6,7 +6,7 @@ set ExportLineFolder to "Bireme:Actium:tableart:pdf:lines:"
 
 set inddfiles to (choose file with prompt "Select the tabletables to export:" of type {"IDd8", "IDd9"} default location ("Bireme:Actium:tableart:indd:" as alias) with multiple selections allowed)
 
-tell application "Adobe InDesign CS6"
+tell application id "com.adobe.InDesign"
 	
 	set myPreset to PDF export preset "[Smallest File Size]"
 	
