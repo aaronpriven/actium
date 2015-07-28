@@ -27,13 +27,13 @@ the "get-modules" script in ~/bin, then installed the relevant modules.
 
 9. installed unixodbc via homebrew.
 
-10) the Homebrew ODBC home is /usr/local/Cellar/unixodbc/2.3.2. I replaced
+10. the Homebrew ODBC home is /usr/local/Cellar/unixodbc/2.3.2. I replaced
 the .ini fles in /usr/local/Cellar/unixodbc/2.3.2/etc with symlinks to the
 system .ini files. (I wonder if I could have just changed the ODBCHOME 
 environment variable to /usr/local/Cellar/unixodbc/2.3.2 before trying to
 install DBD::ODBC? Oh well)
 
-11) cpanm DBD::ODBC
+11. cpanm DBD::ODBC
 
 So far, so good!
 
