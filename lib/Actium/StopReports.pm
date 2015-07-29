@@ -1,13 +1,8 @@
-# /Actium/StopReports.pm
-
-# Create the crew list and other reports from stop database
-
 package Actium::StopReports 0.010;
 use Actium::Preamble;
-use Excel::Writer::XLSX; ### DEP ###
+use Excel::Writer::XLSX;    ### DEP ###
 use Actium::Sorting::Travel(qw<travelsort>);
 use Actium::Sorting::Line(qw/linekeys sortbyline/);
-use Actium::Util('joinseries_ampersand');
 
 use Sub::Exporter -setup => { exports => [qw(crewlist_xlsx stops2kml)] };
 # Sub::Exporter ### DEP ###
@@ -97,8 +92,7 @@ sub stops2kml {
     #);
 
     my $stops_r = $actiumdb->all_in_columns_key(
-        {
-            TABLE   => 'Stops_Neue',
+        {   TABLE   => 'Stops_Neue',
             COLUMNS => [
                 qw/c_description_fullabbr h_stp_identifier
                   h_loca_latitude h_loca_longitude
@@ -108,8 +102,7 @@ sub stops2kml {
     );
 
     my $lines_r = $actiumdb->all_in_columns_key(
-        {
-            TABLE   => 'Lines',
+        {   TABLE   => 'Lines',
             COLUMNS => [qw/LineGroupType/],
         }
     );
@@ -126,8 +119,8 @@ sub stops2kml {
 
         my $description = _kml_stop_description( \%stp );
 
-        my $text =
-            "<Placemark>\n"
+        my $text
+          = "<Placemark>\n"
           . "<name>$stopid</name>\n"
           . "<styleUrl>#stop${foldername}Style</styleUrl>\n"
           . "<description>$description</description>\n";
@@ -136,8 +129,8 @@ sub stops2kml {
             my @lines = split( ' ', $stp{p_lines} );
             my $color = _kml_color( $lines_r, @lines );
 
-            $text .=
-                "<Style>\n"
+            $text
+              .= "<Style>\n"
               . "<IconStyle>\n"
               . "<color>$color</color>\n"
               . "</IconStyle>\n"
@@ -149,19 +142,19 @@ sub stops2kml {
 
         my ( $lat, $long ) = @stp{qw/h_loca_latitude h_loca_longitude/};
 
-        $text .=
-            "<Point>\n"
+        $text
+          .= "<Point>\n"
           . "<coordinates>$long, $lat</coordinates>\n"
           . "</Point>\n"
           . "</Placemark>\n";
 
         $folders{$foldername} .= $text;
 
-    }
+    } ## tidy end: foreach my $stopid ( sort keys...)
 
     foreach my $foldername ( keys %folders ) {
-        $folders{$foldername} =
-            "<Folder>\n"
+        $folders{$foldername}
+          = "<Folder>\n"
           . "<name>$foldername</name>\n"
           . "$folders{$foldername}\n"
           . "</Folder>\n";
@@ -175,7 +168,7 @@ sub stops2kml {
 
     #return $KML_START . $folders{active} . $folders{inactive} . $KML_END;
 
-}
+} ## tidy end: sub stops2kml
 
 sub _kml_stop_description {
 
@@ -192,21 +185,22 @@ sub _kml_stop_description {
     my $connections_text = $EMPTY_STR;
     if ($connections) {
         my @connections = split( /\r/, $connections );
-        $connections_text =
-            "<br>\n"
+        $connections_text
+          = "<br>\n"
           . "<u>Connections:</u> "
-          . joinseries_ampersand(@connections);
+          . u::joinseries_ampersand(@connections);
     }
 
-    my $text =
-        "<p><b><u>$stop_id\x{2003}$hastus_id</u></b><br>\n"
+    my $text
+      = "<p><b><u>$stop_id\x{2003}$hastus_id</u></b><br>\n"
       . "${activestar}$desc</p>\n"
-      . "$linetext" . "${connections_text}";
+      . "$linetext"
+      . "${connections_text}";
 
-    require HTML::Entities; ### DEP ###
+    require HTML::Entities;    ### DEP ###
     return HTML::Entities::encode_entities_numeric($text);
 
-}
+} ## tidy end: sub _kml_stop_description
 
 {
 
@@ -270,8 +264,7 @@ sub crewlist_xlsx {
 
     my %params = u::validate(
         @_,
-        {
-            actiumdb         => { can  => 'all_in_columns_key' },
+        {   actiumdb         => { can  => 'all_in_columns_key' },
             outputfile       => { type => $PV_TYPE{SCALAR} },
             stops_of_linedir => { type => $PV_TYPE{HASHREF} },
             signup_display =>
@@ -282,8 +275,7 @@ sub crewlist_xlsx {
     my $signup_display = $params{signup_display};
 
     my $promote_lines_r = $actiumdb->all_in_column_key(
-        {
-            TABLE  => 'Lines',
+        {   TABLE  => 'Lines',
             COLUMN => 'crewlist_promote',
             WHERE  => q{Active = 'Yes' AND crewlist_promote = 1},
         }
@@ -292,8 +284,7 @@ sub crewlist_xlsx {
     my @promote_lines = sortbyline keys %{$promote_lines_r};
 
     my $stops_r = $actiumdb->all_in_columns_key(
-        {
-            TABLE   => 'Stops_Neue',
+        {   TABLE   => 'Stops_Neue',
             COLUMNS => [qw/c_description_fullabbr c_crew_assignment p_decals/],
             WHERE   => 'p_active = 1',
         }
@@ -340,8 +331,8 @@ sub crewlist_xlsx {
         # original array, second element is the line to be sorted,
         # third element is the direction to be sorted
 
-        @to_line_sort =
-          sort { $a->[1] cmp $b->[1] or $a->[2] cmp $b->[2] } @to_line_sort;
+        @to_line_sort
+          = sort { $a->[1] cmp $b->[1] or $a->[2] cmp $b->[2] } @to_line_sort;
 
         # sort that, first by the line, then by the direction
 
@@ -365,8 +356,7 @@ sub crewlist_xlsx {
                 $decals =~ s/-/\x{2011}/g;
 
                 push @output_stops,
-                  [
-                    $linedir, "$i of $numstops",
+                  [ $linedir, "$i of $numstops",
                     $stopid,  $stops_r->{$stopid}{c_description_fullabbr},
                     $decals,
                   ];
@@ -390,7 +380,7 @@ sub crewlist_xlsx {
         $sheet->repeat_rows(0);
         $sheet->hide_gridlines(0);
 
-    }
+    } ## tidy end: foreach my $crew_assignment...
 
     for my $worksheet ( $workbook->sheets() ) {
 
@@ -398,6 +388,86 @@ sub crewlist_xlsx {
 
     return $workbook->close;
 
-}
+} ## tidy end: sub crewlist_xlsx
+
+sub linesbycity {
+
+    my %params = u::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
+
+    my $actiumdb = $params{actiumdb};
+
+    my %type_of;
+    foreach my $line ( $actiumdb->lines ) {
+        \my %row = $actiumdb->line_row_r($line);
+        if ( u::feq( $row{agency_id}, 'ACTransit' ) ) {
+            # note that is not agency name. Name has spaces.
+            # ID does not
+            $type_of{$line} = $row{LineGroupType};
+        }
+        else {
+            $type_of{$line} = $EMPTY;
+        }
+    }
+
+    #my $eachstop = $actiumdb->each_row_eq( 'Stops_Neue', 'p_active', '1' );
+
+    my $eachstop = $actiumdb->each_columns_in_row_where(
+        table   => 'Stops_Neue',
+        columns => [qw/h_stp_511_id p_lines c_city/],
+        where   => 'WHERE p_active = 1'
+    );
+
+    # build lines by city and type struct
+    my %lines_of;
+    while ( my $colref = $eachstop->() ) {
+        \my @cols = $colref;
+        my ( undef, $p_lines, $c_city ) = @cols;
+
+        my @lines = split( /\s+/, $p_lines );
+        foreach my $line (@lines) {
+            my $type = $type_of{$line};
+            $lines_of{$c_city}{$type}{$line} = 1;
+        }
+    }
+
+    open my $html_fh, '>', \my $html_text
+      or die "Can't open output to scalar: $OS_ERROR";
+
+    print $html_fh "\n<!--\n    Do not edit this file! "
+      . "It is automatically generated from a program.\n-->\n";
+
+    my @all_lgtypes = $actiumdb->linegrouptypes_in_order;
+
+    foreach my $city ( sort keys %lines_of ) {
+        my $city_h = u::encode_entities($city);
+        print $html_fh
+          qq{<h4 style="text-transform:uppercase;" id="$city_h">$city_h</h4>}
+          ;
+
+        #        foreach my $type ( sort keys %{ $lines_of{$city} } ) {
+        foreach my $type (@all_lgtypes) {
+            next unless exists $lines_of{$city}{$type};
+            my $type_h = u::encode_entities($type);
+            print $html_fh "<p><strong>$type_h:</strong>";
+
+            my @lines = sortbyline keys %{ $lines_of{$city}{$type} };
+
+            foreach my $line (@lines) {
+                my $url = $actiumdb->linesked_url($line);
+                $line = qq{<a href="$url">$line</a>};
+            }
+            
+            my $separator = '&nbsp;&nbsp;&nbsp; ';
+
+            say $html_fh $separator, join( $separator , @lines ), '</p>';
+
+        }
+        #say $html_fh '</dl>';
+
+    } ## tidy end: foreach my $city ( sort keys...)
+
+    return ( struct => \%lines_of, html => $html_text );
+
+} ## tidy end: sub linesbycity
 
 1;

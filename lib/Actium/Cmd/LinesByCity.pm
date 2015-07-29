@@ -1,15 +1,35 @@
-#/Actium/Cmd/LinesByCity.pm
-
 package Actium::Cmd::LinesByCity 0.010;
 
 use Actium::Preamble;
-use Actium::Sorting::Line (qw(sortbyline));
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
+use Actium::StopReports;
 
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return ( Actium::Cmd::Config::ActiumFM::OPTIONS($env) );
 }
+
+sub HELP {
+    say "linesbycity: produce list of lines by city for the web site.";
+    return;
+}
+
+sub START {
+    my ( $class, $env ) = @_;
+    my $cry = cry("Producing lines by city report for web site");
+    my $actiumdb = actiumdb($env);
+    my $html;
+    my %results = Actium::StopReports::linesbycity(actiumdb => $actiumdb);
+    say $results{html};
+    $cry->done;
+
+}
+
+1;
+
+__END__
+
+use Actium::Sorting::Line (qw(sortbyline));
 
 sub START {
 
