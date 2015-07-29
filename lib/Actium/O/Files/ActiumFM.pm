@@ -46,8 +46,8 @@ sub _build_keys_of {
 
     my $dbh = $self->dbh;
 
-    my $query =
-"SELECT $TABLE_OF_KEYFIELD_TABLE, $KEY_OF_KEYFIELD_TABLE FROM $KEYFIELD_TABLE";
+    my $query
+      = "SELECT $TABLE_OF_KEYFIELD_TABLE, $KEY_OF_KEYFIELD_TABLE FROM $KEYFIELD_TABLE";
     my $rows_r  = $dbh->selectall_arrayref($query);
     my %keys_of = u::flatten($rows_r);
 
@@ -62,29 +62,34 @@ sub _build_keys_of {
 
 # commented out ones are just things I haven't used yet
 
-my %table_of_item = (
+const my %TABLE_OF_ITEM => (
     agency => 'Agencies',
     line   => 'Lines',
 
     #city => 'Cities',
     #color => 'Colors',
     #flagtype => 'Flagtypes',
+    linegrouptype => 'LineGroupTypes',
     #pubtimetable => 'PubTimetables',
     #signtype => 'SignTypes',
     transithub => 'TransitHubs',
 );
 
-foreach my $item ( keys %table_of_item ) {
-    my $table = $table_of_item{$item};
+foreach my $item ( keys %TABLE_OF_ITEM ) {
+    my $table = $TABLE_OF_ITEM{$item};
 
     has "_${item}_cache_r" => (
         traits   => ['Hash'],
         is       => 'bare',
         init_arg => undef,
         isa      => 'HashRef[HashRef]',
-        handles  => { "${item}_row_r" => 'get', lc($table) => 'keys' },
-        builder  => "_build_${item}_cache",
-        lazy     => 1,
+        handles  => {
+            "${item}_row_r" => 'get',
+            lc($table)      => 'keys',
+            "${item}_cache" => 'elements',
+        },
+        builder => "_build_${item}_cache",
+        lazy    => 1,
     );
 
 }
@@ -92,17 +97,18 @@ foreach my $item ( keys %table_of_item ) {
 sub _build_table_cache {
     my $self    = shift;
     my $item    = shift;
-    my $table   = $table_of_item{$item};
+    my $table   = $TABLE_OF_ITEM{$item};
     my @columns = @_;
 
     my $dbh = $self->dbh;
 
     my $cache_r = $self->all_in_columns_key(
-        {
-            TABLE   => $table,
+        {   TABLE   => $table,
             COLUMNS => \@columns,
         }
     );
+
+    u::lock_hashref_recurse($cache_r);
     return $cache_r;
 }
 
@@ -119,6 +125,12 @@ sub _build_agency_cache {
     );
 }
 
+sub _build_linegrouptype_cache {
+    my $self = shift;
+    return $self->_build_table_cache( 'linegrouptype', 'LineGroupType',
+        'SortValue' );
+}
+
 sub _build_transithub_cache {
     my $self = shift;
     return $self->_build_table_cache( 'transithub', qw<City Name ShortName> );
@@ -128,8 +140,7 @@ sub _build_line_cache {
     my $self    = shift;
     my $dbh     = $self->dbh;
     my $cache_r = $self->all_in_columns_key(
-        {
-            TABLE   => 'Lines',
+        {   TABLE   => 'Lines',
             COLUMNS => [
                 qw(
                   agency_id      Color     Description
@@ -143,6 +154,8 @@ sub _build_line_cache {
             BIND_VALUES => ['Yes'],
         }
     );
+    
+    return $cache_r;
 }
 
 ##############################
@@ -196,8 +209,8 @@ sub _build_ss_cache {
     my ( $savedtime, $cache_r );
 
     if ( -e ( $folder->make_filespec($SS_CACHE_FNAME) ) ) {
-        ( $savedtime, $cache_r ) =
-          @{ $folder->retrieve($SS_CACHE_FNAME) };
+        ( $savedtime, $cache_r )
+          = @{ $folder->retrieve($SS_CACHE_FNAME) };
         if ( $savedtime + $CACHE_TIME_TO_LIVE >= time ) {
             $do_reload = 0;
         }
@@ -213,7 +226,7 @@ sub _build_ss_cache {
 
     return $cache_r;
 
-}    ## tidy end: sub _build_ss_cache
+} ## tidy end: sub _build_ss_cache
 
 sub _reload_ss_cache {
     my $self = shift;
@@ -270,7 +283,20 @@ sub search_ss {
 
     return values %row_of_stopid;
 
-}    ## tidy end: sub search_ss
+} ## tidy end: sub search_ss
+
+#########################
+### LINEGROUPTYPE METHODS
+
+sub linegrouptypes_in_order {
+    my $self = shift;
+    my %lg_cache = $self->linegrouptype_cache;
+
+    my %sortvalue_of
+      = map { $_->{LineGroupType}, $_->{SortValue} } values %lg_cache;
+    return sort { $sortvalue_of{$a} <=> $sortvalue_of{$b} } keys %sortvalue_of;
+
+}
 
 #########################
 ### AGENCY METHODS
@@ -358,14 +384,14 @@ sub _build_lines_of_linegrouptype {
 
     foreach my $linegrouptype ( keys %lines_of_linegrouptype ) {
 
-        $lines_of_linegrouptype{$linegrouptype} =
-          [ sortbyline @{ $lines_of_linegrouptype{$linegrouptype} } ];
+        $lines_of_linegrouptype{$linegrouptype}
+          = [ sortbyline @{ $lines_of_linegrouptype{$linegrouptype} } ];
 
     }
 
     return \%lines_of_linegrouptype;
 
-}
+} ## tidy end: sub _build_lines_of_linegrouptype
 
 ##############################
 ### TRANSIT HUBS ATTRIBUTES
@@ -423,8 +449,8 @@ sub _build_lines_of_transithub {
     foreach my $line ( $self->lines ) {
         my $transithubs_field = $self->line_row_r($line)->{TransitHubs};
         next unless $transithubs_field;
-        my @transithubs =
-          split( /\r/, $transithubs_field );    # check - is \r correct?
+        my @transithubs
+          = split( /\r/, $transithubs_field );    # check - is \r correct?
         foreach my $transithub (@transithubs) {
             push @{ $lines_of_transithub{$transithub} }, $line;
         }
@@ -444,8 +470,8 @@ sub lines_at_transit_hubs_html {
       . "It is automatically generated from a program.\n-->\n";
 
     foreach my $city ( sort $self->transithub_cities ) {
-        $text .=
-            qq{<h3>$city</h3>\n}
+        $text
+          .= qq{<h3>$city</h3>\n}
           . qq{<table width="100%" }
           . qq{cellspacing=0 style="border-collapse:collapse;" }
           . qq{cellpadding=4 border="0">};
@@ -453,8 +479,8 @@ sub lines_at_transit_hubs_html {
         foreach my $hub ( sort $self->_transithubs_of_city($city) ) {
 
             my $hub_name = $self->transithub_row_r($hub)->{Name};
-            $text .=
-qq{<tr><td width='30%' style="vertical-align: middle; text-align: right;">}
+            $text
+              .= qq{<tr><td width='30%' style="vertical-align: middle; text-align: right;">}
               . qq{$hub_name</td><td width='2%' style="vertical-align:middle;">&bull;</td>};
 
             my @lines = sortbyline( $self->_lines_of_transithub($hub) );
@@ -468,44 +494,39 @@ qq{<tr><td width='30%' style="vertical-align: middle; text-align: right;">}
                   qq{<a href="} . $self->linesked_url($line) . qq{">$line</a>};
             }
 
-            $text .=
-                '<td style="vertical-align:middle;">'
+            $text
+              .= '<td style="vertical-align:middle;">'
               . join( "&nbsp;&middot; ", @displaylines )
               . "</td></tr>\n";
 
-        }
+        } ## tidy end: foreach my $hub ( sort $self...)
 
         $text .= "</table>\n";
 
-    }
+    } ## tidy end: foreach my $city ( sort $self...)
 
     return $text;
 
-}
+} ## tidy end: sub lines_at_transit_hubs_html
 
 #######################
 ### LINES HTML OUTPUT
 
 sub line_descrip_html {
 
-    require HTML::Entities; ### DEP ###
+    require HTML::Entities;    ### DEP ###
     require Actium::EffectiveDate;
 
     my $self = shift;
 
-    my %params = u::validate(
-        @_,
-        {
-            signup => 1,
-        }
-    );
+    my %params = u::validate( @_, { signup => 1, } );
 
     my $signup = $params{signup};
 
     my $effdate = Actium::EffectiveDate::effectivedate($signup);
 
-    my $html =
-        "\n<!--\n    Do not edit this file! "
+    my $html
+      = "\n<!--\n    Do not edit this file! "
       . "It is automatically generated from a program.\n-->"
       . _ldh_header($effdate);
 
@@ -522,20 +543,19 @@ sub line_descrip_html {
         # heading
         my $count = scalar @lines;
         my $pub   = "$linegrouptype Lines";
-        my $anchor =
-          $linegrouptype eq 'All Nighter' ? 'AllNighter' : $linegrouptype;
+        my $anchor
+          = $linegrouptype eq 'All Nighter' ? 'AllNighter' : $linegrouptype;
 
-        $html .=
-            qq{<table style="border-collapse: collapse;" border="1">}
+        $html
+          .= qq{<table style="border-collapse: collapse;" border="1">}
           . qq{<caption style="padding-top: 1.2em;"><strong><a name="$anchor">}
           . qq{$pub</a></strong></caption>};
 
-        $html .=
-            '<thead><tr><th style="background-color: silver;">Line</th>'
+        $html .= '<thead><tr><th style="background-color: silver;">Line</th>'
           . '<th style="background-color: silver;">Description</th>';
 
-        $html .=
-          "\n" . '<th style="background-color: silver;">Links</th></thead>';
+        $html
+          .= "\n" . '<th style="background-color: silver;">Links</th></thead>';
 
         $html .= '<tbody>';
 
@@ -546,8 +566,8 @@ sub line_descrip_html {
             my $mapurl  = $self->linemap_url($line);
             my $skedurl = $self->linesked_url($line);
 
-            $html .=
-qq{<tr><td style="text-align: center;vertical-align:middle;">$line</td>};
+            $html
+              .= qq{<tr><td style="text-align: center;vertical-align:middle;">$line</td>};
             $html .= qq{<td style="padding: 2pt;">$desc</td>};
             $html .= '<td style="text-align: center;">';
             $html .= qq{<a href="$mapurl">Map</a>};
@@ -559,14 +579,14 @@ qq{<tr><td style="text-align: center;vertical-align:middle;">$line</td>};
 #qq{<a href="http://www.actransit.org/maps/schedule_results.php?quick_line=$line&Go=Go">Schedule</a>};
             $html .= '</td></tr>' . "\n";
 
-        }
+        } ## tidy end: foreach my $line (@lines)
 
         $html .= '</tbody></table>' . "\n";
         $html .= "<p>($linegrouptype lines: $count)</p>\n";
 
         $total += $count;
 
-    }    ## tidy end: foreach my $linegrouptype ( qw/Local Transbay/...)
+    } ## tidy end: foreach my $linegrouptype (...)
 
     $html .= "<p>(Total lines: $total)</p>\n";
 
@@ -574,7 +594,7 @@ qq{<tr><td style="text-align: center;vertical-align:middle;">$line</td>};
 
     return $html;
 
-}    ## tidy end: sub line_descrip_html
+} ## tidy end: sub line_descrip_html
 
 sub _ldh_footer {
 
@@ -647,7 +667,7 @@ EOF
 
     return $header;
 
-}    ## tidy end: sub _ldh_header
+} ## tidy end: sub _ldh_header
 
 with 'Actium::O::Files::FileMaker_ODBC';
 

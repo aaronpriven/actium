@@ -34,6 +34,7 @@ Actium::Cmd::run(
         iphoto_stops    => 'IPhoto_Stops',
         k2id            => \'makepoints',
         linedescrip     => 'LineDescrip',
+        linesbycity     => 'LinesByCity',
         makebags        => 'MakeBags',
         makepoints      => 'MakePoints',
         matrix          => 'TimetableMatrixText',
