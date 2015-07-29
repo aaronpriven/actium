@@ -43,6 +43,7 @@ use Sub::Exporter -setup => {
           mean                population_stdev
           all_eq
           in                  folded_in
+          feq                 fne
           halves
           flatten             hashref
           dumpstr
@@ -695,6 +696,16 @@ sub u_trim_to_columns {
 sub immut {
     my $package = caller;
     $package->meta->make_immutable;
+}
+
+sub feq {
+    my ($x, $y) = @_;
+    return fc($x) eq fc($y);
+}
+
+sub fne {
+    my ($x, $y) = @_;
+    return fc($x) ne fc($y);
 }
 
 1;
