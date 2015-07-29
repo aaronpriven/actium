@@ -32,6 +32,14 @@ BEGIN {
     Hash::Util::->import(@Hash::Util::EXPORT_OK);
 }
 
+sub lock_hashref_recurse  {
+    goto &Hash::Util::lock_hashref_recurse ;
+}
+
+sub unlock_hashref_recurse  {
+    goto &Hash::Util::unlock_hashref_recurse ;
+}
+
 1;
 
 __END__
