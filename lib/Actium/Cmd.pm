@@ -63,19 +63,34 @@ sub _mainhelp {
     my $status      = $params{status} // 0;
     my $error       = $params{error};
     my $system_name = $params{system_name};
-    my @helptext;
+    my $helptext    = $EMPTY_STR;
 
     if ($error) {
-        @helptext = ("$error\n");
+        $helptext .= "$error\n";
     }
 
-    push @helptext, "Subcommands available for $system_name:\n";
-    foreach my $subcommand ( sort keys %module_of ) {
-        next if defined( u::reftype( $module_of{$subcommand} ) );
-        push @helptext, $subcommand;
-    }
+    $helptext .= "Subcommands available for $system_name:\n";
 
-    say u::joinlf(@helptext) or die "Can't output help text: $OS_ERROR";
+    my @subcommands = grep { not defined( u::reftype( $module_of{$_} ) ) }
+      sort keys %module_of;
+
+    #my @subcommands;
+    #foreach my $subcommand ( sort keys %module_of ) {
+    #    next if defined( u::reftype( $module_of{$subcommand} ) );
+    #    push @subcommands, $subcommand;
+    #}
+
+    my $width = _get_width();
+
+    require Actium::O::2DArray;
+    ( undef, \my @lines ) = Actium::O::2DArray->new_like_ls(
+        array     => \@subcommands,
+        width     => $width,
+        separator => ( $SPACE x 2 )
+    );
+
+    say $helptext, u::joinlf(@lines)
+      or die "Can't output help text: $OS_ERROR";
 
     exit $status;
 } ## tidy end: sub _mainhelp
@@ -218,10 +233,8 @@ sub _process_options {
             'Provides lots of debugging information if there is an error. '
               . 'Best ignored'
         ],
-        [ 'quiet!', 'Does not display unnecessary information' ],
-        [   'termcolor!',
-            'May display colors in terminal output.'
-        ],
+        [ 'quiet!',     'Does not display unnecessary information' ],
+        [ 'termcolor!', 'May display colors in terminal output.' ],
         [   'progress!',
             'May display dynamic progress indications. '
               . 'On by default. Use -noprogress to turn off',

@@ -89,7 +89,7 @@ sub make_labels {
 
     }
 
-    my $out_sheet = Actium::O::2DArray->new_in_chunks( 2, @labels );
+    my $out_sheet = Actium::O::2DArray->new_across( 2, @labels );
     $out_sheet->ins_col( 1, ($SPACE) x scalar @{$out_sheet});
 
     # blank column for space in the mdidle of the label
