@@ -14,7 +14,7 @@ use Actium::Preamble;
 # The object can be treated as an ordinary array of arrays,
 # or have methods invoked on it
 
-use namespace::autoclean;  ### DEP ###
+use namespace::autoclean;    ### DEP ###
 # don't allow imported functions as methods
 
 #################
@@ -40,9 +40,9 @@ sub new {
     CORE::bless $self, $class;
     return $self;
 
-}
+} ## tidy end: sub new
 
-sub new_in_chunks {
+sub new_across {
     my $class = shift;
 
     my $quantity = shift;
@@ -58,6 +58,58 @@ sub new_in_chunks {
     return $self;
 
 }
+
+sub new_down {
+    my $class = shift;
+
+    my $quantity = shift;
+    my @values   = @_;
+    
+    my $self;
+    my $it = u::natatime( $quantity, @values );
+    
+    while ( my @vals = $it->() ) {
+        for my $i (0 .. $#vals) {
+           push @{ $self->[$i] }, $vals[$i];
+        }
+    }
+
+    CORE::bless $self, $class;
+    return $self; 
+    
+}
+
+sub new_like_ls { # there has got to be a better name than that
+
+    my $class = shift;
+    my %params = u::validate(
+        @_,
+        {   array     => { type    => $PV_TYPE{ARRAYREF} },
+            width     => { default => 80 },
+            separator => 0, # optional
+        }
+    );
+
+    \my @array = $params{array};
+    
+    my $separator = $params{separator};
+    my $sepwidth = defined $separator ? u::u_columns( $separator ) : 0;
+    my $colwidth = $sepwidth + u::max( map { u::u_columns($_) } @array );
+    my $cols = u::floor( ( $params{width} + $sepwidth) / ($colwidth) ) || 1;
+
+    # add sepwidth there to compensate for the fact that we don't actually
+    # print the separator at the end of the line
+
+    my $rows = u::ceil( @array / $cols );
+    
+    my $obj = $class->new_down($rows, @array);
+    
+    \my @tabulated = $obj->tabulate_equal_width($separator);
+    
+    return $obj, \@tabulated;
+
+} ## tidy end: sub new_tabulated
+
 
 sub bless {
     my $class = shift;
@@ -115,7 +167,7 @@ sub new_from_xlsx {
     croak "No file specified in " . __PACKAGE__ . '->new_from_xlsx'
       unless $xlsx_filespec;
 
-    require Spreadsheet::ParseXLSX; ### DEP ###
+    require Spreadsheet::ParseXLSX;    ### DEP ###
 
     my $parser   = Spreadsheet::ParseXLSX->new;
     my $workbook = $parser->parse($xlsx_filespec);
@@ -139,8 +191,7 @@ sub new_from_xlsx {
 
     foreach my $row ( $minrow .. $maxrow ) {
 
-        my @cells =
-          map { $sheet->get_cell( $row, $_ ) } ( $mincol .. $maxcol );
+        my @cells = map { $sheet->get_cell( $row, $_ ) } ( $mincol .. $maxcol );
 
         foreach (@cells) {
             if ( defined $_ ) {
@@ -157,7 +208,7 @@ sub new_from_xlsx {
 
     return $class->bless( \@rows );
 
-}
+} ## tidy end: sub new_from_xlsx
 
 sub new_from_file {
     my $class    = shift;
@@ -174,7 +225,7 @@ sub new_from_file {
     }
 
     if ( $fext eq fc('txt') or $fext eq fc('tsv') or $fext eq fc('tab') ) {
-        require File::Slurp::Tiny; ### DEP ###
+        require File::Slurp::Tiny;    ### DEP ###
         my $tsv = File::Slurp::Tiny::read_file($filespec);
         return $class->new_from_tsv($tsv);
     }
@@ -183,7 +234,7 @@ sub new_from_file {
       . __PACKAGE__
       . '->new_from_file';
 
-}
+} ## tidy end: sub new_from_file
 
 ##################################################
 ### find the last index, or the number of elements
@@ -464,8 +515,8 @@ sub slice {
     $lastcol = u::min( $lastcol, $self_lastcol );
     $lastrow = u::min( $lastrow, $self_lastrow );
 
-    my $new =
-      $self->col( $firstcol .. $lastcol )->rows( $firstrow .. $lastrow );
+    my $new
+      = $self->col( $firstcol .. $lastcol )->rows( $firstrow .. $lastrow );
 
     if ( defined wantarray ) {
         return $new;
@@ -473,7 +524,7 @@ sub slice {
 
     @{$self} = @{$new};
 
-}
+} ## tidy end: sub slice
 
 sub transpose {
 
@@ -494,7 +545,7 @@ sub transpose {
     @{$self} = @{$new};
     return;
 
-}
+} ## tidy end: sub transpose
 
 sub prune {
     my $self = shift;
@@ -542,7 +593,8 @@ sub prune_callback {
     # does not use the last_col method because that method calls this one
     my $last_col = u::max( map { $#{$_} } @{$self} );
 
-    while ( $last_col > -1 and u::all { $callback->() } $self->col($last_col) ) {
+    while ( $last_col > -1 and u::all { $callback->() } $self->col($last_col) )
+    {
         $last_col--;
 
         # set index of the last item of each row to the new $last_col
@@ -552,7 +604,7 @@ sub prune_callback {
 
     return $self;
 
-}
+} ## tidy end: sub prune_callback
 
 sub apply {
     my $orig     = shift;
@@ -576,7 +628,7 @@ sub apply {
         }
     }
     return $self;
-}
+} ## tidy end: sub apply
 
 sub trim {
     my $self = shift;
@@ -636,7 +688,7 @@ sub hash_of_rows {
     }
 
     return \%hash;
-}
+} ## tidy end: sub hash_of_rows
 
 sub hash_of_row_elements {
     my $self = shift;
@@ -659,6 +711,32 @@ sub hash_of_row_elements {
     }
 
     return \%hash;
+} ## tidy end: sub hash_of_row_elements
+
+sub tabulate_equal_width {
+    
+    my $self = undef2empty(shift);
+    # makes a copy
+    my $separator = shift // $SPACE;
+    
+    my %width_of;
+    $width_of{$_} = u::u_columns($_) foreach $self->flattened();
+    
+    my $colwidth = u::max(values %width_of);
+    
+    my @lines;
+
+    foreach \my @fields ( @{$self} ) {
+
+        for my $j ( 0 .. $#fields - 1 ) {
+            $fields[$j] .= $SPACE x ($colwidth - $width_of{$fields[$j]});
+        }
+        push @lines, join( $separator, @fields );
+
+    }
+
+    return \@lines;
+
 }
 
 sub tabulate {
@@ -677,8 +755,8 @@ sub tabulate {
                 $length_of_col[$this_col] = $thislength;
             }
             else {
-                $length_of_col[$this_col] =
-                  u::max( $length_of_col[$this_col], $thislength );
+                $length_of_col[$this_col]
+                  = u::max( $length_of_col[$this_col], $thislength );
             }
         }
     }
@@ -699,7 +777,7 @@ sub tabulate {
 
     return \@lines;
 
-}    ## tidy end: sub tabulate
+} ## tidy end: sub tabulate
 
 my $charcarp = sub {
     my $character  = shift;
@@ -711,6 +789,12 @@ my $charcarp = sub {
 
 # I didn't put that inside the tsv method because I thought maybe someday
 # there might be ->csv or something else.
+
+sub flattened {
+    my $self = shift;
+    my @flattened = u::flatten($self);
+    return @flattened;
+}
 
 sub tsv {
 
@@ -755,14 +839,13 @@ sub tsv {
 
     return $str;
 
-}
+} ## tidy end: sub tsv
 
 sub xlsx {
     my $self   = shift;
     my %params = u::validate(
         @_,
-        {
-            headers     => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
+        {   headers     => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
             format      => { type => $PV_TYPE{HASHREF},  optional => 1 },
             output_file => 1,
         }
@@ -775,7 +858,7 @@ sub xlsx {
         @headers = @{ $params{headers} };
     }
 
-    require Excel::Writer::XLSX; ### DEP ###
+    require Excel::Writer::XLSX;    ### DEP ###
 
     my $workbook = Excel::Writer::XLSX->new($output_file);
     my $sheet    = $workbook->add_worksheet();
@@ -802,7 +885,7 @@ sub xlsx {
 
     return $workbook->close();
 
-}
+} ## tidy end: sub xlsx
 
 1;
 
@@ -912,6 +995,62 @@ Actium::O::2DArray object. Returns the new object.
 
 Note that this blesses the original array, so any other references to this 
 data structures will become a reference to the object, too.
+
+=item B<new_across($chunksize, I<element>, I<element>, ...)>
+
+Takes a flat list and returns it as an Actium::O::2DArray object, 
+where each row has the number of elements specified. So, for example,
+
+ Actium::O::2DArray->new_across (3, qw/a b c d e f g h i j/)
+ 
+returns
+
+  [ 
+    [ a, b, c] ,
+    [ d, e, f] ,
+    [ g, h, i] ,
+    [ j ],
+  ]
+  
+=item B<new_down($chunksize, I<element>, I<element>, ...)>
+
+Takes a flat list and returns it as an Actium::O::2DArray object, 
+where each column has the number of elements specified. So, for example,
+
+ Actium::O::2DArray->new_down (3, qw/a b c d e f g h i j/)
+ 
+returns
+
+  [ 
+    [ a, d, g, j ] ,
+    [ b, e, h ] ,
+    [ c, f, i ] ,
+  ]
+  
+=item B<new_tabulated (...)>
+
+A combination of I<new_down> and I<tabulate>.  Takes three named arguments:
+
+=over
+
+=item array => I<arrayref>
+ 
+A one-dimensional list of scalars.
+
+=item separator => I<separator>
+
+A scalar to be passed to ->tabulate(). The default is set in ->tabulate.
+
+=item width => I<width>
+
+The width of the terminal. If not specified, defaults to 80.
+
+=back
+
+The method determines the number of columns required, creates an
+Actium::O::2DArray object of that number of columns using new_down, and
+then returns first the object and then the results of ->tabulate() on that
+object.
 
 =back
 

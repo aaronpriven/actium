@@ -508,7 +508,7 @@ sub flatten {
     my @inputs = @_;
     my @results;
     foreach my $input (@inputs) {
-        if ( ref($input) eq 'ARRAY' ) {
+        if ( reftype($input) && reftype($input) eq 'ARRAY' ) {
             push @results, flatten( @{$input} );
         }
         else {
@@ -559,7 +559,7 @@ sub in {
 sub chunks {
 
     carp 'Call remains to Actium::Util::chunks' if DEBUG;
-    # deprecate in favor of Actium::O::2DArray->new_in_chunks
+    # deprecate in favor of Actium::O::2DArray->new_across
 
     my $n      = shift;
     my @values = @_;
