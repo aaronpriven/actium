@@ -19,26 +19,26 @@
 #Each db_type (datbase type), has one or more filetypes,
 #which has one or more tables (aka rowtypes).
 
-use warnings; ### DEP ###
-use 5.012;    # turns on features
+use warnings;    ### DEP ###
+use 5.012;       # turns on features
 
 package Actium::O::Files::SQLite 0.010;
 
-use Moose::Role; ### DEP ###
+use Moose::Role;    ### DEP ###
 
-use namespace::autoclean; ### DEP ###
+use namespace::autoclean;    ### DEP ###
 
 use Actium::Constants;
 use Actium::Crier(qw/cry last_cry/);
 use Actium::Util(qw/flatten in/);
 
-use Carp; ### DEP ###
-use DBI; ### DEP ###
+use Carp;                    ### DEP ###
+use DBI;                     ### DEP ###
 # DBD::SQLite ### DEP ###
-use English '-no_match_vars'; ### DEP ###
-use File::Spec; ### DEP ###
-use List::MoreUtils('uniq'); ### DEP ###
-use Const::Fast; ### DEP ###
+use English '-no_match_vars';    ### DEP ###
+use File::Spec;                  ### DEP ###
+use List::MoreUtils('uniq');     ### DEP ###
+use Const::Fast;                 ### DEP ###
 
 # set some constants
 const my $STAT_MTIME   => 9;
@@ -173,12 +173,22 @@ sub _build_db_filespec {
 
 sub _connect {
     my $self        = shift;
-    my $db_filespec = $self->_db_filespec();
-    my $existed     = -e $db_filespec;
-
     my $db_filename = $self->db_filename;
+    my $db_folder   = $self->db_folder;
+    my $db_filespec = $self->_db_filespec;
+    if ( -e $db_folder ) {
+        if ( not -d $db_folder ) {
+            croak
+              "$db_folder is not a directory; can't save $db_filename there.";
+        }
+    }
+    else {
+        mkdir $db_folder or croak "Can't create $db_folder: $OS_ERROR";
+    }
 
-    my $cry = cry (
+    my $existed = -e $db_filespec;
+
+    my $cry = cry(
         $existed
         ? "Connecting to database $db_filename"
         : "Creating new database $db_filename"
@@ -469,7 +479,7 @@ sub _check_columns {
     my @columns = $self->columns_of_table($table);
     foreach my $input (@input_columns) {
         croak "Invalid column $input for table $table"
-          if not in($input , @columns);
+          if not in( $input, @columns );
     }
     return;
 }

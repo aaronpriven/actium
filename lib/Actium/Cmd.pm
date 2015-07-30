@@ -57,6 +57,9 @@ sub run {
 
 } ## tidy end: sub run
 
+const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
+const my $SUBCOMMAND_SEPARATOR => ( $SPACE x 2 );
+
 sub _mainhelp {
     my %params      = @_;
     my %module_of   = %{ $params{module_of} };
@@ -80,16 +83,17 @@ sub _mainhelp {
     #    push @subcommands, $subcommand;
     #}
 
-    my $width = _get_width();
+    my $width = _get_width() - 2;
 
     require Actium::O::2DArray;
     ( undef, \my @lines ) = Actium::O::2DArray->new_like_ls(
         array     => \@subcommands,
         width     => $width,
-        separator => ( $SPACE x 2 )
+        separator => ($SUBCOMMAND_SEPARATOR)
     );
 
-    say $helptext, u::joinlf(@lines)
+    say $helptext, $SUBCOMMAND_PADDING,
+      join( ( "\n" . $SUBCOMMAND_PADDING ), @lines )
       or die "Can't output help text: $OS_ERROR";
 
     exit $status;
@@ -275,7 +279,7 @@ sub _process_options {
     } ## tidy end: for my $optionrequest_r...
 
     my $returnvalue = GetOptions( \%options, @option_specs );
-    die "Errors returned from Getopt::Long\n" unless $returnvalue;
+    die "Errors parsing command-line options.\n" unless $returnvalue;
 
     foreach my $thisoption ( keys %options ) {
         if ( exists $callback_of{$thisoption} ) {
