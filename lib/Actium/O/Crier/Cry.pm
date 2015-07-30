@@ -708,9 +708,10 @@ sub text {
         NOTRY => 'bold bright_white on_magenta',
         UNK   => 'bold bright_yellow on_magenta',
         YES   => 'green',
+        DONE  => \'YES',
         PASS  => \'YES',
         NO    => 'bright_red',
-    );    # OTHER and DONE explicitly omitted
+    ); # OTHER explicitly omitted
 
     sub _add_color {
 
