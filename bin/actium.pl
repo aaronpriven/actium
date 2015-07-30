@@ -24,6 +24,7 @@ Actium::Cmd::run(
         crewlist        => 'CrewList',
         dbexport        => 'ActiumDBExport',
         decalcount      => 'DecalCount',
+        decalcompare    => 'DecalCompare',
         decallabels     => 'DecalLabels',
         ems             => 'Ems',
         flagspecs       => 'Flagspecs',
