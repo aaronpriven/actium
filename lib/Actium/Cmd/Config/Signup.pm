@@ -12,6 +12,7 @@ const my $SIGNUP_ENV    => 'ACTIUM_SIGNUP';
 const my $OLDSIGNUP_ENV => 'ACTIUM_OLDSIGNUP';
 const my $OLDBASE_ENV   => 'ACTIUM_OLDBASE';
 const my $CACHE_ENV     => 'ACTIUM_CACHE';
+const my $HOME_ENV      => 'HOME';
 
 my %defaults;
 
@@ -36,7 +37,8 @@ sub build_defaults {
     $defaults{OLDSIGNUP}
       = ( $env->sysenv($OLDSIGNUP_ENV) // $config{oldsignup} );
 
-    $defaults{CACHE} = $env->sysenv($CACHE_ENV) // $config{cache};
+    $defaults{CACHE} = $env->sysenv($CACHE_ENV) // $config{cache}
+      // ( $env->sysenv($HOME_ENV) . "/.actium" );
     return;
 
 } ## tidy end: sub build_defaults
@@ -123,14 +125,14 @@ sub signup {
 sub oldsignup {
 
     my $env = shift;
-    
+
     \my %params = u::positional( \@_, '@subfolders' );
 
     #\my %params = _process_args(@_);
 
     $params{base} //= ( $env->option('oldbase') // $env->option('base')
           // $defaults{BASE} );
-          
+
     $params{signup} //= ( $env->option('oldsignup') // $defaults{OLDSIGNUP} );
 
     if ( not exists $params{cache} ) {
