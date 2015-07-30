@@ -219,6 +219,8 @@ sub move_insignificant_changes_to_unchanged {
           DB3-c DB3-h
           DB3-d DB3-i
           DB3-e DB3-j
+          F-e  F-a
+          F-f  F-d
           M-a  M-e
           M-b  M-f
           11-d  11-h
