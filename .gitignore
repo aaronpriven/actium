@@ -1,4 +1,6 @@
-# ignore the .project file
+# eclipse things
+.settings/
+.includepath
 .project
 
 # and Mac stuff
