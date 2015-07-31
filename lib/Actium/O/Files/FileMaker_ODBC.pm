@@ -420,10 +420,10 @@ sub load_tables {
 
             if ($process_dupe) {
 
-                my $dupecry
-                  = cry(
-"Determining whether duplicate index field ($index_field) entries"
-                  );
+                my $dupecry = cry(
+                        'Determining whether there are '
+                      . "duplicate index field ($index_field) entries"
+                );
 
                 my @all_indexes = @{
                     $actium_dbh->selectcol_arrayref(
