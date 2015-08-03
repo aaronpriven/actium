@@ -32,7 +32,7 @@ sub flag_assignments {
 
     if (@stopids) {
 
-        my $placeholders = ('?') x scalar @stopids;
+        my $placeholders = (join ', ' , ('?') x scalar @stopids);
 
         $query = <<"EOT";
 
@@ -55,7 +55,7 @@ EOT
 EOT
 
     }
-
+    
     my $sth = $actium_dbh->prepare($query);
     $sth->execute(@stopids);
 
