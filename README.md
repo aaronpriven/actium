@@ -17,4 +17,8 @@ Many of our graphics files are available at
 
 ## Why the name "actium"?
 
-It is a word beginning with "ACT" (for "AC Transit").
+It was chosen because it is a word beginning with "ACT" (for "AC Transit"). 
+It is the name of peninsula in Greece; it gave its name to an 
+important 
+[battle](https://en.wikipedia.org/wiki/Battle_of_Actium) that gave rise to
+the Roman Empire. 
