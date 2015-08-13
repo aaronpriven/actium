@@ -211,6 +211,20 @@ sub splittab {
     return split( /\t/s, $_[0] );
 }
 
+sub display_pairs {
+    my @args = @_;
+    my $text = $EMPTY_STR;
+
+    my $it = natatime 2, @args;
+    while ( my ( $key, $val ) = $it->() ) {
+        my $value = $val // '[undef]';
+        $text .= "$key => $value\n";
+    }
+
+    return $text;
+
+}
+
 # KEY SEPARATOR ADDING AND REMOVING
 
 sub keyreadable {
@@ -471,24 +485,25 @@ sub iterative_flatten {
     # needs testing before replacing 'flatten'
 
     my @results;
-    
+
     while (@_) {
         my $element = shift @_;
-        if (reftype($element) eq 'ARRAY') {
+        if ( reftype($element) eq 'ARRAY' ) {
             unshift @_, @{$element};
-        } else {
+        }
+        else {
             push @results, $element;
         }
     }
 
     return wantarray ? @results : \@results;
-    
+
     # other alternatives, which are untested
-    
+
     #while ( any { reftype $_ eq 'ARRAY' } @array ) {
     #    @array = map { reftype $_ eq 'ARRAY' ? @{$_} : $_ } @array
     #}
-    
+
     #my $continue = 1;
     #while ($continue) {
     #    @array = map {
@@ -699,12 +714,12 @@ sub immut {
 }
 
 sub feq {
-    my ($x, $y) = @_;
+    my ( $x, $y ) = @_;
     return fc($x) eq fc($y);
 }
 
 sub fne {
-    my ($x, $y) = @_;
+    my ( $x, $y ) = @_;
     return fc($x) ne fc($y);
 }
 
