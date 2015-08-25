@@ -199,7 +199,7 @@ sub _build_apbx {
 
 }
 
-sub _build_h24 {
+sub _build_t24 {
     my $self = shift;
     my $tn   = $self->timenum;
     return $EMPTY unless defined $tn;
@@ -235,7 +235,7 @@ This documentation refers to Actium::O::Time version 0.010
  say $time->ap;      # 12:15a
  say $negtime->ap;   # 11:59p
  say $negtime->apbx; # 11:59b
- say $time->h24;     # 00:15
+ say $time->t24;     # 00:15
  
 =head1 DESCRIPTION
 
@@ -322,13 +322,13 @@ a null time. This is used for blank columns in schedules.
 This class method accepts a list of time strings and returns all the objects
 represented by them.
 
-=item B<< Actium::O::Time->new(I<daycode> , I<schooldaycode>) >>
+=item B<< Actium::O::Time->new() >>
 
 B<< Do not use this method. >>
 
 This method is used internally by Actium::O::Time to create a new object and
 insert it into the cache used by instance(). There should never be a reason
-to create more than one method with the same arguments.
+to create more than one object with the same arguments.
 
 =back
 
