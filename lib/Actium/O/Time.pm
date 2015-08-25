@@ -140,11 +140,11 @@ around BUILDARGS => sub {
 ## TIMENUM ATTRIBUTE
 #######################################################
 
-has timenum => {
+has timenum => (
     isa      => TimeNum,
     is       => 'ro',
     required => 1,
-};
+);
 
 #######################################################
 ## FORMATTED TIMES
@@ -152,19 +152,19 @@ has timenum => {
 
 my $hr12_min_cr = sub {
     my $time    = shift;
-    my $minutes = $time % 60;
+    my $minutes = sprintf( '%02d' , $time % 60);
     my $hours   = ( int( $time / 60 ) ) % 12;
     return ( $hours, $minutes );
 };
 
 for my $attribute (qw/ap apbx t24/) {
-    has $attribute => {
+    has $attribute => (
         isa     => 'Str',
         is      => 'ro',
         lazy    => 1,
         builder => "_build_$attribute",
         traits  => ['DoNotSerialize'],
-    };
+    );
 }
 
 sub _build_ap {
@@ -204,8 +204,8 @@ sub _build_t24 {
     my $tn   = $self->timenum;
     return $EMPTY unless defined $tn;
 
-    my $minutes = $tn % 60;
-    my $hours = sprintf( '%2d', ( int( $tn / 60 ) ) % 24 );
+    my $minutes = sprintf('%02d' , $tn % 60);
+    my $hours = sprintf( '%02d', ( int( $tn / 60 ) ) % 24 );
     return "$hours:$minutes";
 }
 
