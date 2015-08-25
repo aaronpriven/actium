@@ -167,11 +167,11 @@ To use a list of stops in a file, create the file. It can be either a plain text
 
 #### Specifying flags from the database
 
-The other way to specify what files are to be printed is to use data in the FileMaekr database. In the database, there is a checkbox "Print next run." It is located under the Flag tab, in the "Stops Neue" layout. 
+The other way to specify what files are to be printed is to use data in the FileMaker database. In the database, there is a checkbox "Print next run." It is located under the Flag tab, in the "Stops Neue" layout. 
 
 The "Print next run" checkbox needs to be checked for those stops, and only those stops, that are to be printed. This box is located on the "Flag" tab of the Stops Neue layout.
 
-#### Zeroing out the current stops
+##### Zeroing out the current stops
 
 First, to make sure that no boxes are still checked from the last time flags were printed, go into Find mode, click the "print next run" box, and then perform the find by pressing the return key. This will display all the records where the box is checked. Turn them all off by clicking the box (so it is not checked) and then select "Replace field contents" from the Records menu. This will open up a little dialog box. Make sure “Replace with: ' ' ” (the empty string) is selected, and select "Replace." This will turn off all the pre-existing checkboxes.
 
@@ -184,11 +184,11 @@ One reason to use the database to specify stops is that each flag must have a fl
 The flag type consists of a number, which represents the number of bus lines that can fit on the front of the flag (the number of boxes), followed by a letter suffix that indicates a variant on the usual flag. Current flag types are:
 
 * 3, 4, 6, 8, 10: Typical flags, 19.5" wide by various heights depending on the number of decals. Almost all new flags printed should be one of these sizes.
-* 5, 9: Flags that are very similar to the typical flags, but which are at odd heights. I created these to use up old metal that were cut to these sizes, but once that old metal is used up these heights should no longer be used.
+* 5, 9: Flags that are very similar to the typical flags, but which are at odd heights. I created these to use up old metal that were cut to these sizes, but once that old metal is used up these heights should probably no longer be used.
 * 2R, 4R, 6R,10R: These are regular flags, but with the 10.5 inch "Rapid" banner at the top. They should be used where the 1R or 72R are present.
 * 2N, 3N, 4N, 5N, 6N: These are narrow flags, of old sizes created in order to re-use old metal (from 1990s-style flags). These should not be used except where old metal exists.
 * 2D: This is the Dumbarton Express branded flag, to be used where Dumbarton Express branding is required.
-* 7W: This flag is an extra wide flag, used where space on a pole is very limited (due to sharing a pole with other signs) and we can't use a typical size flag. This should only be used where absolutely necessary. (I believe at this writing there are exactly two in use.)
+* 7W, 8W: These flags are extra wide flags, used where space on a pole is very limited (due to sharing a pole with other signs) and we can't use a typical size flag. This should only be used where absolutely necessary. (I believe at this writing there are exactly three in use.) The flags are the same size, but 8W reduces the size of the logo, phone number, and so on in order to fit one more bus line.
 * 13W, 15W: These are extra wide flags used where there are more than ten bus lines at a single stop.
 
 #### Running prepareflags
