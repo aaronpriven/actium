@@ -29,6 +29,7 @@ Actium::Cmd::run(
         ems             => 'Ems',
         flagspecs       => 'Flagspecs',
         flickr          => 'Flickr_Stops',
+        frequency       => 'Frequency',
         headwaytimes    => 'HeadwayTimes',
         htmltables      => 'HTMLTables',
         iph             => \'iphoto_stops',
