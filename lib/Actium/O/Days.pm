@@ -9,6 +9,7 @@ use Actium::Moose;
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 with 'MooseX::Role::Flyweight';
+# MooseX::Role::Flyweight ### DEP ###
 
 use Actium::Types qw<DayCode SchoolDayCode>;
 
