@@ -9,6 +9,7 @@ use Actium::Moose;
 use MooseX::Storage;              ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 with 'MooseX::Role::Flyweight';
+# MooseX::Role::Flyweight ### DEP ###
 
 use Actium::Types('TimeNum');
 
@@ -63,6 +64,17 @@ my $timestr_to_timenum = sub {
     my $time = shift;
     state %cache;
     return $cache{$time} if exists $cache{$time};
+
+    # So there are actually two caches in this object.
+    # The one that is used by the Flyweight role caches the 
+    # objects associated with each time number. 
+    # The one in this subroutine caches the numbers associated
+    # with each string.
+
+    # It is worth considering whether to rewrite this to make sure
+    # only one cache is kept -- that would basically mean writing
+    # my own instance() routine that cached both instance{time=>'01:15'} and
+    # instance->{timenum=>75}, and not using MooseX::Role::Flyweight.
 
     if ( $time !~ /[0-9]/ ) {
         return undef;
@@ -162,6 +174,7 @@ for my $attribute (qw/ap apbx t24/) {
         isa     => 'Str',
         is      => 'ro',
         lazy    => 1,
+        init_arg => undef,
         builder => "_build_$attribute",
         traits  => ['DoNotSerialize'],
     );

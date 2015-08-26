@@ -12,7 +12,8 @@
 use 5.010;
 use warnings;
 
-use List::MoreUtils('uniq'); ### DEP ###
+#use List::MoreUtils('uniq'); 
+# I don't want to have a dependency in the dependency-finding program!
 
 my $tag = '### ' . 'DEP' . ' ###';
 # writing it that way avoids finding the literal tag in this file
@@ -48,7 +49,14 @@ push @deps, qw(
      App::Ack 
 ); # general dependencies of the system, not for any single module
 
-@deps = uniq @deps;
+@deps = uniq (@deps);
 @deps = sort @deps;
 
 say join("\n", @deps);
+
+sub uniq {
+  my %seen;
+  return grep { !$seen{$_}++ } @_;
+}
+
+__END__

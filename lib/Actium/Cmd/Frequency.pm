@@ -17,7 +17,8 @@ sub OPTIONS {
 
     return [
         'column=i',
-        'Column that contains the times. Default is the first column.', 1
+        'Column that contains the times (starting with 1). ' . 
+        'Default is the first column.', 1
       ],
       [ 'skiplines=i', 'Lines to skip from the beginning. Default is 0.', 0 ],
       ;
@@ -34,15 +35,39 @@ sub START {
     my $column     = $env->option('column');
     my $skiplines  = $env->option('skiplines');
 
-    my $aoa   = Actium::O::2DArray::->new_from_file($input_file);
-    my @times = $aoa->col($column);
+    my $aoa = Actium::O::2DArray::->new_from_file($input_file);
+
+    my @times = $aoa->col($column - 1);
     if ($skiplines) {
         @times = @times[ $skiplines .. $#times ];
     }
 
-    my @tobjs = Actium::O::Time->instances(@times);
-    
-    say $_->timenum foreach @tobjs;
+    my @timenums = grep { defined } 
+      ( map {  Actium::O::Time->instance($_)->timenum } @times);
+
+    say $_ foreach @timenums;
+
+    @timenums = sort { $a <=> $b } @timenums;
+
+    my %count_of;
+    for my $idx ( 1 .. $#timenums ) {
+      my $diff = $timenums[$idx] - $timenums[$idx - 1];
+      $count_of{$diff}++;
+    }
+
+    foreach my $diff ( sort { $a <=> $b } keys %count_of ) {
+       say "$diff: $count_of{$diff}";
+    }
+    say $EMPTY;
+
+    my $num_of_diffs = scalar keys %count_of;
+
+    if ($num_of_diffs == 1 ) {
+       say "Frequency: $num_of_diffs";
+    } else {
+       my ($lowest , $highest) = u::minmax(keys %count_of);
+       say "Frequency: $lowest-$highest";
+    }
 
     return;
 
