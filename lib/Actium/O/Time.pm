@@ -1,25 +1,30 @@
-package Actium::O::Time 0.010;
+package Actium::O::Time 0.011;
 
 # object for formatting schedule times and parsing formatted times
 
 use 5.022;
-use warnings;                     ### DEP ###
+use warnings;    ### DEP ###
 
 use Actium::Moose;
-use MooseX::Storage;              ### DEP ###
+use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
-with 'MooseX::Role::Flyweight';
-# MooseX::Role::Flyweight ### DEP ###
 
 use Actium::Types('TimeNum');
-
-const my $MINS_IN_12HRS => ( 12 * 60 );
+# that definition should be moved inside here when Actium::Time is phased out
 
 const my $NOON_YESTERDAY    => -$MINS_IN_12HRS;
 const my $MIDNIGHT          => 0;
 const my $NOON              => $MINS_IN_12HRS;
 const my $MIDNIGHT_TOMORROW => 2 * $MINS_IN_12HRS;
 const my $NOON_TOMORROW     => 3 * $MINS_IN_12HRS;
+
+const my %NAMED_TIMENUMS => (
+    NOON_YESTERDAY    => -$MINS_IN_12HRS,
+    MIDNIGHT          => 0,
+    NOON              => $MINS_IN_12HRS,
+    MIDNIGHT_TOMORROW => 2 * $MINS_IN_12HRS,
+    NOON_TOMORROW     => 3 * $MINS_IN_12HRS,
+);
 
 const my %AMPM_OFFSETS => (
     'a' => 0,
@@ -32,9 +37,29 @@ const my %AMPM_OFFSETS => (
 ## CONSTRUCTION
 ###########################################
 
-sub instances {
-    my $class = shift;
-    return map { $class->instance($_) } @_;
+my %str_cache;
+my %num_cache;
+
+my $undef_instance;
+# undef can't be a hash key, so can't keep it in the caches.
+# Can't create it here because rest of object not defined yet
+
+sub from_num {
+    my $class    = shift;
+    my @timenums = @_;
+
+    my @objs = (
+        map {
+            defined $_
+              ? $num_cache{$_} //= $class->new( timenum => $_ )
+              : $undef_instance
+              //= $class->new( timenum => undef )
+        } @timenums
+    );
+
+    return @objs if wantarray;
+    return @timenums > 1 ? \@objs : $objs[0];
+
 }
 
 my $ampm_to_num_cr = sub {
@@ -59,22 +84,13 @@ my $t24h_to_num_cr = sub {
 
 };
 
-my $timestr_to_timenum = sub {
+my $str_to_num_cr = sub {
 
     my $time = shift;
-    state %cache;
-    return $cache{$time} if exists $cache{$time};
-
-    # So there are actually two caches in this object.
-    # The one that is used by the Flyweight role caches the 
-    # objects associated with each time number. 
-    # The one in this subroutine caches the numbers associated
-    # with each string.
-
-    # It is worth considering whether to rewrite this to make sure
-    # only one cache is kept -- that would basically mean writing
-    # my own instance() routine that cached both instance{time=>'01:15'} and
-    # instance->{timenum=>75}, and not using MooseX::Role::Flyweight.
+    
+    if (exists $NAMED_TIMENUMS{$time} ) {
+        return $NAMED_TIMENUMS{$time} ;
+    }
 
     if ( $time !~ /[0-9]/ ) {
         return undef;
@@ -94,59 +110,39 @@ my $timestr_to_timenum = sub {
         if (   (/^   0?      [1-9] [0-5] [0-9] [apxb] $/sx)
             or (/^   1       [0-2] [0-5] [0-9] [apxb] $/sx) )
         {    # 12 hours
-            return $cache{$time} = $ampm_to_num_cr->($time);
+            return $ampm_to_num_cr->($time);
         }
         if (/^ \-?       [0-9]+ [0-5] [0-9] $/sx) {    # 24 hour
-            return $cache{$time} = $t24h_to_num_cr->($time);
+            return $t24h_to_num_cr->($time);
         }
         if (   (/^   [01]?  [0-9] \' [0-5] [0-9] $/sx)
             or (/^    2     [0-3] \' [0-5] [0-9] $/sx) )
         {    # before-midnight military
             $time =~ s/\'//g;
-            return $cache{$time}
-              = ( $t24h_to_num_cr->($time) - ( 2 * $MINS_IN_12HRS ) )
+            return $t24h_to_num_cr->($time) - ( 2 * $MINS_IN_12HRS );
 
-              # treat as 24 hours, but subtract a day so it refers to yesterday
+            # treat as 24 hours, but subtract a day so it refers to yesterday
         }
         croak "Invalid time [$origtime] [$time]";
-    } ## tidy end: for ($time)
+    }
 
 };
 
-around BUILDARGS => sub {
+sub from_str {
+    my $class    = shift;
+    my @timestrs = @_;
 
-    my $orig  = shift;
-    my $class = shift;
-    my %params;
+    my @objs = map {
+        defined $_
+          ? $str_cache{$_} //= $class->from_num( $str_to_num_cr->($_) )
+          : $undef_instance
+          //= $class->new( timenum => undef )
+    } @timestrs;
 
-    if ( @_ == 1 ) {
-        if ( u::reftype( $_[0] ) eq 'HASH' ) {
-            %params = %{ $_[0] };
-        }
-        else {
-            %params = ( time => $_[0] );
-        }
-    }
-    else {
-        %params = @_;
-    }
-    # doing it that way instead of using 'u::positional' means we can specify
-    # named arguments with either a hash or a hashref.
-    # u::positional requires a hashref because it may have optional positional
-    # arguments.
+    return @objs if wantarray;
+    return @timestrs > 1 ? \@objs : $objs[0];
 
-    if ( $params{timenum} and $params{'time'} ) {
-        croak q{Can't specify both a time and a timenum to } . __PACKAGE__;
-    }
-
-    if ( $params{'time'} ) {
-        $params{timenum} = $timestr_to_timenum->($_);
-        delete $params{'time'};
-    }
-
-    return $class->$orig( \%params );
-
-};
+}
 
 #######################################################
 ## TIMENUM ATTRIBUTE
@@ -164,19 +160,20 @@ has timenum => (
 
 my $hr12_min_cr = sub {
     my $time    = shift;
-    my $minutes = sprintf( '%02d' , $time % 60);
-    my $hours   = ( int( $time / 60 ) ) % 12;
+    my $minutes = sprintf( '%02d', $time % 60 );
+    my $hours   = ( u::floor( $time / 60 ) ) % 12;
+    $hours = 12 if $hours == 0;
     return ( $hours, $minutes );
 };
 
 for my $attribute (qw/ap apbx t24/) {
     has $attribute => (
-        isa     => 'Str',
-        is      => 'ro',
-        lazy    => 1,
+        isa      => 'Str',
+        is       => 'ro',
+        lazy     => 1,
         init_arg => undef,
-        builder => "_build_$attribute",
-        traits  => ['DoNotSerialize'],
+        builder  => "_build_$attribute",
+        traits   => ['DoNotSerialize'],
     );
 }
 
@@ -206,9 +203,12 @@ sub _build_apbx {
       : $tn >= $NOON              && $tn < $MIDNIGHT_TOMORROW ? 'p'
       : $tn >= $NOON_YESTERDAY    && $tn < $MIDNIGHT          ? 'b'
       : $tn >= $MIDNIGHT_TOMORROW && $tn < $NOON_TOMORROW     ? 'x'
+      : $tn == $NOON_TOMORROW                                 ? 'z'
       :   croak "Cannot make a 12 hour timestr from out-of-range number $tn";
-
+      
     my ( $hours, $minutes ) = $hr12_min_cr->($tn);
+
+    return "$hours:${minutes}$marker";
 
 }
 
@@ -217,13 +217,15 @@ sub _build_t24 {
     my $tn   = $self->timenum;
     return $EMPTY unless defined $tn;
 
-    my $minutes = sprintf('%02d' , $tn % 60);
+    my $minutes = sprintf( '%02d', $tn % 60 );
     my $hours = sprintf( '%02d', ( int( $tn / 60 ) ) % 24 );
     return "$hours:$minutes";
 }
 
 # A lot of formatting flexibility from the old Actium::Time was not replicated
 # here, because it was never used, and why bother.
+
+u::immut;
 
 1;
 
@@ -240,10 +242,10 @@ This documentation refers to Actium::O::Time version 0.010
 =head1 SYNOPSIS
 
  use Actium::O::Time;
- my $time = Actium::O::Time->instance('8:15a');
- my $time2 = Actium::O::Time->instance( {timenum => 65 } ); # 1:05 am
- my $negtime = Actium::O::Time->instance("23'59");
- my @moretimes = Actium::O::Time->instances('12:15p', '2015', '12:01x');
+ my $time = Actium::O::Time->from_str('8:15a');
+ my $time2 = Actium::O::Time->from_num(  65 ); # 1:05 am
+ my $negtime = Actium::O::Time->from_str("23'59");
+ my @moretimes = Actium::O::Time->from_str('12:15p', '2015', '12:01x');
  
  say $time->ap;      # 12:15a
  say $negtime->ap;   # 11:59p
@@ -265,25 +267,14 @@ are immutable.
 
 =head1 CLASS METHODS
 
+The object is constructed using C<< Actium::O::Time->from_str >>
+or C<< Actium::O::Time->from_num >>
+
 =over
 
-=item B<< Actium::O::Time->instance( I<time> ) >>
+=item B<< Actium::O::Time->from_str( I<string> , I<string>, ...) >>
 
-=item B<< Actium::O::Time->instance( { time => I<time> }) >>
-
-=item B<< Actium::O::Time->instance( { timenum => I<timenum> }) >>
-
-The object is constructed using "Actium::O::Time->instance".  
-
-The constructor accepts a time string, either as the only positional
-argument or as the "time" named argument.  Or, it accepts, in the
-"timenum" named argument, a time number: an integer representing
-the number of minutes after midnight (or, if negative, before
-midnight). It can accept only one or the other, not both.
-
-The times must be between -720 and 2159, representing the times between
-noon yesterday and 11:59 a.m. tomorrow.
-
+This constructor accepts times represented as a string.
 The string form can be in one of three basic formats:
 
 =over 
@@ -320,7 +311,10 @@ it were the time on the day before midnight, so "23'59" is treated as
 meaning, one minute before today's midnight.
 
 For the first format, a final "a" is accepted for a.m. times, and
-a final "p" for p.m. times. Two other final letters are accepted.
+a final "p" for p.m. times. 
+
+Two other final letters are accepted.
+
 A final "b" is accepted for times before midnight, so '1159b' is 
 treated as one minute before midnight.
 
@@ -330,17 +324,22 @@ A final "x" is accepted for times after midnight on the following day, so
 As a special case, if there are no numbers in the string at all, it represents
 a null time. This is used for blank columns in schedules.
 
-=item B<< Actium::O::Time->instances(I<time>, I<time>, ...) >>
+=item B<< Actium::O::Time->from_num( I<integer>, I<integer>, ... ) >>
 
-This class method accepts a list of time strings and returns all the objects
-represented by them.
+This constructor accepts a time number: an integer representing
+the number of minutes after midnight (or, if negative, before
+midnight). 
+
+The integer must be between -720 and 2159, representing the times between
+noon yesterday and 11:59 a.m. tomorrow.
 
 =item B<< Actium::O::Time->new() >>
 
 B<< Do not use this method. >>
 
 This method is used internally by Actium::O::Time to create a new object and
-insert it into the cache used by instance(). There should never be a reason
+insert it into the caches used by C<from_str> and C<from_num>. 
+There should never be a reason
 to create more than one object with the same arguments.
 
 =back
@@ -370,8 +369,8 @@ For example, "11:59b" is yesterday, one minute before midnight and
 =item B<t24()>
 
 Returns the time as a 24-hour string: hours (padded with a leading zero if
-necessary), a colon, and minutes.  The day is not given (so yesterday's times
-are shown as if they were today's).
+necessary), a colon, and minutes.  The day is not given (so yesterday's and 
+tomorrow's times are shown as if they were today's).
 
 =head1 AUTHOR
 
