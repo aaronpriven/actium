@@ -10,7 +10,7 @@ package Actium::Cmd::Time 0.010;
 
 use 5.014;
 
-use Actium::Time qw(timestr_sub);
+use Actium::O::Time;
 
 ###########################################
 ## COMMAND
@@ -39,29 +39,31 @@ of a minus sign ("n10" will be treated as -10).
 
 HELP
 
-}
+} ## tidy end: sub HELP
 
 sub START {
 
     my $class = shift;
-    my $env = shift;
-    my @argv = $env->argv;
+    my $env   = shift;
+    my @argv  = $env->argv;
 
-    my $timestr_sub = timestr_sub( { XB    => 1 } );
-    my $timestr_24  = timestr_sub( { HOURS => 24 } );
     foreach my $time (@argv) {
-        if ( $time =~ m/\A [-n] ? \d+ \z/sx ) {
+        if ( $time =~ m/\A [-n] ? \d+ \z/sx ) {    # is it a timenum?
             $time =~ s/n/-/g;
-            say "$time -> ", $timestr_sub->($time), " or ",
-              $timestr_24->($time);
+
+            my $obj = Actium::O::Time::->from_num($time);
+
+            say "$time -> AP: ", $obj->ap, " or APBX: ", $obj->apbx,
+              " or T24: ", $obj->t24;
         }
         else {
-            say "$time -> ", timenum($time);
+            my $obj = Actium::O::Time::->from_str($time);
+            say "$time -> ", $obj->timenum;
         }
 
     }
 
-}
+} ## tidy end: sub START
 
 1;
 
