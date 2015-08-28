@@ -8,11 +8,13 @@
 use strict;
 use warnings;
 
-package Actium::Constants 0.010;
+package Actium::Constants 0.011;
 # Cannot use Actium::Preamble since that module depends on this one
 
 use 5.016;
-use Const::Fast; ### DEP ###
+use Const::Fast;    ### DEP ###
+
+use Scalar::Util('reftype');   ### DEP ###
 
 my %constants;
 
@@ -21,12 +23,16 @@ my %constants;
 BEGIN {
 
     %constants = (
-        EMPTY_STR   => \q{},
-        EMPTY       => \q{},
-        CRLF        => \qq{\cM\cJ},
-        SPACE       => \q{ },
-        DQUOTE      => \q{"},
-        VERTICALTAB => \qq{\cK},
+        EMPTY_STR     => \q{},
+        EMPTY         => \q{},
+        CR            => \"\cM",
+        LF            => \"\cJ",
+        TAB           => \"\t",
+        CRLF          => \qq{\cM\cJ},
+        SPACE         => \q{ },
+        DQUOTE        => \q{"},
+        VERTICALTAB   => \qq{\cK},
+        MINS_IN_12HRS => \( 12 * 60 ),
 
         # FileMaker uses this separator for repeating fields, so I do too
         KEY_SEPARATOR => \"\c]",
@@ -111,7 +117,7 @@ BEGIN {
     );
 
     {
-        require Params::Validate; ### DEP ###
+        require Params::Validate;    ### DEP ###
         my %pv_type;
 
         my @pv = @{ $Params::Validate::EXPORT_TAGS{'types'} };
@@ -148,10 +154,12 @@ BEGIN {
         my $value = $constants{$name};
         #*{$name} = $value;    # supports <sigil>__PACKAGE__::<variable>
         my $qualname = __PACKAGE__ . q{::} . $name;
-        my $reftype  = ref($value);
+        my $reftype  = reftype($value);
 
         if ( not $reftype ) {
-            $value = \$value;    # non-references turn to references
+            $value            = \$value;     # non-references turn to references
+            $constants{$name} = $value;
+            $reftype          = 'SCALAR',;
         }
 
         if ( $reftype eq 'HASH' ) {
@@ -175,10 +183,26 @@ sub import {
     my $caller = caller;
     no strict 'refs';
     while ( my ( $name, $value ) = each(%constants) ) {
-        *{ $caller . q{::} . $name } = $value;
+        my $reftype    = reftype($value);
+        my $callername = $caller . '::' . $name;
+
+        if ( $reftype eq 'HASH' ) {
+            *{$callername} = \%{$name};
+        }
+        elsif ( $reftype eq 'ARRAY' ) {
+            *{$callername} = \@{$name};
+        }
+        elsif ( $reftype eq 'SCALAR' or $reftype eq 'REF' ) {
+            *{$callername} = \${$name};
+        }
+        else {
+            die "Can't make $reftype into a constant";
+        }
+
+        #*{ $caller . q{::} . $name } = $value;
     }
     return;
-}
+} ## tidy end: sub import
 
 1;
 
@@ -214,9 +238,21 @@ $Actium::Constants::CRLF .
 
 The empty string.
 
+=item $CR
+
+A carriage return.
+
+=item $LF
+
+A line feed.
+
 =item $CRLF
 
 A carriage return followed by a line feed ("\r\n").
+
+=item $TAB
+
+A tab.
 
 =item $SPACE
 
@@ -239,6 +275,10 @@ the Hastus Standard AVL routines use it in hash keys when two or
 more values are needed to uniquely identify a record. (This is the
 same basic idea as that intended by perl's C<$;> variable [see
 L<perlvar/$;>].)
+
+=item $MINS_IN_12HRS
+
+The number of minutes in 12 hours (12 times 60, or 720). 
 
 =item %LINES_TO_COMBINE
 
@@ -340,7 +380,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2014
+Copyright 2015
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
