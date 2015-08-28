@@ -4,7 +4,6 @@ package Actium::O::Time 0.011;
 
 use 5.022;
 use warnings;    ### DEP ###
-
 use Actium::Moose;
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -24,13 +23,6 @@ const my %NAMED_TIMENUMS => (
     NOON              => $MINS_IN_12HRS,
     MIDNIGHT_TOMORROW => 2 * $MINS_IN_12HRS,
     NOON_TOMORROW     => 3 * $MINS_IN_12HRS,
-);
-
-const my %AMPM_OFFSETS => (
-    'a' => 0,
-    'p' => $MINS_IN_12HRS,
-    'b' => -$MINS_IN_12HRS,
-    'x' => 2 * $MINS_IN_12HRS,
 );
 
 ###########################################
@@ -72,7 +64,15 @@ my $ampm_to_num_cr = sub {
     # hour is 0 if it reads 12, or otherwise $time
     my $hour = ( $time == 12 ? 0 : $time );
 
-    return ( $minutes + $hour * 60 + $AMPM_OFFSETS{$ampm} );
+    $minutes += $hour * 60;
+    $minutes += (
+          $ampm eq 'p' ? $MINS_IN_12HRS
+        : $ampm eq 'b' ? -$MINS_IN_12HRS
+        : $ampm eq 'x' ? 2 * $MINS_IN_12HRS
+        : 0
+    );
+
+    return $minutes;
 
 };
 
@@ -199,8 +199,7 @@ sub _build_apmn {
 
     return "12:00m" if ( $tn == $MIDNIGHT or $tn == $MIDNIGHT_TOMORROW );
     return "12:00n"
-      if ( $tn == $NOON or $tn == $NOON_YESTERDAY or $tn == $NOON_TOMORROW )
-      ;
+      if ( $tn == $NOON or $tn == $NOON_YESTERDAY or $tn == $NOON_TOMORROW );
 
     return $self->ap;
 }
@@ -237,6 +236,20 @@ sub _build_t24 {
 
 # A lot of formatting flexibility from the old Actium::Time was not replicated
 # here, because it was never used, and why bother.
+
+#######################################
+### OTHER CLASS METHODS
+
+sub timesort {
+    my $class = shift;
+    my @objs  = @_;
+
+    # Schwartzian transform
+    return map { $_->[0] }
+      sort     { $a->[1] <=> $b->[1] }
+      map { [ $_, $_->timenum ] } @_;
+
+}
 
 u::immut;
 
@@ -390,6 +403,12 @@ This method is used internally by Actium::O::Time to create a new object and
 insert it into the caches used by C<from_str> and C<from_num>. 
 There should never be a reason
 to create more than one object with the same arguments.
+
+=item B<Actium::O::Time::->timesort(I<obj>, I<obj>, ...>
+
+This class method takes a series of Actium::O::Time objects and sorts them
+(numerically according to their time number value), returning the 
+sorted list of objects. 
 
 =back
 

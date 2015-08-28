@@ -16,7 +16,7 @@ use Const::Fast;
 
 use MooseX::Types -declare => [
     qw <TransitInfoDays   DayCode     SchoolDayCode
-      DaySpec             ActiumDays
+      DaySpec             ActiumDays  ActiumTime
       HastusDirCode       DirCode     ActiumDir
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
       Str4                Str8
@@ -108,6 +108,9 @@ coerce ARCrierBullets, from CrierBullet, via { [$_] };
 
 ######################
 ## SCHEDULE TIMES
+
+subtype ActiumTime, as class_type ('Actium::O::Time');
+coerce ActiumTime, from Str, via { Actium::O::Time->from_str($_) };
 
 const my $NOON_YESTERDAY => -$MINS_IN_12HRS;
 const my $NOON_TOMORROW  => 3 * $MINS_IN_12HRS;
