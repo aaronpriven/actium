@@ -109,15 +109,13 @@ coerce ARCrierBullets, from CrierBullet, via { [$_] };
 ######################
 ## SCHEDULE TIMES
 
-const my $MINS_IN_12HRS  => ( 12 * 60 );
 const my $NOON_YESTERDAY => -$MINS_IN_12HRS;
 const my $NOON_TOMORROW  => 3 * $MINS_IN_12HRS;
 
-#subtype TimeNum, as Maybe [Int];
 subtype TimeNum, as Maybe [Int], where {
     not defined($_) or ( $_ >= $NOON_YESTERDAY ) && ( $_ <= $NOON_TOMORROW )
 },
-  message {"Times must be between noon yesterday and noon tomorrow"};
+  message {"Times must be on or after noon yesterday and before noon tomorrow"};
 
 subtype ArrayRefOrTimeNum, as TimeNum | ArrayRef [TimeNum];
 
