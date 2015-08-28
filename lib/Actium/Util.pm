@@ -637,7 +637,7 @@ sub dumpstr {
 sub u_columns {
     my $str = shift;
     require Unicode::GCString;    ### DEP ###
-    return scalar Unicode::GCString->new("$str")->columns;
+    return Unicode::GCString->new("$str")->columns;
     # the quotes are necessary because GCString doesn't work properly
     # with variables Perl thinks are numbers. It doesn't automatically
     # stringify them.
