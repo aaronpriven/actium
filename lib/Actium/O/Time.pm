@@ -87,9 +87,9 @@ my $t24h_to_num_cr = sub {
 my $str_to_num_cr = sub {
 
     my $time = shift;
-    
-    if (exists $NAMED_TIMENUMS{$time} ) {
-        return $NAMED_TIMENUMS{$time} ;
+
+    if ( exists $NAMED_TIMENUMS{$time} ) {
+        return $NAMED_TIMENUMS{$time};
     }
 
     if ( $time !~ /[0-9]/ ) {
@@ -166,7 +166,7 @@ my $hr12_min_cr = sub {
     return ( $hours, $minutes );
 };
 
-for my $attribute (qw/ap apbx t24/) {
+for my $attribute (qw/ap apmn apbx t24/) {
     has $attribute => (
         isa      => 'Str',
         is       => 'ro',
@@ -192,6 +192,19 @@ sub _build_ap {
     return "$hours:${minutes}$marker";
 }
 
+sub _build_apmn {
+    my $self = shift;
+    my $tn   = $self->timenum;
+    return $EMPTY unless defined $tn;
+
+    return "12:00m" if ( $tn == $MIDNIGHT or $tn == $MIDNIGHT_TOMORROW );
+    return "12:00n"
+      if ( $tn == $NOON or $tn == $NOON_YESTERDAY or $tn == $NOON_TOMORROW )
+      ;
+
+    return $self->ap;
+}
+
 sub _build_apbx {
 
     my $self = shift;
@@ -203,9 +216,9 @@ sub _build_apbx {
       : $tn >= $NOON              && $tn < $MIDNIGHT_TOMORROW ? 'p'
       : $tn >= $NOON_YESTERDAY    && $tn < $MIDNIGHT          ? 'b'
       : $tn >= $MIDNIGHT_TOMORROW && $tn < $NOON_TOMORROW     ? 'x'
-      : $tn == $NOON_TOMORROW                                 ? 'z'
+      : $tn == $NOON_TOMORROW ? 'z'
       :   croak "Cannot make a 12 hour timestr from out-of-range number $tn";
-      
+
     my ( $hours, $minutes ) = $hr12_min_cr->($tn);
 
     return "$hours:${minutes}$marker";
@@ -237,7 +250,7 @@ Actium::O::Time - Routines to format times in the Actium system
 
 =head1 VERSION
 
-This documentation refers to Actium::O::Time version 0.010
+This documentation refers to Actium::O::Time version 0.011
 
 =head1 SYNOPSIS
 
@@ -254,11 +267,20 @@ This documentation refers to Actium::O::Time version 0.010
  
 =head1 DESCRIPTION
 
-Actium::O::Time contains routines to format times for transit schedules.
+Actium::O::Time is an class designed to format times for transit schedules.
 It takes times formatted in a number of different ways and converts them
 to a number of minutes after midnight (or, if negative, before midnight).
+Times are only treated as whole minutes, so seconds are not used.
 
-The routines allow times in different formats to be normalized and output
+Most transit operators that run service after midnight treat those trips as 
+a later part of the service day: so a trip that begins at 1:00 a.m. on Sunday 
+is scheduled as though it were at 25 o'clock on Saturday. This class allows 
+times from noon on the day before the service day through 11:59 on the day
+after the service day (so for a Saturday day of service, from 12:00 p.m. Friday
+through 11:59 a.m. Sunday). 
+(Noon on the following day is also accepted as a special case.)
+
+The object allows times in different formats to be normalized and output
 in various other formats, as well as allowing sorting of times numerically.
 
 This uses "flyweight" objects, meaning that it returns the same object
@@ -274,8 +296,29 @@ or C<< Actium::O::Time->from_num >>
 
 =item B<< Actium::O::Time->from_str( I<string> , I<string>, ...) >>
 
-This constructor accepts times represented as a string.
-The string form can be in one of three basic formats:
+This constructor accepts times represented as a string, usually a formatted
+time such as "11:59a" or "13'25".
+
+There are a limited number of special cases where names are used for times
+instead of a format string. The valid named times are:
+
+=over
+
+=item    NOON_YESTERDAY
+
+=item    MIDNIGHT
+
+=item    NOON
+
+=item    MIDNIGHT_TOMORROW 
+
+=item    NOON_TOMORROW 
+
+=back 
+
+(The named format is the only way to specify noon tomorrow with a string.)
+
+Otherwise, the string format can be one of three:
 
 =over 
 
@@ -293,7 +336,8 @@ The string form can be in one of three basic formats:
 
 =back
 
-Common separators (colons, periods, spaces, commas) as well as a
+Most characters, including common separators (colons, periods, spaces, commas) 
+and the 
 final "m" are filtered out before determining which format applies.
 This makes it easy to submit "8:35 a.m." if you receive times in
 that format; it will be converted to '835a' before processing.
@@ -303,8 +347,10 @@ on the hours.
 
 The first format accepts hours from 1 to 12, and minutes from 00 to 59. 
 
-The second format accepts any number of hours from 0 to 35. Minutes 
-still must be from 00 to 59.
+The second format accepts any number of hours from -11 to 35. Minutes 
+still must be from 00 to 59. If a negative sign is given, these are treated 
+as times before midnight, so -0:01 is the same as "11:59b" 
+(i.e., 11:59 yesterday).
 
 The third format accepts hours from 12 to 23. It is treated as though
 it were the time on the day before midnight, so "23'59" is treated as
@@ -321,6 +367,9 @@ treated as one minute before midnight.
 A final "x" is accepted for times after midnight on the following day, so 
 '1201x' is treated as one minute after midnight, tomorrow.
 
+(Note that "12:00z" is not accepted for noon tomorrow, although the module
+can output that format from C<apbx>.)
+
 As a special case, if there are no numbers in the string at all, it represents
 a null time. This is used for blank columns in schedules.
 
@@ -330,8 +379,8 @@ This constructor accepts a time number: an integer representing
 the number of minutes after midnight (or, if negative, before
 midnight). 
 
-The integer must be between -720 and 2159, representing the times between
-noon yesterday and 11:59 a.m. tomorrow.
+The integer must be between -720 and 2160, representing the times between
+noon yesterday and noon tomorrow.
 
 =item B<< Actium::O::Time->new() >>
 
@@ -358,13 +407,23 @@ midnight).
 Returns the time as a string: hours, a colon, minutes, followed by "a" for a.m.
 or "p" for p.m. For example, "2:25a" or "11:30p".
 
+=item B<apbm()>
+
+Like C<ap()>, except that noon is returned as "12:00n" and midnight is returned
+as "12:00m".
+
 =item B<apbx()>
 
 Returns the time as a string: hours, a colon, minutes, followed by marker. 
 Times today are given the marker "a" for a.m. or "p" for p.m. Times tomorrow
 are given the marker "x" and times yesterday are given the marker "b".
 For example, "11:59b" is yesterday, one minute before midnight and 
-"12:01x" is tomorrow, one minute after midnight.
+"12:01x" is tomorrow, one minute after midnight. 
+
+(There is one additional
+marker, "z", which is only used for noon tomorrow. Times after noon tomorrow
+are invalid, but the time noon tomorrow is used as a highest-possible-time, 
+so that is a valid object, although it should probably not be displayed.)
 
 =item B<t24()>
 
