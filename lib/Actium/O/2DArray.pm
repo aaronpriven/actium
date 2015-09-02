@@ -265,8 +265,8 @@ sub last_col {
 
 sub element {
     my $self   = shift;
-    my $colidx = shift;
     my $rowidx = shift;
+    my $colidx = shift;
     return $self->[$rowidx][$colidx];
 }
 
