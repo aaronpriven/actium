@@ -16,7 +16,7 @@ use autodie;
 
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup ('signup');
-use Actium::Crier;
+use Actium::Crier ('cry');
 
 sub OPTIONS {
     my ($class, $env) = @_;
