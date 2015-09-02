@@ -575,7 +575,7 @@ keyword in the SQL.
 =item B<each_columns_in_row_where(I<...>)>
 
 Similar to the other I<each_> routines, I<each_columns_in_row_where> 
-returns a subroutine referenceu allowing iteration through each row.
+returns a subroutine reference allowing iteration through each row.
 
 Unlike those routines, this allows the specification of specific columns, 
 and returns an array reference
