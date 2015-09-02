@@ -32,6 +32,9 @@ BEGIN {
     Hash::Util::->import(@Hash::Util::EXPORT_OK);
 }
 
+# The following work around a bug in Hash::Util.
+# That bug is fixed in perl 5.23.3
+
 sub lock_hashref_recurse  {
     goto &Hash::Util::lock_hashref_recurse ;
 }
