@@ -8,12 +8,14 @@ use lib ("$Bin/../lib"); ### DEP ###
 use Actium::Preamble;
 use Actium::Cmd;
 
-our $VERSION = 0.010;
+our $VERSION = 0.011;
 
 Actium::Cmd::run(
+    commandpath => $0,
     system_name => 'actium',
-    commands    => {
+    subcommands => {
         adddescriptionf => 'AddDescriptionF',
+        addfields       => 'AddFields',
         avl2patdest     => 'AVL2PatDest',
         avl2points      => 'AVL2Points',
         avl2skeds       => 'AVL2Skeds',
