@@ -846,9 +846,9 @@ So
 Returns its result as an array reference in scalar context, but as a
 list in list context.
 
-=item B<positional(C<\@_> , I<arguments>)>
+=item B<positional(\@_ , I<arguments>)>
 
-=item B<positional_around(C<\@_> , I<arguments>)>
+=item B<positional_around(\@_ , I<arguments>)>
 
 The B<positional> and B<positional_around> routines allow the use of positional
 arguments in addition to named arguments in method calls or Moose object
