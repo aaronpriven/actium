@@ -1,4 +1,4 @@
-package Actium::Cmd 0.010;
+package Actium::Cmd 0.011;
 
 use Actium::Preamble;
 use Getopt::Long;    ### DEP ###
@@ -16,7 +16,7 @@ sub run {
 
     my %params      = @_;
     my $system_name = $params{system_name};
-    my %module_of   = %{ $params{commands} };
+    my %module_of   = %{ $params{subcommands} };
 
     $crier = default_crier();
 
@@ -28,6 +28,7 @@ sub run {
     my $module = _get_module( $subcommand, \%module_of, $system_name );
 
     my $env = Actium::O::CmdEnv::->new(
+        commandpath => $params{commandpath},
         subcommand  => $subcommand,
         system_name => $system_name,
         crier       => $crier,
