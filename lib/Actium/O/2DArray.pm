@@ -64,52 +64,51 @@ sub new_down {
 
     my $quantity = shift;
     my @values   = @_;
-    
+
     my $self;
     my $it = u::natatime( $quantity, @values );
-    
+
     while ( my @vals = $it->() ) {
-        for my $i (0 .. $#vals) {
-           push @{ $self->[$i] }, $vals[$i];
+        for my $i ( 0 .. $#vals ) {
+            push @{ $self->[$i] }, $vals[$i];
         }
     }
 
     CORE::bless $self, $class;
-    return $self; 
-    
+    return $self;
+
 }
 
-sub new_like_ls { # there has got to be a better name than that
+sub new_like_ls {    # there has got to be a better name than that
 
-    my $class = shift;
+    my $class  = shift;
     my %params = u::validate(
         @_,
         {   array     => { type    => $PV_TYPE{ARRAYREF} },
             width     => { default => 80 },
-            separator => 0, # optional
+            separator => 0,        # optional
         }
     );
 
     \my @array = $params{array};
-    
+
     my $separator = $params{separator};
-    my $sepwidth = defined $separator ? u::u_columns( $separator ) : 0;
-    my $colwidth = $sepwidth + u::max( map { u::u_columns($_) } @array );
-    my $cols = u::floor( ( $params{width} + $sepwidth) / ($colwidth) ) || 1;
+    my $sepwidth  = defined $separator ? u::u_columns($separator) : 0;
+    my $colwidth  = $sepwidth + u::max( map { u::u_columns($_) } @array );
+    my $cols = u::floor( ( $params{width} + $sepwidth ) / ($colwidth) ) || 1;
 
     # add sepwidth there to compensate for the fact that we don't actually
     # print the separator at the end of the line
 
     my $rows = u::ceil( @array / $cols );
-    
-    my $obj = $class->new_down($rows, @array);
-    
+
+    my $obj = $class->new_down( $rows, @array );
+
     \my @tabulated = $obj->tabulate_equal_width($separator);
-    
+
     return $obj, \@tabulated;
 
-} ## tidy end: sub new_tabulated
-
+} ## tidy end: sub new_like_ls
 
 sub bless {
     my $class = shift;
@@ -210,27 +209,46 @@ sub new_from_xlsx {
 
 } ## tidy end: sub new_from_xlsx
 
-sub new_from_file {
-    my $class    = shift;
+my $filetype_from_ext_r = sub {
     my $filespec = shift;
-
-    croak "No file specified in " . __PACKAGE__ . '->new_from_file'
-      unless $filespec;
+    return unless $filespec;
 
     my ( $filename, $ext ) = u::file_ext($filespec);
     my $fext = fc($ext);
 
     if ( $fext eq fc('xlsx') ) {
+        return 'xlsx';
+    }
+
+    if ( u::folded_in( $fext, qw/tsv tab txt/ ) ) {
+        return 'tsv';
+    }
+
+    return;
+
+};
+
+sub new_from_file {
+    my $class    = shift;
+    my $filespec = shift;
+    my $filetype = shift || $filetype_from_ext_r->($filespec);
+
+    croak "Cannot determine type of $filespec in "
+      . __PACKAGE__
+      . '->new_from_file'
+      unless $filetype;
+
+    if ( $filetype eq 'xlsx' ) {
         return $class->new_from_xlsx($filespec);
     }
 
-    if ( $fext eq fc('txt') or $fext eq fc('tsv') or $fext eq fc('tab') ) {
-        require File::Slurp::Tiny;    ### DEP ###
-        my $tsv = File::Slurp::Tiny::read_file($filespec);
+    if ( $filetype eq 'tsv' ) {
+        require File::Slurper;    ### DEP ###
+        my $tsv = File::Slurper::read_text($filespec);
         return $class->new_from_tsv($tsv);
     }
 
-    croak "File type unrecognized in $filename passed to "
+    croak "File type $filetype unrecognized in "
       . __PACKAGE__
       . '->new_from_file';
 
@@ -714,22 +732,22 @@ sub hash_of_row_elements {
 } ## tidy end: sub hash_of_row_elements
 
 sub tabulate_equal_width {
-    
+
     my $self = undef2empty(shift);
     # makes a copy
     my $separator = shift // $SPACE;
-    
+
     my %width_of;
     $width_of{$_} = u::u_columns($_) foreach $self->flattened();
-    
-    my $colwidth = u::max(values %width_of);
-    
+
+    my $colwidth = u::max( values %width_of );
+
     my @lines;
 
-    foreach \my @fields ( @{$self} ) {
+    foreach \my @fields( @{$self} ) {
 
         for my $j ( 0 .. $#fields - 1 ) {
-            $fields[$j] .= $SPACE x ($colwidth - $width_of{$fields[$j]});
+            $fields[$j] .= $SPACE x ( $colwidth - $width_of{ $fields[$j] } );
         }
         push @lines, join( $separator, @fields );
 
@@ -737,7 +755,7 @@ sub tabulate_equal_width {
 
     return \@lines;
 
-}
+} ## tidy end: sub tabulate_equal_width
 
 sub tabulate {
 
@@ -791,7 +809,7 @@ my $charcarp = sub {
 # there might be ->csv or something else.
 
 sub flattened {
-    my $self = shift;
+    my $self      = shift;
     my @flattened = u::flatten($self);
     return @flattened;
 }
@@ -801,7 +819,7 @@ sub tsv {
     state $methodname = __PACKAGE__ . '->tsv';
 
     # tab-separated-values,
-    # suitable for something like File::Slurp::write_file
+    # suitable for something like File::Slurper::write_text
 
     # converts line feeds, tabs, and carriage returns to the Unicode
     # visible symbols for these characters. Which is probably wrong, but
@@ -840,6 +858,40 @@ sub tsv {
     return $str;
 
 } ## tidy end: sub tsv
+
+sub file {
+    my $self = shift;
+
+    my %params = u::validate(
+        @_,
+        {   headers     => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
+            output_file => 1,
+            type        => 0,
+        }
+    );
+    my $output_file = $params{output_file};
+    my $type = $params{type} || $filetype_from_ext_r->($output_file);
+
+    croak "Cannot determine type of $output_file in " . __PACKAGE__ . '->file'
+      unless $type;
+
+    if ( $type eq 'xlsx' ) {
+        $self->xlsx( \%params );
+        return;
+    }
+    if ( $type eq 'tab' ) {
+        my $text = $self->tsv;
+
+        if ( $params{headers} ) {
+            $text = join( "\t", @{ $params{headers} } ) . "\n" . $text;
+        }
+
+        require File::Slurper;
+        File::Slurper::write_text($text);
+        return;
+    }
+    croak "Unrecognized type $type in " . __PACKAGE__ . '->file';
+} ## tidy end: sub file
 
 sub xlsx {
     my $self   = shift;
@@ -1483,6 +1535,40 @@ with format parameters as specified by Excel::Writer::XLSX.
 
 =back
 
+=item B<<file(...) >>
+
+Accepts a file specification and creates a new file at that 
+location containing the data in the 2D array. 
+
+This method uses named parameters. 
+
+=over
+
+=item type
+
+This parameter is the file's type. Currently, the types recognized are 'tsv'
+for tab-separated values, and 'xlsx' for Excel XLSX. If the type is not given,
+it attempts to determine the type from the file extension, which can be
+(case-insensitively) 'xlsx' for Excel XLSX files  or 'tab', 'tsv' or 'txt' for 
+tab-separated value files. 
+
+=item output_file
+
+This mandatory parameter contains the file specification.
+
+=item headers
+
+This parameter is optional. If present, it contains an array reference to be
+used as the first row in the ouptut file.
+
+The idea is that these will be the headers of the columns. It's not really
+any different than putting the column headers as the first element of the
+data, but frequently these are stored separately. 
+
+=item type
+
+=back
+
 =back
 
 =head1 DIAGNOSTICS
@@ -1558,7 +1644,7 @@ Add CSV (and possibly other file type) support to new_from_file.
 
 =item Actium::Util
 
-=item File::Slurp::Tiny
+=item File::Slurper
 
 =item Spreadsheet::ParseXLSX
 
