@@ -14,7 +14,6 @@ Actium::Cmd::run(
     commandpath => $0,
     system_name => 'actium',
     subcommands => {
-        adddescriptionf => 'AddDescriptionF',
         addfields       => 'AddFields',
         avl2patdest     => 'AVL2PatDest',
         avl2points      => 'AVL2Points',

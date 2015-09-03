@@ -1,4 +1,4 @@
-package Actium::Cmd::AddFields 0.010;
+package Actium::Cmd::AddFields 0.011;
 
 # Adds fields from the database to a file.
 
@@ -9,6 +9,7 @@ use Actium::O::2DArray;
 use Actium::Crier ('cry');
 
 const my $DEFAULT_TABLE  => 'Stops_Neue';
+const my $DEFAULT_FIELD => 'c_description_full';
 const my $DEFAULT_ID_COL => 1;
 
 sub HELP {
@@ -16,6 +17,7 @@ sub HELP {
     my $command = $env->command;
     say "Adds fields from the database to a file.";
     say "Usage: $command addfields <input_file> <field> <field>...";
+    say '    If no fields are specified, uses "c_description_full"';
     return;
 }
 
@@ -60,6 +62,9 @@ sub START {
     my $has_headers = $env->option('headers');
     my @fields      = $env->argv;
     my $file        = shift @fields;
+
+    @fields = ($DEFAULT_FIELD) unless @fields;
+
     my $output_file = $env->option('output')
       // u::add_before_extension( $file, 'out' );
 
