@@ -9,7 +9,7 @@ use Actium::O::2DArray;
 use Actium::Crier ('cry');
 
 const my $DEFAULT_TABLE  => 'Stops_Neue';
-const my $DEFAULT_FIELD => 'c_description_full';
+const my $DEFAULT_FIELD  => 'c_description_full';
 const my $DEFAULT_ID_COL => 1;
 
 sub HELP {
@@ -56,7 +56,13 @@ sub START {
     my $table    = $env->option('table');
     my $keyfield = $actiumdb->key_of_table($table);
 
-    my $column = $env->option('idcolumn') - 1;
+    my $column;
+    if ( $env->option_is_set('idcolumn') ) {
+        $column = $env->option('idcolumn') - 1;
+    }
+    else {
+        $column = $DEFAULT_ID_COL;
+    }
     # externally one-based, internally zero-based
 
     my $has_headers = $env->option('headers');
@@ -70,9 +76,25 @@ sub START {
 
     my $load_cry = cry("Loading $file");
     my $aoa      = Actium::O::2DArray->new_from_file($file);
-    my $last_col = $aoa->last_col;
-    my @ids      = $aoa->col($DEFAULT_ID_COL);
     $load_cry->done;
+    
+    my $process_cry = cry("Getting column from $file");
+    my $last_col = $aoa->last_col;
+
+    if ( $column > $last_col ) {
+        $process_cry->text(
+            sprintf(
+"Column specified, %d, is greater than last column in table, %d",
+                $column + 1,
+                $last_col + 1,
+            )
+        );
+        $process_cry->d_error;
+        die;
+    }
+
+    my @ids = $aoa->col($column);
+    $process_cry->done;
 
     my $query_cry = cry('Preparing FileMaker query');
     $query_cry->text("From table $table, using $keyfield as the key");
@@ -99,7 +121,7 @@ sub START {
     $fetch_cry->over($EMPTY);
     $fetch_cry->done;
 
-    my $push_cry = cry('Placing data in the correct rows');
+    my $push_cry  = cry('Placing data in the correct rows');
     my $first_row = 0;
     if ($has_headers) {
         $first_row = 1;
