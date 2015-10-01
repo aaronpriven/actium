@@ -94,7 +94,12 @@ has options_r => (
     is      => 'bare',
     writer  => '_set_options_r',
     default => sub { {} },
-    handles => { option => 'get', _set_option => 'set' },
+    handles => {
+        option        => 'get',
+        _set_option   => 'set',
+        option_is_set => 'exists',
+      }
+    ,
 );
 
 sub be_quiet {

@@ -879,7 +879,7 @@ sub file {
         $self->xlsx( \%params );
         return;
     }
-    if ( $type eq 'tab' ) {
+    if ( $type eq 'tsv' ) {
         my $text = $self->tsv;
 
         if ( $params{headers} ) {
@@ -887,7 +887,7 @@ sub file {
         }
 
         require File::Slurper;
-        File::Slurper::write_text($text);
+        File::Slurper::write_text($output_file, $text);
         return;
     }
     croak "Unrecognized type $type in " . __PACKAGE__ . '->file';
