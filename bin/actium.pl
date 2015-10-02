@@ -20,6 +20,7 @@ Actium::Cmd::run(
         avl2skeds       => 'AVL2Skeds',
         avl2stoplines   => 'AVL2StopLines',
         avl2stoplists   => 'AVL2StopLists',
+        bartskeds => 'BARTSkeds',
         comparestops    => 'CompareStops',
         compareskeds    => 'CompareSkeds',
         crewlist        => 'CrewList',
