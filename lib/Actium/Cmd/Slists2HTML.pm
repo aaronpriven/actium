@@ -24,38 +24,38 @@ const my $HIGHEST_LINE_IN_FIRST_LOCALPAGE => 70;
 const my %LONGCORNER_OF => (
     # taken from Wikipedia... all of them except the eight principal ones
     # are just for fun
-    N    => 'North',
-    NbE  => 'North by east',
-    NNE  => 'North-northeast',
-    NEbN => 'Northeast by north',
-    NE   => 'Northeast',
-    NEbE => 'Northeast by east',
-    ENE  => 'East-northeast',
-    EbN  => 'East by north',
-    E    => 'East',
-    EbS  => 'East by south',
-    ESE  => 'East-southeast',
-    SEbE => 'Southeast by east',
-    SE   => 'Southeast',
-    SEbS => 'Southeast by south',
-    SSE  => 'South-southeast',
-    SbE  => 'South by east',
-    S    => 'South',
-    SbW  => 'South by west',
-    SSW  => 'South-southwest',
-    SWbS => 'Southwest by south',
-    SW   => 'Southwest',
-    SWbW => 'Southwest by west',
-    WSW  => 'West-southwest',
-    WbS  => 'West by south',
-    W    => 'West',
-    WbN  => 'West by north',
-    WNW  => 'West-northwest',
-    NWbW => 'Northwest by west',
-    NW   => 'Northwest',
-    NWbN => 'Northwest by north',
-    NNW  => 'North-northwest',
-    NbW  => 'North by west',
+    N    => 'north',
+    NbE  => 'north by east',
+    NNE  => 'north-northeast',
+    NEbN => 'northeast by north',
+    NE   => 'northeast',
+    NEbE => 'northeast by east',
+    ENE  => 'east-northeast',
+    EbN  => 'east by north',
+    E    => 'east',
+    EbS  => 'east by south',
+    ESE  => 'east-southeast',
+    SEbE => 'southeast by east',
+    SE   => 'southeast',
+    SEbS => 'southeast by south',
+    SSE  => 'south-southeast',
+    SbE  => 'south by east',
+    S    => 'south',
+    SbW  => 'south by west',
+    SSW  => 'south-southwest',
+    SWbS => 'southwest by south',
+    SW   => 'southwest',
+    SWbW => 'southwest by west',
+    WSW  => 'west-southwest',
+    WbS  => 'west by south',
+    W    => 'west',
+    WbN  => 'west by north',
+    WNW  => 'west-northwest',
+    NWbW => 'northwest by west',
+    NW   => 'northwest',
+    NWbN => 'northwest by north',
+    NNW  => 'north-northwest',
+    NbW  => 'north by west',
 );
 
 sub START {
@@ -103,7 +103,7 @@ sub START {
 
     foreach my $line ( u::sortbyline keys %dirs_of ) {
 
-        next if $LINE_SHOULD_BE_SKIPPED{$line};
+        next if exists $LINE_SHOULD_BE_SKIPPED{$line};
 
         $htmlversion_cry->over($line);
 
@@ -140,8 +140,11 @@ sub START {
                 if ($corner) {
                     $cornertext
                       = ', '
-                      . ( $LONGCORNER_OF{$corner} // $corner )
-                      . "ern corner";
+                      . (
+                        exists $LONGCORNER_OF{$corner}
+                        ? $LONGCORNER_OF{$corner}
+                        : $corner )
+                      . " corner";
                     $cornertext = encode_entities($cornertext);
                 }
 
@@ -166,7 +169,7 @@ sub START {
                 }
 
                 push @{ $stoplines_corner_of{$dir} },
-                    $citytext
+                  $citytext
                   . qq{$desc$cornertext (<a href="$url" target="_blank">$stopid</a>)};
 
                 push @{ $stoplines_of{$dir} },
@@ -192,26 +195,27 @@ sub START {
         open( my $clist_ofh, '>:encoding(UTF-8)', \$cornerlist_outdata )
           or die "Can't open memory location as file: $OS_ERROR";
 
-        say $clist_ofh qq[<h3><span id="$line">$line</span></h3>\n],
-          qq[<h4>$dir_bound[0]</h4>];
-          
+        say $clist_ofh qq[<h4><span id="$line">$line</span>],
+          qq[- $dir_bound[0]</h4>];
+
+        say $clist_ofh q{<p>};
+        say $clist_ofh join( '<br />', @{ $stoplines_corner_of{ $dirs[0] } } );
+        say $clist_ofh '</p>';
+
+        if ( @dirs == 2 ) {
+            say $clist_ofh qq[<h4>$line - $dir_bound[1]</h4>];
+
             say $clist_ofh q{<p>};
-            say $clist_ofh join( '<br />', @{ $stoplines_corner_of{$dirs[0]} } );
+            say $clist_ofh
+              join( '<br />', @{ $stoplines_corner_of{ $dirs[1] } } );
             say $clist_ofh '</p>';
-            
-            if (@dirs == 2) {
-          say qq[<h4>$dir_bound[1]</h4>];
-                
-            say $clist_ofh q{<p>};
-            say $clist_ofh join( '<br />', @{ $stoplines_corner_of{$dirs[1]} } );
-            say $clist_ofh '</p>';
-                
-            }
-            
-            close $clist_ofh or die "Can't close memory file: $OS_ERROR";
-            
-            $corner_list_of{$line} = $cornerlist_outdata;
-          
+
+        }
+
+        close $clist_ofh or die "Can't close memory file: $OS_ERROR";
+
+        $corner_list_of{$line} = $cornerlist_outdata;
+
         ##########################################
         #### ORIGINAL TABLE LIST
         #########################################
@@ -263,9 +267,9 @@ EOT
             }
         }
 
-        push @{ $lines_of_type{$type} },  $line;
-        push @{ $tables_of_type{$type} }, $outdata;
-        push @{ $corner_lists_of_type{$type}} , $cornerlist_outdata;
+        push @{ $lines_of_type{$type} },        $line;
+        push @{ $tables_of_type{$type} },       $outdata;
+        push @{ $corner_lists_of_type{$type} }, $cornerlist_outdata;
 
     } ## tidy end: foreach my $line ( u::sortbyline...)
 
@@ -278,21 +282,20 @@ EOT
     # display and group type same as type, for now
 
     foreach my $type ( keys %tables_of_type ) {
-        
-        
+
         {
-        my $ofh = $stoplists_folder->open_write("$type.html");
+            my $ofh = $stoplists_folder->open_write("$type.html");
 
-        my @lines_and_urls
-          = map {"<a href='#$_'>$_</a>"} @{ $lines_of_type{$type} };
+            my @lines_and_urls
+              = map {"<a href='#$_'>$_</a>"} @{ $lines_of_type{$type} };
 
-        say $ofh contents(@lines_and_urls);
+            say $ofh contents(@lines_and_urls);
 
-        say $ofh join( "\n", @{ $tables_of_type{$type} } );
-        close $ofh or die "Can't close $type.html: $OS_ERROR";
-        
+            say $ofh join( "\n", @{ $tables_of_type{$type} } );
+            close $ofh or die "Can't close $type.html: $OS_ERROR";
+
         }
-        
+
         my $ofh = $stoplists_folder->open_write("c-$type.html");
         my @lines_and_urls
           = map {"<a href='#$_'>$_</a>"} @{ $lines_of_type{$type} };
@@ -301,11 +304,10 @@ EOT
 
         say $ofh join( "\n", @{ $corner_lists_of_type{$type} } );
         close $ofh or die "Can't close c-$type.html: $OS_ERROR";
-        
-        
-    }
 
-    my $indexfh = $stoplists_folder->open_write('stop_index.html');
+    } ## tidy end: foreach my $type ( keys %tables_of_type)
+
+    my $indexfh  = $stoplists_folder->open_write('stop_index.html');
     my $cindexfh = $stoplists_folder->open_write('c_stop_index.html');
 
     for my $type ( 'Local', 'All Nighter', 'Transbay', 'Supplementary' ) {
@@ -317,11 +319,11 @@ EOT
 
                 my $url_type = $subtype =~ s/ /-/grs;
 
-                my $url  = lc("/rider-info/stops/$url_type/#") . $line;
+                my $url    = lc("/rider-info/stops/$url_type/#") . $line;
                 my $c_url  = lc("/rider-info/stops/c-$url_type/#") . $line;
-                my $link = qq{<a href="$url">$line</a>};
+                my $link   = qq{<a href="$url">$line</a>};
                 my $c_link = qq{<a href="$c_url">$line</a>};
-                push @links, $link;
+                push @links,  $link;
                 push @clinks, $c_link;
 
             }
@@ -336,7 +338,7 @@ EOT
 
     } ## tidy end: for my $type ( 'Local',...)
 
-    close $indexfh or die "Can't close stop_index.html: $OS_ERROR";
+    close $indexfh  or die "Can't close stop_index.html: $OS_ERROR";
     close $cindexfh or die "Can't close c_stop_index.html: $OS_ERROR";
 
     $htmlversion_cry->done;
