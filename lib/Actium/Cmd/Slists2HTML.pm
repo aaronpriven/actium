@@ -39,8 +39,6 @@ sub START {
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');
 
-    #    my $linehtml_folder       = $stoplists_folder->subfolder('linehtml');
-
     $actiumdb->ensure_loaded('Stops_Neue');
 
     my $stopdesc_cry = cry( 'Getting stop descriptions from FileMaker');
@@ -130,8 +128,6 @@ sub START {
 
                 push @{ $stops_of{$dir} }, $stopid;
 
-                #my $savedline = $stopline =~ s/\t/ =&gt; /r;
-                #push @{ $stoplines_of{$dir} }, $savedline;
             } ## tidy end: while ( defined( my $stopline...))
 
             close $ifh or die "Can't close $file: $OS_ERROR";
@@ -210,31 +206,12 @@ EOT
 
         say $ofh contents(@lines_and_urls);
 
-=for comment
-        say $ofh '<table border="0" cellspacing="0" cellpadding="10">';
-        say $ofh '<tr>';
-
-        my @lines = @{ $lines_of_type{$type} };
-
-        for my $i ( 0 .. $#lines ) {
-            my $line = $lines[$i];
-            print $ofh "<td><a href='#$line'>$line</a></td>";
-            if ( not( ( $i + 1 ) % 10 ) ) {
-                print $ofh "</tr>\n<tr>";
-            }
-
-        }
-        say $ofh "</tr></table>";
-        
-=cut
-
         say $ofh join( "\n", @{ $tables_of_type{$type} } );
         close $ofh or die "Can't close $type.html: $OS_ERROR";
     } ## tidy end: foreach my $type ( keys %tables_of_type)
 
     my $indexfh = $stoplists_folder->open_write('stop_index.html');
 
-    #for my $type (keys %subtypes_of) {
     for my $type ( 'Local', 'All Nighter', 'Transbay', 'Supplementary' ) {
         my @links;
 
