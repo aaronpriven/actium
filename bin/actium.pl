@@ -47,6 +47,7 @@ Actium::Cmd::run(
         nearbyroutes    => 'NearbyRoutes',
         newsignup       => 'NewSignup',
         orderbytravel   => 'OrderByTravel',
+        pr_add_stop       => 'PRAddStop',
         prepareflags    => 'PrepareFlags',
         storeavl        => 'StorableAVL',
         slists2html     => 'Slists2HTML',
