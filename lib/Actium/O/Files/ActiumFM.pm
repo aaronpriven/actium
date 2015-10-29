@@ -285,6 +285,39 @@ sub search_ss {
 
 } ## tidy end: sub search_ss
 
+const my $MAXIMUM_VALID_DISTANCE => 1320;
+
+sub ss_nearest_stop {
+    
+    require Actium::Geo;
+
+    my ($self, $lat, $long) = @_;
+
+    my $cache_r   = $self->_ss_cache_r;
+
+    my $nearest_dist = $MAXIMUM_VALID_DISTANCE;
+    my $nearest;
+
+    foreach \my %stop_data ( values %{$cache_r} ) {
+
+        my $stoplat  = $stop_data{h_loca_latitude};
+        my $stoplong = $stop_data{h_loca_longitude};
+
+        my $dist = Actium::Geo::distance_feet( $lat, $long, $stoplat, $stoplong );
+
+        if ( $dist < $nearest_dist ) {
+            $nearest      = \%stop_data;
+            $nearest_dist = $dist;
+        }
+
+    }
+
+    return $nearest if $nearest;
+    return;
+
+} ## tidy end: sub get_nearest_stop
+
+
 #########################
 ### LINEGROUPTYPE METHODS
 
