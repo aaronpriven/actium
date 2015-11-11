@@ -15,7 +15,7 @@ The program newsignup is intended to encapsulate as much as possible
 of the routine work of creating a new signup.
 
 ````Shell
-cd /Volumes/Bireme/Actium/db –s z00 –x Z00.ZIP
+actium.pl newsignup -b /Volumes/Bireme/Actium/db –s z00 –x Z00.ZIP
 ````
 
 The -s argument should be the name of the signup, which will be
