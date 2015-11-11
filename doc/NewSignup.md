@@ -43,7 +43,7 @@ XHEA data.
 
 ## 2. Import AVL files into Perl
 
-Run the program "readavl". This takes the AVL files and processes
+Run the program "storeavl". This takes the AVL files and processes
 them into Perl data structures, so they can be more easily read by
 the other programs that deal with the data.
 
