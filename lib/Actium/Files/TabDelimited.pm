@@ -1,15 +1,6 @@
-# Actium/Files/TabDelimited.pm
+package Actium::Files::TabDelimited 0.011;
 
-# Procedural routines for reading Tab-Delimited files and returning them to the caller.
-
-use warnings;
-use 5.014;    # turns on features
-
-package Actium::Files::TabDelimited 0.010;
-
-use Carp;
-use English '-no_match_vars';
-use autodie;
+use Actium::Preamble;
 
 use Params::Validate (':all'); ### DEP ###
 
