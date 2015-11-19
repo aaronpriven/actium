@@ -144,7 +144,7 @@ This file determines the timepoint order for schedules where the computer has tr
 
 Run this program:
 
-    avl2skeds.pl -si z00 -raw
+    actium.pl avl2skeds -si z00 -raw
 
 This creates the "raw" schedule files in the directory rawskeds.  These raw schedules are what is used for comparing schedules from one signup to another. (The regular schedules in "skeds" have the exceptions copied over to them.)
 
@@ -179,9 +179,9 @@ Create a new directory called "exceptions" under the signup directory.  Copy the
 
 This involves running avl2skeds again:
 
-    avl2skeds.pl -si z00
+    actium.pl avl2skeds -si z00
 
-This re-runs the avl2skeds.pl program, only this time it includes the exceptions and creates the "skeds" directory where the skeds that are actually used are stored.
+This re-runs the avl2skeds program, only this time it includes the exceptions and creates the "skeds" directory where the skeds that are actually used are stored.
 
 ## 12. Ensure that the "Lines" table is up to date
 
@@ -191,7 +191,7 @@ This is a manual process to make sure that the "Lines" table has current lines a
 
 a) Run the avl2stoplines.pl program
 
-    avl2stoplines.pl -s z00
+    actium.pl avl2stoplines -s z00
 
 That creates the file stoplines.txt
 
