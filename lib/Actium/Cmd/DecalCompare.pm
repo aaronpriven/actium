@@ -28,7 +28,9 @@ sub START {
         my ( $id, $olddesc, $decals ) = split( /\t/, $line, 3 );
 
         # drop DB lines
-        my @decals = grep { !/\ADB1?\-/ } split( /\t/, $decals );
+        my @decals;
+        @decals = split( /\t/, $decals );
+        #@decals = grep { !/\ADB1?\-/ } @decals;
         next unless @decals;
 
         $decals_of{$id} = join( "\t", @decals );
@@ -201,6 +203,8 @@ sub add_drop_unchanged {
 sub move_insignificant_changes_to_unchanged {
     state $same_decals = [
         qw(
+          46-b 46-d
+          46-d 46-b
           DB-a DB-g
           DB-b DB-h
           DB-c DB-i
