@@ -154,9 +154,9 @@ sub _build_line_cache {
             BIND_VALUES => ['Yes'],
         }
     );
-    
+
     return $cache_r;
-}
+} ## tidy end: sub _build_line_cache
 
 ##############################
 ### SS CACHE
@@ -288,12 +288,12 @@ sub search_ss {
 const my $MAXIMUM_VALID_DISTANCE => 1320;
 
 sub ss_nearest_stop {
-    
+
     require Actium::Geo;
 
-    my ($self, $lat, $long) = @_;
+    my ( $self, $lat, $long ) = @_;
 
-    my $cache_r   = $self->_ss_cache_r;
+    my $cache_r = $self->_ss_cache_r;
 
     my $nearest_dist = $MAXIMUM_VALID_DISTANCE;
     my $nearest;
@@ -303,7 +303,8 @@ sub ss_nearest_stop {
         my $stoplat  = $stop_data{h_loca_latitude};
         my $stoplong = $stop_data{h_loca_longitude};
 
-        my $dist = Actium::Geo::distance_feet( $lat, $long, $stoplat, $stoplong );
+        my $dist
+          = Actium::Geo::distance_feet( $lat, $long, $stoplat, $stoplong );
 
         if ( $dist < $nearest_dist ) {
             $nearest      = \%stop_data;
@@ -315,14 +316,13 @@ sub ss_nearest_stop {
     return $nearest if $nearest;
     return;
 
-} ## tidy end: sub get_nearest_stop
-
+} ## tidy end: sub ss_nearest_stop
 
 #########################
 ### LINEGROUPTYPE METHODS
 
 sub linegrouptypes_in_order {
-    my $self = shift;
+    my $self     = shift;
     my %lg_cache = $self->linegrouptype_cache;
 
     my %sortvalue_of
@@ -469,9 +469,10 @@ has _lines_of_transithub_r => (
 );
 
 sub _lines_of_transithub {
-    my $self = shift;
-    my $hub  = shift;
-    return @{ $self->_lines_of_transithub_r($hub) };
+    my $self   = shift;
+    my $hub    = shift;
+    my $hubs_r = $self->_lines_of_transithub_r($hub) // [];
+    return @{$hubs_r};
 }
 
 sub _build_lines_of_transithub {
@@ -503,7 +504,11 @@ sub lines_at_transit_hubs_html {
       . "It is automatically generated from a program.\n-->\n";
 
     foreach my $city ( sort $self->transithub_cities ) {
-        $text
+
+        my $citytext  = $EMPTY_STR;
+        my $skip_city = 1; # skip city unless we see some lines
+
+        $citytext
           .= qq{<h3>$city</h3>\n}
           . qq{<table width="100%" }
           . qq{cellspacing=0 style="border-collapse:collapse;" }
@@ -511,14 +516,16 @@ sub lines_at_transit_hubs_html {
 
         foreach my $hub ( sort $self->_transithubs_of_city($city) ) {
 
-            my $hub_name = $self->transithub_row_r($hub)->{Name};
-            $text
-              .= qq{<tr><td width='30%' style="vertical-align: middle; text-align: right;">}
-              . qq{$hub_name</td><td width='2%' style="vertical-align:middle;">&bull;</td>};
-
             my @lines = sortbyline( $self->_lines_of_transithub($hub) );
 
             next unless @lines;
+
+            $skip_city = 0; # we saw some lines, don't skip city
+            my $hub_name = $self->transithub_row_r($hub)->{Name};
+
+            $citytext
+              .= qq{<tr><td width='30%' style="vertical-align: middle; text-align: right;">}
+              . qq{$hub_name</td><td width='2%' style="vertical-align:middle;">&bull;</td>};
 
             my @displaylines;
             foreach my $line (@lines) {
@@ -527,14 +534,16 @@ sub lines_at_transit_hubs_html {
                   qq{<a href="} . $self->linesked_url($line) . qq{">$line</a>};
             }
 
-            $text
+            $citytext
               .= '<td style="vertical-align:middle;">'
               . join( "&nbsp;&middot; ", @displaylines )
               . "</td></tr>\n";
 
         } ## tidy end: foreach my $hub ( sort $self...)
 
-        $text .= "</table>\n";
+        if ( not $skip_city ) {
+            $text .= "$citytext</table>\n";
+        }
 
     } ## tidy end: foreach my $city ( sort $self...)
 
