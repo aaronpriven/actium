@@ -24,6 +24,16 @@ HELP
 
 my %factor_of;
 
+my %color_text = (
+    BWY => 'white, blue and yellow',
+    BW  => 'white and blue',
+    BY  => 'blue and yellow,',
+    WY  => 'white and yellow',
+    B   => 'blue',
+    Y   => 'yellow',
+    W   => 'white',
+);
+
 sub START {
     my ( $class, $env ) = @_;
     my @argv = $env->argv;
@@ -42,7 +52,25 @@ sub START {
     s#\s+#/#g foreach @tt_names;    # spaces to slash
     s#/+#/#g  foreach @tt_names;    # consecutive slashes to one slash
 
-    my @columns_to_use = $sheet->shift_row;
+    my @groups = $sheet->shift_row;
+
+    my @colors = $sheet->shift_row;
+
+    foreach my $column_idx ( 0 .. $#colors ) {
+
+        my $colors
+          = join( $EMPTY_STR, grep {/[A-Z]/} ( split( //, $colors[$column_idx] ) ) );
+
+        #say "$column_idx $colors[$column_idx] $colors";
+
+        next unless $colors;
+        
+        my $color_text
+          = exists $color_text{$colors}
+          ? $color_text{$colors}
+          : $colors;
+        $tt_names[$column_idx] .= " $color_text";
+    }
 
     my %timetables_of;
     my %each_of;
@@ -92,7 +120,7 @@ sub START {
             my $tt_name = $tt_names[$idx];
             $factor_of{"$center\0$tt_name"} = $entry;
 
-            my $thisgroup = uc( $columns_to_use[$idx] );
+            my $thisgroup = uc( $groups[$idx] );
 
             next if not $thisgroup;
 
@@ -136,7 +164,7 @@ sub START {
                 $total += $quantity;
             }
 
-            say $textfh "$center.$grouptext Weight: _________________________";
+            print $textfh "$center.$grouptext Weight: _________________________\\r";
 
             if ( 1 == scalar keys %tts_of_quantity ) {
                 print $textfh "$each of these timetables: ";
