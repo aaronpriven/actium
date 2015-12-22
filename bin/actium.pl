@@ -52,6 +52,7 @@ Actium::Cmd::run(
         storeavl        => 'StorableAVL',
         slists2html     => 'Slists2HTML',
         sqlite2tab      => 'SQLite2tab',
+        stopsofline     => 'StopsOfEachLine',
         ss              => 'StopSearch',
         stops2kml       => 'Stops2KML',
         stopsearch      => \'ss',

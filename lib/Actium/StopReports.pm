@@ -95,8 +95,8 @@ sub stops2kml {
         {   TABLE   => 'Stops_Neue',
             COLUMNS => [
                 qw/c_description_fullabbr h_stp_identifier
-                  h_loca_latitude h_loca_longitude
-                  p_active p_lines p_linedirs u_connections/
+                  h_loca_latitude h_loca_longitude p_active p_lines
+                  p_linedirs u_connections u_flex_route/
             ],
         }
     );
@@ -110,11 +110,14 @@ sub stops2kml {
     my %folders;
 
     foreach my $stopid ( sort keys %{$stops_r} ) {
-
+        
         #next if $stopid > "52000";
 
         my %stp        = %{ $stops_r->{$stopid} };
         my $active     = $stp{p_active};
+        #my $flex     = $stp{u_flex_route};
+        #next unless ($flex and $flex eq '448');
+        
         my $foldername = $active ? 'Active' : 'Inactive';
 
         my $description = _kml_stop_description( \%stp );
