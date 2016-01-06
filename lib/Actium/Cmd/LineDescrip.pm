@@ -14,7 +14,7 @@ package Actium::Cmd::LineDescrip 0.010;
 use Actium::Preamble;
 
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup ('signup');
+use Actium::Cmd::Config::Signup   ('signup');
 
 sub HELP {
 
@@ -26,9 +26,11 @@ HELP
 }
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options($env));
+    my ( $class, $env ) = @_;
+    return (
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::Signup::options($env)
+    );
 }
 
 sub START {
@@ -49,6 +51,15 @@ sub START {
     my $outhubs = $signup->open_write('transithubs.html');
     say $outhubs $html_hubs;
     close $outhubs or die $OS_ERROR;
+
+    \my %descrips_of_hubs_indesign
+      = $actiumdb->descrips_of_transithubs_indesign( { signup => $signup } )
+      ;
+
+    my $line_descrip_folder = $signup->subfolder('line_descrip');
+
+    $line_descrip_folder->write_files_from_hash( \%descrips_of_hubs_indesign,
+        'Indesign Line Description', 'txt' );
 
     return;
 

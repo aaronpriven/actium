@@ -692,10 +692,12 @@ sub write_files_from_hash {
     foreach my $key ( sort keys %hash ) {
 
         $cry->over($key);
+        
+        my $filekey = $key =~ s@/@-@gr;
 
-        my $file = $self->make_filespec( $key . $extension );
+        my $file = $self->make_filespec( $filekey . $extension );
 
-        my $out = $self->open_write( $key . $extension );
+        my $out = $self->open_write( $filekey . $extension );
 
         print $out $hash{$key} or die "Can't print to $file: $OS_ERROR";
 
