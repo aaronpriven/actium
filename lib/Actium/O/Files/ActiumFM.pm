@@ -494,6 +494,94 @@ sub _build_lines_of_transithub {
     return \%lines_of_transithub;
 }
 
+# $x->{Hubname}{line} = description
+
+has _line_descrips_of_transithubs_r => (
+    traits   => ['Hash'],
+    isa      => 'HashRef[HashRef[Str]]',
+    init_arg => undef,
+    is       => 'bare',
+    handles  => { _line_descrips_of_transithub_r => 'get' },
+    builder  => '_build_line_descrips_of_transithub',
+    lazy     => 1,
+);
+
+sub line_descrips_of_transithub {
+    my $self       = shift;
+    my $hub        = shift;
+    my $descrips_r = $self->_line_descrips_of_transithub_r($hub) // {};
+    return %{$descrips_r};
+
+}
+
+sub _build_line_descrips_of_transithub {
+    my $self = shift;
+
+    my %line_descrips_of_transithub;
+    foreach my $transithub ( $self->transithubs ) {
+        my @lines = $self->_lines_of_transithub($transithub);
+        foreach my $line (@lines) {
+            my $desc = ${ $self->line_row_r($line) }{Description};
+            $line_descrips_of_transithub{$transithub}{$line} = $desc;
+        }
+    }
+
+    return \%line_descrips_of_transithub;
+
+}
+
+######################################
+#### LINE DESCRIPTIONS OF TRANSIT HUBS
+
+const my $IDT => 'Actium::Text::InDesignTags';
+
+sub descrips_of_transithubs_indesign {
+    my $self = shift;
+
+    my %params = u::validate( @_, { signup => 1, } );
+    my $signup = $params{signup};
+
+    require Actium::EffectiveDate;
+    my $effdate = Actium::EffectiveDate::effectivedate($signup);
+
+    require Actium::Text::InDesignTags;
+    my %descrips_of_hubs;
+
+    foreach my $transithub ( $self->transithubs ) {
+
+        my %descrip_of = $self->line_descrips_of_transithub($transithub);
+
+        my @descrip_texts;
+        foreach my $line ( sortbyline keys %descrip_of ) {
+            my $descrip = $descrip_of{$line};
+
+            push @descrip_texts,
+              u::joinempty(
+                $IDT->parastyle('LineDescrip_Line'),
+                $IDT->encode_high_chars($line),
+                $IDT->hardreturn,
+                $IDT->parastyle('LineDescrip_Descrip'),
+                $IDT->encode_high_chars($descrip)
+              );
+
+        }
+
+        $descrips_of_hubs{$transithub} = u::joinempty(
+            $IDT->start,
+            $IDT->parastyle('LineDescrip_TitleLine'),
+            $IDT->charstyle('LineDescrip_Title'),
+            'Line Descriptions',
+            $IDT->nocharstyle,
+            ' Effective ',
+            join( $IDT->hardreturn, $effdate, @descrip_texts ),
+        );
+
+    } ## tidy end: foreach my $transithub ( $self...)
+
+    return \%descrips_of_hubs;
+
+} ## tidy end: sub descrips_of_transithubs_indesign
+
 #########################
 ### TRANSIT HUBS HTML OUTPUT
 
@@ -506,7 +594,7 @@ sub lines_at_transit_hubs_html {
     foreach my $city ( sort $self->transithub_cities ) {
 
         my $citytext  = $EMPTY_STR;
-        my $skip_city = 1; # skip city unless we see some lines
+        my $skip_city = 1;            # skip city unless we see some lines
 
         $citytext
           .= qq{<h3>$city</h3>\n}
@@ -520,7 +608,7 @@ sub lines_at_transit_hubs_html {
 
             next unless @lines;
 
-            $skip_city = 0; # we saw some lines, don't skip city
+            $skip_city = 0;    # we saw some lines, don't skip city
             my $hub_name = $self->transithub_row_r($hub)->{Name};
 
             $citytext
