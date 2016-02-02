@@ -40,27 +40,29 @@ sub OPTIONS {
 
 sub START {
 
+    my $start_cry = cry('Building BART frequency tables');
+
     my ( $class, $env ) = @_;
     my @dates = get_dates( $env->option('date') );
 
     \my %stations = get_stations();
-    my @station_abbrs = keys %stations;
-    
+    my @station_abbrs = sort keys %stations;
+
     my %fl_of;
 
     my $skeds_cry = cry('Getting station schedules from BART');
 
     foreach my $station (@station_abbrs) {
-        
+
         my %dest_is_used;
 
         $skeds_cry->over($station);
 
         foreach my $idx ( 0 .. $#DAYS ) {
-            my $date = $dates[$idx];
-            my $day  = $DAYS[$idx];
-            my $firstlast_r = 
-            $fl_of{$station}{$day} = get_firstlast( $station, $date );
+            my $date        = $dates[$idx];
+            my $day         = $DAYS[$idx];
+            my $firstlast_r = $fl_of{$station}{$day}
+              = get_firstlast( $station, $date );
             $dest_is_used{$_} = 1 foreach keys %$firstlast_r;
         }
         $skeds_cry->over($EMPTY);
@@ -69,12 +71,13 @@ sub START {
 
         push @results, ["Departing from  $stations{$station} Station"];
         push @results,
-          [ 'Train', 'Weekday', $EMPTY, 'Saturday', $EMPTY, 'Sunday' ]
-          ;
-          push @results, [ $EMPTY, qw/First Last First Last First Last/];
-          
-        foreach
-          my $dest ( sort { $stations{$a} cmp $stations{$b} } keys %dest_is_used )
+          [ 'Train', 'Weekday', $EMPTY, 'Saturday', $EMPTY, 'Sunday' ];
+        push @results, [ $EMPTY, qw/First Last First Last First Last/ ];
+
+        foreach my $dest (
+            sort { $stations{$a} cmp $stations{$b} }
+            keys %dest_is_used
+          )
         {
             my @train;
             push @train, $stations{$dest};
@@ -83,18 +86,20 @@ sub START {
                 push @train, $fl_of{$station}{$day}{$dest}[0] // '—';
                 push @train, $fl_of{$station}{$day}{$dest}[1] // '—';
             }
-            
+
             push @results, \@train;
 
         }
-        
-        my $aoa = Actium::O::2DArray->bless(\@results);
-        my $file = "/Volumes/Bireme/Connectivity-TIDs/bart_sked_output/$station.xlsx";
-        $aoa->xlsx(output_file=>$file);
-        
-    } ## tidy end: foreach my $station ('DALY')
+
+        my $aoa = Actium::O::2DArray->bless( \@results );
+        my $file
+          = "/Volumes/Bireme/Connectivity-TIDs/bart_sked_output/$station.xlsx";
+        $aoa->xlsx( output_file => $file );
+
+    } ## tidy end: foreach my $station (@station_abbrs)
 
     $skeds_cry->done;
+    $start_cry->done;
 
 } ## tidy end: sub START
 
@@ -104,7 +109,7 @@ sub get_firstlast {
 
     my $twig = XML::Twig->new();
     $twig->parse($stnsked_xml);
-
+    
     my @items = $twig->root->first_child('station')->children('item');
 
     my %items_of_dest;
@@ -237,15 +242,29 @@ sub get_dates {
 
     my $effective_date = shift;
     my $date_obj;
+    my $today = today();
 
     if ( not $effective_date ) {
-        $date_obj = today();
+        $date_obj = $today;
     }
-    elsif ( not u::blessed($effective_date) ) {
-        $date_obj = date($effective_date);
-        die "Unrecognized date '$effective_date'" unless defined $date_obj;
-    }
+    else {
 
+        if ( not u::blessed($effective_date) ) {
+            $date_obj = date($effective_date);
+            die "Unrecognized date '$effective_date'" unless defined $date_obj;
+        }
+        
+        if ($date_obj < $today) {
+            my $cry = last_cry;
+            $cry->text(
+             "Can't ask for BART schedules for past date $effective_date."
+             );
+             $cry->d_error;
+             die;
+        }
+
+    }
+    
     my %date_of;
 
     while ( scalar keys %date_of < 3 ) {
