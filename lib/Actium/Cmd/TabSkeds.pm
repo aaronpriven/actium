@@ -159,6 +159,7 @@ our %adjectivedaynames = (
     DA => "Daily",
     SA => "Saturdays",
     SU => "Sundays and Holidays",
+    SD => 'School days only',
 );
 
 our %longerdaynames = (
@@ -168,6 +169,7 @@ our %longerdaynames = (
     SA => "Saturdays",
     SU => "Sundays and Holidays",
     WU => "Weekdays and Sundays",
+    SD => 'School days only',
 );
 
 our %longdaynames = (
@@ -176,6 +178,7 @@ our %longdaynames = (
     DA => "Every day",
     SA => "Saturdays",
     SU => "Sundays and Holidays",
+    SD => 'School days only',
 );
 
 our %shortdaynames = (
@@ -184,6 +187,7 @@ our %shortdaynames = (
     DA => "Every day",
     SA => "Saturdays",
     SU => "Sun & Hol",
+    SD => 'School days',
 );
 
 our %longdirnames = (
@@ -411,6 +415,11 @@ sub START {
 
             outtab($skedname);
             my $day = $skedref->{DAY};
+            
+            if ($linegroup =~ /\A 6 [0-9] [0-9] \z/x ) {
+            	$day = 'SD';
+            }
+
             outtab( $day, $adjectivedaynames{$day},
                 $longdaynames{$day}, $longerdaynames{$day} );
             my $dir = $skedref->{DIR};
