@@ -26,7 +26,13 @@ sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
         Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::Signup::options_with_old($env)
+        Actium::Cmd::Config::Signup::options_with_old($env),
+        
+        [   'ignore600s!',
+            'Ignore lines 600-699 in comparison. '
+        ],
+        
+        
     );
 }
 
@@ -38,6 +44,13 @@ sub START {
     my $actiumdb  = actiumdb($env);
     my $oldsignup = oldsignup($env);
     my $signup    = signup($env);
+    
+    my $ignore_600s = $env->option('ignore600s');
+    
+    my @skipped = qw(BSH 399);
+    if ($ignore_600s) {
+    	push @skipped, (600 .. 699);
+    }
 
     chdir $signup->path;
     $actiumdb->load_tables(
@@ -52,7 +65,7 @@ sub START {
 
     my $comparedir = $signup->subfolder('compare');
 
-    my %newstoplists = assemble_stoplists( $signup, qw(BSH 399) );
+    my %newstoplists = assemble_stoplists( $signup, @skipped );
 
     open my $out, '>', 'compare/comparestops.txt' or die $OS_ERROR;
     # done here so as to make sure the file is saved in the *new*
@@ -61,7 +74,7 @@ sub START {
     print $out
 "Change\tStopID\tStop Description\tNumAdded\tAdded\tNumRemoved\tRemoved\tNumUnchanged\tUnchanged\n";
 
-    %oldstoplists = assemble_stoplists( $oldsignup, qw(BSH 399) );
+    %oldstoplists = assemble_stoplists( $oldsignup, @skipped );
 
     my @stopids = u::uniq( sort ( keys %newstoplists, keys %oldstoplists ) );
 
