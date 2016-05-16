@@ -111,7 +111,7 @@ Note that the "active" field will not have been updated yet.
 
 ## 5. Import places into FileMaker
 
-a) Go into the Places\_Neue layout in FileMaker. Display all records.
+a) Go into the Places layout in FileMaker. Display all records.
 
 b) import place\_with\_i.txt
 
