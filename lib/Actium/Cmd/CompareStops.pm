@@ -67,7 +67,7 @@ sub START {
 
     my %newstoplists = assemble_stoplists( $signup, @skipped );
 
-    open my $out, '>', 'compare/comparestops.txt' or die $OS_ERROR;
+    open my $out, '>:utf8', 'compare/comparestops.txt' or die $OS_ERROR;
     # done here so as to make sure the file is saved in the *new*
     # signup directory
 
