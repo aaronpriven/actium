@@ -641,7 +641,7 @@ sub apply {
             for ( $row->[$idx] ) {
 
                 # localize $_ to $row->[$idx]. Autovivifies.
-                $callback->();
+                $callback->($row, $idx);
             }
         }
     }
@@ -1412,6 +1412,9 @@ values are defined):
 
 In void context, alters the original object.
 Otherwise, creates a new Actium::O::2DArray object and returns the object.
+
+For each invocation of the callback, @_ is set to the row and column indexes
+(0-based).
 
 =item B<trim()>
 
