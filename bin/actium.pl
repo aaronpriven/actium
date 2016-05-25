@@ -35,6 +35,7 @@ Actium::Cmd::run(
 		frequency     => 'Frequency',
 		headwaytimes  => 'HeadwayTimes',
 		htmltables    => 'HTMLTables',
+		indd_encode   => 'InDesignEncode',
 		iph           => \'iphoto_stops',
 		iphoto_stops  => 'IPhoto_Stops',
 		k2id          => \'makepoints',
