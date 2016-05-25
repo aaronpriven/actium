@@ -11,6 +11,7 @@ my $crier;
 
 const my $EX_USAGE    => 64;    # from "man sysexits"
 const my $EX_SOFTWARE => 70;
+const my $COMMAND_PREFIX => 'Actium::Cmd';
 
 sub run {
 
@@ -222,7 +223,7 @@ sub _get_module {
         }
     }
 
-    return "Actium::Cmd::$module_of{$subcommand}";
+    return "${COMMAND_PREFIX}::$module_of{$subcommand}";
 
 } ## tidy end: sub _get_module
 
