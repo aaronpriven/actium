@@ -916,7 +916,8 @@ B<The following will not work:>
 
 If the name of the last argument to C<positional> or C<positional_around>
 begins with an at sign (@), then the at sign will be removed, and an arrayref 
-pointing to an array of the remaining arguments to your method.
+pointing to an array of the remaining arguments to your method will be returned
+in that slot of the array.
 
 For example, given the following:
 
