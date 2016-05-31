@@ -25,6 +25,8 @@ use constant {
 	emdash           => '<0x2014>',
 	hardreturn       => "\r",                     # 0x000D
 	softreturn       => "\n",                     # 0x000A
+	hardreturn_esc   => '<0x000D>',
+	softreturn_esc   => '<0x000A>',
 	end_nested_style => '<0x0003>',               # actually is exported as 0x03
 	emspace          => '<0x2003>',
 	enspace          => '<0x2002>',
