@@ -16,21 +16,21 @@ package Actium::O::Points::Point 0.010;
 
 use sort ('stable');
 
-use Moose; ### DEP ###
-use MooseX::SemiAffordanceAccessor; ### DEP ###
-use Moose::Util::TypeConstraints; ### DEP ###
+use Moose;                             ### DEP ###
+use MooseX::SemiAffordanceAccessor;    ### DEP ###
+use Moose::Util::TypeConstraints;      ### DEP ###
 
-use namespace::autoclean; ### DEP ###
+use namespace::autoclean;              ### DEP ###
 
 use Actium::Util('joinseries');
 use Actium::Crier(qw/cry last_cry/);
 use Actium::Constants;
 use Actium::Sorting::Line (qw(byline sortbyline));
-use List::MoreUtils('natatime'); ### DEP ###
-use Const::Fast; ### DEP ###
-use List::Compare::Functional('get_unique'); ### DEP ###
+use List::MoreUtils('natatime');                ### DEP ###
+use Const::Fast;                                ### DEP ###
+use List::Compare::Functional('get_unique');    ### DEP ###
 
-use POSIX (); ### DEP ###
+use POSIX ();                                   ### DEP ###
 
 use Actium::O::Points::Column;
 
@@ -168,7 +168,7 @@ sub new_from_kpoints {
         is_db             => ( $special_type eq 'db' ),
         nonstoplocation   => $nonstoplocation,
         omitted_of_stop_r => $omitted_of_stop_r,
-        delivery => $delivery,
+        delivery          => $delivery,
     );
 
     my $is_simple = $self->is_simple_stopid;
@@ -273,9 +273,11 @@ sub new_from_kpoints {
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
             my $lines = joinseries(@notfound);
-            last_cry()->text(
-              "\x{1f4A5}  Warning! $linetext $lines found in omit list for "
-              . "stop $stop_to_import, sign $signid, but not found in " . "stop schedule data.");
+            last_cry()
+              ->text(
+                "\x{1f4A5}  Warning! $linetext $lines found in omit list for "
+                  . "stop $stop_to_import, sign $signid, but not found in "
+                  . "stop schedule data." );
         }
 
     } ## tidy end: foreach my $stop_to_import ...
@@ -597,13 +599,13 @@ sub format_side {
 
     print $sidefh $IDT->parastyle('sideeffective'),
       $IDT->color($color), "Effective: $effdate";
-      
+
     print $sidefh "\r", $IDT->parastyle('sidenotes'),
       'Light Face = a.m.', $IDT->softreturn;
     print $sidefh $IDT->bold_word('Bold Face = p.m.'), "\r";
 
     if ( $self->has_ab ) {
-        print $sidefh 
+        print $sidefh
 'Lines that have <0x201C>A Loop<0x201D> and <0x201C>B Loop<0x201D> travel in a circle, beginning ',
           'and ending at the same point. The A Loop operates in the clockwise ',
           'direction. The B Loop operates in the counterclockwise direction. ',
@@ -612,13 +614,13 @@ sub format_side {
     }
 
     my $sidenote = $Actium::Cmd::MakePoints::signs{$signid}{Sidenote};
-    
+
     if ( $sidenote and ( $sidenote !~ /^\s+$/ ) ) {
         $sidenote =~ s/\n/\r/g;
         $sidenote =~ s/\r+/\r/g;
         $sidenote =~ s/\r+$//;
         $sidenote =~ s/\0+$//;
-        
+
         $sidenote = $IDT->encode_high_chars($sidenote);
 
         if ($is_bsh) {
@@ -627,9 +629,8 @@ sub format_side {
         }
         else {
 
-            print $sidefh $IDT->bold_word(
-                $sidenote)
-                #$Actium::Cmd::MakePoints::signs{$signid}{Sidenote} )
+            print $sidefh $IDT->bold_word($sidenote)
+              #$Actium::Cmd::MakePoints::signs{$signid}{Sidenote} )
               . "\r";
         }
     }
@@ -650,8 +651,8 @@ sub format_side {
 #}
 
     print $sidefh
-'See something wrong with this sign, or any other AC Transit sign?' . 
-" Let us know! Leave a comment at actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
+      'See something wrong with this sign, or any other AC Transit sign?'
+      . " Let us know! Leave a comment at actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
       if lc(
         $Actium::Cmd::MakePoints::signtypes{
             $Actium::Cmd::MakePoints::signs{$signid}{SignType}
@@ -665,13 +666,13 @@ sub format_side {
           $IDT->bold_word('"Departure Times"'),
           " for live bus predictions\r", $IDT->parastyle('stopid'),
           "STOP ID\r",                   $IDT->parastyle('stopidnumber'),
-          $self->stopid() , "\r";
+          $self->stopid(), "\r";
     }
 
-    if ($self->delivery and fc($self->delivery) eq fc('Clear Channel')) {
-       print $sidefh   $IDT->parastyle('sidenotes'),
-       'Please report maintenance or safety issues at bus shelters ' . 
-       "by calling Clear Channel toll free 24/7: 1-888-ADSHEL1 (237-4351)\r";
+    if ( $self->delivery and fc( $self->delivery ) eq fc('Clear Channel') ) {
+        print $sidefh $IDT->parastyle('sidenotes'),
+          'Please report maintenance or safety issues at bus shelters '
+          . "by calling Clear Channel toll free 24/7: 1-888-ADSHEL1 (237-4351)\r";
     }
 
     close $sidefh;
@@ -886,7 +887,7 @@ sub output {
     print $fh $self->formatted_side;
     print $fh $break;
     print $fh $self->formatted_bottom;
-    
+
     close $fh;
 
 } ## tidy end: sub output
