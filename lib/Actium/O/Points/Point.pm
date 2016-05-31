@@ -382,6 +382,55 @@ my $ewreplace = sub {
     return $dircode;
 };
 
+sub sort_columns_and_determine_heights {
+
+    my ( $self, $signtype ) = @_;
+
+    $signtype =~ s/=.*\z//;
+    # Don't allow specifying a subtype manually
+    # -- it will just treat it as though it were a main type
+
+    my @subtypes
+      = grep {/$signtype=[A-Z]\z/} keys %Actium::Cmd::MakePoints::signtypes;
+
+    if ( @subtypes == 0 ) {
+        foreach my $column ( $self->columns ) {
+            $column->set_formatted_height(
+                $Actium::Cmd::MakePoints::signtypes{$signtype}{TallColumnLines}
+            );
+        }
+
+        return $self->sort_columns_by_route_etc;
+    }
+    
+    
+    
+    
+    #### TO DO ##############
+    
+    ## Divide columns into chunks
+    ## Figure out if chunks will fit in this subtype at all
+    ##    (sort by chunk with longest column, then test against
+    ##     columns to see if all fits)
+    ## if not, go to next subtype, 
+    ##      ultimately bailing out with "can't fit" error 
+    ##      and setting length to 0
+    ## If it is, sort by line/dir/dest. If fits, great!
+    ## If not, and there are short columns, reorder so that 
+    ## shortest chunk is moved to short columns, and try again
+    ## Keep going until ... short columns are full, I guess
+    
+    
+    my @columns_with_height = map { [ $_, $_->time_count ] } $self->columns;
+
+    # determine minimum fitting subtype
+
+    foreach my $subtype ( sort @subtypes ) {
+
+    }
+
+} ## tidy end: sub sort_columns_and_determine_heights
+
 sub sort_columns_by_route_etc {
     my $self = shift;
 
@@ -531,8 +580,9 @@ sub format_columns {
 
         }    ## <perltidy> end foreach my $i ( 0 .. $column...)
 
-        my $column_length
-          = $Actium::Cmd::MakePoints::signtypes{$signtype}{TallColumnLines};
+        my $column_length = $column->formatted_height;
+        #my $column_length
+        #  = $Actium::Cmd::MakePoints::signtypes{$signtype}{TallColumnLines};
         my $formatted_columns;
 
         if ($column_length) {

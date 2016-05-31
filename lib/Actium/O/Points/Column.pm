@@ -239,7 +239,7 @@ has approxflag_r => (
 
 has formatted_height => (
     is  => 'rw',
-    isa => 'Int',
+    isa => 'Maybe[Int]',
 );
 
 sub format_header {
