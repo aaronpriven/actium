@@ -18,7 +18,7 @@ use Actium::Preamble;
 use Actium::Union('ordered_union');
 
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup ('signup');
+use Actium::Cmd::Config::Signup   ('signup');
 
 use File::Slurp::Tiny('read_file');    ### DEP ###
 use Text::Trim;                        ### DEP ###
@@ -42,16 +42,18 @@ EOF
 }
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options($env));
+    my ( $class, $env ) = @_;
+    return (
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::Signup::options($env)
+    );
 }
 
 sub START {
 
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
-    my @argv = $env->argv;
+    my @argv     = $env->argv;
 
     my $signup = signup($env);
     chdir $signup->path();
@@ -61,14 +63,14 @@ sub START {
     my $effdate = read_file('effectivedate.txt');
 
     #our ( @signs, @stops, @lines, @signtypes );
-    our ( %places, %signs, %stops, %lines, %signtypes , %i18n);
+    our ( %places, %signs, %stops, %lines, %signtypes, %i18n );
     #our ( @places );
     our (@ssj);
 
     # retrieve data
-    
+
     %i18n = %{ $actiumdb->all_in_columns_key(qw(I18N en es zh)) };
-    
+
     $actiumdb->load_tables(
         requests => {
             Places_Neue => {
@@ -122,7 +124,7 @@ sub START {
 
     my $effectivedate = trim( read_file('effectivedate.txt') );
 
-    my $cry = cry( "Now processing point schedules for sign number:");
+    my $cry = cry("Now processing point schedules for sign number:");
 
     my $displaycolumns = 0;
     my @signstodo;
@@ -198,8 +200,8 @@ sub START {
 
         my $point
           = Actium::O::Points::Point->new_from_kpoints( $stopid, $signid,
-            $effdate, $old_makepoints, $omitted_of_stop_r, $nonstoplocation , 
-            $delivery);
+            $effdate, $old_makepoints, $omitted_of_stop_r, $nonstoplocation,
+            $delivery );
 
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header
@@ -218,7 +220,8 @@ sub START {
 
         # 5) Sort columns into order
 
-        $point->sort_columns_by_route_etc;
+        #$point->sort_columns_by_route_etc;
+        $point->sort_columns_and_determine_heights( $signs{$signid}{SignType} );
 
         # 6) Format with text and indesign tags. Includes
         #    expanding places into full place descriptions
