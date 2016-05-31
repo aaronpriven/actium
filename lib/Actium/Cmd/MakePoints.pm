@@ -51,6 +51,7 @@ sub START {
 
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
+    my @argv = $env->argv;
 
     my $signup = signup($env);
     chdir $signup->path();
@@ -60,12 +61,14 @@ sub START {
     my $effdate = read_file('effectivedate.txt');
 
     #our ( @signs, @stops, @lines, @signtypes );
-    our ( %places, %signs, %stops, %lines, %signtypes );
+    our ( %places, %signs, %stops, %lines, %signtypes , %i18n);
     #our ( @places );
     our (@ssj);
 
     # retrieve data
-
+    
+    %i18n = %{ $actiumdb->all_in_columns_key(qw(I18N en es zh)) };
+    
     $actiumdb->load_tables(
         requests => {
             Places_Neue => {
@@ -124,8 +127,8 @@ sub START {
     my $displaycolumns = 0;
     my @signstodo;
 
-    if (@ARGV) {
-        @signstodo = @ARGV;
+    if (@argv) {
+        @signstodo = @argv;
     }
     else {
         @signstodo = keys %signs;
@@ -167,10 +170,6 @@ sub START {
           and $sign_is_active eq 'yes'
           and $signs{$signid}{Status} !~ /no service/i;
         # skip inactive signs and those without stop IDs
-
-        if ( not $stopid ) {
-            $cry->text( 'yowza');
-        }
 
         my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints} );
         #next SIGN if $old_makepoints eq 'yes';
