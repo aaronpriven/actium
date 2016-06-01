@@ -242,6 +242,12 @@ has formatted_height => (
     isa => 'Maybe[Int]',
 );
 
+has 'previous_blank_columns' => (
+    isa     => 'Int',
+    is      => 'rw',
+    default => 0,
+);
+
 sub format_header {
     my $self = shift;
     $self->format_head_lines;

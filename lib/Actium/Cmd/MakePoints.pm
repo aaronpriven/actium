@@ -20,7 +20,11 @@ use Actium::Union('ordered_union');
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup   ('signup');
 
-use File::Slurp::Tiny('read_file');    ### DEP ###
+use Actium::Text::InDesignTags;
+const my $IDT          => 'Actium::Text::InDesignTags';
+
+
+use File::Slurper('read_text');    ### DEP ###
 use Text::Trim;                        ### DEP ###
 
 use Actium::O::Points::Point;
@@ -52,7 +56,11 @@ sub OPTIONS {
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
+    
+    our ( $actiumdb, %places, %signs, %stops, %lines, %signtypes, %smoking , @ssj);
+    # this use of global variables should be refactored...
+    
+    $actiumdb = actiumdb($env);
     my @argv     = $env->argv;
 
     my $signup = signup($env);
@@ -60,44 +68,35 @@ sub START {
 
     my $pointdir = $signup->subfolder($IDPOINTFOLDER);
 
-    my $effdate = read_file('effectivedate.txt');
-
-    #our ( @signs, @stops, @lines, @signtypes );
-    our ( %places, %signs, %stops, %lines, %signtypes, %i18n );
-    #our ( @places );
-    our (@ssj);
+    my $effdate = read_text('effectivedate.txt');
 
     # retrieve data
 
-    %i18n = %{ $actiumdb->all_in_columns_key(qw(I18N en es zh)) };
+    %smoking = %{ $actiumdb->all_in_column_key(qw(Cities SmokingText)) };
 
     $actiumdb->load_tables(
         requests => {
             Places_Neue => {
-                #array       => \@places,
                 hash        => \%places,
                 index_field => 'h_plc_identifier'
             },
             SignTypes => {
-                #array       => \@signtypes,
                 hash        => \%signtypes,
                 index_field => 'SignType'
             },
             Signs => {
-                #array       => \@signs,
                 hash        => \%signs,
                 index_field => 'SignID',
                 fields      => [
                     qw[
                       SignID Active stp_511_id Status SignType Sidenote
                       UseOldMakepoints ShelterNum NonStopLocation NonStopCity
-                      Delivery
+                      Delivery City
                       ]
                 ],
             },
             Signs_Stops_Join => { array => \@ssj },
             Lines            => {
-                # array => \@lines,
                 hash        => \%lines,
                 index_field => 'Line'
             },
@@ -122,8 +121,6 @@ sub START {
         $stops_of_sign{$ssj_sign}{$ssj_stop} = \@ssj_omitted;
     }
 
-    my $effectivedate = trim( read_file('effectivedate.txt') );
-
     my $cry = cry("Now processing point schedules for sign number:");
 
     my $displaycolumns = 0;
@@ -136,19 +133,23 @@ sub START {
         @signstodo = keys %signs;
     }
 
-    my %skipped_stops;
+    my (%skipped_stops, @subtype_lines);
 
   SIGN:
     foreach my $signid ( sort { $a <=> $b } @signstodo ) {
 
         my $stopid = $signs{$signid}{stp_511_id};
         my $delivery = $signs{$signid}{Delivery} // $EMPTY;
+        my $city = $signs{$signid}{City} // $EMPTY;
 
-        my $nonstoplocation;
+        my ($nonstoplocation, $nonstopcity);
         if ( not($stopid) ) {
+            $nonstopcity = $signs{$signid}{NonStopCity};
             $nonstoplocation = $signs{$signid}{NonStopLocation} . ', '
-              . $signs{$signid}{NonStopCity};
+              . $nonstopcity;
         }
+        
+        my $smoking = $smoking{$city} // $IDT->emdash;
 
         my $omitted_of_stop_r;
         if ( exists $stops_of_sign{$signid} ) {
@@ -201,7 +202,7 @@ sub START {
         my $point
           = Actium::O::Points::Point->new_from_kpoints( $stopid, $signid,
             $effdate, $old_makepoints, $omitted_of_stop_r, $nonstoplocation,
-            $delivery );
+            $smoking, $delivery );
 
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header
@@ -221,7 +222,11 @@ sub START {
         # 5) Sort columns into order
 
         #$point->sort_columns_by_route_etc;
-        $point->sort_columns_and_determine_heights( $signs{$signid}{SignType} );
+        my $subtype = $point->sort_columns_and_determine_heights( $signs{$signid}{SignType} );
+        
+        if ($subtype) {
+           push @subtype_lines, "$signid\t$subtype";
+        }
 
         # 6) Format with text and indesign tags. Includes
         #    expanding places into full place descriptions
@@ -259,6 +264,8 @@ sub START {
         print "\tSign $s[2]: $skipped_stops{$s[2]}" if $s[2];
         print "\n";
     }
+    
+    $signup->slurp_write( u::joinlf(@subtype_lines), 'point_subtypes.txt');
 
 } ## tidy end: sub START
 
