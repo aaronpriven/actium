@@ -15,6 +15,8 @@ const my $KEYFIELD_TABLE          => 'FMTableKeys';
 const my $KEY_OF_KEYFIELD_TABLE   => 'FMTableKey';
 const my $TABLE_OF_KEYFIELD_TABLE => 'FMTable';
 
+const my @ALL_LANGUAGES => qw/en es zh/;
+
 has 'db_name' => (
     is  => 'ro',
     isa => 'Str',
@@ -65,7 +67,7 @@ sub _build_keys_of {
 const my %TABLE_OF_ITEM => (
     agency => 'Agencies',
     line   => 'Lines',
-
+    i18n => 'I18N',
     #city => 'Cities',
     #color => 'Colors',
     #flagtype => 'Flagtypes',
@@ -110,6 +112,14 @@ sub _build_table_cache {
 
     u::lock_hashref_recurse($cache_r);
     return $cache_r;
+}
+
+sub _build_i18n_cache {
+    my $self = shift;
+    my $cache_r =  $self->_build_table_cache(
+    'i18n' , qw(en es zh),
+    );
+    
 }
 
 sub _build_agency_cache {
@@ -317,6 +327,27 @@ sub ss_nearest_stop {
     return;
 
 } ## tidy end: sub ss_nearest_stop
+
+#########################
+### I18N METHODS
+
+sub i18n_all {
+    my $self = shift;
+    my $i18n_id = shift;
+
+    state $i18n_all_cache_r = {};
+    
+    return @{ $i18n_all_cache_r->{$i18n_id} }
+       if exists $i18n_all_cache_r->{$i18n_id};
+    
+    my $i18n_row_r = $self->i18n_row_r($i18n_id);
+    
+    my $all_r = [ @{$i18n_row_r}{ @ALL_LANGUAGES } ];
+    
+    $i18n_all_cache_r->{$i18n_id} = $all_r;
+    return @{$all_r};
+    
+}
 
 #########################
 ### LINEGROUPTYPE METHODS
