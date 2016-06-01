@@ -379,9 +379,13 @@ sub slurp_write {
 
     my $cry = cry("Writing $filename...");
 
-    require File::Slurp::Tiny;    ### DEP ###
-    File::Slurp::Tiny::write_file( $filespec, $string,
-        binmode => ':encoding(UTF-8)' );
+
+    require File::Slurper;
+    File::Slurper::write_text ($filespec, $string);
+    
+    #require File::Slurp::Tiny;    ### DEP ###
+    #File::Slurp::Tiny::write_file( $filespec, $string,
+    #    binmode => ':encoding(UTF-8)' );
 
     $cry->done;
 
