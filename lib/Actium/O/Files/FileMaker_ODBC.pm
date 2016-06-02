@@ -361,6 +361,7 @@ before DEMOLISH => sub {
     my $self = shift;
     return unless $self->has_connected;
     my $dbh = $self->dbh;
+    return unless $dbh;
     $dbh->disconnect();
     return;
 };

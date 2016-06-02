@@ -161,6 +161,18 @@ sub encode_high_chars {
 
 }
 
+sub encode_high_chars_only {
+    
+    my $invocant = shift;
+
+    my $check_ord_cr = sub {
+        my $ord = shift;
+        return ( $ord > 0x7F );
+    };
+
+    return _encode( $check_ord_cr, @_ ) 
+}
+
 sub _encode {
 
 	my $check_ord_cr = shift;

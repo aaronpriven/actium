@@ -21,11 +21,10 @@ use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup   ('signup');
 
 use Actium::Text::InDesignTags;
-const my $IDT          => 'Actium::Text::InDesignTags';
-
+const my $IDT => 'Actium::Text::InDesignTags';
 
 use File::Slurper('read_text');    ### DEP ###
-use Text::Trim;                        ### DEP ###
+use Text::Trim;                    ### DEP ###
 
 use Actium::O::Points::Point;
 
@@ -56,12 +55,13 @@ sub OPTIONS {
 sub START {
 
     my ( $class, $env ) = @_;
-    
-    our ( $actiumdb, %places, %signs, %stops, %lines, %signtypes, %smoking , @ssj);
+
+    our ( $actiumdb, %places, %signs, %stops, %lines, %signtypes, %smoking,
+        @ssj );
     # this use of global variables should be refactored...
-    
+
     $actiumdb = actiumdb($env);
-    my @argv     = $env->argv;
+    my @argv = $env->argv;
 
     my $signup = signup($env);
     chdir $signup->path();
@@ -133,22 +133,22 @@ sub START {
         @signstodo = keys %signs;
     }
 
-    my (%skipped_stops, @subtype_lines);
+    my ( %skipped_stops, %points_of_signtype );
 
   SIGN:
     foreach my $signid ( sort { $a <=> $b } @signstodo ) {
 
-        my $stopid = $signs{$signid}{stp_511_id};
+        my $stopid   = $signs{$signid}{stp_511_id};
         my $delivery = $signs{$signid}{Delivery} // $EMPTY;
-        my $city = $signs{$signid}{City} // $EMPTY;
+        my $city     = $signs{$signid}{City} // $EMPTY;
 
-        my ($nonstoplocation, $nonstopcity);
+        my ( $nonstoplocation, $nonstopcity );
         if ( not($stopid) ) {
             $nonstopcity = $signs{$signid}{NonStopCity};
-            $nonstoplocation = $signs{$signid}{NonStopLocation} . ', '
-              . $nonstopcity;
+            $nonstoplocation
+              = $signs{$signid}{NonStopLocation} . ', ' . $nonstopcity;
         }
-        
+
         my $smoking = $smoking{$city} // $IDT->emdash;
 
         my $omitted_of_stop_r;
@@ -222,10 +222,13 @@ sub START {
         # 5) Sort columns into order
 
         #$point->sort_columns_by_route_etc;
-        my $subtype = $point->sort_columns_and_determine_heights( $signs{$signid}{SignType} );
-        
-        if ($subtype) {
-           push @subtype_lines, "$signid\t$subtype";
+        my $subtype = $point->sort_columns_and_determine_heights(
+            $signs{$signid}{SignType} );
+
+        if ( $subtype and $subtype ne '!' ) {
+            my ( $signtype, $master ) = split( /=/, $subtype );
+            push @{ $points_of_signtype{$signtype} }, [ $signid, $master ];
+
         }
 
         # 6) Format with text and indesign tags. Includes
@@ -254,6 +257,22 @@ sub START {
 
     $cry->done;
 
+    my $list_fh = $signup->open_write('pointlist.txt');
+    #open my $list_fh, '>:utf8' , 'pointlist.txt';
+
+    foreach my $signtype ( sort keys %points_of_signtype ) {
+        say $list_fh "FILE\t$signtype";
+        my @points = @{ $points_of_signtype{$signtype} };
+        @points = sort { $a->[0] <=> $b->[0] } @points;
+        # sort numerically by signid
+        foreach my $point (@points) {
+            my $pointline = $point->[0] . "\t" . $point->[1];
+            say $list_fh $pointline;
+        }
+    }
+
+    close $list_fh;
+
     print "\n", scalar keys %skipped_stops,
       " skipped signs because stop file not found.\n";
 
@@ -265,8 +284,6 @@ sub START {
         print "\n";
     }
     
-    $signup->slurp_write( u::joinlf(@subtype_lines), 'point_subtypes.txt');
-
 } ## tidy end: sub START
 
 1;
