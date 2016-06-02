@@ -29,6 +29,7 @@ use Actium::Sorting::Line (qw(byline sortbyline));
 use List::MoreUtils('natatime');                ### DEP ###
 use Const::Fast;                                ### DEP ###
 use List::Compare::Functional('get_unique');    ### DEP ###
+use List::Util('first');
 
 use POSIX ();                                   ### DEP ###
 
@@ -247,12 +248,21 @@ sub new_from_kpoints {
                 }
                 next;
             }
+            else {
+                next
+                  if ( $linegroup eq 'BSD'
+                    or $linegroup eq 'BSH'
+                    or $linegroup eq 'BSN' );
+            }
 
             if ( $special_type eq 'db' ) {
                 if ( $linegroup =~ /^DB/ ) {
                     $self->push_columns($column);
                 }
                 next;
+            }
+            else {
+                next if ( $linegroup =~ /^DB/ );
             }
 
             if ( $linegroup !~ /^6\d\d/ ) {
@@ -494,7 +504,7 @@ sub determine_subtype {
         my $chunk_id
           = $column->head_line(0) . "_" . $ewreplace->( $column->dircode );
 
-        my $height = $column->time_count || 1; 
+        my $height = $column->time_count || 1;
         # at least one time, to allow for note-onlies
 
         push @{ $heights_of_chunk{$chunk_id} }, $height;
@@ -502,97 +512,145 @@ sub determine_subtype {
 
     }
 
-    my %tallest_of_chunk;
-    foreach my $chunk_id ( keys %heights_of_chunk ) {
-        $tallest_of_chunk{$chunk_id}
-          = u::max( @{ $heights_of_chunk{$chunk_id} } );
-    }
+    my ($chosen_subtype, @chosen_regions, @chunkids_by_region,
+        @columns_needed, $all_chunks_singular
+    );
 
-    my @chunkids_by_length = reverse
-      sort { $tallest_of_chunk{$a} <=> $tallest_of_chunk{$b} }
-      keys %tallest_of_chunk;
+    my $first_run = 1;
+    my $cried;
 
-    # determine minimum fitting subtype
+  CHUNK_GROUPING:
+    until ( $chosen_subtype or $all_chunks_singular ) {
 
-    my ( $chosen_subtype, @chosen_regions, @chunkids_by_region,
-        @columns_needed );
+        if ($first_run) {
+            $first_run = 0;
+        }
+        else {
 
-  SUBTYPE:
-    foreach my $subtype ( sort @subtypes ) {
+            if ( not $cried ) {
+                #last_cry()->text( "Splitting chunks in ", $self->signid );
+                $cried = 1;
+            }
+            # divide chunks into single schedules and try again
 
-        my (@regions);
+            my $chunkid_to_split
+              = first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
+            keys %heights_of_chunk;
 
-        $regions[0] = {
-            height =>
-              $Actium::Cmd::MakePoints::signtypes{$subtype}{TallColumnLines},
-            columns =>
-              $Actium::Cmd::MakePoints::signtypes{$subtype}{TallColumnNum}
-        };
+            if ($chunkid_to_split) {
+                my @heights = @{ $heights_of_chunk{$chunkid_to_split} };
+                my @columns = @{ $columns_of_chunk{$chunkid_to_split} };
 
-        if ( $Actium::Cmd::MakePoints::signtypes{$subtype}{ShortColumnNum} ) {
-            $regions[1] = {
-                height => $Actium::Cmd::MakePoints::signtypes{$subtype}
-                  {ShortColumnLines},
-                columns =>
-                  $Actium::Cmd::MakePoints::signtypes{$subtype}{ShortColumnNum}
-            };
+                delete $heights_of_chunk{$chunkid_to_split};
+                delete $columns_of_chunk{$chunkid_to_split};
+
+                for my $i ( 0 .. $#heights ) {
+                    my $thischunkid = "$chunkid_to_split $i";
+                    $heights_of_chunk{$thischunkid} = [ $heights[$i] ];
+                    $columns_of_chunk{$thischunkid} = [ $columns[$i] ];
+                }
+            }
+            else {
+                $all_chunks_singular = 1;
+            }
+
+        } ## tidy end: else [ if ($first_run) ]
+
+        my %tallest_of_chunk;
+        foreach my $chunk_id ( keys %heights_of_chunk ) {
+            $tallest_of_chunk{$chunk_id}
+              = u::max( @{ $heights_of_chunk{$chunk_id} } );
         }
 
-        # if we add more quantity of regions, will need to sort them by height
+        my @chunkids_by_length = reverse
+          sort { $tallest_of_chunk{$a} <=> $tallest_of_chunk{$b} }
+          keys %tallest_of_chunk;
 
-        @chunkids_by_region = ( [@chunkids_by_length] );
+        # determine minimum fitting subtype
 
-      REGION_ASSIGNMENT:
-        while ( @{ $chunkids_by_region[0] } ) {
+        #my ( @chosen_regions, @chunkids_by_region, @columns_needed );
 
-            @columns_needed = ();
+      SUBTYPE:
+        foreach my $subtype ( sort @subtypes ) {
 
-          REGION:
-            foreach my $i ( reverse( 0 .. $#chunkids_by_region ) ) {
+            my (@regions);
 
-                # get the number of formatted columns required by all the
-                # columns in the chunks assigned to this region
+            $regions[0] = {
+                height => $Actium::Cmd::MakePoints::signtypes{$subtype}
+                  {TallColumnLines},
+                columns =>
+                  $Actium::Cmd::MakePoints::signtypes{$subtype}{TallColumnNum}
+            };
 
-                my $columns_needed = 0;
-                foreach my $chunk_id ( @{ $chunkids_by_region[$i] } ) {
-                    $columns_needed += $takes_up_columns_cr->(
-                        $regions[$i]{height},
-                        @{ $heights_of_chunk{$chunk_id} },
-                    );
-                }
+            if ( $Actium::Cmd::MakePoints::signtypes{$subtype}{ShortColumnNum} )
+            {
+                $regions[1] = {
+                    height => $Actium::Cmd::MakePoints::signtypes{$subtype}
+                      {ShortColumnLines},
+                    columns => $Actium::Cmd::MakePoints::signtypes{$subtype}
+                      {ShortColumnNum}
+                };
+            }
 
-                if ( $columns_needed > $regions[$i]{columns} ) {
+          # if we add more quantity of regions, will need to sort them by height
 
-                    # it doesn't fit
+            @chunkids_by_region = ( [@chunkids_by_length] );
 
-                    if ( $i == $#regions ) {
-                        # Smallest region is filled, so it can't fit at all
-                        next SUBTYPE;
+          REGION_ASSIGNMENT:
+            while ( @{ $chunkids_by_region[0] } ) {
+
+                @columns_needed = ();
+
+              REGION:
+                foreach my $i ( reverse( 0 .. $#chunkids_by_region ) ) {
+
+                    # get the number of formatted columns required by all the
+                    # columns in the chunks assigned to this region
+
+                    my $columns_needed = 0;
+                    foreach my $chunk_id ( @{ $chunkids_by_region[$i] } ) {
+                        $columns_needed += $takes_up_columns_cr->(
+                            $regions[$i]{height},
+                            @{ $heights_of_chunk{$chunk_id} },
+                        );
                     }
 
-                    # move a chunk from this region to the following region,
-                    # and try a new region assignment
+                    if ( $columns_needed > $regions[$i]{columns} ) {
 
-                    my $chunkid_to_move = pop( @{ $chunkids_by_region[$i] } );
-                    push @{ $chunkids_by_region[ $i + 1 ] }, $chunkid_to_move;
+                        # it doesn't fit
 
-                    next REGION_ASSIGNMENT;
+                        if ( $i == $#regions ) {
+                            # Smallest region is filled, so it can't fit at all
+                            next SUBTYPE;
+                        }
 
-                }
+                        # move a chunk from this region to the following region,
+                        # and try a new region assignment
 
-                $columns_needed[$i] = $columns_needed;
+                        my $chunkid_to_move
+                          = pop( @{ $chunkids_by_region[$i] } );
+                        push @{ $chunkids_by_region[ $i + 1 ] },
+                          $chunkid_to_move;
 
-            } ## tidy end: REGION: foreach my $i ( reverse( 0 ...))
+                        next REGION_ASSIGNMENT;
 
-            # got through the last region, so they all must fit
-            $chosen_subtype = $subtype;
-            @chosen_regions = @regions;
+                    } ## tidy end: if ( $columns_needed >...)
 
-            last SUBTYPE;
+                    $columns_needed[$i] = $columns_needed;
 
-        } ## tidy end: REGION_ASSIGNMENT: while ( @{ $chunkids_by_region...})
+                } ## tidy end: REGION: foreach my $i ( reverse( 0 ...))
 
-    } ## tidy end: SUBTYPE: foreach my $subtype ( sort ...)
+                # got through the last region, so they all must fit
+                $chosen_subtype = $subtype;
+                @chosen_regions = @regions;
+
+                last SUBTYPE;
+
+            } ## tidy end: REGION_ASSIGNMENT: while ( @{ $chunkids_by_region...})
+
+        } ## tidy end: SUBTYPE: foreach my $subtype ( sort ...)
+
+    } ## tidy end: CHUNK_GROUPING: until ( $chosen_subtype or...)
 
     if ( not $chosen_subtype ) {
         my $signid = $self->signid;
@@ -660,6 +718,15 @@ sub format_columns {
         # format header, and footnote of header
 
         $column->format_header;    # everything except footnote
+        
+        my $blanks;
+        if ( $column->previous_blank_columns ) {
+            $blanks = $IDT->parastyle('amtimes')
+              . ( ($BLANK_COLUMN) x ( $column->previous_blank_columns ) );
+        }
+        else {
+            $blanks = $EMPTY;
+        }
 
         if ( not( $column->has_note ) and $column->head_line_count > 1 ) {
 
@@ -735,7 +802,7 @@ sub format_columns {
 
             } ## tidy end: for ( $column->note )
 
-            $column->set_formatted_column( $column->formatted_header
+            $column->set_formatted_column( $blanks . $column->formatted_header
                   . $BOXBREAK
                   . $IDT->parastyle('noteonly')
                   . $notetext );
@@ -809,14 +876,7 @@ sub format_columns {
             $self->add_to_width(1);
         }
 
-        my $blanks;
-        if ( $column->previous_blank_columns ) {
-            $blanks = $IDT->parastyle('amtimes')
-              . ( ( $BLANK_COLUMN) x ( $column->previous_blank_columns ) );
-        }
-        else {
-            $blanks = $EMPTY;
-        }
+
 
         $column->set_formatted_column( $blanks
               . $column->formatted_header
@@ -903,11 +963,7 @@ sub format_side {
     print $sidefh $self->format_sidenotes;
 
     if ( $self->note600 ) {
-        my $stoporarea = $self->is_simple_stopid ? 'stop' : 'area';
-        print $sidefh
-"This $stoporarea may also be served by supplementary lines (Lines 600"
-          . $IDT->endash
-          . "699), which operate school days only, at times that may vary from day to day. Call 511 or visit actransit.org for more information. This service is available to everyone at regular fares.\r";
+        print $sidefh join( $IDT->hardreturn, $i18n_all_cr->('note_600') ),
     }
 
 # TODO - will have to make this work if exception processing is added
@@ -1106,7 +1162,7 @@ sub format_bottom {
     ### SMOKING BOX ####
 
     print $botfh $IDT->parastyle('bottomnotes'),
-      $IDT->encode_high_chars( $self->smoking ), $BOXBREAK;
+      $IDT->encode_high_chars_only( $self->smoking ), $BOXBREAK;
 
     ### BOTTOM BOX ####
 
@@ -1179,8 +1235,6 @@ sub output {
     $fh->close;
 
 } ## tidy end: sub output
-
-
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
