@@ -304,11 +304,13 @@ sub START {
 
     print "Using signup $signup\n";
 
-    open my $date, "<effectivedate.txt"
-      or die "Can't open effectivedate.txt for input: $!";
-    our $effdate = scalar <$date>;
-    close $date;
-    chomp $effdate;
+    #my $effdate = $actiumdb->agency_effective_date->long_en;
+
+    #open my $date, "<effectivedate.txt"
+    #  or die "Can't open effectivedate.txt for input: $!";
+    #our $effdate = scalar <$date>;
+    #close $date;
+    #chomp $effdate;
 
     my $prepdate;
 
