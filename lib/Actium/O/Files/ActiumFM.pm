@@ -377,6 +377,34 @@ sub i18n_all_indd {
 
 } ## tidy end: sub i18n_all_indd
 
+sub i18n_all_indd_hash {
+    my $self    = shift;
+    my $i18n_id = shift;
+    
+    my $metastyle = shift;
+    
+    state $i18n_all_cache_r = {};
+    return %{ $i18n_all_cache_r->{$i18n_id} }
+      if exists $i18n_all_cache_r->{$i18n_id};
+
+    my $i18n_row_r = $self->i18n_row_r($i18n_id);
+
+    require Actium::Text::InDesignTags;
+
+    my $all_r;
+    foreach my $language (@ALL_LANGUAGES) {
+        my $phrase = $i18n_row_r->{$language};
+        $phrase
+          = Actium::Text::InDesignTags::->language_phrase( $language, $phrase, $metastyle );
+        $phrase=~ s/\s+\z//;
+        $all_r->{$language} = $phrase;
+    }
+
+    $i18n_all_cache_r->{$i18n_id} = $all_r;
+    return %{$all_r}; 
+    
+}
+
 #########################
 ### LINEGROUPTYPE METHODS
 
