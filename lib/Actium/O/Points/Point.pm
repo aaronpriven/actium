@@ -7,6 +7,9 @@
 
 # The object Actium::O::Points is used to hold unformatted data.
 
+# This really needs to be refactored to get rid of the awful use of
+# global variables.
+
 use warnings;
 use strict;
 
@@ -33,6 +36,9 @@ use List::Util('first');
 
 use POSIX ();                                   ### DEP ###
 
+const my $IDPOINTFOLDER => 'idpoints2016';
+const my $KFOLDER       => 'kpoints';
+
 use Actium::O::Points::Column;
 
 use Actium::Text::InDesignTags;
@@ -40,9 +46,19 @@ const my $IDT          => 'Actium::Text::InDesignTags';
 const my $BOXBREAK     => $IDT->boxbreak;
 const my $BLANK_COLUMN => ( $BOXBREAK x 2 );
 
-has [qw/effdate stopid signid delivery/] => (
+has [qw/stopid signid delivery/] => (
     is  => 'ro',
     isa => 'Str',
+);
+
+has effdate => (
+    is  => 'ro',
+    isa => 'Actium::O::DateTime',
+);
+
+has signup => (
+    is  => 'ro',
+    isa => 'Actium::O::Folders::Signup',
 );
 
 has 'nonstoplocation' => (
@@ -54,6 +70,17 @@ has 'smoking' => (
     is      => 'ro',
     isa     => 'Str',
     default => $EMPTY,
+);
+
+has 'error_r' => (
+    traits  => ['Array'],
+    is      => 'rw',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => {
+        errors     => 'elements',
+        push_error => 'push',
+    },
 );
 
 has 'region_count' => (
@@ -179,14 +206,15 @@ my $i18n_all_cr = sub {
     my $i18n_id = shift;
 
     no warnings 'once';
-    return $Actium::Cmd::MakePoints::actiumdb->i18n_all($i18n_id);
+    my @all = $Actium::Cmd::MakePoints::actiumdb->i18n_all_indd($i18n_id);
 
 };
 
 sub new_from_kpoints {
     my ($class,           $stopid,       $signid,
         $effdate,         $special_type, $omitted_of_stop_r,
-        $nonstoplocation, $smoking,      $delivery
+        $nonstoplocation, $smoking,      $delivery,
+        $signup
     ) = @_;
 
     my $self = $class->new(
@@ -199,8 +227,8 @@ sub new_from_kpoints {
         smoking           => $smoking,
         omitted_of_stop_r => $omitted_of_stop_r,
         delivery          => $delivery,
+        signup            => $signup,
     );
-
     my $is_simple = $self->is_simple_stopid;
 
     foreach my $stop_to_import ( $self->allstopids ) {
@@ -213,10 +241,11 @@ sub new_from_kpoints {
 
         my $kpointdir = substr( $stop_to_import, 0, 3 ) . 'xx';
 
-        my $kpointfile = "kpoints/$kpointdir/$stop_to_import.txt";
+        my $kpointfile = "$KFOLDER/$kpointdir/$stop_to_import.txt";
 
-        open my $kpoint, '<', $kpointfile
-          or die "Can't open $kpointfile: $!";
+        my $kpoint = $signup->open_read($kpointfile);
+        #open my $kpoint, '<', $kpointfile
+        #  or die "Can't open $kpointfile: $!";
 
         my (%bsn_columns);
 
@@ -312,11 +341,14 @@ sub new_from_kpoints {
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
             my $lines = joinseries(@notfound);
-            last_cry()
-              ->text(
-                "\x{1f4A5}  Warning! $linetext $lines found in omit list for "
-                  . "stop $stop_to_import, sign $signid, but not found in "
-                  . "stop schedule data." );
+            #last_cry()
+            #  ->text(
+            #    "\x{1f4A5}  Warning! $linetext $lines found in omit list for "
+            #      . "stop $stop_to_import, sign $signid, but not found in "
+            #      . "stop schedule data." );
+            $self->push_error(
+                "$linetext $lines found in omit list but not in schedule data."
+            );
         }
 
     } ## tidy end: foreach my $stop_to_import ...
@@ -437,7 +469,7 @@ sub sort_columns_and_determine_heights {
         return;
     }
 
-    my $subtype = $self->determine_subtype(@subtypes);
+    my $subtype = $self->determine_subtype( $signtype, @subtypes );
     unless ($subtype) {
         $self->no_subtype($signtype);
         return "!";
@@ -490,6 +522,7 @@ my $columnsort_cr = sub {
 
 sub determine_subtype {
     my $self     = shift;
+    my $signtype = shift;
     my @subtypes = @_;
 
     # A "chunk" is a set of schedules that all are the same line and direction
@@ -504,8 +537,14 @@ sub determine_subtype {
         my $chunk_id
           = $column->head_line(0) . "_" . $ewreplace->( $column->dircode );
 
-        my $height = $column->time_count || 1;
-        # at least one time, to allow for note-onlies
+        my $height;
+        if ( $column->has_note ) {
+            $height = 9;    # height of drop off only note
+        }
+        else {
+            $height = $column->time_count || 1;
+        }
+        # at least one time -- that used to be there for noteonly
 
         push @{ $heights_of_chunk{$chunk_id} }, $height;
         push @{ $columns_of_chunk{$chunk_id} }, $column;
@@ -654,10 +693,11 @@ sub determine_subtype {
 
     if ( not $chosen_subtype ) {
         my $signid = $self->signid;
-        last_cry()
-          ->text(
-                "\x{1f4A5}  Warning! Couldn't fit columns in any template for "
-              . "sign $signid" );
+        #last_cry()
+        #  ->text(
+        #        "\x{1f4A5}  Warning! Couldn't fit columns in any template for "
+        #      . "sign $signid" );
+        $self->push_error("Couldn't fit in any $signtype template");
         return;
 
     }
@@ -718,10 +758,12 @@ sub format_columns {
         # format header, and footnote of header
 
         $column->format_header;    # everything except footnote
-        
+
         my $blanks;
         if ( $column->previous_blank_columns ) {
-            $blanks = $IDT->parastyle('amtimes')
+            $blanks
+              = $IDT->parastyle('amtimes')
+              . $IDT->nocharstyle
               . ( ($BLANK_COLUMN) x ( $column->previous_blank_columns ) );
         }
         else {
@@ -751,58 +793,62 @@ sub format_columns {
             my $notetext;
 
             for ( $column->note ) {
-                if ( $_ eq 'LASTSTOP' ) {
-                    $notetext = "Last Stop";
+                #if ( $_ eq 'LASTSTOP' ) {
+                #$notetext = "Last Stop";
+                #    next;
+                #}
+                if ( $_ eq 'DROPOFF' or $_ eq 'LASTSTOP' ) {
+                    $notetext = join( $IDT->hardreturn,
+                        $i18n_all_cr->('drop_off_only') );
+                    #$notetext = "Drop Off Only";
                     next;
                 }
-                if ( $_ eq 'DROPOFF' ) {
-                    $notetext = "Drop Off Only";
-                    next;
-                }
-                if ( $_ eq '72R' ) {
-                    $notetext
-                      = 'Buses arrive about every 12 minutes '
-                      . $IDT->emdash
-                      . $IDT->softreturn
-                      . 'See information elsewhere on this sign.';
-                    next;
-                }
-                if ( $_ eq '1R-MIXED' ) {
+#                if ( $_ eq '72R' ) {
+#                    $notetext
+#                      = 'Buses arrive about every 12 minutes '
+#                      . $IDT->emdash
+#                      . $IDT->softreturn
+#                      . 'See information elsewhere on this sign.';
+#                    next;
+#                }
+#                if ( $_ eq '1R-MIXED' ) {
+#
+#                    $notetext
+#                      = 'Buses arrive about every 12 minutes weekdays, and 15 minutes weekends.'
+#                      . ' (Weekend service to downtown Oakland only.) '
+#                      . $IDT->softreturn
+#                      . 'See information elsewhere on this sign.';
+#
+#                    next;
+#                }
+#
+#                if ( $_ eq '1R' ) {
+#
+#                    if ( $column->days eq '12345' ) {
+#                        $notetext
+#                          = 'Buses arrive about every 12 minutes '
+#                          . $IDT->emdash
+#                          . $IDT->softreturn
+#                          . 'See information elsewhere on this sign.';
+#                    }
+#                    else {
+#
+#                        $notetext
+#                          = 'Buses arrive about every 12 minutes weekdays, 15 minutes weekends '
+#                          . $IDT->emdash
+#                          . $IDT->softreturn
+#                          . 'See information elsewhere on this sign.';
+#                    }
+#
+#                    next;
+#                } ## tidy end: if ( $_ eq '1R' )
 
-                    $notetext
-                      = 'Buses arrive about every 12 minutes weekdays, and 15 minutes weekends.'
-                      . ' (Weekend service to downtown Oakland only.) '
-                      . $IDT->softreturn
-                      . 'See information elsewhere on this sign.';
-
-                    next;
-                }
-
-                if ( $_ eq '1R' ) {
-
-                    if ( $column->days eq '12345' ) {
-                        $notetext
-                          = 'Buses arrive about every 12 minutes '
-                          . $IDT->emdash
-                          . $IDT->softreturn
-                          . 'See information elsewhere on this sign.';
-                    }
-                    else {
-
-                        $notetext
-                          = 'Buses arrive about every 12 minutes weekdays, 15 minutes weekends '
-                          . $IDT->emdash
-                          . $IDT->softreturn
-                          . 'See information elsewhere on this sign.';
-                    }
-
-                    next;
-
-                } ## tidy end: if ( $_ eq '1R' )
+                $self->push_error('Unknown note $_');
 
             } ## tidy end: for ( $column->note )
 
-            $column->set_formatted_column( $blanks . $column->formatted_header
+            $column->set_formatted_column( $blanks
+                  . $column->formatted_header
                   . $BOXBREAK
                   . $IDT->parastyle('noteonly')
                   . $notetext );
@@ -876,8 +922,6 @@ sub format_columns {
             $self->add_to_width(1);
         }
 
-
-
         $column->set_formatted_column( $blanks
               . $column->formatted_header
               . $BOXBREAK
@@ -896,6 +940,8 @@ sub format_side {
     my $formatted_side;
     open my $sidefh, '>:utf8', \$formatted_side;
 
+    my $month = $effdate->month;
+
     # EFFECTIVE DATE and colors
     my $color;
 
@@ -903,29 +949,49 @@ sub format_side {
         $color = 'Black';
     }
     else {
-        if ( $effdate =~ /Dec|Jan|Feb/ ) {
-            $color = "H101-Purple";    # if it looks crummy change it to H3-Blue
+        if ( $month == 12 or $month == 1 or $month == 2 ) {
+            $color = "LineViolet";
         }
-        elsif ( $effdate =~ /Mar|Apr|May/ ) {
+        elsif ( $month == 3 or $month == 4 or $month == 5 ) {
             $color = "New AC Green";
         }
-        elsif ( $effdate =~ /Jun|Jul/ ) {
+        elsif ( $month == 6 or $month == 7 ) {
             $color = "Black";
         }
-        else {                         # Aug, Sept, Oct, Nov
+        else {    # Aug, Sept, Oct, Nov
             $color = "Rapid Red";
         }
     }
 
-    my $nbsp = $IDT->nbsp;
-    $effdate =~ s/\s+$//;
-    $effdate =~ s/\s/$nbsp/g;
+    $color = $IDT->color($color);
 
-    print $sidefh $IDT->parastyle('sideeffective'),
-      $IDT->color($color), "Effective: $effdate\r",
-      $IDT->parastyle('sidenotes');
+    #print $sidefh $IDT->parastyle('sideeffective'), $IDT->color($color);
 
-#    print $sidefh "\r", $IDT->parastyle('sidenotes'),
+    my %effective
+      = $Actium::Cmd::MakePoints::actiumdb->i18n_all_indd_hash(
+        'effective_colon', 'Bold' );
+
+    my @effectives;
+
+    foreach my $language (qw(en es zh)) {
+        my $effective = $effective{$language};
+        my $method    = "long_$language";
+        my $date      = $IDT->encode_high_chars( $effdate->$method );
+        $date = $IDT->language_phrase( $language, $date, 'Bold' );
+        my $nbsp = $IDT->nbsp;
+        $date =~ s/ +/$nbsp/g;
+        $date = "$effective $date";
+        $date =~ s/<CharStyle:(.*?)>/<CharStyle:$1>$color/g;
+
+        push @effectives, $IDT->parastyle('sideeffective') . $color . $date;
+
+    }
+
+    print $sidefh ( join( $IDT->hardreturn, @effectives ) );
+
+    print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
+    # blank line to separate effective dates from side notes
+
 #      'Light Face = a.m.', $IDT->softreturn;
 #    print $sidefh $IDT->bold_word('Bold Face = p.m.'), "\r";
 #
@@ -949,21 +1015,21 @@ sub format_side {
         $sidenote = $IDT->encode_high_chars($sidenote);
 
         if ($is_bsh) {
-            print $sidefh $IDT->parastyle('BSHsidenotes'), $sidenote,
-              "\r", $IDT->parastyle('sidenotes');
+            print $sidefh $IDT->hardreturn, $IDT->parastyle('BSHsidenotes'),
+              $sidenote;
         }
         else {
 
-            print $sidefh $IDT->bold_word($sidenote)
-              #$Actium::Cmd::MakePoints::signs{$signid}{Sidenote} )
-              . "\r";
+            print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes'),
+              $IDT->bold_word($sidenote);
         }
     }
 
     print $sidefh $self->format_sidenotes;
 
     if ( $self->note600 ) {
-        print $sidefh join( $IDT->hardreturn, $i18n_all_cr->('note_600') ),
+        print $sidefh $IDT->hardreturn,
+          join( $IDT->hardreturn, $i18n_all_cr->('note_600') );
     }
 
 # TODO - will have to make this work if exception processing is added
@@ -1015,7 +1081,9 @@ my %text_of_exception = (
 
 sub format_sidenotes {
 
-    my $self    = shift;
+    my $self = shift;
+    return $EMPTY unless $self->highest_footnote;
+
     my %foot_of = reverse $self->elements_marker_of_footnote;
 
     my $formatted_sidenotes = '';
@@ -1023,6 +1091,8 @@ sub format_sidenotes {
 
   NOTE:
     for my $i ( 1 .. $self->highest_footnote ) {
+
+        print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
 
         print $sidefh $IDT->combi_side($i), $SPACE;
 
@@ -1056,7 +1126,6 @@ sub format_sidenotes {
         $line = $attr{line} if $attr{line};
 
         if ( $attr{destination} ) {
- #$dest = $Actium::Cmd::MakePoints::places{ $attr{destination} }{c_destination};
             $dest = $attr{destination};
             $dest =~ s/\.*$/\./;
         }
@@ -1120,8 +1189,6 @@ sub format_sidenotes {
             }
             if ( $_ eq 'l' ) { print $sidefh "Line $line."; next; }
         }    ## <perltidy> end given
-
-        print $sidefh "\r";
 
     }    ## <perltidy> end for my $i ( 1 .. $self->highest_footnote)
 
@@ -1197,8 +1264,9 @@ sub output {
 
     my $signid = $self->signid;
 
-    open my $fh, '>:utf8', "indesign_points/$signid.txt"
-      or die "Can't open $signid.txt for writing: $!";
+    my $pointdir = $self->signup->subfolder($IDPOINTFOLDER);
+
+    my $fh = $pointdir->open_write("$signid.txt");
 
     print $fh $IDT->start;
 
@@ -1214,7 +1282,10 @@ sub output {
         {    # if there's an entry in SignTypes
             my $columns = $maxcolumns - ( $self->width );
             #print "[[$maxcolumns:" , $self->width , ":$columns]]";
-            print $fh ( $IDT->parastyle('amtimes'), $BLANK_COLUMN x $columns );
+            print $fh (
+                $IDT->parastyle('amtimes'),
+                $IDT->nocharstyle, $BLANK_COLUMN x $columns
+            );
         }
 
     }

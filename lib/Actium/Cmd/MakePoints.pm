@@ -28,7 +28,9 @@ use Text::Trim;                    ### DEP ###
 
 use Actium::O::Points::Point;
 
-const my $IDPOINTFOLDER => 'indesign_points';
+const my $LISTFILE          => 'pointlist.txt';
+const my $ERRORFILE         => 'point_errors.txt';
+const my $SIGNIDS_IN_A_FILE => 250;
 
 sub HELP {
 
@@ -48,7 +50,11 @@ sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
         Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::Signup::options($env)
+        Actium::Cmd::Config::Signup::options($env),
+        [   'update',
+            'Will only process signs that have the status "Needs Update."', 0
+        ],
+        [ 'type=s', 'Will only process signs that have a given signtype.', '' ],
     );
 }
 
@@ -66,13 +72,14 @@ sub START {
     my $signup = signup($env);
     chdir $signup->path();
 
-    my $pointdir = $signup->subfolder($IDPOINTFOLDER);
-
-    my $effdate = read_text('effectivedate.txt');
-
     # retrieve data
 
+    my $makepoints_cry = cry 'Making InDesign point schedule files';
+
+    my $load_cry = cry 'Loading data from Actium database';
+
     %smoking = %{ $actiumdb->all_in_column_key(qw(Cities SmokingText)) };
+    my $effdate = $actiumdb->agency_effective_date('ACTransit');
 
     $actiumdb->load_tables(
         requests => {
@@ -108,6 +115,8 @@ sub START {
         }
     );
 
+    my $ssj_cry = cry('Processing multistop entries');
+
     my (%stops_of_sign);
     foreach my $ssj (@ssj) {
         my $ssj_stop = $ssj->{h_stp_511_id};
@@ -119,6 +128,18 @@ sub START {
             @ssj_omitted = split( ' ', $ssj->{OmitLines} );
         }
         $stops_of_sign{$ssj_sign}{$ssj_stop} = \@ssj_omitted;
+    }
+
+    $ssj_cry->done;
+
+    $load_cry->done;
+
+    my $signtype_opt = $env->option('type');
+    if ( $signtype_opt and not exists $signtypes{$signtype_opt} ) {
+        $makepoints_cry->text(
+            "Invalid signtype $signtype_opt specified on command line.");
+        $makepoints_cry->d_error;
+        exit 1;
     }
 
     my $cry = cry("Now processing point schedules for sign number:");
@@ -133,7 +154,7 @@ sub START {
         @signstodo = keys %signs;
     }
 
-    my ( %skipped_stops, %points_of_signtype );
+    my ( %skipped_stops, %points_of_signtype, %errors );
 
   SIGN:
     foreach my $signid ( sort { $a <=> $b } @signstodo ) {
@@ -141,6 +162,15 @@ sub START {
         my $stopid   = $signs{$signid}{stp_511_id};
         my $delivery = $signs{$signid}{Delivery} // $EMPTY;
         my $city     = $signs{$signid}{City} // $EMPTY;
+        my $signtype = $signs{$signid}{SignType} // $EMPTY;
+        my $status   = $signs{$signid}{Status};
+
+        next SIGN
+          if $signtype_opt and $signtype_opt ne $signtype;
+
+        next SIGN
+          if $env->option('update')
+          and not( u::feq( $status, 'Needs update' ) );
 
         my ( $nonstoplocation, $nonstopcity );
         if ( not($stopid) ) {
@@ -172,7 +202,6 @@ sub START {
           unless $stopid
           and $sign_is_active eq 'yes'
           and $signs{$signid}{Status} !~ /no service/i;
-        # skip inactive signs and those without stop IDs
 
         my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints} );
         #next SIGN if $old_makepoints eq 'yes';
@@ -189,6 +218,7 @@ sub START {
             my $kpointfile = "kpoints/${firstdigits}xx/$stoptotest.txt";
 
             unless ( -e $kpointfile ) {
+                push @{ $errors{$signid} }, "Stop $stoptotest not found";
                 $skipped_stops{$signid} = $stoptotest;
                 next SIGN;
             }
@@ -199,10 +229,11 @@ sub START {
 
         # 1) Read kpoints from file
 
-        my $point
-          = Actium::O::Points::Point->new_from_kpoints( $stopid, $signid,
-            $effdate, $old_makepoints, $omitted_of_stop_r, $nonstoplocation,
-            $smoking, $delivery );
+        my $point = Actium::O::Points::Point->new_from_kpoints(
+            $stopid,         $signid,            $effdate,
+            $old_makepoints, $omitted_of_stop_r, $nonstoplocation,
+            $smoking,        $delivery,          $signup
+        );
 
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header
@@ -253,37 +284,83 @@ sub START {
 
         $point->output;
 
+        push @{ $errors{$signid} }, $point->errors;
+
     }    ## <perltidy> end foreach my $signid ( sort {...})
 
     $cry->done;
 
-    my $list_fh = $signup->open_write('pointlist.txt');
+    my $list_cry = cry "Writing list to $LISTFILE";
+
+    my $list_fh = $signup->open_write($LISTFILE);
     #open my $list_fh, '>:utf8' , 'pointlist.txt';
 
     foreach my $signtype ( sort keys %points_of_signtype ) {
-        say $list_fh "FILE\t$signtype";
         my @points = @{ $points_of_signtype{$signtype} };
         @points = sort { $a->[0] <=> $b->[0] } @points;
         # sort numerically by signid
+
+        my $end_signid = $SIGNIDS_IN_A_FILE;
+
+        my $addition = "1-" . $SIGNIDS_IN_A_FILE;
+        my $file_line_has_been_output;
+
         foreach my $point (@points) {
-            my $pointline = $point->[0] . "\t" . $point->[1];
-            say $list_fh $pointline;
-        }
-    }
+
+            my $signid         = $point->[0];
+            my $subtype_letter = $point->[1];
+
+            while ( $signid > $end_signid ) {
+                $file_line_has_been_output = 0;
+                $addition                  = ( $end_signid + 1 ) . "-"
+                  . ( $end_signid + $SIGNIDS_IN_A_FILE );
+                $end_signid += $SIGNIDS_IN_A_FILE;
+            }
+            # separating the addition and the print allows there to be large
+            # gaps in the number of sign IDs
+
+            if ( not $file_line_has_been_output ) {
+                say $list_fh "FILE\t$signtype\t$addition";
+                $file_line_has_been_output = 1;
+            }
+
+            say $list_fh "$signid\t$subtype_letter";
+        } ## tidy end: foreach my $point (@points)
+    } ## tidy end: foreach my $signtype ( sort...)
 
     close $list_fh;
 
-    print "\n", scalar keys %skipped_stops,
-      " skipped signs because stop file not found.\n";
+    $list_cry->done;
 
-    my $iterator = u::natatime( 3, sort { $a <=> $b } keys %skipped_stops );
-    while ( my @s = $iterator->() ) {
-        print "Sign $s[0]: $skipped_stops{$s[0]}";
-        print "\tSign $s[1]: $skipped_stops{$s[1]}" if $s[1];
-        print "\tSign $s[2]: $skipped_stops{$s[2]}" if $s[2];
-        print "\n";
+    ### ERROR DISPLAY
+
+    my $error_cry = cry "Writing errors to $ERRORFILE";
+
+    my $error_fh = $signup->open_write($ERRORFILE);
+
+    foreach my $signid ( sort { $a <=> $b } keys %errors ) {
+        foreach my $error ( @{ $errors{$signid} } ) {
+            say $error_fh "$signid\t$error";
+        }
     }
-    
+
+    $error_fh->close;
+
+    $cry->done;
+
+   #    print "\n", scalar keys %skipped_stops,
+   #      " skipped signs because stop file not found.\n";
+   #
+   #    my $iterator = u::natatime( 3, sort { $a <=> $b } keys %skipped_stops );
+   #    while ( my @s = $iterator->() ) {
+   #        printf ('%25s' ,  "Sign $s[0]: $skipped_stops{$s[0]}");
+   #        printf '%25s' , "Sign $s[1]: $skipped_stops{$s[1]}" if $s[1];
+   #        print  '%25s' ,  "Sign $s[2]: $skipped_stops{$s[2]}" if $s[2];
+   #        print "\n";
+   #    }
+
+    $makepoints_cry->done;
+
 } ## tidy end: sub START
 
 1;
