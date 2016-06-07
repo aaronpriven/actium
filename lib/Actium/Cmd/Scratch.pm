@@ -6,7 +6,7 @@ use Actium::Cmd::Config::Signup   (qw<signup oldsignup>);
 
 # a place to test out small programs, in the Actium environment
 
-sub OPTIONS {
+sub zOPTIONS {
     my ( $class, $env ) = @_;
     return (
         Actium::Cmd::Config::ActiumFM::OPTIONS($env),
@@ -14,10 +14,28 @@ sub OPTIONS {
     );
 }
 
+sub OPTIONS {
+    my ( $class, $env ) = @_;
+    return (
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::Signup::options($env),
+        [   'update',
+            'Will only process signs that have the status "Needs Update."', 0
+        ],
+        [ 'type=s', 'Will only process signs that have a given signtype.', '' ],
+    );
+}
+
 use Actium::O::DateTime;
 
 sub START {
     my ( $class, $env ) = @_;
+    say $env->option('update');
+}
+
+sub zSTART {
+    my ( $class, $env ) = @_;
+    
 
     my $actiumdb = actiumdb($env);
     #my $signup   = signup($env);
