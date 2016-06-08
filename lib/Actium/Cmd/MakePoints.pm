@@ -28,8 +28,8 @@ use Text::Trim;                    ### DEP ###
 
 use Actium::O::Points::Point;
 
-const my $LISTFILE          => 'pointlist.txt';
-const my $ERRORFILE         => 'point_errors.txt';
+const my $LISTFILE_BASE     => 'pointlist';
+const my $ERRORFILE_BASE    => 'point_errors.txt';
 const my $SIGNIDS_IN_A_FILE => 250;
 
 sub HELP {
@@ -290,10 +290,15 @@ sub START {
 
     $cry->done;
 
-    my $list_cry = cry "Writing list to $LISTFILE";
+    my $run_name = _get_run_name($env);
 
-    my $list_fh = $signup->open_write($LISTFILE);
-    #open my $list_fh, '>:utf8' , 'pointlist.txt';
+    my $listfile = $LISTFILE_BASE . $run_name . '.txt';
+
+    my $list_cry = cry "Writing list to $listfile";
+
+    my $pointlist_folder = $signup->subfolder('pointlist');
+
+    my $list_fh = $pointlist_folder->open_write($listfile);
 
     foreach my $signtype ( sort keys %points_of_signtype ) {
         my @points = @{ $points_of_signtype{$signtype} };
@@ -334,9 +339,11 @@ sub START {
 
     ### ERROR DISPLAY
 
-    my $error_cry = cry "Writing errors to $ERRORFILE";
+    my $error_file = $ERRORFILE_BASE . $run_name . '.txt';
 
-    my $error_fh = $signup->open_write($ERRORFILE);
+    my $error_cry = cry "Writing errors to $error_file";
+
+    my $error_fh = $pointlist_folder->open_write($error_file);
 
     foreach my $signid ( sort { $a <=> $b } keys %errors ) {
         foreach my $error ( @{ $errors{$signid} } ) {
@@ -362,5 +369,23 @@ sub START {
     $makepoints_cry->done;
 
 } ## tidy end: sub START
+
+sub _get_run_name {
+
+    my $env      = shift;
+    my @args     = $env->argv;
+    my $signtype = $env->option('type');
+
+    my $run = $EMPTY;
+
+    $run .= "_" . join( '_', @args )
+      if @args;
+
+    $run .= "_$signtype" if $signtype;
+    $run .= "_update" if $env->option('update');
+
+    return $run;
+
+}
 
 1;
