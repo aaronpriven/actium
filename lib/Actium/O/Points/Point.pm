@@ -965,29 +965,13 @@ sub format_side {
 
     $color = $IDT->color($color);
 
-    #print $sidefh $IDT->parastyle('sideeffective'), $IDT->color($color);
+    print $sidefh $IDT->parastyle('sideeffective'), $color;
 
-    my %effective
-      = $Actium::Cmd::MakePoints::actiumdb->i18n_all_indd_hash(
-        'effective_colon', 'Bold' );
+    my $effective_dates
+      = $Actium::Cmd::MakePoints::actiumdb->agency_effective_date_indd(
+        'effective_colon', $color );
 
-    my @effectives;
-
-    foreach my $language (qw(en es zh)) {
-        my $effective = $effective{$language};
-        my $method    = "long_$language";
-        my $date      = $IDT->encode_high_chars( $effdate->$method );
-        $date = $IDT->language_phrase( $language, $date, 'Bold' );
-        my $nbsp = $IDT->nbsp;
-        $date =~ s/ +/$nbsp/g;
-        $date = "$effective $date";
-        $date =~ s/<CharStyle:(.*?)>/<CharStyle:$1>$color/g;
-
-        push @effectives, $IDT->parastyle('sideeffective') . $color . $date;
-
-    }
-
-    print $sidefh ( join( $IDT->hardreturn, @effectives ) );
+    print $sidefh $effective_dates;
 
     print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
     # blank line to separate effective dates from side notes
