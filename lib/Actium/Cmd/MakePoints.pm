@@ -29,7 +29,7 @@ use Text::Trim;                    ### DEP ###
 use Actium::O::Points::Point;
 
 const my $LISTFILE_BASE     => 'pointlist';
-const my $ERRORFILE_BASE    => 'point_errors.txt';
+const my $ERRORFILE_BASE    => 'point_errors';
 const my $SIGNIDS_IN_A_FILE => 250;
 
 sub HELP {
