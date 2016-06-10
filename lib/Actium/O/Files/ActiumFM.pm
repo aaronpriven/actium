@@ -1,5 +1,3 @@
-# Actium/O/Files/ActiumDB.pm
-
 # Class holding routines related to the Actium database
 # (the FileMaker database used by Actium users), accessed
 # thorugh ODBC.
@@ -14,6 +12,8 @@ use Actium::Sorting::Line('sortbyline');
 const my $KEYFIELD_TABLE          => 'FMTableKeys';
 const my $KEY_OF_KEYFIELD_TABLE   => 'FMTableKey';
 const my $TABLE_OF_KEYFIELD_TABLE => 'FMTable';
+
+const my $IDT => 'Actium::Text::InDesignTags';
 
 const my @ALL_LANGUAGES => qw/en es zh/;
 
@@ -341,8 +341,8 @@ sub i18n_all {
     my $i18n_row_r = $self->i18n_row_r($i18n_id);
 
     my $all_r = [ @{$i18n_row_r}{@ALL_LANGUAGES} ];
-    
-    s/\s+\z// foreach (@{$all_r});
+
+    s/\s+\z// foreach ( @{$all_r} );
 
     $i18n_all_cache_r->{$i18n_id} = $all_r;
     return @{$all_r};
@@ -352,9 +352,9 @@ sub i18n_all {
 sub i18n_all_indd {
     my $self    = shift;
     my $i18n_id = shift;
-    
+
     my $metastyle = shift;
-    
+
     state $i18n_all_cache_r = {};
     return @{ $i18n_all_cache_r->{$i18n_id} }
       if exists $i18n_all_cache_r->{$i18n_id};
@@ -367,8 +367,9 @@ sub i18n_all_indd {
     foreach my $language (@ALL_LANGUAGES) {
         my $phrase = $i18n_row_r->{$language};
         $phrase
-          = Actium::Text::InDesignTags::->language_phrase( $language, $phrase, $metastyle );
-        $phrase=~ s/\s+\z//;
+          = Actium::Text::InDesignTags::->language_phrase( $language, $phrase,
+            $metastyle );
+        $phrase =~ s/\s+\z//;
         push @{$all_r}, $phrase;
     }
 
@@ -380,9 +381,9 @@ sub i18n_all_indd {
 sub i18n_all_indd_hash {
     my $self    = shift;
     my $i18n_id = shift;
-    
+
     my $metastyle = shift;
-    
+
     state $i18n_all_cache_r = {};
     return %{ $i18n_all_cache_r->{$i18n_id} }
       if exists $i18n_all_cache_r->{$i18n_id};
@@ -393,17 +394,18 @@ sub i18n_all_indd_hash {
 
     my $all_r;
     foreach my $language (@ALL_LANGUAGES) {
-        my $phrase = $i18n_row_r->{$language};
+        my $phrase = $i18n_row_r->{$i18n_id}{$language};
         $phrase
-          = Actium::Text::InDesignTags::->language_phrase( $language, $phrase, $metastyle );
-        $phrase=~ s/\s+\z//;
+          = Actium::Text::InDesignTags::->language_phrase( $language, $phrase,
+            $metastyle );
+        $phrase =~ s/\s+\z//;
         $all_r->{$language} = $phrase;
     }
 
     $i18n_all_cache_r->{$i18n_id} = $all_r;
-    return %{$all_r}; 
-    
-}
+    return %{$all_r};
+
+} ## tidy end: sub i18n_all_indd_hash
 
 #########################
 ### LINEGROUPTYPE METHODS
@@ -473,17 +475,88 @@ sub linesked_url {
 }
 
 sub agency_effective_date {
-    my $self = shift;
-    my $agency = shift;
+    my $self         = shift;
+    my $agency       = shift;
     my $agency_row_r = $self->agency_row_r($agency);
-    my $str = $agency_row_r->{agency_effective_date};
-    
-    my @ymd = split(/-/ , $str);
-    
+    my $str          = $agency_row_r->{agency_effective_date};
+    $str =~ s/[\s\0]+\z//;
+
+    my @ymd = split( /-/, $str );
+
     require Actium::O::DateTime;
-    my $dt = Actium::O::DateTime::->new( ymd => \@ymd) ;
+    my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
     return $dt;
 }
+
+sub agency_effective_date_indd {
+    my $self      = shift;
+    my $i18n_id   = shift;
+    my $color     = shift;
+    my $metastyle = 'Bold';
+
+    my $cachekey = "$i18n_id|$color";
+
+    state $cache;
+    return $cache->{$cachekey} if exists $cache->{$cachekey};
+
+    my $dt         = $self->agency_effective_date('ACTransit');
+    my $i18n_row_r = $self->i18n_row_r($i18n_id);
+
+    require Actium::Text::InDesignTags;
+    const my $nbsp => $IDT->nbsp;
+
+    my @effectives;
+    foreach my $lang (@ALL_LANGUAGES) {
+        my $method = "long_$lang";
+        my $date   = $dt->$method;
+        $date =~ s/ /$nbsp/g;
+
+        $date = $IDT->encode_high_chars_only($date);
+        $date = $IDT->language_phrase( $lang, $date, $metastyle );
+
+        my $phrase = $i18n_row_r->{$lang};
+        $phrase =~ s/\s+\z//;
+
+        if ( $phrase =~ m/\%s/ ) {
+            $phrase =~ s/\%s/$date/;
+        }
+        else {
+            $phrase .= " $date";
+        }
+
+        #$phrase = $IDT->language_phrase( $lang, $phrase, $metastyle );
+
+        $phrase =~ s/<CharStyle:Chinese>/<CharStyle:ZH_Bold>/g;
+        $phrase =~ s/<CharStyle:([^>]*)>/<CharStyle:$1>$color/g;
+
+        push @effectives, $phrase;
+
+    } ## tidy end: foreach my $lang (@ALL_LANGUAGES)
+
+    return $cache->{$cachekey} = join( $IDT->hardreturn, @effectives );
+
+} ## tidy end: sub agency_effective_date_indd
+
+sub date_i18n_texts_hash {
+    my $self    = shift;
+    my $dt      = shift;
+    my $i18n_id = shift;
+
+    my $i18n_row_r = $self->i18n_row_r($i18n_id);
+
+    my %text_of;
+
+    foreach my $lang (qw(en es zh)) {
+        my $text   = $i18n_row_r->{$lang};
+        my $method = "long_$lang";
+        my $date   = $dt->$method;
+        $text =~ s/\%s/$date/;
+        $text_of{$lang} = $text;
+    }
+
+    return \%text_of;
+
+} ## tidy end: sub date_i18n_texts_hash
 
 #########################
 ### LINES ATTRIBUTES
@@ -633,14 +706,12 @@ sub _build_line_descrips_of_transithub {
 ######################################
 #### LINE DESCRIPTIONS OF TRANSIT HUBS
 
-const my $IDT => 'Actium::Text::InDesignTags';
-
 sub descrips_of_transithubs_indesign {
     my $self = shift;
 
     my %params = u::validate( @_, { signup => 1, } );
-    my $signup = $params{ signup};
-    
+    my $signup = $params{signup};
+
     my $effdate = $self->agency_effective_date('ACTransit')->long_en;
 
     require Actium::Text::InDesignTags;
