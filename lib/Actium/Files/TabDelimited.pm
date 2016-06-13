@@ -1,4 +1,4 @@
-package Actium::Files::TabDelimited 0.011;
+package Actium::Files::TabDelimited 0.010;
 
 use Actium::Preamble;
 

@@ -1,4 +1,4 @@
-package Actium::O::CmdEnv 0.011;
+package Actium::O::CmdEnv 0.010;
 
 # Configuration and environment of command line programs
 # Probably needs a better name

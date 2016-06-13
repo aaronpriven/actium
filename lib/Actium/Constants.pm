@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-package Actium::Constants 0.011;
+package Actium::Constants 0.010;
 # Cannot use Actium::Preamble since that module depends on this one
 
 use 5.016;

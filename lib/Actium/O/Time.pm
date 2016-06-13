@@ -1,4 +1,4 @@
-package Actium::O::Time 0.011;
+package Actium::O::Time 0.010;
 
 # object for formatting schedule times and parsing formatted times
 
@@ -263,7 +263,7 @@ Actium::O::Time - Routines to format times in the Actium system
 
 =head1 VERSION
 
-This documentation refers to Actium::O::Time version 0.011
+This documentation refers to Actium::O::Time version 0.010
 
 =head1 SYNOPSIS
 

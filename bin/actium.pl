@@ -8,7 +8,7 @@ use lib ("$Bin/../lib"); ### DEP ###
 use Actium::Preamble;
 use Actium::Cmd;
 
-our $VERSION = 0.011;
+our $VERSION = 0.010;
 
 Actium::Cmd::run(
     commandpath => $0,

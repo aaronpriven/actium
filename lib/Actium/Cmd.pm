@@ -1,4 +1,4 @@
-package Actium::Cmd 0.011;
+package Actium::Cmd 0.010;
 
 use Actium::Preamble;
 use Getopt::Long;    ### DEP ###

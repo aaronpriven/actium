@@ -7,6 +7,8 @@ use autodie;
 use FindBin qw($Bin);    ### DEP ###
 use lib ("$Bin/../lib"); ### DEP ###
 
+our $VERSION = 0.010;
+
 # this program is used every year to convert the supplementary schools
 # calendar from Excel to HTML. 
 
