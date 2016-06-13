@@ -1,4 +1,4 @@
-package Actium::Cmd::BARTSkeds 0.011;
+package Actium::Cmd::BARTSkeds 0.010;
 
 # gets schedules from BART API and creates reports
 

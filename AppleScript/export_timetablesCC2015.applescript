@@ -1,3 +1,4 @@
+-- version 0.010
 
 -- set savefolder to (choose folder with prompt "Select the folder wherein the PDFs shall be saved." default location alias "Bireme:Actium:tableart:pdf") as string
 

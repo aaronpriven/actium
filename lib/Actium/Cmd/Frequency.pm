@@ -1,4 +1,4 @@
-package Actium::Cmd::Frequency 0.011;
+package Actium::Cmd::Frequency 0.010;
 
 use Actium::Preamble;
 use Actium::Frequency;
