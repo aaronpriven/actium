@@ -7,7 +7,7 @@ use English '-no_match_vars';
 use autodie;
 use Text::Trim; ### DEP ###
 use Actium::Crier(qw/cry last_cry/);
-use Actium::EffectiveDate (qw[effectivedate long_date file_date newest_date]);
+use Actium::EffectiveDate (qw[long_date file_date newest_date]);
 use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Sorting::Skeds('skedsort');
 use Actium::Constants;
@@ -441,9 +441,6 @@ sub output_a_pubtts {
 
         my $file = join( "_", @{$lines_r} );
         $cry->over (" $file");
-        if ( $file eq '32' ) {
-            $cry->over ("#");
-        }
 
         my ( $portrait_chars, @table_assignments )
           = Actium::IDTables::PageAssignments::assign( $tables_r,

@@ -15,7 +15,7 @@ The program newsignup is intended to encapsulate as much as possible
 of the routine work of creating a new signup.
 
 ````Shell
-cd /Volumes/Bireme/Actium/db –s z00 –x Z00.ZIP
+actium.pl newsignup -b /Volumes/Bireme/Actium/db –s z00 –x Z00.ZIP
 ````
 
 The -s argument should be the name of the signup, which will be
@@ -43,7 +43,7 @@ XHEA data.
 
 ## 2. Import AVL files into Perl
 
-Run the program "readavl". This takes the AVL files and processes
+Run the program "storeavl". This takes the AVL files and processes
 them into Perl data structures, so they can be more easily read by
 the other programs that deal with the data.
 
@@ -111,7 +111,7 @@ Note that the "active" field will not have been updated yet.
 
 ## 5. Import places into FileMaker
 
-a) Go into the Places\_Neue layout in FileMaker. Display all records.
+a) Go into the Places layout in FileMaker. Display all records.
 
 b) import place\_with\_i.txt
 
@@ -144,7 +144,7 @@ This file determines the timepoint order for schedules where the computer has tr
 
 Run this program:
 
-    avl2skeds.pl -si z00 -raw
+    actium.pl avl2skeds -si z00 -raw
 
 This creates the "raw" schedule files in the directory rawskeds.  These raw schedules are what is used for comparing schedules from one signup to another. (The regular schedules in "skeds" have the exceptions copied over to them.)
 
@@ -179,9 +179,9 @@ Create a new directory called "exceptions" under the signup directory.  Copy the
 
 This involves running avl2skeds again:
 
-    avl2skeds.pl -si z00
+    actium.pl avl2skeds -si z00
 
-This re-runs the avl2skeds.pl program, only this time it includes the exceptions and creates the "skeds" directory where the skeds that are actually used are stored.
+This re-runs the avl2skeds program, only this time it includes the exceptions and creates the "skeds" directory where the skeds that are actually used are stored.
 
 ## 12. Ensure that the "Lines" table is up to date
 
@@ -191,7 +191,7 @@ This is a manual process to make sure that the "Lines" table has current lines a
 
 a) Run the avl2stoplines.pl program
 
-    avl2stoplines.pl -s z00
+    actium.pl avl2stoplines -s z00
 
 That creates the file stoplines.txt
 

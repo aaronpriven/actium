@@ -211,6 +211,20 @@ sub splittab {
     return split( /\t/s, $_[0] );
 }
 
+sub display_pairs {
+    my @args = @_;
+    my $text = $EMPTY_STR;
+
+    my $it = natatime 2, @args;
+    while ( my ( $key, $val ) = $it->() ) {
+        my $value = $val // '[undef]';
+        $text .= "$key => $value\n";
+    }
+
+    return $text;
+
+}
+
 # KEY SEPARATOR ADDING AND REMOVING
 
 sub keyreadable {
@@ -471,24 +485,25 @@ sub iterative_flatten {
     # needs testing before replacing 'flatten'
 
     my @results;
-    
+
     while (@_) {
         my $element = shift @_;
-        if (reftype($element) eq 'ARRAY') {
+        if ( reftype($element) eq 'ARRAY' ) {
             unshift @_, @{$element};
-        } else {
+        }
+        else {
             push @results, $element;
         }
     }
 
     return wantarray ? @results : \@results;
-    
+
     # other alternatives, which are untested
-    
+
     #while ( any { reftype $_ eq 'ARRAY' } @array ) {
     #    @array = map { reftype $_ eq 'ARRAY' ? @{$_} : $_ } @array
     #}
-    
+
     #my $continue = 1;
     #while ($continue) {
     #    @array = map {
@@ -622,7 +637,10 @@ sub dumpstr {
 sub u_columns {
     my $str = shift;
     require Unicode::GCString;    ### DEP ###
-    return Unicode::GCString->new($str)->columns;
+    return Unicode::GCString->new("$str")->columns;
+    # the quotes are necessary because GCString doesn't work properly
+    # with variables Perl thinks are numbers. It doesn't automatically
+    # stringify them.
 }
 
 sub u_pad {
@@ -699,12 +717,12 @@ sub immut {
 }
 
 sub feq {
-    my ($x, $y) = @_;
+    my ( $x, $y ) = @_;
     return fc($x) eq fc($y);
 }
 
 sub fne {
-    my ($x, $y) = @_;
+    my ( $x, $y ) = @_;
     return fc($x) ne fc($y);
 }
 
@@ -828,9 +846,9 @@ So
 Returns its result as an array reference in scalar context, but as a
 list in list context.
 
-=item B<positional(C<\@_> , I<arguments>)>
+=item B<positional(\@_ , I<arguments>)>
 
-=item B<positional_around(C<\@_> , I<arguments>)>
+=item B<positional_around(\@_ , I<arguments>)>
 
 The B<positional> and B<positional_around> routines allow the use of positional
 arguments in addition to named arguments in method calls or Moose object
@@ -898,7 +916,8 @@ B<The following will not work:>
 
 If the name of the last argument to C<positional> or C<positional_around>
 begins with an at sign (@), then the at sign will be removed, and an arrayref 
-pointing to an array of the remaining arguments to your method.
+pointing to an array of the remaining arguments to your method will be returned
+in that slot of the array.
 
 For example, given the following:
 

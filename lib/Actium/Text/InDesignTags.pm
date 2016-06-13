@@ -1,17 +1,12 @@
-# Actium/Text/InDesignTags.pm
-
-# class providing routines and constants for InDesign tagged text
-
-# Legacy stage 4
-
 package Actium::Text::InDesignTags 0.010;
+# class providing routines and constants for InDesign tagged text
 
 use warnings;
 use 5.016;
 
 # Simple tags
 
-use Carp; ### DEP ###
+use Carp;    ### DEP ###
 
 use constant {
     start            => "<ASCII-MAC>\r<Version:6><FeatureSet:InDesign-Roman>",
@@ -19,13 +14,15 @@ use constant {
     thinspace        => '<0x2009>',
     bullet           => '<0x2022>',
     boxbreak         => "<cNextXChars:Box>\r<cNextXChars:>",
-    pagebreak         => "<cNextXChars:Page>\r<cNextXChars:>",
+    pagebreak        => "<cNextXChars:Page>\r<cNextXChars:>",
     nbsp             => '<0x00A0>',
     endash           => '<0x2013>',
     emdash           => '<0x2014>',
-    hardreturn       => "\r", # 0x000D
-    softreturn       => "\n", # 0x000A
-    end_nested_style => '<0x0003>', # actually is exported as 0x03
+    hardreturn       => "\r",                     # 0x000D
+    softreturn       => "\n",                     # 0x000A
+    hardreturn_esc   => '<0x000D>',
+    softreturn_esc   => '<0x000A>',
+    end_nested_style => '<0x0003>',               # actually is exported as 0x03
     emspace          => '<0x2003>',
     enspace          => '<0x2002>',
     thirdspace       => '<0x2004>',
@@ -78,26 +75,26 @@ sub dropcapchars {
 
 sub underline_word {
     my $invocant = shift;
-    my $word = shift;
+    my $word     = shift;
     return char_underline . $word . nocharstyle;
 }
 
 sub bold_word {
     my $invocant = shift;
-    my $word = shift;
+    my $word     = shift;
     return char_bold . $word . nocharstyle;
 }
 
 sub combi_side {
     my $invocant = shift;
     my $num      = $invocant->combichar( +shift );
-    return ($invocant->charstyle( 'sidenum') . $num . nocharstyle);
+    return ( $invocant->charstyle('sidenum') . $num . nocharstyle );
 }
 
 sub combi_foot {
     my $invocant = shift;
     my $num      = $invocant->combichar( +shift );
-    return ($invocant->charstyle( 'footnum')  . $num . nocharstyle);
+    return ( $invocant->charstyle('footnum') . $num . nocharstyle );
 }
 
 sub combichar {
@@ -110,12 +107,14 @@ sub combichar {
 
     if ( $num < 20 ) {
         $num = (qw(p q w e r t y u i o a s d f g h j k l ;))[$num];
+
         # 0 through 19
     }
     else {
         my @chars = split( //, $num );
         no warnings qw(qw);
         $chars[1] = (qw/ ) ! @ # $ % ^ & * ( /)[ $chars[1] ];
+
         # The characters above are the right halves of two-digit numbers.
         # 0-9 are, themselves, the left halves of two-digit numbers,
         # so we don't need to modify those.
@@ -126,12 +125,55 @@ sub combichar {
 
 } ## tidy end: sub combichar
 
+sub encode_all {
+
+    my $invocant = shift;
+
+    my $check_ord_cr = sub {
+        my $ord = shift;
+        return (
+                 $ord < 32
+              or $ord == ord('<')
+              or $ord == ord('>')
+              or $ord > 0x7F
+        );
+    };
+
+    return _encode( $check_ord_cr, @_ )
+
+}
+
 sub encode_high_chars {
 
     my $invocant = shift;
 
+    my $check_ord_cr = sub {
+        my $ord = shift;
+        return ( $ord == ord('<') or $ord == ord('>') or $ord > 0x7F );
+    };
+
+    return _encode( $check_ord_cr, @_ )
+
+}
+
+sub encode_high_chars_only {
+
+    my $invocant = shift;
+
+    my $check_ord_cr = sub {
+        my $ord = shift;
+        return ( $ord > 0x7F );
+    };
+
+    return _encode( $check_ord_cr, @_ );
+}
+
+sub _encode {
+
+    my $check_ord_cr = shift;
+
     @_ = @_ ? @_ : $_ if defined wantarray;
-    
+
     # set @_ to be a copy of itself, or of $_, if not in void context
 
     # allows it to work on copies in any but void context, or on
@@ -142,26 +184,56 @@ sub encode_high_chars {
         my @chars = split(//);
         for my $i ( reverse 0 .. $#chars ) {
             my $ord = ord( $chars[$i] );
-            if ( $ord == ord('<') or $ord == ord('>') or $ord > 0x7F ) {
+            if ( $check_ord_cr->($ord) ) {
                 substr( $_, $i, 1, sprintf( '<0x%04X>', $ord ) );
             }
 
         }
     }
-    
     return if not defined wantarray;
     return @_ if wantarray;
 
     # return concatenation of defined values, if any
     my @defined_vals = grep { defined($_) } @_;
-    if ( @defined_vals ) {
-        my $joined = join('', @defined_vals);
+    if (@defined_vals) {
+        my $joined = join( '', @defined_vals );
         return $joined;
     }
 
     return;
 
-} ## tidy end: sub encode_high_chars
+} ## tidy end: sub _encode
+
+my %style_of_metastyle = (
+    zh => {
+        Regular => 'ZH_Regular',
+        Bold    => 'ZH_Bold',
+        Light   => 'ZH_Light',
+    },
+);
+
+my %language_phrases = (
+    zh => sub {
+        my $phrase    = shift;
+        my $metastyle = shift // 'Regular';
+        my $zh_style  = $style_of_metastyle{zh}{$metastyle} //
+          $style_of_metastyle{zh}{Regular};
+
+        $phrase
+          =~ s/((?:<0x[[:xdigit:]]+>)+)/<CharStyle:$zh_style>$1<CharStyle:>/g;
+        $phrase =~ s/<CharStyle:> +<CharStyle:$zh_style>/ /g;
+
+        return $phrase;
+    },
+);
+
+sub language_phrase {
+    my ( $self, $language, $phrase, $metastyle ) = @_;
+    if ( exists $language_phrases{$language} ) {
+        $phrase = $language_phrases{$language}->( $phrase, $metastyle );
+    }
+    return $phrase;
+}
 
 1;
 

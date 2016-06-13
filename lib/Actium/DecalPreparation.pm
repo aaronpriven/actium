@@ -7,8 +7,8 @@ package Actium::DecalPreparation 0.010;
 use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');
 use Actium::O::2DArray;
-use Excel::Writer::XLSX; ### DEP ###
-use Excel::Writer::XLSX::Utility; ### DEP ###
+use Excel::Writer::XLSX;             ### DEP ###
+use Excel::Writer::XLSX::Utility;    ### DEP ###
 use Actium::Util(qw[folded_in joinseries_ampersand]);
 
 use Sub::Exporter -setup => {
@@ -29,49 +29,51 @@ sub make_labels {
     my $lines_of_r        = $in_sheet->hash_of_row_elements( 0, 1 );
     my $instructions_of_r = $in_sheet->hash_of_row_elements( 0, 3 );
     my $db_decals_of_r = $actium_db->all_in_column_key(qw/Stops_Neue p_decals/);
-    my $desc_of_r =
-      $actium_db->all_in_column_key(qw/Stops_Neue c_description_fullabbr/);
-   my $assignment_of_r = $actium_db->all_in_column_key(qw/Stops_Neue c_crew_assignment/);
+    my $desc_of_r
+      = $actium_db->all_in_column_key(qw/Stops_Neue c_description_fullabbr/);
+    my $assignment_of_r
+      = $actium_db->all_in_column_key(qw/Stops_Neue c_crew_assignment/);
 
-    my ( $decals_of_r, $found_decals_of_r ) =
-      decals_of_stop( $lines_of_r, $db_decals_of_r );
+    my ( $decals_of_r, $found_decals_of_r )
+      = decals_of_stop( $lines_of_r, $db_decals_of_r );
 
     my @labels;
     foreach my $stopid ( sort keys %{$lines_of_r} ) {
 
         my $instructions = $instructions_of_r->{$stopid};
         my $desc         = $desc_of_r->{$stopid};
-        my $assignment = $assignment_of_r->{$stopid};
+        my $assignment   = $assignment_of_r->{$stopid};
 
         if ( not $desc ) {
             next if folded_in( $stopid => 'id', 'stop id', 'stopid' );
             $desc = '[NO DESCRIPTION FOUND]';
         }
 
-        my @found_all = @{ $found_decals_of_r->{$stopid} };
-        my @found_custom = grep { m/-/ } @found_all;
-        my $all_list =
-          @found_all
+        my @found_all        = @{ $found_decals_of_r->{$stopid} };
+        my $decal_pluralized = @found_all > 1 ? 'decals' : 'decal';
+        my @found_custom     = grep {m/-/} @found_all;
+        my $all_list
+          = @found_all
           ? joinseries_ampersand(@found_all)
           : '(NO DECALS FOUND)';
-        my $custom_list =
-          @found_custom
+        my $custom_list
+          = @found_custom
           ? joinseries_ampersand(@found_custom)
           : '(NO CUSTOM DECALS FOUND)';
-          
+
         $instructions =~ s/%c/$custom_list/;
         $instructions =~ s/%d/$all_list/;
-          
+
         if ( not $instructions or $instructions =~ /\A\&/ ) {
 
             my $originstructions = $instructions;
 
-            my $decal_pluralized = @found_custom > 1 ? 'decals' : 'decal';
-                $instructions = "Replace generic $decal_pluralized with $custom_list";
+            $instructions
+              = "Replace generic $decal_pluralized with $custom_list";
 
-                if ( @found_custom < @{ $decals_of_r->{$stopid} } ) {
-                    $instructions .= ". Leave other decals";
-                }
+            if ( @found_custom < @{ $decals_of_r->{$stopid} } ) {
+                $instructions .= ". Leave other decals";
+            }
 
             if ($originstructions) {
                 $originstructions =~ s/^\&\s*//;
@@ -79,18 +81,22 @@ sub make_labels {
             }
 
         }
-        elsif ( $instructions eq 'P' ) {
-            my $decal_pluralized = @found_all > 1 ? 'decals' : 'decal';
-            $instructions =
-                "Place $decal_pluralized $all_list on the flag";
+        elsif ( u::feq( $instructions, 'P' ) ) {
+            $instructions = "Place $decal_pluralized $all_list on the flag";
+        }
+        elsif ( u::feq( $instructions, 'N' ) ) {
+            $instructions
+              = "Get a new or re-usable flag from storage. "
+              . "Place $decal_pluralized $all_list on the flag. "
+              . "Place the stop ID on the flag and install it.";
         }
 
         push @labels, "[Crew area $assignment] $stopid   $desc\n$instructions";
 
-    }
+    } ## tidy end: foreach my $stopid ( sort keys...)
 
     my $out_sheet = Actium::O::2DArray->new_across( 2, @labels );
-    $out_sheet->ins_col( 1, ($SPACE) x scalar @{$out_sheet});
+    $out_sheet->ins_col( 1, ($SPACE) x scalar @{$out_sheet} );
 
     # blank column for space in the mdidle of the label
 
@@ -98,7 +104,7 @@ sub make_labels {
 
     return $out_sheet->xlsx( output_file => $output_file, format => $format );
 
-}
+} ## tidy end: sub make_labels
 
 sub make_decal_count {
 
@@ -111,8 +117,8 @@ sub make_decal_count {
 
     my $db_decals_of_r = $actium_db->all_in_column_key(qw/Stops_Neue p_decals/);
 
-    my ( $decals_of_r, $found_decals_of_r ) =
-      decals_of_stop( $lines_of_r, $db_decals_of_r );
+    my ( $decals_of_r, $found_decals_of_r )
+      = decals_of_stop( $lines_of_r, $db_decals_of_r );
 
     my $count_of_r = count_decals($found_decals_of_r);
 
@@ -125,7 +131,7 @@ sub make_decal_count {
 
     return;
 
-}
+} ## tidy end: sub make_decal_count
 
 sub write_decalcount_xlsx {
     my %params          = @_;
@@ -156,12 +162,12 @@ sub write_decalcount_xlsx {
         my %celladdr_of;
         for my $columntype (@columntypes) {
             my $col = $column_num_of{$columntype};
-            $celladdr_of{ $columntypes[$col] } =
-              xl_rowcol_to_cell( $row, $col );
+            $celladdr_of{ $columntypes[$col] }
+              = xl_rowcol_to_cell( $row, $col );
         }
 
-        my $formula =
-          "=CEILING( $celladdr_of{Stops}*2.1 + $celladdr_of{Adjust} , 1)";
+        my $formula
+          = "=CEILING( $celladdr_of{Stops}*2.1 + $celladdr_of{Adjust} , 1)";
 
         my $decal = $decals[$idx];
         $count_sheet->write_string( $celladdr_of{Decal}, $decal, $text_format );
@@ -197,7 +203,7 @@ sub write_decalcount_xlsx {
 
     return $workbook->close();
 
-}
+} ## tidy end: sub write_decalcount_xlsx
 
 sub count_decals {
 
@@ -258,11 +264,11 @@ sub decals_of_stop {
         $decals_of{$stopid}       = \@decals;
         $found_decals_of{$stopid} = \@found_decals;
 
-    }
+    } ## tidy end: foreach my $stopid ( sort keys...)
 
     return ( \%decals_of, \%found_decals_of );
 
-}    ## tidy end: sub START
+} ## tidy end: sub decals_of_stop
 
 1;
 

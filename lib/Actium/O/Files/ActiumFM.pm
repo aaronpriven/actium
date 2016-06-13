@@ -1,5 +1,3 @@
-# Actium/O/Files/ActiumDB.pm
-
 # Class holding routines related to the Actium database
 # (the FileMaker database used by Actium users), accessed
 # thorugh ODBC.
@@ -14,6 +12,10 @@ use Actium::Sorting::Line('sortbyline');
 const my $KEYFIELD_TABLE          => 'FMTableKeys';
 const my $KEY_OF_KEYFIELD_TABLE   => 'FMTableKey';
 const my $TABLE_OF_KEYFIELD_TABLE => 'FMTable';
+
+const my $IDT => 'Actium::Text::InDesignTags';
+
+const my @ALL_LANGUAGES => qw/en es zh/;
 
 has 'db_name' => (
     is  => 'ro',
@@ -65,7 +67,7 @@ sub _build_keys_of {
 const my %TABLE_OF_ITEM => (
     agency => 'Agencies',
     line   => 'Lines',
-
+    i18n   => 'I18N',
     #city => 'Cities',
     #color => 'Colors',
     #flagtype => 'Flagtypes',
@@ -112,6 +114,12 @@ sub _build_table_cache {
     return $cache_r;
 }
 
+sub _build_i18n_cache {
+    my $self = shift;
+    my $cache_r = $self->_build_table_cache( 'i18n', qw(en es zh), );
+
+}
+
 sub _build_agency_cache {
     my $self = shift;
     return $self->_build_table_cache(
@@ -120,7 +128,7 @@ sub _build_agency_cache {
           agency_fare_url      agency_id           agency_lang
           agency_linemap_url   agency_url
           agency_linesked_url  agency_mapversion   agency_name
-          agency_phone         agency_timezone
+          agency_phone         agency_timezone     agency_effective_date
           )
     );
 }
@@ -154,9 +162,9 @@ sub _build_line_cache {
             BIND_VALUES => ['Yes'],
         }
     );
-    
+
     return $cache_r;
-}
+} ## tidy end: sub _build_line_cache
 
 ##############################
 ### SS CACHE
@@ -285,11 +293,125 @@ sub search_ss {
 
 } ## tidy end: sub search_ss
 
+const my $MAXIMUM_VALID_DISTANCE => 1320;
+
+sub ss_nearest_stop {
+
+    require Actium::Geo;
+
+    my ( $self, $lat, $long ) = @_;
+
+    my $cache_r = $self->_ss_cache_r;
+
+    my $nearest_dist = $MAXIMUM_VALID_DISTANCE;
+    my $nearest;
+
+    foreach \my %stop_data ( values %{$cache_r} ) {
+
+        my $stoplat  = $stop_data{h_loca_latitude};
+        my $stoplong = $stop_data{h_loca_longitude};
+
+        my $dist
+          = Actium::Geo::distance_feet( $lat, $long, $stoplat, $stoplong );
+
+        if ( $dist < $nearest_dist ) {
+            $nearest      = \%stop_data;
+            $nearest_dist = $dist;
+        }
+
+    }
+
+    return $nearest if $nearest;
+    return;
+
+} ## tidy end: sub ss_nearest_stop
+
+#########################
+### I18N METHODS
+
+sub i18n_all {
+    my $self    = shift;
+    my $i18n_id = shift;
+
+    state $i18n_all_cache_r = {};
+
+    return @{ $i18n_all_cache_r->{$i18n_id} }
+      if exists $i18n_all_cache_r->{$i18n_id};
+
+    my $i18n_row_r = $self->i18n_row_r($i18n_id);
+
+    my $all_r = [ @{$i18n_row_r}{@ALL_LANGUAGES} ];
+
+    s/\s+\z// foreach ( @{$all_r} );
+
+    $i18n_all_cache_r->{$i18n_id} = $all_r;
+    return @{$all_r};
+
+}
+
+sub i18n_all_indd {
+    my $self    = shift;
+    my $i18n_id = shift;
+
+    my $metastyle = shift;
+
+    state $i18n_all_cache_r = {};
+    return @{ $i18n_all_cache_r->{$i18n_id} }
+      if exists $i18n_all_cache_r->{$i18n_id};
+
+    my $i18n_row_r = $self->i18n_row_r($i18n_id);
+
+    require Actium::Text::InDesignTags;
+
+    my $all_r;
+    foreach my $language (@ALL_LANGUAGES) {
+        my $phrase = $i18n_row_r->{$language};
+        $phrase
+          = Actium::Text::InDesignTags::->language_phrase( $language, $phrase,
+            $metastyle );
+        $phrase =~ s/\s+\z//;
+        push @{$all_r}, $phrase;
+    }
+
+    $i18n_all_cache_r->{$i18n_id} = $all_r;
+    return @{$all_r};
+
+} ## tidy end: sub i18n_all_indd
+
+sub i18n_all_indd_hash {
+    my $self    = shift;
+    my $i18n_id = shift;
+
+    my $metastyle = shift;
+
+    state $i18n_all_cache_r = {};
+    return %{ $i18n_all_cache_r->{$i18n_id} }
+      if exists $i18n_all_cache_r->{$i18n_id};
+
+    my $i18n_row_r = $self->i18n_row_r($i18n_id);
+
+    require Actium::Text::InDesignTags;
+
+    my $all_r;
+    foreach my $language (@ALL_LANGUAGES) {
+        my $phrase = $i18n_row_r->{$i18n_id}{$language};
+        $phrase
+          = Actium::Text::InDesignTags::->language_phrase( $language, $phrase,
+            $metastyle );
+        $phrase =~ s/\s+\z//;
+        $all_r->{$language} = $phrase;
+    }
+
+    $i18n_all_cache_r->{$i18n_id} = $all_r;
+    return %{$all_r};
+
+} ## tidy end: sub i18n_all_indd_hash
+
 #########################
 ### LINEGROUPTYPE METHODS
 
 sub linegrouptypes_in_order {
-    my $self = shift;
+    my $self     = shift;
     my %lg_cache = $self->linegrouptype_cache;
 
     my %sortvalue_of
@@ -351,6 +473,90 @@ sub linesked_url {
     return $url_make_cr->( $self, $line, 'agency_linesked_url' );
 
 }
+
+sub agency_effective_date {
+    my $self         = shift;
+    my $agency       = shift;
+    my $agency_row_r = $self->agency_row_r($agency);
+    my $str          = $agency_row_r->{agency_effective_date};
+    $str =~ s/[\s\0]+\z//;
+
+    my @ymd = split( /-/, $str );
+
+    require Actium::O::DateTime;
+    my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
+    return $dt;
+}
+
+sub agency_effective_date_indd {
+    my $self      = shift;
+    my $i18n_id   = shift;
+    my $color     = shift;
+    my $metastyle = 'Bold';
+
+    my $cachekey = "$i18n_id|$color";
+
+    state $cache;
+    return $cache->{$cachekey} if exists $cache->{$cachekey};
+
+    my $dt         = $self->agency_effective_date('ACTransit');
+    my $i18n_row_r = $self->i18n_row_r($i18n_id);
+
+    require Actium::Text::InDesignTags;
+    const my $nbsp => $IDT->nbsp;
+
+    my @effectives;
+    foreach my $lang (@ALL_LANGUAGES) {
+        my $method = "long_$lang";
+        my $date   = $dt->$method;
+        $date =~ s/ /$nbsp/g;
+
+        $date = $IDT->encode_high_chars_only($date);
+        $date = $IDT->language_phrase( $lang, $date, $metastyle );
+
+        my $phrase = $i18n_row_r->{$lang};
+        $phrase =~ s/\s+\z//;
+
+        if ( $phrase =~ m/\%s/ ) {
+            $phrase =~ s/\%s/$date/;
+        }
+        else {
+            $phrase .= " $date";
+        }
+
+        #$phrase = $IDT->language_phrase( $lang, $phrase, $metastyle );
+
+        $phrase =~ s/<CharStyle:Chinese>/<CharStyle:ZH_Bold>/g;
+        $phrase =~ s/<CharStyle:([^>]*)>/<CharStyle:$1>$color/g;
+
+        push @effectives, $phrase;
+
+    } ## tidy end: foreach my $lang (@ALL_LANGUAGES)
+
+    return $cache->{$cachekey} = join( $IDT->hardreturn, @effectives );
+
+} ## tidy end: sub agency_effective_date_indd
+
+sub date_i18n_texts_hash {
+    my $self    = shift;
+    my $dt      = shift;
+    my $i18n_id = shift;
+
+    my $i18n_row_r = $self->i18n_row_r($i18n_id);
+
+    my %text_of;
+
+    foreach my $lang (qw(en es zh)) {
+        my $text   = $i18n_row_r->{$lang};
+        my $method = "long_$lang";
+        my $date   = $dt->$method;
+        $text =~ s/\%s/$date/;
+        $text_of{$lang} = $text;
+    }
+
+    return \%text_of;
+
+} ## tidy end: sub date_i18n_texts_hash
 
 #########################
 ### LINES ATTRIBUTES
@@ -436,9 +642,10 @@ has _lines_of_transithub_r => (
 );
 
 sub _lines_of_transithub {
-    my $self = shift;
-    my $hub  = shift;
-    return @{ $self->_lines_of_transithub_r($hub) };
+    my $self   = shift;
+    my $hub    = shift;
+    my $hubs_r = $self->_lines_of_transithub_r($hub) // [];
+    return @{$hubs_r};
 }
 
 sub _build_lines_of_transithub {
@@ -460,6 +667,91 @@ sub _build_lines_of_transithub {
     return \%lines_of_transithub;
 }
 
+# $x->{Hubname}{line} = description
+
+has _line_descrips_of_transithubs_r => (
+    traits   => ['Hash'],
+    isa      => 'HashRef[HashRef[Str]]',
+    init_arg => undef,
+    is       => 'bare',
+    handles  => { _line_descrips_of_transithub_r => 'get' },
+    builder  => '_build_line_descrips_of_transithub',
+    lazy     => 1,
+);
+
+sub line_descrips_of_transithub {
+    my $self       = shift;
+    my $hub        = shift;
+    my $descrips_r = $self->_line_descrips_of_transithub_r($hub) // {};
+    return %{$descrips_r};
+
+}
+
+sub _build_line_descrips_of_transithub {
+    my $self = shift;
+
+    my %line_descrips_of_transithub;
+    foreach my $transithub ( $self->transithubs ) {
+        my @lines = $self->_lines_of_transithub($transithub);
+        foreach my $line (@lines) {
+            my $desc = ${ $self->line_row_r($line) }{Description};
+            $line_descrips_of_transithub{$transithub}{$line} = $desc;
+        }
+    }
+
+    return \%line_descrips_of_transithub;
+
+}
+
+######################################
+#### LINE DESCRIPTIONS OF TRANSIT HUBS
+
+sub descrips_of_transithubs_indesign {
+    my $self = shift;
+
+    my %params = u::validate( @_, { signup => 1, } );
+    my $signup = $params{signup};
+
+    my $effdate = $self->agency_effective_date('ACTransit')->long_en;
+
+    require Actium::Text::InDesignTags;
+    my %descrips_of_hubs;
+
+    foreach my $transithub ( $self->transithubs ) {
+
+        my %descrip_of = $self->line_descrips_of_transithub($transithub);
+
+        my @descrip_texts;
+        foreach my $line ( sortbyline keys %descrip_of ) {
+            my $descrip = $descrip_of{$line};
+
+            push @descrip_texts,
+              u::joinempty(
+                $IDT->parastyle('LineDescrip_Line'),
+                $IDT->encode_high_chars($line),
+                $IDT->hardreturn,
+                $IDT->parastyle('LineDescrip_Descrip'),
+                $IDT->encode_high_chars($descrip)
+              );
+
+        }
+
+        $descrips_of_hubs{$transithub} = u::joinempty(
+            $IDT->start,
+            $IDT->parastyle('LineDescrip_TitleLine'),
+            $IDT->charstyle('LineDescrip_Title'),
+            'Line Descriptions',
+            $IDT->nocharstyle,
+            ' Effective ',
+            join( $IDT->hardreturn, $effdate, @descrip_texts ),
+        );
+
+    } ## tidy end: foreach my $transithub ( $self...)
+
+    return \%descrips_of_hubs;
+
+} ## tidy end: sub descrips_of_transithubs_indesign
+
 #########################
 ### TRANSIT HUBS HTML OUTPUT
 
@@ -470,7 +762,11 @@ sub lines_at_transit_hubs_html {
       . "It is automatically generated from a program.\n-->\n";
 
     foreach my $city ( sort $self->transithub_cities ) {
-        $text
+
+        my $citytext  = $EMPTY_STR;
+        my $skip_city = 1;            # skip city unless we see some lines
+
+        $citytext
           .= qq{<h3>$city</h3>\n}
           . qq{<table width="100%" }
           . qq{cellspacing=0 style="border-collapse:collapse;" }
@@ -478,14 +774,16 @@ sub lines_at_transit_hubs_html {
 
         foreach my $hub ( sort $self->_transithubs_of_city($city) ) {
 
-            my $hub_name = $self->transithub_row_r($hub)->{Name};
-            $text
-              .= qq{<tr><td width='30%' style="vertical-align: middle; text-align: right;">}
-              . qq{$hub_name</td><td width='2%' style="vertical-align:middle;">&bull;</td>};
-
             my @lines = sortbyline( $self->_lines_of_transithub($hub) );
 
             next unless @lines;
+
+            $skip_city = 0;    # we saw some lines, don't skip city
+            my $hub_name = $self->transithub_row_r($hub)->{Name};
+
+            $citytext
+              .= qq{<tr><td width='30%' style="vertical-align: middle; text-align: right;">}
+              . qq{$hub_name</td><td width='2%' style="vertical-align:middle;">&bull;</td>};
 
             my @displaylines;
             foreach my $line (@lines) {
@@ -494,14 +792,16 @@ sub lines_at_transit_hubs_html {
                   qq{<a href="} . $self->linesked_url($line) . qq{">$line</a>};
             }
 
-            $text
+            $citytext
               .= '<td style="vertical-align:middle;">'
               . join( "&nbsp;&middot; ", @displaylines )
               . "</td></tr>\n";
 
         } ## tidy end: foreach my $hub ( sort $self...)
 
-        $text .= "</table>\n";
+        if ( not $skip_city ) {
+            $text .= "$citytext</table>\n";
+        }
 
     } ## tidy end: foreach my $city ( sort $self...)
 
@@ -515,7 +815,6 @@ sub lines_at_transit_hubs_html {
 sub line_descrip_html {
 
     require HTML::Entities;    ### DEP ###
-    require Actium::EffectiveDate;
 
     my $self = shift;
 
@@ -523,7 +822,7 @@ sub line_descrip_html {
 
     my $signup = $params{signup};
 
-    my $effdate = Actium::EffectiveDate::effectivedate($signup);
+    my $effdate = $self->agency_effective_date('ACTransit')->long_en;
 
     my $html
       = "\n<!--\n    Do not edit this file! "

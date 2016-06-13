@@ -431,6 +431,10 @@ sub make_sked {
         my $trip_r   = $trips[$trip_idx];
         my $line     = $lines[$trip_idx];
         my $specdays = $specdays[$trip_idx];
+        
+        if ($line =~ /\A 6 [0-9] [0-9] \z /x  and not $specdays ) {
+        	$specdays = 'SD';
+        } # override special days for 600-series lines
 
         my @expanded_trip;
         my $current_idx = 0;

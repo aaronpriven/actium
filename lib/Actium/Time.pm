@@ -2,6 +2,7 @@
 # Routines for formatting times and parsing formatted times
 
 # legacy status 3
+# to be phased out in favor of Actium::O::Time
 
 use warnings; ### DEP ###
 use strict; ### DEP ###
@@ -20,8 +21,6 @@ use Memoize; ### DEP ###
 use List::MoreUtils (qw<firstidx>); ### DEP ###
 
 ## no critic (ProhibitMagicNumbers)
-
-const my $MINS_IN_12HRS => ( 12 * 60 );
 
 const my %AMPM_OFFSETS => (
     'a' => 0,

@@ -31,9 +31,10 @@ has bin => (
     isa     => 'Actium::O::Folder',
     is      => 'ro',
     builder => '_build_bin',
+    lazy    => 1,
 );
 
-has [qw/subcommand system_name module/] => (
+has [qw/commandpath subcommand system_name module/] => (
     isa      => 'Str',
     is       => 'ro',
     required => 1,
@@ -48,6 +49,18 @@ has crier => (
 sub _build_bin {
     require Actium::O::Folder;
     return Actium::O::Folder::->new($Bin);
+}
+
+has command => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_command',
+);
+
+sub _build_command {
+    my $self        = shift;
+    my $commandpath = $self->commandpath;
+    return u::filename($commandpath);
 }
 
 has sysenv_r => (
@@ -81,14 +94,19 @@ has options_r => (
     is      => 'bare',
     writer  => '_set_options_r',
     default => sub { {} },
-    handles => { option => 'get', _set_option => 'set' },
+    handles => {
+        option        => 'get',
+        _set_option   => 'set',
+        option_is_set => 'exists',
+      }
+    ,
 );
 
 sub be_quiet {
-    
+
     my $self = shift;
     $self->crier->set_maxdepth(0);
-    $self->_set_option('quiet', 1);
+    $self->_set_option( 'quiet', 1 );
 
 }
 

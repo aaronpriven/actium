@@ -79,7 +79,7 @@ sub _abbrev9 {
 
 sub hastus_stops_import {
 
-    my $cry = ( 'Calculating fields derived from Hastus stop data');
+    my $cry = cry ( 'Calculating fields derived from Hastus stop data');
 
     my @stop_headers = @{ +shift };
     my @stop_records = @{ +shift };

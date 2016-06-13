@@ -11,6 +11,7 @@ use Actium::Moose;
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 with 'MooseX::Role::Flyweight';
+# MooseX::Role::Flyweight ### DEP ###
 
 use Actium::Types qw<DirCode>;
 
@@ -65,7 +66,7 @@ sub as_to_text {
     my $self    = shift;
     my $dircode = $self->dircode;
 
-    if ( $IS_A_LOOP_DIRECTION{$dircode} ) {
+    if ( exists $IS_A_LOOP_DIRECTION{$dircode} ) {
         return $self->as_direction . " to";
     }
 

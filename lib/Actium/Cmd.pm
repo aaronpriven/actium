@@ -11,12 +11,13 @@ my $crier;
 
 const my $EX_USAGE    => 64;    # from "man sysexits"
 const my $EX_SOFTWARE => 70;
+const my $COMMAND_PREFIX => 'Actium::Cmd';
 
 sub run {
 
     my %params      = @_;
     my $system_name = $params{system_name};
-    my %module_of   = %{ $params{commands} };
+    my %module_of   = %{ $params{subcommands} };
 
     $crier = default_crier();
 
@@ -28,6 +29,7 @@ sub run {
     my $module = _get_module( $subcommand, \%module_of, $system_name );
 
     my $env = Actium::O::CmdEnv::->new(
+        commandpath => $params{commandpath},
         subcommand  => $subcommand,
         system_name => $system_name,
         crier       => $crier,
@@ -221,7 +223,7 @@ sub _get_module {
         }
     }
 
-    return "Actium::Cmd::$module_of{$subcommand}";
+    return "${COMMAND_PREFIX}::$module_of{$subcommand}";
 
 } ## tidy end: sub _get_module
 
