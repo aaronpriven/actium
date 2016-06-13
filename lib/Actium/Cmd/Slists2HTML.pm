@@ -1,26 +1,19 @@
-# Actium/Cmd/Slists2HTML.pm
-
-# Produces HTML tables of stop lists
-
-use 5.016;
-use warnings;
-
 package Actium::Cmd::Slists2HTML 0.010;
 
 use Actium::Preamble;
 
 use Actium::O::Dir;
-use Actium::Sorting::Line ('sortbyline');
-use Actium::Util('filename');
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup ('signup');
+use Actium::Cmd::Config::Signup   ('signup');
 
 use HTML::Entities;    ### DEP ###
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options($env));
+    my ( $class, $env ) = @_;
+    return (
+        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+        Actium::Cmd::Config::Signup::options($env)
+    );
 }
 
 my $count;
@@ -28,26 +21,61 @@ my %order_of = map { $_ => $count++ } @DIRCODES;
 
 const my $HIGHEST_LINE_IN_FIRST_LOCALPAGE => 70;
 
+const my %LONGCORNER_OF => (
+    # taken from Wikipedia... all of them except the eight principal ones
+    # are just for fun
+    N    => 'north',
+    NbE  => 'north by east',
+    NNE  => 'north-northeast',
+    NEbN => 'northeast by north',
+    NE   => 'northeast',
+    NEbE => 'northeast by east',
+    ENE  => 'east-northeast',
+    EbN  => 'east by north',
+    E    => 'east',
+    EbS  => 'east by south',
+    ESE  => 'east-southeast',
+    SEbE => 'southeast by east',
+    SE   => 'southeast',
+    SEbS => 'southeast by south',
+    SSE  => 'south-southeast',
+    SbE  => 'south by east',
+    S    => 'south',
+    SbW  => 'south by west',
+    SSW  => 'south-southwest',
+    SWbS => 'southwest by south',
+    SW   => 'southwest',
+    SWbW => 'southwest by west',
+    WSW  => 'west-southwest',
+    WbS  => 'west by south',
+    W    => 'west',
+    WbN  => 'west by north',
+    WNW  => 'west-northwest',
+    NWbW => 'northwest by west',
+    NW   => 'northwest',
+    NWbN => 'northwest by north',
+    NNW  => 'north-northwest',
+    NbW  => 'north by west',
+);
+
 sub START {
 
-    my $makehtml_cry = cry( 'Making HTML files of stop lists');
+    my $makehtml_cry = cry('Making HTML files of stop lists');
 
     my ( $class, $env ) = @_;
     my $actiumdb = actiumdb($env);
-    my $signup = signup($env);
+    my $signup   = signup($env);
 
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');
 
-    #    my $linehtml_folder       = $stoplists_folder->subfolder('linehtml');
-
     $actiumdb->ensure_loaded('Stops_Neue');
 
-    my $stopdesc_cry = cry( 'Getting stop descriptions from FileMaker');
+    my $stopdesc_cry = cry('Getting stop descriptions from FileMaker');
 
     my $stops_row_of_r = $actiumdb->all_in_columns_key(
         qw/Stops_Neue c_description_short h_loca_latitude h_loca_longitude
-          c_city/
+          c_city c_corner/
     );
 
     $stopdesc_cry->done;
@@ -55,10 +83,10 @@ sub START {
     my $linegrouptype_of_r
       = $actiumdb->all_in_column_key(qw/Lines LineGroupType/);
 
-    my $htmlversion_cry = cry( 'Creating HTML versions of stop lists');
+    my $htmlversion_cry = cry('Creating HTML versions of stop lists');
 
     my @files = $stoplists_line_folder->glob_plain_files('*.txt');
-    @files = map { filename($_) } @files;
+    @files = map { u::filename($_) } @files;
 
     my %dirs_of;
 
@@ -67,20 +95,23 @@ sub START {
         push @{ $dirs_of{$line} }, $dir;
     }
 
+    my %corner_list_of;
+    my %corner_lists_of_type;
     my %table_of;
     my %tables_of_type;
     my %lines_of_type;
 
-    foreach my $line ( sortbyline keys %dirs_of ) {
+    foreach my $line ( u::sortbyline keys %dirs_of ) {
 
-        next if $LINE_SHOULD_BE_SKIPPED{$line};
+        next if exists $LINE_SHOULD_BE_SKIPPED{$line};
 
-        $htmlversion_cry->over ($line);
+        $htmlversion_cry->over($line);
 
         my @dirs = @{ $dirs_of{$line} };
         @dirs = sort { $order_of{$a} <=> $order_of{$b} } @dirs;
         my %stops_of;
         my %stoplines_of;
+        my %stoplines_corner_of;
 
         foreach my $dir (@dirs) {
 
@@ -103,6 +134,20 @@ sub START {
                 my $desc = encode_entities(
                     $stops_row_of_r->{$stopid}{c_description_short} );
 
+                my $corner     = $stops_row_of_r->{$stopid}{c_corner};
+                my $cornertext = $EMPTY;
+
+                if ($corner) {
+                    $cornertext
+                      = ', '
+                      . (
+                        exists $LONGCORNER_OF{$corner}
+                        ? $LONGCORNER_OF{$corner}
+                        : $corner )
+                      . " corner";
+                    $cornertext = encode_entities($cornertext);
+                }
+
                 my $latlong = $stops_row_of_r->{$stopid}{h_loca_latitude} . ','
                   . $stops_row_of_r->{$stopid}{h_loca_longitude};
                 my $url
@@ -123,15 +168,16 @@ sub START {
                     $prevcity = $city;
                 }
 
-                #push @{ $stoplines_of{$dir} }, $stopid . ' =&gt; ' . $desc;
+                push @{ $stoplines_corner_of{$dir} },
+                  $citytext
+                  . qq{$desc$cornertext (<a href="$url" target="_blank">$stopid</a>)};
+
                 push @{ $stoplines_of{$dir} },
                   $citytext
                   . qq{$desc (<a href="$url" target="_blank">$stopid</a>)};
 
                 push @{ $stops_of{$dir} }, $stopid;
 
-                #my $savedline = $stopline =~ s/\t/ =&gt; /r;
-                #push @{ $stoplines_of{$dir} }, $savedline;
             } ## tidy end: while ( defined( my $stopline...))
 
             close $ifh or die "Can't close $file: $OS_ERROR";
@@ -140,6 +186,39 @@ sub START {
 
         my @dir_objs  = map { Actium::O::Dir->instance($_) } @dirs;
         my @dir_bound = map { $_->as_bound } @dir_objs;
+
+        ###########################################
+        ### Corner list
+        ###########################################
+
+        my $cornerlist_outdata;
+        open( my $clist_ofh, '>:encoding(UTF-8)', \$cornerlist_outdata )
+          or die "Can't open memory location as file: $OS_ERROR";
+
+        say $clist_ofh qq[<h4><span id="$line">$line</span>],
+          qq[- $dir_bound[0]</h4>];
+
+        say $clist_ofh q{<p>};
+        say $clist_ofh join( '<br />', @{ $stoplines_corner_of{ $dirs[0] } } );
+        say $clist_ofh '</p>';
+
+        if ( @dirs == 2 ) {
+            say $clist_ofh qq[<h4>$line - $dir_bound[1]</h4>];
+
+            say $clist_ofh q{<p>};
+            say $clist_ofh
+              join( '<br />', @{ $stoplines_corner_of{ $dirs[1] } } );
+            say $clist_ofh '</p>';
+
+        }
+
+        close $clist_ofh or die "Can't close memory file: $OS_ERROR";
+
+        $corner_list_of{$line} = $cornerlist_outdata;
+
+        ##########################################
+        #### ORIGINAL TABLE LIST
+        #########################################
 
         # make dummy stop list if there's only one direction
         if ( @dirs == 1 ) {
@@ -188,10 +267,11 @@ EOT
             }
         }
 
-        push @{ $lines_of_type{$type} },  $line;
-        push @{ $tables_of_type{$type} }, $outdata;
+        push @{ $lines_of_type{$type} },        $line;
+        push @{ $tables_of_type{$type} },       $outdata;
+        push @{ $corner_lists_of_type{$type} }, $cornerlist_outdata;
 
-    } ## tidy end: foreach my $line ( sortbyline...)
+    } ## tidy end: foreach my $line ( u::sortbyline...)
 
     my %display_type_of = map { ( $_, $_ ) } keys %lines_of_type;
     my %subtypes_of = map { ( $_, [$_] ) } keys %lines_of_type;
@@ -203,50 +283,48 @@ EOT
 
     foreach my $type ( keys %tables_of_type ) {
 
-        my $ofh = $stoplists_folder->open_write("$type.html");
+        {
+            my $ofh = $stoplists_folder->open_write("$type.html");
 
+            my @lines_and_urls
+              = map {"<a href='#$_'>$_</a>"} @{ $lines_of_type{$type} };
+
+            say $ofh contents(@lines_and_urls);
+
+            say $ofh join( "\n", @{ $tables_of_type{$type} } );
+            close $ofh or die "Can't close $type.html: $OS_ERROR";
+
+        }
+
+        my $ofh = $stoplists_folder->open_write("c-$type.html");
         my @lines_and_urls
           = map {"<a href='#$_'>$_</a>"} @{ $lines_of_type{$type} };
 
         say $ofh contents(@lines_and_urls);
 
-=for comment
-        say $ofh '<table border="0" cellspacing="0" cellpadding="10">';
-        say $ofh '<tr>';
+        say $ofh join( "\n", @{ $corner_lists_of_type{$type} } );
+        close $ofh or die "Can't close c-$type.html: $OS_ERROR";
 
-        my @lines = @{ $lines_of_type{$type} };
-
-        for my $i ( 0 .. $#lines ) {
-            my $line = $lines[$i];
-            print $ofh "<td><a href='#$line'>$line</a></td>";
-            if ( not( ( $i + 1 ) % 10 ) ) {
-                print $ofh "</tr>\n<tr>";
-            }
-
-        }
-        say $ofh "</tr></table>";
-        
-=cut
-
-        say $ofh join( "\n", @{ $tables_of_type{$type} } );
-        close $ofh or die "Can't close $type.html: $OS_ERROR";
     } ## tidy end: foreach my $type ( keys %tables_of_type)
 
-    my $indexfh = $stoplists_folder->open_write('stop_index.html');
+    my $indexfh  = $stoplists_folder->open_write('stop_index.html');
+    my $cindexfh = $stoplists_folder->open_write('c_stop_index.html');
 
-    #for my $type (keys %subtypes_of) {
     for my $type ( 'Local', 'All Nighter', 'Transbay', 'Supplementary' ) {
         my @links;
+        my @clinks;
 
-        #next if ($type =~ /Broadway/ or $type =~ /Dumbarton/);
         for my $subtype ( @{ $subtypes_of{$type} } ) {
             for my $line ( @{ $lines_of_type{$subtype} } ) {
 
                 my $url_type = $subtype =~ s/ /-/grs;
 
-                my $url  = lc("/rider-info/stops/$url_type/#") . $line;
-                my $link = qq{<a href="$url">$line</a>};
-                push @links, $link;
+                my $url    = lc("/rider-info/stops/$url_type/#") . $line;
+                my $c_url  = lc("/rider-info/stops/c-$url_type/#") . $line;
+                my $link   = qq{<a href="$url">$line</a>};
+                my $c_link = qq{<a href="$c_url">$line</a>};
+                push @links,  $link;
+                push @clinks, $c_link;
 
             }
 
@@ -255,9 +333,13 @@ EOT
         say $indexfh "<p><strong>$type</strong></p>";
         say $indexfh contents(@links);
 
+        say $cindexfh "<p><strong>$type</strong></p>";
+        say $cindexfh contents(@clinks);
+
     } ## tidy end: for my $type ( 'Local',...)
 
-    close $indexfh or die "Can't close stop_index.html: $OS_ERROR";
+    close $indexfh  or die "Can't close stop_index.html: $OS_ERROR";
+    close $cindexfh or die "Can't close c_stop_index.html: $OS_ERROR";
 
     $htmlversion_cry->done;
 

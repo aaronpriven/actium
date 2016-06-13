@@ -7,25 +7,25 @@ package Actium::EffectiveDate 0.010;
 use Actium::Constants;
 
 use Sub::Exporter -setup =>
-  { exports => [qw(long_date file_date effectivedate newest_date)] };
+  { exports => [qw(long_date file_date newest_date)] };
 # Sub::Exporter ### DEP ###
 
-sub effectivedate {
-    # lame and should be replaced...
-
-    my $signup   = shift;
-    my $filespec = $signup->make_filespec('effectivedate.txt');
-
-    open my $date, '<', $filespec
-      or die "Can't open $filespec for input";
-
-    our $effdate = scalar <$date>;
-    close $date;
-    chomp $effdate;
-    $effdate =~ s/\r//g;
-    return $effdate;
-
-}
+#sub effectivedate {
+#    # lame and should be replaced...
+#
+#    my $signup   = shift;
+#    my $filespec = $signup->make_filespec('effectivedate.txt');
+#
+#    open my $date, '<', $filespec
+#      or die "Can't open $filespec for input";
+#
+#    our $effdate = scalar <$date>;
+#    close $date;
+#    chomp $effdate;
+#    $effdate =~ s/\r//g;
+#    return $effdate;
+#
+#}
 
 sub newest_date {
     require DateTime; ### DEP ###

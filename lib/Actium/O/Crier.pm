@@ -146,7 +146,8 @@ around BUILDARGS => sub {
 ## WIDTH AND POSITION
 
 has 'position' => (
-    is      => 'rw',
+    is      => 'ro',
+    writer => '_set_position_without_prog_cols',
     isa     => 'Int',
     default => 0,
 );
@@ -156,6 +157,13 @@ has '_prog_cols' => (
     isa     => 'Int',
     default => 0,
 );
+
+sub set_position {
+    my $self = shift;
+    my $col = shift;
+    $self->_set_position_without_prog_cols($col);
+    $self->_set_prog_cols(0);
+}
 
 # backs over this many columns during $cry->over
 # this means will send two backspaces for each double-wide character
@@ -1054,11 +1062,13 @@ knows about what it has sent to the output destination.
 If you mix C<print> or C<say> statements, or other output methods, with your
 Actium::O::Crier output, then things
 will likely get screwy.  So, you'll need to tell Actium::O::Crier where you've
-left the cursor.  Do this by setting the I<-pos> option:
+left the cursor.  Do this by using  C<set_position>:
 
     $cry = $crier->cry("Doing something");
     print "\nHey, look at me, I'm printed output!\n";
     $cry->set_position(0);  # Tell where we left the cursor
+    
+(Using C<set_position> will skip the backspacing of the next C<over>.)
 
 =head1 SUBROUTINES, METHODS, ATTRIBUTES REFERENCE
 
@@ -1654,6 +1664,8 @@ with cries.
 Set this to 0 to indicate that the position is at the start of a
 new line (as in, just after a C<print "\n"> or C<say>).
 See L</Mixing Actium::O::Crier with other output>.
+
+After setting the position, C<over> will not backspace.
 
 =head3 reason
 

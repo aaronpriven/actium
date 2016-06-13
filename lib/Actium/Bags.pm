@@ -11,7 +11,6 @@ use Actium::Preamble;
 #use Actium::Util(qw/joinseries/);
 
 use Actium::Text::InDesignTags;
-use Actium::EffectiveDate;
 
 use Actium::Sorting::Travel ('travelsort');
 
@@ -55,8 +54,7 @@ sub make_bags {
 
         #        {   signup    => { can => [qw (subfolder retrieve)] },
         #            oldsignup => { can => [qw (subfolder retrieve)] },
-        {
-            signup    => { isa => 'Actium::O::Folder' },
+        {   signup    => { isa => 'Actium::O::Folder' },
             oldsignup => { isa => 'Actium::O::Folder' },
             actium_db => 1,
         }
@@ -68,12 +66,13 @@ sub make_bags {
     my $actium_db = $params{actium_db};
 
     my $effectivedate =
-      Actium::EffectiveDate::effectivedate( $signup_of_r->{$NEW} );
-    $effectivedate =~ s/,? \s* \d{2,4} \s* \z//sx;
+      $actium_db->agency_effective_date('ACTransit');
+      
+    $effectivedate = $effectivedate->month_name . $IDT->nbsp . $effectivedate->day;
+
+    #$effectivedate =~ s/,? \s* \d{2,4} \s* \z//sx;
 
     # trim year and trailing white space
-    my $nbsp = $IDT->nbsp;    # non breaking space
-    $effectivedate =~ s/ +/$nbsp/g;
 
     my $of_stop_r = _make_stop_info($actium_db);
 
@@ -88,7 +87,7 @@ sub make_bags {
 
     return $bagtexts_r, $baglist_r, $counts_r, $final_height_r;
 
-}    ## tidy end: sub make_bags
+} ## tidy end: sub make_bags
 
 sub _make_baglist {
 
@@ -104,8 +103,7 @@ sub _make_baglist {
             my $outlist = $list eq $OLD ? $EMPTY_STR : "-add";
 
             push @thislist,
-              [
-                $stop_r->{StopID}, $stop_r->{Group} . $outlist,
+              [ $stop_r->{StopID}, $stop_r->{Group} . $outlist,
                 @{$stop_r}{qw/Order Of Desc/}
               ];
 
@@ -120,7 +118,7 @@ sub _make_baglist {
 
     return \@baglist;
 
-}    ## tidy end: sub _make_baglist
+} ## tidy end: sub _make_baglist
 
 sub _make_stop_info {
     my $actium_db = shift;
@@ -142,8 +140,7 @@ sub _make_stop_info {
     # if doesn't autoviv because no bag of that type, gives errors
 
     while ( my $stop_r = $each_stop->() ) {
-        my (
-            $stopid,    $desc,          $added,
+        my ($stopid,    $desc,          $added,
             $num_added, $removed,       $num_removed,
             $unchanged, $num_unchanged, $bagtext
         ) = @{$stop_r};
@@ -182,11 +179,11 @@ sub _make_stop_info {
             $compare{$OLD}{$stopid} = \%this_stop;
         }
 
-    }    ## tidy end: while ( my $stop_r = $each_stop...)
+    } ## tidy end: while ( my $stop_r = $each_stop...)
 
     return \%compare;
 
-}    ## tidy end: sub _make_stop_info
+} ## tidy end: sub _make_stop_info
 
 sub _sort_stops {
     my ( $of_stop_r, $signup_of_r ) = @_;
@@ -216,11 +213,11 @@ sub _sort_stops {
 
         }
 
-    }    ## tidy end: for my $list ( $OLD, $NEW)
+    } ## tidy end: for my $list ( $OLD, $NEW)
 
     return \%stops_sorted;
 
-}    ## tidy end: sub _sort_stops
+} ## tidy end: sub _sort_stops
 
 sub _bagtexts {
     my $of_stop_r     = shift;
@@ -244,13 +241,13 @@ sub _bagtexts {
     my %counts;
     foreach ( keys %bagtexts ) {
         $counts{$_} = scalar @{ $bagtexts{$_} };
-        $bagtexts{$_} =
-          $IDT->start . join( $IDT->boxbreak, @{ $bagtexts{$_} } );
+        $bagtexts{$_}
+          = $IDT->start . join( $IDT->boxbreak, @{ $bagtexts{$_} } );
 
     }
 
     return \%bagtexts, \%counts;
-}    ## tidy end: sub _bagtexts
+} ## tidy end: sub _bagtexts
 
 sub _bagtext_of_stop {
     my %of_stop       = %{ +shift };
@@ -272,8 +269,8 @@ sub _bagtext_of_stop {
     $list_of{Removed}   = _prepare_lines( $of_stop{Removed} );
     $list_of{Unchanged} = _prepare_lines( $of_stop{Unchanged} );
 
-    my ( $linestext, $height ) =
-      $OUTPUT_DISPATCH{ $of_stop{Action} }->( \%list_of, $effectivedate );
+    my ( $linestext, $height )
+      = $OUTPUT_DISPATCH{ $of_stop{Action} }->( \%list_of, $effectivedate );
 
     print $fh $linestext;
 
@@ -293,7 +290,7 @@ sub _bagtext_of_stop {
 
     return $thistext, $height;
 
-}    ## tidy end: sub _bagtext_of_stop
+} ## tidy end: sub _bagtext_of_stop
 
 const my $BIGSEP   => $IDT->enspace . $IDT->discretionary_lf;
 const my $SMALLSEP => $IDT->thirdspace
@@ -374,7 +371,7 @@ sub _prepare_lines {
 
     return \%return;
 
-}    ## tidy end: sub _prepare_lines
+} ## tidy end: sub _prepare_lines
 
 sub _para {
     state %paras;
@@ -412,8 +409,8 @@ sub _output_dispatch {
         my %unchanged = %{ $list_of_r->{Unchanged} };
         my $date      = shift;
 
-        my $r =
-            _para('FirstLineIntro')
+        my $r
+          = _para('FirstLineIntro')
           . ucfirst( $unchanged{thesestop} )
           . " here:$CR"
           . _para( 'CurrentLines', $unchanged{lines} )
@@ -437,8 +434,8 @@ sub _output_dispatch {
         my %unchanged = %{ $list_of_r->{Unchanged} };
         my $date      = shift;
 
-        my $r =
-            _para('FirstLineIntro')
+        my $r
+          = _para('FirstLineIntro')
           . ucfirst( $unchanged{thesestop} )
           . " here:"
           . $CR
@@ -472,8 +469,8 @@ sub _output_dispatch {
           . $IDT->underline_word('begin')
           . " stopping here:$CR";
 
-        $r .=
-            _para( 'AddedLines', $added{lines} )
+        $r
+          .= _para( 'AddedLines', $added{lines} )
           . $CR
           . _para('LineIntroSm')
           . "\u$removed{these} will "
@@ -499,8 +496,8 @@ sub _output_dispatch {
         if ( scalar keys %unchanged ) {
             $length += $unchanged{len};
 
-            $r .=
-                "\u$unchanged{thesestop} here:"
+            $r
+              .= "\u$unchanged{thesestop} here:"
               . $CR
               . _para( 'CurrentLines', $unchanged{lines} )
               . $CR
@@ -519,8 +516,8 @@ sub _output_dispatch {
 
         }
 
-        $r .=
-            _para( 'AddedLines', $added{lines} )
+        $r
+          .= _para( 'AddedLines', $added{lines} )
           . $CR
           . _para('LineIntro')
           . "\u$removed{these} will "
@@ -538,8 +535,8 @@ sub _output_dispatch {
         my %added     = %{ $list_of_r->{Added} };
         my $date      = shift;
 
-        my $r =
-          _para( 'NewBusStop', "NEW " . $IDT->softreturn . "BUS STOP$CR" );
+        my $r
+          = _para( 'NewBusStop', "NEW " . $IDT->softreturn . "BUS STOP$CR" );
         $r .= _para('FirstLineIntro');
         $r .= "Effective $date, $added{these} will stop here:$CR";
         $r .= _para( 'AddedLines', $added{lines} ) . $CR;
@@ -555,8 +552,8 @@ sub _output_dispatch {
 
         my $length = $removed{len} + $HEIGHT_OF{RS};
 
-        my $r =
-          _current(%removed)
+        my $r
+          = _current(%removed)
           . _para( 'Removed',
             "Effective $date, this bus stop will be removed." )
           . $CR;
@@ -574,7 +571,7 @@ sub _output_dispatch {
         RS => $rs_output,
     );
 
-}    ## tidy end: sub _output_dispatch
+} ## tidy end: sub _output_dispatch
 
 sub _current {
     my %current = @_;

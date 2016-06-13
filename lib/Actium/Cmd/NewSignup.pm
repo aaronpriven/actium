@@ -5,6 +5,7 @@
 package Actium::Cmd::NewSignup 0.010;
 
 use Actium::Preamble;
+#use Actium::Cmd::Config::ActiumFM;
 use Actium::Cmd::Config::Signup ('signup');
 use Actium::Util('filename');
 use Actium::Files::Xhea;
@@ -14,7 +15,7 @@ sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
         [ 'xhea=s', 'ZIP file containing Xhea export ', ],
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+#        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
         Actium::Cmd::Config::Signup::options($env)
     );
 }

@@ -7,6 +7,9 @@
 
 # The object Actium::O::Points is used to hold unformatted data.
 
+# This really needs to be refactored to get rid of the awful use of
+# global variables.
+
 use warnings;
 use strict;
 
@@ -16,35 +19,74 @@ package Actium::O::Points::Point 0.010;
 
 use sort ('stable');
 
-use Moose; ### DEP ###
-use MooseX::SemiAffordanceAccessor; ### DEP ###
-use Moose::Util::TypeConstraints; ### DEP ###
+use Moose;                             ### DEP ###
+use MooseX::SemiAffordanceAccessor;    ### DEP ###
+use Moose::Util::TypeConstraints;      ### DEP ###
 
-use namespace::autoclean; ### DEP ###
+use namespace::autoclean;              ### DEP ###
 
 use Actium::Util('joinseries');
 use Actium::Crier(qw/cry last_cry/);
 use Actium::Constants;
 use Actium::Sorting::Line (qw(byline sortbyline));
-use List::MoreUtils('natatime'); ### DEP ###
-use Const::Fast; ### DEP ###
-use List::Compare::Functional('get_unique'); ### DEP ###
+use List::MoreUtils('natatime');                ### DEP ###
+use Const::Fast;                                ### DEP ###
+use List::Compare::Functional('get_unique');    ### DEP ###
+use List::Util('first');
 
-use POSIX (); ### DEP ###
+use POSIX ();                                   ### DEP ###
+
+const my $IDPOINTFOLDER => 'idpoints2016';
+const my $KFOLDER       => 'kpoints';
 
 use Actium::O::Points::Column;
 
 use Actium::Text::InDesignTags;
-const my $IDT => 'Actium::Text::InDesignTags';
+const my $IDT          => 'Actium::Text::InDesignTags';
+const my $BOXBREAK     => $IDT->boxbreak;
+const my $BLANK_COLUMN => ( $BOXBREAK x 2 );
 
-has [qw/effdate stopid signid delivery/] => (
+has [qw/stopid signid delivery/] => (
     is  => 'ro',
     isa => 'Str',
+);
+
+has effdate => (
+    is  => 'ro',
+    isa => 'Actium::O::DateTime',
+);
+
+has signup => (
+    is  => 'ro',
+    isa => 'Actium::O::Folders::Signup',
 );
 
 has 'nonstoplocation' => (
     is  => 'ro',
     isa => 'Maybe[Str]',
+);
+
+has 'smoking' => (
+    is      => 'ro',
+    isa     => 'Str',
+    default => $EMPTY,
+);
+
+has 'error_r' => (
+    traits  => ['Array'],
+    is      => 'rw',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => {
+        errors     => 'elements',
+        push_error => 'push',
+    },
+);
+
+has 'region_count' => (
+    is      => 'rw',
+    isa     => 'Int',
+    default => 0,
 );
 
 has 'omitted_of_stop_r' => (
@@ -149,16 +191,31 @@ has [qw<is_bsh is_db>] => (
     default => 0,
 );
 
+has subtype => (
+    isa => 'Str',
+    is  => 'rw',
+);
+
 sub add_to_width {
     my $self = shift;
     $self->set_width( $self->width + $_[0] );
     return;
 }
 
+my $i18n_all_cr = sub {
+    my $i18n_id = shift;
+
+    no warnings 'once';
+    my @all = $Actium::Cmd::MakePoints::actiumdb->i18n_all_indd($i18n_id);
+
+};
+
 sub new_from_kpoints {
-    my ( $class, $stopid, $signid, $effdate, $special_type,
-        $omitted_of_stop_r, $nonstoplocation, $delivery )
-      = @_;
+    my ($class,           $stopid,       $signid,
+        $effdate,         $special_type, $omitted_of_stop_r,
+        $nonstoplocation, $smoking,      $delivery,
+        $signup
+    ) = @_;
 
     my $self = $class->new(
         stopid            => $stopid,
@@ -167,10 +224,11 @@ sub new_from_kpoints {
         is_bsh            => ( $special_type eq 'bsh' ),
         is_db             => ( $special_type eq 'db' ),
         nonstoplocation   => $nonstoplocation,
+        smoking           => $smoking,
         omitted_of_stop_r => $omitted_of_stop_r,
-        delivery => $delivery,
+        delivery          => $delivery,
+        signup            => $signup,
     );
-
     my $is_simple = $self->is_simple_stopid;
 
     foreach my $stop_to_import ( $self->allstopids ) {
@@ -183,10 +241,11 @@ sub new_from_kpoints {
 
         my $kpointdir = substr( $stop_to_import, 0, 3 ) . 'xx';
 
-        my $kpointfile = "kpoints/$kpointdir/$stop_to_import.txt";
+        my $kpointfile = "$KFOLDER/$kpointdir/$stop_to_import.txt";
 
-        open my $kpoint, '<', $kpointfile
-          or die "Can't open $kpointfile: $!";
+        my $kpoint = $signup->open_read($kpointfile);
+        #open my $kpoint, '<', $kpointfile
+        #  or die "Can't open $kpointfile: $!";
 
         my (%bsn_columns);
 
@@ -218,12 +277,21 @@ sub new_from_kpoints {
                 }
                 next;
             }
+            else {
+                next
+                  if ( $linegroup eq 'BSD'
+                    or $linegroup eq 'BSH'
+                    or $linegroup eq 'BSN' );
+            }
 
             if ( $special_type eq 'db' ) {
                 if ( $linegroup =~ /^DB/ ) {
                     $self->push_columns($column);
                 }
                 next;
+            }
+            else {
+                next if ( $linegroup =~ /^DB/ );
             }
 
             if ( $linegroup !~ /^6\d\d/ ) {
@@ -273,9 +341,14 @@ sub new_from_kpoints {
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
             my $lines = joinseries(@notfound);
-            last_cry()->text(
-              "\x{1f4A5}  Warning! $linetext $lines found in omit list for "
-              . "stop $stop_to_import, sign $signid, but not found in " . "stop schedule data.");
+            #last_cry()
+            #  ->text(
+            #    "\x{1f4A5}  Warning! $linetext $lines found in omit list for "
+            #      . "stop $stop_to_import, sign $signid, but not found in "
+            #      . "stop schedule data." );
+            $self->push_error(
+                "$linetext $lines found in omit list but not in schedule data."
+            );
         }
 
     } ## tidy end: foreach my $stop_to_import ...
@@ -380,21 +453,298 @@ my $ewreplace = sub {
     return $dircode;
 };
 
+sub sort_columns_and_determine_heights {
+
+    my ( $self, $signtype ) = @_;
+
+    $signtype =~ s/=.*\z//;
+    # Don't allow specifying a subtype manually
+    # -- it will just treat it as though it were a main type
+
+    my @subtypes
+      = grep {/$signtype=[A-Z]\z/} keys %Actium::Cmd::MakePoints::signtypes;
+
+    if ( @subtypes == 0 ) {
+        $self->no_subtype($signtype);
+        return;
+    }
+
+    my $subtype = $self->determine_subtype( $signtype, @subtypes );
+    unless ($subtype) {
+        $self->no_subtype($signtype);
+        return "!";
+    }
+
+    $self->set_subtype($subtype);
+
+    return $subtype;
+
+} ## tidy end: sub sort_columns_and_determine_heights
+
+sub no_subtype {
+
+    my $self     = shift;
+    my $signtype = shift;
+
+    foreach my $column ( $self->columns ) {
+        $column->set_formatted_height(
+            $Actium::Cmd::MakePoints::signtypes{$signtype}{TallColumnLines} );
+    }
+
+    return $self->sort_columns_by_route_etc;
+
+}
+
+my $takes_up_columns_cr = sub {
+
+    my ( $col_height, @heights ) = @_;
+
+    my $fits_in_cols = 0;
+
+    foreach my $height (@heights) {
+        $fits_in_cols += u::ceil( $height / $col_height );
+    }
+
+    return $fits_in_cols;
+
+};
+
+my $columnsort_cr = sub {
+    my ( $aa, $bb ) = @_;
+    return (
+             byline( $aa->head_line(0), $bb->head_line(0) )
+          or $ewreplace->( $aa->dircode ) <=> $ewreplace->( $bb->dircode )
+          or $aa->days cmp $bb->days
+          or $aa->primary_destination cmp $bb->primary_destination
+    );
+
+};
+
+sub determine_subtype {
+    my $self     = shift;
+    my $signtype = shift;
+    my @subtypes = @_;
+
+    # A "chunk" is a set of schedules that all are the same line and direction
+
+    # A "region" is an area of a point schedule with the same number of columns
+
+    # The idea is to determine whether all the chunks can fit in a single region
+
+    my ( %columns_of_chunk, %heights_of_chunk );
+
+    foreach my $column ( $self->columns ) {
+        my $chunk_id
+          = $column->head_line(0) . "_" . $ewreplace->( $column->dircode );
+
+        my $height;
+        if ( $column->has_note ) {
+            $height = 9;    # height of drop off only note
+        }
+        else {
+            $height = $column->time_count || 1;
+        }
+        # at least one time -- that used to be there for noteonly
+
+        push @{ $heights_of_chunk{$chunk_id} }, $height;
+        push @{ $columns_of_chunk{$chunk_id} }, $column;
+
+    }
+
+    my ($chosen_subtype, @chosen_regions, @chunkids_by_region,
+        @columns_needed, $all_chunks_singular
+    );
+
+    my $first_run = 1;
+    my $cried;
+
+  CHUNK_GROUPING:
+    until ( $chosen_subtype or $all_chunks_singular ) {
+
+        if ($first_run) {
+            $first_run = 0;
+        }
+        else {
+
+            if ( not $cried ) {
+                #last_cry()->text( "Splitting chunks in ", $self->signid );
+                $cried = 1;
+            }
+            # divide chunks into single schedules and try again
+
+            my $chunkid_to_split
+              = first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
+            keys %heights_of_chunk;
+
+            if ($chunkid_to_split) {
+                my @heights = @{ $heights_of_chunk{$chunkid_to_split} };
+                my @columns = @{ $columns_of_chunk{$chunkid_to_split} };
+
+                delete $heights_of_chunk{$chunkid_to_split};
+                delete $columns_of_chunk{$chunkid_to_split};
+
+                for my $i ( 0 .. $#heights ) {
+                    my $thischunkid = "$chunkid_to_split $i";
+                    $heights_of_chunk{$thischunkid} = [ $heights[$i] ];
+                    $columns_of_chunk{$thischunkid} = [ $columns[$i] ];
+                }
+            }
+            else {
+                $all_chunks_singular = 1;
+            }
+
+        } ## tidy end: else [ if ($first_run) ]
+
+        my %tallest_of_chunk;
+        foreach my $chunk_id ( keys %heights_of_chunk ) {
+            $tallest_of_chunk{$chunk_id}
+              = u::max( @{ $heights_of_chunk{$chunk_id} } );
+        }
+
+        my @chunkids_by_length = reverse
+          sort { $tallest_of_chunk{$a} <=> $tallest_of_chunk{$b} }
+          keys %tallest_of_chunk;
+
+        # determine minimum fitting subtype
+
+        #my ( @chosen_regions, @chunkids_by_region, @columns_needed );
+
+      SUBTYPE:
+        foreach my $subtype ( sort @subtypes ) {
+
+            my (@regions);
+
+            $regions[0] = {
+                height => $Actium::Cmd::MakePoints::signtypes{$subtype}
+                  {TallColumnLines},
+                columns =>
+                  $Actium::Cmd::MakePoints::signtypes{$subtype}{TallColumnNum}
+            };
+
+            if ( $Actium::Cmd::MakePoints::signtypes{$subtype}{ShortColumnNum} )
+            {
+                $regions[1] = {
+                    height => $Actium::Cmd::MakePoints::signtypes{$subtype}
+                      {ShortColumnLines},
+                    columns => $Actium::Cmd::MakePoints::signtypes{$subtype}
+                      {ShortColumnNum}
+                };
+            }
+
+          # if we add more quantity of regions, will need to sort them by height
+
+            @chunkids_by_region = ( [@chunkids_by_length] );
+
+          REGION_ASSIGNMENT:
+            while ( @{ $chunkids_by_region[0] } ) {
+
+                @columns_needed = ();
+
+              REGION:
+                foreach my $i ( reverse( 0 .. $#chunkids_by_region ) ) {
+
+                    # get the number of formatted columns required by all the
+                    # columns in the chunks assigned to this region
+
+                    my $columns_needed = 0;
+                    foreach my $chunk_id ( @{ $chunkids_by_region[$i] } ) {
+                        $columns_needed += $takes_up_columns_cr->(
+                            $regions[$i]{height},
+                            @{ $heights_of_chunk{$chunk_id} },
+                        );
+                    }
+
+                    if ( $columns_needed > $regions[$i]{columns} ) {
+
+                        # it doesn't fit
+
+                        if ( $i == $#regions ) {
+                            # Smallest region is filled, so it can't fit at all
+                            next SUBTYPE;
+                        }
+
+                        # move a chunk from this region to the following region,
+                        # and try a new region assignment
+
+                        my $chunkid_to_move
+                          = pop( @{ $chunkids_by_region[$i] } );
+                        push @{ $chunkids_by_region[ $i + 1 ] },
+                          $chunkid_to_move;
+
+                        next REGION_ASSIGNMENT;
+
+                    } ## tidy end: if ( $columns_needed >...)
+
+                    $columns_needed[$i] = $columns_needed;
+
+                } ## tidy end: REGION: foreach my $i ( reverse( 0 ...))
+
+                # got through the last region, so they all must fit
+                $chosen_subtype = $subtype;
+                @chosen_regions = @regions;
+
+                last SUBTYPE;
+
+            } ## tidy end: REGION_ASSIGNMENT: while ( @{ $chunkids_by_region...})
+
+        } ## tidy end: SUBTYPE: foreach my $subtype ( sort ...)
+
+    } ## tidy end: CHUNK_GROUPING: until ( $chosen_subtype or...)
+
+    if ( not $chosen_subtype ) {
+        my $signid = $self->signid;
+        #last_cry()
+        #  ->text(
+        #        "\x{1f4A5}  Warning! Couldn't fit columns in any template for "
+        #      . "sign $signid" );
+        $self->push_error("Couldn't fit in any $signtype template");
+        return;
+
+    }
+
+    $self->set_region_count( scalar @chunkids_by_region );
+
+    my @sorted_columns;
+
+    foreach my $i ( 0 .. $#chunkids_by_region ) {
+        my @chunkids = @{ $chunkids_by_region[$i] };
+        my @columns = map { @{ $columns_of_chunk{$_} } } @chunkids;
+
+        @columns = sort { $columnsort_cr->( $a, $b ) } @columns;
+
+        my $blank_columns_to_add
+          = $chosen_regions[$i]{columns} - $columns_needed[$i];
+
+        $columns[0]->set_previous_blank_columns($blank_columns_to_add);
+
+        my $height = $chosen_regions[$i]{height};
+        $_->set_formatted_height($height) foreach @columns;
+
+        push @sorted_columns, @columns;
+
+    }
+
+    $self->set_column_r( \@sorted_columns );
+
+    return $chosen_subtype;
+
+} ## tidy end: sub determine_subtype
+
 sub sort_columns_by_route_etc {
     my $self = shift;
 
-    my $columnsort = sub {
-        my ( $aa, $bb ) = @_;
-        return (
-                 byline( $aa->head_line(0), $bb->head_line(0) )
-              or $ewreplace->( $aa->dircode ) <=> $ewreplace->( $bb->dircode )
-              or $aa->days cmp $bb->days
-              or $aa->primary_destination cmp $bb->primary_destination
-        );
+ #    my $columnsort = sub {
+ #        my ( $aa, $bb ) = @_;
+ #        return (
+ #                 byline( $aa->head_line(0), $bb->head_line(0) )
+ #              or $ewreplace->( $aa->dircode ) <=> $ewreplace->( $bb->dircode )
+ #              or $aa->days cmp $bb->days
+ #              or $aa->primary_destination cmp $bb->primary_destination
+ #        );
+ #
+ #    };
 
-    };
-
-    $self->sort_columns($columnsort);
+    $self->sort_columns($columnsort_cr);
     return;
 }
 
@@ -408,6 +758,17 @@ sub format_columns {
         # format header, and footnote of header
 
         $column->format_header;    # everything except footnote
+
+        my $blanks;
+        if ( $column->previous_blank_columns ) {
+            $blanks
+              = $IDT->parastyle('amtimes')
+              . $IDT->nocharstyle
+              . ( ($BLANK_COLUMN) x ( $column->previous_blank_columns ) );
+        }
+        else {
+            $blanks = $EMPTY;
+        }
 
         if ( not( $column->has_note ) and $column->head_line_count > 1 ) {
 
@@ -432,59 +793,63 @@ sub format_columns {
             my $notetext;
 
             for ( $column->note ) {
-                if ( $_ eq 'LASTSTOP' ) {
-                    $notetext = "Last Stop";
+                #if ( $_ eq 'LASTSTOP' ) {
+                #$notetext = "Last Stop";
+                #    next;
+                #}
+                if ( $_ eq 'DROPOFF' or $_ eq 'LASTSTOP' ) {
+                    $notetext = join( $IDT->hardreturn,
+                        $i18n_all_cr->('drop_off_only') );
+                    #$notetext = "Drop Off Only";
                     next;
                 }
-                if ( $_ eq 'DROPOFF' ) {
-                    $notetext = "Drop Off Only";
-                    next;
-                }
-                if ( $_ eq '72R' ) {
-                    $notetext
-                      = 'Buses arrive about every 12 minutes '
-                      . $IDT->emdash
-                      . $IDT->softreturn
-                      . 'See information elsewhere on this sign.';
-                    next;
-                }
-                if ( $_ eq '1R-MIXED' ) {
+#                if ( $_ eq '72R' ) {
+#                    $notetext
+#                      = 'Buses arrive about every 12 minutes '
+#                      . $IDT->emdash
+#                      . $IDT->softreturn
+#                      . 'See information elsewhere on this sign.';
+#                    next;
+#                }
+#                if ( $_ eq '1R-MIXED' ) {
+#
+#                    $notetext
+#                      = 'Buses arrive about every 12 minutes weekdays, and 15 minutes weekends.'
+#                      . ' (Weekend service to downtown Oakland only.) '
+#                      . $IDT->softreturn
+#                      . 'See information elsewhere on this sign.';
+#
+#                    next;
+#                }
+#
+#                if ( $_ eq '1R' ) {
+#
+#                    if ( $column->days eq '12345' ) {
+#                        $notetext
+#                          = 'Buses arrive about every 12 minutes '
+#                          . $IDT->emdash
+#                          . $IDT->softreturn
+#                          . 'See information elsewhere on this sign.';
+#                    }
+#                    else {
+#
+#                        $notetext
+#                          = 'Buses arrive about every 12 minutes weekdays, 15 minutes weekends '
+#                          . $IDT->emdash
+#                          . $IDT->softreturn
+#                          . 'See information elsewhere on this sign.';
+#                    }
+#
+#                    next;
+#                } ## tidy end: if ( $_ eq '1R' )
 
-                    $notetext
-                      = 'Buses arrive about every 12 minutes weekdays, and 15 minutes weekends.'
-                      . ' (Weekend service to downtown Oakland only.) '
-                      . $IDT->softreturn
-                      . 'See information elsewhere on this sign.';
-
-                    next;
-                }
-
-                if ( $_ eq '1R' ) {
-
-                    if ( $column->days eq '12345' ) {
-                        $notetext
-                          = 'Buses arrive about every 12 minutes '
-                          . $IDT->emdash
-                          . $IDT->softreturn
-                          . 'See information elsewhere on this sign.';
-                    }
-                    else {
-
-                        $notetext
-                          = 'Buses arrive about every 12 minutes weekdays, 15 minutes weekends '
-                          . $IDT->emdash
-                          . $IDT->softreturn
-                          . 'See information elsewhere on this sign.';
-                    }
-
-                    next;
-
-                } ## tidy end: if ( $_ eq '1R' )
+                $self->push_error('Unknown note $_');
 
             } ## tidy end: for ( $column->note )
 
-            $column->set_formatted_column( $column->formatted_header
-                  . $IDT->boxbreak
+            $column->set_formatted_column( $blanks
+                  . $column->formatted_header
+                  . $BOXBREAK
                   . $IDT->parastyle('noteonly')
                   . $notetext );
 
@@ -529,8 +894,9 @@ sub format_columns {
 
         }    ## <perltidy> end foreach my $i ( 0 .. $column...)
 
-        my $column_length
-          = $Actium::Cmd::MakePoints::signtypes{$signtype}{TallColumnLines};
+        my $column_length = $column->formatted_height;
+        #my $column_length
+        #  = $Actium::Cmd::MakePoints::signtypes{$signtype}{TallColumnLines};
         my $formatted_columns;
 
         if ($column_length) {
@@ -547,15 +913,19 @@ sub format_columns {
 
             $self->add_to_width( scalar @ft );
 
-            $formatted_columns = join( ( $IDT->boxbreak() x 2 ), @ft );
+            $formatted_columns = join( ( ( $BOXBREAK x 2 ) ), @ft );
+            # one column to get to header, one to get to next schedule box
+
         }
         else {    # no entry for TallColumnLines in Signtype table
             $formatted_columns = join( "\r", $column->formatted_times );
             $self->add_to_width(1);
         }
 
-        $column->set_formatted_column(
-            $column->formatted_header . $IDT->boxbreak . $formatted_columns );
+        $column->set_formatted_column( $blanks
+              . $column->formatted_header
+              . $BOXBREAK
+              . $formatted_columns );
 
     }    ## <perltidy> end foreach my $column ( $self->columns)
 
@@ -570,6 +940,8 @@ sub format_side {
     my $formatted_side;
     open my $sidefh, '>:utf8', \$formatted_side;
 
+    my $month = $effdate->month;
+
     # EFFECTIVE DATE and colors
     my $color;
 
@@ -577,71 +949,71 @@ sub format_side {
         $color = 'Black';
     }
     else {
-        if ( $effdate =~ /Dec|Jan|Feb/ ) {
-            $color = "H101-Purple";    # if it looks crummy change it to H3-Blue
+        if ( $month == 12 or $month == 1 or $month == 2 ) {
+            $color = "LineViolet";
         }
-        elsif ( $effdate =~ /Mar|Apr|May/ ) {
+        elsif ( $month == 3 or $month == 4 or $month == 5 ) {
             $color = "New AC Green";
         }
-        elsif ( $effdate =~ /Jun|Jul/ ) {
+        elsif ( $month == 6 or $month == 7 ) {
             $color = "Black";
         }
-        else {                         # Aug, Sept, Oct, Nov
+        else {    # Aug, Sept, Oct, Nov
             $color = "Rapid Red";
         }
     }
 
-    my $nbsp = $IDT->nbsp;
-    $effdate =~ s/\s+$//;
-    $effdate =~ s/\s/$nbsp/g;
+    $color = $IDT->color($color);
 
-    print $sidefh $IDT->parastyle('sideeffective'),
-      $IDT->color($color), "Effective: $effdate";
-      
-    print $sidefh "\r", $IDT->parastyle('sidenotes'),
-      'Light Face = a.m.', $IDT->softreturn;
-    print $sidefh $IDT->bold_word('Bold Face = p.m.'), "\r";
+    print $sidefh $IDT->parastyle('sideeffective'), $color;
 
-    if ( $self->has_ab ) {
-        print $sidefh 
-'Lines that have <0x201C>A Loop<0x201D> and <0x201C>B Loop<0x201D> travel in a circle, beginning ',
-          'and ending at the same point. The A Loop operates in the clockwise ',
-          'direction. The B Loop operates in the counterclockwise direction. ',
-'Look for <0x201C>A<0x201D> or <0x201C>B<0x201D> at the right end of the headsign on the bus. ',
-          "\r";
-    }
+    my $effective_dates
+      = $Actium::Cmd::MakePoints::actiumdb->agency_effective_date_indd(
+        'effective_colon', $color );
+
+    print $sidefh $effective_dates;
+
+    print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
+    # blank line to separate effective dates from side notes
+
+#      'Light Face = a.m.', $IDT->softreturn;
+#    print $sidefh $IDT->bold_word('Bold Face = p.m.'), "\r";
+#
+#    if ( $self->has_ab ) {
+#        print $sidefh
+#'Lines that have <0x201C>A Loop<0x201D> and <0x201C>B Loop<0x201D> travel in a circle, beginning ',
+#          'and ending at the same point. The A Loop operates in the clockwise ',
+#          'direction. The B Loop operates in the counterclockwise direction. ',
+#'Look for <0x201C>A<0x201D> or <0x201C>B<0x201D> at the right end of the headsign on the bus. ',
+#          "\r";
+#    }
 
     my $sidenote = $Actium::Cmd::MakePoints::signs{$signid}{Sidenote};
-    
+
     if ( $sidenote and ( $sidenote !~ /^\s+$/ ) ) {
         $sidenote =~ s/\n/\r/g;
         $sidenote =~ s/\r+/\r/g;
         $sidenote =~ s/\r+$//;
         $sidenote =~ s/\0+$//;
-        
+
         $sidenote = $IDT->encode_high_chars($sidenote);
 
         if ($is_bsh) {
-            print $sidefh $IDT->parastyle('BSHsidenotes'), $sidenote,
-              "\r", $IDT->parastyle('sidenotes');
+            print $sidefh $IDT->hardreturn, $IDT->parastyle('BSHsidenotes'),
+              $sidenote;
         }
         else {
 
-            print $sidefh $IDT->bold_word(
-                $sidenote)
-                #$Actium::Cmd::MakePoints::signs{$signid}{Sidenote} )
-              . "\r";
+            print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes'),
+              $IDT->bold_word($sidenote);
         }
     }
 
     print $sidefh $self->format_sidenotes;
 
     if ( $self->note600 ) {
-        my $stoporarea = $self->is_simple_stopid ? 'stop' : 'area';
-        print $sidefh
-"This $stoporarea may also be served by supplementary lines (Lines 600"
-          . $IDT->endash
-          . "699), which operate school days only, at times that may vary from day to day. Call 511 or visit actransit.org for more information. This service is available to everyone at regular fares.\r";
+        print $sidefh $IDT->hardreturn,
+          join( $IDT->hardreturn, $i18n_all_cr->('note_600') );
     }
 
 # TODO - will have to make this work if exception processing is added
@@ -649,30 +1021,30 @@ sub format_side {
 #   print $sidefh "Trips that run school days only may not operate every day and will occasionally operate at times other than those shown. Supplementary service is available to everyone at regular fares.\r";
 #}
 
-    print $sidefh
-'See something wrong with this sign, or any other AC Transit sign?' . 
-" Let us know! Leave a comment at actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
-      if lc(
-        $Actium::Cmd::MakePoints::signtypes{
-            $Actium::Cmd::MakePoints::signs{$signid}{SignType}
-        }{GenerateWrongText} ) eq "yes";
+#    print $sidefh
+#      'See something wrong with this sign, or any other AC Transit sign?'
+#      . " Let us know! Leave a comment at actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
+#      if lc(
+#        $Actium::Cmd::MakePoints::signtypes{
+#            $Actium::Cmd::MakePoints::signs{$signid}{SignType}
+#        }{GenerateWrongText} ) eq "yes";
 
     ### new stop ID
 
-    if ( not $self->is_bsh and $self->is_simple_stopid ) {
-        print $sidefh $IDT->parastyle('depttimeside'), 'Call ',
-          $IDT->bold_word('511'), ' and say ',
-          $IDT->bold_word('"Departure Times"'),
-          " for live bus predictions\r", $IDT->parastyle('stopid'),
-          "STOP ID\r",                   $IDT->parastyle('stopidnumber'),
-          $self->stopid() , "\r";
-    }
+    #    if ( not $self->is_bsh and $self->is_simple_stopid ) {
+    #        print $sidefh $IDT->parastyle('depttimeside'), 'Call ',
+    #          $IDT->bold_word('511'), ' and say ',
+    #          $IDT->bold_word('"Departure Times"'),
+    #          " for live bus predictions\r", $IDT->parastyle('stopid'),
+    #          "STOP ID\r",                   $IDT->parastyle('stopidnumber'),
+    #          $self->stopid(), "\r";
+    #    }
 
-    if ($self->delivery and fc($self->delivery) eq fc('Clear Channel')) {
-       print $sidefh   $IDT->parastyle('sidenotes'),
-       'Please report maintenance or safety issues at bus shelters ' . 
-       "by calling Clear Channel toll free 24/7: 1-888-ADSHEL1 (237-4351)\r";
-    }
+#    if ( $self->delivery and fc( $self->delivery ) eq fc('Clear Channel') ) {
+#        print $sidefh $IDT->parastyle('sidenotes'),
+#          'Please report maintenance or safety issues at bus shelters '
+#          . "by calling Clear Channel toll free 24/7: 1-888-ADSHEL1 (237-4351)\r";
+#    }
 
     close $sidefh;
 
@@ -693,7 +1065,9 @@ my %text_of_exception = (
 
 sub format_sidenotes {
 
-    my $self    = shift;
+    my $self = shift;
+    return $EMPTY unless $self->highest_footnote;
+
     my %foot_of = reverse $self->elements_marker_of_footnote;
 
     my $formatted_sidenotes = '';
@@ -701,6 +1075,8 @@ sub format_sidenotes {
 
   NOTE:
     for my $i ( 1 .. $self->highest_footnote ) {
+
+        print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
 
         print $sidefh $IDT->combi_side($i), $SPACE;
 
@@ -734,7 +1110,6 @@ sub format_sidenotes {
         $line = $attr{line} if $attr{line};
 
         if ( $attr{destination} ) {
- #$dest = $Actium::Cmd::MakePoints::places{ $attr{destination} }{c_destination};
             $dest = $attr{destination};
             $dest =~ s/\.*$/\./;
         }
@@ -799,8 +1174,6 @@ sub format_sidenotes {
             if ( $_ eq 'l' ) { print $sidefh "Line $line."; next; }
         }    ## <perltidy> end given
 
-        print $sidefh "\r";
-
     }    ## <perltidy> end for my $i ( 1 .. $self->highest_footnote)
 
     close $sidefh;
@@ -811,6 +1184,13 @@ sub format_sidenotes {
 
 sub format_bottom {
 
+    # As of SU16, the order of the boxes is:
+    # o) Columns of text
+    # o) Stop ID
+    # o) Smoking blurb
+    # o) bottom notes
+    # o) side notes (possibly more than one)
+
     my $self   = shift;
     my $is_bsh = $self->is_bsh;
 
@@ -820,8 +1200,25 @@ sub format_bottom {
     my $formatted_bottom;
     open my $botfh, '>:utf8', \$formatted_bottom;
 
+    ##### STOP ID BOX ####
+
+    if ( $self->is_simple_stopid ) {
+        print $botfh $IDT->parastyle('stopidintro'),
+          join( $IDT->hardreturn, $i18n_all_cr->('stop_id') ),
+          $IDT->hardreturn,
+          $IDT->parastyle('stopidnumber'), $stopid;
+    }
+    print $botfh $BOXBREAK;    # if not simple, leave blank
+
+    ### SMOKING BOX ####
+
+    print $botfh $IDT->parastyle('bottomnotes'),
+      $IDT->encode_high_chars_only( $self->smoking ), $BOXBREAK;
+
+    ### BOTTOM BOX ####
+
     no warnings('once');
-    my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid}; # this is a reference
+    my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid};
 
     my $nonstoplocation = $self->nonstoplocation;
 
@@ -830,7 +1227,6 @@ sub format_bottom {
     $IDT->encode_high_chars($description);
 
     print $botfh $IDT->parastyle('bottomnotes'), $description;
-    #$stop_r->{c_description_full} ;
 
     print $botfh ". Sign #$signid.";
 
@@ -839,10 +1235,6 @@ sub format_bottom {
     print $botfh " Shelter site #"
       . $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum} . "."
       if $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum};
-
-    if ( $is_bsh and not $nonstoplocation ) {
-        print $botfh $IDT->boxbreak, $IDT->parastyle('BSHInfoStopID'), $stopid;
-    }
 
     close $botfh;
 
@@ -856,38 +1248,46 @@ sub output {
 
     my $signid = $self->signid;
 
-    open my $fh, '>:encoding(ascii)', "indesign_points/$signid.txt"
-      or die "Can't open $signid.txt for writing: $!";
+    my $pointdir = $self->signup->subfolder($IDPOINTFOLDER);
+
+    my $fh = $pointdir->open_write("$signid.txt");
 
     print $fh $IDT->start;
 
-    # output blank columns at beginning
+    if ( not defined $self->subtype ) {
+        # output blank columns at beginning
 
-    my $maxcolumns
-      = $Actium::Cmd::MakePoints::signtypes{
-        $Actium::Cmd::MakePoints::signs{$signid}{SignType}
-      }{TallColumnNum};
-    my $break = $IDT->boxbreak;
+        my $maxcolumns
+          = $Actium::Cmd::MakePoints::signtypes{
+            $Actium::Cmd::MakePoints::signs{$signid}{SignType}
+          }{TallColumnNum};
 
-    if ( $maxcolumns and $maxcolumns > $self->width )
-    {    # if there's an entry in SignTypes
-        my $columns = $maxcolumns - ( $self->width );
-        #print "[[$maxcolumns:" , $self->width , ":$columns]]";
-        print $fh ( $IDT->parastyle('amtimes'), $break x ( $columns * 2 ) );
+        if ( $maxcolumns and $maxcolumns > $self->width )
+        {    # if there's an entry in SignTypes
+            my $columns = $maxcolumns - ( $self->width );
+            #print "[[$maxcolumns:" , $self->width , ":$columns]]";
+            print $fh (
+                $IDT->parastyle('amtimes'),
+                $IDT->nocharstyle, $BLANK_COLUMN x $columns
+            );
+        }
+
     }
 
     # output real columns
 
     foreach my $column ( $self->columns ) {
         print $fh $column->formatted_column;
-        print $fh $break;
+        print $fh $BOXBREAK;
     }
 
-    print $fh $self->formatted_side;
-    print $fh $break;
+    # this order is new as of SU16
+
     print $fh $self->formatted_bottom;
-    
-    close $fh;
+    print $fh $BOXBREAK;
+    print $fh $self->formatted_side;
+
+    $fh->close;
 
 } ## tidy end: sub output
 

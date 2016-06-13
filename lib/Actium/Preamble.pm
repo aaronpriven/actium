@@ -33,7 +33,7 @@ BEGIN {
         # Module::Runtime ### DEP ###
         [qw[autodie]],
         # autodie ### DEP ###
-        [qw[feature :5.16 refaliasing]],
+        [qw[feature :5.16 refaliasing postderef postderef_qq ]],
         # feature ### DEP ###
         #[ 'open', IO => ':encoding(utf-8)' ],
         [qw[open :std :utf8 ]],
@@ -46,7 +46,7 @@ BEGIN {
         # warnings ### DEP ###
     );
     @nomodule_rs
-      = ( [qw[indirect]], [qw[warnings experimental::refaliasing]] );
+      = ( [qw[indirect]], [qw[warnings experimental::refaliasing experimental::postderef]] );
           # indirect ### DEP ###
 
     foreach my $module_r ( @module_rs, @nomodule_rs ) {

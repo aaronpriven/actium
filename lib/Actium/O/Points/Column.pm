@@ -2,8 +2,6 @@
 
 # Object for a single column in an InDesign point schedule
 
-# legacy stage 3, mostly
-
 use warnings;
 use strict;
 
@@ -11,17 +9,17 @@ use 5.010;
 
 use sort ('stable');
 
-package Actium::O::Points::Column 0.008;
+package Actium::O::Points::Column 0.011;
 
-use Moose; ### DEP ###
-use MooseX::SemiAffordanceAccessor; ### DEP ###
-use Moose::Util::TypeConstraints; ### DEP ###
+use Moose;                             ### DEP ###
+use MooseX::SemiAffordanceAccessor;    ### DEP ###
+use Moose::Util::TypeConstraints;      ### DEP ###
 
-use namespace::autoclean; ### DEP ###
+use namespace::autoclean;              ### DEP ###
 
 use Actium::Constants;
 use Actium::Time ('timenum');
-use Const::Fast; ### DEP ###
+use Const::Fast;                       ### DEP ###
 
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
@@ -56,9 +54,9 @@ around BUILDARGS => sub {
 
     my $display_stopid = shift;
 
-    my ( $linegroup, $dircode, $days, @entries ) = split( /\t/, $kpoint );
-
-    if ( $entries[0] =~ /^\#/s ) {    # entries like "LAST STOP"
+    my ( $linegroup, $dircode, $days, @entries )
+      = split( /\t/, $kpoint );
+    if ( $entries[0] =~ /^\#/s ) { # entries like "LAST STOP"
         my ( $note, $head_lines, $desttp4s ) = @entries;
         $note =~ s/^\#//s;
         my @head_lines = split( /:/, $head_lines );
@@ -239,6 +237,17 @@ has approxflag_r => (
     handles => { approxflags => 'elements', approxflag => 'get', },
 );
 
+has formatted_height => (
+    is  => 'rw',
+    isa => 'Maybe[Int]',
+);
+
+has 'previous_blank_columns' => (
+    isa     => 'Int',
+    is      => 'rw',
+    default => 0,
+);
+
 sub format_header {
     my $self = shift;
     $self->format_head_lines;
@@ -277,7 +286,7 @@ sub format_head_lines {
                                               # I should really fix the data
                 }
                 elsif ( $line eq 'BSD' or $line eq 'BSH' ) {
-                    $line = 'MON' . $IDT->endash . 'FRI DAY'
+                    $line = 'MON' . $IDT->endash . 'FRI DAY';
                 }
 
                 #$pstyle = 'dropcapheadbsh';

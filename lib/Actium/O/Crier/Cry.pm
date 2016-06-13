@@ -37,7 +37,7 @@ has '_crier' => (
           _close_up_to        _severity_num
           _prog_cols          _set_prog_cols
           _bullet_width       _alter_bullet_width
-          _bullet_for_level
+          _bullet_for_level   _set_position_without_prog_cols
           ),
     },
 );
@@ -331,7 +331,6 @@ sub _print_left_text {
     }
 
     $self->set_position( $leading_width + $final_width );
-    $self->_set_prog_cols(0);
 
     return $self;
 }    ## tidy end: sub _print_left_text
@@ -583,7 +582,7 @@ sub prog {
 
         $position = length($bspace) + length($indent);
         $progcols = 0;
-        $self->set_position($position);
+        $self->_set_position_without_prog_cols($position);
         $self->_set_prog_cols($progcols);
     }
 
@@ -591,7 +590,7 @@ sub prog {
     my $succeeded = print $fh $msg;
     return unless $succeeded;
 
-    $self->set_position( $position + $columns );
+    $self->_set_position_without_prog_cols( $position + $columns );
     $self->_set_prog_cols( $progcols + $columns );
 
     return 1;
@@ -621,7 +620,6 @@ sub over {
         return unless $succeeded;
 
         $self->set_position( $self->position - $prog_cols );
-        $self->_set_prog_cols(0);
 
     }    ## tidy end: if ( $self->backspace )
 
