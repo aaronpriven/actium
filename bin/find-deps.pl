@@ -12,6 +12,8 @@
 use 5.010;
 use warnings;
 
+our $VERSION = 0.010;
+
 #use List::MoreUtils('uniq'); 
 # I don't want to have a dependency in the dependency-finding program!
 
