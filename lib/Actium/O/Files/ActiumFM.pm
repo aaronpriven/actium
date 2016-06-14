@@ -509,7 +509,9 @@ sub agency_effective_date_indd {
     foreach my $lang (@ALL_LANGUAGES) {
         my $method = "long_$lang";
         my $date   = $dt->$method;
-        $date =~ s/ /$nbsp/g;
+        if ($lang eq 'en') {
+            $date =~ s/ /$nbsp/g;
+        }
 
         $date = $IDT->encode_high_chars_only($date);
         $date = $IDT->language_phrase( $lang, $date, $metastyle );
@@ -521,7 +523,7 @@ sub agency_effective_date_indd {
             $phrase =~ s/\%s/$date/;
         }
         else {
-            $phrase .= " $date";
+            $phrase .= " " . $IDT->discretionary_lf . $date;
         }
 
         #$phrase = $IDT->language_phrase( $lang, $phrase, $metastyle );

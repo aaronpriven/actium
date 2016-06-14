@@ -2,12 +2,12 @@
 
 # legacy stage 4
 
-package Actium::Cmd::MakePoints 0.010;
+package Actium::Cmd::MakePoints 0.011;
 
 use warnings;    ### DEP ###
 use strict;      ### DEP ###
 
-use 5.014;
+use 5.022;
 
 use sort ('stable');    ### DEP ###
 
@@ -28,16 +28,17 @@ use Text::Trim;                    ### DEP ###
 
 use Actium::O::Points::Point;
 
-const my $LISTFILE_BASE     => 'pointlist';
-const my $ERRORFILE_BASE    => 'point_errors';
-const my $SIGNIDS_IN_A_FILE => 250;
+const my $LISTFILE_BASE  => 'pl';
+const my $ERRORFILE_BASE => 'err';
+#const my $SIGNIDS_IN_A_FILE => 250;
 
 sub HELP {
 
     my $helptext = <<'EOF';
 MakePoints reads the data written by avl2points and turns it into 
 output suitable for InDesign.
-It is saved in the directory "points" in the directory for that signup.
+
+It is saved in the directory "idpoints2016" in the directory for that signup.
 EOF
 
     say $helptext;
@@ -55,6 +56,13 @@ sub OPTIONS {
             'Will only process signs that have the status "Needs Update."', 0
         ],
         [ 'type=s', 'Will only process signs that have a given signtype.', '' ],
+        [   'name=s',
+            'Name given to this run. Defaults to a combination '
+              . 'of the signtype given (if any), the signIDs given (if any), '
+              . 'and whether or not -update was given. '
+              . '"-name _" will use no special name.',
+            ''
+        ],
     );
 }
 
@@ -305,9 +313,11 @@ sub START {
         @points = sort { $a->[0] <=> $b->[0] } @points;
         # sort numerically by signid
 
-        my $end_signid = $SIGNIDS_IN_A_FILE;
+        my $signids_in_a_file = $signtypes{$signtype}{StopIDsInAFile};
 
-        my $addition = "1-" . $SIGNIDS_IN_A_FILE;
+        my $end_signid = $signids_in_a_file;
+
+        my $addition = "1-" . $signids_in_a_file;
         my $file_line_has_been_output;
 
         foreach my $point (@points) {
@@ -318,8 +328,8 @@ sub START {
             while ( $signid > $end_signid ) {
                 $file_line_has_been_output = 0;
                 $addition                  = ( $end_signid + 1 ) . "-"
-                  . ( $end_signid + $SIGNIDS_IN_A_FILE );
-                $end_signid += $SIGNIDS_IN_A_FILE;
+                  . ( $end_signid + $signids_in_a_file );
+                $end_signid += $signids_in_a_file;
             }
             # separating the addition and the print allows there to be large
             # gaps in the number of sign IDs
@@ -372,20 +382,31 @@ sub START {
 
 sub _get_run_name {
 
-    my $env      = shift;
+    my $env     = shift;
+    my $nameopt = $env->option('name');
+
+    if (defined $nameopt and $nameopt ne $EMPTY ) {
+        return '.' . $nameopt;
+    }
+    if ( $nameopt eq '_' ) {
+        return $EMPTY;
+    }
+
     my @args     = $env->argv;
     my $signtype = $env->option('type');
 
-    my $run = $EMPTY;
+    my @run_pieces;
+    
+    push @run_pieces, join( ',', @args ) if @args;
+    push @run_pieces, $signtype if $signtype;
+    push @run_pieces, 'U' if $env->option('update');
+    
+    if (@run_pieces) {
+        return '.' . join('_' , @run_pieces);
+    } else {
+        return $EMPTY;
+    }
 
-    $run .= "_" . join( '_', @args )
-      if @args;
-
-    $run .= "_$signtype" if $signtype;
-    $run .= "_update" if $env->option('update');
-
-    return $run;
-
-}
+} ## tidy end: sub _get_run_name
 
 1;
