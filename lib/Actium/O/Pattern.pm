@@ -18,7 +18,7 @@ use namespace::autoclean; ### DEP ###
 use Actium::Constants;
 use Actium::Types (qw/DirCode HastusDirCode ActiumDir/);
 use Actium::O::Dir;
-use Actium::Util ('jk');
+use Actium::Util ('joinkey');
 
 has 'route' => (
     required => 1,
@@ -55,7 +55,7 @@ sub id {
 
 sub _build_unique_id {
     my $self = shift;
-    return jk( $self->route, $self->dircode, $self->identifier );
+    return joinkey( $self->route, $self->dircode, $self->identifier );
 }
 
 has 'stops_r' => (

@@ -17,7 +17,7 @@ use namespace::autoclean; ### DEP ###
 
 use Actium::Constants;
 use Actium::Crier(qw/cry last_cry/);
-use Actium::Util qw(j jk filename);
+use Actium::Util qw(j joinkey filename);
 use Carp; ### DEP ###
 use English '-no_match_vars';
 use File::Glob qw(:glob); ### DEP ###
@@ -224,7 +224,7 @@ sub _load {
 
             if ( $has_repeating_final_column{$table} ) {
                 my @finals = splice( @columns, scalar( columns($table) ) );
-                push @columns, jk( grep { $_ ne $EMPTY_STR } @finals );
+                push @columns, joinkey( grep { $_ ne $EMPTY_STR } @finals );
             }
 
             my $parent = $parent_of{$table};
@@ -234,7 +234,7 @@ sub _load {
 
             if ( $has_composite_key{$table} ) {
                 push @columns,
-                  jk( @columns[ @{ $key_components_idxs{$table} } ] );
+                  joinkey( @columns[ @{ $key_components_idxs{$table} } ] );
             }
 
             $sth_of{$table}->execute( $sequence, @columns );

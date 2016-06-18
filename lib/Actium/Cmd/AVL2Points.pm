@@ -494,7 +494,7 @@ sub makestoptimes {
         my $linegroup = linegroup($line);
 
         my $pattern = $tripinfo_of{Pattern};
-        my $patkey = jk( $line, $pattern );
+        my $patkey = u::joinkey( $line, $pattern );
 
         my $days_input = $tripinfo_of{OperatingDays};
         $days_input =~ tr/0-9//cd;      # strip everything but digits

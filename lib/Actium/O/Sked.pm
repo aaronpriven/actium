@@ -476,19 +476,19 @@ sub _build_md5 {
         push @data, jt( $trip->placetimes );
     }
 
-    my $digest = Digest::MD5::md5_hex( jk(@data) );
+    my $digest = Digest::MD5::md5_hex( joinkey(@data) );
     return $digest;
 
 }
 
 sub _build_linedir {
     my $self = shift;
-    return jk( $self->linegroup, $self->dircode );
+    return joinkey( $self->linegroup, $self->dircode );
 }
 
 sub _build_linedays {
     my $self = shift;
-    return jk( $self->linegroup, $self->sortable_days );
+    return joinkey( $self->linegroup, $self->sortable_days );
 }
 
 sub _build_earliest_timenum {
