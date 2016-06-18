@@ -25,7 +25,7 @@ use Sub::Exporter -setup => {
           positional          positional_around
           joinseries          joinseries_ampersand
           j                   jt
-          jk                  jn
+          jn
           sk                  st
           joinspace
           joinempty          jointab
@@ -169,11 +169,6 @@ sub jointab {
 
 sub joinspace {
     return join( $SPACE, map { $_ // $EMPTY_STR } @_ );
-}
-
-sub jk {
-    carp 'Call to "Actium::Util::jk" remains' if DEBUG;
-    goto &joinkey;
 }
 
 sub joinkey {
@@ -746,7 +741,7 @@ This documentation refers to Actium::Util version 0.001
  
  $smashed = j(@list); # 'Thing OneThing TwoRed Fish'
  say jt(@list);       # "Thing One\tThing Two\tRed Fish"
- $key = jk(@list);    # "Thing One\c]Thing Two\c]Red Fish"
+ $key = joinkey(@list);    # "Thing One\c]Thing Two\c]Red Fish"
  $readable_key = keyreadable($key); 
                       # 'Thing One_Thing Two_Red Fish'
                       
@@ -785,7 +780,7 @@ and returns that).
 Takes the list passed to it and joins it together as a simple string. 
 A quicker way to type "join ('' , @list)".
 
-=item B<jk()>
+=item B<joinkey()>
 
 Takes the list passed to it and joins it together, with each element separated 
 by the $KEY_SEPARATOR value from L<Actium::Constants/Actium::Constants>.

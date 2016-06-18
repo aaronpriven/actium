@@ -138,13 +138,12 @@ sub START {
                 my $cornertext = $EMPTY;
 
                 if ($corner) {
-                    $cornertext
-                      = ', '
+                    $cornertext = ', '
                       . (
                         exists $LONGCORNER_OF{$corner}
                         ? $LONGCORNER_OF{$corner}
-                        : $corner )
-                      . " corner";
+                        : $corner
+                      ) . " corner";
                     $cornertext = encode_entities($cornertext);
                 }
 
@@ -283,8 +282,10 @@ EOT
 
     foreach my $type ( keys %tables_of_type ) {
 
+        my $url_type = url_type($type);
+
         {
-            my $ofh = $stoplists_folder->open_write("$type.html");
+            my $ofh = $stoplists_folder->open_write("$url_type.html");
 
             my @lines_and_urls
               = map {"<a href='#$_'>$_</a>"} @{ $lines_of_type{$type} };
@@ -296,7 +297,7 @@ EOT
 
         }
 
-        my $ofh = $stoplists_folder->open_write("c-$type.html");
+        my $ofh = $stoplists_folder->open_write("c-$url_type.html");
         my @lines_and_urls
           = map {"<a href='#$_'>$_</a>"} @{ $lines_of_type{$type} };
 
@@ -307,17 +308,32 @@ EOT
 
     } ## tidy end: foreach my $type ( keys %tables_of_type)
 
-    my $indexfh  = $stoplists_folder->open_write('stop_index.html');
-    my $cindexfh = $stoplists_folder->open_write('c_stop_index.html');
+    my $effectivedate = $actiumdb->agency_effective_date('ACTransit')->long_en;
 
+    my $indexfh  = $stoplists_folder->open_write('stops.html');
+    my $cindexfh = $stoplists_folder->open_write('c-stops.html');
+
+    my $efftext
+      = "<p>Bus stop lists are updated after each quarterly service change. "
+      . "These stop lists are effective $effectivedate.</p>";
+
+    say $indexfh $efftext;
+    say $cindexfh $efftext;
+
+  TYPE:
     for my $type ( 'Local', 'All Nighter', 'Transbay', 'Supplementary' ) {
         my @links;
         my @clinks;
 
+        my @lines_of_type
+          = map { @{ $lines_of_type{$_} } } @{ $subtypes_of{$type} };
+
+        next TYPE if ( @lines_of_type == 0 );
+
         for my $subtype ( @{ $subtypes_of{$type} } ) {
             for my $line ( @{ $lines_of_type{$subtype} } ) {
 
-                my $url_type = $subtype =~ s/ /-/grs;
+                my $url_type = url_type($subtype);
 
                 my $url    = lc("/rider-info/stops/$url_type/#") . $line;
                 my $c_url  = lc("/rider-info/stops/c-$url_type/#") . $line;
@@ -336,7 +352,12 @@ EOT
         say $cindexfh "<p><strong>$type</strong></p>";
         say $cindexfh contents(@clinks);
 
-    } ## tidy end: for my $type ( 'Local',...)
+    } ## tidy end: TYPE: for my $type ( 'Local',...)
+
+    say $indexfh '<p>In addition to these lists, '
+      . '<a href="/rider-info/c-stops/">'
+      . 'there is also a set of lists of bus stops by line '
+      . 'that includes the corner where the stop is located.</a></p>';
 
     close $indexfh  or die "Can't close stop_index.html: $OS_ERROR";
     close $cindexfh or die "Can't close c_stop_index.html: $OS_ERROR";
@@ -376,5 +397,11 @@ sub contents {
     return $contents_text;
 
 } ## tidy end: sub contents
+
+sub url_type {
+    my $subtype  = shift;
+    my $url_type = lc( $subtype =~ s/ /-/grs );
+    return $url_type;
+}
 
 1;
