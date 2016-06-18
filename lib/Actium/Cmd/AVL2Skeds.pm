@@ -172,14 +172,14 @@ sub load_timepoint_overrides {
         my ( $line, $dircode, $days ) = split( /_/, $sked );
 
         my @skeds;
-        push @skeds, jk( $line, $dircode, $days );
+        push @skeds, joinkey( $line, $dircode, $days );
 
         if ( $days eq 'WE' or $days eq 'DA' ) {
-            push @skeds, jk( $line, $dircode, 'SA' );
-            push @skeds, jk( $line, $dircode, 'SU' );
+            push @skeds, joinkey( $line, $dircode, 'SA' );
+            push @skeds, joinkey( $line, $dircode, 'SU' );
         }
         if ( $days eq 'DA' ) {
-            push @skeds, jk( $line, $dircode, 'WD' );
+            push @skeds, joinkey( $line, $dircode, 'WD' );
         }
 
         $sked_override_order_of{$_} = \@timepoints for @skeds;
@@ -261,7 +261,7 @@ sub merge_days {
           = split( /$KEY_SEPARATOR/, $skedkey );
 
         next SKED if $days ne $merging[0];
-        my $secondkey = jk( $linegroup, $dircode, $merging[1] );
+        my $secondkey = joinkey( $linegroup, $dircode, $merging[1] );
         next SKED if ( not exists( $sked_of{$secondkey} ) );
 
         # so now we know that the first day and second day exist.
@@ -290,7 +290,7 @@ sub merge_days {
 
         # so at this point, all is identical.
 
-        my $newkey = jk( $linegroup, $dircode, $merged );
+        my $newkey = joinkey( $linegroup, $dircode, $merged );
         $sked_of{$newkey}       = $sked_of{$skedkey};
         $sked_order_of{$newkey} = $sked_order_of{$skedkey};
         delete $sked_of{$skedkey};
@@ -524,7 +524,7 @@ sub make_place_ordering {
         }
 
         # %trip_tps_seen contains unique place lists
-        $trip_tps_seen{ jk(@places) } = \@places;
+        $trip_tps_seen{ joinkey(@places) } = \@places;
 
     }
 
@@ -635,7 +635,7 @@ sub make_skeds_pairs_of_hash {
         }
 
         my $pattern = $tripinfo_of{Pattern};
-        my $patkey = jk( $line, $pattern );
+        my $patkey = joinkey( $line, $pattern );
         if ( not exists $avldata{PAT}{$patkey} ) {
             next TRIP;
         }
@@ -721,7 +721,7 @@ sub make_skeds_pairs_of_hash {
         }
 
         foreach my $thesedays (@days) {
-            my $key = jk( $linegroup, $dir_code, $thesedays );
+            my $key = joinkey( $linegroup, $dir_code, $thesedays );
             push( @{ $skeds_lines_of{$key} },    $line );
             push( @{ $skeds_specdays_of{$key} }, $specdays );
             push( @{ $skeds_pairs_of{$key} }, [@pairs] );
