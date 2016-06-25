@@ -490,7 +490,7 @@ sub write_sked {
     print $out $filename, "\n";
     print $out "Note Definitions:\t\n";
 
-    say $out jt( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM',
+    say $out jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM',
         map { tp9($_) } ( @{ $sked_order_of{$key} } ) );
 
     foreach my $trip ( @{ $sked_of{$key} } ) {
@@ -498,7 +498,7 @@ sub write_sked {
         #if ($dir ne 'rawskeds') {
         tr/bx/pa/ for @times;    # old format can't handle b, a times
                                  #}
-        say $out jt( $trip->{SPECDAYS}, $EMPTY_STR, $EMPTY_STR, $trip->{LINE},
+        say $out jointab( $trip->{SPECDAYS}, $EMPTY_STR, $EMPTY_STR, $trip->{LINE},
             @times );
     }
 

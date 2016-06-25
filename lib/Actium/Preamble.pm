@@ -17,7 +17,7 @@ BEGIN {
     @module_rs = (
         [qw[Actium::Constants]],
         [qw[Actium::Crier cry last_cry]],
-        [qw[Actium::Util in jt ]],
+        [qw[Actium::Util in ]],
         [qw[Carp]],
         # Carp ### DEP ###
         [qw[Const::Fast]],
@@ -85,6 +85,7 @@ use List::AllUtils(':all');                                  ### DEP ###
 use Params::Validate;                                        ### DEP ###
 use POSIX (qw/ceil floor/);                                  ### DEP ###
 use Text::Trim;                                              ### DEP ###
+use Ref::Util (':all');                                      ### DEP ###
 
 BEGIN {
     # modules with no 'all' tag

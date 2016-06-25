@@ -142,14 +142,14 @@ sub START {
             {
                 open my $fh, '>:utf8', "slists/line/$route-$dir.txt"
                   or die "Cannot open slists/line/$route-$dir.txt for output";
-                print $fh jt( $route, $dir ), "\n";
+                print $fh u::jointab( $route, $dir ), "\n";
                 foreach (@union) {
 
                     my $desc = $stops{$_}{c_description_full} // $EMPTY_STR;
                     #utf8::decode($desc);
 
                     print $fh "$_\t$desc\n";
-                    #print $fh jt($_, $stops{$_}{c_description_full}) , "\n";
+                    #print $fh u::jointab($_, $stops{$_}{c_description_full}) , "\n";
                 }
                 close $fh;
             }
@@ -158,9 +158,9 @@ sub START {
                 open my $fh, '>:utf8', "slists/line-win/$route-$dir.txt"
                   or die
                   "Cannot open slists/line-win/$route-$dir.txt for output";
-                print $fh jt( $route, $dir ), "\r\n";
+                print $fh u::jointab( $route, $dir ), "\r\n";
                 foreach (@union) {
-                    print $fh jt( $_, $stops{$_}{c_description_full} ), "\r\n";
+                    print $fh u::jointab( $_, $stops{$_}{c_description_full} ), "\r\n";
                 }
                 close $fh;
             }

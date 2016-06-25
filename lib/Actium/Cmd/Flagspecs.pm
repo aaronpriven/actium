@@ -8,13 +8,12 @@ use 5.012;
 package Actium::Cmd::Flagspecs 0.010;
 
 use Actium::Sorting::Line (qw/sortbyline byline/);
-use Actium::Util qw(in jn j jt );
+use Actium::Util qw(in joinlf j jointab );
 use Actium::Union (qw/ordered_union distinguish/);
 use Actium::DaysDirections(':all');
 use Actium::O::Files::HastusASI;
 use Actium::Constants;
 use Actium::Crier(qw/cry cry_text/);
-use Text::Trim;    ### DEP ###
 use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::Cmd::Config::Signup ('signup');
 
@@ -793,8 +792,8 @@ sub delete_placelist_from_lists {
                   = uniq( sort { length($b) <=> length($a) || $a cmp $b }
                       @placelists );
 
-                my $combokey = jt(@placelists);
-                my $shortkey = jt( $routedir, $combokey );
+                my $combokey = jointab(@placelists);
+                my $shortkey = jointab( $routedir, $combokey );
 
                 $combos{$routedir}{$combokey} = \@placelists;
                 push @{ $shortkeys_of_stop{$stop}{$routedir} }, $shortkey;
@@ -877,7 +876,7 @@ sub delete_placelist_from_lists {
             my @thesecombos = keys %{ $combos{$routedir} };
 
             foreach my $combokey (@thesecombos) {
-                my $shortkey = jt( $routedir, $combokey );
+                my $shortkey = jointab( $routedir, $combokey );
                 $short_code_of{$shortkey} = $short++;
                 printf "Line %-3s %68s\n", $route, $short_code_of{$shortkey};
                 my @placelists = @{ $combos{$routedir}{$combokey} };
@@ -999,7 +998,7 @@ sub delete_placelist_from_lists {
                   if $input_comments_of{$short};
                 push @preserved,
                   j( $OVERRIDE_STRING, $SPACE, $input_override_of{$short} );
-                $preserved_override_of{$shortkey} = jn(@preserved);
+                $preserved_override_of{$shortkey} = joinlf(@preserved);
             }
         }
 
@@ -1090,7 +1089,7 @@ sub relevant_places {
             :                'To '
         ) . $destination;
 
-        $destination_of{ jt( $routedir, $combokey ) } = $destination;
+        $destination_of{ jointab( $routedir, $combokey ) } = $destination;
 
         return;
 
@@ -1394,7 +1393,7 @@ sub make_decal_spec {
         my $oldfh = select $out;
 
         foreach ( sortbyline keys %routes ) {    # plain decals
-            print jt ( $_, $_, ( $color_of{$_} || 'grey30' ),
+            print jointab ( $_, $_, ( $color_of{$_} || 'grey30' ),
                 style_of_route($_) );
             if ( $plain_override_of{$_} ) {
                 print "\t$plain_override_of{$_}\t";
@@ -1410,7 +1409,7 @@ sub make_decal_spec {
             my ( $route, $destination, $icons ) = sk( $spec_of{$decal} );
             my $style = style_of_route($route);
 
-            say jt (
+            say jointab (
                 $route, ( $color_of{$route} || 'grey30' ),
                 $style, $destination, $icons
             );
