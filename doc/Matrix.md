@@ -6,15 +6,15 @@ The matrix itself is a simple Excel spreadsheet, with each row representing an i
 
 Here's the top left part of the spreadsheet:
 
-|                      | #    | 1 1R | 7 | 11 | 12 |
-|----------------------|------|---|----|----|---|
-| Output group         |      | A | A  |    | B |
-| **BART STATIONS**    |      |   |    |    |   |
-| Richmond             | 100  |   |    |    |   |
-| El Cerrito del Norte | 100  |   | X  |    |   |
-| El Cerrito Plaza     | 75  |   |    |    |   |
-| North Berkeley       | 75  |   |    |    |   |
-| Downtown Berkeley    | 100  | 1.5 | X  |    | X |
+|                      | #    | 1 1R | 7  | 11 | 12 |
+|----------------------|------|------|----|----|---|
+| Output group         |      |   A  | A  |    |  B |
+| **BART STATIONS**    |      |      |    |    |    |
+| Richmond             | 100  |      |    |    |    |
+| El Cerrito del Norte | 100  |      | X  |    |    |
+| El Cerrito Plaza     | 75   |      |    |    |    |
+| North Berkeley       | 75   |      |    |    |    |
+| Downtown Berkeley    | 100  | 1.5  | X  |    |  X |
 
 This shows that 100 Line 7 timetables should be sent to each of El Cerrito del Norte and Downtown Berkeley, and 100 Line 12 timetables should also be sent to Downtown Berkeley. It also shows that 150 Line 1/1R timetables should be sent to Downtown Berkeley.
 
