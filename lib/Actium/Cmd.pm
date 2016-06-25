@@ -49,7 +49,7 @@ sub run {
         else {
             say "Help not implemented for $subcommand.";
         }
-        output_usage(%helpmsg_of);
+        _output_usage(%helpmsg_of);
     }
     else {
         $module->START($env);
@@ -101,7 +101,7 @@ sub _mainhelp {
     exit $status;
 } ## tidy end: sub _mainhelp
 
-sub output_usage {
+sub _output_usage {
 
     my %helpmessages = @_;
 
@@ -248,7 +248,12 @@ sub _process_options {
         ],
     );
 
-    unshift @option_requests, $module->OPTIONS($env) if $module->can('OPTIONS');
+    my @module_options;
+    @module_options = $module->OPTIONS($env) if $module->can('OPTIONS');
+
+    # add code for plugins here
+
+    unshift @option_requests, @module_options;
 
     my ( %options, @option_specs, %callback_of, %helpmsg_of );
 
