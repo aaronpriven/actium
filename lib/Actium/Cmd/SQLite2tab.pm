@@ -10,7 +10,7 @@ use warnings;
 package Actium::Cmd::SQLite2tab 0.010;
 
 use Actium::Cmd::Config::Signup ('signup');
-use Actium::Util qw(jt );
+use Actium::Util qw(jointab );
 use Actium::Constants;
 use Actium::O::Files::HastusASI;
 
@@ -49,14 +49,14 @@ sub START {
     my $parent = $db->parent_of_table($table);
     push @columnnames, "${parent}_id" if $parent;
 
-    say jt (@columnnames);
+    say u::jointab (@columnnames);
 
     while ( my $row_r = $iterator->() ) {
         my @values;
         foreach my $key (@columnnames) {
             push @values, $row_r->{$key};
         }
-        say jt(@values);
+        say u::jointab(@values);
     }
 
     $cry->done;

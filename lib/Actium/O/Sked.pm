@@ -469,11 +469,11 @@ sub _build_md5 {
     # build an MD5 digest from the placetimes, stoptimes, places, and stops
     require Digest::MD5; ### DEP ###
 
-    my @data = ( jt( $self->place4s ), jt( $self->stopids ) );
+    my @data = ( jointab( $self->place4s ), jointab( $self->stopids ) );
 
     foreach my $trip ( $self->trips ) {
-        push @data, jt( $trip->stoptimes );
-        push @data, jt( $trip->placetimes );
+        push @data, jointab( $trip->stoptimes );
+        push @data, jointab( $trip->placetimes );
     }
 
     my $digest = Digest::MD5::md5_hex( joinkey(@data) );

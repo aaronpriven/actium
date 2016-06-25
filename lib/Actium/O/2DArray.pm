@@ -841,7 +841,7 @@ sub tsv {
             }
 
         }
-        push @lines, jt(@rowcopy);
+        push @lines, u::jointab(@rowcopy);
     }
 
     foreach (@lines) {

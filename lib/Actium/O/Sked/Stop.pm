@@ -9,9 +9,7 @@ package Actium::O::Sked::Stop 0.010;
 use 5.016;
 use strict;
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
-use Moose::Util::TypeConstraints; ### DEP ###
+use Actium::Moose;
 
 use namespace::autoclean; ### DEP ###
 
@@ -74,13 +72,12 @@ sub as_kpoint {
     my @kpoint_data = $self->linegroup, $self->dircode, $self->daycode,
       map { $_->for_kpoint } $self->time_objs;
 
-    return jt(@kpoint_data);
+    return u::jointab(@kpoint_data);
 
 }
 
-__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
+u::immut;
 
 1;
 
 __END__
-   

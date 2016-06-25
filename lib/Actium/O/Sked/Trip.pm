@@ -19,7 +19,7 @@ use MooseX::Storage; ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
 use Actium::Time qw<timestr timestr_sub>;
-use Actium::Util qw<jt in>;
+use Actium::Util qw<in>;
 use Actium::Constants;
 use Carp; ### DEP ###
 

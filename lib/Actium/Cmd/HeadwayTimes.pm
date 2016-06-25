@@ -74,7 +74,7 @@ sub START {
             }
 
             if ( u::any {defined} @headways ) {
-                say jt(@headways);
+                say u::jointab(@headways);
             }
 
             say $line;

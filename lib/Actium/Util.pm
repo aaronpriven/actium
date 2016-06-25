@@ -24,8 +24,7 @@ use Sub::Exporter -setup => {
         qw<
           positional          positional_around
           joinseries          joinseries_ampersand
-          j                   jt
-          jn
+          j                   
           sk                  st
           joinspace
           joinempty          jointab
@@ -158,11 +157,6 @@ sub joinempty {
     return join( $EMPTY_STR, map { $_ // $EMPTY_STR } @_ );
 }
 
-sub jt {
-    carp 'Call to "Actium::Util::jt" remains' if DEBUG;
-    goto &jointab;
-}
-
 sub jointab {
     return join( "\t", map { $_ // $EMPTY_STR } @_ );
 }
@@ -175,11 +169,6 @@ sub joinkey {
     return join( $KEY_SEPARATOR, map { $_ // $EMPTY_STR } @_ );
 }
 
-sub jn {
-    carp 'Call to "Actium::Util::jn" remains' if DEBUG;
-    goto &joinlf;
-}
-
 sub joinlf {
     return join( "\n", map { $_ // $EMPTY_STR } @_ );
 }
@@ -190,7 +179,7 @@ sub sk {
 }
 
 sub splitkey {
-    croak 'Null argument specified to ' . __PACKAGE__ . '::sk'
+    croak 'Null argument specified to ' . __PACKAGE__ . '::splitkey'
       unless defined $_[0];
     return split( /$KEY_SEPARATOR/sx, $_[0] );
 }
@@ -312,14 +301,14 @@ sub aoa2tsv {
     my @headers = flatten(@_);
 
     my @lines;
-    push @lines, jt(@headers) if @headers;
+    push @lines, jointab(@headers) if @headers;
 
     foreach my $array ( @{$aoa_r} ) {
         foreach ( @{$array} ) {
             $_ //= $EMPTY_STR;
             s/\t/\x{2409}/g;    # visible symbol for tab
         }
-        push @lines, jt( @{$array} );
+        push @lines, jointab( @{$array} );
     }
 
     foreach (@lines) {
@@ -327,7 +316,7 @@ sub aoa2tsv {
         s/\r/\x{240D}/g;        # visible symbol for carriage return
     }
 
-    my $str = jn(@lines) . "\n";
+    my $str = joinlf(@lines) . "\n";
 
     return $str;
 
@@ -740,7 +729,7 @@ This documentation refers to Actium::Util version 0.001
  use Actium::Util ':all';
  
  $smashed = j(@list); # 'Thing OneThing TwoRed Fish'
- say jt(@list);       # "Thing One\tThing Two\tRed Fish"
+ say jointab(@list);       # "Thing One\tThing Two\tRed Fish"
  $key = joinkey(@list);    # "Thing One\c]Thing Two\c]Red Fish"
  $readable_key = keyreadable($key); 
                       # 'Thing One_Thing Two_Red Fish'
@@ -786,12 +775,12 @@ Takes the list passed to it and joins it together, with each element separated
 by the $KEY_SEPARATOR value from L<Actium::Constants/Actium::Constants>.
 A quicker way to type "join ($KEY_SEPARATOR , @list)".
 
-=item B<jt()>
+=item B<jointab()>
 
 Takes the list passed to it and joins it together, with each element separated 
 by tabs. A quicker way to type 'join ("\t" , @list)'.
 
-=item B<jn()>
+=item B<joinlf()>
 
 Takes the list passed to it and joins it together, with each element separated 
 by line feeds. A quicker way to type 'join ("\n" , @list)'.
