@@ -15,7 +15,7 @@ use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
-use Actium::Util(qw/doe in jt chunks population_stdev/);
+use Actium::Util(qw/doe in jointab chunks population_stdev/);
 use Const::Fast; ### DEP ###
 use List::Util ( 'max', 'sum' ); ### DEP ###
 use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>); ### DEP ###
@@ -522,9 +522,9 @@ sub output_a_pubtts {
     my $listfh  = $pubtt_folder->open_write('_ttlist.txt');
     my @columns = qw<file effectivedate pages MapFile LeaveCoverForMap
       MasterPage has_short_page portrait_chars>;
-    say $listfh jt(@columns);
+    say $listfh jointab(@columns);
     for my $linegroup ( sortbyline keys %script_entries ) {
-        say $listfh jt( @{ $script_entries{$linegroup} }{@columns} );
+        say $listfh jointab( @{ $script_entries{$linegroup} }{@columns} );
     }
     close $listfh;
 

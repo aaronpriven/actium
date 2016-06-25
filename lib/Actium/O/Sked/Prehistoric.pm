@@ -24,7 +24,7 @@ use List::MoreUtils qw<uniq none>; ### DEP ###
 
 use Text::Trim; ### DEP ###
 use English '-no_match_vars'; ### DEP ###
-use Actium::Util (qw/jt dumpstr/);
+use Actium::Util (qw/jointab dumpstr/);
 use Actium::Time ('timestr_sub');
 
 # comes from prehistorics
@@ -79,7 +79,7 @@ sub prehistoric_skedsfile {
         push @place9s, $place9;
     }
 
-    say $out jt( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
+    say $out jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
 
     my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR );
 
@@ -88,7 +88,7 @@ sub prehistoric_skedsfile {
 
         $times =~ s/\s+\z//;
 
-        say $out jt( $trip->daysexceptions, $EMPTY_STR, $EMPTY_STR,
+        say $out jointab( $trip->daysexceptions, $EMPTY_STR, $EMPTY_STR,
             $trip->line, $times );
     }
 
