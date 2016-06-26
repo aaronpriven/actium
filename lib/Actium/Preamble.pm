@@ -98,6 +98,8 @@ BEGIN {
 # The following work around a bug in Hash::Util.
 # I submitted the patch that fixed it in perl 5.23.3
 
+no warnings 'redefine'; # otherwise it complains. 
+
 sub lock_hashref_recurse  {
     goto &Hash::Util::lock_hashref_recurse ;
 }
