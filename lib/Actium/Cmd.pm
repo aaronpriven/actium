@@ -9,8 +9,8 @@ use Term::ReadKey;    ### DEP ###
 
 my $crier;
 
-const my $EX_USAGE    => 64;    # from "man sysexits"
-const my $EX_SOFTWARE => 70;
+const my $EX_USAGE       => 64;              # from "man sysexits"
+const my $EX_SOFTWARE    => 70;
 const my $COMMAND_PREFIX => 'Actium::Cmd';
 
 sub run {
@@ -252,6 +252,21 @@ sub _process_options {
     @module_options = $module->OPTIONS($env) if $module->can('OPTIONS');
 
     # add code for plugins here
+
+    foreach my $module_option ( reverse @module_options ) {
+
+        if ( u::is_arrayref($module_option) ) {
+            unshift @option_requests, $module_option;
+        }
+        elsif ( $module_option eq 'actiumfm' ) {
+            require Actium::Cmd::Config::ActiumFM;
+            my @opts = Actium::Cmd::Config::ActiumFM::options($env);
+            unshift @option_requests, @opts;
+        }
+
+    } 
+    # that adds the option code, but it needs to actually use
+    # the option and put the result in $env (or something)
 
     unshift @option_requests, @module_options;
 
