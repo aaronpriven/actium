@@ -16,7 +16,7 @@ const my $EX_USAGE       => 64;              # from "man sysexits"
 const my $EX_SOFTWARE    => 70;
 const my $COMMAND_PREFIX => 'Actium::Cmd';
 
-const my $FALLBACK_COLUMNS => 80;
+const my $FALLBACK_COLUMNS     => 80;
 const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
 const my $SUBCOMMAND_SEPARATOR => ( $SPACE x 2 );
 
@@ -64,7 +64,8 @@ my $mainhelp_cr = sub {
 };
 
 my $get_module_cr = sub {
-    my $subcommand  = shift;
+    my $subcommand = shift;
+
     my %module_of   = %{ +shift };
     my $system_name = shift;
 
@@ -178,6 +179,8 @@ sub BUILD {
     my $self   = shift;
     my $module = $self->module;
 
+    $self->_init_terminal();
+
     $self->_get_options();
 
     if ( $self->help_requested or $self->option('help') ) {
@@ -278,9 +281,7 @@ sub _get_options {
     }
 
     $self->_set_options_r( \%options );
-    $self->_set_helpmsg_of_r(\%helpmsg_of);
-
- 
+    $self->_set_helpmsg_of_r( \%helpmsg_of );
 
     return;
 
@@ -325,58 +326,68 @@ sub _output_usage {
 }    ## <perltidy> end sub output_usage
 
 sub _handle_options {
-     
+
     # these are options set here as opposed to in the submodules
-    
+
     my $self = shift;
-    
+
     $self->crier->set_maxdepth(0) if $self->option('quiet');
     $self->crier->use_color if $self->option('termcolor');
     $self->crier->hide_progress unless $self->option('progress');
 
-    if ( $self->option('_stacktrace')) {
+    if ( $self->option('_stacktrace') ) {
         ## no critic (RequireLocalizedPunctuationVars)
         $SIG{'__WARN__'} = \&_stacktrace;
         $SIG{'__DIE__'}  = \&_stacktrace;
         ## use critic
     }
-    
-    
-}
 
+}
 
 ##### TERMINAL AND SIGNAL FUNCTIONS #####
 
 sub _init_terminal {
 
+    my $self = shift;
+
     ## no critic (RequireLocalizedPunctuationVars)
-    $SIG{'WINCH'} = \&_set_width;
-    $SIG{'INT'}   = \&_terminate;
+    #$SIG{'WINCH'} = \&_set_width;
+    #$SIG{'INT'}   = \&_terminate;
+    $SIG{'WINCH'} = sub {
+        $self->crier->set_column_width( $term_width_cr->() );
+    };
+    $SIG{'INT'} = sub {
+        my $signal = shift;
+        $self->crier->text("Caught SIG$signal... Aborting program.");
+        exit 1;
+    };
     ## use critic
 
     _set_width();
     return;
 
-}
+} ## tidy end: sub _init_terminal
 
 sub _stacktrace {
     Carp::confess(@_);
     return;
 }
 
-sub _terminate {
-    my $signal = shift;
-    $crier->text("Caught SIG$signal... Aborting program.");
-    exit 1;
-}
-
-sub _set_width {
-    my $width = $term_width_cr->();
-    $crier->set_column_width($width);
-    return;
-}
+#sub _terminate {
+#    my $signal = shift;
+#    $crier->text("Caught SIG$signal... Aborting program.");
+#    exit 1;
+#}
+#
+#sub _set_width {
+#    my $width = $term_width_cr->();
+#    $crier->set_column_width($width);
+#    return;
+#}
 
 sub term_readline {
+    
+    my $self = shift;
 
     require IO::Prompter;    ### DEP ###
 
@@ -395,7 +406,7 @@ sub term_readline {
         $val = IO::Prompter::prompt( $prompt, '-stdio' );
     }
 
-    $crier->set_position(0);
+    $self->crier->set_position(0);
 
     return "$val";
     # stringify what would otherwise be a weird Contextual::Return value,
@@ -403,7 +414,9 @@ sub term_readline {
 
 } ## tidy end: sub term_readline
 
-1;
+
+################
+## Attributes
 
 sub _build_config {
     my $self       = shift;
@@ -442,7 +455,7 @@ has crier => (
     is      => 'ro',
     default => sub { default_crier() },
     isa     => 'Actium::O::Crier',
-    lazy => 1,
+    lazy    => 1,
 );
 
 sub _build_bin {
