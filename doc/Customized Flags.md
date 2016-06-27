@@ -382,7 +382,4 @@ already). Then it will ask if you want to convert the text to
 outlines (which our print shop will request). It will then save a
 PDF of each of the InDesign files and then use Illustrator to save
 each of those PDF files as EPS files. It will save them in the
-folder "PRINT" in the same folder where the InDesign file was
-located.
-
-Those EPS files can then be zipped and sent to the print shop.
+folder "SaveAsEPS" in the Desktop folder. Those EPS files can then be zipped and sent to the print shop.
