@@ -92,10 +92,16 @@ sub _build_values {
 
 sub value {
 	my $self     = shift;
-	my $section  = shift // '_';
-	my $property = shift;
+	
+   my %params = u::validate(
+        @_,
+        {   
+            section      => { type => 'Str' , default => '_'},
+            key         => { type => 'Str' },
+        });
+  	
 	my $ini_hoh  = $self->_values_r;
-	return $ini_hoh->{$section}{$property};
+	return $ini_hoh->{$params{section}}{$params{key}};
 }
 
 sub section {
