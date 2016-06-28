@@ -59,6 +59,12 @@ has 'muted' => (
     },
 );
 
+has 'silent' => (
+    isa     => 'Bool',
+    is      => 'ro',
+    default => 0,
+);
+
 has '_level' => (
     isa      => 'Int',
     is       => 'ro',
@@ -278,8 +284,9 @@ sub BUILD {
 
     my $level    = $self->_level + $self->_adjust_level;
     my $maxdepth = $self->_maxdepth;
+    my $silent = $self->silent;
 
-    if ( ( not defined $maxdepth ) or $level <= $maxdepth ) {
+    if ( not $silent and ( ! defined $maxdepth or $level <= $maxdepth )) {
 
         # if not s not hidden by maxdepth
         my $success = $self->_open($level);
