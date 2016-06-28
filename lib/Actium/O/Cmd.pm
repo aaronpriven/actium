@@ -10,9 +10,11 @@ use Actium::O::Files::Ini;
 use Getopt::Long('GetOptionsFromArray');    ### DEP ###
 use Text::Wrap;                             ### DEP ###
 use Term::ReadKey;                          ### DEP ###
+use File::HomeDir;                          ### DEP ###
 
 use Actium::Crier('default_crier');
 use Actium::O::Cmd::Option;
+use Actium::O::Folder;
 
 const my $EX_USAGE       => 64;              # from "man sysexits"
 const my $EX_SOFTWARE    => 70;
@@ -23,7 +25,7 @@ const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
 const my $SUBCOMMAND_SEPARATOR => ( $SPACE x 2 );
 
 const my %OPTION_PACKAGE_DISPATCH => ( map { $_ => ( '_' . $_ . '_package' ) }
-      (qw/default actiumfm flickr signup geonames signup+old/) );
+      (qw/default actiumfm flickr signup geonames signup_with_old/) );
 
 my $term_width_cr = sub {
     return (
@@ -46,6 +48,8 @@ around BUILDARGS => sub {
             sysenv      => { type => $PV_TYPE{HASHREF}, default => {%ENV} },
             subcommands => { type => $PV_TYPE{HASHREF} },
             argv        => { type => $PV_TYPE{ARRAYREF}, default => [@ARGV] },
+            home_folder =>
+              { type => $PV_TYPE{SCALAR}, default => File::HomeDir->my_home },
         }
     );
 
@@ -86,9 +90,10 @@ around BUILDARGS => sub {
         commandpath     => $params{commandpath},
         subcommand      => $subcommand // $EMPTY,
         _subcommands    => $params{subcommands},
-        _original_argv   => \@original_argv,
+        _original_argv  => \@original_argv,
         _help_requested => $help_requested,
         argv            => \@argv,
+        home_folder     => Actium::O::Folder->new( $params{home_folder} ),
     );
 
     return $class->$orig(%init_args);
@@ -252,12 +257,11 @@ sub _output_usage {
         next if $name =~ /\A_/s;
         my $displayname = sprintf '%*s -- ', $longest, "-$name";
 
-        say STDERR 
-            Text::Wrap::wrap(
-                $EMPTY_STR,
-                q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
-                $displayname . $description_of{$name}
-            );
+        say STDERR Text::Wrap::wrap(
+            $EMPTY_STR,
+            q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
+            $displayname . $description_of{$name}
+        );
 
     }
 
@@ -267,6 +271,12 @@ sub _output_usage {
 
 #################################
 ## Public Attributes and builders
+
+has home_folder => (
+    isa      => 'Actium::O::Folder',
+    is       => 'ro',
+    required => 1,
+);
 
 has config => (
     is      => 'ro',
@@ -343,7 +353,7 @@ sub _build_module {
     require_module($module) or die " Couldn't load module $module: $OS_ERROR";
     return $module;
 
-} ## tidy end: sub build_module
+} ## tidy end: sub _build_module
 
 has crier => (
     is      => 'ro',
@@ -374,25 +384,25 @@ has sysenv_r => (
 );
 
 has _original_argv_r => (
-    traits  => ['Array'],
-    isa     => 'ArrayRef[Str]',
-    is      => 'bare',
-    default => sub { [] },
+    traits   => ['Array'],
+    isa      => 'ArrayRef[Str]',
+    is       => 'bare',
+    default  => sub { [] },
     init_arg => '_original_argv',
-    handles => {
+    handles  => {
         _original_argv     => 'elements',
         _original_argv_idx => 'get',
     },
 );
 
 has argv_r => (
-    traits  => ['Array'],
-    isa     => 'ArrayRef[Str]',
-    is      => 'bare',
-    writer  => '_set_argv_r',
-    default => sub { [] },
+    traits   => ['Array'],
+    isa      => 'ArrayRef[Str]',
+    is       => 'bare',
+    writer   => '_set_argv_r',
+    default  => sub { [] },
     init_arg => 'argv',
-    handles => {
+    handles  => {
         argv     => 'elements',
         argv_idx => 'get',
     },
@@ -580,6 +590,224 @@ sub _default_package {
     );
 
 } ## tidy end: sub _default_package
+
+{
+
+    my ( $default_dbname, %config );
+    const my $CONFIG_SECTION => 'ActiumFM';
+
+    sub _actiumfm_package {
+
+        my $self   = shift;
+        my %config = $self->config->config_obj->section($CONFIG_SECTION);
+
+        require Actium::O::Files::ActiumFM;
+
+        has actiumdb => (
+            is      => 'ro',
+            builder => '_build_actiumdb',
+            isa     => 'Actium::O::Files::ActiumFM',
+            lazy    => 1,
+        );
+
+        const my $DBNAME_ENV      => 'ACTIUM_DBNAME';
+        const my $FALLBACK_DBNAME => 'ActiumFM';
+
+        $default_dbname = $self->sysenv($DBNAME_ENV) // $config{db_name}
+          // $FALLBACK_DBNAME;
+        return (
+
+            {   spec        => 'db_user=s',
+                description => 'User name to access Actium database'
+            },
+            {   spec        => 'db_password=s',
+                description => 'Password to access Actium database'
+            },
+            {   spec        => 'db_name=s',
+                description => 'Name of the database in the ODBC driver. '
+                  . qq[If not specified, will use "$default_dbname"],
+                $default_dbname,
+            }
+        );
+
+    } ## tidy end: sub _actiumfm_package
+
+    sub _build_actiumdb {
+        my $self = shift;
+
+        my %params;
+        foreach (qw(db_user db_password db_name)) {
+            $params{$_} = $self->option($_) // $config{$_};
+        }
+
+        $params{db_user}
+          //= $self->term_readline('User name to access Actium database:');
+
+        $params{db_password}
+          //= $self->term_readline( 'Password to access Actium database:', 1 );
+        $params{db_name} //= $default_dbname;
+
+        my $actium_db = Actium::O::Files::ActiumFM::->new(%params);
+        return $actium_db;
+
+    }
+
+}
+
+{
+
+    const my $BASE_ENV      => 'ACTIUM_BASE';
+    const my $SIGNUP_ENV    => 'ACTIUM_SIGNUP';
+    const my $OLDSIGNUP_ENV => 'ACTIUM_OLDSIGNUP';
+    const my $OLDBASE_ENV   => 'ACTIUM_OLDBASE';
+    const my $CACHE_ENV     => 'ACTIUM_CACHE';
+
+    my %defaults;
+    my %config;
+
+    const my $CONFIG_SECTION => 'Signup';
+
+    sub _signup_package {
+
+        my $self = shift;
+        %config = $self->config->section($CONFIG_SECTION);
+
+        require Actium::O::Folders::Signup;
+
+        has signup => (
+            is      => 'ro',
+            builder => '_build_signup',
+            isa     => 'Actium::O::Folders::Signup',
+            lazy    => 1,
+        );
+
+        my $last_resort_base
+          = File::Spec->catdir( $self->bin->path, File::Spec->updir(),
+            'signups' );
+
+        $defaults{BASE}
+          = ( $self->sysenv($BASE_ENV) // $config{base} // $last_resort_base );
+
+        $defaults{SIGNUP}
+          = ( $self->sysenv($SIGNUP_ENV) // $config{signup} );
+
+        $defaults{CACHE} = $self->sysenv($CACHE_ENV) // $config{cache}
+          // $self->home_folder->subfolder_path( $self->system_name );
+
+        my $signup_default_text
+          = (
+            not defined( $defaults{SIGNUP} )
+              or $defaults{SIGNUP} eq $EMPTY_STR
+          )
+          ? $EMPTY_STR
+          : qq<. If not specified, will use "$defaults{SIGNUP}">;
+          
+        my $cache_default_text = ' If not specified, will use ' . 
+             qq{"$defaults{CACHE}"};
+        
+        #my $cache_default_text = ' If not specified, will use '
+        #  . (
+        #    defined( $defaults{CACHE} )
+        #    ? qq{"$defaults{CACHE}"}
+        #    : 'the location of the files being cached'
+        #  );
+
+        return (
+            {   spec => 'base=s',
+                description =>
+                  'Base folder (normally [something]/Actium/signups). '
+                  . qq<If not specified, will use "$defaults{BASE}">,
+                default => $defaults{BASE},
+            },
+            {   spec => 'signup=s',
+                description =>
+                  'Signup. This is the subfolder under the base folder. '
+                  . qq<Typically something like "f08" (meaning Fall 2008)>
+                  . $signup_default_text,
+                default => $defaults{SIGNUP},
+            },
+            {   spec => 'cache=s',
+                description =>
+                  'Cache folder. Files (like SQLite files) that cannot '
+                  . 'be stored on network filesystems are stored here.'
+                  . $cache_default_text,
+                default => $defaults{CACHE},
+            },
+        );
+    } ## tidy end: sub _signup_package
+
+    sub _signup_with_old_package {
+        my $self = shift;
+
+        my %signup_specs = $self->_signup_package;
+
+        has oldsignup => (
+            is      => 'ro',
+            builder => '_build_oldsignup',
+            isa     => 'Actium::O::Folders::Signup',
+            lazy    => 1,
+        );
+
+        $defaults{OLDSIGNUP}
+          = ( $self->sysenv($OLDSIGNUP_ENV) // $config{oldsignup} );
+
+        my $oldsignup_default_text
+          = (
+            not defined( $defaults{OLDSIGNUP} )
+              or $defaults{OLDSIGNUP} eq $EMPTY_STR
+          )
+          ? $EMPTY_STR
+          : qq<. If not specified, will use "$defaults{OLDSIGNUP}">;
+
+        return (
+            %signup_specs,
+            {   spec => 'oldsignup|o=s',
+                description =>
+                  'The older signup, to be compared with the current signup'
+                  . $oldsignup_default_text,
+                default => $defaults{OLDSIGNUP},
+            },
+            {   spec => 'oldbase|ob=s',
+                description =>
+                  'The base folder to be used for the older signup.'
+                  . ' If not specified, will be the same as -base',
+            },
+
+        );
+    } ## tidy end: sub _signup_with_old_package
+
+}
+
+sub _build_signup {
+
+    my $self = shift;
+
+    if ( not defined $self->option('signup') ) {
+        croak 'No signup specified in ' . $self->subcommand;
+    }
+
+    my %params = map { $_ => $self->option($_) } qw/base signup cache/;
+
+    return Actium::O::Folders::Signup::->new(%params);
+
+}
+
+sub _build_oldsignup {
+
+    my $self = shift;
+
+    if ( not defined $self->option('signup') ) {
+        croak 'No old signup specified in ' . $self->subcommand;
+    }
+    my %params = {
+        base => ( $self->option('oldbase') // $self->option('base') ),
+        signup => $self->option('oldsignup'),
+        cache  => $self->option('cache'),
+    };
+
+    return Actium::O::Folders::Signup::->new(%params);
+
+}
 
 1;
 
