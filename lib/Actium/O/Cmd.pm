@@ -22,7 +22,7 @@ const my $FALLBACK_COLUMNS     => 80;
 const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
 const my $SUBCOMMAND_SEPARATOR => ( $SPACE x 2 );
 
-const my %OPTION_PACKAGE_DISPATCH => ( map { $_ => ('_' . $_ . '_package') }
+const my %OPTION_PACKAGE_DISPATCH => ( map { $_ => ( '_' . $_ . '_package' ) }
       (qw/default actiumfm flickr signup geonames signup+old/) );
 
 my $term_width_cr = sub {
@@ -82,10 +82,11 @@ around BUILDARGS => sub {
     # delete 'help' from args
 
     my %init_args = (
-        %params{qw/sysenv commmandpath system_name/},
-        subcommand => $subcommand // 'help',
+        %params{qw/sysenv system_name/},
+        commandpath     => $params{commandpath},
+        subcommand      => $subcommand // $EMPTY,
         _subcommands    => $params{subcommands},
-        original_argv   => \@original_argv,
+        _original_argv   => \@original_argv,
         _help_requested => $help_requested,
         argv            => \@argv,
     );
@@ -146,16 +147,9 @@ sub _init_terminal {
         exit 1;
     };
 
-    $self->_set_width();
+    $self->crier->set_column_width( $term_width_cr->() );
     return;
 
-}
-
-sub _set_width {
-    my $self  = shift;
-    my $width = $term_width_cr->();
-    $self->crier->set_column_width($width);
-    return;
 }
 
 sub term_readline {
@@ -205,13 +199,14 @@ sub _mainhelp {
         }
     );
 
-    my $system_name = $self->system_name;
+    #my $system_name = $self->system_name;
+    my $command = $self->command;
 
     my $helptext = $params{error} ? "$params{error}\n" : $EMPTY;
 
-    $helptext .= "Subcommands available for $system_name:\n";
+    $helptext .= "Subcommands available for $command:\n";
 
-    my @subcommands = $self->subcommand_names;
+    my @subcommands = $self->_subcommand_names;
 
     my $width = $term_width_cr->() - 2;
 
@@ -246,7 +241,7 @@ sub _output_usage {
     my $longest = 1 + u::max( map { length($_) } keys %description_of );
     # add one for the hyphen
 
-    $self->crier->text('Options:');
+    say STDERR 'Options:';
 
     const my $HANGING_INDENT_PADDING => 4;
     ## no critic (Variables::ProhibitPackageVars)
@@ -254,16 +249,15 @@ sub _output_usage {
     ## use critic
 
     foreach my $name ( sort keys %description_of ) {
-        next if /\A_/s;
-        my $displayname = sprintf '%*s -- ', $longest, "-$_";
+        next if $name =~ /\A_/s;
+        my $displayname = sprintf '%*s -- ', $longest, "-$name";
 
-        $self->crier->text(
+        say STDERR 
             Text::Wrap::wrap(
                 $EMPTY_STR,
                 q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
-                $displayname . $description_of{$_}
-            )
-        );
+                $displayname . $description_of{$name}
+            );
 
     }
 
@@ -313,7 +307,7 @@ has module => (
     builder => '_build_module',
 );
 
-sub build_module {
+sub _build_module {
     my $self       = shift;
     my $subcommand = $self->subcommand;
 
@@ -376,6 +370,19 @@ has sysenv_r => (
     is       => 'bare',
     required => 1,
     handles  => { sysenv => 'get', },
+    init_arg => 'sysenv',
+);
+
+has _original_argv_r => (
+    traits  => ['Array'],
+    isa     => 'ArrayRef[Str]',
+    is      => 'bare',
+    default => sub { [] },
+    init_arg => '_original_argv',
+    handles => {
+        _original_argv     => 'elements',
+        _original_argv_idx => 'get',
+    },
 );
 
 has argv_r => (
@@ -384,6 +391,7 @@ has argv_r => (
     is      => 'bare',
     writer  => '_set_argv_r',
     default => sub { [] },
+    init_arg => 'argv',
     handles => {
         argv     => 'elements',
         argv_idx => 'get',
@@ -439,10 +447,11 @@ has _help_requested => (
 
 has _subcommands_r => (
     traits   => ['Hash'],
-    isa      => 'HashRef[Str|[ScalarRef[Str]]',
+    isa      => 'HashRef[Str|ScalarRef[Str]]',
     is       => 'ro',
     required => 1,
-    handles  => { subcommands => 'keys' },
+    init_arg => '_subcommands',
+    handles  => { _subcommands => 'keys' },
 );
 
 sub _subcommand_names {
@@ -456,7 +465,7 @@ sub _subcommand_names {
 }
 
 has _option_obj_r => (
-    traits  => ['Array'],
+    traits  => ['Hash'],
     isa     => 'HashRef[Actium::O::Cmd::Option]',
     is      => 'bare',
     lazy    => 1,
@@ -518,8 +527,6 @@ sub _build_option_objs {
     for my $obj (@opt_objs) {
         my $name    = $obj->name;
         my @aliases = $obj->aliases;
-
-        $opt_obj_of{$name} = $obj;
 
         for my $this_name ( $name, @aliases ) {
             if ( exists $opt_obj_of{$this_name} ) {
