@@ -10,7 +10,7 @@ use Actium::O::Cmd;
 
 our $VERSION = 0.011;
 
-Actium::Cmd::run(
+Actium::O::Cmd::->new(
     commandpath => $0,
     system_name => 'actium',
     subcommands => {
