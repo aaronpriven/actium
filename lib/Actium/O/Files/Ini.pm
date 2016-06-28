@@ -8,116 +8,116 @@
 
 package Actium::O::Files::Ini 0.010;
 
-use Actium::Moose; 
+use Actium::Moose;
 use Actium::Types ('ActiumFolderLike');
 
-use File::HomeDir; ### DEP ###
-use Config::Tiny; ### DEP ###
+use File::HomeDir;    ### DEP ###
+use Config::Tiny;     ### DEP ###
 
 around BUILDARGS => sub {
-	my $orig  = shift;
-	my $class = shift;
-	
-	my %args;
+    my $orig  = shift;
+    my $class = shift;
 
-	# one arg, hashref: args are in hashref
-	# one arg, not hashref: one arg is filename
-	# more than one arg: args are hash
-	
-	if ( @_ == 1 ) {
-		if ( u::reftype $_[0] and u::reftype $_[0] eq 'HASH' ) {
-			%args = %{ $_[0] };
-		}
-		else {
-			%args = ( filename => $_[0] );
-		}
-	}
-	else {
-		%args = (@_);
-	}
+    my %args;
 
-	#$args{folder} //= $ENV{HOME};
-	$args{folder} //= File::HomeDir::->my_home;
+    # one arg, hashref: args are in hashref
+    # one arg, not hashref: one arg is filename
+    # more than one arg: args are hash
 
-	return $class->$orig(%args);
+    if ( @_ == 1 ) {
+        if ( u::reftype $_[0] and u::reftype $_[0] eq 'HASH' ) {
+            %args = %{ $_[0] };
+        }
+        else {
+            %args = ( filename => $_[0] );
+        }
+    }
+    else {
+        %args = (@_);
+    }
+
+    #$args{folder} //= $ENV{HOME};
+    $args{folder} //= File::HomeDir::->my_home;
+
+    return $class->$orig(%args);
 
 };
 
 has 'filename' => (
-   isa => 'Str',
-   is => 'ro',
+    isa => 'Str',
+    is  => 'ro',
 );
 
 has 'folder' => (
-	isa    => ActiumFolderLike,
-	is     => 'ro',
-	coerce => 1,
+    isa    => ActiumFolderLike,
+    is     => 'ro',
+    coerce => 1,
 );
 
 has 'filespec' => (
-	is       => 'ro',
-	init_arg => undef,
-	builder  => '_build_filespec',
-	lazy => 1,
+    is       => 'ro',
+    init_arg => undef,
+    builder  => '_build_filespec',
+    lazy     => 1,
 );
 
 sub _build_filespec {
-	my $self     = shift;
-	my $folder   = $self->folder;
-	my $filespec = $folder->make_filespec( $self->filename );
-	return $filespec;
+    my $self     = shift;
+    my $folder   = $self->folder;
+    my $filespec = $folder->make_filespec( $self->filename );
+    return $filespec;
 }
 
 has '_values_r' => (
-	is      => 'ro',
-	isa     => 'HashRef[HashRef[Str]]',
-	lazy    => 1,
-	builder => '_build_values',
+    is      => 'ro',
+    isa     => 'HashRef[HashRef[Str]]',
+    lazy    => 1,
+    builder => '_build_values',
 );
 
 sub _build_values {
-	my $self    = shift;
-	my $config = Config::Tiny::->read( $self->filespec );
-	if (not defined $config) {
-	    my $errstr = Config::Tiny::->errstr ;
-	    if ($errstr =~ /does not exist/i or $errstr =~ /no such file/i) {
-	       return +{ '_' => +{} }
-	    }
-	    croak $errstr;
-	}
-	my $ini_hoh = { %{$config} };
-	# shallow clone, in order to get an unblessed copy
-	return $ini_hoh;
+    my $self   = shift;
+    my $config = Config::Tiny::->read( $self->filespec );
+    if ( not defined $config ) {
+        my $errstr = Config::Tiny::->errstr;
+        if ( $errstr =~ /does not exist/i or $errstr =~ /no such file/i ) {
+            return +{ '_' => +{} };
+        }
+        croak $errstr;
+    }
+    my $ini_hoh = { %{$config} };
+    # shallow clone, in order to get an unblessed copy
+    return $ini_hoh;
 }
 
 sub value {
-	my $self     = shift;
-	
-   my %params = u::validate(
+    my $self = shift;
+
+    my %params = u::validate(
         @_,
-        {   
-            section      => { type => 'Str' , default => '_'},
-            key         => { type => 'Str' },
-        });
-  	
-	my $ini_hoh  = $self->_values_r;
-	return $ini_hoh->{$params{section}}{$params{key}};
+        {   section => { type => 'Str', default => '_' },
+            key     => { type => 'Str' },
+        }
+    );
+
+    my $ini_hoh = $self->_values_r;
+    return $ini_hoh->{ $params{section} }{ $params{key} };
 }
 
 sub section {
-	my $self    = shift;
-	my $section = shift // '_';
-	my $ini_hoh = $self->_values_r;
-	if ( exists $ini_hoh->{$section} ) {
-		return wantarray ? %{ $ini_hoh->{$section} } : $ini_hoh->{$section};
-	}
-	return;
+    my $self    = shift;
+    my $section = shift // '_';
+    my $ini_hoh = $self->_values_r;
+    if ( exists $ini_hoh->{$section} ) {
+        return wantarray ? %{ $ini_hoh->{$section} } : $ini_hoh->{$section};
+    }
+    return;
 }
 
 sub sections {
-	my $self    = shift;
-	my $ini_hoh = $self->_values_r;
-	return keys %{$ini_hoh};
+    my $self    = shift;
+    my $ini_hoh = $self->_values_r;
+    return keys %{$ini_hoh};
 }
 
 1;
