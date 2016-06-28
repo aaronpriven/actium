@@ -433,6 +433,10 @@ sub cry_method {
             push @args, $_;
         }
     }
+    
+    if (exists $opts{silent}) {
+        $opts{muted} = 1;
+    }
 
     if (    @args == 1
         and defined( u::reftype( $args[0] ) )
@@ -480,7 +484,7 @@ sub cry_method {
     $cry->d_unk( { reason => 'Cry error (cry object not saved)' } );
 
     # void context - close immediately
-    return;    # only to make perlcritic happy
+    return; 
 
 } ## tidy end: sub cry
 
@@ -511,7 +515,7 @@ sub last_cry_method {
     if ( $self->cry_level == 0 ) {
 
         # caller's subroutine name
-        $cry = $self->cry( { muted => 1, closestat => 'UNK' } );
+        $cry = $self->cry( { silent => 1, closestat => 'UNK' } );
     }
     else {
         $cry = $self->_last_cry;
@@ -1202,7 +1206,7 @@ with "UNK" severity, and will display 'Cry error (cry object not saved)'.
 =head3 $crier->text()
 
 This invokes the C<text> object method on the deepest open cry.
-If no cry is open, opens a muted cry.
+If no cry is open, opens a silent cry.
 
 =head2 Cry Object Methods
 
@@ -1704,6 +1708,21 @@ This attribute determines whether C<< $cry->over >> and C<< $cry->prog >>
 display anything. If false, these don't do anything. This is useful
 for turning these off via the command line, especially in circumstances 
 where certain dumb IDE consoles can't backspace.
+
+=head3 silent
+
+=over
+
+=item I<silent> option to C<cry>
+
+=back
+
+Set this option to a true value to have the cry both begin and close out 
+silently. It will not display the opentext, and it will set the I<muted> 
+option for this cry.
+
+It might seem pointless, but since C<text> calls are only valid inside a cry,
+a silent cry is the only way to allow for C<text> calls before any cry is issued.
 
 =head3 step
 
