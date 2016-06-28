@@ -7,10 +7,12 @@ use Actium::Moose;
 use FindBin (qw($Bin));
 use Actium::O::Files::Ini;
 
-use Getopt::Long;    ### DEP ###
+use Getopt::Long('GetOptionsFromArray');    ### DEP ###
+use Text::Wrap;                             ### DEP ###
+use Term::ReadKey;                          ### DEP ###
+
 use Actium::Crier('default_crier');
-use Text::Wrap;       ### DEP ###
-use Term::ReadKey;    ### DEP ###
+use Actium::O::Cmd::Option;
 
 const my $EX_USAGE       => 64;              # from "man sysexits"
 const my $EX_SOFTWARE    => 70;
@@ -20,6 +22,9 @@ const my $FALLBACK_COLUMNS     => 80;
 const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
 const my $SUBCOMMAND_SEPARATOR => ( $SPACE x 2 );
 
+const my %OPTION_PACKAGE_DISPATCH => ( map { $_ => ('_' . $_ . '_package') }
+      (qw/default actiumfm flickr signup geonames signup+old/) );
+
 my $term_width_cr = sub {
     return (
         eval { ( Term::ReadKey::GetTerminalSize() )[0]; }
@@ -27,79 +32,8 @@ my $term_width_cr = sub {
     );
 };
 
-##### BUILDARGS and associated routines
-
-my $mainhelp_cr = sub {
-    my %params      = @_;
-    my %module_of   = %{ $params{module_of} };
-    my $status      = $params{status} // 0;
-    my $error       = $params{error};
-    my $system_name = $params{system_name};
-    my $helptext    = $EMPTY_STR;
-
-    if ($error) {
-        $helptext .= "$error\n";
-    }
-
-    $helptext .= "Subcommands available for $system_name:\n";
-
-    my @subcommands
-      = grep { not is_ref( $module_of{$_} ) } sort keys %module_of;
-
-    my $width = $term_width_cr->() - 2;
-
-    require Actium::O::2DArray;
-    ( undef, \my @lines ) = Actium::O::2DArray->new_like_ls(
-        array     => \@subcommands,
-        width     => $width,
-        separator => ($SUBCOMMAND_SEPARATOR)
-    );
-
-    say $helptext, $SUBCOMMAND_PADDING,
-      join( ( "\n" . $SUBCOMMAND_PADDING ), @lines )
-      or die "Can't output help text: $OS_ERROR";
-
-    exit $status;
-
-};
-
-my $get_module_cr = sub {
-    my $subcommand = shift;
-
-    my %module_of   = %{ +shift };
-    my $system_name = shift;
-
-    my $referred;
-    while ( exists( $module_of{$subcommand} )
-        and u::is_ref( $module_of{$subcommand} ) )
-    {
-        $subcommand = ${ $module_of{$subcommand} };
-        $referred   = 1;
-    }
-
-    if ( not exists $module_of{$subcommand} ) {
-        if ($referred) {
-            $mainhelp_cr->(
-                module_of   => \%module_of,
-                system_name => $system_name,
-                status      => $EX_SOFTWARE,
-                error =>
-                  "Internal error (bad reference) in subcommand $subcommand."
-            );
-        }
-        else {
-            $mainhelp_cr->(
-                module_of   => \%module_of,
-                system_name => $system_name,
-                status      => $EX_USAGE,
-                error       => "Unrecognized subcommand $subcommand."
-            );
-        }
-    }
-
-    return "${COMMAND_PREFIX}::$module_of{$subcommand}";
-
-};
+###############
+##### BUILDARGS
 
 around BUILDARGS => sub {
     my $orig  = shift;
@@ -108,9 +42,10 @@ around BUILDARGS => sub {
     my %params = u::validate(
         @_,
         {   system_name => { type => $PV_TYPE{SCALAR} },
-            subcommands => { type => $PV_TYPE{HASHREF} },
             commandpath => { type => $PV_TYPE{SCALAR} },
-            argv        => { type => $PV_TYPE{ARRAYREF} },
+            sysenv      => { type => $PV_TYPE{HASHREF}, default => {%ENV} },
+            subcommands => { type => $PV_TYPE{HASHREF} },
+            argv        => { type => $PV_TYPE{ARRAYREF}, default => [@ARGV] },
         }
     );
 
@@ -125,12 +60,12 @@ around BUILDARGS => sub {
     }
     ## use critic
 
-    my @argv = @{ $params{argv} };    # intentional copy
+    my @argv = @original_argv;    # intentional copy
     my ( $help_requested, $help_arg_index, $subcommand );
 
     if (@argv) {
         for my $i ( 0 .. $#argv ) {
-            if ( u::feq( $argv[$i], 'help' ) ) {
+            if ( $argv[$i] =~ /-?help/i ) {
                 $help_requested = 1;
                 $help_arg_index = $i;
                 next;
@@ -138,52 +73,43 @@ around BUILDARGS => sub {
             if ( $argv[$i] !~ /\A -/sx ) {
                 $subcommand = splice( @argv, $i, 1 );
                 # remove subcommand from args
-                last;
+                last;    # stop after first command found
             }
         }
     }
 
-    if ( not $subcommand ) {
-        $mainhelp_cr->(
-            module_of   => $params{subcommands},
-            system_name => $params{system_name},
-        );
-    }
-
     splice( @argv, $help_arg_index, 1 ) if $help_arg_index;
-    # delete 'help'
-
-    my $module = $get_module_cr->(
-        $subcommand, $params{subcommands}, $params{system_name}
-    );
-
-    require_module($module) or die " Couldn't load module $module: $OS_ERROR";
+    # delete 'help' from args
 
     my %init_args = (
-        commandpath    => $params{commandpath},
-        subcommand     => $subcommand,
-        system_name    => $params{system_name},
-        module         => $module,
-        original_argv  => \@original_argv,
-        help_requested => $help_requested,
-        argv           => \@argv,
+        %params{qw/sysenv commmandpath system_name/},
+        subcommand => $subcommand // 'help',
+        _subcommands    => $params{subcommands},
+        original_argv   => \@original_argv,
+        _help_requested => $help_requested,
+        argv            => \@argv,
     );
 
-    return $class->$orig->(%init_args);
+    return $class->$orig(%init_args);
 
 };
 
-#### BUILD and associated methods
+###############
+#### BUILD
 
 sub BUILD {
-    my $self   = shift;
-    my $module = $self->module;
+    my $self       = shift;
+    my $subcommand = $self->subcommand;
 
     $self->_init_terminal();
 
-    $self->_get_options();
+    if ( not $subcommand ) {
+        $self->_mainhelp();
+    }
 
-    if ( $self->help_requested or $self->option('help') ) {
+    my $module = $self->module;
+
+    if ( $self->_help_requested or $self->option('help') ) {
         if ( $module->can('HELP') ) {
             $module->HELP($self);
         }
@@ -193,166 +119,24 @@ sub BUILD {
         $self->_output_usage();
     }
     else {
-        $self->_handle_options;
         $module->START($self);
     }
 
 } ## tidy end: sub BUILD
 
-sub _get_options {
+##### TERMINAL AND SIGNAL FUNCTIONS #####
+
+sub be_quiet {
     my $self = shift;
-
-    my $module = $self->module;
-
-    my @option_requests = (
-        [ 'help|?', 'Displays this help message' ],
-        [   '_stacktrace',
-            'Provides lots of debugging information if there is an error. '
-              . 'Best ignored'
-        ],
-        [ 'quiet!',     'Does not display unnecessary information' ],
-        [ 'termcolor!', 'May display colors in terminal output.' ],
-        [   'progress!',
-            'May display dynamic progress indications. '
-              . 'On by default. Use -noprogress to turn off',
-            1,
-        ],
-    );
-
-    my @module_options;
-    @module_options = $module->OPTIONS($self) if $module->can('OPTIONS');
-
-    # add code for plugins here
-
-    foreach my $module_option ( reverse @module_options ) {
-
-        if ( u::is_arrayref($module_option) ) {
-            unshift @option_requests, $module_option;
-        }
-        elsif ( $module_option eq 'actiumfm' ) {
-            require Actium::Cmd::Config::ActiumFM;
-            my @opts = Actium::Cmd::Config::ActiumFM::options($self);
-            unshift @option_requests, @opts;
-        }
-
-    }
-    # that adds the option code, but it needs to actually use
-    # the option and put the result in $env (or something)
-
-    unshift @option_requests, @module_options;
-
-    my ( %options, @option_specs, %callback_of, %helpmsg_of );
-
-    for my $optionrequest_r (@option_requests) {
-        my ( $option_spec, $option_help, $callbackordefault )
-          = @{$optionrequest_r};
-        push @option_specs, $option_spec;
-
-        my $allnames   = $option_spec =~ s/( [\w ? \- | ] + ) .*/$1/rsx;
-        my @splitnames = split( /[|]/s, $allnames );
-        my $mainname   = shift @splitnames;
-
-        foreach my $optionname ( $mainname, @splitnames ) {
-            die "Attempt to add duplicate option or alias $optionname."
-              if ( exists $helpmsg_of{$optionname} );
-        }
-
-        $helpmsg_of{$mainname} = $option_help;
-        $helpmsg_of{$_} = "Same as -$mainname" foreach @splitnames;
-
-        if ( ref($callbackordefault) eq 'CODE' ) {
-            # it's a callback
-            $callback_of{$mainname} = $callbackordefault;
-        }
-        else {
-            # it's a default value
-            $options{$mainname} = $callbackordefault;
-        }
-
-    } ## tidy end: for my $optionrequest_r...
-
-    my $returnvalue = GetOptions( \%options, @option_specs );
-    die "Errors parsing command-line options.\n" unless $returnvalue;
-
-    foreach my $thisoption ( keys %options ) {
-        if ( exists $callback_of{$thisoption} ) {
-            &{ $callback_of{$thisoption} }( $options{$thisoption} );
-        }
-    }
-
-    $self->_set_options_r( \%options );
-    $self->_set_helpmsg_of_r( \%helpmsg_of );
-
-    return;
-
-} ## tidy end: sub _get_options
-
-sub _output_usage {
-
-    my %helpmessages = @_;
-
-    say "\nOptions:"
-      or carp "Can't output help text : $OS_ERROR";
-
-    my $longest = 0;
-
-    foreach my $option ( keys %helpmessages ) {
-        $longest = length($option) if $longest < length($option);
-    }
-
-    $longest++;    # add one for the hyphen in front
-
-    const my $HANGING_INDENT_PADDING => 4;
-    ## no critic (Variables::ProhibitPackageVars)
-    local ($Text::Wrap::columns) = $term_width_cr->();
-    ## use critic
-
-    foreach ( sort keys %helpmessages ) {
-        next if /\A_/s;
-        my $optionname = sprintf '%*s -- ', $longest, "-$_";
-
-        say Text::Wrap::wrap (
-            $EMPTY_STR,
-            q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
-            $optionname . $helpmessages{$_}
-        );
-
-    }
-    print "\n"
-      or carp "Can't output help text : $OS_ERROR";
-
-    return;
-
-}    ## <perltidy> end sub output_usage
-
-sub _handle_options {
-
-    # these are options set here as opposed to in the submodules
-
-    my $self = shift;
-
-    $self->crier->set_maxdepth(0) if $self->option('quiet');
-    $self->crier->use_color if $self->option('termcolor');
-    $self->crier->hide_progress unless $self->option('progress');
-
-    if ( $self->option('_stacktrace') ) {
-        ## no critic (RequireLocalizedPunctuationVars)
-        $SIG{'__WARN__'} = \&_stacktrace;
-        $SIG{'__DIE__'}  = \&_stacktrace;
-        ## use critic
-    }
+    $self->crier->set_maxdepth(0);
+    $self->_set_option( 'quiet', 1 );
 
 }
-
-##### TERMINAL AND SIGNAL FUNCTIONS #####
 
 sub _init_terminal {
 
     my $self = shift;
 
-    ## no critic (RequireLocalizedPunctuationVars)
-    #$SIG{'WINCH'} = \&_set_width;
-    #$SIG{'INT'}   = \&_terminate;
     $SIG{'WINCH'} = sub {
         $self->crier->set_column_width( $term_width_cr->() );
     };
@@ -361,32 +145,21 @@ sub _init_terminal {
         $self->crier->text("Caught SIG$signal... Aborting program.");
         exit 1;
     };
-    ## use critic
 
-    _set_width();
+    $self->_set_width();
     return;
 
-} ## tidy end: sub _init_terminal
+}
 
-sub _stacktrace {
-    Carp::confess(@_);
+sub _set_width {
+    my $self  = shift;
+    my $width = $term_width_cr->();
+    $self->crier->set_column_width($width);
     return;
 }
 
-#sub _terminate {
-#    my $signal = shift;
-#    $crier->text("Caught SIG$signal... Aborting program.");
-#    exit 1;
-#}
-#
-#sub _set_width {
-#    my $width = $term_width_cr->();
-#    $crier->set_column_width($width);
-#    return;
-#}
-
 sub term_readline {
-    
+
     my $self = shift;
 
     require IO::Prompter;    ### DEP ###
@@ -399,8 +172,12 @@ sub term_readline {
     print "\n";
 
     if ($hide) {
-        $val
-          = IO::Prompter::prompt( $prompt, -echo => '*', '-hNONE', '-stdio' );
+        $val = IO::Prompter::prompt(
+            $prompt,
+            -echo => '*',
+            '-hNONE',
+            '-stdio'
+        );
     }
     else {
         $val = IO::Prompter::prompt( $prompt, '-stdio' );
@@ -414,22 +191,88 @@ sub term_readline {
 
 } ## tidy end: sub term_readline
 
+#############
+#### HELP
 
-################
-## Attributes
+sub _mainhelp {
 
-sub _build_config {
-    my $self       = shift;
-    my $systemname = $self->system_name;
+    my $self = shift;
 
-    ## no critic (RequireExplicitInclusion)
-    # bug in RequireExplicitInclusion
-    my $config = Actium::O::Files::Ini::->new(".$systemname.ini");
+    my %params = u::validate(
+        @_,
+        {   error  => { type => $PV_TYPE{SCALAR}, default => $EMPTY },
+            status => { type => $PV_TYPE{SCALAR}, default => 0 },
+        }
+    );
+
+    my $system_name = $self->system_name;
+
+    my $helptext = $params{error} ? "$params{error}\n" : $EMPTY;
+
+    $helptext .= "Subcommands available for $system_name:\n";
+
+    my @subcommands = $self->subcommand_names;
+
+    my $width = $term_width_cr->() - 2;
+
+    require Actium::O::2DArray;
+    ( undef, \my @lines ) = Actium::O::2DArray->new_like_ls(
+        array     => \@subcommands,
+        width     => $width,
+        separator => ($SUBCOMMAND_SEPARATOR)
+    );
+
+    say $helptext, $SUBCOMMAND_PADDING,
+      join( ( "\n" . $SUBCOMMAND_PADDING ), @lines )
+      or die "Can't output help text: $OS_ERROR";
+
+    exit $params{status};
+
+} ## tidy end: sub _mainhelp
+
+sub _output_usage {
+
+    my $self = shift;
+
+    my @objs = $self->_option_objs;
+
+    my %description_of;
+    foreach my $obj (@objs) {
+        my $name = $obj->name;
+        $description_of{$name} = $obj->description;
+        $description_of{$_} = "Same as -$name" foreach $obj->aliases;
+    }
+
+    my $longest = 1 + u::max( map { length($_) } keys %description_of );
+    # add one for the hyphen
+
+    $self->crier->text('Options:');
+
+    const my $HANGING_INDENT_PADDING => 4;
+    ## no critic (Variables::ProhibitPackageVars)
+    local ($Text::Wrap::columns) = $term_width_cr->();
     ## use critic
 
-    return $config;
+    foreach my $name ( sort keys %description_of ) {
+        next if /\A_/s;
+        my $displayname = sprintf '%*s -- ', $longest, "-$_";
 
-}
+        $self->crier->text(
+            Text::Wrap::wrap(
+                $EMPTY_STR,
+                q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
+                $displayname . $description_of{$_}
+            )
+        );
+
+    }
+
+    return;
+
+}    ## <perltidy> end sub output_usage
+
+#################################
+## Public Attributes and builders
 
 has config => (
     is      => 'ro',
@@ -438,6 +281,13 @@ has config => (
     lazy    => 1,
 );
 
+sub _build_config {
+    my $self       = shift;
+    my $systemname = $self->system_name;
+    my $config     = Actium::O::Files::Ini::->new(".$systemname.ini");
+    return $config;
+}
+
 has bin => (
     isa     => 'Actium::O::Folder',
     is      => 'ro',
@@ -445,11 +295,61 @@ has bin => (
     lazy    => 1,
 );
 
-has [qw/commandpath subcommand system_name module/] => (
+sub _build_bin {
+    require Actium::O::Folder;
+    return Actium::O::Folder::->new($Bin);
+}
+
+has [qw/commandpath subcommand system_name/] => (
     isa      => 'Str',
     is       => 'ro',
     required => 1,
 );
+
+has module => (
+    isa     => 'Str',
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_module',
+);
+
+sub build_module {
+    my $self       = shift;
+    my $subcommand = $self->subcommand;
+
+    \my %subcommands = $self->_subcommands_r;
+
+    my $system_name = shift;
+
+    my $referred;
+    while ( exists( $subcommands{$subcommand} )
+        and u::is_ref( $subcommands{$subcommand} ) )
+    {
+        $subcommand = ${ $subcommands{$subcommand} };
+        $referred   = 1;
+    }
+
+    if ( not exists $subcommands{$subcommand} ) {
+        if ($referred) {
+            $self->_mainhelp(
+                status => $EX_SOFTWARE,
+                error  => "Internal error (bad reference) ' 
+                      . 'in subcommand $subcommand."
+            );
+        }
+        else {
+            $self->_mainhelp(
+                status => $EX_USAGE,
+                error  => "Unrecognized subcommand $subcommand."
+            );
+        }
+    }
+
+    my $module = "${COMMAND_PREFIX}::$subcommands{$subcommand}";
+    require_module($module) or die " Couldn't load module $module: $OS_ERROR";
+    return $module;
+
+} ## tidy end: sub build_module
 
 has crier => (
     is      => 'ro',
@@ -457,11 +357,6 @@ has crier => (
     isa     => 'Actium::O::Crier',
     lazy    => 1,
 );
-
-sub _build_bin {
-    require Actium::O::Folder;
-    return Actium::O::Folder::->new($Bin);
-}
 
 has command => (
     is      => 'ro',
@@ -476,17 +371,12 @@ sub _build_command {
 }
 
 has sysenv_r => (
-    traits  => ['Hash'],
-    isa     => 'HashRef[Str]',
-    is      => 'bare',
-    builder => '_build_sysenv',
-    lazy    => 1,
-    handles => { sysenv => 'get', },
+    traits   => ['Hash'],
+    isa      => 'HashRef[Str]',
+    is       => 'bare',
+    required => 1,
+    handles  => { sysenv => 'get', },
 );
-
-sub _build_sysenv {
-    return {%ENV};
-}
 
 has argv_r => (
     traits  => ['Array'],
@@ -504,8 +394,8 @@ has options_r => (
     traits  => ['Hash'],
     isa     => 'HashRef',
     is      => 'bare',
-    writer  => '_set_options_r',
-    default => sub { {} },
+    builder => '_build_options',
+    lazy    => 1,
     handles => {
         option        => 'get',
         _set_option   => 'set',
@@ -513,63 +403,183 @@ has options_r => (
     },
 );
 
-sub be_quiet {
+sub _build_options {
+    my $self         = shift;
+    my @objs         = $self->_option_objs;
+    my @option_specs = map { $_->spec } @objs;
+
+    my @argv = $self->argv;
+
+    my %options;
+    my $returnvalue = GetOptionsFromArray( \@argv, \%options, @option_specs );
+    die "Errors parsing command-line options.\n" unless $returnvalue;
+
+    foreach my $thisoption ( keys %options ) {
+        my $callback = $self->_option_obj_of($thisoption)->callback;
+        if ($callback) {
+            $callback->( $options{$thisoption} );
+        }
+    }
+
+    $self->_set_argv_r( \@argv );
+    # replace old argv with new one without options in it
+
+    return \%options;
+
+} ## tidy end: sub _build_options
+
+##########################################################
+## Private attributes (used in processing options, etc.)
+
+has _help_requested => (
+    isa     => 'Bool',
+    is      => 'ro',
+    default => 0,
+);
+
+has _subcommands_r => (
+    traits   => ['Hash'],
+    isa      => 'HashRef[Str|[ScalarRef[Str]]',
+    is       => 'ro',
+    required => 1,
+    handles  => { subcommands => 'keys' },
+);
+
+sub _subcommand_names {
+    my $self = shift;
+    \my %subcommands = $self->_subcommands_r;
+
+    return (
+        grep { not u::is_ref( $subcommands{$_} ) }
+        sort keys %subcommands
+    );
+}
+
+has _option_obj_r => (
+    traits  => ['Array'],
+    isa     => 'HashRef[Actium::O::Cmd::Option]',
+    is      => 'bare',
+    lazy    => 1,
+    builder => '_build_option_objs',
+    handles => {
+        _option_names  => 'keys',
+        _option_obj_of => 'get',
+        _option_objs   => 'values'
+    },
+);
+
+sub _build_option_objs {
+
+    my $self   = shift;
+    my $module = $self->module;
+
+    my @optionspecs = 'default';
+    push @optionspecs, $module->OPTIONS($self) if $module->can('OPTIONS');
+
+    my @opt_objs;
+    while (@optionspecs) {
+        my $optionspec = shift @optionspecs;
+
+        if ( u::is_hashref($optionspec) ) {
+            push @opt_objs, Actium::O::Cmd::Option->new($optionspec);
+        }
+        elsif ( u::is_arrayref($optionspec) ) {
+
+            my ( $spec, $description, $callbackordefault ) = @{$optionspec};
+
+            my %option_init = ( spec => $spec, description => $description );
+
+            if ( defined $callbackordefault ) {
+
+                my $key
+                  = u::is_coderef($callbackordefault) ? 'callback' : 'default';
+                $option_init{$key} = $callbackordefault;
+            }
+
+            push @opt_objs, Actium::O::Cmd::Option->( \%option_init );
+
+        }
+        else {
+            # option package
+            if ( not exists $OPTION_PACKAGE_DISPATCH{$optionspec} ) {
+                croak(  'Internal error. Invalid option package '
+                      . "$optionspec specified in "
+                      . $self->module );
+            }
+
+            my $dispatch = $OPTION_PACKAGE_DISPATCH{$optionspec};
+            unshift @optionspecs, $self->$dispatch;
+
+        }
+    } ## tidy end: while (@optionspecs)
+
+    my ( %opt_obj_of, %opt_truename_of );
+
+    for my $obj (@opt_objs) {
+        my $name    = $obj->name;
+        my @aliases = $obj->aliases;
+
+        $opt_obj_of{$name} = $obj;
+
+        for my $this_name ( $name, @aliases ) {
+            if ( exists $opt_obj_of{$this_name} ) {
+                croak
+                  "Internal error. Duplicate option $this_name specified in "
+                  . $self->module;
+            }
+        }
+
+        $opt_obj_of{$name} = $obj;
+
+    }
+
+    return \%opt_obj_of;
+
+} ## tidy end: sub _build_option_objs
+
+sub _default_package {
 
     my $self = shift;
-    $self->crier->set_maxdepth(0);
-    $self->_set_option( 'quiet', 1 );
 
-}
+    return (
+        {   spec        => 'help|?',
+            description => 'Displays this help message',
+        },
+        {   spec        => '_stacktrace',
+            description => 'Provides lots of debugging information if '
+              . 'there is an error.  Best ignored',
+            callback => sub {
+                if ( $_[0] ) {
+                    $SIG{'__WARN__'} = sub { Carp::confess(@_) };
+                    $SIG{'__DIE__'}  = sub { Carp::confess(@_) };
+                }
+            },
+        },
+        {   spec        => 'quiet!',
+            description => 'Does not display unnecessary information',
+            callback    => sub { $self->crier->set_maxdepth(0) if $_[0] }
+        },
+        {   spec        => 'termcolor!',
+            description => 'May display colors in terminal output.',
+            callback    => sub { $self->crier->use_color if $_[0] },
+        },
+        {   spec        => 'progress!',
+            description => 'May display dynamic progress indications. '
+              . 'On by default. Use -noprogress to turn off',
+            default  => 1,
+            callback => sub { $self->crier->hide_progress unless $_[0] },
+        },
+
+    );
+
+} ## tidy end: sub _default_package
 
 1;
 
 __END__
 
-Documentation originally from Actium::Term
-
-=over
-
-=item B<output_usage>
-
-This routine gets the help messages from B<Actium::Options::helpmessages()> 
-and displays them in a pretty manner. It is intended to be used from HELP 
-routines in modules.
-
-Help messages of options beginning with underscores (e.g., -_stacktrace) 
-are not displayed.
-
 Documentation from Actium::Options
 
-=head1 NAME
-
-Actium::Options - command-line options for the Actium system
-
-=head1 VERSION
-
-This documentation refers to Actium::Options version 0.001
-
-=head1 SYNOPSIS
-
-In a module:
-
- use Actium::Options qw(option add_option);
- 
- add_option ('sad'    , 'Makes the output sad'  );
- add_option ('angry!' , 'Makes the output angry');
- 
- sub emotion {
-  say 'Grr!!!' if option ('angry');
-  say 'Waa!!!' if option ('sad');
- }
-
-In a main program:
-
- use Actium::Options qw(add_option option init_options);
- add_option('verbose!','Unnecessary output will be presented');
- init_options() or croak 'Options could not be processed';
- print "Now processing..." if option('verbose');
- 
-=head1 DESCRIPTION
 
 Actium::Options is a wrapper for L<Getopt::Long|Getopt::Long>. 
 It contains routines designed to allow both main programs and 
@@ -750,7 +760,3 @@ FITNESS FOR A PARTICULAR PURPOSE.
 
 
 =cut
-
-
-
-
