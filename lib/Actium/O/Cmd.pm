@@ -4,15 +4,12 @@ package Actium::O::Cmd 0.011;
 # Actium::Cmd::Config::* modules
 
 use Actium::Moose;
-use FindBin (qw($Bin));
-use Actium::O::Files::Ini;
 
 use Getopt::Long('GetOptionsFromArray');    ### DEP ###
-use Text::Wrap;                             ### DEP ###
 use Term::ReadKey;                          ### DEP ###
-use File::HomeDir;                          ### DEP ###
 
 use Actium::Crier('default_crier');
+use Actium::O::Files::Ini;
 use Actium::O::Cmd::Option;
 use Actium::O::Folder;
 
@@ -25,7 +22,7 @@ const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
 const my $SUBCOMMAND_SEPARATOR => ( $SPACE x 2 );
 
 const my %OPTION_PACKAGE_DISPATCH => ( map { $_ => ( '_' . $_ . '_package' ) }
-      (qw/default actiumfm flickr signup geonames signup_with_old/) );
+      (qw/default actiumfm flickr geonames signup signup_with_old/) );
 
 my $term_width_cr = sub {
     return (
@@ -48,15 +45,25 @@ around BUILDARGS => sub {
             sysenv      => { type => $PV_TYPE{HASHREF}, default => {%ENV} },
             subcommands => { type => $PV_TYPE{HASHREF} },
             argv        => { type => $PV_TYPE{ARRAYREF}, default => [@ARGV] },
-            home_folder =>
-              { type => $PV_TYPE{SCALAR}, default => File::HomeDir->my_home },
+            home_folder => { type => $PV_TYPE{SCALAR}, required => 0 },
+            bin         => { type => $PV_TYPE{SCALAR}, required => 0 },
         }
     );
+
+    if ( not defined $params{home_folder} ) {
+        require File::HomeDir;    ### DEP ###
+        $params{home_folder} = File::HomeDir->my_home;
+    }
+    if ( not defined $params{bin} ) {
+        require FindBin;          ### DEP ###
+        no warnings 'once';
+        $params{bin} = $FindBin::Bin;
+    }
 
     my @original_argv = @{ $params{argv} };
 
     ## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
-    {    # scoping for "no warnings"
+    {                             # scoping for "no warnings"
         no warnings('once');
         if ( ( not @original_argv ) and $Actium::Eclipse::is_under_eclipse ) {
             @original_argv = Actium::Eclipse::get_command_line();
@@ -157,7 +164,7 @@ sub _init_terminal {
 
 }
 
-sub term_readline {
+sub prompt {
 
     my $self = shift;
 
@@ -188,7 +195,7 @@ sub term_readline {
     # stringify what would otherwise be a weird Contextual::Return value,
     # thank you Mr. Conway
 
-} ## tidy end: sub term_readline
+} ## tidy end: sub prompt
 
 #############
 #### HELP
@@ -248,8 +255,11 @@ sub _output_usage {
 
     say STDERR 'Options:';
 
+    require Text::Wrap;    ### DEP ###
+
     const my $HANGING_INDENT_PADDING => 4;
     ## no critic (Variables::ProhibitPackageVars)
+    no warnings 'once';
     local ($Text::Wrap::columns) = $term_width_cr->();
     ## use critic
 
@@ -293,16 +303,10 @@ sub _build_config {
 }
 
 has bin => (
-    isa     => 'Actium::O::Folder',
-    is      => 'ro',
-    builder => '_build_bin',
-    lazy    => 1,
+    isa      => 'Actium::O::Folder',
+    is       => 'ro',
+    required => 1,
 );
-
-sub _build_bin {
-    require Actium::O::Folder;
-    return Actium::O::Folder::->new($Bin);
-}
 
 has [qw/commandpath subcommand system_name/] => (
     isa      => 'Str',
@@ -422,15 +426,40 @@ has options_r => (
 );
 
 sub _build_options {
-    my $self         = shift;
-    my @objs         = $self->_option_objs;
-    my @option_specs = map { $_->spec } @objs;
+    my $self = shift;
+    my @objs = $self->_option_objs;
+
+    my @option_specs;
+    my %options;
+
+    foreach my $obj (@objs) {
+        push @option_specs, $obj->spec unless $obj->no_command;
+        if ( defined $obj->default ) {
+            $options{ $obj->name } = $obj->default;
+        }
+    }
 
     my @argv = $self->argv;
 
-    my %options;
     my $returnvalue = GetOptionsFromArray( \@argv, \%options, @option_specs );
     die "Errors parsing command-line options.\n" unless $returnvalue;
+    $self->_set_argv_r( \@argv );
+    # replace old argv with new one without options in it
+
+    foreach my $obj (@objs) {
+        my $name = $obj->name;
+
+        if ( not exists $options{$name} ) {
+            if ( $obj->fallback ) {
+                $options{$name} = $obj->fallback;
+            }
+            elsif ( $obj->prompt ) {
+                my $prompt = $obj->prompt =~ s/:*\z/:/r;
+                # add a colon if it's not already there
+                $options{$name} = $self->prompt( $prompt, $obj->prompthide );
+            }
+        }
+    }
 
     foreach my $thisoption ( keys %options ) {
         my $callback = $self->_option_obj_of($thisoption)->callback;
@@ -438,9 +467,6 @@ sub _build_options {
             $callback->( $options{$thisoption} );
         }
     }
-
-    $self->_set_argv_r( \@argv );
-    # replace old argv with new one without options in it
 
     return \%options;
 
@@ -500,13 +526,15 @@ sub _build_option_objs {
         my $optionspec = shift @optionspecs;
 
         if ( u::is_hashref($optionspec) ) {
+            $optionspec->{cmdenv} = $self;
             push @opt_objs, Actium::O::Cmd::Option->new($optionspec);
         }
         elsif ( u::is_arrayref($optionspec) ) {
 
             my ( $spec, $description, $callbackordefault ) = @{$optionspec};
 
-            my %option_init = ( spec => $spec, description => $description );
+            my %option_init
+              = ( cmdenv => $self, spec => $spec, description => $description );
 
             if ( defined $callbackordefault ) {
 
@@ -532,7 +560,7 @@ sub _build_option_objs {
         }
     } ## tidy end: while (@optionspecs)
 
-    my ( %opt_obj_of, %opt_truename_of );
+    my %opt_obj_of;
 
     for my $obj (@opt_objs) {
         my $name    = $obj->name;
@@ -554,6 +582,9 @@ sub _build_option_objs {
 
 } ## tidy end: sub _build_option_objs
 
+#######################
+### OPTION PACKAGES
+
 sub _default_package {
 
     my $self = shift;
@@ -565,25 +596,40 @@ sub _default_package {
         {   spec        => '_stacktrace',
             description => 'Provides lots of debugging information if '
               . 'there is an error.  Best ignored',
-            callback => sub {
+            config_section => 'Debug',
+            config_key     => 'stacktrace',
+            envvar         => 'STACKTRACE',
+            fallback       => 0,
+            callback       => sub {
                 if ( $_[0] ) {
                     $SIG{'__WARN__'} = sub { Carp::confess(@_) };
                     $SIG{'__DIE__'}  = sub { Carp::confess(@_) };
                 }
             },
         },
-        {   spec        => 'quiet!',
-            description => 'Does not display unnecessary information',
-            callback    => sub { $self->crier->set_maxdepth(0) if $_[0] }
+        {   spec           => 'quiet!',
+            envvar         => 'TERM_QUIET',
+            config_section => 'Terminal',
+            config_key     => 'quiet',
+            description    => 'Does not display unnecessary information',
+            callback       => sub { $self->crier->set_maxdepth(0) if $_[0] },
+            fallback       => 0,
         },
-        {   spec        => 'termcolor!',
-            description => 'May display colors in terminal output.',
-            callback    => sub { $self->crier->use_color if $_[0] },
+        {   spec           => 'termcolor!',
+            envvar         => 'TERM_COLOR',
+            description    => 'May display colors in terminal output.',
+            config_section => 'Terminal',
+            config_key     => 'color',
+            fallback       => 0,
+            callback       => sub { $self->crier->use_color if $_[0] },
         },
-        {   spec        => 'progress!',
-            description => 'May display dynamic progress indications. '
+        {   spec           => 'progress!',
+            envvar         => 'TERM_PROGRESS',
+            config_section => 'Terminal',
+            config_key     => 'progress',
+            description    => 'May display dynamic progress indications. '
               . 'On by default. Use -noprogress to turn off',
-            default  => 1,
+            fallback => 1,
             callback => sub { $self->crier->hide_progress unless $_[0] },
         },
 
@@ -591,221 +637,234 @@ sub _default_package {
 
 } ## tidy end: sub _default_package
 
-{
+### ActiumFM package
 
-    my ( $default_dbname, %config );
-    const my $CONFIG_SECTION => 'ActiumFM';
-
-    sub _actiumfm_package {
-
-        my $self   = shift;
-        my %config = $self->config->config_obj->section($CONFIG_SECTION);
-
-        require Actium::O::Files::ActiumFM;
-
-        has actiumdb => (
-            is      => 'ro',
-            builder => '_build_actiumdb',
-            isa     => 'Actium::O::Files::ActiumFM',
-            lazy    => 1,
-        );
-
-        const my $DBNAME_ENV      => 'ACTIUM_DBNAME';
-        const my $FALLBACK_DBNAME => 'ActiumFM';
-
-        $default_dbname = $self->sysenv($DBNAME_ENV) // $config{db_name}
-          // $FALLBACK_DBNAME;
-        return (
-
-            {   spec        => 'db_user=s',
-                description => 'User name to access Actium database'
-            },
-            {   spec        => 'db_password=s',
-                description => 'Password to access Actium database'
-            },
-            {   spec        => 'db_name=s',
-                description => 'Name of the database in the ODBC driver. '
-                  . qq[If not specified, will use "$default_dbname"],
-                $default_dbname,
-            }
-        );
-
-    } ## tidy end: sub _actiumfm_package
-
-    sub _build_actiumdb {
-        my $self = shift;
-
-        my %params;
-        foreach (qw(db_user db_password db_name)) {
-            $params{$_} = $self->option($_) // $config{$_};
-        }
-
-        $params{db_user}
-          //= $self->term_readline('User name to access Actium database:');
-
-        $params{db_password}
-          //= $self->term_readline( 'Password to access Actium database:', 1 );
-        $params{db_name} //= $default_dbname;
-
-        my $actium_db = Actium::O::Files::ActiumFM::->new(%params);
-        return $actium_db;
-
-    }
-
-}
-
-{
-
-    const my $BASE_ENV      => 'ACTIUM_BASE';
-    const my $SIGNUP_ENV    => 'ACTIUM_SIGNUP';
-    const my $OLDSIGNUP_ENV => 'ACTIUM_OLDSIGNUP';
-    const my $OLDBASE_ENV   => 'ACTIUM_OLDBASE';
-    const my $CACHE_ENV     => 'ACTIUM_CACHE';
-
-    my %defaults;
-    my %config;
-
-    const my $CONFIG_SECTION => 'Signup';
-
-    sub _signup_package {
-
-        my $self = shift;
-        %config = $self->config->section($CONFIG_SECTION);
-
-        require Actium::O::Folders::Signup;
-
-        has signup => (
-            is      => 'ro',
-            builder => '_build_signup',
-            isa     => 'Actium::O::Folders::Signup',
-            lazy    => 1,
-        );
-
-        my $last_resort_base
-          = File::Spec->catdir( $self->bin->path, File::Spec->updir(),
-            'signups' );
-
-        $defaults{BASE}
-          = ( $self->sysenv($BASE_ENV) // $config{base} // $last_resort_base );
-
-        $defaults{SIGNUP}
-          = ( $self->sysenv($SIGNUP_ENV) // $config{signup} );
-
-        $defaults{CACHE} = $self->sysenv($CACHE_ENV) // $config{cache}
-          // $self->home_folder->subfolder_path( $self->system_name );
-
-        my $signup_default_text
-          = (
-            not defined( $defaults{SIGNUP} )
-              or $defaults{SIGNUP} eq $EMPTY_STR
-          )
-          ? $EMPTY_STR
-          : qq<. If not specified, will use "$defaults{SIGNUP}">;
-          
-        my $cache_default_text = ' If not specified, will use ' . 
-             qq{"$defaults{CACHE}"};
-        
-        #my $cache_default_text = ' If not specified, will use '
-        #  . (
-        #    defined( $defaults{CACHE} )
-        #    ? qq{"$defaults{CACHE}"}
-        #    : 'the location of the files being cached'
-        #  );
-
-        return (
-            {   spec => 'base=s',
-                description =>
-                  'Base folder (normally [something]/Actium/signups). '
-                  . qq<If not specified, will use "$defaults{BASE}">,
-                default => $defaults{BASE},
-            },
-            {   spec => 'signup=s',
-                description =>
-                  'Signup. This is the subfolder under the base folder. '
-                  . qq<Typically something like "f08" (meaning Fall 2008)>
-                  . $signup_default_text,
-                default => $defaults{SIGNUP},
-            },
-            {   spec => 'cache=s',
-                description =>
-                  'Cache folder. Files (like SQLite files) that cannot '
-                  . 'be stored on network filesystems are stored here.'
-                  . $cache_default_text,
-                default => $defaults{CACHE},
-            },
-        );
-    } ## tidy end: sub _signup_package
-
-    sub _signup_with_old_package {
-        my $self = shift;
-
-        my %signup_specs = $self->_signup_package;
-
-        has oldsignup => (
-            is      => 'ro',
-            builder => '_build_oldsignup',
-            isa     => 'Actium::O::Folders::Signup',
-            lazy    => 1,
-        );
-
-        $defaults{OLDSIGNUP}
-          = ( $self->sysenv($OLDSIGNUP_ENV) // $config{oldsignup} );
-
-        my $oldsignup_default_text
-          = (
-            not defined( $defaults{OLDSIGNUP} )
-              or $defaults{OLDSIGNUP} eq $EMPTY_STR
-          )
-          ? $EMPTY_STR
-          : qq<. If not specified, will use "$defaults{OLDSIGNUP}">;
-
-        return (
-            %signup_specs,
-            {   spec => 'oldsignup|o=s',
-                description =>
-                  'The older signup, to be compared with the current signup'
-                  . $oldsignup_default_text,
-                default => $defaults{OLDSIGNUP},
-            },
-            {   spec => 'oldbase|ob=s',
-                description =>
-                  'The base folder to be used for the older signup.'
-                  . ' If not specified, will be the same as -base',
-            },
-
-        );
-    } ## tidy end: sub _signup_with_old_package
-
-}
-
-sub _build_signup {
+sub _actiumfm_package {
 
     my $self = shift;
 
-    if ( not defined $self->option('signup') ) {
-        croak 'No signup specified in ' . $self->subcommand;
-    }
+    require Actium::O::Files::ActiumFM;
 
+    has actiumdb => (
+        is      => 'ro',
+        builder => '_build_actiumdb',
+        isa     => 'Actium::O::Files::ActiumFM',
+        lazy    => 1,
+    );
+
+    return (
+        {   spec           => 'db_user=s',
+            config_section => 'ActiumFM',
+            config_key     => 'db_user',
+            envvar         => 'DB_USER',
+            description    => 'User name to access Actium database',
+            prompt         => 'User name to access Actium database',
+        },
+        {   spec           => 'db_password=s',
+            description    => 'Password to access Actium database',
+            config_section => 'ActiumFM',
+            config_key     => 'db_password',
+            envvar         => 'DB_PASSWORD',
+            description    => 'Password to access Actium database',
+            prompt         => 'Password to access Actium database',
+            prompthide     => 1,
+        },
+        {   spec            => 'db_name=s',
+            description     => 'Name of the database in the ODBC driver. ',
+            display_default => 1,
+            config_section  => 'ActiumFM',
+            config_key      => 'db_name',
+            envvar          => 'DB_NAME',
+            fallback        => 'ActiumFM',
+        }
+    );
+
+} ## tidy end: sub _actiumfm_package
+
+sub _build_actiumdb {
+    my $self = shift;
+
+    my $actium_db
+      = Actium::O::Files::ActiumFM::->new( map { $_ => $self->option($_) }
+          qw /db_user db_password db_name/ );
+
+    return $actium_db;
+
+}
+#### Signup
+
+sub _signup_package {
+
+    my $self = shift;
+
+    require Actium::O::Folders::Signup;
+
+    has signup => (
+        is      => 'ro',
+        builder => '_build_signup',
+        isa     => 'Actium::O::Folders::Signup',
+        lazy    => 1,
+    );
+
+    require File::Spec;
+
+    return (
+        {   spec        => 'base=s',
+            description => 'Base folder (normally [something]/Actium/signups)',
+            display_default => 1,
+            fallback        => File::Spec->catdir(
+                $self->bin->path, File::Spec->updir(), 'signups'
+            ),
+            envvar         => 'BASE',
+            config_section => 'Signup',
+            config_key     => 'base',
+        },
+        {   spec => 'signup=s',
+            description =>
+              'Signup. This is the subfolder under the base folder. '
+              . qq<Typically something like "f08" (meaning Fall 2008)>,
+            envvar          => 'SIGNUP',
+            config_section  => 'Signup',
+            config_key      => 'signup',
+            prompt          => 'Signup',
+            display_default => 1,
+        },
+        {   spec => 'cache=s',
+            description =>
+              'Cache folder. Files (like SQLite files) that cannot '
+              . 'be stored on network filesystems are stored here.',
+            display_default => 1,
+            fallback =>
+              $self->home_folder->subfolder_path( '.' . $self->system_name ),
+            envvar         => 'CACHE',
+            config_section => 'Signup',
+            config_key     => 'cache',
+        },
+    );
+} ## tidy end: sub _signup_package
+
+sub _signup_with_old_package {
+    my $self = shift;
+
+    my @signup_specs = $self->_signup_package;
+
+    has oldsignup => (
+        is      => 'ro',
+        builder => '_build_oldsignup',
+        isa     => 'Actium::O::Folders::Signup',
+        lazy    => 1,
+    );
+
+    return (
+        @signup_specs,
+        {   spec => 'oldsignup|o=s',
+            description =>
+              'The older signup, to be compared with the current signup',
+            display_default => 1,
+            prompt          => 'Old signup',
+            config_section  => 'Signup',
+            config_key      => 'oldsignup',
+            envvar          => 'OLDSIGNUP',
+        },
+        {   spec           => 'oldbase|ob=s',
+            envvar         => 'OLDBASE',
+            config_section => 'Signup',
+            config_key     => 'oldbase',
+            description    => 'The base folder to be used for the older signup.'
+              . ' If not specified, will be the same as -base',
+        },
+
+    );
+} ## tidy end: sub _signup_with_old_package
+
+sub _build_signup {
+    my $self = shift;
     my %params = map { $_ => $self->option($_) } qw/base signup cache/;
-
     return Actium::O::Folders::Signup::->new(%params);
-
 }
 
 sub _build_oldsignup {
-
     my $self = shift;
 
-    if ( not defined $self->option('signup') ) {
-        croak 'No old signup specified in ' . $self->subcommand;
-    }
-    my %params = {
+    return Actium::O::Folders::Signup::->new(
         base => ( $self->option('oldbase') // $self->option('base') ),
         signup => $self->option('oldsignup'),
         cache  => $self->option('cache'),
+    );
+
+}
+
+### Geonames
+
+sub _geonames_package {
+    my $self = shift;
+
+    has geonames_username => (
+        is      => 'ro',
+        builder => '_build_geonames_username',
+        isa     => 'Str',
+        lazy    => 1,
+    );
+
+    return {
+        spec            => 'geonames_username=s',
+        envvar          => 'GEONAMES_USERNAME',
+        config_key      => 'username',
+        config_section  => 'Geonames',
+        display_default => 1,
+        description     => 'Geonames API username',
+        prompt          => 'Geonames API username',
     };
 
-    return Actium::O::Folders::Signup::->new(%params);
+} ## tidy end: sub _geonames_package
+
+sub _build_geonames_username {
+    my $self = shift;
+    return $self->option('geonames_username');
+}
+
+#### FLICKR
+
+{
+    const my %DESCRIPTION_OF_OPTION => (
+        key    => 'Flickr API key',
+        secret => 'Flickr API secret',
+    );
+
+    sub _flickr_package {
+        my $self = shift;
+
+        has flickr_auth => (
+            is      => 'ro',
+            isa     => 'Actium::O::Photos::Flickr::Auth',
+            builder => '_build_flickr_auth',
+            lazy    => 1,
+        );
+
+        my @optionlist;
+        foreach my $optionname ( keys %DESCRIPTION_OF_OPTION ) {
+            push @optionlist,
+              { spec           => "flickr_${optionname}=s",
+                envvar         => "FLICKR_$optionname",
+                config_section => 'Flickr',
+                config_key     => $optionname,
+                description    => $DESCRIPTION_OF_OPTION{$optionname},
+                prompt         => $DESCRIPTION_OF_OPTION{$optionname},
+              };
+        }
+
+        return @optionlist;
+
+    } ## tidy end: sub _flickr_package
+
+    sub _build_flickr_auth {
+
+        my $self = shift;
+        my %params
+          = map { $_ => $self->option($_) } keys %DESCRIPTION_OF_OPTION;
+        return Actium::O::Photos::Flickr::Auth->new(%params);
+
+    }
 
 }
 
@@ -816,27 +875,10 @@ __END__
 Documentation from Actium::Options
 
 
-Actium::Options is a wrapper for L<Getopt::Long|Getopt::Long>. 
-It contains routines designed to allow both main programs and 
-any used modules to set particular command-line options.
-
-The idea is that the main program can set options that apply to the main
-program, and any modules can set other options that apply to that module. 
-
 Note that the default configuration for Getopt::Long is used, so (for
 example) bundling is off and options can be abbreviated to their shortest
 unique abbreviation. See 
 L<Getopt::Long/"Configuring Getopt::Long"|"Configuring Getopt::Long" in Getopt::Long>.
-
-=head1 SUBROUTINES
-
-No subroutine names are exported by default, but most can be imported.
-
-=over
-
-=item B<add_option($optionspec, $description, $callbackordefault)>
-
-To add an option for processing, use B<add_option()>.
 
 $optionspec is an
 option specification as defined in L<Getopt::Long|Getopt::Long>. Note that to specify
@@ -846,8 +888,6 @@ of Option Specifications"> for more information.
 
 B<add_option()> will accept alternate names in the $optionspec, as described in 
 L<Getopt::Long/Getopt::Long>.  
-Other subroutines (B<option()>, B<set_option()>, etc.) require that
-the primary name be used.
 
 $description is a human-readable short description to be used in
 displaying lists of options to users.
@@ -859,114 +899,25 @@ first element of the @_ passed to the code.
 If $callbackordefault is present but not a code reference, it will be treated as
 the default value for the option.
 
-All calls to add_option must run prior to the time the command line is
-processed. Place add_option calls in the main part of your module.
-
-=for comment
-All calls to add_option must run prior to the time the command line is
-processed. For this purpose, you can put your add_option calls in a 
-subroutine called OPTIONS. This subroutine (if present) is called 
-by init_options just before the command line is processed. You can 
-think of it as a specialized sort of INIT block. (You can also do them in real
-INIT blocks, if you know that your INIT blocks will run. The  
-'eval "require $module"' syntax for requiring modules at runtime
-does not, like all string eval's, run INIT blocks. This syntax has been
-used in actium.pl for loading primary modules.) --- THIS ROUTINE NO LONGER EXISTS
-
-=item B<is_an_option($optionname)>
-
-Returns true if an option $optionname has been defined (whether as
-a primary name or as an alias).
-
-=item B<init_options()>
-
-This is the routine that actually processes the options. It should be called
-from the main program (not from any modules, although this is not enforced).
-
-=for comment
-<This has been commented out in the code>
-Before processing the options, it checks to see if a subroutine called OPTIONS
-exists in the module that added the option, and if so, runs it. This is designed
-to allow options to be added by support modules.
-
-After processing the options, for each option that is actually set, it calls
-the callback routine as specified in the add_option call.
-This replaces the callback feature of Getopt::Long.
-
 =item B<option($optionname)>
 
 The B<option()> subroutine returns the value of the option. This can be
 the value, or a reference to a hash or array if that was in the option
 specification. 
 
-
 =item B<set_option($optionname, $value)>
 
 This routine sets the value for an option. It is used to override options
 set by users (for whatever reason).
 
-=item B<helpmessages()>
-
-This routine returns a reference to a hash. The keys of the hash are the
-option names, and the values are the human-readable help descriptions. Aliases
-for option names are given separately. The help text for these is simply 
-"Same as -primaryoption."  So:
-
- add_option ('height|width|h=f' , "Height of box")
-will result in
-
- h => "Same as -height."
- height => "Height of box."
- width => "Same as -height."
-
-In no particular order, of course.
-
-=back
-
-
 =head1 DIAGNOSTICS
 
 =over
-
-=item Attempt to add option after initialization
-
-This means that add_option was called after init_options was already run.
-
-=item Attempt to set an option before initaliztion
-
-This means that set_option was called before init_options was run.
-
-=for comment
-#=item Something other than a code reference was used as a callback
-
-=for comment
-When using add_options, something was provided as a callback routine 
-that was not actually a code reference.
 
 =item Attempt to add duplicate option $optionname. 
 
 A module tried to add an option that had already been added 
 (presumably by another module).
-
-=item Attempt to access option before initialization
-
-A module tried to access an option through option() before init_options 
-had been called.
-
-=item Attempt to set an option before initaliztion
-
-A module tried to set an option through set_option() before init_options 
-had been called.
-
-=item Attempt to initialize options more than once
-
-Something called init_options after init_options had already been called.
-
-=back
-
-=head1 DEPENDENCIES
-
-perl 5.010.
 
 =head1 BUGS AND LIMITATIONS
 
@@ -975,23 +926,82 @@ default configuration can be used, and subroutines cannot be specified as the
 destinations for non-option arguments. (Callbacks are implemented for options
 in another way.)
 
-Arguments currently cannot be shared; there's no way to specify an argument like
-"quiet" that might be usable across several different modules, because the
-add_option will fail. (You can still access the option, just not specify it, so
-you can still use an option if you use the module first.)
+=head1 Old documentation from Actium::O::Folders::Signup 
 
-=head1 AUTHOR
+The base folder is specified as follows (in the following order of
+precedence):
 
-Aaron Priven <apriven@actransit.org>
+=over
 
-=head1 LICENSE AND COPYRIGHT
+=item *
 
-This module is free software; you can redistribute it and/or modify it under 
-the same terms as Perl itself. See L<perlartistic|perlartistic>.
+In the "base" argument to the "signup" method call
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+=item *
+In the command line with the "-base" option
 
+=item *
+By the environment variable "ACTIUM_BASE".
 
-=cut
+=back
+
+If none of these are set, Actium::O::Folders::Signup uses
+L<FindBin|FindBin> to find the folder where the script is running
+(in the above example, /Actium/bin), and sets the base folder to
+"signups" in the script folder's parent folder.  In other words,
+it's something like "/Actium/bin/../signups". In the normal case
+where the "bin" folder is in the same folder as the Actium data
+this means it will all work fine without any specification of the
+base folder. If not, then it will croak.
+
+=item Signup folder
+
+The data for each signup is stored in a subfolder of the base folder.
+This folder is usually named after the period of time when the signup
+becomes effective ("w08" meaning "Winter 2008", for example). 
+
+The signup folder is specified as follows (in the following order of
+precedence):
+
+=over
+
+=item *
+In the "signup" argument to the "signup" method call
+
+=item *
+In the command line with the "-signup" option
+
+=item *
+By the environment variable "ACTIUM_SIGNUP".
+
+=back
+
+If none of these are present, then Actium::O::Folders::Signup 
+will croak "No signup folder specified."
+
+=head1 COMMAND-LINE OPTIONS AND ENVIRONMENT VARIABLES
+
+=over
+
+=item -base (option)
+
+=item ACTIUM_BASE (environment variable)
+
+These supply a base folder used when the calling program doesn't
+specify one.
+
+=item -signup (option)
+
+=item ACTIUM_SIGNUP (environment variable)
+
+These supply a signup folder used when the calling program doesn't
+specify one.
+
+=item -cache (option)
+
+=item ACTIUM_CACHE (environment variable)
+
+These supply a cache folder used when the calling program doesn't
+specify one. See the method "cache" below.
+
+=back
