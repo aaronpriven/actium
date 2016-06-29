@@ -1,12 +1,8 @@
-# Actium/Cmd/Ems.pm
+package Actium::Cmd::Ems 0.011;
+
 # Print number of ems for text
 
-use warnings;
-use strict;
-
-package Actium::Cmd::Ems 0.010;
-
-use 5.020;
+use Actium::Preamble;
 
 use Actium::Text::CharWidth ('ems');
 
@@ -37,4 +33,3 @@ sub START {
 1;
 
 __END__
-# TODO: Add POD
