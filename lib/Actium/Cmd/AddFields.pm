@@ -4,9 +4,7 @@ package Actium::Cmd::AddFields 0.010;
 
 use Actium::Preamble;
 
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::O::2DArray;
-use Actium::Crier ('cry');
 
 const my $DEFAULT_TABLE  => 'Stops_Neue';
 const my $DEFAULT_FIELD  => 'c_description_full';
@@ -24,34 +22,36 @@ sub HELP {
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        [   'table=s',
-            "Table where fields whill come from. Default is $DEFAULT_TABLE.",
-            $DEFAULT_TABLE,
-        ],
-        [   'idcolumn=i',
-'Column of the input file which will be used as IDs (starting with 1). '
-              . "Default is $DEFAULT_ID_COL.",
-            $DEFAULT_ID_COL,
-        ],
-        [   'output=s',
-            'Name of the output file. If not specified, '
+        'actiumfm',
+        {   spec            => 'table=s',
+            description     => "Table where fields will come from",
+            fallback         => $DEFAULT_TABLE,
+            display_default => 1,
+        },
+        {   spec => 'idcolumn=i',
+            'Column of the input file which will be used as IDs'
+              . ' (starting with 1)',
+            fallback         => $DEFAULT_ID_COL,
+            display_default => 1,
+        },
+        {   spec => 'output=s',
+            description => 'Name of the output file. If not specified, '
               . 'the output file will be the name of the input file '
               . 'with "-out" just before the extension; e.g., "file.txt" '
               . 'will be changed to "file-out.txt".',
-        ],
-        [   'headers!',
-            'Treat the first row of the files as the names of the headers '
+        },
+        {   spec => 'headers!',
+            description => 'Treat the first row of the files as the names of the headers '
               . '(on by default; turn off with -no-headers)',
-            1,
-        ],
+            fallback => 1,
+        },
     );
 } ## tidy end: sub OPTIONS
 
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
+    my $actiumdb = $env->actiumdb;
 
     my $table    = $env->option('table');
     my $keyfield = $actiumdb->key_of_table($table);
@@ -77,9 +77,9 @@ sub START {
     my $load_cry = cry("Loading $file");
     my $aoa      = Actium::O::2DArray->new_from_file($file);
     $load_cry->done;
-    
+
     my $process_cry = cry("Getting column from $file");
-    my $last_col = $aoa->last_col;
+    my $last_col    = $aoa->last_col;
 
     if ( $column > $last_col ) {
         $process_cry->text(

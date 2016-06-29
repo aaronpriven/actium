@@ -7,8 +7,6 @@ use Actium::Sorting::Line ('byline');
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');    ### DEP ###
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup   (qw<signup oldsignup>);
 
 sub HELP {
 
@@ -23,14 +21,11 @@ EOF
 }
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
-    return (
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::Signup::options_with_old($env),
-        
-        [   'ignore600s!',
-            'Ignore lines 600-699 in comparison. '
-        ],
+    return ( qw/actiumfm signup_with_old/ ,
+        {   spec => 'ignore600s!',
+            description => 'Ignore lines 600-699 in comparison. ',
+            fallback => 0,
+        },
         
         
     );
@@ -41,9 +36,9 @@ my ( %changes, %oldstoplists, %stops );
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actiumdb  = actiumdb($env);
-    my $oldsignup = oldsignup($env);
-    my $signup    = signup($env);
+    my $actiumdb  = $env->actiumdb;
+    my $oldsignup = $env->oldsignup;
+    my $signup    = $env->signup;
     
     my $ignore_600s = $env->option('ignore600s');
     

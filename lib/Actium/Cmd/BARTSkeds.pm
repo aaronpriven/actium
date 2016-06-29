@@ -29,11 +29,11 @@ sub HELP {
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        [   'date=s',
-            'Effective date of the new BART schedules. '
+        { spec =>  'date=s',
+            description => 'Effective date of the new BART schedules. '
               . 'Must be in YYYY-MM-DD format (2015-12-25)'
               . 'If not provided, defaults to today.',
-        ],
+        },
     );
 
 }
