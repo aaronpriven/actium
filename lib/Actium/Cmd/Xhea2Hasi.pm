@@ -6,17 +6,15 @@ package Actium::Cmd::Xhea2Hasi 0.010;
 
 use Actium::Preamble;
 use Actium::Files::Xhea;
-use Actium::Cmd::Config::Signup ('signup');
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return ( Actium::Cmd::Config::Signup::options($env));
+    return 'signup';
 }
 
 sub START {
 
     my ( $class, $env ) = @_;
-    my $signup = signup($env);
+    my $signup = $env->signup;
 
     my $xhea_tab_folder = $signup->subfolder('xhea' , 'tab');
     my $hasi_folder = $signup->subfolder('hasi');

@@ -5,8 +5,6 @@
 package Actium::Cmd::ZipCodes 0.010;
 
 use Actium::Preamble;
-use Actium::Cmd::Config::ActiumFM     ('actiumdb');
-use Actium::Cmd::Config::GeonamesAuth ('geonames_username');
 use Actium::Geo('get_zip_for_stops');
 
 use REST::Client;    ### DEP ###
@@ -19,18 +17,13 @@ sub HELP {
 }
 
 sub OPTIONS {
-
-    my ( $class, $env ) = @_;
-    return (
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::GeonamesAuth::OPTIONS($env),
-    );
+    return qw/geonames actiumfm/;
 }
 
 sub START {
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
-    my $username = geonames_username($env);
+    my $actiumdb = $env->actiumdb;
+    my $username = $env->geonames_username;
 
     my $zip_code_of_r = get_zip_for_stops(
         actiumdb => $actiumdb,
