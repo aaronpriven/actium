@@ -6,8 +6,6 @@ use Storable();         ### DEP ###
 
 use Actium::Time (qw(timenum ));
 use Actium::Union('ordered_union');
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup ('signup');
 
 const my @COMBOS_TO_PROCESS => (
     [qw( 5 6 56 )],     [qw( 1 234 1234 )], [qw( 1234 5 12345 )],
@@ -16,8 +14,7 @@ const my @COMBOS_TO_PROCESS => (
 
 sub OPTIONS {
     my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options($env));
+    return qw/actiumdb signup/;
 }
 
 sub HELP {
@@ -35,7 +32,7 @@ EOF
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
+    my $actiumdb = $env->actiumdb;
 
     my ( %stops, %cities );
 
@@ -54,7 +51,7 @@ sub START {
         }
     );
 
-    my $signup = signup($env);
+    my $signup = $env->signup;
     chdir $signup->path();
 
     # retrieve data
