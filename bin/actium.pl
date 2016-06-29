@@ -6,11 +6,11 @@ use FindBin qw($Bin);    ### DEP ###
 use lib ("$Bin/../lib"); ### DEP ###
 
 use Actium::Preamble;
-use Actium::Cmd;
+use Actium::O::Cmd;
 
-our $VERSION = 0.010;
+our $VERSION = 0.011;
 
-Actium::Cmd::run(
+Actium::O::Cmd->new(
     commandpath => $0,
     system_name => 'actium',
     subcommands => {
@@ -58,7 +58,6 @@ Actium::Cmd::run(
         zipcodes      => 'ZipCodes',
         zipdecals     => 'ZipDecals',
 
-        # more to come
     },
 );
 
