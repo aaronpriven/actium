@@ -5,7 +5,6 @@ package Actium::Cmd::StopsOfEachLine 0.010;
 use Actium::Preamble;
 use Storable();    ### DEP ###
 use Actium::Sorting::Line (qw<sortbyline>);
-use Actium::Cmd::Config::Signup ('signup');
 
 sub HELP {
 
@@ -22,13 +21,12 @@ EOF
 }
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
-    return ( Actium::Cmd::Config::Signup::options($env) );
+    return 'signup';
 }
 
 sub START {
     my ( $class, $env ) = @_;
-    my $signup = signup($env);
+    my $signup = $env->signup;
 
     chdir $signup->path();
 

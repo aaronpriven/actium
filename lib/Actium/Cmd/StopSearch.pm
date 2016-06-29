@@ -6,13 +6,10 @@ package Actium::Cmd::StopSearch 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folder;
-use Actium::Cmd::Config::ActiumFM('actiumdb');
 
 sub OPTIONS {
 
-    my ($class, $env) = @_;
-
-    return ( Actium::Cmd::Config::ActiumFM::OPTIONS($env),
+    return ( 'actiumfm',
         [ 'tab', 'Uses tabs instead of spaces to separate text' ] );
 }
 
@@ -25,7 +22,7 @@ sub START {
 
     $env->be_quiet();
 
-    my $actiumdb = actiumdb($env);
+    my $actiumdb = $env->actiumdb;
 
     $divider = $env->option('tab') ? "\t" : $DEFAULT_DIVIDER;
 
@@ -86,7 +83,7 @@ sub _display {
     }
 
     return;
-} ## tidy end: sub _display
+}
 
 1;
 

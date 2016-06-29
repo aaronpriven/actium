@@ -6,15 +6,11 @@ package Actium::Cmd::TabSkeds 0.010;
 # Makes tab-delimited but public versions of the skeds in /skeds
 
 use Actium::Preamble;
-use Actium::Cmd::Config::Signup ('signup');
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 no warnings 'uninitialized';
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options($env));
+    return qw/actiumfm signup/;
 }
 
 my $out;
@@ -270,9 +266,9 @@ our %daydirhash = (
 sub START {
     
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
+    my $actiumdb = $env->actiumdb;
     
-    my $signupfolder = signup($env);
+    my $signupfolder = $env->signup;
 
     my @specdaynames;
     foreach ( keys %specdaynames ) {

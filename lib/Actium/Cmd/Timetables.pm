@@ -13,8 +13,6 @@ use Actium::O::Sked;
 use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);    ### DEP ###
 use Actium::Sorting::Line (qw(sortbyline byline));
 use Actium::IDTables;
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup ('signup');
 
 use English '-no_match_vars';                                      ### DEP ###
 use autodie;                                                       ### DEP ###
@@ -32,15 +30,13 @@ HELP
 }
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options($env));
+    return qw/signup actiumfm/;
 }
 
 sub START {
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
-    my $signup = signup($env);
+    my $actiumdb = $env->actiumdb;
+    my $signup = $env->signup;
     
     my $tabulae_folder    = $signup->subfolder('timetables');
     my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');

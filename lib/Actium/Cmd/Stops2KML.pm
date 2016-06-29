@@ -10,7 +10,6 @@ use warnings;
 package Actium::Cmd::Stops2KML 0.010;
 
 use Actium::Preamble;
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::StopReports('stops2kml');
 use File::Slurp::Tiny('write_file');    ### DEP ###
 
@@ -32,13 +31,12 @@ HELP
 }
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return Actium::Cmd::Config::ActiumFM::OPTIONS($env);
+    return 'actiumfm';
 }
 
 sub START {
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
+    my $actiumdb = $env->actiumdb;
     my @argv = $env->argv;
 
     my $outputfile = shift @argv;
