@@ -6,7 +6,6 @@ package Actium::Cmd::ActiumDBExport 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folder;
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Archive::Zip (qw( :ERROR_CODES :CONSTANTS ));    ### DEP ###
 
 my %fields_of =
@@ -34,8 +33,7 @@ my %fields_of =
   );
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return Actium::Cmd::Config::ActiumFM::OPTIONS($env);
+    return 'actiumfm';
 }
 
 sub START {
@@ -45,7 +43,7 @@ sub START {
 
     local $OUTPUT_RECORD_SEPARATOR = "\r\n";    # exporting for windoze
 
-    my $actiumdb = actiumdb($env);
+    my $actiumdb = $env->actiumdb;
 
     my $dbh = $actiumdb->dbh;
 

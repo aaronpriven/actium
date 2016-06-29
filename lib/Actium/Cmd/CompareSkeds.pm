@@ -4,7 +4,6 @@ use 5.022;
 use warnings;
 
 use Actium::Preamble;
-use Actium::Cmd::Config::Signup (qw<signup oldsignup>);
 use Actium::O::Folder;
 
 use File::Copy ();
@@ -12,8 +11,7 @@ use List::Compare;
 use File::Compare;
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
-    return Actium::Cmd::Config::Signup::options_with_old($env);
+    return 'signup_with_old';
 }
 
 const my %WE_DAYS => ( WE => 1, SA => 1, SU => 1 );
@@ -27,10 +25,10 @@ sub START {
 
     my ( $class, $env ) = @_;
 
-    $new = signup( $env, { must_exist => 1 } );
+    $new = $env->signup;
     my $newsignup = $new->signup;
     $newraw = $new->subfolder( 'rawskeds', { must_exist => 1 } );
-    $old = oldsignup( $env, { must_exist => 1 } );
+    $old = $env->oldsignup;
     my $oldsignup = $old->signup;
     $oldraw = $old->subfolder( 'rawskeds', { must_exist => 1 } );
 
