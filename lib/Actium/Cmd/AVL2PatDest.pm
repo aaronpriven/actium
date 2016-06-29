@@ -6,8 +6,6 @@ use Storable();    ### DEP ###
 
 use Actium::Union('ordered_union');
 use Actium::Sorting::Line('byline');
-use Actium::Cmd::Config::Signup ('signup');
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
 
 sub HELP {
 
@@ -22,16 +20,15 @@ EOF
 
 sub OPTIONS {
     my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options($env));
+    return qw/actiumfm signup/;
 }
 
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
+    my $actiumdb = $env->actiumdb;
 
-        my $signup = signup($env);
+        my $signup = $env->signup;
     
     chdir $signup->path();
 
