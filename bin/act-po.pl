@@ -27,7 +27,6 @@ Actium::O::Cmd::->new(
         time          => 'Time', 
         xhea2hasi     => 'Xhea2Hasi', 
     },
-    argv => [ @ARGV ],
 );
 
 # a reference is an alias, so tabulae => \'tabula' means if you type
