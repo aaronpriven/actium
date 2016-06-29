@@ -34,7 +34,6 @@ sub HELP {
     my $helptext = <<'EOF';
 MakePoints reads the data written by avl2points and turns it into 
 output suitable for InDesign.
-
 It is saved in the directory "idpoints2016" in the directory for that signup.
 EOF
 
@@ -67,7 +66,7 @@ sub OPTIONS {
             fallback => $EMPTY,
         },
     );
-}
+} ## tidy end: sub OPTIONS
 
 sub START {
 
