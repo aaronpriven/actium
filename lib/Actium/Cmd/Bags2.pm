@@ -7,8 +7,6 @@ package Actium::Cmd::Bags2 0.010;
 use Actium::Preamble;
 use autodie;
 
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup   (qw<signup oldsignup>);
 use Actium::O::2DArray;
 
 use Actium::Text::InDesignTags;
@@ -16,8 +14,7 @@ const my $IDT     => 'Actium::Text::InDesignTags';
 const my $HARDRET => Actium::Text::InDesignTags::->hardreturn_esc;
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
-    return ( Actium::Cmd::Config::ActiumFM::OPTIONS($env), );
+    return qw/actiumfm/;
 }
 
 my %i18n;
@@ -32,7 +29,7 @@ sub START {
 
     my $i18n_cry = $env->crier->cry('Fetching i18ns from database');
 
-    my $actium_db = actiumdb($env);
+    my $actium_db = $env->actiumdb;
 
     %i18n = %{ $actium_db->all_in_columns_key(qw(I18N en es zh)) };
 

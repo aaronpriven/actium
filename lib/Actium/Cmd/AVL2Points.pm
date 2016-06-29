@@ -13,7 +13,6 @@ const my @COMBOS_TO_PROCESS => (
 );
 
 sub OPTIONS {
-    my ($class, $env) = @_;
     return qw/actiumdb signup/;
 }
 
