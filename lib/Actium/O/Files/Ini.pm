@@ -95,8 +95,8 @@ sub value {
 
     my %params = u::validate(
         @_,
-        {   section => { type => 'Str', default => '_' },
-            key     => { type => 'Str' },
+        {   section => { type => $PV_TYPE{SCALAR}, default => '_' },
+            key     => { type => $PV_TYPE{SCALAR} },
         }
     );
 
