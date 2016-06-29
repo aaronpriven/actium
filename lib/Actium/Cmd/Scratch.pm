@@ -1,24 +1,12 @@
 package Actium::Cmd::Scratch 0.010;
 
 use Actium::Preamble;
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup   (qw<signup oldsignup>);
 
 # a place to test out small programs, in the Actium environment
 
-sub zOPTIONS {
-    my ( $class, $env ) = @_;
-    return (
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::Signup::options($env)
-    );
-}
-
 sub OPTIONS {
     my ( $class, $env ) = @_;
-    return (
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::Signup::options($env),
+    return ( qw/actiumfm signup/,
         [   'update',
             'Will only process signs that have the status "Needs Update."', 0
         ],
@@ -37,8 +25,8 @@ sub zSTART {
     my ( $class, $env ) = @_;
     
 
-    my $actiumdb = actiumdb($env);
-    #my $signup   = signup($env);
+    my $actiumdb = $env->actiumdb;
+    #my $signup   = $env->signup;
 
     my $str = $actiumdb->agency_effective_date('ACTransit');
     say "String: $str";

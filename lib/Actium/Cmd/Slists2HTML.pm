@@ -3,17 +3,11 @@ package Actium::Cmd::Slists2HTML 0.010;
 use Actium::Preamble;
 
 use Actium::O::Dir;
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup   ('signup');
 
 use HTML::Entities;    ### DEP ###
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
-    return (
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::Signup::options($env)
-    );
+    return qw/actiumfm signup/;
 }
 
 my $count;
@@ -63,8 +57,8 @@ sub START {
     my $makehtml_cry = cry('Making HTML files of stop lists');
 
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
-    my $signup   = signup($env);
+    my $actiumdb = $env->actiumdb;
+    my $signup   = $env->signup;
 
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');

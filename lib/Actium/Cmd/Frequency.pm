@@ -13,14 +13,17 @@ sub HELP {
 
 sub OPTIONS {
 
-    return [
-        'column=i',
-        'Column that contains the times (starting with 1). '
-          . 'Default is the first column.',
-        1
-      ],
-      [ 'skiplines=i', 'Lines to skip from the beginning. Default is 0.', 0 ],
-      [ 'breaks=s',    'Breaks in the frequency calculation' ];
+    return (
+        {   spec        => 'column=i',
+            description => 'Column that contains the times (starting with 1). '
+              . 'Default is the first column.',
+        },
+        {   spec        => 'skiplines=i',
+            description =>,
+            'Lines to skip from the beginning. Default is 0.', fallback => 0
+        },
+        { spec => 'breaks=s', 'Breaks in the frequency calculation' },
+    );
 }
 
 sub START {
@@ -50,7 +53,8 @@ sub START {
     my @timenums = Actium::Frequency::adjust_timenums(@orig_timenums);
     my $final    = Actium::O::Time::->from_num( $timenums[-1] )->ap;
 
-    ( \my @sets, \my @breaktimes ) = Actium::Frequency::break_sets( $breaks, \@timenums );
+    ( \my @sets, \my @breaktimes )
+      = Actium::Frequency::break_sets( $breaks, \@timenums );
 
     my @freqs;
 

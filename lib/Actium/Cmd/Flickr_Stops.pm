@@ -8,10 +8,9 @@ package Actium::Cmd::Flickr_Stops 0.010;
 
 use Actium::Preamble;
 use Actium::Photos;
-use Actium::Cmd::Config::Flickr_Auth('flickr_auth');
 
 sub OPTIONS {
-   return Actium::Cmd::Config::Flickr_Auth::OPTIONS;
+   return 'flickr';
 }
 
 sub START {
@@ -21,7 +20,7 @@ sub START {
     my $class      = shift;
     my $env = shift;
     
-    my $flickr_auth = flickr_auth($env);
+    my $flickr_auth = $env->flickr_auth;
     
     Actium::Photos::flickr_stops($flickr_auth);
     

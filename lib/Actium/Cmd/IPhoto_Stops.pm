@@ -11,7 +11,6 @@ use warnings;
 # add the current program directory to list of files to include
 
 use Actium::Preamble;
-use Actium::Cmd::Config::ActiumFM;
 
 use Math::Trig   (qw(deg2rad pi great_circle_distance asin acos));   ### DEP ###
 use Scalar::Util ('looks_like_number');                              ### DEP ###
@@ -34,14 +33,13 @@ use constant {
 my @dropped_info;
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return Actium::Cmd::Config::ActiumFM::OPTIONS($env);
+    return 'actiumfm';
 }
 
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb($env);
+    my $actium_db = $env->actiumdb;
 
     ## no critic (ProhibitLongLines)
     my $get_selected_script = <<'ENDSCRIPT';
