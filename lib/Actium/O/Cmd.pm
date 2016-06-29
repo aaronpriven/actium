@@ -22,7 +22,9 @@ const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
 const my $SUBCOMMAND_SEPARATOR => ( $SPACE x 2 );
 
 const my %OPTION_PACKAGE_DISPATCH => ( map { $_ => ( '_' . $_ . '_package' ) }
-      (qw/default actiumfm flickr geonames signup signup_with_old/) );
+      (qw/default actiumfm flickr geonames signup newsignup signup_with_old/) );
+# specifying more than one of the signup packages should give
+# duplicate option errors
 
 my $term_width_cr = sub {
     return (
@@ -175,18 +177,22 @@ sub prompt {
 
     my $val;
 
-    print "\n" if ($self->crier->position != 0) ;
+    my $fh = $self->crier->fh;
+
+    print $fh "\n" if ( $self->crier->position != 0 );
+
+    my @filehandles = ( in => *STDIN{IO}, out => $fh );
 
     if ($hide) {
         $val = IO::Prompter::prompt(
             $prompt,
             -echo => '*',
             '-hNONE',
-            '-stdio'
+            @filehandles,
         );
     }
     else {
-        $val = IO::Prompter::prompt( $prompt, '-stdio' );
+        $val = IO::Prompter::prompt( $prompt, @filehandles );
     }
 
     $self->crier->set_position(0);
@@ -559,7 +565,7 @@ sub _build_option_objs {
 
         } ## tidy end: elsif ( u::is_arrayref($optionspec...))
         else {
-                  # option package
+            # option package
             if ( not exists $OPTION_PACKAGE_DISPATCH{$optionspec} ) {
                 croak(  'Internal error. Invalid option package '
                       . "$optionspec specified in "
@@ -705,15 +711,23 @@ sub _build_actiumdb {
 }
 #### Signup
 
-sub _signup_package {
+sub _newsignup_package {
 
     my $self = shift;
+    return $self->_signup_package(1);
+
+}
+
+sub _signup_package {
+
+    my $self   = shift;
+    my $is_new = shift;
 
     require Actium::O::Folders::Signup;
 
     has signup => (
         is      => 'ro',
-        builder => '_build_signup',
+        builder => ( $is_new ? '_build_newsignup' : '_build_signup' ),
         isa     => 'Actium::O::Folders::Signup',
         lazy    => 1,
     );
@@ -789,9 +803,16 @@ sub _signup_with_old_package {
     );
 } ## tidy end: sub _signup_with_old_package
 
+sub _build_newsignup {
+    my $self = shift;
+    my %params = map { $_ => $self->option($_) } qw/base signup cache/;
+    return Actium::O::Folders::Signup::->new(%params);
+}
+
 sub _build_signup {
     my $self = shift;
     my %params = map { $_ => $self->option($_) } qw/base signup cache/;
+    $params{must_exist} = 1;
     return Actium::O::Folders::Signup::->new(%params);
 }
 
@@ -802,6 +823,7 @@ sub _build_oldsignup {
         base => ( $self->option('oldbase') // $self->option('base') ),
         signup => $self->option('oldsignup'),
         cache  => $self->option('cache'),
+        must_exist => 1,
     );
 
 }
