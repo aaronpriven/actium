@@ -24,7 +24,6 @@ Actium::O::Cmd->new(
         bartskeds     => 'BARTSkeds',
         comparestops  => 'CompareStops',
         compareskeds  => 'CompareSkeds',
-        crewlist      => 'CrewList',
         dbexport      => 'ActiumDBExport',
         decalcount    => 'DecalCount',
         decalcompare  => 'DecalCompare',
