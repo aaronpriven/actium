@@ -5,8 +5,6 @@
 package Actium::Cmd::NewSignup 0.010;
 
 use Actium::Preamble;
-#use Actium::Cmd::Config::ActiumFM;
-use Actium::Cmd::Config::Signup ('signup');
 use Actium::Util('filename');
 use Actium::Files::Xhea;
 use Archive::Zip;    ### DEP ###
@@ -14,9 +12,11 @@ use Archive::Zip;    ### DEP ###
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        [ 'xhea=s', 'ZIP file containing Xhea export ', ],
-#        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::Signup::options($env)
+        'newsignup',
+        {   spec        => 'xhea=s',
+            description => 'ZIP file containing Xhea export ',
+            fallback => $EMPTY,
+        },
     );
 }
 
@@ -36,9 +36,9 @@ sub START {
     my $env     = shift;
     my $xheazip = $env->option('xhea');
 
-    my $cry = cry( "Making signup and subdirectories");
+    my $cry = cry("Making signup and subdirectories");
 
-    my $signup = signup($env);
+    my $signup      = $env->signup;
     my $hasi_folder = $signup->subfolder('hasi');
     my $xhea_folder = $signup->subfolder('xhea');
 
@@ -46,7 +46,7 @@ sub START {
 
     if ($xheazip) {
 
-        my $xcry = cry( "Extracting XHEA files");
+        my $xcry = cry("Extracting XHEA files");
 
         unless ( -e $xheazip ) {
             die "Can't find xhea zip file $xheazip";
@@ -70,7 +70,7 @@ sub START {
 
         $xcry->done;
 
-        my $impcry = cry( "Importing xhea files");
+        my $impcry = cry("Importing xhea files");
 
         my $tab_folder = $xhea_folder->subfolder('tab');
 
@@ -82,7 +82,7 @@ sub START {
 
         $impcry->done;
 
-        my $hasicry = cry( "Creating HASI files from XHEA files");
+        my $hasicry = cry("Creating HASI files from XHEA files");
 
         Actium::Files::Xhea::to_hasi( $tab_folder, $hasi_folder );
 

@@ -14,8 +14,6 @@ use Actium::DaysDirections(':all');
 use Actium::O::Files::HastusASI;
 use Actium::Constants;
 use Actium::Crier(qw/cry cry_text/);
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup ('signup');
 
 use Carp;                         ### DEP ###
 use English('-no_match_vars');    ### DEP ###
@@ -29,9 +27,7 @@ use Const::Fast;                      ### DEP ###
 const my $NEW_KEY_SEPARATOR => '_';
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return (Actium::Cmd::Config::ActiumFM::OPTIONS($env), 
-    Actium::Cmd::Config::Signup::options($env));
+    return qw/actiumfm signup/;
 }
 
 sub sk {
@@ -116,9 +112,9 @@ sub START {
 
     my $class    = shift;
     my $env   = shift;
-    my $actiumdb = actiumdb($env);
+    my $actiumdb = $env->actiumdb;
 
-    my $signup = signup($env);
+    my $signup = $env->signup;
 
     my $flagfolder = $signup->subfolder('flags');
 

@@ -16,12 +16,11 @@ use English ('-no_match_vars');
 
 use Actium::Sorting::Travel(qw<travelsort>);
 use Actium::Constants;
-use Actium::Cmd::Config::Signup ('signup');
 
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        Actium::Cmd::Config::Signup::options($env),
+        'signup',
         [   'promote=s',
             'When sorting by travel, give a list of lines to be sorted first, '
               . 'separated by commas. For example, -promote 26,A,58'
@@ -90,7 +89,8 @@ sub START {
 
     }
 
-    my $slistsdir = signup($env, 'slists');
+    my $signup = $env->signup;
+    my $slistsdir = $signup->subfolder('slists');
 
     # retrieve data
     my $stops_of_r = $slistsdir->retrieve('line.storable')

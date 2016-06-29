@@ -7,19 +7,17 @@ use Actium::Photos;
 use File::Glob(':bsd_glob');         ### DEP ###
 use Image::ExifTool('ImageInfo');    ### DEP ###
 
-use Actium::Cmd::Config::ActiumFM;
-
 const my %IS_VALID_EXT => map { fc($_) => 1 } qw/gif jpeg jpg png/;
 const my $IMAGE_INFO_OPTIONS => { PrintConv => 0, CharsetEXIF => 'UTF8', };
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
-    return [
-        'repository=s',
-        'Location of repository in file system',
-        '/Volumes/Bireme/Photos/Repository'
-      ],
-      Actium::Cmd::Config::ActiumFM::OPTIONS($env);
+    return (
+        [   'repository=s',
+            'Location of repository in file system',
+            '/Volumes/Bireme/Photos/Repository'
+        ],
+        'actiumfm',
+    );
 }
 
 sub HELP {
@@ -34,7 +32,7 @@ sub HELP {
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actium_db = Actium::Cmd::Config::ActiumFM::actiumdb($env);
+    my $actium_db = $env->actiumdb;
 
     my @argv = $env->argv;
     goto &HELP if not @argv;
