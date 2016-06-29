@@ -9,14 +9,12 @@ use warnings;
 
 package Actium::Cmd::SQLite2tab 0.010;
 
-use Actium::Cmd::Config::Signup ('signup');
 use Actium::Util qw(jointab );
 use Actium::Constants;
 use Actium::O::Files::HastusASI;
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
-    return ( Actium::Cmd::Config::Signup::options($env) );
+    return 'signup';
 }
 
 sub START {
@@ -26,7 +24,8 @@ sub START {
 
     my @argv = $env->argv;
 
-    my $dir = signup( $env, 'hasi' );
+    my $signup = $env->signup;
+    my $dir = $signup->subfolder( 'hasi' );
     my $db = Actium::O::Files::HastusASI->new( $dir->path() );
 
     my $table = $argv[0];

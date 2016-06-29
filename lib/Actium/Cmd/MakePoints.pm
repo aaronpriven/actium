@@ -17,9 +17,6 @@ use Actium::Preamble;
 
 use Actium::Union('ordered_union');
 
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup   ('signup');
-
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
 
@@ -50,19 +47,25 @@ EOF
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::Signup::options($env),
-        [   'update',
-            'Will only process signs that have the status "Needs Update."', 0
-        ],
-        [ 'type=s', 'Will only process signs that have a given signtype.', '' ],
-        [   'name=s',
-            'Name given to this run. Defaults to a combination '
+        qw/actiumfm signup/,
+
+        {   spec => 'update',
+            description =>
+              'Will only process signs that have the status "Needs Update."',
+            fallback => 0
+        },
+        {   spec => 'type=s',
+            description =>
+              'Will only process signs that have a given signtype.',
+            fallback => $EMPTY
+        },
+        {   spec        => 'name=s',
+            description => 'Name given to this run. Defaults to a combination '
               . 'of the signtype given (if any), the signIDs given (if any), '
               . 'and whether or not -update was given. '
               . '"-name _" will use no special name.',
-            ''
-        ],
+            fallback => $EMPTY,
+        },
     );
 }
 
@@ -70,14 +73,14 @@ sub START {
 
     my ( $class, $env ) = @_;
 
-    our ( $actiumdb, %places, %signs, %stops, %lines, %signtypes, %smoking,
-        @ssj );
+    our ( $actiumdb, %places, %signs, %stops, %lines, %signtypes,
+        %smoking, @ssj );
     # this use of global variables should be refactored...
 
-    $actiumdb = actiumdb($env);
+    $actiumdb = $env->actiumdb;
     my @argv = $env->argv;
 
-    my $signup = signup($env);
+    my $signup = $env->signup;
     chdir $signup->path();
 
     # retrieve data
@@ -385,7 +388,7 @@ sub _get_run_name {
     my $env     = shift;
     my $nameopt = $env->option('name');
 
-    if (defined $nameopt and $nameopt ne $EMPTY ) {
+    if ( defined $nameopt and $nameopt ne $EMPTY ) {
         return '.' . $nameopt;
     }
     if ( $nameopt eq '_' ) {
@@ -396,14 +399,15 @@ sub _get_run_name {
     my $signtype = $env->option('type');
 
     my @run_pieces;
-    
+
     push @run_pieces, join( ',', @args ) if @args;
     push @run_pieces, $signtype if $signtype;
-    push @run_pieces, 'U' if $env->option('update');
-    
+    push @run_pieces, 'U'       if $env->option('update');
+
     if (@run_pieces) {
-        return '.' . join('_' , @run_pieces);
-    } else {
+        return '.' . join( '_', @run_pieces );
+    }
+    else {
         return $EMPTY;
     }
 

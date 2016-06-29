@@ -7,23 +7,17 @@
 package Actium::Cmd::PrepareFlags 0.010;
 
 use Actium::Preamble;
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup   ('signup');
 use Actium::Flags;
 use Actium::Util('file_ext');
 use Actium::O::2DArray;
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
-    return (
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::Signup::options($env),
-    );
+    return qw/actiumfm signup/;
 }
 
 sub START {
     my ( $class, $env ) = @_;
-    my $actiumdb = actiumdb($env);
+    my $actiumdb = $env->actiumdb;
     my @argv     = $env->argv;
 
     my $assigncry = cry( 'Creating flag assignments');
@@ -59,7 +53,7 @@ sub START {
             binmode => ':utf8' );
     }
     else {
-        my $signup = signup($env);
+        my $signup = $env->signup;
         $signup->slurp_write( $tabbed, 'flag_assignments.txt' );
     }
 

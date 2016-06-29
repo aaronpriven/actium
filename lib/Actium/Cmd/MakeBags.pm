@@ -6,16 +6,9 @@ package Actium::Cmd::MakeBags 0.010;
 
 use Actium::Preamble;
 use Actium::Bags;
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
-use Actium::Cmd::Config::Signup   (qw<signup oldsignup>);
-use Actium::Util('tabulate');
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
-    return (
-        Actium::Cmd::Config::ActiumFM::OPTIONS($env),
-        Actium::Cmd::Config::Signup::options_with_old($env)
-    );
+    return qw/actiumdb signup_with_old/;
 }
 
 sub START {
@@ -23,10 +16,10 @@ sub START {
     my ( $class, $env ) = @_;
     my $config_obj = $env->config;
 
-    my $signup    = signup($env);
-    my $oldsignup = oldsignup($env);
+    my $signup    = $env->signup;
+    my $oldsignup = $env->oldsignup;
 
-    my $actium_db = actiumdb($env);
+    my $actium_db = $env->actiumdb;
 
     my ( $bagtexts_r, $baglist_r, $counts_r, $final_heights_r )
       = Actium::Bags::make_bags(
@@ -47,14 +40,14 @@ sub START {
     foreach ( sort keys %{$counts_r} ) {
         push @counts_rs, [ $_, $counts_r->{$_} ];
     }
-    say u::joinlf ( @{ tabulate(@counts_rs) } );
+    say u::joinlf ( @{ u::tabulate(@counts_rs) } );
 
     say '---';
     my @heights_rs;
     foreach ( sort { $a <=> $b } keys %{$final_heights_r} ) {
         push @heights_rs, [ $_, $final_heights_r->{$_}{count} ];
     }
-    say u::joinlf( @{ tabulate(@heights_rs) } );
+    say u::joinlf( @{ u::tabulate(@heights_rs) } );
 
     return;
 

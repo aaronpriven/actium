@@ -6,7 +6,6 @@ package Actium::Cmd::DecalLabels 0.010;
 
 use Actium::Preamble;
 use Actium::Util('add_before_extension');
-use Actium::Cmd::Config::ActiumFM ('actiumdb');
 use Actium::DecalPreparation(qw/make_labels/);
 
 sub HELP {
@@ -15,15 +14,14 @@ sub HELP {
 }
 
 sub OPTIONS {
-    my ($class, $env) = @_;
-    return Actium::Cmd::Config::ActiumFM::OPTIONS($env);
+    return 'actiumfm';
 }
 
 sub START {
 
     my $class     = shift;
     my $env = shift;
-    my $actium_db = actiumdb($env);
+    my $actium_db = $env->actiumdb;
     
     my @argv = $env->argv;
 
