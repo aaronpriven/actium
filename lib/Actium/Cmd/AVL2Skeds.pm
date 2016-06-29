@@ -1,5 +1,4 @@
 package Actium::Cmd::AVL2Skeds 0.010;
-
 # This is one of the most important programs: it produces the skeds files from
 # the avl files.
 
@@ -7,20 +6,22 @@ use Actium::Preamble;
 
 use sort ('stable');
 
-use File::Copy;                                 ### DEP ###
-use Array::Transpose;                           ### DEP ###
+use File::Copy;          ### DEP ###
+use Array::Transpose;    ### DEP ###
 use Actium::Util (':all');
 use Actium::Constants;
 use Actium::Union('ordered_union');
 use Actium::Time           ('timenum');
 use Actium::DaysDirections (':all');
-use Actium::Cmd::Config::Signup ('signup');
 
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        [ 'rawonly!', 'Only create "rawskeds" and not "skeds".' ],
-        Actium::Cmd::Config::Signup::options($env)
+        'signup ',
+        {   spec        => 'rawonly!',
+            description => 'Only create "rawskeds" and not "skeds".',
+            fallback    => 0,
+        },
     );
 }
 
@@ -54,7 +55,7 @@ sub START {
     my $quiet   = $env->option('quiet');
     my $rawonly = $env->option('rawonly');
 
-    my $signup = signup($env);
+    my $signup = $env->signup;
     chdir $signup->path();
 
     # retrieve data
@@ -143,11 +144,11 @@ sub START {
 
     say "\n\nAveraged keys:";
 
-    say  "   ", keyreadable($_)  for (@averaged_keys);
+    say "   ", keyreadable($_) for (@averaged_keys);
 
     copy_exceptions($quiet) unless $rawonly;
 
-    say ("\nEnd.");
+    say("\nEnd.");
 
     return;
 
@@ -431,10 +432,10 @@ sub make_sked {
         my $trip_r   = $trips[$trip_idx];
         my $line     = $lines[$trip_idx];
         my $specdays = $specdays[$trip_idx];
-        
-        if ($line =~ /\A 6 [0-9] [0-9] \z /x  and not $specdays ) {
-        	$specdays = 'SD';
-        } # override special days for 600-series lines
+
+        if ( $line =~ /\A 6 [0-9] [0-9] \z /x and not $specdays ) {
+            $specdays = 'SD';
+        }    # override special days for 600-series lines
 
         my @expanded_trip;
         my $current_idx = 0;
@@ -498,8 +499,8 @@ sub write_sked {
         #if ($dir ne 'rawskeds') {
         tr/bx/pa/ for @times;    # old format can't handle b, a times
                                  #}
-        say $out jointab( $trip->{SPECDAYS}, $EMPTY_STR, $EMPTY_STR, $trip->{LINE},
-            @times );
+        say $out jointab( $trip->{SPECDAYS}, $EMPTY_STR, $EMPTY_STR,
+            $trip->{LINE}, @times );
     }
 
     close $out;
@@ -748,9 +749,8 @@ sub copy_exceptions {
 
     my @skeds = sort glob 'exceptions/*.txt';
 
-    say 
-"\nAdding exceptional schedules (possibly overwriting previously processed ones)."
-    ;
+    say
+"\nAdding exceptional schedules (possibly overwriting previously processed ones).";
 
     my $displaycolumns = 0;
 
