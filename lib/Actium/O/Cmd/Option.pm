@@ -15,12 +15,12 @@ use Actium::Moose;
 # so no point in asking for both
 
 around BUILDARGS => sub {
-    my $class = shift;
     my $orig  = shift;
+    my $class = shift;
 
     my %params = u::validate(
         @_,
-        {   cmdenv         => { type    => 'Actium::O::Cmd' },
+        {   cmdenv         => { isa     => 'Actium::O::Cmd' },
             envvar         => 0,
             config_section => { default => '_' },
             config_key     => 0,
@@ -29,6 +29,7 @@ around BUILDARGS => sub {
             description     => 1,
             display_default => { type => $PV_TYPE{BOOLEAN}, default => 0 },
 
+            order => { type => $PV_TYPE{SCALAR} },
             spec       => 0,
             callback   => 0,
             prompt     => 0,
@@ -43,7 +44,7 @@ around BUILDARGS => sub {
     my $default;
 
     if ( exists $params{envvar} ) {
-        my $envvar      = $params{env};
+        my $envvar      = $params{envvar};
         my $system_name = $cmdenv->system_name;
         $envvar =~ s/\A(?:${system_name}_)*/${system_name}_/;
         $envvar  = uc($envvar);
@@ -58,13 +59,14 @@ around BUILDARGS => sub {
         );
     }
 
-    if (    $default eq $EMPTY
-        and $params{spec} =~ m/\A [ \w ? \- | ]+ [+!]?/x )
+    if (    defined $default
+        and $default eq $EMPTY
+        and $params{spec} =~ m/\A [ \w ? \- | ]+ (?: [+!] | \z)/x )
     {
         $default = 1;
     }
-         # set default to 1 for simple options - those with no argument spec,
-         # or + or ! argument specs
+    # set default to 1 for simple options - those with no argument spec,
+    # or + or ! argument specs
 
     if ( not defined $default and exists $params{fallback} ) {
         $default = $params{fallback};
@@ -74,28 +76,19 @@ around BUILDARGS => sub {
         $description .= qq{. If not specified, will use $default};
     }
 
-    my %init_args = (
-        %params{qw/spec callback prompt no_command/},
-        description => $description
-    );
+    my %init_args;
+
+    foreach my $param (qw(spec prompthide callback prompt no_command order)) {
+        $init_args{$param} = $params{$param} if exists $params{$param};
+    }
+
+    $init_args{description} = $description;
 
     $init_args{default} = $default if defined $default;
 
     return $class->$orig(%init_args);
 
 };
-
-has spec => (
-    isa      => 'Str',
-    is       => 'ro',
-    required => 0,
-);
-
-has [qw/no_command prompthide/] => (
-    isa     => 'Bool',
-    is      => 'ro',
-    default => 0,
-);
 
 sub BUILD {
     my $self = shift;
@@ -109,6 +102,12 @@ sub BUILD {
     $self->_set_aliases( \@aliases );
 
 }
+
+has spec => (
+    isa      => 'Str',
+    is       => 'ro',
+    required => 0,
+);
 
 has name => (
     isa    => 'Str',
@@ -131,7 +130,24 @@ has description => (
     is       => 'ro',
 );
 
-has default => ( is => 'ro', );
+has order => (
+    required => 1,
+    isa      => 'Int',
+    is       => 'ro',
+);
+
+has [qw/no_command prompthide/] => (
+    isa     => 'Bool',
+    is      => 'ro',
+    default => 0,
+);
+
+has prompt => (
+    isa => 'Str',
+    is  => 'ro',
+);
+
+has [qw/default fallback/] => ( is => 'ro' );
 
 has callback => (
     isa => 'CodeRef',

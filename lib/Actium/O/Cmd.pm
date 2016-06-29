@@ -45,8 +45,8 @@ around BUILDARGS => sub {
             sysenv      => { type => $PV_TYPE{HASHREF}, default => {%ENV} },
             subcommands => { type => $PV_TYPE{HASHREF} },
             argv        => { type => $PV_TYPE{ARRAYREF}, default => [@ARGV] },
-            home_folder => { type => $PV_TYPE{SCALAR}, required => 0 },
-            bin         => { type => $PV_TYPE{SCALAR}, required => 0 },
+            home_folder => { type => $PV_TYPE{SCALAR}, optional => 1 },
+            bin         => { type => $PV_TYPE{SCALAR}, optional => 1 },
         }
     );
 
@@ -57,7 +57,7 @@ around BUILDARGS => sub {
     if ( not defined $params{bin} ) {
         require FindBin;          ### DEP ###
         no warnings 'once';
-        $params{bin} = $FindBin::Bin;
+        $params{bin} = Actium::O::Folder->new($FindBin::Bin);
     }
 
     my @original_argv = @{ $params{argv} };
@@ -100,6 +100,7 @@ around BUILDARGS => sub {
         _original_argv  => \@original_argv,
         _help_requested => $help_requested,
         argv            => \@argv,
+        bin             => $params{bin},
         home_folder     => Actium::O::Folder->new( $params{home_folder} ),
     );
 
@@ -121,7 +122,6 @@ sub BUILD {
     }
 
     my $module = $self->module;
-
     if ( $self->_help_requested or $self->option('help') ) {
         if ( $module->can('HELP') ) {
             $module->HELP($self);
@@ -175,7 +175,7 @@ sub prompt {
 
     my $val;
 
-    print "\n";
+    print "\n" if ($self->crier->position != 0) ;
 
     if ($hide) {
         $val = IO::Prompter::prompt(
@@ -446,6 +446,11 @@ sub _build_options {
     $self->_set_argv_r( \@argv );
     # replace old argv with new one without options in it
 
+    @objs = map { $_->[0] }
+      sort { $a->[1] <=> $b->[1] }
+      map { [ $_, $_->order ] } @objs;
+    # sort options by order submitted, so the prompts come out reasonably
+
     foreach my $obj (@objs) {
         my $name = $obj->name;
 
@@ -521,20 +526,27 @@ sub _build_option_objs {
     my @optionspecs = 'default';
     push @optionspecs, $module->OPTIONS($self) if $module->can('OPTIONS');
 
+    my $count = 0;
+
     my @opt_objs;
     while (@optionspecs) {
         my $optionspec = shift @optionspecs;
 
         if ( u::is_hashref($optionspec) ) {
             $optionspec->{cmdenv} = $self;
+            $optionspec->{order}  = $count++;
             push @opt_objs, Actium::O::Cmd::Option->new($optionspec);
         }
         elsif ( u::is_arrayref($optionspec) ) {
 
             my ( $spec, $description, $callbackordefault ) = @{$optionspec};
 
-            my %option_init
-              = ( cmdenv => $self, spec => $spec, description => $description );
+            my %option_init = (
+                cmdenv      => $self,
+                spec        => $spec,
+                description => $description,
+                order       => $count++
+            );
 
             if ( defined $callbackordefault ) {
 
@@ -545,9 +557,9 @@ sub _build_option_objs {
 
             push @opt_objs, Actium::O::Cmd::Option->( \%option_init );
 
-        }
+        } ## tidy end: elsif ( u::is_arrayref($optionspec...))
         else {
-            # option package
+                  # option package
             if ( not exists $OPTION_PACKAGE_DISPATCH{$optionspec} ) {
                 croak(  'Internal error. Invalid option package '
                       . "$optionspec specified in "
@@ -617,7 +629,7 @@ sub _default_package {
         },
         {   spec           => 'termcolor!',
             envvar         => 'TERM_COLOR',
-            description    => 'May display colors in terminal output.',
+            description    => 'May display colors in terminal output',
             config_section => 'Terminal',
             config_key     => 'color',
             fallback       => 0,
