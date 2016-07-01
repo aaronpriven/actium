@@ -12,7 +12,7 @@ use Actium::Util('file_ext');
 use Actium::O::2DArray;
 
 sub OPTIONS {
-    return qw/actiumfm signup/;
+    return qw/actiumdb signup/;
 }
 
 sub START {

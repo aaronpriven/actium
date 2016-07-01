@@ -20,7 +20,7 @@ EOF
 
 sub OPTIONS {
     my ($class, $env) = @_;
-    return qw/actiumfm signup/;
+    return qw/actiumdb signup/;
 }
 
 sub START {
