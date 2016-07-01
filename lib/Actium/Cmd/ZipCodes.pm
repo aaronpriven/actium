@@ -17,7 +17,7 @@ sub HELP {
 }
 
 sub OPTIONS {
-    return qw/geonames actiumfm/;
+    return qw/geonames actiumdb/;
 }
 
 sub START {

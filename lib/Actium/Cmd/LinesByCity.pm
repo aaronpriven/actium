@@ -4,7 +4,7 @@ use Actium::Preamble;
 use Actium::StopReports;
 
 sub OPTIONS {
-    return 'actiumfm';
+    return 'actiumdb';
 }
 
 sub HELP {

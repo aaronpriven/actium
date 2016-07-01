@@ -22,7 +22,7 @@ const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
 const my $SUBCOMMAND_SEPARATOR => ( $SPACE x 2 );
 
 const my %OPTION_PACKAGE_DISPATCH => ( map { $_ => ( '_' . $_ . '_package' ) }
-      (qw/default actiumfm flickr geonames signup newsignup signup_with_old/) );
+      (qw/default actiumdb flickr geonames signup newsignup signup_with_old/) );
 # specifying more than one of the signup packages should give
 # duplicate option errors
 
@@ -59,7 +59,7 @@ around BUILDARGS => sub {
     if ( not defined $params{bin} ) {
         require FindBin;          ### DEP ###
         no warnings 'once';
-        $params{bin} = Actium::O::Folder->new($FindBin::Bin);
+        $params{bin} = $FindBin::Bin;
     }
 
     my @original_argv = @{ $params{argv} };
@@ -102,7 +102,7 @@ around BUILDARGS => sub {
         _original_argv  => \@original_argv,
         _help_requested => $help_requested,
         argv            => \@argv,
-        bin             => $params{bin},
+        bin             => Actium::O::Folder->new( $params{bin} ),
         home_folder     => Actium::O::Folder->new( $params{home_folder} ),
     );
 
@@ -655,24 +655,24 @@ sub _default_package {
 
 } ## tidy end: sub _default_package
 
-### ActiumFM package
+### ActiumDB package
 
-sub _actiumfm_package {
+sub _actiumdb_package {
 
     my $self = shift;
 
-    require Actium::O::Files::ActiumFM;
+    require Actium::O::Files::ActiumDB;
 
     has actiumdb => (
         is      => 'ro',
         builder => '_build_actiumdb',
-        isa     => 'Actium::O::Files::ActiumFM',
+        isa     => 'Actium::O::Files::ActiumDB',
         lazy    => 1,
     );
 
     return (
         {   spec           => 'db_user=s',
-            config_section => 'ActiumFM',
+            config_section => 'ActiumDB',
             config_key     => 'db_user',
             envvar         => 'DB_USER',
             description    => 'User name to access Actium database',
@@ -680,7 +680,7 @@ sub _actiumfm_package {
         },
         {   spec           => 'db_password=s',
             description    => 'Password to access Actium database',
-            config_section => 'ActiumFM',
+            config_section => 'ActiumDB',
             config_key     => 'db_password',
             envvar         => 'DB_PASSWORD',
             description    => 'Password to access Actium database',
@@ -690,23 +690,23 @@ sub _actiumfm_package {
         {   spec            => 'db_name=s',
             description     => 'Name of the database in the ODBC driver. ',
             display_default => 1,
-            config_section  => 'ActiumFM',
+            config_section  => 'ActiumDB',
             config_key      => 'db_name',
             envvar          => 'DB_NAME',
-            fallback        => 'ActiumFM',
+            fallback        => 'ActiumDB',
         }
     );
 
-} ## tidy end: sub _actiumfm_package
+} ## tidy end: sub _actiumdb_package
 
 sub _build_actiumdb {
     my $self = shift;
 
-    my $actium_db
-      = Actium::O::Files::ActiumFM::->new( map { $_ => $self->option($_) }
+    my $actiumdb
+      = Actium::O::Files::ActiumDB::->new( map { $_ => $self->option($_) }
           qw /db_user db_password db_name/ );
 
-    return $actium_db;
+    return $actiumdb;
 
 }
 #### Signup

@@ -14,7 +14,7 @@ const my $IDT     => 'Actium::Text::InDesignTags';
 const my $HARDRET => Actium::Text::InDesignTags::->hardreturn_esc;
 
 sub OPTIONS {
-    return qw/actiumfm/;
+    return qw/actiumdb/;
 }
 
 my %i18n;

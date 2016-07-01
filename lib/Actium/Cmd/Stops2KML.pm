@@ -31,7 +31,7 @@ HELP
 }
 
 sub OPTIONS {
-    return 'actiumfm';
+    return 'actiumdb';
 }
 
 sub START {

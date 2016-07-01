@@ -30,7 +30,7 @@ HELP
 }
 
 sub OPTIONS {
-    return qw/signup actiumfm/;
+    return qw/signup actiumdb/;
 }
 
 sub START {

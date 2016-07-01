@@ -10,7 +10,7 @@ use Actium::Preamble;
 no warnings 'uninitialized';
 
 sub OPTIONS {
-    return qw/actiumfm signup/;
+    return qw/actiumdb signup/;
 }
 
 my $out;
