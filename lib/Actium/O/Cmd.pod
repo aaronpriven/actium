@@ -1,0 +1,259 @@
+=encoding utf8
+
+=head1 NAME
+
+Actium::O::Cmd - Command line interface routines for Actium
+
+=head1 VERSION
+
+This documentation refers to version 0.011
+
+=head1 SYNOPSIS
+
+mycommand:
+
+ use Actium::O::Cmd;
+
+ Actium::O::Cmd->new(
+   commandpath => $0,
+   system_name => 'this_system',
+   subcommands => { 
+     do_something  => 'DoSomething',
+     something     => \'Something',
+     another_thing => 'AnotherThing',
+   },
+ );
+
+Actium/Cmd/DoSomething.pm:
+
+ package Actium::Cmd::DoSomething 0.001;
+
+ sub OPTIONS {
+    my ($class, $env) = @_;
+    return { spec => myopt , description => 'My option' };
+ }
+
+ sub HELP {
+    my ($class, $env) = @_;
+    say "mycommand do_something - does something"
+ }
+
+ sub START {
+    my ($class, $env) = @_;
+    my $argument = $env->argv(0);
+    my $subcommand = $env->subcommand;
+    my $command = $env->command;
+
+    print "$command $subcommand to $argument"
+    print " with option -myopt" if $env->option('myopt');
+ }
+ 1;
+     
+Then, at a shell:
+ 
+ $ mycommand something myarg -myopt
+ "Executing DoSomething to myart with option -myopt"
+   
+=head1 DESCRIPTION
+
+Actium::O::Cmd is an object representing everything associated
+with the command-line interface for the Actium system.
+
+The idea is that this object encapulates everything such as terminal input and
+output and command-line arguments and options, and other ways of
+configuring programs.  It represents the environment
+in which the program runs.  (Not to be confused with the system environment,
+perl's C<%ENV>, which is a small part of what this program does.)
+
+In theory there could also be other environments that could 
+be presented (Actium::O::GUI, Actium::O::Web, or whatever), although
+none exist at the moment.  The basic idea comes from L<Mark Jason 
+Dominus's article on the Moonpig billing 
+system|http://blog.plover.com/prog/Moonpig.html>, although that encompasses
+much more than Actium::O::Cmd does.
+
+Actium::O::Cmd is a Moose object. This may surprise people who are used to
+thinking of Moose as slow and inappropriate for command-line programs.
+Speed was not a significant factor in the design.
+
+=head2 Basic structure of Actium::O::Cmd
+
+Actium::O::Cmd is designed to create commands with subcommands and which
+handle command-line options and command-line arguments.
+
+It works this way:
+
+=over
+
+=item *
+
+The executable script is run, and passes Actium::O::Cmd information on
+valid subcommands and other information about the system.
+
+=item * 
+
+Actium::O::Cmd identifies which command is selected, if any. It displays
+usage information for the script if requested or if there's an error. 
+
+=item * 
+
+Otherwise it loads the proper subcommand. It asks the subcommand which options
+are requested, and processes the command line and other configuration
+sources to set the options properly.  
+
+=item * 
+
+Then it either runs the subcommand's routine, or alternatively asks it to
+display its help information.
+
+=back
+
+=head1 Actium::O::Cmd object construction
+
+The Actium::O::Cmd object is constructed using a call to 
+Actium::O::Cmd->new() from the main script.
+
+The "new" call takes the following named parameters, which can be passed
+as a hash reference or as a plain hash (in other words, a simple list 
+name => value pairs).
+
+=head2 Required parameters
+
+=over
+
+=item system_name
+
+The system name is intended to be an overall name for the system.
+In practice, it will probably always be "actium", but it could be anything.
+It is used for determining the name of the configuration files and any 
+system environment variables that are used.
+
+=item commandpath
+
+The command path is used for determining the name of this command,
+which itself is primarily intended for display to the user. 
+In normal usage it should be set to perl's C<$0> variable (aka 
+C<$PROGRAM_NAME> under L<English.pm|English>).
+
+=item subcommands
+
+This should be set to a hash reference. The keys are the names of the
+subcommands, and the values are names of modules under the C<Actium::Cmd>
+namespace.
+
+If the value is a reference to a scalar, that scalar is taken as the 
+name of another subcommand. This allows several aliases to be made of 
+the same subcommand.
+
+So, for example, if passed
+
+ subcommand { 
+    fred      => 'Frederick',
+    freddy    => \'fred',
+    sam_spade => 'Sam::Spade',
+ },
+    
+Then Actium::O::Cmd would use the module C<Actium::Cmd::Frederick>
+if either 'fred' or 'freddy' were supplied, and use the module
+C<Actium::Cmd::Sam::Spade> if 'sam_spade' were supplied.
+
+Note that the value of the C<command> attribute will always be the
+non-alias name, even if the alias is specified. 
+
+=back
+
+=head2 Optional parameters
+
+=over
+
+=item sysenv
+
+This should be a hash reference.  If not specified, it will be set 
+to a I<copy> of the system environment (perl's C<%ENV>). As such, it should
+be used only for reading the environment and not for passing data to 
+child processes.  (Functions respecting C<sysenv> could be added to 
+Actium::O::Cmd.)
+
+=item argv
+
+This should be an array reference. If not specified, it will be set to 
+a copy of the command-line arguments (perl's C<@ARGV>).
+
+=item home_folder
+
+This should be a string representing a path on disk (which will be passed
+to Actium::O::Folder), representing the user's home folder. If not specified,
+it will be set to the user's home folder (as determined by 
+L<the File::HomeDir module|File::HomeDir>.
+
+=item bin
+
+This should also be a string representing a path on disk (which, again,
+will be passed to Actium::O::Folder). This represents the folder where the
+script is stored. If not specified, it will be set to C<$Bin> from 
+L<the FindBin module|FindBin>.
+
+=back
+
+=head1 Moose Attributes
+
+Actium::O::Cmd uses the semi-affordance style:
+
+ $value = $obj->attribute_name()     # reads the attribute
+ $obj->set_attribute_name() = $value # sets the attribute
+
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties
+that can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2014
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
