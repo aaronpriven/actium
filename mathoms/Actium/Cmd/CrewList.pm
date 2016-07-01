@@ -4,6 +4,9 @@
 
 # legacy stage 4
 
+__END__
+# to avoid Eclipse errors
+
 use 5.016;
 use warnings;
 
