@@ -7,7 +7,7 @@ use Actium::O::Dir;
 use HTML::Entities;    ### DEP ###
 
 sub OPTIONS {
-    return qw/actiumfm signup/;
+    return qw/actiumdb signup/;
 }
 
 my $count;

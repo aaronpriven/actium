@@ -9,7 +9,7 @@ use Actium::O::Folder;
 
 sub OPTIONS {
 
-    return ( 'actiumfm',
+    return ( 'actiumdb',
         [ 'tab', 'Uses tabs instead of spaces to separate text' ] );
 }
 

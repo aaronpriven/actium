@@ -33,7 +33,7 @@ my %fields_of =
   );
 
 sub OPTIONS {
-    return 'actiumfm';
+    return 'actiumdb';
 }
 
 sub START {
