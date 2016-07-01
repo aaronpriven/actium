@@ -46,7 +46,7 @@ EOF
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        qw/actiumfm signup/,
+        qw/actiumdb signup/,
 
         {   spec => 'update',
             description =>

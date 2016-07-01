@@ -33,7 +33,7 @@ use constant {
 my @dropped_info;
 
 sub OPTIONS {
-    return 'actiumfm';
+    return 'actiumdb';
 }
 
 sub START {

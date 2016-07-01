@@ -23,7 +23,7 @@ EOF
 }
 
 sub OPTIONS {
-    return (qw/actiumfm signup/);
+    return (qw/actiumdb signup/);
 }
 
 ##### Retrieve data from AVL and from database
