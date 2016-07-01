@@ -561,7 +561,7 @@ sub _build_option_objs {
                 $option_init{$key} = $callbackordefault;
             }
 
-            push @opt_objs, Actium::O::Cmd::Option->( \%option_init );
+            push @opt_objs, Actium::O::Cmd::Option->new( \%option_init );
 
         } ## tidy end: elsif ( u::is_arrayref($optionspec...))
         else {
