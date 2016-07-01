@@ -65,7 +65,7 @@ There are two other items that are placed.
 
 This is optional; not every sign has a map.
 
-* A non-printing stop ID. I thought it would be good to display the stop ID large on screen, but not have it printed out. This frame should have the "Nonprinting" box checked in the "Attributes" palette and have the script label "NonprintingStopID".
+* A non-printing stop ID. I thought it would be good to display the stop ID large on screen, but not have it printed out. This frame should have the "Nonprinting" box checked in the "Attributes" palette and have the script label "NonPrintingStopID".
 
 ## Actium database
 
@@ -104,7 +104,7 @@ There is a new "SmokingText" field containing the legal code reference.
 
 ### i18n
 
-This contains multilingual text. ("I18n" is an example of a newly geeky kind of acbbreviation: "internationalization" has 18 letters betwen the i and the n, hence "i18n". They also use "a10y" for "accessibility.") 
+This contains multilingual text. ("I18n" is an example of a newly geeky kind of acbbreviation: "internationalization" has 18 letters betwen the i and the n, hence "i18n". They also use "a11y" for "accessibility.")
 
 At the moment, the way my perl stuff handles this is completely broken and needs to be redone, so it's probably best left alone for now.
 
@@ -160,13 +160,13 @@ This will generate text files for the schedule signs for this signup that are ma
 
     actium.pl makepoints -s signup 37 372 473
     
-This will generate text files for signs 37, 372, and 473, assuming each of those are marked "Active." The name of this run will be "37_372_473".
+This will generate text files for signs 37, 372, and 473, assuming each of those are marked "Active." The name of this run will be "37\_372\_473".
 
     actium.pl makepoints -s signup -type T24 -u -name tuba
     
 This will generate text files for signs marked "Needs Update" that are of type T24. The run name will be "tuba" (instead of "T24_U").
 
-    actium.pl makepoints -s signup 2
+    actium.pl makepoints -s signup 2 -name _
     
 This will generate a text file for sign 2. It will use no run name.
 
