@@ -3,6 +3,9 @@
 ##################################################################
 ### CREW LIST
 
+__END__
+to avoid Eclipse errors
+
 const my @HEADERS    => (qw/Group Order StopID Location Decals/);
 const my $PAPER_SIZE => 1;                                          # letter
 
