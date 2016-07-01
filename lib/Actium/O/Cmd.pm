@@ -59,7 +59,7 @@ around BUILDARGS => sub {
     if ( not defined $params{bin} ) {
         require FindBin;          ### DEP ###
         no warnings 'once';
-        $params{bin} = Actium::O::Folder->new($FindBin::Bin);
+        $params{bin} = $FindBin::Bin;
     }
 
     my @original_argv = @{ $params{argv} };
@@ -102,7 +102,7 @@ around BUILDARGS => sub {
         _original_argv  => \@original_argv,
         _help_requested => $help_requested,
         argv            => \@argv,
-        bin             => $params{bin},
+        bin             => Actium::O::Folder->new( $params{bin} ),
         home_folder     => Actium::O::Folder->new( $params{home_folder} ),
     );
 
