@@ -6,7 +6,7 @@ use Actium::Preamble;
 
 sub OPTIONS {
     my ( $class, $env ) = @_;
-    return ( qw/actiumfm signup/,
+    return ( qw/actiumdb signup/,
         [   'update',
             'Will only process signs that have the status "Needs Update."', 0
         ],

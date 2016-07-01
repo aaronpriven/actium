@@ -16,7 +16,7 @@ sub OPTIONS {
             'Location of repository in file system',
             '/Volumes/Bireme/Photos/Repository'
         ],
-        'actiumfm',
+        'actiumdb',
     );
 }
 

@@ -21,7 +21,7 @@ EOF
 }
 
 sub OPTIONS {
-    return ( qw/actiumfm signup_with_old/ ,
+    return ( qw/actiumdb signup_with_old/ ,
         {   spec => 'ignore600s!',
             description => 'Ignore lines 600-699 in comparison. ',
             fallback => 0,

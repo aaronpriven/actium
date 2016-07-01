@@ -22,7 +22,7 @@ sub HELP {
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        'actiumfm',
+        'actiumdb',
         {   spec            => 'table=s',
             description     => "Table where fields will come from",
             fallback         => $DEFAULT_TABLE,

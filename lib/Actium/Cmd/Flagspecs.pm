@@ -27,7 +27,7 @@ use Const::Fast;                      ### DEP ###
 const my $NEW_KEY_SEPARATOR => '_';
 
 sub OPTIONS {
-    return qw/actiumfm signup/;
+    return qw/actiumdb signup/;
 }
 
 sub sk {
