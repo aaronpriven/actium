@@ -129,7 +129,7 @@ sub BUILD {
             $module->HELP($self);
         }
         else {
-            say "Help not implemented for $self->subcommand.";
+            say "Help not implemented for " . $self->subcommand . ".";
         }
         $self->_output_usage();
     }
@@ -228,7 +228,7 @@ sub _mainhelp {
 
     my $width = $term_width_cr->() - 2;
 
-    require Actium::O::2DArray;
+    require Actium::O::2DArray; 
     ( undef, \my @lines ) = Actium::O::2DArray->new_like_ls(
         array     => \@subcommands,
         width     => $width,
@@ -401,7 +401,6 @@ has _original_argv_r => (
     init_arg => '_original_argv',
     handles  => {
         _original_argv     => 'elements',
-        _original_argv_idx => 'get',
     },
 );
 
@@ -414,7 +413,6 @@ has argv_r => (
     init_arg => 'argv',
     handles  => {
         argv     => 'elements',
-        argv_idx => 'get',
     },
 );
 
@@ -578,6 +576,10 @@ sub _build_option_objs {
         }
     } ## tidy end: while (@optionspecs)
 
+    u::immut; 
+    # made immutable here, after any new attributes are made in dispatch
+    # routines
+
     my %opt_obj_of;
 
     for my $obj (@opt_objs) {
@@ -732,7 +734,7 @@ sub _signup_package {
         lazy    => 1,
     );
 
-    require File::Spec;
+    require File::Spec;   ### DEP ###
 
     return (
         {   spec        => 'base=s',
@@ -904,138 +906,3 @@ sub _build_geonames_username {
 
 1;
 
-__END__
-
-Documentation from Actium::Options
-
-
-Note that the default configuration for Getopt::Long is used, so (for
-example) bundling is off and options can be abbreviated to their shortest
-unique abbreviation. See 
-L<Getopt::Long/"Configuring Getopt::Long"|"Configuring Getopt::Long" in Getopt::Long>.
-
-$optionspec is an
-option specification as defined in L<Getopt::Long|Getopt::Long>. Note that to specify
-options that take list or hash values, it is necessary to indicate this
-by appending an "@" or "%" sign after the type. See L<Getopt::Long/"Summary 
-of Option Specifications"> for more information.
-
-B<add_option()> will accept alternate names in the $optionspec, as described in 
-L<Getopt::Long/Getopt::Long>.  
-
-$description is a human-readable short description to be used in
-displaying lists of options to users.
-
-If $callbackordefault is present, and is a code reference, the code referred to will 
-be executed if the option is set. The value of the option will be the 
-first element of the @_ passed to the code.
-
-If $callbackordefault is present but not a code reference, it will be treated as
-the default value for the option.
-
-=item B<option($optionname)>
-
-The B<option()> subroutine returns the value of the option. This can be
-the value, or a reference to a hash or array if that was in the option
-specification. 
-
-=item B<set_option($optionname, $value)>
-
-This routine sets the value for an option. It is used to override options
-set by users (for whatever reason).
-
-=head1 DIAGNOSTICS
-
-=over
-
-=item Attempt to add duplicate option $optionname. 
-
-A module tried to add an option that had already been added 
-(presumably by another module).
-
-=head1 BUGS AND LIMITATIONS
-
-Actium::Options does not support all the features of Getopt::Long. Only the
-default configuration can be used, and subroutines cannot be specified as the
-destinations for non-option arguments. (Callbacks are implemented for options
-in another way.)
-
-=head1 Old documentation from Actium::O::Folders::Signup 
-
-The base folder is specified as follows (in the following order of
-precedence):
-
-=over
-
-=item *
-
-In the "base" argument to the "signup" method call
-
-=item *
-In the command line with the "-base" option
-
-=item *
-By the environment variable "ACTIUM_BASE".
-
-=back
-
-If none of these are set, Actium::O::Folders::Signup uses
-L<FindBin|FindBin> to find the folder where the script is running
-(in the above example, /Actium/bin), and sets the base folder to
-"signups" in the script folder's parent folder.  In other words,
-it's something like "/Actium/bin/../signups". In the normal case
-where the "bin" folder is in the same folder as the Actium data
-this means it will all work fine without any specification of the
-base folder. If not, then it will croak.
-
-=item Signup folder
-
-The data for each signup is stored in a subfolder of the base folder.
-This folder is usually named after the period of time when the signup
-becomes effective ("w08" meaning "Winter 2008", for example). 
-
-The signup folder is specified as follows (in the following order of
-precedence):
-
-=over
-
-=item *
-In the "signup" argument to the "signup" method call
-
-=item *
-In the command line with the "-signup" option
-
-=item *
-By the environment variable "ACTIUM_SIGNUP".
-
-=back
-
-If none of these are present, then Actium::O::Folders::Signup 
-will croak "No signup folder specified."
-
-=head1 COMMAND-LINE OPTIONS AND ENVIRONMENT VARIABLES
-
-=over
-
-=item -base (option)
-
-=item ACTIUM_BASE (environment variable)
-
-These supply a base folder used when the calling program doesn't
-specify one.
-
-=item -signup (option)
-
-=item ACTIUM_SIGNUP (environment variable)
-
-These supply a signup folder used when the calling program doesn't
-specify one.
-
-=item -cache (option)
-
-=item ACTIUM_CACHE (environment variable)
-
-These supply a cache folder used when the calling program doesn't
-specify one. See the method "cache" below.
-
-=back
