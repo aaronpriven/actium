@@ -30,10 +30,10 @@ around BUILDARGS => sub {
             display_default => { type => $PV_TYPE{BOOLEAN}, default => 0 },
 
             order => { type => $PV_TYPE{SCALAR} },
-            spec       => 0,
+            spec       => 1,
             callback   => 0,
             prompt     => 0,
-            no_command => 0,
+            no_command => { type => $PV_TYPE{BOOLEAN}, default => 0 },
             prompthide => { type => $PV_TYPE{BOOLEAN}, default => 0 },
         }
     );
@@ -72,8 +72,8 @@ around BUILDARGS => sub {
         $default = $params{fallback};
     }
 
-    if ( defined $default and $params{display_default} ) {
-        $description .= qq{. If not specified, will use $default};
+    if ( defined($default) and $params{display_default} ) {
+        $description .= qq{. If not specified, will use "$default"};
     }
 
     my %init_args;
