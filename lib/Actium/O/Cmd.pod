@@ -116,8 +116,8 @@ The Actium::O::Cmd object is constructed using a call to
 Actium::O::Cmd->new() from the main script.
 
 The "new" call takes the following named parameters, which can be passed
-as a hash reference or as a plain hash (in other words, a simple list 
-name => value pairs).
+as a hash reference or as a plain hash (in other words, a simple list
+of name => value pairs).
 
 =head2 Required parameters
 
@@ -235,12 +235,12 @@ option packages, see "Option packages" below.
 =head3 home_folder
 
 An Actium::O::Folder object representing the user's home folder; 
-see "home_folder" above.
+see "home_folder" above, under "Construction".
 
 =head3 bin
 
 An Actium::O::Folder object representing the folder where the script
-is located; see "bin" above.  
+is located; see "bin" above, under "Construction".  
 
 =head3 config
 
@@ -252,7 +252,8 @@ See Actium::O::Files::Ini for details.
 
 =head3 commandpath
 
-A file specification to the script. See "commandpath" above.
+A file specification to the script. See "commandpath" above, under
+"Construction".
 
 =head3 subcommand
 
@@ -263,12 +264,12 @@ is invoked as "myscript do_something" then subcommand will be
 =head3 system_name
 
 The system name passed to the object in construction. See
-"system_name" above.
+"system_name" above, under "Construction".
 
 =head3 module
 
 The package name of the module that is associated with this subcommand.
-If the "do_something" is associated with "DoSomething" in the 
+If the "do_something" subcommand is associated with "DoSomething" in the 
 "subcommands" hash passed in construction, then the module will be 
 "Actium::Cmd::DoSomething".
 
@@ -472,7 +473,7 @@ If set to a true value, will not look for the value on the command
 line.  Presumably one of the other sources would be specified
 (otherwise it would be pointless).
 
-=head1 OPTION BUNDLES
+=head1 OPTION PACKAGES
 
 Groups of options, generally shared among several modules, are
 collected in option packages.  If a non-reference is part of the
@@ -494,7 +495,7 @@ the option name.  For example, -noquiet will
 turn off the quiet setting if it was set by the system_name_TERM_QUIET 
 environment variable.
 
-=head2 default package
+=head2 'default' package
 
 The default package has options regarding terminal display.
 
@@ -656,7 +657,23 @@ in the event it is different from the base of the current signup.
 If not specified it will be the same as the "base" option, since the
 signups are usually stored in the same folder.
 
-<more to come>
+=head2 'geonames' package
+
+This package is used for geocoding using the geonames.org server.
+See L<Actium::Geo|Actium::Geo> for more information.
+
+=head3 option: -geonames_username
+
+=head3 environment: GEONAMES_USERNAME
+
+=head3 config key: 'username' in section 'Geonames'
+
+The user name for the Geonames API. If not supplied, will prompt the
+user for a name.
+
+=head2 'flickr' package
+
+This package is used for 
 
 =head1 USER HELP
 
