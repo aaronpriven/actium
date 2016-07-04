@@ -129,7 +129,7 @@ sub BUILD {
             $module->HELP($self);
         }
         else {
-            say "Help not implemented for " . $self->subcommand . ".";
+            say STDERR "Help not implemented for " . $self->subcommand . ".";
         }
         $self->_output_usage();
     }
@@ -543,7 +543,8 @@ sub _build_option_objs {
         }
         elsif ( u::is_arrayref($optionspec) ) {
 
-            my ( $spec, $description, $callbackordefault ) = @{$optionspec};
+            my ( $spec, $description, $callbackorfallback ) 
+                 = @{$optionspec};
 
             my %option_init = (
                 cmdenv      => $self,
@@ -552,11 +553,12 @@ sub _build_option_objs {
                 order       => $count++
             );
 
-            if ( defined $callbackordefault ) {
+            if ( defined $callbackorfallback ) {
 
                 my $key
-                  = u::is_coderef($callbackordefault) ? 'callback' : 'default';
-                $option_init{$key} = $callbackordefault;
+                  = u::is_coderef($callbackorfallback) 
+                    ? 'callback' : 'fallback';
+                $option_init{$key} = $callbackorfallback;
             }
 
             push @opt_objs, Actium::O::Cmd::Option->new( \%option_init );
