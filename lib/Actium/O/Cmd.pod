@@ -590,9 +590,10 @@ The 'signup' package only allows for the specification of the current
 signup, while 'signup_with_old' allows for the specification of the
 current signup as well as a previous signup. 
 
-Actium::O::Cmd attributes called "signup" and "oldsignup" will return
-the object representing the current signup and the object representing
-the previous signup, respectively.
+If these packages are chosen, Actium::O::Cmd attributes called
+"signup" and "oldsignup" will return the object representing the
+current signup and the object representing the previous signup,
+respectively.
 
 =head3 option: -base
 
@@ -673,38 +674,140 @@ user for a name.
 
 =head2 'flickr' package
 
-This package is used for 
+This package is used for accessing the Flickr api.  If selected, this
+package will add an attribute "flickr_auth" to Actium::O::Cmd, which
+is an Actium::O::Photos::Flickr::Auth object representing the Flickr
+authorization. See Actium::O::Photos::Flickr::Auth for more
+information.
+
+=head3 option: flickr_key
+
+=head3 environment: FLICKR_KEY
+
+=head3 config key: 'key' in section 'Flickr'
+
+The "key" required to use the Flickr API.  
+If not provided, the user will be prompted for the key.
+
+=head3 option: flickr_secret
+
+=head3 environment: FLICKR_SECRET
+
+=head3 config key: 'secret' in section 'Flickr'
+
+The "secret" required to use the Flickr API.
+If not provided, the user will be prompted for the key.
 
 =head1 USER HELP
 
+Actium::O::Cmd also provides some simple user help capabilities.
+They can be invoked in two ways: via the "help" subcommand, or the
+"-help" (or "-?") option.
+
+If no subcommand is specified, or if an unrecognized subcommand is
+found on the command line, then a brief list of subcommands available
+is output to the terminal.
+
+If a subcommand is specified, then first the HELP() method from the
+appropriate module is invoked. After that, a brief summary of the
+options is displayed, using the "description" from the
+option specification.  If "display_default" was specified, then 
+the default will be displayed in the option summary. (Note that
+this default is whatever will be used if no option is specified on 
+the command line. It will display a value found in an environment
+variable or configuration file, for example.) 
+
+All option names are supplied, even aliases, although the description
+of every alias is just "Same as" followed by the name of the main
+name.
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
+=over 
 
+=item Help not implemented for...
 
-(old item - replace)
+The user requested help for a particular subcommand, but no HELP() 
+method was found in the module.  Command-line option usage will 
+be displayed anyway.
+
+=item Can't output help text: ...
+
+An system error occurred while sending help text to a buffer.
+
+=item Couldn't load module $module: ...
+
+An error occurred trying to load the $module module.
+
+=item Internal error (bad reference) in subcommand $subcommand
+
+The "subcommands" argument to the constructor tried to set an alias,
+but the main name was not found.
+
+=item Unrecognized subcommand $subcommand.
+
+A subcommand was entered on the command line that was not present in
+the subcommands argument to the constructor.
+
+=item Errors parsing command-line options.
+
+An error occurred when asking GetOpt::Long to process command-line
+options.
 
 =item Attempt to add duplicate option $optionname. 
 
 A module tried to add an option that had already been added 
 (presumably by another module).
 
-=head1 CONFIGURATION AND ENVIRONMENT
+=item Internal error. Invalid option package $optionspec specified...
 
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
+A module tried to add an option package that does not exist in
+Actium::O::Cmd (probably a spelling error).
+
+=item Internal error. Duplicate option $this_name specified...
+
+A module tried to add an option that has the same name as one already
+submitted.
+
+=back
 
 =head1 DEPENDENCIES
 
-List its dependencies.
+=over 
+
+=item *
+
+Actium::Moose and its dependencies
+
+=item *
+
+Getopt::Long
+
+=item *
+
+Term::Readkey
+
+=item *
+
+File::HomeDir
+
+=item *
+
+FindBin
+
+=item *
+
+IO::Prompter
+
+=item *
+
+Text::Wrap
+
+=item *
+
+File::Spec
+
+=back
 
 =head1 AUTHOR
 
@@ -717,13 +820,17 @@ Copyright 2016
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
 
-=over 4
+=over
 
-=item * the GNU General Public License as published by the Free
+=item * 
+
+the GNU General Public License as published by the Free
 Software Foundation; either version 1, or (at your option) any
 later version, or
 
-=item * the Artistic License version 2.0.
+=item * 
+
+the Artistic License version 2.0.
 
 =back
 
