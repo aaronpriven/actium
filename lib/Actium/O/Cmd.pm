@@ -228,7 +228,7 @@ sub _mainhelp {
 
     my $width = $term_width_cr->() - 2;
 
-    require Actium::O::2DArray; 
+    require Actium::O::2DArray;
     ( undef, \my @lines ) = Actium::O::2DArray->new_like_ls(
         array     => \@subcommands,
         width     => $width,
@@ -399,9 +399,7 @@ has _original_argv_r => (
     is       => 'bare',
     default  => sub { [] },
     init_arg => '_original_argv',
-    handles  => {
-        _original_argv     => 'elements',
-    },
+    handles  => { _original_argv => 'elements', },
 );
 
 has argv_r => (
@@ -411,9 +409,7 @@ has argv_r => (
     writer   => '_set_argv_r',
     default  => sub { [] },
     init_arg => 'argv',
-    handles  => {
-        argv     => 'elements',
-    },
+    handles  => { argv => 'elements', },
 );
 
 has options_r => (
@@ -543,8 +539,7 @@ sub _build_option_objs {
         }
         elsif ( u::is_arrayref($optionspec) ) {
 
-            my ( $spec, $description, $callbackorfallback ) 
-                 = @{$optionspec};
+            my ( $spec, $description, $callbackorfallback ) = @{$optionspec};
 
             my %option_init = (
                 cmdenv      => $self,
@@ -556,8 +551,9 @@ sub _build_option_objs {
             if ( defined $callbackorfallback ) {
 
                 my $key
-                  = u::is_coderef($callbackorfallback) 
-                    ? 'callback' : 'fallback';
+                  = u::is_coderef($callbackorfallback)
+                  ? 'callback'
+                  : 'fallback';
                 $option_init{$key} = $callbackorfallback;
             }
 
@@ -578,7 +574,7 @@ sub _build_option_objs {
         }
     } ## tidy end: while (@optionspecs)
 
-    u::immut; 
+    u::immut;
     # made immutable here, after any new attributes are made in dispatch
     # routines
 
@@ -736,7 +732,7 @@ sub _signup_package {
         lazy    => 1,
     );
 
-    require File::Spec;   ### DEP ###
+    require File::Spec;    ### DEP ###
 
     return (
         {   spec        => 'base=s',
@@ -825,8 +821,8 @@ sub _build_oldsignup {
 
     return Actium::O::Folders::Signup::->new(
         base => ( $self->option('oldbase') // $self->option('base') ),
-        signup => $self->option('oldsignup'),
-        cache  => $self->option('cache'),
+        signup     => $self->option('oldsignup'),
+        cache      => $self->option('cache'),
         must_exist => 1,
     );
 
