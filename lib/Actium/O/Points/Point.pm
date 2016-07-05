@@ -83,6 +83,12 @@ has 'error_r' => (
     },
 );
 
+has 'heights' => (
+    is      => 'rw',
+    isa     => 'Str',
+    default => 'duh',
+);
+
 has 'region_count' => (
     is      => 'rw',
     isa     => 'Int',
@@ -525,6 +531,8 @@ sub determine_subtype {
     my $signtype = shift;
     my @subtypes = @_;
 
+    my @all_heights;
+
     # A "chunk" is a set of schedules that all are the same line and direction
 
     # A "region" is an area of a point schedule with the same number of columns
@@ -546,10 +554,15 @@ sub determine_subtype {
         }
         # at least one time -- that used to be there for noteonly
 
+        push @all_heights, $height;
+
         push @{ $heights_of_chunk{$chunk_id} }, $height;
         push @{ $columns_of_chunk{$chunk_id} }, $column;
 
     }
+    
+    @all_heights = reverse sort {$a <=> $b} @all_heights;
+    $self->set_heights("@all_heights");
 
     my ($chosen_subtype, @chosen_regions, @chunkids_by_region,
         @columns_needed, $all_chunks_singular
@@ -697,7 +710,8 @@ sub determine_subtype {
         #  ->text(
         #        "\x{1f4A5}  Warning! Couldn't fit columns in any template for "
         #      . "sign $signid" );
-        $self->push_error("Couldn't fit in any $signtype template");
+
+        $self->push_error( "Couldn't fit in any $signtype template");
         return;
 
     }
