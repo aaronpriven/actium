@@ -25,8 +25,9 @@ use Text::Trim;                    ### DEP ###
 
 use Actium::O::Points::Point;
 
-const my $LISTFILE_BASE  => 'pl';
-const my $ERRORFILE_BASE => 'err';
+const my $LISTFILE_BASE    => 'pl';
+const my $ERRORFILE_BASE   => 'err';
+const my $HEIGHTSFILE_BASE => 'ht';
 #const my $SIGNIDS_IN_A_FILE => 250;
 
 sub HELP {
@@ -47,7 +48,10 @@ sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
         qw/actiumdb signup/,
-
+        {    spec => 'output_heights' ,
+             description => 'Will output a file with the heights of each column',
+             fallback => 0,
+        },
         {   spec => 'update',
             description =>
               'Will only process signs that have the status "Needs Update."',
@@ -164,7 +168,7 @@ sub START {
         @signstodo = keys %signs;
     }
 
-    my ( %skipped_stops, %points_of_signtype, %errors );
+    my ( %skipped_stops, %points_of_signtype, %errors, %heights );
 
   SIGN:
     foreach my $signid ( sort { $a <=> $b } @signstodo ) {
@@ -296,6 +300,8 @@ sub START {
 
         push @{ $errors{$signid} }, $point->errors;
 
+        $heights{$signid} = $point->heights;
+
     }    ## <perltidy> end foreach my $signid ( sort {...})
 
     $cry->done;
@@ -352,9 +358,7 @@ sub START {
     ### ERROR DISPLAY
 
     my $error_file = $ERRORFILE_BASE . $run_name . '.txt';
-
     my $error_cry = cry "Writing errors to $error_file";
-
     my $error_fh = $pointlist_folder->open_write($error_file);
 
     foreach my $signid ( sort { $a <=> $b } keys %errors ) {
@@ -364,8 +368,20 @@ sub START {
     }
 
     $error_fh->close;
-
     $cry->done;
+
+    ### HEIGHTS DISPLAY
+
+    if ( $env->option('output_heights') ) {
+        my $heights_file = $HEIGHTSFILE_BASE . $run_name . '.txt';
+        my $heights_cry = cry "Writing heights to $heights_file";
+        my $heights_fh = $pointlist_folder->open_write($heights_file);
+        foreach my $signid ( sort { $a <=> $b } keys %heights ) {
+            say $heights_fh "$signid\t" . $heights{$signid};
+        }
+        $heights_fh->close;
+        $cry->done;
+    }
 
    #    print "\n", scalar keys %skipped_stops,
    #      " skipped signs because stop file not found.\n";
