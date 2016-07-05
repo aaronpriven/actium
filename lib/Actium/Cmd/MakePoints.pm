@@ -300,7 +300,7 @@ sub START {
 
         push @{ $errors{$signid} }, $point->errors;
 
-        $heights{$signid} = $point->heights;
+        $heights{$signid} = $point->heights if defined $point->heights;
 
     }    ## <perltidy> end foreach my $signid ( sort {...})
 
