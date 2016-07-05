@@ -86,7 +86,6 @@ has 'error_r' => (
 has 'heights' => (
     is      => 'rw',
     isa     => 'Str',
-    default => 'duh',
 );
 
 has 'region_count' => (
