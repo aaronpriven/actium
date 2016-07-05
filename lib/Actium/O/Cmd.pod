@@ -17,9 +17,9 @@ mycommand:
  Actium::O::Cmd->new(
    commandpath => $0,
    system_name => 'this_system',
-   subcommands => { 
+   subcommands => {
      do_something  => 'DoSomething',
-     something     => \'Something',
+     something     => \'do_something',
      another_thing => 'AnotherThing',
    },
  );
@@ -48,12 +48,12 @@ Actium/Cmd/DoSomething.pm:
     print " with option -myopt" if $env->option('myopt');
  }
  1;
-     
+
 Then, at a shell:
- 
+
  $ mycommand something myarg -myopt
  "Executing DoSomething to myart with option -myopt"
-   
+
 =head1 DESCRIPTION
 
 Actium::O::Cmd is an object representing everything associated
@@ -65,10 +65,10 @@ configuring programs.  It represents the environment
 in which the program runs.  (Not to be confused with the system environment,
 perl's C<%ENV>, which is a small part of what this program does.)
 
-In theory there could also be other environments that could 
+In theory there could also be other environments that could
 be presented (Actium::O::GUI, Actium::O::Web, or whatever), although
-none exist at the moment.  The basic idea comes from L<Mark Jason 
-Dominus's article on the Moonpig billing 
+none exist at the moment.  The basic idea comes from L<Mark Jason
+Dominus's article on the Moonpig billing
 system|http://blog.plover.com/prog/Moonpig.html>, although that encompasses
 much more than Actium::O::Cmd does.  Typically this object is called
 C<$env> in modules (as in Moonpig), since there could in theory be more
@@ -92,18 +92,18 @@ It works this way:
 The executable script is run, and passes Actium::O::Cmd information on
 valid subcommands and other information about the system.
 
-=item * 
+=item *
 
 Actium::O::Cmd identifies which command is selected, if any. It displays
-usage information for the script if requested or if there's an error. 
+usage information for the script if requested or if there's an error.
 
-=item * 
+=item *
 
 Otherwise it loads the proper subcommand. It asks the subcommand which options
 are requested, and processes the command line and other configuration
-sources to set the options properly.  
+sources to set the options properly.
 
-=item * 
+=item *
 
 Then it either runs the subcommand's routine, or alternatively asks it to
 display its help information.
@@ -112,7 +112,7 @@ display its help information.
 
 =head1 CONSTRUCTION
 
-The Actium::O::Cmd object is constructed using a call to 
+The Actium::O::Cmd object is constructed using a call to
 Actium::O::Cmd->new() from the main script.
 
 The "new" call takes the following named parameters, which can be passed
@@ -125,14 +125,14 @@ of name => value pairs).
 
 The system name is intended to be an overall name for the system.
 In practice, it will probably always be "actium", but it could be anything.
-It is used for determining the name of the configuration files and any 
+It is used for determining the name of the configuration files and any
 system environment variables that are used.
 
 =head3 commandpath
 
 The command path is used for determining the name of this command,
-which itself is primarily intended for display to the user. 
-In normal usage it should be set to perl's C<$0> variable (aka 
+which itself is primarily intended for display to the user.
+In normal usage it should be set to perl's C<$0> variable (aka
 C<$PROGRAM_NAME> under L<English.pm|English>).
 
 =head3 subcommands
@@ -141,24 +141,24 @@ This should be set to a hash reference. The keys are the names of the
 subcommands, and the values are names of modules under the C<Actium::Cmd>
 namespace.
 
-If the value is a reference to a scalar, that scalar is taken as the 
-name of another subcommand. This allows several aliases to be made of 
+If the value is a reference to a scalar, that scalar is taken as the
+name of another subcommand. This allows several aliases to be made of
 the same subcommand.
 
 So, for example, if passed
 
- subcommand { 
+ subcommand {
     fred      => 'Frederick',
     freddy    => \'fred',
     sam_spade => 'Sam::Spade',
  },
-    
+
 Then Actium::O::Cmd would use the module C<Actium::Cmd::Frederick>
 if either 'fred' or 'freddy' were supplied, and use the module
 C<Actium::Cmd::Sam::Spade> if 'sam_spade' were supplied.
 
 Note that the value of the C<command> attribute will always be the
-non-alias name, even if the alias is specified. 
+non-alias name, even if the alias is specified.
 
 The value 'help' is used by Actium::O::Cmd itself so no subcommand
 can be called 'help'.
@@ -167,36 +167,34 @@ can be called 'help'.
 
 =head3 sysenv
 
-This should be a hash reference.  If not specified, it will be set 
+This should be a hash reference.  If not specified, it will be set
 to a I<copy> of the system environment (perl's C<%ENV>). As such, it should
-be used only for reading the environment and not for passing data to 
-child processes.  (Functions respecting C<sysenv> could be added to 
+be used only for reading the environment and not for passing data to
+child processes.  (Functions respecting C<sysenv> could be added to
 Actium::O::Cmd.)
 
 =head3 argv
 
-This should be an array reference. If not specified, it will be set to 
+This should be an array reference. If not specified, it will be set to
 a copy of the command-line arguments (perl's C<@ARGV>).
 
 =head3 home_folder
 
 This should be a string representing a path on disk (which will be passed
 to Actium::O::Folder), representing the user's home folder. If not specified,
-it will be set to the user's home folder (as determined by 
+it will be set to the user's home folder (as determined by
 L<the File::HomeDir module|File::HomeDir>.
 
 =head3 bin
 
 This should also be a string representing a path on disk (which, again,
 will be passed to Actium::O::Folder). This represents the folder where the
-script is stored. If not specified, it will be set to C<$Bin> from 
+script is stored. If not specified, it will be set to C<$Bin> from
 L<the FindBin module|FindBin>.
-
-=back
 
 =head1 SUBCOMMAND MODULES
 
-Subcommand modules will be found in the "Actium::Cmd" namespace. 
+Subcommand modules will be found in the "Actium::Cmd" namespace.
 Actium::O::Cmd will load those modules and invoke them if selected by
 the user.
 
@@ -205,14 +203,14 @@ support HELP() and OPTIONS() methods.  Methods are invoked using
 method lookup (so could theoretically be inherited from parents or
 composed from roles).
 
-All these methods are passed the Actium::O::Cmd object itself as the 
+All these methods are passed the Actium::O::Cmd object itself as the
 only argument.
 
 =head3 START()
 
-The START() method is invoked when the module is intended to be run. 
+The START() method is invoked when the module is intended to be run.
 Normally it contains the procedural code that does whatever it is the
-module is supposed to do. 
+module is supposed to do.
 
 =head3 HELP()
 
@@ -223,7 +221,7 @@ it should be invoked.
 
 =head3 OPTIONS()
 
-The OPTIONS() method is how modules request that Actium::O::Cmd 
+The OPTIONS() method is how modules request that Actium::O::Cmd
 do options handling. The method should return a list of option
 specifications and/or option packages. See "OPTION PROCESSING" below.
 
@@ -234,21 +232,21 @@ option packages, see "Option packages" below.
 
 =head3 home_folder
 
-An Actium::O::Folder object representing the user's home folder; 
+An Actium::O::Folder object representing the user's home folder;
 see "home_folder" above, under "Construction".
 
 =head3 bin
 
 An Actium::O::Folder object representing the folder where the script
-is located; see "bin" above, under "Construction".  
+is located; see "bin" above, under "Construction".
 
 =head3 config
 
 An Actium::O::Files::Ini object representing a configuration file.
 The configuration file is the system name with a period in front,
-and an .ini extension (so, if the system name is "actium", the 
+and an .ini extension (so, if the system name is "actium", the
 configuration file will be ".actium.ini").
-See Actium::O::Files::Ini for details. 
+See Actium::O::Files::Ini for details.
 
 =head3 commandpath
 
@@ -269,8 +267,8 @@ The system name passed to the object in construction. See
 =head3 module
 
 The package name of the module that is associated with this subcommand.
-If the "do_something" subcommand is associated with "DoSomething" in the 
-"subcommands" hash passed in construction, then the module will be 
+If the "do_something" subcommand is associated with "DoSomething" in the
+"subcommands" hash passed in construction, then the module will be
 "Actium::Cmd::DoSomething".
 
 =head3 crier
@@ -298,7 +296,7 @@ subcommand name, and command-line options are preserved.
 
 =head3 be_quiet
 
-This method sets the "quiet" command-line option to be true, 
+This method sets the "quiet" command-line option to be true,
 and sets the crier object to not display ordinary text.
 
 This allows some modules, which would otherwise be noisy, to suppress
@@ -307,7 +305,7 @@ unwanted information.
 =head3 prompt
 
 This will ask the user to type a value on the terminal, using the
-IO::Prompter module. 
+IO::Prompter module.
 
  $value = $env->prompt($prompt, $hide)
 
@@ -330,7 +328,7 @@ value:
 =head3 option and option_is_set
 
 The option() method provides the value of the command-line option
-given, and returns undef if it is not set.  
+given, and returns undef if it is not set.
 
  $color = $env->option('color');
 
@@ -345,7 +343,7 @@ See "Option Processing" below.
 
 Actium::O::Cmd is designed to handle configuration and options
 processing from several sources. The idea is to allow the user to
-specify in many different ways the configuration of the program. 
+specify in many different ways the configuration of the program.
 
 The program looks for the values in the following order:
 
@@ -376,23 +374,23 @@ The user will be prompted for a value.
 =head1 OPTION SPECIFICATIONS
 
 The OPTIONS() method in each subcommand module should return a list of
-option specifications and/or packages. 
+option specifications and/or packages.
 
-An option specification is a hash reference, each specifying a single 
-option. (An older array-reference style of option specification 
-is deprecated.)  
+An option specification is a hash reference, each specifying a single
+option. (An older array-reference style of option specification
+is deprecated.)
 
 =head2 Required option specification keys
 
 =head3 spec
 
-This is a command-line option specification, as defined in 
+This is a command-line option specification, as defined in
 L<Getopt::Long|Getopt::Long>.  Any type of option that can be
 specified in Getopt::Long can be used, and aliases can be used.
 
 To specify
 options that take list or hash values, it is necessary to indicate this
-by appending an "@" or "%" sign after the type. See L<Getopt::Long/"Summary 
+by appending an "@" or "%" sign after the type. See L<Getopt::Long/"Summary
 of Option Specifications"> for more information. However, only
 command-line options will actually return an array or hash;
 environment variables, configuration files, and user prompts will only
@@ -401,9 +399,9 @@ return scalars.
 Note that the default configuration for Getopt::Long is used, so (for
 example) bundling is off and options can be abbreviated to their shortest
 unique abbreviation. See 
-L<Getopt::Long/"Configuring Getopt::Long"|"Configuring Getopt::Long" in Getopt::Long>.  A single hyphen is used to introduce all options.
+L<"Configuring Getopt::Long" in Getopt::Long|Getopt::Long/"Configuring Getopt::Long">. A single hyphen is used to introduce all options.
 
-Duplicate names or aliases will cause program termination, so do not 
+Duplicate names or aliases will cause program termination, so do not
 specify a name twice, or one that is present in an active option
 package (including the default option package).
 
@@ -426,7 +424,7 @@ capitalized. Thus, if the system name is "actium" and the environment
 variable specified is "foo", then the value will be taken from the
 "ACTIUM_FOO" environment variable. (To avoid errors, the system name
 will not be added if it is already present: envvar => 'ACTIUM_FOO'
-will look for 'ACTIUM_FOO' not 'ACTIUM_ACTIUM_FOO'.) 
+will look for 'ACTIUM_FOO' not 'ACTIUM_ACTIUM_FOO'.)
 
 =head3 config_section and config_key
 
@@ -444,7 +442,7 @@ any other method.
 
 If set to a true value, a default value will be added to the
 description of the option in the
-command-line option usage information. The default value is the value 
+command-line option usage information. The default value is the value
 that would be used if the option is not specified on the command line
 -- either the value from the environment variable, configuration file,
 or fallback value, in that order.
@@ -452,13 +450,13 @@ or fallback value, in that order.
 =head3 callback
 
 If a code reference is provided, after the option is set, this code
-wll be executed. The value of the option will be the first argument 
+wll be executed. The value of the option will be the first argument
 passed.
 
 =head3 prompt
 
 If this is set to a true value, it will prompt the user for the value,
-displaying this string, if there is no other source for the value. 
+displaying this string, if there is no other source for the value.
 A colon is added to the prompt string if not already present.
 
 =head3 prompthide
@@ -486,31 +484,29 @@ subcommand.
 When given here, the enviornment variable is given without the system
 name, but the system name must be present in the actual environment.
 (So, if the system name is 'actium' and the environment variable is
-given as 'TERM_QUIET', the actual environment variable used would be 
+given as 'TERM_QUIET', the actual environment variable used would be
 'ACTIUM_TERM_QUIET'.)
 
 A negatable option allows the command-line to override a setting from
 the environment or the configuration file, by specifying 'no' before
 the option name.  For example, -noquiet will
-turn off the quiet setting if it was set by the system_name_TERM_QUIET 
+turn off the quiet setting if it was set by the system_name_TERM_QUIET
 environment variable.
 
 =head2 'default' package
 
 The default package has options regarding terminal display.
 
-=over
+=head3 option: -help
 
-=item option: -help
-
-=item option: -?
+=head3 option: -?
 
 The help, or ? option, is an alternative way of asking for help from
 Actium::O::Cmd. Using it is effectively the same as using the help
 subcommand.  (Note that a command shell may use ? as a wildcard
-character and not pass it through to Actium::O::Cmd.) 
+character and not pass it through to Actium::O::Cmd.)
 
-=head3 option: -quiet 
+=head3 option: -quiet
 
 =head3 environment: TERM_QUIET
 
@@ -523,7 +519,7 @@ display. (Negatable)
 
 The be_quiet() method can be used by a submodule to turn this option on.
 
-=head3 option: -termcolor 
+=head3 option: -termcolor
 
 =head3 environment: TERM_COLOR
 
@@ -544,7 +540,7 @@ Actium::O::Crier will output dynamic progress indications (from the
 "prog" or "over" methods).  See Actium::O::Crier for more information.
 Submodules may also inspect this option and act accordingly.
 
-This is a negatable option, but it has a fallback value of 1, so will 
+This is a negatable option, but it has a fallback value of 1, so will
 be on unless specified otherwise.
 
 =head2 'actiumdb' package
@@ -553,7 +549,7 @@ The 'actiumdb' package has options allowing the specification of the
 database name, user name, and password to access the Actium database.
 See Actium::O::Files::ActiumDB for more information.
 
-When this package is requested, 
+When this package is requested,
 it will create a new attribute in Actium::O::Cmd called 'actiumdb', which
 will return the Actium database object.
 
@@ -583,12 +579,12 @@ The name of the ODBC driver entry for this database.
 
 =head2 'signup' and 'signup_with_old' packages
 
-These packages allow the specification of Actium::O::Folders::Signup objects. 
+These packages allow the specification of Actium::O::Folders::Signup objects.
 See that module for more information.
 
 The 'signup' package only allows for the specification of the current
 signup, while 'signup_with_old' allows for the specification of the
-current signup as well as a previous signup. 
+current signup as well as a previous signup.
 
 If these packages are chosen, Actium::O::Cmd attributes called
 "signup" and "oldsignup" will return the object representing the
@@ -604,7 +600,7 @@ respectively.
 The base directory where signups are found.
 
 If none of these are set, Actium::O::Folders::Signup uses
-the C<bin> attribute to find the script's folder, 
+the C<bin> attribute to find the script's folder,
 and sets the base folder to
 "signups" in the script folder's parent folder.  In other words,
 it's something like "/Actium/bin/../signups". In the normal case
@@ -620,7 +616,7 @@ base folder. If that is not the case, an error will be generated.
 
 The data for each signup is stored in a subfolder of the base folder.
 This folder is usually named after the period of time when the signup
-becomes effective ("w08" meaning "Winter 2008", for example). 
+becomes effective ("w08" meaning "Winter 2008", for example).
 
 =head3 option: -cache
 
@@ -628,7 +624,7 @@ becomes effective ("w08" meaning "Winter 2008", for example).
 
 =head3 config key: 'cache' in section 'Signup'
 
-A folder where local cache files are stored.  The fallback value is 
+A folder where local cache files are stored.  The fallback value is
 a directory called '.' plus the system name (so, if the system name is
 "actium", then  ".actium") in the user's home folder.
 
@@ -640,9 +636,9 @@ a directory called '.' plus the system name (so, if the system name is
 
 =head3 config key: 'oldsignup' in section 'Signup'
 
-This is in the 'signup_with_old' package. 
+This is in the 'signup_with_old' package.
 It is like "signup," but representing the previous signup. This is used for
-comparing signups to see what has changed. 
+comparing signups to see what has changed.
 
 =head3 option: -oldbase
 
@@ -652,7 +648,7 @@ comparing signups to see what has changed.
 
 =head3 config key: 'oldsignup' in section 'Signup'
 
-This is in the 'signup_with_old' package. 
+This is in the 'signup_with_old' package.
 It is like "base" but it is the folder where the old signup is stored,
 in the event it is different from the base of the current signup.
 If not specified it will be the same as the "base" option, since the
@@ -686,7 +682,7 @@ information.
 
 =head3 config key: 'key' in section 'Flickr'
 
-The "key" required to use the Flickr API.  
+The "key" required to use the Flickr API.
 If not provided, the user will be prompted for the key.
 
 =head3 option: flickr_secret
@@ -711,11 +707,11 @@ is output to the terminal.
 If a subcommand is specified, then first the HELP() method from the
 appropriate module is invoked. After that, a brief summary of the
 options is displayed, using the "description" from the
-option specification.  If "display_default" was specified, then 
+option specification.  If "display_default" was specified, then
 the default will be displayed in the option summary. (Note that
-this default is whatever will be used if no option is specified on 
+this default is whatever will be used if no option is specified on
 the command line. It will display a value found in an environment
-variable or configuration file, for example.) 
+variable or configuration file, for example.)
 
 All option names are supplied, even aliases, although the description
 of every alias is just "Same as" followed by the name of the main
@@ -723,12 +719,12 @@ name.
 
 =head1 DIAGNOSTICS
 
-=over 
+=over
 
 =item Help not implemented for...
 
-The user requested help for a particular subcommand, but no HELP() 
-method was found in the module.  Command-line option usage will 
+The user requested help for a particular subcommand, but no HELP()
+method was found in the module.  Command-line option usage will
 be displayed anyway.
 
 =item Can't output help text: ...
@@ -754,9 +750,9 @@ the subcommands argument to the constructor.
 An error occurred when asking GetOpt::Long to process command-line
 options.
 
-=item Attempt to add duplicate option $optionname. 
+=item Attempt to add duplicate option $optionname.
 
-A module tried to add an option that had already been added 
+A module tried to add an option that had already been added
 (presumably by another module).
 
 =item Internal error. Invalid option package $optionspec specified...
@@ -773,7 +769,7 @@ submitted.
 
 =head1 DEPENDENCIES
 
-=over 
+=over
 
 =item *
 
@@ -822,18 +818,18 @@ modify it under the terms of either:
 
 =over
 
-=item * 
+=item *
 
 the GNU General Public License as published by the Free
 Software Foundation; either version 1, or (at your option) any
 later version, or
 
-=item * 
+=item *
 
 the Artistic License version 2.0.
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 FITNESS FOR A PARTICULAR PURPOSE.
