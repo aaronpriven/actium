@@ -84,8 +84,8 @@ has 'error_r' => (
 );
 
 has 'heights' => (
-    is      => 'rw',
-    isa     => 'Str',
+    is  => 'rw',
+    isa => 'Str',
 );
 
 has 'region_count' => (
@@ -467,7 +467,8 @@ sub sort_columns_and_determine_heights {
     # -- it will just treat it as though it were a main type
 
     my @subtypes
-      = grep {/$signtype=[A-Z]\z/} keys %Actium::Cmd::MakePoints::signtypes;
+      = sort grep {/$signtype=[A-Z]+\z/}
+      keys %Actium::Cmd::MakePoints::signtypes;
 
     if ( @subtypes == 0 ) {
         $self->no_subtype($signtype);
@@ -559,8 +560,8 @@ sub determine_subtype {
         push @{ $columns_of_chunk{$chunk_id} }, $column;
 
     }
-    
-    @all_heights = reverse sort {$a <=> $b} @all_heights;
+
+    @all_heights = reverse sort { $a <=> $b } @all_heights;
     $self->set_heights("@all_heights");
 
     my ($chosen_subtype, @chosen_regions, @chunkids_by_region,
@@ -710,7 +711,7 @@ sub determine_subtype {
         #        "\x{1f4A5}  Warning! Couldn't fit columns in any template for "
         #      . "sign $signid" );
 
-        $self->push_error( "Couldn't fit in any $signtype template");
+        $self->push_error("Couldn't fit in any $signtype template");
         return;
 
     }
