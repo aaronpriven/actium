@@ -54,9 +54,8 @@ around BUILDARGS => sub {
 
     my $display_stopid = shift;
 
-    my ( $linegroup, $dircode, $days, @entries )
-      = split( /\t/, $kpoint );
-    if ( $entries[0] =~ /^\#/s ) { # entries like "LAST STOP"
+    my ( $linegroup, $dircode, $days, @entries ) = split( /\t/, $kpoint );
+    if ( $entries[0] =~ /^\#/s ) {    # entries like "LAST STOP"
         my ( $note, $head_lines, $desttp4s ) = @entries;
         $note =~ s/^\#//s;
         my @head_lines = split( /:/, $head_lines );
@@ -267,7 +266,15 @@ sub format_head_lines {
     my @head_lines = $self->head_lines;
     my ( $color, $head_lines );
 
-    my $pstyle = $#head_lines ? 'dropcapheadmany' : 'dropcaphead';
+    my $pstyle    = 'dropcaphead';
+    my $firstline = $self->head_line(0);
+    if ( $#head_lines
+        or ( length($firstline) >= 3 and $firstline !~ /[0-9]{3}/ ) )
+    {
+        $pstyle = 'dropcapheadmany';
+    }
+
+    #my $pstyle = $#head_lines ? 'dropcapheadmany' : 'dropcaphead';
 
     foreach my $line (@head_lines) {
         {
