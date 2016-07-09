@@ -1,8 +1,6 @@
-# /Actium/Cmd/XheaImport.pm
-#
-# Takes XML files exported from Hastus and imports them
+package Actium::Cmd::XheaImport 0.011;
 
-package Actium::Cmd::XheaImport 0.010;
+# Takes XML files exported from Hastus and imports them
 
 use Actium::Preamble;
 use Actium::Files::Xhea;

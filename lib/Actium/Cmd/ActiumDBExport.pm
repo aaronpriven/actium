@@ -1,8 +1,6 @@
-# Actium/Cmd/ExportForScheduling.pm
+package Actium::Cmd::ActiumDBExport 0.011;
 
 # Exports data for Scheduling import
-
-package Actium::Cmd::ActiumDBExport 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folder;

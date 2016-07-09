@@ -1,4 +1,4 @@
-# Actium/Points/Column.pm
+package Actium::O::Points::Column 0.011;
 
 # Object for a single column in an InDesign point schedule
 
@@ -9,7 +9,6 @@ use 5.010;
 
 use sort ('stable');
 
-package Actium::O::Points::Column 0.011;
 
 use Moose;                             ### DEP ###
 use MooseX::SemiAffordanceAccessor;    ### DEP ###

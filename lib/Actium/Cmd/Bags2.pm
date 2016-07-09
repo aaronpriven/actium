@@ -1,8 +1,6 @@
-# /Actium/Cmd/Bags2.pm
+package Actium::Cmd::Bags2 0.011;
 
 # service change bag decals from Excel and into a script
-
-package Actium::Cmd::Bags2 0.010;
 
 use Actium::Preamble;
 use autodie;

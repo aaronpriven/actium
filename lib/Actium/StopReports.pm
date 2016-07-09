@@ -1,4 +1,4 @@
-package Actium::StopReports 0.010;
+package Actium::StopReports 0.011;
 use Actium::Preamble;
 use Excel::Writer::XLSX;    ### DEP ###
 use Actium::Sorting::Travel(qw<travelsort>);

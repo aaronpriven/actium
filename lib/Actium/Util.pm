@@ -1,7 +1,6 @@
-# Actium/Util.pm
-# Utility routines
+package Actium::Util 0.011;
 
-package Actium::Util 0.010;
+# Utility routines
 
 # Cannot use Actium::Preamble since that module uses this one
 

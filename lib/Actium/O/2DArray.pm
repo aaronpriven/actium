@@ -1,11 +1,10 @@
-# Actium/O/2DArray.pm
+package Actium::O::2DArray 0.011;
 
 # Convenience object for 2D array methods
 
 use 5.016;
 use warnings;
 
-package Actium::O::2DArray 0.010;
 
 use Actium::Preamble;
 

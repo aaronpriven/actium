@@ -1,4 +1,4 @@
-package Actium::IDTables::PageAssignments 0.010;
+package Actium::IDTables::PageAssignments 0.011;
 
 use 5.016;
 use warnings;

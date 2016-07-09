@@ -1,4 +1,4 @@
-package Actium::Cmd::AVL2StopLines 0.010;
+package Actium::Cmd::AVL2StopLines 0.011;
 
 use Actium::Preamble;
 use Actium::Sorting::Line (qw[sortbyline]);

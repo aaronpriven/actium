@@ -1,6 +1,4 @@
-#/Actium/Cmd/StopsOfEachLine.pm
-
-package Actium::Cmd::StopsOfEachLine 0.010;
+package Actium::Cmd::StopsOfEachLine 0.011;
 
 use Actium::Preamble;
 use Storable();    ### DEP ###

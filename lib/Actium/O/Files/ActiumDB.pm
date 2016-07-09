@@ -1,10 +1,8 @@
+package Actium::O::Files::ActiumDB 0.011;
+
 # Class holding routines related to the Actium database
 # (the FileMaker database used by Actium users), accessed
 # thorugh ODBC.
-
-# Legacy stage 4
-
-package Actium::O::Files::ActiumDB 0.010;
 
 use Actium::Moose;
 use Actium::Sorting::Line('sortbyline');

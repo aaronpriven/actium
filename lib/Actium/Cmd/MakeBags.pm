@@ -1,8 +1,6 @@
-# /Actium/Cmd/MakeBags.pm
-#
-# Makes service change bag decals
+package Actium::Cmd::MakeBags 0.011;
 
-package Actium::Cmd::MakeBags 0.010;
+# Makes service change bag decals
 
 use Actium::Preamble;
 use Actium::Bags;

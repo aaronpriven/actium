@@ -1,13 +1,10 @@
-# Actium/Cmd/SQLite2tab.pm
+package Actium::Cmd::SQLite2tab 0.011;
 
 # File for getting tab-delimted files from Actium::O::Files::SQLite
-
-# legacy status: 4
 
 use 5.012;
 use warnings;
 
-package Actium::Cmd::SQLite2tab 0.010;
 
 use Actium::Util qw(jointab );
 use Actium::Constants;

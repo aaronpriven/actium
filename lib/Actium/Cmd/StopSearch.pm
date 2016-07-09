@@ -1,8 +1,6 @@
-# /Actium/Cmd/StopSearch.pm
-#
-# Command-line utility to search for stps
+package Actium::Cmd::StopSearch 0.011;
 
-package Actium::Cmd::StopSearch 0.010;
+# command-line utility to search for stps
 
 use Actium::Preamble;
 use Actium::O::Folder;
