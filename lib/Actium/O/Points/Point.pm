@@ -466,10 +466,18 @@ sub sort_columns_and_determine_heights {
     # Don't allow specifying a subtype manually
     # -- it will just treat it as though it were a main type
 
-    my @subtypes
-      = sort grep {/$signtype=[A-Z]+\z/}
-      keys %Actium::Cmd::MakePoints::signtypes;
+    #my @subtypes = sort grep {/$signtype=[A-Z]+\z/}
+    #  keys %Actium::Cmd::MakePoints::signtypes;
+    
+    if ( not (exists ($Actium::Cmd::MakePoints::templates_of{$signtype})) ) {
+         
+        $self->no_subtype($signtype);
+        return;
+    }
 
+    my @subtypes
+      = sort keys %{ $Actium::Cmd::MakePoints::templates_of{$signtype} };
+      
     if ( @subtypes == 0 ) {
         $self->no_subtype($signtype);
         return;
@@ -625,26 +633,26 @@ sub determine_subtype {
       SUBTYPE:
         foreach my $subtype ( sort @subtypes ) {
 
-            my (@regions);
-
-            $regions[0] = {
-                height => $Actium::Cmd::MakePoints::signtypes{$subtype}
-                  {TallColumnLines},
-                columns =>
-                  $Actium::Cmd::MakePoints::signtypes{$subtype}{TallColumnNum}
-            };
-
-            if ( $Actium::Cmd::MakePoints::signtypes{$subtype}{ShortColumnNum} )
-            {
-                $regions[1] = {
-                    height => $Actium::Cmd::MakePoints::signtypes{$subtype}
-                      {ShortColumnLines},
-                    columns => $Actium::Cmd::MakePoints::signtypes{$subtype}
-                      {ShortColumnNum}
-                };
-            }
-
-          # if we add more quantity of regions, will need to sort them by height
+            my @regions
+              = @{ $Actium::Cmd::MakePoints::templates_of{$signtype}{$subtype}
+              };
+              
+#            $regions[0] = {
+#                height => $Actium::Cmd::MakePoints::signtypes{$subtype}
+#                  {TallColumnLines},
+#                columns =>
+#                  $Actium::Cmd::MakePoints::signtypes{$subtype}{TallColumnNum}
+#            };
+#
+#            if ( $Actium::Cmd::MakePoints::signtypes{$subtype}{ShortColumnNum} )
+#            {
+#                $regions[1] = {
+#                    height => $Actium::Cmd::MakePoints::signtypes{$subtype}
+#                      {ShortColumnLines},
+#                    columns => $Actium::Cmd::MakePoints::signtypes{$subtype}
+#                      {ShortColumnNum}
+#                };
+#            }
 
             @chunkids_by_region = ( [@chunkids_by_length] );
 
