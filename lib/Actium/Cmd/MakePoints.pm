@@ -77,7 +77,7 @@ sub START {
     my ( $class, $env ) = @_;
 
     our ( $actiumdb, %places, %signs, %stops, %lines, %signtypes,
-        %smoking, @ssj );
+        @templates, %smoking, @ssj );
     # this use of global variables should be refactored...
 
     $actiumdb = $env->actiumdb;
@@ -117,6 +117,7 @@ sub START {
                 ],
             },
             Signs_Stops_Join => { array => \@ssj },
+            SignTemplates => { array => \@templates },
             Lines            => {
                 hash        => \%lines,
                 index_field => 'Line'
@@ -128,7 +129,32 @@ sub START {
             },
         }
     );
-
+    
+    our %templates_of;
+    
+    foreach \my %template (@templates) {
+        my $signtype = $template{SignType};
+        my $subtype = $template{MasterPage};
+        my @regions;
+        my $tempregions = u::trim($template{Regions});
+        $tempregions =~ s/\s+/ /;
+        $tempregions =~ s/[^0-9: ]//g;
+        
+        foreach my $region ( split(' ' , $tempregions) ) {
+            my ($columns, $height) = split(/:/ , $region );
+            push @regions , {columns => $columns, height => $height};
+        }
+        
+        @regions = 
+          map  { $_->[0] }
+          reverse sort { $a->[1] <=> $b->[1] }
+          map  { [$_, $_->{height} ] }    
+               @regions;
+        
+        $templates_of{$signtype}{$subtype} = \@regions;
+        
+    }
+    
     my $ssj_cry = cry('Processing multistop entries');
 
     my (%stops_of_sign);
@@ -267,12 +293,13 @@ sub START {
         # 5) Sort columns into order
 
         #$point->sort_columns_by_route_etc;
+        
         my $subtype = $point->sort_columns_and_determine_heights(
             $signs{$signid}{SignType} );
 
         if ( $subtype and $subtype ne '!' ) {
-            my ( $signtype, $master ) = split( /=/, $subtype );
-            push @{ $points_of_signtype{$signtype} }, [ $signid, $master ];
+            #my ( $signtype, $subtype ) = split( /=/, $subtype );
+            push @{ $points_of_signtype{$signtype} }, [ $signid, $subtype ];
 
         }
 
