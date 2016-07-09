@@ -1,15 +1,8 @@
-# Actium/Cmd/LineDescrip.pm
+package Actium::Cmd::LineDescrip 0.011;
 
 # Produces line descriptions from the Lines database
 # Also produces transit hubs sheet, so should be renamed to something else.
 # Possibly combine with slists2html
-
-# legacy status: 4
-
-use warnings;
-use 5.016;
-
-package Actium::Cmd::LineDescrip 0.010;
 
 use Actium::Preamble;
 

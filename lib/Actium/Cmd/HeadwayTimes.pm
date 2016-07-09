@@ -1,12 +1,7 @@
-# Actium/Cmd/HeadwayTimes.pm
+package Actium::Cmd::HeadwayTimes 0.011;
 
 # This is intended to accept a tab-delimited text file and then display the
 # minutes between times in the list.
-
-use warnings;
-use strict;
-
-package Actium::Cmd::HeadwayTimes 0.010;
 
 use Actium::Preamble;
 

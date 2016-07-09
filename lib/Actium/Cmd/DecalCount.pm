@@ -1,8 +1,6 @@
-# /Actium/Cmd/DecalCount.pm
-#
-# Makes spreadsheet to calculate decal count
+package Actium::Cmd::DecalCount 0.011;
 
-package Actium::Cmd::DecalCount 0.010;
+# Makes spreadsheet to calculate decal count
 
 use Actium::Preamble;
 use Actium::Util('add_before_extension');

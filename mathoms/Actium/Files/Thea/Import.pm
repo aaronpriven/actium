@@ -1,14 +1,11 @@
-# /Actium/Files/Thea/Import.pm
+package Actium::Files::Thea::Import 0.011;
 
 # Takes the THEA files and imports them so Actium can use them.
 # THEA is "Tab-Delimited Hastus Export for Actium"
 
-# Legacy status: 4 (still in progress...)
-
 use 5.014;
 use warnings;
 
-package Actium::Files::Thea::Import 0.010;
 
 __END__
 

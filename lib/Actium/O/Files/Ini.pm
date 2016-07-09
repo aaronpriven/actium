@@ -1,12 +1,8 @@
-# /Actium/O/Files/Ini.pm
+package Actium::O::Files::Ini 0.011;
 
 # Class for reading .ini files.
 # At the moment, and possibly permanently, a thin wrapper around
 # Config::Tiny, but could be more later. Maybe.
-
-# Legacy status: 4
-
-package Actium::O::Files::Ini 0.010;
 
 use Actium::Moose;
 use Actium::Types ('ActiumFolderLike');

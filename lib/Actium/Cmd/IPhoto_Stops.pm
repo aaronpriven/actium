@@ -1,8 +1,6 @@
-# /Actium/Cmd/IPhoto_Stops.pm
-#
-# Command-line program to modify iPhoto stop information
+package Actium::Cmd::IPhoto_Stops 0.011;
 
-package Actium::Cmd::IPhoto_Stops 0.010;
+# Command-line program to modify iPhoto stop information
 
 use 5.016;
 
