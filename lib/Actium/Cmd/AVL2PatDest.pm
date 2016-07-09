@@ -1,4 +1,4 @@
-package Actium::Cmd::AVL2PatDest 0.010;
+package Actium::Cmd::AVL2PatDest 0.011;
 
 use Actium::Preamble;
 

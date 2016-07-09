@@ -1,8 +1,6 @@
-# /Actium/Cmd/Labels.pm
-#
-# Makes spreadsheet to print decal labels
+package Actium::Cmd::DecalLabels 0.011;
 
-package Actium::Cmd::DecalLabels 0.010;
+# Makes spreadsheet to print decal labels
 
 use Actium::Preamble;
 use Actium::Util('add_before_extension');

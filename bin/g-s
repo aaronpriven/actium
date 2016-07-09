@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+our $VERSION = 0.011;
+
 my $file;
 
 if ($0 =~ /g-s$/) {

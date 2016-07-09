@@ -1,7 +1,8 @@
+package Actium::O::Crier 0.011;
+
 # Actium/O/Crier - Print with indentation, status, and closure
 # Based on Term::Emit by Steve Roscio
 
-package Actium::O::Crier 0.010;
 use Actium::Moose;
 
 use Actium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);

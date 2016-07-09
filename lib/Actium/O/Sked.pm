@@ -1,10 +1,7 @@
-# Actium/O/Sked/Sked.pm
+package Actium::O::Sked 0.011;
 
 # the Sked object, containing everything that is a schedule
 
-# legacy status 4
-
-package Actium::O::Sked 0.010;
 
 use 5.012;
 use strict;

@@ -1,4 +1,4 @@
-package Actium::Cmd::PRAddStop 0.010;
+package Actium::Cmd::PRAddStop 0.011;
 
 use Actium::Preamble;
 

@@ -1,10 +1,6 @@
-# Actium/Sked/Trip.pm
+package Actium::O::Sked::Trip 0.011;
 
 # Trip object (for schedules and headways)
-
-# legacy status 4
-
-package Actium::O::Sked::Trip 0.010;
 
 use 5.016;
 

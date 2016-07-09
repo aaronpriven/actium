@@ -1,8 +1,6 @@
-# /Actium/Cmd/NewSignup.pm
-#
-# Prepares a new signup directory
+package Actium::Cmd::NewSignup 0.011;
 
-package Actium::Cmd::NewSignup 0.010;
+# Prepares a new signup directory
 
 use Actium::Preamble;
 use Actium::Util('filename');

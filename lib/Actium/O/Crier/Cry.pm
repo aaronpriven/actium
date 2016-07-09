@@ -1,8 +1,9 @@
+package Actium::O::Crier::Cry 0.011;
+
 # One output from Actium::O::Crier::Cry
 #
 # Based on Term::Emit by Steve Roscio
 
-package Actium::O::Crier::Cry 0.010;
 
 use Actium::Moose;
 use Unicode::LineBreak; ### DEP ###

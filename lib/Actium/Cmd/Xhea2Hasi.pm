@@ -1,8 +1,6 @@
-# /Actium/Cmd/Xhea2Hasi.pm
-#
-# Takes tab files that are result of XheaImport, and mocks up hasi files
+package Actium::Cmd::Xhea2Hasi 0.011;
 
-package Actium::Cmd::Xhea2Hasi 0.010;
+# Takes tab files that are result of XheaImport, and mocks up hasi files
 
 use Actium::Preamble;
 use Actium::Files::Xhea;

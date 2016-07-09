@@ -1,9 +1,7 @@
-#Actium/Cmd/StorableAVL.pm
+package Actium::Cmd::StorableAVL 0.011;
 
 # All the programs that use the 'avl.storable' file depend on this one.
 # This shouild ultimately be replaced
-
-package Actium::Cmd::StorableAVL 0.010;
 
 use Actium::Preamble;
 

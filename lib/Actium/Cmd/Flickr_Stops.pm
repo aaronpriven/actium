@@ -1,10 +1,6 @@
-# Actium/Cmd/Flickr_Stops.pm
+package Actium::Cmd::Flickr_Stops 0.011;
 
 # work with photos in flickr
-
-# legacy stage 4
-
-package Actium::Cmd::Flickr_Stops 0.010;
 
 use Actium::Preamble;
 use Actium::Photos;

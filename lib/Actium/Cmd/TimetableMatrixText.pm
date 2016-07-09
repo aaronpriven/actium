@@ -1,8 +1,6 @@
-# Actium/Cmd/TimetableMatrixText.pm
+package Actium::Cmd::TimetableMatrixText 0.011;
 
 # Reads the timetable matrix and produces text for it.
-
-package Actium::Cmd::TimetableMatrixText 0.010;
 
 use warnings;
 use 5.016;

@@ -1,7 +1,3 @@
-# Actium/Cmd/MakePoints.pm
-
-# legacy stage 4
-
 package Actium::Cmd::MakePoints 0.011;
 
 use warnings;    ### DEP ###

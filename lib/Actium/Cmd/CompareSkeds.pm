@@ -1,4 +1,4 @@
-package Actium::Cmd::CompareSkeds 0.010;
+package Actium::Cmd::CompareSkeds 0.011;
 
 use 5.022;
 use warnings;

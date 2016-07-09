@@ -1,13 +1,7 @@
-#!/ActivePerl/bin/perl
-
-#/Actium/Patterns/Pattern.pm
-
-# legacy stage 4
+package Actium::O::Pattern 0.011;
 
 use 5.012;
 use warnings;
-
-package Actium::O::Pattern 0.010;
 
 use Moose; ### DEP ###
 use MooseX::StrictConstructor; ### DEP ###

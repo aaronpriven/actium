@@ -1,8 +1,5 @@
-# /Actium/Cmd/ZipCodes.pm
+package Actium::Cmd::ZipCodes 0.011;
 
-# Gets zip codes for stops from geonames.org
-
-package Actium::Cmd::ZipCodes 0.010;
 
 use Actium::Preamble;
 use Actium::Geo('get_zip_for_stops');

@@ -1,4 +1,4 @@
-# Actium/Sked/Prehistoric.pm
+package Actium::O::Sked::Prehistoric 0.011;
 
 # Role to allow reading and writing prehistoric Skedfile files to/from
 # Sked objects
@@ -6,12 +6,9 @@
 # This could just as easily be in the main Actium/Sked.pm file, but I decided
 # it would be better to separate it out this way
 
-# legacy status 4
-
 use warnings;
 use 5.012;    # turns on features
 
-package Actium::O::Sked::Prehistoric 0.010;
 
 use Moose::Role; ### DEP ###
 use namespace::autoclean; ### DEP ###

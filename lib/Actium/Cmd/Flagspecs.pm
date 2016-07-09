@@ -1,11 +1,7 @@
-# Actium/Cmd/Flagspecs.pm
-
-# This needs refactoring badly. Currently though it is still the version being used.
+package Actium::Cmd::Flagspecs 0.011;
 
 use warnings;
 use 5.012;
-
-package Actium::Cmd::Flagspecs 0.010;
 
 use Actium::Sorting::Line (qw/sortbyline byline/);
 use Actium::Util qw(in joinlf j jointab );

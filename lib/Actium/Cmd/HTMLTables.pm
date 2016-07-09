@@ -1,13 +1,9 @@
-# Actium/Cmd/HTMLTables.pm
-
-# Produces HTML tables that represent timetables.
-
-# legacy status: 4
+package Actium::Cmd::HTMLTables 0.011;
 
 use warnings;
 use 5.014;
 
-package Actium::Cmd::HTMLTables 0.010;
+# Produces HTML tables that represent timetables.
 
 use Actium::Constants;
 use Actium::O::Sked;

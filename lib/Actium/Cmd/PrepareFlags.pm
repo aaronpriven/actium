@@ -1,10 +1,6 @@
-# Actium/Cmd/PrepareFlags.pm
+package Actium::Cmd::PrepareFlags 0.011;
 
 # Prepare artwork so that flags are built
-
-# legacy stage 4
-
-package Actium::Cmd::PrepareFlags 0.010;
 
 use Actium::Preamble;
 use Actium::Flags;

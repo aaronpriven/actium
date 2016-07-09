@@ -1,13 +1,10 @@
-# Actium/Cmd/Timetables.pm
+package Actium::Cmd::Timetables 0.011;
 
 # Produces InDesign tag files that represent timetables.
-
-# legacy status: 4
 
 use warnings;
 use 5.012;
 
-package Actium::Cmd::Timetables 0.010;
 
 use Actium::O::Sked;
 use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);    ### DEP ###

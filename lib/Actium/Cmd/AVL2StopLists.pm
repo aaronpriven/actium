@@ -1,4 +1,4 @@
-package Actium::Cmd::AVL2StopLists 0.010;
+package Actium::Cmd::AVL2StopLists 0.011;
 
 use Actium::Preamble;
 # avl2stoplists - see POD documentation below

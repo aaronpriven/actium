@@ -1,6 +1,4 @@
-# Actium/Points/Point.pm
-
-# legacy stages 2 and 3
+package Actium::O::Points::Point 0.011;
 
 # This object is used for *display*, and should probably be called something
 # that relates to that.
@@ -15,7 +13,6 @@ use strict;
 
 use 5.022;
 
-package Actium::O::Points::Point 0.010;
 
 use sort ('stable');
 

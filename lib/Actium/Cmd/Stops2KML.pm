@@ -1,13 +1,10 @@
-# /Actium/Cmd/Stops2KML.pm
+package Actium::Cmd::Stops2KML 0.011;
 
 # Creates KML output of stops
-
-# legacy stage 4
 
 use 5.016;
 use warnings;
 
-package Actium::Cmd::Stops2KML 0.010;
 
 use Actium::Preamble;
 use Actium::StopReports('stops2kml');
