@@ -181,7 +181,9 @@ sub prompt {
 
     print $fh "\n" if ( $self->crier->position != 0 );
 
-    my @filehandles = ( -in => *STDIN{IO}, -out => $fh );
+    my @filehandles = ( '-in' => *STDIN , '-out' => *{$fh} );
+
+    #say $prompt;
 
     if ($hide) {
         $val = IO::Prompter::prompt(
