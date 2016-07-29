@@ -9,9 +9,6 @@ use lib ("$Bin/../lib"); ### DEP ###
 
 our $VERSION = 0.012;
 
-# this program is used every year to convert the supplementary schools
-# calendar from Excel to HTML.
-
 use Actium::Preamble;
 
 const my $RIGHTMOST_COL => 90;
@@ -19,11 +16,34 @@ const my $RIGHTMOST_COL => 90;
 my ( @wkdays, @dates );
 my ( $currentrow, $minrow, $maxrow, $mincol, $maxcol, $sheet );
 
-my %num_of_month = 
-qw( Jan 1 Feb 2 Mar 3 Apr 4 May 5 Jun 6 Jul 7 Aug 8 Sep 9 Oct 10 Nov 11 Dec 12);
+my %num_of_month
+  = qw( Jan 1 Feb 2 Mar 3 Apr 4 May 5 Jun 6 Jul 7 Aug 8 Sep 9 Oct 10 Nov 11 Dec 12);
+
+my @months
+  = qw(January February March April May June July August September October November December);
+
+my %day_sub = qw(
+  Mon Monday
+  Tue Tuesday
+  Tues Tuesday
+  Wed Wednesday
+  Wednes Wednesday
+  Thu Thursday
+  Thurs Thursday
+  Fri Friday
+);
+
+my %num_of_day = qw(
+  Monday 1 Tuesday 2 Wednesday 3 Thursday 4 Friday 5
+);
+
+my %key_of_day;
+
+my %blocks_of_note;
+my %day_of_block;
 
 foreach my $file (@ARGV) {
-    
+
     say "\n$file";
 
     $sheet = open_xlsx($file);
@@ -34,22 +54,25 @@ foreach my $file (@ARGV) {
 
     foreach (@dates) {
         my ( $day, $month ) = split(/-/);
-        
-        $month = $num_of_month{$month};
-        
-        $_ = "$month/$day";
 
-        #$_ = "$month. $day";
-        #s/May\./May/;
-        #s/Jul\./July/;
-        #s/Jun\./June/;
-        #s/Mar\./March/;
-        #s/Apr\./April/;
-        #s/Sep\./Sept./;
+        my $monthnum = $num_of_month{$month};
+
+        $_ = "$month. $day";
+
+        s/May\./May/;
+        s/Jul\./July/;
+        s/Jun\./June/;
+        s/Mar\./March/;
+        s/Apr\./April/;
+        s/Sep\./Sept./;
+
+        $key_of_day{$_} = $monthnum * 100 + $day;
     }
 
     @wkdays = nextline();
     @wkdays = @wkdays[ 6 .. $RIGHTMOST_COL ];
+
+    @wkdays = map { $day_sub{$_} } @wkdays;
 
     my @uniq_wkdays = u::uniq @wkdays;
 
@@ -62,7 +85,7 @@ foreach my $file (@ARGV) {
         my ( $block, $run, $school, $pullout, $pullin, $dist, @on_or_off )
           = @values;
 
-        my ( %has_a_wkdy_off, %dates_on_of_wkdy );
+        my ( %dates_off_of_wkdy, %dates_on_of_wkdy );
 
         for my $i ( 0 .. $#on_or_off ) {
 
@@ -73,120 +96,97 @@ foreach my $file (@ARGV) {
                 push $dates_on_of_wkdy{$wkdy}->@*, $date;
             }
             else {    # off
-                $has_a_wkdy_off{$wkdy} = 1;
+                push $dates_off_of_wkdy{$wkdy}->@*, $date;
             }
         }
 
         print "Block $block: ";
 
-        my @all_on_wkdays = grep { not $has_a_wkdy_off{$_} } @uniq_wkdays;
-        my $has_a_wkdy;
+        my ( @on, @also );
+        my $pure_days = 1;
 
-        if (@all_on_wkdays) {
-            print "All ", join( ", ", @all_on_wkdays );
-            $has_a_wkdy = 1;
+        foreach my $wkdy (@uniq_wkdays) {
+            next unless defined $dates_on_of_wkdy{$wkdy};
+            my $on_count = scalar( $dates_on_of_wkdy{$wkdy}->@* );
+            next if not $on_count;
+
+            my $off_count
+              = defined $dates_off_of_wkdy{$wkdy}
+              ? ( scalar $dates_off_of_wkdy{$wkdy}->@* )
+              : 0;
+
+            if ( not $off_count ) {
+                push @on, $wkdy;
+            }
+            elsif ( $off_count < ( 1 / 4 * $on_count ) ) {
+                $pure_days = 0;
+                push @on,
+                    $wkdy
+                  . ' except '
+                  . displaydates( $dates_off_of_wkdy{$wkdy}->@* );
+            }
+            else {
+                $pure_days = 0;
+                push @also, $dates_on_of_wkdy{$wkdy}->@*;
+            }
+
+        } ## tidy end: foreach my $wkdy (@uniq_wkdays)
+
+        if ( not @on and not @also ) {
+            say 'No schedules.';
+            next;
         }
-        delete $dates_on_of_wkdy{$_} foreach @all_on_wkdays;
-        
-        my @ondates;
-        foreach my $wkdy (keys %dates_on_of_wkdy) {
-            push @ondates, $dates_on_of_wkdy{$wkdy}->@*;
+
+        my $note = '';
+
+        if (@on) {
+            my @every_on = map {"every $_"} @on;
+            $note .= 'Operates ' . u::joinseries(@every_on);
         }
-        
-        if (@ondates) {
-           print ". Also "  if $has_a_wkdy;
-           print join (", " , @ondates);
+
+        if (@also) {
+            if (@on) {
+                $note .= ', and also on ';
+            }
+            else {
+                $note .= 'Operates only ';
+            }
+            $note .= displaydates(@also) . ".";
         }
-        
-        print "\n";
-        
+        else {
+            $note .= ".";
+        }
+
+        say $note ;
+
+        if ($pure_days) {
+            $day_of_block{$block} = join( '', map { $num_of_day{$_} } @on );
+        }
+        else {
+            push @{ $blocks_of_note{$note} }, $block;
+        }
+
     } ## tidy end: while ( my @values = nextline...)
 
 } ## tidy end: foreach my $file (@ARGV)
 
+use Data::Printer;
+
+p %day_of_block;
+p %blocks_of_note;
+
 ##### END OF MAIN ####
 
-sub daterange_indices {
-    my @indices;
-    my $rtype = u::reftype( $_[0] );
-    if ( defined $rtype and $rtype eq 'ARRAY' ) {
-        @indices = @{ $_[0] };
-    }
-    else {
-        @indices = @_;
-    }
-    @indices = sort { $a <=> $b } @indices;
-    return @indices;
+sub displaydates {
+    my @dates = sort { $key_of_day{$a} <=> $key_of_day{$b} } @_;
+
+    #foreach my $date (@dates) {
+    #    substr( $date, -2, 0, '/' );
+    #}
+
+    return u::joinseries(@dates);
+
 }
-
-sub daterange_nocompress {
-    my @indices       = daterange_indices(@_);
-    my @thesedaydates = datetoprint(@indices);
-    my $final_daydate = pop @thesedaydates;
-    my $date_str      = join( "; ", @thesedaydates ) . " and $final_daydate";
-    return $date_str;
-}
-
-sub datetoprint {
-    my @datestrs = map {"$wkdays[$_]., $dates[$_]"} @_;
-    return wantarray ? @datestrs : $datestrs[0];
-}
-
-sub currentpair_str {
-    my @pair  = @_;
-    my $rtype = u::reftype( $pair[0] );
-    if ( defined $rtype and $rtype eq 'ARRAY' ) {
-        @pair = @{ $pair[0] };
-    }
-    $pair[1] //= "-";
-    return "[$pair[0]/$pair[1]]";
-}
-
-sub daterange {
-    my @indices = daterange_indices(@_);
-
-    my @index_pairs;
-    my @current_pair = ( $indices[0] );
-    foreach my $thisindex ( @indices[ 1 .. $#indices ] ) {
-
-        my $current_final = $current_pair[-1];
-        # that's the last entry of the current pair --
-        # could be the first entry, too, if there's only one
-
-        if ( $current_final == $thisindex - 1 ) {
-            # if the current final day is this day -1,
-            $current_pair[1] = $thisindex;
-            # set the last item to be this day.
-        }
-        else {
-            push @index_pairs, [@current_pair];
-            @current_pair = ($thisindex);
-            # otherwise make a new current pair
-        }
-
-    }
-
-    push @index_pairs, [@current_pair];
-
-    my @all_datestrs;
-    foreach my $pair (@index_pairs) {
-        my $datestr;
-        if ( @{$pair} == 2 ) {
-            $datestr
-              = datetoprint( $pair->[0] )
-              . '&ndash;'
-              . datetoprint( $pair->[1] );
-        }
-        else {
-            $datestr = datetoprint( $pair->[0] );
-        }
-        push @all_datestrs, $datestr;
-
-    }
-
-    return @all_datestrs;
-
-} ## tidy end: sub daterange
 
 sub open_xlsx {
 
@@ -241,6 +241,7 @@ sub nextline {
     return @values;
 }
 
+
 sub cleanvalues {
     my @values = @_;
     foreach (@values) {
@@ -254,87 +255,173 @@ sub cleanvalues {
     return @values;
 }
 
-sub get_first_and_last {
-    my @skedvals = @_;
+###### may not be used ####
 
-    my $first = 0;
-    $first++ while $skedvals[$first] eq 'off';
+__END__
 
-    my $last = $#skedvals;
-    $last-- while $skedvals[$last] eq 'off';
-
-    return $first, $last;
-
+sub daterange_indices {
+    my @indices;
+    my $rtype = u::reftype( $_[0] );
+    if ( defined $rtype and $rtype eq 'ARRAY' ) {
+        @indices = @{ $_[0] };
+    }
+    else {
+        @indices = @_;
+    }
+    @indices = sort { $a <=> $b } @indices;
+    return @indices;
 }
 
-sub clean_dismissal {
-    my $dismissal = shift;
+sub daterange_nocompress {
+    my @indices       = daterange_indices(@_);
+    my @thesedaydates = datetoprint(@indices);
+    my $final_daydate = pop @thesedaydates;
+    my $date_str      = join( "; ", @thesedaydates ) . " and $final_daydate";
+    return $date_str;
+}
 
-    $dismissal =~ s#not served/(.*)#$1-no service#;
-    $dismissal =~ s#(.*)/\s*not served#$1-no service#;
-    $dismissal =~ s#\s*\(No service\)#-no service#i;
-
-    my @dismissals = split( m#/#, $dismissal );
-
-    for (@dismissals) {    # aliases $_
-
-        s/\ANO PM\z/(No afternoon service)/i;
-        s/Finals\s*-\s*verify/verify/i;
-        s/leave at\s*//;
-        s/\s*leave\z//;
-        s/Noon/12:00 noon/;
-        s/\s*pick up//;
-        s/(\d)([A-Za-z])/$1 $2/;
-        s/(\d? \d ) ( \d \d ) / $1 : $2 /;
-        s/a\z/a.m./;
-        s/p\z/p.m./;
-        s/AM/a.m./i;
-        s/PM/p.m./i;
-        s/(\d)$/$1 p.m./;
-        s/verify/(to be determined)/i;
-        s/-\s*no service/ (Service will not operate)/i;
-        s/(Line )?\d* tripper//;
-
+sub datetoprint {
+    my @datestrs = map {"$wkdays[$_]., $dates[$_]"} @_;
+    return wantarray ? @datestrs : $datestrs[0];
       } ## tidy end: map
 
-      $dismissal = join( " or ", @dismissals );
+      sub currentpair_str {
+        my @pair  = @_;
+        my $rtype = u::reftype( $pair[0] );
+        if ( defined $rtype and $rtype eq 'ARRAY' ) {
+            @pair = @{ $pair[0] };
+        }
+        $pair[1] //= "-";
+        return "[$pair[0]/$pair[1]]";
+    }
 
-    $dismissal = "at $dismissal" unless $dismissal =~ /^\(/;
+    sub daterange {
+        my @indices = daterange_indices(@_);
 
-    return $dismissal;
+        my @index_pairs;
+        my @current_pair = ( $indices[0] );
+        foreach my $thisindex ( @indices[ 1 .. $#indices ] ) {
 
-} ## tidy end: sub nextline
+            my $current_final = $current_pair[-1];
+            # that's the last entry of the current pair --
+            # could be the first entry, too, if there's only one
 
-sub print_table {
+            if ( $current_final == $thisindex - 1 ) {
+                # if the current final day is this day -1,
+                $current_pair[1] = $thisindex;
+                # set the last item to be this day.
+            }
+            else {
+                push @index_pairs, [@current_pair];
+                @current_pair = ($thisindex);
+                # otherwise make a new current pair
+            }
 
-      my $tablefh    = shift;
-      my $header     = shift;
-      my @tabledates = @_;
+        }
 
-      my $columns = 3;
+        push @index_pairs, [@current_pair];
 
-      while ( @tabledates % $columns != 0 ) {
-          push @tabledates, '&nbsp;';
-      }
-      my $rows = ( @tabledates / $columns );
+        my @all_datestrs;
+        foreach my $pair (@index_pairs) {
+            my $datestr;
+            if ( @{$pair} == 2 ) {
+                $datestr
+                  = datetoprint( $pair->[0] )
+                  . '&ndash;'
+                  . datetoprint( $pair->[1] );
+            }
+            else {
+                $datestr = datetoprint( $pair->[0] );
+            }
+            push @all_datestrs, $datestr;
 
-      say $tablefh
+        }
+
+        return @all_datestrs;
+
+    } ## tidy end: sub daterange
+
+    sub get_first_and_last {
+        my @skedvals = @_;
+
+        my $first = 0;
+        $first++ while $skedvals[$first] eq 'off';
+
+        my $last = $#skedvals;
+        $last-- while $skedvals[$last] eq 'off';
+
+        return $first, $last;
+
+    }
+
+    sub clean_dismissal {
+        my $dismissal = shift;
+
+        $dismissal =~ s#not served/(.*)#$1-no service#;
+        $dismissal =~ s#(.*)/\s*not served#$1-no service#;
+        $dismissal =~ s#\s*\(No service\)#-no service#i;
+
+        my @dismissals = split( m#/#, $dismissal );
+
+        for (@dismissals) {    # aliases $_
+
+            s/\ANO PM\z/(No afternoon service)/i;
+            s/Finals\s*-\s*verify/verify/i;
+            s/leave at\s*//;
+            s/\s*leave\z//;
+            s/Noon/12:00 noon/;
+            s/\s*pick up//;
+            s/(\d)([A-Za-z])/$1 $2/;
+            s/(\d? \d ) ( \d \d ) / $1 : $2 /;
+            s/a\z/a.m./;
+            s/p\z/p.m./;
+            s/AM/a.m./i;
+            s/PM/p.m./i;
+            s/(\d)$/$1 p.m./;
+            s/verify/(to be determined)/i;
+            s/-\s*no service/ (Service will not operate)/i;
+            s/(Line )?\d* tripper//;
+
+        } ## tidy end: for (@dismissals)
+
+        $dismissal = join( " or ", @dismissals );
+
+        $dismissal = "at $dismissal" unless $dismissal =~ /^\(/;
+
+        return $dismissal;
+
+    } ## tidy end: sub clean_dismissal
+
+    sub print_table {
+
+        my $tablefh    = shift;
+        my $header     = shift;
+        my @tabledates = @_;
+
+        my $columns = 3;
+
+        while ( @tabledates % $columns != 0 ) {
+            push @tabledates, '&nbsp;';
+        }
+        my $rows = ( @tabledates / $columns );
+
+        say $tablefh
 '<p><table border="1" width="90%" cellspacing="0" cellpadding="6" style="float:none;border-collapse:collapse;border-width:1px;margin-bottom:1em;">';
-      say $tablefh
+        say $tablefh
 qq[<thead><tr><th style="border-width:1px;border-collapse:collapse;text-align: left;" colspan=$columns>$header</th></tr></thead>];
-      say $tablefh '<tbody>';
+        say $tablefh '<tbody>';
 
-      for my $row ( 0 .. $rows - 1 ) {
-          print $tablefh '<tr>';
-          for my $col ( 0 .. $columns - 1 ) {
-              my $thisdateidx = ( ( $rows * $col ) + $row );
-              my $thisdate = $tabledates[$thisdateidx] // "ERROR";
-              print $tablefh
+        for my $row ( 0 .. $rows - 1 ) {
+            print $tablefh '<tr>';
+            for my $col ( 0 .. $columns - 1 ) {
+                my $thisdateidx = ( ( $rows * $col ) + $row );
+                my $thisdate = $tabledates[$thisdateidx] // "ERROR";
+                print $tablefh
 qq[<td width="30%" style="border-width:1px;border-collapse:collapse;">$thisdate</td>];
-          }
-          say $tablefh '</tr>';
-      }
+            }
+            say $tablefh '</tr>';
+        }
 
-      say $tablefh '</tbody></table></p>';
+        say $tablefh '</tbody></table></p>';
 
-} ## tidy end: sub print_table
+    } ## tidy end: sub print_table
