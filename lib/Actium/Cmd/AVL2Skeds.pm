@@ -18,7 +18,7 @@ use Actium::DaysDirections (':all');
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        'signup ',
+        'signup',
         {   spec        => 'rawonly!',
             description => 'Only create "rawskeds" and not "skeds".',
             fallback    => 0,
