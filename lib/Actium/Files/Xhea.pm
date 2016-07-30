@@ -6,7 +6,7 @@
 # Also other routines with Xhea files or results from them, such as
 # creating mock HASI files
 
-package Actium::Files::Xhea 0.010;
+package Actium::Files::Xhea 0.012;
 
 ## no critic (ProhibitAmbiguousNames)
 
@@ -39,31 +39,31 @@ sub xhea_import {
     my $signup       = $p{signup};
     my $xhea_folder  = $p{xhea_folder};
     my $tab_folder   = $p{tab_folder};
-    my $sch_cal_data = $p{sch_cal_folder};
+    my $sch_cal_data = $p{sch_cal_data};
 
     my ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r )
       = Actium::Files::Xhea::load_adjusted($xhea_folder);
 
     if ($sch_cal_data) {
-        
-        my ($adjusted_blocks_r , $adjusted_trips_r) = adjust_sch_cal(
+
+        my ( $adjusted_blocks_r, $adjusted_trips_r ) = adjust_sch_cal(
             sch_cal_data => $sch_cal_data,
             fieldnames   => $fieldnames_of_r,
             fields       => $fields_of_r,
             values       => $adjusted_values_of_r,
         );
-        
+
         foreach (qw/block trip/) {
             my $orig = $_ . '_orig';
-            $fieldnames_of_r->{$orig} = $fieldnames_of_r->{$_};
-            $fields_of_r->{$orig} = $fields_of_r->{$_};
+            $fieldnames_of_r->{$orig}      = $fieldnames_of_r->{$_};
+            $fields_of_r->{$orig}          = $fields_of_r->{$_};
             $adjusted_values_of_r->{$orig} = $adjusted_values_of_r->{$_};
         }
-        
+
         $adjusted_values_of_r->{block} = $adjusted_blocks_r;
-        $adjusted_values_of_r->{trip} = $adjusted_trips_r;
-        
-    }
+        $adjusted_values_of_r->{trip}  = $adjusted_trips_r;
+
+    } ## tidy end: if ($sch_cal_data)
 
     my $tab_strings_r
       = Actium::Files::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
@@ -143,7 +143,9 @@ sub tab_strings {
       7   blk_oper_sunday
     );
 
-    sub adjust_sch_data {
+    sub adjust_sch_cal {
+
+        my $cry = cry('Adjusting XHEA data from school calendars');
 
         my %p = u::validate(
             @_,
@@ -160,63 +162,76 @@ sub tab_strings {
 
         #### Block ###
 
-        my @block_headers = $fieldnames{block};
-        my @block_records = $values{block};
+        my @block_headers = @{ $fieldnames{block} };
+        my @block_records = @{ $values{block} };
         my @returned_block_records;
 
-        foreach my $block_record (@block_records) {
+        foreach \my @block_record(@block_records) {
 
             my %field;
-            @field{@block_headers} = @{$block_record};
+            @field{@block_headers} = @block_record;
 
             my $block = $field{blk_number};
-            next unless exists $calendar_of_block{$block};
-
-            if ( u::is_arrayref( $calendar_of_block{$block} ) ) {
-                $field{blk_evt_stat_dsp} = $calendar_of_block{$block}[1];
+            if ( not exists $calendar_of_block{$block} ) {
+                push @returned_block_records, [@block_record];
             }
             else {
-                my $days = $calendar_of_block{$block};
-                foreach my $day ( keys %blockfield_of_day ) {
-                    $field{ $blockfield_of_day{$day} }
-                      = ( $days =~ m/$day/ ) ? 1 : 0;
+
+                if ( u::is_arrayref( $calendar_of_block{$block} ) ) {
+                    $field{blk_evt_stat_dsp} = $calendar_of_block{$block}[1];
+                }
+                else {
+                    my $days = $calendar_of_block{$block};
+                    foreach my $day ( keys %blockfield_of_day ) {
+                        $field{ $blockfield_of_day{$day} }
+                          = ( $days =~ m/$day/ ) ? 1 : 0;
+                    }
+
                 }
 
+                my @new_record = @field{@block_headers};
+                push @returned_block_records, \@new_record;
             }
 
-            my @new_record = @field{@block_headers};
-            push @returned_block_records, \@new_record;
+        } ## tidy end: foreach \my @block_record(@block_records)
 
-        } ## tidy end: foreach my $block_record (@block_records)
+        #### Trip ###
 
-        my @trip_headers = $fieldnames{trip};
-        my @trip_records = $values{trip};
+        my @trip_headers = @{ $fieldnames{trip} };
+        my @trip_records = @{ $values{trip} };
         my @returned_trip_records;
 
-        foreach my $trip_record (@trip_records) {
+        foreach \my @trip_record(@trip_records) {
 
             my %field;
-            @field{@trip_headers} = @{$trip_record};
+            @field{@trip_headers} = @trip_record;
 
             my $block = $field{trp_block};
-            next unless exists $calendar_of_block{$block};
-
-            if ( u::is_arrayref( $calendar_of_block{$block} ) ) {
-                $field{trp_event_and_status} = $calendar_of_block{$block}[1];
+            if ( not exists $calendar_of_block{$block} ) {
+                push @returned_trip_records, [@trip_record];
             }
             else {
-                my $days = $calendar_of_block{$block};
-                foreach my $day ( keys %tripfield_of_day ) {
-                    $field{ $tripfield_of_day{$day} }
-                      = ( $days =~ m/$day/ ) ? 1 : 0;
-                }
 
+                if ( u::is_arrayref( $calendar_of_block{$block} ) ) {
+                    $field{trp_event_and_status}
+                      = $calendar_of_block{$block}[1];
+                }
+                else {
+                    my $days = $calendar_of_block{$block};
+                    foreach my $day ( keys %tripfield_of_day ) {
+                        $field{ $tripfield_of_day{$day} }
+                          = ( $days =~ m/$day/ ) ? 1 : 0;
+                    }
+
+                }
+                my @new_record = @field{@trip_headers};
+                push @returned_trip_records, \@new_record;
             }
-        } ## tidy end: foreach my $trip_record (@trip_records)
+        } ## tidy end: foreach \my @trip_record(@trip_records)
 
         return \@returned_block_records, \@returned_trip_records;
 
-    } ## tidy end: sub adjust_sch_data
+    } ## tidy end: sub adjust_sch_cal
 }
 
 sub load_adjusted {
@@ -334,12 +349,12 @@ sub load {
         my $xsd       = $xheafolder->make_filespec("$filename.xsd");
         my @xml       = $xheafolder->make_filespec("$filename.xml");
         my @filenames = $filename;
-        
+
         if ( $xheafolder->file_exists("W$filename.xml") ) {
-            push @xml, $xheafolder->make_filespec("W$filename.xml");
+            push @xml,       $xheafolder->make_filespec("W$filename.xml");
             push @filenames, "W$filename";
         }
-        
+
         my $newprefix = $PREFIX . "::$filename";
 
         $pastor->generate(
@@ -362,10 +377,10 @@ sub load {
         my $newvalues_r = _load_values(
             tree       => $tree_r,
             model      => $model,
-            xmlfiles    => \@xml,
+            xmlfiles   => \@xml,
             records_of => $records_of_r,
             fields_of  => $fields_of_r,
-            filenames   => \@filenames,
+            filenames  => \@filenames,
 
             #tfolder    => $tfolder,
         );
@@ -392,32 +407,32 @@ sub _load_values {
             model      => 1,
             fields_of  => 1,
             records_of => 1,
-            xmlfiles    => 1,
-            filenames   => 1,
+            xmlfiles   => 1,
+            filenames  => 1,
             #tfolder    => 1,
         }
     );
-    
-    my @xmlfiles = $p{xmlfiles}->@*;
+
+    my @xmlfiles  = $p{xmlfiles}->@*;
     my @filenames = $p{filenames}->@*;
 
     my %values_of;
 
     for my $table_name ( keys %{ $p{tree} } ) {
         my $table_class = $p{model}->xml_item_class($table_name);
-        
+
         my @tables;
-        
-        foreach my $i (0 .. $#xmlfiles) {
+
+        foreach my $i ( 0 .. $#xmlfiles ) {
             my $filename = $filenames[$i];
-            my $xmlfile = $xmlfiles[$i];
-            my $load_cry    = cry("Loading $table_name from $filename.xml");
-            $load_cry->text('(This can take quite a while; be patient)');
-            push @tables, $table_class->from_xml_file( $xmlfile );
+            my $xmlfile  = $xmlfiles[$i];
+            my $load_cry = cry("Loading $table_name from $filename.xml");
+            #$load_cry->text('(This can take quite a while; be patient)');
+            push @tables, $table_class->from_xml_file($xmlfile);
             $load_cry->done;
-        
+
         }
-        
+
         my $record_cry = cry("Processing $table_name into records");
 
         for my $record_name ( @{ $p{records_of}{$table_name} } ) {
@@ -428,7 +443,7 @@ sub _load_values {
             $index_of{$_} = $p{fields_of}{$record_name}{$_}{idx}
               foreach @field_names;
 
-            my @record_objs = map  { @{ $_->$record_name } } @tables;
+            my @record_objs = map { @{ $_->$record_name } } @tables;
 
             foreach my $record_obj (@record_objs) {
                 my @record_data;
@@ -450,7 +465,7 @@ sub _load_values {
 
 sub _records_and_fields {
 
-    my $xsd_cry = cry('Processing XSD into record and field information');
+    my $xsd_cry = cry('Processing XSD to record and field info');
 
     # Hastus exports XML files with three levels:
     # table level (contains records)
