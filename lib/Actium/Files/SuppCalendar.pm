@@ -37,9 +37,7 @@ sub read_supp_calendars {
     @files = grep { not( u::filename($_) =~ m/\A~/ ) } @files;
     # skip temporary files beginning with ~
 
-    my (%next_code_of_days, %blocks_of_note, %day_of_block,
-        %blocks_of_day,     %code_of_note
-    );
+    my ( %next_code_of_days, %code_of_note, %calendar_of_block );
 
     foreach my $file (@files) {
 
@@ -149,12 +147,11 @@ sub read_supp_calendars {
                 $note .= ".";
             }
             if ($pure_days) {
+
                 my $day = join( '', map { $num_of_day{$_} } sort @on );
-                $day_of_block{$block} = $day;
-                push $blocks_of_day{$day}->@*, $block;
+                $calendar_of_block{$block} = $day;
             }
             else {
-                push @{ $blocks_of_note{$note} }, $block;
 
                 if ( not exists $code_of_note{$note} ) {
 
@@ -182,6 +179,8 @@ sub read_supp_calendars {
 
                 } ## tidy end: if ( not exists $code_of_note...)
 
+                $calendar_of_block{$block} = [ $code_of_note{$note} , $note ];
+
             } ## tidy end: else [ if ($pure_days) ]
 
         } ## tidy end: while ( my @values = _nextline...)
@@ -190,18 +189,13 @@ sub read_supp_calendars {
 
     my $fh = $calendar_folder->open_write('sch_cal.txt');
 
-    foreach my $note ( sort keys %code_of_note ) {
-        say $fh u::jointab( $code_of_note{$note}, $note,
-            $blocks_of_note{$note}->@* );
-    }
-
-    foreach my $day ( sort keys %blocks_of_day ) {
-        say $fh u::jointab( $day, $blocks_of_day{$day}->@* );
+    foreach my $block ( sort { $a <=> $b } keys %calendar_of_block ) {
+        my $cal = $calendar_of_block{$block};
+        say $fh u::jointab( $block, u::is_arrayref($cal) ? @$cal : $cal );
     }
 
     $fh->close;
-
-    return ( \%code_of_note, \%blocks_of_note, \%day_of_block );
+    return ( \%calendar_of_block );
 
 } ## tidy end: sub read_supp_calendars
 
@@ -212,7 +206,6 @@ sub read_supp_calendars {
     my ( %currentrow, %minrow, %maxrow, %mincol, %maxcol );
 
     sub _open_xlsx {
-
         my $xlsx_filespec = shift;
 
         require Spreadsheet::ParseXLSX;    ### DEP ###
