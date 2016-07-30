@@ -320,6 +320,13 @@ sub make_filespec {
 
 }
 
+sub file_exists {
+    my $self = shift;
+    my $filename = shift;
+    my $path = $self->path;
+    return -e File::Spec->catfile( $path, $filename );
+}
+
 sub glob_files {
     my $self        = shift;
     my $pattern     = shift || q{*};
@@ -912,6 +919,11 @@ folder represented by the object. If no pattern is specified, uses
 
 Like B<glob_files>, except returns only plain files 
 (that is, where B<-f I<file>> is true).
+
+=item B<$obj-E<gt>file_exists(I<filename>)>
+
+Returns true if a file with that name exists in the folder.
+
 
 =item B<$obj-E<gt>store($data_r , F<filename>)>
 
