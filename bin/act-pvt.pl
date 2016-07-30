@@ -21,6 +21,7 @@ Actium::O::Cmd::->new(
         indd_encode   => 'InDesignEncode',
         pr_add_stop   => 'PRAddStop', 
         scratch       => 'Scratch', 
+        sch_cal       => 'SchCal',
         tempsigns     => 'TempSigns',
         theaimport    => 'TheaImport', 
         time          => 'Time', 
