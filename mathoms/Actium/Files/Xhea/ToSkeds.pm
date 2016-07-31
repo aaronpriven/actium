@@ -1,13 +1,3 @@
-# /Actium/Files/Xhea/ToSkeds.pm
-
-# Takes the XHEA files and imports them so Actium can use them.
-# XHEA is "XML Hastus Export for Actium"
-
-# Legacy status: 4 (still in progress...)
-
-use 5.016;
-use warnings;
-
 package Actium::Files::Xhea::ToSkeds 0.010;
 
 use Actium::Preamble;
@@ -22,13 +12,17 @@ use Actium::Crier qw/cry last_cry/;
 use Actium::Time 'timenum';
 use Actium::Union('ordered_union_columns');
 use Actium::Util (qw<linegroup_of>);
-use List::Compare; ### DEP ###
-use List::MoreUtils (qw<each_arrayref>); ### DEP ###
-
-use Params::Validate; ### DEP ###
+use List::Compare;    ### DEP ###
+use List::MoreUtils (qw<each_arrayref>);    ### DEP ###
 
 ## no critic (ProhibitConstantPragma)
-use constant { P_DIRECTION => 0, P_STOPS => 1, P_PLACES => 2 };
+use constant {
+    P_DIRECTION => 0,
+    P_STOPS     => 1,
+    P_PLACES    => 2,
+    P_VDC       => 3,
+    P_VIA       => 4,
+};
 
 use constant {
     PL_DESCRIP   => 0,
@@ -65,12 +59,8 @@ my %dircode_of_xhea = (
     '1'              => 'D1',
 );
 
-
 my %required_headers = (
-    trippatterns => [
-        qw<tpat_route tpat_id tpat_direction
-          tpat_in_serv tpat_via tpat_trips_match>
-    ],
+
     trippatternstops => [
         qw<stp_511_id tpat_stp_rank tpat_stp_plc tpat_stp_tp_sequence>,
         'item tpat_id', 'item tpat_route',
@@ -86,139 +76,37 @@ my %required_headers = (
     tripstops => [qw<trp_int_number tstp_position tstp_passing_time>],
 );
 
-
 sub xhea2skeds {
- 
-  my %params = u::validate(
-                   @_, {
-                       signup => 1,    # mandatory
-                       fieldnames => 1,
-                       fields => 1,
-                       values => 1,
-                   }
-               );
- 
- 
-    my $fieldnames_r = $params{fieldnames};
-    my $fields_r = $params{fields};
-    my $values_r = $params{'values'};
-    
+
+    my %params = u::validate(
+        @_,
+        {   signup          => 1,
+            xhea_tab_folder => 1,
+        }
+    );
+
+    my $signup          = $params{signup};
+    my $xhea_tab_folder = $params{xhea_tab_folder};
+
     my ( $patterns_r, $pat_lineids_of_lgdir_r, $upattern_of_r, $uindex_of_r )
-      = _get_patterns($fieldnames_r, $fields_r, $values_r);
+      = _get_patterns($xhea_tab_folder);
 
     my $trips_of_skedid_r
-      = xhea_trips( $fieldnames_r, $fields_r, $values_r, $pat_lineids_of_lgdir_r, $uindex_of_r );
+      = xhea_trips( $xhea_tab_folder, $pat_lineids_of_lgdir_r, $uindex_of_r );
 
-    my $places_info_of_r = _load_places($fieldnames_r, $fields_r, $values_r);
+    my $places_info_of_r = _load_places($xhea_tab_folder);
 
     my @skeds
       = _make_skeds( $trips_of_skedid_r, $upattern_of_r, $places_info_of_r );
 
-    #_output_debugging_patterns( $signup, $patterns_r, $pat_lineids_of_lgdir_r,
-    #   $upattern_of_r, $uindex_of_r, \@skeds );
+    _output_debugging_patterns( $signup, $patterns_r, $pat_lineids_of_lgdir_r,
+        $upattern_of_r, $uindex_of_r, \@skeds );
 
-    #_output_skeds( $signup, \@skeds );
+    _output_skeds( $signup, \@skeds );
 
     return @skeds;
 
-} ## tidy end: sub xhea_import
-
-sub _output_skeds {
- # should be moved to a SkedCollection object
-
-    use autodie;
-    my $signup  = shift;
-    my $skeds_r = shift;
-
-    my $objfolder = $signup->subfolder('s/json_obj');
-    $objfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'json',
-        EXTENSION => 'json',
-    );
-
-    my $xlsxfolder = $signup->subfolder('s/xlsx');
-    $xlsxfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'xlsx',
-        EXTENSION => 'xlsx',
-    );
-
-    my $spacedfolder = $signup->subfolder('s/spaced');
-    $spacedfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'spaced',
-        EXTENSION => 'txt',
-    );
-
-    Actium::O::Sked->write_prehistorics( $skeds_r, $signup );
-
-} ## tidy end: sub _output_skeds
-
-sub _output_debugging_patterns {
-
-    use autodie;
-    ## no critic (RequireCheckedSyscalls)
-
-    my $signup                 = shift;
-    my $patterns_r             = shift;
-    my $pat_lineids_of_lgdir_r = shift;
-    my $upattern_of_r          = shift;
-    my $uindex_of_r            = shift;
-    my $skeds_r                = shift;
-
-    my $debugfolder = $signup->subfolder('xhea_debug');
-
-    my $dumpfolder = $debugfolder->subfolder('dump');
-    $dumpfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'dump',
-        EXTENSION => 'dump',
-    );
-
-    my $ufh = $debugfolder->open_write('xhea_upatterns.txt');
-
-    foreach my $lgdir ( sortbyline keys %{$pat_lineids_of_lgdir_r} ) {
-        my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
-        say $ufh "\n$lgdir";
-        say $ufh join( "\t", @{ $upattern_of_r->{$lgdir} } );
-        foreach my $lineid (@lineids) {
-            say $ufh $lineid;
-            say $ufh join( "\t", @{ $uindex_of_r->{$lineid} } );
-
-            my @stopinfos = @{ $patterns_r->{$lineid}[P_STOPS] };
-            my @stops;
-            foreach my $stopinfo (@stopinfos) {
-                my $text = shift @{$stopinfo};
-                if ( scalar @{$stopinfo} ) {
-                    my $plc = shift @{$stopinfo};
-                    my $seq = shift @{$stopinfo};
-                    $text .= ":$plc:$seq";
-                }
-                push @stops, $text;
-
-            }
-            my $stops = join( "\t", @stops );
-
-            my %places = %{ $patterns_r->{$lineid}[ P_PLACES() ] };
-            my @places;
-
-            foreach my $seq ( sort { $a <=> $b } keys %places ) {
-                push @places, "$seq:$places{$seq}";
-            }
-            my $places = join( "\t", @places );
-
-            say $ufh "$stops\n$places";
-
-        } ## tidy end: foreach my $lineid (@lineids)
-
-    } ## tidy end: foreach my $lgdir ( sortbyline...)
-
-    close $ufh or die "Can't close xhea_upatterns.txt: $OS_ERROR";
-
-    ##use critic
-
-} ## tidy end: sub _output_debugging_patterns
+} ## tidy end: sub xhea2skeds
 
 my $stop_tiebreaker = sub {
 
@@ -248,12 +136,22 @@ my $stop_tiebreaker = sub {
 
 };
 
+const my @requiredheaders_trippatterns => (
+    qw<tpat_route tpat_id tpat_direction
+      tpat_in_serv tpat_via tpat_trips_match>
+);
+
+const my @requiredheaders_tpstops => (
+    qw<stp_511_id tpat_stp_rank tpat_stp_plc tpat_stp_tp_sequence>,
+    'item tpat_id', 'item tpat_route',
+);
+
 sub _get_patterns {
-    my $xheafolder = shift;
+    my $xhea_tab_folder = shift;
     my %patterns;
     my %pat_lineids_of_lgdir;
 
-    my $load_cry = cry( 'Loading and assembling XHEA patterns');
+    my $load_cry = cry('Loading and assembling XHEA patterns');
 
     my $read_cry = cry('Reading XHEA trippattern files');
 
@@ -282,23 +180,25 @@ sub _get_patterns {
 
         push @{ $pat_lineids_of_lgdir{$lgdir} }, $lineid;
 
-        $patterns{$lineid}[ P_DIRECTION() ] = $direction;
+        $patterns{$lineid}[P_DIRECTION] = $direction;
+        $patterns{$lineid}[P_VDC] = $value_of_r->{tpat_veh_display} // $EMPTY;
+        $patterns{$lineid}[P_VIA] = $value_of_r->{tpat_via} // $EMPTY;
 
         return;
 
     };
 
     read_tab_files(
-        {   globpatterns     => ['*trippatterns.txt'],
-            folder           => $xheafolder,
-            required_headers => $required_headers{'trippatterns'},
+        {   globpatterns     => ['*trip_pattern.txt'],
+            folder           => $xhea_tab_folder,
+            required_headers => \@requiredheaders_trippatterns,
             callback         => $patfile_callback,
         }
     );
 
     $read_cry->done;
 
-    my $tps_cry = cry( 'Reading XHEA trippatternstops files');
+    my $tps_cry = cry('Reading XHEA trippatternstops files');
 
     my $patstopfile_callback = sub {
         my $value_of_r = shift;
@@ -332,7 +232,7 @@ sub _get_patterns {
 
     read_tab_files(
         {   globpatterns     => ['*trippatternstops.txt'],
-            folder           => $xheafolder,
+            folder           => $xhea_tab_folder,
             required_headers => $required_headers{'trippatternstops'},
             callback         => $patstopfile_callback,
         }
@@ -340,7 +240,7 @@ sub _get_patterns {
 
     $tps_cry->done;
 
-    my $unipatcry = cry( 'Making unified patterns for each direction');
+    my $unipatcry = cry('Making unified patterns for each direction');
 
     my ( %upattern_of, %uindex_of );
 
@@ -385,10 +285,10 @@ sub _get_patterns {
 } ## tidy end: sub _get_patterns
 
 sub _load_places {
-    my $xheafolder = shift;
+    my $xhea_tab_folder = shift;
     my %place_info_of;
 
-    my $cry = cry( 'Reading XHEA place files');
+    my $cry = cry('Reading XHEA place files');
 
     my $place_callback = sub {
         my $value_of_r   = shift;
@@ -405,7 +305,7 @@ sub _load_places {
 
     read_tab_files(
         {   globpatterns     => ['*places.txt'],
-            folder           => $xheafolder,
+            folder           => $xhea_tab_folder,
             required_headers => $required_headers{'places'},
             callback         => $place_callback,
         }
@@ -424,11 +324,11 @@ sub _make_skeds {
 
     my @skeds;
 
-    my $cry = cry( "Making Actium::O::Sked objects");
+    my $cry = cry("Making Actium::O::Sked objects");
 
     foreach my $skedid ( sortbyline keys %{$trips_of_skedid_r} ) {
 
-        $cry->over( $skedid);
+        $cry->over($skedid);
 
         my ( $lg, $dir, $days ) = split( /_/s, $skedid );
         my $lgdir    = "${lg}_$dir";
@@ -479,7 +379,7 @@ sub _make_skeds {
 
 sub xhea_trips {
 
-    my $cry = cry( "Loading XHEA trips into trip objects");
+    my $cry = cry("Loading XHEA trips into trip objects");
 
     my $xheafolder             = shift;
     my $pat_lineids_of_lgdir_r = shift;
@@ -499,10 +399,9 @@ sub xhea_trips {
 
 } ## tidy end: sub xhea_trips
 
-
 sub _load_trips_from_file {
     my $xheafolder = shift;
-    my $cry = cry( 'Reading XHEA trip files');
+    my $cry        = cry('Reading XHEA trip files');
 
     my %trip_of_tnum;
     my %tnums_of_lineid;
@@ -554,7 +453,7 @@ sub _load_trips_from_file {
 
     $cry->done;
 
-    my $tripstop_cry = cry( 'Reading XHEA trip stop (time) files');
+    my $tripstop_cry = cry('Reading XHEA trip stop (time) files');
 
     my $tripstops_callback = sub {
         my $value_of_r = shift;
@@ -621,11 +520,12 @@ sub _make_trip_objs {
 
     # Then we turn them into objects, and sort the objects.
 
-    my $cry = cry( 'Making Trip objects (padding out columns, merging double trips)');
+    my $cry
+      = cry('Making Trip objects (padding out columns, merging double trips)');
 
-    foreach my $lgdir ( sortbyline keys %{$pat_lineids_of_lgdir_r } ) {
+    foreach my $lgdir ( sortbyline keys %{$pat_lineids_of_lgdir_r} ) {
 
-        $cry->over( $lgdir);
+        $cry->over($lgdir);
 
         my $trip_objs_r;
         my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
@@ -703,11 +603,11 @@ sub _get_trips_of_sked {
     my $trips_of_lgdir_r = shift;
     my %trips_of_sked;
 
-    my $cry = cry( "Assembling trips into schedules by day");
+    my $cry = cry("Assembling trips into schedules by day");
 
-    foreach my $lgdir ( sortbyline keys %{ $trips_of_lgdir_r }) {
+    foreach my $lgdir ( sortbyline keys %{$trips_of_lgdir_r} ) {
 
-        $cry->over( $lgdir);
+        $cry->over($lgdir);
 
         # first, this separates them out by individual days.
         # then, it reassembles them in groups.
@@ -732,7 +632,7 @@ sub _get_trips_of_sked {
 
         my $trips_of_skedday_r = _assemble_skeddays( \%trips_of_day );
 
-        for my $skedday ( keys %{ $trips_of_skedday_r } ) {
+        for my $skedday ( keys %{$trips_of_skedday_r} ) {
 
             my $skedid = "${lgdir}_$skedday";
             $trips_of_sked{$skedid} = $trips_of_skedday_r->{$skedday};
@@ -749,7 +649,7 @@ sub _get_trips_of_sked {
 
 sub _assemble_skeddays {
     my $trips_of_day_r = shift;
-    my @days           = sort keys %{ $trips_of_day_r} ;
+    my @days           = sort keys %{$trips_of_day_r};
     my ( %already_found_day, %trips_of_skedday );
 
     # Go through list of days. Compare the first one to the subsequent ones.
@@ -894,7 +794,106 @@ sub _trips_are_identical {
 
 }
 
-1;
+###################
+##### OUTPUT ######
+###################
+
+sub _output_skeds {
+    # should be moved to a SkedCollection object
+
+    use autodie;
+    my $signup  = shift;
+    my $skeds_r = shift;
+
+    my $objfolder = $signup->subfolder('s/json_obj');
+    $objfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'json',
+        EXTENSION => 'json',
+    );
+
+    my $xlsxfolder = $signup->subfolder('s/xlsx');
+    $xlsxfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'xlsx',
+        EXTENSION => 'xlsx',
+    );
+
+    my $spacedfolder = $signup->subfolder('s/spaced');
+    $spacedfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'spaced',
+        EXTENSION => 'txt',
+    );
+
+    Actium::O::Sked->write_prehistorics( $skeds_r, $signup );
+
+} ## tidy end: sub _output_skeds
+
+sub _output_debugging_patterns {
+
+    use autodie;
+    ## no critic (RequireCheckedSyscalls)
+
+    my $signup                 = shift;
+    my $patterns_r             = shift;
+    my $pat_lineids_of_lgdir_r = shift;
+    my $upattern_of_r          = shift;
+    my $uindex_of_r            = shift;
+    my $skeds_r                = shift;
+
+    my $debugfolder = $signup->subfolder('xhea_debug');
+
+    my $dumpfolder = $debugfolder->subfolder('dump');
+    $dumpfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'dump',
+        EXTENSION => 'dump',
+    );
+
+    my $ufh = $debugfolder->open_write('xhea_upatterns.txt');
+
+    foreach my $lgdir ( sortbyline keys %{$pat_lineids_of_lgdir_r} ) {
+        my @lineids = @{ $pat_lineids_of_lgdir_r->{$lgdir} };
+        say $ufh "\n$lgdir";
+        say $ufh join( "\t", @{ $upattern_of_r->{$lgdir} } );
+        foreach my $lineid (@lineids) {
+            say $ufh $lineid;
+            say $ufh join( "\t", @{ $uindex_of_r->{$lineid} } );
+
+            my @stopinfos = @{ $patterns_r->{$lineid}[P_STOPS] };
+            my @stops;
+            foreach my $stopinfo (@stopinfos) {
+                my $text = shift @{$stopinfo};
+                if ( scalar @{$stopinfo} ) {
+                    my $plc = shift @{$stopinfo};
+                    my $seq = shift @{$stopinfo};
+                    $text .= ":$plc:$seq";
+                }
+                push @stops, $text;
+
+            }
+            my $stops = join( "\t", @stops );
+
+            my %places = %{ $patterns_r->{$lineid}[ P_PLACES() ] };
+            my @places;
+
+            foreach my $seq ( sort { $a <=> $b } keys %places ) {
+                push @places, "$seq:$places{$seq}";
+            }
+            my $places = join( "\t", @places );
+
+            say $ufh "$stops\n$places";
+
+        } ## tidy end: foreach my $lineid (@lineids)
+
+    } ## tidy end: foreach my $lgdir ( sortbyline...)
+
+    close $ufh or die "Can't close xhea_upatterns.txt: $OS_ERROR";
+
+    ##use critic
+
+} ## tidy end: sub _output_debugging_patterns
 
 1;
 

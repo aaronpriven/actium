@@ -381,8 +381,6 @@ sub load {
             records_of => $records_of_r,
             fields_of  => $fields_of_r,
             filenames  => \@filenames,
-
-            #tfolder    => $tfolder,
         );
 
         %values_of = ( %values_of, %{$newvalues_r} );
@@ -390,8 +388,6 @@ sub load {
         $file_cry->done;
 
     } ## tidy end: foreach my $filename (@xhea_filenames)
-
-    #$tfolder->json_store_pretty( \%fields_of, 'records.json' );
 
     $load_cry->done;
 
