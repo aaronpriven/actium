@@ -1083,7 +1083,7 @@ First, it loads and then adjusts the XHEA files
 (see load and adjust_for_basetype below). Then, using routines in 
 Actium::Import::CalculateFields, it creates the updated i_ fields. 
 Finally, it saves those files in the "tab" folder, and creates a "records.json" 
-file storing 
+file storing  the field names and assoocated information.
 
 It takes three named parameters, all of which should be folder objects.
 
