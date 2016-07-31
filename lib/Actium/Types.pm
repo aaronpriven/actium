@@ -14,10 +14,12 @@ use Const::Fast;
 
 ## no critic (ProhibitMagicNumbers)
 
+      #HastusDirCode
+
 use MooseX::Types -declare => [
     qw <TransitInfoDays   DayCode     SchoolDayCode
       DaySpec             ActiumDays  ActiumTime
-      HastusDirCode       DirCode     ActiumDir
+      DirCode             ActiumDir
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
       Str4                Str8
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
@@ -81,15 +83,15 @@ subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 
 enum( DirCode, \@DIRCODES );
 
-subtype HastusDirCode, as Int, where { $_ >= 0 and $_ <= $#DIRCODES };
-
-coerce DirCode, from HastusDirCode, via { $DIRCODES[ $HASTUS_DIRS[$_] ] };
+#subtype HastusDirCode, as Int, where { $_ >= 0 and $_ <= $#DIRCODES };
+# "1" is contradictory - integer or "direction 1"?
+#coerce DirCode, from HastusDirCode, via { $DIRCODES[ $HASTUS_DIRS[$_] ] };
 
 subtype ActiumDir, as class_type('Actium::O::Dir');
 
 coerce( ActiumDir,
-    from HastusDirCode,
-    via               { Actium::O::Dir->instance( to_DirCode($_) ) },
+#    from HastusDirCode,
+#    via               { Actium::O::Dir->instance( to_DirCode($_) ) },
     from DirCode, via { Actium::O::Dir->instance($_) },
 );
 
