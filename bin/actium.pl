@@ -53,6 +53,7 @@ Actium::O::Cmd->new(
         tabulae       => \'timetables',
         tabskeds      => 'TabSkeds',
         timetables    => 'Timetables',
+        xhea2skeds    => 'Xhea2Skeds',
         zipcodes      => 'ZipCodes',
         zipdecals     => 'ZipDecals',
 
