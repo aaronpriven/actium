@@ -1,19 +1,64 @@
-package Actium::O::Dir 0.010;
+package Actium::O::Dir 0.012;
 
 # Object representing the scheduled direction (of a trip, or set of trips)
-
-use 5.022;
-use warnings;
-
-package Actium::O::Dir 0.010;
 
 use Actium::Moose;
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
-with 'MooseX::Role::Flyweight';
-# MooseX::Role::Flyweight ### DEP ###
 
 use Actium::Types qw<DirCode>;
+
+# if you supply this with "1", it's going to think you mean Hastus AVL "1"
+# (i.e., "SB") instead of "D1".
+
+const my %DIRCODE_OF => (
+    ( map { lc($_) => $_ } @DIRCODES ),
+    ( map { $HASTUS_DIRS[$_], $DIRCODES[ $HASTUS_DIRS[$_] ] } 0 .. $#DIRCODES ),
+    'ccw'           => 'CC',
+    'clock'         => 'CW',
+    'counterclo'    => 'CC',
+    'counterclock'  => 'CC',
+    'direction one' => 'D1',
+    'direction two' => 'D2',
+    'da'            => 'A',
+    'db'            => 'B',
+    'down'          => 'DN',
+    'ea'            => 'EB',
+    'east'          => 'EB',
+    'in'            => 'IN',
+    'no'            => 'NB',
+    'north'         => 'NB',
+    'out'           => 'OU',
+    'return'        => 'RT',
+    'so'            => 'SB',
+    'south'         => 'SB',
+    'up'            => 'UP',
+    'we'            => 'WB',
+    'west'          => 'WB',
+);
+my %obj_cache;
+
+sub instance {
+    my $class     = shift;
+    my $direction = lc(shift);
+
+    return $obj_cache{$direction} if exists $obj_cache{$direction};
+
+    for ($direction) {
+        s/\Adir/d/;
+        s/bound\z//;
+        s/ward\z//;
+        s/wise\z//;
+    }
+
+    if ( not exists $DIRCODE_OF{$direction} ) {
+        croak "Unknown direction $direction";
+    }
+
+    return $obj_cache{$direction}
+      = $class->new( $DIRCODE_OF{$direction} );
+
+} ## tidy end: sub instance
 
 ###################################
 #### ENGLISH NAMES FOR DAYS CONSTANTS
@@ -122,26 +167,61 @@ are immutable.
 
 The object is constructed using "Actium::O::Dir->instance".  
 
-It accepts a direction specification, in one of two ways.  As a string:
+It accepts a direction string. In general, the directions are as follows:
 
- NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN
+ Direction         Code         Hastus Standard AVL code
+ ---------         ----         ------------------------
+ North             NB           0
+ South             SB           1
+ West              WB           3
+ East              EB           2      
+ In                IN           4
+ Out               OU           5
+ Go                GO           6
+ Return            RT           7
+ Clock             CW           8
+ Counterclock      CC           9
+ Direction One     D1           10
+ Direction Two     D2           11
+ Up                UP           12
+ Down              DN           13
+ A                 A            14
+ B                 B            15
  
-Or as a number from 0 to 13, corresponding to the above directions,
-except that 2 is "EB" and 3 is "WB". (These are the codes from the Hastus
-Standard AVL Interface. This program sorts westbound before eastbound, unlike
-Hastus.)
+The 'Code' is the code used by 'dircode', below. This is the sort
+order that is used by this program -- the Hastus Standard AVL code
+is the code from the Hastus Standard AVL interface, and this program
+sorts westbound before eastbound, unlike Hastus.
+
+The ->instance method will accept any of these as inputs,
+case-insensitively, will strip a final "bound", "ward", or
+"wise" from any of them, and replaces a leading "dir" with just
+"d". In addition, it accepts:
+
+  Abbreviation    Meaning
+  ------------    ------------
+  CCW             Counterclock
+  Counterclo      Counterclock
+  DA              A
+  DB              B
+  Ea              East
+  No              North
+  So              South
+  We              West
+
 
 =item B<< Actium::O::Dir->new(I<dircode>) >>
 
 B<< Do not use this method. >>
 
-This method is used internally by Actium::O::Days to create a new object and
-insert it into the cache used by instance(). There should never be a reason
-to create more than one method with the same arguments.
+This method is used internally by Actium::O::Days to create a new
+object and insert it into the cache used by instance(). There should
+never be a reason to create more than one object with the same
+arguments.
 
 =item B<< $obj->dircode >>
 
-Returns the direction code, as the string given above.
+Returns the direction code, as above.
 
 =item B<< $obj->as_direction >>
 
@@ -190,6 +270,13 @@ west before east.
 =item Actium::Types
 
 =back
+
+=head1 BUGS AND LIMITATIONS
+
+Supplying the ->instance() routine with "1" is somewhat ambiguous: it 
+could mean Hastus Stnadard AVL direction 1, which is "southbound," or it could
+mean "Direction 1" (which is used for supervisor orders). At the moment it 
+treats it as though it were the Hastus AVL direction.
 
 =head1 AUTHOR
 
