@@ -36,13 +36,17 @@ const my %DIRCODE_OF => (
     'we'            => 'WB',
     'west'          => 'WB',
 );
+
 my %obj_cache;
 
 sub instance {
     my $class     = shift;
-    my $direction = lc(shift);
+    my $orig_direction = lc(shift);
+    my $direction = lc($orig_direction);
 
-    return $obj_cache{$direction} if exists $obj_cache{$direction};
+    if ( exists $obj_cache{$direction} ) {
+        return $obj_cache{$direction};
+    }
 
     for ($direction) {
         s/\Adir/d/;
@@ -55,8 +59,9 @@ sub instance {
         croak "Unknown direction $direction";
     }
 
-    return $obj_cache{$direction}
-      = $class->new( $DIRCODE_OF{$direction} );
+    my $instance = $class->new( $DIRCODE_OF{$direction} );
+    $obj_cache{$orig_direction} = $instance;
+    return $instance;
 
 } ## tidy end: sub instance
 
