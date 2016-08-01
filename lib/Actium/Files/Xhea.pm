@@ -671,6 +671,10 @@ sub _get_xhea_filenames {
 
 } ## tidy end: sub _get_xhea_filenames
 
+
+##########################
+#### All below is part of the legacy HASI converter
+
 # From trip_pattern.txt
 #
 #  PAT PAT noparent
