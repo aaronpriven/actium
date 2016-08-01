@@ -1,32 +1,30 @@
-package Actium::O::Pattern 0.011;
+package Actium::O::Pattern 0.012;
 
-use 5.012;
-use warnings;
+# used by Xhea:::ToSkeds
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
-use Moose::Util::TypeConstraints; ### DEP ###
+use Actium::Moose;
 
-use namespace::autoclean; ### DEP ###
-
-use Actium::Constants;
-use Actium::Types (qw/DirCode HastusDirCode ActiumDir/);
+use Actium::Types (qw/DirCode ActiumDir/);
 use Actium::O::Dir;
-use Actium::Util ('joinkey');
+use Actium::O::Pattern::Stop;
 
-has 'route' => (
+has 'line' => (
     required => 1,
     is       => 'ro',
     isa      => 'Str',
 );
 
+has [qw/vdc via/] => (
+    is => 'ro',
+);
+
 has 'dir_obj' => (
     required => 1,
-    coerce => 1,
+    coerce   => 1,
     init_arg => 'direction',
     is       => 'ro',
     isa      => ActiumDir,
-    handles  => ['dircode' ],
+    handles  => ['dircode'],
 );
 
 has 'identifier' => (
@@ -43,39 +41,26 @@ has 'unique_id' => (
 );
 
 sub id {
-   my $self = shift;
-   return $self->unique_id;
+    my $self = shift;
+    return $self->unique_id;
 }
 
 sub _build_unique_id {
     my $self = shift;
-    return joinkey( $self->route, $self->dircode, $self->identifier );
+    return u::joinkey( $self->line, $self->dircode, $self->identifier );
 }
 
-has 'stops_r' => (
+has 'stop_objs_r' => (
     is      => 'bare',
-    isa     => 'ArrayRef[Str]',
+    isa     => 'ArrayRef[Actium::O::Pattern::Stop]',
+    writer => '_set_stop_objs_r',
     default => sub { [] },
     traits  => ['Array'],
     handles => {
-        stops    => 'elements',
-        add_stop => 'push',
-        stoplist => ['join' , $KEY_SEPARATOR ],
+        stop_objs    => 'elements',
     },
 );
 
-has 'places_r' => (
-   is => 'bare',
-   isa => 'ArrayRef[Str]',
-    default => sub { [] },
-    traits  => ['Array'],
-    handles => {
-        places    => 'elements',
-        add_place => 'push',
-        placelist => ['join' , $KEY_SEPARATOR ],
-    },
-);
-
-__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
+u::immut;
 
 1;

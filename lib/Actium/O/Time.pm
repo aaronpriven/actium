@@ -1,4 +1,4 @@
-package Actium::O::Time 0.010;
+package Actium::O::Time 0.012;
 
 # object for formatting schedule times and parsing formatted times
 
@@ -10,6 +10,8 @@ with Storage( traits => ['OnlyWhenBuilt'] );
 
 use Actium::Types('TimeNum');
 # that definition should be moved inside here when Actium::Time is phased out
+
+#use overload '0+' => sub { shift->timenum };
 
 const my $NOON_YESTERDAY    => -$MINS_IN_12HRS;
 const my $MIDNIGHT          => 0;
@@ -99,6 +101,38 @@ my $str_to_num_cr = sub {
     # if there's no numbers, use undef
 
     my $origtime = $time;
+
+
+    # ISO TIME FROM XHEA
+    if ($time =~ m/
+        \A                # beginning of string
+        [0-9]+            # year, however many digits
+        \-                # hyphen
+        (12-31|01-0[12])  # date - captured - Dec 31 or Jan 1 or Jan 2
+        T                 # T
+        ([0-9]+)          # hours  - captured
+        \:                # colon
+        ([0-9][0-9])      # minutes - captured
+        (?:\:[0-9.]*)?    # seconds
+        Z?                # optional Z for Zulu time
+        \z                # end of string
+        /x
+      )
+    {
+
+        my $isodate = $1;
+        my $isotime = $2 . $3;
+        my $time    = $t24h_to_num_cr->($isotime);
+
+        if ( $isodate eq '12-31' ) {
+            $time -= ( 2 * $MINS_IN_12HRS );
+        }
+        elsif ( $isodate eq '01-02' ) {
+            $time += ( 2 * $MINS_IN_12HRS );
+        }
+        return $time;
+
+    }
 
     $time = lc($time);
 
