@@ -47,7 +47,7 @@ sub id {
 
 sub _build_unique_id {
     my $self = shift;
-    return u::joinkey( $self->line, $self->dircode, $self->identifier );
+    return join ('.' , $self->line, $self->identifier );
 }
 
 has 'stop_objs_r' => (
@@ -60,6 +60,31 @@ has 'stop_objs_r' => (
         stop_objs    => 'elements',
     },
 );
+
+has 'stops_and_places_r' => (
+    is => 'bare',
+    isa => 'ArrayRef[Str]',
+    lazy => 1,
+    builder => '_build_stops_places_r',
+    traits => ['Array'],
+    handles => { 
+        stops_and_places => 'elements',
+    },
+);
+
+sub _build_stops_places_r {
+    my $self = shift;
+    return [ map { $_->stop_and_place } $self->stop_objs ];
+}
+
+has union_indexes_r => (
+    is => 'rw',
+    isa => 'ArrayRef[Str]',
+    traits => ['Array'],
+    handles => { 
+        union_indexes => 'elements',
+    },
+); 
 
 u::immut;
 
