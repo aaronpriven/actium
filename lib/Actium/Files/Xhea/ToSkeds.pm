@@ -5,9 +5,11 @@ use Actium::Files::TabDelimited 'read_aoas';
 use Actium::O::Dir;
 use Actium::O::Time;
 use Actium::O::Pattern;
+use Actium::O::Pattern::Group;
 use Actium::O::Pattern::Stop;
+use Actium::Union ('ordered_union_columns');
 
-const my @required_tables => (qw/trip trip_pattern trip_stop trip_tp/);
+const my @required_tables => (qw/ppat trip trip_pattern trip_stop trip_tp/);
 
 sub xheatab2skeds {
 
@@ -15,8 +17,9 @@ sub xheatab2skeds {
 
     my %params = u::validate(
         @_,
-        {   skeds_folder    => 1,    # mandatory
+        {   skeds_folder    => 1,
             xhea_tab_folder => 1,
+            actiumdb        => 1,
         }
     );
     my $skeds_folder    = $params{skeds_folder};
@@ -37,6 +40,7 @@ sub xheatab2skeds {
 
     return xhea2skeds(
         skeds_folder => $skeds_folder,
+        actiumdb     => $params{actiumdb},
         fieldnames   => $fieldnames_of_r,
         values       => $values_of_r
     );
@@ -49,7 +53,8 @@ sub xhea2skeds {
 
     my %params = u::validate(
         @_,
-        {   skeds_folder => 1,    # mandatory
+        {   skeds_folder => 1,
+            actiumdb     => 1,
             fieldnames   => 1,
             values       => 1,
         }
@@ -58,67 +63,127 @@ sub xhea2skeds {
     my $skeds_folder    = $params{skeds_folder};
     my $fieldnames_of_r = $params{fieldnames};
     my $values_of_r     = $params{values};
+    my $actiumdb        = $params{actiumdb};
 
-    my $pattern_of_r = _get_patterns( $fieldnames_of_r, $values_of_r );
+    my ( $pattern_by_id_r, $patterns_by_linedir_r, $patgroup_by_lgdir_r )
+      = _get_patterns(
+        actiumdb   => $actiumdb,
+        fieldnames => $fieldnames_of_r,
+        values     => $values_of_r
+      );
 
     my $trip_r = _get_trips(
-        patterns   => $pattern_of_r,
+        patterns   => $pattern_by_id_r,
         fieldnames => $fieldnames_of_r,
         values     => $values_of_r
     );
 
-    _add_stops_to_patterns( $pattern_of_r, $trip_r );
+    _add_stops_to_patterns( $pattern_by_id_r, $trip_r );
+
+    _add_place_patterns_to_patterns(
+        fieldnames          => $fieldnames_of_r,
+        patterns_by_linedir => $patterns_by_linedir_r,
+        values              => $values_of_r
+    );
+
+    _make_patgroup_stop_order(
+        patterns  => $pattern_by_id_r,
+        patgroups => $patgroup_by_lgdir_r,
+    );
 
     $xhea2skedscry->done;
     my $dumpcry = cry('Dumping patterns and trips');
     $dumpcry->prog('patterns...');
 
-    open my $out, '>', '/tmp/xheaout_patterns.2';
-    say $out u::dumpstr($pattern_of_r);
+    open my $out, '>', '/tmp/xheaout_patterns.3';
+    say $out u::dumpstr([ $patgroup_by_lgdir_r, $pattern_by_id_r ]);
     close $out;
     $dumpcry->prog('trips...');
-    open $out, '>', '/tmp/xheaout_trips.2';
+    open $out, '>', '/tmp/xheaout_trips.3';
     say $out u::dumpstr($trip_r);
     close $out;
     $dumpcry->done;
 
 } ## tidy end: sub xhea2skeds
 
-sub _get_patterns {
+{
 
-    my $fieldnames_of_r = shift;
-    my $values_of_r     = shift;
+    my %line_cache;
 
-    my %pattern_of;
+    my $linegroup_cr = sub {
+        my $line = shift;
+        my $linegroup = $line_cache{$line}{LineGroup} || $line;
+    };
 
-    records_in_turn(
-        cry        => 'Processing trip patterns',
-        fieldnames => $fieldnames_of_r,
-        values     => $values_of_r,
-        table      => 'trip_pattern',
-        callback   => sub {
-            \my %field = shift;
-            return unless $field{tpat_in_serv};
+    sub _get_patterns {
 
-            my $line       = $field{tpat_route};
-            my $identifier = $field{tpat_id};
-            my $uniqid     = "$line.$identifier";
+        my %params = u::validate(
+            @_,
+            {   actiumdb   => 1,
+                fieldnames => 1,
+                values     => 1,
+            }
+        );
 
-            my $dir_obj = Actium::O::Dir::->instance( $field{tpat_direction} );
+        my $fieldnames_of_r = $params{fieldnames};
+        my $values_of_r     = $params{values};
+        %line_cache = $params{actiumdb}->line_cache;
 
-            $pattern_of{$uniqid} = Actium::O::Pattern->new(
-                line       => $line,
-                identifier => $identifier,
-                direction  => $dir_obj,
-                vdc        => $field{tpat_veh_display},
-                via        => $field{tpat_via},
-            );
-        }
-    );
+        my ( %pattern_by_id, %patterns_by_linedir, %patgroup_by_lgdir );
 
-    return \%pattern_of;
+        records_in_turn(
+            cry        => 'Processing trip patterns',
+            fieldnames => $fieldnames_of_r,
+            values     => $values_of_r,
+            table      => 'trip_pattern',
+            callback   => sub {
+                \my %field = shift;
+                return unless $field{tpat_in_serv};
 
-} ## tidy end: sub _get_patterns
+                my $line       = $field{tpat_route};
+                my $identifier = $field{tpat_id};
+                my $uniqid     = "$line.$identifier";
+
+                my $dir_obj
+                  = Actium::O::Dir::->instance( $field{tpat_direction} );
+
+                my $pattern = Actium::O::Pattern->new(
+                    line       => $line,
+                    identifier => $identifier,
+                    direction  => $dir_obj,
+                    vdc        => $field{tpat_veh_display},
+                    via        => $field{tpat_via},
+                );
+                $pattern_by_id{$uniqid} = $pattern;
+
+                my $linedir
+                  = Actium::O::Pattern::Group->build_lgdir( $line, $dir_obj );
+
+                push $patterns_by_linedir{$linedir}->@*, $pattern;
+
+                my $linegroup = $linegroup_cr->($line);
+                my $lgdir
+                  = Actium::O::Pattern::Group->build_lgdir( $linegroup,
+                    $dir_obj );
+
+                if ( not exists $patgroup_by_lgdir{$lgdir} ) {
+                    $patgroup_by_lgdir{$lgdir}
+                      = Actium::O::Pattern::Group->new(
+                        linegroup => $linegroup,
+                        direction => $dir_obj,
+                      );
+                }
+
+                $patgroup_by_lgdir{$lgdir}->add_pattern($pattern);
+
+            }
+        );
+
+        return ( \%pattern_by_id, \%patterns_by_linedir, \%patgroup_by_lgdir );
+
+    } ## tidy end: sub _get_patterns
+
+}
 
 {
     const my %tripfield_of_day => qw(
@@ -146,6 +211,73 @@ sub _get_patterns {
 
 }
 
+sub _add_place_patterns_to_patterns {
+    my %params = u::validate(
+        @_,
+        {   fieldnames          => 1,
+            patterns_by_linedir => 1,
+            values              => 1,
+        }
+    );
+
+    my $fieldnames_of_r = $params{fieldnames};
+    my $values_of_r     = $params{values};
+    \my %patterns_by_linedir = $params{patterns_by_linedir};
+
+    my %ppat_of_linedir;
+
+    records_in_turn(
+        fieldnames => $fieldnames_of_r,
+        cry        => 'Processing place patterns',
+        values     => $values_of_r,
+        table      => 'ppat',
+        callback   => sub {
+
+            \my %field = shift;
+            my $direction = Actium::O::Dir->instance( $field{direction} );
+            my $linedir = Actium::O::Pattern::Group->build_lgdir( $field{line},
+                $direction );
+            my ( $place, $rank ) = @field{qw/place rank/};
+
+            $ppat_of_linedir{$linedir}->[$rank] = $place;
+
+            return;
+
+        },
+    );
+
+    my $ppat_stop_cry = cry('Adding place pattern ranks to pattern stops');
+
+    foreach my $linedir ( keys %ppat_of_linedir ) {
+        \my @ppat_entries = $ppat_of_linedir{$linedir};
+
+      PATTERN:
+        foreach my $pattern ( $patterns_by_linedir{$linedir}->@* ) {
+            my $ppat_rank = 0;
+          STOP:
+            foreach my $stop ( $pattern->stop_objs ) {
+                next STOP unless $stop->has_place;
+                my $stop_place = $stop->tstp_place;
+                my $ppat_place = $ppat_entries[$ppat_rank];
+                while ( $stop_place ne $ppat_place
+                    and $ppat_rank <= $#ppat_entries )
+                {
+                    $ppat_rank++;
+                    $ppat_place = $ppat_entries[$ppat_rank];
+                }
+                next PATTERN if $ppat_rank > $#ppat_entries;
+                $stop->set_place_rank($ppat_rank);
+                $ppat_rank++;
+            }
+
+        }
+    } ## tidy end: foreach my $linedir ( keys ...)
+
+    $ppat_stop_cry->done;
+    return;
+
+} ## tidy end: sub _add_place_patterns_to_patterns
+
 sub _get_trips {
 
     my %params = u::validate(
@@ -156,7 +288,7 @@ sub _get_trips {
         }
     );
 
-    my $pattern_of_r    = $params{patterns};
+    my $pattern_by_id_r = $params{patterns};
     my $fieldnames_of_r = $params{fieldnames};
     my $values_of_r     = $params{values};
 
@@ -174,7 +306,8 @@ sub _get_trips {
             my $int_number = $field{trp_int_number};
             my $pattern_id = $field{tpat_route} . '.' . $field{trp_pattern};
 
-            return unless exists $pattern_of_r->{$pattern_id};  # not in service
+            return
+              unless exists $pattern_by_id_r->{$pattern_id};    # not in service
 
             $trip_struct_of{$int_number} = {
                 days             => $days,
@@ -205,9 +338,9 @@ sub _get_trips {
 
             $trip_struct_of{$int_number}{stop}[ $field{tstp_position} - 1 ] = {
                 # convert 1-based to 0-based counting
-                time             => $time,
-                h_stp_511_id     => $field{stp_511_id},
-                tstp_place       => $field{tstp_place},
+                time         => $time,
+                h_stp_511_id => $field{stp_511_id},
+                tstp_place   => $field{tstp_place},
             };
 
             return;
@@ -227,20 +360,13 @@ sub _get_trips {
             return unless exists $trip_struct_of{$int_number};  # not in service
 
             my $time = Actium::O::Time::->from_str( $field{ttp_passing_time} );
-            my $next_time
-              = Actium::O::Time::->from_str( $field{ttp_pass_time_next} );
-            my $prev_time
-              = Actium::O::Time::->from_str( $field{ttp_pass_time_prev} );
 
             $trip_struct_of{$int_number}{place}[ $field{ttp_position} - 1 ] = {
                 # convert 1-based to 0-based counting
-                ttp_time      => $time,
-                ttp_next_time => $next_time,
-                ttp_prev_time => $prev_time,
+                ttp_time => $time,
                 %field{
-                    qw( ttp_is_arrival ttp_is_departure ttp_is_public
-                      ttp_next       ttp_place        ttp_prev
-                      ),
+                    qw( ttp_is_arrival ttp_is_departure
+                      ttp_is_public ttp_place ),
                 }
             };
 
@@ -326,8 +452,6 @@ const my @stopfields => qw(
   ttp_is_arrival
   ttp_is_departure
   ttp_is_public
-  ttp_prev
-  ttp_next
 );
 
 sub _add_stops_to_patterns {
@@ -378,74 +502,6 @@ sub _add_stops_to_patterns {
 
 } ## tidy end: sub _add_stops_to_patterns
 
-1;
-
-__END__
-
-
-
-
-my %dircode_of_xhea = (
-    Northbound       => 'NB',
-    Southbound       => 'SB',
-    Eastbound        => 'EB',
-    Westbound        => 'WB',
-    Counterclockwise => 'CC',
-    Clockwise        => 'CW',
-    A                => 'A',    # sigh
-    B                => 'B',
-    '1'              => 'D1',
-);
-
-my %required_headers = (
-
-    trippatternstops => [
-        qw<stp_511_id tpat_stp_rank tpat_stp_plc tpat_stp_tp_sequence>,
-        'item tpat_id', 'item tpat_route',
-    ],
-    places => [
-        qw[plc_identifier      plc_description
-          plc_reference_place plc_district plc_number],
-    ],
-    trips => [
-        qw<trp_int_number trp_route trp_pattern trp_is_in_service
-          trp_blkng_day_digits trp_event>
-    ],
-    tripstops => [qw<trp_int_number tstp_position tstp_passing_time>],
-);
-
-sub xhea2skeds {
-
-    my %params = u::validate(
-        @_,
-        {   signup          => 1,
-            xhea_tab_folder => 1,
-        }
-    );
-
-    my $signup          = $params{signup};
-    my $xhea_tab_folder = $params{xhea_tab_folder};
-
-    my ( $patterns_r, $pat_lineids_of_lgdir_r, $upattern_of_r, $uindex_of_r )
-      = _get_patterns($xhea_tab_folder);
-
-    my $trips_of_skedid_r
-      = xhea_trips( $xhea_tab_folder, $pat_lineids_of_lgdir_r, $uindex_of_r );
-
-    my $places_info_of_r = _load_places($xhea_tab_folder);
-
-    my @skeds
-      = _make_skeds( $trips_of_skedid_r, $upattern_of_r, $places_info_of_r );
-
-    _output_debugging_patterns( $signup, $patterns_r, $pat_lineids_of_lgdir_r,
-        $upattern_of_r, $uindex_of_r, \@skeds );
-
-    _output_skeds( $signup, \@skeds );
-
-    return @skeds;
-
-} ## tidy end: sub xhea2skeds
-
 my $stop_tiebreaker = sub {
 
     # tiebreaks by using the average rank of the timepoints involved.
@@ -457,14 +513,14 @@ my $stop_tiebreaker = sub {
 
         my @ranks;
         foreach my $stop ( @{ $lists[$i] } ) {
-            my ( $stopid, $placeid, $placerank ) = split( /:/s, $stop );
+            my ( $stopid, $placeid, $placerank ) = split( /\./s, $stop );
             if ( defined $placerank ) {
                 push @ranks, $placerank;
             }
         }
         return 0 unless @ranks;
-        # if either list has no timepoints, return 0 indicating we can't break
-        # the tie
+        # if either list has no timepoint ranks,
+        # return 0 indicating we can't break the tie
 
         $avg_ranks[$i] = u::sum(@ranks) / @ranks;
 
@@ -474,186 +530,51 @@ my $stop_tiebreaker = sub {
 
 };
 
-const my @requiredheaders_trippatterns => (
-    qw<tpat_route tpat_id tpat_direction
-      tpat_in_serv tpat_via tpat_trips_match>
-);
+sub _make_patgroup_stop_order {
 
-const my @requiredheaders_tpstops => (
-    qw<stp_511_id tpat_stp_rank tpat_stp_plc tpat_stp_tp_sequence>,
-    'item tpat_id', 'item tpat_route',
-);
-
-sub _get_patterns {
-    my $xhea_tab_folder = shift;
-    my %patterns;
-    my %pat_lineids_of_lgdir;
-
-    my $load_cry = cry('Loading and assembling XHEA patterns');
-
-    my $read_cry = cry('Reading XHEA trippattern files');
-
-    my $patfile_callback = sub {
-
-        my $value_of_r = shift;
-
-        return unless $value_of_r->{tpat_in_serv};
-        return unless $value_of_r->{tpat_trips_match};
-        # skip if this trip isn't in service, or if it has no active trips
-        # tpat_trips_match is unreliable!!!
-
-        my $tpat_line = $value_of_r->{tpat_route};
-        my $tpat_id   = $value_of_r->{tpat_id};
-
-        my $lineid = $tpat_line . "_$tpat_id";
-        return if exists $patterns{$lineid};    # duplicate
-
-        my $tpat_direction = $value_of_r->{tpat_direction};
-        my $direction      = $dircode_of_xhea{$tpat_direction};
-        if ( not defined $direction ) {
-            $direction = $tpat_direction;
-            $read_cry->text("Unknown direction: $tpat_direction");
-        }
-        my $lgdir = linegroup_of( ${tpat_line} ) . "_$direction";
-
-        push @{ $pat_lineids_of_lgdir{$lgdir} }, $lineid;
-
-        $patterns{$lineid}[P_DIRECTION] = $direction;
-        $patterns{$lineid}[P_VDC] = $value_of_r->{tpat_veh_display} // $EMPTY;
-        $patterns{$lineid}[P_VIA] = $value_of_r->{tpat_via} // $EMPTY;
-
-        return;
-
-    };
-
-    read_tab_files(
-        {   globpatterns     => ['*trip_pattern.txt'],
-            folder           => $xhea_tab_folder,
-            required_headers => \@requiredheaders_trippatterns,
-            callback         => $patfile_callback,
+    my %params = u::validate(
+        @_,
+        {   patterns  => 1,
+            patgroups => 1,
         }
     );
 
-    $read_cry->done;
+    \my %pattern_by_id     = $params{patterns};
+    \my %patgroup_by_lgdir = $params{patgroups};
 
-    my $tps_cry = cry('Reading XHEA trippatternstops files');
+    foreach my $patgroup ( values %patgroup_by_lgdir ) {
 
-    my $patstopfile_callback = sub {
-        my $value_of_r = shift;
+        my %stop_set_of;
 
-        my $tpat_line = $value_of_r->{'item tpat_route'};
-        my $tpat_id   = $value_of_r->{'item tpat_id'};
+        my @patterns = $patgroup->patterns;
+        my @pat_ids;
+        foreach my $pattern (@patterns) {
 
-        my $lineid = $tpat_line . "_$tpat_id";
-
-        return unless exists $patterns{$lineid};
-
-        my @stop = $value_of_r->{stp_511_id};
-
-        my $tpat_stp_plc         = $value_of_r->{tpat_stp_plc};
-        my $tpat_stp_tp_sequence = $value_of_r->{tpat_stp_tp_sequence};
-
-        if ( $tpat_stp_plc or $tpat_stp_tp_sequence ) {
-            push @stop, $tpat_stp_plc, $tpat_stp_tp_sequence;
-        }
-
-        my $tpat_stp_rank = $value_of_r->{tpat_stp_rank};
-
-        $patterns{$lineid}[P_STOPS][$tpat_stp_rank] = \@stop;
-
-        $patterns{$lineid}[P_PLACES]{$tpat_stp_tp_sequence} = $tpat_stp_plc
-          if $tpat_stp_tp_sequence;
-
-        return;
-
-    };
-
-    read_tab_files(
-        {   globpatterns     => ['*trippatternstops.txt'],
-            folder           => $xhea_tab_folder,
-            required_headers => $required_headers{'trippatternstops'},
-            callback         => $patstopfile_callback,
-        }
-    );
-
-    $tps_cry->done;
-
-    my $unipatcry = cry('Making unified patterns for each direction');
-
-    my ( %upattern_of, %uindex_of );
-
-    foreach my $lgdir ( keys %pat_lineids_of_lgdir ) {
-
-        my @lineids = @{ $pat_lineids_of_lgdir{$lgdir} };
-
-        my %stop_set_of_lineid;
-        foreach my $lineid (@lineids) {
-
-            next unless $patterns{$lineid}[P_STOPS];
-
-            # skip making the pattern if there aren't any stops for that
-            # pattern
-
-            my @stop_set;
-            foreach my $stop ( @{ $patterns{$lineid}[P_STOPS] } ) {
-                push @stop_set, join( ':', @{$stop} );
-            }
-            $stop_set_of_lineid{$lineid} = \@stop_set;
+            my $pat_id = $pattern->unique_id;
+            push @pat_ids, $pat_id;
+            $stop_set_of{$pat_id} = [ $pattern->stops_and_places ];
         }
 
         my %returned = ordered_union_columns(
-            sethash    => \%stop_set_of_lineid,
+            sethash    => \%stop_set_of,
             tiebreaker => $stop_tiebreaker,
         );
 
-        $upattern_of{$lgdir} = $returned{union};
+        $patgroup->set_upattern_r( join( ':', $returned{union}->@* ) );
 
-        foreach my $lineid (@lineids) {
-            $uindex_of{$lineid} = $returned{columns_of}{$lineid};
+        foreach my $pat_id (@pat_ids) {
+            $pattern_by_id{$pat_id}
+              ->set_union_indexes_r( $returned{columns_of}{$pat_id} );
         }
 
-    } ## tidy end: foreach my $lgdir ( keys %pat_lineids_of_lgdir)
+    } ## tidy end: foreach my $patgroup ( values...)
 
-    $unipatcry->done;
+} ## tidy end: sub _make_patgroup_stop_order
 
-    $load_cry->done;
+1;
 
-    return \%patterns, \%pat_lineids_of_lgdir, \%upattern_of, \%uindex_of;
+__END__
 
-} ## tidy end: sub _get_patterns
-
-sub _load_places {
-    my $xhea_tab_folder = shift;
-    my %place_info_of;
-
-    my $cry = cry('Reading XHEA place files');
-
-    my $place_callback = sub {
-        my $value_of_r   = shift;
-        my $this_place_r = [];
-
-        $this_place_r->[PL_DESCRIP]   = $value_of_r->{plc_description};
-        $this_place_r->[PL_REFERENCE] = $value_of_r->{plc_reference_place};
-        $this_place_r->[PL_CITYCODE]  = $value_of_r->{plc_district};
-        $this_place_r->[PL_PLACE8]    = $value_of_r->{plc_number};
-        $place_info_of{ $value_of_r->{plc_identifier} } = $this_place_r;
-
-        return;
-    };
-
-    read_tab_files(
-        {   globpatterns     => ['*places.txt'],
-            folder           => $xhea_tab_folder,
-            required_headers => $required_headers{'places'},
-            callback         => $place_callback,
-        }
-    );
-
-    $cry->done;
-
-    return \%place_info_of;
-
-} ## tidy end: sub _load_places
 
 sub _make_skeds {
     my $trips_of_skedid_r = shift;

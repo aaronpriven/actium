@@ -6,18 +6,20 @@ use Actium::Preamble;
 use Actium::Files::Xhea::ToSkeds;
 
 sub OPTIONS {
-    return 'signup';
+    return ( 'signup', 'actiumdb' );
 }
 
 sub START {
 
     my ( $class, $env ) = @_;
-    my $signup = $env->signup;
+    my $signup   = $env->signup;
+    my $actiumdb = $env->actiumdb;
 
     my $xhea_tab_folder = $signup->subfolder( 'xhea', 'tab' );
     my $xhea_skeds_folder = $signup->subfolder('xheaskeds');
 
     Actium::Files::Xhea::ToSkeds::xheatab2skeds(
+        actiumdb        => $actiumdb,
         skeds_folder    => $xhea_skeds_folder,
         xhea_tab_folder => $xhea_tab_folder,
     );
