@@ -326,17 +326,71 @@ sub _adjust_boolean {
 
 }
 
+{
+
+    const my $placepatfile => 'PlacePattern.xml';
+    const my @fieldnames   => qw/line direction place rank/;
+    const my %fields       => (
+        line => { base => 'string', type => 'string', idx => 0, },
+        direction =>
+          { base => 'string', type => 'Dir_ch_String', idx => 1, },
+        place => { base => 'string', type => 'string', idx => 2, },
+        rank  => { base => 'int',    type => 'int',    idx => 3, },
+    );
+
+    sub _load_placepatterns {
+
+        my $ppat_cry = cry("Processing place patterns");
+
+        my $xheafolder = shift;
+        return unless $xheafolder->file_exists($placepatfile);
+
+        my $fh = $xheafolder->open_read($placepatfile);
+        my ( @ppat_records, $line, $direction );
+
+        my $rank = 0;
+
+        while (<$fh>) {
+            if (m[<rte_identifier>(.*?)</rte_identifier>]) {
+                $line = $1;
+                $rank = 0;
+            }
+            elsif (m[<ppat_direction>(.*?)</ppat_direction>]) {
+                $direction = $1;
+                $rank      = 0;
+            }
+            elsif (m[<pplc_id>(.*?)</pplc_id>]) {
+                my $place = $1;
+                push @ppat_records, [ $line, $direction, $place, $rank ];
+                $rank++;
+            }
+        }
+
+        $ppat_cry->done;
+        
+        return ( \@fieldnames, \%fields, \@ppat_records );
+
+    } ## tidy end: sub _load_placepatterns
+
+}
+
 sub load {
 
     my $xheafolder = shift;
 
+    my ( %fieldnames_of, %fields_of, %values_of );
+
+    my @ppat_results = _load_placepatterns($xheafolder);
+
+    if (@ppat_results) {
+        ( $fieldnames_of{ppat}, $fields_of{ppat}, $values_of{ppat} )
+          = @ppat_results;
+    }
     my @xhea_filenames = _get_xhea_filenames($xheafolder);
 
     require XML::Pastor;    ### DEP ###
 
     my $pastor = XML::Pastor->new();
-
-    my ( %fieldnames_of, %fields_of, %values_of );
 
     my $load_cry = cry('Loading XHEA files');
 
@@ -652,10 +706,10 @@ sub _get_xhea_filenames {
 
     foreach my $filename (@xmlfiles) {
 
-        next if fc($filename) eq fc('PlacePatterns');
+        next if fc($filename) eq fc('PlacePattern');
 
         # skip PlacePatterns, which has a different XML structure
-        # than the simple one this program can deal with
+        # than the simple one this part of the program can deal with
 
         push @xhea_filenames, $filename
           if in( $filename, @xsdfiles );
@@ -670,7 +724,6 @@ sub _get_xhea_filenames {
     return @xhea_filenames;
 
 } ## tidy end: sub _get_xhea_filenames
-
 
 ##########################
 #### All below is part of the legacy HASI converter

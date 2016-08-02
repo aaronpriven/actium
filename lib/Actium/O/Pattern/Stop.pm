@@ -15,14 +15,43 @@ has 'h_stp_511_id' => (
 
 has [
     qw(
-      h_stp_identifier   tstp_place
+      h_stp_identifier   ttp_is_public
       ttp_is_arrival     ttp_is_departure
-      ttp_is_public      ttp_prev  ttp_next
       )
   ] => (
     is  => 'ro',
     isa => 'Str',
   );
+
+has 'tstp_place' => (
+    is        => 'ro',
+    isa       => 'Str',
+    predicate => 'has_place',
+);
+
+has 'place_rank' => (
+    is        => 'rw',
+    isa       => 'Int',
+    predicate => 'has_place_rank',
+);
+
+has 'stop_and_place' => (
+    isa     => 'Str',
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_stop_and_place',
+);
+
+sub _build_stop_and_place {
+    my $self           = shift;
+    my $stop_and_place = $self->h_stp_511_id;
+    return $stop_and_place unless $self->has_place;
+    $stop_and_place .= '.' . $self->tstp_place;
+    if ( $self->has_place_rank ) {
+        $stop_and_place .= '.' . $self->place_rank;
+    }
+    return $stop_and_place;
+}
 
 u::immut;
 
