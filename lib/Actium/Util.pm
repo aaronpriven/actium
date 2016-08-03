@@ -37,6 +37,7 @@ use Sub::Exporter -setup => {
           remove_leading_path add_before_extension
           linegroup_of
           chunks
+          display_percent
           is_odd              is_even
           mean                population_stdev
           all_eq
@@ -707,6 +708,12 @@ sub feq {
 sub fne {
     my ( $x, $y ) = @_;
     return fc($x) ne fc($y);
+}
+
+sub display_percent {
+    my $val = shift;
+    my $total = shift;
+    return sprintf( ' %.0f%%' , $val/ $total * 100 );
 }
 
 1;

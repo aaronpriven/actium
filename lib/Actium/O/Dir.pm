@@ -26,10 +26,10 @@ const my %DIRCODE_OF => (
     'ea'            => 'EB',
     'east'          => 'EB',
     'in'            => 'IN',
-    'inb' => 'IN',
-     'outb' => 'OU',
-    'inw' => 'IN',
-    'outw' => 'OU',
+    'inb'           => 'IN',
+    'outb'          => 'OU',
+    'inw'           => 'IN',
+    'outw'          => 'OU',
     'no'            => 'NB',
     'north'         => 'NB',
     'out'           => 'OU',
@@ -44,13 +44,14 @@ const my %DIRCODE_OF => (
 my %obj_cache;
 
 sub instance {
-    my $class     = shift;
-    my $orig_direction = lc(shift);
-    my $direction = lc($orig_direction);
+    my $class          = shift;
+    my $orig_direction = shift;
 
-    if ( exists $obj_cache{$direction} ) {
-        return $obj_cache{$direction};
+    if ( exists $obj_cache{$orig_direction} ) {
+        return $obj_cache{$orig_direction};
     }
+
+    my $direction      = lc($orig_direction);
 
     for ($direction) {
         s/\Adir/d/;
@@ -69,6 +70,27 @@ sub instance {
 
 } ## tidy end: sub instance
 
+####################
+### Utility methods
+####################
+
+sub linedir {
+    my $invocant = shift;
+    my $line     = shift;
+
+    my $self;
+
+    if ( u::blessed $invocant) {
+        $self = $invocant;
+    }
+    else {
+        # invocant is class
+        my $direction = shift;
+        $self = $invocant->instance($direction);
+    }
+    return "$line." . $self->dircode;
+
+}
 ###################################
 #### ENGLISH NAMES FOR DAYS CONSTANTS
 ###################################
