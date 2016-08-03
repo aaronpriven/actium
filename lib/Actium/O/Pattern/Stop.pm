@@ -13,16 +13,6 @@ has 'h_stp_511_id' => (
     required => 1,
 );
 
-has [
-    qw(
-      h_stp_identifier   ttp_is_public
-      ttp_is_arrival     ttp_is_departure
-      )
-  ] => (
-    is  => 'ro',
-    isa => 'Str',
-  );
-
 has 'tstp_place' => (
     is        => 'ro',
     isa       => 'Str',
