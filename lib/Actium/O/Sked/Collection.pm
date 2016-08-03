@@ -27,6 +27,6 @@ sub add_sked {
    $self->_set_sked_obj(map { $_->id, $_} @objs );
 }
 
-__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
+u::immut;
 
 __END__
