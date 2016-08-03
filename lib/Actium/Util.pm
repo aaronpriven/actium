@@ -695,11 +695,6 @@ sub u_trim_to_columns {
 
 }
 
-sub immut {
-    my $package = caller;
-    $package->meta->make_immutable;
-}
-
 sub feq {
     my ( $x, $y ) = @_;
     return fc($x) eq fc($y);
