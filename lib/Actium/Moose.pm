@@ -39,6 +39,13 @@ sub init_meta {
     # turned on by Moose, etc.
 }
 
+# here because, why bother putting it in util?
+
+sub u::immut {
+    my $package = caller;
+    $package->meta->make_immutable;
+}
+
 1;
 
 __END__
