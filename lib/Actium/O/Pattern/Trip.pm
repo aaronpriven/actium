@@ -43,6 +43,13 @@ has 'stop_objs_r' => (
     },
 );
 
+sub times {
+    my $self = shift;
+    return map { $_->time } $self->stops;
+    
+    
+}
+
 # place objects are only used temporarily; their elements are
 # merged into the tripstop objects early on
 has 'place_objs_r' => (

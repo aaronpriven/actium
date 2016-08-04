@@ -88,20 +88,35 @@ has 'trip_objs_r' => (
 sub add_trip {
     my $self = shift;
     my $trip = shift;
-    $self->_push_trip($trip);
-    unless ( $self->trip_count ) {
+    \my %place_neue_of = shift;
 
+    $self->_push_trip($trip);
+
+    unless ( $self->trip_count ) {
         my @trip_stop_objs = $trip->stop_objs;
         my @stop_objs;
+
         foreach my $trip_stop_obj (@trip_stop_objs) {
+            my %place_info;
+            if ( $trip_stop_obj->has_place ) {
+                my $place     = $trip_stop_obj->tstp_place;
+                my $ref_place = $place_neue_of{$place}{h_plc_reference_place};
+                %place_info = (
+                    tstp_place => $place,
+                    ref_place  => $place_neue_of{$place}{h_plc_reference_place},
+                    place8     => $place_neue_of{$ref_place}{h_plc_number},
+                );
+            }
+
             push @stop_objs, Actium::O::Pattern::Stop->new(
                 h_stp_511_id => $trip_stop_obj->h_stp_511_id,
-                tstp_place   => $trip_stop_obj->tstp_place,
+                %place_info
             );
+
         }
 
         $self->_set_stop_objs_r( \@stop_objs );
-    }
+    } ## tidy end: unless ( $self->trip_count)
     return;
 } ## tidy end: sub add_trip
 
