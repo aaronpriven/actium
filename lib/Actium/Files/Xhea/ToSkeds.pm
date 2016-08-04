@@ -68,9 +68,11 @@ sub xhea2skeds {
     my $values_of_r     = $params{values};
     my $actiumdb        = $params{actiumdb};
 
+    my %place_neue_of = $actiumdb->place_cache;
+
     my $blocks_by_id_r = _get_blocks(
         fieldnames => $fieldnames_of_r,
-        values     => $values_of_r
+        values     => $values_of_r,
     );
 
     my ( $pattern_by_id_r, $patterns_by_linedir_r, $patgroup_by_lgdir_r )
@@ -84,7 +86,8 @@ sub xhea2skeds {
         blocks     => $blocks_by_id_r,
         patterns   => $pattern_by_id_r,
         fieldnames => $fieldnames_of_r,
-        values     => $values_of_r
+        values     => $values_of_r,
+        place_neue => \%place_neue_of,
     );
 
     _add_place_patterns_to_patterns(
@@ -93,15 +96,17 @@ sub xhea2skeds {
         values              => $values_of_r
     );
 
-    \my @skeds = _make_skeds($patgroup_by_lgdir_r);
 
-    $xhea2skedscry->done;
 
     my $dumpcry = cry('Dumping patterns and trips');
     open my $out, '>', '/tmp/xheaout.5';
     say $out u::dumpstr( [$patgroup_by_lgdir_r] );
     close $out;
     $dumpcry->done;
+    
+    \my @skeds = _make_skeds($patgroup_by_lgdir_r);
+
+    $xhea2skedscry->done;
 
 } ## tidy end: sub xhea2skeds
 
@@ -261,7 +266,9 @@ sub _get_trips {
         @_,
         {   patterns   => 1,
             fieldnames => 1,
+            blocks     => 1,
             values     => 1,
+            place_neue => 1,
         }
     );
 
@@ -269,6 +276,7 @@ sub _get_trips {
     \my %block_by_id   = $params{blocks};
     my $fieldnames_of_r = $params{fieldnames};
     my $values_of_r     = $params{values};
+    my $place_neue_of_r = $params{place_neue};
 
     my ( %trip_by_internal, %trips_by_lgdir );
 
@@ -373,6 +381,8 @@ sub _get_trips {
         },
     );
 
+    # load reference places
+
     my $stop_place_cry = cry('Combining stops and places');
 
     my @trips = values %trip_by_internal;
@@ -405,7 +415,7 @@ sub _get_trips {
         $trip->clear_places;
 
         my $pattern = $pattern_by_id{ $trip->pattern_id };
-        $pattern->add_trip($trip);
+        $pattern->add_trip($trip, $place_neue_of_r);
 
     } ## tidy end: foreach my $trip (@trips)
 
@@ -531,7 +541,7 @@ sub _make_skeds {
 
     my @skeds;
     foreach my $patgroup ( values %patgroup_by_lgdir ) {
-        push @skeds, $patgroup->make_skeds;
+        push @skeds, $patgroup->sked;
     }
 
     return \@skeds;
