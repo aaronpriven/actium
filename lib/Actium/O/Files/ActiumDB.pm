@@ -73,6 +73,7 @@ const my %TABLE_OF_ITEM => (
     #pubtimetable => 'PubTimetables',
     #signtype => 'SignTypes',
     transithub => 'TransitHubs',
+    place => 'Places_Neue',
 );
 
 foreach my $item ( keys %TABLE_OF_ITEM ) {
