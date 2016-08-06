@@ -1368,6 +1368,8 @@ sub make_decal_spec {
                 push @decals, make_decal_from_spec( $spec, $route );
             }
         } ## tidy end: for my $routedir ( grep...)
+        
+        @decals = uniq @decals;
 
         return @decals;
     } ## tidy end: sub decals
