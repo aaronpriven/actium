@@ -66,18 +66,13 @@ sub add_pattern {
 }
 
 has 'places_r' => (
-    is      => 'bare',
+    is      => 'ro',
     isa     => 'ArrayRef[Str]',
     writer  => '_set_places_r',
     default => sub { [] },
     traits  => ['Array'],
-    handles => {
-        places   => 'elements',
-    },
+    handles => { places => 'elements', },
 );
-
-u::immut;
-
 
 ### debugging use only
 has 'upattern_r' => (
@@ -85,47 +80,28 @@ has 'upattern_r' => (
     isa => 'Str',
 );
 
-my $stop_tiebreaker = sub {
-
-    # tiebreaks by using the average rank of the timepoints involved.
-
-    my @lists = @_;
-    my @avg_ranks;
-
-    foreach my $i ( 0, 1 ) {
-
-        my @ranks;
-        foreach my $stop ( @{ $lists[$i] } ) {
-            my ( $stopid, $placeid, $placerank ) = split( /\./s, $stop );
-            if ( defined $placerank ) {
-                push @ranks, $placerank;
-            }
-        }
-        return 0 unless @ranks;
-        # if either list has no timepoint ranks,
-        # return 0 indicating we can't break the tie
-
-        $avg_ranks[$i] = u::sum(@ranks) / @ranks;
-
-    }
-
-    return $avg_ranks[0] <=> $avg_ranks[1];
-
-};
-
 sub sked {
-    my $self = shift;
+    my $self     = shift;
+    my $actiumdb = shift;
+
     $self->_order_stops;
-    
-    #my @places = $self->places;
 
     my @sked_trip_objs = $self->_sked_trip_objs;
-    
 
-}
+    my @place8s = map { $actiumdb->place8($_) } $self->places;
 
-    
-    
+    my $sked = Actium::O::Sked->new(
+        place4_r  => $self->places_r,
+        place8_r  => \@place8s,
+        linegroup => $self->linegroup,
+        dir_obj   => $self->dir_obj,
+
+    );
+
+    ...;
+    return $sked;
+
+} ## tidy end: sub sked
 
 sub _sked_trip_objs {
     my $self = shift;
@@ -156,13 +132,41 @@ sub _sked_trip_objs {
                 stoptime_r     => \@times,
               );
 
-        }
+        } ## tidy end: foreach my $trip ( $pattern...)
 
     } ## tidy end: foreach my $pattern ( $self...)
 
     return @skedtrips;
 
 } ## tidy end: sub _sked_trip_objs
+
+my $stop_tiebreaker = sub {
+
+    # tiebreaks by using the average rank of the timepoints involved.
+
+    my @lists = @_;
+    my @avg_ranks;
+
+    foreach my $i ( 0, 1 ) {
+
+        my @ranks;
+        foreach my $stop ( @{ $lists[$i] } ) {
+            my ( $stopid, $placeid, $placerank ) = split( /\./s, $stop );
+            if ( defined $placerank ) {
+                push @ranks, $placerank;
+            }
+        }
+        return 0 unless @ranks;
+        # if either list has no timepoint ranks,
+        # return 0 indicating we can't break the tie
+
+        $avg_ranks[$i] = u::sum(@ranks) / @ranks;
+
+    }
+
+    return $avg_ranks[0] <=> $avg_ranks[1];
+
+};
 
 sub _order_stops {
     my $self = shift;
@@ -204,19 +208,18 @@ sub _order_stops {
 
     # $self->upattern_r and $pattern->union_indexes_r are
     # no longer used but is left in for debugging purposes
-    
-    my @union = $returned{union}->@* ;
-    
+
+    my @union = $returned{union}->@*;
+
     $self->set_upattern_r( join( ':', @union ) );
-    
+
     my @places;
     foreach my $stop_and_place (@union) {
-        my ($stop, $place, $rank) = split(/\./, $stop_and_place);
-        push @places , $place if $place;
+        my ( $stop, $place, $rank ) = split( /\./, $stop_and_place );
+        push @places, $place if $place;
     }
-    
-    $self->_set_places_r(\@places);
-    
+
+    $self->_set_places_r( \@places );
 
 } ## tidy end: sub _order_stops
 

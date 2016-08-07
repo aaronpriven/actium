@@ -104,7 +104,7 @@ sub xhea2skeds {
     close $out;
     $dumpcry->done;
     
-    \my @skeds = _make_skeds($patgroup_by_lgdir_r);
+    \my @skeds = _make_skeds(patgroups => $patgroup_by_lgdir_r, actiumdb => $actiumdb);
 
     $xhea2skedscry->done;
 
@@ -537,11 +537,21 @@ sub _records_in_turn {
 ##### MAKE SKEDS
 
 sub _make_skeds {
-    \my %patgroup_by_lgdir = shift;
+    
+    
+    my %params = u::validate(
+        @_,
+        {   
+            actiumdb     => 1,
+            patgroups   => 1,
+        }
+    ); 
+    
+    \my %patgroup_by_lgdir = $params{patgroups};
 
     my @skeds;
     foreach my $patgroup ( values %patgroup_by_lgdir ) {
-        push @skeds, $patgroup->sked;
+        push @skeds, $patgroup->sked($params{actiumdb});
     }
 
     return \@skeds;
