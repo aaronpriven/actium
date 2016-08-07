@@ -73,7 +73,7 @@ const my %TABLE_OF_ITEM => (
     #pubtimetable => 'PubTimetables',
     #signtype => 'SignTypes',
     transithub => 'TransitHubs',
-    place => 'Places_Neue',
+    place      => 'Places_Neue',
 );
 
 foreach my $item ( keys %TABLE_OF_ITEM ) {
@@ -164,6 +164,17 @@ sub _build_line_cache {
 
     return $cache_r;
 } ## tidy end: sub _build_line_cache
+
+sub _build_place_cache {
+    my $self = shift;
+    return $self->_build_table_cache(
+        'place',
+        qw(h_plc_identifier c_description c_destination
+          h_plc_reference_place h_plc_number
+          )
+    );
+
+}
 
 ##############################
 ### SS CACHE
@@ -407,6 +418,27 @@ sub i18n_all_indd_hash {
 } ## tidy end: sub i18n_all_indd_hash
 
 #########################
+### PLACE METHODS
+
+sub place8 {
+    my $self  = shift;
+    my $place = shift;
+    my $row_r = $self->place_row_r($place);
+    return unless $row_r;
+
+    while ( $row_r->{h_plc_reference_place}
+        and $row_r->{h_plc_reference_place} ne $place )
+    {
+        $row_r
+          = $self->place_row_r( $row_r->{h_plc_reference_place} );
+          return unless $row_r;
+    }
+    
+    return $row_r->{h_plc_number};
+
+}
+
+#########################
 ### LINEGROUPTYPE METHODS
 
 sub linegrouptypes_in_order {
@@ -508,7 +540,7 @@ sub agency_effective_date_indd {
     foreach my $lang (@ALL_LANGUAGES) {
         my $method = "long_$lang";
         my $date   = $dt->$method;
-        if ($lang eq 'en') {
+        if ( $lang eq 'en' ) {
             $date =~ s/ /$nbsp/g;
         }
 
