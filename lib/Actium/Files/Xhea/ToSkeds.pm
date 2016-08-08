@@ -5,14 +5,12 @@ use Actium::Files::TabDelimited 'read_aoas';
 use Actium::O::Dir;
 use Actium::O::Time;
 use Actium::O::Pattern;
+use Actium::O::Pattern::Block;
 use Actium::O::Pattern::Group;
 use Actium::O::Pattern::Stop;
 use Actium::O::Pattern::Trip;
-use Actium::O::Pattern::TripStop;
-use Actium::O::Pattern::TripPlace;
 
-const my @required_tables =>
-  (qw/ppat blocks trip trip_pattern trip_stop trip_tp/);
+const my @required_tables => (qw/ppat block trip trip_pattern trip_stop/);
 
 sub xheatab2skeds {
 
@@ -68,8 +66,6 @@ sub xhea2skeds {
     my $values_of_r     = $params{values};
     my $actiumdb        = $params{actiumdb};
 
-    my %place_neue_of = $actiumdb->place_cache;
-
     my $blocks_by_id_r = _get_blocks(
         fieldnames => $fieldnames_of_r,
         values     => $values_of_r,
@@ -82,12 +78,11 @@ sub xhea2skeds {
         values     => $values_of_r
       );
 
-    my $trip_r = _get_trips(
+    _get_trips(
         blocks     => $blocks_by_id_r,
         patterns   => $pattern_by_id_r,
         fieldnames => $fieldnames_of_r,
         values     => $values_of_r,
-        place_neue => \%place_neue_of,
     );
 
     _add_place_patterns_to_patterns(
@@ -96,15 +91,23 @@ sub xhea2skeds {
         values              => $values_of_r
     );
 
-
-
     my $dumpcry = cry('Dumping patterns and trips');
-    open my $out, '>', '/tmp/xheaout.5';
-    say $out u::dumpstr( [$patgroup_by_lgdir_r] );
-    close $out;
+    open my $dump_out, '>', '/tmp/xheaout.6';
+    say $dump_out u::dumpstr( [$patgroup_by_lgdir_r] );
+    close $dump_out;
     $dumpcry->done;
+
+    #\my @skeds
+    my $trip_collections  # debug
+      = _make_skeds( patgroups => $patgroup_by_lgdir_r, actiumdb => $actiumdb )
+      ;
     
-    \my @skeds = _make_skeds(patgroups => $patgroup_by_lgdir_r, actiumdb => $actiumdb);
+    my $tdumpcry = cry('Dumping patterns and trips');
+    open my $tdump_out, '>', '/tmp/xheaout.t6';
+    say $tdump_out u::dumpstr( $trip_collections) ;
+    close $tdump_out;
+    $tdumpcry->done; 
+    
 
     $xhea2skedscry->done;
 
@@ -131,10 +134,9 @@ sub _get_blocks {
         cry        => 'Processing blocks ',
         fieldnames => $fieldnames_of_r,
         values     => $values_of_r,
-        table      => 'blocks',
+        table      => 'block',
         callback   => sub {
             \my %field = shift;
-            return unless $field{tpat_in_serv};
 
             my $block_id = $field{blk_number};
 
@@ -142,7 +144,6 @@ sub _get_blocks {
                 block_id      => $block_id,
                 vehicle_group => $field{blk_vehicle_group},
                 vehicle_type  => $field{blk_vehicle_type},
-                garage        => $field{garage},
             );
 
             $blocks_by_id{$block_id} = $block;
@@ -268,7 +269,6 @@ sub _get_trips {
             fieldnames => 1,
             blocks     => 1,
             values     => 1,
-            place_neue => 1,
         }
     );
 
@@ -276,9 +276,8 @@ sub _get_trips {
     \my %block_by_id   = $params{blocks};
     my $fieldnames_of_r = $params{fieldnames};
     my $values_of_r     = $params{values};
-    my $place_neue_of_r = $params{place_neue};
 
-    my ( %trip_by_internal, %trips_by_lgdir );
+    my ( %trip_by_internal, %pattern_id_of_trip_number );
 
     _records_in_turn(
         fieldnames => $fieldnames_of_r,
@@ -294,7 +293,6 @@ sub _get_trips {
 
             return unless exists $pattern_by_id{$pattern_id};
             # not in service
-            my $lgdir = $pattern_by_id{$pattern_id}->lgdir;
 
             my $block = $block_by_id{ $field{trp_block} };
 
@@ -306,13 +304,14 @@ sub _get_trips {
                 event_and_status => $field{trp_event_and_status},
                 op_except        => $field{trp_has_op_except},
                 block_id         => $field{trp_block},
-                vehicle_group    => $block->blk_vehicle_group,
-                vehicle_type     => $block->blk_vehicle_type,
-                garage           => $block->garage,
+                vehicle_group    => $block->vehicle_group,
+                vehicle_type     => $block->vehicle_type,
             );
 
-            $trip_by_internal{$int_number} = $trip;
-            push $trips_by_lgdir{$lgdir}->@*, $trip;
+            $pattern_by_id{$pattern_id}->add_trip($trip);
+
+            $trip_by_internal{$int_number}          = $trip;
+            $pattern_id_of_trip_number{$int_number} = $pattern_id;
 
             return;
 
@@ -330,99 +329,95 @@ sub _get_trips {
             my $int_number = $field{trp_int_number};
             return unless exists $trip_by_internal{$int_number};
             # not in service
-            my $trip = $trip_by_internal{$int_number};
+
+            my $trip       = $trip_by_internal{$int_number};
+            my $pattern_id = $pattern_id_of_trip_number{$int_number};
+            my $pattern    = $pattern_by_id{$pattern_id};
 
             my $time = Actium::O::Time::->from_str( $field{tstp_passing_time} );
             my $stop_position = $field{tstp_position} - 1;
             # convert 1-based to 0-based counting
 
-            #$trip->set_time( $stop_position, $time );
+            $trip->set_stoptime( $stop_position, $time );
 
-            my %stop_spec = (
-                h_stp_511_id => $field{stp_511_id},
-                time         => $time,
-            );
-            $stop_spec{tstp_place} = $field{tstp_place} if $field{tstp_place};
+            my $pattern_stop = $pattern->stop_obj($stop_position);
+            if ( not defined $pattern_stop ) {
 
-            $trip->set_stop( $stop_position,
-                Actium::O::Pattern::TripStop->new(%stop_spec) );
-
-            return;
-
-        },
-    );
-
-    _records_in_turn(
-        fieldnames => $fieldnames_of_r,
-        cry        => 'Processing trip places',
-        values     => $values_of_r,
-        table      => 'trip_tp',
-        callback   => sub {
-            \my %field = shift;
-
-            my $int_number = $field{trp_int_number};
-            return unless exists $trip_by_internal{$int_number};
-            # not in service
-            my $trip = $trip_by_internal{$int_number};
-
-            my $ttp_position = $field{ttp_position} - 1;
-
-            my $place_obj = Actium::O::Pattern::TripPlace->new(
-                %field{
-                    qw( ttp_place ttp_is_arrival
-                      ttp_is_departure ttp_is_public )
-                }
-            );
-
-            $trip->set_place( $ttp_position, $place_obj );
-
-            return;
-
-        },
-    );
-
-    # load reference places
-
-    my $stop_place_cry = cry('Combining stops and places');
-
-    my @trips = values %trip_by_internal;
-
-    $stop_place_cry->over(' 0%');
-    my $count = 0;
-    foreach my $trip (@trips) {
-        $count++;
-        $stop_place_cry->over( u::display_percent( $count, scalar @trips ) )
-          if not $count % 100;
-
-        my @place_objs = $trip->place_objs;
-        my $stop_idx   = 0;
-        foreach my $place_obj (@place_objs) {
-            my $place      = $place_obj->ttp_place;
-            my $stop_place = $trip->stop($stop_idx)->tstp_place;
-            while ( not defined $stop_place or $stop_place ne $place ) {
-                $stop_idx++;
-                $stop_place = $trip->stop($stop_idx)->tstp_place;
+                my %stop_spec = ( h_stp_511_id => $field{stp_511_id} );
+                $stop_spec{tstp_place} = $field{tstp_place}
+                  if $field{tstp_place};
+                my $stop_obj = Actium::O::Pattern::Stop->new(%stop_spec);
+                $pattern->set_stop_obj( $stop_position, $stop_obj );
 
             }
 
-            my $stop = $trip->stop($stop_idx);
+            return;
 
-            $stop->set_ttp_is_arrival( $place_obj->ttp_is_arrival );
-            $stop->set_ttp_is_departure( $place_obj->ttp_is_departure );
-            $stop->set_ttp_is_public( $place_obj->ttp_is_public );
+        },
+    );
 
-        }
-        $trip->clear_places;
+### NONE OF THESE DATA ARE WORTH COLLECTING ####
 
-        my $pattern = $pattern_by_id{ $trip->pattern_id };
-        $pattern->add_trip($trip, $place_neue_of_r);
+#    _records_in_turn(
+#        fieldnames => $fieldnames_of_r,
+#        cry        => 'Processing trip places',
+#        values     => $values_of_r,
+#        table      => 'trip_tp',
+#        callback   => sub {
+#            \my %field = shift;
+#
+#            my $int_number = $field{trp_int_number};
+#            return unless exists $trip_by_internal{$int_number};
+#            # not in service
+#            my $trip       = $trip_by_internal{$int_number};
+#            my $pattern_id = $pattern_id_of_trip_number{$int_number};
+#            my $pattern    = $pattern_by_id{$pattern_id};
+#
+#            my $ttp_position = $field{ttp_position} - 1;
+#            # convert 1-based to 0-based counting
+#
+#            my $pattern_place = $pattern->place_obj($ttp_position);
+#
+#            if ( not defined $pattern_place ) {
+#
+#                my $place_obj = Actium::O::Pattern::Place->new(
+#                    %field{
+#                        qw( ttp_place ttp_is_arrival
+#                          ttp_is_departure ttp_is_public )
+#                    }
+#                );
+#                $pattern->set_place_obj( $ttp_position, $place_obj );
+#
+#            }
+#
+#            return;
+#
+#        },
+#    );
+#
+#    my $stop_place_cry = cry('Combining stops and places');
+#
+#    foreach my $pattern ( values %pattern_by_id ) {
+#
+#        my @place_objs = $pattern->place_objs;
+#        my $stop_idx   = 0;
+#        foreach my $place_obj (@place_objs) {
+#            my $place      = $place_obj->ttp_place;
+#            my $stop_place = $pattern->stop_obj($stop_idx)->tstp_place;
+#            while ( not defined $stop_place or $stop_place ne $place ) {
+#                $stop_idx++;
+#                $stop_place = $pattern->stop_obj($stop_idx)->tstp_place;
+#            }
+#
+#            $pattern->stop_obj($stop_idx)->set_place_obj($place_obj);
+#
+#        }
+#
+#    }
+#
+#    $stop_place_cry->done;
 
-    } ## tidy end: foreach my $trip (@trips)
-
-    $stop_place_cry->over(' 100%');
-    $stop_place_cry->done;
-
-    return ( \@trips, \%trips_by_lgdir );
+return;
 
 } ## tidy end: sub _get_trips
 
@@ -537,21 +532,19 @@ sub _records_in_turn {
 ##### MAKE SKEDS
 
 sub _make_skeds {
-    
-    
+
     my %params = u::validate(
         @_,
-        {   
-            actiumdb     => 1,
-            patgroups   => 1,
+        {   actiumdb  => 1,
+            patgroups => 1,
         }
-    ); 
-    
+    );
+
     \my %patgroup_by_lgdir = $params{patgroups};
 
     my @skeds;
     foreach my $patgroup ( values %patgroup_by_lgdir ) {
-        push @skeds, $patgroup->sked($params{actiumdb});
+        push @skeds, $patgroup->skeds( $params{actiumdb} );
     }
 
     return \@skeds;
@@ -713,152 +706,6 @@ sub _get_trips_of_sked {
 
 } ## tidy end: sub _get_trips_of_sked
 
-sub _assemble_skeddays {
-    my $trips_of_day_r = shift;
-    my @days           = sort keys %{$trips_of_day_r};
-    my ( %already_found_day, %trips_of_skedday );
-
-    # Go through list of days. Compare the first one to the subsequent ones.
-    # If any of the subsequent ones are identical to the first day, mark them
-    # as such, and put them as part of the original list.
-
-    foreach my $i ( 0 .. $#days ) {
-        my $outer_day = $days[$i];
-        next if $already_found_day{$outer_day};
-        my @found_days = $outer_day;
-
-        my $found_trips_r = $trips_of_day_r->{$outer_day};
-
-        for my $j ( $i + 1 .. $#days ) {
-            my $inner_day = $days[$j];
-            next if $already_found_day{$inner_day};
-
-            my $inner_trips_r = $trips_of_day_r->{$inner_day};
-
-            if ( my $merged_trips_r
-                = _merge_if_appropriate( $found_trips_r, $inner_trips_r ) )
-            {
-                push @found_days, $inner_day;
-                $found_trips_r = $merged_trips_r;
-                $already_found_day{$inner_day} = $outer_day;
-            }
-        }
-
-        # so @found_days now has all the days that are identical to
-        # the outer day
-
-        my $skedday = j(@found_days);
-        $trips_of_skedday{$skedday} = $found_trips_r;
-
-    } ## tidy end: foreach my $i ( 0 .. $#days)
-
-    return \%trips_of_skedday;
-
-} ## tidy end: sub _assemble_skeddays
-
-const my $MAXIMUM_DIFFERING_TIMES  => 4;
-const my $MINIMUM_TIMES_MULTIPLIER => 5;
-
-sub _merge_if_appropriate {
-
-    my $outer_trips_r = shift;
-    my $inner_trips_r = shift;
-
-    my $outer_count = scalar @{$outer_trips_r};
-    my $inner_count = scalar @{$inner_trips_r};
-
-    # Are the quantities so different that there's no point comparing them?
-
-    my $difference = abs( $outer_count - $inner_count );
-
-    return if $difference > $MAXIMUM_DIFFERING_TIMES;
-
-    # check to see if all the trips themselves are the same object.
-    # This will frequently be the case
-
-    return $outer_trips_r
-      if ( not $difference
-        and _trips_are_identical( $outer_trips_r, $inner_trips_r ) );
-
-    ## now check if times are the same even if trips are not
-    ## identical (as with Saturday/Sunday). First, make lists of times
-
-    my @outer_times = map { $_->stoptimes_comparison_str } @{$outer_trips_r};
-    my @inner_times = map { $_->stoptimes_comparison_str } @{$inner_trips_r};
-
-    # Then compare them using List::Compare
-
-    my $compare = List::Compare->new(
-        {   lists       => [ \@outer_times, \@inner_times ],
-            unsorted    => 1,
-            accelerated => 1,
-        }
-    );
-
-    my $only_in_either = scalar( $compare->get_symmetric_difference );
-
-    # if all the trips have identical times, then merge them
-
-    if ( not $only_in_either ) {
-
-        my @merged_trips;
-        for my $i ( 0 .. $#outer_times ) {
-
-            push @merged_trips,
-              $outer_trips_r->[$i]->merge_trips( $inner_trips_r->[$i] );
-
-        }
-
-        return \@merged_trips;
-
-    }
-
-    # if they are *almost* identical -- that is, 4 or fewer differing
-    # times, and the number of times is at least 5 times the number of
-    # differing ones, then merge them
-
-    # In weird situations where, for example, you have several different sets --
-    # -- 30 trips that are every day, plus two separate ones on Monday,
-    # two separate ones on Tuesday, two separate ones on Wednesday,
-    # etc. -- this will give inconsistent results, with Monday's
-    # and Tuesday's trips combined but Wednesday's not.
-    # To do that you'd need to compare them all to each other simultaneously,
-    # which code I am not prepared to write at this point.
-
-    my $in_both = ( u::max( $inner_count, $outer_count ) ) - $only_in_either;
-
-    if (    $only_in_either <= $MAXIMUM_DIFFERING_TIMES
-        and $in_both > ( $MINIMUM_TIMES_MULTIPLIER * $only_in_either ) )
-    {
-        my $trips_to_merge_r
-          = Actium::O::Sked::Trip->stoptimes_sort( @{$outer_trips_r},
-            @{$inner_trips_r} );
-
-        return Actium::O::Sked::Trip->merge_trips_if_same(
-            {   trips              => $trips_to_merge_r,
-                methods_to_compare => ['stoptimes_comparison_str'],
-            }
-        );
-
-    }
-
-    # no merging
-
-    return;
-
-} ## tidy end: sub _merge_if_appropriate
-
-sub _trips_are_identical {
-    my $outer_trips_r = shift;
-    my $inner_trips_r = shift;
-
-    for my $i ( 0 .. $#{$outer_trips_r} ) {
-        return unless $outer_trips_r->[$i] == $inner_trips_r->[$i];
-    }
-
-    return 1;
-
-}
 
 ###################
 ##### OUTPUT ######
