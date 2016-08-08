@@ -130,7 +130,7 @@ has 'days_obj' => (
     required => 0,
     coerce   => 1,
     init_arg => 'days',
-    is       => 'ro',
+    is       => 'rw',
     isa      => ActiumDays,
     handles  => {
         daycode        => 'daycode',
@@ -197,7 +197,7 @@ has destination_stoptime_idx => (
 sub _build_final_stoptime_idx {
     my $self = shift;
     my $idx;
-    for my $i ( reverse( 0 .. $self->stopcount ) ) {
+    for my $i ( reverse( 0 .. $self->stoptime_count ) ) {
         my $time = $self->stoptime($i);
         if ( defined $time and $time ne $EMPTY_STR ) {
             $idx = $i;
@@ -291,6 +291,8 @@ sub merge_trips {
     my %merged_value_of = ( mergedtrip_r => \@mergedtrips );
 
     foreach my $attribute ( $class->meta->get_all_attributes ) {
+        
+        next if $attribute eq 'destination_stoptime_idx' ;
 
         my $attrname = $attribute->name;
         my $init_arg = $attribute->init_arg // $attrname;
