@@ -32,6 +32,13 @@ has 'stop_and_place' => (
     builder => '_build_stop_and_place',
 );
 
+#has place_obj => (
+#    is      => 'ro',
+#    writer  => 'set_place_obj',
+#    predicate => 'has_place_obj',
+#    isa     => 'Actium::O::Pattern::Place',
+#); 
+    
 sub _build_stop_and_place {
     my $self           = shift;
     my $stop_and_place = $self->h_stp_511_id;
