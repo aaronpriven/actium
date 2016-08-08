@@ -67,6 +67,17 @@ sub _build_unique_id {
     return join( '.', $self->line, $self->identifier );
 }
 
+#has 'place_objs_r' => (
+#    is      => 'rw',
+#    writer  => '_set_place_obj_r',
+#    isa     => 'ArrayRef[Actium::O::Pattern::Place]',
+#    default => sub { [] },
+#    traits  => ['Array'],
+#    handles =>
+#      { place_objs => 'elements', 'place_obj' => 'get', place_count => 'count',
+#          set_place_obj => 'set', },
+#);
+
 has 'stop_objs_r' => (
     is      => 'rw',
     writer  => '_set_stops_obj_r',
@@ -74,7 +85,8 @@ has 'stop_objs_r' => (
     default => sub { [] },
     traits  => ['Array'],
     handles =>
-      { stop_objs => 'elements', 'stop_obj' => 'get', stop_count => 'count' },
+      { stop_objs => 'elements', 'stop_obj' => 'get', stop_count => 'count',
+          set_stop_obj => 'set', },
 );
 
 has 'trip_objs_r' => (
@@ -82,43 +94,49 @@ has 'trip_objs_r' => (
     isa     => 'ArrayRef[Actium::O::Pattern::Trip]',
     default => sub { [] },
     traits  => ['Array'],
-    handles => { trips => 'elements', _push_trip => 'push', },
+    handles => {
+        trip_count => 'count',
+        trips      => 'elements',
+        add_trip => 'push',
+      }
+    ,
 );
 
-sub add_trip {
-    my $self = shift;
-    my $trip = shift;
-    \my %place_neue_of = shift;
-
-    $self->_push_trip($trip);
-
-    unless ( $self->trip_count ) {
-        my @trip_stop_objs = $trip->stop_objs;
-        my @stop_objs;
-
-        foreach my $trip_stop_obj (@trip_stop_objs) {
-            my %place_info;
-            if ( $trip_stop_obj->has_place ) {
-                my $place     = $trip_stop_obj->tstp_place;
-                my $ref_place = $place_neue_of{$place}{h_plc_reference_place};
-                %place_info = (
-                    tstp_place => $place,
-                    ref_place  => $place_neue_of{$place}{h_plc_reference_place},
-                    place8     => $place_neue_of{$ref_place}{h_plc_number},
-                );
-            }
-
-            push @stop_objs, Actium::O::Pattern::Stop->new(
-                h_stp_511_id => $trip_stop_obj->h_stp_511_id,
-                %place_info
-            );
-
-        }
-
-        $self->_set_stop_objs_r( \@stop_objs );
-    } ## tidy end: unless ( $self->trip_count)
-    return;
-} ## tidy end: sub add_trip
+#sub add_trip {
+#    my $self = shift;
+#    my $trip = shift;
+#    \my %place_neue_of = shift;
+#
+#    $self->_push_trip($trip);
+#
+#    unless ( $self->trip_count ) {
+#        my @trip_stop_objs = $trip->stop_objs;
+#        my @stop_objs;
+#
+#        foreach my $trip_stop_obj (@trip_stop_objs) {
+#            my %place_info;
+#            if ( $trip_stop_obj->has_place ) {
+#                my $place     = $trip_stop_obj->tstp_place;
+#                my $ref_place = $place_neue_of{$place}{h_plc_reference_place};
+#                %place_info = (
+#                    tstp_place => $place,
+#                    ref_place  => $place_neue_of{$place}{h_plc_reference_place},
+#                    place8     => $place_neue_of{$ref_place}{h_plc_number},
+#                );
+#            }
+#
+#            push @stop_objs,
+#              Actium::O::Pattern::Stop->new(
+#                h_stp_511_id => $trip_stop_obj->h_stp_511_id,
+#                %place_info
+#              );
+#
+#        }
+#
+#        $self->_set_stop_objs_r( \@stop_objs );
+#    } ## tidy end: unless ( $self->trip_count)
+#    return;
+#} ## tidy end: sub add_trip
 
 has 'stops_and_places_r' => (
     is      => 'bare',

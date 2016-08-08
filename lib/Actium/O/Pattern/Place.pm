@@ -1,4 +1,4 @@
-package Actium::O::Pattern::TripPlace 0.012;
+package Actium::O::Pattern::Place 0.012;
 
 use Actium::Moose;
 
