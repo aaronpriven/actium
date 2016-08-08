@@ -413,6 +413,8 @@ has 'stopid_r' => (
     },
 );
 
+# stopplaces -- either the place associated with the stop, or nothing
+# if there is no place associated with the stop
 has 'stopplace_r' => (
     traits  => ['Array'],
     is      => 'bare',
