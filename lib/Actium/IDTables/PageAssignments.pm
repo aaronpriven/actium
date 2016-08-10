@@ -14,7 +14,7 @@ use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::O::Sked::Timetable::IDTimetable;
 use Actium::O::Sked::Timetable::IDTimetableSet;
-use Actium::Util qw/in chunks flatten population_stdev joinempty joinkey all_eq halves/;
+use Actium::Util qw/in flatten population_stdev joinempty joinkey all_eq halves/;
 use Const::Fast; ### DEP ###
 use List::Util      (qw/max sum/); ### DEP ###
 use List::MoreUtils (qw[any natatime]); ### DEP ###
