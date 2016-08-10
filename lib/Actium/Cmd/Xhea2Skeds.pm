@@ -20,8 +20,7 @@ sub START {
 
     Actium::Files::Xhea::ToSkeds::xheatab2skeds(
         actiumdb        => $actiumdb,
-        skeds_folder    => $xhea_skeds_folder,
-        xhea_tab_folder => $xhea_tab_folder,
+        signup => $signup,
     );
 
 }
