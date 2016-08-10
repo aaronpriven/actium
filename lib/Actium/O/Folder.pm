@@ -643,6 +643,8 @@ sub write_files_with_method {
         );
 
     } ## tidy end: foreach my $obj (@objects)
+    
+    $cry->over('');
 
     $cry->done;
 
@@ -719,6 +721,7 @@ sub write_files_from_hash {
 
     }
 
+    $cry->over('');
     $cry->done;
 
 } ## tidy end: sub write_files_from_hash

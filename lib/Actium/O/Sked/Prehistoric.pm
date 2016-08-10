@@ -9,18 +9,45 @@ package Actium::O::Sked::Prehistoric 0.011;
 use warnings;
 use 5.012;    # turns on features
 
+use Const::Fast;
 
-use Moose::Role; ### DEP ###
-use namespace::autoclean; ### DEP ###
+const my %TRANSITINFO_DAYS_OF => (
+    qw(
+      1234567H DA
+      123457H  WU
+      123456   WA
+      12345    WD
+      1        MY
+      2        TY
+      3        WY
+      4        TH
+      5        FY
+      6        SA
+      56       FS
+      7H       SU
+      67H      WE
+      24       TT
+      25       TF
+      35       WF
+      135      MZ
+      1245     XW
+      1235     XH
+      )
+);
 
-use Carp; ### DEP ###
+const my %DAYS_FROM_TRANSITINFO => ( reverse %TRANSITINFO_DAYS_OF );
+
+use Moose::Role;             ### DEP ###
+use namespace::autoclean;    ### DEP ###
+
+use Carp;                    ### DEP ###
 
 use Actium::Constants;
 use Actium::Crier (qw/cry last_cry/);
-use List::MoreUtils qw<uniq none>; ### DEP ###
+use List::MoreUtils qw<uniq none>;    ### DEP ###
 
-use Text::Trim; ### DEP ###
-use English '-no_match_vars'; ### DEP ###
+use Text::Trim;                       ### DEP ###
+use English '-no_match_vars';         ### DEP ###
 use Actium::Util (qw/jointab dumpstr/);
 use Actium::Time ('timestr_sub');
 
@@ -42,7 +69,14 @@ sub prehistoric_id {
 sub prehistoric_days {
     my $self     = shift;
     my $days_obj = $self->days_obj;
-    return $days_obj->for_prehistoric;
+
+    my $transitinfo = _as_transitinfo($days_obj);
+
+    my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
+
+    return 'WD' unless in( $transitinfo, @valid_prehistorics );
+    return $transitinfo;
+
 }
 
 sub prehistoric_skedsfile {
@@ -99,7 +133,7 @@ sub load_prehistorics {
 
     my $class     = shift;
     my $folder    = shift;
-    my $actiumdb    = shift;
+    my $actiumdb  = shift;
     my @filespecs = @_;
 
     if ( not defined $actiumdb ) {
@@ -110,21 +144,21 @@ sub load_prehistorics {
 
     my $actium_dbh = $actiumdb->dbh;
 
-    my $cry = cry( "Loading prehistoric schedules");
+    my $cry = cry("Loading prehistoric schedules");
 
     my %tp4_of_tp8;
 
     {
         my $rows_r = $actium_dbh->selectall_arrayref(
             'SELECT c_abbrev9 , h_plc_identifier FROM Places_Neue');
-            
+
         foreach my $row_r ( @{$rows_r} ) {
             my ( $tp9, $tp4 ) = @{$row_r};
             my $tp8 = _tp9_to_tp8($tp9);
             $tp4_of_tp8{$tp8} = $tp4;
         }
     }
-    
+
     my @files;
     if (@filespecs) {
         @files = map { $folder->glob_plain_files($_) } @filespecs;
@@ -132,11 +166,11 @@ sub load_prehistorics {
     else {
         @files = $folder->glob_plain_files;
     }
-    
+
     my @skeds
       = map { $class->_new_from_prehistoric( $_, \%tp4_of_tp8 ) } @files;
 
-    $cry->over ($EMPTY_STR);
+    $cry->over($EMPTY_STR);
     $cry->done;
 
     return @skeds;
@@ -165,7 +199,7 @@ sub _new_from_prehistoric {
 
     state %seen_linegroup;
     if ( not $seen_linegroup{$linegroup} ) {
-        last_cry()->over ($linegroup) unless $seen_linegroup{$linegroup};
+        last_cry()->over($linegroup) unless $seen_linegroup{$linegroup};
         $seen_linegroup{$linegroup} = 1;
     }
 
@@ -174,7 +208,7 @@ sub _new_from_prehistoric {
 
     $_ = <$skedsfh>;
     trim;
-    
+
     my @place9s;
     ( undef, undef, undef, undef, @place9s ) = split(/\t/);
 
@@ -254,7 +288,7 @@ sub _new_from_prehistoric {
     $spec{trip_r} = \@trips;
 
     close $skedsfh or die "Can't close $filespec for reading: $OS_ERROR";
-    
+
     #if ($filespec =~ /26_EB_WD/ ) {
     #    say dumpstr $spec{place4_r};
     #    say dumpstr $spec{place8_r};
@@ -270,16 +304,16 @@ sub write_prehistorics {
     my $skeds_r = shift;
     my $signup  = shift;
 
-    my $prepare_cry = cry ( 'Preparing prehistoric sked files');
+    my $prepare_cry = cry('Preparing prehistoric sked files');
 
     my %prehistorics_of;
 
-    my $create_cry = cry( 'Creating prehistoric file data');
+    my $create_cry = cry('Creating prehistoric file data');
 
     foreach my $sked ( @{$skeds_r} ) {
         my $group_dir = $sked->linegroup . q{_} . $sked->direction;
         my $days      = $sked->prehistoric_days();
-        $create_cry->over ("${group_dir}_$days");
+        $create_cry->over("${group_dir}_$days");
         $prehistorics_of{$group_dir}{$days} = $sked->prehistoric_skedsfile();
     }
 
@@ -294,11 +328,11 @@ sub write_prehistorics {
     my @comparisons
       = ( [qw/SA SU WE/], [qw/WD SA WA/], [qw/WD SU WU/], [qw/WD WE DA/], );
 
-    my $merge_cry = cry( 'Merging days');
+    my $merge_cry = cry('Merging days');
 
     foreach my $group_dir ( sort keys %prehistorics_of ) {
 
-        $merge_cry->over ($group_dir);
+        $merge_cry->over($group_dir);
 
         # merge days
         foreach my $comparison_r (@comparisons) {
@@ -363,5 +397,27 @@ sub _tp9_to_tp8 {
     return wantarray ? @places : $places[0];
 
 }
+
+sub _as_transitinfo {
+
+    my $days_obj  = shift;
+    my $as_string = $days_obj->as_string;
+
+    state %cache;
+    return $cache{$as_string} if $cache{$as_string};
+
+    my $daycode       = $days_obj->daycode;
+    my $schooldaycode = $days_obj->schooldaycode;
+
+    return $cache{$as_string} = "SD" if $days_obj->_is_SD;
+    return $cache{$as_string} = "SH" if $days_obj->_is_SH;
+
+    my $transitinfo = $TRANSITINFO_DAYS_OF{$daycode};
+
+    return $cache{$as_string} = $transitinfo if $transitinfo;
+    carp qq[Using invalid Transitinfo daycode XX for <$daycode/$schooldaycode>];
+    return $cache{$as_string} = 'XX';
+
+} ## tidy end: sub _as_transitinfo
 
 1;

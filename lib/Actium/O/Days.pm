@@ -141,48 +141,6 @@ sub _build_as_shortcode {
 
 } ## tidy end: sub _build_as_shortcode
 
-sub as_transitinfo {
-
-    my $self      = shift;
-    my $as_string = $self->as_string;
-
-    state %cache;
-    return $cache{$as_string} if $cache{$as_string};
-
-    my $daycode       = $self->daycode;
-    my $schooldaycode = $self->schooldaycode;
-
-    return $cache{$as_string} = "SD" if $self->_is_SD;
-    return $cache{$as_string} = "SH" if $self->_is_SH;
-
-    my $transitinfo = $TRANSITINFO_DAYS_OF{$daycode};
-
-    return $cache{$as_string} = $transitinfo if $transitinfo;
-    return $cache{$as_string} = $self->_invalid_transitinfo_daycode;
-
-} ## tidy end: sub as_transitinfo
-
-sub for_prehistoric {
-    # prehistoric skeds files just uses the days from the headway sheets
-
-    my $self        = shift;
-    my $transitinfo = $self->as_transitinfo;
-
-    my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
-
-    return 'WD' unless in( $transitinfo, @valid_prehistorics );
-    return $transitinfo;
-
-}
-
-sub _invalid_transitinfo_daycode {
-    my $self          = shift;
-    my $daycode       = $self->daycode;
-    my $schooldaycode = $self->schooldaycode;
-    carp qq[Using invalid Transitinfo daycode XX for <$daycode/$schooldaycode>];
-    return 'XX';
-}
-
 sub _is_SD {
     my $self = shift;
     return 1 if ( $self->daycode eq '12345' and $self->schooldaycode eq 'D' );
@@ -380,8 +338,6 @@ This documentation refers to version 0.010
  say $days->as_adjectives; # "Monday, Wednesday, and Friday"
  say $days->as_abbrevs; # "Mon Wed & Fri"
  
- say $days->as_transitinfo; # 'MZ'
- 
 =head1 DESCRIPTION
 
 This class is used for objects storing scheduled day information. 
@@ -411,10 +367,6 @@ Tuesdays; and so on through 7 for Sundays.  (7 is used instead of
 because 0 is false in perl and it's convenient to allow simple truth
 tests.)  The H, if present, is used to indicate holidays. However,
 at this time the system will add an H to any 7 specified.
-
-As an alternative, the two-letter codes derived from those used by the old 
-www.transitinfo.org web site may be specified. See 
-L<as_transitinfo|/as_transitinfo> below. 
 
 The constructor also accepts a school days flag, a single character.
 If specified, "D" indicates that it operates school days only, and "H" that 
@@ -481,24 +433,6 @@ perl's cmp operator to be in order.
 
 Returns a version of the day code / schoolday code that can be used to create
 a new object using B<instance_from_string>.
-
-=item B<< $obj->as_transitinfo >>
-
-Returns the two-letter code for the day derived from the codes used by the 
-old www.transitinfo.org web site.
-
-Here is a table of equivalents:
-
-      DA  1234567H    SU  7H      TF  25
-      WD  12345       WE  67H     WF  35
-      SA  6           TT  24      MZ  135
- 
-Since these codes do not allow for
-the full range of possibilities, these codes probably should not be used
-in new situations.
-
-Where there is no valid code for the days, the code "XX" is returned and a
-warning is generated (using "carp").
 
 =item B<< $obj->as_adjectives >>
 
