@@ -2,27 +2,12 @@ package Actium::O::Sked::Trip 0.011;
 
 # Trip object (for schedules and headways)
 
-use 5.016;
-
-use utf8;
-
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
-
-use namespace::autoclean; ### DEP ###
+use Actium::Moose;
 
 use MooseX::Storage; ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
 use Actium::Time qw<timestr timestr_sub>;
-use Actium::Util qw<in>;
-use Actium::Constants;
-use Carp; ### DEP ###
-
-use Const::Fast; ### DEP ###
-
-use List::Util   ('min'); ### DEP ###
-use Scalar::Util ('reftype'); ### DEP ###
 
 #use overload q{""} => \&stoptimes_comparison_str;
 # only for debugging - remove in production
@@ -161,7 +146,7 @@ has stoptimes_comparison_str => (
 
 sub _build_stoptimes_comparison_str {
     my $self = shift;
-    return join( "\t", grep {defined} $self->stoptimes );
+    return join( "|", grep {defined} $self->stoptimes );
 }
 
 has average_stoptime => (
@@ -291,7 +276,7 @@ sub merge_trips {
             if ($_ eq 'mergedtrip_r') {
                 next;
             }    # do nothing
-            if ( in ($_,  'placetime_r', 'stoptime_r' )) {
+            if ( u::in ($_,  'placetime_r', 'stoptime_r' )) {
                 # assumed to be equal
                 $merged_value_of{$init_arg} = $self->$attrname;
                 next;
@@ -313,7 +298,7 @@ sub merge_trips {
                     $merged_value_of{$init_arg} = $firstattr;
                 }
                 # if they're identical, set the array to the value
-                elsif ( in( $attrname, ['daysexceptions'] ) ) {
+                elsif ( u::in( $attrname, ['daysexceptions'] ) ) {
                     $merged_value_of{$init_arg} = '';
                 }
                 # otherwise, if the attribute name is one of the those, then
@@ -341,7 +326,7 @@ my $common_stop_cr = sub {
     my @trips = @_;
     my $common_stop;
     my $last_to_search
-      = ( List::Util::min( map { $_->stoptime_count } @trips ) ) - 1;
+      = ( u::min( map { $_->stoptime_count } @trips ) ) - 1;
 
   SORTBY_STOP:
     for my $stop ( 0 .. $last_to_search ) {

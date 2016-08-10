@@ -404,7 +404,7 @@ has 'stopid_r' => (
 has 'stopplace_r' => (
     traits  => ['Array'],
     is      => 'bare',
-    isa     => 'ArrayRef[Str]',
+    isa     => 'ArrayRef[Maybe[Str]]',
     default => sub { [] },
     handles => { stopplaces => 'elements', _delete_stopplace => 'delete' },
 );
@@ -454,26 +454,26 @@ sub _build_md5 {
     # build an MD5 digest from the placetimes, stoptimes, places, and stops
     require Digest::MD5; ### DEP ###
 
-    my @data = ( jointab( $self->place4s ), jointab( $self->stopids ) );
+    my @data = ( u::jointab( $self->place4s ), u::jointab( $self->stopids ) );
 
     foreach my $trip ( $self->trips ) {
-        push @data, jointab( $trip->stoptimes );
-        push @data, jointab( $trip->placetimes );
+        push @data, u::jointab( $trip->stoptimes );
+        push @data, u::jointab( $trip->placetimes );
     }
 
-    my $digest = Digest::MD5::md5_hex( joinkey(@data) );
+    my $digest = Digest::MD5::md5_hex( join($KEY_SEPARATOR, @data) );
     return $digest;
 
 }
 
 sub _build_linedir {
     my $self = shift;
-    return joinkey( $self->linegroup, $self->dircode );
+    return join ( $KEY_SEPARATOR, $self->linegroup, $self->dircode );
 }
 
 sub _build_linedays {
     my $self = shift;
-    return joinkey( $self->linegroup, $self->sortable_days );
+    return join( $KEY_SEPARATOR, $self->linegroup, $self->sortable_days );
 }
 
 sub _build_earliest_timenum {
@@ -697,7 +697,7 @@ sub spaced {
           [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
     }
 
-    say $out joinlf( @{ tabulate(@place_records) } ), "\n";
+    say $out u::joinlf( @{ u::tabulate(@place_records) } ), "\n";
     # extra \n for a blank line to separate places and stops
 
     my @stop_records;
@@ -709,7 +709,7 @@ sub spaced {
         push @stop_records, [ $timesub->( $trip->stoptimes ) ];
     }
 
-    say $out joinlf( @{ tabulate(@stop_records) } );
+    say $out u::joinlf( @{ u::tabulate(@stop_records) } );
 #
 #    my @tripfields = qw<blockid daysexceptions from noteletter pattern runid to
 #      type typevalue vehicledisplay via viadescription>;
