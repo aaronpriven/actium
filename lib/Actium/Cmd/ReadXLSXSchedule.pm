@@ -6,6 +6,7 @@ use Actium::Preamble;
 use Actium::O::Sked;
 use Actium::O::Sked::Trip;
 use Actium::Util(qw[joinseries ]);
+use Actium::O::2DArray;
 
 our $VERSION = 0.010;
 
@@ -46,10 +47,10 @@ sub _get_trips {
       unless @tp_rows == @stop_rows;
 
     #say u::joinlf( @{ tabulate(@tp_rows) } );
-    say Actium::O::2DArray->tabulated(\@tp_rows);
+    say Actium::O::2DArray->new(@tp_rows)->tabulated();
     say $EMPTY_STR;
     #say u::joinlf( @{ tabulate(@stop_rows) } );
-    say Actium::O::2DArray->tabulated(\@stop_rows);
+    say Actium::O::2DArray->new->(@stop_rows)->tabulated();
 
 }
 

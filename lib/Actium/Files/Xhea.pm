@@ -77,8 +77,7 @@ sub xhea_import {
             $adjusted_values_of_r->{$STOPS} );
 
         $tab_strings_r->{$STOPS_PC}
-          #= Actium::Util::aoa2tsv( $new_s_records_r, $new_s_heads_r );
-          = Actium::O::2DArray( $new_s_records_r, @{$new_s_heads_r} )->tsv;
+          = Actium::O::2DArray->new($new_s_records_r)->tsv( @{$new_s_heads_r} );
 
     }
 
@@ -90,7 +89,7 @@ sub xhea_import {
             $adjusted_values_of_r->{$PLACES} );
 
         $tab_strings_r->{$PLACES_PC}
-          = Actium::O::2DArray( $new_p_records_r, @{$new_p_heads_r} )->tsv;
+          = Actium::O::2DArray->new($new_p_records_r)->tsv(@{$new_p_heads_r} );
           #= Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
     }
 
@@ -116,7 +115,7 @@ sub tab_strings {
         my $records_r = $values_of_r->{$record_name};
 
         $tab_of{$record_name} 
-          = Actium::O::2DArray( $records_r, @{$fieldnames_r} )->tsv;
+          = Actium::O::2DArray-new( $records_r)->tsv(@{$fieldnames_r}) ;
          # = aoa2tsv( $records_r, $fieldnames_r );
 
     }
