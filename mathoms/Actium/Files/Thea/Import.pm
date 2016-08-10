@@ -19,7 +19,7 @@ use Actium::Sorting::Line 'sortbyline';
 
 use Actium::Files::Thea::Trips('thea_trips');
 
-use Actium::Util (qw<jt doe linegroup_of>);
+use Actium::Util (qw<jt linegroup_of>);
 
 use Actium::Union('ordered_union_columns');
 
