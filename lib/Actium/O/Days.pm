@@ -41,7 +41,6 @@ has 'daycode' => (
     isa         => DayCode,
     required    => 1,
     initializer => '_initialize_daycode',
-    coerce      => 1,
 );
 
 # New day codes have a character for each set of days that are used.
