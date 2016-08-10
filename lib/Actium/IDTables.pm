@@ -15,7 +15,7 @@ use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
-use Actium::Util(qw/doe in jointab chunks population_stdev/);
+use Actium::Util(qw/in jointab chunks population_stdev/);
 use Const::Fast; ### DEP ###
 use List::Util ( 'max', 'sum' ); ### DEP ###
 use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>); ### DEP ###
@@ -387,10 +387,6 @@ sub _make_length {
     my @lines = @_;
 
     my $ems = max( ( map { ems($_) } @lines ) );
-
-    #if ( $lines[0] =~ /72/ ) {
-    #    last_cry()->over '[' . doe($ems) . ']';
-    #}
 
     my $length;
     for ($ems) {
