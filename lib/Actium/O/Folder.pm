@@ -617,7 +617,7 @@ sub write_files_with_method {
 
     my $count;
 
-    my $cry = ( "Writing $method files to " . $folder->display_path );
+    my $cry = cry ( "Writing $method files to " . $folder->display_path );
 
     my %seen_id;
 
