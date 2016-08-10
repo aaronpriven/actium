@@ -93,7 +93,7 @@ sub xhea2skeds {
 
     my $dumpcry = cry('Dumping patterns and trips');
     open my $dump_out, '>', '/tmp/xheaout.6';
-    say $dump_out u::dumpstr( [$patgroup_by_lgdir_r] );
+    say $dump_out u::dumpstr( $patgroup_by_lgdir_r );
     close $dump_out;
     $dumpcry->done;
 
@@ -102,7 +102,7 @@ sub xhea2skeds {
       = _make_skeds( patgroups => $patgroup_by_lgdir_r, actiumdb => $actiumdb )
       ;
     
-    my $tdumpcry = cry('Dumping patterns and trips');
+    my $tdumpcry = cry('Dumping trip collections');
     open my $tdump_out, '>', '/tmp/xheaout.t6';
     say $tdump_out u::dumpstr( $trip_collections) ;
     close $tdump_out;
