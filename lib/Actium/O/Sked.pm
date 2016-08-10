@@ -1,15 +1,8 @@
-package Actium::O::Sked 0.011;
+package Actium::O::Sked 0.012;
 
 # the Sked object, containing everything that is a schedule
 
-
-use 5.012;
-use strict;
-
-use Moose; ### DEP ###
-#use MooseX::SemiAffordanceAccessor;
-use MooseX::StrictConstructor; ### DEP ###
-use Moose::Util::TypeConstraints; ### DEP ###
+use Actium::Moose;
 
 use MooseX::MarkAsMethods autoclean => 1;
 use overload '""' => sub { shift->id };
@@ -17,15 +10,8 @@ use overload '""' => sub { shift->id };
 use MooseX::Storage; ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'], 'format' => 'JSON' );
 
-use English '-no_match_vars'; ### DEP ###
-
-use List::MoreUtils (qw<none any>); ### DEP ###
-use List::Util ( 'first', 'max' ); ### DEP ###
-
-use Actium::Util(qw<:all>);
 use Actium::Time(qw<:all>);
 use Actium::Sorting::Line qw<sortbyline linekeys>;
-use Actium::Constants;
 
 use Actium::Types (qw/DirCode ActiumDir ActiumDays/);
 use Actium::O::Sked::Trip;
@@ -72,10 +58,10 @@ sub _delete_blank_columns {
         my $has_place4s      = not $self->place4s_are_empty;
 
         my $place_id_count = $self->place_count;
-        my $placecount = max( $place_id_count, $#columns_of_times );
+        my $placecount = u::max( $place_id_count, $#columns_of_times );
 
         for my $i ( reverse( 0 .. $placecount ) ) {
-            if ( none { defined($_) } @{ $columns_of_times[$i] } ) {
+            if ( u::none { defined($_) } @{ $columns_of_times[$i] } ) {
                 push @placetime_cols_to_delete, $i;
                 next                      if $i > $place_id_count;
                 $self->_delete_place8($i) if ($has_place8s);
@@ -99,10 +85,10 @@ sub _delete_blank_columns {
 
         my @columns_of_times = $self->_stoptime_columns;
         my $stopid_count     = $self->stop_count;
-        my $stopcount        = max( $stopid_count, $#columns_of_times );
+        my $stopcount        = u::max( $stopid_count, $#columns_of_times );
 
         for my $i ( reverse( 0 .. $stopcount ) ) {
-            if ( none { defined($_) } @{ $columns_of_times[$i] } ) {
+            if ( u::none { defined($_) } @{ $columns_of_times[$i] } ) {
                 push @stoptimes_cols_to_delete, $i;
                 next if $i > $stopid_count;
                 $self->_delete_stopid($i);
@@ -241,7 +227,7 @@ sub _combine_duplicate_timepoints {
             # if this isn't the last column, and there are any times
             # defined later...
             if ( $#alltimes > $lastcolumn
-                and any { defined($_) }
+                and u::any { defined($_) }
                 @alltimes[ $lastcolumn + 1 .. $#alltimes ] )
             {
 
@@ -494,7 +480,7 @@ sub _build_earliest_timenum {
     my $self    = shift;
     my $trip    = $self->trip(0);
     my @times   = $trip->placetimes;
-    my $timenum = first { defined $_ } @times;
+    my $timenum = u::first { defined $_ } @times;
     return $timenum;
 }
 
@@ -640,91 +626,7 @@ sub attribute_columns {
 
 } ## tidy end: sub attribute_columns
 
-### METHODS THAT ALTER SKEDS
 
-# This is commented out because it is only used in Headways,
-# and alters the existing sked object, which I don't want to do
-
-#sub divide_sked {
-#    my $self = shift;
-#
-#    my @lines = $self->lines();
-#
-#    my %linegroup_of;
-#    foreach (@lines) {
-#        $linegroup_of{$_} = ( $LINES_TO_COMBINE{$_} || $_ );
-#
-#        #        $linegroup_of{$_} = ( $_ );
-#    }
-#
-#    my %linegroups;
-#    $linegroups{$_} = 1 foreach ( values %linegroup_of );
-#    my @linegroups = keys %linegroups;
-#
-#    if ( scalar(@linegroups) == 1 ) {  # there's just one linegroup, return self
-#        $self->set_linegroup( $lines[0] );
-#
-#        $self->delete_blank_columns;
-#
-#        # override Scheduling's linegroup with the first line
-#        return $self;
-#    }
-#
-#    # More than one linegroup! Split apart
-#
-#    my ( %trips_of, @newskeds );
-#
-#    # collect trips for each one in %trips_of
-#    foreach my $trip ( $self->trips ) {
-#        my $linegroup = $linegroup_of{ $trip->line };
-#        push @{ $trips_of{$linegroup} }, $trip;
-#    }
-#
-#    foreach my $linegroup (@linegroups) {
-#
-#        my %value_of;
-#
-#        # collect all other attribute values in %values_of
-#        # This is a really primitive clone routine and might arguably
-#        # be better replaced by something based on MooseX::Clone or some other
-#        # "real" deep clone routine.
-#
-#        foreach my $attribute ( $self->meta->get_all_attributes ) {
-#
-#            # meta-objects! woohoo! screw you, Mouse!
-#
-#            my $attrname = $attribute->name;
-#            next if $attrname eq 'trip_r' or $attrname eq 'linegroup';
-#
-#            my $value = $self->$attrname;
-#            if ( ref($value) eq 'ARRAY' ) {
-#                $value = [ @{$value} ];
-#            }
-#            elsif ( ref($value) eq 'HASH' ) {
-#                $value = { %{$value} };
-#            }    # purely speculative as there are no hash attributes right now
-#
-#            # use of "ref" rather than "reftype" is intentional here. We don't
-#            # want to clone objects this way.
-#
-#            $value_of{$attrname} = $value;
-#        }    ## <perltidy> end foreach my $attribute ( $self...)
-#
-#        my $newsked = Actium::O::Sked->new(
-#            trip_r    => $trips_of{$linegroup},
-#            linegroup => $linegroup,
-#            %value_of,
-#        );
-#
-#        $newsked->delete_blank_columns;
-#
-#        push @newskeds, $newsked;
-#
-#    }    ## <perltidy> end foreach my $linegroup (@linegroups)
-#
-#    return @newskeds;
-#
-#}    ## <perltidy> end sub divide_sked
 
 #### OUTPUT METHODS
 
