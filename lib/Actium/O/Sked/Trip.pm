@@ -116,16 +116,6 @@ foreach my $attrname ( keys %shortcol_of_attribute ) {
     );
 }
 
-#has [
-#    qw<daysexceptions line runid blockid noteletter pattern type typevalue
-#      from to vehicletype internal_num
-#      vehicledisplay via viadescription>
-#  ] => (
-#    is  => 'ro',
-#    isa => 'Str',
-#  );
-
-# generated from Thea, if nowhere else
 has 'days_obj' => (
     required => 0,
     coerce   => 1,
@@ -292,10 +282,10 @@ sub merge_trips {
 
     foreach my $attribute ( $class->meta->get_all_attributes ) {
         
-        next if $attribute eq 'destination_stoptime_idx' ;
-
         my $attrname = $attribute->name;
-        my $init_arg = $attribute->init_arg // $attrname;
+        #my $init_arg = $attribute->init_arg // $attrname;
+        my $init_arg = $attribute->init_arg;
+        next unless defined $init_arg;
 
         for ($attrname) {
             if ($_ eq 'mergedtrip_r') {
