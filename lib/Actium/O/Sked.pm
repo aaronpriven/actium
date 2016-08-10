@@ -7,7 +7,7 @@ use Actium::Moose;
 use MooseX::MarkAsMethods autoclean => 1;
 use overload '""' => sub { shift->id };
 
-use MooseX::Storage; ### DEP ###
+use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'], 'format' => 'JSON' );
 
 use Actium::Time(qw<:all>);
@@ -20,7 +20,7 @@ use Actium::O::Days;
 use Actium::O::Sked::Stop;
 use Actium::O::Sked::Stop::Time;
 
-use Const::Fast; ### DEP ###
+use Const::Fast;    ### DEP ###
 
 with 'Actium::O::Sked::Prehistoric';
 # allows prehistoric skeds files to be read and written.
@@ -452,7 +452,7 @@ has 'md5' => (
 sub _build_md5 {
     my $self = shift;
     # build an MD5 digest from the placetimes, stoptimes, places, and stops
-    require Digest::MD5; ### DEP ###
+    require Digest::MD5;    ### DEP ###
 
     my @data = ( u::jointab( $self->place4s ), u::jointab( $self->stopids ) );
 
@@ -461,14 +461,14 @@ sub _build_md5 {
         push @data, u::jointab( $trip->placetimes );
     }
 
-    my $digest = Digest::MD5::md5_hex( join($KEY_SEPARATOR, @data) );
+    my $digest = Digest::MD5::md5_hex( join( $KEY_SEPARATOR, @data ) );
     return $digest;
 
 }
 
 sub _build_linedir {
     my $self = shift;
-    return join ( $KEY_SEPARATOR, $self->linegroup, $self->dircode );
+    return join( $KEY_SEPARATOR, $self->linegroup, $self->dircode );
 }
 
 sub _build_linedays {
@@ -626,8 +626,6 @@ sub attribute_columns {
 
 } ## tidy end: sub attribute_columns
 
-
-
 #### OUTPUT METHODS
 
 sub tidydump {
@@ -635,7 +633,7 @@ sub tidydump {
     my $self   = shift;
     my $dumped = $self->dump;
 
-    require Perl::Tidy; ### DEP ###
+    require Perl::Tidy;    ### DEP ###
     my $tidy;
     Perl::Tidy::perltidy(
         source      => \$dumped,
@@ -648,7 +646,7 @@ sub tidydump {
 
 sub dump {
     my $self = shift;
-    require Data::Dump; ### DEP ###
+    require Data::Dump;    ### DEP ###
     my $dumped = Data::Dump::dump($self);
 
     return $dumped;
@@ -679,37 +677,45 @@ sub spaced {
 
     say $out "@simplefields";
 
+    require Actium::O::2DArray;
+
     my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR, XB => 1 );
 
-    my @place_records;
+    my $place_records = Actium::O::2DArray->new();
 
     my ( $columns_r, $shortcol_of_r ) = $self->attribute_columns;
     my @columns     = @{$columns_r};
     my %shortcol_of = %{$shortcol_of_r};
 
-    push @place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
-    push @place_records, [ @shortcol_of{@columns}, $self->place8s ];
+    push @$place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
+    push @$place_records, [ @shortcol_of{@columns}, $self->place8s ];
 
     my @trips = $self->trips;
 
     foreach my $trip (@trips) {
-        push @place_records,
+        push @$place_records,
           [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
     }
 
-    say $out u::joinlf( @{ u::tabulate(@place_records) } ), "\n";
+    say $out $place_records->tabulate, "\n";
+
+    #say $out u::joinlf( @{ u::tabulate(@place_records) } ), "\n";
     # extra \n for a blank line to separate places and stops
 
-    my @stop_records;
+    #my @stop_records;
 
-    push @stop_records, [ $self->stopids ];
-    push @stop_records, [ $self->stopplaces ];
+    my $stop_records = Actium::O::2DArray->new();
+
+    push @$stop_records, [ $self->stopids ];
+    push @$stop_records, [ $self->stopplaces ];
 
     foreach my $trip (@trips) {
-        push @stop_records, [ $timesub->( $trip->stoptimes ) ];
+        push @$stop_records, [ $timesub->( $trip->stoptimes ) ];
     }
 
-    say $out u::joinlf( @{ u::tabulate(@stop_records) } );
+    say $out $place_records->tabulate;
+
+#say $out u::joinlf( @{ u::tabulate(@stop_records) } );
 #
 #    my @tripfields = qw<blockid daysexceptions from noteletter pattern runid to
 #      type typevalue vehicledisplay via viadescription>;
@@ -737,7 +743,7 @@ sub xlsx {
     my $self = shift;
     my $timesub = timestr_sub( XB => 1 );
 
-    require Excel::Writer::XLSX; ### DEP ###
+    require Excel::Writer::XLSX;             ### DEP ###
 
     my $outdata;
     open( my $out, '>', \$outdata ) or die "$!";
@@ -870,7 +876,7 @@ sub stop_objects {
                 and $newtimes[$previous_idx]
                 and $stopid eq $stopids[$previous_idx] )
             {
-                # This stop has the same stop id 
+                # This stop has the same stop id
                 # as the previous stop, and
                 # the previous time was valid.
 
