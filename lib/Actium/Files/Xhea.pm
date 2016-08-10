@@ -15,8 +15,9 @@ use Actium::Import::CalculateFields;
 
 use List::MoreUtils('pairwise');    ### DEP ###
 use Params::Validate(':all');       ### DEP ###
-use Actium::Util(qw/file_ext aoa2tsv/);
+use Actium::Util(qw/file_ext /);
 use Actium::Time(qw[timestr_sub timenum]);
+use Actium::O::2DArray;
 
 const my $PREFIX => 'Actium::O::Files::Xhea';
 
@@ -76,7 +77,8 @@ sub xhea_import {
             $adjusted_values_of_r->{$STOPS} );
 
         $tab_strings_r->{$STOPS_PC}
-          = Actium::Util::aoa2tsv( $new_s_records_r, $new_s_heads_r );
+          #= Actium::Util::aoa2tsv( $new_s_records_r, $new_s_heads_r );
+          = Actium::O::2DArray( $new_s_records_r, @{$new_s_heads_r} )->tsv;
 
     }
 
@@ -88,7 +90,8 @@ sub xhea_import {
             $adjusted_values_of_r->{$PLACES} );
 
         $tab_strings_r->{$PLACES_PC}
-          = Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
+          = Actium::O::2DArray( $new_p_records_r, @{$new_p_heads_r} )->tsv;
+          #= Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
     }
 
     $tab_folder->write_files_from_hash( $tab_strings_r, qw(tab txt) );
@@ -112,7 +115,9 @@ sub tab_strings {
 
         my $records_r = $values_of_r->{$record_name};
 
-        $tab_of{$record_name} = aoa2tsv( $records_r, $fieldnames_r );
+        $tab_of{$record_name} 
+          = Actium::O::2DArray( $records_r, @{$fieldnames_r} )->tsv;
+         # = aoa2tsv( $records_r, $fieldnames_r );
 
     }
 

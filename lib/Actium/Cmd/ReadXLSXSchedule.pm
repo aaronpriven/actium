@@ -5,7 +5,7 @@ package Actium::Cmd::ReadXLSXSchedule 0.010;
 use Actium::Preamble;
 use Actium::O::Sked;
 use Actium::O::Sked::Trip;
-use Actium::Util(qw[joinseries tabulate]);
+use Actium::Util(qw[joinseries ]);
 
 our $VERSION = 0.010;
 
@@ -45,9 +45,11 @@ sub _get_trips {
       . qq{ "stopsked" sheet in file $file}
       unless @tp_rows == @stop_rows;
 
-    say u::joinlf( @{ tabulate(@tp_rows) } );
+    #say u::joinlf( @{ tabulate(@tp_rows) } );
+    say Actium::O::2DArray->tabulated(\@tp_rows);
     say $EMPTY_STR;
-    say u::joinlf( @{ tabulate(@stop_rows) } );
+    #say u::joinlf( @{ tabulate(@stop_rows) } );
+    say Actium::O::2DArray->tabulated(\@stop_rows);
 
 }
 
