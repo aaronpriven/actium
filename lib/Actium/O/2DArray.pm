@@ -668,7 +668,7 @@ sub trim_right {
     return $self->apply($callback);
 }
 
-sub undef2empty {
+sub define {
     my $self = shift;
 
     my $callback = sub {
@@ -732,7 +732,7 @@ sub hash_of_row_elements {
 
 sub tabulate_equal_width {
 
-    my $self = undef2empty(shift);
+    my $self = define(shift);
     # makes a copy
     my $separator = shift // $SPACE;
 
@@ -758,7 +758,7 @@ sub tabulate_equal_width {
 
 sub tabulate {
 
-    my $self = undef2empty(shift);
+    my $self = define(shift);
 
     my $separator = shift // $SPACE;
     my @length_of_col;
@@ -824,7 +824,7 @@ sub tsv {
     # visible symbols for these characters. Which is probably wrong, but
     # why would you feed those in then...
 
-    my $self = undef2empty(shift);
+    my $self = define(shift);
 
     my @headers = u::flatten(@_);
 
@@ -1430,7 +1430,7 @@ Removes white space from the end of each element in the array.
 In void context, alters the original object.
 Otherwise, creates a new Actium::O::2DArray object and returns the object.
 
-=item B<undef2empty()>
+=item B<define()>
 
 Replaces undefined values with the empty string.
 
