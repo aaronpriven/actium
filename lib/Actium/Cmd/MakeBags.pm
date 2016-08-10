@@ -31,7 +31,7 @@ sub START {
 
     $bagtextdir->write_files_from_hash( $bagtexts_r, 'service change bag',
         'txt' );
-    my $baglist = Actium::O::2DArray->tsv($baglist_r);
+    my $baglist = Actium::O::2DArray->new->($baglist_r)->tsv;
     #my $baglist = Actium::Util::aoa2tsv($baglist_r);
 
     $bagtextdir->slurp_write( $baglist, 'baglist.txt' );
@@ -41,7 +41,7 @@ sub START {
         push @counts_rs, [ $_, $counts_r->{$_} ];
     }
     #say u::joinlf ( @{ u::tabulate(@counts_rs) } );
-    say Actium::O::2DArray->tabulated(\@counts_rs);
+    say Actium::O::2DArray->new(@counts_rs)->tabulated();
 
     say '---';
     my @heights_rs;
@@ -49,7 +49,7 @@ sub START {
         push @heights_rs, [ $_, $final_heights_r->{$_}{count} ];
     }
     #say u::joinlf( @{ u::tabulate(@heights_rs) } );
-    say Actium::O::2DArray->tabulated(\@heights_rs);
+    say Actium::O::2DArray->new(@heights_rs)->tabulated();
 
     return;
 
