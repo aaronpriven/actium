@@ -7,6 +7,7 @@ use Actium::O::Dir;
 use Actium::O::Days;
 use Actium::O::Pattern;
 use Actium::O::Sked::Trip;
+use Actium::O::Sked;
 use Actium::O::Sked::TripCollection;
 use Actium::Union ('ordered_union_columns');
 
@@ -66,16 +67,25 @@ sub add_pattern {
 
 }
 
-#for (qw(stopid stopplace place)) {
-#    has "${_}s_r" => (
-#        is      => 'ro',
-#        isa     => 'ArrayRef[Str]',
-#        writer  => "_set_${_}s_r",
-#        default => sub { [] },
-#        traits  => ['Array'],
-#        handles => { "${_}s" => 'elements', },
-#    );
-#}
+for (qw(stopid place)) {
+    has "${_}s_r" => (
+        is      => 'ro',
+        isa     => 'ArrayRef[Str]',
+        writer  => "_set_${_}s_r",
+        default => sub { [] },
+        traits  => ['Array'],
+        handles => { "${_}s" => 'elements', },
+    );
+}
+
+has stopplaces_r => (
+    is      => 'ro',
+    isa     => 'ArrayRef[Maybe[Str]]',
+    writer  => "_set_stopplaces_r",
+    default => sub { [] },
+    traits  => ['Array'],
+    handles => { stopplaces => 'elements', },
+);
 
 ### debugging use only
 #has 'upattern_r' => (
@@ -92,28 +102,29 @@ sub skeds {
     my @skeds;
 
     \my %trip_collection_by_days = $self->_sked_trip_collections;
-    
-    return \%trip_collection_by_days;
 
     my @place8s = map { $actiumdb->place8($_) } $self->places;
 
     foreach my $days ( keys %trip_collection_by_days ) {
+        my $trip_collection = $trip_collection_by_days{$days};
 
-        my $sked = Actium::O::Sked->new(
+        push @skeds,
+          Actium::O::Sked->new(
             place4_r    => $self->places_r,
             place8_r    => \@place8s,
             stopplace_r => $self->stopplaces_r,
             stopid_r    => $self->stopids_r,
             linegroup   => $self->linegroup,
-            dir_obj     => $self->dir_obj,
-            trip_r      => $trip_collection_by_days{$days}->trips_r,
-        );
+            direction   => $self->dir_obj,
+            trip_r      => $trip_collection->trips_r,
+            days        => Actium::O::Days->instance( $days, 'B' ),
+          );
 
     }
 
     return @skeds;
 
-} ## tidy end: sub sked
+} ## tidy end: sub skeds
 
 sub _sked_trip_collections {
     my $self = shift;
@@ -124,8 +135,8 @@ sub _sked_trip_collections {
 
             my $days = $trip->days;
             $days =~ s/7/7H/;    # dumb way of dealing with holidays, but...
-            my @days = split(//, $trip->days);
-            my $days_obj = Actium::O::Days->instance( $days , 'B');
+            my @days = split( //, $trip->days );
+            my $days_obj = Actium::O::Days->instance( $days, 'B' );
 
             my @times = map { $_->timenum } $trip->stoptimes;
 
@@ -152,7 +163,6 @@ sub _sked_trip_collections {
       = Actium::O::Sked::TripCollection->new( trips_r => \@skedtrips );
 
     return $all_trips_collection->trips_by_day;
-
 } ## tidy end: sub _sked_trip_collections
 
 my $stop_tiebreaker = sub {
@@ -190,7 +200,18 @@ sub _order_stops {
 
     foreach my $pattern ( $self->patterns ) {
         my $pattern_id = $pattern->unique_id;
-        $stop_set_of{$pattern_id} = [ $pattern->stops_and_places ];
+        my @stops_and_places;
+        foreach my $stop ( $pattern->stop_objs ) {
+            my $stop_and_place = $stop->h_stp_511_id;
+            if ( $stop->has_place ) {
+                $stop_and_place .= "\t" . $stop->tstp_place;
+                if ( $stop->has_place_rank ) {
+                    $stop_and_place .= "\t" . $stop->place_rank;
+                }
+            }
+            push @stops_and_places, $stop_and_place;
+        }
+        $stop_set_of{$pattern_id} = \@stops_and_places;
     }
 
     my %returned = ordered_union_columns(
@@ -199,7 +220,6 @@ sub _order_stops {
     );
 
     foreach my $pattern_id ( $self->_pattern_ids ) {
-
         \my @union_indexes = $returned{columns_of}{$pattern_id};
         my $pattern = $self->_pattern($pattern_id);
         $pattern->set_union_indexes_r( \@union_indexes );
@@ -219,26 +239,26 @@ sub _order_stops {
 
     }
 
-    #    my @union = $returned{union}->@*;
-    #
-    #    $self->set_upattern_r( join( ':', @union ) );
-    #
-    #    my ( @places, @stopids, @stopplaces );
-    #    foreach my $stop_and_place (@union) {
-    #        my ( $stop, $place, $rank ) = split( /\./, $stop_and_place );
-    #        push @stopids, $stop;
-    #        if ($place) {
-    #            push @places,     $place;
-    #            push @stopplaces, $place;
-    #        }
-    #        else {
-    #            push @stopplaces, undef;
-    #        }
-    #    }
-    #
-    #    $self->_set_stopids_r( \@stopids );
-    #    $self->_set_places_r( \@places );
-    #    $self->_set_stopplaces_r( \@stopplaces );
+    my @union = $returned{union}->@*;
+
+    #$self->set_upattern_r( join( ':', @union ) );
+
+    my ( @places, @stopids, @stopplaces );
+    foreach my $stop_and_place (@union) {
+        my ( $stop, $place, $rank ) = split( /\t/, $stop_and_place );
+        push @stopids, $stop;
+        if ($place) {
+            push @places,     $place;
+            push @stopplaces, $place;
+        }
+        else {
+            push @stopplaces, undef;
+        }
+    }
+
+    $self->_set_stopids_r( \@stopids );
+    $self->_set_places_r( \@places );
+    $self->_set_stopplaces_r( \@stopplaces );
 
 } ## tidy end: sub _order_stops
 
