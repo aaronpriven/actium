@@ -121,11 +121,6 @@ sub flag_assignments_tabbed {
     
     return $assignments->tsv;
 
-    ### no critic (RequireExplicitInclusion)
-    #my $tabbed = Actium::Util::aoa2tsv($assignments_aoa);
-    #return $tabbed;
-    ### use critic
-
 }
 
 1;
