@@ -142,7 +142,7 @@ sub START {
 } ## tidy end: sub START
 
 sub _say_array {
-    say scalar u::u_wrap( u::joinspace( u::sortbyline(@_) ) );
+    say scalar u::u_wrap( joinspace( u::sortbyline(@_) ) );
 }
 
 sub _makessdiff {
@@ -183,11 +183,16 @@ sub _makessdiff {
         '--format=hilite', '--context=all',
     );
 
-    push @ssdiff_commands, u::joinspace(@commandwords);
+    push @ssdiff_commands, joinspace(@commandwords);
     push @comparisons,     $diffbase;
 
     return;
 } ## tidy end: sub _makessdiff
+
+sub joinspace {
+    return join( $SPACE, map { $_ // $EMPTY_STR } @_ );
+}
+
 
 1;
 

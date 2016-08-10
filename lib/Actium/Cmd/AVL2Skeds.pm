@@ -785,6 +785,18 @@ sub copy_exceptions {
 
 } ## tidy end: sub copy_exceptions
 
+sub keyreadable {
+    if (wantarray) {
+        my @list = @_;
+        s/$KEY_SEPARATOR/_/sxg foreach @list;
+        return @list;
+    }
+    my $value = shift;
+    $value =~ s/$KEY_SEPARATOR/_/gxs;
+    return $value;
+}
+
+
 1;
 
 __END__
