@@ -17,7 +17,7 @@ use Const::Fast;
       #HastusDirCode
 
 use MooseX::Types -declare => [
-    qw <TransitInfoDays   DayCode     SchoolDayCode
+    qw <DayCode     SchoolDayCode
       DaySpec             ActiumDays  ActiumTime
       DirCode             ActiumDir
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
@@ -48,10 +48,6 @@ subtype DayCode, as Str, where {/\A1?2?3?4?5?6?7?H?\z/}, message {
 # It uses question marks instead of [1-7H]+ because
 # the numbers have to be in order, and not repeated
 
-enum( TransitInfoDays, [ values %TRANSITINFO_DAYS_OF ] );
-
-coerce DayCode, from TransitInfoDays, via { $DAYS_FROM_TRANSITINFO{$_} };
-
 enum( SchoolDayCode, [ 'B', 'D', 'H' ] );
 
 subtype DaySpec, as ArrayRef, where {
@@ -61,14 +57,13 @@ subtype DaySpec, as ArrayRef, where {
 };
 
 coerce DaySpec, from DayCode, via { [ $_, 'B' ] },
-  from TransitInfoDays, via { [ to_DayCode($_), 'B' ] };
+;
 
 subtype ActiumDays, as class_type('Actium::O::Days');
 
 coerce ActiumDays,
   from DaySpec,         via { Actium::O::Days->instance($_) },
   from DayCode,         via { Actium::O::Days->instance( to_DaySpec($_) ) },
-  from TransitInfoDays, via { Actium::O::Days->instance( to_DaySpec($_) ) },
   ;
 
 #########################
@@ -203,11 +198,6 @@ L<Moose::Manual::Types>.
 =head2 SCHEDULE DAYS
 
 =over
-
-=item B<TransitInfoDays>
-
-An enumeration of the values of %Actium::Constants::TRANSITINFO_DAYS_OF. 
-See L<Actium::Constants/Actium::Constants>. Can be coerced into a DayCode.
 
 =item B<DayCode>
 

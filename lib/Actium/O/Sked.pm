@@ -736,22 +736,20 @@ sub spaced {
 
 } ## tidy end: sub spaced
 
-const my $xlsx_window_height => 950 ;
-const my $xlsx_window_width  => 1200 ;
+const my $xlsx_window_height => 950;
+const my $xlsx_window_width  => 1200;
 
 sub xlsx {
     my $self = shift;
     my $timesub = timestr_sub( XB => 1 );
 
-    require Excel::Writer::XLSX;             ### DEP ###
+    require Excel::Writer::XLSX;    ### DEP ###
 
     my $outdata;
     open( my $out, '>', \$outdata ) or die "$!";
 
     my $workbook = Excel::Writer::XLSX->new($out);
     $workbook->set_size( $xlsx_window_width, $xlsx_window_height );
-
-    ####
 
     my $textformat = $workbook->add_format( num_format => 0x31 );    # text only
 
