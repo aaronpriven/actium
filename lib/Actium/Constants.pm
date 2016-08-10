@@ -54,27 +54,7 @@ BEGIN {
         TRANSBAY_NOLOCALS   => [qw/FS L NX NX1 NX2 NX3 U W/],
         LINES_TO_BE_SKIPPED => [399],
 
-        TRANSITINFO_DAYS_OF => {
-            qw(
-              1234567H DA
-              123457H  WU
-              123456   WA
-              12345    WD
-              1        MY
-              2        TY
-              3        WY
-              4        TH
-              5        FY
-              6        SA
-              56       FS
-              7H       SU
-              67H      WE
-              24       TT
-              25       TF
-              35       WF
-              135      MZ
-              )
-        },
+
 
         SIDE_OF => {
             ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
@@ -143,9 +123,6 @@ BEGIN {
 
     $constants{HASTUS_DIRS}
       = [ 0, 1, 3, 2, 4 .. scalar @{ $constants{DIRCODES} } ];
-
-    $constants{DAYS_FROM_TRANSITINFO}
-      = { reverse %{ $constants{TRANSITINFO_DAYS_OF} } };
 
     no warnings 'once';
     no strict 'refs';
@@ -334,15 +311,6 @@ to a database.
 
 Lines that should not be used at all. This should be moved to a database. 
 The hash version just allows an easy "should this line be skipped" lookup.
-
-=item %TRANSITINFO_DAYS_OF
-=item %DAYS_FROM_TRANSIITNFO
-
-These provide mappings between operating days with digits (1 = Monday, 2 = 
-Tuesday, etc., through 7 = Sunday, plus H = holidays) and the abbreviated
-days used by the old transitinfo.org style schedule files. Theose short 
-(generally two-letter) abbreviations are not that useful these days and should
-be phased out.
 
 =item %SIDE_OF
 
