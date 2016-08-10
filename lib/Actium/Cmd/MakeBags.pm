@@ -4,6 +4,7 @@ package Actium::Cmd::MakeBags 0.011;
 
 use Actium::Preamble;
 use Actium::Bags;
+use Actium::O::2DArray;
 
 sub OPTIONS {
     return qw/actiumdb signup_with_old/;
@@ -30,22 +31,25 @@ sub START {
 
     $bagtextdir->write_files_from_hash( $bagtexts_r, 'service change bag',
         'txt' );
+    my $baglist = Actium::O::2DArray->tsv($baglist_r);
+    #my $baglist = Actium::Util::aoa2tsv($baglist_r);
 
-    my $baglist = Actium::Util::aoa2tsv($baglist_r);
     $bagtextdir->slurp_write( $baglist, 'baglist.txt' );
 
     my @counts_rs;
     foreach ( sort keys %{$counts_r} ) {
         push @counts_rs, [ $_, $counts_r->{$_} ];
     }
-    say u::joinlf ( @{ u::tabulate(@counts_rs) } );
+    #say u::joinlf ( @{ u::tabulate(@counts_rs) } );
+    say Actium::O::2DArray->tabulated(\@counts_rs);
 
     say '---';
     my @heights_rs;
     foreach ( sort { $a <=> $b } keys %{$final_heights_r} ) {
         push @heights_rs, [ $_, $final_heights_r->{$_}{count} ];
     }
-    say u::joinlf( @{ u::tabulate(@heights_rs) } );
+    #say u::joinlf( @{ u::tabulate(@heights_rs) } );
+    say Actium::O::2DArray->tabulated(\@heights_rs);
 
     return;
 

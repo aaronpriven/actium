@@ -26,7 +26,6 @@ use Sub::Exporter -setup => {
           joinkey            joinlf
           define
           isblank             isnotblank
-          tabulate            aoa2tsv
           filename            file_ext
           remove_leading_path add_before_extension
           display_percent
@@ -181,107 +180,6 @@ sub joinseries_ampersand {
 =head2 Unclassified as yet
 
 =over
-
-=item tabulate
-
-...
-
-=cut
-
-sub tabulate {
-    carp 'Call remains to Actium::Util::tabulate' if DEBUG;
-
-    # TODO: remove in favor of Actium::O::2DArray
-    my @record_rs;
-
-    my $rt = reftype( $_[0] );
-    if ( not defined $rt ) {
-        my @lines = @_;
-        chomp @lines;
-        @record_rs = map { [ split(/\t/) ] } @lines;
-    }
-    else {
-        @record_rs = @_;
-    }
-
-    my @length_of_column;
-
-    foreach my $record_r (@record_rs) {
-
-        my @fields = @{$record_r};
-        for my $this_column ( 0 .. $#fields ) {
-            my $thislength = length( $fields[$this_column] ) // 0;
-            if ( not $length_of_column[$this_column] ) {
-                $length_of_column[$this_column] = $thislength;
-            }
-            else {
-                $length_of_column[$this_column]
-                  = max( $length_of_column[$this_column], $thislength );
-            }
-        }
-    }
-
-    my @lines;
-
-    foreach my $record_r (@record_rs) {
-        my @fields = @{$record_r};
-
-        for my $this_column ( 0 .. $#fields - 1 ) {
-            $fields[$this_column] = sprintf( '%-*s',
-                $length_of_column[$this_column],
-                ( $fields[$this_column] // $EMPTY_STR ) );
-        }
-        push @lines, join( $SPACE, @fields );
-
-    }
-
-    return \@lines;
-
-} ## tidy end: sub tabulate
-
-=item aoa2tsv
-
-...
-
-=cut
-
-sub aoa2tsv {
-
-    # array of arrays to a single string of tab-separated-values,
-    # suitable for something like File::Slurp::write_file
-
-    # converts line feeds, tabs, and carriage returns to the Unicode
-    # visible symbols for these characters. Which is probably wrong, but
-    # why would you feed those in then...
-
-    # TODO: remove in favor of Actium::O::2DArray
-
-    carp 'Call remains to Actium::Util::aoa2tsv' if DEBUG;
-
-    my $aoa_r   = shift;
-    my @headers = flatten(@_);
-
-    my @lines;
-    push @lines, jointab(@headers) if @headers;
-
-    foreach my $array ( @{$aoa_r} ) {
-        foreach ( @{$array} ) {
-            $_ //= $EMPTY_STR;
-            s/\t/\x{2409}/g;    # visible symbol for tab
-        }
-        push @lines, jointab( @{$array} );
-    }
-
-    foreach (@lines) {
-        s/\n/\x{240A}/g;        # visible symbol for line feed
-        s/\r/\x{240D}/g;        # visible symbol for carriage return
-    }
-
-    my $str = joinlf(@lines) . "\n";
-
-    return $str;
-
-} ## tidy end: sub aoa2tsv
 
 =item define
 

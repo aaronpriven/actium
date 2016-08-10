@@ -76,8 +76,8 @@ sub frequency {
           ];
     }
 
-    my $freq_display = u::joinlf(
-        @{ Actium::O::2DArray::->new(@diff_displays)->tabulate('  ') } );
+    my $freq_display = 
+         Actium::O::2DArray::->new(@diff_displays)->tabulated('  ')  ;
 
     my ( $lowest, $highest ) = u::minmax( keys %diff_psych_culled );
     my $freq = ( $lowest == $highest ) ? $lowest : "$lowest-$highest";
