@@ -736,8 +736,8 @@ sub spaced {
 
 } ## tidy end: sub spaced
 
-const my $xlsx_window_height => 950 * 20;    # 20 twips to the point
-const my $xlsx_window_width  => 1200 * 20;
+const my $xlsx_window_height => 950 ;
+const my $xlsx_window_width  => 1200 ;
 
 sub xlsx {
     my $self = shift;
@@ -749,13 +749,7 @@ sub xlsx {
     open( my $out, '>', \$outdata ) or die "$!";
 
     my $workbook = Excel::Writer::XLSX->new($out);
-
-    ### horrible breaking encapsulation of object,
-    ### but there are no accessors for some reason, and
-    ### this works to change the window size
-
-    $workbook->{_window_height} = $xlsx_window_height;
-    $workbook->{_window_width}  = $xlsx_window_height;
+    $workbook->set_size( $xlsx_window_width, $xlsx_window_height );
 
     ####
 
