@@ -29,9 +29,12 @@ const my %TRANSITINFO_DAYS_OF => (
       24       TT
       25       TF
       35       WF
+      123      MX
       135      MZ
       1245     XW
       1235     XH
+      1234     XF
+      45       HF
       )
 );
 
@@ -48,7 +51,7 @@ use List::MoreUtils qw<uniq none>;    ### DEP ###
 
 use Text::Trim;                       ### DEP ###
 use English '-no_match_vars';         ### DEP ###
-use Actium::Util (qw/jointab dumpstr/);
+use Actium::Util (qw/jointab in dumpstr/);
 use Actium::Time ('timestr_sub');
 
 # comes from prehistorics
@@ -302,7 +305,7 @@ sub write_prehistorics {
 
     my $class   = shift;
     my $skeds_r = shift;
-    my $signup  = shift;
+    my $folder  = shift;
 
     my $prepare_cry = cry('Preparing prehistoric sked files');
 
@@ -368,7 +371,7 @@ sub write_prehistorics {
 
     $merge_cry->done;
 
-    $signup->subfolder('prehistoric')
+    $folder
       ->write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
     $prepare_cry->done;
 
@@ -411,10 +414,11 @@ sub _as_transitinfo {
 
     return $cache{$as_string} = "SD" if $days_obj->_is_SD;
     return $cache{$as_string} = "SH" if $days_obj->_is_SH;
+    
+    if (exists $TRANSITINFO_DAYS_OF{$daycode}) {
+       return $cache{$as_string} = $TRANSITINFO_DAYS_OF{$daycode};
+    }
 
-    my $transitinfo = $TRANSITINFO_DAYS_OF{$daycode};
-
-    return $cache{$as_string} = $transitinfo if $transitinfo;
     carp qq[Using invalid Transitinfo daycode XX for <$daycode/$schooldaycode>];
     return $cache{$as_string} = 'XX';
 
