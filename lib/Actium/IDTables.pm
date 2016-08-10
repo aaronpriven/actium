@@ -15,7 +15,7 @@ use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
-use Actium::Util(qw/in jointab chunks population_stdev/);
+use Actium::Util(qw/in jointab population_stdev/);
 use Const::Fast; ### DEP ###
 use List::Util ( 'max', 'sum' ); ### DEP ###
 use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>); ### DEP ###
