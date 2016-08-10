@@ -796,6 +796,12 @@ sub tabulate {
 
 } ## tidy end: sub tabulate
 
+sub tabulated {
+    my $self = shift;
+    \my @lines = $self->tabulate(@_);
+    return u::joinlf(@lines), "\n";
+}
+
 my $charcarp = sub {
     my $character  = shift;
     my $methodname = shift;
@@ -1078,7 +1084,7 @@ returns
     [ c, f, i ] ,
   ]
   
-=item B<new_tabulated (...)>
+=item B<new_like_ls (...)>
 
 A combination of I<new_down> and I<tabulate>.  Takes three named arguments:
 
@@ -1492,6 +1498,12 @@ So, for example,
 The width of each element is determined using the
 C<Unicode::GCString->columns()> method, so it will treat composed
 accented characters and double-width Asian characters correctly.
+
+=item B<tabulated(I<separator>)>
+
+Like C<tabulate()>, but returns the data as a single string, 
+using line feeds as separators of rows, suitable for sending to a 
+terminal.
 
 =item B<< tsv(I<headers>) >>
 

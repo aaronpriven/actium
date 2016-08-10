@@ -697,12 +697,7 @@ sub spaced {
           [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
     }
 
-    say $out $place_records->tabulate, "\n";
-
-    #say $out u::joinlf( @{ u::tabulate(@place_records) } ), "\n";
-    # extra \n for a blank line to separate places and stops
-
-    #my @stop_records;
+    say $out $place_records->tabulated, "\n";
 
     my $stop_records = Actium::O::2DArray->new();
 
@@ -713,10 +708,8 @@ sub spaced {
         push @$stop_records, [ $timesub->( $trip->stoptimes ) ];
     }
 
-    say $out $place_records->tabulate;
+    say $out $place_records->tabulated;
 
-#say $out u::joinlf( @{ u::tabulate(@stop_records) } );
-#
 #    my @tripfields = qw<blockid daysexceptions from noteletter pattern runid to
 #      type typevalue vehicledisplay via viadescription>;
 #
