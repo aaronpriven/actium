@@ -115,7 +115,7 @@ sub tab_strings {
         my $records_r = $values_of_r->{$record_name};
 
         $tab_of{$record_name} 
-          = Actium::O::2DArray-new( $records_r)->tsv(@{$fieldnames_r}) ;
+          = Actium::O::2DArray->new( $records_r)->tsv(@{$fieldnames_r}) ;
          # = aoa2tsv( $records_r, $fieldnames_r );
 
     }

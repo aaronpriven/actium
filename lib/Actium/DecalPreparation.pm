@@ -91,7 +91,7 @@ sub make_labels {
               . "Place the stop ID on the flag and install it.";
         }
 
-        push @labels, "[Crew area $assignment] $stopid   $desc\n$instructions";
+        push @labels, "$stopid   $desc\n$instructions";
 
     } ## tidy end: foreach my $stopid ( sort keys...)
 
