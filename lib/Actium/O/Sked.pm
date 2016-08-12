@@ -708,7 +708,7 @@ sub spaced {
         push @$stop_records, [ $timesub->( $trip->stoptimes ) ];
     }
 
-    say $out $place_records->tabulated;
+    say $out $stop_records->tabulated;
 
 #    my @tripfields = qw<blockid daysexceptions from noteletter pattern runid to
 #      type typevalue vehicledisplay via viadescription>;
