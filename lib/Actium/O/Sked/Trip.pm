@@ -318,121 +318,7 @@ sub merge_trips {
 
 }    ## <perltidy> end sub merge_trips
 
-my $common_stop_cr = sub {
-
-    # returns undef if there's no stop in common, or
-    # the stop to sort by if there is one
-
-    my @trips = @_;
-    my $common_stop;
-    my $last_to_search
-      = ( u::min( map { $_->stoptime_count } @trips ) ) - 1;
-
-  SORTBY_STOP:
-    for my $stop ( 0 .. $last_to_search ) {
-      SORTBY_TRIP:
-        for my $trip (@trips) {
-            next SORTBY_STOP if not defined $trip->stoptime($stop);
-        }
-        $common_stop = $stop;
-        last SORTBY_STOP;
-    }
-
-    return $common_stop;
-
-};
-
-sub stoptimes_sort {
-
-    my $class = shift;
-    my @trips = @_;
-
-    my $common_stop = $common_stop_cr->(@trips);
-
-    if ( defined $common_stop ) {
-
-        # sort trips with a common stop
-
-        my @cache = map {
-            [   $_->stoptime($common_stop),    # 0
-                $_->average_stoptime,          # 1
-                $_,                            # 2
-            ]
-        } @trips;
-
-        @cache = sort {
-                 $a->[0] <=> $b->[0]
-              or $a->[1] <=> $b->[1]
-              or $a->[2]->sortable_days cmp $b->[2]->sortable_days
-        } @cache;
-
-        @trips = map { $_->[2] } @cache;
-
-        # a schwartzian transform with two criteria --
-        # either the common stop, or if those times are the same,
-        # the average.
-        # if both of those tie, use sortable_days (not put into the
-        # cache because will be used very very rarely)
-
-    } ## tidy end: if ( defined $common_stop)
-    else {
-        # sort trips without a common stop for all of them
-
-        @trips = sort {
-
-            my $common = $common_stop_cr->( $a, $b );
-
-            defined $common
-              ? ( $a->stoptime($common) <=> $b->stoptime($common)
-                  or $a->average_stoptime <=> $b->average_stoptime
-                  or $a->sortable_days cmp $b->sortable_days )
-              : $a->average_stoptime <=> $b->average_stoptime
-              or $a->sortable_days cmp $b->sortable_days;
-
-            # if these two trips have a common stop, sort first
-            # on those common times, and then by the average.
-
-            # if they don't, just sort by the average.
-
-        } @trips;
-
-    } ## tidy end: else [ if ( defined $common_stop)]
-
-    return \@trips;
-
-} ## tidy end: sub stoptimes_sort
-
-sub merge_trips_if_same {
-    my $class  = shift;
-    my %params = %{ +shift };
-
-    my @trips   = @{ $params{trips} };
-    my @methods = @{ $params{methods_to_compare} };
-
-    my @newtrips = shift @trips;
-
-  TRIP_TO_MERGE:
-    while (@trips) {
-        my $thistrip = shift @trips;
-        my $prevtrip = $newtrips[-1];
-
-        foreach my $this_test (@methods) {
-            if ( $thistrip->$this_test ne $prevtrip->$this_test ) {
-                push @newtrips, $thistrip;
-                next TRIP_TO_MERGE;
-            }
-        }
-        # so now we know they are the same
-
-        $newtrips[-1] = $prevtrip->merge_trips($thistrip);
-
-    }
-
-    return \@newtrips;
-
-} ## tidy end: sub merge_trips_if_same
-
-__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
+u::immut;
 
 1;
 
@@ -557,18 +443,18 @@ The number of elements in the mergedtrip array.
 
 =back
 
-=head1 CLASS METHODS
+=head1 OBJECT METHODS
 
 =over
 
 =item B<merge_trips()>
 
-This is a class method to merge two trips that, presumably, have identical stoptimes
+This is a method to merge two trips that, presumably, have identical stoptimes
 and placetimes. (The purpose is to allow two trips that are scheduled identically --
 two buses that are designed to run at the same time to allow an extra heavy load to be
 carried -- to appear only once in the schedule.)
 
- Actium::O::Sked::Trip->merge_trips($trip1, $trip2);
+ $trip1->merge_trips($trip2);
 
 A new Actium::O::Sked::Trip object is created, with attributes as follows:
 
@@ -580,24 +466,20 @@ The stoptimes and placetimes for the first trip are used.
 
 =item mergedtrips
 
-This attribute contains the Actium::O::Sked::Trip objects for all the parent trips. 
-In the simplest case, it contains the two Actium::O::Sked::Trip objects passed to merge_trips.
+This attribute contains the Actium::O::Sked::Trip objects for all
+the parent trips.  In the simplest case, it contains the two
+Actium::O::Sked::Trip objects passed to merge_trips.
 
-However, if either of the Actium::O::Sked::Trip objects passed to merge_trips already has a
-mergedtrips attribute, then instead of saving the current Actium::O::Sked::Trip object, it saves
-the contents of mergedtrips. The upshot is that mergedtrips contains all the trips 
-that are parents of this merged trip.
+However, if either of the Actium::O::Sked::Trip objects passed to
+merge_trips already has a mergedtrips attribute, then instead of
+saving the current Actium::O::Sked::Trip object, it saves the
+contents of mergedtrips. The upshot is that mergedtrips contains
+all the trips that are parents of this merged trip.
 
 =item All other attributes
 
 All other attributes are set as follows: if the value of an attribute is the same in 
 the two trips, they are set with that value. Otherwise the attribute is not set.
-
-=back
-
-=item B<stoptimes_sort()>
-
-To be written
 
 =back
 
