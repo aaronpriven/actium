@@ -93,6 +93,11 @@ sub _build_as_string {
     return $self->daycode . q{-} . $self->schooldaycode;
 }
 
+sub _data_printer {
+    my $self = shift;
+    return $self->as_string;
+}
+
 sub as_sortable {
     my $self = shift;
     return $self->as_string;
