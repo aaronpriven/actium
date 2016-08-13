@@ -116,6 +116,11 @@ has 'dircode' => (
     isa => DirCode,
 );
 
+sub _data_printer {
+    my $self = shift;
+    return $self->dircode;
+}
+
 around BUILDARGS => sub {
     return u::positional_around( \@_, 'dircode' );
 };
