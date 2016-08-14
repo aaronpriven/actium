@@ -118,7 +118,8 @@ has 'dircode' => (
 
 sub _data_printer {
     my $self = shift;
-    return $self->dircode;
+    my $class = u::blessed ($self);
+    return "$class=" . $self->dircode;
 }
 
 around BUILDARGS => sub {
