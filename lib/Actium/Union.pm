@@ -180,7 +180,7 @@ sub ordered_union_columns {
     # or alternatively the one that sorts alphabetically latest.
     # The latter test is arbitrary, just to make sure the
     # result is the same each time.
-
+    
     ### INITIALIZE LOOP OF ARRAYS
     
     my $first_set_id = shift @ordered_ids;
@@ -279,13 +279,13 @@ sub _columns_pair {
 
         my $previous_value = @union ? $union[-1] : undef;
 
-        my $afirst = (
+        my $cmpvalue = (
             $tiebreaker->(
                 \@tempa, \@tempb, $previous_value, $following_value
               ) <= 0
         );
-
-        if ($afirst) {
+        
+        if ($cmpvalue != 1) {
             push @union, @tempa,     @tempb;
             push @u_col, @tempa_col, @tempb_col;
             push @markers, ('<') x @tempa, ('>') x @tempb;
