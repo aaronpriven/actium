@@ -94,8 +94,9 @@ sub _build_as_string {
 }
 
 sub _data_printer {
-    my $self = shift;
-    return $self->as_string;
+    my $self  = shift;
+    my $class = u::blessed($self);
+    return "$class=" . $self->as_string;
 }
 
 sub as_sortable {
@@ -276,47 +277,139 @@ sub as_abbrevs {
     no warnings 'redefine';
     # Otherwise it conflicts with Moose::Util::TypeConstraints::union()
 
+ #sub union {
+ #    # take multiple day objects and return the union of them
+ #    # e.g., take one representing Saturday and one representing
+ #    # Sunday and turn it into one representing both Saturday and Sunday
+ #
+ #    my $class = shift;
+ #    my @objs  = @_;
+ #
+ #    my $union_obj           = shift @objs;
+ #    my $union_daycode       = $union_obj->daycode;
+ #    my $union_schooldaycode = $union_obj->schooldaycode;
+ #
+ #    foreach my $obj (@objs) {
+ #
+ #        my $daycode       = $obj->daycode;
+ #        my $schooldaycode = $obj->schooldaycode;
+ #
+ #        next
+ #          if $daycode eq $union_daycode
+ #          and $schooldaycode eq $union_schooldaycode;
+ #
+ #        if ( $schooldaycode ne $union_schooldaycode ) {
+ #            $union_schooldaycode = 'B';
+ #        }
+ #
+ #        if ( $daycode ne $union_daycode ) {
+ #
+ #            $union_daycode = join( $EMPTY_STR,
+ #                ( u::uniq sort ( split //, $union_daycode . $daycode ) ) );
+ #
+ #        }
+ #
+ #        $union_obj = $class->instance( $union_daycode, $union_schooldaycode );
+ #
+ #    } ## tidy end: foreach my $obj (@objs)
+ #
+ #    return $union_obj;
+ #
+ #} ## tidy end: sub union
+
     sub union {
-        # take multiple day objects and return the union of them
-        # e.g., take one representing Saturday and one representing
-        # Sunday and turn it into one representing both Saturday and Sunday
 
-        my $class = shift;
-        my @objs  = @_;
+        my $invocant = shift;
+        my @objs     = @_;
+        return $invocant->_perform_set_operation( 'union', @objs );
+    }
 
-        my $union_obj           = shift @objs;
-        my $union_daycode       = $union_obj->daycode;
-        my $union_schooldaycode = $union_obj->schooldaycode;
+    sub intersection {
+        my $invocant = shift;
+        my @objs     = @_;
+        return $invocant->_perform_set_operation( 'intersection', @objs );
+    }
 
-        foreach my $obj (@objs) {
-
-            my $daycode       = $obj->daycode;
-            my $schooldaycode = $obj->schooldaycode;
-
-            next
-              if $daycode eq $union_daycode
-              and $schooldaycode eq $union_schooldaycode;
-
-            if ( $schooldaycode ne $union_schooldaycode ) {
-                $union_schooldaycode = 'B';
-            }
-
-            if ( $daycode ne $union_daycode ) {
-
-                $union_daycode = join( $EMPTY_STR,
-                    ( u::uniq sort ( split //, $union_daycode . $daycode ) ) );
-
-            }
-
-            $union_obj
-              = $class->instance( $union_daycode, $union_schooldaycode );
-
-        } ## tidy end: foreach my $obj (@objs)
-
-        return $union_obj;
-
-    } ## tidy end: sub union
 }
+
+sub _perform_set_operation {
+
+    my $class     = shift;
+    my $operation = shift;
+    my $is_union  = $operation eq 'union';
+    my @objs      = @_;
+
+    my $return_obj           = shift @objs;
+    my $return_daycode       = $return_obj->daycode;
+    my $return_schooldaycode = $return_obj->schooldaycode;
+
+    foreach my $obj (@objs) {
+
+        my $daycode       = $obj->daycode;
+        my $schooldaycode = $obj->schooldaycode;
+
+        next
+          if $daycode eq $return_daycode
+          and $schooldaycode eq $return_schooldaycode;
+        # they're identical
+
+        if ( $is_union and $schooldaycode ne $return_schooldaycode ) {
+            $return_schooldaycode = 'B';
+            # if it's a union, and school days are different, return B
+            # (otherwise, leave it alone)
+        }
+        elsif ( $schooldaycode ne $return_schooldaycode ) {
+            # it's an intersection, and they're different
+            my @schooldays = sort ( $schooldaycode, $return_schooldaycode );
+            my $schoolday_combo = join( '', @schooldays );
+            if ( $schoolday_combo eq 'DH' ) {
+                croak 'Empty intersection:'
+                  . ' both school days and school holidays supplied';
+            }
+            elsif ( $schoolday_combo eq 'BD' ) {
+                $return_schooldaycode = 'D';
+            }
+            else {
+                $return_schooldaycode = 'H';
+            }
+        }
+
+        if ( $is_union and $daycode ne $return_daycode ) {
+
+            $return_daycode = join( $EMPTY_STR,
+                ( u::uniq sort ( split //, $return_daycode . $daycode ) ) );
+
+        }
+        elsif ( $daycode ne $return_daycode ) {
+            # intersection, and they're different
+
+            require List::Compare;    ## DEP ##
+
+            my @days        = split //, $daycode;
+            my @return_days = split //, $return_daycode;
+
+            my $lc = List::Compare->new(
+                {   lists       => [ \@days, \@return_days ],
+                    unsorted    => 1,
+                    accelerated => 1,
+                }
+            );
+
+            my @intersection = sort $lc->get_intersection;
+
+            croak "Empty intersection of days" unless @intersection;
+            $return_daycode = join( $EMPTY, @intersection );
+
+        } ## tidy end: elsif ( $daycode ne $return_daycode)
+
+        $return_obj
+          = $class->instance( $return_daycode, $return_schooldaycode );
+
+    } ## tidy end: foreach my $obj (@objs)
+
+    return $return_obj;
+
+} ## tidy end: sub _perform_set_operation
 
 u::immut();
 
