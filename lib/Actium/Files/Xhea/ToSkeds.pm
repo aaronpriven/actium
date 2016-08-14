@@ -91,12 +91,12 @@ sub xhea2skeds {
         values              => $values_of_r
     );
 
-    #    my $dumpfile = '/tmp/xheaout.7';
-    #    my $dumpcry = cry("Dumping patterns and trips to $dumpfile");
-    #    open my $dump_out, '>', $dumpfile;
-    #    say $dump_out u::dumpstr($patgroup_by_lgdir_r);
-    #    close $dump_out;
-    #    $dumpcry->done;
+#        my $dumpfile = '/tmp/xheaout.7';
+#        my $dumpcry = cry("Dumping patterns and trips to $dumpfile");
+#        open my $dump_out, '>', $dumpfile;
+#        say $dump_out u::dumpstr($patgroup_by_lgdir_r);
+#        close $dump_out;
+#        $dumpcry->done;
 
     my $skedscry = cry('Making schedules');
 
