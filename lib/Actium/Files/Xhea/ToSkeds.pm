@@ -47,6 +47,7 @@ sub xheatab2skeds {
     );
 
 } ## tidy end: sub xheatab2skeds
+
 sub xhea2skeds {
 
     my $xhea2skedscry = cry('Converting Xhea to schedules');
