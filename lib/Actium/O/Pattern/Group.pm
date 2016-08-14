@@ -5,6 +5,7 @@ use Actium::Moose;
 use Actium::Types (qw/ActiumDir/);
 use Actium::O::Dir;
 use Actium::O::Days;
+use Actium::O::Time;
 use Actium::O::Pattern;
 use Actium::O::Sked::Trip;
 use Actium::O::Sked;
@@ -135,7 +136,6 @@ sub _sked_trip_collections {
 
             my $days = $trip->days;
             $days =~ s/7/7H/;    # dumb way of dealing with holidays, but...
-            my @days = split( //, $trip->days );
             my $days_obj = Actium::O::Days->instance( $days, 'B' );
 
             my @times = map { $_->timenum } $trip->stoptimes;
@@ -193,6 +193,8 @@ my $stop_tiebreaker = sub {
 
 };
 
+my $undef_time = Actium::O::Time->from_num(undef);
+
 sub _order_stops {
     my $self = shift;
 
@@ -224,20 +226,25 @@ sub _order_stops {
         my $pattern = $self->_pattern($pattern_id);
         $pattern->set_union_indexes_r( \@union_indexes );
 
-     #        foreach my $trip ( $pattern->trips ) {
-     #            my @stops = $trip->stoptimes;
-     #            my @unified_stops;
-     #
-     #            for my $old_column_idx ( 0 .. $#stops ) {
-     #                my $new_column_idx = $union_indexes[$old_column_idx];
-     #                $unified_stops[$new_column_idx] = $stops[$old_column_idx];
-     #            }
-     #            $trip->_set_stoptime_r( \@unified_stops );
-     #
-     #        }
-     #
+        foreach my $trip ( $pattern->trips ) {
+            my @stops = $trip->stoptimes;
+            my @unified_stops;
 
-    }
+            for my $old_column_idx ( 0 .. $#stops ) {
+                my $new_column_idx = $union_indexes[$old_column_idx];
+                $unified_stops[$new_column_idx] = $stops[$old_column_idx];
+            }
+
+            foreach my $i ( 0 .. $#unified_stops ) {
+                $unified_stops[$i] = $undef_time
+                  if not defined $unified_stops[$i];
+            }
+
+            $trip->_set_stoptime_r( \@unified_stops );
+
+        }
+
+    } ## tidy end: foreach my $pattern_id ( $self...)
 
     my @union = $returned{union}->@*;
 
