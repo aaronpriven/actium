@@ -670,7 +670,7 @@ sub spaced {
         linedescrip   => $self->linedescrip,
     );
 
-    foreach my $field (sort keys %value_of_simplefield) {
+    foreach my $field ( sort keys %value_of_simplefield ) {
         my $value = $value_of_simplefield{$field};
         next unless defined($value);
         push @simplefields, "$field:$value";

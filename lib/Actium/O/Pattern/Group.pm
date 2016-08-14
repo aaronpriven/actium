@@ -111,17 +111,19 @@ sub skeds {
 
         push @skeds,
           Actium::O::Sked->new(
-            place4_r    => $self->places_r,
-            place8_r    => \@place8s,
-            stopplace_r => $self->stopplaces_r,
-            stopid_r    => $self->stopids_r,
+            place4_r    => [ $self->places_r->@* ],
+            place8_r    => [@place8s],
+            stopplace_r => [ $self->stopplaces_r->@* ],
+            stopid_r    => [ $self->stopids_r->@* ],
             linegroup   => $self->linegroup,
             direction   => $self->dir_obj,
-            trip_r      => $trip_collection->trips_r,
+            trip_r      => [ $trip_collection->trips_r->@* ],
             days        => Actium::O::Days->instance( $days, 'B' ),
           );
 
     }
+
+    my $lgdir = $self->lgdir;
 
     return @skeds;
 
@@ -163,6 +165,7 @@ sub _sked_trip_collections {
       = Actium::O::Sked::TripCollection->new( trips_r => \@skedtrips );
 
     return $all_trips_collection->trips_by_day;
+
 } ## tidy end: sub _sked_trip_collections
 
 my $stop_tiebreaker = sub {
@@ -266,6 +269,8 @@ sub _order_stops {
     $self->_set_stopids_r( \@stopids );
     $self->_set_places_r( \@places );
     $self->_set_stopplaces_r( \@stopplaces );
+
+    return;
 
 } ## tidy end: sub _order_stops
 
