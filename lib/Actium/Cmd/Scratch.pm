@@ -1,52 +1,91 @@
 package Actium::Cmd::Scratch 0.011;
 
 use Actium::Preamble;
+use Actium::Union('ordered_union_columns');
 
 # a place to test out small programs, in the Actium environment
 
-sub OPTIONS {
-    my ( $class, $env ) = @_;
-    return ( qw/actiumdb signup/,
-        [   'update',
-            'Will only process signs that have the status "Needs Update."', 0
-        ],
-        [ 'type=s', 'Will only process signs that have a given signtype.', '' ],
-    );
-}
+my $stop_tiebreaker = sub {
 
-use Actium::O::DateTime;
+    # tiebreaks by using the average rank of the timepoints involved.
+    
+    say "tiebreak";
+
+    my @lists = @_;
+    my @avg_ranks;
+
+    foreach my $i ( 0, 1 ) {
+
+        my @ranks;
+        foreach my $stop ( @{ $lists[$i] } ) {
+            my ( $stopid, $placeid, $placerank ) = split( /\./s, $stop );
+            if ( defined $placerank ) {
+                push @ranks, $placerank;
+            }
+        }
+        return 0 unless @ranks;
+        # if either list has no timepoint ranks,
+        # return 0 indicating we can't break the tie
+
+        $avg_ranks[$i] = u::sum(@ranks) / @ranks;
+        
+        say "@ranks : $avg_ranks[$i]";
+
+    }
+
+    return $avg_ranks[0] <=> $avg_ranks[1];
+
+};
 
 sub START {
     my ( $class, $env ) = @_;
-    say $env->option('update');
-}
 
-sub zSTART {
-    my ( $class, $env ) = @_;
+    my %stop_set_of = (
+        11.106 => [
+            "59988|HIWY|0", 50860, 51541,          56114,
+            53131,          51335, 51238,          59550,
+            59556,          55250, "55350|HAMA|1", 54600,
+            58821,          53477, 51688,          56781,
+            55485,          51570, "57556|KCCN|3", 55240,
+            54700,          50958, "50212|12BD|4", 51536,
+            59999,          55571, 58894,          "55833|MRBA|5"
+        ],
+        11.111 => [
+            "59988|HIWY|0", 50860, 51541,          56114,
+            53131,          51335, 51238,          59550,
+            59556,          55250, "55350|HAMA|1", 54600,
+            58821,          53477, 51688,          56781,
+            55485,          51570, "57556|KCCN|3", 55240,
+            54700,          50958, "50212|12BD|4", 51536,
+            59999,          55571, 58894,          "54999|MRBA|5",
+            54483,          55781, 57671,          53447,
+            56061,          54845, 57554,          "55261|14FT|6",
+            51140,          57233, 55263,          54150,
+            54250,          55102, 52567,          55202,
+            51268,          53349, 50405,          59916,
+            51267,          "55997|FTMO|7"
+        ],
+        11.116 => [
+            "55350|HAMA|1", 54600,          58821, 53477,
+            51688,          56781,          55485, 51570,
+            "57556|KCCN|3", 55240,          54700, 50958,
+            "50212|12BD|4", 51536,          59999, 55571,
+            58894,          "54999|MRBA|5", 54483, 55781,
+            57671,          53447,          56061, 54845,
+            57554,          "55261|14FT|6", 51140, 57233,
+            55263,          54150,          54250, 55102,
+            52567,          55202,          51268, 53349,
+            50405,          59916,          51267, "55997|FTMO|7"
+        ]
+    );
     
-
-    my $actiumdb = $env->actiumdb;
-    #my $signup   = $env->signup;
-
-    my $str = $actiumdb->agency_effective_date('ACTransit');
-    say "String: $str";
+    my %returned = ordered_union_columns(
+        sethash    => \%stop_set_of,
+        tiebreaker => $stop_tiebreaker,
+    );
     
-    my @ymd = split(/-/ , $str);
-    say "array: @ymd";
-    
-    my $dt = Actium::O::DateTime::->new(
-        #datetime => $str,
-        ymd => \@ymd,
-        #pattern  => '%Y-%m-%d'
-      )
-      ;
+    use DDP;
+    p %returned;
 
-    say '$dt->ymd is ' , $dt->ymd;
-    
-    say u::jointab ($dt->fulls);
-    print "\n";
-    say u::jointab ($dt->longs);
+} ## tidy end: sub START
 
-}
-
-1;
