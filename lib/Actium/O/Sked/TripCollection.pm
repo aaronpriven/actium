@@ -14,7 +14,7 @@ has 'trips_r' => (
 
 sub BUILD {
     my $self = shift;
-    $self->_sort_by_stoptimes;
+    $self->_merge;
 }
 
 my $all_are_weekdays_cr = sub {
@@ -96,9 +96,9 @@ sub trips_by_day {
 
 sub _merge_if_appropriate {
     my $self = shift;
-    const my $MAX_DIFFERING_TIMES      => 5;
-    const my $MINIMUM_TIMES_MULTIPLIER => 5;
-    const my $MAX_WEEKDAY_MERGE        => 10;
+    const my $MAX_DIFFERING_TIMES      => 10;
+    const my $MINIMUM_TIMES_MULTIPLIER => 4;
+    const my $WKDY_ALWAYS_MERGE_BELOW  => 11;
 
     my ( $outer_trips_r, $inner_trips_r, $both_are_weekdays ) = @_;
 
@@ -142,12 +142,6 @@ sub _merge_if_appropriate {
         ];
 
     }
-    ### DEBGUG ###
-    # Will only merge schedules with identical times
-    
-    #### SOMETHING AFTER THIS IS NOT WORKING PROPERLY ###
-
-    return;
 
     # if they are *almost* identical -- that is, 5 or fewer differing
     # times, and the number of times is at least 5 times the number of
@@ -166,17 +160,16 @@ sub _merge_if_appropriate {
 
     my $in_both = scalar( $compare->get_intersection );
 
-    last_cry()->text( 'pre_mis:', $outer_trips_r->[0]->line );
-
-    return $self->_merge_trips_if_same( $outer_trips_r, $inner_trips_r )
+    return $self->_merge_trips( $outer_trips_r, $inner_trips_r )
       if $both_are_weekdays
-      and $outer_count + $inner_count <= $MAX_WEEKDAY_MERGE;
+      and $outer_count + $inner_count < $WKDY_ALWAYS_MERGE_BELOW;
 
-    return $self->_merge_trips_if_same( $outer_trips_r, $inner_trips_r )
+    return $self->_merge_trips( $outer_trips_r, $inner_trips_r )
       if $both_are_weekdays
-      and ( u::min( $outer_count, $inner_count ) < $MAX_DIFFERING_TIMES );
+      #and ( u::min( $outer_count, $inner_count ) < $MAX_DIFFERING_TIMES );
+      and ( $only_in_either <= $MAX_DIFFERING_TIMES );
 
-    return $self->_merge_trips_if_same( $outer_trips_r, $inner_trips_r )
+    return $self->_merge_trips( $outer_trips_r, $inner_trips_r )
       if $only_in_either <= $MAX_DIFFERING_TIMES
       and $in_both > ( $MINIMUM_TIMES_MULTIPLIER * $only_in_either );
     # no merging
@@ -185,14 +178,23 @@ sub _merge_if_appropriate {
 
 } ## tidy end: sub _merge_if_appropriate
 
-sub _merge_trips_if_same {
+sub _merge {
+
+    my $self           = shift;
+    my $trips_r        = $self->trips_r;
+    my $merged_trips_r = $self->_merge_trips($trips_r);
+    $self->_set_trips_r($merged_trips_r);
+    return;
+
+}
+
+sub _merge_trips {
     my $self = shift;
 
     my @trips_rs = @_;
 
     my @trips = $self->stoptime_sort( map {@$_} @trips_rs )->@*;
 
-    last_cry()->text( 'mis', $trips[0]->line );
     my @methods  = ('stoptimes_comparison_str');
     my @newtrips = shift @trips;
 
@@ -209,13 +211,13 @@ sub _merge_trips_if_same {
         }
         # so now we know they are the same
 
-        $newtrips[-1] = $prevtrip->merge_trips($thistrip);
+        $newtrips[-1] = $prevtrip->merge_pair($thistrip);
 
     }
 
     return \@newtrips;
 
-} ## tidy end: sub _merge_trips_if_same
+} ## tidy end: sub _merge_trips
 
 sub _trips_are_identical {
     my $self          = shift;
