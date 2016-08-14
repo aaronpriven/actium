@@ -4,7 +4,7 @@ package Actium::O::Sked::Trip 0.011;
 
 use Actium::Moose;
 
-use MooseX::Storage; ### DEP ###
+use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
 use Actium::Time qw<timestr timestr_sub>;
@@ -219,24 +219,9 @@ has 'mergedtrip_r' => (
 
 ### OBJECT METHODS
 
-sub merge_trips {
-    # allows calling as object method or class method
-    # but calling as a class method is deprecated
-
-    my $class;
-    if ( blessed $_[0] ) {
-        $class = blessed $_[0];
-    }
-    else {
-        $class = shift;
-        warn 'Called merge_trips as a class method; '
-          . 'this should be changed to an object call';
-    }
-
-    # allows calling as object method or class method
-    # calling as a class method should be deprecated...
-
+sub merge_pair {
     my $self       = shift;
+    my $class      = blessed $self;
     my $secondtrip = shift;
 
     return $self if $self == $secondtrip;
@@ -266,57 +251,56 @@ sub merge_trips {
     my %merged_value_of = ( mergedtrip_r => \@mergedtrips );
 
     foreach my $attribute ( $class->meta->get_all_attributes ) {
-        
+
         my $attrname = $attribute->name;
         #my $init_arg = $attribute->init_arg // $attrname;
         my $init_arg = $attribute->init_arg;
         next unless defined $init_arg;
 
         for ($attrname) {
-            if ($_ eq 'mergedtrip_r') {
+            if ( $_ eq 'mergedtrip_r' ) {
                 next;
             }    # do nothing
-            if ( u::in ($_,  'placetime_r', 'stoptime_r' )) {
+            if ( u::in( $_, 'placetime_r', 'stoptime_r' ) ) {
                 # assumed to be equal
                 $merged_value_of{$init_arg} = $self->$attrname;
                 next;
             }
-            if ($_ eq 'days_obj') {
+            if ( $_ eq 'days_obj' ) {
                 $merged_value_of{$init_arg}
                   = Actium::O::Days->union( $self->$attrname,
                     $secondtrip->$attrname );
-                    next;
+                next;
             }
-      
-                my $firstattr  = $self->$attrname;
-                my $secondattr = $secondtrip->$attrname;
 
-                if (    defined($firstattr)
-                    and defined($secondattr)
-                    and $self->$attrname eq $secondtrip->$attrname )
-                {
-                    $merged_value_of{$init_arg} = $firstattr;
-                }
-                # if they're identical, set the array to the value
-                elsif ( u::in( $attrname, ['daysexceptions'] ) ) {
-                    $merged_value_of{$init_arg} = '';
-                }
-                # otherwise, if the attribute name is one of the those, then
-                # set it to nothing. (If it isn't listed, the attribute will
-                # be blank.)
+            my $firstattr  = $self->$attrname;
+            my $secondattr = $secondtrip->$attrname;
 
-                # TODO - special days merging should probably merge
-                # daysexceptions specially, although currently -- with the
-                # only possible values SD and SH -- it would't make
-                # a difference
+            if (    defined($firstattr)
+                and defined($secondattr)
+                and $self->$attrname eq $secondtrip->$attrname )
+            {
+                $merged_value_of{$init_arg} = $firstattr;
+            }
+            # if they're identical, set the array to the value
+            elsif ( u::in( $attrname, ['daysexceptions'] ) ) {
+                $merged_value_of{$init_arg} = '';
+            }
+            # otherwise, if the attribute name is one of the those, then
+            # set it to nothing. (If it isn't listed, the attribute will
+            # be blank.)
 
-      
+            # TODO - special days merging should probably merge
+            # daysexceptions specially, although currently -- with the
+            # only possible values SD and SH -- it would't make
+            # a difference
+
         }    ## <perltidy> end given
 
     }    ## <perltidy> end foreach my $attribute ( $class...)
     return $class->new(%merged_value_of);
 
-}    ## <perltidy> end sub merge_trips
+}    ## <perltidy> end sub merge_pair
 
 u::immut;
 
@@ -430,7 +414,7 @@ Returns the value of the placetime of the given index (beginning at 0).
 
 =item B<mergedtrip_r>
 
-After trips are  merged using I<merge_trips()>, this array holds all the 
+After trips are  merged using I<merge_pair()>, this array holds all the 
 Actium::O::Sked::Trip objects that were originally merged.  
 
 =item B<mergedtrips>
@@ -447,14 +431,14 @@ The number of elements in the mergedtrip array.
 
 =over
 
-=item B<merge_trips()>
+=item B<merge_pair()>
 
 This is a method to merge two trips that, presumably, have identical stoptimes
 and placetimes. (The purpose is to allow two trips that are scheduled identically --
 two buses that are designed to run at the same time to allow an extra heavy load to be
 carried -- to appear only once in the schedule.)
 
- $trip1->merge_trips($trip2);
+ $trip1->merge_pair($trip2);
 
 A new Actium::O::Sked::Trip object is created, with attributes as follows:
 
@@ -468,10 +452,10 @@ The stoptimes and placetimes for the first trip are used.
 
 This attribute contains the Actium::O::Sked::Trip objects for all
 the parent trips.  In the simplest case, it contains the two
-Actium::O::Sked::Trip objects passed to merge_trips.
+Actium::O::Sked::Trip objects passed to merge_pair.
 
 However, if either of the Actium::O::Sked::Trip objects passed to
-merge_trips already has a mergedtrips attribute, then instead of
+merge_pair already has a mergedtrips attribute, then instead of
 saving the current Actium::O::Sked::Trip object, it saves the
 contents of mergedtrips. The upshot is that mergedtrips contains
 all the trips that are parents of this merged trip.
