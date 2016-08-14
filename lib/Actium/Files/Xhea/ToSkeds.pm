@@ -47,7 +47,6 @@ sub xheatab2skeds {
     );
 
 } ## tidy end: sub xheatab2skeds
-
 sub xhea2skeds {
 
     my $xhea2skedscry = cry('Converting Xhea to schedules');
@@ -91,12 +90,13 @@ sub xhea2skeds {
         values              => $values_of_r
     );
 
-    #    my $dumpcry = cry('Dumping patterns and trips');
-    #    open my $dump_out, '>', '/tmp/xheaout.6';
+    #    my $dumpfile = '/tmp/xheaout.7';
+    #    my $dumpcry = cry("Dumping patterns and trips to $dumpfile");
+    #    open my $dump_out, '>', $dumpfile;
     #    say $dump_out u::dumpstr($patgroup_by_lgdir_r);
     #    close $dump_out;
     #    $dumpcry->done;
-    #
+
     my $skedscry = cry('Making schedules');
 
     \my @skeds
@@ -540,7 +540,6 @@ sub _make_skeds {
     \my %patgroup_by_lgdir = $params{patgroups};
 
     my @skeds;
-    #foreach my $patgroup ( values %patgroup_by_lgdir ) {
     foreach my $lgdir ( u::sortbyline keys %patgroup_by_lgdir ) {
         last_cry()->over( $lgdir, " " );
         my $patgroup = $patgroup_by_lgdir{$lgdir};
@@ -566,19 +565,19 @@ sub _output_skeds {
     my $skeds_r      = shift;
     my $skeds_folder = $signup->subfolder('s');
 
-#    my $objfolder = $skeds_folder->subfolder('json_obj');
-#    $objfolder->write_files_with_method(
-#        OBJECTS   => $skeds_r,
-#        METHOD    => 'json',
-#        EXTENSION => 'json',
-#    );
-#
-#    my $xlsxfolder = $skeds_folder->subfolder('xlsx');
-#    $xlsxfolder->write_files_with_method(
-#        OBJECTS   => $skeds_r,
-#        METHOD    => 'xlsx',
-#        EXTENSION => 'xlsx',
-#    );
+    #    my $objfolder = $skeds_folder->subfolder('json_obj');
+    #    $objfolder->write_files_with_method(
+    #        OBJECTS   => $skeds_r,
+    #        METHOD    => 'json',
+    #        EXTENSION => 'json',
+    #    );
+    #
+    #    my $xlsxfolder = $skeds_folder->subfolder('xlsx');
+    #    $xlsxfolder->write_files_with_method(
+    #        OBJECTS   => $skeds_r,
+    #        METHOD    => 'xlsx',
+    #        EXTENSION => 'xlsx',
+    #    );
 
     my $spacedfolder = $skeds_folder->subfolder('spaced');
     $spacedfolder->write_files_with_method(
