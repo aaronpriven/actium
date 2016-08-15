@@ -146,7 +146,7 @@ has stoptimes_comparison_str => (
 
 sub _build_stoptimes_comparison_str {
     my $self = shift;
-    return join( "|", grep {defined} $self->stoptimes );
+    return join( "|", map {defined ? $_ : '-'} $self->stoptimes );
 }
 
 has average_stoptime => (
