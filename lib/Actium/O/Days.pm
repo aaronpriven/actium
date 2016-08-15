@@ -397,7 +397,6 @@ sub _perform_set_operation {
 
             my @intersection = sort $lc->get_intersection;
 
-            croak "Empty intersection of days" unless @intersection;
             $return_daycode = join( $EMPTY, @intersection );
 
         } ## tidy end: elsif ( $daycode ne $return_daycode)
