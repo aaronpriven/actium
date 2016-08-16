@@ -51,7 +51,7 @@ sub instance {
         return $obj_cache{$orig_direction};
     }
 
-    my $direction      = lc($orig_direction);
+    my $direction = lc($orig_direction);
 
     for ($direction) {
         s/\Adir/d/;
@@ -117,8 +117,8 @@ has 'dircode' => (
 );
 
 sub _data_printer {
-    my $self = shift;
-    my $class = u::blessed ($self);
+    my $self  = shift;
+    my $class = u::blessed($self);
     return "$class=" . $self->dircode;
 }
 
@@ -142,6 +142,31 @@ sub as_sortable {
     my $self    = shift;
     my $dircode = $self->dircode;
     return ( 'A' .. 'Z' )[ $ORDER_OF{$dircode} ];
+}
+
+const my %ONECHAR_DIRECTION_OF => qw(
+  A   A
+  B   B
+  CC  9
+  CW  8
+  D1  1
+  D2  2
+  DN  D
+  EB  E
+  GO  G
+  IN  I
+  NB  N
+  OU  O
+  RT  R
+  SB  S
+  UP  U
+  WB  W
+);
+
+sub as_onechar {
+    my $self    = shift;
+    my $dircode = $self->dircode;
+    return $ONECHAR_DIRECTION_OF{$dircode};
 }
 
 sub as_to_text {
