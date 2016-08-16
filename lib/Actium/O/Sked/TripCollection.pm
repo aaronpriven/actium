@@ -14,7 +14,7 @@ has 'trips_r' => (
 
 sub BUILD {
     my $self = shift;
-    $self->_merge;
+    $self->_sort_by_stoptimes;
 }
 
 ########################
@@ -165,8 +165,9 @@ my $compare_range_cr = sub {
         # so @found_days now has all the days that are identical to
         # the outer day
 
-        my $return_day = u::joinempty(@found_days);
-        $compstrs_of_return_day{ u::joinempty(@found_days) }
+        @found_days = map { split(//) } @found_days;
+
+        $compstrs_of_return_day{ u::joinempty( sort @found_days ) }
           = $found_compstrs_r;
 
     } ## tidy end: foreach my $outer_idx ( 0 .....)
@@ -234,12 +235,12 @@ sub trips_by_day {
     my $class = u::blessed $self;
     my @trips = $self->trips;
 
-    # compstr = stoptimes_comparison_string
+    # compstr = stoptimes_comparison_str
 
     my $compstrs_of_day_r;
 
     foreach my $trip (@trips) {
-        my $compstr = $trip->stoptimes_comparison_string;
+        my $compstr = $trip->stoptimes_comparison_str;
         my @days = split( //s, $trip->daycode );
         foreach my $day (@days) {
             push @{ $compstrs_of_day_r->{$day} }, $compstr;
@@ -266,112 +267,29 @@ sub trips_by_day {
             my $trip_day_obj = $trip->days_obj;
 
             if (   $skedday eq $trip_day_obj->daycode
-                or $sked_day_obj->intersection($trip_day_obj) )
+                or $sked_day_obj->is_a_superset_of($trip_day_obj) )
             {
+
                 push @trips_of_this_skedday, $trip;
+            }
+            else {
+                my $isect_obj = $sked_day_obj->intersection($trip_day_obj);
+                if ($isect_obj) {
+                    push @trips_of_this_skedday,
+                      $trip->clone( days => $isect_obj );
+                }
             }
         }
 
         $tripcollection_of{$skedday}
-          = $class->new( trips_r => @trips_of_this_skedday );
+          = $class->new( trips_r => \@trips_of_this_skedday );
+        $tripcollection_of{$skedday}->_merge;
 
     } ## tidy end: for my $skedday ( keys ...)
 
     return \%tripcollection_of;
 
 } ## tidy end: sub trips_by_day
-
-u::immut;
-
-1;
-
-__END__
-
-Old merging codej
-
-sub _merge_if_appropriate {
-    my $self = shift;
-    const my $MAX_DIFFERING_TIMES      => 10;
-    const my $MINIMUM_TIMES_MULTIPLIER => 4;
-    const my $WKDY_ALWAYS_MERGE_BELOW  => 11;
-
-    my ( $outer_trips_r, $inner_trips_r, $both_are_weekdays ) = @_;
-
-    my $outer_count = scalar @{$outer_trips_r};
-    my $inner_count = scalar @{$inner_trips_r};
-
-    # Are the quantities so different that there's no point comparing them?
-
-    my $difference = abs( $outer_count - $inner_count );
-
-    return if $difference > $MAX_DIFFERING_TIMES;
-
-    # check to see if all the trips themselves are the same object.
-    # This will frequently be the case
-
-    return $outer_trips_r
-      if ( not $difference
-        and $self->_trips_are_identical( $outer_trips_r, $inner_trips_r ) );
-
-    ## now check if times are the same even if trips are not
-    ## identical (as with Saturday/Sunday). First, make lists of times
-
-    my @outer_times = map { $_->stoptimes_comparison_str } @{$outer_trips_r};
-    my @inner_times = map { $_->stoptimes_comparison_str } @{$inner_trips_r};
-
-    # Then compare them using List::Compare
-
-    my $compare = List::Compare->new(
-        {   lists    => [ \@outer_times, \@inner_times ],
-            unsorted => 1,
-        }
-    );
-
-    my $only_in_either = scalar( $compare->get_symmetric_difference );
-    # if all the trips have identical times, then merge them
-
-    if ( not $only_in_either ) {
-        return [
-            map { $outer_trips_r->[$_]->merge_trips( $inner_trips_r->[$_] ) }
-              ( 0 .. $#outer_times )
-        ];
-
-    }
-
-    # if they are *almost* identical -- that is, 5 or fewer differing
-    # times, and the number of times is at least 5 times the number of
-    # differing ones, then merge them
-
-    # or, if they're weekdays,  (e.g., school trips), merge them unless
-    # they're very different
-
-    # In weird situations where, for example, you have several different sets --
-    # -- 30 trips that are every day, plus two separate ones on Monday,
-    # two separate ones on Tuesday, two separate ones on Wednesday,
-    # etc. -- this will give inconsistent results, with Monday's
-    # and Tuesday's trips combined but Wednesday's not.
-    # To do that you'd need to compare them all to each other simultaneously,
-    # which code I am not prepared to write at this point.
-
-    my $in_both = scalar( $compare->get_intersection );
-
-    return $self->_merge_trips( $outer_trips_r, $inner_trips_r )
-      if $both_are_weekdays
-      and $outer_count + $inner_count < $WKDY_ALWAYS_MERGE_BELOW;
-
-    return $self->_merge_trips( $outer_trips_r, $inner_trips_r )
-      if $both_are_weekdays
-      #and ( u::min( $outer_count, $inner_count ) < $MAX_DIFFERING_TIMES );
-      and ( $only_in_either <= $MAX_DIFFERING_TIMES );
-
-    return $self->_merge_trips( $outer_trips_r, $inner_trips_r )
-      if $only_in_either <= $MAX_DIFFERING_TIMES
-      and $in_both > ( $MINIMUM_TIMES_MULTIPLIER * $only_in_either );
-    # no merging
-
-    return;
-
-} ## tidy end: sub _merge_if_appropriate
 
 sub _merge {
 
@@ -398,6 +316,9 @@ sub _merge_trips {
         my $thistrip = shift @trips;
         my $prevtrip = $newtrips[-1];
 
+        next if ( $thistrip == $prevtrip );
+        # skip this trip if it's the same object as the previous trip
+
         foreach my $this_test (@methods) {
             if ( $thistrip->$this_test ne $prevtrip->$this_test ) {
                 push @newtrips, $thistrip;
@@ -414,18 +335,6 @@ sub _merge_trips {
 
 } ## tidy end: sub _merge_trips
 
-sub _trips_are_identical {
-    my $self          = shift;
-    my $outer_trips_r = shift;
-    my $inner_trips_r = shift;
+u::immut;
 
-    for my $i ( 0 .. $#{$outer_trips_r} ) {
-        return unless $outer_trips_r->[$i] == $inner_trips_r->[$i];
-    }
-
-    return 1;
-
-}
-
-
-
+1;
