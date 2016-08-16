@@ -12,6 +12,7 @@ with 'MooseX::Role::Flyweight';
 # MooseX::Role::Flyweight ### DEP ###
 
 use Actium::Types qw<DayCode SchoolDayCode>;
+use List::Compare;      ### DEP ###
 
 ###################################
 #### ENGLISH NAMES FOR DAYS CONSTANTS
@@ -277,71 +278,71 @@ sub as_abbrevs {
     no warnings 'redefine';
     # Otherwise it conflicts with Moose::Util::TypeConstraints::union()
 
- #sub union {
- #    # take multiple day objects and return the union of them
- #    # e.g., take one representing Saturday and one representing
- #    # Sunday and turn it into one representing both Saturday and Sunday
- #
- #    my $class = shift;
- #    my @objs  = @_;
- #
- #    my $union_obj           = shift @objs;
- #    my $union_daycode       = $union_obj->daycode;
- #    my $union_schooldaycode = $union_obj->schooldaycode;
- #
- #    foreach my $obj (@objs) {
- #
- #        my $daycode       = $obj->daycode;
- #        my $schooldaycode = $obj->schooldaycode;
- #
- #        next
- #          if $daycode eq $union_daycode
- #          and $schooldaycode eq $union_schooldaycode;
- #
- #        if ( $schooldaycode ne $union_schooldaycode ) {
- #            $union_schooldaycode = 'B';
- #        }
- #
- #        if ( $daycode ne $union_daycode ) {
- #
- #            $union_daycode = join( $EMPTY_STR,
- #                ( u::uniq sort ( split //, $union_daycode . $daycode ) ) );
- #
- #        }
- #
- #        $union_obj = $class->instance( $union_daycode, $union_schooldaycode );
- #
- #    } ## tidy end: foreach my $obj (@objs)
- #
- #    return $union_obj;
- #
- #} ## tidy end: sub union
-
     sub union {
+        # take multiple day objects and return the union of them
+        # e.g., take one representing Saturday and one representing
+        # Sunday and turn it into one representing both Saturday and Sunday
 
-        my $invocant = shift;
-        my @objs     = @_;
-        return $invocant->_perform_set_operation( 'union', @objs );
-    }
+        my ( $class, @objs );
 
-    sub intersection {
-        my $invocant = shift;
-        my @objs     = @_;
-        return $invocant->_perform_set_operation( 'intersection', @objs );
-    }
+        if ( u::blessed( $_[0] ) ) {
+            @objs  = @_;
+            $class = u::blessed( $objs[0] );
+        }
+        else {
+            $class = shift;
+            @objs  = @_;
+        }
+
+        my $union_obj           = shift @objs;
+        my $union_daycode       = $union_obj->daycode;
+        my $union_schooldaycode = $union_obj->schooldaycode;
+
+        foreach my $obj (@objs) {
+
+            my $daycode       = $obj->daycode;
+            my $schooldaycode = $obj->schooldaycode;
+
+            next
+              if $daycode eq $union_daycode
+              and $schooldaycode eq $union_schooldaycode;
+
+            if ( $schooldaycode ne $union_schooldaycode ) {
+                $union_schooldaycode = 'B';
+            }
+
+            if ( $daycode ne $union_daycode ) {
+
+                $union_daycode = join( $EMPTY_STR,
+                    ( u::uniq sort ( split //, $union_daycode . $daycode ) ) );
+
+            }
+
+            $union_obj
+              = $class->instance( $union_daycode, $union_schooldaycode );
+
+        } ## tidy end: foreach my $obj (@objs)
+
+        return $union_obj;
+
+    } ## tidy end: sub union
 
 }
 
-sub _perform_set_operation {
+sub intersection {
 
-    my $class     = shift;
-    my $operation = shift;
-    my $is_union  = $operation eq 'union';
-    my @objs      = @_;
+    my $invocant = shift;
+    my @objs     = @_;
 
-    my $return_obj           = shift @objs;
-    my $return_daycode       = $return_obj->daycode;
-    my $return_schooldaycode = $return_obj->schooldaycode;
+    my $class;
+    if ( u::blessed($invocant) ) {
+        unshift @objs, $invocant;
+        $class = u::blessed($invocant);
+    }
+
+    my $isect_obj           = shift @objs;
+    my $isect_daycode       = $isect_obj->daycode;
+    my $isect_schooldaycode = $isect_obj->schooldaycode;
 
     foreach my $obj (@objs) {
 
@@ -349,66 +350,75 @@ sub _perform_set_operation {
         my $schooldaycode = $obj->schooldaycode;
 
         next
-          if $daycode eq $return_daycode
-          and $schooldaycode eq $return_schooldaycode;
+          if $daycode eq $isect_daycode
+          and $schooldaycode eq $isect_schooldaycode;
         # they're identical
 
-        if ( $is_union and $schooldaycode ne $return_schooldaycode ) {
-            $return_schooldaycode = 'B';
-            # if it's a union, and school days are different, return B
-            # (otherwise, leave it alone)
-        }
-        elsif ( $schooldaycode ne $return_schooldaycode ) {
-            # it's an intersection, and they're different
-            my @schooldays = sort ( $schooldaycode, $return_schooldaycode );
-            my $schoolday_combo = join( '', @schooldays );
+        if ( $schooldaycode ne $isect_schooldaycode ) {
+            my @schooldays = sort ( $schooldaycode, $isect_schooldaycode );
+            my $schoolday_combo = join( $EMPTY, @schooldays );
             if ( $schoolday_combo eq 'DH' ) {
-                croak 'Empty intersection:'
-                  . ' both school days and school holidays supplied';
+                return;
             }
             elsif ( $schoolday_combo eq 'BD' ) {
-                $return_schooldaycode = 'D';
+                $isect_schooldaycode = 'D';
             }
             else {
-                $return_schooldaycode = 'H';
+                $isect_schooldaycode = 'H';
             }
         }
 
-        if ( $is_union and $daycode ne $return_daycode ) {
+        if ( $daycode ne $isect_daycode ) {
 
-            $return_daycode = join( $EMPTY_STR,
-                ( u::uniq sort ( split //, $return_daycode . $daycode ) ) );
-
-        }
-        elsif ( $daycode ne $return_daycode ) {
-            # intersection, and they're different
-
-            require List::Compare;    ## DEP ##
-
-            my @days        = split //, $daycode;
-            my @return_days = split //, $return_daycode;
+            my @days       = split //, $daycode;
+            my @isect_days = split //, $isect_daycode;
 
             my $lc = List::Compare->new(
-                {   lists       => [ \@days, \@return_days ],
-                    unsorted    => 1,
+                {   lists       => [ \@days, \@isect_days ],
                     accelerated => 1,
                 }
             );
 
-            my @intersection = sort $lc->get_intersection;
+            my @intersection = $lc->get_intersection;
+            return unless @intersection;
 
-            $return_daycode = join( $EMPTY, @intersection );
+            $isect_daycode = join( $EMPTY, @intersection );
 
-        } ## tidy end: elsif ( $daycode ne $return_daycode)
+        }
 
-        $return_obj
-          = $class->instance( $return_daycode, $return_schooldaycode );
+        $isect_obj = $class->instance( $isect_daycode, $isect_schooldaycode );
 
     } ## tidy end: foreach my $obj (@objs)
 
-    return $return_obj;
+    return $isect_obj;
 
-} ## tidy end: sub _perform_set_operation
+} ## tidy end: sub intersection
+
+sub is_a_superset_of {
+    my $self = shift;
+    my $obj  = shift;
+
+    my $selfsch = $self->schooldaycode;
+    my $objsch  = $obj->schooldaycode;
+
+    return 0 unless $selfsch eq 'B' or $selfsch eq $objsch;
+
+    my $seldays = $self->daycode;
+    my $objdays = $obj->daycode;
+
+    return 1 if index( $seldays, $objdays ) ne -1;
+
+    my @seldays = split( //, $seldays );
+    my @objdays = split( //, $objdays );
+    my $lc      = List::Compare->new(
+        {   lists       => [ \@seldays, \@objdays ],
+            unsorted    => 1,
+            accelerated => 1,
+        }
+    );
+
+    return $lc->is_RsubsetL;
+} ## tidy end: sub is_a_superset_of
 
 u::immut();
 
