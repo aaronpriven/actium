@@ -144,10 +144,13 @@ has stoptimes_comparison_str => (
     lazy    => 1,
 );
 
+#<<< no perltidy
 sub _build_stoptimes_comparison_str {
     my $self = shift;
-    return join( "|", map {defined ? $_ : '-'} $self->stoptimes );
+    return join( "|",
+         map { defined ? $_ : '-' } $self->stoptimes );
 }
+#>>>
 
 has average_stoptime => (
     is       => 'ro',
@@ -208,16 +211,60 @@ has placetime_r => (
     },
 );
 
-has 'mergedtrip_r' => (
+has '_mergedtrip_r' => (
     traits  => ['Array'],
-    is      => 'bare',
+    is      => 'ro',
     isa     => 'ArrayRef[Actium::O::Sked::Trip]',
     default => sub { [] },
-    handles => { mergedtrips => 'elements', mergedtrip_count => 'count', },
+    handles => { mergedtrips => 'elements', _mergedtrip_count => 'count', },
 
 );
 
 ### OBJECT METHODS
+
+my $reader_of_attribute_cr = sub {
+
+    my $attribute = shift;
+    my $reader    = $attribute->reader;
+    if ( u::is_hashref($reader) ) {
+        $reader = ( keys %$reader )[0];
+    }
+    return $reader;
+};
+
+sub clone {
+    my $self  = shift;
+    my $class = blessed $self;
+
+    my %init_args = u::hashref(@_)->%*;
+
+    foreach my $attribute ( $class->meta->get_all_attributes ) {
+
+        my $attrname = $attribute->name;
+
+        my $init_arg = $attribute->init_arg;
+        next unless defined $init_arg;
+        next if exists $init_args{$init_arg};
+
+        my $reader = $reader_of_attribute_cr->($attribute);
+
+        my $value = $self->$reader;
+        next unless defined $value;
+
+        if ( u::is_plain_hashref($value) ) {
+            $value = { $value->%* };
+        }
+        elsif ( u::is_plain_arrayref($value) ) {
+            $value = [ $value->@* ];
+        }
+
+        $init_args{$init_arg} = $value;
+
+    }    ## <perltidy> end foreach my $attribute ( $class...)
+
+    return $class->new(%init_args);
+
+} ## tidy end: sub clone
 
 sub merge_pair {
     my $self       = shift;
@@ -230,7 +277,7 @@ sub merge_pair {
 
     my @mergedtrips;
     foreach my $trip ( $self, $secondtrip ) {
-        if ( $trip->mergedtrip_count ) {
+        if ( $trip->_mergedtrip_count ) {
             push @mergedtrips, $trip->mergedtrips;
         }
         else {
@@ -248,7 +295,7 @@ sub merge_pair {
         }
     }
 
-    my %merged_value_of = ( mergedtrip_r => \@mergedtrips );
+    my %merged_value_of = ( _mergedtrip_r => \@mergedtrips );
 
     foreach my $attribute ( $class->meta->get_all_attributes ) {
 
@@ -258,7 +305,7 @@ sub merge_pair {
         next unless defined $init_arg;
 
         for ($attrname) {
-            if ( $_ eq 'mergedtrip_r' ) {
+            if ( $_ eq '_mergedtrip_r' ) {
                 next;
             }    # do nothing
             if ( u::in( $_, 'placetime_r', 'stoptime_r' ) ) {
@@ -273,12 +320,13 @@ sub merge_pair {
                 next;
             }
 
-            my $firstattr  = $self->$attrname;
-            my $secondattr = $secondtrip->$attrname;
+            my $reader     = $reader_of_attribute_cr->($attribute);
+            my $firstattr  = $self->$reader;
+            my $secondattr = $secondtrip->$reader;
 
             if (    defined($firstattr)
                 and defined($secondattr)
-                and $self->$attrname eq $secondtrip->$attrname )
+                and $firstattr eq $secondattr )
             {
                 $merged_value_of{$init_arg} = $firstattr;
             }
@@ -412,18 +460,10 @@ The number of elements in the placetime array.
 
 Returns the value of the placetime of the given index (beginning at 0).
 
-=item B<mergedtrip_r>
-
-After trips are  merged using I<merge_pair()>, this array holds all the 
-Actium::O::Sked::Trip objects that were originally merged.  
-
 =item B<mergedtrips>
 
-Returns the elements of I<mergedtrip_r>.
-
-=item B<mergedtrip_count>
-
-The number of elements in the mergedtrip array.
+After trips are  merged using I<merge_pair()>, this will return all the 
+Actium::O::Sked::Trip objects that were originally merged.  
 
 =back
 
