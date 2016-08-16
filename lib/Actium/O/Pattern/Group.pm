@@ -88,12 +88,6 @@ has stopplaces_r => (
     handles => { stopplaces => 'elements', },
 );
 
-### debugging use only
-#has 'upattern_r' => (
-#    is  => 'rw',
-#    isa => 'Str',
-#);
-
 sub skeds {
     my $self     = shift;
     my $actiumdb = shift;
@@ -179,7 +173,7 @@ my $stop_tiebreaker = sub {
 
         my @ranks;
         foreach my $stop ( @{ $lists[$i] } ) {
-            my ( $stopid, $placeid, $placerank ) = split( /\./s, $stop );
+            my ( $stopid, $placeid, $placerank ) = split( /\t/, $stop );
             if ( defined $placerank ) {
                 push @ranks, $placerank;
             }
@@ -250,8 +244,6 @@ sub _order_stops {
     } ## tidy end: foreach my $pattern_id ( $self...)
 
     my @union = $returned{union}->@*;
-
-    #$self->set_upattern_r( join( ':', @union ) );
 
     my ( @places, @stopids, @stopplaces );
     foreach my $stop_and_place (@union) {
