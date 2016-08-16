@@ -282,7 +282,7 @@ sub _columns_pair {
         my $cmpvalue = (
             $tiebreaker->(
                 \@tempa, \@tempb, $previous_value, $following_value
-              ) <= 0
+              ) 
         );
         
         if ($cmpvalue != 1) {
