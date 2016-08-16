@@ -420,8 +420,9 @@ L<Actium::Time::timenum|Actium::Time/"timenum ($time)">
 
 =item B<noteletter>
 
-The letter(s) representing the note for this trip. The full note is contained in 
-an L<Actium::O::Sked::Note> object.
+(not currently used)
+
+The letter(s) representing the note for this trip. The full note is contained elsewhere...
 
 =item B<stoptime_r>
 
