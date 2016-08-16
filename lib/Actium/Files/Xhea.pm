@@ -89,8 +89,8 @@ sub xhea_import {
             $adjusted_values_of_r->{$PLACES} );
 
         $tab_strings_r->{$PLACES_PC}
-          = Actium::O::2DArray->new($new_p_records_r)->tsv(@{$new_p_heads_r} );
-          #= Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
+          = Actium::O::2DArray->new($new_p_records_r)->tsv( @{$new_p_heads_r} );
+        #= Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
     }
 
     $tab_folder->write_files_from_hash( $tab_strings_r, qw(tab txt) );
@@ -114,9 +114,9 @@ sub tab_strings {
 
         my $records_r = $values_of_r->{$record_name};
 
-        $tab_of{$record_name} 
-          = Actium::O::2DArray->new( $records_r)->tsv(@{$fieldnames_r}) ;
-         # = aoa2tsv( $records_r, $fieldnames_r );
+        $tab_of{$record_name}
+          = Actium::O::2DArray->new($records_r)->tsv( @{$fieldnames_r} );
+        # = aoa2tsv( $records_r, $fieldnames_r );
 
     }
 
@@ -182,7 +182,10 @@ sub tab_strings {
             else {
 
                 if ( u::is_arrayref( $calendar_of_block{$block} ) ) {
-                    $field{blk_evt_stat_dsp} = $calendar_of_block{$block}[1];
+                    $field{blk_evt_stat_dsp}
+                      = $calendar_of_block{$block}[0]
+                      . $SPACE
+                      . $calendar_of_block{$block}[1];
                 }
                 else {
                     my $days = $calendar_of_block{$block};
@@ -195,7 +198,7 @@ sub tab_strings {
 
                 my @new_record = @field{@block_headers};
                 push @returned_block_records, \@new_record;
-            }
+            } ## tidy end: else [ if ( not exists $calendar_of_block...)]
 
         } ## tidy end: foreach \my @block_record(@block_records)
 
@@ -218,7 +221,9 @@ sub tab_strings {
 
                 if ( u::is_arrayref( $calendar_of_block{$block} ) ) {
                     $field{trp_event_and_status}
-                      = $calendar_of_block{$block}[1];
+                      = $calendar_of_block{$block}[0]
+                      . $SPACE
+                      . $calendar_of_block{$block}[1];
                 }
                 else {
                     my $days = $calendar_of_block{$block};
@@ -335,11 +340,10 @@ sub _adjust_boolean {
     const my $placepatfile => 'PlacePattern.xml';
     const my @fieldnames   => qw/line direction place rank/;
     const my %fields       => (
-        line => { base => 'string', type => 'string', idx => 0, },
-        direction =>
-          { base => 'string', type => 'Dir_ch_String', idx => 1, },
-        place => { base => 'string', type => 'string', idx => 2, },
-        rank  => { base => 'int',    type => 'int',    idx => 3, },
+        line      => { base => 'string', type => 'string',        idx => 0, },
+        direction => { base => 'string', type => 'Dir_ch_String', idx => 1, },
+        place     => { base => 'string', type => 'string',        idx => 2, },
+        rank      => { base => 'int',    type => 'int',           idx => 3, },
     );
 
     sub _load_placepatterns {
@@ -371,7 +375,7 @@ sub _adjust_boolean {
         }
 
         $ppat_cry->done;
-        
+
         return ( \@fieldnames, \%fields, \@ppat_records );
 
     } ## tidy end: sub _load_placepatterns
