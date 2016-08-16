@@ -91,12 +91,12 @@ sub xhea2skeds {
         values              => $values_of_r
     );
 
-#        my $dumpfile = '/tmp/xheaout.7';
-#        my $dumpcry = cry("Dumping patterns and trips to $dumpfile");
-#        open my $dump_out, '>', $dumpfile;
-#        say $dump_out u::dumpstr($patgroup_by_lgdir_r);
-#        close $dump_out;
-#        $dumpcry->done;
+    #        my $dumpfile = '/tmp/xheaout.7';
+    #        my $dumpcry = cry("Dumping patterns and trips to $dumpfile");
+    #        open my $dump_out, '>', $dumpfile;
+    #        say $dump_out u::dumpstr($patgroup_by_lgdir_r);
+    #        close $dump_out;
+    #        $dumpcry->done;
 
     my $skedscry = cry('Making schedules');
 
@@ -566,19 +566,19 @@ sub _output_skeds {
     my $skeds_r      = shift;
     my $skeds_folder = $signup->subfolder('s');
 
-        my $objfolder = $skeds_folder->subfolder('json_obj');
-        $objfolder->write_files_with_method(
-            OBJECTS   => $skeds_r,
-            METHOD    => 'json',
-            EXTENSION => 'json',
-        );
-    
-    #    my $xlsxfolder = $skeds_folder->subfolder('xlsx');
-    #    $xlsxfolder->write_files_with_method(
-    #        OBJECTS   => $skeds_r,
-    #        METHOD    => 'xlsx',
-    #        EXTENSION => 'xlsx',
-    #    );
+    my $objfolder = $skeds_folder->subfolder('json_obj');
+    $objfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'json',
+        EXTENSION => 'json',
+    );
+
+    my $xlsxfolder = $skeds_folder->subfolder('xlsx');
+    $xlsxfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'xlsx',
+        EXTENSION => 'xlsx',
+    );
 
     my $spacedfolder = $skeds_folder->subfolder('spaced');
     $spacedfolder->write_files_with_method(
