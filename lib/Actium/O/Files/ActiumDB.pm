@@ -67,7 +67,7 @@ const my %TABLE_OF_ITEM => (
     line   => 'Lines',
     i18n   => 'I18N',
     #city => 'Cities',
-    #color => 'Colors',
+    color => 'Colors',
     #flagtype => 'Flagtypes',
     linegrouptype => 'LineGroupTypes',
     #pubtimetable => 'PubTimetables',
@@ -85,9 +85,10 @@ foreach my $item ( keys %TABLE_OF_ITEM ) {
         init_arg => undef,
         isa      => 'HashRef[HashRef]',
         handles  => {
-            "${item}_row_r" => 'get',
-            lc($table)      => 'keys',
-            "${item}_cache" => 'elements',
+            "${item}_row_r"  => 'get',
+            lc($table)       => 'keys',       # should probably not be used
+            "${item}_fields" => 'keys',
+            "${item}_cache"  => 'elements',
         },
         builder => "_build_${item}_cache",
         lazy    => 1,
@@ -420,22 +421,44 @@ sub i18n_all_indd_hash {
 #########################
 ### PLACE METHODS
 
-sub place8 {
-    my $self  = shift;
-    my $place = shift;
-    my $row_r = $self->place_row_r($place);
-    return unless $row_r;
+sub field_of_referenced_place {
+    my $self = shift;
 
+    my %params = u::validate(
+        @_,
+        {   field => 1,
+            place => 1,
+        }
+    );
+
+    my $row_r = $self->place_row_r( $params{place} );
     while ( $row_r->{h_plc_reference_place}
-        and $row_r->{h_plc_reference_place} ne $place )
+        and $row_r->{h_plc_reference_place} ne $params{place} )
     {
-        $row_r
-          = $self->place_row_r( $row_r->{h_plc_reference_place} );
-          return unless $row_r;
+        $row_r = $self->place_row_r( $row_r->{h_plc_reference_place} );
+        return unless $row_r;
     }
-    
-    return $row_r->{h_plc_number};
+    return $row_r->{ $params{field} };
+}
 
+sub place8 {
+    my $self   = shift;
+    my $place  = shift;
+    my $place8 = $self->field_of_referenced_place(
+        field => 'h_plc_number',
+        place => $place,
+    );
+    return $place8;
+}
+
+sub destination {
+    my $self        = shift;
+    my $place       = shift;
+    my $destination = $self->field_of_referenced_place(
+        field => 'c_destination',
+        place => $place,
+    );
+    return $destination;
 }
 
 #########################
