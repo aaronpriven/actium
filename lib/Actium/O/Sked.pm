@@ -8,7 +8,7 @@ use MooseX::MarkAsMethods autoclean => 1;
 use overload '""' => sub { shift->id };
 
 use MooseX::Storage;    ### DEP ###
-with Storage( traits => ['OnlyWhenBuilt'], 'format' => 'JSON' );
+with Storage( traits => ['OnlyWhenBuilt'], 'format' => 'JSON', io => 'File' );
 
 use Actium::Time(qw<:all>);
 use Actium::Sorting::Line qw<sortbyline linekeys>;
@@ -626,6 +626,7 @@ sub attribute_columns {
 
 } ## tidy end: sub attribute_columns
 
+####################
 #### OUTPUT METHODS
 
 sub tidydump {
@@ -710,19 +711,6 @@ sub spaced {
     }
 
     say $out $stop_records->tabulated;
-
-#    my @tripfields = qw<blockid daysexceptions from noteletter pattern runid to
-#      type typevalue vehicledisplay via viadescription>;
-#
-#    foreach my $trip (@trips) {
-#        my @tripfield_outs;
-#        foreach my $field (@tripfields) {
-#            my $value = $trip->$field;
-#            next unless defined($value);
-#            push @tripfield_outs, "$field:$value";
-#        }
-#        say $out "@tripfield_outs";
-#    }
 
     close $out;
 
@@ -828,6 +816,146 @@ sub json {
     my $self = shift;
     return $self->freeze;    # uses MooseX::Storage;
 }
+
+sub tabxchange {
+
+    # tab files for AC Transit web site
+    my $self = shift;
+
+    my %params = u::validate(
+        @_,
+        {   tabfolder    => 1,
+            commonfolder => 1,
+            actiumdb     => 1,
+            collection   => 1,
+        }
+    );
+
+    my $tabfolder      = $params{tabfolder};
+    my $commonfolder   = $params{commonfolder};
+    my $actiumdb       = $params{actiumdb};
+    my $skedcollection = $params{skedcollection};
+
+    require Actium::O::DestinationCode;
+
+    my $dc = Actium::O::DestinationCode->load($commonfolder);
+
+    require Actium::O::2DArray;
+    my $aoa = Actium::O::2DArray->new;
+
+    my $p = sub { $aoa->push_row(@_) };
+
+    # line 1 - skedid
+    $p->( $self->skedid );
+
+    # line 2 - days
+    my $days = $self->days_obj;
+    $p->(
+        $days->daycode,    $days->as_adjectives,
+        $days->as_abbrevs, $days->as_plurals
+    );
+
+    # line 3 - direction/destination
+    my $final_place = $self->place4(-1);
+    my $destination = $actiumdb->destination($final_place);
+    my $destcode    = $dc->code_of($destination);
+    my $dir_obj     = $self->dir_obj;
+    $p->( $dir_obj->as_onechar . $destcode, $dir_obj->as_bound, $destination );
+
+    # line 4 - upcoming/current and linegroup
+    my $linegroup  = $self->linegroup;
+    my $line_row_r = $actiumdb->line_row_r($linegroup);
+
+    $p->(
+        'U',
+        $linegroup,
+        '',    # LineGroupWebNote - no longer valid
+        $line_row_r->{LineGroupType},
+        ''     # UpComingOrCurrentLineGroup
+    );
+
+    # line 5 - all lines
+    $p->( $self->lines );
+
+    # line 6 - associated scheduleso
+    $p->( $skedcollection->sked_ids_of_lg );
+
+    # lines 7 - one line per bus line
+    foreach my $line ( $self->lines ) {
+        my $line_row_r  = $actiumdb->line_row_r($line);
+        my $color       = $line_row_r->{Color};
+        my $color_row_r = $actiumdb->color_row_r($color);
+
+        $p->(
+            $line,
+            $line_row_r->{Description},
+            '',    # DirectionFile
+            '',    # StopListFile
+            '',    # MapFileName,
+            '',    # LineNote,
+            $line_row_r->{TimetableDate},
+            $color_row_r->{Cyan},
+            $color_row_r->{Magenta},
+            $color_row_r->{Yellow},
+            $color_row_r->{Black},
+            $color_row_r->{RGB}
+        );
+
+    } ## tidy end: foreach my $line ( $self->lines)
+
+    # lines 8 - timepoints
+    my @place4s = $self->place4s;
+    $p->(@place4s);
+
+    # lines 9 - lines per timepoint
+
+    foreach my $place (@place4s) {
+
+        my $desc = $actiumdb->field_of_referenced_place(
+            place => $place,
+            field => 'c_description',
+        );
+        my $city = $actiumdb->field_of_referenced_place(
+            place => $place,
+            field => 'c_city',
+        );
+        my $usecity = (
+            $actiumdb->field_of_referenced_place(
+                place => $place,
+                field => 'ux_usecity_description',
+            ) ? 'Yes' : 'No'
+        );
+
+        $p->(
+            $place,
+            $desc,
+            $city,
+            $usecity,
+            '',       # Neighborhood
+            '',       # TPNote
+            '',       # fake timepoint note
+        );
+    } ## tidy end: foreach my $place (@place4s)
+
+    # lines 10 - footnotes for a trip
+
+    my @daysexceptions = $self->daysexceptions;
+
+    foreach my $trip ( $self->trips ) {
+
+    }
+
+    # TODO -- MUCH TO DO HERE
+
+    $dc->store;
+
+} ## tidy end: sub tabxchange
+
+###################
+### STOP OBJECTS
+
+# An earlier attempt at replacing some of the work done by
+# kpoints and flagspecs, I believe
 
 sub stop_objects {
     my $self = shift;
