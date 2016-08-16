@@ -5,7 +5,6 @@ package Actium::O::2DArray 0.011;
 use 5.016;
 use warnings;
 
-
 use Actium::Preamble;
 
 # this is a deliberately non-encapsulated object that is just
@@ -28,6 +27,12 @@ sub new {
 
     if ( @rows == 0 ) {    # if no arguments, new anonymous AoA
         $self = [ [] ];
+    }
+    elsif ( @rows == 1
+        and u::is_arrayref( $rows[0] )
+        and u::all { u::is_arrayref($_) } $rows[0]->@* )
+    {
+        $self = $rows[0];
     }
     elsif ( u::any { u::reftype($_) ne 'ARRAY' } @rows ) {
         croak 'Arguments to ' . __PACKAGE__ . '->new must be arrayrefs (rows)';
@@ -640,7 +645,7 @@ sub apply {
             for ( $row->[$idx] ) {
 
                 # localize $_ to $row->[$idx]. Autovivifies.
-                $callback->($row, $idx);
+                $callback->( $row, $idx );
             }
         }
     }
@@ -892,7 +897,7 @@ sub file {
         }
 
         require File::Slurper;
-        File::Slurper::write_text($output_file, $text);
+        File::Slurper::write_text( $output_file, $text );
         return;
     }
     croak "Unrecognized type $type in " . __PACKAGE__ . '->file';
