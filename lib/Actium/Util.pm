@@ -9,6 +9,7 @@ use Actium::Constants;
 use List::Util (qw[first max min sum]);    ### DEP ###
 use List::MoreUtils(qw[any all none notall natatime uniq]);    ### DEP ###
 use Scalar::Util(qw[blessed reftype looks_like_number]);       ### DEP ###
+use Ref::Util ('is_plain_hashref');                            ### DEP ###
 use Carp;                                                      ### DEP ###
 use File::Spec;                                                ### DEP ###
 
@@ -361,7 +362,7 @@ sub _join_path_components {
 =cut
 
 sub hashref {
-    return $_[0] if reftype( $_[0] ) eq 'HASH' and @_ == 1;
+    return $_[0] if is_plain_hashref( $_[0] ) and @_ == 1;
     croak 'Odd number of elements passed to ' . __PACKAGE__ . '::hashref'
       if @_ % 2;
     return {@_};
@@ -395,7 +396,7 @@ sub iterative_flatten {
 
     while (@_) {
         my $element = shift @_;
-        if ( reftype($element) eq 'ARRAY' ) {
+        if ( Ref::Util::is_plain_arrayref($element) ) {
             unshift @_, @{$element};
         }
         else {
