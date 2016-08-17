@@ -9,6 +9,7 @@ use Actium::O::Pattern::Block;
 use Actium::O::Pattern::Group;
 use Actium::O::Pattern::Stop;
 use Actium::O::Pattern::Trip;
+use Actium::O::Sked::Collection;
 
 const my @required_tables => (qw/ppat block trip trip_pattern trip_stop/);
 
@@ -100,12 +101,12 @@ sub xhea2skeds {
 
     my $skedscry = cry('Making schedules');
 
-    \my @skeds
+    my $skedcollection
       = _make_skeds( patgroups => $patgroup_by_lgdir_r, actiumdb => $actiumdb );
 
     $skedscry->done;
 
-    _output_skeds( $signup, \@skeds );
+    $skedcollection->_output_skeds_all( $signup ) ;
 
     $xhea2skedscry->done;
 
@@ -542,61 +543,19 @@ sub _make_skeds {
 
     my @skeds;
     foreach my $lgdir ( u::sortbyline keys %patgroup_by_lgdir ) {
+        next if $lgdir =~ /^399/;
+        # 399 is not a real line
         last_cry()->over( $lgdir, " " );
         my $patgroup = $patgroup_by_lgdir{$lgdir};
         push @skeds, $patgroup->skeds( $params{actiumdb} );
     }
     last_cry()->over(".");
+    
+    return Actium::O::Sked::Collection->new(skeds => \@skeds);
 
-    return \@skeds;
+    #return \@skeds;
 
 } ## tidy end: sub _make_skeds
 
 1;
 
-###################
-##### OUTPUT ######
-###################
-
-sub _output_skeds {
-    # should be moved to a SkedCollection object
-
-    use autodie;
-    my $signup       = shift;
-    my $skeds_r      = shift;
-    my $skeds_folder = $signup->subfolder('s');
-
-    my $objfolder = $skeds_folder->subfolder('json_obj');
-    $objfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'json',
-        EXTENSION => 'json',
-    );
-
-    my $xlsxfolder = $skeds_folder->subfolder('xlsx');
-    $xlsxfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'xlsx',
-        EXTENSION => 'xlsx',
-    );
-
-    my $spacedfolder = $skeds_folder->subfolder('spaced');
-    $spacedfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'spaced',
-        EXTENSION => 'txt',
-    );
-
-    my $dumpfolder = $skeds_folder->subfolder('dump');
-    $dumpfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'dump',
-        EXTENSION => 'dump',
-    );
-
-    Actium::O::Sked->write_prehistorics( $skeds_r,
-        $skeds_folder->subfolder('prehistoric') );
-
-} ## tidy end: sub _output_skeds
-
-1;
