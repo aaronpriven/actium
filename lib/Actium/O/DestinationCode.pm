@@ -7,7 +7,7 @@ const my $JSON_FILE => 'destcodes.json';
 has '_destination_code_of_r' => (
     is       => 'ro',
     init_arg => 'destination_code_of',
-    isa      => 'Skedlike',
+    isa      => 'HashRef[Str]',
     traits   => ['Hash'],
     default  => sub { {} },
     handles  => {
@@ -40,7 +40,7 @@ sub store {
     my $self = shift;
 
     \my %destination_code_of = $self->_destination_code_of_r;
-    my $folder = $self->folder;
+    my $folder = $self->_folder;
 
     my $filespec = $folder->make_filespec($JSON_FILE);
 
@@ -58,9 +58,9 @@ sub code_of {
     my $code = $self->_get_code_of($dest);
 
     if ( not defined $code ) {
-        $code = $self->highest_code;
+        $code = $self->_highest_code;
         $code++;    # magic increment
-        _set_code_of( $dest => $code );
+        $self->_set_code_of( $dest => $code );
     }
 
     return $code;
