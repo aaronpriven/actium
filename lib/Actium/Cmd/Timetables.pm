@@ -1,21 +1,12 @@
-package Actium::Cmd::Timetables 0.011;
+package Actium::Cmd::Timetables 0.012;
 
 # Produces InDesign tag files that represent timetables.
 
-use warnings;
-use 5.012;
+use Actium::Preamble;
 
-
+use Actium::O::Sked::Collection;
 use Actium::O::Sked;
-use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);    ### DEP ###
-use Actium::Sorting::Line (qw(sortbyline byline));
 use Actium::IDTables;
-
-use English '-no_match_vars';                                      ### DEP ###
-use autodie;                                                       ### DEP ###
-use Actium::Constants;
-
-# saves typing
 
 sub HELP {
 
@@ -33,24 +24,30 @@ sub OPTIONS {
 sub START {
     my ( $class, $env ) = @_;
     my $actiumdb = $env->actiumdb;
-    my $signup = $env->signup;
-    
+    my $signup   = $env->signup;
+
     my $tabulae_folder    = $signup->subfolder('timetables');
     my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
     my $multipubtt_folder = $tabulae_folder->subfolder('pub-idtags');
+    my $storablefolder    = $signup->subfolder('s');
 
-    my $prehistorics_folder = $signup->subfolder('skeds');
+    #my $prehistorics_folder = $signup->subfolder('skeds');
+
+    my $collection
+      = Actium::O::Sked::Collection->load_storable($storablefolder);
 
     chdir( $signup->path );
 
     # my %front_matter = _get_configuration($signup);
 
-    my @skeds
-      = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
+    # my @skeds
+    #   = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
+
+    my @skeds = $collection->skeds;
 
     my @all_lines = map { $_->lines } @skeds;
     @all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN' } @all_lines;
-    @all_lines = uniq sortbyline @all_lines;
+    @all_lines = u::uniq u::sortbyline @all_lines;
 
     my ( $pubtt_contents_with_dates_r, $pubtimetables_r )
       = Actium::IDTables::get_pubtt_contents_with_dates( $actiumdb,
