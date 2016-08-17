@@ -4,7 +4,7 @@ use warnings;
 use 5.012;
 
 use Actium::Sorting::Line (qw/sortbyline byline/);
-use Actium::Util qw(in joinlf j jointab );
+use Actium::Util qw(in joinlf j joinempty jointab );
 use Actium::Union (qw/ordered_union distinguish/);
 use Actium::DaysDirections(':all');
 use Actium::O::Files::HastusASI;
@@ -1275,7 +1275,7 @@ sub make_decal_spec {
         $icons = $EMPTY_STR;
     }
 
-    $icons = j( sort split( //, $icons ) );
+    $icons = joinempty( sort split( //, $icons ) );
 
     my $spec = jk( $route, $destination, $icons );
     return $spec;
