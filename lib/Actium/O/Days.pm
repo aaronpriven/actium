@@ -112,6 +112,7 @@ has 'as_shortcode' => (
     init_arg => 'undef',
     builder  => '_build_as_shortcode',
     lazy     => 1,
+    predicate => '_has_shortcode',
 );
 
 sub _build_as_shortcode {
@@ -174,8 +175,8 @@ sub as_adjectives {
 
     my $as_string = $self->as_string;
 
-    state %cache;
-    return $cache{$as_string} if $cache{$as_string};
+    state $cache_r;
+    return $cache_r->{$as_string} if $cache_r->{$as_string};
 
     my $daycode = $self->daycode;
     $daycode =~ s/1234567H/D/;    # every day
@@ -190,7 +191,7 @@ sub as_adjectives {
     my $results
       = u::joinseries(@as_adjectives) . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
 
-    return $cache{$as_string} = $results;
+    return $cache_r->{$as_string} = $results;
 
 } ## tidy end: sub as_adjectives
 
@@ -206,13 +207,16 @@ const my %PLURAL_SCHOOL_OF => (
     H => ' (School holidays only)',
 );
 
+# TODO: all these methods with caches should be turned into attributes
+# with lazy builders
+
 sub as_plurals {
 
     my $self      = shift;
     my $as_string = $self->as_string;
 
-    state %cache;
-    return $cache{$as_string} if $cache{$as_string};
+    state $cache_r;
+    return $cache_r->{$as_string} if $cache_r->{$as_string};
 
     my $daycode    = $self->daycode;
     my $seriescode = $daycode;
@@ -233,13 +237,13 @@ sub as_plurals {
         $results .= ' except holidays' unless $daycode =~ /H/;
     }
 
-    return $cache{$as_string} = ucfirst($results);
+    return $cache_r->{$as_string} = ucfirst($results);
 
 } ## tidy end: sub as_plurals
 const my @ABBREVS =>
   ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
 
-const my %ABBREV_OF => u::mesh( @DAYLETTERS, @PLURALS );
+const my %ABBREV_OF => u::mesh( @DAYLETTERS, @ABBREVS );
 const my %ABBREV_SCHOOL_OF => (
     B => $EMPTY_STR,
     D => ' (Sch days)',
@@ -251,8 +255,8 @@ sub as_abbrevs {
     my $self      = shift;
     my $as_string = $self->as_string;
 
-    state %cache;
-    return $cache{$as_string} if $cache{$as_string};
+    state $cache_r;
+    return $cache_r->{$as_string} if $cache_r->{$as_string};
 
     my $daycode = $self->daycode;
     $daycode =~ s/1234567H/D/;    # every day
@@ -270,9 +274,111 @@ sub as_abbrevs {
     my $results
       = join( $SPACE, @as_abbrevs ) . $ABBREV_SCHOOL_OF{$schooldaycode};
 
-    return $cache{$as_string} = $results;
+    return $cache_r->{$as_string} = $results;
 
 } ## tidy end: sub as_abbrevs
+
+for my $attr (qw/specday specdayletter/) {
+
+    has "as_$attr" => (
+        is      => 'ro',
+        isa     => 'Str',
+        lazy    => 1,
+        builder => "_build_as_$attr",
+        predicate => "_has_$attr",
+    );
+
+}
+
+sub _build_as_specday {
+    my $self = shift;
+
+    my $specday = $EMPTY;
+
+    my $daycode       = $self->daycode;
+    my $schooldaycode = $self->schooldaycode;
+
+    if ( $schooldaycode eq 'D' ) {
+        $specday = 'School day ';
+    }
+    elsif ( $schooldaycode eq 'H' ) {
+        $specday = 'School holiday ';
+    }
+
+    my @as_plurals = map { $PLURAL_OF{$_} } split( //, $daycode );
+
+    last_cry()->text("$daycode gives blank as_plurals in specday")
+      if not @as_plurals;
+
+    $specday .= u::joinseries(@as_plurals) . ' only';
+
+    return $specday;
+} ## tidy end: sub _build_as_specday
+
+const my %SPECDAYLETTER_OF => (
+    qw(
+      1 M
+      2 T
+      3 W
+      4 Th
+      5 F
+      6 S
+      7 Su
+      H Hol
+      )
+);
+
+sub _build_as_specdayletter {
+    my $self = shift;
+
+    my $specdayletter = $EMPTY;
+
+    my $daycode       = $self->daycode;
+    my $schooldaycode = $self->schooldaycode;
+
+    if ( $schooldaycode eq 'D' ) {
+        $specdayletter = 'SD';
+    }
+    elsif ( $schooldaycode eq 'H' ) {
+        $specdayletter = 'SH';
+    }
+
+    my @as_specdayletters = map { $SPECDAYLETTER_OF{$_} } split( //, $daycode );
+
+}
+
+sub specday_and_specdayletter {
+
+    my $tripdays = shift;
+    my $skeddays = shift;
+
+    my $tripdaycode = $tripdays->daycode;
+    my $skeddaycode = $skeddays->daycode;
+    my $tripsch     = $tripdays->schooldaycode;
+    my $skedsch     = $skeddays->schooldaycode;
+
+    if ( $tripdaycode eq $skeddaycode ) {
+        # if the only difference is in the schools
+        return
+          unless $skedsch eq 'B' and ( $tripsch eq 'D' or $tripsch eq 'H' );
+        # either no difference or invalid intersection, otherwise
+        return ( SD => 'School days only' ) if $tripsch eq 'D';
+        return ( SH => 'School holidays only' );
+    }
+
+    my $isect = $tripdays->intersection($skeddays);
+    return unless $isect;
+
+    # if the sched days school code isn't 'B', then it must
+    # be the same as the trip day code (otherwise no intersection)
+    if ( $skedsch ne 'B' ) {
+        my $class = u::blessed($tripdays);
+        $isect = $class->new( $isect->daycode, 'B' );
+    }
+
+    return $isect->as_specdayletter, $isect->as_specday;
+
+} ## tidy end: sub specday_and_specdayletter
 
 {
     no warnings 'redefine';
@@ -419,6 +525,54 @@ sub is_a_superset_of {
 
     return $lc->is_RsubsetL;
 } ## tidy end: sub is_a_superset_of
+
+sub is_equal_to {
+
+    my $self = shift;
+    my $obj  = shift;
+
+    return 1 if $self == $obj;
+    # relies on flyweight-ness
+
+    return 0;
+
+}
+
+const my %TRANSITINFO_DAYS_OF => (
+    qw(
+      1234567H DA
+      123457H  WU
+      123456   WA
+      12345    WD
+      1        MY
+      2        TY
+      3        WY
+      4        TH
+      5        FY
+      6        SA
+      56       FS
+      7H       SU
+      67H      WE
+      24       TT
+      25       TF
+      35       WF
+      123      MX
+      135      MZ
+      1245     XW
+      1235     XH
+      1234     XF
+      45       HF
+      )
+);
+
+sub as_transitinfo {
+    my $self = shift;
+    my $daycode = $self->daycode;
+    if (exists $TRANSITINFO_DAYS_OF{$daycode}) {
+        return $TRANSITINFO_DAYS_OF{$daycode};
+    }
+    return $daycode;
+}
 
 u::immut();
 
