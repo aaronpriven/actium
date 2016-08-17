@@ -352,21 +352,62 @@ sub push_col {
     my $self       = shift;
     my @col_values = @_;
     my $col_idx    = $self->last_col;
-    return $self->ins_col( $col_idx, @col_values );
-}
+
+    if ( $col_idx == -1 ) {
+        @{$self} = map { [$_] } @col_values;
+        return $self->width;
+    }
+
+    my $last_row = u::max( $self->last_row, $#col_values );
+    my $last_col = $self->last_col;
+
+    for my $row_index ( 0 .. $last_row ) {
+        my $row_r = $self->[$row_index];
+        $#{$row_r} = $last_col;          # pad out
+        push @{$row_r}, $col_values[$row_index];
+    }
+
+    return $self->width;
+
+    #return $self->ins_col( $col_idx, @col_values );
+} ## tidy end: sub push_col
 
 sub push_rows {
     my $self = shift;
-    my @cols = @_;
-    return push @{$self}, @cols;
+    my @rows = @_;
+    return push @{$self}, @rows;
 }
 
 sub push_cols {
     my $self    = shift;
     my @cols    = @_;
     my $col_idx = $self->last_col;
-    return $self->ins_cols( $col_idx, @cols );
-}
+
+    if ( $col_idx == -1 ) {
+        @{$self} = map { [ @{$_} ] } @{$self};
+        return $self->width;
+    }
+
+    my $last_row = u::max( $self->last_row, $#cols );
+    my $last_col = $self->last_col;
+
+    for my $row_index ( 0 .. $last_row ) {
+        my $row_r = $self->[$row_index];
+        $#{$row_r} = $last_col;    # pad out
+        push @{$row_r}, @{ $cols[$row_index] };
+    }
+
+    return $self->width;
+
+    #return $self->ins_col( $col_idx, @col_values );
+} ## tidy end: sub push_cols
+
+#sub push_cols {
+#   my $self    = shift;
+#    my @cols    = @_;
+#    my $col_idx = $self->last_col;
+#    return $self->ins_cols( $col_idx, @cols );
+#}
 
 sub unshift_row {
     my $self       = shift;
@@ -811,7 +852,7 @@ my $charcarp = sub {
     my $character  = shift;
     my $methodname = shift;
     carp "$character character found in array during $methodname; "
-      . 'converted to visible symbol.';
+      . 'converted to visible symbol';
     return;
 };
 
