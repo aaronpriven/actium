@@ -64,7 +64,7 @@ sub instance {
         croak "Unknown direction $direction";
     }
 
-    my $instance = $class->new( $DIRCODE_OF{$direction} );
+    my $instance = $class->new( dircode => $DIRCODE_OF{$direction} );
     $obj_cache{$orig_direction} = $instance;
     return $instance;
 
@@ -122,9 +122,9 @@ sub _data_printer {
     return "$class=" . $self->dircode;
 }
 
-around BUILDARGS => sub {
-    return u::positional_around( \@_, 'dircode' );
-};
+#around BUILDARGS => sub {
+#    return u::positional_around( \@_, 'dircode' );
+#};
 
 sub as_bound {
     my $self = shift;
