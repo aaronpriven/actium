@@ -8,7 +8,11 @@ use MooseX::MarkAsMethods autoclean => 1;
 use overload '""' => sub { shift->id };
 
 use MooseX::Storage;    ### DEP ###
-with Storage( traits => ['OnlyWhenBuilt'], 'format' => 'JSON', io => 'File' );
+with Storage(
+    traits   => ['OnlyWhenBuilt'],
+    'format' => 'Storable',
+    io       => 'File'
+);
 
 use Actium::Time(qw<:all>);
 use Actium::Sorting::Line qw<sortbyline linekeys>;
@@ -768,7 +772,7 @@ sub xlsx {
     my @place_records;
 
     my ( $columns_r, $shortcol_of_r )
-      = $self->attribute_columns(qw(line day vehicletype));
+      = $self->attribute_columns(qw(line day vehicletype daysexceptions));
     my @columns     = @{$columns_r};
     my %shortcol_of = %{$shortcol_of_r};
 
@@ -812,9 +816,20 @@ sub xlsx {
 
 sub xlsx_layers {':raw'}
 
-sub json {
+sub storable {
     my $self = shift;
     return $self->freeze;    # uses MooseX::Storage;
+}
+
+sub transitinfo_id {
+
+    my $self             = shift;
+    my $linegroup        = $self->linegroup;
+    my $dir              = $self->dircode;
+    my $days_transitinfo = $self->days_obj->as_transitinfo;
+
+    return join( '_', $linegroup, $dir, $days_transitinfo );
+
 }
 
 sub tabxchange {
@@ -824,66 +839,80 @@ sub tabxchange {
 
     my %params = u::validate(
         @_,
-        {   tabfolder    => 1,
-            commonfolder => 1,
-            actiumdb     => 1,
-            collection   => 1,
+        {   destinationcode => 1,
+            actiumdb        => 1,
+            collection      => 1,
         }
     );
 
-    my $tabfolder      = $params{tabfolder};
-    my $commonfolder   = $params{commonfolder};
+    my $dc             = $params{destinationcode};
     my $actiumdb       = $params{actiumdb};
-    my $skedcollection = $params{skedcollection};
-
-    require Actium::O::DestinationCode;
-
-    my $dc = Actium::O::DestinationCode->load($commonfolder);
-
-    require Actium::O::2DArray;
-    my $aoa = Actium::O::2DArray->new;
-
-    my $p = sub { $aoa->push_row(@_) };
+    my $skedcollection = $params{collection};
 
     # line 1 - skedid
-    $p->( $self->skedid );
+
+    require Actium::O::2DArray;
+    my $aoa = Actium::O::2DArray->bless( [ [ $self->transitinfo_id ] ] );
+
+    my $p = sub { $aoa->push_row( @_, $EMPTY ) };
+           # the $EMPTY is probably not needed but the old program
+           # added a tab at the end of every line
 
     # line 2 - days
-    my $days = $self->days_obj;
+    my $days             = $self->days_obj;
+    my $days_transitinfo = $self->days_obj->as_transitinfo;
     $p->(
-        $days->daycode,    $days->as_adjectives,
+        $days_transitinfo, $days->as_adjectives,
         $days->as_abbrevs, $days->as_plurals
     );
 
     # line 3 - direction/destination
     my $final_place = $self->place4(-1);
     my $destination = $actiumdb->destination($final_place);
-    my $destcode    = $dc->code_of($destination);
     my $dir_obj     = $self->dir_obj;
+    my $dir         = $dir_obj->dircode;
+    if ( $dir eq 'CC' ) {
+        $destination = "Counterclockwise to $destination,";
+    }
+    elsif ( $dir eq 'CW' ) {
+        $destination = "Clockwise to $destination,";
+    }
+    elsif ( $dir eq 'A' ) {
+        $destination = "A Loop to $destination,";
+    }
+    elsif ( $dir eq 'B' ) {
+        $destination = "B Loop to $destination,";
+    }
+    else {
+        $destination = "To $destination,";
+    }
+
+    my $destcode = $dc->code_of($destination);
     $p->( $dir_obj->as_onechar . $destcode, $dir_obj->as_bound, $destination );
 
     # line 4 - upcoming/current and linegroup
-    my $linegroup  = $self->linegroup;
-    my $line_row_r = $actiumdb->line_row_r($linegroup);
+    my $linegroup       = $self->linegroup;
+    my $linegroup_row_r = $actiumdb->line_row_r($linegroup);
 
     $p->(
         'U',
         $linegroup,
         '',    # LineGroupWebNote - no longer valid
-        $line_row_r->{LineGroupType},
+        $linegroup_row_r->{LineGroupType},
         ''     # UpComingOrCurrentLineGroup
     );
 
     # line 5 - all lines
     $p->( $self->lines );
 
-    # line 6 - associated scheduleso
-    $p->( $skedcollection->sked_ids_of_lg );
+    # line 6 - associated schedules
+    $p->( $skedcollection->sked_transitinfo_ids_of_lg($linegroup) );
 
     # lines 7 - one line per bus line
     foreach my $line ( $self->lines ) {
-        my $line_row_r  = $actiumdb->line_row_r($line);
-        my $color       = $line_row_r->{Color};
+        my $line_row_r = $actiumdb->line_row_r($line);
+        my $color = $line_row_r->{Color} // 'Default';
+        $color = 'Default' if not $actiumdb->color_exists($color);
         my $color_row_r = $actiumdb->color_row_r($color);
 
         $p->(
@@ -931,23 +960,165 @@ sub tabxchange {
             $desc,
             $city,
             $usecity,
-            '',       # Neighborhood
-            '',       # TPNote
-            '',       # fake timepoint note
+            '',    # Neighborhood
+            '',    # TPNote
+            '',    # fake timepoint note
         );
     } ## tidy end: foreach my $place (@place4s)
 
     # lines 10 - footnotes for a trip
+    
+    push @{$aoa}, [];
+    # make an actual blank line
 
-    my @daysexceptions = $self->daysexceptions;
+    #$p->($EMPTY);
 
-    foreach my $trip ( $self->trips ) {
+    # lines 11 - schedule notes
 
+    my $fullnote      = $EMPTY;
+    my $schedule_note = $linegroup_row_r->{schedule_note};
+    $fullnote .= $schedule_note if $schedule_note;
+
+    my $govtopic = $linegroup_row_r->{GovDeliveryTopic};
+
+    if ($govtopic) {
+        $fullnote
+          .= '<p>'
+          . q{<a href="https://public.govdelivery.com/}
+          . q{accounts/ACTRANSIT/subscriber/new?topic_id=}
+          . $govtopic . q{">}
+          . 'Get timely, specific updates about '
+          . "Line $linegroup from AC Transit eNews."
+          . '</a></p>';
     }
 
-    # TODO -- MUCH TO DO HERE
+    $fullnote .= '<p>The times provided are for '
+      . 'important landmarks along the route.';
 
-    $dc->store;
+    my %stoplist_url_of;
+
+    foreach my $line ( $self->lines ) {
+        my $line_row_r = $actiumdb->line_row_r($line);
+
+        my $linegrouptype = lc( $line_row_r->{LineGroupType} );
+        $linegrouptype =~ s/ /-/g;    # converted to dashes by wordpress
+        if ($linegrouptype) {
+            if ( $linegrouptype eq 'local' ) {
+                no warnings 'numeric';
+                if ( $line <= 70 ) {
+                    $linegrouptype = 'local1';
+                }
+                else {
+                    $linegrouptype = 'local2';
+                }
+            }
+
+            $stoplist_url_of{$line}
+              = qq{http://www.actransit.org/riderinfo/stops/$linegrouptype/#$line};
+        }
+        else {
+            warn "No linegroup type for line $line";
+        }
+
+    } ## tidy end: foreach my $line ( $self->lines)
+
+    my @linklines = u::sortbyline keys %stoplist_url_of;
+    my $numlinks  = scalar @linklines;
+
+    if ( $numlinks == 1 ) {
+        my $linkline = $linklines[0];
+
+        $fullnote
+          .= $SPACE
+          . qq{<a href="$stoplist_url_of{$linkline}">}
+          . qq{A complete list of stops for Line $linkline is also available.</a>};
+    }
+    elsif ( $numlinks != 0 ) {
+
+        my @stoplist_links
+          = map {qq{<a href="$stoplist_url_of{$_}">$_</a>}} @linklines;
+
+        $fullnote
+          .= qq{ Complete lists of stops for lines }
+          . u::joinseries(@stoplist_links)
+          . ' are also available.';
+    }
+
+    $fullnote .= '</p>';
+
+    $p->( $fullnote, $linegroup_row_r->{LineGroupNote} );
+
+    # lines 12 - current or upcoming schedule equivalent. Not used
+
+    $p->('');
+
+    # lines 13 - Definitions of special day codes
+
+    my ( %specday_of_specdayletter, @specdayletters, @noteletters, @lines );
+
+    foreach my $daysexception ( $self->daysexceptions ) {
+        next unless $daysexception;
+        my ( $specdayletter, $specday ) = split( / /, $daysexception, 2 );
+        $specday_of_specdayletter{$specdayletter} = $specday;
+    }
+
+    foreach my $trip ( $self->trips ) {
+        my $tripdays = $trip->days_obj;
+        my ( $specdayletter, $specday )
+          = $tripdays->specday_and_specdayletter($days);
+
+        if ($specdayletter) {
+            $specday_of_specdayletter{$specdayletter} = $specday;
+            push @specdayletters, $specdayletter;
+        }
+        else {
+            push @specdayletters, $EMPTY;
+        }
+
+        push @noteletters, $EMPTY;
+        push @lines,       $trip->line;
+
+    }
+    
+    my @specdaynotes;
+
+    foreach my $noteletter ( keys %specday_of_specdayletter ) {
+        push @specdaynotes, 
+            u::joinkey( $noteletter, $specday_of_specdayletter{$noteletter} ) ;
+    }
+    
+    $p->(@specdaynotes);
+
+    # lines 14  - special day code for each trip
+
+    $p->(@specdayletters);
+
+    # lines 15 - note letters for each trip
+
+    $p->(@noteletters);
+
+    # lines 16 - lines
+
+    $p->(@lines);
+
+    # lines 17 - times
+
+    my $placetimes_aoa = Actium::O::2DArray->new;
+    my $timesub = timestr_sub( SEPARATOR => $EMPTY );
+
+    foreach my $trip ( $self->trips ) {
+        my @placetimes = map { $timesub->($_) } $trip->placetimes;
+        $placetimes_aoa->push_col(@placetimes);
+    }
+    
+    # so, the old program had a bug, I think, that added an extra tab
+    # to every line.
+    
+    # Here we are being bug-compatible.
+    
+    $placetimes_aoa->push_col($EMPTY x $placetimes_aoa->height() );
+
+    return $aoa->tsv . $placetimes_aoa->tsv;
 
 } ## tidy end: sub tabxchange
 
