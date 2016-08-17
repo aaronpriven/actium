@@ -592,6 +592,8 @@ sub write_files_with_method {
             METHOD    => 1,
             EXTENSION => 0,
             SUBFOLDER => 0,
+            FILENAME_METHOD => { default => 'id' },
+            ARGS => { default => [] , type => ARRAYREF },
         }
     );
 
@@ -606,6 +608,7 @@ sub write_files_with_method {
 
     my $method    = $params{METHOD};
     my $subfolder = $params{SUBFOLDER};
+    my $filename_method = $params{FILENAME_METHOD};
 
     my $folder;
     if ($subfolder) {
@@ -625,7 +628,7 @@ sub write_files_with_method {
 
         my $out;
 
-        my $id = $obj->id;
+        my $id = $obj->$filename_method;
         $cry->over( $id . $SPACE );
 
         $seen_id{$id}++;
@@ -639,6 +642,7 @@ sub write_files_with_method {
                 OBJECT   => $obj,
                 METHOD   => $method,
                 FILENAME => $filename,
+                ARGS => $params{ARGS},
             }
         );
 
@@ -656,6 +660,7 @@ sub write_file_with_method {
     my $obj      = $params{OBJECT};
     my $filename = $params{FILENAME};
     my $method   = $params{METHOD};
+    my $args_r = $params{ARGS} // [];
     my $cry      = $params{CRY} // cry("Writing to $filename via $method");
 
     my $out;
@@ -666,14 +671,18 @@ sub write_file_with_method {
         $cry->d_error;
         croak "Can't open $file for writing: $OS_ERROR";
     }
+    
 
     my $layermethod = $method . '_layers';
     if ( $obj->can($layermethod) ) {
         my $layers = $obj->$layermethod;
         binmode( $out, $layers );
     }
+    else {
+        binmode( $out, ':utf8' );
+    }
 
-    print $out $obj->$method() or croak "Can't print to $file: $OS_ERROR";
+    print $out $obj->$method(@$args_r) or croak "Can't print to $file: $OS_ERROR";
 
     unless ( close $out ) {
         $cry->d_error;
