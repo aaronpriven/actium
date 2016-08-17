@@ -10,25 +10,25 @@ use warnings;
 
 package Actium::O::Sked::Timetable 0.010;
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
+use Moose;                        ### DEP ###
+use MooseX::StrictConstructor;    ### DEP ###
 
-use MooseX::MarkAsMethods (autoclean => 1); ### DEP ###
+use MooseX::MarkAsMethods ( autoclean => 1 );    ### DEP ###
 use overload '""' => sub { shift->id };
 # overload ### DEP ###
 
-use Params::Validate (':all'); ### DEP ###
+use Params::Validate (':all');                   ### DEP ###
 
 use Actium::Time;
 use Actium::Constants;
 
 use Actium::Text::InDesignTags;
 
-use Const::Fast; ### DEP ###
+use Const::Fast;                                 ### DEP ###
 
 const my $idt => 'Actium::Text::InDesignTags';
 
-use HTML::Entities; ### DEP ###
+use HTML::Entities;                              ### DEP ###
 
 my $timesub = Actium::Time::timestr_sub();
 
@@ -39,8 +39,10 @@ has sked_obj => (
     is       => 'ro',
     required => 1,
     handles  => {
-        linegroup                       => 'linegroup',
-        has_note_col                    => 'has_multiple_daysexceptions',
+        linegroup => 'linegroup',
+             #has_note_col                    => 'has_multiple_daysexceptions',
+        has_note_col                    => 'has_multiple_specdays',
+        specday_count                   => 'specday_count',
         has_route_col                   => 'has_multiple_lines',
         header_routes                   => 'lines',
         lines                           => 'lines',
@@ -110,7 +112,7 @@ has height => (
 
 sub _build_height {
     my $self = shift;
-    return $self->body_row_count;
+    return $self->body_row_count + $self->specday_count;
 
     # TODO - add rows for each note of whatever type...
 }
@@ -161,12 +163,11 @@ sub new_from_sked {
 
     # ASCERTAIN COLUMNS
 
-    my $has_multiple_lines          = $sked->has_multiple_lines;
-    my $has_multiple_daysexceptions = $sked->has_multiple_daysexceptions;
+    my $has_multiple_lines    = $sked->has_multiple_lines;
+    my $has_multiple_specdays = $sked->has_multiple_specdays;
 
     # TODO allow for other timepoint notes
 
-    my @place9s = $sked->place9s;
     my @place4s = $sked->place4s;
 
     my $halfcols = 0;
@@ -174,14 +175,10 @@ sub new_from_sked {
 
     my @note_definitions;
 
-    if ($has_multiple_daysexceptions) {
+    if ($has_multiple_specdays) {
         $halfcols++;
-        foreach my $daysexceptions ( $sked->daysexceptions ) {
-
-            if ( exists( $note_definition_of{$daysexceptions} ) ) {
-                push @note_definitions, $note_definition_of{$daysexceptions};
-            }
-
+        foreach my $specday ( $sked->specdays ) {
+            push @note_definitions, $specday;
         }
 
     }
@@ -189,7 +186,7 @@ sub new_from_sked {
     $spec{note_definitions_r} = \@note_definitions;
 
     $spec{half_columns} = $halfcols;
-    $spec{columns}      = scalar @place9s;
+    $spec{columns}      = scalar @place4s;
 
     # HEADERS
 
@@ -206,7 +203,7 @@ sub new_from_sked {
     my @header_columntexts;
 
     push @header_columntexts, 'Line' if $has_multiple_lines;
-    push @header_columntexts, 'Note' if $has_multiple_daysexceptions;
+    push @header_columntexts, 'Note' if $has_multiple_specdays;
 
     for my $i ( 0 .. $#place4s ) {
         my $place4 = $place4s[$i];
@@ -224,8 +221,8 @@ sub new_from_sked {
 
     $spec{header_columntext_r} = \@header_columntexts;
 
-    $spec{header_dirtext} =
-      $sked->to_text . $SPACE . $places_r->{ $place4s[-1] }{c_destination};
+    $spec{header_dirtext}
+      = $sked->to_text . $SPACE . $places_r->{ $place4s[-1] }{c_destination};
 
     # BODY
 
@@ -240,8 +237,9 @@ sub new_from_sked {
             push @row, $trip->line;
         }
 
-        if ($has_multiple_daysexceptions) {
-            push @row, $trip->daysexceptions;
+        if ($has_multiple_specdays) {
+            my ( $specdayletter, $specday ) = $trip->specday( $sked->days_obj );
+            push @row, $specdayletter;
         }
 
         foreach my $timenum ( $trip->placetimes ) {
@@ -256,7 +254,7 @@ sub new_from_sked {
 
     return $class->new( \%spec );
 
-}    ## tidy end: sub new_from_sked
+} ## tidy end: sub new_from_sked
 
 sub as_indesign {
 
@@ -264,8 +262,7 @@ sub as_indesign {
 
     my %params = u::validate(
         @_,
-        {
-            minimum_columns  => 1,
+        {   minimum_columns  => 1,
             minimum_halfcols => 1,
             compression      => { type => BOOLEAN, default => 0 },
             lower_bound => { default => 0 },
@@ -298,8 +295,8 @@ sub as_indesign {
 
     #my $rowcount = $self->body_row_count + 2;          # 2 header rows
     my $header_rows = 2;
-    my $rowcount =
-      $header_rows + $params{upper_bound} - $params{lower_bound} + 1;
+    my $rowcount
+      = $header_rows + $params{upper_bound} - $params{lower_bound} + 1;
 
     my $colcount = $columns + $halfcols + $trailing;
 
@@ -331,8 +328,8 @@ sub as_indesign {
     # number of characters in routes, plus three characters -- space bullet
     # space -- for each route except the first one, plus a final space
 
-    my $bullet =
-      '<0x2009><CharStyle:SmallRoundBullet><0x2022><CharStyle:><0x2009>';
+    my $bullet
+      = '<0x2009><CharStyle:SmallRoundBullet><0x2022><CharStyle:><0x2009>';
     my $routetext = join( $bullet, @routes );
 
     my $header_style = _get_header_style( $routes[0] );
@@ -345,25 +342,25 @@ sub as_indesign {
         print $th $idt->parastyle('dropcaphead');
         print $th "<pDropCapCharacters:$routechars>$routetext ";
         print $th $idt->charstyle('DropCapHeadDays');
-        print $th "\cG"; # control-G is "Indent to Here"
-        
-#        my $header_daytext = $self->header_daytext;
-#        
-#        if ($header_daytext =~ /except holidays/) {
-#            my $except = $idt->charstyle('DropCapHeadDaysSmall') . 
-#              'except holidays' . $idt->charstyle('DropCapHeadDays');
-#            $header_daytext =~ s/except holidays/$except/;
-#            
-#        }
-#        
-#        print $th $header_daytext;
-        
+        print $th "\cG";    # control-G is "Indent to Here"
+
+        #        my $header_daytext = $self->header_daytext;
+        #
+        #        if ($header_daytext =~ /except holidays/) {
+        #            my $except = $idt->charstyle('DropCapHeadDaysSmall') .
+        #              'except holidays' . $idt->charstyle('DropCapHeadDays');
+        #            $header_daytext =~ s/except holidays/$except/;
+        #
+        #        }
+        #
+        #        print $th $header_daytext;
+
         print $th "\cG", $self->header_daytext;
         print $th $idt->nocharstyle, '<0x000A>';
         print $th $idt->charstyle('DropCapHeadDest'),
           , $self->header_dirtext;    # control-G is "Indent to Here"
         print $th $idt->nocharstyle;
-    }
+    } ## tidy end: if ( $params{firstpage...})
     else {
         print $th $idt->parastyle('nodrophead1');
         print $th "$routetext (continued)\r";
@@ -453,7 +450,7 @@ sub as_indesign {
                 print $th $time;
             }
             print $th '<CellEnd:>';
-        }    ## tidy end: for my $time (@body_row)
+        } ## tidy end: for my $time (@body_row)
 
         for ( 1 .. $trailing ) {
             print $th
@@ -462,7 +459,7 @@ sub as_indesign {
 
         print $th '<RowEnd:>';
 
-    }    ## tidy end: for my $body_row_r ( ( ...))
+    } ## tidy end: for my $body_row_r ( ( ...))
 
     ###############
     # Table End
@@ -481,7 +478,7 @@ sub as_indesign {
 
     return $tabletext;
 
-}    ## tidy end: sub as_indesign
+} ## tidy end: sub as_indesign
 
 sub _get_header_style {
 
@@ -526,7 +523,7 @@ sub _minimums {
 
     return ( $trailing_columns, $trailing_halves );
 
-}    ## tidy end: sub _minimums
+} ## tidy end: sub _minimums
 
 my %name_of_bsh = (
     BSH => 'Broadway Shuttle',
@@ -556,7 +553,7 @@ sub as_html {
     print $th qq{<tr\n><th class="skedhead" colspan=$all_columns>};
 
     if ( $header_routes[0] =~ /^BS[DNH]/ ) {
-        my $header_name = $name_of_bsh{$header_routes[0]};
+        my $header_name = $name_of_bsh{ $header_routes[0] };
         print $th qq{<p class="bshtitle">$header_name</p>};
         print $th encode_entities( $self->header_daytext );
         print $th '<br />';
@@ -567,7 +564,7 @@ sub as_html {
         print $th '<div class="skedheaddiv">';
         print $th '<div class="skedroute">';
 
-        my @routes = map { encode_entities($_) } @header_routes ;
+        my @routes = map { encode_entities($_) } @header_routes;
         print $th join( ' &bull; ', @routes );
         print $th '</div>';
         # ROUTE DESTINATION AND DIRECTION
@@ -590,8 +587,8 @@ sub as_html {
     my $has_line_col = $self->has_route_col;
     my $has_note_col = $self->has_note_col;
 
-    my @header_columntexts =
-      map { encode_entities $_} ( $self->header_columntexts );
+    my @header_columntexts
+      = map { encode_entities $_} ( $self->header_columntexts );
 
     print $th "<tr\n>";
 
@@ -650,7 +647,7 @@ sub as_html {
 
         print $th "</tr\n>";
 
-    }    ## tidy end: for my $body_row_r ( $self...)
+    } ## tidy end: for my $body_row_r ( $self...)
 
     ###############
     # Table End
@@ -665,7 +662,7 @@ sub as_html {
 
     return $tabletext;
 
-}    ## tidy end: sub as_html
+} ## tidy end: sub as_html
 
 sub as_public_json {
 
@@ -703,13 +700,13 @@ sub as_public_json {
         times              => \@times,
     );
 
-    require JSON; ### DEP ###
+    require JSON;    ### DEP ###
 
     my $json_text = JSON::encode_json( \%json_data );
 
     return $json_text;
 
-}    ## tidy end: sub as_public_json
+} ## tidy end: sub as_public_json
 
 with 'Actium::O::Skedlike';
 
