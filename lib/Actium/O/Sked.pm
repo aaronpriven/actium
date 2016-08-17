@@ -365,6 +365,19 @@ has 'daysexceptions_r' => (
     handles => { daysexceptions => 'elements' },
 );
 
+has 'specdays_r' => (
+    lazy    => 1,
+    builder => '_build_specdays_r',
+    traits  => ['Hash'],
+    is      => 'bare',
+    isa     => 'HashRef[Str]',
+    handles => {
+        specdayletters => 'keys',
+        specdays       => 'values',
+        specday_count  => 'count',
+    },
+);
+
 # days
 has 'days_obj' => (
     required => 1,
@@ -430,6 +443,12 @@ has 'has_multiple_daysexceptions' => (
     is      => 'ro',
     lazy    => 1,
     builder => '_build_has_multiple_daysexceptions',
+);
+
+has 'has_multiple_specdays' => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_has_multiple_specdays',
 );
 
 has 'skedid' => (
@@ -508,16 +527,26 @@ sub _build_has_multiple_lines {
     return @lines > 1;
 }
 
+sub _build_specdays_r {
+
+    my $self = shift;
+    my %specday_of;
+    foreach my $trip ( $self->trips() ) {
+        my ( $specdayletter, $specday );
+        next unless $specdayletter;
+        $specday_of{$specdayletter} = $specday;
+    }
+    return \%specday_of;
+
+}
+
 sub _build_daysexceptions {
 
     my $self = shift;
-
     my %seen_daysexceptions;
-
     foreach my $trip ( $self->trips() ) {
         $seen_daysexceptions{ $trip->daysexceptions } = 1;
     }
-
     return [ sort keys %seen_daysexceptions ];
 
 }
@@ -526,6 +555,11 @@ sub _build_has_multiple_daysexceptions {
     my $self           = shift;
     my @daysexceptions = $self->daysexceptions;
     return @daysexceptions > 1;
+}
+
+sub _build_has_multiple_specdays {
+    my $self = shift;
+    return $self->specday_count > 1;
 }
 
 sub _build_skedid {
@@ -855,8 +889,8 @@ sub tabxchange {
     my $aoa = Actium::O::2DArray->bless( [ [ $self->transitinfo_id ] ] );
 
     my $p = sub { $aoa->push_row( @_, $EMPTY ) };
-           # the $EMPTY is probably not needed but the old program
-           # added a tab at the end of every line
+    # the $EMPTY is probably not needed but the old program
+    # added a tab at the end of every line
 
     # line 2 - days
     my $days             = $self->days_obj;
@@ -967,7 +1001,7 @@ sub tabxchange {
     } ## tidy end: foreach my $place (@place4s)
 
     # lines 10 - footnotes for a trip
-    
+
     push @{$aoa}, [];
     # make an actual blank line
 
@@ -1079,14 +1113,14 @@ sub tabxchange {
         push @lines,       $trip->line;
 
     }
-    
+
     my @specdaynotes;
 
     foreach my $noteletter ( keys %specday_of_specdayletter ) {
-        push @specdaynotes, 
-            u::joinkey( $noteletter, $specday_of_specdayletter{$noteletter} ) ;
+        push @specdaynotes,
+          u::joinkey( $noteletter, $specday_of_specdayletter{$noteletter} );
     }
-    
+
     $p->(@specdaynotes);
 
     # lines 14  - special day code for each trip
@@ -1110,13 +1144,13 @@ sub tabxchange {
         my @placetimes = map { $timesub->($_) } $trip->placetimes;
         $placetimes_aoa->push_col(@placetimes);
     }
-    
+
     # so, the old program had a bug, I think, that added an extra tab
     # to every line.
-    
+
     # Here we are being bug-compatible.
-    
-    $placetimes_aoa->push_col($EMPTY x $placetimes_aoa->height() );
+
+    $placetimes_aoa->push_col( $EMPTY x $placetimes_aoa->height() );
 
     return $aoa->tsv . $placetimes_aoa->tsv;
 
