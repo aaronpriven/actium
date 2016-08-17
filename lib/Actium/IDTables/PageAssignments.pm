@@ -128,7 +128,7 @@ sub assign {
 
     if ($fit_failure) {
         foreach my $idtable (@idtables) {
-            next unless $idtable->failure;
+            next unless $idtable->failed;
 
             last_cry()->text( $idtable->id
               . " could not be fit in the pages available: "
