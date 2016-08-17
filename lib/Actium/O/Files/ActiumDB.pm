@@ -86,6 +86,7 @@ foreach my $item ( keys %TABLE_OF_ITEM ) {
         isa      => 'HashRef[HashRef]',
         handles  => {
             "${item}_row_r"  => 'get',
+            "${item}_exists" => 'exists',
             lc($table)       => 'keys',       # should probably not be used
             "${item}_fields" => 'keys',
             "${item}_cache"  => 'elements',
@@ -117,7 +118,15 @@ sub _build_table_cache {
 sub _build_i18n_cache {
     my $self = shift;
     my $cache_r = $self->_build_table_cache( 'i18n', qw(en es zh), );
+}
 
+sub _build_color_cache {
+    my $self    = shift;
+    my $cache_r = $self->_build_table_cache(
+        'color', qw(
+          ColorID RGB Cyan Magenta Yellow Black Red Green Blue
+          ),
+    );
 }
 
 sub _build_agency_cache {
@@ -171,7 +180,8 @@ sub _build_place_cache {
     return $self->_build_table_cache(
         'place',
         qw(h_plc_identifier c_description c_destination
-          h_plc_reference_place h_plc_number
+          h_plc_reference_place h_plc_number c_city
+          ux_usecity_description
           )
     );
 
