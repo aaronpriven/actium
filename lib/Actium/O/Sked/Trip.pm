@@ -115,6 +115,21 @@ has 'days_obj' => (
     }
 );
 
+sub specday {
+
+    my $self           = shift;
+    my $daysexceptions = $self->daysexceptions;
+    return $daysexceptions if $daysexceptions;
+
+    my $skeddays = shift;
+    my $days     = $self->days_obj;
+
+    my ( $specdayletter, $specday )
+      = $days->specday_and_specdayletter($skeddays);
+
+    return ( $specdayletter, $specday );
+}
+
 # from headways
 has 'stopleave' => (
     is     => 'ro',
