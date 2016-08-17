@@ -110,9 +110,10 @@ sub tab_strings {
 
     foreach my $record_name ( keys %{$fields_of_r} ) {
 
-        my $fieldnames_r = $fieldnames_of_r->{$record_name};
+        $cry->over($record_name);
 
-        my $records_r = $values_of_r->{$record_name};
+        my $fieldnames_r = $fieldnames_of_r->{$record_name};
+        my $records_r    = $values_of_r->{$record_name};
 
         $tab_of{$record_name}
           = Actium::O::2DArray->new($records_r)->tsv( @{$fieldnames_r} );
@@ -120,6 +121,7 @@ sub tab_strings {
 
     }
 
+    $cry->over($EMPTY);
     $cry->done;
 
     return \%tab_of;
@@ -318,6 +320,10 @@ sub _adjust_string {
     my $adjusted = shift;
     $adjusted =~ s/\A\s+//s;
     $adjusted =~ s/\s+\z//s;
+    $adjusted =~ s/\n+/ /g;
+    # change line feeds to a space. Not sure what the right thing to do here is
+    # Should I remove other white space before and after line feeds?
+    # Should I convert them to something other than spaces?
     return $adjusted;
 }
 
