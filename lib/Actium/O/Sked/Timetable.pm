@@ -239,7 +239,7 @@ sub new_from_sked {
 
         if ($has_multiple_specdays) {
             my ( $specdayletter, $specday ) = $trip->specday( $sked->days_obj );
-            push @row, $specdayletter;
+            push @row, $specdayletter // $EMPTY_STR;
         }
 
         foreach my $timenum ( $trip->placetimes ) {
