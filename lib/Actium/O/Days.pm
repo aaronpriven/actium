@@ -344,6 +344,8 @@ sub _build_as_specdayletter {
     }
 
     my @as_specdayletters = map { $SPECDAYLETTER_OF{$_} } split( //, $daycode );
+    
+    return u::joinempty(@as_specdayletters);
 
 }
 
