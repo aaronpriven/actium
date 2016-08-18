@@ -1,11 +1,11 @@
 package Actium::IDTables 0.011;
 
 use 5.012;
-use warnings; ### DEP ###
+use warnings;    ### DEP ###
 
 use English '-no_match_vars';
 use autodie;
-use Text::Trim; ### DEP ###
+use Text::Trim;    ### DEP ###
 use Actium::Crier(qw/cry last_cry/);
 use Actium::EffectiveDate (qw[long_date file_date newest_date]);
 use Actium::Sorting::Line ( 'sortbyline', 'byline' );
@@ -16,10 +16,10 @@ use Actium::Text::CharWidth ( 'ems', 'char_width' );
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::Util(qw/in jointab population_stdev/);
-use Const::Fast; ### DEP ###
-use List::Util ( 'max', 'sum' ); ### DEP ###
-use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>); ### DEP ###
-use Algorithm::Combinatorics ('combinations'); ### DEP ###
+use Const::Fast;    ### DEP ###
+use List::Util ( 'max', 'sum' );    ### DEP ###
+use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);    ### DEP ###
+use Algorithm::Combinatorics ('combinations');                     ### DEP ###
 
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
@@ -29,7 +29,7 @@ use Actium::IDTables::PageAssignments;
 
 sub create_timetable_texts {
 
-    my $cry = cry( "Creating timetable texts");
+    my $cry = cry("Creating timetable texts");
 
     my $db_obj = shift;
     my @skeds  = @_;
@@ -40,16 +40,17 @@ sub create_timetable_texts {
 
         my $linegroup = $sked->linegroup;
         if ( $linegroup ne $prev_linegroup ) {
-            $cry->over ("$linegroup ");
+            $cry->over("$linegroup ");
             $prev_linegroup = $linegroup;
         }
 
         my $table = Actium::O::Sked::Timetable->new_from_sked( $sked, $db_obj );
         push @{ $tables_of{$linegroup} }, $table;
         push @alltables, $table;
+
     }
 
-    $cry->over ($EMPTY_STR);
+    $cry->over($EMPTY_STR);
     $cry->done;
 
     return \@alltables, \%tables_of;
@@ -58,7 +59,7 @@ sub create_timetable_texts {
 
 sub output_all_tables {
 
-    my $cry = cry( "Outputting all tables into all.txt");
+    my $cry = cry("Outputting all tables into all.txt");
 
     my $tabulae_folder = shift;
     my $alltables_r    = shift;
@@ -398,7 +399,7 @@ sub _make_length {
             $length = 2;
             next;
         }
-        if ( $_ <= 1.8 ) {    # NXC is 2, NX3 1.95 
+        if ( $_ <= 1.8 ) {    # NXC is 2, NX3 1.95
             $length = 3;
             next;
         }
@@ -412,7 +413,7 @@ sub _make_length {
 
 sub output_a_pubtts {
 
-    my $cry = cry( "Outputting public timetable files for Applescript");
+    my $cry = cry("Outputting public timetable files for Applescript");
 
     my $pubtt_folder              = shift;
     my @pubtt_contents_with_dates = @{ +shift };
@@ -436,14 +437,14 @@ sub output_a_pubtts {
         next unless @$tables_r;
 
         my $file = join( "_", @{$lines_r} );
-        $cry->over (" $file");
+        $cry->over(" $file");
 
         my ( $portrait_chars, @table_assignments )
           = Actium::IDTables::PageAssignments::assign( $tables_r,
             $leave_cover_for_map );
 
         if ( not @table_assignments ) {
-            $cry->text ("Can't place $file on pages (too many timepoints?)");
+            $cry->text("Can't place $file on pages (too many timepoints?)");
             next;
         }
 
@@ -498,7 +499,7 @@ sub output_a_pubtts {
         # End matter, if there is any, goes here
 
         close $ttfh;
-        
+
         my $has_short_page = not( $table_assignments[0]{pagebreak} );
 
         $script_entries{$linegroup} = {
@@ -511,7 +512,6 @@ sub output_a_pubtts {
             has_short_page   => $has_short_page,
             portrait_chars   => $portrait_chars,
         };
-        
 
     } ## tidy end: foreach my $pubtt_content_r...
 
@@ -524,9 +524,9 @@ sub output_a_pubtts {
     }
     close $listfh;
 
-    $cry->over ($EMPTY_STR);
+    $cry->over($EMPTY_STR);
     $cry->done;
-    
+
     # $cry->text( "Has more than eight pages: @over_eight_pages");
     $cry->done;
 
