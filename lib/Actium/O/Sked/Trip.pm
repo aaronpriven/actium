@@ -119,7 +119,10 @@ sub specday {
 
     my $self           = shift;
     my $daysexceptions = $self->daysexceptions;
-    return $daysexceptions if $daysexceptions;
+    if ($daysexceptions) {
+       my ($specdayletter, $specday) = split(/ / , $daysexceptions,2);
+       return ($specdayletter, $specday);
+    }
 
     my $skeddays = shift;
     my $days     = $self->days_obj;
