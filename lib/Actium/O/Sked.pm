@@ -446,6 +446,8 @@ has 'has_multiple_daysexceptions' => (
 );
 
 has 'has_multiple_specdays' => (
+# badly named - actually it needs only one specday,
+# but that means there are two sets of days: regular and special
     is      => 'ro',
     lazy    => 1,
     builder => '_build_has_multiple_specdays',
@@ -530,9 +532,10 @@ sub _build_has_multiple_lines {
 sub _build_specdays_r {
 
     my $self = shift;
+    my $days_obj = $self->days_obj;
     my %specday_of;
     foreach my $trip ( $self->trips() ) {
-        my ( $specdayletter, $specday );
+        my ( $specdayletter, $specday ) = $trip->specday($days_obj);
         next unless $specdayletter;
         $specday_of{$specdayletter} = $specday;
     }
@@ -559,7 +562,7 @@ sub _build_has_multiple_daysexceptions {
 
 sub _build_has_multiple_specdays {
     my $self = shift;
-    return $self->specday_count > 1;
+    return $self->specday_count ;
 }
 
 sub _build_skedid {
@@ -892,6 +895,9 @@ sub tabxchange {
     # the $EMPTY is probably not needed but the old program
     # added a tab at the end of every line
 
+    my $p_blank = sub { push @{$aoa}, [] };
+    # to push an actual blank line
+
     # line 2 - days
     my $days             = $self->days_obj;
     my $days_transitinfo = $self->days_obj->as_transitinfo;
@@ -1002,7 +1008,7 @@ sub tabxchange {
 
     # lines 10 - footnotes for a trip
 
-    push @{$aoa}, [];
+    $p_blank->();
     # make an actual blank line
 
     #$p->($EMPTY);
@@ -1080,13 +1086,8 @@ sub tabxchange {
 
     $fullnote .= '</p>';
 
-    $p->( $fullnote, $linegroup_row_r->{LineGroupNote} );
-
-    # lines 12 - current or upcoming schedule equivalent. Not used
-
-    $p->('');
-
-    # lines 13 - Definitions of special day codes
+    # This was under lines 13 - special days notes, but has been moved here
+    # because the PHP code is apparently broken
 
     my ( %specday_of_specdayletter, @specdayletters, @noteletters, @lines );
 
@@ -1118,10 +1119,60 @@ sub tabxchange {
 
     foreach my $noteletter ( keys %specday_of_specdayletter ) {
         push @specdaynotes,
-          u::joinkey( $noteletter, $specday_of_specdayletter{$noteletter} );
+            '<p>'
+          . $noteletter
+          . ' &mdash; '
+          . $specday_of_specdayletter{$noteletter} . '</p>';
     }
 
-    $p->(@specdaynotes);
+    #$p->(@specdaynotes);
+
+    $fullnote .= u::joinempty(@specdaynotes);
+
+    $p->( $fullnote, $linegroup_row_r->{LineGroupNote} );
+
+    # lines 12 - current or upcoming schedule equivalent. Not used
+
+    $p->('');
+
+    # lines 13 - Definitions of special day codes
+
+   #    my ( %specday_of_specdayletter, @specdayletters, @noteletters, @lines );
+   #
+   #    foreach my $daysexception ( $self->daysexceptions ) {
+   #        next unless $daysexception;
+   #        my ( $specdayletter, $specday ) = split( / /, $daysexception, 2 );
+   #        $specday_of_specdayletter{$specdayletter} = $specday;
+   #    }
+   #
+   #    foreach my $trip ( $self->trips ) {
+   #        my $tripdays = $trip->days_obj;
+   #        my ( $specdayletter, $specday )
+   #          = $tripdays->specday_and_specdayletter($days);
+   #
+   #        if ($specdayletter) {
+   #            $specday_of_specdayletter{$specdayletter} = $specday;
+   #            push @specdayletters, $specdayletter;
+   #        }
+   #        else {
+   #            push @specdayletters, $EMPTY;
+   #        }
+   #
+   #        push @noteletters, $EMPTY;
+   #        push @lines,       $trip->line;
+   #
+   #    }
+   #
+   #    my @specdaynotes;
+   #
+   #    foreach my $noteletter ( keys %specday_of_specdayletter ) {
+   #        push @specdaynotes,
+   #          u::joinkey( $noteletter, $specday_of_specdayletter{$noteletter} );
+   #    }
+   #
+   #    $p->(@specdaynotes);
+   #
+   $p_blank->(); # special day notes, moved above
 
     # lines 14  - special day code for each trip
 
