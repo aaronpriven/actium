@@ -1,30 +1,17 @@
-# Actium/O/Sked/Timetable.pm
+package Actium::O::Sked::Timetable 0.010;
 
 # Object representing the data in a timetable to be displayed to the user.
 # Designed to take an Actium::O::Sked object and make it displayable.
 
-# legacy status: 4
-
-use 5.012;
-use warnings;
-
-package Actium::O::Sked::Timetable 0.010;
-
-use Moose;                        ### DEP ###
-use MooseX::StrictConstructor;    ### DEP ###
+use Actium::Moose;
 
 use MooseX::MarkAsMethods ( autoclean => 1 );    ### DEP ###
-use overload '""' => sub { shift->id };
-# overload ### DEP ###
-
-use Params::Validate (':all');                   ### DEP ###
+#use overload '""' => sub { shift->id };
+## overload ### DEP ###
 
 use Actium::Time;
-use Actium::Constants;
 
 use Actium::Text::InDesignTags;
-
-use Const::Fast;                                 ### DEP ###
 
 const my $idt => 'Actium::Text::InDesignTags';
 
@@ -40,7 +27,7 @@ has sked_obj => (
     required => 1,
     handles  => {
         linegroup => 'linegroup',
-             #has_note_col                    => 'has_multiple_daysexceptions',
+        #has_note_col                    => 'has_multiple_daysexceptions',
         has_note_col                    => 'has_multiple_specdays',
         specday_count                   => 'specday_count',
         has_route_col                   => 'has_multiple_lines',
@@ -112,9 +99,8 @@ has height => (
 
 sub _build_height {
     my $self = shift;
-    return $self->body_row_count + $self->specday_count;
+    return $self->body_row_count;
 
-    # TODO - add rows for each note of whatever type...
 }
 
 has width_in_halfcols => (
@@ -264,7 +250,7 @@ sub as_indesign {
         @_,
         {   minimum_columns  => 1,
             minimum_halfcols => 1,
-            compression      => { type => BOOLEAN, default => 0 },
+            compression      => { type => $PV_TYPE{BOOLEAN}, default => 0 },
             lower_bound => { default => 0 },
             upper_bound => { default => ( $self->body_row_count - 1 ) },
             firstpage   => { default => 1 },
