@@ -127,6 +127,16 @@ sub dimensions_for_display {
     return "$displaywidth columns x $displayheight rows";
 }
 
+has linegrouptype => (
+    is  => 'ro',
+    isa => 'Str',
+);
+
+has linegrouptype_rgbhex => (
+    is  => 'ro',
+    isa => 'Str',
+);
+
 my %note_definition_of = (
 
     MZ => 'MZ - Mondays, Wednesdays, and Fridays only',
@@ -163,8 +173,8 @@ sub new_from_sked {
 
     if ($has_multiple_specdays) {
         $halfcols++;
-        foreach my $specday ( $sked->specdays ) {
-            push @note_definitions, $specday;
+        foreach my $specday_definition ( $sked->specday_definitions ) {
+            push @note_definitions, $specday_definition;
         }
 
     }
@@ -180,6 +190,13 @@ sub new_from_sked {
 
     #$spec{days_obj} = $sked->days_obj;
     #$spec{linegroup} = $sked->linegroup;
+
+    my $linegroup_row_r = $actiumdb->line_row_r( $sked->linegroup );
+    my $linegrouptype   = $linegroup_row_r->{LineGroupType};
+    $spec{linegrouptype} = $linegrouptype;
+
+    my $linegrouptype_row_r = $actiumdb->linegrouptype_row_r($linegrouptype);
+    $spec{linegrouptype_rgbhex} = $linegrouptype_row_r->{RGBHex};
 
     $spec{header_daytext} = $sked->days_obj->as_plurals;
 
@@ -412,6 +429,11 @@ sub as_indesign {
         }
         if ($has_note_col) {
             my $note = shift @body_row;
+
+            if ( length($note) > 3 ) {
+                $note = "<CharStyle:SmallNote>$note<CharStyle:>";
+            }
+
             print $th
 "<CellStyle:LineNote><StylePriority:20><CellStart:1,1><ParaStyle:LineNote>$note<CellEnd:>";
         }
@@ -452,12 +474,13 @@ sub as_indesign {
 
     print $th "<TableEnd:>";
 
-    unless ( $params{finalpage} ) {
-        print $th "\rContinued...";
+    foreach my $note_definition ( $self->note_definitions ) {
+        my $converted = $idt->encode_high_chars($note_definition);
+        print $th "\r$converted";
     }
 
-    foreach my $note_definition ( $self->note_definitions ) {
-        print $th "\r$note_definition";
+    unless ( $params{finalpage} ) {
+        print $th "\rContinued...";
     }
 
     close $th;
@@ -518,6 +541,26 @@ my %name_of_bsh = (
 );
 
 sub as_html {
+    my $self       = shift;
+    my $html_table = $self->html_table;
+    return
+        '<head>'
+      . '<link rel="stylesheet" type="text/css" href="timetable.css">'
+      . '</head><body>'
+      . $html_table
+      . '</body>';
+}
+
+has html_table => (
+    is       => 'ro',
+    lazy     => 1,
+    init_arg => undef,
+    builder  => '_build_html_table',
+);
+
+sub _build_html_table {
+
+    require HTML::Entities;    ### DEP ###
 
     my $self = shift;
 
@@ -536,7 +579,12 @@ sub as_html {
 
     my @header_routes = $self->header_routes;
 
-    print $th qq{<tr\n><th class="skedhead" colspan=$all_columns>};
+    my $linegroup_rgbhex = $self->linegrouptype_rgbhex;
+    $linegroup_rgbhex =~ s/^#*/#/;
+    # add a hash if there isn't one already
+
+    print $th
+qq{<tr\n><th class="skedhead" style="background-color: $linegroup_rgbhex" colspan=$all_columns>};
 
     if ( $header_routes[0] =~ /^BS[DNH]/ ) {
         my $header_name = $name_of_bsh{ $header_routes[0] };
@@ -576,22 +624,24 @@ sub as_html {
     my @header_columntexts
       = map { encode_entities $_} ( $self->header_columntexts );
 
-    print $th "<tr\n>";
+    print $th '<tr class="timepointheaders"\n>';
 
     # The following is written this way so that in future, we can decide to
     # treat Note and Line with special graphic treatment (italics, color, etc.)
+    
+    my @temp_header_columntexts = @header_columntexts;
 
     if ($has_line_col) {
-        my $header = shift @header_columntexts;
+        my $header = shift @temp_header_columntexts;
         print $th qq{<th class="lineheader">$header</th>};
     }
 
     if ($has_note_col) {
-        my $header = shift @header_columntexts;
+        my $header = shift @temp_header_columntexts;
         print $th qq{<th class="noteheader">$header</th>};
     }
 
-    for my $headertext (@header_columntexts) {
+    for my $headertext (@temp_header_columntexts) {
         print $th qq{<th class="timepointheader">$headertext</th>};
     }
 
@@ -603,30 +653,35 @@ sub as_html {
     for my $body_row_r ( $self->body_row_rs ) {
         my @body_row = map { encode_entities($_) } @{$body_row_r};
 
-        print $th "<tr\n>";
+        my @temp_header_columntexts = @header_columntexts;
+
+        print $th qq{<tr class="times"\n>};
 
         if ($has_line_col) {
             my $line = shift @body_row;
+            my $data_title = shift @temp_header_columntexts;
 
-            print $th qq{<td class="line">$line</td>};
+            print $th qq{<td data-title="$data_title" class="line">$line</td>};
 
         }
         if ($has_note_col) {
             my $note = shift @body_row;
-            print $th qq{<td class="note">$note</td>};
+            my $data_title = shift @temp_header_columntexts;
+            print $th qq{<td data-title="$data_title" class="note">$note</td>};
         }
 
         for my $time (@body_row) {
+            my $data_title = shift @temp_header_columntexts;
+            
 
             if ( !$time ) {
-                $time = '&mdash;';
+                print $th qq{<td data-title="$data_title" class='blanktime'>&mdash;};
             }
-
-            if ( $time =~ /p\z/ ) {
-                print $th "<td class='pmtime'>$time";
+            elsif ( $time =~ /p\z/ ) {
+                print $th qq{<td data-title="$data_title" class='pmtime'>$time};
             }
             else {
-                print $th "<td class='amtime'>$time";
+                print $th qq{<td data-title="$data_title" class='amtime'>$time};
             }
             print $th '</td>';
         }
@@ -641,14 +696,17 @@ sub as_html {
     print $th "</tbody></table>\n";
 
     foreach my $note_definition ( $self->note_definitions ) {
-        print $th "<p>$note_definition</p>";
+        my $enc = HTML::Entities::encode_entities_numeric($note_definition);
+        print $th "<p>$enc</p>";
     }
+
+    #print $th '</body>';
 
     close $th;
 
     return $tabletext;
 
-} ## tidy end: sub as_html
+} ## tidy end: sub _build_html_table
 
 sub as_public_json {
 
