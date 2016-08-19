@@ -444,7 +444,10 @@ sub _build_options {
     my @argv = $self->argv;
 
     my $returnvalue = GetOptionsFromArray( \@argv, \%options, @option_specs );
-    die "Errors parsing command-line options.\n" unless $returnvalue;
+    unless ($returnvalue) {
+       say "Error parsing command-line options.\n---";
+       %options = ( help => 1 );
+    }
     $self->_set_argv_r( \@argv );
     # replace old argv with new one without options in it
 
