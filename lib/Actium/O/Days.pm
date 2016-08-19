@@ -108,10 +108,10 @@ sub as_sortable {
 # so we put this stub in so that we can make a sortable version
 
 has 'as_shortcode' => (
-    is       => 'ro',
-    init_arg => 'undef',
-    builder  => '_build_as_shortcode',
-    lazy     => 1,
+    is        => 'ro',
+    init_arg  => 'undef',
+    builder   => '_build_as_shortcode',
+    lazy      => 1,
     predicate => '_has_shortcode',
 );
 
@@ -281,10 +281,10 @@ sub as_abbrevs {
 for my $attr (qw/specday specdayletter/) {
 
     has "as_$attr" => (
-        is      => 'ro',
-        isa     => 'Str',
-        lazy    => 1,
-        builder => "_build_as_$attr",
+        is        => 'ro',
+        isa       => 'Str',
+        lazy      => 1,
+        builder   => "_build_as_$attr",
         predicate => "_has_$attr",
     );
 
@@ -331,23 +331,47 @@ const my %SPECDAYLETTER_OF => (
 sub _build_as_specdayletter {
     my $self = shift;
 
-    my $specdayletter = $EMPTY;
+    my $schspecdayletter;
 
     my $daycode       = $self->daycode;
     my $schooldaycode = $self->schooldaycode;
 
     if ( $schooldaycode eq 'D' ) {
-        $specdayletter = 'SD';
+        $schspecdayletter = 'SD';
     }
     elsif ( $schooldaycode eq 'H' ) {
-        $specdayletter = 'SH';
+        $schspecdayletter = 'SH';
     }
 
-    my @as_specdayletters = map { $SPECDAYLETTER_OF{$_} } split( //, $daycode );
-    
-    return u::joinempty(@as_specdayletters);
+    my $specdayletter;
 
-}
+    if ( $daycode eq '1234' ) {
+        $specdayletter = 'XF';
+    }
+    elsif ( $daycode eq '1235' ) {
+        $specdayletter = 'XTh';
+    }
+    elsif ( $daycode eq '1245' ) {
+        $specdayletter = 'XW';
+    }
+    elsif ( $daycode eq '1345' ) {
+        $specdayletter = 'XT';
+    }
+    elsif ( $daycode eq '2345' ) {
+        $specdayletter = 'XM';
+    }
+    else {
+        my @as_specdayletters
+          = map { $SPECDAYLETTER_OF{$_} } split( //, $daycode );
+        $specdayletter = u::joinempty(@as_specdayletters);
+    }
+
+    if ($schspecdayletter) {
+        $specdayletter .= "-$schspecdayletter";
+    }
+    return $specdayletter;
+
+} ## tidy end: sub _build_as_specdayletter
 
 sub specday_and_specdayletter {
 
@@ -568,9 +592,9 @@ const my %TRANSITINFO_DAYS_OF => (
 );
 
 sub as_transitinfo {
-    my $self = shift;
+    my $self    = shift;
     my $daycode = $self->daycode;
-    if (exists $TRANSITINFO_DAYS_OF{$daycode}) {
+    if ( exists $TRANSITINFO_DAYS_OF{$daycode} ) {
         return $TRANSITINFO_DAYS_OF{$daycode};
     }
     return $daycode;
