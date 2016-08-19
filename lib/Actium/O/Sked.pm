@@ -15,7 +15,7 @@ with Storage(
 );
 
 use Actium::Time(qw<:all>);
-use Actium::Sorting::Line qw<sortbyline linekeys>;
+use Actium::Sorting::Line qw<linekeys>;
 
 use Actium::Types (qw/DirCode ActiumDir ActiumDays/);
 use Actium::O::Sked::Trip;
@@ -24,10 +24,10 @@ use Actium::O::Days;
 use Actium::O::Sked::Stop;
 use Actium::O::Sked::Stop::Time;
 
-use Const::Fast;    ### DEP ###
-
 with 'Actium::O::Sked::Prehistoric';
 # allows prehistoric skeds files to be read and written.
+
+no warnings 'experimental::refaliasing';
 
 ###################################
 ## CONSTRUCTION
@@ -370,6 +370,7 @@ has 'specdays_r' => (
     builder => '_build_specdays_r',
     traits  => ['Hash'],
     is      => 'bare',
+    reader  => '_specdays_r',
     isa     => 'HashRef[Str]',
     handles => {
         specdayletters => 'keys',
@@ -377,6 +378,28 @@ has 'specdays_r' => (
         specday_count  => 'count',
     },
 );
+
+has 'specday_definitions_r' => (
+    lazy    => 1,
+    builder => '_build_specday_definitions_r',
+    traits  => ['Array'],
+    is      => 'bare',
+    handles => { 'specday_definitions' => 'elements' },
+);
+
+sub _build_specday_definitions_r {
+
+    my $self = shift;
+    \my %specday_of = $self->_specdays_r;
+
+    my @definitions;
+    foreach my $letter ( keys %specday_of ) {
+        push @definitions, $letter . " \x{2014} " . $specday_of{$letter};
+    }
+    @definitions = sort @definitions;
+    return \@definitions;
+
+}
 
 # days
 has 'days_obj' => (
@@ -446,8 +469,8 @@ has 'has_multiple_daysexceptions' => (
 );
 
 has 'has_multiple_specdays' => (
-# badly named - actually it needs only one specday,
-# but that means there are two sets of days: regular and special
+    # badly named - actually it needs only one specday,
+    # but that means there are two sets of days: regular and special
     is      => 'ro',
     lazy    => 1,
     builder => '_build_has_multiple_specdays',
@@ -519,7 +542,7 @@ sub _build_lines {
         $seen_line{ $trip->line() } = 1;
     }
 
-    return [ sortbyline( keys %seen_line ) ];
+    return [ u::sortbyline( keys %seen_line ) ];
 
 }
 
@@ -531,7 +554,7 @@ sub _build_has_multiple_lines {
 
 sub _build_specdays_r {
 
-    my $self = shift;
+    my $self     = shift;
     my $days_obj = $self->days_obj;
     my %specday_of;
     foreach my $trip ( $self->trips() ) {
@@ -562,7 +585,7 @@ sub _build_has_multiple_daysexceptions {
 
 sub _build_has_multiple_specdays {
     my $self = shift;
-    return $self->specday_count ;
+    return $self->specday_count;
 }
 
 sub _build_skedid {
@@ -1172,15 +1195,18 @@ sub tabxchange {
    #
    #    $p->(@specdaynotes);
    #
-   $p_blank->(); # special day notes, moved above
+    $p_blank->();    # special day notes, moved above
+
+    # FLIPPING NOTE LETTERS AND SPECIAL DAY CODES TO SEE IF THAT WORKS
 
     # lines 14  - special day code for each trip
 
-    $p->(@specdayletters);
-
+    # $p->(@specdayletters);
     # lines 15 - note letters for each trip
 
     $p->(@noteletters);
+
+    $p->(@specdayletters);
 
     # lines 16 - lines
 
