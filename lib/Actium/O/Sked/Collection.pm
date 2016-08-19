@@ -3,6 +3,7 @@ package Actium::O::Sked::Collection 0.010;
 use Actium::Moose;
 
 use Actium::O::Sked;
+use Actium::Sorting::Skeds ('skedsort');
 
 around BUILDARGS => sub {
     my $orig  = shift;
@@ -23,10 +24,17 @@ has 'skeds_r' => (
     isa      => 'ArrayRef[Skedlike]',
     traits   => ['Array'],
     required => 1,
+    writer => '_set_skeds_r',
     init_arg => 'skeds',
     handles  => { skeds => 'elements' },
 );
 
+sub BUILD {
+    my $self = shift;
+    my @skeds = skedsort ($self->skeds);
+    $self->_set_skeds_r->(\@skeds);
+}
+    
 has '_sked_obj_by_id_r' => (
     is      => 'bare',
     isa     => 'HashRef[Skedlike]',
