@@ -544,8 +544,8 @@ sub as_html {
     my $self       = shift;
     my $html_table = $self->html_table;
     return
-        '<head>'
-      . '<link rel="stylesheet" type="text/css" href="timetable.css">'
+        "<!DOCTYPE html>\n"
+      . '<head><link rel="stylesheet" type="text/css" href="timetable.css">'
       . '</head><body>'
       . $html_table
       . '</body>';
@@ -613,6 +613,20 @@ qq{<tr\n><th class="skedhead" style="background-color: $linegroup_rgbhex" colspa
     }
 
     print $th "</th></tr>";
+
+    ##############
+    # Service Alert Row 
+
+    foreach my $header_route (@header_routes) {
+        print $th qq{<tr class=alertrow><th class=alerts colspan=$all_columns>};
+        
+        print $th 
+        qq{<a href="http://www.actransit.org/line_alert/?quick_line=$header_route">};
+        print $th "See service alerts for line $header_route.";
+        print $th '</a></th></tr>';
+
+    }
+
     print $th "</thead><tbody\n>";
 
     ##############
@@ -628,7 +642,7 @@ qq{<tr\n><th class="skedhead" style="background-color: $linegroup_rgbhex" colspa
 
     # The following is written this way so that in future, we can decide to
     # treat Note and Line with special graphic treatment (italics, color, etc.)
-    
+
     my @temp_header_columntexts = @header_columntexts;
 
     if ($has_line_col) {
@@ -658,24 +672,26 @@ qq{<tr\n><th class="skedhead" style="background-color: $linegroup_rgbhex" colspa
         print $th qq{<tr class="times"\n>};
 
         if ($has_line_col) {
-            my $line = shift @body_row;
+            my $line       = shift @body_row;
             my $data_title = shift @temp_header_columntexts;
 
             print $th qq{<td data-title="$data_title" class="line">$line</td>};
 
         }
         if ($has_note_col) {
-            my $note = shift @body_row;
+            my $note       = shift @body_row;
             my $data_title = shift @temp_header_columntexts;
-            print $th qq{<td data-title="$data_title" class="note">$note</td>};
+            my $class      = $note ? 'note' : 'blanktime';
+            print $th qq{<td data-title="$data_title" class="$class">$note</td>}
+              ;
         }
 
         for my $time (@body_row) {
             my $data_title = shift @temp_header_columntexts;
-            
 
             if ( !$time ) {
-                print $th qq{<td data-title="$data_title" class='blanktime'>&mdash;};
+                print $th
+                  qq{<td data-title="$data_title" class='blanktime'>&mdash;};
             }
             elsif ( $time =~ /p\z/ ) {
                 print $th qq{<td data-title="$data_title" class='pmtime'>$time};
