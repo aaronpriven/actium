@@ -47,7 +47,7 @@ sub START {
     foreach my $sked (@skeds) {
 
         my $linegroup = $sked->linegroup;
-        
+
         if ( $linegroup ne $prev_linegroup ) {
             $tttext_cry->over("$linegroup ");
             $prev_linegroup = $linegroup;
@@ -73,16 +73,14 @@ sub START {
     );
 
     foreach my $linegroup ( u::sortbyline keys %htmls_of_linegroup ) {
-        my $file = "$linegroup.html";
+        my $file  = "$linegroup.html";
         my @htmls = @{ $htmls_of_linegroup{$linegroup} };
         my $html
-          = '<head>'
-          . '<link rel="stylesheet" type="text/css" href="timetable.css">'
-          . '</head><body>'
-          . join( '<br />', @htmls )
-          . '</body>';
+          = "<!DOCTYPE html>\n"
+          . '<head><link rel="stylesheet" type="text/css" href="timetable.css">'
+          . '</head><body>' . join( '<br />', @htmls ) . '</body>';
 
-        $html_folder->slurp_write ( $html, $file );
+        $html_folder->slurp_write( $html, $file );
     }
 
     $htmlcry->done;
