@@ -145,7 +145,7 @@ sub _build_agency_cache {
 sub _build_linegrouptype_cache {
     my $self = shift;
     return $self->_build_table_cache( 'linegrouptype', 'LineGroupType',
-        'SortValue' );
+        'SortValue' , 'RGBHex', );
 }
 
 sub _build_transithub_cache {
