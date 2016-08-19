@@ -1,12 +1,12 @@
 package Actium::Cmd::HTMLTables 0.011;
 
-use warnings;
-use 5.014;
+use Actium::Preamble;
 
 # Produces HTML tables that represent timetables.
 
 use Actium::Constants;
 use Actium::O::Sked;
+use Actium::O::Sked::Collection;
 use Actium::O::Sked::Timetable;
 
 sub HELP {
@@ -26,34 +26,37 @@ sub OPTIONS {
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
-    my $signup   = $env->signup;
+    my $actiumdb       = $env->actiumdb;
+    my $signup         = $env->signup;
+    my $storablefolder = $signup->subfolder('s');
 
     my $html_folder = $signup->subfolder('html');
 
-    my $prehistorics_folder = $signup->subfolder('skeds');
+    my $collection
+      = Actium::O::Sked::Collection->load_storable($storablefolder);
 
-    my $loadcry = cry('Loading prehistoric schedules');
-
-    my @skeds
-      = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
-
-    $loadcry->done;
+    my @skeds = $collection->skeds;
 
     my $tttext_cry = cry('Creating timetable texts');
 
     my @tables;
     my $prev_linegroup = $EMPTY_STR;
+
+    my %htmls_of_linegroup;
+
     foreach my $sked (@skeds) {
 
         my $linegroup = $sked->linegroup;
+        
         if ( $linegroup ne $prev_linegroup ) {
             $tttext_cry->over("$linegroup ");
             $prev_linegroup = $linegroup;
         }
 
-        push @tables,
-          Actium::O::Sked::Timetable->new_from_sked( $sked, $actiumdb );
+        my $table
+          = Actium::O::Sked::Timetable->new_from_sked( $sked, $actiumdb );
+        push @tables, $table;
+        push @{ $htmls_of_linegroup{$linegroup} }, $table->html_table;
 
     }
 
@@ -68,6 +71,19 @@ sub START {
             SUBFOLDER => 'html',
         }
     );
+
+    foreach my $linegroup ( u::sortbyline keys %htmls_of_linegroup ) {
+        my $file = "$linegroup.html";
+        my @htmls = @{ $htmls_of_linegroup{$linegroup} };
+        my $html
+          = '<head>'
+          . '<link rel="stylesheet" type="text/css" href="timetable.css">'
+          . '</head><body>'
+          . join( '<br />', @htmls )
+          . '</body>';
+
+        $html_folder->slurp_write ( $html, $file );
+    }
 
     $htmlcry->done;
 
