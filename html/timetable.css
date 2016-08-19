@@ -1,0 +1,172 @@
+body {
+   font-family:  'Frutiger LT Std' , 'Frutiger LT Pro' , 'Myriad Pro', 'Segoe UI',  sans-serif;
+}
+
+table.sked {
+        border-collapse: collapse;
+        line-height: normal;
+        width: auto;
+}
+
+.sked tr {
+        border: none;
+        width: auto;
+}
+
+.sked th {
+        background-color: transparent;
+        text-align: center;
+        padding-top: .5em;
+        padding-bottom: 1em;
+        line-height: normal;
+        border: none;
+        width: auto;
+}
+
+th.skedhead {
+        text-align: left;
+        background-color: rgb(0,83,150);
+        color: white;
+            padding-left: 1em;
+            padding-right: 1em;
+        padding-top: .5em;
+        padding-bottom: .5em;
+        border: none;
+        width: auto;
+}
+
+div.skedheaddiv {
+        display: table-row;
+}
+
+div.skedroute {
+        font-size: 300%;
+        display: table-cell;
+        padding-right: .5em;
+        font-weight: bold;
+            vertical-align: middle;
+}
+
+div.skeddest {
+        display: table-cell;
+        line-height: normal;
+        font-weight: bold;
+            font-size: 125%;
+            vertical-align: middle;
+}
+
+.sked td {
+        line-height: normal;
+        text-align: center;
+        border: none;
+        width: auto;
+            font-size: 90%;
+            line-height: 95%;
+}
+
+.sked tr:nth-of-type(5n+7) {
+   border-top: dotted 1pt #808080;
+}
+
+.sked tr:nth-of-type(5n+7) td {
+   padding-top: 3pt;
+}
+
+.pmtime {
+        font-weight: bold;
+}
+
+th.timepointheader,th.noteheader,th.lineheader{
+        background-color: white;
+        color: black;
+            font-weight: normal;
+            padding-left: .5em;
+            padding-right: .5em;
+            font-size: 90%;
+            max-width: 6em;
+            vertical-align: bottom;
+}
+
+        
+@media only screen and (max-width: 760px),
+(min-device-width: 768px) and (max-device-width: 1024px)  {
+
+        .sked table, 
+        .sked thead, 
+        .sked tbody, 
+        .sked th, 
+        .sked td, 
+        .sked tr { 
+                display: block; 
+        }
+
+body {
+   font-family: '-apple-system' , 'Frutiger LT Std' , 'Frutiger LT Pro' , 'Myriad Pro', 'Segoe UI', sans-serif;
+}
+
+
+
+div.skedroute {
+        font-size: 200%;
+}
+
+div.skeddest {
+            font-size: 100%;
+}
+
+
+
+
+.sked tr:nth-of-type(5n+7) {
+   border-top: none;
+}
+
+.sked tr:nth-of-type(5n+7) td {
+   padding-top: 0;
+}
+ 
+        /* Hide table headers (but not display: none;, for accessibility) */
+         .sked td.blanktime , .sked tr.timepointheaders { 
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+        }
+
+        .sked th.alerts { font-size: 95% ;}
+ 
+        .sked tr.times { 
+                    padding-bottom: 1px;
+                    padding-top: 1px;
+                    border-top: 2px solid black ; }
+
+ 
+        .sked td { 
+                /* Behave  like a "row" */
+                border: none;
+                border-top: 1px solid #ddd; 
+                position: relative;
+                padding-left: 90%; 
+                text-align:left;
+                        display:block;
+        }
+
+        .sked td:before { 
+                /* Now like a table header */
+                position: absolute;
+                /* Top/left values mimic padding */
+                top: 2px;
+                left: 0px;
+                width: 85%; 
+                font-size: 90%;
+                line-height: 95%;
+                padding-right: 2px; 
+                text-align:right;
+                content: attr(data-title);
+                font-weight: normal;
+                        
+        }
+
+
+ 
+
+
