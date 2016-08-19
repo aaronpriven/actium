@@ -27,7 +27,7 @@ sub START {
     my $signup   = $env->signup;
 
     my $tabulae_folder    = $signup->subfolder('timetables');
-    my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
+    #my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
     my $multipubtt_folder = $tabulae_folder->subfolder('pub-idtags');
     my $storablefolder    = $signup->subfolder('s');
 
