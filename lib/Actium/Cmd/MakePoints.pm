@@ -254,7 +254,9 @@ sub START {
             my $kpointfile = "kpoints/${firstdigits}xx/$stoptotest.txt";
 
             unless ( -e $kpointfile ) {
-                push @{ $errors{$signid} }, "Stop $stoptotest not found";
+                my $add;
+                $add = " ($old_makepoints)" if $old_makepoints ne 'no';
+                push @{ $errors{$signid} }, "Stop $stoptotest not found$add";
                 $skipped_stops{$signid} = $stoptotest;
                 next SIGN;
             }
