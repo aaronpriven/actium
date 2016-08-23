@@ -912,7 +912,8 @@ sub tabxchange {
     # line 1 - skedid
 
     require Actium::O::2DArray;
-    my $aoa = Actium::O::2DArray->bless( [ [ $self->transitinfo_id ] ] );
+    my $skedid = $self->transitinfo_id;
+    my $aoa = Actium::O::2DArray->bless( [ [$skedid] ] );
 
     my $p = sub { $aoa->push_row( @_, $EMPTY ) };
     # the $EMPTY is probably not needed but the old program
