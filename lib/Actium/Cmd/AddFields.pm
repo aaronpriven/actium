@@ -25,23 +25,24 @@ sub OPTIONS {
         'actiumdb',
         {   spec            => 'table=s',
             description     => "Table where fields will come from",
-            fallback         => $DEFAULT_TABLE,
+            fallback        => $DEFAULT_TABLE,
             display_default => 1,
         },
-        {   spec => 'idcolumn=i',
-            'Column of the input file which will be used as IDs'
+        {   spec        => 'idcolumn=i',
+            description => 'Column of the input file which will be used as IDs'
               . ' (starting with 1)',
-            fallback         => $DEFAULT_ID_COL,
+            fallback        => $DEFAULT_ID_COL,
             display_default => 1,
         },
-        {   spec => 'output=s',
+        {   spec        => 'output=s',
             description => 'Name of the output file. If not specified, '
               . 'the output file will be the name of the input file '
               . 'with "-out" just before the extension; e.g., "file.txt" '
               . 'will be changed to "file-out.txt".',
         },
         {   spec => 'headers!',
-            description => 'Treat the first row of the files as the names of the headers '
+            description =>
+              'Treat the first row of the files as the names of the headers '
               . '(on by default; turn off with -no-headers)',
             fallback => 1,
         },
