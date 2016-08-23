@@ -51,7 +51,7 @@ Actium::O::Cmd->new(
         stopsearch    => \'ss',
         tabula        => \'timetables',
         tabulae       => \'timetables',
-        tabskeds      => 'TabSkeds',
+        tabskeds      => 'TabSkeds2',
         timetables    => 'Timetables',
         xhea2skeds    => 'Xhea2Skeds',
         zipcodes      => 'ZipCodes',
