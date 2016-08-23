@@ -26,7 +26,6 @@ Actium::O::Cmd::->new(
         theaimport    => 'TheaImport', 
         time          => 'Time', 
         xhea2hasi     => 'Xhea2Hasi', 
-        tab2 => 'TabSkeds2',
     },
 );
 
