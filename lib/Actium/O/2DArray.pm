@@ -363,8 +363,10 @@ sub push_col {
 
     for my $row_index ( 0 .. $last_row ) {
         my $row_r = $self->[$row_index];
-        $#{$row_r} = $last_col;          # pad out
-        push @{$row_r}, $col_values[$row_index];
+        if (not defined $row_r) {
+            $row_r = $self->[$row_index] = [];
+        }
+        $row_r->[$last_col+1] = $col_values[$row_index];
     }
 
     return $self->width;
@@ -393,6 +395,9 @@ sub push_cols {
 
     for my $row_index ( 0 .. $last_row ) {
         my $row_r = $self->[$row_index];
+        if (not defined $row_r) {
+            $row_r = $self->[$row_index] = [];
+        }
         $#{$row_r} = $last_col;    # pad out
         push @{$row_r}, @{ $cols[$row_index] };
     }
