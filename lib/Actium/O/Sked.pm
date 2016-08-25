@@ -4,8 +4,9 @@ package Actium::O::Sked 0.012;
 
 use Actium::Moose;
 
-use MooseX::MarkAsMethods autoclean => 1;
 use overload '""' => sub { shift->id };
+
+use Actium::Moose;
 
 use MooseX::Storage;    ### DEP ###
 with Storage(
@@ -26,8 +27,6 @@ use Actium::O::Sked::Stop::Time;
 
 with 'Actium::O::Sked::Prehistoric';
 # allows prehistoric skeds files to be read and written.
-
-no warnings 'experimental::refaliasing';
 
 ###################################
 ## CONSTRUCTION
@@ -1002,12 +1001,15 @@ sub tabxchange {
 
     # lines 9 - lines per timepoint
 
+    my @placedescs;
+
     foreach my $place (@place4s) {
 
         my $desc = $actiumdb->field_of_referenced_place(
             place => $place,
             field => 'c_description',
         );
+        push @placedescs, $desc;
         my $city = $actiumdb->field_of_referenced_place(
             place => $place,
             field => 'c_city',
@@ -1113,22 +1115,33 @@ sub tabxchange {
     # This was under lines 13 - special days notes, but has been moved here
     # because the PHP code is apparently broken
 
-    my ( %specday_of_specdayletter, @specdayletters, @noteletters, @lines );
+    my ( %specday_of_specdayletter, %trips_of_letter, @specdayletters,
+        @noteletters, @lines );
 
-    foreach my $daysexception ( $self->daysexceptions ) {
-        next unless $daysexception;
-        my ( $specdayletter, $specday ) = split( / /, $daysexception, 2 );
-        $specday_of_specdayletter{$specdayletter} = $specday;
-    }
+    #    foreach my $daysexception ( $self->daysexceptions ) {
+    #        next unless $daysexception;
+    #        my ( $specdayletter, $specday ) = split( / /, $daysexception, 2 );
+    #        $specday_of_specdayletter{$specdayletter} = $specday;
+    #    }
 
     foreach my $trip ( $self->trips ) {
+
+        my $daysexception = $trip->daysexceptions;
+
         my $tripdays = $trip->days_obj;
         my ( $specdayletter, $specday )
           = $tripdays->specday_and_specdayletter($days);
 
-        if ($specdayletter) {
+        if ($daysexception) {
+            my ( $dspecdayletter, $dspecday ) = split( / /, $daysexception, 2 );
+            $specday_of_specdayletter{$dspecdayletter} = $dspecday;
+            push @specdayletters, $specdayletter;
+            push @{ $trips_of_letter{$dspecdayletter} }, $trip;
+        }
+        elsif ($specdayletter) {
             $specday_of_specdayletter{$specdayletter} = $specday;
             push @specdayletters, $specdayletter;
+            push @{ $trips_of_letter{$specdayletter} }, $trip;
         }
         else {
             push @specdayletters, $EMPTY;
@@ -1137,21 +1150,49 @@ sub tabxchange {
         push @noteletters, $EMPTY;
         push @lines,       $trip->line;
 
-    }
+    } ## tidy end: foreach my $trip ( $self->trips)
 
-    my @specdaynotes;
+    my ( @specdaynotes, @specdaytrips );
+
+    my $colon_timesub = timestr_sub();
 
     foreach my $noteletter ( keys %specday_of_specdayletter ) {
+
+        my $specday = $specday_of_specdayletter{$noteletter};
+
         push @specdaynotes,
             '<p>'
           . $noteletter
           . ' &mdash; '
           . $specday_of_specdayletter{$noteletter} . '</p>';
-    }
+
+        my @trips = $trips_of_letter{$noteletter}->@*;
+
+        my $specdaytrip = $specday =~ s/\.*\z/:/r;
+        $specdaytrip = "<dt>$specdaytrip</dt>";
+
+        foreach my $trip (@trips) {
+
+            my @placetimes = $trip->placetimes;
+            my $idx = u::firstidx {defined} @placetimes;
+
+            $specdaytrip .= "<dd>Trip leaving $placedescs[$idx]" . " at "
+              . $colon_timesub->( $placetimes[$idx] ) . '</dd>';
+        }
+
+        push @specdaytrips, $specdaytrip;
+
+    } ## tidy end: foreach my $noteletter ( keys...)
+    
+    @specdaytrips = sort @specdaytrips;
 
     #$p->(@specdaynotes);
 
-    $fullnote .= u::joinempty(@specdaynotes);
+    #$fullnote .= u::joinempty(@specdaynotes);
+
+    if (@specdaytrips) {
+        $fullnote .= '<dl>' . u::joinempty(@specdaytrips) . '</dl>';
+    }
 
     $p->( $fullnote, $linegroup_row_r->{LineGroupNote} );
 
