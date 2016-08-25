@@ -63,9 +63,10 @@ sub _build_keys_of {
 # commented out ones are just things I haven't used yet
 
 const my %TABLE_OF_ITEM => (
-    agency => 'Agencies',
-    line   => 'Lines',
-    i18n   => 'I18N',
+    agency      => 'Agencies',
+    agency_abbr => undef,
+    line        => 'Lines',
+    i18n        => 'I18N',
     #city => 'Cities',
     color => 'Colors',
     #flagtype => 'Flagtypes',
@@ -87,8 +88,7 @@ foreach my $item ( keys %TABLE_OF_ITEM ) {
         handles  => {
             "${item}_row_r"  => 'get',
             "${item}_exists" => 'exists',
-            lc($table)       => 'keys',       # should probably not be used
-            "${item}_fields" => 'keys',
+            "${item}_keys"   => 'keys',
             "${item}_cache"  => 'elements',
         },
         builder => "_build_${item}_cache",
@@ -131,21 +131,34 @@ sub _build_color_cache {
 
 sub _build_agency_cache {
     my $self = shift;
-    return $self->_build_table_cache(
-        'agency',
+    return $self->_build_table_cache('agency',
         qw(
-          agency_fare_url      agency_id           agency_lang
-          agency_linemap_url   agency_url
+          agency_id            agency_lang
+          agency_linemap_url   agency_url          agency_abbr
           agency_linesked_url  agency_mapversion   agency_name
           agency_phone         agency_timezone     agency_effective_date
+          agency_fare_url
           )
     );
+}
+
+sub _build_agency_abbr_cache {
+    my $self         = shift;
+    my %agency_cache = $self->agency_cache;
+    my %agency_abbr_cache;
+    foreach my $agency_id ( keys %agency_cache ) {
+        my $abbr = $agency_cache{$agency_id}{agency_abbr};
+        $agency_abbr_cache{$abbr} = $agency_cache{$agency_id};
+    }
+
+    return \%agency_abbr_cache;
+
 }
 
 sub _build_linegrouptype_cache {
     my $self = shift;
     return $self->_build_table_cache( 'linegrouptype', 'LineGroupType',
-        'SortValue' , 'RGBHex', );
+        'SortValue', 'RGBHex', );
 }
 
 sub _build_transithub_cache {
@@ -486,6 +499,24 @@ sub linegrouptypes_in_order {
 
 #########################
 ### AGENCY METHODS
+
+sub agency_or_abbr_row {
+    my $self = shift;
+    my $name = shift;
+    
+    if ($self->agency_exists($name)) {
+        my $row_r = $self->agency_row_r($name);
+        return ($name, $row_r->{agency_abbr}, $row_r);
+    }
+    
+    if ($self->agency_abbr_exists($name)) {
+        my $row_r = $self->agency_abbr_row_r($name);
+        return ($row_r->{agency_id}, $name, $row_r);
+    }
+    
+    return;
+    
+}
 
 my $url_make_cr = sub {
 
