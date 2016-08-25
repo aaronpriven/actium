@@ -26,6 +26,9 @@ const my $ERRORFILE_BASE   => 'err';
 const my $HEIGHTSFILE_BASE => 'ht';
 #const my $SIGNIDS_IN_A_FILE => 250;
 
+const my $FALLBACK_AGENCY      => 'ACTransit';
+const my $FALLBACK_AGENCY_ABBR => 'AC';
+
 sub HELP {
 
     my $helptext = <<'EOF';
@@ -44,9 +47,9 @@ sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
         qw/actiumdb signup/,
-        {    spec => 'output_heights' ,
-             description => 'Will output a file with the heights of each column',
-             fallback => 0,
+        {   spec        => 'output_heights',
+            description => 'Will output a file with the heights of each column',
+            fallback    => 0,
         },
         {   spec => 'update',
             description =>
@@ -65,6 +68,13 @@ sub OPTIONS {
               . '"-name _" will use no special name.',
             fallback => $EMPTY,
         },
+
+        {   spec        => 'agency=s',
+            description => 'Agency ID used for this run. '
+              . 'Only signs of this agency will be produced',
+            display_default => 1,
+            fallback        => $FALLBACK_AGENCY,
+        },
     );
 } ## tidy end: sub OPTIONS
 
@@ -72,8 +82,10 @@ sub START {
 
     my ( $class, $env ) = @_;
 
-    our ( $actiumdb, %places, %signs, %stops, %lines, %signtypes,
-        @templates, %smoking, @ssj );
+    our (
+        $actiumdb,  %places,    %signs,   %stops, %lines,
+        %signtypes, @templates, %smoking, @ssj
+    );
     # this use of global variables should be refactored...
 
     $actiumdb = $env->actiumdb;
@@ -89,7 +101,16 @@ sub START {
     my $load_cry = cry 'Loading data from Actium database';
 
     %smoking = %{ $actiumdb->all_in_column_key(qw(Cities SmokingText)) };
-    my $effdate = $actiumdb->agency_effective_date('ACTransit');
+
+    my ( $run_agency, $run_agency_abbr, $run_agency_row )
+      = $actiumdb->agency_or_abbr_row( $env->option('agency') );
+
+    unless ($run_agency) {
+        $load_cry->d_error;
+        die "Agency " . $env->option('agency') . " not found.\n";
+    }
+
+    my $effdate = $actiumdb->agency_effective_date($run_agency);
 
     $actiumdb->load_tables(
         requests => {
@@ -107,13 +128,13 @@ sub START {
                 fields      => [
                     qw[
                       SignID Active stp_511_id Status SignType Sidenote
-                      UseOldMakepoints ShelterNum NonStopLocation NonStopCity
+                      Agency ShelterNum NonStopLocation NonStopCity
                       Delivery City
                       ]
                 ],
             },
             Signs_Stops_Join => { array => \@ssj },
-            SignTemplates => { array => \@templates },
+            SignTemplates    => { array => \@templates },
             Lines            => {
                 hash        => \%lines,
                 index_field => 'Line'
@@ -125,32 +146,34 @@ sub START {
             },
         }
     );
-    
+
     our %templates_of;
-    
+
     foreach \my %template (@templates) {
         my $signtype = $template{SignType};
-        my $subtype = $template{MasterPage};
+        my $subtype  = $template{MasterPage};
+        my $agency   = $template{Agency};
+
+        next if $agency and $agency ne $run_agency;
+
         my @regions;
-        my $tempregions = u::trim($template{Regions});
+        my $tempregions = u::trim( $template{Regions} );
         $tempregions =~ s/\s+/ /;
         $tempregions =~ s/[^0-9: ]//g;
-        
-        foreach my $region ( split(' ' , $tempregions) ) {
-            my ($columns, $height) = split(/:/ , $region );
-            push @regions , {columns => $columns, height => $height};
+
+        foreach my $region ( split( ' ', $tempregions ) ) {
+            my ( $columns, $height ) = split( /:/, $region );
+            push @regions, { columns => $columns, height => $height };
         }
-        
-        @regions = 
-          map  { $_->[0] }
+
+        @regions = map { $_->[0] }
           reverse sort { $a->[1] <=> $b->[1] }
-          map  { [$_, $_->{height} ] }    
-               @regions;
-        
+          map { [ $_, $_->{height} ] } @regions;
+
         $templates_of{$signtype}{$subtype} = \@regions;
-        
-    }
-    
+
+    } ## tidy end: foreach \my %template (@templates)
+
     my $ssj_cry = cry('Processing multistop entries');
 
     my (%stops_of_sign);
@@ -239,10 +262,10 @@ sub START {
           and $sign_is_active eq 'yes'
           and $signs{$signid}{Status} !~ /no service/i;
 
-        my $old_makepoints = lc( $signs{$signid}{UseOldMakepoints} );
-        #next SIGN if $old_makepoints eq 'yes';
-        ## Old makepoints no longer used, but that field also specifies
-        # BSH or DB
+        my $agency      = $signs{$signid}{Agency};
+        my $agency_abbr = $actiumdb->agency_row_r($agency)->{agency_abbr};
+
+        next SIGN unless $agency eq $run_agency;
 
         #####################
         # Following steps
@@ -254,8 +277,9 @@ sub START {
             my $kpointfile = "kpoints/${firstdigits}xx/$stoptotest.txt";
 
             unless ( -e $kpointfile ) {
-                my $add;
-                $add = " ($old_makepoints)" if $old_makepoints ne 'no';
+                my $add = $EMPTY;
+                $add = " ($agency)"
+                  if $agency ne $FALLBACK_AGENCY;
                 push @{ $errors{$signid} }, "Stop $stoptotest not found$add";
                 $skipped_stops{$signid} = $stoptotest;
                 next SIGN;
@@ -268,11 +292,10 @@ sub START {
         # 1) Read kpoints from file
 
         my $point = Actium::O::Points::Point->new_from_kpoints(
-            $stopid,         $signid,            $effdate,
-            $old_makepoints, $omitted_of_stop_r, $nonstoplocation,
-            $smoking,        $delivery,          $signup
+            $stopid,  $signid,            $effdate,
+            $agency,  $omitted_of_stop_r, $nonstoplocation,
+            $smoking, $delivery,          $signup
         );
-
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header
         #    from the times and what's in the footnotes)
@@ -291,7 +314,7 @@ sub START {
         # 5) Sort columns into order
 
         #$point->sort_columns_by_route_etc;
-        
+
         my $subtype = $point->sort_columns_and_determine_heights(
             $signs{$signid}{SignType} );
 
@@ -299,6 +322,10 @@ sub START {
             #my ( $signtype, $subtype ) = split( /=/, $subtype );
             push @{ $points_of_signtype{$signtype} }, [ $signid, $subtype ];
 
+        }
+        else {
+            push @{ $errors{$signid} },
+              "No sign template found in $signtype for $run_agency";
         }
 
         # 6) Format with text and indesign tags. Includes
@@ -331,7 +358,7 @@ sub START {
 
     $cry->done;
 
-    my $run_name = _get_run_name($env);
+    my $run_name = _get_run_name( $env, $run_agency_abbr );
 
     my $listfile = $LISTFILE_BASE . $run_name . '.txt';
 
@@ -342,6 +369,7 @@ sub START {
     my $list_fh = $pointlist_folder->open_write($listfile);
 
     foreach my $signtype ( sort keys %points_of_signtype ) {
+
         my @points = @{ $points_of_signtype{$signtype} };
         @points = sort { $a->[0] <=> $b->[0] } @points;
         # sort numerically by signid
@@ -383,8 +411,8 @@ sub START {
     ### ERROR DISPLAY
 
     my $error_file = $ERRORFILE_BASE . $run_name . '.txt';
-    my $error_cry = cry "Writing errors to $error_file";
-    my $error_fh = $pointlist_folder->open_write($error_file);
+    my $error_cry  = cry "Writing errors to $error_file";
+    my $error_fh   = $pointlist_folder->open_write($error_file);
 
     foreach my $signid ( sort { $a <=> $b } keys %errors ) {
         foreach my $error ( @{ $errors{$signid} } ) {
@@ -399,8 +427,8 @@ sub START {
 
     if ( $env->option('output_heights') ) {
         my $heights_file = $HEIGHTSFILE_BASE . $run_name . '.txt';
-        my $heights_cry = cry "Writing heights to $heights_file";
-        my $heights_fh = $pointlist_folder->open_write($heights_file);
+        my $heights_cry  = cry "Writing heights to $heights_file";
+        my $heights_fh   = $pointlist_folder->open_write($heights_file);
         foreach my $signid ( sort { $a <=> $b } keys %heights ) {
             say $heights_fh "$signid\t" . $heights{$signid};
         }
@@ -408,25 +436,15 @@ sub START {
         $cry->done;
     }
 
-   #    print "\n", scalar keys %skipped_stops,
-   #      " skipped signs because stop file not found.\n";
-   #
-   #    my $iterator = u::natatime( 3, sort { $a <=> $b } keys %skipped_stops );
-   #    while ( my @s = $iterator->() ) {
-   #        printf ('%25s' ,  "Sign $s[0]: $skipped_stops{$s[0]}");
-   #        printf '%25s' , "Sign $s[1]: $skipped_stops{$s[1]}" if $s[1];
-   #        print  '%25s' ,  "Sign $s[2]: $skipped_stops{$s[2]}" if $s[2];
-   #        print "\n";
-   #    }
-
     $makepoints_cry->done;
 
 } ## tidy end: sub START
 
 sub _get_run_name {
 
-    my $env     = shift;
-    my $nameopt = $env->option('name');
+    my $env             = shift;
+    my $run_agency_abbr = shift;
+    my $nameopt         = $env->option('name');
 
     if ( defined $nameopt and $nameopt ne $EMPTY ) {
         return '.' . $nameopt;
@@ -439,7 +457,8 @@ sub _get_run_name {
     my $signtype = $env->option('type');
 
     my @run_pieces;
-
+    push @run_pieces, $run_agency_abbr
+      unless $run_agency_abbr eq $FALLBACK_AGENCY_ABBR;
     push @run_pieces, join( ',', @args ) if @args;
     push @run_pieces, $signtype if $signtype;
     push @run_pieces, 'U'       if $env->option('update');
