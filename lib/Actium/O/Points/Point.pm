@@ -7,12 +7,10 @@ package Actium::O::Points::Point 0.011;
 
 # This really needs to be refactored to get rid of the awful use of
 # global variables.
-
 use warnings;
 use strict;
 
 use 5.022;
-
 
 use sort ('stable');
 
@@ -213,9 +211,9 @@ my $i18n_all_cr = sub {
 };
 
 sub new_from_kpoints {
-    my ($class,           $stopid,       $signid,
-        $effdate,         $special_type, $omitted_of_stop_r,
-        $nonstoplocation, $smoking,      $delivery,
+    my ($class,           $stopid,  $signid,
+        $effdate,         $agency,  $omitted_of_stop_r,
+        $nonstoplocation, $smoking, $delivery,
         $signup
     ) = @_;
 
@@ -223,8 +221,8 @@ sub new_from_kpoints {
         stopid            => $stopid,
         signid            => $signid,
         effdate           => $effdate,
-        is_bsh            => ( $special_type eq 'bsh' ),
-        is_db             => ( $special_type eq 'db' ),
+        is_bsh            => ( $agency eq 'BroadwayShuttle' ),
+        is_db             => ( $agency eq 'DumbartonExpress' ),
         nonstoplocation   => $nonstoplocation,
         smoking           => $smoking,
         omitted_of_stop_r => $omitted_of_stop_r,
@@ -270,7 +268,7 @@ sub new_from_kpoints {
 
             # BSH handling
 
-            if ( $special_type eq 'bsh' ) {
+            if ( $agency eq 'BroadwayShuttle' ) {
                 if ( $linegroup eq 'BSD' or $linegroup eq 'BSH' ) {
                     $self->push_columns($column);
                 }
@@ -286,7 +284,7 @@ sub new_from_kpoints {
                     or $linegroup eq 'BSN' );
             }
 
-            if ( $special_type eq 'db' ) {
+            if ( $agency eq 'DumbartonExpress' ) {
                 if ( $linegroup =~ /^DB/ ) {
                     $self->push_columns($column);
                 }
@@ -465,16 +463,16 @@ sub sort_columns_and_determine_heights {
 
     #my @subtypes = sort grep {/$signtype=[A-Z]+\z/}
     #  keys %Actium::Cmd::MakePoints::signtypes;
-    
-    if ( not (exists ($Actium::Cmd::MakePoints::templates_of{$signtype})) ) {
-         
+
+    if ( not( exists( $Actium::Cmd::MakePoints::templates_of{$signtype} ) ) ) {
+
         $self->no_subtype($signtype);
         return;
     }
 
     my @subtypes
       = sort keys %{ $Actium::Cmd::MakePoints::templates_of{$signtype} };
-      
+
     if ( @subtypes == 0 ) {
         $self->no_subtype($signtype);
         return;
@@ -633,7 +631,7 @@ sub determine_subtype {
             my @regions
               = @{ $Actium::Cmd::MakePoints::templates_of{$signtype}{$subtype}
               };
-              
+
 #            $regions[0] = {
 #                height => $Actium::Cmd::MakePoints::signtypes{$subtype}
 #                  {TallColumnLines},
