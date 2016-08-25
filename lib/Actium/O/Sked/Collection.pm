@@ -19,22 +19,23 @@ around BUILDARGS => sub {
 
 };
 
-has 'skeds_r' => (
+has skeds_r => (
     is       => 'ro',
+    writer   => '_set_skeds_r',
     isa      => 'ArrayRef[Skedlike]',
     traits   => ['Array'],
     required => 1,
-    writer => '_set_skeds_r',
     init_arg => 'skeds',
     handles  => { skeds => 'elements' },
 );
 
 sub BUILD {
-    my $self = shift;
-    my @skeds = skedsort ($self->skeds);
-    $self->_set_skeds_r->(\@skeds);
-}
+    my $self  = shift;
+    my @skeds = skedsort( $self->skeds );
     
+    $self->_set_skeds_r( \@skeds );
+}
+
 has '_sked_obj_by_id_r' => (
     is      => 'bare',
     isa     => 'HashRef[Skedlike]',
@@ -74,7 +75,7 @@ sub _build_sked_transitinfo_ids_of_lg {
     my %sked_transitinfo_ids_of_lg;
     foreach my $sked (@skeds) {
 
-        my $t_id        = $sked->transitinfo_id;
+        my $t_id      = $sked->transitinfo_id;
         my $linegroup = $sked->linegroup;
         push $sked_transitinfo_ids_of_lg{$linegroup}->@*, $t_id;
 
@@ -151,17 +152,17 @@ sub write_tabxchange {
       = Actium::O::DestinationCode->load( $params{commonfolder} );
 
     $params{tabfolder}->write_files_with_method(
-        OBJECTS   => $self->skeds_r,
-        METHOD    => 'tabxchange',
-        EXTENSION => 'tab',
+        OBJECTS         => $self->skeds_r,
+        METHOD          => 'tabxchange',
+        EXTENSION       => 'tab',
         FILENAME_METHOD => 'transitinfo_id',
-        ARGS      => [
+        ARGS            => [
             destinationcode => $destination_code,
             actiumdb        => $params{actiumdb},
             collection      => $self,
         ],
     );
-    
+
     $destination_code->store;
 
 } ## tidy end: sub write_tabxchange
