@@ -41,7 +41,7 @@ const my $IDT          => 'Actium::Text::InDesignTags';
 const my $BOXBREAK     => $IDT->boxbreak;
 const my $BLANK_COLUMN => ( $BOXBREAK x 2 );
 
-has [qw/stopid signid delivery/] => (
+has [qw/stopid signid delivery agency/] => (
     is  => 'ro',
     isa => 'Str',
 );
@@ -56,18 +56,18 @@ has signup => (
     isa => 'Actium::O::Folders::Signup',
 );
 
-has 'nonstoplocation' => (
+has nonstoplocation => (
     is  => 'ro',
     isa => 'Maybe[Str]',
 );
 
-has 'smoking' => (
+has smoking => (
     is      => 'ro',
     isa     => 'Str',
     default => $EMPTY,
 );
 
-has 'error_r' => (
+has error_r => (
     traits  => ['Array'],
     is      => 'rw',
     isa     => 'ArrayRef[Str]',
@@ -78,12 +78,12 @@ has 'error_r' => (
     },
 );
 
-has 'heights' => (
+has heights => (
     is  => 'rw',
     isa => 'Str',
 );
 
-has 'region_count' => (
+has region_count => (
     is      => 'rw',
     isa     => 'Int',
     default => 0,
@@ -185,12 +185,6 @@ has 'width' => (
     default => 0,
 );
 
-has [qw<is_bsh is_db>] => (
-    isa     => 'Bool',
-    is      => 'rw',
-    default => 0,
-);
-
 has subtype => (
     isa => 'Str',
     is  => 'rw',
@@ -221,8 +215,7 @@ sub new_from_kpoints {
         stopid            => $stopid,
         signid            => $signid,
         effdate           => $effdate,
-        is_bsh            => ( $agency eq 'BroadwayShuttle' ),
-        is_db             => ( $agency eq 'DumbartonExpress' ),
+        agency  => $agency,
         nonstoplocation   => $nonstoplocation,
         smoking           => $smoking,
         omitted_of_stop_r => $omitted_of_stop_r,
@@ -952,7 +945,7 @@ sub format_side {
     my $self    = shift;
     my $signid  = $self->signid;
     my $effdate = $self->effdate;
-    my $is_bsh  = $self->is_bsh;
+    my $is_bsh  = $self->agency eq 'BroadwayShuttle';
 
     my $formatted_side;
     open my $sidefh, '>:utf8', \$formatted_side;
@@ -1209,7 +1202,6 @@ sub format_bottom {
     # o) side notes (possibly more than one)
 
     my $self   = shift;
-    my $is_bsh = $self->is_bsh;
 
     my $signid = $self->signid;
     my $stopid = $self->stopid;
