@@ -263,7 +263,7 @@ sub linesbycity {
     my $actiumdb = $params{actiumdb};
 
     my %type_of;
-    foreach my $line ( $actiumdb->lines ) {
+    foreach my $line ( $actiumdb->line_keys ) {
         \my %row = $actiumdb->line_row_r($line);
         if ( u::feq( $row{agency_id}, 'ACTransit' ) ) {
             # note that is not agency name. Name has spaces.
