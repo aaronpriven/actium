@@ -10,7 +10,8 @@ use Actium::Preamble;
 
 const my @COLUMNS => qw[
   u_flagtype_id        flagtype_filename    flagtype_master_page
-  h_stp_511_id         c_description_full   p_decals
+  h_stp_511_id         c_description_full   p_decals  
+  u_flex_route
 ];
 
 const my %COLUMN_INDEX_OF => ( map { $COLUMNS[$_] => $_ } 0 .. $#COLUMNS );
@@ -68,8 +69,14 @@ EOT
             s/\s+\z//;    # trim trailing white space
         }
 
-        my ( $flagtype, $file, $master, $stopid, $description, $decals ) =
+        my ( $flagtype, $file, $master, $stopid, $description, $decals, $flex ) =
           @{$row_r};
+          
+        if ($flex and $decals) {
+            $decals .= " $flex";
+        } elsif ($flex) {
+            $decals = $flex;
+        }
 
         unless ($flagtype) {
             push @{ $skipped_because{no_flagtype} }, $stopid;
