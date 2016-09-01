@@ -23,11 +23,14 @@ sub START {
 
     }
 
+    my %is_subcluster;
+
     foreach my $cluster ( keys %stops_of ) {
         my @stops = sort $stops_of{$cluster}->@*;
         if ( scalar(@stops) <= 20 ) {
             foreach my $stop (@stops) {
-                $cluster_of{$stop} = $cluster;
+                $cluster_of{$stop}       = $cluster;
+                $is_subcluster{$cluster} = 1;
             }
         }
         else {
@@ -36,7 +39,9 @@ sub START {
                 $subcluster++;
                 my @these20 = splice( @stops, 0, 20 );
                 foreach my $stop (@these20) {
-                    $cluster_of{$stop} = $cluster . $subcluster;
+                    my $finalcluster = $cluster . $subcluster;
+                    $cluster_of{$stop}            = $finalcluster;
+                    $is_subcluster{$finalcluster} = 1;
                 }
             }
 
@@ -44,19 +49,25 @@ sub START {
 
     } ## tidy end: foreach my $cluster ( keys ...)
 
-    my $fname  = '/Users/apriven/Desktop/SaveAsEPS/PrintSet5';
+    my $fname  = '/Users/apriven/Desktop/SaveAsEPS/PrintSet7';
     my $folder = Actium::O::Folder->new($fname);
 
     my @files = $folder->glob_files('*.eps');
 
     my %new_of;
 
+    foreach my $cluster ( keys %is_subcluster ) {
+        my $dir = "$fname/$cluster";
+        mkdir "$fname/$cluster" unless -d $dir;
+    }
+
     foreach my $file (@files) {
         my $oname = u::filename($file);
         $oname =~ m/(\d{5})(Fr|Bk)/;
-        my $stopid = $1;
-        my $side   = $2;
-        my $nname  = "$cluster_of{$stopid}-$stopid$side.eps";
+        my $stopid  = $1;
+        my $side    = $2;
+        my $cluster = $cluster_of{$stopid};
+        my $nname   = "$cluster/$cluster-$stopid$side.eps";
         say "$fname/$oname, $fname/$nname";
         rename "$fname/$oname", "$fname/$nname";
 
