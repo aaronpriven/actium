@@ -1,5 +1,7 @@
 package Actium::Cmd::Flickr_Stops 0.011;
 
+__END__
+
 # work with photos in flickr
 
 use Actium::Preamble;
