@@ -15,9 +15,6 @@ sub START {
     my $signup   = $env->signup;
     my $actiumdb = $env->actiumdb;
 
-    my $xhea_tab_folder = $signup->subfolder( 'xhea', 'tab' );
-    my $xhea_skeds_folder = $signup->subfolder('xheaskeds');
-
     Actium::Files::Xhea::ToSkeds::xheatab2skeds(
         actiumdb        => $actiumdb,
         signup => $signup,

@@ -71,8 +71,6 @@ sub START {
 
     my $sch_cal_folder = $signup->subfolder('sch_cal');
 
-    $sch_cal_folder->glob_plain_files('*.xlsx');
-
     my $calendar_of_block_r;
 
     if ( $sch_cal_folder->glob_plain_files('*.xlsx') ) {
