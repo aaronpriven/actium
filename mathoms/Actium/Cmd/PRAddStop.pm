@@ -1,5 +1,7 @@
 package Actium::Cmd::PRAddStop 0.011;
 
+__END__
+
 use Actium::Preamble;
 
 use Actium::Photos;
