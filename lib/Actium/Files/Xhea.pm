@@ -799,6 +799,8 @@ sub _get_xhea_filenames {
         Westbound        => 'Westbound',
         Northbound       => 'Northbound',
         Southbound       => 'Southbound',
+        Outbound         => 'Outbound',
+        Inbound           => 'Inbound',
         DIR1             => 1,
         DIRA             => 'A',
         DIRB             => 'B',
@@ -831,6 +833,8 @@ sub _get_xhea_filenames {
         Westbound        => 3,
         Northbound       => 0,
         Southbound       => 1,
+        Outbound         => 5,
+        Inbound          => 4,
         $EMPTY_STR       => $EMPTY_STR,
     );
 
