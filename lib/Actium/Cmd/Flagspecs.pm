@@ -204,8 +204,8 @@ sub build_place_and_stop_lists {
                 $pat->{PAT_id} )
         };
 
-        # SKIP 600 ROUTES
-        if ( $route =~ /\A 6\d\d \z/sx ) {
+        # SKIP 400 and 600 ROUTES
+        if ( $route =~ /\A [46]\d\d \z/sx ) {
             for my $tps_row (@tps) {
                 my $stop_ident = $tps_row->{StopIdentifier};
                 $plainroutes_of_stop{$stop_ident}{$route}++;
@@ -561,7 +561,7 @@ sub cull_placepats {
             $conn_icon{$_} = 1 foreach keys %{ $patinfo->{ConnIcons} };
         }
 
-        return j( map { $ICON_OF{$_} } keys %conn_icon );
+        return u::joinempty( map { $ICON_OF{$_} } keys %conn_icon );
 
     }
 
@@ -884,7 +884,7 @@ sub delete_placelist_from_lists {
                 }
                 say '= Computer: ', destination_of($shortkey);
                 say $comments_of{$shortkey} if $comments_of{$shortkey};
-                say j (
+                say u::joinempty (
                     $OVERRIDE_STRING, $SPACE,
                     $override_of{$shortkey} || $EMPTY_STR
                 );
@@ -989,7 +989,9 @@ sub delete_placelist_from_lists {
                 push @preserved, $input_comments_of{$short}
                   if $input_comments_of{$short};
                 push @preserved,
-                  j( $OVERRIDE_STRING, $SPACE, $input_override_of{$short} );
+                  u::joinempty( $OVERRIDE_STRING, $SPACE, 
+                  $input_override_of{$short} 
+                  );
                 $preserved_override_of{$shortkey} = joinlf(@preserved);
             }
         }
@@ -1114,6 +1116,7 @@ sub relevant_places {
                 my @descriptions;
                 foreach my $place ( sk($relevant) ) {
                     push @descriptions, $places_r->{$place}{c_description};
+                    warn "Unknown description for $place" unless $descriptions[-1];
                 }
 
                 $description_of{$routedir}{$placelist}
@@ -1308,7 +1311,7 @@ sub make_decal_spec {
             my ( undef, $letter ) = split( /\-/, $decal );
             $next_decal_of{$route} = ++$letter;
 
-            $icons = j( sort split( //, $icons ) );
+            $icons = u::joinempty( sort split( //, $icons ) );
 
             $decal_of{ jk( $route, $destination, $icons ) } = $decal;
         }
