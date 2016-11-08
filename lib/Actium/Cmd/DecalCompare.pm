@@ -27,11 +27,9 @@ sub START {
 		chomp $line;
 		my ( $id, $olddesc, $decals ) = split( /\t/, $line, 3 );
 
-		# drop DB lines
 		my @decals;
-		@decals = split( /\t/, $decals );
+		@decals = u::uniq split( /\t/, $decals );
 
-		#@decals = grep { !/\ADB1?\-/ } @decals;
 		next unless @decals;
 
 		$decals_of{$id} = join( "\t", @decals );
@@ -53,7 +51,7 @@ sub START {
 			$results_of{$id} = {
 				change      => 'AS',
 				description => $description,
-				new_line    => [ sortbyline( split /\t/, $new_decals_text ) ],
+				new_line    => [ sortbyline( u::uniq split /\t/, $new_decals_text ) ],
 				old_line    => [],
 				new_decals  => [],
 				old_decals  => [],
