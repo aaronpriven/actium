@@ -411,7 +411,7 @@ has argv_r => (
     writer   => '_set_argv_r',
     default  => sub { [] },
     init_arg => 'argv',
-    handles  => { argv => 'elements', },
+    handles  => { argv => 'elements', argv_idx => 'get',},
 );
 
 has options_r => (
