@@ -8,6 +8,8 @@ use autodie;
 use Actium::O::2DArray;
 
 use Actium::Text::InDesignTags;
+use Actium::O::DateTime;
+
 const my $IDT     => 'Actium::Text::InDesignTags';
 const my $HARDRET => Actium::Text::InDesignTags::->hardreturn_esc;
 
@@ -22,6 +24,9 @@ sub START {
 
     my $class = shift;
     $env = shift;
+
+    my @ymd = qw/2016 12 18/;
+    my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
 
     my $config_obj = $env->config;
 
@@ -58,7 +63,7 @@ sub START {
     say $outfh "Action\tStopID\tMainbox\tInstruction";
 
     for my $stop_r ( @{$list} ) {
-        my $out_line = _process_stop( $stop_r, \%col );
+        my $out_line = _process_stop( $stop_r, \%col, $dt );
         next unless defined $out_line;
         say $outfh $out_line;
     }
@@ -72,11 +77,15 @@ sub _process_stop {
 
     \my @stop = shift;
     \my %col  = shift;
+    my $dt = shift;
 
     my $stopid    = $stop[ $col{StopID} ];
     my @added     = split( ' ', $stop[ $col{Added} ] );
+    @added = grep ! /^BS[DN]$/, @added;
     my @removed   = split( ' ', $stop[ $col{Removed} ] );
+    @removed = grep ! /^BS[DN]$/, @removed;
     my @unchanged = split( ' ', $stop[ $col{Unchanged} ] );
+    @unchanged = grep ! /^BS[DN]$/, @unchanged;
     my $bagtext   = $stop[ $col{'Bag Text Number'} ];
     $bagtext = $EMPTY unless $bagtext =~ /\w/;
     my $desc     = $stop[ $col{'Stop Description'} ];
@@ -137,21 +146,29 @@ sub _process_stop {
           . $HARDRET
           . _translate_graf( 'stop_removed', 'Removed' )
           . $HARDRET;
-          # extra return to add more space after removed
+        # extra return to add more space after removed
     }
 
     if ( defined $bagtext and $bagtext !~ /\A\s*\z/ ) {
-        $mainbox .= $HARDRET . _translate_graf( $bagtext, 'Note' , 'ChineseMedium');
+        $mainbox
+          .= $HARDRET . _translate_graf( $bagtext, 'Note', 'ChineseMedium' );
     }
+
+    #$mainbox = _effective_date_indd($dt) . $HARDRET . $HARDRET . $mainbox;
+    #$mainbox
+    #  = _translate_graf( 'w16_10', 'effectivedate', 'ChineseMedium' )
+    #  . $HARDRET
+    #  . $HARDRET
+    #  . $mainbox;
 
     return "$action\t$stopid\t$mainbox\t$desc";
 
 } ## tidy end: sub _process_stop
 
 sub _translate_graf {
-    my $i18n_id = shift;
-    my $style   = shift;
-    my $zh_style = shift // 'ChineseBold' ;
+    my $i18n_id  = shift;
+    my $style    = shift;
+    my $zh_style = shift // 'ChineseBold';
 
     \my %translations = _translate($i18n_id);
 
@@ -161,56 +178,105 @@ sub _translate_graf {
       . $HARDRET
       . $translations{es}
       . $HARDRET
-      . _zh_phrase($translations{zh} , $zh_style);
+      . _zh_phrase( $translations{zh}, $zh_style );
 
 }
 
 sub _translate {
     my $i18n_id      = shift;
     my %translations = %{ $i18n{$i18n_id} };
+    delete $translations{i18n_id};
     return \%translations;
 
 }
 
 sub _lines_first {
-   unshift @_, 'FirstLineIntro';
-   goto &_lines_with_introstyle; 
-    
+    unshift @_, 'FirstLineIntro';
+    goto &_lines_with_introstyle;
+
 }
 
 sub _lines {
-   unshift @_, 'LineIntro';
-   goto &_lines_with_introstyle; 
+    unshift @_, 'LineIntro';
+    goto &_lines_with_introstyle;
 }
-    
 
 sub _lines_with_introstyle {
     my $introstyle = shift;
-    my $i18n_id = shift;    # of intro
-    my $style   = shift;    # of lines
-    my @lines   = @_;
+    my $i18n_id    = shift;    # of intro
+    my $style      = shift;    # of lines
+    my @lines      = @_;
 
     $i18n_id .= "_pl" if @lines != 1;    # pluralize
 
-    my $translations = _translate_phrase( $i18n_id );
-    
-    my $return =
-      _para($introstyle) . 
-       $translations
+    my $translations = _translate_phrase($i18n_id);
+
+    my $return
+      = _para($introstyle)
+      . $translations
       . $HARDRET
       . _para($style)
       . ( join( $SPACE, @lines ) );
-      
+
     return $return;
 
-}
+} ## tidy end: sub _lines_with_introstyle
+
+const my @ALL_LANGUAGES => qw/en es zh/;
+const my $nbsp          => $IDT->nbsp;
+
+sub _effective_date_indd {
+
+    my $dt = shift;
+
+    my $i18n_id = 'effective_colon';
+    my $style   = 'effectivedate';
+
+    \my %translations = _translate($i18n_id);
+
+    foreach my $lang ( keys %translations ) {
+        my $method = "full_$lang";
+        my $date   = $dt->$method;
+        if ( $lang eq 'en' ) {
+            $date =~ s/ /$nbsp/g;
+        }
+
+        $date = $IDT->encode_high_chars_only($date);
+        $date = $IDT->language_phrase( $lang, $date, 'Regular' );
+
+        my $phrase = $translations{$lang};
+        $phrase =~ s/\s+\z//;
+
+        if ( $phrase =~ m/\%s/ ) {
+            $phrase =~ s/\%s/$date/;
+        }
+        else {
+            $phrase .= " " . $IDT->discretionary_lf . $date;
+        }
+
+        $phrase
+          =~ s/CharStyle:(?:Chinese|ZH_Bold|ZH_Regular)/CharStyle:ChineseMedium/g;
+
+        $translations{$lang} = $phrase;
+
+    } ## tidy end: foreach my $lang ( keys %translations)
+
+    return
+        _para($style)
+      . $translations{en}
+      . $HARDRET
+      . $translations{es}
+      . $HARDRET
+      . $translations{zh};
+
+} ## tidy end: sub _effective_date_indd
 
 sub _translate_phrase {
 
     my $i18n_id = shift;
     \my %translations = _translate($i18n_id);
 
-    $translations{zh} = _zh_phrase($translations{zh});
+    $translations{zh} = _zh_phrase( $translations{zh} );
 
     my $nbsp   = $IDT->nbsp;
     my $joiner = $IDT->nbsp . $IDT->bullet . $SPACE;
