@@ -974,6 +974,8 @@ sub format_side {
     }
 
     $color = $IDT->color($color);
+    
+    $color = ''; # zero out colors for now
 
     print $sidefh $IDT->parastyle('sideeffective'), $color;
 
