@@ -5,7 +5,7 @@ use Actium::Sorting::Line (qw[sortbyline]);
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
 
-const my @opp => qw( EB WB NB SB CC CW A B);
+const my @opp => qw( EB WB NB SB CC CW A B IN OU);
 const my %opposite_of => ( @opp, reverse @opp );
 
 sub HELP {
