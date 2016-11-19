@@ -487,6 +487,10 @@ sub makestoptimes {
         my $line = $tripinfo_of{RouteForStatistics};
         next TRIP if $line eq '399';    # supervisor order
 
+        next TRIP if $tripinfo_of{IsSpecial} and $line !~ m/^6\d\d/;
+        # HORRIBLE KLUDGE to avoid school day only trips on regular lines
+        # in pole schedules
+
         my $linegroup = linegroup($line);
 
         my $pattern = $tripinfo_of{Pattern};

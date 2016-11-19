@@ -894,6 +894,8 @@ sub _get_xhea_filenames {
             my $route   = $hr->{tpat_route};
             my $tripnum = $hr->{trp_int_number};
             my $pattern = $hr->{trp_pattern};
+            
+            my $event = $hr->{trp_event_and_status};
 
             my $patid = "$route\t$pattern";
             my $is_public = $patid eq "\t" ? 0 : $pat{IsInService}{$patid};
@@ -906,6 +908,8 @@ sub _get_xhea_filenames {
             $trp{RouteForStatistics}{$tripnum} = $route;
             $trp{Pattern}{$tripnum}            = $pattern;
             $trp{IsPublic}{$tripnum}           = $is_public;
+            $trp{IsSpecial}{$tripnum}          = 
+                $event ? 'X' : $EMPTY_STR;
 
         };
 
@@ -1056,7 +1060,7 @@ sub _get_xhea_filenames {
               $trp{Pattern}{$tripnum},               # Pattern
               $EMPTY_STR,                            # Type
               $EMPTY_STR,                            # TypeValue
-              $EMPTY_STR,                            # IsSpecial
+              $trp{IsSpecial}{$tripnum},             # IsSpecial
               $trp{IsPublic}{$tripnum},              # IsPublic
               ;
 
