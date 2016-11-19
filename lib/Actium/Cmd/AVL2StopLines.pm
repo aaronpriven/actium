@@ -5,7 +5,9 @@ use Actium::Sorting::Line (qw[sortbyline]);
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
 
-const my @opp => qw( EB WB NB SB CC CW A B);
+use List::Compare;
+
+const my @opp => qw( EB WB NB SB CC CW A B IN OU);
 const my %opposite_of => ( @opp, reverse @opp );
 
 sub HELP {
@@ -44,7 +46,7 @@ sub START {
             Stops_Neue => {
                 index_field => 'h_stp_511_id',
                 hash        => \%stops,
-                fields      => [qw/h_stp_511_id h_stp_identifier/],
+                fields => [qw/h_stp_511_id h_stp_identifier h_stp_flag_routes/],
             },
         }
     );
@@ -95,13 +97,28 @@ sub START {
         "\t",
         qw[
           h_stp_511_id p_active p_lines p_line_count
-          p_linedirs p_linedir_count]
+          p_linedirs p_linedir_count
+          h_stp_flag_routes p_flag_route_diff]
     );
 
     foreach my $stopid ( sort keys(%stops) ) {
 
+        my $h_stp_flag_routes = $stops{$stopid}{h_stp_flag_routes} ;
+        
+        my (@flagroutes);
+        my $flagroutes_all = $EMPTY;
+        
+        if ($h_stp_flag_routes) {
+           @flagroutes = split( /[\s,]+/, $stops{$stopid}{h_stp_flag_routes} );
+           $flagroutes_all = join( $SPACE, @flagroutes );
+        } 
+
         if ( not exists $routes_of{$stopid} ) {
-            say $stoplines join( "\t", $stopid, 0, q[], 0, q[], 0 );
+            
+            my $flagroute_diff = add_char('A:' , @flagroutes);
+
+            say $stoplines join( "\t",
+                $stopid, 0, q[], 0, q[], 0, $flagroutes_all, $flagroute_diff );
             next;
         }
 
@@ -130,14 +147,24 @@ sub START {
             push @routedirs, $routedir;
         }
 
-        next unless @routes;    # eliminate BSH-only stops
+        #next unless @routes;    # eliminate BSH-only stops
 
-        say $stoplines join( "\t",
+        my $lc = List::Compare->new( \@flagroutes, \@routes );
+        
+        my $added   = add_char('A:' , $lc->get_Lonly());
+        my $removed = add_char('M:' , $lc->get_Ronly());
+        
+        my $flagroute_diff = ($added and $removed) ? "$added $removed" : "$added$removed";
+
+        say $stoplines join(
+            "\t",
             $stopid, $active,
             join( $SPACE, sortbyline(@routes) ),
             scalar @routes,
             join( $SPACE, sortbyline(@routedirs) ),
             scalar @routedirs,
+            $flagroutes_all,
+            $flagroute_diff,
         );
 
     }    ## #tidy# end foreach my $stop ( sort keys...)
@@ -160,6 +187,14 @@ sub remove_last {
     my $disp = shift;
     $disp =~ s/-LAST\z//;
     return $disp;
+}
+
+sub add_char {
+    my $char = shift;
+    my @list = @_;
+
+    return $EMPTY unless @list;
+    return $char . join( " $char", @list );
 }
 
 1;
