@@ -15,7 +15,7 @@ I think there were permissions issues here.
 
 4. Installed perlbrew from perlbrew.pl
 
-5. perlbrew install 5.20.0 -Accflags="-DPERL_USE_SAFE_PUTENV" 
+5. perlbrew install 5.20.0 -Accflags="-DPERL\_USE\_SAFE\_PUTENV" 
 
 6. perlbrew install-cpanm
 
