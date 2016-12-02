@@ -150,9 +150,11 @@ sub write_tabxchange {
 
     my $destination_code
       = Actium::O::DestinationCode->load( $params{commonfolder} );
+      
+    my @skeds = grep { $_->linegroup !~ /^(?:BS|4\d\d)/ } $self->skeds;
 
     $params{tabfolder}->write_files_with_method(
-        OBJECTS         => $self->skeds_r,
+        OBJECTS         => \@skeds ,
         METHOD          => 'tabxchange',
         EXTENSION       => 'tab',
         FILENAME_METHOD => 'transitinfo_id',
