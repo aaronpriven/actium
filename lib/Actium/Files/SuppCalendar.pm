@@ -79,8 +79,6 @@ sub read_supp_calendars {
 
             my ( $block, $run, $school, $pullout, $pullin, $dist, @on_or_off )
               = @values;
-              
-              next unless $block;
 
             my ( %dates_off_of_wkdy, %dates_on_of_wkdy );
 
