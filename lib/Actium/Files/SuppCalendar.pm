@@ -6,6 +6,9 @@ const my %num_of_month =>
   qw( Jan 101 Feb 102 Mar 103 Apr 104 May 105 Jun 106 Jul 107
   Aug 8 Sep 9 Oct 10 Nov 11 Dec 12);
 
+const my $TBA_NOTE     => 'Operates only on days to be announced.';
+const my $TBA_NOTECODE => 'TBA';
+
 # sorts in school year order
 
 const my @months => qw(January February March April May June July
@@ -38,6 +41,8 @@ sub read_supp_calendars {
     # skip temporary files beginning with ~
 
     my ( %next_code_of_days, %code_of_note, %calendar_of_block );
+
+    $code_of_note{$TBA_NOTE} = $TBA_NOTECODE;
 
     foreach my $file (@files) {
 
@@ -75,12 +80,17 @@ sub read_supp_calendars {
 
         _nextline($sheet);    #  ignore counts of how many are on
 
+      LINE:
         while ( my @values = _nextline($sheet) ) {
 
             my ( $block, $run, $school, $pullout, $pullin, $dist, @on_or_off )
               = @values;
 
+            next unless $block;
+
             my ( %dates_off_of_wkdy, %dates_on_of_wkdy );
+
+            my $has_an_on;
 
             for my $i ( 0 .. $#on_or_off ) {
 
@@ -89,10 +99,18 @@ sub read_supp_calendars {
 
                 if ( $on_or_off[$i] =~ /on/i ) {
                     push $dates_on_of_wkdy{$wkdy}->@*, $date;
+                    $has_an_on = 1;
                 }
                 else {    # off
                     push $dates_off_of_wkdy{$wkdy}->@*, $date;
                 }
+            }
+
+            if ( not $has_an_on ) {
+
+                $calendar_of_block{$block} = [ $TBA_NOTECODE, $TBA_NOTE ];
+                next LINE;
+
             }
 
             my ( @on, @also, @ondays );
@@ -101,6 +119,7 @@ sub read_supp_calendars {
             foreach my $wkdy (@uniq_wkdays) {
                 next unless defined $dates_on_of_wkdy{$wkdy};
                 my $on_count = scalar( $dates_on_of_wkdy{$wkdy}->@* );
+
                 next if not $on_count;
 
                 my $off_count
@@ -179,11 +198,11 @@ sub read_supp_calendars {
 
                 } ## tidy end: if ( not exists $code_of_note...)
 
-                $calendar_of_block{$block} = [ $code_of_note{$note} , $note ];
+                $calendar_of_block{$block} = [ $code_of_note{$note}, $note ];
 
             } ## tidy end: else [ if ($pure_days) ]
 
-        } ## tidy end: while ( my @values = _nextline...)
+        } ## tidy end: LINE: while ( my @values = _nextline...)
 
     } ## tidy end: foreach my $file (@files)
 
