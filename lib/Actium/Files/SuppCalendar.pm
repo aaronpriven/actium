@@ -131,7 +131,7 @@ sub read_supp_calendars {
                     push @on,     $wkdy;
                     push @ondays, $num_of_day{$wkdy};
                 }
-                elsif ( $off_count < ( 1 / 4 * $on_count ) ) {
+                elsif ( $off_count < ( 1 / 3 * $on_count ) ) {
                     $pure_days = 0;
                     push @on,
                         $wkdy
@@ -184,11 +184,13 @@ sub read_supp_calendars {
                         $ondays =~ s/3/W/;
                         $ondays =~ s/4/Th/;
                         $ondays =~ s/5/F/;
+                        
+                        $ondays = 'A' if length($ondays) > 2;
                     }
                     else {
-                        $ondays = "A";
+                        $ondays = 'A';
                     }
-
+                    
                     $next_code_of_days{$ondays} //= 1;
 
                     $code_of_note{$note} = "$ondays-";
