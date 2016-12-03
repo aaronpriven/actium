@@ -44,9 +44,14 @@ sub START {
     #   = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
 
     my @skeds = $collection->skeds;
-
+    
+    @skeds = grep { 
+            my $linegroup = $_->linegroup;
+            not ( $linegroup =~ /^(?:BS[DHN]|4\d\d)/ )
+    } @skeds;
+    
     my @all_lines = map { $_->lines } @skeds;
-    @all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN' } @all_lines;
+    #@all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN' and ! m/4\d\d/ } @all_lines;
     @all_lines = u::uniq u::sortbyline @all_lines;
 
     my ( $pubtt_contents_with_dates_r, $pubtimetables_r )
