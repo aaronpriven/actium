@@ -114,6 +114,11 @@ my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
         frames            => [ { widthpair => [ 18, 0 ], frame_idx => 0 } ],
         height            => 40,
     },
+    {   description       => 'Landscape full, 18.5 narrower columns',
+        compression_level => 2,
+        frames            => [ { widthpair => [ 18, 1 ], frame_idx => 0 } ],
+        height            => 40,
+    },
 );
 # reduced height by two, in order to allow for two more lines
 # of timepoint names.  This is a guess
