@@ -5,17 +5,12 @@ package Actium::O::Sked::Timetable 0.010;
 
 use Actium::Moose;
 
-use MooseX::MarkAsMethods ( autoclean => 1 );    ### DEP ###
-#use overload '""' => sub { shift->id };
-## overload ### DEP ###
-
 use Actium::Time;
-
 use Actium::Text::InDesignTags;
 
 const my $idt => 'Actium::Text::InDesignTags';
 
-use HTML::Entities;                              ### DEP ###
+use HTML::Entities;    ### DEP ###
 
 my $timesub = Actium::Time::timestr_sub();
 
@@ -259,6 +254,27 @@ sub new_from_sked {
 
 } ## tidy end: sub new_from_sked
 
+const my @COMPRESSION_SETTINGS => (
+    # 0
+    {   col_points     => 48,
+        halfcol_points => 24,
+        timestyle      => 'Time',
+        timepointstyle => 'Timepoints',
+    },
+    # 1
+    {   col_points     => 40,
+        halfcol_points => 20,
+        timestyle      => 'CompressedTime',
+        timepointstyle => 'CompressedTimepoints',
+    },
+    # 2
+    {   col_points     => 38.9,
+        halfcol_points => 19.45,
+        timestyle      => 'CompressedTime',
+        timepointstyle => 'CompressedTimepoints',
+    }
+);
+
 sub as_indesign {
 
     my $self = shift;
@@ -267,22 +283,28 @@ sub as_indesign {
         @_,
         {   minimum_columns  => 1,
             minimum_halfcols => 1,
-            compression      => { type => $PV_TYPE{BOOLEAN}, default => 0 },
-            lower_bound => { default => 0 },
-            upper_bound => { default => ( $self->body_row_count - 1 ) },
-            firstpage   => { default => 1 },
-            finalpage   => { default => 1 },
+            compression      => { default => 0 },
+            lower_bound      => { default => 0 },
+            upper_bound      => { default => ( $self->body_row_count - 1 ) },
+            firstpage        => { default => 1 },
+            finalpage        => { default => 1 },
         }
     );
 
     #my $minimum_columns  = $params{minimum_columns};
     #my $minimum_halfcols = $params{minimum_halfcols};
-    my $compression = $params{compression};
 
-    my $halfcol_points = $compression ? 20                     : 24;
-    my $col_points     = $compression ? 40                     : 48;
-    my $timestyle      = $compression ? 'CompressedTime'       : 'Time';
-    my $timepointstyle = $compression ? 'CompressedTimepoints' : 'Timepoints';
+    \my %compression_setting = $COMPRESSION_SETTINGS[ $params{compression} ];
+
+    my $halfcol_points = $compression_setting{halfcol_points};
+    my $col_points     = $compression_setting{col_points};
+    my $timestyle      = $compression_setting{timestyle};
+    my $timepointstyle = $compression_setting{timepointstyle};
+
+ #    my $halfcol_points = $compression ? 20                     : 24;
+ #    my $col_points     = $compression ? 40                     : 48;
+ #    my $timestyle      = $compression ? 'CompressedTime'       : 'Time';
+ #    my $timepointstyle = $compression ? 'CompressedTimepoints' : 'Timepoints';
 
     my $columns  = $self->columns;
     my $halfcols = $self->half_columns;
@@ -474,12 +496,16 @@ sub as_indesign {
 
     print $th "<TableEnd:>";
 
-    foreach my $note_definition ( $self->note_definitions ) {
-        my $converted = $idt->encode_high_chars($note_definition);
-        print $th "\r$converted";
-    }
+    if ( $params{finalpage} ) {
+        foreach my $note_definition ( $self->note_definitions ) {
+            my $converted = $idt->encode_high_chars($note_definition);
+            print $th "\r$converted";
+        }
+        # This prints note definitions only at the end of the whole table.
+        # It would be better to keep track of which ones were seen and
+        # print them underneath that part of the table.
 
-    unless ( $params{finalpage} ) {
+    } else {
         print $th "\rContinued...";
     }
 
@@ -615,13 +641,13 @@ qq{<tr\n><th class="skedhead" style="background-color: $linegroup_rgbhex" colspa
     print $th "</th></tr>";
 
     ##############
-    # Service Alert Row 
+    # Service Alert Row
 
     foreach my $header_route (@header_routes) {
         print $th qq{<tr class=alertrow><th class=alerts colspan=$all_columns>};
-        
-        print $th 
-        qq{<a href="http://www.actransit.org/line_alert/?quick_line=$header_route">};
+
+        print $th
+qq{<a href="http://www.actransit.org/line_alert/?quick_line=$header_route">};
         print $th "See service alerts for line $header_route.";
         print $th '</a></th></tr>';
 
@@ -682,8 +708,8 @@ qq{<tr\n><th class="skedhead" style="background-color: $linegroup_rgbhex" colspa
             my $note       = shift @body_row;
             my $data_title = shift @temp_header_columntexts;
             my $class      = $note ? 'note' : 'blanktime';
-            print $th qq{<td data-title="$data_title" class="$class">$note</td>}
-              ;
+            print $th
+              qq{<td data-title="$data_title" class="$class">$note</td>};
         }
 
         for my $time (@body_row) {

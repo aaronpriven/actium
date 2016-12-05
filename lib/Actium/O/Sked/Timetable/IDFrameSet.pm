@@ -201,6 +201,8 @@ designed to allow different sizes to be used in different circumstances.
 
 =item Actium::O::Sked::Timetable::IDFrame
 
+=back
+
 =head1 AUTHOR
 
 Aaron Priven <apriven@actransit.org>
