@@ -464,6 +464,17 @@ sub field_of_referenced_place {
     return $row_r->{ $params{field} };
 }
 
+sub dereference_place {
+    my $self = shift;
+    my $place = shift;
+    return $place unless $place;
+    my $deref_place = $self->field_of_referenced_place(
+        field => 'h_plc_identifier',
+        place => $place,
+    );
+    return $deref_place || $place;
+}
+
 sub place8 {
     my $self   = shift;
     my $place  = shift;

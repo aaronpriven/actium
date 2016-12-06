@@ -97,17 +97,19 @@ sub skeds {
     my @skeds;
 
     \my %trip_collection_by_days = $self->_sked_trip_collections;
-
-    my @place8s = map { $actiumdb->place8($_) } $self->places;
+    
+    my @place4s = map { $actiumdb->dereference_place } $self->places;
+    my @stopplaces = map { $actiumdb->dereference_place } $self->stopplaces;
+    my @place8s = map { $actiumdb->place8($_) } @place4s;
 
     foreach my $days ( keys %trip_collection_by_days ) {
         my $trip_collection = $trip_collection_by_days{$days};
 
         push @skeds,
           Actium::O::Sked->new(
-            place4_r    => [ $self->places_r->@* ],
-            place8_r    => [@place8s],
-            stopplace_r => [ $self->stopplaces_r->@* ],
+            place4_r    => \@place4s,
+            place8_r    => \@place8s,
+            stopplace_r => \@stopplaces,
             stopid_r    => [ $self->stopids_r->@* ],
             linegroup   => $self->linegroup,
             direction   => $self->dir_obj,
