@@ -286,6 +286,8 @@ sub new_from_kpoints {
             else {
                 next if ( $linegroup =~ /^DB/ );
             }
+            
+            next if $linegroup =~ /^4\d\d/;
 
             if ( $linegroup !~ /^6\d\d/ ) {
                 $self->push_columns($column);
