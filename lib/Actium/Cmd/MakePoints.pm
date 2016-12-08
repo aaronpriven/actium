@@ -58,9 +58,15 @@ sub OPTIONS {
         },
         {   spec => 'type=s',
             description =>
-              'Will only process signs that have a given signtype.',
+              'Will only process signs that have a given signtype.'
+              . ' (Accepts a regular expression.)',
             fallback => $EMPTY
         },
+
+        # Note that the regular expression feature, while not allowing more
+        # access than is given at the command line anyway, could be problematic
+        # if this used on a server.
+
         {   spec        => 'name=s',
             description => 'Name given to this run. Defaults to a combination '
               . 'of the signtype given (if any), the signIDs given (if any), '
@@ -194,12 +200,26 @@ sub START {
     $load_cry->done;
 
     my $signtype_opt = $env->option('type');
-    if ( $signtype_opt and not exists $signtypes{$signtype_opt} ) {
-        $makepoints_cry->text(
-            "Invalid signtype $signtype_opt specified on command line.");
-        $makepoints_cry->d_error;
-        exit 1;
+    my @matching_signtypes;
+
+    if ($signtype_opt) {
+        @matching_signtypes = grep {m/\A$signtype_opt\z/} keys %signtypes;
+
+        # Note that the regular expression feature, while not allowing more
+        # access than is given at the command line anyway, could be problematic
+        # if this used on a server.
+
+        if ( not @matching_signtypes ) {
+            $makepoints_cry->text(
+                "No signtype matches $signtype_opt specified on command line.");
+            $makepoints_cry->d_error;
+            exit 1;
+        }
     }
+    else {
+        @matching_signtypes = keys %signtypes;
+    }
+    my %signtype_matches = map { $_, 1 } @matching_signtypes;
 
     my $cry = cry("Now processing point schedules for sign number:");
 
@@ -225,7 +245,7 @@ sub START {
         my $status   = $signs{$signid}{Status};
 
         next SIGN
-          if $signtype_opt and $signtype_opt ne $signtype;
+          if not exists $signtype_matches{$signtype};
 
         next SIGN
           if $env->option('update')
@@ -349,8 +369,10 @@ sub START {
         #    output to points
 
         $point->output;
+        
+        my @errors = $point->errors;
 
-        push @{ $errors{$signid} }, $point->errors;
+        push @{ $errors{$signid} }, @errors if @errors;
 
         $heights{$signid} = $point->heights if defined $point->heights;
 
@@ -410,18 +432,29 @@ sub START {
 
     ### ERROR DISPLAY
 
-    my $error_file = $ERRORFILE_BASE . $run_name . '.txt';
-    my $error_cry  = cry "Writing errors to $error_file";
-    my $error_fh   = $pointlist_folder->open_write($error_file);
+    if ( scalar keys %errors ) {
+        
+        my $error_count = scalar keys %errors;
 
-    foreach my $signid ( sort { $a <=> $b } keys %errors ) {
-        foreach my $error ( @{ $errors{$signid} } ) {
-            say $error_fh "$signid\t$error";
+        my $error_file = $ERRORFILE_BASE . $run_name . '.txt';
+        my $error_cry  = cry "Writing $error_count errors to $error_file";
+        $error_cry->text(join(" " , keys %errors) );
+        my $error_fh   = $pointlist_folder->open_write($error_file);
+
+        foreach my $signid ( sort { $a <=> $b } keys %errors ) {
+            foreach my $error ( @{ $errors{$signid} } ) {
+                say $error_fh "$signid\t$error";
+            }
         }
-    }
 
-    $error_fh->close;
-    $cry->done;
+        $error_fh->close;
+        $cry->done;
+
+    }
+    else {
+        my $error_cry = cry 'No errors to log';
+        $error_cry->d_ok;
+    }
 
     ### HEIGHTS DISPLAY
 
