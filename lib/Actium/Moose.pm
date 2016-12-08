@@ -1,15 +1,13 @@
+package Actium::Moose 0.012;
+
+use 5.016;
+
 # Actium::Moose
 
 # The preamble to Moose Actium perl modules
 # Imports things that are common to (many) modules.
 # inspired by
 # http://blogs.perl.org/users/ovid/2013/09/building-your-own-moose.html
-
-# legacy status: 4
-
-use 5.016;
-
-package Actium::Moose 0.010;
 
 use Moose();                             ### DEP ###
 use MooseX::StrictConstructor();         ### DEP ###

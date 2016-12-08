@@ -1,10 +1,6 @@
-# Actium/Sked/Stop/Time.pm
+package Actium::O::Sked::Stop::Time 0.012;
 
 # the stop time object, containing all the info for each time of a schedule
-
-# legacy status 4
-
-package Actium::O::Sked::Stop::Time 0.010;
 
 use 5.016;
 use strict;

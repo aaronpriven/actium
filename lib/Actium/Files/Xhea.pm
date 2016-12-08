@@ -1,3 +1,5 @@
+package Actium::Files::Xhea 0.012;
+
 # /Actium/Files/Xhea.pm
 #
 # Using XML::Pastor, reads XML Hastus Exports for Actium files
@@ -5,8 +7,6 @@
 #
 # Also other routines with Xhea files or results from them, such as
 # creating mock HASI files
-
-package Actium::Files::Xhea 0.012;
 
 ## no critic (ProhibitAmbiguousNames)
 

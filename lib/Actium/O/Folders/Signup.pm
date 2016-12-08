@@ -1,9 +1,7 @@
-# Signup.pm
+package Actium::O::Folders::Signup 0.012;
+
 # Object-oriented interface to the signup folder
 
-# legacy stage 4
-
-package Actium::O::Folders::Signup 0.010;
 
 use 5.012;
 use warnings;    ### DEP ###

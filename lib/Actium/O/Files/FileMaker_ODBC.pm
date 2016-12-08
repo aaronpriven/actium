@@ -1,10 +1,6 @@
-# Actium/O/Files/FileMaker_ODBC.pm
+package Actium::O::Files::FileMaker_ODBC 0.012;
 
 # Role for reading and processing FileMaker Pro databases via ODBC
-
-# Legacy stage 4
-
-package Actium::O::Files::FileMaker_ODBC 0.010;
 
 use Actium::MooseRole;
 

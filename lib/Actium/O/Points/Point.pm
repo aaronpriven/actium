@@ -1,4 +1,4 @@
-package Actium::O::Points::Point 0.011;
+package Actium::O::Points::Point 0.012;
 
 # This object is used for *display*, and should probably be called something
 # that relates to that.

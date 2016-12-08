@@ -1,11 +1,8 @@
-# Actium/O/Traits/ShortColumn.pm
-
+package Actium::O::Traits::WithShortColumn 0.012;
 # Trait for adding short column names to attributes
 
 use warnings;
 use 5.016;    # turns on features
-
-package Actium::O::Traits::WithShortColumn 0.010;
 
 use Actium::MooseRole;
 

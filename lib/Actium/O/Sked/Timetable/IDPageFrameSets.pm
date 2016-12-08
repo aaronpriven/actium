@@ -1,11 +1,7 @@
-# Actium/O/Sked/Timetable/IDPageFrameSets.pm
+package Actium::O::Sked::Timetable::IDPageFrameSets 0.012;
 
 # Moose object representing all the frame sets (series of one or more frames
 # used on a page) for an InDesign timetable
-
-# legacy status: 4
-
-package Actium::O::Sked::Timetable::IDPageFrameSets 0.010;
 
 use warnings;
 use 5.016;

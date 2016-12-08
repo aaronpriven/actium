@@ -1,4 +1,4 @@
-package Actium::Cmd::NewSignup 0.011;
+package Actium::Cmd::NewSignup 0.012;
 
 # Prepares a new signup directory
 

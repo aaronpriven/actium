@@ -1,6 +1,8 @@
 use 5.022;
 use warnings;
 
+our $VERSION = 0.012;
+
 use DateTime;
 use DateTime::Format::CLDR;
 

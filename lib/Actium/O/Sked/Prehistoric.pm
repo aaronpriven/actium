@@ -1,4 +1,4 @@
-package Actium::O::Sked::Prehistoric 0.011;
+package Actium::O::Sked::Prehistoric 0.012;
 
 # Role to allow reading and writing prehistoric Skedfile files to/from
 # Sked objects

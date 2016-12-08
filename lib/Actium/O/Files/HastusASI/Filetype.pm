@@ -1,13 +1,9 @@
-# Actium/Files/HastusASI/Filetype.pm
+package Actium::O::Files::HastusASI::Filetype 0.012;
 
 # Class for Hastus ASI filetypes
 
-# Legacy stage 4
-
 use warnings;
 use 5.012;    # turns on features
-
-package Actium::O::Files::HastusASI::Filetype 0.010;
 
 use Moose; ### DEP ###
 use MooseX::StrictConstructor; ### DEP ###

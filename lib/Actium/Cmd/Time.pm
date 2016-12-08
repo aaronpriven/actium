@@ -1,12 +1,10 @@
-# Actium/Cmd/Time.pm
-# Routines for formatting times and parsing formatted times
+package Actium::Cmd::Time 0.012;
 
-# legacy status 3
+# Routines for formatting times and parsing formatted times
 
 use warnings;
 use strict;
 
-package Actium::Cmd::Time 0.010;
 
 use 5.014;
 

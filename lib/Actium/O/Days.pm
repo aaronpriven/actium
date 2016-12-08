@@ -1,4 +1,4 @@
-package Actium::O::Days 0.010;
+package Actium::O::Days 0.012;
 # Object representing the scheduled days (of a trip, or set of trips)
 
 use 5.022;

@@ -1,4 +1,4 @@
-# Actium/Eclipse.pm
+package Actium::Eclipse 0.012;
 
 # Originally, this did nothing of any use. However, requiring that this file
 # be present was a cute way of figuring out whether the requiring
@@ -20,10 +20,6 @@
 # none was provided.  I later moved that routine to this module. So
 # Actium::Eclipse::get_command_line() gets the command line (using Applescript...
 # slowly) from Eclipse.
-
-# Legacy stage 4.
-
-package Actium::Eclipse 0.010;
 
 use 5.010;
 use warnings;  ### DEP ###

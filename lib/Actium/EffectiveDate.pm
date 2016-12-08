@@ -1,9 +1,8 @@
-#Actium/EffectiveDate.pm
+package Actium::EffectiveDate 0.012;
 
 use 5.012;
 use warnings;
 
-package Actium::EffectiveDate 0.010;
 use Actium::Constants;
 
 use Sub::Exporter -setup =>

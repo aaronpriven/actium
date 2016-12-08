@@ -1,4 +1,4 @@
-package Actium::Cmd::HTMLTables 0.011;
+package Actium::Cmd::HTMLTables 0.012;
 
 use Actium::Preamble;
 

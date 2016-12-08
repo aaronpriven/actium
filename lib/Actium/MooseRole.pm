@@ -1,15 +1,11 @@
-# Actium/MooseRole.pm
+package Actium::MooseRole 0.012;
 
 # The preamble to Actium perl modules that are Moose roles
 # Imports things that are common to (many) modules.
 # inspired by
 # http://blogs.perl.org/users/ovid/2013/09/building-your-own-moose.html
 
-# legacy status: 4
-
 use 5.016;
-
-package Actium::MooseRole 0.010;
 
 use Moose::Role(); ### DEP ###
 use MooseX::StrictConstructor(); ### DEP ###

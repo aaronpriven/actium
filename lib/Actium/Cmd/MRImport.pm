@@ -1,10 +1,6 @@
-# /Actium/Cmd/MRImport.pm
+package Actium::Cmd::MRImport 0.012;
 
 # Command-line access to import_to_repository in Actum::MapRepostory
-
-# Legacy status: 4
-
-package Actium::Cmd::MRImport 0.010;
 
 use 5.014;
 use warnings;

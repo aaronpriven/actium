@@ -1,10 +1,4 @@
-# Actium/Flags.pm
-
-# Routines for dealing with flag artwork
-
-# legacy stage 4
-
-package Actium::Flags 0.010;
+package Actium::Flags 0.012;
 
 use Actium::Preamble;
 

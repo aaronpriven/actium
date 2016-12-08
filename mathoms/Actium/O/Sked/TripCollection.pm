@@ -1,10 +1,6 @@
-# Actium/Sked/TripCollection.pm
+package Actium::O::Sked::TripCollection 0.012;
 
 # Trip collection object (for schedules)
-
-# legacy status 4
-
-package Actium::O::Sked::TripCollection 0.010;
 
 # This is a collection of trips. It is convenient to have a collection of trips
 # object (separate from the Sked object) for two reasons. First, the collection

@@ -1,4 +1,4 @@
-package Actium::O::Sked::Timetable 0.010;
+package Actium::O::Sked::Timetable 0.012;
 
 # Object representing the data in a timetable to be displayed to the user.
 # Designed to take an Actium::O::Sked object and make it displayable.

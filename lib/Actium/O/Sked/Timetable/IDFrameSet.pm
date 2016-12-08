@@ -1,11 +1,9 @@
+package Actium::O::Sked::Timetable::IDFrameSet 0.012;
+
 # Actium/O/Sked/Timetable/IDFrameSet.pm
 
 # Moose object representing the frame set (series of one or more frames
 # used on a page) for an InDesign timetable
-
-# legacy status: 4
-
-package Actium::O::Sked::Timetable::IDFrameSet 0.010;
 
 use Moose; ### DEP ###
 use MooseX::StrictConstructor; ### DEP ###

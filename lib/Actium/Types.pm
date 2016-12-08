@@ -1,12 +1,9 @@
-# Actium/Types.pm
-# Moose types for Actium
+package Actium::Types 0.012;
 
-# legacy status 4
+# Moose types for Actium
 
 use strict;
 use warnings;
-
-package Actium::Types 0.010;
 
 use 5.016;    # turns on features
 

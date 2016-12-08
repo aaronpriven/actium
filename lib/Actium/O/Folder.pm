@@ -1,13 +1,10 @@
-# Folder.pm
+package Actium::O::Folder 0.012;
+
 # Objects representing folders (directories) on disk
 
-# legacy stage 4
-
 use 5.012;
-use strict;      ### DEP ###
-use warnings;    ### DEP ###
+use warnings;
 
-package Actium::O::Folder 0.010;
 
 use Moose;                        ### DEP ###
 use MooseX::StrictConstructor;    ### DEP ###

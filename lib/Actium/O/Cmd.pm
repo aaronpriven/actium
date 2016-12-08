@@ -1,4 +1,4 @@
-package Actium::O::Cmd 0.011;
+package Actium::O::Cmd 0.012;
 
 # Amalgamation of Actium::Cmd, Actium::O::CmdEnv, and the various
 # Actium::Cmd::Config::* modules
