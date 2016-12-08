@@ -1,8 +1,6 @@
-# Actium/O/Files/SQLite.pm
+package Actium::O::Files::SQLite 0.012;
 
 # Role for reading and processing flat files and storing in an SQLite database
-
-# Legacy stage 4
 
 #The idea is that classes for different types of files (HastusASI,
 #FileMaker Pro "Merge", FileMaker Pro "XML") will compose this role
@@ -21,8 +19,6 @@
 
 use warnings;    ### DEP ###
 use 5.012;       # turns on features
-
-package Actium::O::Files::SQLite 0.010;
 
 use Moose::Role;    ### DEP ###
 

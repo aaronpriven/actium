@@ -1,4 +1,4 @@
-package Actium::O::2DArray 0.011;
+package Actium::O::2DArray 0.012;
 
 # Convenience object for 2D array methods
 

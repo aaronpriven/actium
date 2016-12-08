@@ -1,12 +1,9 @@
-# Actium/Sorting/Travel.pm
-# Sorting routines by travel line)
+package Actium::Sorting::Travel 0.012;
 
-# legacy status 4
+# Sorting routines by travel line)
 
 use 5.012;
 use warnings;
-
-package Actium::Sorting::Travel 0.010;
 
 use Actium::Sorting::Line ('byline');
 

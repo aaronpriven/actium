@@ -1,4 +1,4 @@
-package Actium::Cmd::AVL2Points 0.011;
+package Actium::Cmd::AVL2Points 0.012;
 
 use Actium::Preamble;
 use sort ('stable');    ### DEP ###

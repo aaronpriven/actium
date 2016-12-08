@@ -1,11 +1,7 @@
-# Actium/O/Sked/Timetable/IDTimetable.pm
+package Actium::O::Sked::Timetable::IDTimetable 0.012;
 
 # Object representing data in a timetable to be displayed to user,
 # specific to InDesign timetables. Mostly to do with frame information.
-
-# legacy status: 4
-
-package Actium::O::Sked::Timetable::IDTimetable 0.010;
 
 use 5.016;
 use warnings;

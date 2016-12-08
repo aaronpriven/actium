@@ -1,9 +1,7 @@
-# Actium/O/Photos/Flickr/Auth.pm
+package Actium::O::Photos::Flickr::Auth 0.012;
 
 # Object representing Flickr authentication information (api key, & secret, 
 # OAuth user [consumer] keys and secrets )
-
-package Actium::O::Photos::Flickr::Auth 0.010;
 
 use Actium::Moose;
 

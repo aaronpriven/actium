@@ -1,12 +1,9 @@
-# Actium/Sorting/Line.pm
-# Sorting routines (by line designation)
+package Actium::Sorting::Line 0.012;
 
-# legacy status 4
+# Sorting routines (by line designation)
 
 use 5.012;
 use warnings;
-
-package Actium::Sorting::Line 0.010;
 
 use Actium::Constants;
 

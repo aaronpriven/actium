@@ -1,4 +1,4 @@
-package Actium::Cmd::AVL2Skeds 0.011;
+package Actium::Cmd::AVL2Skeds 0.012;
 
 # This is one of the most important programs: it produces the skeds files from
 # the avl files.

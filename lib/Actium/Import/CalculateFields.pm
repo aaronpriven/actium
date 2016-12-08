@@ -1,10 +1,8 @@
-# /Actium/Import/CalculateFields.pm
-#
+package Actium::Import::CalculateFields 0.012;
+
 # Routines for calculating fields based on imported data.
 # Does things like break up "description" into "on" and "at". Etc.
 # This is probably a terrible name for this.
-
-package Actium::Import::CalculateFields 0.010;
 
 use Actium::Preamble;
 use Text::Trim; ### DEP ###

@@ -1,10 +1,6 @@
-# /Actium/Cmd/MRCopy.pm
+package Actium::Cmd::MRCopy 0.012;
 
 # Command-line access to copylatest in Actum::MapRepostory
-
-# Legacy status: 4
-
-package Actium::Cmd::MRCopy 0.010;
 
 use 5.014;
 use warnings;

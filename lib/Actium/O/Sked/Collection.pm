@@ -1,4 +1,4 @@
-package Actium::O::Sked::Collection 0.010;
+package Actium::O::Sked::Collection 0.012;
 
 use Actium::Moose;
 

@@ -1,4 +1,4 @@
-package Actium::Frequency 0.010;
+package Actium::Frequency 0.012;
 
 use Actium::Preamble;
 use Actium::O::2DArray;

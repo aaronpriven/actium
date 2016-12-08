@@ -1,10 +1,7 @@
-# Actium/O/Sked/Timetable/IDTimetableSet.pm
+package Actium::O::Sked::Timetable::IDTimetableSet 0.012;
 
 # A set of timetables
 
-# legacy status: 4
-
-package Actium::O::Sked::Timetable::IDTimetableSet 0.010;
 
 use 5.016;
 use warnings;

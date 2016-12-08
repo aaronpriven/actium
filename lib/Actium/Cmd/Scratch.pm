@@ -1,4 +1,4 @@
-package Actium::Cmd::Scratch 0.011;
+package Actium::Cmd::Scratch 0.012;
 
 use Actium::Preamble;
 use Actium::O::2DArray;

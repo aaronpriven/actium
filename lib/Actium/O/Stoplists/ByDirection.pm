@@ -1,9 +1,3 @@
-#!/ActivePerl/bin/perl
-
-#/Actium/O/Stoplists/ByDirection.pm
-
-# legacy stage 4
-
 package Actium::O::Stoplists::ByDirection 0.010;
 
 use Moose; ### DEP ###

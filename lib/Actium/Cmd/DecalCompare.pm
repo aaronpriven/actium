@@ -1,6 +1,4 @@
-#Actium/Cmd/DecalCompare.pm
-
-package Actium::Cmd::DecalCompare 0.010;
+package Actium::Cmd::DecalCompare 0.012;
 
 use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');

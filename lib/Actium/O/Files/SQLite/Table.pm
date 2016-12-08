@@ -1,4 +1,4 @@
-# Actium/Files/SQLite/Table.pm
+package Actium::O::Files::SQLite::Table 0.012;
 
 # Class for SQLite tables
 
@@ -6,8 +6,6 @@
 
 use warnings;
 use 5.012;    # turns on features
-
-package Actium::O::Files::SQLite::Table 0.010;
 
 use Moose; ### DEP ###
 use MooseX::StrictConstructor; ### DEP ###

@@ -1,4 +1,4 @@
-package Actium::O::Files::ActiumDB 0.011;
+package Actium::O::Files::ActiumDB 0.012;
 
 # Class holding routines related to the Actium database
 # (the FileMaker database used by Actium users), accessed
