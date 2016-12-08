@@ -1,11 +1,10 @@
-# Actium/Cmd/ZipDecals.pm
+package Actium::Cmd::ZipDecals 0.012;
 
 # Creates a Zip archive of the relevant decals
 
 use 5.016;
 use warnings;
 
-package Actium::Cmd::ZipDecals 0.010;
 
 use Actium::Preamble;
 use Actium::O::Folder;

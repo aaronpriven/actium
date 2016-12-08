@@ -1,10 +1,6 @@
-# Actium/Bags.pm
+package Actium::Bags 0.012;
 
 # Routines for dealing with bag artwork
-
-# legacy stage 4
-
-package Actium::Bags 0.010;
 
 use Actium::Preamble;
 

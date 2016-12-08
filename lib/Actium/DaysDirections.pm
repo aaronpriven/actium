@@ -1,13 +1,11 @@
-# Actium/DaysDirections
+package Actium::DaysDirections 0.012;
+
 # Day and direction codes, conversion between in Hastus and legacy systems
 
-# legacy stage 2, mostly
 # should be eliminated in favor of Actium::O::Days and Actium::O::Dir
 
 use 5.012;
 use warnings;
-
-package Actium::DaysDirections 0.010;
 
 use Const::Fast; ### DEP ###
 use Actium::Constants;

@@ -1,4 +1,4 @@
-package Actium::Cmd::ReadXLSXSchedule 0.010;
+package Actium::Cmd::ReadXLSXSchedule 0.012;
 
 # This is very much in progress and not a complete program yet.
 

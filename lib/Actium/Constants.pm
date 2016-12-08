@@ -1,17 +1,8 @@
-# Actium/Constants.pm
-# Various constants
-
-# Should this be combined with Actium::Preamble?
-
-# legacy stages 3 and 4
-
-use strict;
-use warnings;
-
-package Actium::Constants 0.010;
+package Actium::Constants 0.012;
 # Cannot use Actium::Preamble since that module depends on this one
 
-use 5.016;
+use 5.020;
+use warnings;
 use Const::Fast;    ### DEP ###
 
 use Scalar::Util('reftype');   ### DEP ###

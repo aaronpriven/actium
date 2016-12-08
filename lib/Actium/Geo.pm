@@ -1,8 +1,6 @@
-# /Actium/Geo.pm
+package Actium::Geo 0.012;
 
 # Geocoding, geodesy, etc.
-
-package Actium::Geo 0.010;
 
 use Actium::Preamble;
 

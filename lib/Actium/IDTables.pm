@@ -1,6 +1,6 @@
-package Actium::IDTables 0.011;
+package Actium::IDTables 0.012;
 
-use 5.012;
+use 5.020;
 use warnings;    ### DEP ###
 
 use English '-no_match_vars';

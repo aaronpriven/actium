@@ -1,9 +1,7 @@
-# Actium/O/DateTime.pm
+package Actium::O::DateTime 0.012;
 
 # Object representing a date and time
 # (a thin wrapper around the DateTime module, with some i18n methods)
-
-package Actium::O::DateTime 0.010;
 
 use 5.016;
 use warnings;    ### DEP ###

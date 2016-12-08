@@ -1,4 +1,4 @@
-package Actium::Cmd::MakePoints 0.011;
+package Actium::Cmd::MakePoints 0.012;
 
 use warnings;    ### DEP ###
 use strict;      ### DEP ###

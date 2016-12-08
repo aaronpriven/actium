@@ -1,12 +1,10 @@
-# Actium/O/Skedlike.pm
+package Actium::O::Skedlike 0.012;
 
 # Role for defining objects that do what skeds can do
 # (including such things as Timetables and IDTables)
 
 use warnings;
 use 5.016;    # turns on features
-
-package Actium::O::Skedlike 0.010;
 
 use Moose::Role; ### DEP ###
 

@@ -1,4 +1,4 @@
-package Actium::Cmd::Bags2 0.011;
+package Actium::Cmd::Bags2 0.012;
 
 # service change bag decals from Excel and into a script
 

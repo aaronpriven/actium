@@ -1,4 +1,4 @@
-package Actium::Cmd::Flagspecs 0.011;
+package Actium::Cmd::Flagspecs 0.012;
 
 use warnings;
 use 5.012;

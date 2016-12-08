@@ -1,10 +1,9 @@
-# Actium/Union.pm
+package Actium::Union 0.012;
+
 # Ordered union of lists
 
 use 5.012;
 use warnings;
-
-package Actium::Union 0.010;
 
 use Carp;
 

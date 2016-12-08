@@ -1,8 +1,6 @@
-#MapRepository.pm
+package Actium::MapRepository 0.012;
 
 # Routines for dealing with the filenames of line maps
-
-# Legacy status: 4
 
 # The filename pattern is supposed to be
 
@@ -22,8 +20,6 @@
 
 use 5.014;
 use warnings;
-
-package Actium::MapRepository 0.010;
 
 use Sub::Exporter -setup => {
     exports => [

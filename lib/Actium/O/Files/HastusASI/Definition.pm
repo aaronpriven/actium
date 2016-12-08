@@ -1,13 +1,9 @@
-# Actium/Files/HastusASI/Definition.pm
+package Actium::O::Files::HastusASI::Definition 0.012;
 
 # Definition of Hastus ASI tables and file types
 
-# Legacy stage 4
-
 use warnings;
 use 5.012;    # turns on features
-
-package Actium::O::Files::HastusASI::Definition 0.010;
 
 use MooseX::Singleton; ### DEP ###
 

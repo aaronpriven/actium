@@ -1,4 +1,4 @@
-package Actium::Cmd::AddFields 0.011;
+package Actium::Cmd::AddFields 0.012;
 
 # Adds fields from the database to a file.
 

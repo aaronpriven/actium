@@ -1,8 +1,4 @@
-# /Actium/DecalPreparation.pm
-#
-# Routines for decal preparation.
-
-package Actium::DecalPreparation 0.010;
+package Actium::DecalPreparation 0.012;
 
 use Actium::Preamble;
 use Actium::Sorting::Line ('sortbyline');

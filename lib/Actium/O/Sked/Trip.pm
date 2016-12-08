@@ -1,4 +1,4 @@
-package Actium::O::Sked::Trip 0.011;
+package Actium::O::Sked::Trip 0.012;
 
 # Trip object (for schedules and headways)
 

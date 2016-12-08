@@ -1,12 +1,9 @@
-# Actium/Sorting/Skeds.pm
-# Routines to sort schedule-type objects
+package Actium::Sorting::Skeds 0.012;
 
-# legacy status 4
+# Routines to sort schedule-type objects
 
 use 5.016;
 use warnings;
-
-package Actium::Sorting::Skeds 0.010;
 
 #use Storable;
 

@@ -1,4 +1,4 @@
-package Actium::Cmd::MakeBags 0.011;
+package Actium::Cmd::MakeBags 0.012;
 
 # Makes service change bag decals
 

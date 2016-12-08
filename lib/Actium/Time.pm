@@ -1,13 +1,10 @@
-# Actium/Time.pm
-# Routines for formatting times and parsing formatted times
+package Actium::Time 0.012;
 
-# legacy status 3
-# to be phased out in favor of Actium::O::Time
+# Routines for formatting times and parsing formatted times
+# -- to be phased out in favor of Actium::O::Time
 
 use warnings; ### DEP ###
 use strict; ### DEP ###
-
-package Actium::Time 0.010;
 
 use 5.010;
 

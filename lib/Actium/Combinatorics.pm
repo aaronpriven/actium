@@ -1,10 +1,6 @@
-# Actium/Combinatorics.pm
+package Actium::Combinatorics 0.012;
 
 # Permutations, partitions, and combinations for Actium
-
-# legacy status: 4
-
-package Actium::Combinatorics 0.010;
 
 use 5.016;
 use warnings;
