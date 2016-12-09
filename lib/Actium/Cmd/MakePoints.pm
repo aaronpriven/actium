@@ -438,7 +438,7 @@ sub START {
 
         my $error_file = $ERRORFILE_BASE . $run_name . '.txt';
         my $error_cry  = cry "Writing $error_count errors to $error_file";
-        $error_cry->text(join(" " , keys %errors) );
+        #$error_cry->text(join(" " , keys %errors) );
         my $error_fh   = $pointlist_folder->open_write($error_file);
 
         foreach my $signid ( sort { $a <=> $b } keys %errors ) {
