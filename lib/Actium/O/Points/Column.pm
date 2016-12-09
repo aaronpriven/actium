@@ -9,7 +9,6 @@ use 5.010;
 
 use sort ('stable');
 
-
 use Moose;                             ### DEP ###
 use MooseX::SemiAffordanceAccessor;    ### DEP ###
 use Moose::Util::TypeConstraints;      ### DEP ###
@@ -265,15 +264,17 @@ sub format_head_lines {
     my @head_lines = $self->head_lines;
     my ( $color, $head_lines );
 
-    my $pstyle    = 'dropcaphead';
-    my $firstline = $self->head_line(0);
+    my $pstyle        = 'dropcaphead';
+    my $firstline     = $self->head_line(0);
+    my $firstline_len = length($firstline);
     if ( $#head_lines
-        or ( length($firstline) >= 3 and $firstline !~ /[0-9]{3}/ ) )
+        or ( $firstline_len >= 3 and $firstline !~ /[0-9]{3}/ ) )
     {
         $pstyle = 'dropcapheadmany';
     }
-
-    #my $pstyle = $#head_lines ? 'dropcapheadmany' : 'dropcaphead';
+    elsif ( $firstline_len == 3 ) {
+        $pstyle = 'dropcaphead3';
+    }
 
     foreach my $line (@head_lines) {
         {
