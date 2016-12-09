@@ -708,7 +708,7 @@ sub text {
         OOPS  => 'bold bright_yellow on_bright_black',
         WARN  => 'bold black on_bright_yellow',
         NOTE  => 'bold bright_white on_blue',
-        INFO  => 'bold black on_green',
+        INFO  => 'bold white on_green',
         OK    => \'INFO',
         DEBUG => 'bright_white on_bright_black',      #  'bold black on_yellow',
         NOTRY => 'bold bright_white on_magenta',
