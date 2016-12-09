@@ -430,6 +430,10 @@ sub START {
                 foreach my $days (
                     sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
                 {
+                    
+                    next if $days eq '1245' or $days eq '1235' or ($linegroup =~ /\d\d/ and $days eq '1234');
+                    # skip school trips... this is wrong but will probably
+                    # not be fixed in the version that comes from avl
 
                     print $out "$linegroup\t$dir_code\t$days";
 
