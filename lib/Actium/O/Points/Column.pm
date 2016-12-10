@@ -1,4 +1,4 @@
-package Actium::O::Points::Column 0.011;
+package Actium::O::Points::Column 0.013;
 
 # Object for a single column in an InDesign point schedule
 
@@ -9,15 +9,15 @@ use 5.010;
 
 use sort ('stable');
 
-use Moose;                             ### DEP ###
-use MooseX::SemiAffordanceAccessor;    ### DEP ###
-use Moose::Util::TypeConstraints;      ### DEP ###
+use Moose;                                  ### DEP ###
+use MooseX::SemiAffordanceAccessor;         ### DEP ###
+use Moose::Util::TypeConstraints;           ### DEP ###
 
-use namespace::autoclean;              ### DEP ###
+use namespace::autoclean;                   ### DEP ###
 
 use Actium::Constants;
 use Actium::Time ('timenum');
-use Const::Fast;                       ### DEP ###
+use Const::Fast;                            ### DEP ###
 
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
@@ -267,9 +267,7 @@ sub format_head_lines {
     my $pstyle        = 'dropcaphead';
     my $firstline     = $self->head_line(0);
     my $firstline_len = length($firstline);
-    if ( $#head_lines
-        or ( $firstline_len >= 3 and $firstline !~ /[0-9]{3}/ ) )
-    {
+    if ( $#head_lines or ( $firstline_len > 3 ) ) {
         $pstyle = 'dropcapheadmany';
     }
     elsif ( $firstline_len == 3 ) {

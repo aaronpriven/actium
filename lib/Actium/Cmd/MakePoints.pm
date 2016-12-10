@@ -1,4 +1,4 @@
-package Actium::Cmd::MakePoints 0.012;
+package Actium::Cmd::MakePoints 0.013;
 
 use warnings;    ### DEP ###
 use strict;      ### DEP ###
@@ -74,12 +74,12 @@ sub OPTIONS {
               . '"-name _" will use no special name.',
             fallback => $EMPTY,
         },
-        
-         {   spec        => 'cluster=s',
+
+        {   spec        => 'cluster=s',
             description => 'Sign cluster used for this run. '
-              . 'If specified, only signs in this cluster will be ' . 
-              'produced. Use _ for no cluster',
-            fallback        => $EMPTY,
+              . 'If specified, only signs in this cluster will be '
+              . 'produced. Use _ for no cluster',
+            fallback => $EMPTY,
         },
 
         {   spec        => 'agency=s',
@@ -123,7 +123,7 @@ sub START {
         die "Agency " . $env->option('agency') . " not found.\n";
     }
 
-    my $effdate = $actiumdb->agency_effective_date($run_agency);
+    #my $effdate = $actiumdb->agency_effective_date($run_agency);
 
     $actiumdb->load_tables(
         requests => {
@@ -205,12 +205,12 @@ sub START {
     $ssj_cry->done;
 
     $load_cry->done;
-    
+
     my $cluster_opt = $env->option('cluster');
 
     my $signtype_opt = $env->option('type');
     my @matching_signtypes;
-    
+
     if ($signtype_opt) {
         @matching_signtypes = grep {m/\A$signtype_opt\z/} keys %signtypes;
 
@@ -229,7 +229,7 @@ sub START {
         @matching_signtypes = keys %signtypes;
     }
     my %signtype_matches = map { $_, 1 } @matching_signtypes;
-    
+
     my $cry = cry("Now processing point schedules for sign number:");
 
     my $displaycolumns = 0;
@@ -252,8 +252,8 @@ sub START {
         my $city     = $signs{$signid}{City} // $EMPTY;
         my $signtype = $signs{$signid}{SignType} // $EMPTY;
         my $status   = $signs{$signid}{Status};
-        my $cluster =  $signs{$signid}{Cluster} // $EMPTY;
-        
+        my $cluster  = $signs{$signid}{Cluster} // $EMPTY;
+
         next SIGN if $cluster_opt eq '_' and $cluster eq $EMPTY;
         next SIGN if $cluster_opt and $cluster_opt ne $cluster;
 
@@ -325,7 +325,7 @@ sub START {
         # 1) Read kpoints from file
 
         my $point = Actium::O::Points::Point->new_from_kpoints(
-            $stopid,  $signid,            $effdate,
+            $stopid, $signid,    #$effdate,
             $agency,  $omitted_of_stop_r, $nonstoplocation,
             $smoking, $delivery,          $signup
         );
@@ -382,7 +382,7 @@ sub START {
         #    output to points
 
         $point->output;
-        
+
         my @errors = $point->errors;
 
         push @{ $errors{$signid} }, @errors if @errors;
@@ -410,10 +410,10 @@ sub START {
         # sort numerically by signid
 
         my $signids_in_a_file = $signtypes{$signtype}{StopIDsInAFile};
-        if ($cluster_opt and $cluster_opt ne '_') {
-            $signids_in_a_file = 1e6;
+        if ( $cluster_opt and $cluster_opt ne '_' ) {
+            $signids_in_a_file = 9999;
         }
-            
+
         my $end_signid = $signids_in_a_file;
 
         my $addition = "1-" . $signids_in_a_file;
@@ -449,13 +449,13 @@ sub START {
     ### ERROR DISPLAY
 
     if ( scalar keys %errors ) {
-        
+
         my $error_count = scalar keys %errors;
 
         my $error_file = $ERRORFILE_BASE . $run_name . '.txt';
         my $error_cry  = cry "Writing $error_count errors to $error_file";
         #$error_cry->text(join(" " , keys %errors) );
-        my $error_fh   = $pointlist_folder->open_write($error_file);
+        my $error_fh = $pointlist_folder->open_write($error_file);
 
         foreach my $signid ( sort { $a <=> $b } keys %errors ) {
             foreach my $error ( @{ $errors{$signid} } ) {
@@ -502,17 +502,17 @@ sub _get_run_name {
         return $EMPTY;
     }
 
-    my @args     = $env->argv;
-    my $signtype = $env->option('type');
-    my $cluster_opt         = $env->option('cluster');
+    my @args        = $env->argv;
+    my $signtype    = $env->option('type');
+    my $cluster_opt = $env->option('cluster');
 
     my @run_pieces;
     push @run_pieces, $run_agency_abbr
       unless $run_agency_abbr eq $FALLBACK_AGENCY_ABBR;
     push @run_pieces, join( ',', @args ) if @args;
-    push @run_pieces, $signtype if $signtype;
+    push @run_pieces, $signtype       if $signtype;
     push @run_pieces, "C$cluster_opt" if $cluster_opt;
-    push @run_pieces, 'U'       if $env->option('update');
+    push @run_pieces, 'U'             if $env->option('update');
 
     if (@run_pieces) {
         return '.' . join( '_', @run_pieces );
