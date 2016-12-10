@@ -74,6 +74,13 @@ sub OPTIONS {
               . '"-name _" will use no special name.',
             fallback => $EMPTY,
         },
+        
+         {   spec        => 'cluster=s',
+            description => 'Sign cluster used for this run. '
+              . 'If specified, only signs in this cluster will be ' . 
+              'produced. Use _ for no cluster',
+            fallback        => $EMPTY,
+        },
 
         {   spec        => 'agency=s',
             description => 'Agency ID used for this run. '
@@ -133,7 +140,7 @@ sub START {
                 index_field => 'SignID',
                 fields      => [
                     qw[
-                      SignID Active stp_511_id Status SignType Sidenote
+                      SignID Active stp_511_id Status SignType Cluster Sidenote
                       Agency ShelterNum NonStopLocation NonStopCity
                       Delivery City
                       ]
@@ -198,10 +205,12 @@ sub START {
     $ssj_cry->done;
 
     $load_cry->done;
+    
+    my $cluster_opt = $env->option('cluster');
 
     my $signtype_opt = $env->option('type');
     my @matching_signtypes;
-
+    
     if ($signtype_opt) {
         @matching_signtypes = grep {m/\A$signtype_opt\z/} keys %signtypes;
 
@@ -220,7 +229,7 @@ sub START {
         @matching_signtypes = keys %signtypes;
     }
     my %signtype_matches = map { $_, 1 } @matching_signtypes;
-
+    
     my $cry = cry("Now processing point schedules for sign number:");
 
     my $displaycolumns = 0;
@@ -243,6 +252,10 @@ sub START {
         my $city     = $signs{$signid}{City} // $EMPTY;
         my $signtype = $signs{$signid}{SignType} // $EMPTY;
         my $status   = $signs{$signid}{Status};
+        my $cluster =  $signs{$signid}{Cluster} // $EMPTY;
+        
+        next SIGN if $cluster_opt eq '_' and $cluster eq $EMPTY;
+        next SIGN if $cluster_opt and $cluster_opt ne $cluster;
 
         next SIGN
           if not exists $signtype_matches{$signtype};
@@ -397,7 +410,10 @@ sub START {
         # sort numerically by signid
 
         my $signids_in_a_file = $signtypes{$signtype}{StopIDsInAFile};
-
+        if ($cluster_opt and $cluster_opt ne '_') {
+            $signids_in_a_file = 1e6;
+        }
+            
         my $end_signid = $signids_in_a_file;
 
         my $addition = "1-" . $signids_in_a_file;
@@ -488,12 +504,14 @@ sub _get_run_name {
 
     my @args     = $env->argv;
     my $signtype = $env->option('type');
+    my $cluster_opt         = $env->option('cluster');
 
     my @run_pieces;
     push @run_pieces, $run_agency_abbr
       unless $run_agency_abbr eq $FALLBACK_AGENCY_ABBR;
     push @run_pieces, join( ',', @args ) if @args;
     push @run_pieces, $signtype if $signtype;
+    push @run_pieces, "C$cluster_opt" if $cluster_opt;
     push @run_pieces, 'U'       if $env->option('update');
 
     if (@run_pieces) {

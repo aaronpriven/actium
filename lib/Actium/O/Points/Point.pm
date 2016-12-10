@@ -977,15 +977,17 @@ sub format_side {
 
     $color = $IDT->color($color);
     
-    $color = ''; # zero out colors for now
+    $color = ''; # zero out text colors for now
+    
+    my $shading = '<pShadingColor:LineViolet>';
 
-    print $sidefh $IDT->parastyle('sideeffective'), $color;
+    print $sidefh $IDT->parastyle('sideeffective'), $shading, $color;
 
     my $effective_dates
       = $Actium::Cmd::MakePoints::actiumdb->agency_effective_date_indd(
         'effective_colon', $color );
 
-    print $sidefh $effective_dates;
+    print $sidefh $effective_dates, '<pShadingColor:>';
 
     print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
     # blank line to separate effective dates from side notes
