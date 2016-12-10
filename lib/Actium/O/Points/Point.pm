@@ -1,4 +1,4 @@
-package Actium::O::Points::Point 0.012;
+package Actium::O::Points::Point 0.013;
 
 # This object is used for *display*, and should probably be called something
 # that relates to that.
@@ -24,10 +24,12 @@ use Actium::Util('joinseries');
 use Actium::Crier(qw/cry last_cry/);
 use Actium::Constants;
 use Actium::Sorting::Line (qw(byline sortbyline));
-use List::MoreUtils('natatime');                ### DEP ###
+use List::MoreUtils(qw/natatime uniq/);         ### DEP ###
 use Const::Fast;                                ### DEP ###
 use List::Compare::Functional('get_unique');    ### DEP ###
 use List::Util('first');
+use Actium::EffectiveDate ('newest_date');
+use Actium::O::DateTime;
 
 use POSIX ();                                   ### DEP ###
 
@@ -40,6 +42,7 @@ use Actium::Text::InDesignTags;
 const my $IDT          => 'Actium::Text::InDesignTags';
 const my $BOXBREAK     => $IDT->boxbreak;
 const my $BLANK_COLUMN => ( $BOXBREAK x 2 );
+const my $NBSP         => $IDT->nbsp;
 
 has [qw/stopid signid delivery agency/] => (
     is  => 'ro',
@@ -47,8 +50,9 @@ has [qw/stopid signid delivery agency/] => (
 );
 
 has effdate => (
-    is  => 'ro',
-    isa => 'Actium::O::DateTime',
+    is     => 'ro',
+    writer => '_set_effdate',
+    isa    => 'Actium::O::DateTime',
 );
 
 has signup => (
@@ -135,7 +139,7 @@ has 'has_ab' => (
 has 'column_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Actium::O::Points::Column]',
+    isa     => 'ArrayRef[Maybe[Actium::O::Points::Column]]',
     default => sub { [] },
     handles => {
         columns      => 'elements',
@@ -205,17 +209,18 @@ my $i18n_all_cr = sub {
 };
 
 sub new_from_kpoints {
-    my ($class,           $stopid,  $signid,
-        $effdate,         $agency,  $omitted_of_stop_r,
+    my ($class, $stopid, $signid,
+        # $effdate,
+        $agency, $omitted_of_stop_r,
         $nonstoplocation, $smoking, $delivery,
         $signup
     ) = @_;
 
     my $self = $class->new(
-        stopid            => $stopid,
-        signid            => $signid,
-        effdate           => $effdate,
-        agency  => $agency,
+        stopid => $stopid,
+        signid => $signid,
+        #effdate           => $effdate,
+        agency            => $agency,
         nonstoplocation   => $nonstoplocation,
         smoking           => $smoking,
         omitted_of_stop_r => $omitted_of_stop_r,
@@ -230,15 +235,13 @@ sub new_from_kpoints {
 
         my %do_omit_line
           = map { $_, 1 } @{ $self->omitted_of($stop_to_import) };
-        my ( @found_lines, @found_linedirs );
+        my ( %found_line, @found_linedirs );
 
         my $kpointdir = substr( $stop_to_import, 0, 3 ) . 'xx';
 
         my $kpointfile = "$KFOLDER/$kpointdir/$stop_to_import.txt";
 
         my $kpoint = $signup->open_read($kpointfile);
-        #open my $kpoint, '<', $kpointfile
-        #  or die "Can't open $kpointfile: $!";
 
         my (%bsn_columns);
 
@@ -248,13 +251,14 @@ sub new_from_kpoints {
             my $column = Actium::O::Points::Column->new( $_, $column_stopid );
 
             my $linegroup = $column->linegroup;
-            push @found_lines, $linegroup;
+
+            push @found_linedirs, $linegroup;
             my $dircode = $column->dircode;
 
             my $transitinfo_dir = $DIRCODES[ $HASTUS_DIRS[$dircode] ];
 
             my $linedir = "$linegroup-$transitinfo_dir";
-            push @found_lines, $linedir;
+            push @found_linedirs, $linedir;
 
             next if $do_omit_line{$linedir};
             next if $do_omit_line{$linegroup};
@@ -286,7 +290,7 @@ sub new_from_kpoints {
             else {
                 next if ( $linegroup =~ /^DB/ );
             }
-            
+
             next if $linegroup =~ /^4\d\d/;
 
             if ( $linegroup !~ /^6\d\d/ ) {
@@ -331,22 +335,25 @@ sub new_from_kpoints {
 
         } ## tidy end: if ( scalar keys %bsn_columns)
 
-        my @notfound = get_unique( [ [ keys %do_omit_line ], \@found_lines ] );
+        my @notfound
+          = get_unique( [ [ keys %do_omit_line ], \@found_linedirs ] );
 
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
             my $lines = joinseries(@notfound);
-            #last_cry()
-            #  ->text(
-            #    "\x{1f4A5}  Warning! $linetext $lines found in omit list for "
-            #      . "stop $stop_to_import, sign $signid, but not found in "
-            #      . "stop schedule data." );
             $self->push_error(
                 "$linetext $lines found in omit list but not in schedule data."
             );
         }
 
     } ## tidy end: foreach my $stop_to_import ...
+
+    my @all_lines = uniq( map { $_->lines } $self->columns );
+
+    my @dates
+      = map { $Actium::Cmd::MakePoints::lines{$_}{TimetableDate} } @all_lines;
+
+    $self->_set_effdate( Actium::O::DateTime->new( newest_date(@dates) ) );
 
     return $self;
 
@@ -567,7 +574,6 @@ sub determine_subtype {
     );
 
     my $first_run = 1;
-    my $cried;
 
   CHUNK_GROUPING:
     until ( $chosen_subtype or $all_chunks_singular ) {
@@ -577,15 +583,11 @@ sub determine_subtype {
         }
         else {
 
-            if ( not $cried ) {
-                #last_cry()->text( "Splitting chunks in ", $self->signid );
-                $cried = 1;
-            }
             # divide chunks into single schedules and try again
 
             my $chunkid_to_split
               = first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
-            keys %heights_of_chunk;
+            sort keys %heights_of_chunk;
 
             if ($chunkid_to_split) {
                 my @heights = @{ $heights_of_chunk{$chunkid_to_split} };
@@ -613,7 +615,7 @@ sub determine_subtype {
         }
 
         my @chunkids_by_length = reverse
-          sort { $tallest_of_chunk{$a} <=> $tallest_of_chunk{$b} }
+          sort { $tallest_of_chunk{$a} <=> $tallest_of_chunk{$b} || $b cmp $a }
           keys %tallest_of_chunk;
 
         # determine minimum fitting subtype
@@ -626,23 +628,6 @@ sub determine_subtype {
             my @regions
               = @{ $Actium::Cmd::MakePoints::templates_of{$signtype}{$subtype}
               };
-
-#            $regions[0] = {
-#                height => $Actium::Cmd::MakePoints::signtypes{$subtype}
-#                  {TallColumnLines},
-#                columns =>
-#                  $Actium::Cmd::MakePoints::signtypes{$subtype}{TallColumnNum}
-#            };
-#
-#            if ( $Actium::Cmd::MakePoints::signtypes{$subtype}{ShortColumnNum} )
-#            {
-#                $regions[1] = {
-#                    height => $Actium::Cmd::MakePoints::signtypes{$subtype}
-#                      {ShortColumnLines},
-#                    columns => $Actium::Cmd::MakePoints::signtypes{$subtype}
-#                      {ShortColumnNum}
-#                };
-#            }
 
             @chunkids_by_region = ( [@chunkids_by_length] );
 
@@ -702,39 +687,48 @@ sub determine_subtype {
 
     } ## tidy end: CHUNK_GROUPING: until ( $chosen_subtype or...)
 
+    my @texts = map { $_ // $EMPTY } @columns_needed;
+    @texts = @chosen_regions;
+
     if ( not $chosen_subtype ) {
         my $signid = $self->signid;
-        #last_cry()
-        #  ->text(
-        #        "\x{1f4A5}  Warning! Couldn't fit columns in any template for "
-        #      . "sign $signid" );
 
         $self->push_error("Couldn't fit in any $signtype template");
         return;
 
     }
 
-    $self->set_region_count( scalar @chunkids_by_region );
+    #$self->set_region_count( scalar @chunkids_by_region );
+    $self->set_region_count( scalar @chosen_regions );
 
     my @sorted_columns;
 
-    foreach my $i ( 0 .. $#chunkids_by_region ) {
-        my @chunkids = @{ $chunkids_by_region[$i] };
-        my @columns = map { @{ $columns_of_chunk{$_} } } @chunkids;
+    foreach my $i ( 0 .. $#chosen_regions ) {
+        #foreach my $i ( 0 .. $#chunkids_by_region ) {
 
-        @columns = sort { $columnsort_cr->( $a, $b ) } @columns;
+        if ( not $chunkids_by_region[$i] ) {
+            my $column_count = $chosen_regions[$i]{columns};
+            push @sorted_columns, (undef) x $column_count;
+        }
+        else {
+            my @chunkids = @{ $chunkids_by_region[$i] };
 
-        my $blank_columns_to_add
-          = $chosen_regions[$i]{columns} - $columns_needed[$i];
+            my @columns = map { @{ $columns_of_chunk{$_} } } @chunkids;
 
-        $columns[0]->set_previous_blank_columns($blank_columns_to_add);
+            @columns = sort { $columnsort_cr->( $a, $b ) } @columns;
 
-        my $height = $chosen_regions[$i]{height};
-        $_->set_formatted_height($height) foreach @columns;
+            my $blank_columns_to_add
+              = $chosen_regions[$i]{columns} - $columns_needed[$i];
 
-        push @sorted_columns, @columns;
+            $columns[0]->set_previous_blank_columns($blank_columns_to_add);
 
-    }
+            my $height = $chosen_regions[$i]{height};
+            $_->set_formatted_height($height) foreach @columns;
+
+            push @sorted_columns, @columns;
+        }
+
+    } ## tidy end: foreach my $i ( 0 .. $#chosen_regions)
 
     $self->set_column_r( \@sorted_columns );
 
@@ -768,6 +762,8 @@ sub format_columns {
     foreach my $column ( $self->columns ) {
 
         # format header, and footnote of header
+
+        next unless defined $column;
 
         $column->format_header;    # everything except footnote
 
@@ -952,42 +948,11 @@ sub format_side {
     my $formatted_side;
     open my $sidefh, '>:utf8', \$formatted_side;
 
-    my $month = $effdate->month;
+    print $sidefh $self->_effective_date_indd($is_bsh);
 
-    # EFFECTIVE DATE and colors
-    my $color;
-
-    if ($is_bsh) {
-        $color = 'Black';
-    }
-    else {
-        if ( $month == 12 or $month == 1 or $month == 2 ) {
-            $color = "LineViolet";
-        }
-        elsif ( $month == 3 or $month == 4 or $month == 5 ) {
-            $color = "New AC Green";
-        }
-        elsif ( $month == 6 or $month == 7 ) {
-            $color = "Black";
-        }
-        else {    # Aug, Sept, Oct, Nov
-            $color = "Rapid Red";
-        }
-    }
-
-    $color = $IDT->color($color);
-    
-    $color = ''; # zero out text colors for now
-    
-    my $shading = '<pShadingColor:LineViolet>';
-
-    print $sidefh $IDT->parastyle('sideeffective'), $shading, $color;
-
-    my $effective_dates
-      = $Actium::Cmd::MakePoints::actiumdb->agency_effective_date_indd(
-        'effective_colon', $color );
-
-    print $sidefh $effective_dates, '<pShadingColor:>';
+    #my $effective_dates
+    #  = $Actium::Cmd::MakePoints::actiumdb->agency_effective_date_indd(
+    #    'effective_colon', $color );
 
     print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
     # blank line to separate effective dates from side notes
@@ -1207,7 +1172,7 @@ sub format_bottom {
     # o) bottom notes
     # o) side notes (possibly more than one)
 
-    my $self   = shift;
+    my $self = shift;
 
     my $signid = $self->signid;
     my $stopid = $self->stopid;
@@ -1271,6 +1236,7 @@ sub output {
 
     if ( not defined $self->subtype ) {
         # output blank columns at beginning
+        # if subtype is defined, was already done in determine_subtype()
 
         my $maxcolumns
           = $Actium::Cmd::MakePoints::signtypes{
@@ -1287,12 +1253,17 @@ sub output {
             );
         }
 
-    }
+    } ## tidy end: if ( not defined $self...)
 
     # output real columns
 
     foreach my $column ( $self->columns ) {
-        print $fh $column->formatted_column;
+        if ( defined $column ) {
+            print $fh $column->formatted_column;
+        }
+        else {
+            print $fh $BOXBREAK;
+        }
         print $fh $BOXBREAK;
     }
 
@@ -1305,6 +1276,103 @@ sub output {
     $fh->close;
 
 } ## tidy end: sub output
+
+const my %COLORS => (qw/0 Paper 1 Black/);
+
+const my %SHADINGS => (
+    qw/
+      11  Gray20
+      21  Gray20
+      31  LineFern
+      41  Gray20
+      51  Gray20
+      61  LineYellow
+      71  Gray20
+      81  LineSky
+      91  Gray20
+      101  Gray20
+      111  Gray20
+      121  LineLavender
+      10  Grey80
+      20  Grey80
+      30/, 'New AC Green', qw/
+      40  Grey80
+      50  Grey80
+      60/, 'Rapid Red', qw/
+      70  Grey80
+      80  LineBlue
+      90  Grey80
+      100  Grey80
+      110  Grey80
+      120  LineViolet/
+);
+
+const my @ALL_LANGUAGES => qw/en es zh/;
+
+sub _effective_date_indd {
+    my $self   = shift;
+    my $dt     = $self->effdate;
+    my $is_bsh = shift;
+
+    my $i18n_id = 'effective_colon';
+
+    my $metastyle = 'Bold';
+
+    my $month   = $dt->month;
+    my $oddyear = $dt->year % 2;
+    my ( $color, $shading, $end );
+
+    # EFFECTIVE DATE and colors
+    if ($is_bsh) {
+        $color   = $EMPTY;
+        $shading = $EMPTY;
+        $end     = $EMPTY;
+    }
+    else {
+        $color   = $COLORS{$oddyear};
+        $color   = $IDT->color($color);
+        $shading = $SHADINGS{ $month . $oddyear };
+        $shading = "<pShadingColor:$shading>";
+        $end     = '<pShadingColor:>';
+    }
+
+    my $retvalue = $IDT->parastyle('sideeffective') . $shading . $color;
+
+    my $i18n_row_r = $Actium::Cmd::MakePoints::actiumdb->i18n_row_r($i18n_id);
+
+    my @effectives;
+    foreach my $lang (@ALL_LANGUAGES) {
+        my $method = "long_$lang";
+        my $date   = $dt->$method;
+        if ( $lang eq 'en' ) {
+            $date =~ s/ /$NBSP/g;
+        }
+
+        $date = $IDT->encode_high_chars_only($date);
+        $date = $IDT->language_phrase( $lang, $date, $metastyle );
+
+        my $phrase = $i18n_row_r->{$lang};
+        $phrase =~ s/\s+\z//;
+
+        if ( $phrase =~ m/\%s/ ) {
+            $phrase =~ s/\%s/$date/;
+        }
+        else {
+            $phrase .= " " . $IDT->discretionary_lf . $date;
+        }
+
+        #$phrase = $IDT->language_phrase( $lang, $phrase, $metastyle );
+
+        $phrase =~ s/<CharStyle:Chinese>/<CharStyle:ZH_Bold>/g;
+        $phrase =~ s/<CharStyle:([^>]*)>/<CharStyle:$1>$color/g;
+
+        push @effectives, $phrase;
+
+    } ## tidy end: foreach my $lang (@ALL_LANGUAGES)
+
+    return $retvalue . join( $IDT->hardreturn, @effectives ) . $end;
+
+} ## tidy end: sub _effective_date_indd
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
