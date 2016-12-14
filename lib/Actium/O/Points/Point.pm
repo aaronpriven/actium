@@ -1232,7 +1232,7 @@ sub output {
 
     my $fh = $pointdir->open_write("$signid.txt");
 
-    print $fh $IDT->start , IDT->nocharstyle;
+    print $fh $IDT->start , $IDT->nocharstyle;
 
     if ( not defined $self->subtype ) {
         # output blank columns at beginning
