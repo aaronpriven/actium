@@ -679,6 +679,11 @@ has _lines_of_linegrouptype_r => (
     lazy     => 1,
 );
 
+sub lines {
+    my $self=shift;
+    return $self->line_keys;
+}
+
 sub _lines_of_linegrouptype {
     my $self          = shift;
     my $linegrouptype = shift;
@@ -709,6 +714,11 @@ sub _build_lines_of_linegrouptype {
 
 ##############################
 ### TRANSIT HUBS ATTRIBUTES
+
+sub transithubs {
+    my $self = shift;
+    return $self->transithub_keys;
+}
 
 has _transithubs_of_city_r => (
     traits   => ['Hash'],
@@ -802,11 +812,12 @@ sub _build_line_descrips_of_transithub {
     foreach my $transithub ( $self->transithubs ) {
         my @lines = $self->_lines_of_transithub($transithub);
         foreach my $line (@lines) {
+            next if $line =~ /4\d\d/;
             my $desc = ${ $self->line_row_r($line) }{Description};
             $line_descrips_of_transithub{$transithub}{$line} = $desc;
         }
     }
-
+    
     return \%line_descrips_of_transithub;
 
 }
