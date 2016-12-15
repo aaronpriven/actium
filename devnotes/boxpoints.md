@@ -40,40 +40,46 @@ Box can vary in height and width and still work:
     +---------------------------------------+
 
 Headers take up different amounts of room (due to empty space at
-right, and need to leave big space for line number) 
-and will have to be measured for length too. (Any text measurement
-will have to be approximate using font metrics and a guess
-about how it will be line-broken, since this can't be determined a priori without 
-feeding it through InDesign line break composer. Afterwards, script should go
-through each table cell and repeatedly reduce point size by .25 pt
-until there is no overset.)
+right, and need to leave big space for line number) and will have
+to be measured for length too. (Any text measurement will have to
+be approximate using font metrics and a guess about how it will be
+line-broken, since this can't be determined a priori without feeding
+it through InDesign line break composer. Afterwards, script should
+go through each table cell and repeatedly reduce point size by .25
+pt until there is no overset.)
 
-System should try to fit sked boxes in the smallest InDesign frame available, while still retaining order of
-the lines and the aesthetic part wherever possible.
+System should try to fit sked boxes in the smallest InDesign frame
+available, while still retaining order of the lines and the aesthetic
+part wherever possible.
 
-For each sked box, it determines all potential valid sizes (from minimum to maximum width -- too narrow,
-header lines can't be read; too wide, it's odd to read the columns ordered down. My guess is 2 or 3 for min and 6 
-for max. Need to test appearance in layouts)
+For each sked box, it determines all potential valid sizes (from
+minimum to maximum width -- too narrow, header lines can't be read;
+too wide, it's odd to read the columns ordered down. My guess is 2
+or 3 for min and 6 for max. Need to test appearance in layouts)
 
-First time trying to fit, takes all skeds with the same line and direction and treats them as a unit for
-fitting purposes.  If it doesn't fit in the frame that way, it breaks it up and allows e.g. putting Saturdays on
-the next column over from weekdays.
+First time trying to fit, takes all skeds with the same line and
+direction and treats them as a unit for fitting purposes.  If it
+doesn't fit in the frame that way, it breaks it up and allows e.g.
+putting Saturdays on the next column over from weekdays.
 
 Fitting algorithm looks like this:
 
 Try each possible width, from minimum to maximum.
 
-For each possible column width, see how much room is left at the end.  Keep adding boxes to the first column as long
-as the height of the frame will accommodate the boxes.  Left over space at the bottom is waste.
+For each possible column width, see how much room is left at the
+end.  Keep adding boxes to the first column as long as the height
+of the frame will accommodate the boxes.  Left over space at the
+bottom is waste.
 
-Use whichever first column has the least amount of waste, and then go on and repeat with the second, third,
-etc. columns.
+Use whichever first column has the least amount of waste, and then
+go on and repeat with the second, third, etc. columns.
 
 Check to make sure hasn't gone over size of frame. If has, ... 
 
-one possibiity is to retry fitting with different sized columns (e.g., backtrack). But may be very
-time-consuming and not often produce results. (need to keep track of all possible widths, in least-waste
-order, of each column.) not sure if it's worth doing. 
+one possibiity is to retry fitting with different sized columns
+(e.g., backtrack). But may be very time-consuming and not often
+produce results. (need to keep track of all possible widths, in
+least-waste order, of each column.) not sure if it's worth doing.
 
 Otherwise, first, split up linedir-sets into individual line-dir-dest sked boxes, and try again.
 
@@ -121,6 +127,9 @@ algorithm should allow moving line-days-dir box sets between frames without rega
 (so frame 1 might have lines 1 and 10
 while frame 2 has 6 and 20), but not allow breaking them apart betewen
 frames -- don't want Sunday schedules on other sign from Saturday schedules.
+
+* In any event, some templates have multiple boxes -- like the T24s with the area at the bottom -- need to work out
+how to deal with that. 
 
 * Think of visual ways to distinguish daily, weekday, weekend, saturday, sunday, and different directions if
 found in same sign (or pair of signs)
