@@ -14,24 +14,12 @@ use 5.022;
 
 use sort ('stable');
 
-use Moose;                             ### DEP ###
-use MooseX::SemiAffordanceAccessor;    ### DEP ###
-use Moose::Util::TypeConstraints;      ### DEP ###
+use Actium::Moose;
 
-use namespace::autoclean;              ### DEP ###
-
-use Actium::Util('joinseries');
-use Actium::Crier(qw/cry last_cry/);
-use Actium::Constants;
 use Actium::Sorting::Line (qw(byline sortbyline));
-use List::MoreUtils(qw/natatime uniq/);         ### DEP ###
-use Const::Fast;                                ### DEP ###
 use List::Compare::Functional('get_unique');    ### DEP ###
-use List::Util('first');
 use Actium::EffectiveDate ('newest_date');
 use Actium::O::DateTime;
-
-use POSIX ();                                   ### DEP ###
 
 const my $IDPOINTFOLDER => 'idpoints2016';
 const my $KFOLDER       => 'kpoints';
@@ -340,7 +328,7 @@ sub new_from_kpoints {
 
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
-            my $lines = joinseries(@notfound);
+            my $lines = u::joinseries(@notfound);
             $self->push_error(
                 "$linetext $lines found in omit list but not in schedule data."
             );
@@ -348,7 +336,7 @@ sub new_from_kpoints {
 
     } ## tidy end: foreach my $stop_to_import ...
 
-    my @all_lines = uniq( map { $_->lines } $self->columns );
+    my @all_lines = u::uniq( map { $_->lines } $self->columns );
 
     my @dates
       = map { $Actium::Cmd::MakePoints::lines{$_}{TimetableDate} } @all_lines;
@@ -586,7 +574,7 @@ sub determine_subtype {
             # divide chunks into single schedules and try again
 
             my $chunkid_to_split
-              = first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
+              = u::first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
             sort keys %heights_of_chunk;
 
             if ($chunkid_to_split) {
@@ -636,6 +624,7 @@ sub determine_subtype {
 
                 @columns_needed = ();
 
+
               REGION:
                 foreach my $i ( reverse( 0 .. $#chunkids_by_region ) ) {
 
@@ -664,6 +653,7 @@ sub determine_subtype {
 
                         my $chunkid_to_move
                           = pop( @{ $chunkids_by_region[$i] } );
+
                         push @{ $chunkids_by_region[ $i + 1 ] },
                           $chunkid_to_move;
 
@@ -704,7 +694,6 @@ sub determine_subtype {
     my @sorted_columns;
 
     foreach my $i ( 0 .. $#chosen_regions ) {
-        #foreach my $i ( 0 .. $#chunkids_by_region ) {
 
         if ( not $chunkids_by_region[$i] ) {
             my $column_count = $chosen_regions[$i]{columns};
@@ -910,11 +899,11 @@ sub format_columns {
         if ($column_length) {
 
             my $count = $column->formatted_time_count;
-            my $width = POSIX::ceil( $count / $column_length );
-            $column_length = POSIX::ceil( $count / $width );
+            my $width = u::ceil( $count / $column_length );
+            $column_length = u::ceil( $count / $width );
 
             my @ft;
-            my $iterator = natatime $column_length, $column->formatted_times;
+            my $iterator = u::natatime $column_length, $column->formatted_times;
             while ( my @formatted_times = $iterator->() ) {
                 push @ft, join( "\r", @formatted_times );
             }
@@ -1232,7 +1221,7 @@ sub output {
 
     my $fh = $pointdir->open_write("$signid.txt");
 
-    print $fh $IDT->start , $IDT->nocharstyle;
+    print $fh $IDT->start, $IDT->nocharstyle;
 
     if ( not defined $self->subtype ) {
         # output blank columns at beginning
