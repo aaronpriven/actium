@@ -986,36 +986,6 @@ sub format_side {
           join( $IDT->hardreturn, $i18n_all_cr->('note_600') );
     }
 
-# TODO - will have to make this work if exception processing is added
-#if ($self->schooldayflag ) {
-#   print $sidefh "Trips that run school days only may not operate every day and will occasionally operate at times other than those shown. Supplementary service is available to everyone at regular fares.\r";
-#}
-
-#    print $sidefh
-#      'See something wrong with this sign, or any other AC Transit sign?'
-#      . " Let us know! Leave a comment at actransit.org/feedback or call 511 and say 'AC Transit'. Thanks!\r"
-#      if lc(
-#        $Actium::Cmd::MakePoints::signtypes{
-#            $Actium::Cmd::MakePoints::signs{$signid}{SignType}
-#        }{GenerateWrongText} ) eq "yes";
-
-    ### new stop ID
-
-    #    if ( not $self->is_bsh and $self->is_simple_stopid ) {
-    #        print $sidefh $IDT->parastyle('depttimeside'), 'Call ',
-    #          $IDT->bold_word('511'), ' and say ',
-    #          $IDT->bold_word('"Departure Times"'),
-    #          " for live bus predictions\r", $IDT->parastyle('stopid'),
-    #          "STOP ID\r",                   $IDT->parastyle('stopidnumber'),
-    #          $self->stopid(), "\r";
-    #    }
-
-#    if ( $self->delivery and fc( $self->delivery ) eq fc('Clear Channel') ) {
-#        print $sidefh $IDT->parastyle('sidenotes'),
-#          'Please report maintenance or safety issues at bus shelters '
-#          . "by calling Clear Channel toll free 24/7: 1-888-ADSHEL1 (237-4351)\r";
-#    }
-
     close $sidefh;
 
     $formatted_side =~ s/\r+$//;
