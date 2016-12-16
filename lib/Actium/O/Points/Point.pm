@@ -644,10 +644,6 @@ sub determine_subtype {
                         # it doesn't fit
 
                         if ( $i == $#regions ) {
-                            if ($debug) {
-                                say "$i: $columns_needed ; exiting";
-                                exit;
-                            }
                             # Smallest region is filled, so it can't fit at all
                             next SUBTYPE;
                         }
