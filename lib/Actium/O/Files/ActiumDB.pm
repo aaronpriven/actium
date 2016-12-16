@@ -952,7 +952,7 @@ sub line_descrip_html {
 
     foreach my $linegrouptype (
         qw/ Local Transbay
-        /, 'All Nighter', 'Supplementary'
+        /, 'All Nighter', 'Service to Schools'
       )
     {
 
@@ -962,7 +962,8 @@ sub line_descrip_html {
         my $count = scalar @lines;
         my $pub   = "$linegrouptype Lines";
         my $anchor
-          = $linegrouptype eq 'All Nighter' ? 'AllNighter' : $linegrouptype;
+          = $linegrouptype =~ s/ /_/gr;
+          #= $linegrouptype eq 'All Nighter' ? 'AllNighter' : $linegrouptype;
 
         $html
           .= qq{<table style="border-collapse: collapse;" border="1">}
@@ -1073,8 +1074,8 @@ Bay to San Francisco or the Peninsula.</p>
   <p > 
   <a href="#Local">Local Lines</a><br>
   <a href="#Transbay">Transbay Lines</a><br>
-  <a href="#AllNighter">All Nighter Lines</a> <br>
-  <a href="#Supplementary">Supplementary Lines</a><br>
+  <a href="#All_Nighter">All Nighter Lines</a> <br>
+  <a href="#Service_to_Schools">Service to Schools Lines</a><br>
 </p>
 
 <hr>
