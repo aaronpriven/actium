@@ -574,6 +574,7 @@ sub makestoptimes {
 
         my $final_stop_of_pattern;
 
+      my $prevstop = '';
       TIMEIDX:
         foreach my $timeidx ( 0 .. $#{ $tripinfo_of{PTS} } ) {
             my $stop = $avldata{PAT}{$patkey}{TPS}[$timeidx]{StopIdentifier};
@@ -590,6 +591,12 @@ sub makestoptimes {
 
             foreach my $days (@days) {
 
+                if ($stop eq $prevstop) {
+                    pop @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} };
+                }
+                # remove previous stop data if this is the same stop.
+                # in other words, show departure, not arrival time
+
                 push @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} }, {
                     TIME          => $time,
                     DESTINATION   => $final_place,
@@ -600,6 +607,8 @@ sub makestoptimes {
                 };
 
             }
+            
+            $prevstop = $stop;
 
         }    ## <perltidy> end foreach my $timeidx ( 0 .. ...)
 
