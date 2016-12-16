@@ -315,7 +315,7 @@ EOT
     say $cindexfh $efftext;
 
   TYPE:
-    for my $type ( 'Local', 'All Nighter', 'Transbay', 'Supplementary' ) {
+    for my $type ( 'Local', 'All Nighter', 'Transbay', 'Service to Schools' ) {
         my @links;
         my @clinks;
 
