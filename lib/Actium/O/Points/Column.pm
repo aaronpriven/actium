@@ -70,6 +70,7 @@ around BUILDARGS => sub {
             dircode             => $dircode,
             note                => $note,
             head_line_r         => \@head_lines,
+            line_r              => [ @head_lines ],
             primary_line        => $head_lines[0],
             primary_destination => $destinations[0],
             primary_exception   => '',
