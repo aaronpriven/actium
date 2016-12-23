@@ -788,7 +788,8 @@ sub xlsx {
     my $self = shift;
     my $timesub = timestr_sub( XB => 1 );
 
-    require Excel::Writer::XLSX;    ### DEP ###
+    #require Excel::Writer::XLSX;    ### DEP ###
+    require Actium::Excel; 
 
     my $outdata;
     open( my $out, '>', \$outdata ) or die "$!";
@@ -821,8 +822,8 @@ sub xlsx {
         }
     }
 
-    $intro->write_col( 0, 0, \@output_names,  $textformat );
-    $intro->write_col( 0, 1, \@output_values, $textformat );
+    $intro->write_col_string( 0, 0, \@output_names,  $textformat );
+    $intro->write_col_string( 0, 1, \@output_values, $textformat );
 
     ### TPSKED
 
@@ -845,7 +846,7 @@ sub xlsx {
           [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
     }
 
-    $tpsked->write_col( 0, 0, \@place_records, $textformat );
+    $tpsked->write_col_string( 0, 0, \@place_records, $textformat );
     $tpsked->freeze_panes( 2, 0 );
     $tpsked->set_zoom(125);
 
@@ -862,8 +863,8 @@ sub xlsx {
         push @stop_records, [ $timesub->( $trip->stoptimes ) ];
     }
 
-    $stopsked->write_col( 0, 0, \@stop_records, $textformat );
-    $stopsked->freeze_panes( 2, 0 );
+    $stopsked->write_row_string( 0, 0, \@stop_records, $textformat );
+    $stopsked->freeze_panes(  0, 2 );
 
     $tpsked->activate();
 
