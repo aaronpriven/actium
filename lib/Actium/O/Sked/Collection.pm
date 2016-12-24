@@ -1,9 +1,11 @@
-package Actium::O::Sked::Collection 0.012;
+package Actium::O::Sked::Collection 0.014;
 
 use Actium::Moose;
 
 use Actium::O::Sked;
 use Actium::Sorting::Skeds ('skedsort');
+
+use Actium::Excel;
 
 around BUILDARGS => sub {
     my $orig  = shift;
@@ -32,7 +34,7 @@ has skeds_r => (
 sub BUILD {
     my $self  = shift;
     my @skeds = skedsort( $self->skeds );
-    
+
     $self->_set_skeds_r( \@skeds );
 }
 
@@ -55,10 +57,14 @@ sub _build_sked_obj_by_id_r {
     my %sked_obj_by_id;
     foreach my $sked (@skeds) {
         my $id = $sked->id;
-        $sked_obj_by_id{$id}->@* = $sked;
+        $sked_obj_by_id{$id} = $sked;
     }
+    
+    
     return \%sked_obj_by_id;
 }
+
+# Transitinfo IDs used by tabxchange
 
 has '_sked_transitinfo_ids_of_lg' => (
     is      => 'bare',
@@ -98,7 +104,10 @@ has '_sked_ids_of_lg' => (
     traits  => ['Hash'],
     builder => '_build_sked_ids_of_lg',
     lazy    => 1,
-    handles => { _sked_ids_of_lg => 'get' },
+    handles => {
+        _sked_ids_of_lg => 'get',
+        linegroups      => 'keys',
+    },
 );
 
 sub _build_sked_ids_of_lg {
@@ -122,6 +131,13 @@ sub sked_ids_of_lg {
     my $linegroup = shift;
     my @skedids   = $self->_sked_ids_of_lg($linegroup)->@*;
     return @skedids;
+}
+
+sub skeds_of_lg {
+    my $self      = shift;
+    my $linegroup = shift;
+    my @skeds     = map { $self->sked_obj($_) } $self->sked_ids_of_lg($linegroup);
+    return @skeds;
 }
 
 #sub add_sked {
@@ -150,11 +166,11 @@ sub write_tabxchange {
 
     my $destination_code
       = Actium::O::DestinationCode->load( $params{commonfolder} );
-      
+
     my @skeds = grep { $_->linegroup !~ /^(?:BS|4\d\d)/ } $self->skeds;
 
     $params{tabfolder}->write_files_with_method(
-        OBJECTS         => \@skeds ,
+        OBJECTS         => \@skeds,
         METHOD          => 'tabxchange',
         EXTENSION       => 'tab',
         FILENAME_METHOD => 'transitinfo_id',
@@ -174,7 +190,6 @@ sub write_tabxchange {
 ###################
 
 sub _output_skeds_all {
-
     my $self    = shift;
     my $skeds_r = $self->skeds_r;
 
@@ -183,18 +198,20 @@ sub _output_skeds_all {
 
     $skeds_folder->store( $self, 'skeds.storable' );
 
+    #    my $xlsxfolder = $skeds_folder->subfolder('xlsx');
+    #    $xlsxfolder->write_files_with_method(
+    #        OBJECTS   => $skeds_r,
+    #        METHOD    => 'xlsx',
+    #        EXTENSION => 'xlsx',
+    #    );
+
+    $self->output_skeds_xlsx($skeds_folder);
+
     my $dumpfolder = $skeds_folder->subfolder('dump');
     $dumpfolder->write_files_with_method(
         OBJECTS   => $skeds_r,
         METHOD    => 'dump',
         EXTENSION => 'dump',
-    );
-
-    my $xlsxfolder = $skeds_folder->subfolder('xlsx');
-    $xlsxfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'xlsx',
-        EXTENSION => 'xlsx',
     );
 
     my $spacedfolder = $skeds_folder->subfolder('spaced');
@@ -208,6 +225,48 @@ sub _output_skeds_all {
         $skeds_folder->subfolder('prehistoric') );
 
 } ## tidy end: sub _output_skeds_all
+
+sub output_skeds_xlsx {
+    my $self         = shift;
+    my $skeds_folder = shift;
+
+    my $cry = cry("Writing place and stop xlsx schedules");
+
+    my $stop_xlsx_folder  = $skeds_folder->subfolder('xlsx_s');
+    my $place_xlsx_folder = $skeds_folder->subfolder('xlsx_p');
+
+    my @linegroups = u::sortbyline $self->linegroups;
+
+    foreach my $linegroup (@linegroups) {
+
+        $cry->over("$linegroup ");
+
+        my $stop_workbook_fh
+          = $stop_xlsx_folder->open_write_binary("$linegroup.xlsx");
+        my $stop_workbook    = Excel::Writer::XLSX->new($stop_workbook_fh);
+        my $stop_text_format = $stop_workbook->actium_text_format;
+
+        my $place_workbook_fh
+          = $place_xlsx_folder->open_write_binary("$linegroup.xlsx");
+        my $place_workbook    = Excel::Writer::XLSX->new($place_workbook_fh);
+        my $place_text_format = $place_workbook->actium_text_format;
+
+        foreach my $sked ( $self->skeds_of_lg($linegroup) ) {
+            $sked->add_stop_xlsx_sheet( $stop_workbook, $stop_text_format );
+            $sked->add_place_xlsx_sheet( $place_workbook, $place_text_format );
+        }
+
+        $stop_workbook->close;
+        $place_workbook->close;
+
+    } ## tidy end: foreach my $linegroup (@linegroups)
+
+    $cry->over($EMPTY_STR);
+    $cry->done;
+
+    return;
+
+} ## tidy end: sub output_skeds_xlsx
 
 u::immut;
 
