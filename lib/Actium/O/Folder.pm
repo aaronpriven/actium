@@ -5,7 +5,6 @@ package Actium::O::Folder 0.012;
 use 5.012;
 use warnings;
 
-
 use Moose;                        ### DEP ###
 use MooseX::StrictConstructor;    ### DEP ###
 
@@ -82,7 +81,6 @@ sub _stringify {
     my $self = shift;
     return $self->path;
 }
-
 sub _build_path {
     my $self = shift;
     return File::Spec->catpath( $self->volume,
@@ -318,9 +316,9 @@ sub make_filespec {
 }
 
 sub file_exists {
-    my $self = shift;
+    my $self     = shift;
     my $filename = shift;
-    my $path = $self->path;
+    my $path     = $self->path;
     return -e File::Spec->catfile( $path, $filename );
 }
 
@@ -343,17 +341,16 @@ sub glob_plain_files {
 }
 
 sub glob_files_nopath {
-    my $self = shift;
-    my @files = $self->glob_files (@_);
+    my $self  = shift;
+    my @files = $self->glob_files(@_);
     return map { filename($_) } @files;
 }
 
 sub glob_plain_files_nopath {
-    my $self = shift;
-    my @files = $self->glob_plain_files (@_);
+    my $self  = shift;
+    my @files = $self->glob_plain_files(@_);
     return map { filename($_) } @files;
 }
-    
 
 sub children {
 
@@ -383,15 +380,24 @@ sub slurp_write {
 
     my $cry = cry("Writing $filename...");
 
-
     require File::Slurper;
-    File::Slurper::write_text ($filespec, $string);
-    
-    #require File::Slurp::Tiny;    ### DEP ###
-    #File::Slurp::Tiny::write_file( $filespec, $string,
-    #    binmode => ':encoding(UTF-8)' );
+    File::Slurper::write_text( $filespec, $string );
 
     $cry->done;
+
+}
+
+sub slurp_read {
+    my $self     = shift;
+    my $filename = shift;
+    my $filespec = $self->make_filespec($filename);
+    my $cry      = cry("Reading $filename...");
+
+    croak "$filespec does not exist"
+      unless -e $filespec;
+
+    require File::Slurper;
+    return scalar File::Slurper::read_text($filespec);
 
 }
 
@@ -400,39 +406,31 @@ sub json_retrieve {
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
 
-    croak "$filespec does not exist"
-      unless -e $filespec;
+    my $cry = cry("Retrieving JSON file $filename");
 
-    my $cry = cry("Retrieving $filename");
+    my $json_text = $self->slurp_read($filename);
 
-    require File::Slurp::Tiny;    ### DEP ###
-    my $json_text = File::Slurp::Tiny::read_file( $filespec,
-        binmode => ':encoding(UTF-8)' );
-
-    require JSON;                 ### DEP ###
+    require JSON;    ### DEP ###
     my $data_r = JSON::from_json($json_text);
 
     $cry->done;
 
     return $data_r;
 
-} ## tidy end: sub json_retrieve
+}
 
 sub json_store {
 
     my $self     = shift;
     my $data_r   = shift;
     my $filename = shift;
-    my $filespec = $self->make_filespec($filename);
 
-    my $cry = cry("Storing $filename...");
+    my $cry = cry("Storing JSON file $filename...");
 
     require JSON;    ### DEP ###
     my $json_text = JSON::to_json($data_r);
 
-    require File::Slurp::Tiny;    ### DEP ###
-    File::Slurp::Tiny::write_file( $filespec, $json_text,
-        binmode => ':encoding(UTF-8)' );
+    $self->slurp_write( $json_text, $filename );
 
     $cry->done;
 
@@ -443,16 +441,13 @@ sub json_store_pretty {
     my $self     = shift;
     my $data_r   = shift;
     my $filename = shift;
-    my $filespec = $self->make_filespec($filename);
 
-    my $cry = cry("Storing $filename...");
+    my $cry = cry("Storing JSON file $filename...");
 
     require JSON;    ### DEP ###
     my $json_text = JSON::to_json( $data_r, { pretty => 1, canonical => 1 } );
 
-    require File::Slurp::Tiny;    ### DEP ###
-    File::Slurp::Tiny::write_file( $filespec, $json_text,
-        binmode => ':encoding(UTF-8)' );
+    $self->slurp_write( $json_text, $filename );
 
     $cry->done;
 
@@ -500,24 +495,52 @@ sub store {
     $cry->done;
 }
 
+sub open_read_binary {
+    my $self     = shift;
+    my $filename = shift;
+    $self->_open_read_encoding( $self, $filename, ':raw' );
+}
+
 sub open_read {
     my $self     = shift;
     my $filename = shift;
+    $self->_open_read_encoding( $self, $filename, ':encoding(UTF-8)' );
+}
+
+sub _open_read_encoding {
+    my $self     = shift;
+    my $filename = shift;
+    my $encoding = shift;
     my $filespec = $self->make_filespec($filename);
 
-    open my $fh, '<:encoding(UTF-8)', $filespec
+    open my $fh, '<$encoding', $filespec
       or croak "Can't open $filespec for reading: $OS_ERROR";
 
     return $fh;
 
 }
 
+sub open_write_binary {
+    my $self     = shift;
+    my $filename = shift;
+    my $encoding = shift || ':raw';
+    $self->_open_write_encoding( $self, $filename, $encoding );
+}
+
 sub open_write {
     my $self     = shift;
     my $filename = shift;
+    my $encoding = shift || ':raw';
+    $self->_open_write_encoding( $self, $filename, ':encoding(UTF-8)' );
+}
+
+sub _open_write_encoding {
+    my $self     = shift;
+    my $filename = shift;
+    my $encoding = shift;
     my $filespec = $self->make_filespec($filename);
 
-    open my $fh, '>:encoding(UTF-8)', $filespec
+    open my $fh, ">$encoding", $filespec
       or croak "Can't open $filespec for writing: $OS_ERROR";
 
     return $fh;
@@ -585,12 +608,12 @@ sub write_files_with_method {
 
     my %params = u::validate(
         @_,
-        {   OBJECTS   => { type => ARRAYREF },
-            METHOD    => 1,
-            EXTENSION => 0,
-            SUBFOLDER => 0,
+        {   OBJECTS         => { type    => ARRAYREF },
+            METHOD          => 1,
+            EXTENSION       => 0,
+            SUBFOLDER       => 0,
             FILENAME_METHOD => { default => 'id' },
-            ARGS => { default => [] , type => ARRAYREF },
+            ARGS => { default => [], type => ARRAYREF },
         }
     );
 
@@ -603,8 +626,8 @@ sub write_files_with_method {
         # make sure there's only one a leading period
     }
 
-    my $method    = $params{METHOD};
-    my $subfolder = $params{SUBFOLDER};
+    my $method          = $params{METHOD};
+    my $subfolder       = $params{SUBFOLDER};
     my $filename_method = $params{FILENAME_METHOD};
 
     my $folder;
@@ -617,7 +640,7 @@ sub write_files_with_method {
 
     my $count;
 
-    my $cry = cry ( "Writing $method files to " . $folder->display_path );
+    my $cry = cry( "Writing $method files to " . $folder->display_path );
 
     my %seen_id;
 
@@ -639,12 +662,12 @@ sub write_files_with_method {
                 OBJECT   => $obj,
                 METHOD   => $method,
                 FILENAME => $filename,
-                ARGS => $params{ARGS},
+                ARGS     => $params{ARGS},
             }
         );
 
     } ## tidy end: foreach my $obj (@objects)
-    
+
     $cry->over('');
 
     $cry->done;
@@ -657,7 +680,7 @@ sub write_file_with_method {
     my $obj      = $params{OBJECT};
     my $filename = $params{FILENAME};
     my $method   = $params{METHOD};
-    my $args_r = $params{ARGS} // [];
+    my $args_r   = $params{ARGS} // [];
     my $cry      = $params{CRY} // cry("Writing to $filename via $method");
 
     my $out;
@@ -668,7 +691,6 @@ sub write_file_with_method {
         $cry->d_error;
         croak "Can't open $file for writing: $OS_ERROR";
     }
-    
 
     my $layermethod = $method . '_layers';
     if ( $obj->can($layermethod) ) {
@@ -679,7 +701,8 @@ sub write_file_with_method {
         binmode( $out, ':utf8' );
     }
 
-    print $out $obj->$method(@$args_r) or croak "Can't print to $file: $OS_ERROR";
+    print $out $obj->$method(@$args_r)
+      or croak "Can't print to $file: $OS_ERROR";
 
     unless ( close $out ) {
         $cry->d_error;
@@ -711,7 +734,7 @@ sub write_files_from_hash {
     foreach my $key ( sort keys %hash ) {
 
         $cry->over($key);
-        
+
         my $filekey = $key =~ s@/@-@gr;
 
         my $file = $self->make_filespec( $filekey . $extension );
