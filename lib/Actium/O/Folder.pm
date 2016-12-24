@@ -498,13 +498,13 @@ sub store {
 sub open_read_binary {
     my $self     = shift;
     my $filename = shift;
-    $self->_open_read_encoding( $self, $filename, ':raw' );
+    $self->_open_read_encoding( $filename, ':raw' );
 }
 
 sub open_read {
     my $self     = shift;
     my $filename = shift;
-    $self->_open_read_encoding( $self, $filename, ':encoding(UTF-8)' );
+    $self->_open_read_encoding( $filename, ':encoding(UTF-8)' );
 }
 
 sub _open_read_encoding {
@@ -513,7 +513,7 @@ sub _open_read_encoding {
     my $encoding = shift;
     my $filespec = $self->make_filespec($filename);
 
-    open my $fh, '<$encoding', $filespec
+    open my $fh, "<$encoding", $filespec
       or croak "Can't open $filespec for reading: $OS_ERROR";
 
     return $fh;
@@ -523,15 +523,13 @@ sub _open_read_encoding {
 sub open_write_binary {
     my $self     = shift;
     my $filename = shift;
-    my $encoding = shift || ':raw';
-    $self->_open_write_encoding( $self, $filename, $encoding );
+    $self->_open_write_encoding( $filename, ':raw');
 }
 
 sub open_write {
     my $self     = shift;
     my $filename = shift;
-    my $encoding = shift || ':raw';
-    $self->_open_write_encoding( $self, $filename, ':encoding(UTF-8)' );
+    $self->_open_write_encoding( $filename, ':encoding(UTF-8)' );
 }
 
 sub _open_write_encoding {
