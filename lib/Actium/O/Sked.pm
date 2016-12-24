@@ -8,7 +8,7 @@ use overload '""' => sub { shift->id };
 
 use Actium::Moose;
 
-use MooseX::Storage;    ### DEP ###
+use MooseX::Storage;              ### DEP ###
 with Storage(
     traits   => ['OnlyWhenBuilt'],
     'format' => 'Storable',
@@ -781,6 +781,83 @@ sub spaced {
 
 } ## tidy end: sub spaced
 
+my $xlsx_timesub = timestr_sub( XB => 1 );
+
+sub add_stop_xlsx_sheet {
+    my $self     = shift;
+    my $workbook = shift;
+    my $format   = shift;
+
+    my $id = $self->skedid;
+
+    my $stopsked = $workbook->add_worksheet($id);
+
+    my @stop_records;
+
+    push @stop_records, [ $self->stopids ];
+    push @stop_records, [ $self->stopplaces ];
+
+    foreach my $trip ( $self->trips ) {
+        push @stop_records, [ $xlsx_timesub->( $trip->stoptimes ) ];
+    }
+
+    my $stop_count = $self->stop_count;
+    my $trip_count = $self->trip_count;
+
+    if ( $stop_count > 2.5 * $self->trip_count ) {
+        # if stops are wider than trips, then
+        $stopsked->actium_write_row_string( 0, 0, \@stop_records, $format );
+        $stopsked->freeze_panes( 0, 2 );
+    }
+    else {
+        # otherwise stops at the top
+        $stopsked->actium_write_col_string( 0, 0, \@stop_records, $format );
+        $stopsked->freeze_panes( 2, 0 );
+    }
+
+    return;
+
+} ## tidy end: sub add_stop_xlsx_sheet
+
+sub add_place_xlsx_sheet {
+
+    my $self     = shift;
+    my $workbook = shift;
+    my $format   = shift;
+
+    my $id = $self->skedid;
+
+    my $tpsked = $workbook->add_worksheet($id);
+
+    my @place_records;
+
+    my ( $columns_r, $shortcol_of_r )
+      = $self->attribute_columns(qw(line day vehicletype daysexceptions));
+    my @columns     = @{$columns_r};
+    my %shortcol_of = %{$shortcol_of_r};
+
+    push @place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
+    push @place_records, [ @shortcol_of{@columns}, $self->place8s ];
+
+    my @trips = $self->trips;
+
+    foreach my $trip (@trips) {
+        push @place_records,
+          [ ( map { $trip->$_ } @columns ),
+            $xlsx_timesub->( $trip->placetimes )
+          ];
+    }
+
+    $tpsked->actium_write_col_string( 0, 0, \@place_records, $format );
+    $tpsked->freeze_panes( 2, 0 );
+    $tpsked->set_zoom(125);
+
+    return;
+
+} ## tidy end: sub add_place_xlsx_sheet
+
+### OLD XLSX SCHEDULES, TO BE DELETED ###
+
 const my $xlsx_window_height => 950;
 const my $xlsx_window_width  => 1200;
 
@@ -789,7 +866,7 @@ sub xlsx {
     my $timesub = timestr_sub( XB => 1 );
 
     #require Excel::Writer::XLSX;    ### DEP ###
-    require Actium::Excel; 
+    require Actium::Excel;
 
     my $outdata;
     open( my $out, '>', \$outdata ) or die "$!";
@@ -822,8 +899,8 @@ sub xlsx {
         }
     }
 
-    $intro->write_col_string( 0, 0, \@output_names,  $textformat );
-    $intro->write_col_string( 0, 1, \@output_values, $textformat );
+    $intro->actium_write_col_string( 0, 0, \@output_names,  $textformat );
+    $intro->actium_write_col_string( 0, 1, \@output_values, $textformat );
 
     ### TPSKED
 
@@ -846,7 +923,7 @@ sub xlsx {
           [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
     }
 
-    $tpsked->write_col_string( 0, 0, \@place_records, $textformat );
+    $tpsked->actium_write_col_string( 0, 0, \@place_records, $textformat );
     $tpsked->freeze_panes( 2, 0 );
     $tpsked->set_zoom(125);
 
@@ -863,8 +940,8 @@ sub xlsx {
         push @stop_records, [ $timesub->( $trip->stoptimes ) ];
     }
 
-    $stopsked->write_row_string( 0, 0, \@stop_records, $textformat );
-    $stopsked->freeze_panes(  0, 2 );
+    $stopsked->actium_write_row_string( 0, 0, \@stop_records, $textformat );
+    $stopsked->freeze_panes( 0, 2 );
 
     $tpsked->activate();
 
@@ -1184,7 +1261,7 @@ sub tabxchange {
         push @specdaytrips, $specdaytrip;
 
     } ## tidy end: foreach my $noteletter ( keys...)
-    
+
     @specdaytrips = sort @specdaytrips;
 
     #$p->(@specdaynotes);
