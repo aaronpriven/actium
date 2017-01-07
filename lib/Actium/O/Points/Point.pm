@@ -1170,10 +1170,13 @@ sub format_bottom {
     print $botfh ". Sign #$signid.";
 
     print $botfh " Stop $stopid." unless $nonstoplocation;
-
+    
     print $botfh " Shelter site #"
       . $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum} . "."
       if $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum};
+
+    print $botfh '<DefineTextVariable:Output Date=<TextVarType:OutputDate><tvDateFormat:MMMM d\, yyyy>>';
+    print $botfh ' Printed <cPageNumType:TextVariable><TextVarName:Output Date><cPageNumType:>.'; 
 
     close $botfh;
 
