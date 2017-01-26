@@ -1158,7 +1158,7 @@ sub tabxchange {
             }
 
             $stoplist_url_of{$line}
-              = qq{http://www.actransit.org/riderinfo/stops/$linegrouptype/#$line};
+              = qq{http://www.actransit.org/rider-info/stops/$linegrouptype/#$line};
         }
         else {
             warn "No linegroup type for line $line";
