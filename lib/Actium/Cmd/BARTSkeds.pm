@@ -38,6 +38,9 @@ sub OPTIONS {
 
 }
 
+my %not_main_station;
+$not_main_station{$_} = 1 foreach qw/24TH NCON PHIL BAYF / ;
+
 sub START {
 
     my $start_cry = cry('Building BART frequency tables');
@@ -63,7 +66,11 @@ sub START {
             my $day         = $DAYS[$idx];
             my $firstlast_r = $fl_of{$station}{$day}
               = get_firstlast( $station, $date );
-            $dest_is_used{$_} = 1 foreach keys %$firstlast_r;
+              
+              foreach (keys %$firstlast_r) {
+                $dest_is_used{$_} = 1 ;
+                $not_main_station{$_} //= 0;
+              }
         }
         $skeds_cry->over($EMPTY);
 
@@ -75,7 +82,9 @@ sub START {
         push @results, [ $EMPTY, qw/First Last First Last First Last/ ];
 
         foreach my $dest (
-            sort { $stations{$a} cmp $stations{$b} }
+            sort { 
+                $not_main_station{$a} <=> $not_main_station{$b} ||
+                $stations{$a} cmp $stations{$b} }
             keys %dest_is_used
           )
         {
@@ -123,7 +132,7 @@ sub get_firstlast {
 
         if ( $dest eq 'MLBR' and $line eq 'ROUTE 1' ) {
             push @{ $items_of_dest{'SFIA'} },
-              { dest => 'SFIA', line => $line, time => $time . '*' };
+              { dest => 'SFIA', line => $line, time => $time  };
         }
 
     }
