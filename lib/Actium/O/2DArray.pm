@@ -969,6 +969,7 @@ sub xlsx {
     require Excel::Writer::XLSX;    ### DEP ###
 
     my $workbook = Excel::Writer::XLSX->new($output_file);
+    croak "Can't open $output_file for writing: $!" unless defined $workbook;
     my $sheet    = $workbook->add_worksheet();
     my @format;
 
