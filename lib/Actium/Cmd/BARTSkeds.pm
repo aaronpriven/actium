@@ -39,7 +39,7 @@ sub OPTIONS {
 }
 
 my %not_main_station;
-$not_main_station{$_} = 1 foreach qw/24TH NCON PHIL BAYF / ;
+$not_main_station{$_} = 1 foreach qw/24TH NCON MONT PHIL BAYF / ;
 
 sub START {
 
