@@ -233,6 +233,14 @@ sub move_insignificant_changes_to_unchanged {
 		  67-g    67-j
 		  88-a    88-c
 		  851-a   851-e
+		  12-i    12-r
+		  12-i    12-t
+		  12-i    12-u
+		  18-e    18-k
+		  18-f    18-m
+		  51A-c   51A-h
+		  51A-c   51A-i
+		  
 		  )
 	];
 
