@@ -40,7 +40,8 @@ BEGIN {
         # Weekdays, Saturdays, Sundays, Weekdays-and-Saturdays,
         # Weekdays-and-Sundays, Weekends, Daily
 
-        DIRCODES => [qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN A B )],
+        DIRCODES => [qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B )],
+        #                0  1  3  2  4  5  6  7  8  9  10 11 12 13 14 15
         LOOP_DIRECTIONS     => [qw( CW CC A B )],
         TRANSBAY_NOLOCALS   => [qw/FS L NX NX1 NX2 NX3 U W/],
         LINES_TO_BE_SKIPPED => [399],
