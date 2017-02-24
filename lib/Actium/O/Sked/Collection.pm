@@ -247,7 +247,7 @@ sub output_skeds_xlsx {
         my $stop_text_format = $stop_workbook->actium_text_format;
 
         my $place_workbook_fh
-          = $place_xlsx_folder->open_write_binary("$linegroup.xlsx");
+          = $place_xlsx_folder->open_write_binary($linegroup . "_p.xlsx");
         my $place_workbook    = Excel::Writer::XLSX->new($place_workbook_fh);
         my $place_text_format = $place_workbook->actium_text_format;
 
