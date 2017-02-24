@@ -25,7 +25,7 @@ sub START {
     my $class = shift;
     $env = shift;
 
-    my @ymd = qw/2016 12 18/;
+    my @ymd = qw/2017 3 26/;
     my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
 
     my $config_obj = $env->config;
