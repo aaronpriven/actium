@@ -38,8 +38,10 @@ sub START {
     foreach my $decal (@decals) {
         next if (! $decal and $decal ne '0');
         next if $decal =~ /decal/i;
-        my $zip_internal_filename  = "$decal.outl.eps";
+        my $zip_internal_filename  = "${decal}_outl.eps";
         my $diskfile = "$EPSFOLDER/$zip_internal_filename";
+        
+        die "Can't find file $diskfile" unless -e $diskfile;
         $zipobj->addFile( $diskfile, $zip_internal_filename ) ;
     }
     
