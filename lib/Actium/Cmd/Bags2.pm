@@ -206,6 +206,8 @@ sub _lines_with_introstyle {
     my $i18n_id    = shift;    # of intro
     my $style      = shift;    # of lines
     my @lines      = @_;
+    
+    return $EMPTY if $lines[0] eq 'NONE';
 
     $i18n_id .= "_pl" if @lines != 1;    # pluralize
 
