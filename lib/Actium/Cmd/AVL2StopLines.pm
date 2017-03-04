@@ -46,7 +46,8 @@ sub START {
             Stops_Neue => {
                 index_field => 'h_stp_511_id',
                 hash        => \%stops,
-                fields => [qw/h_stp_511_id h_stp_identifier h_stp_flag_routes/],
+                fields => [qw/h_stp_511_id h_stp_identifier 
+                h_stp_flag_routes h_loca_longitude h_loca_latitude/],
             },
         }
     );
@@ -98,7 +99,8 @@ sub START {
         qw[
           h_stp_511_id p_active p_lines p_line_count
           p_linedirs p_linedir_count
-          h_stp_flag_routes p_flag_route_diff]
+          h_stp_flag_routes p_flag_route_diff
+          h_loca_longitude h_loca_latitude]
     );
 
     foreach my $stopid ( sort keys(%stops) ) {
@@ -124,6 +126,8 @@ sub START {
 
         my $active   = 1;
         my $hastusid = $stops{$stopid}{h_stp_identifier};
+        my $long = $stops{$stopid}{h_loca_longitude};
+        my $lat = $stops{$stopid}{h_loca_latitude};
         $active = 0 if $hastusid =~ /\AD/i;    # mark virtual stops inactive
 
         my @routes = keys %{ $routes_of{$stopid} };
@@ -165,6 +169,8 @@ sub START {
             scalar @routedirs,
             $flagroutes_all,
             $flagroute_diff,
+            $long,
+            $lat,
         );
 
     }    ## #tidy# end foreach my $stop ( sort keys...)
