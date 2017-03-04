@@ -131,6 +131,8 @@ sub stops2kml {
         if ($active) {
             my @lines = split( ' ', $stp{p_lines} );
             my $color = _kml_color( $lines_r, @lines );
+            
+            warn "unnknown color for " . $stp{p_lines} unless defined $color;
 
             $text
               .= "<Style>\n"
@@ -211,7 +213,7 @@ sub _kml_stop_description {
         'Rapid', 'Transbay',
         'Dumbarton Express',
         'Broadway Shuttle',
-        'All Nighter', 'Local', 'Supplementary', $EMPTY_STR,
+        'All Nighter', 'Local', 'Service to Schools', 'Flex' , $EMPTY_STR,
     );
 
     const my $LOWEST_PRIORITY => scalar @KML_LINE_TYPES;
@@ -223,7 +225,8 @@ sub _kml_stop_description {
         'Broadway Shuttle'  => 'FF00FFC0',
         'All Nighter'       => 'FFFFFF00',
         Local               => 'FFFFFF00',
-        Supplementary       => 'FF80FFFF',
+        'Service to Schools' => 'FF80FFFF',
+        Flex                => 'FFAF1F30',
         $EMPTY_STR          => 'FF80FFFF',
     );
 
