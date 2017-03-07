@@ -17,7 +17,6 @@ Actium::O::Cmd->new(
         addfields     => 'AddFields',
         avl2patdest   => 'AVL2PatDest',
         avl2points    => 'AVL2Points',
-        avl2skeds     => 'AVL2Skeds',
         avl2stoplines => 'AVL2StopLines',
         avl2stoplists => 'AVL2StopLists',
         bags2         => 'Bags2',
