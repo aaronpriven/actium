@@ -30,7 +30,9 @@ const my %TRANSITINFO_DAYS_OF => (
       25       TF
       35       WF
       123      MX
+      125      MV
       135      MZ
+      1345     XT
       1245     XW
       1235     XH
       1234     XF
@@ -122,7 +124,15 @@ sub prehistoric_skedsfile {
 
         $times =~ s/\s+\z//;
 
-        say $out jointab( $trip->daysexceptions, $EMPTY_STR, $EMPTY_STR,
+        my $except = $trip->daysexceptions;
+
+        if ( not $except ) {
+            if ( $trip->daycode ne $self->daycode ) {
+                $except = _as_transitinfo( $trip->days_obj )
+            }
+        }
+
+        say $out jointab( $except, $EMPTY_STR, $EMPTY_STR,
             $trip->line, $times );
     }
 
@@ -371,8 +381,7 @@ sub write_prehistorics {
 
     $merge_cry->done;
 
-    $folder
-      ->write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
+    $folder->write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
     $prepare_cry->done;
 
     return;
@@ -414,9 +423,9 @@ sub _as_transitinfo {
 
     return $cache{$as_string} = "SD" if $days_obj->_is_SD;
     return $cache{$as_string} = "SH" if $days_obj->_is_SH;
-    
-    if (exists $TRANSITINFO_DAYS_OF{$daycode}) {
-       return $cache{$as_string} = $TRANSITINFO_DAYS_OF{$daycode};
+
+    if ( exists $TRANSITINFO_DAYS_OF{$daycode} ) {
+        return $cache{$as_string} = $TRANSITINFO_DAYS_OF{$daycode};
     }
 
     carp qq[Using invalid Transitinfo daycode XX for <$daycode/$schooldaycode>];
