@@ -106,7 +106,7 @@ sub xhea2skeds {
 
     $skedscry->done;
 
-    $skedcollection->_output_skeds_all( $signup ) ;
+    $skedcollection->_output_skeds_all($signup);
 
     $xhea2skedscry->done;
 
@@ -295,16 +295,23 @@ sub _get_trips {
 
             my $block = $block_by_id{ $field{trp_block} };
 
+            say "not defined: block in $int_number" if not defined $block;
+
+            my $event = $field{trp_event_and_status};
+            $event = $EMPTY if $event =~ /\A [A-Z]* on \z/x;
+            # delete SCHOOOLon type events
+
             my $trip = Actium::O::Pattern::Trip->new(
                 days             => $days,
                 int_number       => $int_number,
                 schedule_daytype => $field{trp_schedule_type},
                 pattern_id       => $pattern_id,
-                event_and_status => $field{trp_event_and_status},
-                op_except        => $field{trp_has_op_except},
-                block_id         => $field{trp_block},
-                vehicle_group    => $block->vehicle_group,
-                vehicle_type     => $block->vehicle_type,
+                event_and_status => $event,
+                #event_and_status => $field{trp_event_and_status},
+                op_except     => $field{trp_has_op_except},
+                block_id      => $field{trp_block},
+                vehicle_group => $block->vehicle_group,
+                vehicle_type  => $block->vehicle_type,
             );
 
             $pattern_by_id{$pattern_id}->add_trip($trip);
@@ -550,8 +557,8 @@ sub _make_skeds {
         push @skeds, $patgroup->skeds( $params{actiumdb} );
     }
     last_cry()->over(".");
-    
-    return Actium::O::Sked::Collection->new(skeds => \@skeds);
+
+    return Actium::O::Sked::Collection->new( skeds => \@skeds );
 
     #return \@skeds;
 
