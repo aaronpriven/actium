@@ -161,28 +161,20 @@ Then check "Update matching records in found set" and click the arrow next to "h
 
 Click "Import."  On the "Import Options" box, click "Import" again (it doesn't matter whether "Perform auto-enter options" is checked).
 
-## Copy timepointorder.txt
 
-Copy the file timepointorder.txt from the previous signup folder
-to the new one. For this imaginary signup, the previous signup
-folder will be called "y00." It's usually the previous season,
-of course.
-
-This file determines the timepoint order for schedules where the computer has trouble figuring out ambiguities. Only a small number of schedules are actually included -- most, the computer figures out by itself, but sometimes you have a route where no single trip has all timepoints in common, and the computer can't know which ones go first.  If you have trips with timepoints Red, Blue, Green and other trips with timepoints Red, Yellow, Green, there's no way for the computer to know whether Yellow or Green should come first. Sometimes it doesn't matter, but other times it does.
-
-## 7. Create "raw" schedule files 
+## Create "raw" schedule files 
 	
 Run this program:
 	
-    actium.pl avl2skeds -si z00 -raw
+    actium.pl xhea2skeds -s z00
 	
-This creates the "raw" schedule files in the folder rawskeds.  These raw schedules are what is used for comparing schedules from one signup to another. (The regular schedules in "skeds" have the exceptions copied over to them.)
+This creates the schedule files in the folder s. There are several types: Excel places (xlsx_p), Excel stops (xlsx_s), space-delimited, and memory dumps. The one that's actually used for reading is the Storable version, skeds.storable.
 
-## 8. Create the file comparing the signups
+## Create the file comparing the signups
 
 ````Shell
     cd Actium/db
-    diff y00/rawskeds z00/rawskeds >diffs/y00-z00.diff
+    diff y00/s/prehistorics z00/s/prehistorics >diffs/y00-z00.diff
 ````
 
 This creates the "diff" file that includes the differences between the two sets of directories.
@@ -191,7 +183,7 @@ A simple explanation of how a "normal" diff file can be read is here:
 
 <http://www.markusbe.com/2009/12/how-to-read-a-patch-or-diff-and-understand-its-structure-to-apply-it-manually/#how-to-read-a-normal-diff>
 
-## 9. Analyze comparison and make report
+## Analyze comparison and make report
 
 Go through the diff file and write down the changes for the comparison report. Opening the diff file in vim is nice because the syntax checking tools autmatically colorize everything: the previous signup is orange (or blue, on a light background) and the new one is green (or something else if the settings are different from mine).
 
@@ -201,11 +193,15 @@ I write these up and save them in a file such as diffs/y00-z00-comparison.doc an
 
 ## 10. Create exceptional schedules
 
+    not implemented at this point
+
 There are always some schedules that don't come out quite right from the scheduling system. The AVL data doesn't include information about school day only running, so all school trippers on regular lines have to be exceptions.  The scheduling system contains times for intermediate timepoints on Rapid lines, which need to be removed. Lollipop-shaped routes like B and F need to be rewritten so that when the same bus serves as the end of the eastbound trip and the beginning of the westbound trip, it appears on both schedules.
 
 Create a new folder called "exceptions" under the signup folder.  Copy the old exceptions from the previous signup folder to it, unless you know from step #7 that the schedule has changed. If it has, you'll need to rewrite it again.
 
 ## 11. Create final schedule files
+
+    also not implemented
 
 This involves running avl2skeds again:
 
