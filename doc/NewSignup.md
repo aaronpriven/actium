@@ -256,7 +256,7 @@ Then send that to the Help Desk with a request that it be made previews soon and
 
 See the separate make timetables document.
 
-## 19. Create stops lists
+## Create stops lists
 
 a) create the stop lists in "slists"
 
