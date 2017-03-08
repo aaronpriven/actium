@@ -5,7 +5,6 @@ package Actium::Cmd::Stops2KML 0.011;
 use 5.016;
 use warnings;
 
-
 use Actium::Preamble;
 use Actium::StopReports('stops2kml');
 use File::Slurp::Tiny('write_file');    ### DEP ###
@@ -28,13 +27,22 @@ HELP
 }
 
 sub OPTIONS {
-    return 'actiumdb';
+    return (
+        'actiumdb',
+        {   spec           => 'workzones',
+            description    => 'Create KML for work zones instead of by stop',
+            fallback       => '0',
+            envvar         => 'STOPS2KML_WORKZONES',
+            config_section => 'Stops2KML',
+            config_key     => 'WorkZones',
+        },
+    );
 }
 
 sub START {
     my ( $class, $env ) = @_;
     my $actiumdb = $env->actiumdb;
-    my @argv = $env->argv;
+    my @argv     = $env->argv;
 
     my $outputfile = shift @argv;
 
@@ -43,13 +51,15 @@ sub START {
         return;
     }
 
-    my $kml_text = stops2kml($actiumdb);
+    my $workzones = $env->option('workzones');
+
+    my $kml_text = stops2kml( $actiumdb, $workzones );
 
     write_file( $outputfile, $kml_text, binmode => ':utf8' );
 
     return;
 
-}
+} ## tidy end: sub START
 
 1;
 
