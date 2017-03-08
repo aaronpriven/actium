@@ -81,8 +81,43 @@ const my $KML_END => <<'KMLEND';
 </kml>
 KMLEND
 
+const my @HASH_COLORS => map { '#FF' . $_ } qw( 00E000
+  CCDF32
+  FF8080
+  D197D9
+  BED6FF
+  FFFF00
+  DC78DC
+  00D0D0
+  79ABFF
+  EFC090
+  FF0000
+  00FF00
+  0000FF
+  00FFFF
+  FF00FF
+  FFFF00
+);
+
+sub _hash_color {
+
+    state $color_of_r;
+    my $value = shift;
+
+    return $color_of_r->{$value} if $color_of_r->{$value};
+
+    require Archive::Zip;
+
+    my $crc   = Archive::Zip::computeCRC32($value);
+    my $color = $HASH_COLORS[ $crc % @HASH_COLORS ];
+
+    return $color_of_r->{$value} = $color;
+
+}
+
 sub stops2kml {
-    my $actiumdb = shift;
+    my $actiumdb  = shift;
+    my $is_wz_kml = shift;
 
     #my %params   = u::validate(
     #    @_,
@@ -96,7 +131,8 @@ sub stops2kml {
             COLUMNS => [
                 qw/c_description_fullabbr h_stp_identifier
                   h_loca_latitude h_loca_longitude p_active p_lines
-                  p_linedirs u_connections u_flex_route/
+                  p_linedirs u_connections u_flex_route u_work_zone p_zip_code
+                  c_city /
             ],
         }
     );
@@ -110,29 +146,40 @@ sub stops2kml {
     my %folders;
 
     foreach my $stopid ( sort keys %{$stops_r} ) {
-        
-        #next if $stopid > "52000";
 
-        my %stp        = %{ $stops_r->{$stopid} };
-        my $active     = $stp{p_active};
+        my %stp = %{ $stops_r->{$stopid} };
+        next if $stp{c_city} eq 'Virtual';
+        my $active   = $stp{p_active};
+        my $zip      = $stp{p_zip_code};
+        my $workzone = $stp{u_work_zone};
         #my $flex     = $stp{u_flex_route};
         #next unless ($flex and $flex eq '448');
-        
-        my $foldername = $active ? 'Active' : 'Inactive';
+
+        my $activity = $active ? 'Active' : 'Inactive';
+        my $foldername;
+
+        if ($is_wz_kml) {
+            $foldername = $workzone;
+        }
+        else {
+            $foldername = $activity;
+        }
 
         my $description = _kml_stop_description( \%stp );
 
-        my $text
-          = "<Placemark>\n"
-          . "<name>$stopid</name>\n"
-          . "<styleUrl>#stop${foldername}Style</styleUrl>\n"
-          . "<description>$description</description>\n";
+        my $text;
 
-        if ($active) {
-            my @lines = split( ' ', $stp{p_lines} );
-            my $color = _kml_color( $lines_r, @lines );
-            
-            warn "unnknown color for " . $stp{p_lines} unless defined $color;
+        if ($is_wz_kml) {
+
+            $text
+              = "<Placemark>\n"
+              . "<name>$workzone</name>\n"
+              . "<styleUrl>#stop${activity}Style</styleUrl>\n"
+              . "<description>$description</description>\n";
+
+            # pick color here
+
+            my $color = _hash_color($workzone);
 
             $text
               .= "<Style>\n"
@@ -143,7 +190,35 @@ sub stops2kml {
               . "<color>$color</color>\n"
               . "</LabelStyle>\n"
               . "</Style>\n";
-        }
+
+        } ## tidy end: if ($is_wz_kml)
+        else {    # by stops
+
+            $text
+              = "<Placemark>\n"
+              . "<name>$stopid</name>\n"
+              . "<styleUrl>#stop${foldername}Style</styleUrl>\n"
+              . "<description>$description</description>\n";
+
+            if ($active) {
+                my @lines = split( ' ', $stp{p_lines} );
+                my $color = _kml_color( $lines_r, @lines );
+
+                warn "unnknown color for " . $stp{p_lines}
+                  unless defined $color;
+
+                $text
+                  .= "<Style>\n"
+                  . "<IconStyle>\n"
+                  . "<color>$color</color>\n"
+                  . "</IconStyle>\n"
+                  . "<LabelStyle>\n"
+                  . "<color>$color</color>\n"
+                  . "</LabelStyle>\n"
+                  . "</Style>\n";
+            }
+
+        } ## tidy end: else [ if ($is_wz_kml) ]
 
         my ( $lat, $long ) = @stp{qw/h_loca_latitude h_loca_longitude/};
 
@@ -166,12 +241,17 @@ sub stops2kml {
     }
 
     my $alltext = $KML_START;
-    $alltext .= $folders{Active};
-    $alltext .= $folders{Inactive};
+
+    my @keys;
+    {
+        no warnings 'numeric';
+        @keys = sort { $a <=> $b || $a cmp $b } keys %folders;
+    }
+    $alltext .= join( $EMPTY, @folders{@keys} );
+    #$alltext .= $folders{Active};
+    #$alltext .= $folders{Inactive};
     $alltext .= $KML_END;
     return $alltext;
-
-    #return $KML_START . $folders{active} . $folders{inactive} . $KML_END;
 
 } ## tidy end: sub stops2kml
 
@@ -183,6 +263,7 @@ sub _kml_stop_description {
     my $desc       = $stp{c_description_fullabbr};
     my $hastus_id  = $stp{h_stp_identifier};
     my $lines      = $stp{p_linedirs};
+    my $zip        = $stp{p_zip_code};
     my $linetext   = $lines ? "<u>Lines:</u> $lines" : 'Inactive stop';
     my $activestar = $stp{p_active} ? $EMPTY_STR : '*';
 
@@ -198,7 +279,7 @@ sub _kml_stop_description {
 
     my $text
       = "<p><b><u>$stop_id\x{2003}$hastus_id</u></b><br>\n"
-      . "${activestar}$desc</p>\n"
+      . "${activestar}$desc  $zip</p>\n"
       . "$linetext"
       . "${connections_text}";
 
@@ -210,24 +291,25 @@ sub _kml_stop_description {
 {
 
     const my @KML_LINE_TYPES => (
-        'Rapid', 'Transbay',
-        'Dumbarton Express',
-        'Broadway Shuttle',
-        'All Nighter', 'Local', 'Service to Schools', 'Flex' , $EMPTY_STR,
+        'Rapid',              'Transbay',
+        'Dumbarton Express',  'Broadway Shuttle',
+        'All Nighter',        'Local',
+        'Service to Schools', 'Flex',
+        $EMPTY_STR,
     );
 
     const my $LOWEST_PRIORITY => scalar @KML_LINE_TYPES;
 
     const my %KML_LINE_COLORS => (
-        Rapid               => 'FF4040FF',
-        Transbay            => 'FF00FF00',
-        'Dumbarton Express' => 'FFFF6060',
-        'Broadway Shuttle'  => 'FF00FFC0',
-        'All Nighter'       => 'FFFFFF00',
-        Local               => 'FFFFFF00',
+        Rapid                => 'FF4040FF',
+        Transbay             => 'FF00FF00',
+        'Dumbarton Express'  => 'FFFF6060',
+        'Broadway Shuttle'   => 'FF00FFC0',
+        'All Nighter'        => 'FFFFFF00',
+        Local                => 'FFFFFF00',
         'Service to Schools' => 'FF80FFFF',
-        Flex                => 'FFAF1F30',
-        $EMPTY_STR          => 'FF80FFFF',
+        Flex                 => 'FFAF1D30',
+        $EMPTY_STR           => 'FF80FFFF',
     );
 
     my %color_of_priority;
@@ -257,7 +339,6 @@ sub _kml_stop_description {
     }
 
 }
-
 
 sub linesbycity {
 
@@ -310,8 +391,7 @@ sub linesbycity {
     foreach my $city ( sort keys %lines_of ) {
         my $city_h = u::encode_entities($city);
         print $html_fh
-          qq{<h4 style="text-transform:uppercase;" id="$city_h">$city_h</h4>}
-          ;
+          qq{<h4 style="text-transform:uppercase;" id="$city_h">$city_h</h4>};
 
         #        foreach my $type ( sort keys %{ $lines_of{$city} } ) {
         foreach my $type (@all_lgtypes) {
@@ -325,10 +405,10 @@ sub linesbycity {
                 my $url = $actiumdb->linesked_url($line);
                 $line = qq{<a href="$url">$line</a>};
             }
-            
+
             my $separator = '&nbsp;&nbsp;&nbsp; ';
 
-            say $html_fh $separator, join( $separator , @lines ), '</p>';
+            say $html_fh $separator, join( $separator, @lines ), '</p>';
 
         }
         #say $html_fh '</dl>';
