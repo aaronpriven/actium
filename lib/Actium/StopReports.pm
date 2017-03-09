@@ -81,22 +81,19 @@ const my $KML_END => <<'KMLEND';
 </kml>
 KMLEND
 
-const my @HASH_COLORS => map { '#FF' . $_ } qw( 00E000
-  CCDF32
-  FF8080
-  D197D9
-  BED6FF
-  FFFF00
-  DC78DC
-  00D0D0
-  79ABFF
-  EFC090
-  FF0000
+const my @HASH_COLORS => map { '#FF' . $_ } qw(
+
+  FF66FF
+  FF9933
   00FF00
-  0000FF
-  00FFFF
-  FF00FF
+  8000FF
+  FF3333
+  CCFF66
+  0080FF
+  FF3399
   FFFF00
+  FF00FF
+
 );
 
 sub _hash_color {
@@ -106,14 +103,21 @@ sub _hash_color {
 
     return $color_of_r->{$value} if $color_of_r->{$value};
 
-    require Archive::Zip;
+    my $crc;
+    if ( u::looks_like_number($value) ) {
+        $crc = $value;
+    }
+    else {
+        require Archive::Zip;
 
-    my $crc   = Archive::Zip::computeCRC32($value);
+        $crc = Archive::Zip::computeCRC32($value);
+
+    }
     my $color = $HASH_COLORS[ $crc % @HASH_COLORS ];
 
     return $color_of_r->{$value} = $color;
 
-}
+} ## tidy end: sub _hash_color
 
 sub stops2kml {
     my $actiumdb  = shift;
