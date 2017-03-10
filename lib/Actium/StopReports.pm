@@ -81,20 +81,25 @@ const my $KML_END => <<'KMLEND';
 </kml>
 KMLEND
 
-const my @HASH_COLORS => map { '#FF' . $_ } qw(
+const my @RGBS =>
 
-  FF66FF
-  FF9933
+  qw(
+  FF8800
   00FF00
-  8000FF
+  9933FF
   FF3333
-  CCFF66
-  0080FF
-  FF3399
   FFFF00
-  FF00FF
-
+  00FFFF
+  FF66FF
+  80FF00
+  0080FF
+  FF0080
+  FFFFCC
 );
+
+const my @HASH_COLORS =>
+  map { '#FF' . join( $EMPTY, reverse ( $_ =~ /../g ) ) } @RGBS;
+# KML uses alpha + BGR for some insane reason
 
 sub _hash_color {
 
@@ -103,22 +108,28 @@ sub _hash_color {
 
     return $color_of_r->{$value} if $color_of_r->{$value};
 
-    my $crc;
-    if ( u::looks_like_number($value) ) {
+    state $count = 0;
 
-        # add digits
-        my @arr = $value =~ /./g;
-        $arr[1] *= 2;
-        $crc = u::sum (@arr);
-        #$crc = $value;
-    }
-    else {
-        require Archive::Zip;
+    $count++;
 
-        $crc = Archive::Zip::computeCRC32($value);
+    my $color = $HASH_COLORS[ $count % @HASH_COLORS ];
 
-    }
-    my $color = $HASH_COLORS[ $crc % @HASH_COLORS ];
+    #    my $crc;
+    #    if ( u::looks_like_number($value) ) {
+    #
+    #        # add digits
+    #        #my @arr = $value =~ /./g;
+    #        #$arr[1] *= 2;
+    #        #$crc = u::sum (@arr);
+    #        #$crc = $value;
+    #    }
+    #    else {
+    #        require Archive::Zip;
+    #
+    #        $crc = Archive::Zip::computeCRC32($value);
+    #
+    #    }
+    #    my $color = $HASH_COLORS[ $crc % @HASH_COLORS ];
 
     return $color_of_r->{$value} = $color;
 
@@ -154,6 +165,19 @@ sub stops2kml {
 
     my %folders;
 
+    if ($is_wz_kml) {
+        my %seen_workzone;
+        foreach my $stopid ( sort keys %{$stops_r} ) {
+            my $workzone = $stops_r->{$stopid}{u_work_zone};
+            $seen_workzone{$workzone}++;
+        }
+
+        my @workzones = sort { $a <=> $b } keys %seen_workzone;
+        my @colors    = map  { _hash_color($_) } @workzones;
+        # colors is thrown away, but that seeds the hash color generator
+
+    }
+
     foreach my $stopid ( sort keys %{$stops_r} ) {
 
         my %stp = %{ $stops_r->{$stopid} };
@@ -185,8 +209,6 @@ sub stops2kml {
               . "<name>$workzone</name>\n"
               . "<styleUrl>#stop${activity}Style</styleUrl>\n"
               . "<description>$description</description>\n";
-
-            # pick color here
 
             my $color = _hash_color($workzone);
 
