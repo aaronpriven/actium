@@ -105,7 +105,12 @@ sub _hash_color {
 
     my $crc;
     if ( u::looks_like_number($value) ) {
-        $crc = $value;
+
+        # add digits
+        my @arr = $value =~ /./g;
+        $arr[1] *= 2;
+        $crc = u::sum (@arr);
+        #$crc = $value;
     }
     else {
         require Archive::Zip;
