@@ -21,6 +21,7 @@ Actium::O::Cmd->new(
         avl2stoplists => 'AVL2StopLists',
         bags2         => 'Bags2',
         bartskeds     => 'BARTSkeds',
+        citiesbyline  => 'CitiesByLine',
         comparestops  => 'CompareStops',
         compareskeds  => 'CompareSkeds',
         dbexport      => 'ActiumDBExport',
