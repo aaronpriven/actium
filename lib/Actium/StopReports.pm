@@ -349,6 +349,46 @@ sub _kml_stop_description {
 
 }
 
+sub citiesbyline {
+
+    my %params = u::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
+    my $actiumdb = $params{actiumdb};
+
+   my $eachstop = $actiumdb->each_columns_in_row_where(
+        table   => 'Stops_Neue',
+        columns => [qw/h_stp_511_id p_lines c_city/],
+        where   => 'WHERE p_active = 1'
+    );
+
+    # build lines by city and type struct
+    my %cities_of;
+    while ( my $colref = $eachstop->() ) {
+        \my @cols = $colref;
+        my ( undef, $p_lines, $c_city ) = @cols;
+
+        my @lines = split( /\s+/, $p_lines );
+        foreach my $line (@lines) {
+            $cities_of{$line}{$c_city} = 1;
+        }
+    }
+
+   foreach my $line (u::sortbyline keys %cities_of) {
+
+      my @cities = sort (keys %{ $cities_of{$line}} );
+
+      say $line;
+      foreach my $city (@cities) {
+         say "   $city";
+      }
+      say "";
+
+
+   }
+
+   return;
+
+}
+
 sub linesbycity {
 
     my %params = u::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
