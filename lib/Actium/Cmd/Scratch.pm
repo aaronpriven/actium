@@ -1,6 +1,56 @@
 package Actium::Cmd::Scratch 0.012;
 
 use Actium::Preamble;
+
+use Actium::Clusterize('fold_clusters');
+
+sub natatime ($@);
+
+sub START {
+
+    my %count_of = (
+
+        101 => 5,
+        102 => 4,
+        112 => 10,
+        113 => 11,
+        221 => 5,
+        222 => 3,
+        233 => 135,
+        234 => 5,
+        235 => 13,
+        251 => 6,
+        305 => 2,
+        441 => 5,
+        442 => 8,
+        501 => 5,
+        502 => 4,
+        607 => 8,
+    );
+    
+    my %folded_of = fold_clusters(\%count_of);
+    
+    print STDERR "%folded_of = ";
+    
+    use DDP;
+    p %folded_of;
+
+}
+
+sub natatime ($@) {
+    my $n    = shift;
+    my @list = @_;
+
+    return sub {
+        return splice @list, 0, $n;
+      }
+}
+
+1;
+
+__END__
+
+
 use Actium::O::2DArray;
 use Actium::O::Folder;
 
