@@ -215,7 +215,7 @@ This is a manual process to make sure that the "Lines" table has current lines a
 
 Importantly, all changed lines should have their Timetable Date updated.
 
-## 15. Create point schedule files
+## Create point schedule files
 
 a) Run the avl2points command:
 
@@ -229,7 +229,7 @@ b) Run the actium k2id command:
 
 At the end it will say something like "20 skipped signs because stop file not found." Each of these signs has an entry in the Signs table in the FileMaker database. It will probably be necessary to go through each one of those and figure out why the stop is no longer there.
 
-## 16. Replace the "current" link
+## Replace the "current" link
 
 There is a symbolic link "current" in /Volumes/Bireme/actium/db that points to the current signup. Replace it.
 
@@ -238,7 +238,7 @@ rm current
 ln –s z00 current
 ````
 
-## 17. Create web schedules
+## Create web schedules
 
 Run the tabskeds program:
 
