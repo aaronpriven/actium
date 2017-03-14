@@ -1,7 +1,6 @@
 package Actium::StopReports 0.012;
 use Actium::Preamble;
 use Excel::Writer::XLSX;    ### DEP ###
-use Actium::Sorting::Travel(qw<travelsort>);
 use Actium::Sorting::Line(qw/linekeys sortbyline/);
 
 use Sub::Exporter -setup => { exports => [qw(crewlist_xlsx stops2kml)] };
@@ -82,82 +81,38 @@ const my $KML_END => <<'KMLEND';
 KMLEND
 
 const my @RGBS =>
-
- # qw(
- # FF8800
- # 00FF00
- # 9933FF
- # FF3333
- # FFFF00
- # 00FFFF
- # FF66FF
- # 80FF00
- # 0080FF
- # FF0080
- # FFFFCC
- 
- # removed from below
- 
-# 80FF00
-# 00FFFF
-# FF0080
- qw(
-
-6666FF
-0080FF
-00FF00
-00FF80
-8000FF
-8080FF
-80FF00
-80FF80
-80FFFF
-FF0000
-FF00FF
-FF8000
-FF8080
-FF80FF
-FFFF00
-FFFF80
-FFFFFF
-
+  qw(
+  6666FF
+  0080FF
+  00FF00
+  00FF80
+  8000FF
+  8080FF
+  80FF00
+  80FF80
+  80FFFF
+  FF0000
+  FF00FF
+  FF8000
+  FF8080
+  FF80FF
+  FFFF00
+  FFFF80
+  FFFFFF
 
 );
 
-const my @HASH_COLORS =>
-  map { '#FF' . join( $EMPTY, reverse ( $_ =~ /../g ) ) } @RGBS;
+const my @HASH_COLORS => map { '#FF' . join( $EMPTY, reverse( $_ =~ /../g ) ) }
+  @RGBS;
 # KML uses alpha + BGR for some insane reason
 
 sub _hash_color {
-
     state $color_of_r;
     my $value = shift;
-
     return $color_of_r->{$value} if $color_of_r->{$value};
-
     state $count = 0;
-
     $count++;
-
     my $color = $HASH_COLORS[ $count % @HASH_COLORS ];
-
-    #    my $crc;
-    #    if ( u::looks_like_number($value) ) {
-    #
-    #        # add digits
-    #        #my @arr = $value =~ /./g;
-    #        #$arr[1] *= 2;
-    #        #$crc = u::sum (@arr);
-    #        #$crc = $value;
-    #    }
-    #    else {
-    #        require Archive::Zip;
-    #
-    #        $crc = Archive::Zip::computeCRC32($value);
-    #
-    #    }
-    #    my $color = $HASH_COLORS[ $crc % @HASH_COLORS ];
-
     return $color_of_r->{$value} = $color;
 
 } ## tidy end: sub _hash_color
@@ -166,19 +121,12 @@ sub stops2kml {
     my $actiumdb  = shift;
     my $is_wz_kml = shift;
 
-    #my %params   = u::validate(
-    #    @_,
-    #    {
-    #        actiumdb => { can => 'all_in_columns_key' },
-    #    }
-    #);
-
     my $stops_r = $actiumdb->all_in_columns_key(
         {   TABLE   => 'Stops_Neue',
             COLUMNS => [
                 qw/c_description_fullabbr h_stp_identifier
                   h_loca_latitude h_loca_longitude p_active p_lines
-                  p_linedirs u_connections u_flex_route u_work_zone p_zip_code
+                  p_linedirs u_connections u_flex_route u_work_zone 
                   c_city /
             ],
         }
@@ -316,13 +264,13 @@ sub _kml_stop_description {
 
     my %stp = %{ +shift };
 
-    my $stop_id    = $stp{h_stp_511_id};
-    my $desc       = $stp{c_description_fullabbr};
-    my $hastus_id  = $stp{h_stp_identifier};
-    my $lines      = $stp{p_linedirs};
+    my $stop_id   = $stp{h_stp_511_id};
+    my $desc      = $stp{c_description_fullabbr};
+    my $hastus_id = $stp{h_stp_identifier};
+    my $lines     = $stp{p_linedirs};
     #my $zip        = $stp{p_zip_code};
-    my $linetext   = $lines ? "<u>Lines:</u> $lines" : 'Inactive stop';
-    my $activestar = $stp{p_active} ? $EMPTY_STR : '*';
+    my $linetext   = $lines         ? "<u>Lines:</u> $lines" : 'Inactive stop';
+    my $activestar = $stp{p_active} ? $EMPTY_STR             : '*';
     my $workzone = $stp{u_work_zone};
 
     my $connections      = $stp{u_connections};
@@ -403,7 +351,7 @@ sub citiesbyline {
     my %params = u::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
     my $actiumdb = $params{actiumdb};
 
-   my $eachstop = $actiumdb->each_columns_in_row_where(
+    my $eachstop = $actiumdb->each_columns_in_row_where(
         table   => 'Stops_Neue',
         columns => [qw/h_stp_511_id p_lines c_city/],
         where   => 'WHERE p_active = 1'
@@ -421,22 +369,21 @@ sub citiesbyline {
         }
     }
 
-   foreach my $line (u::sortbyline keys %cities_of) {
+    foreach my $line ( u::sortbyline keys %cities_of ) {
 
-      my @cities = sort (keys %{ $cities_of{$line}} );
+        my @cities = sort ( keys %{ $cities_of{$line} } );
 
-      say $line;
-      foreach my $city (@cities) {
-         say "   $city";
-      }
-      say "";
+        say $line;
+        foreach my $city (@cities) {
+            say "   $city";
+        }
+        say "";
 
+    }
 
-   }
+    return;
 
-   return;
-
-}
+} ## tidy end: sub citiesbyline
 
 sub linesbycity {
 
