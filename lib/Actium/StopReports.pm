@@ -83,18 +83,45 @@ KMLEND
 
 const my @RGBS =>
 
-  qw(
-  FF8800
-  00FF00
-  9933FF
-  FF3333
-  FFFF00
-  00FFFF
-  FF66FF
-  80FF00
-  0080FF
-  FF0080
-  FFFFCC
+ # qw(
+ # FF8800
+ # 00FF00
+ # 9933FF
+ # FF3333
+ # FFFF00
+ # 00FFFF
+ # FF66FF
+ # 80FF00
+ # 0080FF
+ # FF0080
+ # FFFFCC
+ 
+ # removed from below
+ 
+# 80FF00
+# 00FFFF
+# FF0080
+ qw(
+
+6666FF
+0080FF
+00FF00
+00FF80
+8000FF
+8080FF
+80FF00
+80FF80
+80FFFF
+FF0000
+FF00FF
+FF8000
+FF8080
+FF80FF
+FFFF00
+FFFF80
+FFFFFF
+
+
 );
 
 const my @HASH_COLORS =>
@@ -183,7 +210,6 @@ sub stops2kml {
         my %stp = %{ $stops_r->{$stopid} };
         next if $stp{c_city} eq 'Virtual';
         my $active   = $stp{p_active};
-        my $zip      = $stp{p_zip_code};
         my $workzone = $stp{u_work_zone};
         #my $flex     = $stp{u_flex_route};
         #next unless ($flex and $flex eq '448');
@@ -204,13 +230,13 @@ sub stops2kml {
 
         if ($is_wz_kml) {
 
+            my $color = _hash_color($workzone);
+
             $text
               = "<Placemark>\n"
               . "<name>$workzone</name>\n"
               . "<styleUrl>#stop${activity}Style</styleUrl>\n"
               . "<description>$description</description>\n";
-
-            my $color = _hash_color($workzone);
 
             $text
               .= "<Style>\n"
@@ -294,9 +320,10 @@ sub _kml_stop_description {
     my $desc       = $stp{c_description_fullabbr};
     my $hastus_id  = $stp{h_stp_identifier};
     my $lines      = $stp{p_linedirs};
-    my $zip        = $stp{p_zip_code};
+    #my $zip        = $stp{p_zip_code};
     my $linetext   = $lines ? "<u>Lines:</u> $lines" : 'Inactive stop';
     my $activestar = $stp{p_active} ? $EMPTY_STR : '*';
+    my $workzone = $stp{u_work_zone};
 
     my $connections      = $stp{u_connections};
     my $connections_text = $EMPTY_STR;
@@ -310,7 +337,7 @@ sub _kml_stop_description {
 
     my $text
       = "<p><b><u>$stop_id\x{2003}$hastus_id</u></b><br>\n"
-      . "${activestar}$desc  $zip</p>\n"
+      . "${activestar}$desc  [$workzone]</p>\n"
       . "$linetext"
       . "${connections_text}";
 
