@@ -10,9 +10,26 @@ const my $CLUSTER_MINIMUM => 10;
 # and all characters must be digits except the first one
 
 sub fold_clusters {
+    
+    # accepts a hashref of cluster counts, an arrayref of clusters,
+    # or a list of clusters
 
-    my %count_of = %{ +shift };
+    my %count_of;
+    my $ref = shift;
 
+    if ( u::is_hashref($ref) ) {
+        \%count_of = $ref;
+    }
+    elsif ( u::is_arrayref($ref) ) {
+        $count_of{$_}++ foreach $ref->@*;
+    }
+    elsif ( u::is_ref($ref) ) {
+        croak "Invalid " . u::reftype($ref) . " reference passed to clusterize";
+    }
+    else {
+        $count_of{$_}++ foreach ($ref, @_) ;
+    }
+    
     my %leaves_of = map { $_, [$_] } keys %count_of;
     # this represents the leaves that have been folded into this cluster.
 
@@ -133,6 +150,9 @@ sub fold_clusters {
 
     } ## tidy end: foreach my $cluster (@clusters)
     
+
+    # put the x's on the end
+
     foreach my $leaf (keys %folded_of) {
         my $folded = $folded_of{$leaf};
         my $leaflength = length ($leaf);
