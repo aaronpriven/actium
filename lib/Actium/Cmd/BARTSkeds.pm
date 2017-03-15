@@ -10,11 +10,6 @@ use Date::Simple(qw/date today/);    ### DEP ###
 use Actium::O::2DArray;
 
 const my $API_KEY => 'MW9S-E7SL-26DU-VV8V';
-const my $ROUTE_URL =>
-  "http://api.bart.gov/api/route.aspx?cmd=routes&key=$API_KEY";
-
-const my $STATIONS_URL =>
-  "http://api.bart.gov/api/stn.aspx?cmd=stns&key=$API_KEY";
 
 const my @DAYS => qw/12345 6 7/;
 # weekday, saturday, sunday; matches Actium::O::Days
@@ -29,7 +24,7 @@ sub HELP {
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        { spec =>  'date=s',
+        {   spec        => 'date=s',
             description => 'Effective date of the new BART schedules. '
               . 'Must be in YYYY-MM-DD format (2015-12-25)'
               . 'If not provided, defaults to today.',
@@ -39,7 +34,7 @@ sub OPTIONS {
 }
 
 my %not_main_station;
-$not_main_station{$_} = 1 foreach qw/24TH NCON MONT PHIL BAYF / ;
+$not_main_station{$_} = 1 foreach qw/24TH NCON MONT PHIL BAYF /;
 
 sub START {
 
@@ -48,7 +43,7 @@ sub START {
     my ( $class, $env ) = @_;
     my @dates = get_dates( $env->option('date') );
 
-    \my %stations = get_stations();
+    \my %stations = get_stations( $dates[0] );
     my @station_abbrs = sort keys %stations;
 
     my %fl_of;
@@ -59,20 +54,20 @@ sub START {
 
         my %dest_is_used;
 
-        $skeds_cry->over($station);
+        $skeds_cry->text( "[$station:" . $stations{$station} . "]" );
 
         foreach my $idx ( 0 .. $#DAYS ) {
             my $date        = $dates[$idx];
             my $day         = $DAYS[$idx];
             my $firstlast_r = $fl_of{$station}{$day}
               = get_firstlast( $station, $date );
-              
-              foreach (keys %$firstlast_r) {
-                $dest_is_used{$_} = 1 ;
+
+            foreach ( keys %$firstlast_r ) {
+                $dest_is_used{$_} = 1;
                 $not_main_station{$_} //= 0;
-              }
+            }
         }
-        $skeds_cry->over($EMPTY);
+        #$skeds_cry->over($EMPTY);
 
         my @results;
 
@@ -82,9 +77,10 @@ sub START {
         push @results, [ $EMPTY, qw/First Last First Last First Last/ ];
 
         foreach my $dest (
-            sort { 
-                $not_main_station{$a} <=> $not_main_station{$b} ||
-                $stations{$a} cmp $stations{$b} }
+            sort {
+                     $not_main_station{$a} <=> $not_main_station{$b}
+                  || $stations{$a} cmp $stations{$b}
+            }
             keys %dest_is_used
           )
         {
@@ -118,7 +114,7 @@ sub get_firstlast {
 
     my $twig = XML::Twig->new();
     $twig->parse($stnsked_xml);
-    
+
     my @items = $twig->root->first_child('station')->children('item');
 
     my %items_of_dest;
@@ -132,7 +128,7 @@ sub get_firstlast {
 
         if ( $dest eq 'MLBR' and $line eq 'ROUTE 1' ) {
             push @{ $items_of_dest{'SFIA'} },
-              { dest => 'SFIA', line => $line, time => $time  };
+              { dest => 'SFIA', line => $line, time => $time };
         }
 
     }
@@ -186,9 +182,34 @@ sub stnsked_url {
 
 }
 
+#const my $ROUTE_URL =>
+#  "http://api.bart.gov/api/route.aspx?cmd=routes&key=$API_KEY";
+
+#const my $STATIONS_URL =>
+#  "http://api.bart.gov/api/stn.aspx?cmd=stns&key=$API_KEY";
+
+sub stations_url {
+    my $date = shift;
+    my $url =
+      "http://api.bart.gov/api/stn.aspx?cmd=stns&date=$date&key=$API_KEY";
+    return $url;
+}
+
+sub routes_url {
+
+    my $date = shift;
+    my $url
+      = "http://api.bart.gov/api/route.aspx?cmd=routes&date=$date&key=$API_KEY";
+    return $url;
+
+}
+
 sub get_routes {
 
-    my $routes_xml = get_url($ROUTE_URL);
+    my $date      = shift;
+    my $route_url = routes_url($date);
+
+    my $routes_xml = get_url($route_url);
 
     my $twig = XML::Twig->new();
     $twig->parse($routes_xml);
@@ -203,7 +224,7 @@ sub get_routes {
 
     return \%routename_of;
 
-}
+} ## tidy end: sub get_routes
 
 sub get_url {
 
@@ -218,10 +239,15 @@ sub get_url {
 
 sub get_stations {
 
+    my $date = shift;
+
     my %name_of;
 
-    my $cry          = cry('Getting station list from BART');
-    my $stations_xml = get_url($STATIONS_URL);
+    my $cry = cry('Getting station list from BART');
+
+    my $stations_url = stations_url($date);
+
+    my $stations_xml = get_url($stations_url);
     $cry->done;
 
     my $process_cry = cry('Processing XML data from BART');
@@ -262,18 +288,17 @@ sub get_dates {
             $date_obj = date($effective_date);
             die "Unrecognized date '$effective_date'" unless defined $date_obj;
         }
-        
-        if ($date_obj < $today) {
+
+        if ( $date_obj < $today ) {
             my $cry = last_cry;
             $cry->text(
-             "Can't ask for BART schedules for past date $effective_date."
-             );
-             $cry->d_error;
-             die;
+                "Can't ask for BART schedules for past date $effective_date." );
+            $cry->d_error;
+            die;
         }
 
     }
-    
+
     my %date_of;
 
     while ( scalar keys %date_of < 3 ) {
