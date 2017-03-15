@@ -182,49 +182,12 @@ sub stnsked_url {
 
 }
 
-#const my $ROUTE_URL =>
-#  "http://api.bart.gov/api/route.aspx?cmd=routes&key=$API_KEY";
-
-#const my $STATIONS_URL =>
-#  "http://api.bart.gov/api/stn.aspx?cmd=stns&key=$API_KEY";
-
 sub stations_url {
     my $date = shift;
-    my $url =
-      "http://api.bart.gov/api/stn.aspx?cmd=stns&date=$date&key=$API_KEY";
-    return $url;
-}
-
-sub routes_url {
-
-    my $date = shift;
     my $url
-      = "http://api.bart.gov/api/route.aspx?cmd=routes&date=$date&key=$API_KEY";
+      = "http://api.bart.gov/api/stn.aspx?cmd=stns&date=$date&key=$API_KEY";
     return $url;
-
 }
-
-sub get_routes {
-
-    my $date      = shift;
-    my $route_url = routes_url($date);
-
-    my $routes_xml = get_url($route_url);
-
-    my $twig = XML::Twig->new();
-    $twig->parse($routes_xml);
-    my @routes = $twig->root->first_child('routes')->children('route');
-    my %routename_of;
-
-    foreach (@routes) {
-        my $name   = $_->first_child('name')->text;
-        my $number = $_->first_child('number')->text;
-        $routename_of{$number} = $name;
-    }
-
-    return \%routename_of;
-
-} ## tidy end: sub get_routes
 
 sub get_url {
 
@@ -292,7 +255,7 @@ sub get_dates {
         if ( $date_obj < $today ) {
             my $cry = last_cry;
             $cry->text(
-                "Can't ask for BART schedules for past date $effective_date." );
+                "Can't ask for BART schedules for past date $effective_date.");
             $cry->d_error;
             die;
         }
@@ -324,25 +287,3 @@ sub get_dates {
 1;
 
 __END__
-
-#sub get_firstlast {
-#
-#    my ( $routenum, $date ) = @_;
-#    my $sked_xml = get_url( sked_url( $routenum, $date ) );
-#
-#    my $twig = XML::Twig->new();
-#    $twig->parse($sked_xml);
-#
-#    my @trains = $twig->root->first_child('route')->children;
-#
-#    foreach my $train (@trains) {
-#        my @stops = $train->children('stop');
-#        foreach my $stop (@stops) {
-#            next if not defined $stop->att('origTime');
-#            my $station = $stop->att('station');
-#            my $time    = $stop->att('origTime');
-#            say "$station:$time";
-#        }
-#    }
-#
-#} ## tidy end: sub get_firstlast
