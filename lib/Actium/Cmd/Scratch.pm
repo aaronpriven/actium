@@ -2,9 +2,7 @@ package Actium::Cmd::Scratch 0.012;
 
 use Actium::Preamble;
 
-use Actium::Clusterize('fold_clusters');
-
-sub natatime ($@);
+use Actium::Clusterize('unfold_clusters');
 
 sub START {
 
@@ -12,38 +10,31 @@ sub START {
 
         101 => 5,
         102 => 4,
-        112 => 10,
-        113 => 11,
+        112 => 0,
+        113 => 1,
         221 => 5,
-        222 => 3,
+        222 => 43,
         233 => 135,
+        237 => 45,
         234 => 5,
-        235 => 13,
-        251 => 6,
+        235 => 43,
+        251 => 67,
         305 => 2,
         441 => 5,
         442 => 8,
         501 => 5,
         502 => 4,
+        510 => 73,
         607 => 8,
     );
     
-    my %folded_of = fold_clusters(\%count_of);
+    \my %unfolded_of = unfold_clusters( count_of => \%count_of);
     
-    print STDERR "%folded_of = ";
+    print STDERR "%unfolded_of = ";
     
     use DDP;
-    p %folded_of;
+    p %unfolded_of;
 
-}
-
-sub natatime ($@) {
-    my $n    = shift;
-    my @list = @_;
-
-    return sub {
-        return splice @list, 0, $n;
-      }
 }
 
 1;
