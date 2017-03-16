@@ -2,45 +2,119 @@ package Actium::Clusterize 0.012;
 
 use Actium::Preamble;
 
-use Sub::Exporter -setup => { exports => [qw(fold_clusters)] };    ### DEP ###
+use DDP;
+
+use Sub::Exporter -setup => { exports => [qw(unfold_clusters)] };    ### DEP ###
 
 sub unfold_clusters {
 
-    ( my $size, \my %count_of_leaf ) = _validate_unfold(@_);
+    ( my $size, \my %original_count ) = _validate_unfold(@_);
 
-    \my ( @roots, %count_of_node, %children_of, %leaves_of )
-      = _nodes( \%count_of_leaf );
+    ## pad leaves to the longest length, with spaces
 
-    my @to_process = @roots;
+    my $leaf_length = u::max( map {length} keys %original_count );
+
+    my %count_of_leaf;
+    foreach my $original_leaf ( keys %original_count ) {
+        my $newleaf = _pad( length => $leaf_length, original => $original_leaf , padding => " ");
+        $count_of_leaf{$newleaf} = $original_count{$original_leaf};
+    }
+
+    my ( %count_of_node, %leaves_of, %is_a_root, %children_of );
+
+    foreach my $leaf ( keys %count_of_leaf ) {
+        my @chars = split( //, $leaf );
+        if ( @chars < $leaf_length ) {
+            push @chars, " " x ( $leaf_length - @chars );
+        }
+
+        my $leafcount = $count_of_leaf{$leaf};
+        $leaves_of{$leaf}{$leaf} = 1;
+
+        while ( @chars > 1 ) {
+
+            my $node = join( $EMPTY, @chars );
+            $count_of_node{$node} += $leafcount;
+
+            pop @chars;
+
+            my $parent = join( $EMPTY, @chars );
+            $leaves_of{$parent}{$leaf}   = 1;
+            $children_of{$parent}{$node} = 1;
+
+        }
+
+        $is_a_root{ $chars[0] } = 1;
+        $count_of_node{ $chars[0] } += $leafcount;
+
+    } ## tidy end: foreach my $leaf ( keys %count_of_leaf)
+
+    my @to_process = keys %is_a_root;
     my @processed;
 
   NODE:
     while (@to_process) {
 
         my $node = shift @to_process;
-        if (   $count_of_node{$node} < $size
-            or not exists $children_of{$node}
-            or scalar $children_of{$node} == 1 )
-        {
+
+        print STDERR "A: to process =";
+        my %z = %count_of_node{@to_process};
+        p %z;
+        say STDERR "B: processing: $node, count = ", $count_of_node{$node};
+        %z = %count_of_node{@processed};
+        print STDERR "C: processed =";
+        p %z;
+
+        #is this a leaf? if so, we're done with it
+        if ( not exists $children_of{$node} ) {
             push @processed, $node;
-            next NODE;
         }
 
-        foreach my $child_idx ( reverse 0 .. $#{ $children_of{$node} } ) {
+        #        # is there only one child? bump it up
+        #        if ( ( scalar keys $children_of{$node}->%* ) == 1 ) {
+        #            unshift @to_process, keys %{ $children_of{$node} };
+        #            next NODE;
+        #        }
 
-            my $child = $children_of{$node}[$child_idx];
+        #        # if it's smaller than specified size, we're done with it
+        #        if ( $count_of_node{$node} < $size ) {
+        #            push @processed, $node;
+        #            next NODE;
+        #        }
 
-            if ( $count_of_node{$child} >= $size
-                and ( $count_of_node{$node} - $count_of_node{$child} )
-                >= $size )
-            {
-                $count_of_node{$node} -= $count_of_node{$child};
-                push @processed, $child;
-                unshift @to_process, $node;
-                splice( $children_of{$node}->@*, $child_idx, 1 );
-                delete $leaves_of{$node}{$child};
-            }
+        # sort children by size
 
+        my @children
+          = reverse sort { $count_of_node{$a} <=> $count_of_node{$b} }
+          keys $children_of{$node}->%*;
+
+        # as long as there are children large enough, and which leave
+        # enough left in the node to continue, bump that up
+
+        while ( @children > 1
+            and $count_of_node{ $children[0] } >= $size
+            and ( $count_of_node{$node} - $count_of_node{ $children[0] } )
+            >= $size )
+        {
+
+            my $child = shift @children;
+
+            $count_of_node{$node} -= $count_of_node{$child};
+            delete $children_of{$node}{$child};
+            delete $leaves_of{$node}{$child};
+
+            unshift @to_process, $child;
+
+        }
+
+        if ( @children == 1 ) {
+            # only one child left? process it
+            unshift @to_process, @children;
+        }
+        elsif (@children) {
+            # more than one child? We know none of them can be removed,
+            # so we're done
+            push @processed, $node;
         }
 
     } ## tidy end: NODE: while (@to_process)
@@ -48,10 +122,28 @@ sub unfold_clusters {
     # now @processed is the list of clusters
     # need to return %leaves_of{@processed}
 
+    @processed = sort @processed;
+
+    my %node_of_leaf;
+
+    foreach my $node (@processed) {
+        my @leaves = keys $leaves_of{$node}->%*;
+        foreach (@leaves) {
+            s/ +$//;
+        }
+        #my $displaynode = $node; 
+        #my $displaynode = u::joinseries_ampersand(sort @leaves);
+        my $displaynode = _pad(length => $leaf_length, padding => 'x', original => $node );
+        
+        $node_of_leaf{$_} = $displaynode foreach @leaves;
+    }
+
+    return \%node_of_leaf;
+
 } ## tidy end: sub unfold_clusters
 
 sub _validate_unfold {
-    my %params = validate(
+    my %params = u::validate(
         @_,
         {   size     => { default => 40 },
             count_of => { type    => $PV_TYPE{HASHREF}, optional => 1 },
@@ -76,43 +168,27 @@ sub _validate_unfold {
     return $params{size}, \%count_of;
 } ## tidy end: sub _validate_unfold
 
-sub _nodes {
+sub _pad {
+    
+    my %p = @_;
 
-    \my %count_of_leaf = shift;
+    my $padded_length = $p{length};
+    my $orig          = $p{original};
+    my $orig_length   = length($orig);
+    my $padding = $p{padding};
 
-    my $length = u::max( map {length} keys %count_of_leaf );
+    my $new = $orig;
+    if ( $orig_length < $padded_length ) {
+        $new .= $padding x ( $padded_length - $orig_length );
+    }
 
-    my ( %count_of_node, %leaves_of, %is_a_root, %children_of );
+    return $new;
 
-    foreach my $leaf ( keys %count_of_leaf ) {
-        my @chars = split( //, $leaf );
-        if ( @chars < $length ) {
-            push @chars, " " x ( $length - @chars );
-        }
-        
-        my $leafcount = $count_of_leaf{$leaf};
+}
 
-        while ( @chars > 1 ) {
+1;
 
-            my $node = join( $EMPTY, @chars );
-            $count_of_node{$node} += $leafcount;
-            $leaves_of{$node}{$leaf} = 1;
-
-            pop @chars;
-
-            my $parent = join( $EMPTY, @chars );
-            push $children_of{$parent}->@*, $node;
-
-        }
-
-        $is_a_root{ $chars[0] } = 1;
-        $count_of_node{ $chars[0] } += $leafcount;
-
-    } ## tidy end: foreach my $leaf ( keys %count_of_leaf)
-
-    return [ keys %is_a_root ], \%count_of_node, \%children_of, \%leaves_of;
-
-} ## tidy end: sub _nodes
+__END__
 
 const my $CLUSTER_MINIMUM => 10;
 
