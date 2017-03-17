@@ -726,7 +726,7 @@ sub _get_xhea_filenames {
         # than the simple one this part of the program can deal with
 
         push @xhea_filenames, $filename
-          if in( $filename, @xsdfiles );
+          if u::in( $filename, @xsdfiles );
     }
 
     # so @xhea_filenames contains filename piece of all filenames where
