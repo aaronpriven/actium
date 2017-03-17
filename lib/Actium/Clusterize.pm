@@ -2,24 +2,32 @@ package Actium::Clusterize 0.012;
 
 use Actium::Preamble;
 
-use Sub::Exporter -setup => { exports => [qw(unfold_clusters)] };    ### DEP ###
-use Set::IntSpan; # dep
+use Sub::Exporter -setup => { exports => [qw(clusterize)] };    ### DEP ###
+use Set::IntSpan;                                               ### DEP ###
 
-sub unfold_clusters {
+sub clusterize {
 
-    ( my $size, \my %original_count ) = _validate_unfold(@_);
+    ( my $size, \my %original_count, my $root_digits ) = _validate(@_);
 
     ## pad leaves to the longest length, with spaces
 
     my $leaf_length = u::max( map {length} keys %original_count );
 
-    my %count_of_leaf;
-    foreach my $original_leaf ( keys %original_count ) {
-        my $newleaf = _pad( length => $leaf_length, original => $original_leaf , padding => " ");
-        $count_of_leaf{$newleaf} = $original_count{$original_leaf};
+    unless (u::looks_like_number($root_digits)
+        and $root_digits >= 0
+        and $root_digits < $leaf_length )
+    {
+        croak "Invalid root digit specification $root_digits";
     }
 
-    my ( %count_of_node, %leaves_of, %is_a_root, %children_of );
+    my ( %count_of_leaf, %original_leaf_of );
+    foreach my $original_leaf ( keys %original_count ) {
+        my $newleaf = sprintf( '%-*s', $leaf_length, $original_leaf );
+        $count_of_leaf{$newleaf}    = $original_count{$original_leaf};
+        $original_leaf_of{$newleaf} = $original_leaf;
+    }
+
+    my ( %count_of_node, %is_a_root, %children_of );
 
     foreach my $leaf ( keys %count_of_leaf ) {
         my @chars = split( //, $leaf );
@@ -28,23 +36,22 @@ sub unfold_clusters {
         }
 
         my $leafcount = $count_of_leaf{$leaf};
-        $leaves_of{$leaf}{$leaf} = 1;
 
-        while ( @chars > 1 ) {
+        while ( @chars > $root_digits ) {
 
             my $node = join( $EMPTY, @chars );
             $count_of_node{$node} += $leafcount;
 
             pop @chars;
 
-            my $parent = join( $EMPTY, @chars );
-            $leaves_of{$parent}{$leaf}   = 1;
+            my $parent = @chars ? join( $EMPTY, @chars ) : 'EMPTY';
             $children_of{$parent}{$node} = 1;
 
         }
 
-        $is_a_root{ $chars[0] } = 1;
-        $count_of_node{ $chars[0] } += $leafcount;
+        my $root = @chars ? join( $EMPTY, @chars ) : 'EMPTY';
+        $is_a_root{$root} = 1;
+        $count_of_node{$root} += $leafcount;
 
     } ## tidy end: foreach my $leaf ( keys %count_of_leaf)
 
@@ -78,7 +85,6 @@ sub unfold_clusters {
 
             $count_of_node{$node} -= $count_of_node{$child};
             delete $children_of{$node}{$child};
-            delete $leaves_of{$node}{$child};
 
             unshift @to_process, $child;
 
@@ -87,12 +93,64 @@ sub unfold_clusters {
         if ( @children == 1 ) {
             # only one child left? process it
             unshift @to_process, @children;
+            next NODE;
         }
-        elsif (@children) {
-            # more than one child? We know none of them can be removed,
-            # so we're done
-            push @processed, $node;
-        }
+
+        @children = sort { $a <=> $b } @children;
+
+        my $partition_letter = 'a';
+
+      PARTITION:
+        while ( @children >= 4
+            and ( u::sum( @count_of_node{@children} ) ) >= $size * 2 )
+        {
+
+            # so it may be possible to partition these.
+            # Any single node that could have worked
+            # has been filtered out already, so there must be at
+            # least two nodes on either side of the partition, hence minimum 4
+
+            # I am intentionally limiting partitions to consecutive remaining
+            # items (I don't want it to do [701,704] and [702,703]).
+            # if there is a pathological situation where that can't be
+            # partitioned (e.g., 701 => 1, 702=> 2, 703 => 38, 704  => 39 )
+            # it's still unlikely to lead to absurdly large clusters
+
+            foreach my $last_item_of_partition ( 1 .. $#children - 2 ) {
+
+                my @partition       = @children[ 0 .. $last_item_of_partition ];
+                my $partition_count = u::sum( @count_of_node{@partition} );
+
+                if ( $partition_count >= $size ) {
+
+                    # do the partition
+
+                    splice( @children, 0, $last_item_of_partition + 1 );
+
+                    my $partition_node = $node . ++$partition_letter;
+                    push @processed, $partition_node;
+
+                    $count_of_node{$partition_node} = $partition_count;
+                    $count_of_node{$node} -= $partition_count;
+
+                    foreach my $partition_child (@partition) {
+                        $children_of{$partition_node}{$partition_child} = 1;
+                        delete $children_of{$node}{$partition_child};
+                    }
+
+                    next PARTITION;
+
+                } ## tidy end: if ( $partition_count ...)
+
+            } ## tidy end: foreach my $last_item_of_partition...
+
+            # got to the end, no partition possible
+
+            last PARTITION;
+
+        } ## tidy end: PARTITION: while ( @children >= 4 and...)
+
+        push @processed, $node;
 
     } ## tidy end: NODE: while (@to_process)
 
@@ -103,69 +161,310 @@ sub unfold_clusters {
 
     my %node_of_leaf;
 
-    foreach my $node (@processed) {
-        my @leaves = keys $leaves_of{$node}->%*;
-        foreach (@leaves) {
-            s/ +$//;
+    foreach my $processed_node (@processed) {
+
+        # walk children, finding their leaves
+
+        my @to_get_leaves_of = $processed_node;
+        my @leaves;
+
+        while (@to_get_leaves_of) {
+            my $node = shift @to_get_leaves_of;
+
+            my @children = keys $children_of{$node}->%*;
+            @children = ($node) unless @children;
+
+            foreach my $child (@children) {
+                if ( exists $original_leaf_of{$child} ) {
+                    push @leaves, $original_leaf_of{$child};
+                }
+                else {
+                    push @to_get_leaves_of, $child;
+                }
+            }
+
         }
-        #my $displaynode = $node; 
-        #my $displaynode = u::joinseries_ampersand(sort @leaves);
-        #my $displaynode = _pad(length => $leaf_length, padding => 'x', original => $node );
-        my $span = Set::IntSpan::->new(\@leaves);
+
+        my $span        = Set::IntSpan::->new( \@leaves );
         my $displaynode = $span->run_list;
-        #$displaynode =~ s/,/, /g;
-        
+
         $node_of_leaf{$_} = $displaynode foreach @leaves;
-    }
+    } ## tidy end: foreach my $processed_node ...
 
     return \%node_of_leaf;
 
-} ## tidy end: sub unfold_clusters
+} ## tidy end: sub clusterize
 
-sub _validate_unfold {
+sub _validate {
     my %params = u::validate(
         @_,
-        {   size     => { default => 40 },
-            count_of => { type    => $PV_TYPE{HASHREF}, optional => 1 },
-            clusters => { type    => $PV_TYPE{ARRAYREF}, optional => 1 },
+        {   size        => { default => 40 },
+            root_digits => { type    => $PV_TYPE{SCALAR}, default => 1 },
+            count_of    => { type    => $PV_TYPE{HASHREF}, optional => 1 },
+            items    => { type    => $PV_TYPE{ARRAYREF}, optional => 1 },
         }
     );
 
     my %count_of;
 
-    if ( exists $params{clusters} ) {
-        croak "Cannot specify both count_of and clusters"
+    if ( exists $params{items} ) {
+        croak "Cannot specify both count_of and items"
           if exists $params{count_of};
-        $count_of{$_}++ foreach ( $params{clusters}->@* );
+        $count_of{$_}++ foreach ( $params{items}->@* );
     }
     elsif ( exists $params{count_of} ) {
         \%count_of = $params{count_of};
     }
     else {
-        croak "Must specify either count_of or clusters";
+        croak "Must specify either count_of or items";
     }
 
-    return $params{size}, \%count_of;
-} ## tidy end: sub _validate_unfold
-
-sub _pad {
-    
-    my %p = @_;
-
-    my $padded_length = $p{length};
-    my $orig          = $p{original};
-    my $orig_length   = length($orig);
-    my $padding = $p{padding};
-
-    my $new = $orig;
-    if ( $orig_length < $padded_length ) {
-        $new .= $padding x ( $padded_length - $orig_length );
-    }
-
-    return $new;
-
-}
+    return $params{size}, \%count_of, $params{root_digits};
+} ## tidy end: sub _validate
 
 1;
 
 __END__
+
+=encoding utf8
+
+=head1 NAME
+
+Actium::Clusterize - Break lists of bus stops, etc.,  into manageable clusters
+
+=head1 VERSION
+
+This documentation refers to version 0.012
+
+=head1 SYNOPSIS
+
+ use Actium::Clusterize('clusterize');
+ 
+ my $clusters_of_r =  clusterize (
+     count_of => { 101 => 5, 102 => 2 }
+     );
+     
+or
+
+ my $clusters_of_r =  clusterize (
+     items => [ 101, 101, 101, 101, 101 , 102, 102, 102 ]
+     );
+     
+or
+
+ # either way, $clusters_of_r = { '101,102' => 8 }
+ 
+More usefully:
+
+    my %count_of = (
+        101 => 5,
+        102 => 4,
+        112 => 0,
+        113 => 1,
+        221 => 5,
+        222 => 43,
+        233 => 135,
+        237 => 45,
+        234 => 5,
+        235 => 43,
+        251 => 67,
+        305 => 2,
+        441 => 5,
+        442 => 8,
+        501 => 5,
+        502 => 4,
+        510 => 73,
+        607 => 8,
+        701 => 21,
+        702 => 21,
+        703 => 21,
+        704 => 41,
+        705 => 21,
+    );
+
+ my $clusters_of_r =  clusterize ( count_of => \%count_of );
+
+ # now $clusters_of_r = {
+ #   101 =>  '101-102,112-113',
+ #   102 =>  '101-102,112-113',
+ #   112 =>  '101-102,112-113',
+ #   113 =>  '101-102,112-113',
+ #   221 =>  '221-222',
+ #   222 =>  '221-222',
+ #   233 =>  '233',
+ #   234 =>  '234-235',
+ #   235 =>  '234-235',
+ #   237 =>  '237',
+ #   251 =>  '251',
+ #   305 =>  '305',
+ #   441 =>  '441-442',
+ #   442 =>  '441-442',
+ #   501 =>  '501-502,510',
+ #   502 =>  '501-502,510',
+ #   510 =>  '501-502,510',
+ #   607 =>  '607',
+ #   701 =>  '701-702',
+ #   702 =>  '701-702',
+ #   703 =>  '703,705',
+ #   704 =>  '704',
+ #   705 =>  '703,705',
+ #}
+ 
+=head1 DESCRIPTION
+
+Actium::Clusterize combines lists of items into reasonably-sized chunks.
+
+The idea is that there are a certain number of items, each one
+divided into a category that is an integer.  Maybe there are different
+zones of bus stops, where each zone is given a number: zone 101,
+zone 102, zone 304, and so on.  If each zone has a significant
+number of stops that need work, not much is needed: just make up a
+separate work order list for each zone. But what if some zones only
+have one or two stops? A separte work order for each stop is overkill. 
+This routine combines small zones into larger ones.
+
+The routine assumes that the numbers are hierarchies, and puts together
+zones that start with the same numbers.  So, for example, it treats
+502 and 5021 as more closely related than 502 and 503, or 5021 and 5120.
+This is intentional, as it should make it easier (for example) to add new 
+zones in between other zones, without having to rename them.
+
+=head1 SUBROUTINES
+
+=over
+
+=item B<clusterize()>
+
+The B<clusterize> subroutine accepts named parameters. Either C<count_of> or 
+C<items> must be specified. The other two parameters, C<root_digits> and 
+C<size>, are optional.
+
+=over 
+
+=item C<count_of>
+
+This should be a reference to a hash, where the keys are the zone numbers and
+the values are the quantities in each zone.
+
+ my $clusters_of_r = clusterize ( count_of => { 101 => 5, 102 => 2 } );
+ 
+=item C<items>
+
+This should be a reference to an array, each containing a zone number.
+
+ my $clusters_of_r = clusterize ( items => { qw/101 101 101 101 101 102 102/);
+     
+The B<clusterize> subroutine will convert this into a count. Specify whichever
+is easier.
+
+=item C<root_digits> (default: 1)
+
+The B<clusterize> routine does not combine zones that have different roots.
+For example, using the default, it will never combine zones beginning
+with 1 and zones beginning with 2, even if only one stop begins with 1. 
+This parameter allows the number of digits treated as root digits to be specified:
+
+=over
+
+0 -- All items could be combined.
+
+1 -- Items 1000 and 1999 could be combined, but not items 1010 and 2010.
+
+2 -- Items 1010 and 1020 could be combined, but not items 1010 and 1100, or
+items 1100 and 2100.
+
+=back
+
+And so forth.
+
+=item C<size> (default: 40)
+
+This is the number of items that's considered the minimum size for a work 
+order.  Work zones with a quantity of items smaller than this will be combined
+with other work zones (unless those work zones have different roots).
+
+So, for example, 
+
+ my $clusters_of_r = clusterize ( count_of => { 101 => 45, 102 => 42 } );
+ 
+will yield C<{ 101 => 101, 102 = 102 }>, but 
+ 
+ my $clusters_of_r = clusterize ( 
+      count_of => { 101 => 45, 102 => 42 } , size => 50);
+      
+will yield C<{ '101' => '101-102', '102' => '101-102' }>.
+
+=back
+
+The result from B<clusterize> will be a reference to a hash. The keys will be
+the original items passed to B<clusterize>. The values will be the new cluster
+that they are placed in, expressed as a combination of ranges. So, for example, 
+a new cluster might be "101" where a single work zone makes up a cluster,
+or "102-103" or even "102-105,107-108,150-151" if that's the result.
+
+=back
+
+=head1 DIAGNOSTICS
+
+=over 
+
+=item *
+
+Invalid root digit specification $root_digits
+
+The root_digit parameter was not a number, or negative, or more digits
+than the longest work zone number had.
+
+=item * 
+
+Cannot specify both count_of and items
+
+=item *
+
+Must specify either count_of or items
+
+One, and only one, of C<count_of> or C<items> must be specified 
+to B<clusterize>. If neither is specified, there's nothing to work on;
+if both are specified, it's not clear which should be worked on.
+
+=back
+
+=head1 DEPENDENCIES
+
+=over
+
+=item * 
+
+Actium::Preamble.
+
+=item *
+
+Set::IntSpan.
+
+=back
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
+
