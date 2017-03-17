@@ -61,7 +61,7 @@ sub START {
 
     foreach my $route ( sortbyline keys %seen_stops_of ) {
 
-        next if ( in( $route, qw/BSD BSH BSN 399 51S/ ) );
+        next if ( u::in( $route, qw/BSD BSH BSN 399 51S/ ) );
 
         my $numstops = scalar keys %{ $seen_stops_of{$route} };
 

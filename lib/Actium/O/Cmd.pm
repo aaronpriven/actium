@@ -362,7 +362,8 @@ sub _build_module {
     }
 
     my $module = "${COMMAND_PREFIX}::$subcommands{$subcommand}";
-    require_module($module) or die " Couldn't load module $module: $OS_ERROR";
+    u::require_module($module) 
+        or die " Couldn't load module $module: $OS_ERROR";
     return $module;
 
 } ## tidy end: sub _build_module

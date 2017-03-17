@@ -47,7 +47,7 @@ sub START {
 
                 my ( $row, $col ) = @_;
 
-                if ( in( $col, @chinese_cols ) ) {
+                if ( u::in( $col, @chinese_cols ) ) {
 
                     my @components = $_ =~ /[!-~]+|[^!-~]+/g;
 
