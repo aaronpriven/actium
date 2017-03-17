@@ -44,9 +44,8 @@ sub START {
     }
 
     if ( defined $output_file ) {
-        require File::Slurp::Tiny;    ### DEP ###
-        File::Slurp::Tiny::write_file( $output_file, $tabbed,
-            binmode => ':utf8' );
+        require File::Slurper;
+        File::Slurper::write_text($output_file, $tabbed);
     }
     else {
         my $signup = $env->signup;

@@ -7,7 +7,7 @@ use warnings;
 
 use Actium::Preamble;
 use Actium::StopReports('stops2kml');
-use File::Slurp::Tiny('write_file');    ### DEP ###
+use File::Slurper('write_text');    ### DEP ###
 
 sub HELP {
 
@@ -55,7 +55,7 @@ sub START {
 
     my $kml_text = stops2kml( $actiumdb, $workzones );
 
-    write_file( $outputfile, $kml_text, binmode => ':utf8' );
+    write_text( $outputfile, $kml_text );
 
     return;
 
