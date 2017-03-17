@@ -17,15 +17,12 @@ BEGIN {
     @module_rs = (
         [qw[Actium::Constants]],
         [qw[Actium::Crier cry last_cry]],
-        [qw[Actium::Util in ]],
         [qw[Carp]],
         # Carp ### DEP ###
         [qw[Const::Fast]],
         # Const::Fast ### DEP ###
         [qw[English -no-match-vars]],
         # English ### DEP ###
-        [qw[Module::Runtime require_module]],
-        # Module::Runtime ### DEP ###
         [qw[autodie]],
         # autodie ### DEP ###
         [qw[feature :5.16 refaliasing postderef postderef_qq ]],
