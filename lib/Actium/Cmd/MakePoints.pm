@@ -142,7 +142,7 @@ sub START {
                     qw[
                       SignID Active stp_511_id Status SignType Cluster Sidenote
                       Agency ShelterNum NonStopLocation NonStopCity
-                      Delivery City
+                      Delivery City TIDFile
                       ]
                 ],
             },
@@ -270,8 +270,15 @@ sub START {
             $nonstoplocation
               = $signs{$signid}{NonStopLocation} . ', ' . $nonstopcity;
         }
+        
+        my $smoking;
+        #if ($signtype =~ /^TID/) {
+        #    $smoking = $signs{$signid}{TIDFile};
+        #}    
+        # before this is useful we need to give every smoking box
+        # a scripting label, on every template. Sigh.
 
-        my $smoking = $smoking{$city} // $IDT->emdash;
+        $smoking //= $smoking{$city} // $IDT->emdash;
 
         my $omitted_of_stop_r;
         if ( exists $stops_of_sign{$signid} ) {
