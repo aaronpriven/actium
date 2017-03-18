@@ -131,12 +131,13 @@ sub _build_color_cache {
 
 sub _build_agency_cache {
     my $self = shift;
-    return $self->_build_table_cache('agency',
+    return $self->_build_table_cache(
+        'agency',
         qw(
           agency_id            agency_lang
           agency_linemap_url   agency_url          agency_abbr
           agency_linesked_url  agency_mapversion   agency_name
-          agency_phone         agency_timezone     agency_effective_date
+          agency_phone         agency_timezone
           agency_fare_url
           )
     );
@@ -465,7 +466,7 @@ sub field_of_referenced_place {
 }
 
 sub dereference_place {
-    my $self = shift;
+    my $self  = shift;
     my $place = shift;
     return $place unless $place;
     my $deref_place = $self->field_of_referenced_place(
@@ -514,19 +515,19 @@ sub linegrouptypes_in_order {
 sub agency_or_abbr_row {
     my $self = shift;
     my $name = shift;
-    
-    if ($self->agency_exists($name)) {
+
+    if ( $self->agency_exists($name) ) {
         my $row_r = $self->agency_row_r($name);
-        return ($name, $row_r->{agency_abbr}, $row_r);
+        return ( $name, $row_r->{agency_abbr}, $row_r );
     }
-    
-    if ($self->agency_abbr_exists($name)) {
+
+    if ( $self->agency_abbr_exists($name) ) {
         my $row_r = $self->agency_abbr_row_r($name);
-        return ($row_r->{agency_id}, $name, $row_r);
+        return ( $row_r->{agency_id}, $name, $row_r );
     }
-    
+
     return;
-    
+
 }
 
 my $url_make_cr = sub {
@@ -584,14 +585,26 @@ sub agency_effective_date {
     my $self         = shift;
     my $agency       = shift;
     my $agency_row_r = $self->agency_row_r($agency);
-    my $str          = $agency_row_r->{agency_effective_date};
-    $str =~ s/[\s\0]+\z//;
 
-    my @ymd = split( /-/, $str );
+    my %line_cache = $self->line_cache;
 
+    my @lines = grep { $line_cache{$_}{agency_id} eq $agency } keys %line_cache;
+
+    my @dates = map { $line_cache{$_}{TimetableDate} } @lines;
+
+    return _newest_date(@dates);
+
+}
+
+sub _newest_date {
+
+    my @dates = @_;
+    require Actium::EffectiveDate;
     require Actium::O::DateTime;
-    my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
-    return $dt;
+
+    return Actium::O::DateTime->new(
+        Actium::EffectiveDate::newest_date(@dates) );
+
 }
 
 sub agency_effective_date_indd {
@@ -680,7 +693,7 @@ has _lines_of_linegrouptype_r => (
 );
 
 sub lines {
-    my $self=shift;
+    my $self = shift;
     return $self->line_keys;
 }
 
@@ -817,7 +830,7 @@ sub _build_line_descrips_of_transithub {
             $line_descrips_of_transithub{$transithub}{$line} = $desc;
         }
     }
-    
+
     return \%line_descrips_of_transithub;
 
 }
@@ -831,7 +844,7 @@ sub descrips_of_transithubs_indesign {
     my %params = u::validate( @_, { signup => 1, } );
     my $signup = $params{signup};
 
-    my $effdate = $self->agency_effective_date('ACTransit')->long_en;
+    my %line_cache = $self->line_cache;
 
     require Actium::Text::InDesignTags;
     my %descrips_of_hubs;
@@ -841,7 +854,10 @@ sub descrips_of_transithubs_indesign {
         my %descrip_of = $self->line_descrips_of_transithub($transithub);
 
         my @descrip_texts;
+        my @lines_of_hub;
+
         foreach my $line ( sortbyline keys %descrip_of ) {
+            push @lines_of_hub, $line;
             my $descrip = $descrip_of{$line};
 
             push @descrip_texts,
@@ -854,7 +870,14 @@ sub descrips_of_transithubs_indesign {
               );
 
         }
+        
+        next unless @lines_of_hub;
 
+        my @dates = map { $line_cache{$_}{TimetableDate} } @lines_of_hub;
+        my $effdate_obj = _newest_date(@dates);
+        my $effdate = $effdate_obj->long_en;
+        
+        
         $descrips_of_hubs{$transithub} = u::joinempty(
             $IDT->start,
             $IDT->parastyle('LineDescrip_TitleLine'),
@@ -959,11 +982,10 @@ sub line_descrip_html {
         my @lines = $self->_lines_of_linegrouptype($linegrouptype);
 
         # heading
-        my $count = scalar @lines;
-        my $pub   = "$linegrouptype Lines";
-        my $anchor
-          = $linegrouptype =~ s/ /_/gr;
-          #= $linegrouptype eq 'All Nighter' ? 'AllNighter' : $linegrouptype;
+        my $count  = scalar @lines;
+        my $pub    = "$linegrouptype Lines";
+        my $anchor = $linegrouptype =~ s/ /_/gr;
+        #= $linegrouptype eq 'All Nighter' ? 'AllNighter' : $linegrouptype;
 
         $html
           .= qq{<table style="border-collapse: collapse;" border="1">}
