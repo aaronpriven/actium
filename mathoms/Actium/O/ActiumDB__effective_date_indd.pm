@@ -1,42 +1,26 @@
-const my @ALL_LANGUAGES => qw/en es zh/;
-
-sub _effective_date_indd {
-    my $self   = shift;
-    my $dt     = $self->effdate;
-    my $is_bsh = shift;
-
-    my $i18n_id = 'effective_colon';
-
+sub agency_effective_date_indd {
+    my $self      = shift;
+    my $i18n_id   = shift;
+    my $color     = shift;
     my $metastyle = 'Bold';
 
-    my $month   = $dt->month;
-    my $oddyear = $dt->year % 2;
-    my ( $color, $shading, $end );
+    my $cachekey = "$i18n_id|$color";
 
-    # EFFECTIVE DATE and colors
-    if ($is_bsh) {
-        $color   = $EMPTY;
-        $shading = $EMPTY;
-        $end     = $EMPTY;
-    }
-    else {
-        $color   = $COLORS{$oddyear};
-        $color   = $IDT->color($color);
-        $shading = $SHADINGS{ $month . $oddyear };
-        $shading = "<pShadingColor:$shading>";
-        $end     = '<pShadingColor:>';
-    }
+    state $cache;
+    return $cache->{$cachekey} if exists $cache->{$cachekey};
 
-    my $retvalue = $IDT->parastyle('sideeffective') . $shading . $color;
+    my $dt         = $self->effective_date(agency => $DEFAULT_AGENCY);
+    my $i18n_row_r = $self->i18n_row_r($i18n_id);
 
-    my $i18n_row_r = $Actium::Cmd::MakePoints::actiumdb->i18n_row_r($i18n_id);
+    require Actium::Text::InDesignTags;
+    const my $nbsp => $IDT->nbsp;
 
     my @effectives;
     foreach my $lang (@ALL_LANGUAGES) {
         my $method = "long_$lang";
         my $date   = $dt->$method;
         if ( $lang eq 'en' ) {
-            $date =~ s/ /$NBSP/g;
+            $date =~ s/ /$nbsp/g;
         }
 
         $date = $IDT->encode_high_chars_only($date);
@@ -61,7 +45,6 @@ sub _effective_date_indd {
 
     } ## tidy end: foreach my $lang (@ALL_LANGUAGES)
 
-    return $retvalue . join( $IDT->hardreturn, @effectives ) . $end;
+    return $cache->{$cachekey} = join( $IDT->hardreturn, @effectives );
 
-} ## tidy end: sub _effective_date_indd
-
+} ## tidy end: sub agency_effective_date_indd
