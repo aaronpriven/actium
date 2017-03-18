@@ -35,7 +35,6 @@ Actium::O::Cmd->new(
         k2id          => \'makepoints',
         linedescrip   => 'LineDescrip',
         linesbycity   => 'LinesByCity',
-        makebags      => 'MakeBags',
         makepoints    => 'MakePoints',
         matrix        => 'TimetableMatrixText',
         mr_copy       => 'MRCopy',
