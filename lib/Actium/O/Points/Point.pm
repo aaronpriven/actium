@@ -18,7 +18,6 @@ use Actium::Moose;
 
 use Actium::Sorting::Line (qw(byline sortbyline));
 use List::Compare::Functional('get_unique');    ### DEP ###
-use Actium::EffectiveDate ('newest_date');
 use Actium::O::DateTime;
 
 const my $IDPOINTFOLDER => 'idpoints2016';
