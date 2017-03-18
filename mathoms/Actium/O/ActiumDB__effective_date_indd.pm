@@ -1,3 +1,30 @@
+sub agency_effective_date {
+    my $self         = shift;
+    my $agency       = shift;
+    my $agency_row_r = $self->agency_row_r($agency);
+
+    my %line_cache = $self->line_cache;
+
+    my @lines = grep { $line_cache{$_}{agency_id} eq $agency } keys %line_cache;
+
+    my @dates = map { $line_cache{$_}{TimetableDate} } @lines;
+    push @dates, $agency_row_r->{agency_effective_date};
+
+    return _newest_date(@dates);
+
+}
+
+sub _newest_date {
+
+    my @dates = @_;
+    require Actium::EffectiveDate;
+    require Actium::O::DateTime;
+
+    return Actium::O::DateTime->new(
+        Actium::EffectiveDate::newest_date(@dates) );
+
+}
+
 sub agency_effective_date_indd {
     my $self      = shift;
     my $i18n_id   = shift;
