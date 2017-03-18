@@ -123,7 +123,7 @@ sub START {
         die "Agency " . $env->option('agency') . " not found.\n";
     }
 
-    #my $effdate = $actiumdb->agency_effective_date($run_agency);
+    my $effdate = $actiumdb->effective_date(agency => $run_agency);
 
     $actiumdb->load_tables(
         requests => {
@@ -332,7 +332,7 @@ sub START {
         # 1) Read kpoints from file
 
         my $point = Actium::O::Points::Point->new_from_kpoints(
-            $stopid, $signid,    #$effdate,
+            $stopid, $signid,    $effdate,
             $agency,  $omitted_of_stop_r, $nonstoplocation,
             $smoking, $delivery,          $signup
         );
