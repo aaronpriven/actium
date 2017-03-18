@@ -62,7 +62,7 @@ sub make_bags {
     my $actium_db = $params{actium_db};
 
     my $effectivedate =
-      $actium_db->agency_effective_date('ACTransit');
+      $actium_db->effective_date(agency => 'ACTransit');
       
     $effectivedate = $effectivedate->month_name . $IDT->nbsp . $effectivedate->day;
 
