@@ -340,7 +340,7 @@ sub new_from_kpoints {
 
     my @dates
       = map { $Actium::Cmd::MakePoints::lines{$_}{TimetableDate} } @all_lines;
-
+      
     $self->_set_effdate( Actium::O::DateTime->new( newest_date(@dates) ) );
 
     return $self;
@@ -1174,9 +1174,15 @@ sub format_bottom {
     print $botfh " Shelter site #"
       . $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum} . "."
       if $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum};
+      
+    if ($Actium::Cmd::MakePoints::signs{$signid}{SignType} !~ /\ATID/i ) {
 
-    print $botfh '<DefineTextVariable:Output Date=<TextVarType:OutputDate><tvDateFormat:MMMM d\, yyyy>>';
-    print $botfh ' Printed <cPageNumType:TextVariable><TextVarName:Output Date><cPageNumType:>.'; 
+       print $botfh '<DefineTextVariable:Output Date=<TextVarType:OutputDate>';
+       print $botfh '<tvDateFormat:MMMM d\, yyyy>>';
+       print $botfh ' Printed <cPageNumType:TextVariable>';
+       print $botfh '<TextVarName:Output Date><cPageNumType:>.'; 
+    
+    }
 
     close $botfh;
 
