@@ -39,7 +39,6 @@ has [qw/stopid signid delivery agency/] => (
 
 has effdate => (
     is     => 'ro',
-    writer => '_set_effdate',
     isa    => 'Actium::O::DateTime',
 );
 
@@ -197,8 +196,7 @@ my $i18n_all_cr = sub {
 };
 
 sub new_from_kpoints {
-    my ($class, $stopid, $signid,
-        # $effdate,
+    my ($class, $stopid, $signid, $effdate,
         $agency, $omitted_of_stop_r,
         $nonstoplocation, $smoking, $delivery,
         $signup
@@ -207,7 +205,7 @@ sub new_from_kpoints {
     my $self = $class->new(
         stopid => $stopid,
         signid => $signid,
-        #effdate           => $effdate,
+        effdate           => $effdate,
         agency            => $agency,
         nonstoplocation   => $nonstoplocation,
         smoking           => $smoking,
@@ -336,13 +334,6 @@ sub new_from_kpoints {
 
     } ## tidy end: foreach my $stop_to_import ...
 
-    my @all_lines = u::uniq( map { $_->lines } $self->columns );
-
-    my @dates
-      = map { $Actium::Cmd::MakePoints::lines{$_}{TimetableDate} } @all_lines;
-      
-    $self->_set_effdate( Actium::O::DateTime->new( newest_date(@dates) ) );
-
     return $self;
 
 }    ## <perltidy> end sub new_from_kpoints
@@ -450,9 +441,6 @@ sub sort_columns_and_determine_heights {
     $signtype =~ s/=.*\z//;
     # Don't allow specifying a subtype manually
     # -- it will just treat it as though it were a main type
-
-    #my @subtypes = sort grep {/$signtype=[A-Z]+\z/}
-    #  keys %Actium::Cmd::MakePoints::signtypes;
 
     if ( not( exists( $Actium::Cmd::MakePoints::templates_of{$signtype} ) ) ) {
 
@@ -727,18 +715,6 @@ sub determine_subtype {
 
 sub sort_columns_by_route_etc {
     my $self = shift;
-
- #    my $columnsort = sub {
- #        my ( $aa, $bb ) = @_;
- #        return (
- #                 byline( $aa->head_line(0), $bb->head_line(0) )
- #              or $ewreplace->( $aa->dircode ) <=> $ewreplace->( $bb->dircode )
- #              or $aa->days cmp $bb->days
- #              or $aa->primary_destination cmp $bb->primary_destination
- #        );
- #
- #    };
-
     $self->sort_columns($columnsort_cr);
     return;
 }
@@ -800,45 +776,6 @@ sub format_columns {
                     #$notetext = "Drop Off Only";
                     next;
                 }
-#                if ( $_ eq '72R' ) {
-#                    $notetext
-#                      = 'Buses arrive about every 12 minutes '
-#                      . $IDT->emdash
-#                      . $IDT->softreturn
-#                      . 'See information elsewhere on this sign.';
-#                    next;
-#                }
-#                if ( $_ eq '1R-MIXED' ) {
-#
-#                    $notetext
-#                      = 'Buses arrive about every 12 minutes weekdays, and 15 minutes weekends.'
-#                      . ' (Weekend service to downtown Oakland only.) '
-#                      . $IDT->softreturn
-#                      . 'See information elsewhere on this sign.';
-#
-#                    next;
-#                }
-#
-#                if ( $_ eq '1R' ) {
-#
-#                    if ( $column->days eq '12345' ) {
-#                        $notetext
-#                          = 'Buses arrive about every 12 minutes '
-#                          . $IDT->emdash
-#                          . $IDT->softreturn
-#                          . 'See information elsewhere on this sign.';
-#                    }
-#                    else {
-#
-#                        $notetext
-#                          = 'Buses arrive about every 12 minutes weekdays, 15 minutes weekends '
-#                          . $IDT->emdash
-#                          . $IDT->softreturn
-#                          . 'See information elsewhere on this sign.';
-#                    }
-#
-#                    next;
-#                } ## tidy end: if ( $_ eq '1R' )
 
                 $self->push_error('Unknown note $_');
 
@@ -892,8 +829,6 @@ sub format_columns {
         }    ## <perltidy> end foreach my $i ( 0 .. $column...)
 
         my $column_length = $column->formatted_height;
-        #my $column_length
-        #  = $Actium::Cmd::MakePoints::signtypes{$signtype}{TallColumnLines};
         my $formatted_columns;
 
         if ($column_length) {
@@ -931,7 +866,6 @@ sub format_columns {
 sub format_side {
     my $self    = shift;
     my $signid  = $self->signid;
-    my $effdate = $self->effdate;
     my $is_bsh  = $self->agency eq 'BroadwayShuttle';
 
     my $formatted_side;
@@ -939,24 +873,8 @@ sub format_side {
 
     print $sidefh $self->_effective_date_indd($is_bsh);
 
-    #my $effective_dates
-    #  = $Actium::Cmd::MakePoints::actiumdb->agency_effective_date_indd(
-    #    'effective_colon', $color );
-
     print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
     # blank line to separate effective dates from side notes
-
-#      'Light Face = a.m.', $IDT->softreturn;
-#    print $sidefh $IDT->bold_word('Bold Face = p.m.'), "\r";
-#
-#    if ( $self->has_ab ) {
-#        print $sidefh
-#'Lines that have <0x201C>A Loop<0x201D> and <0x201C>B Loop<0x201D> travel in a circle, beginning ',
-#          'and ending at the same point. The A Loop operates in the clockwise ',
-#          'direction. The B Loop operates in the counterclockwise direction. ',
-#'Look for <0x201C>A<0x201D> or <0x201C>B<0x201D> at the right end of the headsign on the bus. ',
-#          "\r";
-#    }
 
     my $sidenote = $Actium::Cmd::MakePoints::signs{$signid}{Sidenote};
 
@@ -1328,8 +1246,6 @@ sub _effective_date_indd {
         else {
             $phrase .= " " . $IDT->discretionary_lf . $date;
         }
-
-        #$phrase = $IDT->language_phrase( $lang, $phrase, $metastyle );
 
         $phrase =~ s/<CharStyle:Chinese>/<CharStyle:ZH_Bold>/g;
         $phrase =~ s/<CharStyle:([^>]*)>/<CharStyle:$1>$color/g;
