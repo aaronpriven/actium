@@ -302,7 +302,8 @@ EOT
 
     } ## tidy end: foreach my $type ( keys %tables_of_type)
 
-    my $effectivedate = $actiumdb->agency_effective_date('ACTransit')->long_en;
+    my $effectivedate = 
+       $actiumdb->effective_date(agency => 'ACTransit')->long_en;
 
     my $indexfh  = $stoplists_folder->open_write('stops.html');
     my $cindexfh = $stoplists_folder->open_write('c-stops.html');
