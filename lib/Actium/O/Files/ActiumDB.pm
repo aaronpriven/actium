@@ -614,11 +614,8 @@ sub effective_date {
         );
     }
 
-    require Actium::EffectiveDate;
     require Actium::O::DateTime;
-
-    return Actium::O::DateTime->new(
-        Actium::EffectiveDate::newest_date(@dates) );
+    return Actium::O::DateTime->newest_date(@dates);
 
 } ## tidy end: sub effective_date
 
