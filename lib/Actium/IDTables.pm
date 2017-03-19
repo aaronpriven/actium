@@ -7,7 +7,7 @@ use English '-no_match_vars';
 use autodie;
 use Text::Trim;    ### DEP ###
 use Actium::Crier(qw/cry last_cry/);
-use Actium::EffectiveDate (qw[long_date file_date newest_date]);
+use Actium::O::DateTime;
 use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Sorting::Skeds('skedsort');
 use Actium::Constants;
@@ -108,13 +108,11 @@ sub get_pubtt_contents_with_dates {
 
     for my $lines_r ( values %on_timetable_of ) {
         my @lines = @{$lines_r};
+        
+        my $date_obj = $db_obj->effective_date(lines => \@lines);
 
-        my @datestrs
-          = map { $on_timetable_from_db_r->{$_}{'TimetableDate'} } @lines;
-        my $date_obj  = newest_date(@datestrs);
-        my $date      = long_date($date_obj);
-        my $file_date = file_date($date_obj);
-        #my ( $date, $filedate ) = newest_date(@datestrs);
+        my $date      = $date_obj->long_en;
+        my $file_date = $date_obj->ymd('_');
         push @pubtt_contents_with_dates,
           { lines     => [ sortbyline @lines ],
             date      => $date,
