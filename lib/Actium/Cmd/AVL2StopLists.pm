@@ -46,7 +46,6 @@ sub START {
     my $slistsfolder  = $signup->subfolder('slists');
     my $patfolder     = $slistsfolder->subfolder('pat');
     my $linefolder    = $slistsfolder->subfolder('line');
-    my $linewinfolder = $slistsfolder->subfolder('line-win');
 
     my %pat;
     my %tps;
@@ -146,17 +145,6 @@ sub START {
 
                     print $fh "$_\t$desc\n";
                     #print $fh u::jointab($_, $stops{$_}{c_description_full}) , "\n";
-                }
-                close $fh;
-            }
-
-            {
-                open my $fh, '>:utf8', "slists/line-win/$route-$dir.txt"
-                  or die
-                  "Cannot open slists/line-win/$route-$dir.txt for output";
-                print $fh u::jointab( $route, $dir ), "\r\n";
-                foreach (@union) {
-                    print $fh u::jointab( $_, $stops{$_}{c_description_full} ), "\r\n";
                 }
                 close $fh;
             }
