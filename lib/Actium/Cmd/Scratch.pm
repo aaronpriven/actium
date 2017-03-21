@@ -6,8 +6,13 @@ use Actium::O::DateTime;
 
 sub START {
     
-    my $obj = Actium::O::DateTime->from_object(strptime => "02-10-2017");
-
+    my $obj = Actium::O::DateTime->new(strptime => "2017-02-10");
+    
+    use DDP;
+    p $obj;
+    
+    say join("\n" , $obj->fulls->@*);
+    say join("\n" , $obj->longs->@*);
 
 } ## tidy end: sub START
 
