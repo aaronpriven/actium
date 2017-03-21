@@ -11,8 +11,7 @@ use warnings;    ### DEP ###
 
 use Actium::Preamble;
 
-use DateTime;
-our @ISA = qw(DateTime);
+use parent 'DateTime';
 # DateTime ### DEP ###
 
 use overload q{""} => '_stringify';
@@ -24,206 +23,98 @@ sub _stringify {
 
 const my $CONSTRUCTOR => __PACKAGE__ . '->new';
 
-sub new { # needs rewriting so it returns $self
+sub _datetime_arg {
+    my $class = shift;
+    my $arg   = shift;
+    if ( u::is_blessed_ref($arg) ) {
+        return $class->from_object($arg);
+    }
+    return $class->_from_strptime($arg);
+}
+
+sub new {
 
     my $class = shift;
 
     croak "No arguments given to $CONSTRUCTOR" unless @_;
 
-    my %args;
-
     if ( @_ == 1 and not u::is_plain_hashref( $_[0] ) ) {
-        %args = ( datetime => $_[0] );
-    }
-    else {
-        %args = @_;
+        return $class->_datetime_arg(@_);
     }
 
-    my @special_args = (qw[datetime strp cldr ymd]);
+    my %args = @_;
 
-    my $special_argcount = 0;
-    foreach my $special_arg (@special_args) {
-        $special_argcount++ if exists $args{$special_arg};
-    }
+    my @exclusive_args         = (qw[datetime strp cldr]);
+    my $exclusive_args_display = u::joinseries_or(@exclusive_args);
+    my $exclusive_argcount     = scalar( @args{@exclusive_args} ) // 0;
 
-    croak "Can't specify more than one of (@special_args) to $CONSTRUCTOR"
-      if $special_argcount > 1;
+    croak
+      "Can't specify more than one of ($exclusive_args_display) to $CONSTRUCTOR"
+      if $exclusive_argcount > 1;
 
     my $pattern;
-    if ( $special_argcount and exists $args{pattern} ) {
-        $pattern = delete $args{pattern};
+    if ( exists $args{pattern} ) {
+        if ($exclusive_argcount) {
+            $pattern = delete $args{pattern};
+        }
+        else {
+            croak "Can't specify a pattern without specifying "
+              . "one of $exclusive_args_display to "
+              . $CONSTRUCTOR;
+        }
     }
 
-    croak "Can't specify both a special argument (one of @special_args) "
-      . "and also DateTime arguments to $CONSTRUCTOR"
-      if $special_argcount == 1 and ( scalar keys %args > 1 );
+    croak(  "Can't specify both a exclusive argument "
+          . "(one of $exclusive_args_display)"
+          . " and also DateTime arguments to $CONSTRUCTOR" )
+      if $exclusive_argcount == 1 and ( scalar keys %args > 1 );
 
-    if ($special_argcount) {
+    return $class->_datetime_arg( $args{datetime} )
+      if ( exists $args{datetime} );
 
-        if ( exists $args{datetime} ) {
-            if ( u::is_blessed_ref( $args{datetime} ) ) {
-                return { object => $args{datetime} };
-            }
+    return $class->_from_strptime( $args{strptime}, $pattern )
+      if ( exists $args{strptime} );
 
-            $args{strptime} = delete $args{datetime};
+    return $class->_from_cldr( $args{cldr}, $pattern )
+      if ( exists $args{cldr} );
+
+    if ( exists $args{ymd} ) {
+
+        if ( not u::is_arrayref( $args{ymd} )
+            or $args{ymd}->@* != 3 )
+        {
+            croak 'Argument to ymd must be a reference '
+              . 'to a three-element array (year, month, and day) in '
+              . $CONSTRUCTOR;
         }
 
-        if ( exists $args{strptime} ) {
-            return { object => _dt_from_string( $args{strptime}, $pattern ) };
-        }
+        croak "Can't specify ymd and also either year, month, or day to"
+          . $CONSTRUCTOR
+          if exists $args{year}
+          or exists $args{month}
+          or exists $args{day};
 
-        if ( exists $args{cldr} ) {
-            return { object => _dt_from_cldr( $args{cldr}, $pattern ) };
-        }
+        my ( $year, $month, $day ) = $args{ymd}->@*;
 
-        if ( exists $args{ymd} ) {
+        %args = (
+            %args,
+            year  => $year,
+            month => $month,
+            day   => $day
+          )
 
-            if ( not u::is_arrayref( $args{ymd} )
-                or $args{ymd}->@* != 3 )
-            {
-                croak 'Argument to ymd must be a reference '
-                  . 'to a three-element array (year, month, and day) in '
-                  . $CONSTRUCTOR;
-            }
+    } ## tidy end: if ( exists $args{ymd})
 
-            my ( $year, $month, $day ) = $args{ymd}->@*;
-
-            %args = (
-                year  => $year,
-                month => $month,
-                day   => $day
-              )
-
-        }
-
-    } ## tidy end: if ($special_argcount)
-
-    return { object => DateTime->new(%args) }
+    return $class->SUPER::new(%args);
 
 } ## tidy end: sub new
-
-#######################################
-## Return international date formats
-
-my %locale_of_language = ( en => 'en_US', es => 'es_US', zh => 'zh_Hans' );
-my @languages = qw/en es zh/;    # for order
-# currently happens to be in alpha order, but Vietnamese or Korean
-# would come after Chinese
-
-# have to rewrite non-moosey
-
-my $format_language_cr = sub {
-    my $self     = shift;
-    my $format   = shift;
-    my $language = shift;
-    my $locale   = shift;
-
-    my $dt     = $self->datetime_obj;
-    my $method = "date_format_$format";
-
-    require DateTime::Locale;
-    require DateTime::Format::CLDR;
-
-    my $dl = DateTime::Locale->load($locale);
-
-    my $cldr = DateTime::Format::CLDR->new(
-        locale  => $locale,
-        pattern => $dl->$method,
-    );
-
-    return $cldr->format_datetime($dt);
-
-};
-
-# There ought to be a way to dynamically generate those but I can't
-# figure it out right now
-
-sub long_en {
-    my $self     = shift;
-    my $language = 'en';
-    my $format   = 'long';
-    my $locale   = $locale_of_language{$language};
-    return $format_language_cr->( $self, $language, $format, $locale );
-}
-
-sub long_es {
-    my $self     = shift;
-    my $language = 'es';
-    my $format   = 'long';
-    my $locale   = $locale_of_language{$language};
-    return $format_language_cr->( $self, $language, $format, $locale );
-}
-
-sub long_zh {
-    my $self     = shift;
-    my $language = 'zh';
-    my $format   = 'long';
-    my $locale   = $locale_of_language{$language};
-    return $format_language_cr->( $self, $language, $format, $locale );
-}
-
-sub full_en {
-    my $self     = shift;
-    my $language = 'en';
-    my $format   = 'full';
-    my $locale   = $locale_of_language{$language};
-    return $format_language_cr->( $self, $language, $format, $locale );
-}
-
-sub full_es {
-    my $self     = shift;
-    my $language = 'es';
-    my $format   = 'full';
-    my $locale   = $locale_of_language{$language};
-    return $format_language_cr->( $self, $language, $format, $locale );
-}
-
-sub full_zh {
-    my $self     = shift;
-    my $language = 'zh';
-    my $format   = 'full';
-    my $locale   = $locale_of_language{$language};
-    return $format_language_cr->( $self, $language, $format, $locale );
-}
-
-sub longs {
-    my $self = shift;
-
-    my @return;
-
-    foreach my $language (@languages) {
-        my $locale = $locale_of_language{$language};
-
-        my $method = "long_$language";
-        push @return, $self->$method;
-    }
-
-    return \@return;
-
-}
-
-sub fulls {
-    my $self = shift;
-
-    my @return;
-
-    foreach my $language (@languages) {
-        my $locale = $locale_of_language{$language};
-
-        my $method = "full_$language";
-        push @return, $self->$method;
-    }
-
-    return \@return;
-
-}
 
 {
 
     my %strp_obj_of;
 
-    sub _dt_from_string {
-
+    sub _from_strptime {
+        my $class   = shift;
         my $datestr = shift;
         my $pattern = shift // $datestr =~ m{/} ? '%m/%d/%Y' : '%Y-%m-%d';
         # %Y - four-digit year (unlike %D)
@@ -232,39 +123,143 @@ sub fulls {
 
         my $strp_obj = $strp_obj_of{$pattern}
           //= DateTime::Format::Strptime->new(
-            pattern => $pattern,
-            locale  => 'en_US'
+            pattern  => $pattern,
+            locale   => 'en_US',
+            on_error => 'croak',
           );
+          
+        my $obj = $strp_obj->parse_datetime($datestr);
 
-        # %Y - four-digit year (unlike %D)
+        # returns a DateTime object.
+        # This re-blesses it into an Actium::O::DateTime object
 
-        return $strp_obj->parse_datetime($datestr);
+        bless $obj, $class;
+        return $obj;
 
+    } ## tidy end: sub _from_strptime
+
+    my %cldr_obj_of;
+
+    sub _from_cldr {
+
+        my $class   = shift;
+        my $datestr = shift;
+        my $pattern = shift // $datestr =~ m{/} ? 'M/d/y' : 'y-d-m';
+
+        require DateTime::Format::CLDR;    ### DEP ###
+
+        my $cldr = $cldr_obj_of{$pattern} //= DateTime::Format::CLDR->new(
+            $pattern => $pattern,
+            locale   => 'en_US',
+            on_error => 'croak',
+        );
+
+        my $obj = $cldr->parse_datetime($datestr);
+
+        # returns a DateTime object.
+        # This re-blesses it into an Actium::O::DateTime object
+
+        bless $obj, $class;
+        return $obj;
+
+    } ## tidy end: sub _from_cldr
+
+} ## tidy end: sub _dt_from_cldr
+
+### OBJECT METHODS
+
+{
+
+## international date formats
+
+    my %locale_of_language = (
+        en => 'en_US',
+        es => 'es_US',
+        zh => 'zh_Hans'
+    );
+
+    my @languages = qw/en es zh/;    # for order
+         # currently happens to be in alpha order, but Vietnamese or Korean
+         # would come after Chinese
+
+    my $format_language_cr = sub {
+        my $self     = shift;
+        my $language = shift;
+        my $format   = shift;
+        my $locale   = $locale_of_language{$language};
+
+        my $method = "date_format_$format";
+
+        require DateTime::Locale;
+        require DateTime::Format::CLDR;
+
+        my $dl = DateTime::Locale->load($locale);
+
+        my $cldr = DateTime::Format::CLDR->new(
+            locale  => $locale,
+            pattern => $dl->$method,
+        );
+
+        return $cldr->format_datetime($self);
+
+    };
+
+    sub long_en {
+        my $self = shift;
+        return $format_language_cr->( $self, 'en', 'long' );
+    }
+
+    sub long_es {
+        my $self = shift;
+        return $format_language_cr->( $self, 'es', 'long' );
+    }
+
+    sub long_zh {
+        my $self = shift;
+        return $format_language_cr->( $self, 'zh', 'long' );
+    }
+
+    sub full_en {
+        my $self = shift;
+        return $format_language_cr->( $self, 'en', 'full' );
+    }
+
+    sub full_es {
+        my $self = shift;
+        return $format_language_cr->( $self, 'es', 'full' );
+    }
+
+    sub full_zh {
+        my $self = shift;
+        return $format_language_cr->( $self, 'zh', 'full' );
+    }
+
+    my $formats_cr = sub {
+        my $self   = shift;
+        my $format = shift;
+
+        my @ret;
+
+        foreach my $language (@languages) {
+            my $method = $format . "_$language";
+            push @ret, $self->$method;
+        }
+
+        return \@ret;
+    };
+
+    sub longs {
+        my $self = shift;
+        return $formats_cr->( $self, 'long' );
+
+    }
+
+    sub fulls {
+        my $self = shift;
+        return $formats_cr->( $self, 'full' );
     }
 
 }
-
-sub _dt_from_cldr {
-
-    my $datestr = shift;
-    my $pattern = shift;
-
-    unless ($pattern) {
-        if ( $datestr =~ m{/} ) {
-            $pattern = 'M/d/y';
-        }
-        else {
-            $pattern = "y-d-M";
-        }
-
-        require DateTime::Format::CLDR;    ### DEP ###
-        my $dt = DateTime::Format::CLDR::cldr_parse( $pattern, $datestr );
-
-        return $dt;
-
-    }
-
-} ## tidy end: sub _dt_from_cldr
 
 # CLASS METHOD
 
@@ -278,7 +273,7 @@ sub newest_date {
     foreach my $date (@dates) {
 
         if ( not u::is_blessed_ref($date) ) {
-            $date = _dt_from_string($date);
+            $date = $class->_from_strptime($date);
         }
 
         if (not defined $newest_date
@@ -330,7 +325,7 @@ This documentation refers to version 0.014
 =head1 DESCRIPTION
 
 Actium::O::DateTime is a thin wrapper around L<DateTime>. 
-It delegates almost everything to DateTime, while providing a few
+In inherits almost almost everything from DateTime, while providing a few
 convenience methods and convenience ways of constructing the object. 
 
 Actium::O::DateTime was created in order to do comparisons and presentation of
@@ -356,21 +351,18 @@ Most arguments must be specified using names:
       );
     
 If a single positional argument is seen, 
-then it is treated as an argument to 'datetime', below.
+then it is treated the same as an argument to 'datetime', below.
 
-There are four special arguments that signal that Actium::O::DateTime should
-proocess its input (rather than passing them directly to DateTime->new).
-One cannot use the special arguments and arguments to DateTime at the same time.
-One additional argument, "pattern," is used in conjuction with the "cldr" 
-and "strptime" arguments.
+The arguments used by Actium::O::DateTime are given below. If none of these
+arguments are present, the arguments are passed through to DateTime.
+Only one of "datetime", "strptime" or "cldr" can be present, 
+and if one is, none of the other arguments other than "pattern" can be present.
 
 =over
-
 
 =item cldr
 
 This is treated as a string, to be parsed by DateTime::Format::CLDR.
-The result becomes the DateTime delegate object.
 
 If the named argument "pattern" is present, that will be passed to 
 DateTime::Format::CLDR. Otherwise, it will use the pattern 
@@ -378,38 +370,30 @@ DateTime::Format::CLDR. Otherwise, it will use the pattern
 
 =item datetime
 
-The named datetime argument can be one of three things:
+The named datetime argument can be:
 
 =over
 
 =item * 
 
-A blessed object that does not have datetime_obj as a method. In this case,
-it is presumed that this is itself a DateTime object, and it used as the
-object to which Actium::O::DateTime will delegate methods.
+An object. A new object is returned using DateTime->from_object, q.v.
 
 =item * 
 
-A blessed object that has "datetime_obj" as a method.  In this event, the result
-from datetime_obj is used as the object to which Actium::O::DateTime will
-delegate methods. This allows you to pass other Actium::O::DateTime objects
-to Actium::O::DateTime->new (although I'm not sure this has any benefit really).
-
 =item *
 
-Anything else. This is treated as the argument to strptime. (It exists here
-to ease processing for a single positional argument.)
+A string. This is treated as the argument to strptime. 
 
 =back
 
 =item pattern
 
-See the "cldr" and "strptime" arguments.
+See the "cldr" and "strptime" arguments. This cannot be specified
+unless one of datetime, strptime, or cldr is also specified.
 
 =item strptime
 
 This is treated as a string, to be parsed by DateTime::Format::Strptime.
-The result becomes the DateTime delegate object.
 
 If the named argument "pattern" is present, that will be passed to 
 DateTime::Format::Strptime. Otherwise, it will use the pattern 
@@ -420,16 +404,12 @@ pattern "%Y-%m-%d" (e.g., 2017-12-31) otherwise.
 
 If passed, this value must be a reference to an array with three entries, 
 representing the year, month, and day, in order. These are submitted as 
-year, month and day to DateTime->new.
+year, month and day to DateTime->new.  If it is present, none of 
+"year", "month" and "day" can also be present.
 
 =back
 
-Any other arguments are passed to DateTime->new, and the results are used
-as the delegate object.
-
-=item B<datetime_obj()>
-
-This provides access to the delegate object, should that be necessary.
+Any other arguments are treated as they are in DateTime.
 
 =item B<long_en()>
 
@@ -449,6 +429,15 @@ or Chinese (simplified), using the locales "en_US", "es_US", and "zh_Hans".
 The "long" date formats provide the full name of the month, the day
 and the year.  The "full" date formats add the weekday as well.
 
+=item B<fulls>
+
+=item B<longs>
+
+These return a reference to an array of each of the appropriate "full" or 
+"long" values, in language order. The order is currently alphabetical,
+although if more languages are added later, they will probably be added 
+at the end.
+
 =item B<newest_date($date, $date, $date...)>
 
 This class method (not object method) calculates the newest date
@@ -467,34 +456,52 @@ is an Actium::O::DateTime object.
 
 =item * 
 
-No arguments given to Actium::O::DateTime->new
+No arguments given
 
 Some arguments must be passed in calls to new().
     
 =item  *
 
-Can't specify more than one of (datetime strptime cldr ymd) to Actium::O::DateTime->new
+Can't specify more than one of ...
 
-The "datetime," "strptime," "cldr," and "ymd" arguments are mutually exclusive.
+The "datetime", "strptime", and "cldr" arguments are mutually exclusive.
 Specify just one.
 
 =item *
 
-Can't specify both a special argument (one of datetime strptime cldr ymd) 
-and also DateTime arguments to Actium::O::DateTime->new
+Can't specify a pattern without specifying one of ...
 
-The "datetime", "strptime," "cldr," and "ymd" arguments must be
-specified alone, or in the case of "strptime" or "cldr," only with the
-"pattern" argument.  Specify just one.
+The "pattern" argument has no meaning unless it is coupled 
+with either "datetime", "strptime", or "cldr". Specify one.
+
+=item *
+
+Can't specify both a exclusive argument (one of ... ) and also DateTime 
+arguments
+
+The "datetime", "strptime" or "cldr" arguments must be
+specified alone or with the "pattern" argument, and cannot be combined
+with any of the regular arguments to DateTime.
 
 =item *
 
 Argument to ymd must be a reference to a three-element array (year,
-month, and day) in Actium::O::DateTime->new()
+month, and day) 
 
-Some other sort of argument was recieved. 
+Some other sort of argument was recieved than a reference to a 
+three-element array.  Specify just the year, month, and day.
+
+=item *
+
+Can't specify ymd and also either year, month, or day ...
+
+The "ymd" argument repalces the "year", "month", and "day" arguments to 
+DateTime, so you can't specify both. Specify one of either "ymd" or 
+the separate set of "year", "month", and "day" arguments.
 
 =back
+
+See also the dependencies, below.
 
 =head1 DEPENDENCIES
 
