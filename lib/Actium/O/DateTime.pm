@@ -3,11 +3,17 @@ package Actium::O::DateTime 0.014;
 # Object representing a date and time
 # (a thin wrapper around the DateTime module, with some i18n methods)
 
+# Non-moosey, because Moose kept interfering too much with
+# constructor names and the like
+
 use 5.022;
 use warnings;    ### DEP ###
 
-use Actium::Moose;
-use DateTime;    ### DEP ###
+use Actium::Preamble;
+
+use DateTime;
+our @ISA = qw(DateTime);
+# DateTime ### DEP ###
 
 use overload q{""} => '_stringify';
 
@@ -18,20 +24,19 @@ sub _stringify {
 
 const my $CONSTRUCTOR => __PACKAGE__ . '->new';
 
-around BUILDARGS => sub {
+sub new { # needs rewriting so it returns $self
 
-    my $orig = shift;
-    my $self = shift;
+    my $class = shift;
 
     croak "No arguments given to $CONSTRUCTOR" unless @_;
 
     my %args;
 
     if ( @_ == 1 and not u::is_plain_hashref( $_[0] ) ) {
-        %args = $self->$orig( { datetime => $_[0] } )->%*;
+        %args = ( datetime => $_[0] );
     }
     else {
-        %args = $self->$orig(@_)->%*;
+        %args = @_;
     }
 
     my @special_args = (qw[datetime strp cldr ymd]);
@@ -46,8 +51,7 @@ around BUILDARGS => sub {
 
     my $pattern;
     if ( $special_argcount and exists $args{pattern} ) {
-        $pattern = $args{pattern};
-        delete $args{pattern};
+        $pattern = delete $args{pattern};
     }
 
     croak "Can't specify both a special argument (one of @special_args) "
@@ -58,36 +62,18 @@ around BUILDARGS => sub {
 
         if ( exists $args{datetime} ) {
             if ( u::is_blessed_ref( $args{datetime} ) ) {
-                my $obj = $args{datetime};
-                if ( $obj->can('datetime_obj') ) {
-                    return { datetime => $obj->datetime_obj };
-                }
-                return { datetime => $obj };
+                return { object => $args{datetime} };
             }
 
-            $args{strptime} = $args{datetime};
-            delete $args{datetime};
+            $args{strptime} = delete $args{datetime};
         }
 
         if ( exists $args{strptime} ) {
-            if ($pattern) {
-                require DateTime::Format::Strptime;
-                return {
-                    datetime => DateTime::Format::Strptime::strptime(
-                        $pattern, $args{strptime}
-                    )
-                };
-            }
-            else {
-                return { datetime => _dt_from_string( $args{strptime} ) };
-            }
-
+            return { object => _dt_from_string( $args{strptime}, $pattern ) };
         }
 
         if ( exists $args{cldr} ) {
-
-            return { datetime => _dt_from_cldr( $args{cldr}, $pattern ) };
-
+            return { object => _dt_from_cldr( $args{cldr}, $pattern ) };
         }
 
         if ( exists $args{ymd} ) {
@@ -102,32 +88,19 @@ around BUILDARGS => sub {
 
             my ( $year, $month, $day ) = $args{ymd}->@*;
 
-            return {
-                datetime => DateTime::->new(
-                    year  => $year,
-                    month => $month,
-                    day   => $day
-                )
-            };
+            %args = (
+                year  => $year,
+                month => $month,
+                day   => $day
+              )
 
-        } ## tidy end: if ( exists $args{ymd})
+        }
 
     } ## tidy end: if ($special_argcount)
 
-    return { datetime => DateTime->new(%args) }
+    return { object => DateTime->new(%args) }
 
-};
-
-has datetime_obj => (
-    is       => 'ro',
-    isa      => 'DateTime',
-    init_arg => 'datetime',
-    handles  => qr/.*/,
-    # moose manual says it filters subs it finds from DateTime
-    # rather than literally selecting anything that matches.
-    # so I should't need to worry about it picking up things from this class
-    # unless there's a name conflict
-);
+} ## tidy end: sub new
 
 #######################################
 ## Return international date formats
@@ -137,87 +110,137 @@ my @languages = qw/en es zh/;    # for order
 # currently happens to be in alpha order, but Vietnamese or Korean
 # would come after Chinese
 
-my @formats = qw/long full/;
+# have to rewrite non-moosey
 
-foreach my $format (@formats) {
+my $format_language_cr = sub {
+    my $self     = shift;
+    my $format   = shift;
+    my $language = shift;
+    my $locale   = shift;
 
-    # This creates methods long_en, long_es, long_zh, full_en, etc.
+    my $dt     = $self->datetime_obj;
+    my $method = "date_format_$format";
 
-    foreach my $language ( keys %locale_of_language ) {
+    require DateTime::Locale;
+    require DateTime::Format::CLDR;
+
+    my $dl = DateTime::Locale->load($locale);
+
+    my $cldr = DateTime::Format::CLDR->new(
+        locale  => $locale,
+        pattern => $dl->$method,
+    );
+
+    return $cldr->format_datetime($dt);
+
+};
+
+# There ought to be a way to dynamically generate those but I can't
+# figure it out right now
+
+sub long_en {
+    my $self     = shift;
+    my $language = 'en';
+    my $format   = 'long';
+    my $locale   = $locale_of_language{$language};
+    return $format_language_cr->( $self, $language, $format, $locale );
+}
+
+sub long_es {
+    my $self     = shift;
+    my $language = 'es';
+    my $format   = 'long';
+    my $locale   = $locale_of_language{$language};
+    return $format_language_cr->( $self, $language, $format, $locale );
+}
+
+sub long_zh {
+    my $self     = shift;
+    my $language = 'zh';
+    my $format   = 'long';
+    my $locale   = $locale_of_language{$language};
+    return $format_language_cr->( $self, $language, $format, $locale );
+}
+
+sub full_en {
+    my $self     = shift;
+    my $language = 'en';
+    my $format   = 'full';
+    my $locale   = $locale_of_language{$language};
+    return $format_language_cr->( $self, $language, $format, $locale );
+}
+
+sub full_es {
+    my $self     = shift;
+    my $language = 'es';
+    my $format   = 'full';
+    my $locale   = $locale_of_language{$language};
+    return $format_language_cr->( $self, $language, $format, $locale );
+}
+
+sub full_zh {
+    my $self     = shift;
+    my $language = 'zh';
+    my $format   = 'full';
+    my $locale   = $locale_of_language{$language};
+    return $format_language_cr->( $self, $language, $format, $locale );
+}
+
+sub longs {
+    my $self = shift;
+
+    my @return;
+
+    foreach my $language (@languages) {
         my $locale = $locale_of_language{$language};
-        has "${format}_$language" => (
-            is      => 'ro',
-            isa     => 'Str',
-            lazy    => 1,
-            default => sub {
 
-                my $self   = shift;
-                my $dt     = $self->datetime_obj;
-                my $method = "date_format_$format";
+        my $method = "long_$language";
+        push @return, $self->$method;
+    }
 
-                require DateTime::Locale;
-                require DateTime::Format::CLDR;
+    return \@return;
 
-                my $dl = DateTime::Locale->load($locale);
+}
 
-                my $cldr = DateTime::Format::CLDR->new(
-                    locale  => $locale,
-                    pattern => $dl->$method,
-                );
+sub fulls {
+    my $self = shift;
 
-                return $cldr->format_datetime($dt);
+    my @return;
 
-            },
+    foreach my $language (@languages) {
+        my $locale = $locale_of_language{$language};
 
-        );
+        my $method = "full_$language";
+        push @return, $self->$method;
+    }
 
-    } ## tidy end: foreach my $language ( keys...)
+    return \@return;
 
-    # This creates longs and fulls
+}
 
-    has "${format}s_r" => (
+{
 
-        reader   => "_${format}s_r",
-        init_arg => undef,
-        isa      => 'ArrayRef[Str]',
-        traits   => ['Array'],
-        handles  => { "${format}s" => 'elements' },
-        lazy     => 1,
-        default  => sub {
-            my $self = shift;
+    my %strp_obj_of;
 
-            my @return;
+    sub _dt_from_string {
 
-            foreach my $language (@languages) {
-                my $locale = $locale_of_language{$language};
+        my $datestr = shift;
+        my $pattern = shift // $datestr =~ m{/} ? '%m/%d/%Y' : '%Y-%m-%d';
+        # %Y - four-digit year (unlike %D)
 
-                my $method = "${format}_$language";
-                push @return, $self->$method;
-            }
+        require DateTime::Format::Strptime;
 
-            return \@return;
-        },
-    );
+        my $strp_obj = $strp_obj_of{$pattern}
+          //= DateTime::Format::Strptime->new(
+            pattern => $pattern,
+            locale  => 'en_US'
+          );
 
-} ## tidy end: foreach my $format (@formats)
+        # %Y - four-digit year (unlike %D)
 
-sub _dt_from_string {
+        return $strp_obj->parse_datetime($datestr);
 
-    my $datestr = shift;
-
-    require DateTime::Format::Strptime;    ### DEP ###
-    state $strp_slashes = DateTime::Format::Strptime->new(
-        pattern => '%m/%d/%Y',             # %Y - four-digit year (unlike %D)
-        locale  => 'en_US',
-    );
-
-    state $strp_dashes = DateTime::Format::Strptime->new(
-        pattern => '%Y-%m-%d',
-        locale  => 'en_US',
-    );
-
-    my $strp = $datestr =~ m{/} ? $strp_slashes : $strp_dashes;
-    return $strp->parse_datetime($datestr);
+    }
 
 }
 
@@ -241,7 +264,7 @@ sub _dt_from_cldr {
 
     }
 
-}
+} ## tidy end: sub _dt_from_cldr
 
 # CLASS METHOD
 
@@ -268,10 +291,10 @@ sub newest_date {
     }
 
     return if not defined $newest_date;
-    
-    if (not $newest_date->can('date_obj')) {
-        $newest_date = Actium::O::DateTime->new($newest_date);
-        # if somebody is passing DateTime objects, 
+
+    if ( not $newest_date->isa(__PACKAGE__) ) {
+        $newest_date = Actium::O::DateTime::->new($newest_date);
+        # if somebody is passing DateTime objects,
         # turns them into Actium::O::DateTime objects
     }
 
