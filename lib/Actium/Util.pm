@@ -22,6 +22,7 @@ use Sub::Exporter -setup => {
         qw<
           positional          positional_around
           joinseries          joinseries_ampersand
+          joinseries_or
           j
           joinempty          jointab
           joinkey            joinlf
@@ -164,9 +165,18 @@ sub joinseries {
 
 =item joinseries_ampersand
 
-Just like I<joinseries>, but uses "&" instead of "and".
+=item joinseries_or
+
+Just like I<joinseries>, but uses "&" or "or" instead of "and".
 
 =cut
+
+
+sub joinseries_or {
+    croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries_or'
+      unless @_;
+    return _joinseries_with_x( 'or', @_ );
+}
 
 sub joinseries_ampersand {
     croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries_ampersand'
