@@ -534,14 +534,15 @@ sub determine_subtype {
         }
         # at least one time -- that used to be there for noteonly
 
-        push @all_heights, $height;
+        push @all_heights, [ $height, join("_" , $column->linegroup , $column->days, $column->dircode )];
 
         push @{ $heights_of_chunk{$chunk_id} }, $height;
         push @{ $columns_of_chunk{$chunk_id} }, $column;
 
     }
 
-    @all_heights = reverse sort { $a <=> $b } @all_heights;
+    @all_heights = reverse sort { $a->[0] <=> $b->[0] || u::byline ($a, $b) } @all_heights;
+    @all_heights = map { $_->[0] . ":" . $_->[1] }  @all_heights;
     $self->set_heights("@all_heights");
 
     my ($chosen_subtype, @chosen_regions, @chunkids_by_region,
