@@ -12,9 +12,6 @@ I am slowly reorganizing and rewriting. It is not ready yet for
 anybody else to use, but perhaps those who are interested can at
 least see what it looks like.
 
-Many of our graphics files are available at 
-[our Pixelapse account](https://www.pixelapse.com/ACTransit_Svc_Info).
-
 ## Why the name "actium"?
 
 It was chosen because it is a word beginning with "ACT" (for "AC Transit"). 
