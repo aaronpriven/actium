@@ -20,7 +20,15 @@ our $VERSION = 0.010;
 my $tag = '### ' . 'DEP' . ' ###';
 # writing it that way avoids finding the literal tag in this file
 
-my @deps = `grep '$tag' -hIR .`;
+my $path;
+
+if (-d 'bin' and -d 'lib') {
+$path = './bin ./lib';
+} else {
+$path = '.';
+} 
+
+my @deps = `grep '$tag' -hIR $path`;
 
 foreach (@deps) {
    
@@ -28,12 +36,12 @@ foreach (@deps) {
    s/;//g;
    s/^\s+//;
    s/\s+$//;
+   s/^#+//;
    s/^use //;
    s/^require //;
    s/(?:qw)?\(.*\)//g; # deliberately greedy
    s/qw<.*\>//g; 
    s/'.*'//g; 
-   s/^#+//;
    s/^\s+//;
    s/\s+$//;
 
