@@ -37,7 +37,7 @@ use File::Copy(); ### DEP ###
 use Params::Validate ':all'; ### DEP ###
 
 use Actium::O::Folder;
-use Actium::Util(qw<filename file_ext remove_leading_path>);
+use Actium::Util(qw<filename file_ext >);
 use Actium::Sorting::Line('sortbyline');
 use Actium::Constants;
 use Actium::Crier(qw/cry last_cry/);
@@ -532,7 +532,7 @@ sub _display_path {
     my ( $from, $to, $path ) = @_;    # making copies
     if ( defined $path ) {
         foreach ( $from, $to ) {      # aliasing $_ to each in turn
-            my $new = remove_leading_path( $_, $path );
+            my $new = _remove_leading_path( $_, $path );
             if ( $_ ne $new ) {
                 $_ = ".../$new";
             }
@@ -577,6 +577,81 @@ sub _mapname_pieces {
     ## use critic
 
 } ## tidy end: sub _mapname_pieces
+
+
+sub _remove_leading_path {
+    my ( $filespec, $path ) = @_;
+
+    ############################
+    ## GET CANONICAL PATHS
+
+    require Cwd;    ### DEP ###
+    $path     = Cwd::abs_path($path);
+    $filespec = Cwd::abs_path($filespec);
+
+    ##############
+    ## FOLD CASE
+
+    # if a component of $filespec is the same except for upper/lowercase
+    # from a component of $path, use the upper/lowercase of $path
+
+    my ( $filevol, $filefolders_r, $file ) = _split_path_components($filespec);
+    my ( $pathvol, $pathfolders_r, $pathfile )
+      = _split_path_components( $path, 1 );
+
+    $file    = $pathfile if ( lc($file) eq lc($pathfile) );
+    $filevol = $pathvol  if ( lc($filevol) eq lc($pathvol) );
+
+    # put each component into $case_of. But
+    # if there is a conflict between folder names within $path --
+    # e.g., $path is "/Whatever/whatever/WHatEVer" -- use
+    # the first one
+
+    my %case_of;
+    foreach ( @{$pathfolders_r} ) {
+        my $lower = lc($_);
+        if ( exists( $case_of{$lower} ) ) {
+            $_ = $case_of{$lower};
+        }
+        else {
+            $case_of{$lower} = $_;
+        }
+    }
+
+    foreach my $component ( @{$filefolders_r} ) {
+        $component = $case_of{ lc($component) }
+          if $case_of{ lc($component) };
+    }
+
+    $filespec = _join_path_components( $filevol, $filefolders_r, $file );
+    $path     = _join_path_components( $pathvol, $pathfolders_r, $pathfile );
+
+    ############################
+    ## REMOVE THE LEADING PATH
+
+    return File::Spec->abs2rel( $filespec, $path );
+} ## tidy end: sub remove_leading_path
+
+# _split_path_components and _join_path_components
+# might be worth making public if they are used again.
+# Originally written for the case-folding in remove_leading_path
+
+sub _split_path_components {
+    my $filespec = shift;
+    my $nofile   = shift;
+    my ( $volume, $folders, $file )
+      = File::Spec->splitpath( $filespec, $nofile );
+    my @folders = File::Spec->splitdir($folders);
+    return $volume, \@folders, $file;
+}
+
+sub _join_path_components {
+    my ( $vol, $folders_r, $file ) = @_;
+    my $path
+      = File::Spec->catpath( $vol, File::Spec->catdir( @{$folders_r} ), $file );
+    return $path;
+}
+
 
 1;
 
