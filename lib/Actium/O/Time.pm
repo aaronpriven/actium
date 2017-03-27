@@ -484,6 +484,8 @@ Returns the time as a 24-hour string: hours (padded with a leading zero if
 necessary), a colon, and minutes.  The day is not given (so yesterday's and 
 tomorrow's times are shown as if they were today's).
 
+=back
+
 =head1 AUTHOR
 
 Aaron Priven <apriven@actransit.org>
@@ -497,11 +499,15 @@ modify it under the terms of either:
 
 =over 4
 
-=item * the GNU General Public License as published by the Free
+=item * 
+
+the GNU General Public License as published by the Free
 Software Foundation; either version 1, or (at your option) any
 later version, or
 
-=item * the Artistic License version 2.0.
+=item * 
+
+the Artistic License version 2.0.
 
 =back
 
