@@ -400,7 +400,7 @@ sub hashref {
 
 =item flatten
 
-Takes a list and flattens any array references in it, 
+Takes a list and flattens any (unblessed) array references in it, 
 ensuring that the contents of any lists of lists
 are returned as individual items.
 
