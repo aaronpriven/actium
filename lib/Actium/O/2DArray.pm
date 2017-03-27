@@ -866,7 +866,8 @@ my $charcarp = sub {
 
 sub flattened {
     my $self      = shift;
-    my @flattened = u::flatten($self);
+    my @flattened = u::flatten(@$self);
+    # deref there because u::flatten doesn't do blessed objects
     return @flattened;
 }
 
