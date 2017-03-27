@@ -9,7 +9,7 @@ use Actium::Constants;
 use List::Util (qw[first max min sum]);    ### DEP ###
 use List::MoreUtils(qw[any all none notall natatime uniq]);    ### DEP ###
 use Scalar::Util(qw[blessed reftype looks_like_number]);       ### DEP ###
-use Ref::Util ('is_plain_hashref');                            ### DEP ###
+use Ref::Util (qw/is_plain_hashref is_plain_arrayref/);        ### DEP ###
 use Carp;                                                      ### DEP ###
 use File::Spec;                                                ### DEP ###
 
@@ -22,14 +22,12 @@ use Sub::Exporter -setup => {
         qw<
           positional          positional_around
           joinseries          joinseries_ampersand
-          joinseries_or
-          j
-          joinempty          jointab
-          joinkey            joinlf
-          define
-          isblank             isnotblank
+          joinseries_or       j
+          joinempty           jointab
+          joinkey             joinlf
+          define              isempty
           filename            file_ext
-          remove_leading_path add_before_extension
+          add_before_extension
           display_percent
           is_odd              is_even
           mean                population_stdev
@@ -46,13 +44,15 @@ use Sub::Exporter -setup => {
 };
 # Sub::Exporter ### DEP ###
 
+=encoding utf-8
+
 =head1 NAME
 
 Actium::Util - Utility functions for the Actium system
 
 =head1 VERSION
 
-This documentation refers to Actium::Util version 0.001
+This documentation refers to Actium::Util version 0.012
 
 =head1 SYNOPSIS
 
@@ -72,7 +72,7 @@ This module contains some simple routines for use in other modules.
 
 =head1 SUBROUTINES
 
-=head2 JOINING AND SPLITTING
+=head2 JOINING
 
 =over
 
@@ -171,7 +171,6 @@ Just like I<joinseries>, but uses "&" or "or" instead of "and".
 
 =cut
 
-
 sub joinseries_or {
     croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries_or'
       unless @_;
@@ -184,11 +183,9 @@ sub joinseries_ampersand {
     return _joinseries_with_x( '&', @_ );
 }
 
-=cut
-
 =back
 
-=head2 Unclassified as yet
+=head2 DEFINEDNESS, EMPTINESS
 
 =over
 
@@ -212,162 +209,185 @@ sub define {
     }
 }
 
-=item isnotblank
+=item isempty
 
-...
-
-=cut
-
-sub isnotblank {
-    my $value = shift;
-    return ( defined $value and $value ne $EMPTY_STR );
-}
-
-=item isblank
-
-...
+Returns a boolean value: false if the first argument is defined and not an 
+empty string, or true if it is either undefined or the empty string.
 
 =cut
 
-sub isblank {
+sub isempty {
     my $value = shift;
     return ( not( defined $value and $value ne $EMPTY_STR ) );
 }
 
-=item filename
+=back
 
-...
+=head2 STRING EQUALITY
 
-=cut
+=over
 
-sub filename {
+=item in
 
-    my $filespec = shift;
-    my $filename;
-    ( undef, undef, $filename ) = File::Spec->splitpath($filespec);
-    return $filename;
-}
-
-=item file_ext
-
-...
+Returns a boolean value: true if the first argument is equal to 
+(using the C<eq> operator) any of the subsequent arguments, 
+or if the second argument is a plain arrayref, 
+any of the elements of that array.
 
 =cut
 
-sub file_ext {
-    my $filespec = shift;                 # works on filespecs or filenames
-    my $filename = filename($filespec);
-    my ( $filepart, $ext )
-      = $filename =~ m{(.*)    # as many characters as possible
-                      [.]     # a dot
-                      ([^.]+) # one or more non-dot characters
-                      \z}sx;
-    return ( $filepart, $ext );
-}
+sub in {
 
-=item add_before_extension
+    # is-an-element-of (stringwise)
 
-...
-
-=cut
-
-sub add_before_extension {
-
-    my $input_path = shift;
-    my $addition   = shift;
-
-    my ( $volume, $folders, $filename ) = File::Spec->splitpath($input_path);
-    my ( $filepart, $ext ) = file_ext($filename);
-
-    my $output_path
-      = File::Spec->catpath( $volume, $folders, "$filepart-$addition.$ext" );
-
-    return ($output_path);
-
-}
-
-=item remove_leading_path
-
-...
-
-=cut
-
-sub remove_leading_path {
-    my ( $filespec, $path ) = @_;
-
-    ############################
-    ## GET CANONICAL PATHS
-
-    require Cwd;    ### DEP ###
-    $path     = Cwd::abs_path($path);
-    $filespec = Cwd::abs_path($filespec);
-
-    ##############
-    ## FOLD CASE
-
-    # if a component of $filespec is the same except for upper/lowercase
-    # from a component of $path, use the upper/lowercase of $path
-
-    my ( $filevol, $filefolders_r, $file ) = _split_path_components($filespec);
-    my ( $pathvol, $pathfolders_r, $pathfile )
-      = _split_path_components( $path, 1 );
-
-    $file    = $pathfile if ( lc($file) eq lc($pathfile) );
-    $filevol = $pathvol  if ( lc($filevol) eq lc($pathvol) );
-
-    # put each component into $case_of. But
-    # if there is a conflict between folder names within $path --
-    # e.g., $path is "/Whatever/whatever/WHatEVer" -- use
-    # the first one
-
-    my %case_of;
-    foreach ( @{$pathfolders_r} ) {
-        my $lower = lc($_);
-        if ( exists( $case_of{$lower} ) ) {
-            $_ = $case_of{$lower};
-        }
-        else {
-            $case_of{$lower} = $_;
-        }
+    my $item = shift;
+    if ( is_plain_arrayref( $_[0] ) ) {
+        return any { $item eq $_ } @{ $_[0] };
     }
 
-    foreach my $component ( @{$filefolders_r} ) {
-        $component = $case_of{ lc($component) }
-          if $case_of{ lc($component) };
+    return any { $item eq $_ } @_;
+
+}
+
+=item folded_in
+
+Like C<in>, but folding the case of the arguments (using C<fc>) 
+before making the comparison.
+
+=cut
+
+sub folded_in {
+
+    my $item = fc(shift);
+    if ( is_plain_arrayref( $_[0] ) ) {
+        return any { $item eq fc($_) } @{ $_[0] };
+    }
+    return any { $item eq fc($_) } @_;
+}
+
+=item all_eq
+
+Returns a boolean value: true if the first value is equal to all the
+subsequent values (using C<eq>), false otherwise.
+
+=cut
+
+sub all_eq {
+    my $first = shift;
+    my @rest  = @_;
+    return all { $_ eq $first } @rest;
+}
+
+=item feq
+
+Returns a boolean value: 
+true if, when case-folded (using C<fc>), 
+the first argument is equal to its second; otherwise false.
+
+=cut
+
+sub feq {
+    my ( $x, $y ) = @_;
+    return fc($x) eq fc($y);
+}
+
+=item fne
+
+Returns a boolean value: 
+true if, when case-folded (using C<fc>), 
+the first argument is not equal to its second; otherwise false.
+
+
+=cut
+
+sub fne {
+    my ( $x, $y ) = @_;
+    return fc($x) ne fc($y);
+}
+
+=back
+
+=head2 MATHEMATICS
+
+=over
+
+=item is_odd
+
+Returns true if the first argument is odd (not divisible by two),
+false if it is not.
+
+=cut
+
+sub is_odd {
+    return $_[0] % 2;
+}
+
+=item is_even
+
+Returns true if the first argument is even (divisible by two),
+false if it is not.
+
+=cut
+
+sub is_even {
+    return not( $_[0] % 2 );
+}
+
+=item mean
+
+The arithmetic mean of its arguments.
+
+=cut
+
+sub mean {
+
+    if ( is_plain_arrayref( $_[0] ) ) {
+        return sum( @{ $_[0] } ) / scalar( @{ $_[0] } );
     }
 
-    $filespec = _join_path_components( $filevol, $filefolders_r, $file );
-    $path     = _join_path_components( $pathvol, $pathfolders_r, $pathfile );
-
-    ############################
-    ## REMOVE THE LEADING PATH
-
-    return File::Spec->abs2rel( $filespec, $path );
-} ## tidy end: sub remove_leading_path
-
-# _split_path_components and _join_path_components
-# might be worth making public if they are used again.
-# Originally written for the case-folding in remove_leading_path
-
-sub _split_path_components {
-    my $filespec = shift;
-    my $nofile   = shift;
-    my ( $volume, $folders, $file )
-      = File::Spec->splitpath( $filespec, $nofile );
-    my @folders = File::Spec->splitdir($folders);
-    return $volume, \@folders, $file;
+    return sum(@_) / scalar(@_);
 }
 
-sub _join_path_components {
-    my ( $vol, $folders_r, $file ) = @_;
-    my $path
-      = File::Spec->catpath( $vol, File::Spec->catdir( @{$folders_r} ), $file );
-    return $path;
+=item population_stdev
+
+The population standard deviation of its arguments, or if the first 
+argument is an array ref, of the members of that array.
+
+=cut
+
+sub population_stdev {
+
+    my @popul = is_plain_arrayref( $_[0] ) ? @{ $_[0] } : @_;
+
+    my $themean = mean(@popul);
+    return sqrt( mean( [ map $_**2, @popul ] ) - ( $themean**2 ) );
 }
+
+=item halves( I<wholes> , I<halves> )
+
+This takes two values, "wholes" and "halves", and returns the number of halves
+(that is, it multiples wholes by two, and adds the results to halves,
+and returns that).
+
+=cut
+
+sub halves {
+    my ( $wholes, $halves ) = ( flatten(@_) );
+    return ( $wholes * 2 + $halves );
+}
+
+
+=back
+
+=head2 ARRAY AND HASH REFERENCES
+
+=over
 
 =item hashref
 
-...
+Returns true if there is only one argument and it is a plain hashref.
+Useful in accepting either a hashref or a plain hash as arguments
+to a function. 
 
 =cut
 
@@ -398,15 +418,13 @@ list in list context.
 
 =cut 
 
-sub iterative_flatten {
-
-    # needs testing before replacing 'flatten'
+sub flatten {
 
     my @results;
 
     while (@_) {
         my $element = shift @_;
-        if ( Ref::Util::is_plain_arrayref($element) ) {
+        if ( is_plain_arrayref($element) ) {
             unshift @_, @{$element};
         }
         else {
@@ -416,161 +434,13 @@ sub iterative_flatten {
 
     return wantarray ? @results : \@results;
 
-    # other alternatives, which are untested
-
-    #while ( any { reftype $_ eq 'ARRAY' } @array ) {
-    #    @array = map { reftype $_ eq 'ARRAY' ? @{$_} : $_ } @array
-    #}
-
-    #my $continue = 1;
-    #while ($continue) {
-    #    @array = map {
-    #        if ( reftype $_ eq 'ARRAY' ) {
-    #            $continue = 0 unless any { reftype $_ eq 'ARRAY' } @{$_};
-    #            @{$_};
-    #        }
-    #        else {
-    #            $_;
-    #        }
-    #      } @array
-    #}
-
-} ## tidy end: sub iterative_flatten
-
-sub flatten {
-
-    my @inputs = @_;
-    my @results;
-    foreach my $input (@inputs) {
-        if ( reftype($input) && reftype($input) eq 'ARRAY' ) {
-            push @results, flatten( @{$input} );
-        }
-        else {
-            push @results, $input;
-        }
-    }
-
-    return wantarray ? @results : \@results;
-
-}
-
-# this should be moved to a more general
-# "information from the filemaker database" section
-# when LINES_TO_COMBINE gets moved there
-
-=item folded_in
-
-...
-
-=cut
-
-sub folded_in {
-
-    my $item    = fc(shift);
-    my $reftype = reftype( $_[0] );
-    if ( defined $reftype and $reftype eq 'ARRAY' ) {
-        return any { $item eq fc($_) } @{ $_[0] };
-    }
-    return any { $item eq fc($_) } @_;
-}
-
-=item in
-
-...
-
-=cut
-
-sub in {
-
-    # is-an-element-of (stringwise)
-
-    my $item    = shift;
-    my $reftype = reftype( $_[0] );
-    if ( defined $reftype and $reftype eq 'ARRAY' ) {
-        return any { $item eq $_ } @{ $_[0] };
-    }
-
-    return any { $item eq $_ } @_;
-
-}
-
-=item is_odd
-
-...
-
-=cut
-
-sub is_odd {
-    return $_[0] % 2;
-}
-
-=item is_even
-
-...
-
-=cut
-
-sub is_even {
-    return not( $_[0] % 2 );
-}
-
-=item mean
-
-...
-
-=cut
-
-sub mean {
-
-    if ( ref( $_[0] ) eq 'ARRAY' ) {
-        return sum( @{ $_[0] } ) / scalar( @{ $_[0] } );
-    }
-
-    return sum(@_) / scalar(@_);
-}
-
-=item population_stdev
-
-...
-
-=cut
-
-sub population_stdev {
-
-    my @popul = ref $_[0] ? @{ $_[0] } : @_;
-
-    my $themean = mean(@popul);
-    return sqrt( mean( [ map $_**2, @popul ] ) - ( $themean**2 ) );
-}
-
-=item all_eq
-
-...
-
-=cut
-
-sub all_eq {
-    my $first = shift;
-    my @rest  = @_;
-    return all { $_ eq $first } @rest;
-}
-
-=item halves( I<wholes> , I<halves> )
-
-This takes two values, "wholes" and "halves", and returns the number of halves
-(that is, it multiples wholes by two, and adds the results to halves,
-and returns that).
-
-=cut
-
-sub halves {
-    my ( $wholes, $halves ) = ( flatten(@_) );
-    return ( $wholes * 2 + $halves );
 }
 
 =item dumpstr
 
-...
+This returns a string -- 
+a dump from the Data::Printer module of the passed 
+data structure, suitable for displaying and debugging.
 
 =cut
 
@@ -586,18 +456,20 @@ sub dumpstr (\[@$%&];%) {
 
 =back
 
-=head2 Unicode column untilities
+=head2 UNICODE COLUMNS
+
+These utilities are used when displaying text in a monospaced typeface, 
+to ensure that text with combining characters and wide characters are 
+shown taking up the proper width.
 
 =over
 
 =item u_columns
 
-...
+This returns the number of columns in its first argument, as determined
+by the L<Unicode::GCString> module. 
 
 =cut
-
-##########################
-## Unicode column utilities
 
 sub u_columns {
     my $str = shift;
@@ -610,7 +482,15 @@ sub u_columns {
 
 =item u_pad
 
-...
+Pads a string with spaces to a number of columns. The first argument should
+be the string, and the second the number of columns. 
+
+ $y = u_pad("x", 2);
+ # returns  "x "
+ $z = u_pad("柱", 4);
+ # returns ("柱  ");
+
+Uses u_columns internally to determine the width of the text.
 
 =cut
 
@@ -628,9 +508,21 @@ sub u_pad {
 
 }
 
-=item u_wrap
+=item u_wrap (I<string>, I<min_columns>, I<max_columns>)
 
-...
+Takes a string and wraps it to a number of columns, producing 
+a series of shorter lines, using the L<Unicode::Linebreak> module.
+If the string has embedded newlines, these are taken as separating
+paragraphs.
+
+The first argument is the string to wrap. 
+
+The second argument, if present,
+is the minimum number of columns -- ColMin from Unicode::LineBreak. If
+not present, 0 will be used.
+
+The third argment, if present, is the maximum number of columns -- ColMax
+from Unicode::LineBreak. If not present, 79 will be used.
 
 =cut
 
@@ -674,51 +566,38 @@ sub u_wrap {
 
 =item u_trim_to_columns
 
-...
+Trims an input string to a particular number of columns.
+
+ $x = u_trim_to_columns("Barney", 4);
+ # returns "Barn"
 
 =cut
 
 sub u_trim_to_columns {
     my $text        = shift;
-    my $num_columns = shift;
+    my $max_columns = shift;
 
     require Unicode::GCString;    ### DEP ###
 
     my $gc = Unicode::GCString::->new($text);
 
-    while ( $gc->columns > $num_columns ) {
+    my $columns = $gc->columns;
+    while ( $gc->columns > $max_columns ) {
         $gc->substr( -1, 1, $EMPTY_STR );
+        $columns = $gc->columns;
     }
 
-    return $gc->as_string;
+    return $gc->as_string if $columns == $max_columns;
+    
+    return u_pad($gc->as_string, $max_columns);
+    # in case we trimmed off a double-wide character or something,
+    # pad it to the right number of columns
 
-}
-
-=item feq
-
-...
-
-=cut
-
-sub feq {
-    my ( $x, $y ) = @_;
-    return fc($x) eq fc($y);
-}
-
-=item fne
-
-...
-
-=cut
-
-sub fne {
-    my ( $x, $y ) = @_;
-    return fc($x) ne fc($y);
 }
 
 =item display_percent
 
-...
+Returns the first argument as a whole percentage: 
 
 =cut
 
@@ -730,7 +609,72 @@ sub display_percent {
 
 =back
 
-=head2 Positional or named arguments
+=head2 FILENAMES AND EXTENSIONS
+
+=over
+
+=item filename
+
+Treats the first argument as a file specification and returns the 
+filename portion (as determined by File::Spec->splitpath ).
+
+=cut
+
+sub filename {
+
+    my $filespec = shift;
+    my $filename;
+    ( undef, undef, $filename ) = File::Spec->splitpath($filespec);
+    return $filename;
+}
+
+=item file_ext
+
+Treats the first argument as a file specification and returns two strings:
+the filename without extension, and the extension.
+
+=cut
+
+sub file_ext {
+    my $filespec = shift;                 # works on filespecs or filenames
+    my $filename = filename($filespec);
+    my ( $filepart, $ext )
+      = $filename =~ m{(.*)    # as many characters as possible
+                      [.]     # a dot
+                      ([^.]+) # one or more non-dot characters
+                      \z}sx;
+    return ( $filepart, $ext );
+}
+
+=item add_before_extension
+
+Treats the first argument as a file specification and adds the second
+argument to it, prior to the extension, separated from it by a
+hyphen. So:
+
+ $file = add_before_extension("sam.txt", "fred");
+ # $file is "sam-fred.txt"
+
+=cut
+
+sub add_before_extension {
+
+    my $input_path = shift;
+    my $addition   = shift;
+
+    my ( $volume, $folders, $filename ) = File::Spec->splitpath($input_path);
+    my ( $filepart, $ext ) = file_ext($filename);
+
+    my $output_path
+      = File::Spec->catpath( $volume, $folders, "$filepart-$addition.$ext" );
+
+    return ($output_path);
+
+}
+
+=back
+
+=head2 POSITIONAL OR NAMED ARGUMENTS
 
 =over
 
@@ -914,6 +858,10 @@ sub positional_around {
 
 =item Sub::Exporter
 
+=item Ref::Util
+
+=item List::MoreUtils
+
 =back
 
 =head1 AUTHOR
@@ -922,7 +870,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2011-2016
+Copyright 2011-2017
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
