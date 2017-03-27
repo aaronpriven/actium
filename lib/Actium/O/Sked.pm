@@ -1407,7 +1407,7 @@ sub stop_objects {
                     next;
                 }
 
-                if ( isblank($stopplace) ) {
+                if ( u::isempty($stopplace) ) {
                     # If this stop has a time but no place, and the previous
                     # stop had a place,
                     # use the previous place and go to the next stop.
@@ -1435,7 +1435,7 @@ sub stop_objects {
 
             $newtimes[$stop_idx] = $time;
 
-            if ( isblank($stopplace) ) {
+            if ( u::isempty($stopplace) ) {
                 # Not a timepoint
                 $previouses[$stop_idx] = $previous_place;
             }
@@ -1467,7 +1467,7 @@ sub stop_objects {
                     $previous_place = $place;
                 }
 
-            } ## tidy end: else [ if ( isblank($stopplace...))]
+            } 
 
         } ## tidy end: for my $stop_idx ( 0 .....)
 
