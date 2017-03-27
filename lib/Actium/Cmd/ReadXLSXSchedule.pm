@@ -78,7 +78,7 @@ sub _get_rows {
 
         }
 
-        next unless u::any { u::isnotblank($_) } @row;
+        next if u::all { u::isempty($_) } @row;
         # skip blank rows
         push @rows, \@row;
     } ## tidy end: for my $row_idx ( $top ...)
@@ -129,8 +129,8 @@ sub _get_intros {
         my $attribute = $introsheet->get_cell( $row, $col_min )->value;
         my $value     = $introsheet->get_cell( $row, $col_min + 1 )->value;
 
-        my $av = ( u::isblank($attribute) ? $EMPTY_STR : 'A' )
-          . ( u::isblank($value) ? $EMPTY_STR : 'V' );
+        my $av = ( u::isempty($attribute) ? $EMPTY_STR : 'A' )
+          . ( u::isempty($value) ? $EMPTY_STR : 'V' );
 
         if ( $av eq 'AV' ) {
             $intros{$attribute} = $value;
