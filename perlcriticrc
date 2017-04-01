@@ -1,8 +1,10 @@
-severity = 1
+severity = brutal
 exclude = CodeLayout::ProhibitParensWithBuiltins CodeLayout::RequireUseUTF8 ControlStructures::ProhibitPostfixControls ControlStructures::ProhibitUnlessBlocks Documentation::RequirePODSections Documentation::RequirePackageMatchesPodName Editor::RequireEmacsFileVariables ErrorHandling::RequireCarping InputOutput::RequireBracedFileHandleWithPrint Lax::ProhibitEmptyQuotes::ExceptAsFallback Modules::RequireExplicitPackage RegularExpressions::RequireLineBoundaryMatching Subroutines::ProhibitCallsToUndeclaredSubs Subroutines::ProhibitCallsToUnexportedSubs Subroutines::RequireArgUnpacking Tics::ProhibitUseBase ValuesAndExpressions::ProhibitAccessOfPrivateData Documentation::RequirePodSections InputOutput::RequireBriefOpen Modules::ProhibitMultiplePackages ValuesAndExpressions::RequireConstantVersion ValuesAndExpressions::RestrictLongStrings ValuesAndExpressions::ProhibitNoisyQuotes InputOutput::ProhibitOneArgSelect Subroutines::ProhibitUnusedPrivateSubroutines BuiltinFunctions::ProhibitUselessTopic Miscellanea::RequireRcsKeywords Modules::RequireExplicitInclusion RegularExpressions::RequireDotMatchAnything
 
 # Modules::RequireExplicitInclusion turned off to avoid X::->whatever giving
 # errors
+
+verbose = %m at line %l, near '%r'. [%p; %s]\n
 
 #[BuiltinFunctions::ProhibitStringyEval]
 #allow_includes = 1
