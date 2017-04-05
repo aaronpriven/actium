@@ -1,5 +1,6 @@
 package Actium::Cmd::MakeBags 0.012;
 
+__END__
 # Makes service change bag decals
 
 use Actium::Preamble;
