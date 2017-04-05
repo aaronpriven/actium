@@ -12,10 +12,13 @@ use Scalar::Util(qw[blessed reftype looks_like_number]);       ### DEP ###
 use Ref::Util (qw/is_plain_hashref is_plain_arrayref/);        ### DEP ###
 use Carp;                                                      ### DEP ###
 use File::Spec;                                                ### DEP ###
+use Const::Fast;                                               ### DEP ###
 
-use English '-no-match-vars';
+use English '-no_match_vars';
 
+## no critic (ProhibitConstantPragma)
 use constant DEBUG => 1;
+## use critic
 
 use Sub::Exporter -setup => {
     exports => [
@@ -43,6 +46,8 @@ use Sub::Exporter -setup => {
     ]
 };
 # Sub::Exporter ### DEP ###
+
+## no critic (RequirePodAtEnd)
 
 =encoding utf-8
 
@@ -360,7 +365,7 @@ sub population_stdev {
     my @popul = is_plain_arrayref( $_[0] ) ? @{ $_[0] } : @_;
 
     my $themean = mean(@popul);
-    return sqrt( mean( [ map $_**2, @popul ] ) - ( $themean**2 ) );
+    return sqrt( mean( [ map { $_**2 } @popul ] ) - ( $themean**2 ) );
 }
 
 =item halves( I<wholes> , I<halves> )
@@ -375,7 +380,6 @@ sub halves {
     my ( $wholes, $halves ) = ( flatten(@_) );
     return ( $wholes * 2 + $halves );
 }
-
 
 =back
 
@@ -444,8 +448,8 @@ data structure, suitable for displaying and debugging.
 
 =cut
 
-sub dumpstr (\[@$%&];%) {
-    # prototype copied from Data::Printer::np
+sub dumpstr (\[@$%&];%) {    ## no critic (ProhibitSubroutinePrototypes)
+                              # prototype copied from Data::Printer::np
     require Data::Printer;    ### DEP ###
     return Data::Printer::np(
         @_,
@@ -467,7 +471,7 @@ shown taking up the proper width.
 =item u_columns
 
 This returns the number of columns in its first argument, as determined
-by the L<Unicode::GCString> module. 
+by the L<Unicode::GCString|Unicode::GCString> module. 
 
 =cut
 
@@ -500,7 +504,7 @@ sub u_pad {
 
     my $textwidth = u_columns($text);
 
-    return $text unless $textwidth < $width;
+    return $text if $textwidth >= $width;
 
     my $spaces = ( $SPACE x ( $width - $textwidth ) );
 
@@ -511,7 +515,8 @@ sub u_pad {
 =item u_wrap (I<string>, I<min_columns>, I<max_columns>)
 
 Takes a string and wraps it to a number of columns, producing 
-a series of shorter lines, using the L<Unicode::Linebreak> module.
+a series of shorter lines, using the 
+L<Unicode::Linebreak|Unicode::LineBreak> module.
 If the string has embedded newlines, these are taken as separating
 paragraphs.
 
@@ -526,16 +531,19 @@ from Unicode::LineBreak. If not present, 79 will be used.
 
 =cut
 
+const my $DEFAULT_LINE_LENGTH  => 79;
+const my $DEFAULT_MINIMUM_LINE => 3;
+
 sub u_wrap {
     my ( $msg, $min, $max ) = @_;
 
     return unless defined $msg;
 
     $min //= 0;
-    $max ||= 79;
+    $max ||= $DEFAULT_LINE_LENGTH;
 
     return $msg
-      if $max < 3 or $min > $max;
+      if $max < $DEFAULT_MINIMUM_LINE or $min > $max;
 
     require Unicode::LineBreak;    ### DEP ###
 
@@ -588,12 +596,12 @@ sub u_trim_to_columns {
     }
 
     return $gc->as_string if $columns == $max_columns;
-    
-    return u_pad($gc->as_string, $max_columns);
+
+    return u_pad( $gc->as_string, $max_columns );
     # in case we trimmed off a double-wide character or something,
     # pad it to the right number of columns
 
-}
+} ## tidy end: sub u_trim_to_columns
 
 =item display_percent
 
@@ -604,7 +612,9 @@ Returns the first argument as a whole percentage:
 sub display_percent {
     my $val   = shift;
     my $total = shift;
+    ## no critic (ProhibitMagicNumbers)
     return sprintf( ' %.0f%%', $val / $total * 100 );
+    ## use critic
 }
 
 =back
@@ -782,11 +792,11 @@ Note that no change is made to any named arguments.
 sub positional {
 
     my $argument_r = shift;
+    my $qualsub    = __PACKAGE__ . '::positional';
     ## no critic (RequireInterpolationOfMetachars)
-    my $qualsub = __PACKAGE__ . '::positional';
-    ## use critic
     croak 'First argument to ' . $qualsub . ' must be a reference to @_'
       if not( ref($argument_r) eq 'ARRAY' );
+    ## use critic
 
     my @arguments = @{$argument_r};
     my @attrnames = @_;
