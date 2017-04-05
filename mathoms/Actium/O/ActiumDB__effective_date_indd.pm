@@ -1,3 +1,5 @@
+__END__
+
 sub agency_effective_date {
     my $self         = shift;
     my $agency       = shift;
