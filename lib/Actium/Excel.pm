@@ -20,7 +20,7 @@ const my $xlsx_window_width  => 1200;
 
 sub new_workbook {
 
-    my $fh_or_fname;
+    my $fh_or_fname = shift;
 
     my $workbook = Excel::Writer::XLSX->new($fh_or_fname);
     if ( not defined $workbook ) {
