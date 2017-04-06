@@ -80,8 +80,7 @@ const my $KML_END => <<'KMLEND';
 </kml>
 KMLEND
 
-const my @RGBS =>
-  qw(
+const my @RGBS => qw(
   6666FF
   0080FF
   00FF00
@@ -115,7 +114,7 @@ sub _hash_color {
     my $color = $HASH_COLORS[ $count % @HASH_COLORS ];
     return $color_of_r->{$value} = $color;
 
-} ## tidy end: sub _hash_color
+}
 
 sub stops2kml {
     my $actiumdb  = shift;
@@ -126,7 +125,7 @@ sub stops2kml {
             COLUMNS => [
                 qw/c_description_fullabbr h_stp_identifier
                   h_loca_latitude h_loca_longitude p_active p_lines
-                  p_linedirs u_connections u_flex_route u_work_zone 
+                  p_linedirs u_connections u_flex_route u_work_zone
                   c_city /
             ],
         }
@@ -297,11 +296,8 @@ sub _kml_stop_description {
 {
 
     const my @KML_LINE_TYPES => (
-        'Rapid',              'Transbay',
-        'Dumbarton Express',  'Broadway Shuttle',
-        'All Nighter',        'Local',
-        'Service to Schools', 'Flex',
-        $EMPTY_STR,
+        'Flex' , 'Rapid', 'Transbay', 'Dumbarton Express', 'Broadway Shuttle',
+        'All Nighter', 'Local', 'Service to Schools', $EMPTY_STR,
     );
 
     const my $LOWEST_PRIORITY => scalar @KML_LINE_TYPES;
@@ -309,13 +305,14 @@ sub _kml_stop_description {
     const my %KML_LINE_COLORS => (
         Rapid                => 'FF4040FF',
         Transbay             => 'FF00FF00',
-        'Dumbarton Express'  => 'FFFF6060',
+        'Dumbarton Express'  => 'FFFF8000',
         'Broadway Shuttle'   => 'FF00FFC0',
         'All Nighter'        => 'FFFFFF00',
         Local                => 'FFFFFF00',
         'Service to Schools' => 'FF80FFFF',
-        Flex                 => 'FFAF1D30',
-        $EMPTY_STR           => 'FF80FFFF',
+        # flex is 301DAF - multiplied by 1.46
+        Flex       => 'FF462AFF',
+        $EMPTY_STR => 'FF80FFFF',
     );
 
     my %color_of_priority;
