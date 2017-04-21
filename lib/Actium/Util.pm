@@ -860,6 +860,10 @@ sub positional_around {
 
 =back
 
+1;
+
+__END__
+
 =head1 DEPENDENCIES
 
 =over
@@ -901,4 +905,3 @@ FITNESS FOR A PARTICULAR PURPOSE.
 
 =cut
 
-1;
