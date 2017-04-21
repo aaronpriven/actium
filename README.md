@@ -19,3 +19,20 @@ It is the name of peninsula in Greece; it gave its name to an
 important 
 [battle](https://en.wikipedia.org/wiki/Battle_of_Actium) that gave rise to
 the Roman Empire. 
+
+### COPYRIGHT & LICENSE
+
+Copyright 2011-2017
+
+The Actium system is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+* the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+* the Artistic License version 2.0.
+
+This system is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
