@@ -57,3 +57,22 @@ Once makepoints and k2id have been run, the resultant InDesign Tagged Text files
 Once the sign is ready we print it on a large-format inkjet printer. AC Transit has two, an Epson Stylus Pro 10600 purchased several years ago, and a newer Epson Stylus Pro 11880 purchased as part of our MTC work. Each uses Epson color-fast ink; we have not had problems with fading, even in color. We use a special resin-coated, UV- and water-resistant paper (Paper #4301 by Cartolith Group). This paper does not require lamination for outdoor use.
 
 Since we have many different sizes of cases, we order the paper cut in rolls to size – different widths for each size of sign. The large-format inkjet printers have cutting blades that cut the roll paper at the page border. The upshot is that what comes out of the large-format inkjet printer is ready to post. We log the printing of the insert in our database, package them and send them to the appropriate installation crew.
+
+
+
+## COPYRIGHT & LICENSE
+
+Copyright 2011-2017
+
+The Actium system is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+* the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+* the Artistic License version 2.0.
+
+This system is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.

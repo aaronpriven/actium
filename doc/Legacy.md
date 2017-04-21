@@ -27,3 +27,22 @@ In late 2009 I decided again that a new start was necessary. I began keeping the
 Stages two and three were attempts to restart the programs, without integrating the older programs into the new code base. It is clear to me now that an incremental approach is going to be better than such a radical change. Thus, I moved all the files into the new version control structure, and decided that no matter how ugly the code was, it ought to be made public, so I moved the repository from my own server to Google Code.
 
 The effort here is going to be incremental simplification of code, as well as documentation of the code and how to use it.
+
+
+
+## COPYRIGHT & LICENSE
+
+Copyright 2011-2017
+
+The Actium system is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+* the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+* the Artistic License version 2.0.
+
+This system is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.

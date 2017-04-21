@@ -383,3 +383,23 @@ outlines (which our print shop will request). It will then save a
 PDF of each of the InDesign files and then use Illustrator to save
 each of those PDF files as EPS files. It will save them in the
 folder "SaveAsEPS" in the Desktop folder. Those EPS files can then be zipped and sent to the print shop.
+
+
+
+
+## COPYRIGHT & LICENSE
+
+Copyright 2011-2017
+
+The Actium system is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+* the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+* the Artistic License version 2.0.
+
+This system is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
