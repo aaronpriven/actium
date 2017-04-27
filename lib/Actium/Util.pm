@@ -860,6 +860,8 @@ sub positional_around {
 
 =back
 
+=cut
+
 1;
 
 __END__
