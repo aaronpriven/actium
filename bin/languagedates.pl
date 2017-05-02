@@ -3,8 +3,8 @@ use warnings;
 
 our $VERSION = 0.012;
 
-use DateTime;
-use DateTime::Format::CLDR;
+use DateTime; ### DEP ###
+use DateTime::Format::CLDR; ### DEP ###
 
 use open (qw/:std :utf8/);
 
