@@ -64,6 +64,12 @@ Now works as long as one installs a homebrew version of openssl first,
 and follows the instructions regarding adding items to environment variables
 (including PATH).
 
+* DateTime::Format::CLDR
+
+There's some bug in either this or DateTime::TimeZone that makes it fail with
+DateTime::TimeZone 2.10 or 2.11. I installed DateTime::TimeZone 2.09 and it 
+passed.
+
 ## COPYRIGHT & LICENSE
 
 Copyright 2011-2017
