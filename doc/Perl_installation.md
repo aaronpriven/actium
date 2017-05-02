@@ -56,8 +56,13 @@ It fails a couple of tests trying to load the apache.org site. I think
 these are due to changes at apache.org and not real problems with the module.
 I force installed this (cpanm -f LWP::Protocol::https)
 
+## notes as of May 1, 2017
 
+* LWP::Protocol::https 
 
+Now works as long as one installs a homebrew version of openssl first, 
+and follows the instructions regarding adding items to environment variables
+(including PATH).
 
 ## COPYRIGHT & LICENSE
 
