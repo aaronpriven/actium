@@ -119,7 +119,7 @@ sub new {
         my $pattern = shift // $datestr =~ m{/} ? '%m/%d/%Y' : '%Y-%m-%d';
         # %Y - four-digit year (unlike %D)
 
-        require DateTime::Format::Strptime;
+        require DateTime::Format::Strptime; ### DEP ###
 
         my $strp_obj = $strp_obj_of{$pattern}
           //= DateTime::Format::Strptime->new(
@@ -190,8 +190,8 @@ sub new {
 
         my $method = "date_format_$format";
 
-        require DateTime::Locale;
-        require DateTime::Format::CLDR;
+        require DateTime::Locale; ### DEP ###
+        require DateTime::Format::CLDR; ### DEP ###
 
         my $dl = DateTime::Locale->load($locale);
 
