@@ -380,8 +380,6 @@ An object. A new object is returned using DateTime->from_object, q.v.
 
 =item * 
 
-=item *
-
 A string. This is treated as the argument to strptime. 
 
 =back
