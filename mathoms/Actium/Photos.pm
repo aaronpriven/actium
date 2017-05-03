@@ -4,6 +4,9 @@
 
 package Actium::Photos 0.010;
 
+__END__ 
+# eliminate old dependency
+
 use Actium::Preamble;
 use Flickr::API2; ### DEP ###
 
