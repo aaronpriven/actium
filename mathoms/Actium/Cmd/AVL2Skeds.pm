@@ -1,5 +1,8 @@
 package Actium::Cmd::AVL2Skeds 0.012;
 
+__END__
+# eliminate call for old dependency
+
 # This is one of the most important programs: it produces the skeds files from
 # the avl files.
 
