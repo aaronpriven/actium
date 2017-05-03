@@ -62,6 +62,12 @@ sub OPTIONS {
               . ' (Accepts a regular expression.)',
             fallback => $EMPTY
         },
+        {   spec => 'delivery=s',
+            description =>
+              'Will only process signs that have a given delivery.'
+              . ' (Accepts a regular expression.)',
+            fallback => $EMPTY
+        },
 
         # Note that the regular expression feature, while not allowing more
         # access than is given at the command line anyway, could be problematic
@@ -75,11 +81,12 @@ sub OPTIONS {
             fallback => $EMPTY,
         },
 
-        {   spec        => 'cluster=s',
-            description => 'Sign cluster used for this run. '
-              . 'If specified, only signs in this cluster will be '
-              . 'produced. Use _ for no cluster',
-            fallback => $EMPTY,
+        {   spec        => 'clusterize!',
+            description => <<'EOT',
+If specified, will group signs first by delivery, then by stop work zone.
+Default is on; specify -no-clusterize to turn off.
+EOT
+            fallback => 1,
         },
 
         {   spec        => 'agency=s',
@@ -123,7 +130,7 @@ sub START {
         die "Agency " . $env->option('agency') . " not found.\n";
     }
 
-    my $effdate = $actiumdb->effective_date(agency => $run_agency);
+    my $effdate = $actiumdb->effective_date( agency => $run_agency );
 
     $actiumdb->load_tables(
         requests => {
@@ -155,7 +162,7 @@ sub START {
             Stops_Neue => {
                 hash        => \%stops,
                 index_field => 'h_stp_511_id',
-                fields      => [qw[h_stp_511_id c_description_full ]],
+                fields => [qw[h_stp_511_id c_description_full u_work_zone]],
             },
         }
     );
@@ -170,11 +177,11 @@ sub START {
         next if $agency and $agency ne $run_agency;
 
         my @regions;
-        my $tempregions = u::trim( $template{Regions} );
-        $tempregions =~ s/\s+/ /;
-        $tempregions =~ s/[^0-9: ]//g;
+        my $regionspec = u::trim( $template{Regions} );
+        $regionspec =~ s/\s+/ /;
+        $regionspec =~ s/[^0-9: ]//g;
 
-        foreach my $region ( split( ' ', $tempregions ) ) {
+        foreach my $region ( split( ' ', $regionspec ) ) {
             my ( $columns, $height ) = split( /:/, $region );
             push @regions, { columns => $columns, height => $height };
         }
@@ -206,59 +213,86 @@ sub START {
 
     $load_cry->done;
 
-    my $cluster_opt = $env->option('cluster');
+    my @signstodo;
+
+    if (@argv) {
+        @signstodo = sort { $a <=> $b } @argv;
+    }
+    else {
+        @signstodo = sort { $a <=> $b } keys %signs;
+    }
 
     my $signtype_opt = $env->option('type');
-    my @matching_signtypes;
+    my $delivery_opt = $env->option('delivery');
 
-    if ($signtype_opt) {
-        @matching_signtypes = grep {m/\A$signtype_opt\z/} keys %signtypes;
+    my ( %signtype_matches, %delivery_matches );
+
+    if ( $signtype_opt or $delivery_opt ) {
 
         # Note that the regular expression feature, while not allowing more
         # access than is given at the command line anyway, could be problematic
         # if this used on a server.
 
-        if ( not @matching_signtypes ) {
-            $makepoints_cry->text(
-                "No signtype matches $signtype_opt specified on command line.");
-            $makepoints_cry->d_error;
-            exit 1;
+        my ( %seen_signtype, %seen_delivery );
+
+        foreach my $signid (@signstodo) {
+            my $delivery = $signs{$signid}{Delivery} // $EMPTY;
+            my $signtype = $signs{$signid}{SignType} // $EMPTY;
+            $seen_delivery{$delivery} = 1;
+            $seen_signtype{$signtype} = 1;
         }
-    }
-    else {
-        @matching_signtypes = keys %signtypes;
-    }
-    my %signtype_matches = map { $_, 1 } @matching_signtypes;
+
+        if ($signtype_opt) {
+            my @matching_signtypes
+              = grep {m/\A$signtype_opt\z/} keys %seen_signtype;
+
+            if ( not @matching_signtypes ) {
+                $makepoints_cry->text(
+                    "No signtype of signs to generate matches $signtype_opt "
+                      . "specified on command line." );
+                $makepoints_cry->d_error;
+                exit 1;
+            }
+            %signtype_matches = map { $_, 1 } @matching_signtypes;
+            $makepoints_cry->text("Using sign types: @matching_signtypes");
+        }
+
+        if ($delivery_opt) {
+            my @matching_deliveries
+              = grep {m/\A$delivery_opt\z/} keys %seen_delivery;
+
+            if ( not @matching_deliveries ) {
+                $makepoints_cry->text(
+                    "No delivery of signs to generate matches $delivery_opt "
+                      . "specified on command line." );
+                $makepoints_cry->d_error;
+                exit 1;
+            }
+            %delivery_matches = map { $_, 1 } @matching_deliveries;
+            $makepoints_cry->text("Using deliveries: @matching_deliveries");
+        }
+
+    } ## tidy end: if ( $signtype_opt or ...)
 
     my $cry = cry("Now processing point schedules for sign number:");
-
-    my $displaycolumns = 0;
-    my @signstodo;
-
-    if (@argv) {
-        @signstodo = @argv;
-    }
-    else {
-        @signstodo = keys %signs;
-    }
 
     my ( %skipped_stops, %points_of_signtype, %errors, %heights );
 
   SIGN:
-    foreach my $signid ( sort { $a <=> $b } @signstodo ) {
+    foreach my $signid (@signstodo) {
 
         my $stopid   = $signs{$signid}{stp_511_id};
         my $delivery = $signs{$signid}{Delivery} // $EMPTY;
         my $city     = $signs{$signid}{City} // $EMPTY;
         my $signtype = $signs{$signid}{SignType} // $EMPTY;
         my $status   = $signs{$signid}{Status};
-        my $cluster  = $signs{$signid}{Cluster} // $EMPTY;
-
-        next SIGN if $cluster_opt eq '_' and $cluster eq $EMPTY;
-        next SIGN if $cluster_opt and $cluster_opt ne $cluster;
+        my $workzone;
 
         next SIGN
-          if not exists $signtype_matches{$signtype};
+          if $signtype_opt and not exists $signtype_matches{$signtype};
+
+        next SIGN
+          if $delivery_opt and not exists $delivery_matches{$delivery};
 
         next SIGN
           if $env->option('update')
@@ -269,12 +303,16 @@ sub START {
             $nonstopcity = $signs{$signid}{NonStopCity};
             $nonstoplocation
               = $signs{$signid}{NonStopLocation} . ', ' . $nonstopcity;
+            $workzone = $EMPTY;
         }
-        
+        else {
+            $workzone = $stops{$stopid}{u_work_zone} // $EMPTY;
+        }
+
         my $smoking;
         #if ($signtype =~ /^TID/) {
         #    $smoking = $signs{$signid}{TIDFile};
-        #}    
+        #}
         # before this is useful we need to give every smoking box
         # a scripting label, on every template. Sigh.
 
@@ -332,9 +370,10 @@ sub START {
         # 1) Read kpoints from file
 
         my $point = Actium::O::Points::Point->new_from_kpoints(
-            $stopid, $signid,    $effdate,
+            $stopid,  $signid,            $effdate,
             $agency,  $omitted_of_stop_r, $nonstoplocation,
-            $smoking, $delivery,          $signup
+            $smoking, $delivery,          $signup,
+            $workzone,
         );
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header
@@ -410,6 +449,9 @@ sub START {
 
     my $list_fh = $pointlist_folder->open_write($listfile);
 
+    # here is where to get the clusters from Actium::Clusterize
+    # and put them in the sets
+
     foreach my $signtype ( sort keys %points_of_signtype ) {
 
         my @points = @{ $points_of_signtype{$signtype} };
@@ -417,9 +459,6 @@ sub START {
         # sort numerically by signid
 
         my $signids_in_a_file = $signtypes{$signtype}{StopIDsInAFile};
-        if ( $cluster_opt and $cluster_opt ne '_' ) {
-            $signids_in_a_file = 9999;
-        }
 
         my $end_signid = $signids_in_a_file;
 
@@ -502,24 +541,24 @@ sub _get_run_name {
     my $run_agency_abbr = shift;
     my $nameopt         = $env->option('name');
 
-    if ( defined $nameopt and $nameopt ne $EMPTY ) {
+    if ( defined $nameopt ) {
+        if ( $nameopt eq '_' ) {
+            return $EMPTY;
+        }
         return '.' . $nameopt;
     }
-    if ( $nameopt eq '_' ) {
-        return $EMPTY;
-    }
 
-    my @args        = $env->argv;
-    my $signtype    = $env->option('type');
-    my $cluster_opt = $env->option('cluster');
+    my @args     = $env->argv;
+    my $signtype = $env->option('type');
+    #my $cluster_opt = $env->option('cluster');
 
     my @run_pieces;
     push @run_pieces, $run_agency_abbr
       unless $run_agency_abbr eq $FALLBACK_AGENCY_ABBR;
     push @run_pieces, join( ',', @args ) if @args;
-    push @run_pieces, $signtype       if $signtype;
-    push @run_pieces, "C$cluster_opt" if $cluster_opt;
-    push @run_pieces, 'U'             if $env->option('update');
+    push @run_pieces, $signtype if $signtype;
+    #push @run_pieces, "C$cluster_opt" if $cluster_opt;
+    push @run_pieces, 'U' if $env->option('update');
 
     if (@run_pieces) {
         return '.' . join( '_', @run_pieces );
