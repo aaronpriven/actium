@@ -51,7 +51,7 @@ has nonstoplocation => (
     isa => 'Maybe[Str]',
 );
 
-has smoking => (
+has [ qw/smoking workzone/] => (
     is      => 'ro',
     isa     => 'Str',
     default => $EMPTY,
@@ -198,7 +198,7 @@ sub new_from_kpoints {
     my ($class, $stopid, $signid, $effdate,
         $agency, $omitted_of_stop_r,
         $nonstoplocation, $smoking, $delivery,
-        $signup
+        $signup, $workzone,
     ) = @_;
 
     my $self = $class->new(
@@ -211,6 +211,7 @@ sub new_from_kpoints {
         omitted_of_stop_r => $omitted_of_stop_r,
         delivery          => $delivery,
         signup            => $signup,
+        workzone => $workzone,
     );
     my $is_simple = $self->is_simple_stopid;
 
