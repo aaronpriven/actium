@@ -142,7 +142,12 @@ on openOriginalIDfile(OriginalIDFIle, AdditionalComponent)
 	tell application "Adobe InDesign CC 2017"
 		set OriginalIDFileSpec to OriginalIDFileFolder & OriginalIDFIle & ".indd"
 		set myDocument to open OriginalIDFileSpec without showing window
-		set NewIDFile to NewIDPath & ":" & OriginalIDFIle & "_" & Signup & "_" & AdditionalComponent & ".indd"
+		if AdditionalComponent = "all" then
+			set AdditionInFile to ""
+		else
+			set AdditionInFile to "_" & AdditionalComponent
+		end if
+		set NewIDFile to NewIDPath & ":" & OriginalIDFIle & "_" & Signup & AdditionInFile & ".indd"
 		set myDocument to save myDocument to NewIDFile with force save
 		return myDocument
 	end tell
