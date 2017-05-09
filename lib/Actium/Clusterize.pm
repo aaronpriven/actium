@@ -7,17 +7,30 @@ use Set::IntSpan;                                               ### DEP ###
 
 sub clusterize {
 
-    ( my $size, \my %original_count, my $root_digits ) = _validate(@_);
+    (   my $size,
+        \my %original_count,
+        my $root_digits,
+        \my @all_values,
+        my $return,
+    ) = _validate(@_);
 
     ## pad leaves to the longest length, with spaces
 
     my $leaf_length = u::max( map {length} keys %original_count );
 
-    unless (u::looks_like_number($root_digits)
-        and $root_digits >= 0
-        and $root_digits < $leaf_length )
-    {
+    if ( not( u::looks_like_number($root_digits) ) or $root_digits < 1 ) {
         croak "Invalid root digit specification $root_digits";
+    }
+
+    if ( $leaf_length <= $root_digits ) {
+        if ( $return eq 'runlist' ) {
+            return +{ map { $_ => $_ } keys %original_count };
+        }
+        else {
+            return +{ map { $_ => [$_] } keys %original_count };
+        }
+   #croak "Longest leaf length ($leaf_length) less than or equal to the number "
+   #  . "of root digits specified ($root_digits)";
     }
 
     my ( %count_of_leaf, %original_leaf_of );
@@ -27,9 +40,12 @@ sub clusterize {
         $original_leaf_of{$newleaf} = $original_leaf;
     }
 
-    my ( %count_of_node, %is_a_root, %children_of );
+    my ( %count_of_node, %is_a_root, %children_of, %leaves_of );
 
     foreach my $leaf ( keys %count_of_leaf ) {
+
+        $leaf = scalar( '0' x $leaf_length ) unless $leaf;
+
         my @chars = split( //, $leaf );
         if ( @chars < $leaf_length ) {
             push @chars, " " x ( $leaf_length - @chars );
@@ -41,6 +57,8 @@ sub clusterize {
 
             my $node = join( $EMPTY, @chars );
             $count_of_node{$node} += $leafcount;
+
+            push $leaves_of{$node}->@*, $leaf;
 
             pop @chars;
 
@@ -68,20 +86,20 @@ sub clusterize {
             push @processed, $node;
         }
 
-        my @children
+        my @children_nodes
           = reverse sort { $count_of_node{$a} <=> $count_of_node{$b} }
           keys $children_of{$node}->%*;
 
         # as long as there are children large enough, and which leave
         # enough left in the node to continue, bump that up
 
-        while ( @children > 1
-            and $count_of_node{ $children[0] } >= $size
-            and ( $count_of_node{$node} - $count_of_node{ $children[0] } )
+        while ( @children_nodes > 1
+            and $count_of_node{ $children_nodes[0] } >= $size
+            and ( $count_of_node{$node} - $count_of_node{ $children_nodes[0] } )
             >= $size )
         {
 
-            my $child = shift @children;
+            my $child = shift @children_nodes;
 
             $count_of_node{$node} -= $count_of_node{$child};
             delete $children_of{$node}{$child};
@@ -90,19 +108,19 @@ sub clusterize {
 
         }
 
-        if ( @children == 1 ) {
+        if ( @children_nodes == 1 ) {
             # only one child left? process it
-            unshift @to_process, @children;
+            unshift @to_process, @children_nodes;
             next NODE;
         }
 
-        @children = sort { $a <=> $b } @children;
+        @children_nodes = sort @children_nodes;
 
         my $partition_letter = 'a';
 
       PARTITION:
-        while ( @children >= 4
-            and ( u::sum( @count_of_node{@children} ) ) >= $size * 2 )
+        while ( @children_nodes >= 4
+            and ( u::sum( @count_of_node{@children_nodes} ) ) >= $size * 2 )
         {
 
             # so it may be possible to partition these.
@@ -116,16 +134,16 @@ sub clusterize {
             # partitioned (e.g., 701 => 1, 702=> 2, 703 => 38, 704  => 39 )
             # it's still unlikely to lead to absurdly large clusters
 
-            foreach my $last_item_of_partition ( 1 .. $#children - 2 ) {
+            foreach my $last_item_of_partition ( 1 .. $#children_nodes - 2 ) {
 
-                my @partition       = @children[ 0 .. $last_item_of_partition ];
+                my @partition = @children_nodes[ 0 .. $last_item_of_partition ];
                 my $partition_count = u::sum( @count_of_node{@partition} );
 
                 if ( $partition_count >= $size ) {
 
                     # do the partition
 
-                    splice( @children, 0, $last_item_of_partition + 1 );
+                    splice( @children_nodes, 0, $last_item_of_partition + 1 );
 
                     my $partition_node = $node . ++$partition_letter;
                     push @processed, $partition_node;
@@ -148,7 +166,33 @@ sub clusterize {
 
             last PARTITION;
 
-        } ## tidy end: PARTITION: while ( @children >= 4 and...)
+        } ## tidy end: PARTITION: while ( @children_nodes >=...)
+
+        # if any of the remaining children of node are not leaves,
+        # flatten the structure by a level -- make the grandchildren
+        # the children -- and reprocess.
+
+        if ( u::any { exists $children_of{$_} } @children_nodes ) {
+
+            foreach my $child_node (@children_nodes) {
+                if ( exists $children_of{$child_node} ) {
+                    my @grandchildren_nodes
+                      = keys $children_of{$child_node}->%*;
+                    delete $children_of{$node}{$child_node};
+                    foreach my $grandchild_node (@grandchildren_nodes) {
+                        $children_of{$node}{$grandchild_node} = 1;
+                    }
+
+                }
+
+            }
+
+            unshift @to_process, $node;
+            next NODE;
+
+        }
+
+        # if all are leaves, then we're done
 
         push @processed, $node;
 
@@ -185,10 +229,38 @@ sub clusterize {
 
         }
 
-        my $span        = Set::IntSpan::->new( \@leaves );
-        my $displaynode = $span->run_list;
+        my $span = Set::IntSpan::->new( \@leaves );
 
-        $node_of_leaf{$_} = $displaynode foreach @leaves;
+        if (@all_values) {
+
+           # go through each span of holes. If the *entire* hole is missing in
+           # all values, then add the hole to the displayed span.
+           # If any of the values of the hole is a real value, don't fill it in.
+
+            my $all_values_set = Set::IntSpan->new(@all_values);
+
+            my @holes = $span->holes->sets;
+            foreach my $hole_set (@holes) {
+                my $diff_set = $hole_set->diff($all_values_set);
+                # set of integers in $hole_set but not in $all_values_set
+                if ( $hole_set->equal($diff_set) ) {
+                    # if they are the same, so no member of the hole is in
+                    # all_values_set,
+                    $span->U($hole_set);
+                    # fill in the hole
+                }
+            }
+        } ## tidy end: if (@all_values)
+        my $returnnode;
+        if ( $return eq 'runlist' ) {
+            $returnnode = $span->run_list;
+        }
+        else {
+            $returnnode = scalar( $span->elements );
+            # returns a reference
+        }
+
+        $node_of_leaf{$_} = $returnnode foreach @leaves;
     } ## tidy end: foreach my $processed_node ...
 
     return \%node_of_leaf;
@@ -201,7 +273,9 @@ sub _validate {
         {   size        => { default => 40 },
             root_digits => { type    => $PV_TYPE{SCALAR}, default => 1 },
             count_of    => { type    => $PV_TYPE{HASHREF}, optional => 1 },
-            items    => { type    => $PV_TYPE{ARRAYREF}, optional => 1 },
+            items       => { type    => $PV_TYPE{ARRAYREF}, optional => 1 },
+            all_values  => { type    => $PV_TYPE{ARRAYREF}, optional => 1 },
+            return => { type => $PV_TYPE{SCALAR}, default => 'runlist' },
         }
     );
 
@@ -210,16 +284,33 @@ sub _validate {
     if ( exists $params{items} ) {
         croak "Cannot specify both count_of and items"
           if exists $params{count_of};
-        $count_of{$_}++ foreach ( $params{items}->@* );
+        \my @items = $params{items};
+        croak "No items passed to clusterize" unless @items;
+        $count_of{$_}++ foreach (@items);
     }
     elsif ( exists $params{count_of} ) {
         \%count_of = $params{count_of};
+        croak "No items passed to clusterize" unless %count_of;
     }
     else {
         croak "Must specify either count_of or items";
     }
 
-    return $params{size}, \%count_of, $params{root_digits};
+    my $all_values_r;
+    if ( exists $params{all_values} ) {
+        $all_values_r = $params{all_values};
+    }
+    else {
+        $all_values_r = [];
+    }
+
+    if ( $params{return} ne 'runlist' and $params{return} ne 'values' ) {
+        croak "Unknown return request (must be runlist or values) "
+          . $params{return};
+    }
+
+    return $params{size}, \%count_of, $params{root_digits}, $all_values_r,
+      $params{return};
 } ## tidy end: sub _validate
 
 1;
@@ -412,8 +503,21 @@ or "102-103" or even "102-105,107-108,150-151" if that's the result.
 
 Invalid root digit specification $root_digits
 
-The root_digit parameter was not a number, or negative, or more digits
-than the longest work zone number had.
+The root_digit parameter was not a number, or negative
+
+=for removed
+
+=item *
+
+Longest leaf length (...) less than or equal to the number of root digits specified (...)
+
+The root digit specification was so big, and the longest leaf length
+so small, that clusterization would be pointless as everything would be 
+in its own cluster.
+
+This is no longer valid as now clusters like this just return themselves
+
+=cut
 
 =item * 
 
