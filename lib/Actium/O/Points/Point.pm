@@ -31,7 +31,7 @@ const my $BOXBREAK     => $IDT->boxbreak;
 const my $BLANK_COLUMN => ( $BOXBREAK x 2 );
 const my $NBSP         => $IDT->nbsp;
 
-has [qw/stopid signid delivery agency/] => (
+has [qw/stopid signid delivery agency signtype/] => (
     is  => 'ro',
     isa => 'Str',
 );
@@ -51,7 +51,7 @@ has nonstoplocation => (
     isa => 'Maybe[Str]',
 );
 
-has [ qw/smoking workzone/] => (
+has [ qw/smoking city workzone/] => (
     is      => 'ro',
     isa     => 'Str',
     default => $EMPTY,
@@ -198,7 +198,7 @@ sub new_from_kpoints {
     my ($class, $stopid, $signid, $effdate,
         $agency, $omitted_of_stop_r,
         $nonstoplocation, $smoking, $delivery,
-        $signup, $workzone,
+        $signup, $workzone, $signtype, $city,
     ) = @_;
 
     my $self = $class->new(
@@ -212,6 +212,8 @@ sub new_from_kpoints {
         delivery          => $delivery,
         signup            => $signup,
         workzone => $workzone,
+        signtype => $signtype,
+        city => $city,
     );
     my $is_simple = $self->is_simple_stopid;
 
