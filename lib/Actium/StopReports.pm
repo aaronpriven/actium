@@ -9,18 +9,29 @@ use Sub::Exporter -setup => { exports => [qw(crewlist_xlsx stops2kml)] };
 ##################################################################
 ### KML output for Google Earth etc.
 
-const my $KML_START => <<'KMLSTART';
+const my $KML_ICON_DEFAULT =>
+  'http://maps.google.com/mapfiles/kml/paddle/wht-blank.png';
+
+const my %KML_ICON => (
+    $EMPTY    => $KML_ICON_DEFAULT,
+    Polesign  => 'http://maps.google.com/mapfiles/kml/paddle/wht-circle.png',
+    Shelter   => 'http://maps.google.com/mapfiles/kml/paddle/wht-square.png',
+    Other     => 'http://maps.google.com/mapfiles/kml/paddle/wht-diamond.png',
+    'Sort of' => 'http://maps.google.com/mapfiles/kml/paddle/wht-stars.png',
+);
+
+const my $KML_START => <<"KMLSTART";
 <?xml version="1.0" encoding="utf-8"?>
 <kml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/kml/2.2">
   <Document>
     <Style id="highlightInactivePlacemark">
-       <BalloonStyle><text>$[description]</text>
+       <BalloonStyle><text>\$[description]</text>
           <bgColor>FFCCCCCC</bgColor></BalloonStyle>
        <LabelStyle><scale>.7</scale></LabelStyle>
       <IconStyle>
          <scale>.7</scale>
         <Icon>
-          <href>http://maps.google.com/mapfiles/kml/shapes/placemark_square.png</href>
+          <href>$KML_ICON_DEFAULT</href>
         </Icon>
       </IconStyle>
     </Style>
@@ -28,29 +39,29 @@ const my $KML_START => <<'KMLSTART';
        <LabelStyle><scale>.9</scale></LabelStyle>
       <IconStyle>
         <Icon>
-          <href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href>
+          <href>$KML_ICON_DEFAULT</href>
         </Icon>
       </IconStyle>
-    <BalloonStyle><text>$[description]</text></BalloonStyle>
+    <BalloonStyle><text>\$[description]</text></BalloonStyle>
     </Style>
     <Style id="normalInactivePlacemark">
        <LabelStyle><scale>.7</scale></LabelStyle>
       <IconStyle>
          <scale>.7</scale>
         <Icon>
-          <href>http://maps.google.com/mapfiles/kml/shapes/placemark_square.png</href>
+          <href>$KML_ICON_DEFAULT</href>
         </Icon>
       </IconStyle>
-    <BalloonStyle><text>$[description]</text></BalloonStyle>
+    <BalloonStyle><text>\$[description]</text></BalloonStyle>
     </Style>
     <Style id="normalActivePlacemark">
        <LabelStyle><scale>.9</scale></LabelStyle>
       <IconStyle>
         <Icon>
-          <href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href>
+          <href>$KML_ICON_DEFAULT</href>
         </Icon>
       </IconStyle>
-    <BalloonStyle><text>$[description]</text>
+    <BalloonStyle><text>\$[description]</text>
     <bgColor>FFCCCCCC</bgColor></BalloonStyle>
     </Style>
         <StyleMap id="stopInactiveStyle">
@@ -137,6 +148,72 @@ sub stops2kml {
         }
     );
 
+    my ( %icon_of_stop, %signtype_of_stop );
+
+    {
+
+        const my @SIGNCOLUMNS =>
+          qw[ stp_511_id  Active Signs.SignType SignTypes.SignClassification ];
+        const my $SIGN_COLUMNS_SQL => join( ', ', @SIGNCOLUMNS );
+
+        my $signquery = <<"EOT";
+    SELECT $SIGN_COLUMNS_SQL
+    FROM Signs
+       LEFT JOIN Signtypes ON Signs.SignType = SignTypes.SignType
+       WHERE Signs.Active <> 'No'
+EOT
+
+        my $sth = $actiumdb->dbh->prepare($signquery);
+        $sth->execute();
+
+      SIGNROW:
+        while ( my $row_r = $sth->fetchrow_arrayref ) {
+            foreach ( @{$row_r} ) {
+                next SIGNROW unless defined;
+                s/\s+\z//;    # trim trailing white space
+            }
+
+            my ( $stopid, $active, $signtype, $signclassification ) = @{$row_r};
+
+            if ( exists $signtype_of_stop{$stopid} ) {
+                $signtype_of_stop{$stopid} .= " / $signtype";
+            }
+            else {
+                $signtype_of_stop{$stopid} = $signtype;
+            }
+
+            if ( u::feq( $active, 'Sort of' ) ) {
+                $icon_of_stop{$stopid} = $KML_ICON{'Sort of'};
+                next SIGNROW;
+            }
+
+            my $thisicon;
+
+            if ( exists $KML_ICON{$signclassification} ) {
+                $thisicon = $KML_ICON{$signclassification};
+            }
+            else {
+                $thisicon = $KML_ICON{Other};
+            }
+
+            if ( exists $icon_of_stop{$stopid}
+                and $icon_of_stop{$stopid} ne $thisicon )
+            {
+                $icon_of_stop{$stopid} = $KML_ICON{'Sort of'};
+            }
+            else {
+                $icon_of_stop{$stopid} = $thisicon;
+            }
+
+        } ## tidy end: SIGNROW: while ( my $row_r = $sth->...)
+
+    }
+
+    #my $signs_r = $actiumdb->all_in_columns_key(
+    #   TABLE => 'Signs',
+    #   COLUMNS => 'stp_511_id',
+    #);
+
     my %folders;
 
     if ($is_wz_kml) {
@@ -171,9 +248,14 @@ sub stops2kml {
             $foldername = $activity;
         }
 
-        my $description = _kml_stop_description( \%stp );
+        my $description = _kml_stop_description( \%stp, \%signtype_of_stop );
 
         my $text;
+        my $icon_text = $EMPTY;
+        if ( exists $icon_of_stop{$stopid} ) {
+            $icon_text
+              = "<Icon>" . $icon_of_stop{$stopid} . "</Icon>";
+        }
 
         if ($is_wz_kml) {
 
@@ -189,6 +271,7 @@ sub stops2kml {
               .= "<Style>\n"
               . "<IconStyle>\n"
               . "<color>$color</color>\n"
+              . $icon_text
               . "</IconStyle>\n"
               . "<LabelStyle>\n"
               . "<color>$color</color>\n"
@@ -214,6 +297,7 @@ sub stops2kml {
                 $text
                   .= "<Style>\n"
                   . "<IconStyle>\n"
+                  . $icon_text
                   . "<color>$color</color>\n"
                   . "</IconStyle>\n"
                   . "<LabelStyle>\n"
@@ -261,7 +345,8 @@ sub stops2kml {
 
 sub _kml_stop_description {
 
-    my %stp = %{ +shift };
+    \my %stp              = shift;
+    \my %signtype_of_stop = shift;
 
     my $stop_id   = $stp{h_stp_511_id};
     my $desc      = $stp{c_description_fullabbr};
@@ -271,9 +356,14 @@ sub _kml_stop_description {
     my $linetext   = $lines         ? "<u>Lines:</u> $lines" : 'Inactive stop';
     my $activestar = $stp{p_active} ? $EMPTY_STR             : '*';
     my $workzone = $stp{u_work_zone};
+    my $signtype = $signtype_of_stop{$stop_id};
 
     my $connections      = $stp{u_connections};
     my $connections_text = $EMPTY_STR;
+    my $signtype_text    = $EMPTY_STR;
+    if ($signtype) {
+        $signtype_text = "<br>$signtype";
+    }
     if ($connections) {
         my @connections = split( /\r/, $connections );
         $connections_text
@@ -285,8 +375,9 @@ sub _kml_stop_description {
     my $text
       = "<p><b><u>$stop_id\x{2003}$hastus_id</u></b><br>\n"
       . "${activestar}$desc  [$workzone]</p>\n"
-      . "$linetext"
-      . "${connections_text}";
+      . $linetext
+      . $signtype_text
+      . $connections_text;
 
     require HTML::Entities;    ### DEP ###
     return HTML::Entities::encode_entities_numeric($text);
@@ -296,8 +387,11 @@ sub _kml_stop_description {
 {
 
     const my @KML_LINE_TYPES => (
-        'Flex' , 'Rapid', 'Transbay', 'Dumbarton Express', 'Broadway Shuttle',
-        'All Nighter', 'Local', 'Service to Schools', $EMPTY_STR,
+        'Flex',             'Rapid',
+        'Transbay',         'Dumbarton Express',
+        'Broadway Shuttle', 'All Nighter',
+        'Local',            'Service to Schools',
+        $EMPTY_STR,
     );
 
     const my $LOWEST_PRIORITY => scalar @KML_LINE_TYPES;
@@ -335,9 +429,10 @@ sub _kml_stop_description {
     }
 
     sub _kml_color {
-        my $lines_r  = shift;
-        my @lines    = @_;
-        my $priority = u::min( map { _kml_priority( $lines_r, $_ ) } @lines );
+        my $lines_r = shift;
+        my @lines   = @_;
+        my $priority
+          = u::min( map { _kml_priority( $lines_r, $_ ) } @lines );
         return $color_of_priority{$priority};
     }
 
@@ -345,7 +440,8 @@ sub _kml_stop_description {
 
 sub citiesbyline {
 
-    my %params = u::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
+    my %params
+      = u::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
     my $actiumdb = $params{actiumdb};
 
     my $eachstop = $actiumdb->each_columns_in_row_where(
@@ -384,7 +480,8 @@ sub citiesbyline {
 
 sub linesbycity {
 
-    my %params = u::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
+    my %params
+      = u::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
 
     my $actiumdb = $params{actiumdb};
 
@@ -462,8 +559,6 @@ sub linesbycity {
 } ## tidy end: sub linesbycity
 
 1;
-
-
 
 __END__
 
