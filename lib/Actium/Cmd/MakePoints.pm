@@ -12,6 +12,7 @@ use sort ('stable');    ### DEP ###
 use Actium::Preamble;
 
 use Actium::Union('ordered_union');
+use Actium::Clusterize('clusterize');
 
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
@@ -82,11 +83,21 @@ sub OPTIONS {
         },
 
         {   spec        => 'clusterize!',
-            description => <<'EOT',
-If specified, will group signs first by delivery, then by stop work zone.
-Default is on; specify -no-clusterize to turn off.
-EOT
+            description => 'If specified, will group signs first by delivery, '
+              . 'then by stop work zone. '
+              . 'Default is on; specify -no-clusterize to turn off.',
             fallback => 1,
+        },
+
+        {   spec => 'minimum-cluster=i',
+            description =>
+              'The number of signs that makes up a satisfactory cluster. '
+              . '(Work zones that differ in their first digits '
+              . 'will never be combined, '
+              . 'even if they are smaller than this value.)',
+
+            display_default => 1,
+            fallback        => 40,
         },
 
         {   spec        => 'agency=s',
@@ -164,8 +175,19 @@ sub START {
                 index_field => 'h_stp_511_id',
                 fields => [qw[h_stp_511_id c_description_full u_work_zone]],
             },
+            Cities => {
+                hash        => \my %cities,
+                index_field => 'City',
+                fields      => [qw[City CityWorkZone]],
+            },
         }
     );
+
+    my %city_of_workzone;
+    foreach my $city ( keys %cities ) {
+        my $workzone = $cities{$city}{CityWorkZone};
+        $city_of_workzone{$workzone} = $city;
+    }
 
     our %templates_of;
 
@@ -222,8 +244,9 @@ sub START {
         @signstodo = sort { $a <=> $b } keys %signs;
     }
 
-    my $signtype_opt = $env->option('type');
-    my $delivery_opt = $env->option('delivery');
+    my $signtype_opt   = $env->option('type');
+    my $delivery_opt   = $env->option('delivery');
+    my $clusterize_opt = $env->option('clusterize');
 
     my ( %signtype_matches, %delivery_matches );
 
@@ -276,7 +299,8 @@ sub START {
 
     my $cry = cry("Now processing point schedules for sign number:");
 
-    my ( %skipped_stops, %points_of_signtype, %errors, %heights );
+    my ( %skipped_stops, %points_of_delivery, @finished_points, %errors,
+        %heights, %workzone_count );
 
   SIGN:
     foreach my $signid (@signstodo) {
@@ -298,9 +322,9 @@ sub START {
           if $env->option('update')
           and not( u::feq( $status, 'Needs update' ) );
 
-        my ( $nonstoplocation, $nonstopcity );
+        my $nonstoplocation;
         if ( not($stopid) ) {
-            $nonstopcity = $signs{$signid}{NonStopCity};
+            my $nonstopcity = $signs{$signid}{NonStopCity};
             $nonstoplocation
               = $signs{$signid}{NonStopLocation} . ', ' . $nonstopcity;
             $workzone = $EMPTY;
@@ -370,10 +394,10 @@ sub START {
         # 1) Read kpoints from file
 
         my $point = Actium::O::Points::Point->new_from_kpoints(
-            $stopid,  $signid,            $effdate,
-            $agency,  $omitted_of_stop_r, $nonstoplocation,
-            $smoking, $delivery,          $signup,
-            $workzone,
+            $stopid,   $signid,            $effdate,
+            $agency,   $omitted_of_stop_r, $nonstoplocation,
+            $smoking,  $delivery,          $signup,
+            $workzone, $signtype,          $city,
         );
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header
@@ -394,13 +418,16 @@ sub START {
 
         #$point->sort_columns_by_route_etc;
 
+        $heights{$signid} = $point->heights if defined $point->heights;
+
         my $subtype = $point->sort_columns_and_determine_heights(
             $signs{$signid}{SignType} );
 
         if ( $subtype and $subtype ne '!' ) {
             #my ( $signtype, $subtype ) = split( /=/, $subtype );
-            push @{ $points_of_signtype{$signtype} }, [ $signid, $subtype ];
-
+            push @finished_points, $point;
+            push $points_of_delivery{$delivery}->@*, $point;
+            $workzone_count{$delivery}{$workzone}++;
         }
         else {
             push @{ $errors{$signid} },
@@ -442,50 +469,153 @@ sub START {
     my $run_name = _get_run_name( $env, $run_agency_abbr );
 
     my $listfile = $LISTFILE_BASE . $run_name . '.txt';
-
     my $list_cry = cry "Writing list to $listfile";
 
     my $pointlist_folder = $signup->subfolder('pointlist');
 
     my $list_fh = $pointlist_folder->open_write($listfile);
 
-    # here is where to get the clusters from Actium::Clusterize
-    # and put them in the sets
+    my %pages_of;
 
-    foreach my $signtype ( sort keys %points_of_signtype ) {
+    if ($clusterize_opt) {
 
-        my @points = @{ $points_of_signtype{$signtype} };
-        @points = sort { $a->[0] <=> $b->[0] } @points;
-        # sort numerically by signid
+        if ( exists $points_of_delivery{'Polecrew'} ) {
 
-        my $signids_in_a_file = $signtypes{$signtype}{StopIDsInAFile};
-
-        my $end_signid = $signids_in_a_file;
-
-        my $addition = "1-" . $signids_in_a_file;
-        my $file_line_has_been_output;
-
-        foreach my $point (@points) {
-
-            my $signid         = $point->[0];
-            my $subtype_letter = $point->[1];
-
-            while ( $signid > $end_signid ) {
-                $file_line_has_been_output = 0;
-                $addition                  = ( $end_signid + 1 ) . "-"
-                  . ( $end_signid + $signids_in_a_file );
-                $end_signid += $signids_in_a_file;
-            }
-            # separating the addition and the print allows there to be large
-            # gaps in the number of sign IDs
-
-            if ( not $file_line_has_been_output ) {
-                say $list_fh "FILE\t$signtype\t$addition";
-                $file_line_has_been_output = 1;
+            my %seen_workzone;
+            foreach my $stopid ( keys %stops ) {
+                $seen_workzone{ $stops{$stopid}{u_work_zone} } = 1;
             }
 
-            say $list_fh "$signid\t$subtype_letter";
-        } ## tidy end: foreach my $point (@points)
+            my $delivery = 'Polecrew';
+
+            \my @these_points = $points_of_delivery{$delivery};
+
+            \my %cluster_of_workzone = clusterize(
+                count_of   => $workzone_count{$delivery},
+                size       => $env->option('minimum-cluster'),
+                all_values => [ keys %seen_workzone ],
+                return     => 'runlist',
+            );
+
+            my $skip_addition;
+
+            if ( ( scalar keys %cluster_of_workzone ) == 1 ) {
+                $skip_addition = 1;
+            }
+
+            foreach my $point (@these_points) {
+
+                my $addition
+                  = $point->delivery . "_"
+                  . (
+                    $skip_addition
+                    ? 'all'
+                    : $cluster_of_workzone{ $point->workzone }
+                  );
+
+                push @{ $pages_of{ $point->signtype }{$addition} },
+                  [ $point->signid, $point->subtype ];
+
+            }
+
+        } ## tidy end: if ( exists $points_of_delivery...)
+
+        if ( exists $points_of_delivery{'Clear Channel'} ) {
+
+            my $delivery = 'Clear Channel';
+
+            \my @these_points = $points_of_delivery{$delivery};
+
+            my (%city_workzone_count);
+            foreach my $point (@these_points) {
+                my $city     = $point->city;
+                my $workzone = $cities{$city}{CityWorkZone};
+                $city_workzone_count{$workzone}++;
+            }
+
+            \my %cluster_of_cityworkzone = clusterize(
+                count_of => \%city_workzone_count,
+                size     => $env->option('minimum-cluster'),
+                return   => 'values',
+            );
+
+            my $skip_addition;
+            if ( ( scalar keys %cluster_of_cityworkzone ) == 1 ) {
+                $skip_addition = 1;
+            }
+
+            my %cluster_of_city;
+
+            foreach my $workzone ( keys %cluster_of_cityworkzone ) {
+                my $city = $city_of_workzone{$workzone};
+                \my @cluster_zones = $cluster_of_cityworkzone{$workzone};
+                my $cluster_display
+                  = u::joinseries_ampersand( sort map { $city_of_workzone{$_} }
+                      @cluster_zones );
+                $cluster_of_city{$city} = $cluster_display;
+            }
+
+            foreach my $point (@these_points) {
+
+                my $addition
+                  = $point->delivery . "_"
+                  . (
+                    $skip_addition
+                    ? 'all'
+                    : $cluster_of_city{ $point->city }
+                  );
+
+                push @{ $pages_of{ $point->signtype }{$addition} },
+                  [ $point->signid, $point->subtype ];
+
+            }
+        } ## tidy end: if ( exists $points_of_delivery...)
+
+        foreach my $delivery ( keys %points_of_delivery ) {
+            next if $delivery eq 'Polecrew' or $delivery eq 'Clear Channel';
+
+            \my @these_points = $points_of_delivery{$delivery};
+
+            foreach my $point (@these_points) {
+                push $pages_of{ $point->signtype }{$delivery}->@*,
+                  [ $point->signid, $point->subtype ];
+            }
+
+        }
+
+    } ## tidy end: if ($clusterize_opt)
+    else {
+
+        foreach my $point (@finished_points) {
+            push $pages_of{ $point->signtype }{'all'}->@*,
+              [ $point->signid, $point->subtype ];
+        }
+
+    }
+
+    # should we need to break up files because they are too big,
+    # here is where one would go through %pages_of and add _1, _2, etc.
+    # to the addition
+
+    foreach my $signtype ( sort keys %pages_of ) {
+
+        foreach my $addition ( sort keys $pages_of{$signtype}->%* ) {
+
+            my @pages = @{ $pages_of{$signtype}{$addition} };
+            @pages = sort { $a->[0] <=> $b->[0] } @pages;
+            # sort numerically by signid
+
+            say $list_fh "FILE\t$signtype\t$addition\t", scalar @pages;
+
+            foreach my $page (@pages) {
+
+                my $signid         = $page->[0];
+                my $subtype_letter = $page->[1];
+
+                say $list_fh "$signid\t$subtype_letter";
+            }
+        }
+
     } ## tidy end: foreach my $signtype ( sort...)
 
     close $list_fh;
@@ -541,7 +671,7 @@ sub _get_run_name {
     my $run_agency_abbr = shift;
     my $nameopt         = $env->option('name');
 
-    if ( defined $nameopt ) {
+    if ( defined $nameopt and $nameopt ne $EMPTY ) {
         if ( $nameopt eq '_' ) {
             return $EMPTY;
         }
@@ -550,15 +680,13 @@ sub _get_run_name {
 
     my @args     = $env->argv;
     my $signtype = $env->option('type');
-    #my $cluster_opt = $env->option('cluster');
 
     my @run_pieces;
     push @run_pieces, $run_agency_abbr
       unless $run_agency_abbr eq $FALLBACK_AGENCY_ABBR;
     push @run_pieces, join( ',', @args ) if @args;
     push @run_pieces, $signtype if $signtype;
-    #push @run_pieces, "C$cluster_opt" if $cluster_opt;
-    push @run_pieces, 'U' if $env->option('update');
+    push @run_pieces, 'U'       if $env->option('update');
 
     if (@run_pieces) {
         return '.' . join( '_', @run_pieces );
