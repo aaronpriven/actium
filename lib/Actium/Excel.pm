@@ -33,6 +33,7 @@ sub new_workbook {
     }
 
     $workbook->set_size( $xlsx_window_width, $xlsx_window_height );
+    return $workbook;
 
 }
 
