@@ -17,6 +17,8 @@ use Actium::Clusterize('clusterize');
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
 
+use Actium::Excel('new_workbook');
+
 use File::Slurper('read_text');    ### DEP ###
 use Text::Trim;                    ### DEP ###
 
@@ -25,7 +27,7 @@ use Actium::O::Points::Point;
 const my $LISTFILE_BASE    => 'pl';
 const my $ERRORFILE_BASE   => 'err';
 const my $HEIGHTSFILE_BASE => 'ht';
-#const my $SIGNIDS_IN_A_FILE => 250;
+const my $CHECKLIST_BASE   => 'check';
 
 const my $FALLBACK_AGENCY      => 'ACTransit';
 const my $FALLBACK_AGENCY_ABBR => 'AC';
@@ -84,7 +86,7 @@ sub OPTIONS {
 
         {   spec        => 'clusterize!',
             description => 'If specified, will group signs first by delivery, '
-              . 'then by stop work zone. '
+              . 'then by stop work zone for polecrew or city for Clear Channel. '
               . 'Default is on; specify -no-clusterize to turn off.',
             fallback => 1,
         },
@@ -113,14 +115,11 @@ sub START {
 
     my ( $class, $env ) = @_;
 
-    our (
-        $actiumdb,  %places,    %signs,   %stops, %lines,
-        %signtypes, @templates, %smoking, @ssj
-    );
+    our ( %places, %lines );
     # this use of global variables should be refactored...
 
-    $actiumdb = $env->actiumdb;
-    my @argv = $env->argv;
+    my $actiumdb = $env->actiumdb;
+    my @argv     = $env->argv;
 
     my $signup = $env->signup;
     chdir $signup->path();
@@ -131,7 +130,7 @@ sub START {
 
     my $load_cry = cry 'Loading data from Actium database';
 
-    %smoking = %{ $actiumdb->all_in_column_key(qw(Cities SmokingText)) };
+    my %smoking = %{ $actiumdb->all_in_column_key(qw(Cities SmokingText)) };
 
     my ( $run_agency, $run_agency_abbr, $run_agency_row )
       = $actiumdb->agency_or_abbr_row( $env->option('agency') );
@@ -150,11 +149,11 @@ sub START {
                 index_field => 'h_plc_identifier'
             },
             SignTypes => {
-                hash        => \%signtypes,
+                hash        => \my %signtypes,
                 index_field => 'SignType'
             },
             Signs => {
-                hash        => \%signs,
+                hash        => \my %signs,
                 index_field => 'SignID',
                 fields      => [
                     qw[
@@ -164,16 +163,19 @@ sub START {
                       ]
                 ],
             },
-            Signs_Stops_Join => { array => \@ssj },
-            SignTemplates    => { array => \@templates },
+            Signs_Stops_Join => { array => \my @ssj },
+            SignTemplates    => { array => \my @templates },
             Lines            => {
                 hash        => \%lines,
                 index_field => 'Line'
             },
             Stops_Neue => {
-                hash        => \%stops,
+                hash        => \my %stops,
                 index_field => 'h_stp_511_id',
-                fields => [qw[h_stp_511_id c_description_full u_work_zone]],
+                fields      => [
+                    qw[h_stp_511_id c_city c_description_full
+                      c_description_nocity u_work_zone]
+                ],
             },
             Cities => {
                 hash        => \my %cities,
@@ -189,7 +191,7 @@ sub START {
         $city_of_workzone{$workzone} = $city;
     }
 
-    our %templates_of;
+    my %templates_of;
 
     foreach \my %template (@templates) {
         my $signtype = $template{SignType};
@@ -307,10 +309,16 @@ sub START {
 
         my $stopid   = $signs{$signid}{stp_511_id};
         my $delivery = $signs{$signid}{Delivery} // $EMPTY;
-        my $city     = $signs{$signid}{City} // $EMPTY;
         my $signtype = $signs{$signid}{SignType} // $EMPTY;
-        my $status   = $signs{$signid}{Status};
-        my $workzone;
+        if ( $signtype =~ /^TID/ ) {
+            $delivery = 'TID';
+        }
+        my $tallcolumnnum   = $signtypes{$signtype}{TallColumnNum}   || 10;
+        my $tallcolumnlines = $signtypes{$signtype}{TallColumnLines} || 50;
+        my $status          = $signs{$signid}{Status};
+        my $shelternum     = $signs{$signid}{ShelterNum} // $EMPTY;
+        my $sidenote       = $signs{$signid}{Sidenote}   // $EMPTY;
+        my $templates_of_r = $templates_of{$signtype}    // {};
 
         next SIGN
           if $signtype_opt and not exists $signtype_matches{$signtype};
@@ -322,15 +330,19 @@ sub START {
           if $env->option('update')
           and not( u::feq( $status, 'Needs update' ) );
 
-        my $nonstoplocation;
-        if ( not($stopid) ) {
-            my $nonstopcity = $signs{$signid}{NonStopCity};
-            $nonstoplocation
-              = $signs{$signid}{NonStopLocation} . ', ' . $nonstopcity;
-            $workzone = $EMPTY;
+        my ( $description, $description_nocity, $city, $nonstop );
+
+        if ($stopid) {
+            $description        = $stops{$stopid}{c_description_full};
+            $description_nocity = $stops{$stopid}{c_description_nocity};
+            $city               = $stops{$stopid}{c_city};
         }
         else {
-            $workzone = $stops{$stopid}{u_work_zone} // $EMPTY;
+            $nonstop            = 1;
+            $description_nocity = $signs{$signid}{NonStopLocation};
+            $city               = $signs{$signid}{NonStopCity};
+            $description        = $description_nocity;
+            $description .= ", $city" if $city;
         }
 
         my $smoking;
@@ -364,6 +376,8 @@ sub START {
           and $sign_is_active eq 'yes'
           and $signs{$signid}{Status} !~ /no service/i;
 
+        my $workzone = $stops{$stopid}{u_work_zone} // $EMPTY;
+
         my $agency      = $signs{$signid}{Agency};
         my $agency_abbr = $actiumdb->agency_row_r($agency)->{agency_abbr};
 
@@ -379,10 +393,9 @@ sub START {
             my $kpointfile = "kpoints/${firstdigits}xx/$stoptotest.txt";
 
             unless ( -e $kpointfile ) {
-                my $add = $EMPTY;
-                $add = " ($agency)"
-                  if $agency ne $FALLBACK_AGENCY;
-                push @{ $errors{$signid} }, "Stop $stoptotest not found$add";
+                push @{ $errors{$signid} },
+                  "Stop $stoptotest not found"
+                  . ( $agency ne $FALLBACK_AGENCY ? " ($agency)" : $EMPTY );
                 $skipped_stops{$signid} = $stoptotest;
                 next SIGN;
             }
@@ -394,10 +407,28 @@ sub START {
         # 1) Read kpoints from file
 
         my $point = Actium::O::Points::Point->new_from_kpoints(
-            $stopid,   $signid,            $effdate,
-            $agency,   $omitted_of_stop_r, $nonstoplocation,
-            $smoking,  $delivery,          $signup,
-            $workzone, $signtype,          $city,
+            {   stopid             => $stopid,
+                signid             => $signid,
+                effdate            => $effdate,
+                agency             => $agency,
+                omitted_of_stop_r  => $omitted_of_stop_r,
+                nonstop            => $nonstop,
+                description        => $description,
+                city               => $city,
+                description_nocity => $description_nocity,
+                smoking            => $smoking,
+                delivery           => $delivery,
+                signup             => $signup,
+                workzone           => $workzone,
+                signtype           => $signtype,
+                city               => $city,
+                actiumdb           => $actiumdb,
+                shelternum         => $shelternum,
+                sidenote           => $sidenote,
+                tallcolumnnum      => $tallcolumnnum,
+                tallcolumnlines    => $tallcolumnlines,
+                templates_of_r     => $templates_of_r,
+            }
         );
         # 2) Change kpoints to the kind of data that's output in
         #    each column (that is, separate what's in the header
@@ -468,8 +499,9 @@ sub START {
 
     my $run_name = _get_run_name( $env, $run_agency_abbr );
 
-    my $listfile = $LISTFILE_BASE . $run_name . '.txt';
-    my $list_cry = cry "Writing list to $listfile";
+    my $listfile  = $LISTFILE_BASE . $run_name . '.txt';
+    my $excelfile = $CHECKLIST_BASE . $run_name . '.xlsx';
+    my $list_cry  = cry "Writing list to $listfile";
 
     my $pointlist_folder = $signup->subfolder('pointlist');
 
@@ -497,24 +529,26 @@ sub START {
                 return     => 'runlist',
             );
 
-            my $skip_addition;
+            my $skip_cluster;
 
             if ( ( scalar keys %cluster_of_workzone ) == 1 ) {
-                $skip_addition = 1;
+                $skip_cluster = 1;
             }
 
             foreach my $point (@these_points) {
 
-                my $addition
-                  = $point->delivery . "_"
+                my $addition = "Crew_"
                   . (
-                    $skip_addition
+                    $skip_cluster
                     ? 'all'
                     : $cluster_of_workzone{ $point->workzone }
                   );
 
+                $addition = substr( $addition, 0, 31 );
+                # truncate to 31 characters
+
                 push @{ $pages_of{ $point->signtype }{$addition} },
-                  [ $point->signid, $point->subtype ];
+                  [ $point->signid, $point->subtype, $point ];
 
             }
 
@@ -530,6 +564,12 @@ sub START {
             foreach my $point (@these_points) {
                 my $city     = $point->city;
                 my $workzone = $cities{$city}{CityWorkZone};
+
+                if ( not defined $workzone ) {
+                    die "Work zone code not defined for $city in "
+                      . $point->signid;
+                }
+
                 $city_workzone_count{$workzone}++;
             }
 
@@ -539,34 +579,45 @@ sub START {
                 return   => 'values',
             );
 
-            my $skip_addition;
-            if ( ( scalar keys %cluster_of_cityworkzone ) == 1 ) {
-                $skip_addition = 1;
-            }
-
             my %cluster_of_city;
 
-            foreach my $workzone ( keys %cluster_of_cityworkzone ) {
-                my $city = $city_of_workzone{$workzone};
-                \my @cluster_zones = $cluster_of_cityworkzone{$workzone};
-                my $cluster_display
-                  = u::joinseries_ampersand( sort map { $city_of_workzone{$_} }
-                      @cluster_zones );
-                $cluster_of_city{$city} = $cluster_display;
+            my $skip_cluster;
+            if ( ( scalar keys %cluster_of_cityworkzone ) == 1 ) {
+                $skip_cluster = 1;
             }
+
+            else {
+
+                foreach my $workzone ( keys %cluster_of_cityworkzone ) {
+                    my $city = $city_of_workzone{$workzone};
+                    \my @cluster_zones = $cluster_of_cityworkzone{$workzone};
+
+                    my @cities = map { $city_of_workzone{$_} } @cluster_zones;
+                    my $max_length = u::max( map { length($_) } @cities );
+
+                    my $cluster_display;
+
+                    do {
+                        $_ = substr( $_, 0, $max_length ) foreach @cities;
+                        $cluster_display = join( ',', sort @cities );
+                        $max_length--;
+                    } until length($cluster_display) <= 28;
+
+                    $cluster_of_city{$city} = $cluster_display;
+                }
+            } ## tidy end: else [ if ( ( scalar keys %cluster_of_cityworkzone...))]
 
             foreach my $point (@these_points) {
 
-                my $addition
-                  = $point->delivery . "_"
+                my $addition = "CC_"
                   . (
-                    $skip_addition
+                    $skip_cluster
                     ? 'all'
                     : $cluster_of_city{ $point->city }
                   );
 
                 push @{ $pages_of{ $point->signtype }{$addition} },
-                  [ $point->signid, $point->subtype ];
+                  [ $point->signid, $point->subtype, $point ];
 
             }
         } ## tidy end: if ( exists $points_of_delivery...)
@@ -578,7 +629,7 @@ sub START {
 
             foreach my $point (@these_points) {
                 push $pages_of{ $point->signtype }{$delivery}->@*,
-                  [ $point->signid, $point->subtype ];
+                  [ $point->signid, $point->subtype, $point ];
             }
 
         }
@@ -588,7 +639,7 @@ sub START {
 
         foreach my $point (@finished_points) {
             push $pages_of{ $point->signtype }{'all'}->@*,
-              [ $point->signid, $point->subtype ];
+              [ $point->signid, $point->subtype, $point ];
         }
 
     }
@@ -596,6 +647,8 @@ sub START {
     # should we need to break up files because they are too big,
     # here is where one would go through %pages_of and add _1, _2, etc.
     # to the addition
+
+    my %checklist_of;
 
     foreach my $signtype ( sort keys %pages_of ) {
 
@@ -605,22 +658,58 @@ sub START {
             @pages = sort { $a->[0] <=> $b->[0] } @pages;
             # sort numerically by signid
 
-            say $list_fh "FILE\t$signtype\t$addition\t", scalar @pages;
+            say $list_fh "FILE\t$signtype\t$addition";
 
             foreach my $page (@pages) {
 
-                my $signid         = $page->[0];
-                my $subtype_letter = $page->[1];
+                my ( $signid, $subtype_letter, $point ) = $page->@*;
 
                 say $list_fh "$signid\t$subtype_letter";
+
+                push $checklist_of{$addition}->@*,
+                  [ $signid,          $point->stopid,
+                    $point->signtype, $point->description_nocity,
+                    $point->city,
+                  ];
+
             }
-        }
+        } ## tidy end: foreach my $addition ( sort...)
 
     } ## tidy end: foreach my $signtype ( sort...)
 
     close $list_fh;
 
     $list_cry->done;
+
+    my $excel_cry = cry "Writing checklist to $excelfile";
+
+    {
+
+        my $workbook_fh = $pointlist_folder->open_write_binary($excelfile);
+        my $workbook    = new_workbook($workbook_fh);
+
+        my $body_fmt = $workbook->add_format( text_wrap => 1, valign => 'top' );
+        my $header_fmt = $workbook->add_format( bold => 1 );
+
+        foreach my $addition ( sort keys %checklist_of ) {
+
+            my $worksheet = $workbook->add_worksheet($addition);
+            $worksheet->set_header($addition);
+            $worksheet->write_row( 'A1',
+                [qw/SignID StopID SignType Location City/], $header_fmt );
+            $worksheet->repeat_rows(0);
+            $worksheet->write_col( 'A2', $checklist_of{$addition}, $body_fmt );
+
+            my $column = 0;
+            for my $columnwidth ( 5, 5.33, 7.17, 48.5, 15.33 ) {
+                $worksheet->set_column( $column, $column, $columnwidth );
+                $column++;
+            }
+        }
+
+    }
+
+    $excel_cry->done;
 
     ### ERROR DISPLAY
 
