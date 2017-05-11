@@ -2,8 +2,8 @@ package Actium::Params 0.012;
 
 use Actium::Preamble;
 
-use Type::Params('validate');
-use Types::Standard (qw(slurpy Dict Any Optional));
+use Type::Params('validate'); ### DEP ###
+use Types::Standard (qw(slurpy Dict Any Optional)); ### DEP ###
 
 sub namedparams (\@+) {
     \my @p    = shift;
