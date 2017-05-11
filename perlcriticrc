@@ -1,5 +1,5 @@
 severity = brutal
-exclude = CodeLayout::ProhibitParensWithBuiltins CodeLayout::RequireUseUTF8 ControlStructures::ProhibitPostfixControls ControlStructures::ProhibitUnlessBlocks Documentation::RequirePODSections Documentation::RequirePackageMatchesPodName Editor::RequireEmacsFileVariables ErrorHandling::RequireCarping InputOutput::RequireBracedFileHandleWithPrint Lax::ProhibitEmptyQuotes::ExceptAsFallback Modules::RequireExplicitPackage RegularExpressions::RequireLineBoundaryMatching Subroutines::ProhibitCallsToUndeclaredSubs Subroutines::ProhibitCallsToUnexportedSubs Subroutines::RequireArgUnpacking Tics::ProhibitUseBase ValuesAndExpressions::ProhibitAccessOfPrivateData Documentation::RequirePodSections InputOutput::RequireBriefOpen Modules::ProhibitMultiplePackages ValuesAndExpressions::RequireConstantVersion ValuesAndExpressions::RestrictLongStrings ValuesAndExpressions::ProhibitNoisyQuotes InputOutput::ProhibitOneArgSelect Subroutines::ProhibitUnusedPrivateSubroutines BuiltinFunctions::ProhibitUselessTopic Miscellanea::RequireRcsKeywords Modules::RequireExplicitInclusion RegularExpressions::RequireDotMatchAnything
+exclude = CodeLayout::ProhibitParensWithBuiltins CodeLayout::RequireUseUTF8 ControlStructures::ProhibitPostfixControls ControlStructures::ProhibitUnlessBlocks Documentation::RequirePODSections Documentation::RequirePackageMatchesPodName Editor::RequireEmacsFileVariables ErrorHandling::RequireCarping InputOutput::RequireBracedFileHandleWithPrint Lax::ProhibitEmptyQuotes::ExceptAsFallback Modules::RequireExplicitPackage RegularExpressions::RequireLineBoundaryMatching Subroutines::ProhibitCallsToUndeclaredSubs Subroutines::ProhibitCallsToUnexportedSubs Subroutines::RequireArgUnpacking ValuesAndExpressions::ProhibitAccessOfPrivateData Documentation::RequirePodSections InputOutput::RequireBriefOpen Modules::ProhibitMultiplePackages ValuesAndExpressions::RequireConstantVersion ValuesAndExpressions::RestrictLongStrings ValuesAndExpressions::ProhibitNoisyQuotes InputOutput::ProhibitOneArgSelect Subroutines::ProhibitUnusedPrivateSubroutines BuiltinFunctions::ProhibitUselessTopic Miscellanea::RequireRcsKeywords Modules::RequireExplicitInclusion RegularExpressions::RequireDotMatchAnything ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions References::ProhibitDoubleSigils RegularExpressions::ProhibitEnumeratedClasses
 
 # Modules::RequireExplicitInclusion turned off to avoid X::->whatever giving
 # errors
@@ -15,8 +15,11 @@ allow_in_main_unless_in_subroutine = 1
 [Variables::ProhibitEvilVariables]
 variables = $( $) $< $> $; $& $` $' $% $- $: $= $^ $~
 
+[Variables::ProhibitPunctuationVars]
+allow = $* %* @*
+
 [CodeLayout::RequireTidyCode]
-#perltidyrc = /Users/apriven/git/actium/perltidyrc
+perltidyrc = /Users/apriven/git/actium/perltidyrc
 
 [TestingAndDebugging::RequireUseWarnings]
 equivalent_modules = Actium::Preamble
@@ -48,6 +51,9 @@ severity = 2
 
 [Subroutines::ProhibitExportingUndeclaredSubs]
 severity = 5
+
+[ValuesAndExpressions::ProhibitCommaSeparatedStatements]
+allow_last_statement_to_be_comma_separated_in_map_and_grep = 1
 
 # Distributions that this uses:
 # Perl::Critic::Deprecated ### DEP ###
