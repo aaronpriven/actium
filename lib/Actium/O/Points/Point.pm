@@ -40,6 +40,12 @@ has [
     required => 1,
   );
   
+ has copyquantity => ( 
+    is => 'ro',
+    isa => 'Int',
+    default => '1',
+ );
+  
   has [ qw/tallcolumnnum tallcolumnlines/] => (
   is => 'ro',
   isa => 'Int',
