@@ -29,8 +29,16 @@ const my $ERRORFILE_BASE   => 'err';
 const my $HEIGHTSFILE_BASE => 'ht';
 const my $CHECKLIST_BASE   => 'check';
 
+const my @EXCEL_COLUMN_WIDTHS => ( 2, 5, 5.33, 7.17, 46.5, 14.83 );
+const my $EXCEL_MAX_WORKSHEET_CHARS => 31;
+
+const my $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH => 28;
+
 const my $FALLBACK_AGENCY      => 'ACTransit';
 const my $FALLBACK_AGENCY_ABBR => 'AC';
+
+const my $DEFAULT_TALLCOLUMNNUM   => 10;
+const my $DEFAULT_TALLCOLUMNLINES => 50;
 
 sub HELP {
 
@@ -137,7 +145,7 @@ sub START {
 
     unless ($run_agency) {
         $load_cry->d_error;
-        die "Agency " . $env->option('agency') . " not found.\n";
+        die 'Agency ' . $env->option('agency') . " not found.\n";
     }
 
     my $effdate = $actiumdb->effective_date( agency => $run_agency );
@@ -159,7 +167,7 @@ sub START {
                     qw[
                       SignID Active stp_511_id Status SignType Cluster Sidenote
                       Agency ShelterNum NonStopLocation NonStopCity
-                      Delivery City TIDFile
+                      Delivery City TIDFile CopyQuantity
                       ]
                 ],
             },
@@ -205,7 +213,7 @@ sub START {
         $regionspec =~ s/\s+/ /;
         $regionspec =~ s/[^0-9: ]//g;
 
-        foreach my $region ( split( ' ', $regionspec ) ) {
+        foreach my $region ( split( $SPACE, $regionspec ) ) {
             my ( $columns, $height ) = split( /:/, $region );
             push @regions, { columns => $columns, height => $height };
         }
@@ -228,7 +236,7 @@ sub START {
         my $ssj_omit_lines = $ssj->{OmitLines};
         my @ssj_omitted;
         if ($ssj_omit_lines) {
-            @ssj_omitted = split( ' ', $ssj->{OmitLines} );
+            @ssj_omitted = split( $SPACE, $ssj->{OmitLines} );
         }
         $stops_of_sign{$ssj_sign}{$ssj_stop} = \@ssj_omitted;
     }
@@ -260,6 +268,8 @@ sub START {
 
         my ( %seen_signtype, %seen_delivery );
 
+        $seen_delivery{TID} = 1;
+
         foreach my $signid (@signstodo) {
             my $delivery = $signs{$signid}{Delivery} // $EMPTY;
             my $signtype = $signs{$signid}{SignType} // $EMPTY;
@@ -269,27 +279,27 @@ sub START {
 
         if ($signtype_opt) {
             my @matching_signtypes
-              = grep {m/\A$signtype_opt\z/} keys %seen_signtype;
+              = grep {m/\A $signtype_opt \z/x} keys %seen_signtype;
 
             if ( not @matching_signtypes ) {
                 $makepoints_cry->text(
                     "No signtype of signs to generate matches $signtype_opt "
-                      . "specified on command line." );
+                      . 'specified on command line.' );
                 $makepoints_cry->d_error;
                 exit 1;
             }
-            %signtype_matches = map { $_, 1 } @matching_signtypes;
+            %signtype_matches = map { ( $_, 1 ) } @matching_signtypes;
             $makepoints_cry->text("Using sign types: @matching_signtypes");
         }
 
         if ($delivery_opt) {
             my @matching_deliveries
-              = grep {m/\A$delivery_opt\z/} keys %seen_delivery;
+              = grep {m/\A $delivery_opt \z/x} keys %seen_delivery;
 
             if ( not @matching_deliveries ) {
                 $makepoints_cry->text(
                     "No delivery of signs to generate matches $delivery_opt "
-                      . "specified on command line." );
+                      . 'specified on command line.' );
                 $makepoints_cry->d_error;
                 exit 1;
             }
@@ -299,7 +309,7 @@ sub START {
 
     } ## tidy end: if ( $signtype_opt or ...)
 
-    my $cry = cry("Now processing point schedules for sign number:");
+    my $cry = cry('Now processing point schedules for sign number:');
 
     my ( %skipped_stops, %points_of_delivery, @finished_points, %errors,
         %heights, %workzone_count );
@@ -313,12 +323,15 @@ sub START {
         if ( $signtype =~ /^TID/ ) {
             $delivery = 'TID';
         }
-        my $tallcolumnnum   = $signtypes{$signtype}{TallColumnNum}   || 10;
-        my $tallcolumnlines = $signtypes{$signtype}{TallColumnLines} || 50;
-        my $status          = $signs{$signid}{Status};
+        my $tallcolumnnum
+          = $signtypes{$signtype}{TallColumnNum} || $DEFAULT_TALLCOLUMNNUM;
+        my $tallcolumnlines = $signtypes{$signtype}{TallColumnLines}
+          || $DEFAULT_TALLCOLUMNLINES;
+        my $status         = $signs{$signid}{Status};
         my $shelternum     = $signs{$signid}{ShelterNum} // $EMPTY;
-        my $sidenote       = $signs{$signid}{Sidenote}   // $EMPTY;
-        my $templates_of_r = $templates_of{$signtype}    // {};
+        my $sidenote       = $signs{$signid}{Sidenote} // $EMPTY;
+        my $copyquantity   = $signs{$signid}{CopyQuantity} // 1;
+        my $templates_of_r = $templates_of{$signtype} // {};
 
         next SIGN
           if $signtype_opt and not exists $signtype_matches{$signtype};
@@ -371,10 +384,9 @@ sub START {
 
         my $sign_is_active = lc( $signs{$signid}{Active} );
 
-        next SIGN
-          unless $stopid
-          and $sign_is_active eq 'yes'
-          and $signs{$signid}{Status} !~ /no service/i;
+        next SIGN if $signs{$signid}{Status} =~ /no service/i;
+        next SIGN if $sign_is_active ne 'yes';
+        next SIGN unless $stopid;
 
         my $workzone = $stops{$stopid}{u_work_zone} // $EMPTY;
 
@@ -386,10 +398,13 @@ sub START {
         #####################
         # Following steps
 
+        const my $KPOINT_FOLDER_PREFIX_CHARS => 3;
+
         foreach my $stoptotest ( keys %{$omitted_of_stop_r} ) {
 
             # skip stop if file not found
-            my $firstdigits = substr( $stoptotest, 0, 3 );
+            my $firstdigits
+              = substr( $stoptotest, 0, $KPOINT_FOLDER_PREFIX_CHARS );
             my $kpointfile = "kpoints/${firstdigits}xx/$stoptotest.txt";
 
             unless ( -e $kpointfile ) {
@@ -428,6 +443,7 @@ sub START {
                 tallcolumnnum      => $tallcolumnnum,
                 tallcolumnlines    => $tallcolumnlines,
                 templates_of_r     => $templates_of_r,
+                copyquantity       => $copyquantity,
             }
         );
         # 2) Change kpoints to the kind of data that's output in
@@ -537,14 +553,14 @@ sub START {
 
             foreach my $point (@these_points) {
 
-                my $addition = "Crew_"
+                my $addition = 'Crew_'
                   . (
                     $skip_cluster
                     ? 'all'
                     : $cluster_of_workzone{ $point->workzone }
                   );
 
-                $addition = substr( $addition, 0, 31 );
+                $addition = substr( $addition, 0, $EXCEL_MAX_WORKSHEET_CHARS );
                 # truncate to 31 characters
 
                 push @{ $pages_of{ $point->signtype }{$addition} },
@@ -601,7 +617,8 @@ sub START {
                         $_ = substr( $_, 0, $max_length ) foreach @cities;
                         $cluster_display = join( ',', sort @cities );
                         $max_length--;
-                    } until length($cluster_display) <= 28;
+                      } until length($cluster_display)
+                      <= $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH;
 
                     $cluster_of_city{$city} = $cluster_display;
                 }
@@ -609,7 +626,7 @@ sub START {
 
             foreach my $point (@these_points) {
 
-                my $addition = "CC_"
+                my $addition = 'CC_'
                   . (
                     $skip_cluster
                     ? 'all'
@@ -666,10 +683,13 @@ sub START {
 
                 say $list_fh "$signid\t$subtype_letter";
 
+                my $copyquantity = $point->copyquantity;
+                $copyquantity = $EMPTY if $copyquantity == 1;
+
                 push $checklist_of{$addition}->@*,
-                  [ $signid,          $point->stopid,
-                    $point->signtype, $point->description_nocity,
-                    $point->city,
+                  [ $copyquantity,              $signid,
+                    $point->stopid,             $point->signtype,
+                    $point->description_nocity, $point->city,
                   ];
 
             }
@@ -677,8 +697,7 @@ sub START {
 
     } ## tidy end: foreach my $signtype ( sort...)
 
-    close $list_fh;
-
+    close $list_fh || croak "Can't close $listfile: $ERRNO";
     $list_cry->done;
 
     my $excel_cry = cry "Writing checklist to $excelfile";
@@ -687,21 +706,22 @@ sub START {
 
         my $workbook_fh = $pointlist_folder->open_write_binary($excelfile);
         my $workbook    = new_workbook($workbook_fh);
-
         my $body_fmt = $workbook->add_format( text_wrap => 1, valign => 'top' );
         my $header_fmt = $workbook->add_format( bold => 1 );
 
         foreach my $addition ( sort keys %checklist_of ) {
 
             my $worksheet = $workbook->add_worksheet($addition);
-            $worksheet->set_header($addition);
+            $worksheet->set_header('&A');          # header = worksheet name
+            $worksheet->set_footer('&P of &N');    # footer - page #
+            $worksheet->hide_gridlines(0);         # don't hide gridlines
             $worksheet->write_row( 'A1',
-                [qw/SignID StopID SignType Location City/], $header_fmt );
+                [qw/x SignID StopID SignType Location City/], $header_fmt );
             $worksheet->repeat_rows(0);
             $worksheet->write_col( 'A2', $checklist_of{$addition}, $body_fmt );
 
             my $column = 0;
-            for my $columnwidth ( 5, 5.33, 7.17, 48.5, 15.33 ) {
+            for my $columnwidth (@EXCEL_COLUMN_WIDTHS) {
                 $worksheet->set_column( $column, $column, $columnwidth );
                 $column++;
             }
@@ -751,6 +771,7 @@ sub START {
     }
 
     $makepoints_cry->done;
+    return;
 
 } ## tidy end: sub START
 
