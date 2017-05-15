@@ -1,28 +1,34 @@
 severity = brutal
-exclude = CodeLayout::ProhibitParensWithBuiltins CodeLayout::RequireUseUTF8 ControlStructures::ProhibitPostfixControls ControlStructures::ProhibitUnlessBlocks Documentation::RequirePODSections Documentation::RequirePackageMatchesPodName Editor::RequireEmacsFileVariables ErrorHandling::RequireCarping InputOutput::RequireBracedFileHandleWithPrint Lax::ProhibitEmptyQuotes::ExceptAsFallback Modules::RequireExplicitPackage RegularExpressions::RequireLineBoundaryMatching Subroutines::ProhibitCallsToUndeclaredSubs Subroutines::ProhibitCallsToUnexportedSubs Subroutines::RequireArgUnpacking ValuesAndExpressions::ProhibitAccessOfPrivateData Documentation::RequirePodSections InputOutput::RequireBriefOpen Modules::ProhibitMultiplePackages ValuesAndExpressions::RequireConstantVersion ValuesAndExpressions::RestrictLongStrings ValuesAndExpressions::ProhibitNoisyQuotes InputOutput::ProhibitOneArgSelect Subroutines::ProhibitUnusedPrivateSubroutines BuiltinFunctions::ProhibitUselessTopic Miscellanea::RequireRcsKeywords Modules::RequireExplicitInclusion RegularExpressions::RequireDotMatchAnything ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions References::ProhibitDoubleSigils RegularExpressions::ProhibitEnumeratedClasses
-
-# Modules::RequireExplicitInclusion turned off to avoid X::->whatever giving
-# errors
 
 verbose = %m at line %l, near '%r'. [%p; %s]\n
 
-#[BuiltinFunctions::ProhibitStringyEval]
-#allow_includes = 1
+######################################################################
+### DISTRIBUTION: Perl::Critic ### DEP ###
 
-[ErrorHandling::RequireCarping]
-allow_in_main_unless_in_subroutine = 1
-
-[Variables::ProhibitEvilVariables]
-variables = $( $) $< $> $; $& $` $' $% $- $: $= $^ $~
-
-[Variables::ProhibitPunctuationVars]
-allow = $* %* @*
+[-BuiltinFunctions::ProhibitComplexMappings]
+# using Lax version
 
 [CodeLayout::RequireTidyCode]
 perltidyrc = /Users/apriven/git/actium/perltidyrc
 
-[TestingAndDebugging::RequireUseWarnings]
-equivalent_modules = Actium::Preamble
+[-ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions]
+
+[ErrorHandling::RequireCarping]
+allow_in_main_unless_in_subroutine = 1
+
+[-InputOutput::RequireBracedFileHandleWithPrint]
+
+[-InputOutput::RequireCheckedSyscalls]
+[-InputOutput::RequireCheckedClose]
+[-InputOutput::RequireCheckedOpen]
+# autodie in Actium::Preamble isn't recognized
+
+
+[-RegularExpressions::RequireDotMatchAnything]
+
+[-References::ProhibitDoubleSigils]
+
+[-RegularExpressions::ProhibitEnumeratedClasses]
 
 [TestingAndDebugging::RequireUseStrict]
 equivalent_modules = Actium::Preamble
@@ -30,31 +36,209 @@ equivalent_modules = Actium::Preamble
 [TestingAndDebugging::ProhibitNoStrict]
 allow = vars subs refs
 
+[TestingAndDebugging::RequireUseWarnings]
+equivalent_modules = Actium::Preamble Actium
+
 [TestingAndDebugging::ProhibitNoWarnings]
 allow_with_category_restriction = 1
 
 [RegularExpressions::RequireExtendedFormatting]
 minimum_regex_length_to_complain_about = 9
 
-[ValuesAndExpressions::ProhibitMagicNumbers]
-allowed_values = 0 1 2 -1
-severity = 1
-
-[InputOutput::RequireCheckedSyscalls]
-exclude_functions = print say
-
 [Subroutines::ProhibitExcessComplexity]
 severity = 1
 
-[ValuesAndExpressions::ProhibitInterpolationOfLiterals]
-severity = 2
+[Variables::ProhibitPunctuationVars]
+allow = $* %* @*
 
-[Subroutines::ProhibitExportingUndeclaredSubs]
-severity = 5
+[Variables::ProhibitEvilVariables]
+variables = $( $) $< $> $; $& $` $' $% $- $: $= $^ $~
 
 [ValuesAndExpressions::ProhibitCommaSeparatedStatements]
 allow_last_statement_to_be_comma_separated_in_map_and_grep = 1
 
-# Distributions that this uses:
-# Perl::Critic::Deprecated ### DEP ###
-# Perl::Critic::StricterSubs ### DEP ###
+[ValuesAndExpressions::ProhibitMagicNumbers]
+allowed_values = 0 1 2 -1
+severity = 1
+
+[ValuesAndExpressions::ProhibitInterpolationOfLiterals]
+severity = 1
+
+[-BuiltinFunctions::ProhibitUselessTopic]
+[-CodeLayout::ProhibitParensWithBuiltins]
+[-ControlStructures::ProhibitPostfixControls]
+[-ControlStructures::ProhibitUnlessBlocks]
+[-Documentation::RequirePackageMatchesPodName]
+[-Documentation::RequirePodSections]
+[-ErrorHandling::RequireCarping]
+[-InputOutput::RequireBriefOpen]
+[-Modules::ProhibitMultiplePackages]
+[-Modules::RequireExplicitPackage]
+[-RegularExpressions::RequireLineBoundaryMatching]
+[-Subroutines::ProhibitUnusedPrivateSubroutines]
+[-Subroutines::RequireArgUnpacking]
+[-ValuesAndExpressions::ProhibitNoisyQuotes]
+[-ValuesAndExpressions::RequireConstantVersion]
+
+######################################################################
+# DISTRIBUTION Perl::Critic::Bangs ### DEP ###
+
+[-Perl::Critic::Policy::Bangs::ProhibitBitwiseOperators]
+[-Perl::Critic::Policy::Bangs::ProhibitDebuggingModules]
+[-Perl::Critic::Policy::Bangs::ProhibitFlagComments]
+
+[Perl::Critic::Policy::Bangs::ProhibitNumberedNames]
+exceptions = tp4 tp8 tp9 place4 place8 place9
+
+######################################################################
+# DISTRIBUTION Perl::Critic::CognitiveComplexity ### DEP ###
+
+[CognitiveComplexity::ProhibitExcessCognitiveComplexity]
+warn_level = 10
+info_level = 10
+
+######################################################################
+# DISTRIBUTION Perl::Critic::Freenode ### DEP ###
+
+[-Freenode::EmptyReturn]
+[-Freenode::DeprecatedFeatures]
+# I'm using newer perls that will tell me what's deprecated
+[-Freenode::Wantarray]
+[-Freenode::StrictWarnings]
+# duplicative
+[-Freenode::IndirectObjectNotation]
+# just detects "new" -- not useful enough to be worth keeping
+
+######################################################################
+# DISTRIBUTION Perl::Critic::Itch -
+#    no #DEP since only one policy, not used
+
+# [-CodeLayout::ProhibitHashBarewords]
+
+######################################################################
+# DISTRIBUTION Perl::Critic::Lax ### DEP ###
+
+[-Lax::ProhibitEmptyQuotes::ExceptAsFallback]
+[-Lax::RequireExplicitPackage::ExceptForPragmata]
+
+[Lax::RequireConstantOnLeftSideOfEquality::ExceptEq]
+
+[-Lax::ProhibitStringyEval::ExceptForRequire]
+
+[-Lax::ProhibitLeadingZeros::ExceptChmod]
+# Duplicative, the regualr version now allows chmod also
+
+[Lax::ProhibitComplexMappings::LinesNotStatements]
+
+######################################################################
+### DISTRIBUTION Perl::Critic::logicLAB ### DEP ###
+
+[-logicLAB::RequireParamsValidate]
+
+[logicLAB::RequireVersionFormat]
+ignore_quotes = 0
+# uses numeric formats: x.y or x.y_z
+
+[logicLAB::RequireSheBang]
+formats = #!/usr/bin/env perl
+
+######################################################################
+# DISTRIBUTION Perl::Critic::Moose ### DEP ###
+
+[Perl::Critic::Policy::Moose::ProhibitDESTROYMethod]
+
+[Perl::Critic::Policy::Moose::ProhibitLazyBuild]
+
+[Perl::Critic::Policy::Moose::ProhibitMultipleWiths]
+
+[Perl::Critic::Policy::Moose::ProhibitNewMethod]
+
+[-Perl::Critic::Policy::Moose::RequireCleanNamespace]
+# namespace::autoclean takes care of it
+
+[-Perl::Critic::Policy::Moose::RequireMakeImmutable]
+# u::immut isn't recognized 
+
+######################################################################
+# DISTRIBUTION Perl::Critic::More ### DEP ###
+
+[-CodeLayout::RequireASCII]
+[-Editor::RequireEmacsFileVariables]
+# [-RequirePerlVersion] 
+[-ErrorHandling::RequireUseOfExceptions]
+# included in Actium::Preamble
+
+[-ValuesAndExpressions::RequireConstantOnLeftSideOfEquality]
+# using Lax version (allows eq, not ==)
+
+######################################################################
+# DISTRIBUTION 
+# Perl::Critic::Policy::BuiltinFunctions::ProhibitReturnOr ### DEP ###
+
+######################################################################
+# DISTRIBUTION 
+# Perl::Critic::Policy::BuiltinFunctions::ProhibitDeleteOnArrays ### DEP ###
+
+######################################################################
+# DISTRIBUTION
+# Perl::Critic::Policy::ValuesAndExpressions::ProhibitSingleArgArraySlice ### DEP ###
+
+######################################################################
+# DISTRIBUTION
+# Perl::Critic::Pulp ### DEP ###
+
+[-Perl::Critic::Policy::Miscellanea::TextDomainPlaceholders]
+# I don't use Locale:TextDomain
+
+[-Compatibility::ConstantPragmaHash]
+[-Compatibility::ConstantLeadingUnderscore]
+[-Compatibility::Gtk2Constants]
+[-Compatibility::PerlMinimumVersionAndWhy]
+[-Compatibility::PodMinimumVersion]
+[-ValuesAndExpressions::ProhibitBarewordDoubleColon]
+[-Documentation::ProhibitUnbalancedParens]
+[-Documentation::ProhibitParagraphEndComma]
+[-Documentation::RequireFinalCut]
+
+######################################################################
+# DISTRIBUTION Perl::Critic::StricterSubs ### DEP ###
+
+[Subroutines::ProhibitExportingUndeclaredSubs]
+severity = 5
+
+[-Subroutines::ProhibitCallsToUndeclaredSubs]
+[-Subroutines::ProhibitCallsToUnexportedSubs]
+
+[-Modules::RequireExplicitInclusion]
+# Modules::RequireExplicitInclusion turned off to avoid X::->whatever giving
+# errors
+
+######################################################################
+# DISTRIBUTION
+# Perl::Critic::PetPeeves::JTRAMMELL  ### DEP ###
+
+######################################################################
+# DISTRIBUTION
+# Perl::Critic::Policy::References::ProhibitComplexDoubleSigils ### DEP ###
+
+[Perl::Critic::Policy::References::ProhibitComplexDoubleSigils]
+
+[-ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions]
+
+######################################################################
+### DISTRIBUTION Perl::Critic::Swift ### DEP ###
+
+[-CodeLayout::RequireUseUTF8]
+# included in Actium::Preamble
+
+### Distribution Perl::Critic::Nits - only policy is unused, so no DEP
+
+# [-ValuesAndExpressions::ProhibitAccessOfPrivateData]
+
+######################################################################
+### DISTRIBUTION Perl::Critic::Tics ### DEP ###
+
+[Tics::ProhibitManyArrows]
+max_allowed = 1
+
+
