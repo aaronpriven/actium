@@ -8,8 +8,9 @@ verbose = %m at line %l, near '%r'. [%p; %s]\n
 [-BuiltinFunctions::ProhibitComplexMappings]
 # using Lax version
 
-[CodeLayout::RequireTidyCode]
-perltidyrc = /Users/apriven/git/actium/perltidyrc
+[-CodeLayout::RequireTidyCode]
+#perltidyrc = /Users/apriven/git/actium/perltidyrc
+# Turned off because of Kavorka
 
 [-ControlStructures::ProhibitNegativeExpressionsInUnlessAndUntilConditions]
 
