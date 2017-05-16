@@ -8,7 +8,6 @@ use 5.016;
 # Imports things that are common to (many) modules.
 # inspired by
 # http://blogs.perl.org/users/ovid/2013/09/building-your-own-moose.html
-
 use Moose();                             ### DEP ###
 use MooseX::StrictConstructor();         ### DEP ###
 use MooseX::SemiAffordanceAccessor();    ### DEP ###
@@ -22,7 +21,7 @@ use Moose::Exporter;                     ### DEP ###
 Moose::Exporter->setup_import_methods( also => ['Moose'] );
 
 # The C< import ( into => ... ) > syntax is provided by those modules,
-# (via Moose::Exporter which uses Sub::Exporter, or Exporter::Tiny). 
+# (via Moose::Exporter which uses Sub::Exporter, or Exporter::Tiny).
 # Other modules using other export functions must use Import::Into
 
 sub init_meta {
