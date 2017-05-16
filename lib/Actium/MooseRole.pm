@@ -7,28 +7,31 @@ package Actium::MooseRole 0.012;
 
 use 5.016;
 
-use Moose::Role(); ### DEP ###
-use MooseX::StrictConstructor(); ### DEP ###
-use MooseX::SemiAffordanceAccessor(); ### DEP ###
-use MooseX::MarkAsMethods(); ### DEP ###
-use Moose::Util::TypeConstraints(); ### DEP ###
+use Moose::Role();                       ### DEP ###
+use MooseX::StrictConstructor();         ### DEP ###
+use MooseX::SemiAffordanceAccessor();    ### DEP ###
+use MooseX::MarkAsMethods();             ### DEP ###
+use Moose::Util::TypeConstraints();      ### DEP ###
+use MooseX::MungeHas();                  ### DEP ###
 use Actium::Preamble();
-use Actium::Types;
-use Import::Into; ### DEP ###
+use Import::Into;                        ### DEP ###
 
-use Moose::Exporter; ### DEP ###
-Moose::Exporter->setup_import_methods( also => ['Moose::Role'] ); 
+use Moose::Exporter;                     ### DEP ###
+Moose::Exporter->setup_import_methods( also => ['Moose::Role'] );
 
 sub init_meta {
     my $class     = shift;
     my %params    = @_;
     my $for_class = $params{for_class};
     Moose::Role->init_meta(@_);
-    Actium::Preamble->import::into($for_class);
-    MooseX::MarkAsMethods->import( {into => $for_class } , autoclean => 1);
+
+    MooseX::MarkAsMethods->import( { into => $for_class }, autoclean => 1 );
     MooseX::StrictConstructor->import( { into => $for_class } );
     MooseX::SemiAffordanceAccessor->import( { into => $for_class } );
     Moose::Util::TypeConstraints->import( { into => $for_class } );
+    MooseX::MungeHas->import::into($for_class);
+    Kavorka->import::into( $for_class, qw/method -allmodifiers/ );
+    Actium::Preamble->import::into($for_class);
 }
 
 1;
