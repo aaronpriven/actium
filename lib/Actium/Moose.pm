@@ -14,27 +14,31 @@ use MooseX::StrictConstructor();         ### DEP ###
 use MooseX::SemiAffordanceAccessor();    ### DEP ###
 use MooseX::MarkAsMethods();             ### DEP ###
 use Moose::Util::TypeConstraints();      ### DEP ###
+use MooseX::MungeHas();                  ### DEP ###
 use Actium::Preamble();
-#use Actium::Types;
-# not included because not useful without importing specific types
-use Import::Into;    ### DEP ###
+use Import::Into;                        ### DEP ###
 
-use Moose::Exporter; ### DEP ###
+use Moose::Exporter;                     ### DEP ###
 Moose::Exporter->setup_import_methods( also => ['Moose'] );
+
+# The C< import ( into => ... ) > syntax is provided by those modules,
+# (via Moose::Exporter which uses Sub::Exporter, or Exporter::Tiny). 
+# Other modules using other export functions must use Import::Into
 
 sub init_meta {
     my $class     = shift;
     my %params    = @_;
     my $for_class = $params{for_class};
     Moose->init_meta(@_);
-    #    Actium::Types->import::into($for_class);
     MooseX::MarkAsMethods->import( { into => $for_class }, autoclean => 1 );
     MooseX::StrictConstructor->import( { into => $for_class } );
     MooseX::SemiAffordanceAccessor->import( { into => $for_class } );
     Moose::Util::TypeConstraints->import( { into => $for_class } );
+    MooseX::MungeHas->import::into($for_class);
+    Kavorka->import::into( $for_class, qw/method -allmodifiers/ );
     Actium::Preamble->import::into($for_class);
-    # must be at the end so "no warnings" in preamble overrides warnings 
-    # turned on by Moose, etc.
+    # Actium::Preamble must be at the end so "no warnings experimental" in
+    # preamble overrides warnings turned on by Moose, etc.
 }
 
 # here because, why bother putting it in util?

@@ -5,7 +5,7 @@ package Actium::Preamble 0.011;
 # Imports things that are common to (many) modules.
 # inspired by http://www.perladvent.org/2012/2012-12-16.html
 
-use 5.022;
+use 5.024;
 use Module::Runtime (qw(require_module));    ### DEP ###
 use Import::Into;                            ### DEP ###
 
@@ -25,7 +25,7 @@ BEGIN {
         # English ### DEP ###
         [qw[autodie]],
         # autodie ### DEP ###
-        [qw[feature :5.16 refaliasing postderef postderef_qq ]],
+        [qw[feature :5.24 refaliasing postderef_qq ]],
         # feature ### DEP ###
         #[ 'open', IO => ':encoding(utf-8)' ],
         [qw[open :std :utf8 ]],
@@ -36,6 +36,8 @@ BEGIN {
         # utf8 ### DEP ###
         [qw[warnings]],
         # warnings ### DEP ###
+        ['Kavorka' , fun => { -as => 'func' } ],
+        # Kavorka ### DEP ###
     );
     @nomodule_rs = (
         [qw[indirect]],
@@ -61,10 +63,10 @@ sub import {
         my $module = shift @args;
         $module->unimport::out_of( $caller, @args );
     }
+
 }
 
 # Modules that import into u::
-
 BEGIN {
     # make the 'u' package an alias to this package
     no strict 'refs';
@@ -92,21 +94,7 @@ BEGIN {
     Hash::Util::->import(@Hash::Util::EXPORT_OK);
 }
 
-# The following work around a bug in Hash::Util.
-# I submitted the patch that fixed it in perl 5.23.3
-
-no warnings 'redefine'; # otherwise it complains. 
-
-sub lock_hashref_recurse  {
-    goto &Hash::Util::lock_hashref_recurse ;
-}
-
-sub unlock_hashref_recurse  {
-    goto &Hash::Util::unlock_hashref_recurse ;
-}
-
 1;
-
 
 __END__
 
