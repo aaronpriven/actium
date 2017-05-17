@@ -38,6 +38,12 @@ BEGIN {
         # warnings ### DEP ###
         ['Kavorka' , fun => { -as => 'func' } ],
         # Kavorka ### DEP ###
+
+        # The reason for importing it as 'func' is twofold:
+        # 1) Eclipse supports Method::Signatures keywords ("func" and "method")
+        # 2) I think it looks weird to have the abbreviation for one word 
+        #    be another word
+        
     );
     @nomodule_rs = (
         [qw[indirect]],
