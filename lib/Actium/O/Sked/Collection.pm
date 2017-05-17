@@ -189,23 +189,21 @@ sub write_tabxchange {
 ##### OUTPUT ######
 ###################
 
-sub _output_skeds_all {
-    my $self    = shift;
+method output_skeds_all ( :$signup!  , :$subfolder_name = 's') {
+    
     my $skeds_r = $self->skeds_r;
 
-    my $signup       = shift;
-    my $skeds_folder = $signup->subfolder('s');
-
+    my $skeds_folder = $signup->subfolder($subfolder_name);
+    
     $skeds_folder->store( $self, 'skeds.storable' );
+        my $xlsxfolder = $skeds_folder->subfolder('xlsx_s');
+        $xlsxfolder->write_files_with_method(
+            OBJECTS   => $skeds_r,
+            METHOD    => 'xlsx',
+            EXTENSION => 'xlsx',
+        );
 
-    #    my $xlsxfolder = $skeds_folder->subfolder('xlsx');
-    #    $xlsxfolder->write_files_with_method(
-    #        OBJECTS   => $skeds_r,
-    #        METHOD    => 'xlsx',
-    #        EXTENSION => 'xlsx',
-    #    );
-
-    $self->output_skeds_xlsx($skeds_folder);
+    $self->output_skeds_xlsx(skeds_folder => $skeds_folder);
 
     my $dumpfolder = $skeds_folder->subfolder('dump');
     $dumpfolder->write_files_with_method(
@@ -226,13 +224,11 @@ sub _output_skeds_all {
 
 } ## tidy end: sub _output_skeds_all
 
-sub output_skeds_xlsx {
-    my $self         = shift;
-    my $skeds_folder = shift;
+method output_skeds_xlsx (:$skeds_folder!) {
 
-    my $cry = cry("Writing place and stop xlsx schedules");
+    my $cry = cry("Writing place xlsx schedules");
 
-    my $stop_xlsx_folder  = $skeds_folder->subfolder('xlsx_s');
+    #my $stop_xlsx_folder  = $skeds_folder->subfolder('xlsx_s');
     my $place_xlsx_folder = $skeds_folder->subfolder('xlsx_p');
 
     my @linegroups = u::sortbyline $self->linegroups;
@@ -241,10 +237,10 @@ sub output_skeds_xlsx {
 
         $cry->over("$linegroup ");
 
-        my $stop_workbook_fh
-          = $stop_xlsx_folder->open_write_binary("$linegroup.xlsx");
-        my $stop_workbook    = Excel::Writer::XLSX->new($stop_workbook_fh);
-        my $stop_text_format = $stop_workbook->actium_text_format;
+#        my $stop_workbook_fh
+#          = $stop_xlsx_folder->open_write_binary("$linegroup.xlsx");
+#        my $stop_workbook    = Excel::Writer::XLSX->new($stop_workbook_fh);
+#        my $stop_text_format = $stop_workbook->actium_text_format;
 
         my $place_workbook_fh
           = $place_xlsx_folder->open_write_binary($linegroup . "_p.xlsx");
@@ -252,11 +248,11 @@ sub output_skeds_xlsx {
         my $place_text_format = $place_workbook->actium_text_format;
 
         foreach my $sked ( $self->skeds_of_lg($linegroup) ) {
-            $sked->add_stop_xlsx_sheet( $stop_workbook, $stop_text_format );
+#            $sked->add_stop_xlsx_sheet( workbook => $stop_workbook, format => $stop_text_format );
             $sked->add_place_xlsx_sheet( $place_workbook, $place_text_format );
         }
 
-        $stop_workbook->close;
+#        $stop_workbook->close;
         $place_workbook->close;
 
     } ## tidy end: foreach my $linegroup (@linegroups)
