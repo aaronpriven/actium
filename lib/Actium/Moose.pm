@@ -35,6 +35,7 @@ sub init_meta {
     Moose::Util::TypeConstraints->import( { into => $for_class } );
     MooseX::MungeHas->import::into($for_class);
     Kavorka->import::into( $for_class, qw/method -allmodifiers/ );
+    # the function import from Kavorka is in Preamble
     Actium::Preamble->import::into($for_class);
     # Actium::Preamble must be at the end so "no warnings experimental" in
     # preamble overrides warnings turned on by Moose, etc.
@@ -52,17 +53,15 @@ sub u::immut {
 __END__
 
 
-__END__
-
 =encoding utf8
 
 =head1 NAME
 
-<name> - <brief description>
+Actium::Moose - Actium customizations for Moose classes
 
 =head1 VERSION
 
-This documentation refers to version 0.003
+This documentation refers to version 0.013
 
 =head1 SYNOPSIS
 
