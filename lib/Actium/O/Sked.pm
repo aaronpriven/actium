@@ -4,15 +4,15 @@ package Actium::O::Sked 0.012;
 
 use Actium::Moose;
 
-use overload '""' => sub { shift->id };
+use overload '""' => sub { shift->id }, fallback => 1;
 
 use Actium::Moose;
 
-use MooseX::Storage;              ### DEP ###
+use MooseX::Storage;    ### DEP ###
 with Storage(
     traits   => ['OnlyWhenBuilt'],
     'format' => 'Storable',
-    io       => 'File'
+    io       => 'File',
 );
 
 use Actium::Time(qw<:all>);
@@ -22,6 +22,7 @@ use Actium::Types (qw/DirCode ActiumDir ActiumDays/);
 use Actium::O::Sked::Trip;
 use Actium::O::Dir;
 use Actium::O::Days;
+use Actium::O::2DArray;
 
 with 'Actium::O::Sked::Prehistoric';
 # allows prehistoric skeds files to be read and written.
@@ -36,6 +37,8 @@ sub BUILD {
     $self->_add_placetimes_from_stoptimes;
     $self->_delete_blank_columns;
     $self->_combine_duplicate_timepoints;
+
+    return;
 
 }
 
@@ -200,10 +203,9 @@ sub _combine_duplicate_timepoints {
 
             if ( scalar @thesetimes != 1 ) {
 
-                @thesetimes
-                  = @thesetimes[ 0, -1 ];    ## no critic 'ProhibitMagicNumbers'
-                     # first and last only -- discard any middle times.
-                     # Unlikely to actually happen
+                @thesetimes = @thesetimes[ 0, -1 ];
+                # first and last only -- discard any middle times.
+                # Unlikely to actually happen
 
                 if ( $thesetimes[0] == $thesetimes[1] ) {
                     @thesetimes = ( $thesetimes[0] );
@@ -216,7 +218,7 @@ sub _combine_duplicate_timepoints {
             # now @thesetimes contains one time
             # or two times that are different.
 
-            if ( scalar @thesetimes == 2 ) {
+            if ( 2 == scalar @thesetimes ) {
                 push @single_list, $thesetimes[1];
                 push @double_list, [@thesetimes];
                 $has_double = 1;
@@ -227,9 +229,10 @@ sub _combine_duplicate_timepoints {
 
             # if this isn't the last column, and there are any times
             # defined later...
-            if ( $#alltimes > $lastcolumn
+            if ($#alltimes > $lastcolumn
                 and u::any { defined($_) }
-                @alltimes[ $lastcolumn + 1 .. $#alltimes ] )
+                @alltimes[ $lastcolumn + 1 .. $#alltimes ]
+              )
             {
 
                 # Then set the single time to be the departure time
@@ -279,10 +282,11 @@ sub _combine_duplicate_timepoints {
 ###################################
 ## MOOSE ATTRIBUTES
 
-# comes from AVL, not headways
-has 'place4_r' => (
+# supplied attributes
+
+has '_place4_r' => (
     traits  => ['Array'],
-    is      => 'bare',
+    is      => 'ro',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
     handles => {
@@ -295,10 +299,9 @@ has 'place4_r' => (
     },
 );
 
-# comes from AVL or headways
-has 'place8_r' => (
+has '_place8_r' => (
     traits  => ['Array'],
-    is      => 'bare',
+    is      => 'ro',
     isa     => 'ArrayRef[Str]',
     default => sub { [] },
     handles => {
@@ -311,13 +314,29 @@ has 'place8_r' => (
     },
 );
 
-# from AVL or headways
-has [qw<origlinegroup linegroup linedescrip>] => (
-    is  => 'ro',
-    isa => 'Str',
+has '_stopid_r' => (
+    traits  => ['Array'],
+    is      => 'ro',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    handles => {
+        stopid         => 'get',
+        stop_count     => 'count',
+        stopids        => 'elements',
+        _delete_stopid => 'delete',
+    },
 );
 
-# direction
+# stopplaces -- either the place associated with the stop, or nothing
+# if there is no place associated with the stop
+has '_stopplace_r' => (
+    traits  => ['Array'],
+    is      => 'ro',
+    isa     => 'ArrayRef[Maybe[Str]]',
+    default => sub { [] },
+    handles => { stopplaces => 'elements', _delete_stopplace => 'delete' },
+);
+
 has 'dir_obj' => (
     required => 1,
     coerce   => 1,
@@ -331,6 +350,35 @@ has 'dir_obj' => (
         should_preserve_direction_order => 'should_preserve_direction_order',
     },
 );
+
+has 'linegroup' => (
+    is       => 'ro',
+    isa      => 'Str',
+    required => 1,
+);
+
+has 'days_obj' => (
+    required => 1,
+    coerce   => 1,
+    init_arg => 'days',
+    is       => 'ro',
+    isa      => ActiumDays,
+    handles  => {
+        daycode       => 'daycode',
+        schooldaycode => 'schooldaycode',
+        sortable_days => 'as_sortable',
+    },
+);
+
+has 'trip_r' => (
+    traits  => ['Array'],
+    is      => 'bare',
+    isa     => 'ArrayRef[Actium::O::Sked::Trip]',
+    default => sub { [] },
+    handles => { trips => 'elements', trip => 'get', trip_count => 'count' },
+);
+
+### built attributes
 
 has 'linedir' => (
     lazy    => 1,
@@ -398,54 +446,6 @@ sub _build_specday_definitions_r {
 
 }
 
-# days
-has 'days_obj' => (
-    required => 1,
-    coerce   => 1,
-    init_arg => 'days',
-    is       => 'ro',
-    isa      => ActiumDays,
-    handles  => {
-        daycode       => 'daycode',
-        schooldaycode => 'schooldaycode',
-        sortable_days => 'as_sortable',
-    }
-);
-
-# from AVL or headways, but specific data in trips varies
-has 'trip_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Actium::O::Sked::Trip]',
-    default => sub { [] },
-    handles => { trips => 'elements', trip => 'get', trip_count => 'count' },
-);
-
-# from AVL only
-
-has 'stopid_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Str]',
-    default => sub { [] },
-    handles => {
-        stopid         => 'get',
-        stop_count     => 'count',
-        stopids        => 'elements',
-        _delete_stopid => 'delete'
-    },
-);
-
-# stopplaces -- either the place associated with the stop, or nothing
-# if there is no place associated with the stop
-has 'stopplace_r' => (
-    traits  => ['Array'],
-    is      => 'bare',
-    isa     => 'ArrayRef[Maybe[Str]]',
-    default => sub { [] },
-    handles => { stopplaces => 'elements', _delete_stopplace => 'delete' },
-);
-
 has 'earliest_timenum' => (
     is       => 'ro',
     lazy     => 1,
@@ -499,14 +499,15 @@ sub _build_md5 {
     # build an MD5 digest from the placetimes, stoptimes, places, and stops
     require Digest::MD5;    ### DEP ###
 
-    my @data = ( u::jointab( $self->place4s ), u::jointab( $self->stopids ) );
+    my @sked_stream
+      = ( u::jointab( $self->place4s ), u::jointab( $self->stopids ) );
 
     foreach my $trip ( $self->trips ) {
-        push @data, u::jointab( $trip->stoptimes );
-        push @data, u::jointab( $trip->placetimes );
+        push @sked_stream, u::jointab( $trip->stoptimes );
+        push @sked_stream, u::jointab( $trip->placetimes );
     }
 
-    my $digest = Digest::MD5::md5_hex( join( $KEY_SEPARATOR, @data ) );
+    my $digest = Digest::MD5::md5_hex( join( $KEY_SEPARATOR, @sked_stream ) );
     return $digest;
 
 }
@@ -532,7 +533,6 @@ sub _build_earliest_timenum {
 sub _build_lines {
     my $self = shift;
 
-    my $line_r;
     my %seen_line;
 
     foreach my $trip ( $self->trips() ) {
@@ -587,8 +587,7 @@ sub _build_has_multiple_specdays {
 
 sub _build_skedid {
     my $self = shift;
-    my $linegroup = $self->linegroup || $self->oldlinegroup;
-    return ( join( '_', $linegroup, $self->dircode, $self->daycode ) );
+    return ( join( '_', $self->linegroup, $self->dircode, $self->daycode ) );
 }
 
 sub _build_sortable_id {
@@ -608,7 +607,10 @@ sub sortable_id_with_timenum {
     my $self    = shift;
     my $timenum = shift;
 
-    my $linegroup = linekeys( $self->linegroup || $self->oldlinegroup );
+    $timenum = sprintf '<%04d>', $timenum;
+    # pad to 4 zeros
+
+    my $linegroup = linekeys( $self->linegroup );
     $linegroup =~ s/\0/ /g;
     my $dir = $self->dir_obj->as_sortable;
 
@@ -619,10 +621,7 @@ sub sortable_id_with_timenum {
 #################################
 ## METHODS
 
-sub id {
-    my $self = shift;
-    return $self->skedid;
-}
+method id { $self->skedid }
 
 sub attribute_columns {
     # return only non-empty attributes of trips, for creating
@@ -725,11 +724,9 @@ sub spaced {
 
     my @simplefields;
     my %value_of_simplefield = (
-        dir           => $self->dircode,
-        days          => $self->sortable_days,
-        linegroup     => $self->linegroup,
-        origlinegroup => $self->origlinegroup,
-        linedescrip   => $self->linedescrip,
+        dir       => $self->dircode,
+        days      => $self->sortable_days,
+        linegroup => $self->linegroup,
     );
 
     foreach my $field ( sort keys %value_of_simplefield ) {
@@ -738,9 +735,8 @@ sub spaced {
         push @simplefields, "$field:$value";
     }
 
+    local $LIST_SEPARATOR = $SPACE;
     say $out "@simplefields";
-
-    require Actium::O::2DArray;
 
     my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR, XB => 1 );
 
@@ -781,173 +777,143 @@ sub spaced {
 
 my $xlsx_timesub = timestr_sub( XB => 1 );
 
-sub add_stop_xlsx_sheet {
-    my $self     = shift;
-    my $workbook = shift;
-    my $format   = shift;
+method _trip_attribute_columns {
 
-    my $id = $self->skedid;
+    # note that this only has one header column, and not two.
+    # Before combining it with _stop_columns or _place_columns, a
+    # $trip_attribute_columns->unshift_row()
+    # should be done, to avoid misalignments
 
-    my $stopsked = $workbook->add_worksheet($id);
+    my ( $columns_r, $shortcol_of_r )
+      = $self->attribute_columns(qw(line day vehicletype daysexceptions));
+    my @columns     = @{$columns_r};
+    my %shortcol_of = %{$shortcol_of_r};
 
-    my @stop_records;
-
-    push @stop_records, [ $self->stopids ];
-    push @stop_records, [ $self->stopplaces ];
+    my $trip_attribute_columns
+      = Actium::O::2DArray->new( [ @shortcol_of{@columns} ] );
 
     foreach my $trip ( $self->trips ) {
-        push @stop_records, [ $xlsx_timesub->( $trip->stoptimes ) ];
+        $trip_attribute_columns->push_row( map { $trip->$_ } @columns );
     }
 
-    my $stop_count = $self->stop_count;
-    my $trip_count = $self->trip_count;
+    return $trip_attribute_columns;
 
-    if ( $stop_count > 2.5 * $self->trip_count ) {
-        # if stops are wider than trips, then
-        $stopsked->actium_write_row_string( 0, 0, \@stop_records, $format );
+} ## tidy end: sub METHOD1
+
+method _stop_columns {
+
+    my $stop_columns
+      = Actium::O::2DArray->new( $self->_stopid_r, $self->_stopplace_r );
+
+    foreach my $trip ( $self->trips ) {
+        $stop_columns->push_row( $xlsx_timesub->( $trip->stoptimes ) );
+    }
+
+    return $stop_columns;
+
+}
+
+method _place_columns {
+
+    my $place_columns
+      = Actium::O::2DArray->new( $self->_place4_r, $self->_place8_r );
+
+    foreach my $trip ( $self->trips ) {
+        $place_columns->push_row( $xlsx_timesub->( $trip->placetimes ) );
+    }
+
+    return $place_columns;
+}
+
+method add_stop_xlsx_sheet (
+          :$orientation 
+             where { $_ eq 'auto' or $_ eq 'top' or $_ eq 'left' } 
+             = 'top', 
+          Excel::Writer::XLSX :$workbook! , 
+          Excel::Writer::XLSX::Format :$format!, 
+       ) {
+
+    my $id                     = $self->skedid;
+    my $trip_attribute_columns = $self->_trip_attribute_columns;
+    $trip_attribute_columns->unshift_row();
+    my $stop_columns = $self->_stop_columns;
+
+    ## no critic (ProhibitMagicNumbers)
+    if ( $orientation eq 'auto' ) {
+        if ( $self->stop_count > 2.5 * $self->trip_count ) {
+            $orientation = 'left';
+        }
+        else {
+            $orientation = 'top';
+        }
+    }
+    ## use critic
+
+    my $trip_attribute_width = $trip_attribute_columns->width;
+
+    if ( $orientation eq 'left' ) {
+        my $stopsked = $workbook->add_worksheet("$id.l");
+        $stopsked->actium_write_row_string( 0, 0, $trip_attribute_columns,
+            $format );
+        $stopsked->actium_write_row_string( $trip_attribute_width, 0,
+            $stop_columns, $format );
         $stopsked->freeze_panes( 0, 2 );
     }
-    else {
-        # otherwise stops at the top
-        $stopsked->actium_write_col_string( 0, 0, \@stop_records, $format );
+    else {    # top
+        my $stopsked = $workbook->add_worksheet($id);
+        $stopsked->actium_write_col_string( 0, 0, $trip_attribute_columns,
+            $format );
+        $stopsked->actium_write_col_string( 0, $trip_attribute_width,
+            $stop_columns, $format );
         $stopsked->freeze_panes( 2, 0 );
     }
 
     return;
 
-} ## tidy end: sub add_stop_xlsx_sheet
+} ## tidy end: sub METHOD4
 
-sub add_place_xlsx_sheet {
-
-    my $self     = shift;
-    my $workbook = shift;
-    my $format   = shift;
+method add_place_xlsx_sheet (
+          Excel::Writer::XLSX :$workbook! , 
+          Excel::Writer::XLSX::Format :$format!, 
+       ) {
 
     my $id = $self->skedid;
 
+    my $trip_attribute_columns = $self->_trip_attribute_columns;
+    $trip_attribute_columns->unshift_row();
+    my $place_columns = $self->_place_columns;
+
     my $tpsked = $workbook->add_worksheet($id);
 
-    my @place_records;
-
-    my ( $columns_r, $shortcol_of_r )
-      = $self->attribute_columns(qw(line day vehicletype daysexceptions));
-    my @columns     = @{$columns_r};
-    my %shortcol_of = %{$shortcol_of_r};
-
-    push @place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
-    push @place_records, [ @shortcol_of{@columns}, $self->place8s ];
-
-    my @trips = $self->trips;
-
-    foreach my $trip (@trips) {
-        push @place_records,
-          [ ( map { $trip->$_ } @columns ),
-            $xlsx_timesub->( $trip->placetimes )
-          ];
-    }
-
-    $tpsked->actium_write_col_string( 0, 0, \@place_records, $format );
+    $tpsked->actium_write_col_string( 0, 0, $trip_attribute_columns, $format );
+    $tpsked->actium_write_col_string( 0, 0, $place_columns,          $format );
     $tpsked->freeze_panes( 2, 0 );
-    $tpsked->set_zoom(125);
+    $tpsked->set_zoom(125);    ## no critic (ProhibitMagicNumbers)
 
     return;
 
-} ## tidy end: sub add_place_xlsx_sheet
+}
 
-### OLD XLSX SCHEDULES, TO BE DELETED ###
-
-const my $xlsx_window_height => 950;
-const my $xlsx_window_width  => 1200;
-
-sub xlsx {
-    my $self = shift;
+method xlsx {
     my $timesub = timestr_sub( XB => 1 );
 
-    #require Excel::Writer::XLSX;    ### DEP ###
     require Actium::Excel;
 
-    my $outdata;
-    open( my $out, '>', \$outdata ) or die "$!";
+    my $stop_workbook_stream;
+    open( my $stop_workbook_fh, '>', \$stop_workbook_stream )
+      or die "$OS_ERROR";
 
-    my $workbook = Excel::Writer::XLSX->new($out);
-    $workbook->set_size( $xlsx_window_width, $xlsx_window_height );
+    my $stop_workbook    = Actium::Excel::new_workbook($stop_workbook_fh);
+    my $stop_text_format = $stop_workbook->actium_text_format;
 
-    my $textformat = $workbook->add_format( num_format => 0x31 );    # text only
+    $self->add_stop_xlsx_sheet(
+        workbook => $stop_workbook,
+        format   => $stop_text_format,
+    );
 
-    ### INTRO
-
-    my $intro = $workbook->add_worksheet('intro');
-
-    my @all_attributes
-      = qw(id sortable_days dircode linegroup origlinegroup linedescrip md5);
-    my @all_output_names
-      = qw(id days dir linegroup origlinegroup linedescrip md5);
-
-    my @output_names;
-    my @output_values;
-
-    foreach my $i ( 0 .. $#all_attributes ) {
-        my $output_name = $all_output_names[$i];
-        my $attribute   = $all_attributes[$i];
-        my $value       = $self->$attribute;
-
-        if ( defined $value ) {
-            push @output_names,  $output_name;
-            push @output_values, $value;
-        }
-    }
-
-    $intro->actium_write_col_string( 0, 0, \@output_names,  $textformat );
-    $intro->actium_write_col_string( 0, 1, \@output_values, $textformat );
-
-    ### TPSKED
-
-    my $tpsked = $workbook->add_worksheet('tpsked');
-
-    my @place_records;
-
-    my ( $columns_r, $shortcol_of_r )
-      = $self->attribute_columns(qw(line day vehicletype daysexceptions));
-    my @columns     = @{$columns_r};
-    my %shortcol_of = %{$shortcol_of_r};
-
-    push @place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
-    push @place_records, [ @shortcol_of{@columns}, $self->place8s ];
-
-    my @trips = $self->trips;
-
-    foreach my $trip (@trips) {
-        push @place_records,
-          [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
-    }
-
-    $tpsked->actium_write_col_string( 0, 0, \@place_records, $textformat );
-    $tpsked->freeze_panes( 2, 0 );
-    $tpsked->set_zoom(125);
-
-    ### STOPSKED
-
-    my $stopsked = $workbook->add_worksheet('stopsked');
-
-    my @stop_records;
-
-    push @stop_records, [ $self->stopids ];
-    push @stop_records, [ $self->stopplaces ];
-
-    foreach my $trip (@trips) {
-        push @stop_records, [ $timesub->( $trip->stoptimes ) ];
-    }
-
-    $stopsked->actium_write_row_string( 0, 0, \@stop_records, $textformat );
-    $stopsked->freeze_panes( 0, 2 );
-
-    $tpsked->activate();
-
-    $workbook->close();
-    close $out;
-    return $outdata;
-
-} ## tidy end: sub xlsx
+    close $stop_workbook_fh or die "$OS_ERROR";
+    return $stop_workbook_stream;
+} ## tidy end: sub METHOD6
 
 sub xlsx_layers {':raw'}
 
@@ -967,26 +933,32 @@ sub transitinfo_id {
 
 }
 
-sub tabxchange {
+const my $LAST_LINE_IN_FIRST_LOCAL_LIST = 70;
+# arbitrary choice, but it should be always the same or links will break
+
+method tabxchange ( 
+       :destinationcode($dc)! , 
+       :$actiumdb! , 
+       :collection($skedcollection)! ,
+   ) {
 
     # tab files for AC Transit web site
-    my $self = shift;
+    #  my $self = shift;
 
-    my %params = u::validate(
-        @_,
-        {   destinationcode => 1,
-            actiumdb        => 1,
-            collection      => 1,
-        }
-    );
-
-    my $dc             = $params{destinationcode};
-    my $actiumdb       = $params{actiumdb};
-    my $skedcollection = $params{collection};
+    #  my %params = u::validate(
+    #      @_,
+    #      {   destinationcode => 1,
+    #          actiumdb        => 1,
+    #          collection      => 1,
+    #      },
+    #  );
+    #
+    #  my $dc             = $params{destinationcode};
+    #  my $actiumdb       = $params{actiumdb};
+    #  my $skedcollection = $params{collection};
 
     # line 1 - skedid
 
-    require Actium::O::2DArray;
     my $skedid = $self->transitinfo_id;
     my $aoa = Actium::O::2DArray->bless( [ [$skedid] ] );
 
@@ -1002,7 +974,7 @@ sub tabxchange {
     my $days_transitinfo = $self->days_obj->as_transitinfo;
     $p->(
         $days_transitinfo, $days->as_adjectives,
-        $days->as_abbrevs, $days->as_plurals
+        $days->as_abbrevs, $days->as_plurals,
     );
 
     # line 3 - direction/destination
@@ -1036,9 +1008,9 @@ sub tabxchange {
     $p->(
         'U',
         $linegroup,
-        '',    # LineGroupWebNote - no longer valid
+        $EMPTY,    # LineGroupWebNote - no longer valid
         $linegroup_row_r->{LineGroupType},
-        ''     # UpComingOrCurrentLineGroup
+        $EMPTY,    # UpComingOrCurrentLineGroup
     );
 
     # line 5 - all lines
@@ -1102,9 +1074,9 @@ sub tabxchange {
             $desc,
             $city,
             $usecity,
-            '',    # Neighborhood
-            '',    # TPNote
-            '',    # fake timepoint note
+            $EMPTY,    # Neighborhood
+            $EMPTY,    # TPNote
+            $EMPTY,    # fake timepoint note
         );
     } ## tidy end: foreach my $place (@place4s)
 
@@ -1147,7 +1119,7 @@ sub tabxchange {
         if ($linegrouptype) {
             if ( $linegrouptype eq 'local' ) {
                 no warnings 'numeric';
-                if ( $line <= 70 ) {
+                if ( $line <= $LAST_LINE_IN_FIRST_LOCAL_LIST ) {
                     $linegrouptype = 'local1';
                 }
                 else {
@@ -1159,7 +1131,7 @@ sub tabxchange {
               = qq{http://www.actransit.org/rider-info/stops/$linegrouptype/#$line};
         }
         else {
-            warn "No linegroup type for line $line";
+            carp "No linegroup type for line $line";
         }
 
     } ## tidy end: foreach my $line ( $self->lines)
@@ -1167,7 +1139,7 @@ sub tabxchange {
     my @linklines = u::sortbyline keys %stoplist_url_of;
     my $numlinks  = scalar @linklines;
 
-    if ( $numlinks == 1 ) {
+    if ( 1 == $numlinks ) {
         my $linkline = $linklines[0];
 
         $fullnote
@@ -1181,7 +1153,7 @@ sub tabxchange {
           = map {qq{<a href="$stoplist_url_of{$_}">$_</a>}} @linklines;
 
         $fullnote
-          .= qq{ Complete lists of stops for lines }
+          .= ' Complete lists of stops for lines '
           . u::joinseries(@stoplist_links)
           . ' are also available.';
     }
@@ -1349,12 +1321,11 @@ sub tabxchange {
 
     return $aoa->tsv . $placetimes_aoa->tsv;
 
-} ## tidy end: sub tabxchange
-
+} ## tidy end: sub METHOD7
 
 with 'Actium::O::Skedlike';
 
-__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
+u::immut;
 
 1;
 

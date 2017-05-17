@@ -32,7 +32,7 @@ allow_in_main_unless_in_subroutine = 1
 [-RegularExpressions::ProhibitEnumeratedClasses]
 
 [TestingAndDebugging::RequireUseStrict]
-equivalent_modules = Actium::Preamble
+equivalent_modules = Actium::Preamble Actium::Moose Actium::MooseRole
 
 [TestingAndDebugging::ProhibitNoStrict]
 allow = vars subs refs
@@ -84,9 +84,10 @@ severity = 1
 ######################################################################
 # DISTRIBUTION Perl::Critic::Bangs ### DEP ###
 
-[-Perl::Critic::Policy::Bangs::ProhibitBitwiseOperators]
-[-Perl::Critic::Policy::Bangs::ProhibitDebuggingModules]
-[-Perl::Critic::Policy::Bangs::ProhibitFlagComments]
+[-Bangs::ProhibitBitwiseOperators]
+[-Bangs::ProhibitDebuggingModules]
+[-Bangs::ProhibitFlagComments]
+[-Bangs::ProhibitCommentedOutCode]
 
 [Perl::Critic::Policy::Bangs::ProhibitNumberedNames]
 exceptions = tp4 tp8 tp9 place4 place8 place9
@@ -165,9 +166,9 @@ formats = #!/usr/bin/env perl
 
 [-CodeLayout::RequireASCII]
 [-Editor::RequireEmacsFileVariables]
-# [-RequirePerlVersion] 
-[-ErrorHandling::RequireUseOfExceptions]
+[-Modules::RequirePerlVersion] 
 # included in Actium::Preamble
+[-ErrorHandling::RequireUseOfExceptions]
 
 [-ValuesAndExpressions::RequireConstantOnLeftSideOfEquality]
 # using Lax version (allows eq, not ==)
