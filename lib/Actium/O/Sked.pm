@@ -1,5 +1,4 @@
 package Actium::O::Sked 0.012;
-
 # the Sked object, containing everything that is a schedule
 
 use Actium::Moose;
@@ -41,6 +40,38 @@ sub BUILD {
     return;
 
 }
+
+method new_from_xlsx ( :$filename!) {
+
+    use Spreadsheet::ParseXLSX;
+
+    my $parser    = Spreadsheet::ParseXLSX->new;
+    my $workbook  = $parser->parse($filename);
+    my $worksheet = $workbook->worksheet(0);
+
+    my $id = uc( $workbook->get_name );
+    if ($id !~ /\A 
+                [A-Z0-9]+     # route indicator
+                _             # underscore
+                [A-Z0-9]+     # days
+                _             # underscore
+                [A-Z0-9]      # direction
+           \z /x
+      )
+    {
+        croak "Can't find line, direction, and days "
+          . "in sheet name $id in $filename";
+    }
+
+    my ( $line, $daycode, $dircode ) = split( /_/, $id );
+
+} ## tidy end: sub METHOD0
+
+###################################
+### TRIP FINALIZING
+
+# These should be moved to O::Sked::TripCollection and
+# the trips_r attribute replaced by a TripCollection object
 
 sub _add_placetimes_from_stoptimes {
     my $self       = shift;
@@ -798,7 +829,7 @@ method _trip_attribute_columns {
 
     return $trip_attribute_columns;
 
-} ## tidy end: sub METHOD1
+} ## tidy end: sub METHOD2
 
 method _stop_columns {
 
@@ -870,7 +901,7 @@ method add_stop_xlsx_sheet (
 
     return;
 
-} ## tidy end: sub METHOD4
+} ## tidy end: sub METHOD5
 
 method add_place_xlsx_sheet (
           Excel::Writer::XLSX :$workbook! , 
@@ -913,7 +944,7 @@ method xlsx {
 
     close $stop_workbook_fh or die "$OS_ERROR";
     return $stop_workbook_stream;
-} ## tidy end: sub METHOD6
+} ## tidy end: sub METHOD7
 
 sub xlsx_layers {':raw'}
 
@@ -1321,7 +1352,7 @@ method tabxchange (
 
     return $aoa->tsv . $placetimes_aoa->tsv;
 
-} ## tidy end: sub METHOD7
+} ## tidy end: sub METHOD8
 
 with 'Actium::O::Skedlike';
 
@@ -1362,19 +1393,18 @@ Description of subroutine.
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
+A list of every error and warning message that the application can generate
+(even the ones that will "never happen"), with a full explanation of each
+problem, one or more likely causes, and any suggested remedies. If the
+application generates exit status codes, then list the exit status associated
+with each error.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
+A full explanation of any configuration system(s) used by the application,
+including the names and locations of any configuration files, and the meaning
+of any environment variables or properties that can be se. These descriptions
+must also include details of any configuration language used.
 
 =head1 DEPENDENCIES
 
@@ -1388,8 +1418,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it under
+the terms of either:
 
 =over 4
 
@@ -1404,3 +1434,4 @@ later version, or
 This program is distributed in the hope that it will be useful, but WITHOUT 
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
 FITNESS FOR A PARTICULAR PURPOSE.
+
