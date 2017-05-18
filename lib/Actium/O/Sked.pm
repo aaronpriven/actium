@@ -41,22 +41,41 @@ sub BUILD {
 
 }
 
+my $excel_to_timestr_cr = func( $timefraction ! ) {
+
+    my $ampm = $EMPTY_STR;
+
+    if ( $timefraction < 0 ) {
+        $timefraction += 0.5;
+        $ampm = "b";
+    }
+
+    require Spreadsheet::ParseExcel::Utility;    ### DEP ###
+
+    my ( $minutes, $hours )
+      = ( Spreadsheet::ParseExcel::Utility::ExcelLocaltime($timefraction) )
+      [ 1, 2 ];
+
+    return $hours . sprintf( "%02d", $minutes ) . $ampm;
+
+};
+
 method new_from_xlsx ( :$filename!) {
 
     use Spreadsheet::ParseXLSX;
 
-    my $parser    = Spreadsheet::ParseXLSX->new;
-    my $workbook  = $parser->parse($filename);
-    my $worksheet = $workbook->worksheet(0);
+    my $parser   = Spreadsheet::ParseXLSX->new;
+    my $workbook = $parser->parse($filename);
+    my $sheet    = $workbook->worksheet(0);
 
-    my $id = uc( $workbook->get_name );
-    if ($id !~ /\A 
-                [A-Z0-9]+     # route indicator
-                _             # underscore
-                [A-Z0-9]+     # days
-                _             # underscore
-                [A-Z0-9]      # direction
-           \z /x
+    my $id = uc( $sheet->get_name );
+    if ($id !~ /\A
+                    [A-Z0-9]+     # route indicator
+                    _             # underscore
+                    [A-Z0-9]+     # days
+                    _             # underscore
+                    [A-Z0-9]      # direction
+               \z /x
       )
     {
         croak "Can't find line, direction, and days "
@@ -64,6 +83,30 @@ method new_from_xlsx ( :$filename!) {
     }
 
     my ( $line, $daycode, $dircode ) = split( /_/, $id );
+
+    my ( $minrow, $maxrow ) = $sheet->row_range();
+    my ( $mincol, $maxcol ) = $sheet->col_range();
+
+    my $sheetarray = Actium::O::2DArray::->new();
+
+    foreach my $row ( $minrow .. $maxrow ) {
+        my @cells = map { $sheet->get_cell( $row, $_ ) } ( $mincol .. $maxcol );
+        @cells = map { defined($_) ? $_->unformatted : $EMPTY } @cells;
+        push @$sheetarray, \@cells;
+    }
+
+    my $attr_col_count = u::first_index { $_ ne $EMPTY } $sheetarray->[0]->@*;
+    my $attr_array = $sheetarray->del_cols($attr_col_count);
+
+    #            foreach my $value (@cells) {
+    #            if (u::looks_like_number($value)
+    #                and .5 <= $value
+    #                and $value <= 1.5
+    #              )
+    #            {
+    #                $value = $excel_to_timestr_cr->($value);
+    #            }
+    #        }
 
 } ## tidy end: sub METHOD0
 
@@ -652,7 +695,9 @@ sub sortable_id_with_timenum {
 #################################
 ## METHODS
 
-method id { $self->skedid }
+method id {
+    $self->skedid;
+}
 
 sub attribute_columns {
     # return only non-empty attributes of trips, for creating
@@ -1393,18 +1438,19 @@ Description of subroutine.
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can generate
-(even the ones that will "never happen"), with a full explanation of each
-problem, one or more likely causes, and any suggested remedies. If the
-application generates exit status codes, then list the exit status associated
-with each error.
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-A full explanation of any configuration system(s) used by the application,
-including the names and locations of any configuration files, and the meaning
-of any environment variables or properties that can be se. These descriptions
-must also include details of any configuration language used.
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
 
 =head1 DEPENDENCIES
 
@@ -1418,8 +1464,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or modify it under
-the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -1431,7 +1477,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 
