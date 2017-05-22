@@ -167,7 +167,7 @@ sub _init_terminal {
 }
 
 sub prompt {
-    
+
     my $self = shift;
 
     require IO::Prompter;    ### DEP ###
@@ -181,7 +181,7 @@ sub prompt {
 
     print $fh "\n" if ( $self->crier->position != 0 );
 
-    my @filehandles = ( '-in' => *STDIN , '-out' => *{$fh} );
+    my @filehandles = ( '-in' => *STDIN, '-out' => *{$fh} );
 
     #say $prompt;
 
@@ -231,7 +231,7 @@ sub _mainhelp {
     my $width = $term_width_cr->() - 2;
 
     require Actium::O::2DArray;
-    ( undef, \my @lines ) = Actium::O::2DArray->new_like_ls(
+    ( undef, \my @lines ) = Actium::O::2DArray->new_to_term_width(
         array     => \@subcommands,
         width     => $width,
         separator => ($SUBCOMMAND_SEPARATOR)
@@ -362,8 +362,8 @@ sub _build_module {
     }
 
     my $module = "${COMMAND_PREFIX}::$subcommands{$subcommand}";
-    u::require_module($module) 
-        or die " Couldn't load module $module: $OS_ERROR";
+    u::require_module($module)
+      or die " Couldn't load module $module: $OS_ERROR";
     return $module;
 
 } ## tidy end: sub _build_module
@@ -412,7 +412,7 @@ has argv_r => (
     writer   => '_set_argv_r',
     default  => sub { [] },
     init_arg => 'argv',
-    handles  => { argv => 'elements', argv_idx => 'get',},
+    handles  => { argv => 'elements', argv_idx => 'get', },
 );
 
 has options_r => (
@@ -441,13 +441,13 @@ sub _build_options {
             $options{ $obj->name } = $obj->default;
         }
     }
-    
+
     my @argv = $self->argv;
 
     my $returnvalue = GetOptionsFromArray( \@argv, \%options, @option_specs );
     unless ($returnvalue) {
-       say "Error parsing command-line options.\n---";
-       %options = ( help => 1 );
+        say "Error parsing command-line options.\n---";
+        %options = ( help => 1 );
     }
     $self->_set_argv_r( \@argv );
     # replace old argv with new one without options in it
@@ -456,9 +456,9 @@ sub _build_options {
       sort { $a->[1] <=> $b->[1] }
       map { [ $_, $_->order ] } @objs;
     # sort options by order submitted, so the prompts come out reasonably
-    
+
     return \%options if $options{help};
-    # could be generalized to a "skip prompts" value, for 
+    # could be generalized to a "skip prompts" value, for
     # manuals or other displays
 
     foreach my $obj (@objs) {
@@ -475,7 +475,7 @@ sub _build_options {
             }
         }
     }
-    
+
     foreach my $thisoption ( keys %options ) {
         my $callback = $self->_option_obj_of($thisoption)->callback;
         if ($callback) {
