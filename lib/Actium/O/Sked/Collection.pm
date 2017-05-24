@@ -1,6 +1,6 @@
 package Actium::O::Sked::Collection 0.014;
 
-use Actium::Moose;
+use Actium ('class_nomod');
 
 use Actium::O::Sked;
 use Actium::Sorting::Skeds ('skedsort');
@@ -59,8 +59,7 @@ sub _build_sked_obj_by_id_r {
         my $id = $sked->id;
         $sked_obj_by_id{$id} = $sked;
     }
-    
-    
+
     return \%sked_obj_by_id;
 }
 
@@ -136,7 +135,7 @@ sub sked_ids_of_lg {
 sub skeds_of_lg {
     my $self      = shift;
     my $linegroup = shift;
-    my @skeds     = map { $self->sked_obj($_) } $self->sked_ids_of_lg($linegroup);
+    my @skeds = map { $self->sked_obj($_) } $self->sked_ids_of_lg($linegroup);
     return @skeds;
 }
 
@@ -190,20 +189,20 @@ sub write_tabxchange {
 ###################
 
 method output_skeds_all ( :$signup!  , :$subfolder_name = 's') {
-    
+
     my $skeds_r = $self->skeds_r;
 
     my $skeds_folder = $signup->subfolder($subfolder_name);
-    
-    $skeds_folder->store( $self, 'skeds.storable' );
-        my $xlsxfolder = $skeds_folder->subfolder('xlsx_s');
-        $xlsxfolder->write_files_with_method(
-            OBJECTS   => $skeds_r,
-            METHOD    => 'xlsx',
-            EXTENSION => 'xlsx',
-        );
 
-    $self->output_skeds_xlsx(skeds_folder => $skeds_folder);
+    $skeds_folder->store( $self, 'skeds.storable' );
+    my $xlsxfolder = $skeds_folder->subfolder('xlsx_s');
+    $xlsxfolder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'xlsx',
+        EXTENSION => 'xlsx',
+    );
+
+    $self->output_skeds_xlsx( skeds_folder => $skeds_folder );
 
     my $dumpfolder = $skeds_folder->subfolder('dump');
     $dumpfolder->write_files_with_method(
@@ -222,7 +221,7 @@ method output_skeds_all ( :$signup!  , :$subfolder_name = 's') {
     Actium::O::Sked->write_prehistorics( $skeds_r,
         $skeds_folder->subfolder('prehistoric') );
 
-} ## tidy end: sub _output_skeds_all
+} ## tidy end: sub METHOD1
 
 method output_skeds_xlsx (:$skeds_folder!) {
 
@@ -237,13 +236,13 @@ method output_skeds_xlsx (:$skeds_folder!) {
 
         $cry->over("$linegroup ");
 
-#        my $stop_workbook_fh
-#          = $stop_xlsx_folder->open_write_binary("$linegroup.xlsx");
-#        my $stop_workbook    = Excel::Writer::XLSX->new($stop_workbook_fh);
-#        my $stop_text_format = $stop_workbook->actium_text_format;
+    #        my $stop_workbook_fh
+    #          = $stop_xlsx_folder->open_write_binary("$linegroup.xlsx");
+    #        my $stop_workbook    = Excel::Writer::XLSX->new($stop_workbook_fh);
+    #        my $stop_text_format = $stop_workbook->actium_text_format;
 
         my $place_workbook_fh
-          = $place_xlsx_folder->open_write_binary($linegroup . "_p.xlsx");
+          = $place_xlsx_folder->open_write_binary( $linegroup . "_p.xlsx" );
         my $place_workbook    = Excel::Writer::XLSX->new($place_workbook_fh);
         my $place_text_format = $place_workbook->actium_text_format;
 
@@ -252,7 +251,7 @@ method output_skeds_xlsx (:$skeds_folder!) {
             $sked->add_place_xlsx_sheet( $place_workbook, $place_text_format );
         }
 
-#        $stop_workbook->close;
+        #        $stop_workbook->close;
         $place_workbook->close;
 
     } ## tidy end: foreach my $linegroup (@linegroups)
@@ -262,7 +261,7 @@ method output_skeds_xlsx (:$skeds_folder!) {
 
     return;
 
-} ## tidy end: sub output_skeds_xlsx
+} ## tidy end: sub METHOD2
 
 u::immut;
 
@@ -309,8 +308,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -325,8 +324,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -338,6 +337,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
