@@ -2,7 +2,7 @@ package Actium::O::Sked::Trip 0.012;
 
 # Trip object (for schedules and headways)
 
-use Actium::Moose;
+use Actium ('class_nomod');
 
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -120,8 +120,8 @@ sub specday {
     my $self           = shift;
     my $daysexceptions = $self->daysexceptions;
     if ($daysexceptions) {
-       my ($specdayletter, $specday) = split(/ / , $daysexceptions,2);
-       return ($specdayletter, $specday);
+        my ( $specdayletter, $specday ) = split( / /, $daysexceptions, 2 );
+        return ( $specdayletter, $specday );
     }
 
     my $skeddays = shift;
@@ -166,7 +166,7 @@ has stoptimes_comparison_str => (
 sub _build_stoptimes_comparison_str {
     my $self = shift;
     return join( "|",
-         map { defined ? $_ : '-' } $self->stoptimes );
+         map { defined($_) ? $_ : '-' } $self->stoptimes );
 }
 #>>>
 
