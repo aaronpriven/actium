@@ -1,6 +1,6 @@
 package Actium::Cmd::AVL2StopLines 0.012;
 
-use Actium::Preamble;
+use Actium;
 use Actium::Sorting::Line (qw[sortbyline]);
 use Actium::Union('ordered_union');
 use Actium::DaysDirections (':all');
@@ -46,8 +46,10 @@ sub START {
             Stops_Neue => {
                 index_field => 'h_stp_511_id',
                 hash        => \%stops,
-                fields => [qw/h_stp_511_id h_stp_identifier 
-                h_stp_flag_routes h_loca_longitude h_loca_latitude/],
+                fields      => [
+                    qw/h_stp_511_id h_stp_identifier
+                      h_stp_flag_routes h_loca_longitude h_loca_latitude/
+                ],
             },
         }
     );
@@ -105,19 +107,19 @@ sub START {
 
     foreach my $stopid ( sort keys(%stops) ) {
 
-        my $h_stp_flag_routes = $stops{$stopid}{h_stp_flag_routes} ;
-        
+        my $h_stp_flag_routes = $stops{$stopid}{h_stp_flag_routes};
+
         my (@flagroutes);
         my $flagroutes_all = $EMPTY;
-        
+
         if ($h_stp_flag_routes) {
-           @flagroutes = split( /[\s,]+/, $stops{$stopid}{h_stp_flag_routes} );
-           $flagroutes_all = join( $SPACE, @flagroutes );
-        } 
+            @flagroutes = split( /[\s,]+/, $stops{$stopid}{h_stp_flag_routes} );
+            $flagroutes_all = join( $SPACE, @flagroutes );
+        }
 
         if ( not exists $routes_of{$stopid} ) {
-            
-            my $flagroute_diff = add_char('A:' , @flagroutes);
+
+            my $flagroute_diff = add_char( 'A:', @flagroutes );
 
             say $stoplines join( "\t",
                 $stopid, 0, q[], 0, q[], 0, $flagroutes_all, $flagroute_diff );
@@ -126,8 +128,8 @@ sub START {
 
         my $active   = 1;
         my $hastusid = $stops{$stopid}{h_stp_identifier};
-        my $long = $stops{$stopid}{h_loca_longitude};
-        my $lat = $stops{$stopid}{h_loca_latitude};
+        my $long     = $stops{$stopid}{h_loca_longitude};
+        my $lat      = $stops{$stopid}{h_loca_latitude};
         $active = 0 if $hastusid =~ /\AD/i;    # mark virtual stops inactive
 
         my @routes = keys %{ $routes_of{$stopid} };
@@ -154,23 +156,19 @@ sub START {
         #next unless @routes;    # eliminate BSH-only stops
 
         my $lc = List::Compare->new( \@flagroutes, \@routes );
-        
-        my $added   = add_char('A:' , $lc->get_Lonly());
-        my $removed = add_char('M:' , $lc->get_Ronly());
-        
-        my $flagroute_diff = ($added and $removed) ? "$added $removed" : "$added$removed";
 
-        say $stoplines join(
-            "\t",
+        my $added   = add_char( 'A:', $lc->get_Lonly() );
+        my $removed = add_char( 'M:', $lc->get_Ronly() );
+
+        my $flagroute_diff
+          = ( $added and $removed ) ? "$added $removed" : "$added$removed";
+
+        say $stoplines join( "\t",
             $stopid, $active,
-            join( $SPACE, sortbyline(@routes) ),
-            scalar @routes,
-            join( $SPACE, sortbyline(@routedirs) ),
-            scalar @routedirs,
-            $flagroutes_all,
-            $flagroute_diff,
-            $long,
-            $lat,
+            join( $SPACE, sortbyline(@routes) ),    scalar @routes,
+            join( $SPACE, sortbyline(@routedirs) ), scalar @routedirs,
+            $flagroutes_all, $flagroute_diff,
+            $long,           $lat,
         );
 
     }    ## #tidy# end foreach my $stop ( sort keys...)
@@ -248,8 +246,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -264,8 +262,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -277,6 +275,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

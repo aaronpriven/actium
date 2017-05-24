@@ -1,6 +1,6 @@
 package Actium::Cmd::AVL2Points 0.013;
 
-use Actium::Preamble;
+use Actium;
 use sort ('stable');    ### DEP ###
 use Storable();         ### DEP ###
 
@@ -231,7 +231,7 @@ sub START {
 
                     if ( u::all { $_->{LASTSTOP} } @{$times_r} ) {
 
-                  #if ( u::all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
+               #if ( u::all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
                         $has_last_stop{$linegroup} = 1;
                         $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
                           = "LASTSTOP";
@@ -430,8 +430,11 @@ sub START {
                 foreach my $days (
                     sort keys %{ $stopinfo{$stop}{$linegroup}{$dir_code} } )
                 {
-                    
-                    next if $days eq '1245' or $days eq '1235' or ($linegroup =~ /\d\d/ and $days eq '1234');
+
+                    next
+                      if $days eq '1245'
+                      or $days eq '1235'
+                      or ( $linegroup =~ /\d\d/ and $days eq '1234' );
                     # skip school trips... this is wrong but will probably
                     # not be fixed in the version that comes from avl
 
@@ -501,7 +504,7 @@ sub makestoptimes {
         my $patkey = u::joinkey( $line, $pattern );
 
         my $days_input = $tripinfo_of{OperatingDays};
-        $days_input =~ tr/0-9//cd;      # strip everything but digits
+        $days_input =~ tr/0-9//cd;    # strip everything but digits
 
         my @days;
 
@@ -574,7 +577,7 @@ sub makestoptimes {
 
         my $final_stop_of_pattern;
 
-      my $prevstop = '';
+        my $prevstop = '';
       TIMEIDX:
         foreach my $timeidx ( 0 .. $#{ $tripinfo_of{PTS} } ) {
             my $stop = $avldata{PAT}{$patkey}{TPS}[$timeidx]{StopIdentifier};
@@ -591,7 +594,7 @@ sub makestoptimes {
 
             foreach my $days (@days) {
 
-                if ($stop eq $prevstop) {
+                if ( $stop eq $prevstop ) {
                     pop @{ $stopinfo{$stop}{$linegroup}{$dir_code}{$days} };
                 }
                 # remove previous stop data if this is the same stop.
@@ -607,7 +610,7 @@ sub makestoptimes {
                 };
 
             }
-            
+
             $prevstop = $stop;
 
         }    ## <perltidy> end foreach my $timeidx ( 0 .. ...)
@@ -649,9 +652,9 @@ avl2points - makes list of times that buses pass each stop;
 
 =head1 DESCRIPTION
 
-avl2points reads the data written by readavl and turns it into 
-a list of times that buses pass each stop.
-It is saved in the directory "kpoints" in the directory for that signup.
+avl2points reads the data written by readavl and turns it into  a list
+of times that buses pass each stop. It is saved in the directory
+"kpoints" in the directory for that signup.
 
 =head1 AUTHOR
 
@@ -703,8 +706,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -719,8 +722,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -732,6 +735,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

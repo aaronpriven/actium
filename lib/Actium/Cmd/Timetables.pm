@@ -2,7 +2,7 @@ package Actium::Cmd::Timetables 0.012;
 
 # Produces InDesign tag files that represent timetables.
 
-use Actium::Preamble;
+use Actium;
 
 use Actium::O::Sked::Collection;
 use Actium::O::Sked;
@@ -26,7 +26,7 @@ sub START {
     my $actiumdb = $env->actiumdb;
     my $signup   = $env->signup;
 
-    my $tabulae_folder    = $signup->subfolder('timetables');
+    my $tabulae_folder = $signup->subfolder('timetables');
     #my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
     my $multipubtt_folder = $tabulae_folder->subfolder('pub-idtags');
     my $storablefolder    = $signup->subfolder('s');
@@ -44,14 +44,14 @@ sub START {
     #   = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
 
     my @skeds = $collection->skeds;
-    
-    @skeds = grep { 
-            my $linegroup = $_->linegroup;
-            not ( $linegroup =~ /^(?:BS[DHN]|4\d\d)/ )
+
+    @skeds = grep {
+        my $linegroup = $_->linegroup;
+        not( $linegroup =~ /^(?:BS[DHN]|4\d\d)/ )
     } @skeds;
-    
+
     my @all_lines = map { $_->lines } @skeds;
-    #@all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN' and ! m/4\d\d/ } @all_lines;
+   #@all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN' and ! m/4\d\d/ } @all_lines;
     @all_lines = u::uniq u::sortbyline @all_lines;
 
     my ( $pubtt_contents_with_dates_r, $pubtimetables_r )
@@ -119,8 +119,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -135,8 +135,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -148,6 +148,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

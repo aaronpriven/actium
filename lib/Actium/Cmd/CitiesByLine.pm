@@ -1,6 +1,6 @@
 package Actium::Cmd::CitiesByLine 0.011;
 
-use Actium::Preamble;
+use Actium;
 use Actium::StopReports;
 
 sub OPTIONS {
@@ -14,9 +14,9 @@ sub HELP {
 
 sub START {
     my ( $class, $env ) = @_;
-    my $cry = cry("Producing ciies by line report for web site");
+    my $cry      = cry("Producing ciies by line report for web site");
     my $actiumdb = $env->actiumdb;
-    Actium::StopReports::citiesbyline(actiumdb => $actiumdb);
+    Actium::StopReports::citiesbyline( actiumdb => $actiumdb );
     $cry->done;
 
 }
@@ -66,8 +66,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -82,8 +82,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -95,6 +95,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

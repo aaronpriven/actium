@@ -2,7 +2,7 @@ package Actium::Cmd::PrepareFlags 0.011;
 
 # Prepare artwork so that flags are built
 
-use Actium::Preamble;
+use Actium;
 use Actium::Flags;
 use Actium::Util('file_ext');
 use Actium::O::2DArray;
@@ -16,13 +16,13 @@ sub START {
     my $actiumdb = $env->actiumdb;
     my @argv     = $env->argv;
 
-    my $assigncry = cry( 'Creating flag assignments');
+    my $assigncry = cry('Creating flag assignments');
 
     my $input_file = shift @argv;
     my ( $output_file, @stopids );
 
     if ( defined $input_file ) {
-        my $stopidinput_cry = cry ( "Getting stop IDs from file $input_file");
+        my $stopidinput_cry = cry("Getting stop IDs from file $input_file");
         ( $output_file, undef ) = file_ext($input_file);
         $output_file .= '-assignments.txt';
 
@@ -32,7 +32,7 @@ sub START {
         $stopidinput_cry->d_ok;
     }
     else {
-        my $db_cry = cry ('Getting stop IDs from database');
+        my $db_cry = cry('Getting stop IDs from database');
         $db_cry->d_ok;
     }
 
@@ -45,7 +45,7 @@ sub START {
 
     if ( defined $output_file ) {
         require File::Slurper;
-        File::Slurper::write_text($output_file, $tabbed);
+        File::Slurper::write_text( $output_file, $tabbed );
     }
     else {
         my $signup = $env->signup;
@@ -102,8 +102,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -118,8 +118,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -131,6 +131,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

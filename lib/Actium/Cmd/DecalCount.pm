@@ -2,7 +2,7 @@ package Actium::Cmd::DecalCount 0.011;
 
 # Makes spreadsheet to calculate decal count
 
-use Actium::Preamble;
+use Actium;
 use Actium::Util('add_before_extension');
 use Actium::DecalPreparation(qw/make_decal_count/);
 
@@ -19,7 +19,7 @@ sub START {
 
     my ( $class, $env ) = @_;
     my $actiumdb = $env->actiumdb;
-    my @argv = $env->argv;
+    my @argv     = $env->argv;
 
     my $input_file = shift @argv;
     my $output_file = add_before_extension( $input_file, 'counted' );
@@ -75,8 +75,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -91,8 +91,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -104,6 +104,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
