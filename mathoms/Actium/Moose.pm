@@ -41,13 +41,6 @@ sub init_meta {
     # preamble overrides warnings turned on by Moose, etc.
 }
 
-# here because, why bother putting it in util?
-
-sub u::immut {
-    my $package = caller;
-    $package->meta->make_immutable;
-}
-
 1;
 
 __END__
@@ -82,15 +75,15 @@ Description of subroutine.
 
 =item B<< immut() >>
 
-A function that makes a Moose class immutable. It is recommended that Moose
-classes be made immutable once they are defined because because 
+A function that makes a Moose class immutable. It is recommended that
+Moose classes be made immutable once they are defined because because 
 they are much faster that way. Normally one does this by putting
 
  __PACKAGE__->meta->make_immutable
 
-at the end of the class. This function allows replacement of that unwieldy 
-code with something that's easier to type.
-    
+at the end of the class. This function allows replacement of that
+unwieldy  code with something that's easier to type.
+
 =back
 
 =head1 DIAGNOSTICS
@@ -105,8 +98,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -121,8 +114,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -134,7 +127,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 
