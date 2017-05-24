@@ -1,6 +1,6 @@
 package Actium::O::Pattern::Group 0.012;
 
-use Actium::Moose;
+use Actium ('class_nomod');
 
 use Actium::Types (qw/ActiumDir/);
 use Actium::O::Dir;
@@ -97,21 +97,21 @@ sub skeds {
     my @skeds;
 
     \my %trip_collection_by_days = $self->_sked_trip_collections;
-    
-    my @place4s = map { $actiumdb->dereference_place($_) } $self->places;
+
+    my @place4s    = map { $actiumdb->dereference_place($_) } $self->places;
     my @stopplaces = map { $actiumdb->dereference_place($_) } $self->stopplaces;
-    my @place8s = map { $actiumdb->place8($_) } @place4s;
+    my @place8s    = map { $actiumdb->place8($_) } @place4s;
 
     foreach my $days ( keys %trip_collection_by_days ) {
         my $trip_collection = $trip_collection_by_days{$days};
-        
-        # those are [@place4s] and not \@place4s (etc.) 
+
+        # those are [@place4s] and not \@place4s (etc.)
         # because this is a loop and we want each schedule to get its own
         # new reference.
-        
+
         push @skeds,
           Actium::O::Sked->new(
-            place4_r    => [@place4s], 
+            place4_r    => [@place4s],
             place8_r    => [@place8s],
             stopplace_r => [@stopplaces],
             stopid_r    => [ $self->stopids_r->@* ],
@@ -121,7 +121,7 @@ sub skeds {
             days        => Actium::O::Days->instance( $days, 'B' ),
           );
 
-    }
+    } ## tidy end: foreach my $days ( keys %trip_collection_by_days)
 
     my $lgdir = $self->lgdir;
 
@@ -319,8 +319,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -335,8 +335,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -348,6 +348,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
