@@ -22,7 +22,7 @@ allow_in_main_unless_in_subroutine = 1
 [-InputOutput::RequireCheckedSyscalls]
 [-InputOutput::RequireCheckedClose]
 [-InputOutput::RequireCheckedOpen]
-# autodie in Actium::Preamble isn't recognized
+# autodie in Actium.pm isn't recognized
 
 
 [-RegularExpressions::RequireDotMatchAnything]
@@ -32,13 +32,13 @@ allow_in_main_unless_in_subroutine = 1
 [-RegularExpressions::ProhibitEnumeratedClasses]
 
 [TestingAndDebugging::RequireUseStrict]
-equivalent_modules = Actium::Preamble Actium::Moose Actium::MooseRole
+equivalent_modules = Actium 
 
 [TestingAndDebugging::ProhibitNoStrict]
 allow = vars subs refs
 
 [TestingAndDebugging::RequireUseWarnings]
-equivalent_modules = Actium::Preamble Actium
+equivalent_modules = Actium
 
 [TestingAndDebugging::ProhibitNoWarnings]
 allow_with_category_restriction = 1
@@ -167,7 +167,7 @@ formats = #!/usr/bin/env perl
 [-CodeLayout::RequireASCII]
 [-Editor::RequireEmacsFileVariables]
 [-Modules::RequirePerlVersion] 
-# included in Actium::Preamble
+# included in Actium.pm
 [-ErrorHandling::RequireUseOfExceptions]
 
 [-ValuesAndExpressions::RequireConstantOnLeftSideOfEquality]
@@ -231,7 +231,7 @@ severity = 5
 ### DISTRIBUTION Perl::Critic::Swift ### DEP ###
 
 [-CodeLayout::RequireUseUTF8]
-# included in Actium::Preamble
+# included in Actium.pm
 
 ### Distribution Perl::Critic::Nits - only policy is unused, so no DEP
 
