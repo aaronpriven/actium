@@ -1,6 +1,6 @@
 package Actium::Util 0.012;
 
-# Cannot use Actium::Preamble since that module uses this one
+# Cannot use Actium.pm since that module uses this one
 
 use 5.022;
 use warnings;
@@ -42,6 +42,7 @@ use Sub::Exporter -setup => {
           dumpstr
           u_wrap              u_columns
           u_trim_to_columns   u_pad
+          immut
           >
     ]
 };
@@ -101,9 +102,10 @@ sub joinempty {
 
 =item joinkey
 
-Takes the list passed to it and joins it together, with each element separated 
-by the $KEY_SEPARATOR value from L<Actium::Constants/Actium::Constants>.
-A quicker way to type "join ($KEY_SEPARATOR , @list)".
+Takes the list passed to it and joins it together, with each element
+separated  by the $KEY_SEPARATOR value from
+L<Actium::Constants/Actium::Constants>. A quicker way to type "join
+($KEY_SEPARATOR , @list)".
 
 =cut
 
@@ -113,8 +115,8 @@ sub joinkey {
 
 =item joinlf
 
-Takes the list passed to it and joins it together, with each element separated 
-by a line feed. A quicker way to type 'join ("\n" , @list)'.
+Takes the list passed to it and joins it together, with each element
+separated  by a line feed. A quicker way to type 'join ("\n" , @list)'.
 
 =cut 
 
@@ -124,8 +126,8 @@ sub joinlf {
 
 =item jointab
 
-Takes the list passed to it and joins it together, with each element separated 
-by tabs. A quicker way to type 'join ("\t" , @list)'.
+Takes the list passed to it and joins it together, with each element
+separated  by tabs. A quicker way to type 'join ("\t" , @list)'.
 
 =cut
 
@@ -135,10 +137,10 @@ sub jointab {
 
 =item joinseries
 
-This routine takes the list passed to it and joins it together. It
-adds a comma and a space between all the entries except the penultimate
-and last. Between the penultimate and last, adds only the word "and"
-and a space.
+This routine takes the list passed to it and joins it together. It adds
+a comma and a space between all the entries except the penultimate and
+last. Between the penultimate and last, adds only the word "and" and a
+space.
 
 For example
 
@@ -148,8 +150,8 @@ becomes
 
  "Alice, Bob, Eve and Mallory"
 
-The routine intentionally follows Associated Press style and 
-omits the serial comma.
+The routine intentionally follows Associated Press style and  omits the
+serial comma.
 
 =cut
 
@@ -196,8 +198,8 @@ sub joinseries_ampersand {
 
 =item define
 
-For each value passed to it, returns either 
-that value, if defined, or the empty string, if not.
+For each value passed to it, returns either  that value, if defined, or
+the empty string, if not.
 
 =cut
 
@@ -216,8 +218,9 @@ sub define {
 
 =item isempty
 
-Returns a boolean value: false if the first argument is defined and not an 
-empty string, or true if it is either undefined or the empty string.
+Returns a boolean value: false if the first argument is defined and not
+an  empty string, or true if it is either undefined or the empty
+string.
 
 =cut
 
@@ -234,10 +237,9 @@ sub isempty {
 
 =item in
 
-Returns a boolean value: true if the first argument is equal to 
-(using the C<eq> operator) any of the subsequent arguments, 
-or if the second argument is a plain arrayref, 
-any of the elements of that array.
+Returns a boolean value: true if the first argument is equal to  (using
+the C<eq> operator) any of the subsequent arguments,  or if the second
+argument is a plain arrayref,  any of the elements of that array.
 
 =cut
 
@@ -256,8 +258,8 @@ sub in {
 
 =item folded_in
 
-Like C<in>, but folding the case of the arguments (using C<fc>) 
-before making the comparison.
+Like C<in>, but folding the case of the arguments (using C<fc>)  before
+making the comparison.
 
 =cut
 
@@ -285,9 +287,8 @@ sub all_eq {
 
 =item feq
 
-Returns a boolean value: 
-true if, when case-folded (using C<fc>), 
-the first argument is equal to its second; otherwise false.
+Returns a boolean value:  true if, when case-folded (using C<fc>),  the
+first argument is equal to its second; otherwise false.
 
 =cut
 
@@ -298,9 +299,8 @@ sub feq {
 
 =item fne
 
-Returns a boolean value: 
-true if, when case-folded (using C<fc>), 
-the first argument is not equal to its second; otherwise false.
+Returns a boolean value:  true if, when case-folded (using C<fc>),  the
+first argument is not equal to its second; otherwise false.
 
 
 =cut
@@ -318,8 +318,8 @@ sub fne {
 
 =item is_odd
 
-Returns true if the first argument is odd (not divisible by two),
-false if it is not.
+Returns true if the first argument is odd (not divisible by two), false
+if it is not.
 
 =cut
 
@@ -329,8 +329,8 @@ sub is_odd {
 
 =item is_even
 
-Returns true if the first argument is even (divisible by two),
-false if it is not.
+Returns true if the first argument is even (divisible by two), false if
+it is not.
 
 =cut
 
@@ -370,9 +370,9 @@ sub population_stdev {
 
 =item halves( I<wholes> , I<halves> )
 
-This takes two values, "wholes" and "halves", and returns the number of halves
-(that is, it multiples wholes by two, and adds the results to halves,
-and returns that).
+This takes two values, "wholes" and "halves", and returns the number of
+halves (that is, it multiples wholes by two, and adds the results to
+halves, and returns that).
 
 =cut
 
@@ -390,8 +390,8 @@ sub halves {
 =item hashref
 
 Returns true if there is only one argument and it is a plain hashref.
-Useful in accepting either a hashref or a plain hash as arguments
-to a function. 
+Useful in accepting either a hashref or a plain hash as arguments to a
+function.
 
 =cut
 
@@ -405,8 +405,8 @@ sub hashref {
 =item flatten
 
 Takes a list and flattens any (unblessed) array references in it, 
-ensuring that the contents of any lists of lists
-are returned as individual items.
+ensuring that the contents of any lists of lists are returned as
+individual items.
 
 So
 
@@ -442,9 +442,8 @@ sub flatten {
 
 =item dumpstr
 
-This returns a string -- 
-a dump from the Data::Printer module of the passed 
-data structure, suitable for displaying and debugging.
+This returns a string --  a dump from the Data::Printer module of the
+passed  data structure, suitable for displaying and debugging.
 
 =cut
 
@@ -462,8 +461,8 @@ sub dumpstr (\[@$%&];%) {    ## no critic (ProhibitSubroutinePrototypes)
 
 =head2 UNICODE COLUMNS
 
-These utilities are used when displaying text in a monospaced typeface, 
-to ensure that text with combining characters and wide characters are 
+These utilities are used when displaying text in a monospaced typeface,
+ to ensure that text with combining characters and wide characters are 
 shown taking up the proper width.
 
 =over
@@ -471,7 +470,7 @@ shown taking up the proper width.
 =item u_columns
 
 This returns the number of columns in its first argument, as determined
-by the L<Unicode::GCString|Unicode::GCString> module. 
+by the L<Unicode::GCString|Unicode::GCString> module.
 
 =cut
 
@@ -486,8 +485,8 @@ sub u_columns {
 
 =item u_pad
 
-Pads a string with spaces to a number of columns. The first argument should
-be the string, and the second the number of columns. 
+Pads a string with spaces to a number of columns. The first argument
+should be the string, and the second the number of columns.
 
  $y = u_pad("x", 2);
  # returns  "x "
@@ -514,20 +513,18 @@ sub u_pad {
 
 =item u_wrap (I<string>, I<min_columns>, I<max_columns>)
 
-Takes a string and wraps it to a number of columns, producing 
-a series of shorter lines, using the 
-L<Unicode::Linebreak|Unicode::LineBreak> module.
-If the string has embedded newlines, these are taken as separating
-paragraphs.
+Takes a string and wraps it to a number of columns, producing  a series
+of shorter lines, using the  L<Unicode::Linebreak|Unicode::LineBreak>
+module. If the string has embedded newlines, these are taken as
+separating paragraphs.
 
-The first argument is the string to wrap. 
+The first argument is the string to wrap.
 
-The second argument, if present,
-is the minimum number of columns -- ColMin from Unicode::LineBreak. If
-not present, 0 will be used.
+The second argument, if present, is the minimum number of columns --
+ColMin from Unicode::LineBreak. If not present, 0 will be used.
 
-The third argment, if present, is the maximum number of columns -- ColMax
-from Unicode::LineBreak. If not present, 79 will be used.
+The third argment, if present, is the maximum number of columns --
+ColMax from Unicode::LineBreak. If not present, 79 will be used.
 
 =cut
 
@@ -605,7 +602,7 @@ sub u_trim_to_columns {
 
 =item display_percent
 
-Returns the first argument as a whole percentage: 
+Returns the first argument as a whole percentage:
 
 =cut
 
@@ -640,8 +637,8 @@ sub filename {
 
 =item file_ext
 
-Treats the first argument as a file specification and returns two strings:
-the filename without extension, and the extension.
+Treats the first argument as a file specification and returns two
+strings: the filename without extension, and the extension.
 
 =cut
 
@@ -659,8 +656,8 @@ sub file_ext {
 =item add_before_extension
 
 Treats the first argument as a file specification and adds the second
-argument to it, prior to the extension, separated from it by a
-hyphen. So:
+argument to it, prior to the extension, separated from it by a hyphen.
+So:
 
  $file = add_before_extension("sam.txt", "fred");
  # $file is "sam-fred.txt"
@@ -692,14 +689,14 @@ sub add_before_extension {
 
 =item positional_around(\@_ , I<arguments>)
 
-The B<positional> and B<positional_around> routines allow the use of positional
-arguments in addition to named arguments in method calls or Moose object
-construction.
+The B<positional> and B<positional_around> routines allow the use of
+positional arguments in addition to named arguments in method calls or
+Moose object construction.
 
-The I<positional_around> routine is intended for use within a BUILDARGS block,
-or another "around" method modifer in a
-Moose class (see L<Moose::Manual::Construction|Moose::Manual::Construction>
-and L<Moose::Manual::MethodModifiers|Moose::Manual::MethodModifiers>).
+The I<positional_around> routine is intended for use within a BUILDARGS
+block, or another "around" method modifer in a Moose class (see
+L<Moose::Manual::Construction|Moose::Manual::Construction> and
+L<Moose::Manual::MethodModifiers|Moose::Manual::MethodModifiers>).
 
 Typical use for positional would be as follows:
 
@@ -711,24 +708,25 @@ Typical use for positional would be as follows:
     
  }
 
-Typical use for positional_around would be as follows: 
+Typical use for positional_around would be as follows:
 
  around BUILDARGS => sub {
     return positional_around (\@_ , 'foo' , 'bar' );
  };
  
-The first argument to I<positional> or I<positional_around> must always be 
-a reference to the arguments passed to the original routine. 
-The remaining arguments are the C<init_arg> values (usually, the same
-as the names) of attributes to be passed to Moose. 
+The first argument to I<positional> or I<positional_around> must always
+be  a reference to the arguments passed to the original routine.  The
+remaining arguments are the C<init_arg> values (usually, the same as
+the names) of attributes to be passed to Moose.
 
-When using these routines, the arguments to your method are 
-first, the optional positional arguments that you specify, followed by 
-an optional hashref of named arguments, which must be the last argument. 
-If named arguments in the hashref 
-conflict with the positional arguments, the positional arguments will be used.
+When using these routines, the arguments to your method are  first, the
+optional positional arguments that you specify, followed by  an
+optional hashref of named arguments, which must be the last argument. 
+If named arguments in the hashref  conflict with the positional
+arguments, the positional arguments will be used.
 
-For example, the following are all valid in the above positional_around example:
+For example, the following are all valid in the above positional_around
+example:
 
  Class->new('foo_value', 'bar_value'); 
     # both specified
@@ -743,8 +741,8 @@ For example, the following are all valid in the above positional_around example:
  Class->new( foo => 'foo_value', { foo => 'a_different_foo_value');
     # will use 'foo_value'
 
-Note that if only named arguments are given, I<they must be given in a hash
-reference>. 
+Note that if only named arguments are given, I<they must be given in a
+hash reference>.
 
 B<The following will not work:>
 
@@ -756,10 +754,10 @@ B<The following will not work:>
  Class->new( foo => 'foo_value', { foo => 'a_different_foo_value');
     # Will croak 'Conflicting values specified in object construction'
 
-If the name of the last argument to C<positional> or C<positional_around>
-begins with an at sign (@), then the at sign will be removed, and an arrayref 
-pointing to an array of the remaining arguments to your method will be returned
-in that slot of the array.
+If the name of the last argument to C<positional> or
+C<positional_around> begins with an at sign (@), then the at sign will
+be removed, and an arrayref  pointing to an array of the remaining
+arguments to your method will be returned in that slot of the array.
 
 For example, given the following:
 
@@ -860,7 +858,28 @@ sub positional_around {
 
 =back
 
+=head2 MOOSE
+
+=over
+
+=item immut
+
+The B<immut> routine is designed to be used in place of the rather
+unwieldy
+
+    __PACKAGE__->meta->make_immutable
+    
+The C<immut> routine simply performs this on the calling package,
+making the Moose class immutable.
+
+=back
+
 =cut
+
+sub immut {
+    my $package = caller;
+    $package->meta->make_immutable;
+}
 
 1;
 
@@ -888,8 +907,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2011-2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -901,9 +920,9 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 
 =cut
 
