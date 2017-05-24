@@ -3,7 +3,7 @@ package Actium::O::Cmd 0.012;
 # Amalgamation of Actium::Cmd, Actium::O::CmdEnv, and the various
 # Actium::Cmd::Config::* modules
 
-use Actium::Moose;
+use Actium ('class_nomod');
 
 use Getopt::Long('GetOptionsFromArray');    ### DEP ###
 use Term::ReadKey;                          ### DEP ###

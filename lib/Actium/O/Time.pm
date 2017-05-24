@@ -2,9 +2,7 @@ package Actium::O::Time 0.012;
 
 # object for formatting schedule times and parsing formatted times
 
-use 5.022;
-use warnings;    ### DEP ###
-use Actium::Moose;
+use Actium ('class_nomod');
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
@@ -102,7 +100,6 @@ my $str_to_num_cr = sub {
 
     my $origtime = $time;
 
-
     # ISO TIME FROM XHEA
     if ($time =~ m/
         \A                # beginning of string
@@ -132,7 +129,7 @@ my $str_to_num_cr = sub {
         }
         return $time;
 
-    }
+    } ## tidy end: if ( $time =~ m/ )
 
     $time = lc($time);
 
@@ -314,40 +311,43 @@ This documentation refers to Actium::O::Time version 0.010
  
 =head1 DESCRIPTION
 
-Actium::O::Time is an class designed to format times for transit schedules.
-It takes times formatted in a number of different ways and converts them
-to a number of minutes after midnight (or, if negative, before midnight).
-Times are only treated as whole minutes, so seconds are not used.
+Actium::O::Time is an class designed to format times for transit
+schedules. It takes times formatted in a number of different ways and
+converts them to a number of minutes after midnight (or, if negative,
+before midnight). Times are only treated as whole minutes, so seconds
+are not used.
 
-Most transit operators that run service after midnight treat those trips as 
-a later part of the service day: so a trip that begins at 1:00 a.m. on Sunday 
-is scheduled as though it were at 25 o'clock on Saturday. This class allows 
-times from noon on the day before the service day through 11:59 on the day
-after the service day (so for a Saturday day of service, from 12:00 p.m. Friday
-through 11:59 a.m. Sunday). 
-(Noon on the following day is also accepted as a special case.)
+Most transit operators that run service after midnight treat those
+trips as  a later part of the service day: so a trip that begins at
+1:00 a.m. on Sunday  is scheduled as though it were at 25 o'clock on
+Saturday. This class allows  times from noon on the day before the
+service day through 11:59 on the day after the service day (so for a
+Saturday day of service, from 12:00 p.m. Friday through 11:59 a.m.
+Sunday).  (Noon on the following day is also accepted as a special
+case.)
 
-The object allows times in different formats to be normalized and output
-in various other formats, as well as allowing sorting of times numerically.
+The object allows times in different formats to be normalized and
+output in various other formats, as well as allowing sorting of times
+numerically.
 
 This uses "flyweight" objects, meaning that it returns the same object
-every time you pass particular arguments to construct it.  These objects
-are immutable.
+every time you pass particular arguments to construct it.  These
+objects are immutable.
 
 =head1 CLASS METHODS
 
-The object is constructed using C<< Actium::O::Time->from_str >>
-or C<< Actium::O::Time->from_num >>
+The object is constructed using C<< Actium::O::Time->from_str >> or C<<
+Actium::O::Time->from_num >>
 
 =over
 
 =item B<< Actium::O::Time->from_str( I<string> , I<string>, ...) >>
 
-This constructor accepts times represented as a string, usually a formatted
-time such as "11:59a" or "13'25".
+This constructor accepts times represented as a string, usually a
+formatted time such as "11:59a" or "13'25".
 
-There are a limited number of special cases where names are used for times
-instead of a format string. The valid named times are:
+There are a limited number of special cases where names are used for
+times instead of a format string. The valid named times are:
 
 =over
 
@@ -363,7 +363,8 @@ instead of a format string. The valid named times are:
 
 =back 
 
-(The named format is the only way to specify noon tomorrow with a string.)
+(The named format is the only way to specify noon tomorrow with a
+string.)
 
 Otherwise, the string format can be one of three:
 
@@ -383,66 +384,64 @@ Otherwise, the string format can be one of three:
 
 =back
 
-Most characters, including common separators (colons, periods, spaces, commas) 
-and the 
-final "m" are filtered out before determining which format applies.
-This makes it easy to submit "8:35 a.m." if you receive times in
-that format; it will be converted to '835a' before processing.
+Most characters, including common separators (colons, periods, spaces,
+commas)  and the  final "m" are filtered out before determining which
+format applies. This makes it easy to submit "8:35 a.m." if you receive
+times in that format; it will be converted to '835a' before processing.
 
-All three formats require a leading zero on the minutes, but not
-on the hours.
+All three formats require a leading zero on the minutes, but not on the
+hours.
 
-The first format accepts hours from 1 to 12, and minutes from 00 to 59. 
+The first format accepts hours from 1 to 12, and minutes from 00 to 59.
 
 The second format accepts any number of hours from -11 to 35. Minutes 
-still must be from 00 to 59. If a negative sign is given, these are treated 
-as times before midnight, so -0:01 is the same as "11:59b" 
+still must be from 00 to 59. If a negative sign is given, these are
+treated  as times before midnight, so -0:01 is the same as "11:59b" 
 (i.e., 11:59 yesterday).
 
 The third format accepts hours from 12 to 23. It is treated as though
 it were the time on the day before midnight, so "23'59" is treated as
 meaning, one minute before today's midnight.
 
-For the first format, a final "a" is accepted for a.m. times, and
-a final "p" for p.m. times. 
+For the first format, a final "a" is accepted for a.m. times, and a
+final "p" for p.m. times.
 
 Two other final letters are accepted.
 
 A final "b" is accepted for times before midnight, so '1159b' is 
 treated as one minute before midnight.
 
-A final "x" is accepted for times after midnight on the following day, so 
-'1201x' is treated as one minute after midnight, tomorrow.
+A final "x" is accepted for times after midnight on the following day,
+so  '1201x' is treated as one minute after midnight, tomorrow.
 
-(Note that "12:00z" is not accepted for noon tomorrow, although the module
-can output that format from C<apbx>.)
+(Note that "12:00z" is not accepted for noon tomorrow, although the
+module can output that format from C<apbx>.)
 
-As a special case, if there are no numbers in the string at all, it represents
-a null time. This is used for blank columns in schedules.
+As a special case, if there are no numbers in the string at all, it
+represents a null time. This is used for blank columns in schedules.
 
 =item B<< Actium::O::Time->from_num( I<integer>, I<integer>, ... ) >>
 
-This constructor accepts a time number: an integer representing
-the number of minutes after midnight (or, if negative, before
-midnight). 
+This constructor accepts a time number: an integer representing the
+number of minutes after midnight (or, if negative, before midnight).
 
-The integer must be between -720 and 2160, representing the times between
-noon yesterday and noon tomorrow.
+The integer must be between -720 and 2160, representing the times
+between noon yesterday and noon tomorrow.
 
 =item B<< Actium::O::Time->new() >>
 
 B<< Do not use this method. >>
 
-This method is used internally by Actium::O::Time to create a new object and
-insert it into the caches used by C<from_str> and C<from_num>. 
-There should never be a reason
-to create more than one object with the same arguments.
+This method is used internally by Actium::O::Time to create a new
+object and insert it into the caches used by C<from_str> and
+C<from_num>.  There should never be a reason to create more than one
+object with the same arguments.
 
 =item B<Actium::O::Time::->timesort(I<obj>, I<obj>, ...>
 
-This class method takes a series of Actium::O::Time objects and sorts them
-(numerically according to their time number value), returning the 
-sorted list of objects. 
+This class method takes a series of Actium::O::Time objects and sorts
+them (numerically according to their time number value), returning the 
+sorted list of objects.
 
 =back
 
@@ -452,37 +451,37 @@ sorted list of objects.
 
 =item B<timenum()>
 
-Returns the time as a number of minutes since midnight (or, if negative, before
-midnight).
+Returns the time as a number of minutes since midnight (or, if
+negative, before midnight).
 
 =item B<ap()>
 
-Returns the time as a string: hours, a colon, minutes, followed by "a" for a.m.
-or "p" for p.m. For example, "2:25a" or "11:30p".
+Returns the time as a string: hours, a colon, minutes, followed by "a"
+for a.m. or "p" for p.m. For example, "2:25a" or "11:30p".
 
 =item B<apbm()>
 
-Like C<ap()>, except that noon is returned as "12:00n" and midnight is returned
-as "12:00m".
+Like C<ap()>, except that noon is returned as "12:00n" and midnight is
+returned as "12:00m".
 
 =item B<apbx()>
 
-Returns the time as a string: hours, a colon, minutes, followed by marker. 
-Times today are given the marker "a" for a.m. or "p" for p.m. Times tomorrow
-are given the marker "x" and times yesterday are given the marker "b".
-For example, "11:59b" is yesterday, one minute before midnight and 
-"12:01x" is tomorrow, one minute after midnight. 
+Returns the time as a string: hours, a colon, minutes, followed by
+marker.  Times today are given the marker "a" for a.m. or "p" for p.m.
+Times tomorrow are given the marker "x" and times yesterday are given
+the marker "b". For example, "11:59b" is yesterday, one minute before
+midnight and  "12:01x" is tomorrow, one minute after midnight.
 
-(There is one additional
-marker, "z", which is only used for noon tomorrow. Times after noon tomorrow
-are invalid, but the time noon tomorrow is used as a highest-possible-time, 
-so that is a valid object, although it should probably not be displayed.)
+(There is one additional marker, "z", which is only used for noon
+tomorrow. Times after noon tomorrow are invalid, but the time noon
+tomorrow is used as a highest-possible-time,  so that is a valid
+object, although it should probably not be displayed.)
 
 =item B<t24()>
 
-Returns the time as a 24-hour string: hours (padded with a leading zero if
-necessary), a colon, and minutes.  The day is not given (so yesterday's and 
-tomorrow's times are shown as if they were today's).
+Returns the time as a 24-hour string: hours (padded with a leading zero
+if necessary), a colon, and minutes.  The day is not given (so
+yesterday's and  tomorrow's times are shown as if they were today's).
 
 =back
 
@@ -494,16 +493,15 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2015
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
 =item * 
 
-the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any
-later version, or
+the GNU General Public License as published by the Free Software
+Foundation; either version 1, or (at your option) any later version, or
 
 =item * 
 
@@ -511,6 +509,7 @@ the Artistic License version 2.0.
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

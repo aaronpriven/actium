@@ -7,14 +7,10 @@ package Actium::O::Points::Point 0.013;
 
 # This really needs to be refactored to get rid of the awful use of
 # global variables.
-use warnings;
-use strict;
 
-use 5.022;
+use Actium ('class_nomod');
 
 use sort ('stable');
-
-use Actium::Moose;
 
 use Actium::Sorting::Line (qw(byline sortbyline));
 use List::Compare::Functional('get_unique');    ### DEP ###
@@ -39,18 +35,18 @@ has [
     isa      => 'Str',
     required => 1,
   );
-  
- has copyquantity => ( 
-    is => 'ro',
-    isa => 'Int',
+
+has copyquantity => (
+    is      => 'ro',
+    isa     => 'Int',
     default => '1',
- );
-  
-  has [ qw/tallcolumnnum tallcolumnlines/] => (
-  is => 'ro',
-  isa => 'Int',
-  default => 10,
-  );
+);
+
+has [qw/tallcolumnnum tallcolumnlines/] => (
+    is      => 'ro',
+    isa     => 'Int',
+    default => 10,
+);
 
 has effdate => (
     is       => 'ro',
@@ -119,7 +115,7 @@ has 'templates_of_r' => (
     required => 1,
     handles  => {
         no_templates => 'is_empty',
-        subtypes => 'keys',
+        subtypes     => 'keys',
     },
 );
 
@@ -468,7 +464,7 @@ sub sort_columns_and_determine_heights {
     # Don't allow specifying a subtype manually
     # -- it will just treat it as though it were a main type
 
-    if ($self->no_templates) {
+    if ( $self->no_templates ) {
         $self->no_subtype($signtype);
         return;
     }
@@ -493,8 +489,7 @@ sub no_subtype {
     my $signtype = shift;
 
     foreach my $column ( $self->columns ) {
-        $column->set_formatted_height(
-        $self->tallcolumnlines);
+        $column->set_formatted_height( $self->tallcolumnlines );
     }
 
     return $self->sort_columns_by_route_etc;
@@ -621,7 +616,7 @@ sub determine_subtype {
         # determine minimum fitting subtype
 
         #my ( @chosen_regions, @chunkids_by_region, @columns_needed );
-        
+
         my $templates_of_r = $self->templates_of_r;
 
       SUBTYPE:
@@ -1147,7 +1142,7 @@ sub output {
         my $maxcolumns = $self->tallcolumnnum;
 
         if ( $maxcolumns and $maxcolumns > $self->width )
-        {                     # if there's an entry in SignTypes
+        {    # if there's an entry in SignTypes
             my $columns = $maxcolumns - ( $self->width );
             #print "[[$maxcolumns:" , $self->width , ":$columns]]";
             print $fh (
@@ -1322,8 +1317,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -1338,8 +1333,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -1351,6 +1346,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
