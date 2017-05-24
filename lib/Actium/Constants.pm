@@ -1,11 +1,11 @@
 package Actium::Constants 0.012;
-# Cannot use Actium::Preamble since that module depends on this one
+# Cannot use Actium:.pm since that module depends on this one
 
 use 5.020;
 use warnings;
 use Const::Fast;    ### DEP ###
 
-use Scalar::Util('reftype');   ### DEP ###
+use Scalar::Util('reftype');    ### DEP ###
 
 my %constants;
 
@@ -45,8 +45,6 @@ BEGIN {
         LOOP_DIRECTIONS     => [qw( CW CC A B )],
         TRANSBAY_NOLOCALS   => [qw/FS L NX NX1 NX2 NX3 U W/],
         LINES_TO_BE_SKIPPED => [399],
-
-
 
         SIDE_OF => {
             ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
@@ -192,10 +190,9 @@ This documentation refers to Actium::Constants version 0.005
    
 =head1 DESCRIPTION
 
-This module exports a series of constant values used by various
-Actium modules.  They will be exported by default and are also
-available using the fully-qualified form, e.g., 
-$Actium::Constants::CRLF .
+This module exports a series of constant values used by various Actium
+modules.  They will be exported by default and are also available using
+the fully-qualified form, e.g.,  $Actium::Constants::CRLF .
 
 =head1 CONSTANTS
 
@@ -237,60 +234,61 @@ A vertical tab, used to separate multiline fields in FileMaker.
 
 =item $KEY_SEPARATOR
 
-This contains the C<^]> character (ASCII 29, "Group Separator"),
-which is used by FileMaker to separate entries in repeating fields.
-It is also used by various Actium routines to separate values, e.g.,
-the Hastus Standard AVL routines use it in hash keys when two or
-more values are needed to uniquely identify a record. (This is the
-same basic idea as that intended by perl's C<$;> variable [see
+This contains the C<^]> character (ASCII 29, "Group Separator"), which
+is used by FileMaker to separate entries in repeating fields. It is
+also used by various Actium routines to separate values, e.g., the
+Hastus Standard AVL routines use it in hash keys when two or more
+values are needed to uniquely identify a record. (This is the same
+basic idea as that intended by perl's C<$;> variable [see
 L<perlvar/$;>].)
 
 =item $MINS_IN_12HRS
 
-The number of minutes in 12 hours (12 times 60, or 720). 
+The number of minutes in 12 hours (12 times 60, or 720).
 
 =item %LINES_TO_COMBINE
 
 This contains a hard-wired hash of lines. Each key is a line that
-should be consolidated with another line on its schedule: for
-example, 59A should appear with 59, and 72M should appear with 72.
-It is not possible to simply assume that a line should appear with
-all its subsidiary lines since some lines do not fit this pattern
-(386 and 83 go on 86 while 72R does not go on 72).
+should be consolidated with another line on its schedule: for example,
+59A should appear with 59, and 72M should appear with 72. It is not
+possible to simply assume that a line should appear with all its
+subsidiary lines since some lines do not fit this pattern (386 and 83
+go on 86 while 72R does not go on 72).
 
-This is not the right place to store this information; 
-it should be moved to a user-accessible database.
+This is not the right place to store this information;  it should be
+moved to a user-accessible database.
 
 =item @SCHEDULE_DAYS
 
-This is a list of valid schedule day codes. Each set of schedules
-is either the set of schedules for weekdays (WD), Saturdays (SA),
-or Sundays (SU). Sometimes these can be combined, so we have
-combinations: weekends (WE), and every day (DA). For completeness
-we also have weekdays and Saturdays (WA) and weekdays and Sundays
-(WU), although usage is expected to be extremely rare.
+This is a list of valid schedule day codes. Each set of schedules is
+either the set of schedules for weekdays (WD), Saturdays (SA), or
+Sundays (SU). Sometimes these can be combined, so we have combinations:
+weekends (WE), and every day (DA). For completeness we also have
+weekdays and Saturdays (WA) and weekdays and Sundays (WU), although
+usage is expected to be extremely rare.
 
-These originate from the old transitinfo.org web site, which many years ago
-helped parse the schedules. That went away a long time ago, but the codes
-live on.
+These originate from the old transitinfo.org web site, which many years
+ago helped parse the schedules. That went away a long time ago, but the
+codes live on.
 
 =item @DIRCODES
 
 Direction codes (northbound, southbound, etc.)  The original few were
-based on transitinfo.org directions, but have been extended to include kinds
-of directions that didn't exist back then.
+based on transitinfo.org directions, but have been extended to include
+kinds of directions that didn't exist back then.
 
 =item @HASTUS_DIRS
 
-Numeric directions from Hastus, in the same order as @DIRCODES (so @DIRCODES[5]
-is the same direction as @HASTUS_DIRS[5]).
+Numeric directions from Hastus, in the same order as @DIRCODES (so
+@DIRCODES[5] is the same direction as @HASTUS_DIRS[5]).
 
 =item @LOOP_DIRECTIONS
 
 =item %IS_A_LOOP_DIRECTION
 
-Those directions that are loops: counterclockwise and clockwise, and A and B.
-The hash version just allows an easy "is this a loop direction" lookup.
+Those directions that are loops: counterclockwise and clockwise, and A
+and B. The hash version just allows an easy "is this a loop direction"
+lookup.
 
 =item @TRANSBAY_NOLOCALS
 
@@ -301,32 +299,33 @@ to a database.
 
 =item %LINE_SHOULD_BE_SKIPPED
 
-Lines that should not be used at all. This should be moved to a database. 
-The hash version just allows an easy "should this line be skipped" lookup.
+Lines that should not be used at all. This should be moved to a
+database.  The hash version just allows an easy "should this line be
+skipped" lookup.
 
 =item %SIDE_OF
 
-Of city codes, "E" if it's in the East Bay, "W" for the West Bay. Used for 
-determining whether "Transbay Passengers Only" needs to be 
-put on flags, among other things. Should be replaced with the "Side" value in 
-the "Cities" table in the Actium database. (Perhaps should even be replaced 
-by a more general fare-zone value associated with stops...)
+Of city codes, "E" if it's in the East Bay, "W" for the West Bay. Used
+for  determining whether "Transbay Passengers Only" needs to be  put on
+flags, among other things. Should be replaced with the "Side" value in 
+the "Cities" table in the Actium database. (Perhaps should even be
+replaced  by a more general fare-zone value associated with stops...)
 
 =item @HASTUS_CITY_OF
 
-City codes associated with Hastus. Should be replaced with the "Code" value
-in the "Cities" table in the Actium database.
+City codes associated with Hastus. Should be replaced with the "Code"
+value in the "Cities" table in the Actium database.
 
 =item %PV_TYPE
 
 A hash whose keys are all the various type values that are part of
-Params::Validate's ":types" export tag (SCALAR, ARRAYREF, HASHREF, etc.).
-This way it avoids polluting the namespace with all those very generic 
-values, while still allowing the use of Params::Validate types.
-(Which are not at all related to Moose types.)
+Params::Validate's ":types" export tag (SCALAR, ARRAYREF, HASHREF,
+etc.). This way it avoids polluting the namespace with all those very
+generic  values, while still allowing the use of Params::Validate
+types. (Which are not at all related to Moose types.)
 
-See L<Params::Validate|Params::Validate> for details on the values and their 
-meanings.
+See L<Params::Validate|Params::Validate> for details on the values and
+their  meanings.
 
 =back
 
@@ -342,8 +341,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2015
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -355,6 +354,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

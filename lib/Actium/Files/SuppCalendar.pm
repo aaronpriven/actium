@@ -1,6 +1,6 @@
 package Actium::Files::SuppCalendar 0.012;
 
-use Actium::Preamble;
+use Actium;
 
 const my %num_of_month =>
   qw( Jan 101 Feb 102 Mar 103 Apr 104 May 105 Jun 106 Jul 107
@@ -184,13 +184,13 @@ sub read_supp_calendars {
                         $ondays =~ s/3/W/;
                         $ondays =~ s/4/Th/;
                         $ondays =~ s/5/F/;
-                        
+
                         $ondays = 'A' if length($ondays) > 2;
                     }
                     else {
                         $ondays = 'A';
                     }
-                    
+
                     $next_code_of_days{$ondays} //= 1;
 
                     $code_of_note{$note} = "$ondays-";
@@ -273,14 +273,13 @@ sub read_supp_calendars {
           = map { $sheet->get_cell( $currentrow{$sheet_key}, $_ ) }
           ( $mincol{$sheet_key} .. $maxcol{$sheet_key} );
 
-        my @values = map {
-            defined ? $_->value : $EMPTY_STR } @cells;
+        my @values = map { defined($_) ? $_->value : $EMPTY_STR } @cells;
 
         @values = _cleanvalues(@values);
         return if ( u::none {$_} @values );
-        
+
         pop @values while $values[-1] eq $EMPTY_STR;
-        
+
         $currentrow{$sheet_key}++;
 
         return @values;
@@ -353,8 +352,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -369,8 +368,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -382,6 +381,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
