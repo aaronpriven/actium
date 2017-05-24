@@ -1,7 +1,5 @@
 package Actium::Files::Xhea 0.012;
 
-# /Actium/Files/Xhea.pm
-#
 # Using XML::Pastor, reads XML Hastus Exports for Actium files
 # (exports from Hastus) and imports them into Actium.
 #
@@ -10,7 +8,7 @@ package Actium::Files::Xhea 0.012;
 
 ## no critic (ProhibitAmbiguousNames)
 
-use Actium::Preamble;
+use Actium;
 use Actium::Import::CalculateFields;
 
 use List::MoreUtils('pairwise');    ### DEP ###
@@ -800,7 +798,7 @@ sub _get_xhea_filenames {
         Northbound       => 'Northbound',
         Southbound       => 'Southbound',
         Outbound         => 'Outbound',
-        Inbound           => 'Inbound',
+        Inbound          => 'Inbound',
         DIR1             => 1,
         DIRA             => 'A',
         DIRB             => 'B',
@@ -894,7 +892,7 @@ sub _get_xhea_filenames {
             my $route   = $hr->{tpat_route};
             my $tripnum = $hr->{trp_int_number};
             my $pattern = $hr->{trp_pattern};
-            
+
             my $event = $hr->{trp_event_and_status};
 
             my $patid = "$route\t$pattern";
@@ -908,8 +906,7 @@ sub _get_xhea_filenames {
             $trp{RouteForStatistics}{$tripnum} = $route;
             $trp{Pattern}{$tripnum}            = $pattern;
             $trp{IsPublic}{$tripnum}           = $is_public;
-            $trp{IsSpecial}{$tripnum}          = 
-                $event ? 'X' : $EMPTY_STR;
+            $trp{IsSpecial}{$tripnum}          = $event ? 'X' : $EMPTY_STR;
 
         };
 
@@ -1110,7 +1107,8 @@ __END__
 
 =head1 NAME
 
-Actium::Files::Xhea - Routines for loading and processing XML Hastus exports
+Actium::Files::Xhea - Routines for loading and processing XML Hastus
+exports
 
 =head1 VERSION
 
@@ -1133,32 +1131,34 @@ This documentation refers to version 0.009
  
 =head1 DESCRIPTION
 
-Actium::Files::Xhea is a series of routines for loading XML Hastus exports and 
-processing them into perl data structures. It uses L<XML::Pastor|XML::Pastor>
-to process the XSD and read XML files, and so has the limitations of that 
-module.
+Actium::Files::Xhea is a series of routines for loading XML Hastus
+exports and  processing them into perl data structures. It uses
+L<XML::Pastor|XML::Pastor> to process the XSD and read XML files, and
+so has the limitations of that  module.
 
 B<It ignores all attributes in all XML elements.> The only attribute 
-normally found in Hastus XML exports is ' xsi:nil="true" ', which indicates
-an empty element.  No practical advantage would be had by replacing the empty
-string with an undefined value in the results, so an empty string is given for
-such elements and this attribute, along with all others, is ignored.
+normally found in Hastus XML exports is ' xsi:nil="true" ', which
+indicates an empty element.  No practical advantage would be had by
+replacing the empty string with an undefined value in the results, so
+an empty string is given for such elements and this attribute, along
+with all others, is ignored.
 
 =head1 SUBROUTINES 
 
-No subroutines are exported. Use the fully qualified name to invoke them.
-(e.g., "Actium::Files::Xhea::load_adjusted($folder)") 
+No subroutines are exported. Use the fully qualified name to invoke
+them. (e.g., "Actium::Files::Xhea::load_adjusted($folder)")
 
 =over
 
 =item B<xhea_import>
 
-This routine runs the other routines, performing a complete XHEA import process.
-First, it loads and then adjusts the XHEA files 
-(see load and adjust_for_basetype below). Then, using routines in 
+This routine runs the other routines, performing a complete XHEA import
+process. First, it loads and then adjusts the XHEA files  (see load and
+adjust_for_basetype below). Then, using routines in 
 Actium::Import::CalculateFields, it creates the updated i_ fields. 
-Finally, it saves those files in the "tab" folder, and creates a "records.json" 
-file storing  the field names and assoocated information.
+Finally, it saves those files in the "tab" folder, and creates a
+"records.json"  file storing  the field names and assoocated
+information.
 
 It takes three named parameters, all of which should be folder objects.
 
@@ -1180,25 +1180,24 @@ The folder to store the tab files in.
 
 =item B<load(I<folderobj>)>
 
-This routine takes a folder object (such as an 
-Actium::O::Folder or Actium::O::Folders::Signup object ), looks for paired
-xml and xsd files in that folder, and returns three structs: one contains a summary
-of the fields and records, one contains further
-information about the records and fields, and the other contains the values
-from the file.
+This routine takes a folder object (such as an  Actium::O::Folder or
+Actium::O::Folders::Signup object ), looks for paired xml and xsd files
+in that folder, and returns three structs: one contains a summary of
+the fields and records, one contains further information about the
+records and fields, and the other contains the values from the file.
 
-The XML and XSD structure is somewhat limited and assumes the sort of XML 
-typically exported from Hastus. 
+The XML and XSD structure is somewhat limited and assumes the sort of
+XML  typically exported from Hastus.
 
-Hastus exports XML files with three levels:
-table level (contains records), record level (contains fields), 
-and field level (contains field data).
+Hastus exports XML files with three levels: table level (contains
+records), record level (contains fields),  and field level (contains
+field data).
 
-This routine allows multiple tables per file (which hasn't happened) and 
-multiple record types per file (which also hasn't happened).  
-It does not allow any variations of
-the levels (so there can't be nested record types or anything like that).
-Names of all record types across all XML files loaded much be unique. 
+This routine allows multiple tables per file (which hasn't happened)
+and  multiple record types per file (which also hasn't happened).   It
+does not allow any variations of the levels (so there can't be nested
+record types or anything like that). Names of all record types across
+all XML files loaded much be unique.
 
  my ($fieldnames_r, $fields_r, $values_r) = 
     Actium::Files::Xhea::load($folder);
@@ -1211,7 +1210,7 @@ The structure of $fieldnames_r will be:
    };
 
 The structure of $fields_r will be:
- 
+
  $fields_r =
    { recordname => 
       { fieldname => 
@@ -1225,18 +1224,18 @@ The structure of $fields_r will be:
     recordname => I<etc...>
    };
       
-It contains a hash whose keys are the record names. The values of that hash
-are other hashes whose keys are fieldnames and whose values are a third hash. 
-That hash has the literal keys 'base', 'type', and 'idx.' 
+It contains a hash whose keys are the record names. The values of that
+hash are other hashes whose keys are fieldnames and whose values are a
+third hash.  That hash has the literal keys 'base', 'type', and 'idx.'
 
-The 'base' and 'type' entries 
-both refer to the XSD data type. The 'type' can be either an XSD built-in type 
-such as string, int, date, etc., or a custom XML 
-simple type definition from the XSD.
-The 'base' is always an XSD built-in type. 
-If 'type' is an XSD built-in type, then 'base' and 'type' are identical.
+The 'base' and 'type' entries  both refer to the XSD data type. The
+'type' can be either an XSD built-in type  such as string, int, date,
+etc., or a custom XML  simple type definition from the XSD. The 'base'
+is always an XSD built-in type.  If 'type' is an XSD built-in type,
+then 'base' and 'type' are identical.
 
-The 'idx' entry provides an offset into the array of field data for this field.
+The 'idx' entry provides an offset into the array of field data for
+this field.
 
 The structure of $values_r will be:
 
@@ -1251,15 +1250,16 @@ The structure of $values_r will be:
       I<etc...>
   }
       
-It contains a hash whose keys are the record names. The values of that hash
-are arrays representing individual records. Each record is an array of scalars,
-each of which is the data from a field. The 'idx' entry in the $field_r 
-struct says which field corresponds to each entry in the record.
+It contains a hash whose keys are the record names. The values of that
+hash are arrays representing individual records. Each record is an
+array of scalars, each of which is the data from a field. The 'idx'
+entry in the $field_r  struct says which field corresponds to each
+entry in the record.
 
 =item B<adjust_for_basetype(I<$fields_r>, I<$values_r>)>
 
-This routine takes the result of load() and adjusts the resulting data to
-better match expectations of someone using Perl.
+This routine takes the result of load() and adjusts the resulting data
+to better match expectations of someone using Perl.
 
 At the moment it does only the following:
 
@@ -1267,18 +1267,18 @@ At the moment it does only the following:
 
 =item 1
 
-It removes leading and trailing whitespaces from fields whose base type is
-'string' or 'normalizedString'.
+It removes leading and trailing whitespaces from fields whose base type
+is 'string' or 'normalizedString'.
 
 =item 2
 
-For fields whose base type is 'boolean', it changes the values 'true' to 1 
-and 'false' to 0.
+For fields whose base type is 'boolean', it changes the values 'true'
+to 1  and 'false' to 0.
 
 =back
 
-In future this would be the place to decode base64Binary and hexBinary types,
-or possibly other adjustments should that prove necessary.
+In future this would be the place to decode base64Binary and hexBinary
+types, or possibly other adjustments should that prove necessary.
 
 =item B<load_adjusted(I<folderobj>)>
 
@@ -1288,8 +1288,8 @@ Equivalent to adjust_for_basetype(load(...))
 
 Takes the result of I<load> or I<load_adjusted> and changes them into 
 a hash, where the keys are the record types and the values are 
-strings. Records are separated by line feeds and fields are separated by tabs.
-The first record contains the field names.
+strings. Records are separated by line feeds and fields are separated
+by tabs. The first record contains the field names.
 
 =back
 
@@ -1303,10 +1303,9 @@ The first record contains the field names.
 
 =item Unexpected record "record" where data field expected in $filename
 
-While processing an XSD file, a complex type with elements was found when a 
-type with no elements was expected, or vice versa. 
-The program doesn't know how to 
-deal with this more complicated schema.
+While processing an XSD file, a complex type with elements was found
+when a  type with no elements was expected, or vice versa.  The program
+doesn't know how to  deal with this more complicated schema.
 
 =item No xsd / xml file pairs found when trying to import xhea files
 
@@ -1321,7 +1320,7 @@ Check that the folder is correct and that the files are present.
 
 =item *
 
-Actium::Preamble
+Actium
 
 =item *
 
@@ -1349,8 +1348,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2014
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -1362,6 +1361,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

@@ -1,6 +1,6 @@
 package Actium::Frequency 0.012;
 
-use Actium::Preamble;
+use Actium;
 use Actium::O::2DArray;
 use Actium::O::Time;
 use Math::Round('nearest');    ### DEP ###
@@ -50,7 +50,7 @@ sub break_sets {
 } ## tidy end: sub break_sets
 
 sub frequency {
-    
+
     \my @timenums = shift;
 
     my ( %diff_count, %diff_psychrounded );
@@ -76,8 +76,8 @@ sub frequency {
           ];
     }
 
-    my $freq_display = 
-         Actium::O::2DArray::->new(@diff_displays)->tabulated('  ')  ;
+    my $freq_display
+      = Actium::O::2DArray::->new(@diff_displays)->tabulated('  ');
 
     my ( $lowest, $highest ) = u::minmax( keys %diff_psych_culled );
     my $freq = ( $lowest == $highest ) ? $lowest : "$lowest-$highest";
@@ -233,8 +233,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -249,8 +249,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -262,6 +262,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

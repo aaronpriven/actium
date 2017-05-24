@@ -1,8 +1,8 @@
 package Actium::Files::TabDelimited 0.010;
 
-use Actium::Preamble;
+use Actium;
 
-use Params::Validate (':all'); ### DEP ###
+use Params::Validate (':all');    ### DEP ###
 
 use Actium::Util(qw/filename in/);
 
@@ -31,23 +31,23 @@ sub read_aoas {
     my %records_of;
 
     my $callback = sub {
-        
-        my ($value_of_r, $values_r, $headers_r, $line, $file, $linenum) = @_;
-        
-        unless (exists $headers_of{$file}) {
+
+        my ( $value_of_r, $values_r, $headers_r, $line, $file, $linenum ) = @_;
+
+        unless ( exists $headers_of{$file} ) {
             $headers_of{$file} = \@{$headers_r};
         }
 
-        push @{$records_of{$file}}, $values_r;
+        push @{ $records_of{$file} }, $values_r;
 
     };
-    
+
     $params{callback} = $callback;
-    
-    read_tab_files(\%params);
-    
+
+    read_tab_files( \%params );
+
     return \%headers_of, \%records_of;
-    
+
 } ## tidy end: sub read_aoas
 
 sub read_tab_files {
@@ -87,7 +87,7 @@ sub read_tab_files {
 
     foreach my $file (@files) {
 
-        my $file_cry = cry( "Loading $file");
+        my $file_cry = cry("Loading $file");
 
         my $fh = $folder->open_read($file);
 
@@ -97,13 +97,14 @@ sub read_tab_files {
         #my $size    = -s $folder->make_filespec($file);
         my $linenum = 0;
 
-        $file_cry->over( ' 0%');
+        $file_cry->over(' 0%');
 
         while ( my $line = <$fh> ) {
 
             $linenum++;
             if ( not $linenum % $progress_lines ) {
-                $file_cry->over( sprintf( ' %.0f%%', tell($fh) / $size * 100 ) );
+                $file_cry->over(
+                    sprintf( ' %.0f%%', tell($fh) / $size * 100 ) );
             }
 
             my @values;
@@ -118,8 +119,8 @@ sub read_tab_files {
                 $line =~ s/\s+\z//;
                 @values = ( split( /\t/, $line ) );
             }
-            
-            push @values, (q{}) x (scalar @headers - scalar @values);
+
+            push @values, (q{}) x ( scalar @headers - scalar @values );
             # pad out with empty strings...
 
             my %value_of;
@@ -132,7 +133,7 @@ sub read_tab_files {
 
         } ## tidy end: while ( my $line = <$fh> )
 
-        $file_cry->over( ' 100%');
+        $file_cry->over(' 100%');
 
         close $fh;
 
@@ -245,13 +246,14 @@ Or:
    
 =head1 DESCRIPTION
 
-Actium::Files::TabDelimited contains routines to read tab-delimited files
-from a directory. I<read_tab_files> returns the data to the caller via a 
-callback function. I<read_aoas> returns the data as arrays of arrays.
+Actium::Files::TabDelimited contains routines to read tab-delimited
+files from a directory. I<read_tab_files> returns the data to the
+caller via a  callback function. I<read_aoas> returns the data as
+arrays of arrays.
 
-It is designed to encapsulate some of the more tedious aspects of reading
-tab-delimited files, such as determining the headers and providing terminal
-feedback.
+It is designed to encapsulate some of the more tedious aspects of
+reading tab-delimited files, such as determining the headers and
+providing terminal feedback.
 
 The program assumes that the first line of each file is a set of column
 headings, and that values are separated by tabs.
@@ -262,9 +264,9 @@ headings, and that values are separated by tabs.
 
 =head2 read_tab_files()
 
-The read_tab_files takes a series of named parameters. Parameter processing is
-performed using Params::Validate, so the parameters can either be passed as
-a hash or as a hash reference.
+The read_tab_files takes a series of named parameters. Parameter
+processing is performed using Params::Validate, so the parameters can
+either be passed as a hash or as a hash reference.
 
 The named parameters are:
 
@@ -272,33 +274,35 @@ The named parameters are:
 
 =item folder
 
-This mandatory parameter is intended to be an Actium::O::Folder
-object (or a subclass such as Actium::O::Folders::Signup). However,
-any object representing a folder will work if it implements the
-methods "make_filespec", "glob_plain_files", "open_read", and
-"display_path." See L<Actium::O::Folder|Actium::O::Folder> for details
-of these methods.
+This mandatory parameter is intended to be an Actium::O::Folder object
+(or a subclass such as Actium::O::Folders::Signup). However, any object
+representing a folder will work if it implements the methods
+"make_filespec", "glob_plain_files", "open_read", and "display_path."
+See L<Actium::O::Folder|Actium::O::Folder> for details of these
+methods.
 
 =item files
 
-If present, this parameter must be a reference to an array of 
-one or more names of files found in the folder given in the folder parameter. 
+If present, this parameter must be a reference to an array of  one or
+more names of files found in the folder given in the folder parameter.
 
-If neither files nor globpatterns is specified, an exception will be thrown.
+If neither files nor globpatterns is specified, an exception will be
+thrown.
 
 =item globpatterns
 
 If present, this parameter must be a reference to an array of one or
-more patterns (to be passed to $folderobject->glob_plain_files ), which will
-cause those files to be read.
+more patterns (to be passed to $folderobject->glob_plain_files ), which
+will cause those files to be read.
 
-If neither files nor globpatterns is specified, an exception will be thrown.
+If neither files nor globpatterns is specified, an exception will be
+thrown.
 
 =item required_headers
 
-If present, this parameter must be a reference to an array of column headers
-to be found in the tab file. If any header is not found, an exception is
-thrown.
+If present, this parameter must be a reference to an array of column
+headers to be found in the tab file. If any header is not found, an
+exception is thrown.
 
 =item progress_lines
 
@@ -307,13 +311,13 @@ indicator (percentages) are updated. The default is 5000.
 
 =item callback
 
-This mandatory parameter must be a code reference. For each line read, this
-code reference is invoked, as described below.
+This mandatory parameter must be a code reference. For each line read,
+this code reference is invoked, as described below.
 
 =item trim
 
-If present and true, this will trim whitespace from the beginning and end 
-of each field. This can be time-consuming in a large file.
+If present and true, this will trim whitespace from the beginning and
+end  of each field. This can be time-consuming in a large file.
 
 =back
 
@@ -326,8 +330,8 @@ a series of arguments:
 
 =item * 
 
-A reference to a hash whose keys are the column headers and whose values
-are the values of each column.
+A reference to a hash whose keys are the column headers and whose
+values are the values of each column.
 
 =item *
 
@@ -347,22 +351,25 @@ The file name of the current file.
 
 =item *
 
-The number of the current line being read in the file (beginning with 1).
+The number of the current line being read in the file (beginning with
+1).
 
 =back
 
-This allows the caller to save the data from the line in a variety of ways.
+This allows the caller to save the data from the line in a variety of
+ways.
 
 =head2 read_aoas()
 
-This routine simplifies reading simple files by simply returning the data
-in two complex data structures. Each is a hash where the keys are the names of 
-the files that was read.  The values of the first hash are references to an 
-array containing the names of the headers.  The values of the second hash are 
-references to an array of records, each containing an array of data fields.
+This routine simplifies reading simple files by simply returning the
+data in two complex data structures. Each is a hash where the keys are
+the names of  the files that was read.  The values of the first hash
+are references to an  array containing the names of the headers.  The
+values of the second hash are  references to an array of records, each
+containing an array of data fields.
 
-It accepts all the same parameters as read_tab_files (see above), except
-"callback."
+It accepts all the same parameters as read_tab_files (see above),
+except "callback."
 
 =head1 DIAGNOSTICS
 
@@ -370,9 +377,9 @@ It accepts all the same parameters as read_tab_files (see above), except
 
 =item 'Must specify either files or globpatterns to read_tab_files'
 
-read_tab_files was called, but the caller specified neither a list of files
-nor a list of patterns that will be used to determine which files should
-be called, so the routine didn't know which files to open.
+read_tab_files was called, but the caller specified neither a list of
+files nor a list of patterns that will be used to determine which files
+should be called, so the routine didn't know which files to open.
 
 =item "No files found in $path passed to read_tab_files "
 
@@ -380,8 +387,8 @@ No files were found, either from the files or globpatterns provided.
 
 =item "Required header $required_header not found in file $file"
 
-A header was passed via the "required_headers" parameter that was not found
-in the file.
+A header was passed via the "required_headers" parameter that was not
+found in the file.
 
 =back
 
@@ -409,11 +416,12 @@ Sub::Exporter
 
 =head1 LIMITATIONS
 
-A more flexible routine would also allow other line terminators than "\n". 
+A more flexible routine would also allow other line terminators than
+"\n".
 
 Some of the same code could be used for CSV files, where it would use 
-Text::CSV to do the CSV parsing but would have the same calling syntax and
-other features.
+Text::CSV to do the CSV parsing but would have the same calling syntax
+and other features.
 
 =head1 AUTHOR
 
@@ -423,8 +431,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2012
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -436,6 +444,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

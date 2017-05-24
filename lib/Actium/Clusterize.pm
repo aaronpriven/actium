@@ -1,6 +1,6 @@
 package Actium::Clusterize 0.012;
 
-use Actium::Preamble;
+use Actium;
 
 use Sub::Exporter -setup => { exports => [qw(clusterize)] };    ### DEP ###
 use Set::IntSpan;                                               ### DEP ###
@@ -321,7 +321,8 @@ __END__
 
 =head1 NAME
 
-Actium::Clusterize - Break lists of bus stops, etc.,  into manageable clusters
+Actium::Clusterize - Break lists of bus stops, etc.,  into manageable
+clusters
 
 =head1 VERSION
 
@@ -403,22 +404,23 @@ More usefully:
  
 =head1 DESCRIPTION
 
-Actium::Clusterize combines lists of items into reasonably-sized chunks.
+Actium::Clusterize combines lists of items into reasonably-sized
+chunks.
 
-The idea is that there are a certain number of items, each one
-divided into a category that is an integer.  Maybe there are different
-zones of bus stops, where each zone is given a number: zone 101,
-zone 102, zone 304, and so on.  If each zone has a significant
-number of stops that need work, not much is needed: just make up a
-separate work order list for each zone. But what if some zones only
-have one or two stops? A separte work order for each stop is overkill. 
-This routine combines small zones into larger ones.
+The idea is that there are a certain number of items, each one divided
+into a category that is an integer.  Maybe there are different zones of
+bus stops, where each zone is given a number: zone 101, zone 102, zone
+304, and so on.  If each zone has a significant number of stops that
+need work, not much is needed: just make up a separate work order list
+for each zone. But what if some zones only have one or two stops? A
+separte work order for each stop is overkill.  This routine combines
+small zones into larger ones.
 
 The routine assumes that the numbers are hierarchies, and puts together
-zones that start with the same numbers.  So, for example, it treats
-502 and 5021 as more closely related than 502 and 503, or 5021 and 5120.
-This is intentional, as it should make it easier (for example) to add new 
-zones in between other zones, without having to rename them.
+zones that start with the same numbers.  So, for example, it treats 502
+and 5021 as more closely related than 502 and 503, or 5021 and 5120.
+This is intentional, as it should make it easier (for example) to add
+new  zones in between other zones, without having to rename them.
 
 =head1 SUBROUTINES
 
@@ -426,16 +428,16 @@ zones in between other zones, without having to rename them.
 
 =item B<clusterize()>
 
-The B<clusterize> subroutine accepts named parameters. Either C<count_of> or 
-C<items> must be specified. The other two parameters, C<root_digits> and 
-C<size>, are optional.
+The B<clusterize> subroutine accepts named parameters. Either
+C<count_of> or  C<items> must be specified. The other two parameters,
+C<root_digits> and  C<size>, are optional.
 
 =over 
 
 =item C<count_of>
 
-This should be a reference to a hash, where the keys are the zone numbers and
-the values are the quantities in each zone.
+This should be a reference to a hash, where the keys are the zone
+numbers and the values are the quantities in each zone.
 
  my $clusters_of_r = clusterize ( count_of => { 101 => 5, 102 => 2 } );
  
@@ -445,24 +447,26 @@ This should be a reference to an array, each containing a zone number.
 
  my $clusters_of_r = clusterize ( items => { qw/101 101 101 101 101 102 102/);
      
-The B<clusterize> subroutine will convert this into a count. Specify whichever
-is easier.
+The B<clusterize> subroutine will convert this into a count. Specify
+whichever is easier.
 
 =item C<root_digits> (default: 1)
 
-The B<clusterize> routine does not combine zones that have different roots.
-For example, using the default, it will never combine zones beginning
-with 1 and zones beginning with 2, even if only one stop begins with 1. 
-This parameter allows the number of digits treated as root digits to be specified:
+The B<clusterize> routine does not combine zones that have different
+roots. For example, using the default, it will never combine zones
+beginning with 1 and zones beginning with 2, even if only one stop
+begins with 1.  This parameter allows the number of digits treated as
+root digits to be specified:
 
 =over
 
 0 -- All items could be combined.
 
-1 -- Items 1000 and 1999 could be combined, but not items 1010 and 2010.
+1 -- Items 1000 and 1999 could be combined, but not items 1010 and
+2010.
 
-2 -- Items 1010 and 1020 could be combined, but not items 1010 and 1100, or
-items 1100 and 2100.
+2 -- Items 1010 and 1020 could be combined, but not items 1010 and
+1100, or items 1100 and 2100.
 
 =back
 
@@ -470,16 +474,17 @@ And so forth.
 
 =item C<size> (default: 40)
 
-This is the number of items that's considered the minimum size for a work 
-order.  Work zones with a quantity of items smaller than this will be combined
-with other work zones (unless those work zones have different roots).
+This is the number of items that's considered the minimum size for a
+work  order.  Work zones with a quantity of items smaller than this
+will be combined with other work zones (unless those work zones have
+different roots).
 
-So, for example, 
+So, for example,
 
  my $clusters_of_r = clusterize ( count_of => { 101 => 45, 102 => 42 } );
  
-will yield C<{ 101 => 101, 102 = 102 }>, but 
- 
+will yield C<{ 101 => 101, 102 = 102 }>, but
+
  my $clusters_of_r = clusterize ( 
       count_of => { 101 => 45, 102 => 42 } , size => 50);
       
@@ -487,11 +492,12 @@ will yield C<{ '101' => '101-102', '102' => '101-102' }>.
 
 =back
 
-The result from B<clusterize> will be a reference to a hash. The keys will be
-the original items passed to B<clusterize>. The values will be the new cluster
-that they are placed in, expressed as a combination of ranges. So, for example, 
-a new cluster might be "101" where a single work zone makes up a cluster,
-or "102-103" or even "102-105,107-108,150-151" if that's the result.
+The result from B<clusterize> will be a reference to a hash. The keys
+will be the original items passed to B<clusterize>. The values will be
+the new cluster that they are placed in, expressed as a combination of
+ranges. So, for example,  a new cluster might be "101" where a single
+work zone makes up a cluster, or "102-103" or even
+"102-105,107-108,150-151" if that's the result.
 
 =back
 
@@ -509,13 +515,15 @@ The root_digit parameter was not a number, or negative
 
 =item *
 
-Longest leaf length (...) less than or equal to the number of root digits specified (...)
+Longest leaf length (...) less than or equal to the number of root
+digits specified (...)
 
-The root digit specification was so big, and the longest leaf length
-so small, that clusterization would be pointless as everything would be 
+The root digit specification was so big, and the longest leaf length so
+small, that clusterization would be pointless as everything would be 
 in its own cluster.
 
-This is no longer valid as now clusters like this just return themselves
+This is no longer valid as now clusters like this just return
+themselves
 
 =cut
 
@@ -527,9 +535,9 @@ Cannot specify both count_of and items
 
 Must specify either count_of or items
 
-One, and only one, of C<count_of> or C<items> must be specified 
-to B<clusterize>. If neither is specified, there's nothing to work on;
-if both are specified, it's not clear which should be worked on.
+One, and only one, of C<count_of> or C<items> must be specified  to
+B<clusterize>. If neither is specified, there's nothing to work on; if
+both are specified, it's not clear which should be worked on.
 
 =back
 
@@ -539,7 +547,7 @@ if both are specified, it's not clear which should be worked on.
 
 =item * 
 
-Actium::Preamble.
+Actium
 
 =item *
 
@@ -555,8 +563,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -568,7 +576,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 
