@@ -5,7 +5,7 @@
 use FindBin qw($Bin);    ### DEP ###
 use lib ("$Bin/../lib"); ### DEP ###
 
-use Actium::Preamble;
+use Actium;
 use Actium::O::Cmd;
 
 our $VERSION = 0.012;
@@ -42,7 +42,7 @@ Actium::O::Cmd->new(
         newsignup     => 'NewSignup',
         orderbytravel => 'OrderByTravel',
         prepareflags  => 'PrepareFlags',
-        storeavl      => 'StorableAVL', 
+        storeavl      => 'StorableAVL',
         slists2html   => 'Slists2HTML',
         stopsofline   => 'StopsOfEachLine',
         ss            => 'StopSearch',
@@ -82,15 +82,14 @@ This documentation refers to <name> version 0.003
 
 =head1 REQUIRED ARGUMENTS
 
-A list of every argument that must appear on the command line when
-the application is invoked, explaining what each one does, any
-restrictions on where each one may appear (i.e., flags that must
-appear before or after filenames), and how the various arguments
-and options may interact (e.g., mutual exclusions, required
-combinations, etc.)
+A list of every argument that must appear on the command line when the
+application is invoked, explaining what each one does, any restrictions
+on where each one may appear (i.e., flags that must appear before or
+after filenames), and how the various arguments and options may
+interact (e.g., mutual exclusions, required combinations, etc.)
 
-If all of the application's arguments are optional, this section
-may be omitted entirely.
+If all of the application's arguments are optional, this section may be
+omitted entirely.
 
 =over
 
@@ -124,8 +123,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -140,8 +139,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -153,7 +152,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 
