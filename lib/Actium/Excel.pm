@@ -1,6 +1,6 @@
 package Actium::Excel 0.013;
 
-use Actium::Preamble;
+use Actium;
 
 use Excel::Writer::XLSX 0.95;               ## DEP ##
 use Excel::Writer::XLSX::Worksheet 0.95;    ## DEP ##
@@ -86,7 +86,8 @@ sub actium_write_row_string {
 
         # Check for nested arrays
         if ( ref $token eq "ARRAY" ) {
-            $ret = $self->actium_write_col_string( $row, $col, $token, @options );
+            $ret
+              = $self->actium_write_col_string( $row, $col, $token, @options );
         }
         else {
             $token //= '';
@@ -138,7 +139,8 @@ sub actium_write_col_string {
 
         # Check for nested arrays
         if ( ref $token eq "ARRAY" ) {
-            $ret = $self->actium_write_row_string( $row, $col, $token, @options );
+            $ret
+              = $self->actium_write_row_string( $row, $col, $token, @options );
         }
         else {
             $token //= '';
@@ -151,7 +153,7 @@ sub actium_write_col_string {
     }
 
     return $error;
-} ## tidy end: sub write_col_string
+} ## tidy end: sub actium_write_col_string
 
 1;
 
@@ -199,8 +201,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -215,8 +217,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -228,6 +230,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

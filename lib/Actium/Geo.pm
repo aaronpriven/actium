@@ -2,11 +2,11 @@ package Actium::Geo 0.012;
 
 # Geocoding, geodesy, etc.
 
-use Actium::Preamble;
+use Actium;
 
-use REST::Client; ### DEP ###
-use JSON; ### DEP ###
-use Math::Trig   (qw(deg2rad asin ));   ### DEP ###
+use REST::Client;    ### DEP ###
+use JSON;            ### DEP ###
+use Math::Trig (qw(deg2rad asin ));    ### DEP ###
 
 use Sub::Exporter -setup => {
     exports => [
@@ -19,7 +19,7 @@ use Sub::Exporter -setup => {
 
 # This arguably should be replaced with GIS::Distance or something
 
-const my $RADIUS => 3956.6 * 5280;  # feet
+const my $RADIUS => 3956.6 * 5280;    # feet
 
 sub distance_feet {
 
@@ -42,8 +42,7 @@ sub get_zip_for_stops {
 
     my %params = u::validate(
         @_,
-        {
-            client   => { isa  => 'REST::Client',   optional => 1 },
+        {   client   => { isa  => 'REST::Client',   optional => 1 },
             actiumdb => { can  => 'all_in_columns_key' },
             username => { type => $PV_TYPE{SCALAR} },
             sleep    => { type => $PV_TYPE{SCALAR}, optional => 1 },
@@ -88,17 +87,16 @@ sub get_zip_for_stops {
 
         sleep($sleep) if $sleep;
 
-    }
+    } ## tidy end: foreach my $stopid ( keys %$stopinfo_r)
 
     return \%zip_code_of;
 
-}
+} ## tidy end: sub get_zip_for_stops
 
 sub zip_code_request {
     my %params = u::validate(
         @_,
-        {
-            client   => { isa  => 'REST::Client', optional => 1 },
+        {   client   => { isa  => 'REST::Client', optional => 1 },
             lat      => { type => $PV_TYPE{SCALAR} },
             lng      => { type => $PV_TYPE{SCALAR} },
             username => { type => $PV_TYPE{SCALAR} },
@@ -111,8 +109,8 @@ sub zip_code_request {
 
     my $request = 'http://api.geonames.org/findNearbyPostalCodesJSON?';
 
-    my @args =
-      ( "lat=$lat", "lng=$lng", 'maxRows=1', "username=$params{username}" );
+    my @args
+      = ( "lat=$lat", "lng=$lng", 'maxRows=1', "username=$params{username}" );
 
     $request .= join( "&", @args );
 
@@ -124,7 +122,7 @@ sub zip_code_request {
 
     return $zipcode;
 
-}
+} ## tidy end: sub zip_code_request
 
 1;
 
@@ -172,8 +170,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -188,8 +186,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -201,6 +199,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

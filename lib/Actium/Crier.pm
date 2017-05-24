@@ -3,22 +3,21 @@ package Actium::Crier 0.010;
 use 5.022;
 use warnings;
 
-# Avoiding Actium::Preamble because that module will probably load this one
+# Avoiding Actium.pm because that module will probably load this one
 
 use Const::Fast;
 use Carp;
 use Module::Runtime ('require_module');
 
 # Actium::O::Crier is require'd at runtime to avoid a circular dependency
-# in Actium::Preamble, which is used by Actium::O::Crier.
+# in Actium.pm which is used by Actium::O::Crier.
 
 const my $CRIERCLASS => 'Actium::O::Crier';
 
 use Sub::Exporter -setup => {
     exports => [
-        'cry','last_cry',
-        'cry_text',
-        'default_crier' => \&_build_default_crier,
+        'cry', 'last_cry',
+        'cry_text', 'default_crier' => \&_build_default_crier,
     ]
 };
 # Sub::Exporter ### DEP ###
@@ -55,8 +54,8 @@ sub _build_default_crier {
 
 sub _init_default_crier {
     return if $default_crier;
-        require_module($CRIERCLASS);
-        $default_crier = $CRIERCLASS->new();
+    require_module($CRIERCLASS);
+    $default_crier = $CRIERCLASS->new();
 }
 
 sub cry {
@@ -120,8 +119,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -136,8 +135,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -149,6 +148,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
