@@ -1,6 +1,6 @@
 package Actium::Cmd::AVL2StopLists 0.011;
 
-use Actium::Preamble;
+use Actium;
 # avl2stoplists - see POD documentation below
 
 use sort ('stable');
@@ -31,21 +31,19 @@ sub OPTIONS {
     return (qw/actiumdb signup/);
 }
 
-
 sub START {
 
     my ( $class, $env ) = @_;
     my $actiumdb = $env->actiumdb;
-
 
     my $signup = $env->signup;
     chdir $signup->path();
 
     # retrieve data
 
-    my $slistsfolder  = $signup->subfolder('slists');
-    my $patfolder     = $slistsfolder->subfolder('pat');
-    my $linefolder    = $slistsfolder->subfolder('line');
+    my $slistsfolder = $signup->subfolder('slists');
+    my $patfolder    = $slistsfolder->subfolder('pat');
+    my $linefolder   = $slistsfolder->subfolder('line');
 
     my %pat;
     my %tps;
@@ -62,7 +60,7 @@ sub START {
         }
     );
 
-    {                                                                  # scoping
+    {    # scoping
 # the reason to do this is to release the %avldata structure, so Affrus
 # (or, presumably, another IDE)
 # doesn't have to display it when it's not being used. Of course it saves memory, too
@@ -92,9 +90,9 @@ sub START {
         open my $fh, '>:utf8', "slists/pat/$filekey.txt"
           or die "Cannot open slists/pat/$filekey.txt for output";
 
-            printf "%13s", $filekey;
-            $count++;
-            print "\n" unless $count % 6;
+        printf "%13s", $filekey;
+        $count++;
+        print "\n" unless $count % 6;
 
         print $fh join( "\t",
             $route, $dir, $pat{$key}{Identifier},
@@ -127,9 +125,9 @@ sub START {
     foreach my $route ( keys %liststomerge ) {
         foreach my $dir ( keys %{ $liststomerge{$route} } ) {
 
-                printf "%13s", "$route-$dir";
-                $count++;
-                print "\n" unless $count % 6;
+            printf "%13s", "$route-$dir";
+            $count++;
+            print "\n" unless $count % 6;
 
             my @union = @{ ordered_union( @{ $liststomerge{$route}{$dir} } ) };
             $stops_of_line{"$route-$dir"} = \@union;
@@ -144,7 +142,7 @@ sub START {
                     #utf8::decode($desc);
 
                     print $fh "$_\t$desc\n";
-                    #print $fh u::jointab($_, $stops{$_}{c_description_full}) , "\n";
+               #print $fh u::jointab($_, $stops{$_}{c_description_full}) , "\n";
                 }
                 close $fh;
             }
@@ -166,18 +164,17 @@ avl2stoplists - Make stop lists by pattern and route from AVL files.
 
 =head1 DESCRIPTION
 
-avl2stoplists reads the data written by readavl and turns it into lists of 
-stops by pattern and by route.  First it produces a list for each pattern 
-(files in the form <route>-<direction>-<patternnum>.txt) and then one for 
-each route (in the form <route>-<direction>.txt. Lists for each pattern are
-merged using the Algorithm::Diff routine. 
+avl2stoplists reads the data written by readavl and turns it into lists
+of  stops by pattern and by route.  First it produces a list for each
+pattern  (files in the form <route>-<direction>-<patternnum>.txt) and
+then one for  each route (in the form <route>-<direction>.txt. Lists
+for each pattern are merged using the Algorithm::Diff routine.
 
 =head1 AUTHOR
 
 Aaron Priven
 
 =cut
-
 
 __END__
 
@@ -222,8 +219,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -238,8 +235,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -251,6 +248,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

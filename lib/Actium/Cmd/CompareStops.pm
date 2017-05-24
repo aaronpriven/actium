@@ -1,6 +1,6 @@
 package Actium::Cmd::CompareStops 0.011;
 
-use Actium::Preamble;
+use Actium;
 
 use Storable();    ### DEP ###
 use Actium::Sorting::Line ('byline');
@@ -21,13 +21,13 @@ EOF
 }
 
 sub OPTIONS {
-    return ( qw/actiumdb signup_with_old/ ,
-        {   spec => 'ignore600s!',
+    return (
+        qw/actiumdb signup_with_old/,
+        {   spec        => 'ignore600s!',
             description => 'Ignore lines 600-699 in comparison. ',
-            fallback => 0,
+            fallback    => 0,
         },
-        
-        
+
     );
 }
 
@@ -39,12 +39,12 @@ sub START {
     my $actiumdb  = $env->actiumdb;
     my $oldsignup = $env->oldsignup;
     my $signup    = $env->signup;
-    
+
     my $ignore_600s = $env->option('ignore600s');
-    
+
     my @skipped = qw(BSH 399);
     if ($ignore_600s) {
-    	push @skipped, (600 .. 699);
+        push @skipped, ( 600 .. 699 );
     }
 
     chdir $signup->path;
@@ -290,9 +290,9 @@ comparestops - Compares the stops from two sets of AVL files.
 
 =head1 DESCRIPTION
 
-comparestops reads the data written by readavl.
-It then assembles a list of stops and the routes that stop at each one.
-Finally, it displays a list of new, deleted, and changed stops.
+comparestops reads the data written by readavl. It then assembles a
+list of stops and the routes that stop at each one. Finally, it
+displays a list of new, deleted, and changed stops.
 
 =head1 AUTHOR
 
@@ -341,8 +341,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -357,8 +357,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -370,6 +370,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
