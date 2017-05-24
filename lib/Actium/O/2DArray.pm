@@ -1,11 +1,6 @@
 package Actium::O::2DArray 0.013;
 
-# Convenience object for 2D array methods
-
-use 5.016;
-use warnings;
-
-use Actium::Preamble;
+use Actium;
 
 # this is a deliberately non-encapsulated object that is just
 # an array of arrays (AoA).
@@ -1744,7 +1739,7 @@ Add CSV (and possibly other file type) support to new_from_file.
 
 =item Perl 5.20
 
-=item Actium::Preamble
+=item Actium
 
 =item Actium::Util
 
