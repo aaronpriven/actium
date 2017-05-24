@@ -6,10 +6,7 @@ package Actium::O::DateTime 0.014;
 # Non-moosey, because Moose kept interfering too much with
 # constructor names and the like
 
-use 5.022;
-use warnings;    ### DEP ###
-
-use Actium::Preamble;
+use Actium;
 
 use parent 'DateTime';
 # DateTime ### DEP ###
@@ -119,7 +116,7 @@ sub new {
         my $pattern = shift // $datestr =~ m{/} ? '%m/%d/%Y' : '%Y-%m-%d';
         # %Y - four-digit year (unlike %D)
 
-        require DateTime::Format::Strptime; ### DEP ###
+        require DateTime::Format::Strptime;    ### DEP ###
 
         my $strp_obj = $strp_obj_of{$pattern}
           //= DateTime::Format::Strptime->new(
@@ -127,7 +124,7 @@ sub new {
             locale   => 'en_US',
             on_error => 'croak',
           );
-          
+
         my $obj = $strp_obj->parse_datetime($datestr);
 
         # returns a DateTime object.
@@ -190,8 +187,8 @@ sub new {
 
         my $method = "date_format_$format";
 
-        require DateTime::Locale; ### DEP ###
-        require DateTime::Format::CLDR; ### DEP ###
+        require DateTime::Locale;          ### DEP ###
+        require DateTime::Format::CLDR;    ### DEP ###
 
         my $dl = DateTime::Locale->load($locale);
 
@@ -324,16 +321,15 @@ This documentation refers to version 0.014
    
 =head1 DESCRIPTION
 
-Actium::O::DateTime is a thin wrapper around L<DateTime>. 
-In inherits almost almost everything from DateTime, while providing a few
-convenience methods and convenience ways of constructing the object. 
+Actium::O::DateTime is a thin wrapper around L<DateTime>.  In inherits
+almost almost everything from DateTime, while providing a few
+convenience methods and convenience ways of constructing the object.
 
-Actium::O::DateTime was created in order to do comparisons and presentation of
-dates rather than times. Therefore, its own methods ignore such details as 
-time zones, leap seconds and the like. 
-Theoretically you could use Actium::O::DateTime 
-objects to do processing on time, but it's not really intended for that 
-purpose.
+Actium::O::DateTime was created in order to do comparisons and
+presentation of dates rather than times. Therefore, its own methods
+ignore such details as  time zones, leap seconds and the like. 
+Theoretically you could use Actium::O::DateTime  objects to do
+processing on time, but it's not really intended for that  purpose.
 
 =head1 METHODS
 
@@ -341,22 +337,24 @@ purpose.
 
 =item B<new()>
 
-This subroutine takes arguments and returns a new Actium::O::DateTime object.
+This subroutine takes arguments and returns a new Actium::O::DateTime
+object.
 
-Most arguments must be specified using names: 
+Most arguments must be specified using names:
 
     $dt = 
       Actium::O::DateTime->new(
         cldr => '31-5-2017' , pattern => 'D-M-Y' 
       );
     
-If a single positional argument is seen, 
-then it is treated the same as an argument to 'datetime', below.
+If a single positional argument is seen,  then it is treated the same
+as an argument to 'datetime', below.
 
-The arguments used by Actium::O::DateTime are given below. If none of these
-arguments are present, the arguments are passed through to DateTime.
-Only one of "datetime", "strptime" or "cldr" can be present, 
-and if one is, none of the other arguments other than "pattern" can be present.
+The arguments used by Actium::O::DateTime are given below. If none of
+these arguments are present, the arguments are passed through to
+DateTime. Only one of "datetime", "strptime" or "cldr" can be present, 
+and if one is, none of the other arguments other than "pattern" can be
+present.
 
 =over
 
@@ -365,8 +363,8 @@ and if one is, none of the other arguments other than "pattern" can be present.
 This is treated as a string, to be parsed by DateTime::Format::CLDR.
 
 If the named argument "pattern" is present, that will be passed to 
-DateTime::Format::CLDR. Otherwise, it will use the pattern 
-"M/d/y" if slashes are present in the value, or the pattern "y-d-M" otherwise.
+DateTime::Format::CLDR. Otherwise, it will use the pattern  "M/d/y" if
+slashes are present in the value, or the pattern "y-d-M" otherwise.
 
 =item datetime
 
@@ -380,7 +378,7 @@ An object. A new object is returned using DateTime->from_object, q.v.
 
 =item * 
 
-A string. This is treated as the argument to strptime. 
+A string. This is treated as the argument to strptime.
 
 =back
 
@@ -391,19 +389,20 @@ unless one of datetime, strptime, or cldr is also specified.
 
 =item strptime
 
-This is treated as a string, to be parsed by DateTime::Format::Strptime.
+This is treated as a string, to be parsed by
+DateTime::Format::Strptime.
 
 If the named argument "pattern" is present, that will be passed to 
 DateTime::Format::Strptime. Otherwise, it will use the pattern 
-"%m/%d/%Y" (e.g., 12/31/2017) if any slashes are present in the value, or the
-pattern "%Y-%m-%d" (e.g., 2017-12-31) otherwise. 
+"%m/%d/%Y" (e.g., 12/31/2017) if any slashes are present in the value,
+or the pattern "%Y-%m-%d" (e.g., 2017-12-31) otherwise.
 
 =item ymd
 
-If passed, this value must be a reference to an array with three entries, 
-representing the year, month, and day, in order. These are submitted as 
-year, month and day to DateTime->new.  If it is present, none of 
-"year", "month" and "day" can also be present.
+If passed, this value must be a reference to an array with three
+entries,  representing the year, month, and day, in order. These are
+submitted as  year, month and day to DateTime->new.  If it is present,
+none of  "year", "month" and "day" can also be present.
 
 =back
 
@@ -421,30 +420,31 @@ Any other arguments are treated as they are in DateTime.
 
 =item B<full_zh()>
 
-These provide dates formatted in the appropriate languages: English, Spanish, 
-or Chinese (simplified), using the locales "en_US", "es_US", and "zh_Hans".
+These provide dates formatted in the appropriate languages: English,
+Spanish,  or Chinese (simplified), using the locales "en_US", "es_US",
+and "zh_Hans".
 
-The "long" date formats provide the full name of the month, the day
-and the year.  The "full" date formats add the weekday as well.
+The "long" date formats provide the full name of the month, the day and
+the year.  The "full" date formats add the weekday as well.
 
 =item B<fulls>
 
 =item B<longs>
 
-These return a reference to an array of each of the appropriate "full" or 
-"long" values, in language order. The order is currently alphabetical,
-although if more languages are added later, they will probably be added 
-at the end.
+These return a reference to an array of each of the appropriate "full"
+or  "long" values, in language order. The order is currently
+alphabetical, although if more languages are added later, they will
+probably be added  at the end.
 
 =item B<newest_date($date, $date, $date...)>
 
-This class method (not object method) calculates the newest date
-from a list of dates passed to it. (Note that the invocant is assumed
-to be the class name and is not used in the calculation.)  The dates
-can be Actium::O::DateTime objects, DateTime objects, or strings;
-if they are strings they will be formatted as dates as though they
-were passed to new() in the strptime argument.  The return value
-is an Actium::O::DateTime object.
+This class method (not object method) calculates the newest date from a
+list of dates passed to it. (Note that the invocant is assumed to be
+the class name and is not used in the calculation.)  The dates can be
+Actium::O::DateTime objects, DateTime objects, or strings; if they are
+strings they will be formatted as dates as though they were passed to
+new() in the strptime argument.  The return value is an
+Actium::O::DateTime object.
 
 =back
 
@@ -457,34 +457,34 @@ is an Actium::O::DateTime object.
 No arguments given
 
 Some arguments must be passed in calls to new().
-    
+
 =item  *
 
 Can't specify more than one of ...
 
-The "datetime", "strptime", and "cldr" arguments are mutually exclusive.
-Specify just one.
+The "datetime", "strptime", and "cldr" arguments are mutually
+exclusive. Specify just one.
 
 =item *
 
 Can't specify a pattern without specifying one of ...
 
-The "pattern" argument has no meaning unless it is coupled 
-with either "datetime", "strptime", or "cldr". Specify one.
+The "pattern" argument has no meaning unless it is coupled  with either
+"datetime", "strptime", or "cldr". Specify one.
 
 =item *
 
-Can't specify both a exclusive argument (one of ... ) and also DateTime 
-arguments
+Can't specify both a exclusive argument (one of ... ) and also DateTime
+ arguments
 
-The "datetime", "strptime" or "cldr" arguments must be
-specified alone or with the "pattern" argument, and cannot be combined
-with any of the regular arguments to DateTime.
+The "datetime", "strptime" or "cldr" arguments must be specified alone
+or with the "pattern" argument, and cannot be combined with any of the
+regular arguments to DateTime.
 
 =item *
 
 Argument to ymd must be a reference to a three-element array (year,
-month, and day) 
+month, and day)
 
 Some other sort of argument was recieved than a reference to a 
 three-element array.  Specify just the year, month, and day.
@@ -493,8 +493,8 @@ three-element array.  Specify just the year, month, and day.
 
 Can't specify ymd and also either year, month, or day ...
 
-The "ymd" argument repalces the "year", "month", and "day" arguments to 
-DateTime, so you can't specify both. Specify one of either "ymd" or 
+The "ymd" argument repalces the "year", "month", and "day" arguments to
+ DateTime, so you can't specify both. Specify one of either "ymd" or 
 the separate set of "year", "month", and "day" arguments.
 
 =back
@@ -535,8 +535,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -548,6 +548,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
