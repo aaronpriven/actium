@@ -1,14 +1,14 @@
 package Actium::O::Photos::Flickr::Auth 0.012;
 
-# Object representing Flickr authentication information (api key, & secret, 
+# Object representing Flickr authentication information (api key, & secret,
 # OAuth user [consumer] keys and secrets )
 
-use Actium::Moose;
+use Actium ('class_nomod');
 
-has [qw/key secret/]  => (
-   isa => 'Str',
-   is => 'ro',
-   required => 1,
+has [qw/key secret/] => (
+    isa      => 'Str',
+    is       => 'ro',
+    required => 1,
 );
 
 # TO DO : User info
@@ -58,8 +58,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -74,8 +74,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -87,6 +87,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
