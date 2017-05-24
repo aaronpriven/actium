@@ -10,9 +10,9 @@ use lib ("$Bin/../lib"); ### DEP ###
 our $VERSION = 0.010;
 
 # this program is used every year to convert the supplementary schools
-# calendar from Excel to HTML. 
+# calendar from Excel to HTML.
 
-use Actium::Preamble;
+use Actium;
 
 my $file = shift @ARGV;
 
@@ -20,9 +20,9 @@ my $sheet = open_xlsx($file);
 
 my ( $currentrow, $minrow, $maxrow, $mincol, $maxcol );
 
-nextline();              # Overload Protection Trip
-nextline();              # first day
-nextline();              # last day
+nextline();    # Overload Protection Trip
+nextline();    # first day
+nextline();    # last day
 
 my @dates = nextline();
 
@@ -350,7 +350,6 @@ sub clean_dismissal {
         s/Noon/12:00 noon/;
         s/\s*pick up//;
         s/(\d)([A-Za-z])/$1 $2/;
-        s/(\d? \d ) ( \d \d ) / $1 : $2 /;
         s/a\z/a.m./;
         s/p\z/p.m./;
         s/AM/a.m./i;
@@ -358,7 +357,9 @@ sub clean_dismissal {
         s/(\d)$/$1 p.m./;
         s/verify/(to be determined)/i;
         s/-\s*no service/ (Service will not operate)/i;
-        s/(Line )?\d* tripper//;
+        s/(Line )? \d * tripper //;
+
+        #s[(\d? \d ) ( \d \d ) ][ $1 : $2 ];
 
       } ## tidy end: map
 
@@ -372,39 +373,37 @@ sub clean_dismissal {
 
 sub print_table {
 
-      my $tablefh    = shift;
-      my $header     = shift;
-      my @tabledates = @_;
+    my $tablefh    = shift;
+    my $header     = shift;
+    my @tabledates = @_;
 
-      my $columns = 3;
+    my $columns = 3;
 
-      while ( @tabledates % $columns != 0 ) {
-          push @tabledates, '&nbsp;';
-      }
-      my $rows = ( @tabledates / $columns );
+    while ( @tabledates % $columns != 0 ) {
+        push @tabledates, '&nbsp;';
+    }
+    my $rows = ( @tabledates / $columns );
 
-      say $tablefh
+    say $tablefh
 '<p><table border="1" width="90%" cellspacing="0" cellpadding="6" style="float:none;border-collapse:collapse;border-width:1px;margin-bottom:1em;">';
-      say $tablefh
+    say $tablefh
 qq[<thead><tr><th style="border-width:1px;border-collapse:collapse;text-align: left;" colspan=$columns>$header</th></tr></thead>];
-      say $tablefh '<tbody>';
+    say $tablefh '<tbody>';
 
-      for my $row ( 0 .. $rows - 1 ) {
-          print $tablefh '<tr>';
-          for my $col ( 0 .. $columns - 1 ) {
-              my $thisdateidx = ( ( $rows * $col ) + $row );
-              my $thisdate = $tabledates[$thisdateidx] // "ERROR";
-              print $tablefh
+    for my $row ( 0 .. $rows - 1 ) {
+        print $tablefh '<tr>';
+        for my $col ( 0 .. $columns - 1 ) {
+            my $thisdateidx = ( ( $rows * $col ) + $row );
+            my $thisdate = $tabledates[$thisdateidx] // "ERROR";
+            print $tablefh
 qq[<td width="30%" style="border-width:1px;border-collapse:collapse;">$thisdate</td>];
-          }
-          say $tablefh '</tr>';
-      }
+        }
+        say $tablefh '</tr>';
+    }
 
-      say $tablefh '</tbody></table></p>';
+    say $tablefh '</tbody></table></p>';
 
 } ## tidy end: sub print_table
-
-
 
 =encoding utf8
 
@@ -422,15 +421,14 @@ This documentation refers to <name> version 0.003
 
 =head1 REQUIRED ARGUMENTS
 
-A list of every argument that must appear on the command line when
-the application is invoked, explaining what each one does, any
-restrictions on where each one may appear (i.e., flags that must
-appear before or after filenames), and how the various arguments
-and options may interact (e.g., mutual exclusions, required
-combinations, etc.)
+A list of every argument that must appear on the command line when the
+application is invoked, explaining what each one does, any restrictions
+on where each one may appear (i.e., flags that must appear before or
+after filenames), and how the various arguments and options may
+interact (e.g., mutual exclusions, required combinations, etc.)
 
-If all of the application's arguments are optional, this section
-may be omitted entirely.
+If all of the application's arguments are optional, this section may be
+omitted entirely.
 
 =over
 
@@ -464,8 +462,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -480,8 +478,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -493,7 +491,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 
