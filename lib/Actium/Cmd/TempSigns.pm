@@ -1,6 +1,6 @@
 package Actium::Cmd::TempSigns 0.011;
 
-use Actium::Preamble;
+use Actium;
 use autodie;
 
 use Actium::O::Folder;
@@ -61,9 +61,9 @@ sub START {
     my $en     = $i18n{$word}{en} . " " . $dt->full_en;
     my $es     = $i18n{$word}{es} . " " . $dt->full_es;
     my $zh     = $i18n{$word}{zh};
-    my $zhdate = $dt->full_zh ;
+    my $zhdate = $dt->full_zh;
     $zhdate = $IDT->encode_high_chars($zhdate);
-    $zhdate = _zh_phrase( $zhdate);
+    $zhdate = _zh_phrase($zhdate);
     $zh =~ s/\%s/$zhdate/;
 
     my $dates
@@ -151,7 +151,6 @@ sub _zh_phrase {
 
 1;
 
-
 __END__
 
 =encoding utf8
@@ -195,8 +194,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -211,8 +210,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -224,6 +223,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

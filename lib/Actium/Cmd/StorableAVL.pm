@@ -3,7 +3,7 @@ package Actium::Cmd::StorableAVL 0.011;
 # All the programs that use the 'avl.storable' file depend on this one.
 # This shouild ultimately be replaced
 
-use Actium::Preamble;
+use Actium;
 
 use Text::Trim;    ### DEP ###
 use Storable();    ### DEP ###
@@ -43,8 +43,8 @@ EOF
 }
 
 sub START {
-    
-        my ( $class, $env ) = @_;
+
+    my ( $class, $env ) = @_;
     my $signup = $env->signup;
     chdir $signup->path();
 
@@ -66,7 +66,7 @@ sub START {
     read_files(@files);
 
     $signup->store( \%data_of, 'avl.storable' );
-    
+
     return;
 
 } ## tidy end: sub START
@@ -192,7 +192,7 @@ sub read_files {
         # resets line numbering for errors
         close ARGV if eof;
     }
-    
+
     return;
 
 } ## tidy end: sub read_files
@@ -223,8 +223,7 @@ sub init_templates {
 
     } ## tidy end: for my $row_type ( keys...)
 
-
-   return;
+    return;
 
 } ## tidy end: sub init_templates
 
@@ -304,19 +303,19 @@ readavl - read AVL files in the Hastus AVL Standard Interface format.
 
 =head1 DESCRIPTION
 
-readavl reads the files transmitted in the Hastus AVL Standard Interface format,
-as described in the Hastus 2006 documentation, and collects it in a structure
-readable in perl.
+readavl reads the files transmitted in the Hastus AVL Standard
+Interface format, as described in the Hastus 2006 documentation, and
+collects it in a structure readable in perl.
 
 =head1 KNOWN ISSUES
 
-Generally ignores the delimiters and treats the data as fixed-width, but 
-uses the delimiter to determine the record type.
+Generally ignores the delimiters and treats the data as fixed-width,
+but  uses the delimiter to determine the record type.
 
-As of Summer 2013, the RouteMainPlacePatternDirection field in the PPAT record
-has apparently been changed to 10 characters instead of 6. (I assume this has
-to do with a Hastus upgrade.) Using this program on old records will need to
-have it changed back again.
+As of Summer 2013, the RouteMainPlacePatternDirection field in the PPAT
+record has apparently been changed to 10 characters instead of 6. (I
+assume this has to do with a Hastus upgrade.) Using this program on old
+records will need to have it changed back again.
 
 =head1 AUTHOR
 
@@ -361,8 +360,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -377,8 +376,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -390,9 +389,9 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 
 =cut
 

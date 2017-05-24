@@ -2,7 +2,7 @@ package Actium::Cmd::Bags2 0.012;
 
 # service change bag decals from Excel and into a script
 
-use Actium::Preamble;
+use Actium;
 use autodie;
 
 use Actium::O::2DArray;
@@ -79,14 +79,14 @@ sub _process_stop {
     \my %col  = shift;
     my $dt = shift;
 
-    my $stopid    = $stop[ $col{StopID} ];
-    my @added     = split( ' ', $stop[ $col{Added} ] );
-    @added = grep ! /^BS[DN]$/, @added;
-    my @removed   = split( ' ', $stop[ $col{Removed} ] );
-    @removed = grep ! /^BS[DN]$/, @removed;
+    my $stopid = $stop[ $col{StopID} ];
+    my @added = split( ' ', $stop[ $col{Added} ] );
+    @added = grep !/^BS[DN]$/, @added;
+    my @removed = split( ' ', $stop[ $col{Removed} ] );
+    @removed = grep !/^BS[DN]$/, @removed;
     my @unchanged = split( ' ', $stop[ $col{Unchanged} ] );
-    @unchanged = grep ! /^BS[DN]$/, @unchanged;
-    my $bagtext   = $stop[ $col{'Bag Text Number'} ];
+    @unchanged = grep !/^BS[DN]$/, @unchanged;
+    my $bagtext = $stop[ $col{'Bag Text Number'} ];
     $bagtext = $EMPTY unless $bagtext =~ /\w/;
     my $desc     = $stop[ $col{'Stop Description'} ];
     my $bagortmp = $stop[ $col{'Bag/ Tmp?'} ];
@@ -206,7 +206,7 @@ sub _lines_with_introstyle {
     my $i18n_id    = shift;    # of intro
     my $style      = shift;    # of lines
     my @lines      = @_;
-    
+
     return $EMPTY if $lines[0] eq 'NONE';
 
     $i18n_id .= "_pl" if @lines != 1;    # pluralize
@@ -306,7 +306,6 @@ sub _zh_phrase {
 
 1;
 
-
 __END__
 
 =encoding utf8
@@ -350,8 +349,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -366,8 +365,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -379,6 +378,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
