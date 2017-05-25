@@ -78,7 +78,7 @@ use Text::Trim('trim');                                      ### DEP ###
             do_import 'MooseX::StrictConstructor';
             do_import 'MooseX::SemiAffordanceAccessor';
             do_import 'Moose::Util::TypeConstraints';
-            do_import 'MooseX::MungeHas';
+            do_import 'MooseX::MungeHas', { mhas => [] };
         }
 
         do_import 'Kavorka', kavorka_args($type);
