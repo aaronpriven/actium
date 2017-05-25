@@ -1,11 +1,9 @@
 package Actium::DecalPreparation 0.012;
 
 use Actium;
-use Actium::Sorting::Line ('sortbyline');
 use Actium::O::2DArray;
 use Excel::Writer::XLSX;             ### DEP ###
 use Excel::Writer::XLSX::Utility;    ### DEP ###
-use Actium::Util(qw[folded_in joinseries_ampersand]);
 
 use Sub::Exporter -setup => {
     exports => [
@@ -41,7 +39,7 @@ sub make_labels {
         my $assignment   = $assignment_of_r->{$stopid};
 
         if ( not $desc ) {
-            next if folded_in( $stopid => 'id', 'stop id', 'stopid' );
+            next if u::folded_in( $stopid => 'id', 'stop id', 'stopid' );
             $desc = '[NO DESCRIPTION FOUND]';
         }
 
@@ -50,11 +48,11 @@ sub make_labels {
         my @found_custom     = grep {m/-/} @found_all;
         my $all_list
           = @found_all
-          ? joinseries_ampersand(@found_all)
+          ? u::joinseries_with( '&', @found_all )
           : '(NO DECALS FOUND)';
         my $custom_list
           = @found_custom
-          ? joinseries_ampersand(@found_custom)
+          ? u::joinseries_with( '&', @found_custom )
           : '(NO CUSTOM DECALS FOUND)';
 
         $instructions =~ s/%c/$custom_list/;
@@ -142,7 +140,7 @@ sub write_decalcount_xlsx {
 
     my $text_format = $workbook->add_format( num_format => '@' );
 
-    my @decals = sortbyline keys %count_of;
+    my @decals = u::sortbyline keys %count_of;
 
     my @columntypes = (qw[Decal Print Stops Adjust]);
     $count_sheet->write_row( 0, 0, \@columntypes );
@@ -230,7 +228,7 @@ sub decals_of_stop {
 
         next
           if $decals eq $EMPTY_STR
-          and folded_in( $stopid => 'id', 'stop id', 'stopid' );
+          and u::folded_in( $stopid => 'id', 'stop id', 'stopid' );
 
         my ( @decals, @found_decals, @lines );
         @decals = split( /\s+/, $decals );

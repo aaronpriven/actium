@@ -4,10 +4,9 @@ package Actium::O::Crier 0.011;
 # Based on Term::Emit by Steve Roscio
 
 use Actium ('class_nomod');
-
 use Actium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
-
 use Actium::O::Crier::Cry;
+use Scalar::Util;
 
 const my $CRY_CLASS            => 'Actium::O::Crier::Cry';
 const my $FALLBACK_CLOSESTAT   => 'DONE';
@@ -84,7 +83,7 @@ sub _fh_or_scalarref {
     my $class = shift;
     my $arg   = shift;
 
-    return $arg if defined u::openhandle($arg);
+    return $arg if defined Scalar::Util::openhandle($arg);
 
     if ( defined u::reftype($arg) and u::reftype($arg) eq 'SCALAR' ) {
         open( my $fh, '>', \$_[0] );
@@ -406,7 +405,7 @@ sub _push_cry {
     my $cries_r = $self->_cries_r;
 
     push @{$cries_r}, $cry;
-    u::weaken ${$cries_r}[-1];
+    Scalar::Util::weaken( ${$cries_r}[-1] );
 
 }
 

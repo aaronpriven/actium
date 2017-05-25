@@ -5,16 +5,15 @@ package Actium::Sorting::Skeds 0.012;
 use 5.016;
 use warnings;
 
-#use Storable;
-
 use Sub::Exporter -setup => { exports => [qw(skedsort)] };
 # Sub::Exporter ### DEP ###
-use Params::Validate; ### DEP ###
+use Params::Validate;    ### DEP ###
 
 use Actium::Sorting::Line (qw(byline linekeys));
 use Actium::Constants;
 
-use List::Util(qw/min/); ### DEP ###
+use List::Util(qw/min/);    ### DEP ###
+use Params::Validate();     ### DEP ###
 
 my $required_methods
   = [qw( linedir earliest_timenum sortable_id sortable_id_with_timenum )];
@@ -24,7 +23,8 @@ my $required_methods
 
 sub skedsort {
 
-    u::validate_pos( @_, ( ( { can => $required_methods } ) x scalar(@_) ) );
+    Params::Validate::validate_pos( @_,
+        ( ( { can => $required_methods } ) x scalar(@_) ) );
 
     my %earliest_timenum_of;
     my @objs = @_;
@@ -109,8 +109,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -125,8 +125,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -138,6 +138,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
