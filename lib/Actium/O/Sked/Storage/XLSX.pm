@@ -88,7 +88,7 @@ method new_from_xlsx (
 
     return $sked;
 
-} ## tidy end: sub METHOD4
+} ## tidy end: sub METHOD0
 
 func _cell_value ( $sheet!, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
@@ -301,7 +301,7 @@ method add_stop_xlsx_sheet (
 
     return;
 
-} ## tidy end: sub METHOD5
+} ## tidy end: sub METHOD1
 
 method add_place_xlsx_sheet (
           Excel::Writer::XLSX :$workbook! , 
@@ -326,7 +326,7 @@ method add_place_xlsx_sheet (
 }
 
 method xlsx {
-    my $timesub = timestr_sub( XB => 1 );
+    my $timesub = Actium::Time::timestr_sub( XB => 1 );
 
     require Actium::Excel;
 
@@ -342,9 +342,11 @@ method xlsx {
         format   => $stop_text_format,
     );
 
+    $stop_workbook->close;
+
     close $stop_workbook_fh or die "$OS_ERROR";
     return $stop_workbook_stream;
-} ## tidy end: sub METHOD7
+} ## tidy end: sub METHOD3
 
 sub xlsx_layers {':raw'}
 
@@ -382,7 +384,7 @@ method _trip_attribute_columns {
 
     return $trip_attribute_columns;
 
-} ## tidy end: sub METHOD9
+} ## tidy end: sub METHOD5
 
 method _place_columns {
 
