@@ -13,6 +13,7 @@ use Ref::Util (qw/is_plain_hashref is_plain_arrayref/);        ### DEP ###
 use Carp;                                                      ### DEP ###
 use File::Spec;                                                ### DEP ###
 use Const::Fast;                                               ### DEP ###
+use Kavorka ( fun => { -as => 'func' } );                      ### DEP ###
 
 use English '-no_match_vars';
 
@@ -24,8 +25,8 @@ use Sub::Exporter -setup => {
     exports => [
         qw<
           positional          positional_around
-          joinseries          joinseries_ampersand
-          joinseries_or       j
+          joinseries          joinseries_with
+          j
           joinempty           jointab
           joinkey             joinlf
           define              isempty
@@ -135,59 +136,44 @@ sub jointab {
     return join( "\t", map { $_ // $EMPTY_STR } @_ );
 }
 
-=item joinseries
+=item joinseries_with (I<conjunction> , I<item>, I<item>, ...)
 
-This routine takes the list passed to it and joins it together. It adds
-a comma and a space between all the entries except the penultimate and
-last. Between the penultimate and last, adds only the word "and" and a
-space.
+This routine is designed to display a list as it should appear in
+English.
 
-For example
+   Sally and Carlos
+   Fred, Sally and Carlos
+   Mei, Fred, Sally and Carlos
 
- joinseries(qw[Alice Bob Eve Mallory])
- 
-becomes
+The first argument is the conjunction, used to connect the penultimate
+and last items in the list. The remaining arguments are the members of
+the list.
 
- "Alice, Bob, Eve and Mallory"
+   joinseries_with('or' , qw(Sasha Aisha Raj)); 
+   # 'Sasha, Aisha or Raj'
 
 The routine intentionally follows Associated Press style and  omits the
 serial comma.
 
 =cut
 
-sub _joinseries_with_x {
-    my $and    = shift;
-    my @things = @_;
+func joinseries_with (Str $and!, Str @things!) {
     return $things[0] if @things == 1;
     return "$things[0] $and $things[1]" if @things == 2;
     my $final = pop @things;
     return ( join( q{, }, @things ) . " $and $final" );
 }
 
-sub joinseries {
-    croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries'
-      unless @_;
-    return _joinseries_with_x( 'and', @_ );
-}
+=item joinseries (I<list>)
 
-=item joinseries_ampersand
-
-=item joinseries_or
-
-Just like I<joinseries>, but uses "&" or "or" instead of "and".
+The same as C< joinseries_with('and', ...)>;
 
 =cut
 
-sub joinseries_or {
-    croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries_or'
+sub joinseries {
+    croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries'
       unless @_;
-    return _joinseries_with_x( 'or', @_ );
-}
-
-sub joinseries_ampersand {
-    croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries_ampersand'
-      unless @_;
-    return _joinseries_with_x( '&', @_ );
+    return joinseries_with( 'and', @_ );
 }
 
 =back
@@ -389,9 +375,9 @@ sub halves {
 
 =item hashref
 
-Returns true if there is only one argument and it is a plain hashref.
-Useful in accepting either a hashref or a plain hash as arguments to a
-function.
+Returns its argument if there is only one argument and it is a plain
+hashref. Otherwise creates a hash from its arguments. Useful in
+accepting either a hashref or a plain hash as arguments to a function.
 
 =cut
 

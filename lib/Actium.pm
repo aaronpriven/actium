@@ -15,25 +15,30 @@ BEGIN {
 
 use Actium::Constants;
 use Actium::Sorting::Line(qw/byline sortbyline/);
-use Actium::Util(':all');
-use Carp qw(:DEFAULT cluck longmess shortmess);
+use Actium::Util(
+    qw(add_before_extension define dumpstr feq file_ext filename
+      flatten folded_in immut in
+      joinempty joinkey joinlf joinseries joinseries_with jointab
+      u_columns u_wrap)
+);
+use Carp;           ### DEP ###
 use Const::Fast;    ### DEP ###
-use HTML::Entities (qw[encode_entities decode_entities]);    ### DEP ###
-use Import::Into;                                            ### DEP ###
-use List::AllUtils  (':all');                                ### DEP ###
-use Module::Runtime (qw(require_module));                    ### DEP ###
-use POSIX           (qw/ceil floor/);
-use Params::Validate;                                        ### DEP ###
-use Ref::Util (':all');                                      ### DEP ###
-use Text::Trim;                                              ### DEP ###
-
-BEGIN {
-    # modules with no 'all' tag
-    require Scalar::Util;
-    Scalar::Util::->import(@Scalar::Util::EXPORT_OK);
-    require Hash::Util;
-    Hash::Util::->import(@Hash::Util::EXPORT_OK);
-}
+use HTML::Entities (qw[encode_entities]);    ### DEP ###
+use Import::Into;                            ### DEP ###
+use List::Util (qw(all any first max min none sum uniq));    ### DEP ###
+use List::MoreUtils                                          ### DEP ###
+  (qw(firstidx mesh natatime));
+# List::MoreUtils::XS  ### DEP ###
+use Module::Runtime  (qw(require_module));                   ### DEP ###
+use POSIX            (qw/ceil floor/);                       ### DEP ###
+use Params::Validate (qw(validate));                         ### DEP ###
+use Ref::Util                                                ### DEP ###
+  ( qw( is_arrayref is_blessed_ref is_coderef is_hashref
+      is_ioref is_plain_arrayref is_plain_hashref is_ref)
+  );
+use Scalar::Util                                             ### DEP ###
+  (qw( blessed looks_like_number refaddr reftype ));
+use Text::Trim('trim');                                      ### DEP ###
 
 {
 

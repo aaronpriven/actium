@@ -164,7 +164,7 @@ sub START {
 
             if ( 1 == scalar keys %tts_of_quantity ) {
                 print $textfh "$each of these timetables: ";
-                print $textfh u::joinseries_ampersand(@timetables), " ";
+                print $textfh u::joinseries_with( '&', @timetables ), " ";
             }
             else {
 
@@ -176,7 +176,7 @@ sub START {
                     print $textfh "$quantity each of ";
                     my @thesetts = @{ $tts_of_quantity{$quantity} };
 
-                    print $textfh u::joinseries_ampersand(@thesetts), ". ";
+                    print $textfh u::joinseries_with( '&', @thesetts ), ". ";
 
                 }
 

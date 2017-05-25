@@ -369,7 +369,7 @@ sub _kml_stop_description {
         $connections_text
           = "<br>\n"
           . "<u>Connections:</u> "
-          . u::joinseries_ampersand(@connections);
+          . u::joinseries_with( '&', @connections );
     }
 
     my $text

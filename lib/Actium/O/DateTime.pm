@@ -7,10 +7,10 @@ package Actium::O::DateTime 0.014;
 # constructor names and the like
 
 use Actium;
+use Actium::Util;
 
 use parent 'DateTime';
 # DateTime ### DEP ###
-
 use overload q{""} => '_stringify';
 
 sub _stringify {
@@ -41,9 +41,10 @@ sub new {
 
     my %args = @_;
 
-    my @exclusive_args         = (qw[datetime strp cldr]);
-    my $exclusive_args_display = u::joinseries_or(@exclusive_args);
-    my $exclusive_argcount     = scalar( @args{@exclusive_args} ) // 0;
+    my @exclusive_args = (qw[datetime strp cldr]);
+    my $exclusive_args_display
+      = Actium::Util::joinseries_with( 'or', @exclusive_args );
+    my $exclusive_argcount = scalar( @args{@exclusive_args} ) // 0;
 
     croak
       "Can't specify more than one of ($exclusive_args_display) to $CONSTRUCTOR"

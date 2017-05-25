@@ -5,7 +5,7 @@ package Actium::O::Files::ActiumDB 0.013;
 # thorugh ODBC.
 
 use Actium ('class_nomod');
-use Actium::Sorting::Line('sortbyline');
+use Hash::Util();
 
 const my $KEYFIELD_TABLE          => 'FMTableKeys';
 const my $KEY_OF_KEYFIELD_TABLE   => 'FMTableKey';
@@ -113,7 +113,7 @@ sub _build_table_cache {
         }
     );
 
-    u::lock_hashref_recurse($cache_r);
+    Hash::Util::lock_hashref_recurse($cache_r);
     return $cache_r;
 }
 
@@ -678,7 +678,7 @@ sub _build_lines_of_linegrouptype {
     foreach my $linegrouptype ( keys %lines_of_linegrouptype ) {
 
         $lines_of_linegrouptype{$linegrouptype}
-          = [ sortbyline @{ $lines_of_linegrouptype{$linegrouptype} } ];
+          = [ u::sortbyline @{ $lines_of_linegrouptype{$linegrouptype} } ];
 
     }
 
@@ -817,7 +817,7 @@ sub descrips_of_transithubs_indesign {
         my @descrip_texts;
         my @lines_of_hub;
 
-        foreach my $line ( sortbyline keys %descrip_of ) {
+        foreach my $line ( u::sortbyline keys %descrip_of ) {
             push @lines_of_hub, $line;
             my $descrip = $descrip_of{$line};
 
@@ -876,7 +876,7 @@ sub lines_at_transit_hubs_html {
 
         foreach my $hub ( sort $self->_transithubs_of_city($city) ) {
 
-            my @lines = sortbyline( $self->_lines_of_transithub($hub) );
+            my @lines = u::sortbyline( $self->_lines_of_transithub($hub) );
 
             next unless @lines;
 
