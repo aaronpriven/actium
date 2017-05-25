@@ -254,7 +254,8 @@ sub clone {
     my $self  = shift;
     my $class = blessed $self;
 
-    my %init_args = u::hashref(@_)->%*;
+    #my %init_args = u::hashref(@_)->%*;
+    my %init_args = @_ == 1 ? @_ : $_[0]->%*;
 
     foreach my $attribute ( $class->meta->get_all_attributes ) {
 

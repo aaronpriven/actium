@@ -24,7 +24,7 @@ sub new_workbook {
 
     my $workbook = Excel::Writer::XLSX->new($fh_or_fname);
     if ( not defined $workbook ) {
-        if ( u::is_io_ref($fh_or_fname) ) {
+        if ( u::is_ioref($fh_or_fname) ) {
             croak "Couldn't create workbook";
         }
         else {

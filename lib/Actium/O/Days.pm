@@ -5,6 +5,7 @@ use 5.022;
 use warnings;    ### DEP ###
 
 use Actium ('class_nomod');
+use Actium::Util;
 
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -34,7 +35,7 @@ const my @SEVENDAYABBREVS => map { substr( $_, 0, 3 ) } @SEVENDAYNAMES;
 ###################################
 
 around BUILDARGS => sub {
-    return u::positional_around( \@_, 'daycode', 'schooldaycode' );
+    return Actium::Util::positional_around( \@_, 'daycode', 'schooldaycode' );
 };
 
 has 'daycode' => (

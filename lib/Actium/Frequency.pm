@@ -4,6 +4,7 @@ use Actium;
 use Actium::O::2DArray;
 use Actium::O::Time;
 use Math::Round('nearest');    ### DEP ###
+use List::MoreUtils();         ### DEP ###
 
 my $earliest = Actium::O::Time->from_str('NOON_YESTERDAY')->timenum;
 my $latest   = Actium::O::Time->from_str('NOON_TOMORROW')->timenum;
@@ -79,7 +80,8 @@ sub frequency {
     my $freq_display
       = Actium::O::2DArray::->new(@diff_displays)->tabulated('  ');
 
-    my ( $lowest, $highest ) = u::minmax( keys %diff_psych_culled );
+    my ( $lowest, $highest )
+      = List::MoreUtils::minmax( keys %diff_psych_culled );
     my $freq = ( $lowest == $highest ) ? $lowest : "$lowest-$highest";
     return ( $freq_display, $freq );
 
