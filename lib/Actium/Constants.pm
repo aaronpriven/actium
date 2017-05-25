@@ -16,40 +16,16 @@ BEGIN {
     %constants = (
         EMPTY_STR     => \q{},
         EMPTY         => \q{},
-        CR            => \"\cM",
-        LF            => \"\cJ",
-        TAB           => \"\t",
         CRLF          => \qq{\cM\cJ},
         SPACE         => \q{ },
-        DQUOTE        => \q{"},
-        VERTICALTAB   => \qq{\cK},
         MINS_IN_12HRS => \( 12 * 60 ),
 
         # FileMaker uses this separator for repeating fields, so I do too
         KEY_SEPARATOR => \"\c]",
 
-        LINES_TO_COMBINE => {
-            '72M' => '72',
-            '386' => '86',
-            'NC'  => 'NX4',
-            'NXC' => 'NX4',
-            'LC'  => 'L',
-        },
-
-        SCHEDULE_DAYS => [qw/WD SA SU WA WU WE DA/],
-        # Weekdays, Saturdays, Sundays, Weekdays-and-Saturdays,
-        # Weekdays-and-Sundays, Weekends, Daily
-
         DIRCODES => [qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B )],
         #                0  1  3  2  4  5  6  7  8  9  10 11 12 13 14 15
-        LOOP_DIRECTIONS     => [qw( CW CC A B )],
-        TRANSBAY_NOLOCALS   => [qw/FS L NX NX1 NX2 NX3 U W/],
-        LINES_TO_BE_SKIPPED => [399],
-
-        SIDE_OF => {
-            ( map { $_ => 'E' } ( 0 .. 13, qw/15 16 17 20 21 23 98 99/ ) ),
-            ( map { $_ => 'W' } (qw/14 18 19 22 24 25 26 97/) ),
-        },
+        TRANSBAY_NOLOCALS => [qw/FS L NX NX1 NX2 NX3 U W/],
 
         HASTUS_CITY_OF => {
             "01" => "Alameda",
@@ -104,12 +80,6 @@ BEGIN {
     foreach ( 1 .. 9 ) {
         $constants{HASTUS_CITY_OF}{$_} = $constants{HASTUS_CITY_OF}{"0$_"};
     }    # add single-digit versions as well
-
-    $constants{IS_A_LOOP_DIRECTION}{$_} = 1
-      foreach @{ $constants{LOOP_DIRECTIONS} };
-
-    $constants{LINE_SHOULD_BE_SKIPPED}{$_} = 1
-      foreach @{ $constants{LINES_TO_BE_SKIPPED} };
 
     $constants{HASTUS_DIRS}
       = [ 0, 1, 3, 2, 4 .. scalar @{ $constants{DIRCODES} } ];
@@ -204,33 +174,13 @@ the fully-qualified form, e.g.,  $Actium::Constants::CRLF .
 
 The empty string.
 
-=item $CR
-
-A carriage return.
-
-=item $LF
-
-A line feed.
-
 =item $CRLF
 
 A carriage return followed by a line feed ("\r\n").
 
-=item $TAB
-
-A tab.
-
 =item $SPACE
 
 A space.
-
-=item $DQUOTE
-
-A double quote (useful for interpolation).
-
-=item $VERTICALTAB
-
-A vertical tab, used to separate multiline fields in FileMaker.
 
 =item $KEY_SEPARATOR
 
@@ -246,31 +196,6 @@ L<perlvar/$;>].)
 
 The number of minutes in 12 hours (12 times 60, or 720).
 
-=item %LINES_TO_COMBINE
-
-This contains a hard-wired hash of lines. Each key is a line that
-should be consolidated with another line on its schedule: for example,
-59A should appear with 59, and 72M should appear with 72. It is not
-possible to simply assume that a line should appear with all its
-subsidiary lines since some lines do not fit this pattern (386 and 83
-go on 86 while 72R does not go on 72).
-
-This is not the right place to store this information;  it should be
-moved to a user-accessible database.
-
-=item @SCHEDULE_DAYS
-
-This is a list of valid schedule day codes. Each set of schedules is
-either the set of schedules for weekdays (WD), Saturdays (SA), or
-Sundays (SU). Sometimes these can be combined, so we have combinations:
-weekends (WE), and every day (DA). For completeness we also have
-weekdays and Saturdays (WA) and weekdays and Sundays (WU), although
-usage is expected to be extremely rare.
-
-These originate from the old transitinfo.org web site, which many years
-ago helped parse the schedules. That went away a long time ago, but the
-codes live on.
-
 =item @DIRCODES
 
 Direction codes (northbound, southbound, etc.)  The original few were
@@ -282,34 +207,10 @@ kinds of directions that didn't exist back then.
 Numeric directions from Hastus, in the same order as @DIRCODES (so
 @DIRCODES[5] is the same direction as @HASTUS_DIRS[5]).
 
-=item @LOOP_DIRECTIONS
-
-=item %IS_A_LOOP_DIRECTION
-
-Those directions that are loops: counterclockwise and clockwise, and A
-and B. The hash version just allows an easy "is this a loop direction"
-lookup.
-
 =item @TRANSBAY_NOLOCALS
 
 Transbay lines where local riding is prohibited. This should be moved 
 to a database.
-
-=item @LINES_TO_BE_SKIPPED
-
-=item %LINE_SHOULD_BE_SKIPPED
-
-Lines that should not be used at all. This should be moved to a
-database.  The hash version just allows an easy "should this line be
-skipped" lookup.
-
-=item %SIDE_OF
-
-Of city codes, "E" if it's in the East Bay, "W" for the West Bay. Used
-for  determining whether "Transbay Passengers Only" needs to be  put on
-flags, among other things. Should be replaced with the "Side" value in 
-the "Cities" table in the Actium database. (Perhaps should even be
-replaced  by a more general fare-zone value associated with stops...)
 
 =item @HASTUS_CITY_OF
 
@@ -328,10 +229,6 @@ See L<Params::Validate|Params::Validate> for details on the values and
 their  meanings.
 
 =back
-
-=head1 BUGS AND LIMITATIONS
-
-See L</%LINES_TO_COMBINE>.
 
 =head1 AUTHOR
 
