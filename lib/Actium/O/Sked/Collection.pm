@@ -221,7 +221,7 @@ method output_skeds_all ( :$signup!  , :$subfolder_name = 's') {
     Actium::O::Sked->write_prehistorics( $skeds_r,
         $skeds_folder->subfolder('prehistoric') );
 
-} ## tidy end: sub METHOD1
+} ## tidy end: sub METHOD0
 
 method output_skeds_xlsx (:$skeds_folder!) {
 
@@ -248,7 +248,10 @@ method output_skeds_xlsx (:$skeds_folder!) {
 
         foreach my $sked ( $self->skeds_of_lg($linegroup) ) {
 #            $sked->add_stop_xlsx_sheet( workbook => $stop_workbook, format => $stop_text_format );
-            $sked->add_place_xlsx_sheet( $place_workbook, $place_text_format );
+            $sked->add_place_xlsx_sheet(
+                workbook => $place_workbook,
+                format   => $place_text_format
+            );
         }
 
         #        $stop_workbook->close;
@@ -256,12 +259,12 @@ method output_skeds_xlsx (:$skeds_folder!) {
 
     } ## tidy end: foreach my $linegroup (@linegroups)
 
-    $cry->over($EMPTY_STR);
+    $cry->over($EMPTY);
     $cry->done;
 
     return;
 
-} ## tidy end: sub METHOD2
+} ## tidy end: sub METHOD1
 
 u::immut;
 
