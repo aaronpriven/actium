@@ -11,6 +11,8 @@ use Actium::Types qw<DirCode>;
 # if you supply this with "1", it's going to think you mean Hastus AVL "1"
 # (i.e., "SB") instead of "D1".
 
+const my %IS_A_LOOP_DIRECTION => ( CW => 1, CC => 1, A => 1, B => 1 );
+
 const my %DIRCODE_OF => (
     ( map { lc($_) => $_ } @DIRCODES ),
     ( map { $HASTUS_DIRS[$_], $DIRCODES[ $HASTUS_DIRS[$_] ] } 0 .. $#DIRCODES ),

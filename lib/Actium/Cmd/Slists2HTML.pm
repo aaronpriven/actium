@@ -15,6 +15,8 @@ my %order_of = map { $_ => $count++ } @DIRCODES;
 
 const my $HIGHEST_LINE_IN_FIRST_LOCALPAGE => 70;
 
+const my %LINE_SHOULD_BE_SKIPPED => ( 399 => 1 );
+
 const my %LONGCORNER_OF => (
     # taken from Wikipedia... all of them except the eight principal ones
     # are just for fun
