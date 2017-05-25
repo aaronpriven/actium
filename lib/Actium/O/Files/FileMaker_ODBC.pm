@@ -2,7 +2,7 @@ package Actium::O::Files::FileMaker_ODBC 0.012;
 
 # Role for reading and processing FileMaker Pro databases via ODBC
 
-use Actium ('role_nomod');
+use Actium ('role');
 
 use Params::Validate(':all');    ### DEP ###
 
@@ -353,9 +353,12 @@ sub all_in_columns_key {
 
 sub DEMOLISH { }
 
-before DEMOLISH => sub {
-    my $self = shift;
-    return unless $self->has_connected;
+#before DEMOLISH => sub {
+#   my $self = shift;
+
+before DEMOLISH {
+    return
+      unless $self->has_connected;
     my $dbh = $self->dbh;
     return unless $dbh;
     $dbh->disconnect();
