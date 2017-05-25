@@ -11,6 +11,43 @@ use Lingua::EN::Titlecase::Simple('titlecase');    ### DEP ###
 const my $CALC_PREFIX => 'i_';
 const my $ORIG_PREFIX => 'h_';
 
+my %HASTUS_CITY_OF = (
+    "01" => "Alameda",
+    "02" => "Albany",
+    "03" => "Berkeley",
+    "04" => "Castro Valley",
+    "05" => "El Cerrito",
+    "06" => "Emeryville",
+    "07" => "Fremont",
+    "08" => "Hayward",
+    "09" => "Newark",
+    "10" => "Oakland",
+    "11" => "Piedmont",
+    "12" => "Pinole",
+    "13" => "Richmond",
+    "14" => "San Francisco",
+    "15" => "San Leandro",
+    "16" => "San Pablo",
+    "17" => "Union City",
+    "18" => "Foster City",
+    "19" => "San Mateo",
+    "20" => "San Lorenzo",
+    "21" => "Orinda",
+    "22" => "Palo Alto",
+    "23" => "Milpitas",
+    "24" => "Menlo Park",
+    "25" => "Redwood City",
+    "26" => "East Palo Alto",
+    "97" => "Santa Clara County",
+    "98" => "Alameda County",
+    "99" => "Contra Costa County",
+
+);
+
+foreach ( 1 .. 9 ) {
+    $HASTUS_CITY_OF{$_} = $HASTUS_CITY_OF{"0$_"};
+}    # add single-digit versions as well
+
 sub hastus_places_import {
 
     my $cry = cry('Calculating fields derived from Hastus place data');
