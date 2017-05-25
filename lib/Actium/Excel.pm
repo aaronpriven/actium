@@ -2,6 +2,7 @@ package Actium::Excel 0.013;
 
 use Actium;
 
+use Ref::Util;
 use Excel::Writer::XLSX 0.95;               ## DEP ##
 use Excel::Writer::XLSX::Worksheet 0.95;    ## DEP ##
 
@@ -71,13 +72,19 @@ sub actium_write_row_string {
     }
 
     # Catch non array refs passed by user.
-    if ( ref $_[2] ne 'ARRAY' ) {
-        croak "Not an array ref in call to actium_write_row_string()$!";
+
+    my $row    = shift;
+    my $col    = shift;
+    my $tokens = shift;
+
+    if ( Ref::Util::is_blessed_arrayref($tokens) and $tokens->can('unblessed') )
+    {
+        $tokens = $tokens->unblessed;
+    }
+    elsif ( not u::is_arrayref($tokens) ) {
+        croak "Not an array ref in call to actium_write_row_string()";
     }
 
-    my $row     = shift;
-    my $col     = shift;
-    my $tokens  = shift;
     my @options = @_;
     my $error   = 0;
     my $ret;
@@ -85,7 +92,7 @@ sub actium_write_row_string {
     for my $token (@$tokens) {
 
         # Check for nested arrays
-        if ( ref $token eq "ARRAY" ) {
+        if ( u::is_arrayref($token) ) {
             $ret
               = $self->actium_write_col_string( $row, $col, $token, @options );
         }
@@ -123,14 +130,19 @@ sub actium_write_col_string {
         @_ = $self->_substitute_cellref(@_);
     }
 
+    my $row    = shift;
+    my $col    = shift;
+    my $tokens = shift;
+
     # Catch non array refs passed by user.
-    if ( ref $_[2] ne 'ARRAY' ) {
+    if ( Ref::Util::is_blessed_arrayref($tokens) and $tokens->can('unblessed') )
+    {
+        $tokens = $tokens->unblessed;
+    }
+    elsif ( not is_arrayref($tokens) ) {
         croak "Not an array ref in call to actium_write_col_string()$!";
     }
 
-    my $row     = shift;
-    my $col     = shift;
-    my $tokens  = shift;
     my @options = @_;
     my $error   = 0;
     my $ret;
@@ -138,7 +150,7 @@ sub actium_write_col_string {
     for my $token (@$tokens) {
 
         # Check for nested arrays
-        if ( ref $token eq "ARRAY" ) {
+        if ( u::is_arrayref($token) ) {
             $ret
               = $self->actium_write_row_string( $row, $col, $token, @options );
         }
