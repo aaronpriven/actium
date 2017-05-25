@@ -142,6 +142,16 @@ sub _sked_trip_collections {
 
             my @times = map { $_->timenum } $trip->stoptimes;
 
+            # combine xhea's vehicle group and vehicle type into
+            # one field. (Currently only vehicle group is used)
+
+            my @vehicle_info = grep { $_ or $_ eq '0' }
+              ( $trip->vehicle_group, $trip->vehicle_type );
+
+            my $vehicletype;
+            $vehicletype = join( ":", @vehicle_info )
+              if @vehicle_info;
+
             push @skedtrips,
               Actium::O::Sked::Trip->new(
                 blockid        => $trip->block_id,
@@ -149,7 +159,7 @@ sub _sked_trip_collections {
                 daysexceptions => $trip->event_and_status,
                 vehicledisplay => $pattern->vdc,
                 via            => $pattern->via,
-                vehicletype    => $trip->vehicle_type,
+                vehicletype    => $vehicletype,
                 line           => $pattern->line,
                 internal_num   => $trip->int_number,
                 type           => $trip->schedule_daytype,
@@ -169,7 +179,6 @@ sub _sked_trip_collections {
 } ## tidy end: sub _sked_trip_collections
 
 my $stop_tiebreaker = sub {
-
     # tiebreaks by using the average rank of the timepoints involved.
 
     my @lists = @_;
