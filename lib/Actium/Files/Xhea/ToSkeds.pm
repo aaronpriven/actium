@@ -106,7 +106,10 @@ sub xhea2skeds {
 
     $skedscry->done;
 
-    $skedcollection->output_skeds_all( signup => $signup, subfolder => 'raw' );
+    $skedcollection->output_skeds_all(
+        signup         => $signup,
+        subfolder_name => 'raw'
+    );
 
     $xhea2skedscry->done;
 
