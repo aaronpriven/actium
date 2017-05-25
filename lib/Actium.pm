@@ -44,8 +44,17 @@ use Text::Trim('trim');                                      ### DEP ###
 
     my $caller;
 
-    sub do_import;
-    sub do_unimport;
+    sub do_import {
+        my $module = shift;
+        require_module($module);
+        $module->import::into( $caller, @_ );
+    }
+
+    sub do_unimport {
+        my $module = shift;
+        require_module($module);
+        $module->unimport::out_of( $caller, @_ );
+    }
 
     sub import {
         my $class = shift;
@@ -91,18 +100,6 @@ use Text::Trim('trim');                                      ### DEP ###
           'experimental::postderef';
 
     } ## tidy end: sub import
-
-    sub do_import {
-        my $module = shift;
-        require_module($module);
-        $module->import::into( $caller, @_ );
-    }
-
-    sub do_unimport {
-        my $module = shift;
-        require_module($module);
-        $module->unimport::out_of( $caller, @_ );
-    }
 
 }
 
