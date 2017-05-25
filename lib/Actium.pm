@@ -35,20 +35,6 @@ BEGIN {
     Hash::Util::->import(@Hash::Util::EXPORT_OK);
 }
 
-my %KAVORKA_OF = (
-    proc        => [ fun => { -as => 'func' } ],
-    class       => [ fun => { -as => 'func' }, qw/method -allmodifiers/ ],
-    role        => [ fun => { -as => 'func' }, qw/method -allmodifiers/ ],
-    class_nomod => [ fun => { -as => 'func' }, 'method' ],
-    role_nomod  => [ fun => { -as => 'func' }, 'method' ],
-);
-# Kavorka croaks if this is made with Const::Fast
-
-# The reason for importing 'fun' as 'func' is twofold:
-# 1) Eclipse supports Method::Signatures keywords ("func" and "method")
-# 2) I think it looks weird to have the abbreviation for one word
-#    be another word
-
 {
 
     my $caller;
@@ -58,22 +44,22 @@ my %KAVORKA_OF = (
 
     sub import {
         my $class = shift;
-        my $type = shift || 'proc';
-
-        croak "Unknown module type $type"
-          unless exists $KAVORKA_OF{$type};
-
+        my $type = shift || q{};
         $caller = caller;
 
         if ($type) {
             if ( $type eq 'class' or $type eq 'class_nomod' ) {
                 do_import 'Moose';
             }
-            elsif ( $type eq 'role' or $type eq 'role_nomod' ) {
+            elsif ( $type eq 'role' ) {
                 do_import 'Moose::Role';
+            }
+            else {
+                croak "Unknown module type $type";
             }
 
             # either class or role
+
             do_import 'MooseX::MarkAsMethods', autoclean => 1;
             do_import 'MooseX::StrictConstructor';
             do_import 'MooseX::SemiAffordanceAccessor';
@@ -81,7 +67,7 @@ my %KAVORKA_OF = (
             do_import 'MooseX::MungeHas';
         }
 
-        do_import 'Kavorka', $KAVORKA_OF{$type}->@*;
+        do_import 'Kavorka', kavorka_args($type);
 
         do_import 'Actium::Constants';
         do_import 'Actium::Crier', qw/cry last_cry/;
@@ -114,6 +100,23 @@ my %KAVORKA_OF = (
     }
 
 }
+
+sub kavorka_args {
+    my $type = shift;
+    my @args;
+    if ( $type eq 'class' or $type eq 'role' ) {
+        @args = qw/method -allmodifiers/;
+    }
+    elsif ( $type eq 'class_nomod' ) {
+        @args = qw/method/;
+    }
+    return ( fun => { -as => 'func' }, @args );
+}
+
+# The reason for importing 'fun' as 'func' is twofold:
+# 1) Eclipse supports Method::Signatures keywords ("func" and "method")
+# 2) I think it looks weird to have the abbreviation for one word
+#    be another word
 
 1;
 
