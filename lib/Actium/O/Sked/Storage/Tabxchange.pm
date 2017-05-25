@@ -1,9 +1,9 @@
 package Actium::O::Sked::Storage::Tabxchange 0.013;
 
-use Actium ('role_nomod');
+use Actium ('role');
 
-const my $LAST_LINE_IN_FIRST_LOCAL_LIST = 70;
-# arbitrary choice, but it should be always the same or links will break
+const my $LAST_LINE_IN_FIRST_LOCAL_LIST => 70;
+# arbitrary choice, but it must always be the same or links will break
 
 method tabxchange ( 
        :destinationcode($dc)! , 
@@ -394,7 +394,7 @@ method tabxchange (
 
     return $aoa->tsv . $placetimes_aoa->tsv;
 
-} ## tidy end: sub METHOD3
+} ## tidy end: sub METHOD0
 
 1;
 
