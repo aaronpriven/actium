@@ -1,4 +1,4 @@
-package Actium::MooseX::DefaultMethodNames 0.013;
+package Actium::MooseX::DefaultMethodNames 0.014;
 
 use strict;
 use warnings;
@@ -38,10 +38,9 @@ before '_process_options' => sub {
     my $name    = shift;
     my $options = shift;
 
-    my $suffix = $name;
-    if ( $suffix !~ /\A_/ ) {
-        $suffix = '_' . $suffix;
-    }
+    my $private_attr = ( $name =~ /\A_/ );
+
+    my $suffix = ( $private_attr ? q{_} : q{} ) . $name;
 
     foreach my $option (qw/trigger builder/) {
         if ( exists $options->{$option}
@@ -54,7 +53,7 @@ before '_process_options' => sub {
     foreach my $option (qw/predicate clearer/) {
         if ( exists $options->{$option} ) {
             if ( $options->{$option} eq '_'
-                or ( 1 == $options->{$option} and $name =~ /\A_/ ) )
+                or ( $private_attr and 1 == $options->{$option} ) )
             {
                 $options->{$option} = '_' . $prefix{$option} . $suffix;
             }
