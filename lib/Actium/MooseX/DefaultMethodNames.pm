@@ -19,7 +19,7 @@ my %metaroles = (
 
 Moose::Exporter->setup_import_methods(%metaroles);
 
-package Actium::MooseX::DefaultMethodNames::Role::Attribute 0.013;
+package Actium::MooseX::DefaultMethodNames::Role::Attribute 0.014;
 
 use Moose::Role;
 
@@ -44,7 +44,7 @@ before '_process_options' => sub {
 
     foreach my $option (qw/trigger builder/) {
         if ( exists $options->{$option}
-            and ( '_' eq $options->{$option} or 1 == $options->{$option} ) )
+            and ( '_' eq $options->{$option} or 1 eq $options->{$option} ) )
         {
             $options->{$option} = '_' . $prefix{$option} . $suffix;
         }
@@ -53,11 +53,11 @@ before '_process_options' => sub {
     foreach my $option (qw/predicate clearer/) {
         if ( exists $options->{$option} ) {
             if ( $options->{$option} eq '_'
-                or ( $private_attr and 1 == $options->{$option} ) )
+                or ( $private_attr and 1 eq $options->{$option} ) )
             {
                 $options->{$option} = '_' . $prefix{$option} . $suffix;
             }
-            elsif ( 1 == $options->{$option} ) {
+            elsif ( 1 eq $options->{$option} ) {
                 $options->{$option} = $prefix{$option} . $suffix;
             }
         }
