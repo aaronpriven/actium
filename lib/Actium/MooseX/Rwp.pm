@@ -32,12 +32,13 @@ before '_process_options' => sub {
         }
         if ( not exists $options->{writer} ) {
 
-            my $prefix = '_set';
-            if ( $name !~ s/\A_// ) {
-                $prefix .= '_';
+            if ( $name =~ s/\A_// ) {
+                $options->{writer} = "_set$name";
+            }
+            else {
+                $options->{writer} = "_set_$name";
             }
 
-            $options->{writer} = $prefix . $name;
         }
         delete $options->{is};
     }
