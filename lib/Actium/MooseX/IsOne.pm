@@ -24,20 +24,6 @@ use Moose::Role;
 # trigger and build are always private, since they should not be called
 # outside the class, but predicate and clearer could be public, or not
 
-my %prefix_of_one = {
-    trigger   => '_trigger',
-    builder   => '_build',
-    predicate => 'has',
-    clearer   => 'clear',
-};
-
-my %prefix_of_underscore = {
-    trigger   => '_trigger',
-    builder   => '_build',
-    predicate => 'has',
-    clearer   => 'clear',
-};
-
 before '_process_options' => sub {
     my $class   = shift;
     my $name    = shift;
@@ -48,14 +34,21 @@ before '_process_options' => sub {
         $suffix = '_' . $suffix;
     }
 
-    foreach my $option (qw/trigger builder predicate clearer/) {
+    foreach my $option (qw/trigger builder/) {
+        if ( exists $options->{$option}
+            and ( $options->{$option} eq '_' or $options->{$option} == 1 ) )
+        {
+            $options->{$option} = "_$option$suffix";
+        }
+    }
 
+    foreach my $option (qw/predicate clearer/) {
         if ( exists $options->{$option} ) {
             if ( $options->{$option} eq '_' ) {
-                $options->{$option} = $prefix_of_underscore{$option} . $suffix;
+                $options->{$option} = "_$option$suffix";
             }
             elsif ( $options->{$option} == 1 ) {
-                $options->{$option} = $prefix_of_one{$option} . $suffix;
+                $options->{$option} = "$option$suffix";
             }
         }
 
