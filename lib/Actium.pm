@@ -76,8 +76,9 @@ use Text::Trim('trim');                                      ### DEP ###
 
             do_import 'MooseX::MarkAsMethods', autoclean => 1;
             do_import 'Actium::MooseX::IsCodeRef';
-            do_import 'Actium::MooseX::IsOne';
+            do_import 'Actium::MooseX::DefaultMethodNames';
             do_import 'Actium::MooseX::Rwp';
+            do_import 'Actium::MooseX::BuiltIsRo';
             do_import 'MooseX::StrictConstructor';
             do_import 'MooseX::SemiAffordanceAccessor';
             do_import 'Moose::Util::TypeConstraints';
