@@ -1,4 +1,4 @@
-package Actum::MooseX::Rwp 0.013;
+package Actium::MooseX::Rwp 0.013;
 
 use strict;
 use warnings;
@@ -54,55 +54,76 @@ __END__
 
 =head1 NAME
 
-<name> - <brief description>
+Actium::MooseX::Rwp - implements "has x => ( is => 'rwp' )"
 
 =head1 VERSION
 
-This documentation refers to version 0.003
+This documentation refers to version 0.014
 
 =head1 SYNOPSIS
 
- use <name>;
- # do something with <name>
-   
+ use Moose;
+ use Actium::MooseX::Rwp;
+ 
+ has attribute => (
+    is => 'rwp',
+ );
+ 
+ # is as though you wrote
+ 
+ has attribute => (
+    reader => 'attribute',
+    writer => '_set_attribute',
+    );
+ 
 =head1 DESCRIPTION
 
-A full description of the module and its features.
+Actium::MooseX::IsCodeRef implements the "rwp" shortcut in Moose,
+allowing attributes with private writers but public readers.
 
-=head1 SUBROUTINES or METHODS (pick one)
+=head1 OPTIONS TO 'HAS'
 
 =over
 
-=item B<subroutine()>
+=item C<is => 'rwp'>
 
-Description of subroutine.
+This will install a reader in your class with the name of the
+attribute, and a writer in your class with the name of your attribute
+preceded by "_set_". So, for an attribute called "name", the reader
+would be "name" and the writer would be "_set_name".
+
+If the name begins with an underscore, a second underscore will not be
+added after "set", so for example "_attribute" would have a writer
+called "_set_attribute" and not "_set__attribute".
+
+So this will break if there are two attributes whose names differ only
+by an initial underscore. Don't do that. But in any case, it would
+usually make more sense to use MooseX::SemiAffordanceAccessor and
+express that as just plain "is => 'rw'".
 
 =back
 
-=head1 DIAGNOSTICS
-
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties that
-can be se. These descriptions must also include details of any
-configuration language used.
-
 =head1 DEPENDENCIES
 
-List its dependencies.
+=over 
+
+=item *
+
+Moose 1.99 or higher
+
+=back
 
 =head1 ACKNOWLEDGEMENTS
 
 This module is an adaptaion of Dave Rolsky's
 MooseX::SemiAffordanceAccessor.
+
+=head1 SEE ALSO
+
+MooseX::MungeHas, MooseX::AttributeShortcuts. These are more
+complicated modules that do a lot of things in a single role. I have
+preferred simple roles that do just one or two things without
+interfering with other roles.
 
 =head1 AUTHOR
 
