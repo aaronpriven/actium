@@ -1,27 +1,30 @@
 package Actium::Cmd::Scratch 0.012;
 
 use Actium;
+use Actium::O::Sked::Collection;
 
-use Actium::O::2DArray;
+sub OPTIONS { return 'actiumdb' }
 
 sub START {
 
-    my $obj = Actium::O::2DArray::->new_from_xlsx(
-        '/Users/apriven/Desktop/flex_stops_2017-03-26.xlsx');
+    my ( $class, $env ) = @_;
 
-    $obj->trim;
-    $obj->apply(
-        sub {
-            my @words = split;
-            $_ = join( ' ', u::sortbyline(@words) );
-        }
+    my $actiumdb    = $env->actiumdb;
+    my $xlsx_folder = Actium::O::Folder->new(
+        '/Users/Shared/Dropbox (AC_PubInfSys)/signups/su17/raw/xlsx_s');
+    my $test_folder = Actium::O::Folder->new(
+        '/Users/Shared/Dropbox (AC_PubInfSys)/signups/su17/test/dump');
+
+    my $collection = Actium::O::Sked::Collection->load_xlsx(
+        actiumdb    => $actiumdb,
+        xlsx_folder => $xlsx_folder,
     );
 
-    say $obj->tabulated;
-    $obj->xlsx(
-        output_file => '/Users/apriven/Desktop/flex_stops_modified.xlsx' );
+    $collection->output_skeds_dump($test_folder);
 
-}
+    return;
+
+} ## tidy end: sub START
 
 1;
 
@@ -31,7 +34,7 @@ __END__
 
 =head1 NAME
 
-<name> - <brief description>
+Actium::Cmd::Scratch - temporary programs
 
 =head1 VERSION
 
