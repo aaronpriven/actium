@@ -31,7 +31,7 @@ method new_from_xlsx (
     }
 
     my $id = $sheet->get_name;
-    my ( $linegroup, $daycode, $dircode )
+    my ( $linegroup, $dircode, $daycode )
       = _process_id( id => $id, filename => $file );
 
     my ( $minrow, $maxrow ) = $sheet->row_range();
@@ -65,7 +65,7 @@ method new_from_xlsx (
         sheet  => $sheet,
     );
 
-    my @trips = _read_trips(
+    my $trips_r = _read_trips(
         sheet        => $sheet,
         mincol       => $mincol,
         maxcol       => $maxcol,
@@ -75,8 +75,8 @@ method new_from_xlsx (
         attributes   => \@attributes,
     );
 
-    my $dir_obj = Actium::O::Dir->new($dircode);
-    my $day_obj = Actium::O::Days->new( $daycode, 'B' );
+    my $dir_obj = Actium::O::Dir->instance($dircode);
+    my $day_obj = Actium::O::Days->instance( $daycode, 'B' );
 
     my $sked = $class->new(
         place4_r    => \@place4s,
@@ -84,13 +84,13 @@ method new_from_xlsx (
         stopid_r    => \@stops,
         linegroup   => $linegroup,
         direction   => $dir_obj,
-        trip_r      => \@trips,
+        trip_r      => $trips_r,
         days        => $day_obj,
     );
 
     return $sked;
 
-} ## tidy end: sub METHOD4
+} ## tidy end: sub METHOD0
 
 func _cell_value ( $sheet!, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
@@ -160,14 +160,14 @@ func _read_trips (
             $trip{$attribute} = _cell_value( $sheet, $row, $col );
         }
 
-        if ( exists $trip{DAY} ) {
-            my $day_string = delete $trip{DAY};
-            $trip{days_obj}
-              = Actium::O::Days->instance_from_string($day_string);
-        }
+        #if ( exists $trip{DAY} ) {
+        #    my $day_string = delete $trip{DAY};
+        #    $trip{days_obj}
+        #      = Actium::O::Days->instance_from_string($day_string);
+        #}
 
         $trip{stoptime_r}
-          = map { _cell_time( $sheet, $row, $_ ) } $min_stop_col .. $maxcol;
+          = [ map { _cell_time( $sheet, $row, $_ ) } $min_stop_col .. $maxcol ];
 
         my $trip_obj = Actium::O::Sked::Trip->new(%trip);
 
@@ -192,7 +192,7 @@ func _read_attribute_names (
             $attribute = $EMPTY;
         }
         elsif ( 'DAY' eq $shortcol ) {
-            $attribute = 'DAY';
+            $attribute = 'days';
         }
         else {
 
@@ -312,7 +312,7 @@ method add_stop_xlsx_sheet (
 
     return;
 
-} ## tidy end: sub METHOD5
+} ## tidy end: sub METHOD1
 
 method add_place_xlsx_sheet (
           Excel::Writer::XLSX :$workbook! , 
@@ -357,7 +357,7 @@ method xlsx {
 
     close $stop_workbook_fh or die "$OS_ERROR";
     return $stop_workbook_stream;
-} ## tidy end: sub METHOD7
+} ## tidy end: sub METHOD3
 
 sub xlsx_layers {':raw'}
 
@@ -395,7 +395,7 @@ method _trip_attribute_columns {
 
     return $trip_attribute_columns;
 
-} ## tidy end: sub METHOD9
+} ## tidy end: sub METHOD5
 
 method _place_columns {
 
