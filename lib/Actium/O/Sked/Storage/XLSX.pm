@@ -11,28 +11,28 @@ use Actium::Time;
 #### READ FROM AN EXCEL SPREADSHEET
 
 method new_from_xlsx ( 
-        $class: Str :$filename? , Spreadsheet::ParseExcel::Worksheet :$sheet?
+        $class: Str :$file , Spreadsheet::ParseExcel::Worksheet :$sheet
     ) {
 
-    if ( $filename and $sheet ) {
-        croak 'Can only pass one of either a filename or a worksheet object '
+    if ( $file and $sheet ) {
+        croak 'Can only pass one of either a file or a worksheet object '
           . "to $class->new_from_xlsx";
     }
-    if ( not $filename and not $sheet ) {
-        croak 'Must pass either a filename or a worksheet object '
+    if ( not $file and not $sheet ) {
+        croak 'Must pass either a file or a worksheet object '
           . "to $class->new_from_xlsx";
     }
 
-    if ($filename) {
+    if ($file) {
         require Spreadsheet::ParseXLSX;
         my $parser   = Spreadsheet::ParseXLSX->new;
-        my $workbook = $parser->parse($filename);
+        my $workbook = $parser->parse($file);
         $sheet = $workbook->worksheet(0);
     }
 
     my $id = $sheet->get_name;
     my ( $linegroup, $daycode, $dircode )
-      = _process_id( id => $id, filename => $filename );
+      = _process_id( id => $id, filename => $file );
 
     my ( $minrow, $maxrow ) = $sheet->row_range();
     my ( $mincol, $maxcol ) = $sheet->col_range();
@@ -46,7 +46,7 @@ method new_from_xlsx (
     };
 
     my $min_stop_col
-      = u::first { $is_stopid_col_cr->$_ } ( $mincol .. $maxcol );
+      = u::first { $is_stopid_col_cr->($_) } ( $mincol .. $maxcol );
 
     \my ( @stops, @place4s, @stopplaces ) = _read_stops_and_places(
         mincol    => $min_stop_col,
@@ -54,6 +54,7 @@ method new_from_xlsx (
         stop_row  => $minrow,
         place_row => $minrow + 1,
         sheet     => $sheet,
+        filename  => $file,
     );
 
     \my @attributes = _read_attribute_names(
@@ -61,6 +62,7 @@ method new_from_xlsx (
         maxcol => $min_stop_col - 1,
         row    => $minrow + 1,
         id     => $id,
+        sheet  => $sheet,
     );
 
     my @trips = _read_trips(
@@ -88,7 +90,7 @@ method new_from_xlsx (
 
     return $sked;
 
-} ## tidy end: sub METHOD0
+} ## tidy end: sub METHOD4
 
 func _cell_value ( $sheet!, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
@@ -158,6 +160,12 @@ func _read_trips (
             $trip{$attribute} = _cell_value( $sheet, $row, $col );
         }
 
+        if ( exists $trip{DAY} ) {
+            my $day_string = delete $trip{DAY};
+            $trip{days_obj}
+              = Actium::O::Days->instance_from_string($day_string);
+        }
+
         $trip{stoptime_r}
           = map { _cell_time( $sheet, $row, $_ ) } $min_stop_col .. $maxcol;
 
@@ -165,7 +173,7 @@ func _read_trips (
 
         push @trips, $trip_obj;
 
-    }
+    } ## tidy end: foreach my $row ( $minrow .....)
 
     return \@trips;
 
@@ -183,6 +191,9 @@ func _read_attribute_names (
             carp "Blank column # $col in $id ignored";
             $attribute = $EMPTY;
         }
+        elsif ( 'DAY' eq $shortcol ) {
+            $attribute = 'DAY';
+        }
         else {
 
             $attribute
@@ -193,13 +204,13 @@ func _read_attribute_names (
 
         push @attributes, $attribute;
 
-    }
+    } ## tidy end: foreach my $col ( $mincol .....)
 
     return \@attributes;
 
 } ## tidy end: sub FUNC4
 
-func _process_id (Str $id!, Str $filename!) {
+func _process_id (Str :$id!, Str :$filename!) {
     if ($id !~ /\A
                     [A-Z0-9]+     # route indicator
                     _             # underscore
@@ -301,7 +312,7 @@ method add_stop_xlsx_sheet (
 
     return;
 
-} ## tidy end: sub METHOD1
+} ## tidy end: sub METHOD5
 
 method add_place_xlsx_sheet (
           Excel::Writer::XLSX :$workbook! , 
@@ -346,7 +357,7 @@ method xlsx {
 
     close $stop_workbook_fh or die "$OS_ERROR";
     return $stop_workbook_stream;
-} ## tidy end: sub METHOD3
+} ## tidy end: sub METHOD7
 
 sub xlsx_layers {':raw'}
 
@@ -384,7 +395,7 @@ method _trip_attribute_columns {
 
     return $trip_attribute_columns;
 
-} ## tidy end: sub METHOD5
+} ## tidy end: sub METHOD9
 
 method _place_columns {
 

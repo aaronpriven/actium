@@ -12,7 +12,7 @@ around BUILDARGS => sub {
     my $class = shift;
 
     # if they're all objects, treat them as though they were skeds
-    if ( u::all { u::blessed($_) } @_ ) {
+    if ( u::all { u::is_blessed_ref($_) } @_ ) {
         return $class->$orig( skeds => \@_ );
     }
 
@@ -35,7 +35,7 @@ sub BUILD {
     my $self  = shift;
     my @skeds = skedsort( $self->skeds );
 
-    $self->_set_skeds_r( \@skeds );
+    return $self->_set_skeds_r( \@skeds );
 }
 
 has '_sked_obj_by_id_r' => (
@@ -93,8 +93,8 @@ sub _build_sked_transitinfo_ids_of_lg {
 sub sked_transitinfo_ids_of_lg {
     my $self      = shift;
     my $linegroup = shift;
-    my @skedids   = $self->_sked_transitinfo_ids_of_lg($linegroup)->@*;
-    return sort @skedids;
+    my @skedids   = sort ( $self->_sked_transitinfo_ids_of_lg($linegroup)->@* );
+    return @skedids;
 }
 
 has '_sked_ids_of_lg' => (
@@ -145,11 +145,37 @@ sub skeds_of_lg {
 #    $self->_set_sked_obj( map { $_->id, $_ } @objs );
 #}
 
+##################
+##### INPUT ######
+##################
+
 sub load_storable {
     my $class           = shift;
     my $storable_folder = shift;
     return $storable_folder->retrieve('skeds.storable');
 }
+
+method load_xlsx (
+        $class:
+        Actium::O::Folder :$xlsx_folder ,
+        Actium::O::Files::ActiumDB :$actiumdb ,
+    ) {
+
+    my @xlsx_files = $xlsx_folder->glob_plain_files('*.xlsx');
+
+    my @skeds;
+    foreach my $file (@xlsx_files) {
+        my $sked = Actium::O::Sked->new_from_xlsx( file => $file );
+        push @skeds, $sked;
+    }
+
+    return $class->new(@skeds);
+
+}
+
+###################
+##### OUTPUT ######
+###################
 
 sub write_tabxchange {
 
@@ -160,13 +186,13 @@ sub write_tabxchange {
         {   tabfolder    => 1,
             commonfolder => 1,
             actiumdb     => 1,
-        }
+        },
     );
 
     my $destination_code
       = Actium::O::DestinationCode->load( $params{commonfolder} );
 
-    my @skeds = grep { $_->linegroup !~ /^(?:BS|4\d\d)/ } $self->skeds;
+    my @skeds = grep { $_->linegroup !~ /^(?:BS|4\d\d)/ax } $self->skeds;
 
     $params{tabfolder}->write_files_with_method(
         OBJECTS         => \@skeds,
@@ -181,14 +207,21 @@ sub write_tabxchange {
     );
 
     $destination_code->store;
-
 } ## tidy end: sub write_tabxchange
 
-##################
-##### OUTPUT ######
-###################
+method output_skeds_dump ( :$dump_folder ) {
 
-method output_skeds_all ( :$signup!  , :$subfolder_name = 's') {
+    my $skeds_r = $self->skeds_r;
+
+    $dump_folder->write_files_with_method(
+        OBJECTS   => $skeds_r,
+        METHOD    => 'dump',
+        EXTENSION => 'dump',
+    );
+
+}
+
+method output_skeds_all ( :$signup! , :$subfolder_name = 's') {
 
     my $skeds_r = $self->skeds_r;
 
@@ -204,12 +237,7 @@ method output_skeds_all ( :$signup!  , :$subfolder_name = 's') {
 
     $self->output_skeds_xlsx( skeds_folder => $skeds_folder );
 
-    my $dumpfolder = $skeds_folder->subfolder('dump');
-    $dumpfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'dump',
-        EXTENSION => 'dump',
-    );
+    $self->output_skeds_dump( $skeds_folder->subfolder('dump') );
 
     my $spacedfolder = $skeds_folder->subfolder('spaced');
     $spacedfolder->write_files_with_method(
@@ -221,11 +249,11 @@ method output_skeds_all ( :$signup!  , :$subfolder_name = 's') {
     Actium::O::Sked->write_prehistorics( $skeds_r,
         $skeds_folder->subfolder('prehistoric') );
 
-} ## tidy end: sub METHOD0
+} ## tidy end: sub METHOD2
 
 method output_skeds_xlsx (:$skeds_folder!) {
 
-    my $cry = cry("Writing place xlsx schedules");
+    my $cry = cry('Writing place xlsx schedules');
 
     #my $stop_xlsx_folder  = $skeds_folder->subfolder('xlsx_s');
     my $place_xlsx_folder = $skeds_folder->subfolder('xlsx_p');
@@ -242,7 +270,7 @@ method output_skeds_xlsx (:$skeds_folder!) {
     #        my $stop_text_format = $stop_workbook->actium_text_format;
 
         my $place_workbook_fh
-          = $place_xlsx_folder->open_write_binary( $linegroup . "_p.xlsx" );
+          = $place_xlsx_folder->open_write_binary( $linegroup . '_p.xlsx' );
         my $place_workbook    = Excel::Writer::XLSX->new($place_workbook_fh);
         my $place_text_format = $place_workbook->actium_text_format;
 
@@ -250,7 +278,7 @@ method output_skeds_xlsx (:$skeds_folder!) {
 #            $sked->add_stop_xlsx_sheet( workbook => $stop_workbook, format => $stop_text_format );
             $sked->add_place_xlsx_sheet(
                 workbook => $place_workbook,
-                format   => $place_text_format
+                format   => $place_text_format,
             );
         }
 
@@ -264,9 +292,11 @@ method output_skeds_xlsx (:$skeds_folder!) {
 
     return;
 
-} ## tidy end: sub METHOD1
+} ## tidy end: sub METHOD3
 
 u::immut;
+
+1;
 
 __END__
 
