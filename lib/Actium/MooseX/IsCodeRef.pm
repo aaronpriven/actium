@@ -30,12 +30,11 @@ before '_process_options' => sub {
     my ( $builderref, $buildername );
 
     if ( $name =~ /\A_/ ) {
-        $buildername = '_build$name';
+        $buildername = "_build$name";
     }
     else {
-        $buildername = '_build_$name';
+        $buildername = "_build_$name";
     }
-
     if ( exists $options->{lazy} and is_coderef( $options->{lazy} ) ) {
         $builderref = $options->{lazy};
         $options->{lazy} = 1;
