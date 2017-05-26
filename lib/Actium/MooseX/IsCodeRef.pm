@@ -6,7 +6,6 @@ use warnings;
 use Moose 1.99 ();    ### DEP ###
 use Moose::Exporter;
 use Moose::Util::MetaRole;
-use Ref::Util('is_coderef');    ### DEP ###
 # use Actium::MooseX::IsCodeRef::Role::Attribute;
 
 my %metaroles = (
@@ -21,6 +20,7 @@ Moose::Exporter->setup_import_methods(%metaroles);
 package Actium::MooseX::IsCodeRef::Role::Attribute 0.013;
 
 use Moose::Role;
+use Ref::Util('is_coderef');    ### DEP ###
 
 before '_process_options' => sub {
     my $class   = shift;
@@ -41,7 +41,7 @@ before '_process_options' => sub {
             $builderref = $options->{lazy};
             $options->{lazy} = 1;
         }
-        elsif ( $options->lazy eq '_' ) {
+        elsif ( $options->{lazy} eq '_' ) {
             $options->{builder} //= $buildername;
             $options->{lazy} = 1;
         }
