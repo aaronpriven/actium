@@ -75,11 +75,14 @@ use Text::Trim('trim');                                      ### DEP ###
             # either class or role
 
             do_import 'MooseX::MarkAsMethods', autoclean => 1;
+            do_import 'Actium::MooseX::IsCodeRef';
+            do_import 'Actium::MooseX::IsOne';
+            do_import 'Actium::MooseX::Rwp';
             do_import 'MooseX::StrictConstructor';
             do_import 'MooseX::SemiAffordanceAccessor';
             do_import 'Moose::Util::TypeConstraints';
-            do_import 'MooseX::MungeHas', { mhas => [] };
-        }
+            #do_import 'MooseX::MungeHas', { mhas => [] };
+        } ## tidy end: if ($type)
 
         do_import 'Kavorka', kavorka_args($type);
 
