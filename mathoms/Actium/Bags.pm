@@ -2,7 +2,7 @@ package Actium::Bags 0.012;
 
 # Routines for dealing with bag artwork
 
-use Actium::Preamble;
+use Actium;
 
 #use Actium::Util(qw/joinseries/);
 

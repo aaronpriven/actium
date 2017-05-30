@@ -8,27 +8,30 @@ use Actium::Sorting::Line ('byline');
 use Sub::Exporter -setup => { exports => [qw(travelsort)] };
 # Sub::Exporter ### DEP ###
 
-sub travelsort {
+func travelsort ( 
+     :@stops! is ref_alias , 
+     :%allstops_of_linedir! is ref_alias,
+     :@promote is ref_alias , 
+     Bool :$demote600s = 0 , 
+     ) {
 
-    my %params = u::validate(
-        @_,
-        {   stops            => { type => $PV_TYPE{ARRAYREF} },
-            stops_of_linedir => { type => $PV_TYPE{HASHREF} },
-            promote          => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
-            demote600s       => { type => $PV_TYPE{BOOLEAN}, default => 0 },
-        }
-    );
+ #    my %params = u::validate(
+ #        @_,
+ #        {   stops            => { type => $PV_TYPE{ARRAYREF} },
+ #            stops_of_linedir => { type => $PV_TYPE{HASHREF} },
+ #            promote          => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
+ #            demote600s       => { type => $PV_TYPE{BOOLEAN}, default => 0 },
+ #        }
+ #    );
 
     my %stop_is_used;
-    $stop_is_used{$_} = 1 foreach @{ $params{stops} };
-
-    my %allstops_of_linedir = %{ $params{stops_of_linedir} };
+    $stop_is_used{$_} = 1 foreach @stops;
 
     # keys: travel lines. values: array ref of stops
 
     my %is_priority_line;
-    if ( $params{promote} ) {
-        $is_priority_line{$_} = 1 foreach @{ $params{promote} };
+    if (@promote) {
+        $is_priority_line{$_} = 1 foreach @promote;
     }
 
     # Make new %used_stops_of_linedir with only stops
@@ -43,7 +46,6 @@ sub travelsort {
 
         $is_priority_linedir{$linedir} = 1
           if $is_priority_line{$line};
-
         my @usedstops;
         foreach my $stop ( u::uniq @{$stops_r} ) {
             push @usedstops, $stop if $stop_is_used{$stop};
@@ -57,7 +59,7 @@ sub travelsort {
 
         my $max_linedir
           = _get_max_linedir( \%used_stops_of_linedir, \%is_priority_linedir,
-            $params{demote600s} );
+            $demote600s );
 
         # $max_linedir is now the line/dir combination with the most stops
 
@@ -94,7 +96,7 @@ sub travelsort {
 
     } ## tidy end: while ( scalar keys %used_stops_of_linedir)
     return @results;
-} ## tidy end: sub travelsort
+} ## tidy end: sub FUNC0
 
 sub _get_max_linedir {
 
