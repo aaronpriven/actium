@@ -114,7 +114,7 @@ sub _translate_graf {
 sub _para {
     my $para = shift;
     #$para = "A-$para";    # allows find-and-replace to B-, C-, etc.
-    return $IDT->parastyle($para) . join( $EMPTY_STR, @_ );
+    return $IDT->parastyle($para) . join( $EMPTY, @_ );
 }
 
 sub _translate {

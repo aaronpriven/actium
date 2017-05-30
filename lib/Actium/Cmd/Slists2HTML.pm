@@ -119,7 +119,7 @@ sub START {
 
             my $headerline = readline($ifh);    # thrown away
 
-            my $prevcity = $EMPTY_STR;
+            my $prevcity = $EMPTY;
 
             while ( defined( my $stopline = readline($ifh) ) ) {
                 chomp $stopline;
@@ -151,7 +151,7 @@ sub START {
                 my $city
                   = encode_entities( $stops_row_of_r->{$stopid}{c_city} );
 
-                my $citytext = $EMPTY_STR;
+                my $citytext = $EMPTY;
 
                 if ( $prevcity ne $city ) {
                     $citytext
@@ -217,10 +217,10 @@ sub START {
 
         # make dummy stop list if there's only one direction
         if ( @dirs == 1 ) {
-            push @dirs, $EMPTY_STR;
-            $stops_of{$EMPTY_STR}     = [$EMPTY_STR];
-            $stoplines_of{$EMPTY_STR} = [$EMPTY_STR];
-            push @dir_bound, $EMPTY_STR;
+            push @dirs, $EMPTY;
+            $stops_of{$EMPTY}     = [$EMPTY];
+            $stoplines_of{$EMPTY} = [$EMPTY];
+            push @dir_bound, $EMPTY;
 
         }
 

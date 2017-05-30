@@ -6,20 +6,19 @@ package Actium::O::Files::HastusASI 0.011;
 use warnings;
 use 5.012;    # turns on features
 
+use Moose;                        ### DEP ###
+use MooseX::StrictConstructor;    ### DEP ###
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
-
-use namespace::autoclean; ### DEP ###
+use namespace::autoclean;         ### DEP ###
 
 use Actium::Constants;
 use Actium::Crier(qw/cry last_cry/);
 use Actium::Util qw(j joinkey filename);
-use Carp; ### DEP ###
+use Carp;                         ### DEP ###
 use English '-no_match_vars';
-use File::Glob qw(:glob); ### DEP ###
-use File::Spec; ### DEP ###
-use Const::Fast; ### DEP ###
+use File::Glob qw(:glob);         ### DEP ###
+use File::Spec;                   ### DEP ###
+use Const::Fast;                  ### DEP ###
 
 use Actium::O::Files::HastusASI::Definition;
 
@@ -43,7 +42,7 @@ const my $DISPLAY_PERCENTAGE_FACTOR   => 100 / $OCCASIONS_TO_DISPLAY;
 #########################################
 
 # db_type required by SQLite role
-sub db_type () { return 'HastusASI'}
+sub db_type () { return 'HastusASI' }
 
 has '_definition' => (
     is       => 'bare',
@@ -64,7 +63,7 @@ has '_definition' => (
         _index_query_of_table       => 'index_query_of_table',
         _insert_query_of_table      => 'insert_query_of_table',
         _key_components_idxs        => 'key_components_idxs',
-        parent_of_table            => 'parent_of_table',
+        parent_of_table             => 'parent_of_table',
         _tables_of_filetype         => 'tables_of_filetype',
 
     },
@@ -134,7 +133,7 @@ sub _load {
 
     local $INPUT_RECORD_SEPARATOR = $CRLF;
 
-    my $cry = cry( "Reading HastusASI $filetype files");
+    my $cry = cry("Reading HastusASI $filetype files");
 
     my ( %sth_of, %parent_of, %key_components_idxs, %has_composite_key,
         %has_repeating_final_column );
@@ -158,7 +157,7 @@ sub _load {
           = $self->_has_repeating_final_column($table);
         $key_components_idxs{$table} = [ $self->_key_components_idxs($table) ];
 
-    } ## tidy end: foreach my $table ( $self->_tables_of_filetype...)
+    } ## tidy end: foreach my $table ( $self->...)
 
     my $sequence = 0;
     $self->begin_transaction;
@@ -184,7 +183,7 @@ sub _load {
         my $fraction = 0;
         my %previous_seq_of;
 
-        $cry->over ("$file: 0%");
+        $cry->over("$file: 0%");
 
       ROW:
         while (<$fh>) {
@@ -207,8 +206,7 @@ sub _load {
             unless ( $self->is_a_table($table)
                 and ( $self->_filetype_of_table($table) eq $filetype ) )
             {
-                carp
-                  "Incorrect table type $table in file $filespec, "
+                carp "Incorrect table type $table in file $filespec, "
                   . "row $INPUT_LINE_NUMBER:\n$_\n";
                 set_term_pos(0);
                 next ROW;
@@ -221,7 +219,7 @@ sub _load {
 
             if ( $has_repeating_final_column{$table} ) {
                 my @finals = splice( @columns, scalar( columns($table) ) );
-                push @columns, joinkey( grep { $_ ne $EMPTY_STR } @finals );
+                push @columns, joinkey( grep { $_ ne $EMPTY } @finals );
             }
 
             my $parent = $parent_of{$table};
@@ -242,7 +240,7 @@ sub _load {
             croak "Can't close $filespec for reading: $OS_ERROR";
         }
 
-        $cry->over ("$file: 100%");
+        $cry->over("$file: 100%");
 
     }    # FILE
 
@@ -262,11 +260,12 @@ sub _build_templates {
 This requires a bit of explanation.  HSA rows are specified in the HSA
 documentation as fixed-width records, with a delimiter -- practically
 always a comma -- inserted between each pair of fields.  The comma is
-not treated specially; it's just there to make the files easier to read.
-There is no escaping mechanism where the comma, if found in real data,
-is somehow marked as not being a real delimiter.  A program that naively
-treats an HSA file as a typical comma-separated values file (CSV) will
-yield incorrect results for each line where the data includes a comma.
+not treated specially; it's just there to make the files easier to
+read. There is no escaping mechanism where the comma, if found in real
+data, is somehow marked as not being a real delimiter.  A program that
+naively treats an HSA file as a typical comma-separated values file
+(CSV) will yield incorrect results for each line where the data
+includes a comma.
 
 Unfortunately, some people have written custom HSA export routines that
 replace a standard field (such as the stop identifier) with another
@@ -275,17 +274,17 @@ different length. So a program that uses the field lengths to determine
 where each field is will break when provided with this custom HSA
 export.
 
-What is constant, however, is that the number of fields is the same, and
-there will always be a comma between two fields. There will always be
-*at minimum* that number of commas, and no fewer. There may, however,
-be more.
+What is constant, however, is that the number of fields is the same,
+and there will always be a comma between two fields. There will always
+be *at minimum* that number of commas, and no fewer. There may,
+however, be more.
 
 So what this program does is go through each HSA file and look for rows
 that have the proper number of commas for the number of fields. If it
-has more commas than that, then one of those commas is part of the data,
-but if it has the right number for the number of fields, then we can use
-the positions of each comma to determine the positions of the beginning
-and end of each field.
+has more commas than that, then one of those commas is part of the
+data, but if it has the right number for the number of fields, then we
+can use the positions of each comma to determine the positions of the
+beginning and end of each field.
 
 =end comment
 
@@ -325,7 +324,7 @@ and end of each field.
               "Couldn't return seek position to top of $filespec: $OS_ERROR";
         }
 
-    } ## tidy end: foreach my $table ( $self->_tables_of_filetype...)
+    } ## tidy end: foreach my $table ( $self->...)
 
     return %template_of;
 
@@ -341,13 +340,14 @@ __END__
 
 =head1 NAME
 
-Actium::O::Files::HastusASI - Routines for SQLite storage of
-Hastus AVL Standard Interface files
+Actium::O::Files::HastusASI - Routines for SQLite storage of Hastus AVL
+Standard Interface files
 
 =head1 NOTE
 
-This documentation is intended for maintainers of the Actium system, not
-users of it. Run "perldoc Actium" for general information on the Actium system.
+This documentation is intended for maintainers of the Actium system,
+not users of it. Run "perldoc Actium" for general information on the
+Actium system.
 
 =head1 VERSION
 
@@ -368,14 +368,15 @@ This documentation refers to version 0.001
  
 =head1 DESCRIPTION
 
-This is a series of routines that store Hastus AVL Standard Interface files
-using the Actium::O::Files::SQLite role. This documentation describes the
-specifics of the Hastus ASI routines; for general information about the
-database access and structure, see
+This is a series of routines that store Hastus AVL Standard Interface
+files using the Actium::O::Files::SQLite role. This documentation
+describes the specifics of the Hastus ASI routines; for general
+information about the database access and structure, see
 L<Actium::O::Files::SQLite|Actium::O::Files::SQLite>.
 
-For more information about the Hastus AVL Standard Interface, see the document
-"Hastus 2006 AVL Standard Interface, Last Update: July 26, 2005".
+For more information about the Hastus AVL Standard Interface, see the
+document "Hastus 2006 AVL Standard Interface, Last Update: July 26,
+2005".
 
 =head1 PUBLIC METHODS 
 
@@ -400,8 +401,8 @@ using Actium::O::Files::SQLite.
 
 These are delegated to 
 L<Actium::O::Files::HastusASI::Definition|Actium::O::Files::HastusASI::Definition>
-and information on them can be found there, or in other modules used by that 
-module.
+and information on them can be found there, or in other modules used by
+that  module.
 
 =back
 
@@ -429,27 +430,27 @@ module.
 
 These are delegated to 
 L<Actium::O::Files::HastusASI::Definition|Actium::O::Files::HastusASI::Definition>
-and information on them can be found there, or in other modules used by that 
-module. In that module, they do not have leading underscores.
+and information on them can be found there, or in other modules used by
+that  module. In that module, they do not have leading underscores.
 
-Two (I<_tables_of_filetype> and I<_filetype_of_table>) are
-required by Actium::O::Files::SQLite. The others are only used within this module.
+Two (I<_tables_of_filetype> and I<_filetype_of_table>) are required by
+Actium::O::Files::SQLite. The others are only used within this module.
 
 =item B<_files_of_filetype(I<filetype>)>
 
-This returns the list of files on disk associated with a particular filetype.
-Usually, this will be just one file per filetype, but it's conceivable that
-different sets of Hastus AVL files could be usefully combined, so that ability
-is present.
+This returns the list of files on disk associated with a particular
+filetype. Usually, this will be just one file per filetype, but it's
+conceivable that different sets of Hastus AVL files could be usefully
+combined, so that ability is present.
 
-This method is required by Actium::O::Files::SQLite. 
+This method is required by Actium::O::Files::SQLite.
 
 =item B<_load(I<filetype>,I<files...>)>
 
-This reads the files specified, which are of the filetype specified, and 
-saves the data into the database.
+This reads the files specified, which are of the filetype specified,
+and  saves the data into the database.
 
-This method is required by Actium::O::Files::SQLite. 
+This method is required by Actium::O::Files::SQLite.
 
 =back
 
@@ -461,8 +462,8 @@ This method is required by Actium::O::Files::SQLite.
 
 =item Error reading list of filenames in Hastus AVL Standard folder $flats_folder: $OS_ERROR
 
-An error was found getting the list of files from C<glob>. 
-See L<File::Glob diagnostics for more information.|File::Glob/DIAGNOSTICS>.
+An error was found getting the list of files from C<glob>.  See
+L<File::Glob diagnostics for more information.|File::Glob/DIAGNOSTICS>.
 
 =item No files found in Hastus AVL Standard folder $flats_folder
 
@@ -473,23 +474,24 @@ folder was specified?
 
 =item Can't close $filespec for reading: $OS_ERROR
 
-An error occurred opening or closing the file $filespec. Possibly the file is
-locked in another application, or there was some other operating system error.
+An error occurred opening or closing the file $filespec. Possibly the
+file is locked in another application, or there was some other
+operating system error.
 
 =item Unable to determine columns of $table in $filespec (never found a line with the right number)
 
 The program searched through the whole file and never found a line with
-the right number of fields for that row. Each table has a fixed number of fields,
-found in the HastusASI definition.  If no row has the proper number of 
-fields, probably the file is corrupt or incorrectly specified. (It is also
-possible that every row has data with a comma inside the data, but this
-is unlikely.)
+the right number of fields for that row. Each table has a fixed number
+of fields, found in the HastusASI definition.  If no row has the proper
+number of  fields, probably the file is corrupt or incorrectly
+specified. (It is also possible that every row has data with a comma
+inside the data, but this is unlikely.)
 
 =item  Couldn't return seek position to top of $file
 
-After searching through the file for a row with the right number of fields 
-for each rowtype, the program received an input/ouptut error when trying to move
-the next-line pointer back to the top of the file.
+After searching through the file for a row with the right number of
+fields  for each rowtype, the program received an input/ouptut error
+when trying to move the next-line pointer back to the top of the file.
 
 =back
 
@@ -532,8 +534,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2011
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -545,6 +547,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE. 
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

@@ -109,7 +109,7 @@ ENDSCRIPT
         foreach (@iphoto_fields) {
             s/\A\s+//;
             s/\s+\z//;
-            $_ = $EMPTY_STR if $_ and $_ eq 'missing value';
+            $_ = $EMPTY if $_ and $_ eq 'missing value';
         }
 
         my ( $iphoto_id, $name, $comment, $filename, $thumbfilename, $lat,
@@ -204,7 +204,7 @@ ENDSCRIPT
     }
 
     if (@photo_commands) {
-        my $all_commands = join( $EMPTY_STR,
+        my $all_commands = join( $EMPTY,
             qq{tell application "iPhoto"\n},
             @photo_commands, 'end tell' );
 

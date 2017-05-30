@@ -191,14 +191,14 @@ has 'highest_footnote' => (
 
 has 'formatted_side' => (
     traits  => ['String'],
-    default => $EMPTY_STR,
+    default => $EMPTY,
     is      => 'rw',
     isa     => 'Str',
 );
 
 has 'formatted_bottom' => (
     traits  => ['String'],
-    default => $EMPTY_STR,
+    default => $EMPTY,
     is      => 'rw',
     isa     => 'Str',
 );
@@ -239,7 +239,7 @@ sub new_from_kpoints {
 
     foreach my $stop_to_import ( $self->allstopids ) {
 
-        my $column_stopid = $is_simple ? $EMPTY_STR : $stop_to_import;
+        my $column_stopid = $is_simple ? $EMPTY : $stop_to_import;
 
         my %do_omit_line
           = map { $_, 1 } @{ $self->omitted_of($stop_to_import) };
@@ -407,11 +407,11 @@ sub make_headers_and_footnotes {
                 my $item        = $column->$attr($i);
                 my $primaryattr = "primary_$attr";
                 my $primaryitem = $column->$primaryattr;
-                $foot_of{$attr} = $item eq $primaryitem ? $EMPTY_STR : $item;
+                $foot_of{$attr} = $item eq $primaryitem ? $EMPTY : $item;
             }
 
-            if ( join( $EMPTY_STR, values %foot_of ) eq $EMPTY_STR ) {
-                $column->set_foot( $i, $EMPTY_STR );
+            if ( join( $EMPTY, values %foot_of ) eq $EMPTY ) {
+                $column->set_foot( $i, $EMPTY );
             }
             else {
                 my $foot = join( ':', @foot_of{@attrs} );
@@ -812,7 +812,7 @@ sub format_columns {
 
         } ## tidy end: if ( $column->has_note)
 
-        my $prev_pstyle = $EMPTY_STR;
+        my $prev_pstyle = $EMPTY;
 
         foreach my $i ( 0 .. $column->time_count - 1 ) {
 
@@ -970,7 +970,7 @@ sub format_sidenotes {
 
         my @attrs = qw(line destination exception approxflag);
         my (%attr);
-        my $attrcode = $EMPTY_STR;
+        my $attrcode = $EMPTY;
 
         @attr{@attrs} = split( /:/, $foot, scalar @attrs );
         # scalar @attrs sets the LIMIT field, so it doesn't delete empty

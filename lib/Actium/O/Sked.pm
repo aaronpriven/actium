@@ -685,7 +685,7 @@ sub attribute_columns {
             my $value = $trip->$reader;
             next
               if ( not defined $value )
-              or ( $value eq $EMPTY_STR );
+              or ( $value eq $EMPTY );
             $anydefined = 1;
             last;
         }
@@ -764,7 +764,7 @@ sub spaced {
     local $LIST_SEPARATOR = $SPACE;
     say $out "@simplefields";
 
-    my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR, XB => 1 );
+    my $timesub = timestr_sub( SEPARATOR => $EMPTY, XB => 1 );
 
     my $place_records = Actium::O::2DArray->new();
 
@@ -772,7 +772,7 @@ sub spaced {
     my @columns     = @{$columns_r};
     my %shortcol_of = %{$shortcol_of_r};
 
-    push @$place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
+    push @$place_records, [ ($EMPTY) x scalar @columns, $self->place4s ];
     push @$place_records, [ @shortcol_of{@columns}, $self->place8s ];
 
     my @trips = $self->trips;

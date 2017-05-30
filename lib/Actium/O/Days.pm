@@ -165,7 +165,7 @@ const my @ADJECTIVES => ( @SEVENDAYNAMES, qw(Holiday Weekday Weekend Daily),
     "Daily except holidays" );
 const my %ADJECTIVE_OF => u::mesh( @DAYLETTERS, @ADJECTIVES );
 const my %ADJECTIVE_SCHOOL_OF => (
-    B => $EMPTY_STR,
+    B => $EMPTY,
     D => ' (except school holidays)',
     H => ' (except school days)',
 );
@@ -203,7 +203,7 @@ const my @PLURALS => (
 
 const my %PLURAL_OF => u::mesh( @DAYLETTERS, @PLURALS );
 const my %PLURAL_SCHOOL_OF => (
-    B => $EMPTY_STR,
+    B => $EMPTY,
     D => ' (School days only)',
     H => ' (School holidays only)',
 );
@@ -246,7 +246,7 @@ const my @ABBREVS =>
 
 const my %ABBREV_OF => u::mesh( @DAYLETTERS, @ABBREVS );
 const my %ABBREV_SCHOOL_OF => (
-    B => $EMPTY_STR,
+    B => $EMPTY,
     D => ' (Sch days)',
     H => ' (Sch hols)',
 );
@@ -446,7 +446,7 @@ sub specday_and_specdayletter {
 
             if ( $daycode ne $union_daycode ) {
 
-                $union_daycode = join( $EMPTY_STR,
+                $union_daycode = join( $EMPTY,
                     ( u::uniq sort ( split //, $union_daycode . $daycode ) ) );
 
             }

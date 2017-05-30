@@ -1,4 +1,4 @@
-package Actium::O::Folder 0.012;
+package Actium::O::Folder 0.014;
 
 # Objects representing folders (directories) on disk
 
@@ -57,14 +57,14 @@ sub parents {
 
     while (@folders) {
         $path_so_far = File::Spec->catdir( $path_so_far, shift @folders );
-        push @parents, File::Spec->catpath( $volume, $path_so_far, $EMPTY_STR );
+        push @parents, File::Spec->catpath( $volume, $path_so_far, $EMPTY );
     }
 
     return @parents;
 }
 
 has volume => (
-    default => $EMPTY_STR,
+    default => $EMPTY,
     isa     => 'Str',
     is      => 'ro',
 );
@@ -81,6 +81,7 @@ sub _stringify {
     my $self = shift;
     return $self->path;
 }
+
 sub _build_path {
     my $self = shift;
     return File::Spec->catpath( $self->volume,
@@ -127,7 +128,7 @@ around BUILDARGS => sub {
 
     my @folders = @{ $class->split_folderlist( $hashref->{folderlist} ) };
 
-    my $volume = $EMPTY_STR;
+    my $volume = $EMPTY;
     $volume = $hashref->{volume} if exists $hashref->{volume};
 
     my $temppath = File::Spec->catpath( $volume, File::Spec->catdir(@folders) );
@@ -157,8 +158,8 @@ sub split_folderlist {
     foreach my $folder ( @{$folder_r} ) {
 
         my $canon = File::Spec->canonpath($folder);
-        if ( $canon eq $EMPTY_STR ) {
-            push @new_folders, $EMPTY_STR;
+        if ( $canon eq $EMPTY ) {
+            push @new_folders, $EMPTY;
         }
         else {
             my @split = File::Spec->splitdir($canon);
@@ -523,7 +524,7 @@ sub _open_read_encoding {
 sub open_write_binary {
     my $self     = shift;
     my $filename = shift;
-    $self->_open_write_encoding( $filename, ':raw');
+    $self->_open_write_encoding( $filename, ':raw' );
 }
 
 sub open_write {
@@ -569,10 +570,10 @@ sub load_sqlite {
     }
 
     my $subfolder_is_empty = (
-        ( $subfolder eq $EMPTY_STR )
+        ( $subfolder eq $EMPTY )
           or (  ref $subfolder eq 'ARRAY'
             and @{$subfolder} == 1
-            and $subfolder->[0] eq $EMPTY_STR )
+            and $subfolder->[0] eq $EMPTY )
     );
 
     if ($subfolder_is_empty) {
@@ -616,7 +617,7 @@ sub write_files_with_method {
     );
 
     my @objects   = @{ $params{OBJECTS} };
-    my $extension = $EMPTY_STR;
+    my $extension = $EMPTY;
     if ( exists $params{EXTENSION} ) {
         $extension = $params{EXTENSION};
         $extension =~ s/\A\.*/./;
@@ -724,7 +725,7 @@ sub write_files_from_hash {
         $extension = ".$extension";
     }
     else {
-        $extension = $EMPTY_STR;
+        $extension = $EMPTY;
     }
 
     my $cry = cry( "Writing $filetype files to " . $self->display_path );

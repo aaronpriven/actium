@@ -55,7 +55,7 @@ sub xlsx {
     my @columns     = @{$columns_r};
     my %shortcol_of = %{$shortcol_of_r};
 
-    push @place_records, [ ($EMPTY_STR) x scalar @columns, $self->place4s ];
+    push @place_records, [ ($EMPTY) x scalar @columns, $self->place4s ];
     push @place_records, [ @shortcol_of{@columns}, $self->place8s ];
 
     my @trips = $self->trips;

@@ -237,7 +237,7 @@ sub new_from_sked {
 
         if ($has_multiple_specdays) {
             my ( $specdayletter, $specday ) = $trip->specday( $sked->days_obj );
-            push @row, $specdayletter // $EMPTY_STR;
+            push @row, $specdayletter // $EMPTY;
         }
 
         foreach my $timenum ( $trip->placetimes ) {
@@ -316,7 +316,7 @@ sub as_indesign {
     );
 
     my $trailing = $trailing_columns + $trailing_halves;
-    my @trailers = ($EMPTY_STR) x $trailing;
+    my @trailers = ($EMPTY) x $trailing;
 
     #my $rowcount = $self->body_row_count + 2;          # 2 header rows
     my $header_rows = 2;

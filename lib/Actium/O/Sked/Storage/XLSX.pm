@@ -90,7 +90,7 @@ method new_from_xlsx (
 
     return $sked;
 
-} ## tidy end: sub METHOD0
+} ## tidy end: sub METHOD3
 
 func _cell_value ( $sheet!, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
@@ -180,7 +180,12 @@ func _read_trips (
 } ## tidy end: sub FUNC3
 
 func _read_attribute_names (
-     Int :$mincol!, Int :$maxcol!, Int :$row! , :$sheet! , Str :$id!) {
+     Int :$mincol!, 
+     Int :$maxcol!, 
+     Int :$row!, 
+     :$sheet!, 
+     Str :$id!,
+     ) {
 
     my @attributes;
     foreach my $col ( $mincol .. $maxcol ) {
@@ -312,7 +317,7 @@ method add_stop_xlsx_sheet (
 
     return;
 
-} ## tidy end: sub METHOD1
+} ## tidy end: sub METHOD4
 
 method add_place_xlsx_sheet (
           Excel::Writer::XLSX :$workbook! , 
@@ -357,7 +362,7 @@ method xlsx {
 
     close $stop_workbook_fh or die "$OS_ERROR";
     return $stop_workbook_stream;
-} ## tidy end: sub METHOD3
+} ## tidy end: sub METHOD6
 
 sub xlsx_layers {':raw'}
 
@@ -395,7 +400,7 @@ method _trip_attribute_columns {
 
     return $trip_attribute_columns;
 
-} ## tidy end: sub METHOD5
+} ## tidy end: sub METHOD8
 
 method _place_columns {
 

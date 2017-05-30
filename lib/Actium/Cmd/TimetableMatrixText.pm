@@ -51,21 +51,21 @@ sub START {
 
     #my @colors = $sheet->shift_row;
 
-#foreach my $column_idx ( 0 .. $#colors ) {
-#
-#    my $colors
-#      = join( $EMPTY_STR, grep {/[A-Z]/} ( split( //, $colors[$column_idx] ) ) );
-#
-#    #say "$column_idx $colors[$column_idx] $colors";
-#
-#    next unless $colors;
-#
-#    my $color_text
-#      = exists $color_text{$colors}
-#      ? $color_text{$colors}
-#      : $colors;
-#    $tt_names[$column_idx] .= " $color_text";
-#}
+  #foreach my $column_idx ( 0 .. $#colors ) {
+  #
+  #    my $colors
+  #      = join( $EMPTY, grep {/[A-Z]/} ( split( //, $colors[$column_idx] ) ) );
+  #
+  #    #say "$column_idx $colors[$column_idx] $colors";
+  #
+  #    next unless $colors;
+  #
+  #    my $color_text
+  #      = exists $color_text{$colors}
+  #      ? $color_text{$colors}
+  #      : $colors;
+  #    $tt_names[$column_idx] .= " $color_text";
+  #}
 
     my %timetables_of;
     my %each_of;

@@ -177,7 +177,7 @@ sub new_from_xlsx {
                 $_ = $_->value;
             }
             else {
-                $_ = $EMPTY_STR;
+                $_ = $EMPTY;
             }
         }
 
@@ -630,7 +630,7 @@ sub prune {
 
 sub prune_empty {
     my ( $class, $self ) = &$invocant_cr;
-    my $callback = sub { !defined $_ or $_ eq $EMPTY_STR };
+    my $callback = sub { !defined $_ or $_ eq $EMPTY };
     return $class->prune_callback( $self, $callback );
 }
 
@@ -735,7 +735,7 @@ sub define {
     my ( $class, $self ) = &$invocant_cr;
 
     my $callback = sub {
-        $_ //= $EMPTY_STR;
+        $_ //= $EMPTY;
     };
     return $class->apply( $self, $callback );
 }
@@ -848,7 +848,7 @@ sub tabulate {
         for my $this_col ( 0 .. $#fields - 1 ) {
             $fields[$this_col] = sprintf( '%-*s',
                 $length_of_col[$this_col],
-                ( $fields[$this_col] // $EMPTY_STR ) );
+                ( $fields[$this_col] // $EMPTY ) );
         }
         push @lines, join( $separator, @fields );
 
@@ -904,7 +904,7 @@ sub tsv {
     foreach my $row ( @{$self} ) {
         my @rowcopy = @{$row};
         foreach (@rowcopy) {
-            $_ //= $EMPTY_STR;
+            $_ //= $EMPTY;
             if (s/\t/\x{2409}/g) {    # visible symbol for tab
                 $charcarp->( "Tab", $methodname );
             }
@@ -1479,7 +1479,7 @@ string, or zero:
 
  my $callback = sub { 
      my $val = shift;
-     ! defined $val or $val eq $EMPTY_STR  or $val == 0;
+     ! defined $val or $val eq $EMPTY  or $val == 0;
  }
  $obj->prune_callback($callback);
 

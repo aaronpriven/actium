@@ -20,7 +20,7 @@ package Actium::O::Files::SQLite 0.012;
 use warnings;    ### DEP ###
 use 5.012;       # turns on features
 
-use Moose::Role;    ### DEP ###
+use Moose::Role; ### DEP ###
 
 use namespace::autoclean;    ### DEP ###
 
@@ -191,7 +191,7 @@ sub _connect {
     );
 
     my $dbh = DBI->connect( "dbi:SQLite:dbname=$db_filespec",
-        $EMPTY_STR, $EMPTY_STR, { RaiseError => 1, sqlite_unicode => 1 } );
+        $EMPTY, $EMPTY, { RaiseError => 1, sqlite_unicode => 1 } );
     $dbh->do(
 'CREATE TABLE files ( files_id INTEGER PRIMARY KEY, filetype TEXT , mtimes TEXT )'
     ) if not $existed;
@@ -221,7 +221,7 @@ sub _current_mtimes {
     my $self  = shift;
     my @files = sort @_;
 
-    my $mtimes = $EMPTY_STR;
+    my $mtimes = $EMPTY;
 
     foreach my $file (@files) {
         my $filespec = $self->_flat_filespec($file);
@@ -266,7 +266,7 @@ sub ensure_loaded {
                 'SELECT mtimes FROM files WHERE filetype = ?', {},
                 $filetype
               )
-              or $EMPTY_STR
+              or $EMPTY
         );
 
         my $current_mtimes = $self->_current_mtimes(@flats);
