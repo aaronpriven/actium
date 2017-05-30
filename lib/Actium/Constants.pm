@@ -1,6 +1,9 @@
 package Actium::Constants 0.012;
 # Cannot use Actium:.pm since that module depends on this one
 
+### TO BE PHASED OUT ###
+# but there are too many using it at this point to eliminate it entirely
+
 use 5.020;
 use warnings;
 use Const::Fast;    ### DEP ###
@@ -27,9 +30,6 @@ BEGIN {
         TRANSBAY_NOLOCALS => [qw/FS L NX NX1 NX2 NX3 U W/],
 
     );
-
-    $constants{HASTUS_DIRS}
-      = [ 0, 1, 3, 2, 4 .. scalar @{ $constants{DIRCODES} } ];
 
     no warnings 'once';
     no strict 'refs';
@@ -146,11 +146,6 @@ The number of minutes in 12 hours (12 times 60, or 720).
 Direction codes (northbound, southbound, etc.)  The original few were
 based on transitinfo.org directions, but have been extended to include
 kinds of directions that didn't exist back then.
-
-=item @HASTUS_DIRS
-
-Numeric directions from Hastus, in the same order as @DIRCODES (so
-@DIRCODES[5] is the same direction as @HASTUS_DIRS[5]).
 
 =item @TRANSBAY_NOLOCALS
 
