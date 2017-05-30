@@ -580,24 +580,15 @@ sub linesked_url {
     my $self = shift;
     my $line = shift;
     return $url_make_cr->( $self, $line, 'agency_linesked_url' );
-
 }
 
-sub effective_date {
+method effective_date (
+    Str :$agency = $DEFAULT_AGENCY,
+    :@lines is ref_alias = [],
+    ) {
 
-    my $self = shift;
-
-    my %params = u::validate(
-        @_,
-        {   agency => { default => $DEFAULT_AGENCY },
-            lines  => { default => [], type => $PV_TYPE{ARRAYREF} },
-        }
-    );
-
-    my $agency     = $params{agency};
     my %line_cache = $self->line_cache;
 
-    my @lines = $params{lines}->@*;
     my @dates;
 
     if (@lines) {
@@ -617,7 +608,7 @@ sub effective_date {
     require Actium::O::DateTime;
     return Actium::O::DateTime->newest_date(@dates);
 
-} ## tidy end: sub effective_date
+} ## tidy end: sub METHOD0
 
 sub date_i18n_texts_hash {
     my $self    = shift;
