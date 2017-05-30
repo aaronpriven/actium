@@ -1,18 +1,35 @@
-package Actium::Clusterize 0.012;
+package Actium::Clusterize 0.014;
 
 use Actium;
 
 use Sub::Exporter -setup => { exports => [qw(clusterize)] };    ### DEP ###
 use Set::IntSpan;                                               ### DEP ###
 
-sub clusterize {
+const my $DEFAULT_CLUSTER_SIZE => 40;
 
-    (   my $size,
-        \my %original_count,
-        my $root_digits,
-        \my @all_values,
-        my $return,
-    ) = _validate(@_);
+func clusterize (
+     :$size = $DEFAULT_CLUSTER_SIZE,
+     :$root_digits = 1,
+     :$return where { $_ eq 'runlist' or $_ eq 'values' } = 'runlist',
+     :@all_values is ref_alias = [],
+     :@items is ref_alias = [],
+     :%original_count is ref_alias = {},
+    ) {
+
+    if ( @items and scalar keys %original_count ) {
+        croak "Cannot specify both count_of and items";
+    }
+    if ( not @items and not scalar keys %original_count ) {
+        croak "Must specify either count_of or items";
+    }
+
+    if (@items) {
+        my %item_count_of;
+        $item_count_of{$_}++ foreach (@items);
+        %original_count = %item_count_of;
+        # make a copy so it doesn't change an original empty count_of
+        # parameter if that was passed in
+    }
 
     ## pad leaves to the longest length, with spaces
 
@@ -265,53 +282,7 @@ sub clusterize {
 
     return \%node_of_leaf;
 
-} ## tidy end: sub clusterize
-
-sub _validate {
-    my %params = u::validate(
-        @_,
-        {   size        => { default => 40 },
-            root_digits => { type    => $PV_TYPE{SCALAR}, default => 1 },
-            count_of    => { type    => $PV_TYPE{HASHREF}, optional => 1 },
-            items       => { type    => $PV_TYPE{ARRAYREF}, optional => 1 },
-            all_values  => { type    => $PV_TYPE{ARRAYREF}, optional => 1 },
-            return => { type => $PV_TYPE{SCALAR}, default => 'runlist' },
-        }
-    );
-
-    my %count_of;
-
-    if ( exists $params{items} ) {
-        croak "Cannot specify both count_of and items"
-          if exists $params{count_of};
-        \my @items = $params{items};
-        croak "No items passed to clusterize" unless @items;
-        $count_of{$_}++ foreach (@items);
-    }
-    elsif ( exists $params{count_of} ) {
-        \%count_of = $params{count_of};
-        croak "No items passed to clusterize" unless %count_of;
-    }
-    else {
-        croak "Must specify either count_of or items";
-    }
-
-    my $all_values_r;
-    if ( exists $params{all_values} ) {
-        $all_values_r = $params{all_values};
-    }
-    else {
-        $all_values_r = [];
-    }
-
-    if ( $params{return} ne 'runlist' and $params{return} ne 'values' ) {
-        croak "Unknown return request (must be runlist or values) "
-          . $params{return};
-    }
-
-    return $params{size}, \%count_of, $params{root_digits}, $all_values_r,
-      $params{return};
-} ## tidy end: sub _validate
+} ## tidy end: func clusterize
 
 1;
 
