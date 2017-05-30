@@ -11,8 +11,6 @@ use Const::Fast;
 
 ## no critic (ProhibitMagicNumbers)
 
-#HastusDirCode
-
 use MooseX::Types -declare => [
     qw <DayCode     SchoolDayCode   DayStr
       DaySpec             ActiumDays  ActiumTime
@@ -83,17 +81,9 @@ subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 
 enum( DirCode, \@DIRCODES );
 
-#subtype HastusDirCode, as Int, where { $_ >= 0 and $_ <= $#DIRCODES };
-# "1" is contradictory - integer or "direction 1"?
-#coerce DirCode, from HastusDirCode, via { $DIRCODES[ $HASTUS_DIRS[$_] ] };
-
 subtype ActiumDir, as class_type('Actium::O::Dir');
 
-coerce( ActiumDir,
-    #    from HastusDirCode,
-    #    via               { Actium::O::Dir->instance( to_DirCode($_) ) },
-    from DirCode, via { Actium::O::Dir->instance($_) },
-);
+coerce( ActiumDir, from DirCode, via { Actium::O::Dir->instance($_) }, );
 
 ######################
 ## NOTIFY
@@ -227,12 +217,6 @@ days ("D"), school holidays ("H"), or both ("B").
 =head2 SCHEDULE DIRECTIONS
 
 =over
-
-=item B<HastusDirCode>
-
-A number from 0 to 13, representing the various direction codes used in
-the  Hastus AVL Standard Interface. It can be coerced into DirCode or
-ActiumODir.
 
 =item B<DirCode>
 
