@@ -2,16 +2,9 @@ package Actium::Cmd::OrderByTravel 0.011;
 # Takes a list of stops and order it so that people can drive down a
 # particular bus route and hit as many stops as possible.
 
-use 5.012;
-use warnings;
-
-
-use Carp;          ### DEP ###
-use Storable();    ### DEP ###
-use English ('-no_match_vars');
+use Actium;
 
 use Actium::Sorting::Travel(qw<travelsort>);
-use Actium::Constants;
 
 sub OPTIONS {
     my ( $class, $env ) = @_;
@@ -85,7 +78,7 @@ sub START {
 
     }
 
-    my $signup = $env->signup;
+    my $signup    = $env->signup;
     my $slistsdir = $signup->subfolder('slists');
 
     # retrieve data
@@ -118,7 +111,8 @@ __END__
 
 =head1 NAME
 
-orderbytravel - produce ordered list of stops by travel along bus routes
+orderbytravel - produce ordered list of stops by travel along bus
+routes
 
 =head1 VERSION
 
@@ -137,7 +131,8 @@ From a shell:
 =item I<file>
 
 The user must give the full pathname to an input file. The input file
-is treated as tab-delimited text, with the first field being the stop ID.
+is treated as tab-delimited text, with the first field being the stop
+ID.
 
 If the first field of a line is 'PhoneID', 'StopID', or 'stop_id_1', 
 the line is skipped (since it probably contains column names).
@@ -152,24 +147,22 @@ This program specifies two options itself.
 
 =item B<-promote>
 
-If present, this option must be followed by a list of lines, separated by
-commas (and no spaces). For example, 
+If present, this option must be followed by a list of lines, separated
+by commas (and no spaces). For example,
 
   actium orderbytravel -promote 26,A,58 file.txt
 
-These lines will be given precedence when choosing which line to use for a
-particular stop, even if another line has more stops.
+These lines will be given precedence when choosing which line to use
+for a particular stop, even if another line has more stops.
 
 =item B<-demote600s>
 
-If this option is given, all other lines
-will be given precedence over lines 600-699, even if a 600-series line has more
-stops.
+If this option is given, all other lines will be given precedence over
+lines 600-699, even if a 600-series line has more stops.
 
 =back
 
-Also, several modules this subprogram 
-uses specify options. See:
+Also, several modules this subprogram  uses specify options. See:
 
 =over
 
@@ -177,22 +170,24 @@ uses specify options. See:
 
 =back
 
-A complete list of options can be found by running 
-"actium.pl help orderbytravel"
+A complete list of options can be found by running  "actium.pl help
+orderbytravel"
 
 =head1 DESCRIPTION
 
-The purpose of this program is to produce lists of stops ordered by travel 
-route. This makes it easier for a maintenance
-worker or surveyor to travel down a bus route and visit all the stops,
-but without duplicates.
+The purpose of this program is to produce lists of stops ordered by
+travel  route. This makes it easier for a maintenance worker or
+surveyor to travel down a bus route and visit all the stops, but
+without duplicates.
 
-The user specifies an input file which contains stops. The program compares
-this to the 'line.storable' file, which contains a list of bus lines and
-directions and which stops, in order, are used by those lines.
+The user specifies an input file which contains stops. The program
+compares this to the 'line.storable' file, which contains a list of bus
+lines and directions and which stops, in order, are used by those
+lines.
 
-The result is a list of routings, with the affected stops, with all duplicates
-removed. It is designed so that the longest lists possible are given.
+The result is a list of routings, with the affected stops, with all
+duplicates removed. It is designed so that the longest lists possible
+are given.
 
 =head1 DIAGNOSTICS
 
@@ -209,9 +204,9 @@ The file may not have been found, or there may be some other error.
 
 =item Can't open line.storable file: $OS_ERROR
 
-An error was found trying to read the file line.storable. It may not be 
-present in the appropriate place (the "slists" folder under the specified 
-signup) or there may be some other error.
+An error was found trying to read the file line.storable. It may not be
+ present in the appropriate place (the "slists" folder under the
+specified  signup) or there may be some other error.
 
 =back
 
@@ -235,8 +230,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2011-2015
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -248,6 +243,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE. 
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
