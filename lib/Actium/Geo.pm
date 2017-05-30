@@ -38,23 +38,13 @@ sub distance_feet {
 
 }
 
-sub get_zip_for_stops {
-
-    my %params = u::validate(
-        @_,
-        {   client   => { isa  => 'REST::Client',   optional => 1 },
-            actiumdb => { can  => 'all_in_columns_key' },
-            username => { type => $PV_TYPE{SCALAR} },
-            sleep    => { type => $PV_TYPE{SCALAR}, optional => 1 },
-            max      => { type => $PV_TYPE{SCALAR}, optional => 1 },
-        }
-    );
-
-    my $client    = $params{client} // REST::Client->new();
-    my $username  = $params{username};
-    my $actium_db = $params{actiumdb};
-    my $sleep     = $params{sleep};
-    my $max       = $params{max};
+func get_zip_for_stops (
+   REST::Client :$client  = REST::Client->new() ,
+   Str :$username!,
+   Int :$sleep,
+   Int :$max,
+   :$actium_db! where { $_->can('all_in_columns_key') },
+   ) {
 
     my $stopinfo_r = $actium_db->all_in_columns_key(
         qw/Stops_Neue c_city p_zip_code h_loca_latitude h_loca_longitude/);
@@ -91,30 +81,21 @@ sub get_zip_for_stops {
 
     return \%zip_code_of;
 
-} ## tidy end: sub get_zip_for_stops
+} ## tidy end: func get_zip_for_stops
 
-sub zip_code_request {
-    my %params = u::validate(
-        @_,
-        {   client   => { isa  => 'REST::Client', optional => 1 },
-            lat      => { type => $PV_TYPE{SCALAR} },
-            lng      => { type => $PV_TYPE{SCALAR} },
-            username => { type => $PV_TYPE{SCALAR} },
-        }
-    );
-
-    my $client = $params{client} // REST::Client->new();
-    my $lat    = $params{lat};
-    my $lng    = $params{lng};
+func zip_code_request (
+     REST::Client :$client = REST::Client->new() ,
+     :$lat! ,
+     :$lng! ,
+     Str :$username!,
+   ) {
 
     my $request = 'http://api.geonames.org/findNearbyPostalCodesJSON?';
 
-    my @args
-      = ( "lat=$lat", "lng=$lng", 'maxRows=1', "username=$params{username}" );
+    my @args = ( "lat=$lat", "lng=$lng", 'maxRows=1', "username=$username" );
 
     $request .= join( "&", @args );
-
-    $params{client}->GET($request);
+    $client->GET($request);
     my $json   = $client->responseContent();
     my $struct = decode_json($json);
 
@@ -122,7 +103,7 @@ sub zip_code_request {
 
     return $zipcode;
 
-} ## tidy end: sub zip_code_request
+}
 
 1;
 
