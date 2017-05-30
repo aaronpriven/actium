@@ -117,7 +117,7 @@ sub prehistoric_skedsfile {
 
     say $out jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
 
-    my $timesub = timestr_sub( SEPARATOR => $EMPTY_STR );
+    my $timesub = timestr_sub( SEPARATOR => $EMPTY );
 
     foreach my $trip ( $self->trips ) {
         my $times = $timesub->( $trip->placetimes );
@@ -128,12 +128,11 @@ sub prehistoric_skedsfile {
 
         if ( not $except ) {
             if ( $trip->daycode ne $self->daycode ) {
-                $except = _as_transitinfo( $trip->days_obj )
+                $except = _as_transitinfo( $trip->days_obj );
             }
         }
 
-        say $out jointab( $except, $EMPTY_STR, $EMPTY_STR,
-            $trip->line, $times );
+        say $out jointab( $except, $EMPTY, $EMPTY, $trip->line, $times );
     }
 
     close $out;
@@ -183,7 +182,7 @@ sub load_prehistorics {
     my @skeds
       = map { $class->_new_from_prehistoric( $_, \%tp4_of_tp8 ) } @files;
 
-    $cry->over($EMPTY_STR);
+    $cry->over($EMPTY);
     $cry->done;
 
     return @skeds;
@@ -400,7 +399,7 @@ sub _tp9_to_tp8 {
       CHARACTER:
         for my $i ( reverse 0 .. 4 ) {
             if ( substr( $place, $i, 1 ) eq $SPACE ) {
-                substr( $place, $i, 1, $EMPTY_STR );
+                substr( $place, $i, 1, $EMPTY );
                 last CHARACTER;
             }
         }
@@ -478,8 +477,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -494,8 +493,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -507,6 +506,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

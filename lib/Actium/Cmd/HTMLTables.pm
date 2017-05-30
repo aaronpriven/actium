@@ -40,7 +40,7 @@ sub START {
     my $tttext_cry = cry('Creating timetable texts');
 
     my @tables;
-    my $prev_linegroup = $EMPTY_STR;
+    my $prev_linegroup = $EMPTY;
 
     my %htmls_of_linegroup;
 

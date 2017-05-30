@@ -61,10 +61,10 @@ sub make_bags {
     $signup_of_r->{$OLD} = $params{oldsignup};
     my $actium_db = $params{actium_db};
 
-    my $effectivedate =
-      $actium_db->effective_date(agency => 'ACTransit');
-      
-    $effectivedate = $effectivedate->month_name . $IDT->nbsp . $effectivedate->day;
+    my $effectivedate = $actium_db->effective_date( agency => 'ACTransit' );
+
+    $effectivedate
+      = $effectivedate->month_name . $IDT->nbsp . $effectivedate->day;
 
     #$effectivedate =~ s/,? \s* \d{2,4} \s* \z//sx;
 
@@ -96,7 +96,7 @@ sub _make_baglist {
 
         for my $stop_r ( @{ $of_stop_r->{$list} } ) {
 
-            my $outlist = $list eq $OLD ? $EMPTY_STR : "-add";
+            my $outlist = $list eq $OLD ? $EMPTY : "-add";
 
             push @thislist,
               [ $stop_r->{StopID}, $stop_r->{Group} . $outlist,
@@ -296,10 +296,10 @@ const my $SMALLSEP => $IDT->thirdspace
 sub _prepare_lines {
 
     my $unprepared = shift;
-    return if ( not defined $unprepared or $unprepared eq $EMPTY_STR );
+    return if ( not defined $unprepared or $unprepared eq $EMPTY );
 
     my @lines = split( ' ', $unprepared );
-    @lines = grep { $_ ne $EMPTY_STR } @lines;
+    @lines = grep { $_ ne $EMPTY } @lines;
 
     my %return;
 
@@ -315,7 +315,7 @@ sub _prepare_lines {
     }
 
     my @textlines;
-    my $thisline = $EMPTY_STR;
+    my $thisline = $EMPTY;
 
     my $line_width = 11;
 
@@ -337,7 +337,7 @@ sub _prepare_lines {
 
     # last item
 
-    my $chars = $lines[-1] || $EMPTY_STR;
+    my $chars = $lines[-1] || $EMPTY;
 
     if ( _charwidth( $thisline . $chars ) <= ($line_width) ) {
 
@@ -359,7 +359,7 @@ sub _prepare_lines {
         }
     }
 
-    my $lines = join( $EMPTY_STR, @textlines );
+    my $lines = join( $EMPTY, @textlines );
     $lines =~ s/$SPACE/$sep/g;
     $return{lines} = $lines;
 
@@ -374,7 +374,7 @@ sub _para {
     if ( defined $_[0] ) {
         my $para = shift;
         $paras{$para}++;
-        return $IDT->parastyle($para) . join( $EMPTY_STR, @_ );
+        return $IDT->parastyle($para) . join( $EMPTY, @_ );
     }
 
     return \%paras;

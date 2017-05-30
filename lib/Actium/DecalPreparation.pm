@@ -224,10 +224,10 @@ sub decals_of_stop {
 
     foreach my $stopid ( sort keys %lines_of ) {
 
-        my $decals = $db_decals_of_r->{$stopid} // $EMPTY_STR;
+        my $decals = $db_decals_of_r->{$stopid} // $EMPTY;
 
         next
-          if $decals eq $EMPTY_STR
+          if $decals eq $EMPTY
           and u::folded_in( $stopid => 'id', 'stop id', 'stopid' );
 
         my ( @decals, @found_decals, @lines );

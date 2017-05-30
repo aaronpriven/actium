@@ -1,4 +1,4 @@
-package Actium::Cmd::AVL2StopLists 0.011;
+package Actium::Cmd::AVL2StopLists 0.014;
 
 use Actium;
 # avl2stoplists - see POD documentation below
@@ -107,7 +107,7 @@ sub START {
             push @thesestops, $stopid;
 
             print $fh $stopid, "\t",
-              $stops{$stopid}{c_description_full} // $EMPTY_STR, "\n";
+              $stops{$stopid}{c_description_full} // $EMPTY, "\n";
         }
 
         push @{ $liststomerge{$route}{$dir} }, \@thesestops;
@@ -138,7 +138,7 @@ sub START {
                 print $fh u::jointab( $route, $dir ), "\n";
                 foreach (@union) {
 
-                    my $desc = $stops{$_}{c_description_full} // $EMPTY_STR;
+                    my $desc = $stops{$_}{c_description_full} // $EMPTY;
                     #utf8::decode($desc);
 
                     print $fh "$_\t$desc\n";

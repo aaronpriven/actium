@@ -35,7 +35,7 @@ sub create_timetable_texts {
     my @skeds  = @_;
 
     my ( %tables_of, @alltables );
-    my $prev_linegroup = $EMPTY_STR;
+    my $prev_linegroup = $EMPTY;
     foreach my $sked (@skeds) {
 
         my $linegroup = $sked->linegroup;
@@ -50,7 +50,7 @@ sub create_timetable_texts {
 
     }
 
-    $cry->over($EMPTY_STR);
+    $cry->over($EMPTY);
     $cry->done;
 
     return \@alltables, \%tables_of;
@@ -96,7 +96,7 @@ sub get_pubtt_contents_with_dates {
 
     foreach my $line (@$lines_r) {
         my $fromdb = $on_timetable_from_db_r->{$line}{'PubTimetable'};
-        if ( defined $fromdb and $fromdb ne $EMPTY_STR ) {
+        if ( defined $fromdb and $fromdb ne $EMPTY ) {
             push @{ $on_timetable_of{$fromdb} }, $line;
         }
         else {
@@ -108,8 +108,8 @@ sub get_pubtt_contents_with_dates {
 
     for my $lines_r ( values %on_timetable_of ) {
         my @lines = @{$lines_r};
-        
-        my $date_obj = $db_obj->effective_date(lines => \@lines);
+
+        my $date_obj = $db_obj->effective_date( lines => \@lines );
 
         my $date      = $date_obj->long_en;
         my $file_date = $date_obj->ymd('_');
@@ -205,7 +205,7 @@ sub _output_pubtt_front_matter {
     my $tables_r      = shift;
     my @lines         = @{ +shift };
     my @front_matter  = @{ +shift };
-    my $effectivedate = shift // $EMPTY_STR;
+    my $effectivedate = shift // $EMPTY;
 
     # @front_matter is currently unused, but I am leaving the code in here
     # for now
@@ -252,8 +252,8 @@ sub _output_pubtt_front_matter {
 
     print $ttfh $IDT->boxbreak;
 
-    print $ttfh $per_line_texts_r->{$EMPTY_STR}
-      if exists $per_line_texts_r->{$EMPTY_STR};
+    print $ttfh $per_line_texts_r->{$EMPTY}
+      if exists $per_line_texts_r->{$EMPTY};
 
     print $ttfh $IDT->boxbreak;
 
@@ -320,14 +320,14 @@ sub _make_days {
     }
 
     if ( @lines == 1 ) {
-        return { $EMPTY_STR => $days_obj_of{ $lines[0] } };
+        return { $EMPTY => $days_obj_of{ $lines[0] } };
     }
 
     my @days_objs = values %days_obj_of;
     my @days_codes = uniq( map { $_->as_sortable } @days_objs );
 
     if ( @days_codes == 1 ) {
-        return { $EMPTY_STR => $days_objs[0] };
+        return { $EMPTY => $days_objs[0] };
     }
 
     return \%days_obj_of;
@@ -358,7 +358,7 @@ sub _make_locals {
     my @locals = uniq( sort values %local_of );
 
     if ( @locals == 1 ) {
-        return { $EMPTY_STR => $locals[0] };
+        return { $EMPTY => $locals[0] };
     }
 
     return \%local_of;
@@ -377,7 +377,7 @@ sub _local_text {
           . 'Local Passengers Permitted for Local Fare';
     }
 
-    return $EMPTY_STR;
+    return $EMPTY;
 
 }
 
@@ -425,8 +425,8 @@ sub output_a_pubtts {
     foreach my $pubtt_content_r (@pubtt_contents_with_dates) {
         my $pubtt         = $pubtt_content_r->{lines};
         my $linegroup     = $pubtt->[0];
-        my $effectivedate = $pubtt_content_r->{date} // $EMPTY_STR;
-        my $file_date     = $pubtt_content_r->{file_date} // $EMPTY_STR;
+        my $effectivedate = $pubtt_content_r->{date} // $EMPTY;
+        my $file_date     = $pubtt_content_r->{file_date} // $EMPTY;
         my $dbentry       = $pubtimetables_r->{$linegroup};
         my $leave_cover_for_map
           = ( ( $dbentry->{LeaveCoverForMap} // 'No' ) eq 'Yes' );
@@ -504,9 +504,9 @@ sub output_a_pubtts {
             file             => $file,
             effectivedate    => $file_date,
             pages            => $pagebreak_count,
-            MapFile          => $dbentry->{MapFile} // $EMPTY_STR,
+            MapFile          => $dbentry->{MapFile} // $EMPTY,
             LeaveCoverForMap => $leave_cover_for_map,
-            MasterPage       => $dbentry->{MasterPage} // $EMPTY_STR,
+            MasterPage       => $dbentry->{MasterPage} // $EMPTY,
             has_short_page   => $has_short_page,
             portrait_chars   => $portrait_chars,
         };
@@ -522,7 +522,7 @@ sub output_a_pubtts {
     }
     close $listfh;
 
-    $cry->over($EMPTY_STR);
+    $cry->over($EMPTY);
     $cry->done;
 
     # $cry->text( "Has more than eight pages: @over_eight_pages");
@@ -531,7 +531,6 @@ sub output_a_pubtts {
 } ## tidy end: sub output_a_pubtts
 
 1;
-
 
 __END__
 
@@ -576,8 +575,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -592,8 +591,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -605,6 +604,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

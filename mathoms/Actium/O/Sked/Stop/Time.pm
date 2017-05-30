@@ -5,15 +5,15 @@ package Actium::O::Sked::Stop::Time 0.012;
 use 5.016;
 use strict;
 
-use Moose; ### DEP ###
+use Moose;    ### DEP ###
 #use MooseX::StrictConstructor;
-use Moose::Util::TypeConstraints; ### DEP ###
+use Moose::Util::TypeConstraints;    ### DEP ###
 use Actium::O::Days;
 use Actium::Constants;
 
-use namespace::autoclean; ### DEP ###
+use namespace::autoclean;            ### DEP ###
 
-use MooseX::Storage; ### DEP ###
+use MooseX::Storage;                 ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
 use Actium::Types qw(Str4 TimeNum ActiumDays);
@@ -25,18 +25,18 @@ has [qw(origin destination follower previous)] => (
 );
 
 has at_place => (
-is => 'bare',
-isa => Str4 ,
-lazy => 1,
-builder => '_build_at_place',
+    is      => 'bare',
+    isa     => Str4,
+    lazy    => 1,
+    builder => '_build_at_place',
 );
 
 sub _build_at_place {
-   my $self = shift;
-   my $previous = $self->previous;
-   my $follower = $self->follower;
-   
-   return $previous eq $follower ? $previous : $EMPTY_STR;
+    my $self     = shift;
+    my $previous = $self->previous;
+    my $follower = $self->follower;
+
+    return $previous eq $follower ? $previous : $EMPTY;
 
 }
 
@@ -67,22 +67,21 @@ has 'time' => (
 );
 
 has stop_index => (
-   is => 'ro',
-   isa => 'Int',
+    is  => 'ro',
+    isa => 'Int',
 );
 
 my $kpoint_timestr_sub = Actium::Time::timestr_sub( SEPARATOR => '', XB => 1 );
 
 sub for_kpoint {
     my $self = shift;
-    
-    my @kpoint_time = $kpoint_timestr_sub->($self->time), $self->line,
-    $self->destination,$self->place,$self->daysexc
- 
- 
+
+    my @kpoint_time = $kpoint_timestr_sub->( $self->time ), $self->line,
+      $self->destination, $self->place, $self->daysexc
+
 }
 
-__PACKAGE__->meta->make_immutable; ## no critic (RequireExplicitInclusion)
+__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 1;
 
@@ -129,8 +128,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -145,8 +144,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -158,6 +157,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

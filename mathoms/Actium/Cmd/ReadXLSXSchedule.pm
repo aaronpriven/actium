@@ -50,7 +50,7 @@ sub _get_trips {
 
     #say u::joinlf( @{ tabulate(@tp_rows) } );
     say Actium::O::2DArray->new(@tp_rows)->tabulated();
-    say $EMPTY_STR;
+    say $EMPTY;
     #say u::joinlf( @{ tabulate(@stop_rows) } );
     say Actium::O::2DArray->new->(@stop_rows)->tabulated();
 
@@ -68,7 +68,7 @@ sub _get_rows {
         my @row = map { $sheet->get_cell( $row_idx, $_ ) } ( $left .. $right );
 
         for my $cell (@row) {
-            my $value = defined $cell ? $cell->value : $EMPTY_STR;
+            my $value = defined $cell ? $cell->value : $EMPTY;
 
             $value = _excel_to_timestr( $cell->unformatted )
               if (  Scalar::Util::looks_like_number $value
@@ -91,7 +91,7 @@ sub _get_rows {
 sub _excel_to_timestr {
 
     my $timefraction = shift;
-    my $ampm         = $EMPTY_STR;
+    my $ampm         = $EMPTY;
 
     if ( $timefraction < 0 ) {
         $timefraction += 0.5;
@@ -131,8 +131,8 @@ sub _get_intros {
         my $attribute = $introsheet->get_cell( $row, $col_min )->value;
         my $value     = $introsheet->get_cell( $row, $col_min + 1 )->value;
 
-        my $av = ( u::isempty($attribute) ? $EMPTY_STR : 'A' )
-          . ( u::isempty($value) ? $EMPTY_STR : 'V' );
+        my $av = ( u::isempty($attribute) ? $EMPTY : 'A' )
+          . ( u::isempty($value) ? $EMPTY : 'V' );
 
         if ( $av eq 'AV' ) {
             $intros{$attribute} = $value;
@@ -212,18 +212,19 @@ Description of subroutine.
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can generate
-(even the ones that will "never happen"), with a full explanation of each
-problem, one or more likely causes, and any suggested remedies. If the
-application generates exit status codes, then list the exit status associated
-with each error.
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-A full explanation of any configuration system(s) used by the application,
-including the names and locations of any configuration files, and the meaning
-of any environment variables or properties that can be se. These descriptions
-must also include details of any configuration language used.
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
 
 =head1 DEPENDENCIES
 
@@ -237,8 +238,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or modify it under
-the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -250,7 +251,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 

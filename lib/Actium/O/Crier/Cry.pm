@@ -161,7 +161,7 @@ sub _timestamp_now {
         return sprintf "%2.2d:%2.2d:%2.2d ", $h, $m, $s;
     }
 
-    return $EMPTY_STR;
+    return $EMPTY;
 }
 
 has 'ellipsis' => (

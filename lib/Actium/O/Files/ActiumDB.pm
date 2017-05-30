@@ -865,8 +865,8 @@ sub lines_at_transit_hubs_html {
 
     foreach my $city ( sort $self->transithub_cities ) {
 
-        my $citytext  = $EMPTY_STR;
-        my $skip_city = 1;            # skip city unless we see some lines
+        my $citytext  = $EMPTY;
+        my $skip_city = 1;        # skip city unless we see some lines
 
         $citytext
           .= qq{<h3>$city</h3>\n}

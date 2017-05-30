@@ -276,7 +276,7 @@ sub _output_usage {
         my $displayname = sprintf '%*s -- ', $longest, "-$name";
 
         say STDERR Text::Wrap::wrap(
-            $EMPTY_STR,
+            $EMPTY,
             q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
             $displayname . $description_of{$name}
         );

@@ -196,7 +196,7 @@ sub _build_final_stoptime_idx {
     my $idx;
     for my $i ( reverse( 0 .. $self->stoptime_count ) ) {
         my $time = $self->stoptime($i);
-        if ( defined $time and $time ne $EMPTY_STR ) {
+        if ( defined $time and $time ne $EMPTY ) {
             $idx = $i;
             last;
         }

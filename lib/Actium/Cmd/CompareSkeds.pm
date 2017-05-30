@@ -1,4 +1,4 @@
-package Actium::Cmd::CompareSkeds 0.012;
+package Actium::Cmd::CompareSkeds 0.014;
 
 use Actium;
 use Actium::O::Folder;
@@ -187,7 +187,7 @@ sub _makessdiff {
 } ## tidy end: sub _makessdiff
 
 sub joinspace {
-    return join( $SPACE, map { $_ // $EMPTY_STR } @_ );
+    return join( $SPACE, map { $_ // $EMPTY } @_ );
 }
 
 1;

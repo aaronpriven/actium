@@ -97,7 +97,7 @@ sub START {
 
     #iterates over each schedule
     my $count = 0;
-    my $prev  = $EMPTY_STR;
+    my $prev  = $EMPTY;
 
     print "Processing line:";
 
@@ -213,7 +213,7 @@ sub modify_duplicate_places {
               $sked_order_of{$key}[ $placeidx - 1 ];
             my $thistime = $trip->{TIMES}[$placeidx];
             my $prevtime = $trip->{TIMES}[ $placeidx - 1 ];
-            next PLACE if $thistime ne $EMPTY_STR and $prevtime ne $EMPTY_STR;
+            next PLACE if $thistime ne $EMPTY and $prevtime ne $EMPTY;
 
             # now we know we have only one time between the two columns.
             # Put it in the second column if there are more times; otherwise
@@ -221,20 +221,20 @@ sub modify_duplicate_places {
 
             $thistime = $thistime || $prevtime;
 
-            if (join( $EMPTY_STR,
+            if (join( $EMPTY,
                     @{ $trip->{TIMES} }[ $placeidx + 1 .. $lastplaceidx ] ) eq
-                $EMPTY_STR
+                $EMPTY
               )
             {
                 # if all the times after this one are blank
 
                 # put it in the first column
-                $trip->{TIMES}[$placeidx] = $EMPTY_STR;
+                $trip->{TIMES}[$placeidx] = $EMPTY;
                 $trip->{TIMES}[ $placeidx - 1 ] = $thistime;
             }
             else {
                 # put it in the second column
-                $trip->{TIMES}[ $placeidx - 1 ] = $EMPTY_STR;
+                $trip->{TIMES}[ $placeidx - 1 ] = $EMPTY;
                 $trip->{TIMES}[$placeidx] = $thistime;
             }
 
@@ -272,8 +272,8 @@ sub merge_days {
         # so now we know that the first day and second day exist.
 
         next SKED
-          if join( $EMPTY_STR, @{ $sked_order_of{$skedkey} } ) ne
-          join( $EMPTY_STR, @{ $sked_order_of{$secondkey} } );
+          if join( $EMPTY, @{ $sked_order_of{$skedkey} } ) ne
+          join( $EMPTY, @{ $sked_order_of{$secondkey} } );
         # skip it if timepoints aren't all the same
 
         next SKED
@@ -288,8 +288,8 @@ sub merge_days {
               if $sked_of{$skedkey}[$idx]{SPECDAYS} ne
               $sked_of{$secondkey}[$idx]{SPECDAYS};
             next SKED
-              if join( $EMPTY_STR, @{ $sked_of{$skedkey}[$idx]{TIMES} } ) ne
-              join( $EMPTY_STR, @{ $sked_of{$secondkey}[$idx]{TIMES} } );
+              if join( $EMPTY, @{ $sked_of{$skedkey}[$idx]{TIMES} } ) ne
+              join( $EMPTY, @{ $sked_of{$secondkey}[$idx]{TIMES} } );
 
         }
 
@@ -332,8 +332,8 @@ sub remove_duplicate_rows {
    # given that no special days information comes through
 
         next
-          if join( $EMPTY_STR, @{ $sked->[$row]{TIMES} } ) ne
-          join( $EMPTY_STR, @{ $sked->[ $row - 1 ]{TIMES} } );
+          if join( $EMPTY, @{ $sked->[$row]{TIMES} } ) ne
+          join( $EMPTY, @{ $sked->[ $row - 1 ]{TIMES} } );
 
         splice( @{$sked}, $row, 1 );    # delete this row
 
@@ -455,7 +455,7 @@ sub make_sked {
 
             # pad out the trips until
             if ( $current_idx > $final_idx ) {
-                push @expanded_trip, $EMPTY_STR;
+                push @expanded_trip, $EMPTY;
                 next PLACE;
             }
 
@@ -467,7 +467,7 @@ sub make_sked {
                 push @expanded_trip, $current_time;
             }
             else {
-                push @expanded_trip, $EMPTY_STR;
+                push @expanded_trip, $EMPTY;
             }
 
         } ## tidy end: PLACE: foreach my $place_to_process...
@@ -503,7 +503,7 @@ sub write_sked {
         #if ($dir ne 'rawskeds') {
         tr/bx/pa/ for @times;    # old format can't handle b, a times
                                  #}
-        say $out jointab( $trip->{SPECDAYS}, $EMPTY_STR, $EMPTY_STR,
+        say $out jointab( $trip->{SPECDAYS}, $EMPTY, $EMPTY,
             $trip->{LINE}, @times );
     }
 
@@ -542,8 +542,8 @@ sub make_place_ordering {
           = ordered_union( $sked_override_order_of{$key},
             values %trip_tps_seen );
 
-        if (join( $EMPTY_STR, @{ $sked_override_order_of{$key} } ) ne
-            join( $EMPTY_STR, @{ $sked_order_of{$key} } ) )
+        if (join( $EMPTY, @{ $sked_override_order_of{$key} } ) ne
+            join( $EMPTY, @{ $sked_order_of{$key} } ) )
         {
             warn
 "\nTimepoints in timepointorder.txt not the same as final result for "
@@ -628,7 +628,7 @@ sub make_skeds_pairs_of_hash {
         my $line = $tripinfo_of{RouteForStatistics};
         next TRIP if $line eq '399';    # supervisor order
 
-        my $specdays = $tripinfo_of{SpecDays} || $EMPTY_STR;
+        my $specdays = $tripinfo_of{SpecDays} || $EMPTY;
 
         my $hasidays = $tripinfo_of{OperatingDays} =~ s/\*//gr;
 
@@ -646,7 +646,7 @@ sub make_skeds_pairs_of_hash {
         }
 
         my $dirval = $avldata{PAT}{$patkey}{DirectionValue};
-        if ( $dirval eq $EMPTY_STR ) {
+        if ( $dirval eq $EMPTY ) {
             next TRIP;
         }
         my $dir_code = dir_of_hasi($dirval);
@@ -815,10 +815,12 @@ files suitable for ACTium.
 
 =head1 BUGS
 
-Sometimes two different places will have the same long timepoint abbreviation, e.g., Hillsdale Mall
-and Hilltop Mall are both HILL MALL, even though one is HIML and the other is HDMA. For this particular
-example, it knows that HDMA should be changed to HDAL MALL . For everything else, it will be ambiguous.
-Enter the four-digit abbreviation, not the longer one, in timepointorder.txt.
+Sometimes two different places will have the same long timepoint
+abbreviation, e.g., Hillsdale Mall and Hilltop Mall are both HILL MALL,
+even though one is HIML and the other is HDMA. For this particular
+example, it knows that HDMA should be changed to HDAL MALL . For
+everything else, it will be ambiguous. Enter the four-digit
+abbreviation, not the longer one, in timepointorder.txt.
 
 =head1 AUTHOR
 

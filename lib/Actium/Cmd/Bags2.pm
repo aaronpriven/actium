@@ -1,4 +1,4 @@
-package Actium::Cmd::Bags2 0.012;
+package Actium::Cmd::Bags2 0.014;
 
 # service change bag decals from Excel and into a script
 
@@ -290,7 +290,7 @@ sub _translate_phrase {
 sub _para {
     my $para = shift;
     $para = "A-$para";    # allows find-and-replace to B-, C-, etc.
-    return $IDT->parastyle($para) . join( $EMPTY_STR, @_ );
+    return $IDT->parastyle($para) . join( $EMPTY, @_ );
 }
 
 sub _zh_phrase {

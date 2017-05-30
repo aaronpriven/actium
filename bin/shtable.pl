@@ -284,7 +284,7 @@ sub nextline {
       = map { $sheet->get_cell( $currentrow, $_ ) } ( $mincol .. $maxcol );
 
     my @values = map {
-        defined ? $_->value : $EMPTY_STR } @cells;
+        defined ? $_->value : $EMPTY } @cells;
         
     @values = cleanvalues(@values);
     return if ( u::none {$_} @values );

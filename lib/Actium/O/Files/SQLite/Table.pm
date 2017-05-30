@@ -7,10 +7,10 @@ package Actium::O::Files::SQLite::Table 0.012;
 use warnings;
 use 5.012;    # turns on features
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
+use Moose;                        ### DEP ###
+use MooseX::StrictConstructor;    ### DEP ###
 
-use namespace::autoclean; ### DEP ###
+use namespace::autoclean;         ### DEP ###
 
 use Actium::Constants;
 
@@ -126,7 +126,7 @@ sub column_type_of {
     my $self   = shift;
     my $column = shift;
     my $type   = _type_given_of($column);
-    return $type // $EMPTY_STR;
+    return $type // $EMPTY;
 
 }
 
@@ -145,7 +145,7 @@ has 'key' => (
 sub _build_key {
     my $self = shift;
     return unless $self->_key_component_count;
-    return $self->id . '_key' if $self->has_composite_key ;
+    return $self->id . '_key' if $self->has_composite_key;
     return $self->_key_component_number(0);
 }
 
@@ -277,13 +277,14 @@ __END__
 
 =head1 NAME
 
-Actium::O::Files::SQLite::Table - Class representing tables used by classes
-consuming Actium::O::Files::SQLite role
+Actium::O::Files::SQLite::Table - Class representing tables used by
+classes consuming Actium::O::Files::SQLite role
 
 =head1 NOTE
 
-This documentation is intended for maintainers of the Actium system, not
-users of it. Run "perldoc Actium" for general information on the Actium system.
+This documentation is intended for maintainers of the Actium system,
+not users of it. Run "perldoc Actium" for general information on the
+Actium system.
 
 =head1 VERSION
 
@@ -309,16 +310,17 @@ This documentation refers to version 0.001
 
 =head1 DESCRIPTION
 
-Actium::O::Files::SQLite::Table is a class holding information
-on the tables in a type of file imported into SQLite via a class consuming the 
-Actium::O::Files::SQLite role.
+Actium::O::Files::SQLite::Table is a class holding information on the
+tables in a type of file imported into SQLite via a class consuming the
+ Actium::O::Files::SQLite role.
 
-All objects are read-only and are expected to be set during object construction.
+All objects are read-only and are expected to be set during object
+construction.
 
 It is intended to be used only from within another class, such as 
 Actium::O::Files::HastusASI::Definition or (formerly) 
-Actium::O::Files::FMPXMLresult. All 
-attributes and methods should be considered private to that class.
+Actium::O::Files::FMPXMLresult. All  attributes and methods should be
+considered private to that class.
 
 =head1 ATTRIBUTES and METHODS
 
@@ -328,9 +330,9 @@ attributes and methods should be considered private to that class.
 
 =item B<id>
 
-Identifier for the table. This should be the same as the table's "Record"
-('PAT' for the trip pattern description record, 'TPS' for the trip pattern
-detail record, etc.). 
+Identifier for the table. This should be the same as the table's
+"Record" ('PAT' for the trip pattern description record, 'TPS' for the
+trip pattern detail record, etc.).
 
 =item B<parent>
 
@@ -340,14 +342,14 @@ For example, "TPS" tables each have a parent "PAT" record.
 =item B<children>
 
 The names of the children tables of this table, if any. (The
-constructor should specify children_r and provide a reference to
-the list of names.) 
+constructor should specify children_r and provide a reference to the
+list of names.)
 
 =item B<filetype>
 
-The file type identifier for this table. For example, "DIS" and
-"SHA" tables are found in the "NET" (itinerary) file.  (For FileMaker,
-the filetype and id will be identical.)
+The file type identifier for this table. For example, "DIS" and "SHA"
+tables are found in the "NET" (itinerary) file.  (For FileMaker, the
+filetype and id will be identical.)
 
 =back
 
@@ -357,7 +359,7 @@ the filetype and id will be identical.)
 
 =item B<columns>
 
-The names of the columns of the table, in order. 
+The names of the columns of the table, in order.
 
 =item B<column_number(I<idx>)>
 
@@ -365,47 +367,49 @@ Given an index n, returns the column name of the nth column.
 
 =item B<column_idx_of(I<column>)>
 
-Given a column name, returns the index of that column 
-(what its position in order is).
+Given a column name, returns the index of that column  (what its
+position in order is).
 
 =item B<column_idx_hash>
 
-Returns a flattened hash. The column names are the keys, and the
-values are each column's place in the order: the first column's
-value is 0, the second's is 1, etc.
+Returns a flattened hash. The column names are the keys, and the values
+are each column's place in the order: the first column's value is 0,
+the second's is 1, etc.
 
 =item B<column_length_of>
 
-Accepts a column name as an argument, and returns 
-the column's length in bytes. Using this is
-deprecated since not all Hastus ASI data in the world actually fits
-the specified lengths. This will not be populated for all types of imports.
+Accepts a column name as an argument, and returns  the column's length
+in bytes. Using this is deprecated since not all Hastus ASI data in the
+world actually fits the specified lengths. This will not be populated
+for all types of imports.
 
 =item B<column_type_of>
 
-Accepts a column name as an argument, and returns 
-the column's specified type (TEXT, NUMBER, etc.) from the original database. 
-At this time, these are not being used since SQLite pretty much ignores types.
-This will not be populated for all types of imports.
+Accepts a column name as an argument, and returns  the column's
+specified type (TEXT, NUMBER, etc.) from the original database.  At
+this time, these are not being used since SQLite pretty much ignores
+types. This will not be populated for all types of imports.
 
 =item B<column_repetitions_of>
 
-Accepts a column name as an argument, and returns 
-the number of repetitions found in that column. FileMaker allows a column to
-have a number of different values, called repetitions. If no number of repetitions
-was given, 1 will be returned. In any event, this will be 1 except for rare circumstances.
+Accepts a column name as an argument, and returns  the number of
+repetitions found in that column. FileMaker allows a column to have a
+number of different values, called repetitions. If no number of
+repetitions was given, 1 will be returned. In any event, this will be 1
+except for rare circumstances.
 
-For fields with more than one repetition, the data should be stored with data 
-for the different repetitions separated by the group separator character 
-( ASCII 29, "GS" Group Separator, also known as control-]. This is 
-$KEY_SEPARATOR in L<Actium::Constants|Actium::Constants>.)
+For fields with more than one repetition, the data should be stored
+with data  for the different repetitions separated by the group
+separator character  ( ASCII 29, "GS" Group Separator, also known as
+control-]. This is  $KEY_SEPARATOR in
+L<Actium::Constants|Actium::Constants>.)
 
 =item B<has_repeating_final_column>
 
 This boolean flag indicates whether the last column in the field
-definition is the first of 50 repeated entries. (I'm not sure why
-the PPAT table is defined like this instead of using a subsidiary
-table.)  This will not be used for all types of imports.
+definition is the first of 50 repeated entries. (I'm not sure why the
+PPAT table is defined like this instead of using a subsidiary table.) 
+This will not be used for all types of imports.
 
 =back
 
@@ -422,19 +426,21 @@ found in the original data, combining the various key columns.
 =item B<has_composite_key>
 
 This boolean flag indicates whether the key, if any, is a composite
-key. (If false, either there is no key or the key is a single column from the
-Hastus ASI data.) Defaults to 0.
+key. (If false, either there is no key or the key is a single column
+from the Hastus ASI data.) Defaults to 0.
 
 =item B<key_components>
 
-Returns a list of names of the columns of the component(s) of the key, if any. 
-If the table has a single key column, it will have a single entry. 
+Returns a list of names of the columns of the component(s) of the key,
+if any.  If the table has a single key column, it will have a single
+entry.
 
 =item B<key_components_idxs>
 
-Returns a list of which places in the list of columns the component(s) of the 
-key, if any, have. That is, if the second, fifth, and eighth columns are the 
-components of the key, key_components_idx will be ( 1, 4, 7 ) .
+Returns a list of which places in the list of columns the component(s)
+of the  key, if any, have. That is, if the second, fifth, and eighth
+columns are the  components of the key, key_components_idx will be ( 1,
+4, 7 ) .
 
 =back
 
@@ -444,27 +450,28 @@ components of the key, key_components_idx will be ( 1, 4, 7 ) .
 
 =item B<sql_createcmd>
 
-Returns a string containing an SQL command for creating this table in an 
-SQLite database.
+Returns a string containing an SQL command for creating this table in
+an  SQLite database.
 
 =item B<sql_insertcmd>
 
-Returns a string containing an SQL command for inserting an entire row of data 
-of this table into an SQLite database.
+Returns a string containing an SQL command for inserting an entire row
+of data  of this table into an SQLite database.
 
 =item B<sql_idxcmd>
 
-Returns a string containing an SQL command for creating an index on the key 
-column of this table. The index will be called "idx_<table name>_key". (This 
-is true no matter what the key column actually is.) If there is no key for this 
-table, the value is undef.
+Returns a string containing an SQL command for creating an index on the
+key  column of this table. The index will be called "idx_<table
+name>_key". (This  is true no matter what the key column actually is.)
+If there is no key for this  table, the value is undef.
 
 =back
 
 =head1 OBJECT CONSTRUCTION
 
-As with most Moose classes, the constructor method is called "new". Invoke it
-with C<< Actium::O:::Files::HastusASI::Table->new(%hash_of_attributes) >>.
+As with most Moose classes, the constructor method is called "new".
+Invoke it with C<<
+Actium::O:::Files::HastusASI::Table->new(%hash_of_attributes) >>.
 
 The following attributes should be specified in object construction:
 
@@ -476,12 +483,13 @@ The following attributes should be specified in object construction:
 
 =item B<parent> (optional)
 
-See L<the entries above under ATTRIBUTES and METHODS|/"ATTRIBUTES and METHODS">.
+See L<the entries above under ATTRIBUTES and METHODS|/"ATTRIBUTES and
+METHODS">.
 
 =item B<children_r> (optional)
 
-A reference to a list of the names of the children tables of this table.
-Defaults to an empty array.
+A reference to a list of the names of the children tables of this
+table. Defaults to an empty array.
 
 =item B<columns_r> (required)
 
@@ -489,32 +497,33 @@ A reference to a list of the names of the columns.
 
 =item B<column_length_of_r> (optional)
 
-A reference to a hash: the keys are the column names and the values are the 
-length in bytes of each column. Usage of these values is deprecated.
+A reference to a hash: the keys are the column names and the values are
+the  length in bytes of each column. Usage of these values is
+deprecated.
 
 =item B<column_repetitions_of_r> (optional)
 
-A reference to a hash: the keys are the column names and the values are the 
-number of repetitions found in each column. 
-See L<the entry above under ATTRIBUTES and METHODS|/"ATTRIBUTES and METHODS">.
+A reference to a hash: the keys are the column names and the values are
+the  number of repetitions found in each column.  See L<the entry above
+under ATTRIBUTES and METHODS|/"ATTRIBUTES and METHODS">.
 
 If omitted, the returned value will be 1.
 
 =item B<column_type_of_r> (optional)
 
-A reference to a hash: the keys are the column names and the values are a
-string representing the type of each column. 
-See L<the entry above under ATTRIBUTES and METHODS|/"ATTRIBUTES and METHODS">.
+A reference to a hash: the keys are the column names and the values are
+a string representing the type of each column.  See L<the entry above
+under ATTRIBUTES and METHODS|/"ATTRIBUTES and METHODS">.
 
 =item B<has_repeating_final_column> (optional)
 
-See L<the entry above under ATTRIBUTES and METHODS|/"ATTRIBUTES and METHODS">.
-Defaults to false (0).
+See L<the entry above under ATTRIBUTES and METHODS|/"ATTRIBUTES and
+METHODS">. Defaults to false (0).
 
 =item B<key_components_r> (optional)
 
-A reference to a list of the names of the component(s) of the key, if any.
-Defaults to the empty list.
+A reference to a list of the names of the component(s) of the key, if
+any. Defaults to the empty list.
 
 =back
 
@@ -539,8 +548,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2011
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -552,6 +561,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE. 
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

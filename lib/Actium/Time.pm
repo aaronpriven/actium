@@ -3,19 +3,19 @@ package Actium::Time 0.012;
 # Routines for formatting times and parsing formatted times
 # -- to be phased out in favor of Actium::O::Time
 
-use warnings; ### DEP ###
-use strict; ### DEP ###
+use warnings;    ### DEP ###
+use strict;      ### DEP ###
 
 use 5.010;
 
-use Carp; ### DEP ###
+use Carp;        ### DEP ###
 use Actium::Constants;
-use Params::Validate qw(:all); ### DEP ###
-use Const::Fast; ### DEP ###
-use Scalar::Util (qw<reftype looks_like_number>); ### DEP ###
-use Memoize; ### DEP ###
+use Params::Validate qw(:all);    ### DEP ###
+use Const::Fast;                  ### DEP ###
+use Scalar::Util (qw<reftype looks_like_number>);    ### DEP ###
+use Memoize;                                         ### DEP ###
 
-use List::MoreUtils (qw<firstidx>); ### DEP ###
+use List::MoreUtils (qw<firstidx>);                  ### DEP ###
 
 ## no critic (ProhibitMagicNumbers)
 
@@ -69,28 +69,25 @@ sub _single_timenum {
     # strip everything except numbers, digits, apostrophe, and apxb
 
     for ($time) {
-        if (
-                 (/^   0?      [1-9] [0-5] [0-9] [apxb] $/sx)
-              or (/^   1       [0-2] [0-5] [0-9] [apxb] $/sx)
-          )
+        if (   (/^   0?      [1-9] [0-5] [0-9] [apxb] $/sx)
+            or (/^   1       [0-2] [0-5] [0-9] [apxb] $/sx) )
         {    # 12 hours
             return $cache{$time} = _ampm_to_num($time);
         }
         if (/^ \-?       [0-9]+ [0-5] [0-9] $/sx) {    # 24 hour
             return $cache{$time} = _24h_to_num($time);
         }
-        if (
-                 (/^   [01]?  [0-9] \' [0-5] [0-9] $/sx)
-              or (/^    2     [0-3] \' [0-5] [0-9] $/sx)
-          )
+        if (   (/^   [01]?  [0-9] \' [0-5] [0-9] $/sx)
+            or (/^    2     [0-3] \' [0-5] [0-9] $/sx) )
         {    # before-midnight military
             $time =~ s/\'//g;
-            return $cache{$time} = ( _24h_to_num($time) - ( 2 * $MINS_IN_12HRS ) )
+            return $cache{$time}
+              = ( _24h_to_num($time) - ( 2 * $MINS_IN_12HRS ) )
 
               # treat as 24 hours, but subtract a day so it refers to yesterday
         }
-        croak "Invalid time [$origtime] [$time]" ;
-    };
+        croak "Invalid time [$origtime] [$time]";
+    } ## tidy end: for ($time)
 
     return;    # this will never be executed because of the default croak
 
@@ -101,7 +98,7 @@ sub _ampm_to_num {
     my $time = shift;
     my $ampm = chop $time;
 
-    my $minutes = substr( $time, -2, 2, $EMPTY_STR );
+    my $minutes = substr( $time, -2, 2, $EMPTY );
 
     # hour is 0 if it reads 12, or otherwise $time
     my $hour = ( $time == 12 ? 0 : $time );
@@ -113,7 +110,7 @@ sub _ampm_to_num {
 sub _24h_to_num {
 
     my $time = shift;
-    my $minutes = substr( $time, -2, 2, $EMPTY_STR );
+    my $minutes = substr( $time, -2, 2, $EMPTY );
     return ( $minutes + $time * 60 );
 
 }
@@ -182,7 +179,7 @@ sub _make_template_12 {
 sub _make_template_24 {
     my ( $leadingzero, $separator ) = @_;
     my $hours = $leadingzero ? '%2d' : '%d';
-    my $minutes = ( $separator // $EMPTY_STR ) . '%02d';
+    my $minutes = ( $separator // $EMPTY ) . '%02d';
     return ( $hours . $minutes );
 }
 
@@ -213,7 +210,7 @@ sub _single_timestr12 {
     my $time     = pop;
     my @markers  = @_;
 
-    return $EMPTY_STR unless defined($time);
+    return $EMPTY unless defined($time);
 
     croak "Cannot make a timestr from non-number $time"
       unless looks_like_number($time);
@@ -249,14 +246,14 @@ sub _single_timestr12 {
 
     return sprintf( $template, $hours, $minutes, $ampm );
 
-}
+} ## tidy end: sub _single_timestr12
 
 #memoize('_single_timestr24');
 
 sub _single_timestr24 {
     my ( $template, $time ) = @_;
 
-    return $EMPTY_STR unless defined($time);
+    return $EMPTY unless defined($time);
 
     croak "Cannot make a timestr from non-number $time"
       unless looks_like_number($time);
@@ -272,7 +269,7 @@ sub _single_timestr24 {
 
     return sprintf( $template, $hours, $minutes );
 
-} ## #tidy# end sub _single_timestr24
+}    ## #tidy# end sub _single_timestr24
 
 sub _hoursminutes {
     my $time    = shift;
@@ -287,12 +284,12 @@ sub timestr {
 
     for ( ref( $_[0] ) ) {    # The first parameter
 
-        if ($_ eq 'ARRAY') {
+        if ( $_ eq 'ARRAY' ) {
             unshift @_, 'TIME';
 
      # when the first parameter is an arrayref, take it to be an array of times,
      # and put TIME in front of it so Params::Validate will see it as a name
-     next;
+            next;
         }
 
         if ( $_ ne 'HASH' ) {
@@ -326,7 +323,7 @@ sub timestr {
             # assume the TIME entry is somewhere later in the list, and
             # hope Params::Validate can deal with it
 
-        next;
+            next;
         }    ## <perltidy> end when ( $_ ne 'HASH' )
 
     }    ## <perltidy> end given
@@ -426,11 +423,13 @@ This documentation refers to Actium::Time version 0.001
 =head1 DESCRIPTION
 
 Actium::Time contains routines to format times for transit schedules.
-It takes times formatted in a number of different ways and converts them
-to a number of minutes after midnight (or, if negative, before midnight).
+It takes times formatted in a number of different ways and converts
+them to a number of minutes after midnight (or, if negative, before
+midnight).
 
-The routines allow times in different formats to be normalized and output
-in various other formats, as well as allowing sorting of times numerically.
+The routines allow times in different formats to be normalized and
+output in various other formats, as well as allowing sorting of times
+numerically.
 
 =head1 SUBROUTINES
 
@@ -438,8 +437,8 @@ in various other formats, as well as allowing sorting of times numerically.
 
 =item B<timenum(@times)>
 
-B<timenum()> accepts one or more times in string form and returns
-the number of minutes after midnight that the time represents.
+B<timenum()> accepts one or more times in string form and returns the
+number of minutes after midnight that the time represents.
 
 The string form can be in one of three basic formats:
 
@@ -459,50 +458,55 @@ The string form can be in one of three basic formats:
 
 =back
 
-Common separators (colons, periods, spaces, commas) as well as a
-final "m" are filtered out before determining which format applies. This makes
-it easy to submit "8:35 a.m." if you receive times in that format; it will
-be converted to '835a' before processing.
+Common separators (colons, periods, spaces, commas) as well as a final
+"m" are filtered out before determining which format applies. This
+makes it easy to submit "8:35 a.m." if you receive times in that
+format; it will be converted to '835a' before processing.
 
-All three formats require a leading zero on the minutes, but not on the hours.
+All three formats require a leading zero on the minutes, but not on the
+hours.
 
-The first format accepts hours from 1 to 12, and minutes from 00 to 59. 
+The first format accepts hours from 1 to 12, and minutes from 00 to 59.
 
-The second format accepts any number of hours. Minutes still must be from 
-00 to 59.
+The second format accepts any number of hours. Minutes still must be
+from  00 to 59.
 
-The third format accepts hours from 0 to 23. It is treated as though it were 
-the time on the day before midnight, so "23'59" is returned as -1 (meaning, one minute before midnight).
+The third format accepts hours from 0 to 23. It is treated as though it
+were  the time on the day before midnight, so "23'59" is returned as -1
+(meaning, one minute before midnight).
 
-For the first format, a final "a" is accepted for a.m. times, and a final "p" 
-for p.m. times. Two other final letters are accepted. A final "b" is accepted
-for times before midnight, so timenum('1159b') is equal to -1 (again, one minute
-before midnight).  
+For the first format, a final "a" is accepted for a.m. times, and a
+final "p"  for p.m. times. Two other final letters are accepted. A
+final "b" is accepted for times before midnight, so timenum('1159b') is
+equal to -1 (again, one minute before midnight).
 
-A final "x" is accepted for times after midnight on the following day, so 
-timenum('1201x') is equal to 1441 (meaning, 1441 minutes after midnight).
+A final "x" is accepted for times after midnight on the following day,
+so  timenum('1201x') is equal to 1441 (meaning, 1441 minutes after
+midnight).
 
-As a special case, if there are no numbers in the string at all, it returns 
-undef. This is used for blank columns in schedules.
+As a special case, if there are no numbers in the string at all, it
+returns  undef. This is used for blank columns in schedules.
 
 If called in scalar context, returns only the first value.
 
 =item B<timestr(I<TIMES> , I<NAMED PARAMETERS>)>
 
-B<timestr()> takes one or more time numbers (the number of minutes after midnight) 
-and returns a formatted string separating hours and minutes, with an optional
-a.m./p.m. marker at the end.
+B<timestr()> takes one or more time numbers (the number of minutes
+after midnight)  and returns a formatted string separating hours and
+minutes, with an optional a.m./p.m. marker at the end.
 
-If it receives an undefined value instead of a time number, it returns the empty string.
+If it receives an undefined value instead of a time number, it returns
+the empty string.
 
-This routine can be called in a multiplicity of ways. I<TIMES> can be specified either
-as a flat list of time numbers (meaning, numbers and/or undefined values), or as a 
-(single) reference to a flat list of time numbers.  
+This routine can be called in a multiplicity of ways. I<TIMES> can be
+specified either as a flat list of time numbers (meaning, numbers
+and/or undefined values), or as a  (single) reference to a flat list of
+time numbers.
 
 (Alternatively, times can be specified as the named argument TIME.)
 
-I<NAMED PARAMETERS> can be specified either as a (single) hash reference or as 
-a flattened list.
+I<NAMED PARAMETERS> can be specified either as a (single) hash
+reference or as  a flattened list.
 
 Basically, this means the following all mean the same thing:
 
@@ -513,32 +517,34 @@ Basically, this means the following all mean the same thing:
  timestr ( TIME => [15, undef, 60] , HOURS => 12, XB => 1 );
  timestr ( { TIME => [15, undef, 60] , HOURS => 12, XB => 1 } );
  
-(Actium::Time is politically liberal and believes strongly in acceptance.)
- 
+(Actium::Time is politically liberal and believes strongly in
+acceptance.)
+
 The named parameters are as follows:
 
 =over
 
 =item TIME
 
-The time number, the number of minutes after midnight. (If negative, the 
-number of minutes before midnight.)  Alternatively, an undefined value, in
-which case timestr returns the empty string.
+The time number, the number of minutes after midnight. (If negative,
+the  number of minutes before midnight.)  Alternatively, an undefined
+value, in which case timestr returns the empty string.
 
 =item HOURS
 
-The format: either a 12-hour format (with a.m./p.m. markers) or a 24-hour
-format (without those markers). Valid values are '12' and '24'. The default
-is '12'.
+The format: either a 12-hour format (with a.m./p.m. markers) or a
+24-hour format (without those markers). Valid values are '12' and '24'.
+The default is '12'.
 
-Times more than twelve hours before midnight, or after 36 hours after midnight,
-will give an error if an attempt is made to present them in a 12-hour format.
+Times more than twelve hours before midnight, or after 36 hours after
+midnight, will give an error if an attempt is made to present them in a
+12-hour format.
 
 =item APMARKERS
 
-This is a reference to a list of markers for AM/PM status. If the 'XB' parameter
-is false, can have either two or four entries, the latter two of which are 
-ignored; if XB is true, must have four entries.
+This is a reference to a list of markers for AM/PM status. If the 'XB'
+parameter is false, can have either two or four entries, the latter two
+of which are  ignored; if XB is true, must have four entries.
 
  MARKER  USED FOR                  DEFAULT
  0       a.m. times                'a'
@@ -554,18 +560,18 @@ parameter is '24'.
 
 =item XB
 
-If true, will return times before midnight with marker #3 (default: 'b')
-and times after midnight on the following day with marker #2 (default: 'x').
-Otherwise, will use markers #0 ('p') and #1 ('a') respectively.  This defaults
-to false.
+If true, will return times before midnight with marker #3 (default:
+'b') and times after midnight on the following day with marker #2
+(default: 'x'). Otherwise, will use markers #0 ('p') and #1 ('a')
+respectively.  This defaults to false.
 
 An error will be generated if this parameter is present and the HOURS 
 parameter is '24'.
 
 =item LEADINGZERO
 
-If true, the hours will be given with at least two digits: '01:15' instead of
-'1:15'. The default is false.
+If true, the hours will be given with at least two digits: '01:15'
+instead of '1:15'. The default is false.
 
 =item SEPARATOR
 
@@ -574,26 +580,28 @@ a colon: '1:15a'. Supply the empty string for no separator: '115a'.
 
 =back
 
-If called in scalar context, returns a string of all the time strings joined 
-together by tab characters. This is probably not what you want.
+If called in scalar context, returns a string of all the time strings
+joined  together by tab characters. This is probably not what you want.
 
 =item B<timestr_sub()>
 
-This is designed to make it easier to supply a long list of parameters only once,
-saving typing. It accepts all the same named parameters as B<timestr()>,
-except TIME, and returns a reference to an anonymous subroutine that allows easy
-access to that particular format. The anonymous subroutine accepts one argument,
-which becomes the TIME parameter given above.
+This is designed to make it easier to supply a long list of parameters
+only once, saving typing. It accepts all the same named parameters as
+B<timestr()>, except TIME, and returns a reference to an anonymous
+subroutine that allows easy access to that particular format. The
+anonymous subroutine accepts one argument, which becomes the TIME
+parameter given above.
 
 For example:
 
  $timesub = timestr_sub {HOURS => 24, LEADINGZERO => 1 , SEPARATOR => '.' };
  $timestr = $timesub->(75); # '01.15' - parameters are preserved
  
-Since what happens when you call timestr is that it uses timestr_sub to generate
-a subroutine and then promptly throws it away, it is strongly recommended that timestr_sub
-be used in your program rather than timestr if the routine is used more than once with 
-the same parameters.
+Since what happens when you call timestr is that it uses timestr_sub to
+generate a subroutine and then promptly throws it away, it is strongly
+recommended that timestr_sub be used in your program rather than
+timestr if the routine is used more than once with  the same
+parameters.
 
 =back
 
@@ -603,15 +611,15 @@ the same parameters.
 
 =item Invalid time [$origtime]
 
-An invalid time string, not matching the formats Actium::Time knows about, 
-was supplied to B<timenum()>
+An invalid time string, not matching the formats Actium::Time knows
+about,  was supplied to B<timenum()>
 
 =item Cannot specify XB for 24 hour string
 
 =item Cannot specify AM/PM markers for 24 hour string
 
-A request was made to use a 24-hour format, and a parameter that doesn't
-apply to the 24-hour format was included.
+A request was made to use a 24-hour format, and a parameter that
+doesn't apply to the 24-hour format was included.
 
 =item Improper number of AM/PM markers
 
@@ -620,8 +628,8 @@ A number of AM/PM markers was given that was other than exactly four
 
 =item Time out of range
 
-A time number was given for a 12-hour format that was more than 12 hours before,
-or 36 hours after, midnight.
+A time number was given for a 12-hour format that was more than 12
+hours before, or 36 hours after, midnight.
 
 =back
 
@@ -651,8 +659,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2011
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -664,8 +672,8 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 
 
