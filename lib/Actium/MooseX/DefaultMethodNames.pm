@@ -119,7 +119,7 @@ Double-underscores are avoided, so that even if an attribute is called
 "_trigger_attribute", etc., not "_build__attribute."
 
 (So this will break if there are two attributes whose names differ only
-by  an initial underscore. Don't do that.)
+by an initial underscore. Don't do that.)
 
 =over
 
@@ -149,7 +149,7 @@ attribute is private and whether or not the underscore or 1 is given in
 the option to "has", since conventionally triggers and builders are not
 part of a class's interface.
 
-The default nams are "_trigger_I<attributename>" and
+The default names are "_trigger_I<attributename>" and
 "_build_<attributename>".
 
 =back
