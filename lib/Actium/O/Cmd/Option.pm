@@ -1,6 +1,6 @@
 package Actium::O::Cmd::Option 0.011;
 
-use Actium ('class_nomod');
+use Actium ('class');
 
 # it will look for, in this order:
 
@@ -14,48 +14,35 @@ use Actium ('class_nomod');
 # It will never get to the prompt if a fallback value is specified,
 # so no point in asking for both
 
-around BUILDARGS => sub {
-    my $orig  = shift;
-    my $class = shift;
+#<<< 
 
-    my %params = u::validate(
-        @_,
-        {   cmdenv         => { isa     => 'Actium::O::Cmd' },
-            envvar         => 0,
-            config_section => { default => '_' },
-            config_key     => 0,
-            fallback       => 0,
-
-            description     => 1,
-            display_default => { type => $PV_TYPE{BOOLEAN}, default => 0 },
-
-            order    => { type => $PV_TYPE{SCALAR} },
-            spec     => 1,
-            callback => 0,
-            prompt   => 0,
-            no_command => { type => $PV_TYPE{BOOLEAN}, default => 0 },
-            prompthide => { type => $PV_TYPE{BOOLEAN}, default => 0 },
-        }
-    );
+around BUILDARGS ( 
+   $orig, $class:
+   Actium::O::Cmd :$cmdenv!,
+   Str :$envvar,
+   Str :$config_section = '_',
+   Str :$config_key,
+   :$fallback,
+   Bool :$display_default = 0,
+   slurpy %params,
+) {
+    
+#>>> 
 
     # Establish default, if any
-    my $cmdenv      = $params{cmdenv};
-    my $description = $params{description};
     my $default;
 
-    if ( exists $params{envvar} ) {
-        my $envvar      = $params{envvar};
+    if ( defined $envvar ) {
         my $system_name = $cmdenv->system_name;
         $envvar =~ s/\A(?:${system_name}_)*/${system_name}_/;
         $envvar  = uc($envvar);
         $default = $cmdenv->sysenv($envvar);
-
     }
 
-    if ( not defined $default and exists $params{config_key} ) {
+    if ( not defined $default and defined $config_key ) {
         $default = $cmdenv->config->value(
-            section => $params{config_section},
-            key     => $params{config_key}
+            section => $config_section,
+            key     => $config_key
         );
     }
 
@@ -65,30 +52,27 @@ around BUILDARGS => sub {
     {
         $default = 1;
     }
-    # set default to 1 for simple options - those with no argument spec,
-    # or + or ! argument specs
+    # set default to 1 for simple options found in environment or config file
+    # - those with no argument spec, or + or ! argument specs
 
-    if ( not defined $default and exists $params{fallback} ) {
-        $default = $params{fallback};
+    if ( not defined $default and defined $fallback ) {
+        $default = $fallback;
     }
 
-    if ( defined($default) and $params{display_default} ) {
-        $description .= qq{. If not specified, will use "$default"};
+    if (    defined($default)
+        and $display_default
+        and exists $params{description} )
+    {
+        $params{description} .= qq{. If not specified, will use "$default"};
     }
+    # There should always be a description, but I want Moose to give that
+    # error, not add a check for it here
 
-    my %init_args;
+    $params{default} = $default if defined $default;
 
-    foreach my $param (qw(spec prompthide callback prompt no_command order)) {
-        $init_args{$param} = $params{$param} if exists $params{$param};
-    }
+    return $class->$orig(%params);
 
-    $init_args{description} = $description;
-
-    $init_args{default} = $default if defined $default;
-
-    return $class->$orig(%init_args);
-
-};
+} ## tidy end: around BUILDARGS
 
 sub BUILD {
     my $self = shift;
