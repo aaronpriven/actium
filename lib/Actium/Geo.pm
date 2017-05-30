@@ -50,7 +50,6 @@ func get_zip_for_stops (
         qw/Stops_Neue c_city p_zip_code h_loca_latitude h_loca_longitude/);
 
     my %zip_code_of;
-
     my $count = 0;
     foreach my $stopid ( keys %$stopinfo_r ) {
         next if $stopinfo_r->{$stopid}{p_zip_code};

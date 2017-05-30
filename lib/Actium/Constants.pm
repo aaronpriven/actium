@@ -28,21 +28,6 @@ BEGIN {
 
     );
 
-    {
-        require Params::Validate;    ### DEP ###
-        my %pv_type;
-
-        my @pv = @{ $Params::Validate::EXPORT_TAGS{'types'} };
-        foreach (@pv) {
-            my $name = 'Params::Validate::' . $_;
-            no strict 'refs';
-            my $value = &$name;
-            $pv_type{$_} = $value;
-        }
-
-        $constants{PV_TYPE} = \%pv_type;
-    }
-
     $constants{HASTUS_DIRS}
       = [ 0, 1, 3, 2, 4 .. scalar @{ $constants{DIRCODES} } ];
 
@@ -171,17 +156,6 @@ Numeric directions from Hastus, in the same order as @DIRCODES (so
 
 Transbay lines where local riding is prohibited. This should be moved 
 to a database.
-
-=item %PV_TYPE
-
-A hash whose keys are all the various type values that are part of
-Params::Validate's ":types" export tag (SCALAR, ARRAYREF, HASHREF,
-etc.). This way it avoids polluting the namespace with all those very
-generic  values, while still allowing the use of Params::Validate
-types. (Which are not at all related to Moose types.)
-
-See L<Params::Validate|Params::Validate> for details on the values and
-their  meanings.
 
 =back
 
