@@ -99,7 +99,11 @@ called "_set_attribute" and not "_set__attribute".
 So this will break if there are two attributes whose names differ only
 by an initial underscore. Don't do that. But in any case, it would
 usually make more sense to use MooseX::SemiAffordanceAccessor and
-express that as just plain "is => 'rw'".
+express that as just plain "is => 'rw'", rather than use "rwp" with  an
+attribute whose name begins with an underscore.
+
+In any event, you can explicitly specify a reader or writer and this
+module will not overwrite them.
 
 =back
 
