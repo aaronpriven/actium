@@ -15,15 +15,6 @@ func travelsort (
      Bool :$demote600s = 0 , 
      ) {
 
- #    my %params = u::validate(
- #        @_,
- #        {   stops            => { type => $PV_TYPE{ARRAYREF} },
- #            stops_of_linedir => { type => $PV_TYPE{HASHREF} },
- #            promote          => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
- #            demote600s       => { type => $PV_TYPE{BOOLEAN}, default => 0 },
- #        }
- #    );
-
     my %stop_is_used;
     $stop_is_used{$_} = 1 foreach @stops;
 
