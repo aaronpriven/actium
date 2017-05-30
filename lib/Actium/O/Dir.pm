@@ -13,6 +13,8 @@ use Actium::Types qw<DirCode>;
 
 const my %IS_A_LOOP_DIRECTION => ( CW => 1, CC => 1, A => 1, B => 1 );
 
+const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
+
 const my %DIRCODE_OF => (
     ( map { lc($_) => $_ } @DIRCODES ),
     ( map { $HASTUS_DIRS[$_], $DIRCODES[ $HASTUS_DIRS[$_] ] } 0 .. $#DIRCODES ),

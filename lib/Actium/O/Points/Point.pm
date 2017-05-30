@@ -10,6 +10,8 @@ package Actium::O::Points::Point 0.013;
 
 use Actium ('class_nomod');
 
+const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
+
 use sort ('stable');
 
 use Actium::Sorting::Line (qw(byline sortbyline));
