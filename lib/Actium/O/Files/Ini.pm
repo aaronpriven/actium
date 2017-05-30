@@ -86,18 +86,10 @@ sub _build_values {
     return $ini_hoh;
 }
 
-sub value {
-    my $self = shift;
-
-    my %params = u::validate(
-        @_,
-        {   section => { type => $PV_TYPE{SCALAR}, default => '_' },
-            key     => { type => $PV_TYPE{SCALAR} },
-        }
-    );
+method value ( :$section = '_' , :$key!  ) {
 
     my $ini_hoh = $self->_values_r;
-    return $ini_hoh->{ $params{section} }{ $params{key} };
+    return $ini_hoh->{$section}{$key};
 }
 
 sub section {

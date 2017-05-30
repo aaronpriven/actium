@@ -11,7 +11,7 @@ use Sub::Exporter -setup => { exports => [qw(travelsort)] };
 func travelsort ( 
      :@stops! is ref_alias , 
      :%allstops_of_linedir! is ref_alias,
-     :@promote is ref_alias , 
+     :@promote is ref_alias = [], 
      Bool :$demote600s = 0 , 
      ) {
 
