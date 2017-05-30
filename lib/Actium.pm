@@ -40,17 +40,27 @@ use Scalar::Util                                             ### DEP ###
   (qw( blessed looks_like_number refaddr reftype ));
 use Text::Trim('trim');                                      ### DEP ###
 
+const my $EMPTY             => q[];
+const my $CRLF              => qq{\cM\cJ};
+const my $SPACE             => q{ };
+const my $MINS_IN_12HRS     => ( 12 * 60 );
+const my $KEY_SEPARATOR     => "\c]";
+const my @TRANSBAY_NOLOCALS => (qw/FS L NX NX1 NX2 NX3 U W/);
+
+const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
+#                         0  1  3  2  4  5  6  7  8  9  10 11 12 13 14 15
+
 {
 
     my $caller;
 
-    sub do_import {
+    sub _do_import {
         my $module = shift;
         require_module($module);
         $module->import::into( $caller, @_ );
     }
 
-    sub do_unimport {
+    sub _do_unimport {
         my $module = shift;
         require_module($module);
         $module->unimport::out_of( $caller, @_ );
@@ -61,12 +71,24 @@ use Text::Trim('trim');                                      ### DEP ###
         my $type = shift || q{};
         $caller = caller;
 
+        # constants
+        {
+            no strict 'refs';
+            *{ $caller . '::' . 'EMPTY' }             = \$EMPTY;
+            *{ $caller . '::' . 'CRLF' }              = \$CRLF;
+            *{ $caller . '::' . 'SPACE' }             = \$SPACE;
+            *{ $caller . '::' . 'MINS_IN_12HRS' }     = \$MINS_IN_12HRS;
+            *{ $caller . '::' . 'KEY_SEPARATOR' }     = \$KEY_SEPARATOR;
+            *{ $caller . '::' . 'TRANSBAY_NOLOCALS' } = \@TRANSBAY_NOLOCALS;
+            *{ $caller . '::' . 'DIRCODES' }          = \@DIRCODES;
+        }
+
         if ($type) {
             if ( $type eq 'class' or $type eq 'class_nomod' ) {
-                do_import 'Moose';
+                _do_import 'Moose';
             }
             elsif ( $type eq 'role' ) {
-                do_import 'Moose::Role';
+                _do_import 'Moose::Role';
             }
             else {
                 croak "Unknown module type $type";
@@ -74,39 +96,39 @@ use Text::Trim('trim');                                      ### DEP ###
 
             # either class or role
 
-            do_import 'MooseX::MarkAsMethods', autoclean => 1;
-            do_import 'Actium::MooseX::IsCodeRef';
-            do_import 'Actium::MooseX::DefaultMethodNames';
-            do_import 'Actium::MooseX::Rwp';
-            do_import 'Actium::MooseX::BuiltIsRo';
-            do_import 'MooseX::StrictConstructor';
-            do_import 'MooseX::SemiAffordanceAccessor';
-            do_import 'Moose::Util::TypeConstraints';
+            _do_import 'MooseX::MarkAsMethods', autoclean => 1;
+            _do_import 'Actium::MooseX::IsCodeRef';
+            _do_import 'Actium::MooseX::DefaultMethodNames';
+            _do_import 'Actium::MooseX::Rwp';
+            _do_import 'Actium::MooseX::BuiltIsRo';
+            _do_import 'MooseX::StrictConstructor';
+            _do_import 'MooseX::SemiAffordanceAccessor';
+            _do_import 'Moose::Util::TypeConstraints';
         } ## tidy end: if ($type)
 
-        do_import 'Kavorka', kavorka_args($type);
+        _do_import 'Kavorka', _kavorka_args($type);
 
-        do_import 'Actium::Constants';
-        do_import 'Actium::Crier', qw/cry last_cry/;
-        do_import 'Carp';
-        do_import 'Const::Fast';
-        do_import 'English', '-no_match_vars';
+        _do_import 'Actium::Constants';
+        _do_import 'Actium::Crier', qw/cry last_cry/;
+        _do_import 'Carp';
+        _do_import 'Const::Fast';
+        _do_import 'English', '-no_match_vars';
 
-        do_import 'autodie';
-        do_import 'feature', qw/:5.24 refaliasing postderef_qq/;
-        do_unimport 'indirect';
-        do_import 'open', qw/:std :utf8/;
-        do_import 'strict';
-        do_import 'utf8';
-        do_import 'warnings';
-        do_unimport 'warnings', 'experimental::refaliasing',
+        _do_import 'autodie';
+        _do_import 'feature', qw/:5.24 refaliasing postderef_qq/;
+        _do_unimport 'indirect';
+        _do_import 'open', qw/:std :utf8/;
+        _do_import 'strict';
+        _do_import 'utf8';
+        _do_import 'warnings';
+        _do_unimport 'warnings', 'experimental::refaliasing',
           'experimental::postderef';
 
     } ## tidy end: sub import
 
 }
 
-sub kavorka_args {
+sub _kavorka_args {
     my $type = shift;
     my @args;
     if ( $type eq 'class' or $type eq 'role' ) {
@@ -155,6 +177,47 @@ A full description of the module and its features.
 Description of subroutine.
 
 =back
+
+=head1 CONSTANTS
+
+=over
+
+=item $EMPTY
+
+The empty string.
+
+=item $CRLF
+
+A carriage return followed by a line feed ("\r\n").
+
+=item $SPACE
+
+A space.
+
+=item $KEY_SEPARATOR
+
+This contains the C<^]> character (ASCII 29, "Group Separator"), which
+is used by FileMaker to separate entries in repeating fields. It is
+also used by various Actium routines to separate values, e.g., the
+Hastus Standard AVL routines use it in hash keys when two or more
+values are needed to uniquely identify a record. (This is the same
+basic idea as that intended by perl's C<$;> variable [see
+L<perlvar/$;>].)
+
+=item $MINS_IN_12HRS
+
+The number of minutes in 12 hours (12 times 60, or 720).
+
+=item @DIRCODES
+
+Direction codes (northbound, southbound, etc.)  The original few were
+based on transitinfo.org directions, but have been extended to include
+kinds of directions that didn't exist back then.
+
+=item @TRANSBAY_NOLOCALS
+
+Transbay lines where local riding is prohibited. This should be moved 
+to a database.
 
 =head1 DIAGNOSTICS
 
