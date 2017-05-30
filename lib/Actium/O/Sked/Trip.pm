@@ -541,8 +541,6 @@ See L<Moose>.
 
 =item MooseX::Storage
 
-=item Actium::Constants
-
 =item Actium::Time
 
 =item Actium::Types

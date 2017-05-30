@@ -4,7 +4,6 @@ use Actium;
 
 # Produces HTML tables that represent timetables.
 
-use Actium::Constants;
 use Actium::O::Sked;
 use Actium::O::Sked::Collection;
 use Actium::O::Sked::Timetable;
