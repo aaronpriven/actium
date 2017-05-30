@@ -1,6 +1,8 @@
-package Actium::O::2DArray 0.013;
+package Actium::O::2DArray 0.014;
 
 use Actium;
+
+use Params::Validate (qw/validate :types/);
 
 # this is a deliberately non-encapsulated object that is just
 # an array of arrays (AoA).
@@ -81,9 +83,9 @@ sub new_down {
 sub new_to_term_width {
 
     my $class  = shift;
-    my %params = u::validate(
+    my %params = validate(
         @_,
-        {   array     => { type    => $PV_TYPE{ARRAYREF} },
+        {   array     => { type    => ARRAYREF },
             width     => { default => 80 },
             separator => { default => $SPACE },
         }
@@ -931,9 +933,9 @@ sub tsv {
 sub file {
     my ( $class, $self ) = &$invocant_cr;
 
-    my %params = u::validate(
+    my %params = validate(
         @_,
-        {   headers     => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
+        {   headers     => { type => ARRAYREF, optional => 1 },
             output_file => 1,
             type        => 0,
         }
@@ -964,10 +966,10 @@ sub file {
 
 sub xlsx {
     my ( $class, $self ) = &$invocant_cr;
-    my %params = u::validate(
+    my %params = validate(
         @_,
-        {   headers     => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
-            format      => { type => $PV_TYPE{HASHREF},  optional => 1 },
+        {   headers     => { type => ARRAYREF, optional => 1 },
+            format      => { type => HASHREF,  optional => 1 },
             output_file => 1,
         }
     );
@@ -1210,7 +1212,7 @@ array object.
 This is usually pointless, as Perl lets you ignore the  object-ness of
 any object and access the data inside, but sometimes certain modules
 don't like to break object encapsulation, and this will allow getting
-around that.
+around that .
 
 Note that while modifying the elements inside the rows will modify the 
 original 2D array, modifying the outer arrayref will not. So:
@@ -1743,14 +1745,20 @@ Add CSV (and possibly other file type) support to new_from_file.
 
 =item Actium::Util
 
+=item Params::Validate
+
+=back
+
+Also, these are required by those methods that use them 
+(C<new_from_tsv>, C<new_from_xlsx>, and C<xlsx> respectively):
+
+=over
+
 =item File::Slurper
 
 =item Spreadsheet::ParseXLSX
 
 =item Excel::Writer::XLSX
-
-The last three are required only by those methods that use them 
-(C<new_from_tsv>, C<new_from_xlsx>, and C<xlsx> respectively).
 
 =back
 

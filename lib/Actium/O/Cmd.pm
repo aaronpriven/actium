@@ -3,7 +3,7 @@ package Actium::O::Cmd 0.012;
 # Amalgamation of Actium::Cmd, Actium::O::CmdEnv, and the various
 # Actium::Cmd::Config::* modules
 
-use Actium ('class_nomod');
+use Actium ('class');
 
 use Getopt::Long('GetOptionsFromArray');    ### DEP ###
 use Term::ReadKey;                          ### DEP ###
@@ -36,21 +36,12 @@ my $term_width_cr = sub {
 ###############
 ##### BUILDARGS
 
-around BUILDARGS => sub {
-    my $orig  = shift;
-    my $class = shift;
+around BUILDARGS (
+   $orig, $class: slurpy %params
+) {
 
-    my %params = u::validate(
-        @_,
-        {   system_name => { type => $PV_TYPE{SCALAR} },
-            commandpath => { type => $PV_TYPE{SCALAR} },
-            sysenv      => { type => $PV_TYPE{HASHREF}, default => {%ENV} },
-            subcommands => { type => $PV_TYPE{HASHREF} },
-            argv        => { type => $PV_TYPE{ARRAYREF}, default => [@ARGV] },
-            home_folder => { type => $PV_TYPE{SCALAR}, optional => 1 },
-            bin         => { type => $PV_TYPE{SCALAR}, optional => 1 },
-        }
-    );
+    $params{sysenv} //= {%ENV};
+    $params{argv}   //= {@ARGV};
 
     if ( not defined $params{home_folder} ) {
         require File::HomeDir;    ### DEP ###
@@ -108,7 +99,7 @@ around BUILDARGS => sub {
 
     return $class->$orig(%init_args);
 
-};
+} ## tidy end: around BUILDARGS
 
 ###############
 #### BUILD
@@ -208,21 +199,12 @@ sub prompt {
 #############
 #### HELP
 
-sub _mainhelp {
-
-    my $self = shift;
-
-    my %params = u::validate(
-        @_,
-        {   error  => { type => $PV_TYPE{SCALAR}, default => $EMPTY },
-            status => { type => $PV_TYPE{SCALAR}, default => 0 },
-        }
-    );
+method _mainhelp ( Str :$error = q[] , Bool :$status = 0 ) {
 
     #my $system_name = $self->system_name;
     my $command = $self->command;
 
-    my $helptext = $params{error} ? "$params{error}\n" : $EMPTY;
+    my $helptext = $error ? "$error\n" : $EMPTY;
 
     $helptext .= "Subcommands available for $command:\n";
 
@@ -241,9 +223,9 @@ sub _mainhelp {
       join( ( "\n" . $SUBCOMMAND_PADDING ), @lines )
       or die "Can't output help text: $OS_ERROR";
 
-    exit $params{status};
+    exit $status;
 
-} ## tidy end: sub _mainhelp
+} ## tidy end: method _mainhelp
 
 sub _output_usage {
 
