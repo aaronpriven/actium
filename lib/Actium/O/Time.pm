@@ -59,7 +59,7 @@ my $ampm_to_num_cr = sub {
     my $time = shift;
     my $ampm = chop $time;
 
-    my $minutes = substr( $time, -2, 2, $EMPTY_STR );
+    my $minutes = substr( $time, -2, 2, $EMPTY );
 
     # hour is 0 if it reads 12, or otherwise $time
     my $hour = ( $time == 12 ? 0 : $time );
@@ -79,7 +79,7 @@ my $ampm_to_num_cr = sub {
 my $t24h_to_num_cr = sub {
 
     my $time = shift;
-    my $minutes = substr( $time, -2, 2, $EMPTY_STR );
+    my $minutes = substr( $time, -2, 2, $EMPTY );
     return ( $minutes + $time * 60 );
 
 };

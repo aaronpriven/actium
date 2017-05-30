@@ -273,12 +273,12 @@ sub read_supp_calendars {
           = map { $sheet->get_cell( $currentrow{$sheet_key}, $_ ) }
           ( $mincol{$sheet_key} .. $maxcol{$sheet_key} );
 
-        my @values = map { defined($_) ? $_->value : $EMPTY_STR } @cells;
+        my @values = map { defined($_) ? $_->value : $EMPTY } @cells;
 
         @values = _cleanvalues(@values);
         return if ( u::none {$_} @values );
 
-        pop @values while $values[-1] eq $EMPTY_STR;
+        pop @values while $values[-1] eq $EMPTY;
 
         $currentrow{$sheet_key}++;
 

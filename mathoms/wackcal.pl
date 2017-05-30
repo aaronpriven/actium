@@ -231,7 +231,7 @@ sub nextline {
       = map { $sheet->get_cell( $currentrow, $_ ) } ( $mincol .. $maxcol );
 
     my @values = map {
-        defined ? $_->value : $EMPTY_STR } @cells;
+        defined ? $_->value : $EMPTY } @cells;
         
     @values = cleanvalues(@values);
     return if ( u::none {$_} @values );
@@ -282,8 +282,9 @@ sub daterange_nocompress {
 
 sub datetoprint {
     my @datestrs = map {"$wkdays[$_]., $dates[$_]"} @_;
-    return wantarray ? @datestrs : $datestrs[0];
-      } ## tidy end: map
+    return @datestrs if wantarray;
+    return $datestrs[0];
+} ## tidy end: map
 
       sub currentpair_str {
         my @pair  = @_;
@@ -371,8 +372,7 @@ sub datetoprint {
             s/\s*leave\z//;
             s/Noon/12:00 noon/;
             s/\s*pick up//;
-            s/(\d)([A-Za-z])/$1 $2/;
-            s/(\d? \d ) ( \d \d ) / $1 : $2 /;
+            s{(\d)([A-Za-z]}{$1 $2};
             s/a\z/a.m./;
             s/p\z/p.m./;
             s/AM/a.m./i;
@@ -380,48 +380,49 @@ sub datetoprint {
             s/(\d)$/$1 p.m./;
             s/verify/(to be determined)/i;
             s/-\s*no service/ (Service will not operate)/i;
-            s/(Line )?\d* tripper//;
+            s/(Line )? \d * tripper //;
+        ## s/(\d? \d ) ( \d \d ) / $1 : $2 /x;
 
-        } ## tidy end: for (@dismissals)
+      } ## tidy end: map
 
-        $dismissal = join( " or ", @dismissals );
+      $dismissal = join( " or ", @dismissals );
 
-        $dismissal = "at $dismissal" unless $dismissal =~ /^\(/;
+    $dismissal = "at $dismissal" unless $dismissal =~ /^\(/;
 
-        return $dismissal;
+    return $dismissal;
 
-    } ## tidy end: sub clean_dismissal
+} ## tidy end: sub nextline
 
-    sub print_table {
+sub print_table {
 
-        my $tablefh    = shift;
-        my $header     = shift;
-        my @tabledates = @_;
+    my $tablefh    = shift;
+    my $header     = shift;
+    my @tabledates = @_;
 
-        my $columns = 3;
+    my $columns = 3;
 
-        while ( @tabledates % $columns != 0 ) {
-            push @tabledates, '&nbsp;';
-        }
-        my $rows = ( @tabledates / $columns );
+    while ( @tabledates % $columns != 0 ) {
+        push @tabledates, '&nbsp;';
+    }
+    my $rows = ( @tabledates / $columns );
 
-        say $tablefh
+    say $tablefh
 '<p><table border="1" width="90%" cellspacing="0" cellpadding="6" style="float:none;border-collapse:collapse;border-width:1px;margin-bottom:1em;">';
-        say $tablefh
+    say $tablefh
 qq[<thead><tr><th style="border-width:1px;border-collapse:collapse;text-align: left;" colspan=$columns>$header</th></tr></thead>];
-        say $tablefh '<tbody>';
+    say $tablefh '<tbody>';
 
-        for my $row ( 0 .. $rows - 1 ) {
-            print $tablefh '<tr>';
-            for my $col ( 0 .. $columns - 1 ) {
-                my $thisdateidx = ( ( $rows * $col ) + $row );
-                my $thisdate = $tabledates[$thisdateidx] // "ERROR";
-                print $tablefh
+    for my $row ( 0 .. $rows - 1 ) {
+        print $tablefh '<tr>';
+        for my $col ( 0 .. $columns - 1 ) {
+            my $thisdateidx = ( ( $rows * $col ) + $row );
+            my $thisdate = $tabledates[$thisdateidx] // "ERROR";
+            print $tablefh
 qq[<td width="30%" style="border-width:1px;border-collapse:collapse;">$thisdate</td>];
-            }
-            say $tablefh '</tr>';
         }
+        say $tablefh '</tr>';
+    }
 
-        say $tablefh '</tbody></table></p>';
+    say $tablefh '</tbody></table></p>';
 
-    } ## tidy end: sub print_table
+} ## tidy end: sub print_table

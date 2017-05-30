@@ -101,7 +101,7 @@ sub _abbrev9 {
     my $number     = shift;
     my $identifier = shift;
 
-    $number = $identifier if not defined $number or $number eq $EMPTY_STR;
+    $number = $identifier if not defined $number or $number eq $EMPTY;
 
     return $number if length($number) <= 4;
 
@@ -248,8 +248,7 @@ sub _street_name {
 sub _stops_description {
     my $desc = shift;
 
-    my ( $on, $at, $stnum, $comment )
-      = ( $EMPTY_STR, $EMPTY_STR, $EMPTY_STR, $EMPTY_STR );
+    my ( $on, $at, $stnum, $comment ) = ( $EMPTY, $EMPTY, $EMPTY, $EMPTY );
     # assign these the empty streets to avoid
     # "Undefined value in comparison errors
 
@@ -279,7 +278,7 @@ sub _stops_description {
 
         if ( $rest =~ /Berkley/ and $comment and $comment =~ /20th/ ) {
             $rest .= " ($comment)";
-            $comment = $EMPTY_STR;
+            $comment = $EMPTY;
         }    # Thomas L. Berkley Way (20th St.) is "at"...
 
         # But put it back if it's Thomas L. Berkley Way (20th St.)
@@ -330,7 +329,7 @@ sub _direction {
 
     my $cornersite = $corner . $site;
 
-    return $EMPTY_STR unless exists $DIRECTION_OF{$cornersite};
+    return $EMPTY unless exists $DIRECTION_OF{$cornersite};
     return $DIRECTION_OF{$cornersite};
 
 }

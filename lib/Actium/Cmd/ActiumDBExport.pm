@@ -1,4 +1,4 @@
-package Actium::Cmd::ActiumDBExport 0.011;
+package Actium::Cmd::ActiumDBExport 0.014;
 
 # Exports data for Scheduling import
 
@@ -70,7 +70,7 @@ sub START {
           VALUE:
             foreach my $value (@values) {
                 if ( not defined $value ) {
-                    $value = $EMPTY_STR;
+                    $value = $EMPTY;
                     next VALUE;
                 }
                 $value =~ s/\r/\|/sg;
@@ -98,7 +98,7 @@ sub process_values {
   VALUE:
     foreach (@_) {
         if ( not defined ) {
-            $_ = $EMPTY_STR;
+            $_ = $EMPTY;
             next VALUE;
         }
         s/\r/\|/gs;

@@ -63,7 +63,7 @@ sub START {
 
                 my $headway = ( $time - $prevtime );
 
-                $headway = $EMPTY_STR if $headway == 0;
+                $headway = $EMPTY if $headway == 0;
                 push @headways, $headway;
 
             }

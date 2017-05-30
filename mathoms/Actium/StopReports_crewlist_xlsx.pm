@@ -19,7 +19,7 @@ sub crewlist_xlsx {
             outputfile       => { type => $PV_TYPE{SCALAR} },
             stops_of_linedir => { type => $PV_TYPE{HASHREF} },
             signup_display =>
-              { type => $PV_TYPE{SCALAR}, default => $EMPTY_STR },
+              { type => $PV_TYPE{SCALAR}, default => $EMPTY },
         }
     );
     my $actiumdb       = $params{actiumdb};

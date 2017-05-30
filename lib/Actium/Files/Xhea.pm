@@ -622,7 +622,7 @@ sub _records_and_fields {
 
     } ## tidy end: for my $table ( keys %{...})
 
-    $xsd_cry->over($EMPTY_STR);
+    $xsd_cry->over($EMPTY);
 
     $xsd_cry->done;
 
@@ -808,7 +808,7 @@ sub _get_xhea_filenames {
         WEST             => 'Westbound',
         NORTH            => 'Northbound',
         SOUTH            => 'Southbound',
-        $EMPTY_STR       => $EMPTY_STR,
+        $EMPTY           => $EMPTY,
     );
 
     const my %DIRECTION_VALUE_MAP => (
@@ -833,7 +833,7 @@ sub _get_xhea_filenames {
         Southbound       => 1,
         Outbound         => 5,
         Inbound          => 4,
-        $EMPTY_STR       => $EMPTY_STR,
+        $EMPTY           => $EMPTY,
     );
 
     sub to_hasi {
@@ -880,7 +880,7 @@ sub _get_xhea_filenames {
         my $trip_callback = sub {
             my $hr = shift;
 
-            my $days = $EMPTY_STR;
+            my $days = $EMPTY;
             $days .= '1' if $hr->{trp_operates_mon};
             $days .= '2' if $hr->{trp_operates_tue};
             $days .= '3' if $hr->{trp_operates_wed};
@@ -906,7 +906,7 @@ sub _get_xhea_filenames {
             $trp{RouteForStatistics}{$tripnum} = $route;
             $trp{Pattern}{$tripnum}            = $pattern;
             $trp{IsPublic}{$tripnum}           = $is_public;
-            $trp{IsSpecial}{$tripnum}          = $event ? 'X' : $EMPTY_STR;
+            $trp{IsSpecial}{$tripnum}          = $event ? 'X' : $EMPTY;
 
         };
 
@@ -1017,14 +1017,14 @@ sub _get_xhea_filenames {
               $pat{VehicleDIsplay}{$patid},    # VehicleDisplay
               $pat{IsInService}{$patid},       # IsInService
               $pat{Via}{$patid},               # Via
-              $EMPTY_STR,                      # ViaDescription
+              $EMPTY,                          # ViaDescription
               ;
 
             for my $tps_hr ( @{ $tps{$patid} } ) {
                 printf $pat_fh "TPS,%-5s,%-6s,%-8s,%-1s,%-1s$CRLF",
                   $tps_hr->{StopIdentifier},    # StopIdentifier
                   $tps_hr->{Place},             # Place
-                  $EMPTY_STR,                   # VehicleDisplay
+                  $EMPTY,                       # VehicleDisplay
                   $tps_hr->{IsATimingPoint},    # IsATimingPoint
                   0,                            # IsAARoutingPoint
                   ;
@@ -1051,12 +1051,12 @@ sub _get_xhea_filenames {
             printf $trp_fh
               "TRP,%-10s,%-8s,%-7s,%-5s,%-4s,%-15s,%-2s,%-1s,%-1s$CRLF",
               $trp{InternalNumber}{$tripnum},        # InternalNumber
-              $EMPTY_STR,                            # Number
+              $EMPTY,                                # Number
               $trp{OperatingDays}{$tripnum},         # OperatingDays
               $trp{RouteForStatistics}{$tripnum},    # RouteForStatistics
               $trp{Pattern}{$tripnum},               # Pattern
-              $EMPTY_STR,                            # Type
-              $EMPTY_STR,                            # TypeValue
+              $EMPTY,                                # Type
+              $EMPTY,                                # TypeValue
               $trp{IsSpecial}{$tripnum},             # IsSpecial
               $trp{IsPublic}{$tripnum},              # IsPublic
               ;
@@ -1082,9 +1082,9 @@ sub _get_xhea_filenames {
               $plc{ReferencePlace}{$place},     # Reference place
               $plc{District}{$place},           # District
               $plc{AlternateNumber}{$place},    # AlternateNumber
-              $EMPTY_STR,                       # AlternatteName
-              $EMPTY_STR,                       # XCoordinate
-              $EMPTY_STR,                       # YCoordinate
+              $EMPTY,                           # AlternatteName
+              $EMPTY,                           # XCoordinate
+              $EMPTY,                           # YCoordinate
               ;
 
         }

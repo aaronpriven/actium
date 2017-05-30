@@ -1,4 +1,4 @@
-package Actium::Cmd::Flagspecs 0.012;
+package Actium::Cmd::Flagspecs 0.014;
 
 use warnings;
 use 5.012;
@@ -33,7 +33,7 @@ sub sk {
 }
 
 sub jk {
-    return join( $NEW_KEY_SEPARATOR, map { $_ // $EMPTY_STR } @_ );
+    return join( $NEW_KEY_SEPARATOR, map { $_ // $EMPTY } @_ );
 }
 
 sub keyreadable {
@@ -107,7 +107,7 @@ my %color_of;
 sub START {
 
     my $class    = shift;
-    my $env   = shift;
+    my $env      = shift;
     my $actiumdb = $env->actiumdb;
 
     my $signup = $env->signup;
@@ -163,7 +163,7 @@ sub START {
 
     read_decal_specs($flagfolder);
 
-    build_color_of($signup, $actiumdb);
+    build_color_of( $signup, $actiumdb );
 
     output_specs( $flagfolder, \%stops );
 
@@ -176,7 +176,7 @@ sub build_place_and_stop_lists {
     my $hasi_db = shift;
     my $stops_r = shift;
 
-    my $cry = cry( 'Building lists of places and stops');
+    my $cry = cry('Building lists of places and stops');
 
     my $eachpat = $hasi_db->each_row_where( 'PAT',
         q{WHERE IsInService <> '' AND IsInService <> '0' ORDER BY Route} );
@@ -185,14 +185,14 @@ sub build_place_and_stop_lists {
     my $tps_sth
       = $dbh->prepare('SELECT * FROM TPS WHERE PAT_id = ? ORDER BY TPS_id');
 
-    my $prevroute = $EMPTY_STR;
+    my $prevroute = $EMPTY;
   PAT:
     while ( my $pat = $eachpat->() ) {
 
         my $pat_ident = $pat->{Identifier};
         my $route     = $pat->{Route};
         if ( $route ne $prevroute ) {
-            $cry->over( $route) ;
+            $cry->over($route);
             $prevroute = $route;
         }
 
@@ -221,8 +221,8 @@ sub build_place_and_stop_lists {
 
         my @places;
 
-        my $prevplace = $EMPTY_STR;
-        my $prevstop  = $EMPTY_STR;
+        my $prevplace = $EMPTY;
+        my $prevstop  = $EMPTY;
         my ( @intermediate_stops, @all_stops );
 
       TPS:
@@ -384,7 +384,7 @@ sub transbay_and_connections {
 sub build_trip_quantity_lists {
     my $hasi_db = shift;
 
-    my $cry = cry( 'Building lists of trip quantities');
+    my $cry = cry('Building lists of trip quantities');
 
     my $next_trp = $hasi_db->each_row_where( 'TRP',
         q{WHERE IsPublic = 'X' OR IsPublic = '1'} );
@@ -417,7 +417,7 @@ sub build_trip_quantity_lists {
 
 sub cull_placepats {
 
-    my $cry = cry ( 'Combining duplicate place-patterns');
+    my $cry = cry('Combining duplicate place-patterns');
 
     foreach my $routedir ( sortbyline( keys %num_trips_of_pat ) ) {
 
@@ -445,7 +445,7 @@ sub cull_placepats {
 
     $cry->done;
 
-    my $cullcry = cry( 'Culling place-patterns');
+    my $cullcry = cry('Culling place-patterns');
 
     foreach my $routedir ( sortbyline( keys %num_trips_of_pat ) ) {
 
@@ -595,8 +595,8 @@ sub cull_placepats {
             if ( not defined $patinfo->{Place} ) {
                 my $q       = exists $pats_of_stop{$stop_ident};
                 my $disp_rd = keyreadable($routedir);
-                cry_text ( "P ${disp_rd} ${stop_ident} "
-                  . join( ' ', keys %$patinfo ));
+                cry_text( "P ${disp_rd} ${stop_ident} "
+                      . join( ' ', keys %$patinfo ) );
                 return;
             }
 
@@ -605,8 +605,8 @@ sub cull_placepats {
             if ( not defined $patinfo->{NextPlace} ) {
                 my $q       = exists $pats_of_stop{$stop_ident};
                 my $disp_rd = keyreadable($routedir);
-                cry_text ( "NP ${disp_rd} ${stop_ident} "
-                  . join( ' ', keys %$patinfo ));
+                cry_text( "NP ${disp_rd} ${stop_ident} "
+                      . join( ' ', keys %$patinfo ) );
                 return;
             }
 
@@ -631,7 +631,7 @@ sub cull_placepats {
         }
 
         if ( @results == 0 ) {
-            cry_text( "No results: $stop_ident $routedir");
+            cry_text("No results: $stop_ident $routedir");
         }
 
         return @results;
@@ -677,7 +677,7 @@ sub cull_placepats {
 
     sub delete_last_stops {
 
-        my $cry = cry( 'Deleting final stops');
+        my $cry = cry('Deleting final stops');
 
         foreach my $stop ( keys %pats_of_stop ) {
 
@@ -759,7 +759,7 @@ sub delete_placelist_from_lists {
     #my %short_code_of;
 
     sub build_pat_combos {
-        my $cry = cry( 'Building pattern combinations');
+        my $cry = cry('Building pattern combinations');
 
       STOP:
         foreach my $stop ( keys_pats_of_stop() ) {
@@ -775,8 +775,7 @@ sub delete_placelist_from_lists {
 
                 if ( not defined $placelists[0] ) {
                     $cry->text(
-                      "No placelist for $stop, $route, $dir, [@pat_idents]"
-                      );
+                        "No placelist for $stop, $route, $dir, [@pat_idents]");
                     next STOP;
                 }
 
@@ -848,7 +847,7 @@ sub delete_placelist_from_lists {
     sub write_combo_overrides {
         my $file = shift;
 
-        my $cry = cry( "Writing override file $OVERRIDE_FILENAME");
+        my $cry = cry("Writing override file $OVERRIDE_FILENAME");
 
         open my $out, '>', $file or die "Can't open $file for writing";
 
@@ -873,7 +872,7 @@ sub delete_placelist_from_lists {
                 printf "Line %-3s %68s\n", $route, $short_code_of{$shortkey};
                 my @placelists = @{ $combos{$routedir}{$combokey} };
                 #say $PATTERNPAD, 'Pattern',
-                #  ( scalar @placelists ? '(s)' : $EMPTY_STR ),
+                #  ( scalar @placelists ? '(s)' : $EMPTY ),
                 #  q{:};
                 foreach my $placelist (@placelists) {
                     say wrap (
@@ -885,8 +884,7 @@ sub delete_placelist_from_lists {
                 say '= Computer: ', destination_of($shortkey);
                 say $comments_of{$shortkey} if $comments_of{$shortkey};
                 say u::joinempty (
-                    $OVERRIDE_STRING, $SPACE,
-                    $override_of{$shortkey} || $EMPTY_STR
+                    $OVERRIDE_STRING, $SPACE, $override_of{$shortkey} || $EMPTY
                 );
                 say $ENTRY_DIVIDER;
             } ## tidy end: foreach my $combokey (@thesecombos)
@@ -927,7 +925,7 @@ sub delete_placelist_from_lists {
         my %input_comments_of;
         my $chunk;
 
-        my $cry = cry( "Reading override file $OVERRIDE_FILENAME");
+        my $cry = cry("Reading override file $OVERRIDE_FILENAME");
 
         open my $in, '<', $file
           or die "Can't open $file for input: $OS_ERROR";
@@ -989,9 +987,8 @@ sub delete_placelist_from_lists {
                 push @preserved, $input_comments_of{$short}
                   if $input_comments_of{$short};
                 push @preserved,
-                  u::joinempty( $OVERRIDE_STRING, $SPACE, 
-                  $input_override_of{$short} 
-                  );
+                  u::joinempty( $OVERRIDE_STRING, $SPACE,
+                    $input_override_of{$short} );
                 $preserved_override_of{$shortkey} = joinlf(@preserved);
             }
         }
@@ -1039,7 +1036,7 @@ sub relevant_places {
     }
 
     sub make_destination_of {
-        my $cry = shift;
+        my $cry      = shift;
         my $routedir = shift;
         my ( $route, $dir ) = routedir($routedir);
         my $combokey   = shift;
@@ -1050,7 +1047,7 @@ sub relevant_places {
 
         foreach my $placelist (@placelists) {
             if ( not defined $placelist ) {
-                $cry->over( '!!!');
+                $cry->over('!!!');
             }
             push @place_arys, [ sk($placelist) ];
         }
@@ -1116,7 +1113,8 @@ sub relevant_places {
                 my @descriptions;
                 foreach my $place ( sk($relevant) ) {
                     push @descriptions, $places_r->{$place}{c_description};
-                    warn "Unknown description for $place" unless $descriptions[-1];
+                    warn "Unknown description for $place"
+                      unless $descriptions[-1];
                 }
 
                 $description_of{$routedir}{$placelist}
@@ -1157,9 +1155,9 @@ sub output_specs {
     my $flagfolder = shift;
     my $stops_r    = shift;
 
-    my $stop_decal_cry = cry( 'Writing stop and decal info');
+    my $stop_decal_cry = cry('Writing stop and decal info');
 
-    my $decal_cry = cry ("Writing stop decal file $STOP_SPEC_FILENAME");
+    my $decal_cry = cry("Writing stop decal file $STOP_SPEC_FILENAME");
 
     my $file = File::Spec->catfile( $flagfolder->path(), $STOP_SPEC_FILENAME );
 
@@ -1204,7 +1202,7 @@ sub output_specs {
 sub make_decal_spec {
     my ( $shortkey, $stop, $routedir ) = @_;
     my ( $route, $dir ) = routedir($routedir);
-    my $icons = $EMPTY_STR;
+    my $icons = $EMPTY;
 
     # Transbay and All_Nighter icons are used even
     # when no connection icons are used
@@ -1275,7 +1273,7 @@ sub make_decal_spec {
     }
 
     if ( $destination =~ /\ALimited (?:weekday )hours\z/ ) {
-        $icons = $EMPTY_STR;
+        $icons = $EMPTY;
     }
 
     $icons = joinempty( sort split( //, $icons ) );
@@ -1371,7 +1369,7 @@ sub make_decal_spec {
                 push @decals, make_decal_from_spec( $spec, $route );
             }
         } ## tidy end: for my $routedir ( grep...)
-        
+
         @decals = uniq @decals;
 
         return @decals;
@@ -1381,7 +1379,7 @@ sub make_decal_spec {
 
         my $flagfolder = shift;
 
-        my $cry = cry ( "Writing decal specification file $DECAL_SPEC_FILENAME");
+        my $cry = cry("Writing decal specification file $DECAL_SPEC_FILENAME");
 
         my $file
           = File::Spec->catfile( $flagfolder->path(), $DECAL_SPEC_FILENAME );
@@ -1477,7 +1475,7 @@ sub style_of_route {
 } ## tidy end: sub style_of_route
 
 sub build_color_of {
-    my $signup = shift;
+    my $signup   = shift;
     my $actiumdb = shift;
 
     my %lines;
@@ -1497,7 +1495,7 @@ sub read_plain_overrides {
     my $file
       = File::Spec->catfile( $flagfolder->path(), $PLAIN_OVERRIDE_FILENAME );
 
-    my $cry = cry ("Reading plain override file $PLAIN_OVERRIDE_FILENAME");
+    my $cry = cry("Reading plain override file $PLAIN_OVERRIDE_FILENAME");
 
     open my $in, '<', $file or die "Can't open $file for input: $OS_ERROR";
 
@@ -1521,7 +1519,7 @@ sub read_tp_overrides {
     my $file
       = File::Spec->catfile( $flagfolder->path(), $TP_OVERRIDE_FILENAME );
 
-    my $cry = cry( "Reading timepoint override file $TP_OVERRIDE_FILENAME");
+    my $cry = cry("Reading timepoint override file $TP_OVERRIDE_FILENAME");
 
     open my $in, '<', $file or die "Can't open $file for input: $OS_ERROR";
 
@@ -1607,8 +1605,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -1623,8 +1621,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -1636,6 +1634,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

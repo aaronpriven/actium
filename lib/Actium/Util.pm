@@ -98,7 +98,7 @@ sub j {
 }
 
 sub joinempty {
-    return join( $EMPTY_STR, map { $_ // $EMPTY_STR } @_ );
+    return join( $EMPTY, map { $_ // $EMPTY } @_ );
 }
 
 =item joinkey
@@ -111,7 +111,7 @@ L<Actium::Constants/Actium::Constants>. A quicker way to type "join
 =cut
 
 sub joinkey {
-    return join( $KEY_SEPARATOR, map { $_ // $EMPTY_STR } @_ );
+    return join( $KEY_SEPARATOR, map { $_ // $EMPTY } @_ );
 }
 
 =item joinlf
@@ -122,7 +122,7 @@ separated  by a line feed. A quicker way to type 'join ("\n" , @list)'.
 =cut 
 
 sub joinlf {
-    return join( "\n", map { $_ // $EMPTY_STR } @_ );
+    return join( "\n", map { $_ // $EMPTY } @_ );
 }
 
 =item jointab
@@ -133,7 +133,7 @@ separated  by tabs. A quicker way to type 'join ("\t" , @list)'.
 =cut
 
 sub jointab {
-    return join( "\t", map { $_ // $EMPTY_STR } @_ );
+    return join( "\t", map { $_ // $EMPTY } @_ );
 }
 
 =item joinseries_with (I<conjunction> , I<item>, I<item>, ...)
@@ -192,12 +192,12 @@ the empty string, if not.
 sub define {
     if (wantarray) {
         my @list = @_;
-        $_ = $_ // $EMPTY_STR foreach @list;
+        $_ = $_ // $EMPTY foreach @list;
         return @list;
     }
     else {
         local $_ = shift;
-        $_ = $_ // $EMPTY_STR;
+        $_ = $_ // $EMPTY;
         return $_;
     }
 }
@@ -212,7 +212,7 @@ string.
 
 sub isempty {
     my $value = shift;
-    return ( not( defined $value and $value ne $EMPTY_STR ) );
+    return ( not( defined $value and $value ne $EMPTY ) );
 }
 
 =back
@@ -574,7 +574,7 @@ sub u_trim_to_columns {
 
     my $columns = $gc->columns;
     while ( $gc->columns > $max_columns ) {
-        $gc->substr( -1, 1, $EMPTY_STR );
+        $gc->substr( -1, 1, $EMPTY );
         $columns = $gc->columns;
     }
 

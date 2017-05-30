@@ -52,7 +52,7 @@ sub START {
             last if ( not $_ );
             my @rows = $actiumdb->search_ss($_);
             _display(@rows);
-            say $EMPTY_STR;
+            say $EMPTY;
         }
 
         say 'Exiting.';
@@ -77,7 +77,7 @@ sub _display {
 
         print $fields_r->{h_stp_511_id}, $divider,
           $fields_r->{h_stp_identifier}, $divider;
-        say( $active ? $EMPTY_STR : '*', $fields_r->{c_description_full} );
+        say( $active ? $EMPTY : '*', $fields_r->{c_description_full} );
     }
 
     return;

@@ -121,7 +121,7 @@ sub read_files {
 
             # assign last field: array of remaining fields
             $this_row{$final_field}
-              = [ grep { $_ ne $EMPTY_STR }
+              = [ grep { $_ ne $EMPTY }
                   @fields[ $final_field_idx .. $#fields ] ];
 
         }
@@ -201,7 +201,7 @@ sub init_templates {
 
     for my $row_type ( keys %field_names_of ) {
 
-        $template_of{$row_type} = $EMPTY_STR;
+        $template_of{$row_type} = $EMPTY;
         my @template_pieces;
 
       FIELD:
@@ -233,7 +233,7 @@ sub jointemplate {
 
 sub init_field_names {
 
-    local $/ = $EMPTY_STR;    # paragraph mode
+    local $/ = $EMPTY;    # paragraph mode
 
   ROW_TYPE:
     while (<DATA>) {

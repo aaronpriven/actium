@@ -260,7 +260,7 @@ sub _bullet_for_level {
     my $self  = shift;
     my $count = $self->bullet_count;
 
-    return $EMPTY_STR unless $count;
+    return $EMPTY unless $count;
 
     my $level = shift;
     $level = $count if $level > $count;

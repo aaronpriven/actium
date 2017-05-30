@@ -30,11 +30,11 @@ use Sub::Exporter -setup => {
 };
 # Sub::Exporter ### DEP ###
 
-use Carp; ### DEP ###
-use Const::Fast; ### DEP ###
-use English '-no_match_vars'; ### DEP ###
-use File::Copy(); ### DEP ###
-use Params::Validate ':all'; ### DEP ###
+use Carp;                        ### DEP ###
+use Const::Fast;                 ### DEP ###
+use English '-no_match_vars';    ### DEP ###
+use File::Copy();                ### DEP ###
+use Params::Validate ':all';     ### DEP ###
 
 use Actium::O::Folder;
 use Actium::Util(qw<filename file_ext >);
@@ -73,19 +73,19 @@ sub import_to_repository {
     my $verbose    = $params{verbose};
 
     my $importfolder = $params{importfolder};
-    my $cry = cry ( 'Importing line maps from ' . $importfolder->path);
-    my @files = $importfolder->glob_plain_files();
+    my $cry          = cry( 'Importing line maps from ' . $importfolder->path );
+    my @files        = $importfolder->glob_plain_files();
 
     my @copied_files;
 
   FILE:
-    foreach my $filespec (sort @files) {
+    foreach my $filespec ( sort @files ) {
 
         next FILE if -d $filespec;
 
         my $filename    = filename($filespec);
         my $newfilename = $filename;
-        $cry->over ($filename) unless $verbose;
+        $cry->over($filename) unless $verbose;
 
         # if newfilename isn't valid, first run it through normalize_filename.
         # Then if it's still not valid, carp and move on.
@@ -98,8 +98,8 @@ sub import_to_repository {
         if ( not filename_is_valid($newfilename) ) {
             # check of the newly normalized name - not a duplicate call
 
-            $cry->text (
-"Can't find line, date, version or " . "extension in $filename: skipped");
+            $cry->text( "Can't find line, date, version or "
+                  . "extension in $filename: skipped" );
             next FILE;
         }
 
@@ -111,8 +111,8 @@ sub import_to_repository {
         my $newfilespec = $linefolder->make_filespec($newfilename);
 
         if ( -e $newfilespec ) {
-            $cry->text (
-"Can't move $filespec " . "because $newfilespec already exists: skipped");
+            $cry->text( "Can't move $filespec "
+                  . "because $newfilespec already exists: skipped" );
             next FILE;
         }
 
@@ -123,7 +123,7 @@ sub import_to_repository {
             _copy_file( $filespec, $newfilespec, $repository->path, $verbose );
         }
         push @copied_files, $newfilespec;
-    } ## tidy end: foreach my $filespec (@files)
+    } ## tidy end: FILE: foreach my $filespec ( sort...)
     $cry->done;
 
     return @copied_files;
@@ -150,7 +150,7 @@ sub make_web_maps {
     my $gsargs         = "-r$params{resolution} -sDEVICE=jpeg "
       . '-dGraphicsAlphaBits=4 -dTextAlphaBits=4 -q';
 
-    my $cry = cry( 'Making maps for web');
+    my $cry = cry('Making maps for web');
 
     foreach my $filespec ( @{ $params{files} } ) {
 
@@ -159,12 +159,12 @@ sub make_web_maps {
 
         my %nameparts = %{ _mapname_pieces($filename) };
 
-        $cry->over ($nameparts{lines}) if not $verbose;
+        $cry->over( $nameparts{lines} ) if not $verbose;
 
         my @output_lines = @{ $nameparts{lines_r} };
         my $token        = $nameparts{token};
 
-        if ( $token ne $EMPTY_STR ) {
+        if ( $token ne $EMPTY ) {
             foreach (@output_lines) {
                 $_ .= "=$token";
             }
@@ -187,7 +187,7 @@ sub make_web_maps {
             if ($verbose) {
                 my $display_path = _display_path( $first_jpeg_spec, $filespec,
                     $path_to_remove );
-                $cry->text ("Successfully rasterized: $display_path");
+                $cry->text("Successfully rasterized: $display_path");
             }
         }
         else {
@@ -278,11 +278,11 @@ sub normalize_filename {
 
 } ## tidy end: sub normalize_filename
 
-const my $LINE_NAME_RE       => qr/(?:[[:upper:]\d]{1,4}|[[:alpha:]\d]{5,})/;
-const    my $YEAR_RE => '(?:19[89]\d|20\d\d)';
-    # year - another Y2100 problem
-const    my $MONTH_RE => '(?:0[123456789]|1[012])';
-    # numeric month
+const my $LINE_NAME_RE => qr/(?:[[:upper:]\d]{1,4}|[[:alpha:]\d]{5,})/;
+const my $YEAR_RE      => '(?:19[89]\d|20\d\d)';
+# year - another Y2100 problem
+const my $MONTH_RE => '(?:0[123456789]|1[012])';
+# numeric month
 
 sub filename_is_valid {
 
@@ -339,7 +339,7 @@ sub copylatest {
 
     my $repository = $params{repository};
 
-    my $list_cry= cry( 'Getting list of folders in map repository');
+    my $list_cry    = cry('Getting list of folders in map repository');
     my @folder_objs = $repository->children;
     $list_cry->done;
 
@@ -349,7 +349,7 @@ sub copylatest {
     my %latest_date_of;
     my %latest_ver_of;
 
-    my $copy_cry = cry( 'Copying files in repository folders');
+    my $copy_cry = cry('Copying files in repository folders');
 
     my %folder_obj_of;
     $folder_obj_of{ $_->folder } = $_ foreach @folder_objs;
@@ -376,7 +376,7 @@ sub copylatest {
         my $folder_obj = $folder_obj_of{$foldername};
         my @filespecs  = $folder_obj->glob_plain_files;
 
-        $copy_cry->over ($foldername) unless $verbose;
+        $copy_cry->over($foldername) unless $verbose;
 
       FILE:
         foreach my $filespec (@filespecs) {
@@ -409,7 +409,7 @@ sub copylatest {
                 # mark the this file as the latest.
             }
 
-        } ## tidy end: foreach my $filespec (@filespecs)
+        } ## tidy end: FILE: foreach my $filespec (@filespecs)
 
         # process latest files
 
@@ -461,8 +461,8 @@ sub copylatest {
 
         } ## tidy end: foreach my $line_and_token ...
 
-    } ## tidy end: foreach my $foldername ( sortbyline...)
-    
+    } ## tidy end: FOLDER: foreach my $foldername ( sortbyline...)
+
     $copy_cry->over($EMPTY);
     $copy_cry->done;
 
@@ -485,7 +485,7 @@ sub copylatest {
 
 sub _active_maps {
 
-    my $cry = cry( 'Getting list of active maps');
+    my $cry = cry('Getting list of active maps');
 
     my $repository = shift;
     my $filename   = shift;
@@ -516,7 +516,7 @@ sub _file_action {
     if ( $action_r->( $from, $to ) ) {
         if ($verbose) {
             my $display_path = _display_path( $from, $to, $path );
-            last_cry()->text ("Successful $actionword: $display_path");
+            last_cry()->text("Successful $actionword: $display_path");
         }
     }
     else {
@@ -561,7 +561,7 @@ sub _mapname_pieces {
 
     my ( $lines, $token ) = split( /=/s, $lines_and_token );
 
-    $token = $EMPTY_STR unless defined $token;
+    $token = $EMPTY unless defined $token;
 
     my @lines = split( /_/s, $lines );
     return {
@@ -577,7 +577,6 @@ sub _mapname_pieces {
     ## use critic
 
 } ## tidy end: sub _mapname_pieces
-
 
 sub _remove_leading_path {
     my ( $filespec, $path ) = @_;
@@ -630,7 +629,7 @@ sub _remove_leading_path {
     ## REMOVE THE LEADING PATH
 
     return File::Spec->abs2rel( $filespec, $path );
-} ## tidy end: sub remove_leading_path
+} ## tidy end: sub _remove_leading_path
 
 # _split_path_components and _join_path_components
 # might be worth making public if they are used again.
@@ -651,7 +650,6 @@ sub _join_path_components {
       = File::Spec->catpath( $vol, File::Spec->catdir( @{$folders_r} ), $file );
     return $path;
 }
-
 
 1;
 

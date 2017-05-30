@@ -14,7 +14,6 @@ my %constants;
 BEGIN {
 
     %constants = (
-        EMPTY_STR     => \q{},
         EMPTY         => \q{},
         CRLF          => \qq{\cM\cJ},
         SPACE         => \q{ },
@@ -130,8 +129,6 @@ the fully-qualified form, e.g.,  $Actium::Constants::CRLF .
 =head1 CONSTANTS
 
 =over
-
-=item $EMPTY_STR
 
 =item $EMPTY
 
