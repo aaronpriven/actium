@@ -13,7 +13,6 @@ BEGIN {
     *u:: = \*Actium::;
 }
 
-use Actium::Constants;
 use Actium::Sorting::Line(qw/byline sortbyline/);
 use Actium::Util(
     qw(add_before_extension define dumpstr feq file_ext filename
@@ -48,7 +47,7 @@ const my $KEY_SEPARATOR     => "\c]";
 const my @TRANSBAY_NOLOCALS => (qw/FS L NX NX1 NX2 NX3 U W/);
 
 const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
-#                         0  1  3  2  4  5  6  7  8  9  10 11 12 13 14 15
+#  Hastus                 0  1  3  2  4  5  6  7  8  9  10 11 12 13 14 15
 
 {
 
@@ -74,13 +73,13 @@ const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
         # constants
         {
             no strict 'refs';
-            *{ $caller . '::' . 'EMPTY' }             = \$EMPTY;
-            *{ $caller . '::' . 'CRLF' }              = \$CRLF;
-            *{ $caller . '::' . 'SPACE' }             = \$SPACE;
-            *{ $caller . '::' . 'MINS_IN_12HRS' }     = \$MINS_IN_12HRS;
-            *{ $caller . '::' . 'KEY_SEPARATOR' }     = \$KEY_SEPARATOR;
-            *{ $caller . '::' . 'TRANSBAY_NOLOCALS' } = \@TRANSBAY_NOLOCALS;
-            *{ $caller . '::' . 'DIRCODES' }          = \@DIRCODES;
+            *{ $caller . '::EMPTY' }             = \$EMPTY;
+            *{ $caller . '::CRLF' }              = \$CRLF;
+            *{ $caller . '::SPACE' }             = \$SPACE;
+            *{ $caller . '::MINS_IN_12HRS' }     = \$MINS_IN_12HRS;
+            *{ $caller . '::KEY_SEPARATOR' }     = \$KEY_SEPARATOR;
+            *{ $caller . '::TRANSBAY_NOLOCALS' } = \@TRANSBAY_NOLOCALS;
+            *{ $caller . '::DIRCODES' }          = \@DIRCODES;
         }
 
         if ($type) {
@@ -108,7 +107,6 @@ const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
 
         _do_import 'Kavorka', _kavorka_args($type);
 
-        _do_import 'Actium::Constants';
         _do_import 'Actium::Crier', qw/cry last_cry/;
         _do_import 'Carp';
         _do_import 'Const::Fast';
