@@ -3,15 +3,9 @@ package Actium::Time 0.012;
 # Routines for formatting times and parsing formatted times
 # -- to be phased out in favor of Actium::O::Time
 
-use warnings;    ### DEP ###
-use strict;      ### DEP ###
+use Actium;
 
-use 5.010;
-
-use Carp;        ### DEP ###
-use Actium::Constants;
 use Params::Validate qw(:all);    ### DEP ###
-use Const::Fast;                  ### DEP ###
 use Scalar::Util (qw<reftype looks_like_number>);    ### DEP ###
 use Memoize;                                         ### DEP ###
 
