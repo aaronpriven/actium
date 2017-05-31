@@ -8,10 +8,9 @@ package Actium::O::Sked::Timetable::IDFrame 0.012;
 use warnings;
 use 5.016;
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
-use namespace::autoclean; ### DEP ###
-use Actium::Util qw/halves/;
+use Moose;                        ### DEP ###
+use MooseX::StrictConstructor;    ### DEP ###
+use namespace::autoclean;         ### DEP ###
 
 has widthpair_r => (
     # columns and half columns
@@ -33,7 +32,8 @@ has width => (
 
 sub _build_width {
     my $self = shift;
-    return halves( $self->widthpair );
+    my ( $wholes, $halves ) = $self->widthpair;
+    return ( $wholes * 2 + $halves );
 }
 
 has frame_idx => (
@@ -116,8 +116,6 @@ InDesign to go to the proper frame.
 =item MooseX::StrictConstructor
 
 =item namespace::autoclean
-
-=item Actium::Util
 
 =head1 AUTHOR
 

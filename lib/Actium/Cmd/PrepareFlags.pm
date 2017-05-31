@@ -4,7 +4,6 @@ package Actium::Cmd::PrepareFlags 0.011;
 
 use Actium;
 use Actium::Flags;
-use Actium::Util('file_ext');
 use Actium::O::2DArray;
 
 sub OPTIONS {
@@ -23,7 +22,7 @@ sub START {
 
     if ( defined $input_file ) {
         my $stopidinput_cry = cry("Getting stop IDs from file $input_file");
-        ( $output_file, undef ) = file_ext($input_file);
+        ( $output_file, undef ) = u::file_ext($input_file);
         $output_file .= '-assignments.txt';
 
         my $in_sheet = Actium::O::2DArray->new_from_file($input_file);

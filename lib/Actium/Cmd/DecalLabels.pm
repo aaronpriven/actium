@@ -3,7 +3,6 @@ package Actium::Cmd::DecalLabels 0.011;
 # Makes spreadsheet to print decal labels
 
 use Actium;
-use Actium::Util('add_before_extension');
 use Actium::DecalPreparation(qw/make_labels/);
 
 sub HELP {
@@ -24,7 +23,7 @@ sub START {
     my @argv = $env->argv;
 
     my $input_file = shift @argv;
-    my $output_file = add_before_extension( $input_file, 'labels' );
+    my $output_file = u::add_before_extension( $input_file, 'labels' );
 
     make_labels( $input_file, $output_file, $actium_db );
 

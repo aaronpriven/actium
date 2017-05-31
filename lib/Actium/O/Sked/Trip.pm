@@ -3,7 +3,6 @@ package Actium::O::Sked::Trip 0.012;
 # Trip object (for schedules and headways)
 
 use Actium ('class');
-use Actium::Util;
 
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -255,7 +254,7 @@ sub clone {
     my $self  = shift;
     my $class = blessed $self;
 
-    my %init_args = Actium::Util::hashref(@_)->%*;
+    my %init_args = u::hashref(@_)->%*;
 
     foreach my $attribute ( $class->meta->get_all_attributes ) {
 
@@ -544,8 +543,6 @@ See L<Moose>.
 =item Actium::Time
 
 =item Actium::Types
-
-=item Actium::Util
 
 =back
 

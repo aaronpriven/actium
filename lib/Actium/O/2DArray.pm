@@ -1743,8 +1743,6 @@ Add CSV (and possibly other file type) support to new_from_file.
 
 =item Actium
 
-=item Actium::Util
-
 =item Params::Validate
 
 =back

@@ -9,7 +9,6 @@ use Unicode::LineBreak;    ### DEP ###
 use Unicode::GCString;     ### DEP ###
 
 use Actium::Types (qw<CrierBullet CrierTrailer>);
-use Actium::Util  (qw<u_columns u_pad u_wrap u_trim_to_columns>);
 
 const my $MAX_SEVERITY_TEXT_WIDTH => 5;
 const my $SEVERITY_MARKER_WIDTH   => 8;    # text width, plus space and brackets
@@ -314,18 +313,18 @@ sub _print_left_text {
     # Timestamp
     $timestamp = $self->_timestamp_now( $level, $timestamp );
 
-    my $bullet = u_pad( $self->bullet, $self->_bullet_width );
+    my $bullet = u::u_pad( $self->bullet, $self->_bullet_width );
     my $indent         = $SPACE x ( $self->_step * ( $level - 1 ) );
     my $leading        = $timestamp . $bullet . $indent;
-    my $leading_width  = u_columns($leading);
+    my $leading_width  = u::u_columns($leading);
     my $leading_spaces = $SPACE x $leading_width;
     my $span_max = $self->_column_width - $leading_width - $NOTIFY_RIGHT_PAD;
     my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
 
     $text .= $ellipsis;
 
-    my @lines = u_wrap( $text, $span_min, $span_max );
-    my $final_width = u_columns( $lines[-1] );
+    my @lines = u::u_wrap( $text, $span_min, $span_max );
+    my $final_width = u::u_columns( $lines[-1] );
     $lines[0] = $leading . $lines[0];
     if ( @lines > 1 ) {
         $lines[$_] = "\n" . $leading_spaces . $lines[$_]
@@ -395,7 +394,7 @@ sub _close {
     # Make the severity text
 
     my $severity_output
-      = u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
+      = u::u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
     if ( $self->colorize ) {
         $severity_output = $self->_add_color($severity_output);
     }
@@ -574,7 +573,7 @@ sub prog {
 
     # Start a new line?
     my $avail   = $self->_column_width - $self->position - $NOTIFY_RIGHT_PAD;
-    my $columns = u_columns($msg);
+    my $columns = u::u_columns($msg);
     my $fh      = $self->_fh;
 
     my $position = $self->position;
@@ -677,7 +676,7 @@ sub text {
     my $span_max = $self->_column_width - $indent_cols - $NOTIFY_RIGHT_PAD;
     my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
 
-    my @lines = u_wrap( $text, $span_min, $span_max );
+    my @lines = u::u_wrap( $text, $span_min, $span_max );
 
     foreach my $line (@lines) {
         my $succeeded = print $fh $indentspace, $line, "\n";

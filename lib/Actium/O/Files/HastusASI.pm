@@ -5,7 +5,6 @@ package Actium::O::Files::HastusASI 0.011;
 
 use Actium ('class');
 
-use Actium::Util qw(j joinkey filename);
 use File::Glob qw(:glob);    ### DEP ###
 use File::Spec;              ### DEP ###
 
@@ -97,7 +96,7 @@ sub _build_files_list {
         croak "No files found in Hastus AVL Standard folder $flats_folder";
     }
 
-    @all_files = map { filename($_) } @all_files;
+    @all_files = map { u::filename($_) } @all_files;
 
     my %files_of;
     foreach my $filetype ( $self->_filetypes() ) {
@@ -208,7 +207,7 @@ sub _load {
 
             if ( $has_repeating_final_column{$table} ) {
                 my @finals = splice( @columns, scalar( columns($table) ) );
-                push @columns, joinkey( grep { $_ ne $EMPTY } @finals );
+                push @columns, u::joinkey( grep { $_ ne $EMPTY } @finals );
             }
 
             my $parent = $parent_of{$table};
@@ -218,7 +217,7 @@ sub _load {
 
             if ( $has_composite_key{$table} ) {
                 push @columns,
-                  joinkey( @columns[ @{ $key_components_idxs{$table} } ] );
+                  u::joinkey( @columns[ @{ $key_components_idxs{$table} } ] );
             }
 
             $sth_of{$table}->execute( $sequence, @columns );
@@ -502,8 +501,6 @@ an HSA file.) This row will be skipped.
 =item Actium
 
 =item Actium::O::Files::SQLite
-
-=item Actium::Util
 
 =back
 

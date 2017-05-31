@@ -5,12 +5,11 @@ package Actium::Combinatorics 0.012;
 use 5.016;
 use warnings;
 
-use Algorithm::Combinatorics(':all'); ### DEP ###
-use Actium::Util('population_stdev');
+use Actium;
+use Algorithm::Combinatorics(':all');    ### DEP ###
 
-use Sub::Exporter -setup => {
-    exports => [ qw< ordered_partitions odometer_combinations > ]
-};
+use Sub::Exporter -setup =>
+  { exports => [qw< ordered_partitions odometer_combinations >] };
 # Sub::Exporter ### DEP ###
 
 sub ordered_partitions {
@@ -44,7 +43,7 @@ sub ordered_partitions {
     # it be weird to have a big NX1 table followed by small NX and NX2 tables?
     # If not, then this could be replaced with partitions, as above.
 
-    my @data     = @{+shift};
+    my @data       = @{ +shift };
     my $num_frames = shift;
 
     my $final_idx = $#data;
@@ -56,17 +55,17 @@ sub ordered_partitions {
         }
         return @all_partitions;
     }
-    
-    if ($num_frames == @data ) {
-        return [ map { [ $_ ] } @data ];
+
+    if ( $num_frames == @data ) {
+        return [ map { [$_] } @data ];
     }
-    if ($num_frames == 1 ) {
+    if ( $num_frames == 1 ) {
         return [ \@data ];
     }
-    
+
     my @indices = ( 0 .. $final_idx - 1 );
     my @break_after_idx_sets = combinations( \@indices, $num_frames - 1 );
-    
+
     my @partitions;
 
     foreach my $break_after_idx_set (@break_after_idx_sets) {
@@ -81,35 +80,33 @@ sub ordered_partitions {
             push @partition, [ @data[ $first .. $last ] ];
         }
 
-        push @partition,
-          [ @data[ 1 + $break_after_idx[-1] .. $final_idx ] ];
-          
+        push @partition, [ @data[ 1 + $break_after_idx[-1] .. $final_idx ] ];
+
         push @partitions, \@partition;
 
-#        my @sort_values = map { scalar @{$_} } @partition;
-#        # count of tables in each frame
-#
-#        unshift @sort_values, population_stdev(@sort_values);
-#        # standard deviation -- so makes them as close to the same
-#        # number of tables as possible
-#
-#        push @partitions, [ \@partition, \@sort_values ];
-#
-#    } ## tidy end: foreach my $break_after_idx_set...
-#
-#    @partitions = sort _ordered_partition_sort @partitions;
-#
-#    return map { $_->[0] } @partitions;
+        #        my @sort_values = map { scalar @{$_} } @partition;
+        #        # count of tables in each frame
+        #
+        #        unshift @sort_values, population_stdev(@sort_values);
+        #        # standard deviation -- so makes them as close to the same
+        #        # number of tables as possible
+        #
+        #        push @partitions, [ \@partition, \@sort_values ];
+        #
+        #    } ## tidy end: foreach my $break_after_idx_set...
+        #
+        #    @partitions = sort _ordered_partition_sort @partitions;
+        #
+        #    return map { $_->[0] } @partitions;
 
-    }
-    
+    } ## tidy end: foreach my $break_after_idx_set...
+
     return @partitions;
 
 } ## tidy end: sub ordered_partitions
 
-
 sub odometer_combinations {
- 
+
     # This is a stupid name but I don't know what to call it.
     # You pass this a list of lists, and it gives you all the possible
     # combinations of one from each list.
@@ -120,36 +117,37 @@ sub odometer_combinations {
     # [ A , D , F ] , [ B , D , F ], [ C, D, F ]
 
     # Note that the CPAN module Iterator::Array::Jagged may do the same thing,
-    # in which case it might be better to use that code instead.  I just 
-    # looked at that module briefly without looking to see whether it 
+    # in which case it might be better to use that code instead.  I just
+    # looked at that module briefly without looking to see whether it
     # made sense.
 
     my @list_of_lists = @_;
 
-    my ( @combinations);
+    my (@combinations);
     my $odometer_r = [];
-    my $maxes_r = [];
+    my $maxes_r    = [];
 
     foreach my $i ( 0 .. $#list_of_lists ) {
         $odometer_r->[$i] = 0;
-        $maxes_r->[$i] = $#{ $list_of_lists[$i] };
+        $maxes_r->[$i]    = $#{ $list_of_lists[$i] };
     }
 
     while ($odometer_r) {
-     
+
         #my @combination;
         #for my $wheel (0 .. $#list_of_lists) {
         #   push @combination, $list_of_lists[$wheel][$odometer_r->[$wheel]];
         #}
-           
-         my @combination
-          = map { $list_of_lists[$_][ $odometer_r->[$_] ] } 0 .. $#list_of_lists;
+
+        my @combination
+          = map { $list_of_lists[$_][ $odometer_r->[$_] ] }
+          0 .. $#list_of_lists;
         push @combinations, \@combination;
         $odometer_r = _odometer_increment( $odometer_r, $maxes_r );
     }
     return @combinations;
 
-} ## tidy end: sub _odometer_combinations
+} ## tidy end: sub odometer_combinations
 
 sub _odometer_increment {
     my $odometer_r = shift;
@@ -216,8 +214,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -232,8 +230,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -245,6 +243,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
