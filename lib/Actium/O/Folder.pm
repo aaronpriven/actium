@@ -249,7 +249,7 @@ sub subfolder {
     my $init_arg = $self->subfolderlist_init_arg;
     my $reader   = $self->subfolderlist_reader;
 
-    my $params_r = u::positional( \@_, '@' . $init_arg );
+    my $params_r = _positional( \@_, '@' . $init_arg );
 
     my @subfolders = @{ $params_r->{$init_arg} };
 
@@ -272,6 +272,59 @@ sub subfolder {
     return $class->new($params_r);
 
 } ## tidy end: sub subfolder
+
+sub _positional {
+    # moved from Actium::Util since this is now the only routine that uses it
+
+    my $argument_r = shift;
+    my $qualsub    = __PACKAGE__ . '::positional';
+    ## no critic (RequireInterpolationOfMetachars)
+    croak 'First argument to ' . $qualsub . ' must be a reference to @_'
+      if not( ref($argument_r) eq 'ARRAY' );
+    ## use critic
+
+    my @arguments = @{$argument_r};
+    my @attrnames = @_;
+
+    # if the last attribute begins with @, package up all remaining
+    # positional arrguments into an arrayref and return that
+    my $finalarray;
+    if ( $attrnames[-1] =~ /\A @/sx ) {
+        $finalarray = 1;
+        $attrnames[-1] =~ s/\A @//sx;
+    }
+
+    for my $attrname (@attrnames) {
+        next unless $attrname =~ /\A @/sx;
+        croak "Attribute $attrname specified.\n"
+          . "Only the last attribute specified in $qualsub in can be an array";
+    }
+
+    my %newargs;
+    if ( defined reftype( $arguments[-1] )
+        and reftype( $arguments[-1] ) eq 'HASH' )
+    {
+        %newargs = %{ pop @arguments };
+    }
+    if ( not $finalarray and scalar @attrnames < scalar @arguments ) {
+        croak 'Too many positional arguments in object construction';
+    }
+
+    while (@arguments) {
+        my $name = shift @attrnames;
+        if ( not @attrnames and $finalarray ) {
+            # if this is the last attribute name, and it originally had a @
+            $newargs{$name} = [@arguments];
+            @arguments = ();
+        }
+        else {
+            $newargs{$name} = shift @arguments;
+        }
+    }
+
+    return \%newargs;
+
+} ## tidy end: sub _positional
 
 sub new_from_file {
 

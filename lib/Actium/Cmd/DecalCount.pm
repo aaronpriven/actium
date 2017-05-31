@@ -3,7 +3,6 @@ package Actium::Cmd::DecalCount 0.011;
 # Makes spreadsheet to calculate decal count
 
 use Actium;
-use Actium::Util('add_before_extension');
 use Actium::DecalPreparation(qw/make_decal_count/);
 
 sub HELP {
@@ -22,7 +21,7 @@ sub START {
     my @argv     = $env->argv;
 
     my $input_file = shift @argv;
-    my $output_file = add_before_extension( $input_file, 'counted' );
+    my $output_file = u::add_before_extension( $input_file, 'counted' );
 
     make_decal_count( $input_file, $output_file, $actiumdb );
 

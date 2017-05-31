@@ -20,6 +20,8 @@ use Actium;
 
 #<ext> is of course .eps or .pdf, or another standard filename
 
+use Actium;
+
 use Sub::Exporter -setup => {
     exports => [
         qw(import_to_repository  make_web_maps      copylatest
@@ -33,8 +35,6 @@ use File::Copy();               ### DEP ###
 use Params::Validate ':all';    ### DEP ###
 
 use Actium::O::Folder;
-use Actium::Util(qw<filename file_ext >);
-use Actium::Sorting::Line('sortbyline');
 
 const my $LINE_NAME_LENGTH   => 4;
 const my $DEFAULT_RESOLUTION => 288;
@@ -77,7 +77,7 @@ sub import_to_repository {
 
         next FILE if -d $filespec;
 
-        my $filename    = filename($filespec);
+        my $filename    = u::filename($filespec);
         my $newfilename = $filename;
         $cry->over($filename) unless $verbose;
 
@@ -148,7 +148,7 @@ sub make_web_maps {
 
     foreach my $filespec ( @{ $params{files} } ) {
 
-        my $filename = filename($filespec);
+        my $filename = u::filename($filespec);
         next unless $filename =~ /[.]pdf\z/si;
 
         my %nameparts = %{ _mapname_pieces($filename) };
@@ -351,7 +351,7 @@ sub copylatest {
     my @web_maps_to_process;
 
   FOLDER:
-    foreach my $foldername ( sortbyline keys %folder_obj_of ) {
+    foreach my $foldername ( u::sortbyline keys %folder_obj_of ) {
 
         #        next FOLDER unless $foldername =~ m{
         #                      \A
@@ -376,7 +376,7 @@ sub copylatest {
         foreach my $filespec (@filespecs) {
             next FILE
               unless $filespec =~ /[.] $defining_extension \z/isx;
-            my $filename = filename($filespec);
+            my $filename = u::filename($filespec);
 
             my %nameparts = %{ _mapname_pieces($filename) };
 
@@ -417,8 +417,8 @@ sub copylatest {
             my @latest_filespecs = $folder_obj->glob_plain_files($globpattern);
 
             foreach my $latest_filespec (@latest_filespecs) {
-                my $filename = filename($latest_filespec);
-                my ( undef, $ext ) = file_ext($filename);
+                my $filename = u::filename($latest_filespec);
+                my ( undef, $ext ) = u::file_ext($filename);
 
                 if ( defined $fullname_folder ) {
                     my $newfilespec
@@ -455,7 +455,7 @@ sub copylatest {
 
         } ## tidy end: foreach my $line_and_token ...
 
-    } ## tidy end: FOLDER: foreach my $foldername ( sortbyline...)
+    } ## tidy end: FOLDER: foreach my $foldername ( u::sortbyline...)
 
     $copy_cry->over(q[]);
     $copy_cry->done;
@@ -550,7 +550,7 @@ sub _move_file {
 sub _mapname_pieces {
     ## no critic (ProhibitMagicNumbers)
     my $filename = shift;
-    my ( $filepart, $ext ) = file_ext($filename);
+    my ( $filepart, $ext ) = u::file_ext($filename);
     my ( $lines_and_token, $date, $ver ) = split( /-/s, $filepart, 3 );
 
     my ( $lines, $token ) = split( /=/s, $lines_and_token );
@@ -933,8 +933,6 @@ Attempting to move or copy returned a system error.
 =item * Actium::O::Folder
 
 =item * Actium::Sorting::Line
-
-=item * Actium::Util
 
 =head1 AUTHOR
 

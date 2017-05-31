@@ -39,7 +39,6 @@ const my %DAYS_FROM_TRANSITINFO => ( reverse %TRANSITINFO_DAYS_OF );
 use List::MoreUtils qw<uniq none>;    ### DEP ###
 
 use Text::Trim;                       ### DEP ###
-use Actium::Util (qw/jointab in dumpstr/);
 use Actium::Time ('timestr_sub');
 
 # comes from prehistorics
@@ -65,7 +64,7 @@ sub prehistoric_days {
 
     my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
 
-    return 'WD' unless in( $transitinfo, @valid_prehistorics );
+    return 'WD' unless u::in( $transitinfo, @valid_prehistorics );
     return $transitinfo;
 
 }
@@ -101,7 +100,7 @@ sub prehistoric_skedsfile {
         push @place9s, $place9;
     }
 
-    say $out jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
+    say $out u::jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
 
     my $timesub = timestr_sub( SEPARATOR => q[] );
 
@@ -118,7 +117,7 @@ sub prehistoric_skedsfile {
             }
         }
 
-        say $out jointab( $except, $EMPTY, $EMPTY, $trip->line, $times );
+        say $out u::jointab( $except, $EMPTY, $EMPTY, $trip->line, $times );
     }
 
     close $out;

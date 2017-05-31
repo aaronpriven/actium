@@ -13,6 +13,8 @@ use Actium::O::Files::Ini;
 use Actium::O::Cmd::Option;
 use Actium::O::Folder;
 
+use Module::Runtime ('require_module');
+
 const my $EX_USAGE       => 64;              # from "man sysexits"
 const my $EX_SOFTWARE    => 70;
 const my $COMMAND_PREFIX => 'Actium::Cmd';
@@ -36,12 +38,10 @@ my $term_width_cr = sub {
 ###############
 ##### BUILDARGS
 
-around BUILDARGS (
-   $orig, $class: slurpy %params
-) {
+around BUILDARGS ( $orig, $class : slurpy %params ) {
 
     $params{sysenv} //= {%ENV};
-    $params{argv}   //= {@ARGV};
+    $params{argv}   //= [@ARGV];
 
     if ( not defined $params{home_folder} ) {
         require File::HomeDir;    ### DEP ###
@@ -344,7 +344,7 @@ sub _build_module {
     }
 
     my $module = "${COMMAND_PREFIX}::$subcommands{$subcommand}";
-    u::require_module($module)
+    require_module($module)
       or die " Couldn't load module $module: $OS_ERROR";
     return $module;
 

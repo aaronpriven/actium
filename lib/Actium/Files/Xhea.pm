@@ -13,7 +13,6 @@ use Actium::Import::CalculateFields;
 
 use List::MoreUtils('pairwise');    ### DEP ###
 use Params::Validate(':all');       ### DEP ###
-use Actium::Util(qw/file_ext /);
 use Actium::Time(qw[timestr_sub timenum]);
 use Actium::O::2DArray;
 
@@ -88,7 +87,6 @@ sub xhea_import {
 
         $tab_strings_r->{$PLACES_PC}
           = Actium::O::2DArray->new($new_p_records_r)->tsv( @{$new_p_heads_r} );
-        #= Actium::Util::aoa2tsv( $new_p_records_r, $new_p_heads_r );
     }
 
     $tab_folder->write_files_from_hash( $tab_strings_r, qw(tab txt) );
@@ -711,7 +709,7 @@ sub _get_xhea_filenames {
     my @xsdfiles = $xheafolder->glob_files('*.xsd');
 
     foreach ( @xmlfiles, @xsdfiles ) {
-        ( $_, undef ) = file_ext($_);
+        ( $_, undef ) = u::file_ext($_);
     }
 
     my @xhea_filenames;
@@ -1325,10 +1323,6 @@ Actium
 =item *
 
 Params::Validate
-
-=item *
-
-Actium::Util
 
 =item *
 
