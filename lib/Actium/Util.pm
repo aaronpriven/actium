@@ -153,7 +153,7 @@ the list.
    joinseries_with('or' , qw(Sasha Aisha Raj)); 
    # 'Sasha, Aisha or Raj'
 
-The routine intentionally follows Associated Press style and  omits the
+The routine intentionally follows Associated Press style and omits the
 serial comma.
 
 =cut
@@ -191,16 +191,9 @@ the empty string, if not.
 =cut
 
 sub define {
-    if (wantarray) {
-        my @list = @_;
-        $_ = $_ // q[] foreach @list;
-        return @list;
-    }
-    else {
-        local $_ = shift;
-        $_ = $_ // q[];
-        return $_;
-    }
+    my @list = @_;
+    $_ = $_ // q[] foreach @list;
+    return @list;
 }
 
 =item isempty
@@ -401,7 +394,7 @@ So
 
  $array_ref = flatten(@list);
  @flatarray = flatten(@list);
- # $list_ref = [ 'A', 'B1', 'B2', 'B3A', 'B3B' ]
+ # $array_ref = [ 'A', 'B1', 'B2', 'B3A', 'B3B' ]
  # @flatarray = ('A', 'B1', 'B2', 'B3A', 'B3B') 
 
 Returns its result as an array reference in scalar context, but as a
@@ -430,7 +423,7 @@ sub flatten {
 =item dumpstr
 
 This returns a string --  a dump from the Data::Printer module of the
-passed  data structure, suitable for displaying and debugging.
+passed data structure, suitable for displaying and debugging.
 
 =cut
 
@@ -449,7 +442,7 @@ sub dumpstr (\[@$%&];%) {    ## no critic (ProhibitSubroutinePrototypes)
 =head2 UNICODE COLUMNS
 
 These utilities are used when displaying text in a monospaced typeface,
- to ensure that text with combining characters and wide characters are 
+to ensure that text with combining characters and wide characters are 
 shown taking up the proper width.
 
 =over
@@ -737,9 +730,9 @@ B<The following will not work:>
     # Will croak 'Conflicting values specified in object construction'
 
 If the name of the last argument to C<positional>  begins with an at
-sign (@), then the at sign will be removed, and an arrayref  pointing
-to an array of the remaining arguments to your method will be returned
-in that slot of the array.
+sign (@), then the at sign will be removed, and an arrayref pointing to
+an array of the remaining arguments to your method will be returned in
+that slot.
 
 For example, given the following:
 
