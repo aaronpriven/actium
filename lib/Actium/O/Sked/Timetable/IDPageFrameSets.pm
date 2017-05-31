@@ -6,22 +6,12 @@ package Actium::O::Sked::Timetable::IDPageFrameSets 0.012;
 use warnings;
 use 5.016;
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
-use namespace::autoclean; ### DEP ###
+use Actium ('class');
 use Actium::O::Sked::Timetable::IDFrameSet;
 use Actium::O::Sked::Timetable::IDTimetable;
-use Actium::Combinatorics(':all'); 
-use POSIX('ceil'); ### DEP ###
+use Actium::Combinatorics(':all');
 
-use Params::Validate (':all'); ### DEP ###
-
-use Scalar::Util ('reftype'); ### DEP ###
-use List::MoreUtils ('uniq'); ### DEP ###
-use List::Util(qw<max sum min>); ### DEP ###
-use Actium::Util(qw<flatten population_stdev>);
-
-use Const::Fast; ### DEP ###
+use Params::Validate (':all');    ### DEP ###
 
 const my $IDTABLE => 'Actium::O::Sked::Timetable::IDTimetable';
 
@@ -55,20 +45,17 @@ sub _build_portrait_preferred_frameset_r {
         push @{ $divided_framesets[$portrait] }, $frameset;
     }
 
-    return scalar flatten(@divided_framesets);
+    return scalar u::flatten(@divided_framesets);
 
 }
 
-around BUILDARGS => sub {
-
-    my $orig  = shift;
-    my $class = shift;
+around BUILDARGS ( $orig, $class: @ ) {
 
     my @framesets = map { Actium::O::Sked::Timetable::IDFrameSet->new($_) } @_;
 
     return $class->$orig( framesets => \@framesets );
 
-};
+}
 
 has compression_levels_r => (
     traits  => ['Array'],
@@ -142,7 +129,7 @@ sub _build_heights_of_compression_level_r {
     }
 
     foreach my $level ( keys %heights_of ) {
-        my @heights = uniq( sort { $b <=> $a } @{ $heights_of{$level} } );
+        my @heights = u::uniq( sort { $b <=> $a } @{ $heights_of{$level} } );
         $heights_of{$level} = \@heights;
     }
 
@@ -167,7 +154,7 @@ sub _build_smallest_frame_height {
     my $min;
     foreach my $frameset ( $self->framesets ) {
         if ( defined $min ) {
-            $min = min( $min, $frameset->height );
+            $min = u::min( $min, $frameset->height );
         }
         else {
             $min = $frameset->height;
@@ -188,7 +175,7 @@ sub _build_maximum_frame_count {
     my $self = shift;
     my $max  = 0;
     foreach my $frameset ( $self->framesets ) {
-        $max = max( $max, $frameset->frame_count );
+        $max = u::max( $max, $frameset->frame_count );
     }
     return $max;
 
@@ -283,21 +270,21 @@ sub make_idtables {
 sub minimum_pages {
     my $self     = shift;
     my @idtables = @_;
-    
+
     my $overlong = 0;
     foreach my $idtable (@idtables) {
-        $overlong++ if ($idtable->overlong);
+        $overlong++ if ( $idtable->overlong );
     }
-    
-    return 1 if ($overlong == 0);
+
+    return 1 if ( $overlong == 0 );
     # if not overlong, could fit on one page
-    
-    my $minimum_frames = ceil($overlong*1.5);
-    
+
+    my $minimum_frames = u::ceil( $overlong * 1.5 );
+
     # Each overlong table can only be paired with one other overlong table.
     # So it takes at least 1.5 frames per overlong one.
-    
-    return ceil ($minimum_frames / $self->maximum_frame_count) ;
+
+    return u::ceil( $minimum_frames / $self->maximum_frame_count );
 }
 
 sub assign_page {
@@ -310,8 +297,8 @@ sub assign_page {
       = $prefer_portrait
       ? $self->portrait_preferred_framesets
       : $self->framesets;
-      
-   FRAMESET:
+
+  FRAMESET:
 
     foreach my $frameset (@framesets) {
 
@@ -380,7 +367,7 @@ sub assign_page {
 
         # finished all the permutations for this page, but nothing fit
 
-    } ## tidy end: foreach my $frameset (@framesets)
+    } ## tidy end: FRAMESET: foreach my $frameset (@framesets)
 
     return;
     # finished all the permutations for this page set, but nothing fit
@@ -397,7 +384,7 @@ sub _sort_table_permutations {
         my @sort_values = map { scalar @{$_} } @partition;
         # count of tables in each frame
 
-        unshift @sort_values, population_stdev(@sort_values);
+        unshift @sort_values, u::population_stdev(@sort_values);
         # standard deviation -- so makes them as close to the same
         # number of tables as possible
 
@@ -481,8 +468,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -497,8 +484,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -510,6 +497,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

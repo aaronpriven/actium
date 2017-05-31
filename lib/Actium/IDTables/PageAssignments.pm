@@ -3,9 +3,7 @@ package Actium::IDTables::PageAssignments 0.012;
 use 5.016;
 use warnings;
 
-use English '-no_match_vars';    ### DEP ###
-use autodie;                     ### DEP ###
-use Text::Trim;                  ### DEP ###
+use Actium;
 use Actium::Crier (qw/cry last_cry/);
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
@@ -13,11 +11,7 @@ use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::O::Sked::Timetable::IDTimetable;
 use Actium::O::Sked::Timetable::IDTimetableSet;
-use Actium::Util
-  qw/in flatten population_stdev joinempty joinkey all_eq halves/;
-use Const::Fast;                 ### DEP ###
-use List::Util      (qw/max sum/);         ### DEP ###
-use List::MoreUtils (qw[any natatime]);    ### DEP ###
+use List::Util (qw/max sum/);    ### DEP ###
 use List::Compare::Functional(qw/get_intersection/);          ### DEP ###
 use Algorithm::Combinatorics(qw/partitions permutations/);    ### DEP ###
 use Actium::Combinatorics (qw/odometer_combinations ordered_partitions/);
@@ -187,7 +181,7 @@ sub _make_portrait_chars {
 
     shift @page_assignments if $has_shortpage;
 
-    return joinempty( map { $_->{frameset}->is_portrait ? 'P' : 'L' }
+    return u::joinempty( map { $_->{frameset}->is_portrait ? 'P' : 'L' }
           @page_assignments );
 
     #my @portrait_chars;
@@ -303,7 +297,7 @@ sub _overlong_set_assign_pages {
     my @page_partitions;
 
     foreach my $table_set (@expanded_table_sets) {
-        my @tables           = flatten($table_set);
+        my @tables           = u::flatten($table_set);
         my @these_partitions = ordered_partitions( \@tables );
         push @page_partitions, @these_partitions;
     }
@@ -383,14 +377,14 @@ sub _sort_page_partitions {
 
                 my @lines_of_this_table = $table->lines;
                 push @lines,     \@lines_of_this_table;
-                push @all_lines, joinkey(@lines_of_this_table);
+                push @all_lines, u::joinkey(@lines_of_this_table);
 
                 push @dircodes, $table->dircode;
                 push @daycodes, $table->daycode;
 
             }
 
-            if ( all_eq(@ids) ) {
+            if ( u::all_eq(@ids) ) {
                 $partitions_with_values{pointsforsorting} += 11;
                 next PAGE;
                 # one ID; maximum value (8+2+1)
@@ -398,7 +392,7 @@ sub _sort_page_partitions {
 
             my $pagepoints = 0;
 
-            my $all_eq_lines = all_eq(@all_lines);
+            my $all_eq_lines = u::all_eq(@all_lines);
 
             if ($all_eq_lines) {
                 $pagepoints += 8;
@@ -410,14 +404,14 @@ sub _sort_page_partitions {
             else {
                 $pagepoints += 4 if _one_line_in_common(@lines);
             }
-            $pagepoints += 2 if all_eq(@daycodes);
-            $pagepoints += 1 if all_eq(@dircodes);
+            $pagepoints += 2 if u::all_eq(@daycodes);
+            $pagepoints += 1 if u::all_eq(@dircodes);
 
             $partitions_with_values{pointsforsorting} += $pagepoints;
 
         } ## tidy end: PAGE: foreach my $page ( @{$partition...})
 
-        $partitions_with_values{deviation} = population_stdev(@tablecounts);
+        $partitions_with_values{deviation} = u::population_stdev(@tablecounts);
 
         push @page_partitions, \%partitions_with_values;
 
@@ -456,7 +450,7 @@ sub _one_line_in_common {
   ELEMENT:
     foreach my $element (@first_elements) {
         foreach my $list_r (@lol) {
-            next ELEMENT unless in( $element, $list_r );
+            next ELEMENT unless u::in( $element, $list_r );
         }
         return 1;    # matches all elements
     }
@@ -601,7 +595,7 @@ sub _reassign_short_page {
   FRAMESET_TO_REPLACE:
     for my $page_idx (@page_order) {
         my $page_assignment_r = $page_assignments[$page_idx];
-        my $tables_r          = flatten( $page_assignment_r->{tables} );
+        my $tables_r          = u::flatten( $page_assignment_r->{tables} );
         #my $frameset          = $page_assignment_r->{frameset};
 
         # don't move part of a overlong table to the short page,

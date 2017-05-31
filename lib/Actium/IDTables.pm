@@ -4,16 +4,13 @@ use Actium;
 
 use Text::Trim;    ### DEP ###
 use Actium::O::DateTime;
-use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Sorting::Skeds('skedsort');
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
-use Actium::Util(qw/in jointab population_stdev/);
-use List::Util ( 'max', 'sum' );    ### DEP ###
-use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);    ### DEP ###
-use Algorithm::Combinatorics ('combinations');                     ### DEP ###
+use List::MoreUtils (qw<pairwise each_arrayref>);    ### DEP ###
+use Algorithm::Combinatorics ('combinations');       ### DEP ###
 
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
@@ -108,7 +105,7 @@ sub get_pubtt_contents_with_dates {
         my $date      = $date_obj->long_en;
         my $file_date = $date_obj->ymd('_');
         push @pubtt_contents_with_dates,
-          { lines     => [ sortbyline @lines ],
+          { lines     => [ u::sortbyline @lines ],
             date      => $date,
             file_date => $file_date
           };
@@ -122,7 +119,7 @@ sub get_pubtt_contents_with_dates {
     my $pubtimetables_r
       = $db_obj->all_in_columns_key( 'PubTimetables', @pubtimetable_cols );
 
-    return [ sort { byline( $a->{lines}->[0], $b->{lines}->[0] ) }
+    return [ sort { u::byline( $a->{lines}->[0], $b->{lines}->[0] ) }
           @pubtt_contents_with_dates ], $pubtimetables_r;
 
 } ## tidy end: sub get_pubtt_contents_with_dates
@@ -176,7 +173,7 @@ sub _tables_and_lines {
     foreach my $table (@tables) {
         $is_a_line{$_} = 1 foreach ( $table->header_routes );
     }
-    @lines = sortbyline( keys %is_a_line );
+    @lines = u::sortbyline( keys %is_a_line );
 
     return \@tables, \@lines;
 
@@ -265,7 +262,7 @@ sub _make_per_line_texts {
     my $locals_of_r = _make_locals($lines_r);
 
     foreach
-      my $line ( uniq( sort ( keys %{$days_of_r}, keys %{$locals_of_r} ) ) )
+      my $line ( u::uniq( sort ( keys %{$days_of_r}, keys %{$locals_of_r} ) ) )
     {
 
         my @texts;
@@ -289,7 +286,7 @@ sub _make_per_line_texts {
 
         $per_line_texts{$line} = join( $IDT->hardreturn, @texts );
 
-    } ## tidy end: foreach my $line ( uniq( sort...))
+    } ## tidy end: foreach my $line ( u::uniq(...))
 
     return \%per_line_texts;
 
@@ -318,7 +315,7 @@ sub _make_days {
     }
 
     my @days_objs = values %days_obj_of;
-    my @days_codes = uniq( map { $_->as_sortable } @days_objs );
+    my @days_codes = u::uniq( map { $_->as_sortable } @days_objs );
 
     if ( @days_codes == 1 ) {
         return { q[] => $days_objs[0] };
@@ -336,7 +333,7 @@ sub _make_locals {
     foreach my $line (@lines) {
 
         if ( $line =~ /\A [A-Z]/sx or $line eq '800' ) {
-            if ( in( $line, @TRANSBAY_NOLOCALS ) ) {
+            if ( u::in( $line, @TRANSBAY_NOLOCALS ) ) {
                 $local_of{$line} = 0;
             }
             else {
@@ -349,7 +346,7 @@ sub _make_locals {
         }
     }
 
-    my @locals = uniq( sort values %local_of );
+    my @locals = u::uniq( sort values %local_of );
 
     if ( @locals == 1 ) {
         return { q[] => $locals[0] };
@@ -362,7 +359,7 @@ sub _make_locals {
 sub _local_text {
     my $line = shift;
 
-    if ( in( $line, @TRANSBAY_NOLOCALS ) ) {
+    if ( u::in( $line, @TRANSBAY_NOLOCALS ) ) {
         return $IDT->parastyle('CoverLocalPax') . 'No Local Passengers Allowed';
     }
 
@@ -379,7 +376,7 @@ sub _make_length {
 
     my @lines = @_;
 
-    my $ems = max( ( map { ems($_) } @lines ) );
+    my $ems = u::max( ( map { ems($_) } @lines ) );
 
     my $length;
     for ($ems) {
@@ -400,7 +397,7 @@ sub _make_length {
 
     }
 
-    return max( $length, scalar @lines );
+    return u::max( $length, scalar @lines );
 } ## tidy end: sub _make_length
 
 sub output_a_pubtts {
@@ -510,9 +507,9 @@ sub output_a_pubtts {
     my $listfh  = $pubtt_folder->open_write('_ttlist.txt');
     my @columns = qw<file effectivedate pages MapFile LeaveCoverForMap
       MasterPage has_short_page portrait_chars>;
-    say $listfh jointab(@columns);
-    for my $linegroup ( sortbyline keys %script_entries ) {
-        say $listfh jointab( @{ $script_entries{$linegroup} }{@columns} );
+    say $listfh u::jointab(@columns);
+    for my $linegroup ( u::sortbyline keys %script_entries ) {
+        say $listfh u::jointab( @{ $script_entries{$linegroup} }{@columns} );
     }
     close $listfh;
 

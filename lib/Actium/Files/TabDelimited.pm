@@ -4,8 +4,6 @@ use Actium;
 
 use Params::Validate (':all');    ### DEP ###
 
-use Actium::Util(qw/filename in/);
-
 use Sub::Exporter -setup => { exports => [qw(read_aoas read_tab_files)] };
 # Sub::Exporter ### DEP ###
 
@@ -152,7 +150,7 @@ sub _expand_files {
     my @files = @{$files_r};
 
     foreach (@$globpatterns_r) {
-        push @files, filename( $folder->glob_plain_files($_) );
+        push @files, u::filename( $folder->glob_plain_files($_) );
     }
 
     if ( not scalar @files ) {
@@ -180,7 +178,7 @@ sub _verify_headers {
 
     if ( scalar @required_headers ) {
         foreach my $required_header (@required_headers) {
-            if ( not in( $required_header, @headers ) ) {
+            if ( not u::in( $required_header, @headers ) ) {
                 croak
                   "Required header $required_header not found in file $file";
             }
@@ -399,10 +397,6 @@ found in the file.
 =item *
 
 Perl 5.014
-
-=item *
-
-Actium::Util
 
 =item *
 
