@@ -2,7 +2,7 @@ package Actium::O::Dir 0.012;
 
 # Object representing the scheduled direction (of a trip, or set of trips)
 
-use Actium ('class_nomod');
+use Actium ('class');
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 

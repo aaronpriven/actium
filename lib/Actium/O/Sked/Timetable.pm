@@ -3,7 +3,7 @@ package Actium::O::Sked::Timetable 0.012;
 # Object representing the data in a timetable to be displayed to the user.
 # Designed to take an Actium::O::Sked object and make it displayable.
 
-use Actium ('class_nomod');
+use Actium ('class');
 
 use Actium::Time;
 use Actium::Text::InDesignTags;

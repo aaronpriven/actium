@@ -83,7 +83,7 @@ const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
         }
 
         if ($type) {
-            if ( $type eq 'class' or $type eq 'class_nomod' ) {
+            if ( $type eq 'class' ) {
                 _do_import 'Moose';
             }
             elsif ( $type eq 'role' ) {
@@ -103,9 +103,13 @@ const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
             _do_import 'MooseX::StrictConstructor';
             _do_import 'MooseX::SemiAffordanceAccessor';
             _do_import 'Moose::Util::TypeConstraints';
+            _do_import 'Kavorka',
+              fun => { -as => 'func' },
+              'method', '-allmodifiers';
         } ## tidy end: if ($type)
-
-        _do_import 'Kavorka', _kavorka_args($type);
+        else {
+            _do_import( 'Kavorka', fun => { -as => 'func' } );
+        }
 
         _do_import 'Actium::Crier', qw/cry last_cry/;
         _do_import 'Carp';
@@ -124,18 +128,6 @@ const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
 
     } ## tidy end: sub import
 
-}
-
-sub _kavorka_args {
-    my $type = shift;
-    my @args;
-    if ( $type eq 'class' or $type eq 'role' ) {
-        @args = qw/method -allmodifiers/;
-    }
-    elsif ( $type eq 'class_nomod' ) {
-        @args = qw/method/;
-    }
-    return ( fun => { -as => 'func' }, @args );
 }
 
 # The reason for importing 'fun' as 'func' is twofold:

@@ -4,15 +4,13 @@ package Actium::O::Files::Ini 0.011;
 # At the moment, and possibly permanently, a thin wrapper around
 # Config::Tiny, but could be more later. Maybe.
 
-use Actium        ('class_nomod');
+use Actium        ('class');
 use Actium::Types ('ActiumFolderLike');
 
 use File::HomeDir;    ### DEP ###
 use Config::Tiny;     ### DEP ###
 
-around BUILDARGS => sub {
-    my $orig  = shift;
-    my $class = shift;
+around BUILDARGS ($orig, $class : slurpy @ ) {
 
     my %args;
 
@@ -37,7 +35,7 @@ around BUILDARGS => sub {
 
     return $class->$orig(%args);
 
-};
+} ## tidy end: around BUILDARGS
 
 has 'filename' => (
     isa => 'Str',

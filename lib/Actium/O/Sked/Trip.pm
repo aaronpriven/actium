@@ -2,7 +2,7 @@ package Actium::O::Sked::Trip 0.012;
 
 # Trip object (for schedules and headways)
 
-use Actium ('class_nomod');
+use Actium ('class');
 use Actium::Util;
 
 use MooseX::Storage;    ### DEP ###

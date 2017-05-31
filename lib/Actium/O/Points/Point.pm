@@ -8,7 +8,7 @@ package Actium::O::Points::Point 0.013;
 # This really needs to be refactored to get rid of the awful use of
 # global variables.
 
-use Actium ('class_nomod');
+use Actium ('class');
 
 const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 
