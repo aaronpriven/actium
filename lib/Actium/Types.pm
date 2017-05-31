@@ -72,7 +72,7 @@ subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 #########################
 ### SCHEDULE DIRECTIONS
 
-enum( DirCode, [@DIRCODES] );
+enum( DirCode, \@DIRCODES );
 
 subtype ActiumDir, as class_type('Actium::O::Dir');
 
@@ -213,9 +213,8 @@ days ("D"), school holidays ("H"), or both ("B").
 
 =item B<DirCode>
 
-An enumeration of the elements of @Actium::Constants::DIRCODES.  See
-L<Actium::Constants/Actium::Constants>. It can be coerced into 
-ActiumODir.
+An enumeration of the elements of @Actium::DIRCODES.  See
+L<Actium/Actium>. It can be coerced into  ActiumODir.
 
 =item B<ActiumODir>
 
@@ -259,7 +258,7 @@ in  specifying timepoint abbreviations.
 
 =over
 
-=item Actium::Constants
+=item Actium
 
 =item Actium::Time
 
