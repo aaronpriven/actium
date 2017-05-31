@@ -7,10 +7,10 @@ package Actium::DaysDirections 0.012;
 use 5.012;
 use warnings;
 
-use Const::Fast;    ### DEP ###
+use Actium;
 
 use Sub::Exporter ( -setup => { exports => [qw<day_of_hasi dir_of_hasi>] } )
-  ;                 ### DEP ###
+  ;    ### DEP ###
 
 # New day codes have a character for each set of days that are used.
 
