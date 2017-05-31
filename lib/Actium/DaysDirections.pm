@@ -8,8 +8,6 @@ use 5.012;
 use warnings;
 
 use Const::Fast;    ### DEP ###
-use Actium::Constants;
-use Carp;
 
 use Sub::Exporter ( -setup => { exports => [qw<day_of_hasi dir_of_hasi>] } )
   ;                 ### DEP ###
