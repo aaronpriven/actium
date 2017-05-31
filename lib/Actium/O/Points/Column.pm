@@ -15,7 +15,6 @@ use Moose::Util::TypeConstraints;      ### DEP ###
 
 use namespace::autoclean;              ### DEP ###
 
-use Actium::Constants;
 use Actium::Time ('timenum');
 use Const::Fast;                       ### DEP ###
 
@@ -139,7 +138,7 @@ foreach (qw/formatted_header formatted_column/) {
     has $_ => => (
         is      => 'rw',
         isa     => 'Str',
-        default => $EMPTY,
+        default => q[],
     );
 }
 
@@ -347,10 +346,10 @@ sub format_head_lines {
           . $head_lines;
 
     }
-    $self->append_to_formatted_header( $head_lines . $SPACE );
+    $self->append_to_formatted_header( $head_lines . q[ ] );
 
     #$self->set_formatted_header
-    #      ($self->formatted_header . $head_lines . $SPACE);
+    #      ($self->formatted_header . $head_lines . q[ ]);
 
     return;
 
