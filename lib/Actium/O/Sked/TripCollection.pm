@@ -1,6 +1,6 @@
 package Actium::O::Sked::TripCollection 0.012;
 
-use Actium ('class_nomod');
+use Actium ('class');
 use List::Compare;
 
 has 'trips_r' => (

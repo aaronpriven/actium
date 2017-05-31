@@ -1,15 +1,13 @@
 package Actium::O::Sked::Collection 0.014;
 
-use Actium ('class_nomod');
+use Actium ('class');
 
 use Actium::O::Sked;
 use Actium::Sorting::Skeds ('skedsort');
 
 use Actium::Excel;
 
-around BUILDARGS => sub {
-    my $orig  = shift;
-    my $class = shift;
+around BUILDARGS ($orig, $class: slurpy @ ) {
 
     # if they're all objects, treat them as though they were skeds
     if ( u::all { u::is_blessed_ref($_) } @_ ) {
@@ -19,7 +17,7 @@ around BUILDARGS => sub {
     # otherwise, normal
     return $class->$orig(@_);
 
-};
+}
 
 has skeds_r => (
     is       => 'ro',
@@ -249,7 +247,7 @@ method output_skeds_all ( :$signup! , :$subfolder_name = 's') {
     Actium::O::Sked->write_prehistorics( $skeds_r,
         $skeds_folder->subfolder('prehistoric') );
 
-} ## tidy end: sub METHOD2
+} ## tidy end: method output_skeds_all
 
 method output_skeds_xlsx (:$skeds_folder!) {
 
@@ -292,7 +290,7 @@ method output_skeds_xlsx (:$skeds_folder!) {
 
     return;
 
-} ## tidy end: sub METHOD3
+} ## tidy end: method output_skeds_xlsx
 
 u::immut;
 

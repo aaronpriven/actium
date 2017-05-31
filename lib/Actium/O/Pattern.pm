@@ -2,7 +2,7 @@ package Actium::O::Pattern 0.012;
 
 # used by Xhea:::ToSkeds
 
-use Actium ('class_nomod');
+use Actium ('class');
 
 use Actium::Types (qw/DirCode ActiumDir/);
 use Actium::O::Dir;

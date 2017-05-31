@@ -1,6 +1,6 @@
 package Actium::O::DestinationCode 0.012;
 
-use Actium ('class_nomod');
+use Actium ('class');
 
 const my $JSON_FILE => 'destcodes.json';
 

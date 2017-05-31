@@ -4,7 +4,7 @@ package Actium::O::Files::ActiumDB 0.013;
 # (the FileMaker database used by Actium users), accessed
 # thorugh ODBC.
 
-use Actium ('class_nomod');
+use Actium ('class');
 use Hash::Util();
 
 const my $KEYFIELD_TABLE          => 'FMTableKeys';
@@ -608,7 +608,7 @@ method effective_date (
     require Actium::O::DateTime;
     return Actium::O::DateTime->newest_date(@dates);
 
-} ## tidy end: sub METHOD0
+} ## tidy end: method effective_date
 
 sub date_i18n_texts_hash {
     my $self    = shift;

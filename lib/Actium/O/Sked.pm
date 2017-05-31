@@ -1,7 +1,7 @@
 package Actium::O::Sked 0.013;
 # the Sked object, containing everything that is a schedule
 
-use Actium ('class_nomod');
+use Actium ('class');
 
 use overload '""' => sub { shift->id }, fallback => 1;
 

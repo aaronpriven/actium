@@ -4,7 +4,7 @@ package Actium::O::Crier::Cry 0.013;
 #
 # Based on Term::Emit by Steve Roscio
 
-use Actium ('class_nomod');
+use Actium ('class');
 use Unicode::LineBreak;    ### DEP ###
 use Unicode::GCString;     ### DEP ###
 
