@@ -106,9 +106,8 @@ sub joinempty {
 =item joinkey
 
 Takes the list passed to it and joins it together, with each element
-separated  by the $KEY_SEPARATOR value from
-L<Actium::Constants/Actium::Constants>. A quicker way to type "join
-($KEY_SEPARATOR , @list)".
+separated  by the $KEY_SEPARATOR value from L<Actium/Actium>. A quicker
+way to type "join ($KEY_SEPARATOR , @list)".
 
 =cut
 

@@ -39,7 +39,6 @@ use Params::Validate ':all';     ### DEP ###
 use Actium::O::Folder;
 use Actium::Util(qw<filename file_ext >);
 use Actium::Sorting::Line('sortbyline');
-use Actium::Constants;
 use Actium::Crier(qw/cry last_cry/);
 
 const my $LINE_NAME_LENGTH   => 4;
@@ -164,7 +163,7 @@ sub make_web_maps {
         my @output_lines = @{ $nameparts{lines_r} };
         my $token        = $nameparts{token};
 
-        if ( $token ne $EMPTY ) {
+        if ( $token ne q[] ) {
             foreach (@output_lines) {
                 $_ .= "=$token";
             }
@@ -204,7 +203,7 @@ sub make_web_maps {
 
     } ## tidy end: foreach my $filespec ( @{ $params...})
 
-    $cry->over($EMPTY) unless $verbose;
+    $cry->over(q[]) unless $verbose;
     $cry->done;
 
     return;
@@ -463,7 +462,7 @@ sub copylatest {
 
     } ## tidy end: FOLDER: foreach my $foldername ( sortbyline...)
 
-    $copy_cry->over($EMPTY);
+    $copy_cry->over(q[]);
     $copy_cry->done;
 
     if (@web_maps_to_process) {
@@ -561,7 +560,7 @@ sub _mapname_pieces {
 
     my ( $lines, $token ) = split( /=/s, $lines_and_token );
 
-    $token = $EMPTY unless defined $token;
+    $token = q[] unless defined $token;
 
     my @lines = split( /_/s, $lines );
     return {
