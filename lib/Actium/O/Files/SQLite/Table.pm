@@ -1,18 +1,8 @@
 package Actium::O::Files::SQLite::Table 0.012;
 
+use Actium ('class');
+
 # Class for SQLite tables
-
-# Legacy stage 4
-
-use warnings;
-use 5.012;    # turns on features
-
-use Moose;                        ### DEP ###
-use MooseX::StrictConstructor;    ### DEP ###
-
-use namespace::autoclean;         ### DEP ###
-
-use Actium::Constants;
 
 #########################
 ### GENERAL ATTRIBUTES
@@ -401,8 +391,7 @@ except for rare circumstances.
 For fields with more than one repetition, the data should be stored
 with data  for the different repetitions separated by the group
 separator character  ( ASCII 29, "GS" Group Separator, also known as
-control-]. This is  $KEY_SEPARATOR in
-L<Actium::Constants|Actium::Constants>.)
+control-]. This is  $KEY_SEPARATOR in L<Actium|Actium>.)
 
 =item B<has_repeating_final_column>
 
@@ -531,11 +520,9 @@ any. Defaults to the empty list.
 
 =over
 
-=item perl 5.012
+=item Actium
 
 =item Moose
-
-=item MooseX::StrictConstructor
 
 =back
 

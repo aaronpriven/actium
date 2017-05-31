@@ -1,24 +1,17 @@
 package Actium::Cmd::Flagspecs 0.014;
 
-use warnings;
-use 5.012;
-
+use Actium;
 use Actium::Sorting::Line (qw/sortbyline byline/);
 use Actium::Util qw(in joinlf j joinempty jointab );
 use Actium::Union (qw/ordered_union distinguish/);
 use Actium::DaysDirections(':all');
 use Actium::O::Files::HastusASI;
-use Actium::Constants;
 use Actium::Crier(qw/cry cry_text/);
 
-use Carp;                         ### DEP ###
-use English('-no_match_vars');    ### DEP ###
-use Text::Wrap ('wrap');          ### DEP ###
+use Text::Wrap ('wrap');    ### DEP ###
 use List::MoreUtils(qw/any uniq/);    ### DEP ###
 use File::Spec;                       ### DEP ###
 use Text::Trim;                       ### DEP ###
-
-use Const::Fast;                      ### DEP ###
 
 const my $NEW_KEY_SEPARATOR => '_';
 
@@ -54,8 +47,6 @@ const my $PLAIN_OVERRIDE_FILENAME => 'plain_override.txt';
 const my $STOP_SPEC_FILENAME      => 'stop-decals.txt';
 const my $DECAL_SPEC_FILENAME     => 'decalspec.txt';
 
-#const my @TRANSBAY_NOLOCALS => qw/FS L NX NX1 NX2 NX3 U W/;
-# Transbay_nolocals comes from Actium::Constants
 const my $DROPOFFONLY     => 'Drop off only';
 const my $LASTSTOP        => $DROPOFFONLY;      #'Last stop';
 const my $OVERRIDE_STRING => 'Override:';

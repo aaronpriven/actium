@@ -2,23 +2,12 @@ package Actium::O::Folder 0.014;
 
 # Objects representing folders (directories) on disk
 
-use 5.012;
-use warnings;
+use Actium ('class');
 
-use Moose;                        ### DEP ###
-use MooseX::StrictConstructor;    ### DEP ###
+use File::Spec;    ### DEP ###
+use File::Glob ('bsd_glob');    ### DEP ###
 
-use namespace::autoclean;         ### DEP ###
-
-use Actium::Constants;
-use Actium::Crier(qw/cry last_cry/);
-use Actium::Util(qw/flatten filename positional/);
-use Carp;                         ### DEP ###
-use English '-no_match_vars';     ### DEP ###
-use File::Spec;                   ### DEP ###
-use File::Glob ('bsd_glob');      ### DEP ###
-
-use Params::Validate qw(:all);    ### DEP ###
+use Params::Validate qw(:all);  ### DEP ###
 
 use overload (
     q[""]    => '_stringify',
@@ -109,11 +98,7 @@ has must_exist => (
 #######################
 ### CONSTRUCTION
 
-around BUILDARGS => sub {
-    my $orig           = shift;
-    my $class          = shift;
-    my $first_argument = shift;
-    my @rest           = @_;
+around BUILDARGS ($orig, $class : $first_argument , slurpy @rest) {
 
     my $hashref;
     if ( ref($first_argument) eq 'HASH' ) {
@@ -144,7 +129,7 @@ around BUILDARGS => sub {
 
     return $class->$orig($hashref)
 
-};
+} ## tidy end: around BUILDARGS
 
 sub split_folderlist {
 
@@ -152,7 +137,7 @@ sub split_folderlist {
     # Takes either an array of strings, or an arrayref of strings.
 
     my $self     = shift;
-    my $folder_r = flatten(@_);
+    my $folder_r = u::flatten(@_);
 
     my @new_folders;
     foreach my $folder ( @{$folder_r} ) {
@@ -264,7 +249,7 @@ sub subfolder {
     my $init_arg = $self->subfolderlist_init_arg;
     my $reader   = $self->subfolderlist_reader;
 
-    my $params_r = positional( \@_, '@' . $init_arg );
+    my $params_r = u::positional( \@_, '@' . $init_arg );
 
     my @subfolders = @{ $params_r->{$init_arg} };
 
@@ -344,13 +329,13 @@ sub glob_plain_files {
 sub glob_files_nopath {
     my $self  = shift;
     my @files = $self->glob_files(@_);
-    return map { filename($_) } @files;
+    return map { u::filename($_) } @files;
 }
 
 sub glob_plain_files_nopath {
     my $self  = shift;
     my @files = $self->glob_plain_files(@_);
-    return map { filename($_) } @files;
+    return map { u::filename($_) } @files;
 }
 
 sub children {
@@ -1166,19 +1151,9 @@ L<write_files_from_hash> routines.
 
 =over
 
-=item perl 5.012
-
-=item Moose
-
-=item MooseX::StrictConstructor
-
-=item Const::Fast
+=item Actium
 
 =item Params::Validate
-
-=item Actium::Constants
-
-=item Actium::Util
 
 =back
 

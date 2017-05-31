@@ -3,13 +3,7 @@ package Actium::O::Sked::Storage::Prehistoric 0.012;
 # Role to allow reading and writing prehistoric Skedfile files to/from
 # Sked objects
 
-# This could just as easily be in the main Actium/Sked.pm file, but I decided
-# it would be better to separate it out this way
-
-use warnings;
-use 5.012;    # turns on features
-
-use Const::Fast;
+use Actium ('role');
 
 const my %TRANSITINFO_DAYS_OF => (
     qw(
@@ -42,17 +36,9 @@ const my %TRANSITINFO_DAYS_OF => (
 
 const my %DAYS_FROM_TRANSITINFO => ( reverse %TRANSITINFO_DAYS_OF );
 
-use Moose::Role;             ### DEP ###
-use namespace::autoclean;    ### DEP ###
-
-use Carp;                    ### DEP ###
-
-use Actium::Constants;
-use Actium::Crier (qw/cry last_cry/);
 use List::MoreUtils qw<uniq none>;    ### DEP ###
 
 use Text::Trim;                       ### DEP ###
-use English '-no_match_vars';         ### DEP ###
 use Actium::Util (qw/jointab in dumpstr/);
 use Actium::Time ('timestr_sub');
 
