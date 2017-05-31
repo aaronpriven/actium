@@ -214,8 +214,6 @@ specified  signup) or there may be some other error.
 
 =over
 
-=item Actium::Constants
-
 =item Actium::Cmd::Config::Signup
 
 =item Actium::Sorting::Travel

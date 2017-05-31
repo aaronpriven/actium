@@ -10,7 +10,6 @@ use Sub::Exporter -setup => { exports => [qw(skedsort)] };
 use Params::Validate;    ### DEP ###
 
 use Actium::Sorting::Line (qw(byline linekeys));
-use Actium::Constants;
 
 use List::Util(qw/min/);    ### DEP ###
 use Params::Validate();     ### DEP ###
