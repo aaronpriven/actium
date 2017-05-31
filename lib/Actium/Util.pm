@@ -5,7 +5,6 @@ package Actium::Util 0.012;
 use 5.022;
 use warnings;
 
-use Actium::Constants;
 use List::Util (qw[first max min sum]);    ### DEP ###
 use List::MoreUtils(qw[any all none notall natatime uniq]);    ### DEP ###
 use Scalar::Util(qw[blessed reftype looks_like_number]);       ### DEP ###
@@ -20,6 +19,9 @@ use English '-no_match_vars';
 ## no critic (ProhibitConstantPragma)
 use constant DEBUG => 1;
 ## use critic
+
+const my $KEY_SEPARATOR => "\c]";
+# duplicated from Actium...
 
 use Sub::Exporter -setup => {
     exports => [
@@ -98,7 +100,7 @@ sub j {
 }
 
 sub joinempty {
-    return join( $EMPTY, map { $_ // $EMPTY } @_ );
+    return join( q[], map { $_ // q[] } @_ );
 }
 
 =item joinkey
@@ -111,7 +113,7 @@ L<Actium::Constants/Actium::Constants>. A quicker way to type "join
 =cut
 
 sub joinkey {
-    return join( $KEY_SEPARATOR, map { $_ // $EMPTY } @_ );
+    return join( $KEY_SEPARATOR, map { $_ // q[] } @_ );
 }
 
 =item joinlf
@@ -122,7 +124,7 @@ separated  by a line feed. A quicker way to type 'join ("\n" , @list)'.
 =cut 
 
 sub joinlf {
-    return join( "\n", map { $_ // $EMPTY } @_ );
+    return join( "\n", map { $_ // q[] } @_ );
 }
 
 =item jointab
@@ -133,7 +135,7 @@ separated  by tabs. A quicker way to type 'join ("\t" , @list)'.
 =cut
 
 sub jointab {
-    return join( "\t", map { $_ // $EMPTY } @_ );
+    return join( "\t", map { $_ // q[] } @_ );
 }
 
 =item joinseries_with (I<conjunction> , I<item>, I<item>, ...)
@@ -192,12 +194,12 @@ the empty string, if not.
 sub define {
     if (wantarray) {
         my @list = @_;
-        $_ = $_ // $EMPTY foreach @list;
+        $_ = $_ // q[] foreach @list;
         return @list;
     }
     else {
         local $_ = shift;
-        $_ = $_ // $EMPTY;
+        $_ = $_ // q[];
         return $_;
     }
 }
@@ -212,7 +214,7 @@ string.
 
 sub isempty {
     my $value = shift;
-    return ( not( defined $value and $value ne $EMPTY ) );
+    return ( not( defined $value and $value ne q[] ) );
 }
 
 =back
@@ -491,7 +493,7 @@ sub u_pad {
 
     return $text if $textwidth >= $width;
 
-    my $spaces = ( $SPACE x ( $width - $textwidth ) );
+    my $spaces = ( q[ ] x ( $width - $textwidth ) );
 
     return ( $text . $spaces );
 
@@ -574,7 +576,7 @@ sub u_trim_to_columns {
 
     my $columns = $gc->columns;
     while ( $gc->columns > $max_columns ) {
-        $gc->substr( -1, 1, $EMPTY );
+        $gc->substr( -1, 1, q[] );
         $columns = $gc->columns;
     }
 
