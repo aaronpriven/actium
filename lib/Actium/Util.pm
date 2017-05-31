@@ -26,7 +26,7 @@ const my $KEY_SEPARATOR => "\c]";
 use Sub::Exporter -setup => {
     exports => [
         qw<
-          positional          positional_around
+          positional
           joinseries          joinseries_with
           j
           joinempty           jointab
@@ -674,16 +674,9 @@ sub add_before_extension {
 
 =item positional(\@_ , I<arguments>)
 
-=item positional_around(\@_ , I<arguments>)
-
-The B<positional> and B<positional_around> routines allow the use of
-positional arguments in addition to named arguments in method calls or
-Moose object construction.
-
-The I<positional_around> routine is intended for use within a BUILDARGS
-block, or another "around" method modifer in a Moose class (see
-L<Moose::Manual::Construction|Moose::Manual::Construction> and
-L<Moose::Manual::MethodModifiers|Moose::Manual::MethodModifiers>).
+The B<positional> routine allows the use of positional arguments in
+addition to named arguments in method calls or Moose object
+construction.
 
 Typical use for positional would be as follows:
 
@@ -695,16 +688,18 @@ Typical use for positional would be as follows:
     
  }
 
-Typical use for positional_around would be as follows:
+ or
 
  around BUILDARGS => sub {
-    return positional_around (\@_ , 'foo' , 'bar' );
+    my $orig = shift;
+    my $class = shift;
+    return $class->$orig->(positional(\@_ , 'foo' , 'bar' ));
  };
  
-The first argument to I<positional> or I<positional_around> must always
-be  a reference to the arguments passed to the original routine.  The
-remaining arguments are the C<init_arg> values (usually, the same as
-the names) of attributes to be passed to Moose.
+The first argument to I<positional> must always be  a reference to the
+arguments passed to the original routine.  The remaining arguments are
+the C<init_arg> values (usually, the same as the names) of attributes
+to be passed to Moose.
 
 When using these routines, the arguments to your method are  first, the
 optional positional arguments that you specify, followed by  an
@@ -712,7 +707,7 @@ optional hashref of named arguments, which must be the last argument.
 If named arguments in the hashref  conflict with the positional
 arguments, the positional arguments will be used.
 
-For example, the following are all valid in the above positional_around
+For example, the following are all valid in the above 'around' 
 example:
 
  Class->new('foo_value', 'bar_value'); 
@@ -741,17 +736,19 @@ B<The following will not work:>
  Class->new( foo => 'foo_value', { foo => 'a_different_foo_value');
     # Will croak 'Conflicting values specified in object construction'
 
-If the name of the last argument to C<positional> or
-C<positional_around> begins with an at sign (@), then the at sign will
-be removed, and an arrayref  pointing to an array of the remaining
-arguments to your method will be returned in that slot of the array.
+If the name of the last argument to C<positional>  begins with an at
+sign (@), then the at sign will be removed, and an arrayref  pointing
+to an array of the remaining arguments to your method will be returned
+in that slot of the array.
 
 For example, given the following:
 
  around BUILDARGS => sub {
-    return positional_around (\@_ , 'baz' , '@qux' );
+    my $orig = shift;
+    my $class = shift;
+    return $class->$orig->(positional(\@_ , 'baz' , '@qux' ));
  };
- 
+
 The following would be valid:
 
  Class->new ('baz_value', 'qux_value_1', 'qux_value_2');
@@ -835,13 +832,6 @@ sub positional {
     return \%newargs;
 
 } ## tidy end: sub positional
-
-sub positional_around {
-    my $args_r   = shift;
-    my $orig     = shift @{$args_r};    # see Moose::Manual::Construction
-    my $invocant = shift @{$args_r};    # see Moose::Manual::Construction
-    return $invocant->$orig( positional( $args_r, @_ ) );
-}
 
 =back
 
