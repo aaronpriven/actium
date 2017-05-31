@@ -1,22 +1,16 @@
 package Actium::IDTables 0.012;
 
-use 5.020;
-use warnings;    ### DEP ###
+use Actium;
 
-use English '-no_match_vars';
-use autodie;
 use Text::Trim;    ### DEP ###
-use Actium::Crier(qw/cry last_cry/);
 use Actium::O::DateTime;
 use Actium::Sorting::Line ( 'sortbyline', 'byline' );
 use Actium::Sorting::Skeds('skedsort');
-use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::Util(qw/in jointab population_stdev/);
-use Const::Fast;    ### DEP ###
 use List::Util ( 'max', 'sum' );    ### DEP ###
 use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);    ### DEP ###
 use Algorithm::Combinatorics ('combinations');                     ### DEP ###

@@ -1,5 +1,7 @@
 package Actium::MapRepository 0.012;
 
+use Actium;
+
 # Routines for dealing with the filenames of line maps
 
 # The filename pattern is supposed to be
@@ -18,9 +20,6 @@ package Actium::MapRepository 0.012;
 
 #<ext> is of course .eps or .pdf, or another standard filename
 
-use 5.014;
-use warnings;
-
 use Sub::Exporter -setup => {
     exports => [
         qw(import_to_repository  make_web_maps      copylatest
@@ -30,16 +29,12 @@ use Sub::Exporter -setup => {
 };
 # Sub::Exporter ### DEP ###
 
-use Carp;                        ### DEP ###
-use Const::Fast;                 ### DEP ###
-use English '-no_match_vars';    ### DEP ###
-use File::Copy();                ### DEP ###
-use Params::Validate ':all';     ### DEP ###
+use File::Copy();               ### DEP ###
+use Params::Validate ':all';    ### DEP ###
 
 use Actium::O::Folder;
 use Actium::Util(qw<filename file_ext >);
 use Actium::Sorting::Line('sortbyline');
-use Actium::Crier(qw/cry last_cry/);
 
 const my $LINE_NAME_LENGTH   => 4;
 const my $DEFAULT_RESOLUTION => 288;
@@ -931,13 +926,9 @@ Attempting to move or copy returned a system error.
 
 =item * Perl 5.014
 
-=item * Const::Fast
-
 =item * Params::Validate
 
 =item * Sub::Exporter
-
-=item * Actium::Constants
 
 =item * Actium::O::Folder
 

@@ -3,22 +3,11 @@ package Actium::O::Files::HastusASI 0.011;
 # Class for reading and processing Hastus Standard AVL files
 # and storing in an SQLite database using Actium::O::Files::SQLite
 
-use warnings;
-use 5.012;    # turns on features
+use Actium ('class');
 
-use Moose;                        ### DEP ###
-use MooseX::StrictConstructor;    ### DEP ###
-
-use namespace::autoclean;         ### DEP ###
-
-use Actium::Constants;
-use Actium::Crier(qw/cry last_cry/);
 use Actium::Util qw(j joinkey filename);
-use Carp;                         ### DEP ###
-use English '-no_match_vars';
-use File::Glob qw(:glob);         ### DEP ###
-use File::Spec;                   ### DEP ###
-use Const::Fast;                  ### DEP ###
+use File::Glob qw(:glob);    ### DEP ###
+use File::Spec;              ### DEP ###
 
 use Actium::O::Files::HastusASI::Definition;
 
@@ -510,15 +499,7 @@ an HSA file.) This row will be skipped.
 
 =over
 
-=item perl 5.012
-
-=item Moose
-
-=item MooseX::StrictConstructor
-
-=item Const::Fast
-
-=item Actium::Constants
+=item Actium
 
 =item Actium::O::Files::SQLite
 
