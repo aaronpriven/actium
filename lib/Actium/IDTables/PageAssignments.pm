@@ -3,23 +3,23 @@ package Actium::IDTables::PageAssignments 0.012;
 use 5.016;
 use warnings;
 
-use English '-no_match_vars'; ### DEP ###
-use autodie; ### DEP ###
-use Text::Trim; ### DEP ###
+use English '-no_match_vars';    ### DEP ###
+use autodie;                     ### DEP ###
+use Text::Trim;                  ### DEP ###
 use Actium::Crier (qw/cry last_cry/);
-use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::O::Sked::Timetable::IDTimetable;
 use Actium::O::Sked::Timetable::IDTimetableSet;
-use Actium::Util qw/in flatten population_stdev joinempty joinkey all_eq halves/;
-use Const::Fast; ### DEP ###
-use List::Util      (qw/max sum/); ### DEP ###
-use List::MoreUtils (qw[any natatime]); ### DEP ###
-use List::Compare::Functional(qw/get_intersection/); ### DEP ###
-use Algorithm::Combinatorics(qw/partitions permutations/); ### DEP ###
+use Actium::Util
+  qw/in flatten population_stdev joinempty joinkey all_eq halves/;
+use Const::Fast;                 ### DEP ###
+use List::Util      (qw/max sum/);         ### DEP ###
+use List::MoreUtils (qw[any natatime]);    ### DEP ###
+use List::Compare::Functional(qw/get_intersection/);          ### DEP ###
+use Algorithm::Combinatorics(qw/partitions permutations/);    ### DEP ###
 use Actium::Combinatorics (qw/odometer_combinations ordered_partitions/);
 
 use Actium::O::Sked::Timetable::IDPageFrameSets;
@@ -125,9 +125,9 @@ my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
 
 sub assign {
 
-    my (@tables) = @{ +shift };    # copy
+    my (@tables) = @{ +shift };       # copy
     my $force_no_shortpage = shift;
-    
+
     my ( $fit_failure, $has_overlong, @idtables )
       = $page_framesets->make_idtables(@tables);
 
@@ -135,9 +135,10 @@ sub assign {
         foreach my $idtable (@idtables) {
             next unless $idtable->failed;
 
-            last_cry()->text( $idtable->id
-              . " could not be fit in the pages available: "
-              . $idtable->dimensions_for_display);
+            last_cry()
+              ->text( $idtable->id
+                  . " could not be fit in the pages available: "
+                  . $idtable->dimensions_for_display );
 
         }
 
@@ -160,41 +161,42 @@ sub assign {
     # find one that works, return nothing
 
     my $has_shortpage;
-    if ($force_no_shortpage)  {
-       $has_shortpage = 0;
-    } else {
-    ( $has_shortpage, @page_assignments )
-      = _reassign_short_page(@page_assignments);
+    if ($force_no_shortpage) {
+        $has_shortpage = 0;
+    }
+    else {
+        ( $has_shortpage, @page_assignments )
+          = _reassign_short_page(@page_assignments);
     }
 
     # @page_assignments is organized by page, but want to return
     # table_assignments, organized by table
-    
-    my $portrait_chars = _make_portrait_chars($has_shortpage , @page_assignments);
 
-    return $portrait_chars, 
-           _make_table_assignments_from_page_assignments( $has_shortpage,
+    my $portrait_chars
+      = _make_portrait_chars( $has_shortpage, @page_assignments );
+
+    return $portrait_chars,
+      _make_table_assignments_from_page_assignments( $has_shortpage,
         @page_assignments );
 
 } ## tidy end: sub assign
 
 sub _make_portrait_chars {
-   my $has_shortpage = shift;
-   my @page_assignments = @_;
-   
-   shift @page_assignments if $has_shortpage;
-   
-   return joinempty(
-   map { $_->{frameset}->is_portrait ? 'P' : 'L' } @page_assignments
-   );
-       
-   #my @portrait_chars;
-   #foreach my $page_assignment_r (@page_assignments) {
-   #    push @portrait_chars, 
-   #    ($page_assignment_r->{frameset}->is_portrait ? 'P' : 'L');
-   #}
-   
-   #return j(@portrait_chars);
+    my $has_shortpage    = shift;
+    my @page_assignments = @_;
+
+    shift @page_assignments if $has_shortpage;
+
+    return joinempty( map { $_->{frameset}->is_portrait ? 'P' : 'L' }
+          @page_assignments );
+
+    #my @portrait_chars;
+    #foreach my $page_assignment_r (@page_assignments) {
+    #    push @portrait_chars,
+    #    ($page_assignment_r->{frameset}->is_portrait ? 'P' : 'L');
+    #}
+
+    #return j(@portrait_chars);
 
 }
 
@@ -722,8 +724,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -738,8 +740,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -751,6 +753,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

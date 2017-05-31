@@ -100,7 +100,7 @@ sub prehistoric_skedsfile {
 
     foreach ( $self->place8s ) {
         my $place9 = $_;
-        substr( $place9, 4, 0, $SPACE );
+        substr( $place9, 4, 0, q[ ] );
         $place9 =~ s/  / /g;
 
         if ( $place9s_seen{$place9} ) {
@@ -117,7 +117,7 @@ sub prehistoric_skedsfile {
 
     say $out jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
 
-    my $timesub = timestr_sub( SEPARATOR => $EMPTY );
+    my $timesub = timestr_sub( SEPARATOR => q[] );
 
     foreach my $trip ( $self->trips ) {
         my $times = $timesub->( $trip->placetimes );

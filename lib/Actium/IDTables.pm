@@ -35,7 +35,7 @@ sub create_timetable_texts {
     my @skeds  = @_;
 
     my ( %tables_of, @alltables );
-    my $prev_linegroup = $EMPTY;
+    my $prev_linegroup = q[];
     foreach my $sked (@skeds) {
 
         my $linegroup = $sked->linegroup;
@@ -50,7 +50,7 @@ sub create_timetable_texts {
 
     }
 
-    $cry->over($EMPTY);
+    $cry->over(q[]);
     $cry->done;
 
     return \@alltables, \%tables_of;
@@ -96,7 +96,7 @@ sub get_pubtt_contents_with_dates {
 
     foreach my $line (@$lines_r) {
         my $fromdb = $on_timetable_from_db_r->{$line}{'PubTimetable'};
-        if ( defined $fromdb and $fromdb ne $EMPTY ) {
+        if ( defined $fromdb and $fromdb ne q[] ) {
             push @{ $on_timetable_of{$fromdb} }, $line;
         }
         else {
@@ -205,7 +205,7 @@ sub _output_pubtt_front_matter {
     my $tables_r      = shift;
     my @lines         = @{ +shift };
     my @front_matter  = @{ +shift };
-    my $effectivedate = shift // $EMPTY;
+    my $effectivedate = shift // q[];
 
     # @front_matter is currently unused, but I am leaving the code in here
     # for now
@@ -252,8 +252,8 @@ sub _output_pubtt_front_matter {
 
     print $ttfh $IDT->boxbreak;
 
-    print $ttfh $per_line_texts_r->{$EMPTY}
-      if exists $per_line_texts_r->{$EMPTY};
+    print $ttfh $per_line_texts_r->{q[]}
+      if exists $per_line_texts_r->{q[]};
 
     print $ttfh $IDT->boxbreak;
 
@@ -320,14 +320,14 @@ sub _make_days {
     }
 
     if ( @lines == 1 ) {
-        return { $EMPTY => $days_obj_of{ $lines[0] } };
+        return { q[] => $days_obj_of{ $lines[0] } };
     }
 
     my @days_objs = values %days_obj_of;
     my @days_codes = uniq( map { $_->as_sortable } @days_objs );
 
     if ( @days_codes == 1 ) {
-        return { $EMPTY => $days_objs[0] };
+        return { q[] => $days_objs[0] };
     }
 
     return \%days_obj_of;
@@ -358,7 +358,7 @@ sub _make_locals {
     my @locals = uniq( sort values %local_of );
 
     if ( @locals == 1 ) {
-        return { $EMPTY => $locals[0] };
+        return { q[] => $locals[0] };
     }
 
     return \%local_of;
@@ -377,7 +377,7 @@ sub _local_text {
           . 'Local Passengers Permitted for Local Fare';
     }
 
-    return $EMPTY;
+    return q[];
 
 }
 
@@ -425,8 +425,8 @@ sub output_a_pubtts {
     foreach my $pubtt_content_r (@pubtt_contents_with_dates) {
         my $pubtt         = $pubtt_content_r->{lines};
         my $linegroup     = $pubtt->[0];
-        my $effectivedate = $pubtt_content_r->{date} // $EMPTY;
-        my $file_date     = $pubtt_content_r->{file_date} // $EMPTY;
+        my $effectivedate = $pubtt_content_r->{date} // q[];
+        my $file_date     = $pubtt_content_r->{file_date} // q[];
         my $dbentry       = $pubtimetables_r->{$linegroup};
         my $leave_cover_for_map
           = ( ( $dbentry->{LeaveCoverForMap} // 'No' ) eq 'Yes' );
@@ -504,9 +504,9 @@ sub output_a_pubtts {
             file             => $file,
             effectivedate    => $file_date,
             pages            => $pagebreak_count,
-            MapFile          => $dbentry->{MapFile} // $EMPTY,
+            MapFile          => $dbentry->{MapFile} // q[],
             LeaveCoverForMap => $leave_cover_for_map,
-            MasterPage       => $dbentry->{MasterPage} // $EMPTY,
+            MasterPage       => $dbentry->{MasterPage} // q[],
             has_short_page   => $has_short_page,
             portrait_chars   => $portrait_chars,
         };
@@ -522,7 +522,7 @@ sub output_a_pubtts {
     }
     close $listfh;
 
-    $cry->over($EMPTY);
+    $cry->over(q[]);
     $cry->done;
 
     # $cry->text( "Has more than eight pages: @over_eight_pages");
