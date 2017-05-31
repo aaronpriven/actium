@@ -1,13 +1,7 @@
 package Actium::Types 0.012;
 
 # Moose types for Actium
-
-use strict;
-use warnings;
-
-use 5.016;    # turns on features
-
-use Const::Fast;
+use Actium;
 
 ## no critic (ProhibitMagicNumbers)
 
@@ -30,7 +24,6 @@ use MooseX::Types -declare => [
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
 
 use Actium::Time;
-use Actium::Constants;
 use Unicode::GCString;    ### DEP ###
 
 ##################
@@ -79,7 +72,7 @@ subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 #########################
 ### SCHEDULE DIRECTIONS
 
-enum( DirCode, \@DIRCODES );
+enum( DirCode, [@DIRCODES] );
 
 subtype ActiumDir, as class_type('Actium::O::Dir');
 

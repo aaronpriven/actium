@@ -5,8 +5,6 @@ package Actium::Sorting::Line 0.012;
 use 5.012;
 use warnings;
 
-use Actium::Constants;
-
 use Sub::Exporter -setup => { exports => [qw(byline sortbyline linekeys)] };
 # Sub::Exporter ### DEP ###
 
@@ -17,9 +15,9 @@ use Sub::Exporter -setup => { exports => [qw(byline sortbyline linekeys)] };
 sub linekeys {
     my @keys;
     foreach my $line (@_) {
-       push @keys, _numbers_first($line);
+        push @keys, _numbers_first($line);
     }
-    if (@keys == 1 ) { return $keys[0] };
+    if ( @keys == 1 ) { return $keys[0] }
     return @keys;
 }
 
