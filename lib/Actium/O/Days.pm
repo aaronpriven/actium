@@ -4,8 +4,8 @@ package Actium::O::Days 0.012;
 use 5.022;
 use warnings;    ### DEP ###
 
-use Actium ('class_nomod');
-use Actium::Util;
+use Actium ('class');
+use Actium::Util('positional');
 
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -34,9 +34,10 @@ const my @SEVENDAYABBREVS => map { substr( $_, 0, 3 ) } @SEVENDAYNAMES;
 #### ATTRIBUTES AND CONSTRUCTION
 ###################################
 
-around BUILDARGS => sub {
-    return Actium::Util::positional_around( \@_, 'daycode', 'schooldaycode' );
-};
+around BUILDARGS {
+    return $self->$next(
+        Actium::Util::positional( \@_, 'daycode', 'schooldaycode' ) );
+}
 
 has 'daycode' => (
     is          => 'ro',

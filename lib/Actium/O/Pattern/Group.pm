@@ -1,6 +1,6 @@
 package Actium::O::Pattern::Group 0.012;
 
-use Actium ('class_nomod');
+use Actium ('class');
 
 use Actium::Types (qw/ActiumDir/);
 use Actium::O::Dir;

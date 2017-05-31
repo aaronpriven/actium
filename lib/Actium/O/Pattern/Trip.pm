@@ -1,6 +1,6 @@
 package Actium::O::Pattern::Trip 0.012;
 
-use Actium ('class_nomod');
+use Actium ('class');
 use Actium::O::Time;
 
 sub id {

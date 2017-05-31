@@ -3,7 +3,7 @@ package Actium::O::Crier 0.011;
 # Actium/O/Crier - Print with indentation, status, and closure
 # Based on Term::Emit by Steve Roscio
 
-use Actium ('class_nomod');
+use Actium ('class');
 use Actium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
 use Actium::O::Crier::Cry;
 use Scalar::Util;
@@ -94,9 +94,7 @@ sub _fh_or_scalarref {
 
 }
 
-around BUILDARGS => sub {
-    my $orig  = shift;
-    my $class = shift;
+around BUILDARGS ($orig, $class : slurpy @) {
 
     # if first argument is handle or reference to scalar,
     # use it as argument to "fh" .
@@ -140,7 +138,7 @@ around BUILDARGS => sub {
     # ->new(option => option1 ,...)
     return $class->$orig( $firstarg, @_ );
 
-};
+} ## tidy end: around BUILDARGS
 
 ######################
 ## WIDTH AND POSITION

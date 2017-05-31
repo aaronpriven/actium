@@ -2,7 +2,7 @@ package Actium::O::Time 0.012;
 
 # object for formatting schedule times and parsing formatted times
 
-use Actium ('class_nomod');
+use Actium ('class');
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 

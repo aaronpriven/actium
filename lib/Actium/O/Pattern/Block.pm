@@ -1,6 +1,6 @@
 package Actium::O::Pattern::Block 0.012;
 
-use Actium ('class_nomod');
+use Actium ('class');
 
 sub id {
     my $self = shift;
