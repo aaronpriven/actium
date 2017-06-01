@@ -98,7 +98,7 @@ has must_exist => (
 #######################
 ### CONSTRUCTION
 
-around BUILDARGS ($orig, $class : $first_argument , slurpy @rest) {
+around BUILDARGS ( $orig, $class : $first_argument, slurpy @rest ) {
 
     my $hashref;
     if ( ref($first_argument) eq 'HASH' ) {
@@ -285,7 +285,6 @@ sub _positional {
 
     my @arguments = @{$argument_r};
     my @attrnames = @_;
-
     # if the last attribute begins with @, package up all remaining
     # positional arrguments into an arrayref and return that
     my $finalarray;
@@ -301,7 +300,7 @@ sub _positional {
     }
 
     my %newargs;
-    if ( defined reftype( $arguments[-1] )
+    if ( defined u::reftype( $arguments[-1] )
         and reftype( $arguments[-1] ) eq 'HASH' )
     {
         %newargs = %{ pop @arguments };
