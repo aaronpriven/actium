@@ -795,7 +795,6 @@ sub u_wrap {
     foreach my $line ( split( /\n/, $msg ) ) {
 
         my $linewidth = u_columns($line);
-
         if ( $linewidth <= $max ) {
             push @lines, $line;
         }
@@ -845,6 +844,21 @@ sub u_trim_to_columns {
 =back
 
 =head3 Other String Functions
+
+=over
+ 
+=item define
+ 
+For each value passed to it, returns either that value, if defined, or
+the empty string, if not. 
+
+In scalar context, returns the final value.
+ 
+=cut
+
+sub define {
+    return List::MoreUtils::apply { $_ //= q[] } @_;
+}
 
 =over
 
@@ -1237,6 +1251,5 @@ later version, or
 =back
 
 This program is distributed in the hope that it will be useful, but
-WITHOUT  ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
-
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
