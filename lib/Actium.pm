@@ -20,6 +20,8 @@ use Kavorka ( fun => { -as => 'func' } ); ### DEP ###
 # Imports things that are common to (many) modules.
 # inspired by http://www.perladvent.org/2012/2012-12-16.html
 
+## no critic (RequirePodAtEnd)
+
 =encoding utf8
 
 =head1 NAME
@@ -41,9 +43,9 @@ This documentation refers to version 0.014
 =head1 DESCRIPTION
 
 Actium.pm provides the boilerplate code that should be common to all
-Actium modules. It contains a number of utility routines, exports
-a number of constants, and further imports symbols from a number of other 
-modules into each namespace.
+Actium modules. It contains a number of utility routines, exports a
+number of constants, and further imports symbols from a number of other
+ modules into each namespace.
 
 =cut
 
@@ -82,16 +84,16 @@ The number of minutes in 12 hours (12 times 60, or 720).
 =item @DIRCODES
 
 Alphabetic two-character direction codes (NB representing northbound, 
-SB representing southbound, etc.)  The original few were
-based on transitinfo.org directions, but have been extended to include
-kinds of directions that didn't exist back then.
+SB representing southbound, etc.)  The original few were based on
+transitinfo.org directions, but have been extended to include kinds of
+directions that didn't exist back then.
 
-This should be moved to Actium::O::Dir when other modules
-not using it are changed.
+This should be moved to Actium::O::Dir when other modules not using it
+are changed.
 
 =item @TRANSBAY_NOLOCALS
 
-Transbay lines where local riding is prohibited. 
+Transbay lines where local riding is prohibited.
 
 This should no longer be used, and instead the appropriate field from
 the Lines table in the Actium database used instead.
@@ -114,7 +116,7 @@ const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
 
 Unless otherwise specified, the modules below are imported into the
 calling module using the default parameters, i.e., as if it were a
-plain "use Module". 
+plain "use Module".
 
 =head2 CLASSES
 
@@ -145,7 +147,8 @@ L<Moose::Role|Moose::Role>
 =head2 CLASSES OR ROLES
 
 In addition to modules listed later, the following module is imported
-into modules that use Actium with either the 'class' or the 'role' parameter.
+into modules that use Actium with either the 'class' or the 'role'
+parameter.
 
 =over
 
@@ -196,15 +199,15 @@ role, or other type of module.
 
 L<Kavorka|Kavorka>
 
-All modules will have the function keyword imported as "func"
-rather than Kavorka's default "fun." Classes and roles will
-also have the "method" keyword and all method modifiers
-("after", "around" and "before").
+All modules will have the function keyword imported as "func" rather
+than Kavorka's default "fun." Classes and roles will also have the
+"method" keyword and all method modifiers ("after", "around" and
+"before").
 
-(The reason for importing 'fun' as 'func' is twofold:
-first, Eclipse supports the Method::Signatures keywords "func" and "method".
-Second, I think it looks weird to have the abbreviation for one word
-to be another word.)
+(The reason for importing 'fun' as 'func' is twofold: first, Eclipse
+supports the Method::Signatures keywords "func" and "method". Second, I
+think it looks weird to have the abbreviation for one word to be
+another word.)
 
 =item *
 
@@ -225,8 +228,8 @@ L<Const::Fast|Const::Fast>
 
 L<English|English>
 
-Although it is not important in more recent perls, the '-no_match_vars' 
-parameter is specified when loading the English module.
+Although it is not important in more recent perls, the '-no_match_vars'
+ parameter is specified when loading the English module.
 
 =item *
 
@@ -236,8 +239,8 @@ L<autodie|autodie>
 
 L<feature|feature>
 
-The ":5.24" feature bundle is loaded into each module, as well as 
-the "refaliasing" and "postderef_qq" features.
+The ":5.24" feature bundle is loaded into each module, as well as  the
+"refaliasing" and "postderef_qq" features.
 
 =item *
 
@@ -250,8 +253,8 @@ in the calling module.
 
 L<open|open>
 
-The ':utf8' parameter is passed, as well as the ':std' parameter 
-to ensure that STDIN, STDOUT, and STDERR are treated as UTF-8 also.
+The ':utf8' parameter is passed, as well as the ':std' parameter  to
+ensure that STDIN, STDOUT, and STDERR are treated as UTF-8 also.
 
 =item *
 
@@ -280,12 +283,14 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
         my $module = shift;
         require_module($module);
         $module->import::into( $caller, @_ );
+        return;
     }
 
     sub _do_unimport {
         my $module = shift;
         require_module($module);
         $module->unimport::out_of( $caller, @_ );
+        return;
     }
 
     sub import {
@@ -295,6 +300,7 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
 
         # constants
         {
+            ## no critic (ProhibitProlongedStrictureOverride)
             no strict 'refs';
             *{ $caller . '::EMPTY' }             = \$EMPTY;
             *{ $caller . '::CRLF' }              = \$CRLF;
@@ -303,6 +309,7 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
             *{ $caller . '::KEY_SEPARATOR' }     = \$KEY_SEPARATOR;
             *{ $caller . '::TRANSBAY_NOLOCALS' } = \@TRANSBAY_NOLOCALS;
             *{ $caller . '::DIRCODES' }          = \@DIRCODES;
+            ## use critic
         }
 
         if ($type) {
@@ -349,6 +356,8 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
         _do_unimport 'warnings', 'experimental::refaliasing',
           'experimental::postderef';
 
+        return;
+
     } ## tidy end: sub import
 
 }
@@ -371,10 +380,11 @@ use Text::Trim('trim');                                          ### DEP ###
 
 =head1 SUBROUTINES 
 
-None of these subroutines are, or can be, exported into the caller's namespace.
-They are accessible using the fully qualified name, e.g. "Actium::byline".
-As a convenience, the package "u" is made an alias for the "Actium" package,
-so they are also accessible using the easier-to-type "u::byline."
+None of these subroutines are, or can be, exported into the caller's
+namespace. They are accessible using the fully qualified name, e.g.
+"Actium::byline". As a convenience, the package "u" is made an alias
+for the "Actium" package, so they are also accessible using the
+easier-to-type "u::byline."
 
 =head2 LISTS
 
@@ -396,8 +406,8 @@ sub joinempty {
 =item joinkey
 
 Takes the list passed to it and joins it together, with each element
-separated  by the $KEY_SEPARATOR value from L<Actium/Actium>. A quicker
-way to type "join ($KEY_SEPARATOR , @list)".
+separated  by the C<$KEY_SEPARATOR> value. A quicker way to type "join
+($KEY_SEPARATOR , @list)".
 
 =cut
 
@@ -449,8 +459,8 @@ serial comma.
 =cut
 
 func joinseries_with (Str $and!, Str @things!) {
-    return $things[0] if @things == 1;
-    return "$things[0] $and $things[1]" if @things == 2;
+    return $things[0] if 1 == @things;
+    return "$things[0] $and $things[1]" if 2 == @things;
     my $final = pop @things;
     return ( join( q{, }, @things ) . " $and $final" );
 }
@@ -462,7 +472,7 @@ The same as C< joinseries_with('and', ...)>;
 =cut
 
 sub joinseries {
-    croak 'No argumments passed to ' . __PACKAGE__ . '::joinseries'
+    croak 'No arguments passed to ' . __PACKAGE__ . '::joinseries'
       unless @_;
     return joinseries_with( 'and', @_ );
 }
@@ -479,8 +489,8 @@ L<C<max> from List::Util|List::Util/max>
 
 =item mean
 
-The arithmetic mean of its arguments, or if the first argument
-is an array ref, of the members of that array.
+The arithmetic mean of its arguments, or if the first argument is an
+array ref, of the members of that array.
 
 =cut
 
@@ -553,13 +563,12 @@ L<C<firstidx> from List::MoreUtils|List::MoreUtils/firstidx>.
 
 =item folded_in
 
-Returns true if first argument, when case-folded, is equal to
-the any of the subsequent arguments, when those are case-folded.
-If the second argument is an arrayref, compares the elements of
-that array.
+Returns true if first argument, when case-folded, is equal to the any
+of the subsequent arguments, when those are case-folded. If the second
+argument is an arrayref, compares the elements of that array.
 
-See L<fc in perlfunc|perlfunc/fc> for more information about
-case folding.
+See L<fc in perlfunc|perlfunc/fc> for more information about case
+folding.
 
 =cut
 
@@ -574,9 +583,9 @@ sub folded_in {
 
 =item in
 
-Returns true if the first argument is equal to (using
-the C<eq> operator) any of the subsequent arguments, or if the second
-argument is a plain arrayref,  any of the elements of that array.
+Returns true if the first argument is equal to (using the C<eq>
+operator) any of the subsequent arguments, or if the second argument is
+a plain arrayref,  any of the elements of that array.
 
 =cut
 
@@ -617,7 +626,8 @@ L<C<natatime> from List::MoreUtils|List::MoreUtils/natatime>.
 
 =item sortbyline
 
-L<C<sortbyline> from Actium::Sorting::Line|Actium::Sorting::Line/sortbyline>
+L<C<sortbyline> from
+Actium::Sorting::Line|Actium::Sorting::Line/sortbyline>
 
 =item uniq
 
@@ -781,7 +791,7 @@ sub u_wrap {
     $breaker->config( ColMax => $max, ColMin => $min );
 
     # First split on newlines
-    my @lines = ();
+    my @lines;
     foreach my $line ( split( /\n/, $msg ) ) {
 
         my $linewidth = u_columns($line);
@@ -841,7 +851,8 @@ sub u_trim_to_columns {
 
 =item encode_entities
 
-L<C<encode_entities> from HTML::Entities|HTML::Entities/encode_entities>.
+L<C<encode_entities> from
+HTML::Entities|HTML::Entities/encode_entities>.
 
 =item feq
 
@@ -902,7 +913,8 @@ L<C<floor> from POSIX|POSIX/floor>.
 
 =item looks_like_number
 
-L<C<looks_like_number> from Scalar::Util|Scalar::Util/looks_like_number>.
+L<C<looks_like_number> from
+Scalar::Util|Scalar::Util/looks_like_number>.
 
 
 =back
@@ -924,7 +936,7 @@ accepting either a hashref or a plain hash as arguments to a function.
 =cut
 
 sub hashref {
-    return $_[0] if is_plain_hashref( $_[0] ) and @_ == 1;
+    return $_[0] if is_plain_hashref( $_[0] ) and 1 == @_;
     croak 'Odd number of elements passed to ' . __PACKAGE__ . '::hashref'
       if @_ % 2;
     return {@_};
@@ -1027,7 +1039,7 @@ sub dumpstr (\[@$%&];%) {    ## no critic (ProhibitSubroutinePrototypes)
     return Data::Printer::np(
         @_,
         hash_separator => ' => ',
-        class => { expand => 'all', parents => 0, show_methods => 'none', }
+        class => { expand => 'all', parents => 0, show_methods => 'none', },
     );
 }
 
@@ -1046,6 +1058,7 @@ making the Moose class immutable.
 sub immut {
     my $package = caller;
     $package->meta->make_immutable;
+    return;
 }
 
 =item validate
@@ -1068,24 +1081,27 @@ __END__
 
 Unknown module type $type
 
-A module type other than 'class' or 'role' was passed in the 'use Actium' 
-statement.
+A module type other than 'class' or 'role' was passed in the 'use
+Actium'  statement.
 
 =item *
 
-No argumments passed to Actium::joinseries
+No arguments passed to Actium::joinseries
 
 The joinseries function was called without any valid arguments. Supply
 strings to join.
 
 Odd number of elements passed to Actium::hashref
 
-The hashref function was called with an odd number of arguments (other than
-a single hashref argument), so cannot be made into hash reference.
+The hashref function was called with an odd number of arguments (other
+than a single hashref argument), so cannot be made into hash reference.
+
+=back
 
 =head1 DEPENDENCIES
 
-Actium.pm requires the following modules or distributions to be present:
+Actium.pm requires the following modules or distributions to be
+present:
 
 =over
 
@@ -1143,7 +1159,10 @@ Text::Trim
 
 =back
 
-When used for a Moose class or role, it requires the following distributions:
+When used for a Moose class or role, it requires the following
+distributions:
+
+=over
 
 =item *
 
@@ -1221,3 +1240,4 @@ later version, or
 This program is distributed in the hope that it will be useful, but
 WITHOUT  ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
