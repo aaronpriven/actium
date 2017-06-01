@@ -827,18 +827,17 @@ sub u_trim_to_columns {
 
     require Unicode::GCString;    ### DEP ###
 
-    my $gc = Unicode::GCString::->new($text);
+    my $gc = Unicode::GCString::->new("$text");
+    # stringification of numbers bug means have to do so explicitly
 
-    my $columns = $gc->columns;
     while ( $gc->columns > $max_columns ) {
         $gc->substr( -1, 1, q[] );
-        $columns = $gc->columns;
     }
 
-    return $gc->as_string if $columns == $max_columns;
+    return $gc->as_string if $gc->columns == $max_columns;
 
     return u_pad( $gc->as_string, $max_columns );
-    # in case we trimmed off a double-wide character or something,
+    # in case we trimmed off a double-wide character,
     # pad it to the right number of columns
 
 } ## tidy end: sub u_trim_to_columns
