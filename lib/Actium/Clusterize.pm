@@ -13,7 +13,7 @@ func clusterize (
      :$return where { $_ eq 'runlist' or $_ eq 'values' } = 'runlist',
      :@all_values is ref_alias = [],
      :@items is ref_alias = [],
-     :%original_count is ref_alias = {},
+     :count_of(%original_count) is ref_alias = {},
     ) {
 
     if ( @items and scalar keys %original_count ) {
