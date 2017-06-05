@@ -2,6 +2,8 @@ package Actium::O::Sked::Storage::Tabxchange 0.013;
 
 use Actium ('role');
 
+use Actium::Time('timestr_sub');
+
 const my $LAST_LINE_IN_FIRST_LOCAL_LIST => 70;
 # arbitrary choice, but it must always be the same or links will break
 
@@ -394,7 +396,7 @@ method tabxchange (
 
     return $aoa->tsv . $placetimes_aoa->tsv;
 
-} ## tidy end: sub METHOD0
+} ## tidy end: method tabxchange
 
 1;
 
