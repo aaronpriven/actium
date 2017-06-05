@@ -850,17 +850,15 @@ sub u_trim_to_columns {
 =item define
  
 For each value passed to it, returns either that value, if defined, or
-the empty string, if not. 
+the empty string, if not.
 
 In scalar context, returns the final value.
- 
+
 =cut
 
 sub define {
     return List::MoreUtils::apply { $_ //= q[] } @_;
 }
-
-=over
 
 =item encode_entities
 
@@ -1252,4 +1250,5 @@ later version, or
 
 This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
