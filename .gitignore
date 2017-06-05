@@ -2,6 +2,7 @@
 .settings/
 .includepath
 .project
+scratch.pl
 
 # and Mac stuff
 .DS_Store
