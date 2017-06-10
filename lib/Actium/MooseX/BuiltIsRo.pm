@@ -67,18 +67,15 @@ This documentation refers to version 0.014
     is => 'ro' ,
     default => 'value',
  );
- 
+
 =head1 DESCRIPTION
 
-Actium::MooseX::BuiltIsRo 
-ensures that if either "lazy," "builder," or "default" is supplied, but there
-is no "is" option supplied, the attribute will be set to be read-only
-("is => 'ro'").
+Actium::MooseX::BuiltIsRo  ensures that if either "lazy," "builder," or
+"default" is supplied, but there is no "is" option supplied, the
+attribute will be set to be read-only ("is => 'ro'").
 
-Any supplied "is" option, such as "is => 'bare'" or "is => 'rw'", will be
-left intact.
-
-=back
+Any supplied "is" option, such as "is => 'bare'" or "is => 'rw'", will
+be left intact.
 
 =head1 DEPENDENCIES
 
@@ -97,9 +94,10 @@ MooseX::SemiAffordanceAccessor.
 
 =head1 SEE ALSO
 
-MooseX::MungeHas, MooseX::AttributeShortcuts. These are more complicated
-modules that do a lot of things in a single role. I have preferred simple
-roles that do just one or two things without interfering with other roles.
+MooseX::MungeHas, MooseX::AttributeShortcuts. These are more
+complicated modules that do a lot of things in a single role. I have
+preferred simple roles that do just one or two things without
+interfering with other roles.
 
 =head1 AUTHOR
 
@@ -124,4 +122,5 @@ later version, or
 
 This program is distributed in the hope that it will be useful, but
 WITHOUT  ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE. 
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

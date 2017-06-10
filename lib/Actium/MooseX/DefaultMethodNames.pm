@@ -124,6 +124,7 @@ by an initial underscore. Don't do that.)
 =over
 
 =item C<< predicate => 1 >>
+
 =item C<< clearer => 1 >>
 
 These are given names "has_I<attributename>" and
@@ -132,6 +133,7 @@ leading underscore, the methods will too: "_has_I<attributename>" and
 "_clear_I<attributename>",
 
 =item C<< predicate => '_' >>
+
 =item C<< clearer => '_' >>
 
 Specifying an underscore instead of 1 will make these methods private
@@ -140,8 +142,11 @@ itself is public: so an attribute called "name" will be given methods
 "_has_name" and "_clear_name".
 
 =item C<< trigger => 1 >>
+
 =item C<< builder => 1 >>
+
 =item C<< trigger => '_' >>
+
 =item C<< builder => '_' >>
 
 These are always given an underscore in front, whether or not the
