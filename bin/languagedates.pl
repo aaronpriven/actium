@@ -3,51 +3,49 @@ use warnings;
 
 our $VERSION = 0.012;
 
-use DateTime; ### DEP ###
-use DateTime::Format::CLDR; ### DEP ###
+use DateTime;                  ### DEP ###
+use DateTime::Format::CLDR;    ### DEP ###
 
-use open (qw/:std :utf8/);
+use open(qw/:std :utf8/);
 
 #my %date = (year => 2016, month => 6, day => '5', );
 
-foreach my $year (2016..2050) {
+foreach my $year ( 2016 .. 2050 ) {
 
-print "--$year--\n\n";
+    print "--$year--\n\n";
 
-foreach my $day ( 1 .. 366) {
+    foreach my $day ( 1 .. 366 ) {
 
-next if $day == 366 and $year % 4;
+        next if $day == 366 and $year % 4;
 
-my %date = ( year => $year, day_of_year => $day);
+        my %date = ( year => $year, day_of_year => $day );
 
-my $dt = DateTime->from_day_of_year (%date);
+        my $dt = DateTime->from_day_of_year(%date);
 
-my @locales = qw/en_US es_US zh_Hans/;
+        my @locales = qw/en_US es_US zh_Hans/;
 
-my @formatted;
+        my @formatted;
 
-foreach my $locale (@locales) {
-   my $dl = DateTime::Locale->load($locale);
-   my $pattern = $dl->date_format_long;
-   my $cldr = DateTime::Format::CLDR->new(
-     locale      => $locale,
-     pattern => $pattern, 
-  );
-  push @formatted,  $cldr->format_datetime($dt) ;
-  #$cldr->pattern($dl->date_format_long);
-  #say $cldr->format_datetime($dt);
+        foreach my $locale (@locales) {
+            my $dl      = DateTime::Locale->load($locale);
+            my $pattern = $dl->date_format_full;
+            my $cldr    = DateTime::Format::CLDR->new(
+                locale  => $locale,
+                pattern => $pattern,
+            );
+            push @formatted, $cldr->format_datetime($dt);
+            #$cldr->pattern($dl->date_format_long);
+            #say $cldr->format_datetime($dt);
 
-}
+        }
 
-say join("\t" , @formatted);
+        say join( "\t", @formatted );
 
-}
+    } ## tidy end: foreach my $day ( 1 .. 366 )
 
-say "\cL";
+    say "\cL";
 
-}
-
-
+} ## tidy end: foreach my $year ( 2016 .. ...)
 
 =encoding utf8
 
@@ -65,15 +63,14 @@ This documentation refers to <name> version 0.003
 
 =head1 REQUIRED ARGUMENTS
 
-A list of every argument that must appear on the command line when
-the application is invoked, explaining what each one does, any
-restrictions on where each one may appear (i.e., flags that must
-appear before or after filenames), and how the various arguments
-and options may interact (e.g., mutual exclusions, required
-combinations, etc.)
+A list of every argument that must appear on the command line when the
+application is invoked, explaining what each one does, any restrictions
+on where each one may appear (i.e., flags that must appear before or
+after filenames), and how the various arguments and options may
+interact (e.g., mutual exclusions, required combinations, etc.)
 
-If all of the application's arguments are optional, this section
-may be omitted entirely.
+If all of the application's arguments are optional, this section may be
+omitted entirely.
 
 =over
 
@@ -107,8 +104,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -123,8 +120,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -136,7 +133,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 
