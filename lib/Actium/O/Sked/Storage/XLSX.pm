@@ -90,7 +90,7 @@ method new_from_xlsx (
 
     return $sked;
 
-} ## tidy end: sub METHOD3
+} ## tidy end: method new_from_xlsx
 
 func _cell_value ( $sheet!, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
@@ -138,7 +138,7 @@ func _read_stops_and_places (
 
     return \@stops, \@places, \@stopplaces;
 
-} ## tidy end: sub FUNC2
+} ## tidy end: func _read_stops_and_places
 
 func _read_trips (
    Spreadsheet::ParseExcel::Worksheet :$sheet! ,
@@ -177,7 +177,7 @@ func _read_trips (
 
     return \@trips;
 
-} ## tidy end: sub FUNC3
+} ## tidy end: func _read_trips
 
 func _read_attribute_names (
      Int :$mincol!, 
@@ -213,7 +213,7 @@ func _read_attribute_names (
 
     return \@attributes;
 
-} ## tidy end: sub FUNC4
+} ## tidy end: func _read_attribute_names
 
 func _process_id (Str :$id!, Str :$filename!) {
     if ($id !~ /\A
@@ -265,7 +265,7 @@ func _time_as_string (:$formatted!, :$unformatted!) {
 
     return $formatted;
 
-} ## tidy end: sub FUNC6
+} ## tidy end: func _time_as_string
 
 #############################################
 #### WRITE TO AN EXCEL SPREADSHEET
@@ -317,7 +317,7 @@ method add_stop_xlsx_sheet (
 
     return;
 
-} ## tidy end: sub METHOD4
+} ## tidy end: method add_stop_xlsx_sheet
 
 method add_place_xlsx_sheet (
           Excel::Writer::XLSX :$workbook! , 
@@ -362,7 +362,7 @@ method xlsx {
 
     close $stop_workbook_fh or die "$OS_ERROR";
     return $stop_workbook_stream;
-} ## tidy end: sub METHOD6
+} ## tidy end: method xlsx
 
 sub xlsx_layers {':raw'}
 
@@ -400,7 +400,7 @@ method _trip_attribute_columns {
 
     return $trip_attribute_columns;
 
-} ## tidy end: sub METHOD8
+} ## tidy end: method _trip_attribute_columns
 
 method _place_columns {
 
