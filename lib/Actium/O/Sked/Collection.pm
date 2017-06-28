@@ -171,6 +171,14 @@ method load_xlsx (
 
 }
 
+method cook_skeds (
+    $class:
+    Actium::O::Folder :$signup ,
+    Actium::O::Files::ActiumDB :$actiumdb ,
+    ) {
+
+}
+
 ###################
 ##### OUTPUT ######
 ###################
