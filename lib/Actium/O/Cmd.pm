@@ -199,7 +199,7 @@ sub prompt {
 #############
 #### HELP
 
-method _mainhelp ( Str :$error = q[] , Bool :$status = 0 ) {
+method _mainhelp ( Str :$error = q[] , Int :$status = 0 ) {
 
     #my $system_name = $self->system_name;
     my $command = $self->command;
