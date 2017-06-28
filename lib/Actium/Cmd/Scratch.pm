@@ -1,9 +1,24 @@
 package Actium::Cmd::Scratch 0.012;
 
 use Actium;
-use Actium::O::Sked::Collection;
+use Actium::O::Folders::Signup;
 
-sub OPTIONS { return 'actiumdb' }
+sub OPTIONS { return 'actiumdb', 'signup' }
+
+sub START {
+
+    my ( $class, $env ) = @_;
+
+    my $signup = $env->signup;
+
+    use DDP;
+    p $signup;
+
+}
+
+1;
+
+__END__
 
 sub START {
 
