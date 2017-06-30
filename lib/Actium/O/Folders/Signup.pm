@@ -139,6 +139,7 @@ sub signup_obj {
 
     my $self  = shift;
     my $class = blessed $self;
+    return $self unless $self->_subfolder_count;
 
     return $class->new(
         {   base   => $self->base,
@@ -158,6 +159,28 @@ sub base_obj {
             volume     => $self->volume,
         }
     );
+
+}
+
+## identified folders ###
+
+BEGIN { 
+
+my %method_of = (
+   skeds => 'skeds/skeds',
+   raw_skeds => 'skeds/raw/skeds',
+   exceptions => 'skeds/exceptions',
+   point_skeds => 'skeds/point',
+   spaced_skeds => 'skeds/spaced',
+   dumped_skeds => 'skeds/spaced',
+   raw_skeds => 'skeds/raw/skeds',
+   prehistoric_skeds => 'skeds/prehistoric',
+);
+
+   foreach my $method (keys %method_of) {
+      no strict 'refs';
+      *{ $method . '_folder' } = sub { my $self = shift; return $self->signup_obj->subfolder($method_of{$method}) };
+   }
 
 }
 
