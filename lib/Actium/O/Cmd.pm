@@ -114,6 +114,8 @@ sub BUILD {
         $self->_mainhelp();
     }
 
+    Actium::_set_env($self);
+
     my $module = $self->module;
     if ( $self->_help_requested or $self->option('help') ) {
         if ( $module->can('HELP') ) {
@@ -240,7 +242,7 @@ sub _output_usage {
         $description_of{$_} = "Same as -$name" foreach $obj->aliases;
     }
 
-    my $longest = 1 + u::max( map { length($_) } keys %description_of );
+    my $longest = 1 + Actium::max( map { length($_) } keys %description_of );
     # add one for the hyphen
 
     say STDERR 'Options:';
@@ -321,7 +323,7 @@ sub _build_module {
 
     my $referred;
     while ( exists( $subcommands{$subcommand} )
-        and u::is_ref( $subcommands{$subcommand} ) )
+        and Actium::is_ref( $subcommands{$subcommand} ) )
     {
         $subcommand = ${ $subcommands{$subcommand} };
         $referred   = 1;
@@ -366,7 +368,7 @@ has command => (
 sub _build_command {
     my $self        = shift;
     my $commandpath = $self->commandpath;
-    return u::filename($commandpath);
+    return Actium::filename($commandpath);
 }
 
 has sysenv_r => (
@@ -492,7 +494,7 @@ sub _subcommand_names {
     \my %subcommands = $self->_subcommands_r;
 
     return (
-        grep { not u::is_ref( $subcommands{$_} ) }
+        grep { not Actium::is_ref( $subcommands{$_} ) }
         sort keys %subcommands
     );
 }
@@ -524,12 +526,12 @@ sub _build_option_objs {
     while (@optionspecs) {
         my $optionspec = shift @optionspecs;
 
-        if ( u::is_hashref($optionspec) ) {
+        if ( Actium::is_hashref($optionspec) ) {
             $optionspec->{cmdenv} = $self;
             $optionspec->{order}  = $count++;
             push @opt_objs, Actium::O::Cmd::Option->new($optionspec);
         }
-        elsif ( u::is_arrayref($optionspec) ) {
+        elsif ( Actium::is_arrayref($optionspec) ) {
 
             my ( $spec, $description, $callbackorfallback ) = @{$optionspec};
 
@@ -543,7 +545,7 @@ sub _build_option_objs {
             if ( defined $callbackorfallback ) {
 
                 my $key
-                  = u::is_coderef($callbackorfallback)
+                  = Actium::is_coderef($callbackorfallback)
                   ? 'callback'
                   : 'fallback';
                 $option_init{$key} = $callbackorfallback;
@@ -551,7 +553,7 @@ sub _build_option_objs {
 
             push @opt_objs, Actium::O::Cmd::Option->new( \%option_init );
 
-        } ## tidy end: elsif ( u::is_arrayref($optionspec...))
+        } ## tidy end: elsif ( Actium::is_arrayref...)
         else {
             # option package
             if ( not exists $OPTION_PACKAGE_DISPATCH{$optionspec} ) {
@@ -566,7 +568,7 @@ sub _build_option_objs {
         }
     } ## tidy end: while (@optionspecs)
 
-    u::immut;
+    Actium::immut;
     # made immutable here, after any new attributes are made in dispatch
     # routines
 
