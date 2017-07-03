@@ -6,7 +6,6 @@ use warnings;
 
 BEGIN {
     # make the 'u' package an alias to this package
-    no strict 'refs';
     *u:: = \*Actium::;
 }
 
@@ -298,7 +297,7 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
         my $type = shift || q{};
         $caller = caller;
 
-        # constants
+        # constants and exported routines
         {
             ## no critic (ProhibitProlongedStrictureOverride)
             no strict 'refs';
@@ -309,6 +308,7 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
             *{ $caller . '::KEY_SEPARATOR' }     = \$KEY_SEPARATOR;
             *{ $caller . '::TRANSBAY_NOLOCALS' } = \@TRANSBAY_NOLOCALS;
             *{ $caller . '::DIRCODES' }          = \@DIRCODES;
+            *{ $caller . '::env' }               = \&env;
             ## use critic
         }
 
@@ -380,11 +380,46 @@ use Text::Trim('trim');                                          ### DEP ###
 
 =head1 SUBROUTINES 
 
-None of these subroutines are, or can be, exported into the caller's
-namespace. They are accessible using the fully qualified name, e.g.
-"Actium::byline". As a convenience, the package "u" is made an alias
-for the "Actium" package, so they are also accessible using the
-easier-to-type "u::byline."
+Except for C<env>, none of these subroutines are, or can be, exported 
+into the caller's namespace. They are accessible using the fully
+qualified name, e.g. "Actium::byline".
+
+The only subroutine that is exported is C<env>. It is always exported.
+
+As a convenience, the package "u" was made an alias for the "Actium"
+package, so the routines are also accessible using, e.g., "u::byline."
+This usage has now been deprecated and will eventually go away. It's
+not that much harder to type "Actium::byline", especially if "Actium::"
+is bound to a key in your editor.
+
+=head2 ACTIUM ENVIRONMENT
+
+=cut
+
+my $env;
+
+sub env () {
+    return $env;
+}
+
+sub _set_env {
+    $env = shift;
+}
+
+=over
+
+=item env
+
+This returns the object representing the environment in which the
+program operates. (This is not to be confused with the system
+environment variables represented by L<%ENV|perlvar/%ENV>, which is
+only one part of the  operating environment.)
+
+At the moment this is always going to be an Actium::O::Cmd object,
+although at some point if other operating environments are created
+(Web, GUI, etc.)  this may change.
+
+=back
 
 =head2 LISTS
 
