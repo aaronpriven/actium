@@ -162,27 +162,33 @@ sub base_obj {
 
 }
 
-## identified folders ###
+## specifically identified folders ###
 
-BEGIN { 
+BEGIN {
 
-my %method_of = (
-   skeds => 'skeds/skeds',
-   raw_skeds => 'skeds/raw/skeds',
-   exceptions => 'skeds/exceptions',
-   point_skeds => 'skeds/point',
-   spaced_skeds => 'skeds/spaced',
-   dumped_skeds => 'skeds/spaced',
-   raw_skeds => 'skeds/raw/skeds',
-   prehistoric_skeds => 'skeds/prehistoric',
-);
+    my %method_of = (
+        skeds             => 's/skeds',
+        raw_skeds         => 's/raw/skeds',
+        exception_s        => 's/exceptions',
+        place_skeds       => 's/export/place',
+        spaced_skeds      => 's/export/spaced',
+        dumped_skeds      => 's/export/dump',
+        prehistoric_skeds => 's/export/prehistoric',
+        raw_place_skeds       => 's/raw/place',
+        raw_spaced_skeds      => 's/raw/spaced',
+        raw_dumped_skeds      => 's/raw/dump',
+        raw_prehistoric_skeds => 's/raw/prehistoric',
+    );
 
-   foreach my $method (keys %method_of) {
-      no strict 'refs';
-      *{ $method . '_folder' } = sub { my $self = shift; return $self->signup_obj->subfolder($method_of{$method}) };
-   }
+    foreach my $method ( keys %method_of ) {
+        no strict 'refs';
+        *{ $method . '_folder' } = sub {
+            my $self = shift;
+            return $self->signup_obj->subfolder( $method_of{$method} );
+        };
+    }
 
-}
+} ## tidy end: BEGIN
 
 1;
 
