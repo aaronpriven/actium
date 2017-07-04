@@ -147,6 +147,12 @@ sub skeds_of_lg {
 ##### INPUT ######
 ##################
 
+sub load_raw_storable {
+    my $class           = shift;
+    my $storable_folder = shift;
+    return $storable_folder->retrieve('rawskeds.storable');
+}
+
 sub load_storable {
     my $class           = shift;
     my $storable_folder = shift;
@@ -176,6 +182,14 @@ method cook_skeds (
     Actium::O::Folder :$signup ,
     Actium::O::Files::ActiumDB :$actiumdb ,
     ) {
+
+    my $main_collection
+      = $class->load_raw_storable( $signup->skeds_base_folder );
+
+    my $exception_collection
+      = $class->load_xlsx( $signup->exceptions_skeds_folder );
+
+    # TODO - go through exceptions and replace sked in main collection
 
 }
 
