@@ -46,7 +46,7 @@ method new_from_xlsx (
     };
 
     my $min_stop_col
-      = u::first { $is_stopid_col_cr->($_) } ( $mincol .. $maxcol );
+      = Actium::first { $is_stopid_col_cr->($_) } ( $mincol .. $maxcol );
 
     \my ( @stops, @place4s, @stopplaces ) = _read_stops_and_places(
         mincol    => $min_stop_col,
@@ -78,8 +78,12 @@ method new_from_xlsx (
     my $dir_obj = Actium::O::Dir->instance($dircode);
     my $day_obj = Actium::O::Days->instance( $daycode, 'B' );
 
+    my $actiumdb = env->actiumdb;
+    my @place8s = map { $actiumdb->place8($_) } @place4s;
+
     my $sked = $class->new(
         place4_r    => \@place4s,
+        place8_r    => \@place8s,
         stopplace_r => \@stopplaces,
         stopid_r    => \@stops,
         linegroup   => $linegroup,
