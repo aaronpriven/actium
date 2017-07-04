@@ -167,13 +167,14 @@ sub base_obj {
 BEGIN {
 
     my %method_of = (
-        skeds             => 's/skeds',
-        raw_skeds         => 's/raw/skeds',
-        exception_s        => 's/exceptions',
-        place_skeds       => 's/export/place',
-        spaced_skeds      => 's/export/spaced',
-        dumped_skeds      => 's/export/dump',
-        prehistoric_skeds => 's/export/prehistoric',
+        skeds_base            => 's/',
+        skeds                 => 's/skeds',
+        raw_skeds             => 's/raw/skeds',
+        exception_skeds       => 's/exceptions',
+        place_skeds           => 's/export/place',
+        spaced_skeds          => 's/export/spaced',
+        dumped_skeds          => 's/export/dump',
+        prehistoric_skeds     => 's/export/prehistoric',
         raw_place_skeds       => 's/raw/place',
         raw_spaced_skeds      => 's/raw/spaced',
         raw_dumped_skeds      => 's/raw/dump',
