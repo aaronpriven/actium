@@ -2,24 +2,16 @@ package Actium::O::Folders::Signup 0.012;
 
 # Object-oriented interface to the signup folder
 
-use 5.012;
-use warnings;    ### DEP ###
+use Actium('class');
 
-use Moose;                        ### DEP ###
-use MooseX::StrictConstructor;    ### DEP ###
+const my $BASE_CLASS => 'Actium::O::Folder';
+extends $BASE_CLASS;
 
-use namespace::autoclean;         ### DEP ###
+#around BUILDARGS => sub {
+#    my $orig  = shift;
+#    my $class = shift;
 
-use Carp;                         ### DEP ###
-use File::Spec;                   ### DEP ###
-use Const::Fast;                  ### DEP ###
-
-const my $base_class => 'Actium::O::Folder';
-extends $base_class;
-
-around BUILDARGS => sub {
-    my $orig  = shift;
-    my $class = shift;
+around BUILDARGS ( $orig, $class: @ ) {
 
     my $first_argument = shift;
     my @rest           = @_;
@@ -80,14 +72,15 @@ has signup => (
     required => 1,
 );
 
-around load_sqlite => sub {
-    my ( $orig, $self, $default_subfolder, $db_class, $params_r ) = @_;
+#around load_sqlite => sub {
+around load_sqlite ($orig, $self: $default_subfolder, $db_class, $params_r) {
+    #    my ( $orig, $self, $default_subfolder, $db_class, $params_r ) = @_;
     if ( not exists( $params_r->{db_folder} ) and $self->cache ) {
         $params_r->{db_folder} = $self->cache;
     }
     $self->$orig( $default_subfolder, $db_class, $params_r );
 
-};
+}
 
 has cache => (
     is  => 'ro',
@@ -109,8 +102,9 @@ has subfolderlist_r => (
 
 # for below, see big comment in Actium::O::Folder
 
-override 'original_parameters' => sub {
-    my $self     = shift;
+override original_parameters {
+
+    #    my $self     = shift;
     my $params_r = super();
     delete $params_r->{folderlist};
     $params_r->{base}       = $self->base;
@@ -122,11 +116,11 @@ override 'original_parameters' => sub {
 
 };
 
-override subfolderlist_reader   => sub {'_subfolderlist_r'};
-override subfolderlist_init_arg => sub {'subfolders'};
+override subfolderlist_reader {'_subfolderlist_r'};
+override subfolderlist_init_arg {'subfolders'};
 
-override display_path => sub {
-    my $self       = shift;
+override display_path {
+    #    my $self       = shift;
     my @subfolders = $self->subfolders;
     if (@subfolders) {
         return File::Spec->catdir(@subfolders) . " in signup " . $self->signup;
@@ -148,13 +142,12 @@ sub signup_obj {
             volume => $self->volume,
         }
     );
-
 }
 
 sub base_obj {
     my $self = shift;
 
-    return $base_class->new(
+    return $BASE_CLASS->new(
         {   folderlist => $self->base,
             volume     => $self->volume,
         }
@@ -162,38 +155,19 @@ sub base_obj {
 
 }
 
-## specifically identified folders ###
+method folder ( :$phylum!, :$collection!, :$format ) {
+    # at the moment, nothing special is done with these... but that could
+    # change
 
-BEGIN {
+    return $self->signup_obj->subfolder( $phylum, $collection )
+      if ( not defined $format or $format eq $EMPTY );
 
-    my %method_of = (
-        skeds_base            => 's/',
-        skeds                 => 's/skeds',
-        raw_skeds             => 's/raw/skeds',
-        exception_skeds       => 's/exceptions',
-        place_skeds           => 's/export/place',
-        spaced_skeds          => 's/export/spaced',
-        dumped_skeds          => 's/export/dump',
-        prehistoric_skeds     => 's/export/prehistoric',
-        raw_place_skeds       => 's/raw/place',
-        raw_spaced_skeds      => 's/raw/spaced',
-        raw_dumped_skeds      => 's/raw/dump',
-        raw_prehistoric_skeds => 's/raw/prehistoric',
-    );
+    return $self->signup_obj->subfolder( $phylum, $collection, $format );
+}
 
-    foreach my $method ( keys %method_of ) {
-        no strict 'refs';
-        *{ $method . '_folder' } = sub {
-            my $self = shift;
-            return $self->signup_obj->subfolder( $method_of{$method} );
-        };
-    }
-
-} ## tidy end: BEGIN
+Actium::immut;
 
 1;
-
-__PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 __END__
 
