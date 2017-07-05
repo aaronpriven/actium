@@ -189,7 +189,7 @@ method load_xlsx ( $class: :$signup, :$collection ) {
 ##### TRANSFORMATION
 #######################
 
-method finalize_skeds ( $class: :$signup ) {
+method finalize_skeds ( $class: $signup! ) {
 
     my $received_collection
       = $class->load_storable( signup => $signup, collection => 'received' );
