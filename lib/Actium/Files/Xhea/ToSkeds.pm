@@ -101,15 +101,15 @@ sub xhea2skeds {
 
     my $skedscry = cry('Making schedules');
 
-    my $skedcollection
-      = _make_skeds( patgroups => $patgroup_by_lgdir_r, actiumdb => $actiumdb );
+    my $skedcollection = _make_skeds(
+        signup    => $signup,
+        patgroups => $patgroup_by_lgdir_r,
+        actiumdb  => $actiumdb
+    );
 
     $skedscry->done;
 
-    $skedcollection->output_skeds_all(
-        signup         => $signup,
-        subfolder_name => 'raw'
-    );
+    $skedcollection->output_skeds_all;
 
     $xhea2skedscry->done;
 
@@ -546,6 +546,7 @@ sub _make_skeds {
         @_,
         {   actiumdb  => 1,
             patgroups => 1,
+            signup    => 1,
         }
     );
 
@@ -561,8 +562,11 @@ sub _make_skeds {
     }
     last_cry()->over(".");
 
-    return Actium::O::Sked::Collection->new( skeds => \@skeds );
-
+    return Actium::O::Sked::Collection->new(
+        name   => 'received',
+        skeds  => \@skeds,
+        signup => $params{signup}
+    );
     #return \@skeds;
 
 } ## tidy end: sub _make_skeds
