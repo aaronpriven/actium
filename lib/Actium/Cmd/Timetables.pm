@@ -29,12 +29,13 @@ sub START {
     my $tabulae_folder = $signup->subfolder('timetables');
     #my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
     my $multipubtt_folder = $tabulae_folder->subfolder('pub-idtags');
-    my $storablefolder    = $signup->subfolder('s');
 
     #my $prehistorics_folder = $signup->subfolder('skeds');
 
-    my $collection
-      = Actium::O::Sked::Collection->load_storable($storablefolder);
+    my $collection = Actium::O::Sked::Collection->load_storable(
+        signup     => $signup,
+        collection => 'final'
+    );
 
     chdir( $signup->path );
 

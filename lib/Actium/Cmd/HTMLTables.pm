@@ -25,14 +25,15 @@ sub OPTIONS {
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actiumdb       = $env->actiumdb;
-    my $signup         = $env->signup;
-    my $storablefolder = $signup->subfolder('s');
+    my $actiumdb = $env->actiumdb;
+    my $signup   = $env->signup;
 
     my $html_folder = $signup->subfolder('html');
 
-    my $collection
-      = Actium::O::Sked::Collection->load_storable($storablefolder);
+    my $collection = Actium::O::Sked::Collection->load_storable(
+        signup     => $signup,
+        collection => 'final'
+    );
 
     my @skeds = $collection->skeds;
 
