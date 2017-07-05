@@ -1,4 +1,4 @@
-package Actium::Cmd::CookSkeds 0.012;
+package Actium::Cmd::FinalizeSkeds 0.012;
 
 use Actium;
 use Actium::O::Sked::Collection;
@@ -8,16 +8,7 @@ sub OPTIONS {
 }
 
 sub START {
-
-    my ( $class, $env ) = @_;
-    my $signup   = $env->signup;
-    my $actiumdb = $env->actiumdb;
-
-    Actium::O::Sked::Collection::->cook_skeds(
-        actiumdb => $actiumdb,
-        signup   => $signup,
-    );
-
+    Actium::O::Sked::Collection::->finalize_skeds( Actium::env->signup );
 }
 
 1;
@@ -28,7 +19,7 @@ __END__
 
 =head1 NAME
 
-Actium::Cmd::CookSkeds - CLI command to cook schedules
+Actium::Cmd::FinalizeSkeds - CLI command to cook schedules
 
 =head1 VERSION
 
@@ -41,8 +32,9 @@ This documentation refers to version 0.003
    
 =head1 DESCRIPTION
 
-Combines raw schedules (that come directly from the XHEA files) with
-exceptional ones altered by a person, and creates new cooked schedules.
+Combines received schedules (that come from XHEA or other files
+exported from a scheduling system) with exceptional ones altered by a
+person, and creates new finalized schedules.
 
 =head1 SUBROUTINES or METHODS (pick one)
 
