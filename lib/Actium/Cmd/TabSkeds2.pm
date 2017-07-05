@@ -15,15 +15,16 @@ sub OPTIONS {
 sub START {
 
     my ( $class, $env ) = @_;
-    my $actiumdb       = $env->actiumdb;
-    my $signup         = $env->signup;
-    my $basefolder     = $signup->base_obj;
-    my $commonfolder   = $basefolder->subfolder('common');
-    my $tabfolder      = $signup->subfolder('tabxchange');
-    my $storablefolder = $signup->subfolder('s');
+    my $actiumdb     = $env->actiumdb;
+    my $signup       = $env->signup;
+    my $basefolder   = $signup->base_obj;
+    my $commonfolder = $basefolder->subfolder('common');
+    my $tabfolder    = $signup->subfolder('tabxchange');
 
-    my $collection
-      = Actium::O::Sked::Collection->load_storable($storablefolder);
+    my $collection = Actium::O::Sked::Collection->load_storable(
+        signup     => $signup,
+        collection => 'final'
+    );
 
     my $dbh = $actiumdb->dbh;
     # just there to move the display forward from where it would
