@@ -35,10 +35,10 @@ has name => (
 );
 
 has signup => (
-    is       => 'rwp',
-    isa      => 'Actium::O::Folders::Signup',
-    required => 1,
-    traits   => ['DoNotSerialize']
+    is      => 'rwp',
+    isa     => 'Actium::O::Folders::Signup',
+    default => sub { Actium::env->signup },
+    traits  => ['DoNotSerialize']
 );
 
 sub BUILD {
@@ -149,7 +149,10 @@ sub skeds_of_lg {
 ##### INPUT ######
 ##################
 
-method load_storable ($class: :$signup, :$collection) {
+method load_storable( $class : Actium::O::Folders::Signup : $signup
+      = Actium::env->signup,
+    Str : $collection ! )
+{
 
     my $folder
       = $signup->folder( phylum => $PHYLUM, collection => $collection );
@@ -161,7 +164,10 @@ method load_storable ($class: :$signup, :$collection) {
 
 }
 
-method load_xlsx ( $class: :$signup, :$collection ) {
+method load_xlsx( $class : Actium::O::Folders::Signup : $signup
+      = Actium::env->signup,
+    Str : $collection ! )
+{
 
     my $folder = $signup->folder(
         phylum     => $PHYLUM,
@@ -183,13 +189,17 @@ method load_xlsx ( $class: :$signup, :$collection ) {
         signup => $signup
     );
 
-} ## tidy end: method load_xlsx
+} ## tidy end: load_xlsx
 
 #######################
 ##### TRANSFORMATION
 #######################
 
-method finalize_skeds ( $class: $signup! ) {
+method finalize_skeds(
+    $class: 
+    Actium::O::Folders::Signup $signup = Actium::env->signup
+  )
+{
 
     my $received_collection
       = $class->load_storable( signup => $signup, collection => 'received' );
@@ -220,7 +230,7 @@ method finalize_skeds ( $class: $signup! ) {
 
     $finalized_collection->output_skeds_all;
 
-} ## tidy end: method finalize_skeds
+} ## tidy end: finalize_skeds
 
 ###################
 ##### OUTPUT ######
@@ -258,7 +268,7 @@ sub write_tabxchange {
     $destination_code->store;
 } ## tidy end: sub write_tabxchange
 
-method folder ($the_format) {
+method folder($the_format) {
     # calling it $format yields syntax formatting errors
     # This can only be used for output folders since it depends on
     # object attributes
@@ -271,7 +281,7 @@ method folder ($the_format) {
     );
 }
 
-method output_skeds_dump ( :$signup! ) {
+method output_skeds_dump {
 
     my $skeds_r = $self->skeds_r;
 
@@ -288,7 +298,6 @@ method output_skeds_dump ( :$signup! ) {
 method output_skeds_all {
 
     my $skeds_r = $self->skeds_r;
-    my $signup  = $self->signup;
 
     $self->output_skeds_storable;
 
@@ -315,9 +324,9 @@ method output_skeds_all {
 
     Actium::O::Sked->write_prehistorics( $skeds_r, $prehistoricfolder );
 
-} ## tidy end: method output_skeds_all
+} ## tidy end: output_skeds_all
 
-method output_skeds_storable (:$signup!) {
+method output_skeds_storable( : $signup ! ) {
     my $filespec = $self->folder->make_filespec('skeds.storable');
     $self->store($filespec);
 }
@@ -364,9 +373,9 @@ method output_skeds_place {
 
     return;
 
-} ## tidy end: method output_skeds_place
+} ## tidy end: output_skeds_place
 
-u::immut;
+Actium::immut;
 
 1;
 
