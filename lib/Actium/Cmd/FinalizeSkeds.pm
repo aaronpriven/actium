@@ -8,7 +8,7 @@ sub OPTIONS {
 }
 
 sub START {
-    Actium::O::Sked::Collection::->finalize_skeds( Actium::env->signup );
+    Actium::O::Sked::Collection::->finalize_skeds;
 }
 
 1;
