@@ -1,0 +1,39 @@
+Actium thoughts
+
+Signup object
+X Sked collection (role?)
+X x Sked
+X x x stop collection (role)
+X x x x stop (stopid, place id)
+X x x trip collection (role)
+X x x x trip 
+X x x x x stoptime collection (role)
+X x x x x x stoptime (time, interpolation info)
+X Xhea object 
+X x objects for each Xhea table
+X GTFS object 
+X x objects for each gtfs table
+X Pattern object (if there is an intermediate form that both GTFS and Xhea are transformed into
+X x pattern component objects
+
+Compare::Stop - for stop comparisons
+Compare::PlaceSked - for place schedule comparisons 
+
+DB - database object 
+X objects for each database table (possibly using DBIx::Class)
+X roles for common behavior among database table classes (such as caches)
+
+(Maybe instead of having lines, line dirs, flag decals in the stops table, they should be in a related table, where the primary key includes both stop id and signup id?)
+
+Env - the environment object 
+Cmd - command line (puts info into environment object)
+Cmd::* - commands
+
+Storage::Folder - folder object, inherits from path class dir
+Storage::File - inherits from path class file
+Storage::FileMaker - if needed, routines to access FileMaker server
+
+Time - time object 
+Datetime: date time obj
+Day - days object
+Text - text object. InDesign and HTML versions 
