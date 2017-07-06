@@ -43,10 +43,10 @@ func get_zip_for_stops (
    Str :$username!,
    Int :$sleep,
    Int :$max,
-   :$actium_db! where { $_->can('all_in_columns_key') },
+   :$actiumdb! where { $_->can('all_in_columns_key') },
    ) {
 
-    my $stopinfo_r = $actium_db->all_in_columns_key(
+    my $stopinfo_r = $actiumdb->all_in_columns_key(
         qw/Stops_Neue c_city p_zip_code h_loca_latitude h_loca_longitude/);
 
     my %zip_code_of;
