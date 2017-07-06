@@ -546,7 +546,7 @@ sub _make_skeds {
         @_,
         {   actiumdb  => 1,
             patgroups => 1,
-            signup    => 1,
+            signup    => { default => Actium::env->signup },
         }
     );
 
