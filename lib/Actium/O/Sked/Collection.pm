@@ -27,6 +27,9 @@ has skeds_r => (
     handles  => { skeds => 'elements' },
 );
 
+# name and signup come from the filename
+# so should not be serialized
+
 has name => (
     is       => 'rwp',
     isa      => 'Str',
@@ -149,10 +152,11 @@ sub skeds_of_lg {
 ##### INPUT ######
 ##################
 
-method load_storable( $class : Actium::O::Folders::Signup : $signup
-      = Actium::env->signup,
-    Str : $collection ! )
-{
+method load_storable (
+      $class:
+      Actium::O::Folders::Signup : $signup = Actium::env->signup,
+      Str : $collection !
+    ) {
 
     my $folder
       = $signup->folder( phylum => $PHYLUM, collection => $collection );
@@ -164,10 +168,11 @@ method load_storable( $class : Actium::O::Folders::Signup : $signup
 
 }
 
-method load_xlsx( $class : Actium::O::Folders::Signup : $signup
-      = Actium::env->signup,
-    Str : $collection ! )
-{
+method load_xlsx (
+      $class: 
+      Actium::O::Folders::Signup : $signup = Actium::env->signup,
+      Str : $collection ! 
+    ) {
 
     my $folder = $signup->folder(
         phylum     => $PHYLUM,
@@ -189,28 +194,30 @@ method load_xlsx( $class : Actium::O::Folders::Signup : $signup
         signup => $signup
     );
 
-} ## tidy end: load_xlsx
+} ## tidy end: method load_xlsx
 
 #######################
 ##### TRANSFORMATION
 #######################
 
-method finalize_skeds(
+method finalize_skeds (
     $class: 
     Actium::O::Folders::Signup $signup = Actium::env->signup
-  )
-{
+  ) {
 
-    my $received_collection
-      = $class->load_storable( signup => $signup, collection => 'received' );
+    my $received_collection = $class->load_storable(
+        signup     => $signup,
+        collection => 'received'
+    );
 
-    my $exception_collection
-      = $class->load_xlsx( signup => $signup, collection => 'exceptions' );
+    my $exception_collection = $class->load_xlsx(
+        signup     => $signup,
+        collection => 'exceptions'
+    );
 
     my @finalized_skeds;
 
-    my @ids
-      = uniq( $received_collection->_sked_ids,
+    my @ids = uniq( $received_collection->_sked_ids,
         $exception_collection->_sked_ids );
 
     for my $id (@ids) {
@@ -230,7 +237,7 @@ method finalize_skeds(
 
     $finalized_collection->output_skeds_all;
 
-} ## tidy end: finalize_skeds
+} ## tidy end: method finalize_skeds
 
 ###################
 ##### OUTPUT ######
@@ -268,7 +275,7 @@ sub write_tabxchange {
     $destination_code->store;
 } ## tidy end: sub write_tabxchange
 
-method folder($the_format) {
+method folder ($the_format) {
     # calling it $format yields syntax formatting errors
     # This can only be used for output folders since it depends on
     # object attributes
@@ -324,9 +331,9 @@ method output_skeds_all {
 
     Actium::O::Sked->write_prehistorics( $skeds_r, $prehistoricfolder );
 
-} ## tidy end: output_skeds_all
+} ## tidy end: method output_skeds_all
 
-method output_skeds_storable( : $signup ! ) {
+method output_skeds_storable ( : $signup ! ) {
     my $filespec = $self->folder->make_filespec('skeds.storable');
     $self->store($filespec);
 }
@@ -373,7 +380,7 @@ method output_skeds_place {
 
     return;
 
-} ## tidy end: output_skeds_place
+} ## tidy end: method output_skeds_place
 
 Actium::immut;
 
