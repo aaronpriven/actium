@@ -17,8 +17,6 @@ There are three sets of files:
    2. The PlacePatterns.xml and xsd files   which are usually separate. These need to be placed manually in the folder xhea under the signup folder.
    3. The school calendars. These need to be placed manually in the folder sch_cal under the signup folder.
 
-Fred
-
 
 ## Run actium.pl newsignup
 
@@ -191,7 +189,7 @@ This is basically analysis. Sometimes the changes are clear from the context, su
 
 I write these up and save them in a file such as diffs/y00-z00-comparison.doc and then send them around.
 
-## 10. Create exceptional schedules
+## Create exceptional schedules
 
     not implemented at this point
 
@@ -199,7 +197,7 @@ There are always some schedules that don't come out quite right from the schedul
 
 Create a new folder called "exceptions" under the signup folder.  Copy the old exceptions from the previous signup folder to it, unless you know from step #7 that the schedule has changed. If it has, you'll need to rewrite it again.
 
-## 11. Create final schedule files
+## Create final schedule files
 
     also not implemented
 
@@ -252,7 +250,7 @@ zip -r tabskeds tabxchange/
 
 Then send that to the Help Desk with a request that it be made previews soon and active on the effective date.
 
-## 18. Run timetable program and update timetables
+## Run timetable program and update timetables
 
 See the separate make timetables document.
 
@@ -276,7 +274,7 @@ Run the program
 
 It will create the file Actium/db/z00/nextbus-destinations.txt. Email this file to Nextbus.
 
-## Get zip codes for new stops
+## Get zip codes and work zones for new stops
 
 Run the program
 
@@ -289,6 +287,11 @@ In FileMaker, go to Import -> File and select zipcodes.txt from the desktop. Che
 Then check "Update matching records in found set" and click the arrow next to "h\_stp\_511\_id" so it becomes a double-headed arrow. (Arrange By will change to "custom import order")
 
 Click "Import."  On the "Import Options" box, click "Import" again (it doesn't matter whether "Perform auto-enter options" is checked).
+
+The stops with new zip codes will be showing. Those will also be the ones
+without work zones. Go into Google Earth and find the locations of those stops.
+Using the KML export from the previous signup, find the work zones of the 
+nearest stops to the new one. Enter that workzone in the correct spot.
 
 ## Create KML export
 
