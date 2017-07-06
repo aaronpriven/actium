@@ -22,7 +22,6 @@ sub START {
     my $tabfolder    = $signup->subfolder('tabxchange');
 
     my $collection = Actium::O::Sked::Collection->load_storable(
-        signup     => $signup,
         collection => 'final'
     );
 

@@ -31,7 +31,6 @@ sub START {
     my $html_folder = $signup->subfolder('html');
 
     my $collection = Actium::O::Sked::Collection->load_storable(
-        signup     => $signup,
         collection => 'final'
     );
 

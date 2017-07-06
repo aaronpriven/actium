@@ -33,7 +33,6 @@ sub START {
     #my $prehistorics_folder = $signup->subfolder('skeds');
 
     my $collection = Actium::O::Sked::Collection->load_storable(
-        signup     => $signup,
         collection => 'final'
     );
 

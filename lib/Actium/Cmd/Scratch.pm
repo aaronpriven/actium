@@ -20,31 +20,6 @@ sub START {
 
 __END__
 
-sub START {
-
-    my ( $class, $env ) = @_;
-
-    my $actiumdb    = $env->actiumdb;
-    my $xlsx_folder = Actium::O::Folder->new(
-        '/Users/Shared/Dropbox (AC_PubInfSys)/signups/su17/raw/xlsx_s');
-    my $test_folder = Actium::O::Folder->new(
-        '/Users/Shared/Dropbox (AC_PubInfSys)/signups/su17/test/dump');
-
-    my $collection = Actium::O::Sked::Collection->load_xlsx(
-        actiumdb    => $actiumdb,
-        xlsx_folder => $xlsx_folder,
-    );
-
-    $collection->output_skeds_dump($test_folder);
-
-    return;
-
-} ## tidy end: sub START
-
-1;
-
-__END__
-
 =encoding utf8
 
 =head1 NAME
