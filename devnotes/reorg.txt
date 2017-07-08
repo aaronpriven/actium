@@ -1,4 +1,4 @@
-Actium thoughts
+Thoughts on reorganization of modules
 
 Signup object
 X Sked collection (role?)
