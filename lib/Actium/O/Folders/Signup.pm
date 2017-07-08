@@ -93,7 +93,7 @@ has subfolderlist_r => (
     isa      => 'ArrayRef[Str]',
     required => 1,
     traits   => ['Array'],
-    handles  => { subfolders => 'elements' },
+    handles  => { subfolders => 'elements', _subfolder_count => 'count', },
 );
 
 # Because subfolderlist comes from File::Spec->splitdir, it may
