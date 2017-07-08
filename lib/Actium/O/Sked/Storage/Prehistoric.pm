@@ -85,16 +85,18 @@ sub prehistoric_skedsfile {
 
     foreach ( $self->place8s ) {
         my $place9 = $_;
-        substr( $place9, 4, 0, q[ ] );
-        $place9 =~ s/  / /g;
+        if ( length($place9) >= 4 ) {
+            substr( $place9, 4, 0, q[ ] );
+            $place9 =~ s/  / /g;
 
-        if ( $place9s_seen{$place9} ) {
+            if ( $place9s_seen{$place9} ) {
 
-            $place9s_seen{$place9}++;
-            $place9 .= '=' . $place9s_seen{$place9};
-        }
-        else {
-            $place9s_seen{$place9} = 1;
+                $place9s_seen{$place9}++;
+                $place9 .= '=' . $place9s_seen{$place9};
+            }
+            else {
+                $place9s_seen{$place9} = 1;
+            }
         }
 
         push @place9s, $place9;
