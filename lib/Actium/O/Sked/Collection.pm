@@ -7,14 +7,6 @@ use Actium::Sorting::Skeds ('skedsort');
 
 use Actium::Excel;
 
-use MooseX::Storage;
-
-with Storage(
-    traits   => ['OnlyWhenBuilt'],
-    'format' => 'Storable',
-    io       => 'File',
-);
-
 const my $PHYLUM => 's';
 
 has skeds_r => (
@@ -34,14 +26,12 @@ has name => (
     is       => 'rwp',
     isa      => 'Str',
     required => 1,
-    traits   => ['DoNotSerialize'],
 );
 
 has signup => (
     is      => 'rwp',
     isa     => 'Actium::O::Folders::Signup',
     default => sub { Actium::env->signup },
-    traits  => ['DoNotSerialize']
 );
 
 sub BUILD {
@@ -161,7 +151,8 @@ method load_storable (
     my $folder
       = $signup->folder( phylum => $PHYLUM, collection => $collection );
 
-    my $self = $class->load( $folder->make_filespec('skeds_storable') );
+    my $self = $folder->retrieve('skeds_storable');
+    #my $self = $class->load( $folder->make_filespec('skeds_storable') );
     $self->_set_signup($signup);
     $self->_set_name($collection);
     return $self;
@@ -275,8 +266,9 @@ sub write_tabxchange {
     $destination_code->store;
 } ## tidy end: sub write_tabxchange
 
-method folder ($the_format) {
-    # calling it $format yields syntax formatting errors
+method folder ($the_format = undef) {
+    # calling it $format yields syntax formatting errors in Eclipse
+
     # This can only be used for output folders since it depends on
     # object attributes
     my $signup     = $self->signup;
@@ -304,12 +296,13 @@ method output_skeds_dump {
 
 method output_skeds_all {
 
-    my $skeds_r = $self->skeds_r;
+    my $outputcry = cry("Saving schedules to disk");
 
     $self->output_skeds_storable;
 
     my $skeds_folder = $self->folder('skeds');
 
+    my $skeds_r = $self->skeds_r;
     $skeds_folder->write_files_with_method(
         OBJECTS   => $skeds_r,
         METHOD    => 'xlsx',
@@ -331,19 +324,23 @@ method output_skeds_all {
 
     Actium::O::Sked->write_prehistorics( $skeds_r, $prehistoricfolder );
 
+    $outputcry->done;
+
 } ## tidy end: method output_skeds_all
 
-method output_skeds_storable ( : $signup ! ) {
+method output_skeds_storable {
+    my $cry      = cry("Writing skeds in Storable format");
     my $filespec = $self->folder->make_filespec('skeds.storable');
-    $self->store($filespec);
+    $cry->prog($filespec);
+
+    $self->folder->store( $self, 'skeds.storable' );
+    $cry->done;
 }
 
 method output_skeds_place {
 
     my $cry = cry('Writing place xlsx schedules');
 
-    #my $stop_xlsx_folder  = $skeds_folder->subfolder('xlsx_s');
-    #my $place_xlsx_folder = $skeds_folder->subfolder('xlsx_p');
     my $place_xlsx_folder = $self->folder('place');
 
     my @linegroups = u::sortbyline $self->linegroups;
@@ -352,28 +349,21 @@ method output_skeds_place {
 
         $cry->over("$linegroup ");
 
-    #        my $stop_workbook_fh
-    #          = $stop_xlsx_folder->open_write_binary("$linegroup.xlsx");
-    #        my $stop_workbook    = Excel::Writer::XLSX->new($stop_workbook_fh);
-    #        my $stop_text_format = $stop_workbook->actium_text_format;
-
         my $place_workbook_fh
           = $place_xlsx_folder->open_write_binary( $linegroup . '_p.xlsx' );
         my $place_workbook    = Excel::Writer::XLSX->new($place_workbook_fh);
         my $place_text_format = $place_workbook->actium_text_format;
 
         foreach my $sked ( $self->skeds_of_lg($linegroup) ) {
-#            $sked->add_stop_xlsx_sheet( workbook => $stop_workbook, format => $stop_text_format );
             $sked->add_place_xlsx_sheet(
                 workbook => $place_workbook,
                 format   => $place_text_format,
             );
         }
 
-        #        $stop_workbook->close;
         $place_workbook->close;
 
-    } ## tidy end: foreach my $linegroup (@linegroups)
+    }
 
     $cry->over($EMPTY);
     $cry->done;
