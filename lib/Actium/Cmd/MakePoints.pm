@@ -4,8 +4,7 @@ use sort ('stable');    ### DEP ###
 
 use Actium;
 
-use Actium::Set('ordered_union');
-use Actium::Clusterize('clusterize');
+use Actium::Set(qw/ordered_union clusterize/);
 
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
