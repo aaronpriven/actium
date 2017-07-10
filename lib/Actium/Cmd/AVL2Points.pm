@@ -5,7 +5,7 @@ use sort ('stable');    ### DEP ###
 use Storable();         ### DEP ###
 
 use Actium::Time (qw(timenum ));
-use Actium::Union('ordered_union');
+use Actium::Set('ordered_union');
 
 const my @COMBOS_TO_PROCESS => (
     [qw( 5 6 56 )],     [qw( 1 234 1234 )], [qw( 1234 5 12345 )],

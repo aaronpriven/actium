@@ -4,7 +4,7 @@ use Actium;
 
 use Storable();    ### DEP ###
 use Actium::Sorting::Line ('byline');
-use Actium::Union('ordered_union');
+use Actium::Set('ordered_union');
 use Actium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');    ### DEP ###
 

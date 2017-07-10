@@ -4,7 +4,7 @@ use Actium;
 
 use Storable();    ### DEP ###
 
-use Actium::Union('ordered_union');
+use Actium::Set('ordered_union');
 use Actium::Sorting::Line('byline');
 
 sub HELP {
