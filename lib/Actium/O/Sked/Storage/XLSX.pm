@@ -332,18 +332,20 @@ method add_place_xlsx_sheet (
 
     my $trip_attribute_columns = $self->_trip_attribute_columns;
     $trip_attribute_columns->unshift_row();
-    my $place_columns = $self->_place_columns;
+    my $trip_attribute_width = $trip_attribute_columns->width;
+    my $place_columns        = $self->_place_columns;
 
     my $tpsked = $workbook->add_worksheet($id);
 
     $tpsked->actium_write_col_string( 0, 0, $trip_attribute_columns, $format );
-    $tpsked->actium_write_col_string( 0, 0, $place_columns,          $format );
+    $tpsked->actium_write_col_string( 0, $trip_attribute_width, $place_columns,
+        $format );
     $tpsked->freeze_panes( 2, 0 );
     $tpsked->set_zoom(125);    ## no critic (ProhibitMagicNumbers)
 
     return;
 
-}
+} ## tidy end: method add_place_xlsx_sheet
 
 method xlsx {
     my $timesub = Actium::Time::timestr_sub( XB => 1 );
