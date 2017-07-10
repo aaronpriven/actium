@@ -1,4 +1,4 @@
-package Actium::Excel 0.013;
+package Actium::Storage::Excel 0.013;
 
 use Actium;
 

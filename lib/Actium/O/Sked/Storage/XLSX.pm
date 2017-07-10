@@ -348,13 +348,13 @@ method add_place_xlsx_sheet (
 method xlsx {
     my $timesub = Actium::Time::timestr_sub( XB => 1 );
 
-    require Actium::Excel;
+    require Actium::Storage::Excel;
 
     my $stop_workbook_stream;
     open( my $stop_workbook_fh, '>', \$stop_workbook_stream )
       or die "$OS_ERROR";
 
-    my $stop_workbook    = Actium::Excel::new_workbook($stop_workbook_fh);
+    my $stop_workbook = Actium::Storage::Excel::new_workbook($stop_workbook_fh);
     my $stop_text_format = $stop_workbook->actium_text_format;
 
     $self->add_stop_xlsx_sheet(

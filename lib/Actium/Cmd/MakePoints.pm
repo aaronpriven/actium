@@ -10,7 +10,7 @@ use Actium::Clusterize('clusterize');
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
 
-use Actium::Excel('new_workbook');
+use Actium::Storage::Excel('new_workbook');
 
 use File::Slurper('read_text');    ### DEP ###
 use Text::Trim;                    ### DEP ###
