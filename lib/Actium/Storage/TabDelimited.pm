@@ -1,4 +1,4 @@
-package Actium::Files::TabDelimited 0.010;
+package Actium::Storage::TabDelimited 0.010;
 
 use Actium;
 
@@ -196,7 +196,7 @@ __END__
 
 =head1 NAME
 
-Actium::Files::TabDelimited - Read tab-delimited files into perl data
+Actium::Storage::TabDelimited - Read tab-delimited files into perl data
 
 =head1 VERSION
 
@@ -204,7 +204,7 @@ This documentation refers to version 0.002
 
 =head1 SYNOPSIS
 
- use Actium::Files::TabDelimited ('read_tab_files');
+ use Actium::Storage::TabDelimited ('read_tab_files');
  
  my %data;
  
@@ -226,7 +226,7 @@ This documentation refers to version 0.002
  
 Or:
 
- use Actium::Files::TabDelimited ('read_aoas');
+ use Actium::Storage::TabDelimited ('read_aoas');
  
  my ($headers_of_r, $values_of_r)  = read_aoas(
     {   globfiles        => ['*.txt'],
@@ -244,7 +244,7 @@ Or:
    
 =head1 DESCRIPTION
 
-Actium::Files::TabDelimited contains routines to read tab-delimited
+Actium::Storage::TabDelimited contains routines to read tab-delimited
 files from a directory. I<read_tab_files> returns the data to the
 caller via a  callback function. I<read_aoas> returns the data as
 arrays of arrays.
