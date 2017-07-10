@@ -5,7 +5,7 @@ use Actium ('class');
 use Actium::O::Sked;
 use Actium::Sorting::Skeds ('skedsort');
 
-use Actium::Excel;
+use Actium::Storage::Excel;
 
 const my $PHYLUM => 's';
 
