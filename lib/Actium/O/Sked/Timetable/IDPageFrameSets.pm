@@ -9,7 +9,7 @@ use 5.016;
 use Actium ('class');
 use Actium::O::Sked::Timetable::IDFrameSet;
 use Actium::O::Sked::Timetable::IDTimetable;
-use Actium::Combinatorics(':all');
+use Actium::Set(':all');
 
 use Params::Validate (':all');    ### DEP ###
 

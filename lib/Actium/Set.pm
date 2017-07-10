@@ -1,20 +1,159 @@
 package Actium::Set 0.012;
 
-use 5.012;
-use warnings;
+use Actium;
 
-use Carp;
+use Algorithm::Diff qw(sdiff traverse_sequences);    ### DEP ###
+use Algorithm::Combinatorics(':all');                ### DEP ###
 
-use Algorithm::Diff qw(sdiff traverse_sequences); ### DEP ###
-use Scalar::Util ('reftype'); ### DEP ###
-
-use Sub::Exporter 
-   -setup => 
-   { exports => [qw(ordered_union distinguish comm ordered_union_columns)] }
-;
+use Sub::Exporter -setup => {
+    exports => [
+        qw(ordered_union distinguish comm ordered_union_columns
+          ordered_partitions odometer_combinations)
+    ]
+};
 # Sub::Exporter ### DEP ###
 
-use Params::Validate (':all'); ### DEP ###
+use Params::Validate (':all');                       ### DEP ###
+
+### COMBINATORICS
+
+sub ordered_partitions {
+
+    # The idea here is that partitions are identified by a combination
+    # of numbers representing the breaks between items.
+
+    # So if you have items qw<a b c d e> then the possible breaks are
+    # after a, after b, after c, or after d --
+    # numbered 0, 1, 2 and 3.
+
+    # If you have two frames, then you have one break between them.
+    # If you have three frames, then you have two breaks between them.
+
+    # This gets all the combinations of breaks between them and
+    # then creates the subsets that correspond to those breaks,
+    # and returns the subsets. So, if you have two frames, the results are
+    # [ a] [ b c d e] , [ a b ] [ c d e] , [a b c] [ d e ], [a b c d] [e].
+
+    # These sorted by which one we'd want to use first
+    # (primarily, which combination yields even results, and then
+    # if it can't be even, having the extra one at the front rather than
+    # at the back or the middle)
+
+    # This differs from
+    # Algorithm::Combinatorics::partitions(\@tables, $num_frames)
+    # only that it preserves the order. partitions could return
+    # [ b] [ a c d e]
+    # but this routine will never do that.
+    # I am not sure whether this is actually good or not.  Wouldn't
+    # it be weird to have a big NX1 table followed by small NX and NX2 tables?
+    # If not, then this could be replaced with partitions, as above.
+
+    my @data       = @{ +shift };
+    my $num_frames = shift;
+
+    my $final_idx = $#data;
+
+    if ( not defined $num_frames ) {
+        my @all_partitions;
+        for ( 1 .. @data ) {
+            push @all_partitions, ordered_partitions( \@data, $_ );
+        }
+        return @all_partitions;
+    }
+
+    if ( $num_frames == @data ) {
+        return [ map { [$_] } @data ];
+    }
+    if ( $num_frames == 1 ) {
+        return [ \@data ];
+    }
+
+    my @indices = ( 0 .. $final_idx - 1 );
+    my @break_after_idx_sets = combinations( \@indices, $num_frames - 1 );
+
+    my @partitions;
+
+    foreach my $break_after_idx_set (@break_after_idx_sets) {
+        my @partition;
+        my @break_after_idx = @$break_after_idx_set;
+
+        push @partition, [ @data[ 0 .. $break_after_idx[0] ] ];
+
+        for my $i ( 1 .. $#break_after_idx ) {
+            my $first = $break_after_idx[ $i - 1 ] + 1;
+            my $last  = $break_after_idx[$i];
+            push @partition, [ @data[ $first .. $last ] ];
+        }
+
+        push @partition, [ @data[ 1 + $break_after_idx[-1] .. $final_idx ] ];
+
+        push @partitions, \@partition;
+
+    }
+
+    return @partitions;
+
+} ## tidy end: sub ordered_partitions
+
+sub odometer_combinations {
+
+    # This is a stupid name but I don't know what to call it.
+    # You pass this a list of lists, and it gives you all the possible
+    # combinations of one from each list.
+    #
+    # So, if you have [ [ A, B, C] , [ D ] , [E, F ]],
+    # and you call this, you'll end up with
+    # [ A , D , E ] , [ B , D , E ], [ C, D, E ],
+    # [ A , D , F ] , [ B , D , F ], [ C, D, F ]
+
+    # Note that the CPAN module Iterator::Array::Jagged may do the same thing,
+    # in which case it might be better to use that code instead.  I just
+    # looked at that module briefly without looking to see whether it
+    # made sense.
+
+    my @list_of_lists = @_;
+
+    my (@combinations);
+    my $odometer_r = [];
+    my $maxes_r    = [];
+
+    foreach my $i ( 0 .. $#list_of_lists ) {
+        $odometer_r->[$i] = 0;
+        $maxes_r->[$i]    = $#{ $list_of_lists[$i] };
+    }
+
+    while ($odometer_r) {
+
+        my @combination
+          = map { $list_of_lists[$_][ $odometer_r->[$_] ] }
+          0 .. $#list_of_lists;
+        push @combinations, \@combination;
+        $odometer_r = _odometer_increment( $odometer_r, $maxes_r );
+    }
+    return @combinations;
+
+} ## tidy end: sub odometer_combinations
+
+sub _odometer_increment {
+    my $odometer_r = shift;
+    my $maxes_r    = shift;
+
+    my $wheel = $#{$odometer_r};    # start at rightmost wheel
+
+    until ( $odometer_r->[$wheel] < $maxes_r->[$wheel] || $wheel < 0 ) {
+        $odometer_r->[$wheel] = 0;
+        $wheel--;                   # next wheel to the left
+    }
+    if ( $wheel < 0 ) {
+        return;                     # fell off the left end; no more sequences
+    }
+    else {
+        ( $odometer_r->[$wheel] )++;    # this wheel now turns one notch
+        return $odometer_r;
+    }
+}
+
+### UNION
 
 sub ordered_union {
     my @array_rs = @_;
@@ -117,39 +256,18 @@ my $sethash_callback = {
     'not a hash of lists' => sub {
         my $sethash_r = shift;
         while ( my ( $id, $set_r ) = each %{$sethash_r} ) {
-            my $reftype = reftype($set_r);
+            my $reftype = Actium::reftype($set_r);
             if ( not( $reftype and $reftype eq 'ARRAYREF' ) ) {
                 return 0;
             }
         }
         return 1;
-      }
+    }
 
 };
 
-#my $sets_callback = {
-#    'not a list of lists' => sub {
-#        my $sets_r = shift;
-#        foreach ( @{$sets_r} ) {
-#            my $reftype = reftype($_);
-#            if ( not( $reftype and $reftype eq 'ARRAYREF' ) ) {
-#                return 0;
-#            }
-#            return 1;
-#        }
-#      }
-#};
-#
-#my $set_ids_callback = {
-#    'different number of set IDs as sets' => sub {
-#        my $set_ids_r = shift;
-#        my $sets_r    = $_[0]->{sets};
-#        return ( scalar @$set_ids_r == scalar @$sets_r );
-#      }
-#};
-
 my $ordered_union_columns_validspec = {
-    sethash => { type => HASHREF, callback => $sethash_callback, },
+    sethash    => { type => HASHREF, callback => $sethash_callback, },
     tiebreaker => {
         type    => CODEREF,
         default => sub { return 0 }
@@ -163,26 +281,25 @@ sub ordered_union_columns {
     my %params = u::validate( @_, $ordered_union_columns_validspec );
 
     my $tiebreaker = $params{tiebreaker};
-    
+
     my %set_of = %{ $params{sethash} };
-    
-    my @ordered_ids = map  { $_->[0] }
-          reverse sort {
-               @{$a->[1]} <=> @{$b->[1]} or "@{$a->[1]}" cmp "@{$b->[1]}" 
-          }
-          map  { [$_, $set_of{$_} ] }
-          keys %set_of;
-    
+
+    my @ordered_ids = map { $_->[0] }
+      reverse
+      sort { @{ $a->[1] } <=> @{ $b->[1] } or "@{$a->[1]}" cmp "@{$b->[1]}" }
+      map { [ $_, $set_of{$_} ] }
+      keys %set_of;
+
     # sort it so the list with the most entries is first,
     # or alternatively the one that sorts alphabetically latest.
     # The latter test is arbitrary, just to make sure the
     # result is the same each time.
-    
+
     ### INITIALIZE LOOP OF ARRAYS
-    
+
     my $first_set_id = shift @ordered_ids;
-    
-    my $union_set_r  = $set_of{$first_set_id};        # longest entry
+
+    my $union_set_r  = $set_of{$first_set_id};    # longest entry
     my $highest_col  = $#{$union_set_r};
     my $union_cols_r = [ 0 .. $highest_col ];
 
@@ -192,12 +309,11 @@ sub ordered_union_columns {
 
     while (@ordered_ids) {
         my $set_id = shift @ordered_ids;
-        my $set_r = $set_of{$set_id};
+        my $set_r  = $set_of{$set_id};
         my $set_cols;
 
         ( $union_set_r, $union_cols_r, $markers_r, $set_cols )
-          = _columns_pair( $union_set_r, $union_cols_r, $set_r,
-            $tiebreaker );
+          = _columns_pair( $union_set_r, $union_cols_r, $set_r, $tiebreaker );
 
         $cols_of{$set_id} = $set_cols;
 
@@ -233,7 +349,7 @@ sub ordered_union_columns {
 sub _columns_pair {
 
     my ( $a_r, $a_col_r, $b_r, $tiebreaker ) = @_;
-    
+
     my $highest_col = $#{$a_r};
 
     my ( @union, @u_col, @b_col,     @markers );
@@ -269,9 +385,9 @@ sub _columns_pair {
     };
 
     my $add_temps_to_union_r = sub {
-     
+
         return unless @tempa or @tempb;
-        
+
         my $following_value = shift;
 
         my $previous_value = @union ? $union[-1] : undef;
@@ -279,10 +395,10 @@ sub _columns_pair {
         my $cmpvalue = (
             $tiebreaker->(
                 \@tempa, \@tempb, $previous_value, $following_value
-              ) 
+            )
         );
-        
-        if ($cmpvalue != 1) {
+
+        if ( $cmpvalue != 1 ) {
             push @union, @tempa,     @tempb;
             push @u_col, @tempa_col, @tempb_col;
             push @markers, ('<') x @tempa, ('>') x @tempb;
@@ -336,8 +452,8 @@ sub _check_arrayrefs {
     my @arrayrefs = @_;
     foreach (@arrayrefs) {
         croak "Arguments to $caller must be array references"
-          unless defined( reftype($_) )
-              and reftype($_) eq 'ARRAY';
+          unless defined( Actium::reftype($_) )
+          and Actium::reftype($_) eq 'ARRAY';
     }
     return;
 }
@@ -510,50 +626,59 @@ Actium::Set consists of several specialized set functions.
 
 =over
 
+=item B<ordered_partitions()>
+
+Documentation to come.
+
+=item B<odometer_combinations()>
+
+Documentation to come.
+
 =item B<ordered_union()>
 
-ordered_union is designed to take the union of two sets, preserving the 
-order of the two sets as much as possible.  It takes the two lists and 
-interleaves the two, coming up with a list that preserves the order of the two
-while including all elements.
+ordered_union is designed to take the union of two sets, preserving the
+ order of the two sets as much as possible.  It takes the two lists and
+ interleaves the two, coming up with a list that preserves the order of
+the two while including all elements.
 
-Most of the work of this routine comes from L<Algorithm::Diff|Algorithm::Diff>. 
-Basically it takes the result from Algorithm::Diff and stitches it back
-together again as best it can.
+Most of the work of this routine comes from
+L<Algorithm::Diff|Algorithm::Diff>.  Basically it takes the result from
+Algorithm::Diff and stitches it back together again as best it can.
 
-The purpose of this is of course to put together lists of timepoints and stops,
-creating a single stop or timepoint list out of multiple lists.
+The purpose of this is of course to put together lists of timepoints
+and stops, creating a single stop or timepoint list out of multiple
+lists.
 
-B<ordered_union> takes a series of array references as arguments, and returns
-the union of those lists, in order. If you have lists like
+B<ordered_union> takes a series of array references as arguments, and
+returns the union of those lists, in order. If you have lists like
 
  qw/m v c 6   f e w 5 ! a t       m/
  qw/m v c 6 z f   w p @   t r x y m/
 
-(spacing added to emphasize similarities and differences), then the result is
+(spacing added to emphasize similarities and differences), then the
+result is
 
  qw/m v c 6 z f e w 5 ! a p @ t r x y m/
 
-If you pass more than two lists, it runs the algorithm repeatedly until it has
-a single remaining list.
+If you pass more than two lists, it runs the algorithm repeatedly until
+it has a single remaining list.
 
-Where there is a sequence that differs between the two lists (for example, the
-sequences qw/5 1 a/ and qw/p @/ from the above lists),
-the algorithm puts the values of the first list ahead of the values from the
-second list, keeping values from the same list together until there is a match
-again. (It doesn't do something like qw/5 p ! @ a/.)
+Where there is a sequence that differs between the two lists (for
+example, the sequences qw/5 1 a/ and qw/p @/ from the above lists), the
+algorithm puts the values of the first list ahead of the values from
+the second list, keeping values from the same list together until there
+is a match again. (It doesn't do something like qw/5 p ! @ a/.)
 
 =item B<comm()>
 
-This routine is named after the Unix utility C<comm>, in that it is similar
-conceptually, even though the results are different.
-(I couldn't think of a better name. Sorry.)
+This routine is named after the Unix utility C<comm>, in that it is
+similar conceptually, even though the results are different. (I
+couldn't think of a better name. Sorry.)
 
-It accepts as its 
-arguments two lists which are to be compared.  It returns the unified list,
-as I<ordered_union> does, but also provides a second list, with markers as to 
-whether each result is from the first list only ('<'), the second list only
-('>'), or both lists ('=').
+It accepts as its  arguments two lists which are to be compared.  It
+returns the unified list, as I<ordered_union> does, but also provides a
+second list, with markers as to  whether each result is from the first
+list only ('<'), the second list only ('>'), or both lists ('=').
 
 To use the example from above, if passed the two lists
 
@@ -565,38 +690,42 @@ then the result from comm would be
  [ qw/m v c 6 z f e w 5 ! a p @ t r x y m/ ,
    qw/= = = = > = < = < < = > > = > > > =/ ]
  
-Unlike I<ordered_union>, I<comm> can accept only two lists as arguments.
+Unlike I<ordered_union>, I<comm> can accept only two lists as
+arguments.
 
 =item B<ordered_union_columns>
 
 ordered_union_columns is an elaboration on ordered_union. It takes the 
-following named parameters, which may be specified in a hash or as a hash 
-reference. (L<Params::Validate|Params::Validate> is used for validating 
-parameters.)
+following named parameters, which may be specified in a hash or as a
+hash  reference. (L<Params::Validate|Params::Validate> is used for
+validating  parameters.)
 
 =over
 
 =item sets
 
-This must be an array reference, containing references to other arrays which
-are the sets that are unified. It is required.
+This must be an array reference, containing references to other arrays
+which are the sets that are unified. It is required.
 
 =item ids
 
-This is another array reference. It should contain a unique ID for each set
-that is passed. This is used in the columns_of return value. If it is not
-specified, the lists are assigned the ids ( 0, 1, 2, ... ) and so on.
+This is another array reference. It should contain a unique ID for each
+set that is passed. This is used in the columns_of return value. If it
+is not specified, the lists are assigned the ids ( 0, 1, 2, ... ) and
+so on.
 
 =item tiebreaker
 
-When there is a sequence that differs between the two lists (such as the 
-qw/5 1 a/ and qw/p @/ seqeuences from the example above), there is no way for
-the algorithm to know which goes first. The tiebreaker parameter allows the user
-to pass in a function that will determine whether a first list or second list
-will go first. It should return a value less than zero if the first list should 
-go first, zero if it can't make a determination, or a value greater than zero if
-the second list should go first. (The values are chosen to be similar to the
-blocks in the sort function, and to allow easy use of the <=> and cmp operators.
+When there is a sequence that differs between the two lists (such as
+the  qw/5 1 a/ and qw/p @/ seqeuences from the example above), there is
+no way for the algorithm to know which goes first. The tiebreaker
+parameter allows the user to pass in a function that will determine
+whether a first list or second list will go first. It should return a
+value less than zero if the first list should  go first, zero if it
+can't make a determination, or a value greater than zero if the second
+list should go first. (The values are chosen to be similar to the
+blocks in the sort function, and to allow easy use of the <=> and cmp
+operators.
 
 An example:
 
@@ -608,15 +737,16 @@ An example:
  
 That would put the longest sequence first.
 
-Four arguments are passed to the tiebreaker function: a reference to the first
-sequence, a reference to the second sequence, the value in the combined list 
-that would come before the two sequences (or undef if there is none), and the
-value in the combined list that would come after the two sequences.
+Four arguments are passed to the tiebreaker function: a reference to
+the first sequence, a reference to the second sequence, the value in
+the combined list  that would come before the two sequences (or undef
+if there is none), and the value in the combined list that would come
+after the two sequences.
 
 =back
 
-The return values are passed in a hash reference, which has the following 
-values:
+The return values are passed in a hash reference, which has the
+following  values:
 
 =over
 
@@ -627,24 +757,24 @@ returned by ordered_union (barring the effect of tiebreakers).
 
 =item markers
 
-This contains a set of markers such as that returned by comm() (see above). 
-The values are not meaningful unless exactly two lists were passed to the
-function.
+This contains a set of markers such as that returned by comm() (see
+above).  The values are not meaningful unless exactly two lists were
+passed to the function.
 
 =item columns_of
 
-This is a hash reference. The keys are the id's for each of the lists, and the
-values are array references indicating what column in the unified list
-corresponds to each column in the passed lists.
+This is a hash reference. The keys are the id's for each of the lists,
+and the values are array references indicating what column in the
+unified list corresponds to each column in the passed lists.
 
 For example, suppose we take the union of the following lists:
 
  ID 'A':  qw/m v c 6   f e w 5 ! a t       m/
  ID 'B':  qw/m v c 6 z f   w p @   t r x y m/
  
-The union would be, with the column numbers below it:
- union            =>  qw/m v c 6 z f e w 5 !  a  p  @  t  r  x  y  m/
-  (union columns)        0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+The union would be, with the column numbers below it:  union           
+=>  qw/m v c 6 z f e w 5 !  a  p  @  t  r  x  y  m/   (union columns)  
+     0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
 
  
 The columns_of hash would look like:
@@ -655,8 +785,9 @@ The columns_of hash would look like:
               B => [0 1 2 3 4 5 7 11 12 13 14 15 16 17 ] }
 #                qw/m v c 6 z f w  p  @  t  r  x  y m/
  
-The idea is that if I have a column of data that matches the headers in list
-B, that I can then put that column in the right place in the unified list.
+The idea is that if I have a column of data that matches the headers in
+list B, that I can then put that column in the right place in the
+unified list.
 
 =back
 
@@ -666,15 +797,15 @@ B, that I can then put that column in the right place in the unified list.
 Takes a series of array references as arguments, and provides in turn the relevant
 elements from each list, in order to describe the differences between them.
 
-The idea is that if you have a bus line that 
-has several variants, travelling through the following points:
+The idea is that if you have a bus line that  has several variants,
+travelling through the following points:
 
  M Q V R 
  M Q V R L Y T
  M Q V R Z X T
 
-you don't actually need to show all these points to distinguish the three lists.
-You can say
+you don't actually need to show all these points to distinguish the
+three lists. You can say
 
  M R
  M L T
@@ -682,9 +813,10 @@ You can say
  
 And that is sufficient to distinguish the three lists from each other.
 
-The first and last entry of each list is always retained. Otherwise, entries
-that are identical across all the lists are dropped, and of each range of 
-differing entries, only one is kept (it tries to pick one in the middle).
+The first and last entry of each list is always retained. Otherwise,
+entries that are identical across all the lists are dropped, and of
+each range of  differing entries, only one is kept (it tries to pick
+one in the middle).
 
 =back
 
@@ -694,14 +826,14 @@ differing entries, only one is kept (it tries to pick one in the middle).
 
 =item Arguments to I<caller> must be array references
 
-Something was passed to I<ordered_union()>, I<comm()> or I<distinguish()> 
-that was not an array reference.
+Something was passed to I<ordered_union()>, I<comm()> or
+I<distinguish()>  that was not an array reference.
 
 =item Not enough arguments to comm
 =item Too many arguments to comm
 
-The I<comm> routine can compare two, but only two, lists. Some number of lists
-other than two were passed to it.
+The I<comm> routine can compare two, but only two, lists. Some number
+of lists other than two were passed to it.
 
 =back
 
@@ -710,6 +842,8 @@ other than two were passed to it.
 =over
 
 =item Perl 5.012
+
+=item Algorithm::Combinatorics
 
 =item Algorithm::Diff
 
@@ -720,15 +854,15 @@ other than two were passed to it.
 =head1 BUGS AND LIMITATIONS
 
 The ordered_union_columns routine was written later, and arguably all
-three of ordered_union, comm, and ordered_union_columns should be combined
-in some way (the way ordered_union and comm already are).
+three of ordered_union, comm, and ordered_union_columns should be
+combined in some way (the way ordered_union and comm already are).
 
 The distingish routine needs better comments in the code.
 
-The comm routine could be redone so that instead of using symbols,
-it uses IDs -- this would allow more than one to be used. (In the simplest case,
-"<" would be "A", ">" would be "B", and "=" would be the combination of A and B,
-probably "A\tB").
+The comm routine could be redone so that instead of using symbols, it
+uses IDs -- this would allow more than one to be used. (In the simplest
+case, "<" would be "A", ">" would be "B", and "=" would be the
+combination of A and B, probably "A\tB").
 
 =head1 AUTHOR
 
@@ -736,16 +870,17 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 ACKNOWLEDGEMENTS
 
-Thanks to the participants of the UCSC forum (http://www.geek.org/forum/)
-for the insight, when I had absolutely no clue how to solve the 
-ordered_union problem, that it was a variant of the "diff" problem.
+Thanks to the participants of the UCSC forum
+(http://www.geek.org/forum/) for the insight, when I had absolutely no
+clue how to solve the  ordered_union problem, that it was a variant of
+the "diff" problem.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2012 
+Copyright 2012-2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -757,6 +892,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
