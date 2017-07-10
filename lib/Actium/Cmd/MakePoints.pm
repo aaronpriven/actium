@@ -4,7 +4,7 @@ use sort ('stable');    ### DEP ###
 
 use Actium;
 
-use Actium::Union('ordered_union');
+use Actium::Set('ordered_union');
 use Actium::Clusterize('clusterize');
 
 use Actium::Text::InDesignTags;

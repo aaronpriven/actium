@@ -10,7 +10,7 @@ use Actium::O::Pattern;
 use Actium::O::Sked::Trip;
 use Actium::O::Sked;
 use Actium::O::Sked::TripCollection;
-use Actium::Union ('ordered_union_columns');
+use Actium::Set ('ordered_union_columns');
 
 # OBJECT METHODS AND ATTRIBUTES
 

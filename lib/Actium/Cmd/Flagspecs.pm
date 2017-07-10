@@ -1,7 +1,7 @@
 package Actium::Cmd::Flagspecs 0.014;
 
 use Actium;
-use Actium::Union (qw/ordered_union distinguish/);
+use Actium::Set (qw/ordered_union distinguish/);
 use Actium::DaysDirections(':all');
 use Actium::O::Files::HastusASI;
 use Actium::Crier(qw/cry cry_text/);

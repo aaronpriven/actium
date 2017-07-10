@@ -1,6 +1,4 @@
-package Actium::Union 0.012;
-
-# Ordered union of lists
+package Actium::Set 0.012;
 
 use 5.012;
 use warnings;
@@ -473,15 +471,15 @@ __END__
 
 =head1 NAME
 
-Actium::Union - Ordered union of lists for the Actium system
+Actium::Set - Set functions for the Actium system
 
 =head1 VERSION
 
-This documentation refers to Actium::Union version 0.001
+This documentation refers to Actium::Set version 0.012
 
 =head1 SYNOPSIS
 
- use Actium::Union qw(ordered_union comm distinguish);
+ use Actium::Set qw(ordered_union comm distinguish);
  @list = qw/HILL_MALL CCJR_COLL DELN_BART UNIV_S.P. OAKL_AMTK/;
  @list2 = qw/CAST_TEWK RICH_BART DELN_BART UNIV_S.P./;
  @list3 = qw/DELN_BART OAKL_AMTK/;
@@ -506,7 +504,7 @@ This documentation refers to Actium::Union version 0.001
  
 =head1 DESCRIPTION
 
-Actium::Union consists of four specialized set functions.
+Actium::Set consists of several specialized set functions.
 
 =head1 SUBROUTINES
 
