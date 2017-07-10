@@ -1,39 +1,72 @@
 Thoughts on reorganization of modules
 
-Signup object
-X Sked collection (role?)
-X x Sked
-X x x stop collection (role)
-X x x x stop (stopid, place id)
-X x x trip collection (role)
-X x x x trip 
-X x x x x stoptime collection (role)
+Signup object - Actium::Signup
+X Sked collection (role?) - Actium::Sked::Collection
+X x Sked - Actium::Sked
+X x x stop collection (role) - Actium::Sked::Stop::Collection
+X x x x stop (stopid, place id) - Actium::Sked::Stop
+X x x trip collection (role) - Actium::Sked::Trip::Collection
+X x x x trip - Actium::Sked::Trip
+X x x x x stoptime collection (role) 
+   - Actium::Sked::Trip::Time::Collection
 X x x x x x stoptime (time, interpolation info)
+   - Actium::Sked::Trip::Time
 X Xhea object 
+   - Actium::Xhea
 X x objects for each Xhea table
+   - Actium::Xhea::Stop, Actium::Xhea::TripStop, etc.
 X GTFS object 
+   - Actium::GTFS
 X x objects for each gtfs table
+   - Actium::GTFS::Agency, Actium::GTFS::Stop, etc.
 X Pattern object (if there is an intermediate form that both GTFS and Xhea are transformed into
+   - Actium::Pattern
 X x pattern component objects
+   - Actium::Pattern::*
 
-Compare::Stop - for stop comparisons
-Compare::PlaceSked - for place schedule comparisons 
+Point - information regarding a single point (a pole schedule 
+   or a flag) - Actium::Point
 
-DB - database object 
+Stop comparisons - Actium::Compare::Stop
+Schedule comparisons - Actium::Compare::PlaceSked
+
+DB - database object  - Actium::DB
+   This represents the Actium database specifically, not databases
+   in general
 X objects for each database table (possibly using DBIx::Class)
+   - Actium::DB::Stop, Actium::DB::Place, etc.
 X roles for common behavior among database table classes (such as caches)
+   - Actium::DB::Table if just one, otherwise named for behavior
 
 (Maybe instead of having lines, line dirs, flag decals in the stops table, they should be in a related table, where the primary key includes both stop id and signup id?)
 
-Env - the environment object 
-Cmd - command line (puts info into environment object)
-Cmd::* - commands
+Env - the environment object  - Actium::Env
+CLI - command line (puts info into environment object) -- Actium::CLI
+Crier - 
+  Actium::CLI::Crier, unless made its own distribution
+Cmd::* - commands - Actium::Cmd::*
 
-Storage::Folder - folder object, inherits from path class dir
-Storage::File - inherits from path class file
-Storage::FileMaker - if needed, routines to access FileMaker server
+The actual commands go in Actium::Cmd, while the interface programming
+(what's now Actium::O::Cmd) goes in Actium::CLI.
 
-Time - time object 
-Datetime: date time obj
-Day - days object
-Text - text object. InDesign and HTML versions 
+folder object, inherits from Path::Class::Dir
+  - Actium::Storage::Folder
+file object, inherits from Path::Class::File
+  - Actium::Storage::File
+FileMaker database object, low-level database access if needed
+  - Actium::Storage::FileMaker
+
+time object  - Actium::Time
+date object for comparisons - Actium::Date
+day object  - Actium::Days
+direction object - Actium::Dir
+text object (used for multilingual, InDesign tags, HTML)
+  - Actium::Text
+
+Type library - Actium::Types
+
+Map Repository - Actium::MapRepository 
+
+Union, Clusterize, Combinatorics - all are various set utilities, maybe
+   combine into Actium::Sets or something like that. 
+
