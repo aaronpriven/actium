@@ -1,7 +1,7 @@
 package Actium::Cmd::SchCal 0.012;
 
 use Actium;
-use Actium::Files::SuppCalendar;
+use Actium::Xhea::SuppCalendar;
 
 sub OPTIONS {
     return 'signup';
@@ -14,7 +14,7 @@ sub START {
 
     my $sch_cal_folder = $signup->subfolder('sch_cal');
 
-    Actium::Files::SuppCalendar::read_supp_calendars( $sch_cal_folder, );
+    Actium::Xhea::SuppCalendar::read_supp_calendars( $sch_cal_folder, );
     return;
 
 }

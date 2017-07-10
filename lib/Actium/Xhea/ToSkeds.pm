@@ -1,7 +1,7 @@
-package Actium::Files::Xhea::ToSkeds 0.012;
+package Actium::Xhea::ToSkeds 0.012;
 
 use Actium;
-use Actium::Files::TabDelimited 'read_aoas';
+use Actium::Storage::TabDelimited 'read_aoas';
 use Actium::O::Dir;
 use Actium::O::Time;
 use Actium::O::Pattern;

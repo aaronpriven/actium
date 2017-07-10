@@ -1,4 +1,4 @@
-package Actium::Files::Xhea 0.012;
+package Actium::Xhea 0.012;
 
 # Using XML::Pastor, reads XML Hastus Exports for Actium files
 # (exports from Hastus) and imports them into Actium.
@@ -40,7 +40,7 @@ sub xhea_import {
     my $sch_cal_data = $p{sch_cal_data};
 
     my ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r )
-      = Actium::Files::Xhea::load_adjusted($xhea_folder);
+      = Actium::Xhea::load_adjusted($xhea_folder);
 
     if ($sch_cal_data) {
 
@@ -64,7 +64,7 @@ sub xhea_import {
     } ## tidy end: if ($sch_cal_data)
 
     my $tab_strings_r
-      = Actium::Files::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
+      = Actium::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
         $adjusted_values_of_r );
 
     if ( exists( $fieldnames_of_r->{$STOPS} ) ) {
@@ -839,7 +839,7 @@ sub _get_xhea_filenames {
 
         my $cry = cry("Loading XHEA files to memory");
 
-        require Actium::Files::TabDelimited;
+        require Actium::Storage::TabDelimited;
 
         my ( %trp, %pat, %tps, %pts, %plc );
 
@@ -868,7 +868,7 @@ sub _get_xhea_filenames {
 
         };
 
-        Actium::Files::TabDelimited::read_tab_files(
+        Actium::Storage::TabDelimited::read_tab_files(
             {   files    => ['trip_pattern.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $pattern_callback,
@@ -908,7 +908,7 @@ sub _get_xhea_filenames {
 
         };
 
-        Actium::Files::TabDelimited::read_tab_files(
+        Actium::Storage::TabDelimited::read_tab_files(
             {   files    => ['trip.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $trip_callback,
@@ -962,7 +962,7 @@ sub _get_xhea_filenames {
 
         };
 
-        Actium::Files::TabDelimited::read_tab_files(
+        Actium::Storage::TabDelimited::read_tab_files(
             {   files    => ['trip_stop.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $stop_callback,
@@ -981,7 +981,7 @@ sub _get_xhea_filenames {
 
         };
 
-        Actium::Files::TabDelimited::read_tab_files(
+        Actium::Storage::TabDelimited::read_tab_files(
             {   files    => ['place.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $place_callback,
@@ -1105,7 +1105,7 @@ __END__
 
 =head1 NAME
 
-Actium::Files::Xhea - Routines for loading and processing XML Hastus
+Actium::Xhea - Routines for loading and processing XML Hastus
 exports
 
 =head1 VERSION
@@ -1115,12 +1115,12 @@ This documentation refers to version 0.009
 =head1 SYNOPSIS
 
  use Actium::O::Folder;
- use Actium::Files::Xhea;
+ use Actium::Xhea;
  
  my $folder = Actium::O::Folder->new("/path/to/folder");
  # folder should have paired xsd and xml files
  
- my ($fields_r, $values_r) = Actium::Files::Xhea::load_adjusted ($folder);
+ my ($fields_r, $values_r) = Actium::Xhea::load_adjusted ($folder);
  
  my $recordname = 'place';
  my $fieldname = 'plc_identifier';
@@ -1129,7 +1129,7 @@ This documentation refers to version 0.009
  
 =head1 DESCRIPTION
 
-Actium::Files::Xhea is a series of routines for loading XML Hastus
+Actium::Xhea is a series of routines for loading XML Hastus
 exports and  processing them into perl data structures. It uses
 L<XML::Pastor|XML::Pastor> to process the XSD and read XML files, and
 so has the limitations of that  module.
@@ -1144,7 +1144,7 @@ with all others, is ignored.
 =head1 SUBROUTINES 
 
 No subroutines are exported. Use the fully qualified name to invoke
-them. (e.g., "Actium::Files::Xhea::load_adjusted($folder)")
+them. (e.g., "Actium::Xhea::load_adjusted($folder)")
 
 =over
 
@@ -1198,7 +1198,7 @@ record types or anything like that). Names of all record types across
 all XML files loaded much be unique.
 
  my ($fieldnames_r, $fields_r, $values_r) = 
-    Actium::Files::Xhea::load($folder);
+    Actium::Xhea::load($folder);
 
 The structure of $fieldnames_r will be:
 
