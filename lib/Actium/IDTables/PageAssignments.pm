@@ -14,7 +14,7 @@ use Actium::O::Sked::Timetable::IDTimetableSet;
 use List::Util (qw/max sum/);    ### DEP ###
 use List::Compare::Functional(qw/get_intersection/);          ### DEP ###
 use Algorithm::Combinatorics(qw/partitions permutations/);    ### DEP ###
-use Actium::Combinatorics (qw/odometer_combinations ordered_partitions/);
+use Actium::Set (qw/odometer_combinations ordered_partitions/);
 
 use Actium::O::Sked::Timetable::IDPageFrameSets;
 
