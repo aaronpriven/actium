@@ -151,8 +151,7 @@ method load_storable (
     my $folder
       = $signup->folder( phylum => $PHYLUM, collection => $collection );
 
-    my $self = $folder->retrieve('skeds_storable');
-    #my $self = $class->load( $folder->make_filespec('skeds_storable') );
+    my $self = $folder->retrieve('skeds.storable');
     $self->_set_signup($signup);
     $self->_set_name($collection);
     return $self;
@@ -208,7 +207,7 @@ method finalize_skeds (
 
     my @finalized_skeds;
 
-    my @ids = uniq( $received_collection->_sked_ids,
+    my @ids = Actium::uniq( $received_collection->_sked_ids,
         $exception_collection->_sked_ids );
 
     for my $id (@ids) {
