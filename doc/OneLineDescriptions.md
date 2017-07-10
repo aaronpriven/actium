@@ -68,10 +68,6 @@ Another part of the partially-completed stop lists and route list programs. Thes
 
 Uses the data in the db/slists folder to make stop lists suitable for posting on the web.
 
-> sqlite2tab      => 'SQLite2tab',
-
-A program written to test the Actium::Files::SQLite program, outputting SQL files as tab-delimited files.
-
 > tabula          => 'Tabula',
 
 This is the program that takes the schedules and prepares the InDesign files for them, for the printed timetables and the full-schedule signs.
