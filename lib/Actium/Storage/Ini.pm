@@ -1,4 +1,4 @@
-package Actium::O::Files::Ini 0.011;
+package Actium::Storage::Ini 0.011;
 
 # Class for reading .ini files.
 # At the moment, and possibly permanently, a thin wrapper around

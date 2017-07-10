@@ -243,10 +243,10 @@ located; see "bin" above, under "Construction".
 
 =head3 config
 
-An Actium::O::Files::Ini object representing a configuration file. The
+An Actium::Storage::Ini object representing a configuration file. The
 configuration file is the system name with a period in front, and an
 .ini extension (so, if the system name is "actium", the configuration
-file will be ".actium.ini"). See Actium::O::Files::Ini for details.
+file will be ".actium.ini"). See Actium::Storage::Ini for details.
 
 =head3 commandpath
 

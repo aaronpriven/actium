@@ -9,7 +9,7 @@ use Getopt::Long('GetOptionsFromArray');    ### DEP ###
 use Term::ReadKey;                          ### DEP ###
 
 use Actium::Crier('default_crier');
-use Actium::O::Files::Ini;
+use Actium::Storage::Ini;
 use Actium::O::Cmd::Option;
 use Actium::O::Folder;
 
@@ -282,7 +282,7 @@ has home_folder => (
 
 has config => (
     is      => 'ro',
-    isa     => 'Actium::O::Files::Ini',
+    isa     => 'Actium::Storage::Ini',
     builder => '_build_config',
     lazy    => 1,
 );
@@ -290,7 +290,7 @@ has config => (
 sub _build_config {
     my $self       = shift;
     my $systemname = $self->system_name;
-    my $config     = Actium::O::Files::Ini::->new(".$systemname.ini");
+    my $config     = Actium::Storage::Ini::->new(".$systemname.ini");
     return $config;
 }
 
