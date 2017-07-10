@@ -28,6 +28,7 @@ Actium::O::Cmd->new(
         decalcount    => 'DecalCount',
         decalcompare  => 'DecalCompare',
         decallabels   => 'DecalLabels',
+        finalizeskeds => 'FinalizeSkeds',
         flagspecs     => 'Flagspecs',
         htmltables    => 'HTMLTables',
         iph           => \'iphoto_stops',
