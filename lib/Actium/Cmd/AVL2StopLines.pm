@@ -2,7 +2,7 @@ package Actium::Cmd::AVL2StopLines 0.012;
 
 use Actium;
 use Actium::Sorting::Line (qw[sortbyline]);
-use Actium::Union('ordered_union');
+use Actium::Set('ordered_union');
 use Actium::DaysDirections (':all');
 
 use List::Compare;

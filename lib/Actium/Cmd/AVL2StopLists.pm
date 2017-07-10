@@ -10,7 +10,7 @@ use sort ('stable');
 use Carp;          ### DEP ###
 use Storable();    ### DEP ###
 
-use Actium::Union('ordered_union');
+use Actium::Set('ordered_union');
 use Actium::DaysDirections ('dir_of_hasi');
 
 # don't buffer terminal output
