@@ -1,4 +1,4 @@
-package Actium::Files::SuppCalendar 0.012;
+package Actium::Xhea::SuppCalendar 0.012;
 
 use Actium;
 

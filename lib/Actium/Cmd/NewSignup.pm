@@ -3,7 +3,7 @@ package Actium::Cmd::NewSignup 0.012;
 # Prepares a new signup directory
 
 use Actium;
-use Actium::Files::Xhea;
+use Actium::Xhea;
 use Archive::Zip;    ### DEP ###
 
 sub OPTIONS {
@@ -76,10 +76,10 @@ sub START {
     if ( $sch_cal_folder->glob_plain_files('*.xlsx') ) {
 
         my $suppcry = cry("Importing supplementary calendars");
-        require Actium::Files::SuppCalendar;
+        require Actium::Xhea::SuppCalendar;
 
         $calendar_of_block_r
-          = Actium::Files::SuppCalendar::read_supp_calendars($sch_cal_folder);
+          = Actium::Xhea::SuppCalendar::read_supp_calendars($sch_cal_folder);
 
         $suppcry->done;
     }
@@ -98,13 +98,13 @@ sub START {
         $xhea_import_specs{sch_cal_data} = $calendar_of_block_r
           if $calendar_of_block_r;
 
-        Actium::Files::Xhea::xhea_import(%xhea_import_specs);
+        Actium::Xhea::xhea_import(%xhea_import_specs);
 
         $impcry->done;
 
         my $hasicry = cry("Creating HASI files from XHEA files");
 
-        Actium::Files::Xhea::to_hasi( $tab_folder, $hasi_folder );
+        Actium::Xhea::to_hasi( $tab_folder, $hasi_folder );
 
         $hasicry->done;
 
