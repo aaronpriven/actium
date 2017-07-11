@@ -3,9 +3,13 @@
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
 	<title></title>
-	<meta name="generator" content="LibreOffice Vanilla 5.2.3.5 (MacOSX)"/>
+	<meta name="generator" content="LibreOffice 5.3.4.2 (MacOSX)"/>
 	<meta name="created" content="00:00:00"/>
-	<meta name="changed" content="2017-07-11T00:07:13.016120000"/>
+	<meta name="changed" content="2017-07-11T11:17:33.085630000"/>
+	<meta name="created" content="00:00:00">
+	<meta name="changed" content="2017-07-11T11:13:31.659069000">
+	<meta name="created" content="00:00:00">
+	<meta name="changed" content="2017-07-11T00:07:13.016120000">
 </head>
 <body lang="en-US" dir="ltr">
 <table cellpadding="2" cellspacing="2" style="page-break-before: always">
@@ -28,7 +32,7 @@
 	</tr>
 	<tr>
 		<td colspan="3" width="974" valign="top" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><b>SCHEDULE –&nbsp;of a line / direction / days</b></p>
+			<p><b>SCHEDULE – of a line / direction / days</b></p>
 		</td>
 	</tr>
 	<tr valign="top">
@@ -79,7 +83,8 @@
 		</td>
 		<td width="489" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
 			<p>Each schedule has exactly one set of stops, so this can be a
-			role that is applied to Actium::Sked</p>
+			role that is applied to Actium::Sked – and
+			Actium:::Sked::StopSked</p>
 		</td>
 	</tr>
 	<tr valign="top">
@@ -144,7 +149,8 @@ Collection</p>
 			<p>Object representing a bus stop’s schedules</p>
 		</td>
 		<td width="241" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::OfStop</p>
+			<p>Actium::Sked::StopSked::<br/>
+Collection</p>
 		</td>
 		<td width="489" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
 			<p>Contains the information related to a bus stop: what lines stop
@@ -157,27 +163,26 @@ Collection</p>
 			<p>Object representing schedules at a bus stop</p>
 		</td>
 		<td width="241" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::OfStop::Sked</p>
+			<p>Actium::Sked::StopSked</p>
 		</td>
 		<td width="489" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
 			<p><a name="_GoBack"></a>Contains the schedule information just
-			about that stop: the times here, what the destination is of each
-			route that stops here, etc. Represents the column of a point
-			schedule, and also the data on each flag decal.</p>
+			about one line at a stop: the times here, what the destination is
+			of each route that stops here, etc. Represents the column of a
+			point schedule, and also the data on each flag decal.</p>
 		</td>
 	</tr>
 	<tr valign="top">
 		<td width="212" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Time of a schedule at a bus stop</p>
+			<p>Trip of a schedule at a bus stop</p>
 		</td>
 		<td width="241" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::OfStop::Sked::<br/>
-Time</p>
+			<p>Actium::Sked::StopSked::Trip</p>
 		</td>
 		<td width="489" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Contains an Actium::Time object (or maybe an
-			Actium::Sked::Trip::Time object) but also has information found in
-			kpoints. A time of a point schedule, including notes etc.</p>
+			<p>Contains an Actium::Sked::Trip::Time object but also has
+			information found in kpoints and the patinfo struct in FlagSpecs.
+			A time of a point schedule, including notes etc.</p>
 		</td>
 	</tr>
 	<tr>
@@ -386,7 +391,8 @@ Time</p>
 			<p>Actium::CLI</p>
 		</td>
 		<td width="489" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>The idea is that this would create the Actium::Env object</p>
+			<p>The idea is that this would create the Actium::Env object. Most
+			of what is now Actium::O::Cmd</p>
 		</td>
 	</tr>
 	<tr valign="top">
@@ -431,28 +437,24 @@ Time</p>
 	</tr>
 	<tr valign="top">
 		<td width="212" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Folder object (relates to Path::Class::Dir)</p>
+			<p>Folder object</p>
 		</td>
 		<td width="241" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
 			<p>Actium::Storage::Folder</p>
 		</td>
 		<td width="489" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
+			<p>Relates to Path::Class::Dir</p>
 		</td>
 	</tr>
 	<tr valign="top">
 		<td width="212" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>File object (relates to Path::Class::File)</p>
+			<p>File object</p>
 		</td>
 		<td width="241" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
 			<p>Actium::Storage::File</p>
 		</td>
 		<td width="489" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
+			<p>Relates to Path::Class:File</p>
 		</td>
 	</tr>
 	<tr valign="top">
