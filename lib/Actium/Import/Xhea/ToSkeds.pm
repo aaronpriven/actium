@@ -1,4 +1,4 @@
-package Actium::Xhea::ToSkeds 0.012;
+package Actium::Import::Xhea::ToSkeds 0.012;
 
 use Actium;
 use Actium::Storage::TabDelimited 'read_aoas';
