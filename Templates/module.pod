@@ -20,7 +20,7 @@ This documentation refers to version 0.014
 
 A full description of the module and its features.
 
-=head1 SUBROUTINES or METHODS (pick one)
+=head1 SUBROUTINES or METHODS or ATTRIBUTES
 
 =over
 
