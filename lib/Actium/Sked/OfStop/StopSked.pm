@@ -52,12 +52,12 @@ has is_dropoff_only => (
     handles => ( make_dropoff_only => 'set' ),
 );
 
-has _times_r => (
+has _trips_r => (
     required => 1,
-    isa      => 'ArrayRef[Actium::Sked::Time]' is => 'bare',
-    init_arg => 'times',
+    isa      => 'ArrayRef[Actium::Sked::OfStop::StopSked::Trip]' is => 'bare',
+    init_arg => 'trips',
     traits   => ['Array'],
-    handles  => ( 'times' => 'elements' ),
+    handles  => ( 'trips' => 'elements' ),
 );
 
 1;
