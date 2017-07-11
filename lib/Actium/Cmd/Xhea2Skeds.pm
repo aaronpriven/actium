@@ -3,7 +3,7 @@ package Actium::Cmd::Xhea2Skeds 0.012;
 # Takes tab files that are result of XheaImport, and makes schedules
 
 use Actium;
-use Actium::Xhea::ToSkeds;
+use Actium::Import::Xhea::ToSkeds;
 
 sub OPTIONS {
     return ( 'signup', 'actiumdb' );
@@ -15,7 +15,7 @@ sub START {
     my $signup   = $env->signup;
     my $actiumdb = $env->actiumdb;
 
-    Actium::Xhea::ToSkeds::xheatab2skeds(
+    Actium::Import::Xhea::ToSkeds::xheatab2skeds(
         actiumdb => $actiumdb,
         signup   => $signup,
     );
