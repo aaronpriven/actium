@@ -1,4 +1,4 @@
-package Actium::Sked::OfStop::StopSked 0.014;
+package Actium::Sked::StopSked 0.014;
 
 use Actium 'class';
 
@@ -54,7 +54,7 @@ has is_dropoff_only => (
 
 has _trips_r => (
     required => 1,
-    isa      => 'ArrayRef[Actium::Sked::OfStop::StopSked::Trip]' is => 'bare',
+    isa      => 'ArrayRef[Actium::Sked::StopSked::Trip]' is => 'bare',
     init_arg => 'trips',
     traits   => ['Array'],
     handles  => ( 'trips' => 'elements' ),

@@ -1,4 +1,4 @@
-package Actium::Sked::OfStop 0.014;
+package Actium::Sked::StopSked::Collection 0.014;
 
 use Actium 'class';
 
@@ -12,7 +12,7 @@ has _stopskeds_r => (
     traits   => ['Array'],
     is       => 'bare',
     init_arg => 'stopskeds',
-    isa      => 'ArrayRef[Actium::Sked::OfStop::StopSked]',
+    isa      => 'ArrayRef[Actium::Sked::StopSked]',
     required => 1,
     handles  => { stopskeds => 'elements', },
 );
@@ -25,8 +25,8 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::OfStop - Object representing schedule info for a
-particular  bus stop
+Actium::Sked::StopSked::Collection -  Object representing schedule info
+for a particular  bus stop
 
 =head1 VERSION
 
@@ -34,8 +34,8 @@ This documentation refers to version 0.014
 
 =head1 SYNOPSIS
 
- use Actium::Sked::OfStop;
- # do something with Actium::Sked::OfStop
+ use Actium::Sked::StopSked::Collection;
+ # do something with Actium::Sked::StopSked::Collection
    
 =head1 DESCRIPTION
 
