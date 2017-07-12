@@ -175,6 +175,50 @@ sub from_str {
 
 }
 
+method from_excel ($class: @cells) {
+
+    my @objs;
+
+    foreach my $cell (@cells) {
+
+        return $undef_instance unless defined $cell;
+        my $formatted   = $cell->value;
+        my $unformatted = $cell->unformatted;
+
+        # if it looks like an Excel time fraction,
+        if (    Actium::looks_like_number($unformatted)
+            and $formatted =~ /:/
+            and -0.5 <= $unformatted
+            and $unformatted < 1.5 )
+        {
+
+            my $ampm = $EMPTY;
+
+            if ( $unformatted < 0 ) {
+                $unformatted += 0.5;
+                $ampm = "b";
+            }
+            elsif ( 1 < $unformatted ) {
+                $unformatted -= 1;
+                $ampm = "x";
+            }
+
+            require POSIX;
+
+            my $timenum = POSIX::round( $unformatted * 2 * $MINS_IN_12HRS );
+            push @objs, $class->from_num($timenum);
+
+        } ## tidy end: if ( Actium::looks_like_number...)
+        else {
+            push @objs, $class->from_str($formatted);
+        }
+    } ## tidy end: foreach my $cell (@cells)
+
+    return @objs if wantarray;
+    return @objs > 1 ? \@objs : $objs[0];
+
+} ## tidy end: method from_excel
+
 #######################################################
 ## TIMENUM ATTRIBUTE
 #######################################################
@@ -336,15 +380,14 @@ objects are immutable.
 
 =head1 CLASS METHODS
 
-The object is constructed using C<< Actium::O::Time->from_str >> or C<<
-Actium::O::Time->from_num >>
+The object is constructed using C<< Actium::O::Time->from_str >> , C<<
+Actium::O::Time->from_num >>, or  C<< Actium::O::Time->from_excel >>.
 
-=over
-
-=item B<< Actium::O::Time->from_str( I<string> , I<string>, ...) >>
+=head2 Actium::O::Time->from_str( I<string> , I<string>, ...) 
 
 This constructor accepts times represented as a string, usually a
-formatted time such as "11:59a" or "13'25".
+formatted time such as "11:59a" or "13'25", and returns an object for
+each time that is passed.
 
 There are a limited number of special cases where names are used for
 times instead of a format string. The valid named times are:
@@ -420,15 +463,26 @@ module can output that format from C<apbx>.)
 As a special case, if there are no numbers in the string at all, it
 represents a null time. This is used for blank columns in schedules.
 
-=item B<< Actium::O::Time->from_num( I<integer>, I<integer>, ... ) >>
+=head2 Actium::O::Time->from_num( I<integer>, I<integer>, ... ) 
 
 This constructor accepts a time number: an integer representing the
-number of minutes after midnight (or, if negative, before midnight).
+number of minutes after midnight (or, if negative, before midnight). It
+returns one object for each number that is passed.
 
 The integer must be between -720 and 2160, representing the times
 between noon yesterday and noon tomorrow.
 
-=item B<< Actium::O::Time->new() >>
+=head2 Actium::O::Time->from_excel( I<cell>, I<cell>, ... ) 
+
+This constructor accepts cells from Excel, specifically those returned
+from the get_cell routine in either  Spreadsheet::ParseExcel or
+Spreadsheet::ParseXLSX. (The object passed in must support the methods 
+C<value> and C<unformatted>.)  It can accept a formatted Excel time 
+(which it converts to a time number and sends to C<from_num> or a
+string (which it sends to C<from_str>). It returns one object for each
+cell passed to it.
+
+=head2 Actium::O::Time->new() 
 
 B<< Do not use this method. >>
 
@@ -437,13 +491,11 @@ object and insert it into the caches used by C<from_str> and
 C<from_num>.  There should never be a reason to create more than one
 object with the same arguments.
 
-=item B<Actium::O::Time::->timesort(I<obj>, I<obj>, ...>
+=head2 Actium::O::Time::->timesort(I<obj>, I<obj>, ...
 
 This class method takes a series of Actium::O::Time objects and sorts
 them (numerically according to their time number value), returning the 
 sorted list of objects.
-
-=back
 
 =head1 OBJECT METHODS
 
