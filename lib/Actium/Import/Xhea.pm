@@ -14,6 +14,7 @@ use Actium::Import::CalculateFields;
 use List::MoreUtils('pairwise');    ### DEP ###
 use Params::Validate(':all');       ### DEP ###
 use Actium::Time(qw[timestr_sub timenum]);
+use Actium::O::Time;
 use Actium::O::2DArray;
 
 const my $PREFIX => 'Actium::Import::Xhea';
@@ -157,12 +158,17 @@ sub tab_strings {
                 sch_cal_data => 1,
             }
         );
-        \my %fields            = $p{fields};
-        \my %fieldnames        = $p{fieldnames};
-        \my %values            = $p{values};
-        \my %calendar_of_block = $p{sch_cal_data};
+        \my %fields              = $p{fields};
+        \my %fieldnames          = $p{fieldnames};
+        \my %values              = $p{values};
+        \my %calendar_of_tripkey = $p{sch_cal_data};
 
         #### Block ###
+
+        ### I don't think block adjustments are used at the moment
+        ### -- just trip adjustments. And since school calendars don't
+        ### necessarily apply to the whole block, it's best just not to
+        ### work on these.  I think.
 
         my @block_headers = @{ $fieldnames{block} };
         my @block_records = @{ $values{block} };
@@ -174,29 +180,29 @@ sub tab_strings {
             @field{@block_headers} = @block_record;
 
             my $block = $field{blk_number};
-            if ( not exists $calendar_of_block{$block} ) {
-                push @returned_block_records, [@block_record];
-            }
-            else {
-
-                if ( u::is_arrayref( $calendar_of_block{$block} ) ) {
-                    $field{blk_evt_stat_dsp}
-                      = $calendar_of_block{$block}[0]
-                      . $SPACE
-                      . $calendar_of_block{$block}[1];
-                }
-                else {
-                    my $days = $calendar_of_block{$block};
-                    foreach my $day ( keys %blockfield_of_day ) {
-                        $field{ $blockfield_of_day{$day} }
-                          = ( $days =~ m/$day/ ) ? 1 : 0;
-                    }
-
-                }
-
-                my @new_record = @field{@block_headers};
-                push @returned_block_records, \@new_record;
-            } ## tidy end: else [ if ( not exists $calendar_of_block...)]
+            #            if ( not exists $calendar_of_tripkey{$block} ) {
+            push @returned_block_records, [@block_record];
+    #            }
+    #            else {
+    #
+    #                if ( u::is_arrayref( $calendar_of_tripkey{$block} ) ) {
+    #                    $field{blk_evt_stat_dsp}
+    #                      = $calendar_of_tripkey{$block}[0]
+    #                      . $SPACE
+    #                      . $calendar_of_tripkey{$block}[1];
+    #                }
+    #                else {
+    #                    my $days = $calendar_of_tripkey{$block};
+    #                    foreach my $day ( keys %blockfield_of_day ) {
+    #                        $field{ $blockfield_of_day{$day} }
+    #                          = ( $days =~ m/$day/ ) ? 1 : 0;
+    #                    }
+    #
+    #                }
+    #
+    #                my @new_record = @field{@block_headers};
+    #                push @returned_block_records, \@new_record;
+    #            } ## tidy end: else [ if ( not exists $calendar_of_tripkey...)]
 
         } ## tidy end: foreach \my @block_record(@block_records)
 
@@ -205,6 +211,7 @@ sub tab_strings {
         my @trip_headers = @{ $fieldnames{trip} };
         my @trip_records = @{ $values{trip} };
         my @returned_trip_records;
+        #my @display_trip_records;
 
         foreach \my @trip_record(@trip_records) {
 
@@ -212,19 +219,24 @@ sub tab_strings {
             @field{@trip_headers} = @trip_record;
 
             my $block = $field{trp_block};
-            if ( not exists $calendar_of_block{$block} ) {
+            my $starttime
+              = Actium::O::Time->from_str( $field{trp_time_start} )->timenum;
+            my $tripkey = "$block/$starttime";
+            $cry->over($tripkey);
+
+            if ( not exists $calendar_of_tripkey{$tripkey} ) {
                 push @returned_trip_records, [@trip_record];
             }
             else {
 
-                if ( u::is_arrayref( $calendar_of_block{$block} ) ) {
+                if ( u::is_arrayref( $calendar_of_tripkey{$tripkey} ) ) {
                     $field{trp_event_and_status}
-                      = $calendar_of_block{$block}[0]
+                      = $calendar_of_tripkey{$tripkey}[0]
                       . $SPACE
-                      . $calendar_of_block{$block}[1];
+                      . $calendar_of_tripkey{$tripkey}[1];
                 }
                 else {
-                    my $days = $calendar_of_block{$block};
+                    my $days = $calendar_of_tripkey{$tripkey};
                     foreach my $day ( keys %tripfield_of_day ) {
                         $field{ $tripfield_of_day{$day} }
                           = ( $days =~ m/$day/ ) ? 1 : 0;
@@ -233,8 +245,16 @@ sub tab_strings {
                 }
                 my @new_record = @field{@trip_headers};
                 push @returned_trip_records, \@new_record;
-            }
+                #push @display_trip_records, \@new_record;
+                delete $calendar_of_tripkey{$tripkey};
+            } ## tidy end: else [ if ( not exists $calendar_of_tripkey...)]
         } ## tidy end: foreach \my @trip_record(@trip_records)
+
+        foreach my $tripkey ( sort keys %calendar_of_tripkey ) {
+            $cry->text("Didn't find $tripkey in schedules");
+        }
+
+        $cry->done;
 
         return \@returned_block_records, \@returned_trip_records;
 
