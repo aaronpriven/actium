@@ -780,6 +780,20 @@ sub spaced {
     foreach my $trip (@trips) {
         push @$place_records,
           [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
+
+        if ( $trip->_mergedtrip_count ) {
+            foreach my $mergedtrip ( $trip->mergedtrips ) {
+                my @record;
+                foreach my $idx ( 0 .. $#columns ) {
+                    if ( $columns[$idx] eq 'blockid' ) {
+                        $record[$idx] = $mergedtrip->blockid;
+                    }
+                }
+                push @$place_records, \@record if @record;
+            }
+
+        }
+
     }
 
     say $out $place_records->tabulated, "\n";
