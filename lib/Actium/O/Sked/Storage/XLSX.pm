@@ -6,6 +6,7 @@ use Actium::O::Sked::Trip;
 use Actium::O::Dir;
 use Actium::O::Days;
 use Actium::Time;
+use Actium::O::Time;
 
 #############################################
 #### READ FROM AN EXCEL SPREADSHEET
@@ -105,12 +106,8 @@ func _cell_value ( $sheet!, Int $row!, Int $col! ) {
 func _cell_time ( $sheet!, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
     return $EMPTY unless defined $cell;
-    my $formatted   = $cell->value;
-    my $unformatted = $cell->unformatted;
-    return _time_as_string(
-        formatted   => $formatted,
-        unformatted => $unformatted
-    );
+    my $time = Actium::O::Time->from_excel($cell);
+    return $time->timenum;
 }
 
 func _read_stops_and_places (
@@ -237,39 +234,6 @@ func _process_id (Str :$id!, Str :$filename!) {
 
     return $line, $daycode, $dircode;
 }
-
-func _time_as_string (:$formatted!, :$unformatted!) {
-
-    # if it looks like an Excel time fraction,
-    if (    u::looks_like_number($unformatted)
-        and $formatted =~ /:/
-        and -0.5 <= $unformatted
-        and $unformatted < 1.5 )
-    {
-
-        my $ampm = $EMPTY;
-
-        if ( $unformatted < 0 ) {
-            $unformatted += 0.5;
-            $ampm = "b";
-        }
-        elsif ( 1 < $unformatted ) {
-            $unformatted -= 1;
-            $ampm = "x";
-        }
-
-        require Spreadsheet::ParseExcel::Utility;    ### DEP ###
-
-        my ( $minutes, $hours )
-          = ( Spreadsheet::ParseExcel::Utility::ExcelLocaltime($unformatted) )
-          [ 1, 2 ];
-        return $hours . sprintf( "%02d", $minutes ) . $ampm;
-
-    } ## tidy end: if ( u::looks_like_number...)
-
-    return $formatted;
-
-} ## tidy end: func _time_as_string
 
 #############################################
 #### WRITE TO AN EXCEL SPREADSHEET
