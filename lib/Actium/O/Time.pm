@@ -241,7 +241,7 @@ my $hr12_min_cr = sub {
     return ( $hours, $minutes );
 };
 
-for my $attribute (qw/ap apmn apbx t24/) {
+for my $attribute (qw/ap apmn apbx apbx_noseparator t24/) {
     has $attribute => (
         isa      => 'Str',
         is       => 'ro',
@@ -251,6 +251,8 @@ for my $attribute (qw/ap apmn apbx t24/) {
         traits   => ['DoNotSerialize'],
     );
 }
+
+# apbx_noseparator is for hasi and can probably be eliminated once that is gone
 
 sub _build_ap {
     my $self = shift;
@@ -279,10 +281,11 @@ sub _build_apmn {
     return $self->ap;
 }
 
-sub _build_apbx {
+sub _build_apbx_withsep {
 
-    my $self = shift;
-    my $tn   = $self->timenum;
+    my $self      = shift;
+    my $separator = shift;
+    my $tn        = $self->timenum;
     return $EMPTY unless defined $tn;
 
     my $marker
@@ -295,8 +298,16 @@ sub _build_apbx {
 
     my ( $hours, $minutes ) = $hr12_min_cr->($tn);
 
-    return "$hours:${minutes}$marker";
+    return join( $EMPTY, $hours, $separator, $minutes, $marker );
 
+} ## tidy end: sub _build_apbx_withsep
+
+method _build_apbx_noseparator ($timenum) {
+    return $self->_build_apbx_withsep( $timenum, $EMPTY );
+}
+
+method _build_apbx ($timenum) {
+    return $self->_build_apbx_withsep( $timenum, ":" );
 }
 
 sub _build_t24 {
