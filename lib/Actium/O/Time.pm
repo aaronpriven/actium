@@ -7,7 +7,6 @@ use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
 use Actium::Types('TimeNum');
-# that definition should be moved inside here when Actium::Time is phased out
 
 #use overload '0+' => sub { shift->timenum };
 
@@ -335,9 +334,6 @@ sub _build_t24 {
     my $hours = sprintf( '%02d', ( int( $tn / 60 ) ) % 24 );
     return "$hours:$minutes";
 }
-
-# A lot of formatting flexibility from the old Actium::Time was not replicated
-# here, because it was never used, and why bother.
 
 #######################################
 ### OTHER CLASS METHODS
