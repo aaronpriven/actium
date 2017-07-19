@@ -432,7 +432,7 @@ time; if it's to continue on another trip, it's usually after some layover time.
 
 This is an integer, the number of minutes since midnight (or before midnight, if
 negative). If this is set to a string, it is coerced to an integer using 
-L<Actium::Time::timenum|Actium::Time/"timenum ($time)">
+L<Actium::O::Time|Actium::O::Time>
 
 =item B<noteletter>
 
@@ -453,7 +453,7 @@ Entries for stops or places not served by this trip are stored as I<undef>.
 
 These are integers, the number of minutes since midnight (or before midnight, if
 negative). If an entry is set to a string, it is coerced to an integer using 
-L<Actium::Time::timenum|Actium::Time/"timenum ($time)">.
+L<Actium::O::Time|Actium::O::Time>.
 
 =item B<stoptimes>
 
@@ -537,8 +537,6 @@ See L<Moose>.
 =item MooseX::StrictConstructor
 
 =item MooseX::Storage
-
-=item Actium::Time
 
 =item Actium::Types
 
