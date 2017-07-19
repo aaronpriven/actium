@@ -4,8 +4,7 @@ package Actium::Cmd::HeadwayTimes 0.011;
 # minutes between times in the list.
 
 use Actium;
-
-use Actium::Time qw(timenum);
+use Actium::O::Time;
 
 ###########################################
 ## COMMAND
@@ -44,8 +43,8 @@ sub START {
                 next LINE;
             }
 
-            my @prevtimes = timenum( split( "\t", $prev ) );
-            my @times     = timenum( split( "\t", $line ) );
+            my @prevtimes = timenums( split( "\t", $prev ) );
+            my @times     = timenums( split( "\t", $line ) );
 
             my $numfields = u::min( $#prevtimes, $#times );
 
@@ -80,6 +79,11 @@ sub START {
 
     } ## tidy end: FILE: foreach my $filename (@argv)
 } ## tidy end: sub START
+
+func timenums (@times) {
+    my @timenums = map { Actium::O::Time->from_str($_)->timenum } @times;
+    return @timenums;
+}
 
 1;
 
