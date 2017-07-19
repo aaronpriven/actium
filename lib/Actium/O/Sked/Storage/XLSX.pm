@@ -5,15 +5,13 @@ use Actium ('role');
 use Actium::O::Sked::Trip;
 use Actium::O::Dir;
 use Actium::O::Days;
-use Actium::Time;
 use Actium::O::Time;
 
 #############################################
 #### READ FROM AN EXCEL SPREADSHEET
 
-method new_from_xlsx ( 
-        $class: Str :$file , Spreadsheet::ParseExcel::Worksheet :$sheet
-    ) {
+method new_from_xlsx ( $class : Str : $file,
+    Spreadsheet::ParseExcel::Worksheet : $sheet ) {
 
     if ( $file and $sheet ) {
         croak 'Can only pass one of either a file or a worksheet object '
@@ -97,13 +95,13 @@ method new_from_xlsx (
 
 } ## tidy end: method new_from_xlsx
 
-func _cell_value ( $sheet!, Int $row!, Int $col! ) {
+func _cell_value ( $sheet !, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
     return $EMPTY unless defined $cell;
     return $cell->value;
 }
 
-func _cell_time ( $sheet!, Int $row!, Int $col! ) {
+func _cell_time ( $sheet !, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
     return $EMPTY unless defined $cell;
     my $time = Actium::O::Time->from_excel($cell);
@@ -111,13 +109,13 @@ func _cell_time ( $sheet!, Int $row!, Int $col! ) {
 }
 
 func _read_stops_and_places (
-   Int :$mincol!,
-   Int :$maxcol!,
-   Int :$stop_row!,
-   Int :$place_row!,
-   :$sheet!,
-   Str :$filename!,
-) {
+    Int : $mincol !,
+    Int : $maxcol !,
+    Int : $stop_row !,
+    Int : $place_row !,
+    : $sheet !,
+    Str : $filename !,
+  ) {
 
     my ( @stops, @places, @stopplaces );
     for my $col ( $mincol .. $maxcol ) {
@@ -142,14 +140,14 @@ func _read_stops_and_places (
 } ## tidy end: func _read_stops_and_places
 
 func _read_trips (
-   Spreadsheet::ParseExcel::Worksheet :$sheet! ,
-   Int :$mincol!, 
-   Int :$maxcol!, 
-   Int :$minrow!, 
-   Int :$maxrow!, 
-   Int :$min_stop_col!,
-   :@attributes is ref_alias,
-) {
+    Spreadsheet::ParseExcel::Worksheet : $sheet !,
+    Int                                : $mincol !,
+    Int                                : $maxcol !,
+    Int                                : $minrow !,
+    Int                                : $maxrow !,
+    Int                                : $min_stop_col !,
+    : @attributes is ref_alias,
+  ) {
 
     my @trips;
     foreach my $row ( $minrow .. $maxrow ) {
@@ -181,12 +179,12 @@ func _read_trips (
 } ## tidy end: func _read_trips
 
 func _read_attribute_names (
-     Int :$mincol!, 
-     Int :$maxcol!, 
-     Int :$row!, 
-     :$sheet!, 
-     Str :$id!,
-     ) {
+    Int : $mincol !,
+    Int : $maxcol !,
+    Int : $row !,
+    : $sheet !,
+    Str : $id !,
+  ) {
 
     my @attributes;
     foreach my $col ( $mincol .. $maxcol ) {
@@ -216,7 +214,7 @@ func _read_attribute_names (
 
 } ## tidy end: func _read_attribute_names
 
-func _process_id (Str :$id!, Str :$filename!) {
+func _process_id ( Str : $id !, Str : $filename ! ) {
     if ($id !~ /\A
                     [A-Z0-9]+     # route indicator
                     _             # underscore
@@ -238,15 +236,12 @@ func _process_id (Str :$id!, Str :$filename!) {
 #############################################
 #### WRITE TO AN EXCEL SPREADSHEET
 
-my $xlsx_timesub = Actium::Time::timestr_sub( XB => 1 );
-
 method add_stop_xlsx_sheet (
-          :$orientation 
-             where { $_ eq 'auto' or $_ eq 'top' or $_ eq 'left' } 
-             = 'top', 
-          Excel::Writer::XLSX :$workbook! , 
-          Excel::Writer::XLSX::Format :$format!, 
-       ) {
+    : $orientation where { $_ eq 'auto' or $_ eq 'top' or $_ eq 'left' }
+    = 'top',
+    Excel::Writer::XLSX         : $workbook !,
+    Excel::Writer::XLSX::Format : $format !,
+  ) {
 
     my $id                     = $self->skedid;
     my $trip_attribute_columns = $self->_trip_attribute_columns;
@@ -288,9 +283,9 @@ method add_stop_xlsx_sheet (
 } ## tidy end: method add_stop_xlsx_sheet
 
 method add_place_xlsx_sheet (
-          Excel::Writer::XLSX :$workbook! , 
-          Excel::Writer::XLSX::Format :$format!, 
-       ) {
+    Excel::Writer::XLSX         : $workbook !,
+    Excel::Writer::XLSX::Format : $format !,
+  ) {
 
     my $id = $self->skedid;
 
@@ -312,7 +307,6 @@ method add_place_xlsx_sheet (
 } ## tidy end: method add_place_xlsx_sheet
 
 method xlsx {
-    my $timesub = Actium::Time::timestr_sub( XB => 1 );
 
     require Actium::Storage::Excel;
 
@@ -342,7 +336,9 @@ method _stop_columns {
       = Actium::O::2DArray->new( $self->_stopid_r, $self->_stopplace_r );
 
     foreach my $trip ( $self->trips ) {
-        $stop_columns->push_row( $xlsx_timesub->( $trip->stoptimes ) );
+        my @times
+          = map { Actium::O::Time->from_num($_)->apbx } $trip->stoptimes;
+        $stop_columns->push_row(@times);
     }
 
     return $stop_columns;
@@ -378,7 +374,10 @@ method _place_columns {
       = Actium::O::2DArray->new( $self->_place4_r, $self->_place8_r );
 
     foreach my $trip ( $self->trips ) {
-        $place_columns->push_row( $xlsx_timesub->( $trip->placetimes ) );
+        my @times
+          = map { Actium::O::Time->from_num($_)->apbx } $trip->placetimes;
+
+        $place_columns->push_row(@times);
     }
 
     return $place_columns;
