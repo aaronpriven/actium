@@ -241,7 +241,7 @@ my $hr12_min_cr = sub {
     return ( $hours, $minutes );
 };
 
-for my $attribute (qw/ap apmn apbx apbx_noseparator t24/) {
+for my $attribute (qw/ap ap_noseparator apmn apbx apbx_noseparator t24/) {
     has $attribute => (
         isa      => 'Str',
         is       => 'ro',
@@ -267,6 +267,22 @@ sub _build_ap {
     my ( $hours, $minutes ) = $hr12_min_cr->($tn);
 
     return "$hours:${minutes}$marker";
+}
+
+sub _build_ap_noseparator {
+    # used for tabxchange files
+    my $self = shift;
+    my $tn   = $self->timenum;
+    return $EMPTY unless defined $tn;
+
+    my $marker
+      = ( $tn % ( 2 * $MINS_IN_12HRS ) ) < $MINS_IN_12HRS
+      ? 'a'
+      : 'p';
+
+    my ( $hours, $minutes ) = $hr12_min_cr->($tn);
+
+    return join( $EMPTY, $hours, $minutes, $marker );
 }
 
 sub _build_apmn {
