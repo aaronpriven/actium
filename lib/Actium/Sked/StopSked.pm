@@ -54,7 +54,8 @@ has is_dropoff_only => (
 
 has _trips_r => (
     required => 1,
-    isa      => 'ArrayRef[Actium::Sked::StopSked::Trip]' is => 'bare',
+    isa      => 'ArrayRef[Actium::Sked::StopSked::Trip]',
+    is       => 'bare',
     init_arg => 'trips',
     traits   => ['Array'],
     handles  => ( 'trips' => 'elements' ),
