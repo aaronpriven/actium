@@ -7,8 +7,6 @@ use Actium ('class');
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
-use Actium::Time qw<timestr timestr_sub>;
-
 #use overload q{""} => \&stoptimes_comparison_str;
 # only for debugging - remove in production
 
