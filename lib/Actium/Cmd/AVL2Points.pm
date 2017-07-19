@@ -4,8 +4,8 @@ use Actium;
 use sort ('stable');    ### DEP ###
 use Storable();         ### DEP ###
 
-use Actium::Time (qw(timenum ));
 use Actium::Set('ordered_union');
+use Actium::O::Time;
 
 const my @COMBOS_TO_PROCESS => (
     [qw( 5 6 56 )],     [qw( 1 234 1234 )], [qw( 1234 5 12345 )],
@@ -640,6 +640,10 @@ sub remove_place_suffixes {
     my $place = shift;
     $place =~ s/-[AD12]$//;
     return $place;
+}
+
+func timenum ($time) {
+    return Actium::O::Time->from_str($time)->timenum;
 }
 
 1;
