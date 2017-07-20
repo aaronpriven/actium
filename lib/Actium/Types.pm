@@ -23,7 +23,6 @@ use MooseX::Types -declare => [
 
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
 
-use Actium::O::Time;
 use Unicode::GCString;    ### DEP ###
 
 ##################
