@@ -81,13 +81,14 @@ schedule by an interpolated version.
 This method returns a boolean value: true if a time has been
 interpolated here, false if it has not. This indicates that the time
 I<was> interpolated -- to check if a time still needs to be
-interpolated, use the method C<is_awaiting_interpolation> from
-Actium::Time.
+interpolated, use the method C<is_awaiting_interpolation> (documented in
+Actium::Time).
 
 =head2 set_interpolated_str, set_interpolated_num
 
-These methods set the value of this time to a new value, either a string
-(which is sent to by Actium::Time->from_str) or a number (sent to
+These methods set the value of this time to a new value. The C<set_interpolated_str>
+method expects a string (which is sent to by Actium::Time->from_str), and the
+C<set_interpolated_num> method expects a number (sent to
 Actium::Time->from_num). They also mark this time as having been
 interpolated (which can be queried by C<was_interpolated>).
 
