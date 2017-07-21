@@ -1,7 +1,7 @@
 package Actium::O::Sked::Storage::Tabxchange 0.013;
 
 use Actium ('role');
-use Actium::O::Time;
+use Actium::Time;
 
 const my $LAST_LINE_IN_FIRST_LOCAL_LIST => 70;
 # arbitrary choice, but it must always be the same or links will break
@@ -294,7 +294,7 @@ method tabxchange (
 
             my @placetimes = $trip->placetimes;
             my $idx        = u::firstidx {defined} @placetimes;
-            my $time       = Actium::O::Time->from_num( $placetimes[$idx] )->ap;
+            my $time       = Actium::Time->from_num( $placetimes[$idx] )->ap;
 
             $specdaytrip .= "<dd>Trip leaving $placedescs[$idx] at $time</dd>";
 
@@ -379,7 +379,7 @@ method tabxchange (
     my $placetimes_aoa = Actium::O::2DArray->new;
 
     foreach my $trip ( $self->trips ) {
-        my @placetimes = map { Actium::O::Time->from_num($_)->ap_noseparator }
+        my @placetimes = map { Actium::Time->from_num($_)->ap_noseparator }
           $trip->placetimes;
         $placetimes_aoa->push_col(@placetimes);
     }

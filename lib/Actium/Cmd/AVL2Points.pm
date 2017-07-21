@@ -5,7 +5,7 @@ use sort ('stable');    ### DEP ###
 use Storable();         ### DEP ###
 
 use Actium::Set('ordered_union');
-use Actium::O::Time;
+use Actium::Time;
 
 const my @COMBOS_TO_PROCESS => (
     [qw( 5 6 56 )],     [qw( 1 234 1234 )], [qw( 1234 5 12345 )],
@@ -643,7 +643,7 @@ sub remove_place_suffixes {
 }
 
 func timenum ($time) {
-    return Actium::O::Time->from_str($time)->timenum;
+    return Actium::Time->from_str($time)->timenum;
 }
 
 1;

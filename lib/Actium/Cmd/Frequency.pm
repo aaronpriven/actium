@@ -4,7 +4,7 @@ use Actium;
 use Actium::Frequency;
 
 use Actium::O::2DArray;
-use Actium::O::Time;
+use Actium::Time;
 
 sub HELP {
     say 'Determines the frequency of times.';
@@ -45,13 +45,13 @@ sub START {
         @times = @times[ $skiplines .. $#times ];
     }
 
-    my @orig_timenums = grep {defined}
-      ( map { Actium::O::Time->from_str($_)->timenum } @times );
+    my @orig_timenums
+      = grep {defined} ( map { Actium::Time->from_str($_)->timenum } @times );
 
-    my $first = Actium::O::Time::->from_num( $orig_timenums[0] )->ap;
+    my $first = Actium::Time::->from_num( $orig_timenums[0] )->ap;
 
     my @timenums = Actium::Frequency::adjust_timenums(@orig_timenums);
-    my $final    = Actium::O::Time::->from_num( $timenums[-1] )->ap;
+    my $final    = Actium::Time::->from_num( $timenums[-1] )->ap;
 
     ( \my @sets, \my @breaktimes )
       = Actium::Frequency::break_sets( $breaks, \@timenums );

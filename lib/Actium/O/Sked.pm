@@ -15,7 +15,7 @@ use Actium::Sorting::Line qw<linekeys>;
 
 use Actium::Types (qw/DirCode ActiumDir ActiumDays/);
 use Actium::O::Sked::Trip;
-use Actium::O::Time;
+use Actium::Time;
 use Actium::O::Dir;
 use Actium::O::Days;
 use Actium::O::2DArray;
@@ -776,7 +776,7 @@ sub spaced {
     my @trips = $self->trips;
 
     foreach my $trip (@trips) {
-        my @times = map { Actium::O::Time->from_num($_)->apbx_noseparator }
+        my @times = map { Actium::Time->from_num($_)->apbx_noseparator }
           $trip->placetimes;
 
         push @$place_records, [ ( map { $trip->$_ } @columns ), @times ];
@@ -804,7 +804,7 @@ sub spaced {
     push @$stop_records, [ $self->stopplaces ];
 
     foreach my $trip (@trips) {
-        my @times = map { Actium::O::Time->from_num($_)->apbx_noseparator }
+        my @times = map { Actium::Time->from_num($_)->apbx_noseparator }
           $trip->stoptimes;
         push @$stop_records, \@times;
     }

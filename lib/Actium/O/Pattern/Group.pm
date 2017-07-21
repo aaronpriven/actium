@@ -5,7 +5,7 @@ use Actium ('class');
 use Actium::Types (qw/ActiumDir/);
 use Actium::O::Dir;
 use Actium::O::Days;
-use Actium::O::Time;
+use Actium::Time;
 use Actium::O::Pattern;
 use Actium::O::Sked::Trip;
 use Actium::O::Sked;
@@ -205,7 +205,7 @@ my $stop_tiebreaker = sub {
 
 };
 
-my $undef_time = Actium::O::Time->from_num(undef);
+my $undef_time = Actium::Time->from_num(undef);
 
 sub _order_stops {
     my $self = shift;

@@ -2,12 +2,12 @@ package Actium::Frequency 0.012;
 
 use Actium;
 use Actium::O::2DArray;
-use Actium::O::Time;
+use Actium::Time;
 use Math::Round('nearest');    ### DEP ###
 use List::MoreUtils();         ### DEP ###
 
-my $earliest = Actium::O::Time->from_str('NOON_YESTERDAY')->timenum;
-my $latest   = Actium::O::Time->from_str('NOON_TOMORROW')->timenum;
+my $earliest = Actium::Time->from_str('NOON_YESTERDAY')->timenum;
+my $latest   = Actium::Time->from_str('NOON_TOMORROW')->timenum;
 
 sub break_sets {
     my $breaks = shift;
@@ -17,7 +17,7 @@ sub break_sets {
         return ( [ \@timenums ], [undef] );
     }
 
-    my @objs = u::uniq( Actium::O::Time->from_str( split( /,/, $breaks ) ) );
+    my @objs = u::uniq( Actium::Time->from_str( split( /,/, $breaks ) ) );
 
     my @objs_with_num = sort { $a->[1] <=> $b->[1] }
       map { [ $_, $_->timenum ] } @objs;
@@ -27,7 +27,7 @@ sub break_sets {
 
     my @breaktimes = map { $_->[0]->ap } @objs_with_num;
 
-    unshift @breaktimes, Actium::O::Time::->from_num( $timenums[0] )->ap;
+    unshift @breaktimes, Actium::Time::->from_num( $timenums[0] )->ap;
 
     my @breaknums = map { $_->[1] } @objs_with_num;
     @breaknums = ( $earliest, @breaknums, $latest );

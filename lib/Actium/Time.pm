@@ -1,4 +1,4 @@
-package Actium::O::Time 0.014;
+package Actium::Time 0.014;
 
 # object for formatting schedule times and parsing formatted times
 
@@ -212,13 +212,13 @@ method from_excel ($class: @cells) {
 ## TIMENUM ATTRIBUTE
 #######################################################
 
-#subtype 'Actium::O::Time::RealTimeNum', as 'Int',
+#subtype 'Actium::Time::RealTimeNum', as 'Int',
 #  where { ( $_ >= $NAMED{NOON_YESTERDAY} ) && ( $_ <= $NAMED{NOON_TOMORROW} ) };
-#subtype 'Actium::O::Time::SpecialTimeNum', as 'Maybe[Str]',
+#subtype 'Actium::Time::SpecialTimeNum', as 'Maybe[Str]',
 #  where { not defined($_) or $_ eq 'f' or $_ eq 'i' };
 #
-#union 'Actium::O::Time::TimeNum',
-#  [ 'Actium::O::Time::RealTimeNum', 'Actium::O::Time::SpecialTimeNum' ];
+#union 'Actium::Time::TimeNum',
+#  [ 'Actium::Time::RealTimeNum', 'Actium::Time::SpecialTimeNum' ];
 
 has timenum => (
     isa => union(
@@ -424,19 +424,19 @@ __END__
 
 =head1 NAME
 
-Actium::O::Time - Routines to format times in the Actium system
+Actium::Time - Routines to format times in the Actium system
 
 =head1 VERSION
 
-This documentation refers to Actium::O::Time version 0.014
+This documentation refers to Actium::Time version 0.014
 
 =head1 SYNOPSIS
 
- use Actium::O::Time;
- my $time = Actium::O::Time->from_str('8:15a');
- my $time2 = Actium::O::Time->from_num(  65 ); # 1:05 am
- my $negtime = Actium::O::Time->from_str("23'59");
- my @moretimes = Actium::O::Time->from_str('12:15p', '2015', '12:01x');
+ use Actium::Time;
+ my $time = Actium::Time->from_str('8:15a');
+ my $time2 = Actium::Time->from_num(  65 ); # 1:05 am
+ my $negtime = Actium::Time->from_str("23'59");
+ my @moretimes = Actium::Time->from_str('12:15p', '2015', '12:01x');
  
  say $time->ap;      # 12:15a
  say $negtime->ap;   # 11:59p
@@ -445,7 +445,7 @@ This documentation refers to Actium::O::Time version 0.014
  
 =head1 DESCRIPTION
 
-Actium::O::Time is an class designed to format times for transit
+Actium::Time is an class designed to format times for transit
 schedules. It takes times formatted in a number of different ways and
 converts them to a number of minutes after midnight (or, if negative,
 before midnight). Times are only treated as whole minutes, so seconds
@@ -478,10 +478,10 @@ performed.
 
 =head1 CLASS METHODS
 
-The object is constructed using C<< Actium::O::Time->from_str >> , C<<
-Actium::O::Time->from_num >>, or  C<< Actium::O::Time->from_excel >>.
+The object is constructed using C<< Actium::Time->from_str >> , C<<
+Actium::Time->from_num >>, or  C<< Actium::Time->from_excel >>.
 
-=head2 Actium::O::Time->from_str( I<string> , I<string>, ...) 
+=head2 Actium::Time->from_str( I<string> , I<string>, ...) 
 
 This constructor accepts times represented as a string, usually a
 formatted time such as "11:59a" or "13'25", and returns an object for
@@ -578,7 +578,7 @@ so  '1201x' is treated as one minute after midnight, tomorrow.
 (Note that "12:00z" is not accepted for noon tomorrow, although the
 module can output that format.)
 
-=head2 Actium::O::Time->from_num( I<integer>, I<integer>, ... ) 
+=head2 Actium::Time->from_num( I<integer>, I<integer>, ... ) 
 
 This constructor accepts a time number: an integer representing the
 number of minutes after midnight (or, if negative, before midnight). It
@@ -589,7 +589,7 @@ between noon yesterday and noon tomorrow.
 
 It also accepts the three special values: "f", "i", and the undefined value. 
 
-=head2 Actium::O::Time->from_excel( I<cell>, I<cell>, ... ) 
+=head2 Actium::Time->from_excel( I<cell>, I<cell>, ... ) 
 
 This constructor accepts cells from Excel, specifically those returned
 from the get_cell routine in either Spreadsheet::ParseExcel or
@@ -599,18 +599,18 @@ C<value> and C<unformatted>.)  It can accept a formatted Excel time
 string (which it sends to C<from_str>). It returns one object for each
 cell passed to it.
 
-=head2 Actium::O::Time->new() 
+=head2 Actium::Time->new() 
 
 B<< Do not use this method. >>
 
-This method is used internally by Actium::O::Time to create a new
+This method is used internally by Actium::Time to create a new
 object and insert it into the caches used by C<from_str>, C<from_excel>, and
 C<from_num>.  There should never be a reason to create more than one
 object with the same arguments.
 
-=head2 Actium::O::Time::->timesort(I<obj>, I<obj>, ...
+=head2 Actium::Time::->timesort(I<obj>, I<obj>, ...
 
-This class method takes a series of Actium::O::Time objects and sorts
+This class method takes a series of Actium::Time objects and sorts
 them (numerically according to their time number value), returning the 
 sorted list of objects.
 
