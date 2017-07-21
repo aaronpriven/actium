@@ -1,4 +1,4 @@
-package Actium::Sked::TripTime 0.014;
+package Actium::Sked::Trip::Time 0.014;
 
 use Actium 'class';
 use Actium::Time;
@@ -54,7 +54,7 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::TripTime - Times associated with schedules
+Actium::Sked::Trip::Time - Times associated with schedules
 
 =head1 VERSION
 
@@ -62,12 +62,12 @@ This documentation refers to version 0.014
 
 =head1 SYNOPSIS
 
- use Actium:Sked::TripTime;
- my $time = Actium::Sked::TripTime->from_str('21:30');
+ use Actium:Sked::Trip::Time;
+ my $time = Actium::Sked::Trip::Time->from_str('21:30');
    
 =head1 DESCRIPTION
 
-Actium::Sked::TripTime is an object representing a time in a 
+Actium::Sked::Trip::Time is an object representing a time in a 
 schedule. Most of the work is done by
 L<Actium::Time|Actium::Time>, q.v. , and all methods supported by
 Actium::Time are supported by this module. There are only a small
@@ -95,7 +95,7 @@ interpolated (which can be queried by C<was_interpolated>).
 =head2 from_str, from_num, from_excel
 
 These are the same as their counterparts in Actium::Time, except that
-they return an Actium::Sked::TripTime object instead of an
+they return an Actium::Sked::Trip::Time object instead of an
 Actium::Time object.
 
 =back
