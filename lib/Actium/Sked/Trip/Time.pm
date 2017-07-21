@@ -9,6 +9,9 @@ has _time_obj => (
     required => 1,
     init_arg => 'time_obj',
     handles  => qr/^(?!(?:from_str|from_num|from_excel)$).*/,
+    # use all of Actium::O::Time's methods except for
+    # from_str, from_num, from_excel
+    # which are defined below
 );
 
 has was_interpolated => (
@@ -60,41 +63,49 @@ This documentation refers to version 0.014
 =head1 SYNOPSIS
 
  use Actium:Sked::Trip::Time;
- # do something with <name>
+ my $time = Actium::Sked::Trip::Time->from_str('21:30');
    
 =head1 DESCRIPTION
 
-A full description of the module and its features.
+Actium::Sked::Trip::Time is an object representing a time in a 
+schedule. Most of the work is done by
+L<Actium::O::Time|Actium::O::Time>, q.v. , and all methods supported by
+Actium::O::Time are supported by this module. There are only a small
+number of additional methods, which allow the replacement of a time in a
+schedule by an interpolated version.
 
-=head1 SUBROUTINES or METHODS or ATTRIBUTES
+=head1 METHODS 
 
-=over
+=head2 was_interpolated
 
-=item B<subroutine()>
+This method returns a boolean value: true if a time has been
+interpolated here, false if it has not. This indicates that the time
+I<was> interpolated -- to check if a time still needs to be
+interpolated, use the method C<is_awaiting_interpolation> from
+Actium::O::Time.
 
-Description of subroutine.
+=head2 set_interpolated_str, set_interpolated_num
+
+These methods set the value of this time to a new value, either a string
+(which is sent to by Actium::O::Time->from_str) or a number (sent to
+Actium::O::Time->from_num). They also mark this time as having been
+interpolated (which can be queried by C<was_interpolated>).
+
+=head2 from_str, from_num, from_excel
+
+These are the same as their counterparts in Actium::O::Time, except that
+they return an Actium::Sked::Trip::Time object instead of an
+Actium::O::Time object.
 
 =back
 
-=head1 DIAGNOSTICS
-
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties that
-can be se. These descriptions must also include details of any
-configuration language used.
-
 =head1 DEPENDENCIES
 
-List its dependencies.
+=over
+
+=item Actium
+
+=item Actium::O::Time
 
 =head1 AUTHOR
 
@@ -121,6 +132,6 @@ the Artistic License version 2.0.
 =back
 
 This program is distributed in the hope that it will be useful, but
-WITHOUT  ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
