@@ -3,7 +3,7 @@ package Actium::Import::Xhea::ToSkeds 0.012;
 use Actium;
 use Actium::Storage::TabDelimited 'read_aoas';
 use Actium::O::Dir;
-use Actium::O::Time;
+use Actium::Time;
 use Actium::O::Pattern;
 use Actium::O::Pattern::Block;
 use Actium::O::Pattern::Group;
@@ -343,7 +343,7 @@ sub _get_trips {
             my $pattern_id = $pattern_id_of_trip_number{$int_number};
             my $pattern    = $pattern_by_id{$pattern_id};
 
-            my $time = Actium::O::Time::->from_str( $field{tstp_passing_time} );
+            my $time = Actium::Time::->from_str( $field{tstp_passing_time} );
             my $stop_position = $field{tstp_position} - 1;
             # convert 1-based to 0-based counting
 

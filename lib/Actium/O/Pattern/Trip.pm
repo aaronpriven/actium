@@ -1,7 +1,7 @@
 package Actium::O::Pattern::Trip 0.012;
 
 use Actium ('class');
-use Actium::O::Time;
+use Actium::Time;
 
 sub id {
     my $self = shift;
@@ -32,7 +32,7 @@ has 'stoptime_r' => (
     traits  => ['Array'],
     is      => 'ro',
     writer  => '_set_stoptime_r',
-    isa     => 'ArrayRef[Actium::O::Time]',
+    isa     => 'ArrayRef[Actium::Time]',
     default => sub { [] },
     handles => {
         set_stoptime        => 'set',

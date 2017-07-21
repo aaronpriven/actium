@@ -5,7 +5,7 @@ use Actium ('role');
 use Actium::O::Sked::Trip;
 use Actium::O::Dir;
 use Actium::O::Days;
-use Actium::O::Time;
+use Actium::Time;
 
 #############################################
 #### READ FROM AN EXCEL SPREADSHEET
@@ -104,7 +104,7 @@ func _cell_value ( $sheet !, Int $row!, Int $col! ) {
 func _cell_time ( $sheet !, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
     return $EMPTY unless defined $cell;
-    my $time = Actium::O::Time->from_excel($cell);
+    my $time = Actium::Time->from_excel($cell);
     return $time->timenum;
 }
 
@@ -336,8 +336,7 @@ method _stop_columns {
       = Actium::O::2DArray->new( $self->_stopid_r, $self->_stopplace_r );
 
     foreach my $trip ( $self->trips ) {
-        my @times
-          = map { Actium::O::Time->from_num($_)->apbx } $trip->stoptimes;
+        my @times = map { Actium::Time->from_num($_)->apbx } $trip->stoptimes;
         $stop_columns->push_row(@times);
     }
 
@@ -374,8 +373,7 @@ method _place_columns {
       = Actium::O::2DArray->new( $self->_place4_r, $self->_place8_r );
 
     foreach my $trip ( $self->trips ) {
-        my @times
-          = map { Actium::O::Time->from_num($_)->apbx } $trip->placetimes;
+        my @times = map { Actium::Time->from_num($_)->apbx } $trip->placetimes;
 
         $place_columns->push_row(@times);
     }
