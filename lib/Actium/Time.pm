@@ -13,7 +13,7 @@ const my %NAMED => (
     MIDNIGHT          => 0,
     NOON              => $MINS_IN_12HRS,
     MIDNIGHT_TOMORROW => 2 * $MINS_IN_12HRS,
-    NOON_TOMORROW     => 3 * $MINS_IN_12HRS,
+    MAX_TIME          => ( 3 * $MINS_IN_12HRS ) - 1,
     f                 => 'f',
     i                 => 'i',
 );
@@ -213,7 +213,7 @@ method from_excel ($class: @cells) {
 #######################################################
 
 #subtype 'Actium::Time::RealTimeNum', as 'Int',
-#  where { ( $_ >= $NAMED{NOON_YESTERDAY} ) && ( $_ <= $NAMED{NOON_TOMORROW} ) };
+#  where { ( $_ >= $NAMED{NOON_YESTERDAY} ) && ( $_ <= $NAMED{MAX_TIME} ) };
 #subtype 'Actium::Time::SpecialTimeNum', as 'Maybe[Str]',
 #  where { not defined($_) or $_ eq 'f' or $_ eq 'i' };
 #
@@ -226,7 +226,7 @@ has timenum => (
                 as 'Int',
                 where {
                     ( $_ >= $NAMED{NOON_YESTERDAY} )
-                      && ( $_ <= $NAMED{NOON_TOMORROW} )
+                      && ( $_ <= $NAMED{MAX_TIME} )
                 }
             ),
             subtype(
@@ -289,8 +289,8 @@ has _formatted_cache_r => (
 
 method formatted ( 
     :$separator = ':' , 
+    :$negative_separator = q['] ,
     :$format = '24', 
-    :$negative_separator = q['] 
 ) {
 
     croak "Invalid format $format in " . __PACKAGE__ . '->formatted'
@@ -327,7 +327,7 @@ method formatted (
     # 12 hour formats
 
     my $minutes = sprintf( '%02d', $timenum % 60 );
-    my $hours = ( u::floor( $timenum / 60 ) ) % 12;
+    my $hours = ( Actium::floor( $timenum / 60 ) ) % 12;
     $hours = 12 if $hours == 0;
 
     if ( $format eq '12apmn' ) {
@@ -336,9 +336,7 @@ method formatted (
           if ( $timenum == $NAMED{MIDNIGHT}
             or $timenum == $NAMED{MIDNIGHT_TOMORROW} );
         return "12:00n"
-          if ( $timenum == $NAMED{NOON}
-            or $timenum == $NAMED{NOON_YESTERDAY}
-            or $timenum == $NAMED{NOON_TOMORROW} );
+          if ( $timenum == $NAMED{NOON} or $timenum == $NAMED{NOON_YESTERDAY} );
 
         $format = '12ap';
     }
@@ -351,17 +349,14 @@ method formatted (
           : 'p';
     }
     else {    # 12apbx
-        $marker
-          = $timenum >= $NAMED{MIDNIGHT} && $timenum < $NAMED{NOON} ? 'a'
-          : $timenum >= $NAMED{NOON}
-          && $timenum < $NAMED{MIDNIGHT_TOMORROW} ? 'p'
-          : $timenum >= $NAMED{NOON_YESTERDAY}
-          && $timenum < $NAMED{MIDNIGHT} ? 'b'
-          : $timenum >= $NAMED{MIDNIGHT_TOMORROW}
-          && $timenum < $NAMED{NOON_TOMORROW} ? 'x'
-          : $timenum == $NAMED{NOON_TOMORROW} ? 'z'
-          : croak
-          "Cannot make a 12 hour timestr from out-of-range number $timenum";
+   #<<<
+ $marker
+   = $timenum >= $NAMED{MIDNIGHT} && $timenum < $NAMED{NOON} ? 'a'
+   : $timenum >= $NAMED{NOON} && $timenum < $NAMED{MIDNIGHT_TOMORROW} ? 'p'
+   : $timenum >= $NAMED{NOON_YESTERDAY} && $timenum < $NAMED{MIDNIGHT} ? 'b'
+   : $timenum >= $NAMED{MIDNIGHT_TOMORROW} && $timenum <= $NAMED{MAX_TIME} ? 'x'
+   : croak "Cannot make a 12 hour timestr from out-of-range number $timenum";
+  #>>>
     }
     return $self->_fcache_set(
         $cachekey => join( $EMPTY, $hours, $separator, $minutes, $marker ) );
@@ -439,9 +434,9 @@ This documentation refers to Actium::Time version 0.014
  my @moretimes = Actium::Time->from_str('12:15p', '2015', '12:01x');
  
  say $time->ap;      # 12:15a
+ say $time->formatted(format => '24', separator => '.'); # 0.15
  say $negtime->ap;   # 11:59p
  say $negtime->apbx; # 11:59b
- say $time->formatted(format => '24', separator => '.'); # 0.15
  
 =head1 DESCRIPTION
 
@@ -453,12 +448,11 @@ are not used.
 
 Most transit operators that run service after midnight treat those
 trips as a later part of the service day: so a trip that begins at
-1:00 a.m. on Sunday  is scheduled as though it were at 25 o'clock on
-Saturday. This class allows  times from noon on the day before the
-service day through 11:59 on the day after the service day (so for a
-Saturday day of service, from 12:00 p.m. Friday through 11:59 a.m.
-Sunday).  (Noon on the following day is also accepted as a special
-case.)
+1:00 a.m. on Sunday  is scheduled as though it were at 25 o'clock
+on Saturday. This class allows a 48-hour stretch of times, from
+noon on the day before the service day through 11:59 on the day
+after the service day (so for a Saturday day of service, from 12:00
+p.m. Friday through 11:59 a.m. Sunday).
 
 The object allows times in different formats to be normalized and
 output in various other formats, as well as allowing sorting of times
@@ -500,17 +494,16 @@ times instead of a format string. The valid named times are:
 
 =item    MIDNIGHT_TOMORROW 
 
-=item    NOON_TOMORROW 
+=item    MAX_TIME
 
 =back 
 
-(The named format is the only way to specify noon tomorrow with a
-string.)
+MAX_TIME is equivalent to 11:59x, or 11:59 a.m. on the following day.
 
 The C<from_str> method also accepts the three special values 'f',
-'i', and the undefined value.  Other than "f" and "i", any values without any
-numbers in it (including the empty string) are treated as the undefined
-value.
+'i', and the undefined value.  Other than "f" and "i", a string without any
+numbers in it is treated as the undefined value.  (This includes the 
+empty sttring.)
 
 Otherwise, the string format can be one of these:
 
@@ -575,17 +568,14 @@ treated as one minute before midnight.
 A final "x" is accepted for times after midnight on the following day,
 so  '1201x' is treated as one minute after midnight, tomorrow.
 
-(Note that "12:00z" is not accepted for noon tomorrow, although the
-module can output that format.)
-
 =head2 Actium::Time->from_num( I<integer>, I<integer>, ... ) 
 
 This constructor accepts a time number: an integer representing the
 number of minutes after midnight (or, if negative, before midnight). It
 returns one object for each number that is passed.
 
-The integer must be between -720 and 2160, representing the times
-between noon yesterday and noon tomorrow.
+The integer must be between -720 and 2159, representing the times
+between noon yesterday and one minute before noon tomorrow.
 
 It also accepts the three special values: "f", "i", and the undefined value. 
 
@@ -616,15 +606,13 @@ sorted list of objects.
 
 =head1 OBJECT METHODS
 
-=over
-
-=item B<timenum()>
+=head2 B<timenum()>
 
 Returns the time as a number of minutes since midnight (or, if
 negative, before midnight), or one of the special values 'f', 'i', or the 
 undefined value.
 
-=item B<ap()> and B<ap_noseparator>
+=head2 B<ap()> and B<ap_noseparator>
 
 The C<ap> method returns the time as a string: hours, a colon, minutes,
 followed by "a" for a.m. or "p" for p.m. For example, "2:25a" or
@@ -636,7 +624,7 @@ time will be returned as the empty string.
 
 These values are cached so will only be generated once for each time.
 
-=item B<apbx()> and B<apbx_noseparator>
+=head2 B<apbx()> and B<apbx_noseparator>
 
 The C<apbx> method returns the time as a string: hours, a colon,
 minutes, followed by a marker.  Times today are given the marker
@@ -647,17 +635,12 @@ tomorrow, one minute after midnight.
 
 The C<apbx_noseparator> method is similar, but does not include the colon.
 
-(There is one additional marker, "z", which is only used for noon
-tomorrow. Times after noon tomorrow are invalid, but the time noon
-tomorrow is used as a highest-possible-time,  so that is a valid
-object, although it should probably not be displayed.)
-
 The special values 'f' and 'i' will be returned as such. An undefined
 time will be returned as the empty string.
 
 These values are cached so will only be generated once for each time.
 
-=item B<< formatted (format => I<format>, separator => I<str> , negative_separator => I<str> >>
+=head2 B<< formatted (format => I<format>, separator => I<str> , negative_separator => I<str> >>
 
 This method provides the time in one of several formats. In each case,
 the separator given is used to separate the hours and minutes (except
@@ -684,13 +667,13 @@ noon (on any day) is returned as 12:00n.
 This returns the 12-hour time: hours from 1 to 12, and minutes from 0 to 60.
 Times on the current day are marked "a" for a.m. or "p" for p.m.  The previous
 day's p.m. times are given the marker "b", and the following day's a.m. times
-are given the marker "x".  In addition, noon on the following day is shown as
-"12:00z" (although this is the only value displayed with a "z").
+are given the marker "x".  
 
 =item 24
 
-This returns the 24-hour time: hours from 0 to 23, minutes from 0 to 60. No distinction is
-made between times on the current day, on the previous day, or on the following day.
+This returns the 24-hour time: hours from 0 to 23, minutes from 0 to 60.
+No distinction is made between times on the current day, on the previous
+day, or on the following day.
 
 =item 24+
 
@@ -699,9 +682,8 @@ Hours above 23 indicate times on the following day.
 
 The separator serves to indicate times on the previous day. Times on the
 previous day use the negative separator provided, rather than the regular
-separator. The default negative separator is a single quote (').
-
-=back
+separator. (This is the only format that uses the negative separator.) 
+The default negative separator is a single quote (').
 
 =back
 
@@ -732,4 +714,3 @@ the Artistic License version 2.0.
 This program is distributed in the hope that it will be useful, but
 WITHOUT  ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
-
