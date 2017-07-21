@@ -78,8 +78,8 @@ This documentation refers to version 0.014
  
 =head1 DESCRIPTION
 
-Actium::MooseX::IsCodeRef implements the "rwp" shortcut in Moose,
-allowing attributes with private writers but public readers.
+Actium::MooseX::Rwp implements the "rwp" shortcut in Moose, allowing
+attributes with private writers but public readers.
 
 =head1 OPTIONS TO 'HAS'
 
