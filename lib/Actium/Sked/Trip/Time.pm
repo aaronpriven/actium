@@ -8,10 +8,10 @@ has _time_obj => (
     isa      => 'Actium::Time',
     required => 1,
     init_arg => 'time_obj',
-    handles  => qr/^(?!(?:from_str|from_num|from_excel)$).*/,
+    handles  => qr/^(?!(?:new|from_str|from_num|from_excel)$).*/,
     # use all of Actium::Time's methods except for
-    # from_str, from_num, from_excel
-    # which are defined below
+    # from_str, from_num, from_excel which are defined below
+    # and new which nobody should be using anyway
 );
 
 has was_interpolated => (
