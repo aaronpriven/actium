@@ -10,10 +10,9 @@ has line => (
 
 has days_obj => (
     required => 0,
-    coerce   => 1,
     init_arg => 'days',
     is       => 'ro',
-    isa      => ActiumDays,
+    isa      => 'Actium::O::Days',
     handles  => {
         daycode       => 'daycode',
         sortable_days => 'as_sortable',
