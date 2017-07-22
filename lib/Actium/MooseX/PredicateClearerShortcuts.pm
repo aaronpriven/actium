@@ -1,4 +1,4 @@
-package Actium::MooseX::DefaultMethodNames 0.014;
+package Actium::MooseX::PredicateClearerShortcuts 0.014;
 
 use strict;
 use warnings;
@@ -6,29 +6,26 @@ use warnings;
 use Moose 1.99 ();
 use Moose::Exporter;
 use Moose::Util::MetaRole;
-# use Actium::MooseX::DefaultMethodNames::Role::Attribute;
+# use Actium::MooseX::PredicateClearerShortcuts::Role::Attribute;
 
 my %metaroles = (
-    class_metaroles =>
-      { attribute => ['Actium::MooseX::DefaultMethodNames::Role::Attribute'], },
+    class_metaroles => {
+        attribute =>
+          ['Actium::MooseX::PredicateClearerShortcuts::Role::Attribute'],
+    },
     role_metaroles => {
         applied_attribute =>
-          ['Actium::MooseX::DefaultMethodNames::Role::Attribute'],
+          ['Actium::MooseX::PredicateClearerShortcuts::Role::Attribute'],
     },
 );
 
 Moose::Exporter->setup_import_methods(%metaroles);
 
-package Actium::MooseX::DefaultMethodNames::Role::Attribute 0.014;
+package Actium::MooseX::PredicateClearerShortcuts::Role::Attribute 0.014;
 
 use Moose::Role;
 
-# trigger and build are always private, since they should not be called
-# outside the class, but predicate and clearer could be public, or not
-
 my %prefix = (
-    trigger   => 'trigger',
-    builder   => 'build',
     predicate => 'has',
     clearer   => 'clear',
 );
@@ -41,14 +38,6 @@ before '_process_options' => sub {
     my $private_attr = ( $name =~ /\A_/ );
 
     my $suffix = ( $private_attr ? q{_} : q{} ) . $name;
-
-    foreach my $option (qw/trigger builder/) {
-        if ( exists $options->{$option}
-            and ( '_' eq $options->{$option} or 1 eq $options->{$option} ) )
-        {
-            $options->{$option} = '_' . $prefix{$option} . $suffix;
-        }
-    }
 
     foreach my $option (qw/predicate clearer/) {
         if ( exists $options->{$option} ) {
@@ -75,8 +64,8 @@ __END__
 
 =head1 NAME
 
-Actium::MooseX::DefaultMethodNames - supply default names for Moose
-attributes
+Actium::MooseX::PredicateClearerShortcuts - supply default predicate
+and clearer names
 
 =head1 VERSION
 
@@ -85,12 +74,10 @@ This documentation refers to version 0.014
 =head1 SYNOPSIS
 
  use Moose;
- use Actium::MooseX::DefaultMethodNames;
+ use Actium::MooseX::PredicateClearerShortcuts;
  
  has attribute => (
     is => 'ro',
-    trigger => 1,
-    builder => 1,
     predicate => 1,
     clearer => '_',
  );
@@ -99,18 +86,16 @@ This documentation refers to version 0.014
  
  has attribute => (
     is => 'ro',
-    trigger => '_trigger_attribute',
-    builder => '_build_attribute',
     predicate => 'has_attribute',
     clearer => '_clear_attribute',
  );
  
 =head1 DESCRIPTION
 
-Actium::MooseX::DefaultMethodNames allows several shortcuts in Moose
-"has" attribute specifiers to allow easier specification of trigger,
-builder, predicate, or clearer methods, when those methods have
-conventional names.
+Actium::MooseX::PredicateClearerShortcuts allows several shortcuts in
+Moose "has" attribute specifiers to allow easier specification of 
+predicate or clearer methods, when those methods have conventional
+names.
 
 =head2 CONVENTIONAL NAMES
 
@@ -140,22 +125,6 @@ Specifying an underscore instead of 1 will make these methods private
 (with a leading underscore) instead of public, even if the attribute
 itself is public: so an attribute called "name" will be given methods
 "_has_name" and "_clear_name".
-
-=item C<< trigger => 1 >>
-
-=item C<< builder => 1 >>
-
-=item C<< trigger => '_' >>
-
-=item C<< builder => '_' >>
-
-These are always given an underscore in front, whether or not the
-attribute is private and whether or not the underscore or 1 is given in
-the option to "has", since conventionally triggers and builders are not
-part of a class's interface.
-
-The default names are "_trigger_I<attributename>" and
-"_build_<attributename>".
 
 =back
 
