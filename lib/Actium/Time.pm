@@ -259,6 +259,11 @@ method no_stop {
     return not defined $self->timenum;
 }
 
+method has_time {
+    my $timenum = $self->timenum;
+    return ( defined $timenum and $timenum ne 'f' and $timenum ne 'i' );
+}
+
 #######################################################
 ## FORMATTED TIMES
 #######################################################
@@ -611,6 +616,32 @@ sorted list of objects.
 Returns the time as a number of minutes since midnight (or, if
 negative, before midnight), or one of the special values 'f', 'i', or the 
 undefined value.
+
+=head2 B<is_flex()>
+
+Returns true if the time represents a flexible stop (i.e., the timenum value 
+is 'f'), false otherwise.
+
+=head2 B<is_awaiting_interpolation()>
+
+Returns true if the time represents a time that must be interpolated 
+(i.e., the timenum value is 'i'), false otherwise.
+
+=head2 B<does_stop()>
+
+Returns true if the time represents a stop that will be made
+(i.e., the timenum value is defined), false otherwise.
+
+=head2 B<no_stop()>
+
+The opposite of C<does_stop>. Returns true if the time represents a stop
+that will not be made (i.e., the timenum value is not defined), false
+otherwise.
+
+=head2 B<has_time()>
+
+Returns true if the time represents an actual time rather than one of the
+special values 'f', 'i', or the undefined value; false otherwise.
 
 =head2 B<ap()> and B<ap_noseparator>
 
