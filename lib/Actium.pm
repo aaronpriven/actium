@@ -159,11 +159,11 @@ MooseX::MarkAsMethods is imported with parameters "autoclean => 1".
 
 =item *
 
-L<Actium::MooseX::IsCodeRef|Actium::MooseX::IsCodeRef>
+L<Actium::MooseX::BuildTriggerShortcuts|Actium::MooseX::BuildTriggerShortcuts>
 
 =item *
 
-L<Actium::MooseX::DefaultMethodNames|Actium::MooseX::DefaultMethodNames>
+L<Actium::MooseX::PredicateClearerShortcuts|Actium::MooseX::PredicateClearerShortcuts>
 
 =item *
 
@@ -326,8 +326,8 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
             # either class or role
 
             _do_import 'MooseX::MarkAsMethods', autoclean => 1;
-            _do_import 'Actium::MooseX::IsCodeRef';
-            _do_import 'Actium::MooseX::DefaultMethodNames';
+            _do_import 'Actium::MooseX::BuildTriggerShortcuts';
+            _do_import 'Actium::MooseX::PredicateClearerShortcuts';
             _do_import 'Actium::MooseX::Rwp';
             _do_import 'Actium::MooseX::BuiltIsRo';
             _do_import 'MooseX::StrictConstructor';
@@ -1220,11 +1220,11 @@ Actium::MooseX::BuiltIsRo
 
 =item *
 
-Actium::MooseX::DefaultMethodNames
+Actium::MooseX::PredicateClearerShortcuts
 
 =item *
 
-Actium::MooseX::IsCodeRef
+Actium::MooseX::BuildTriggerShortcuts
 
 =item *
 
