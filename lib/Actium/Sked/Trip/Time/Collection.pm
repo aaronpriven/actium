@@ -10,31 +10,6 @@ use Actium ('role');
 # The following is invoked only from the BUILD routine in Actium::Sked
 # It requires knowledge of the stopplaces which is in the Sked object
 
-sub _add_placetimes_from_stoptimes {
-    my $self = shift;
-    return unless $self->placetimes_are_empty;
-
-    my @stopplaces = @_;
-
-    my @stoptimes = $self->stoptimes;
-    my @placetimes;
-
-    for my $i ( 0 .. $#stoptimes ) {
-
-        my $stopplace = $stopplaces[$i];
-        my $stoptime  = $stoptimes[$i];
-
-        if ($stopplace) {
-            push @placetimes, $stoptime;
-        }
-    }
-
-    $self->_set_placetime_r( \@placetimes );
-
-    return;
-
-} ## tidy end: sub _add_placetimes_from_stoptimes
-
 ################
 ### STOPTIMES
 ################
@@ -97,30 +72,39 @@ has placetime_r => (
     isa      => 'ArrayRef[Actium::Sked::Trip::Time]',
     required => 0,
     default  => sub { [] },
-    trigger  => 1,
-    handles  => {
-        placetimes           => 'elements',
-        placetime_count      => 'count',
-        placetimes_are_empty => 'is_empty',
-        placetime            => 'get',
-        _splice_placetimes   => 'splice',
-        _delete_placetime    => 'delete',
+    trigger  => method( $placetimes_r, $? )
+    {
+        my @stoptimes = $self->stoptimes;
+        foreach my $placetime (@$placetimes_r) {
+            if ( Actium::none { $_ == $placetime } @stoptimes ) {
+                croak 'Actium::Sked::Trip::Time object '
+                  . 'found in placetimes but not in stoptimes.';
+            }
+        }
+        return;
+    },
+    handles => {
+        placetimes            => 'elements',
+        placetime_count       => 'count',
+        _placetimes_are_empty => 'is_empty',
+        placetime             => 'get',
+        _splice_placetimes    => 'splice',
+        _delete_placetime     => 'delete',
         # only from BUILD in Actium::O::Sked
     },
 );
 
-method _trigger_placetime_r ($placetimes_r, $?) {
-    my @stoptimes = $self->stoptimes;
+method placetimes_initialized {
+    return not $self->_placetimes_are_empty;
+}
 
-    foreach my $placetime (@$placetimes_r) {
-        if ( Actium::none { $_ == $placetime } @stoptimes ) {
-            croak 'Actium::Sked::Trip::Time object '
-              . 'found in placetimes but not in stoptimes.';
-        }
+method specify_placetimes (@stoptimes_indices) {
+    my @placetimes;
+    for my $index (@stoptimes_indices) {
+        push @placetimes, $self->stoptime($index);
     }
-
+    $self->_set_placetime_r( \@placetimes );
     return;
-
 }
 
 1;
@@ -134,134 +118,82 @@ schedule times
 
 =head1 VERSION
 
-This documentation refers to Actium:::Sked::Trip::Time::Collection version 0.014
+This documentation refers to Actium:::Sked::Trip::Time::Collection
+version 0.014
 
 =head1 DESCRIPTION
 
-This is a Moose role, representing the collection of times associated with
-a trip of a transit schedule.  It is designed to be applied to the 
-Actium::Sked::Trip class, but could conceivably be used for other collections
-of times.
+This is a Moose role, representing the collection of times associated
+with a trip of a transit schedule.  It is designed to be applied to the
+ Actium::Sked::Trip class, but could conceivably be used for other
+collections of times.
 
 =head1 ATTRIBUTES
 
 =head2 B<stoptimes>
 
-This is an array of Actium::Sked::Trip::Time objects, each one representing
-the time the vehicle passes a stop. See Actium::Sked::Trip::Time and 
-Actium::Time for more details.
+This is an array of Actium::Sked::Trip::Time objects, each one
+representing the time the vehicle passes a stop. See
+Actium::Sked::Trip::Time and Actium::Time for more details.
 
-In the constructor, the <stoptimes> entry expects an array reference.
+There is one entry for each stop in the schedule, although that  may
+point to an Actium::Time value representing a stop that is not served
+by this trip.
+
+=head3 construction
+
+In the constructor, the C<stoptimes> entry expects an array reference.
+
+=head3 C<stoptimes> method
+
 The C<stoptimes> method returns a list of the times. The stoptimes 
 attribute is read-only.
 
-=item B<placetimes>
+=head3 C<stoptime( I<index> ) > method
 
-This is a list of those times (from 
+The C<stoptime> method returns the time object at the specified index.
 
+=head3 C<stoptime_count> method
 
+The C<stoptime_count> method returns the count of the elements of
+stoptimes.
 
+=head2 C<placetimes>
 
-In the constructor, the <stoptimes> entry expects an array reference.
-The C<stoptimes> method returns a list of the times.
+This is a list of those times from C<stoptimes> that are the times
+representing "places" (timepoints).
 
-Two references to arrays containing times, numerically, 
-in minutes since midnight 
-(minutes before midnight are shown as negative numbers). There is one entry 
-for each stop or place in the schedule, even if the stop or place 
-is not served by this trip.
-Entries for stops or places not served by this trip are stored as I<undef>.
+There is one entry for each place (timepoint) in the schedule, although
+that may point to an Actium::Time value representing a stop that is not
+served by this trip.
 
-These are integers, the number of minutes since midnight (or before midnight, if
-negative). If an entry is set to a string, it is coerced to an integer using 
-L<Actium::Time|Actium::Time>.
+=head3 construction
 
-=item B<stoptimes>
+In the constructor, the C<placetimes> entry expects an array reference.
 
-=item B<placetimes>
+=head3 C<placetimes> method
 
-The elements of the I<stoptime_r> and I<placetime_r> array references, 
-respectively.
+The C<placetimes> method returns a list of the times.
 
-=item B<stoptimes_are_empty>
+=head3 C<placetime( I<index> ) > method
 
-=item B<placetimes_are_empty>
+The C<placetime> method returns the time object at the specified index.
 
-Returns false if stoptime_r or placetime_r, respectively, have any elements;
-true otherwise.
+=head3 C<placetime_count> method
 
-=item B<placetime_count>
+The C<placetime_count> method returns the count of the elements of
+placetimes.
 
-The number of elements in the placetime array.
+=head3 C<placetimes_initialized>
 
-=item B<placetime(I<index>)>
+Returns true if the placetimes have been initialized, false otherwise.
 
-Returns the value of the placetime of the given index (beginning at 0).
+=head3 C<< specify_placetimes (I<stoptime_indices>) >>
 
-=item B<mergedtrips>
-
-After trips are  merged using I<merge_pair()>, this will return all the 
-Actium::O::Sked::Trip objects that were originally merged.  
-
-=back
-
-=head1 OBJECT METHODS
-
-=over
-
-=item B<merge_pair()>
-
-This is a method to merge two trips that, presumably, have identical stoptimes
-and placetimes. (The purpose is to allow two trips that are scheduled identically --
-two buses that are designed to run at the same time to allow an extra heavy load to be
-carried -- to appear only once in the schedule.)
-
- $trip1->merge_pair($trip2);
-
-A new Actium::O::Sked::Trip object is created, with attributes as follows:
-
-=over
-
-=item stoptimes and placetimes
-
-The stoptimes and placetimes for the first trip are used.
-
-=item mergedtrips
-
-This attribute contains the Actium::O::Sked::Trip objects for all
-the parent trips.  In the simplest case, it contains the two
-Actium::O::Sked::Trip objects passed to merge_pair.
-
-However, if either of the Actium::O::Sked::Trip objects passed to
-merge_pair already has a mergedtrips attribute, then instead of
-saving the current Actium::O::Sked::Trip object, it saves the
-contents of mergedtrips. The upshot is that mergedtrips contains
-all the trips that are parents of this merged trip.
-
-=item All other attributes
-
-All other attributes are set as follows: if the value of an attribute is the same in 
-the two trips, they are set with that value. Otherwise the attribute is not set.
-
-=back
-
-=head1 DIAGNOSTICS
-
-See L<Moose>.
-
-=head1 DEPENDENCIES
-
-=over
-
-=item Moose
-
-=item MooseX::StrictConstructor
-
-=item MooseX::Storage
-
-=item Actium::Types
-
-=back
+This method accepts a list of indices in stoptimes, to be made into the
+placetimes for this object. So, for example, C<specify_placetimes
+(0,3,7,9)> would make the zeroth, third, seventh, and ninth stop times
+into the place times.
 
 =head1 AUTHOR
 
@@ -269,21 +201,21 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2011
+Copyright 2011-2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
-=item * the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any
-later version, or
+=item * the GNU General Public License as published by the Free Software
+Foundation; either version 1, or (at your option) any later version, or
 
 =item * the Artistic License version 2.0.
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
