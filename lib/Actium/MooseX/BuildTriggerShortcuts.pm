@@ -6,6 +6,7 @@ use warnings;
 use Moose 1.99 ();    ### DEP ###
 use Moose::Exporter;
 use Moose::Util::MetaRole;
+use Carp;
 
 # use Actium::MooseX::BuildTriggerShortcuts::Role::Attribute;
 
@@ -31,25 +32,34 @@ before '_process_options' => sub {
     my $name  = shift;
     my $opt   = shift;
 
-    my ( $builderref, $buildername, $triggername );
+    my ( $builderref, $buildername, $default_triggername );
 
     if ( $name =~ /\A_/ ) {
-        $buildername = "_build$name";
-        $triggername = "_trigger$name";
+        $buildername         = "_build$name";
+        $default_triggername = "_trigger$name";
     }
     else {
-        $buildername = "_build_$name";
-        $triggername = "_trigger_$name";
+        $buildername         = "_build_$name";
+        $default_triggername = "_trigger_$name";
     }
 
-    if ( exists $opt->{trigger} ) {
-        if ( is_coderef( $opt->{trigger} ) ) {
-            $class->meta->add_method( $triggername => $opt->{trigger} );
-            $opt->{trigger} = $triggername;
+    if ( exists $opt->{trigger}
+        and not is_coderef( $opt->{trigger} ) )
+    {
+        my $metamethod;
+        if ( $opt->{trigger} eq '1' or $opt->{trigger} eq '_' ) {
+            $metamethod = $class->meta->get_method($default_triggername);
+            croak(  "Can't find default trigger "
+                  . "method $default_triggername in $class" )
+              if not defined $metamethod;
         }
-        elsif ( $opt->{trigger} eq '1' or $opt->{trigger} eq '_' ) {
-            $opt->{trigger} = $triggername;
+        else {
+            $metamethod = $class->meta->get_method( $opt->{trigger} );
+            croak(
+                "Can't find trigger method " . $opt->{trigger} . " in $class" )
+              if not defined $metamethod;
         }
+        $opt->{trigger} = $metamethod->body;
     }
 
     $opt->{builder} = $buildername
@@ -76,14 +86,21 @@ before '_process_options' => sub {
         $class->meta->add_method( $opt->{builder} => $builderref );
     }
 
-    if ( ( exists $opt->{builder} or exists $opt->{default} )
-        and not exists $opt->{init_arg} )
-    {
-        $opt->{init_arg} = undef;
-    }
-    elsif ( exists $opt->{init_arg} and $opt->{init_arg} eq '1' ) {
-        $opt->{init_arg} = $name;
-    }
+    #if ( ( exists $opt->{builder} or exists $opt->{default} )
+    #    and not exists $opt->{init_arg} )
+    #{
+    #    $opt->{init_arg} = undef;
+    #}
+    #elsif ( exists $opt->{init_arg}
+    #    and defined( $opt->{init_arg} )
+    #    and $opt->{init_arg} eq '1' )
+    #{
+    #    $opt->{init_arg} = $name;
+    #}
+
+    # I don't understand why this doesn't work --
+    # it complaints that there shouldn't be an init_arg... But other
+    # options use it.
 
 };
 
@@ -199,11 +216,15 @@ default trigger name as given above.
 
 =item C<init_arg>
 
+B<This isn't working right now.>
+
 If either a builder or default is specified (whether explicitly or
 through a coderef or underscore argument to "lazy"), the init_arg
 option will be set to the undefined value, unless it is set explicitly.
  Providing the value  "1" to init_arg will restore the default value of
 the attribute name.
+
+=cut
 
 =back
 
