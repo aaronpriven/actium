@@ -14,6 +14,7 @@ Actium::O::Cmd::->new(
     commandpath => $0,
     system_name => 'actium',
     subcommands => {
+        nonmin       => 'NonMinSuppCalendar',
         ems          => 'Ems',
         flickr       => 'Flickr_Stops',
         frequency    => 'Frequency',
