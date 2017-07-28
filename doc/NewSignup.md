@@ -1,20 +1,13 @@
 # New Signup Procedures
 
-Aaron Priven, last modified March 2017
-
-A lot has changed since I created the first version of this, in
-August 2011.
-
-I am documenting the procedures I am using for the June 2015 signup
-as I go about doing it. So this should help anyone going about this
-in the future. Including myself.
+Aaron Priven, last modified Fall 2017
 
 ## Get files
 
 There are three sets of files:
 
-   1. The main XHEA export. This can be    specified with -xhea in actium.pl newsignup
-   2. The PlacePatterns.xml and xsd files   which are usually separate. These need to be placed manually in the folder xhea under the signup folder.
+   1. The main XHEA export. This can be specified with -xhea in actium.pl newsignup
+   2. The PlacePatterns.xml and xsd files which are usually separate. These need to be placed manually in the folder xhea under the signup folder.
    3. The school calendars. These need to be placed manually in the folder sch_cal under the signup folder.
 
 
@@ -31,7 +24,7 @@ The -s argument should be the name of the signup, which will be
 created in the base folder (Actium/db).
 
 In this document I will use "z00", but this is just a placeholder.
-Most of the time signups are something like "f11" or "sp12" --  f,
+Most of the time signups are something like "f11" or "sp12" -- f,
 w, sp, su = fall, winter, spring, summer followed by a two-digit
 year – f11, su10, sp08. Actually the name is arbitrary and could
 be anything. This is the "signup folder".
@@ -49,7 +42,6 @@ folder.
 
 It will also create temporary Hastus Standard AVL files from the
 XHEA data. 
-
 
 ## Download a copy of the Actium database, for backup
 
@@ -159,13 +151,12 @@ Then check "Update matching records in found set" and click the arrow next to "h
 
 Click "Import."  On the "Import Options" box, click "Import" again (it doesn't matter whether "Perform auto-enter options" is checked).
 
-
 ## Create "raw" schedule files 
-	
+
 Run this program:
-	
+
     actium.pl xhea2skeds -s z00
-	
+
 This creates the schedule files in the folder s. There are several types: Excel places (xlsx_p), Excel stops (xlsx_s), space-delimited, and memory dumps. The one that's actually used for reading is the Storable version, skeds.storable.
 
 ## Create the file comparing the signups
@@ -191,25 +182,44 @@ I write these up and save them in a file such as diffs/y00-z00-comparison.doc an
 
 ## Create exceptional schedules
 
-    not implemented at this point
+There are always some schedules that don't come out quite right from the
+scheduling system.  The scheduling system contains times for
+intermediate timepoints on headway-based schedules, which need to be
+removed.  Lollipop-shaped routes need to be rewritten so that when the
+same bus serves as the end of the eastbound trip and the beginning of
+the westbound trip, it appears on both schedules.  Some lines (like LA)
+have "opportunity trips" that show up as separate lines on the schedule,
+though they are really continuations of the previous trips. 
 
-There are always some schedules that don't come out quite right from the scheduling system. The AVL data doesn't include information about school day only running, so all school trippers on regular lines have to be exceptions.  The scheduling system contains times for intermediate timepoints on Rapid lines, which need to be removed. Lollipop-shaped routes like B and F need to be rewritten so that when the same bus serves as the end of the eastbound trip and the beginning of the westbound trip, it appears on both schedules.
+Create a new folder called "exceptions" under "s" under the signup
+folder.  Copy the old exceptions from the previous signup folder to it,
+unless you know from step #7 that the schedule has changed. If it has,
+you'll need to rewrite it again, presumably using as a starting point
+the stop schedules output from the scheduling system (found in the
+"received" folder under "s" in the signup folder).
 
-Create a new folder called "exceptions" under the signup folder.  Copy the old exceptions from the previous signup folder to it, unless you know from step #7 that the schedule has changed. If it has, you'll need to rewrite it again.
+Note that these are schedules for _stops_, so that each stop has to be
+listed, with a time. Although this is not implemented yet, I plan to
+allow "i" to be used to have the program interpolate times stops between
+timepoints, and "f" to be used for flexible stops (on Flex lines).
+
+At this time there is no way to delete an incoming schedule so it is not
+used.
 
 ## Create final schedule files
 
-    also not implemented
+This involves running the finalizeskeds program:
 
-This involves running avl2skeds again:
+    actium.pl finalizeskeds -s z00 
 
-    actium.pl avl2skeds -si z00
-
-This re-runs the avl2skeds program, only this time it includes the exceptions and creates the "skeds" folder where the skeds that are actually used are stored.
+This loads the received schedules, adds the exceptional schedules
+(replacing these if necessary), and then sends the results to the
+"final" folder under "s" in the signup folder.
 
 ## Ensure that the "Lines" and "Timetable" tables are up to date
 
-This is a manual process to make sure that the "Lines" table has current lines and associated information.
+This is a manual process to make sure that the "Lines" table has current
+lines and associated information.
 
 Importantly, all changed lines should have their Timetable Date updated.
 
@@ -308,9 +318,6 @@ Replace "<outputfile>" with the name of the file, which should probably be somet
 ##24. Update flag and decal specifications
 
 (also instructions to come)
-
-
-
 
 ## COPYRIGHT & LICENSE
 
