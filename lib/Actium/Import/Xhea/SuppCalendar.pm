@@ -140,7 +140,8 @@ sub read_supp_calendars {
                     push @on,     $wkdy;
                     push @ondays, $num_of_day{$wkdy};
                 }
-                elsif ( $off_count < ( 1 / 3 * $on_count ) ) {
+                #                elsif ( $off_count < ( 1 / 3 * $on_count ) ) {
+                elsif ( $off_count < $on_count ) {
                     $pure_days = 0;
                     push @on,
                         $wkdy
