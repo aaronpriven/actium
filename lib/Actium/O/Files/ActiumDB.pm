@@ -583,8 +583,8 @@ sub linesked_url {
 }
 
 method effective_date (
-    Str :$agency = $DEFAULT_AGENCY,
-    :@lines is ref_alias = [],
+       Str :$agency = $DEFAULT_AGENCY,
+       :@lines is ref_alias = [],
     ) {
 
     my %line_cache = $self->line_cache;
