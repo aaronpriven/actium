@@ -276,20 +276,23 @@ sub format_head_lines {
     foreach my $line (@head_lines) {
         {
             no warnings 'once';
-            if ( $line =~ /BS[DNH]/ ) {
+            if ( $line =~ /BS[DN]/ ) {
                 $color = $line;
 
                 if ( $line eq 'BSN' ) {
-                    my $days = $self->days;
-                    $line = 'FRI NIGHT' if $days eq '5';
-                    #$line = 'SAT NIGHT'       if $days eq '6';
-                    $line = 'FRI & SAT NIGHT' if $days eq '6';
-                    $line = 'FRI & SAT NIGHT' if $days eq '56';
-                    $line = 'MON' . $IDT->endash . 'THU NIGHT'
-                      if $days eq '12345';    # ugly ugly ugly hack,
-                                              # I should really fix the data
+                   #    my $days = $self->days;
+                   #    $line = 'FRI NIGHT' if $days eq '5';
+                   #    #$line = 'SAT NIGHT'       if $days eq '6';
+                   #    $line = 'FRI & SAT NIGHT' if $days eq '6';
+                   #    $line = 'FRI & SAT NIGHT' if $days eq '56';
+                   #    $line = 'MON' . $IDT->endash . 'THU NIGHT'
+                   #      if $days eq '12345';    # ugly ugly ugly hack,
+                   #                              # I should really fix the data
+                   #}
+                   #elsif ( $line eq 'BSD' or $line eq 'BSH' ) {
+                    $line = 'MON' . $IDT->endash . 'FRI NIGHT';
                 }
-                elsif ( $line eq 'BSD' or $line eq 'BSH' ) {
+                else {
                     $line = 'MON' . $IDT->endash . 'FRI DAY';
                 }
 
@@ -305,7 +308,7 @@ sub format_head_lines {
                 );
                 return;
 
-            } ## tidy end: if ( $line =~ /BS[DNH]/)
+            } ## tidy end: if ( $line =~ /BS[DN]/)
             else {
                 $color = (
                     $Actium::Cmd::MakePoints::lines{$line}{Color}
