@@ -12,10 +12,6 @@ const my $idt => 'Actium::Text::InDesignTags';
 
 use HTML::Entities;    ### DEP ###
 
-my $timesub = Actium::Time::timestr_sub();
-
-# Uses default values. Someday it would be nice to make that configurable
-
 has sked_obj => (
     isa      => 'Actium::O::Sked',
     is       => 'ro',
@@ -241,7 +237,7 @@ sub new_from_sked {
         }
 
         foreach my $timenum ( $trip->placetimes ) {
-            push @row, $timesub->($timenum);
+            push @row, Actium::Time->from_num($timenum)->ap;
         }
 
         push @body_rows, \@row;

@@ -9,7 +9,7 @@ use MooseX::Types -declare => [
     qw <DayCode     SchoolDayCode   DayStr
       DaySpec             ActiumDays  ActiumTime
       DirCode             ActiumDir
-      ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
+      ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum
       Str4                Str8
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
       ActiumFolderLike
@@ -23,7 +23,6 @@ use MooseX::Types -declare => [
 
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
 
-use Actium::Time;
 use Unicode::GCString;    ### DEP ###
 
 ##################
@@ -94,8 +93,8 @@ coerce ARCrierBullets, from CrierBullet, via { [$_] };
 ######################
 ## SCHEDULE TIMES
 
-subtype ActiumTime, as class_type('Actium::O::Time');
-coerce ActiumTime, from Str, via { Actium::O::Time->from_str($_) };
+subtype ActiumTime, as class_type('Actium::Time');
+coerce ActiumTime, from Str, via { Actium::Time->from_str($_) };
 
 const my $NOON_YESTERDAY => -$MINS_IN_12HRS;
 const my $NOON_TOMORROW  => 3 * $MINS_IN_12HRS;
@@ -107,7 +106,7 @@ subtype TimeNum, as Maybe [Int], where {
 
 subtype ArrayRefOrTimeNum, as TimeNum | ArrayRef [TimeNum];
 
-coerce TimeNum, from Str, via { Actium::Time::timenum($_) };
+coerce TimeNum, from Str, via { Actium::Time->from_str($_)->timenum };
 
 subtype ArrayRefOfTimeNums, as ArrayRef [ Maybe [TimeNum] ];
 
@@ -230,7 +229,7 @@ A type representing the Actium::O::Dir class.
 
 A time number, suitable for use by L<Actium::Time>. The number of
 minutes after midnight (or before, if negative), or undef. Coerces
-strings into TimeNums using Actium::Time::timenum().
+strings into TimeNums using Actium::Time.
 
 =item B<ArrayRefOrTimeNum>
 
@@ -259,8 +258,6 @@ in  specifying timepoint abbreviations.
 =over
 
 =item Actium
-
-=item Actium::Time
 
 =item Moose
 

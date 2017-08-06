@@ -13,8 +13,7 @@ use Actium::Import::CalculateFields;
 
 use List::MoreUtils('pairwise');    ### DEP ###
 use Params::Validate(':all');       ### DEP ###
-use Actium::Time(qw[timestr_sub timenum]);
-use Actium::O::Time;
+use Actium::Time;
 use Actium::O::2DArray;
 
 const my $PREFIX => 'Actium::Import::Xhea';
@@ -220,7 +219,7 @@ sub tab_strings {
 
             my $block = $field{trp_block};
             my $starttime
-              = Actium::O::Time->from_str( $field{trp_time_start} )->timenum;
+              = Actium::Time->from_str( $field{trp_time_start} )->timenum;
             my $tripkey = "$block/$starttime";
             $cry->over($tripkey);
 
@@ -935,8 +934,6 @@ sub _get_xhea_filenames {
             }
         );
 
-        my $timestr_sub = timestr_sub( XB => 1, SEPARATOR => '', HOURS => 12 );
-
         my $stop_callback = sub {
             my $hr = shift;
 
@@ -958,28 +955,8 @@ sub _get_xhea_filenames {
             $tps{$patid}[$position]{Place}          = $place;
             $tps{$patid}[$position]{IsATimingPoint} = $place ? 1 : 0;
 
-            #my ($htime) = $passing_time =~ m/T(\d\d:\d\d)/;
-
-            my ( $day, $hours, $mins )
-              = $passing_time =~ m/(\d\d)T(\d\d):(\d\d)/;
-
-            my $xtime;
-            if ( $day eq '31' ) {
-                $xtime = "$hours'$mins";
-            }
-            elsif ( $day eq '02' ) {
-                $hours += 24;
-                $xtime = "$hours:$mins";
-            }
-            else {
-                $xtime = "$hours:$mins";
-            }
-
-            my $timenum = timenum($xtime);
-            my $htime   = $timestr_sub->($timenum);
-
-            $pts{$tripnum}[$position] = $htime;
-
+            $pts{$tripnum}[$position]
+              = Actium::Time->from_str($passing_time)->apbx_noseparator;
         };
 
         Actium::Storage::TabDelimited::read_tab_files(

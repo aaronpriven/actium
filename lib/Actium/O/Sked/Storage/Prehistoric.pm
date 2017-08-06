@@ -39,7 +39,7 @@ const my %DAYS_FROM_TRANSITINFO => ( reverse %TRANSITINFO_DAYS_OF );
 use List::MoreUtils qw<uniq none>;    ### DEP ###
 
 use Text::Trim;                       ### DEP ###
-use Actium::Time ('timestr_sub');
+use Actium::Time;
 
 # comes from prehistorics
 has 'place9_r' => (
@@ -104,10 +104,10 @@ sub prehistoric_skedsfile {
 
     say $out u::jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
 
-    my $timesub = timestr_sub( SEPARATOR => q[] );
-
     foreach my $trip ( $self->trips ) {
-        my $times = $timesub->( $trip->placetimes );
+        my @times = map { Actium::Time->from_num($_)->ap_no_separator }
+          $trip->placetimes;
+        my $times = join( "\t", @times );
 
         $times =~ s/\s+\z//;
 

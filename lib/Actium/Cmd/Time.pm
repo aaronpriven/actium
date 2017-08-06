@@ -5,10 +5,9 @@ package Actium::Cmd::Time 0.012;
 use warnings;
 use strict;
 
-
 use 5.014;
 
-use Actium::O::Time;
+use Actium::Time;
 
 ###########################################
 ## COMMAND
@@ -49,13 +48,13 @@ sub START {
         if ( $time =~ m/\A [-n] ? \d+ \z/sx ) {    # is it a timenum?
             $time =~ s/n/-/g;
 
-            my $obj = Actium::O::Time::->from_num($time);
+            my $obj = Actium::Time::->from_num($time);
 
             say "$time -> AP: ", $obj->ap, " or APBX: ", $obj->apbx,
               " or T24: ", $obj->t24;
         }
         else {
-            my $obj = Actium::O::Time::->from_str($time);
+            my $obj = Actium::Time::->from_str($time);
             say "$time -> ", $obj->timenum;
         }
 
@@ -64,7 +63,6 @@ sub START {
 } ## tidy end: sub START
 
 1;
-
 
 __END__
 
@@ -109,8 +107,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -125,8 +123,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -138,6 +136,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

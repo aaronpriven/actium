@@ -11,11 +11,11 @@ with Storage(
     'format' => 'Storable',
     io       => 'File',
 );
-use Actium::Time(qw<:all>);
 use Actium::Sorting::Line qw<linekeys>;
 
 use Actium::Types (qw/DirCode ActiumDir ActiumDays/);
 use Actium::O::Sked::Trip;
+use Actium::Time;
 use Actium::O::Dir;
 use Actium::O::Days;
 use Actium::O::2DArray;
@@ -764,8 +764,6 @@ sub spaced {
     local $LIST_SEPARATOR = $SPACE;
     say $out "@simplefields";
 
-    my $timesub = timestr_sub( SEPARATOR => $EMPTY, XB => 1 );
-
     my $place_records = Actium::O::2DArray->new();
 
     my ( $columns_r, $shortcol_of_r ) = $self->attribute_columns;
@@ -778,8 +776,10 @@ sub spaced {
     my @trips = $self->trips;
 
     foreach my $trip (@trips) {
-        push @$place_records,
-          [ ( map { $trip->$_ } @columns ), $timesub->( $trip->placetimes ) ];
+        my @times = map { Actium::Time->from_num($_)->apbx_noseparator }
+          $trip->placetimes;
+
+        push @$place_records, [ ( map { $trip->$_ } @columns ), @times ];
 
         if ( $trip->_mergedtrip_count ) {
             foreach my $mergedtrip ( $trip->mergedtrips ) {
@@ -794,7 +794,7 @@ sub spaced {
 
         }
 
-    }
+    } ## tidy end: foreach my $trip (@trips)
 
     say $out $place_records->tabulated, "\n";
 
@@ -804,7 +804,9 @@ sub spaced {
     push @$stop_records, [ $self->stopplaces ];
 
     foreach my $trip (@trips) {
-        push @$stop_records, [ $timesub->( $trip->stoptimes ) ];
+        my @times = map { Actium::Time->from_num($_)->apbx_noseparator }
+          $trip->stoptimes;
+        push @$stop_records, \@times;
     }
 
     say $out $stop_records->tabulated;

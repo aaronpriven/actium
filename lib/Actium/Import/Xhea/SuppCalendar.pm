@@ -1,7 +1,7 @@
 package Actium::Import::Xhea::SuppCalendar 0.012;
 
 use Actium;
-use Actium::O::Time;
+use Actium::Time;
 
 const my %num_of_month =>
   qw( Jan 101 Feb 102 Mar 103 Apr 104 May 105 Jun 106 Jul 107
@@ -92,7 +92,7 @@ sub read_supp_calendars {
             next unless $block;
 
             my $pullout_cell    = $cells[3];
-            my $pullout_time    = Actium::O::Time->from_excel($pullout_cell);
+            my $pullout_time    = Actium::Time->from_excel($pullout_cell);
             my $pullout_timenum = $pullout_time->timenum;
 
             my $tripkey = "$block/$pullout_timenum";

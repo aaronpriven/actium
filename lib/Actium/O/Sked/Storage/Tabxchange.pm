@@ -1,17 +1,16 @@
 package Actium::O::Sked::Storage::Tabxchange 0.013;
 
 use Actium ('role');
-
-use Actium::Time('timestr_sub');
+use Actium::Time;
 
 const my $LAST_LINE_IN_FIRST_LOCAL_LIST => 70;
 # arbitrary choice, but it must always be the same or links will break
 
-method tabxchange ( 
-       :destinationcode($dc)! , 
-       :$actiumdb! , 
-       :collection($skedcollection)! ,
-   ) {
+method tabxchange (
+    :destinationcode($dc)!,
+    :$actiumdb!,
+    :collection($skedcollection)!,
+  ) {
 
     # tab files for AC Transit web site
     #  my $self = shift;
@@ -276,8 +275,6 @@ method tabxchange (
 
     my ( @specdaynotes, @specdaytrips );
 
-    my $colon_timesub = timestr_sub();
-
     foreach my $noteletter ( keys %specday_of_specdayletter ) {
 
         my $specday = $specday_of_specdayletter{$noteletter};
@@ -296,11 +293,11 @@ method tabxchange (
         foreach my $trip (@trips) {
 
             my @placetimes = $trip->placetimes;
-            my $idx = u::firstidx {defined} @placetimes;
+            my $idx        = u::firstidx {defined} @placetimes;
+            my $time       = Actium::Time->from_num( $placetimes[$idx] )->ap;
 
-            $specdaytrip
-              .= "<dd>Trip leaving $placedescs[$idx]" . " at "
-              . $colon_timesub->( $placetimes[$idx] ) . '</dd>';
+            $specdaytrip .= "<dd>Trip leaving $placedescs[$idx] at $time</dd>";
+
         }
 
         push @specdaytrips, $specdaytrip;
@@ -380,10 +377,10 @@ method tabxchange (
     # lines 17 - times
 
     my $placetimes_aoa = Actium::O::2DArray->new;
-    my $timesub = timestr_sub( SEPARATOR => $EMPTY );
 
     foreach my $trip ( $self->trips ) {
-        my @placetimes = map { $timesub->($_) } $trip->placetimes;
+        my @placetimes = map { Actium::Time->from_num($_)->ap_noseparator }
+          $trip->placetimes;
         $placetimes_aoa->push_col(@placetimes);
     }
 
