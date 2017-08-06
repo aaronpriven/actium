@@ -276,20 +276,27 @@ sub new_from_kpoints {
             # BSH handling
 
             if ( $self->agency eq 'BroadwayShuttle' ) {
-                if ( $linegroup eq 'BSD' or $linegroup eq 'BSH' ) {
+                if ( $linegroup eq 'BSD' or $linegroup eq 'BSN' ) {
                     $self->push_columns($column);
-                }
-                elsif ( $linegroup eq 'BSN' ) {
-                    $bsn_columns{ $column->days } = $column;
                 }
                 next;
             }
-            else {
-                next
-                  if ( $linegroup eq 'BSD'
-                    or $linegroup eq 'BSH'
-                    or $linegroup eq 'BSN' );
-            }
+
+            #if ( $self->agency eq 'BroadwayShuttle' ) {
+            #    if ( $linegroup eq 'BSD' or $linegroup eq 'BSH' ) {
+            #        $self->push_columns($column);
+            #    }
+            #    elsif ( $linegroup eq 'BSN' ) {
+            #        $bsn_columns{ $column->days } = $column;
+            #    }
+            #    next;
+            #}
+            #else {
+            #    next
+            #      if ( $linegroup eq 'BSD'
+            #        or $linegroup eq 'BSH'
+            #        or $linegroup eq 'BSN' );
+            #}
 
             if ( $self->agency eq 'DumbartonExpress' ) {
                 if ( $linegroup =~ /^DB/ ) {
@@ -318,32 +325,32 @@ sub new_from_kpoints {
 
         close $kpoint or die "Can't close $kpointfile: $!";
 
-        # ugly kludge for BSH weekday/Friday/Saturday skeds
-
-        if ( scalar keys %bsn_columns ) {
-            my $weekday  = $bsn_columns{'12345'};
-            my $friday   = $bsn_columns{'5'};
-            my $saturday = $bsn_columns{'6'};
-
-            $self->push_columns($weekday);
-         # the header formatting is changed so it changes it to "M-TH only"
-         # This will really screw up if there are any day exceptions in it later
-
-            my %is_a_fri_time
-              = map { $_ => 1 } ( $weekday->times, $friday->times );
-
-            my @sat_exceptions;
-
-            foreach my $i ( 0 .. $saturday->time_count - 1 ) {
-                my $sat_time = $saturday->time($i);
-                push @sat_exceptions, $is_a_fri_time{$sat_time} ? '' : '6';
-            }
-
-            $saturday->_set_exception_r( \@sat_exceptions );
-
-            $self->push_columns($saturday);
-
-        } ## tidy end: if ( scalar keys %bsn_columns)
+#        # ugly kludge for BSH weekday/Friday/Saturday skeds
+#
+#        if ( scalar keys %bsn_columns ) {
+#            my $weekday  = $bsn_columns{'12345'};
+#            my $friday   = $bsn_columns{'5'};
+#            my $saturday = $bsn_columns{'6'};
+#
+#            $self->push_columns($weekday);
+#         # the header formatting is changed so it changes it to "M-TH only"
+#         # This will really screw up if there are any day exceptions in it later
+#
+#            my %is_a_fri_time
+#              = map { $_ => 1 } ( $weekday->times, $friday->times );
+#
+#            my @sat_exceptions;
+#
+#            foreach my $i ( 0 .. $saturday->time_count - 1 ) {
+#                my $sat_time = $saturday->time($i);
+#                push @sat_exceptions, $is_a_fri_time{$sat_time} ? '' : '6';
+#            }
+#
+#            $saturday->_set_exception_r( \@sat_exceptions );
+#
+#            $self->push_columns($saturday);
+#
+#        } ## tidy end: if ( scalar keys %bsn_columns)
 
         my @notfound
           = get_unique( [ [ keys %do_omit_line ], \@found_linedirs ] );
@@ -1082,10 +1089,15 @@ sub format_bottom {
     ##### STOP ID BOX ####
 
     if ( $self->is_simple_stopid ) {
-        print $botfh $IDT->parastyle('stopidintro'),
-          join( $IDT->hardreturn, $self->_i18n_all('stop_id') ),
-          $IDT->hardreturn,
-          $IDT->parastyle('stopidnumber'), $stopid;
+        if ( $self->agency eq 'BroadwayShuttle' ) {
+            print $botfh $IDT->parastyle('BSHInfoStopID'), $stopid;
+        }
+        else {
+            print $botfh $IDT->parastyle('stopidintro'),
+              join( $IDT->hardreturn, $self->_i18n_all('stop_id') ),
+              $IDT->hardreturn,
+              $IDT->parastyle('stopidnumber'), $stopid;
+        }
     }
     print $botfh $BOXBREAK;    # if not simple, leave blank
 
@@ -1214,6 +1226,12 @@ sub _effective_date_indd {
     my $dt     = $self->effdate;
     my $is_bsh = shift;
 
+    if ($is_bsh) {
+        my $date = $dt->long_en;
+        $date =~ s/ /$NBSP/g;
+        return $IDT->parastyle('BSHsideeffective') . "Effective $date";
+    }
+
     my $i18n_id = 'effective_colon';
 
     my $metastyle = 'Bold';
@@ -1223,18 +1241,11 @@ sub _effective_date_indd {
     my ( $color, $shading, $end );
 
     # EFFECTIVE DATE and colors
-    if ($is_bsh) {
-        $color   = $EMPTY;
-        $shading = $EMPTY;
-        $end     = $EMPTY;
-    }
-    else {
-        $color   = $COLORS{$oddyear};
-        $color   = $IDT->color($color);
-        $shading = $SHADINGS{ $month . $oddyear };
-        $shading = "<pShadingColor:$shading>";
-        $end     = '<pShadingColor:>';
-    }
+    $color   = $COLORS{$oddyear};
+    $color   = $IDT->color($color);
+    $shading = $SHADINGS{ $month . $oddyear };
+    $shading = "<pShadingColor:$shading>";
+    $end     = '<pShadingColor:>';
 
     my $retvalue = $IDT->parastyle('sideeffective') . $shading . $color;
 
