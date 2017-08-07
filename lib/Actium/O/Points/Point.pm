@@ -262,6 +262,10 @@ sub new_from_kpoints {
 
             my $linegroup = $column->linegroup;
 
+            my $line_agency
+              = $Actium::Cmd::MakePoints::lines{$linegroup}{agency_id};
+            next if $line_agency ne $self->agency;
+
             push @found_linedirs, $linegroup;
             my $dircode = $column->dircode;
 
@@ -273,14 +277,14 @@ sub new_from_kpoints {
             next if $do_omit_line{$linedir};
             next if $do_omit_line{$linegroup};
 
-            # BSH handling
-
-            if ( $self->agency eq 'BroadwayShuttle' ) {
-                if ( $linegroup eq 'BSD' or $linegroup eq 'BSN' ) {
-                    $self->push_columns($column);
-                }
-                next;
-            }
+            #            # BSH handling
+            #
+            #            if ( $self->agency eq 'BroadwayShuttle' ) {
+            #                if ( $linegroup eq 'BSD' or $linegroup eq 'BSN' ) {
+            #                    $self->push_columns($column);
+            #                }
+            #                next;
+            #            }
 
             #if ( $self->agency eq 'BroadwayShuttle' ) {
             #    if ( $linegroup eq 'BSD' or $linegroup eq 'BSH' ) {
@@ -298,15 +302,15 @@ sub new_from_kpoints {
             #        or $linegroup eq 'BSN' );
             #}
 
-            if ( $self->agency eq 'DumbartonExpress' ) {
-                if ( $linegroup =~ /^DB/ ) {
-                    $self->push_columns($column);
-                }
-                next;
-            }
-            else {
-                next if ( $linegroup =~ /^DB/ );
-            }
+            #            if ( $self->agency eq 'DumbartonExpress' ) {
+            #                if ( $linegroup =~ /^DB/ ) {
+            #                    $self->push_columns($column);
+            #                }
+            #                next;
+            #            }
+            #            else {
+            #                next if ( $linegroup =~ /^DB/ );
+            #            }
 
             next if $linegroup =~ /^4\d\d/;
 

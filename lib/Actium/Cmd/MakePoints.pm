@@ -134,6 +134,8 @@ sub START {
 
     my ( $run_agency, $run_agency_abbr, $run_agency_row )
       = $actiumdb->agency_or_abbr_row( $env->option('agency') );
+    # allows specifying either the agency or the agency abbreviation
+    # on the command line
 
     unless ($run_agency) {
         $load_cry->d_error;
