@@ -377,19 +377,19 @@ has [qw/ap ap_noseparator apbx apbx_noseparator/] => (
 );
 
 method _build_ap {
-    return $self->formatted( format => 'ap' );
+    return $self->formatted( format => '12ap' );
 }
 
 method _build_apbx {
-    return $self->formatted( format => 'apbx' );
+    return $self->formatted( format => '12apbx' );
 }
 
 method _build_ap_noseparator {
-    return $self->formatted( format => 'ap', separator => $EMPTY );
+    return $self->formatted( format => '12ap', separator => $EMPTY );
 }
 
 method _build_apbx_noseparator {
-    return $self->formatted( format => 'apbx', separator => $EMPTY );
+    return $self->formatted( format => '12apbx', separator => $EMPTY );
 }
 
 #######################################
