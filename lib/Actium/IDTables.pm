@@ -414,13 +414,13 @@ sub output_a_pubtts {
     my @over_eight_pages;
 
     foreach my $pubtt_content_r (@pubtt_contents_with_dates) {
-        my $pubtt         = $pubtt_content_r->{lines};
-        my $linegroup     = $pubtt->[0];
-        my $effectivedate = $pubtt_content_r->{date} // q[];
-        my $file_date     = $pubtt_content_r->{file_date} // q[];
-        my $dbentry       = $pubtimetables_r->{$linegroup};
-        my $leave_cover_for_map
-          = ( ( $dbentry->{LeaveCoverForMap} // 'No' ) eq 'Yes' );
+        my $pubtt               = $pubtt_content_r->{lines};
+        my $linegroup           = $pubtt->[0];
+        my $effectivedate       = $pubtt_content_r->{date} // q[];
+        my $file_date           = $pubtt_content_r->{file_date} // q[];
+        my $dbentry             = $pubtimetables_r->{$linegroup};
+        my $leave_cover_for_map = 0;
+        #  = ( ( $dbentry->{LeaveCoverForMap} // 'No' ) eq 'Yes' );
 
         my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
         next unless @$tables_r;
