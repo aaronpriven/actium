@@ -105,7 +105,7 @@ sub prehistoric_skedsfile {
     say $out u::jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
 
     foreach my $trip ( $self->trips ) {
-        my @times = map { Actium::Time->from_num($_)->ap_no_separator }
+        my @times = map { Actium::Time->from_num($_)->ap_noseparator }
           $trip->placetimes;
         my $times = join( "\t", @times );
 

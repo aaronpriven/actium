@@ -647,7 +647,7 @@ special values 'f', 'i', or the undefined value; false otherwise.
 
 The C<ap> method returns the time as a string: hours, a colon, minutes,
 followed by "a" for a.m. or "p" for p.m. For example, "2:25a" or
-"11:30p".  The C<ap_no_separator> method also returns this value, only
+"11:30p".  The C<ap_noseparator> method also returns this value, only
 without the colon: "225a" or "1130p".
 
 The special values 'f' and 'i' will be returned as such. An undefined
