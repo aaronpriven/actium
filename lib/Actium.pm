@@ -413,7 +413,7 @@ sub _set_env {
 This returns the object representing the environment in which the
 program operates. (This is not to be confused with the system
 environment variables represented by L<%ENV|perlvar/%ENV>, which is
-only one part of the  operating environment.)
+only one part of the operating environment.)
 
 At the moment this is always going to be an Actium::O::Cmd object,
 although at some point if other operating environments are created
