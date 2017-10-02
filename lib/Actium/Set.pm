@@ -911,8 +911,6 @@ or
      items => [ 101, 101, 101, 101, 101 , 102, 102, 102 ]
      );
      
-or
-
  # either way, $clusters_of_r = { '101,102' => 8 }
  
 More usefully:
@@ -1130,8 +1128,10 @@ unified list.
 =back
 
 =item B<distinguish()>
-Takes a series of array references as arguments, and provides in turn the relevant
-elements from each list, in order to describe the differences between them.
+
+Takes a series of array references as arguments, and provides in turn
+the relevant elements from each list, in order to describe the
+differences between them.
 
 The idea is that if you have a bus line that  has several variants,
 travelling through the following points:
@@ -1156,8 +1156,8 @@ one in the middle).
 
 =item B<clusterize()>
 
-The B<clusterize()> routine combines lists of items into reasonably-sized
-chunks.
+The B<clusterize()> routine combines lists of items into
+reasonably-sized chunks.
 
 The idea is that there are a certain number of items, each one divided
 into a category that is an integer.  Maybe there are different zones of
@@ -1245,20 +1245,6 @@ ranges. So, for example,  a new cluster might be "101" where a single
 work zone makes up a cluster, or "102-103" or even
 "102-105,107-108,150-151" if that's the result.
 
-=item * 
-
-Cannot specify both count_of and items
-
-=item *
-
-Must specify either count_of or items
-
-One, and only one, of C<count_of> or C<items> must be specified  to
-B<clusterize>. If neither is specified, there's nothing to work on; if
-both are specified, it's not clear which should be worked on.
-
-=back
-
 =back
 
 =head1 DIAGNOSTICS
@@ -1277,22 +1263,22 @@ I<distinguish()>  that was not an array reference.
 The I<comm> routine can compare two, but only two, lists. Some number
 of lists other than two were passed to it.
 
-=item *
-
-Invalid root digit specification $root_digits
+=item Invalid root digit specification $root_digits
 
 clusterize: The root_digit parameter was not a number, or it was
 negative.
 
-=cut
+=item Cannot specify both count_of and items
 
-=item * 
+=item Must specify either count_of or items
 
-Cannot specify both count_of and items
+One, and only one, of C<count_of> or C<items> must be specified  to
+B<clusterize>. If neither is specified, there's nothing to work on; if
+both are specified, it's not clear which should be worked on.
 
-=item *
+=item Cannot specify both count_of and items
 
-Must specify either count_of or items
+=item Must specify either count_of or items
 
 One, and only one, of C<count_of> or C<items> must be specified to
 B<clusterize>. If neither is specified, there's nothing to work on; if
