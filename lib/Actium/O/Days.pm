@@ -4,7 +4,7 @@ package Actium::O::Days 0.012;
 use 5.022;
 use warnings;    ### DEP ###
 
-use Actium::Moose;
+use Actium ('class');
 
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -33,9 +33,9 @@ const my @SEVENDAYABBREVS => map { substr( $_, 0, 3 ) } @SEVENDAYNAMES;
 #### ATTRIBUTES AND CONSTRUCTION
 ###################################
 
-around BUILDARGS => sub {
-    return u::positional_around( \@_, 'daycode', 'schooldaycode' );
-};
+around BUILDARGS ($daycode, $schooldaycode) {
+    return $self->$next( daycode => $daycode, schooldaycode => $schooldaycode );
+}
 
 has 'daycode' => (
     is          => 'ro',
@@ -164,7 +164,7 @@ const my @ADJECTIVES => ( @SEVENDAYNAMES, qw(Holiday Weekday Weekend Daily),
     "Daily except holidays" );
 const my %ADJECTIVE_OF => u::mesh( @DAYLETTERS, @ADJECTIVES );
 const my %ADJECTIVE_SCHOOL_OF => (
-    B => $EMPTY_STR,
+    B => $EMPTY,
     D => ' (except school holidays)',
     H => ' (except school days)',
 );
@@ -202,7 +202,7 @@ const my @PLURALS => (
 
 const my %PLURAL_OF => u::mesh( @DAYLETTERS, @PLURALS );
 const my %PLURAL_SCHOOL_OF => (
-    B => $EMPTY_STR,
+    B => $EMPTY,
     D => ' (School days only)',
     H => ' (School holidays only)',
 );
@@ -245,7 +245,7 @@ const my @ABBREVS =>
 
 const my %ABBREV_OF => u::mesh( @DAYLETTERS, @ABBREVS );
 const my %ABBREV_SCHOOL_OF => (
-    B => $EMPTY_STR,
+    B => $EMPTY,
     D => ' (Sch days)',
     H => ' (Sch hols)',
 );
@@ -445,7 +445,7 @@ sub specday_and_specdayletter {
 
             if ( $daycode ne $union_daycode ) {
 
-                $union_daycode = join( $EMPTY_STR,
+                $union_daycode = join( $EMPTY,
                     ( u::uniq sort ( split //, $union_daycode . $daycode ) ) );
 
             }
@@ -627,15 +627,16 @@ This documentation refers to version 0.010
 =head1 DESCRIPTION
 
 This class is used for objects storing scheduled day information. 
-Trips, or timetables, are assigned to particular scheduled days.
-Almost all the time this is either usually weekdays, Saturdays, 
-or Sundays-and-Holidays.  However, there are lots of exceptions.
-Some trips run only school days, while others run only school holidays. 
-Some trips run only a few weekdays (e.g., Mondays, Wednesdays, and Fridays).
+Trips, or timetables, are assigned to particular scheduled days. Almost
+all the time this is either usually weekdays, Saturdays,  or
+Sundays-and-Holidays.  However, there are lots of exceptions. Some
+trips run only school days, while others run only school holidays. 
+Some trips run only a few weekdays (e.g., Mondays, Wednesdays, and
+Fridays).
 
 This uses "flyweight" objects, meaning that it returns the same object
-every time you pass particular arguments to construct it.  These objects
-are immutable.
+every time you pass particular arguments to construct it.  These
+objects are immutable.
 
 =head1 CLASS METHODS
 
@@ -643,53 +644,56 @@ are immutable.
 
 =item B<< Actium::O::Days->instance(I<daycode> , I<schooldaycode>) >>
 
-The object is constructed using "Actium::O::Days->instance".  
+The object is constructed using "Actium::O::Days->instance".
 
 The ->instance method accepts a day specification as a string,
-containing any or all of the numbers 1 through 7 and optionally H.
-If a 1 is present, it operates on Mondays; if 2, it operates on
-Tuesdays; and so on through 7 for Sundays.  (7 is used instead of
-0 for two reasons: because Hastus provides it in this way, and
-because 0 is false in perl and it's convenient to allow simple truth
-tests.)  The H, if present, is used to indicate holidays. However,
-at this time the system will add an H to any 7 specified.
+containing any or all of the numbers 1 through 7 and optionally H. If a
+1 is present, it operates on Mondays; if 2, it operates on Tuesdays;
+and so on through 7 for Sundays.  (7 is used instead of 0 for two
+reasons: because Hastus provides it in this way, and because 0 is false
+in perl and it's convenient to allow simple truth tests.)  The H, if
+present, is used to indicate holidays. However, at this time the system
+will add an H to any 7 specified.
 
-The constructor also accepts a school days flag, a single character.
-If specified, "D" indicates that it operates school days only, and "H" that 
-it operates school holidays only. The default is "B", which indicates that 
-operation on both school days and school holidays. (This is regardless of
-whether school normally operates on that day -- weekend trips will 
-still have "B" as the school day flag, unless there is a situation where
-some school service is operated on a Saturday.)
+The constructor also accepts a school days flag, a single character. If
+specified, "D" indicates that it operates school days only, and "H"
+that  it operates school holidays only. The default is "B", which
+indicates that  operation on both school days and school holidays.
+(This is regardless of whether school normally operates on that day --
+weekend trips will  still have "B" as the school day flag, unless there
+is a situation where some school service is operated on a Saturday.)
 
 =item B<< Actium::O::Days->new(I<daycode> , I<schooldaycode>) >>
 
 B<< Do not use this method. >>
 
-This method is used internally by Actium::O::Days to create a new object and
-insert it into the cache used by instance(). There should never be a reason
-to create more than one method with the same arguments.
+This method is used internally by Actium::O::Days to create a new
+object and insert it into the cache used by instance(). There should
+never be a reason to create more than one method with the same
+arguments.
 
 =item B<< Actium::O::Days->instance_from_string (I<string>) >>
 
-This is an alternative constructor. It uses a single string, rather than
-the separate daycode and schooldaycode, to construct an object and return it.
+This is an alternative constructor. It uses a single string, rather
+than the separate daycode and schooldaycode, to construct an object and
+return it.
 
-The only way to get a valid string is by using the I<as_string> object method.
-The format of the string is internal and not guaranteed to remain the same
-across versions of Actium::O::Days. The purpose of this is to allow a
-single string to contain day information without requiring it to have all
-the object overhead.
+The only way to get a valid string is by using the I<as_string> object
+method. The format of the string is internal and not guaranteed to
+remain the same across versions of Actium::O::Days. The purpose of this
+is to allow a single string to contain day information without
+requiring it to have all the object overhead.
 
 =item B<< Actium::O::Days->union(I<days_obj> , ... >>
 
 Another constructor. It takes one or more Actium::O::Days objects and 
-returns a new object representing the union of those objects. For example,
-if passed an object representing Saturday and an object representing Sunday, 
-will return an object representing both Saturday and Sunday.
+returns a new object representing the union of those objects. For
+example, if passed an object representing Saturday and an object
+representing Sunday,  will return an object representing both Saturday
+and Sunday.
 
-If the school day codes of the passed objects are identical, it will use that
-code. Otherwise it will use "B".
+If the school day codes of the passed objects are identical, it will
+use that code. Otherwise it will use "B".
 
 =back
 
@@ -699,26 +703,26 @@ code. Otherwise it will use "B".
 
 =item B<< $obj->daycode >>
 
-Returns the day specification: a string with one or more of the characters
-1 through 7, indicating operation on Monday through Sunday, and the character
-H, indicating operation on holidays.
+Returns the day specification: a string with one or more of the
+characters 1 through 7, indicating operation on Monday through Sunday,
+and the character H, indicating operation on holidays.
 
 =item B<< $obj->schooldaycode >>
 
-Returns one character. "D" indicates operation school days only. "H" indicates
-operation school holidays only. "B" indicates operation on both types of days.
-(Service on days when school service does not operate is also indicated 
-by "B".)
+Returns one character. "D" indicates operation school days only. "H"
+indicates operation school holidays only. "B" indicates operation on
+both types of days. (Service on days when school service does not
+operate is also indicated  by "B".)
 
 =item B<< $obj->as_sortable >>
 
-Returns a version of the day code / schoolday code that can be sorted using 
-perl's cmp operator to be in order.
+Returns a version of the day code / schoolday code that can be sorted
+using  perl's cmp operator to be in order.
 
 =item B<< $obj->as_string >>
 
-Returns a version of the day code / schoolday code that can be used to create
-a new object using B<instance_from_string>.
+Returns a version of the day code / schoolday code that can be used to
+create a new object using B<instance_from_string>.
 
 =item B<< $obj->as_adjectives >>
 
@@ -731,7 +735,8 @@ The form is "Day, Day and Day" . The days used are as follows:
  Tuesday    Friday     Holiday   Daily
  Wednesday  Saturday   Weekday
  
-May be followed by "(except school holidays)" or "(except school days)".
+May be followed by "(except school holidays)" or "(except school
+days)".
 
 =item B<< $obj->as_plurals >>
 
@@ -745,15 +750,16 @@ The form is "Days, Days and Days" . The days used are as follows:
  Wednesdays  Saturdays   
  
 "Monday through Friday" is given instead of "Weekdays."
- 
+
 (Saturdays and Sundays are not combined into weekends here.)
- 
+
 May be followed by "(School days only)" or "(School holidays only)".
 
 =item B<< $obj->as_abbrevs >>
 
-This returns a string containing English text describing the days in as 
-brief a form as possible, for tables or other places with little space.
+This returns a string containing English text describing the days in as
+ brief a form as possible, for tables or other places with little
+space.
 
 The form is "Day Day & Day" . The days used are as follows:
 
@@ -768,14 +774,20 @@ May be followed by "(Sch days)" or "(Sch hols)".
 =head1 BUGS AND LIMITATIONS
 
 Holidays are hard-coded to always go with Sundays. At the very least 
-holidays should be allowed to go with Saturdays, since some agencies run
-a Saturday rather than Sunday schedule on holidays.
+holidays should be allowed to go with Saturdays, since some agencies
+run a Saturday rather than Sunday schedule on holidays.
 
 =head1 DEPENDENCIES
 
 =over
 
-=item Actium::Moose
+=item * 
+
+Moose
+
+=item *
+
+Actium
 
 =back
 
@@ -785,9 +797,10 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 LICENSE AND COPYRIGHT
 
-This module is free software; you can redistribute it and/or modify it under 
-the same terms as Perl itself. See L<perlartistic>.
+This module is free software; you can redistribute it and/or modify it
+under  the same terms as Perl itself. See L<perlartistic>.
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE. 
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

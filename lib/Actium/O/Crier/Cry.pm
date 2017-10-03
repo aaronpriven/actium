@@ -4,13 +4,11 @@ package Actium::O::Crier::Cry 0.013;
 #
 # Based on Term::Emit by Steve Roscio
 
-
-use Actium::Moose;
-use Unicode::LineBreak; ### DEP ###
-use Unicode::GCString; ### DEP ###
+use Actium ('class');
+use Unicode::LineBreak;    ### DEP ###
+use Unicode::GCString;     ### DEP ###
 
 use Actium::Types (qw<CrierBullet CrierTrailer>);
-use Actium::Util  (qw<u_columns u_pad u_wrap u_trim_to_columns>);
 
 const my $MAX_SEVERITY_TEXT_WIDTH => 5;
 const my $SEVERITY_MARKER_WIDTH   => 8;    # text width, plus space and brackets
@@ -29,7 +27,7 @@ has '_crier' => (
         map ( { ( '_' . $_ ) => $_ } (
                 qw( backspace
                   maxdepth        step  override_severity
-                  column_width    fh    default_closestat 
+                  column_width    fh    default_closestat
                   shows_progress  )
               ) ),
         map { $_ => $_ }
@@ -103,9 +101,9 @@ has 'bullet' => (
 );
 
 sub _build_bullet {
-    my $self = shift;
-    my $bullet =
-      $self->_crier->_bullet_for_level( $self->_level + $self->_adjust_level );
+    my $self   = shift;
+    my $bullet = $self->_crier->_bullet_for_level(
+        $self->_level + $self->_adjust_level );
 
     return $bullet;
 
@@ -162,7 +160,7 @@ sub _timestamp_now {
         return sprintf "%2.2d:%2.2d:%2.2d ", $h, $m, $s;
     }
 
-    return $EMPTY_STR;
+    return $EMPTY;
 }
 
 has 'ellipsis' => (
@@ -272,22 +270,22 @@ sub _open {
     my $ellipsis  = $self->ellipsis;
     my $timestamp = $self->timestamp;
 
-    my $succeeded =
-      $self->_print_left_text( $self->opentext, $level, $ellipsis, $timestamp );
+    my $succeeded = $self->_print_left_text( $self->opentext, $level, $ellipsis,
+        $timestamp );
 
     $self->_mark_opened;
     return $succeeded;
 
-}    ## tidy end: sub _open
+} ## tidy end: sub _open
 
 sub BUILD {
     my $self = shift;
 
     my $level    = $self->_level + $self->_adjust_level;
     my $maxdepth = $self->_maxdepth;
-    my $silent = $self->silent;
+    my $silent   = $self->silent;
 
-    if ( not $silent and ( ! defined $maxdepth or $level <= $maxdepth )) {
+    if ( not $silent and ( !defined $maxdepth or $level <= $maxdepth ) ) {
 
         # if not s not hidden by maxdepth
         my $success = $self->_open($level);
@@ -302,7 +300,7 @@ sub BUILD {
 
     return;
 
-}    ## tidy end: sub BUILD
+} ## tidy end: sub BUILD
 
 sub _print_left_text {
     my $self      = shift;
@@ -315,18 +313,18 @@ sub _print_left_text {
     # Timestamp
     $timestamp = $self->_timestamp_now( $level, $timestamp );
 
-    my $bullet = u_pad( $self->bullet, $self->_bullet_width );
+    my $bullet = u::u_pad( $self->bullet, $self->_bullet_width );
     my $indent         = $SPACE x ( $self->_step * ( $level - 1 ) );
     my $leading        = $timestamp . $bullet . $indent;
-    my $leading_width  = u_columns($leading);
+    my $leading_width  = u::u_columns($leading);
     my $leading_spaces = $SPACE x $leading_width;
     my $span_max = $self->_column_width - $leading_width - $NOTIFY_RIGHT_PAD;
     my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
 
     $text .= $ellipsis;
 
-    my @lines = u_wrap( $text, $span_min, $span_max );
-    my $final_width = u_columns( $lines[-1] );
+    my @lines = u::u_wrap( $text, $span_min, $span_max );
+    my $final_width = u::u_columns( $lines[-1] );
     $lines[0] = $leading . $lines[0];
     if ( @lines > 1 ) {
         $lines[$_] = "\n" . $leading_spaces . $lines[$_]
@@ -341,7 +339,7 @@ sub _print_left_text {
     $self->set_position( $leading_width + $final_width );
 
     return $self;
-}    ## tidy end: sub _print_left_text
+} ## tidy end: sub _print_left_text
 
 ###########################
 ### close
@@ -395,8 +393,8 @@ sub _close {
 
     # Make the severity text
 
-    my $severity_output =
-      u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
+    my $severity_output
+      = u::u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
     if ( $self->colorize ) {
         $severity_output = $self->_add_color($severity_output);
     }
@@ -414,8 +412,8 @@ sub _close {
             return unless $succeeded;
         }
 
-        my $succeeded =
-          $self->_print_left_text( $closetext, $level, $ellipsis, $timestamp );
+        my $succeeded = $self->_print_left_text( $closetext, $level, $ellipsis,
+            $timestamp );
         return unless $succeeded;
 
         $position = $self->position;
@@ -435,8 +433,8 @@ sub _close {
 
     # trailer set to be a single column wide by attribute type
 
-    my $num_trailers =
-      $self->_column_width - $position - $SEVERITY_MARKER_WIDTH;
+    my $num_trailers
+      = $self->_column_width - $position - $SEVERITY_MARKER_WIDTH;
     my $succeeded = print $fh ( $trailer x $num_trailers, $severity_output );
     return unless $succeeded;
 
@@ -455,7 +453,7 @@ sub _close {
 
     return $severity_num;
 
-}    ## tidy end: sub _close
+} ## tidy end: sub _close
 
 sub done {
     my $self = shift;
@@ -563,7 +561,7 @@ sub DEMOLISH {
 ### PROGRESS AND TEXT
 
 sub prog {
-    
+
     my $self = shift;
     next unless $self->_shows_progress;
 
@@ -575,7 +573,7 @@ sub prog {
 
     # Start a new line?
     my $avail   = $self->_column_width - $self->position - $NOTIFY_RIGHT_PAD;
-    my $columns = u_columns($msg);
+    my $columns = u::u_columns($msg);
     my $fh      = $self->_fh;
 
     my $position = $self->position;
@@ -603,7 +601,7 @@ sub prog {
 
     return 1;
 
-}    ## tidy end: sub prog
+} ## tidy end: sub prog
 
 sub over {
     my $self = shift;
@@ -629,10 +627,10 @@ sub over {
 
         $self->set_position( $self->position - $prog_cols );
 
-    }    ## tidy end: if ( $self->backspace )
+    }
 
     return $self->prog(@_);
-}    ## tidy end: sub over
+} ## tidy end: sub over
 
 sub text {
     my $self = shift;
@@ -678,7 +676,7 @@ sub text {
     my $span_max = $self->_column_width - $indent_cols - $NOTIFY_RIGHT_PAD;
     my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
 
-    my @lines = u_wrap( $text, $span_min, $span_max );
+    my @lines = u::u_wrap( $text, $span_min, $span_max );
 
     foreach my $line (@lines) {
         my $succeeded = print $fh $indentspace, $line, "\n";
@@ -687,7 +685,7 @@ sub text {
     }
 
     return 1;
-}    ## tidy end: sub text
+} ## tidy end: sub text
 
 #######################
 #### COLORIZE
@@ -717,7 +715,7 @@ sub text {
         DONE  => \'YES',
         PASS  => \'YES',
         NO    => 'bright_red',
-    ); # OTHER explicitly omitted
+    );                                                # OTHER explicitly omitted
 
     sub _add_color {
 
@@ -733,7 +731,7 @@ sub text {
 
         return $sev unless exists $COLORS_OF{$sev_key};
 
-        require Term::ANSIColor; ### DEP ###
+        require Term::ANSIColor;    ### DEP ###
         return Term::ANSIColor::colored( $sev, $COLORS_OF{$sev_key} );
 
     }
@@ -755,8 +753,8 @@ This documentation refers to version 0.009
 
 =head1 SEE
 
-All documentation for this module is found in 
-L<the documentation for Actium::O::Crier/Actium::O::Crier>.
+All documentation for this module is found in  L<the documentation for
+Actium::O::Crier/Actium::O::Crier>.
 
 =head1 AUTHOR
 
@@ -766,8 +764,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2015
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -779,6 +777,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

@@ -7,11 +7,10 @@ package Actium::DaysDirections 0.012;
 use 5.012;
 use warnings;
 
-use Const::Fast; ### DEP ###
-use Actium::Constants;
-use Carp;
+use Actium;
 
-use Sub::Exporter (-setup => { exports => [qw<day_of_hasi dir_of_hasi>] }); ### DEP ###
+use Sub::Exporter ( -setup => { exports => [qw<day_of_hasi dir_of_hasi>] } )
+  ;    ### DEP ###
 
 # New day codes have a character for each set of days that are used.
 
@@ -48,22 +47,20 @@ const my %DIR_OF_HASI => (
       )
 );
 
-
 sub day_of_hasi {
     my $days = shift;
     croak "Uninitialized direction" if not defined $days;
     $days =~ s/[^\d]//g;
-    return exists $DAY_OF_HASI{ $days } ? $DAY_OF_HASI{$days} : $EMPTY_STR;
+    return exists $DAY_OF_HASI{$days} ? $DAY_OF_HASI{$days} : $EMPTY;
 }
 
-sub dir_of_hasi  {
+sub dir_of_hasi {
     my $dir = shift;
     croak "Uninitialized direction" if not defined $dir;
-    return exists $DIR_OF_HASI{ $dir } ? $DIR_OF_HASI{$dir} : $EMPTY_STR;
+    return exists $DIR_OF_HASI{$dir} ? $DIR_OF_HASI{$dir} : $EMPTY;
 }
 
 1;
-
 
 __END__
 
@@ -218,7 +215,7 @@ This documentation refers to version 0.001
 
 =head1 DESCRIPTION
 
-Actium::DaysDirections 
+Actium::DaysDirections
 
 =head1 SUBROUTINES
 
@@ -226,8 +223,9 @@ Actium::DaysDirections
 
 =item B<day_of_hasi)>
 
-Takes one argument, the Hastus "Operating Days" code (which is usually one or 
-more digits from 1 to 7), and returns a two-letter code for the days:
+Takes one argument, the Hastus "Operating Days" code (which is usually
+one or  more digits from 1 to 7), and returns a two-letter code for the
+days:
 
  WD Weekdays
  SA Saturday
@@ -238,15 +236,15 @@ more digits from 1 to 7), and returns a two-letter code for the days:
  TT Tuesday and Thursday
  TF Tuesday and Friday
  
-Ultimately, these codes (which originated at the old www.transitinfo.org 
-web site) are obsolete and should be replaced since they do not allow for 
-the full range of date possibilities.
+Ultimately, these codes (which originated at the old
+www.transitinfo.org  web site) are obsolete and should be replaced
+since they do not allow for  the full range of date possibilities.
 
 =item B<dir_of_hasi()>
 
-Takes one argument, the Hastus 2006 "Directions" code (see table 9.2 in the 
-Hastus 2006 AVL Standard Interface document), and returns a two-letter code
-representing the direction.
+Takes one argument, the Hastus 2006 "Directions" code (see table 9.2 in
+the  Hastus 2006 AVL Standard Interface document), and returns a
+two-letter code representing the direction.
 
  Code  Meaning
  NB    Northbound
@@ -266,10 +264,10 @@ representing the direction.
 
 Only the first six are actually used at AC Transit.
 
-These codes also come from www.transitinfo.org. There's nothing wrong with the 
-codes themselves, but because a route marked "Eastbound" may not actually 
-go in an eastward direction, avoid actually displaying their meanings
-to customers.
+These codes also come from www.transitinfo.org. There's nothing wrong
+with the  codes themselves, but because a route marked "Eastbound" may
+not actually  go in an eastward direction, avoid actually displaying
+their meanings to customers.
 
 =back
 
@@ -293,9 +291,10 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 LICENSE AND COPYRIGHT
 
-This module is free software; you can redistribute it and/or modify it under 
-the same terms as Perl itself. See L<perlartistic>.
+This module is free software; you can redistribute it and/or modify it
+under  the same terms as Perl itself. See L<perlartistic>.
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

@@ -1,16 +1,16 @@
 package Actium::O::Pattern::Group 0.012;
 
-use Actium::Moose;
+use Actium ('class');
 
 use Actium::Types (qw/ActiumDir/);
 use Actium::O::Dir;
 use Actium::O::Days;
-use Actium::O::Time;
+use Actium::Time;
 use Actium::O::Pattern;
 use Actium::O::Sked::Trip;
 use Actium::O::Sked;
 use Actium::O::Sked::TripCollection;
-use Actium::Union ('ordered_union_columns');
+use Actium::Set ('ordered_union_columns');
 
 # OBJECT METHODS AND ATTRIBUTES
 
@@ -97,21 +97,21 @@ sub skeds {
     my @skeds;
 
     \my %trip_collection_by_days = $self->_sked_trip_collections;
-    
-    my @place4s = map { $actiumdb->dereference_place($_) } $self->places;
+
+    my @place4s    = map { $actiumdb->dereference_place($_) } $self->places;
     my @stopplaces = map { $actiumdb->dereference_place($_) } $self->stopplaces;
-    my @place8s = map { $actiumdb->place8($_) } @place4s;
+    my @place8s    = map { $actiumdb->place8($_) } @place4s;
 
     foreach my $days ( keys %trip_collection_by_days ) {
         my $trip_collection = $trip_collection_by_days{$days};
-        
-        # those are [@place4s] and not \@place4s (etc.) 
+
+        # those are [@place4s] and not \@place4s (etc.)
         # because this is a loop and we want each schedule to get its own
         # new reference.
-        
+
         push @skeds,
           Actium::O::Sked->new(
-            place4_r    => [@place4s], 
+            place4_r    => [@place4s],
             place8_r    => [@place8s],
             stopplace_r => [@stopplaces],
             stopid_r    => [ $self->stopids_r->@* ],
@@ -121,7 +121,7 @@ sub skeds {
             days        => Actium::O::Days->instance( $days, 'B' ),
           );
 
-    }
+    } ## tidy end: foreach my $days ( keys %trip_collection_by_days)
 
     my $lgdir = $self->lgdir;
 
@@ -142,6 +142,16 @@ sub _sked_trip_collections {
 
             my @times = map { $_->timenum } $trip->stoptimes;
 
+            # combine xhea's vehicle group and vehicle type into
+            # one field. (Currently only vehicle group is used)
+
+            my @vehicle_info = grep { $_ or $_ eq '0' }
+              ( $trip->vehicle_group, $trip->vehicle_type );
+
+            my $vehicletype;
+            $vehicletype = join( ":", @vehicle_info )
+              if @vehicle_info;
+
             push @skedtrips,
               Actium::O::Sked::Trip->new(
                 blockid        => $trip->block_id,
@@ -149,7 +159,7 @@ sub _sked_trip_collections {
                 daysexceptions => $trip->event_and_status,
                 vehicledisplay => $pattern->vdc,
                 via            => $pattern->via,
-                vehicletype    => $trip->vehicle_type,
+                vehicletype    => $vehicletype,
                 line           => $pattern->line,
                 internal_num   => $trip->int_number,
                 type           => $trip->schedule_daytype,
@@ -169,7 +179,6 @@ sub _sked_trip_collections {
 } ## tidy end: sub _sked_trip_collections
 
 my $stop_tiebreaker = sub {
-
     # tiebreaks by using the average rank of the timepoints involved.
 
     my @lists = @_;
@@ -196,7 +205,7 @@ my $stop_tiebreaker = sub {
 
 };
 
-my $undef_time = Actium::O::Time->from_num(undef);
+my $undef_time = Actium::Time->from_num(undef);
 
 sub _order_stops {
     my $self = shift;
@@ -275,3 +284,80 @@ sub _order_stops {
 u::immut;
 
 1;
+
+__END__
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

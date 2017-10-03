@@ -7,18 +7,15 @@ package Actium::O::Points::Point 0.013;
 
 # This really needs to be refactored to get rid of the awful use of
 # global variables.
-use warnings;
-use strict;
 
-use 5.022;
+use Actium ('class');
+
+const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 
 use sort ('stable');
 
-use Actium::Moose;
-
 use Actium::Sorting::Line (qw(byline sortbyline));
 use List::Compare::Functional('get_unique');    ### DEP ###
-use Actium::EffectiveDate ('newest_date');
 use Actium::O::DateTime;
 
 const my $IDPOINTFOLDER => 'idpoints2016';
@@ -32,28 +29,40 @@ const my $BOXBREAK     => $IDT->boxbreak;
 const my $BLANK_COLUMN => ( $BOXBREAK x 2 );
 const my $NBSP         => $IDT->nbsp;
 
-has [qw/stopid signid delivery agency/] => (
-    is  => 'ro',
-    isa => 'Str',
+has [
+    qw/stopid signid delivery agency signtype
+      description description_nocity city/
+  ] => (
+    is       => 'ro',
+    isa      => 'Str',
+    required => 1,
+  );
+
+has copyquantity => (
+    is      => 'ro',
+    isa     => 'Int',
+    default => '1',
+);
+
+has [qw/tallcolumnnum tallcolumnlines/] => (
+    is      => 'ro',
+    isa     => 'Int',
+    default => 10,
 );
 
 has effdate => (
-    is     => 'ro',
-    writer => '_set_effdate',
-    isa    => 'Actium::O::DateTime',
+    is       => 'ro',
+    isa      => 'Actium::O::DateTime',
+    required => 1,
 );
 
 has signup => (
-    is  => 'ro',
-    isa => 'Actium::O::Folders::Signup',
+    is       => 'ro',
+    isa      => 'Actium::O::Folders::Signup',
+    required => 1,
 );
 
-has nonstoplocation => (
-    is  => 'ro',
-    isa => 'Maybe[Str]',
-);
-
-has smoking => (
+has [qw/smoking workzone shelternum sidenote/] => (
     is      => 'ro',
     isa     => 'Str',
     default => $EMPTY,
@@ -75,6 +84,12 @@ has heights => (
     isa => 'Str',
 );
 
+has actiumdb => (
+    is       => 'ro',
+    isa      => 'Actium::O::Files::ActiumDB',
+    required => 1,
+);
+
 has region_count => (
     is      => 'rw',
     isa     => 'Int',
@@ -82,16 +97,35 @@ has region_count => (
 );
 
 has 'omitted_of_stop_r' => (
-    traits  => ['Hash'],
-    is      => 'bare',
-    isa     => 'HashRef[ArrayRef[Str]]',
-    default => sub { {} },
-    handles => {
+    traits   => ['Hash'],
+    is       => 'bare',
+    isa      => 'HashRef[ArrayRef[Str]]',
+    default  => sub { {} },
+    required => 1,
+    handles  => {
         allstopids       => 'keys',
         omitted_of       => 'get',
         _allstopid_count => 'count',
         _get_allstopid   => 'get',
     },
+);
+
+has 'templates_of_r' => (
+    traits   => ['Hash'],
+    is       => 'ro',
+    isa      => 'HashRef',
+    required => 1,
+    handles  => {
+        no_templates => 'is_empty',
+        subtypes     => 'keys',
+    },
+);
+
+has 'nonstop' => (
+    traits   => ['Bool'],
+    is       => 'ro',
+    isa      => 'Bool',
+    required => 1,
 );
 
 has 'is_simple_stopid' => (
@@ -159,14 +193,14 @@ has 'highest_footnote' => (
 
 has 'formatted_side' => (
     traits  => ['String'],
-    default => $EMPTY_STR,
+    default => $EMPTY,
     is      => 'rw',
     isa     => 'Str',
 );
 
 has 'formatted_bottom' => (
     traits  => ['String'],
-    default => $EMPTY_STR,
+    default => $EMPTY,
     is      => 'rw',
     isa     => 'Str',
 );
@@ -188,38 +222,26 @@ sub add_to_width {
     return;
 }
 
-my $i18n_all_cr = sub {
+sub _i18n_all {
+    my $self    = shift;
     my $i18n_id = shift;
 
     no warnings 'once';
-    my @all = $Actium::Cmd::MakePoints::actiumdb->i18n_all_indd($i18n_id);
+    my @all = $self->actiumdb->i18n_all_indd($i18n_id);
 
-};
+}
 
 sub new_from_kpoints {
-    my ($class, $stopid, $signid,
-        # $effdate,
-        $agency, $omitted_of_stop_r,
-        $nonstoplocation, $smoking, $delivery,
-        $signup
-    ) = @_;
 
-    my $self = $class->new(
-        stopid => $stopid,
-        signid => $signid,
-        #effdate           => $effdate,
-        agency            => $agency,
-        nonstoplocation   => $nonstoplocation,
-        smoking           => $smoking,
-        omitted_of_stop_r => $omitted_of_stop_r,
-        delivery          => $delivery,
-        signup            => $signup,
-    );
+    my $class = shift;
+
+    my $self = $class->new(@_);
+
     my $is_simple = $self->is_simple_stopid;
 
     foreach my $stop_to_import ( $self->allstopids ) {
 
-        my $column_stopid = $is_simple ? $EMPTY_STR : $stop_to_import;
+        my $column_stopid = $is_simple ? $EMPTY : $stop_to_import;
 
         my %do_omit_line
           = map { $_, 1 } @{ $self->omitted_of($stop_to_import) };
@@ -229,7 +251,7 @@ sub new_from_kpoints {
 
         my $kpointfile = "$KFOLDER/$kpointdir/$stop_to_import.txt";
 
-        my $kpoint = $signup->open_read($kpointfile);
+        my $kpoint = $self->signup->open_read($kpointfile);
 
         my (%bsn_columns);
 
@@ -239,6 +261,10 @@ sub new_from_kpoints {
             my $column = Actium::O::Points::Column->new( $_, $column_stopid );
 
             my $linegroup = $column->linegroup;
+
+            my $line_agency
+              = $Actium::Cmd::MakePoints::lines{$linegroup}{agency_id};
+            next if $line_agency ne $self->agency;
 
             push @found_linedirs, $linegroup;
             my $dircode = $column->dircode;
@@ -251,33 +277,40 @@ sub new_from_kpoints {
             next if $do_omit_line{$linedir};
             next if $do_omit_line{$linegroup};
 
-            # BSH handling
+            #            # BSH handling
+            #
+            #            if ( $self->agency eq 'BroadwayShuttle' ) {
+            #                if ( $linegroup eq 'BSD' or $linegroup eq 'BSN' ) {
+            #                    $self->push_columns($column);
+            #                }
+            #                next;
+            #            }
 
-            if ( $agency eq 'BroadwayShuttle' ) {
-                if ( $linegroup eq 'BSD' or $linegroup eq 'BSH' ) {
-                    $self->push_columns($column);
-                }
-                elsif ( $linegroup eq 'BSN' ) {
-                    $bsn_columns{ $column->days } = $column;
-                }
-                next;
-            }
-            else {
-                next
-                  if ( $linegroup eq 'BSD'
-                    or $linegroup eq 'BSH'
-                    or $linegroup eq 'BSN' );
-            }
+            #if ( $self->agency eq 'BroadwayShuttle' ) {
+            #    if ( $linegroup eq 'BSD' or $linegroup eq 'BSH' ) {
+            #        $self->push_columns($column);
+            #    }
+            #    elsif ( $linegroup eq 'BSN' ) {
+            #        $bsn_columns{ $column->days } = $column;
+            #    }
+            #    next;
+            #}
+            #else {
+            #    next
+            #      if ( $linegroup eq 'BSD'
+            #        or $linegroup eq 'BSH'
+            #        or $linegroup eq 'BSN' );
+            #}
 
-            if ( $agency eq 'DumbartonExpress' ) {
-                if ( $linegroup =~ /^DB/ ) {
-                    $self->push_columns($column);
-                }
-                next;
-            }
-            else {
-                next if ( $linegroup =~ /^DB/ );
-            }
+            #            if ( $self->agency eq 'DumbartonExpress' ) {
+            #                if ( $linegroup =~ /^DB/ ) {
+            #                    $self->push_columns($column);
+            #                }
+            #                next;
+            #            }
+            #            else {
+            #                next if ( $linegroup =~ /^DB/ );
+            #            }
 
             next if $linegroup =~ /^4\d\d/;
 
@@ -296,32 +329,32 @@ sub new_from_kpoints {
 
         close $kpoint or die "Can't close $kpointfile: $!";
 
-        # ugly kludge for BSH weekday/Friday/Saturday skeds
-
-        if ( scalar keys %bsn_columns ) {
-            my $weekday  = $bsn_columns{'12345'};
-            my $friday   = $bsn_columns{'5'};
-            my $saturday = $bsn_columns{'6'};
-
-            $self->push_columns($weekday);
-         # the header formatting is changed so it changes it to "M-TH only"
-         # This will really screw up if there are any day exceptions in it later
-
-            my %is_a_fri_time
-              = map { $_ => 1 } ( $weekday->times, $friday->times );
-
-            my @sat_exceptions;
-
-            foreach my $i ( 0 .. $saturday->time_count - 1 ) {
-                my $sat_time = $saturday->time($i);
-                push @sat_exceptions, $is_a_fri_time{$sat_time} ? '' : '6';
-            }
-
-            $saturday->_set_exception_r( \@sat_exceptions );
-
-            $self->push_columns($saturday);
-
-        } ## tidy end: if ( scalar keys %bsn_columns)
+#        # ugly kludge for BSH weekday/Friday/Saturday skeds
+#
+#        if ( scalar keys %bsn_columns ) {
+#            my $weekday  = $bsn_columns{'12345'};
+#            my $friday   = $bsn_columns{'5'};
+#            my $saturday = $bsn_columns{'6'};
+#
+#            $self->push_columns($weekday);
+#         # the header formatting is changed so it changes it to "M-TH only"
+#         # This will really screw up if there are any day exceptions in it later
+#
+#            my %is_a_fri_time
+#              = map { $_ => 1 } ( $weekday->times, $friday->times );
+#
+#            my @sat_exceptions;
+#
+#            foreach my $i ( 0 .. $saturday->time_count - 1 ) {
+#                my $sat_time = $saturday->time($i);
+#                push @sat_exceptions, $is_a_fri_time{$sat_time} ? '' : '6';
+#            }
+#
+#            $saturday->_set_exception_r( \@sat_exceptions );
+#
+#            $self->push_columns($saturday);
+#
+#        } ## tidy end: if ( scalar keys %bsn_columns)
 
         my @notfound
           = get_unique( [ [ keys %do_omit_line ], \@found_linedirs ] );
@@ -335,13 +368,6 @@ sub new_from_kpoints {
         }
 
     } ## tidy end: foreach my $stop_to_import ...
-
-    my @all_lines = u::uniq( map { $_->lines } $self->columns );
-
-    my @dates
-      = map { $Actium::Cmd::MakePoints::lines{$_}{TimetableDate} } @all_lines;
-
-    $self->_set_effdate( Actium::O::DateTime->new( newest_date(@dates) ) );
 
     return $self;
 
@@ -394,11 +420,11 @@ sub make_headers_and_footnotes {
                 my $item        = $column->$attr($i);
                 my $primaryattr = "primary_$attr";
                 my $primaryitem = $column->$primaryattr;
-                $foot_of{$attr} = $item eq $primaryitem ? $EMPTY_STR : $item;
+                $foot_of{$attr} = $item eq $primaryitem ? $EMPTY : $item;
             }
 
-            if ( join( $EMPTY_STR, values %foot_of ) eq $EMPTY_STR ) {
-                $column->set_foot( $i, $EMPTY_STR );
+            if ( join( $EMPTY, values %foot_of ) eq $EMPTY ) {
+                $column->set_foot( $i, $EMPTY );
             }
             else {
                 my $foot = join( ':', @foot_of{@attrs} );
@@ -451,22 +477,12 @@ sub sort_columns_and_determine_heights {
     # Don't allow specifying a subtype manually
     # -- it will just treat it as though it were a main type
 
-    #my @subtypes = sort grep {/$signtype=[A-Z]+\z/}
-    #  keys %Actium::Cmd::MakePoints::signtypes;
-
-    if ( not( exists( $Actium::Cmd::MakePoints::templates_of{$signtype} ) ) ) {
-
+    if ( $self->no_templates ) {
         $self->no_subtype($signtype);
         return;
     }
 
-    my @subtypes
-      = sort keys %{ $Actium::Cmd::MakePoints::templates_of{$signtype} };
-
-    if ( @subtypes == 0 ) {
-        $self->no_subtype($signtype);
-        return;
-    }
+    my @subtypes = sort $self->subtypes;
 
     my $subtype = $self->determine_subtype( $signtype, @subtypes );
     unless ($subtype) {
@@ -486,8 +502,7 @@ sub no_subtype {
     my $signtype = shift;
 
     foreach my $column ( $self->columns ) {
-        $column->set_formatted_height(
-            $Actium::Cmd::MakePoints::signtypes{$signtype}{TallColumnLines} );
+        $column->set_formatted_height( $self->tallcolumnlines );
     }
 
     return $self->sort_columns_by_route_etc;
@@ -547,14 +562,19 @@ sub determine_subtype {
         }
         # at least one time -- that used to be there for noteonly
 
-        push @all_heights, $height;
+        push @all_heights,
+          [ $height,
+            join( "_", $column->linegroup, $column->days, $column->dircode )
+          ];
 
         push @{ $heights_of_chunk{$chunk_id} }, $height;
         push @{ $columns_of_chunk{$chunk_id} }, $column;
 
-    }
+    } ## tidy end: foreach my $column ( $self->...)
 
-    @all_heights = reverse sort { $a <=> $b } @all_heights;
+    @all_heights = reverse sort { $a->[0] <=> $b->[0] || u::byline( $a, $b ) }
+      @all_heights;
+    @all_heights = map { $_->[0] . ":" . $_->[1] } @all_heights;
     $self->set_heights("@all_heights");
 
     my ($chosen_subtype, @chosen_regions, @chunkids_by_region,
@@ -610,12 +630,12 @@ sub determine_subtype {
 
         #my ( @chosen_regions, @chunkids_by_region, @columns_needed );
 
+        my $templates_of_r = $self->templates_of_r;
+
       SUBTYPE:
         foreach my $subtype ( sort @subtypes ) {
 
-            my @regions
-              = @{ $Actium::Cmd::MakePoints::templates_of{$signtype}{$subtype}
-              };
+            my @regions = @{ $templates_of_r->{$subtype} };
 
             @chunkids_by_region = ( [@chunkids_by_length] );
 
@@ -623,7 +643,6 @@ sub determine_subtype {
             while ( @{ $chunkids_by_region[0] } ) {
 
                 @columns_needed = ();
-
 
               REGION:
                 foreach my $i ( reverse( 0 .. $#chunkids_by_region ) ) {
@@ -727,18 +746,6 @@ sub determine_subtype {
 
 sub sort_columns_by_route_etc {
     my $self = shift;
-
- #    my $columnsort = sub {
- #        my ( $aa, $bb ) = @_;
- #        return (
- #                 byline( $aa->head_line(0), $bb->head_line(0) )
- #              or $ewreplace->( $aa->dircode ) <=> $ewreplace->( $bb->dircode )
- #              or $aa->days cmp $bb->days
- #              or $aa->primary_destination cmp $bb->primary_destination
- #        );
- #
- #    };
-
     $self->sort_columns($columnsort_cr);
     return;
 }
@@ -795,54 +802,17 @@ sub format_columns {
                 #    next;
                 #}
                 if ( $_ eq 'DROPOFF' or $_ eq 'LASTSTOP' ) {
-                    $notetext = join( $IDT->hardreturn,
-                        $i18n_all_cr->('drop_off_only') );
+                    $notetext = join(
+                        $IDT->hardreturn,
+                        $self->_i18n_all('drop_off_only')
+                    );
                     #$notetext = "Drop Off Only";
                     next;
                 }
-#                if ( $_ eq '72R' ) {
-#                    $notetext
-#                      = 'Buses arrive about every 12 minutes '
-#                      . $IDT->emdash
-#                      . $IDT->softreturn
-#                      . 'See information elsewhere on this sign.';
-#                    next;
-#                }
-#                if ( $_ eq '1R-MIXED' ) {
-#
-#                    $notetext
-#                      = 'Buses arrive about every 12 minutes weekdays, and 15 minutes weekends.'
-#                      . ' (Weekend service to downtown Oakland only.) '
-#                      . $IDT->softreturn
-#                      . 'See information elsewhere on this sign.';
-#
-#                    next;
-#                }
-#
-#                if ( $_ eq '1R' ) {
-#
-#                    if ( $column->days eq '12345' ) {
-#                        $notetext
-#                          = 'Buses arrive about every 12 minutes '
-#                          . $IDT->emdash
-#                          . $IDT->softreturn
-#                          . 'See information elsewhere on this sign.';
-#                    }
-#                    else {
-#
-#                        $notetext
-#                          = 'Buses arrive about every 12 minutes weekdays, 15 minutes weekends '
-#                          . $IDT->emdash
-#                          . $IDT->softreturn
-#                          . 'See information elsewhere on this sign.';
-#                    }
-#
-#                    next;
-#                } ## tidy end: if ( $_ eq '1R' )
 
                 $self->push_error('Unknown note $_');
 
-            } ## tidy end: for ( $column->note )
+            }
 
             $column->set_formatted_column( $blanks
                   . $column->formatted_header
@@ -855,7 +825,7 @@ sub format_columns {
 
         } ## tidy end: if ( $column->has_note)
 
-        my $prev_pstyle = $EMPTY_STR;
+        my $prev_pstyle = $EMPTY;
 
         foreach my $i ( 0 .. $column->time_count - 1 ) {
 
@@ -892,8 +862,6 @@ sub format_columns {
         }    ## <perltidy> end foreach my $i ( 0 .. $column...)
 
         my $column_length = $column->formatted_height;
-        #my $column_length
-        #  = $Actium::Cmd::MakePoints::signtypes{$signtype}{TallColumnLines};
         my $formatted_columns;
 
         if ($column_length) {
@@ -929,36 +897,19 @@ sub format_columns {
 }    ## <perltidy> end sub format_columns
 
 sub format_side {
-    my $self    = shift;
-    my $signid  = $self->signid;
-    my $effdate = $self->effdate;
-    my $is_bsh  = $self->agency eq 'BroadwayShuttle';
+    my $self   = shift;
+    my $signid = $self->signid;
+    my $is_bsh = $self->agency eq 'BroadwayShuttle';
 
     my $formatted_side;
     open my $sidefh, '>:utf8', \$formatted_side;
 
     print $sidefh $self->_effective_date_indd($is_bsh);
 
-    #my $effective_dates
-    #  = $Actium::Cmd::MakePoints::actiumdb->agency_effective_date_indd(
-    #    'effective_colon', $color );
-
     print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
     # blank line to separate effective dates from side notes
 
-#      'Light Face = a.m.', $IDT->softreturn;
-#    print $sidefh $IDT->bold_word('Bold Face = p.m.'), "\r";
-#
-#    if ( $self->has_ab ) {
-#        print $sidefh
-#'Lines that have <0x201C>A Loop<0x201D> and <0x201C>B Loop<0x201D> travel in a circle, beginning ',
-#          'and ending at the same point. The A Loop operates in the clockwise ',
-#          'direction. The B Loop operates in the counterclockwise direction. ',
-#'Look for <0x201C>A<0x201D> or <0x201C>B<0x201D> at the right end of the headsign on the bus. ',
-#          "\r";
-#    }
-
-    my $sidenote = $Actium::Cmd::MakePoints::signs{$signid}{Sidenote};
+    my $sidenote = $self->sidenote;
 
     if ( $sidenote and ( $sidenote !~ /^\s+$/ ) ) {
         $sidenote =~ s/\n/\r/g;
@@ -983,7 +934,7 @@ sub format_side {
 
     if ( $self->note600 ) {
         print $sidefh $IDT->hardreturn,
-          join( $IDT->hardreturn, $i18n_all_cr->('note_600') );
+          join( $IDT->hardreturn, $self->_i18n_all('note_600') );
     }
 
     close $sidefh;
@@ -1032,7 +983,7 @@ sub format_sidenotes {
 
         my @attrs = qw(line destination exception approxflag);
         my (%attr);
-        my $attrcode = $EMPTY_STR;
+        my $attrcode = $EMPTY;
 
         @attr{@attrs} = split( /:/, $foot, scalar @attrs );
         # scalar @attrs sets the LIMIT field, so it doesn't delete empty
@@ -1142,10 +1093,15 @@ sub format_bottom {
     ##### STOP ID BOX ####
 
     if ( $self->is_simple_stopid ) {
-        print $botfh $IDT->parastyle('stopidintro'),
-          join( $IDT->hardreturn, $i18n_all_cr->('stop_id') ),
-          $IDT->hardreturn,
-          $IDT->parastyle('stopidnumber'), $stopid;
+        if ( $self->agency eq 'BroadwayShuttle' ) {
+            print $botfh $IDT->parastyle('BSHInfoStopID'), $stopid;
+        }
+        else {
+            print $botfh $IDT->parastyle('stopidintro'),
+              join( $IDT->hardreturn, $self->_i18n_all('stop_id') ),
+              $IDT->hardreturn,
+              $IDT->parastyle('stopidnumber'), $stopid;
+        }
     }
     print $botfh $BOXBREAK;    # if not simple, leave blank
 
@@ -1157,23 +1113,27 @@ sub format_bottom {
     ### BOTTOM BOX ####
 
     no warnings('once');
-    my $stop_r = $Actium::Cmd::MakePoints::stops{$stopid};
 
-    my $nonstoplocation = $self->nonstoplocation;
-
-    my $description = $nonstoplocation || $stop_r->{c_description_full};
+    my $description = $self->description;
 
     $IDT->encode_high_chars($description);
 
-    print $botfh $IDT->parastyle('bottomnotes'), $description;
+    print $botfh $IDT->parastyle('bottomnotes'), "$description. Sign #$signid.";
 
-    print $botfh ". Sign #$signid.";
+    print $botfh " Stop $stopid." unless $self->nonstop;
 
-    print $botfh " Stop $stopid." unless $nonstoplocation;
+    my $shelternum = $self->shelternum;
 
-    print $botfh " Shelter site #"
-      . $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum} . "."
-      if $Actium::Cmd::MakePoints::signs{$signid}{ShelterNum};
+    print $botfh " Shelter site #$shelternum." if $shelternum;
+
+    if ( $self->signtype !~ /\ATID/i ) {
+
+        print $botfh '<DefineTextVariable:Output Date=<TextVarType:OutputDate>';
+        print $botfh '<tvDateFormat:MMMM d\, yyyy>>';
+        print $botfh ' Printed <cPageNumType:TextVariable>';
+        print $botfh '<TextVarName:Output Date><cPageNumType:>.';
+
+    }
 
     close $botfh;
 
@@ -1197,10 +1157,7 @@ sub output {
         # output blank columns at beginning
         # if subtype is defined, was already done in determine_subtype()
 
-        my $maxcolumns
-          = $Actium::Cmd::MakePoints::signtypes{
-            $Actium::Cmd::MakePoints::signs{$signid}{SignType}
-          }{TallColumnNum};
+        my $maxcolumns = $self->tallcolumnnum;
 
         if ( $maxcolumns and $maxcolumns > $self->width )
         {    # if there's an entry in SignTypes
@@ -1212,7 +1169,7 @@ sub output {
             );
         }
 
-    } ## tidy end: if ( not defined $self...)
+    }
 
     # output real columns
 
@@ -1273,6 +1230,12 @@ sub _effective_date_indd {
     my $dt     = $self->effdate;
     my $is_bsh = shift;
 
+    if ($is_bsh) {
+        my $date = $dt->long_en;
+        $date =~ s/ /$NBSP/g;
+        return $IDT->parastyle('BSHsideeffective') . "Effective $date";
+    }
+
     my $i18n_id = 'effective_colon';
 
     my $metastyle = 'Bold';
@@ -1282,22 +1245,15 @@ sub _effective_date_indd {
     my ( $color, $shading, $end );
 
     # EFFECTIVE DATE and colors
-    if ($is_bsh) {
-        $color   = $EMPTY;
-        $shading = $EMPTY;
-        $end     = $EMPTY;
-    }
-    else {
-        $color   = $COLORS{$oddyear};
-        $color   = $IDT->color($color);
-        $shading = $SHADINGS{ $month . $oddyear };
-        $shading = "<pShadingColor:$shading>";
-        $end     = '<pShadingColor:>';
-    }
+    $color   = $COLORS{$oddyear};
+    $color   = $IDT->color($color);
+    $shading = $SHADINGS{ $month . $oddyear };
+    $shading = "<pShadingColor:$shading>";
+    $end     = '<pShadingColor:>';
 
     my $retvalue = $IDT->parastyle('sideeffective') . $shading . $color;
 
-    my $i18n_row_r = $Actium::Cmd::MakePoints::actiumdb->i18n_row_r($i18n_id);
+    my $i18n_row_r = $self->actiumdb->i18n_row_r($i18n_id);
 
     my @effectives;
     foreach my $lang (@ALL_LANGUAGES) {
@@ -1320,8 +1276,6 @@ sub _effective_date_indd {
             $phrase .= " " . $IDT->discretionary_lf . $date;
         }
 
-        #$phrase = $IDT->language_phrase( $lang, $phrase, $metastyle );
-
         $phrase =~ s/<CharStyle:Chinese>/<CharStyle:ZH_Bold>/g;
         $phrase =~ s/<CharStyle:([^>]*)>/<CharStyle:$1>$color/g;
 
@@ -1334,4 +1288,82 @@ sub _effective_date_indd {
 } ## tidy end: sub _effective_date_indd
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
+
+1;
+
+__END__
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 

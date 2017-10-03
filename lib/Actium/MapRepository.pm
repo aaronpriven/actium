@@ -1,5 +1,7 @@
 package Actium::MapRepository 0.012;
 
+use Actium;
+
 # Routines for dealing with the filenames of line maps
 
 # The filename pattern is supposed to be
@@ -18,8 +20,7 @@ package Actium::MapRepository 0.012;
 
 #<ext> is of course .eps or .pdf, or another standard filename
 
-use 5.014;
-use warnings;
+use Actium;
 
 use Sub::Exporter -setup => {
     exports => [
@@ -30,17 +31,10 @@ use Sub::Exporter -setup => {
 };
 # Sub::Exporter ### DEP ###
 
-use Carp; ### DEP ###
-use Const::Fast; ### DEP ###
-use English '-no_match_vars'; ### DEP ###
-use File::Copy(); ### DEP ###
-use Params::Validate ':all'; ### DEP ###
+use File::Copy();               ### DEP ###
+use Params::Validate ':all';    ### DEP ###
 
 use Actium::O::Folder;
-use Actium::Util(qw<filename file_ext remove_leading_path>);
-use Actium::Sorting::Line('sortbyline');
-use Actium::Constants;
-use Actium::Crier(qw/cry last_cry/);
 
 const my $LINE_NAME_LENGTH   => 4;
 const my $DEFAULT_RESOLUTION => 288;
@@ -73,19 +67,19 @@ sub import_to_repository {
     my $verbose    = $params{verbose};
 
     my $importfolder = $params{importfolder};
-    my $cry = cry ( 'Importing line maps from ' . $importfolder->path);
-    my @files = $importfolder->glob_plain_files();
+    my $cry          = cry( 'Importing line maps from ' . $importfolder->path );
+    my @files        = $importfolder->glob_plain_files();
 
     my @copied_files;
 
   FILE:
-    foreach my $filespec (sort @files) {
+    foreach my $filespec ( sort @files ) {
 
         next FILE if -d $filespec;
 
-        my $filename    = filename($filespec);
+        my $filename    = u::filename($filespec);
         my $newfilename = $filename;
-        $cry->over ($filename) unless $verbose;
+        $cry->over($filename) unless $verbose;
 
         # if newfilename isn't valid, first run it through normalize_filename.
         # Then if it's still not valid, carp and move on.
@@ -98,8 +92,8 @@ sub import_to_repository {
         if ( not filename_is_valid($newfilename) ) {
             # check of the newly normalized name - not a duplicate call
 
-            $cry->text (
-"Can't find line, date, version or " . "extension in $filename: skipped");
+            $cry->text( "Can't find line, date, version or "
+                  . "extension in $filename: skipped" );
             next FILE;
         }
 
@@ -111,8 +105,8 @@ sub import_to_repository {
         my $newfilespec = $linefolder->make_filespec($newfilename);
 
         if ( -e $newfilespec ) {
-            $cry->text (
-"Can't move $filespec " . "because $newfilespec already exists: skipped");
+            $cry->text( "Can't move $filespec "
+                  . "because $newfilespec already exists: skipped" );
             next FILE;
         }
 
@@ -123,7 +117,7 @@ sub import_to_repository {
             _copy_file( $filespec, $newfilespec, $repository->path, $verbose );
         }
         push @copied_files, $newfilespec;
-    } ## tidy end: foreach my $filespec (@files)
+    } ## tidy end: FILE: foreach my $filespec ( sort...)
     $cry->done;
 
     return @copied_files;
@@ -150,21 +144,21 @@ sub make_web_maps {
     my $gsargs         = "-r$params{resolution} -sDEVICE=jpeg "
       . '-dGraphicsAlphaBits=4 -dTextAlphaBits=4 -q';
 
-    my $cry = cry( 'Making maps for web');
+    my $cry = cry('Making maps for web');
 
     foreach my $filespec ( @{ $params{files} } ) {
 
-        my $filename = filename($filespec);
+        my $filename = u::filename($filespec);
         next unless $filename =~ /[.]pdf\z/si;
 
         my %nameparts = %{ _mapname_pieces($filename) };
 
-        $cry->over ($nameparts{lines}) if not $verbose;
+        $cry->over( $nameparts{lines} ) if not $verbose;
 
         my @output_lines = @{ $nameparts{lines_r} };
         my $token        = $nameparts{token};
 
-        if ( $token ne $EMPTY_STR ) {
+        if ( $token ne q[] ) {
             foreach (@output_lines) {
                 $_ .= "=$token";
             }
@@ -187,7 +181,7 @@ sub make_web_maps {
             if ($verbose) {
                 my $display_path = _display_path( $first_jpeg_spec, $filespec,
                     $path_to_remove );
-                $cry->text ("Successfully rasterized: $display_path");
+                $cry->text("Successfully rasterized: $display_path");
             }
         }
         else {
@@ -204,7 +198,7 @@ sub make_web_maps {
 
     } ## tidy end: foreach my $filespec ( @{ $params...})
 
-    $cry->over($EMPTY) unless $verbose;
+    $cry->over(q[]) unless $verbose;
     $cry->done;
 
     return;
@@ -278,11 +272,11 @@ sub normalize_filename {
 
 } ## tidy end: sub normalize_filename
 
-const my $LINE_NAME_RE       => qr/(?:[[:upper:]\d]{1,4}|[[:alpha:]\d]{5,})/;
-const    my $YEAR_RE => '(?:19[89]\d|20\d\d)';
-    # year - another Y2100 problem
-const    my $MONTH_RE => '(?:0[123456789]|1[012])';
-    # numeric month
+const my $LINE_NAME_RE => qr/(?:[[:upper:]\d]{1,4}|[[:alpha:]\d]{5,})/;
+const my $YEAR_RE      => '(?:19[89]\d|20\d\d)';
+# year - another Y2100 problem
+const my $MONTH_RE => '(?:0[123456789]|1[012])';
+# numeric month
 
 sub filename_is_valid {
 
@@ -339,7 +333,7 @@ sub copylatest {
 
     my $repository = $params{repository};
 
-    my $list_cry= cry( 'Getting list of folders in map repository');
+    my $list_cry    = cry('Getting list of folders in map repository');
     my @folder_objs = $repository->children;
     $list_cry->done;
 
@@ -349,7 +343,7 @@ sub copylatest {
     my %latest_date_of;
     my %latest_ver_of;
 
-    my $copy_cry = cry( 'Copying files in repository folders');
+    my $copy_cry = cry('Copying files in repository folders');
 
     my %folder_obj_of;
     $folder_obj_of{ $_->folder } = $_ foreach @folder_objs;
@@ -357,7 +351,7 @@ sub copylatest {
     my @web_maps_to_process;
 
   FOLDER:
-    foreach my $foldername ( sortbyline keys %folder_obj_of ) {
+    foreach my $foldername ( u::sortbyline keys %folder_obj_of ) {
 
         #        next FOLDER unless $foldername =~ m{
         #                      \A
@@ -376,13 +370,13 @@ sub copylatest {
         my $folder_obj = $folder_obj_of{$foldername};
         my @filespecs  = $folder_obj->glob_plain_files;
 
-        $copy_cry->over ($foldername) unless $verbose;
+        $copy_cry->over($foldername) unless $verbose;
 
       FILE:
         foreach my $filespec (@filespecs) {
             next FILE
               unless $filespec =~ /[.] $defining_extension \z/isx;
-            my $filename = filename($filespec);
+            my $filename = u::filename($filespec);
 
             my %nameparts = %{ _mapname_pieces($filename) };
 
@@ -409,7 +403,7 @@ sub copylatest {
                 # mark the this file as the latest.
             }
 
-        } ## tidy end: foreach my $filespec (@filespecs)
+        } ## tidy end: FILE: foreach my $filespec (@filespecs)
 
         # process latest files
 
@@ -423,8 +417,8 @@ sub copylatest {
             my @latest_filespecs = $folder_obj->glob_plain_files($globpattern);
 
             foreach my $latest_filespec (@latest_filespecs) {
-                my $filename = filename($latest_filespec);
-                my ( undef, $ext ) = file_ext($filename);
+                my $filename = u::filename($latest_filespec);
+                my ( undef, $ext ) = u::file_ext($filename);
 
                 if ( defined $fullname_folder ) {
                     my $newfilespec
@@ -461,9 +455,9 @@ sub copylatest {
 
         } ## tidy end: foreach my $line_and_token ...
 
-    } ## tidy end: foreach my $foldername ( sortbyline...)
-    
-    $copy_cry->over($EMPTY);
+    } ## tidy end: FOLDER: foreach my $foldername ( u::sortbyline...)
+
+    $copy_cry->over(q[]);
     $copy_cry->done;
 
     if (@web_maps_to_process) {
@@ -485,7 +479,7 @@ sub copylatest {
 
 sub _active_maps {
 
-    my $cry = cry( 'Getting list of active maps');
+    my $cry = cry('Getting list of active maps');
 
     my $repository = shift;
     my $filename   = shift;
@@ -516,7 +510,7 @@ sub _file_action {
     if ( $action_r->( $from, $to ) ) {
         if ($verbose) {
             my $display_path = _display_path( $from, $to, $path );
-            last_cry()->text ("Successful $actionword: $display_path");
+            last_cry()->text("Successful $actionword: $display_path");
         }
     }
     else {
@@ -532,7 +526,7 @@ sub _display_path {
     my ( $from, $to, $path ) = @_;    # making copies
     if ( defined $path ) {
         foreach ( $from, $to ) {      # aliasing $_ to each in turn
-            my $new = remove_leading_path( $_, $path );
+            my $new = _remove_leading_path( $_, $path );
             if ( $_ ne $new ) {
                 $_ = ".../$new";
             }
@@ -556,12 +550,12 @@ sub _move_file {
 sub _mapname_pieces {
     ## no critic (ProhibitMagicNumbers)
     my $filename = shift;
-    my ( $filepart, $ext ) = file_ext($filename);
+    my ( $filepart, $ext ) = u::file_ext($filename);
     my ( $lines_and_token, $date, $ver ) = split( /-/s, $filepart, 3 );
 
     my ( $lines, $token ) = split( /=/s, $lines_and_token );
 
-    $token = $EMPTY_STR unless defined $token;
+    $token = q[] unless defined $token;
 
     my @lines = split( /_/s, $lines );
     return {
@@ -577,6 +571,79 @@ sub _mapname_pieces {
     ## use critic
 
 } ## tidy end: sub _mapname_pieces
+
+sub _remove_leading_path {
+    my ( $filespec, $path ) = @_;
+
+    ############################
+    ## GET CANONICAL PATHS
+
+    require Cwd;    ### DEP ###
+    $path     = Cwd::abs_path($path);
+    $filespec = Cwd::abs_path($filespec);
+
+    ##############
+    ## FOLD CASE
+
+    # if a component of $filespec is the same except for upper/lowercase
+    # from a component of $path, use the upper/lowercase of $path
+
+    my ( $filevol, $filefolders_r, $file ) = _split_path_components($filespec);
+    my ( $pathvol, $pathfolders_r, $pathfile )
+      = _split_path_components( $path, 1 );
+
+    $file    = $pathfile if ( lc($file) eq lc($pathfile) );
+    $filevol = $pathvol  if ( lc($filevol) eq lc($pathvol) );
+
+    # put each component into $case_of. But
+    # if there is a conflict between folder names within $path --
+    # e.g., $path is "/Whatever/whatever/WHatEVer" -- use
+    # the first one
+
+    my %case_of;
+    foreach ( @{$pathfolders_r} ) {
+        my $lower = lc($_);
+        if ( exists( $case_of{$lower} ) ) {
+            $_ = $case_of{$lower};
+        }
+        else {
+            $case_of{$lower} = $_;
+        }
+    }
+
+    foreach my $component ( @{$filefolders_r} ) {
+        $component = $case_of{ lc($component) }
+          if $case_of{ lc($component) };
+    }
+
+    $filespec = _join_path_components( $filevol, $filefolders_r, $file );
+    $path     = _join_path_components( $pathvol, $pathfolders_r, $pathfile );
+
+    ############################
+    ## REMOVE THE LEADING PATH
+
+    return File::Spec->abs2rel( $filespec, $path );
+} ## tidy end: sub _remove_leading_path
+
+# _split_path_components and _join_path_components
+# might be worth making public if they are used again.
+# Originally written for the case-folding in remove_leading_path
+
+sub _split_path_components {
+    my $filespec = shift;
+    my $nofile   = shift;
+    my ( $volume, $folders, $file )
+      = File::Spec->splitpath( $filespec, $nofile );
+    my @folders = File::Spec->splitdir($folders);
+    return $volume, \@folders, $file;
+}
+
+sub _join_path_components {
+    my ( $vol, $folders_r, $file ) = @_;
+    my $path
+      = File::Spec->catpath( $vol, File::Spec->catdir( @{$folders_r} ), $file );
+    return $path;
+}
 
 1;
 
@@ -859,19 +926,13 @@ Attempting to move or copy returned a system error.
 
 =item * Perl 5.014
 
-=item * Const::Fast
-
 =item * Params::Validate
 
 =item * Sub::Exporter
 
-=item * Actium::Constants
-
 =item * Actium::O::Folder
 
 =item * Actium::Sorting::Line
-
-=item * Actium::Util
 
 =head1 AUTHOR
 

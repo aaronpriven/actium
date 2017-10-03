@@ -3,7 +3,7 @@ package Actium::Cmd::StorableAVL 0.011;
 # All the programs that use the 'avl.storable' file depend on this one.
 # This shouild ultimately be replaced
 
-use Actium::Preamble;
+use Actium;
 
 use Text::Trim;    ### DEP ###
 use Storable();    ### DEP ###
@@ -43,8 +43,8 @@ EOF
 }
 
 sub START {
-    
-        my ( $class, $env ) = @_;
+
+    my ( $class, $env ) = @_;
     my $signup = $env->signup;
     chdir $signup->path();
 
@@ -66,7 +66,7 @@ sub START {
     read_files(@files);
 
     $signup->store( \%data_of, 'avl.storable' );
-    
+
     return;
 
 } ## tidy end: sub START
@@ -121,7 +121,7 @@ sub read_files {
 
             # assign last field: array of remaining fields
             $this_row{$final_field}
-              = [ grep { $_ ne $EMPTY_STR }
+              = [ grep { $_ ne $EMPTY }
                   @fields[ $final_field_idx .. $#fields ] ];
 
         }
@@ -192,7 +192,7 @@ sub read_files {
         # resets line numbering for errors
         close ARGV if eof;
     }
-    
+
     return;
 
 } ## tidy end: sub read_files
@@ -201,7 +201,7 @@ sub init_templates {
 
     for my $row_type ( keys %field_names_of ) {
 
-        $template_of{$row_type} = $EMPTY_STR;
+        $template_of{$row_type} = $EMPTY;
         my @template_pieces;
 
       FIELD:
@@ -223,8 +223,7 @@ sub init_templates {
 
     } ## tidy end: for my $row_type ( keys...)
 
-
-   return;
+    return;
 
 } ## tidy end: sub init_templates
 
@@ -234,7 +233,7 @@ sub jointemplate {
 
 sub init_field_names {
 
-    local $/ = $EMPTY_STR;    # paragraph mode
+    local $/ = $EMPTY;    # paragraph mode
 
   ROW_TYPE:
     while (<DATA>) {
@@ -296,29 +295,103 @@ sub init_field_names {
     return;
 } ## tidy end: sub init_field_names
 
+1;
+
 =head1 NAME
 
 readavl - read AVL files in the Hastus AVL Standard Interface format.
 
 =head1 DESCRIPTION
 
-readavl reads the files transmitted in the Hastus AVL Standard Interface format,
-as described in the Hastus 2006 documentation, and collects it in a structure
-readable in perl.
+readavl reads the files transmitted in the Hastus AVL Standard
+Interface format, as described in the Hastus 2006 documentation, and
+collects it in a structure readable in perl.
 
 =head1 KNOWN ISSUES
 
-Generally ignores the delimiters and treats the data as fixed-width, but 
-uses the delimiter to determine the record type.
+Generally ignores the delimiters and treats the data as fixed-width,
+but  uses the delimiter to determine the record type.
 
-As of Summer 2013, the RouteMainPlacePatternDirection field in the PPAT record
-has apparently been changed to 10 characters instead of 6. (I assume this has
-to do with a Hastus upgrade.) Using this program on old records will need to
-have it changed back again.
+As of Summer 2013, the RouteMainPlacePatternDirection field in the PPAT
+record has apparently been changed to 10 characters instead of 6. (I
+assume this has to do with a Hastus upgrade.) Using this program on old
+records will need to have it changed back again.
 
 =head1 AUTHOR
 
 Aaron Priven
+
+=cut
+
+=encoding utf8
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 
 =cut
 

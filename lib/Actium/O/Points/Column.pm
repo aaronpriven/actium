@@ -9,15 +9,14 @@ use 5.010;
 
 use sort ('stable');
 
-use Moose;                                  ### DEP ###
-use MooseX::SemiAffordanceAccessor;         ### DEP ###
-use Moose::Util::TypeConstraints;           ### DEP ###
+use Moose;                             ### DEP ###
+use MooseX::SemiAffordanceAccessor;    ### DEP ###
+use Moose::Util::TypeConstraints;      ### DEP ###
 
-use namespace::autoclean;                   ### DEP ###
+use namespace::autoclean;              ### DEP ###
 
-use Actium::Constants;
-use Actium::Time ('timenum');
-use Const::Fast;                            ### DEP ###
+use Actium::Time;
+use Const::Fast;                       ### DEP ###
 
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
@@ -70,7 +69,7 @@ around BUILDARGS => sub {
             dircode             => $dircode,
             note                => $note,
             head_line_r         => \@head_lines,
-            line_r              => [ @head_lines ],
+            line_r              => [@head_lines],
             primary_line        => $head_lines[0],
             primary_destination => $destinations[0],
             primary_exception   => '',
@@ -84,8 +83,7 @@ around BUILDARGS => sub {
 
     foreach (@entries) {
         my ( $time, $line, $destination, $place, $exception ) = split(/:/);
-        my $timenum = timenum($time);
-        $time_of{$_} = $timenum;
+        $time_of{$_} = Actium::Time->from_str($time)->timenum;
     }
 
     @entries = sort { $time_of{$a} <=> $time_of{$b} } @entries;
@@ -139,7 +137,7 @@ foreach (qw/formatted_header formatted_column/) {
     has $_ => => (
         is      => 'rw',
         isa     => 'Str',
-        default => $EMPTY_STR,
+        default => q[],
     );
 }
 
@@ -278,20 +276,23 @@ sub format_head_lines {
     foreach my $line (@head_lines) {
         {
             no warnings 'once';
-            if ( $line =~ /BS[DNH]/ ) {
+            if ( $line =~ /BS[DN]/ ) {
                 $color = $line;
 
                 if ( $line eq 'BSN' ) {
-                    my $days = $self->days;
-                    $line = 'FRI NIGHT' if $days eq '5';
-                    #$line = 'SAT NIGHT'       if $days eq '6';
-                    $line = 'FRI & SAT NIGHT' if $days eq '6';
-                    $line = 'FRI & SAT NIGHT' if $days eq '56';
-                    $line = 'MON' . $IDT->endash . 'THU NIGHT'
-                      if $days eq '12345';    # ugly ugly ugly hack,
-                                              # I should really fix the data
+                   #    my $days = $self->days;
+                   #    $line = 'FRI NIGHT' if $days eq '5';
+                   #    #$line = 'SAT NIGHT'       if $days eq '6';
+                   #    $line = 'FRI & SAT NIGHT' if $days eq '6';
+                   #    $line = 'FRI & SAT NIGHT' if $days eq '56';
+                   #    $line = 'MON' . $IDT->endash . 'THU NIGHT'
+                   #      if $days eq '12345';    # ugly ugly ugly hack,
+                   #                              # I should really fix the data
+                   #}
+                   #elsif ( $line eq 'BSD' or $line eq 'BSH' ) {
+                    $line = 'MON' . $IDT->endash . 'FRI NIGHT';
                 }
-                elsif ( $line eq 'BSD' or $line eq 'BSH' ) {
+                else {
                     $line = 'MON' . $IDT->endash . 'FRI DAY';
                 }
 
@@ -307,7 +308,7 @@ sub format_head_lines {
                 );
                 return;
 
-            } ## tidy end: if ( $line =~ /BS[DNH]/)
+            } ## tidy end: if ( $line =~ /BS[DN]/)
             else {
                 $color = (
                     $Actium::Cmd::MakePoints::lines{$line}{Color}
@@ -347,10 +348,10 @@ sub format_head_lines {
           . $head_lines;
 
     }
-    $self->append_to_formatted_header( $head_lines . $SPACE );
+    $self->append_to_formatted_header( $head_lines . q[ ] );
 
     #$self->set_formatted_header
-    #      ($self->formatted_header . $head_lines . $SPACE);
+    #      ($self->formatted_header . $head_lines . q[ ]);
 
     return;
 
@@ -488,4 +489,79 @@ __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
 1;
 
-__END__ 
+__END__
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

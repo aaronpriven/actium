@@ -68,10 +68,6 @@ Another part of the partially-completed stop lists and route list programs. Thes
 
 Uses the data in the db/slists folder to make stop lists suitable for posting on the web.
 
-> sqlite2tab      => 'SQLite2tab',
-
-A program written to test the Actium::Files::SQLite program, outputting SQL files as tab-delimited files.
-
 > tabula          => 'Tabula',
 
 This is the program that takes the schedules and prepares the InDesign files for them, for the printed timetables and the full-schedule signs.
@@ -314,3 +310,22 @@ This produces a cross-tabulation of line groups and timepoints. I don't remember
 xl2sked.pl
 
 Excel for Mac outputs text files that use CR instead of LF as line boundaries, and which may have extra fields tacked on to the end which confuse the sked reading program. This truncates those.
+
+
+
+## COPYRIGHT & LICENSE
+
+Copyright 2011-2017
+
+The Actium system is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+* the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+* the Artistic License version 2.0.
+
+This system is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.

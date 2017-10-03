@@ -1,6 +1,6 @@
 package Actium::Cmd::Slists2HTML 0.013;
 
-use Actium::Preamble;
+use Actium;
 
 use Actium::O::Dir;
 
@@ -14,6 +14,8 @@ my $count;
 my %order_of = map { $_ => $count++ } @DIRCODES;
 
 const my $HIGHEST_LINE_IN_FIRST_LOCALPAGE => 70;
+
+const my %LINE_SHOULD_BE_SKIPPED => ( 399 => 1 );
 
 const my %LONGCORNER_OF => (
     # taken from Wikipedia... all of them except the eight principal ones
@@ -117,7 +119,7 @@ sub START {
 
             my $headerline = readline($ifh);    # thrown away
 
-            my $prevcity = $EMPTY_STR;
+            my $prevcity = $EMPTY;
 
             while ( defined( my $stopline = readline($ifh) ) ) {
                 chomp $stopline;
@@ -149,7 +151,7 @@ sub START {
                 my $city
                   = encode_entities( $stops_row_of_r->{$stopid}{c_city} );
 
-                my $citytext = $EMPTY_STR;
+                my $citytext = $EMPTY;
 
                 if ( $prevcity ne $city ) {
                     $citytext
@@ -215,10 +217,10 @@ sub START {
 
         # make dummy stop list if there's only one direction
         if ( @dirs == 1 ) {
-            push @dirs, $EMPTY_STR;
-            $stops_of{$EMPTY_STR}     = [$EMPTY_STR];
-            $stoplines_of{$EMPTY_STR} = [$EMPTY_STR];
-            push @dir_bound, $EMPTY_STR;
+            push @dirs, $EMPTY;
+            $stops_of{$EMPTY}     = [$EMPTY];
+            $stoplines_of{$EMPTY} = [$EMPTY];
+            push @dir_bound, $EMPTY;
 
         }
 
@@ -302,7 +304,8 @@ EOT
 
     } ## tidy end: foreach my $type ( keys %tables_of_type)
 
-    my $effectivedate = $actiumdb->agency_effective_date('ACTransit')->long_en;
+    my $effectivedate
+      = $actiumdb->effective_date( agency => 'ACTransit' )->long_en;
 
     my $indexfh  = $stoplists_folder->open_write('stops.html');
     my $cindexfh = $stoplists_folder->open_write('c-stops.html');
@@ -399,3 +402,80 @@ sub url_type {
 }
 
 1;
+
+__END__
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

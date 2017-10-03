@@ -2,12 +2,10 @@ package Actium::O::Sked::Trip 0.012;
 
 # Trip object (for schedules and headways)
 
-use Actium::Moose;
+use Actium ('class');
 
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
-
-use Actium::Time qw<timestr timestr_sub>;
 
 #use overload q{""} => \&stoptimes_comparison_str;
 # only for debugging - remove in production
@@ -120,8 +118,8 @@ sub specday {
     my $self           = shift;
     my $daysexceptions = $self->daysexceptions;
     if ($daysexceptions) {
-       my ($specdayletter, $specday) = split(/ / , $daysexceptions,2);
-       return ($specdayletter, $specday);
+        my ( $specdayletter, $specday ) = split( / /, $daysexceptions, 2 );
+        return ( $specdayletter, $specday );
     }
 
     my $skeddays = shift;
@@ -166,7 +164,7 @@ has stoptimes_comparison_str => (
 sub _build_stoptimes_comparison_str {
     my $self = shift;
     return join( "|",
-         map { defined ? $_ : '-' } $self->stoptimes );
+         map { defined($_) ? $_ : '-' } $self->stoptimes );
 }
 #>>>
 
@@ -195,7 +193,7 @@ sub _build_final_stoptime_idx {
     my $idx;
     for my $i ( reverse( 0 .. $self->stoptime_count ) ) {
         my $time = $self->stoptime($i);
-        if ( defined $time and $time ne $EMPTY_STR ) {
+        if ( defined $time and $time ne $EMPTY ) {
             $idx = $i;
             last;
         }
@@ -434,7 +432,7 @@ time; if it's to continue on another trip, it's usually after some layover time.
 
 This is an integer, the number of minutes since midnight (or before midnight, if
 negative). If this is set to a string, it is coerced to an integer using 
-L<Actium::Time::timenum|Actium::Time/"timenum ($time)">
+L<Actium::Time|Actium::Time>
 
 =item B<noteletter>
 
@@ -455,7 +453,7 @@ Entries for stops or places not served by this trip are stored as I<undef>.
 
 These are integers, the number of minutes since midnight (or before midnight, if
 negative). If an entry is set to a string, it is coerced to an integer using 
-L<Actium::Time::timenum|Actium::Time/"timenum ($time)">.
+L<Actium::Time|Actium::Time>.
 
 =item B<stoptimes>
 
@@ -540,13 +538,7 @@ See L<Moose>.
 
 =item MooseX::Storage
 
-=item Actium::Constants
-
-=item Actium::Time
-
 =item Actium::Types
-
-=item Actium::Util
 
 =back
 

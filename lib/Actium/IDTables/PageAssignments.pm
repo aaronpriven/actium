@@ -3,24 +3,18 @@ package Actium::IDTables::PageAssignments 0.012;
 use 5.016;
 use warnings;
 
-use English '-no_match_vars'; ### DEP ###
-use autodie; ### DEP ###
-use Text::Trim; ### DEP ###
+use Actium;
 use Actium::Crier (qw/cry last_cry/);
-use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
 use Actium::O::Sked::Timetable::IDTimetable;
 use Actium::O::Sked::Timetable::IDTimetableSet;
-use Actium::Util qw/in flatten population_stdev joinempty joinkey all_eq halves/;
-use Const::Fast; ### DEP ###
-use List::Util      (qw/max sum/); ### DEP ###
-use List::MoreUtils (qw[any natatime]); ### DEP ###
-use List::Compare::Functional(qw/get_intersection/); ### DEP ###
-use Algorithm::Combinatorics(qw/partitions permutations/); ### DEP ###
-use Actium::Combinatorics (qw/odometer_combinations ordered_partitions/);
+use List::Util (qw/max sum/);    ### DEP ###
+use List::Compare::Functional(qw/get_intersection/);          ### DEP ###
+use Algorithm::Combinatorics(qw/partitions permutations/);    ### DEP ###
+use Actium::Set (qw/odometer_combinations ordered_partitions/);
 
 use Actium::O::Sked::Timetable::IDPageFrameSets;
 
@@ -125,9 +119,9 @@ my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
 
 sub assign {
 
-    my (@tables) = @{ +shift };    # copy
+    my (@tables) = @{ +shift };       # copy
     my $force_no_shortpage = shift;
-    
+
     my ( $fit_failure, $has_overlong, @idtables )
       = $page_framesets->make_idtables(@tables);
 
@@ -135,9 +129,10 @@ sub assign {
         foreach my $idtable (@idtables) {
             next unless $idtable->failed;
 
-            last_cry()->text( $idtable->id
-              . " could not be fit in the pages available: "
-              . $idtable->dimensions_for_display);
+            last_cry()
+              ->text( $idtable->id
+                  . " could not be fit in the pages available: "
+                  . $idtable->dimensions_for_display );
 
         }
 
@@ -160,41 +155,42 @@ sub assign {
     # find one that works, return nothing
 
     my $has_shortpage;
-    if ($force_no_shortpage)  {
-       $has_shortpage = 0;
-    } else {
-    ( $has_shortpage, @page_assignments )
-      = _reassign_short_page(@page_assignments);
+    if ($force_no_shortpage) {
+        $has_shortpage = 0;
+    }
+    else {
+        ( $has_shortpage, @page_assignments )
+          = _reassign_short_page(@page_assignments);
     }
 
     # @page_assignments is organized by page, but want to return
     # table_assignments, organized by table
-    
-    my $portrait_chars = _make_portrait_chars($has_shortpage , @page_assignments);
 
-    return $portrait_chars, 
-           _make_table_assignments_from_page_assignments( $has_shortpage,
+    my $portrait_chars
+      = _make_portrait_chars( $has_shortpage, @page_assignments );
+
+    return $portrait_chars,
+      _make_table_assignments_from_page_assignments( $has_shortpage,
         @page_assignments );
 
 } ## tidy end: sub assign
 
 sub _make_portrait_chars {
-   my $has_shortpage = shift;
-   my @page_assignments = @_;
-   
-   shift @page_assignments if $has_shortpage;
-   
-   return joinempty(
-   map { $_->{frameset}->is_portrait ? 'P' : 'L' } @page_assignments
-   );
-       
-   #my @portrait_chars;
-   #foreach my $page_assignment_r (@page_assignments) {
-   #    push @portrait_chars, 
-   #    ($page_assignment_r->{frameset}->is_portrait ? 'P' : 'L');
-   #}
-   
-   #return j(@portrait_chars);
+    my $has_shortpage    = shift;
+    my @page_assignments = @_;
+
+    shift @page_assignments if $has_shortpage;
+
+    return u::joinempty( map { $_->{frameset}->is_portrait ? 'P' : 'L' }
+          @page_assignments );
+
+    #my @portrait_chars;
+    #foreach my $page_assignment_r (@page_assignments) {
+    #    push @portrait_chars,
+    #    ($page_assignment_r->{frameset}->is_portrait ? 'P' : 'L');
+    #}
+
+    #return j(@portrait_chars);
 
 }
 
@@ -301,7 +297,7 @@ sub _overlong_set_assign_pages {
     my @page_partitions;
 
     foreach my $table_set (@expanded_table_sets) {
-        my @tables           = flatten($table_set);
+        my @tables           = u::flatten($table_set);
         my @these_partitions = ordered_partitions( \@tables );
         push @page_partitions, @these_partitions;
     }
@@ -381,14 +377,14 @@ sub _sort_page_partitions {
 
                 my @lines_of_this_table = $table->lines;
                 push @lines,     \@lines_of_this_table;
-                push @all_lines, joinkey(@lines_of_this_table);
+                push @all_lines, u::joinkey(@lines_of_this_table);
 
                 push @dircodes, $table->dircode;
                 push @daycodes, $table->daycode;
 
             }
 
-            if ( all_eq(@ids) ) {
+            if ( u::all_eq(@ids) ) {
                 $partitions_with_values{pointsforsorting} += 11;
                 next PAGE;
                 # one ID; maximum value (8+2+1)
@@ -396,7 +392,7 @@ sub _sort_page_partitions {
 
             my $pagepoints = 0;
 
-            my $all_eq_lines = all_eq(@all_lines);
+            my $all_eq_lines = u::all_eq(@all_lines);
 
             if ($all_eq_lines) {
                 $pagepoints += 8;
@@ -408,14 +404,14 @@ sub _sort_page_partitions {
             else {
                 $pagepoints += 4 if _one_line_in_common(@lines);
             }
-            $pagepoints += 2 if all_eq(@daycodes);
-            $pagepoints += 1 if all_eq(@dircodes);
+            $pagepoints += 2 if u::all_eq(@daycodes);
+            $pagepoints += 1 if u::all_eq(@dircodes);
 
             $partitions_with_values{pointsforsorting} += $pagepoints;
 
         } ## tidy end: PAGE: foreach my $page ( @{$partition...})
 
-        $partitions_with_values{deviation} = population_stdev(@tablecounts);
+        $partitions_with_values{deviation} = u::population_stdev(@tablecounts);
 
         push @page_partitions, \%partitions_with_values;
 
@@ -454,7 +450,7 @@ sub _one_line_in_common {
   ELEMENT:
     foreach my $element (@first_elements) {
         foreach my $list_r (@lol) {
-            next ELEMENT unless in( $element, $list_r );
+            next ELEMENT unless u::in( $element, $list_r );
         }
         return 1;    # matches all elements
     }
@@ -599,7 +595,7 @@ sub _reassign_short_page {
   FRAMESET_TO_REPLACE:
     for my $page_idx (@page_order) {
         my $page_assignment_r = $page_assignments[$page_idx];
-        my $tables_r          = flatten( $page_assignment_r->{tables} );
+        my $tables_r          = u::flatten( $page_assignment_r->{tables} );
         #my $frameset          = $page_assignment_r->{frameset};
 
         # don't move part of a overlong table to the short page,
@@ -680,3 +676,78 @@ sub _make_table_assignments_from_page_assignments {
 1;
 
 __END__
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

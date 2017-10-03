@@ -90,8 +90,10 @@ try reordering boxes and retrying fit to see if it makes a difference.
 
 Once it fits, it saves the solution to the fit, and outputs InDesign tagged text to a file
 
-(I looked into bin-packing algorithms; variable width of rectangles makes them not easily applicable, and
-anyway, results are efficient but ugly and not sure that's really desireable.)
+(I looked into bin-packing algorithms; variable width of rectangles
+makes them not easily applicable, and anyway, results are efficient
+but ugly and not sure that's really desireable. One on CPAN is
+Algorithm::BinPack::2D)
 
 --
 
@@ -99,6 +101,8 @@ Rather than putting smoking and location texts in InDesign text file, put it in 
 script check to see if frames with correct script labels exist before trying to put smoking and location in
 the file. Avoids unnecessary location and smoking on TIDs, etc.
 
+(Maybe put location as mandatory last box in table? Then will waste as little
+room as possible)
 
 --
 

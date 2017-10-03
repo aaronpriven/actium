@@ -4,8 +4,8 @@ package Actium::O::Files::ActiumDB 0.013;
 # (the FileMaker database used by Actium users), accessed
 # thorugh ODBC.
 
-use Actium::Moose;
-use Actium::Sorting::Line('sortbyline');
+use Actium ('class');
+use Hash::Util();
 
 const my $KEYFIELD_TABLE          => 'FMTableKeys';
 const my $KEY_OF_KEYFIELD_TABLE   => 'FMTableKey';
@@ -14,6 +14,8 @@ const my $TABLE_OF_KEYFIELD_TABLE => 'FMTable';
 const my $IDT => 'Actium::Text::InDesignTags';
 
 const my @ALL_LANGUAGES => qw/en es zh/;
+
+const my $DEFAULT_AGENCY => 'ACTransit';
 
 has 'db_name' => (
     is  => 'ro',
@@ -111,7 +113,7 @@ sub _build_table_cache {
         }
     );
 
-    u::lock_hashref_recurse($cache_r);
+    Hash::Util::lock_hashref_recurse($cache_r);
     return $cache_r;
 }
 
@@ -131,13 +133,14 @@ sub _build_color_cache {
 
 sub _build_agency_cache {
     my $self = shift;
-    return $self->_build_table_cache('agency',
+    return $self->_build_table_cache(
+        'agency',
         qw(
           agency_id            agency_lang
           agency_linemap_url   agency_url          agency_abbr
           agency_linesked_url  agency_mapversion   agency_name
-          agency_phone         agency_timezone     agency_effective_date
-          agency_fare_url
+          agency_phone         agency_timezone
+          agency_fare_url      agency_effective_date
           )
     );
 }
@@ -465,7 +468,7 @@ sub field_of_referenced_place {
 }
 
 sub dereference_place {
-    my $self = shift;
+    my $self  = shift;
     my $place = shift;
     return $place unless $place;
     my $deref_place = $self->field_of_referenced_place(
@@ -514,19 +517,19 @@ sub linegrouptypes_in_order {
 sub agency_or_abbr_row {
     my $self = shift;
     my $name = shift;
-    
-    if ($self->agency_exists($name)) {
+
+    if ( $self->agency_exists($name) ) {
         my $row_r = $self->agency_row_r($name);
-        return ($name, $row_r->{agency_abbr}, $row_r);
+        return ( $name, $row_r->{agency_abbr}, $row_r );
     }
-    
-    if ($self->agency_abbr_exists($name)) {
+
+    if ( $self->agency_abbr_exists($name) ) {
         my $row_r = $self->agency_abbr_row_r($name);
-        return ($row_r->{agency_id}, $name, $row_r);
+        return ( $row_r->{agency_id}, $name, $row_r );
     }
-    
+
     return;
-    
+
 }
 
 my $url_make_cr = sub {
@@ -577,73 +580,35 @@ sub linesked_url {
     my $self = shift;
     my $line = shift;
     return $url_make_cr->( $self, $line, 'agency_linesked_url' );
-
 }
 
-sub agency_effective_date {
-    my $self         = shift;
-    my $agency       = shift;
-    my $agency_row_r = $self->agency_row_r($agency);
-    my $str          = $agency_row_r->{agency_effective_date};
-    $str =~ s/[\s\0]+\z//;
+method effective_date (
+       Str :$agency = $DEFAULT_AGENCY,
+       :@lines is ref_alias = [],
+    ) {
 
-    my @ymd = split( /-/, $str );
+    my %line_cache = $self->line_cache;
+
+    my @dates;
+
+    if (@lines) {
+        @dates = map { $line_cache{$_}{TimetableDate} } @lines;
+    }
+    else {
+        my $agency_row_r = $self->agency_row_r($agency);
+        @lines
+          = grep { $line_cache{$_}{agency_id} eq $agency } keys %line_cache;
+
+        @dates = (
+            ( map { $line_cache{$_}{TimetableDate} } @lines ),
+            $agency_row_r->{agency_effective_date}
+        );
+    }
 
     require Actium::O::DateTime;
-    my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
-    return $dt;
-}
+    return Actium::O::DateTime->newest_date(@dates);
 
-sub agency_effective_date_indd {
-    my $self      = shift;
-    my $i18n_id   = shift;
-    my $color     = shift;
-    my $metastyle = 'Bold';
-
-    my $cachekey = "$i18n_id|$color";
-
-    state $cache;
-    return $cache->{$cachekey} if exists $cache->{$cachekey};
-
-    my $dt         = $self->agency_effective_date('ACTransit');
-    my $i18n_row_r = $self->i18n_row_r($i18n_id);
-
-    require Actium::Text::InDesignTags;
-    const my $nbsp => $IDT->nbsp;
-
-    my @effectives;
-    foreach my $lang (@ALL_LANGUAGES) {
-        my $method = "long_$lang";
-        my $date   = $dt->$method;
-        if ( $lang eq 'en' ) {
-            $date =~ s/ /$nbsp/g;
-        }
-
-        $date = $IDT->encode_high_chars_only($date);
-        $date = $IDT->language_phrase( $lang, $date, $metastyle );
-
-        my $phrase = $i18n_row_r->{$lang};
-        $phrase =~ s/\s+\z//;
-
-        if ( $phrase =~ m/\%s/ ) {
-            $phrase =~ s/\%s/$date/;
-        }
-        else {
-            $phrase .= " " . $IDT->discretionary_lf . $date;
-        }
-
-        #$phrase = $IDT->language_phrase( $lang, $phrase, $metastyle );
-
-        $phrase =~ s/<CharStyle:Chinese>/<CharStyle:ZH_Bold>/g;
-        $phrase =~ s/<CharStyle:([^>]*)>/<CharStyle:$1>$color/g;
-
-        push @effectives, $phrase;
-
-    } ## tidy end: foreach my $lang (@ALL_LANGUAGES)
-
-    return $cache->{$cachekey} = join( $IDT->hardreturn, @effectives );
-
-} ## tidy end: sub agency_effective_date_indd
+} ## tidy end: method effective_date
 
 sub date_i18n_texts_hash {
     my $self    = shift;
@@ -680,7 +645,7 @@ has _lines_of_linegrouptype_r => (
 );
 
 sub lines {
-    my $self=shift;
+    my $self = shift;
     return $self->line_keys;
 }
 
@@ -704,7 +669,7 @@ sub _build_lines_of_linegrouptype {
     foreach my $linegrouptype ( keys %lines_of_linegrouptype ) {
 
         $lines_of_linegrouptype{$linegrouptype}
-          = [ sortbyline @{ $lines_of_linegrouptype{$linegrouptype} } ];
+          = [ u::sortbyline @{ $lines_of_linegrouptype{$linegrouptype} } ];
 
     }
 
@@ -817,7 +782,7 @@ sub _build_line_descrips_of_transithub {
             $line_descrips_of_transithub{$transithub}{$line} = $desc;
         }
     }
-    
+
     return \%line_descrips_of_transithub;
 
 }
@@ -831,7 +796,7 @@ sub descrips_of_transithubs_indesign {
     my %params = u::validate( @_, { signup => 1, } );
     my $signup = $params{signup};
 
-    my $effdate = $self->agency_effective_date('ACTransit')->long_en;
+    my %line_cache = $self->line_cache;
 
     require Actium::Text::InDesignTags;
     my %descrips_of_hubs;
@@ -841,7 +806,10 @@ sub descrips_of_transithubs_indesign {
         my %descrip_of = $self->line_descrips_of_transithub($transithub);
 
         my @descrip_texts;
-        foreach my $line ( sortbyline keys %descrip_of ) {
+        my @lines_of_hub;
+
+        foreach my $line ( u::sortbyline keys %descrip_of ) {
+            push @lines_of_hub, $line;
             my $descrip = $descrip_of{$line};
 
             push @descrip_texts,
@@ -854,6 +822,12 @@ sub descrips_of_transithubs_indesign {
               );
 
         }
+
+        next unless @lines_of_hub;
+
+        my $effdate_obj = $self->effective_date();
+
+        my $effdate = $effdate_obj->long_en;
 
         $descrips_of_hubs{$transithub} = u::joinempty(
             $IDT->start,
@@ -882,8 +856,8 @@ sub lines_at_transit_hubs_html {
 
     foreach my $city ( sort $self->transithub_cities ) {
 
-        my $citytext  = $EMPTY_STR;
-        my $skip_city = 1;            # skip city unless we see some lines
+        my $citytext  = $EMPTY;
+        my $skip_city = 1;        # skip city unless we see some lines
 
         $citytext
           .= qq{<h3>$city</h3>\n}
@@ -893,7 +867,7 @@ sub lines_at_transit_hubs_html {
 
         foreach my $hub ( sort $self->_transithubs_of_city($city) ) {
 
-            my @lines = sortbyline( $self->_lines_of_transithub($hub) );
+            my @lines = u::sortbyline( $self->_lines_of_transithub($hub) );
 
             next unless @lines;
 
@@ -937,11 +911,12 @@ sub line_descrip_html {
 
     my $self = shift;
 
-    my %params = u::validate( @_, { signup => 1, } );
+    my %params = u::validate( @_,
+        { signup => 1, agency => { default => $DEFAULT_AGENCY } } );
 
     my $signup = $params{signup};
 
-    my $effdate = $self->agency_effective_date('ACTransit')->long_en;
+    my $effdate = $self->effective_date()->long_en;
 
     my $html
       = "\n<!--\n    Do not edit this file! "
@@ -959,11 +934,10 @@ sub line_descrip_html {
         my @lines = $self->_lines_of_linegrouptype($linegrouptype);
 
         # heading
-        my $count = scalar @lines;
-        my $pub   = "$linegrouptype Lines";
-        my $anchor
-          = $linegrouptype =~ s/ /_/gr;
-          #= $linegrouptype eq 'All Nighter' ? 'AllNighter' : $linegrouptype;
+        my $count  = scalar @lines;
+        my $pub    = "$linegrouptype Lines";
+        my $anchor = $linegrouptype =~ s/ /_/gr;
+        #= $linegrouptype eq 'All Nighter' ? 'AllNighter' : $linegrouptype;
 
         $html
           .= qq{<table style="border-collapse: collapse;" border="1">}
@@ -1096,4 +1070,79 @@ __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
 __END__
 
+
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 

@@ -3,15 +3,17 @@ package Actium::O::Cmd 0.012;
 # Amalgamation of Actium::Cmd, Actium::O::CmdEnv, and the various
 # Actium::Cmd::Config::* modules
 
-use Actium::Moose;
+use Actium ('class');
 
 use Getopt::Long('GetOptionsFromArray');    ### DEP ###
 use Term::ReadKey;                          ### DEP ###
 
 use Actium::Crier('default_crier');
-use Actium::O::Files::Ini;
+use Actium::Storage::Ini;
 use Actium::O::Cmd::Option;
 use Actium::O::Folder;
+
+use Module::Runtime ('require_module');
 
 const my $EX_USAGE       => 64;              # from "man sysexits"
 const my $EX_SOFTWARE    => 70;
@@ -36,21 +38,10 @@ my $term_width_cr = sub {
 ###############
 ##### BUILDARGS
 
-around BUILDARGS => sub {
-    my $orig  = shift;
-    my $class = shift;
+around BUILDARGS ( $orig, $class : slurpy %params ) {
 
-    my %params = u::validate(
-        @_,
-        {   system_name => { type => $PV_TYPE{SCALAR} },
-            commandpath => { type => $PV_TYPE{SCALAR} },
-            sysenv      => { type => $PV_TYPE{HASHREF}, default => {%ENV} },
-            subcommands => { type => $PV_TYPE{HASHREF} },
-            argv        => { type => $PV_TYPE{ARRAYREF}, default => [@ARGV] },
-            home_folder => { type => $PV_TYPE{SCALAR}, optional => 1 },
-            bin         => { type => $PV_TYPE{SCALAR}, optional => 1 },
-        }
-    );
+    $params{sysenv} //= {%ENV};
+    $params{argv}   //= [@ARGV];
 
     if ( not defined $params{home_folder} ) {
         require File::HomeDir;    ### DEP ###
@@ -108,7 +99,7 @@ around BUILDARGS => sub {
 
     return $class->$orig(%init_args);
 
-};
+} ## tidy end: around BUILDARGS
 
 ###############
 #### BUILD
@@ -122,6 +113,8 @@ sub BUILD {
     if ( not $subcommand ) {
         $self->_mainhelp();
     }
+
+    Actium::_set_env($self);
 
     my $module = $self->module;
     if ( $self->_help_requested or $self->option('help') ) {
@@ -167,7 +160,7 @@ sub _init_terminal {
 }
 
 sub prompt {
-    
+
     my $self = shift;
 
     require IO::Prompter;    ### DEP ###
@@ -181,7 +174,7 @@ sub prompt {
 
     print $fh "\n" if ( $self->crier->position != 0 );
 
-    my @filehandles = ( '-in' => *STDIN , '-out' => *{$fh} );
+    my @filehandles = ( '-in' => *STDIN, '-out' => *{$fh} );
 
     #say $prompt;
 
@@ -208,21 +201,12 @@ sub prompt {
 #############
 #### HELP
 
-sub _mainhelp {
-
-    my $self = shift;
-
-    my %params = u::validate(
-        @_,
-        {   error  => { type => $PV_TYPE{SCALAR}, default => $EMPTY },
-            status => { type => $PV_TYPE{SCALAR}, default => 0 },
-        }
-    );
+method _mainhelp ( Str :$error = q[] , Int :$status = 0 ) {
 
     #my $system_name = $self->system_name;
     my $command = $self->command;
 
-    my $helptext = $params{error} ? "$params{error}\n" : $EMPTY;
+    my $helptext = $error ? "$error\n" : $EMPTY;
 
     $helptext .= "Subcommands available for $command:\n";
 
@@ -231,7 +215,7 @@ sub _mainhelp {
     my $width = $term_width_cr->() - 2;
 
     require Actium::O::2DArray;
-    ( undef, \my @lines ) = Actium::O::2DArray->new_like_ls(
+    ( undef, \my @lines ) = Actium::O::2DArray->new_to_term_width(
         array     => \@subcommands,
         width     => $width,
         separator => ($SUBCOMMAND_SEPARATOR)
@@ -241,9 +225,9 @@ sub _mainhelp {
       join( ( "\n" . $SUBCOMMAND_PADDING ), @lines )
       or die "Can't output help text: $OS_ERROR";
 
-    exit $params{status};
+    exit $status;
 
-} ## tidy end: sub _mainhelp
+} ## tidy end: method _mainhelp
 
 sub _output_usage {
 
@@ -258,7 +242,7 @@ sub _output_usage {
         $description_of{$_} = "Same as -$name" foreach $obj->aliases;
     }
 
-    my $longest = 1 + u::max( map { length($_) } keys %description_of );
+    my $longest = 1 + Actium::max( map { length($_) } keys %description_of );
     # add one for the hyphen
 
     say STDERR 'Options:';
@@ -276,7 +260,7 @@ sub _output_usage {
         my $displayname = sprintf '%*s -- ', $longest, "-$name";
 
         say STDERR Text::Wrap::wrap(
-            $EMPTY_STR,
+            $EMPTY,
             q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
             $displayname . $description_of{$name}
         );
@@ -298,7 +282,7 @@ has home_folder => (
 
 has config => (
     is      => 'ro',
-    isa     => 'Actium::O::Files::Ini',
+    isa     => 'Actium::Storage::Ini',
     builder => '_build_config',
     lazy    => 1,
 );
@@ -306,7 +290,7 @@ has config => (
 sub _build_config {
     my $self       = shift;
     my $systemname = $self->system_name;
-    my $config     = Actium::O::Files::Ini::->new(".$systemname.ini");
+    my $config     = Actium::Storage::Ini::->new(".$systemname.ini");
     return $config;
 }
 
@@ -339,7 +323,7 @@ sub _build_module {
 
     my $referred;
     while ( exists( $subcommands{$subcommand} )
-        and u::is_ref( $subcommands{$subcommand} ) )
+        and Actium::is_ref( $subcommands{$subcommand} ) )
     {
         $subcommand = ${ $subcommands{$subcommand} };
         $referred   = 1;
@@ -362,7 +346,8 @@ sub _build_module {
     }
 
     my $module = "${COMMAND_PREFIX}::$subcommands{$subcommand}";
-    require_module($module) or die " Couldn't load module $module: $OS_ERROR";
+    require_module($module)
+      or die " Couldn't load module $module: $OS_ERROR";
     return $module;
 
 } ## tidy end: sub _build_module
@@ -383,7 +368,7 @@ has command => (
 sub _build_command {
     my $self        = shift;
     my $commandpath = $self->commandpath;
-    return u::filename($commandpath);
+    return Actium::filename($commandpath);
 }
 
 has sysenv_r => (
@@ -411,7 +396,7 @@ has argv_r => (
     writer   => '_set_argv_r',
     default  => sub { [] },
     init_arg => 'argv',
-    handles  => { argv => 'elements', argv_idx => 'get',},
+    handles  => { argv => 'elements', argv_idx => 'get', },
 );
 
 has options_r => (
@@ -440,13 +425,13 @@ sub _build_options {
             $options{ $obj->name } = $obj->default;
         }
     }
-    
+
     my @argv = $self->argv;
 
     my $returnvalue = GetOptionsFromArray( \@argv, \%options, @option_specs );
     unless ($returnvalue) {
-       say "Error parsing command-line options.\n---";
-       %options = ( help => 1 );
+        say "Error parsing command-line options.\n---";
+        %options = ( help => 1 );
     }
     $self->_set_argv_r( \@argv );
     # replace old argv with new one without options in it
@@ -455,9 +440,9 @@ sub _build_options {
       sort { $a->[1] <=> $b->[1] }
       map { [ $_, $_->order ] } @objs;
     # sort options by order submitted, so the prompts come out reasonably
-    
+
     return \%options if $options{help};
-    # could be generalized to a "skip prompts" value, for 
+    # could be generalized to a "skip prompts" value, for
     # manuals or other displays
 
     foreach my $obj (@objs) {
@@ -474,7 +459,7 @@ sub _build_options {
             }
         }
     }
-    
+
     foreach my $thisoption ( keys %options ) {
         my $callback = $self->_option_obj_of($thisoption)->callback;
         if ($callback) {
@@ -509,7 +494,7 @@ sub _subcommand_names {
     \my %subcommands = $self->_subcommands_r;
 
     return (
-        grep { not u::is_ref( $subcommands{$_} ) }
+        grep { not Actium::is_ref( $subcommands{$_} ) }
         sort keys %subcommands
     );
 }
@@ -541,12 +526,12 @@ sub _build_option_objs {
     while (@optionspecs) {
         my $optionspec = shift @optionspecs;
 
-        if ( u::is_hashref($optionspec) ) {
+        if ( Actium::is_hashref($optionspec) ) {
             $optionspec->{cmdenv} = $self;
             $optionspec->{order}  = $count++;
             push @opt_objs, Actium::O::Cmd::Option->new($optionspec);
         }
-        elsif ( u::is_arrayref($optionspec) ) {
+        elsif ( Actium::is_arrayref($optionspec) ) {
 
             my ( $spec, $description, $callbackorfallback ) = @{$optionspec};
 
@@ -560,7 +545,7 @@ sub _build_option_objs {
             if ( defined $callbackorfallback ) {
 
                 my $key
-                  = u::is_coderef($callbackorfallback)
+                  = Actium::is_coderef($callbackorfallback)
                   ? 'callback'
                   : 'fallback';
                 $option_init{$key} = $callbackorfallback;
@@ -568,7 +553,7 @@ sub _build_option_objs {
 
             push @opt_objs, Actium::O::Cmd::Option->new( \%option_init );
 
-        } ## tidy end: elsif ( u::is_arrayref($optionspec...))
+        } ## tidy end: elsif ( Actium::is_arrayref...)
         else {
             # option package
             if ( not exists $OPTION_PACKAGE_DISPATCH{$optionspec} ) {
@@ -583,7 +568,7 @@ sub _build_option_objs {
         }
     } ## tidy end: while (@optionspecs)
 
-    u::immut;
+    Actium::immut;
     # made immutable here, after any new attributes are made in dispatch
     # routines
 
@@ -913,3 +898,22 @@ sub _build_geonames_username {
 
 1;
 
+__END__
+
+
+## COPYRIGHT & LICENSE
+
+Copyright 2011-2017
+
+The Actium system is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+* the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+* the Artistic License version 2.0.
+
+This system is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.

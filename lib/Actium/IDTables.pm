@@ -1,25 +1,16 @@
 package Actium::IDTables 0.012;
 
-use 5.020;
-use warnings;    ### DEP ###
+use Actium;
 
-use English '-no_match_vars';
-use autodie;
 use Text::Trim;    ### DEP ###
-use Actium::Crier(qw/cry last_cry/);
-use Actium::EffectiveDate (qw[long_date file_date newest_date]);
-use Actium::Sorting::Line ( 'sortbyline', 'byline' );
+use Actium::O::DateTime;
 use Actium::Sorting::Skeds('skedsort');
-use Actium::Constants;
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );
 use Actium::O::Sked;
 use Actium::O::Sked::Timetable;
-use Actium::Util(qw/in jointab population_stdev/);
-use Const::Fast;    ### DEP ###
-use List::Util ( 'max', 'sum' );    ### DEP ###
-use List::MoreUtils (qw<uniq pairwise natatime each_arrayref>);    ### DEP ###
-use Algorithm::Combinatorics ('combinations');                     ### DEP ###
+use List::MoreUtils (qw<pairwise each_arrayref>);    ### DEP ###
+use Algorithm::Combinatorics ('combinations');       ### DEP ###
 
 const my $IDT        => 'Actium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
@@ -35,7 +26,7 @@ sub create_timetable_texts {
     my @skeds  = @_;
 
     my ( %tables_of, @alltables );
-    my $prev_linegroup = $EMPTY_STR;
+    my $prev_linegroup = q[];
     foreach my $sked (@skeds) {
 
         my $linegroup = $sked->linegroup;
@@ -50,7 +41,7 @@ sub create_timetable_texts {
 
     }
 
-    $cry->over($EMPTY_STR);
+    $cry->over(q[]);
     $cry->done;
 
     return \@alltables, \%tables_of;
@@ -96,7 +87,7 @@ sub get_pubtt_contents_with_dates {
 
     foreach my $line (@$lines_r) {
         my $fromdb = $on_timetable_from_db_r->{$line}{'PubTimetable'};
-        if ( defined $fromdb and $fromdb ne $EMPTY_STR ) {
+        if ( defined $fromdb and $fromdb ne q[] ) {
             push @{ $on_timetable_of{$fromdb} }, $line;
         }
         else {
@@ -109,14 +100,12 @@ sub get_pubtt_contents_with_dates {
     for my $lines_r ( values %on_timetable_of ) {
         my @lines = @{$lines_r};
 
-        my @datestrs
-          = map { $on_timetable_from_db_r->{$_}{'TimetableDate'} } @lines;
-        my $date_obj  = newest_date(@datestrs);
-        my $date      = long_date($date_obj);
-        my $file_date = file_date($date_obj);
-        #my ( $date, $filedate ) = newest_date(@datestrs);
+        my $date_obj = $db_obj->effective_date( lines => \@lines );
+
+        my $date      = $date_obj->long_en;
+        my $file_date = $date_obj->ymd('_');
         push @pubtt_contents_with_dates,
-          { lines     => [ sortbyline @lines ],
+          { lines     => [ u::sortbyline @lines ],
             date      => $date,
             file_date => $file_date
           };
@@ -130,7 +119,7 @@ sub get_pubtt_contents_with_dates {
     my $pubtimetables_r
       = $db_obj->all_in_columns_key( 'PubTimetables', @pubtimetable_cols );
 
-    return [ sort { byline( $a->{lines}->[0], $b->{lines}->[0] ) }
+    return [ sort { u::byline( $a->{lines}->[0], $b->{lines}->[0] ) }
           @pubtt_contents_with_dates ], $pubtimetables_r;
 
 } ## tidy end: sub get_pubtt_contents_with_dates
@@ -184,7 +173,7 @@ sub _tables_and_lines {
     foreach my $table (@tables) {
         $is_a_line{$_} = 1 foreach ( $table->header_routes );
     }
-    @lines = sortbyline( keys %is_a_line );
+    @lines = u::sortbyline( keys %is_a_line );
 
     return \@tables, \@lines;
 
@@ -207,7 +196,7 @@ sub _output_pubtt_front_matter {
     my $tables_r      = shift;
     my @lines         = @{ +shift };
     my @front_matter  = @{ +shift };
-    my $effectivedate = shift // $EMPTY_STR;
+    my $effectivedate = shift // q[];
 
     # @front_matter is currently unused, but I am leaving the code in here
     # for now
@@ -254,8 +243,8 @@ sub _output_pubtt_front_matter {
 
     print $ttfh $IDT->boxbreak;
 
-    print $ttfh $per_line_texts_r->{$EMPTY_STR}
-      if exists $per_line_texts_r->{$EMPTY_STR};
+    print $ttfh $per_line_texts_r->{q[]}
+      if exists $per_line_texts_r->{q[]};
 
     print $ttfh $IDT->boxbreak;
 
@@ -273,7 +262,7 @@ sub _make_per_line_texts {
     my $locals_of_r = _make_locals($lines_r);
 
     foreach
-      my $line ( uniq( sort ( keys %{$days_of_r}, keys %{$locals_of_r} ) ) )
+      my $line ( u::uniq( sort ( keys %{$days_of_r}, keys %{$locals_of_r} ) ) )
     {
 
         my @texts;
@@ -297,7 +286,7 @@ sub _make_per_line_texts {
 
         $per_line_texts{$line} = join( $IDT->hardreturn, @texts );
 
-    } ## tidy end: foreach my $line ( uniq( sort...))
+    } ## tidy end: foreach my $line ( u::uniq(...))
 
     return \%per_line_texts;
 
@@ -322,14 +311,14 @@ sub _make_days {
     }
 
     if ( @lines == 1 ) {
-        return { $EMPTY_STR => $days_obj_of{ $lines[0] } };
+        return { q[] => $days_obj_of{ $lines[0] } };
     }
 
     my @days_objs = values %days_obj_of;
-    my @days_codes = uniq( map { $_->as_sortable } @days_objs );
+    my @days_codes = u::uniq( map { $_->as_sortable } @days_objs );
 
     if ( @days_codes == 1 ) {
-        return { $EMPTY_STR => $days_objs[0] };
+        return { q[] => $days_objs[0] };
     }
 
     return \%days_obj_of;
@@ -344,7 +333,7 @@ sub _make_locals {
     foreach my $line (@lines) {
 
         if ( $line =~ /\A [A-Z]/sx or $line eq '800' ) {
-            if ( in( $line, @TRANSBAY_NOLOCALS ) ) {
+            if ( u::in( $line, @TRANSBAY_NOLOCALS ) ) {
                 $local_of{$line} = 0;
             }
             else {
@@ -357,10 +346,10 @@ sub _make_locals {
         }
     }
 
-    my @locals = uniq( sort values %local_of );
+    my @locals = u::uniq( sort values %local_of );
 
     if ( @locals == 1 ) {
-        return { $EMPTY_STR => $locals[0] };
+        return { q[] => $locals[0] };
     }
 
     return \%local_of;
@@ -370,7 +359,7 @@ sub _make_locals {
 sub _local_text {
     my $line = shift;
 
-    if ( in( $line, @TRANSBAY_NOLOCALS ) ) {
+    if ( u::in( $line, @TRANSBAY_NOLOCALS ) ) {
         return $IDT->parastyle('CoverLocalPax') . 'No Local Passengers Allowed';
     }
 
@@ -379,7 +368,7 @@ sub _local_text {
           . 'Local Passengers Permitted for Local Fare';
     }
 
-    return $EMPTY_STR;
+    return q[];
 
 }
 
@@ -387,7 +376,7 @@ sub _make_length {
 
     my @lines = @_;
 
-    my $ems = max( ( map { ems($_) } @lines ) );
+    my $ems = u::max( ( map { ems($_) } @lines ) );
 
     my $length;
     for ($ems) {
@@ -408,7 +397,7 @@ sub _make_length {
 
     }
 
-    return max( $length, scalar @lines );
+    return u::max( $length, scalar @lines );
 } ## tidy end: sub _make_length
 
 sub output_a_pubtts {
@@ -425,13 +414,13 @@ sub output_a_pubtts {
     my @over_eight_pages;
 
     foreach my $pubtt_content_r (@pubtt_contents_with_dates) {
-        my $pubtt         = $pubtt_content_r->{lines};
-        my $linegroup     = $pubtt->[0];
-        my $effectivedate = $pubtt_content_r->{date} // $EMPTY_STR;
-        my $file_date     = $pubtt_content_r->{file_date} // $EMPTY_STR;
-        my $dbentry       = $pubtimetables_r->{$linegroup};
-        my $leave_cover_for_map
-          = ( ( $dbentry->{LeaveCoverForMap} // 'No' ) eq 'Yes' );
+        my $pubtt               = $pubtt_content_r->{lines};
+        my $linegroup           = $pubtt->[0];
+        my $effectivedate       = $pubtt_content_r->{date} // q[];
+        my $file_date           = $pubtt_content_r->{file_date} // q[];
+        my $dbentry             = $pubtimetables_r->{$linegroup};
+        my $leave_cover_for_map = 0;
+        #  = ( ( $dbentry->{LeaveCoverForMap} // 'No' ) eq 'Yes' );
 
         my ( $tables_r, $lines_r ) = _tables_and_lines( $pubtt, \%tables_of );
         next unless @$tables_r;
@@ -506,9 +495,9 @@ sub output_a_pubtts {
             file             => $file,
             effectivedate    => $file_date,
             pages            => $pagebreak_count,
-            MapFile          => $dbentry->{MapFile} // $EMPTY_STR,
+            MapFile          => $dbentry->{MapFile} // q[],
             LeaveCoverForMap => $leave_cover_for_map,
-            MasterPage       => $dbentry->{MasterPage} // $EMPTY_STR,
+            MasterPage       => $dbentry->{MasterPage} // q[],
             has_short_page   => $has_short_page,
             portrait_chars   => $portrait_chars,
         };
@@ -518,13 +507,13 @@ sub output_a_pubtts {
     my $listfh  = $pubtt_folder->open_write('_ttlist.txt');
     my @columns = qw<file effectivedate pages MapFile LeaveCoverForMap
       MasterPage has_short_page portrait_chars>;
-    say $listfh jointab(@columns);
-    for my $linegroup ( sortbyline keys %script_entries ) {
-        say $listfh jointab( @{ $script_entries{$linegroup} }{@columns} );
+    say $listfh u::jointab(@columns);
+    for my $linegroup ( u::sortbyline keys %script_entries ) {
+        say $listfh u::jointab( @{ $script_entries{$linegroup} }{@columns} );
     }
     close $listfh;
 
-    $cry->over($EMPTY_STR);
+    $cry->over(q[]);
     $cry->done;
 
     # $cry->text( "Has more than eight pages: @over_eight_pages");
@@ -535,4 +524,78 @@ sub output_a_pubtts {
 1;
 
 __END__
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 

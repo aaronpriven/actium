@@ -17,24 +17,12 @@ package Actium::O::Files::SQLite 0.012;
 #Each db_type (datbase type), has one or more filetypes,
 #which has one or more tables (aka rowtypes).
 
-use warnings;    ### DEP ###
-use 5.012;       # turns on features
+use Actium ('role');
 
-use Moose::Role;    ### DEP ###
-
-use namespace::autoclean;    ### DEP ###
-
-use Actium::Constants;
-use Actium::Crier(qw/cry last_cry/);
-use Actium::Util(qw/flatten in/);
-
-use Carp;                    ### DEP ###
-use DBI;                     ### DEP ###
+use DBI;    ### DEP ###
 # DBD::SQLite ### DEP ###
-use English '-no_match_vars';    ### DEP ###
-use File::Spec;                  ### DEP ###
-use List::MoreUtils('uniq');     ### DEP ###
-use Const::Fast;                 ### DEP ###
+use File::Spec;                 ### DEP ###
+use List::MoreUtils('uniq');    ### DEP ###
 
 # set some constants
 const my $STAT_MTIME   => 9;
@@ -138,15 +126,11 @@ has 'dbh' => (
 
 # allows a single "flats_folder" argument, or a hash or hashref with full
 # attribute specifications
-around BUILDARGS => sub {
-    my $orig           = shift;
-    my $class          = shift;
-    my $first_argument = shift;
-    my @rest           = @_;
+around BUILDARGS ( $orig, $class : $first_argument, slurpy @rest, ) {
     return $class->$orig( $first_argument, @rest )
       if ( ref $first_argument or @rest );
     return $class->$orig( flats_folder => $first_argument );
-};
+}
 
 sub _build_db_folder {
 
@@ -191,7 +175,7 @@ sub _connect {
     );
 
     my $dbh = DBI->connect( "dbi:SQLite:dbname=$db_filespec",
-        $EMPTY_STR, $EMPTY_STR, { RaiseError => 1, sqlite_unicode => 1 } );
+        $EMPTY, $EMPTY, { RaiseError => 1, sqlite_unicode => 1 } );
     $dbh->do(
 'CREATE TABLE files ( files_id INTEGER PRIMARY KEY, filetype TEXT , mtimes TEXT )'
     ) if not $existed;
@@ -221,7 +205,7 @@ sub _current_mtimes {
     my $self  = shift;
     my @files = sort @_;
 
-    my $mtimes = $EMPTY_STR;
+    my $mtimes = $EMPTY;
 
     foreach my $file (@files) {
         my $filespec = $self->_flat_filespec($file);
@@ -266,7 +250,7 @@ sub ensure_loaded {
                 'SELECT mtimes FROM files WHERE filetype = ?', {},
                 $filetype
               )
-              or $EMPTY_STR
+              or $EMPTY
         );
 
         my $current_mtimes = $self->_current_mtimes(@flats);
@@ -435,7 +419,7 @@ sub all_in_columns_key {
     if ( ref($firstarg) eq 'HASH' ) {
         $table = $firstarg->{TABLE};
 
-        @columns = flatten( $firstarg->{COLUMNS} );
+        @columns = u::flatten( $firstarg->{COLUMNS} );
 
         $where = $firstarg->{WHERE};
 
@@ -446,7 +430,7 @@ sub all_in_columns_key {
     }
     else {
         $table   = $firstarg;
-        @columns = flatten(@_);
+        @columns = u::flatten(@_);
     }
 
     $self->ensure_loaded($table);
@@ -475,7 +459,7 @@ sub _check_columns {
     my @columns = $self->columns_of_table($table);
     foreach my $input (@input_columns) {
         croak "Invalid column $input for table $table"
-          if not in( $input, @columns );
+          if not u::in( $input, @columns );
     }
     return;
 }
@@ -808,15 +792,11 @@ A request specified a table that was not found for the specified database type.
 
 =over 
 
-=item perl 5.012
+=item Actium
 
 =item DBI
 
 =item DBD::SQLite
-
-=item Moose::Role
-
-=item Actium::Constants
 
 =back
 
@@ -826,7 +806,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2011
+Copyright 2011-2017
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:

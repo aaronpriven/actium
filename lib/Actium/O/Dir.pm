@@ -2,7 +2,7 @@ package Actium::O::Dir 0.012;
 
 # Object representing the scheduled direction (of a trip, or set of trips)
 
-use Actium::Moose;
+use Actium ('class');
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
@@ -10,6 +10,10 @@ use Actium::Types qw<DirCode>;
 
 # if you supply this with "1", it's going to think you mean Hastus AVL "1"
 # (i.e., "SB") instead of "D1".
+
+const my %IS_A_LOOP_DIRECTION => ( CW => 1, CC => 1, A => 1, B => 1 );
+
+const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 
 const my %DIRCODE_OF => (
     ( map { lc($_) => $_ } @DIRCODES ),
@@ -122,10 +126,6 @@ sub _data_printer {
     return "$class=" . $self->dircode;
 }
 
-#around BUILDARGS => sub {
-#    return u::positional_around( \@_, 'dircode' );
-#};
-
 sub as_bound {
     my $self = shift;
     my $dir  = $self->dircode;
@@ -214,12 +214,12 @@ This documentation refers to version 0.010
  
 =head1 DESCRIPTION
 
-This class is used for objects storing scheduled direction information. 
-Trips, or timetables, are assigned to particular scheduled directions.
+This class is used for objects storing scheduled direction information.
+ Trips, or timetables, are assigned to particular scheduled directions.
 
 This uses "flyweight" objects, meaning that it returns the same object
-every time you pass particular arguments to construct it.  These objects
-are immutable.
+every time you pass particular arguments to construct it.  These
+objects are immutable.
 
 =head1 METHODS
 
@@ -227,9 +227,10 @@ are immutable.
 
 =item B<< Actium::O::Dir->instance(I<dircode>) >>
 
-The object is constructed using "Actium::O::Dir->instance".  
+The object is constructed using "Actium::O::Dir->instance".
 
-It accepts a direction string. In general, the directions are as follows:
+It accepts a direction string. In general, the directions are as
+follows:
 
  Direction         Code         Hastus Standard AVL code
  ---------         ----         ------------------------
@@ -250,15 +251,15 @@ It accepts a direction string. In general, the directions are as follows:
  A                 A            14
  B                 B            15
  
-The 'Code' is the code used by 'dircode', below. This is the sort
-order that is used by this program -- the Hastus Standard AVL code
-is the code from the Hastus Standard AVL interface, and this program
-sorts westbound before eastbound, unlike Hastus.
+The 'Code' is the code used by 'dircode', below. This is the sort order
+that is used by this program -- the Hastus Standard AVL code is the
+code from the Hastus Standard AVL interface, and this program sorts
+westbound before eastbound, unlike Hastus.
 
 The ->instance method will accept any of these as inputs,
-case-insensitively, will strip a final "bound", "ward", or
-"wise" from any of them, and replaces a leading "dir" with just
-"d". In addition, it accepts:
+case-insensitively, will strip a final "bound", "ward", or "wise" from
+any of them, and replaces a leading "dir" with just "d". In addition,
+it accepts:
 
   Abbreviation    Meaning
   ------------    ------------
@@ -309,15 +310,14 @@ Returns one of the following, corresponding to the direction:
    Direction One   Direction Two
    Up              Down
    
-At this point I don't think "Clockwisebound" or "Upbound" make much sense, but
-this may change.
-   
+At this point I don't think "Clockwisebound" or "Upbound" make much
+sense, but this may change.
+
 =item B<< $obj->as_sortable >>
 
-Returns a code corresponding to the directions in order,
-suitable for sorting using perl's cmp operator.
-Unlike the numeric code passed to I<instance()>, this puts 
-west before east.
+Returns a code corresponding to the directions in order, suitable for
+sorting using perl's cmp operator. Unlike the numeric code passed to
+I<instance()>, this puts  west before east.
 
 =back
 
@@ -327,7 +327,9 @@ west before east.
 
 =item Perl 5.022 and the standard distribution.
 
-=item Actium::Moose
+=item Actium
+
+=item Moose
 
 =item Actium::Types
 
@@ -336,9 +338,9 @@ west before east.
 =head1 BUGS AND LIMITATIONS
 
 Supplying the ->instance() routine with "1" is somewhat ambiguous: it 
-could mean Hastus Stnadard AVL direction 1, which is "southbound," or it could
-mean "Direction 1" (which is used for supervisor orders). At the moment it 
-treats it as though it were the Hastus AVL direction.
+could mean Hastus Stnadard AVL direction 1, which is "southbound," or
+it could mean "Direction 1" (which is used for supervisor orders). At
+the moment it  treats it as though it were the Hastus AVL direction.
 
 =head1 AUTHOR
 
@@ -346,9 +348,10 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 LICENSE AND COPYRIGHT
 
-This module is free software; you can redistribute it and/or modify it under 
-the same terms as Perl itself. See L<perlartistic>.
+This module is free software; you can redistribute it and/or modify it
+under  the same terms as Perl itself. See L<perlartistic>.
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE. 
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

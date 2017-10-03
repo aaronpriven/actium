@@ -2,7 +2,7 @@ package Actium::Cmd::BARTSkeds 0.011;
 
 # gets schedules from BART API and creates reports
 
-use Actium::Preamble;
+use Actium;
 use HTTP::Request;                   ### DEP ###
 use LWP::UserAgent;                  ### DEP ###
 use XML::Twig;                       ### DEP ###
@@ -10,11 +10,6 @@ use Date::Simple(qw/date today/);    ### DEP ###
 use Actium::O::2DArray;
 
 const my $API_KEY => 'MW9S-E7SL-26DU-VV8V';
-const my $ROUTE_URL =>
-  "http://api.bart.gov/api/route.aspx?cmd=routes&key=$API_KEY";
-
-const my $STATIONS_URL =>
-  "http://api.bart.gov/api/stn.aspx?cmd=stns&key=$API_KEY";
 
 const my @DAYS => qw/12345 6 7/;
 # weekday, saturday, sunday; matches Actium::O::Days
@@ -29,7 +24,7 @@ sub HELP {
 sub OPTIONS {
     my ( $class, $env ) = @_;
     return (
-        { spec =>  'date=s',
+        {   spec        => 'date=s',
             description => 'Effective date of the new BART schedules. '
               . 'Must be in YYYY-MM-DD format (2015-12-25)'
               . 'If not provided, defaults to today.',
@@ -38,6 +33,9 @@ sub OPTIONS {
 
 }
 
+my %not_main_station;
+$not_main_station{$_} = 1 foreach qw/24TH NCON MONT PHIL BAYF /;
+
 sub START {
 
     my $start_cry = cry('Building BART frequency tables');
@@ -45,7 +43,7 @@ sub START {
     my ( $class, $env ) = @_;
     my @dates = get_dates( $env->option('date') );
 
-    \my %stations = get_stations();
+    \my %stations = get_stations( $dates[0] );
     my @station_abbrs = sort keys %stations;
 
     my %fl_of;
@@ -56,16 +54,20 @@ sub START {
 
         my %dest_is_used;
 
-        $skeds_cry->over($station);
+        $skeds_cry->text( "[$station:" . $stations{$station} . "]" );
 
         foreach my $idx ( 0 .. $#DAYS ) {
             my $date        = $dates[$idx];
             my $day         = $DAYS[$idx];
             my $firstlast_r = $fl_of{$station}{$day}
               = get_firstlast( $station, $date );
-            $dest_is_used{$_} = 1 foreach keys %$firstlast_r;
+
+            foreach ( keys %$firstlast_r ) {
+                $dest_is_used{$_} = 1;
+                $not_main_station{$_} //= 0;
+            }
         }
-        $skeds_cry->over($EMPTY);
+        #$skeds_cry->over($EMPTY);
 
         my @results;
 
@@ -75,7 +77,10 @@ sub START {
         push @results, [ $EMPTY, qw/First Last First Last First Last/ ];
 
         foreach my $dest (
-            sort { $stations{$a} cmp $stations{$b} }
+            sort {
+                     $not_main_station{$a} <=> $not_main_station{$b}
+                  || $stations{$a} cmp $stations{$b}
+            }
             keys %dest_is_used
           )
         {
@@ -109,7 +114,7 @@ sub get_firstlast {
 
     my $twig = XML::Twig->new();
     $twig->parse($stnsked_xml);
-    
+
     my @items = $twig->root->first_child('station')->children('item');
 
     my %items_of_dest;
@@ -123,7 +128,7 @@ sub get_firstlast {
 
         if ( $dest eq 'MLBR' and $line eq 'ROUTE 1' ) {
             push @{ $items_of_dest{'SFIA'} },
-              { dest => 'SFIA', line => $line, time => $time . '*' };
+              { dest => 'SFIA', line => $line, time => $time };
         }
 
     }
@@ -177,23 +182,11 @@ sub stnsked_url {
 
 }
 
-sub get_routes {
-
-    my $routes_xml = get_url($ROUTE_URL);
-
-    my $twig = XML::Twig->new();
-    $twig->parse($routes_xml);
-    my @routes = $twig->root->first_child('routes')->children('route');
-    my %routename_of;
-
-    foreach (@routes) {
-        my $name   = $_->first_child('name')->text;
-        my $number = $_->first_child('number')->text;
-        $routename_of{$number} = $name;
-    }
-
-    return \%routename_of;
-
+sub stations_url {
+    my $date = shift;
+    my $url
+      = "http://api.bart.gov/api/stn.aspx?cmd=stns&date=$date&key=$API_KEY";
+    return $url;
 }
 
 sub get_url {
@@ -209,10 +202,15 @@ sub get_url {
 
 sub get_stations {
 
+    my $date = shift;
+
     my %name_of;
 
-    my $cry          = cry('Getting station list from BART');
-    my $stations_xml = get_url($STATIONS_URL);
+    my $cry = cry('Getting station list from BART');
+
+    my $stations_url = stations_url($date);
+
+    my $stations_xml = get_url($stations_url);
     $cry->done;
 
     my $process_cry = cry('Processing XML data from BART');
@@ -253,18 +251,17 @@ sub get_dates {
             $date_obj = date($effective_date);
             die "Unrecognized date '$effective_date'" unless defined $date_obj;
         }
-        
-        if ($date_obj < $today) {
+
+        if ( $date_obj < $today ) {
             my $cry = last_cry;
             $cry->text(
-             "Can't ask for BART schedules for past date $effective_date."
-             );
-             $cry->d_error;
-             die;
+                "Can't ask for BART schedules for past date $effective_date.");
+            $cry->d_error;
+            die;
         }
 
     }
-    
+
     my %date_of;
 
     while ( scalar keys %date_of < 3 ) {
@@ -291,24 +288,77 @@ sub get_dates {
 
 __END__
 
-#sub get_firstlast {
-#
-#    my ( $routenum, $date ) = @_;
-#    my $sked_xml = get_url( sked_url( $routenum, $date ) );
-#
-#    my $twig = XML::Twig->new();
-#    $twig->parse($sked_xml);
-#
-#    my @trains = $twig->root->first_child('route')->children;
-#
-#    foreach my $train (@trains) {
-#        my @stops = $train->children('stop');
-#        foreach my $stop (@stops) {
-#            next if not defined $stop->att('origTime');
-#            my $station = $stop->att('station');
-#            my $time    = $stop->att('origTime');
-#            say "$station:$time";
-#        }
-#    }
-#
-#} ## tidy end: sub get_firstlast
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

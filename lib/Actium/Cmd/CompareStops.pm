@@ -1,10 +1,10 @@
 package Actium::Cmd::CompareStops 0.011;
 
-use Actium::Preamble;
+use Actium;
 
 use Storable();    ### DEP ###
 use Actium::Sorting::Line ('byline');
-use Actium::Union('ordered_union');
+use Actium::Set('ordered_union');
 use Actium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');    ### DEP ###
 
@@ -21,13 +21,13 @@ EOF
 }
 
 sub OPTIONS {
-    return ( qw/actiumdb signup_with_old/ ,
-        {   spec => 'ignore600s!',
+    return (
+        qw/actiumdb signup_with_old/,
+        {   spec        => 'ignore600s!',
             description => 'Ignore lines 600-699 in comparison. ',
-            fallback => 0,
+            fallback    => 0,
         },
-        
-        
+
     );
 }
 
@@ -39,12 +39,12 @@ sub START {
     my $actiumdb  = $env->actiumdb;
     my $oldsignup = $env->oldsignup;
     my $signup    = $env->signup;
-    
+
     my $ignore_600s = $env->option('ignore600s');
-    
+
     my @skipped = qw(BSH 399);
     if ($ignore_600s) {
-    	push @skipped, (600 .. 699);
+        push @skipped, ( 600 .. 699 );
     }
 
     chdir $signup->path;
@@ -290,12 +290,87 @@ comparestops - Compares the stops from two sets of AVL files.
 
 =head1 DESCRIPTION
 
-comparestops reads the data written by readavl.
-It then assembles a list of stops and the routes that stop at each one.
-Finally, it displays a list of new, deleted, and changed stops.
+comparestops reads the data written by readavl. It then assembles a
+list of stops and the routes that stop at each one. Finally, it
+displays a list of new, deleted, and changed stops.
 
 =head1 AUTHOR
 
 Aaron Priven
 
 =cut
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

@@ -2,38 +2,27 @@ package Actium::Sorting::Travel 0.012;
 
 # Sorting routines by travel line)
 
-use 5.012;
-use warnings;
-
+use Actium;
 use Actium::Sorting::Line ('byline');
-
-use Actium::Preamble;
 
 use Sub::Exporter -setup => { exports => [qw(travelsort)] };
 # Sub::Exporter ### DEP ###
 
-sub travelsort {
-
-    my %params = u::validate(
-        @_,
-        {
-            stops            => { type => $PV_TYPE{ARRAYREF} },
-            stops_of_linedir => { type => $PV_TYPE{HASHREF}  },
-            promote          => { type => $PV_TYPE{ARRAYREF}, optional => 1 },
-            demote600s       => { type => $PV_TYPE{BOOLEAN}, default => 0 },
-        }
-    );
+func travelsort ( 
+     :@stops! is ref_alias , 
+     :%allstops_of_linedir! is ref_alias,
+     :@promote is ref_alias = [], 
+     Bool :$demote600s = 0 , 
+     ) {
 
     my %stop_is_used;
-    $stop_is_used{$_} = 1 foreach @{ $params{stops} };
-
-    my %allstops_of_linedir = %{ $params{stops_of_linedir} };
+    $stop_is_used{$_} = 1 foreach @stops;
 
     # keys: travel lines. values: array ref of stops
 
     my %is_priority_line;
-    if ( $params{promote} ) {
-        $is_priority_line{$_} = 1 foreach @{ $params{promote} };
+    if (@promote) {
+        $is_priority_line{$_} = 1 foreach @promote;
     }
 
     # Make new %used_stops_of_linedir with only stops
@@ -48,7 +37,6 @@ sub travelsort {
 
         $is_priority_linedir{$linedir} = 1
           if $is_priority_line{$line};
-
         my @usedstops;
         foreach my $stop ( u::uniq @{$stops_r} ) {
             push @usedstops, $stop if $stop_is_used{$stop};
@@ -60,9 +48,9 @@ sub travelsort {
 
     while ( scalar keys %used_stops_of_linedir ) {
 
-        my $max_linedir =
-          _get_max_linedir( \%used_stops_of_linedir, \%is_priority_linedir,
-            $params{demote600s} );
+        my $max_linedir
+          = _get_max_linedir( \%used_stops_of_linedir, \%is_priority_linedir,
+            $demote600s );
 
         # $max_linedir is now the line/dir combination with the most stops
 
@@ -97,19 +85,19 @@ sub travelsort {
             }
         }
 
-    }    ## tidy end: while ( scalar keys %used_stops_of_linedir)
+    } ## tidy end: while ( scalar keys %used_stops_of_linedir)
     return @results;
-}    ## tidy end: sub travelsort
+} ## tidy end: sub FUNC0
 
 sub _get_max_linedir {
 
     my $stops_of_linedir_r    = shift;
     my $is_priority_linedir_r = shift;
-    my $demote600s = shift;
+    my $demote600s            = shift;
 
     my $max_linedir;
 
-    if ( $demote600s ) {
+    if ($demote600s) {
 
         $max_linedir = (
             sort {
@@ -145,7 +133,7 @@ sub _get_max_linedir {
     }
 
     return $max_linedir;
-}    ## tidy end: sub _get_max_linedir
+} ## tidy end: sub _get_max_linedir
 
 1;
 
@@ -166,14 +154,15 @@ This documentation refers to version 0.001.
 
 =head1 DESCRIPTION
 
-Actium::Sorting::Travel is a module that provides special sorting routine
-for the Actium system. It sorts by travel line. The purpose is to provide
-lists of stops ordered in a way that makes it easier for a maintenance
-worker or surveyor to travel down a bus line and visit all the stops,
-but without duplication.
+Actium::Sorting::Travel is a module that provides special sorting
+routine for the Actium system. It sorts by travel line. The purpose is
+to provide lists of stops ordered in a way that makes it easier for a
+maintenance worker or surveyor to travel down a bus line and visit all
+the stops, but without duplication.
 
-The result is a list of routings, with the affected stops, with all duplicates
-removed. It is designed so that the longest lists possible are given.
+The result is a list of routings, with the affected stops, with all
+duplicates removed. It is designed so that the longest lists possible
+are given.
 
 =head1 SUBROUTINE
 
@@ -189,16 +178,15 @@ It takes two mandatory and two optional named arguments.
 
 =item stops
 
-The mandatory stops argument is a reference to an array
-of the stops that are to be sorted. 
+The mandatory stops argument is a reference to an array of the stops
+that are to be sorted.
 
  [qw<stop_1 stop_2 stop_3>] ...
  
 =item stops_of_linedir
 
-The stops_of_linedir argument must be a hash ref, where the 
-keys are the routings and and the 
-values are the stops that it uses, in order.
+The stops_of_linedir argument must be a hash ref, where the  keys are
+the routings and and the  values are the stops that it uses, in order.
 
  $ref->{1-Northbound}->[qw<stop_2 stop_1>]
  $ref->{5-Northbound}->[qw<stop_1>]
@@ -206,19 +194,20 @@ values are the stops that it uses, in order.
  ...
  
 Stops in stops_of_linedir list but not in stops are ignored, allowing 
-users to pass (for example) the full set of stops-by-line to the routine.
+users to pass (for example) the full set of stops-by-line to the
+routine.
 
 =item promote
 
-This optional parameter, if present, must be a reference to an array of lines. 
-These lines will be given precedence when choosing which line to use for a
-particular stop, even if another line has more stops.
+This optional parameter, if present, must be a reference to an array of
+lines.  These lines will be given precedence when choosing which line
+to use for a particular stop, even if another line has more stops.
 
 =item demote600s
 
 This optional parameter is a boolean. If it is true, all other lines
-will be given precedence over lines 600-699, even if a 600-series line has more
-stops.
+will be given precedence over lines 600-699, even if a 600-series line
+has more stops.
 
 =back
  
@@ -251,8 +240,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2011-2015
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -264,6 +253,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE. 
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

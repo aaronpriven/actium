@@ -1,25 +1,13 @@
-package Actium::O::Folder 0.012;
+package Actium::O::Folder 0.014;
 
 # Objects representing folders (directories) on disk
 
-use 5.012;
-use warnings;
+use Actium ('class');
 
+use File::Spec;    ### DEP ###
+use File::Glob ('bsd_glob');    ### DEP ###
 
-use Moose;                        ### DEP ###
-use MooseX::StrictConstructor;    ### DEP ###
-
-use namespace::autoclean;         ### DEP ###
-
-use Actium::Constants;
-use Actium::Crier(qw/cry last_cry/);
-use Actium::Util(qw/flatten filename positional/);
-use Carp;                         ### DEP ###
-use English '-no_match_vars';     ### DEP ###
-use File::Spec;                   ### DEP ###
-use File::Glob ('bsd_glob');      ### DEP ###
-
-use Params::Validate qw(:all);    ### DEP ###
+use Params::Validate qw(:all);  ### DEP ###
 
 use overload (
     q[""]    => '_stringify',
@@ -58,14 +46,14 @@ sub parents {
 
     while (@folders) {
         $path_so_far = File::Spec->catdir( $path_so_far, shift @folders );
-        push @parents, File::Spec->catpath( $volume, $path_so_far, $EMPTY_STR );
+        push @parents, File::Spec->catpath( $volume, $path_so_far, $EMPTY );
     }
 
     return @parents;
 }
 
 has volume => (
-    default => $EMPTY_STR,
+    default => $EMPTY,
     isa     => 'Str',
     is      => 'ro',
 );
@@ -110,11 +98,7 @@ has must_exist => (
 #######################
 ### CONSTRUCTION
 
-around BUILDARGS => sub {
-    my $orig           = shift;
-    my $class          = shift;
-    my $first_argument = shift;
-    my @rest           = @_;
+around BUILDARGS ( $orig, $class : $first_argument, slurpy @rest ) {
 
     my $hashref;
     if ( ref($first_argument) eq 'HASH' ) {
@@ -129,7 +113,7 @@ around BUILDARGS => sub {
 
     my @folders = @{ $class->split_folderlist( $hashref->{folderlist} ) };
 
-    my $volume = $EMPTY_STR;
+    my $volume = $EMPTY;
     $volume = $hashref->{volume} if exists $hashref->{volume};
 
     my $temppath = File::Spec->catpath( $volume, File::Spec->catdir(@folders) );
@@ -145,7 +129,7 @@ around BUILDARGS => sub {
 
     return $class->$orig($hashref)
 
-};
+} ## tidy end: around BUILDARGS
 
 sub split_folderlist {
 
@@ -153,14 +137,14 @@ sub split_folderlist {
     # Takes either an array of strings, or an arrayref of strings.
 
     my $self     = shift;
-    my $folder_r = flatten(@_);
+    my $folder_r = u::flatten(@_);
 
     my @new_folders;
     foreach my $folder ( @{$folder_r} ) {
 
         my $canon = File::Spec->canonpath($folder);
-        if ( $canon eq $EMPTY_STR ) {
-            push @new_folders, $EMPTY_STR;
+        if ( $canon eq $EMPTY ) {
+            push @new_folders, $EMPTY;
         }
         else {
             my @split = File::Spec->splitdir($canon);
@@ -265,7 +249,7 @@ sub subfolder {
     my $init_arg = $self->subfolderlist_init_arg;
     my $reader   = $self->subfolderlist_reader;
 
-    my $params_r = positional( \@_, '@' . $init_arg );
+    my $params_r = _positional( \@_, '@' . $init_arg );
 
     my @subfolders = @{ $params_r->{$init_arg} };
 
@@ -288,6 +272,58 @@ sub subfolder {
     return $class->new($params_r);
 
 } ## tidy end: sub subfolder
+
+sub _positional {
+    # moved from Actium::Util since this is now the only routine that uses it
+
+    my $argument_r = shift;
+    my $qualsub    = __PACKAGE__ . '::positional';
+    ## no critic (RequireInterpolationOfMetachars)
+    croak 'First argument to ' . $qualsub . ' must be a reference to @_'
+      if not( ref($argument_r) eq 'ARRAY' );
+    ## use critic
+
+    my @arguments = @{$argument_r};
+    my @attrnames = @_;
+    # if the last attribute begins with @, package up all remaining
+    # positional arrguments into an arrayref and return that
+    my $finalarray;
+    if ( $attrnames[-1] =~ /\A @/sx ) {
+        $finalarray = 1;
+        $attrnames[-1] =~ s/\A @//sx;
+    }
+
+    for my $attrname (@attrnames) {
+        next unless $attrname =~ /\A @/sx;
+        croak "Attribute $attrname specified.\n"
+          . "Only the last attribute specified in $qualsub in can be an array";
+    }
+
+    my %newargs;
+    if ( defined u::reftype( $arguments[-1] )
+        and reftype( $arguments[-1] ) eq 'HASH' )
+    {
+        %newargs = %{ pop @arguments };
+    }
+    if ( not $finalarray and scalar @attrnames < scalar @arguments ) {
+        croak 'Too many positional arguments in object construction';
+    }
+
+    while (@arguments) {
+        my $name = shift @attrnames;
+        if ( not @attrnames and $finalarray ) {
+            # if this is the last attribute name, and it originally had a @
+            $newargs{$name} = [@arguments];
+            @arguments = ();
+        }
+        else {
+            $newargs{$name} = shift @arguments;
+        }
+    }
+
+    return \%newargs;
+
+} ## tidy end: sub _positional
 
 sub new_from_file {
 
@@ -318,9 +354,9 @@ sub make_filespec {
 }
 
 sub file_exists {
-    my $self = shift;
+    my $self     = shift;
     my $filename = shift;
-    my $path = $self->path;
+    my $path     = $self->path;
     return -e File::Spec->catfile( $path, $filename );
 }
 
@@ -343,17 +379,16 @@ sub glob_plain_files {
 }
 
 sub glob_files_nopath {
-    my $self = shift;
-    my @files = $self->glob_files (@_);
-    return map { filename($_) } @files;
+    my $self  = shift;
+    my @files = $self->glob_files(@_);
+    return map { u::filename($_) } @files;
 }
 
 sub glob_plain_files_nopath {
-    my $self = shift;
-    my @files = $self->glob_plain_files (@_);
-    return map { filename($_) } @files;
+    my $self  = shift;
+    my @files = $self->glob_plain_files(@_);
+    return map { u::filename($_) } @files;
 }
-    
 
 sub children {
 
@@ -383,15 +418,24 @@ sub slurp_write {
 
     my $cry = cry("Writing $filename...");
 
-
     require File::Slurper;
-    File::Slurper::write_text ($filespec, $string);
-    
-    #require File::Slurp::Tiny;    ### DEP ###
-    #File::Slurp::Tiny::write_file( $filespec, $string,
-    #    binmode => ':encoding(UTF-8)' );
+    File::Slurper::write_text( $filespec, $string );
 
     $cry->done;
+
+}
+
+sub slurp_read {
+    my $self     = shift;
+    my $filename = shift;
+    my $filespec = $self->make_filespec($filename);
+    my $cry      = cry("Reading $filename...");
+
+    croak "$filespec does not exist"
+      unless -e $filespec;
+
+    require File::Slurper;
+    return scalar File::Slurper::read_text($filespec);
 
 }
 
@@ -400,39 +444,31 @@ sub json_retrieve {
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
 
-    croak "$filespec does not exist"
-      unless -e $filespec;
+    my $cry = cry("Retrieving JSON file $filename");
 
-    my $cry = cry("Retrieving $filename");
+    my $json_text = $self->slurp_read($filename);
 
-    require File::Slurp::Tiny;    ### DEP ###
-    my $json_text = File::Slurp::Tiny::read_file( $filespec,
-        binmode => ':encoding(UTF-8)' );
-
-    require JSON;                 ### DEP ###
+    require JSON;    ### DEP ###
     my $data_r = JSON::from_json($json_text);
 
     $cry->done;
 
     return $data_r;
 
-} ## tidy end: sub json_retrieve
+}
 
 sub json_store {
 
     my $self     = shift;
     my $data_r   = shift;
     my $filename = shift;
-    my $filespec = $self->make_filespec($filename);
 
-    my $cry = cry("Storing $filename...");
+    my $cry = cry("Storing JSON file $filename...");
 
     require JSON;    ### DEP ###
     my $json_text = JSON::to_json($data_r);
 
-    require File::Slurp::Tiny;    ### DEP ###
-    File::Slurp::Tiny::write_file( $filespec, $json_text,
-        binmode => ':encoding(UTF-8)' );
+    $self->slurp_write( $json_text, $filename );
 
     $cry->done;
 
@@ -443,16 +479,13 @@ sub json_store_pretty {
     my $self     = shift;
     my $data_r   = shift;
     my $filename = shift;
-    my $filespec = $self->make_filespec($filename);
 
-    my $cry = cry("Storing $filename...");
+    my $cry = cry("Storing JSON file $filename...");
 
     require JSON;    ### DEP ###
     my $json_text = JSON::to_json( $data_r, { pretty => 1, canonical => 1 } );
 
-    require File::Slurp::Tiny;    ### DEP ###
-    File::Slurp::Tiny::write_file( $filespec, $json_text,
-        binmode => ':encoding(UTF-8)' );
+    $self->slurp_write( $json_text, $filename );
 
     $cry->done;
 
@@ -500,24 +533,50 @@ sub store {
     $cry->done;
 }
 
+sub open_read_binary {
+    my $self     = shift;
+    my $filename = shift;
+    $self->_open_read_encoding( $filename, ':raw' );
+}
+
 sub open_read {
     my $self     = shift;
     my $filename = shift;
+    $self->_open_read_encoding( $filename, ':encoding(UTF-8)' );
+}
+
+sub _open_read_encoding {
+    my $self     = shift;
+    my $filename = shift;
+    my $encoding = shift;
     my $filespec = $self->make_filespec($filename);
 
-    open my $fh, '<:encoding(UTF-8)', $filespec
+    open my $fh, "<$encoding", $filespec
       or croak "Can't open $filespec for reading: $OS_ERROR";
 
     return $fh;
 
 }
 
+sub open_write_binary {
+    my $self     = shift;
+    my $filename = shift;
+    $self->_open_write_encoding( $filename, ':raw' );
+}
+
 sub open_write {
     my $self     = shift;
     my $filename = shift;
+    $self->_open_write_encoding( $filename, ':encoding(UTF-8)' );
+}
+
+sub _open_write_encoding {
+    my $self     = shift;
+    my $filename = shift;
+    my $encoding = shift;
     my $filespec = $self->make_filespec($filename);
 
-    open my $fh, '>:encoding(UTF-8)', $filespec
+    open my $fh, ">$encoding", $filespec
       or croak "Can't open $filespec for writing: $OS_ERROR";
 
     return $fh;
@@ -548,10 +607,10 @@ sub load_sqlite {
     }
 
     my $subfolder_is_empty = (
-        ( $subfolder eq $EMPTY_STR )
+        ( $subfolder eq $EMPTY )
           or (  ref $subfolder eq 'ARRAY'
             and @{$subfolder} == 1
-            and $subfolder->[0] eq $EMPTY_STR )
+            and $subfolder->[0] eq $EMPTY )
     );
 
     if ($subfolder_is_empty) {
@@ -585,17 +644,17 @@ sub write_files_with_method {
 
     my %params = u::validate(
         @_,
-        {   OBJECTS   => { type => ARRAYREF },
-            METHOD    => 1,
-            EXTENSION => 0,
-            SUBFOLDER => 0,
+        {   OBJECTS         => { type    => ARRAYREF },
+            METHOD          => 1,
+            EXTENSION       => 0,
+            SUBFOLDER       => 0,
             FILENAME_METHOD => { default => 'id' },
-            ARGS => { default => [] , type => ARRAYREF },
+            ARGS => { default => [], type => ARRAYREF },
         }
     );
 
     my @objects   = @{ $params{OBJECTS} };
-    my $extension = $EMPTY_STR;
+    my $extension = $EMPTY;
     if ( exists $params{EXTENSION} ) {
         $extension = $params{EXTENSION};
         $extension =~ s/\A\.*/./;
@@ -603,8 +662,8 @@ sub write_files_with_method {
         # make sure there's only one a leading period
     }
 
-    my $method    = $params{METHOD};
-    my $subfolder = $params{SUBFOLDER};
+    my $method          = $params{METHOD};
+    my $subfolder       = $params{SUBFOLDER};
     my $filename_method = $params{FILENAME_METHOD};
 
     my $folder;
@@ -617,7 +676,7 @@ sub write_files_with_method {
 
     my $count;
 
-    my $cry = cry ( "Writing $method files to " . $folder->display_path );
+    my $cry = cry( "Writing $method files to " . $folder->display_path );
 
     my %seen_id;
 
@@ -639,12 +698,12 @@ sub write_files_with_method {
                 OBJECT   => $obj,
                 METHOD   => $method,
                 FILENAME => $filename,
-                ARGS => $params{ARGS},
+                ARGS     => $params{ARGS},
             }
         );
 
     } ## tidy end: foreach my $obj (@objects)
-    
+
     $cry->over('');
 
     $cry->done;
@@ -657,7 +716,7 @@ sub write_file_with_method {
     my $obj      = $params{OBJECT};
     my $filename = $params{FILENAME};
     my $method   = $params{METHOD};
-    my $args_r = $params{ARGS} // [];
+    my $args_r   = $params{ARGS} // [];
     my $cry      = $params{CRY} // cry("Writing to $filename via $method");
 
     my $out;
@@ -668,7 +727,6 @@ sub write_file_with_method {
         $cry->d_error;
         croak "Can't open $file for writing: $OS_ERROR";
     }
-    
 
     my $layermethod = $method . '_layers';
     if ( $obj->can($layermethod) ) {
@@ -679,7 +737,8 @@ sub write_file_with_method {
         binmode( $out, ':utf8' );
     }
 
-    print $out $obj->$method(@$args_r) or croak "Can't print to $file: $OS_ERROR";
+    print $out $obj->$method(@$args_r)
+      or croak "Can't print to $file: $OS_ERROR";
 
     unless ( close $out ) {
         $cry->d_error;
@@ -703,7 +762,7 @@ sub write_files_from_hash {
         $extension = ".$extension";
     }
     else {
-        $extension = $EMPTY_STR;
+        $extension = $EMPTY;
     }
 
     my $cry = cry( "Writing $filetype files to " . $self->display_path );
@@ -711,7 +770,7 @@ sub write_files_from_hash {
     foreach my $key ( sort keys %hash ) {
 
         $cry->over($key);
-        
+
         my $filekey = $key =~ s@/@-@gr;
 
         my $file = $self->make_filespec( $filekey . $extension );
@@ -1144,19 +1203,9 @@ L<write_files_from_hash> routines.
 
 =over
 
-=item perl 5.012
-
-=item Moose
-
-=item MooseX::StrictConstructor
-
-=item Const::Fast
+=item Actium
 
 =item Params::Validate
-
-=item Actium::Constants
-
-=item Actium::Util
 
 =back
 

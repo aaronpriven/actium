@@ -3,7 +3,7 @@ package Actium::O::Sked::Timetable 0.012;
 # Object representing the data in a timetable to be displayed to the user.
 # Designed to take an Actium::O::Sked object and make it displayable.
 
-use Actium::Moose;
+use Actium ('class');
 
 use Actium::Time;
 use Actium::Text::InDesignTags;
@@ -11,10 +11,6 @@ use Actium::Text::InDesignTags;
 const my $idt => 'Actium::Text::InDesignTags';
 
 use HTML::Entities;    ### DEP ###
-
-my $timesub = Actium::Time::timestr_sub();
-
-# Uses default values. Someday it would be nice to make that configurable
 
 has sked_obj => (
     isa      => 'Actium::O::Sked',
@@ -237,11 +233,11 @@ sub new_from_sked {
 
         if ($has_multiple_specdays) {
             my ( $specdayletter, $specday ) = $trip->specday( $sked->days_obj );
-            push @row, $specdayletter // $EMPTY_STR;
+            push @row, $specdayletter // $EMPTY;
         }
 
         foreach my $timenum ( $trip->placetimes ) {
-            push @row, $timesub->($timenum);
+            push @row, Actium::Time->from_num($timenum)->ap;
         }
 
         push @body_rows, \@row;
@@ -316,7 +312,7 @@ sub as_indesign {
     );
 
     my $trailing = $trailing_columns + $trailing_halves;
-    my @trailers = ($EMPTY_STR) x $trailing;
+    my @trailers = ($EMPTY) x $trailing;
 
     #my $rowcount = $self->body_row_count + 2;          # 2 header rows
     my $header_rows = 2;
@@ -505,7 +501,8 @@ sub as_indesign {
         # It would be better to keep track of which ones were seen and
         # print them underneath that part of the table.
 
-    } else {
+    }
+    else {
         print $th "\rContinued...";
     }
 
@@ -797,4 +794,80 @@ sub as_public_json {
 with 'Actium::O::Skedlike';
 
 1;
+
+__END__
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
 

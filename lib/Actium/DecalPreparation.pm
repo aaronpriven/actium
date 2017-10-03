@@ -1,11 +1,9 @@
 package Actium::DecalPreparation 0.012;
 
-use Actium::Preamble;
-use Actium::Sorting::Line ('sortbyline');
+use Actium;
 use Actium::O::2DArray;
 use Excel::Writer::XLSX;             ### DEP ###
 use Excel::Writer::XLSX::Utility;    ### DEP ###
-use Actium::Util(qw[folded_in joinseries_ampersand]);
 
 use Sub::Exporter -setup => {
     exports => [
@@ -41,7 +39,7 @@ sub make_labels {
         my $assignment   = $assignment_of_r->{$stopid};
 
         if ( not $desc ) {
-            next if folded_in( $stopid => 'id', 'stop id', 'stopid' );
+            next if u::folded_in( $stopid => 'id', 'stop id', 'stopid' );
             $desc = '[NO DESCRIPTION FOUND]';
         }
 
@@ -50,11 +48,11 @@ sub make_labels {
         my @found_custom     = grep {m/-/} @found_all;
         my $all_list
           = @found_all
-          ? joinseries_ampersand(@found_all)
+          ? u::joinseries_with( '&', @found_all )
           : '(NO DECALS FOUND)';
         my $custom_list
           = @found_custom
-          ? joinseries_ampersand(@found_custom)
+          ? u::joinseries_with( '&', @found_custom )
           : '(NO CUSTOM DECALS FOUND)';
 
         $instructions =~ s/%c/$custom_list/;
@@ -142,7 +140,7 @@ sub write_decalcount_xlsx {
 
     my $text_format = $workbook->add_format( num_format => '@' );
 
-    my @decals = sortbyline keys %count_of;
+    my @decals = u::sortbyline keys %count_of;
 
     my @columntypes = (qw[Decal Print Stops Adjust]);
     $count_sheet->write_row( 0, 0, \@columntypes );
@@ -226,11 +224,11 @@ sub decals_of_stop {
 
     foreach my $stopid ( sort keys %lines_of ) {
 
-        my $decals = $db_decals_of_r->{$stopid} // $EMPTY_STR;
+        my $decals = $db_decals_of_r->{$stopid} // $EMPTY;
 
         next
-          if $decals eq $EMPTY_STR
-          and folded_in( $stopid => 'id', 'stop id', 'stopid' );
+          if $decals eq $EMPTY
+          and u::folded_in( $stopid => 'id', 'stop id', 'stopid' );
 
         my ( @decals, @found_decals, @lines );
         @decals = split( /\s+/, $decals );
@@ -269,3 +267,79 @@ sub decals_of_stop {
 1;
 
 __END__
+
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.003
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+   
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 SUBROUTINES or METHODS (pick one)
+
+=over
+
+=item B<subroutine()>
+
+Description of subroutine.
+
+=back
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+List its dependencies.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2017
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

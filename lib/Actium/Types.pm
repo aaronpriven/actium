@@ -1,23 +1,15 @@
 package Actium::Types 0.012;
 
 # Moose types for Actium
-
-use strict;
-use warnings;
-
-use 5.016;    # turns on features
-
-use Const::Fast;
+use Actium;
 
 ## no critic (ProhibitMagicNumbers)
 
-      #HastusDirCode
-
 use MooseX::Types -declare => [
-    qw <DayCode     SchoolDayCode
+    qw <DayCode     SchoolDayCode   DayStr
       DaySpec             ActiumDays  ActiumTime
       DirCode             ActiumDir
-      ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum TimeNum
+      ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum
       Str4                Str8
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
       ActiumFolderLike
@@ -31,8 +23,6 @@ use MooseX::Types -declare => [
 
 use MooseX::Types::Moose qw/Str HashRef Int Maybe Any ArrayRef/;
 
-use Actium::Time;
-use Actium::Constants;
 use Unicode::GCString;    ### DEP ###
 
 ##################
@@ -53,14 +43,22 @@ subtype DaySpec, as ArrayRef, where {
       and is_SchoolDayCode( $_->[1] );
 };
 
-coerce DaySpec, from DayCode, via { [ $_, 'B' ] },
-;
+subtype DayStr, as Str, where {/\A1?2?3?4?5?6?7?H?-[BDH]\z/x}, message {
+    qq<"$_" is not a valid day string\n>
+      . qq<  (one or more of the characters 1-7 plus H, in order\n>
+      . qq<  followed by a hyphen and B, D, or H>;
+};
+
+coerce DaySpec, from DayCode, via { [ $_, 'B' ] },;
+
+coerce DaySpec, from DayStr, via { [ split( /-/, $_, 2 ) ] };
 
 subtype ActiumDays, as class_type('Actium::O::Days');
 
 coerce ActiumDays,
-  from DaySpec,         via { Actium::O::Days->instance($_) },
-  from DayCode,         via { Actium::O::Days->instance( to_DaySpec($_) ) },
+  from DaySpec, via { Actium::O::Days->instance( $_->@* ) },
+  from DayCode, via { Actium::O::Days->instance( to_DaySpec($_)->@* ) },
+  from DayStr,  via { Actium::O::Days->instance( to_DaySpec($_)->@* ) },
   ;
 
 #########################
@@ -75,17 +73,9 @@ subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 
 enum( DirCode, \@DIRCODES );
 
-#subtype HastusDirCode, as Int, where { $_ >= 0 and $_ <= $#DIRCODES };
-# "1" is contradictory - integer or "direction 1"?
-#coerce DirCode, from HastusDirCode, via { $DIRCODES[ $HASTUS_DIRS[$_] ] };
-
 subtype ActiumDir, as class_type('Actium::O::Dir');
 
-coerce( ActiumDir,
-#    from HastusDirCode,
-#    via               { Actium::O::Dir->instance( to_DirCode($_) ) },
-    from DirCode, via { Actium::O::Dir->instance($_) },
-);
+coerce( ActiumDir, from DirCode, via { Actium::O::Dir->instance($_) }, );
 
 ######################
 ## NOTIFY
@@ -103,8 +93,8 @@ coerce ARCrierBullets, from CrierBullet, via { [$_] };
 ######################
 ## SCHEDULE TIMES
 
-subtype ActiumTime, as class_type ('Actium::O::Time');
-coerce ActiumTime, from Str, via { Actium::O::Time->from_str($_) };
+subtype ActiumTime, as class_type('Actium::Time');
+coerce ActiumTime, from Str, via { Actium::Time->from_str($_) };
 
 const my $NOON_YESTERDAY => -$MINS_IN_12HRS;
 const my $NOON_TOMORROW  => 3 * $MINS_IN_12HRS;
@@ -116,7 +106,7 @@ subtype TimeNum, as Maybe [Int], where {
 
 subtype ArrayRefOrTimeNum, as TimeNum | ArrayRef [TimeNum];
 
-coerce TimeNum, from Str, via { Actium::Time::timenum($_) };
+coerce TimeNum, from Str, via { Actium::Time->from_str($_)->timenum };
 
 subtype ArrayRefOfTimeNums, as ArrayRef [ Maybe [TimeNum] ];
 
@@ -187,8 +177,8 @@ This documentation refers to Actium::Types version 0.001
  
 =head1 DESCRIPTION
 
-This module is a library of types for use with Moose. See L<MooseX::Types> and
-L<Moose::Manual::Types>.
+This module is a library of types for use with Moose. See
+L<MooseX::Types> and L<Moose::Manual::Types>.
 
 =head1 TYPES
 
@@ -198,14 +188,21 @@ L<Moose::Manual::Types>.
 
 =item B<DayCode>
 
-This string represents scheduled days in a newer way, based on the way Hastus
-stores them: 1 = Monday, 2 = Tuesday ... 7 = Sunday, and H = holidays.
-They must be in order (e.g., "76" is invalid).
+This string represents scheduled days in a newer way, based on the way
+Hastus stores them: 1 = Monday, 2 = Tuesday ... 7 = Sunday, and H =
+holidays. They must be in order (e.g., "76" is invalid).
 
 =item B<SchoolDayCode>
 
-A character representing whether the scheduled days run during school days
-("D"), school holidays ("H"), or both ("B").
+A character representing whether the scheduled days run during school
+days ("D"), school holidays ("H"), or both ("B").
+
+=item B<DayString>
+
+=item B<DaySpec>
+
+...
+
 
 =back
 
@@ -213,16 +210,10 @@ A character representing whether the scheduled days run during school days
 
 =over
 
-=item B<HastusDirCode>
-
-A number from 0 to 13, representing the various direction codes used in the 
-Hastus AVL Standard Interface. It can be coerced into DirCode or ActiumODir.
-
 =item B<DirCode>
 
-An enumeration of the elements of @Actium::Constants::DIRCODES. 
-See L<Actium::Constants/Actium::Constants>. It can be coerced into 
-ActiumODir.
+An enumeration of the elements of @Actium::DIRCODES.  See
+L<Actium/Actium>. It can be coerced into  ActiumODir.
 
 =item B<ActiumODir>
 
@@ -236,9 +227,9 @@ A type representing the Actium::O::Dir class.
 
 =item B<TimeNum>
 
-A time number, suitable for use by L<Actium::Time>. The number of minutes after
-midnight (or before, if negative), or undef.
-Coerces strings into TimeNums using Actium::Time::timenum().
+A time number, suitable for use by L<Actium::Time>. The number of
+minutes after midnight (or before, if negative), or undef. Coerces
+strings into TimeNums using Actium::Time.
 
 =item B<ArrayRefOrTimeNum>
 
@@ -246,7 +237,8 @@ A "union type" -- either an array reference, or a TimeNum.
 
 =item B<ArrayRefOfTimeNums>
 
-An array reference, which must refer to an array consisting solely of TimeNums.
+An array reference, which must refer to an array consisting solely of
+TimeNums.
 
 =back
 
@@ -256,8 +248,8 @@ An array reference, which must refer to an array consisting solely of TimeNums.
 
 =item B<Str4> and B<Str8>
 
-A string of exactly four characters or eight characters. These are used in 
-specifying timepoint abbreviations.
+A string of exactly four characters or eight characters. These are used
+in  specifying timepoint abbreviations.
 
 =back
 
@@ -265,9 +257,7 @@ specifying timepoint abbreviations.
 
 =over
 
-=item Actium::Constants
-
-=item Actium::Time
+=item Actium
 
 =item Moose
 
@@ -281,10 +271,10 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2011
+Copyright 2011-2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -296,6 +286,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE. 
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

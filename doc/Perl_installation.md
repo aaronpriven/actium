@@ -37,7 +37,7 @@ install DBD::ODBC? Oh well)
 
 So far, so good!
 
-## notes as of July 28, 2015
+### notes as of July 28, 2015
 
 There are a few test failures when installing modules.
 
@@ -55,3 +55,47 @@ version, is installed.
 It fails a couple of tests trying to load the apache.org site. I think
 these are due to changes at apache.org and not real problems with the module.
 I force installed this (cpanm -f LWP::Protocol::https)
+
+### notes as of May 1, 2017
+
+* LWP::Protocol::https 
+
+Now works as long as one installs a homebrew version of openssl first, 
+and follows the instructions regarding adding items to environment variables
+(including PATH).
+
+* DateTime::Format::CLDR
+
+There's some bug in either this or DateTime::TimeZone that makes it fail with
+DateTime::TimeZone 2.10 or 2.11. I installed DateTime::TimeZone 2.09 and it 
+passed.
+
+## Eclipse and Perl::Tidy::Sweetened
+
+The way I got this to work is to replace the file "perlutils/perltidy/perltidy"
+in the archive org.epic.perleditor_0.6.39.jar with a copy of "perltidier" from
+the Perl::Tidy::Sweetened distribution, and made sure that a "use lib <location
+to Perl::Tidy::Sweetened library>" line was put in the file. (Note that this
+should be the *last* "use lib", because "use lib" unshifts onto @INC, and if
+the system libraries are added after this, those will be used first. At the
+moment the cpan version of Perl::Tidy::Sweetened does not handle closing side
+comments correctly.)
+
+
+
+## COPYRIGHT & LICENSE
+
+Copyright 2011-2017
+
+The Actium system is free software; you can redistribute it and/or
+modify it under the terms of either:
+
+* the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+* the Artistic License version 2.0.
+
+This system is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.
