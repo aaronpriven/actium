@@ -1,7 +1,7 @@
 package Actium::Cmd::NonMinSuppCalendar 0.012;
 
 use Actium;
-use Actium::O::Time;
+use Actium::Time;
 use Actium::O::Folder;
 use Actium::Import::Xhea::SuppCalendar;
 use DDP;
@@ -345,7 +345,7 @@ sub read_supp_calendars {
             next unless $block;
 
             my $pullout_cell    = $cells[3];
-            my $pullout_time    = Actium::O::Time->from_excel($pullout_cell);
+            my $pullout_time    = Actium::Time->from_excel($pullout_cell);
             my $pullout_timenum = $pullout_time->timenum;
 
             my $tripkey = "$block/$pullout_timenum";
