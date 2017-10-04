@@ -508,7 +508,7 @@ MAX_TIME is equivalent to 11:59x, or 11:59 a.m. on the following day.
 The C<from_str> method also accepts the three special values 'f',
 'i', and the undefined value.  Other than "f" and "i", a string without any
 numbers in it is treated as the undefined value.  (This includes the 
-empty sttring.)
+empty string.)
 
 Otherwise, the string format can be one of these:
 
@@ -528,7 +528,7 @@ Otherwise, the string format can be one of these:
 
 =item 4
 
-An date and time specification similar to ISO 8601 date-time format.
+A date and time specification similar to ISO 8601 date-time format.
 The date must be specified first, in yyyy-mm-dd format, followed by
 the letter T, and then hours, minutes, and seconds in hh:mm::ss format.
 A letter Z signifying the time zone is optional at the end of the string.
@@ -571,7 +571,7 @@ A final "b" is accepted for times before midnight, so '1159b' is
 treated as one minute before midnight.
 
 A final "x" is accepted for times after midnight on the following day,
-so  '1201x' is treated as one minute after midnight, tomorrow.
+so '1201x' is treated as one minute after midnight, tomorrow.
 
 =head2 Actium::Time->from_num( I<integer>, I<integer>, ... ) 
 
@@ -590,7 +590,7 @@ This constructor accepts cells from Excel, specifically those returned
 from the get_cell routine in either Spreadsheet::ParseExcel or
 Spreadsheet::ParseXLSX. (The object passed in must support the methods 
 C<value> and C<unformatted>.)  It can accept a formatted Excel time 
-(which it converts to a time number and sends to C<from_num> or a
+(which it converts to a time number and sends to C<from_num>) or a
 string (which it sends to C<from_str>). It returns one object for each
 cell passed to it.
 
@@ -603,7 +603,7 @@ object and insert it into the caches used by C<from_str>, C<from_excel>, and
 C<from_num>.  There should never be a reason to create more than one
 object with the same arguments.
 
-=head2 Actium::Time::->timesort(I<obj>, I<obj>, ...
+=head2 Actium::Time::->timesort(I<obj>, I<obj>, ... )
 
 This class method takes a series of Actium::Time objects and sorts
 them (numerically according to their time number value), returning the 
