@@ -1,4 +1,4 @@
-package Actium::Sked::Trip::Time::Collection 0.012;
+package Actium::Sked::Trip::Time::Collection 0.014;
 
 # Collection of trips
 
@@ -6,9 +6,6 @@ use Actium ('role');
 
 # This is a role applied to Actium::Sked::Trip. It represents
 # the methods associated with the collection of times in the trip
-
-# The following is invoked only from the BUILD routine in Actium::Sked
-# It requires knowledge of the stopplaces which is in the Sked object
 
 ################
 ### STOPTIMES
@@ -136,7 +133,7 @@ This is an array of Actium::Sked::Trip::Time objects, each one
 representing the time the vehicle passes a stop. See
 Actium::Sked::Trip::Time and Actium::Time for more details.
 
-There is one entry for each stop in the schedule, although that  may
+There is one entry for each stop in the schedule, although that may
 point to an Actium::Time value representing a stop that is not served
 by this trip.
 
