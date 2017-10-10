@@ -1,74 +1,43 @@
 # Perl installation for Actium
 
-Notes about perl installation via perlbrew: how it worked for me today 
-(8/1/14). 
+## New instructions as of 10/9/2017.
 
-1. installed the FileMaker ODBC driver. 
+Log in as Octavian (administrative user)
 
-2. installed ODBC Manager 
+1. Update Xcode
 
-3. Created a "System DSN" for ActiumFM (fm54.triple8.net, ACTransit_Actium, 
-etc. In "Language Options" unchecked automatic and checked utf-8 --
-this might change later if unixodbc can support Unicode directly instead
-of having to re-encode the results, as I have to currently). 
-I think there were permissions issues here.
+2. Install FileMaker ODBC driver
 
-4. Installed perlbrew from perlbrew.pl
+3. Install ODBC 
 
-5. perlbrew install 5.20.0 -Accflags="-DPERL\_USE\_SAFE\_PUTENV" 
+4. Create a "System DSN" for ActiumFM (fm70.triple8.net,
+ACTransit_Actium, etc. In "Language Options" uncheck automatic and set
+the results to utf-8.
 
-6. perlbrew install-cpanm
+5. Install homebrew from brew.sh.  Homebrew requires a working SSL
+connection, so connect to the Internet via WiFi temporarily, bypassing
+the District's Zscaler software, until done with installing things via
+Homebrew.
 
-7. installed lots of modules with cpanm including DBI and all other 
-relevant ones except DBD::ODBC. First I installed App::Ack, then ran 
-the "get-modules" script in ~/bin, then installed the relevant modules.
+6. install unixodbc via homebrew.
 
-8. installed homebrew.
+7. the Homebrew ODBC home is /usr/local/Cellar/unixodbc/2.3.2. Replace
+the .ini fles in /usr/local/Cellar/unixodbc/2.3.2/etc with symlinks to
+the system .ini files. 
 
-9. installed unixodbc via homebrew.
+8. Install openssl with homebrew. Add path to the openssl to the PATH
+environment variable
 
-10. the Homebrew ODBC home is /usr/local/Cellar/unixodbc/2.3.2. I replaced
-the .ini fles in /usr/local/Cellar/unixodbc/2.3.2/etc with symlinks to the
-system .ini files. (I wonder if I could have just changed the ODBCHOME 
-environment variable to /usr/local/Cellar/unixodbc/2.3.2 before trying to
-install DBD::ODBC? Oh well)
+9. Install ghostscript with homebrew
 
-11. cpanm DBD::ODBC
+10. Install perlbrew from perlbrew.pl
 
-So far, so good!
+11. perlbrew install-cpanm
 
-### notes as of July 28, 2015
+12. perlbrew -- Install latest stable Perl 5 (perl 5.26.1)
 
-There are a few test failures when installing modules.
-
-* DBD::ODBC
-
-That is solved by making sure the ODBC is installed properly, as above.
-
-* Flickr::API2
-
-Tests pass once a version of Mozilla::CA from 2012, rather than the current
-version, is installed.
-
-* LWP::Protocol::https
-
-It fails a couple of tests trying to load the apache.org site. I think
-these are due to changes at apache.org and not real problems with the module.
-I force installed this (cpanm -f LWP::Protocol::https)
-
-### notes as of May 1, 2017
-
-* LWP::Protocol::https 
-
-Now works as long as one installs a homebrew version of openssl first, 
-and follows the instructions regarding adding items to environment variables
-(including PATH).
-
-* DateTime::Format::CLDR
-
-There's some bug in either this or DateTime::TimeZone that makes it fail with
-DateTime::TimeZone 2.10 or 2.11. I installed DateTime::TimeZone 2.09 and it 
-passed.
+13. Go through dependencies of Actium and install them using cpanm 
+(use find-deps.pl to get list of dependencies).
 
 ## Eclipse and Perl::Tidy::Sweetened
 
@@ -80,8 +49,6 @@ should be the *last* "use lib", because "use lib" unshifts onto @INC, and if
 the system libraries are added after this, those will be used first. At the
 moment the cpan version of Perl::Tidy::Sweetened does not handle closing side
 comments correctly.)
-
-
 
 ## COPYRIGHT & LICENSE
 
