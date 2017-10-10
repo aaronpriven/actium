@@ -341,6 +341,14 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
             _do_import( 'Kavorka', fun => { -as => 'func' } );
         }
 
+        # MooseX::MarkAsMethods ### DEP ###
+        # MooseX::StrictConstructor ### DEP ###
+        # MooseX::SemiAffordanceAccessor ### DEP ###
+        # Moose ### DEP ###
+        # Moose::Role ### DEP ###
+        # MooseX::MarkAsMethods ### DEP ###
+        # indirect ### DEP ###
+
         _do_import 'Actium::Crier', qw/cry last_cry/;
         _do_import 'Carp';
         _do_import 'Const::Fast';
