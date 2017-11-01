@@ -8,7 +8,7 @@ Log in as Octavian (administrative user)
 
 2. Install FileMaker ODBC driver
 
-3. Install ODBC 
+3. Install ODBC Manager
 
 4. Create a "System DSN" for ActiumFM (fm70.triple8.net,
 ACTransit_Actium, etc. In "Language Options" uncheck automatic and set
