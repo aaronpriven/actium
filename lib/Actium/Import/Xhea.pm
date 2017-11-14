@@ -358,7 +358,7 @@ sub _adjust_boolean {
 
 {
 
-    const my $placepatfile => 'PlacePatterns.xml';
+    const my $placepatfile => 'PlacePattern.xml';
     const my @fieldnames   => qw/line direction place rank/;
     const my %fields       => (
         line      => { base => 'string', type => 'string',        idx => 0, },
@@ -735,9 +735,9 @@ sub _get_xhea_filenames {
 
     foreach my $filename (@xmlfiles) {
 
-        next if fc($filename) eq fc('PlacePatterns');
+        next if fc($filename) eq fc('PlacePattern');
 
-        # skip PlacePatterns, which has a different XML structure
+        # skip PlacePattern, which has a different XML structure
         # than the simple one this part of the program can deal with
 
         push @xhea_filenames, $filename
