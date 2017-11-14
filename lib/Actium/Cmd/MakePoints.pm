@@ -525,7 +525,14 @@ sub START {
 
             my %seen_workzone;
             foreach my $stopid ( keys %stops ) {
-                $seen_workzone{ $stops{$stopid}{u_work_zone} } = 1;
+                if (   not exists $stops{$stopid}{u_work_zone}
+                    or not defined $stops{$stopid}{u_work_zone} )
+                {
+                    $list_cry->text("Work zone not found in stop id $stopid");
+                }
+                else {
+                    $seen_workzone{ $stops{$stopid}{u_work_zone} } = 1;
+                }
             }
 
             my $delivery = 'Polecrew';
