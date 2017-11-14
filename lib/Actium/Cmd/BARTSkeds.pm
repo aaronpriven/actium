@@ -98,7 +98,7 @@ sub START {
 
         my $aoa = Actium::O::2DArray->bless( \@results );
         my $file
-          = "/Volumes/Bireme/Connectivity-TIDs/bart_sked_output/$station.xlsx";
+          = "/Users/Shared/Dropbox (AC_PubInfSys)/B/Connectivity-TIDs/bart_sked_output/$station.xlsx";
         $aoa->xlsx( output_file => $file );
 
     } ## tidy end: foreach my $station (@station_abbrs)
