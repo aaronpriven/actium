@@ -45,8 +45,9 @@ sub START {
 
     my $dbh = $actiumdb->dbh;
 
-    my $folder = Actium::O::Folder->new('/Volumes/Bireme/Actium/database');
-    my $zip    = Archive::Zip->new();
+    my $folder = Actium::O::Folder->new(
+        '/Users/Shared/Dropbox (AC_PubInfSys)/B/Actium/database');
+    my $zip = Archive::Zip->new();
 
     foreach my $table ( keys %fields_of ) {
 

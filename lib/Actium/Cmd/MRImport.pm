@@ -8,38 +8,33 @@ use warnings;
 use Actium::MapRepository (':all');
 use Actium::O::Folder;
 
-use English '-no_match_vars'; ### DEP ###
+use English '-no_match_vars';    ### DEP ###
 
 sub OPTIONS {
     return (
-        [
-            'repository=s',
+        [   'repository=s',
             'Location of repository in file system',
-            '/Volumes/Bireme/Maps/Repository'
+            '/Users/Shared/Dropbox (AC_PubInfSys)/B/Maps/Repository'
         ],
-        [
-            'web!',
+        [   'web!',
             'Create web files of maps (on by default; turn off with -no-web)',
             1
         ],
-        [
-            'webfolder|wf=s',
+        [   'webfolder|wf=s',
             'Folder where web files will be created. '
               . 'Default is "web" in the folder where the maps already are'
         ],
-        [
-            'move|mv!',
+        [   'move|mv!',
             'Move files into repository instead of copying '
               . '(on by default; turn off with -no-move)',
             1
         ],
-        [
-            'verbose!',
+        [   'verbose!',
             'Display detailed information on each file copied or rasterized.',
             0
         ],
     );
-}
+} ## tidy end: sub OPTIONS
 
 sub HELP {
 
@@ -59,8 +54,8 @@ EOF
 
 sub START {
 
-    my $class   = shift;
-    my $env = shift;
+    my $class = shift;
+    my $env   = shift;
 
     my @importfolders = $env->argv;
     unless (@importfolders) {
@@ -74,15 +69,14 @@ sub START {
     my $specified_webfolder_obj;
 
     if ( $web and $webfolder_opt ) {
-        $specified_webfolder_obj =
-          Actium::O::Folder->new( $env->option('webfolder') );
+        $specified_webfolder_obj
+          = Actium::O::Folder->new( $env->option('webfolder') );
     }
 
     my $repository_opt = $env->option('repository');
 
     my $repository = Actium::O::Folder->new(
-        {
-            folderlist => $repository_opt,
+        {   folderlist => $repository_opt,
             must_exist => 1,
         }
     );
@@ -90,8 +84,7 @@ sub START {
 
         # import to repository
         my $importfolder = Actium::O::Folder->new(
-            {
-                folderlist => $folderspec,
+            {   folderlist => $folderspec,
                 must_exist => 1,
             }
         );
@@ -123,11 +116,11 @@ sub START {
 
         }
 
-    }    ## tidy end: foreach my $folderspec (@importfolders)
+    } ## tidy end: foreach my $folderspec (@importfolders)
 
     return;
 
-}    ## tidy end: sub START
+} ## tidy end: sub START
 
 1;
 
@@ -149,22 +142,27 @@ From a shell:
  
 =head1 DESCRIPTION
 
-The Actium::Cmd::MRCopy module provides a command-line interface to the 
-B<import_to_repository>  and B<make_web_maps> routines of 
-Actium::MapRepository. It expects to be run by
-actium.pl. See the documentation to actium.pl for more information on the START
-and HELP methods.
+The Actium::Cmd::MRCopy module provides a command-line interface to the
+ B<import_to_repository>  and B<make_web_maps> routines of 
+Actium::MapRepository. It expects to be run by actium.pl. See the
+documentation to actium.pl for more information on the START and HELP
+methods.
 
-mr_import takes one or more folders where maps may exist. First, it checks the names of each of those files, and if it can, puts it into the proper name style for the repository. Second, it copies the files to the repository. Third, it creates versions of the PDF files for the web.
+mr_import takes one or more folders where maps may exist. First, it
+checks the names of each of those files, and if it can, puts it into
+the proper name style for the repository. Second, it copies the files
+to the repository. Third, it creates versions of the PDF files for the
+web.
 
 Detailed documentation on the maps repository and how to use mr_import
 can be found in the separate documents, "The Actium Maps Repository: 
-Quick Start Guide" and "The Actium Maps Repository: Extended Usage 
-and Technical Detail." 
+Quick Start Guide" and "The Actium Maps Repository: Extended Usage  and
+Technical Detail."
 
 =head1 USAGE
 
-The mr_import program takes files and copies them into the repository. You run it by entering the following into the Terminal (shell):
+The mr_import program takes files and copies them into the repository.
+You run it by entering the following into the Terminal (shell):
 
  actium.pl mr_import /Name/Of/A/Folder 
  
@@ -172,13 +170,15 @@ or, for more than one folder,
 
  actium.pl mr_import /Folder1 /Folder2 /AndSoOn
  
-One of the most usual ways is to "cd" to the appropriate folder in the Terminal and simply enter (note the period):
+One of the most usual ways is to "cd" to the appropriate folder in the
+Terminal and simply enter (note the period):
 
  actium.pl mr_import .
 
 =head1 COMMAND-LINE OPTIONS
 
-The mr_import program has several options that can be used on the command line. These should be placed after mr_import:
+The mr_import program has several options that can be used on the
+command line. These should be placed after mr_import:
 
  actium.pl mr_import -no-web _new
  
@@ -194,33 +194,51 @@ However, in practice only a few of them are actually useful.
 
 =item -move
 
-This option moves, rather than copies, the files into the repository. They will be removed from the specified folder once they are copied successfully. 
+This option moves, rather than copies, the files into the repository.
+They will be removed from the specified folder once they are copied
+successfully.
 
-This option is on by default. To copy instead of moving, so the maps will remain in the folder you specify, enter "-no-move" on the command line. "move" can be abbreviated as "mv"
+This option is on by default. To copy instead of moving, so the maps
+will remain in the folder you specify, enter "-no-move" on the command
+line. "move" can be abbreviated as "mv"
 
 =item -repository
 
-The repository is currently located at "/Volume/Bireme/Maps/Repository". To use another repository, specify its full path here. 
+The repository is currently located at
+"/Volume/Bireme/Maps/Repository". To use another repository, specify
+its full path here.
 
 =item -web
 
-This option will create a folder called "web" underneath the folder you specify, and create copies of the maps intended for the web in them. (See "Files for the web," above.)
+This option will create a folder called "web" underneath the folder you
+specify, and create copies of the maps intended for the web in them.
+(See "Files for the web," above.)
 
-This option is on by default. To suppress the creation of web files, enter "-no-web" on the command line.
+This option is on by default. To suppress the creation of web files,
+enter "-no-web" on the command line.
 
 =item -webfolder
 
-An alternative folder where web files will be created, instead of "web" under the specified folder. This will be the same for all files converted (it doesn't just replace the folder "web"within each folder with a new name, it specifies a single folder where all converted files will be located). "webfolder" can be abbreviated "wf".
+An alternative folder where web files will be created, instead of "web"
+under the specified folder. This will be the same for all files
+converted (it doesn't just replace the folder "web"within each folder
+with a new name, it specifies a single folder where all converted files
+will be located). "webfolder" can be abbreviated "wf".
 
 =item -quiet, -verbose, and -progress
 
-These three options tell the program how much detail to display on screen. 
+These three options tell the program how much detail to display on
+screen.
 
-"-quiet" eliminates all display except text that describes why the program quit unexpectedly. 
+"-quiet" eliminates all display except text that describes why the
+program quit unexpectedly.
 
-"-verbose" displays on the screen a message indicating the names of each map copied or rasterized.
+"-verbose" displays on the screen a message indicating the names of
+each map copied or rasterized.
 
-"-progress" produces a running indication of which lines' maps are being processed, when "-verbose" is not in effect. This is on by default; use "-no-progress" to turn it off.
+"-progress" produces a running indication of which lines' maps are
+being processed, when "-verbose" is not in effect. This is on by
+default; use "-no-progress" to turn it off.
 
 =back
 
@@ -249,8 +267,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2012-2015
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -262,6 +280,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
