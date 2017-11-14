@@ -22,6 +22,7 @@ const my %TRANSITINFO_DAYS_OF => (
       67H      WE
       24       TT
       25       TF
+      34       WT
       35       WF
       123      MX
       125      MV
