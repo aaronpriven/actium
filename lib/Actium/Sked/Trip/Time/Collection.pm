@@ -1,6 +1,6 @@
 package Actium::Sked::Trip::Time::Collection 0.014;
 
-# Collection of trips
+# Collection of times
 
 use Actium ('role');
 
