@@ -121,8 +121,12 @@ sub START {
 
             my $flagroute_diff = add_char( 'A:', @flagroutes );
 
+            my $long = $stops{$stopid}{h_loca_longitude};
+            my $lat  = $stops{$stopid}{h_loca_latitude};
+
             say $stoplines join( "\t",
-                $stopid, 0, q[], 0, q[], 0, $flagroutes_all, $flagroute_diff );
+                $stopid, 0, q[], 0, q[], 0, $flagroutes_all, $flagroute_diff,
+                $long, $lat );
             next;
         }
 
