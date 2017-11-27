@@ -103,6 +103,25 @@ and also the spellings of names.
 
 Note that the "active" field will not have been updated yet.
 
+## Get zip codes and work zones for new stops
+
+Run the program
+
+    actium.pl zipcodes >~/Desktop/zipcodes.txt
+
+It will create the file zipcodes.txt and save it on your desktop. Then, import the file into the Actium database.
+
+In FileMaker, go to Import -> File and select zipcodes.txt from the desktop. Check "Don't import first record (contains field names)" and then select "Arrange by: matching names".
+
+Then check "Update matching records in found set" and click the arrow next to "h\_stp\_511\_id" so it becomes a double-headed arrow. (Arrange By will change to "custom import order")
+
+Click "Import."  On the "Import Options" box, click "Import" again (it doesn't matter whether "Perform auto-enter options" is checked).
+
+The stops with new zip codes will be showing. Those will also be the ones
+without work zones. Go into Google Earth and find the locations of those stops.
+Using the KML export from the previous signup, find the work zones of the 
+nearest stops to the new one. Enter that workzone in the correct spot.
+
 ## Import places into FileMaker
 
 a) Go into the Places layout in FileMaker. Display all records.
@@ -284,24 +303,9 @@ Run the program
 
 It will create the file Actium/db/z00/nextbus-destinations.txt. Email this file to Nextbus.
 
-## Get zip codes and work zones for new stops
+## Update flag and decal specifications
 
-Run the program
-
-    actium.pl zipcodes >~/Desktop/zipcodes.txt
-
-It will create the file zipcodes.txt and save it on your desktop. Then, import the file into the Actium database.
-
-In FileMaker, go to Import -> File and select zipcodes.txt from the desktop. Check "Don't import first record (contains field names)" and then select "Arrange by: matching names".
-
-Then check "Update matching records in found set" and click the arrow next to "h\_stp\_511\_id" so it becomes a double-headed arrow. (Arrange By will change to "custom import order")
-
-Click "Import."  On the "Import Options" box, click "Import" again (it doesn't matter whether "Perform auto-enter options" is checked).
-
-The stops with new zip codes will be showing. Those will also be the ones
-without work zones. Go into Google Earth and find the locations of those stops.
-Using the KML export from the previous signup, find the work zones of the 
-nearest stops to the new one. Enter that workzone in the correct spot.
+(instructions to come)
 
 ## Create KML export
 
@@ -314,10 +318,6 @@ Replace "<outputfile>" with the name of the file, which should probably be somet
 ## Update Dumbarton Express website
 
 (instructions to come)
-
-##24. Update flag and decal specifications
-
-(also instructions to come)
 
 ## COPYRIGHT & LICENSE
 
