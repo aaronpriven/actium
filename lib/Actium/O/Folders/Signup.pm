@@ -73,7 +73,7 @@ has signup => (
 );
 
 #around load_sqlite => sub {
-around load_sqlite ($orig, $self: $default_subfolder, $db_class, $params_r) {
+around load_sqlite ($orig, $self: $default_subfolder, $db_class, $params_r = +{} ) {
     #    my ( $orig, $self, $default_subfolder, $db_class, $params_r ) = @_;
     if ( not exists( $params_r->{db_folder} ) and $self->cache ) {
         $params_r->{db_folder} = $self->cache;
