@@ -97,7 +97,9 @@ sub new {
             year  => $year,
             month => $month,
             day   => $day
-          )
+        );
+
+        delete $args{ymd};
 
     } ## tidy end: if ( exists $args{ymd})
 
@@ -519,10 +521,6 @@ DateTime::Format::Strptime
 =item * 
 
 DateTime::Locale
-
-=item *
-
-Moose
 
 =back
 
