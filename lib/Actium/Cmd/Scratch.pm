@@ -2,17 +2,17 @@ package Actium::Cmd::Scratch 0.012;
 
 use Actium;
 use Actium::O::Folders::Signup;
+use Actium::Import::GTFS::TripCalendars;
 
 sub OPTIONS { return 'actiumdb', 'signup' }
+use DDP;
 
 sub START {
 
     my ( $class, $env ) = @_;
 
     my $signup = $env->signup;
-
-    use DDP;
-    p $signup;
+    Actium::Import::GTFS::TripCalendars::dates_of_serviceid($signup);
 
 }
 
