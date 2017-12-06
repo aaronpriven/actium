@@ -6,6 +6,8 @@ package Actium::O::DateTime 0.014;
 # Non-moosey, because Moose kept interfering too much with
 # constructor names and the like
 
+# consider adding DateTimeX::Role::Immutable
+
 use Actium;
 
 use parent 'DateTime';
@@ -257,6 +259,28 @@ sub new {
         return $formats_cr->( $self, 'full' );
     }
 
+}
+
+# convenience methods
+sub following_day {
+    my $self = shift;
+    state %one_day;
+    my $class = blessed($self);
+    my $one_day
+      = ( $one_day{$class} //= $class->duration_class()->new( days => 1 ) );
+    my $new_dt = $class->from_object( object => $self );
+    $new_dt->add_duration( $one_day{$class} );
+    return $new_dt;
+}
+
+sub en_us_weekday {
+    my $self = shift;
+    require DateTime::Format::CLDR;    ### DEP ###
+    state $cldr = DateTime::Format::CLDR->new(
+        locale  => 'en_US',
+        pattern => 'EEEE',
+    );
+    return $cldr->format_datetime($self);
 }
 
 # CLASS METHOD
