@@ -12,7 +12,7 @@ sub START {
     my ( $class, $env ) = @_;
 
     my $signup = $env->signup;
-    Actium::Import::GTFS::TripCalendars::dates_of_serviceid($signup);
+    Actium::Import::GTFS::TripCalendars::calendar_notes_of_trips($signup);
 
 }
 
