@@ -1,480 +1,587 @@
 package Actium::Import::GTFS::TripCalendars 0.012;
 
 use Actium;
+use Actium::Import::GTFS (':all');
 use Actium::Time;
 use Actium::O::DateTime;
 use DateTime::Duration;
-use Text::CSV('csv');    ### DEP ###
+use DateTime::Event::Recurrence;
+use DateTime::Event::ICal;
+use DateTime::Span;
+use List::Compare::Functional ('is_LsubsetR');
 
-const my $PHYLUM => 'GTFS';
+# "dow" in identifiers means day of week
 
-use DDP;
+use Data::Printer { filters => { 'Actium::O::DateTime' => sub { $_[0]->ymd }, },
+};
 
-func dates_of_serviceid ( Actium::O::Folders::Signup $signup) {
-
-    my @calendar_ranges = calendar_ranges($signup);
-
-    #( \my %date_column, \my @calendar_dates )
-    #  = array_read_gtfs( signup => $signup, file => 'calendar_dates' );
-
-    #p @calendar_dates;
-
-}
-
-const my @EARLIER_DAYS =>
+const my @DAYS_OF_WEEK =>
   qw/sunday monday tuesday wednesday thursday friday saturday/;
-const my @LATER_DAYS => @EARLIER_DAYS[ 1 .. 6, 0 ];
+const my @FOLLOWING_DAYS_OF_WEEK => @DAYS_OF_WEEK[ 1 .. 6, 0 ];
 
-func calendar_ranges (Actium::O::Folders::Signup $signup) {
+const my @NOTE_DOW =>
+  ( undef, qw/Monday Tuesday Wednesday Thursday Friday Saturday Sunday/ );
 
-    \my %calendar_of = hash_read_gtfs(
-        signup => $signup,
-        file   => 'calendar',
-        key    => 'service_id',
+{
+
+    my (%calendar,     %exceptions,        $initial,
+        $final,        %dt_set_of,         %serviceids_of_dow,
+        $holiday_set,  %note_of_serviceid, %noteletter_of_note,
+        %note_of_trip, %noteletter_of_trip,
     );
 
-    \my %attributes_of = hash_read_gtfs(
-        signup => $signup,
-        file   => 'calendar_attributes',
-        key    => 'service_id',
-    );
+    func calendar_notes_of_trips ( Actium::O::Folders::Signup $signup) {
 
-    my ( $initial, $final );
-    foreach my $service_id ( keys %calendar_of ) {
+        read_calendar($signup);
 
-        my $start = dt_from_gtfs_date( $calendar_of{$service_id}{start_date} );
-        my $end
-          = dt_from_gtfs_date( $calendar_of{$service_id}{end_date} );
+        # Delete Dumbarton, which is an ugly thing but I don't know how
+        # else to do it right now
 
-        if (   not exists $attributes_of{$service_id}
-            or not exists $attributes_of{$service_id}{service_description} )
-        {
-            #warn "No description for service ID $service_id";
+        my @db_ids = grep {/-DBDB1-/} keys %calendar;
+        delete @calendar{@db_ids};
+
+        adjust_calendar_for_midnight($signup);
+        read_calendar_dates($signup);
+
+        @db_ids = grep {/-DBDB1-/} keys %exceptions;
+        delete @exceptions{@db_ids};
+
+        adjust_exceptions_for_midnight();
+        make_unexceptional_sets();
+        place_exceptions_in_sets();
+        holidays();
+        delete_unexceptional_sets();
+        make_ons_and_offs();
+
+        text_notes();
+
+        #p %note_of_serviceid;
+
+        read_tripids($signup);
+
+#foreach my $tripid (keys %noteletter_of_trip) {
+#    say Actium::jointab($tripid, $noteletter_of_trip{$tripid},$note_of_trip{$tripid});
+#}
+
+        return \%noteletter_of_trip, \%note_of_trip;
+
+    } ## tidy end: func calendar_notes_of_trips
+
+    func read_calendar ($signup) {
+
+        %calendar = hash_read_gtfs(
+            signup => $signup,
+            file   => 'calendar',
+            key    => 'service_id',
+        )->%*;
+
+        # get DateTime objects
+
+        foreach my $service_id ( keys %calendar ) {
+            my $start = dt_from_gtfs_date( $calendar{$service_id}{start_date} );
+            my $end   = dt_from_gtfs_date( $calendar{$service_id}{end_date} );
+
+            $calendar{$service_id}{_dt_start_date} = $start;
+            $calendar{$service_id}{_dt_end_date}   = $end;
+
         }
-        else {
-            if ( $attributes_of{$service_id}{service_description} =~ /before/ )
-              # this should be replaced by an analysis of the times
-            {
-                \my %calendar = $calendar_of{$service_id};
-                add_one_day($start);
-                add_one_day($end);
-                say "$service_id\t",
-                  $attributes_of{$service_id}{service_description};
-                say
-                  join( " ", "e", $calendar_of{$service_id}->%{@EARLIER_DAYS} );
-                @calendar{@LATER_DAYS} = @calendar{@EARLIER_DAYS};
-                say
-                  join( " ", "l", $calendar_of{$service_id}->%{@EARLIER_DAYS} );
+        return;    # results in %calendar
 
+    } ## tidy end: func read_calendar
+
+    func adjust_calendar_for_midnight ($signup) {
+        \my %attributes = hash_read_gtfs(
+            signup => $signup,
+            file   => 'calendar_attributes',
+            key    => 'service_id',
+        );
+
+        my %adjusted_calendar;
+
+        foreach my $service_id ( keys %calendar ) {
+
+            \my %old_calendar = $calendar{$service_id};
+            my %new_calendar = %old_calendar;
+            $new_calendar{_description}
+              = $attributes{$service_id}{service_description} // $EMPTY;
+
+            # adjust before-midnight schedules so they are on the correct days
+
+            my ( $start, $end );
+
+            if (    exists $attributes{$service_id}
+                and exists $attributes{$service_id}{service_description}
+                and $attributes{$service_id}{service_description} =~ /before/i )
+              # this is fragile.
+              # it should be replaced by an analysis of the times in trip.txt
+
+            {
+                @new_calendar{@FOLLOWING_DAYS_OF_WEEK}
+                  = @old_calendar{@DAYS_OF_WEEK};
+
+                my $old_start = $old_calendar{'_dt_start_date'};
+                $start = following_day($old_start);
+                $new_calendar{"_old_dt_start_date"} = $old_start;
+                $new_calendar{"_old_start_date"} = $old_calendar{'start_date'};
+                $new_calendar{'_dt_start_date'}  = $start;
+                $new_calendar{start_date}        = $start->ymd($EMPTY);
+
+                my $old_end = $old_calendar{'_dt_end_date'};
+                $end                              = following_day($old_end);
+                $new_calendar{"_old_dt_end_date"} = $old_end;
+                $new_calendar{"_old_end_date"}    = $old_calendar{'end_date'};
+                $new_calendar{'_dt_end_date'}     = $end;
+                $new_calendar{end_date}           = $end->ymd($EMPTY);
+                $new_calendar{'_adjusted'}        = 1;
+
+            } ## tidy end: if ( exists $attributes...)
+            else {
+                $new_calendar{'_adjusted'} = 0;
+                $start                     = $new_calendar{'_dt_start_date'};
+                $end                       = $new_calendar{'_dt_end_date'};
             }
 
+            $initial = $start
+              if not defined $initial
+              or $start < $initial;
+            $final = $end if not defined $final or $final < $end;
+
+            $adjusted_calendar{$service_id} = \%new_calendar;
+        } ## tidy end: foreach my $service_id ( keys...)
+
+        %calendar = %adjusted_calendar;
+
+        return;    # results in %calendar, $initial, $final
+
+    } ## tidy end: func adjust_calendar_for_midnight
+
+    func read_calendar_dates ($signup) {
+
+        ( \my %date_column, \my @calendar_dates )
+          = array_read_gtfs( signup => $signup, file => 'calendar_dates' );
+
+        foreach \my @calendar_date(@calendar_dates) {
+            my ( $service_id, $date, $exception_type )
+              = @calendar_date[ @date_column{qw/service_id date exception_type/}
+              ];
+            my $dt = dt_from_gtfs_date($date);
+            push $exceptions{$service_id}->@*,
+              { '_dt'          => $dt,
+                date           => $date,
+                exception_type => $exception_type
+              };
         }
 
-    } ## tidy end: foreach my $service_id ( keys...)
+        return;    # results in %exceptions
 
-    #        $initial = $start if not defined $initial or $start le $initial;
-    #        $final   = $end   if not defined $initial or $end ge $initial;
+    } ## tidy end: func read_calendar_dates
 
-    #    my $initial_date
-    #      = Actium::O::DateTime->new( ymd => [ gtfs_ymd($initial) ] );
-    #    my $final_date
-    #      = Actium::O::DateTime->new( ymd => [ gtfs_ymd($final) ] );
-    #
-    #    p $initial_date;
-    #    p $final_date;
+    func adjust_exceptions_for_midnight {
 
-} ## tidy end: func calendar_ranges
+        my %adjusted_exceptions;
 
-func array_read_gtfs (Actium::O::Folders::Signup :$signup, Str :$file , :$key?) {
+        foreach my $service_id ( keys %exceptions ) {
 
-    my $filespec = gtfs_filespec( signup => $signup, file => $file );
+            if ( $calendar{$service_id}{'_adjusted'} ) {
+                foreach \my @exceptions( $exceptions{$service_id} ) {
+                    foreach \my %exception (@exceptions) {
 
-    \my @gtfs = csv( in => $filespec, encoding => 'UTF-8' );
+                        my $adj_dt   = following_day( $exception{'_dt'} );
+                        my $adj_date = $adj_dt->ymd($EMPTY);
 
-    my @headers = @{ shift @gtfs };
+                        my %adj_exception = %exception;
+                        $adj_exception{'_dt'} = $adj_dt;
+                        $adj_exception{date} = $adj_date;
+                        push $adjusted_exceptions{$service_id}->@*,
+                          \%adj_exception;
+                    }
+                }
+            }
+            else {
+                $adjusted_exceptions{$service_id} = $exceptions{$service_id};
+            }
+        } ## tidy end: foreach my $service_id ( keys...)
 
-    my %index_of;
+        %exceptions = %adjusted_exceptions;
+        return;    # results in %exceptions
 
-    foreach my $idx ( 0 .. $#headers ) {
-        my $header = $headers[$idx];
-        $index_of{$header} = $idx;
-    }
+    } ## tidy end: func adjust_exceptions_for_midnight
 
-    return \%index_of, \@gtfs;
+    func make_unexceptional_sets {
 
+        foreach my $service_id ( keys %calendar ) {
+
+            my $start = $calendar{$service_id}{_dt_start_date};
+            my $end   = $calendar{$service_id}{_dt_end_date};
+
+            my @days = grep { $calendar{$service_id}{$_} } @DAYS_OF_WEEK;
+
+            my @ical_days = map { substr( $_, 0, 2 ) } @days;
+            my $set
+              = DateTime::Event::Recurrence->weekly( days => \@ical_days );
+
+            $set
+              = $set->intersection(
+                DateTime::Span->from_datetimes( start => $start, end => $end )
+              );
+
+            $dt_set_of{$service_id} = $set;
+            foreach my $dow (@days) {
+                push $serviceids_of_dow{$dow}->@*, $service_id;
+            }
+
+        } ## tidy end: foreach my $service_id ( keys...)
+
+        return;    # results in %dt_set_of, %serviceids_of_dow
+
+    } ## tidy end: func make_unexceptional_sets
+
+    const my $EXCEPTION_TYPE_ADD    => 1;
+    const my $EXCEPTION_TYPE_REMOVE => 2;
+
+    func place_exceptions_in_sets {
+
+        foreach my $service_id ( keys %exceptions ) {
+            my ( @additions, @removals );
+            foreach \my %exception ( $exceptions{$service_id}->@* ) {
+                my $dt   = $exception{'_dt'};
+                my $type = $exception{'exception_type'};
+                if ( $type == $EXCEPTION_TYPE_REMOVE ) {
+                    push @removals, $dt;
+                }
+                elsif ( $type == $EXCEPTION_TYPE_ADD ) {
+                    push @additions, $dt;
+                }
+                else {
+                    die qq{Unknown exception type in calendar_dates: "$type"};
+                }
+            }
+            my $set;
+            if ( not exists $dt_set_of{$service_id} ) {
+                $set = DateTime::Set->empty_set;
+            }
+            else {
+                $set = $dt_set_of{$service_id};
+            }
+            if (@additions) {
+                $dt_set_of{$service_id} = $set->union(@additions);
+            }
+            if (@removals) {
+                $dt_set_of{$service_id} = $set->complement(@removals);
+            }
+
+        } ## tidy end: foreach my $service_id ( keys...)
+
+        return;    # results in %dt_set_of
+
+    } ## tidy end: func place_exceptions_in_sets
+
+    func holidays {
+
+        # the idea is to go through the exception dates. If none of the
+        # services that normally operate on that weekday really operate
+        # on that date, then that day must be a holiday.
+
+        # first, assemble a list of all the exception dates.
+        # (Have to do this _after_ adjustment.)
+
+        my (%dt_of_date);
+        foreach my $service_id ( keys %exceptions ) {
+            foreach \my @exceptions( $exceptions{$service_id} ) {
+                foreach \my %exception (@exceptions) {
+                    $dt_of_date{ $exception{date} } //= $exception{_dt};
+                }
+            }
+        }
+
+        # then, for each date, go through all services that are supposed
+        # to operate on that weekday and see if any of them actually do.
+
+        my @holidays;
+
+      DATE:
+        foreach my $dt ( values %dt_of_date ) {
+
+            my $dow_idx = $dt->dow;
+            $dow_idx = 0 if $dow_idx == 7;
+            my $dow = $DAYS_OF_WEEK[$dow_idx];
+
+            foreach my $service_id ( $serviceids_of_dow{$dow}->@* ) {
+                my $set = $dt_set_of{$service_id};
+                next DATE if $set->contains($dt);
+            }
+
+            # no set matched, so must be a holiday
+            push @holidays, $dt;
+
+        }
+
+        $holiday_set = DateTime::Set->from_datetimes( dates => \@holidays );
+
+        return;
+    } ## tidy end: func holidays
+
+    func delete_unexceptional_sets {
+        # these are sets without any exceptions at all,
+        # or sets with only holiday exceptions
+
+        # delete sets without any exceptions at all
+        foreach my $service_id ( sort keys %dt_set_of ) {
+            if ( not exists $exceptions{$service_id} ) {
+                delete $dt_set_of{$service_id};
+            }
+        }
+
+        # delete sets with only holiday exceptions,
+        foreach my $service_id ( sort keys %exceptions ) {
+            my (@exception_dts);
+            foreach \my %exception ( $exceptions{$service_id}->@* ) {
+                my $dt   = $exception{_dt};
+                my $type = $exception{exception_type};
+                push @exception_dts, $dt;
+            }
+
+            #my @exception_dts = map { $_->{_dt} } $exceptions{$service_id}->@*;
+            if (    $holiday_set->count == @exception_dts
+                and $holiday_set->contains(@exception_dts) )
+            {
+                delete $dt_set_of{$service_id};
+            }
+        }
+
+        return;
+
+    } ## tidy end: func delete_unexceptional_sets
+
+    const my @ICAL_DOW => ( undef, qw/mo tu we th fr sa su/ );
+    const my @NOTE_DOW_ABBR =>
+      ( undef, qw/Mon. Tue. Wed. Thurs. Fri. Sat. Sun./ );
+    const my @NOTELETTER_DOW => ( undef, qw/M T W Th F Sa Su/ );
+    # element 0 not used
+
+    my (%ons_and_offs_of);
+
+    func make_ons_and_offs {
+
+        my ( %quantity_of_dow, %recurrence_set_of );
+
+        # just in case not every signup begins and ends on the same day...
+        foreach my $dow ( 1 .. 7 ) {
+            my $ical_dow = $ICAL_DOW[$dow];
+
+            my $set = DateTime::Event::ICal::->recur(
+                dtstart => $initial,
+                until   => $final,
+                freq    => 'weekly',
+                byday   => [$ical_dow],
+            );
+
+            my @list = $set->as_list;
+            $quantity_of_dow{$dow}   = scalar @list;
+            $recurrence_set_of{$dow} = $set;
+
+        }
+
+        foreach my $service_id ( keys %dt_set_of ) {
+            my @dts = $dt_set_of{$service_id}->as_list;
+            my %dts_of_dow;
+
+            foreach my $dt (@dts) {
+                my $dow = $dt->dow;
+                push $dts_of_dow{$dow}->@*, $dt;
+            }
+
+            foreach my $dow ( sort keys %dts_of_dow ) {
+                \my @dts = $dts_of_dow{$dow};
+                my $on_count  = scalar @dts;
+                my $off_count = $quantity_of_dow{$dow} - $on_count;
+
+                if ( not $off_count ) {
+                    push $ons_and_offs_of{$service_id}{all_on_days}->@*, $dow;
+                    push $ons_and_offs_of{$service_id}{all_or_mostly_on_days}
+                      ->@*, $dow;
+                }
+                elsif ( $off_count < $on_count ) {
+                    push $ons_and_offs_of{$service_id}{all_or_mostly_on_days}
+                      ->@*, $dow;
+
+                    my $except_set
+                      = $recurrence_set_of{$dow}->clone->complement(@dts);
+
+                    $ons_and_offs_of{$service_id}{except_days}{$dow}
+                      = [ $except_set->as_list ];
+                }
+                else {
+                    push $ons_and_offs_of{$service_id}{individual_dates}->@*,
+                      @dts;
+                }
+
+            } ## tidy end: foreach my $dow ( sort keys...)
+
+        } ## tidy end: foreach my $service_id ( keys...)
+
+        return;    # data in %ons_and_offs_of
+
+    } ## tidy end: func make_ons_and_offs
+
+    func text_notes {
+
+        my %highest_note_of;
+
+        foreach my $service_id ( keys %ons_and_offs_of ) {
+
+            \my @all_on_days = $ons_and_offs_of{$service_id}{all_on_days} // [];
+            \my @all_or_mostly_on_days
+              = $ons_and_offs_of{$service_id}{all_or_mostly_on_days} // [];
+            \my %except_days = $ons_and_offs_of{$service_id}{except_days} // {};
+            \my @individual_dates
+              = $ons_and_offs_of{$service_id}{individual_dates} // [];
+
+            my $note_text = "Operates ";
+            my $noteletter;
+
+            if (@all_or_mostly_on_days) {
+
+                if ( @all_or_mostly_on_days < 4 ) {
+                    $noteletter = Actium::joinempty( map { $NOTELETTER_DOW[$_] }
+                          @all_or_mostly_on_days );
+                }
+                elsif (
+                    @all_or_mostly_on_days == 4
+                    and Actium::all { 1 <= $_ and $_ <= 5 }
+                    @all_or_mostly_on_days
+                  )
+                {
+                    my $dow = Actium::first {
+                        not Actium::in( $_, @all_or_mostly_on_days )
+                    }
+                    1 .. 5;
+                    $noteletter = 'X' . $NOTELETTER_DOW[$dow];
+                }
+                elsif ( "@all_or_mostly_on_days" eq '1 2 3 4 5' ) {
+                    $noteletter = 'WD';
+                }
+                else {
+                    $noteletter = 'B';
+                }
+
+                if ( @all_or_mostly_on_days == @all_on_days ) {
+                    $note_text .= 'every '
+                      . Actium::joinseries( @NOTE_DOW[@all_on_days] );
+                }
+                else {
+                    $note_text .= 'every ';
+                    my @everies;
+                    foreach my $dow (@all_or_mostly_on_days) {
+                        my $every = $NOTE_DOW[$dow];
+                        if ( exists $except_days{$dow} ) {
+                            my @except_dates = map { $_->format_cldr("MMM. d") }
+                              $except_days{$dow}->@*;
+                            $every
+                              .= ' except ' . Actium::joinseries(@except_dates);
+                        }
+                        push @everies, $every;
+                    }
+                    $note_text .= joinseries_semicolon_with( 'and', @everies );
+
+                }
+
+                if (@individual_dates) {
+                    $note_text .= '; and also on ';
+                }
+
+            } ## tidy end: if (@all_or_mostly_on_days)
+
+            if (@individual_dates) {
+
+                if ( not @all_or_mostly_on_days ) {
+                    $note_text .= "only on ";
+                    $noteletter = 'A';
+                }
+
+                my @individual_date_text
+                  = map { $_->format_cldr("EEE., MMM. d") }
+                  sort @individual_dates;
+
+                $note_text
+                  .= joinseries_semicolon_with( 'and', @individual_date_text );
+
+            }
+            $note_text = $note_text . '.';
+
+            if ( exists $noteletter_of_note{$note_text} ) {
+                $noteletter = $noteletter_of_note{$note_text};
+            }
+            else {
+                if ( exists $highest_note_of{$noteletter} ) {
+                    $highest_note_of{$noteletter}++;
+                    $noteletter .= '-' . $highest_note_of{$noteletter};
+                    $noteletter_of_note{$note_text} = $noteletter;
+                }
+                else {
+                    $highest_note_of{$noteletter} = '1';
+                    $noteletter .= '-1';
+                    $noteletter_of_note{$note_text} = $noteletter;
+                }
+                $note_of_serviceid{$service_id} = $note_text;
+            }
+
+        } ## tidy end: foreach my $service_id ( keys...)
+
+    } ## tidy end: func read_calendar0
+
+    func read_tripids ($signup) {
+
+        ( \my %trip_column, \my @trips )
+          = array_read_gtfs( signup => $signup, file => 'trips' );
+
+        foreach \my @trip(@trips) {
+
+            my ( $trip_id, $service_id )
+              = @trip[ @trip_column{qw/trip_id service_id/} ];
+
+            if ( exists $note_of_serviceid{$service_id} ) {
+
+                my $note       = $note_of_serviceid{$service_id};
+                my $noteletter = $noteletter_of_note{$note};
+
+                #say join(" => " , $trip_id, $service_id , $noteletter, $note);
+                $note_of_trip{$trip_id}       = $note;
+                $noteletter_of_trip{$trip_id} = $noteletter;
+            }
+        }
+
+        return;
+
+    } ## tidy end: func read_calendar1
+
+}    # scoping
+
+func joinseries_semicolon_with (Str $and!, Str @things!) {
+    return $things[0] if 1 == @things;
+    return "$things[0] $and $things[1]" if 2 == @things;
+    my $final = pop @things;
+    return ( join( q{; }, @things ) . "; $and $final" );
 }
 
-func hash_read_gtfs (Actium::O::Folders::Signup :$signup, Str :$file , :$key?) {
-    my $filespec = gtfs_filespec( signup => $signup, file => $file );
-    return csv( in => $filespec, encoding => 'UTF-8', key => $key );
-}
+#######################################
+## DateTime conversion / math routines
 
-func gtfs_filespec (Actium::O::Folders::Signup :$signup, Str :$file ) {
-    my $folder = $signup->subfolder($PHYLUM);
-
-    my $filespec = $folder->make_filespec($file);
-    $filespec .= ".txt" unless $filespec =~ /\.txt\z/;
-
-    if ( !-e $filespec ) {
-        croak "GTFS file $filespec not found";
-    }
-
-    return $filespec;
-}
-
-func dt_from_gtfs_date (Str $date) {
-
+func dt_from_gtfs_date ( Str $date) {
+    state %dt_of;
+    return $dt_of{$date} if exists $dt_of{date};
     my $year  = substr( $date, 0, 4 );
     my $month = substr( $date, 4, 2 );
     my $day   = substr( $date, 6, 2 );
-
-    return Actium::O::DateTime->new( ymd => [ $year, $month, $day ] );
+    my $dt = Actium::O::DateTime::->new( ymd => [ $year, $month, $day ] );
+    return $dt_of{$date} = $dt;
 }
 
-{
-    my $one_day = DateTime::Duration->new( days => 1 );
-
-    func add_one_day ( Actium::O::DateTime $dt ) {
-        $dt->add_duration($one_day);
-        return;
-    }
-
-}
-
-__END__
-
-const my %num_of_month =>
-  qw( Jan 101 Feb 102 Mar 103 Apr 104 May 105 Jun 106 Jul 107
-  Aug 8 Sep 9 Oct 10 Nov 11 Dec 12 Sma 0);
-
-# Smarch is an imaginary month used for placeholders when kludges are necessary
-
-const my $TBA_NOTE     => 'Operates only on days to be announced.';
-const my $TBA_NOTECODE => 'TBA';
-
-# sorts in school year order
-
-const my %day_sub => qw(
-  Mon Monday
-  Tue Tuesday
-  Tues Tuesday
-  Wed Wednesday
-  Wednes Wednesday
-  Thu Thursday
-  Thurs Thursday
-  Fri Friday
-);
-
-const my %num_of_day => qw(
-  Monday 1 Tuesday 2 Wednesday 3 Thursday 4 Friday 5
-);
-
-my %key_of_day;
-# global cache
-
-sub read_supp_calendars {
-    my $calendar_folder = shift;
-
-    my @files = $calendar_folder->glob_files('*.xlsx');
-
-    @files = grep { not( Actium::filename($_) =~ m/\A~/ ) } @files;
-    # skip temporary files beginning with ~
-
-    my ( %next_code_of_days, %code_of_note, %calendar_of_block );
-
-    $code_of_note{$TBA_NOTE} = $TBA_NOTECODE;
-
-    foreach my $file (@files) {
-
-        my $sheet = _open_xlsx($file);
-
-        my @dates = _nextline($sheet);
-        @dates = @dates[ 6 .. $#dates ];
-
-        foreach (@dates) {
-            next unless /-/;
-            my ( $day, $month ) = split(/-/);
-
-            $_ = "$month. $day";
-
-            s/May\./May/;
-            s/Jul\./July/;
-            s/Jun\./June/;
-            s/Mar\./March/;
-            s/Apr\./April/;
-            s/Sep\./Sept./;
-
-            if ( not defined $key_of_day{$_} ) {
-                my $monthnum = $num_of_month{$month};
-                $key_of_day{$_} = $monthnum * 100 + $day;
-            }
-
-        }
-
-        my @wkdays = _nextline($sheet);
-        @wkdays = @wkdays[ 6 .. $#wkdays ];
-
-        @wkdays = map { $day_sub{$_} } @wkdays;
-
-        my @uniq_wkdays = Actium::uniq @wkdays;
-
-        _nextline($sheet);    #  ignore counts of how many are on
-
-      LINE:
-        while ( my @refs = _nextline( $sheet, 1 ) ) {
-
-            my @values = $refs[0]->@*;
-            my @cells  = $refs[1]->@*;
-
-            my ( $block, $run, $school, $pullout, $pullin, $dist, @on_or_off )
-              = @values;
-
-            next unless $block;
-
-            my $pullout_cell    = $cells[3];
-            my $pullout_time    = Actium::Time->from_excel($pullout_cell);
-            my $pullout_timenum = $pullout_time->timenum;
-
-            my $tripkey = "$block/$pullout_timenum";
-
-            my ( %dates_off_of_wkdy, %dates_on_of_wkdy );
-
-            my $has_an_on;
-
-            for my $i ( 0 .. $#on_or_off ) {
-
-                my $date = $dates[$i];
-                my $wkdy = $wkdays[$i];
-
-                if ( $on_or_off[$i] =~ /on/i ) {
-                    push $dates_on_of_wkdy{$wkdy}->@*, $date;
-                    $has_an_on = 1;
-                }
-                else {    # off
-                    push $dates_off_of_wkdy{$wkdy}->@*, $date;
-                }
-            }
-
-            if ( not $has_an_on ) {
-
-                $calendar_of_block{$tripkey} = [ $TBA_NOTECODE, $TBA_NOTE ];
-                next LINE;
-
-            }
-
-            my ( @on, @also, @ondays );
-            my $pure_days = 1;
-
-            foreach my $wkdy (@uniq_wkdays) {
-                next unless defined $dates_on_of_wkdy{$wkdy};
-                my $on_count = scalar( $dates_on_of_wkdy{$wkdy}->@* );
-
-                next if not $on_count;
-
-                my $off_count
-                  = defined $dates_off_of_wkdy{$wkdy}
-                  ? ( scalar $dates_off_of_wkdy{$wkdy}->@* )
-                  : 0;
-
-                if ( not $off_count ) {
-                    push @on,     $wkdy;
-                    push @ondays, $num_of_day{$wkdy};
-                }
-                #                elsif ( $off_count < ( 1 / 3 * $on_count ) ) {
-                elsif ( $off_count < $on_count ) {
-                    $pure_days = 0;
-                    push @on,
-                        $wkdy
-                      . ' except '
-                      . _displaydates( $dates_off_of_wkdy{$wkdy}->@* );
-                    push @ondays, $num_of_day{$wkdy};
-                }
-                else {
-                    $pure_days = 0;
-                    push @also, $dates_on_of_wkdy{$wkdy}->@*;
-                }
-
-            } ## tidy end: foreach my $wkdy (@uniq_wkdays)
-
-            my $note = '';
-
-            if (@on) {
-                my @every_on = map {"every $_"} @on;
-                $note .= 'Operates ' . Actium::joinseries(@every_on);
-            }
-            if (@also) {
-                if (@on) {
-                    $note .= ', and also on ';
-                }
-                else {
-                    $note .= 'Operates only ';
-                }
-                $note .= _displaydates(@also) . ".";
-            }
-            else {
-                $note .= ".";
-            }
-            if ($pure_days) {
-
-                my $day = join( '', map { $num_of_day{$_} } sort @on );
-                $calendar_of_block{$tripkey} = $day;
-            }
-            else {
-
-                if ( $note eq 'Operates only Sma. 1.' ) {
-                    $calendar_of_block{$tripkey} = [
-                        'SR',
-                        'Operates only when schools are on regular schedules.'
-                    ];
-                }
-                elsif ( $note eq 'Operates only Sma. 2.' ) {
-                    $calendar_of_block{$tripkey} = [
-                        'SM',
-                        'Operates only when schools '
-                          . 'are on minimum day schedules.'
-                    ];
-                }
-                else {
-                    if ( not exists $code_of_note{$note} ) {
-
-                        my $ondays;
-
-                        if (@ondays) {
-                            @ondays = sort { $a <=> $b } @ondays;
-                            $ondays = join( '', @ondays );
-                            $ondays =~ s/1/M/;
-                            $ondays =~ s/2/T/;
-                            $ondays =~ s/3/W/;
-                            $ondays =~ s/4/Th/;
-                            $ondays =~ s/5/F/;
-
-                            $ondays = 'A' if length($ondays) > 2;
-                        }
-                        else {
-                            $ondays = 'A';
-                        }
-
-                        $next_code_of_days{$ondays} //= 1;
-
-                        $code_of_note{$note} = "$ondays-";
-                        $code_of_note{$note} .= $next_code_of_days{$ondays};
-
-                        $next_code_of_days{$ondays}++;
-
-                    } ## tidy end: if ( not exists $code_of_note...)
-
-                    $calendar_of_block{$tripkey}
-                      = [ $code_of_note{$note}, $note ];
-
-                } ## tidy end: else [ if ( $note eq 'Operates only Sma. 1.')]
-
-            } ## tidy end: else [ if ($pure_days) ]
-
-        } ## tidy end: LINE: while ( my @refs = _nextline...)
-
-    } ## tidy end: foreach my $file (@files)
-
-    my $fh = $calendar_folder->open_write('sch_cal.txt');
-
-    foreach my $tripkey ( sort keys %calendar_of_block ) {
-        my $cal = $calendar_of_block{$tripkey};
-        say $fh Actium::jointab( $tripkey,
-            Actium::is_arrayref($cal) ? @$cal : $cal );
-    }
-
-    $fh->close;
-    return ( \%calendar_of_block );
-
-} ## tidy end: sub read_supp_calendars
-
-##### END OF MAIN ####
-
-{
-
-    my ( %currentrow, %minrow, %maxrow, %mincol, %maxcol );
-
-    sub _open_xlsx {
-        my $xlsx_filespec = shift;
-
-        require Spreadsheet::ParseXLSX;    ### DEP ###
-
-        my $parser   = Spreadsheet::ParseXLSX->new;
-        my $workbook = $parser->parse($xlsx_filespec);
-
-        if ( !defined $workbook ) {
-            croak $parser->error();
-        }
-
-        my $sheet_requested = 0;
-        my $sheet           = $workbook->worksheet($sheet_requested);
-
-        if ( !defined $sheet ) {
-            croak "Sheet $sheet_requested not found in $xlsx_filespec in "
-              . __PACKAGE__
-              . '->new_from_xlsx';
-        }
-
-        my $sheet_key = Actium::refaddr($sheet);
-
-        ( $minrow{$sheet_key}, $maxrow{$sheet_key} ) = $sheet->row_range();
-        ( $mincol{$sheet_key}, $maxcol{$sheet_key} ) = $sheet->col_range();
-
-        $currentrow{$sheet_key} = $minrow{$sheet_key};
-
-        return $sheet;
-    } ## tidy end: sub _open_xlsx
-
-    sub _nextline {
-        my $sheet       = shift;
-        my $wants_cells = shift;
-        my $sheet_key   = Actium::refaddr($sheet);
-
-        if ( not defined wantarray ) {
-            $currentrow{$sheet_key}++
-              unless $currentrow{$sheet_key} == $maxrow{$sheet_key};
-            return;
-        }
-
-        return if $currentrow{$sheet_key} >= $maxrow{$sheet_key};
-
-        my @cells
-          = map { $sheet->get_cell( $currentrow{$sheet_key}, $_ ) }
-          ( $mincol{$sheet_key} .. $maxcol{$sheet_key} );
-
-        my @values = map { defined($_) ? $_->value : $EMPTY } @cells;
-
-        @values = _cleanvalues(@values);
-        return if ( Actium::none {$_} @values );
-
-        pop @values while $values[-1] eq $EMPTY;
-
-        $currentrow{$sheet_key}++;
-
-        return @values unless $wants_cells;
-        return \@values, \@cells;
-
-    } ## tidy end: sub _nextline
-
-}
-
-sub _displaydates {
-
-    my @dates = sort { $key_of_day{$a} <=> $key_of_day{$b} } @_;
-    return Actium::joinseries(@dates);
-
-}
-
-sub _cleanvalues {
-    my @values = @_;
-    foreach (@values) {
-        s/\A"//;
-        s/"\z//;
-        s/\A\s+//;
-        s/\s+\z//;
-        s/\.//;       # remove final periods
-        s/\s+/ /g;    # convert all internal whitespace chars to a single space
-    }
-    return @values;
+func following_day ( Actium::O::DateTime $dt) {
+    state $one_day = DateTime::Duration->new( days => 1 );
+    my $new_dt = Actium::O::DateTime::->from_object( object => $dt );
+    $new_dt->add_duration($one_day);
+    return $new_dt;
 }
 
 1;
