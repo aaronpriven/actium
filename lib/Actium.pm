@@ -15,6 +15,8 @@ use Module::Runtime('require_module');    ### DEP ###
 use Import::Into;                         ### DEP ###
 use Kavorka ( fun => { -as => 'func' } ); ### DEP ###
 
+use experimental ('refaliasing');
+
 # The preamble to Actium perl modules.
 # Imports things that are common to (many) modules.
 # inspired by http://www.perladvent.org/2012/2012-12-16.html
@@ -44,7 +46,7 @@ This documentation refers to version 0.014
 Actium.pm provides the boilerplate code that should be common to all
 Actium modules. It contains a number of utility routines, exports a
 number of constants, and further imports symbols from a number of other
- modules into each namespace.
+modules into each namespace.
 
 =cut
 
@@ -480,44 +482,115 @@ sub jointab {
     return join( "\t", map { $_ // q[] } @_ );
 }
 
-=item joinseries_with (I<conjunction> , I<item>, I<item>, ...)
+=item joinseries ( [ I<hashref>, ] I<list>)
 
 This routine is designed to display a list as it should appear in
-English.
+English. (All items passed to joinseries must be defined, scalar values.)
 
-   Sally and Carlos
-   Fred, Sally and Carlos
-   Mei, Fred, Sally and Carlos
+ joinseries(qw/Sally Carlos/);
+ # 'Sally and Carlos'
+ joinseries(qw/Fred Sally Carlos/);
+ # 'Fred, Sally and Carlos'
+ joinseries(qw/Mei Fred Sally Carlos/);
+ # 'Mei, Fred, Sally and Carlos'
+   
+If the first is a hash reference, the keys and values are treated as options.
+Valid options are:
 
-The first argument is the conjunction, used to connect the penultimate
-and last items in the list. The remaining arguments are the members of
-the list.
+=over
+
+=item conjunction
+
+The word used to connect the penultimate and last items in the list.
+If passed 'undef' or if not specified, uses "and".
+Spaces are always placed on either side of the conjunction.
+
+ joinseries( { conjunction => 'or' } , qw/Fred Sally Carlos/);
+ # 'Fred, Sally or Carlos'
+ 
+=item oxford
+
+A boolean value; if true, the separator (see below) is placed after the
+penultimate item in the list. If passed 'undef' or not specified, it
+will be treated as though a false value had been supplied, unless a
+custom separator is supplied, in which case it will be treated as though
+a true value had been supplied. 
+
+ joinseries( { oxford => '1' } , qw/Fred Sally Carlos/);
+ # 'Fred, Sally, and Carlos'
+ 
+=item separator
+
+The punctuation used to separate the appropriate items.  If not
+specified, uses a comma.  A trailing space is always added to the
+separator.
+
+Note that specifying this item changes the default value of
+"oxford," above.
+
+ joinseries( { separator => ';' } , qw/Fred Sally Carlos/);
+ # 'Fred; Sally; and Carlos'
+ 
+=cut
+
+sub joinseries {
+    my %options;
+    if ( is_hashref( $_[0] ) ) {
+        %options = shift->%*;
+    }
+
+    state $subname = __PACKAGE__ . '::joinseries';
+
+    my ( $separator, $oxford, $conjunction );
+
+    $separator = delete $options{separator};
+    if ( defined $separator ) {
+        $oxford = delete $options{oxford} // 1;
+        $separator .= $SPACE;
+    }
+    else {
+        $oxford = delete $options{oxford} // 0;
+        $separator = q[, ];
+    }
+
+    $conjunction = delete $options{conjunction} // 'and';
+
+    croak 'Invalid options ('
+      . joinseries( keys %options )
+      . ") passed to $subname"
+      if %options;
+
+    croak "No items passed to $subname" unless @_;
+    croak "Reference passed to $subname"
+      unless List::Util::none { is_ref($_) } @_;
+    croak "Undefined value passed to $subname"
+      unless List::Util::all { defined($_) } @_;
+
+    return $_[0] if 1 == @_;
+    return "$_[0] $conjunction $_[1]" if 2 == @_;
+
+    my $final = pop;
+    if ($oxford) {
+        return ( join( $separator, @_ ) . " $conjunction $final" );
+    }
+    else {
+        return ( join( $separator, @_, "$conjunction $final" ) );
+    }
+
+} ## tidy end: sub joinseries
+
+=item joinseries_with (I<conjunction> , I<item>, I<item>, ...)
+
+B<Deprecated.> Like C<joinseries>, but instead of an optional hashref,
+the first argument is always the conjunction.
 
    joinseries_with('or' , qw(Sasha Aisha Raj)); 
    # 'Sasha, Aisha or Raj'
 
-The routine intentionally follows Associated Press style and omits the
-serial comma.
-
 =cut
 
-func joinseries_with (Str $and!, Str @things!) {
-    return $things[0] if 1 == @things;
-    return "$things[0] $and $things[1]" if 2 == @things;
-    my $final = pop @things;
-    return ( join( q{, }, @things ) . " $and $final" );
-}
-
-=item joinseries (I<list>)
-
-The same as C< joinseries_with('and', ...)>;
-
-=cut
-
-sub joinseries {
-    croak 'No arguments passed to ' . __PACKAGE__ . '::joinseries'
-      unless @_;
-    return joinseries_with( 'and', @_ );
+func joinseries_with (Str $conjunction!, Str @things!) {
+    return joinseries( { conjunction => $conjunction }, @things );
 }
 
 =back
