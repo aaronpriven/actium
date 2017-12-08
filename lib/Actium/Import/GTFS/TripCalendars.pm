@@ -522,10 +522,18 @@ func read_tripids ($signup) {
 
     foreach \my @trip(@trips) {
 
-        my ( $trip_id, $service_id )
-          = @trip[ @trip_column{qw/trip_id service_id/} ];
+        my ( $trip_id, $service_id, $route_id )
+          = @trip[ @trip_column{qw/trip_id service_id route_id/} ];
 
         if ( exists $note_of_serviceid{$service_id} ) {
+
+            my ( $route, $signup_code ) = split( /-/, $route_id );
+
+            if ( $service_id =~ '1712WR-D4-Weekday-13'
+                and ( not $route =~ /\A6[0-9][0-9]\z/ ) )
+            {
+                next;
+            }
 
             my $note       = $note_of_serviceid{$service_id};
             my $noteletter = $noteletter_of_note{$note};
@@ -533,7 +541,7 @@ func read_tripids ($signup) {
             #say join(" => " , $trip_id, $service_id , $noteletter, $note);
             $note_of_trip{$trip_id} = "$noteletter $note";
         }
-    }
+    } ## tidy end: foreach \my @trip(@trips)
 
     return;
 
