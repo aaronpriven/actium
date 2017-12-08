@@ -19,7 +19,8 @@ sub BUILD {
         my $class = blessed $self;
 
         croak 'Neither placetimes nor stoptimes specified in constructing '
-          . "$class object: "
+          . "$class object (trip "
+          . $self->internal_num . ") : "
 
     }
 
