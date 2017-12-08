@@ -70,17 +70,40 @@ sub START {
     } ## tidy end: if ($xheazip)
 
     my $sch_cal_folder = $signup->subfolder('sch_cal');
+    my $gtfs_folder    = $signup->subfolder('gtfs');
 
-    my $calendar_of_block_r;
+    my %schcal_xhea_specs;
 
-    if ( $sch_cal_folder->glob_plain_files('*.xlsx') ) {
+    #my $calendar_of_block_r;
+
+    if ( $gtfs_folder->glob_plain_files('*.txt') ) {
+
+        my $suppcry = cry("Importing GTFS calendars");
+        require Actium::Import::GTFS::TripCalendars;
+
+        my $note_of_trip_r
+          = Actium::Import::GTFS::TripCalendars::calendar_notes_of_trips(
+            $signup);
+
+        %schcal_xhea_specs = ( note_of_trip => $note_of_trip_r );
+
+        my $dumpfh = $signup->open_write('note_of_trip.dump');
+        say $dumpfh Actium::dumpstr($note_of_trip_r);
+        close $dumpfh;
+
+        $suppcry->done;
+
+    }
+    elsif ( $sch_cal_folder->glob_plain_files('*.xlsx') ) {
 
         my $suppcry = cry("Importing supplementary calendars");
         require Actium::Import::Xhea::SuppCalendar;
 
-        $calendar_of_block_r
+        my $calendar_of_block_r
           = Actium::Import::Xhea::SuppCalendar::read_supp_calendars(
             $sch_cal_folder);
+
+        %schcal_xhea_specs = ( sch_cal_data => $calendar_of_block_r );
 
         $suppcry->done;
     }
@@ -95,9 +118,8 @@ sub START {
             signup      => $signup,
             xhea_folder => $xhea_folder,
             tab_folder  => $tab_folder,
+            %schcal_xhea_specs,
         );
-        $xhea_import_specs{sch_cal_data} = $calendar_of_block_r
-          if $calendar_of_block_r;
 
         Actium::Import::Xhea::xhea_import(%xhea_import_specs);
 
