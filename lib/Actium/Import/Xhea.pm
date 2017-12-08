@@ -31,18 +31,38 @@ sub xhea_import {
             xhea_folder  => 1,
             tab_folder   => 1,
             sch_cal_data => 0,
+            note_of_trip => 0,
         }
     );
 
-    my $signup       = $p{signup};
-    my $xhea_folder  = $p{xhea_folder};
-    my $tab_folder   = $p{tab_folder};
-    my $sch_cal_data = $p{sch_cal_data};
+    my $signup         = $p{signup};
+    my $xhea_folder    = $p{xhea_folder};
+    my $tab_folder     = $p{tab_folder};
+    my $sch_cal_data   = $p{sch_cal_data};
+    my $note_of_trip_r = $p{note_of_trip};
 
     my ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r )
       = Actium::Import::Xhea::load_adjusted($xhea_folder);
 
-    if ($sch_cal_data) {
+    if ($note_of_trip_r) {
+        my $adjusted_trips_r = adjust_trip_note(
+            note_of_trip => $note_of_trip_r,
+            fieldnames   => $fieldnames_of_r,
+            fields       => $fields_of_r,
+            values       => $adjusted_values_of_r,
+        );
+
+        foreach (qw/trip/) {
+            my $orig = $_ . '_orig';
+            $fieldnames_of_r->{$orig}      = $fieldnames_of_r->{$_};
+            $fields_of_r->{$orig}          = $fields_of_r->{$_};
+            $adjusted_values_of_r->{$orig} = $adjusted_values_of_r->{$_};
+        }
+
+        $adjusted_values_of_r->{trip} = $adjusted_trips_r;
+
+    }
+    elsif ($sch_cal_data) {
 
         my ( $adjusted_blocks_r, $adjusted_trips_r ) = adjust_sch_cal(
             sch_cal_data => $sch_cal_data,
@@ -61,7 +81,7 @@ sub xhea_import {
         $adjusted_values_of_r->{block} = $adjusted_blocks_r;
         $adjusted_values_of_r->{trip}  = $adjusted_trips_r;
 
-    } ## tidy end: if ($sch_cal_data)
+    } ## tidy end: elsif ($sch_cal_data)
 
     my $tab_strings_r
       = Actium::Import::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
@@ -259,6 +279,61 @@ sub tab_strings {
 
     } ## tidy end: sub adjust_sch_cal
 }
+
+sub adjust_trip_note {
+
+    my $cry = cry('Adding GTFS trip calendar notes to XHEA data');
+
+    my %p = u::validate(
+        @_,
+        {   fields       => 1,
+            values       => 1,
+            fieldnames   => 1,
+            note_of_trip => 1,
+        }
+    );
+    \my %fields     = $p{fields};
+    \my %fieldnames = $p{fieldnames};
+    \my %values     = $p{values};
+    my %note_of_trip = $p{note_of_trip}->%*;
+    # copy so that deletion doesn't affect anything else using that
+
+    #### Trip ###
+
+    my @trip_headers = @{ $fieldnames{trip} };
+    my @trip_records = @{ $values{trip} };
+    my @returned_trip_records;
+
+    foreach \my @trip_record(@trip_records) {
+
+        my %field;
+        @field{@trip_headers} = @trip_record;
+
+        my $tripnum = $field{trp_int_number};
+
+        if ( not exists $note_of_trip{$tripnum} ) {
+            push @returned_trip_records, [@trip_record];
+        }
+        else {
+            $field{trp_event_and_status} = $note_of_trip{$tripnum};
+
+            my @new_record = @field{@trip_headers};
+            push @returned_trip_records, \@new_record;
+
+            delete $note_of_trip{$tripnum};
+        }
+
+    } ## tidy end: foreach \my @trip_record(@trip_records)
+
+    foreach my $tripnum ( sort keys %note_of_trip ) {
+        $cry->text("Didn't find $tripnum in schedules");
+    }
+
+    $cry->done;
+
+    return \@returned_trip_records;
+
+} ## tidy end: sub adjust_trip_note
 
 sub load_adjusted {
 
