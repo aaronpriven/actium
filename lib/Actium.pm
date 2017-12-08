@@ -414,6 +414,7 @@ sub env () {
 
 sub _set_env {
     $env = shift;
+    return;
 }
 
 =over
@@ -528,8 +529,8 @@ separator.
 Note that specifying this item changes the default value of
 "oxford," above.
 
- joinseries( { separator => ';' } , qw/Fred Sally Carlos/);
- # 'Fred; Sally; and Carlos'
+ joinseries( { separator => ';' } , qw/Sasha Aisha Raj/);
+ # 'Sasha; Aisha; and Raj'
  
 =cut
 
@@ -562,7 +563,7 @@ sub joinseries {
 
     croak "No items passed to $subname" unless @_;
     croak "Reference passed to $subname"
-      unless List::Util::none { is_ref($_) } @_;
+      if List::Util::any { is_ref($_) } @_;
     croak "Undefined value passed to $subname"
       unless List::Util::all { defined($_) } @_;
 
