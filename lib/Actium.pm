@@ -426,7 +426,7 @@ program operates. (This is not to be confused with the system
 environment variables represented by L<%ENV|perlvar/%ENV>, which is
 only one part of the operating environment.)
 
-At the moment this is always going to be an Actium::O::Cmd object,
+At the moment this is always going to be an Actium::CLI object,
 although at some point if other operating environments are created
 (Web, GUI, etc.)  this may change.
 

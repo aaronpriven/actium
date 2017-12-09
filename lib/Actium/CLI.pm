@@ -1,6 +1,6 @@
-package Actium::O::Cmd 0.012;
+package Actium::CLI 0.012;
 
-# Amalgamation of Actium::Cmd, Actium::O::CmdEnv, and the various
+# Amalgamation of Actium::Cmd, Actium::CLIEnv, and the various
 # Actium::Cmd::Config::* modules
 
 use Actium ('class');
@@ -10,7 +10,7 @@ use Term::ReadKey;                          ### DEP ###
 
 use Actium::Crier('default_crier');
 use Actium::Storage::Ini;
-use Actium::O::Cmd::Option;
+use Actium::CLI::Option;
 use Actium::O::Folder;
 
 use Module::Runtime ('require_module');
@@ -501,7 +501,7 @@ sub _subcommand_names {
 
 has _option_obj_r => (
     traits  => ['Hash'],
-    isa     => 'HashRef[Actium::O::Cmd::Option]',
+    isa     => 'HashRef[Actium::CLI::Option]',
     is      => 'bare',
     lazy    => 1,
     builder => '_build_option_objs',
@@ -529,7 +529,7 @@ sub _build_option_objs {
         if ( Actium::is_hashref($optionspec) ) {
             $optionspec->{cmdenv} = $self;
             $optionspec->{order}  = $count++;
-            push @opt_objs, Actium::O::Cmd::Option->new($optionspec);
+            push @opt_objs, Actium::CLI::Option->new($optionspec);
         }
         elsif ( Actium::is_arrayref($optionspec) ) {
 
@@ -551,7 +551,7 @@ sub _build_option_objs {
                 $option_init{$key} = $callbackorfallback;
             }
 
-            push @opt_objs, Actium::O::Cmd::Option->new( \%option_init );
+            push @opt_objs, Actium::CLI::Option->new( \%option_init );
 
         } ## tidy end: elsif ( Actium::is_arrayref...)
         else {
