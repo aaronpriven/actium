@@ -1,4 +1,4 @@
-package Actium::O::Cmd::Option 0.011;
+package Actium::CLI::Option 0.011;
 
 use Actium ('class');
 
@@ -18,7 +18,7 @@ use Actium ('class');
 
 around BUILDARGS ( 
    $orig, $class:
-   Actium::O::Cmd :$cmdenv!,
+   Actium::CLI :$cmdenv!,
    Str :$envvar,
    Str :$config_section = '_',
    Str :$config_key,

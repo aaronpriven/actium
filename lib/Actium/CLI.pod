@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Actium::O::Cmd - Command line interface routines for Actium
+Actium::CLI - Command line interface routines for Actium
 
 =head1 VERSION
 
@@ -12,9 +12,9 @@ This documentation refers to version 0.011
 
 mycommand:
 
- use Actium::O::Cmd;
+ use Actium::CLI;
 
- Actium::O::Cmd->new(
+ Actium::CLI->new(
    commandpath => $0,
    system_name => 'this_system',
    subcommands => {
@@ -56,7 +56,7 @@ Then, at a shell:
 
 =head1 DESCRIPTION
 
-Actium::O::Cmd is an object representing everything associated with the
+Actium::CLI is an object representing everything associated with the
 command-line interface for the Actium system.
 
 The idea is that this object encapulates everything such as terminal
@@ -70,17 +70,17 @@ presented (Actium::O::GUI, Actium::O::Web, or whatever), although none
 exist at the moment.  The basic idea comes from L<Mark Jason Dominus's
 article on the Moonpig billing
 system|http://blog.plover.com/prog/Moonpig.html>, although that
-encompasses much more than Actium::O::Cmd does.  Typically this object
+encompasses much more than Actium::CLI does.  Typically this object
 is called C<$env> in modules (as in Moonpig), since there could in
 theory be more than one kind of environment.
 
-Actium::O::Cmd is a Moose object. This may surprise people who are used
+Actium::CLI is a Moose object. This may surprise people who are used
 to thinking of Moose as slow and inappropriate for command-line
 programs. Speed was not a significant factor in the design.
 
-=head2 Basic structure of Actium::O::Cmd
+=head2 Basic structure of Actium::CLI
 
-Actium::O::Cmd is designed to create commands with subcommands and
+Actium::CLI is designed to create commands with subcommands and
 which handle command-line options and command-line arguments.
 
 It works this way:
@@ -89,12 +89,12 @@ It works this way:
 
 =item *
 
-The executable script is run, and passes Actium::O::Cmd information on
+The executable script is run, and passes Actium::CLI information on
 valid subcommands and other information about the system.
 
 =item *
 
-Actium::O::Cmd identifies which command is selected, if any. It
+Actium::CLI identifies which command is selected, if any. It
 displays usage information for the script if requested or if there's an
 error.
 
@@ -113,8 +113,8 @@ to display its help information.
 
 =head1 CONSTRUCTION
 
-The Actium::O::Cmd object is constructed using a call to
-Actium::O::Cmd->new() from the main script.
+The Actium::CLI object is constructed using a call to
+Actium::CLI->new() from the main script.
 
 The "new" call takes the following named parameters, which can be
 passed as a hash reference or as a plain hash (in other words, a simple
@@ -154,14 +154,14 @@ So, for example, if passed
     sam_spade => 'Sam::Spade',
  },
 
-Then Actium::O::Cmd would use the module C<Actium::Cmd::Frederick> if
+Then Actium::CLI would use the module C<Actium::Cmd::Frederick> if
 either 'fred' or 'freddy' were supplied, and use the module
 C<Actium::Cmd::Sam::Spade> if 'sam_spade' were supplied.
 
 Note that the value of the C<command> attribute will always be the
 non-alias name, even if the alias is specified.
 
-The value 'help' is used by Actium::O::Cmd itself so no subcommand can
+The value 'help' is used by Actium::CLI itself so no subcommand can
 be called 'help'.
 
 =head2 Optional parameters
@@ -172,7 +172,7 @@ This should be a hash reference.  If not specified, it will be set to a
 I<copy> of the system environment (perl's C<%ENV>). As such, it should
 be used only for reading the environment and not for passing data to
 child processes.  (Functions respecting C<sysenv> could be added to
-Actium::O::Cmd.)
+Actium::CLI.)
 
 =head3 argv
 
@@ -196,7 +196,7 @@ L<the FindBin module|FindBin>.
 =head1 SUBCOMMAND MODULES
 
 Subcommand modules will be found in the "Actium::Cmd" namespace.
-Actium::O::Cmd will load those modules and invoke them if selected by
+Actium::CLI will load those modules and invoke them if selected by
 the user.
 
 Subcommand modules must support a START() method and can optionally
@@ -204,7 +204,7 @@ support HELP() and OPTIONS() methods.  Methods are invoked using method
 lookup (so could theoretically be inherited from parents or composed
 from roles).
 
-All these methods are passed the Actium::O::Cmd object itself as the
+All these methods are passed the Actium::CLI object itself as the
 only argument.
 
 =head3 START()
@@ -222,7 +222,7 @@ it should be invoked.
 
 =head3 OPTIONS()
 
-The OPTIONS() method is how modules request that Actium::O::Cmd do
+The OPTIONS() method is how modules request that Actium::CLI do
 options handling. The method should return a list of option
 specifications and/or option packages. See "OPTION PROCESSING" below.
 
@@ -289,7 +289,7 @@ subcommand name, and command-line options are removed.
 =head3 original_argv
 
 This returns a list of the command-line arguments as originally
-provided to Actium::O::Cmd. The command name, subcommand name, and
+provided to Actium::CLI. The command name, subcommand name, and
 command-line options are preserved.
 
 =head1 OTHER METHODS
@@ -341,7 +341,7 @@ See "Option Processing" below.
 
 =head1 OPTION PROCESSING
 
-Actium::O::Cmd is designed to handle configuration and options
+Actium::CLI is designed to handle configuration and options
 processing from several sources. The idea is to allow the user to
 specify in many different ways the configuration of the program.
 
@@ -499,9 +499,9 @@ The default package has options regarding terminal display.
 =head3 option: -?
 
 The help, or ? option, is an alternative way of asking for help from
-Actium::O::Cmd. Using it is effectively the same as using the help
+Actium::CLI. Using it is effectively the same as using the help
 subcommand.  (Note that a command shell may use ? as a wildcard
-character and not pass it through to Actium::O::Cmd.)
+character and not pass it through to Actium::CLI.)
 
 =head3 option: -quiet
 
@@ -547,7 +547,7 @@ database name, user name, and password to access the Actium database.
 See Actium::O::Files::ActiumDB for more information.
 
 When this package is requested, it will create a new attribute in
-Actium::O::Cmd called 'actiumdb', which will return the Actium database
+Actium::CLI called 'actiumdb', which will return the Actium database
 object.
 
 =head3 option: -db_user
@@ -583,7 +583,7 @@ The 'signup' package only allows for the specification of the current
 signup, while 'signup_with_old' allows for the specification of the
 current signup as well as a previous signup.
 
-If these packages are chosen, Actium::O::Cmd attributes called "signup"
+If these packages are chosen, Actium::CLI attributes called "signup"
 and "oldsignup" will return the object representing the current signup
 and the object representing the previous signup, respectively.
 
@@ -666,7 +666,7 @@ user for a name.
 =head2 'flickr' package
 
 This package is used for accessing the Flickr api.  If selected, this
-package will add an attribute "flickr_auth" to Actium::O::Cmd, which is
+package will add an attribute "flickr_auth" to Actium::CLI, which is
 an Actium::O::Photos::Flickr::Auth object representing the Flickr
 authorization. See Actium::O::Photos::Flickr::Auth for more
 information.
@@ -691,7 +691,7 @@ will be prompted for the key.
 
 =head1 USER HELP
 
-Actium::O::Cmd also provides some simple user help capabilities. They
+Actium::CLI also provides some simple user help capabilities. They
 can be invoked in two ways: via the "help" subcommand, or the "-help"
 (or "-?") option.
 
@@ -752,7 +752,7 @@ by another module).
 =item Internal error. Invalid option package $optionspec specified...
 
 A module tried to add an option package that does not exist in
-Actium::O::Cmd (probably a spelling error).
+Actium::CLI (probably a spelling error).
 
 =item Internal error. Duplicate option $this_name specified...
 

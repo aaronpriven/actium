@@ -6,11 +6,11 @@ use FindBin qw($Bin);    ### DEP ###
 use lib ("$Bin/../lib"); ### DEP ###
 
 use Actium;
-use Actium::O::Cmd;
+use Actium::CLI;
 
 our $VERSION = 0.012;
 
-Actium::O::Cmd->new(
+Actium::CLI->new(
     commandpath => $0,
     system_name => 'actium',
     subcommands => {
