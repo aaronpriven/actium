@@ -317,7 +317,7 @@ method spew_from_method (
     $cry->done;
     return;
 
-} ## tidy end: method spew_from_method
+} ## tidy end: method existing_folder4
 
 =head3 spew_from_hash
 
@@ -368,7 +368,7 @@ method spew_from_hash ( :\%hash! , :$display_type = 'hash' , :$extension = $EMPT
     $cry->done;
     return;
 
-} ## tidy end: method spew_from_hash
+} ## tidy end: method existing_folder5
 
 1;
 
@@ -383,7 +383,8 @@ __END__
 # methods --
 # folder -- use basename 
 # path - same as stringify
-# display_path - same as stringify
+# display_path - same as stringify in O::Folder.  Need to consider
+# how to implement this for folders in a signup
 # subfolder_path($subpath) - same as ->subfolder($subpath)->stringify
 # new (with must_exist) - use method existing_folder
 # new (without must_exist) - use method ensure_folder
