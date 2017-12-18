@@ -48,29 +48,12 @@ It only adds methods to the L<Path::Class::Dir|Path::Class::Dir> module
 module, and readers should look at Path::Class::Dir for complete
 documentation on it.
 
-=cut
-
-=head1 EXPORTED FUNCTIONS
-
-=head3 folder
-
-This function is optionally exported. It returns a new folder object
-(the smae as Actium::Storage:::Folder->new(...)
-
-=cut
-
-func folder (@components) {
-    return __PACKAGE__->new(@components);
-}
-
-=head1 CLASS METHODS
-
-Many methods provided by this module come from
-L<Path::Class::Dir|Path::Class::Dir> and documentation for them can be
-found therein.
-
 The following comprises documentation for methods in
 Actium::Storage::Folder.
+
+=cut
+
+=head1 CLASS METHODS
 
 =head3 ensure_folder
 
@@ -317,7 +300,7 @@ method spew_from_method (
     $cry->done;
     return;
 
-} ## tidy end: method existing_folder4
+} ## tidy end: method spew_from_method
 
 =head3 spew_from_hash
 
@@ -372,7 +355,7 @@ method spew_from_hash (
     $cry->done;
     return;
 
-} ## tidy end: method existing_folder5
+} ## tidy end: method spew_from_hash
 
 1;
 
@@ -445,8 +428,6 @@ C<existing_subfolder>, but that folder didn't exist.
 
 =item Path::Class
 
-=item Sub::Exporter
-
 =back
 
 The following are loaded only when necessary:
@@ -456,6 +437,10 @@ The following are loaded only when necessary:
 =item Text::Glob
 
 =back
+
+=head1 SEE ALSO
+
+L<< B<folder> from Actium|Actium/folder >>
 
 =head1 AUTHOR
 

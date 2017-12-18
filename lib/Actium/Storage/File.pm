@@ -8,9 +8,6 @@ use Kavorka ('method');
 use Path::Class();
 use parent ('Path::Class::File');
 
-use Sub::Exporter;
-Sub::Exporter::setup_exporter( { exports => [qw(file)] } );
-
 =encoding utf8
 
 =head1 NAME
@@ -42,19 +39,6 @@ this module, and readers should look at Path::Class::File for complete
 documentation on it.
 
 =cut
-
-=head1 EXPORTED FUNCTIONS
-
-=head3 file
-
-This function is optionally exported. It returns a new file object (the
-smae as Actium::Storage:::File->new(...)
-
-=cut
-
-func file (@components) {
-    return __PACKAGE__->new(@components);
-}
 
 =head1 CLASS METHOD
 
@@ -351,7 +335,6 @@ __END__
 
 =head1 DIAGNOSTICS
 
-
 =over 
 
 =item Can't store I<file>: I<error>
@@ -386,8 +369,6 @@ C<openw_utf8> or C<openw_raw>.
 
 =item Path::Class
 
-=item Sub::Exporter
-
 =back
 
 The following are loaded only when necessary:
@@ -401,6 +382,10 @@ The following are loaded only when necessary:
 =item Storable
 
 =back
+
+=head1 SEE ALSO
+
+L<< B<file> from Actium|Actium/file >>
 
 =head1 AUTHOR
 

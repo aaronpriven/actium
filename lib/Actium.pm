@@ -752,7 +752,39 @@ L<C<uniq> from List::Util|List::Util/uniq>.
 
 =back
 
-=head2 STRINGS
+=head2 FILES AND FOLDERS
+
+=head3 Object Creation Functions
+
+=over
+
+=item file
+
+A function that returns a new Actium::Storage::File object.
+The same as C<< Actium::Storage::File->new(...) >>.
+See L<Actium::Storage::File|Actium::Storage::File> for more information.
+
+=cut
+
+func file (@components) {
+    require Actium::Storage::File;
+    return Actium::Storage::File->new(@components);
+}
+
+=item folder
+
+A function that returns a new Actium::Storage::Folder object.
+The same as C<< Actium::Storage::Folder->new(...) >>.
+See L<Actium::Storage::File|Actium::Storage::Folder> for more information.
+
+=back
+
+=cut
+
+func folder (@components) {
+    require Actium::Storage::Folder;
+    return Actium::Storage::Folder->new(@components);
+}
 
 =head3 Filename Functions
 
@@ -818,6 +850,8 @@ sub file_ext {
 }
 
 =back
+
+=head2 STRINGS
 
 =head3 Unicode Column Functions
 
