@@ -346,7 +346,11 @@ after a period.
 
 =cut
 
-method spew_from_hash ( :\%hash! , :$display_type = 'hash' , :$extension = $EMPTY ) {
+method spew_from_hash ( 
+       :\%hash! , 
+       :$display_type = 'hash' , 
+       :$extension = $EMPTY 
+    ) {
 
     $extension =~ s/\A[.]*/./
       if ( $extension ne $EMPTY );
