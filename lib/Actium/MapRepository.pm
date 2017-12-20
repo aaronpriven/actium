@@ -94,7 +94,7 @@ sub import_to_repository {
         my %nameparts = %{ _mapname_pieces($newfilename) };
 
         my $lines      = $nameparts{lines};
-        my $linefolder = $repository->subfolder($lines);
+        my $linefolder = $repository->ensure_subfolder($lines);
 
         my $newfilespec = $linefolder->file($newfilename)->stringify;
 
@@ -658,9 +658,9 @@ This documentation refers to version 0.001
 
  use Actium::MapsRepository;
  
- $repository = Actium::O::Folder->new('/path/to/repository');
- $import = Actium::O::Folder->new('/path/to/maps/for/importing');
- $webfolder = Actium::O::Folder->new('/path/to/maps/for/web');
+ $repository = Actium::Storage::Folder->new('/path/to/repository');
+ $import = Actium::Storage::Folder->new('/path/to/maps/for/importing');
+ $webfolder = Actium::Storage::Folder->new('/path/to/maps/for/web');
  
  my @imported_files = import_to_repository(
     repository   => $repository,
@@ -693,28 +693,8 @@ and Technical Detail."
 =head1 NOTE ON FOLDER OPTIONS
 
 Folders passed to any of Actium::MapRepository's routines must be in the form
-of an object, not just a string file specification.  Generally, this will
-be an Actium::O::Folder object or a subclass. Specifically, the object must
-handle the following methods:
-
-=over
-
-=item * path
-
-=item * children
-
-=item * glob plain files
-
-=item * subfolder
-
-=item * make_filespec
-
-=item * folder
-
-=back
-
-See L<Actium::O::Folder/Actium::O::Folder> for information on what these methods
-should do.
+of an object, not just a string file specification.  This should
+be an L<Actium::Storage::Folder|Actium::Storage::Folder> object or a subclass. 
 
 =head1 SUBROUTINES
 
@@ -927,7 +907,7 @@ Attempting to move or copy returned a system error.
 
 =item * Sub::Exporter
 
-=item * Actium::O::Folder
+=item * Actium::Storage::Folder
 
 =item * Actium::Sorting::Line
 
