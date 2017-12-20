@@ -33,15 +33,13 @@ sub START {
     my $env     = shift;
     my $xheazip = $env->option('xhea');
 
-    my $cry = cry("Making signup and subdirectories");
+    my $signup_cry = cry( "Making new signup " . $env->option('signup') );
 
-    my $signup      = $env->signup;
-    my $hasi_folder = $signup->subfolder('hasi');
-    my $xhea_folder = $signup->subfolder('xhea');
+    my $signup = $env->signup;
 
-    $cry->done;
-
+    my $xhea_folder;
     if ($xheazip) {
+        $xhea_folder = $signup->ensure_subfolder('xhea');
 
         my $xcry = cry("Extracting XHEA files");
 
@@ -57,7 +55,7 @@ sub START {
             my $filename = u::filename( $member->fileName );
 
             $xcry->over( $filename . '...' );
-            my $filespec = $xhea_folder->make_filespec($filename);
+            my $filespec = $xhea_folder->file($filename)->stringify;
 
             $member->extractToFileNamed("$filespec");
 
@@ -68,6 +66,9 @@ sub START {
         $xcry->done;
 
     } ## tidy end: if ($xheazip)
+    else {
+        $xhea_folder = $signup->existing_subfolder('xhea');
+    }
 
     my $sch_cal_folder = $signup->subfolder('sch_cal');
     my $gtfs_folder    = $signup->subfolder('gtfs');
@@ -76,7 +77,7 @@ sub START {
 
     #my $calendar_of_block_r;
 
-    if ( $gtfs_folder->glob_plain_files('*.txt') ) {
+    if ( $gtfs_folder->exists and $gtfs_folder->glob_files('*.txt') ) {
 
         my $suppcry = cry("Importing GTFS calendars");
         require Actium::Import::GTFS::TripCalendars;
@@ -94,7 +95,8 @@ sub START {
         $suppcry->done;
 
     }
-    elsif ( $sch_cal_folder->glob_plain_files('*.xlsx') ) {
+    elsif ( $sch_cal_folder->exists and $sch_cal_folder->glob_files('*.xlsx') )
+    {
 
         my $suppcry = cry("Importing supplementary calendars");
         require Actium::Import::Xhea::SuppCalendar;
@@ -108,11 +110,11 @@ sub START {
         $suppcry->done;
     }
 
-    if ( $xheazip or $xhea_folder->glob_plain_files('*.xml') ) {
+    if ( $xheazip or $xhea_folder->glob_files('*.xml') ) {
 
         my $impcry = cry("Importing xhea files");
 
-        my $tab_folder = $xhea_folder->subfolder('tab');
+        my $tab_folder = $xhea_folder->ensure_subfolder('tab');
 
         my %xhea_import_specs = (
             signup      => $signup,
@@ -125,13 +127,16 @@ sub START {
 
         $impcry->done;
 
-        my $hasicry = cry("Creating HASI files from XHEA files");
+        my $hasicry     = cry("Creating HASI files from XHEA files");
+        my $hasi_folder = $signup->ensure_subfolder('hasi');
 
         Actium::Import::Xhea::to_hasi( $tab_folder, $hasi_folder );
 
         $hasicry->done;
 
     } ## tidy end: if ( $xheazip or $xhea_folder...)
+
+    $signup_cry->done;
 
 } ## tidy end: sub START
 
