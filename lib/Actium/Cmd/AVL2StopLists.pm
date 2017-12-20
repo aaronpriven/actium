@@ -41,9 +41,9 @@ sub START {
 
     # retrieve data
 
-    my $slistsfolder = $signup->subfolder('slists');
-    my $patfolder    = $slistsfolder->subfolder('pat');
-    my $linefolder   = $slistsfolder->subfolder('line');
+    my $slistsfolder = $signup->ensure_subfolder('slists');
+    my $patfolder    = $slistsfolder->ensure_subfolder('pat');
+    my $linefolder   = $slistsfolder->ensure_subfolder('line');
 
     my %pat;
     my %tps;
