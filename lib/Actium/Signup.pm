@@ -33,7 +33,7 @@ has folder => (
     isa      => 'Actium::Storage::Folder',
     init_arg => undef,
     is       => 'ro',
-    handles  => [qw/subfolder/],
+    handles  => [qw/ensure_subfolder existing_subfolder subfolder/],
     lazy     => method {
         if ( $self->is_new ) {
             return $self->base_folder->ensure_subfolder( $self->name );
@@ -46,10 +46,10 @@ method phylum_folder ( :$phylum!, :$collection!, :$format ) {
     # at the moment, nothing special is done with these... but that could
     # change
 
-    return $self->subfolder( $phylum, $collection )
+    return $self->ensure_subfolder( $phylum, $collection )
       if ( not defined $format or $format eq $EMPTY );
 
-    return $self->subfolder( $phylum, $collection, $format );
+    return $self->ensure_subfolder( $phylum, $collection, $format );
 }
 
 Actium::immut;
