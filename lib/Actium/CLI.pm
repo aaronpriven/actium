@@ -11,7 +11,7 @@ use Term::ReadKey;                          ### DEP ###
 use Actium::Crier('default_crier');
 use Actium::Storage::Ini;
 use Actium::CLI::Option;
-use Actium::O::Folder;
+use Actium::Storage::Folder;
 
 use Module::Runtime ('require_module');
 
@@ -86,15 +86,12 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
     # delete 'help' from args
 
     my %init_args = (
-        %params{qw/sysenv system_name/},
-        commandpath     => $params{commandpath},
-        subcommand      => $subcommand // $EMPTY,
+        %params{qw/commandpath sysenv system_name bin home_folder/},
+        subcommand => $subcommand // $EMPTY,
         _subcommands    => $params{subcommands},
         _original_argv  => \@original_argv,
         _help_requested => $help_requested,
         argv            => \@argv,
-        bin             => Actium::O::Folder->new( $params{bin} ),
-        home_folder     => Actium::O::Folder->new( $params{home_folder} ),
     );
 
     return $class->$orig(%init_args);
@@ -275,9 +272,10 @@ sub _output_usage {
 ## Public Attributes and builders
 
 has home_folder => (
-    isa      => 'Actium::O::Folder',
+    isa      => 'Actium::Storage::Folder',
     is       => 'ro',
     required => 1,
+    coerce   => 1,
 );
 
 has config => (
@@ -295,9 +293,10 @@ sub _build_config {
 }
 
 has bin => (
-    isa      => 'Actium::O::Folder',
+    isa      => 'Actium::Storage::Folder',
     is       => 'ro',
     required => 1,
+    coerce   => 1,
 );
 
 has [qw/commandpath subcommand system_name/] => (
@@ -717,12 +716,12 @@ sub _signup_package {
     my $self   = shift;
     my $is_new = shift;
 
-    require Actium::O::Folders::Signup;
+    require Actium::Signup;
 
     has signup => (
         is      => 'ro',
         builder => ( $is_new ? '_build_newsignup' : '_build_signup' ),
-        isa     => 'Actium::O::Folders::Signup',
+        isa     => 'Actium::Signup',
         lazy    => 1,
     );
 
@@ -749,17 +748,6 @@ sub _signup_package {
             prompt          => 'Signup',
             display_default => 1,
         },
-        {   spec => 'cache=s',
-            description =>
-              'Cache folder. Files (like SQLite files) that cannot '
-              . 'be stored on network filesystems are stored here.',
-            display_default => 1,
-            fallback =>
-              $self->home_folder->subfolder_path( '.' . $self->system_name ),
-            envvar         => 'CACHE',
-            config_section => 'Signup',
-            config_key     => 'cache',
-        },
     );
 } ## tidy end: sub _signup_package
 
@@ -771,7 +759,7 @@ sub _signup_with_old_package {
     has oldsignup => (
         is      => 'ro',
         builder => '_build_oldsignup',
-        isa     => 'Actium::O::Folders::Signup',
+        isa     => 'Actium::Signup',
         lazy    => 1,
     );
 
@@ -797,27 +785,25 @@ sub _signup_with_old_package {
     );
 } ## tidy end: sub _signup_with_old_package
 
-sub _build_newsignup {
-    my $self = shift;
-    my %params = map { $_ => $self->option($_) } qw/base signup cache/;
-    return Actium::O::Folders::Signup::->new(%params);
+method _build_newsignup {
+    return Actium::Signup::->new(
+        is_new => 1,
+        base   => $self->option('base'),
+        name   => $self->option('signup')
+    );
 }
 
-sub _build_signup {
-    my $self = shift;
-    my %params = map { $_ => $self->option($_) } qw/base signup cache/;
-    $params{must_exist} = 1;
-    return Actium::O::Folders::Signup::->new(%params);
+method _build_signup {
+    return Actium::Signup::->new(
+        base => $self->option('base'),
+        name => $self->option('signup')
+    );
 }
 
-sub _build_oldsignup {
-    my $self = shift;
-
-    return Actium::O::Folders::Signup::->new(
+method _build_oldsignup {
+    return Actium::Signup::->new(
         base => ( $self->option('oldbase') // $self->option('base') ),
-        signup     => $self->option('oldsignup'),
-        cache      => $self->option('cache'),
-        must_exist => 1,
+        name => $self->option('oldsignup'),
     );
 
 }
