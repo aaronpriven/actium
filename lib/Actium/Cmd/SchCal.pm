@@ -12,9 +12,9 @@ sub START {
     my ( $class, $env ) = @_;
     my $signup = $env->signup;
 
-    my $sch_cal_folder = $signup->subfolder('sch_cal');
+    my $sch_cal_folder = $signup->ensure_subfolder('sch_cal');
 
-    Actium::Import::Xhea::SuppCalendar::read_supp_calendars( $sch_cal_folder, );
+    Actium::Import::Xhea::SuppCalendar::read_supp_calendars($sch_cal_folder);
     return;
 
 }
