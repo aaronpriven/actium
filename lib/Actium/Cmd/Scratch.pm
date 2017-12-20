@@ -1,11 +1,9 @@
 package Actium::Cmd::Scratch 0.012;
 
 use Actium;
-use Actium::O::Folders::Signup;
 use Actium::Import::GTFS::TripCalendars;
 
 sub OPTIONS { return 'actiumdb', 'signup' }
-use DDP;
 
 sub START {
 
