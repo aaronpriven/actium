@@ -38,7 +38,7 @@ sub START {
     my $cry = cry('Generating stoplines');
 
     my $signup = $env->signup;
-    chdir $signup->path();
+    chdir $signup->folder->stringify;
 
     my %stops;
     $actiumdb->load_tables(
@@ -59,7 +59,7 @@ sub START {
     my %pat;
 
     {    # scoping
-        my $avldata_r = $signup->retrieve('avl.storable');
+        my $avldata_r = $signup->folder->file('avl.storable')->retrieve;
         %pat = %{ $avldata_r->{PAT} };
     }
 
