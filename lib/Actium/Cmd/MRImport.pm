@@ -6,7 +6,7 @@ use 5.014;
 use warnings;
 
 use Actium::MapRepository (':all');
-use Actium::O::Folder;
+use Actium::Storage::Folder;
 
 use English '-no_match_vars';    ### DEP ###
 
@@ -70,24 +70,16 @@ sub START {
 
     if ( $web and $webfolder_opt ) {
         $specified_webfolder_obj
-          = Actium::O::Folder->new( $env->option('webfolder') );
+          = Actium::Storage::Folder->ensure_folder( $env->option('webfolder') );
     }
 
     my $repository_opt = $env->option('repository');
 
-    my $repository = Actium::O::Folder->new(
-        {   folderlist => $repository_opt,
-            must_exist => 1,
-        }
-    );
+    my $repository = Actium::Storage::Folder->existing_folder($repository_opt);
     foreach my $folderspec (@importfolders) {
 
         # import to repository
-        my $importfolder = Actium::O::Folder->new(
-            {   folderlist => $folderspec,
-                must_exist => 1,
-            }
-        );
+        my $importfolder   = Actium::O::Folder->existing_folder($folderspec);
         my @imported_files = import_to_repository(
             repository   => $repository,
             move         => $env->option('move'),
@@ -104,7 +96,7 @@ sub START {
                 $webfolder_obj = $specified_webfolder_obj;
             }
             else {
-                $webfolder_obj = $importfolder->subfolder('web');
+                $webfolder_obj = $importfolder->ensure_subfolder('web');
             }
 
             make_web_maps(

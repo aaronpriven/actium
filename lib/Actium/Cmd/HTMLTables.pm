@@ -30,9 +30,8 @@ sub START {
 
     my $html_folder = $signup->subfolder('html');
 
-    my $collection = Actium::O::Sked::Collection->load_storable(
-        collection => 'final'
-    );
+    my $collection
+      = Actium::O::Sked::Collection->load_storable( collection => 'final' );
 
     my @skeds = $collection->skeds;
 
@@ -63,11 +62,11 @@ sub START {
 
     my $htmlcry = cry('Writing HTML files');
 
-    $signup->write_files_with_method(
-        {   OBJECTS   => \@tables,
-            METHOD    => 'as_html',
-            EXTENSION => 'html',
-            SUBFOLDER => 'html',
+    $signup->folder->spew_from_method(
+        {   objects   => \@tables,
+            method    => 'as_html',
+            extension => 'html',
+            subfolder => 'html',
         }
     );
 
@@ -88,11 +87,11 @@ sub START {
 
     my $jsoncry = cry('Writing JSON struct files');
 
-    $signup->write_files_with_method(
-        {   OBJECTS   => \@tables,
-            METHOD    => 'as_public_json',
-            EXTENSION => 'json',
-            SUBFOLDER => 'public_json',
+    $signup->folder->spew_from_method(
+        {   objects   => \@tables,
+            method    => 'as_public_json',
+            extension => 'json',
+            subfolder => 'public_json',
         }
     );
 
