@@ -22,7 +22,6 @@ Actium::CLI::->new(
         indd_encode  => 'InDesignEncode',
         pr_add_stop  => 'PRAddStop',
         scratch      => 'Scratch',
-        sch_cal      => 'SchCal',
         schooltrips  => 'SchoolTrips',
         tempsigns    => 'TempSigns',
         theaimport   => 'TheaImport',
