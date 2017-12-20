@@ -3,16 +3,43 @@ package Actium::Signup 0.014;
 # Object representing the current signup
 
 use Actium('class');
+use Actium::Types;
 
 has base_folder => (
-    isa => 'Actium::Storage::Folder',
-    is  => 'ro',
+    isa      => 'Actium::Storage::Folder',
+    coerce   => 1,
+    is       => 'ro',
+    required => 1,
+    trigger  => sub {
+        my $self = shift;
+        my $base = shift;
+        croak "Base folder doesn't exist" unless $base->exists;
+    },
+);
+
+has name => (
+    isa      => 'Str',
+    is       => 'ro',
+    required => 1,
+);
+
+has is_new => (
+    isa     => 'Bool',
+    is      => 'ro',
+    default => 0,
 );
 
 has signup_folder => (
-    isa     => 'Actium::Storage::Folder',
-    is      => 'ro',
-    handles => [qw/subfolder/],
+    isa      => 'Actium::Storage::Folder',
+    init_arg => undef,
+    is       => 'ro',
+    handles  => [qw/subfolder/],
+    lazy     => method {
+        if ( $self->is_new ) {
+            return $self->base_folder->ensure_subfolder( $self->name );
+        }
+        return $self->base_folder->existing_subfolder( $self->name );
+    },
 );
 
 method phylum_folder ( :$phylum!, :$collection!, :$format ) {
@@ -67,19 +94,26 @@ work for a period of time.)
 Data associated with a particular signup is located in a folder on
 disk. This object contains information about those folders.
 
+The module L<Actium::CLI|Actium::CLI> contains utilities for selecting
+the base folder and signup name from command line programs, using
+configuration files, environment variables, or commnad-line options.
+
 =head1 ATTRIBUTES
+
+Unless otherwise specified, all attributes must be set in the
+constructor but are otherwise read-only.
+
+=head2 name
+
+This is the name of the signup.  The signup is usually named after the
+period of time when the signup becomes effective ("w08" meaning "Winter
+2008", for example).
 
 =head2 signup_folder
 
-The data for each signup is stored in a folder on disk.  This folder is
-usually named after the period of time when the signup becomes
-effective ("w08" meaning "Winter 2008", for example).
-
-The signup folder, stored as an Actium::Storage::Folder object, is a
-required attribute of this object. The module
-Actium::Cmd::Config::Signup contains utilities for selecting the base
-folder from command line programs, using configuration files,
-environment variables, or commnad-line options.
+The signup folder is stored as an Actium::Storage::Folder object, and
+is  generated from the base_folder and the name. It cannot be set
+separately in the constructor.
 
 =head2 base_folder
 
@@ -91,10 +125,7 @@ whole  file path (which, as of this writing, would be something like
 "/Users/Shared/Dropbox (AC_PubInfSys)/B/Actium/signups/w00").
 
 The base folder, stored as an Actium::Storage::Folder object, is a
-required attribute of this object. The module
-Actium::Cmd::Config::Signup contains utilities for selecting the base
-folder from command line programs, using configuration files,
-environment variables, or commnad-line options.
+required attribute of this object.
 
 =head1 METHODS
 
