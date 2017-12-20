@@ -513,7 +513,7 @@ sub START {
     my $excelfile = $CHECKLIST_BASE . $run_name . '.xlsx';
     my $list_cry  = cry "Writing list to $listfile";
 
-    my $pointlist_folder = $signup->subfolder('pointlist');
+    my $pointlist_folder = $signup->ensure_subfolder('pointlist');
 
     my $list_fh = $pointlist_folder->file($listfile)->openw_utf8;
 

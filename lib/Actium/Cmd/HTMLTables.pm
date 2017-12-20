@@ -28,7 +28,7 @@ sub START {
     my $actiumdb = $env->actiumdb;
     my $signup   = $env->signup;
 
-    my $html_folder = $signup->subfolder('html');
+    my $html_folder = $signup->ensure_subfolder('html');
 
     my $collection
       = Actium::O::Sked::Collection->load_storable( collection => 'final' );
