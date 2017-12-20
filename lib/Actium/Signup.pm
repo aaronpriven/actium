@@ -29,7 +29,7 @@ has is_new => (
     default => 0,
 );
 
-has signup_folder => (
+has folder => (
     isa      => 'Actium::Storage::Folder',
     init_arg => undef,
     is       => 'ro',
