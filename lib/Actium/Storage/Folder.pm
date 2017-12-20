@@ -288,7 +288,7 @@ method spew_from_method (
         $id .= "_$seen_id{$id}" unless 1 == $seen_id{$id};
         my $file = file( $id . $extension );
 
-        $file->spew_with_method(
+        $file->spew_from_method(
             do_cry => 0,
             object => $obj,
             method => $method,
@@ -300,7 +300,7 @@ method spew_from_method (
     $cry->done;
     return;
 
-} ## tidy end: method spew_from_method
+} ## tidy end: method existing_folder4
 
 =head3 spew_from_hash
 
@@ -355,7 +355,7 @@ method spew_from_hash (
     $cry->done;
     return;
 
-} ## tidy end: method spew_from_hash
+} ## tidy end: method existing_folder5
 
 1;
 
@@ -381,8 +381,8 @@ __END__
 # make_filespec - use ->file
 # file_exists - use Actium::Storage::File->exists
 # children - use glob_folders
-# slurp_write - use ->child($filename)->spew_utf8
-# slurp_read - use ->child($filename)->slurp_utf8
+# slurp_write - use ->file($filename)->spew_utf8
+# slurp_read - use ->file($filename)->slurp_utf8
 # json_retrieve - use Actium::Storage::File->json_retrieve
 # json_store_pretty - use use Actium::Storage::File->json_store
 # store - use Actium::Storage::File->store
