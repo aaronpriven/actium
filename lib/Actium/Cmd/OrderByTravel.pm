@@ -79,10 +79,10 @@ sub START {
     }
 
     my $signup    = $env->signup;
-    my $slistsdir = $signup->subfolder('slists');
+    my $slistsdir = $signup->existing_subfolder('slists');
 
     # retrieve data
-    my $stops_of_r = $slistsdir->retrieve('line.storable')
+    my $stops_of_r = $slistsdir->file('line.storable')->retrieve
       or die "Can't open line.storable file: $OS_ERROR";
 
     my @sorted = travelsort(
@@ -206,7 +206,7 @@ The file may not have been found, or there may be some other error.
 
 An error was found trying to read the file line.storable. It may not be
  present in the appropriate place (the "slists" folder under the
-specified  signup) or there may be some other error.
+specified signup) or there may be some other error.
 
 =back
 

@@ -48,7 +48,7 @@ sub START {
     }
     else {
         my $signup = $env->signup;
-        $signup->slurp_write( $tabbed, 'flag_assignments.txt' );
+        $signup->folder->file('flag_assignments.txt')->spew_utf8($tabbed);
     }
 
     $assigncry->done;
