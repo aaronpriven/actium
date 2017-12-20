@@ -57,7 +57,7 @@ sub output_all_tables {
 
     #$alltables_r =  [ (@{$alltables_r})[0..50] ]; # debug
 
-    open my $allfh, '>', $tabulae_folder->make_filespec('all.txt');
+    open my $allfh, '>', $tabulae_folder->file('all.txt')->stringify;
 
     print $allfh $IDT->start;
     foreach my $table ( @{$alltables_r} ) {
@@ -437,7 +437,7 @@ sub output_a_pubtts {
             next;
         }
 
-        open my $ttfh, '>', $pubtt_folder->make_filespec("$file.txt");
+        open my $ttfh, '>', $pubtt_folder->file("$file.txt")->stringify;
 
         print $ttfh $IDT->start;
 
@@ -504,7 +504,7 @@ sub output_a_pubtts {
 
     } ## tidy end: foreach my $pubtt_content_r...
 
-    my $listfh  = $pubtt_folder->open_write('_ttlist.txt');
+    my $listfh  = $pubtt_folder->file('_ttlist.txt')->openw_utf8;
     my @columns = qw<file effectivedate pages MapFile LeaveCoverForMap
       MasterPage has_short_page portrait_chars>;
     say $listfh u::jointab(@columns);
