@@ -296,7 +296,7 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
 
     sub import {
         my $class = shift;
-        my $type = shift || q{};
+        my $type = shift // q{};
         $caller = caller;
 
         # constants and exported routines
