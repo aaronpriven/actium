@@ -41,15 +41,17 @@ sub START {
     \my %descrips_of_hubs_indesign
       = $actiumdb->descrips_of_transithubs_indesign( { signup => $signup } );
 
-    my $line_descrip_folder = $signup->subfolder('line_descrip');
+    my $line_descrip_folder = $signup->ensure_subfolder('line_descrip');
 
-    $line_descrip_folder->write_files_from_hash( \%descrips_of_hubs_indesign,
-        'Indesign Line Description', 'txt' );
+    $line_descrip_folder->spew_from_hash(
+        hash         => \%descrips_of_hubs_indesign,
+        display_type => 'Indesign Line Description',
+        extension    => 'txt'
+    );
 
     return;
 
 } ## tidy end: sub START
-
 1;
 
 __END__
