@@ -32,9 +32,8 @@ sub START {
 
     #my $prehistorics_folder = $signup->subfolder('skeds');
 
-    my $collection = Actium::O::Sked::Collection->load_storable(
-        collection => 'final'
-    );
+    my $collection
+      = Actium::O::Sked::Collection->load_storable( collection => 'final' );
 
     chdir( $signup->path );
 
@@ -68,7 +67,7 @@ sub START {
     Actium::IDTables::output_all_tables( $tabulae_folder, $alltables_r );
 
     Actium::IDTables::output_a_pubtts( $multipubtt_folder,
-        $pubtt_contents_with_dates_r, $pubtimetables_r, $tables_of_r, $signup );
+        $pubtt_contents_with_dates_r, $pubtimetables_r, $tables_of_r );
 
     return;
 

@@ -408,7 +408,6 @@ sub output_a_pubtts {
     my @pubtt_contents_with_dates = @{ +shift };
     my $pubtimetables_r           = shift;
     my %tables_of                 = %{ +shift };
-    my $signup                    = shift;
 
     my %script_entries;
     my @over_eight_pages;
