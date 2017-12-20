@@ -62,8 +62,8 @@ sub START {
     my $actiumdb = $env->actiumdb;
     my $signup   = $env->signup;
 
-    my $stoplists_folder      = $signup->subfolder('slists');
-    my $stoplists_line_folder = $stoplists_folder->subfolder('line');
+    my $stoplists_folder      = $signup->ensure_subfolder('slists');
+    my $stoplists_line_folder = $stoplists_folder->ensure_subfolder('line');
 
     $actiumdb->ensure_loaded('Stops_Neue');
 
@@ -81,7 +81,7 @@ sub START {
 
     my $htmlversion_cry = cry('Creating HTML versions of stop lists');
 
-    my @files = $stoplists_line_folder->glob_plain_files('*.txt');
+    my @files = $stoplists_line_folder->glob_files('*.txt');
     @files = map { u::filename($_) } @files;
 
     my %dirs_of;
@@ -112,8 +112,8 @@ sub START {
         foreach my $dir (@dirs) {
 
             my $file = "$line-$dir.txt";
-            my $ifh  = $stoplists_line_folder->open_read($file);
-            binmode $ifh, ':encoding(MacRoman)';
+            my $ifh  = $stoplists_line_folder->file($file)
+              ->open('<:encoding(MacRoman)');
 
             # HORRIBLE KLUDGE BECAUSE I CAN'T GET ODBC TO READ UTF8 DATA
 
@@ -281,7 +281,7 @@ EOT
         my $url_type = url_type($type);
 
         {
-            my $ofh = $stoplists_folder->open_write("$url_type.html");
+            my $ofh = $stoplists_folder->file("$url_type.html")->openw_utf8;
 
             my @lines_and_urls
               = map {"<a href='#$_'>$_</a>"} @{ $lines_of_type{$type} };
@@ -293,7 +293,7 @@ EOT
 
         }
 
-        my $ofh = $stoplists_folder->open_write("c-$url_type.html");
+        my $ofh = $stoplists_folder->file("c-$url_type.html")->openw_utf8;
         my @lines_and_urls
           = map {"<a href='#$_'>$_</a>"} @{ $lines_of_type{$type} };
 
@@ -307,8 +307,8 @@ EOT
     my $effectivedate
       = $actiumdb->effective_date( agency => 'ACTransit' )->long_en;
 
-    my $indexfh  = $stoplists_folder->open_write('stops.html');
-    my $cindexfh = $stoplists_folder->open_write('c-stops.html');
+    my $indexfh  = $stoplists_folder->file('stops.html')->openw_utf8;
+    my $cindexfh = $stoplists_folder->file('c-stops.html')->openw_utf8;
 
     my $efftext
       = "<p>Bus stop lists are updated after each quarterly service change. "
