@@ -46,9 +46,11 @@ sub START {
 
     my ( $class, $env ) = @_;
     my $signup = $env->signup;
-    chdir $signup->path();
 
-    say 'Reading from ', $signup->path();
+    my $path = $signup->folder->stringify;
+    chdir $path;
+
+    say "Reading from $path";
 
     # set up row type hashes
 
@@ -59,13 +61,13 @@ sub START {
     @files = grep { not( /\.dump/ix || /\.sqlite\z/ix ) } @files;
 
     unless (@files) {
-        die 'No files found in ' . $signup->path;
+        die "No files found in $path";
     }
 
     # read rows
     read_files(@files);
 
-    $signup->store( \%data_of, 'avl.storable' );
+    $signup->folder->file->('avl.storable')->store( \%data_of );
 
     return;
 

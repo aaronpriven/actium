@@ -14,8 +14,8 @@ sub START {
     my ( $class, $env ) = @_;
     my $signup = $env->signup;
 
-    my $xhea_tab_folder = $signup->subfolder( 'xhea', 'tab' );
-    my $hasi_folder = $signup->subfolder('hasi');
+    my $xhea_tab_folder = $signup->existing_subfolder( 'xhea', 'tab' );
+    my $hasi_folder = $signup->ensure_subfolder('hasi');
 
     Actium::Import::Xhea::to_hasi( $xhea_tab_folder, $hasi_folder );
 

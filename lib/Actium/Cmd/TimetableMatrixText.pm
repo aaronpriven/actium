@@ -3,7 +3,7 @@ package Actium::Cmd::TimetableMatrixText 0.011;
 # Reads the timetable matrix and produces text for it.
 
 use Actium;
-use Actium::O::Folder;
+use Actium::Storage::Folder;
 use Actium::Sorting::Line('sortbyline');
 use Text::Trim ('trim');
 
@@ -36,10 +36,13 @@ sub START {
     my $filespec = shift @argv;
     die "No input file given" unless $filespec;
 
-    my ( $folder,   $filename ) = Actium::O::Folder->new_from_file($filespec);
-    my ( $filepart, $fileext )  = u::file_ext($filespec);
+    my $file     = file($filespec);
+    my $folder   = $file->parent;
+    my $filename = $file->basename;
 
-    my $sheet = $folder->load_sheet($filename);
+    my ( $filepart, $fileext ) = u::file_ext($filespec);
+
+    my $sheet = $folder->file($filename)->sheet_retrieve;
 
     $sheet->prune_space;
 
@@ -137,7 +140,7 @@ sub START {
     my $numgroups = scalar keys %timetables_of;
 
     my $outfile = "$filepart-centers.txt";
-    my $textfh  = $folder->open_write($outfile);
+    my $textfh  = $folder->file($outfile)->openw_utf8;
 
     foreach my $group ( sort keys %timetables_of ) {
 
@@ -190,7 +193,7 @@ sub START {
 
     my $ttlistfile = "$filepart-ttlist.txt";
 
-    my $listfh = $folder->open_write($ttlistfile);
+    my $listfh = $folder->file($ttlistfile)->openw_utf8;
 
     foreach my $timetable ( sortbyline keys %centers_of ) {
         my @centers = @{ $centers_of{$timetable} };

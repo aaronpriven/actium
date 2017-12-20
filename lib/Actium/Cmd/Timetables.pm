@@ -26,21 +26,13 @@ sub START {
     my $actiumdb = $env->actiumdb;
     my $signup   = $env->signup;
 
-    my $tabulae_folder = $signup->subfolder('timetables');
-    #my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
-    my $multipubtt_folder = $tabulae_folder->subfolder('pub-idtags');
-
-    #my $prehistorics_folder = $signup->subfolder('skeds');
+    my $tabulae_folder    = $signup->ensure_subfolder('timetables');
+    my $multipubtt_folder = $tabulae_folder->ensure_subfolder('pub-idtags');
 
     my $collection
       = Actium::O::Sked::Collection->load_storable( collection => 'final' );
 
-    chdir( $signup->path );
-
-    # my %front_matter = _get_configuration($signup);
-
-    # my @skeds
-    #   = Actium::O::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
+    chdir( $signup->folder->stringify );
 
     my @skeds = $collection->skeds;
 
@@ -50,7 +42,6 @@ sub START {
     } @skeds;
 
     my @all_lines = map { $_->lines } @skeds;
-   #@all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN' and ! m/4\d\d/ } @all_lines;
     @all_lines = u::uniq u::sortbyline @all_lines;
 
     my ( $pubtt_contents_with_dates_r, $pubtimetables_r )
