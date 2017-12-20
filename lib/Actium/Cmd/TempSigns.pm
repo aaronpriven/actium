@@ -3,7 +3,7 @@ package Actium::Cmd::TempSigns 0.011;
 use Actium;
 use autodie;
 
-use Actium::O::Folder;
+use Actium::Storage::Folder;
 use Actium::O::DateTime;
 
 use Actium::Text::InDesignTags;
@@ -65,12 +65,12 @@ sub START {
     $zhdate = $IDT->encode_high_chars($zhdate);
     $zhdate = _zh_phrase($zhdate);
     $zh =~ s/\%s/$zhdate/;
-
     my $dates
       = $IDT->parastyle('Text16') . join( $HARDRET, $en, $es, $zh ) . $HARDRET;
 
-    my $folder = Actium::O::Folder::->new('/Users/apriven/Desktop');
-    my $ofh    = $folder->open_write('tempsigns.txt');
+    my $folder
+      = Actium::Storage::Folder::->existing_folder('/Users/apriven/Desktop');
+    my $ofh = $folder->file('tempsigns.txt')->openw_utf8;
 
     print $ofh $IDT->start;
     my @signtexts;

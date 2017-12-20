@@ -26,14 +26,14 @@ sub START {
     my ( $class, $env ) = @_;
     my $signup = $env->signup;
 
-    chdir $signup->path();
+    chdir $signup->folder->stringify();
 
     # retrieve data
 
     my %pat;
 
     {    # scoping
-        my $avldata_r = $signup->retrieve('avl.storable');
+        my $avldata_r = $signup->file('avl.storable')->retreive;
         %pat = %{ $avldata_r->{PAT} };
     }
 

@@ -3,7 +3,6 @@ package Actium::Cmd::ZipDecals 0.012;
 # Creates a Zip archive of the relevant decals
 
 use Actium;
-use Actium::O::Folder;
 use Spreadsheet::ParseXLSX;    ### DEP ###
 
 use Archive::Zip qw(:ERROR_CODES);    ### DEP ###
@@ -22,9 +21,11 @@ sub START {
     my $filespec = shift @argv;
     die "No input file given" unless $filespec;
 
-    my ( $folder, $filename ) = Actium::O::Folder->new_from_file($filespec);
+    my $file     = file($filespec);
+    my $folder   = $file->parent;
+    my $filename = $file->basename;
 
-    my $sheet  = $folder->load_sheet($filename);
+    my $sheet  = $file->load_sheet;
     my @decals = u::sortbyline $sheet->col(0);
 
     my $zipobj = Archive::Zip->new();
@@ -47,7 +48,6 @@ sub START {
     my $result = $zipobj->writeToFileNamed($zipfile);
     die "Couldn't write zip file $zipfile"
       unless $result == AZ_OK;
-
     say "Decals written to $zipfile";
 
 } ## tidy end: sub START
