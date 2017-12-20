@@ -1366,6 +1366,14 @@ Certain subroutines also require the following:
 
 =item *
 
+Actium::Storage::File
+
+=item *
+
+Actium::Storage::Folder
+
+=item *
+
 Data::Printer
 
 =item *
