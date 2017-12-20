@@ -51,7 +51,7 @@ sub START {
     );
 
     my $signup = $env->signup;
-    chdir $signup->path();
+    chdir $signup->folder->stringify;
 
     # retrieve data
 
@@ -63,7 +63,7 @@ sub START {
 
         {    # scoping
 
-            my $avldata_r = $signup->retrieve('avl.storable');
+            my $avldata_r = $signup->folder->file('avl.storable')->retrieve;
 
             foreach (qw<PAT TRP>) {
                 $somedata_r->{$_} = $avldata_r->{$_};

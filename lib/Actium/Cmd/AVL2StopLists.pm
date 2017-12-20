@@ -37,7 +37,7 @@ sub START {
     my $actiumdb = $env->actiumdb;
 
     my $signup = $env->signup;
-    chdir $signup->path();
+    chdir $signup->folder->stringify;
 
     # retrieve data
 
@@ -65,7 +65,7 @@ sub START {
 # (or, presumably, another IDE)
 # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-        my $avldata_r = $signup->retrieve('avl.storable');
+        my $avldata_r = $signup->folder->file('avl.storable')->retrieve;
 
         %pat = %{ $avldata_r->{PAT} };
 

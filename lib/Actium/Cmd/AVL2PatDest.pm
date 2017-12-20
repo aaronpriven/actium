@@ -30,14 +30,14 @@ sub START {
 
     my $signup = $env->signup;
 
-    chdir $signup->path();
+    chdir $signup->folder->stringify();
 
     my %stoplist = ();
 
     my (%pat);
 
     {    # scoping
-        my $avldata_r = $signup->retrieve('avl.storable');
+        my $avldata_r = $signup->folder->file('avl.storable')->retrieve;
         %pat = %{ $avldata_r->{PAT} };
     }
 
