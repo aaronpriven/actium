@@ -23,7 +23,6 @@ Actium::CLI->new(
         bartskeds     => 'BARTSkeds',
         citiesbyline  => 'CitiesByLine',
         comparestops  => 'CompareStops',
-        compareskeds  => 'CompareSkeds',
         decalcount    => 'DecalCount',
         decalcompare  => 'DecalCompare',
         decallabels   => 'DecalLabels',
