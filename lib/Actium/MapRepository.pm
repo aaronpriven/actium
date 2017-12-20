@@ -34,22 +34,16 @@ use Sub::Exporter -setup => {
 use File::Copy();               ### DEP ###
 use Params::Validate ':all';    ### DEP ###
 
-use Actium::O::Folder;
+use Actium::Storage::Folder;
 
 const my $LINE_NAME_LENGTH   => 4;
 const my $DEFAULT_RESOLUTION => 288;
 
-const my $CAN_ACTIUM_FOLDER =>
-  [qw<path children glob_plain_files subfolder make_filespec folder>];
-# these are all the methods that Params::Validate tests for to see if it's
-# a working folder object. Doing it with "can" rather than "isa" means we
-# can use subclasses such as Actium::O::Folders::Signup.
-
 ### IMPORTING NEW MAPS
 
 my $import_to_repository_paramspec = {
-    importfolder => { can  => $CAN_ACTIUM_FOLDER },
-    repository   => { can  => $CAN_ACTIUM_FOLDER },
+    importfolder => { isa  => 'Actium::Storage::Folder' },
+    repository   => { isa  => 'Actium::Storage::Folder' },
     move         => { type => BOOLEAN, optional => 1 },
     verbose      => { type => BOOLEAN, default => 0 },
 };
@@ -67,8 +61,8 @@ sub import_to_repository {
     my $verbose    = $params{verbose};
 
     my $importfolder = $params{importfolder};
-    my $cry          = cry( 'Importing line maps from ' . $importfolder->path );
-    my @files        = $importfolder->glob_plain_files();
+    my $cry          = cry("Importing line maps from $importfolder");
+    my @files        = $importfolder->glob_files();
 
     my @copied_files;
 
@@ -102,7 +96,7 @@ sub import_to_repository {
         my $lines      = $nameparts{lines};
         my $linefolder = $repository->subfolder($lines);
 
-        my $newfilespec = $linefolder->make_filespec($newfilename);
+        my $newfilespec = $linefolder->file($newfilename)->stringify;
 
         if ( -e $newfilespec ) {
             $cry->text( "Can't move $filespec "
@@ -111,10 +105,12 @@ sub import_to_repository {
         }
 
         if ($move) {
-            _move_file( $filespec, $newfilespec, $repository->path, $verbose );
+            _move_file( $filespec, $newfilespec, $repository->stringify,
+                $verbose );
         }
         else {
-            _copy_file( $filespec, $newfilespec, $repository->path, $verbose );
+            _copy_file( $filespec, $newfilespec, $repository->stringify,
+                $verbose );
         }
         push @copied_files, $newfilespec;
     } ## tidy end: FILE: foreach my $filespec ( sort...)
@@ -127,7 +123,7 @@ sub import_to_repository {
 ### COPYING/RASTERIZING WEB MAPS
 
 my $make_web_maps_paramspec = {
-    web_folder     => { can  => $CAN_ACTIUM_FOLDER },
+    web_folder     => { isa  => 'Actium::Storage::Folder' },
     files          => { type => ARRAYREF },
     resolution     => { type => SCALAR, default => $DEFAULT_RESOLUTION },
     path_to_remove => { type => SCALAR, optional => 1 },
@@ -166,14 +162,15 @@ sub make_web_maps {
 
         # copy PDFs
         foreach my $output_line (@output_lines) {
-            my $outfile = $output_folder->make_filespec("$output_line.pdf");
+            my $outfile = $output_folder->file("$output_line.pdf")->stringify;
             _copy_file( $filespec, $outfile, $path_to_remove, $verbose );
         }
 
         # copy JPGs
 
-        my $first_line      = shift @output_lines;
-        my $first_jpeg_spec = $output_folder->make_filespec("$first_line.jpeg");
+        my $first_line = shift @output_lines;
+        my $first_jpeg_spec
+          = $output_folder->file("$first_line.jpeg")->stringify;
 
         my $result = system qq{gs $gsargs -o "$first_jpeg_spec" "$filespec"};
 
@@ -192,7 +189,7 @@ sub make_web_maps {
         }
 
         foreach my $output_line (@output_lines) {
-            my $outfile = $output_folder->make_filespec("$output_line.jpeg");
+            my $outfile = $output_folder->file("$output_line.jpeg")->stringify;
             _copy_file( $first_jpeg_spec, $outfile, $path_to_remove, $verbose );
         }
 
@@ -312,10 +309,10 @@ sub filename_is_valid {
 ### COPY LATEST FILES TO NEW DIRECTORY
 
 my $copylatest_spec = {
-    repository         => { can  => $CAN_ACTIUM_FOLDER },
-    fullname           => { can  => $CAN_ACTIUM_FOLDER, optional => 1 },
-    linesname          => { can  => $CAN_ACTIUM_FOLDER, optional => 1 },
-    web                => { can  => $CAN_ACTIUM_FOLDER, optional => 1 },
+    repository         => { isa  => 'Actium::Storage::Folder' },
+    fullname           => { isa  => 'Actium::Storage::Folder', optional => 1 },
+    linesname          => { isa  => 'Actium::Storage::Folder', optional => 1 },
+    web                => { isa  => 'Actium::Storage::Folder', optional => 1 },
     resolution         => { type => SCALAR, default => $DEFAULT_RESOLUTION },
     defining_extension => { type => SCALAR, default => 'eps' },
     verbose            => { type => BOOLEAN, default => 0 },
@@ -334,7 +331,7 @@ sub copylatest {
     my $repository = $params{repository};
 
     my $list_cry    = cry('Getting list of folders in map repository');
-    my @folder_objs = $repository->children;
+    my @folder_objs = $repository->glob_folders;
     $list_cry->done;
 
     my ( $is_an_active_map_r, $is_an_active_line_r )
@@ -346,7 +343,7 @@ sub copylatest {
     my $copy_cry = cry('Copying files in repository folders');
 
     my %folder_obj_of;
-    $folder_obj_of{ $_->folder } = $_ foreach @folder_objs;
+    $folder_obj_of{ $_->basename } = $_ foreach @folder_objs;
 
     my @web_maps_to_process;
 
@@ -368,7 +365,7 @@ sub copylatest {
         next FOLDER unless $is_an_active_line_r->{$foldername};
 
         my $folder_obj = $folder_obj_of{$foldername};
-        my @filespecs  = $folder_obj->glob_plain_files;
+        my @filespecs  = $folder_obj->glob_files;
 
         $copy_cry->over($foldername) unless $verbose;
 
@@ -414,7 +411,7 @@ sub copylatest {
                 $latest_ver_of{$line_and_token} )
               . '.*';
 
-            my @latest_filespecs = $folder_obj->glob_plain_files($globpattern);
+            my @latest_filespecs = $folder_obj->glob_files($globpattern);
 
             foreach my $latest_filespec (@latest_filespecs) {
                 my $filename = u::filename($latest_filespec);
@@ -422,20 +419,20 @@ sub copylatest {
 
                 if ( defined $fullname_folder ) {
                     my $newfilespec
-                      = $fullname_folder->make_filespec($filename);
+                      = $fullname_folder->file($filename)->stringify;
                     _copy_file(
-                        $latest_filespec,  $newfilespec,
-                        $repository->path, $verbose
+                        $latest_filespec,       $newfilespec,
+                        $repository->stringify, $verbose
                     );
                 }
 
                 if ( defined $linesname_folder ) {
                     my $newfilespec
-                      = $linesname_folder->make_filespec($line_and_token)
+                      = $linesname_folder->file($line_and_token)->stringify
                       . ".$ext";
                     _copy_file(
-                        $latest_filespec,  $newfilespec,
-                        $repository->path, $verbose
+                        $latest_filespec,       $newfilespec,
+                        $repository->stringify, $verbose
                     );
                 }
 
@@ -465,7 +462,7 @@ sub copylatest {
             {   web_folder     => $web_folder,
                 files          => \@web_maps_to_process,
                 resolution     => $params{resolution},
-                path_to_remove => $repository->path,
+                path_to_remove => $repository->stringify,
                 verbose        => $verbose,
             }
         );
@@ -484,7 +481,7 @@ sub _active_maps {
     my $repository = shift;
     my $filename   = shift;
 
-    my $filespec = $repository->make_filespec($filename);
+    my $filespec = $repository->file($filename)->stringify;
 
     open my $fh, '<', $filespec
       or croak "Can't open active maps file $filespec for reading: $OS_ERROR";
