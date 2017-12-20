@@ -404,7 +404,7 @@ sub START {
 
     print "Reassembled. Now outputting...\n";
 
-    my $kpointdir = $signup->subfolder('kpoints');
+    my $kpointdir = $signup->ensure_subfolder('kpoints');
 
     my $count = 0;
 
@@ -415,7 +415,7 @@ sub START {
 
         my $firstdigits = substr( $stop, 0, 3 );
 
-        my $citydir = $kpointdir->subfolder("${firstdigits}xx");
+        my $citydir = $kpointdir->ensure_subfolder("${firstdigits}xx");
 
         open my $out, '>', "kpoints/${firstdigits}xx/$stop.txt" or die $!;
 

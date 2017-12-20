@@ -47,7 +47,7 @@ sub START {
         push @skipped, ( 600 .. 699 );
     }
 
-    chdir $signup->path;
+    chdir $signup->folder->stringify;
     $actiumdb->load_tables(
         requests => {
             Stops_Neue => {
@@ -58,7 +58,7 @@ sub START {
         }
     );
 
-    my $comparedir = $signup->subfolder('compare');
+    my $comparedir = $signup->ensure_subfolder('compare');
 
     my %newstoplists = assemble_stoplists( $signup, @skipped );
 
@@ -244,7 +244,7 @@ sub assemble_stoplists {
          # (or, presumably, another IDE)
          # doesn't have to display it when it's not being used. Of course it saves memory, too
 
-        my $avldata_r = $signup->retrieve('avl.storable');
+        my $avldata_r = $signup->folder->file('avl.storable')->retrieve;
 
         %pat = %{ $avldata_r->{PAT} };
 
