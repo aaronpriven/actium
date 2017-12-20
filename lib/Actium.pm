@@ -572,10 +572,10 @@ sub joinseries {
 
     my $final = pop;
     if ($oxford) {
-        return ( join( $separator, @_ ) . " $conjunction $final" );
+        return ( join( $separator, @_, "$conjunction $final" ) );
     }
     else {
-        return ( join( $separator, @_, "$conjunction $final" ) );
+        return ( join( $separator, @_ ) . " $conjunction $final" );
     }
 
 } ## tidy end: sub joinseries
