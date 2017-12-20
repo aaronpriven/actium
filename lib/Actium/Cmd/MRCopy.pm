@@ -81,7 +81,8 @@ EOF
         $env = shift;
 
         $repository
-          = Actium::Storage::Folder->new( $env->option('repository') );
+          = Actium::Storage::Folder->existing_folder(
+            $env->option('repository') );
 
         my $webfolder = option_folder( 'web', 'webfolder', '_web' );
         my $fullfolder
@@ -109,10 +110,11 @@ EOF
         if ( $env->option($option) ) {
             if ( $env->option($folderoption) ) {
                 $folder_obj
-                  = Actium::Storage::Folder->new( $env->option($folderoption) );
+                  = Actium::Storage::Folder->ensure_folder(
+                    $env->option($folderoption) );
             }
             else {
-                $folder_obj = $repository->subfolder($default);
+                $folder_obj = $repository->ensure_subfolder($default);
             }
         }
 
