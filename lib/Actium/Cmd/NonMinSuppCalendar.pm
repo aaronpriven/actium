@@ -1,5 +1,8 @@
 package Actium::Cmd::NonMinSuppCalendar 0.012;
 
+# This generates a supplementary calendar from the list of schools.
+# With luck this will be a temporary measure that will go away soon.
+
 use Actium;
 use Actium::Time;
 use Actium::O::Folder;
