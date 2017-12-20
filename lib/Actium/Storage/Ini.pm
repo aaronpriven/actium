@@ -4,8 +4,7 @@ package Actium::Storage::Ini 0.011;
 # At the moment, and possibly permanently, a thin wrapper around
 # Config::Tiny, but could be more later. Maybe.
 
-use Actium        ('class');
-use Actium::Types ('ActiumFolderLike');
+use Actium ('class');
 
 use File::HomeDir;    ### DEP ###
 use Config::Tiny;     ### DEP ###
@@ -43,7 +42,7 @@ has 'filename' => (
 );
 
 has 'folder' => (
-    isa    => ActiumFolderLike,
+    isa    => 'Actium::Storage::Folder',
     is     => 'ro',
     coerce => 1,
 );
@@ -58,7 +57,7 @@ has 'filespec' => (
 sub _build_filespec {
     my $self     = shift;
     my $folder   = $self->folder;
-    my $filespec = $folder->make_filespec( $self->filename );
+    my $filespec = $folder->file( $self->filename )->stringify;
     return $filespec;
 }
 
