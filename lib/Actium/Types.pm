@@ -155,6 +155,9 @@ coerce 'Actium::Storage::File', from Str,
 coerce 'Actium::Storage::File', from ArrayRef [Str],
   via { require Actium::Storage::File; Actium::Storage::File::->new(@$_) };
 
+# note that the coercions neither create the folder,
+# nor check to see that it already exists
+
 1;
 __END__
 
