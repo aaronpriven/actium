@@ -122,7 +122,7 @@ sub START {
     my @argv     = $env->argv;
 
     my $signup = $env->signup;
-    chdir $signup->path();
+    chdir $signup->folder->stringify;
 
     # retrieve data
 
@@ -515,7 +515,7 @@ sub START {
 
     my $pointlist_folder = $signup->subfolder('pointlist');
 
-    my $list_fh = $pointlist_folder->open_write($listfile);
+    my $list_fh = $pointlist_folder->file($listfile)->openw_utf8;
 
     my %pages_of;
 
@@ -705,7 +705,7 @@ sub START {
 
     {
 
-        my $workbook_fh = $pointlist_folder->open_write_binary($excelfile);
+        my $workbook_fh = $pointlist_folder->file($excelfile)->openw_raw;
         my $workbook    = new_workbook($workbook_fh);
         my $body_fmt = $workbook->add_format( text_wrap => 1, valign => 'top' );
         my $header_fmt = $workbook->add_format( bold => 1 );
@@ -741,7 +741,7 @@ sub START {
         my $error_file = $ERRORFILE_BASE . $run_name . '.txt';
         my $error_cry  = cry "Writing $error_count errors to $error_file";
         #$error_cry->text(join(" " , keys %errors) );
-        my $error_fh = $pointlist_folder->open_write($error_file);
+        my $error_fh = $pointlist_folder->file($error_file)->openw_utf8;
 
         foreach my $signid ( sort { $a <=> $b } keys %errors ) {
             foreach my $error ( @{ $errors{$signid} } ) {
@@ -763,7 +763,7 @@ sub START {
     if ( $env->option('output_heights') ) {
         my $heights_file = $HEIGHTSFILE_BASE . $run_name . '.txt';
         my $heights_cry  = cry "Writing heights to $heights_file";
-        my $heights_fh   = $pointlist_folder->open_write($heights_file);
+        my $heights_fh   = $pointlist_folder->file($heights_file)->openw_utf8;
         foreach my $signid ( sort { $a <=> $b } keys %heights ) {
             say $heights_fh "$signid\t" . $heights{$signid};
         }

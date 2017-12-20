@@ -28,13 +28,13 @@ sub START {
 
     my $html_descrips = $actiumdb->line_descrip_html( { signup => $signup, } );
 
-    my $outfh = $signup->open_write('line_descriptions.html');
+    my $outfh = $signup->folder->file('line_descriptions.html')->openw_utf8;
     say $outfh $html_descrips;
     close $outfh or die $OS_ERROR;
 
     my $html_hubs = $actiumdb->lines_at_transit_hubs_html;
 
-    my $outhubs = $signup->open_write('transithubs.html');
+    my $outhubs = $signup->folder->file('transithubs.html')->openw_utf8;
     say $outhubs $html_hubs;
     close $outhubs or die $OS_ERROR;
 

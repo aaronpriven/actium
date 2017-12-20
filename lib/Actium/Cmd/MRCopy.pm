@@ -6,7 +6,7 @@ use 5.014;
 use warnings;
 
 use Actium::MapRepository (':all');
-use Actium::O::Folder;
+use Actium::Storage::Folder;
 
 use English '-no_match_vars';    ### DEP ###
 
@@ -80,7 +80,8 @@ EOF
         my $class = shift;
         $env = shift;
 
-        $repository = Actium::O::Folder->new( $env->option('repository') );
+        $repository
+          = Actium::Storage::Folder->new( $env->option('repository') );
 
         my $webfolder = option_folder( 'web', 'webfolder', '_web' );
         my $fullfolder
@@ -108,7 +109,7 @@ EOF
         if ( $env->option($option) ) {
             if ( $env->option($folderoption) ) {
                 $folder_obj
-                  = Actium::O::Folder->new( $env->option($folderoption) );
+                  = Actium::Storage::Folder->new( $env->option($folderoption) );
             }
             else {
                 $folder_obj = $repository->subfolder($default);
