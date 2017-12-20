@@ -795,8 +795,8 @@ method _build_newsignup {
 
 method _build_signup {
     return Actium::Signup::->new(
-        base => $self->option('base'),
-        name => $self->option('signup')
+        base_folder => $self->option('base'),
+        name        => $self->option('signup')
     );
 }
 
