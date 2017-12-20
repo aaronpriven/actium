@@ -3,7 +3,6 @@ package Actium::Cmd::StopSearch 0.011;
 # command-line utility to search for stps
 
 use Actium;
-use Actium::O::Folder;
 
 sub OPTIONS {
 
