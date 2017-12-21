@@ -28,7 +28,7 @@ my (%calendar,    %exceptions,        $initial,
     %note_of_trip,
 );
 
-func calendar_notes_of_trips ( Actium::O::Folders::Signup $signup) {
+func calendar_notes_of_trips ( Actium::Signup $signup) {
 
     read_calendar($signup);
 
@@ -513,7 +513,7 @@ func text_notes {
 
     } ## tidy end: foreach my $service_id ( keys...)
 
-} ## tidy end: func read_calendar0
+} ## tidy end: func text_notes
 
 func read_tripids ($signup) {
 
@@ -545,7 +545,7 @@ func read_tripids ($signup) {
 
     return;
 
-} ## tidy end: func read_calendar1
+} ## tidy end: func read_tripids
 
 func joinseries_semicolon_with (Str $and!, Str @things!) {
     return $things[0] if 1 == @things;

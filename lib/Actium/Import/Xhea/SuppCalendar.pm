@@ -234,7 +234,7 @@ sub read_supp_calendars {
 
     } ## tidy end: foreach my $file (@files)
 
-    my $fh = $calendar_folder->open_write('sch_cal.txt');
+    my $fh = $calendar_folder->file('sch_cal.txt')->openw_utf8;
 
     foreach my $tripkey ( sort keys %calendar_of_block ) {
         my $cal = $calendar_of_block{$tripkey};

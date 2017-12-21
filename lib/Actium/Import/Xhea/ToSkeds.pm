@@ -25,7 +25,7 @@ sub xheatab2skeds {
     );
     my $signup = $params{signup};
 
-    my $xhea_tab_folder = $signup->subfolder( 'xhea', 'tab' );
+    my $xhea_tab_folder = $signup->ensure_subfolder( 'xhea', 'tab' );
 
     my @files = map {"$_.txt"} @required_tables;
     my ( $fieldnames_of_file_r, $values_of_file_r )

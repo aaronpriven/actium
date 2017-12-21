@@ -9,7 +9,7 @@ use Sub::Exporter -setup =>
 
 const my $PHYLUM => 'GTFS';
 
-func array_read_gtfs ( Actium::O::Folders::Signup : $signup, Str : $file ) {
+func array_read_gtfs ( Actium::Signup : $signup, Str : $file ) {
 
     my $filespec = gtfs_filespec( signup => $signup, file => $file );
     \my @gtfs = csv( in => $filespec, encoding => 'UTF-8' );
@@ -26,22 +26,22 @@ func array_read_gtfs ( Actium::O::Folders::Signup : $signup, Str : $file ) {
 }
 
 func hash_read_gtfs (
-    Actium::O::Folders::Signup :$signup, Str :$file, Str :$key? ) {
+    Actium::Signup :$signup, Str :$file, Str :$key? ) {
     my $filespec = gtfs_filespec( signup => $signup, file => $file );
     return csv( in => $filespec, encoding => 'UTF-8', key => $key );
 }
 
-func gtfs_filespec ( Actium::O::Folders::Signup : $signup, Str : $file ) {
-    my $folder = $signup->subfolder($PHYLUM);
+func gtfs_filespec ( Actium::O::Folders::Signup : $signup, Str :file($filename) ) {
+    my $folder = $signup->existing_subfolder($PHYLUM);
 
-    my $filespec = $folder->make_filespec($file);
-    $filespec .= ".txt" unless $filespec =~ /\.txt\z/;
+    $filename .= ".txt" unless $filename =~ /\.txt\z/;
+    my $file = $folder->file($filename);
 
-    if ( !-e $filespec ) {
-        croak "GTFS file $filespec not found";
+    unless ( $file->exists ) {
+        croak "GTFS file $file not found";
     }
 
-    return $filespec;
+    return $file->stringify;
 }
 
 __END__
