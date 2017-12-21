@@ -42,14 +42,17 @@ documentation on it.
 
 =head1 CLASS METHOD
 
-=head3 file_class
+=head3 dir_class
 
 Returns the class which is used to create folder objects: 
 Actium::Storage::Folder.
 
 =cut
 
-method dir_class {'Actium::Storage::Folder'}
+method dir_class {
+    require Actium::Storage::Folder;
+    return 'Actium::Storage::Folder';
+}
 
 =head1 OBJECT METHODS
 
