@@ -5,7 +5,7 @@ package Actium::Storage::Folder 0.014;
 
 use Actium;
 use Kavorka ('method');    ### DEP ###
-use Path::Class;           ### DEP ###
+use Path::Class();         ### DEP ###
 use parent ('Path::Class::Dir');
 
 =encoding utf8
@@ -84,7 +84,10 @@ Actium::Storage::File.
 
 =cut
 
-method file_class {'Actium::Storage::File'}
+sub file_class {
+    require Actium::Storage::File;
+    return 'Actium::Storage::File';
+}
 
 =head1 OBJECT METHODS
 
@@ -300,7 +303,7 @@ method spew_from_method (
     $cry->done;
     return;
 
-} ## tidy end: method existing_folder4
+} ## tidy end: method spew_from_method
 
 =head3 spew_from_hash
 
@@ -355,7 +358,7 @@ method spew_from_hash (
     $cry->done;
     return;
 
-} ## tidy end: method existing_folder5
+} ## tidy end: method spew_from_hash
 
 1;
 

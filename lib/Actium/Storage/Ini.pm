@@ -6,6 +6,8 @@ package Actium::Storage::Ini 0.011;
 
 use Actium ('class');
 
+use Actium::Storage::Folder;
+
 use File::HomeDir;    ### DEP ###
 use Config::Tiny;     ### DEP ###
 
