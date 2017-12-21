@@ -161,10 +161,10 @@ sub load_prehistorics {
 
     my @files;
     if (@filespecs) {
-        @files = map { $folder->glob_plain_files($_) } @filespecs;
+        @files = map { $folder->glob_files($_) } @filespecs;
     }
     else {
-        @files = $folder->glob_plain_files;
+        @files = $folder->glob_files;
     }
 
     my @skeds
@@ -368,7 +368,11 @@ sub write_prehistorics {
 
     $merge_cry->done;
 
-    $folder->write_files_from_hash( \%allprehistorics, 'prehistoric', 'txt' );
+    $folder->spew_from_hash(
+        hash         => \%allprehistorics,
+        display_type => 'prehistoric',
+        extension    => 'txt'
+    );
     $prepare_cry->done;
 
     return;

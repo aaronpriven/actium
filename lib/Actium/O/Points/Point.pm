@@ -247,11 +247,12 @@ sub new_from_kpoints {
           = map { $_, 1 } @{ $self->omitted_of($stop_to_import) };
         my ( %found_line, @found_linedirs );
 
-        my $kpointdir = substr( $stop_to_import, 0, 3 ) . 'xx';
+        my $kpoint_folder = substr( $stop_to_import, 0, 3 ) . 'xx';
 
-        my $kpointfile = "$KFOLDER/$kpointdir/$stop_to_import.txt";
+        my $kpointfile = $self->signup->folder->file(
+            "$KFOLDER/$kpoint_folder/$stop_to_import.txt");
 
-        my $kpoint = $self->signup->open_read($kpointfile);
+        my $kpoint = $kpointfile->openr_utf8;
 
         my (%bsn_columns);
 
@@ -1147,9 +1148,9 @@ sub output {
 
     my $signid = $self->signid;
 
-    my $pointdir = $self->signup->subfolder($IDPOINTFOLDER);
+    my $point_folder = $self->signup->ensure_subfolder($IDPOINTFOLDER);
 
-    my $fh = $pointdir->open_write("$signid.txt");
+    my $fh = $point_folder->file("$signid.txt")->openw_utf8;
 
     print $fh $IDT->start, $IDT->nocharstyle;
 

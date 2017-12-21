@@ -19,7 +19,7 @@ has '_destination_code_of_r' => (
 
 has '_folder' => (
     is       => 'ro',
-    isa      => 'Actium::O::Folder',
+    isa      => 'Actium::Storage::Folder',
     init_arg => 'folder',
 );
 
@@ -27,7 +27,8 @@ sub load {
     my $class        = shift;
     my $commonfolder = shift;
 
-    my %destination_code_of = $commonfolder->json_retrieve($JSON_FILE)->%*;
+    my %destination_code_of
+      = $commonfolder->file($JSON_FILE)->json_retrieve()->%*;
 
     return $class->new(
         destination_code_of => \%destination_code_of,
@@ -42,11 +43,10 @@ sub store {
     \my %destination_code_of = $self->_destination_code_of_r;
     my $folder = $self->_folder;
 
-    my $filespec = $folder->make_filespec($JSON_FILE);
+    my $oldfile = $folder->file($JSON_FILE);
+    $oldfile->move_to("$oldfile.bak");
 
-    rename $filespec, "$filespec.bak";
-
-    $folder->json_store_pretty( \%destination_code_of, $JSON_FILE );
+    $folder->file($JSON_FILE)->json_store( \%destination_code_of );
 
 }
 

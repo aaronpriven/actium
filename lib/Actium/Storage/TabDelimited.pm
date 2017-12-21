@@ -10,17 +10,12 @@ use Sub::Exporter -setup => { exports => [qw(read_aoas read_tab_files)] };
 sub read_aoas {
     my %params = u::validate(
         @_,
-        {   folder => {
-                can => [
-                    'make_filespec', 'glob_plain_files',
-                    'open_read',     'display_path'
-                ]
-            },
+        {   folder           => { isa  => 'Actium::Storage::Folder' },
             files            => { type => ARRAYREF, default => [] },
             globpatterns     => { type => ARRAYREF, default => [] },
             required_headers => { type => ARRAYREF, default => [] },
-            progress_lines   => { type => SCALAR,   default => 5000 },
-            trim             => { type => BOOLEAN,  default => 0 },
+            progress_lines   => { type => SCALAR, default => 5000 },
+            trim             => { type => BOOLEAN, default => 0 },
         },
 
     );
@@ -52,18 +47,13 @@ sub read_tab_files {
 
     my %params = u::validate(
         @_,
-        {   folder => {
-                can => [
-                    'make_filespec', 'glob_plain_files',
-                    'open_read',     'display_path'
-                ]
-            },
+        {   folder           => { isa  => 'Actium::Storage::Folder' },
             files            => { type => ARRAYREF, default => [] },
             globpatterns     => { type => ARRAYREF, default => [] },
             required_headers => { type => ARRAYREF, default => [] },
             callback         => { type => CODEREF },
-            progress_lines   => { type => SCALAR,   default => 5000 },
-            trim             => { type => BOOLEAN,  default => 0 },
+            progress_lines   => { type => SCALAR, default => 5000 },
+            trim             => { type => BOOLEAN, default => 0 },
         },
 
     );
@@ -87,7 +77,7 @@ sub read_tab_files {
 
         my $file_cry = cry("Loading $file");
 
-        my $fh = $folder->open_read($file);
+        my $fh = $folder->file($file)->openr_utf8;
 
         my @headers = _verify_headers( $fh, $file, $required_headers_r );
 
@@ -150,11 +140,11 @@ sub _expand_files {
     my @files = @{$files_r};
 
     foreach (@$globpatterns_r) {
-        push @files, u::filename( $folder->glob_plain_files($_) );
+        push @files, u::filename( $folder->glob_files($_) );
     }
 
     if ( not scalar @files ) {
-        my $path = $folder->display_path;
+        my $path = $folder->stringify;
         croak("No files found in $path passed to read_tab_files ");
     }
 
@@ -272,12 +262,7 @@ The named parameters are:
 
 =item folder
 
-This mandatory parameter is intended to be an Actium::O::Folder object
-(or a subclass such as Actium::O::Folders::Signup). However, any object
-representing a folder will work if it implements the methods
-"make_filespec", "glob_plain_files", "open_read", and "display_path."
-See L<Actium::O::Folder|Actium::O::Folder> for details of these
-methods.
+This mandatory parameter is Actium::Storage::Folder object.
 
 =item files
 
@@ -290,8 +275,8 @@ thrown.
 =item globpatterns
 
 If present, this parameter must be a reference to an array of one or
-more patterns (to be passed to $folderobject->glob_plain_files ), which
-will cause those files to be read.
+more patterns (to be passed to $folderobject->glob_files ), which will
+cause those files to be read.
 
 If neither files nor globpatterns is specified, an exception will be
 thrown.
