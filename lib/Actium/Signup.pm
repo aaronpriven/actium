@@ -71,14 +71,14 @@ This documentation refers to version 0.010
  use Actium::Signup;
 
  $signup = Actium::Signup->new(
-      base => '/Actium/signups/',
+      base_folder => '/Actium/signups/',
       signup => 'w00',
     );
  $skeds = $signup->subfolder('skeds');
 
 
- $oldsignup = Actium::O::Folders::Signup->new(
-    { base => '/Actium/signups/' , signup => 'f08'}
+ $oldsignup = Actium::Signup->new(
+    { base_folder => '/Actium/signups/' , signup => 'f08'}
     );
  $oldskeds = $oldsignup->subfolder('skeds');
 
@@ -129,9 +129,9 @@ required attribute of this object.
 
 =head1 METHODS
 
-=head2 subfolder
+=head2 ensure_subfolder, existing_subfolder, ensure_subfolder
 
-This is passed to the signup folder object. See L<subfolder in 
+These are passed to the signup folder object. See L<subfolder in 
 Actium::Storage::Folder|Actium::Storage::Folder/subfolder> for more 
 information.
 
@@ -186,7 +186,9 @@ schedules, JSON schedules, Excel format schedules, etc.
 
 The specific folder can be identified with the phylum_folder method:
 
- $signup->phylum_folder(I<phylum>, I<collection>, I<format>)
+ $folder = $signup->phylum_folder(
+    phylum => I<phylum>, collection => I<collection>, format => I<format>
+ )
 
 The "format" parameter is optional, since not all data comes in
 different formats.

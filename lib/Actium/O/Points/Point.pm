@@ -58,7 +58,7 @@ has effdate => (
 
 has signup => (
     is       => 'ro',
-    isa      => 'Actium::O::Folders::Signup',
+    isa      => 'Actium::Signup',
     required => 1,
 );
 

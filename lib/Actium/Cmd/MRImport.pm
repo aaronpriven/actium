@@ -79,7 +79,8 @@ sub START {
     foreach my $folderspec (@importfolders) {
 
         # import to repository
-        my $importfolder   = Actium::O::Folder->existing_folder($folderspec);
+        my $importfolder
+          = Actium::Storage::Folder->existing_folder($folderspec);
         my @imported_files = import_to_repository(
             repository   => $repository,
             move         => $env->option('move'),
@@ -156,7 +157,7 @@ Technical Detail."
 The mr_import program takes files and copies them into the repository.
 You run it by entering the following into the Terminal (shell):
 
- actium.pl mr_import /Name/Of/A/Folder 
+ actium.pl mr_import /Name/Of/A/Folder
  
 or, for more than one folder,
 
@@ -247,7 +248,7 @@ dependencies below.
 
 =item * Actium::MapRepository
 
-=item * Actium::O::Folder
+=item * Actium::Storage::Folder
 
 =back
 
