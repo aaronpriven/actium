@@ -270,7 +270,7 @@ dependencies below.
 
 =item * Actium::MapRepository
 
-=item * Actium::O::Folder
+=item * Actium::Storage::Folder
 
 =back
 

@@ -31,7 +31,7 @@ func hash_read_gtfs (
     return csv( in => $filespec, encoding => 'UTF-8', key => $key );
 }
 
-func gtfs_filespec ( Actium::O::Folders::Signup : $signup, Str :file($filename) ) {
+func gtfs_filespec ( Actium::Signup : $signup, Str :file($filename) ) {
     my $folder = $signup->existing_subfolder($PHYLUM);
 
     $filename .= ".txt" unless $filename =~ /\.txt\z/;
