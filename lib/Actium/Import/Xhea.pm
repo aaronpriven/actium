@@ -109,9 +109,13 @@ sub xhea_import {
           = Actium::O::2DArray->new($new_p_records_r)->tsv( @{$new_p_heads_r} );
     }
 
-    $tab_folder->write_files_from_hash( $tab_strings_r, qw(tab txt) );
+    $tab_folder->spew_from_hash(
+        hash         => $tab_strings_r,
+        display_type => 'tab',
+        extension    => 'txt'
+    );
 
-    $tab_folder->json_store_pretty( $fields_of_r, 'records.json' );
+    $tab_folder->file('records.json')->json_store($fields_of_r);
 
     return;
 
@@ -447,9 +451,9 @@ sub _adjust_boolean {
         my $ppat_cry = cry("Processing place patterns");
 
         my $xheafolder = shift;
-        return unless $xheafolder->file_exists($placepatfile);
+        return unless $xheafolder->file($placepatfile)->exists;
 
-        my $fh = $xheafolder->open_read($placepatfile);
+        my $fh = $xheafolder->file($placepatfile)->openr_utf8;
         my ( @ppat_records, $line, $direction );
 
         my $rank = 0;
@@ -504,12 +508,12 @@ sub load {
 
         my $class_cry = cry('Generating classes from XSD');
 
-        my $xsd       = $xheafolder->make_filespec("$filename.xsd");
-        my @xml       = $xheafolder->make_filespec("$filename.xml");
+        my $xsd       = $xheafolder->file("$filename.xsd")->stringify;
+        my @xml       = $xheafolder->file("$filename.xml")->stringify;
         my @filenames = $filename;
 
-        if ( $xheafolder->file_exists("W$filename.xml") ) {
-            push @xml,       $xheafolder->make_filespec("W$filename.xml");
+        if ( $xheafolder->file("W$filename.xml")->exists ) {
+            push @xml,       $xheafolder->file("W$filename.xml")->stringify;
             push @filenames, "W$filename";
         }
 
@@ -929,7 +933,7 @@ sub _get_xhea_filenames {
     );
 
     sub to_hasi {
-        my ( $xhea_tab_folder, $hasi_folder ) = @_;
+        my ( $xhea_tab_folder, $hasi_folder, $signup ) = @_;
 
         my $cry = cry("Loading XHEA files to memory");
 
@@ -1060,7 +1064,8 @@ sub _get_xhea_filenames {
             }
         );
 
-        my $signup = $hasi_folder->signup;
+        #my $signup = $hasi_folder->signup;
+        my $signupname = $signup->name;
 
         #my $dump_fh = $hasi_folder->open_write("$signup.dump");
         #say $dump_fh dumpstr (\%pat, \%tps, \%trp, \%pts);
@@ -1070,9 +1075,9 @@ sub _get_xhea_filenames {
 
         my $hasi_cry = cry("Writing HASI files");
 
-        my $pat_cry = cry("Writing $signup.PAT");
+        my $pat_cry = cry("Writing $signupname.PAT");
 
-        my $pat_fh = $hasi_folder->open_write("$signup.PAT");
+        my $pat_fh = $hasi_folder->file("$signupname.PAT")->openw_utf8;
 
         $pat_cry->prog( ( scalar keys %{ $pat{Route} } ) . ' records' );
 
@@ -1106,11 +1111,11 @@ sub _get_xhea_filenames {
 
         $pat_cry->done;
 
-        my $trip_cry = cry("Writing $signup.TRP");
+        my $trip_cry = cry("Writing $signupname.TRP");
         $trip_cry->prog(
             ( scalar keys %{ $trp{InternalNumber} } ) . ' records' );
 
-        my $trp_fh = $hasi_folder->open_write("$signup.TRP");
+        my $trp_fh = $hasi_folder->file("$signupname.TRP")->openw_utf8;
 
         foreach my $tripnum ( keys %{ $trp{InternalNumber} } ) {
 
@@ -1139,10 +1144,10 @@ sub _get_xhea_filenames {
 
         $trip_cry->done;
 
-        my $plc_cry = cry("Writing $signup.PLC");
+        my $plc_cry = cry("Writing $signupname.PLC");
         $plc_cry->prog( ( scalar keys %{ $plc{Place} } ) . ' records' );
 
-        my $plc_fh = $hasi_folder->open_write("$signup.PLC");
+        my $plc_fh = $hasi_folder->file("$signupname.PLC")->openw_utf8;
 
         foreach my $place ( sort keys %{ $plc{Place} } ) {
             printf $plc_fh
@@ -1186,10 +1191,10 @@ This documentation refers to version 0.009
 
 =head1 SYNOPSIS
 
- use Actium::O::Folder;
+ use Actium;
  use Actium::Import::Xhea;
  
- my $folder = Actium::O::Folder->new("/path/to/folder");
+ my $folder = folder("/path/to/folder");
  # folder should have paired xsd and xml files
  
  my ($fields_r, $values_r) = Actium::Import::Xhea::load_adjusted ($folder);
@@ -1230,34 +1235,35 @@ Finally, it saves those files in the "tab" folder, and creates a
 "records.json"  file storing  the field names and assoocated
 information.
 
-It takes three named parameters, all of which should be folder objects.
+It takes three named parameters.
 
 =over
 
 =item signup
 
-The signup folder.
+The Actium::Signup object representing this signup.
 
 =item xhea_folder
 
-The folder with XHEA files.
+An Actium::Storage::Folder object representing folder with XHEA files.
 
 =item tab_folder
 
-The folder to store the tab files in.
+An Actium::Storage::Folder object representing the folder to store  the
+tab files in.
 
 =back
 
 =item B<load(I<folderobj>)>
 
-This routine takes a folder object (such as an  Actium::O::Folder or
-Actium::O::Folders::Signup object ), looks for paired xml and xsd files
-in that folder, and returns three structs: one contains a summary of
-the fields and records, one contains further information about the
-records and fields, and the other contains the values from the file.
+This routine takes an Actium::Storage::Folder object  looks for paired
+xml and xsd files in that folder, and returns three structs: one
+contains a summary of the fields and records, one contains further
+information about the records and fields, and the other contains the
+values from the file.
 
 The XML and XSD structure is somewhat limited and assumes the sort of
-XML  typically exported from Hastus.
+XML typically exported from Hastus.
 
 Hastus exports XML files with three levels: table level (contains
 records), record level (contains fields),  and field level (contains
