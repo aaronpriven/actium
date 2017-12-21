@@ -130,7 +130,7 @@ sub START {
         my $hasicry     = cry("Creating HASI files from XHEA files");
         my $hasi_folder = $signup->ensure_subfolder('hasi');
 
-        Actium::Import::Xhea::to_hasi( $tab_folder, $hasi_folder );
+        Actium::Import::Xhea::to_hasi( $tab_folder, $hasi_folder, $signup );
 
         $hasicry->done;
 
