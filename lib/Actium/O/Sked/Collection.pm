@@ -30,7 +30,7 @@ has name => (
 
 has signup => (
     is      => 'rwp',
-    isa     => 'Actium::O::Folders::Signup',
+    isa     => 'Actium::Signup',
     default => sub { Actium::env->signup },
 );
 
@@ -144,14 +144,14 @@ sub skeds_of_lg {
 
 method load_storable (
       $class:
-      Actium::O::Folders::Signup : $signup = Actium::env->signup,
+      Actium::Signup : $signup = Actium::env->signup,
       Str : $collection !
     ) {
 
     my $folder
-      = $signup->folder( phylum => $PHYLUM, collection => $collection );
+      = $signup->phylum_folder( phylum => $PHYLUM, collection => $collection );
 
-    my $self = $folder->retrieve('skeds.storable');
+    my $self = $folder->file->('skeds.storable')->retrieve;
     $self->_set_signup($signup);
     $self->_set_name($collection);
     return $self;
@@ -160,17 +160,17 @@ method load_storable (
 
 method load_xlsx (
       $class: 
-      Actium::O::Folders::Signup : $signup = Actium::env->signup,
+      Actium::Signup : $signup = Actium::env->signup,
       Str : $collection ! 
     ) {
 
-    my $folder = $signup->folder(
+    my $folder = $signup->phylum_folder(
         phylum     => $PHYLUM,
         collection => $collection,
         format     => 'skeds'
     );
 
-    my @xlsx_files = $folder->glob_plain_files('*.xlsx');
+    my @xlsx_files = $folder->glob_files('*.xlsx');
 
     my @skeds;
     foreach my $file (@xlsx_files) {
@@ -192,7 +192,7 @@ method load_xlsx (
 
 method finalize_skeds (
     $class: 
-    Actium::O::Folders::Signup $signup = Actium::env->signup
+    Actium::Signup $signup = Actium::env->signup
   ) {
 
     my $received_collection = $class->load_storable(
@@ -250,12 +250,12 @@ sub write_tabxchange {
 
     my @skeds = grep { $_->linegroup !~ /^(?:BS|4\d\d)/ax } $self->skeds;
 
-    $params{tabfolder}->write_files_with_method(
-        OBJECTS         => \@skeds,
-        METHOD          => 'tabxchange',
-        EXTENSION       => 'tab',
-        FILENAME_METHOD => 'transitinfo_id',
-        ARGS            => [
+    $params{tabfolder}->spew_from_method(
+        objects         => \@skeds,
+        method          => 'tabxchange',
+        extension       => 'tab',
+        filename_method => 'transitinfo_id',
+        args            => [
             destinationcode => $destination_code,
             actiumdb        => $params{actiumdb},
             collection      => $self,
@@ -272,7 +272,7 @@ method folder ($the_format = undef) {
     # object attributes
     my $signup     = $self->signup;
     my $collection = $self->name;
-    return $signup->folder(
+    return $signup->phylum_folder(
         phylum     => $PHYLUM,
         collection => $collection,
         format     => $the_format,
@@ -285,10 +285,10 @@ method output_skeds_dump {
 
     my $folder = $self->folder('dumped');
 
-    $folder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'dump',
-        EXTENSION => 'dump',
+    $folder->spew_from_method(
+        objects   => $skeds_r,
+        method    => 'dump',
+        extension => 'dump',
     );
 
 }
@@ -302,10 +302,10 @@ method output_skeds_all {
     my $skeds_folder = $self->folder('skeds');
 
     my $skeds_r = $self->skeds_r;
-    $skeds_folder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'xlsx',
-        EXTENSION => 'xlsx',
+    $skeds_folder->spew_from_method(
+        objects   => $skeds_r,
+        method    => 'xlsx',
+        extension => 'xlsx',
     );
 
     $self->output_skeds_place;
@@ -313,10 +313,10 @@ method output_skeds_all {
     $self->output_skeds_dump;
 
     my $spacedfolder = $self->folder('spaced');
-    $spacedfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'spaced',
-        EXTENSION => 'txt',
+    $spacedfolder->spew_from_method(
+        objects   => $skeds_r,
+        method    => 'spaced',
+        extension => 'txt',
     );
 
     my $prehistoricfolder = $self->folder('prehistoric');
@@ -328,11 +328,12 @@ method output_skeds_all {
 } ## tidy end: method output_skeds_all
 
 method output_skeds_storable {
-    my $cry      = cry("Writing skeds in Storable format");
-    my $filespec = $self->folder->make_filespec('skeds.storable');
-    $cry->prog($filespec);
+    my $cry  = cry("Writing skeds in Storable format");
+    my $file = $self->folder->file('skeds.storable');
 
-    $self->folder->store( $self, 'skeds.storable' );
+    $cry->prog("$file");
+
+    $file->store($self);
     $cry->done;
 }
 
@@ -349,7 +350,7 @@ method output_skeds_place {
         $cry->over("$linegroup ");
 
         my $place_workbook_fh
-          = $place_xlsx_folder->open_write_binary( $linegroup . '_p.xlsx' );
+          = $place_xlsx_folder->file( $linegroup . '_p.xlsx' )->openw_raw;
         my $place_workbook    = Excel::Writer::XLSX->new($place_workbook_fh);
         my $place_text_format = $place_workbook->actium_text_format;
 

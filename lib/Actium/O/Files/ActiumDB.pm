@@ -224,7 +224,7 @@ const my @SS_COLUMNS => (
 );
 
 has cachefolder => (
-    isa     => 'Actium::O::Folder',
+    isa     => 'Actium::Storage::Folder',
     is      => 'ro',
     builder => '_build_cachefolder',
     lazy    => 1,
@@ -232,8 +232,8 @@ has cachefolder => (
 
 sub _build_cachefolder {
     my $self = shift;
-    require Actium::O::Folder;
-    return Actium::O::Folder::->new($DEFAULT_CACHE_FOLDER);
+    require Actium::Storage::Folder;
+    return Actium::Storage::Folder::->ensure_folder($DEFAULT_CACHE_FOLDER);
 }
 
 has _ss_cache_r => (
@@ -253,9 +253,10 @@ sub _build_ss_cache {
     my $do_reload = 1;
     my ( $savedtime, $cache_r );
 
-    if ( -e ( $folder->make_filespec($SS_CACHE_FNAME) ) ) {
-        ( $savedtime, $cache_r )
-          = @{ $folder->retrieve($SS_CACHE_FNAME) };
+    my $cachefile = $folder->file($SS_CACHE_FNAME);
+
+    if ( $cachefile->exists ) {
+        ( $savedtime, $cache_r ) = @{ $cachefile->retrieve };
         if ( $savedtime + $CACHE_TIME_TO_LIVE >= time ) {
             $do_reload = 0;
         }
@@ -266,7 +267,7 @@ sub _build_ss_cache {
 
         $cache_r   = $self->_reload_ss_cache;
         $savedtime = time;
-        $folder->store( [ $savedtime, $cache_r ], $SS_CACHE_FNAME );
+        $cachefile->store( [ $savedtime, $cache_r ] );
     }
 
     return $cache_r;
