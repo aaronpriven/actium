@@ -732,7 +732,7 @@ sub _signup_package {
             description => 'Base folder (normally [something]/Actium/signups)',
             display_default => 1,
             fallback        => File::Spec->catdir(
-                $self->bin->path, File::Spec->updir(), 'signups'
+                $self->bin->stringify, File::Spec->updir(), 'signups'
             ),
             envvar         => 'BASE',
             config_section => 'Signup',
@@ -787,9 +787,9 @@ sub _signup_with_old_package {
 
 method _build_newsignup {
     return Actium::Signup::->new(
-        is_new => 1,
-        base   => $self->option('base'),
-        name   => $self->option('signup')
+        is_new      => 1,
+        base_folder => $self->option('base'),
+        name        => $self->option('signup')
     );
 }
 
@@ -802,7 +802,7 @@ method _build_signup {
 
 method _build_oldsignup {
     return Actium::Signup::->new(
-        base => ( $self->option('oldbase') // $self->option('base') ),
+        base_folder => ( $self->option('oldbase') // $self->option('base') ),
         name => $self->option('oldsignup'),
     );
 
