@@ -3,6 +3,7 @@ package Actium::Signup 0.014;
 # Object representing the current signup
 
 use Actium('class');
+use Actium::Storage::Folder;
 use Actium::Types;
 
 has base_folder => (
