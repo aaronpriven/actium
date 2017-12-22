@@ -371,7 +371,8 @@ method formatted (
 has [qw/ap ap_noseparator apbx apbx_noseparator/] => (
     isa      => 'Str',
     is       => 'ro',
-    lazy     => '_',
+    lazy     => 1,
+    builder  => 1,
     init_arg => undef,
     traits   => ['DoNotSerialize'],
 );
