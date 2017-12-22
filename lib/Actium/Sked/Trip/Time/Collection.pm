@@ -25,30 +25,39 @@ has 'stoptime_r' => (
 );
 
 has stoptimes_comparison_str => (
-    is   => 'ro',
-    lazy => method {
-        join( '|', Actium::define( map { $_->timenum } $self->stoptimes ) )
-    },
-    traits => ['DoNotSerialize'],
+    is      => 'ro',
+    lazy    => 1,
+    builder => 1,
+    traits  => ['DoNotSerialize'],
 );
+
+method _build_stoptimes_comparison_str {
+    join( '|', Actium::define( map { $_->timenum } $self->stoptimes ) );
+}
 
 has average_stoptime => (
-    is   => 'ro',
-    lazy => method {
-        Actium::mean( grep { $_->has_time } $self->stoptimes )
-    },
-    traits => ['DoNotSerialize'],
+    is      => 'ro',
+    lazy    => 1,
+    builder => 1,
+    traits  => ['DoNotSerialize'],
 );
 
+method _build_average_stoptime {
+    Actium::mean( grep { $_->has_time } $self->stoptimes );
+}
+
 has destination_stoptime_idx => (
-    is   => 'ro',
-    lazy => method {
-        my $reverseidx
-          = Actium::firstidx { $_->has_time } ( reverse $self->stoptimes );
-        return $self->stoptime_count - $reverseidx - 1;
-    },
-    traits => ['DoNotSerialize'],
+    is      => 'ro',
+    lazy    => 1,
+    builder => 1,
+    traits  => ['DoNotSerialize'],
 );
+
+method _build_destination_stoptime_idx {
+    my $reverseidx
+      = Actium::firstidx { $_->has_time } ( reverse $self->stoptimes );
+    return $self->stoptime_count - $reverseidx - 1;
+}
 
 sub stoptimes_equals {
     my $self       = shift;
