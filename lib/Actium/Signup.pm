@@ -35,13 +35,17 @@ has folder => (
     init_arg => undef,
     is       => 'ro',
     handles  => [qw/ensure_subfolder existing_subfolder subfolder/],
-    lazy     => method {
-        if ( $self->is_new ) {
-            return $self->base_folder->ensure_subfolder( $self->name );
-        }
-        return $self->base_folder->existing_subfolder( $self->name );
-    },
+    lazy     => 1,
+    builder  => 1,
+
 );
+
+method _build_folder {
+    if ( $self->is_new ) {
+        return $self->base_folder->ensure_subfolder( $self->name );
+    }
+    return $self->base_folder->existing_subfolder( $self->name );
+}
 
 method phylum_folder ( :$phylum!, :$collection!, :$format ) {
     # at the moment, nothing special is done with these... but that could
