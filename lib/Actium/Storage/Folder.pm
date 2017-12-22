@@ -164,27 +164,33 @@ method _must_exist {
 
 =head3 grep (qr/regex/)
 
-Returns the children (files or folders) matching the supplied  regular
-expression.
+Returns the children (files or folders) which have a filename matching
+the  supplied regular expression.
 
 =cut
 
-method grep ( $regex! ) {
-    return grep {/$regex/} $self->children;
+# expand someday to accept callbacks?
+
+method grep ( RegexpRef $regex! ) {
+    my @files       = $self->children;
+    my %file_obj_of = map { $_->basename => $_ } @files;
+    my @matching    = grep {/$regex/} keys %file_obj_of;
+    return sort @file_obj_of{@matching};
 }
 
 =head3 glob( $pattern )
 
 Returns a list of Actium::Storage::File or Actium::Storage::Folder
-objects representing the children matching the supplied glob pattern. 
-(See L<Text::Glob|Text::Glob> for the glob pattern rules.)
+objects representing the children which have a filename matching the
+supplied glob pattern. (See L<Text::Glob|Text::Glob> for the glob
+pattern rules.)
 
 =cut
 
 method glob (Str $pattern //= '*') {
     require Text::Glob;
     my $regex = Text::Glob::glob_to_regex($pattern);
-    return grep {/$regex/} $self->children;
+    return $self->grep($regex);
 }
 
 =head3 glob_files
@@ -194,9 +200,9 @@ Like C<glob>, but only returns file objects, not folder objects.
 =cut
 
 method glob_files (Str $pattern //= '*') {
-    require Text::Glob;
-    my $regex = Text::Glob::glob_to_regex($pattern);
-    return grep { not( $_->is_folder ) and /$regex/ } $self->children;
+    my @files = $self->glob($pattern);
+    @files = grep { not( $_->is_folder ) } @files;
+    return @files;
 }
 
 =head3 glob_folders
@@ -206,9 +212,9 @@ Like C<glob>, but only returns folder objects, not file objects.
 =cut
 
 method glob_folders (Str $pattern //= '*') {
-    require Text::Glob;
-    my $regex = Text::Glob::glob_to_regex($pattern);
-    return grep { $_->is_folder and /$regex/ } $self->children;
+    my @files = $self->glob($pattern);
+    @files = grep { $_->is_folder } @files;
+    return @files;
 }
 
 =head2 Writing Multiple Files In Their Entirety
@@ -289,7 +295,7 @@ method spew_from_method (
         $cry->over( $id . q[ ] );
         $seen_id{$id}++;
         $id .= "_$seen_id{$id}" unless 1 == $seen_id{$id};
-        my $file = file( $id . $extension );
+        my $file = $self->file( $id . $extension );
 
         $file->spew_from_method(
             do_cry => 0,
@@ -303,7 +309,7 @@ method spew_from_method (
     $cry->done;
     return;
 
-} ## tidy end: method spew_from_method
+} ## tidy end: method existing_folder3
 
 =head3 spew_from_hash
 
@@ -358,7 +364,7 @@ method spew_from_hash (
     $cry->done;
     return;
 
-} ## tidy end: method spew_from_hash
+} ## tidy end: method existing_folder4
 
 1;
 
