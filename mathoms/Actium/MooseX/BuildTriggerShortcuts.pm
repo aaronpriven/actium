@@ -1,5 +1,15 @@
 package Actium::MooseX::BuildTriggerShortcuts 0.014;
 
+# This does NOT WORK. The "class" passed to _process_options is the
+# metaclass for the attribute (I think), not the class the attribute
+# is found in. At the time that _process_options runs, it's not attached
+# to a class yet, so you can't add a method to the class.
+
+# I think you could add references to the subs in a new attribute of
+# to the attribute metaclass and then later attach the methods to the
+# class in an "after attach_to_class"  (or maybe attach_to_role?)
+# But my head hurts thinking about it.
+
 use strict;
 use warnings;
 
