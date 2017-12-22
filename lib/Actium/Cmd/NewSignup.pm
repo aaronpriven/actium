@@ -88,9 +88,8 @@ sub START {
 
         %schcal_xhea_specs = ( note_of_trip => $note_of_trip_r );
 
-        my $dumpfh = $signup->open_write('note_of_trip.dump');
-        say $dumpfh Actium::dumpstr($note_of_trip_r);
-        close $dumpfh;
+        $signup->folder->file('note_of_trip.dump')
+          ->spew_utf8( Actium::dumpstr($note_of_trip_r) );
 
         $suppcry->done;
 
