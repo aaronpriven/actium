@@ -100,6 +100,17 @@ Actium::Time object.
 
 =back
 
+=head1 IMPLEMENTATION NOTE
+
+This is implemented as a separate class with a has-a relationship
+to Actium::Time, rather than as a subclass of Actium::Time, because
+Actium::Time is implemented as flyweight objects.  If this were a
+subclass, it would lose the benefits of using flyweight objects.
+
+The reason this exists at all as a separate object is because the act of 
+interpolation changes the time. That requires data that is individualized
+by the specific time in the trip.
+
 =head1 DEPENDENCIES
 
 =over
