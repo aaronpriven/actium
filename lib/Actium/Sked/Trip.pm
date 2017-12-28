@@ -1,9 +1,7 @@
 package Actium::Sked::Trip 0.014;
 
 use Actium ('class');
-
-use MooseX::Storage;    ### DEP ###
-with Storage( traits => ['OnlyWhenBuilt'] );
+use MooseX::SetOnce;
 
 ###################
 ###
@@ -47,11 +45,18 @@ foreach my $attrname ( keys %SHORTCOL_OF_ATTRIBUTE ) {
     );
 }
 
-has calendar => (
-    required  => 0,
-    is        => 'ro',
-    predicate => '_',
-    isa       => 'Actium::Sked::Calendar',
+has stoptimes_coll => (
+    is       => 'ro',
+    isa      => 'Actium::Sked::Trip::Time::Collection',
+    required => 1,
+    handles  => { stoptimes => 'times' },
+);
+
+has placetimes_coll => (
+    is      => 'rw',
+    isa     => 'Actium::Sked::Trip::Time::Collection',
+    traits  => ['SetOnce'],
+    handles => { placetimes => 'times' },
 );
 
 has days => (
@@ -65,6 +70,13 @@ has days => (
         sortable_days  => 'as_sortable',
         days_as_string => 'as_string',
     }
+);
+
+has calendar => (
+    required  => 0,
+    is        => 'ro',
+    predicate => '_',
+    isa       => 'Actium::Sked::Calendar',
 );
 
 method calendar_noteletter {
@@ -244,8 +256,6 @@ method merge_pair ($secondtrip) {
 #    return $class->new(%merged_value_of);
 #
 #}    ## <perltidy> end sub merge_pair
-
-with 'Actium::Sked::Trip::Time::Collection';
 
 Actium::immut;
 
