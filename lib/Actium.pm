@@ -89,7 +89,7 @@ SB representing southbound, etc.)  The original few were based on
 transitinfo.org directions, but have been extended to include kinds of
 directions that didn't exist back then.
 
-This should be moved to Actium::O::Dir when other modules not using it
+This should be moved to Actium::Dir when other modules not using it
 are changed.
 
 =item @TRANSBAY_NOLOCALS

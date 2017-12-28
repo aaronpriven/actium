@@ -3,7 +3,7 @@ package Actium::O::Sked::Storage::XLSX 0.013;
 use Actium ('role');
 
 use Actium::O::Sked::Trip;
-use Actium::O::Dir;
+use Actium::Dir;
 use Actium::Days;
 use Actium::Time;
 
@@ -74,7 +74,7 @@ method new_from_xlsx ( $class : Str : $file,
         attributes   => \@attributes,
     );
 
-    my $dir_obj = Actium::O::Dir->instance($dircode);
+    my $dir_obj = Actium::Dir->instance($dircode);
     my $day_obj = Actium::Days->instance( $daycode, 'B' );
 
     my $actiumdb = env->actiumdb;

@@ -5,7 +5,7 @@ package Actium::O::Pattern 0.012;
 use Actium ('class');
 
 use Actium::Types (qw/DirCode ActiumDir/);
-use Actium::O::Dir;
+use Actium::Dir;
 use Actium::O::Pattern::Stop;
 
 has [ 'line', 'linegroup' ] => (

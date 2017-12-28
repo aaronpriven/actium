@@ -2,7 +2,7 @@ package Actium::DaysDirections 0.012;
 
 # Day and direction codes, conversion between in Hastus and legacy systems
 
-# should be eliminated in favor of Actium::Days and Actium::O::Dir
+# should be eliminated in favor of Actium::Days and Actium::Dir
 
 use 5.012;
 use warnings;
