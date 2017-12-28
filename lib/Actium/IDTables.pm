@@ -307,7 +307,7 @@ sub _make_days {
 
     my %days_obj_of;
     while ( my ( $line, $days_objs_r ) = each %all_days_objs_of ) {
-        $days_obj_of{$line} = Actium::O::Days->union( @{$days_objs_r} );
+        $days_obj_of{$line} = Actium::Days->union( @{$days_objs_r} );
     }
 
     if ( @lines == 1 ) {

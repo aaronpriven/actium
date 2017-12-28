@@ -1,4 +1,4 @@
-package Actium::O::Days 0.012;
+package Actium::Days 0.012;
 # Object representing the scheduled days (of a trip, or set of trips)
 
 use 5.022;
@@ -608,7 +608,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Days - Object for holding scheduled days
+Actium::Days - Object for holding scheduled days
 
 =head1 VERSION
 
@@ -616,9 +616,9 @@ This documentation refers to version 0.010
 
 =head1 SYNOPSIS
 
- use Actium::O::Days;
+ use Actium::Days;
  
- my $days = Actium::O::Days->instance ('135');
+ my $days = Actium::Days->instance ('135');
  
  say $days->as_plurals; # "Mondays, Wednesdays, and Fridays"
  say $days->as_adjectives; # "Monday, Wednesday, and Friday"
@@ -642,9 +642,9 @@ objects are immutable.
 
 =over
 
-=item B<< Actium::O::Days->instance(I<daycode> , I<schooldaycode>) >>
+=item B<< Actium::Days->instance(I<daycode> , I<schooldaycode>) >>
 
-The object is constructed using "Actium::O::Days->instance".
+The object is constructed using "Actium::Days->instance".
 
 The ->instance method accepts a day specification as a string,
 containing any or all of the numbers 1 through 7 and optionally H. If a
@@ -663,16 +663,16 @@ indicates that  operation on both school days and school holidays.
 weekend trips will  still have "B" as the school day flag, unless there
 is a situation where some school service is operated on a Saturday.)
 
-=item B<< Actium::O::Days->new(I<daycode> , I<schooldaycode>) >>
+=item B<< Actium::Days->new(I<daycode> , I<schooldaycode>) >>
 
 B<< Do not use this method. >>
 
-This method is used internally by Actium::O::Days to create a new
+This method is used internally by Actium::Days to create a new
 object and insert it into the cache used by instance(). There should
 never be a reason to create more than one method with the same
 arguments.
 
-=item B<< Actium::O::Days->instance_from_string (I<string>) >>
+=item B<< Actium::Days->instance_from_string (I<string>) >>
 
 This is an alternative constructor. It uses a single string, rather
 than the separate daycode and schooldaycode, to construct an object and
@@ -680,13 +680,13 @@ return it.
 
 The only way to get a valid string is by using the I<as_string> object
 method. The format of the string is internal and not guaranteed to
-remain the same across versions of Actium::O::Days. The purpose of this
+remain the same across versions of Actium::Days. The purpose of this
 is to allow a single string to contain day information without
 requiring it to have all the object overhead.
 
-=item B<< Actium::O::Days->union(I<days_obj> , ... >>
+=item B<< Actium::Days->union(I<days_obj> , ... >>
 
-Another constructor. It takes one or more Actium::O::Days objects and 
+Another constructor. It takes one or more Actium::Days objects and 
 returns a new object representing the union of those objects. For
 example, if passed an object representing Saturday and an object
 representing Sunday,  will return an object representing both Saturday

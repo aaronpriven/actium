@@ -17,7 +17,7 @@ use Actium::Types (qw/DirCode ActiumDir ActiumDays/);
 use Actium::O::Sked::Trip;
 use Actium::Time;
 use Actium::O::Dir;
-use Actium::O::Days;
+use Actium::Days;
 use Actium::O::2DArray;
 
 ###################################

@@ -52,12 +52,12 @@ coerce DaySpec, from DayCode, via { [ $_, 'B' ] },;
 
 coerce DaySpec, from DayStr, via { [ split( /-/, $_, 2 ) ] };
 
-subtype ActiumDays, as class_type('Actium::O::Days');
+subtype ActiumDays, as class_type('Actium::Days');
 
 coerce ActiumDays,
-  from DaySpec, via { Actium::O::Days->instance( $_->@* ) },
-  from DayCode, via { Actium::O::Days->instance( to_DaySpec($_)->@* ) },
-  from DayStr,  via { Actium::O::Days->instance( to_DaySpec($_)->@* ) },
+  from DaySpec, via { Actium::Days->instance( $_->@* ) },
+  from DayCode, via { Actium::Days->instance( to_DaySpec($_)->@* ) },
+  from DayStr,  via { Actium::Days->instance( to_DaySpec($_)->@* ) },
   ;
 
 #########################

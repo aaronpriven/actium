@@ -12,7 +12,7 @@ use Actium::O::2DArray;
 const my $API_KEY => 'MW9S-E7SL-26DU-VV8V';
 
 const my @DAYS => qw/12345 6 7/;
-# weekday, saturday, sunday; matches Actium::O::Days
+# weekday, saturday, sunday; matches Actium::Days
 
 sub HELP {
     my ( $class, $env ) = @_;
