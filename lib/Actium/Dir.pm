@@ -1,4 +1,4 @@
-package Actium::O::Dir 0.012;
+package Actium::Dir 0.012;
 
 # Object representing the scheduled direction (of a trip, or set of trips)
 
@@ -197,7 +197,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Dir - Object for holding scheduled direction
+Actium::Dir - Object for holding scheduled direction
 
 =head1 VERSION
 
@@ -205,9 +205,9 @@ This documentation refers to version 0.010
 
 =head1 SYNOPSIS
 
- use Actium::O::Dir;
+ use Actium::Dir;
  
- my $dir = Actium::O::Dir->instance ('WB');
+ my $dir = Actium::Dir->instance ('WB');
  
  say $dir->as_direction; # "West"
  say $days->as_bound; # "Westbound"
@@ -225,9 +225,9 @@ objects are immutable.
 
 =over
 
-=item B<< Actium::O::Dir->instance(I<dircode>) >>
+=item B<< Actium::Dir->instance(I<dircode>) >>
 
-The object is constructed using "Actium::O::Dir->instance".
+The object is constructed using "Actium::Dir->instance".
 
 It accepts a direction string. In general, the directions are as
 follows:
@@ -273,7 +273,7 @@ it accepts:
   We              West
 
 
-=item B<< Actium::O::Dir->new(I<dircode>) >>
+=item B<< Actium::Dir->new(I<dircode>) >>
 
 B<< Do not use this method. >>
 

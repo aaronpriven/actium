@@ -16,7 +16,7 @@ use Actium::Sorting::Line qw<linekeys>;
 use Actium::Types (qw/DirCode ActiumDir ActiumDays/);
 use Actium::O::Sked::Trip;
 use Actium::Time;
-use Actium::O::Dir;
+use Actium::Dir;
 use Actium::Days;
 use Actium::O::2DArray;
 

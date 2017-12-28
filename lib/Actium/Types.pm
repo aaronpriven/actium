@@ -72,9 +72,9 @@ subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 
 enum( DirCode, \@DIRCODES );
 
-subtype ActiumDir, as class_type('Actium::O::Dir');
+subtype ActiumDir, as class_type('Actium::Dir');
 
-coerce( ActiumDir, from DirCode, via { Actium::O::Dir->instance($_) }, );
+coerce( ActiumDir, from DirCode, via { Actium::Dir->instance($_) }, );
 
 ######################
 ## NOTIFY
@@ -225,7 +225,7 @@ L<Actium/Actium>. It can be coerced into  ActiumODir.
 
 =item B<ActiumODir>
 
-A type representing the Actium::O::Dir class.
+A type representing the Actium::Dir class.
 
 =back
 
