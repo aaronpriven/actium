@@ -1,38 +1,36 @@
-What is Actium?
-===============
+# What is Actium?
 
 Actium is a project to release publicly some code and data used to
-create public information materials for [AC Transit](http://www.actransit.org)
-(online timetables, printed schedules at stops) using a series of Perl
-programs, Applescript programs, FileMaker databases and 
-InDesign documents.
+create public information materials for
 
-What's here now is (almost entirely) just the Perl programs, which
-I am slowly reorganizing and rewriting. It is not ready yet for
-anybody else to use, but perhaps those who are interested can at
-least see what it looks like.
+[AC Transit](http://www.actransit.org) (online timetables, printed
+schedules at stops) using a series of Perl programs, Applescript
+programs, FileMaker databases and  InDesign documents.
 
-## Why the name "actium"?
+What's here now is (almost entirely) just the Perl programs, which I am
+slowly reorganizing and rewriting. It is not ready yet for anybody else
+to use, but perhaps those who are interested can at least see what it
+looks like.
 
-It was chosen because it is a word beginning with "ACT" (for "AC Transit"). 
-It is the name of peninsula in Greece; it gave its name to an 
-important 
-[battle](https://en.wikipedia.org/wiki/Battle_of_Actium) that gave rise to
-the Roman Empire. 
+# Why the name "actium"?
 
-### COPYRIGHT & LICENSE
+It was chosen because it is a word beginning with "ACT" (for "AC
+Transit").  It is the name of peninsula in Greece; it gave its name to
+an  important  [battle](https://en.wikipedia.org/wiki/Battle_of_Actium)
+that gave rise to the Roman Empire.
+
+# COPYRIGHT & LICENSE
 
 Copyright 2011-2017
 
 The Actium system is free software; you can redistribute it and/or
 modify it under the terms of either:
 
-* the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any
-later version, or
+\* the GNU General Public License as published by the Free Software
+Foundation; either version 1, or (at your option) any later version, or
 
-* the Artistic License version 2.0.
+\* the Artistic License version 2.0.
 
-This system is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This system is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
