@@ -2,115 +2,72 @@ package Actium::Sked::Trip::Time::Collection 0.014;
 
 # Collection of times
 
-use Actium ('role');
+use Actium ('class');
 
-# This is a role applied to Actium::Sked::Trip. It represents
-# the methods associated with the collection of times in the trip
+# This represents a set of times that's part of a trip --
+# either stoptimes or placetimes
 
-################
-### STOPTIMES
-################
-
-has 'stoptime_r' => (
+has '_times_r' => (
     traits   => ['Array'],
-    is       => 'bare',
+    is       => 'ro',
     isa      => 'ArrayRef[Actium::Sked::Trip::Time]',
     required => 1,
-    init_arg => 'stoptimes',
+    init_arg => 'times',
     handles  => {
-        stoptime       => 'get',
-        stoptimes      => 'elements',
-        stoptime_count => 'count',
+        time      => 'get',
+        times     => 'elements',
+        count     => 'count',
+        '_splice' => 'splice',
+        '_delete' => 'delete',
     },
 );
 
-has stoptimes_comparison_str => (
+# splice and delete should only happen when setting placetimes
+# times_r reader is there just for the slice method, below
+
+has comparison_str => (
     is      => 'ro',
     lazy    => 1,
     builder => 1,
     traits  => ['DoNotSerialize'],
 );
 
-method _build_stoptimes_comparison_str {
-    join( '|', Actium::define( map { $_->timenum } $self->stoptimes ) );
+method _build_comparison_str {
+    return join( '|', Actium::define( map { $_->timenum } $self->times ) );
 }
 
-has average_stoptime => (
+has average => (
     is      => 'ro',
     lazy    => 1,
     builder => 1,
     traits  => ['DoNotSerialize'],
 );
 
-method _build_average_stoptime {
-    Actium::mean( grep { $_->has_time } $self->stoptimes );
+method _build_average {
+    return Actium::mean( grep { $_->has_time } $self->times );
 }
 
-has destination_stoptime_idx => (
+has destination_idx => (
     is      => 'ro',
     lazy    => 1,
     builder => 1,
     traits  => ['DoNotSerialize'],
 );
 
-method _build_destination_stoptime_idx {
-    my $reverseidx
-      = Actium::firstidx { $_->has_time } ( reverse $self->stoptimes );
+method _build_destination_idx {
+    my $reverseidx = Actium::firstidx { $_->has_time } ( reverse $self->times );
     return $self->stoptime_count - $reverseidx - 1;
 }
 
-sub stoptimes_equals {
-    my $self       = shift;
-    my $secondtrip = shift;
-    return $self->stoptimes_comparison_str eq
-      $secondtrip->stoptimes_comparison_str;
+sub equals {
+    my $self             = shift;
+    my $other_collection = shift;
+    return $self->comparison_str eq $other_collection->comparison_str;
 }
 
-################
-### PLACETIMES
-################
-
-has placetime_r => (
-    traits   => ['Array'],
-    is       => 'bare',
-    writer   => '_set_placetime_r',
-    init_arg => 'placetimes',
-    isa      => 'ArrayRef[Actium::Sked::Trip::Time]',
-    required => 0,
-    default  => sub { [] },
-    trigger  => method( $placetimes_r, $? )
-    {
-        my @stoptimes = $self->stoptimes;
-        foreach my $placetime (@$placetimes_r) {
-            if ( Actium::none { $_ == $placetime } @stoptimes ) {
-                croak 'Actium::Sked::Trip::Time object '
-                  . 'found in placetimes but not in stoptimes.';
-            }
-        }
-        return;
-    },
-    handles => {
-        placetimes            => 'elements',
-        placetime_count       => 'count',
-        _placetimes_are_empty => 'is_empty',
-        placetime             => 'get',
-        _splice_placetimes    => 'splice',
-        _delete_placetime     => 'delete',
-        # only from BUILD in Actium::O::Sked
-    },
-);
-
-method placetimes_initialized {
-    return not $self->_placetimes_are_empty;
-}
-
-method specify_placetimes (@stoptimes_indices) {
-    my @placetimes;
-    for my $index (@stoptimes_indices) {
-        push @placetimes, $self->stoptime($index);
-    }
-    $self->_set_placetime_r( \@placetimes );
-    return;
+method slice (@indices) {
+    my $times_r = $self->_time_r;
+    return $times_r->@[@indices];
 }
 
 1;
@@ -119,8 +76,8 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::Trip::Time::Collection - Role representing collection of 
-schedule times
+Actium::Sked::Trip::Time::Collection - Class representing collection of
+ schedule times
 
 =head1 VERSION
 
@@ -129,77 +86,54 @@ version 0.014
 
 =head1 DESCRIPTION
 
-This is a Moose role, representing the collection of times associated
-with a trip of a transit schedule.  It is designed to be applied to the
- Actium::Sked::Trip class, but could conceivably be used for other
-collections of times.
+This object is a Moose role, representing the collection of times
+associated with a trip of a transit schedule.  It might contain times
+for all the stops on a trip, or only those that are published in
+schedules ("timepoints"). It is normally held by the Actium::Sked::Trip
+objects.
 
-=head1 ATTRIBUTES
+All data is read-only once created.
 
-=head2 B<stoptimes>
+=head1 CONSTRUCTION
 
-This is an array of Actium::Sked::Trip::Time objects, each one
-representing the time the vehicle passes a stop. See
+The object is constructed by passing a parameter named "times" to the
+"new"  constructor.
+
+=head2 B<times>
+
+This must be a reference to an array of Actium::Sked::Trip::Time
+objects, each one representing the time the vehicle passes a stop. See
 Actium::Sked::Trip::Time and Actium::Time for more details.
 
-There is one entry for each stop in the schedule, although that may
-point to an Actium::Time value representing a stop that is not served
-by this trip.
+There should be one entry for each entry in the schedule (either stops,
+if this is a set of times for stops, or places, if this is a set of
+times for places). Some trips do not serve all stops, and entries
+representing unserved stops or places should have an Actium::Time value
+that means "service does not stop here".
 
-=head3 construction
+=head1 METHODS
 
-In the constructor, the C<stoptimes> entry expects an array reference.
+=head3 C<times()>
 
-=head3 C<stoptimes> method
+The C<imes> method returns a list of the times.
 
-The C<stoptimes> method returns a list of the times. The stoptimes 
-attribute is read-only.
+=head3 C<time( I<index> ) >
 
-=head3 C<stoptime( I<index> ) > method
+The C<time> method returns the time object at the specified index.
 
-The C<stoptime> method returns the time object at the specified index.
+=head3 C<slice( I<index>, I<index>, ... ) >
 
-=head3 C<stoptime_count> method
+The C<slice> method returns the times at the specified indices.
 
-The C<stoptime_count> method returns the count of the elements of
-stoptimes.
+=head3 C<count()>
 
-=head2 C<placetimes>
+The C<count> method returns the count of the times.
 
-This is a list of those times from C<stoptimes> that are the times
-representing "places" (timepoints).
+=head3 C<equals($other_collection)>
 
-There is one entry for each place (timepoint) in the schedule, although
-that may point to an Actium::Time value representing a stop that is not
-served by this trip.
-
-=head3 construction
-
-In the constructor, the C<placetimes> entry expects an array reference.
-
-=head3 C<placetimes> method
-
-The C<placetimes> method returns a list of the times.
-
-=head3 C<placetime( I<index> ) > method
-
-The C<placetime> method returns the time object at the specified index.
-
-=head3 C<placetime_count> method
-
-The C<placetime_count> method returns the count of the elements of
-placetimes.
-
-=head3 C<placetimes_initialized>
-
-Returns true if the placetimes have been initialized, false otherwise.
-
-=head3 C<< specify_placetimes (I<stoptime_indices>) >>
-
-This method accepts a list of indices in stoptimes, to be made into the
-placetimes for this object. So, for example, C<specify_placetimes
-(0,3,7,9)> would make the zeroth, third, seventh, and ninth stop times
-into the place times.
+The C<equals> method checks if two time collections are equal: the
+current collection and the one passed in the argument. It returns a
+boolean value: true if they are equal.
 
 =head1 AUTHOR
 
