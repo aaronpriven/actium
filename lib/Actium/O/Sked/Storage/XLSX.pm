@@ -4,7 +4,7 @@ use Actium ('role');
 
 use Actium::O::Sked::Trip;
 use Actium::O::Dir;
-use Actium::O::Days;
+use Actium::Days;
 use Actium::Time;
 
 #############################################
@@ -75,7 +75,7 @@ method new_from_xlsx ( $class : Str : $file,
     );
 
     my $dir_obj = Actium::O::Dir->instance($dircode);
-    my $day_obj = Actium::O::Days->instance( $daycode, 'B' );
+    my $day_obj = Actium::Days->instance( $daycode, 'B' );
 
     my $actiumdb = env->actiumdb;
     my @place8s = map { $actiumdb->place8($_) } @place4s;
@@ -162,7 +162,7 @@ func _read_trips (
         #if ( exists $trip{DAY} ) {
         #    my $day_string = delete $trip{DAY};
         #    $trip{days_obj}
-        #      = Actium::O::Days->instance_from_string($day_string);
+        #      = Actium::Days->instance_from_string($day_string);
         #}
 
         $trip{stoptime_r}

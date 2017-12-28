@@ -946,7 +946,7 @@ sub format_side {
 
 } ## tidy end: sub format_side
 
-# TODO - allow all values in Actium::O::Days
+# TODO - allow all values in Actium::Days
 my %text_of_exception = (
     SD     => 'school days only',
     SH     => 'school holidays only',
@@ -1006,7 +1006,7 @@ sub format_sidenotes {
             $dest =~ s/\.*$/\./;
         }
 
-        # TODO - Update to allow all values in Actium::O::Days
+        # TODO - Update to allow all values in Actium::Days
         if ( $attr{exception} ) {
             $exc = $text_of_exception{ $attr{exception} };
         }

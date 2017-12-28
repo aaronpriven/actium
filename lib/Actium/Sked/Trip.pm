@@ -63,7 +63,7 @@ has days => (
     required => 1,
     init_arg => 'days',
     is       => 'ro',
-    isa      => 'Actium::O::Days',
+    isa      => 'Actium::Days',
     handles  => {
         daycode        => 'daycode',
         schooldaycode  => 'schooldaycode',
@@ -222,7 +222,7 @@ method merge_pair ($secondtrip) {
 #            }
 #            if ( $_ eq 'days_obj' ) {
 #                $merged_value_of{$init_arg}
-#                  = Actium::O::Days->union( $self->$attrname,
+#                  = Actium::Days->union( $self->$attrname,
 #                    $secondtrip->$attrname );
 #                next;
 #            }

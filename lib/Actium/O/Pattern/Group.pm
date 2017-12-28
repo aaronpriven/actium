@@ -4,7 +4,7 @@ use Actium ('class');
 
 use Actium::Types (qw/ActiumDir/);
 use Actium::O::Dir;
-use Actium::O::Days;
+use Actium::Days;
 use Actium::Time;
 use Actium::O::Pattern;
 use Actium::O::Sked::Trip;
@@ -118,7 +118,7 @@ sub skeds {
             linegroup   => $self->linegroup,
             direction   => $self->dir_obj,
             trip_r      => [ $trip_collection->trips_r->@* ],
-            days        => Actium::O::Days->instance( $days, 'B' ),
+            days        => Actium::Days->instance( $days, 'B' ),
           );
 
     } ## tidy end: foreach my $days ( keys %trip_collection_by_days)
@@ -138,7 +138,7 @@ sub _sked_trip_collections {
 
             my $days = $trip->days;
             $days =~ s/7/7H/;    # dumb way of dealing with holidays, but...
-            my $days_obj = Actium::O::Days->instance( $days, 'B' );
+            my $days_obj = Actium::Days->instance( $days, 'B' );
 
             my @times = map { $_->timenum } $trip->stoptimes;
 

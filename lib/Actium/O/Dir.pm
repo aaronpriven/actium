@@ -277,10 +277,9 @@ it accepts:
 
 B<< Do not use this method. >>
 
-This method is used internally by Actium::O::Days to create a new
-object and insert it into the cache used by instance(). There should
-never be a reason to create more than one object with the same
-arguments.
+This method is used internally by Actium::Days to create a new object
+and insert it into the cache used by instance(). There should never be
+a reason to create more than one object with the same arguments.
 
 =item B<< $obj->dircode >>
 

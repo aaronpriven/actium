@@ -332,7 +332,7 @@ sub merge_pair {
             }
             if ( $_ eq 'days_obj' ) {
                 $merged_value_of{$init_arg}
-                  = Actium::O::Days->union( $self->$attrname,
+                  = Actium::Days->union( $self->$attrname,
                     $secondtrip->$attrname );
                 next;
             }

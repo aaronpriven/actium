@@ -263,7 +263,7 @@ sub trips_by_day {
 
         for my $trip (@trips) {
 
-            my $sked_day_obj = Actium::O::Days->instance( $skedday, 'B' );
+            my $sked_day_obj = Actium::Days->instance( $skedday, 'B' );
             my $trip_day_obj = $trip->days_obj;
 
             if (   $skedday eq $trip_day_obj->daycode
