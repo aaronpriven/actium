@@ -3,7 +3,6 @@ package Actium::IDTables 0.012;
 use Actium;
 
 use Text::Trim;    ### DEP ###
-use Actium::O::DateTime;
 use Actium::Sorting::Skeds('skedsort');
 use Actium::Text::InDesignTags;
 use Actium::Text::CharWidth ( 'ems', 'char_width' );

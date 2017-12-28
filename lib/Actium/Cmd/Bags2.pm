@@ -8,7 +8,7 @@ use autodie;
 use Actium::O::2DArray;
 
 use Actium::Text::InDesignTags;
-use Actium::O::DateTime;
+use Actium::Date;
 
 const my $IDT     => 'Actium::Text::InDesignTags';
 const my $HARDRET => Actium::Text::InDesignTags::->hardreturn_esc;
@@ -26,7 +26,7 @@ sub START {
     $env = shift;
 
     my @ymd = qw/2017 3 26/;
-    my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
+    my $dt = Actium::Date::->new( ymd => \@ymd );
 
     my $config_obj = $env->config;
 

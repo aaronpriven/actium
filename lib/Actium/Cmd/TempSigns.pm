@@ -4,7 +4,7 @@ use Actium;
 use autodie;
 
 use Actium::Storage::Folder;
-use Actium::O::DateTime;
+use Actium::Date;
 
 use Actium::Text::InDesignTags;
 const my $IDT     => 'Actium::Text::InDesignTags';
@@ -50,8 +50,8 @@ sub START {
 
     my $output_cry = $env->crier->cry('Outputting data to tempsigns.txt');
 
-    my $dt = Actium::O::DateTime::->new(
-        #datetime => $str,
+    my $dt = Actium::Date::->new(
+        #datee => $str,
         ymd => [ 2016, 06, 26 ],
         #pattern  => '%Y-%m-%d'
     );

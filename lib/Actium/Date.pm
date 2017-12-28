@@ -1,17 +1,17 @@
-package Actium::O::DateTime 0.014;
+package Actium::Date 0.014;
 
-# Object representing a date and time
-# (a thin wrapper around the DateTime module, with some i18n methods)
-
-# Non-moosey, because Moose kept interfering too much with
-# constructor names and the like
-
-# consider adding DateTimeX::Role::Immutable
+# Object representing a calendar date
+# (a thin wrapper around the DateTime module, made immutable, and
+# with some i18n methods)
 
 use Actium;
 
 use parent 'DateTime';
 # DateTime ### DEP ###
+# DateTimeX::Role::Immutable ### DEP ###
+use Role::Tiny::With;    ### DEP ###
+with 'DateTimeX::Role::Immutable';
+
 use overload q{""} => '_stringify';
 
 sub _stringify {
@@ -131,7 +131,7 @@ sub new {
         my $obj = $strp_obj->parse_datetime($datestr);
 
         # returns a DateTime object.
-        # This re-blesses it into an Actium::O::DateTime object
+        # This re-blesses it into an Actium::Date object
 
         bless $obj, $class;
         return $obj;
@@ -157,7 +157,7 @@ sub new {
         my $obj = $cldr->parse_datetime($datestr);
 
         # returns a DateTime object.
-        # This re-blesses it into an Actium::O::DateTime object
+        # This re-blesses it into an Actium:::Date object
 
         bless $obj, $class;
         return $obj;
@@ -268,9 +268,7 @@ sub following_day {
     my $class = blessed($self);
     my $one_day
       = ( $one_day{$class} //= $class->duration_class()->new( days => 1 ) );
-    my $new_dt = $class->from_object( object => $self );
-    $new_dt->add_duration( $one_day{$class} );
-    return $new_dt;
+    return $self->plus( $one_day{$class} );
 }
 
 sub en_us_weekday {
@@ -309,10 +307,10 @@ sub newest_date {
 
     return if not defined $newest_date;
 
-    if ( not $newest_date->isa(__PACKAGE__) ) {
-        $newest_date = Actium::O::DateTime::->new($newest_date);
+    if ( not $newest_date->isa($class) ) {
+        $newest_date = $class->new($newest_date);
         # if somebody is passing DateTime objects,
-        # turns them into Actium::O::DateTime objects
+        # turns them into Actium::Date objects
     }
 
     return $newest_date;
@@ -327,7 +325,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::DateTime - dates (and times) for Actium
+Actium::Date - date objects for Actium
 
 =head1 VERSION
 
@@ -335,25 +333,28 @@ This documentation refers to version 0.014
 
 =head1 SYNOPSIS
 
- use Actium::O::DateTime;
+ use Actium::Date;
  
- my $dt = Actium::O::DateTime->('3/27/2017');
+ my $dt = Actium::Date->('3/27/2017');
  # or equivalently
- my $dt = Actium::O::DateTime->(datetime => '3/27/2017');
+ my $dt = Actium::Date->(datetime => '3/27/2017');
  
  my $date_es = $dt->long_es;
  # $date_es = "27 de marzo de 2017";
    
 =head1 DESCRIPTION
 
-Actium::O::DateTime is a thin wrapper around L<DateTime>.  In inherits
-almost almost everything from DateTime, while providing a few
+Actium::Date is an subclass of L<DateTime|DateTime>. 
+The differences between it and DateTime is that it is immutable (it has
+L<DateTimeX::Role::Immutable|DateTimeX::Role::Immutable> applied to it --
+see that role for more information about mutators), 
+and it has a few convenience 
 convenience methods and convenience ways of constructing the object.
 
-Actium::O::DateTime was created in order to do comparisons and
+Actium::Date was created in order to do comparisons and
 presentation of dates rather than times. Therefore, its own methods
-ignore such details as  time zones, leap seconds and the like. 
-Theoretically you could use Actium::O::DateTime  objects to do
+ignore such details as time zones, leap seconds and the like. 
+Theoretically you could use Actium::Date objects to do
 processing on time, but it's not really intended for that  purpose.
 
 =head1 METHODS
@@ -362,20 +363,20 @@ processing on time, but it's not really intended for that  purpose.
 
 =item B<new()>
 
-This subroutine takes arguments and returns a new Actium::O::DateTime
+This subroutine takes arguments and returns a new Actium::DateTime
 object.
 
 Most arguments must be specified using names:
 
     $dt = 
-      Actium::O::DateTime->new(
+      Actium::Date->new(
         cldr => '31-5-2017' , pattern => 'D-M-Y' 
       );
     
 If a single positional argument is seen,  then it is treated the same
 as an argument to 'datetime', below.
 
-The arguments used by Actium::O::DateTime are given below. If none of
+The arguments used by Actium::Date are given below. If none of
 these arguments are present, the arguments are passed through to
 DateTime. Only one of "datetime", "strptime" or "cldr" can be present, 
 and if one is, none of the other arguments other than "pattern" can be
@@ -466,10 +467,10 @@ probably be added  at the end.
 This class method (not object method) calculates the newest date from a
 list of dates passed to it. (Note that the invocant is assumed to be
 the class name and is not used in the calculation.)  The dates can be
-Actium::O::DateTime objects, DateTime objects, or strings; if they are
+Actium::Date objects, DateTime objects, or strings; if they are
 strings they will be formatted as dates as though they were passed to
 new() in the strptime argument.  The return value is an
-Actium::O::DateTime object.
+Actium::Date object.
 
 =back
 
@@ -545,6 +546,14 @@ DateTime::Format::Strptime
 =item * 
 
 DateTime::Locale
+
+=item *
+
+DateTimeX::Role::Immutable
+
+=item *
+
+Role::Tiny
 
 =back
 

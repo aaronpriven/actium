@@ -606,8 +606,8 @@ method effective_date (
         );
     }
 
-    require Actium::O::DateTime;
-    return Actium::O::DateTime->newest_date(@dates);
+    require Actium::Date;
+    return Actium::Date->newest_date(@dates);
 
 } ## tidy end: method effective_date
 

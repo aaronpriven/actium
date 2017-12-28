@@ -16,7 +16,7 @@ use sort ('stable');
 
 use Actium::Sorting::Line (qw(byline sortbyline));
 use List::Compare::Functional('get_unique');    ### DEP ###
-use Actium::O::DateTime;
+use Actium::Date;
 
 const my $IDPOINTFOLDER => 'idpoints2016';
 const my $KFOLDER       => 'kpoints';
@@ -31,7 +31,7 @@ const my $NBSP         => $IDT->nbsp;
 
 has [
     qw/stopid signid delivery agency signtype
-      description description_nocity city/
+      description description_nocity city/,
   ] => (
     is       => 'ro',
     isa      => 'Str',
@@ -52,7 +52,7 @@ has [qw/tallcolumnnum tallcolumnlines/] => (
 
 has effdate => (
     is       => 'ro',
-    isa      => 'Actium::O::DateTime',
+    isa      => 'Actium::Date',
     required => 1,
 );
 
