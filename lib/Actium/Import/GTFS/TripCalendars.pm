@@ -3,7 +3,7 @@ package Actium::Import::GTFS::TripCalendars 0.012;
 use Actium;
 use Actium::Import::GTFS (':all');
 use Actium::Time;
-use Actium::O::DateTime;
+use Actium::Date;
 use DateTime::Duration;
 use DateTime::Event::Recurrence;
 use DateTime::Event::ICal;
@@ -12,8 +12,7 @@ use List::Compare::Functional ('is_LsubsetR');
 
 # "dow" in identifiers means day of week
 
-use Data::Printer { filters => { 'Actium::O::DateTime' => sub { $_[0]->ymd }, },
-};
+use Data::Printer { filters => { 'Actium::Date' => sub { $_[0]->ymd }, }, };
 
 const my @DAYS_OF_WEEK =>
   qw/sunday monday tuesday wednesday thursday friday saturday/;
@@ -513,7 +512,7 @@ func text_notes {
 
     } ## tidy end: foreach my $service_id ( keys...)
 
-} ## tidy end: func text_notes
+} ## tidy end: func read_calendar0
 
 func read_tripids ($signup) {
 
@@ -545,7 +544,7 @@ func read_tripids ($signup) {
 
     return;
 
-} ## tidy end: func read_tripids
+} ## tidy end: func read_calendar1
 
 func joinseries_semicolon_with (Str $and!, Str @things!) {
     return $things[0] if 1 == @things;
@@ -563,13 +562,13 @@ func dt_from_gtfs_date ( Str $date) {
     my $year  = substr( $date, 0, 4 );
     my $month = substr( $date, 4, 2 );
     my $day   = substr( $date, 6, 2 );
-    my $dt = Actium::O::DateTime::->new( ymd => [ $year, $month, $day ] );
+    my $dt = Actium::Date::->new( ymd => [ $year, $month, $day ] );
     return $dt_of{$date} = $dt;
 }
 
-func following_day ( Actium::O::DateTime $dt) {
+func following_day ( Actium::Date $dt) {
     state $one_day = DateTime::Duration->new( days => 1 );
-    my $new_dt = Actium::O::DateTime::->from_object( object => $dt );
+    my $new_dt = Actium::Date::->from_object( object => $dt );
     $new_dt->add_duration($one_day);
     return $new_dt;
 }
