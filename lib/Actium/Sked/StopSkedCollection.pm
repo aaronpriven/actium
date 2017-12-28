@@ -1,4 +1,4 @@
-package Actium::Sked::StopSked::Collection 0.014;
+package Actium::Sked::StopSkedCollection 0.014;
 
 use Actium 'class';
 
@@ -25,7 +25,7 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::StopSked::Collection -  Object representing schedule info
+Actium::Sked::StopSkedCollection -  Object representing schedule info
 for a particular  bus stop
 
 =head1 VERSION
@@ -34,8 +34,8 @@ This documentation refers to version 0.014
 
 =head1 SYNOPSIS
 
- use Actium::Sked::StopSked::Collection;
- # do something with Actium::Sked::StopSked::Collection
+ use Actium::Sked::StopSkedCollection;
+ # do something with Actium::Sked::StopSkedCollection
    
 =head1 DESCRIPTION
 

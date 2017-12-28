@@ -1,4 +1,4 @@
-package Actium::Sked::Trip::Time::Collection 0.014;
+package Actium::Sked::Trip::TimeCollection 0.014;
 
 # Collection of times
 
@@ -76,17 +76,17 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::Trip::Time::Collection - Class representing collection of
+Actium::Sked::Trip::TimeCollection - Class representing collection of
  schedule times
 
 =head1 VERSION
 
-This documentation refers to Actium:::Sked::Trip::Time::Collection
+This documentation refers to Actium:::Sked::Trip::TimeCollection
 version 0.014
 
 =head1 DESCRIPTION
 
-This object is a Moose role, representing the collection of times
+This object is a Moose class, representing the collection of times
 associated with a trip of a transit schedule.  It might contain times
 for all the stops on a trip, or only those that are published in
 schedules ("timepoints"). It is normally held by the Actium::Sked::Trip
