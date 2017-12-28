@@ -1,0 +1,10 @@
+name = "Actium"
+readme_from="README.pod"
+# badges = ["travis"]
+authority="cpan:AARONRP"
+license="perl_5"
+
+module_maker="ModuleBuildTiny"
+
+[release]
+do_not_upload_to_cpan=true
