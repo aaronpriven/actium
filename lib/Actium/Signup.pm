@@ -6,6 +6,8 @@ use Actium('class');
 use Actium::Storage::Folder;
 use Actium::Types;
 
+use Actium::Sked::CalendarCollection;
+
 has base_folder => (
     isa      => 'Actium::Storage::Folder',
     coerce   => 1,
@@ -44,6 +46,11 @@ has agency_id => (
     isa => 'Str',
 );
 
+has calendar_collection => (
+    is  => 'ro',
+    isa => 'Actium::Sked::CalendarCollection',
+);
+
 method _build_folder {
     if ( $self->is_new ) {
         return $self->base_folder->ensure_subfolder( $self->name );
@@ -54,14 +61,11 @@ method _build_folder {
 method phylum_folder ( : $phylum !, : $collection !, : $format ) {
     # at the moment, nothing special is done with these... but that could
     # change
-
     return $self->ensure_subfolder( $phylum, $collection )
       if ( not defined $format or $format eq $EMPTY );
 
     return $self->ensure_subfolder( $phylum, $collection, $format );
 }
-
-with 'Actium::Sked::CalendarCollection';
 
 Actium::immut;
 
