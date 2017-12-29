@@ -1,8 +1,6 @@
 package Actium::Sked::CalendarCollection 0.014;
 
-use Actium ('role');
-
-# role applied to Actium::Signup
+use Actium ('class');
 
 has calendars_r => (
     is      => 'bare',
@@ -33,7 +31,7 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::CalendarCollection - Role representing a collection of
+Actium::Sked::CalendarCollection - Class representing a collection of
 schedule calendars
 
 =head1 VERSION
@@ -43,8 +41,8 @@ This documentation refers to Actium::Sked::CalendarCollection version
 
 =head1 DESCRIPTION
 
-This is a Moose role, representing sets of dates that a schedule will
-operate.  It is intended to be applied to the Actium::Signup class.
+This is a Moose class, representing sets of dates that a schedule will
+operate.
 
 =head1 ATTRIBUTES
 
