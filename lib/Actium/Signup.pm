@@ -37,7 +37,11 @@ has folder => (
     handles  => [qw/ensure_subfolder existing_subfolder subfolder/],
     lazy     => 1,
     builder  => 1,
+);
 
+has agency_id => (
+    is  => 'ro',
+    isa => 'Str',
 );
 
 method _build_folder {
@@ -47,7 +51,7 @@ method _build_folder {
     return $self->base_folder->existing_subfolder( $self->name );
 }
 
-method phylum_folder ( :$phylum!, :$collection!, :$format ) {
+method phylum_folder ( : $phylum !, : $collection !, : $format ) {
     # at the moment, nothing special is done with these... but that could
     # change
 
@@ -56,6 +60,8 @@ method phylum_folder ( :$phylum!, :$collection!, :$format ) {
 
     return $self->ensure_subfolder( $phylum, $collection, $format );
 }
+
+with 'Actium::Sked::CalendarCollection';
 
 Actium::immut;
 
