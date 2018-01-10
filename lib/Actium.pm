@@ -1,19 +1,15 @@
-package Actium 0.014;
+package Actium 0.014;    ## no critic 'ProhibitExcessMainComplexity'
+# vimcolor: #132600
 
 use utf8;
 use 5.024;
 use warnings;
 
-BEGIN {
-    # make the 'u' package an alias to this package
-    *u:: = \*Actium::;
-}
-
 use Carp;                                 ### DEP ###
 use Const::Fast;                          ### DEP ###
 use Module::Runtime('require_module');    ### DEP ###
 use Import::Into;                         ### DEP ###
-use Kavorka ( fun => { -as => 'func' } ); ### DEP ###
+use Kavorka (qw/func multi/);             ### DEP ###
 
 use experimental ('refaliasing');
 
@@ -54,64 +50,23 @@ modules into each namespace.
 
 The following constants are exported into the namespace of each module.
 
-=over
-
-=item $EMPTY
+=head2 $EMPTY
 
 The empty string.
 
-=item $CRLF
+=head2 $CRLF
 
 A carriage return followed by a line feed ("\r\n").
 
-=item $SPACE
+=head2 $SPACE
 
 A space.
 
-=item $KEY_SEPARATOR
-
-This contains the C<^]> character (ASCII 29, "Group Separator"), which
-is used by FileMaker to separate entries in repeating fields. It is
-also used by various Actium routines to separate values, e.g., the
-Hastus Standard AVL routines use it in hash keys when two or more
-values are needed to uniquely identify a record. (This is the same
-basic idea as that intended by perl's C<$;> variable [see
-L<perlvar/$;>].)
-
-=item $MINS_IN_12HRS
-
-The number of minutes in 12 hours (12 times 60, or 720).
-
-=item @DIRCODES
-
-Alphabetic two-character direction codes (NB representing northbound, 
-SB representing southbound, etc.)  The original few were based on
-transitinfo.org directions, but have been extended to include kinds of
-directions that didn't exist back then.
-
-This should be moved to Actium::Dir when other modules not using it
-are changed.
-
-=item @TRANSBAY_NOLOCALS
-
-Transbay lines where local riding is prohibited.
-
-This should no longer be used, and instead the appropriate field from
-the Lines table in the Actium database used instead.
-
-=back
-
 =cut
 
-const my $EMPTY             => q[];
-const my $CRLF              => qq{\cM\cJ};
-const my $SPACE             => q{ };
-const my $KEY_SEPARATOR     => "\c]";
-const my $MINS_IN_12HRS     => ( 12 * 60 );
-const my @TRANSBAY_NOLOCALS => (qw/FS L NX NX1 NX2 NX3 U W/);
-
-const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
-#  Hastus                 0  1  3  2  4  5  6  7  8  9  10 11 12 13 14 15
+const my $EMPTY => q[];
+const my $CRLF  => qq{\cM\cJ};
+const my $SPACE => q{ };
 
 =head1 IMPORTED MODULES
 
@@ -189,33 +144,12 @@ L<Moose::Util::TypeConstraints|Moose::Util::TypeConstraints>
 
 =back
 
-=head2 All modules
+=head2 ALL MODULES
 
 The following modules are imported into all modules, whether a class,
 role, or other type of module.
 
 =over
-
-=item *
-
-L<Kavorka|Kavorka>
-
-All modules will have the function keyword imported as "func" rather
-than Kavorka's default "fun." Classes and roles will also have the
-"method" keyword and all method modifiers ("after", "around" and
-"before").
-
-(The reason for importing 'fun' as 'func' is twofold: first, Eclipse
-supports the Method::Signatures keywords "func" and "method". Second, I
-think it looks weird to have the abbreviation for one word to be
-another word.)
-
-=item *
-
-L<Actium::Crier|Actium::Crier>
-
-The "cry" and "last_cry" subroutines will be exported into the 
-caller's namespace.
 
 =item *
 
@@ -230,7 +164,21 @@ L<Const::Fast|Const::Fast>
 L<English|English>
 
 Although it is not important in more recent perls, the '-no_match_vars'
- parameter is specified when loading the English module.
+parameter is specified when loading the English module.
+
+=item *
+
+L<Kavorka|Kavorka>
+
+All modules will have the "multi" keyword imported, as well as the
+function keyword -- imported as "func" rather than Kavorka's default
+"fun." Classes and roles will also have the "method" keyword and all
+method modifiers ("after", "around", "before", "augment", "override") .
+
+(The reason for importing 'fun' as 'func' is twofold: first, Eclipse
+supports the Method::Signatures keywords "func" and "method". Second, I
+think it looks weird to have the abbreviation for one word to be
+another word.)
 
 =item *
 
@@ -301,16 +249,12 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
 
         # constants and exported routines
         {
-            ## no critic (ProhibitProlongedStrictureOverride)
+            ## no critic 'ProhibitProlongedStrictureOverride'
             no strict 'refs';
-            *{ $caller . '::EMPTY' }             = \$EMPTY;
-            *{ $caller . '::CRLF' }              = \$CRLF;
-            *{ $caller . '::SPACE' }             = \$SPACE;
-            *{ $caller . '::MINS_IN_12HRS' }     = \$MINS_IN_12HRS;
-            *{ $caller . '::KEY_SEPARATOR' }     = \$KEY_SEPARATOR;
-            *{ $caller . '::TRANSBAY_NOLOCALS' } = \@TRANSBAY_NOLOCALS;
-            *{ $caller . '::DIRCODES' }          = \@DIRCODES;
-            *{ $caller . '::env' }               = \&env;
+            *{ $caller . '::EMPTY' } = \$EMPTY;
+            *{ $caller . '::CRLF' }  = \$CRLF;
+            *{ $caller . '::SPACE' } = \$SPACE;
+            *{ $caller . '::env' }   = \&env;
             ## use critic
         }
 
@@ -335,12 +279,10 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
             _do_import 'MooseX::StrictConstructor';
             _do_import 'MooseX::SemiAffordanceAccessor';
             _do_import 'Moose::Util::TypeConstraints';
-            _do_import 'Kavorka',
-              fun => { -as => 'func' },
-              'method', '-allmodifiers';
+            _do_import 'Kavorka', qw/func multi method -allmodifiers/;
         } ## tidy end: if ($type)
         else {
-            _do_import( 'Kavorka', fun => { -as => 'func' } );
+            _do_import( 'Kavorka', qw/func multi/ );
         }
 
         # MooseX::MarkAsMethods ### DEP ###
@@ -351,7 +293,6 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
         # MooseX::MarkAsMethods ### DEP ###
         # indirect ### DEP ###
 
-        _do_import 'Actium::Crier', qw/cry last_cry/;
         _do_import 'Carp';
         _do_import 'Const::Fast';
         _do_import 'English', '-no_match_vars';
@@ -372,37 +313,41 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
 
 }
 
-use Actium::Sorting::Line(qw/byline sortbyline/);
 use HTML::Entities (qw[encode_entities]);                        ### DEP ###
 use List::Util     (qw(all any first max min none sum uniq));    ### DEP ###
-use List::MoreUtils                                              ### DEP ###
-  (qw(firstidx mesh natatime));
+use List::MoreUtils 0.426 (qw(arrayify firstidx mesh natatime)); ### DEP ###
 # List::MoreUtils::XS  ### DEP ###
-use POSIX            (qw/ceil floor/);                           ### DEP ###
-use Params::Validate (qw(validate));                             ### DEP ###
+use POSIX (qw/ceil floor/);                                      ### DEP ###
 use Ref::Util                                                    ### DEP ###
   ( qw( is_arrayref is_blessed_ref is_coderef is_hashref
       is_ioref is_plain_arrayref is_plain_hashref is_ref)
   );
 use Scalar::Util                                                 ### DEP ###
   (qw( blessed looks_like_number refaddr reftype ));
+use Statistics::Lite (qw/mean/);                                 ### DEP ###
 use Text::Trim('trim');                                          ### DEP ###
 
 =head1 SUBROUTINES 
 
-Except for C<env>, none of these subroutines are, or can be, exported 
-into the caller's namespace. They are accessible using the fully
-qualified name, e.g. "Actium::byline".
+Except for C<env>, none of these subroutines are, or can be, exported.
+They can be used with the fully qualified name, e.g. "Actium::byline".
 
 The only subroutine that is exported is C<env>. It is always exported.
 
-As a convenience, the package "u" was made an alias for the "Actium"
-package, so the routines are also accessible using, e.g., "u::byline."
-This usage has now been deprecated and will eventually go away. It's
-not that much harder to type "Actium::byline", especially if "Actium::"
-is bound to a key in your editor.
-
 =head2 ACTIUM ENVIRONMENT
+
+=head3 Environment object
+
+=head4 env
+
+This returns the object representing the environment in which the
+program operates. (This is not to be confused with the system
+environment variables represented by L<%ENV|perlvar/%ENV>, which is
+only one part of the operating environment.)
+
+At the moment this is always going to be an Actium::CLI object,
+although at some point if other operating environments are created
+(Web, GUI, etc.)  this may change.
 
 =cut
 
@@ -417,76 +362,72 @@ sub _set_env {
     return;
 }
 
-=over
+=head3 Terminal Output
 
-=item env
+=head4 cry
 
-This returns the object representing the environment in which the
-program operates. (This is not to be confused with the system
-environment variables represented by L<%ENV|perlvar/%ENV>, which is
-only one part of the operating environment.)
+The same as C<< env->cry(...) >>.
 
-At the moment this is always going to be an Actium::CLI object,
-although at some point if other operating environments are created
-(Web, GUI, etc.)  this may change.
+=cut
 
-=back
+sub cry {
+    return $env->cry(@_);
+}
+
+=head4 last_cry
+
+The same as C<< env->last_cry(...) >>.
+
+=cut
+
+sub last_cry {
+    return $env->last_cry(@_);
+}
 
 =head2 LISTS
 
 =head3 Joining Lists into Strings
 
-=over
+=head4 joincomma (@items)
 
-=item joinempty
+Same as C<< joinseries(items => \@items) >>.  This uses the default,
+which does not use the Oxford (serial) comma.
 
+=cut
+
+func joincomma (Str @items ) {
+    return joinseries( items => \@items );
+}
+
+=head4 joinempty
 Takes the list passed to it and joins it together as a simple string. 
 A quicker way to type "join ('' , @list)".
 
 =cut
 
-sub joinempty {
-    return join( q[], map { $_ // q[] } @_ );
+func joinempty ( Maybe[Str] @items ) {
+    return join( q[], map { $_ // q[] } @items );
 }
 
-=item joinkey
-
-Takes the list passed to it and joins it together, with each element
-separated  by the C<$KEY_SEPARATOR> value. A quicker way to type "join
-($KEY_SEPARATOR , @list)".
-
-=cut
-
-sub joinkey {
-    return join( $KEY_SEPARATOR, map { $_ // q[] } @_ );
-}
-
-=item joinlf
+=head4 joinlf
 
 Takes the list passed to it and joins it together, with each element
 separated  by a line feed. A quicker way to type 'join ("\n" , @list)'.
 
 =cut 
 
-sub joinlf {
-    return join( "\n", map { $_ // q[] } @_ );
+func joinlf ( Maybe[Str] @items ) {
+    return join( "\n", map { $_ // q[] } @items );
 }
 
-=item jointab
-
-Takes the list passed to it and joins it together, with each element
-separated  by tabs. A quicker way to type 'join ("\t" , @list)'.
-
-=cut
-
-sub jointab {
-    return join( "\t", map { $_ // q[] } @_ );
-}
-
-=item joinseries ( [ I<hashref>, ] I<list>)
+=head4 joinseries 
 
 This routine is designed to display a list as it should appear in
-English. (All items passed to joinseries must be defined, scalar values.)
+English.
+
+(All items passed to joinseries must be defined, scalar values.)
+
+For example:
 
  joinseries(qw/Sally Carlos/);
  # 'Sally and Carlos'
@@ -494,17 +435,20 @@ English. (All items passed to joinseries must be defined, scalar values.)
  # 'Fred, Sally and Carlos'
  joinseries(qw/Mei Fred Sally Carlos/);
  # 'Mei, Fred, Sally and Carlos'
-   
-If the first is a hash reference, the keys and values are treated as options.
-Valid options are:
+ 
+There are four named parameters. Only "items" is mandatory.
 
 =over
 
+=item items
+
+These are the strings to be joined.
+
 =item conjunction
 
-The word used to connect the penultimate and last items in the list.
-If passed 'undef' or if not specified, uses "and".
-Spaces are always placed on either side of the conjunction.
+The word used to connect the penultimate and last items in the list. If
+passed 'undef' or if not specified, uses "and". Spaces are always
+placed on either side of the conjunction.
 
  joinseries( { conjunction => 'or' } , qw/Fred Sally Carlos/);
  # 'Fred, Sally or Carlos'
@@ -514,8 +458,8 @@ Spaces are always placed on either side of the conjunction.
 A boolean value; if true, the separator (see below) is placed after the
 penultimate item in the list. If passed 'undef' or not specified, it
 will be treated as though a false value had been supplied, unless a
-custom separator is supplied, in which case it will be treated as though
-a true value had been supplied. 
+custom separator is supplied, in which case it will be treated as
+though a true value had been supplied.
 
  joinseries( { oxford => '1' } , qw/Fred Sally Carlos/);
  # 'Fred, Sally, and Carlos'
@@ -526,159 +470,109 @@ The punctuation used to separate the appropriate items.  If not
 specified, uses a comma.  A trailing space is always added to the
 separator.
 
-Note that specifying this item changes the default value of
-"oxford," above.
+Note that specifying this item changes the default value of "oxford,"
+above.
 
  joinseries( { separator => ';' } , qw/Sasha Aisha Raj/);
  # 'Sasha; Aisha; and Raj'
  
+=back
+ 
 =cut
 
-sub joinseries {
-    my %options;
-    if ( is_hashref( $_[0] ) ) {
-        %options = shift->%*;
-    }
+func joinseries (
+   Str :@items is ref_alias,
+   Str :$conjunction //= 'and',
+   Bool :$oxford?,
+   Str :$separator?,
+   ) {
 
-    state $subname = __PACKAGE__ . '::joinseries';
+    # checking existence of keys in %_ distinguishes
+    # an unspecified 'oxford' key from a specified "oxford => undef"
+    my $oxford_specified = exists $_{oxford};
 
-    my ( $separator, $oxford, $conjunction );
-
-    $separator = delete $options{separator};
     if ( defined $separator ) {
-        $oxford = delete $options{oxford} // 1;
-        $separator .= $SPACE;
+        $oxford = 1 unless $oxford_specified;
+        $separator =~ s/ *\z/ /;
     }
     else {
-        $oxford = delete $options{oxford} // 0;
+        $oxford = 0 unless $oxford_specified;
         $separator = q[, ];
     }
 
-    $conjunction = delete $options{conjunction} // 'and';
+    return $items[0] if 1 == @items;
+    return "$items[0] $conjunction $items[1]" if 2 == @items;
 
-    croak 'Invalid options ('
-      . joinseries( keys %options )
-      . ") passed to $subname"
-      if %options;
-
-    croak "No items passed to $subname" unless @_;
-    croak "Reference passed to $subname"
-      if List::Util::any { is_ref($_) } @_;
-    croak "Undefined value passed to $subname"
-      unless List::Util::all { defined($_) } @_;
-
-    return $_[0] if 1 == @_;
-    return "$_[0] $conjunction $_[1]" if 2 == @_;
-
-    my $final = pop;
+    my @copied = @items;
+    my $final  = pop @copied;
     if ($oxford) {
-        return ( join( $separator, @_, "$conjunction $final" ) );
+        return ( join( $separator, @copied, "$conjunction $final" ) );
     }
     else {
-        return ( join( $separator, @_ ) . " $conjunction $final" );
+        return ( join( $separator, @copied ) . " $conjunction $final" );
     }
 
-} ## tidy end: sub joinseries
+} ## tidy end: func joinseries
 
-=item joinseries_with (I<conjunction> , I<item>, I<item>, ...)
+=head4 jointab
 
-B<Deprecated.> Like C<joinseries>, but instead of an optional hashref,
-the first argument is always the conjunction.
-
-   joinseries_with('or' , qw(Sasha Aisha Raj)); 
-   # 'Sasha, Aisha or Raj'
+Takes the list passed to it and joins it together, with each element
+separated  by tabs. A quicker way to type 'join ("\t" , @list)'.
 
 =cut
 
-func joinseries_with (Str $conjunction!, Str @things!) {
-    return joinseries( { conjunction => $conjunction }, @things );
+func jointab ( Maybe[Str] @items ) {
+    return join( "\t", map { $_ // q[] } @items );
 }
-
-=back
 
 =head3 Mathematics on Lists
 
-=over
+=head4 max
 
-=item max
+L<< C<max> from List::Util|List::Util/max >>
 
-L<C<max> from List::Util|List::Util/max>
+=head4 mean
 
-=item mean
+L<< C<mean> from Stastics::Lite|Statistics::Lite/mean >>
 
-The arithmetic mean of its arguments, or if the first argument is an
-array ref, of the members of that array.
+=head4 min
 
-=cut
+L<< C<min> from List::Util|List::Util/min >>
 
-sub mean {
+=head4 sum
 
-    if ( is_plain_arrayref( $_[0] ) ) {
-        return sum( @{ $_[0] } ) / scalar( @{ $_[0] } );
-    }
-
-    return sum(@_) / scalar(@_);
-}
-
-=item min
-
-L<C<min> from List::Util|List::Util/min>
-
-=item population_stdev
-
-The population standard deviation of its arguments, or if the first 
-argument is an array ref, of the members of that array.
-
-=cut
-
-sub population_stdev {
-
-    my @popul = is_plain_arrayref( $_[0] ) ? @{ $_[0] } : @_;
-
-    my $themean = mean(@popul);
-    return sqrt( mean( [ map { $_**2 } @popul ] ) - ( $themean**2 ) );
-}
-
-=item sum
-
-L<C<sum> from List::Util|List::Util/sum>
-
-=back
+L<< C<sum> from List::Util|List::Util/sum >>
 
 =head3 Searching and Comparison of Lists
 
-=over
+=head4 all
 
-=item all
+L<< C<all> from List::Util|List::Util/all >>
 
-L<C<all> from List::Util|List::Util/all>
-
-=item all_eq
+=head4 all_eq
 
 Returns a boolean value: true if the first value is equal to all the
 subsequent values (using C<eq>), false otherwise.
 
 =cut
 
-sub all_eq {
-    my $first = shift;
-    my @rest  = @_;
+func all_eq (Str $first!, Str @rest!) {
     return all { $_ eq $first } @rest;
 }
 
-=item any
+=head4 any
 
-L<C<any> from List::Util|List::Util/any>
+L<< C<any> from List::Util|List::Util/any >>
 
-=item first
+=head4 first
 
-L<C<first> from List::Util|List::Util/first>.
+L<< C<first> from List::Util|List::Util/first >>.
 
-=item firstidx
+=head4 firstidx
 
-L<C<firstidx> from List::MoreUtils|List::MoreUtils/firstidx>.
+L<< C<firstidx> from List::MoreUtils|List::MoreUtils/firstidx >>.
 
-=item folded_in
+=head4 folded_in
 
 Returns true if first argument, when case-folded, is equal to the any
 of the subsequent arguments, when those are case-folded. If the second
@@ -689,16 +583,12 @@ folding.
 
 =cut
 
-sub folded_in {
-
-    my $item = fc(shift);
-    if ( is_plain_arrayref( $_[0] ) ) {
-        return any { $item eq fc($_) } @{ $_[0] };
-    }
-    return any { $item eq fc($_) } @_;
+func folded_in (Str $element, Str @set) {
+    my $folded = fc($element);
+    return any { $folded eq fc($_) } @set;
 }
 
-=item in
+=head4 in
 
 Returns true if the first argument is equal to (using the C<eq>
 operator) any of the subsequent arguments, or if the second argument is
@@ -706,150 +596,224 @@ a plain arrayref,  any of the elements of that array.
 
 =cut
 
-sub in {
-
-    # is-an-element-of (stringwise)
-
-    my $item = shift;
-    if ( is_plain_arrayref( $_[0] ) ) {
-        return any { $item eq $_ } @{ $_[0] };
-    }
-
-    return any { $item eq $_ } @_;
-
+func in (Str $element, Str @set) {
+    return any { $element eq $_ } @set;
 }
 
-=item none
+=head4 none
 
-L<C<none> from List::Util|List::Util/none>.
+L<< C<none> from List::Util|List::Util/none >>.
 
-=back
+=head3 Sorting by Line
+
+=head4 Description
+
+The following functions sort lists of transit line designations in the
+appropriate order.  This is a type of "natural" sort.  It works by
+generating a key associated with each line, which when sorted gives the
+proper "natural" sort.  See L<Implementation Details|/Implementation
+Details> below.
+
+The usual way of designating transit lines is to use a primary line
+number followed by a secondary letter: for example, "42A" is the "A"
+variant of line "42."  Alternatively, lines are often designated with a
+main letter or pair of letters, followed by a secondary number: line
+"A10" or "JX1".
+
+When sorting lines that are designated in this fashion, they should be
+sorted first by their main line number or letter(s), and then
+secondarily by any secondary part. Because transit line designations
+are a mixture of letters and numbers, a naive sort (purely alphabetical
+or numerical) will yield inappropriate results.
+
+This module can sort lines of arbitrary length and complexity, with
+very long line names (AAAAAAAA...) and/or very high numbers of subline
+designations (A1B2C3D4...).
+
+Line designations beginning with numbers are sorted before lines
+beginning with letters. The functions are is case-insensitive.
+
+=head4 Implementation Details
+
+The key for sorting by line is generated by taking all the alphabetical
+parts and the numeric parts, changing the numeric portion so that it
+sorts properly (by putting the number of digits in the number ahead of
+the number), and then reassembling them, joined by NUL characters (\0).
+
+Any characters that are not alphabetical or numerical (not A-Z or 0-9)
+are dropped when creating the sort key.  The sortbyline() routine will
+fall back on a standard (case-sensitive) string sort if two lines have
+identical keys but are not themselves identical. The other routines
+simply ignore these characters.
+
+If there are international transit lines where letters like Å or Þ
+are used, these routines will not handle them.
+
+=head4 Acknowledgements
+
+The line key generation code in this module is based on the CPAN module
+L<<Sort::Key::Natural|Sort::Key::Natural>>, by Salvador Fandiño
+García.
+
+=cut
+
+=head4 byline (I<line1>, I<line2>)
+
+The byline() subroutine is typically called as the BLOCK part of a 
+L<sort|perlfunc/sort> function call:
+
+  @lines = sort byline @lines;
+
+As required by sort, byline() takes two arguments, which are then
+compared.  It returns -1, 0, or 1, depending on whether the first line
+should sort before, the same as, or after the second line.
+
+It is mainly useful as part of a longer sort block:
+
+ @sorted_lines = 
+    sort { 
+        $mode_of{$a} cmp $mode_of{$b} 
+        or byline($a, $b) 
+    } (@lines);
+    
+=cut
+
+sub byline ($$) {    ## no critic ( Prototypes )
+    my ( $aa, $bb ) = linekeys(@_);
+    return $aa cmp $bb;
+}
+
+=head4 linekeys ( I<line1>, I<line2> [ , ...] )
+
+This function returns keys that can be used to sort the lines that were
+given, using "cmp" or another stringwise operator.  In this way you can
+use the values for sorting in another program, or what have you.
+
+=cut
+
+func linekeys (Str @lines) {
+
+    my @keys;
+    foreach my $line (@lines) {
+
+        # this is derived from Sort::Key::Natural
+
+        my @parts = $line =~ /\d+|[[:alpha:]]+/gx;
+
+        # @parts is $line, divided into digit parts or alphanumeric parts
+        # e.g.,
+        #   $line      @parts
+        #   A          ( A )
+        #   72         ( 72 )
+        #   72M        ( 72 , M )
+        #   MA1        ( MA , 1 )
+        #   A11A        ( A  , 11 , A )
+
+        for (@parts) {
+
+            if (m/ \A 0+ \z/sx) {    # special case: if it's zero
+                $_ = '10';
+            }
+            elsif (m/\A\d/sx) {      # otherwise, for digit parts,
+
+                s/ \A 0+ //sx;       # remove leading zeroes
+
+                my $len       = length($_);
+                my $nines     = int( $len / 9 );    ## no critic (MagicNumbers)
+                my $remainder = $len % 9;           ## no critic (MagicNumbers)
+
+                $_ = ( '9' x $nines ) . $remainder . $_;
+
+            # That adds a string representing the length of the number
+            # to the front of the part.
+            # So, it turns "1" into "11", "57" into "257", and so forth.
+            # For numbers 9 or more digits long, it adds a 9 in front of the
+            # length for each 9 digits: a 10-digit number will have "90"
+            # added, an 11-digit number will have "91" added, an 18-digit number
+            # will have "990", etc.
+
+                # This ends up sorting, using the 'cmp' operator,
+                # the same as a numeric comparison for the numeric parts,
+                # while continuing to have a string comparison for the
+                # non-numeric parts.
+
+            } ## tidy end: elsif (m/\A\d/sx)
+            else {
+                # alphabetic parts
+                $_ = uc($_);
+            }
+
+        } ## tidy end: for (@parts)
+
+        push @keys, join( "\0", @parts );
+
+    } ## tidy end: foreach my $line (@lines)
+
+    return @keys == 1 ? $keys[0] : @keys;
+
+} ## tidy end: func linekeys
+
+=head4 sortbyline
+
+Returns a list of lines, sorted properly by line. (If lines are not
+identical but have identical sort keys -- for example, if they differ
+by case, or one line has extra characters in it -- the sort routine
+will fall back on a standard perl "cmp" sort.)
+
+ @lines        = qw(N N1 NA NA1 1 1R 10 2 20 200 20A );
+ @sorted_lines = sortbyline (@lines);
+ # @sorted_lines is 1 1R 2 10 20 20A 200 N N1 NA NA1
+
+=cut
+
+func sortbyline (Str @lines) {
+    my @vals = sort { byline( $a, $b ) or $a cmp $b } @_;
+    return @vals;
+}
 
 =head3 Other List Functions
 
-=over
+=head4 mesh
 
-=item byline
+L<< C<mesh> from List::MoreUtils|List::MoreUtils/mesh >>.
 
-L<C<byline> from Actium::Sorting::Line|Actium::Sorting::Line/byline>
+=head4 natatime
 
-=item mesh
+L<< C<natatime> from List::MoreUtils|List::MoreUtils/natatime >>.
 
-L<C<mesh> from List::MoreUtils|List::MoreUtils/mesh>.
+=head4 uniq
 
-=item natatime
-
-L<C<natatime> from List::MoreUtils|List::MoreUtils/natatime>.
-
-=item sortbyline
-
-L<C<sortbyline> from
-Actium::Sorting::Line|Actium::Sorting::Line/sortbyline>
-
-=item uniq
-
-L<C<uniq> from List::Util|List::Util/uniq>.
-
-=back
+L<< C<uniq> from List::Util|List::Util/uniq >>.
 
 =head2 FILES AND FOLDERS
 
 =head3 Object Creation Functions
 
-=over
+=head4 file
 
-=item file
-
-A function that returns a new Actium::Storage::File object.
-The same as C<< Actium::Storage::File->new(...) >>.
-See L<Actium::Storage::File|Actium::Storage::File> for more information.
+A function that returns a new Actium::Storage::File object. The same as
+C<< Actium::Storage::File->new(...) >>. See
+L<Actium::Storage::File|Actium::Storage::File> for more information.
 
 =cut
 
-func file (@components) {
+sub file {
     require Actium::Storage::File;
-    return Actium::Storage::File->new(@components);
+    return Actium::Storage::File->new(@_);
 }
 
-=item folder
+=head4 folder
 
-A function that returns a new Actium::Storage::Folder object.
-The same as C<< Actium::Storage::Folder->new(...) >>.
-See L<Actium::Storage::File|Actium::Storage::Folder> for more information.
-
-=back
+A function that returns a new Actium::Storage::Folder object. The same
+as C<< Actium::Storage::Folder->new(...) >>. See
+L<Actium::Storage::File|Actium::Storage::Folder> for more information.
 
 =cut
 
-func folder (@components) {
+sub folder {
     require Actium::Storage::Folder;
-    return Actium::Storage::Folder->new(@components);
+    return Actium::Storage::Folder->new(@_);
 }
-
-=head3 Filename Functions
-
-=over
-
-=item add_before_extension
-
-Treats the first argument as a file specification and adds the second
-argument to it, prior to the extension, separated from it by a hyphen.
-So:
-
- $file = add_before_extension("sam.txt", "fred");
- # $file is "sam-fred.txt"
-
-=cut
-
-sub add_before_extension {
-
-    my $input_path = shift;
-    my $addition   = shift;
-
-    my ( $volume, $folders, $filename ) = File::Spec->splitpath($input_path);
-    my ( $filepart, $ext ) = file_ext($filename);
-
-    my $output_path
-      = File::Spec->catpath( $volume, $folders, "$filepart-$addition.$ext" );
-
-    return ($output_path);
-
-}
-
-=item filename
-
-Treats the first argument as a file specification and returns the 
-filename portion (as determined by File::Spec->splitpath ).
-
-=cut
-
-sub filename {
-
-    my $filespec = shift;
-    my $filename;
-    ( undef, undef, $filename ) = File::Spec->splitpath($filespec);
-    return $filename;
-}
-
-=item file_ext
-
-Treats the first argument as a file specification and returns two
-strings: the filename without extension, and the extension.
-
-=cut
-
-sub file_ext {
-    my $filespec = shift;                 # works on filespecs or filenames
-    my $filename = filename($filespec);
-    my ( $filepart, $ext )
-      = $filename =~ m{(.*)    # as many characters as possible
-                      [.]     # a dot
-                      ([^.]+) # one or more non-dot characters
-                      \z}sx;
-    return ( $filepart, $ext );
-}
-
-=back
 
 =head2 STRINGS
 
@@ -859,17 +823,14 @@ These utilities are used when displaying text in a monospaced typeface,
 to ensure that text with combining characters and wide characters are 
 shown taking up the proper width.
 
-=over
-
-=item u_columns
+=head4 u_columns
 
 This returns the number of columns in its first argument, as determined
 by the L<Unicode::GCString|Unicode::GCString> module.
 
 =cut
 
-sub u_columns {
-    my $str = shift;
+func u_columns (Str $str) {
     require Unicode::GCString;    ### DEP ###
     return Unicode::GCString->new("$str")->columns;
     # the quotes are necessary because GCString doesn't work properly
@@ -877,64 +838,66 @@ sub u_columns {
     # stringify them.
 }
 
-=item u_pad
+=head4 u_pad
 
-Pads a string with spaces to a number of columns. The first argument
-should be the string, and the second the number of columns.
+Pads a string with spaces to a number of columns. The are two named
+arguments: "string", the string to pad, and "width", the number of
+columns that should be the result.
 
- $y = u_pad("x", 2);
+ $y = u_pad(text => "x", width => 2);
  # returns  "x "
- $z = u_pad("柱", 4);
+ $z = u_pad(text => "柱", width => 4);
  # returns ("柱  ");
 
 Uses u_columns internally to determine the width of the text.
 
 =cut
 
-sub u_pad {
-    my $text  = shift;
-    my $width = shift;
-
+func u_pad (
+    Str :$text, Int :$width where { $_ > 0 } ) {    ## no critic (Capitalization)
     my $textwidth = u_columns($text);
-
     return $text if $textwidth >= $width;
-
     my $spaces = ( q[ ] x ( $width - $textwidth ) );
-
     return ( $text . $spaces );
-
 }
 
-=item u_wrap (I<string>, I<min_columns>, I<max_columns>)
+=head4 u_wrap
 
-Takes a string and wraps it to a number of columns, producing  a series
-of shorter lines, using the  L<Unicode::Linebreak|Unicode::LineBreak>
-module. If the string has embedded newlines, these are taken as
-separating paragraphs.
+ my $wrapped = u_wrap ("message of many words", 
+     min_columns => 5,  max_columns => 64 );
 
-The first argument is the string to wrap.
+Takes a string and word-wraps it to a number of columns, producing  a
+series of shorter lines, using the 
+L<Unicode::Linebreak|Unicode::LineBreak> module. If the string has
+embedded newlines, these are taken as separating paragraphs.
 
-The second argument, if present, is the minimum number of columns --
-ColMin from Unicode::LineBreak. If not present, 0 will be used.
+The first argument should be the message to be word-wrapped.
 
-The third argment, if present, is the maximum number of columns --
-ColMax from Unicode::LineBreak. If not present, 79 will be used.
+There are two optional named parameters:
+
+=over
+
+=item min_columns
+
+The minimum number of columns -- ColMin from Unicode::LineBreak. If not
+present, 0 will be used.
+
+=item max_columns
+
+The maximum number of columns -- ColMax from Unicode::LineBreak. If not
+present, 79 will be used.
 
 =cut
 
 const my $DEFAULT_LINE_LENGTH  => 79;
-const my $DEFAULT_MINIMUM_LINE => 3;
+const my $DEFAULT_MINIMUM_LINE => 0;
 
-sub u_wrap {
-    my ( $msg, $min, $max ) = @_;
+func u_wrap ( Str $msg!,
+             Int :min_columns($min) //= $DEFAULT_MINIMUM_LINE,
+             Int :max_columns($max) //= $DEFAULT_LINE_LENGTH,
+             ) {
 
-    return unless defined $msg;
-
-    $min //= 0;
-    $max ||= $DEFAULT_LINE_LENGTH;
-
-    return $msg
-      if $max < $DEFAULT_MINIMUM_LINE or $min > $max;
+    return $msg if $max < $min;
 
     require Unicode::LineBreak;    ### DEP ###
 
@@ -955,42 +918,43 @@ sub u_wrap {
 
     }
     foreach (@lines) {
+        $_ = "$_";    # stringify -- eliminate overloaded objects
         s/\s+\z//;
     }
 
     return wantarray ? @lines : joinlf(@lines);
 
-} ## tidy end: sub u_wrap
+} ## tidy end: func joinempty2
 
 =item u_trim_to_columns
 
-Trims an input string to a particular number of columns.
+Trims an input string to a particular number of columns.  Takes two
+named arguments: 'string' (for the string) and 'columns' (for the
+number of columns).
 
- $x = u_trim_to_columns("Barney", 4);
+ $x = u_trim_to_columns(string => "Barney", columns => 4);
  # returns "Barn"
 
 =cut
 
-sub u_trim_to_columns {
-    my $text        = shift;
-    my $max_columns = shift;
+func u_trim_to_columns ( Str :$string!, Int :$columns! ) {
 
     require Unicode::GCString;    ### DEP ###
 
-    my $gc = Unicode::GCString::->new("$text");
+    my $gc = Unicode::GCString::->new("$string");
     # stringification of numbers bug means have to do so explicitly
 
-    while ( $gc->columns > $max_columns ) {
+    while ( $gc->columns > $columns ) {
         $gc->substr( -1, 1, q[] );
     }
 
-    return $gc->as_string if $gc->columns == $max_columns;
+    return $gc->as_string if $gc->columns == $columns;
 
-    return u_pad( $gc->as_string, $max_columns );
+    return u_pad( text => $gc->as_string, width => $columns );
     # in case we trimmed off a double-wide character,
     # pad it to the right number of columns
 
-} ## tidy end: sub u_trim_to_columns
+}
 
 =back
 
@@ -1013,8 +977,8 @@ sub define {
 
 =item encode_entities
 
-L<C<encode_entities> from
-HTML::Entities|HTML::Entities/encode_entities>.
+L<< C<encode_entities> from
+HTML::Entities|HTML::Entities/encode_entities >>.
 
 =item feq
 
@@ -1023,8 +987,7 @@ first argument is equal to its second; otherwise false.
 
 =cut
 
-sub feq {
-    my ( $x, $y ) = @_;
+func feq (Str $x, Str $y) {
     return fc($x) eq fc($y);
 }
 
@@ -1035,14 +998,13 @@ first argument is not equal to its second; otherwise false.
 
 =cut
 
-sub fne {
-    my ( $x, $y ) = @_;
+func fne (Str $x, Str $y) {
     return fc($x) ne fc($y);
 }
 
 =item trim
 
-L<C<trim> from Text::Trim|Text::Trim/trim>.
+L<< C<trim> from Text::Trim|Text::Trim/trim >>.
 
 =back
 
@@ -1052,32 +1014,39 @@ L<C<trim> from Text::Trim|Text::Trim/trim>.
 
 =item ceil
 
-L<C<ceil> from POSIX|POSIX/ceil>.
+L<< C<ceil> from POSIX|POSIX/ceil >>.
 
-=item display_percent
+=item display_percent (I<fraction>)
 
-Returns the first argument as a whole percentage: e.g., if the value is
-0.252, will return "25%".
+This is used to display a percentage. If two arguments are passed, the
+first is taken as the numerator and the second is taken as the
+denominator: the division is performed and then returned as a whole
+percentage.  If only one argument is passed, the first number is
+treated as a fraction itself and multiplied by 100 to get the
+percentage.
+
+(This violates the usual calling conventions, but it's unlikely that
+the numerator and denominator of fractions will be confused.)
+
+The string returned represents a whole percentage: e.g., if the value
+is 0.252, will return "25%".
 
 =cut
 
-sub display_percent {
-    my $val   = shift;
-    my $total = shift;
+func display_percent (Num $val!, Num $total = 1) {
     ## no critic (ProhibitMagicNumbers)
-    return sprintf( ' %.0f%%', $val / $total * 100 );
+    return sprintf( '%.0f%%', $val / $total * 100 );
     ## use critic
 }
 
 =item floor
 
-L<C<floor> from POSIX|POSIX/floor>.
+L<< C<floor> from POSIX|POSIX/floor >>.
 
 =item looks_like_number
 
-L<C<looks_like_number> from
-Scalar::Util|Scalar::Util/looks_like_number>.
-
+L<< C<looks_like_number> from
+Scalar::Util|Scalar::Util/looks_like_number >>.
 
 =back
 
@@ -1085,9 +1054,13 @@ Scalar::Util|Scalar::Util/looks_like_number>.
 
 =over
 
+=item arrayify
+
+L<< C<arrayify> from List::MoreUtils|List::MoreUtils/arrayify >>.
+
 =item blessed
 
-L<C<blessed> from Scalar::Util|Scalar::Util/blessed>.
+L<< C<blessed> from Scalar::Util|Scalar::Util/blessed >>.
 
 =item hashref
 
@@ -1102,44 +1075,6 @@ sub hashref {
     croak 'Odd number of elements passed to ' . __PACKAGE__ . '::hashref'
       if @_ % 2;
     return {@_};
-}
-
-=item flatten
-
-Takes a list and flattens any (unblessed) array references in it, 
-ensuring that the contents of any lists of lists are returned as
-individual items.
-
-So
-
- @list =  ( 'A' , [ 'B1' , 'B2', [ 'B3A' , 'B3B' ], ] ) ; 
-
- $array_ref = flatten(@list);
- @flatarray = flatten(@list);
- # $array_ref = [ 'A', 'B1', 'B2', 'B3A', 'B3B' ]
- # @flatarray = ('A', 'B1', 'B2', 'B3A', 'B3B') 
-
-Returns its result as an array reference in scalar context, but as a
-list in list context.
-
-=cut 
-
-sub flatten {
-
-    my @results;
-
-    while (@_) {
-        my $element = shift @_;
-        if ( is_plain_arrayref($element) ) {
-            unshift @_, @{$element};
-        }
-        else {
-            push @results, $element;
-        }
-    }
-
-    return wantarray ? @results : \@results;
-
 }
 
 =item is_arrayref
@@ -1195,7 +1130,7 @@ passed data structure, suitable for displaying and debugging.
 
 =cut
 
-sub dumpstr (\[@$%&];%) {    ## no critic (ProhibitSubroutinePrototypes)
+sub dumpstr (\[@$%&];%) {    ## no critic (Prototypes)
                               # prototype copied from Data::Printer::np
     require Data::Printer;    ### DEP ###
     return Data::Printer::np(
@@ -1217,17 +1152,11 @@ making the Moose class immutable.
 
 =cut
 
-sub immut {
+sub immut () {
     my $package = caller;
     $package->meta->make_immutable;
     return;
 }
-
-=item validate
-
-L<C<validate> from Params::Validate|Params::Validate/validate>.
-
-=cut
 
 1;
 
@@ -1248,11 +1177,6 @@ Actium'  statement.
 
 =item *
 
-No arguments passed to Actium::joinseries
-
-The joinseries function was called without any valid arguments. Supply
-strings to join.
-
 Odd number of elements passed to Actium::hashref
 
 The hashref function was called with an odd number of arguments (other
@@ -1270,14 +1194,6 @@ present:
 =item *
 
 Perl 5.24 or greater
-
-=item *
-
-Actium::Crier
-
-=item *
-
-Actium::Sorting::Line
 
 =item *
 
@@ -1301,7 +1217,7 @@ Kavorka
 
 =item *
 
-List::MoreUtils
+List::MoreUtils, version 0.426 or greater
 
 =item *
 
@@ -1309,11 +1225,11 @@ Module::Runtime
 
 =item *
 
-Params::Validate
+Ref::Util
 
 =item *
 
-Ref::Util
+Statistics::Lite
 
 =item *
 
@@ -1328,10 +1244,6 @@ distributions:
 
 =item *
 
-Moose (and its accompanying modules)
-
-=item *
-
 Actium::MooseX::BuiltIsRo
 
 =item *
@@ -1340,11 +1252,15 @@ Actium::MooseX::PredicateClearerShortcuts
 
 =item *
 
-Actium::MooseX::BuildTriggerShortcuts
+Actium::MooseX::BuilderShortuct
 
 =item *
 
 Actium::MooseX::Rwp
+
+=item * 
+
+Moose
 
 =item *
 
