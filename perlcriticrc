@@ -132,6 +132,7 @@ info_level = 20
 [Lax::RequireConstantOnLeftSideOfEquality::ExceptEq]
 
 [-Lax::ProhibitStringyEval::ExceptForRequire]
+[-Lax::RequireEndWithTrueConst]
 
 [-Lax::ProhibitLeadingZeros::ExceptChmod]
 # Duplicative, the regualr version now allows chmod also
@@ -172,6 +173,7 @@ formats = #!/usr/bin/env perl
 
 [-CodeLayout::RequireASCII]
 [-Editor::RequireEmacsFileVariables]
+#[-Miscellanea::RequireRcsKeywords]  ## moved to Perl::Critic::Deprecated
 [-Modules::RequirePerlVersion] 
 # included in Actium.pm
 [-ErrorHandling::RequireUseOfExceptions]
