@@ -1,0 +1,24 @@
+The purpose of these calling conventions is to make it difficult to
+accidentally supply arguments in the wrong order. 
+
+So subs can accept:
+
+Nothing:
+ x()
+
+Single scalar, optional or mandatory:
+ x($scalar)
+
+Single scalar, mandatory, followed by list, optional or mandatory:
+ x ($scalar!, @list)
+
+List of arguments, optional or mandatory:
+ x(@list) 
+This would also include commutative operations, e.g., add ($x, $y).
+
+Named arguments, optional or mandatory:
+x(:$name1, :$name2...)
+
+Initial mandatory scalar, followed by named arguments, all of which must be
+optional:
+x ($scalar!, :$name1? , :$name2? )
