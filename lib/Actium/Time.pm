@@ -3,10 +3,10 @@ package Actium::Time 0.014;
 # object for formatting schedule times and parsing formatted times
 
 use Actium ('class');
-use MooseX::Storage;    ### DEP ###
-with Storage( traits => ['OnlyWhenBuilt'] );
 
 #use overload '0+' => sub { shift->timenum };
+
+const my $MINS_IN_12HRS => ( 12 * 60 );
 
 const my %NAMED => (
     NOON_YESTERDAY    => -$MINS_IN_12HRS,
