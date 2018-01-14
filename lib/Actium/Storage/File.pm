@@ -93,6 +93,47 @@ method is_folder {
     return 0;
 }
 
+=item add_before_extension (I<component>)
+
+Returns a new file object, in the same folder as the old file object.
+Adds the supplied argument to the filename of the file object,
+prior to the extension, separated from it by a hyphen.
+So:
+
+ $file = Actium::Storage::File->new('sam.txt');
+ $file->add_before_extension('fred');
+ # $file is now "sam-fred.txt"
+
+=cut
+
+method add_before_extension ( $self : Str $addition! ) {
+    my ( $filepart, $ext ) = $self->basename_ext;
+    my $newfilename
+      = $ext eq $EMPTY ? "$filepart-$addition" : "$filepart-$addition.$ext";
+    return $self->folder->file($newfilename);
+}
+
+=item basename_ext
+
+Like L<< I<basename> in Path::Class::File|Path::Class::File/basename >>, 
+but returns two separate strings: the filename without extension, and the 
+extension.  Neither string contains the separating period.
+
+=cut
+
+method basename_ext {
+    my $basename = $self->basename;
+    return $basename, $EMPTY unless $basename =~ /[.]/;
+
+    my ( $filepart, $ext )
+      = $basename =~ m{(.*)    # as many characters as possible
+                      [.]     # a dot
+                      ([^.]+) # one or more non-dot characters
+                      \z}sx;
+    return ( $filepart, $ext );
+
+}
+
 =head2 Storing and Retrieving Data
 
 A number of methods exist to store and retrieve data in various
@@ -106,8 +147,8 @@ This method retrieves data stored in JSON format.
 
 method json_retrieve {
     my $basename  = $self->basename;
-    my $cry       = cry("Retrieving JSON file $basename");
-    my $json_text = $self->slurp_utf8;
+    my $cry       = env->cry("Retrieving JSON file $basename");
+    my $json_text = $self->slurp_text;
     require JSON;    ### DEP ###
     my $data_r = JSON::from_json($json_text);
     $cry->done;
@@ -121,12 +162,12 @@ reference to a data structure, which is passed to the JSON module.
 
 =cut
 
-method json_store ($data_r!) {
+method json_store ( $data_r ! ) {
     my $basename = $self->basename;
-    my $cry      = cry("Storing JSON file $basename...");
+    my $cry      = env->cry("Storing JSON file $basename...");
     require JSON;    ### DEP ###
     my $json_text = JSON::to_json( $data_r, { pretty => 1, canonical => 1 } );
-    my $result = $self->spew_utf8($json_text);
+    my $result = $self->spew_text($json_text);
     $cry->done;
     return $result;
 }
@@ -139,7 +180,7 @@ This method retrieves data stored in Perl's Storable format.
 
 method retrieve {
     my $basename = $self->basename;
-    my $cry      = cry("Retrieving $basename");
+    my $cry      = env->cry("Retrieving $basename");
     require Storable;
     my $data_r = Storable::retrieve($self);
     unless ($data_r) {
@@ -160,7 +201,7 @@ stored in XLSX format.
 
 method sheet_retrieve {
     my $basename = $self->basename;
-    my $cry      = cry("Retrieving XLSX file $basename");
+    my $cry      = env->cry("Retrieving XLSX file $basename");
 
     require Actium::O::2DArray;
     my $sheet = Actium::O::2DArray::->new_from_file($self);
@@ -177,9 +218,9 @@ nstore function in  the Storable module|Storable/nstore>.
 
 =cut
 
-method store ($data_r ) {
+method store ($data_r) {
     my $basename = $self->basename;
-    my $cry      = cry("Storing $basename...");
+    my $cry      = env->cry("Storing $basename...");
     require Storable;
     my $result = Storable::nstore( $data_r, $self );
     unless ($result) {
@@ -192,7 +233,7 @@ method store ($data_r ) {
 
 =head2 Reading and Writing Whole Files
 
-=head3 slurp_utf8(...)
+=head3 slurp_text(...)
 
 This is just like L<slurp from
 Path::Class::File|Path::Class::File/slurp>, but sets the encoding to
@@ -200,11 +241,11 @@ strict UTF-8.  Any arguments are passed through to the slurp method.
 
 =cut
 
-method slurp_utf8 {
-    return $self->slurp( iomode => '<:encoding(UTF−8)', @_ );
+method slurp_text {
+    return $self->slurp( iomode => '<:encoding(UTF-8)', @_ );
 }
 
-=head3 spew_utf8
+=head3 spew_text
 
 This is just like L<spew from
 Path::Class::File|Path::Class::File/spew>, but sets the encoding to
@@ -212,8 +253,8 @@ strict UTF-8.  Any arguments are passed through to the spew method.
 
 =cut
 
-method spew_utf8 {
-    return $self->spew( { iomode => '>:encoding(UTF-8)' }, @_ );
+method spew_text {
+    return $self->spew( iomode => '>:encoding(UTF-8)', @_ );
 }
 
 =head3 spew_from_method
@@ -257,12 +298,17 @@ status.
 
 =cut
 
-method spew_from_method ( :$object!, :$method!, :\@args = [], Bool :$do_cry = 1 ) {
+method spew_from_method (
+    : $object !,
+    : $method !,
+    : \@args = [],
+    Bool : $do_cry = 1
+  ) {
 
     my $basename = $self->basename;
     my $cry;
     if ($do_cry) {
-        $cry = cry("Writing results of $method to $basename");
+        $cry = env->cry("Writing results of $method to $basename");
     }
 
     my $result = $object->$method(@args);
@@ -272,12 +318,12 @@ method spew_from_method ( :$object!, :$method!, :\@args = [], Bool :$do_cry = 1 
         $self->spew( { iomode => '>' . $object->$layermethod }, $result );
     }
     else {
-        $self->spew_utf8($result);
+        $self->spew_text($result);
     }
     $cry->done if $do_cry;
     return;
 
-} ## tidy end: method exists2
+} ## tidy end: method exists4
 
 ### OPEN ###
 
@@ -297,13 +343,13 @@ method openr_raw {
     return $fh;
 }
 
-=head3 openr_utf8
+=head3 openr_text
 
 Opens the file with mode '<:encoding(UTF-8)' (UTF-8 input).
 
 =cut
 
-method openr_utf8 {
+method openr_text {
     my $fh = $self->open('<:encoding(UTF-8)') or croak "Can't read $self: $!";
     return $fh;
 }
@@ -319,13 +365,13 @@ method openw_raw {
     return $fh;
 }
 
-=head3 openw_utf8
+=head3 openw_text
 
 Opens the file with mode '>:encoding(UTF-8)' (UTF-8 output).
 
 =cut
 
-method openw_utf8 {
+method openw_text {
     my $fh = $self->open('>:encoding(UTF-8)') or croak "Can't write $self: $!";
     return $fh;
 }
@@ -353,12 +399,12 @@ file.
 =item Can't read I<file>: I<error>
 
 An input/output error occurred while attempting to open a  file using
-C<openr_utf8> or C<openr_raw>.
+C<openr_text> or C<openr_raw>.
 
 =item Can't write I<file>: I<error>
 
 An input/output error occurred while attempting to write a  file using
-C<openw_utf8> or C<openw_raw>.
+C<openw_text> or C<openw_raw>.
 
 =back
 
