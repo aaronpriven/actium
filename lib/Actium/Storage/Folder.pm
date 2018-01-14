@@ -8,6 +8,8 @@ use Kavorka ('method');    ### DEP ###
 use Path::Class();         ### DEP ###
 use parent ('Path::Class::Dir');
 
+## no critic 'RequirePodAtEnd'
+
 =encoding utf8
 
 =head1 NAME
@@ -44,7 +46,7 @@ Actium system as an abbreviation for "direction", and I wanted to avoid
 ambiguity.)
 
 It only adds methods to the L<Path::Class::Dir|Path::Class::Dir> module
- from CPAN.  All methods in Path::Class::Dir are supported by this
+from CPAN.  All methods in Path::Class::Dir are supported by this
 module, and readers should look at Path::Class::Dir for complete
 documentation on it.
 
@@ -175,7 +177,8 @@ method grep ( RegexpRef $regex! ) {
     my @files       = $self->children;
     my %file_obj_of = map { $_->basename => $_ } @files;
     my @matching    = grep {/$regex/} keys %file_obj_of;
-    return sort @file_obj_of{@matching};
+    my @matches     = sort @file_obj_of{@matching};
+    return @matches;
 }
 
 =head3 glob( $pattern )
@@ -272,12 +275,12 @@ arguments.
 
 =cut
 
-method spew_from_method ( 
-    : \@objects !, 
-    Str : $method !, 
-    Str : $extension = $EMPTY, 
-    Str : $subfolder? , 
-    Str :$filename_method = 'id', 
+method spew_from_method (
+    : \@objects !,
+    Str : $method !,
+    Str : $extension = $EMPTY,
+    Str : $subfolder? ,
+    Str :$filename_method = 'id',
     : \@args = [],
     ) {
 
@@ -338,10 +341,10 @@ after a period.
 
 =cut
 
-method spew_from_hash ( 
-       :\%hash! , 
-       :$display_type = 'hash' , 
-       :$extension = $EMPTY 
+method spew_from_hash (
+       :\%hash! ,
+       :$display_type = 'hash' ,
+       :$extension = $EMPTY,
     ) {
 
     $extension =~ s/\A[.]*/./
@@ -458,7 +461,7 @@ Aaron Priven <apriven@actransit.org>
 =head1 LICENSE AND COPYRIGHT
 
 This module is free software; you can redistribute it and/or modify it
-under  the same terms as Perl itself. See L<perlartistic>.
+under  the same terms as Perl itself. See L<perlartistic|perlartistic>.
 
 This program is distributed in the hope that it will be useful, but
 WITHOUT  ANY WARRANTY; without even the implied warranty of
