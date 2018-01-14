@@ -194,7 +194,7 @@ method retrieve {
 =head3 sheet_retrieve
 
 This method uses L<the new_from_file method of 
-Actium::O::2DArray|Actium::O::2DArray/new_from_file> to retrieve data
+Array::2D|Array::2D/new_from_file> to retrieve data
 stored in XLSX format.
 
 =cut
@@ -203,8 +203,8 @@ method sheet_retrieve {
     my $basename = $self->basename;
     my $cry      = env->cry("Retrieving XLSX file $basename");
 
-    require Actium::O::2DArray;
-    my $sheet = Actium::O::2DArray::->new_from_file($self);
+    require Array::2D;
+    my $sheet = Array::2D::->new_from_file( $self->stringify );
 
     $cry->done;
     return $sheet;
@@ -291,7 +291,7 @@ arguments.
 =item do_cry
 
 If present and set to a false value, will omit the terminal status
-display, which uses Actium::O::Crier. If not present, will display the
+display, which uses Actium::CLI::Crier. If not present, will display the
 status.
 
 =back
@@ -424,7 +424,7 @@ The following are loaded only when necessary:
 
 =over
 
-=item Actium::O::2DArray
+=item Array::2D
 
 =item JSON
 
