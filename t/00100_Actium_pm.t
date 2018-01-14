@@ -1,15 +1,10 @@
 use strict;
-use Test::More 0.98;
+use Test::More 0.98 tests => 104;
 
 BEGIN {
-    use_ok $_ for qw(
-      Actium
-    );
+    note "These are tests for constants and functions in Actium.pm.";
+    use_ok 'Actium';
 }
-
-plan tests => 104;
-
-note "These are tests for constants and functions in Actium.pm.";
 
 ok( __PACKAGE__->can('env'), 'module should export env()' );
 
