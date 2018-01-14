@@ -7,15 +7,22 @@ binmode $builder->output,         ":encoding(utf8)";
 binmode $builder->failure_output, ":encoding(utf8)";
 binmode $builder->todo_output,    ":encoding(utf8)";
 
-use File::Temp('tmpnam');
+use File::Temp;
 use Path::Class();
 use JSON;
 use Storable;
 use Actium::Env::TestStub;
+use Array::2D;
 
 BEGIN {
     note "These are tests of Actium::Storage::File.";
     use_ok 'Actium::Storage::File';
+}
+
+sub tempname () {
+    my $tempname = scalar File::Temp::tmpnam();
+    #note $tempname;
+    return $tempname;
 }
 
 Actium::_set_env(Actium::Env::TestStub::cry);
@@ -27,7 +34,7 @@ isa_ok( 'Actium::Storage::File', 'Path::Class::File' );
 is( Actium::Storage::File->dir_class,
     'Actium::Storage::Folder', 'dir_class is Actium::Storage::Folder' );
 
-my $tempname_for_exists = tmpnam();
+my $tempname_for_exists = tempname;
 
 my $newfile = Actium::Storage::File->new($tempname_for_exists);
 isa_ok $newfile, 'Actium::Storage::File', 'object for new, nonexistent file';
@@ -87,7 +94,7 @@ my $deep_data = [
 ];
 
 sub storage_test_objs {
-    my $filename = tmpnam();
+    my $filename = tempname;
     my $asf      = Actium::Storage::File->new($filename);
     my $pcf      = Path::Class::File->new($filename);
     return ( $asf, $pcf );
@@ -108,11 +115,48 @@ is $text_data, $slurptext_result, 'slurp_text() reads data correctly';
 note 'json_store and json_retrieve';
 my $json_text = JSON::to_json( $deep_data, { pretty => 1, canonical => 1 } );
 
-my $js_asf
-  = Actium::Storage::File->new( $ENV{HOME} . "/test.json" ); #scalar tmpnam() );
+my $js_asf = Actium::Storage::File->new(tempname);
 $js_asf->json_store($deep_data);
-my $json_retrieved = JSON::from_json( scalar $js_asf->slurp_text );
-is_deeply( $json_retrieved, $deep_data, 'json_store() writes data correctly' );
+my $js_retrieved = JSON::from_json( scalar $js_asf->slurp_text );
+is_deeply( $js_retrieved, $deep_data, 'json_store() writes data correctly' );
+$js_asf->remove;
+
+my $jr_asf = Actium::Storage::File->new(tempname);
+$js_asf->spew_text( JSON::to_json($deep_data) );
+my $jr_retrieved = $js_asf->json_retrieve;
+is_deeply( $jr_retrieved, $deep_data, 'json_retrieve() reads data correctly' );
+$jr_asf->remove;
+
+note 'Storable store and retrieve';
+
+my $ss_filename = tempname;
+my $ss_asf      = Actium::Storage::File->new($ss_filename);
+$ss_asf->store($deep_data);
+my $ss_retrieved = Storable::retrieve($ss_filename);
+is_deeply( $ss_retrieved, $deep_data, 'store() writes data correctly' );
+$ss_asf->remove;
+
+my $sr_filename = tempname;
+my $sr_asf      = Actium::Storage::File->new($sr_filename);
+Storable::nstore( $deep_data, $sr_filename );
+my $sr_retrieved = $sr_asf->retrieve;
+is_deeply( $sr_retrieved, $deep_data, 'retrieve() reads data correctly' );
+$sr_asf->remove;
+
+note 'sheet_retrieve()';
+
+my $sheet_filename = tempname . '.xlsx';
+note $sheet_filename;
+my $sheet_asf = Actium::Storage::File->new($sheet_filename);
+my $array2d = Array::2D->new( [ [qw /a b c/], [qw/d e f/], [ 1, 2, 3 ] ] );
+$array2d->xlsx( output_file => $sheet_filename );
+my $retrieved_array = $sheet_asf->sheet_retrieve;
+is_deeply( $retrieved_array, $array2d, 'Retrieved Array::2D obj from sheet' );
+$sheet_asf->remove;
+
+note 'spew_from_method';
+
+note 'openr_raw, openr_text, openw_raw, openw_text';
 
 done_testing;
 
