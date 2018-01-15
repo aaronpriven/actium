@@ -58,6 +58,19 @@ method dir_class {
 
 =head2 Folders and Files
 
+=head3 delete
+
+Like L<< I<remove> in Path::Class::File|Path::Class::File/remove >>, but
+croaks on error instead of just returning false.
+
+=cut
+
+method delete {
+    my $result = $self->remove;
+    croak "Can't delete $self: $!" unless $result;
+    return;
+}
+
 =head3 exists
 
 Returns a boolean value: true if there is actually a file on the file
@@ -233,6 +246,18 @@ method store ($data_r) {
 
 =head2 Reading and Writing Whole Files
 
+=head3 slurp_binary(...)
+
+This is just like L<slurp from
+Path::Class::File|Path::Class::File/slurp>, but sets the encoding to
+raw (binary) input.  Any arguments are passed through to the slurp method.
+
+=cut
+
+method slurp_binary {
+    return $self->slurp( iomode => '<:raw', @_ );
+}
+
 =head3 slurp_text(...)
 
 This is just like L<slurp from
@@ -245,11 +270,23 @@ method slurp_text {
     return $self->slurp( iomode => '<:encoding(UTF-8)', @_ );
 }
 
+=head3 spew_binary
+
+This is just like L<spew from Path::Class::File|Path::Class::File/spew>, but
+sets the encoding to raw (binary) output.  Any arguments are passed through to
+the spew method.
+
+=cut
+
+method spew_binary {
+    return $self->spew( iomode => '>:raw', @_ );
+}
+
 =head3 spew_text
 
-This is just like L<spew from
-Path::Class::File|Path::Class::File/spew>, but sets the encoding to
-strict UTF-8.  Any arguments are passed through to the spew method.
+This is just like L<spew from Path::Class::File|Path::Class::File/spew>, but
+sets the encoding to strict UTF-8.  Any arguments are passed through to the
+spew method.
 
 =cut
 
@@ -315,7 +352,7 @@ method spew_from_method (
 
     my $layermethod = $method . '_layers';
     if ( $object->can($layermethod) ) {
-        $self->spew( { iomode => '>' . $object->$layermethod }, $result );
+        $self->spew( iomode => '>' . $object->$layermethod, $result );
     }
     else {
         $self->spew_text($result);
@@ -323,7 +360,7 @@ method spew_from_method (
     $cry->done if $do_cry;
     return;
 
-} ## tidy end: method exists4
+} ## tidy end: method delete7
 
 ### OPEN ###
 
@@ -331,14 +368,15 @@ method spew_from_method (
 
 There are a number of methods that provide shortcuts to opening files
 in particular modes and encodings.   These croak if an error occurs.
+They return a filehandle.
 
-head3 openr_raw
+=head3 openr_binary
 
-Opens the file with mode '<:raw' (raw input).
+Opens the file with mode '<:raw' (binary input).
 
 =cut
 
-method openr_raw {
+method openr_binary {
     my $fh = $self->open('<:raw') or croak "Can't read $self: $!";
     return $fh;
 }
@@ -354,13 +392,13 @@ method openr_text {
     return $fh;
 }
 
-=head3 openw_raw
+=head3 openw_binary
 
 Opens the file with mode '>:raw' (raw output).
 
 =cut
 
-method openw_raw {
+method openw_binary {
     my $fh = $self->open('>:raw') or croak "Can't write $self: $!";
     return $fh;
 }
