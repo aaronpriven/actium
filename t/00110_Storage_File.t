@@ -41,7 +41,7 @@ sub tempname {
     return $tempname;
 }
 
-Actium::_set_env(Actium::Env::TestStub::cry);
+Actium::_set_env(Actium::Env::TestStub::new);
 
 note 'Object creation and inheritance';
 
