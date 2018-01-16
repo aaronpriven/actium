@@ -123,8 +123,55 @@ B<not yet implemented>
 
 =cut
 
-sub mkpath {
-    ...;
+method mkpath {
+    # two possibilities:
+    # mkpath(verbose, mode)
+    # or mkpath( dir, dir, dir, ... , \%opts)
+    # this converts former into latter, and keeps the returned
+    # errors if user didn't ask for them
+    my $err;
+    my %args;
+    if ( @_ and Actium::is_hashref( $_[-1] ) ) {
+        %args = %{ +pop };
+        $args{error} = \$err unless exists $args{error};
+        # if the user asked for errors, just return them
+    }
+    else {
+        my ( $verbose, $mode ) = @_;
+        $args{verbose} = $verbose if defined $verbose;
+        $args{mode}    = $verbose if defined $mode;
+        $args{error}   = \$err;
+    }
+
+    my @results = $self->SUPER::mkpath( $self, @_, \%args );
+
+    return if not $err;
+    # which means error specified in options and never set here.
+    # just return results
+
+    return unless @$err;
+    # no errors were returned
+
+    croak( 'mkpath: ' . _file_path_error($err) );
+    # there were errors! assemble the list and croak
+
+}
+
+func _file_path_err (ArrayRef $err) {
+    my @errormessages;
+
+    for my $diag (@$err) {
+        my ( $file, $message ) = %$diag;
+        if ( $file eq '' ) {
+            push @errormessages, $message;
+        }
+        else {
+            push @errormessages, "problem unlinking $file: $message";
+        }
+    }
+
+    return join( ' - ', @errormessages );
+
 }
 
 =head3 remove
