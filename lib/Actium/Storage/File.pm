@@ -1,4 +1,5 @@
 package Actium::Storage::File 0.014;
+#vimcolor: #D8B8B8
 
 # Objects representing files on disk
 # A module adding methods (nothing else) to Path::Class::File
@@ -58,19 +59,6 @@ method dir_class {
 
 =head2 Folders and Files
 
-=head3 delete
-
-Like L<< I<remove> in Path::Class::File|Path::Class::File/remove >>, but
-croaks on error instead of just returning false.
-
-=cut
-
-method delete {
-    my $result = $self->remove;
-    croak "Can't delete $self: $!" unless $result;
-    return;
-}
-
 =head3 exists
 
 Returns a boolean value: true if there is actually a file on the file
@@ -106,12 +94,45 @@ method is_folder {
     return 0;
 }
 
-=item add_before_extension (I<component>)
+=head3 remove
+
+Like L<< I<remove> in Path::Class::File|Path::Class::File/remove >>,
+but croaks on error, and returns false only if the file doesn't exist
+in the first place.
+
+=cut
+
+method remove {
+    return 0 unless -e $self;
+    my $result = $self->SUPER::remove;
+    return $result if $result;
+    croak "Can't remove $self: $!";
+}
+
+=head3 touch
+
+Exactly like L<< I<touch> in Path::Class::File|Path::Class::File/touch
+>>, but throws an exception on failure.
+
+=cut
+
+method touch {
+    if ( -e $self ) {
+        my $result = utime undef, undef, $self;
+        croak "Can't modify time of $self: $!" unless $result;
+    }
+    else {
+        $self->openw_binary;
+    }
+}
+
+=head2 Filename Manipulation
+
+=head3 add_before_extension (I<component>)
 
 Returns a new file object, in the same folder as the old file object.
-Adds the supplied argument to the filename of the file object,
-prior to the extension, separated from it by a hyphen.
-So:
+Adds the supplied argument to the filename of the file object, prior to
+the extension, separated from it by a hyphen. So:
 
  $file = Actium::Storage::File->new('sam.txt');
  $file->add_before_extension('fred');
@@ -126,11 +147,11 @@ method add_before_extension ( $self : Str $addition! ) {
     return $self->folder->file($newfilename);
 }
 
-=item basename_ext
+=head3 basename_ext
 
-Like L<< I<basename> in Path::Class::File|Path::Class::File/basename >>, 
-but returns two separate strings: the filename without extension, and the 
-extension.  Neither string contains the separating period.
+Like L<< I<basename> in Path::Class::File|Path::Class::File/basename
+>>,  but returns two separate strings: the filename without extension,
+and the  extension.  Neither string contains the separating period.
 
 =cut
 
@@ -207,8 +228,8 @@ method retrieve {
 =head3 sheet_retrieve
 
 This method uses L<the new_from_file method of 
-Array::2D|Array::2D/new_from_file> to retrieve data
-stored in XLSX format.
+Array::2D|Array::2D/new_from_file> to retrieve data stored in XLSX
+format.
 
 =cut
 
@@ -250,7 +271,8 @@ method store ($data_r) {
 
 This is just like L<slurp from
 Path::Class::File|Path::Class::File/slurp>, but sets the encoding to
-raw (binary) input.  Any arguments are passed through to the slurp method.
+raw (binary) input.  Any arguments are passed through to the slurp
+method.
 
 =cut
 
@@ -272,9 +294,9 @@ method slurp_text {
 
 =head3 spew_binary
 
-This is just like L<spew from Path::Class::File|Path::Class::File/spew>, but
-sets the encoding to raw (binary) output.  Any arguments are passed through to
-the spew method.
+This is just like L<spew from
+Path::Class::File|Path::Class::File/spew>, but sets the encoding to raw
+(binary) output.  Any arguments are passed through to the spew method.
 
 =cut
 
@@ -284,9 +306,9 @@ method spew_binary {
 
 =head3 spew_text
 
-This is just like L<spew from Path::Class::File|Path::Class::File/spew>, but
-sets the encoding to strict UTF-8.  Any arguments are passed through to the
-spew method.
+This is just like L<spew from
+Path::Class::File|Path::Class::File/spew>, but sets the encoding to
+strict UTF-8.  Any arguments are passed through to the spew method.
 
 =cut
 
@@ -328,8 +350,8 @@ arguments.
 =item do_cry
 
 If present and set to a false value, will omit the terminal status
-display, which uses Actium::CLI::Crier. If not present, will display the
-status.
+display, which uses Actium::CLI::Crier. If not present, will display
+the status.
 
 =back
 
@@ -360,7 +382,7 @@ method spew_from_method (
     $cry->done if $do_cry;
     return;
 
-} ## tidy end: method delete7
+}
 
 ### OPEN ###
 
@@ -370,14 +392,58 @@ There are a number of methods that provide shortcuts to opening files
 in particular modes and encodings.   These croak if an error occurs.
 They return a filehandle.
 
+=head3 open
+
+Like L<< I<open> in Path::Class::File|Path::Class::File/open >>, but
+croaks on error.
+
+=cut
+
+{
+    no autodie;    # eliminates redefinition errors
+
+    method open {
+        my $result = $self->SUPER::open(@_);
+        return $result unless not defined $result;
+        croak "Can't open $self: $!";
+    }
+}
+
+=head3 openr, openw, opena
+
+These methods throw exceptions; don't call them. The equivalent methods
+in Path::Class::File do not allow for an encoding; they should thus not
+be used.
+
+=cut
+
+method openr {
+    croak 'Disallowed method openr() invoked. '
+      . 'Use an open() with an explicit encoding';
+}
+
+method openw {
+    croak 'Disallowed method openw() invoked. '
+      . 'Use an open() with an explicit encoding';
+}
+
+method opena {
+    croak 'Disallowed method opena() invoked. '
+      . 'Use an open() with an explicit encoding';
+}
+
 =head3 openr_binary
 
 Opens the file with mode '<:raw' (binary input).
 
 =cut
 
+# I use SUPER::open below so that it gives better error messages --
+# if I didn't, it would default to the "Can't open" message instead
+# of giving the "Cant' read" or "Can't write" message.
+
 method openr_binary {
-    my $fh = $self->open('<:raw') or croak "Can't read $self: $!";
+    my $fh = $self->SUPER::open('<:raw') or croak "Can't read $self: $!";
     return $fh;
 }
 
@@ -388,7 +454,8 @@ Opens the file with mode '<:encoding(UTF-8)' (UTF-8 input).
 =cut
 
 method openr_text {
-    my $fh = $self->open('<:encoding(UTF-8)') or croak "Can't read $self: $!";
+    my $fh = $self->SUPER::open('<:encoding(UTF-8)')
+      or croak "Can't read $self: $!";
     return $fh;
 }
 
@@ -399,7 +466,7 @@ Opens the file with mode '>:raw' (raw output).
 =cut
 
 method openw_binary {
-    my $fh = $self->open('>:raw') or croak "Can't write $self: $!";
+    my $fh = $self->SUPER::open('>:raw') or croak "Can't write $self: $!";
     return $fh;
 }
 
@@ -410,8 +477,30 @@ Opens the file with mode '>:encoding(UTF-8)' (UTF-8 output).
 =cut
 
 method openw_text {
-    my $fh = $self->open('>:encoding(UTF-8)') or croak "Can't write $self: $!";
+    my $fh = $self->SUPER::open('>:encoding(UTF-8)')
+      or croak "Can't write $self: $!";
     return $fh;
+}
+
+=head2 Copying and Moving Files
+
+=head3 copy_to, move_to
+
+Just like their equivalents in Path::Class::File, but throw an
+exception on failure.
+
+=cut
+
+method copy_to {
+    my $newfile = $self->SUPER::copy_to(@_);
+    return $newfile if defined $newfile;
+    croak "Couldn't copy $self: $!";
+}
+
+method move_to {
+    my $newfile = $self->SUPER::move_to(@_);
+    return $newfile if defined $newfile;
+    croak "Couldn't move $self: $!";
 }
 
 # Actium::O::Folder equivalents -- see list in Actium::Storage::Folder
