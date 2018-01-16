@@ -22,7 +22,9 @@ BEGIN {
 Actium::_set_env(Actium::Env::TestStub::new);
 
 sub tempname {
-    return File::Temp::mktemp('Actium_testing_XXXXXXXXXX');
+    my $temp = File::Temp::tmpnam();
+    #note "tempname: $temp";
+    return $temp;
 }
 
 note 'Object creation and inheritance';
@@ -66,6 +68,11 @@ note 'Object creation and inheritance';
 
     test_exception { $folder->remove }
     'Removing nonexistent folder throws exception', qr/No such/;
+
+}
+
+{
+    note 'mkpath';
 
 }
 
@@ -165,6 +172,37 @@ note 'Object creation and inheritance';
       qr/does not exist/;
 
 }
+
+{
+    note 'remove';
+
+    my $folder = Actium::Storage::Folder->ensure_folder(tempname);
+    $folder->remove;
+    ok( !$folder->exists, 'remove() removed the folder' );
+
+    my $notafolder = Actium::Storage::Folder->new('/tmp/nope/notafolder');
+    test_exception { $folder->remove }
+    'remove() throws exception with an error', qr/No such/;
+
+}
+
+note 'rmtree';
+# method not written yet
+
+note 'grep';
+
+note 'glob';
+
+note 'glob_files';
+
+note 'glob_folders';
+
+note 'open';
+# method not written yet
+
+note 'spew_from_method';
+
+note 'spew_from_hash';
 
 done_testing;
 
