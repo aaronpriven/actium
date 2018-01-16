@@ -117,60 +117,72 @@ method is_folder {
 
 =head3 mkpath
 
-Like mkpath() from Path::Class::Dir, but throws an exception on error.
+ $folder->mkpath($verbose, $safe)
+ $folder->mkpath(\%options)
 
-B<not yet implemented>
+
+Like mkpath() from Path::Class::Dir, but throws an exception on error
+(unless an 'error' reference is provided in the options hash).
 
 =cut
 
 method mkpath {
-    # two possibilities:
-    # mkpath(verbose, mode)
-    # or mkpath( dir, dir, dir, ... , \%opts)
-    # this converts former into latter, and keeps the returned
-    # errors if user didn't ask for them
-    my $err;
-    my %args;
-    if ( @_ and Actium::is_hashref( $_[-1] ) ) {
-        %args = %{ +pop };
-        $args{error} = \$err unless exists $args{error};
-        # if the user asked for errors, just return them
-    }
-    else {
-        my ( $verbose, $mode ) = @_;
-        $args{verbose} = $verbose if defined $verbose;
-        $args{mode}    = $verbose if defined $mode;
-        $args{error}   = \$err;
-    }
-
-    my @results = $self->SUPER::mkpath( $self, @_, \%args );
-
-    return if not $err;
-    # which means error specified in options and never set here.
-    # just return results
-
-    return unless @$err;
-    # no errors were returned
-
-    croak( 'mkpath: ' . _file_path_error($err) );
-    # there were errors! assemble the list and croak
-
+    $self->_file_path_old_interface( 'mkpath', @_ );
 }
 
-func _file_path_err (ArrayRef $err) {
-    my @errormessages;
+{
 
-    for my $diag (@$err) {
-        my ( $file, $message ) = %$diag;
-        if ( $file eq '' ) {
-            push @errormessages, $message;
+    const my %VERB_OF    => ( mkpath => 'making', rmtree => 'unlinking' );
+    const my %LASTARG_OF => ( mkpath => 'mode',   rmtree => 'safe' );
+
+    method _file_path_old_interface {
+        my $realmethod = shift;
+        # two possibilities:
+        # method(verbose, mode)
+        # or method( dir, dir, dir, ... , \%opts)
+        # this converts former into latter, and keeps the returned
+        # errors if user didn't ask for them
+        my $err;
+        my %args;
+        if ( @_ and Actium::is_hashref( $_[-1] ) ) {
+            %args = %{ +pop };
+            $args{error} = \$err unless exists $args{error};
+            # if the user asked for errors, just return them
         }
         else {
-            push @errormessages, "problem unlinking $file: $message";
+            my ( $verbose, $lastarg ) = @_;
+            $args{verbose}                    = $verbose if defined $verbose;
+            $args{ $LASTARG_OF{$realmethod} } = $lastarg if defined $lastarg;
+            $args{error}                      = \$err;
         }
-    }
 
-    return join( ' - ', @errormessages );
+        my $supermethod = "SUPER::$realmethod";
+
+        my @results = $self->$supermethod( $self, @_, \%args );
+
+        return if not $err;
+        # which means error specified in options and it was never set here.
+        # so just return the results
+
+        return unless @$err;
+        # no errors were returned
+
+        # so there were errors! assemble the list and croak
+        my @errormessages;
+        for my $diag (@$err) {
+            my ( $file, $message ) = %$diag;
+            if ( $file eq '' ) {
+                push @errormessages, $message;
+            }
+            else {
+                push @errormessages,
+                  "problem " . $VERB_OF{$realmethod} . "$file: $message";
+            }
+        }
+
+        croak( $realmethod . ':' . join( ' - ', @errormessages ) );
+
+    }
 
 }
 
@@ -189,14 +201,16 @@ method remove {
 
 =head3 rmtree
 
-Like rmtree() from Path::Class::Dir, but throws an exception on error.
+ $folder->rmtree($verbose, $safe)
+ $folder->rmtree(\%options)
 
-B<not yet implemented>
+Like rmtree() from Path::Class::Dir, but throws an exception on error
+(unless an error was provided in the options hash).
 
 =cut
 
-sub rmtree {
-    ...;
+method rmtree {
+    $self->_file_path_old_interface( 'rmtree', @_ );
 }
 
 =head2 Subfolders
@@ -248,7 +262,7 @@ method _must_exist {
 =head3 grep (qr/regex/)
 
 Returns the children (files or folders) which have a filename matching
-the  supplied regular expression.
+the supplied regular expression.
 
 =cut
 
@@ -268,6 +282,8 @@ Returns a list of Actium::Storage::File or Actium::Storage::Folder
 objects representing the children which have a filename matching the
 supplied glob pattern. (See L<Text::Glob|Text::Glob> for the glob
 pattern rules.)
+
+If no glob pattern is supplied, returns all files and folders.
 
 =cut
 
@@ -305,15 +321,15 @@ method glob_folders (Str $pattern //= '*') {
 
 Like open() from Path::Class::Dir, but throws an exception on error.
 
-B<not yet implemented>
-
 =cut
 
 {
     no autodie;    # eliminate redefiniton errors
 
-    sub open {
-        ...;
+    method open {
+        my $dirh = $self->SUPER::open(@_);
+        croak "Can't open folder: $!" unless defined $dirh;
+        return $dirh;
     }
 }
 
@@ -386,7 +402,7 @@ method spew_from_method (
 
     my $folder = defined $subfolder ? $self->subfolder($subfolder) : $self;
 
-    my $cry = cry("Writing $method files to $folder");
+    my $cry = env->cry("Writing $method files to $folder");
 
     my %seen_id;
 
@@ -414,7 +430,8 @@ method spew_from_method (
 =head3 spew_from_hash
 
 This routine takes a hash reference and saves the hash values in files
-named after the hash keys. It takes several named arguments:
+named after the hash keys (using utf-8 encoding).  It takes several
+named arguments:
 
 =over
 
@@ -447,7 +464,7 @@ method spew_from_hash (
     $extension =~ s/\A[.]*/./
       if ( $extension ne $EMPTY );
 
-    my $cry = cry("Writing $display_type files to  $self");
+    my $cry = env->cry("Writing $display_type files to  $self");
 
     foreach my $key ( sort keys %hash ) {
 
@@ -456,7 +473,7 @@ method spew_from_hash (
         my $filekey = $key =~ s{/}{-}gr;
 
         my $file = $self->file( $filekey . $extension );
-        $file->spew_utf8( $hash{$key} );
+        $file->spew_text( $hash{$key} );
 
     }
 
