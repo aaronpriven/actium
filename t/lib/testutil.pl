@@ -60,7 +60,7 @@ sub test_exception (&;@) {
 
     }
 
-} ## tidy end: sub test_exception
+}
 
 my $has_test_warnings;
 
@@ -96,6 +96,30 @@ sub _run_code_and_warn_maybe (&@) {
 
     }
     return;
-} ## tidy end: sub _run_code_and_warn_maybe
+}
 
 1;
+
+__END__
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2018
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item * the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any
+later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+
