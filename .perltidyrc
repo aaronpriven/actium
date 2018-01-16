@@ -8,7 +8,7 @@
 -sbt=1  # Medium square bracket tightness
 -bbt=1  # Medium block brace tightness
 -bbao   # Break before all operators
--csc    # Add closing side comments
--csci=20 # Closing side comments 20 lines or longer
--cscp="## tidy end:"
+#-csc    # Add closing side comments
+#-csci=20 # Closing side comments 20 lines or longer
+#-cscp="## tidy end:"
 -nbbc # don't introduce blanks before comments
