@@ -6,6 +6,7 @@ use lib "$Bin/lib";
 
 BEGIN {
     require 'testutil.pl';
+    require Actium::Mock::Class;
 }
 
 use Test::More 0.98 tests => 69;
@@ -225,31 +226,7 @@ $sheet_asf->remove;
 
 note 'spew_from_method';
 
-my $sampletext = <<EOT;
-This Is the Title of This Story, Which Is Also Found Several Times in the Story
-Itself.\N{EURO SIGN}
-EOT
-
-package Actium::Mock::Class {
-
-    sub new {
-        my $class = shift;
-        return bless {}, $class;
-    }
-
-    sub meth {
-        my $self = shift;
-        my $text = $sampletext;
-        $text .= "Arguments: @_\n" if @_;
-        return $text;
-    }
-
-}
-
-package Actium::Mock::Class::WithLayers {
-    our @ISA = 'Actium::Mock::Class';
-    sub meth_layers {':encoding(iso-8859-15)'}
-}
+my $sampletext = Actium::Mock::Class->sampletext;
 
 my $sm_filename = tempname;
 my $sm_asf      = Actium::Storage::File->new($sm_filename);
