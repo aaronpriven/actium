@@ -1,4 +1,5 @@
 package Actium::Storage::Folder 0.014;
+# vimcolor: #d8d0b8
 
 # Objects representing folders (directories) on disk
 # A module adding methods to Path::Class::Dir
@@ -24,10 +25,6 @@ This documentation refers to version 0.014
 
  use Actium::Storage::Folder (qw/folder/);
  
- $folder = folder('/path/to/folder');
-
-or, equivalently,
-
  $folder = Actium::Storage::Folder->new('/path/to/folder');
 
  $file = $folder->child('10_EB_WD.txt');
@@ -116,6 +113,43 @@ Actium::Storage::File  objects always return false.
 
 method is_folder {
     return 1;
+}
+
+=head3 mkpath
+
+Like mkpath() from Path::Class::Dir, but throws an exception on error.
+
+B<not yet implemented>
+
+=cut
+
+sub mkpath {
+    ...;
+}
+
+=head3 remove
+
+Removes a folder, which must be empty (like perl's L<rmdir
+function|perlfunc/rmdir>. Throws an exception on errors.
+
+=cut
+
+method remove {
+    my $result = $self->SUPER::remove;
+    croak "Can't remove $self: $!" unless $result;
+    return $result;
+}
+
+=head3 rmtree
+
+Like rmtree() from Path::Class::Dir, but throws an exception on error.
+
+B<not yet implemented>
+
+=cut
+
+sub rmtree {
+    ...;
 }
 
 =head2 Subfolders
@@ -220,6 +254,22 @@ method glob_folders (Str $pattern //= '*') {
     return @files;
 }
 
+=head3 open
+
+Like open() from Path::Class::Dir, but throws an exception on error.
+
+B<not yet implemented>
+
+=cut
+
+{
+    no autodie;    # eliminate redefiniton errors
+
+    sub open {
+        ...;
+    }
+}
+
 =head2 Writing Multiple Files In Their Entirety
 
 =head3 spew_from_method
@@ -312,7 +362,7 @@ method spew_from_method (
     $cry->done;
     return;
 
-} ## tidy end: method existing_folder3
+}
 
 =head3 spew_from_hash
 
@@ -367,7 +417,7 @@ method spew_from_hash (
     $cry->done;
     return;
 
-} ## tidy end: method existing_folder4
+}
 
 1;
 
