@@ -138,10 +138,6 @@ L<MooseX::StrictConstructor|MooseX::StrictConstructor>
 
 L<MooseX::SemiAffordanceAccessor|MooseX::SemiAffordanceAccessor>
 
-=item *
-
-L<Moose::Util::TypeConstraints|Moose::Util::TypeConstraints>
-
 =back
 
 =head2 ALL MODULES
@@ -278,9 +274,8 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
             _do_import 'Actium::MooseX::BuiltIsRo';
             _do_import 'MooseX::StrictConstructor';
             _do_import 'MooseX::SemiAffordanceAccessor';
-            _do_import 'Moose::Util::TypeConstraints';
             _do_import 'Kavorka', qw/func multi method -allmodifiers/;
-        } ## tidy end: if ($type)
+        }
         else {
             _do_import( 'Kavorka', qw/func multi/ );
         }
@@ -309,7 +304,7 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
 
         return;
 
-    } ## tidy end: sub import
+    }
 
 }
 
@@ -512,7 +507,7 @@ func joinseries (
         return ( join( $separator, @copied ) . " $conjunction $final" );
     }
 
-} ## tidy end: func joinseries
+}
 
 =head4 jointab
 
@@ -737,21 +732,21 @@ func linekeys (Str @lines) {
                 # while continuing to have a string comparison for the
                 # non-numeric parts.
 
-            } ## tidy end: elsif (m/\A\d/sx)
+            }
             else {
                 # alphabetic parts
                 $_ = uc($_);
             }
 
-        } ## tidy end: for (@parts)
+        }
 
         push @keys, join( "\0", @parts );
 
-    } ## tidy end: foreach my $line (@lines)
+    }
 
     return @keys == 1 ? $keys[0] : @keys;
 
-} ## tidy end: func linekeys
+}
 
 =head4 sortbyline
 
@@ -924,7 +919,7 @@ func u_wrap ( Str $msg!,
 
     return wantarray ? @lines : joinlf(@lines);
 
-} ## tidy end: func joinempty2
+}
 
 =item u_trim_to_columns
 
