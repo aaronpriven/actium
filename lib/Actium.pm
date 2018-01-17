@@ -64,9 +64,9 @@ A space.
 
 =cut
 
-const my $EMPTY => q[];
-const my $CRLF  => qq{\cM\cJ};
-const my $SPACE => q{ };
+const our $EMPTY => q[];
+const our $CRLF  => qq{\cM\cJ};
+const our $SPACE => q{ };
 
 =head1 IMPORTED MODULES
 
@@ -220,6 +220,9 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
 
 =cut
 
+use parent 'Exporter';
+our @EXPORT = qw/$EMPTY $CRLF $SPACE env/;
+
 {
 
     my $caller;
@@ -243,16 +246,8 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
         my $type = shift // q{};
         $caller = caller;
 
-        # constants and exported routines
-        {
-            ## no critic 'ProhibitProlongedStrictureOverride'
-            no strict 'refs';
-            *{ $caller . '::EMPTY' } = \$EMPTY;
-            *{ $caller . '::CRLF' }  = \$CRLF;
-            *{ $caller . '::SPACE' } = \$SPACE;
-            *{ $caller . '::env' }   = \&env;
-            ## use critic
-        }
+        __PACKAGE__->export_to_level(1);
+        # don't allow overriding exports, at least for now
 
         if ($type) {
             if ( $type eq 'class' ) {
