@@ -200,8 +200,15 @@ method instance ($class: Str $provided_dir) {
         croak "Unknown direction $provided_dir";
     }
 
-    my $instance = $class->new( _dircode => $DIR_OF_ALIAS{$lookup} );
-    return $obj_cache{$provided_dir} = $instance;
+    my $dircode = $DIR_OF_ALIAS{$lookup};
+    if ( exists $obj_cache{$dircode} ) {
+        return $obj_cache{$provided_dir} = $obj_cache{$dircode};
+    }
+
+    my $instance = $class->new( _dircode => $dircode );
+    $obj_cache{$provided_dir} = $instance;
+    $obj_cache{$dircode}      = $instance;
+    return $instance;
 
 }
 
@@ -303,7 +310,7 @@ Returns a one-character version of the direction.
 =cut
 
 method as_onechar {
-    return $DIRDATA{ $self->dircode }[DIRECTION];
+    return $DIRDATA{ $self->dircode }[ONE_CHAR];
 }
 
 #method _as_sortable {
@@ -327,7 +334,7 @@ Note that in each case there is a final space.
 =cut
 
 method as_to_text {
-    return $DIRDATA{ $self->dircode }[TO_TEXT];
+    return $DIRDATA{ $self->dircode }[TO_TEXT] . ' ';
 }
 
 =head2 compare
@@ -342,6 +349,7 @@ order of the directions.
 =cut
 
 method compare ($other, $swap = 0) {
+    return 0 if $other == $self;
     my $result = $DIRDATA{ $self->dircode }[ORDER]
       <=> $DIRDATA{ $other->dircode }[ORDER];
     $result = -$result if $swap;
