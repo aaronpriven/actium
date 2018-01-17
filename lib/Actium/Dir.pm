@@ -48,7 +48,7 @@ use constant {
 };
 ## use critic
 
-const my %DIRDATA = (
+const my %DIRDATA => (
     NB => [ 1, 1, N => 'North',     'Northbound', 'To',           0, 0 ],
     SB => [ 2, 2, S => 'South',     'Southbound', 'To',           0, 0 ],
     WB => [ 3, 4, W => 'West',      'Westbound',  'To',           0, 0 ],
@@ -93,9 +93,9 @@ const my %DIR_OF_ALIAS => (
     TWO           => 'D2',
     DA            => 'A',
     DB            => 'B',
-    map { $DIRDATA{$_}[HASTUS_ORDER]    => $_ } keys %DIRDATA,
-    map { uc( $DIRDATA{$_}[DIRECTION] ) => $_ } keys %DIRDATA,
-    map { $_                            => $_ } keys %DIRDATA,
+    ( map { $DIRDATA{$_}[HASTUS_ORDER]    => $_ } keys %DIRDATA ),
+    ( map { uc( $DIRDATA{$_}[DIRECTION] ) => $_ } keys %DIRDATA ),
+    ( map { $_                            => $_ } keys %DIRDATA ),
 );
 
 =head1 CLASS METHODS
