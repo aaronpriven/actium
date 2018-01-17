@@ -15,7 +15,7 @@ This documentation refers to version 0.014
 
  use <name>;
  # do something with <name>
-   
+  
 =head1 DESCRIPTION
 
 A full description of the module and its features.
@@ -63,18 +63,18 @@ under the terms of either:
 
 =over 4
 
-=item * 
+=item *
 
 the GNU General Public License as published by the Free Software
 Foundation; either version 1, or (at your option) any later version, or
 
-=item * 
+=item *
 
 the Artistic License version 2.0.
 
 =back
 
 This program is distributed in the hope that it will be useful, but
-WITHOUT  ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
