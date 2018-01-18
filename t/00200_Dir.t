@@ -4,9 +4,7 @@ use warnings;
 use FindBin qw($Bin);
 use lib "$Bin/lib";
 
-BEGIN {
-    require 'testutil.pl';
-}
+use Actium::TestUtil;
 
 use Test::More 0.98 tests => 19;
 
