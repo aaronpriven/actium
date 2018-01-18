@@ -1,11 +1,18 @@
+package Actium::TestUtil 0.014;
 use strict;
 use warnings;
+
 use Test::More 0.98;
 
-my $builder = Test::More->builder;
-binmode $builder->output,         ":encoding(utf8)";
-binmode $builder->failure_output, ":encoding(utf8)";
-binmode $builder->todo_output,    ":encoding(utf8)";
+BEGIN {
+    my $builder = Test::More->builder;
+    binmode $builder->output,         ":encoding(utf8)";
+    binmode $builder->failure_output, ":encoding(utf8)";
+    binmode $builder->todo_output,    ":encoding(utf8)";
+}
+
+use parent 'Exporter';
+our @EXPORT = qw/is_blessed isnt_blessed test_exception/;
 
 use Scalar::Util(qw/blessed/);
 
