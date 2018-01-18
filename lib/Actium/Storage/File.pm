@@ -173,6 +173,18 @@ method basename_ext {
 A number of methods exist to store and retrieve data in various
 formats,  from the file represented by the object.
 
+=head3 ini_retrieve()
+
+This method retrieves data stored as an .ini file. It returns an
+L<Actium::Storage::Ini|Actium::Storage::Ini> object.
+
+=cut
+
+method ini_retrieve {
+    require Actium::Storage::Ini;
+    return Actium::Storage::Ini->new($self);
+}
+
 =head3 json_retrieve()
 
 This method retrieves data stored in JSON format.
@@ -492,9 +504,36 @@ exception on failure.
 =cut
 
 method copy_to {
-    my $newfile = $self->SUPER::copy_to(@_);
+    my $newfile = $self->_copy_to(@_);
     return $newfile if defined $newfile;
     croak "Couldn't copy $self: $!";
+}
+
+# moving _copy_to here because Path::Class::File::copy_to
+# uses "system 'cp'" instead of using File::Copy, which I think
+# is pretty crazy.
+
+sub _copy_to {
+    my ( $self, $dest ) = @_;
+    if ( eval { $dest->isa("Path::Class::File") } ) {
+        $dest = $dest->stringify;
+        croak "Can't copy to file $dest: it is a directory" if -d $dest;
+    }
+    elsif ( eval { $dest->isa("Path::Class::Dir") } ) {
+        $dest = $dest->stringify;
+        croak "Can't copy to directory $dest: it is a file" if -f $dest;
+        croak "Can't copy to directory $dest: no such directory"
+          unless -d $dest;
+    }
+    elsif ( ref $dest ) {
+        croak "Don't know how to copy files to objects of type '"
+          . ref($self) . "'";
+    }
+
+    require File::Copy;
+    return unless File::Copy::cp( $self->stringify, "${dest}" );
+
+    return $self->new($dest);
 }
 
 method move_to {
