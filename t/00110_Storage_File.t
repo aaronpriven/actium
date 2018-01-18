@@ -25,19 +25,7 @@ BEGIN {
 my $tmpdir = File::Spec->tmpdir();
 
 sub tempname {
-    my $suffix = shift;
-    my $tempname;
-    my $template = 'Actium_testing_XXXXXXXXXX';
-    my %args = ( OPEN => 0, DIR => $tmpdir );
-    $args{SUFFIX} = $suffix if defined $suffix;
-
-    {
-        no warnings;
-        ( undef, $tempname ) = File::Temp::tempfile( $template, %args );
-    }
-
-    #note $tempname;
-    return $tempname;
+    return tempfilename(@_);
 }
 
 Actium::_set_env(Actium::Env::TestStub::new);

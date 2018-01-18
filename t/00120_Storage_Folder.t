@@ -22,9 +22,7 @@ BEGIN {
 Actium::_set_env(Actium::Env::TestStub::new);
 
 sub tempname {
-    my $temp = File::Temp::tmpnam();
-    #note "tempname: $temp";
-    return $temp;
+    return tempfilename();
 }
 
 note 'Object creation and inheritance';
