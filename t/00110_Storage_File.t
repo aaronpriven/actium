@@ -4,12 +4,10 @@ use warnings;
 use FindBin qw($Bin);
 use lib "$Bin/lib";
 
-BEGIN {
-    require 'testutil.pl';
-    require Actium::Mock::Class;
-}
+use Actium::TestUtil;
+use Actium::Mock::Class;
 
-use Test::More 0.98 tests => 69;
+use Test::More 0.98 tests => 70;
 
 use File::Temp;
 use Path::Class();
@@ -431,6 +429,15 @@ note 'touch()';
     my $asf = Actium::Storage::File->new($filename);
     test_exception { $asf->touch }
     'touch() throws exception with error', qr/No such/;
+
+}
+
+note 'ini_retrieve()';
+
+{
+    my $file = Actium::Storage::File->new( tempname('.ini') );
+    my $ini  = $file->ini_retrieve;
+    isa_ok( $ini, 'Actium::Storage::Ini', 'result from ini_retrieve()' );
 
 }
 
