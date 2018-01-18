@@ -1,4 +1,6 @@
 package Actium::Storage::Ini 0.015;
+# vimcolor: #FFCCCC
+
 use Actium        ('class');
 use Actium::Types ('File');
 
@@ -29,7 +31,8 @@ method _build_values {
         my $empty_hoh = +{ '_' => +{} };
         return $empty_hoh;
     }
-    my $config = Config::Tiny::->read_string( $self->_file->slurp_text );
+    my $string = $self->_file->slurp_text;
+    my $config = Config::Tiny::->read_string($string);
     if ( not defined $config ) {
         my $errstr = Config::Tiny::->errstr;
         $errstr = 'Unknown error' if not defined $errstr or $errstr eq $EMPTY;
@@ -55,7 +58,7 @@ method section ( $section = '_' ) {
 
 method sections {
     my $ini_hoh = $self->_values_r;
-    return keys %{$ini_hoh};
+    return sort keys %{$ini_hoh};
 }
 
 1;
