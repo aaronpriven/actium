@@ -1,7 +1,25 @@
 package Actium::Types 0.012;
 
-# Moose types for Actium
-use Actium;
+# Type::Tiny ### DEP ###
+# Type::Tiny types for Actium
+
+use Type::Library
+  -base,
+  -declare => qw( Folder File );
+use Type::Utils -all;
+use Types::Standard -types;
+
+### definitions
+
+class_type Folder, { class => 'Actium::Storage::Folder' };
+class_type File,   { class => 'Actium::Storage::File' };
+
+### coercions
+
+coerce Folder, from Str, via { Actium::Storage::Folder->new($_) };
+coerce File,   from Str, via { Actium::Storage::Folder->new($_) };
+
+__END__
 
 ## no critic (ProhibitMagicNumbers)
 
