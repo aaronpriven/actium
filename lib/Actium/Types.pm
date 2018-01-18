@@ -17,7 +17,7 @@ class_type File,   { class => 'Actium::Storage::File' };
 ### coercions
 
 coerce Folder, from Str, via { Actium::Storage::Folder->new($_) };
-coerce File,   from Str, via { Actium::Storage::Folder->new($_) };
+coerce File,   from Str, via { Actium::Storage::File->new($_) };
 
 __END__
 
