@@ -88,6 +88,30 @@ sub file_class {
     return 'Actium::Storage::File';
 }
 
+=head3 home
+
+ Actium::Storage::Folder->home(); # home folder
+ Actium::Storage::Folder->home('my_data'); # data folder
+ Actium::Storage::Folder->home('users_videos', 'foo'); 
+    # the foo user's video folder
+
+Fetches a folder from the L<File::HomeDir|File::HomeDir> module and
+returns it as an Actium::Storage::Folder object.
+
+If no arguments are specified, fetches a folder using the C<my_home>
+method from File::HomeDir. Otherwise, fetches a folder using the
+specified method. If any further arguments are passed, forwards them
+along to File::HomeDir.
+
+=cut
+
+method home ($class: $method = 'my_home', @args? ) {
+    require File::HomeDir;    ### DEP ###
+    my $home = File::HomeDir->$method(@args);
+    croak "Can't fetch $method from File::HomeDir" unless defined $home;
+    return $class->new($home);
+}
+
 =head1 OBJECT METHODS
 
 =head2 Folders and Files
@@ -150,7 +174,8 @@ method mkpath {
             # if the user asked for errors, just return them
         }
         else {
-            my ( $verbose, $lastarg ) = @_;
+            my $verbose = shift;
+            my $lastarg = shift;
             $args{verbose}                    = $verbose if defined $verbose;
             $args{ $LASTARG_OF{$realmethod} } = $lastarg if defined $lastarg;
             $args{error}                      = \$err;

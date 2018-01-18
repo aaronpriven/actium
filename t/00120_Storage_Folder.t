@@ -8,7 +8,7 @@ BEGIN {
     require 'testutil.pl';
 }
 
-use Test::More 0.98 tests => 56;
+use Test::More 0.98 tests => 58;
 
 use File::Temp;
 use Actium::Env::TestStub;
@@ -55,6 +55,28 @@ note 'Object creation and inheritance';
 }
 
 {
+    note 'home';
+    use File::HomeDir;
+
+  SKIP: {
+        my $home = File::HomeDir->my_home;
+        skip( 'File::HomeDir not returning a valid home folder', 1 )
+          if not defined $home;
+        is( Actium::Storage::Folder->home->stringify,
+            $home, 'Home folder found (default method to File::HomeDir)' );
+    }
+
+  SKIP: {
+        my $data = File::HomeDir->my_data;
+        skip( 'File::HomeDir not returning a valid data folder', 1 )
+          if not defined $data;
+        is( Actium::Storage::Folder->home('my_data')->stringify,
+            $data, 'Data folder found (specifying a method to File::HomeDir)' );
+    }
+
+}
+
+{
     note 'exists() and remove()';
 
     my $foldername = tempname;
@@ -89,6 +111,7 @@ note 'Object creation and inheritance';
     my $foldername     = tempname;
     my @morecomponents = qw/even more components/;
     my $folder = Actium::Storage::Folder->new( $foldername, @morecomponents );
+    note $folder;
     # this captures verbose output in $verbosity
     open( local *STDOUT, ">", \my $verbosity ) or die "dup out to err: $!";
     my $sentmode = oct('700');
@@ -96,6 +119,7 @@ note 'Object creation and inheritance';
     ok $folder->exists, 'mkpath() made folder with verbosity and mode set';
     my $gotmode = $folder->stat->mode & 07777;
     cmp_ok $gotmode , '==', $sentmode, '...and mode is correct';
+    note "$gotmode  $sentmode";
     like $verbosity, qr/mkdir $folder/, '...and output was verbose';
     File::Path::rmtree($foldername);
 
