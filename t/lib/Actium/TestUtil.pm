@@ -1,5 +1,5 @@
 package Actium::TestUtil 0.014;
-use strict;
+use 5.024;
 use warnings;
 
 use Test::More 0.98;
@@ -12,9 +12,28 @@ BEGIN {
 }
 
 use parent 'Exporter';
-our @EXPORT = qw/is_blessed isnt_blessed test_exception/;
+our @EXPORT = qw/is_blessed isnt_blessed test_exception tempfilename/;
 
 use Scalar::Util(qw/blessed/);
+
+sub tempfilename {
+    require File::Spec;
+    state $tmpdir = File::Spec->tmpdir;
+    my $suffix = shift;
+    my $tempname;
+    my $template = 'Actium_testing_XXXXXXXXXX';
+    my %args = ( OPEN => 0, DIR => $tmpdir );
+    $args{SUFFIX} = $suffix if defined $suffix;
+
+    {
+        no warnings;
+        ( undef, $tempname ) = File::Temp::tempfile( $template, %args );
+    }
+
+    #note $tempname;
+    return $tempname;
+
+}
 
 sub is_blessed {
     my $obj         = shift;
