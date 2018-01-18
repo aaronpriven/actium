@@ -22,9 +22,7 @@ A full description of the module and its features.
 
 =head1 SUBROUTINES or METHODS or ATTRIBUTES
 
-=over
-
-=item B<subroutine()>
+=head2 subroutine
 
 Description of subroutine.
 
