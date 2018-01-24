@@ -1,11 +1,12 @@
 package Actium::Types 0.012;
+# vimcolor: #222222
 
 # Type::Tiny ### DEP ###
 # Type::Tiny types for Actium
 
 use Type::Library
   -base,
-  -declare => qw( Folder File );
+  -declare => qw( Folder File CrierStatus CrierImportance);
 use Type::Utils -all;
 use Types::Standard -types;
 
@@ -13,6 +14,9 @@ use Types::Standard -types;
 
 class_type Folder, { class => 'Actium::Storage::Folder' };
 class_type File,   { class => 'Actium::Storage::File' };
+
+declare CrierStatus,     as Int, where { -7 <= $_ and $_ <= 7 };
+declare CrierImportance, as Int, where { 0 <= $_  and $_ <= 7 };
 
 ### coercions
 
