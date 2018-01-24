@@ -235,7 +235,8 @@ is( Actium::u_trim_to_columns( columns => 2, string => $two_full ),
     "\x{FF24}", 'Trims full-width characters correctly' );
 
 is( Actium::u_trim_to_columns( columns => 3, string => $two_full ),
-    "\x{FF24} ", 'Trims full-width characters and restores space correctly' );
+    "\x{FF24}",
+    'Trims full-width characters correctly when a column left over' );
 
 is( Actium::u_trim_to_columns(
         string =>
