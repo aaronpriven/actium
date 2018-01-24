@@ -831,7 +831,7 @@ func u_columns (Str $str) {
 =head4 u_pad
 
 Pads a string with spaces to a number of columns. The are two named
-arguments: "string", the string to pad, and "width", the number of
+arguments: "text", the string to pad, and "width", the number of
 columns that should be the result.
 
  $y = u_pad(text => "x", width => 2);
@@ -938,9 +938,10 @@ func u_trim_to_columns ( Str :$string!, Int :$columns! ) {
         $gc->substr( -1, 1, q[] );
     }
 
-    return $gc->as_string if $gc->columns == $columns;
+    return $gc->as_string;
+    #return $gc->as_string if $gc->columns == $columns;
 
-    return u_pad( text => $gc->as_string, width => $columns );
+    #return u_pad( text => $gc->as_string, width => $columns );
     # in case we trimmed off a double-wide character,
     # pad it to the right number of columns
 
