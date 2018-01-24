@@ -27,7 +27,8 @@ has '_crier' => (
     required => 1,
     handles  => [
         qw/ _ensure_start_of_line _print
-          position set_position wail /
+          position set_position
+          over prog wail /
     ],
 );
 
@@ -63,9 +64,9 @@ has importance => (
 # silent cries are never opened.
 # muted cries are opened, but are not closed.
 
-has 'silent' => (
+has '_silent' => (
     isa       => Bool,
-    is        => 'rwp',
+    is        => 'rw',
     predicate => '_has_silent',
     #handles   => { _mark_not_silent => 'unset', },
 );
@@ -249,7 +250,7 @@ sub BUILD {
             and $self->_crier->filter_above_level < $self->_level )
     ) unless $self->_has_silent;
 
-    $self->mute if $self->silent;
+    $self->mute if $self->_silent;
 
     $self->set_bullet(
           $self->_has_bullet
@@ -269,7 +270,7 @@ sub BUILD {
 
     # open the cry
 
-    if ( not $self->silent ) {
+    if ( not $self->_silent ) {
         $self->_mark_built_without_error if $self->_open;
     }
     else {
@@ -328,7 +329,7 @@ method _print_left_text ($text) {
 ###########################
 ### close
 
-method force_display {
+method _force_display {
     my $status                   = $self->status;
     my $always_show_status_above = $self->_crier->always_show_status_above;
     return 0 if not defined $always_show_status_above;
@@ -365,7 +366,7 @@ method _close {
         $self->_set_muted_to($muted);
     }
     else {
-        $self->unmute if $self->force_display;
+        $self->unmute if $self->_force_display;
     }
 
     if ( $self->muted ) {
@@ -457,9 +458,9 @@ method fail { $self->c( 'FAIL',  @_ ); }
 method alert { $self->c( 'ALERT', @_ ); }
 method panic { $self->c( 'PANIC', @_ ); }
 
-sub c_quiet {
-    my $self = shift;
-    return $self->c( 'QUIET', @_, { muted => 1 } );
+method c_quiet {
+    ( \my %opts, \my @args ) = $self->_crier->_opts_and_args(@_);
+    return $self->c( @args, { tag => 'QUIET', muted => 1 }, \%opts );
 }
 # closes level quietly (prints no wrapup severity)
 
@@ -468,64 +469,6 @@ sub DEMOLISH {
     return if $self->_is_closed;
     $self->_crier->_close_up_to($self);
     return;
-}
-
-#######################
-### PROGRESS AND TEXT
-
-method prog (@texts) {
-
-    return 1 unless $self->_crier->shows_progress and not $self->muted;
-
-    my $msg = join( $OUTPUT_FIELD_SEPARATOR // $EMPTY, Actium::define(@texts) );
-
-    # Start a new line?
-    my $columns_available
-      = $self->_crier->column_width - $self->position - $RIGHT_INDENT;
-    my $msgcolumns = Actium::u_columns($msg);
-
-    my $position = $self->position;
-    my $progcols = $self->_crier->_prog_cols;
-
-    if ( $msgcolumns > $columns_available ) {
-
-        my $left_indent_cols = $self->_left_indent_cols;
-        my $spaces           = $SPACE x $left_indent_cols;
-        return undef unless $self->_print( "\n", $spaces );
-
-        $position = $left_indent_cols;
-        $progcols = 0;
-        $self->_crier->_set_raw_position($position);
-        $self->_crier->_set_prog_cols($progcols);
-        $self->_mark_position_changed;
-    }
-
-    return undef unless $self->_print($msg);
-
-    $self->_crier->_set_raw_position( $position + $msgcolumns );
-    $self->_crier->_set_prog_cols( $progcols + $msgcolumns );
-
-    return 1;
-
-}
-
-method over {
-    return 1 unless $self->_crier->shows_progress and not $self->muted;
-
-    # if no backspace (in braindead consoles like Eclipse's),
-    # then treats everything as a forward-progress.
-    if ( $self->_crier->backspace ) {
-
-        my $prog_cols  = $self->_crier->_prog_cols;
-        my $backspaces = "\b" x $prog_cols;
-        my $spaces     = $SPACE x $prog_cols;
-
-        return undef unless $self->_print( $backspaces, $spaces, $backspaces );
-        $self->set_position( $self->position - $prog_cols );
-
-    }
-
-    return $self->prog(@_);
 }
 
 #######################
