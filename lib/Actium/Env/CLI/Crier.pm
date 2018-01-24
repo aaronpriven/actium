@@ -463,8 +463,73 @@ method DEMOLISH {
     return;
 }
 
-#########
-## wail
+#######################
+## prog, over, and wail
+
+method prog {
+    $self->_do_prog( 'prog', @_ );
+}
+
+method over {
+    $self->_do_prog( 'over', @_ );
+}
+
+method _do_prog ($type, @texts) {
+
+    return 1 unless $self->shows_progress;
+
+    my $cry;
+    if ( $self->_cry_count ) {
+        $cry = $self->last_cry;
+        return 1 if $cry->_silent or $cry->muted;
+    }
+
+    # if no backspace (in braindead consoles like Eclipse's),
+    # then treats everything as a forward-progress.
+
+    my $prog_cols = $self->_prog_cols;
+
+    if ( $type eq 'over' and $self->backspace and $prog_cols ) {
+
+        my $backspaces = "\b" x $prog_cols;
+        my $spaces     = $SPACE x $prog_cols;
+
+        return undef unless $self->_print( $backspaces, $spaces, $backspaces );
+        $self->set_position( $self->position - $prog_cols );
+        $prog_cols = 0;
+
+    }
+
+    my $msg = join( $OUTPUT_FIELD_SEPARATOR // $EMPTY, Actium::define(@texts) );
+
+    # Start a new line?
+    my $columns_available
+      = $self->column_width - $self->position - $RIGHT_INDENT;
+    my $msgcolumns = Actium::u_columns($msg);
+
+    my $position = $self->position;
+
+    if ( $msgcolumns > $columns_available ) {
+
+        my $left_indent_cols = $self->_left_indent_cols;
+        my $spaces           = $SPACE x $left_indent_cols;
+        return undef unless $self->_print( "\n", $spaces );
+
+        $position  = $left_indent_cols;
+        $prog_cols = 0;
+        $self->_set_raw_position($position);
+        $self->_set_prog_cols($prog_cols);
+        $cry->_mark_position_changed if $cry;
+    }
+
+    return undef unless $self->_print($msg);
+
+    $self->_set_raw_position( $position + $msgcolumns );
+    $self->_set_prog_cols( $prog_cols + $msgcolumns );
+
+    return 1;
+
+}
 
 method wail {
 
@@ -477,7 +542,7 @@ method wail {
     my $right_indent_cols = 0;
     if ( $self->_cry_count ) {
         my $cry = $self->last_cry;
-        return 1 if $cry->silent;
+        return 1 if $cry->_silent or $cry->muted;
         $left_indent_cols  = $cry->_left_indent_cols + 1;
         $right_indent_cols = $RIGHT_INDENT + 1;
     }
@@ -1180,14 +1245,66 @@ these will actually be given importance 1.
 =head3 $crier->last_cry()
 
 This returns the most recent cry from Actium::Env::CLI::Crier's stack of cries.
-If no cry has yet been opened, it will open a special cry that is muted, except
-that C<text> messages will be displayed.
 
-=head3 $crier->text()
+=head3 $crier->prog() and $crier->over()
 
-This invokes the C<text> object method on the deepest open cry. If no cry is
-open, opens a special cry that is muted except that C<text> messages will be
-displayed.
+Outputs a progress indication, such as a percent or M/N or whatever you
+devise.  In fact, this simply puts *any* string on the same line as the
+original message (for the current level). 
+
+Using C<over> will first backspace over a prior progress string (if
+any) to clear it, then it will write the progress string. The prior
+progress string could have been emitted by C<over> or C<prog>; it
+doesn't matter.
+
+The C<prog> method does not backspace, it simply puts the string out
+there.
+
+For example,
+
+  my $cry = cry "Performing a task";
+  $cry->prog '10%...';
+  $cry->prog '20%...';
+
+gives this output:
+
+  Performing a task...10%...20%...
+
+Keep your progress string small!  The string is treated as an
+indivisible entity and won't be split.  If the progress string is too
+big to fit on the line, a new line will be started with the appropriate
+indentation.
+
+With creativity, there's lots of progress indicator styles you could
+use.  Percents, countdowns, spinners, etc. Look at sample005.pl
+included with this package. Here's some styles to get you thinking:
+
+        Style       Example output
+        -----       --------------
+        N           3       (overwrites prior number)
+        M/N         3/7     (overwrites prior numbers)
+        percent     20%     (overwrites prior percent)
+        dots        ....    (these just go on and on, one dot for every step)
+        tics        .........:.........:...
+                            (like dots above but put a colon every tenth)
+        countdown   9... 8... 7...
+                            (liftoff!)
+
+If the cry in question was filtered out, or if it has been muted, or if the
+L<shows_progress|/shows_progress> option is set in the crier, the progress text
+will not be displayed.
+
+
+=head3 $crier->wail()
+
+This outputs the given text without changing the current level. Use it
+to give additional information, such as a blob of description. Lengthy
+lines will be wrapped to fit nicely in the given width, using Unicode
+definitions of column width (to allow for composed or double-wide
+characters).
+
+Note that if the most recent cry was filtered out, the wail will not be shown
+either.
 
 =head2 Cry Object Methods
 
@@ -1219,7 +1336,8 @@ code:
 
  $cry->c('PANIC', { status => '0'} ); # uses status -7
 
-Although the tag will be displayed as provided, it will match the status code regardless of case.
+Although the tag will be displayed as provided, it will match the status code
+regardless of case.
 
  $cry->c('done'); # will display '[done]' but will still use status 3
 
@@ -1264,64 +1382,16 @@ and so forth.
 
 This is equivalent to C<cry>, except that it does NOT output a wrapup
 line or a completion severity.  It simply closes out the current level
-with no message.
+with no message. (It is the same as setting the L<muted|/muted> option.) 
+A severity level can still be set by passing an argument.
 
 =head3 $cry->prog() and $cry->over()
+The same as 
+L<< $crier->prog() and $crier->over()|/$crier->prog() and $crier->over() >>.
 
-Outputs a progress indication, such as a percent or M/N or whatever you
-devise.  In fact, this simply puts *any* string on the same line as the
-original message (for the current level).
+=head3 C<$cry->wail>
 
-Using C<over> will first backspace over a prior progress string (if
-any) to clear it, then it will write the progress string. The prior
-progress string could have been emitted by C<over> or C<prog>; it
-doesn't matter.
-
-The C<prog> method does not backspace, it simply puts the string out
-there.
-
-If the I<backspace> attribute is false, then C<over> behaves
-identically to C<prog>. If the I<shows_progress> attribute is false,
-does nothing.
-
-For example,
-
-  use Actium::Env::CLI::Crier('cry');
-  my $cry = cry "Performing a task";
-  $cry->prog '10%...';
-  $cry->prog '20%...';
-
-gives this output:
-
-  Performing a task...10%...20%...
-
-Keep your progress string small!  The string is treated as an
-indivisible entity and won't be split.  If the progress string is too
-big to fit on the line, a new line will be started with the appropriate
-indentation.
-
-With creativity, there's lots of progress indicator styles you could
-use.  Percents, countdowns, spinners, etc. Look at sample005.pl
-included with this package. Here's some styles to get you thinking:
-
-        Style       Example output
-        -----       --------------
-        N           3       (overwrites prior number)
-        M/N         3/7     (overwrites prior numbers)
-        percent     20%     (overwrites prior percent)
-        dots        ....    (these just go on and on, one dot for every step)
-        tics        .........:.........:...
-                            (like dots above but put a colon every tenth)
-        countdown   9... 8... 7...
-                            (liftoff!)
-
-=head3 C<$cry->text>
-
-This outputs the given text without changing the current level. Use it
-to give additional information, such as a blob of description. Lengthy
-lines will be wrapped to fit nicely in the given width, using Unicode
-definitions of column width (to allow for composed or double-wide
-characters).
+The same as L<< $crier->wail|/$crier->wail >>.
 
 =head2 Attributes
 
@@ -1503,12 +1573,11 @@ will grow and shrink as the window changes size.
 
 =head3 default_importance
 
+=item I<default_importance> option to C<new>
 
-=item I<default_status> option to C<new>
+=item get method: C<< $crier->default_importance() >>
 
-=item get method: C<< $crier->default_status() >>
-
-=item set method: C<< $crier->set_default_status() >>
+=item set method: C<< $crier->set_default_importance() >>
 
 =back
 
@@ -1533,9 +1602,9 @@ original default value (which is 3).
 
 =back
 
-Sets the status to use when completing a cry, if none is
-specified in the C<cry> or any C<c> call. Useful when cries are
-closed because the object gets destroyed.
+Sets the status to use when completing a cry, if none is specified in the
+C<cry> or any C<c> call. Useful when cries are closed because the object gets
+destroyed.
 
 Setting the default_status attribute on a crier will change the default used
 only for future cries, not cries already issued. 
@@ -1642,10 +1711,9 @@ I<default_importance> option if not specified in the C<cry> or equivalent call.
 
 =back
 
-Set this option to a true value to have the cry be silent.  If it is used in
-the C<cry> call, it will not display the opening text, and used at any later
-time, it will not display any progress text (from C<prog> or C<over>), any
-C<text> messages, the closing trailer or the status tag.
+Set this option to a true value to have output from this cry quieted, except
+for the opening text.  It will not display any progress text (from C<prog> or
+C<over>), any C<wail> messages, the closing trailer or the status tag.
 
 The return status from the call will still be the appropriate value
 for the severity code.
@@ -1743,7 +1811,7 @@ IDE consoles can't backspace.
 =back
 
 Sets the numeric status used when completing a cry. This is set to the value of
-the I<default_closestat> option if not specified in the C<cry> or C<c> call.
+the I<default_status> option if not specified in the C<cry> or C<c> call.
 
 See L<Closing with Different Statuses|/"Closing with Different Statuses">.
 
@@ -1818,7 +1886,7 @@ If it's a coderef, then that function is called to get the timestamp string.
 The function is passed the current indent level, for what it's worth.  Note
 that no delimiter is provided between the timestamp string and the emitted
 line, so you should provide your own (a space or colon or whatever).  Also,
-C<text> output is NOT timestamped, just the opening and closing text.
+C<wail> output is not timestamped, just the opening and closing text.
 
 =head3 trailer
 
@@ -1908,6 +1976,11 @@ Actium::Env::CLI::Crier does use Moose, which is somewhat odd for a
 command-line program. Since many other Actium programs also use Moose, this is
 a relatively small loss in this case. If this ever becomes a separate
 distribution it should probably use something else, such as Moo.
+
+=head1 BUGS AND LIMITATIONS
+
+The test suite consists mainly of tests adapted from Term::Emit, and many of
+the new methods and capabilities are not tested.
 
 =head1 AUTHOR
 
