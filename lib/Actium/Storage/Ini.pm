@@ -5,7 +5,7 @@ use Actium        ('class');
 use Actium::Types ('File');
 
 use MooseX::SingleArg;
-single_arg '_file';
+single_arg 'file';
 
 # Class for reading .ini files.
 # At the moment, and possibly permanently, a thin wrapper around
@@ -13,9 +13,9 @@ single_arg '_file';
 
 use Config::Tiny;    ### DEP ###
 
-has '_file' => (
+has 'file' => (
     isa    => File,
-    is     => 'ro',
+    reader => '_file',
     coerce => 1,
 );
 
