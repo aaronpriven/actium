@@ -1,6 +1,8 @@
-package Actium::CLI::Option 0.011;
+package Actium::Env::CLI::Option 0.015;
+# vimcolor: #b8c8d8
 
 use Actium ('class');
+use Types::Standard('Str');
 
 # it will look for, in this order:
 
@@ -18,7 +20,6 @@ use Actium ('class');
 
 around BUILDARGS ( 
    $orig, $class:
-   Actium::CLI :$cmdenv!,
    Str :$envvar,
    Str :$config_section = '_',
    Str :$config_key,
@@ -29,18 +30,19 @@ around BUILDARGS (
     
 #>>> 
 
-    # Establish default, if any
+    # Use the environment variables and configration entries to set
+    # up a default, assuming there's no command-line option.
     my $default;
 
     if ( defined $envvar ) {
-        my $system_name = $cmdenv->system_name;
+        my $system_name = env->system_name;
         $envvar =~ s/\A(?:${system_name}_)*/${system_name}_/;
         $envvar  = uc($envvar);
-        $default = $cmdenv->sysenv($envvar);
+        $default = env->sysenv($envvar);
     }
 
     if ( not defined $default and defined $config_key ) {
-        $default = $cmdenv->config->value(
+        $default = env->config->value(
             section => $config_section,
             key     => $config_key
         );
@@ -65,14 +67,14 @@ around BUILDARGS (
     {
         $params{description} .= qq{. If not specified, will use "$default"};
     }
-    # There should always be a description, but I want Moose to give that
+    # description is required, but I want Moose to give that
     # error, not add a check for it here
 
     $params{default} = $default if defined $default;
 
     return $class->$orig(%params);
 
-} ## tidy end: around BUILDARGS
+}    ## tidy end: around BUILDARGS
 
 sub BUILD {
     my $self = shift;
@@ -127,7 +129,7 @@ has [qw/no_command prompthide/] => (
 );
 
 has prompt => (
-    isa => 'Str',
+    isa => Str,
     is  => 'ro',
 );
 
@@ -138,12 +140,7 @@ has callback => (
     is  => 'ro',
 );
 
-sub allnames {
-    my $self = shift;
-    return ( $self->name, $self->aliases );
-}
-
-u::immut;
+Actium::immut;
 
 1;
 
@@ -153,50 +150,20 @@ __END__
 
 =head1 NAME
 
-<name> - <brief description>
+Actium::Env::CLI::Option - command-line option objects
 
 =head1 VERSION
 
-This documentation refers to version 0.003
+This documentation refers to version 0.015
 
-=head1 SYNOPSIS
-
- use <name>;
- # do something with <name>
-   
 =head1 DESCRIPTION
 
-A full description of the module and its features.
+This module is a Moose class that represents command-line options when
+used in Actium::Cmd modules, which will themselves use
+L<Actium::Env::CLI|Actium::Env::CLI>.
 
-=head1 SUBROUTINES or METHODS (pick one)
-
-=over
-
-=item B<subroutine()>
-
-Description of subroutine.
-
-=back
-
-=head1 DIAGNOSTICS
-
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties that
-can be se. These descriptions must also include details of any
-configuration language used.
-
-=head1 DEPENDENCIES
-
-List its dependencies.
+The documentation for this module is included in the documnentation for
+Actium::Env::CLI.
 
 =head1 AUTHOR
 
@@ -204,7 +171,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2017
+Copyright 2017-2018
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either:
