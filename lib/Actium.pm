@@ -739,7 +739,7 @@ func linekeys (Str @lines) {
 
     }
 
-    return @keys == 1 ? $keys[0] : @keys;
+    return 1 == @keys ? $keys[0] : @keys;
 
 }
 
@@ -863,7 +863,7 @@ embedded newlines, these are taken as separating paragraphs.
 
 The first argument should be the message to be word-wrapped.
 
-There are two optional named parameters:
+There are four optional named parameters:
 
 =over
 
@@ -877,6 +877,24 @@ present, 0 will be used.
 The maximum number of columns -- ColMax from Unicode::LineBreak. If not
 present, 79 will be used.
 
+=item indent
+
+This is an integer, representing the number of spaces that the first line
+should be indented.  If positive, the first line will be shortened by that many
+columns. If negative, the first line will be lengthened by that many columns.
+The default is 0, meaning no indenting will be done.
+
+=item addspace
+
+A boolean value, indicating whether spaces should be added before indented
+lines. The number of spaces is that specified by the "indent" value. (This
+value is ignored if "indent" zero or not supplied.)  If addspace is true and
+indent is positive, then spaces will be added before the first line. If true
+and indent is negative, then spaces will be added before all the lines except
+the first line.
+
+=back
+
 =cut
 
 const my $DEFAULT_LINE_LENGTH  => 79;
@@ -885,31 +903,61 @@ const my $DEFAULT_MINIMUM_LINE => 0;
 func u_wrap ( Str $msg!,
              Int :min_columns($min) //= $DEFAULT_MINIMUM_LINE,
              Int :max_columns($max) //= $DEFAULT_LINE_LENGTH,
-             ) {
+             Int :$indent //= 0 ,
+	 Bool :$addspace //= 1,
+	 ) {
 
     return $msg if $max < $min;
+    my $indented_max = $max - $indent;
+    my $indentspace  = $SPACE x abs($indent);
 
     require Unicode::LineBreak;    ### DEP ###
 
-    state $breaker = Unicode::LineBreak::->new();
-    $breaker->config( ColMax => $max, ColMin => $min );
+    state $breaker = Unicode::LineBreak::->new(
+        Format  => 'TRIM',
+        Urgent  => 'FORCE',
+        Newline => $EMPTY,
+    );
+    $breaker->config( ColMax => $max, ColMin => $min ) unless $indent;
 
     # First split on newlines
     my @lines;
     foreach my $line ( split( /\n/, $msg ) ) {
 
         my $linewidth = u_columns($line);
-        if ( $linewidth <= $max ) {
+        if ( $linewidth <= $indented_max ) {
             push @lines, $line;
         }
         else {
-            push @lines, $breaker->break($line);
+            if ($indent) {
+                # indent first line, save rest of lines in $rest
+
+                $breaker->config( ColMax => $indented_max, ColMin => $min );
+                my @initially_broken_lines = $breaker->break($msg);
+                my $firstline              = shift @initially_broken_lines;
+                $firstline = $indentspace . $firstline
+                  if $addspace and $indent > 0;
+                push @lines, $firstline;
+                my $rest = join( $SPACE, @initially_broken_lines );
+
+                # break $rest
+                $breaker->config( ColMax => $max );
+                my @rest_of_the_lines = $breaker->break($rest);
+
+                if ( $addspace and $indent < 0 ) {
+                    $_ = $indentspace . $_ foreach @rest_of_the_lines;
+                }
+                push @lines, @rest_of_the_lines;
+            }
+            else {
+                push @lines, $breaker->break($line);
+            }
+
         }
 
     }
     foreach (@lines) {
         $_ = "$_";    # stringify -- eliminate overloaded objects
-        s/\s+\z//;
     }
 
     return wantarray ? @lines : joinlf(@lines);
