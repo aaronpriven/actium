@@ -83,6 +83,7 @@ sub BUILD {
     my $allnames = $spec =~ s/( [\w ? \- | ] + ) .*/$1/rsx;
     my @aliases  = split( /[|]/s, $allnames );
     my $name     = shift @aliases;
+    @aliases = sort @aliases;
 
     $self->_set_name($name);
     $self->_set_aliases( \@aliases );
