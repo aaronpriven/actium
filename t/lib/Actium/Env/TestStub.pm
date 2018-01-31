@@ -2,40 +2,43 @@ package Actium::Env::TestStub 0.014;
 
 my $object = bless {}, 'Actium::Env::TestStub';
 
-sub default_crier { return $object }
-sub cry           { return $object }
-sub new           { return $object }
-sub last_cry      { return $object }
+### crier stubs
 
-sub prog     {return}
-sub over     {return}
-sub text     {return}
-sub cry_text {return}
-sub done     {return}
+sub cry { return $object }
+sub new { return $object }
 
-# these should perhaps be moved to a role of some kind...
+sub prog {return}
+sub over {return}
+sub wail {return}
+sub done {return}
+sub ok   {return}
 
-sub d_emerg { done 'EMERG' }
-sub d_panic { done 'PANIC' }
-sub d_havoc { done 'HAVOC' }
-sub d_alert { done 'ALERT' }
-sub d_crit  { done 'CRIT' }
-sub d_darn  { done 'DARN' }
-sub d_fail  { done 'FAIL' }
-sub d_fatal { done 'FATAL' }
-sub d_argh  { done 'ARGH' }
-sub d_error { done 'ERROR' }
-sub d_err   { done 'ERR' }
-sub d_oops  { done 'OOPS' }
-sub d_warn  { done 'WARN' }
-sub d_note  { done 'NOTE' }
-sub d_info  { done 'INFO' }
-sub d_ok    { done 'OK' }
-sub d_debug { done 'DEBUG' }
-sub d_notry { done 'NOTRY' }
-sub d_unk   { done 'UNK' }
-sub d_yes   { done 'YES' }
-sub d_pass  { done 'PASS' }
-sub d_no    { done 'NO' }
+sub system_name {'stub'}
+
+### sysenv stubs
+
+my %sysenv;
+
+sub _t_set_sysenv {
+    my $invocant = shift;
+    %sysenv = (@_);
+}
+
+sub sysenv {
+    my $invocant = shift;
+    my $key      = shift;
+    return $sysenv{$key};
+}
+
+### config stubs
+
+my $config;
+
+sub _t_set_config {
+    my $invocant = shift;
+    $config = shift;
+}
+
+sub config {$config}
 
 1;
