@@ -17,6 +17,7 @@ our @EXPORT = qw/is_blessed isnt_blessed test_exception tempfilename/;
 use Scalar::Util(qw/blessed/);
 
 sub tempfilename {
+    require File::Temp;
     require File::Spec;
     state $tmpdir = File::Spec->tmpdir;
     my $suffix = shift;
