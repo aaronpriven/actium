@@ -2,19 +2,19 @@
 
 =head1 NAME
 
-Actium::CLI - Command line interface routines for Actium
+Actium::Env::CLI - Command line interface routines for Actium
 
 =head1 VERSION
 
-This documentation refers to version 0.011
+This documentation refers to version 0.015
 
 =head1 SYNOPSIS
 
 mycommand:
 
- use Actium::CLI;
+ use Actium::Env::CLI;
 
- Actium::CLI->new(
+ Actium::Env::CLI->new(
    commandpath => $0,
    system_name => 'this_system',
    subcommands => {
@@ -30,7 +30,7 @@ Actium/Cmd/DoSomething.pm:
 
  sub OPTIONS {
     my ($class, $env) = @_;
-    return { spec => myopt , description => 'My option' };
+    return { spec => 'myopt' , description => 'My option' };
  }
 
  sub HELP {
@@ -56,7 +56,7 @@ Then, at a shell:
 
 =head1 DESCRIPTION
 
-Actium::CLI is an object representing everything associated with the
+Actium::Env::CLI is an object representing everything associated with the
 command-line interface for the Actium system.
 
 The idea is that this object encapulates everything such as terminal
@@ -65,22 +65,21 @@ of configuring programs.  It represents the environment in which the
 program runs.  (Not to be confused with the system environment, perl's
 C<%ENV>, which is a small part of what this program does.)
 
-In theory there could also be other environments that could be
-presented (Actium::O::GUI, Actium::O::Web, or whatever), although none
-exist at the moment.  The basic idea comes from L<Mark Jason Dominus's
-article on the Moonpig billing
-system|http://blog.plover.com/prog/Moonpig.html>, although that
-encompasses much more than Actium::CLI does.  Typically this object is
-called C<$env> in modules (as in Moonpig), since there could in theory
-be more than one kind of environment.
+In theory there could also be other environments that could be presented
+(Actium::O::GUI, Actium::O::Web, or whatever), although none exist at the
+moment.  The basic idea comes from L<Mark Jason Dominus's article on the
+Moonpig billing system|http://blog.plover.com/prog/Moonpig.html>, although that
+encompasses much more than Actium::Env::CLI does.  Typically this object is
+called C<$env> in modules (as in Moonpig), since there could in theory be more
+than one kind of environment.
 
-Actium::CLI is a Moose object. This may surprise people who are used to
-thinking of Moose as slow and inappropriate for command-line programs.
-Speed was not a significant factor in the design.
+Actium::Env::CLI is a Moose object. This may surprise people who are used to
+thinking of Moose as slow and inappropriate for command-line programs.  Speed
+was not a significant factor in the design.
 
-=head2 Basic structure of Actium::CLI
+=head2 Basic structure of Actium::Env::CLI
 
-Actium::CLI is designed to create commands with subcommands and which
+Actium::Env::CLI is designed to create commands with subcommands and which
 handle command-line options and command-line arguments.
 
 It works this way:
@@ -89,12 +88,12 @@ It works this way:
 
 =item *
 
-The executable script is run, and passes Actium::CLI information on
+The executable script is run, and passes Actium::Env::CLI information on
 valid subcommands and other information about the system.
 
 =item *
 
-Actium::CLI identifies which command is selected, if any. It displays
+Actium::Env::CLI identifies which command is selected, if any. It displays
 usage information for the script if requested or if there's an error.
 
 =item *
@@ -112,28 +111,26 @@ to display its help information.
 
 =head1 CONSTRUCTION
 
-The Actium::CLI object is constructed using a call to
-Actium::CLI->new() from the main script.
+The Actium::Env::CLI object is constructed using a call to
+Actium::Env::CLI->new() from the main script.
 
-The "new" call takes the following named parameters, which can be
-passed as a hash reference or as a plain hash (in other words, a simple
-list of name => value pairs).
+The "new" call takes the following named parameters, which should be passed as
+a list of name => value pairs.
 
 =head2 Required parameters
 
 =head3 system_name
 
-The system name is intended to be an overall name for the system. In
-practice, it will probably always be "actium", but it could be
-anything. It is used for determining the name of the configuration
-files and any system environment variables that are used.
+The system name is intended to be an overall name for the system. In practice,
+it will probably always be "actium", but it could be anything. It is used for
+determining the name of the configuration files and any system environment
+variables that are used.
 
 =head3 commandpath
 
-The command path is used for determining the name of this command,
-which itself is primarily intended for display to the user. In normal
-usage it should be set to perl's C<$0> variable (aka C<$PROGRAM_NAME>
-under L<English.pm|English>).
+The command path is used for determining the name of this command, which itself
+is primarily intended for display to the user. In normal usage it should be set
+to perl's C<$0> variable (aka C<$PROGRAM_NAME> under L<English.pm|English>).
 
 =head3 subcommands
 
@@ -153,37 +150,37 @@ So, for example, if passed
     sam_spade => 'Sam::Spade',
  },
 
-Then Actium::CLI would use the module C<Actium::Cmd::Frederick> if
+Then Actium::Env::CLI would use the module C<Actium::Cmd::Frederick> if
 either 'fred' or 'freddy' were supplied, and use the module
 C<Actium::Cmd::Sam::Spade> if 'sam_spade' were supplied.
 
-Note that the value of the C<command> attribute will always be the
-non-alias name, even if the alias is specified.
+Note that the value of the C<command> attribute will always be the non-alias
+name, even if the alias is specified.
 
-The value 'help' is used by Actium::CLI itself so no subcommand can be
+The value 'help' is used by Actium::Env::CLI itself so no subcommand can be
 called 'help'.
 
 =head2 Optional parameters
 
 =head3 sysenv
 
-This should be a hash reference.  If not specified, it will be set to a
-I<copy> of the system environment (perl's C<%ENV>). As such, it should
-be used only for reading the environment and not for passing data to
-child processes.  (Functions respecting C<sysenv> could be added to
-Actium::CLI.)
+This should be a hash reference.  If not specified, it will be set to a I<copy>
+of the system environment (perl's C<%ENV>). As such, it should be used only for
+reading the environment and not for passing data to child processes.
+(Functions respecting C<sysenv> could be added to Actium::Env::CLI.)
 
 =head3 argv
 
-This should be an array reference. If not specified, it will be set to
-a copy of the command-line arguments (perl's C<@ARGV>).
+This should be an array reference. If not specified, it will be set to a copy
+of the command-line arguments (perl's C<@ARGV>). Note that, once created, the
+C<argv> method returns the arguments also, but with any subcommand or options
+removed.
 
 =head3 home_folder
 
 This should be a string representing a path on disk (which will be
 passed to Actium::Storage::Folder), representing the user's home
-folder. If not specified, it will be set to the user's home folder (as
-determined by L<the File::HomeDir module|File::HomeDir>.
+folder. If not specified, it will be set to C<< Actium::Storage::Folder->home >>.
 
 =head3 bin
 
@@ -195,7 +192,7 @@ from L<the FindBin module|FindBin>.
 =head1 SUBCOMMAND MODULES
 
 Subcommand modules will be found in the "Actium::Cmd" namespace.
-Actium::CLI will load those modules and invoke them if selected by the
+Actium::Env::CLI will load those modules and invoke them if selected by the
 user.
 
 Subcommand modules must support a START() method and can optionally
@@ -203,8 +200,7 @@ support HELP() and OPTIONS() methods.  Methods are invoked using method
 lookup (so could theoretically be inherited from parents or composed
 from roles).
 
-All these methods are passed the Actium::CLI object itself as the only
-argument.
+None of these methods are passed as arguments. Use the C<env> subroutine from L<the Actium module|Actium> to access the environment object.
 
 =head3 START()
 
@@ -221,7 +217,7 @@ it should be invoked.
 
 =head3 OPTIONS()
 
-The OPTIONS() method is how modules request that Actium::CLI do options
+The OPTIONS() method is how modules request that Actium::Env::CLI do options
 handling. The method should return a list of option specifications
 and/or option packages. See "OPTION PROCESSING" below.
 
@@ -254,9 +250,9 @@ A file specification to the script. See "commandpath" above, under
 
 =head3 subcommand
 
-The subcommand that was chosen on the command line. So if the script is
-invoked as "myscript do_something" then subcommand will be
-"do_something".
+The subcommand that was chosen on the command line. So if the script is invoked
+as "myscript do_something" then subcommand will be "do_something". Note that
+aliases will return the original name, not the alias.
 
 =head3 system_name
 
@@ -272,9 +268,9 @@ the "subcommands" hash passed in construction, then the module will be
 
 =head3 crier
 
-This is an Actium::O::Crier object.  At the moment it will be the
-result from default_crier(). See "Actium::O::Crier" for more
-information.
+This is an Actium::Env::CLI::Crier object.  If not specified, it is the default
+result from Actium::Env::CLI::Crier->new().  L<See
+Actium::Env::CLI::Crier|Actium::Env::CLI::Crier> for more information.
 
 =head3 command
 
@@ -284,12 +280,6 @@ This is the name of the script (derived from "commandpath").
 
 This returns a list of the command-line arguments. The command name,
 subcommand name, and command-line options are removed.
-
-=head3 original_argv
-
-This returns a list of the command-line arguments as originally
-provided to Actium::CLI. The command name, subcommand name, and
-command-line options are preserved.
 
 =head1 OTHER METHODS
 
@@ -340,7 +330,7 @@ See "Option Processing" below.
 
 =head1 OPTION PROCESSING
 
-Actium::CLI is designed to handle configuration and options processing
+Actium::Env::CLI is designed to handle configuration and options processing
 from several sources. The idea is to allow the user to specify in many
 different ways the configuration of the program.
 
@@ -452,9 +442,11 @@ be executed. The value of the option will be the first argument passed.
 
 =head3 prompt
 
-If this is set to a true value, it will prompt the user for the value,
-displaying this string, if there is no other source for the value. A
-colon is added to the prompt string if not already present.
+If this is set to a true value, it will prompt the user for the value of the
+option if no other source for the option is available.  If this is "1", then it
+will display the description, above, as the prompt string; otherwise this
+string itself is used.  A colon is added to the prompt string if not already
+present.
 
 =head3 prompthide
 
@@ -498,9 +490,9 @@ The default package has options regarding terminal display.
 =head3 option: -?
 
 The help, or ? option, is an alternative way of asking for help from
-Actium::CLI. Using it is effectively the same as using the help
+Actium::Env::CLI. Using it is effectively the same as using the help
 subcommand.  (Note that a command shell may use ? as a wildcard
-character and not pass it through to Actium::CLI.)
+character and not pass it through to Actium::Env::CLI.)
 
 =head3 option: -quiet
 
@@ -509,12 +501,12 @@ character and not pass it through to Actium::CLI.)
 =head3 config key: 'quiet' in section 'Terminal'
 
 This will stop Actium::O::Crier from outputting most text (it sets
-"maxdepth" to 0). See Actium::O::Crier for more information. Submodules
-may also inspect this option and turn off some information display.
+"filter_above_depth" to 0). L<See
+Actium::Env::CLI::Crier|Actium::Env::CLI::Crier> for more information.
+Submodules may also inspect this option and turn off some information display.
 (Negatable)
 
-The be_quiet() method can be used by a submodule to turn this option
-on.
+The be_quiet() method can be used by a submodule to turn this option on.
 
 =head3 option: -termcolor
 
@@ -522,9 +514,11 @@ on.
 
 =head3 config key: 'color' in section 'Terminal'
 
-Actium::O::Crier will output control codes to the terminal that will
-colorize output.  See Actium::O::Crier for more information. Submodules
-may also inspect this option and turn on color display. (Negatable)
+Actium::Env::CLI:Crier will output control codes to the terminal that will
+colorize output.  
+L<See Actium::Env::CLI::Crier|Actium::Env::CLI::Crier> for more information. 
+Submodules may also inspect this option and turn on color
+display. (Negatable)
 
 =head3 option: -progress
 
@@ -532,8 +526,9 @@ may also inspect this option and turn on color display. (Negatable)
 
 =head3 config key: 'progress' in section 'Terminal'
 
-Actium::O::Crier will output dynamic progress indications (from the
-"prog" or "over" methods).  See Actium::O::Crier for more information.
+Actium::Env::CLI::Crier will output dynamic progress indications (from the
+"prog" or "over" methods).  
+L<See Actium::Env::CLI::Crier|Actium::Env::CLI::Crier> for more information. 
 Submodules may also inspect this option and act accordingly.
 
 This is a negatable option, but it has a fallback value of 1, so will
@@ -543,10 +538,10 @@ be on unless specified otherwise.
 
 The 'actiumdb' package has options allowing the specification of the
 database name, user name, and password to access the: Actium database.
-See Actium::O::Files::ActiumDB for more information.
+See Actium::Storage::DB for more information.
 
 When this package is requested, it will create a new attribute in
-Actium::CLI called 'actiumdb', which will return the Actium database
+Actium::Env::CLI called 'actiumdb', which will return the Actium database
 object.
 
 =head3 option: -db_user
@@ -575,18 +570,19 @@ The name of the ODBC driver entry for this database.
 
 =head2 'newsignup', 'signup' and 'signup_with_old' packages
 
-These packages allow the specification of Actium::Signup objects. See
-that module for more information.
+These packages allow the specification of Actium::Signup objects. See that
+module for more information.
 
-The 'signup' package only allows for the specification of the current
-signup, while 'signup_with_old' allows for the specification of the
-current signup as well as a previous signup.
+The 'signup' package only allows for the specification of the current signup,
+while 'signup_with_old' allows for the specification of the current signup as
+well as a previous signup.
 
-The 'newsignup' package acts exactly the same as the 'signup' page
+The 'newsignup' package acts exactly the same as the 'signup' package except
+that it will create the signup folder if it does not already exist.
 
-If these packages are chosen, Actium::CLI attributes called "signup"
-and "oldsignup" will return the object representing the current signup
-and the object representing the previous signup, respectively.
+If these packages are chosen, Actium::Env::CLI attributes called "signup" and
+"oldsignup" will return the object representing the current signup and the
+object representing the previous signup, respectively.
 
 =head3 option: -base
 
@@ -613,16 +609,6 @@ an error will be generated.
 The data for each signup is stored in a subfolder of the base folder.
 This folder is usually named after the period of time when the signup
 becomes effective ("w08" meaning "Winter 2008", for example).
-
-=head3 option: -cache
-
-=head3 environment: CACHE
-
-=head3 config key: 'cache' in section 'Signup'
-
-A folder where local cache files are stored.  The fallback value is a
-directory called '.' plus the system name (so, if the system name is
-"actium", then  ".actium") in the user's home folder.
 
 =head3 option: -oldsignup
 
@@ -664,35 +650,9 @@ L<Actium::Geo|Actium::Geo> for more information.
 The user name for the Geonames API. If not supplied, will prompt the
 user for a name.
 
-=head2 'flickr' package
-
-This package is used for accessing the Flickr api.  If selected, this
-package will add an attribute "flickr_auth" to Actium::CLI, which is an
-Actium::O::Photos::Flickr::Auth object representing the Flickr
-authorization. See Actium::O::Photos::Flickr::Auth for more
-information.
-
-=head3 option: flickr_key
-
-=head3 environment: FLICKR_KEY
-
-=head3 config key: 'key' in section 'Flickr'
-
-The "key" required to use the Flickr API. If not provided, the user
-will be prompted for the key.
-
-=head3 option: flickr_secret
-
-=head3 environment: FLICKR_SECRET
-
-=head3 config key: 'secret' in section 'Flickr'
-
-The "secret" required to use the Flickr API. If not provided, the user
-will be prompted for the key.
-
 =head1 USER HELP
 
-Actium::CLI also provides some simple user help capabilities. They can
+Actium::Env::CLI also provides some simple user help capabilities. They can
 be invoked in two ways: via the "help" subcommand, or the "-help" (or
 "-?") option.
 
@@ -753,7 +713,7 @@ by another module).
 =item Internal error. Invalid option package $optionspec specified...
 
 A module tried to add an option package that does not exist in
-Actium::CLI (probably a spelling error).
+Actium::Env::CLI (probably a spelling error).
 
 =item Internal error. Duplicate option $this_name specified...
 
@@ -784,10 +744,6 @@ Term::Readkey
 
 =item *
 
-File::HomeDir
-
-=item *
-
 FindBin
 
 =item *
@@ -795,12 +751,6 @@ FindBin
 IO::Prompter
 
 =item *
-
-Text::Wrap
-
-=item *
-
-File::Spec
 
 =back
 
@@ -810,7 +760,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2016
+Copyright 2016-2018
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either:
