@@ -1,5 +1,5 @@
 use strict;
-use Test::More 0.98 tests => 104;
+use Test::More 0.98 tests => 106;
 
 BEGIN {
     note "These are tests for constants and functions in Actium.pm.";
@@ -190,7 +190,7 @@ is( Actium::u_pad( text => 'x', width => 2 ),
 is( Actium::u_pad( text => "\x{FF24}", width => 4 ),
     "\x{FF24}  ", 'Pad one fullwidth character' );
 
-note 'u_columns';
+note 'u_wrap';
 
 my $text
   = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
@@ -219,11 +219,41 @@ my $lines_50w_r = [
     'laborum.'
 ];
 
+#<<<
+my $lines_indent_r = [
+    '     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod',
+    'tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,',
+    'quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo',
+    'consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse',
+    'cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non',
+    'proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+];
+
+my $lines_hanging_r = [
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor',
+    '     incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis',
+    '     nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo',
+    '     consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse',
+    '     cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat',
+    '     non proident, sunt in culpa qui officia deserunt mollit anim id est',
+    '     laborum.',
+];
+#>>>
+
 is_deeply( [ Actium::u_wrap($text) ],
     $lines_defaults_r, 'Wraps at default characters' );
 is( scalar Actium::u_wrap($text), $lines_scalar, 'Wraps and returns a scalar' );
 is_deeply( [ Actium::u_wrap( $text, max_columns => 50 ) ],
     $lines_50w_r, 'Wraps at specified maximum characters' );
+
+is_deeply( [ Actium::u_wrap( $text, indent => 5, addspace => 1 ) ],
+    $lines_indent_r, 'Wraps with positive indent and space' );
+
+is_deeply(
+    [ Actium::u_wrap( $text, max_columns => 74, indent => -5, addspace => 1 ) ],
+    $lines_hanging_r,
+    'Wraps with negative indent and space'
+);
 
 note 'u_trim_to_columns';
 
