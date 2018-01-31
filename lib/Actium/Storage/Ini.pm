@@ -26,6 +26,12 @@ has '_values_r' => (
     builder => '_build_values',
 );
 
+method BUILD {
+    $self->sections;
+    # that could be anything that runs _build_values
+    # I wanted to just not make _values_r lazy, but it depends on _file
+}
+
 method _build_values {
     if ( not $self->_file->exists ) {
         my $empty_hoh = +{ '_' => +{} };
@@ -96,9 +102,6 @@ Pass a file specification, either as a string or as an
 Actium::Storage::File object, to the class method "new."
 
  Actium::Storage::Ini->new('/any/file/path');
-
-The file won't actually be opened and processed until something
-requires a value.
 
 =head1 METHODS 
 
