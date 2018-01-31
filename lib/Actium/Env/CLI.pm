@@ -1,6 +1,7 @@
-package Actium::CLI 0.012;
+package Actium::Env::CLI 0.012;
+# vimcolor: #001326
 
-# Amalgamation of Actium::Cmd, Actium::CLIEnv, and the various
+# Amalgamation of Actium::Cmd, Actium::Env::CLIEnv, and the various
 # Actium::Cmd::Config::* modules
 
 use Actium ('class');
@@ -8,63 +9,48 @@ use Actium ('class');
 use Getopt::Long('GetOptionsFromArray');    ### DEP ###
 use Term::ReadKey;                          ### DEP ###
 
-use Actium::Crier('default_crier');
-use Actium::Storage::Ini;
-use Actium::CLI::Option;
+use Actium::Env::CLI::Option;
+use Actium::Env::CLI::Crier;
 use Actium::Storage::Folder;
+use Actium::Storage::File;
+use Actium::Types (qw/Folder/);
+use Array::2D;
+use Types::Standard(qw/Int/);
 
 use Module::Runtime ('require_module');
 
-const my $EX_USAGE       => 64;              # from "man sysexits"
-const my $EX_SOFTWARE    => 70;
+const my $EX_USAGE       => 64;           # from "man sysexits"
+const my $EX_SOFTWARE    => 70;           # from "man sysexits"
+const my $EX_SIGINT      => 130;          # from "Advanced BASH scripting guide"
 const my $COMMAND_PREFIX => 'Actium::Cmd';
 
-const my $FALLBACK_COLUMNS     => 80;
-const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
-const my $SUBCOMMAND_SEPARATOR => ( $SPACE x 2 );
+const my $FALLBACK_WIDTH => 80;
 
 const my %OPTION_PACKAGE_DISPATCH => ( map { $_ => ( '_' . $_ . '_package' ) }
-      (qw/default actiumdb flickr geonames signup newsignup signup_with_old/) );
+      (qw/default actiumdb geonames signup newsignup signup_with_old/) );
 # specifying more than one of the signup packages should give
 # duplicate option errors
 
-my $term_width_cr = sub {
-    return (
-        eval { ( Term::ReadKey::GetTerminalSize() )[0]; }
-          or $FALLBACK_COLUMNS
-    );
-};
-
-###############
-##### BUILDARGS
+###########################
+##### BUILDARGS AND BUILD
 
 around BUILDARGS ( $orig, $class : slurpy %params ) {
+    # the BUILDARGS removes the subcommand from argv,
+    # and also handles "help" if "help" comes before the subcommand
 
-    $params{sysenv} //= {%ENV};
-    $params{argv}   //= [@ARGV];
+    $params{argv} //= [@ARGV];
 
-    if ( not defined $params{home_folder} ) {
-        require File::HomeDir;    ### DEP ###
-        $params{home_folder} = File::HomeDir->my_home;
-    }
-    if ( not defined $params{bin} ) {
-        require FindBin;          ### DEP ###
-        no warnings 'once';
-        $params{bin} = $FindBin::Bin;
-    }
-
-    my @original_argv = @{ $params{argv} };
+    my @argv = @{ $params{argv} };
 
     ## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
-    {                             # scoping for "no warnings"
+    {    # scoping for "no warnings"
         no warnings('once');
-        if ( ( not @original_argv ) and $Actium::Eclipse::is_under_eclipse ) {
-            @original_argv = Actium::Eclipse::get_command_line();
+        if ( ( not @argv ) and $Actium::Eclipse::is_under_eclipse ) {
+            @argv = Actium::Eclipse::get_command_line();
         }
     }
     ## use critic
 
-    my @argv = @original_argv;    # intentional copy
     my ( $help_requested, $help_arg_index, $subcommand );
 
     if (@argv) {
@@ -86,94 +72,87 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
     # delete 'help' from args
 
     my %init_args = (
-        %params{qw/commandpath sysenv system_name bin home_folder/},
+        %params,
         subcommand => $subcommand // $EMPTY,
-        _subcommands    => $params{subcommands},
-        _original_argv  => \@original_argv,
         _help_requested => $help_requested,
         argv            => \@argv,
     );
 
     return $class->$orig(%init_args);
 
-} ## tidy end: around BUILDARGS
+}
 
-###############
-#### BUILD
-
-sub BUILD {
-    my $self       = shift;
-    my $subcommand = $self->subcommand;
+method BUILD {
+    # all actual work is done inside here
+    Actium::_set_env($self);
 
     $self->_init_terminal();
 
-    if ( not $subcommand ) {
-        $self->_mainhelp();
-    }
-
-    Actium::_set_env($self);
+    my $subcommand = $self->subcommand;
+    return $self->_mainhelp() if not $subcommand;
 
     my $module = $self->module;
     if ( $self->_help_requested or $self->option('help') ) {
         if ( $module->can('HELP') ) {
-            $module->HELP($self);
+            $module->HELP();
         }
         else {
-            say STDERR "Help not implemented for " . $self->subcommand . ".";
+            say STDERR "Help not implemented for " . $subcommand . ".";
         }
         $self->_output_usage();
     }
     else {
-        $module->START($self);
+        $module->START();
     }
 
-} ## tidy end: sub BUILD
-
-##### TERMINAL AND SIGNAL FUNCTIONS #####
-
-sub be_quiet {
-    my $self = shift;
-    $self->crier->set_maxdepth(0);
-    $self->_set_option( 'quiet', 1 );
+    # returns to main, which usually does nothing else and exits
 
 }
 
-sub _init_terminal {
+#########################################
+##### TERMINAL AND SIGNAL FUNCTIONS #####
 
-    my $self = shift;
+method be_quiet {
+    $self->crier->set_filter_above_level(0);
+    $self->_set_option( 'quiet', 1 );
+}
 
+my $term_width_cr = sub {
+    return (
+        eval { ( Term::ReadKey::GetTerminalSize() )[0]; }
+          or $FALLBACK_WIDTH
+    );
+};
+
+method _init_terminal {
     $SIG{'WINCH'} = sub {
-        $self->crier->set_column_width( $term_width_cr->() );
+        $self->set_term_width( $term_width_cr->() );
     };
     $SIG{'INT'} = sub {
         my $signal = shift;
-        $self->crier->text("Caught SIG$signal... Aborting program.");
-        exit 1;
+        $self->crier->_display_wail(
+            text              => "Caught SIG$signal... Aborting program.",
+            left_indent_cols  => 0,
+            right_indent_cols => 0
+        );
+        exit $EX_SIGINT;
     };
 
-    $self->crier->set_column_width( $term_width_cr->() );
+    $self->set_term_width( $term_width_cr->() );
     return;
 
 }
 
-sub prompt {
-
-    my $self = shift;
+method prompt ($prompt, $hide) {
 
     require IO::Prompter;    ### DEP ###
-
-    my $prompt = shift;
-    my $hide   = shift;
 
     my $val;
 
     my $fh = $self->crier->fh;
-
-    print $fh "\n" if ( $self->crier->position != 0 );
+    $self->crier->_ensure_start_of_line;
 
     my @filehandles = ( '-in' => *STDIN, '-out' => *{$fh} );
-
-    #say $prompt;
 
     if ($hide) {
         $val = IO::Prompter::prompt(
@@ -187,44 +166,45 @@ sub prompt {
         $val = IO::Prompter::prompt( $prompt, @filehandles );
     }
 
-    $self->crier->set_position(0);
-
     return "$val";
     # stringify what would otherwise be a weird Contextual::Return value,
     # thank you Mr. Conway
 
-} ## tidy end: sub prompt
+}
 
 #############
 #### HELP
 
-method _mainhelp ( Str :$error = q[] , Int :$status = 0 ) {
+{
+    const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
+    const my $SUBCOMMAND_SEPARATOR => ( $SPACE x 2 );
 
-    #my $system_name = $self->system_name;
-    my $command = $self->command;
+    method _mainhelp ( Str :$error = q[] , Int :$status = 0 ) {
 
-    my $helptext = $error ? "$error\n" : $EMPTY;
+        my $command = $self->command;
 
-    $helptext .= "Subcommands available for $command:\n";
+        my $helptext = $error ? "$error\n" : $EMPTY;
+        $helptext .= "Subcommands available for $command:\n";
 
-    my @subcommands = $self->_subcommand_names;
+        my @subcommands = $self->_subcommand_names;
 
-    my $width = $term_width_cr->() - 2;
+        my $width = $self->term_width() - 2;
 
-    require Actium::O::2DArray;
-    ( undef, \my @lines ) = Actium::O::2DArray->new_to_term_width(
-        array     => \@subcommands,
-        width     => $width,
-        separator => ($SUBCOMMAND_SEPARATOR)
-    );
+        require Array::2D;
+        ( undef, \my @lines ) = Array::2D->new_to_term_width(
+            array     => \@subcommands,
+            width     => $width,
+            separator => ($SUBCOMMAND_SEPARATOR)
+        );
 
-    say $helptext, $SUBCOMMAND_PADDING,
-      join( ( "\n" . $SUBCOMMAND_PADDING ), @lines )
-      or die "Can't output help text: $OS_ERROR";
+        say STDERR $helptext, $SUBCOMMAND_PADDING,
+          join( ( "\n" . $SUBCOMMAND_PADDING ), @lines )
+          or die "Can't output help text: $OS_ERROR";
 
-    exit $status;
+        exit $status;
 
-} ## tidy end: method _mainhelp
+    }
+}
 
 sub _output_usage {
 
@@ -239,43 +219,39 @@ sub _output_usage {
         $description_of{$_} = "Same as -$name" foreach $obj->aliases;
     }
 
-    my $longest = 1 + Actium::max( map { length($_) } keys %description_of );
-    # add one for the hyphen
+    my $left_padding
+      = 5 + Actium::max( map { length($_) } keys %description_of );
+    # add one for the hyphen, plus four spaces
 
     say STDERR 'Options:';
 
-    require Text::Wrap;    ### DEP ###
-
-    const my $HANGING_INDENT_PADDING => 4;
-    ## no critic (Variables::ProhibitPackageVars)
-    no warnings 'once';
-    local ($Text::Wrap::columns) = $term_width_cr->();
-    ## use critic
-
     foreach my $name ( sort keys %description_of ) {
         next if $name =~ /\A_/s;
-        my $displayname = sprintf '%*s -- ', $longest, "-$name";
+        my $displayname = sprintf '%*s -- ', $left_padding, "-$name";
 
-        say STDERR Text::Wrap::wrap(
-            $EMPTY,
-            q[ ] x ( $longest + $HANGING_INDENT_PADDING ),
-            $displayname . $description_of{$name}
+        my $wrapped = Actium::u_wrap(
+            $displayname . $description_of{$name},
+            max_columns => $self->term_width,
+            indent      => -$left_padding,
+            addspace    => 1,
         );
+
+        say STDERR $wrapped;
 
     }
 
     return;
 
-}    ## <perltidy> end sub output_usage
+}
 
 #################################
 ## Public Attributes and builders
 
 has home_folder => (
-    isa      => 'Actium::Storage::Folder',
-    is       => 'ro',
-    required => 1,
-    coerce   => 1,
+    isa     => Folder,
+    is      => 'ro',
+    coerce  => 1,
+    default => sub { Actium::Storage::Folder->home },
 );
 
 has config => (
@@ -288,18 +264,32 @@ has config => (
 sub _build_config {
     my $self       = shift;
     my $systemname = $self->system_name;
-    my $config     = Actium::Storage::Ini::->new(".$systemname.ini");
+    my $config     = Actium::Storage::Ini::->new(
+        $self->home_folder->file(".$systemname.ini") );
     return $config;
 }
 
 has bin => (
-    isa      => 'Actium::Storage::Folder',
+    isa     => Folder,
+    is      => 'ro',
+    default => sub {
+        no warnings 'once';
+        require FindBin;    ### DEP ###
+        Actium::Storage::Folder->new($FindBin::Bin);
+    },
+    coerce => 1,
+);
+
+has commandpath => (
+    isa      => 'File',
     is       => 'ro',
-    required => 1,
+    required => 1, 
+    # I vaguely recall checking and seeing that  if $0 is put here, 
+    # it will refer to the module name, CLI.pm. I'm not 100% sure though
     coerce   => 1,
 );
 
-has [qw/commandpath subcommand system_name/] => (
+has [qw/subcommand system_name/] => (
     isa      => 'Str',
     is       => 'ro',
     required => 1,
@@ -317,8 +307,6 @@ sub _build_module {
     my $subcommand = $self->subcommand;
 
     \my %subcommands = $self->_subcommands_r;
-
-    my $system_name = shift;
 
     my $referred;
     while ( exists( $subcommands{$subcommand} )
@@ -343,19 +331,19 @@ sub _build_module {
             );
         }
     }
+    # _mainhelp exits, and does not return
 
     my $module = "${COMMAND_PREFIX}::$subcommands{$subcommand}";
     require_module($module)
       or die " Couldn't load module $module: $OS_ERROR";
     return $module;
 
-} ## tidy end: sub _build_module
+}
 
 has crier => (
     is      => 'ro',
-    default => sub { default_crier() },
-    isa     => 'Actium::O::Crier',
-    lazy    => 1,
+    default => sub { Actium::Env::CLI::Crier->new() },
+    isa     => 'Actium::Env::CLI::Crier',
 );
 
 has command => (
@@ -366,26 +354,17 @@ has command => (
 
 sub _build_command {
     my $self        = shift;
-    my $commandpath = $self->commandpath;
-    return Actium::filename($commandpath);
+    my ($basename, $ext) = $self->commandpath->basename_ext;
+    return $basename;
 }
 
 has sysenv_r => (
     traits   => ['Hash'],
     isa      => 'HashRef[Str]',
     is       => 'bare',
-    required => 1,
+    default  => {%ENV},
     handles  => { sysenv => 'get', },
     init_arg => 'sysenv',
-);
-
-has _original_argv_r => (
-    traits   => ['Array'],
-    isa      => 'ArrayRef[Str]',
-    is       => 'bare',
-    default  => sub { [] },
-    init_arg => '_original_argv',
-    handles  => { _original_argv => 'elements', },
 );
 
 has argv_r => (
@@ -411,6 +390,14 @@ has options_r => (
     },
 );
 
+has term_width => (
+    is      => 'rw',
+    isa     => Int,
+    default => $FALLBACK_WIDTH,
+);
+
+after set_term_width { $self->crier->set_column_width( $self->term_width ) }
+
 sub _build_options {
     my $self = shift;
     my @objs = $self->_option_objs;
@@ -429,7 +416,7 @@ sub _build_options {
 
     my $returnvalue = GetOptionsFromArray( \@argv, \%options, @option_specs );
     unless ($returnvalue) {
-        say "Error parsing command-line options.\n---";
+        say STDERR "Error parsing command-line options.\n";
         %options = ( help => 1 );
     }
     $self->_set_argv_r( \@argv );
@@ -452,7 +439,9 @@ sub _build_options {
                 $options{$name} = $obj->fallback;
             }
             elsif ( $obj->prompt ) {
-                my $prompt = $obj->prompt =~ s/:*\z/:/r;
+	    my $prompt = $obj->prompt;
+	    $prompt = $obj->description if $prompt eq '1';
+                $prompt = $obj->prompt =~ s/:*\z/:/r;
                 # add a colon if it's not already there
                 $options{$name} = $self->prompt( $prompt, $obj->prompthide );
             }
@@ -468,7 +457,7 @@ sub _build_options {
 
     return \%options;
 
-} ## tidy end: sub _build_options
+}
 
 ##########################################################
 ## Private attributes (used in processing options, etc.)
@@ -478,13 +467,15 @@ has _help_requested => (
     is      => 'ro',
     default => 0,
 );
+# used when help found in BUILDARGS -- it's not set  if the help option
+# is used, e.g., actium.pl subocommand -help
 
 has _subcommands_r => (
     traits   => ['Hash'],
     isa      => 'HashRef[Str|ScalarRef[Str]]',
     is       => 'ro',
     required => 1,
-    init_arg => '_subcommands',
+    init_arg => 'subcommands',
     handles  => { _subcommands => 'keys' },
 );
 
@@ -500,7 +491,7 @@ sub _subcommand_names {
 
 has _option_obj_r => (
     traits  => ['Hash'],
-    isa     => 'HashRef[Actium::CLI::Option]',
+    isa     => 'HashRef[Actium::Env::CLI::Option]',
     is      => 'bare',
     lazy    => 1,
     builder => '_build_option_objs',
@@ -526,33 +517,15 @@ sub _build_option_objs {
         my $optionspec = shift @optionspecs;
 
         if ( Actium::is_hashref($optionspec) ) {
-            $optionspec->{cmdenv} = $self;
-            $optionspec->{order}  = $count++;
-            push @opt_objs, Actium::CLI::Option->new($optionspec);
+            $optionspec->{order} = $count++;
+            push @opt_objs, Actium::Env::CLI::Option->new($optionspec);
         }
+        # old arrayref should be rewritten as
+        # { spec => , description  =>, fallback => ... }
+        # or { $spec => , description => , callback => }, depending
         elsif ( Actium::is_arrayref($optionspec) ) {
-
-            my ( $spec, $description, $callbackorfallback ) = @{$optionspec};
-
-            my %option_init = (
-                cmdenv      => $self,
-                spec        => $spec,
-                description => $description,
-                order       => $count++
-            );
-
-            if ( defined $callbackorfallback ) {
-
-                my $key
-                  = Actium::is_coderef($callbackorfallback)
-                  ? 'callback'
-                  : 'fallback';
-                $option_init{$key} = $callbackorfallback;
-            }
-
-            push @opt_objs, Actium::CLI::Option->new( \%option_init );
-
-        } ## tidy end: elsif ( Actium::is_arrayref...)
+            croak "Internal error: disallowed arrayref option specfication";
+        }
         else {
             # option package
             if ( not exists $OPTION_PACKAGE_DISPATCH{$optionspec} ) {
@@ -565,7 +538,7 @@ sub _build_option_objs {
             unshift @optionspecs, $self->$dispatch;
 
         }
-    } ## tidy end: while (@optionspecs)
+    }
 
     Actium::immut;
     # made immutable here, after any new attributes are made in dispatch
@@ -591,10 +564,16 @@ sub _build_option_objs {
 
     return \%opt_obj_of;
 
-} ## tidy end: sub _build_option_objs
+}
 
 #######################
 ### OPTION PACKAGES
+
+# I gave much thought as to whether most of these option packages should be set
+# in the modules that use them instead of here -- e.g., should the one for
+# actiumdb actually be included in Actium::Storage::DB? I've gone back and
+# forth on it, but in order to make sure that any duplicate options are caught,
+# I decided to leave them here.
 
 sub _default_package {
 
@@ -623,8 +602,8 @@ sub _default_package {
             config_section => 'Terminal',
             config_key     => 'quiet',
             description    => 'Does not display unnecessary information',
-            callback       => sub { $self->crier->set_maxdepth(0) if $_[0] },
             fallback       => 0,
+            callback => sub { $self->crier->filter_above_level(0) if $_[0] },
         },
         {   spec           => 'termcolor!',
             envvar         => 'TERM_COLOR',
@@ -638,15 +617,15 @@ sub _default_package {
             envvar         => 'TERM_PROGRESS',
             config_section => 'Terminal',
             config_key     => 'progress',
+            fallback       => 1,
             description    => 'May display dynamic progress indications. '
               . 'On by default. Use -noprogress to turn off',
-            fallback => 1,
             callback => sub { $self->crier->hide_progress unless $_[0] },
         },
 
     );
 
-} ## tidy end: sub _default_package
+}
 
 ### ActiumDB package
 
@@ -654,12 +633,12 @@ sub _actiumdb_package {
 
     my $self = shift;
 
-    require Actium::O::Files::ActiumDB;
+    require Actium::Storage::DB;
 
     has actiumdb => (
         is      => 'ro',
         builder => '_build_actiumdb',
-        isa     => 'Actium::O::Files::ActiumDB',
+        isa     => 'Actium:::Storage::DB',
         lazy    => 1,
     );
 
@@ -669,7 +648,7 @@ sub _actiumdb_package {
             config_key     => 'db_user',
             envvar         => 'DB_USER',
             description    => 'User name to access Actium database',
-            prompt         => 'User name to access Actium database',
+            prompt         => 1,
         },
         {   spec           => 'db_password=s',
             description    => 'Password to access Actium database',
@@ -677,11 +656,11 @@ sub _actiumdb_package {
             config_key     => 'db_password',
             envvar         => 'DB_PASSWORD',
             description    => 'Password to access Actium database',
-            prompt         => 'Password to access Actium database',
+            prompt         => 1,
             prompthide     => 1,
         },
         {   spec            => 'db_name=s',
-            description     => 'Name of the database in the ODBC driver. ',
+            description     => 'Name of the database in the ODBC driver',
             display_default => 1,
             config_section  => 'ActiumDB',
             config_key      => 'db_name',
@@ -690,13 +669,13 @@ sub _actiumdb_package {
         }
     );
 
-} ## tidy end: sub _actiumdb_package
+}
 
 sub _build_actiumdb {
     my $self = shift;
 
     my $actiumdb
-      = Actium::O::Files::ActiumDB::->new( map { $_ => $self->option($_) }
+      = Actium::Storage::DB->new( map { $_ => $self->option($_) }
           qw /db_user db_password db_name/ );
 
     return $actiumdb;
@@ -731,9 +710,7 @@ sub _signup_package {
         {   spec        => 'base=s',
             description => 'Base folder (normally [something]/Actium/signups)',
             display_default => 1,
-            fallback        => File::Spec->catdir(
-                $self->bin->stringify, File::Spec->updir(), 'signups'
-            ),
+            fallback        => $self->bin->parent->subfolder('signups'),
             envvar         => 'BASE',
             config_section => 'Signup',
             config_key     => 'base',
@@ -749,7 +726,7 @@ sub _signup_package {
             display_default => 1,
         },
     );
-} ## tidy end: sub _signup_package
+}
 
 sub _signup_with_old_package {
     my $self = shift;
@@ -783,7 +760,7 @@ sub _signup_with_old_package {
         },
 
     );
-} ## tidy end: sub _signup_with_old_package
+}
 
 method _build_newsignup {
     return Actium::Signup::->new(
@@ -830,76 +807,42 @@ sub _geonames_package {
         prompt          => 'Geonames API username',
     };
 
-} ## tidy end: sub _geonames_package
+}
 
 sub _build_geonames_username {
     my $self = shift;
     return $self->option('geonames_username');
 }
 
-#### FLICKR
-
-{
-    const my %DESCRIPTION_OF_OPTION => (
-        key    => 'Flickr API key',
-        secret => 'Flickr API secret',
-    );
-
-    sub _flickr_package {
-        my $self = shift;
-
-        has flickr_auth => (
-            is      => 'ro',
-            isa     => 'Actium::O::Photos::Flickr::Auth',
-            builder => '_build_flickr_auth',
-            lazy    => 1,
-        );
-
-        my @optionlist;
-        foreach my $optionname ( keys %DESCRIPTION_OF_OPTION ) {
-            push @optionlist,
-              { spec           => "flickr_${optionname}=s",
-                envvar         => "FLICKR_$optionname",
-                config_section => 'Flickr',
-                config_key     => $optionname,
-                description    => $DESCRIPTION_OF_OPTION{$optionname},
-                prompt         => $DESCRIPTION_OF_OPTION{$optionname},
-              };
-        }
-
-        return @optionlist;
-
-    } ## tidy end: sub _flickr_package
-
-    sub _build_flickr_auth {
-
-        my $self = shift;
-        my %params
-          = map { $_ => $self->option($_) } keys %DESCRIPTION_OF_OPTION;
-        return Actium::O::Photos::Flickr::Auth->new(%params);
-
-    }
-
-}
-
 1;
 
 __END__
 
+=head1 AUTHOR
 
-## COPYRIGHT & LICENSE
+Aaron Priven <apriven@actransit.org>
 
-Copyright 2011-2017
+=head1 COPYRIGHT & LICENSE
 
-The Actium system is free software; you can redistribute it and/or
-modify it under the terms of either:
+Copyright 2011-2018
 
-* the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any
-later version, or
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
-* the Artistic License version 2.0.
+=over 4
 
-This system is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+=item * 
+
+the GNU General Public License as published by the Free Software
+Foundation; either version 1, or (at your option) any later version, or
+
+=item * 
+
+the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
