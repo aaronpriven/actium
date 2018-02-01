@@ -107,7 +107,7 @@ method BUILD {
         exec 'perldoc', $module;
         die "Can't execute perldoc: $!";
     }
-    elsif ( $self->_help_requested eq 'help' or $self->option('help') ) {
+    elsif ( $self->_help_type eq 'help' or $self->option('help') ) {
         if ( $module->can('HELP') ) {
             $module->HELP();
         }
