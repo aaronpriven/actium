@@ -1,11 +1,11 @@
-#!/ActivePerl/bin/perl
+#!/usr/bin/env perl
 use strict;
 use warnings;
-use Actium::O::Crier;
+use Actium::Env::CLI::Crier;
 
 our $VERSION = 0.005;
 
-my $crier = Actium::O::Crier::->new(colorize=>1);
+my $crier = Actium::Env::CLI::Crier::->new(colorize=>1);
 
 my $cry = $crier->cry("Contract to build house");
 build_house();
@@ -17,7 +17,7 @@ sub build_house {
     my $build_cry = $crier->cry ("Building house");
     sitework();
     shell();
-    $build_cry->text( "
+    $build_cry->wail( "
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 Vestibulum varius libero nec emitus. Mauris eget ipsum eget quam sodales ornare. Suspendisse nec nibh. Duis lobortis mi at augue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
 "); 
@@ -33,7 +33,7 @@ Vestibulum varius libero nec emitus. Mauris eget ipsum eget quam sodales ornare.
 sub sitework {
     my $site_cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $site_cry->d_ok;
+    $site_cry->ok;
 }
 
 
@@ -42,7 +42,7 @@ sub shell {
     foundation();
     framing();
     roofing();
-    $shell_cry->d_ok;
+    $shell_cry->ok;
 }
 
 sub foundation {
@@ -55,13 +55,13 @@ sub foundation {
 sub framing {
     my $framing_cry = $crier->cry( "Now we do the framing task, which has a really long text title that should wrap nicely in the space we give it");
     sleep 1;  #simulate doing something
-    $framing_cry->d_warn;
+    $framing_cry->warn;
 }
 
 sub roofing {
     my $roof_cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $roof_cry->d_ok;
+    $roof_cry->ok;
 }
 
 sub mechanical {
@@ -69,29 +69,29 @@ sub mechanical {
     electrical();
     plumbing();
     hvac();
-    $mech_cry->d_fail;
+    $mech_cry->fail;
 }
 
 sub electrical {
     my $cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $cry->d_ok;
+    $cry->ok;
 }
 
 sub plumbing {
     my $cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $cry->d_ok;
+    $cry->ok;
 }
 
 sub hvac {
     my $cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $cry->d_ok;
+    $cry->ok;
 }
 
 sub finish {
     my $cry = $crier->cry();
     sleep 1;  #simulate doing something
-    $cry->d_ok;
+    $cry->ok;
 }

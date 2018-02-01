@@ -1,11 +1,11 @@
-#!/ActivePerl/bin/perl
+#!/usr/bin/env perl 
 use strict;
 use warnings;
-use Actium::O::Crier;
+use Actium::Env::CLI::Crier;
 
 our $VERSION = 0.005;
 
-my $crier = Actium::O::Crier::->new();
+my $crier = Actium::Env::CLI::Crier::->new();
 
 sub emit { $crier->cry(@_) }
 
@@ -16,6 +16,7 @@ sub emit { $crier->cry(@_) }
         select( undef, undef, undef, 0.100 );
     }
     $cry->over(q{});    # erase the percentage
+    $cry->ok;
 }
 
 {
@@ -24,6 +25,7 @@ sub emit { $crier->cry(@_) }
         $cry->prog( $_ % 10 ? '.' : ':' );
         select( undef, undef, undef, 0.100 );
     }
+    $cry->ok;
 }
 
 {
@@ -34,6 +36,7 @@ sub emit { $crier->cry(@_) }
         select( undef, undef, undef, 0.125 );
     }
     $cry->over;                                # remove spinner
+    $cry->ok;
 }
 {
     my $cry = emit "Zig zags on parade";
@@ -41,6 +44,7 @@ sub emit { $crier->cry(@_) }
         $cry->prog( $_ % 2 ? '/' : '\\' );
         select( undef, undef, undef, 0.025 );
     }
+    $cry->ok;
 }
 
 {
@@ -49,6 +53,7 @@ sub emit { $crier->cry(@_) }
         $cry->over(" $_/10");
         select( undef, undef, undef, 0.100 );
     }
+    $cry->ok;
 }
 
 {
@@ -57,7 +62,7 @@ sub emit { $crier->cry(@_) }
         $cry->prog(" $_ ");
         select( undef, undef, undef, 1.000 );
     }
-    $cry->done("Gone!");
+    $cry->c("Gone!");
 }
 
 exit 0;
