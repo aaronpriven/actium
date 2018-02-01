@@ -13,7 +13,7 @@ use Actium::Env::CLI::Option;
 use Actium::Env::CLI::Crier;
 use Actium::Storage::Folder;
 use Actium::Storage::File;
-use Actium::Types (qw/Folder/);
+use Actium::Types (qw/Folder File/);
 use Array::2D;
 use Types::Standard(qw/Int/);
 
@@ -281,12 +281,12 @@ has bin => (
 );
 
 has commandpath => (
-    isa      => 'File',
+    isa      => File,
     is       => 'ro',
-    required => 1, 
-    # I vaguely recall checking and seeing that  if $0 is put here, 
+    required => 1,
+    # I vaguely recall checking and seeing that  if $0 is put here,
     # it will refer to the module name, CLI.pm. I'm not 100% sure though
-    coerce   => 1,
+    coerce => 1,
 );
 
 has [qw/subcommand system_name/] => (
@@ -353,16 +353,18 @@ has command => (
 );
 
 sub _build_command {
-    my $self        = shift;
-    my ($basename, $ext) = $self->commandpath->basename_ext;
+    my $self = shift;
+    my ( $basename, $ext ) = $self->commandpath->basename_ext;
     return $basename;
 }
 
 has sysenv_r => (
-    traits   => ['Hash'],
-    isa      => 'HashRef[Str]',
-    is       => 'bare',
-    default  => {%ENV},
+    traits  => ['Hash'],
+    isa     => 'HashRef[Str]',
+    is      => 'bare',
+    default => sub {
+        {%ENV}
+    },
     handles  => { sysenv => 'get', },
     init_arg => 'sysenv',
 );
@@ -439,8 +441,8 @@ sub _build_options {
                 $options{$name} = $obj->fallback;
             }
             elsif ( $obj->prompt ) {
-	    my $prompt = $obj->prompt;
-	    $prompt = $obj->description if $prompt eq '1';
+                my $prompt = $obj->prompt;
+                $prompt = $obj->description if $prompt eq '1';
                 $prompt = $obj->prompt =~ s/:*\z/:/r;
                 # add a colon if it's not already there
                 $options{$name} = $self->prompt( $prompt, $obj->prompthide );
@@ -704,16 +706,14 @@ sub _signup_package {
         lazy    => 1,
     );
 
-    require File::Spec;    ### DEP ###
-
     return (
         {   spec        => 'base=s',
             description => 'Base folder (normally [something]/Actium/signups)',
             display_default => 1,
             fallback        => $self->bin->parent->subfolder('signups'),
-            envvar         => 'BASE',
-            config_section => 'Signup',
-            config_key     => 'base',
+            envvar          => 'BASE',
+            config_section  => 'Signup',
+            config_key      => 'base',
         },
         {   spec => 'signup=s',
             description =>
