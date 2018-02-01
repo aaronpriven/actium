@@ -29,9 +29,6 @@ Actium::Env::CLI::->new(
     },
 );
 
-# a reference is an alias, so tabulae => \'tabula' means if you type
-# "tabulae" it will treat it as though you typed "tabula"
-
 __END__
 
 =encoding utf8
@@ -65,6 +62,11 @@ information.
 
 This provides a list of subcommands available using act-pvt.pl.
 
+=head2 manual
+
+This displays this manual page, or the manual page for the supplied
+subcommand.
+
 =head2 time
 
 See L<Actium::Cmd::Time|Actium::Cmd::Time>.
@@ -75,10 +77,6 @@ All commands in act-pvt.pl take the default option package. See
 L<Actium::Env::CLI|Actium::Env::CLI> for more information about the
 option packages. See information in each subcommand's module for
 specific information about that subcommand.
-
-=head1 DEPENDENCIES
-
-List its dependencies.
 
 =head1 AUTHOR
 
