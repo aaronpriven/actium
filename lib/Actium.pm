@@ -856,10 +856,10 @@ func u_pad (
  my $wrapped = u_wrap ("message of many words", 
      min_columns => 5,  max_columns => 64 );
 
-Takes a string and word-wraps it to a number of columns, producing  a
-series of shorter lines, using the 
-L<Unicode::Linebreak|Unicode::LineBreak> module. If the string has
-embedded newlines, these are taken as separating paragraphs.
+Takes a string and word-wraps it to a number of columns, producing  a series of
+shorter lines, using the L<Unicode::Linebreak|Unicode::LineBreak> module. If
+the string has embedded newlines, these are taken as separating paragraphs. Any
+trailing newlines are removed.
 
 The first argument should be the message to be word-wrapped.
 
