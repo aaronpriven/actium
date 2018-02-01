@@ -1,5 +1,5 @@
 use strict;
-use Test::More 0.98 tests => 106;
+use Test::More 0.98 tests => 107;
 
 BEGIN {
     note "These are tests for constants and functions in Actium.pm.";
@@ -254,6 +254,26 @@ is_deeply(
     $lines_hanging_r,
     'Wraps with negative indent and space'
 );
+
+my $multiline = "
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Vestibulum varius libero nec emitus. Mauris eget ipsum eget quam sodales ornare. Suspendisse nec nibh. Duis lobortis mi at augue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
+";
+
+#<<<
+my $multiline_lines = [
+    '',
+    '    Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    'Vestibulum varius libero nec emitus. Mauris eget ipsum eget quam sodales',
+    'ornare. Suspendisse nec nibh. Duis lobortis mi at augue. Pellentesque habitant',
+    'morbi tristique senectus et netus et malesuada fames ac turpis egestas.',
+];
+#>>>
+
+is_deeply( [ Actium::u_wrap($multiline) ],
+    $multiline_lines, 'Multiple lines wrap' );
+
+exit;
 
 note 'u_trim_to_columns';
 
