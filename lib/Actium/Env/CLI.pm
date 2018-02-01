@@ -16,7 +16,7 @@ use Actium::Storage::File;
 use Actium::Storage::Ini;
 use Actium::Types (qw/Folder File/);
 use Array::2D;
-use Types::Standard(qw/Int HashRef Str/);
+use Types::Standard(qw/Enum Int HashRef Maybe Str/);
 
 use Module::Runtime ('require_module');
 
@@ -37,7 +37,7 @@ const my %OPTION_PACKAGE_DISPATCH => ( map { $_ => ( '_' . $_ . '_package' ) }
 
 around BUILDARGS ( $orig, $class : slurpy %params ) {
     # the BUILDARGS removes the subcommand from argv,
-    # and also handles "help" if "help" comes before the subcommand
+    # and also handles "help" or "manual" if they come before the subcommand
 
     $params{argv} //= [@ARGV];
 
@@ -52,31 +52,34 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
     }
     ## use critic
 
-    my ( $help_requested, $help_arg_index, $subcommand );
+    my ( $help_type, $subcommand );
 
-    if (@argv) {
-        for my $i ( 0 .. $#argv ) {
-            if ( $argv[$i] =~ /-?help/i ) {
-                $help_requested = 1;
-                $help_arg_index = $i;
-                next;
-            }
-            if ( $argv[$i] !~ /\A -/sx ) {
-                $subcommand = splice( @argv, $i, 1 );
-                # remove subcommand from args
-                last;    # stop after first command found
-            }
+    my @new_argv;
+
+    while (@argv) {
+        my $arg = shift @argv;
+        if ( $arg =~ /-?help/i ) {
+            $help_type ||= 'help';
+            next;
         }
-    }
+        elsif ( $arg =~ /-?man(ual)/i ) {
+            $help_type = 'manual';
+            next;
+        }
+        if ( $arg !~ /\A -/sx ) {
+            $subcommand = $arg;
+            push @new_argv, @argv;
+            last;    # stop after first command found
+        }
+        push @new_argv, $arg;
 
-    splice( @argv, $help_arg_index, 1 ) if $help_arg_index;
-    # delete 'help' from args
+    }
 
     my %init_args = (
         %params,
         subcommand => $subcommand // $EMPTY,
-        _help_requested => $help_requested,
-        argv            => \@argv,
+        _help_type => $help_type  // $EMPTY,
+        argv       => \@new_argv,
     );
 
     return $class->$orig(%init_args);
@@ -90,10 +93,21 @@ method BUILD {
     $self->_init_terminal();
 
     my $subcommand = $self->subcommand;
-    return $self->_mainhelp() if not $subcommand;
+    if ( not $subcommand ) {
+        if ( $self->_help_type eq 'manual' ) {
+            exec 'perldoc', $self->commandpath;
+            die "Can't execute perldoc: $!";
+        }
+        return $self->_mainhelp();
+    }
 
     my $module = $self->module;
-    if ( $self->_help_requested or $self->option('help') ) {
+
+    if ( $self->_help_type eq 'manual' or $self->option('manual') ) {
+        exec 'perldoc', $module;
+        die "Can't execute perldoc: $!";
+    }
+    elsif ( $self->_help_requested eq 'help' or $self->option('help') ) {
         if ( $module->can('HELP') ) {
             $module->HELP();
         }
@@ -290,7 +304,13 @@ has commandpath => (
     coerce => 1,
 );
 
-has [qw/subcommand system_name/] => (
+has subcommand => (
+    isa     => 'Str',
+    is      => 'ro',
+    default => $EMPTY,
+);
+
+has system_name => (
     isa      => 'Str',
     is       => 'ro',
     required => 1,
@@ -466,13 +486,13 @@ sub _build_options {
 ##########################################################
 ## Private attributes (used in processing options, etc.)
 
-has _help_requested => (
-    isa     => 'Bool',
-    is      => 'ro',
-    default => 0,
+has _help_type => (
+    isa => Enum [ $EMPTY, qw/help manual/ ],
+    is => 'ro',
 );
-# used when help found in BUILDARGS -- it's not set  if the help option
-# is used, e.g., actium.pl subocommand -help
+
+# used when help found in BUILDARGS -- it's not set if an option is used, e.g.,
+# actium.pl subocommand -help
 
 has _subcommands_r => (
     traits   => ['Hash'],
@@ -487,10 +507,11 @@ sub _subcommand_names {
     my $self = shift;
     \my %subcommands = $self->_subcommands_r;
 
-    return (
-        grep { not Actium::is_ref( $subcommands{$_} ) }
-        sort keys %subcommands
-    );
+    my @subcommands = grep { not Actium::is_ref( $subcommands{$_} ) }
+      keys %subcommands;
+    @subcommands = sort ( @subcommands, qw/help manual/ );
+    return @subcommands;
+
 }
 
 has _option_obj_r => (
@@ -586,6 +607,9 @@ sub _default_package {
     return (
         {   spec        => 'help|?',
             description => 'Displays this help message',
+        },
+        {   spec        => 'manual',
+            description => 'Displays the full manual for the command',
         },
         {   spec        => '_stacktrace',
             description => 'Provides lots of debugging information if '
