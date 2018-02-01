@@ -13,9 +13,10 @@ use Actium::Env::CLI::Option;
 use Actium::Env::CLI::Crier;
 use Actium::Storage::Folder;
 use Actium::Storage::File;
+use Actium::Storage::Ini;
 use Actium::Types (qw/Folder File/);
 use Array::2D;
-use Types::Standard(qw/Int/);
+use Types::Standard(qw/Int HashRef Str/);
 
 use Module::Runtime ('require_module');
 
@@ -360,10 +361,11 @@ sub _build_command {
 
 has sysenv_r => (
     traits  => ['Hash'],
-    isa     => 'HashRef[Str]',
+    isa     => HashRef [Str],
     is      => 'bare',
     default => sub {
-        {%ENV}
+        my @x = %ENV;
+        return {@x};
     },
     handles  => { sysenv => 'get', },
     init_arg => 'sysenv',
