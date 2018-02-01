@@ -479,8 +479,10 @@ method _do_prog ($type, @texts) {
     return 1 unless $self->shows_progress;
 
     my $cry;
+    my $left_indent_cols = 0;
     if ( $self->_cry_count ) {
-        $cry = $self->last_cry;
+        $cry              = $self->last_cry;
+        $left_indent_cols = $cry->_left_indent_cols;
         return 1 if $cry->_silent or $cry->muted;
     }
 
@@ -511,8 +513,7 @@ method _do_prog ($type, @texts) {
 
     if ( $msgcolumns > $columns_available ) {
 
-        my $left_indent_cols = $self->_left_indent_cols;
-        my $spaces           = $SPACE x $left_indent_cols;
+        my $spaces = $SPACE x $left_indent_cols;
         return undef unless $self->_print( "\n", $spaces );
 
         $position  = $left_indent_cols;
@@ -569,8 +570,8 @@ method _display_wail (:$text, :$left_indent_cols, :$right_indent_cols) {
 
     my @lines = Actium::u_wrap(
         $text,
-        min_columns => $span_max,
-        max_columns => $span_min,
+        min_columns => $span_min,
+        max_columns => $span_max,
     );
 
     my $indentspace = $SPACE x $left_indent_cols;
