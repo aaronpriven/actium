@@ -29,13 +29,13 @@ sub emit { $crier->cry(@_) }
 }
 
 {
-    my $cry   = emit "Here's a spinner";
+    my $cry  = emit "Here's a spinner";
     my @spin = qw{| / - \\ | / - \\};
     for ( 1 .. 64 ) {
         $cry->over( $spin[ $_ % @spin ] );
         select( undef, undef, undef, 0.125 );
     }
-    $cry->over;                                # remove spinner
+    $cry->over;    # remove spinner
     $cry->ok;
 }
 {
