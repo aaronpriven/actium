@@ -2,11 +2,7 @@ package Actium::Cmd::Time 0.012;
 
 # Routines for formatting times and parsing formatted times
 
-use warnings;
-use strict;
-
-use 5.014;
-
+use Actium;
 use Actium::Time;
 
 ###########################################
@@ -36,13 +32,11 @@ of a minus sign ("n10" will be treated as -10).
 
 HELP
 
-} ## tidy end: sub HELP
+}    ## tidy end: sub HELP
 
 sub START {
 
-    my $class = shift;
-    my $env   = shift;
-    my @argv  = $env->argv;
+    my @argv = env->argv;
 
     foreach my $time (@argv) {
         if ( $time =~ m/\A [-n] ? \d+ \z/sx ) {    # is it a timenum?
@@ -51,7 +45,7 @@ sub START {
             my $obj = Actium::Time::->from_num($time);
 
             say "$time -> AP: ", $obj->ap, " or APBX: ", $obj->apbx,
-              " or T24: ", $obj->t24;
+              " or T24: ", $obj->formatted();
         }
         else {
             my $obj = Actium::Time::->from_str($time);
@@ -60,7 +54,7 @@ sub START {
 
     }
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 
