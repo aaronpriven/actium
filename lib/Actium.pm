@@ -191,7 +191,7 @@ The ":5.24" feature bundle is loaded into each module, as well as  the
 
 L<indirect|indirect>
 
-The indirect module will behave as though "no indirect" had been used 
+The indirect module will behave as though "no indirect" had been used
 in the calling module.
 
 =item *
@@ -213,7 +213,7 @@ L<utf8|utf8>
 
 L<warnings|warnings>
 
-The default warnings are used, except that the following warnings are 
+The default warnings are used, except that the following warnings are
 turned off: 'experimental::refaliasing' and 'experimental::postderef'.
 
 =back
@@ -317,7 +317,7 @@ use Scalar::Util                                                 ### DEP ###
 use Statistics::Lite (qw/mean/);                                 ### DEP ###
 use Text::Trim('trim');                                          ### DEP ###
 
-=head1 SUBROUTINES 
+=head1 SUBROUTINES
 
 Except for C<env>, none of these subroutines are, or can be, exported.
 They can be used with the fully qualified name, e.g. "Actium::byline".
@@ -390,7 +390,7 @@ func joincomma (Str @items ) {
 }
 
 =head4 joinempty
-Takes the list passed to it and joins it together as a simple string. 
+Takes the list passed to it and joins it together as a simple string.
 A quicker way to type "join ('' , @list)".
 
 =cut
@@ -404,13 +404,13 @@ func joinempty ( Maybe[Str] @items ) {
 Takes the list passed to it and joins it together, with each element
 separated  by a line feed. A quicker way to type 'join ("\n" , @list)'.
 
-=cut 
+=cut
 
 func joinlf ( Maybe[Str] @items ) {
     return join( "\n", map { $_ // q[] } @items );
 }
 
-=head4 joinseries 
+=head4 joinseries
 
 This routine is designed to display a list as it should appear in
 English.
@@ -425,7 +425,7 @@ For example:
  # 'Fred, Sally and Carlos'
  joinseries(qw/Mei Fred Sally Carlos/);
  # 'Mei, Fred, Sally and Carlos'
- 
+
 There are four named parameters. Only "items" is mandatory.
 
 =over
@@ -442,7 +442,7 @@ placed on either side of the conjunction.
 
  joinseries( { conjunction => 'or' } , qw/Fred Sally Carlos/);
  # 'Fred, Sally or Carlos'
- 
+
 =item oxford
 
 A boolean value; if true, the separator (see below) is placed after the
@@ -453,7 +453,7 @@ though a true value had been supplied.
 
  joinseries( { oxford => '1' } , qw/Fred Sally Carlos/);
  # 'Fred, Sally, and Carlos'
- 
+
 =item separator
 
 The punctuation used to separate the appropriate items.  If not
@@ -465,9 +465,9 @@ above.
 
  joinseries( { separator => ';' } , qw/Sasha Aisha Raj/);
  # 'Sasha; Aisha; and Raj'
- 
+
 =back
- 
+
 =cut
 
 func joinseries (
@@ -649,7 +649,7 @@ García.
 
 =head4 byline (I<line1>, I<line2>)
 
-The byline() subroutine is typically called as the BLOCK part of a 
+The byline() subroutine is typically called as the BLOCK part of a
 L<sort|perlfunc/sort> function call:
 
   @lines = sort byline @lines;
@@ -660,12 +660,12 @@ should sort before, the same as, or after the second line.
 
 It is mainly useful as part of a longer sort block:
 
- @sorted_lines = 
-    sort { 
-        $mode_of{$a} cmp $mode_of{$b} 
-        or byline($a, $b) 
+ @sorted_lines =
+    sort {
+        $mode_of{$a} cmp $mode_of{$b}
+        or byline($a, $b)
     } (@lines);
-    
+
 =cut
 
 sub byline ($$) {    ## no critic ( Prototypes )
@@ -810,7 +810,7 @@ sub folder {
 =head3 Unicode Column Functions
 
 These utilities are used when displaying text in a monospaced typeface,
-to ensure that text with combining characters and wide characters are 
+to ensure that text with combining characters and wide characters are
 shown taking up the proper width.
 
 =head4 u_columns
@@ -853,12 +853,13 @@ func u_pad (
 
 =head4 u_wrap
 
- my $wrapped = u_wrap ("message of many words", 
+ my $wrapped = u_wrap ("message of many words",
      min_columns => 5,  max_columns => 64 );
 
-Takes a string and word-wraps it to a number of columns, producing  a series of
-shorter lines, using the L<Unicode::Linebreak|Unicode::LineBreak> module. If
-the string has embedded newlines, these are taken as separating paragraphs. Any
+Takes a string and word-wraps it to a number of columns, producing  a
+series of shorter lines, using the
+L<Unicode::Linebreak|Unicode::LineBreak> module. If the string has
+embedded newlines, these are taken as separating paragraphs. Any
 trailing newlines are removed.
 
 The first argument should be the message to be word-wrapped.
@@ -879,19 +880,19 @@ present, 79 will be used.
 
 =item indent
 
-This is an integer, representing the number of spaces that the first line
-should be indented.  If positive, the first line will be shortened by that many
-columns. If negative, the first line will be lengthened by that many columns.
-The default is 0, meaning no indenting will be done.
+This is an integer, representing the number of spaces that the first
+line should be indented.  If positive, the first line will be shortened
+by that many columns. If negative, the first line will be lengthened by
+that many columns. The default is 0, meaning no indenting will be done.
 
 =item addspace
 
-A boolean value, indicating whether spaces should be added before indented
-lines. The number of spaces is that specified by the "indent" value. (This
-value is ignored if "indent" zero or not supplied.)  If addspace is true and
-indent is positive, then spaces will be added before the first line. If true
-and indent is negative, then spaces will be added before all the lines except
-the first line.
+A boolean value, indicating whether spaces should be added before
+indented lines. The number of spaces is that specified by the "indent"
+value. (This value is ignored if "indent" zero or not supplied.)  If
+addspace is true and indent is positive, then spaces will be added
+before the first line. If true and indent is negative, then spaces will
+be added before all the lines except the first line.
 
 =back
 
@@ -964,7 +965,7 @@ func u_wrap ( Str $msg!,
 
 }
 
-=item u_trim_to_columns
+=head4 u_trim_to_columns
 
 Trims an input string to a particular number of columns.  Takes two
 named arguments: 'string' (for the string) and 'columns' (for the
@@ -995,14 +996,10 @@ func u_trim_to_columns ( Str :$string!, Int :$columns! ) {
 
 }
 
-=back
-
 =head3 Other String Functions
 
-=over
- 
-=item define
- 
+=head4 define
+
 For each value passed to it, returns either that value, if defined, or
 the empty string, if not.
 
@@ -1014,12 +1011,12 @@ sub define {
     return List::MoreUtils::apply { $_ //= q[] } @_;
 }
 
-=item encode_entities
+=head4 encode_entities
 
 L<< C<encode_entities> from
 HTML::Entities|HTML::Entities/encode_entities >>.
 
-=item feq
+=head4 feq
 
 Returns a boolean value:  true if, when case-folded (using C<fc>),  the
 first argument is equal to its second; otherwise false.
@@ -1030,7 +1027,7 @@ func feq (Str $x, Str $y) {
     return fc($x) eq fc($y);
 }
 
-=item fne
+=head4 fne
 
 Returns a boolean value:  true if, when case-folded (using C<fc>),  the
 first argument is not equal to its second; otherwise false.
@@ -1041,21 +1038,17 @@ func fne (Str $x, Str $y) {
     return fc($x) ne fc($y);
 }
 
-=item trim
+=head4 trim
 
 L<< C<trim> from Text::Trim|Text::Trim/trim >>.
 
-=back
-
 =head2 NUMBERS
 
-=over
-
-=item ceil
+=head4 ceil
 
 L<< C<ceil> from POSIX|POSIX/ceil >>.
 
-=item display_percent (I<fraction>)
+=head4 display_percent (I<fraction>)
 
 This is used to display a percentage. If two arguments are passed, the
 first is taken as the numerator and the second is taken as the
@@ -1078,30 +1071,26 @@ func display_percent (Num $val!, Num $total = 1) {
     ## use critic
 }
 
-=item floor
+=head4 floor
 
 L<< C<floor> from POSIX|POSIX/floor >>.
 
-=item looks_like_number
+=head4 looks_like_number
 
 L<< C<looks_like_number> from
 Scalar::Util|Scalar::Util/looks_like_number >>.
 
-=back
-
 =head2 REFERENCES
 
-=over
-
-=item arrayify
+=head4 arrayify
 
 L<< C<arrayify> from List::MoreUtils|List::MoreUtils/arrayify >>.
 
-=item blessed
+=head4 blessed
 
 L<< C<blessed> from Scalar::Util|Scalar::Util/blessed >>.
 
-=item hashref
+=head4 hashref
 
 Returns its argument if there is only one argument and it is a plain
 hashref. Otherwise creates a hash from its arguments. Useful in
@@ -1116,53 +1105,49 @@ sub hashref {
     return {@_};
 }
 
-=item is_arrayref
+=head4 is_arrayref
 
 L<C<is_arrayref> from Ref::Util|Ref::Util/is_arrayref>.
 
-=item is_blessed_ref
+=head4 is_blessed_ref
 
 L<C<is_blessed_ref> from Ref::Util|Ref::Util/is_blessed_ref>.
 
-=item is_coderef
+=head4 is_coderef
 
 L<C<is_coderef> from Ref::Util|Ref::Util/is_coderef>.
 
-=item is_hashref
+=head4 is_hashref
 
 L<C<is_hashref> from Ref::Util|Ref::Util/is_hashref>.
 
-=item is_ioref
+=head4 is_ioref
 
 L<C<is_ioref> from Ref::Util|Ref::Util/is_ioref>.
 
-=item is_plain_arrayref
+=head4 is_plain_arrayref
 
 L<C<is_plain_arrayref> from Ref::Util|Ref::Util/is_plain_arrayref>.
 
-=item is_plain_hashref
+=head4 is_plain_hashref
 
 L<C<is_plain_hashref> from Ref::Util|Ref::Util/is_plain_hashref>.
 
-=item is_ref
+=head4 is_ref
 
 L<C<is_ref> from Ref::Util|Ref::Util/is_ref>.
 
-=item refaddr
+=head4 refaddr
 
 L<C<refaddr> from Scalar::Util|Scalar::Util/refaddr>.
 
-=item reftype
+=head4 reftype
 
 L<C<reftype> from Scalar::Util|Scalar::Util/reftype>.
 
-=back
-
 =head2 OTHER FUNCTIONS
 
-=over
-
-=item dumpstr
+=head4 dumpstr
 
 This returns a string --  a dump from the Data::Printer module of the
 passed data structure, suitable for displaying and debugging.
@@ -1179,7 +1164,7 @@ sub dumpstr (\[@$%&];%) {    ## no critic (Prototypes)
     );
 }
 
-=item immut
+=head4 immut
 
 The B<immut> routine is designed to be used in place of the rather
 unwieldy
@@ -1200,8 +1185,6 @@ sub immut () {
 1;
 
 __END__
-
-=back
 
 =head1 DIAGNOSTICS
 
@@ -1297,7 +1280,7 @@ Actium::MooseX::BuilderShortuct
 
 Actium::MooseX::Rwp
 
-=item * 
+=item *
 
 Moose
 
