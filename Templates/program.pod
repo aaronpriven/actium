@@ -15,6 +15,10 @@ This documentation refers to <name> version 0.003
 
  # brief working invocation example(s) using the most comman usage(s)
 
+=head1 DESCRIPTION
+
+A full description of the program and its features.
+
 =head1 REQUIRED ARGUMENTS
 
 A list of every argument that must appear on the command line when the
@@ -28,7 +32,7 @@ omitted entirely.
 
 =over
 
-=item B<argument()>
+=head2 argument
 
 Description of argument.
 
@@ -42,9 +46,9 @@ or interactions.
 
 If the application has no options, this section may be omitted.
 
-=head1 DESCRIPTION
+=head2 an_option
 
-A full description of the program and its features.
+Description of an_option
 
 =head1 DIAGNOSTICS
 
@@ -53,6 +57,10 @@ generate (even the ones that will "never happen"), with a full
 explanation of each problem, one or more likely causes, and any
 suggested remedies. If the application generates exit status codes,
 then list the exit status associated with each error.
+
+=head1 EXIT STATUS
+
+Document numeric exit status codes
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
@@ -65,6 +73,14 @@ configuration language used.
 =head1 DEPENDENCIES
 
 List its dependencies.
+
+=head1 INCOMPATIBILITIES
+
+List its incompatibilities.
+
+=head1 BUGS AND LIMITATIONS
+
+List its bugs and limitations.
 
 =head1 AUTHOR
 
@@ -93,4 +109,3 @@ the Artistic License version 2.0.
 This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
