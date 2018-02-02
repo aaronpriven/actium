@@ -46,15 +46,16 @@ configuration language used.
 
 =head1 DEPENDENCIES
 
-List its dependencies.
+The Actium system, and...
 
 =head1 INCOMPATIBILITIES
 
-List its incompatibilities.
+None known.
 
 =head1 BUGS AND LIMITATIONS
 
-List any bugs or limitations
+None known. Issues are tracked on Github at
+L<https://github.com/aaronpriven/actium/issues|https://github.com/aaronpriven/actium/issues>.
 
 =head1 AUTHOR
 
