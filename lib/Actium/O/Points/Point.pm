@@ -1211,7 +1211,7 @@ const my %SHADINGS => (
       121  LineLavender
       10  Grey80
       20  Grey80
-      30/, 'New AC Green', qw/
+      30/, 'Grey80', qw/
       40  Grey80
       50  Grey80
       60/, 'Rapid Red', qw/
