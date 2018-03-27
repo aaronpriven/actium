@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# actium.pl - command-line access to Actium system
+# act-pvt.pl - command-line access to Actium system
 
 use FindBin qw($Bin);    ### DEP ###
 use lib ("$Bin/../lib"); ### DEP ###
@@ -40,7 +40,7 @@ the Actium system
 
 =head1 VERSION
 
-This documentation refers to <name> version 0.015
+This documentation refers to act-pvt.pl version 0.015
 
 =head1 USAGE
 
