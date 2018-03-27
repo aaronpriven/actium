@@ -304,7 +304,10 @@ func holidays {
 
     }
 
-    $holiday_set = DateTime::Set->from_datetimes( dates => \@holidays );
+    #$holiday_set = DateTime::Set->from_datetimes( dates => \@holidays );
+
+    my $date1 = DateTime->new( year => 2018, month => 5, day => 28 );
+    $holiday_set = DateTime::Set->from_datetimes( dates => [$date1] );
 
     return;
 } ## tidy end: func holidays
