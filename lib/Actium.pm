@@ -390,8 +390,9 @@ func joincomma (Str @items ) {
 }
 
 =head4 joinempty
-Takes the list passed to it and joins it together as a simple string.
-A quicker way to type "join ('' , @list)".
+
+Takes the list passed to it and joins it together as a simple string. A
+quicker way to type "join ('' , @list)".
 
 =cut
 
