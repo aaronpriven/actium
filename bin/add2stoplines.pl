@@ -42,8 +42,8 @@ foreach my $file (@additions) {
 
 } ## tidy end: foreach my $file (@additions)
 
-open my $in,  '<', $filepfx . 'w17/stoplines.txt';
-open my $out, '>', $filepfx . 'w17/stoplines-added.txt';
+open my $in,  '<', $filepfx . 'sp18q/stoplines.txt';
+open my $out, '>', $filepfx . 'sp18q/stoplines-added.txt';
 
 $_ = <$in>;
 chomp;
