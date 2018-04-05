@@ -530,17 +530,17 @@ caches)</p>
 </tr>
 <tr valign="top">
 <td>
-<p>Environment object</p>
+<p>Environment objects</p>
 </td>
 <td>
-<p>Actium::Env</p>
+<p>Actium::Env::.*</p>
 </td>
 <td>
-<p>This is what is returned by Actium::env()</p>
+<p>These objects are what are returned by Actium::env() . If there are ever other ones besides the CLI object, they will be Actium::Env::Web, Actium::Env::Cocoa, or whatever.</p>
 </td>
 <td>
 <p>
-
+X
 </p>
 </td>
 </tr>
@@ -549,7 +549,7 @@ caches)</p>
 <p>Command line interface class</p>
 </td>
 <td>
-<p>Actium::CLI</p>
+<p>Actium::Env::CLI</p>
 </td>
 <td>
 <p>The idea is that this would create the Actium::Env object. Most
@@ -557,7 +557,7 @@ of what was Actium::O::Cmd</p>
 </td>
 <td>
 <p>
-
+X
 </p>
 </td>
 </tr>
@@ -566,14 +566,14 @@ of what was Actium::O::Cmd</p>
 <p>Command line options</p>
 </td>
 <td>
-<p>Actium::CLI::Option</p>
+<p>Actium::Env::CLI::Option</p>
 </td>
 <td>
 <p>What was Actium::O::Cmd::Option</p>
 </td>
 <td>
 <p>
-
+X
 </p>
 </td>
 </tr>
@@ -582,14 +582,14 @@ of what was Actium::O::Cmd</p>
 <p>Terminal input/output</p>
 </td>
 <td>
-<p>Actium::CLI::Crier</p>
+<p>Actium::Env::CLI::Crier</p>
 </td>
 <td>
-<p>If it isn’t hived off into its own distribution</p>
+<p> </p>
 </td>
 <td>
 <p>
-
+X
 </p>
 </td>
 </tr>
@@ -602,7 +602,7 @@ of what was Actium::O::Cmd</p>
 </td>
 <td>
 <p>Actual command modules go into Actium::Cmd, as opposed to
-things that work on the environment such as Actium::CLI::Crier 
+things that work on the environment such as Actium::Env::CLI::Crier 
 </p>
 </td>
 <td>
@@ -781,7 +781,7 @@ X
 </td>
 <td>
 <p>
-
+X
 </p>
 </td>
 </tr>
