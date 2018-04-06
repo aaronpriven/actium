@@ -273,8 +273,6 @@ my $multiline_lines = [
 is_deeply( [ Actium::u_wrap($multiline) ],
     $multiline_lines, 'Multiple lines wrap' );
 
-exit;
-
 note 'u_trim_to_columns';
 
 is( Actium::u_trim_to_columns( columns => 4, string => 'abcde' ),
