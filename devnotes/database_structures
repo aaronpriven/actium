@@ -1,0 +1,36 @@
+
+
+
+DATABASE OBJECTS
+
+Actium::DB
+  -- generic database role, contains dbh, lists of tables
+
+Actium::DB::FileMaker_ODBC
+  -- class composing Actium::DB for FileMaker databases
+
+Actium::DB::SQLite
+  -- class composing Actium::DB for SQLite databases
+
+Actium::DB::ActiumDB
+  -- subclass of Actium::DB with methods that require multiple 
+     Actium tables
+
+Actium::DB::Xhea
+  -- subclass of Actium::DB with methods that require multiple 
+     Xhea tables. 
+
+Actium::DB::GTFS
+  -- subclass of Actium::DB with methods that require multiple 
+     GTFS tables
+
+Actium::DB::Table - generic table
+   includes routines like read_from_csv, read_from_xhea_xml,  etc
+   also things like all_in_columns_key
+
+Actium::DB::ActiumDB::Signs, Actium::DB::Xhea::Stops, etc. - 
+   specific tables, subclasses of DB::Table with methods specific to each
+   table
+
+
+
