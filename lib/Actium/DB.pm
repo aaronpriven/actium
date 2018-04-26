@@ -56,8 +56,8 @@ method table (Str $table_name!) {
     return $table;
 }
 
-method quote_identifiers (@identifiers) {
-    return map { q{"} . $_ . q{"} } @identifiers;
+method quote_identifiers (@identifiers is copy) {
+    return map { s/"/""/g; q{"} . $_ . q{"} } @identifiers;
 }
 
 1;
