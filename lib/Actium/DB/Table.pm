@@ -39,6 +39,15 @@ has _columns_r => (
 
 has keycolumn => ( is => 'ro', );
 
+has _cache_columns_r => (
+    is       => 'ro',
+    init_arg => 'cache_columns',
+    traits   => ['Array'],
+    isa      => 'ArrayRef[Str]',
+    default  => sub { [] },
+    handles  => { _cache_columns => 'elements', },
+);
+
 has _cache_r => (
     traits   => ['Hash'],
     is       => 'ro',
@@ -54,7 +63,7 @@ has _cache_r => (
 );
 
 method _build_cache ($item) {
-    return $self->selectall_hoh;
+    return $self->selectall_hoh( columns => $self->_cache_columns_r );
 }
 
 ###################################
