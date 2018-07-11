@@ -25,7 +25,7 @@ sub START {
     my $class = shift;
     $env = shift;
 
-    my @ymd = qw/2017 3 26/;
+    my @ymd = qw/2018 6 17/;
     my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
 
     my $config_obj = $env->config;
@@ -53,6 +53,8 @@ sub START {
         my $header = $headers[$i];
         $col{$header} = $i;
     }
+
+    $read_cry->text( join( " ", keys %col ) );
 
     $read_cry->done;
 
@@ -86,12 +88,14 @@ sub _process_stop {
     @removed = grep !/^BS[DN]$/, @removed;
     my @unchanged = split( ' ', $stop[ $col{Unchanged} ] );
     @unchanged = grep !/^BS[DN]$/, @unchanged;
-    my $bagtext = $stop[ $col{'Bag Text Number'} ];
+    my $bagtext = $stop[ $col{'bag code'} ];
     $bagtext = $EMPTY unless $bagtext =~ /\w/;
-    my $desc     = $stop[ $col{'Stop Description'} ];
-    my $bagortmp = $stop[ $col{'Bag/ Tmp?'} ];
+    my $cluster = $stop[ $col{'Work cluster'} ];
+    $cluster =~ s/^c//;
+    my $desc = $stop[ $col{'Stop Description'} ] . "      Work zone $cluster";
+    #my $bagortmp = $stop[ $col{'Bag/ Tmp?'} ];
 
-    return unless u::feq( $bagortmp, 'B' );
+    #return unless u::feq( $bagortmp, 'B' );
 
     my $num_added     = scalar @added;
     my $num_removed   = scalar @removed;
@@ -183,7 +187,8 @@ sub _translate_graf {
 }
 
 sub _translate {
-    my $i18n_id      = shift;
+    my $i18n_id = shift;
+    croak "No such id $i18n_id" unless exists $i18n{$i18n_id};
     my %translations = %{ $i18n{$i18n_id} };
     delete $translations{i18n_id};
     return \%translations;
