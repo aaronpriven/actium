@@ -880,6 +880,11 @@ sub lines_at_transit_hubs_html {
 
             my @displaylines;
             foreach my $line (@lines) {
+                if ( $line =~ /4[0-9][0-9]/ ) {
+                    push @displaylines,
+                      qq{<a href="http://actransit.org/flex/">Flex</a>};
+                    next;
+                }
 
                 push @displaylines,
                   qq{<a href="} . $self->linesked_url($line) . qq{">$line</a>};
