@@ -512,9 +512,9 @@ sub linesbycity {
         \my @cols = $colref;
         my ( undef, $p_lines, $c_city ) = @cols;
 
-        my @lines = split( /\s+/, $p_lines );
+        my @lines = split( ' ', $p_lines );
         foreach my $line (@lines) {
-            my $type = $type_of{$line};
+            my $type = $type_of{$line} // 'Local';
             $lines_of{$c_city}{$type}{$line} = 1;
         }
     }
