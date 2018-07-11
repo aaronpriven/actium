@@ -68,10 +68,14 @@ sub START {
           = add_drop_unchanged( [ keys %old_decals_of_line ],
             [ keys %new_decals_of_line ] );
 
-        $results_of{$id}{new_line} = [
-            sortbyline( map { @{ $new_decals_of_line{$_} } } @{$new_lines} ) ];
-        $results_of{$id}{old_line} = [
-            sortbyline( map { @{ $old_decals_of_line{$_} } } @{$old_lines} ) ];
+        $results_of{$id}{new_line}
+          = [
+            sortbyline( map { @{ $new_decals_of_line{$_} } } @{$new_lines} )
+          ];
+        $results_of{$id}{old_line}
+          = [
+            sortbyline( map { @{ $old_decals_of_line{$_} } } @{$old_lines} )
+          ];
 
         my @old_decals
           = map { @{ $old_decals_of_line{$_} } } @{$unchanged_lines};
@@ -241,7 +245,19 @@ sub move_insignificant_changes_to_unchanged {
           18-f    18-m
           51A-c   51A-h
           51A-c   51A-i
-
+          80-b    80-k
+          80-c    80-n
+          80-g    80-m
+          G-a     G-f
+          G-d     G-g
+          S-b     S-d
+          S-a     S-c
+          SB-a    SB-f
+          SB-c    SB-d
+          Z-a     Z-f
+          Z-d     Z-e
+          210-b   210-e
+          210-c   210-f
           )
     ];
 
