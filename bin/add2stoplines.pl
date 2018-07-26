@@ -12,7 +12,8 @@ my $filepfx = '/Users/Shared/Dropbox (AC_PubInfSys)/B/ACTium/signups/';
 
 my @additions = (
     $filepfx . 'dumbarton_stops/dbs-active.txt',
-    $filepfx . 'flex/flex-active.txt'
+    $filepfx . 'flex/flex-active.txt',
+    $filepfx . 'su18/stoplines-600s.txt',
 );
 
 my %lines_of;
@@ -34,16 +35,26 @@ foreach my $file (@additions) {
 
         next if $stopid =~ /[^0-9]/;
 
+        if ( $file =~ /600/ ) {
+            my @lines = split( ' ', $lines );
+            @lines = grep {/^6\d\d$/} @lines;
+            $lines = join( " ", @lines );
+            my @linedirs = split( ' ', $linedirs );
+            @linedirs = grep {/^6\d\d-/} @linedirs;
+            $linedirs = join( " ", @linedirs );
+
+        }
+
         push $lines_of{$stopid}->@*,    $lines;
         push $linedirs_of{$stopid}->@*, $linedirs;
-    }
+    } ## tidy end: while (<$addfile>)
 
     close $addfile;
 
 } ## tidy end: foreach my $file (@additions)
 
-open my $in,  '<', $filepfx . 'sp18q/stoplines.txt';
-open my $out, '>', $filepfx . 'sp18q/stoplines-added.txt';
+open my $in,  '<', $filepfx . 'su18/stoplines.txt';
+open my $out, '>', $filepfx . 'su18/stoplines-added.txt';
 
 $_ = <$in>;
 chomp;
