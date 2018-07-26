@@ -1161,6 +1161,7 @@ sub output_specs {
         next if $stopdesc =~ /Virtual Stop/si;
         next if $stopdesc =~ /^Transbay Terminal/si;
         next if $stopdesc =~ /^Transbay Temp Terminal/si;
+        next if $stopdesc =~ /^Salesforce/si;
 
         print "$stop\t$stopdesc";
 
