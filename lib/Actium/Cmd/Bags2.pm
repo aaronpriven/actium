@@ -9,6 +9,7 @@ use Actium::O::2DArray;
 
 use Actium::Text::InDesignTags;
 use Actium::O::DateTime;
+use Actium::Set ('clusterize');
 
 const my $IDT     => 'Actium::Text::InDesignTags';
 const my $HARDRET => Actium::Text::InDesignTags::->hardreturn_esc;
@@ -18,6 +19,7 @@ sub OPTIONS {
 }
 
 my %i18n;
+my ( %workzone_of, %cluster_of );
 my $env;
 
 sub START {
@@ -25,7 +27,7 @@ sub START {
     my $class = shift;
     $env = shift;
 
-    my @ymd = qw/2018 6 17/;
+    my @ymd = qw/2018 8 12/;
     my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
 
     my $config_obj = $env->config;
@@ -38,11 +40,17 @@ sub START {
 
     $i18n_cry->done;
 
+    my $workzone_cry = $env->crier->cry('Fetching work zones from database');
+    %workzone_of
+      = %{ $actium_db->all_in_column_key(qw(Stops_Neue u_work_zone)) };
+    $workzone_cry->done;
+
     my $read_cry = $env->crier->cry('Reading sheet');
 
     my $excelfile = $env->argv_idx(0);
 
     my ( $outfile, $oldext ) = u::file_ext($excelfile);
+    my $clusterfile = $outfile . '-clusters.txt';
     $outfile .= "-bags.txt";
 
     my $list    = Actium::O::2DArray->new_from_xlsx($excelfile);
@@ -63,6 +71,30 @@ sub START {
     open( my $outfh, '>:encoding(UTF-8)', $outfile );
 
     say $outfh "Action\tStopID\tMainbox\tInstruction";
+
+    # clusterize
+
+    my ( @stopids, @workzones );
+    for my $stop_r ( @{$list} ) {
+        my $stopid = $stop_r->[ $col{StopID} ];
+        push @stopids, $stopid;
+        my $workzone = $workzone_of{$stopid} // '';
+        #$output_cry->text("$stopid $workzone");
+        push @workzones, $workzone_of{$stopid};
+    }
+
+    %cluster_of = %{ clusterize( items => \@workzones, size => 20 ) };
+
+    open( my $clusterfh, '>:encoding(UTF-8)', $clusterfile );
+    foreach my $stopid (@stopids) {
+        say $clusterfh join( "\t",
+            $stopid, $workzone_of{$stopid},
+            $cluster_of{ $workzone_of{$stopid} } );
+    }
+
+    close $clusterfh;
+
+    # end clusterize
 
     for my $stop_r ( @{$list} ) {
         my $out_line = _process_stop( $stop_r, \%col, $dt );
@@ -88,14 +120,17 @@ sub _process_stop {
     @removed = grep !/^BS[DN]$/, @removed;
     my @unchanged = split( ' ', $stop[ $col{Unchanged} ] );
     @unchanged = grep !/^BS[DN]$/, @unchanged;
-    my $bagtext = $stop[ $col{'bag code'} ];
+    my $bagtext = $stop[ $col{'bag text id'} ];
     $bagtext = $EMPTY unless $bagtext =~ /\w/;
-    my $cluster = $stop[ $col{'Work cluster'} ];
-    $cluster =~ s/^c//;
-    my $desc = $stop[ $col{'Stop Description'} ] . "      Work zone $cluster";
-    #my $bagortmp = $stop[ $col{'Bag/ Tmp?'} ];
+    #my $cluster = $stop[ $col{'Work cluster'} ];
+    #$cluster =~ s/^c//;
 
-    #return unless u::feq( $bagortmp, 'B' );
+    my $bagortmp = $stop[ $col{'Bag'} ];
+
+    return unless u::feq( $bagortmp, 'B' );
+
+    my $cluster = $cluster_of{ $workzone_of{$stopid} };
+    my $desc = $stop[ $col{'Stop Description'} ] . "      Work zone $cluster";
 
     my $num_added     = scalar @added;
     my $num_removed   = scalar @removed;
