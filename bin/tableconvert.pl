@@ -42,6 +42,7 @@ while (<$myargvfh>) {
     my $this_elem
       = /\cI/        ? 'table'
       : /^\s*&bull;/ ? 'ul'
+      : /\Ao /       ? 'ul'
       : /^\s*\.ES/   ? ':es'
       : /^\s*\.ZH/   ? ':zh'
       :                'p';
@@ -68,6 +69,7 @@ while (<$myargvfh>) {
           = "<tr><td align=center valign=top>$line</td><td align=left valign=top>$change</td></tr>";
     }
     elsif ( $this_elem eq 'ul' ) {
+        s/^o //;
         s/\s*&bull;//;
         $_ = "<li>$_</li>";
     }
