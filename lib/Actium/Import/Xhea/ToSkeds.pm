@@ -301,7 +301,8 @@ sub _get_trips {
             say "not defined: block in $int_number" if not defined $block;
 
             my $event = $field{trp_event_and_status};
-            $event = $EMPTY if $event =~ /\A [A-Z]* on \z/x;
+
+            #$event = $EMPTY if $event =~ /\A [A-Z]* on \z/x;
             # delete SCHOOOLon type events
 
             my $trip = Actium::O::Pattern::Trip->new(

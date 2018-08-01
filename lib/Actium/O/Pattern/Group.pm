@@ -138,7 +138,15 @@ sub _sked_trip_collections {
 
             my $days = $trip->days;
             $days =~ s/7/7H/;    # dumb way of dealing with holidays, but...
-            my $days_obj = Actium::O::Days->instance( $days, 'B' );
+
+            my $schooldays = 'B';
+            my $event      = $trip->event_and_status;
+            if ( $event =~ /^SD[A-Z]*on/ ) {
+                $schooldays = 'D';
+                $event      = '';
+            }
+
+            my $days_obj = Actium::O::Days->instance( $days, $schooldays );
 
             my @times = map { $_->timenum } $trip->stoptimes;
 
@@ -152,20 +160,19 @@ sub _sked_trip_collections {
             $vehicletype = join( ":", @vehicle_info )
               if @vehicle_info;
 
-            push @skedtrips,
-              Actium::O::Sked::Trip->new(
-                blockid        => $trip->block_id,
-                pattern        => $pattern->identifier,
-                daysexceptions => $trip->event_and_status,
+            push @skedtrips, Actium::O::Sked::Trip->new(
+                blockid => $trip->block_id,
+                pattern => $pattern->identifier,
+                daysexceptions => $event,             # $trip->event_and_status,
                 vehicledisplay => $pattern->vdc,
                 via            => $pattern->via,
                 vehicletype    => $vehicletype,
                 line           => $pattern->line,
                 internal_num   => $trip->int_number,
-                type           => $trip->schedule_daytype,
-                days           => $days_obj,
-                stoptime_r     => \@times,
-              );
+                type       => $trip->schedule_daytype,
+                days       => $days_obj,
+                stoptime_r => \@times,
+            );
 
         } ## tidy end: foreach my $trip ( $pattern...)
 
