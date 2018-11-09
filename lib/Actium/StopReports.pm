@@ -353,10 +353,10 @@ sub _kml_stop_description {
     my $hastus_id = $stp{h_stp_identifier};
     my $lines     = $stp{p_linedirs};
     #my $zip        = $stp{p_zip_code};
-    my $linetext = $lines ? "<u>Lines:</u> $lines" : 'Inactive stop';
-    my $activestar = $stp{p_active} ? $EMPTY : '*';
-    my $workzone = $stp{u_work_zone};
-    my $signtype = $signtype_of_stop{$stop_id};
+    my $linetext   = $lines         ? "<u>Lines:</u> $lines" : 'Inactive stop';
+    my $activestar = $stp{p_active} ? $EMPTY                 : '*';
+    my $workzone   = $stp{u_work_zone};
+    my $signtype   = $signtype_of_stop{$stop_id};
 
     my $connections      = $stp{u_connections};
     my $connections_text = $EMPTY;
@@ -391,7 +391,7 @@ sub _kml_stop_description {
         'Transbay',         'Dumbarton Express',
         'Broadway Shuttle', 'All Nighter',
         'Local',            'Service to Schools',
-        $EMPTY,
+        'Early Bird',       $EMPTY,
     );
 
     const my $LOWEST_PRIORITY => scalar @KML_LINE_TYPES;
@@ -404,6 +404,7 @@ sub _kml_stop_description {
         'All Nighter'        => 'FFFFFF00',
         Local                => 'FFFFFF00',
         'Service to Schools' => 'FF80FFFF',
+        'Early Bird'         => 'FFD09300',
         # flex is 301DAF - multiplied by 1.46
         Flex   => 'FF462AFF',
         $EMPTY => 'FF80FFFF',
