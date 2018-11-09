@@ -19,6 +19,11 @@ sub _stringify {
     return $self->long_en;
 }
 
+sub _data_printer {
+    my $self = shift;
+    return $self->datetime;
+}
+
 const my $CONSTRUCTOR => __PACKAGE__ . '->new';
 
 sub _datetime_arg {
@@ -283,14 +288,24 @@ sub en_us_weekday {
     return $cldr->format_datetime($self);
 }
 
-# CLASS METHOD
+# CLASS METHODS
 
 sub newest_date {
-    my $class = shift;
+    _x_est_date( @_, -1 );
+}
+
+sub oldest_date {
+    _x_est_date( @_, 1 );
+}
+
+sub _x_est_date {
+
+    my $class            = shift;
+    my $comparison_value = pop;
 
     my @dates = @_;
 
-    my $newest_date;
+    my $x_est_date;
 
     foreach my $date (@dates) {
 
@@ -298,26 +313,27 @@ sub newest_date {
             $date = $class->_from_strptime($date);
         }
 
-        if (not defined $newest_date
+        if (not defined $x_est_date
             or ( defined $date
-                and $class->compare( $newest_date, $date ) == -1 )
+                and $class->compare( $x_est_date, $date ) == $comparison_value )
+            #and $class->compare( $newest_date, $date ) == -1 )
           )
         {
-            $newest_date = $date;
+            $x_est_date = $date;
         }
     }
 
-    return if not defined $newest_date;
+    return if not defined $x_est_date;
 
-    if ( not $newest_date->isa(__PACKAGE__) ) {
-        $newest_date = Actium::O::DateTime::->new($newest_date);
+    if ( not $x_est_date->isa(__PACKAGE__) ) {
+        $x_est_date = Actium::O::DateTime::->new($x_est_date);
         # if somebody is passing DateTime objects,
         # turns them into Actium::O::DateTime objects
     }
 
-    return $newest_date;
+    return $x_est_date;
 
-} ## tidy end: sub newest_date
+} ## tidy end: sub _x_est_date
 
 1;
 
