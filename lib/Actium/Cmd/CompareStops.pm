@@ -174,8 +174,8 @@ sub START {
 sub dummy {
     local $_ = shift;
     return 1 if ( /^Virtual/ or /^Dummy/ );
-    return 1 if /San Francisco Terminal/;
-    return 1 if /Transbay Temp Terminal/;
+    #return 1 if /San Francisco Terminal/;
+    #return 1 if /Transbay Temp Terminal/;
     return;
 }
 
