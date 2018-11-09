@@ -109,7 +109,7 @@ const my $SPACE         => q{ };
 const my $KEY_SEPARATOR => "\c]";
 const my $MINS_IN_12HRS => ( 12 * 60 );
 const my @TRANSBAY_NOLOCALS =>
-  (qw/B FS G H J L LA LC NX NX1 NX2 NX3 NX4 NXC OX P S SB U V W Z/);
+  (qw/FS G H J L LA LC NX NX1 NX2 NX3 NX4 NXC OX P S SB U V W Z/);
 
 const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
 #  Hastus                 0  1  3  2  4  5  6  7  8  9  10 11 12 13 14 15
@@ -551,7 +551,7 @@ sub joinseries {
         $separator .= $SPACE;
     }
     else {
-        $oxford = delete $options{oxford} // 0;
+        $oxford    = delete $options{oxford} // 0;
         $separator = q[, ];
     }
 
