@@ -998,8 +998,8 @@ sub _ldh_footer {
 
     my $footer = <<'EOF';
   <p> <strong>Find <a href="http://www.actransit.org/maps/index.php">maps 
-    &amp; schedules</a> for these lines.</strong> Or call 511 and say 
-    &quot;AC Transit&quot; for trip-planning assistance.</p>
+    &amp; schedules</a> for these lines.</strong> Or call (510) 891-4777 
+    for trip-planning assistance.</p>
 EOF
 
     $footer =~ s/\n/ /g;
