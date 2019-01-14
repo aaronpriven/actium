@@ -227,29 +227,6 @@ sub START {
                     my $times_r
                       = $stopinfo{$stop}{$linegroup}{$dir_code}{$days};
 
-                    # LASTSTOP
-
-                    if ( u::all { $_->{LASTSTOP} } @{$times_r} ) {
-
-               #if ( u::all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
-                        $has_last_stop{$linegroup} = 1;
-                        $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
-                          = "LASTSTOP";
-                    }
-                    else {
-
-                        $has_non_last_stop{$linegroup} = 1;
-                        foreach my $i ( reverse 0 .. $#{$times_r} ) {
-
-                            #if ( $times_r->[$i]->{PLACE} eq
-                            #    $times_r->[$i]->{DESTINATION} )
-
-                            if ( $times_r->[$i]->{LASTSTOP} ) {
-                                splice( @{$times_r}, $i, 1 );
-                            }
-                        }
-                    }
-
                     # DROPOFF
 
                     if ( $is_a_nolocal_route{$linegroup} ) {
@@ -271,11 +248,34 @@ sub START {
 
                                 $note_of{"$stop:$linegroup:$dir_code:$days"}
                                   {NOTE} = "DROPOFF";
+                                $has_last_stop{$linegroup} = 1;
 
                             }
                         }
 
                     } ## tidy end: if ( $is_a_nolocal_route...)
+                    elsif
+                      # LASTSTOP
+                      ( u::all { $_->{LASTSTOP} } @{$times_r} ) {
+
+               #if ( u::all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
+                        $has_last_stop{$linegroup} = 1;
+                        $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
+                          = "LASTSTOP";
+                    }
+                    else {
+
+                        $has_non_last_stop{$linegroup} = 1;
+                        foreach my $i ( reverse 0 .. $#{$times_r} ) {
+
+                            #if ( $times_r->[$i]->{PLACE} eq
+                            #    $times_r->[$i]->{DESTINATION} )
+
+                            if ( $times_r->[$i]->{LASTSTOP} ) {
+                                splice( @{$times_r}, $i, 1 );
+                            }
+                        }
+                    }
 
                     # TODO - figure out how to do line U
 
