@@ -676,7 +676,7 @@ sub START {
             @pages = sort { $a->[0] <=> $b->[0] } @pages;
             # sort numerically by signid
 
-            say $list_fh "FILE\t$signtype\t$addition";
+            say $list_fh "FILE\t$signtype\t${addition}$run_name";
 
             foreach my $page (@pages) {
 
