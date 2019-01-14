@@ -32,11 +32,11 @@ const my $NBSP         => $IDT->nbsp;
 has [
     qw/stopid signid delivery agency signtype
       description description_nocity city/
-] => (
+  ] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
-);
+  );
 
 has copyquantity => (
     is      => 'ro',
@@ -635,62 +635,79 @@ sub determine_subtype {
       SUBTYPE:
         foreach my $subtype ( sort @subtypes ) {
 
-            my @regions = @{ $templates_of_r->{$subtype} };
+          TAILFIRST:
+            foreach my $tailfirst ( 1, 0 ) {
 
-            @chunkids_by_region = ( [@chunkids_by_length] );
+                my @regions = @{ $templates_of_r->{$subtype} };
 
-          REGION_ASSIGNMENT:
-            while ( @{ $chunkids_by_region[0] } ) {
+                @chunkids_by_region = ( [@chunkids_by_length] );
 
-                @columns_needed = ();
+              REGION_ASSIGNMENT:
+                while ( @{ $chunkids_by_region[0] } ) {
 
-              REGION:
-                foreach my $i ( reverse( 0 .. $#chunkids_by_region ) ) {
+                    @columns_needed = ();
 
-                    # get the number of formatted columns required by all the
-                    # columns in the chunks assigned to this region
+                  REGION:
+                    foreach my $i ( reverse( 0 .. $#chunkids_by_region ) ) {
 
-                    my $columns_needed = 0;
-                    foreach my $chunk_id ( @{ $chunkids_by_region[$i] } ) {
-                        $columns_needed += $takes_up_columns_cr->(
-                            $regions[$i]{height},
-                            @{ $heights_of_chunk{$chunk_id} },
-                        );
-                    }
+                       # get the number of formatted columns required by all the
+                       # columns in the chunks assigned to this region
 
-                    if ( $columns_needed > $regions[$i]{columns} ) {
-
-                        # it doesn't fit
-
-                        if ( $i == $#regions ) {
-                            # Smallest region is filled, so it can't fit at all
-                            next SUBTYPE;
+                        my $columns_needed = 0;
+                        foreach my $chunk_id ( @{ $chunkids_by_region[$i] } ) {
+                            $columns_needed += $takes_up_columns_cr->(
+                                $regions[$i]{height},
+                                @{ $heights_of_chunk{$chunk_id} },
+                            );
                         }
+
+                        if ( $columns_needed > $regions[$i]{columns} ) {
+
+                            # it doesn't fit
+
+                            if ( $i == $#regions ) {
+                             # Smallest region is filled, so it can't fit at all
+                                next TAILFIRST;
+                            }
 
                         # move a chunk from this region to the following region,
                         # and try a new region assignment
+                            if ($tailfirst) {
 
-                        my $chunkid_to_move
-                          = pop( @{ $chunkids_by_region[$i] } );
+                                my $chunkid_to_move
+                                  = pop( @{ $chunkids_by_region[$i] } );
 
-                        push @{ $chunkids_by_region[ $i + 1 ] },
-                          $chunkid_to_move;
+                                push @{ $chunkids_by_region[ $i + 1 ] },
+                                  $chunkid_to_move;
 
-                        next REGION_ASSIGNMENT;
+                            }
+                            else {
 
-                    } ## tidy end: if ( $columns_needed >...)
+                                my $chunkid_to_move
+                                  = shift( @{ $chunkids_by_region[$i] } );
 
-                    $columns_needed[$i] = $columns_needed;
+                                unshift @{ $chunkids_by_region[ $i + 1 ] },
+                                  $chunkid_to_move;
 
-                } ## tidy end: REGION: foreach my $i ( reverse( 0 ...))
+                            }
 
-                # got through the last region, so they all must fit
-                $chosen_subtype = $subtype;
-                @chosen_regions = @regions;
+                            next REGION_ASSIGNMENT;
 
-                last SUBTYPE;
+                        } ## tidy end: if ( $columns_needed >...)
 
-            } ## tidy end: REGION_ASSIGNMENT: while ( @{ $chunkids_by_region...})
+                        $columns_needed[$i] = $columns_needed;
+
+                    } ## tidy end: REGION: foreach my $i ( reverse( 0 ...))
+
+                    # got through the last region, so they all must fit
+                    $chosen_subtype = $subtype;
+                    @chosen_regions = @regions;
+
+                    last SUBTYPE;
+
+                } ## tidy end: REGION_ASSIGNMENT: while ( @{ $chunkids_by_region...})
+
+            } ## tidy end: TAILFIRST: foreach my $tailfirst ( 1, ...)
 
         } ## tidy end: SUBTYPE: foreach my $subtype ( sort ...)
 
@@ -1211,10 +1228,10 @@ const my %SHADINGS => (
       121  LineLavender
       10  Grey80
       20  Grey80
-      30/, 'Grey80', qw/
+      30/, 'New AC Green', qw/
       40  Grey80
       50  Grey80
-      60/, 'Rapid Red', qw/
+      60  LineMaroon
       70  Grey80
       80  LineBlue
       90  Grey80
