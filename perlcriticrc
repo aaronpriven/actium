@@ -249,4 +249,6 @@ severity = 5
 [Tics::ProhibitManyArrows]
 max_allowed = 1
 
+######################################################################
+### DISTRIBUTION Perl::Critic::Policy::Variables::NameReuse ### DEP ###
 
