@@ -9,6 +9,9 @@ use XML::Twig;                       ### DEP ###
 use Date::Simple(qw/date today/);    ### DEP ###
 use Actium::O::2DArray;
 
+use Actium::Text::InDesignTags;
+const my $IDT => 'Actium::Text::InDesignTags';
+
 const my $API_KEY => 'MW9S-E7SL-26DU-VV8V';
 
 const my @DAYS => qw/12345 6 7/;
@@ -26,8 +29,14 @@ sub OPTIONS {
     return (
         {   spec        => 'date=s',
             description => 'Effective date of the new BART schedules. '
-              . 'Must be in YYYY-MM-DD format (2015-12-25)'
+              . 'Must be in YYYY-MM-DD format (e.g., 2015-12-25) '
               . 'If not provided, defaults to today.',
+        },
+
+        {   spec            => 'folder=s',
+            description     => 'Location where to save the files.',
+            default         => '.',
+            display_default => 1,
         },
     );
 
@@ -40,15 +49,20 @@ sub START {
 
     my $start_cry = cry('Building BART frequency tables');
 
-    my ( $class, $env ) = @_;
-    my @dates = get_dates( $env->option('date') );
+    my ( $class,  $env )   = @_;
+    my ( $oldest, @dates ) = get_dates( $env->option('date') );
+
+    my $foldername = $env->option('folder') . '/BARTfreq_' . $oldest;
+    unless ( -d $foldername ) {
+        mkdir $foldername or die $!;
+    }
 
     \my %stations = get_stations( $dates[0] );
-    my @station_abbrs = sort keys %stations;
+    my @station_abbrs = sort { $stations{$a} cmp $stations{$b} } keys %stations;
 
     my %fl_of;
 
-    my $skeds_cry = cry('Getting station schedules from BART');
+    my $skeds_cry = cry('Getting station schedules and fares from BART');
 
     foreach my $station (@station_abbrs) {
 
@@ -96,10 +110,30 @@ sub START {
 
         }
 
-        my $aoa = Actium::O::2DArray->bless( \@results );
-        my $file
-          = "/Users/Shared/Dropbox (AC_PubInfSys)/B/Connectivity-TIDs/bart_sked_output/$station.xlsx";
+        my $aoa  = Actium::O::2DArray->bless( \@results );
+        my $file = "$foldername/$station.xlsx";
         $aoa->xlsx( output_file => $file );
+
+        ### FARES
+
+        \my %fare_to = get_fares( $station, $dates[0], \@station_abbrs );
+
+        my $farefile = "$foldername/$station-fares.txt";
+
+        my @farelines;
+        foreach my $dest (@station_abbrs) {
+
+            if ( $dest eq $station ) {
+                push @farelines, [ $stations{$dest}, 'YAH', 'YAH' ];
+            }
+            else {
+                push @farelines,
+                  [ $stations{$dest}, $fare_to{$dest}, $fare_to{$dest} * 2 ];
+            }
+
+        }
+
+        write_id_table( $farefile, $stations{$station}, \@farelines );
 
     } ## tidy end: foreach my $station (@station_abbrs)
 
@@ -107,6 +141,37 @@ sub START {
     $start_cry->done;
 
 } ## tidy end: sub START
+
+sub get_fares {
+
+    my $origin = shift;
+    my $date   = shift;
+    \my @station_abbrs = shift;
+
+    my %fare_to;
+
+    foreach my $dest (@station_abbrs) {
+        if ( $origin eq $dest ) {
+            $fare_to{$dest} = 'YAH';
+        }
+        else {
+            my $fare_xml = get_url( fare_url( $origin, $dest, $date ) );
+
+            my $twig = XML::Twig->new();
+            $twig->parse($fare_xml);
+
+            my @fares    = $twig->root->first_child('fares')->children('fare');
+            my $cash_elt = Actium::first { $_->att('class') eq 'cash' } @fares;
+            my $cash     = $cash_elt->att('amount');
+
+            $fare_to{$dest} = $cash;
+        }
+
+    }
+
+    return \%fare_to;
+
+} ## tidy end: sub get_fares
 
 sub get_firstlast {
     my ( $station, $date ) = @_;
@@ -179,6 +244,15 @@ sub stnsked_url {
       = "http://api.bart.gov/api/sched.aspx?cmd=stnsched&orig=$station&key=$API_KEY&l=1&date=$date";
 
     return $url;
+
+}
+
+sub fare_url {
+    my $origin = shift;
+    my $dest   = shift;
+    my $date   = shift;
+    my $url
+      = "http://api.bart.gov/api/sched.aspx?cmd=fare&orig=$origin&dest=$dest&date=$date&key=$API_KEY";
 
 }
 
@@ -262,6 +336,8 @@ sub get_dates {
 
     }
 
+    my $oldest = $date_obj;
+
     my %date_of;
 
     while ( scalar keys %date_of < 3 ) {
@@ -281,8 +357,70 @@ sub get_dates {
         $date_obj = $date_obj->next;
     }
 
-    return @date_of{@DAYS};
+    return $oldest, @date_of{@DAYS};
 } ## tidy end: sub get_dates
+
+sub write_id_table {
+
+    my $filename     = shift;
+    my $station_name = shift;
+    \my @stationfares = shift;
+    my $stationcount = scalar @stationfares;
+
+    open my $fh, '>', $filename or die $!;
+
+    print $fh $IDT->start;
+    #print $fh $IDT->start, $IDT->hardreturn;
+
+    print $fh '<ParaStyle:NormalParagraphStyle><TableStyle:FareTable>';
+    print $fh "<TableStart:$stationcount,3:2:0<tCellDefaultCellType:Text>>";
+    print $fh
+'<ColStart:<tColAttrWidth:161.25>><ColStart:<tColAttrWidth:41.5>><ColStart:<tColAttrWidth:48.755>>';
+    print $fh
+'<RowStart:<tRowAttrHeight:35.75><tRowAttrMinRowSize:31>><CellStyle:\[None\]><StylePriority:0><CellStart:1,3>';
+    print $fh "<ParaStyle:Faretable-Head>From $station_name to:",
+      $IDT->hardreturn;
+
+    print $fh
+'<ParaStyle:Faretable-Head>(stations listed in alphabetical order)<CellEnd:><CellStyle:\[None\]><StylePriority:0><CellStart:1,1><CellEnd:><CellStyle:\[None\]><StylePriority:0><CellStart:1,1><CellEnd:><RowEnd:><RowStart:<tRowAttrHeight:15><tRowAttrMinRowSize:3>><CellStyle:\[None\]><StylePriority:0><CellStart:1,1><ParaStyle:Faretable-Head>Destination Station<CellEnd:><CellStyle:\[None\]><StylePriority:0><CellStart:1,1><ParaStyle:Faretable-Head>One Way<CellEnd:><CellStyle:\[None\]><StylePriority:0><CellStart:1,1><ParaStyle:Faretable-Head>Round Trip<CellEnd:><RowEnd:>';
+
+    foreach \my @stationfare(@stationfares) {
+        my ( $destname, $oneway, $round ) = @stationfare;
+
+        $destname =~ s/International/Int\'l/;
+
+        print $fh
+'<RowStart:<tRowAttrHeight:17.2398681640625>><CellStyle:\[None\]><StylePriority:0><CellStart:1,1><ParaStyle:Faretable-LeftCol>';
+        print $fh $destname;
+
+        if ( $oneway eq 'YAH' ) {
+            print $fh
+'<CellEnd:><CellStyle:Fare-YAH><StylePriority:1><CellStart:1,2><ParaStyle:Faretable-YAH>YOU ARE HERE<CellEnd:><CellStyle:Fare-YAH><StylePriority:1><CellStart:1,1><CellEnd:><RowEnd:>';
+
+        }
+        else {
+
+            for ( $oneway, $round ) {
+                $_ = sprintf( "%.2f", $_ );
+            }
+
+            print $fh
+'<CellEnd:><CellStyle:\[None\]><StylePriority:0><CellStart:1,1><ParaStyle:Faretable-Body>';
+            print $fh $oneway;
+            print $fh
+'<CellEnd:><CellStyle:\[None\]><StylePriority:0><CellStart:1,1><ParaStyle:Faretable-Body>';
+            print $fh $round;
+            print $fh '<CellEnd:><RowEnd:>';
+
+        }
+
+    } ## tidy end: foreach \my @stationfare(@stationfares)
+
+    print $fh '<TableEnd:>';
+
+    close $fh or die $!;
+
+} ## tidy end: sub write_id_table
 
 1;
 
