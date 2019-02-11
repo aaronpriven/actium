@@ -4,17 +4,53 @@ use Actium;
 use Actium::O::Folders::Signup;
 use Actium::Import::GTFS::TripCalendars;
 
-sub OPTIONS { return 'actiumdb', 'signup' }
+#sub OPTIONS { return 'actiumdb', 'signup' }
+sub OPTIONS { return 'actiumdb' }
 use DDP;
 
 sub START {
 
     my ( $class, $env ) = @_;
 
-    my $signup = $env->signup;
-    Actium::Import::GTFS::TripCalendars::calendar_notes_of_trips($signup);
+    #my $signup = $env->signup;
+    #Actium::Import::GTFS::TripCalendars::calendar_notes_of_trips($signup);
+    my $actiumdb = $env->actiumdb;
+    #p $actiumdb;
 
-}
+    my $dbh = $actiumdb->dbh;
+
+    my $fields = join(
+        ", ", qw/
+
+          TableName
+          FieldName
+          FieldType
+          FieldID
+          FieldClass
+          FieldReps
+          ModCount
+          /
+    );
+
+    my $query = "SELECT $fields FROM Filemaker_Fields";
+    \my @array = $dbh->selectall_arrayref($query);
+
+    if (0) {
+        $actiumdb->ensure_loaded('Agencies');
+        foreach my $table ( $actiumdb->tables ) {
+            $actiumdb->ensure_loaded($table);
+        }
+        \my %hash = $actiumdb->_column_cache_r;
+    }
+    use Data::Dumper;
+    $Data::Dumper::Sortkeys = 1;
+    open my $out, '>', "actium_fields.txt" or die $!;
+    for \my @row(@array) {
+        say $out join( "\t", @row );
+    }
+    close $out;
+
+} ## tidy end: sub START
 
 1;
 
