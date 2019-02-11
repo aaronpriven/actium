@@ -507,6 +507,12 @@ has 'md5' => (
     builder => '_build_md5',
 );
 
+has 'place_md5' => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_place_md5',
+);
+
 ################################
 #### BUILDERS
 
@@ -520,6 +526,22 @@ sub _build_md5 {
 
     foreach my $trip ( $self->trips ) {
         push @sked_stream, u::jointab( $trip->stoptimes );
+        push @sked_stream, u::jointab( $trip->placetimes );
+    }
+
+    my $digest = Digest::MD5::md5_hex( join( $KEY_SEPARATOR, @sked_stream ) );
+    return $digest;
+
+}
+
+sub _build_place_md5 {
+    my $self = shift;
+    # build an MD5 digest from the placetimes and  places
+    require Digest::MD5;    ### DEP ###
+
+    my @sked_stream = ( u::jointab( $self->place4s ) );
+
+    foreach my $trip ( $self->trips ) {
         push @sked_stream, u::jointab( $trip->placetimes );
     }
 
@@ -831,6 +853,19 @@ sub transitinfo_id {
 
     return join( '_', $linegroup, $dir, $days_transitinfo );
 
+}
+
+method compare_from (Actium::O::Sked $oldsked) {
+    require Actium::O::Sked::Comparison;
+    return Actium::O::Sked::Comparison->new(
+        oldsked => $oldsked,
+        newsked => $self
+    );
+
+}
+
+method compare_to (Actium::O::Sked $newsked) {
+    return $newsked->compare_from($self);
 }
 
 with 'Actium::O::Sked::Storage::Prehistoric', 'Actium::O::Sked::Storage::XLSX',

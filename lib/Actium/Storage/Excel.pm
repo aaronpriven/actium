@@ -20,6 +20,7 @@ const my $xlsx_window_height => 950;
 const my $xlsx_window_width  => 1200;
 
 sub new_workbook {
+    my $self = shift;
 
     my $fh_or_fname = shift;
 
@@ -139,7 +140,7 @@ sub actium_write_col_string {
     {
         $tokens = $tokens->unblessed;
     }
-    elsif ( not is_arrayref($tokens) ) {
+    elsif ( not Ref::Util::is_arrayref($tokens) ) {
         croak "Not an array ref in call to actium_write_col_string()$!";
     }
 

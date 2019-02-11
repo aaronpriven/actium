@@ -49,7 +49,7 @@ has '_sked_obj_by_id_r' => (
     handles => {
         _set_sked_obj => 'set',
         sked_obj      => 'get',
-        _sked_ids     => 'keys',
+        sked_ids      => 'keys',
         _has_sked_id  => 'exists',
     },
 );
@@ -207,8 +207,8 @@ method finalize_skeds (
 
     my @finalized_skeds;
 
-    my @ids = Actium::uniq( $received_collection->_sked_ids,
-        $exception_collection->_sked_ids );
+    my @ids = Actium::uniq( $received_collection->sked_ids,
+        $exception_collection->sked_ids );
 
     for my $id (@ids) {
         if ( $exception_collection->_has_sked_id($id) ) {
@@ -370,6 +370,22 @@ method output_skeds_place {
     return;
 
 } ## tidy end: method output_skeds_place
+
+method compare_from ( Actium::O::Sked::Collection $oldcollection) {
+    require Actium::O::Sked::ComparisonGroup;
+    return Actium::O::Sked::ComparisonGroup->new(
+        oldskeds => $oldcollection,
+        newskeds => $self
+    );
+}
+
+method compare_to ( Actium::O::Sked::Collection $newcollection) {
+    require Actium::O::Sked::ComparisonGroup;
+    return Actium::O::Sked::ComparisonGroup->new(
+        oldskeds => $self,
+        newskeds => $newcollection
+    );
+}
 
 Actium::immut;
 
