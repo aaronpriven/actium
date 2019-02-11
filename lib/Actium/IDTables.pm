@@ -203,9 +203,10 @@ sub _output_pubtt_front_matter {
 
     # ROUTES
 
-    my $length = _make_length(@lines);
+    my $length_for_style = _make_length(@lines);
+    $length_for_style = 4 if $length_for_style > 4;
 
-    print $ttfh $IDT->parastyle("CoverLine$length");
+    print $ttfh $IDT->parastyle("CoverLine$length_for_style");
     print $ttfh join( $IDT->hardreturn, @lines ), $IDT->boxbreak;
 
     # EFFECTIVE DATE
