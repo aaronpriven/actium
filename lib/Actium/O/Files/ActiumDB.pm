@@ -932,7 +932,7 @@ sub line_descrip_html {
 
     foreach my $linegrouptype (
         qw/ Local Transbay
-        /, 'All Nighter', 'Service to Schools'
+        /, 'Early Bird', 'All Nighter', 'Service to Schools'
       )
     {
 
@@ -1038,6 +1038,12 @@ have altered schedules when local schools have minimum day or
 alternative schedules. These lines are open to all passengers at
 regular fares.</p>
 
+<p>Lines 700&ndash;799 are Early Bird Express lines, operating from 5 a.m.&ndash;6
+a.m. daily, due to a shift in early morning service on BART. See
+<a href="http://www.bart.gov/earlybirdexpress">
+bart.gov/earlybirdexpress</a> for more information.
+.</p>
+
 <p>Lines 800&ndash;899 are All Nighter lines, operating from 1 a.m.&ndash;5
 a.m. daily. Some may operate somewhat earlier or later (especially
 on weekends).</p>
@@ -1053,6 +1059,7 @@ Bay to San Francisco or the Peninsula.</p>
   <p > 
   <a href="#Local">Local Lines</a><br>
   <a href="#Transbay">Transbay Lines</a><br>
+  <a href="#Early_Bird">Early Bird Lines</a><br>
   <a href="#All_Nighter">All Nighter Lines</a> <br>
   <a href="#Service_to_Schools">Service to Schools Lines</a><br>
 </p>
