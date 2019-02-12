@@ -86,7 +86,7 @@ sub stoptime_sort {
         # if both of those tie, use sortable_days (not put into the
         # cache because will be used very very rarely)
 
-    } ## tidy end: if ( defined $common_stop)
+    }
     else {
         # sort trips without a common stop for all of them
 
@@ -108,17 +108,16 @@ sub stoptime_sort {
 
         } @trips;
 
-    } ## tidy end: else [ if ( defined $common_stop)]
+    }
 
     return \@trips;
-} ## tidy end: sub stoptime_sort
+}
 
 ###########################
 ### TRIPS BY DAY
 
 my $all_are_weekdays_cr = sub {
-    my (@days) = shift;
-    return u::all {m/\A 1? 2? 3? 4? 5? \z/x} @days;
+    return u::all {m/\A 1? 2? 3? 4? 5? \z/x} @_;
 };
 
 my $compare_range_cr = sub {
@@ -160,7 +159,7 @@ my $compare_range_cr = sub {
                 $found_compstrs_r = $merged_compstrs_r;
                 $already_found_day{$inner_day} = $outer_day;
             }
-        } ## tidy end: for my $inner_idx ( $outer_idx...)
+        }
 
         # so @found_days now has all the days that are identical to
         # the outer day
@@ -170,7 +169,7 @@ my $compare_range_cr = sub {
         $compstrs_of_return_day{ u::joinempty( sort @found_days ) }
           = $found_compstrs_r;
 
-    } ## tidy end: foreach my $outer_idx ( 0 .....)
+    }
 
     return \%compstrs_of_return_day;
 
@@ -285,11 +284,11 @@ sub trips_by_day {
           = $class->new( trips_r => \@trips_of_this_skedday );
         $tripcollection_of{$skedday}->_merge;
 
-    } ## tidy end: for my $skedday ( keys ...)
+    }
 
     return \%tripcollection_of;
 
-} ## tidy end: sub trips_by_day
+}
 
 sub _merge {
 
@@ -333,7 +332,7 @@ sub _merge_trips {
 
     return \@newtrips;
 
-} ## tidy end: sub _merge_trips
+}
 
 u::immut;
 
