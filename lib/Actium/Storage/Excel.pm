@@ -19,10 +19,7 @@ const my $SHEET_CLASS => 'Excel::Writer::XLSX::Worksheet';
 const my $xlsx_window_height => 950;
 const my $xlsx_window_width  => 1200;
 
-sub new_workbook {
-    my $self = shift;
-
-    my $fh_or_fname = shift;
+func new_workbook ($fh_or_fname) {
 
     my $workbook = Excel::Writer::XLSX->new($fh_or_fname);
     if ( not defined $workbook ) {
@@ -108,7 +105,7 @@ sub actium_write_row_string {
     }
 
     return $error;
-} ## tidy end: sub actium_write_row_string
+}    ## tidy end: sub actium_write_row_string
 
 ###############################################################################
 #
@@ -166,7 +163,7 @@ sub actium_write_col_string {
     }
 
     return $error;
-} ## tidy end: sub actium_write_col_string
+}    ## tidy end: sub actium_write_col_string
 
 1;
 
