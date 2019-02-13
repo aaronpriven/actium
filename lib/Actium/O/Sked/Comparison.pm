@@ -15,6 +15,20 @@ has [qw/oldsked newsked/] => (
     required => 0,
 );
 
+has trips_count => (
+    is       => 'ro',
+    lazy     => 1,
+    init_arg => undef,
+    builder  => '_build_trips_count',
+);
+
+method _build_trips_count {
+    return
+        "Trip count: "
+      . $self->oldsked->trip_count . ' > '
+      . $self->newsked->trip_count;
+}
+
 has difference_type => (
     is       => 'rwp',
     isa      => 'Int',
@@ -41,7 +55,7 @@ method is_only_old {
     return $self->difference_type == $ONLY_OLD;
 }
 
-has [qw/ids sortkey/] => (
+has [qw/ids lgdir sortkey/] => (
     is       => 'rwp',
     isa      => 'Str',
     init_arg => undef,
@@ -89,6 +103,18 @@ method BUILD {
         $self->_set_sortkey_from_id($id);
     }
     else {
+
+        my $old_lgdir
+          = $self->oldsked->linegroup . '_' . $self->oldsked->dircode;
+        my $new_lgdir
+          = $self->newsked->linegroup . '_' . $self->newsked->dircode;
+
+        $self->_set_lgdir(
+              $old_lgdir eq $new_lgdir
+            ? $old_lgdir
+            : "$old_lgdir > $new_lgdir"
+        );
+
         if ( $self->oldsked->place_md5 ne $self->newsked->place_md5 ) {
             $self->_set_difference_type($DIFFER);
         }
@@ -104,12 +130,12 @@ method BUILD {
             $self->_set_ids($old_id);
         }
         else {
-            $self->_set_ids("$old_id>$new_id");
+            $self->_set_ids("$old_id > $new_id");
         }
 
-    } ## tidy end: else [ if ( not defined $oldsked)]
+    }
 
-} ## tidy end: method BUILD
+}
 
 method differ_text (Str :$new_signup = 'new', Str :$old_signup = 'old') {
 
@@ -135,7 +161,7 @@ method differ_text (Str :$new_signup = 'new', Str :$old_signup = 'old') {
         return "$ids: differ";
     }
 
-} ## tidy end: method differ_text
+}
 
 has has_place_differences => (
     is       => 'ro',
@@ -159,6 +185,62 @@ has _place_sdiff_r => (
     handles => { place_sdiffs => 'elements' },
     builder => '_build_place_sdiffs',
 );
+
+for my $attr (qw/line daycode specday/) {
+    has "shows_$attr" => (
+        traits => ['Bool'],
+        is     => 'ro',
+        isa    => 'Bool',
+        #handles => { "_show_$attr" => 'set' },
+        lazy    => 1,
+        builder => "_build_shows_$attr",
+    );
+}
+
+method _build_shows_attr (:$trip_attribute, :$sked_attribute) {
+
+    my $oldattr = $self->oldsked->$sked_attribute;
+    my $newattr = $self->newsked->$sked_attribute;
+
+    foreach \my %trip ( $self->trips ) {
+        my $change = $trip{change};
+        if ( $change eq '=' ) {
+            return 1
+              if $trip{$trip_attribute}[0] ne $oldattr
+              or $trip{$trip_attribute}[1] ne $newattr;
+        }
+        elsif ( $change eq '<' ) {
+            return 1 if $trip{$trip_attribute}[0] ne $oldattr;
+        }
+        else {
+            return 1 if $trip{$trip_attribute}[0] ne $newattr;
+        }
+    }
+    return 0;
+}
+
+method _build_shows_line {
+    return $self->_build_shows_attr(
+        trip_attribute => 'line',
+        sked_attribute => 'linegroup'
+    );
+}
+
+method _build_shows_daycode {
+    return $self->_build_shows_attr(
+        trip_attribute => 'daycode',
+        sked_attribute => 'daycode'
+    );
+}
+
+method _build_shows_specday {
+    foreach \my %trip ( $self->trips ) {
+        my @specdays = $trip{specday}->@*;
+        return 1 if Actium::any {$_} @specdays;
+    }
+    return 0;
+
+}
 
 method _build_place_sdiffs {
     # build map of which columns should compare, from old to new
@@ -189,13 +271,22 @@ method _build_place_sdiffs {
         $newcol_idx++;
         next;
 
-    } ## tidy end: for \my @sdiff( Algorithm::Diff::sdiff...)
+    }
 
     return \@place_sdiffs;
 
-} ## tidy end: method _build_place_sdiffs
+}
 
-method trips {
+has _trips_r => (
+    traits  => ['Array'],
+    is      => 'ro',
+    isa     => 'ArrayRef[HashRef]',
+    lazy    => 1,
+    handles => { trips => 'elements' },
+    builder => '_build_trips',
+);
+
+method _build_trips {
 
     # match up the old and new trips so that similar trips
     # can be compared on the same line
@@ -246,7 +337,7 @@ method trips {
                 $matched_trip_time_count = $thistrip_timecount;
             }
 
-        } ## tidy end: for my $newtripidx ( 0 ...)
+        }
 
         if ( defined $matched_trip_idx ) {
 
@@ -258,7 +349,7 @@ method trips {
             push @matched_trips, [ $oldtrip, undef ];
         }
 
-    } ## tidy end: for my $oldtrip (@oldtrips)
+    }
 
     # any new trips that weren't used for a comparison, keep them around
     push @matched_trips, map { [ undef, $_ ] } @newtrips;
@@ -272,9 +363,12 @@ method trips {
         my $oldtrip = $matched_trip->[0];
         my $newtrip = $matched_trip->[1];
 
-        my @merged_trip;
+        #my @merged_trip;
+
+        my %merged_trip;
+
         if ( defined $oldtrip and defined $newtrip ) {
-            @merged_trip = ("=");
+            $merged_trip{change} = ("=");
             my @oldtimes = $oldtrip->placetimes;
             my @newtimes = $newtrip->placetimes;
 
@@ -285,52 +379,69 @@ method trips {
                 my $oldtime = defined $oldidx ? $oldtimes[$oldidx] : undef;
                 my $newtime = defined $newidx ? $newtimes[$newidx] : undef;
 
-                push @merged_trip, [ $oldtime, $newtime ];
+                push $merged_trip{times}->@*, [ $oldtime, $newtime ];
 
             }
-            push @merged_trips, \@merged_trip;
+
+            $merged_trip{daycode} = [ $oldtrip->daycode, $newtrip->daycode ];
+            $merged_trip{specday} = [
+                $oldtrip->daysexceptions ? '*' : $EMPTY,
+                $newtrip->daysexceptions ? '*' : $EMPTY
+            ];
+            $merged_trip{line} = [ $oldtrip->line, $newtrip->line ];
+
+            push @merged_trips, \%merged_trip;
             next TRIP_TO_MERGE;
         }
 
         my ( $this_idx, $this_trip );
         if ( defined $oldtrip ) {
-            @merged_trip = "<";
+            $merged_trip{change} = "<";
             my @oldtimes = $oldtrip->placetimes;
             for \my @place_sdiff(@place_sdiffs) {
                 my ( $changetype, $oldplace, $newplace, $oldidx, $newidx )
                   = @place_sdiff;
                 my $oldtime = defined $oldidx ? $oldtimes[$oldidx] : undef;
-                push @merged_trip, [$oldtime];
+                push $merged_trip{times}->@*, [$oldtime];
 
             }
 
+            $merged_trip{daycode} = [ $oldtrip->daycode ];
+            $merged_trip{specday} = [ $oldtrip->daysexceptions ? '*' : $EMPTY ];
+            $merged_trip{line}    = [ $oldtrip->line ];
+
         }
         else {
-            @merged_trip = ">";
+            $merged_trip{change} = ">";
             my @newtimes = $newtrip->placetimes;
             for \my @place_sdiff(@place_sdiffs) {
                 my ( $changetype, $oldplace, $newplace, $oldidx, $newidx )
                   = @place_sdiff;
                 my $newtime = defined $newidx ? $newtimes[$newidx] : undef;
-                push @merged_trip, [$newtime];
+                push $merged_trip{times}->@*, [$newtime];
+
+                $merged_trip{daycode} = [ $newtrip->daycode ];
+                $merged_trip{specday}
+                  = [ $newtrip->daysexceptions ? '*' : $EMPTY ];
+                $merged_trip{line} = [ $newtrip->line ];
 
             }
 
         }
 
-        push @merged_trips, \@merged_trip;
+        push @merged_trips, \%merged_trip;
 
-    } ## tidy end: TRIP_TO_MERGE: for my $matched_trip (@matched_trips)
+    }
 
     #### sort the trips in time order
 
     my $column_to_compare;
   FIND_COLUMN_TO_COMPARE:
-    foreach my $col_idx ( 1 .. scalar @place_sdiffs ) {
-        # skips one to account for the + - or = at the beginning
+    foreach my $col_idx ( 0 .. $#place_sdiffs ) {
 
         my @times
-          = map { $_->[$col_idx][0] // $_->[$col_idx][1] } @merged_trips;
+          = map { $_->{times}[$col_idx][0] // $_->{times}[$col_idx][1] }
+          @merged_trips;
         # gets a list of all the times for this column
 
         next FIND_COLUMN_TO_COMPARE
@@ -343,8 +454,10 @@ method trips {
     if ( defined $column_to_compare ) {
 
         @merged_trips = sort {
-            ( $a->[$column_to_compare][0] // $a->[$column_to_compare][1] )
-              <=> ( $b->[$column_to_compare][0] // $b->[$column_to_compare][1] )
+            ( $a->{times}[$column_to_compare][0]
+                  // $a->{times}[$column_to_compare][1] )
+              <=> ( $b->{times}[$column_to_compare][0]
+                  // $b->{times}[$column_to_compare][1] )
         } @merged_trips;
 
     }
@@ -355,10 +468,10 @@ method trips {
 
         my @interim_list;
         foreach my $trip (@merged_trips) {
-            my @times = $trip->@[ 1 .. $trip->$#* ];    # copy
+            my @times = $trip->{times}->@*;    # copy
             @times = map { $_->[0] // $_->[1] } @times;
             @times = grep {defined} @times;
-            my $average = Actium::mean(@times);
+            my $average = Actium::mean( $times[0], $times[-1] );
             push @interim_list, [ $trip, $average ];
         }
 
@@ -369,23 +482,212 @@ method trips {
 
     return \@merged_trips;
 
-} ## tidy end: method trips
+}
 
-method text {
+method strings_and_formats (:$show_line , :$show_daycode , :$show_specday ) {
+    $show_line    //= $self->shows_line;
+    $show_daycode //= $self->shows_daycode;
+    $show_specday //= $self->shows_specday;
+    # Kavorka can't have defaults using the invocant
 
-    my $placetext = "\t" . $self->_place_text;
-    $placetext = "x$placetext";
+    my @headers = (
+        $self->has_place_differences
+        ? [ 'x', 'changed_header' ]
+        : [ $EMPTY, 'unchanged_header' ]
+    );
 
-    my @texts = ($placetext);
+    push @headers, [ 'LN',  'unchanged_header' ] if $show_line;
+    push @headers, [ 'DAY', 'unchanged_header' ] if $show_daycode;
+    push @headers, [ 'EXC', 'unchanged_header' ] if $show_specday;
 
-    foreach my $trip ( $self->trips->@* ) {
+    foreach \my @sdiff( $self->place_sdiffs ) {
+        my ( $changetype, $oldvalue, $newvalue ) = @sdiff;
+        if ( $changetype eq '+' ) {
+            push @headers, [ "- > $newvalue", 'changed_header' ];
+        }
+        elsif ( $changetype eq '-' ) {
+            push @headers, [ "$oldvalue > -", 'changed_header' ];
+        }
+        elsif ( $changetype eq 'c' ) {
+            push @headers, [ "$oldvalue > $newvalue", 'changed_header' ];
+        }
+        else {
+            push @headers, [ $oldvalue, 'unchanged_header' ];
+        }
+    }
 
-        my $changemarker = $trip->[0];
-        my @row_of_times = $trip->@[ 1 .. $#{$trip} ];
+    my @results = ( \@headers );
+
+    foreach \my %trip ( $self->trips ) {
+
+        my $changemarker = $trip{change};
+        my @row_of_times = $trip{times}->@*;
+        my @lines        = $trip{line}->@*;
+        my @daycodes     = $trip{daycode}->@*;
+        my @specdays     = $trip{specday}->@*;
 
         if ( $changemarker eq '=' ) {
 
-            my ( $has_difference, $row_text );
+            my $has_difference;
+            my @row;
+
+            if ($show_line) {
+                if ( $lines[0] ne $lines[1] ) {
+                    push @row, [ "$lines[0] > $lines[1]", 'changed_line' ];
+                }
+                else {
+                    push @row, [ $lines[0], 'unchanged_line' ];
+                }
+            }
+
+            if ($show_daycode) {
+                if ( $daycodes[0] ne $daycodes[1] ) {
+                    push @row,
+                      [ "$daycodes[0] > $daycodes[1]", 'changed_attr' ];
+                }
+                else {
+                    push @row, [ $daycodes[0], 'unchanged_attr' ];
+                }
+            }
+
+            if ($show_specday) {
+                if ( $specdays[0] ne $specdays[1] ) {
+                    push @row,
+                      [ "$specdays[0] > $specdays[1]", 'changed_attr' ];
+                }
+                else {
+                    push @row, [ $specdays[0], 'unchanged_attr' ];
+                }
+            }
+
+            foreach \my @times(@row_of_times) {
+
+                @times = map {
+                    defined($_)
+                      ? Actium::Time->from_num($_)->formatted( format => '24+' )
+                      : "-"
+                } @times;
+
+                if ( $times[0] eq $times[1] ) {
+                    push @row, [ $times[0], 'unchanged_time' ];
+                }
+                else {
+                    $has_difference = 1;
+                    push @row, [ "$times[0] > $times[1]", 'changed_time' ];
+                }
+
+            }
+
+            if ($has_difference) {
+                unshift @row, [ 'x', 'changed_marker' ];
+            }
+            else {
+                unshift @row, [ '', 'unchanged_marker' ];
+            }
+
+            push @results, \@row;
+
+        }
+        else {
+            my $format     = $changemarker eq '<' ? 'old_row'    : 'new_row';
+            my $markformat = $changemarker eq '<' ? 'old_marker' : 'new_marker';
+
+            #my @cols = ($changemarker);
+            my @cols;
+            push @cols, $lines[0]    if $show_line;
+            push @cols, $daycodes[0] if $show_daycode;
+            push @cols, $specdays[0] if $show_specday;
+            push @cols, map {
+                Actium::Time->from_num( $_->[0] )->formatted( format => '24+' )
+            } @row_of_times;
+
+            push @results,
+              [ [ $changemarker, $markformat ], map { [ $_, $format ] } @cols ];
+
+        }
+
+    }
+
+    return @results;
+
+}
+
+method plain_text (:$show_line , :$show_daycode , :$show_specday ) {
+    my @strings_and_formats = $self->strings_and_formats(
+        show_line    => $show_line,
+        show_daycode => $show_daycode,
+        show_specday => $show_specday
+    );
+
+    my @texts;
+
+    foreach \my @row(@strings_and_formats) {
+        my @strings = map { $_->[0] } @row;
+        push @texts, join( "\t", @strings );
+    }
+
+    return join( "\n", @texts ) . "\n";
+
+}
+
+1;
+
+__END__
+
+method text (:$show_line , :$show_daycode , :$show_specday ) {
+    $show_line    //= $self->show_line;
+    $show_daycode //= $self->show_daycode;
+    $show_specday //= $self->show_specday;
+    # Kavorka can't have defaults using the invocant
+
+    my $headers = "\t";
+    $headers .= "LN\t"  if $show_line;
+    $headers .= "DAY\t" if $show_daycode;
+    $headers .= "EXC\t" if $show_specday;
+    $headers .= $self->_place_text;
+    $headers = "x$headers" if $self->has_place_differences;
+
+    my @texts = ($headers);
+
+    foreach my $trip ( $self->trips->@* ) {
+
+        my $changemarker = $trip->{change};
+        my @row_of_times = $trip->{times}->@*;
+        my @lines        = $trip->{line}->@*;
+        my @daycodes     = $trip->{daycode}->@*;
+        my @specdays     = $trip->{specday}->@*;
+
+        if ( $changemarker eq '=' ) {
+
+            my $has_difference;
+            my $row_text = $EMPTY;
+
+            if ($show_line) {
+                if ( $lines[0] ne $lines[1] ) {
+                    $row_text .= "\t$lines[0] > $lines[1]";
+                }
+                else {
+                    $row_text .= "\t$lines[0]";
+                }
+            }
+
+            if ($show_daycode) {
+                if ( $daycodes[0] ne $daycodes[1] ) {
+                    $row_text .= "\t$daycodes[0] > $daycodes[1]";
+                }
+                else {
+                    $row_text .= "\t$daycodes[0]";
+                }
+            }
+
+            if ($show_specday) {
+                if ( $specdays[0] ne $specdays[1] ) {
+                    $row_text .= "\t$specdays[0] > $specdays[1]";
+                }
+                else {
+                    $row_text .= "\t$specdays[0]";
+                }
+            }
 
             foreach \my @times(@row_of_times) {
 
@@ -406,7 +708,7 @@ method text {
 
                 $row_text .= "\t$thistime";
 
-            } ## tidy end: foreach \my @times(@row_of_times)
+            }
 
             if ($has_difference) {
                 $row_text = "x$row_text";
@@ -414,11 +716,18 @@ method text {
 
             push @texts, $row_text;
 
-        } ## tidy end: if ( $changemarker eq ...)
+        }
         else {
+
+            my @cols;
+            push @cols, $lines[0]    if $show_line;
+            push @cols, $daycodes[0] if $show_daycode;
+            push @cols, $specdays[0] if $show_specday;
+
             push @texts, join(
                 "\t",
                 $changemarker,
+                @cols,
                 map {
                     Actium::Time->from_num( $_->[0] )
                       ->formatted( format => '24+' )
@@ -427,11 +736,11 @@ method text {
 
         }
 
-    } ## tidy end: foreach my $trip ( $self->trips...)
+    }
 
     return join( "\n", @texts, '' );
 
-} ## tidy end: method text
+}
 
 method _place_text {
     my @places;
@@ -452,7 +761,7 @@ method _place_text {
     }
     return join( "\t", @places );
 
-} ## tidy end: method _place_text
+}
 
 1;
 
