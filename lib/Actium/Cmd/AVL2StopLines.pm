@@ -25,7 +25,18 @@ EOF
 }
 
 sub OPTIONS {
-    return (qw/actiumdb signup/);
+    return (
+        qw/actiumdb signup/,
+        {   spec => 'addsignup|as=s@',
+            description =>
+              'additional signup, whose lines will be added to this one',
+        },
+        {   spec => 'addbase|ab=s',
+            description =>
+              'The base folder to be used for the additional signup.'
+              . ' If not specified, will be the same as -base',
+        },
+    );
 }
 
 ##### Retrieve data from AVL and from database
@@ -89,7 +100,52 @@ sub START {
 
         }
 
-    }    ## #tidy# end foreach my $key ( keys %pat)
+    }
+
+    # add stops from other signups (e.g., flex, dumbarton)
+
+    if ( $env->option_is_set('addsignup') ) {
+
+        my $addcry
+          = cry(q{Adding additional signups' stoplines.txt files to this one});
+
+        foreach my $addsignup_name ( $env->option('addsignup')->@* ) {
+            my $signupcry = cry("Adding $addsignup_name");
+            require Actium::O::Folders::Signup;
+            my $addsignup = Actium::O::Folders::Signup::->new(
+                base => ( $env->option('addbase') // $env->option('base') ),
+                signup     => $addsignup_name,
+                cache      => $env->option('cache'),
+                must_exist => 1,
+            );
+
+            my $addfh = $addsignup->open_read('stoplines.txt');
+            my @headers = split( /\t/, scalar <$addfh> );
+
+            my $col = 0;
+            my %headercol_of = map { $_, $col++ } @headers;
+            my @cols_to_use
+              = @headercol_of{qw/h_stp_511_id p_lines p_linedirs/};
+            while (<$addfh>) {
+                my @addvalues = split(/\t/);
+                my ( $h_stp_511_id, $p_lines, $p_linedirs )
+                  = @addvalues[@cols_to_use];
+                next unless $p_lines;
+                my @p_lines    = split( ' ', $p_lines );
+                my @p_linedirs = split( ' ', $p_linedirs );
+                $routes_of{$h_stp_511_id}{$_}    = 1 foreach @p_lines;
+                $routedirs_of{$h_stp_511_id}{$_} = 1 foreach @p_linedirs;
+            }
+
+            close $addfh or die "$!";
+
+            $signupcry->done;
+
+        }
+
+        $addcry->done;
+
+    }
 
     # go through each stop and output data
 
@@ -183,7 +239,7 @@ sub START {
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 sub get_opposite {
     my $disp = shift;
