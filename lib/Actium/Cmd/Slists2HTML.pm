@@ -173,11 +173,11 @@ sub START {
 
                 push @{ $stops_of{$dir} }, $stopid;
 
-            } ## tidy end: while ( defined( my $stopline...))
+            }    ## tidy end: while ( defined( my $stopline...))
 
             close $ifh or die "Can't close $file: $OS_ERROR";
 
-        } ## tidy end: foreach my $dir (@dirs)
+        }    ## tidy end: foreach my $dir (@dirs)
 
         my @dir_objs  = map { Actium::O::Dir->instance($_) } @dirs;
         my @dir_bound = map { $_->as_bound } @dir_objs;
@@ -266,7 +266,7 @@ EOT
         push @{ $tables_of_type{$type} },       $outdata;
         push @{ $corner_lists_of_type{$type} }, $cornerlist_outdata;
 
-    } ## tidy end: foreach my $line ( u::sortbyline...)
+    }    ## tidy end: foreach my $line ( u::sortbyline...)
 
     my %display_type_of = map { ( $_, $_ ) } keys %lines_of_type;
     my %subtypes_of = map { ( $_, [$_] ) } keys %lines_of_type;
@@ -302,7 +302,7 @@ EOT
         say $ofh join( "\n", @{ $corner_lists_of_type{$type} } );
         close $ofh or die "Can't close c-$type.html: $OS_ERROR";
 
-    } ## tidy end: foreach my $type ( keys %tables_of_type)
+    }    ## tidy end: foreach my $type ( keys %tables_of_type)
 
     my $effectivedate
       = $actiumdb->effective_date( agency => 'ACTransit' )->long_en;
@@ -318,7 +318,9 @@ EOT
     say $cindexfh $efftext;
 
   TYPE:
-    for my $type ( 'Local', 'All Nighter', 'Transbay', 'Service to Schools' ) {
+    for my $type ( 'Local', 'All Nighter', 'Transbay', 'Service to Schools',
+        'Early Bird' )
+    {
         my @links;
         my @clinks;
 
@@ -349,7 +351,7 @@ EOT
         say $cindexfh "<p><strong>$type</strong></p>";
         say $cindexfh contents(@clinks);
 
-    } ## tidy end: TYPE: for my $type ( 'Local',...)
+    }    ## tidy end: TYPE: for my $type ( 'Local',...)
 
     say $indexfh '<p>In addition to these lists, '
       . '<a href="/rider-info/c-stops/">'
@@ -365,7 +367,7 @@ EOT
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 const my $CONTENTS_COLUMNS => 10;
 
@@ -393,7 +395,7 @@ sub contents {
 
     return $contents_text;
 
-} ## tidy end: sub contents
+}    ## tidy end: sub contents
 
 sub url_type {
     my $subtype  = shift;
