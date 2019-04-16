@@ -61,7 +61,7 @@ sub prehistoric_days {
     my $self     = shift;
     my $days_obj = $self->days_obj;
 
-    my $transitinfo = _as_transitinfo($days_obj);
+    my $transitinfo = _as_transitinfo( $days_obj, $self );
 
     my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
 
@@ -116,7 +116,7 @@ sub prehistoric_skedsfile {
 
         if ( not $except ) {
             if ( $trip->daycode ne $self->daycode ) {
-                $except = _as_transitinfo( $trip->days_obj );
+                $except = _as_transitinfo( $trip->days_obj, $trip );
             }
         }
 
@@ -175,7 +175,7 @@ sub load_prehistorics {
 
     return @skeds;
 
-} ## tidy end: sub load_prehistorics
+}    ## tidy end: sub load_prehistorics
 
 sub _new_from_prehistoric {
 
@@ -253,7 +253,7 @@ sub _new_from_prehistoric {
 
         push @trips, Actium::O::Sked::Trip->new(%tripspec);
 
-    } ## tidy end: while (<$skedsfh>)
+    }    ## tidy end: while (<$skedsfh>)
 
     my @daysexceptions = uniq( map { $_->daysexceptions } @trips );
 
@@ -296,7 +296,7 @@ sub _new_from_prehistoric {
 
     return $class->new(%spec);
 
-} ## tidy end: sub _new_from_prehistoric
+}    ## tidy end: sub _new_from_prehistoric
 
 sub write_prehistorics {
 
@@ -400,6 +400,7 @@ sub _tp9_to_tp8 {
 sub _as_transitinfo {
 
     my $days_obj  = shift;
+    my $obj       = shift;
     my $as_string = $days_obj->as_string;
 
     state %cache;
@@ -415,10 +416,14 @@ sub _as_transitinfo {
         return $cache{$as_string} = $TRANSITINFO_DAYS_OF{$daycode};
     }
 
+    use DDP;
+    p $obj;
+
     carp qq[Using invalid Transitinfo daycode XX for <$daycode/$schooldaycode>];
+
     return $cache{$as_string} = 'XX';
 
-} ## tidy end: sub _as_transitinfo
+}    ## tidy end: sub _as_transitinfo
 
 1;
 
