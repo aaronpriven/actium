@@ -31,12 +31,12 @@ const my $NBSP         => $IDT->nbsp;
 
 has [
     qw/stopid signid delivery agency signtype
-      description description_nocity city/
-  ] => (
+      description description_nocity city tidfile/
+] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
-  );
+);
 
 has copyquantity => (
     is      => 'ro',
@@ -325,7 +325,7 @@ sub new_from_kpoints {
                 $self->set_has_ab;
             }
 
-        } ## tidy end: while (<$kpoint>)
+        }    ## tidy end: while (<$kpoint>)
 
         close $kpoint or die "Can't close $kpointfile: $!";
 
@@ -367,7 +367,7 @@ sub new_from_kpoints {
             );
         }
 
-    } ## tidy end: foreach my $stop_to_import ...
+    }    ## tidy end: foreach my $stop_to_import ...
 
     return $self;
 
@@ -494,7 +494,7 @@ sub sort_columns_and_determine_heights {
 
     return $subtype;
 
-} ## tidy end: sub sort_columns_and_determine_heights
+}    ## tidy end: sub sort_columns_and_determine_heights
 
 sub no_subtype {
 
@@ -570,7 +570,7 @@ sub determine_subtype {
         push @{ $heights_of_chunk{$chunk_id} }, $height;
         push @{ $columns_of_chunk{$chunk_id} }, $column;
 
-    } ## tidy end: foreach my $column ( $self->...)
+    }    ## tidy end: foreach my $column ( $self->...)
 
     @all_heights = reverse sort { $a->[0] <=> $b->[0] || u::byline( $a, $b ) }
       @all_heights;
@@ -614,7 +614,7 @@ sub determine_subtype {
                 $all_chunks_singular = 1;
             }
 
-        } ## tidy end: else [ if ($first_run) ]
+        }    ## tidy end: else [ if ($first_run) ]
 
         my %tallest_of_chunk;
         foreach my $chunk_id ( keys %heights_of_chunk ) {
@@ -693,11 +693,11 @@ sub determine_subtype {
 
                             next REGION_ASSIGNMENT;
 
-                        } ## tidy end: if ( $columns_needed >...)
+                        }    ## tidy end: if ( $columns_needed >...)
 
                         $columns_needed[$i] = $columns_needed;
 
-                    } ## tidy end: REGION: foreach my $i ( reverse( 0 ...))
+                    }    ## tidy end: REGION: foreach my $i ( reverse( 0 ...))
 
                     # got through the last region, so they all must fit
                     $chosen_subtype = $subtype;
@@ -707,11 +707,11 @@ sub determine_subtype {
 
                 } ## tidy end: REGION_ASSIGNMENT: while ( @{ $chunkids_by_region...})
 
-            } ## tidy end: TAILFIRST: foreach my $tailfirst ( 1, ...)
+            }    ## tidy end: TAILFIRST: foreach my $tailfirst ( 1, ...)
 
-        } ## tidy end: SUBTYPE: foreach my $subtype ( sort ...)
+        }    ## tidy end: SUBTYPE: foreach my $subtype ( sort ...)
 
-    } ## tidy end: CHUNK_GROUPING: until ( $chosen_subtype or...)
+    }    ## tidy end: CHUNK_GROUPING: until ( $chosen_subtype or...)
 
     my @texts = map { $_ // $EMPTY } @columns_needed;
     @texts = @chosen_regions;
@@ -753,13 +753,13 @@ sub determine_subtype {
             push @sorted_columns, @columns;
         }
 
-    } ## tidy end: foreach my $i ( 0 .. $#chosen_regions)
+    }    ## tidy end: foreach my $i ( 0 .. $#chosen_regions)
 
     $self->set_column_r( \@sorted_columns );
 
     return $chosen_subtype;
 
-} ## tidy end: sub determine_subtype
+}    ## tidy end: sub determine_subtype
 
 sub sort_columns_by_route_etc {
     my $self = shift;
@@ -840,7 +840,7 @@ sub format_columns {
             $self->add_to_width(1);
             next COLUMN;
 
-        } ## tidy end: if ( $column->has_note)
+        }    ## tidy end: if ( $column->has_note)
 
         my $prev_pstyle = $EMPTY;
 
@@ -960,7 +960,7 @@ sub format_side {
 
     $self->set_formatted_side($formatted_side);
 
-} ## tidy end: sub format_side
+}    ## tidy end: sub format_side
 
 # TODO - allow all values in Actium::O::Days
 my %text_of_exception = (
@@ -1156,7 +1156,7 @@ sub format_bottom {
 
     $self->set_formatted_bottom($formatted_bottom);
 
-} ## tidy end: sub format_bottom
+}    ## tidy end: sub format_bottom
 
 sub output {
 
@@ -1208,7 +1208,7 @@ sub output {
 
     $fh->close;
 
-} ## tidy end: sub output
+}    ## tidy end: sub output
 
 const my %COLORS => (qw/0 Paper 1 Black/);
 
@@ -1298,11 +1298,11 @@ sub _effective_date_indd {
 
         push @effectives, $phrase;
 
-    } ## tidy end: foreach my $lang (@ALL_LANGUAGES)
+    }    ## tidy end: foreach my $lang (@ALL_LANGUAGES)
 
     return $retvalue . join( $IDT->hardreturn, @effectives ) . $end;
 
-} ## tidy end: sub _effective_date_indd
+}    ## tidy end: sub _effective_date_indd
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
