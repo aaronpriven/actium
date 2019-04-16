@@ -109,7 +109,7 @@ sub OPTIONS {
             fallback        => $FALLBACK_AGENCY,
         },
     );
-} ## tidy end: sub OPTIONS
+}
 
 sub START {
 
@@ -218,7 +218,7 @@ sub START {
 
         $templates_of{$signtype}{$subtype} = \@regions;
 
-    } ## tidy end: foreach \my %template (@templates)
+    }
 
     my $ssj_cry = cry('Processing multistop entries');
 
@@ -301,7 +301,7 @@ sub START {
             $makepoints_cry->text("Using deliveries: @matching_deliveries");
         }
 
-    } ## tidy end: if ( $signtype_opt or ...)
+    }
 
     my $cry = cry('Now processing point schedules for sign number:');
 
@@ -353,11 +353,6 @@ sub START {
         }
 
         my $smoking;
-        #if ($signtype =~ /^TID/) {
-        #    $smoking = $signs{$signid}{TIDFile};
-        #}
-        # before this is useful we need to give every smoking box
-        # a scripting label, on every template. Sigh.
 
         $smoking //= $smoking{$city} // $IDT->emdash;
 
@@ -386,6 +381,8 @@ sub START {
 
         my $agency      = $signs{$signid}{Agency};
         my $agency_abbr = $actiumdb->agency_row_r($agency)->{agency_abbr};
+
+        my $tidfile = $signs{$signid}{TIDFile} // $EMPTY;
 
         next SIGN unless $agency eq $run_agency;
 
@@ -438,6 +435,7 @@ sub START {
                 tallcolumnlines    => $tallcolumnlines,
                 templates_of_r     => $templates_of_r,
                 copyquantity       => $copyquantity,
+                tidfile            => $tidfile,
             }
         );
         # 2) Change kpoints to the kind of data that's output in
@@ -519,6 +517,25 @@ sub START {
 
     my %pages_of;
 
+    if ( defined $points_of_delivery{TID} ) {
+
+        my @tidpoints = $points_of_delivery{'TID'}->@*;
+
+        delete $points_of_delivery{'TID'};
+        foreach my $point (@tidpoints) {
+
+            my $tidfile = $point->tidfile;
+
+            $tidfile =~ s#.*/##;
+            my $signtype = $point->signtype;
+
+            push $pages_of{$signtype}{$tidfile}->@*,
+              [ $point->signid, $point->subtype, $point ];
+
+        }
+
+    }
+
     if ($clusterize_opt) {
 
         if ( exists $points_of_delivery{'Polecrew'} ) {
@@ -569,7 +586,7 @@ sub START {
 
             }
 
-        } ## tidy end: if ( exists $points_of_delivery...)
+        }
 
         if ( exists $points_of_delivery{'Clear Channel'} ) {
 
@@ -618,12 +635,12 @@ sub START {
                         $_ = substr( $_, 0, $max_length ) foreach @cities;
                         $cluster_display = join( ',', sort @cities );
                         $max_length--;
-                      } until length($cluster_display)
+                    } until length($cluster_display)
                       <= $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH;
 
                     $cluster_of_city{$city} = $cluster_display;
                 }
-            } ## tidy end: else [ if ( ( scalar keys %cluster_of_cityworkzone...))]
+            }
 
             foreach my $point (@these_points) {
 
@@ -638,7 +655,7 @@ sub START {
                   [ $point->signid, $point->subtype, $point ];
 
             }
-        } ## tidy end: if ( exists $points_of_delivery...)
+        }
 
         foreach my $delivery ( keys %points_of_delivery ) {
             next if $delivery eq 'Polecrew' or $delivery eq 'Clear Channel';
@@ -652,7 +669,7 @@ sub START {
 
         }
 
-    } ## tidy end: if ($clusterize_opt)
+    }
     else {
 
         foreach my $point (@finished_points) {
@@ -694,9 +711,9 @@ sub START {
                   ];
 
             }
-        } ## tidy end: foreach my $addition ( sort...)
+        }
 
-    } ## tidy end: foreach my $signtype ( sort...)
+    }
 
     close $list_fh || croak "Can't close $listfile: $ERRNO";
     $list_cry->done;
@@ -774,7 +791,7 @@ sub START {
     $makepoints_cry->done;
     return;
 
-} ## tidy end: sub START
+}
 
 sub _get_run_name {
 
@@ -806,7 +823,7 @@ sub _get_run_name {
         return $EMPTY;
     }
 
-} ## tidy end: sub _get_run_name
+}
 
 1;
 
