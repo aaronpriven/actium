@@ -92,7 +92,8 @@ displayed in the conventional way (e.g., "3:15p").
 
 Actium time numbers are integers representing the number of minutes since
 midnight on the start of that service day.  It is possible to have negative
-integers,
+integers, which represent times on the previous service day (so -15 is 
+15 minutes before midnight).
 
 =head1 ARGUMENTS
 
