@@ -283,6 +283,7 @@ method excel (:$file! ) {
         );
 
         for my $entry (qw/old new identical differs /) {
+            next unless defined $summary{$entry};
             my @vals = $summary{$entry}->@*;
             unshift @vals, $headers{$entry};
             $summary->actium_write_col_string( 0, $col, \@vals,
