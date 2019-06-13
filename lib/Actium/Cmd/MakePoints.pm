@@ -1,3 +1,4 @@
+## Please see file perltidy.ERR
 package Actium::Cmd::MakePoints 0.013;
 
 use sort ('stable');    ### DEP ###
@@ -56,8 +57,14 @@ sub OPTIONS {
         },
         {   spec => 'update',
             description =>
-              'Will only process signs that have the status "Needs Update."',
+              q{Will exclude signs that don't have the status "Needs Update."},
             fallback => 0
+        },
+        {   spec => 'newsigns',
+            description =>
+q{Will exclude signs that don't have the status "Needs new sign."},
+            fallback => 0,
+
         },
         {   spec => 'type=s',
             description =>
@@ -317,8 +324,8 @@ sub START {
         if ( $signtype =~ /^TID/ ) {
             $delivery = 'TID';
         }
-        my $tallcolumnnum
-          = $signtypes{$signtype}{TallColumnNum} || $DEFAULT_TALLCOLUMNNUM;
+        my $tallcolumnnum = $signtypes{$signtype}{TallColumnNum}
+          || $DEFAULT_TALLCOLUMNNUM;
         my $tallcolumnlines = $signtypes{$signtype}{TallColumnLines}
           || $DEFAULT_TALLCOLUMNLINES;
         my $status         = $signs{$signid}{Status};
@@ -333,9 +340,13 @@ sub START {
         next SIGN
           if $delivery_opt and not exists $delivery_matches{$delivery};
 
-        next SIGN
-          if $env->option('update')
-          and not( u::feq( $status, 'Needs update' ) );
+        if ( $env->option('update') or $env->option('newsigns') ) {
+            next SIGN
+              unless ( u::feq( $status, 'Needs update' )
+                and $env->option('update') )
+              or ( u::feq( $status, 'Needs new sign' )
+                and $env->option('newsigns') );
+        }
 
         my ( $description, $description_nocity, $city, $nonstop );
 
@@ -401,7 +412,11 @@ sub START {
             unless ( -e $kpointfile ) {
                 push @{ $errors{$signid} },
                   "Stop $stoptotest not found"
-                  . ( $agency ne $FALLBACK_AGENCY ? " ($agency)" : $EMPTY );
+                  . (
+                    $agency ne $FALLBACK_AGENCY
+                    ? " ($agency)"
+                    : $EMPTY
+                  );
                 $skipped_stops{$signid} = $stoptotest;
                 next SIGN;
             }
@@ -627,7 +642,8 @@ sub START {
                     \my @cluster_zones = $cluster_of_cityworkzone{$workzone};
 
                     my @cities = map { $city_of_workzone{$_} } @cluster_zones;
-                    my $max_length = u::max( map { length($_) } @cities );
+                    my $max_length
+                      = u::max( map { length($_) } @cities );
 
                     my $cluster_display;
 
@@ -635,7 +651,7 @@ sub START {
                         $_ = substr( $_, 0, $max_length ) foreach @cities;
                         $cluster_display = join( ',', sort @cities );
                         $max_length--;
-                    } until length($cluster_display)
+                      } until length($cluster_display)
                       <= $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH;
 
                     $cluster_of_city{$city} = $cluster_display;
@@ -658,7 +674,9 @@ sub START {
         }
 
         foreach my $delivery ( keys %points_of_delivery ) {
-            next if $delivery eq 'Polecrew' or $delivery eq 'Clear Channel';
+            next
+              if $delivery eq 'Polecrew'
+              or $delivery eq 'Clear Channel';
 
             \my @these_points = $points_of_delivery{$delivery};
 
@@ -693,7 +711,11 @@ sub START {
             @pages = sort { $a->[0] <=> $b->[0] } @pages;
             # sort numerically by signid
 
-            say $list_fh "FILE\t$signtype\t${addition}$run_name";
+            my $thisfile = $addition;
+            $thisfile .= $run_name unless $signtype =~ /^TID/;
+
+            #say $list_fh "FILE\t$signtype\t${addition}$run_name";
+            say $list_fh "FILE\t$signtype\t$thisfile";
 
             foreach my $page (@pages) {
 
@@ -704,7 +726,15 @@ sub START {
                 my $copyquantity = $point->copyquantity;
                 $copyquantity = $EMPTY if $copyquantity == 1;
 
-                push $checklist_of{$addition}->@*,
+                my $sheet;
+                if ( $signtype =~ /^TID/ ) {
+                    $sheet = 'TID';
+                }
+                else {
+                    $sheet = $addition;
+                }
+
+                push $checklist_of{$sheet}->@*,
                   [ $copyquantity,              $signid,
                     $point->stopid,             $point->signtype,
                     $point->description_nocity, $point->city,
@@ -814,6 +844,7 @@ sub _get_run_name {
       unless $run_agency_abbr eq $FALLBACK_AGENCY_ABBR;
     push @run_pieces, join( ',', @args ) if @args;
     push @run_pieces, $signtype if $signtype;
+    push @run_pieces, 'N'       if $env->option('newsigns');
     push @run_pieces, 'U'       if $env->option('update');
 
     if (@run_pieces) {
