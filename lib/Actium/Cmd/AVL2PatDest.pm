@@ -3,9 +3,10 @@ package Actium::Cmd::AVL2PatDest 0.011;
 use Actium;
 
 use Storable();    ### DEP ###
+use List::Util('uniq');
 
 use Actium::Set('ordered_union');
-use Actium::Sorting::Line('byline');
+use Actium::Sorting::Line(qw/byline sortbyline/);
 
 sub HELP {
 
@@ -52,9 +53,11 @@ sub START {
         }
     );
 
-    open my $nbdest, ">", "nextbus-destinations.txt";
+    my %dests_of_ld;
 
-    print $nbdest "Route\tPattern\tDirection\tDestination\n";
+    open my $nbdest, ">", "pattern-destinations.txt";
+
+    say $nbdest "Route\tPattern\tDirection\tDestination\tvdc_id\tplace";
 
     my @results;
     my (%seen);
@@ -68,6 +71,7 @@ sub START {
         my $pat   = $pat{$key}{Identifier};
         my $route = $pat{$key}{Route};
         my $dir   = $pat{$key}{DirectionValue};
+        my $veh   = $pat{$key}{VehicleDisplay};
 
         my $lasttp = $pat{$key}{TPS}[-1]{Place};
 
@@ -82,6 +86,8 @@ sub START {
         # SAVE FOR RESULTS
 
         $seen{$lasttp} = $dest;
+
+        push @{ $dests_of_ld{ $route . "\t" . $dir } }, $dest;
 
         for ($dir) {
             if ( $_ == 8 ) {
@@ -103,17 +109,18 @@ sub START {
 
             $dest = "To $dest";
 
-        } ## tidy end: for ($dir)
+        }    ## tidy end: for ($dir)
 
         push @results,
           { ROUTE  => $route,
             PAT    => $pat,
             DIR    => $dir,
             DEST   => $dest,
-            LASTTP => $lasttp
+            LASTTP => $lasttp,
+            VEH    => $veh,
           };
 
-    } ## tidy end: foreach my $key ( keys %pat)
+    }    ## tidy end: foreach my $key ( keys %pat)
 
     foreach (
         sort {
@@ -124,17 +131,61 @@ sub START {
       )
     {
 
-        say $nbdest join( "\t", $_->{ROUTE}, $_->{PAT}, $_->{DIR}, $_->{DEST} );
+        say $nbdest join( "\t",
+            $_->{ROUTE}, $_->{PAT}, $_->{DIR},
+            $_->{DEST},  $_->{VEH}, $_->{LASTTP} );
 
     }
 
     close $nbdest;
 
-    foreach ( sort keys %seen ) {
-        say "$_\t$seen{$_}";
+    open my $joineddest, ">", "pattern-destinations-joined.txt";
+    say $joineddest "line\tdir\tdestination";
+
+    foreach my $ld ( sortbyline( keys %dests_of_ld ) ) {
+
+        my @dests = uniq( $dests_of_ld{$ld}->@* );
+
+        say $joineddest $ld, "\tTo ", join( " / ", @dests );
+        # eventually might have to deal with clockwise / counterclockwise
+
     }
 
-} ## tidy end: sub START
+    close $joineddest;
+
+    my %text_of_veh;
+
+    open my $new_codebook, '>', 'new-codebook.txt'
+      or die "Can't open new-codebook.txt";
+
+    say $new_codebook "vdc_id\tdestination";
+
+    use DDP;
+    foreach ( sort { $a->{VEH} <=> $b->{VEH} } @results ) {
+
+        my $veh  = $_->{VEH};
+        my $dest = $_->{DEST};
+        if ( exists $text_of_veh{$veh} ) {
+
+            if ( $text_of_veh{$veh} ne $dest ) {
+                warn "\nDuplicate! Veh $veh with destination $dest. Using  "
+                  . $text_of_veh{$veh} . "\n";
+            }
+            next;
+        }
+
+        say $new_codebook join( "\t", $veh, $dest );
+        $text_of_veh{$veh} = $dest;
+
+    }
+
+    close $new_codebook;
+
+    #foreach ( sort keys %seen ) {
+    #    say "$_\t$seen{$_}";
+    #}
+
+}    ## tidy end: sub START
 
 1;
 
