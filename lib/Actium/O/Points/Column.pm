@@ -75,7 +75,7 @@ around BUILDARGS => sub {
             primary_exception   => '',
             display_stopid      => $display_stopid,
         );
-    } ## tidy end: if ( $entries[0] =~ /^\#/s)
+    }
 
     my ( @times, @lines, @destinations, @places, @exceptions, @approxflags );
 
@@ -308,7 +308,7 @@ sub format_head_lines {
                 );
                 return;
 
-            } ## tidy end: if ( $line =~ /BS[DN]/)
+            }
             else {
                 $color = (
                     $Actium::Cmd::MakePoints::lines{$line}{Color}
@@ -318,7 +318,7 @@ sub format_head_lines {
         }
         $color_of{$line}    = $color;
         $seen_color{$color} = 1;
-    } ## tidy end: foreach my $line (@head_lines)
+    }
 
     my $length_head_lines
       = calc_length_head_lines( $head_line_separator, @head_lines );
@@ -355,7 +355,7 @@ sub format_head_lines {
 
     return;
 
-}    ## <perltidy> end sub format_head_lines
+}
 
 sub calc_length_head_lines {
     my $separator  = shift;
@@ -415,7 +415,7 @@ sub format_headdays {
 
     return;
 
-}    ## <perltidy> end sub format_headdays
+}
 
 sub format_headdest {
 
@@ -448,7 +448,7 @@ sub format_headdest {
     $self->append_to_formatted_header($dest);
     return;
 
-}    ## <perltidy> end sub format_headdest
+}
 
 sub format_approxflag {
     my $self = shift;
@@ -483,7 +483,7 @@ sub format_approxflag {
 
     return;
 
-} ## tidy end: sub format_approxflag
+}
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion);
 
