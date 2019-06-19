@@ -69,14 +69,17 @@ const my %TABLE_OF_ITEM => (
     agency_abbr => undef,
     line        => 'Lines',
     i18n        => 'I18N',
-    #city => 'Cities',
-    color => 'Colors',
+    city        => 'Cities',
+    color       => 'Colors',
     #flagtype => 'Flagtypes',
     linegrouptype => 'LineGroupTypes',
     #pubtimetable => 'PubTimetables',
     #signtype => 'SignTypes',
     transithub => 'TransitHubs',
     place      => 'Places_Neue',
+    sign       => 'Signs',
+    #ssj        => 'Signs_Stops_Join',
+    stop => 'Stops_Neue',
 );
 
 foreach my $item ( keys %TABLE_OF_ITEM ) {
@@ -115,6 +118,34 @@ sub _build_table_cache {
 
     Hash::Util::lock_hashref_recurse($cache_r);
     return $cache_r;
+}
+
+sub _build_sign_cache {
+    my $self    = shift;
+    my $cache_r = $self->_build_table_cache(
+        'sign',
+        qw/
+          SignID Active stp_511_id Status SignType Cluster Sidenote
+          Agency ShelterNum NonStopLocation NonStopCity
+          Delivery City TIDFile CopyQuantity
+          /
+    );
+}
+
+sub _build_city_cache {
+    my $self = shift;
+    my $cache_r = $self->_build_table_cache( 'city', qw[City SmokingText ] );
+}
+
+sub _build_stop_cache {
+    my $self    = shift;
+    my $cache_r = $self->_build_table_cache(
+        'stop',
+        qw[h_stp_511_id c_city c_description_full
+          c_description_nocity u_work_zone]
+          # these are just the ones used in bpoints.
+          # We may need more later
+    );
 }
 
 sub _build_i18n_cache {
@@ -189,7 +220,7 @@ sub _build_line_cache {
     );
 
     return $cache_r;
-} ## tidy end: sub _build_line_cache
+}    ## tidy end: sub _build_line_cache
 
 sub _build_place_cache {
     my $self = shift;
@@ -271,7 +302,7 @@ sub _build_ss_cache {
 
     return $cache_r;
 
-} ## tidy end: sub _build_ss_cache
+}    ## tidy end: sub _build_ss_cache
 
 sub _reload_ss_cache {
     my $self = shift;
@@ -328,7 +359,7 @@ sub search_ss {
 
     return values %row_of_stopid;
 
-} ## tidy end: sub search_ss
+}    ## tidy end: sub search_ss
 
 const my $MAXIMUM_VALID_DISTANCE => 1320;
 
@@ -361,7 +392,7 @@ sub ss_nearest_stop {
     return $nearest if $nearest;
     return;
 
-} ## tidy end: sub ss_nearest_stop
+}    ## tidy end: sub ss_nearest_stop
 
 #########################
 ### I18N METHODS
@@ -404,8 +435,8 @@ sub i18n_all_indd {
     foreach my $language (@ALL_LANGUAGES) {
         my $phrase = $i18n_row_r->{$language};
         $phrase
-          = Actium::Text::InDesignTags::->language_phrase( $language, $phrase,
-            $metastyle );
+          = Actium::Text::InDesignTags::->language_phrase( $language,
+            $phrase, $metastyle );
         $phrase =~ s/\s+\z//;
         push @{$all_r}, $phrase;
     }
@@ -413,7 +444,7 @@ sub i18n_all_indd {
     $i18n_all_cache_r->{$i18n_id} = $all_r;
     return @{$all_r};
 
-} ## tidy end: sub i18n_all_indd
+}    ## tidy end: sub i18n_all_indd
 
 sub i18n_all_indd_hash {
     my $self    = shift;
@@ -433,8 +464,8 @@ sub i18n_all_indd_hash {
     foreach my $language (@ALL_LANGUAGES) {
         my $phrase = $i18n_row_r->{$i18n_id}{$language};
         $phrase
-          = Actium::Text::InDesignTags::->language_phrase( $language, $phrase,
-            $metastyle );
+          = Actium::Text::InDesignTags::->language_phrase( $language,
+            $phrase, $metastyle );
         $phrase =~ s/\s+\z//;
         $all_r->{$language} = $phrase;
     }
@@ -442,7 +473,7 @@ sub i18n_all_indd_hash {
     $i18n_all_cache_r->{$i18n_id} = $all_r;
     return %{$all_r};
 
-} ## tidy end: sub i18n_all_indd_hash
+}    ## tidy end: sub i18n_all_indd_hash
 
 #########################
 ### PLACE METHODS
@@ -496,6 +527,16 @@ sub destination {
         place => $place,
     );
     return $destination;
+}
+
+method destination_or_warn ($tp4) {
+    if ( $self->place_exists($tp4) ) {
+        return $self->destination($tp4);
+    }
+    else {
+        last_cry()->text("No timepoint found for $tp4");
+        return $tp4;
+    }
 }
 
 #########################
@@ -608,7 +649,7 @@ method effective_date (
     require Actium::O::DateTime;
     return Actium::O::DateTime->newest_date(@dates);
 
-} ## tidy end: method effective_date
+}    ## tidy end: method effective_date
 
 sub date_i18n_texts_hash {
     my $self    = shift;
@@ -629,7 +670,7 @@ sub date_i18n_texts_hash {
 
     return \%text_of;
 
-} ## tidy end: sub date_i18n_texts_hash
+}    ## tidy end: sub date_i18n_texts_hash
 
 #########################
 ### LINES ATTRIBUTES
@@ -675,7 +716,16 @@ sub _build_lines_of_linegrouptype {
 
     return \%lines_of_linegrouptype;
 
-} ## tidy end: sub _build_lines_of_linegrouptype
+}    ## tidy end: sub _build_lines_of_linegrouptype
+
+const my $FALLBACK_COLOR => 'Grey80';
+
+method color_of_line ($line) {
+    return $FALLBACK_COLOR unless $self->line_exists($line);
+    \my %attribute_of_line = $self->line_row_r($line);
+    return $FALLBACK_COLOR unless $attribute_of_line{Color};
+    return $attribute_of_line{Color};
+}
 
 ##############################
 ### TRANSIT HUBS ATTRIBUTES
@@ -839,11 +889,11 @@ sub descrips_of_transithubs_indesign {
             join( $IDT->hardreturn, $effdate, @descrip_texts ),
         );
 
-    } ## tidy end: foreach my $transithub ( $self...)
+    }    ## tidy end: foreach my $transithub ( $self...)
 
     return \%descrips_of_hubs;
 
-} ## tidy end: sub descrips_of_transithubs_indesign
+}    ## tidy end: sub descrips_of_transithubs_indesign
 
 #########################
 ### TRANSIT HUBS HTML OUTPUT
@@ -895,17 +945,17 @@ sub lines_at_transit_hubs_html {
               . join( "&nbsp;&middot; ", @displaylines )
               . "</td></tr>\n";
 
-        } ## tidy end: foreach my $hub ( sort $self...)
+        }    ## tidy end: foreach my $hub ( sort $self...)
 
         if ( not $skip_city ) {
             $text .= "$citytext</table>\n";
         }
 
-    } ## tidy end: foreach my $city ( sort $self...)
+    }    ## tidy end: foreach my $city ( sort $self...)
 
     return $text;
 
-} ## tidy end: sub lines_at_transit_hubs_html
+}    ## tidy end: sub lines_at_transit_hubs_html
 
 #######################
 ### LINES HTML OUTPUT
@@ -949,7 +999,8 @@ sub line_descrip_html {
           . qq{<caption style="padding-top: 1.2em;"><strong><a name="$anchor">}
           . qq{$pub</a></strong></caption>};
 
-        $html .= '<thead><tr><th style="background-color: silver;">Line</th>'
+        $html
+          .= '<thead><tr><th style="background-color: silver;">Line</th>'
           . '<th style="background-color: silver;">Description</th>';
 
         $html
@@ -977,14 +1028,14 @@ sub line_descrip_html {
 #qq{<a href="http://www.actransit.org/maps/schedule_results.php?quick_line=$line&Go=Go">Schedule</a>};
             $html .= '</td></tr>' . "\n";
 
-        } ## tidy end: foreach my $line (@lines)
+        }    ## tidy end: foreach my $line (@lines)
 
         $html .= '</tbody></table>' . "\n";
         $html .= "<p>($linegrouptype lines: $count)</p>\n";
 
         $total += $count;
 
-    } ## tidy end: foreach my $linegrouptype (...)
+    }    ## tidy end: foreach my $linegrouptype (...)
 
     $html .= "<p>(Total lines: $total)</p>\n";
 
@@ -992,7 +1043,7 @@ sub line_descrip_html {
 
     return $html;
 
-} ## tidy end: sub line_descrip_html
+}    ## tidy end: sub line_descrip_html
 
 sub _ldh_footer {
 
@@ -1072,7 +1123,7 @@ EOF
 
     return $header;
 
-} ## tidy end: sub _ldh_header
+}    ## tidy end: sub _ldh_header
 
 with 'Actium::O::Files::FileMaker_ODBC';
 
