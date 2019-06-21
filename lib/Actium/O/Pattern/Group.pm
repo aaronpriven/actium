@@ -121,13 +121,13 @@ sub skeds {
             days        => Actium::O::Days->instance( $days, 'B' ),
           );
 
-    }    ## tidy end: foreach my $days ( keys %trip_collection_by_days)
+    }
 
     my $lgdir = $self->lgdir;
 
     return @skeds;
 
-}    ## tidy end: sub skeds
+}
 
 sub _sked_trip_collections {
     my $self = shift;
@@ -173,16 +173,16 @@ sub _sked_trip_collections {
                 stoptime_r => \@times,
             );
 
-        }    ## tidy end: foreach my $trip ( $pattern...)
+        }
 
-    }    ## tidy end: foreach my $pattern ( $self...)
+    }
 
     my $all_trips_collection
       = Actium::O::Sked::TripCollection->new( trips_r => \@skedtrips );
 
     return $all_trips_collection->trips_by_day;
 
-}    ## tidy end: sub _sked_trip_collections
+}
 
 my $stop_tiebreaker = sub {
     # tiebreaks by using the average rank of the timepoints involved.
@@ -262,7 +262,7 @@ sub _order_stops {
 
         }
 
-    }    ## tidy end: foreach my $pattern_id ( $self...)
+    }
 
     my @union = $returned{union}->@*;
 
@@ -285,7 +285,7 @@ sub _order_stops {
 
     return;
 
-}    ## tidy end: sub _order_stops
+}
 
 u::immut;
 
