@@ -1,4 +1,3 @@
-## Please see file perltidy.ERR
 package Actium::Cmd::MakePoints 0.013;
 
 use sort ('stable');    ### DEP ###
@@ -90,7 +89,10 @@ q{Will exclude signs that don't have the status "Needs new sign."},
               . '"-name _" will use no special name.',
             fallback => $EMPTY,
         },
-
+        {   spec        => 'tag=s',
+            description => 'Only signs with this tag  will be included.',
+            fallback    => $EMPTY,
+        },
         {   spec        => 'clusterize!',
             description => 'If specified, will group signs first by delivery, '
               . 'then by stop work zone for polecrew or city for Clear Channel. '
@@ -166,7 +168,7 @@ sub START {
                 index_field => 'SignID',
                 fields      => [
                     qw[
-                      SignID Active stp_511_id Status SignType Cluster Sidenote
+                      SignID Active stp_511_id Status SignType Tag Sidenote
                       Agency ShelterNum NonStopLocation NonStopCity
                       Delivery City TIDFile CopyQuantity
                       ]
@@ -256,6 +258,7 @@ sub START {
     }
 
     my $signtype_opt   = $env->option('type');
+    my $tag_opt        = $env->option('tag');
     my $delivery_opt   = $env->option('delivery');
     my $clusterize_opt = $env->option('clusterize');
 
@@ -329,6 +332,7 @@ sub START {
         my $tallcolumnlines = $signtypes{$signtype}{TallColumnLines}
           || $DEFAULT_TALLCOLUMNLINES;
         my $status         = $signs{$signid}{Status};
+        my $tag            = $signs{$signid}{Tag} // $EMPTY;
         my $shelternum     = $signs{$signid}{ShelterNum} // $EMPTY;
         my $sidenote       = $signs{$signid}{Sidenote} // $EMPTY;
         my $copyquantity   = $signs{$signid}{CopyQuantity} // 1;
@@ -336,6 +340,9 @@ sub START {
 
         next SIGN
           if $signtype_opt and not exists $signtype_matches{$signtype};
+
+        next SIGN
+          if $tag_opt and Actium::fne( $tag, $tag_opt );
 
         next SIGN
           if $delivery_opt and not exists $delivery_matches{$delivery};
@@ -838,12 +845,14 @@ sub _get_run_name {
 
     my @args     = $env->argv;
     my $signtype = $env->option('type');
+    my $tag      = $env->option('tag');
 
     my @run_pieces;
     push @run_pieces, $run_agency_abbr
       unless $run_agency_abbr eq $FALLBACK_AGENCY_ABBR;
     push @run_pieces, join( ',', @args ) if @args;
     push @run_pieces, $signtype if $signtype;
+    push @run_pieces, $tag      if $tag;
     push @run_pieces, 'N'       if $env->option('newsigns');
     push @run_pieces, 'U'       if $env->option('update');
 
