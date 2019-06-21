@@ -47,7 +47,7 @@ sub xheatab2skeds {
         values     => $values_of_r
     );
 
-} ## tidy end: sub xheatab2skeds
+}    ## tidy end: sub xheatab2skeds
 
 sub xhea2skeds {
 
@@ -113,7 +113,7 @@ sub xhea2skeds {
 
     $xhea2skedscry->done;
 
-} ## tidy end: sub xhea2skeds
+}    ## tidy end: sub xhea2skeds
 
 #####################
 ### GET BLOCKS
@@ -144,8 +144,8 @@ sub _get_blocks {
 
             my $block = Actium::O::Pattern::Block->new(
                 block_id      => $block_id,
-                vehicle_group => $field{blk_vehicle_group},
-                vehicle_type  => $field{blk_vehicle_type},
+                vehicle_group => $field{blk_vehicle_group} // $EMPTY,
+                vehicle_type  => $field{blk_vehicle_type} // $EMPTY,
             );
 
             $blocks_by_id{$block_id} = $block;
@@ -155,7 +155,7 @@ sub _get_blocks {
     );
 
     return \%blocks_by_id;
-} ## tidy end: sub _get_blocks
+}    ## tidy end: sub _get_blocks
 
 #####################
 ### GET PATTERNS
@@ -230,7 +230,7 @@ sub _get_blocks {
 
         return ( \%pattern_by_id, \%patterns_by_linedir, \%patgroup_by_lgdir );
 
-    } ## tidy end: sub _get_patterns
+    }    ## tidy end: sub _get_patterns
 
 }
 
@@ -429,7 +429,7 @@ sub _get_trips {
 
     return;
 
-} ## tidy end: sub _get_trips
+}    ## tidy end: sub _get_trips
 
 ########################
 ### GET PLACE PATTERNS
@@ -489,12 +489,12 @@ sub _add_place_patterns_to_patterns {
             }
 
         }
-    } ## tidy end: foreach my $linedir ( keys ...)
+    }    ## tidy end: foreach my $linedir ( keys ...)
 
     $ppat_stop_cry->done;
     return;
 
-} ## tidy end: sub _add_place_patterns_to_patterns
+}    ## tidy end: sub _add_place_patterns_to_patterns
 
 ####################
 ### READ RECORDS
@@ -536,7 +536,7 @@ sub _records_in_turn {
 
     return;
 
-} ## tidy end: sub _records_in_turn
+}    ## tidy end: sub _records_in_turn
 
 #################
 ##### MAKE SKEDS
@@ -570,7 +570,7 @@ sub _make_skeds {
     );
     #return \@skeds;
 
-} ## tidy end: sub _make_skeds
+}    ## tidy end: sub _make_skeds
 
 1;
 
