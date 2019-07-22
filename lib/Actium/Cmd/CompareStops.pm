@@ -27,6 +27,10 @@ sub OPTIONS {
             description => 'Ignore lines 600-699 in comparison. ',
             fallback    => 0,
         },
+        {   spec        => 'only600s!',
+            description => 'Only compare lines 600-699. ',
+            fallback    => 0,
+        },
 
     );
 }
@@ -41,8 +45,19 @@ sub START {
     my $signup    = $env->signup;
 
     my $ignore_600s = $env->option('ignore600s');
+    my $only_600s   = $env->option('only600s');
 
-    my @skipped = qw(BSH 399);
+    die "Can't specify both -ignore600s and -only600s"
+      if $ignore_600s and $only_600s;
+
+    my ( @skipped, $reverse_skipped );
+    if ($only_600s) {
+        $reverse_skipped = 1;
+        @skipped         = ( 600 .. 699 );
+    }
+    else {
+        @skipped = qw(BSH 399);
+    }
     if ($ignore_600s) {
         push @skipped, ( 600 .. 699 );
     }
@@ -60,7 +75,8 @@ sub START {
 
     my $comparedir = $signup->subfolder('compare');
 
-    my %newstoplists = assemble_stoplists( $signup, @skipped );
+    my %newstoplists
+      = assemble_stoplists( $signup, @skipped, $reverse_skipped );
 
     open my $out, '>:utf8', 'compare/comparestops.txt' or die $OS_ERROR;
     # done here so as to make sure the file is saved in the *new*
@@ -69,7 +85,8 @@ sub START {
     print $out
 "Change\tStopID\tStop Description\tNumAdded\tAdded\tNumRemoved\tRemoved\tNumUnchanged\tUnchanged\n";
 
-    %oldstoplists = assemble_stoplists( $oldsignup, @skipped );
+    %oldstoplists
+      = assemble_stoplists( $oldsignup, @skipped, $reverse_skipped );
 
     my @stopids = u::uniq( sort ( keys %newstoplists, keys %oldstoplists ) );
 
@@ -169,7 +186,7 @@ sub START {
     say 'Completed comparison.';
 
     return;
-} ## tidy end: sub START
+}
 
 sub dummy {
     local $_ = shift;
@@ -222,15 +239,16 @@ sub output_stops {
 
         print $fh "\n";
 
-    } ## tidy end: foreach my $stopid ( sort keys...)
+    }
 
     return;
 
-} ## tidy end: sub output_stops
+}
 
 sub assemble_stoplists {
 
-    my $signup = shift;
+    my $signup  = shift;
+    my $reverse = pop;
 
     my %stoplist = ();
 
@@ -260,7 +278,13 @@ sub assemble_stoplists {
         my $route = $pat{$key}{Route};
 
         #next if $route eq 'BSH' or $route eq '51S' or $route eq 'NC';
-        next if $skipped{$route};
+
+        if ($reverse) {
+            next unless $skipped{$route};
+        }
+        else {
+            next if $skipped{$route};
+        }
 
         foreach my $tps_r ( @{ $pat{$key}{TPS} } ) {
             my $stopid = $tps_r->{StopIdentifier};
@@ -274,11 +298,11 @@ sub assemble_stoplists {
 
         }
 
-    } ## tidy end: PAT: foreach my $key ( keys %pat)
+    }
 
     return %stoplist;
 
-} ## tidy end: sub assemble_stoplists
+}
 
 1;
 
