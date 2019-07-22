@@ -122,7 +122,7 @@ my $str_to_num_cr = sub {
         }
         return $time;
 
-    } ## tidy end: if ( $time =~ m/ )
+    }    ## tidy end: if ( $time =~ m/ )
 
     $time = lc($time);
 
@@ -201,12 +201,12 @@ method from_excel ($class: @cells) {
         else {
             push @objs, $class->from_str($formatted);
         }
-    } ## tidy end: foreach my $cell (@cells)
+    }    ## tidy end: foreach my $cell (@cells)
 
     return @objs if wantarray;
     return @objs > 1 ? \@objs : $objs[0];
 
-} ## tidy end: method from_excel
+}    ## tidy end: method from_excel
 
 #######################################################
 ## TIMENUM ATTRIBUTE
@@ -366,9 +366,9 @@ method formatted (
     return $self->_fcache_set(
         $cachekey => join( $EMPTY, $hours, $separator, $minutes, $marker ) );
 
-} ## tidy end: method formatted
+}    ## tidy end: method formatted
 
-has [qw/ap ap_noseparator apbx apbx_noseparator/] => (
+has [qw/ap ap_noseparator apbx apbx_noseparator t24/] => (
     isa      => 'Str',
     is       => 'ro',
     lazy     => '_',
@@ -378,6 +378,10 @@ has [qw/ap ap_noseparator apbx apbx_noseparator/] => (
 
 method _build_ap {
     return $self->formatted( format => '12ap' );
+}
+
+method _build_t24 {
+    return $self->formatted( format => '24' );
 }
 
 method _build_apbx {
@@ -414,7 +418,7 @@ sub timesort {
     return map { $_->[0] }
       sort     { $a->[1] <=> $b->[1] } @tosort;
 
-} ## tidy end: sub timesort
+}    ## tidy end: sub timesort
 
 Actium::immut;
 
