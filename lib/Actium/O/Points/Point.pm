@@ -314,9 +314,11 @@ sub new_from_kpoints {
 
             next if $linegroup =~ /^[47]\d\d/;
 
-            if ( $linegroup !~ /^6\d\d/ ) {
+            if ( $linegroup !~ /^6\d\d/ and not $column->has_note ) {
                 $self->push_columns($column);
             }    # skip 600-series lines
+                 # also skip columns with notes, since hte only note left
+                 # is "drop off only" and the flags should cover that
             else {
                 $self->set_note600;
             }
@@ -1210,35 +1212,65 @@ sub output {
 
 }
 
-const my %COLORS => (qw/0 Paper 1 Black/);
+#const my %COLORS => (qw/0 Paper 1 Black/);
+#
 
-const my %SHADINGS => (
+const my %STYLE_OF_MONTH => (
     qw/
-      11  Gray20
-      21  Gray20
-      31  LineFern
-      41  Gray20
-      51  Gray20
-      61  H103-Pink
-      71  Gray20
-      81  LineSky
-      91  Gray20
-      101  Gray20
-      111  Gray20
-      121  LineLavender
-      10  Grey80
-      20  Grey80
-      30/, 'New AC Green', qw/
-      40  Grey80
-      50  Grey80
-      60  LineMaroon
-      70  Grey80
-      80  LineBlue
-      90  Grey80
-      100  Grey80
-      110  Grey80
-      120  LineViolet/
+      11  O
+      21  O
+      31  SpO
+      41  O
+      51  O
+      61  SuO
+      71  O
+      81  FO
+      91  O
+      101  O
+      111  O
+      121  WO
+      10  E
+      20  E
+      30  SpE
+      40  E
+      50  E
+      60  SuE
+      70  E
+      80  FE
+      90  E
+      100 E
+      110  E
+      120  WE
+      /
 );
+
+#const my %SHADINGS => (
+#    qw/
+#      11  Gray20
+#      21  Gray20
+#      31  LineFern
+#      41  Gray20
+#      51  Gray20
+#      61  H103-Pink
+#      71  Gray20
+#      81  LineSky
+#      91  Gray20
+#      101  Gray20
+#      111  Gray20
+#      121  LineLavender
+#      10  Grey80
+#      20  Grey80
+#      30/, 'New AC Green', qw/
+#      40  Grey80
+#      50  Grey80
+#      60  LineMaroon
+#      70  Grey80
+#      80  LineBlue
+#      90  Grey80
+#      100  Grey80
+#      110  Grey80
+#      120  LineViolet/
+#);
 
 const my @ALL_LANGUAGES => qw/en es zh/;
 
@@ -1259,16 +1291,15 @@ sub _effective_date_indd {
 
     my $month   = $dt->month;
     my $oddyear = $dt->year % 2;
-    my ( $color, $shading, $end );
 
     # EFFECTIVE DATE and colors
-    $color   = $COLORS{$oddyear};
-    $color   = $IDT->color($color);
-    $shading = $SHADINGS{ $month . $oddyear };
-    $shading = "<pShadingColor:$shading>";
-    $end     = '<pShadingColor:>';
+    #$color   = $COLORS{$oddyear};
+    #$color   = $IDT->color($color);
+    my $style = $STYLE_OF_MONTH{ $month . $oddyear };
+    #$shading = "<pShadingColor:$shading>";
+    #$end     = '<pShadingColor:>';
 
-    my $retvalue = $IDT->parastyle('sideeffective') . $shading . $color;
+    my $retvalue = $IDT->parastyle( 'sideeffective-' . $style );
 
     my $i18n_row_r = $self->actiumdb->i18n_row_r($i18n_id);
 
@@ -1294,13 +1325,13 @@ sub _effective_date_indd {
         }
 
         $phrase =~ s/<CharStyle:Chinese>/<CharStyle:ZH_Bold>/g;
-        $phrase =~ s/<CharStyle:([^>]*)>/<CharStyle:$1>$color/g;
+        $phrase =~ s/<CharStyle:([^>]*)>/<CharStyle:$1>/g;
 
         push @effectives, $phrase;
 
     }
 
-    return $retvalue . join( $IDT->hardreturn, @effectives ) . $end;
+    return $retvalue . join( $IDT->hardreturn, @effectives );
 
 }
 
