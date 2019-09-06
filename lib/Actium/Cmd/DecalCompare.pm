@@ -93,7 +93,7 @@ sub START {
         $results_of{$id}{old_decals}       = $old_decals;
         $results_of{$id}{unchanged_decals} = $unchanged_decals;
 
-    } ## tidy end: while ( my $line = <$comparefh>)
+    }    ## tidy end: while ( my $line = <$comparefh>)
     close $comparefh;
 
     foreach my $id ( keys %decals_of ) {
@@ -161,11 +161,11 @@ sub START {
 
         print "\n";
 
-    } ## tidy end: foreach my $id ( sort keys ...)
+    }    ## tidy end: foreach my $id ( sort keys ...)
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 sub decals_of_line {
 
@@ -258,6 +258,9 @@ sub move_insignificant_changes_to_unchanged {
           Z-d     Z-e
           210-b   210-e
           210-c   210-f
+          29-f    29-n
+          29-g    29-o
+
           )
     ];
 
@@ -281,7 +284,7 @@ sub move_insignificant_changes_to_unchanged {
 
     return ( $new_decals, $old_decals, $unchanged_decals );
 
-} ## tidy end: sub move_insignificant_changes_to_unchanged
+}    ## tidy end: sub move_insignificant_changes_to_unchanged
 
 1;
 

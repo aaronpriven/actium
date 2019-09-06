@@ -11,6 +11,8 @@ use List::MoreUtils(qw/any uniq/);    ### DEP ###
 use File::Spec;                       ### DEP ###
 use Text::Trim;                       ### DEP ###
 
+use DDP;
+
 const my $NEW_KEY_SEPARATOR => '_';
 
 sub OPTIONS {
@@ -574,6 +576,11 @@ sub cull_placepats {
 
         if ( $nextplace eq $place ) {
             foreach my $patinfo (@patinfos) {
+
+                if ( not defined $patinfo->{Place} ) {
+                    p $patinfo;
+                }
+
                 return 1
                   if $place eq $patinfo->{Place} and exists $patinfo->{AtPlace};
             }
