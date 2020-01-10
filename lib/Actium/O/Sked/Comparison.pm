@@ -25,7 +25,7 @@ has trips_count => (
 method _build_trips_count {
     return
         "Trip count: "
-      . $self->oldsked->trip_count . ' > '
+      . $self->oldsked->trip_count . ' → '
       . $self->newsked->trip_count;
 }
 
@@ -503,13 +503,13 @@ method strings_and_formats (:$show_line , :$show_daycode , :$show_specday ) {
     foreach \my @sdiff( $self->place_sdiffs ) {
         my ( $changetype, $oldvalue, $newvalue ) = @sdiff;
         if ( $changetype eq '+' ) {
-            push @headers, [ "- > $newvalue", 'changed_header' ];
+            push @headers, [ "- → $newvalue", 'changed_header' ];
         }
         elsif ( $changetype eq '-' ) {
-            push @headers, [ "$oldvalue > -", 'changed_header' ];
+            push @headers, [ "$oldvalue → -", 'changed_header' ];
         }
         elsif ( $changetype eq 'c' ) {
-            push @headers, [ "$oldvalue > $newvalue", 'changed_header' ];
+            push @headers, [ "$oldvalue → $newvalue", 'changed_header' ];
         }
         else {
             push @headers, [ $oldvalue, 'unchanged_header' ];
@@ -573,7 +573,7 @@ method strings_and_formats (:$show_line , :$show_daycode , :$show_specday ) {
                 }
                 else {
                     $has_difference = 1;
-                    push @row, [ "$times[0] > $times[1]", 'changed_time' ];
+                    push @row, [ "$times[0] → $times[1]", 'changed_time' ];
                 }
 
             }
