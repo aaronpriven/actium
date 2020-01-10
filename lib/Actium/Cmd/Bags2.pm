@@ -27,7 +27,7 @@ sub START {
     my $class = shift;
     $env = shift;
 
-    my @ymd = qw/2018 8 12/;
+    my @ymd = qw/2019 12 15/;
     my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
 
     my $config_obj = $env->config;
@@ -51,7 +51,7 @@ sub START {
 
     my ( $outfile, $oldext ) = u::file_ext($excelfile);
     my $clusterfile = $outfile . '-clusters.txt';
-    $outfile .= "-bags.txt";
+    $outfile .= "-zt.txt";
 
     my $list    = Actium::O::2DArray->new_from_xlsx($excelfile);
     my @headers = $list->shift_row;
@@ -105,7 +105,7 @@ sub START {
     $output_cry->done;
 
     return;
-} ## tidy end: sub START
+}
 
 sub _process_stop {
 
@@ -125,12 +125,13 @@ sub _process_stop {
     #my $cluster = $stop[ $col{'Work cluster'} ];
     #$cluster =~ s/^c//;
 
-    my $bagortmp = $stop[ $col{'Bag'} ];
+    my $bagortmp = $stop[ $col{'Bag / Temp'} ];
 
-    return unless u::feq( $bagortmp, 'B' );
+    return unless u::feq( $bagortmp, 'T' );
 
     my $cluster = $cluster_of{ $workzone_of{$stopid} };
-    my $desc = $stop[ $col{'Stop Description'} ] . "      Work zone $cluster";
+    #my $desc = $stop[ $col{'Stop Description'} ] . "      Work zone $cluster";
+    my $desc = $stop[ $col{'Stop Description'} ];
 
     my $num_added     = scalar @added;
     my $num_removed   = scalar @removed;
@@ -180,6 +181,11 @@ sub _process_stop {
           . _lines_first( 'begin_stop', 'AddedLines', @added );
     }
     else {    # action is 'RS'
+
+        if ( not @removed ) {
+            say "$stopid";
+            exit 0;
+        }
         $mainbox
           = _lines( 'current_stop', 'CurrentLines', @removed )
           . $HARDRET
@@ -202,7 +208,7 @@ sub _process_stop {
 
     return "$action\t$stopid\t$mainbox\t$desc";
 
-} ## tidy end: sub _process_stop
+}
 
 sub _translate_graf {
     my $i18n_id  = shift;
@@ -262,7 +268,7 @@ sub _lines_with_introstyle {
 
     return $return;
 
-} ## tidy end: sub _lines_with_introstyle
+}
 
 const my @ALL_LANGUAGES => qw/en es zh/;
 const my $nbsp          => $IDT->nbsp;
@@ -301,7 +307,7 @@ sub _effective_date_indd {
 
         $translations{$lang} = $phrase;
 
-    } ## tidy end: foreach my $lang ( keys %translations)
+    }
 
     return
         _para($style)
@@ -311,7 +317,7 @@ sub _effective_date_indd {
       . $HARDRET
       . $translations{zh};
 
-} ## tidy end: sub _effective_date_indd
+}
 
 sub _translate_phrase {
 
