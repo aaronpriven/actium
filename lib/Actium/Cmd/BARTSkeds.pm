@@ -9,6 +9,8 @@ use XML::Twig;                       ### DEP ###
 use Date::Simple(qw/date today/);    ### DEP ###
 use Actium::O::2DArray;
 
+use DDP;
+
 use Actium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
 
@@ -42,7 +44,7 @@ sub OPTIONS {
 
 }
 
-my %not_main_station;
+my ( %stations, %not_main_station, %abbr_of_station );
 $not_main_station{$_} = 1 foreach qw/24TH NCON MONT PHIL BAYF /;
 
 sub START {
@@ -57,7 +59,9 @@ sub START {
         mkdir $foldername or die $!;
     }
 
-    \my %stations = get_stations( $dates[0] );
+    %stations        = get_stations( $dates[0] );
+    %abbr_of_station = reverse %stations;
+
     my @station_abbrs = sort { $stations{$a} cmp $stations{$b} } keys %stations;
 
     my %fl_of;
@@ -135,12 +139,12 @@ sub START {
 
         write_id_table( $farefile, $stations{$station}, \@farelines );
 
-    } ## tidy end: foreach my $station (@station_abbrs)
+    }
 
     $skeds_cry->done;
     $start_cry->done;
 
-} ## tidy end: sub START
+}
 
 sub get_fares {
 
@@ -155,30 +159,43 @@ sub get_fares {
             $fare_to{$dest} = 'YAH';
         }
         else {
-            my $fare_xml = get_url( fare_url( $origin, $dest, $date ) );
+            my $url = fare_url( $origin, $dest, $date );
+            my $fare_xml = get_url($url);
 
             my $twig = XML::Twig->new();
             $twig->parse($fare_xml);
 
-            my @fares    = $twig->root->first_child('fares')->children('fare');
-            my $cash_elt = Actium::first { $_->att('class') eq 'cash' } @fares;
-            my $cash     = $cash_elt->att('amount');
+            my @fares = $twig->root->first_child('fares')->children('fare');
+            #my $cash_elt = Actium::first { $_->att('class') eq 'cash' } @fares;
+            #my $cash     = $cash_elt->att('amount');
 
-            $fare_to{$dest} = $cash;
+            my $clipper_elt
+              = Actium::first { $_->att('class') eq 'clipper' } @fares;
+            my $clipper = $clipper_elt->att('amount');
+
+            $fare_to{$dest} = $clipper;
         }
 
     }
 
     return \%fare_to;
 
-} ## tidy end: sub get_fares
+}
 
 sub get_firstlast {
     my ( $station, $date ) = @_;
-    my $stnsked_xml = get_url( stnsked_url( $station, $date ) );
+    my $stnsked_url = stnsked_url( $station, $date );
+    my $stnsked_xml = get_url($stnsked_url);
 
     my $twig = XML::Twig->new();
-    $twig->parse($stnsked_xml);
+    #$twig->parse($stnsked_xml);
+    my $result = $twig->safe_parse($stnsked_xml);
+    unless ($result) {
+        say "$stnsked_url\n\n$stnsked_xml\n\n";
+        lastcry()->set_position(0);
+        exit;
+
+    }
 
     my @items = $twig->root->first_child('station')->children('item');
 
@@ -187,7 +204,8 @@ sub get_firstlast {
         my $line = $item->att('line');
         my $time = $item->att('origTime');
         $time =~ s/ ([AP])M/\l$1/;
-        my $dest = $item->att('trainHeadStation');
+        my $destname = $item->att('trainHeadStation');
+        my $dest     = $abbr_of_station{$destname};
         push @{ $items_of_dest{$dest} },
           { dest => $dest, line => $line, time => $time };
 
@@ -212,7 +230,7 @@ sub get_firstlast {
 
     return \%fl_of;
 
-} ## tidy end: sub get_firstlast
+}
 
 sub process_dest {
 
@@ -302,9 +320,9 @@ sub get_stations {
 
     $process_cry->done;
 
-    return \%name_of;
+    return %name_of;
 
-} ## tidy end: sub get_stations
+}
 ####################
 #### DATES
 #### This gets the first weekday, Saturday, and Sunday, starting
@@ -358,7 +376,7 @@ sub get_dates {
     }
 
     return $oldest, @date_of{@DAYS};
-} ## tidy end: sub get_dates
+}
 
 sub write_id_table {
 
@@ -414,13 +432,13 @@ sub write_id_table {
 
         }
 
-    } ## tidy end: foreach \my @stationfare(@stationfares)
+    }
 
     print $fh '<TableEnd:>';
 
     close $fh or die $!;
 
-} ## tidy end: sub write_id_table
+}
 
 1;
 
