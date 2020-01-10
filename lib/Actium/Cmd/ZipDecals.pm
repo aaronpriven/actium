@@ -9,7 +9,7 @@ use Spreadsheet::ParseXLSX;    ### DEP ###
 use Archive::Zip qw(:ERROR_CODES);    ### DEP ###
 
 const my $EPSFOLDER =>
-'/Users/Shared/Dropbox (AC_PubInfSys)/B/Actium/flagart/Decals/export_eps_bleed';
+  '/Users/Shared/Dropbox (AC_PubInfSys)/Actium/flagart/Decals/export_eps_bleed';
 
 sub HELP { say "Make an archive of the decals in an Excel file." }
 
@@ -50,7 +50,7 @@ sub START {
 
     say "Decals written to $zipfile";
 
-} ## tidy end: sub START
+}
 
 1;
 
