@@ -1,10 +1,7 @@
 package Actium::Cmd::Scratch 0.012;
 
 use Actium;
-use Actium::O::Folders::Signup;
-use Actium::Import::GTFS::TripCalendars;
 
-#sub OPTIONS { return 'actiumdb', 'signup' }
 sub OPTIONS { return 'actiumdb' }
 use DDP;
 
@@ -12,25 +9,33 @@ sub START {
 
     my ( $class, $env ) = @_;
 
-    #my $signup = $env->signup;
-    #Actium::Import::GTFS::TripCalendars::calendar_notes_of_trips($signup);
     my $actiumdb = $env->actiumdb;
-    #p $actiumdb;
 
     my $dbh = $actiumdb->dbh;
 
-    my $fields = join(
-        ", ", qw/
+    #my $query1 = "SELECT * FROM Filemaker_Tables";
+    #\my @array1 = $dbh->selectall_arrayref( $query1, { Slice => {} } );
+    #p @array1;
 
-          TableName
-          FieldName
-          FieldType
-          FieldID
-          FieldClass
-          FieldReps
-          ModCount
-          /
-    );
+    my $query1 = 'SELECT TableName, BaseTableName from Filemaker_Tables';
+    \my @array1 = $dbh->selectall_arrayref($query1);
+    my %basetable_of;
+    foreach \my @array(@array1) {
+        $basetable_of{ $array[0] } = $array[1];
+    }
+    #p %basetable_of;
+
+    my @fields = qw/
+      TableName
+      FieldName
+      FieldType
+      FieldID
+      FieldClass
+      FieldReps
+      ModCount
+      /;
+
+    my $fields = join( ", ", @fields );
 
     my $query = "SELECT $fields FROM Filemaker_Fields";
     \my @array = $dbh->selectall_arrayref($query);
@@ -42,15 +47,20 @@ sub START {
         }
         \my %hash = $actiumdb->_column_cache_r;
     }
-    use Data::Dumper;
-    $Data::Dumper::Sortkeys = 1;
+
     open my $out, '>', "actium_fields.txt" or die $!;
+
+    say $out join( "\t", @fields );
     for \my @row(@array) {
+        my $table = $row[0];
+        if ( $basetable_of{$table} ne $table ) {
+            next;
+        }
         say $out join( "\t", @row );
     }
     close $out;
 
-} ## tidy end: sub START
+}
 
 1;
 
