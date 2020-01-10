@@ -109,7 +109,7 @@ const my $SPACE         => q{ };
 const my $KEY_SEPARATOR => "\c]";
 const my $MINS_IN_12HRS => ( 12 * 60 );
 const my @TRANSBAY_NOLOCALS =>
-  (qw/FS G H J L LA LC NX NX1 NX2 NX3 NX4 NXC OX P S SB U V W Z/);
+  (qw/BF3 FS G H J L LA LC NX NX1 NX2 NX3 NX4 NXC OX P S SB U V W Z/);
 
 const my @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
 #  Hastus                 0  1  3  2  4  5  6  7  8  9  10 11 12 13 14 15
@@ -339,7 +339,7 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
             _do_import 'Kavorka',
               fun => { -as => 'func' },
               'method', '-allmodifiers';
-        } ## tidy end: if ($type)
+        }    ## tidy end: if ($type)
         else {
             _do_import( 'Kavorka', fun => { -as => 'func' } );
         }
@@ -369,7 +369,7 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
 
         return;
 
-    } ## tidy end: sub import
+    }    ## tidy end: sub import
 
 }
 
@@ -551,7 +551,7 @@ sub joinseries {
         $separator .= $SPACE;
     }
     else {
-        $oxford    = delete $options{oxford} // 0;
+        $oxford = delete $options{oxford} // 0;
         $separator = q[, ];
     }
 
@@ -579,7 +579,7 @@ sub joinseries {
         return ( join( $separator, @_, "$conjunction $final" ) );
     }
 
-} ## tidy end: sub joinseries
+}    ## tidy end: sub joinseries
 
 =item joinseries_with (I<conjunction> , I<item>, I<item>, ...)
 
@@ -927,7 +927,7 @@ sub u_wrap {
 
     return wantarray ? @lines : joinlf(@lines);
 
-} ## tidy end: sub u_wrap
+}    ## tidy end: sub u_wrap
 
 =item u_trim_to_columns
 
@@ -957,7 +957,7 @@ sub u_trim_to_columns {
     # in case we trimmed off a double-wide character,
     # pad it to the right number of columns
 
-} ## tidy end: sub u_trim_to_columns
+}    ## tidy end: sub u_trim_to_columns
 
 =back
 
