@@ -477,6 +477,25 @@ sub _add_place_patterns_to_patterns {
                 next STOP unless $stop->has_place;
                 my $stop_place = $stop->tstp_place;
                 my $ppat_place = $ppat_entries[$ppat_rank];
+
+                unless ( defined $ppat_place ) {
+                    $ppat_stop_cry->text("Linedir: $linedir");
+                    $ppat_stop_cry->text( "This stop: " . $stop->id );
+                    $ppat_stop_cry->text("Stop place $stop_place");
+                    $ppat_stop_cry->text("PPat rank: $ppat_rank");
+                    $ppat_stop_cry->text( "Pattern: " . $pattern->id );
+                    foreach my $new_stop ( $pattern->stop_objs ) {
+                        $ppat_stop_cry->text( "Stop: " . $new_stop->id );
+                    }
+
+                    use DDP;
+                    p $pattern;
+                    $ppat_stop_cry->text('');
+                    $ppat_stop_cry->text('----');
+                    p @ppat_entries;
+                    $ppat_stop_cry->text('');
+                    exit;
+                }
                 while ( $stop_place ne $ppat_place
                     and $ppat_rank < $#ppat_entries )
                 {
