@@ -32,11 +32,11 @@ const my $NBSP         => $IDT->nbsp;
 has [
     qw/stopid signid delivery agency signtype
       description description_nocity city tidfile/
-] => (
+  ] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
-);
+  );
 
 has copyquantity => (
     is      => 'ro',
@@ -312,7 +312,7 @@ sub new_from_kpoints {
             #                next if ( $linegroup =~ /^DB/ );
             #            }
 
-            next if $linegroup =~ /^[47]\d\d/;
+            next if $linegroup =~ /^[4]\d\d/;
 
             if ( $linegroup !~ /^6\d\d/ and not $column->has_note ) {
                 $self->push_columns($column);
