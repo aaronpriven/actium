@@ -1,0 +1,53 @@
+From https://stackoverflow.com/questions/50279420/learn-the-order-of-elements
+
+... graph and topological sort. The Graph module is pretty easy to use:
+
+
+use warnings;
+use strict;
+use Graph;
+
+my $graph = Graph->new(directed => 1);
+my $prev;
+while (<DATA>) {
+    chomp;
+    $graph->add_edge($prev, $_) if length && length $prev;
+    $prev = $_;
+}
+print $_,"\n" for $graph->topological_sort;
+
+__DATA__
+first
+second
+third
+sixth
+seventh
+tenth
+
+first
+third
+fourth
+fifth
+sixth
+
+third
+fifth
+seventh
+eighth
+ninth
+tenth
+
+---
+
+Output:
+
+first
+second
+third
+fourth
+fifth
+sixth
+seventh
+eighth
+ninth
+tenth
