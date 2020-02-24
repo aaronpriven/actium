@@ -129,8 +129,8 @@ sub _hash_color {
 }
 
 sub stops2kml {
-    my $actiumdb  = shift;
-    my $is_wz_kml = shift;
+    my $actiumdb = shift;
+    my $option   = shift;
 
     my $stops_r = $actiumdb->all_in_columns_key(
         {   TABLE   => 'Stops_Neue',
@@ -206,7 +206,7 @@ EOT
                 $icon_of_stop{$stopid} = $thisicon;
             }
 
-        } ## tidy end: SIGNROW: while ( my $row_r = $sth->...)
+        }    ## tidy end: SIGNROW: while ( my $row_r = $sth->...)
 
     }
 
@@ -217,7 +217,7 @@ EOT
 
     my %folders;
 
-    if ($is_wz_kml) {
+    if ( $option eq 'w' ) {
         my %seen_workzone;
         foreach my $stopid ( sort keys %{$stops_r} ) {
             my $workzone = $stops_r->{$stopid}{u_work_zone};
@@ -234,15 +234,20 @@ EOT
 
         my %stp = %{ $stops_r->{$stopid} };
         next if $stp{c_city} eq 'Virtual';
+        if ( $option eq 'v' and $stp{c_city} ne 'Oakland' ) {
+            next;
+        }
         my $active   = $stp{p_active};
         my $workzone = $stp{u_work_zone};
+        my $lines    = $stp{p_lines};
+        next if ( not $lines and $option eq 'v' );
         #my $flex     = $stp{u_flex_route};
         #next unless ($flex and $flex eq '448');
 
         my $activity = $active ? 'Active' : 'Inactive';
         my $foldername;
 
-        if ($is_wz_kml) {
+        if ( $option eq 'w' ) {
             $foldername = $workzone;
         }
         else {
@@ -257,7 +262,7 @@ EOT
             $icon_text = "<Icon>" . $icon_of_stop{$stopid} . "</Icon>";
         }
 
-        if ($is_wz_kml) {
+        if ( $option eq 'w' ) {
 
             my $color = _hash_color($workzone);
 
@@ -278,7 +283,30 @@ EOT
               . "</LabelStyle>\n"
               . "</Style>\n";
 
-        } ## tidy end: if ($is_wz_kml)
+        }
+        elsif ( $option eq 'v' ) {
+
+            #my $color = _hash_color($workzone);
+
+            $text
+              = "<Placemark>\n"
+              . "<name>$lines</name>\n"
+              . "<styleUrl>#stop${activity}Style</styleUrl>\n"
+              . "<description>$description</description>\n";
+
+            $text .= "<Style>\n" . "<IconStyle>\n"
+              #              . "<color>$color</color>\n"
+              . '<scale>.3</scale>'
+              #
+              . '<Icon>'
+              . 'http://maps.google.com/mapfiles/kml/paddle/grn-blank-lv.png'
+              . '</Icon>'
+              . "</IconStyle>\n"
+              . "<LabelStyle>\n"
+              #              . "<color>$color</color>\n"
+              . "</LabelStyle>\n" . "</Style>\n";
+
+        }
         else {    # by stops
 
             $text
@@ -306,7 +334,7 @@ EOT
                   . "</Style>\n";
             }
 
-        } ## tidy end: else [ if ($is_wz_kml) ]
+        }    ## tidy end: else [ if ($is_wz_kml) ]
 
         my ( $lat, $long ) = @stp{qw/h_loca_latitude h_loca_longitude/};
 
@@ -318,7 +346,7 @@ EOT
 
         $folders{$foldername} .= $text;
 
-    } ## tidy end: foreach my $stopid ( sort keys...)
+    }    ## tidy end: foreach my $stopid ( sort keys...)
 
     foreach my $foldername ( keys %folders ) {
         $folders{$foldername}
@@ -341,7 +369,7 @@ EOT
     $alltext .= $KML_END;
     return $alltext;
 
-} ## tidy end: sub stops2kml
+}    ## tidy end: sub stops2kml
 
 sub _kml_stop_description {
 
@@ -351,12 +379,12 @@ sub _kml_stop_description {
     my $stop_id   = $stp{h_stp_511_id};
     my $desc      = $stp{c_description_fullabbr};
     my $hastus_id = $stp{h_stp_identifier};
-    my $lines     = $stp{p_linedirs};
+    my $lines     = $stp{p_lines};
     #my $zip        = $stp{p_zip_code};
-    my $linetext   = $lines         ? "<u>Lines:</u> $lines" : 'Inactive stop';
-    my $activestar = $stp{p_active} ? $EMPTY                 : '*';
-    my $workzone   = $stp{u_work_zone};
-    my $signtype   = $signtype_of_stop{$stop_id};
+    my $linetext = $lines ? "<u>Lines:</u> $lines" : 'Inactive stop';
+    my $activestar = $stp{p_active} ? $EMPTY : '*';
+    my $workzone = $stp{u_work_zone};
+    my $signtype = $signtype_of_stop{$stop_id};
 
     my $connections      = $stp{u_connections};
     my $connections_text = $EMPTY;
@@ -382,7 +410,7 @@ sub _kml_stop_description {
     require HTML::Entities;    ### DEP ###
     return HTML::Entities::encode_entities_numeric($text);
 
-} ## tidy end: sub _kml_stop_description
+}    ## tidy end: sub _kml_stop_description
 
 {
 
@@ -477,7 +505,7 @@ sub citiesbyline {
 
     return;
 
-} ## tidy end: sub citiesbyline
+}    ## tidy end: sub citiesbyline
 
 sub linesbycity {
 
@@ -553,11 +581,11 @@ sub linesbycity {
         }
         #say $html_fh '</dl>';
 
-    } ## tidy end: foreach my $city ( sort keys...)
+    }    ## tidy end: foreach my $city ( sort keys...)
 
     return ( struct => \%lines_of, html => $html_text );
 
-} ## tidy end: sub linesbycity
+}    ## tidy end: sub linesbycity
 
 1;
 
