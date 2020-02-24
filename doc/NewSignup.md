@@ -1,15 +1,17 @@
 # New Signup Procedures
 
-Aaron Priven, last modified Fall 2017
+Aaron Priven, last modified Winter 2018
 
 ## Get files
 
-There are three sets of files:
+There are two sets of files:
 
-   1. The main XHEA export. This can be specified with -xhea in actium.pl newsignup
-   2. The PlacePatterns.xml and xsd files which are usually separate. These need to be placed manually in the folder xhea under the signup folder.
-   3. The school calendars. These need to be placed manually in the folder sch_cal under the signup folder.
+   1. The main XHEA export. This can be specified with -xhea in actium.pl
+newsignup . These now include the school calendars, which formerly were
+separate.
 
+   2. The PlacePatterns.xml and xsd files which are usually separate. These
+need to be placed manually in the folder xhea under the signup folder.
 
 ## Run actium.pl newsignup
 
@@ -255,15 +257,6 @@ b) Run the actium k2id command:
     actium.pl makepoints -s z00
 
 At the end it will say something like "20 skipped signs because stop file not found." Each of these signs has an entry in the Signs table in the FileMaker database. It will probably be necessary to go through each one of those and figure out why the stop is no longer there.
-
-## Replace the "current" link
-
-There is a symbolic link "current" in /Volumes/Bireme/actium/db that points to the current signup. Replace it.
-
-````Shell
-rm current
-ln –s z00 current
-````
 
 ## Create web schedules
 
