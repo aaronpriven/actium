@@ -161,7 +161,7 @@ sub START {
 
     return;
 
-}
+}    ## tidy end: sub START
 
 sub build_place_and_stop_lists {
 
@@ -291,7 +291,7 @@ sub build_place_and_stop_lists {
 
             # references to the same anonymous hash
 
-        }
+        }    ## tidy end: TPS: for my $tps_row (@tps)
         $all_stops[-1]->{Last} = 1;
 
         # connections and Transbay info
@@ -308,13 +308,13 @@ sub build_place_and_stop_lists {
         # now we have cross-indexed the pattern ident
         # and its place listing
 
-    }
+    }    ## tidy end: PAT: while ( my $pat = $eachpat...)
 
     $cry->done;
 
     return;
 
-}
+}    ## tidy end: sub build_place_and_stop_lists
 
 sub transbay_and_connections {
     my ( $route, @all_stops ) = @_;
@@ -346,7 +346,7 @@ sub transbay_and_connections {
                 $prev_side = $side;
             }
         }
-    }
+    }    ## tidy end: for my $patinfo ( reverse...)
 
     if ( u::in( $route, @TRANSBAY_NOLOCALS ) ) {
         my $dropoff;
@@ -369,9 +369,9 @@ sub transbay_and_connections {
 
         }
 
-    }
+    }    ## tidy end: if ( u::in( $route, @TRANSBAY_NOLOCALS...))
 
-}
+}    ## tidy end: sub transbay_and_connections
 
 sub build_trip_quantity_lists {
     my $hasi_db = shift;
@@ -405,7 +405,7 @@ sub build_trip_quantity_lists {
 
     return;
 
-}
+}    ## tidy end: sub build_trip_quantity_lists
 
 sub cull_placepats {
 
@@ -433,7 +433,7 @@ sub cull_placepats {
 
         }
 
-    }
+    }    ## tidy end: foreach my $routedir ( u::sortbyline...)
 
     $cry->done;
 
@@ -470,15 +470,15 @@ sub cull_placepats {
 
             @placelists = grep {defined} @placelists;
             $longest = shift @placelists;
-        }
+        }    ## tidy end: while (@placelists)
 
-    }
+    }    ## tidy end: foreach my $routedir ( u::sortbyline...)
 
     $cullcry->done;
 
     return;
 
-}
+}    ## tidy end: sub cull_placepats
 
 {
     my %pats_of_stop;
@@ -612,11 +612,11 @@ sub cull_placepats {
             return 1
               if $patinfo->{NextPlace} eq $nextplace;
 
-        }
+        }    ## tidy end: foreach my $patinfo (@patinfos)
 
         return;
 
-    }
+    }    ## tidy end: sub places_match
 
     sub patinfos_of {
         my ( $stop_ident, $routedir ) = @_;
@@ -668,11 +668,11 @@ sub cull_placepats {
                 #$routes_of_stop{$stop_ident}{$route}--;
             }
 
-        }
+        }    ## tidy end: foreach my $pat_rdi (@pat_rdis)
 
         return;
 
-    }
+    }    ## tidy end: sub delete_identifiers
 
     sub delete_last_stops {
 
@@ -702,14 +702,14 @@ sub cull_placepats {
 #                    }
 #                    $routes_of_stop{$stop}{$route}--;
 
-                }
-            }
-        }
+                }    ## tidy end: foreach my $pat_ident ( keys...)
+            }    ## tidy end: foreach my $routedir ( keys...)
+        }    ## tidy end: foreach my $stop ( keys %pats_of_stop)
         $cry->done;
 
         return;
 
-    }
+    }    ## tidy end: sub delete_last_stops
 
 }
 
@@ -790,15 +790,15 @@ sub delete_placelist_from_lists {
 
                 make_destination_of( $cry, $routedir, $combokey, @placelists );
 
-            }
-        }
+            }    ## tidy end: foreach my $routedir ( routedirs_of_stop...)
+        }    ## tidy end: STOP: foreach my $stop ( keys_pats_of_stop...)
 
         #say dump_destinations();
 
         $cry->done;
         return;
 
-    }
+    }    ## tidy end: sub build_pat_combos
 
     sub process_combo_overrides {
         my $flagfolder = shift;
@@ -839,7 +839,7 @@ sub delete_placelist_from_lists {
 
         return;
 
-    }
+    }    ## tidy end: sub process_combo_overrides
 
     const my $ENTRY_DIVIDER => ( q{=} x 78 );
 
@@ -886,9 +886,9 @@ sub delete_placelist_from_lists {
                     $OVERRIDE_STRING, $SPACE, $override_of{$shortkey} || $EMPTY
                 );
                 say $ENTRY_DIVIDER;
-            }
+            }    ## tidy end: foreach my $combokey (@thesecombos)
 
-        }
+        }    ## tidy end: foreach my $routedir ( u::sortbyline...)
 
         say '! The following are no longer in use';
         foreach my $shortkey ( u::sortbyline keys %preserved_override_of ) {
@@ -913,7 +913,7 @@ sub delete_placelist_from_lists {
         $cry->done;
         return;
 
-    }
+    }    ## tidy end: sub write_combo_overrides
 
     sub read_combo_overrides {
 
@@ -952,7 +952,7 @@ sub delete_placelist_from_lists {
             $input_comments_of{$short}     = $comments    if $comments;
             $input_descriptions_of{$short} = $description if $description;
 
-        }
+        }    ## tidy end: while ( $chunk = <$in> )
 
         close $in or die "Can't close $file for input: $OS_ERROR";
 
@@ -1000,7 +1000,7 @@ sub delete_placelist_from_lists {
 
         return;
 
-    }
+    }    ## tidy end: sub read_combo_overrides
 
 }
 
@@ -1083,7 +1083,7 @@ sub relevant_places {
 
         return;
 
-    }
+    }    ## tidy end: sub make_destination_of
 
     sub override_destination_of {
         my ( $shortkey, $override ) = @_;
@@ -1121,11 +1121,11 @@ sub relevant_places {
 
             }
 
-        }
+        }    ## tidy end: foreach my $routedir ( keys...)
 
         return %description_of;
 
-    }
+    }    ## tidy end: sub build_placelist_descriptions
 
     sub description_of {
         my ( $routedir, $placelist ) = @_;
@@ -1185,7 +1185,7 @@ sub output_specs {
         }
         #        print "\tOVERRIDDEN" if $tp_overridden{$stop};
         print "\n";
-    }
+    }    ## tidy end: foreach my $stop ( sort keys...)
 
     select $oldfh;
 
@@ -1197,7 +1197,7 @@ sub output_specs {
 
     return;
 
-}
+}    ## tidy end: sub output_specs
 
 sub make_decal_spec {
     my ( $shortkey, $stop, $routedir ) = @_;
@@ -1288,7 +1288,7 @@ sub make_decal_spec {
     my $spec = jk( $route, $destination, $icons );
     return $spec;
 
-}
+}    ## tidy end: sub make_decal_spec
 
 {
     my %decal_of;
@@ -1328,7 +1328,7 @@ sub make_decal_spec {
         rename $file, $bakfile
           or die "Can't rename $file to $bakfile: $OS_ERROR";
 
-    }
+    }    ## tidy end: sub read_decal_specs
 
     sub make_decal_from_spec {
         my $spec  = shift;
@@ -1375,12 +1375,12 @@ sub make_decal_spec {
                 my $spec = make_decal_spec( $shortkey, $stop, $routedir );
                 push @decals, make_decal_from_spec( $spec, $route );
             }
-        }
+        }    ## tidy end: for my $routedir ( grep...)
 
         @decals = uniq @decals;
 
         return @decals;
-    }
+    }    ## tidy end: sub decals
 
     sub output_decal_specs {
 
@@ -1424,9 +1424,9 @@ sub make_decal_spec {
 
         return;
 
-    }
+    }    ## tidy end: sub output_decal_specs
 
-}
+}    ## tidy end: sub decals
 
 sub style_of_route {
     my $route = shift;
@@ -1479,7 +1479,7 @@ sub style_of_route {
     $cache{$route} = $style;
     return $style;
 
-}
+}    ## tidy end: sub style_of_route
 
 sub build_color_of {
     my $signup   = shift;
@@ -1518,7 +1518,7 @@ sub read_plain_overrides {
 
     $cry->done;
 
-}
+}    ## tidy end: sub read_plain_overrides
 
 sub read_tp_overrides {
     my $flagfolder = shift;
@@ -1546,7 +1546,7 @@ sub read_tp_overrides {
 
     $cry->done;
 
-}
+}    ## tidy end: sub read_tp_overrides
 
 sub routedir {
     my $routedir = shift;
