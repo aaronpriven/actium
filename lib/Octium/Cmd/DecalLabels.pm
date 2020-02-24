@@ -1,9 +1,9 @@
-package Actium::Cmd::DecalLabels 0.011;
+package Octium::Cmd::DecalLabels 0.011;
 
 # Makes spreadsheet to print decal labels
 
-use Actium;
-use Actium::DecalPreparation(qw/make_labels/);
+use Octium;
+use Octium::DecalPreparation(qw/make_labels/);
 
 sub HELP {
     say 'Makes spreadsheet with labels for decal envelopes.';

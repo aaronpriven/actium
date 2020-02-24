@@ -1,6 +1,6 @@
-package Actium::Sked::StopSked::Trip 0.014;
+package Octium::Sked::StopSked::Trip 0.014;
 
-use Actium 'class';
+use Octium 'class';
 
 has line => (
     is       => 'ro',
@@ -12,7 +12,7 @@ has days_obj => (
     required => 0,
     init_arg => 'days',
     is       => 'ro',
-    isa      => 'Actium::O::Days',
+    isa      => 'Octium::O::Days',
     handles  => {
         daycode       => 'daycode',
         sortable_days => 'as_sortable',
@@ -21,12 +21,12 @@ has days_obj => (
 
 has time => (
     required => 1,
-    isa      => 'Actium::Sked::Time',
+    isa      => 'Octium::Sked::Time',
 );
 
 # more to come
 
-# with 'Actium::Sked::Stop::Collection';
+# with 'Octium::Sked::Stop::Collection';
 # role doesn't exist yet
 
 1;

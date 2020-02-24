@@ -1,13 +1,13 @@
-package Actium::O::Sked::TripCollection 0.012;
+package Octium::O::Sked::TripCollection 0.012;
 
-use Actium ('class');
+use Octium ('class');
 use List::Compare;
 
 has 'trips_r' => (
     traits   => ['Array'],
     is       => 'ro',
     writer   => '_set_trips_r',
-    isa      => 'ArrayRef[Actium::O::Sked::Trip]',
+    isa      => 'ArrayRef[Octium::O::Sked::Trip]',
     required => 1,
     handles  => { trips => 'elements', trip => 'get', trip_count => 'count' },
 );
@@ -262,7 +262,7 @@ sub trips_by_day {
 
         for my $trip (@trips) {
 
-            my $sked_day_obj = Actium::O::Days->instance( $skedday, 'B' );
+            my $sked_day_obj = Octium::O::Days->instance( $skedday, 'B' );
             my $trip_day_obj = $trip->days_obj;
 
             if (   $skedday eq $trip_day_obj->daycode

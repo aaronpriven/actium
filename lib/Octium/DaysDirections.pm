@@ -1,13 +1,13 @@
-package Actium::DaysDirections 0.012;
+package Octium::DaysDirections 0.012;
 
 # Day and direction codes, conversion between in Hastus and legacy systems
 
-# should be eliminated in favor of Actium::O::Days and Actium::O::Dir
+# should be eliminated in favor of Octium::O::Days and Octium::O::Dir
 
 use 5.012;
 use warnings;
 
-use Actium;
+use Octium;
 
 use Sub::Exporter ( -setup => { exports => [qw<day_of_hasi dir_of_hasi>] } )
   ;    ### DEP ###
@@ -194,7 +194,7 @@ __END__
 
 =head1 NAME
 
-Actium::DaysDirections - Day and direcion codes
+Octium::DaysDirections - Day and direcion codes
 
 =head1 VERSION
 
@@ -202,7 +202,7 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::DaysDirections;
+ use Octium::DaysDirections;
  
  print day_of($hasi->{TRP}{'1632120'}{OperatingDays}) ;
  # prints two-letter day code for the operating days 
@@ -215,7 +215,7 @@ This documentation refers to version 0.001
 
 =head1 DESCRIPTION
 
-Actium::DaysDirections
+Octium::DaysDirections
 
 =head1 SUBROUTINES
 

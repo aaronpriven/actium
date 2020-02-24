@@ -1,6 +1,6 @@
-package Actium::Set 0.014;
+package Octium::Set 0.014;
 
-use Actium;
+use Octium;
 
 use Algorithm::Diff qw(sdiff traverse_sequences);    ### DEP ###
 use Algorithm::Combinatorics(':all');                ### DEP ###
@@ -538,7 +538,7 @@ my $sethash_callback = {
     'not a hash of lists' => sub {
         my $sethash_r = shift;
         while ( my ( $id, $set_r ) = each %{$sethash_r} ) {
-            my $reftype = Actium::reftype($set_r);
+            my $reftype = Octium::reftype($set_r);
             if ( not( $reftype and $reftype eq 'ARRAYREF' ) ) {
                 return 0;
             }
@@ -734,8 +734,8 @@ sub _check_arrayrefs {
     my @arrayrefs = @_;
     foreach (@arrayrefs) {
         croak "Arguments to $caller must be array references"
-          unless defined( Actium::reftype($_) )
-          and Actium::reftype($_) eq 'ARRAY';
+          unless defined( Octium::reftype($_) )
+          and Octium::reftype($_) eq 'ARRAY';
     }
     return;
 }
@@ -869,15 +869,15 @@ __END__
 
 =head1 NAME
 
-Actium::Set - Set functions for the Actium system
+Octium::Set - Set functions for the Actium system
 
 =head1 VERSION
 
-This documentation refers to Actium::Set version 0.012
+This documentation refers to Octium::Set version 0.012
 
 =head1 SYNOPSIS
 
- use Actium::Set qw(ordered_union comm distinguish clusterize);
+ use Octium::Set qw(ordered_union comm distinguish clusterize);
  @list = qw/HILL_MALL CCJR_COLL DELN_BART UNIV_S.P. OAKL_AMTK/;
  @list2 = qw/CAST_TEWK RICH_BART DELN_BART UNIV_S.P./;
  @list3 = qw/DELN_BART OAKL_AMTK/;
@@ -956,7 +956,7 @@ More usefully:
  
 =head1 DESCRIPTION
 
-Actium::Set consists of several specialized set functions.
+Octium::Set consists of several specialized set functions.
 
 =head1 SUBROUTINES
 

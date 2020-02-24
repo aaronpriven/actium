@@ -1,6 +1,6 @@
-package Actium::Storage::Excel 0.013;
+package Octium::Storage::Excel 0.013;
 
-use Actium;
+use Octium;
 
 use Ref::Util;
 use Excel::Writer::XLSX 0.95;               ## DEP ##

@@ -1,6 +1,6 @@
-package Actium::Cmd::AVL2StopLists 0.014;
+package Octium::Cmd::AVL2StopLists 0.014;
 
-use Actium;
+use Octium;
 # avl2stoplists - see POD documentation below
 
 use sort ('stable');
@@ -10,8 +10,8 @@ use sort ('stable');
 use Carp;          ### DEP ###
 use Storable();    ### DEP ###
 
-use Actium::Set('ordered_union');
-use Actium::DaysDirections ('dir_of_hasi');
+use Octium::Set('ordered_union');
+use Octium::DaysDirections ('dir_of_hasi');
 
 # don't buffer terminal output
 

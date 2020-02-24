@@ -1,7 +1,7 @@
-package Actium::O::Sked::Storage::Tabxchange 0.013;
+package Octium::O::Sked::Storage::Tabxchange 0.013;
 
-use Actium ('role');
-use Actium::Time;
+use Octium ('role');
+use Octium::Time;
 
 const my $LAST_LINE_IN_FIRST_LOCAL_LIST => 70;
 # arbitrary choice, but it must always be the same or links will break
@@ -27,12 +27,12 @@ method tabxchange (
     #  my $actiumdb       = $params{actiumdb};
     #  my $skedcollection = $params{collection};
 
-    require Actium::O::2DArray;
+    require Octium::O::2DArray;
 
     # line 1 - skedid
 
     my $skedid = $self->transitinfo_id;
-    my $aoa = Actium::O::2DArray->bless( [ [$skedid] ] );
+    my $aoa = Octium::O::2DArray->bless( [ [$skedid] ] );
 
     my $p = sub { $aoa->push_row( @_, $EMPTY ) };
     # the $EMPTY is probably not needed but the old program
@@ -294,7 +294,7 @@ method tabxchange (
 
             my @placetimes = $trip->placetimes;
             my $idx        = u::firstidx {defined} @placetimes;
-            my $time       = Actium::Time->from_num( $placetimes[$idx] )->ap;
+            my $time       = Octium::Time->from_num( $placetimes[$idx] )->ap;
 
             $specdaytrip .= "<dd>Trip leaving $placedescs[$idx] at $time</dd>";
 
@@ -376,10 +376,10 @@ method tabxchange (
 
     # lines 17 - times
 
-    my $placetimes_aoa = Actium::O::2DArray->new;
+    my $placetimes_aoa = Octium::O::2DArray->new;
 
     foreach my $trip ( $self->trips ) {
-        my @placetimes = map { Actium::Time->from_num($_)->ap_noseparator }
+        my @placetimes = map { Octium::Time->from_num($_)->ap_noseparator }
           $trip->placetimes;
         $placetimes_aoa->push_col(@placetimes);
     }

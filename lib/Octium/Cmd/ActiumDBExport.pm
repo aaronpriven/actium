@@ -1,9 +1,9 @@
-package Actium::Cmd::ActiumDBExport 0.014;
+package Octium::Cmd::ActiumDBExport 0.014;
 
 # Exports data for Scheduling import
 
-use Actium;
-use Actium::O::Folder;
+use Octium;
+use Octium::O::Folder;
 use Archive::Zip (qw( :ERROR_CODES :CONSTANTS ));    ### DEP ###
 
 my %fields_of =
@@ -45,7 +45,7 @@ sub START {
 
     my $dbh = $actiumdb->dbh;
 
-    my $folder = Actium::O::Folder->new(
+    my $folder = Octium::O::Folder->new(
         '/Users/Shared/Dropbox (AC_PubInfSys)/B/Actium/database');
     my $zip = Archive::Zip->new();
 

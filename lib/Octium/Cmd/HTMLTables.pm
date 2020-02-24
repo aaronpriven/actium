@@ -1,12 +1,12 @@
-package Actium::Cmd::HTMLTables 0.012;
+package Octium::Cmd::HTMLTables 0.012;
 
-use Actium;
+use Octium;
 
 # Produces HTML tables that represent timetables.
 
-use Actium::O::Sked;
-use Actium::O::Sked::Collection;
-use Actium::O::Sked::Timetable;
+use Octium::O::Sked;
+use Octium::O::Sked::Collection;
+use Octium::O::Sked::Timetable;
 
 sub HELP {
 
@@ -30,7 +30,7 @@ sub START {
 
     my $html_folder = $signup->subfolder('html');
 
-    my $collection = Actium::O::Sked::Collection->load_storable(
+    my $collection = Octium::O::Sked::Collection->load_storable(
         collection => 'final'
     );
 
@@ -53,7 +53,7 @@ sub START {
         }
 
         my $table
-          = Actium::O::Sked::Timetable->new_from_sked( $sked, $actiumdb );
+          = Octium::O::Sked::Timetable->new_from_sked( $sked, $actiumdb );
         push @tables, $table;
         push @{ $htmls_of_linegroup{$linegroup} }, $table->html_table;
 

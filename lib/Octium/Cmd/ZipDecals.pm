@@ -1,9 +1,9 @@
-package Actium::Cmd::ZipDecals 0.012;
+package Octium::Cmd::ZipDecals 0.012;
 
 # Creates a Zip archive of the relevant decals
 
-use Actium;
-use Actium::O::Folder;
+use Octium;
+use Octium::O::Folder;
 use Spreadsheet::ParseXLSX;    ### DEP ###
 
 use Archive::Zip qw(:ERROR_CODES);    ### DEP ###
@@ -22,7 +22,7 @@ sub START {
     my $filespec = shift @argv;
     die "No input file given" unless $filespec;
 
-    my ( $folder, $filename ) = Actium::O::Folder->new_from_file($filespec);
+    my ( $folder, $filename ) = Octium::O::Folder->new_from_file($filespec);
 
     my $sheet  = $folder->load_sheet($filename);
     my @decals = u::sortbyline $sheet->col(0);

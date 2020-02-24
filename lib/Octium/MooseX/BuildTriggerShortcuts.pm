@@ -1,4 +1,4 @@
-package Actium::MooseX::BuildTriggerShortcuts 0.014;
+package Octium::MooseX::BuildTriggerShortcuts 0.014;
 
 use strict;
 use warnings;
@@ -8,21 +8,21 @@ use Moose::Exporter;
 use Moose::Util::MetaRole;
 use Carp;
 
-# use Actium::MooseX::BuildTriggerShortcuts::Role::Attribute;
+# use Octium::MooseX::BuildTriggerShortcuts::Role::Attribute;
 
 my %metaroles = (
     class_metaroles => {
-        attribute => ['Actium::MooseX::BuildTriggerShortcuts::Role::Attribute'],
+        attribute => ['Octium::MooseX::BuildTriggerShortcuts::Role::Attribute'],
     },
     role_metaroles => {
         applied_attribute =>
-          ['Actium::MooseX::BuildTriggerShortcuts::Role::Attribute'],
+          ['Octium::MooseX::BuildTriggerShortcuts::Role::Attribute'],
     },
 );
 
 Moose::Exporter->setup_import_methods(%metaroles);
 
-package Actium::MooseX::BuildTriggerShortcuts::Role::Attribute 0.013;
+package Octium::MooseX::BuildTriggerShortcuts::Role::Attribute 0.013;
 
 use Moose::Role;
 use Ref::Util('is_coderef');    ### DEP ###
@@ -114,7 +114,7 @@ __END__
 
 =head1 NAME
 
-Actium::MooseX::BuildTriggerShortcuts - shortcuts in attributes for 
+Octium::MooseX::BuildTriggerShortcuts - shortcuts in attributes for 
 builder, lazy, and trigger
 
 =head1 VERSION
@@ -124,7 +124,7 @@ This documentation refers to version 0.014
 =head1 SYNOPSIS
 
  use Moose;
- use Actium::MooseX::BuildTriggerShortcuts;
+ use Octium::MooseX::BuildTriggerShortcuts;
  
  has lazy_attribute => (
     is => 'ro',
@@ -143,7 +143,7 @@ This documentation refers to version 0.014
  
 =head1 DESCRIPTION
 
-Actium::MooseX::BuildTriggerShortcuts allows several shortcuts in Moose
+Octium::MooseX::BuildTriggerShortcuts allows several shortcuts in Moose
 "has" attribute specifiers to allow easier specification of lazy,
 built, or triggered attributes.
 

@@ -1,6 +1,6 @@
-package Actium::Flags 0.012;
+package Octium::Flags 0.012;
 
-use Actium;
+use Octium;
 
 const my @COLUMNS => qw[
   u_flagtype_id        flagtype_filename    flagtype_master_page
@@ -114,12 +114,12 @@ EOT
 } ## tidy end: sub flag_assignments
 
 sub flag_assignments_tabbed {
-    my $assignments_aoa = Actium::Flags::flag_assignments(@_);
+    my $assignments_aoa = Octium::Flags::flag_assignments(@_);
 
     return unless $assignments_aoa;    # if there was an error
 
-    require Actium::O::2DArray;
-    my $assignments = Actium::O::2DArray->bless($assignments_aoa);
+    require Octium::O::2DArray;
+    my $assignments = Octium::O::2DArray->bless($assignments_aoa);
 
     return $assignments->tsv;
 

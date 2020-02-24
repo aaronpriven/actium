@@ -1,6 +1,6 @@
-package Actium::Cmd::Scratch 0.012;
+package Octium::Cmd::Scratch 0.012;
 
-use Actium;
+use Octium;
 
 sub OPTIONS { return 'actiumdb' }
 use DDP;
@@ -70,7 +70,7 @@ __END__
 
 =head1 NAME
 
-Actium::Cmd::Scratch - temporary programs
+Octium::Cmd::Scratch - temporary programs
 
 =head1 VERSION
 

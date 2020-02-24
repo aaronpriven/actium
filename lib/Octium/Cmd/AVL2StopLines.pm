@@ -1,9 +1,9 @@
-package Actium::Cmd::AVL2StopLines 0.012;
+package Octium::Cmd::AVL2StopLines 0.012;
 
-use Actium;
-use Actium::Sorting::Line (qw[sortbyline]);
-use Actium::Set('ordered_union');
-use Actium::DaysDirections (':all');
+use Octium;
+use Octium::Sorting::Line (qw[sortbyline]);
+use Octium::Set('ordered_union');
+use Octium::DaysDirections (':all');
 
 use List::Compare;
 
@@ -111,8 +111,8 @@ sub START {
 
         foreach my $addsignup_name ( $env->option('addsignup')->@* ) {
             my $signupcry = cry("Adding $addsignup_name");
-            require Actium::O::Folders::Signup;
-            my $addsignup = Actium::O::Folders::Signup::->new(
+            require Octium::O::Folders::Signup;
+            my $addsignup = Octium::O::Folders::Signup::->new(
                 base => ( $env->option('addbase') // $env->option('base') ),
                 signup     => $addsignup_name,
                 cache      => $env->option('cache'),

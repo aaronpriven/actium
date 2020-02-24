@@ -1,9 +1,9 @@
-package Actium::Cmd::DecalCount 0.011;
+package Octium::Cmd::DecalCount 0.011;
 
 # Makes spreadsheet to calculate decal count
 
-use Actium;
-use Actium::DecalPreparation(qw/make_decal_count/);
+use Octium;
+use Octium::DecalPreparation(qw/make_decal_count/);
 
 sub HELP {
     say 'Makes spreadsheet to calculate decal count.';

@@ -1,4 +1,4 @@
-package Actium::Text::CharWidth 0.012;
+package Octium::Text::CharWidth 0.012;
 
 # character widths
 

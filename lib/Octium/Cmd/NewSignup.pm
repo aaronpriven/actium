@@ -1,9 +1,9 @@
-package Actium::Cmd::NewSignup 0.012;
+package Octium::Cmd::NewSignup 0.012;
 
 # Prepares a new signup directory
 
-use Actium;
-use Actium::Import::Xhea;
+use Octium;
+use Octium::Import::Xhea;
 use Archive::Zip;    ### DEP ###
 
 sub OPTIONS {
@@ -79,16 +79,16 @@ sub START {
     if ( $gtfs_folder->glob_plain_files('*.txt') ) {
 
         my $suppcry = cry("Importing GTFS calendars");
-        require Actium::Import::GTFS::TripCalendars;
+        require Octium::Import::GTFS::TripCalendars;
 
         my $note_of_trip_r
-          = Actium::Import::GTFS::TripCalendars::calendar_notes_of_trips(
+          = Octium::Import::GTFS::TripCalendars::calendar_notes_of_trips(
             $signup);
 
         %schcal_xhea_specs = ( note_of_trip => $note_of_trip_r );
 
         my $dumpfh = $signup->open_write('note_of_trip.dump');
-        say $dumpfh Actium::dumpstr($note_of_trip_r);
+        say $dumpfh Octium::dumpstr($note_of_trip_r);
         close $dumpfh;
 
         $suppcry->done;
@@ -97,10 +97,10 @@ sub START {
     elsif ( $sch_cal_folder->glob_plain_files('*.xlsx') ) {
 
         my $suppcry = cry("Importing supplementary calendars");
-        require Actium::Import::Xhea::SuppCalendar;
+        require Octium::Import::Xhea::SuppCalendar;
 
         my $calendar_of_block_r
-          = Actium::Import::Xhea::SuppCalendar::read_supp_calendars(
+          = Octium::Import::Xhea::SuppCalendar::read_supp_calendars(
             $sch_cal_folder);
 
         %schcal_xhea_specs = ( sch_cal_data => $calendar_of_block_r );
@@ -121,13 +121,13 @@ sub START {
             %schcal_xhea_specs,
         );
 
-        Actium::Import::Xhea::xhea_import(%xhea_import_specs);
+        Octium::Import::Xhea::xhea_import(%xhea_import_specs);
 
         $impcry->done;
 
         my $hasicry = cry("Creating HASI files from XHEA files");
 
-        Actium::Import::Xhea::to_hasi( $tab_folder, $hasi_folder );
+        Octium::Import::Xhea::to_hasi( $tab_folder, $hasi_folder );
 
         $hasicry->done;
 

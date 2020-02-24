@@ -1,8 +1,8 @@
-package Actium::O::Folder 0.014;
+package Octium::O::Folder 0.014;
 
 # Objects representing folders (directories) on disk
 
-use Actium ('class');
+use Octium ('class');
 
 use File::Spec;    ### DEP ###
 use File::Glob ('bsd_glob');    ### DEP ###
@@ -203,12 +203,12 @@ sub original_parameters {
 
 =begin comment
 
-The idea here is that Actium::O::Folder has a single list of folders,
+The idea here is that Octium::O::Folder has a single list of folders,
 "folderlist," which is specified in the new() constructor and
 subfolder() cloner. In the cloner, the specified folderlist is added to the
 old one to form the complete new folderlist.
 
-The Actium::O::Folders::Signup subclass, however, has a second list of folders 
+The Octium::O::Folders::Signup subclass, however, has a second list of folders 
 that is primary -- "subfolders". The idea is that the subfolders
 are kept separately from the base and signup folders.
 
@@ -274,7 +274,7 @@ sub subfolder {
 } ## tidy end: sub subfolder
 
 sub _positional {
-    # moved from Actium::Util since this is now the only routine that uses it
+    # moved from Octium::Util since this is now the only routine that uses it
 
     my $argument_r = shift;
     my $qualsub    = __PACKAGE__ . '::positional';
@@ -327,7 +327,7 @@ sub _positional {
 
 sub new_from_file {
 
-    # takes a filename and creates a new Actium::O::Folder from the path part
+    # takes a filename and creates a new Octium::O::Folder from the path part
     # must_exist is not implemented yet
     my $class    = shift;
     my $filespec = shift;
@@ -633,7 +633,7 @@ sub load_sqlite {
 
 sub load_hasi {
     my $self = shift;
-    $self->load_sqlite( 'hasi', 'Actium::O::Files::HastusASI', @_ );
+    $self->load_sqlite( 'hasi', 'Octium::O::Files::HastusASI', @_ );
 }
 
 ################################################
@@ -798,8 +798,8 @@ sub load_sheet {
 
     my $filespec = $self->make_filespec($filename);
 
-    require Actium::O::2DArray;
-    my $sheet = Actium::O::2DArray::->new_from_file($filespec);
+    require Octium::O::2DArray;
+    my $sheet = Octium::O::2DArray::->new_from_file($filespec);
 
     return $sheet;
 
@@ -813,7 +813,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Folder - Folder objects for the Actium system
+Octium::O::Folder - Folder objects for the Actium system
 
 =head1 VERSION
 
@@ -821,9 +821,9 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::O::Folder;
+ use Octium::O::Folder;
 
- $folder = Actium::O::Folder->new('/path/to/folder');
+ $folder = Octium::O::Folder->new('/path/to/folder');
 
  $filespec = $folder->make_filespec('10_EB_WD.txt');
  # $filespec is something like /path/to/folder/10_EB_WD.txt
@@ -833,7 +833,7 @@ This documentation refers to version 0.001
 
 =head1 DESCRIPTION
 
-Actium::O::Folder provides an object-oriented interface to folders on disk.
+Octium::O::Folder provides an object-oriented interface to folders on disk.
 (They are referred to here as "folders" rather than "directories" mainly
 because "dir" is more commonly used within the Actium system as an 
 abbreviation for "direction", and I wanted to avoid ambiguity.)
@@ -842,17 +842,17 @@ This module is intended to make it easier to open files within folders and
 create new subfolders.
 
 It forms the base class used by 
-L<Actium::O::Folders::Signup|Actium::O::Folders::Signup>, which is more likely to be
+L<Octium::O::Folders::Signup|Octium::O::Folders::Signup>, which is more likely to be
 used directly in programs.
 
-As much as possible, Actium::O::Folder uses the L<File::Spec> module in order
+As much as possible, Octium::O::Folder uses the L<File::Spec> module in order
 to be platform-independent (although Actium is tested only under Mac OS X for 
 the moment).
 
 =head1 OBJECT CONSTRUCTION
 
-Actium::O::Folder objects are created using the B<new> constructor inherited from
-Moose. Alternatively, they can be cloned from an existing Actium::O::Folder object,
+Octium::O::Folder objects are created using the B<new> constructor inherited from
+Moose. Alternatively, they can be cloned from an existing Octium::O::Folder object,
 using B<subfolder>, or from a file path using B<new_from_file>.
 
 For either B<new> or B<subfolder>, if the first argument is a hash reference, 
@@ -860,11 +860,11 @@ it is taken as a reference to named
 arguments. If not, the arguments given are considered part of the 
 I<folderlist> argument. So this:
 
- my $folder = Actium::O::Folder->new($folder1, $folder2 )
+ my $folder = Octium::O::Folder->new($folder1, $folder2 )
  
 is a shortcut for this:
 
- my $folder = Actium::O::Folder->new({folderlist => [ $folder1, $folder2 ]})
+ my $folder = Octium::O::Folder->new({folderlist => [ $folder1, $folder2 ]})
  
 The B<new_from_file> method takes only a single argument, a file specification.
 It drops the file part, if any, and creates the appropriate folder list 
@@ -886,10 +886,10 @@ This can be a single string with an entire path ('/path/to/folder'), or
 an array reference. The array reference can point to an array
 containing that single string (['/path/to/folder']),
 a series of strings each with a folder name (['path' , 'to' , 'folder']),
-or a combination (['/path/to' , 'folder']). Actium::O::Folder splits the pieces
+or a combination (['/path/to' , 'folder']). Octium::O::Folder splits the pieces
 into individual folders for you.
 
-Actium::O::Folder's I<new> constructor accepts both relative paths and absolute 
+Octium::O::Folder's I<new> constructor accepts both relative paths and absolute 
 paths. If passed a relative path, adds the current working directory 
 (from L<Cwd/Cwd>) to the beginning of the path.
 
@@ -905,9 +905,9 @@ object to the new object.
 
 =item I<must_exist>
 
-This attribute, if set to a true value, will cause Actium::O::Folder to throw
+This attribute, if set to a true value, will cause Octium::O::Folder to throw
 an exception if the specified folder does not yet exist. If not set, 
-Actium::O::Folder will attempt to create this folder and, if necessary, its 
+Octium::O::Folder will attempt to create this folder and, if necessary, its 
 parents.
 
 Unless specified in the arguments to either B<new> or B<subfolder>, the
@@ -918,7 +918,7 @@ and does not copy the value from the original object.
 
 =head1 OVERLOADING
 
-Using an Actium::O::Folder object as a string will return the path() value.
+Using an Octium::O::Folder object as a string will return the path() value.
 For example,
 
  say "That file is in $folderobject";
@@ -962,7 +962,7 @@ The values of the B<volume> and B<must_exist> attributes, respectively.
 Returns a path name to a specified subfolder under the folder -- that is,
 this:
 
- $folder = new Actium::O::Folder ('/Users');
+ $folder = new Octium::O::Folder ('/Users');
  $path = $folder->subfolder_path('apriven');
 
 will yield "/Users/apriven".
@@ -1011,7 +1011,7 @@ encoding.
 
 =item B<$obj-E<gt>load_hasi({I<named arguments>>)>
 
-Returns an Actium::O::Files::HastusASI 
+Returns an Octium::O::Files::HastusASI 
 object. The named arguments are:
 
 =over
@@ -1027,7 +1027,7 @@ by the string or strings provided, or the default: 'hasi' for load_hasi.
 
 =item db_folder
 
-An optional item passed to Actium::O::Files::SQLite: the folder where the SQLite 
+An optional item passed to Octium::O::Files::SQLite: the folder where the SQLite 
 database will be stored.
 
 =back
@@ -1041,7 +1041,7 @@ The default subfolder is a string or reference to a list of strings representing
 subfolders of the folder of the current object.
 
 The database class will be some perl class to be "require"d by this method,
-probably composing the Actium::O::Files::SQLite role.
+probably composing the Octium::O::Files::SQLite role.
 
 The named arguments are the same as those of the B<load_hasi> method, above.
 
@@ -1110,7 +1110,7 @@ See L<perlfunc/binmode>.
 =item FILENAME
 
 The file name that the results of the method are to be saved in. It will 
-be saved in the folder represented by the Actium::O::Folder object.
+be saved in the folder represented by the Octium::O::Folder object.
 
 =back
 
@@ -1161,7 +1161,7 @@ routines.
 
 =item Folder "$path" not found
         
-In creating the Actium::O::Folder object, the must_exist attribute was given
+In creating the Octium::O::Folder object, the must_exist attribute was given
 as true, but the folder was not found.
 
 =item Can't make folder "$path": $OS_ERROR
@@ -1213,7 +1213,7 @@ The following are loaded only when necessary:
 
 =over
 
-=item Actium::O::Files::HastusASI
+=item Octium::O::Files::HastusASI
 
 =back
 

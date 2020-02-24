@@ -1,14 +1,14 @@
-package Actium::O::Files::HastusASI 0.011;
+package Octium::O::Files::HastusASI 0.011;
 
 # Class for reading and processing Hastus Standard AVL files
-# and storing in an SQLite database using Actium::O::Files::SQLite
+# and storing in an SQLite database using Octium::O::Files::SQLite
 
-use Actium ('class');
+use Octium ('class');
 
 use File::Glob qw(:glob);    ### DEP ###
 use File::Spec;              ### DEP ###
 
-use Actium::O::Files::HastusASI::Definition;
+use Octium::O::Files::HastusASI::Definition;
 
 # set some constants
 const my $DELIMITER                   => q{,};
@@ -19,7 +19,7 @@ const my $OCCASIONS_TO_DISPLAY        => 20;
 const my $AVERAGE_CHARS_PER_LINE      => 20;
 const my $DISPLAY_PERCENTAGE_FACTOR   => 100 / $OCCASIONS_TO_DISPLAY;
 
-# Actium::O::Files::SQLite:
+# Octium::O::Files::SQLite:
 # requires(
 #    qw/db_type key_of_table columns_of_table tables
 #       _load _files_of_filetype _tables_of_filetype/
@@ -35,8 +35,8 @@ sub db_type () { return 'HastusASI' }
 has '_definition' => (
     is       => 'bare',
     init_arg => undef,
-    isa      => 'Actium::O::Files::HastusASI::Definition',
-    default  => sub { Actium::O::Files::HastusASI::Definition->instance },
+    isa      => 'Octium::O::Files::HastusASI::Definition',
+    default  => sub { Octium::O::Files::HastusASI::Definition->instance },
     lazy     => 1,
     handles  => {
         columns_of_table            => 'columns_of_table',
@@ -318,7 +318,7 @@ beginning and end of each field.
 
 } ## tidy end: sub _build_templates
 
-with 'Actium::O::Files::SQLite';
+with 'Octium::O::Files::SQLite';
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 
@@ -328,7 +328,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Files::HastusASI - Routines for SQLite storage of Hastus AVL
+Octium::O::Files::HastusASI - Routines for SQLite storage of Hastus AVL
 Standard Interface files
 
 =head1 NOTE
@@ -343,9 +343,9 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::O::Files::HastusASI;
+ use Octium::O::Files::HastusASI;
  
- my $hasi_db = Actium::O::Files::HastusASI->new(
+ my $hasi_db = Octium::O::Files::HastusASI->new(
      flats_folder => $hasi_folder,
      db_folder    => $db_folder,
      db_filename  => $db_filename,
@@ -357,10 +357,10 @@ This documentation refers to version 0.001
 =head1 DESCRIPTION
 
 This is a series of routines that store Hastus AVL Standard Interface
-files using the Actium::O::Files::SQLite role. This documentation
+files using the Octium::O::Files::SQLite role. This documentation
 describes the specifics of the Hastus ASI routines; for general
 information about the database access and structure, see
-L<Actium::O::Files::SQLite|Actium::O::Files::SQLite>.
+L<Octium::O::Files::SQLite|Octium::O::Files::SQLite>.
 
 For more information about the Hastus AVL Standard Interface, see the
 document "Hastus 2006 AVL Standard Interface, Last Update: July 26,
@@ -368,14 +368,14 @@ document "Hastus 2006 AVL Standard Interface, Last Update: July 26,
 
 =head1 PUBLIC METHODS 
 
-These are all required by the Actium::O::Files::SQLite role.
+These are all required by the Octium::O::Files::SQLite role.
 
 =over
 
 =item B<db_type()>
 
 Returns 'HastusASI'.  This distinguishes this type from other databases
-using Actium::O::Files::SQLite.
+using Octium::O::Files::SQLite.
 
 =item B<columns_of_table>
 
@@ -388,7 +388,7 @@ using Actium::O::Files::SQLite.
 =item B<parent_of_table>
 
 These are delegated to 
-L<Actium::O::Files::HastusASI::Definition|Actium::O::Files::HastusASI::Definition>
+L<Octium::O::Files::HastusASI::Definition|Octium::O::Files::HastusASI::Definition>
 and information on them can be found there, or in other modules used by
 that  module.
 
@@ -417,12 +417,12 @@ that  module.
 =item B<_tables_of_filetype>
 
 These are delegated to 
-L<Actium::O::Files::HastusASI::Definition|Actium::O::Files::HastusASI::Definition>
+L<Octium::O::Files::HastusASI::Definition|Octium::O::Files::HastusASI::Definition>
 and information on them can be found there, or in other modules used by
 that  module. In that module, they do not have leading underscores.
 
 Two (I<_tables_of_filetype> and I<_filetype_of_table>) are required by
-Actium::O::Files::SQLite. The others are only used within this module.
+Octium::O::Files::SQLite. The others are only used within this module.
 
 =item B<_files_of_filetype(I<filetype>)>
 
@@ -431,14 +431,14 @@ filetype. Usually, this will be just one file per filetype, but it's
 conceivable that different sets of Hastus AVL files could be usefully
 combined, so that ability is present.
 
-This method is required by Actium::O::Files::SQLite.
+This method is required by Octium::O::Files::SQLite.
 
 =item B<_load(I<filetype>,I<files...>)>
 
 This reads the files specified, which are of the filetype specified,
 and  saves the data into the database.
 
-This method is required by Actium::O::Files::SQLite.
+This method is required by Octium::O::Files::SQLite.
 
 =back
 
@@ -500,7 +500,7 @@ an HSA file.) This row will be skipped.
 
 =item Actium
 
-=item Actium::O::Files::SQLite
+=item Octium::O::Files::SQLite
 
 =back
 

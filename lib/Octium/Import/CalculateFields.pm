@@ -1,10 +1,10 @@
-package Actium::Import::CalculateFields 0.012;
+package Octium::Import::CalculateFields 0.012;
 
 # Routines for calculating fields based on imported data.
 # Does things like break up "description" into "on" and "at". Etc.
 # This is probably a terrible name for this.
 
-use Actium;
+use Octium;
 use Text::Trim;                                    ### DEP ###
 use Lingua::EN::Titlecase::Simple('titlecase');    ### DEP ###
 
@@ -343,7 +343,7 @@ __END__
 
 =head1 NAME
 
-Actium::Import::CaclulateFields - Routines for adding fields based on 
+Octium::Import::CaclulateFields - Routines for adding fields based on 
 Hastus exports
 
 =head1 FIELDS

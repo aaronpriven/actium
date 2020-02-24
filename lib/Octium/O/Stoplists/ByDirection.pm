@@ -1,4 +1,4 @@
-package Actium::O::Stoplists::ByDirection 0.010;
+package Octium::O::Stoplists::ByDirection 0.010;
 
 use Moose; ### DEP ###
 use MooseX::StrictConstructor; ### DEP ###

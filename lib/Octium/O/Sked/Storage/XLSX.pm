@@ -1,11 +1,11 @@
-package Actium::O::Sked::Storage::XLSX 0.013;
+package Octium::O::Sked::Storage::XLSX 0.013;
 
-use Actium ('role');
+use Octium ('role');
 
-use Actium::O::Sked::Trip;
-use Actium::O::Dir;
-use Actium::O::Days;
-use Actium::Time;
+use Octium::O::Sked::Trip;
+use Octium::O::Dir;
+use Octium::O::Days;
+use Octium::Time;
 
 #############################################
 #### READ FROM AN EXCEL SPREADSHEET
@@ -45,7 +45,7 @@ method new_from_xlsx ( $class : Str : $file,
     };
 
     my $min_stop_col
-      = Actium::first { $is_stopid_col_cr->($_) } ( $mincol .. $maxcol );
+      = Octium::first { $is_stopid_col_cr->($_) } ( $mincol .. $maxcol );
 
     \my ( @stops, @place4s, @stopplaces ) = _read_stops_and_places(
         mincol    => $min_stop_col,
@@ -74,8 +74,8 @@ method new_from_xlsx ( $class : Str : $file,
         attributes   => \@attributes,
     );
 
-    my $dir_obj = Actium::O::Dir->instance($dircode);
-    my $day_obj = Actium::O::Days->instance( $daycode, 'B' );
+    my $dir_obj = Octium::O::Dir->instance($dircode);
+    my $day_obj = Octium::O::Days->instance( $daycode, 'B' );
 
     my $actiumdb = env->actiumdb;
     my @place8s = map { $actiumdb->place8($_) } @place4s;
@@ -104,7 +104,7 @@ func _cell_value ( $sheet !, Int $row!, Int $col! ) {
 func _cell_time ( $sheet !, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
     return $EMPTY unless defined $cell;
-    my $time = Actium::Time->from_excel($cell);
+    my $time = Octium::Time->from_excel($cell);
     return $time->timenum;
 }
 
@@ -162,13 +162,13 @@ func _read_trips (
         #if ( exists $trip{DAY} ) {
         #    my $day_string = delete $trip{DAY};
         #    $trip{days_obj}
-        #      = Actium::O::Days->instance_from_string($day_string);
+        #      = Octium::O::Days->instance_from_string($day_string);
         #}
 
         $trip{stoptime_r}
           = [ map { _cell_time( $sheet, $row, $_ ) } $min_stop_col .. $maxcol ];
 
-        my $trip_obj = Actium::O::Sked::Trip->new(%trip);
+        my $trip_obj = Octium::O::Sked::Trip->new(%trip);
 
         push @trips, $trip_obj;
 
@@ -201,7 +201,7 @@ func _read_attribute_names (
         else {
 
             $attribute
-              = Actium::O::Sked::Trip->attribute_of_short_column($shortcol);
+              = Octium::O::Sked::Trip->attribute_of_short_column($shortcol);
             carp "Invalid column $shortcol in $id ignored"
               unless $attribute;
         }
@@ -308,13 +308,13 @@ method add_place_xlsx_sheet (
 
 method xlsx {
 
-    require Actium::Storage::Excel;
+    require Octium::Storage::Excel;
 
     my $stop_workbook_stream;
     open( my $stop_workbook_fh, '>', \$stop_workbook_stream )
       or die "$OS_ERROR";
 
-    my $stop_workbook = Actium::Storage::Excel::new_workbook($stop_workbook_fh);
+    my $stop_workbook = Octium::Storage::Excel::new_workbook($stop_workbook_fh);
     my $stop_text_format = $stop_workbook->actium_text_format;
 
     $self->add_stop_xlsx_sheet(
@@ -333,10 +333,10 @@ sub xlsx_layers {':raw'}
 method _stop_columns {
 
     my $stop_columns
-      = Actium::O::2DArray->new( $self->_stopid_r, $self->_stopplace_r );
+      = Octium::O::2DArray->new( $self->_stopid_r, $self->_stopplace_r );
 
     foreach my $trip ( $self->trips ) {
-        my @times = map { Actium::Time->from_num($_)->apbx } $trip->stoptimes;
+        my @times = map { Octium::Time->from_num($_)->apbx } $trip->stoptimes;
         $stop_columns->push_row(@times);
     }
 
@@ -357,7 +357,7 @@ method _trip_attribute_columns {
     my %shortcol_of = %{$shortcol_of_r};
 
     my $trip_attribute_columns
-      = Actium::O::2DArray->new( [ @shortcol_of{@columns} ] );
+      = Octium::O::2DArray->new( [ @shortcol_of{@columns} ] );
 
     foreach my $trip ( $self->trips ) {
         $trip_attribute_columns->push_row( map { $trip->$_ } @columns );
@@ -370,10 +370,10 @@ method _trip_attribute_columns {
 method _place_columns {
 
     my $place_columns
-      = Actium::O::2DArray->new( $self->_place4_r, $self->_place8_r );
+      = Octium::O::2DArray->new( $self->_place4_r, $self->_place8_r );
 
     foreach my $trip ( $self->trips ) {
-        my @times = map { Actium::Time->from_num($_)->apbx } $trip->placetimes;
+        my @times = map { Octium::Time->from_num($_)->apbx } $trip->placetimes;
 
         $place_columns->push_row(@times);
     }

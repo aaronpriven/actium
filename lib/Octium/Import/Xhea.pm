@@ -1,4 +1,4 @@
-package Actium::Import::Xhea 0.012;
+package Octium::Import::Xhea 0.012;
 
 # Using XML::Pastor, reads XML Hastus Exports for Actium files
 # (exports from Hastus) and imports them into Actium.
@@ -8,16 +8,16 @@ package Actium::Import::Xhea 0.012;
 
 ## no critic (ProhibitAmbiguousNames)
 
-use Actium;
-use Actium::Import::CalculateFields;
-use Actium::O::DateTime;
+use Octium;
+use Octium::Import::CalculateFields;
+use Octium::O::DateTime;
 
 use List::MoreUtils('pairwise');    ### DEP ###
 use Params::Validate(':all');       ### DEP ###
-use Actium::Time;
-use Actium::O::2DArray;
+use Octium::Time;
+use Octium::O::2DArray;
 
-const my $PREFIX => 'Actium::Import::Xhea';
+const my $PREFIX => 'Octium::Import::Xhea';
 
 const my $STOPS     => 'stop';
 const my $STOPS_PC  => 'stop_with_i';
@@ -63,7 +63,7 @@ sub xhea_import {
     my $note_of_trip_r = $p{note_of_trip};
 
     my ( $fieldnames_of_r, $fields_of_r, $adjusted_values_of_r )
-      = Actium::Import::Xhea::load_adjusted($xhea_folder);
+      = Octium::Import::Xhea::load_adjusted($xhea_folder);
 
     if ( exists $fieldnames_of_r->{event_date} ) {
         $note_of_trip_r = _get_trip_notes_from_event_date(
@@ -115,29 +115,29 @@ sub xhea_import {
     } ## tidy end: elsif ($sch_cal_data)
 
     my $tab_strings_r
-      = Actium::Import::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
+      = Octium::Import::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
         $adjusted_values_of_r );
 
     if ( exists( $fieldnames_of_r->{$STOPS} ) ) {
         my ( $new_s_heads_r, $new_s_records_r )
-          = Actium::Import::CalculateFields::hastus_stops_import(
+          = Octium::Import::CalculateFields::hastus_stops_import(
             $fieldnames_of_r->{$STOPS},
             $adjusted_values_of_r->{$STOPS} );
 
         $tab_strings_r->{$STOPS_PC}
-          = Actium::O::2DArray->new($new_s_records_r)->tsv( @{$new_s_heads_r} );
+          = Octium::O::2DArray->new($new_s_records_r)->tsv( @{$new_s_heads_r} );
 
     }
 
     if ( exists( $fieldnames_of_r->{$PLACES} ) ) {
 
         my ( $new_p_heads_r, $new_p_records_r )
-          = Actium::Import::CalculateFields::hastus_places_import(
+          = Octium::Import::CalculateFields::hastus_places_import(
             $fieldnames_of_r->{$PLACES},
             $adjusted_values_of_r->{$PLACES} );
 
         $tab_strings_r->{$PLACES_PC}
-          = Actium::O::2DArray->new($new_p_records_r)->tsv( @{$new_p_heads_r} );
+          = Octium::O::2DArray->new($new_p_records_r)->tsv( @{$new_p_heads_r} );
     }
 
     $tab_folder->write_files_from_hash( $tab_strings_r, qw(tab txt) );
@@ -163,7 +163,7 @@ sub tab_strings {
         my $records_r    = $values_of_r->{$record_name};
 
         $tab_of{$record_name}
-          = Actium::O::2DArray->new($records_r)->tsv( @{$fieldnames_r} );
+          = Octium::O::2DArray->new($records_r)->tsv( @{$fieldnames_r} );
         # = aoa2tsv( $records_r, $fieldnames_r );
 
     }
@@ -251,7 +251,7 @@ sub tab_strings {
 
             my $block = $field{trp_block};
             my $starttime
-              = Actium::Time->from_str( $field{trp_time_start} )->timenum;
+              = Octium::Time->from_str( $field{trp_time_start} )->timenum;
             my $tripkey = "$block/$starttime";
             $cry->over($tripkey);
 
@@ -292,7 +292,7 @@ sub tab_strings {
     } ## tidy end: sub adjust_sch_cal
 }
 
-const my @HOLIDAYS => map Actium::O::DateTime->new( strptime => $_ ),
+const my @HOLIDAYS => map Octium::O::DateTime->new( strptime => $_ ),
   qw/
   2018-09-03 2018-11-22 2018-12-25
   2019-01-01 2019-01-21 2019-02-18 2019-05-27
@@ -310,7 +310,7 @@ sub _get_trip_notes_from_event_date {
 
     my $cry = cry('Creating trip calendar notes from XHEA event dates');
 
-    require Actium::O::DateTime;
+    require Octium::O::DateTime;
     require DateTime::Event::ICal;
 
     my %p = u::validate(
@@ -338,15 +338,15 @@ sub _get_trip_notes_from_event_date {
         my ( $date_str, $event, $status )
           = @field{qw/evtd_date evtd_event evtd_status/};
 
-        my $dt = $dt_cache{$date_str} //= Actium::O::DateTime->new($date_str);
+        my $dt = $dt_cache{$date_str} //= Octium::O::DateTime->new($date_str);
 
-        next if Actium::fne( $status, 'on' );
+        next if Octium::fne( $status, 'on' );
 
         push $dts_of_event{$event}->@*, $dt;
     }
 
-    my $start = Actium::O::DateTime->oldest_date( values %dt_cache );
-    my $end   = Actium::O::DateTime->newest_date( values %dt_cache );
+    my $start = Octium::O::DateTime->oldest_date( values %dt_cache );
+    my $end   = Octium::O::DateTime->newest_date( values %dt_cache );
 
     my ( %quantity_of_dow, %recurrence_set_of );
 
@@ -458,7 +458,7 @@ sub _get_trip_notes_from_event_date {
           = grep { $field{ $tripfield_of_day{$_} } == 1 } 1 .. 7;
         my %is_a_trip_operating_day = map { $_ => 1 } @trip_operating_days;
 
-        my $cachekey = "$event:" . Actium::joinempty(@trip_operating_days);
+        my $cachekey = "$event:" . Octium::joinempty(@trip_operating_days);
         if ( exists $notecache{$cachekey} ) {
             $note_of_trip{$trip_number} = $notecache{$cachekey};
             next TRIP;
@@ -488,17 +488,17 @@ sub _get_trip_notes_from_event_date {
         if (@all_or_mostly_on_days) {
 
             if ( @all_or_mostly_on_days < 4 ) {
-                $noteletter = Actium::joinempty( map { $NOTELETTER_DOW[$_] }
+                $noteletter = Octium::joinempty( map { $NOTELETTER_DOW[$_] }
                       @all_or_mostly_on_days );
             }
             elsif (
                 @all_or_mostly_on_days == 4
-                and Actium::all { 1 <= $_ and $_ <= 5 }
+                and Octium::all { 1 <= $_ and $_ <= 5 }
                 @all_or_mostly_on_days
               )
             {
-                my $dow = Actium::first {
-                    not Actium::in( $_, @all_or_mostly_on_days )
+                my $dow = Octium::first {
+                    not Octium::in( $_, @all_or_mostly_on_days )
                 }
                 1 .. 5;
                 $noteletter = 'X' . $NOTELETTER_DOW[$dow];
@@ -512,7 +512,7 @@ sub _get_trip_notes_from_event_date {
 
             if ( @all_or_mostly_on_days == @all_on_days ) {
                 $note_text
-                  .= 'every ' . Actium::joinseries( @NOTE_DOW[@all_on_days] );
+                  .= 'every ' . Octium::joinseries( @NOTE_DOW[@all_on_days] );
             }
             else {
                 $note_text .= 'every ';
@@ -526,7 +526,7 @@ sub _get_trip_notes_from_event_date {
                         my @except_dates = map { $_->format_cldr("MMM. d") }
                           $except_days{$dow}->@*;
                         $every
-                          .= ' except ' . Actium::joinseries(@except_dates);
+                          .= ' except ' . Octium::joinseries(@except_dates);
                     }
                     push @everies, $every;
                 }
@@ -580,7 +580,7 @@ sub _get_trip_notes_from_event_date {
     } ## tidy end: TRIP: foreach \my @trip_record(@trip_records)
 
     my $dumpfh = $signup->open_write('note_of_trip.dump');
-    say $dumpfh Actium::dumpstr(%note_of_trip);
+    say $dumpfh Octium::dumpstr(%note_of_trip);
     close $dumpfh;
 
     return \%note_of_trip;
@@ -1247,7 +1247,7 @@ sub _get_xhea_filenames {
 
         my $cry = cry("Loading XHEA files to memory");
 
-        require Actium::Storage::TabDelimited;
+        require Octium::Storage::TabDelimited;
 
         my ( %trp, %pat, %tps, %pts, %plc );
 
@@ -1276,7 +1276,7 @@ sub _get_xhea_filenames {
 
         };
 
-        Actium::Storage::TabDelimited::read_tab_files(
+        Octium::Storage::TabDelimited::read_tab_files(
             {   files    => ['trip_pattern.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $pattern_callback,
@@ -1316,7 +1316,7 @@ sub _get_xhea_filenames {
 
         };
 
-        Actium::Storage::TabDelimited::read_tab_files(
+        Octium::Storage::TabDelimited::read_tab_files(
             {   files    => ['trip.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $trip_callback,
@@ -1345,10 +1345,10 @@ sub _get_xhea_filenames {
             $tps{$patid}[$position]{IsATimingPoint} = $place ? 1 : 0;
 
             $pts{$tripnum}[$position]
-              = Actium::Time->from_str($passing_time)->apbx_noseparator;
+              = Octium::Time->from_str($passing_time)->apbx_noseparator;
         };
 
-        Actium::Storage::TabDelimited::read_tab_files(
+        Octium::Storage::TabDelimited::read_tab_files(
             {   files    => ['trip_stop.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $stop_callback,
@@ -1367,7 +1367,7 @@ sub _get_xhea_filenames {
 
         };
 
-        Actium::Storage::TabDelimited::read_tab_files(
+        Octium::Storage::TabDelimited::read_tab_files(
             {   files    => ['place.txt'],
                 folder   => $xhea_tab_folder,
                 callback => $place_callback,
@@ -1377,7 +1377,7 @@ sub _get_xhea_filenames {
         my $signup = $hasi_folder->signup;
 
         #my $dump_fh = $hasi_folder->open_write("$signup.dump");
-        #say $dump_fh Actium::dumpstr (\%pat, \%tps, \%trp, \%pts);
+        #say $dump_fh Octium::dumpstr (\%pat, \%tps, \%trp, \%pts);
         #close $dump_fh;
 
         $cry->done;
@@ -1491,7 +1491,7 @@ __END__
 
 =head1 NAME
 
-Actium::Import::Xhea - Routines for loading and processing XML Hastus
+Octium::Import::Xhea - Routines for loading and processing XML Hastus
 exports
 
 =head1 VERSION
@@ -1500,13 +1500,13 @@ This documentation refers to version 0.009
 
 =head1 SYNOPSIS
 
- use Actium::O::Folder;
- use Actium::Import::Xhea;
+ use Octium::O::Folder;
+ use Octium::Import::Xhea;
  
- my $folder = Actium::O::Folder->new("/path/to/folder");
+ my $folder = Octium::O::Folder->new("/path/to/folder");
  # folder should have paired xsd and xml files
  
- my ($fields_r, $values_r) = Actium::Import::Xhea::load_adjusted ($folder);
+ my ($fields_r, $values_r) = Octium::Import::Xhea::load_adjusted ($folder);
  
  my $recordname = 'place';
  my $fieldname = 'plc_identifier';
@@ -1515,7 +1515,7 @@ This documentation refers to version 0.009
  
 =head1 DESCRIPTION
 
-Actium::Import::Xhea is a series of routines for loading XML Hastus
+Octium::Import::Xhea is a series of routines for loading XML Hastus
 exports and  processing them into perl data structures. It uses
 L<XML::Pastor|XML::Pastor> to process the XSD and read XML files, and
 so has the limitations of that  module.
@@ -1530,7 +1530,7 @@ with all others, is ignored.
 =head1 SUBROUTINES 
 
 No subroutines are exported. Use the fully qualified name to invoke
-them. (e.g., "Actium::Import::Xhea::load_adjusted($folder)")
+them. (e.g., "Octium::Import::Xhea::load_adjusted($folder)")
 
 =over
 
@@ -1539,7 +1539,7 @@ them. (e.g., "Actium::Import::Xhea::load_adjusted($folder)")
 This routine runs the other routines, performing a complete XHEA import
 process. First, it loads and then adjusts the XHEA files  (see load and
 adjust_for_basetype below). Then, using routines in 
-Actium::Import::CalculateFields, it creates the updated i_ fields. 
+Octium::Import::CalculateFields, it creates the updated i_ fields. 
 Finally, it saves those files in the "tab" folder, and creates a
 "records.json"  file storing  the field names and assoocated
 information.
@@ -1564,8 +1564,8 @@ The folder to store the tab files in.
 
 =item B<load(I<folderobj>)>
 
-This routine takes a folder object (such as an  Actium::O::Folder or
-Actium::O::Folders::Signup object ), looks for paired xml and xsd files
+This routine takes a folder object (such as an  Octium::O::Folder or
+Octium::O::Folders::Signup object ), looks for paired xml and xsd files
 in that folder, and returns three structs: one contains a summary of
 the fields and records, one contains further information about the
 records and fields, and the other contains the values from the file.
@@ -1584,7 +1584,7 @@ record types or anything like that). Names of all record types across
 all XML files loaded much be unique.
 
  my ($fieldnames_r, $fields_r, $values_r) = 
-    Actium::Import::Xhea::load($folder);
+    Octium::Import::Xhea::load($folder);
 
 The structure of $fieldnames_r will be:
 

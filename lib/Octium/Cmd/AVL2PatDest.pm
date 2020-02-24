@@ -1,12 +1,12 @@
-package Actium::Cmd::AVL2PatDest 0.011;
+package Octium::Cmd::AVL2PatDest 0.011;
 
-use Actium;
+use Octium;
 
 use Storable();    ### DEP ###
 use List::Util('uniq');
 
-use Actium::Set('ordered_union');
-use Actium::Sorting::Line(qw/byline sortbyline/);
+use Octium::Set('ordered_union');
+use Octium::Sorting::Line(qw/byline sortbyline/);
 
 sub HELP {
 

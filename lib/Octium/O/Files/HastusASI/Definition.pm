@@ -1,4 +1,4 @@
-package Actium::O::Files::HastusASI::Definition 0.012;
+package Octium::O::Files::HastusASI::Definition 0.012;
 
 # Definition of Hastus ASI tables and file types
 
@@ -9,8 +9,8 @@ use MooseX::Singleton; ### DEP ###
 
 use English ('-no_match_vars'); ### DEP ###
 
-use Actium::O::Files::HastusASI::Filetype;
-use Actium::O::Files::SQLite::Table;
+use Octium::O::Files::HastusASI::Filetype;
+use Octium::O::Files::SQLite::Table;
 
 #########################################
 ### DEFINITION
@@ -313,7 +313,7 @@ attribute.
       or die "Can't close internal variable for reading: $OS_ERROR";
 
     my %tableobjs
-      = map { $_ => Actium::O::Files::SQLite::Table->new( $table_spec_of{$_} ) }
+      = map { $_ => Octium::O::Files::SQLite::Table->new( $table_spec_of{$_} ) }
       keys %table_spec_of;
 
     return \%tableobjs;
@@ -332,7 +332,7 @@ sub _build_filetype_of_r {
 
     my %filetypeobj_of;
     foreach my $filetype ( keys %tables_of ) {
-        $filetypeobj_of{$filetype} = Actium::O::Files::HastusASI::Filetype->new(
+        $filetypeobj_of{$filetype} = Octium::O::Files::HastusASI::Filetype->new(
             id       => $filetype,
             tables_r => $tables_of{$filetype},
         );
@@ -351,7 +351,7 @@ has '_table_of_r' => (
     init_arg => undef,
     is       => 'ro',
     traits   => ['Hash'],
-    isa      => 'HashRef[Actium::O::Files::SQLite::Table]',
+    isa      => 'HashRef[Octium::O::Files::SQLite::Table]',
     builder  => '_build_table_of_r',
     lazy     => 1,
     handles  => {
@@ -365,7 +365,7 @@ has '_filetype_of_r' => (
     init_arg => undef,
     is       => 'ro',
     traits   => ['Hash'],
-    isa      => 'HashRef[Actium::O::Files::HastusASI::Filetype]',
+    isa      => 'HashRef[Octium::O::Files::HastusASI::Filetype]',
     builder  => '_build_filetype_of_r',
     lazy     => 1,
     handles  => {
@@ -457,7 +457,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Files::HastusASI::Definition - singleton object/class for Hastus AVL 
+Octium::O::Files::HastusASI::Definition - singleton object/class for Hastus AVL 
 Standard Interface 
 
 =head1 NOTE
@@ -471,18 +471,18 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::O::Files::HastusASI::Definition;
- my $definition = Actium::O::Files::HastusASI::Definition->instance;
+ use Octium::O::Files::HastusASI::Definition;
+ my $definition = Octium::O::Files::HastusASI::Definition->instance;
  
  my @tables = $defintion->tables;
  
 =head1 DESCRIPTION
 
-Actium::O::Files::HastusASI::Definition is a singleton class containing data
+Octium::O::Files::HastusASI::Definition is a singleton class containing data
 about the definition of Hastus ASI files. It builds the data from an embedded
 string and creates the objects when necessary.
 
-It is private to the L<Actium::O::Files::HastusASI|Actium::O::Files::HastusASI> 
+It is private to the L<Octium::O::Files::HastusASI|Octium::O::Files::HastusASI> 
 module. 
 
 =head1 METHODS
@@ -492,14 +492,14 @@ module.
 =item B<instance>
 
 Use the B<instance> class method to obtain the object: 
-C<Actium::O::Files::HastusASI::Definition-E<gt>instance>. (This is unlike
+C<Octium::O::Files::HastusASI::Definition-E<gt>instance>. (This is unlike
 standard Moose classes and most other perl classes, which create
 a constructor called "new".)
 
 =item B<tables>
 
 Returns a list of the identifiers for each table. See L<I<id> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/id>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/id>.
 
 =item B<is_a_table(I<table>)>
 
@@ -510,76 +510,76 @@ of the above list).
 
 Returns a list of the identifiers for each filetype. 
 See L<I<id> in
-Actium::O::Files::HastusASI::Filetype|Actium::O::Files::HastusASI::Filetype/id>.
+Octium::O::Files::HastusASI::Filetype|Octium::O::Files::HastusASI::Filetype/id>.
 
 =item B<key_of_table (I<table_id>)>
 
 Returns the key column of the specified table.
 See L<I<key> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/key>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/key>.
 
 =item B<columns_of_table (I<table_id>)>
 
 Returns a list of the columns of the specified table.
 See L<I<columns> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/columns>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/columns>.
 
 =item B<tables_of_filetype (I<filetype_id>)>
 
 Returns a list of the tables of the specified filetype.
 See L<I<tables> in
-Actium::O::Files::HastusASI::Filetype|Actium::O::Files::HastusASI::Filetype/tables>.
+Octium::O::Files::HastusASI::Filetype|Octium::O::Files::HastusASI::Filetype/tables>.
 
 =item B<filetype_of_table (I<table_id>)>
 
 Returns the filetype of the specified table.
 See L<I<filetype> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/filetype>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/filetype>.
 
 =item B<parent_of_table (I<table_id>)>
 
 Returns the parent of the specified table, if any.
 See L<I<parent> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/parent>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/parent>.
 
 =item B<has_repeating_final_column (I<table_id>)>
 
 Returns a boolean value representing whether the final column has repeated
 values (instead of just one value). 
 See L<I<has_repeating_final_column> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/has_repeating_final_column>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/has_repeating_final_column>.
 
 =item B<has_composite_key (I<table_id>)>
 
 Returns whether the key column is a composite of two or more other columns.
 See L<I<has_composite_key> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/has_composite_key>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/has_composite_key>.
 
 =item B<create_query_of_table (I<table_id>)>
 
 Returns the SQLite command creating this table.
 See L<I<sql_createcmd> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/sql_createcmd>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/sql_createcmd>.
 
 =item B<insert_query_of_table (I<table_id>)>
 
 Returns the SQLite command inserting a row of this table into the database.
 See L<I<sql_insertcmd> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/sql_insertcmd>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/sql_insertcmd>.
 
 =item B<index_query_of_table (I<table_id>)>
 
 Returns the SQLite command creating the index of the specified table based on the key
 column.
 See L<I<sql_idxcmd> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/sql_idxcmd>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/sql_idxcmd>.
 
 =item B<key_components_idxs (I<table_id>)>
 
 Returns the column indexes (what order they are in the columns) of 
 the components that make up the key of the specified table.
 See L<I<key_components_idxs> in
-Actium::O::Files::SQLite::Table|Actium::O::Files::SQLite::Table/key_components_idxs>.
+Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/key_components_idxs>.
 
 =back
 
@@ -606,9 +606,9 @@ entries (which it opens as a file). An unlikely error.
 
 =item Moose
 
-=item Actium::O::Files::HastusASI::Filetype
+=item Octium::O::Files::HastusASI::Filetype
 
-=item Actium::O::Files::SQLite::Table
+=item Octium::O::Files::SQLite::Table
 
 =back
 

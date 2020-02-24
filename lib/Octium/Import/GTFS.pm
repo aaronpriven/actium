@@ -1,6 +1,6 @@
-package Actium::Import::GTFS 0.012;
+package Octium::Import::GTFS 0.012;
 
-use Actium;
+use Octium;
 
 use Text::CSV('csv');    ### DEP ###
 
@@ -9,7 +9,7 @@ use Sub::Exporter -setup =>
 
 const my $PHYLUM => 'GTFS';
 
-func array_read_gtfs ( Actium::O::Folders::Signup : $signup, Str : $file ) {
+func array_read_gtfs ( Octium::O::Folders::Signup : $signup, Str : $file ) {
 
     my $filespec = gtfs_filespec( signup => $signup, file => $file );
     \my @gtfs = csv( in => $filespec, encoding => 'UTF-8' );
@@ -26,12 +26,12 @@ func array_read_gtfs ( Actium::O::Folders::Signup : $signup, Str : $file ) {
 }
 
 func hash_read_gtfs (
-    Actium::O::Folders::Signup :$signup, Str :$file, Str :$key? ) {
+    Octium::O::Folders::Signup :$signup, Str :$file, Str :$key? ) {
     my $filespec = gtfs_filespec( signup => $signup, file => $file );
     return csv( in => $filespec, encoding => 'UTF-8', key => $key );
 }
 
-func gtfs_filespec ( Actium::O::Folders::Signup : $signup, Str : $file ) {
+func gtfs_filespec ( Octium::O::Folders::Signup : $signup, Str : $file ) {
     my $folder = $signup->subfolder($PHYLUM);
 
     my $filespec = $folder->make_filespec($file);

@@ -1,4 +1,4 @@
-package Actium::Cmd::Time 0.012;
+package Octium::Cmd::Time 0.012;
 
 # Routines for formatting times and parsing formatted times
 
@@ -7,7 +7,7 @@ use strict;
 
 use 5.014;
 
-use Actium::Time;
+use Octium::Time;
 
 ###########################################
 ## COMMAND
@@ -48,13 +48,13 @@ sub START {
         if ( $time =~ m/\A [-n] ? \d+ \z/sx ) {    # is it a timenum?
             $time =~ s/n/-/g;
 
-            my $obj = Actium::Time::->from_num($time);
+            my $obj = Octium::Time::->from_num($time);
 
             say "$time -> AP: ", $obj->ap, " or APBX: ", $obj->apbx,
               " or T24: ", $obj->t24;
         }
         else {
-            my $obj = Actium::Time::->from_str($time);
+            my $obj = Octium::Time::->from_str($time);
             say "$time -> ", $obj->timenum;
         }
 

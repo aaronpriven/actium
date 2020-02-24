@@ -1,7 +1,7 @@
-package Actium::Cmd::CompareSkeds 0.014;
+package Octium::Cmd::CompareSkeds 0.014;
 
-use Actium;
-use Actium::O::Sked::Collection;
+use Octium;
+use Octium::O::Sked::Collection;
 
 sub OPTIONS {
     return (
@@ -14,15 +14,15 @@ sub OPTIONS {
 
 sub START {
 
-    my $signup     = Actium::env->signup;
-    my $old_signup = Actium::env->oldsignup;
+    my $signup     = Octium::env->signup;
+    my $old_signup = Octium::env->oldsignup;
 
-    my $collection = Actium::O::Sked::Collection->load_storable(
+    my $collection = Octium::O::Sked::Collection->load_storable(
         signup     => $signup,
         collection => 'received'
     );
 
-    my $oldcollection = Actium::O::Sked::Collection->load_storable(
+    my $oldcollection = Octium::O::Sked::Collection->load_storable(
         signup     => $old_signup,
         collection => 'received'
     );
@@ -45,8 +45,8 @@ sub START {
 
 __END__
 
-use Actium;
-use Actium::O::Folder;
+use Octium;
+use Octium::O::Folder;
 
 use File::Copy ();
 use List::Compare;
@@ -74,14 +74,14 @@ sub START {
     my $oldsignup = $old->signup;
     $oldraw = $old->subfolder( 'rawskeds', { must_exist => 1 } );
 
-    my $tempfolder = Actium::O::Folder->new('/tmp/actium_compareskeds');
+    my $tempfolder = Octium::O::Folder->new('/tmp/actium_compareskeds');
     $oldtempfolder = $tempfolder->subfolder($oldsignup);
     $newtempfolder = $tempfolder->subfolder($newsignup);
 
     my $base = $new->base;
-    my $script_folder = Actium::O::Folder->new( $base, 'diffs' );
+    my $script_folder = Octium::O::Folder->new( $base, 'diffs' );
     $diff_folder
-      = Actium::O::Folder->new( $base, 'diffs',
+      = Octium::O::Folder->new( $base, 'diffs',
         "$oldsignup-$newsignup-ssdiff" );
 
     my $cry = cry("Comparing schedules: $oldsignup and $newsignup");

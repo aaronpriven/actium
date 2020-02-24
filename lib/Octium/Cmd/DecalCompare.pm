@@ -1,7 +1,7 @@
-package Actium::Cmd::DecalCompare 0.012;
+package Octium::Cmd::DecalCompare 0.012;
 
-use Actium;
-use Actium::Sorting::Line ('sortbyline');
+use Octium;
+use Octium::Sorting::Line ('sortbyline');
 
 use autodie;         ### DEP ###
 use Data::Dumper;    ### DEP ###

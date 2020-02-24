@@ -1,6 +1,6 @@
-package Actium::CLI::Option 0.011;
+package Octium::CLI::Option 0.011;
 
-use Actium ('class');
+use Octium ('class');
 
 # it will look for, in this order:
 
@@ -18,7 +18,7 @@ use Actium ('class');
 
 around BUILDARGS ( 
    $orig, $class:
-   Actium::CLI :$cmdenv!,
+   Octium::CLI :$cmdenv!,
    Str :$envvar,
    Str :$config_section = '_',
    Str :$config_key,

@@ -1,14 +1,14 @@
-package Actium::Cmd::FinalizeSkeds 0.012;
+package Octium::Cmd::FinalizeSkeds 0.012;
 
-use Actium;
-use Actium::O::Sked::Collection;
+use Octium;
+use Octium::O::Sked::Collection;
 
 sub OPTIONS {
     return ( 'signup', 'actiumdb' );
 }
 
 sub START {
-    Actium::O::Sked::Collection::->finalize_skeds;
+    Octium::O::Sked::Collection::->finalize_skeds;
 }
 
 1;
@@ -19,7 +19,7 @@ __END__
 
 =head1 NAME
 
-Actium::Cmd::FinalizeSkeds - CLI command to cook schedules
+Octium::Cmd::FinalizeSkeds - CLI command to cook schedules
 
 =head1 VERSION
 

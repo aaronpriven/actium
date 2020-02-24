@@ -1,12 +1,12 @@
-package Actium::O::Dir 0.012;
+package Octium::O::Dir 0.012;
 
 # Object representing the scheduled direction (of a trip, or set of trips)
 
-use Actium ('class');
+use Octium ('class');
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
-use Actium::Types qw<DirCode>;
+use Octium::Types qw<DirCode>;
 
 # if you supply this with "1", it's going to think you mean Hastus AVL "1"
 # (i.e., "SB") instead of "D1".
@@ -197,7 +197,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Dir - Object for holding scheduled direction
+Octium::O::Dir - Object for holding scheduled direction
 
 =head1 VERSION
 
@@ -205,9 +205,9 @@ This documentation refers to version 0.010
 
 =head1 SYNOPSIS
 
- use Actium::O::Dir;
+ use Octium::O::Dir;
  
- my $dir = Actium::O::Dir->instance ('WB');
+ my $dir = Octium::O::Dir->instance ('WB');
  
  say $dir->as_direction; # "West"
  say $days->as_bound; # "Westbound"
@@ -225,9 +225,9 @@ objects are immutable.
 
 =over
 
-=item B<< Actium::O::Dir->instance(I<dircode>) >>
+=item B<< Octium::O::Dir->instance(I<dircode>) >>
 
-The object is constructed using "Actium::O::Dir->instance".
+The object is constructed using "Octium::O::Dir->instance".
 
 It accepts a direction string. In general, the directions are as
 follows:
@@ -273,11 +273,11 @@ it accepts:
   We              West
 
 
-=item B<< Actium::O::Dir->new(I<dircode>) >>
+=item B<< Octium::O::Dir->new(I<dircode>) >>
 
 B<< Do not use this method. >>
 
-This method is used internally by Actium::O::Days to create a new
+This method is used internally by Octium::O::Days to create a new
 object and insert it into the cache used by instance(). There should
 never be a reason to create more than one object with the same
 arguments.
@@ -331,7 +331,7 @@ I<instance()>, this puts  west before east.
 
 =item Moose
 
-=item Actium::Types
+=item Octium::Types
 
 =back
 

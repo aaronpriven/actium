@@ -1,6 +1,6 @@
-package Actium::O::2DArray 0.014;
+package Octium::O::2DArray 0.014;
 
-use Actium;
+use Octium;
 
 use Params::Validate (qw/validate :types/);
 
@@ -1019,7 +1019,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::2DArray - Methods for simple array-of-arrays data structures
+Octium::O::2DArray - Methods for simple array-of-arrays data structures
 
 =head1 VERSION
 
@@ -1027,8 +1027,8 @@ This documentation refers to version 0.013
 
 =head1 SYNOPSIS
 
- use Actium::O::2DArray;
- my $array2d = Actium::O::2DArray->new( [ qw/a b c/ ] , [ qw/w x y/ ] );
+ use Octium::O::2DArray;
+ my $array2d = Octium::O::2DArray->new( [ qw/a b c/ ] , [ qw/w x y/ ] );
 
  # $array2d contains
  
@@ -1045,7 +1045,7 @@ This documentation refers to version 0.013
  
 =head1 DESCRIPTION
 
-Actium::O::2DArray is a module that adds useful methods to Perl's
+Octium::O::2DArray is a module that adds useful methods to Perl's
 standard array of arrays ("AoA") data structure, as described in 
 L<Perl's perldsc documentation|perldsc>.  That is, an array that
 contains other arrays:
@@ -1068,7 +1068,7 @@ implementation of multidimensional arrays in Perl makes it difficult to
 access, for example, a single column, or a two-dimensional slice,
 without writing lots of extra code.
 
-Actium::O::2DArray uses "row" for the first dimension, and "column" or
+Octium::O::2DArray uses "row" for the first dimension, and "column" or
 "col"  for the second dimension.
 
 Because this object is just an array of arrays, most of the methods
@@ -1093,7 +1093,7 @@ Some general notes:
 =item *
 
 In all cases where an array of arrays is specified (I<aoa_ref>), this
-can be either an Actium::O::2DArray object or an array of arrays data
+can be either an Octium::O::2DArray object or an array of arrays data
 structure  that is not an object.
 
 =item *
@@ -1110,23 +1110,23 @@ return values is ommitted in void context.
 
 =item B<new( I<row_ref>, I<row_ref>...)>
 
-Returns a new Actium::O::2DArray object.  It accepts a list of array 
+Returns a new Octium::O::2DArray object.  It accepts a list of array 
 references as arguments, which become the rows of the object.
 
 =item B<bless(I<aoa_ref>)>
 
 Takes an existing non-object array of arrays and returns an 
-Actium::O::2DArray object. Returns the new object.
+Octium::O::2DArray object. Returns the new object.
 
 Note that this blesses the original array, so any other references to
 this  data structures will become a reference to the object, too.
 
 =item B<new_across($chunksize, I<element>, I<element>, ...)>
 
-Takes a flat list and returns it as an Actium::O::2DArray object, 
+Takes a flat list and returns it as an Octium::O::2DArray object, 
 where each row has the number of elements specified. So, for example,
 
- Actium::O::2DArray->new_across (3, qw/a b c d e f g h i j/)
+ Octium::O::2DArray->new_across (3, qw/a b c d e f g h i j/)
  
 returns
 
@@ -1139,11 +1139,11 @@ returns
   
 =item B<new_down($chunksize, I<element>, I<element>, ...)>
 
-Takes a flat list and returns it as an Actium::O::2DArray object, 
+Takes a flat list and returns it as an Octium::O::2DArray object, 
 where each column has the number of elements specified. So, for
 example,
 
- Actium::O::2DArray->new_down (3, qw/a b c d e f g h i j/)
+ Octium::O::2DArray->new_down (3, qw/a b c d e f g h i j/)
  
 returns
 
@@ -1175,7 +1175,7 @@ The width of the terminal. If not specified, defaults to 80.
 =back
 
 The method determines the number of columns required, creates an
-Actium::O::2DArray object of that number of columns using new_down, and
+Octium::O::2DArray object of that number of columns using new_down, and
 then returns first the object and then the results of ->tabulate() on
 that object.
 
@@ -1184,14 +1184,14 @@ that object.
 =head2 CLASS/OBJECT METHODS
 
 All class/object methods can be called as an object method on a blessed
-Actium::O::2DArray object:
+Octium::O::2DArray object:
 
   $self->clone();
   
 Or as a class method, if one supplies the array of arrays as the first
 argument:
 
-  Actium::O::2DArray->clone($self);
+  Octium::O::2DArray->clone($self);
   
 In the latter case, the array of arrays need not be blessed.
 
@@ -1303,12 +1303,12 @@ Returns the elements in the given column.
 
 =item B<< rows(I<row_idx, row_idx...>) >>
 
-Returns a new Actium::O::2DArray object with all the columns of the 
+Returns a new Octium::O::2DArray object with all the columns of the 
 specified rows.
 
 =item B<cols(I<col_idx>, <col_idx>...)>
 
-Returns a new Actium::O::2DArray object with all the  rows of the
+Returns a new Octium::O::2DArray object with all the  rows of the
 specified columns.
 
 =item B<shift_row()>
@@ -1405,12 +1405,12 @@ list of the elements of that column.
 =item B<del_rows(I<row_idx>, I<row_idx>...)>
 
 Removes the rows of the object specified by the indices. Returns an
-Actium::O::2DArray object of those rows.
+Octium::O::2DArray object of those rows.
 
 =item B<del_cols(I<col_idx>, I<col_idx>...)>
 
 Removes the columns of the object specified by the indices. Returns an
-Actium::O::2DArray object of those columns.
+Octium::O::2DArray object of those columns.
 
 =item B<slice(I<firstcol_idx>, I<lastcol_idx>, I<firstrow_idx>, I<lastrow_idx>)>
 
@@ -1418,7 +1418,7 @@ Takes a two-dimensional slice of the object; like cutting a rectangle
 out of the object.
 
 In void context, alters the original object, which then will  contain
-only the area specified; otherwise, creates a new Actium::O::2DArray 
+only the area specified; otherwise, creates a new Octium::O::2DArray 
 object and returns the object.
 
 =item B<transpose()>
@@ -1427,14 +1427,14 @@ Transposes the object: the elements that used to be in rows are now in
 columns, and vice versa.
 
 In void context, alters the original object. Otherwise, creates a new
-Actium::O::2DArray object and returns the object.
+Octium::O::2DArray object and returns the object.
 
 =item B<prune()>
 
 Occasionally an array of arrays can end up with final rows or columns
 that are entirely undefined. For example:
 
- my $obj = Actium::O::2DArray->new ( [ qw/a b c/]  , [ qw/f g h/ ]);
+ my $obj = Octium::O::2DArray->new ( [ qw/a b c/]  , [ qw/f g h/ ]);
  $obj->[0][4] = 'e';
  $obj->[3][0] = 'k';
  
@@ -1458,7 +1458,7 @@ The C<prune> method eliminates these entirely undefined or empty
 columns  and rows at the end of the object.
 
 In void context, alters the original object. Otherwise, creates a new
-Actium::O::2DArray object and returns the object.
+Octium::O::2DArray object and returns the object.
 
 =item B<prune_empty()>
 
@@ -1486,7 +1486,7 @@ string, or zero:
  $obj->prune_callback($callback);
 
 In void context, alters the original object. Otherwise, creates a new
-Actium::O::2DArray object and returns the object.
+Octium::O::2DArray object and returns the object.
 
 =item B<apply(I<coderef>)>
 
@@ -1502,7 +1502,7 @@ If an entry in the array is undefined, it will still be passed to the
 callback.
 
 In void context, alters the original object. Otherwise, creates a new
-Actium::O::2DArray object and returns the object.
+Octium::O::2DArray object and returns the object.
 
 For each invocation of the callback, @_ is set to the row and column
 indexes (0-based).
@@ -1513,21 +1513,21 @@ Removes white space, if present, from the beginning and end  of each
 element in the array.
 
 In void context, alters the original object. Otherwise, creates a new
-Actium::O::2DArray object and returns the object.
+Octium::O::2DArray object and returns the object.
 
 =item B<trim_right()>
 
 Removes white space from the end of each element in the array.
 
 In void context, alters the original object. Otherwise, creates a new
-Actium::O::2DArray object and returns the object.
+Octium::O::2DArray object and returns the object.
 
 =item B<define()>
 
 Replaces undefined values with the empty string.
 
 In void context, alters the original object. Otherwise, creates a new
-Actium::O::2DArray object and returns the object.
+Octium::O::2DArray object and returns the object.
 
 =item B<hash_of_rows(I<col_idx>)>
 
@@ -1540,7 +1540,7 @@ keys.
 
 So:
 
- $obj = Actium::O::2DArray->new([qw/a 1 2/],[qw/b 3 4/]);
+ $obj = Octium::O::2DArray->new([qw/a 1 2/],[qw/b 3 4/]);
  $hashref = $obj->hash_of_rows(0);
  # $hashref = { a => [ '1' , '2' ]  , b => [ '3' , '4' ] }
 
@@ -1551,7 +1551,7 @@ the values are not whole rows but only single elements.
 
 So:
 
- $obj = Actium::O::2DArray->new([qw/a 1 2/],[qw/b 3 4/]);
+ $obj = Octium::O::2DArray->new([qw/a 1 2/],[qw/b 3 4/]);
  $hashref = $obj->hash_of_row_elements(0, 1);
  # $hashref = { a => '1' , b => '3' }
  
@@ -1575,7 +1575,7 @@ C<tabulate()>.  If nothing is passed, a single space will be used.
 
 So, for example,
 
- $obj = Actium::O::2DArray->new([qw/a bbb cc/],[qw/dddd e f/]);
+ $obj = Octium::O::2DArray->new([qw/a bbb cc/],[qw/dddd e f/]);
  $arrayref = $obj->tabulate();
  
  # $arrayref = [ 'a    bbb cc' ,
@@ -1677,7 +1677,7 @@ element of the data, but frequently these are stored separately.
 
 =over
 
-=item Arguments to Actium::O::2DArray->new must be arrayrefs (rows)
+=item Arguments to Octium::O::2DArray->new must be arrayrefs (rows)
 
 A non-arrayref was passed to the new constructor.
 
@@ -1686,24 +1686,24 @@ A non-arrayref was passed to the new constructor.
 An object of another class was passed to the bless() method. Only pass
 unblessed (non-object) data structures to bless().
 
-=item Arguments to Actium::O::2DArray->slice must not be negative
+=item Arguments to Octium::O::2DArray->slice must not be negative
 
 A negative row or column index was provided. This routine does not
 handle that.
 
-=item Sheet $sheet_requested not found in $xlsx in Actium::O::2DArray->new_from_xlsx
+=item Sheet $sheet_requested not found in $xlsx in Octium::O::2DArray->new_from_xlsx
 
 Spreadsheet::ParseExcel returned an error indicating that the sheet
 requested was not found.
 
-=item File type unrecognized in $filename passed to Actium::O::2DArray->new_from_file
+=item File type unrecognized in $filename passed to Octium::O::2DArray->new_from_file
 
 A file other than an Excel (XLSX) or tab-delimited text files (with
 tab,  tsv, or txt extensions) are recognized in ->new_from_file.
 
-=item No file specified in Actium::O::2DArray->new_from_file
+=item No file specified in Octium::O::2DArray->new_from_file
 
-=item No file specified in Actium::O::2DArray->new_from_xlsx
+=item No file specified in Octium::O::2DArray->new_from_xlsx
 
 No filename, or a blank filename, was passed to these methods.
 
@@ -1713,11 +1713,11 @@ No filename, or a blank filename, was passed to these methods.
 
 =over
 
-=item Tab character found in array during Actium::O::2Darray->tsv; converted to visible symbol
+=item Tab character found in array during Octium::O::2Darray->tsv; converted to visible symbol
 
-=item Line feed character found in array during Actium::O::2Darray->tsv; converted to visible symbol
+=item Line feed character found in array during Octium::O::2Darray->tsv; converted to visible symbol
 
-=item Carriage return character found in array during Actium::O::2Darray->tsv; converted to visible symbol
+=item Carriage return character found in array during Octium::O::2Darray->tsv; converted to visible symbol
 
 An invalid character for TSV data was found in the array when creating 
 TSV data. It was converted to the Unicode visible symbol for that

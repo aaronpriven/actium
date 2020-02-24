@@ -1,10 +1,10 @@
-package Actium::Cmd::Flagspecs 0.014;
+package Octium::Cmd::Flagspecs 0.014;
 
-use Actium;
-use Actium::Set (qw/ordered_union distinguish/);
-use Actium::DaysDirections(':all');
-use Actium::O::Files::HastusASI;
-use Actium::Crier(qw/cry cry_text/);
+use Octium;
+use Octium::Set (qw/ordered_union distinguish/);
+use Octium::DaysDirections(':all');
+use Octium::O::Files::HastusASI;
+use Octium::Crier(qw/cry cry_text/);
 
 use Text::Wrap ('wrap');    ### DEP ###
 use List::MoreUtils(qw/any uniq/);    ### DEP ###
@@ -131,7 +131,7 @@ sub START {
     {
         my $hasi_db = $signup->load_hasi();
      #        my $hasidir = $signup->subfolder('hasi');
-     #        my $hasi_db = Actium::O::Files::HastusASI->new( $hasidir->path());
+     #        my $hasi_db = Octium::O::Files::HastusASI->new( $hasidir->path());
         $hasi_db->ensure_loaded(qw(PAT TRP));
         build_place_and_stop_lists( $hasi_db, \%stops );
 

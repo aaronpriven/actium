@@ -1,6 +1,6 @@
-package Actium::O::DestinationCode 0.012;
+package Octium::O::DestinationCode 0.012;
 
-use Actium ('class');
+use Octium ('class');
 
 const my $JSON_FILE => 'destcodes.json';
 
@@ -19,7 +19,7 @@ has '_destination_code_of_r' => (
 
 has '_folder' => (
     is       => 'ro',
-    isa      => 'Actium::O::Folder',
+    isa      => 'Octium::O::Folder',
     init_arg => 'folder',
 );
 

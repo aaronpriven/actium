@@ -1,10 +1,10 @@
-package Actium::Cmd::SchoolTrips 0.012;
+package Octium::Cmd::SchoolTrips 0.012;
 
-use Actium;
+use Octium;
 
-use Actium::O::Sked::Collection;
+use Octium::O::Sked::Collection;
 use List::MoreUtils;
-use Actium::Time;
+use Octium::Time;
 
 sub OPTIONS {
     return qw/actiumdb signup/;
@@ -19,7 +19,7 @@ sub START {
     my $commonfolder = $basefolder->subfolder('common');
 
     my $collection
-      = Actium::O::Sked::Collection->load_storable( collection => 'received' );
+      = Octium::O::Sked::Collection->load_storable( collection => 'received' );
 
     my @skeds = $collection->skeds;
 
@@ -51,13 +51,13 @@ sub START {
             my @placetimes = $trip->placetimes;
 
             my @indices = (
-                ( Actium::firstidx {defined} @placetimes ),
+                ( Octium::firstidx {defined} @placetimes ),
                 ( List::MoreUtils::lastidx {defined} @placetimes )
             );
 
             my @theplaces = map { $places[$_] } @indices;
             my @thetimes
-              = map { Actium::Time->from_num( $placetimes[$_] )->ap } @indices;
+              = map { Octium::Time->from_num( $placetimes[$_] )->ap } @indices;
 
             foreach my $block (@blocks) {
 

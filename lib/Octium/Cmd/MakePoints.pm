@@ -1,20 +1,20 @@
-package Actium::Cmd::MakePoints 0.013;
+package Octium::Cmd::MakePoints 0.013;
 
 use sort ('stable');    ### DEP ###
 
-use Actium;
+use Octium;
 
-use Actium::Set(qw/ordered_union clusterize/);
+use Octium::Set(qw/ordered_union clusterize/);
 
-use Actium::Text::InDesignTags;
-const my $IDT => 'Actium::Text::InDesignTags';
+use Octium::Text::InDesignTags;
+const my $IDT => 'Octium::Text::InDesignTags';
 
-use Actium::Storage::Excel('new_workbook');
+use Octium::Storage::Excel('new_workbook');
 
 use File::Slurper('read_text');    ### DEP ###
 use Text::Trim;                    ### DEP ###
 
-use Actium::O::Points::Point;
+use Octium::O::Points::Point;
 
 const my $LISTFILE_BASE    => 'pl';
 const my $ERRORFILE_BASE   => 'err';
@@ -342,7 +342,7 @@ sub START {
           if $signtype_opt and not exists $signtype_matches{$signtype};
 
         next SIGN
-          if $tag_opt and Actium::fne( $tag, $tag_opt );
+          if $tag_opt and Octium::fne( $tag, $tag_opt );
 
         next SIGN
           if $delivery_opt and not exists $delivery_matches{$delivery};
@@ -434,7 +434,7 @@ sub START {
 
         # 1) Read kpoints from file
 
-        my $point = Actium::O::Points::Point->new_from_kpoints(
+        my $point = Octium::O::Points::Point->new_from_kpoints(
             {   stopid             => $stopid,
                 signid             => $signid,
                 effdate            => $effdate,

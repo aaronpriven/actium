@@ -1,18 +1,18 @@
-package Actium::Cmd::Bags2 0.014;
+package Octium::Cmd::Bags2 0.014;
 
 # service change bag decals from Excel and into a script
 
-use Actium;
+use Octium;
 use autodie;
 
-use Actium::O::2DArray;
+use Octium::O::2DArray;
 
-use Actium::Text::InDesignTags;
-use Actium::O::DateTime;
-use Actium::Set ('clusterize');
+use Octium::Text::InDesignTags;
+use Octium::O::DateTime;
+use Octium::Set ('clusterize');
 
-const my $IDT     => 'Actium::Text::InDesignTags';
-const my $HARDRET => Actium::Text::InDesignTags::->hardreturn_esc;
+const my $IDT     => 'Octium::Text::InDesignTags';
+const my $HARDRET => Octium::Text::InDesignTags::->hardreturn_esc;
 
 sub OPTIONS {
     return qw/actiumdb/;
@@ -28,7 +28,7 @@ sub START {
     $env = shift;
 
     my @ymd = qw/2019 12 15/;
-    my $dt = Actium::O::DateTime::->new( ymd => \@ymd );
+    my $dt = Octium::O::DateTime::->new( ymd => \@ymd );
 
     my $config_obj = $env->config;
 
@@ -53,7 +53,7 @@ sub START {
     my $clusterfile = $outfile . '-clusters.txt';
     $outfile .= "-zt.txt";
 
-    my $list    = Actium::O::2DArray->new_from_xlsx($excelfile);
+    my $list    = Octium::O::2DArray->new_from_xlsx($excelfile);
     my @headers = $list->shift_row;
 
     my %col;

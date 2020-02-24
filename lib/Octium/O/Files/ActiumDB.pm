@@ -1,17 +1,17 @@
-package Actium::O::Files::ActiumDB 0.013;
+package Octium::O::Files::ActiumDB 0.013;
 
 # Class holding routines related to the Actium database
 # (the FileMaker database used by Actium users), accessed
 # thorugh ODBC.
 
-use Actium ('class');
+use Octium ('class');
 use Hash::Util();
 
 const my $KEYFIELD_TABLE          => 'FMTableKeys';
 const my $KEY_OF_KEYFIELD_TABLE   => 'FMTableKey';
 const my $TABLE_OF_KEYFIELD_TABLE => 'FMTable';
 
-const my $IDT => 'Actium::Text::InDesignTags';
+const my $IDT => 'Octium::Text::InDesignTags';
 
 const my @ALL_LANGUAGES => qw/en es zh/;
 
@@ -255,7 +255,7 @@ const my @SS_COLUMNS => (
 );
 
 has cachefolder => (
-    isa     => 'Actium::O::Folder',
+    isa     => 'Octium::O::Folder',
     is      => 'ro',
     builder => '_build_cachefolder',
     lazy    => 1,
@@ -263,8 +263,8 @@ has cachefolder => (
 
 sub _build_cachefolder {
     my $self = shift;
-    require Actium::O::Folder;
-    return Actium::O::Folder::->new($DEFAULT_CACHE_FOLDER);
+    require Octium::O::Folder;
+    return Octium::O::Folder::->new($DEFAULT_CACHE_FOLDER);
 }
 
 has _ss_cache_r => (
@@ -365,7 +365,7 @@ const my $MAXIMUM_VALID_DISTANCE => 1320;
 
 sub ss_nearest_stop {
 
-    require Actium::Geo;
+    require Octium::Geo;
 
     my ( $self, $lat, $long ) = @_;
 
@@ -380,7 +380,7 @@ sub ss_nearest_stop {
         my $stoplong = $stop_data{h_loca_longitude};
 
         my $dist
-          = Actium::Geo::distance_feet( $lat, $long, $stoplat, $stoplong );
+          = Octium::Geo::distance_feet( $lat, $long, $stoplat, $stoplong );
 
         if ( $dist < $nearest_dist ) {
             $nearest      = \%stop_data;
@@ -429,13 +429,13 @@ sub i18n_all_indd {
 
     my $i18n_row_r = $self->i18n_row_r($i18n_id);
 
-    require Actium::Text::InDesignTags;
+    require Octium::Text::InDesignTags;
 
     my $all_r;
     foreach my $language (@ALL_LANGUAGES) {
         my $phrase = $i18n_row_r->{$language};
         $phrase
-          = Actium::Text::InDesignTags::->language_phrase( $language,
+          = Octium::Text::InDesignTags::->language_phrase( $language,
             $phrase, $metastyle );
         $phrase =~ s/\s+\z//;
         push @{$all_r}, $phrase;
@@ -458,13 +458,13 @@ sub i18n_all_indd_hash {
 
     my $i18n_row_r = $self->i18n_row_r($i18n_id);
 
-    require Actium::Text::InDesignTags;
+    require Octium::Text::InDesignTags;
 
     my $all_r;
     foreach my $language (@ALL_LANGUAGES) {
         my $phrase = $i18n_row_r->{$i18n_id}{$language};
         $phrase
-          = Actium::Text::InDesignTags::->language_phrase( $language,
+          = Octium::Text::InDesignTags::->language_phrase( $language,
             $phrase, $metastyle );
         $phrase =~ s/\s+\z//;
         $all_r->{$language} = $phrase;
@@ -646,8 +646,8 @@ method effective_date (
         );
     }
 
-    require Actium::O::DateTime;
-    return Actium::O::DateTime->newest_date(@dates);
+    require Octium::O::DateTime;
+    return Octium::O::DateTime->newest_date(@dates);
 
 }    ## tidy end: method effective_date
 
@@ -848,7 +848,7 @@ sub descrips_of_transithubs_indesign {
 
     my %line_cache = $self->line_cache;
 
-    require Actium::Text::InDesignTags;
+    require Octium::Text::InDesignTags;
     my %descrips_of_hubs;
 
     foreach my $transithub ( $self->transithubs ) {
@@ -1125,7 +1125,7 @@ EOF
 
 }    ## tidy end: sub _ldh_header
 
-with 'Actium::O::Files::FileMaker_ODBC';
+with 'Octium::O::Files::FileMaker_ODBC';
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 

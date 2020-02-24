@@ -1,13 +1,13 @@
-package Actium::O::Points::Box 0.013;
+package Octium::O::Points::Box 0.013;
 
 # Object for a single box in an 2019 InDesign point schedule
 
-use Actium('class');
-use Actium::O::Points::BTime;
-use Actium::Types(qw/ActiumDir ActiumDays/);
+use Octium('class');
+use Octium::O::Points::BTime;
+use Octium::Types(qw/ActiumDir ActiumDays/);
 
-use Actium::Text::InDesignTags;
-const my $IDT => 'Actium::Text::InDesignTags';
+use Octium::Text::InDesignTags;
+const my $IDT => 'Octium::Text::InDesignTags';
 
 has [qw/kpointline display_stopid /] => (
     is       => 'ro',
@@ -19,7 +19,7 @@ has parent => (
     is       => 'ro',
     required => 1,
     weak_ref => 1,
-    isa      => 'Actium::O::Points::BPoint',
+    isa      => 'Octium::O::Points::BPoint',
     handles  => [qw/actiumdb agency/],
 );
 
@@ -61,7 +61,7 @@ has head_line_r => (
 has btimes_r => (
     traits  => ['Array'],
     is      => 'rwp',
-    isa     => 'ArrayRef[Actium::O::Point::BTime]',
+    isa     => 'ArrayRef[Octium::O::Point::BTime]',
     default => sub { [] },
     handles => { time_count => 'count', },
 );
@@ -131,7 +131,7 @@ method BUILD {
     foreach my $entry (@entries) {
         my ( $time, $line, $desttp4, $place, $exception )
           = split( /:/, $entry );
-        my $btime = Actium::O::Points::BTime->new(
+        my $btime = Octium::O::Points::BTime->new(
             time      => $time,
             line      => $line,
             desttp4   => $desttp4,
@@ -149,7 +149,7 @@ method BUILD {
 
     }
 
-    @btimes = Actium::O::Points::BTime->timesort(@btimes);
+    @btimes = Octium::O::Points::BTime->timesort(@btimes);
     $self->_set_btimes_r( \@btimes );
 
     foreach my $primary_attr (@PRIMARIES) {
@@ -213,7 +213,7 @@ method text_head_lines {
     return join( " / ", $self->head_lines );
 }
 
-Actium::immut;
+Octium::immut;
 
 __END__
 
@@ -330,7 +330,7 @@ sub format_head_lines {
             } ## tidy end: if ( $line =~ /BS[DN]/)
             else {
                 $color = (
-                    $Actium::Cmd::MakePoints::lines{$line}{Color}
+                    $Octium::Cmd::MakePoints::lines{$line}{Color}
                       or 'Grey80'
                 );
             }

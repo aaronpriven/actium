@@ -1,22 +1,22 @@
-package Actium::IDTables 0.012;
+package Octium::IDTables 0.012;
 
-use Actium;
+use Octium;
 
 use Text::Trim;    ### DEP ###
-use Actium::O::DateTime;
-use Actium::Sorting::Skeds('skedsort');
-use Actium::Text::InDesignTags;
-use Actium::Text::CharWidth ( 'ems', 'char_width' );
-use Actium::O::Sked;
-use Actium::O::Sked::Timetable;
+use Octium::O::DateTime;
+use Octium::Sorting::Skeds('skedsort');
+use Octium::Text::InDesignTags;
+use Octium::Text::CharWidth ( 'ems', 'char_width' );
+use Octium::O::Sked;
+use Octium::O::Sked::Timetable;
 use List::MoreUtils (qw<pairwise each_arrayref>);    ### DEP ###
 use Algorithm::Combinatorics ('combinations');       ### DEP ###
 
-const my $IDT        => 'Actium::Text::InDesignTags';
+const my $IDT        => 'Octium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
 # saves typing
 
-use Actium::IDTables::PageAssignments;
+use Octium::IDTables::PageAssignments;
 
 sub create_timetable_texts {
 
@@ -35,7 +35,7 @@ sub create_timetable_texts {
             $prev_linegroup = $linegroup;
         }
 
-        my $table = Actium::O::Sked::Timetable->new_from_sked( $sked, $db_obj );
+        my $table = Octium::O::Sked::Timetable->new_from_sked( $sked, $db_obj );
         push @{ $tables_of{$linegroup} }, $table;
         push @alltables, $table;
 
@@ -308,7 +308,7 @@ sub _make_days {
 
     my %days_obj_of;
     while ( my ( $line, $days_objs_r ) = each %all_days_objs_of ) {
-        $days_obj_of{$line} = Actium::O::Days->union( @{$days_objs_r} );
+        $days_obj_of{$line} = Octium::O::Days->union( @{$days_objs_r} );
     }
 
     if ( @lines == 1 ) {
@@ -430,7 +430,7 @@ sub output_a_pubtts {
         $cry->over(" $file");
 
         my ( $portrait_chars, @table_assignments )
-          = Actium::IDTables::PageAssignments::assign( $tables_r,
+          = Octium::IDTables::PageAssignments::assign( $tables_r,
             $leave_cover_for_map );
 
         if ( not @table_assignments ) {

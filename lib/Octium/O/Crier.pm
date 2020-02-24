@@ -1,14 +1,14 @@
-package Actium::O::Crier 0.011;
+package Octium::O::Crier 0.011;
 
 # Actium/O/Crier - Print with indentation, status, and closure
 # Based on Term::Emit by Steve Roscio
 
-use Actium ('class');
-use Actium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
-use Actium::O::Crier::Cry;
+use Octium ('class');
+use Octium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
+use Octium::O::Crier::Cry;
 use Scalar::Util;
 
-const my $CRY_CLASS            => 'Actium::O::Crier::Cry';
+const my $CRY_CLASS            => 'Octium::O::Crier::Cry';
 const my $FALLBACK_CLOSESTAT   => 'DONE';
 const my $DEFAULT_COLUMN_WIDTH => 80;
 const my $DEFAULT_STEP         => 2;
@@ -16,7 +16,7 @@ const my $DEFAULT_STEP         => 2;
 #########################################################
 ### EXPORTS
 
-# Moved to Actium::Crier since this didn't seem to work
+# Moved to Octium::Crier since this didn't seem to work
 
 #use Sub::Exporter -setup => {
 #    exports => [
@@ -35,7 +35,7 @@ const my $DEFAULT_STEP         => 2;
 #    if ( defined $arg and scalar keys %$arg ) {
 #        if ($default_crier) {
 #            croak 'Arguments given in '
-#              . q{"use Actium::O::Crier (default_crier => {args})"}
+#              . q{"use Octium::O::Crier (default_crier => {args})"}
 #              . q{but the default crier has already been initialized};
 #        }
 #
@@ -553,7 +553,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Crier - Terminal notification with indentation, status, and
+Octium::O::Crier - Terminal notification with indentation, status, and
 closure
 
 =head1 VERSION
@@ -562,9 +562,9 @@ This documentation refers to version 0.009
 
 =head1 SYNOPSIS
 
- use Actium::O::Crier;
+ use Octium::O::Crier;
 
- my $crier = Actium::O::Crier::->new();
+ my $crier = Octium::O::Crier::->new();
 
  my $task_cry = $crier->cry("Main Task");
  ...
@@ -587,7 +587,7 @@ This results in this output to STDOUT:
 
 There are procedural shortcuts for output to a default destination:
 
- use Actium::O::Crier(cry);
+ use Octium::O::Crier(cry);
 
  my $task_cry = cry("Main Task");
  ...
@@ -605,15 +605,15 @@ This produces the same output as before.
 
 =head1 DESCRIPTION
 
-Actium::O::Crier is used to to output balanced and nested messages with
+Octium::O::Crier is used to to output balanced and nested messages with
 a completion status.  These messages indent easily within each other,
 are easily parsed, may be bulleted, can be filtered, and even can show
 status in color.
 
 For example, you write code like this:
 
-    use Actium::O::Crier;
-    my $crier = Actium::O::Crier::->new()
+    use Octium::O::Crier;
+    my $crier = Octium::O::Crier::->new()
     my $cry = $crier->cry("Performing the task");
     first_subtask($crier);
     second_subtask($crier);
@@ -640,14 +640,14 @@ whatever, so you can get nice output like this:
       Wrapup of second subtask.................................. [OK]
     Performing the task......................................... [DONE]
 
-A series of examples will make Actium::O::Crier easier to understand.
+A series of examples will make Octium::O::Crier easier to understand.
 
 =head2 Basics
 
 Here is a basic example of usage:
 
-    use Actium::O::Crier;
-    my $crier = Actium::O::Crier::->new();
+    use Octium::O::Crier;
+    my $crier = Octium::O::Crier::->new();
     my $cry = $crier->cry("Performing a task");
     sleep 1; # simulate task performance
     $cry->done;
@@ -661,38 +661,38 @@ looks like this:
 
     Performing a task........................................... [DONE]
 
-Actium::O::Crier works by creating two sets of objects. The I<crier>
+Octium::O::Crier works by creating two sets of objects. The I<crier>
 represents the destination of the cries, such as the terminal, or an
 output file. The I<cry> object represents a single cry, such as a cry
 about one particular task or subtask.  Methods on these objects are
 used to issue cries and complete them.
 
 The crier object is created by the C<new> class method of
-C<Actium::O::Crier>. The cry object is created by the C<cry> object
+C<Octium::O::Crier>. The cry object is created by the C<cry> object
 method of the crier object.
 
 =head2 Exported subroutines: shortcut to a default output destination
 
-Since most output from Actium::O::Crier is to a single default output
+Since most output from Octium::O::Crier is to a single default output
 destination for that process (typically STDERR), some procedural
 shortcuts exist to make it easier to send cries to a default output.
 
 To use the shortcuts, specify them in the import list in the  C<use
-Actium::O::Crier> call. C<< "use Actium::O::Crier ( qw(cry))" >> will
+Octium::O::Crier> call. C<< "use Octium::O::Crier ( qw(cry))" >> will
 install a sub called C<cry> in your package that will call the C<cry>
 method on the default crier object. Therefore,
 
- use Actium::O::Crier ( qw(cry) );
+ use Octium::O::Crier ( qw(cry) );
  my $cry = cry ("Doing a task");
 
 works basically the same as
 
- use Actium::O::Crier;
- my $crier = Actium::O::Crier::->new();
+ use Octium::O::Crier;
+ my $crier = Octium::O::Crier::->new();
  my $cry = $crier->cry ("Doing a task");
 
 except that in the former case, the crier object is stored in the
-Actium::O::Crier class and will be reused by other calls to C<cry>,
+Octium::O::Crier class and will be reused by other calls to C<cry>,
 from this module or any other. This avoids the need to pass the crier
 object as an argument to routines in other modules.
 
@@ -708,8 +708,8 @@ destroyed, such as when the variable goes out of scope (for this
 example: when the program ends). So the code example could be just
 this:
 
-    use Actium::O::Crier;
-    my $crier = Actium::O::Crier::->new();
+    use Octium::O::Crier;
+    my $crier = Octium::O::Crier::->new();
     my $cry = $crier->cry("Performing a task");
     sleep 1; # simulate task performance
 
@@ -723,7 +723,7 @@ convenient to avoid additional method calls at the end of a function.
 
 There's many ways a task can complete.  It can be simply DONE, or it
 can complete with an ERROR, or it can be OK, etc.  These completion
-codes are called the I<severity code>s.  C<Actium::O::Crier> defines
+codes are called the I<severity code>s.  C<Octium::O::Crier> defines
 many different severity codes.
 
 Severity codes also have an associated numerical value. This value is
@@ -771,8 +771,8 @@ complete list.
 
 We'll change our simple example to give a FATAL completion:
 
-    use Actium::O::Crier;
-    my $crier = Actium::O::Crier::->new();
+    use Octium::O::Crier;
+    my $crier = Octium::O::Crier::->new();
     my $cry = $crier->cry("Performing a task");
     sleep 1; # simulate task performance
     $cry->d_fatal;
@@ -783,7 +783,7 @@ Here's how it looks:
 
 =head3 Severity Colors
 
-One feature of C<Actium::O::Crier> is that you can enable colorization
+One feature of C<Octium::O::Crier> is that you can enable colorization
 of the severity codes.  That means that the severity code inside the
 square brackets is output in color, so it's easy to see. The module
 Term::ANSIColor is used to do the colorization.
@@ -816,7 +816,7 @@ Here's the colors:
 To use colors on all cries, pass 'colorize => 1' as an option to the
 C<new> method call:
 
-    my $crier = Actium::O::Crier::->new({colorize => 1});
+    my $crier = Octium::O::Crier::->new({colorize => 1});
 
 Or, invoke the use_color method on the crier, once it's created:
 
@@ -832,8 +832,8 @@ on your terminal.
 
 Nested cries will automatically indent with each other. You do this:
 
-    use Actium::O::Crier;
-    my $crier = Actium::O::Crier::->new();
+    use Octium::O::Crier;
+    my $crier = Octium::O::Crier::->new();
     my $aaa = $crier->cry("Aaa")
     my $bbb = $crier->cry("Bbb")
     my $ccc = $crier->cry("Ccc")
@@ -857,14 +857,14 @@ turn off or alter the repeated text (Bbb and Aaa) as you wish.
 =head3 Filtering-out Deeper Levels (Verbosity)
 
 Often a script will have a verbosity option (-v usually), that allows a
-user to control how much output to see.  Actium::O::Crier handles this
+user to control how much output to see.  Octium::O::Crier handles this
 with the I<maxdepth> attribute and C<set_maxdepth> method.
 
 Suppose your script has the verbose option in $opts{verbose}, where 0
 means no output, 1 means some output, 2 means more output, etc.  In
 your script, do this:
 
-    my $crier = Actium::O::Crier::->new(maxdepth => $opts[verbose});
+    my $crier = Octium::O::Crier::->new(maxdepth => $opts[verbose});
 
 or this:
 
@@ -882,7 +882,7 @@ messages that have at least that severity value or higher will be
 shown, regardless of the depth filtering.  Thus, a better filter would
 look like:
 
-    my $crier = Actium::O::Crier::->new(
+    my $crier = Octium::O::Crier::->new(
         maxdepth          => $opts[verbose} ,
         override_severity => 7,
       );
@@ -934,9 +934,9 @@ more useful:
     use warnings;
     use strict;
 
-    use Actium::O::Crier;
+    use Octium::O::Crier;
 
-    my $crier = Actium::O::Crier::->new({default_closestat => "ERROR");
+    my $crier = Octium::O::Crier::->new({default_closestat => "ERROR");
     primary_task();
 
     sub primary_task {
@@ -972,23 +972,23 @@ If we get through all three steps, we close out with an OK.
 
 =head2 Output to Other File Handles
 
-By default, Actium::O::Crier writes its output to STDERR You can tell
+By default, Octium::O::Crier writes its output to STDERR You can tell
 it to use another file handle like this:
 
     open ($fh, '>', 'some_file.txt') or die;
-    my $crier = Actium::O::Crier::->new({fh => $fh});
+    my $crier = Octium::O::Crier::->new({fh => $fh});
 
 Alternatively, if you pass a scalar reference in the fh attribute, the
 output will be appended to the string at the reference:
 
     my $output = "Cry output:\n";
-    my $crier = Actium::O::Crier::->new({fh => \$output});
+    my $crier = Octium::O::Crier::->new({fh => \$output});
 
 If there is only one argument to C<new>, it is taken as the "fh"
 attribute:
 
     open ($fh, '>', 'some_file.txt') or die;
-    my $crier = Actium::O::Crier::->new($fh);
+    my $crier = Octium::O::Crier::->new($fh);
     # same as ->new({ fh => $fh })
 
 The output destination is determined at the creation of the crier
@@ -1056,13 +1056,13 @@ If not all bullets are the same width (according to the
 Unicode::GCString module), the bullets will be made the same width by
 adding spaces to the right.
 
-=head2 Mixing Actium::O::Crier with other output
+=head2 Mixing Octium::O::Crier with other output
 
-Internally, Actium::O::Crier keeps track of the output cursor position.
+Internally, Octium::O::Crier keeps track of the output cursor position.
 It only knows about what it has sent to the output destination. If you
 mix C<print> or C<say> statements, or other output methods, with your
-Actium::O::Crier output, then things will likely get screwy.  So,
-you'll need to tell Actium::O::Crier where you've left the cursor.  Do
+Octium::O::Crier output, then things will likely get screwy.  So,
+you'll need to tell Octium::O::Crier where you've left the cursor.  Do
 this by using  C<set_position>:
 
     $cry = $crier->cry("Doing something");
@@ -1075,13 +1075,13 @@ this by using  C<set_position>:
 
 =head2 Subroutines
 
-Three subroutines can be exported from Actium::O::Crier.
+Three subroutines can be exported from Octium::O::Crier.
 
 These subroutines are exported using C<Sub::Exporter>, so if you prefer
 a different name for a subroutine,  you can specify that using an
 I<-as> option in a hashref of options after the  subroutine name.
 
-  use Actium::O::Crier (cry => { -as => 'bellow' } , 
+  use Octium::O::Crier (cry => { -as => 'bellow' } , 
                         default_crier => { -as => 'bellower'} ,
                         cry_text => { -as => {bellow_text} } );
 
@@ -1090,7 +1090,7 @@ for more  detail on I<-as>.
 
 Note that several of these routines are built during the import
 process, so cannot be called using a fully-qualified package name. 
-Actium::O::Crier::cry("some text") will not do what you want.  (It will
+Octium::O::Crier::cry("some text") will not do what you want.  (It will
 call the method C<cry>, not the subroutine C<cry>.)
 
 =head3 B<default_crier>
@@ -1100,7 +1100,7 @@ C<default_crier> subroutine in your package that returns the default
 crier object, allowing it to be accessed directly. This allows most
 attributes to be set (although not the filehandle).
 
- use Actium::O::Crier ( qw(default_crier) );
+ use Octium::O::Crier ( qw(default_crier) );
  $crier = default_crier();
  $crier->set_bullets( ' + ' );
  
@@ -1110,10 +1110,10 @@ created with those options.   This is the only way to set the
 filehandle of the default crier object.
 
 Behind the scenes, it is passing these arguments to the C<<
-Actium::O::Crier::->new >> class method, so the import routine accepts
+Octium::O::Crier::->new >> class method, so the import routine accepts
 all the same options as that class method.  For example:
 
- use Actium::O::Crier ( default_crier => { fh => \$myvar , backspace => 0 } );
+ use Octium::O::Crier ( default_crier => { fh => \$myvar , backspace => 0 } );
  
 The import routine for C<default_crier> will accept options  (other
 than "-as") from only one caller.  If two callers attempt to set the
@@ -1134,10 +1134,10 @@ as, the object method C<< $cry->text() >>.
 
 =head2 Class Method
 
-=head3 Actium::O::Crier::->new()
+=head3 Octium::O::Crier::->new()
 
 This is the C<new> constructor inherited from Moose by
-Actium::O::Crier. It creates a new Crier object: the object associated
+Octium::O::Crier. It creates a new Crier object: the object associated
 with a particular output.
 
 It accepts various attributes as options, which are listed in
@@ -1155,7 +1155,7 @@ If no arguments are passed, it will use STDERR as the output.
 =head3 $crier->cry()
 
 This creates a new cry. Specifically, it creates a new
-C<Actium::O::Crier::Cry> object, and then that object outputs the
+C<Octium::O::Crier::Cry> object, and then that object outputs the
 opening text and the ellipsis:
 
  my $cry = $crier->cry('Starting a task');
@@ -1286,7 +1286,7 @@ does nothing.
 
 For example,
 
-  use Actium::O::Crier('cry');
+  use Octium::O::Crier('cry');
   my $cry = cry "Performing a task";
   $cry->prog '10%...';
   $cry->prog '20%...';
@@ -1486,7 +1486,7 @@ Setting the colorize attribute on a crier will affect all future cries.
 
 =back
 
-Sets the column width of your output.  C<Actium::O::Crier>> doesn't try
+Sets the column width of your output.  C<Octium::O::Crier>> doesn't try
 to determine how wide your terminal screen is, so use this option to
 indicate the width.  The default is 80.
 
@@ -1495,13 +1495,13 @@ your device's width:
 
     use Term::Size::Any 'chars';
     my ($cols, $rows) = chars();
-    my $crier = Actium::O::Crier::->new({column_width => $cols});
+    my $crier = Octium::O::Crier::->new({column_width => $cols});
     ...
 
 One cool trick is to have it set when the program receives a window
 change signal:
 
-    my $crier = Actium::O::Crier::->new();
+    my $crier = Octium::O::Crier::->new();
     use Term::Size::Any 'chars';
     local $SIG{WINCH} = \&set_width;
     sub set_width {
@@ -1657,12 +1657,12 @@ See L</...But Show Severe Messages>.
 
 =back
 
-Used to reset what Actium::O::Crier thinks the cursor position is. You
+Used to reset what Octium::O::Crier thinks the cursor position is. You
 may have to do this if you mix ordinary print statements with cries.
 
 Set this to 0 to indicate that the position is at the start of a new
 line (as in, just after a C<print "\n"> or C<say>). See L</Mixing
-Actium::O::Crier with other output>.
+Octium::O::Crier with other output>.
 
 After setting the position, C<over> will not backspace.
 
@@ -1778,7 +1778,7 @@ The default is the dot (the period, ".").  Here's what messages look
 like if you change it to an underscore:
 
   The code:
-    my $crier = Actium::O::Crier::->new({trailer =>'_'});
+    my $crier = Octium::O::Crier::->new({trailer =>'_'});
     $crier->cry("Doing something");
 
   The output:
@@ -1800,7 +1800,7 @@ Setting the trailer attribute on a crier will affect all future cries.
 The C<cry> method was called in void context. This creates an object
 which should be saved to a variable. See L<< /$crier->cry() >>.
 
-=head2 Arguments given in "use Actium::O::Crier (default_crier => {args})" but the default crier has already been initialized
+=head2 Arguments given in "use Octium::O::Crier (default_crier => {args})" but the default crier has already been initialized
 
 A module attempted to set attributes to the default crier in the import
 process, but the default crier can only be created once.  (You can use
@@ -1828,15 +1828,15 @@ modules in Perl 5.016. Other dependencies include:
 
 =head1 NOTES
 
-Actium::O::Crier is a fork of Term::Emit, by Steve Roscio. Term::Emit
+Octium::O::Crier is a fork of Term::Emit, by Steve Roscio. Term::Emit
 is great, but it is dependent on Scope::Upper, which hasn't always
 compiled cleanly in my installation, and also Term::Emit uses a number
 of global variables, which save typing but mean that its objects aren't
-self-contained. Actium::O::Crier is designed to do a lot of what
+self-contained. Octium::O::Crier is designed to do a lot of what
 Term::Emit does, but in a somewhat cleaner way, even if it means
 there's a bit more typing involved.
 
-Actium::O::Crier does use Moose, which is somewhat odd for a
+Octium::O::Crier does use Moose, which is somewhat odd for a
 command-line program. Since many other Actium programs also use Moose,
 this is a relatively small loss in this case. If this ever becomes a
 separate distribution it should probably use something else, such as

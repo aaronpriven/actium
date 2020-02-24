@@ -1,4 +1,4 @@
-package Actium::Text::InDesignTags 0.010;
+package Octium::Text::InDesignTags 0.010;
 # class providing routines and constants for InDesign tagged text
 
 use warnings;

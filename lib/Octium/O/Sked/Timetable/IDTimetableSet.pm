@@ -1,4 +1,4 @@
-package Actium::O::Sked::Timetable::IDTimetableSet 0.012;
+package Octium::O::Sked::Timetable::IDTimetableSet 0.012;
 
 # A set of timetables
 
@@ -13,7 +13,7 @@ use MooseX::SemiAffordanceAccessor; ### DEP ###
 has timetables_r => (
     traits   => ['Array'],
     is       => 'bare',
-    isa      => 'ArrayRef[Actium::O::Sked::Timetable::IDTimetable]',
+    isa      => 'ArrayRef[Octium::O::Sked::Timetable::IDTimetable]',
     default  => sub { [] },
     init_arg => 'timetables',
     handles  => {

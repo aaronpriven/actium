@@ -1,4 +1,4 @@
-package Actium::Sorting::Skeds 0.012;
+package Octium::Sorting::Skeds 0.012;
 
 # Routines to sort schedule-type objects
 
@@ -9,7 +9,7 @@ use Sub::Exporter -setup => { exports => [qw(skedsort)] };
 # Sub::Exporter ### DEP ###
 use Params::Validate;    ### DEP ###
 
-use Actium::Sorting::Line (qw(byline linekeys));
+use Octium::Sorting::Line (qw(byline linekeys));
 
 use List::Util(qw/min/);    ### DEP ###
 use Params::Validate();     ### DEP ###
@@ -17,7 +17,7 @@ use Params::Validate();     ### DEP ###
 my $required_methods
   = [qw( linedir earliest_timenum sortable_id sortable_id_with_timenum )];
 
-# can take Actium::Sked objects, or Actium::Sked::Timetable objects
+# can take Octium::Sked objects, or Octium::Sked::Timetable objects
 # or anything else that can do those methods
 
 sub skedsort {

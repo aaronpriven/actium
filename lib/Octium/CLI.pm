@@ -1,23 +1,23 @@
-package Actium::CLI 0.012;
+package Octium::CLI 0.012;
 
-# Amalgamation of Actium::Cmd, Actium::CLIEnv, and the various
-# Actium::Cmd::Config::* modules
+# Amalgamation of Octium::Cmd, Octium::CLIEnv, and the various
+# Octium::Cmd::Config::* modules
 
-use Actium ('class');
+use Octium ('class');
 
 use Getopt::Long('GetOptionsFromArray');    ### DEP ###
 use Term::ReadKey;                          ### DEP ###
 
-use Actium::Crier('default_crier');
-use Actium::Storage::Ini;
-use Actium::CLI::Option;
-use Actium::O::Folder;
+use Octium::Crier('default_crier');
+use Octium::Storage::Ini;
+use Octium::CLI::Option;
+use Octium::O::Folder;
 
 use Module::Runtime ('require_module');
 
 const my $EX_USAGE       => 64;              # from "man sysexits"
 const my $EX_SOFTWARE    => 70;
-const my $COMMAND_PREFIX => 'Actium::Cmd';
+const my $COMMAND_PREFIX => 'Octium::Cmd';
 
 const my $FALLBACK_COLUMNS     => 80;
 const my $SUBCOMMAND_PADDING   => ( $SPACE x 2 );
@@ -58,8 +58,8 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
     ## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
     {                             # scoping for "no warnings"
         no warnings('once');
-        if ( ( not @original_argv ) and $Actium::Eclipse::is_under_eclipse ) {
-            @original_argv = Actium::Eclipse::get_command_line();
+        if ( ( not @original_argv ) and $Octium::Eclipse::is_under_eclipse ) {
+            @original_argv = Octium::Eclipse::get_command_line();
         }
     }
     ## use critic
@@ -93,8 +93,8 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
         _original_argv  => \@original_argv,
         _help_requested => $help_requested,
         argv            => \@argv,
-        bin             => Actium::O::Folder->new( $params{bin} ),
-        home_folder     => Actium::O::Folder->new( $params{home_folder} ),
+        bin             => Octium::O::Folder->new( $params{bin} ),
+        home_folder     => Octium::O::Folder->new( $params{home_folder} ),
     );
 
     return $class->$orig(%init_args);
@@ -114,7 +114,7 @@ sub BUILD {
         $self->_mainhelp();
     }
 
-    Actium::_set_env($self);
+    Octium::_set_env($self);
 
     my $module = $self->module;
     if ( $self->_help_requested or $self->option('help') ) {
@@ -214,8 +214,8 @@ method _mainhelp ( Str :$error = q[] , Int :$status = 0 ) {
 
     my $width = $term_width_cr->() - 2;
 
-    require Actium::O::2DArray;
-    ( undef, \my @lines ) = Actium::O::2DArray->new_to_term_width(
+    require Octium::O::2DArray;
+    ( undef, \my @lines ) = Octium::O::2DArray->new_to_term_width(
         array     => \@subcommands,
         width     => $width,
         separator => ($SUBCOMMAND_SEPARATOR)
@@ -242,7 +242,7 @@ sub _output_usage {
         $description_of{$_} = "Same as -$name" foreach $obj->aliases;
     }
 
-    my $longest = 1 + Actium::max( map { length($_) } keys %description_of );
+    my $longest = 1 + Octium::max( map { length($_) } keys %description_of );
     # add one for the hyphen
 
     say STDERR 'Options:';
@@ -275,14 +275,14 @@ sub _output_usage {
 ## Public Attributes and builders
 
 has home_folder => (
-    isa      => 'Actium::O::Folder',
+    isa      => 'Octium::O::Folder',
     is       => 'ro',
     required => 1,
 );
 
 has config => (
     is      => 'ro',
-    isa     => 'Actium::Storage::Ini',
+    isa     => 'Octium::Storage::Ini',
     builder => '_build_config',
     lazy    => 1,
 );
@@ -290,12 +290,12 @@ has config => (
 sub _build_config {
     my $self       = shift;
     my $systemname = $self->system_name;
-    my $config     = Actium::Storage::Ini::->new(".$systemname.ini");
+    my $config     = Octium::Storage::Ini::->new(".$systemname.ini");
     return $config;
 }
 
 has bin => (
-    isa      => 'Actium::O::Folder',
+    isa      => 'Octium::O::Folder',
     is       => 'ro',
     required => 1,
 );
@@ -323,7 +323,7 @@ sub _build_module {
 
     my $referred;
     while ( exists( $subcommands{$subcommand} )
-        and Actium::is_ref( $subcommands{$subcommand} ) )
+        and Octium::is_ref( $subcommands{$subcommand} ) )
     {
         $subcommand = ${ $subcommands{$subcommand} };
         $referred   = 1;
@@ -355,7 +355,7 @@ sub _build_module {
 has crier => (
     is      => 'ro',
     default => sub { default_crier() },
-    isa     => 'Actium::O::Crier',
+    isa     => 'Octium::O::Crier',
     lazy    => 1,
 );
 
@@ -368,7 +368,7 @@ has command => (
 sub _build_command {
     my $self        = shift;
     my $commandpath = $self->commandpath;
-    return Actium::filename($commandpath);
+    return Octium::filename($commandpath);
 }
 
 has sysenv_r => (
@@ -494,14 +494,14 @@ sub _subcommand_names {
     \my %subcommands = $self->_subcommands_r;
 
     return (
-        grep { not Actium::is_ref( $subcommands{$_} ) }
+        grep { not Octium::is_ref( $subcommands{$_} ) }
         sort keys %subcommands
     );
 }
 
 has _option_obj_r => (
     traits  => ['Hash'],
-    isa     => 'HashRef[Actium::CLI::Option]',
+    isa     => 'HashRef[Octium::CLI::Option]',
     is      => 'bare',
     lazy    => 1,
     builder => '_build_option_objs',
@@ -526,12 +526,12 @@ sub _build_option_objs {
     while (@optionspecs) {
         my $optionspec = shift @optionspecs;
 
-        if ( Actium::is_hashref($optionspec) ) {
+        if ( Octium::is_hashref($optionspec) ) {
             $optionspec->{cmdenv} = $self;
             $optionspec->{order}  = $count++;
-            push @opt_objs, Actium::CLI::Option->new($optionspec);
+            push @opt_objs, Octium::CLI::Option->new($optionspec);
         }
-        elsif ( Actium::is_arrayref($optionspec) ) {
+        elsif ( Octium::is_arrayref($optionspec) ) {
 
             my ( $spec, $description, $callbackorfallback ) = @{$optionspec};
 
@@ -545,15 +545,15 @@ sub _build_option_objs {
             if ( defined $callbackorfallback ) {
 
                 my $key
-                  = Actium::is_coderef($callbackorfallback)
+                  = Octium::is_coderef($callbackorfallback)
                   ? 'callback'
                   : 'fallback';
                 $option_init{$key} = $callbackorfallback;
             }
 
-            push @opt_objs, Actium::CLI::Option->new( \%option_init );
+            push @opt_objs, Octium::CLI::Option->new( \%option_init );
 
-        } ## tidy end: elsif ( Actium::is_arrayref...)
+        } ## tidy end: elsif ( Octium::is_arrayref...)
         else {
             # option package
             if ( not exists $OPTION_PACKAGE_DISPATCH{$optionspec} ) {
@@ -568,7 +568,7 @@ sub _build_option_objs {
         }
     } ## tidy end: while (@optionspecs)
 
-    Actium::immut;
+    Octium::immut;
     # made immutable here, after any new attributes are made in dispatch
     # routines
 
@@ -655,12 +655,12 @@ sub _actiumdb_package {
 
     my $self = shift;
 
-    require Actium::O::Files::ActiumDB;
+    require Octium::O::Files::ActiumDB;
 
     has actiumdb => (
         is      => 'ro',
         builder => '_build_actiumdb',
-        isa     => 'Actium::O::Files::ActiumDB',
+        isa     => 'Octium::O::Files::ActiumDB',
         lazy    => 1,
     );
 
@@ -697,7 +697,7 @@ sub _build_actiumdb {
     my $self = shift;
 
     my $actiumdb
-      = Actium::O::Files::ActiumDB::->new( map { $_ => $self->option($_) }
+      = Octium::O::Files::ActiumDB::->new( map { $_ => $self->option($_) }
           qw /db_user db_password db_name/ );
 
     return $actiumdb;
@@ -717,12 +717,12 @@ sub _signup_package {
     my $self   = shift;
     my $is_new = shift;
 
-    require Actium::O::Folders::Signup;
+    require Octium::O::Folders::Signup;
 
     has signup => (
         is      => 'ro',
         builder => ( $is_new ? '_build_newsignup' : '_build_signup' ),
-        isa     => 'Actium::O::Folders::Signup',
+        isa     => 'Octium::O::Folders::Signup',
         lazy    => 1,
     );
 
@@ -771,7 +771,7 @@ sub _signup_with_old_package {
     has oldsignup => (
         is      => 'ro',
         builder => '_build_oldsignup',
-        isa     => 'Actium::O::Folders::Signup',
+        isa     => 'Octium::O::Folders::Signup',
         lazy    => 1,
     );
 
@@ -800,20 +800,20 @@ sub _signup_with_old_package {
 sub _build_newsignup {
     my $self = shift;
     my %params = map { $_ => $self->option($_) } qw/base signup cache/;
-    return Actium::O::Folders::Signup::->new(%params);
+    return Octium::O::Folders::Signup::->new(%params);
 }
 
 sub _build_signup {
     my $self = shift;
     my %params = map { $_ => $self->option($_) } qw/base signup cache/;
     $params{must_exist} = 1;
-    return Actium::O::Folders::Signup::->new(%params);
+    return Octium::O::Folders::Signup::->new(%params);
 }
 
 sub _build_oldsignup {
     my $self = shift;
 
-    return Actium::O::Folders::Signup::->new(
+    return Octium::O::Folders::Signup::->new(
         base => ( $self->option('oldbase') // $self->option('base') ),
         signup     => $self->option('oldsignup'),
         cache      => $self->option('cache'),
@@ -864,7 +864,7 @@ sub _build_geonames_username {
 
         has flickr_auth => (
             is      => 'ro',
-            isa     => 'Actium::O::Photos::Flickr::Auth',
+            isa     => 'Octium::O::Photos::Flickr::Auth',
             builder => '_build_flickr_auth',
             lazy    => 1,
         );
@@ -890,7 +890,7 @@ sub _build_geonames_username {
         my $self = shift;
         my %params
           = map { $_ => $self->option($_) } keys %DESCRIPTION_OF_OPTION;
-        return Actium::O::Photos::Flickr::Auth->new(%params);
+        return Octium::O::Photos::Flickr::Auth->new(%params);
 
     }
 
