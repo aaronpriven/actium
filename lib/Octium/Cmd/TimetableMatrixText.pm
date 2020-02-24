@@ -1,10 +1,10 @@
-package Actium::Cmd::TimetableMatrixText 0.011;
+package Octium::Cmd::TimetableMatrixText 0.011;
 
 # Reads the timetable matrix and produces text for it.
 
-use Actium;
-use Actium::O::Folder;
-use Actium::Sorting::Line('sortbyline');
+use Octium;
+use Octium::O::Folder;
+use Octium::Sorting::Line('sortbyline');
 use Text::Trim ('trim');
 
 sub HELP {
@@ -36,7 +36,7 @@ sub START {
     my $filespec = shift @argv;
     die "No input file given" unless $filespec;
 
-    my ( $folder,   $filename ) = Actium::O::Folder->new_from_file($filespec);
+    my ( $folder,   $filename ) = Octium::O::Folder->new_from_file($filespec);
     my ( $filepart, $fileext )  = u::file_ext($filespec);
 
     my $sheet = $folder->load_sheet($filename);

@@ -1,4 +1,4 @@
-package Actium::O::Points::Column 0.013;
+package Octium::O::Points::Column 0.013;
 
 # Object for a single column in an InDesign point schedule
 
@@ -15,18 +15,18 @@ use Moose::Util::TypeConstraints;      ### DEP ###
 
 use namespace::autoclean;              ### DEP ###
 
-use Actium::Time;
+use Octium::Time;
 use Const::Fast;                       ### DEP ###
 
-use Actium::Text::InDesignTags;
-const my $IDT => 'Actium::Text::InDesignTags';
+use Octium::Text::InDesignTags;
+const my $IDT => 'Octium::Text::InDesignTags';
 
 my $get_tp_value = sub {
 
     my $tp4 = shift;
 
     no warnings 'once';
-    my $tpdest = $Actium::Cmd::MakePoints::places{$tp4}{c_destination};
+    my $tpdest = $Octium::Cmd::MakePoints::places{$tp4}{c_destination};
 
     if ($tpdest) {
         return $tpdest;
@@ -83,7 +83,7 @@ around BUILDARGS => sub {
 
     foreach (@entries) {
         my ( $time, $line, $destination, $place, $exception ) = split(/:/);
-        $time_of{$_} = Actium::Time->from_str($time)->timenum;
+        $time_of{$_} = Octium::Time->from_str($time)->timenum;
     }
 
     @entries = sort { $time_of{$a} <=> $time_of{$b} } @entries;
@@ -311,7 +311,7 @@ sub format_head_lines {
             }
             else {
                 $color = (
-                    $Actium::Cmd::MakePoints::lines{$line}{Color}
+                    $Octium::Cmd::MakePoints::lines{$line}{Color}
                       or 'Grey80'
                 );
             }

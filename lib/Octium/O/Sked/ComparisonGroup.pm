@@ -1,13 +1,13 @@
-package Actium::O::Sked::ComparisonGroup 0.014;
+package Octium::O::Sked::ComparisonGroup 0.014;
 
-use Actium 'class';
-use Actium::O::Sked::Comparison;
-use Actium::Sorting::Line;
+use Octium 'class';
+use Octium::O::Sked::Comparison;
+use Octium::Sorting::Line;
 
 use List::Compare;
 
 has [qw/oldskeds newskeds/] => (
-    isa      => 'Actium::O::Sked::Collection',
+    isa      => 'Octium::O::Sked::Collection',
     is       => 'ro',
     required => 1,
 );
@@ -54,8 +54,8 @@ my $lgdir_days_cr = sub {
 
 method _build_result {
 
-    my @newids = Actium::sortbyline( $self->newskeds->sked_ids );
-    my @oldids = Actium::sortbyline( $self->oldskeds->sked_ids );
+    my @newids = Octium::sortbyline( $self->newskeds->sked_ids );
+    my @oldids = Octium::sortbyline( $self->oldskeds->sked_ids );
 
     my $lc = List::Compare->new( \@oldids, \@newids );
 
@@ -109,7 +109,7 @@ method _build_result {
     my $comparecry = cry(
         'Comparing ' . $self->oldsignup_id . ' to ' . $self->newsignup_id );
 
-    foreach my $oldid ( Actium::sortbyline( keys %to_compare ) ) {
+    foreach my $oldid ( Octium::sortbyline( keys %to_compare ) ) {
         my $oldsked = $self->oldskeds->sked_obj($oldid);
         foreach my $newid ( $to_compare{$oldid}->@* ) {
             my $newsked = $self->newskeds->sked_obj($newid);
@@ -117,7 +117,7 @@ method _build_result {
             $comparecry->over( $oldid eq $newid ? $oldid : "$oldid > $newid" );
 
             push @results,
-              Actium::O::Sked::Comparison->new(
+              Octium::O::Sked::Comparison->new(
                 oldsked => $oldsked,
                 newsked => $newsked
               );
@@ -133,14 +133,14 @@ method _build_result {
 
     foreach my $oldid (@only_old_ids) {
         my $oldsked = $self->oldskeds->sked_obj($oldid);
-        push @results, Actium::O::Sked::Comparison->new( oldsked => $oldsked );
+        push @results, Octium::O::Sked::Comparison->new( oldsked => $oldsked );
     }
     $onlyocry->done;
 
     my $onlyncry = cry( 'Adding only in ' . $self->newsignup_id );
     foreach my $newid (@only_new_ids) {
         my $newsked = $self->newskeds->sked_obj($newid);
-        push @results, Actium::O::Sked::Comparison->new( newsked => $newsked );
+        push @results, Octium::O::Sked::Comparison->new( newsked => $newsked );
     }
     $onlyncry->done;
 
@@ -193,8 +193,8 @@ const my %FORMATSPEC => (
 );
 
 method excel (:$file! ) {
-    require Actium::Storage::Excel;
-    my $workbook = Actium::Storage::Excel::new_workbook($file);
+    require Octium::Storage::Excel;
+    my $workbook = Octium::Storage::Excel::new_workbook($file);
 
     my %format = map { $_ => $workbook->add_format( $FORMATSPEC{$_}->%* ) }
       keys %FORMATSPEC;
@@ -288,7 +288,7 @@ method excel (:$file! ) {
             unshift @vals, $headers{$entry};
             $summary->actium_write_col_string( 0, $col, \@vals,
                 $format{unchanged} );
-            my $width = Actium::max( map { length($_) } (@vals) );
+            my $width = Octium::max( map { length($_) } (@vals) );
             $summary->set_column( $col, $col, int( $width * 1.1 ) );
             $col++;
         }
@@ -299,7 +299,7 @@ method excel (:$file! ) {
 
 }
 
-Actium::immut;
+Octium::immut;
 
 1;
 

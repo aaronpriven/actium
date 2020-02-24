@@ -1,6 +1,6 @@
-package Actium::Sked::StopSked::Collection 0.014;
+package Octium::Sked::StopSked::Collection 0.014;
 
-use Actium 'class';
+use Octium 'class';
 
 has stopid => (
     is       => 'ro',
@@ -12,7 +12,7 @@ has _stopskeds_r => (
     traits   => ['Array'],
     is       => 'bare',
     init_arg => 'stopskeds',
-    isa      => 'ArrayRef[Actium::Sked::StopSked]',
+    isa      => 'ArrayRef[Octium::Sked::StopSked]',
     required => 1,
     handles  => { stopskeds => 'elements', },
 );
@@ -25,7 +25,7 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::StopSked::Collection -  Object representing schedule info
+Octium::Sked::StopSked::Collection -  Object representing schedule info
 for a particular  bus stop
 
 =head1 VERSION
@@ -34,8 +34,8 @@ This documentation refers to version 0.014
 
 =head1 SYNOPSIS
 
- use Actium::Sked::StopSked::Collection;
- # do something with Actium::Sked::StopSked::Collection
+ use Octium::Sked::StopSked::Collection;
+ # do something with Octium::Sked::StopSked::Collection
    
 =head1 DESCRIPTION
 
@@ -49,7 +49,7 @@ Returns the unique identifier of the bus stop.
 
 =head2 stopskeds
 
-Returns a list of the Actium::Sked::OfStop::Sked objects that are
+Returns a list of the Octium::Sked::OfStop::Sked objects that are
 appropriate for this stop.
 
 =head1 DIAGNOSTICS

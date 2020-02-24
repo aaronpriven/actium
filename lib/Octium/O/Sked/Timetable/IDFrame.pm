@@ -1,4 +1,4 @@
-package Actium::O::Sked::Timetable::IDFrame 0.012;
+package Octium::O::Sked::Timetable::IDFrame 0.012;
 
 # Moose object representing a frame (one of a series of one or more frames used
 # on a page) for an InDesign timetable
@@ -50,7 +50,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Sked::Timetable::IDFrame - Object representing an InDesign 
+Octium::O::Sked::Timetable::IDFrame - Object representing an InDesign 
 timetable frame
 
 =head1 VERSION
@@ -59,8 +59,8 @@ This documentation refers to version 0.002
 
 =head1 SYNOPSIS
 
- use Actium::O::Sked::Timetable::IDFrame;
- my $frameset = Actium::O::Sked::Timetable::IDFrame->new (
+ use Octium::O::Sked::Timetable::IDFrame;
+ my $frameset = Octium::O::Sked::Timetable::IDFrame->new (
     widthpair => [10, 0],
     frame_idx => 0,
     );

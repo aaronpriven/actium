@@ -1,8 +1,8 @@
-package Actium::O::Sked::Trip 0.012;
+package Octium::O::Sked::Trip 0.012;
 
 # Trip object (for schedules and headways)
 
-use Actium ('class');
+use Octium ('class');
 
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -10,7 +10,7 @@ with Storage( traits => ['OnlyWhenBuilt'] );
 #use overload q{""} => \&stoptimes_comparison_str;
 # only for debugging - remove in production
 
-use Actium::Types qw<ArrayRefOfTimeNums TimeNum ActiumDays>;
+use Octium::Types qw<ArrayRefOfTimeNums TimeNum ActiumDays>;
 
 sub BUILD {
     my $self = shift;
@@ -26,7 +26,7 @@ sub BUILD {
 
 }
 
-# The following is invoked only from the BUILD routine in Actium::O::Sked
+# The following is invoked only from the BUILD routine in Octium::O::Sked
 # It requires knowledge of the stopplaces which is in the Sked object
 
 sub _add_placetimes_from_stoptimes {
@@ -94,7 +94,7 @@ foreach my $attrname ( keys %shortcol_of_attribute ) {
     has $attrname => (
         is           => 'ro',
         isa          => 'Str',
-        traits       => ['Actium::O::Traits::WithShortColumn'],
+        traits       => ['Octium::O::Traits::WithShortColumn'],
         short_column => $shortcol_of_attribute{$attrname},
         required     => ( $attrname eq 'line' ),
     );
@@ -224,14 +224,14 @@ has placetime_r => (
         placetime            => 'get',
         _splice_placetimes   => 'splice',
         _delete_placetime    => 'delete',
-        # only from BUILD in Actium::O::Sked
+        # only from BUILD in Octium::O::Sked
     },
 );
 
 has '_mergedtrip_r' => (
     traits  => ['Array'],
     is      => 'ro',
-    isa     => 'ArrayRef[Actium::O::Sked::Trip]',
+    isa     => 'ArrayRef[Octium::O::Sked::Trip]',
     default => sub { [] },
     handles => { mergedtrips => 'elements', _mergedtrip_count => 'count', },
 
@@ -332,7 +332,7 @@ sub merge_pair {
             }
             if ( $_ eq 'days_obj' ) {
                 $merged_value_of{$init_arg}
-                  = Actium::O::Days->union( $self->$attrname,
+                  = Octium::O::Days->union( $self->$attrname,
                     $secondtrip->$attrname );
                 next;
             }
@@ -375,17 +375,17 @@ __END__
 
 =head1 NAME
 
-Actium::O::Sked::Trip.pm - Object representing a trip in a schedule
+Octium::O::Sked::Trip.pm - Object representing a trip in a schedule
 
 =head1 VERSION
 
-This documentation refers to Actium::O::Sked::Trip.pm version 0.001
+This documentation refers to Octium::O::Sked::Trip.pm version 0.001
 
 =head1 DESCRIPTION
 
 This is a Moose class, representing each trip of a bus schedule. It contains
 information for each trip of a schedule. It is intended to be used by the 
-L<Actium::O::Sked::HeadwayPage> object and the L<Actium::O::Sked> object.
+L<Octium::O::Sked::HeadwayPage> object and the L<Octium::O::Sked> object.
 
 =head1 ATTRIBUTES
 
@@ -433,7 +433,7 @@ time; if it's to continue on another trip, it's usually after some layover time.
 
 This is an integer, the number of minutes since midnight (or before midnight, if
 negative). If this is set to a string, it is coerced to an integer using 
-L<Actium::Time|Actium::Time>
+L<Octium::Time|Octium::Time>
 
 =item B<noteletter>
 
@@ -454,7 +454,7 @@ Entries for stops or places not served by this trip are stored as I<undef>.
 
 These are integers, the number of minutes since midnight (or before midnight, if
 negative). If an entry is set to a string, it is coerced to an integer using 
-L<Actium::Time|Actium::Time>.
+L<Octium::Time|Octium::Time>.
 
 =item B<stoptimes>
 
@@ -481,7 +481,7 @@ Returns the value of the placetime of the given index (beginning at 0).
 =item B<mergedtrips>
 
 After trips are  merged using I<merge_pair()>, this will return all the 
-Actium::O::Sked::Trip objects that were originally merged.  
+Octium::O::Sked::Trip objects that were originally merged.  
 
 =back
 
@@ -498,7 +498,7 @@ carried -- to appear only once in the schedule.)
 
  $trip1->merge_pair($trip2);
 
-A new Actium::O::Sked::Trip object is created, with attributes as follows:
+A new Octium::O::Sked::Trip object is created, with attributes as follows:
 
 =over
 
@@ -508,13 +508,13 @@ The stoptimes and placetimes for the first trip are used.
 
 =item mergedtrips
 
-This attribute contains the Actium::O::Sked::Trip objects for all
+This attribute contains the Octium::O::Sked::Trip objects for all
 the parent trips.  In the simplest case, it contains the two
-Actium::O::Sked::Trip objects passed to merge_pair.
+Octium::O::Sked::Trip objects passed to merge_pair.
 
-However, if either of the Actium::O::Sked::Trip objects passed to
+However, if either of the Octium::O::Sked::Trip objects passed to
 merge_pair already has a mergedtrips attribute, then instead of
-saving the current Actium::O::Sked::Trip object, it saves the
+saving the current Octium::O::Sked::Trip object, it saves the
 contents of mergedtrips. The upshot is that mergedtrips contains
 all the trips that are parents of this merged trip.
 
@@ -539,7 +539,7 @@ See L<Moose>.
 
 =item MooseX::Storage
 
-=item Actium::Types
+=item Octium::Types
 
 =back
 

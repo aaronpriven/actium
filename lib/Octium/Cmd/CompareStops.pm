@@ -1,11 +1,11 @@
-package Actium::Cmd::CompareStops 0.011;
+package Octium::Cmd::CompareStops 0.011;
 
-use Actium;
+use Octium;
 
 use Storable();    ### DEP ###
-use Actium::Sorting::Line ('byline');
-use Actium::Set('ordered_union');
-use Actium::DaysDirections (':all');
+use Octium::Sorting::Line ('byline');
+use Octium::Set('ordered_union');
+use Octium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');    ### DEP ###
 
 sub HELP {

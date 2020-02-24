@@ -1,23 +1,23 @@
-package Actium::Cmd::BARTSkeds 0.011;
+package Octium::Cmd::BARTSkeds 0.011;
 
 # gets schedules from BART API and creates reports
 
-use Actium;
+use Octium;
 use HTTP::Request;                   ### DEP ###
 use LWP::UserAgent;                  ### DEP ###
 use XML::Twig;                       ### DEP ###
 use Date::Simple(qw/date today/);    ### DEP ###
-use Actium::O::2DArray;
+use Octium::O::2DArray;
 
 use DDP;
 
-use Actium::Text::InDesignTags;
-const my $IDT => 'Actium::Text::InDesignTags';
+use Octium::Text::InDesignTags;
+const my $IDT => 'Octium::Text::InDesignTags';
 
 const my $API_KEY => 'MW9S-E7SL-26DU-VV8V';
 
 const my @DAYS => qw/12345 6 7/;
-# weekday, saturday, sunday; matches Actium::O::Days
+# weekday, saturday, sunday; matches Octium::O::Days
 #
 
 use constant DO_FARES => 0;
@@ -117,7 +117,7 @@ sub START {
 
         }
 
-        my $aoa  = Actium::O::2DArray->bless( \@results );
+        my $aoa  = Octium::O::2DArray->bless( \@results );
         my $file = "$foldername/$station.xlsx";
         $aoa->xlsx( output_file => $file );
 
@@ -174,11 +174,11 @@ sub get_fares {
             $twig->parse($fare_xml);
 
             my @fares = $twig->root->first_child('fares')->children('fare');
-            #my $cash_elt = Actium::first { $_->att('class') eq 'cash' } @fares;
+            #my $cash_elt = Octium::first { $_->att('class') eq 'cash' } @fares;
             #my $cash     = $cash_elt->att('amount');
 
             my $clipper_elt
-              = Actium::first { $_->att('class') eq 'clipper' } @fares;
+              = Octium::first { $_->att('class') eq 'clipper' } @fares;
             my $clipper = $clipper_elt->att('amount');
 
             $fare_to{$dest} = $clipper;

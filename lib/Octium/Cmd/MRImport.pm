@@ -1,12 +1,12 @@
-package Actium::Cmd::MRImport 0.012;
+package Octium::Cmd::MRImport 0.012;
 
 # Command-line access to import_to_repository in Actum::MapRepostory
 
 use 5.014;
 use warnings;
 
-use Actium::MapRepository (':all');
-use Actium::O::Folder;
+use Octium::MapRepository (':all');
+use Octium::O::Folder;
 
 use English '-no_match_vars';    ### DEP ###
 
@@ -70,12 +70,12 @@ sub START {
 
     if ( $web and $webfolder_opt ) {
         $specified_webfolder_obj
-          = Actium::O::Folder->new( $env->option('webfolder') );
+          = Octium::O::Folder->new( $env->option('webfolder') );
     }
 
     my $repository_opt = $env->option('repository');
 
-    my $repository = Actium::O::Folder->new(
+    my $repository = Octium::O::Folder->new(
         {   folderlist => $repository_opt,
             must_exist => 1,
         }
@@ -83,7 +83,7 @@ sub START {
     foreach my $folderspec (@importfolders) {
 
         # import to repository
-        my $importfolder = Actium::O::Folder->new(
+        my $importfolder = Octium::O::Folder->new(
             {   folderlist => $folderspec,
                 must_exist => 1,
             }
@@ -128,11 +128,11 @@ __END__
 
 =head1 NAME
 
-Actium::Cmd::MRImport - Copy map files into the map repository
+Octium::Cmd::MRImport - Copy map files into the map repository
 
 =head1 VERSION
 
-This documentation refers to Actium::Cmd::MRImport version 0.001
+This documentation refers to Octium::Cmd::MRImport version 0.001
 
 =head1 USAGE
 
@@ -142,9 +142,9 @@ From a shell:
  
 =head1 DESCRIPTION
 
-The Actium::Cmd::MRCopy module provides a command-line interface to the
+The Octium::Cmd::MRCopy module provides a command-line interface to the
  B<import_to_repository>  and B<make_web_maps> routines of 
-Actium::MapRepository. It expects to be run by actium.pl. See the
+Octium::MapRepository. It expects to be run by actium.pl. See the
 documentation to actium.pl for more information on the START and HELP
 methods.
 
@@ -244,7 +244,7 @@ default; use "-no-progress" to turn it off.
 
 =head1 DIAGNOSTICS
 
-Actium::Cmd::MRCopy issues no error messages on its own, but see its
+Octium::Cmd::MRCopy issues no error messages on its own, but see its
 dependencies below.
 
 =head1 DEPENDENCIES
@@ -253,9 +253,9 @@ dependencies below.
 
 =item * Perl 5.14
 
-=item * Actium::MapRepository
+=item * Octium::MapRepository
 
-=item * Actium::O::Folder
+=item * Octium::O::Folder
 
 =back
 

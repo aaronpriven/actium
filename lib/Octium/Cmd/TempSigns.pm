@@ -1,14 +1,14 @@
-package Actium::Cmd::TempSigns 0.011;
+package Octium::Cmd::TempSigns 0.011;
 
-use Actium;
+use Octium;
 use autodie;
 
-use Actium::O::Folder;
-use Actium::O::DateTime;
+use Octium::O::Folder;
+use Octium::O::DateTime;
 
-use Actium::Text::InDesignTags;
-const my $IDT     => 'Actium::Text::InDesignTags';
-const my $HARDRET => Actium::Text::InDesignTags::->hardreturn_esc;
+use Octium::Text::InDesignTags;
+const my $IDT     => 'Octium::Text::InDesignTags';
+const my $HARDRET => Octium::Text::InDesignTags::->hardreturn_esc;
 
 sub OPTIONS {
     return qw/actiumdb/;
@@ -50,7 +50,7 @@ sub START {
 
     my $output_cry = $env->crier->cry('Outputting data to tempsigns.txt');
 
-    my $dt = Actium::O::DateTime::->new(
+    my $dt = Octium::O::DateTime::->new(
         #datetime => $str,
         ymd => [ 2016, 06, 26 ],
         #pattern  => '%Y-%m-%d'
@@ -69,7 +69,7 @@ sub START {
     my $dates
       = $IDT->parastyle('Text16') . join( $HARDRET, $en, $es, $zh ) . $HARDRET;
 
-    my $folder = Actium::O::Folder::->new('/Users/apriven/Desktop');
+    my $folder = Octium::O::Folder::->new('/Users/apriven/Desktop');
     my $ofh    = $folder->open_write('tempsigns.txt');
 
     print $ofh $IDT->start;

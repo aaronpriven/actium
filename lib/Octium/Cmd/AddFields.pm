@@ -1,10 +1,10 @@
-package Actium::Cmd::AddFields 0.012;
+package Octium::Cmd::AddFields 0.012;
 
 # Adds fields from the database to a file.
 
-use Actium;
+use Octium;
 
-use Actium::O::2DArray;
+use Octium::O::2DArray;
 
 const my $DEFAULT_TABLE  => 'Stops_Neue';
 const my $DEFAULT_FIELD  => 'c_description_full';
@@ -76,7 +76,7 @@ sub START {
       // u::add_before_extension( $file, 'out' );
 
     my $load_cry = cry("Loading $file");
-    my $aoa      = Actium::O::2DArray->new_from_file($file);
+    my $aoa      = Octium::O::2DArray->new_from_file($file);
     $load_cry->done;
 
     my $process_cry = cry("Getting column from $file");

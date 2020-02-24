@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Actium::CLI - Command line interface routines for Actium
+Octium::CLI - Command line interface routines for Actium
 
 =head1 VERSION
 
@@ -12,9 +12,9 @@ This documentation refers to version 0.011
 
 mycommand:
 
- use Actium::CLI;
+ use Octium::CLI;
 
- Actium::CLI->new(
+ Octium::CLI->new(
    commandpath => $0,
    system_name => 'this_system',
    subcommands => {
@@ -26,7 +26,7 @@ mycommand:
 
 Actium/Cmd/DoSomething.pm:
 
- package Actium::Cmd::DoSomething 0.001;
+ package Octium::Cmd::DoSomething 0.001;
 
  sub OPTIONS {
     my ($class, $env) = @_;
@@ -56,7 +56,7 @@ Then, at a shell:
 
 =head1 DESCRIPTION
 
-Actium::CLI is an object representing everything associated with the
+Octium::CLI is an object representing everything associated with the
 command-line interface for the Actium system.
 
 The idea is that this object encapulates everything such as terminal
@@ -66,21 +66,21 @@ program runs.  (Not to be confused with the system environment, perl's
 C<%ENV>, which is a small part of what this program does.)
 
 In theory there could also be other environments that could be
-presented (Actium::O::GUI, Actium::O::Web, or whatever), although none
+presented (Octium::O::GUI, Octium::O::Web, or whatever), although none
 exist at the moment.  The basic idea comes from L<Mark Jason Dominus's
 article on the Moonpig billing
 system|http://blog.plover.com/prog/Moonpig.html>, although that
-encompasses much more than Actium::CLI does.  Typically this object
+encompasses much more than Octium::CLI does.  Typically this object
 is called C<$env> in modules (as in Moonpig), since there could in
 theory be more than one kind of environment.
 
-Actium::CLI is a Moose object. This may surprise people who are used
+Octium::CLI is a Moose object. This may surprise people who are used
 to thinking of Moose as slow and inappropriate for command-line
 programs. Speed was not a significant factor in the design.
 
-=head2 Basic structure of Actium::CLI
+=head2 Basic structure of Octium::CLI
 
-Actium::CLI is designed to create commands with subcommands and
+Octium::CLI is designed to create commands with subcommands and
 which handle command-line options and command-line arguments.
 
 It works this way:
@@ -89,12 +89,12 @@ It works this way:
 
 =item *
 
-The executable script is run, and passes Actium::CLI information on
+The executable script is run, and passes Octium::CLI information on
 valid subcommands and other information about the system.
 
 =item *
 
-Actium::CLI identifies which command is selected, if any. It
+Octium::CLI identifies which command is selected, if any. It
 displays usage information for the script if requested or if there's an
 error.
 
@@ -113,8 +113,8 @@ to display its help information.
 
 =head1 CONSTRUCTION
 
-The Actium::CLI object is constructed using a call to
-Actium::CLI->new() from the main script.
+The Octium::CLI object is constructed using a call to
+Octium::CLI->new() from the main script.
 
 The "new" call takes the following named parameters, which can be
 passed as a hash reference or as a plain hash (in other words, a simple
@@ -140,7 +140,7 @@ under L<English.pm|English>).
 
 This should be set to a hash reference. The keys are the names of the
 subcommands, and the values are names of modules under the
-C<Actium::Cmd> namespace.
+C<Octium::Cmd> namespace.
 
 If the value is a reference to a scalar, that scalar is taken as the
 name of another subcommand. This allows several aliases to be made of
@@ -154,14 +154,14 @@ So, for example, if passed
     sam_spade => 'Sam::Spade',
  },
 
-Then Actium::CLI would use the module C<Actium::Cmd::Frederick> if
+Then Octium::CLI would use the module C<Octium::Cmd::Frederick> if
 either 'fred' or 'freddy' were supplied, and use the module
-C<Actium::Cmd::Sam::Spade> if 'sam_spade' were supplied.
+C<Octium::Cmd::Sam::Spade> if 'sam_spade' were supplied.
 
 Note that the value of the C<command> attribute will always be the
 non-alias name, even if the alias is specified.
 
-The value 'help' is used by Actium::CLI itself so no subcommand can
+The value 'help' is used by Octium::CLI itself so no subcommand can
 be called 'help'.
 
 =head2 Optional parameters
@@ -172,7 +172,7 @@ This should be a hash reference.  If not specified, it will be set to a
 I<copy> of the system environment (perl's C<%ENV>). As such, it should
 be used only for reading the environment and not for passing data to
 child processes.  (Functions respecting C<sysenv> could be added to
-Actium::CLI.)
+Octium::CLI.)
 
 =head3 argv
 
@@ -182,21 +182,21 @@ a copy of the command-line arguments (perl's C<@ARGV>).
 =head3 home_folder
 
 This should be a string representing a path on disk (which will be
-passed to Actium::O::Folder), representing the user's home folder. If
+passed to Octium::O::Folder), representing the user's home folder. If
 not specified, it will be set to the user's home folder (as determined
 by L<the File::HomeDir module|File::HomeDir>.
 
 =head3 bin
 
 This should also be a string representing a path on disk (which, again,
-will be passed to Actium::O::Folder). This represents the folder where
+will be passed to Octium::O::Folder). This represents the folder where
 the script is stored. If not specified, it will be set to C<$Bin> from
 L<the FindBin module|FindBin>.
 
 =head1 SUBCOMMAND MODULES
 
-Subcommand modules will be found in the "Actium::Cmd" namespace.
-Actium::CLI will load those modules and invoke them if selected by
+Subcommand modules will be found in the "Octium::Cmd" namespace.
+Octium::CLI will load those modules and invoke them if selected by
 the user.
 
 Subcommand modules must support a START() method and can optionally
@@ -204,7 +204,7 @@ support HELP() and OPTIONS() methods.  Methods are invoked using method
 lookup (so could theoretically be inherited from parents or composed
 from roles).
 
-All these methods are passed the Actium::CLI object itself as the
+All these methods are passed the Octium::CLI object itself as the
 only argument.
 
 =head3 START()
@@ -222,7 +222,7 @@ it should be invoked.
 
 =head3 OPTIONS()
 
-The OPTIONS() method is how modules request that Actium::CLI do
+The OPTIONS() method is how modules request that Octium::CLI do
 options handling. The method should return a list of option
 specifications and/or option packages. See "OPTION PROCESSING" below.
 
@@ -233,20 +233,20 @@ option packages, see "Option packages" below.
 
 =head3 home_folder
 
-An Actium::O::Folder object representing the user's home folder; see
+An Octium::O::Folder object representing the user's home folder; see
 "home_folder" above, under "Construction".
 
 =head3 bin
 
-An Actium::O::Folder object representing the folder where the script is
+An Octium::O::Folder object representing the folder where the script is
 located; see "bin" above, under "Construction".
 
 =head3 config
 
-An Actium::Storage::Ini object representing a configuration file. The
+An Octium::Storage::Ini object representing a configuration file. The
 configuration file is the system name with a period in front, and an
 .ini extension (so, if the system name is "actium", the configuration
-file will be ".actium.ini"). See Actium::Storage::Ini for details.
+file will be ".actium.ini"). See Octium::Storage::Ini for details.
 
 =head3 commandpath
 
@@ -269,12 +269,12 @@ above, under "Construction".
 The package name of the module that is associated with this subcommand.
 If the "do_something" subcommand is associated with "DoSomething" in
 the "subcommands" hash passed in construction, then the module will be
-"Actium::Cmd::DoSomething".
+"Octium::Cmd::DoSomething".
 
 =head3 crier
 
-This is an Actium::O::Crier object.  At the moment it will be the
-result from default_crier(). See "Actium::O::Crier" for more
+This is an Octium::O::Crier object.  At the moment it will be the
+result from default_crier(). See "Octium::O::Crier" for more
 information.
 
 =head3 command
@@ -289,7 +289,7 @@ subcommand name, and command-line options are removed.
 =head3 original_argv
 
 This returns a list of the command-line arguments as originally
-provided to Actium::CLI. The command name, subcommand name, and
+provided to Octium::CLI. The command name, subcommand name, and
 command-line options are preserved.
 
 =head1 OTHER METHODS
@@ -341,7 +341,7 @@ See "Option Processing" below.
 
 =head1 OPTION PROCESSING
 
-Actium::CLI is designed to handle configuration and options
+Octium::CLI is designed to handle configuration and options
 processing from several sources. The idea is to allow the user to
 specify in many different ways the configuration of the program.
 
@@ -499,9 +499,9 @@ The default package has options regarding terminal display.
 =head3 option: -?
 
 The help, or ? option, is an alternative way of asking for help from
-Actium::CLI. Using it is effectively the same as using the help
+Octium::CLI. Using it is effectively the same as using the help
 subcommand.  (Note that a command shell may use ? as a wildcard
-character and not pass it through to Actium::CLI.)
+character and not pass it through to Octium::CLI.)
 
 =head3 option: -quiet
 
@@ -509,8 +509,8 @@ character and not pass it through to Actium::CLI.)
 
 =head3 config key: 'quiet' in section 'Terminal'
 
-This will stop Actium::O::Crier from outputting most text (it sets
-"maxdepth" to 0). See Actium::O::Crier for more information. Submodules
+This will stop Octium::O::Crier from outputting most text (it sets
+"maxdepth" to 0). See Octium::O::Crier for more information. Submodules
 may also inspect this option and turn off some information display.
 (Negatable)
 
@@ -523,8 +523,8 @@ on.
 
 =head3 config key: 'color' in section 'Terminal'
 
-Actium::O::Crier will output control codes to the terminal that will
-colorize output.  See Actium::O::Crier for more information. Submodules
+Octium::O::Crier will output control codes to the terminal that will
+colorize output.  See Octium::O::Crier for more information. Submodules
 may also inspect this option and turn on color display. (Negatable)
 
 =head3 option: -progress
@@ -533,8 +533,8 @@ may also inspect this option and turn on color display. (Negatable)
 
 =head3 config key: 'progress' in section 'Terminal'
 
-Actium::O::Crier will output dynamic progress indications (from the
-"prog" or "over" methods).  See Actium::O::Crier for more information.
+Octium::O::Crier will output dynamic progress indications (from the
+"prog" or "over" methods).  See Octium::O::Crier for more information.
 Submodules may also inspect this option and act accordingly.
 
 This is a negatable option, but it has a fallback value of 1, so will
@@ -544,10 +544,10 @@ be on unless specified otherwise.
 
 The 'actiumdb' package has options allowing the specification of the
 database name, user name, and password to access the Actium database.
-See Actium::O::Files::ActiumDB for more information.
+See Octium::O::Files::ActiumDB for more information.
 
 When this package is requested, it will create a new attribute in
-Actium::CLI called 'actiumdb', which will return the Actium database
+Octium::CLI called 'actiumdb', which will return the Actium database
 object.
 
 =head3 option: -db_user
@@ -576,14 +576,14 @@ The name of the ODBC driver entry for this database.
 
 =head2 'signup' and 'signup_with_old' packages
 
-These packages allow the specification of Actium::O::Folders::Signup
+These packages allow the specification of Octium::O::Folders::Signup
 objects. See that module for more information.
 
 The 'signup' package only allows for the specification of the current
 signup, while 'signup_with_old' allows for the specification of the
 current signup as well as a previous signup.
 
-If these packages are chosen, Actium::CLI attributes called "signup"
+If these packages are chosen, Octium::CLI attributes called "signup"
 and "oldsignup" will return the object representing the current signup
 and the object representing the previous signup, respectively.
 
@@ -595,7 +595,7 @@ and the object representing the previous signup, respectively.
 
 The base directory where signups are found.
 
-If none of these are set, Actium::O::Folders::Signup uses the C<bin>
+If none of these are set, Octium::O::Folders::Signup uses the C<bin>
 attribute to find the script's folder, and sets the base folder to
 "signups" in the script folder's parent folder.  In other words, it's
 something like "/Actium/bin/../signups". In the normal case where the
@@ -652,7 +652,7 @@ same folder.
 =head2 'geonames' package
 
 This package is used for geocoding using the geonames.org server. See
-L<Actium::Geo|Actium::Geo> for more information.
+L<Octium::Geo|Octium::Geo> for more information.
 
 =head3 option: -geonames_username
 
@@ -666,9 +666,9 @@ user for a name.
 =head2 'flickr' package
 
 This package is used for accessing the Flickr api.  If selected, this
-package will add an attribute "flickr_auth" to Actium::CLI, which is
-an Actium::O::Photos::Flickr::Auth object representing the Flickr
-authorization. See Actium::O::Photos::Flickr::Auth for more
+package will add an attribute "flickr_auth" to Octium::CLI, which is
+an Octium::O::Photos::Flickr::Auth object representing the Flickr
+authorization. See Octium::O::Photos::Flickr::Auth for more
 information.
 
 =head3 option: flickr_key
@@ -691,7 +691,7 @@ will be prompted for the key.
 
 =head1 USER HELP
 
-Actium::CLI also provides some simple user help capabilities. They
+Octium::CLI also provides some simple user help capabilities. They
 can be invoked in two ways: via the "help" subcommand, or the "-help"
 (or "-?") option.
 
@@ -752,7 +752,7 @@ by another module).
 =item Internal error. Invalid option package $optionspec specified...
 
 A module tried to add an option package that does not exist in
-Actium::CLI (probably a spelling error).
+Octium::CLI (probably a spelling error).
 
 =item Internal error. Duplicate option $this_name specified...
 

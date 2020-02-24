@@ -1,4 +1,4 @@
-package Actium::O::Sked::Timetable::IDTimetable 0.012;
+package Octium::O::Sked::Timetable::IDTimetable 0.012;
 
 # Object representing data in a timetable to be displayed to user,
 # specific to InDesign timetables. Mostly to do with frame information.
@@ -20,7 +20,7 @@ use MooseX::MarkAsMethods (autoclean => 1); ### DEP ###
 #};
 
 has timetable_obj => (
-    isa      => 'Actium::O::Sked::Timetable',
+    isa      => 'Octium::O::Sked::Timetable',
     is       => 'ro',
     required => 1,
     handles =>

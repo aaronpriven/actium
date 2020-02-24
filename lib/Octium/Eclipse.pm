@@ -1,13 +1,13 @@
-package Actium::Eclipse 0.012;
+package Octium::Eclipse 0.012;
 
 # Originally, this did nothing of any use. However, requiring that this file
 # be present was a cute way of figuring out whether the requiring
 # program is running under Eclipse or not.
 
-# Add -MActium::Eclipse to Eclipse's default perl comamnd line.
+# Add -MOctium::Eclipse to Eclipse's default perl comamnd line.
 # Then you can do:
 
-#  if ($Actium::Eclipse::is_under_eclipse) {
+#  if ($Octium::Eclipse::is_under_eclipse) {
 #     do_something();
 #  }
 #  else {
@@ -18,7 +18,7 @@ package Actium::Eclipse 0.012;
 
 # Originally, I did that so that actium.pl could ask for a command line if
 # none was provided.  I later moved that routine to this module. So
-# Actium::Eclipse::get_command_line() gets the command line (using Applescript...
+# Octium::Eclipse::get_command_line() gets the command line (using Applescript...
 # slowly) from Eclipse.
 
 use 5.010;

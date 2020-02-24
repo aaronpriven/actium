@@ -1,10 +1,10 @@
-package Actium::Sked::Trip::Time::Collection 0.014;
+package Octium::Sked::Trip::Time::Collection 0.014;
 
 # Collection of times
 
-use Actium ('role');
+use Octium ('role');
 
-# This is a role applied to Actium::Sked::Trip. It represents
+# This is a role applied to Octium::Sked::Trip. It represents
 # the methods associated with the collection of times in the trip
 
 ################
@@ -14,7 +14,7 @@ use Actium ('role');
 has 'stoptime_r' => (
     traits   => ['Array'],
     is       => 'bare',
-    isa      => 'ArrayRef[Actium::Sked::Trip::Time]',
+    isa      => 'ArrayRef[Octium::Sked::Trip::Time]',
     required => 1,
     init_arg => 'stoptimes',
     handles  => {
@@ -27,7 +27,7 @@ has 'stoptime_r' => (
 has stoptimes_comparison_str => (
     is   => 'ro',
     lazy => method {
-        join( '|', Actium::define( map { $_->timenum } $self->stoptimes ) )
+        join( '|', Octium::define( map { $_->timenum } $self->stoptimes ) )
     },
     traits => ['DoNotSerialize'],
 );
@@ -35,7 +35,7 @@ has stoptimes_comparison_str => (
 has average_stoptime => (
     is   => 'ro',
     lazy => method {
-        Actium::mean( grep { $_->has_time } $self->stoptimes )
+        Octium::mean( grep { $_->has_time } $self->stoptimes )
     },
     traits => ['DoNotSerialize'],
 );
@@ -44,7 +44,7 @@ has destination_stoptime_idx => (
     is   => 'ro',
     lazy => method {
         my $reverseidx
-          = Actium::firstidx { $_->has_time } ( reverse $self->stoptimes );
+          = Octium::firstidx { $_->has_time } ( reverse $self->stoptimes );
         return $self->stoptime_count - $reverseidx - 1;
     },
     traits => ['DoNotSerialize'],
@@ -66,15 +66,15 @@ has placetime_r => (
     is       => 'bare',
     writer   => '_set_placetime_r',
     init_arg => 'placetimes',
-    isa      => 'ArrayRef[Actium::Sked::Trip::Time]',
+    isa      => 'ArrayRef[Octium::Sked::Trip::Time]',
     required => 0,
     default  => sub { [] },
     trigger  => method( $placetimes_r, $? )
     {
         my @stoptimes = $self->stoptimes;
         foreach my $placetime (@$placetimes_r) {
-            if ( Actium::none { $_ == $placetime } @stoptimes ) {
-                croak 'Actium::Sked::Trip::Time object '
+            if ( Octium::none { $_ == $placetime } @stoptimes ) {
+                croak 'Octium::Sked::Trip::Time object '
                   . 'found in placetimes but not in stoptimes.';
             }
         }
@@ -87,7 +87,7 @@ has placetime_r => (
         placetime             => 'get',
         _splice_placetimes    => 'splice',
         _delete_placetime     => 'delete',
-        # only from BUILD in Actium::O::Sked
+        # only from BUILD in Octium::O::Sked
     },
 );
 
@@ -110,31 +110,31 @@ __END__
 
 =head1 NAME
 
-Actium::Sked::Trip::Time::Collection - Role representing collection of 
+Octium::Sked::Trip::Time::Collection - Role representing collection of 
 schedule times
 
 =head1 VERSION
 
-This documentation refers to Actium:::Sked::Trip::Time::Collection
+This documentation refers to Octium:::Sked::Trip::Time::Collection
 version 0.014
 
 =head1 DESCRIPTION
 
 This is a Moose role, representing the collection of times associated
 with a trip of a transit schedule.  It is designed to be applied to the
- Actium::Sked::Trip class, but could conceivably be used for other
+ Octium::Sked::Trip class, but could conceivably be used for other
 collections of times.
 
 =head1 ATTRIBUTES
 
 =head2 B<stoptimes>
 
-This is an array of Actium::Sked::Trip::Time objects, each one
+This is an array of Octium::Sked::Trip::Time objects, each one
 representing the time the vehicle passes a stop. See
-Actium::Sked::Trip::Time and Actium::Time for more details.
+Octium::Sked::Trip::Time and Octium::Time for more details.
 
 There is one entry for each stop in the schedule, although that may
-point to an Actium::Time value representing a stop that is not served
+point to an Octium::Time value representing a stop that is not served
 by this trip.
 
 =head3 construction
@@ -161,7 +161,7 @@ This is a list of those times from C<stoptimes> that are the times
 representing "places" (timepoints).
 
 There is one entry for each place (timepoint) in the schedule, although
-that may point to an Actium::Time value representing a stop that is not
+that may point to an Octium::Time value representing a stop that is not
 served by this trip.
 
 =head3 construction

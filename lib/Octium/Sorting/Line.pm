@@ -1,4 +1,4 @@
-package Actium::Sorting::Line 0.012;
+package Octium::Sorting::Line 0.012;
 
 # Sorting routines (by line designation)
 
@@ -96,7 +96,7 @@ __END__
 
 =head1 NAME
 
-Actium::Sorting::Line - sorting by line routines for Actium system
+Octium::Sorting::Line - sorting by line routines for Actium system
 
 =head1 VERSION
 
@@ -104,7 +104,7 @@ This documentation refers to version 0.001.
 
 =head1 SYNOPSIS
 
- use Actium::Sorting::Line qw(byline linekeys);
+ use Octium::Sorting::Line qw(byline linekeys);
  @lines        = qw(N N1 NA NA1 1 1R 10 2 20 200 20A );
  @sorted_lines = sortbyline (@lines);
  # @sorted_lines is 1 1R 2 10 20 20A 200 N N1 NA NA1
@@ -122,7 +122,7 @@ This documentation refers to version 0.001.
    
 =head1 DESCRIPTION
 
-Actium::Sorting::Line is a module that provides special sorting routines
+Octium::Sorting::Line is a module that provides special sorting routines
 for the Actium system. 
  It sorts transit line designations in 
 the appropriate order.  This is a type of "natural" sort.  

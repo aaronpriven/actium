@@ -1,15 +1,15 @@
-package Actium::Import::Xhea::ToSkeds 0.012;
+package Octium::Import::Xhea::ToSkeds 0.012;
 
-use Actium;
-use Actium::Storage::TabDelimited 'read_aoas';
-use Actium::O::Dir;
-use Actium::Time;
-use Actium::O::Pattern;
-use Actium::O::Pattern::Block;
-use Actium::O::Pattern::Group;
-use Actium::O::Pattern::Stop;
-use Actium::O::Pattern::Trip;
-use Actium::O::Sked::Collection;
+use Octium;
+use Octium::Storage::TabDelimited 'read_aoas';
+use Octium::O::Dir;
+use Octium::Time;
+use Octium::O::Pattern;
+use Octium::O::Pattern::Block;
+use Octium::O::Pattern::Group;
+use Octium::O::Pattern::Stop;
+use Octium::O::Pattern::Trip;
+use Octium::O::Sked::Collection;
 
 const my @required_tables => (qw/ppat block trip trip_pattern trip_stop/);
 
@@ -142,7 +142,7 @@ sub _get_blocks {
 
             my $block_id = $field{blk_number};
 
-            my $block = Actium::O::Pattern::Block->new(
+            my $block = Octium::O::Pattern::Block->new(
                 block_id      => $block_id,
                 vehicle_group => $field{blk_vehicle_group} // $EMPTY,
                 vehicle_type  => $field{blk_vehicle_type} // $EMPTY,
@@ -200,9 +200,9 @@ sub _get_blocks {
                 my $uniqid     = "$line.$identifier";
 
                 my $dir_obj
-                  = Actium::O::Dir::->instance( $field{tpat_direction} );
+                  = Octium::O::Dir::->instance( $field{tpat_direction} );
 
-                my $pattern = Actium::O::Pattern->new(
+                my $pattern = Octium::O::Pattern->new(
                     line       => $line,
                     linegroup  => $linegroup,
                     identifier => $identifier,
@@ -217,7 +217,7 @@ sub _get_blocks {
                 my $lgdir = $pattern->lgdir;
                 if ( not exists $patgroup_by_lgdir{$lgdir} ) {
                     $patgroup_by_lgdir{$lgdir}
-                      = Actium::O::Pattern::Group->new(
+                      = Octium::O::Pattern::Group->new(
                         linegroup => $linegroup,
                         direction => $dir_obj,
                       );
@@ -305,7 +305,7 @@ sub _get_trips {
             #$event = $EMPTY if $event =~ /\A [A-Z]* on \z/x;
             # delete SCHOOOLon type events
 
-            my $trip = Actium::O::Pattern::Trip->new(
+            my $trip = Octium::O::Pattern::Trip->new(
                 days             => $days,
                 int_number       => $int_number,
                 schedule_daytype => $field{trp_schedule_type},
@@ -344,7 +344,7 @@ sub _get_trips {
             my $pattern_id = $pattern_id_of_trip_number{$int_number};
             my $pattern    = $pattern_by_id{$pattern_id};
 
-            my $time = Actium::Time::->from_str( $field{tstp_passing_time} );
+            my $time = Octium::Time::->from_str( $field{tstp_passing_time} );
             my $stop_position = $field{tstp_position} - 1;
             # convert 1-based to 0-based counting
 
@@ -356,7 +356,7 @@ sub _get_trips {
                 my %stop_spec = ( h_stp_511_id => $field{stp_511_id} );
                 $stop_spec{tstp_place} = $field{tstp_place}
                   if $field{tstp_place};
-                my $stop_obj = Actium::O::Pattern::Stop->new(%stop_spec);
+                my $stop_obj = Octium::O::Pattern::Stop->new(%stop_spec);
                 $pattern->set_stop_obj( $stop_position, $stop_obj );
 
             }
@@ -390,7 +390,7 @@ sub _get_trips {
     #
     #            if ( not defined $pattern_place ) {
     #
-    #                my $place_obj = Actium::O::Pattern::Place->new(
+    #                my $place_obj = Octium::O::Pattern::Place->new(
     #                    %field{
     #                        qw( ttp_place ttp_is_arrival
     #                          ttp_is_departure ttp_is_public )
@@ -457,7 +457,7 @@ sub _add_place_patterns_to_patterns {
         callback   => sub {
             \my %field = shift;
             my ( $place, $rank ) = @field{qw/place rank/};
-            my $direction = Actium::O::Dir->instance( $field{direction} );
+            my $direction = Octium::O::Dir->instance( $field{direction} );
             my $linedir   = $direction->linedir( $field{line} );
             $ppat_of_linedir{$linedir}->[$rank] = $place;
             return;
@@ -566,7 +566,7 @@ sub _make_skeds {
         @_,
         {   actiumdb  => 1,
             patgroups => 1,
-            signup    => { default => Actium::env->signup },
+            signup    => { default => Octium::env->signup },
         }
     );
 
@@ -582,7 +582,7 @@ sub _make_skeds {
     }
     last_cry()->over(".");
 
-    return Actium::O::Sked::Collection->new(
+    return Octium::O::Sked::Collection->new(
         name   => 'received',
         skeds  => \@skeds,
         signup => $params{signup}

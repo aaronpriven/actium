@@ -1,8 +1,8 @@
-package Actium::O::Sked::Comparison 0.014;
+package Octium::O::Sked::Comparison 0.014;
 
-use Actium ('class');
+use Octium ('class');
 use Algorithm::Diff;
-use Actium::O::Sked;
+use Octium::O::Sked;
 
 const my $ONLY_NEW  => 2;
 const my $ONLY_OLD  => 3;
@@ -10,7 +10,7 @@ const my $DIFFER    => 1;
 const my $IDENTICAL => 0;
 
 has [qw/oldsked newsked/] => (
-    isa      => 'Maybe[Actium::O::Sked]',
+    isa      => 'Maybe[Octium::O::Sked]',
     is       => 'ro',
     required => 0,
 );
@@ -75,7 +75,7 @@ method new_id {
 
 method _set_sortkey_from_id ($id!) {
     my ( $lg, $rest ) = split( /_/, $id, 2 );
-    $lg = Actium::Sorting::Line::linekeys($lg);
+    $lg = Octium::Sorting::Line::linekeys($lg);
     $self->_set_sortkey( $lg . "_$rest" );
     # avoids doing a natural sort on the days,
     # which would sort "67" before "12345"
@@ -174,7 +174,7 @@ has has_place_differences => (
 method _build_has_place_differences {
     my @sdiffs = $self->place_sdiffs;
     my @changetypes = map { $_->[0] } @sdiffs;
-    return Actium::any { $_ ne 'u' } @changetypes;
+    return Octium::any { $_ ne 'u' } @changetypes;
 }
 
 has _place_sdiff_r => (
@@ -236,7 +236,7 @@ method _build_shows_daycode {
 method _build_shows_specday {
     foreach \my %trip ( $self->trips ) {
         my @specdays = $trip{specday}->@*;
-        return 1 if Actium::any {$_} @specdays;
+        return 1 if Octium::any {$_} @specdays;
     }
     return 0;
 
@@ -445,7 +445,7 @@ method _build_trips {
         # gets a list of all the times for this column
 
         next FIND_COLUMN_TO_COMPARE
-          if Actium::any { not defined $_ } @times;
+          if Octium::any { not defined $_ } @times;
 
         $column_to_compare = $col_idx;
 
@@ -471,7 +471,7 @@ method _build_trips {
             my @times = $trip->{times}->@*;    # copy
             @times = map { $_->[0] // $_->[1] } @times;
             @times = grep {defined} @times;
-            my $average = Actium::mean( $times[0], $times[-1] );
+            my $average = Octium::mean( $times[0], $times[-1] );
             push @interim_list, [ $trip, $average ];
         }
 
@@ -564,7 +564,7 @@ method strings_and_formats (:$show_line , :$show_daycode , :$show_specday ) {
 
                 @times = map {
                     defined($_)
-                      ? Actium::Time->from_num($_)->formatted( format => '24+' )
+                      ? Octium::Time->from_num($_)->formatted( format => '24+' )
                       : "-"
                 } @times;
 
@@ -598,7 +598,7 @@ method strings_and_formats (:$show_line , :$show_daycode , :$show_specday ) {
             push @cols, $daycodes[0] if $show_daycode;
             push @cols, $specdays[0] if $show_specday;
             push @cols, map {
-                Actium::Time->from_num( $_->[0] )->formatted( format => '24+' )
+                Octium::Time->from_num( $_->[0] )->formatted( format => '24+' )
             } @row_of_times;
 
             push @results,
@@ -693,7 +693,7 @@ method text (:$show_line , :$show_daycode , :$show_specday ) {
 
                 @times = map {
                     defined($_)
-                      ? Actium::Time->from_num($_)->formatted( format => '24+' )
+                      ? Octium::Time->from_num($_)->formatted( format => '24+' )
                       : "-"
                 } @times;
 
@@ -729,7 +729,7 @@ method text (:$show_line , :$show_daycode , :$show_specday ) {
                 $changemarker,
                 @cols,
                 map {
-                    Actium::Time->from_num( $_->[0] )
+                    Octium::Time->from_num( $_->[0] )
                       ->formatted( format => '24+' )
                 } @row_of_times
             );

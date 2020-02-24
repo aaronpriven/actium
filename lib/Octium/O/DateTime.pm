@@ -1,4 +1,4 @@
-package Actium::O::DateTime 0.014;
+package Octium::O::DateTime 0.014;
 
 # Object representing a date and time
 # (a thin wrapper around the DateTime module, with some i18n methods)
@@ -8,7 +8,7 @@ package Actium::O::DateTime 0.014;
 
 # consider adding DateTimeX::Role::Immutable
 
-use Actium;
+use Octium;
 
 use parent 'DateTime';
 # DateTime ### DEP ###
@@ -136,7 +136,7 @@ sub new {
         my $obj = $strp_obj->parse_datetime($datestr);
 
         # returns a DateTime object.
-        # This re-blesses it into an Actium::O::DateTime object
+        # This re-blesses it into an Octium::O::DateTime object
 
         bless $obj, $class;
         return $obj;
@@ -162,7 +162,7 @@ sub new {
         my $obj = $cldr->parse_datetime($datestr);
 
         # returns a DateTime object.
-        # This re-blesses it into an Actium::O::DateTime object
+        # This re-blesses it into an Octium::O::DateTime object
 
         bless $obj, $class;
         return $obj;
@@ -326,9 +326,9 @@ sub _x_est_date {
     return if not defined $x_est_date;
 
     if ( not $x_est_date->isa(__PACKAGE__) ) {
-        $x_est_date = Actium::O::DateTime::->new($x_est_date);
+        $x_est_date = Octium::O::DateTime::->new($x_est_date);
         # if somebody is passing DateTime objects,
-        # turns them into Actium::O::DateTime objects
+        # turns them into Octium::O::DateTime objects
     }
 
     return $x_est_date;
@@ -343,7 +343,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::DateTime - dates (and times) for Actium
+Octium::O::DateTime - dates (and times) for Actium
 
 =head1 VERSION
 
@@ -351,25 +351,25 @@ This documentation refers to version 0.014
 
 =head1 SYNOPSIS
 
- use Actium::O::DateTime;
+ use Octium::O::DateTime;
  
- my $dt = Actium::O::DateTime->('3/27/2017');
+ my $dt = Octium::O::DateTime->('3/27/2017');
  # or equivalently
- my $dt = Actium::O::DateTime->(datetime => '3/27/2017');
+ my $dt = Octium::O::DateTime->(datetime => '3/27/2017');
  
  my $date_es = $dt->long_es;
  # $date_es = "27 de marzo de 2017";
    
 =head1 DESCRIPTION
 
-Actium::O::DateTime is a thin wrapper around L<DateTime>.  In inherits
+Octium::O::DateTime is a thin wrapper around L<DateTime>.  In inherits
 almost almost everything from DateTime, while providing a few
 convenience methods and convenience ways of constructing the object.
 
-Actium::O::DateTime was created in order to do comparisons and
+Octium::O::DateTime was created in order to do comparisons and
 presentation of dates rather than times. Therefore, its own methods
 ignore such details as  time zones, leap seconds and the like. 
-Theoretically you could use Actium::O::DateTime  objects to do
+Theoretically you could use Octium::O::DateTime  objects to do
 processing on time, but it's not really intended for that  purpose.
 
 =head1 METHODS
@@ -378,20 +378,20 @@ processing on time, but it's not really intended for that  purpose.
 
 =item B<new()>
 
-This subroutine takes arguments and returns a new Actium::O::DateTime
+This subroutine takes arguments and returns a new Octium::O::DateTime
 object.
 
 Most arguments must be specified using names:
 
     $dt = 
-      Actium::O::DateTime->new(
+      Octium::O::DateTime->new(
         cldr => '31-5-2017' , pattern => 'D-M-Y' 
       );
     
 If a single positional argument is seen,  then it is treated the same
 as an argument to 'datetime', below.
 
-The arguments used by Actium::O::DateTime are given below. If none of
+The arguments used by Octium::O::DateTime are given below. If none of
 these arguments are present, the arguments are passed through to
 DateTime. Only one of "datetime", "strptime" or "cldr" can be present, 
 and if one is, none of the other arguments other than "pattern" can be
@@ -482,10 +482,10 @@ probably be added  at the end.
 This class method (not object method) calculates the newest date from a
 list of dates passed to it. (Note that the invocant is assumed to be
 the class name and is not used in the calculation.)  The dates can be
-Actium::O::DateTime objects, DateTime objects, or strings; if they are
+Octium::O::DateTime objects, DateTime objects, or strings; if they are
 strings they will be formatted as dates as though they were passed to
 new() in the strptime argument.  The return value is an
-Actium::O::DateTime object.
+Octium::O::DateTime object.
 
 =back
 

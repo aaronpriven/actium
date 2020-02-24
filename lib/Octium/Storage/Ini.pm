@@ -1,11 +1,11 @@
-package Actium::Storage::Ini 0.011;
+package Octium::Storage::Ini 0.011;
 
 # Class for reading .ini files.
 # At the moment, and possibly permanently, a thin wrapper around
 # Config::Tiny, but could be more later. Maybe.
 
-use Actium        ('class');
-use Actium::Types ('ActiumFolderLike');
+use Octium        ('class');
+use Octium::Types ('ActiumFolderLike');
 
 use File::HomeDir;    ### DEP ###
 use Config::Tiny;     ### DEP ###

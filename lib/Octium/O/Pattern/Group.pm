@@ -1,16 +1,16 @@
-package Actium::O::Pattern::Group 0.012;
+package Octium::O::Pattern::Group 0.012;
 
-use Actium ('class');
+use Octium ('class');
 
-use Actium::Types (qw/ActiumDir/);
-use Actium::O::Dir;
-use Actium::O::Days;
-use Actium::Time;
-use Actium::O::Pattern;
-use Actium::O::Sked::Trip;
-use Actium::O::Sked;
-use Actium::O::Sked::TripCollection;
-use Actium::Set ('ordered_union_columns');
+use Octium::Types (qw/ActiumDir/);
+use Octium::O::Dir;
+use Octium::O::Days;
+use Octium::Time;
+use Octium::O::Pattern;
+use Octium::O::Sked::Trip;
+use Octium::O::Sked;
+use Octium::O::Sked::TripCollection;
+use Octium::Set ('ordered_union_columns');
 
 # OBJECT METHODS AND ATTRIBUTES
 
@@ -48,7 +48,7 @@ sub id {
 
 has 'patterns_obj' => (
     is      => 'bare',
-    isa     => 'HashRef[Actium::O::Pattern]',
+    isa     => 'HashRef[Octium::O::Pattern]',
     default => sub { {} },
     traits  => ['Hash'],
     handles => {
@@ -110,7 +110,7 @@ sub skeds {
         # new reference.
 
         push @skeds,
-          Actium::O::Sked->new(
+          Octium::O::Sked->new(
             place4_r    => [@place4s],
             place8_r    => [@place8s],
             stopplace_r => [@stopplaces],
@@ -118,7 +118,7 @@ sub skeds {
             linegroup   => $self->linegroup,
             direction   => $self->dir_obj,
             trip_r      => [ $trip_collection->trips_r->@* ],
-            days        => Actium::O::Days->instance( $days, 'B' ),
+            days        => Octium::O::Days->instance( $days, 'B' ),
           );
 
     }
@@ -146,7 +146,7 @@ sub _sked_trip_collections {
                 $event      = '';
             }
 
-            my $days_obj = Actium::O::Days->instance( $days, $schooldays );
+            my $days_obj = Octium::O::Days->instance( $days, $schooldays );
 
             my @times = map { $_->timenum } $trip->stoptimes;
 
@@ -159,7 +159,7 @@ sub _sked_trip_collections {
             my $vehicletype
               = @vehicle_info ? join( ":", @vehicle_info ) : $EMPTY;
 
-            push @skedtrips, Actium::O::Sked::Trip->new(
+            push @skedtrips, Octium::O::Sked::Trip->new(
                 blockid => $trip->block_id,
                 pattern => $pattern->identifier,
                 daysexceptions => $event,             # $trip->event_and_status,
@@ -178,7 +178,7 @@ sub _sked_trip_collections {
     }
 
     my $all_trips_collection
-      = Actium::O::Sked::TripCollection->new( trips_r => \@skedtrips );
+      = Octium::O::Sked::TripCollection->new( trips_r => \@skedtrips );
 
     return $all_trips_collection->trips_by_day;
 
@@ -211,7 +211,7 @@ my $stop_tiebreaker = sub {
 
 };
 
-my $undef_time = Actium::Time->from_num(undef);
+my $undef_time = Octium::Time->from_num(undef);
 
 sub _order_stops {
     my $self = shift;

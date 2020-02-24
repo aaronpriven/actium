@@ -1,13 +1,13 @@
-package Actium::Frequency 0.012;
+package Octium::Frequency 0.012;
 
-use Actium;
-use Actium::O::2DArray;
-use Actium::Time;
+use Octium;
+use Octium::O::2DArray;
+use Octium::Time;
 use Math::Round('nearest');    ### DEP ###
 use List::MoreUtils();         ### DEP ###
 
-my $earliest = Actium::Time->from_str('NOON_YESTERDAY')->timenum;
-my $latest   = Actium::Time->from_str('NOON_TOMORROW')->timenum;
+my $earliest = Octium::Time->from_str('NOON_YESTERDAY')->timenum;
+my $latest   = Octium::Time->from_str('NOON_TOMORROW')->timenum;
 
 sub break_sets {
     my $breaks = shift;
@@ -17,7 +17,7 @@ sub break_sets {
         return ( [ \@timenums ], [undef] );
     }
 
-    my @objs = u::uniq( Actium::Time->from_str( split( /,/, $breaks ) ) );
+    my @objs = u::uniq( Octium::Time->from_str( split( /,/, $breaks ) ) );
 
     my @objs_with_num = sort { $a->[1] <=> $b->[1] }
       map { [ $_, $_->timenum ] } @objs;
@@ -27,7 +27,7 @@ sub break_sets {
 
     my @breaktimes = map { $_->[0]->ap } @objs_with_num;
 
-    unshift @breaktimes, Actium::Time::->from_num( $timenums[0] )->ap;
+    unshift @breaktimes, Octium::Time::->from_num( $timenums[0] )->ap;
 
     my @breaknums = map { $_->[1] } @objs_with_num;
     @breaknums = ( $earliest, @breaknums, $latest );
@@ -78,7 +78,7 @@ sub frequency {
     }
 
     my $freq_display
-      = Actium::O::2DArray::->new(@diff_displays)->tabulated('  ');
+      = Octium::O::2DArray::->new(@diff_displays)->tabulated('  ');
 
     my ( $lowest, $highest )
       = List::MoreUtils::minmax( keys %diff_psych_culled );

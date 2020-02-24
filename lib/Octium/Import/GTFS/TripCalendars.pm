@@ -1,9 +1,9 @@
-package Actium::Import::GTFS::TripCalendars 0.012;
+package Octium::Import::GTFS::TripCalendars 0.012;
 
-use Actium;
-use Actium::Import::GTFS (':all');
-use Actium::Time;
-use Actium::O::DateTime;
+use Octium;
+use Octium::Import::GTFS (':all');
+use Octium::Time;
+use Octium::O::DateTime;
 use DateTime::Duration;
 use DateTime::Event::Recurrence;
 use DateTime::Event::ICal;
@@ -12,7 +12,7 @@ use List::Compare::Functional ('is_LsubsetR');
 
 # "dow" in identifiers means day of week
 
-use Data::Printer { filters => { 'Actium::O::DateTime' => sub { $_[0]->ymd }, },
+use Data::Printer { filters => { 'Octium::O::DateTime' => sub { $_[0]->ymd }, },
 };
 
 const my @DAYS_OF_WEEK =>
@@ -28,7 +28,7 @@ my (%calendar,    %exceptions,        $initial,
     %note_of_trip,
 );
 
-func calendar_notes_of_trips ( Actium::O::Folders::Signup $signup) {
+func calendar_notes_of_trips ( Octium::O::Folders::Signup $signup) {
 
     read_calendar($signup);
 
@@ -432,17 +432,17 @@ func text_notes {
         if (@all_or_mostly_on_days) {
 
             if ( @all_or_mostly_on_days < 4 ) {
-                $noteletter = Actium::joinempty( map { $NOTELETTER_DOW[$_] }
+                $noteletter = Octium::joinempty( map { $NOTELETTER_DOW[$_] }
                       @all_or_mostly_on_days );
             }
             elsif (
                 @all_or_mostly_on_days == 4
-                and Actium::all { 1 <= $_ and $_ <= 5 }
+                and Octium::all { 1 <= $_ and $_ <= 5 }
                 @all_or_mostly_on_days
               )
             {
-                my $dow = Actium::first {
-                    not Actium::in( $_, @all_or_mostly_on_days )
+                my $dow = Octium::first {
+                    not Octium::in( $_, @all_or_mostly_on_days )
                 }
                 1 .. 5;
                 $noteletter = 'X' . $NOTELETTER_DOW[$dow];
@@ -456,7 +456,7 @@ func text_notes {
 
             if ( @all_or_mostly_on_days == @all_on_days ) {
                 $note_text
-                  .= 'every ' . Actium::joinseries( @NOTE_DOW[@all_on_days] );
+                  .= 'every ' . Octium::joinseries( @NOTE_DOW[@all_on_days] );
             }
             else {
                 $note_text .= 'every ';
@@ -467,7 +467,7 @@ func text_notes {
                         my @except_dates = map { $_->format_cldr("MMM. d") }
                           $except_days{$dow}->@*;
                         $every
-                          .= ' except ' . Actium::joinseries(@except_dates);
+                          .= ' except ' . Octium::joinseries(@except_dates);
                     }
                     push @everies, $every;
                 }
@@ -566,13 +566,13 @@ func dt_from_gtfs_date ( Str $date) {
     my $year  = substr( $date, 0, 4 );
     my $month = substr( $date, 4, 2 );
     my $day   = substr( $date, 6, 2 );
-    my $dt = Actium::O::DateTime::->new( ymd => [ $year, $month, $day ] );
+    my $dt = Octium::O::DateTime::->new( ymd => [ $year, $month, $day ] );
     return $dt_of{$date} = $dt;
 }
 
-func following_day ( Actium::O::DateTime $dt) {
+func following_day ( Octium::O::DateTime $dt) {
     state $one_day = DateTime::Duration->new( days => 1 );
-    my $new_dt = Actium::O::DateTime::->from_object( object => $dt );
+    my $new_dt = Octium::O::DateTime::->from_object( object => $dt );
     $new_dt->add_duration($one_day);
     return $new_dt;
 }

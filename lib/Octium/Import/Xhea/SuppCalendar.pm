@@ -1,7 +1,7 @@
-package Actium::Import::Xhea::SuppCalendar 0.012;
+package Octium::Import::Xhea::SuppCalendar 0.012;
 
-use Actium;
-use Actium::Time;
+use Octium;
+use Octium::Time;
 
 const my %num_of_month =>
   qw( Jan 101 Feb 102 Mar 103 Apr 104 May 105 Jun 106 Jul 107
@@ -37,7 +37,7 @@ sub read_supp_calendars {
 
     my @files = $calendar_folder->glob_files('*.xlsx');
 
-    @files = grep { not( Actium::filename($_) =~ m/\A~/ ) } @files;
+    @files = grep { not( Octium::filename($_) =~ m/\A~/ ) } @files;
     # skip temporary files beginning with ~
 
     my ( %next_code_of_days, %code_of_note, %calendar_of_block );
@@ -76,7 +76,7 @@ sub read_supp_calendars {
 
         @wkdays = map { $day_sub{$_} } @wkdays;
 
-        my @uniq_wkdays = Actium::uniq @wkdays;
+        my @uniq_wkdays = Octium::uniq @wkdays;
 
         _nextline($sheet);    #  ignore counts of how many are on
 
@@ -92,7 +92,7 @@ sub read_supp_calendars {
             next unless $block;
 
             my $pullout_cell    = $cells[3];
-            my $pullout_time    = Actium::Time->from_excel($pullout_cell);
+            my $pullout_time    = Octium::Time->from_excel($pullout_cell);
             my $pullout_timenum = $pullout_time->timenum;
 
             my $tripkey = "$block/$pullout_timenum";
@@ -160,7 +160,7 @@ sub read_supp_calendars {
 
             if (@on) {
                 my @every_on = map {"every $_"} @on;
-                $note .= 'Operates ' . Actium::joinseries(@every_on);
+                $note .= 'Operates ' . Octium::joinseries(@every_on);
             }
             if (@also) {
                 if (@on) {
@@ -238,8 +238,8 @@ sub read_supp_calendars {
 
     foreach my $tripkey ( sort keys %calendar_of_block ) {
         my $cal = $calendar_of_block{$tripkey};
-        say $fh Actium::jointab( $tripkey,
-            Actium::is_arrayref($cal) ? @$cal : $cal );
+        say $fh Octium::jointab( $tripkey,
+            Octium::is_arrayref($cal) ? @$cal : $cal );
     }
 
     $fh->close;
@@ -274,7 +274,7 @@ sub read_supp_calendars {
               . '->new_from_xlsx';
         }
 
-        my $sheet_key = Actium::refaddr($sheet);
+        my $sheet_key = Octium::refaddr($sheet);
 
         ( $minrow{$sheet_key}, $maxrow{$sheet_key} ) = $sheet->row_range();
         ( $mincol{$sheet_key}, $maxcol{$sheet_key} ) = $sheet->col_range();
@@ -287,7 +287,7 @@ sub read_supp_calendars {
     sub _nextline {
         my $sheet       = shift;
         my $wants_cells = shift;
-        my $sheet_key   = Actium::refaddr($sheet);
+        my $sheet_key   = Octium::refaddr($sheet);
 
         if ( not defined wantarray ) {
             $currentrow{$sheet_key}++
@@ -304,7 +304,7 @@ sub read_supp_calendars {
         my @values = map { defined($_) ? $_->value : $EMPTY } @cells;
 
         @values = _cleanvalues(@values);
-        return if ( Actium::none {$_} @values );
+        return if ( Octium::none {$_} @values );
 
         pop @values while $values[-1] eq $EMPTY;
 
@@ -320,7 +320,7 @@ sub read_supp_calendars {
 sub _displaydates {
 
     my @dates = sort { $key_of_day{$a} <=> $key_of_day{$b} } @_;
-    return Actium::joinseries(@dates);
+    return Octium::joinseries(@dates);
 
 }
 

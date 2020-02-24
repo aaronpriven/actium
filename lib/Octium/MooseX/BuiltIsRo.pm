@@ -1,22 +1,22 @@
-package Actium::MooseX::BuiltIsRo 0.014;
+package Octium::MooseX::BuiltIsRo 0.014;
 use strict;
 use warnings;
 
 use Moose 1.99 ();
 use Moose::Exporter;
 use Moose::Util::MetaRole;
-# use Actium::MooseX::BuiltIsRO::Role::Attribute;
+# use Octium::MooseX::BuiltIsRO::Role::Attribute;
 
 my %metaroles = (
     class_metaroles =>
-      { attribute => ['Actium::MooseX::BuiltIsRO::Role::Attribute'], },
+      { attribute => ['Octium::MooseX::BuiltIsRO::Role::Attribute'], },
     role_metaroles =>
-      { applied_attribute => ['Actium::MooseX::BuiltIsRO::Role::Attribute'], },
+      { applied_attribute => ['Octium::MooseX::BuiltIsRO::Role::Attribute'], },
 );
 
 Moose::Exporter->setup_import_methods(%metaroles);
 
-package Actium::MooseX::BuiltIsRO::Role::Attribute 0.013;
+package Octium::MooseX::BuiltIsRO::Role::Attribute 0.013;
 
 use Moose::Role;
 
@@ -46,7 +46,7 @@ __END__
 
 =head1 NAME
 
-Actium::MooseX::BuiltIsRo - Make built attributes read-only by default
+Octium::MooseX::BuiltIsRo - Make built attributes read-only by default
 
 =head1 VERSION
 
@@ -55,7 +55,7 @@ This documentation refers to version 0.014
 =head1 SYNOPSIS
 
  use Moose;
- use Actium::MooseX::BuiltIsRo;
+ use Octium::MooseX::BuiltIsRo;
  
  has attribute => (
     default => 'value',
@@ -70,7 +70,7 @@ This documentation refers to version 0.014
 
 =head1 DESCRIPTION
 
-Actium::MooseX::BuiltIsRo  ensures that if either "lazy," "builder," or
+Octium::MooseX::BuiltIsRo  ensures that if either "lazy," "builder," or
 "default" is supplied, but there is no "is" option supplied, the
 attribute will be set to be read-only ("is => 'ro'").
 

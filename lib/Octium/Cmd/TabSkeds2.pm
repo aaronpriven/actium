@@ -1,12 +1,12 @@
-package Actium::Cmd::TabSkeds2 0.012;
+package Octium::Cmd::TabSkeds2 0.012;
 
 # This creates the "tab files" that are used in the
 # Designtek-era web schedules
 
-use Actium;
+use Octium;
 
-use Actium::O::Sked::Collection;
-use Actium::O::DestinationCode;
+use Octium::O::Sked::Collection;
+use Octium::O::DestinationCode;
 
 sub OPTIONS {
     return qw/actiumdb signup/;
@@ -21,7 +21,7 @@ sub START {
     my $commonfolder = $basefolder->subfolder('common');
     my $tabfolder    = $signup->subfolder('tabxchange');
 
-    my $collection = Actium::O::Sked::Collection->load_storable(
+    my $collection = Octium::O::Sked::Collection->load_storable(
         collection => 'final'
     );
 

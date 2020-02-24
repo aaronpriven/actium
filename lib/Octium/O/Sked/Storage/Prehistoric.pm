@@ -1,9 +1,9 @@
-package Actium::O::Sked::Storage::Prehistoric 0.012;
+package Octium::O::Sked::Storage::Prehistoric 0.012;
 
 # Role to allow reading and writing prehistoric Skedfile files to/from
 # Sked objects
 
-use Actium ('role');
+use Octium ('role');
 
 const my %TRANSITINFO_DAYS_OF => (
     qw(
@@ -40,7 +40,7 @@ const my %DAYS_FROM_TRANSITINFO => ( reverse %TRANSITINFO_DAYS_OF );
 use List::MoreUtils qw<uniq none>;    ### DEP ###
 
 use Text::Trim;                       ### DEP ###
-use Actium::Time;
+use Octium::Time;
 
 # comes from prehistorics
 has 'place9_r' => (
@@ -106,7 +106,7 @@ sub prehistoric_skedsfile {
     say $out u::jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
 
     foreach my $trip ( $self->trips ) {
-        my @times = map { Actium::Time->from_num($_)->ap_noseparator }
+        my @times = map { Octium::Time->from_num($_)->ap_noseparator }
           $trip->placetimes;
         my $times = join( "\t", @times );
 
@@ -251,7 +251,7 @@ sub _new_from_prehistoric {
         # the number timepoint columns -- discarding any extras and
         # padding out empty ones with undef values
 
-        push @trips, Actium::O::Sked::Trip->new(%tripspec);
+        push @trips, Octium::O::Sked::Trip->new(%tripspec);
 
     }    ## tidy end: while (<$skedsfh>)
 
@@ -260,26 +260,26 @@ sub _new_from_prehistoric {
     if ( @daysexceptions == 1 and $linegroup !~ /\A 6 \d \d \z/sx ) {
         for ( $daysexceptions[0] ) {
             if ( $_ eq 'SD' ) {
-                $days = Actium::O::Days->instance( $days, 'D' );
+                $days = Octium::O::Days->instance( $days, 'D' );
                 next;
             }
             if ( $_ eq 'SH' ) {
-                $days = Actium::O::Days->instance( $days, 'H' );
+                $days = Octium::O::Days->instance( $days, 'H' );
                 next;
             }
             if ( exists $DAYS_FROM_TRANSITINFO{$_} ) {
-                $days = Actium::O::Days->instance( $DAYS_FROM_TRANSITINFO{$_} );
+                $days = Octium::O::Days->instance( $DAYS_FROM_TRANSITINFO{$_} );
                 next;
             }
-            $days = Actium::O::Days->instance($days);
+            $days = Octium::O::Days->instance($days);
         }
     }
     else {
         if ( $linegroup =~ /\A 6 \d \d \z/sx ) {
-            $days = Actium::O::Days->instance( $days, 'D' );
+            $days = Octium::O::Days->instance( $days, 'D' );
         }
         else {
-            $days = Actium::O::Days->instance($days);
+            $days = Octium::O::Days->instance($days);
         }
     }
 

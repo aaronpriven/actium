@@ -1,13 +1,13 @@
-package Actium::O::Sked::Timetable::IDFrameSet 0.012;
+package Octium::O::Sked::Timetable::IDFrameSet 0.012;
 
 # Actium/O/Sked/Timetable/IDFrameSet.pm
 
 # Moose object representing the frame set (series of one or more frames
 # used on a page) for an InDesign timetable
 
-use Actium ('class');
+use Octium ('class');
 
-use Actium::O::Sked::Timetable::IDFrame;
+use Octium::O::Sked::Timetable::IDFrame;
 
 use overload '""' => sub { shift->description };
 # overload ### DEP ###
@@ -20,7 +20,7 @@ has description => (
 has frames_r => (
     traits   => ['Array'],
     is       => 'bare',
-    isa      => 'ArrayRef[Actium::O::Sked::Timetable::IDFrame]',
+    isa      => 'ArrayRef[Octium::O::Sked::Timetable::IDFrame]',
     required => 1,
     init_arg => 'frames',
     handles  => {
@@ -71,7 +71,7 @@ around BUILDARGS ( $orig, $class: @) {
           . '->new must be reference to hash of attribute specifications'
           unless u::reftype($frame_r) eq 'HASH';
 
-        $frames_r->[$i] = Actium::O::Sked::Timetable::IDFrame->new($frame_r);
+        $frames_r->[$i] = Octium::O::Sked::Timetable::IDFrame->new($frame_r);
 
     }
 
@@ -88,7 +88,7 @@ __END__
 
 head1 NAME
 
-Actium::O::Sked::Timetable::IDFrameSet - Object representing a set of 
+Octium::O::Sked::Timetable::IDFrameSet - Object representing a set of 
 InDesign timetable frames
 
 =head1 VERSION
@@ -97,8 +97,8 @@ This documentation refers to version 0.002
 
 =head1 SYNOPSIS
 
- use Actium::O::Sked::Timetable::IDFrameSet;
- my $frameset = Actium::O::Sked::Timetable::IDFrameSet->new(
+ use Octium::O::Sked::Timetable::IDFrameSet;
+ my $frameset = Octium::O::Sked::Timetable::IDFrameSet->new(
      description       => 'Landscape halves',
      compression_level => 0,
      height            => 42,
@@ -145,13 +145,13 @@ True if this frameset represents a portrait page. Defaults to false.
 
 Required during construction, it consists of the frames that make up
 the  frameset. Frames are described in 
-L<Actium::O::Sked::Timetable::IDFrame|Actium::O::Sked::Timetable::IDFrame>.
+L<Octium::O::Sked::Timetable::IDFrame|Octium::O::Sked::Timetable::IDFrame>.
 In the constructor, it should be passed as an array reference; it will
 be  returned as a plain list of objects.
 
 If any of the values passed in the I<frames> entry is an unblessed hash
- reference, Actium::O::Sked::Timetable::IDFrameSet will pass it to 
-Actium::O::Sked::Timetable::IDFrame->new() and use the result.  (So,
+ reference, Octium::O::Sked::Timetable::IDFrameSet will pass it to 
+Octium::O::Sked::Timetable::IDFrame->new() and use the result.  (So,
 you don't have to explicitly create the IDFrame objects; this module
 will do it for you.)
 
@@ -190,7 +190,7 @@ circumstances.
 
 =item Scalar::Util
 
-=item Actium::O::Sked::Timetable::IDFrame
+=item Octium::O::Sked::Timetable::IDFrame
 
 =back
 

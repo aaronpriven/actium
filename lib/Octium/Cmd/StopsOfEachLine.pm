@@ -1,8 +1,8 @@
-package Actium::Cmd::StopsOfEachLine 0.011;
+package Octium::Cmd::StopsOfEachLine 0.011;
 
-use Actium;
+use Octium;
 use Storable();    ### DEP ###
-use Actium::Sorting::Line (qw<sortbyline>);
+use Octium::Sorting::Line (qw<sortbyline>);
 
 sub HELP {
 

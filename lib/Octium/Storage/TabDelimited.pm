@@ -1,6 +1,6 @@
-package Actium::Storage::TabDelimited 0.010;
+package Octium::Storage::TabDelimited 0.010;
 
-use Actium;
+use Octium;
 
 use Params::Validate (':all');    ### DEP ###
 
@@ -196,7 +196,7 @@ __END__
 
 =head1 NAME
 
-Actium::Storage::TabDelimited - Read tab-delimited files into perl data
+Octium::Storage::TabDelimited - Read tab-delimited files into perl data
 
 =head1 VERSION
 
@@ -204,7 +204,7 @@ This documentation refers to version 0.002
 
 =head1 SYNOPSIS
 
- use Actium::Storage::TabDelimited ('read_tab_files');
+ use Octium::Storage::TabDelimited ('read_tab_files');
  
  my %data;
  
@@ -226,7 +226,7 @@ This documentation refers to version 0.002
  
 Or:
 
- use Actium::Storage::TabDelimited ('read_aoas');
+ use Octium::Storage::TabDelimited ('read_aoas');
  
  my ($headers_of_r, $values_of_r)  = read_aoas(
     {   globfiles        => ['*.txt'],
@@ -244,7 +244,7 @@ Or:
    
 =head1 DESCRIPTION
 
-Actium::Storage::TabDelimited contains routines to read tab-delimited
+Octium::Storage::TabDelimited contains routines to read tab-delimited
 files from a directory. I<read_tab_files> returns the data to the
 caller via a  callback function. I<read_aoas> returns the data as
 arrays of arrays.
@@ -272,11 +272,11 @@ The named parameters are:
 
 =item folder
 
-This mandatory parameter is intended to be an Actium::O::Folder object
-(or a subclass such as Actium::O::Folders::Signup). However, any object
+This mandatory parameter is intended to be an Octium::O::Folder object
+(or a subclass such as Octium::O::Folders::Signup). However, any object
 representing a folder will work if it implements the methods
 "make_filespec", "glob_plain_files", "open_read", and "display_path."
-See L<Actium::O::Folder|Actium::O::Folder> for details of these
+See L<Octium::O::Folder|Octium::O::Folder> for details of these
 methods.
 
 =item files

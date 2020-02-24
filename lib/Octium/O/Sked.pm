@@ -1,7 +1,7 @@
-package Actium::O::Sked 0.013;
+package Octium::O::Sked 0.013;
 # the Sked object, containing everything that is a schedule
 
-use Actium ('class');
+use Octium ('class');
 
 use overload '""' => sub { shift->id }, fallback => 1;
 
@@ -11,14 +11,14 @@ with Storage(
     'format' => 'Storable',
     io       => 'File',
 );
-use Actium::Sorting::Line qw<linekeys>;
+use Octium::Sorting::Line qw<linekeys>;
 
-use Actium::Types (qw/DirCode ActiumDir ActiumDays/);
-use Actium::O::Sked::Trip;
-use Actium::Time;
-use Actium::O::Dir;
-use Actium::O::Days;
-use Actium::O::2DArray;
+use Octium::Types (qw/DirCode ActiumDir ActiumDays/);
+use Octium::O::Sked::Trip;
+use Octium::Time;
+use Octium::O::Dir;
+use Octium::O::Days;
+use Octium::O::2DArray;
 
 ###################################
 ## CONSTRUCTION
@@ -385,7 +385,7 @@ has 'days_obj' => (
 has 'trip_r' => (
     traits  => ['Array'],
     is      => 'bare',
-    isa     => 'ArrayRef[Actium::O::Sked::Trip]',
+    isa     => 'ArrayRef[Octium::O::Sked::Trip]',
     default => sub { [] },
     handles => {
         trips      => 'elements',
@@ -735,7 +735,7 @@ sub attribute_columns {
 ####################
 #### OUTPUT METHODS
 
-# see also various Actium::O::Sked::Storage:: roles
+# see also various Octium::O::Sked::Storage:: roles
 
 sub tidydump {
     # cool, but very slow
@@ -786,7 +786,7 @@ sub spaced {
     local $LIST_SEPARATOR = $SPACE;
     say $out "@simplefields";
 
-    my $place_records = Actium::O::2DArray->new();
+    my $place_records = Octium::O::2DArray->new();
 
     my ( $columns_r, $shortcol_of_r ) = $self->attribute_columns;
     my @columns     = @{$columns_r};
@@ -798,7 +798,7 @@ sub spaced {
     my @trips = $self->trips;
 
     foreach my $trip (@trips) {
-        my @times = map { Actium::Time->from_num($_)->apbx_noseparator }
+        my @times = map { Octium::Time->from_num($_)->apbx_noseparator }
           $trip->placetimes;
 
         push @$place_records, [ ( map { $trip->$_ } @columns ), @times ];
@@ -820,13 +820,13 @@ sub spaced {
 
     say $out $place_records->tabulated, "\n";
 
-    my $stop_records = Actium::O::2DArray->new();
+    my $stop_records = Octium::O::2DArray->new();
 
     push @$stop_records, [ $self->stopids ];
     push @$stop_records, [ $self->stopplaces ];
 
     foreach my $trip (@trips) {
-        my @times = map { Actium::Time->from_num($_)->apbx_noseparator }
+        my @times = map { Octium::Time->from_num($_)->apbx_noseparator }
           $trip->stoptimes;
         push @$stop_records, \@times;
     }
@@ -855,21 +855,21 @@ sub transitinfo_id {
 
 }
 
-method compare_from (Actium::O::Sked $oldsked) {
-    require Actium::O::Sked::Comparison;
-    return Actium::O::Sked::Comparison->new(
+method compare_from (Octium::O::Sked $oldsked) {
+    require Octium::O::Sked::Comparison;
+    return Octium::O::Sked::Comparison->new(
         oldsked => $oldsked,
         newsked => $self
     );
 
 }
 
-method compare_to (Actium::O::Sked $newsked) {
+method compare_to (Octium::O::Sked $newsked) {
     return $newsked->compare_from($self);
 }
 
-with 'Actium::O::Sked::Storage::Prehistoric', 'Actium::O::Sked::Storage::XLSX',
-  'Actium::O::Sked::Storage::Tabxchange', 'Actium::O::Skedlike';
+with 'Octium::O::Sked::Storage::Prehistoric', 'Octium::O::Sked::Storage::XLSX',
+  'Octium::O::Sked::Storage::Tabxchange', 'Octium::O::Skedlike';
 
 u::immut;
 

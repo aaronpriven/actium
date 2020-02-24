@@ -1,7 +1,7 @@
-package Actium::Cmd::ZipCodes 0.011;
+package Octium::Cmd::ZipCodes 0.011;
 
-use Actium;
-use Actium::Geo('get_zip_for_stops');
+use Octium;
+use Octium::Geo('get_zip_for_stops');
 
 use REST::Client;    ### DEP ###
 use JSON;            ### DEP ###

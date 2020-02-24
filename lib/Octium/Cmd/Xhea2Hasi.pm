@@ -1,9 +1,9 @@
-package Actium::Cmd::Xhea2Hasi 0.011;
+package Octium::Cmd::Xhea2Hasi 0.011;
 
 # Takes tab files that are result of XheaImport, and mocks up hasi files
 
-use Actium;
-use Actium::Import::Xhea;
+use Octium;
+use Octium::Import::Xhea;
 
 sub OPTIONS {
     return 'signup';
@@ -17,7 +17,7 @@ sub START {
     my $xhea_tab_folder = $signup->subfolder( 'xhea', 'tab' );
     my $hasi_folder = $signup->subfolder('hasi');
 
-    Actium::Import::Xhea::to_hasi( $xhea_tab_folder, $hasi_folder );
+    Octium::Import::Xhea::to_hasi( $xhea_tab_folder, $hasi_folder );
 
 }
 

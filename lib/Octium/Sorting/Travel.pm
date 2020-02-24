@@ -1,9 +1,9 @@
-package Actium::Sorting::Travel 0.012;
+package Octium::Sorting::Travel 0.012;
 
 # Sorting routines by travel line)
 
-use Actium;
-use Actium::Sorting::Line ('byline');
+use Octium;
+use Octium::Sorting::Line ('byline');
 
 use Sub::Exporter -setup => { exports => [qw(travelsort)] };
 # Sub::Exporter ### DEP ###
@@ -141,7 +141,7 @@ __END__
 
 =head1 NAME
 
-Actium::Sorting::Travel - travel sort routines for Actium system
+Octium::Sorting::Travel - travel sort routines for Actium system
 
 =head1 VERSION
 
@@ -149,12 +149,12 @@ This documentation refers to version 0.001.
 
 =head1 SYNOPSIS
 
- use Actium::Sorting::Travel qw(travelsort);
+ use Octium::Sorting::Travel qw(travelsort);
  (more to come)
 
 =head1 DESCRIPTION
 
-Actium::Sorting::Travel is a module that provides special sorting
+Octium::Sorting::Travel is a module that provides special sorting
 routine for the Actium system. It sorts by travel line. The purpose is
 to provide lists of stops ordered in a way that makes it easier for a
 maintenance worker or surveyor to travel down a bus line and visit all

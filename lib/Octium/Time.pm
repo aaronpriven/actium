@@ -1,8 +1,8 @@
-package Actium::Time 0.014;
+package Octium::Time 0.014;
 
 # object for formatting schedule times and parsing formatted times
 
-use Actium ('class');
+use Octium ('class');
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 
@@ -179,7 +179,7 @@ method from_excel ($class: @cells) {
         my $unformatted = $cell->unformatted;
 
         # if it looks like an Excel time fraction,
-        if (    Actium::looks_like_number($unformatted)
+        if (    Octium::looks_like_number($unformatted)
             and $formatted =~ /:/
             and -0.5 <= $unformatted
             and $unformatted < 1.5 )
@@ -212,13 +212,13 @@ method from_excel ($class: @cells) {
 ## TIMENUM ATTRIBUTE
 #######################################################
 
-#subtype 'Actium::Time::RealTimeNum', as 'Int',
+#subtype 'Octium::Time::RealTimeNum', as 'Int',
 #  where { ( $_ >= $NAMED{NOON_YESTERDAY} ) && ( $_ <= $NAMED{MAX_TIME} ) };
-#subtype 'Actium::Time::SpecialTimeNum', as 'Maybe[Str]',
+#subtype 'Octium::Time::SpecialTimeNum', as 'Maybe[Str]',
 #  where { not defined($_) or $_ eq 'f' or $_ eq 'i' };
 #
-#union 'Actium::Time::TimeNum',
-#  [ 'Actium::Time::RealTimeNum', 'Actium::Time::SpecialTimeNum' ];
+#union 'Octium::Time::TimeNum',
+#  [ 'Octium::Time::RealTimeNum', 'Octium::Time::SpecialTimeNum' ];
 
 has timenum => (
     isa => union(
@@ -299,7 +299,7 @@ method formatted (
 ) {
 
     croak "Invalid format $format in " . __PACKAGE__ . '->formatted'
-      unless Actium::any { $_ eq $format } @VALID_FORMATS;
+      unless Octium::any { $_ eq $format } @VALID_FORMATS;
 
     my $cachekey = join( "\0", $format, $separator, $negative_separator );
     return $self->_fcache($cachekey) if $self->_fcache_exists($cachekey);
@@ -332,7 +332,7 @@ method formatted (
     # 12 hour formats
 
     my $minutes = sprintf( '%02d', $timenum % 60 );
-    my $hours = ( Actium::floor( $timenum / 60 ) ) % 12;
+    my $hours = ( Octium::floor( $timenum / 60 ) ) % 12;
     $hours = 12 if $hours == 0;
 
     if ( $format eq '12apmn' ) {
@@ -420,7 +420,7 @@ sub timesort {
 
 }    ## tidy end: sub timesort
 
-Actium::immut;
+Octium::immut;
 
 1;
 
@@ -428,19 +428,19 @@ __END__
 
 =head1 NAME
 
-Actium::Time - Routines to format times in the Actium system
+Octium::Time - Routines to format times in the Actium system
 
 =head1 VERSION
 
-This documentation refers to Actium::Time version 0.014
+This documentation refers to Octium::Time version 0.014
 
 =head1 SYNOPSIS
 
- use Actium::Time;
- my $time = Actium::Time->from_str('8:15a');
- my $time2 = Actium::Time->from_num(  65 ); # 1:05 am
- my $negtime = Actium::Time->from_str("23'59");
- my @moretimes = Actium::Time->from_str('12:15p', '2015', '12:01x');
+ use Octium::Time;
+ my $time = Octium::Time->from_str('8:15a');
+ my $time2 = Octium::Time->from_num(  65 ); # 1:05 am
+ my $negtime = Octium::Time->from_str("23'59");
+ my @moretimes = Octium::Time->from_str('12:15p', '2015', '12:01x');
  
  say $time->ap;      # 12:15a
  say $time->formatted(format => '24', separator => '.'); # 0.15
@@ -449,7 +449,7 @@ This documentation refers to Actium::Time version 0.014
  
 =head1 DESCRIPTION
 
-Actium::Time is an class designed to format times for transit
+Octium::Time is an class designed to format times for transit
 schedules. It takes times formatted in a number of different ways and
 converts them to a number of minutes after midnight (or, if negative,
 before midnight). Times are only treated as whole minutes, so seconds
@@ -481,10 +481,10 @@ performed.
 
 =head1 CLASS METHODS
 
-The object is constructed using C<< Actium::Time->from_str >> , C<<
-Actium::Time->from_num >>, or  C<< Actium::Time->from_excel >>.
+The object is constructed using C<< Octium::Time->from_str >> , C<<
+Octium::Time->from_num >>, or  C<< Octium::Time->from_excel >>.
 
-=head2 Actium::Time->from_str( I<string> , I<string>, ...) 
+=head2 Octium::Time->from_str( I<string> , I<string>, ...) 
 
 This constructor accepts times represented as a string, usually a
 formatted time such as "11:59a" or "13'25", and returns an object for
@@ -577,7 +577,7 @@ treated as one minute before midnight.
 A final "x" is accepted for times after midnight on the following day,
 so '1201x' is treated as one minute after midnight, tomorrow.
 
-=head2 Actium::Time->from_num( I<integer>, I<integer>, ... ) 
+=head2 Octium::Time->from_num( I<integer>, I<integer>, ... ) 
 
 This constructor accepts a time number: an integer representing the
 number of minutes after midnight (or, if negative, before midnight). It
@@ -588,7 +588,7 @@ between noon yesterday and one minute before noon tomorrow.
 
 It also accepts the three special values: "f", "i", and the undefined value. 
 
-=head2 Actium::Time->from_excel( I<cell>, I<cell>, ... ) 
+=head2 Octium::Time->from_excel( I<cell>, I<cell>, ... ) 
 
 This constructor accepts cells from Excel, specifically those returned
 from the get_cell routine in either Spreadsheet::ParseExcel or
@@ -598,18 +598,18 @@ C<value> and C<unformatted>.)  It can accept a formatted Excel time
 string (which it sends to C<from_str>). It returns one object for each
 cell passed to it.
 
-=head2 Actium::Time->new() 
+=head2 Octium::Time->new() 
 
 B<< Do not use this method. >>
 
-This method is used internally by Actium::Time to create a new
+This method is used internally by Octium::Time to create a new
 object and insert it into the caches used by C<from_str>, C<from_excel>, and
 C<from_num>.  There should never be a reason to create more than one
 object with the same arguments.
 
-=head2 Actium::Time::->timesort(I<obj>, I<obj>, ... )
+=head2 Octium::Time::->timesort(I<obj>, I<obj>, ... )
 
-This class method takes a series of Actium::Time objects and sorts
+This class method takes a series of Octium::Time objects and sorts
 them (numerically according to their time number value), returning the 
 sorted list of objects.
 

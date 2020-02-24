@@ -1,8 +1,8 @@
-package Actium::Cmd::Slists2HTML 0.013;
+package Octium::Cmd::Slists2HTML 0.013;
 
-use Actium;
+use Octium;
 
-use Actium::O::Dir;
+use Octium::O::Dir;
 
 use HTML::Entities;    ### DEP ###
 
@@ -179,7 +179,7 @@ sub START {
 
         }    ## tidy end: foreach my $dir (@dirs)
 
-        my @dir_objs  = map { Actium::O::Dir->instance($_) } @dirs;
+        my @dir_objs  = map { Octium::O::Dir->instance($_) } @dirs;
         my @dir_bound = map { $_->as_bound } @dir_objs;
 
         ###########################################

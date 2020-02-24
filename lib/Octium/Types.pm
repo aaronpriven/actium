@@ -1,7 +1,7 @@
-package Actium::Types 0.012;
+package Octium::Types 0.012;
 
 # Moose types for Actium
-use Actium;
+use Octium;
 
 ## no critic (ProhibitMagicNumbers)
 
@@ -53,18 +53,18 @@ coerce DaySpec, from DayCode, via { [ $_, 'B' ] },;
 
 coerce DaySpec, from DayStr, via { [ split( /-/, $_, 2 ) ] };
 
-subtype ActiumDays, as class_type('Actium::O::Days');
+subtype ActiumDays, as class_type('Octium::O::Days');
 
 coerce ActiumDays,
-  from DaySpec, via { Actium::O::Days->instance( $_->@* ) },
-  from DayCode, via { Actium::O::Days->instance( to_DaySpec($_)->@* ) },
-  from DayStr,  via { Actium::O::Days->instance( to_DaySpec($_)->@* ) },
+  from DaySpec, via { Octium::O::Days->instance( $_->@* ) },
+  from DayCode, via { Octium::O::Days->instance( to_DaySpec($_)->@* ) },
+  from DayStr,  via { Octium::O::Days->instance( to_DaySpec($_)->@* ) },
   ;
 
 #########################
 ### SCHEDULE STOP TIMES
 
-subtype ActiumSkedStopTime, as class_type('Actium::O::Sked::Stop::Time');
+subtype ActiumSkedStopTime, as class_type('Octium::O::Sked::Stop::Time');
 
 subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 
@@ -73,9 +73,9 @@ subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 
 enum( DirCode, \@DIRCODES );
 
-subtype ActiumDir, as class_type('Actium::O::Dir');
+subtype ActiumDir, as class_type('Octium::O::Dir');
 
-coerce( ActiumDir, from DirCode, via { Actium::O::Dir->instance($_) }, );
+coerce( ActiumDir, from DirCode, via { Octium::O::Dir->instance($_) }, );
 
 ######################
 ## NOTIFY
@@ -93,8 +93,8 @@ coerce ARCrierBullets, from CrierBullet, via { [$_] };
 ######################
 ## SCHEDULE TIMES
 
-subtype ActiumTime, as class_type('Actium::Time');
-coerce ActiumTime, from Str, via { Actium::Time->from_str($_) };
+subtype ActiumTime, as class_type('Octium::Time');
+coerce ActiumTime, from Str, via { Octium::Time->from_str($_) };
 
 const my $NOON_YESTERDAY => -$MINS_IN_12HRS;
 const my $NOON_TOMORROW  => 3 * $MINS_IN_12HRS;
@@ -106,7 +106,7 @@ subtype TimeNum, as Maybe [Int], where {
 
 subtype ArrayRefOrTimeNum, as TimeNum | ArrayRef [TimeNum];
 
-coerce TimeNum, from Str, via { Actium::Time->from_str($_)->timenum };
+coerce TimeNum, from Str, via { Octium::Time->from_str($_)->timenum };
 
 subtype ArrayRefOfTimeNums, as ArrayRef [ Maybe [TimeNum] ];
 
@@ -135,7 +135,7 @@ subtype Str4, as Str, where { length == 4 },
 ##########################
 ### CLASS AND ROLE TYPES
 
-role_type 'Skedlike', { role => 'Actium::O::Skedlike' };
+role_type 'Skedlike', { role => 'Octium::O::Skedlike' };
 
 #########################
 ## FOLDER
@@ -146,8 +146,8 @@ coerce ActiumFolderLike, from Str, via( \&_make_actium_o_folder ),
   from ArrayRef [Str], via \&_make_actium_o_folder;
 
 sub _make_actium_o_folder {
-    require Actium::O::Folder;
-    Actium::O::Folder::->new($_);
+    require Octium::O::Folder;
+    Octium::O::Folder::->new($_);
 }
 
 1;
@@ -155,18 +155,18 @@ __END__
 
 =head1 NAME
 
-Actium::Types - Moose types for the Actium system
+Octium::Types - Moose types for the Actium system
 
 =head1 VERSION
 
-This documentation refers to Actium::Types version 0.001
+This documentation refers to Octium::Types version 0.001
 
 =head1 SYNOPSIS
 
  # in a Moose class
  package MyClass;
  use Moose;
- use Actium::Types qw(DayCode);
+ use Octium::Types qw(DayCode);
  
  has 'days' =>
     is => 'rw' ,
@@ -212,12 +212,12 @@ days ("D"), school holidays ("H"), or both ("B").
 
 =item B<DirCode>
 
-An enumeration of the elements of @Actium::DIRCODES.  See
+An enumeration of the elements of @Octium::DIRCODES.  See
 L<Actium/Actium>. It can be coerced into  ActiumODir.
 
 =item B<ActiumODir>
 
-A type representing the Actium::O::Dir class.
+A type representing the Octium::O::Dir class.
 
 =back
 
@@ -227,9 +227,9 @@ A type representing the Actium::O::Dir class.
 
 =item B<TimeNum>
 
-A time number, suitable for use by L<Actium::Time>. The number of
+A time number, suitable for use by L<Octium::Time>. The number of
 minutes after midnight (or before, if negative), or undef. Coerces
-strings into TimeNums using Actium::Time.
+strings into TimeNums using Octium::Time.
 
 =item B<ArrayRefOrTimeNum>
 

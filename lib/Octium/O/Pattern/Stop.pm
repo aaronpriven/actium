@@ -1,6 +1,6 @@
-package Actium::O::Pattern::Stop 0.012;
+package Octium::O::Pattern::Stop 0.012;
 
-use Actium ('class');
+use Octium ('class');
 
 sub id {
     my $self = shift;
@@ -36,7 +36,7 @@ has 'place_rank' => (
 #    is      => 'ro',
 #    writer  => 'set_place_obj',
 #    predicate => 'has_place_obj',
-#    isa     => 'Actium::O::Pattern::Place',
+#    isa     => 'Octium::O::Pattern::Place',
 #);
 
 #sub _build_stop_and_place {

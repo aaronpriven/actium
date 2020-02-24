@@ -1,4 +1,4 @@
-package Actium::MooseX::PredicateClearerShortcuts 0.014;
+package Octium::MooseX::PredicateClearerShortcuts 0.014;
 
 use strict;
 use warnings;
@@ -6,22 +6,22 @@ use warnings;
 use Moose 1.99 ();
 use Moose::Exporter;
 use Moose::Util::MetaRole;
-# use Actium::MooseX::PredicateClearerShortcuts::Role::Attribute;
+# use Octium::MooseX::PredicateClearerShortcuts::Role::Attribute;
 
 my %metaroles = (
     class_metaroles => {
         attribute =>
-          ['Actium::MooseX::PredicateClearerShortcuts::Role::Attribute'],
+          ['Octium::MooseX::PredicateClearerShortcuts::Role::Attribute'],
     },
     role_metaroles => {
         applied_attribute =>
-          ['Actium::MooseX::PredicateClearerShortcuts::Role::Attribute'],
+          ['Octium::MooseX::PredicateClearerShortcuts::Role::Attribute'],
     },
 );
 
 Moose::Exporter->setup_import_methods(%metaroles);
 
-package Actium::MooseX::PredicateClearerShortcuts::Role::Attribute 0.014;
+package Octium::MooseX::PredicateClearerShortcuts::Role::Attribute 0.014;
 
 use Moose::Role;
 
@@ -64,7 +64,7 @@ __END__
 
 =head1 NAME
 
-Actium::MooseX::PredicateClearerShortcuts - supply default predicate
+Octium::MooseX::PredicateClearerShortcuts - supply default predicate
 and clearer names
 
 =head1 VERSION
@@ -74,7 +74,7 @@ This documentation refers to version 0.014
 =head1 SYNOPSIS
 
  use Moose;
- use Actium::MooseX::PredicateClearerShortcuts;
+ use Octium::MooseX::PredicateClearerShortcuts;
  
  has attribute => (
     is => 'ro',
@@ -92,7 +92,7 @@ This documentation refers to version 0.014
  
 =head1 DESCRIPTION
 
-Actium::MooseX::PredicateClearerShortcuts allows several shortcuts in
+Octium::MooseX::PredicateClearerShortcuts allows several shortcuts in
 Moose "has" attribute specifiers to allow easier specification of 
 predicate or clearer methods, when those methods have conventional
 names.

@@ -1,11 +1,11 @@
-package Actium::O::Sked::Collection 0.014;
+package Octium::O::Sked::Collection 0.014;
 
-use Actium ('class');
+use Octium ('class');
 
-use Actium::O::Sked;
-use Actium::Sorting::Skeds ('skedsort');
+use Octium::O::Sked;
+use Octium::Sorting::Skeds ('skedsort');
 
-use Actium::Storage::Excel;
+use Octium::Storage::Excel;
 
 const my $PHYLUM => 's';
 
@@ -30,8 +30,8 @@ has name => (
 
 has signup => (
     is      => 'rwp',
-    isa     => 'Actium::O::Folders::Signup',
-    default => sub { Actium::env->signup },
+    isa     => 'Octium::O::Folders::Signup',
+    default => sub { Octium::env->signup },
 );
 
 sub BUILD {
@@ -144,7 +144,7 @@ sub skeds_of_lg {
 
 method load_storable (
       $class:
-      Actium::O::Folders::Signup : $signup = Actium::env->signup,
+      Octium::O::Folders::Signup : $signup = Octium::env->signup,
       Str : $collection !
     ) {
 
@@ -160,7 +160,7 @@ method load_storable (
 
 method load_xlsx (
       $class: 
-      Actium::O::Folders::Signup : $signup = Actium::env->signup,
+      Octium::O::Folders::Signup : $signup = Octium::env->signup,
       Str : $collection ! 
     ) {
 
@@ -174,7 +174,7 @@ method load_xlsx (
 
     my @skeds;
     foreach my $file (@xlsx_files) {
-        my $sked = Actium::O::Sked->new_from_xlsx( file => $file );
+        my $sked = Octium::O::Sked->new_from_xlsx( file => $file );
         push @skeds, $sked;
     }
 
@@ -192,7 +192,7 @@ method load_xlsx (
 
 method finalize_skeds (
     $class: 
-    Actium::O::Folders::Signup $signup = Actium::env->signup
+    Octium::O::Folders::Signup $signup = Octium::env->signup
   ) {
 
     my $received_collection = $class->load_storable(
@@ -207,7 +207,7 @@ method finalize_skeds (
 
     my @finalized_skeds;
 
-    my @ids = Actium::uniq( $received_collection->sked_ids,
+    my @ids = Octium::uniq( $received_collection->sked_ids,
         $exception_collection->sked_ids );
 
     for my $id (@ids) {
@@ -246,7 +246,7 @@ sub write_tabxchange {
     );
 
     my $destination_code
-      = Actium::O::DestinationCode->load( $params{commonfolder} );
+      = Octium::O::DestinationCode->load( $params{commonfolder} );
 
     my @skeds = grep { $_->linegroup !~ /^(?:BS|4\d\d)/ax } $self->skeds;
 
@@ -321,7 +321,7 @@ method output_skeds_all {
 
     my $prehistoricfolder = $self->folder('prehistoric');
 
-    Actium::O::Sked->write_prehistorics( $skeds_r, $prehistoricfolder );
+    Octium::O::Sked->write_prehistorics( $skeds_r, $prehistoricfolder );
 
     $outputcry->done;
 
@@ -371,23 +371,23 @@ method output_skeds_place {
 
 } ## tidy end: method output_skeds_place
 
-method compare_from ( Actium::O::Sked::Collection $oldcollection) {
-    require Actium::O::Sked::ComparisonGroup;
-    return Actium::O::Sked::ComparisonGroup->new(
+method compare_from ( Octium::O::Sked::Collection $oldcollection) {
+    require Octium::O::Sked::ComparisonGroup;
+    return Octium::O::Sked::ComparisonGroup->new(
         oldskeds => $oldcollection,
         newskeds => $self
     );
 }
 
-method compare_to ( Actium::O::Sked::Collection $newcollection) {
-    require Actium::O::Sked::ComparisonGroup;
-    return Actium::O::Sked::ComparisonGroup->new(
+method compare_to ( Octium::O::Sked::Collection $newcollection) {
+    require Octium::O::Sked::ComparisonGroup;
+    return Octium::O::Sked::ComparisonGroup->new(
         oldskeds => $self,
         newskeds => $newcollection
     );
 }
 
-Actium::immut;
+Octium::immut;
 
 1;
 

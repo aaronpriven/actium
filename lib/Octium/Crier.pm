@@ -1,4 +1,4 @@
-package Actium::Crier 0.010;
+package Octium::Crier 0.010;
 
 use 5.022;
 use warnings;
@@ -9,10 +9,10 @@ use Const::Fast;
 use Carp;
 use Module::Runtime ('require_module');
 
-# Actium::O::Crier is require'd at runtime to avoid a circular dependency
-# in Actium.pm which is used by Actium::O::Crier.
+# Octium::O::Crier is require'd at runtime to avoid a circular dependency
+# in Actium.pm which is used by Octium::O::Crier.
 
-const my $CRIERCLASS => 'Actium::O::Crier';
+const my $CRIERCLASS => 'Octium::O::Crier';
 
 use Sub::Exporter -setup => {
     exports => [

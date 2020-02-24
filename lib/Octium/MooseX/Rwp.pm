@@ -1,4 +1,4 @@
-package Actium::MooseX::Rwp 0.013;
+package Octium::MooseX::Rwp 0.013;
 
 use strict;
 use warnings;
@@ -6,18 +6,18 @@ use warnings;
 use Moose 1.99 ();
 use Moose::Exporter;
 use Moose::Util::MetaRole;
-# use Actium::MooseX::Rwp::Role::Attribute;
+# use Octium::MooseX::Rwp::Role::Attribute;
 
 my %metaroles = (
     class_metaroles =>
-      { attribute => ['Actium::MooseX::Rwp::Role::Attribute'], },
+      { attribute => ['Octium::MooseX::Rwp::Role::Attribute'], },
     role_metaroles =>
-      { applied_attribute => ['Actium::MooseX::Rwp::Role::Attribute'], },
+      { applied_attribute => ['Octium::MooseX::Rwp::Role::Attribute'], },
 );
 
 Moose::Exporter->setup_import_methods(%metaroles);
 
-package Actium::MooseX::Rwp::Role::Attribute 0.013;
+package Octium::MooseX::Rwp::Role::Attribute 0.013;
 
 use Moose::Role;
 
@@ -54,7 +54,7 @@ __END__
 
 =head1 NAME
 
-Actium::MooseX::Rwp - implements "has x => ( is => 'rwp' )"
+Octium::MooseX::Rwp - implements "has x => ( is => 'rwp' )"
 
 =head1 VERSION
 
@@ -63,7 +63,7 @@ This documentation refers to version 0.014
 =head1 SYNOPSIS
 
  use Moose;
- use Actium::MooseX::Rwp;
+ use Octium::MooseX::Rwp;
  
  has attribute => (
     is => 'rwp',
@@ -78,7 +78,7 @@ This documentation refers to version 0.014
  
 =head1 DESCRIPTION
 
-Actium::MooseX::Rwp implements the "rwp" shortcut in Moose, allowing
+Octium::MooseX::Rwp implements the "rwp" shortcut in Moose, allowing
 attributes with private writers but public readers.
 
 =head1 OPTIONS TO 'HAS'

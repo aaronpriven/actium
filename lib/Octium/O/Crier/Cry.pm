@@ -1,14 +1,14 @@
-package Actium::O::Crier::Cry 0.013;
+package Octium::O::Crier::Cry 0.013;
 
-# One output from Actium::O::Crier::Cry
+# One output from Octium::O::Crier::Cry
 #
 # Based on Term::Emit by Steve Roscio
 
-use Actium ('class');
+use Octium ('class');
 use Unicode::LineBreak;    ### DEP ###
 use Unicode::GCString;     ### DEP ###
 
-use Actium::Types (qw<CrierBullet CrierTrailer>);
+use Octium::Types (qw<CrierBullet CrierTrailer>);
 
 const my $MAX_SEVERITY_TEXT_WIDTH => 5;
 const my $SEVERITY_MARKER_WIDTH   => 8;    # text width, plus space and brackets
@@ -19,7 +19,7 @@ const my $MIN_SPAN_FACTOR         => 2 / 3;
 ## Attributes set via constructor
 
 has '_crier' => (
-    isa      => 'Actium::O::Crier',
+    isa      => 'Octium::O::Crier',
     is       => 'ro',
     weak_ref => 1,
     required => 1,
@@ -745,7 +745,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Crier::Cry - An instance of an Actium::O::Crier cry
+Octium::O::Crier::Cry - An instance of an Octium::O::Crier cry
 
 =head1 VERSION
 
@@ -754,7 +754,7 @@ This documentation refers to version 0.009
 =head1 SEE
 
 All documentation for this module is found in  L<the documentation for
-Actium::O::Crier/Actium::O::Crier>.
+Octium::O::Crier/Octium::O::Crier>.
 
 =head1 AUTHOR
 

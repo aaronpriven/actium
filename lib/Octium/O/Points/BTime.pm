@@ -1,13 +1,13 @@
-package Actium::O::Points::BTime 0.013;
+package Octium::O::Points::BTime 0.013;
 
 # object for a single time in a box in a 2019 InDesign point schedule
 
-use Actium('class');
-use Actium::Types(qw/ActiumTime/);
+use Octium('class');
+use Octium::Types(qw/ActiumTime/);
 
 has actiumdb => (
     is       => 'ro',
-    isa      => 'Actium::O::Files::ActiumDB',
+    isa      => 'Octium::O::Files::ActiumDB',
     required => 1,
 );
 
@@ -21,7 +21,7 @@ has timeobj => (
 );
 
 method timesort (@objects) {
-    Actium::Time->timesort(@objects);
+    Octium::Time->timesort(@objects);
 }
 
 has [qw/desttp4 line/] => (

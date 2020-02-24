@@ -1,10 +1,10 @@
-package Actium::Cmd::PrepareFlags 0.011;
+package Octium::Cmd::PrepareFlags 0.011;
 
 # Prepare artwork so that flags are built
 
-use Actium;
-use Actium::Flags;
-use Actium::O::2DArray;
+use Octium;
+use Octium::Flags;
+use Octium::O::2DArray;
 
 sub OPTIONS {
     return qw/actiumdb signup/;
@@ -25,7 +25,7 @@ sub START {
         ( $output_file, undef ) = u::file_ext($input_file);
         $output_file .= '-assignments.txt';
 
-        my $in_sheet = Actium::O::2DArray->new_from_file($input_file);
+        my $in_sheet = Octium::O::2DArray->new_from_file($input_file);
         @stopids = $in_sheet->col(0);
         @stopids = grep {/\A \d+ \z/sx} @stopids;
         $stopidinput_cry->d_ok;
@@ -35,7 +35,7 @@ sub START {
         $db_cry->d_ok;
     }
 
-    my $tabbed = Actium::Flags::flag_assignments_tabbed( $actiumdb, @stopids );
+    my $tabbed = Octium::Flags::flag_assignments_tabbed( $actiumdb, @stopids );
 
     unless ($tabbed) {
         $assigncry->d_error;

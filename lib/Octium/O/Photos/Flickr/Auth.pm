@@ -1,9 +1,9 @@
-package Actium::O::Photos::Flickr::Auth 0.012;
+package Octium::O::Photos::Flickr::Auth 0.012;
 
 # Object representing Flickr authentication information (api key, & secret,
 # OAuth user [consumer] keys and secrets )
 
-use Actium ('class');
+use Octium ('class');
 
 has [qw/key secret/] => (
     isa      => 'Str',

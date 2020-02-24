@@ -1,8 +1,8 @@
-package Actium::Geo 0.012;
+package Octium::Geo 0.012;
 
 # Geocoding, geodesy, etc.
 
-use Actium;
+use Octium;
 
 use REST::Client;    ### DEP ###
 use JSON;            ### DEP ###

@@ -1,26 +1,26 @@
-package Actium::Cmd::BARTSkeds 0.015;
+package Octium::Cmd::BARTSkeds 0.015;
 
 # gets schedules from BART API and creates reports
 
-use Actium;
+use Octium;
 use HTTP::Request;                   ### DEP ###
 use LWP::UserAgent;                  ### DEP ###
 use XML::Twig;                       ### DEP ###
 use Date::Simple(qw/date today/);    ### DEP ###
-use Actium::O::2DArray;
+use Octium::O::2DArray;
 use JSON;
-use Actium::Time;
+use Octium::Time;
 
 use DDP;
 
-use Actium::Text::InDesignTags;
+use Octium::Text::InDesignTags;
 const my $BART_MIDNIGHT_TIMENUM => 146;
 
 const my $DEFAULT_KEY => 'MW9S-E7SL-26DU-VV8V';
 
 const my @DAYS        => qw/12345 6 7/;
 const my %DAY_DESC_OF => qw/12345 Weekday 6 Saturday 7 Sunday/;
-# weekday, saturday, sunday; matches Actium::O::Days
+# weekday, saturday, sunday; matches Octium::O::Days
 #
 
 use constant DO_FARES => 0;
@@ -117,13 +117,13 @@ sub output_excel {
             foreach my $day (@DAYS) {
                 my $first = $first_of{$station}{$day}{$dest};
                 if ( defined $first ) {
-                    $first = Actium::Time->from_num($first)->ap;
+                    $first = Octium::Time->from_num($first)->ap;
                 }
                 else { $first = '-'; }
 
                 my $last = $last_of{$station}{$day}{$dest};
                 if ( defined $last ) {
-                    $last = Actium::Time->from_num($last)->ap;
+                    $last = Octium::Time->from_num($last)->ap;
                 }
                 else { $last = '-'; }
 
@@ -134,7 +134,7 @@ sub output_excel {
 
         }
 
-        my $aoa  = Actium::O::2DArray->bless( \@results );
+        my $aoa  = Octium::O::2DArray->bless( \@results );
         my $file = "$foldername/$station.xlsx";
         $aoa->xlsx( output_file => $file );
 
@@ -176,7 +176,7 @@ sub get_firstlast {
                         my $station = $stop_r->{'@station'};
                         $dest_is_used{$station}{$dest} = 1;
                         my $time
-                          = Actium::Time->from_str( $stop_r->{'@origTime'} );
+                          = Octium::Time->from_str( $stop_r->{'@origTime'} );
                         my $timenum = $time->timenum;
                         $timenum += 1440 if $timenum < $BART_MIDNIGHT_TIMENUM;
                         if ( not exists $first_of{$station}{$days}{$dest}
@@ -258,7 +258,7 @@ sub get_from_url {
 
     my $message = $root_r->{message};
 
-    if ( defined Actium::reftype($message) ) {
+    if ( defined Octium::reftype($message) ) {
         require Data::Dumper;
         local $Data::Dumper::Terse     = 1;
         local $Data::Dumper::Indent    = 0;
@@ -453,11 +453,11 @@ sub get_fares {
             $twig->parse($fare_xml);
 
             my @fares = $twig->root->first_child('fares')->children('fare');
-            #my $cash_elt = Actium::first { $_->att('class') eq 'cash' } @fares;
+            #my $cash_elt = Octium::first { $_->att('class') eq 'cash' } @fares;
             #my $cash     = $cash_elt->att('amount');
 
             my $clipper_elt
-              = Actium::first { $_->att('class') eq 'clipper' } @fares;
+              = Octium::first { $_->att('class') eq 'clipper' } @fares;
             my $clipper = $clipper_elt->att('amount');
 
             $fare_to{$dest} = $clipper;

@@ -1,4 +1,4 @@
-package Actium::O::Sked::Timetable::IDPageFrameSets 0.012;
+package Octium::O::Sked::Timetable::IDPageFrameSets 0.012;
 
 # Moose object representing all the frame sets (series of one or more frames
 # used on a page) for an InDesign timetable
@@ -6,19 +6,19 @@ package Actium::O::Sked::Timetable::IDPageFrameSets 0.012;
 use warnings;
 use 5.016;
 
-use Actium ('class');
-use Actium::O::Sked::Timetable::IDFrameSet;
-use Actium::O::Sked::Timetable::IDTimetable;
-use Actium::Set(':all');
+use Octium ('class');
+use Octium::O::Sked::Timetable::IDFrameSet;
+use Octium::O::Sked::Timetable::IDTimetable;
+use Octium::Set(':all');
 
 use Params::Validate (':all');    ### DEP ###
 
-const my $IDTABLE => 'Actium::O::Sked::Timetable::IDTimetable';
+const my $IDTABLE => 'Octium::O::Sked::Timetable::IDTimetable';
 
 has frameset_r => (
     traits   => ['Array'],
     is       => 'bare',
-    isa      => 'ArrayRef[Actium::O::Sked::Timetable::IDFrameSet]',
+    isa      => 'ArrayRef[Octium::O::Sked::Timetable::IDFrameSet]',
     required => 1,
     init_arg => 'framesets',
     handles  => { framesets => 'elements', },
@@ -27,7 +27,7 @@ has frameset_r => (
 has portrait_preferred_frameset_r => (
     traits  => ['Array'],
     is      => 'bare',
-    isa     => 'ArrayRef[Actium::O::Sked::Timetable::IDFrameSet]',
+    isa     => 'ArrayRef[Octium::O::Sked::Timetable::IDFrameSet]',
     lazy    => 1,
     builder => '_build_portrait_preferred_frameset_r',
     handles => { portrait_preferred_framesets => 'elements', },
@@ -51,7 +51,7 @@ sub _build_portrait_preferred_frameset_r {
 
 around BUILDARGS ( $orig, $class: @ ) {
 
-    my @framesets = map { Actium::O::Sked::Timetable::IDFrameSet->new($_) } @_;
+    my @framesets = map { Octium::O::Sked::Timetable::IDFrameSet->new($_) } @_;
 
     return $class->$orig( framesets => \@framesets );
 
@@ -84,7 +84,7 @@ sub _build_compression_levels_r {
 has framesets_of_compression_level_r => (
     traits  => ['Hash'],
     is      => 'bare',
-    isa     => 'HashRef[ArrayRef[Actium::O::Sked::Timetable::IDFrameSet]]',
+    isa     => 'HashRef[ArrayRef[Octium::O::Sked::Timetable::IDFrameSet]]',
     lazy    => 1,
     builder => '_build_framesets_of_compression_level_r',
     handles => {
@@ -184,7 +184,7 @@ sub _build_maximum_frame_count {
 #has all_frames_r => (
 #    traits  => ['Array'],
 #    is      => 'bare',
-#    isa     => 'ArrayRef[Actium::O::Sked::Timetable::IDFrame]',
+#    isa     => 'ArrayRef[Octium::O::Sked::Timetable::IDFrame]',
 #    lazy    => 1,
 #    builder => '_build_all_frames_r',
 #    handles => { all_frames => 'elements', },

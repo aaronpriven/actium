@@ -1,14 +1,14 @@
-package Actium::O::Points::BPoint 0.013;
+package Octium::O::Points::BPoint 0.013;
 
 # object representing an entire point schedule
 
-use Actium ('class');
+use Octium ('class');
 
 const my $KFOLDER => 'kpoints';
 
 has actiumdb => (
     is       => 'ro',
-    isa      => 'Actium::O::Files::ActiumDB',
+    isa      => 'Octium::O::Files::ActiumDB',
     required => 1,
 );
 
@@ -36,13 +36,13 @@ has copyquantity => (
 
 has effdate => (
     is       => 'ro',
-    isa      => 'Actium::O::DateTime',
+    isa      => 'Octium::O::DateTime',
     required => 1,
 );
 
 has signup => (
     is       => 'ro',
-    isa      => 'Actium::O::Folders::Signup',
+    isa      => 'Octium::O::Folders::Signup',
     required => 1,
 );
 
@@ -94,7 +94,7 @@ has error_r => (
 has 'box_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Maybe[Actium::O::Points::Column]]',
+    isa     => 'ArrayRef[Maybe[Octium::O::Points::Column]]',
     builder => '_build_boxes',
     lazy    => 1,
     handles => { boxes => 'elements', },
@@ -119,7 +119,7 @@ method _build_boxes {
         while (<$kpoint>) {
 
             chomp;
-            my $box = Actium::O::Points::Box->new(
+            my $box = Octium::O::Points::Box->new(
                 kpointline     => $_,
                 actiumdb       => $self->actiumdb,
                 display_stopid => $box_stopid,
@@ -175,17 +175,17 @@ __END__
 
 const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 
-use Actium::Sorting::Line (qw(byline sortbyline));
+use Octium::Sorting::Line (qw(byline sortbyline));
 use List::Compare::Functional('get_unique');    ### DEP ###
-use Actium::O::DateTime;
+use Octium::O::DateTime;
 
 const my $IDPOINTFOLDER => 'idpoints2019';
 const my $KFOLDER       => 'kpoints';
 
-use Actium::O::Points::Box;
+use Octium::O::Points::Box;
 
-use Actium::Text::InDesignTags;
-const my $IDT        => 'Actium::Text::InDesignTags';
+use Octium::Text::InDesignTags;
+const my $IDT        => 'Octium::Text::InDesignTags';
 const my $IDBOXBREAK => $IDT->boxbreak;
 const my $NBSP       => $IDT->nbsp;
 
@@ -206,13 +206,13 @@ has copyquantity => (
 
 has effdate => (
     is       => 'ro',
-    isa      => 'Actium::O::DateTime',
+    isa      => 'Octium::O::DateTime',
     required => 1,
 );
 
 has signup => (
     is       => 'ro',
-    isa      => 'Actium::O::Folders::Signup',
+    isa      => 'Octium::O::Folders::Signup',
     required => 1,
 );
 
@@ -240,7 +240,7 @@ has heights => (
 
 has actiumdb => (
     is       => 'ro',
-    isa      => 'Actium::O::Files::ActiumDB',
+    isa      => 'Octium::O::Files::ActiumDB',
     required => 1,
 );
 
@@ -307,7 +307,7 @@ has 'note600' => (
 has 'box_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Maybe[Actium::O::Points::Column]]',
+    isa     => 'ArrayRef[Maybe[Octium::O::Points::Column]]',
     default => sub { [] },
     handles => {
         boxes      => 'elements',
@@ -956,7 +956,7 @@ sub format_side {
 
 }    ## tidy end: sub format_side
 
-# TODO - allow all values in Actium::O::Days
+# TODO - allow all values in Octium::O::Days
 my %text_of_exception = (
     SD     => 'school days only',
     SH     => 'school holidays only',
@@ -1016,7 +1016,7 @@ sub format_sidenotes {
             $dest =~ s/\.*$/\./;
         }
 
-        # TODO - Update to allow all values in Actium::O::Days
+        # TODO - Update to allow all values in Octium::O::Days
         if ( $attr{exception} ) {
             $exc = $text_of_exception{ $attr{exception} };
         }

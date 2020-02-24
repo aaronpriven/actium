@@ -1,9 +1,9 @@
-package Actium::Cmd::NonMinSuppCalendar 0.012;
+package Octium::Cmd::NonMinSuppCalendar 0.012;
 
-use Actium;
-use Actium::Time;
-use Actium::O::Folder;
-use Actium::Import::Xhea::SuppCalendar;
+use Octium;
+use Octium::Time;
+use Octium::O::Folder;
+use Octium::Import::Xhea::SuppCalendar;
 use DDP;
 use Array::2D;
 
@@ -58,7 +58,7 @@ sub START {
                 s/\s+\z//;
             }
 
-            if ( Actium::any { not exists $status_of{$_} } @schools ) {
+            if ( Octium::any { not exists $status_of{$_} } @schools ) {
                 push @calendar_line, "NO STATUS";
             }
             else {
@@ -69,11 +69,11 @@ sub START {
                       = map { onoff( matchstatus => $_, is_pm => $is_pm ) }
                       @matchstatuses_of_day;
 
-                    if ( Actium::all_eq(@results_of_day) ) {
+                    if ( Octium::all_eq(@results_of_day) ) {
                         push @calendar_line, $results_of_day[0];
                     }
                     elsif (
-                        Actium::all { $_ eq '-early-' or $_ eq '-ON-' }
+                        Octium::all { $_ eq '-early-' or $_ eq '-ON-' }
                         @results_of_day
                       )
                     {
@@ -85,7 +85,7 @@ sub START {
                     }
                 } ## tidy end: foreach my $day_idx ( 0 .. ...)
 
-            } ## tidy end: else [ if ( Actium::any { not...})]
+            } ## tidy end: else [ if ( Octium::any { not...})]
 
         } ## tidy end: if ( $trip{School} =~ ...)
         else {    # one school
@@ -200,8 +200,8 @@ sub get_trips {
 
 }
 
-sub _nextline  { goto &Actium::Import::Xhea::SuppCalendar::_nextline }
-sub _open_xlsx { goto &Actium::Import::Xhea::SuppCalendar::_open_xlsx }
+sub _nextline  { goto &Octium::Import::Xhea::SuppCalendar::_nextline }
+sub _open_xlsx { goto &Octium::Import::Xhea::SuppCalendar::_open_xlsx }
 
 #func one_school (%trip is ref_alias) {
 #
@@ -238,7 +238,7 @@ sub _open_xlsx { goto &Actium::Import::Xhea::SuppCalendar::_open_xlsx }
 #
 #    my @calendar_line = @tripheaders;
 #
-#    if ( Actium::any { not exists $status_of{$_} } @schools ) {
+#    if ( Octium::any { not exists $status_of{$_} } @schools ) {
 #        push @calendar_line, "NO STATUS";
 #    }
 #    else {
@@ -247,11 +247,11 @@ sub _open_xlsx { goto &Actium::Import::Xhea::SuppCalendar::_open_xlsx }
 #              = map { $matchstatus_of{$_}[$day_idx] } @schools;
 #            my @results_of_day = map { on_off($_) } @matchstatuses_of_day;
 #
-#            if ( Actium::all_eq(@results_of_day) ) {
+#            if ( Octium::all_eq(@results_of_day) ) {
 #                push @calendar_line, $results_of_day[0];
 #            }
 #            elsif (
-#                Actium::all { $_ eq '-early-' or $_ eq '-ON-' }
+#                Octium::all { $_ eq '-early-' or $_ eq '-ON-' }
 #                @results_of_day
 #              )
 #            {
@@ -262,7 +262,7 @@ sub _open_xlsx { goto &Actium::Import::Xhea::SuppCalendar::_open_xlsx }
 #            }
 #        }
 #
-#    } ## tidy end: else [ if ( Actium::any { not...})]
+#    } ## tidy end: else [ if ( Octium::any { not...})]
 #
 #    my @lines = \@calendar_line;
 #
@@ -290,7 +290,7 @@ sub read_supp_calendars {
 
     my @files = $calendar_folder->glob_files('*.xlsx');
 
-    @files = grep { not( Actium::filename($_) =~ m/\A~/ ) } @files;
+    @files = grep { not( Octium::filename($_) =~ m/\A~/ ) } @files;
     # skip temporary files beginning with ~
 
     my ( %next_code_of_days, %code_of_note, %calendar_of_block );
@@ -329,7 +329,7 @@ sub read_supp_calendars {
 
         @wkdays = map { $day_sub{$_} } @wkdays;
 
-        my @uniq_wkdays = Actium::uniq @wkdays;
+        my @uniq_wkdays = Octium::uniq @wkdays;
 
         _nextline($sheet);    #  ignore counts of how many are on
 
@@ -345,7 +345,7 @@ sub read_supp_calendars {
             next unless $block;
 
             my $pullout_cell    = $cells[3];
-            my $pullout_time    = Actium::Time->from_excel($pullout_cell);
+            my $pullout_time    = Octium::Time->from_excel($pullout_cell);
             my $pullout_timenum = $pullout_time->timenum;
 
             my $tripkey = "$block/$pullout_timenum";
@@ -412,7 +412,7 @@ sub read_supp_calendars {
 
             if (@on) {
                 my @every_on = map {"every $_"} @on;
-                $note .= 'Operates ' . Actium::joinseries(@every_on);
+                $note .= 'Operates ' . Octium::joinseries(@every_on);
             }
             if (@also) {
                 if (@on) {
@@ -490,8 +490,8 @@ sub read_supp_calendars {
 
     foreach my $tripkey ( sort keys %calendar_of_block ) {
         my $cal = $calendar_of_block{$tripkey};
-        say $fh Actium::jointab( $tripkey,
-            Actium::is_arrayref($cal) ? @$cal : $cal );
+        say $fh Octium::jointab( $tripkey,
+            Octium::is_arrayref($cal) ? @$cal : $cal );
     }
 
     $fh->close;
@@ -526,7 +526,7 @@ sub read_supp_calendars {
               . '->new_from_xlsx';
         }
 
-        my $sheet_key = Actium::refaddr($sheet);
+        my $sheet_key = Octium::refaddr($sheet);
 
         ( $minrow{$sheet_key}, $maxrow{$sheet_key} ) = $sheet->row_range();
         ( $mincol{$sheet_key}, $maxcol{$sheet_key} ) = $sheet->col_range();
@@ -539,7 +539,7 @@ sub read_supp_calendars {
     sub _nextline {
         my $sheet       = shift;
         my $wants_cells = shift;
-        my $sheet_key   = Actium::refaddr($sheet);
+        my $sheet_key   = Octium::refaddr($sheet);
 
         if ( not defined wantarray ) {
             $currentrow{$sheet_key}++
@@ -556,7 +556,7 @@ sub read_supp_calendars {
         my @values = map { defined($_) ? $_->value : $EMPTY } @cells;
 
         @values = _cleanvalues(@values);
-        return if ( Actium::none {$_} @values );
+        return if ( Octium::none {$_} @values );
 
         pop @values while $values[-1] eq $EMPTY;
 
@@ -572,7 +572,7 @@ sub read_supp_calendars {
 sub _displaydates {
 
     my @dates = sort { $key_of_day{$a} <=> $key_of_day{$b} } @_;
-    return Actium::joinseries(@dates);
+    return Octium::joinseries(@dates);
 
 }
 

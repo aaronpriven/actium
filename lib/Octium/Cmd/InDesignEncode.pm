@@ -1,13 +1,13 @@
-package Actium::Cmd::InDesignEncode 0.010;
+package Octium::Cmd::InDesignEncode 0.010;
 
-use Actium;
+use Octium;
 use autodie;
 use File::Slurper;
 
-use Actium::Text::InDesignTags;
-const my $IDT => 'Actium::Text::InDesignTags';
+use Octium::Text::InDesignTags;
+const my $IDT => 'Octium::Text::InDesignTags';
 
-use Actium::O::2DArray;
+use Octium::O::2DArray;
 
 sub START {
     my ( $class, $env ) = @_;
@@ -18,7 +18,7 @@ sub START {
         my $processing_cry = $env->crier->cry("Processing $input_file");
         my $input_cry      = $env->crier->cry("Loading $input_file");
 
-        my $input = Actium::O::2DArray->new_from_file($input_file);
+        my $input = Octium::O::2DArray->new_from_file($input_file);
 
         $input->[0][0] =~ s/\N{BYTE ORDER MARK}//;
 

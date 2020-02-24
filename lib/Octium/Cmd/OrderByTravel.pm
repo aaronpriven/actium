@@ -1,10 +1,10 @@
-package Actium::Cmd::OrderByTravel 0.011;
+package Octium::Cmd::OrderByTravel 0.011;
 # Takes a list of stops and order it so that people can drive down a
 # particular bus route and hit as many stops as possible.
 
-use Actium;
+use Octium;
 
-use Actium::Sorting::Travel(qw<travelsort>);
+use Octium::Sorting::Travel(qw<travelsort>);
 
 sub OPTIONS {
     my ( $class, $env ) = @_;
@@ -166,7 +166,7 @@ Also, several modules this subprogram  uses specify options. See:
 
 =over
 
-=item L<OPTIONS in Actium::Cmd::Config::Signup|Actium::Cmd::Config::Signup/OPTIONS>
+=item L<OPTIONS in Octium::Cmd::Config::Signup|Octium::Cmd::Config::Signup/OPTIONS>
 
 =back
 
@@ -214,9 +214,9 @@ specified  signup) or there may be some other error.
 
 =over
 
-=item Actium::Cmd::Config::Signup
+=item Octium::Cmd::Config::Signup
 
-=item Actium::Sorting::Travel
+=item Octium::Sorting::Travel
 
 =back
 

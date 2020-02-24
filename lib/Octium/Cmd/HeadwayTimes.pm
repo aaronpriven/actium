@@ -1,10 +1,10 @@
-package Actium::Cmd::HeadwayTimes 0.011;
+package Octium::Cmd::HeadwayTimes 0.011;
 
 # This is intended to accept a tab-delimited text file and then display the
 # minutes between times in the list.
 
-use Actium;
-use Actium::Time;
+use Octium;
+use Octium::Time;
 
 ###########################################
 ## COMMAND
@@ -81,7 +81,7 @@ sub START {
 } ## tidy end: sub START
 
 func timenums (@times) {
-    my @timenums = map { Actium::Time->from_str($_)->timenum } @times;
+    my @timenums = map { Octium::Time->from_str($_)->timenum } @times;
     return @timenums;
 }
 

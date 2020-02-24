@@ -1,8 +1,8 @@
-package Actium::Sked::StopSked 0.014;
+package Octium::Sked::StopSked 0.014;
 
-use Actium 'class';
+use Octium 'class';
 
-use Actium::Types (qw/DirCode ActiumDir ActiumDays/);
+use Octium::Types (qw/DirCode ActiumDir ActiumDays/);
 
 has dir_obj => (
     required => 1,
@@ -54,7 +54,7 @@ has is_dropoff_only => (
 
 has _trips_r => (
     required => 1,
-    isa      => 'ArrayRef[Actium::Sked::StopSked::Trip]',
+    isa      => 'ArrayRef[Octium::Sked::StopSked::Trip]',
     is       => 'bare',
     init_arg => 'trips',
     traits   => ['Array'],

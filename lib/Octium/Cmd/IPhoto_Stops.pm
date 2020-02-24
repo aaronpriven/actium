@@ -1,8 +1,8 @@
-package Actium::Cmd::IPhoto_Stops 0.011;
+package Octium::Cmd::IPhoto_Stops 0.011;
 
 # Command-line program to modify iPhoto stop information
 
-use Actium;
+use Octium;
 
 use Math::Trig   (qw(deg2rad pi great_circle_distance asin acos));   ### DEP ###
 use Scalar::Util ('looks_like_number');                              ### DEP ###

@@ -1,4 +1,4 @@
-package Actium::O::Files::SQLite 0.012;
+package Octium::O::Files::SQLite 0.012;
 
 # Role for reading and processing flat files and storing in an SQLite database
 
@@ -17,7 +17,7 @@ package Actium::O::Files::SQLite 0.012;
 #Each db_type (datbase type), has one or more filetypes,
 #which has one or more tables (aka rowtypes).
 
-use Actium ('role');
+use Octium ('role');
 
 use DBI;    ### DEP ###
 # DBD::SQLite ### DEP ###
@@ -495,7 +495,7 @@ __END__
 
 head1 NAME
 
-Actium::O::Files::SQLite - role for reading flat files and storing the data
+Octium::O::Files::SQLite - role for reading flat files and storing the data
 in an SQLite database
 
 =head1 VERSION
@@ -504,9 +504,9 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::O::Files::RoleComposer;
+ use Octium::O::Files::RoleComposer;
             
- my $db = Actium::O::Files::RoleComposer->new(
+ my $db = Octium::O::Files::RoleComposer->new(
      flats_folder => $flats_folder,
      db_folder    => $cache,
      db_filename  => $db_filename,
@@ -517,7 +517,7 @@ This documentation refers to version 0.001
    
 =head1 DESCRIPTION
 
-Actium::O::Files::SQLite is a role for storing data from flat files
+Octium::O::Files::SQLite is a role for storing data from flat files
 in an SQLite database, using L<DBI|DBI> and L<DBD::SQLite|DBD::SQLite>.
 
 The SQLite database acts as a cache, allowing quicker access
@@ -610,7 +610,7 @@ or a composite key column which is created by the consuming class.
 
 =back
 
-=head2 Methods in Actium::O::Files::SQLite
+=head2 Methods in Octium::O::Files::SQLite
 
 =over
 

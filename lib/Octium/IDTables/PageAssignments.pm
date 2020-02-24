@@ -1,27 +1,27 @@
-package Actium::IDTables::PageAssignments 0.012;
+package Octium::IDTables::PageAssignments 0.012;
 
 use 5.016;
 use warnings;
 
-use Actium;
-use Actium::Crier (qw/cry last_cry/);
-use Actium::Text::InDesignTags;
-use Actium::Text::CharWidth ( 'ems', 'char_width' );
-use Actium::O::Sked;
-use Actium::O::Sked::Timetable;
-use Actium::O::Sked::Timetable::IDTimetable;
-use Actium::O::Sked::Timetable::IDTimetableSet;
+use Octium;
+use Octium::Crier (qw/cry last_cry/);
+use Octium::Text::InDesignTags;
+use Octium::Text::CharWidth ( 'ems', 'char_width' );
+use Octium::O::Sked;
+use Octium::O::Sked::Timetable;
+use Octium::O::Sked::Timetable::IDTimetable;
+use Octium::O::Sked::Timetable::IDTimetableSet;
 use List::Util (qw/max sum/);    ### DEP ###
 use List::Compare::Functional(qw/get_intersection/);          ### DEP ###
 use Algorithm::Combinatorics(qw/partitions permutations/);    ### DEP ###
-use Actium::Set (qw/odometer_combinations ordered_partitions/);
+use Octium::Set (qw/odometer_combinations ordered_partitions/);
 
-use Actium::O::Sked::Timetable::IDPageFrameSets;
+use Octium::O::Sked::Timetable::IDPageFrameSets;
 
-const my $IDT        => 'Actium::Text::InDesignTags';
+const my $IDT        => 'Octium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
 
-my $shortpage_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
+my $shortpage_framesets = Octium::O::Sked::Timetable::IDPageFrameSets->new(
     {   description => 'Landscape full',
         frames      => [ { widthpair => [ 10, 0 ], frame_idx => 0 } ],
         height      => 42,
@@ -48,7 +48,7 @@ my $shortpage_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
     },
 );
 
-my $page_framesets = Actium::O::Sked::Timetable::IDPageFrameSets->new(
+my $page_framesets = Octium::O::Sked::Timetable::IDPageFrameSets->new(
     {   description       => 'Landscape full',
         compression_level => 0,
         frames            => [ { widthpair => [ 15, 0 ], frame_idx => 0 }, ],
@@ -210,7 +210,7 @@ sub _assign_pages {
 sub _overlong_assign_pages {
     my @idtables = @_;
 
-    my @table_sets = Actium::O::Sked::Timetable::IDTimetableSet->new;
+    my @table_sets = Octium::O::Sked::Timetable::IDTimetableSet->new;
 
     for my $idtable (@idtables) {
 
@@ -228,7 +228,7 @@ sub _overlong_assign_pages {
         }
         else {
             # make a new set
-            my $set = Actium::O::Sked::Timetable::IDTimetableSet->new;
+            my $set = Octium::O::Sked::Timetable::IDTimetableSet->new;
             $set->add_timetable($idtable);
             push @table_sets, $set;
         }
@@ -537,7 +537,7 @@ sub _slide_up_multiframe_tables {
         my $height = $page_assignment_r->{frameset}->height;
         foreach my $tables_of_frame_r ( @{ $page_assignment_r->{tables} } ) {
             my ( $table_height, $table_width )
-              = Actium::O::Sked::Timetable::IDTimetable
+              = Octium::O::Sked::Timetable::IDTimetable
               ->get_stacked_measurements( @{$tables_of_frame_r} );
 
             push @data_of_frame,

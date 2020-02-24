@@ -1,10 +1,10 @@
-package Actium::Cmd::LineDescrip 0.011;
+package Octium::Cmd::LineDescrip 0.011;
 
 # Produces line descriptions from the Lines database
 # Also produces transit hubs sheet, so should be renamed to something else.
 # Possibly combine with slists2html
 
-use Actium;
+use Octium;
 
 sub HELP {
 

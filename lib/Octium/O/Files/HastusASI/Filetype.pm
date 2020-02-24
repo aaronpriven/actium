@@ -1,4 +1,4 @@
-package Actium::O::Files::HastusASI::Filetype 0.012;
+package Octium::O::Files::HastusASI::Filetype 0.012;
 
 # Class for Hastus ASI filetypes
 
@@ -32,7 +32,7 @@ __END__
 
 =head1 NAME
 
-Actium::O::Files::HastusASI::Filetype - Class representing filetypes in 
+Octium::O::Files::HastusASI::Filetype - Class representing filetypes in 
 Hastus AVL Standard Interface
 
 =head1 NOTE
@@ -46,12 +46,12 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Actium::O::Files::HastusASI::Filetype;
+ use Octium::O::Files::HastusASI::Filetype;
  
  my $filetype = 'PAT';
  my @tables = qw/PAT TPS/;
  my $filetype_obj = 
-     Actium::O::Files::HastusASI::Filetype->new(
+     Octium::O::Files::HastusASI::Filetype->new(
          id => $filetype ,
          tables_r => \@tables ,
      );
@@ -65,11 +65,11 @@ This documentation refers to version 0.001
  
 =head1 DESCRIPTION
 
-Actium::O::Files::HastusASI::Filetype is a very simple class holding information
+Octium::O::Files::HastusASI::Filetype is a very simple class holding information
 on the file types from a Hastus AVL Standard Interface export. All attributes
 are read-only and are expected to be set during object construction.
 
-It is intended to be used only from Actium::O::Files::HastusASI::Definition. All 
+It is intended to be used only from Octium::O::Files::HastusASI::Definition. All 
 attributes and methods should be considered private to that module.
 
 =head1 ATTRIBUTES and METHODS
@@ -79,7 +79,7 @@ attributes and methods should be considered private to that module.
 =item B<new>
 
 As with most Moose classes, the constructor method is called "new". Invoke it
-with C<< Actium:::O::Files::HastusASI::Filetype->new(%hash_of_attributes) >>.
+with C<< Octium:::O::Files::HastusASI::Filetype->new(%hash_of_attributes) >>.
 
 =item B<id>
 
