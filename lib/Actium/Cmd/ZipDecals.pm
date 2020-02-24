@@ -50,7 +50,7 @@ sub START {
 
     say "Decals written to $zipfile";
 
-}
+}    ## tidy end: sub START
 
 1;
 
