@@ -33,6 +33,13 @@ sub OPTIONS {
             config_section => 'Stops2KML',
             config_key     => 'WorkZones',
         },
+        {   spec           => 'vicinity',
+            description    => 'Create KML for lines around a vicinity',
+            fallback       => '0',
+            envvar         => 'STOPS2KML_VICINITY',
+            config_section => 'Stops2KML',
+            config_key     => 'Vicinity',
+        },
     );
 }
 
@@ -48,15 +55,19 @@ sub START {
         return;
     }
 
+    my $use_option;
     my $workzones = $env->option('workzones');
+    $use_option = 'w' if $workzones;
+    my $vicinity = $env->option('vicinity');
+    $use_option = 'v' if $vicinity;
 
-    my $kml_text = stops2kml( $actiumdb, $workzones );
+    my $kml_text = stops2kml( $actiumdb, $use_option );
 
     write_text( $outputfile, $kml_text );
 
     return;
 
-} ## tidy end: sub START
+}
 
 1;
 
