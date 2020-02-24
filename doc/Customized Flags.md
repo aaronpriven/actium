@@ -176,13 +176,13 @@ the instructions say depends on the input file.
 
 The decallabels program reads the same file that was used in decalcount.
 
-    | A      | B     | C   | D   
---- | ------ | ----- | --- | ---
-1   | StopID | Lines | Description | Instructions
-2   | 50243  |       | West Midway Ave. at Orion St., Alameda, near side, going north | Replace 31-a "To Alameda Point" with 31-c "To Lexington Street, Alameda Point"
-3   | 50244  | 215   | Paseo Padre Pkwy. at Mission View Dr., Fremont, far side, going east | & Make sure 212 is whited out
-4   | 50663  |       | Martin Luther King Jr. Way at Virginia St., Berkeley, far side, going north | P
-5   | 50773  |       | Castro Valley Blvd. at Santa Maria Ave., Castro Valley, near side, going west |
+|    | A      | B     | C   | D   |
+|--- | --- | -- | --- | --- |
+|1   | StopID | Lines | Description | Instructions |
+|2   | 50243  |       | West Midway Ave. at Orion St., Alameda, near side, going north | Replace 31-a "To Alameda Point" with 31-c "To Lexington Street, Alameda Point" |
+|3   | 50244  | 215   | Paseo Padre Pkwy. at Mission View Dr., Fremont, far side, going east | & Make sure 212 is whited out |
+|4   | 50663  |       | Martin Luther King Jr. Way at Virginia St., Berkeley, far side, going north | P |
+|5   | 50773  |       | Castro Valley Blvd. at Santa Maria Ave., Castro Valley, near side, going west | |
 
 The decallabels program uses the same first two columns as decalcount:
 The first column should contain stop IDs, and the second should
