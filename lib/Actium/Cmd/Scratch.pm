@@ -60,7 +60,7 @@ sub START {
     }
     close $out;
 
-}
+}    ## tidy end: sub START
 
 1;
 
