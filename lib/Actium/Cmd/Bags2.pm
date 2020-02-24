@@ -105,7 +105,7 @@ sub START {
     $output_cry->done;
 
     return;
-}
+}    ## tidy end: sub START
 
 sub _process_stop {
 
@@ -208,7 +208,7 @@ sub _process_stop {
 
     return "$action\t$stopid\t$mainbox\t$desc";
 
-}
+}    ## tidy end: sub _process_stop
 
 sub _translate_graf {
     my $i18n_id  = shift;
@@ -268,7 +268,7 @@ sub _lines_with_introstyle {
 
     return $return;
 
-}
+}    ## tidy end: sub _lines_with_introstyle
 
 const my @ALL_LANGUAGES => qw/en es zh/;
 const my $nbsp          => $IDT->nbsp;
@@ -307,7 +307,7 @@ sub _effective_date_indd {
 
         $translations{$lang} = $phrase;
 
-    }
+    }    ## tidy end: foreach my $lang ( keys %translations)
 
     return
         _para($style)
@@ -317,7 +317,7 @@ sub _effective_date_indd {
       . $HARDRET
       . $translations{zh};
 
-}
+}    ## tidy end: sub _effective_date_indd
 
 sub _translate_phrase {
 
