@@ -1,4 +1,4 @@
-package Actium::Cmd::BARTSkeds 0.011;
+package Actium::Cmd::BARTSkeds 0.015;
 
 # gets schedules from BART API and creates reports
 
@@ -8,16 +8,22 @@ use LWP::UserAgent;                  ### DEP ###
 use XML::Twig;                       ### DEP ###
 use Date::Simple(qw/date today/);    ### DEP ###
 use Actium::O::2DArray;
+use JSON;
+use Actium::Time;
 
 use DDP;
 
 use Actium::Text::InDesignTags;
-const my $IDT => 'Actium::Text::InDesignTags';
+const my $BART_MIDNIGHT_TIMENUM => 146;
 
-const my $API_KEY => 'MW9S-E7SL-26DU-VV8V';
+const my $DEFAULT_KEY => 'MW9S-E7SL-26DU-VV8V';
 
-const my @DAYS => qw/12345 6 7/;
+const my @DAYS        => qw/12345 6 7/;
+const my %DAY_DESC_OF => qw/12345 Weekday 6 Saturday 7 Sunday/;
 # weekday, saturday, sunday; matches Actium::O::Days
+#
+
+use constant DO_FARES => 0;
 
 sub HELP {
     my ( $class, $env ) = @_;
@@ -40,29 +46,336 @@ sub OPTIONS {
             default         => '.',
             display_default => 1,
         },
+        {   spec            => 'key=s',
+            description     => 'Location where to save the files.',
+            default         => $DEFAULT_KEY,
+            envvar          => 'BART_KEY',
+            config_section  => 'BART',
+            config_key      => 'key',
+            display_default => 1,
+        },
     );
 
 }
 
-my ( %stations, %not_main_station, %abbr_of_station );
-$not_main_station{$_} = 1 foreach qw/24TH NCON MONT PHIL BAYF /;
+my ( %name_of_station, %not_main_station, %abbr_of_station );
+$not_main_station{$_} = 1 foreach qw/24TH NCON MONT PHIL BAYF PITT CONC/;
+
+my ( $api_key, $foldername );
+my ( %first_of, %last_of, %dest_is_used );
 
 sub START {
 
     my $start_cry = cry('Building BART frequency tables');
 
-    my ( $class,  $env )   = @_;
-    my ( $oldest, @dates ) = get_dates( $env->option('date') );
+    my ( $class,  $env )       = @_;
+    my ( $oldest, $date_of_r ) = get_dates( $env->option('date') );
+    \my %date_of = $date_of_r;
 
-    my $foldername = $env->option('folder') . '/BARTfreq_' . $oldest;
+    $api_key = $env->option('key');
+
+    $foldername = $env->option('folder') . '/BARTfreq_' . $oldest;
     unless ( -d $foldername ) {
         mkdir $foldername or die $!;
     }
 
-    %stations        = get_stations( $dates[0] );
-    %abbr_of_station = reverse %stations;
+    get_stations( $date_of{ $DAYS[0] } );
+    %abbr_of_station = reverse %name_of_station;
+    my @station_abbrs = sort { $name_of_station{$a} cmp $name_of_station{$b} }
+      keys %name_of_station;
+    $not_main_station{$_} //= 0 foreach @station_abbrs;
 
-    my @station_abbrs = sort { $stations{$a} cmp $stations{$b} } keys %stations;
+    get_firstlast( \%date_of );
+
+    output_excel();
+
+}
+
+sub output_excel {
+
+    foreach my $station ( keys %first_of ) {
+
+        my @results;
+
+        push @results,
+          [ "Departing from " . $name_of_station{$station} . " Station" ];
+        push @results,
+          [ 'Train', 'Weekday', $EMPTY, 'Saturday', $EMPTY, 'Sunday' ];
+        push @results, [ $EMPTY, qw/First Last First Last First Last/ ];
+
+        foreach my $dest (
+            sort {
+                     $not_main_station{$a} <=> $not_main_station{$b}
+                  || $a cmp $b
+            }
+            keys %{ $dest_is_used{$station} }
+          )
+        {
+            my @train;
+            push @train, $name_of_station{$dest};
+
+            foreach my $day (@DAYS) {
+                my $first = $first_of{$station}{$day}{$dest};
+                if ( defined $first ) {
+                    $first = Actium::Time->from_num($first)->ap;
+                }
+                else { $first = '-'; }
+
+                my $last = $last_of{$station}{$day}{$dest};
+                if ( defined $last ) {
+                    $last = Actium::Time->from_num($last)->ap;
+                }
+                else { $last = '-'; }
+
+                push @train, $first, $last;
+            }
+
+            push @results, \@train;
+
+        }
+
+        my $aoa  = Actium::O::2DArray->bless( \@results );
+        my $file = "$foldername/$station.xlsx";
+        $aoa->xlsx( output_file => $file );
+
+    }
+
+}
+
+sub get_firstlast {
+    \my %date_of = shift;
+
+    foreach my $days ( sort keys %date_of ) {
+        my $day_desc = $DAY_DESC_OF{$days};
+        my $date     = $date_of{$days};
+
+        my $routes_cry = cry(
+            [ "Getting $day_desc routes", "Done getting $day_desc routes" ] );
+        \my %routes = get_routes($date);
+        my @routes = sort { $a <=> $b } keys %routes;
+
+        $routes_cry->text( join( " ", @routes ) );
+
+        foreach my $route (@routes) {
+            my $route_cry
+              = cry( "Getting ", $routes{$route}{name}, " schedule" );
+
+            \my @trains = get_sked( $date, $route );
+            if ( not @trains ) {
+                $route_cry->d_info( 'SKIP',
+                    { closetext => "Skipping this route" } );
+            }
+            else {
+                foreach my $train_r (@trains) {
+                    \my @stops     = $train_r->{stop};
+                    \my %finalstop = pop(@stops);
+
+                    my $dest = $finalstop{'@station'};
+
+                    foreach my $stop_r (@stops) {
+                        my $station = $stop_r->{'@station'};
+                        $dest_is_used{$station}{$dest} = 1;
+                        my $time
+                          = Actium::Time->from_str( $stop_r->{'@origTime'} );
+                        my $timenum = $time->timenum;
+                        $timenum += 1440 if $timenum < $BART_MIDNIGHT_TIMENUM;
+                        if ( not exists $first_of{$station}{$days}{$dest}
+                            or $first_of{$station}{$days}{$dest} > $timenum )
+                        {
+                            $first_of{$station}{$days}{$dest} = $timenum;
+                        }
+                        if ( not exists $last_of{$station}{$days}{$dest}
+                            or $last_of{$station}{$days}{$dest} < $timenum )
+                        {
+                            $last_of{$station}{$days}{$dest} = $timenum;
+                        }
+
+                    }
+
+                }
+            }
+        }
+
+    }
+
+}
+
+sub get_sked {
+
+    my ( $date, $route ) = @_;
+    my $sked_url = sked_url( $date, $route );
+    my ($sked_r) = get_from_url($sked_url);
+
+    return [] if ( not exists $sked_r->{route}{train} );
+
+    \my @trains = $sked_r->{route}{train};
+    return \@trains;
+
+}
+
+sub routesked_url {
+    my ( $date, $route ) = @_;
+    my $url
+      = "http://api.bart.gov/api/sched.aspx?cmd=routesched&route=$route&key=$api_key&json=y&date=$date";
+    return $url;
+}
+
+sub get_routes {
+
+    my $date = shift;
+    my %name_of;
+    my %routes;
+
+    my $routes_url = routes_url($date);
+    my ($root_r) = get_from_url($routes_url);
+
+    my @route_structs = $root_r->{routes}{route}->@*;
+    foreach \my %route_struct (@route_structs) {
+        my $route_num = $route_struct{number};
+        $routes{$route_num} = \%route_struct;
+    }
+
+    return \%routes;
+
+}
+
+sub routes_url {
+    my $date = shift;
+    my $url
+      = "http://api.bart.gov/api/route.aspx?cmd=routes&date=$date&key=$api_key&json=y";
+    return $url;
+}
+
+sub get_from_url {
+
+    my $url     = shift;
+    my $request = HTTP::Request->new( GET => $url );
+    my $ua      = LWP::UserAgent->new;
+    my $body    = $ua->request($request)->content;
+    my $body_r  = decode_json($body);
+
+    my $root_r = $body_r->{root};
+
+    my $message = $root_r->{message};
+
+    if ( defined Actium::reftype($message) ) {
+        require Data::Dumper;
+        local $Data::Dumper::Terse     = 1;
+        local $Data::Dumper::Indent    = 0;
+        local $Data::Dumper::Quotekeys = 0;
+        local $Data::Dumper::Pair      = ' : ';
+        $message = Data::Dumper::Dumper($message);
+        last_cry()->text("*** Message from BART: $message");
+    }
+
+    return $root_r;
+
+}
+
+sub sked_url {
+    my $date  = shift;
+    my $route = shift;
+    my $url
+      = 'http://api.bart.gov/api/sched.aspx?cmd=routesched'
+      . "&date=$date&route=$route&key=$api_key&json=y";
+    return $url;
+}
+
+####################
+#### DATES
+#### This gets the first weekday, Saturday, and Sunday, starting
+#### with the specified date (or today)
+
+sub get_dates {
+
+    my $effective_date = shift;
+    my $date_obj;
+    my $today = today();
+
+    if ( not $effective_date ) {
+        $date_obj = $today;
+    }
+    else {
+
+        if ( not u::blessed($effective_date) ) {
+            $date_obj = date($effective_date);
+            die "Unrecognized date '$effective_date'"
+              unless defined $date_obj;
+        }
+
+        if ( $date_obj < $today ) {
+            my $cry = last_cry;
+            $cry->text(
+                "Can't ask for BART schedules for past date $effective_date.");
+            $cry->d_error;
+            die;
+        }
+
+    }
+
+    my $oldest = $date_obj;
+
+    my %date_of;
+
+    while ( scalar keys %date_of < 3 ) {
+
+        my $day = $date_obj->day_of_week;
+        if ( $day == 0 ) {
+            $day = 7;
+        }
+        elsif ( $day != 6 ) {
+            $day = '12345';
+        }
+
+        if ( not exists $date_of{$day} ) {
+            $date_of{$day} = $date_obj->as_str('%m/%d/%Y');
+        }
+
+        $date_obj = $date_obj->next;
+    }
+
+    return $oldest, \%date_of;
+}
+
+sub stations_url {
+    my $date = shift;
+    my $url
+      = "http://api.bart.gov/api/stn.aspx?cmd=stns&date=$date&key=$api_key&json=y";
+    return $url;
+}
+
+sub get_stations {
+
+    my $date = shift;
+
+    my $cry = cry('Getting station list from BART');
+
+    my $stations_url = stations_url($date);
+
+    my $root_r = get_from_url($stations_url);
+
+    my @station_structs = $root_r->{stations}{station}->@*;
+    foreach \my %station_struct (@station_structs) {
+        my $abbr = $station_struct{abbr};
+        $name_of_station{$abbr} = $station_struct{name};
+    }
+
+    return \%name_of_station;
+
+}
+
+1;
+
+__END__
+
+
+
+
+
+
+    #%abbr_of_station = reverse %stations;
+
+    #my @station_abbrs = sort { $stations{$a} cmp $stations{$b} } keys %stations;
 
     my %fl_of;
 
@@ -87,57 +400,31 @@ sub START {
         }
         #$skeds_cry->over($EMPTY);
 
-        my @results;
+           ### FARES
 
-        push @results, ["Departing from  $stations{$station} Station"];
-        push @results,
-          [ 'Train', 'Weekday', $EMPTY, 'Saturday', $EMPTY, 'Sunday' ];
-        push @results, [ $EMPTY, qw/First Last First Last First Last/ ];
+        if (DO_FARES) {
 
-        foreach my $dest (
-            sort {
-                     $not_main_station{$a} <=> $not_main_station{$b}
-                  || $stations{$a} cmp $stations{$b}
+            \my %fare_to = get_fares( $station, $dates[0], \@station_abbrs );
+
+            my $farefile = "$foldername/$station-fares.txt";
+
+            my @farelines;
+            foreach my $dest (@station_abbrs) {
+
+                if ( $dest eq $station ) {
+                    push @farelines, [ $stations{$dest}, 'YAH', 'YAH' ];
+                }
+                else {
+                    push @farelines,
+                      [ $stations{$dest}, $fare_to{$dest},
+                        $fare_to{$dest} * 2 ];
+                }
+
             }
-            keys %dest_is_used
-          )
-        {
-            my @train;
-            push @train, $stations{$dest};
 
-            foreach my $day (@DAYS) {
-                push @train, $fl_of{$station}{$day}{$dest}[0] // '—';
-                push @train, $fl_of{$station}{$day}{$dest}[1] // '—';
-            }
-
-            push @results, \@train;
+            write_id_table( $farefile, $stations{$station}, \@farelines );
 
         }
-
-        my $aoa  = Actium::O::2DArray->bless( \@results );
-        my $file = "$foldername/$station.xlsx";
-        $aoa->xlsx( output_file => $file );
-
-        ### FARES
-
-        \my %fare_to = get_fares( $station, $dates[0], \@station_abbrs );
-
-        my $farefile = "$foldername/$station-fares.txt";
-
-        my @farelines;
-        foreach my $dest (@station_abbrs) {
-
-            if ( $dest eq $station ) {
-                push @farelines, [ $stations{$dest}, 'YAH', 'YAH' ];
-            }
-            else {
-                push @farelines,
-                  [ $stations{$dest}, $fare_to{$dest}, $fare_to{$dest} * 2 ];
-            }
-
-        }
-
-        write_id_table( $farefile, $stations{$station}, \@farelines );
 
     }
 
@@ -187,6 +474,10 @@ sub get_firstlast {
     my $stnsked_url = stnsked_url( $station, $date );
     my $stnsked_xml = get_url($stnsked_url);
 
+    say $stnsked_url;
+    say $stnsked_xml;
+    exit;
+
     my $twig = XML::Twig->new();
     #$twig->parse($stnsked_xml);
     my $result = $twig->safe_parse($stnsked_xml);
@@ -199,22 +490,37 @@ sub get_firstlast {
 
     my @items = $twig->root->first_child('station')->children('item');
 
+    #my %undefined_dests;
+
     my %items_of_dest;
     foreach my $item (@items) {
         my $line = $item->att('line');
         my $time = $item->att('origTime');
         $time =~ s/ ([AP])M/\l$1/;
+        $time =~ s/^0//;
         my $destname = $item->att('trainHeadStation');
-        my $dest     = $abbr_of_station{$destname};
-        push @{ $items_of_dest{$dest} },
-          { dest => $dest, line => $line, time => $time };
 
-        if ( $dest eq 'MLBR' and $line eq 'ROUTE 1' ) {
-            push @{ $items_of_dest{'SFIA'} },
-              { dest => 'SFIA', line => $line, time => $time };
-        }
+        #if ($destname eq 'SFO/Millbrae') {
+        #   $destname = 'Millbrae';
+        #}
+        #my $dest = $abbr_of_station{$destname};
+        #if (not defined $dest) {
+        #   $undefined_dests{$destname} = 1;
+        #   last;
+        #   }
+        push @{ $items_of_dest{$destname} }, { line => $line, time => $time };
+
+        #if ( $dest eq 'MLBR' and $line eq 'ROUTE 1' ) {
+        #    push @{ $items_of_dest{'SFIA'} },
+        #      { dest => 'SFIA', line => $line, time => $time };
+        #}
 
     }
+
+    #if (%undefined_dests) {
+    #    say (join "\n" , sort keys %undefined_dests);
+    #    exit;
+    #}
 
     my %fl_of;
 
@@ -274,109 +580,7 @@ sub fare_url {
 
 }
 
-sub stations_url {
-    my $date = shift;
-    my $url
-      = "http://api.bart.gov/api/stn.aspx?cmd=stns&date=$date&key=$API_KEY";
-    return $url;
-}
 
-sub get_url {
-
-    my $url     = shift;
-    my $request = HTTP::Request->new( GET => $url );
-    my $ua      = LWP::UserAgent->new;
-    my $body    = $ua->request($request)->content;
-
-    return $body;
-
-}
-
-sub get_stations {
-
-    my $date = shift;
-
-    my %name_of;
-
-    my $cry = cry('Getting station list from BART');
-
-    my $stations_url = stations_url($date);
-
-    my $stations_xml = get_url($stations_url);
-    $cry->done;
-
-    my $process_cry = cry('Processing XML data from BART');
-
-    my $twig = XML::Twig->new();
-    $twig->parse($stations_xml);
-    my @station_elts
-      = $twig->root->first_child('stations')->children('station');
-
-    foreach my $station_elt (@station_elts) {
-        my $abbr = $station_elt->first_child('abbr')->text;
-        my $name = $station_elt->first_child('name')->text;
-        $name_of{$abbr} = $name;
-    }
-
-    $process_cry->done;
-
-    return %name_of;
-
-}
-####################
-#### DATES
-#### This gets the first weekday, Saturday, and Sunday, starting
-#### with the specified date (or today)
-
-sub get_dates {
-
-    my $effective_date = shift;
-    my $date_obj;
-    my $today = today();
-
-    if ( not $effective_date ) {
-        $date_obj = $today;
-    }
-    else {
-
-        if ( not u::blessed($effective_date) ) {
-            $date_obj = date($effective_date);
-            die "Unrecognized date '$effective_date'" unless defined $date_obj;
-        }
-
-        if ( $date_obj < $today ) {
-            my $cry = last_cry;
-            $cry->text(
-                "Can't ask for BART schedules for past date $effective_date.");
-            $cry->d_error;
-            die;
-        }
-
-    }
-
-    my $oldest = $date_obj;
-
-    my %date_of;
-
-    while ( scalar keys %date_of < 3 ) {
-
-        my $day = $date_obj->day_of_week;
-        if ( $day == 0 ) {
-            $day = 7;
-        }
-        elsif ( $day != 6 ) {
-            $day = '12345';
-        }
-
-        if ( not exists $date_of{$day} ) {
-            $date_of{$day} = $date_obj->as_str('%m/%d/%Y');
-        }
-
-        $date_obj = $date_obj->next;
-    }
-
-    return $oldest, @date_of{@DAYS};
-}
 
 sub write_id_table {
 
