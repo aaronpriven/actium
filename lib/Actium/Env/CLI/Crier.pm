@@ -1574,6 +1574,8 @@ will grow and shrink as the window changes size.
 
 =head3 default_importance
 
+=over
+
 =item I<default_importance> option to C<new>
 
 =item get method: C<< $crier->default_importance() >>
