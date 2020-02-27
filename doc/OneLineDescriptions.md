@@ -56,10 +56,6 @@ Imports new fles into the maps repository. See the map repository documentation.
 
 Takes an address, geocodes it using the Perl module Geo::Coder::US, and finds the nearest stops from the Stops XML export.
 
-> orderbytravel   => 'OrderByTravel',
-
-From the file given on the command line, creates a list of stops ordered by travel order -- traveling down first one bus line and then the next bus line until all the stops on the list are given, without repeating any. Useful for pole crew assignments and the like.
-
 > patterns        => 'Patterns',
 
 Another part of the partially-completed stop lists and route list programs. These are not actually used.

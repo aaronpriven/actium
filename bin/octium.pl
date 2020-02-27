@@ -41,7 +41,6 @@ Octium::CLI->new(
         mr_copy       => 'MRCopy',
         mr_import     => 'MRImport',
         newsignup     => 'NewSignup',
-        orderbytravel => 'OrderByTravel',
         prepareflags  => 'PrepareFlags',
         storeavl      => 'StorableAVL',
         slists2html   => 'Slists2HTML',
