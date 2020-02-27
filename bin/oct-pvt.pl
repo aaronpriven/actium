@@ -18,12 +18,9 @@ Octium::CLI::->new(
         frequency    => 'Frequency',
         headwaytimes => 'HeadwayTimes',
         indd_encode  => 'InDesignEncode',
-        pr_add_stop  => 'PRAddStop',
         scratch      => 'Scratch',
         schooltrips  => 'SchoolTrips',
         tempsigns    => 'TempSigns',
-        theaimport   => 'TheaImport',
-        xhea2hasi    => 'Xhea2Hasi',
     },
 );
 
