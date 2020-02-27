@@ -26,7 +26,6 @@ Octium::CLI::->new(
         schooltrips  => 'SchoolTrips',
         tempsigns    => 'TempSigns',
         theaimport   => 'TheaImport',
-        time         => 'Time',
         xhea2hasi    => 'Xhea2Hasi',
     },
 );
