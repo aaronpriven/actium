@@ -4,11 +4,6 @@ use utf8;
 use 5.024;
 use warnings;
 
-BEGIN {
-    # make the 'u' package an alias to this package
-    *u:: = \*Octium::;
-}
-
 use Carp;                                 ### DEP ###
 use Const::Fast;                          ### DEP ###
 use Module::Runtime('require_module');    ### DEP ###
