@@ -24,7 +24,6 @@ Octium::CLI->new(
         citiesbyline  => 'CitiesByLine',
         comparestops  => 'CompareStops',
         compareskeds  => 'CompareSkeds',
-        dbexport      => 'ActiumDBExport',
         decalcount    => 'DecalCount',
         decalcompare  => 'DecalCompare',
         decallabels   => 'DecalLabels',
