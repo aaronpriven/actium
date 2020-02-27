@@ -13,20 +13,7 @@ our $VERSION = 0.015;
 Actium::Env::CLI::->new(
     commandpath => $0,
     system_name => 'actium',
-    subcommands => {
-        #        nonmin       => 'NonMinSuppCalendar',
-        #        ems          => 'Ems',
-        #        frequency    => 'Frequency',
-        #        headwaytimes => 'HeadwayTimes',
-        #        indd_encode  => 'InDesignEncode',
-        #        pr_add_stop  => 'PRAddStop',
-        #        scratch      => 'Scratch',
-        #        schooltrips  => 'SchoolTrips',
-        #        tempsigns    => 'TempSigns',
-        #        theaimport   => 'TheaImport',
-        time => 'Time',
-        #        xhea2hasi    => 'Xhea2Hasi',
-    },
+    subcommands => { time => 'Time', },
 );
 
 __END__
