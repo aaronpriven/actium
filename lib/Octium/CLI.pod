@@ -70,18 +70,18 @@ presented (Octium::O::GUI, Octium::O::Web, or whatever), although none
 exist at the moment.  The basic idea comes from L<Mark Jason Dominus's
 article on the Moonpig billing
 system|http://blog.plover.com/prog/Moonpig.html>, although that
-encompasses much more than Octium::CLI does.  Typically this object
-is called C<$env> in modules (as in Moonpig), since there could in
-theory be more than one kind of environment.
+encompasses much more than Octium::CLI does.  Typically this object is
+called C<$env> in modules (as in Moonpig), since there could in theory
+be more than one kind of environment.
 
-Octium::CLI is a Moose object. This may surprise people who are used
-to thinking of Moose as slow and inappropriate for command-line
-programs. Speed was not a significant factor in the design.
+Octium::CLI is a Moose object. This may surprise people who are used to
+thinking of Moose as slow and inappropriate for command-line programs.
+Speed was not a significant factor in the design.
 
 =head2 Basic structure of Octium::CLI
 
-Octium::CLI is designed to create commands with subcommands and
-which handle command-line options and command-line arguments.
+Octium::CLI is designed to create commands with subcommands and which
+handle command-line options and command-line arguments.
 
 It works this way:
 
@@ -94,9 +94,8 @@ valid subcommands and other information about the system.
 
 =item *
 
-Octium::CLI identifies which command is selected, if any. It
-displays usage information for the script if requested or if there's an
-error.
+Octium::CLI identifies which command is selected, if any. It displays
+usage information for the script if requested or if there's an error.
 
 =item *
 
@@ -161,8 +160,8 @@ C<Octium::Cmd::Sam::Spade> if 'sam_spade' were supplied.
 Note that the value of the C<command> attribute will always be the
 non-alias name, even if the alias is specified.
 
-The value 'help' is used by Octium::CLI itself so no subcommand can
-be called 'help'.
+The value 'help' is used by Octium::CLI itself so no subcommand can be
+called 'help'.
 
 =head2 Optional parameters
 
@@ -196,16 +195,16 @@ L<the FindBin module|FindBin>.
 =head1 SUBCOMMAND MODULES
 
 Subcommand modules will be found in the "Octium::Cmd" namespace.
-Octium::CLI will load those modules and invoke them if selected by
-the user.
+Octium::CLI will load those modules and invoke them if selected by the
+user.
 
 Subcommand modules must support a START() method and can optionally
 support HELP() and OPTIONS() methods.  Methods are invoked using method
 lookup (so could theoretically be inherited from parents or composed
 from roles).
 
-All these methods are passed the Octium::CLI object itself as the
-only argument.
+All these methods are passed the Octium::CLI object itself as the only
+argument.
 
 =head3 START()
 
@@ -222,9 +221,9 @@ it should be invoked.
 
 =head3 OPTIONS()
 
-The OPTIONS() method is how modules request that Octium::CLI do
-options handling. The method should return a list of option
-specifications and/or option packages. See "OPTION PROCESSING" below.
+The OPTIONS() method is how modules request that Octium::CLI do options
+handling. The method should return a list of option specifications
+and/or option packages. See "OPTION PROCESSING" below.
 
 =head1 ATTRIBUTES
 
@@ -341,9 +340,9 @@ See "Option Processing" below.
 
 =head1 OPTION PROCESSING
 
-Octium::CLI is designed to handle configuration and options
-processing from several sources. The idea is to allow the user to
-specify in many different ways the configuration of the program.
+Octium::CLI is designed to handle configuration and options processing
+from several sources. The idea is to allow the user to specify in many
+different ways the configuration of the program.
 
 The program looks for the values in the following order:
 
@@ -663,37 +662,11 @@ L<Octium::Geo|Octium::Geo> for more information.
 The user name for the Geonames API. If not supplied, will prompt the
 user for a name.
 
-=head2 'flickr' package
-
-This package is used for accessing the Flickr api.  If selected, this
-package will add an attribute "flickr_auth" to Octium::CLI, which is
-an Octium::O::Photos::Flickr::Auth object representing the Flickr
-authorization. See Octium::O::Photos::Flickr::Auth for more
-information.
-
-=head3 option: flickr_key
-
-=head3 environment: FLICKR_KEY
-
-=head3 config key: 'key' in section 'Flickr'
-
-The "key" required to use the Flickr API. If not provided, the user
-will be prompted for the key.
-
-=head3 option: flickr_secret
-
-=head3 environment: FLICKR_SECRET
-
-=head3 config key: 'secret' in section 'Flickr'
-
-The "secret" required to use the Flickr API. If not provided, the user
-will be prompted for the key.
-
 =head1 USER HELP
 
-Octium::CLI also provides some simple user help capabilities. They
-can be invoked in two ways: via the "help" subcommand, or the "-help"
-(or "-?") option.
+Octium::CLI also provides some simple user help capabilities. They can
+be invoked in two ways: via the "help" subcommand, or the "-help" (or
+"-?") option.
 
 If no subcommand is specified, or if an unrecognized subcommand is
 found on the command line, then a brief list of subcommands available
