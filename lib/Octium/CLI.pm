@@ -55,15 +55,6 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
 
     my @original_argv = @{ $params{argv} };
 
-    ## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
-    {                             # scoping for "no warnings"
-        no warnings('once');
-        if ( ( not @original_argv ) and $Octium::Eclipse::is_under_eclipse ) {
-            @original_argv = Octium::Eclipse::get_command_line();
-        }
-    }
-    ## use critic
-
     my @argv = @original_argv;    # intentional copy
     my ( $help_requested, $help_arg_index, $subcommand );
 
@@ -99,7 +90,7 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
 
     return $class->$orig(%init_args);
 
-} ## tidy end: around BUILDARGS
+}    ## tidy end: around BUILDARGS
 
 ###############
 #### BUILD
@@ -130,7 +121,7 @@ sub BUILD {
         $module->START($self);
     }
 
-} ## tidy end: sub BUILD
+}    ## tidy end: sub BUILD
 
 ##### TERMINAL AND SIGNAL FUNCTIONS #####
 
@@ -196,7 +187,7 @@ sub prompt {
     # stringify what would otherwise be a weird Contextual::Return value,
     # thank you Mr. Conway
 
-} ## tidy end: sub prompt
+}    ## tidy end: sub prompt
 
 #############
 #### HELP
@@ -227,7 +218,7 @@ method _mainhelp ( Str :$error = q[] , Int :$status = 0 ) {
 
     exit $status;
 
-} ## tidy end: method _mainhelp
+}    ## tidy end: method _mainhelp
 
 sub _output_usage {
 
@@ -350,7 +341,7 @@ sub _build_module {
       or die " Couldn't load module $module: $OS_ERROR";
     return $module;
 
-} ## tidy end: sub _build_module
+}    ## tidy end: sub _build_module
 
 has crier => (
     is      => 'ro',
@@ -469,7 +460,7 @@ sub _build_options {
 
     return \%options;
 
-} ## tidy end: sub _build_options
+}    ## tidy end: sub _build_options
 
 ##########################################################
 ## Private attributes (used in processing options, etc.)
@@ -553,7 +544,7 @@ sub _build_option_objs {
 
             push @opt_objs, Octium::CLI::Option->new( \%option_init );
 
-        } ## tidy end: elsif ( Octium::is_arrayref...)
+        }    ## tidy end: elsif ( Octium::is_arrayref...)
         else {
             # option package
             if ( not exists $OPTION_PACKAGE_DISPATCH{$optionspec} ) {
@@ -566,7 +557,7 @@ sub _build_option_objs {
             unshift @optionspecs, $self->$dispatch;
 
         }
-    } ## tidy end: while (@optionspecs)
+    }    ## tidy end: while (@optionspecs)
 
     Octium::immut;
     # made immutable here, after any new attributes are made in dispatch
@@ -592,7 +583,7 @@ sub _build_option_objs {
 
     return \%opt_obj_of;
 
-} ## tidy end: sub _build_option_objs
+}    ## tidy end: sub _build_option_objs
 
 #######################
 ### OPTION PACKAGES
@@ -647,7 +638,7 @@ sub _default_package {
 
     );
 
-} ## tidy end: sub _default_package
+}    ## tidy end: sub _default_package
 
 ### ActiumDB package
 
@@ -691,7 +682,7 @@ sub _actiumdb_package {
         }
     );
 
-} ## tidy end: sub _actiumdb_package
+}    ## tidy end: sub _actiumdb_package
 
 sub _build_actiumdb {
     my $self = shift;
@@ -761,7 +752,7 @@ sub _signup_package {
             config_key     => 'cache',
         },
     );
-} ## tidy end: sub _signup_package
+}    ## tidy end: sub _signup_package
 
 sub _signup_with_old_package {
     my $self = shift;
@@ -795,7 +786,7 @@ sub _signup_with_old_package {
         },
 
     );
-} ## tidy end: sub _signup_with_old_package
+}    ## tidy end: sub _signup_with_old_package
 
 sub _build_newsignup {
     my $self = shift;
@@ -844,7 +835,7 @@ sub _geonames_package {
         prompt          => 'Geonames API username',
     };
 
-} ## tidy end: sub _geonames_package
+}    ## tidy end: sub _geonames_package
 
 sub _build_geonames_username {
     my $self = shift;
@@ -883,7 +874,7 @@ sub _build_geonames_username {
 
         return @optionlist;
 
-    } ## tidy end: sub _flickr_package
+    }    ## tidy end: sub _flickr_package
 
     sub _build_flickr_auth {
 
