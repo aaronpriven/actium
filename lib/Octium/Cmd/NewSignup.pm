@@ -94,19 +94,6 @@ sub START {
         $suppcry->done;
 
     }
-    elsif ( $sch_cal_folder->glob_plain_files('*.xlsx') ) {
-
-        my $suppcry = cry("Importing supplementary calendars");
-        require Octium::Import::Xhea::SuppCalendar;
-
-        my $calendar_of_block_r
-          = Octium::Import::Xhea::SuppCalendar::read_supp_calendars(
-            $sch_cal_folder);
-
-        %schcal_xhea_specs = ( sch_cal_data => $calendar_of_block_r );
-
-        $suppcry->done;
-    }
 
     if ( $xheazip or $xhea_folder->glob_plain_files('*.xml') ) {
 
