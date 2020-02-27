@@ -842,51 +842,6 @@ sub _build_geonames_username {
     return $self->option('geonames_username');
 }
 
-#### FLICKR
-
-{
-    const my %DESCRIPTION_OF_OPTION => (
-        key    => 'Flickr API key',
-        secret => 'Flickr API secret',
-    );
-
-    sub _flickr_package {
-        my $self = shift;
-
-        has flickr_auth => (
-            is      => 'ro',
-            isa     => 'Octium::O::Photos::Flickr::Auth',
-            builder => '_build_flickr_auth',
-            lazy    => 1,
-        );
-
-        my @optionlist;
-        foreach my $optionname ( keys %DESCRIPTION_OF_OPTION ) {
-            push @optionlist,
-              { spec           => "flickr_${optionname}=s",
-                envvar         => "FLICKR_$optionname",
-                config_section => 'Flickr',
-                config_key     => $optionname,
-                description    => $DESCRIPTION_OF_OPTION{$optionname},
-                prompt         => $DESCRIPTION_OF_OPTION{$optionname},
-              };
-        }
-
-        return @optionlist;
-
-    }    ## tidy end: sub _flickr_package
-
-    sub _build_flickr_auth {
-
-        my $self = shift;
-        my %params
-          = map { $_ => $self->option($_) } keys %DESCRIPTION_OF_OPTION;
-        return Octium::O::Photos::Flickr::Auth->new(%params);
-
-    }
-
-}
-
 1;
 
 __END__

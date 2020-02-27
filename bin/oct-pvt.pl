@@ -16,7 +16,6 @@ Octium::CLI::->new(
     subcommands => {
         nonmin       => 'NonMinSuppCalendar',
         ems          => 'Ems',
-        flickr       => 'Flickr_Stops',
         frequency    => 'Frequency',
         headwaytimes => 'HeadwayTimes',
         indd_encode  => 'InDesignEncode',
