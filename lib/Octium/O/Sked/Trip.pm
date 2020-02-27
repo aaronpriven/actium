@@ -52,7 +52,7 @@ sub _add_placetimes_from_stoptimes {
 
     return;
 
-} ## tidy end: sub _add_placetimes_from_stoptimes
+}    ## tidy end: sub _add_placetimes_from_stoptimes
 
 ###################
 ###
@@ -243,7 +243,7 @@ my $reader_of_attribute_cr = sub {
 
     my $attribute = shift;
     my $reader    = $attribute->reader;
-    if ( u::is_hashref($reader) ) {
+    if ( Octium::is_hashref($reader) ) {
         $reader = ( keys %$reader )[0];
     }
     return $reader;
@@ -253,7 +253,7 @@ sub clone {
     my $self  = shift;
     my $class = blessed $self;
 
-    my %init_args = u::hashref(@_)->%*;
+    my %init_args = Octium::hashref(@_)->%*;
 
     foreach my $attribute ( $class->meta->get_all_attributes ) {
 
@@ -268,10 +268,10 @@ sub clone {
         my $value = $self->$reader;
         next unless defined $value;
 
-        if ( u::is_plain_hashref($value) ) {
+        if ( Octium::is_plain_hashref($value) ) {
             $value = { $value->%* };
         }
-        elsif ( u::is_plain_arrayref($value) ) {
+        elsif ( Octium::is_plain_arrayref($value) ) {
             $value = [ $value->@* ];
         }
 
@@ -281,7 +281,7 @@ sub clone {
 
     return $class->new(%init_args);
 
-} ## tidy end: sub clone
+}    ## tidy end: sub clone
 
 sub merge_pair {
     my $self       = shift;
@@ -325,7 +325,7 @@ sub merge_pair {
             if ( $_ eq '_mergedtrip_r' ) {
                 next;
             }    # do nothing
-            if ( u::in( $_, 'placetime_r', 'stoptime_r' ) ) {
+            if ( Octium::in( $_, 'placetime_r', 'stoptime_r' ) ) {
                 # assumed to be equal
                 $merged_value_of{$init_arg} = $self->$attrname;
                 next;
@@ -348,7 +348,7 @@ sub merge_pair {
                 $merged_value_of{$init_arg} = $firstattr;
             }
             # if they're identical, set the array to the value
-            elsif ( u::in( $attrname, ['daysexceptions'] ) ) {
+            elsif ( Octium::in( $attrname, ['daysexceptions'] ) ) {
                 $merged_value_of{$init_arg} = '';
             }
             # otherwise, if the attribute name is one of the those, then
@@ -367,7 +367,7 @@ sub merge_pair {
 
 }    ## <perltidy> end sub merge_pair
 
-u::immut;
+Octium::immut;
 
 1;
 

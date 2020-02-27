@@ -19,7 +19,7 @@ around BUILDARGS ($orig, $class : slurpy @ ) {
     # more than one arg: args are hash
 
     if ( @_ == 1 ) {
-        if ( u::reftype $_[0] and u::reftype $_[0] eq 'HASH' ) {
+        if ( Octium::reftype $_[0] and Octium::reftype $_[0] eq 'HASH' ) {
             %args = %{ $_[0] };
         }
         else {
@@ -35,7 +35,7 @@ around BUILDARGS ($orig, $class : slurpy @ ) {
 
     return $class->$orig(%args);
 
-} ## tidy end: around BUILDARGS
+}    ## tidy end: around BUILDARGS
 
 has 'filename' => (
     isa => 'Str',

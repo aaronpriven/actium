@@ -203,7 +203,7 @@ my $stop_tiebreaker = sub {
         # if either list has no timepoint ranks,
         # return 0 indicating we can't break the tie
 
-        $avg_ranks[$i] = u::sum(@ranks) / @ranks;
+        $avg_ranks[$i] = Octium::sum(@ranks) / @ranks;
 
     }
 
@@ -287,7 +287,7 @@ sub _order_stops {
 
 }
 
-u::immut;
+Octium::immut;
 
 1;
 

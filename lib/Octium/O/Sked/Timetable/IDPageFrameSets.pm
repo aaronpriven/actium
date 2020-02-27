@@ -45,7 +45,7 @@ sub _build_portrait_preferred_frameset_r {
         push @{ $divided_framesets[$portrait] }, $frameset;
     }
 
-    return scalar u::flatten(@divided_framesets);
+    return scalar Octium::flatten(@divided_framesets);
 
 }
 
@@ -129,7 +129,8 @@ sub _build_heights_of_compression_level_r {
     }
 
     foreach my $level ( keys %heights_of ) {
-        my @heights = u::uniq( sort { $b <=> $a } @{ $heights_of{$level} } );
+        my @heights
+          = Octium::uniq( sort { $b <=> $a } @{ $heights_of{$level} } );
         $heights_of{$level} = \@heights;
     }
 
@@ -154,7 +155,7 @@ sub _build_smallest_frame_height {
     my $min;
     foreach my $frameset ( $self->framesets ) {
         if ( defined $min ) {
-            $min = u::min( $min, $frameset->height );
+            $min = Octium::min( $min, $frameset->height );
         }
         else {
             $min = $frameset->height;
@@ -175,7 +176,7 @@ sub _build_maximum_frame_count {
     my $self = shift;
     my $max  = 0;
     foreach my $frameset ( $self->framesets ) {
-        $max = u::max( $max, $frameset->frame_count );
+        $max = Octium::max( $max, $frameset->frame_count );
     }
     return $max;
 
@@ -239,9 +240,9 @@ sub make_idtables {
                   if ( not defined $partial_level
                     and $table_width <= $frame_width );
 
-            } ## tidy end: foreach my $frame ( $frameset...)
+            }    ## tidy end: foreach my $frame ( $frameset...)
 
-        } ## tidy end: foreach my $frameset ( $self...)
+        }    ## tidy end: foreach my $frameset ( $self...)
 
         if ( defined $partial_level ) {
             # if there's a partial level, save it to the list
@@ -261,11 +262,11 @@ sub make_idtables {
         push @idtables, $IDTABLE->new( timetable_obj => $table, failed => 1 );
         $seen_a_failure = 1;
 
-    } ## tidy end: TABLE: foreach my $table (@tables)
+    }    ## tidy end: TABLE: foreach my $table (@tables)
 
     return $seen_a_failure, $any_overlong, @idtables;
 
-} ## tidy end: sub make_idtables
+}    ## tidy end: sub make_idtables
 
 sub minimum_pages {
     my $self     = shift;
@@ -279,12 +280,12 @@ sub minimum_pages {
     return 1 if ( $overlong == 0 );
     # if not overlong, could fit on one page
 
-    my $minimum_frames = u::ceil( $overlong * 1.5 );
+    my $minimum_frames = Octium::ceil( $overlong * 1.5 );
 
     # Each overlong table can only be paired with one other overlong table.
     # So it takes at least 1.5 frames per overlong one.
 
-    return u::ceil( $minimum_frames / $self->maximum_frame_count );
+    return Octium::ceil( $minimum_frames / $self->maximum_frame_count );
 }
 
 sub assign_page {
@@ -367,12 +368,12 @@ sub assign_page {
 
         # finished all the permutations for this page, but nothing fit
 
-    } ## tidy end: FRAMESET: foreach my $frameset (@framesets)
+    }    ## tidy end: FRAMESET: foreach my $frameset (@framesets)
 
     return;
     # finished all the permutations for this page set, but nothing fit
 
-} ## tidy end: sub assign_page
+}    ## tidy end: sub assign_page
 
 sub _sort_table_permutations {
 
@@ -384,7 +385,7 @@ sub _sort_table_permutations {
         my @sort_values = map { scalar @{$_} } @partition;
         # count of tables in each frame
 
-        unshift @sort_values, u::population_stdev(@sort_values);
+        unshift @sort_values, Octium::population_stdev(@sort_values);
         # standard deviation -- so makes them as close to the same
         # number of tables as possible
 
@@ -396,7 +397,7 @@ sub _sort_table_permutations {
 
     return map { $_->[0] } @partitions;
 
-} ## tidy end: sub _sort_table_permutations
+}    ## tidy end: sub _sort_table_permutations
 
 sub _by_table_permutation_sort {
     my @a = @{ $a->[1] };
@@ -419,7 +420,7 @@ sub _by_table_permutation_sort {
 
     return 0;    # the same...
 
-} ## tidy end: sub _by_table_permutation_sort
+}    ## tidy end: sub _by_table_permutation_sort
 
 __PACKAGE__->meta->make_immutable;
 

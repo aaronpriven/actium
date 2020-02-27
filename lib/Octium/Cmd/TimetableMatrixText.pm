@@ -37,7 +37,7 @@ sub START {
     die "No input file given" unless $filespec;
 
     my ( $folder,   $filename ) = Octium::O::Folder->new_from_file($filespec);
-    my ( $filepart, $fileext )  = u::file_ext($filespec);
+    my ( $filepart, $fileext )  = Octium::file_ext($filespec);
 
     my $sheet = $folder->load_sheet($filename);
 
@@ -124,7 +124,7 @@ sub START {
             push @timetables, $tt_name;
             push @{ $centers_of{$tt_name} }, $center;
 
-        } ## tidy end: foreach my $idx ( 2 .. $#entries)
+        }    ## tidy end: foreach my $idx ( 2 .. $#entries)
 
         next ROW if not @timetables;
 
@@ -132,7 +132,7 @@ sub START {
 
         $each_of{$center} = $each;
 
-    } ## tidy end: ROW: foreach my $row_r ( @{$sheet...})
+    }    ## tidy end: ROW: foreach my $row_r ( @{$sheet...})
 
     my $numgroups = scalar keys %timetables_of;
 
@@ -164,7 +164,7 @@ sub START {
 
             if ( 1 == scalar keys %tts_of_quantity ) {
                 print $textfh "$each of these timetables: ";
-                print $textfh u::joinseries_with( '&', @timetables ), " ";
+                print $textfh Octium::joinseries_with( '&', @timetables ), " ";
             }
             else {
 
@@ -176,16 +176,17 @@ sub START {
                     print $textfh "$quantity each of ";
                     my @thesetts = @{ $tts_of_quantity{$quantity} };
 
-                    print $textfh u::joinseries_with( '&', @thesetts ), ". ";
+                    print $textfh Octium::joinseries_with( '&', @thesetts ),
+                      ". ";
 
                 }
 
             }
             print $textfh "(total: $total)\n\n";
 
-        } ## tidy end: foreach my $center ( sort keys...)
+        }    ## tidy end: foreach my $center ( sort keys...)
 
-    } ## tidy end: foreach my $group ( sort keys...)
+    }    ## tidy end: foreach my $group ( sort keys...)
     close $textfh or die "Can't close $outfile: $!";
 
     my $ttlistfile = "$filepart-ttlist.txt";
@@ -204,13 +205,13 @@ sub START {
         print $listfh "\n";
     }
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 sub quantity {
     my ( $center, $tt_name, $each ) = @_;
 
     my $factor = $factor_of{"$center\0$tt_name"} // 1;
-    my $quantity = u::ceil( $factor * $each );
+    my $quantity = Octium::ceil( $factor * $each );
 
     return $quantity;
 

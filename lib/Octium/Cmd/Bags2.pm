@@ -49,7 +49,7 @@ sub START {
 
     my $excelfile = $env->argv_idx(0);
 
-    my ( $outfile, $oldext ) = u::file_ext($excelfile);
+    my ( $outfile, $oldext ) = Octium::file_ext($excelfile);
     my $clusterfile = $outfile . '-clusters.txt';
     $outfile .= "-zt.txt";
 
@@ -127,7 +127,7 @@ sub _process_stop {
 
     my $bagortmp = $stop[ $col{'Bag / Temp'} ];
 
-    return unless u::feq( $bagortmp, 'T' );
+    return unless Octium::feq( $bagortmp, 'T' );
 
     my $cluster = $cluster_of{ $workzone_of{$stopid} };
     #my $desc = $stop[ $col{'Stop Description'} ] . "      Work zone $cluster";

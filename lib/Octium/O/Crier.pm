@@ -85,7 +85,7 @@ sub _fh_or_scalarref {
 
     return $arg if defined Scalar::Util::openhandle($arg);
 
-    if ( defined u::reftype($arg) and u::reftype($arg) eq 'SCALAR' ) {
+    if ( defined Octium::reftype($arg) and Octium::reftype($arg) eq 'SCALAR' ) {
         open( my $fh, '>', \$_[0] );
         return $fh;
     }
@@ -126,7 +126,7 @@ around BUILDARGS ($orig, $class : slurpy @) {
     if ( defined $fh ) {
 
         # ->new($fh, {option => option1, ...})
-        if ( @_ == 1 and u::reftype( $_[0] ) eq 'HASH' ) {
+        if ( @_ == 1 and Octium::reftype( $_[0] ) eq 'HASH' ) {
             return $class->$orig( fh => $fh, %{ $_[0] } );
         }
         else {
@@ -138,7 +138,7 @@ around BUILDARGS ($orig, $class : slurpy @) {
     # ->new(option => option1 ,...)
     return $class->$orig( $firstarg, @_ );
 
-} ## tidy end: around BUILDARGS
+}    ## tidy end: around BUILDARGS
 
 ######################
 ## WIDTH AND POSITION
@@ -250,7 +250,7 @@ has 'bullets_r' => (
 
 sub set_bullets {
     my $self    = shift;
-    my @bullets = u::flatten(@_);
+    my @bullets = Octium::flatten(@_);
     $self->_set_bullets_r(@bullets);
 }
 
@@ -286,7 +286,7 @@ sub _build_bullet_width {
 
     return 0 if @{$bullets_r} == 0;
 
-    my $width = u::max( map { u::u_columns($_) } @{$bullets_r} );
+    my $width = Octium::max( map { Octium::u_columns($_) } @{$bullets_r} );
     return $width;
 }
 
@@ -296,7 +296,8 @@ sub _alter_bullet_width {
 
     my $bullet_width = $self->_bullet_width;
 
-    my $newbullet_width = u::max( map { u::u_columns($_) } @{$bullets_r} );
+    my $newbullet_width
+      = Octium::max( map { Octium::u_columns($_) } @{$bullets_r} );
 
     return if $newbullet_width <= $bullet_width;
 
@@ -426,7 +427,8 @@ sub cry_method {
     my ( %opts, @args );
 
     foreach (@_) {
-        if ( defined( u::reftype($_) ) and u::reftype($_) eq 'HASH' ) {
+        if ( defined( Octium::reftype($_) ) and Octium::reftype($_) eq 'HASH' )
+        {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -439,15 +441,15 @@ sub cry_method {
     }
 
     if (    @args == 1
-        and defined( u::reftype( $args[0] ) )
-        and u::reftype( $args[0] ) eq 'ARRAY' )
+        and defined( Octium::reftype( $args[0] ) )
+        and Octium::reftype( $args[0] ) eq 'ARRAY' )
     {
         my @pair = @{ +shift };
         $opts{opentext}  = $pair[0];
         $opts{closetext} = $pair[1];
     }
     else {
-        my $separator = u::define($OUTPUT_FIELD_SEPARATOR);
+        my $separator = Octium::define($OUTPUT_FIELD_SEPARATOR);
         $opts{opentext} = join( $separator, @args );
     }
 
@@ -486,7 +488,7 @@ sub cry_method {
     # void context - close immediately
     return;
 
-} ## tidy end: sub cry_method
+}    ## tidy end: sub cry_method
 
 sub _close_up_to {
     my $self          = shift;
@@ -497,7 +499,7 @@ sub _close_up_to {
     my $success;
 
     while ( $this_cry
-        and ( u::refaddr($this_cry) != u::refaddr($cry) ) )
+        and ( Octium::refaddr($this_cry) != Octium::refaddr($cry) ) )
     {
         $success = $this_cry->_close;    # default severity and options
         return $success unless $success;

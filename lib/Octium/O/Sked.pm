@@ -61,10 +61,10 @@ sub _delete_blank_columns {
         my $has_place4s      = not $self->place4s_are_empty;
 
         my $place_id_count = $self->place_count;
-        my $placecount = u::max( $place_id_count, $#columns_of_times );
+        my $placecount = Octium::max( $place_id_count, $#columns_of_times );
 
         for my $i ( reverse( 0 .. $placecount ) ) {
-            if (u::none { defined($_) }
+            if (Octium::none { defined($_) }
                 @{ $columns_of_times[$i] }
               )
             {
@@ -83,7 +83,7 @@ sub _delete_blank_columns {
                 $trip->_delete_placetime($i);
             }
         }
-    } ## tidy end: if ( not $self->trip(0...))
+    }    ## tidy end: if ( not $self->trip(0...))
 
     if ( not $self->trip(0)->stoptimes_are_empty ) {
 
@@ -91,10 +91,10 @@ sub _delete_blank_columns {
 
         my @columns_of_times = $self->_stoptime_columns;
         my $stopid_count     = $self->stop_count;
-        my $stopcount        = u::max( $stopid_count, $#columns_of_times );
+        my $stopcount        = Octium::max( $stopid_count, $#columns_of_times );
 
         for my $i ( reverse( 0 .. $stopcount ) ) {
-            if (u::none { defined($_) }
+            if (Octium::none { defined($_) }
                 @{ $columns_of_times[$i] }
               )
             {
@@ -113,7 +113,7 @@ sub _delete_blank_columns {
             }
         }
 
-    } ## tidy end: if ( not $self->trip(0...))
+    }    ## tidy end: if ( not $self->trip(0...))
 
     return;
 
@@ -235,7 +235,7 @@ sub _combine_duplicate_timepoints {
             # if this isn't the last column, and there are any times
             # defined later...
             if ($#alltimes > $lastcolumn
-                and u::any { defined($_) }
+                and Octium::any { defined($_) }
                 @alltimes[ $lastcolumn + 1 .. $#alltimes ]
               )
             {
@@ -282,7 +282,7 @@ sub _combine_duplicate_timepoints {
 
     return;
 
-} ## tidy end: sub _combine_duplicate_timepoints
+}    ## tidy end: sub _combine_duplicate_timepoints
 
 ###################################
 ## MOOSE ATTRIBUTES
@@ -522,11 +522,12 @@ sub _build_md5 {
     require Digest::MD5;    ### DEP ###
 
     my @sked_stream
-      = ( u::jointab( $self->place4s ), u::jointab( $self->stopids ) );
+      = ( Octium::jointab( $self->place4s ),
+        Octium::jointab( $self->stopids ) );
 
     foreach my $trip ( $self->trips ) {
-        push @sked_stream, u::jointab( $trip->stoptimes );
-        push @sked_stream, u::jointab( $trip->placetimes );
+        push @sked_stream, Octium::jointab( $trip->stoptimes );
+        push @sked_stream, Octium::jointab( $trip->placetimes );
     }
 
     my $digest = Digest::MD5::md5_hex( join( $KEY_SEPARATOR, @sked_stream ) );
@@ -539,10 +540,10 @@ sub _build_place_md5 {
     # build an MD5 digest from the placetimes and  places
     require Digest::MD5;    ### DEP ###
 
-    my @sked_stream = ( u::jointab( $self->place4s ) );
+    my @sked_stream = ( Octium::jointab( $self->place4s ) );
 
     foreach my $trip ( $self->trips ) {
-        push @sked_stream, u::jointab( $trip->placetimes );
+        push @sked_stream, Octium::jointab( $trip->placetimes );
     }
 
     my $digest = Digest::MD5::md5_hex( join( $KEY_SEPARATOR, @sked_stream ) );
@@ -564,7 +565,7 @@ sub _build_earliest_timenum {
     my $self    = shift;
     my $trip    = $self->trip(0);
     my @times   = $trip->placetimes;
-    my $timenum = u::first { defined $_ } @times;
+    my $timenum = Octium::first { defined $_ } @times;
     return $timenum;
 }
 
@@ -577,7 +578,7 @@ sub _build_lines {
         $seen_line{ $trip->line() } = 1;
     }
 
-    return [ u::sortbyline( keys %seen_line ) ];
+    return [ Octium::sortbyline( keys %seen_line ) ];
 
 }
 
@@ -718,7 +719,7 @@ sub attribute_columns {
           ? $attr->short_column
           : $attr->name;
 
-    } ## tidy end: ATTRIBUTE: foreach my $attr (@attributes_to_search)
+    }    ## tidy end: ATTRIBUTE: foreach my $attr (@attributes_to_search)
 
     my @colorder = grep { $_ ne 'line' } ( sort keys %shortcol_of );
     unshift @colorder, 'line' if exists $shortcol_of{line};
@@ -730,7 +731,7 @@ sub attribute_columns {
 
     return \@colorder, \%shortcol_of;
 
-} ## tidy end: sub attribute_columns
+}    ## tidy end: sub attribute_columns
 
 ####################
 #### OUTPUT METHODS
@@ -816,7 +817,7 @@ sub spaced {
 
         }
 
-    } ## tidy end: foreach my $trip (@trips)
+    }    ## tidy end: foreach my $trip (@trips)
 
     say $out $place_records->tabulated, "\n";
 
@@ -837,7 +838,7 @@ sub spaced {
 
     return $outdata;
 
-} ## tidy end: sub spaced
+}    ## tidy end: sub spaced
 
 sub storable {
     my $self = shift;
@@ -871,7 +872,7 @@ method compare_to (Octium::O::Sked $newsked) {
 with 'Octium::O::Sked::Storage::Prehistoric', 'Octium::O::Sked::Storage::XLSX',
   'Octium::O::Sked::Storage::Tabxchange', 'Octium::O::Skedlike';
 
-u::immut;
+Octium::immut;
 
 1;
 

@@ -61,7 +61,7 @@ sub START {
 
     foreach my $route ( sortbyline keys %seen_stops_of ) {
 
-        next if ( u::in( $route, qw/BSD BSH BSN 399 51S/ ) );
+        next if ( Octium::in( $route, qw/BSD BSH BSN 399 51S/ ) );
 
         my $numstops = scalar keys %{ $seen_stops_of{$route} };
 
@@ -69,7 +69,7 @@ sub START {
 
         print $stopsfh "$route\t$numstops\t$numdecals\t";
 
-        my $threshold = u::ceil( $numdecals * .02 ) * 10;    #
+        my $threshold = Octium::ceil( $numdecals * .02 ) * 10;    #
              # 20%, rounded up to a multiple of ten
 
         $threshold = 30 if $threshold < 30;
@@ -78,9 +78,9 @@ sub START {
 
         say $stopsfh "$threshold\t$perset";
 
-    } ## tidy end: foreach my $route ( sortbyline...)
+    }    ## tidy end: foreach my $route ( sortbyline...)
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

@@ -88,14 +88,14 @@ sub hastus_places_import {
         trim(@new_record);
         push @returned_records, \@new_record;
 
-    } ## tidy end: foreach my $place_record (@place_records)
+    }    ## tidy end: foreach my $place_record (@place_records)
 
     $cry->over('100%');
     $cry->done;
 
     return \@returned_headers, \@returned_records;
 
-} ## tidy end: sub hastus_places_import
+}    ## tidy end: sub hastus_places_import
 
 sub _abbrev9 {
     my $number     = shift;
@@ -154,12 +154,12 @@ sub hastus_stops_import {
 
         my @new_record = (
             @field{@stop_headers},
-            u::define( $on, $at, $stnum, $comment, $city, $direction )
+            Octium::define( $on, $at, $stnum, $comment, $city, $direction )
         );
         trim(@new_record);
         push @returned_records, \@new_record;
 
-    } ## tidy end: foreach my $stop_record (@stop_records)
+    }    ## tidy end: foreach my $stop_record (@stop_records)
 
     $cry->over('100%');
 
@@ -167,7 +167,7 @@ sub hastus_stops_import {
 
     return \@returned_headers, \@returned_records;
 
-} ## tidy end: sub hastus_stops_import
+}    ## tidy end: sub hastus_stops_import
 
 const my %ENDING_OF => (
     Av   => 'Ave.',
@@ -239,11 +239,11 @@ sub _street_name {
         s/MacDonald/Macdonald/i;
         s/Northport Lp\b/Northport Loop/i;
 
-    } ## tidy end: foreach (@_)
+    }    ## tidy end: foreach (@_)
 
     return;
 
-} ## tidy end: sub _street_name
+}    ## tidy end: sub _street_name
 
 sub _stops_description {
     my $desc = shift;
@@ -298,7 +298,7 @@ sub _stops_description {
         $at =~ s/\bat //i;
         # remove any literal word "at" (followed by a word break, and including
         # a subsequent space, and
-    } ## tidy end: if ($rest)
+    }    ## tidy end: if ($rest)
 
     if ($comment) {
         for ($comment) {
@@ -310,7 +310,7 @@ sub _stops_description {
 
     return trim( $on, $at, $stnum, $comment );
 
-} ## tidy end: sub _stops_description
+}    ## tidy end: sub _stops_description
 
 const my %DIRECTION_OF => (
     NEFS => "N",

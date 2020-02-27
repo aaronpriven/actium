@@ -184,7 +184,7 @@ sub _connect {
 
     return $dbh;
 
-} ## tidy end: sub _connect
+}    ## tidy end: sub _connect
 
 # DBI does the same thing, so this disconnection routine is not needed here.
 
@@ -274,11 +274,11 @@ sub ensure_loaded {
         # now that we've checked, mark them as loaded
         $self->_mark_loaded($filetype);
 
-    } ## tidy end: foreach my $filetype (@filetypes)
+    }    ## tidy end: foreach my $filetype (@filetypes)
 
     return;
 
-} ## tidy end: sub ensure_loaded
+}    ## tidy end: sub ensure_loaded
 
 sub _check_table {
     my ( $self, $table ) = @_;
@@ -340,7 +340,7 @@ sub each_row_where {
         $sth->finish() if not $result;
         return $result;
     };
-} ## tidy end: sub each_row_where
+}    ## tidy end: sub each_row_where
 
 #sub all_in_columns_key {
 #    my $self    = shift;
@@ -407,7 +407,7 @@ sub all_in_column_key {
     my %value_of = @{$list_r};
     return \%value_of;
 
-} ## tidy end: sub all_in_column_key
+}    ## tidy end: sub all_in_column_key
 
 sub all_in_columns_key {
     my $self = shift;
@@ -419,7 +419,7 @@ sub all_in_columns_key {
     if ( ref($firstarg) eq 'HASH' ) {
         $table = $firstarg->{TABLE};
 
-        @columns = u::flatten( $firstarg->{COLUMNS} );
+        @columns = Octium::flatten( $firstarg->{COLUMNS} );
 
         $where = $firstarg->{WHERE};
 
@@ -430,7 +430,7 @@ sub all_in_columns_key {
     }
     else {
         $table   = $firstarg;
-        @columns = u::flatten(@_);
+        @columns = Octium::flatten(@_);
     }
 
     $self->ensure_loaded($table);
@@ -452,14 +452,14 @@ sub all_in_columns_key {
       = $dbh->selectall_hashref( $selection_cmd, $key, {}, @bind_values );
     return $rows_r;
 
-} ## tidy end: sub all_in_columns_key
+}    ## tidy end: sub all_in_columns_key
 
 sub _check_columns {
     my ( $self, $table, @input_columns ) = @_;
     my @columns = $self->columns_of_table($table);
     foreach my $input (@input_columns) {
         croak "Invalid column $input for table $table"
-          if not u::in( $input, @columns );
+          if not Octium::in( $input, @columns );
     }
     return;
 }

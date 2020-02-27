@@ -72,7 +72,7 @@ around BUILDARGS (
 
     return $class->$orig(%params);
 
-} ## tidy end: around BUILDARGS
+}    ## tidy end: around BUILDARGS
 
 sub BUILD {
     my $self = shift;
@@ -143,7 +143,7 @@ sub allnames {
     return ( $self->name, $self->aliases );
 }
 
-u::immut;
+Octium::immut;
 
 1;
 

@@ -96,7 +96,7 @@ sub _build_as_string {
 
 sub _data_printer {
     my $self  = shift;
-    my $class = u::blessed($self);
+    my $class = Octium::blessed($self);
     return "$class=" . $self->as_string;
 }
 
@@ -146,7 +146,7 @@ sub _build_as_shortcode {
 
     return $shortcode;
 
-} ## tidy end: sub _build_as_shortcode
+}    ## tidy end: sub _build_as_shortcode
 
 sub _is_SD {
     my $self = shift;
@@ -162,7 +162,7 @@ sub _is_SH {
 
 const my @ADJECTIVES => ( @SEVENDAYNAMES, qw(Holiday Weekday Weekend Daily),
     "Daily except holidays" );
-const my %ADJECTIVE_OF => u::mesh( @DAYLETTERS, @ADJECTIVES );
+const my %ADJECTIVE_OF => Octium::mesh( @DAYLETTERS, @ADJECTIVES );
 const my %ADJECTIVE_SCHOOL_OF => (
     B => $EMPTY,
     D => ' (except school holidays)',
@@ -189,18 +189,19 @@ sub as_adjectives {
     my @as_adjectives = map { $ADJECTIVE_OF{$_} } split( //, $daycode );
 
     my $results
-      = u::joinseries(@as_adjectives) . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
+      = Octium::joinseries(@as_adjectives)
+      . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
 
     return $cache_r->{$as_string} = $results;
 
-} ## tidy end: sub as_adjectives
+}    ## tidy end: sub as_adjectives
 
 const my @PLURALS => (
     @SEVENDAYPLURALS, 'holidays', 'Monday through Friday',
     'Weekends', 'Every day', "Every day except holidays"
 );
 
-const my %PLURAL_OF => u::mesh( @DAYLETTERS, @PLURALS );
+const my %PLURAL_OF => Octium::mesh( @DAYLETTERS, @PLURALS );
 const my %PLURAL_SCHOOL_OF => (
     B => $EMPTY,
     D => ' (School days only)',
@@ -228,7 +229,7 @@ sub as_plurals {
     my $schooldaycode = $self->schooldaycode;
 
     my @as_plurals = map { $PLURAL_OF{$_} } split( //, $seriescode );
-    my $results = u::joinseries(@as_plurals);
+    my $results = Octium::joinseries(@as_plurals);
 
     if ( $PLURAL_SCHOOL_OF{$schooldaycode} ) {
         $results .= $PLURAL_SCHOOL_OF{$schooldaycode};
@@ -239,11 +240,11 @@ sub as_plurals {
 
     return $cache_r->{$as_string} = ucfirst($results);
 
-} ## tidy end: sub as_plurals
+}    ## tidy end: sub as_plurals
 const my @ABBREVS =>
   ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
 
-const my %ABBREV_OF => u::mesh( @DAYLETTERS, @ABBREVS );
+const my %ABBREV_OF => Octium::mesh( @DAYLETTERS, @ABBREVS );
 const my %ABBREV_SCHOOL_OF => (
     B => $EMPTY,
     D => ' (Sch days)',
@@ -276,7 +277,7 @@ sub as_abbrevs {
 
     return $cache_r->{$as_string} = $results;
 
-} ## tidy end: sub as_abbrevs
+}    ## tidy end: sub as_abbrevs
 
 for my $attr (qw/specday specdayletter/) {
 
@@ -310,10 +311,10 @@ sub _build_as_specday {
     last_cry()->text("$daycode gives blank as_plurals in specday")
       if not @as_plurals;
 
-    $specday .= u::joinseries(@as_plurals) . ' only';
+    $specday .= Octium::joinseries(@as_plurals) . ' only';
 
     return $specday;
-} ## tidy end: sub _build_as_specday
+}    ## tidy end: sub _build_as_specday
 
 const my %SPECDAYLETTER_OF => (
     qw(
@@ -363,7 +364,7 @@ sub _build_as_specdayletter {
     else {
         my @as_specdayletters
           = map { $SPECDAYLETTER_OF{$_} } split( //, $daycode );
-        $specdayletter = u::joinempty(@as_specdayletters);
+        $specdayletter = Octium::joinempty(@as_specdayletters);
     }
 
     if ($schspecdayletter) {
@@ -371,7 +372,7 @@ sub _build_as_specdayletter {
     }
     return $specdayletter;
 
-} ## tidy end: sub _build_as_specdayletter
+}    ## tidy end: sub _build_as_specdayletter
 
 sub specday_and_specdayletter {
 
@@ -398,13 +399,13 @@ sub specday_and_specdayletter {
     # if the sched days school code isn't 'B', then it must
     # be the same as the trip day code (otherwise no intersection)
     if ( $skedsch ne 'B' ) {
-        my $class = u::blessed($tripdays);
+        my $class = Octium::blessed($tripdays);
         $isect = $class->new( $isect->daycode, 'B' );
     }
 
     return $isect->as_specdayletter, $isect->as_specday;
 
-} ## tidy end: sub specday_and_specdayletter
+}    ## tidy end: sub specday_and_specdayletter
 
 {
     no warnings 'redefine';
@@ -417,9 +418,9 @@ sub specday_and_specdayletter {
 
         my ( $class, @objs );
 
-        if ( u::blessed( $_[0] ) ) {
+        if ( Octium::blessed( $_[0] ) ) {
             @objs  = @_;
-            $class = u::blessed( $objs[0] );
+            $class = Octium::blessed( $objs[0] );
         }
         else {
             $class = shift;
@@ -445,19 +446,23 @@ sub specday_and_specdayletter {
 
             if ( $daycode ne $union_daycode ) {
 
-                $union_daycode = join( $EMPTY,
-                    ( u::uniq sort ( split //, $union_daycode . $daycode ) ) );
+                $union_daycode = join(
+                    $EMPTY,
+                    (   Octium::uniq
+                          sort ( split //, $union_daycode . $daycode )
+                    )
+                );
 
             }
 
             $union_obj
               = $class->instance( $union_daycode, $union_schooldaycode );
 
-        } ## tidy end: foreach my $obj (@objs)
+        }    ## tidy end: foreach my $obj (@objs)
 
         return $union_obj;
 
-    } ## tidy end: sub union
+    }    ## tidy end: sub union
 
 }
 
@@ -467,9 +472,9 @@ sub intersection {
     my @objs     = @_;
 
     my $class;
-    if ( u::blessed($invocant) ) {
+    if ( Octium::blessed($invocant) ) {
         unshift @objs, $invocant;
-        $class = u::blessed($invocant);
+        $class = Octium::blessed($invocant);
     }
 
     my $isect_obj           = shift @objs;
@@ -520,11 +525,11 @@ sub intersection {
 
         $isect_obj = $class->instance( $isect_daycode, $isect_schooldaycode );
 
-    } ## tidy end: foreach my $obj (@objs)
+    }    ## tidy end: foreach my $obj (@objs)
 
     return $isect_obj;
 
-} ## tidy end: sub intersection
+}    ## tidy end: sub intersection
 
 sub is_a_superset_of {
     my $self = shift;
@@ -550,7 +555,7 @@ sub is_a_superset_of {
     );
 
     return $lc->is_RsubsetL;
-} ## tidy end: sub is_a_superset_of
+}    ## tidy end: sub is_a_superset_of
 
 sub is_equal_to {
 
@@ -600,7 +605,7 @@ sub as_transitinfo {
     return $daycode;
 }
 
-u::immut();
+Octium::immut();
 
 1;
 

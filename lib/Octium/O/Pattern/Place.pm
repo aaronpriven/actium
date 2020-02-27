@@ -18,7 +18,7 @@ has [qw( ttp_is_public ttp_is_arrival ttp_is_departure)] => (
     isa => 'Str',
 );
 
-u::immut;
+Octium::immut;
 
 1;
 

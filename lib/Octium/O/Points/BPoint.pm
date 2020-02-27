@@ -22,11 +22,11 @@ has 'nonstop' => (
 has [
     qw/stopid signid delivery agency signtype
       description description_nocity city tidfile/
-] => (
+  ] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
-);
+  );
 
 has copyquantity => (
     is      => 'ro',
@@ -161,7 +161,7 @@ method _build_boxes {
 
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
-            my $lines = u::joinseries(@notfound);
+            my $lines = Octium::joinseries(@notfound);
             $self->push_error(
                 "$linetext $lines found in omit list but not in schedule data."
             );
@@ -510,7 +510,7 @@ my $takes_up_columns_cr = sub {
     my $fits_in_cols = 0;
 
     foreach my $height (@heights) {
-        $fits_in_cols += u::ceil( $height / $col_height );
+        $fits_in_cols += Octium::ceil( $height / $col_height );
     }
 
     return $fits_in_cols;
@@ -566,7 +566,7 @@ sub determine_subtype {
 
     }    ## tidy end: foreach my $column ( $self->...)
 
-    @all_heights = reverse sort { $a->[0] <=> $b->[0] || u::byline( $a, $b ) }
+    @all_heights = reverse sort { $a->[0] <=> $b->[0] || Octium::byline( $a, $b ) }
       @all_heights;
     @all_heights = map { $_->[0] . ":" . $_->[1] } @all_heights;
     $self->set_heights("@all_heights");
@@ -588,7 +588,7 @@ sub determine_subtype {
             # divide chunks into single schedules and try again
 
             my $chunkid_to_split
-              = u::first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
+              = Octium::first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
             sort keys %heights_of_chunk;
 
             if ($chunkid_to_split) {
@@ -613,7 +613,7 @@ sub determine_subtype {
         my %tallest_of_chunk;
         foreach my $chunk_id ( keys %heights_of_chunk ) {
             $tallest_of_chunk{$chunk_id}
-              = u::max( @{ $heights_of_chunk{$chunk_id} } );
+              = Octium::max( @{ $heights_of_chunk{$chunk_id} } );
         }
 
         my @chunkids_by_length = reverse
@@ -878,11 +878,11 @@ sub format_columns {
         if ($column_length) {
 
             my $count = $column->formatted_time_count;
-            my $width = u::ceil( $count / $column_length );
-            $column_length = u::ceil( $count / $width );
+            my $width = Octium::ceil( $count / $column_length );
+            $column_length = Octium::ceil( $count / $width );
 
             my @ft;
-            my $iterator = u::natatime $column_length, $column->formatted_times;
+            my $iterator = Octium::natatime $column_length, $column->formatted_times;
             while ( my @formatted_times = $iterator->() ) {
                 push @ft, join( "\r", @formatted_times );
             }

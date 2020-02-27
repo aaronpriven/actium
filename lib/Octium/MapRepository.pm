@@ -56,7 +56,7 @@ my $import_to_repository_paramspec = {
 
 sub import_to_repository {
 
-    my %params = u::validate( @_, $import_to_repository_paramspec );
+    my %params = Octium::validate( @_, $import_to_repository_paramspec );
 
     # this default is not in the parameter spec because if
     # in the spec, the default object would always be created whether or
@@ -77,7 +77,7 @@ sub import_to_repository {
 
         next FILE if -d $filespec;
 
-        my $filename    = u::filename($filespec);
+        my $filename    = Octium::filename($filespec);
         my $newfilename = $filename;
         $cry->over($filename) unless $verbose;
 
@@ -117,12 +117,12 @@ sub import_to_repository {
             _copy_file( $filespec, $newfilespec, $repository->path, $verbose );
         }
         push @copied_files, $newfilespec;
-    } ## tidy end: FILE: foreach my $filespec ( sort...)
+    }    ## tidy end: FILE: foreach my $filespec ( sort...)
     $cry->done;
 
     return @copied_files;
 
-} ## tidy end: sub import_to_repository
+}    ## tidy end: sub import_to_repository
 
 ### COPYING/RASTERIZING WEB MAPS
 
@@ -136,7 +136,7 @@ my $make_web_maps_paramspec = {
 
 sub make_web_maps {
 
-    my %params = u::validate( @_, $make_web_maps_paramspec );
+    my %params = Octium::validate( @_, $make_web_maps_paramspec );
 
     my $output_folder  = $params{web_folder};
     my $verbose        = $params{verbose};
@@ -148,7 +148,7 @@ sub make_web_maps {
 
     foreach my $filespec ( @{ $params{files} } ) {
 
-        my $filename = u::filename($filespec);
+        my $filename = Octium::filename($filespec);
         next unless $filename =~ /[.]pdf\z/si;
 
         my %nameparts = %{ _mapname_pieces($filename) };
@@ -196,14 +196,14 @@ sub make_web_maps {
             _copy_file( $first_jpeg_spec, $outfile, $path_to_remove, $verbose );
         }
 
-    } ## tidy end: foreach my $filespec ( @{ $params...})
+    }    ## tidy end: foreach my $filespec ( @{ $params...})
 
     $cry->over(q[]) unless $verbose;
     $cry->done;
 
     return;
 
-} ## tidy end: sub make_web_maps
+}    ## tidy end: sub make_web_maps
 
 ### FILENAME NORMALIZATION AND CHECKING
 
@@ -250,7 +250,7 @@ sub normalize_filename {
             s/nov(\d\d)/20${1}_11/sxi;
             s/dec(\d\d)/20${1}_12/sxi;
         }
-    } ## tidy end: if ( $date =~ /\A [[:alpha:]]{3} \d{2} \z/sx)
+    }    ## tidy end: if ( $date =~ /\A [[:alpha:]]{3} \d{2} \z/sx)
 
     for ($ver) {
         if ( not( defined or $_ eq q{} ) ) {
@@ -270,7 +270,7 @@ sub normalize_filename {
     $newfilename .= ".$ext" if defined $ext;
     return $newfilename;
 
-} ## tidy end: sub normalize_filename
+}    ## tidy end: sub normalize_filename
 
 const my $LINE_NAME_RE => qr/(?:[[:upper:]\d]{1,4}|[[:alpha:]\d]{5,})/;
 const my $YEAR_RE      => '(?:19[89]\d|20\d\d)';
@@ -307,7 +307,7 @@ sub filename_is_valid {
 
     return $result;
 
-} ## tidy end: sub filename_is_valid
+}    ## tidy end: sub filename_is_valid
 
 ### COPY LATEST FILES TO NEW DIRECTORY
 
@@ -324,7 +324,7 @@ my $copylatest_spec = {
 
 sub copylatest {
 
-    my %params             = u::validate( @_, $copylatest_spec );
+    my %params             = Octium::validate( @_, $copylatest_spec );
     my $fullname_folder    = $params{fullname};
     my $linesname_folder   = $params{linesname};
     my $web_folder         = $params{web};
@@ -351,7 +351,7 @@ sub copylatest {
     my @web_maps_to_process;
 
   FOLDER:
-    foreach my $foldername ( u::sortbyline keys %folder_obj_of ) {
+    foreach my $foldername ( Octium::sortbyline keys %folder_obj_of ) {
 
         #        next FOLDER unless $foldername =~ m{
         #                      \A
@@ -376,7 +376,7 @@ sub copylatest {
         foreach my $filespec (@filespecs) {
             next FILE
               unless $filespec =~ /[.] $defining_extension \z/isx;
-            my $filename = u::filename($filespec);
+            my $filename = Octium::filename($filespec);
 
             my %nameparts = %{ _mapname_pieces($filename) };
 
@@ -403,7 +403,7 @@ sub copylatest {
                 # mark the this file as the latest.
             }
 
-        } ## tidy end: FILE: foreach my $filespec (@filespecs)
+        }    ## tidy end: FILE: foreach my $filespec (@filespecs)
 
         # process latest files
 
@@ -417,8 +417,8 @@ sub copylatest {
             my @latest_filespecs = $folder_obj->glob_plain_files($globpattern);
 
             foreach my $latest_filespec (@latest_filespecs) {
-                my $filename = u::filename($latest_filespec);
-                my ( undef, $ext ) = u::file_ext($filename);
+                my $filename = Octium::filename($latest_filespec);
+                my ( undef, $ext ) = Octium::file_ext($filename);
 
                 if ( defined $fullname_folder ) {
                     my $newfilespec
@@ -451,11 +451,11 @@ sub copylatest {
                     #      );
                 }
 
-            } ## tidy end: foreach my $latest_filespec...
+            }    ## tidy end: foreach my $latest_filespec...
 
-        } ## tidy end: foreach my $line_and_token ...
+        }    ## tidy end: foreach my $line_and_token ...
 
-    } ## tidy end: FOLDER: foreach my $foldername ( u::sortbyline...)
+    }    ## tidy end: FOLDER: foreach my $foldername ( Octium::sortbyline...)
 
     $copy_cry->over(q[]);
     $copy_cry->done;
@@ -473,7 +473,7 @@ sub copylatest {
     }
     return;
 
-} ## tidy end: sub copylatest
+}    ## tidy end: sub copylatest
 
 ### PRIVATE UTILITY METHODS
 
@@ -501,7 +501,7 @@ sub _active_maps {
     $cry->done;
 
     return \%is_an_active_map, \%is_an_active_line;
-} ## tidy end: sub _active_maps
+}    ## tidy end: sub _active_maps
 
 sub _file_action {
 
@@ -550,7 +550,7 @@ sub _move_file {
 sub _mapname_pieces {
     ## no critic (ProhibitMagicNumbers)
     my $filename = shift;
-    my ( $filepart, $ext ) = u::file_ext($filename);
+    my ( $filepart, $ext ) = Octium::file_ext($filename);
     my ( $lines_and_token, $date, $ver ) = split( /-/s, $filepart, 3 );
 
     my ( $lines, $token ) = split( /=/s, $lines_and_token );
@@ -570,7 +570,7 @@ sub _mapname_pieces {
 
     ## use critic
 
-} ## tidy end: sub _mapname_pieces
+}    ## tidy end: sub _mapname_pieces
 
 sub _remove_leading_path {
     my ( $filespec, $path ) = @_;
@@ -623,7 +623,7 @@ sub _remove_leading_path {
     ## REMOVE THE LEADING PATH
 
     return File::Spec->abs2rel( $filespec, $path );
-} ## tidy end: sub _remove_leading_path
+}    ## tidy end: sub _remove_leading_path
 
 # _split_path_components and _join_path_components
 # might be worth making public if they are used again.

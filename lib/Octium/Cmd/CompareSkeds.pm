@@ -39,7 +39,7 @@ sub START {
         say $compcollection->text;
     }
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 
@@ -119,7 +119,7 @@ sub START {
 
         }
         else {
-            my ( $base, undef ) = u::file_ext($filename);
+            my ( $base, undef ) = Octium::file_ext($filename);
             push @identical, $base;
         }
     } ## tidy end: foreach my $filename (@both)
@@ -132,7 +132,7 @@ sub START {
     my ( @old_to_delete, @new_to_delete );
 
     foreach my $filename (@oldonly) {
-        my ( $skedid, $ext ) = u::file_ext($filename);
+        my ( $skedid, $ext ) = Octium::file_ext($filename);
         my @components = split( /_/sx, $skedid );
         my $thesedays  = pop(@components);
         my $lgdir      = join( '_', @components );
@@ -155,7 +155,7 @@ sub START {
     $weekendcry->done;
 
     my $scriptfile = 'compareskeds.sh';
-    my $script     = u::joinlf(@ssdiff_commands) . "\n";
+    my $script     = Octium::joinlf(@ssdiff_commands) . "\n";
 
     $script_folder->slurp_write( $script, $scriptfile );
 
@@ -184,18 +184,18 @@ sub START {
 } ## tidy end: sub START
 
 sub _say_array {
-    say scalar u::u_wrap( joinspace( u::sortbyline(@_) ) );
+    say scalar Octium::u_wrap( joinspace( Octium::sortbyline(@_) ) );
 }
 
 sub _makessdiff {
     my $oldfile = shift;
-    my ( $oldbase, undef ) = u::file_ext($oldfile);
+    my ( $oldbase, undef ) = Octium::file_ext($oldfile);
 
     my $newfile = shift;
     my ( $diffbase, $newbase );
 
     if ($newfile) {
-        ( $newbase, undef ) = u::file_ext($newfile);
+        ( $newbase, undef ) = Octium::file_ext($newfile);
         $diffbase = "$oldbase-$newbase";
     }
     else {

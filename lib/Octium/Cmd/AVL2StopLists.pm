@@ -114,7 +114,7 @@ sub START {
 
         close $fh;
 
-    } ## tidy end: PAT: foreach my $key ( keys %pat)
+    }    ## tidy end: PAT: foreach my $key ( keys %pat)
 
     print "\n\n";
 
@@ -135,26 +135,26 @@ sub START {
             {
                 open my $fh, '>:utf8', "slists/line/$route-$dir.txt"
                   or die "Cannot open slists/line/$route-$dir.txt for output";
-                print $fh u::jointab( $route, $dir ), "\n";
+                print $fh Octium::jointab( $route, $dir ), "\n";
                 foreach (@union) {
 
                     my $desc = $stops{$_}{c_description_full} // $EMPTY;
                     #utf8::decode($desc);
 
                     print $fh "$_\t$desc\n";
-               #print $fh u::jointab($_, $stops{$_}{c_description_full}) , "\n";
+          #print $fh Octium::jointab($_, $stops{$_}{c_description_full}) , "\n";
                 }
                 close $fh;
             }
 
-        } ## tidy end: foreach my $dir ( keys %{ $liststomerge...})
-    } ## tidy end: foreach my $route ( keys %liststomerge)
+        }    ## tidy end: foreach my $dir ( keys %{ $liststomerge...})
+    }    ## tidy end: foreach my $route ( keys %liststomerge)
 
     print "\n\n";
 
     Storable::nstore( \%stops_of_line, "slists/line.storable" );
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

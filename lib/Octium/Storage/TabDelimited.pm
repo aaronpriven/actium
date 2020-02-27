@@ -8,7 +8,7 @@ use Sub::Exporter -setup => { exports => [qw(read_aoas read_tab_files)] };
 # Sub::Exporter ### DEP ###
 
 sub read_aoas {
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   folder => {
                 can => [
@@ -46,11 +46,11 @@ sub read_aoas {
 
     return \%headers_of, \%records_of;
 
-} ## tidy end: sub read_aoas
+}    ## tidy end: sub read_aoas
 
 sub read_tab_files {
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   folder => {
                 can => [
@@ -129,7 +129,7 @@ sub read_tab_files {
                 \%value_of, \@values, \@headers, $line, $file, $linenum
             );
 
-        } ## tidy end: while ( my $line = <$fh> )
+        }    ## tidy end: while ( my $line = <$fh> )
 
         $file_cry->over(' 100%');
 
@@ -137,11 +137,11 @@ sub read_tab_files {
 
         $file_cry->done;
 
-    } ## tidy end: foreach my $file (@files)
+    }    ## tidy end: foreach my $file (@files)
 
     return;
 
-} ## tidy end: sub read_tab_files
+}    ## tidy end: sub read_tab_files
 
 sub _expand_files {
 
@@ -150,7 +150,7 @@ sub _expand_files {
     my @files = @{$files_r};
 
     foreach (@$globpatterns_r) {
-        push @files, u::filename( $folder->glob_plain_files($_) );
+        push @files, Octium::filename( $folder->glob_plain_files($_) );
     }
 
     if ( not scalar @files ) {
@@ -178,7 +178,7 @@ sub _verify_headers {
 
     if ( scalar @required_headers ) {
         foreach my $required_header (@required_headers) {
-            if ( not u::in( $required_header, @headers ) ) {
+            if ( not Octium::in( $required_header, @headers ) ) {
                 croak
                   "Required header $required_header not found in file $file";
             }
@@ -187,7 +187,7 @@ sub _verify_headers {
 
     return @headers;
 
-} ## tidy end: sub _verify_headers
+}    ## tidy end: sub _verify_headers
 
 1;
 

@@ -46,9 +46,9 @@ func clusterize (
 
     ## pad leaves to the longest length, with spaces
 
-    my $leaf_length = u::max( map {length} keys %original_count );
+    my $leaf_length = Octium::max( map {length} keys %original_count );
 
-    if ( not( u::looks_like_number($root_digits) ) or $root_digits < 1 ) {
+    if ( not( Octium::looks_like_number($root_digits) ) or $root_digits < 1 ) {
         croak "Invalid root digit specification $root_digits";
     }
 
@@ -101,7 +101,7 @@ func clusterize (
         $is_a_root{$root} = 1;
         $count_of_node{$root} += $leafcount;
 
-    } ## tidy end: foreach my $leaf ( keys %count_of_leaf)
+    }    ## tidy end: foreach my $leaf ( keys %count_of_leaf)
 
     my @to_process = keys %is_a_root;
     my @processed;
@@ -150,7 +150,8 @@ func clusterize (
 
       PARTITION:
         while ( @children_nodes >= 4
-            and ( u::sum( @count_of_node{@children_nodes} ) ) >= $size * 2 )
+            and ( Octium::sum( @count_of_node{@children_nodes} ) )
+            >= $size * 2 )
         {
 
             # so it may be possible to partition these.
@@ -167,7 +168,7 @@ func clusterize (
             foreach my $last_item_of_partition ( 1 .. $#children_nodes - 2 ) {
 
                 my @partition = @children_nodes[ 0 .. $last_item_of_partition ];
-                my $partition_count = u::sum( @count_of_node{@partition} );
+                my $partition_count = Octium::sum( @count_of_node{@partition} );
 
                 if ( $partition_count >= $size ) {
 
@@ -188,21 +189,21 @@ func clusterize (
 
                     next PARTITION;
 
-                } ## tidy end: if ( $partition_count ...)
+                }    ## tidy end: if ( $partition_count ...)
 
-            } ## tidy end: foreach my $last_item_of_partition...
+            }    ## tidy end: foreach my $last_item_of_partition...
 
             # got to the end, no partition possible
 
             last PARTITION;
 
-        } ## tidy end: PARTITION: while ( @children_nodes >=...)
+        }    ## tidy end: PARTITION: while ( @children_nodes >=...)
 
         # if any of the remaining children of node are not leaves,
         # flatten the structure by a level -- make the grandchildren
         # the children -- and reprocess.
 
-        if ( u::any { exists $children_of{$_} } @children_nodes ) {
+        if ( Octium::any { exists $children_of{$_} } @children_nodes ) {
 
             foreach my $child_node (@children_nodes) {
                 if ( exists $children_of{$child_node} ) {
@@ -226,7 +227,7 @@ func clusterize (
 
         push @processed, $node;
 
-    } ## tidy end: NODE: while (@to_process)
+    }    ## tidy end: NODE: while (@to_process)
 
     # now @processed is the list of clusters
     # need to return %leaves_of{@processed}
@@ -280,7 +281,7 @@ func clusterize (
                     # fill in the hole
                 }
             }
-        } ## tidy end: if (@all_values)
+        }    ## tidy end: if (@all_values)
         my $returnnode;
         if ( $return eq 'runlist' ) {
             $returnnode = $span->run_list;
@@ -291,11 +292,11 @@ func clusterize (
         }
 
         $node_of_leaf{$_} = $returnnode foreach @leaves;
-    } ## tidy end: foreach my $processed_node ...
+    }    ## tidy end: foreach my $processed_node ...
 
     return \%node_of_leaf;
 
-} ## tidy end: func clusterize
+}    ## tidy end: func clusterize
 
 ### COMBINATORICS
 
@@ -375,7 +376,7 @@ sub ordered_partitions {
 
     return @partitions;
 
-} ## tidy end: sub ordered_partitions
+}    ## tidy end: sub ordered_partitions
 
 sub odometer_combinations {
 
@@ -414,7 +415,7 @@ sub odometer_combinations {
     }
     return @combinations;
 
-} ## tidy end: sub odometer_combinations
+}    ## tidy end: sub odometer_combinations
 
 sub _odometer_increment {
     my $odometer_r = shift;
@@ -531,7 +532,7 @@ sub _comm_unchecked {
     # should have been /A L M 1 2 Z/ instead, but we can be pretty sure
     # that interleaving them -- /A 1 L M 2 Z/ or /A 1 L 2 M Z/ -- is wrong.
 
-} ## tidy end: sub _comm_unchecked
+}    ## tidy end: sub _comm_unchecked
 
 my $sethash_callback = {
 
@@ -560,7 +561,7 @@ sub ordered_union_columns {
 
     ### GET PARAMETERS
 
-    my %params = u::validate( @_, $ordered_union_columns_validspec );
+    my %params = Octium::validate( @_, $ordered_union_columns_validspec );
 
     my $tiebreaker = $params{tiebreaker};
 
@@ -626,7 +627,7 @@ sub ordered_union_columns {
         columns_of => \%col_idxs_of,
     );
 
-} ## tidy end: sub ordered_union_columns
+}    ## tidy end: sub ordered_union_columns
 
 sub _columns_pair {
 
@@ -725,7 +726,7 @@ sub _columns_pair {
 
     return ( \@union, \@u_col, \@markers, \@b_col );
 
-} ## tidy end: sub _columns_pair
+}    ## tidy end: sub _columns_pair
 
 sub _check_arrayrefs {
     #my $caller    = '$' . shift . '()';
@@ -813,7 +814,7 @@ sub distinguish {
             }
 
             @prevchanges = @thesechanges;
-        } ## tidy end: for my $idx ( 0 .. $final_idx)
+        }    ## tidy end: for my $idx ( 0 .. $final_idx)
 
         $change_ranges[-1][1] //= $final_idx if @change_ranges;
 
@@ -844,7 +845,7 @@ sub distinguish {
                 }
             }
 
-        } ## tidy end: foreach my $range (@change_ranges)
+        }    ## tidy end: foreach my $range (@change_ranges)
         if ( not( $relevants[0] ) or $relevants[0] ne $firsts[$from] ) {
             unshift @relevants, $firsts[$from];
         }
@@ -855,13 +856,13 @@ sub distinguish {
         $results[$from] = \@relevants;
         #push @results, \@relevants;
 
-    } ## tidy end: foreach my $from (@check_order)
+    }    ## tidy end: foreach my $from (@check_order)
 
     #@results = @results[@input_order];
 
     return @results;
 
-} ## tidy end: sub distinguish
+}    ## tidy end: sub distinguish
 
 1;
 

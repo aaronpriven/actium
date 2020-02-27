@@ -212,7 +212,7 @@ sub START {
         next if $agency and $agency ne $run_agency;
 
         my @regions;
-        my $regionspec = u::trim( $template{Regions} );
+        my $regionspec = Octium::trim( $template{Regions} );
         $regionspec =~ s/\s+/ /;
         $regionspec =~ s/[^0-9: ]//g;
 
@@ -349,9 +349,9 @@ sub START {
 
         if ( $env->option('update') or $env->option('newsigns') ) {
             next SIGN
-              unless ( u::feq( $status, 'Needs update' )
+              unless ( Octium::feq( $status, 'Needs update' )
                 and $env->option('update') )
-              or ( u::feq( $status, 'Needs new sign' )
+              or ( Octium::feq( $status, 'Needs new sign' )
                 and $env->option('newsigns') );
         }
 
@@ -650,7 +650,7 @@ sub START {
 
                     my @cities = map { $city_of_workzone{$_} } @cluster_zones;
                     my $max_length
-                      = u::max( map { length($_) } @cities );
+                      = Octium::max( map { length($_) } @cities );
 
                     my $cluster_display;
 

@@ -55,7 +55,7 @@ sub _connect {
 
     return $dbh;
 
-} ## tidy end: sub _connect
+}    ## tidy end: sub _connect
 
 has '_tables_r' => (
     traits  => ['Hash'],
@@ -77,7 +77,7 @@ sub _build_tables {
       = "SELECT TableName from $META_TABLES WHERE TableName = BaseTableName";
 
     my $ary_ref    = $dbh->selectall_arrayref($statement);
-    my @tables     = u::flatten $ary_ref;
+    my @tables     = Octium::flatten $ary_ref;
     my %is_a_table = map { $_, 1 } @tables;
 
     return \%is_a_table;
@@ -126,7 +126,7 @@ sub _load_column_cache {
 
     my $query = "SELECT FieldName from $META_FIELDS WHERE TableName = '$table'";
     my $ary_ref = $dbh->selectall_arrayref($query);
-    my @columns = u::flatten $ary_ref;
+    my @columns = Octium::flatten $ary_ref;
 
     my %is_a_column = map { $_, 1 } @columns;
     $self->_set_column_cache_of_table( $table, \%is_a_column );
@@ -224,7 +224,7 @@ sub each_columns_in_row_where {
 
     my $self = shift;
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   table   => 1,
             columns => { type => ARRAYREF, required => 1 },
@@ -261,7 +261,7 @@ sub each_columns_in_row_where {
         return $result;
     };
 
-} ## tidy end: sub each_columns_in_row_where
+}    ## tidy end: sub each_columns_in_row_where
 
 sub all_in_column_key {
 
@@ -304,7 +304,7 @@ sub all_in_column_key {
     my %value_of = @{$list_r};
     return \%value_of;
 
-} ## tidy end: sub all_in_column_key
+}    ## tidy end: sub all_in_column_key
 
 sub all_in_columns_key {
     my $self = shift;
@@ -316,7 +316,7 @@ sub all_in_columns_key {
     if ( ref($firstarg) eq 'HASH' ) {
         $table = $firstarg->{TABLE};
 
-        @columns = u::flatten( $firstarg->{COLUMNS} );
+        @columns = Octium::flatten( $firstarg->{COLUMNS} );
 
         $where = $firstarg->{WHERE};
 
@@ -327,7 +327,7 @@ sub all_in_columns_key {
     }
     else {
         $table   = $firstarg;
-        @columns = u::flatten(@_);
+        @columns = Octium::flatten(@_);
     }
 
     $self->_ensure_loaded($table);
@@ -335,7 +335,7 @@ sub all_in_columns_key {
 
     my $key = $self->key_of_table($table);
     unshift @columns, $key;
-    @columns = u::uniq(@columns);
+    @columns = Octium::uniq(@columns);
 
     my $dbh = $self->dbh;
 
@@ -349,7 +349,7 @@ sub all_in_columns_key {
       = $dbh->selectall_hashref( $selection_cmd, $key, {}, @bind_values );
     return $rows_r;
 
-} ## tidy end: sub all_in_columns_key
+}    ## tidy end: sub all_in_columns_key
 
 sub DEMOLISH { }
 
@@ -428,7 +428,7 @@ sub load_tables {
                         "SELECT $index_field from $table")
                 };
 
-                if ( ( u::uniq @all_indexes ) == @all_indexes ) {
+                if ( ( Octium::uniq @all_indexes ) == @all_indexes ) {
                     # indexes are all unique
                     $process_dupe = 0;
                     $dupecry->d_no;
@@ -452,13 +452,13 @@ sub load_tables {
 
             $hashcry->done;
 
-        } ## tidy end: if ( exists $request_of...)
+        }    ## tidy end: if ( exists $request_of...)
 
         $tablecry->done;
 
-    } ## tidy end: foreach my $table ( sort keys...)
+    }    ## tidy end: foreach my $table ( sort keys...)
 
-} ## tidy end: sub load_tables
+}    ## tidy end: sub load_tables
 
 1;
 

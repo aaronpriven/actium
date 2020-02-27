@@ -183,7 +183,7 @@ EOT
                 $signtype_of_stop{$stopid} = $signtype;
             }
 
-            if ( u::feq( $active, 'Sort of' ) ) {
+            if ( Octium::feq( $active, 'Sort of' ) ) {
                 $icon_of_stop{$stopid} = $KML_ICON{'Sort of'};
                 next SIGNROW;
             }
@@ -397,7 +397,7 @@ sub _kml_stop_description {
         $connections_text
           = "<br>\n"
           . "<u>Connections:</u> "
-          . u::joinseries_with( '&', @connections );
+          . Octium::joinseries_with( '&', @connections );
     }
 
     my $text
@@ -461,7 +461,7 @@ sub _kml_stop_description {
         my $lines_r = shift;
         my @lines   = @_;
         my $priority
-          = u::min( map { _kml_priority( $lines_r, $_ ) } @lines );
+          = Octium::min( map { _kml_priority( $lines_r, $_ ) } @lines );
         return $color_of_priority{$priority};
     }
 
@@ -470,7 +470,7 @@ sub _kml_stop_description {
 sub citiesbyline {
 
     my %params
-      = u::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
+      = Octium::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
     my $actiumdb = $params{actiumdb};
 
     my $eachstop = $actiumdb->each_columns_in_row_where(
@@ -491,7 +491,7 @@ sub citiesbyline {
         }
     }
 
-    foreach my $line ( u::sortbyline keys %cities_of ) {
+    foreach my $line ( Octium::sortbyline keys %cities_of ) {
 
         my @cities = sort ( keys %{ $cities_of{$line} } );
 
@@ -510,14 +510,14 @@ sub citiesbyline {
 sub linesbycity {
 
     my %params
-      = u::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
+      = Octium::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
 
     my $actiumdb = $params{actiumdb};
 
     my %type_of;
     foreach my $line ( $actiumdb->line_keys ) {
         \my %row = $actiumdb->line_row_r($line);
-        if ( u::feq( $row{agency_id}, 'ACTransit' ) ) {
+        if ( Octium::feq( $row{agency_id}, 'ACTransit' ) ) {
             # note that is not agency name. Name has spaces.
             # ID does not
             $type_of{$line} = $row{LineGroupType};
@@ -557,14 +557,14 @@ sub linesbycity {
     my @all_lgtypes = $actiumdb->linegrouptypes_in_order;
 
     foreach my $city ( sort keys %lines_of ) {
-        my $city_h = u::encode_entities($city);
+        my $city_h = Octium::encode_entities($city);
         print $html_fh
           qq{<h4 style="text-transform:uppercase;" id="$city_h">$city_h</h4>};
 
         #        foreach my $type ( sort keys %{ $lines_of{$city} } ) {
         foreach my $type (@all_lgtypes) {
             next unless exists $lines_of{$city}{$type};
-            my $type_h = u::encode_entities($type);
+            my $type_h = Octium::encode_entities($type);
             print $html_fh "<p><strong>$type_h:</strong>";
 
             my @lines = sortbyline keys %{ $lines_of{$city}{$type} };

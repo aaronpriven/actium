@@ -65,7 +65,7 @@ sub prehistoric_days {
 
     my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
 
-    return 'WD' unless u::in( $transitinfo, @valid_prehistorics );
+    return 'WD' unless Octium::in( $transitinfo, @valid_prehistorics );
     return $transitinfo;
 
 }
@@ -103,7 +103,7 @@ sub prehistoric_skedsfile {
         push @place9s, $place9;
     }
 
-    say $out u::jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
+    say $out Octium::jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
 
     foreach my $trip ( $self->trips ) {
         my @times = map { Octium::Time->from_num($_)->ap_noseparator }
@@ -120,7 +120,8 @@ sub prehistoric_skedsfile {
             }
         }
 
-        say $out u::jointab( $except, $EMPTY, $EMPTY, $trip->line, $times );
+        say $out Octium::jointab( $except, $EMPTY, $EMPTY, $trip->line,
+            $times );
     }
 
     close $out;
