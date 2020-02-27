@@ -29,11 +29,11 @@ sub START {
         my @headers = $input->row(0);
         my @chinese_cols;
 
-        if ( u::folded_in( 'zh', @headers ) ) {
+        if ( Octium::folded_in( 'zh', @headers ) ) {
 
             # treat that column as though it were Chinese
             @chinese_cols
-              = grep { u::feq( 'zh', $headers[$_] ) } ( 0 .. $#headers );
+              = grep { Octium::feq( 'zh', $headers[$_] ) } ( 0 .. $#headers );
         }
 
         my %style_of = (
@@ -47,15 +47,15 @@ sub START {
 
                 my ( $row, $col ) = @_;
 
-                if ( u::in( $col, @chinese_cols ) ) {
+                if ( Octium::in( $col, @chinese_cols ) ) {
 
                     my @components = $_ =~ /[!-~]+|[^!-~]+/g;
 
                     # eliminate components with just spaces
 
-                    while ( u::any { $_ eq ' ' } @components ) {
+                    while ( Octium::any { $_ eq ' ' } @components ) {
                         my $position
-                          = ( u::firstidx { $_ eq ' ' } @components );
+                          = ( Octium::firstidx { $_ eq ' ' } @components );
 
                         if ( $position == 0 ) {
                             my $newcomponent = $components[0] . $components[1];
@@ -77,7 +77,7 @@ sub START {
 
                         }
 
-                    } ## tidy end: while ( u::any { $_ eq ' '...})
+                    }    ## tidy end: while ( Octium::any { $_ eq ' '...})
 
                     # separates visible ASCII characters from other characters
                     foreach my $component (@components) {
@@ -92,7 +92,7 @@ sub START {
 
                     $_ = join( $EMPTY, @components );
 
-                } ## tidy end: if ( u::in( $col, @chinese_cols...))
+                }    ## tidy end: if ( Octium::in( $col, @chinese_cols...))
                 else {
 
                     $IDT->encode_high_chars($_);
@@ -118,7 +118,7 @@ sub START {
 
         my $tsv = $input->tsv;
 
-        my ( $base, $ext ) = u::file_ext($input_file);
+        my ( $base, $ext ) = Octium::file_ext($input_file);
         my $output_file = "$base.tagged.txt";
 
         my $write_cry = $env->crier->cry("Writing $output_file");
@@ -127,11 +127,11 @@ sub START {
 
         $write_cry->done;
 
-    } ## tidy end: foreach my $input_file (@argv)
+    }    ## tidy end: foreach my $input_file (@argv)
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

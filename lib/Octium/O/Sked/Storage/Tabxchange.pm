@@ -15,7 +15,7 @@ method tabxchange (
     # tab files for AC Transit web site
     #  my $self = shift;
 
-    #  my %params = u::validate(
+    #  my %params = Octium::validate(
     #      @_,
     #      {   destinationcode => 1,
     #          actiumdb        => 1,
@@ -114,7 +114,7 @@ method tabxchange (
             $color_row_r->{RGB}
         );
 
-    } ## tidy end: foreach my $line ( $self->lines)
+    }    ## tidy end: foreach my $line ( $self->lines)
 
     # lines 8 - timepoints
     my @place4s = $self->place4s;
@@ -151,7 +151,7 @@ method tabxchange (
             $EMPTY,    # TPNote
             $EMPTY,    # fake timepoint note
         );
-    } ## tidy end: foreach my $place (@place4s)
+    }    ## tidy end: foreach my $place (@place4s)
 
     # lines 10 - footnotes for a trip
 
@@ -207,9 +207,9 @@ method tabxchange (
             carp "No linegroup type for line $line";
         }
 
-    } ## tidy end: foreach my $line ( $self->lines)
+    }    ## tidy end: foreach my $line ( $self->lines)
 
-    my @linklines = u::sortbyline keys %stoplist_url_of;
+    my @linklines = Octium::sortbyline keys %stoplist_url_of;
     my $numlinks  = scalar @linklines;
 
     if ( 1 == $numlinks ) {
@@ -227,7 +227,7 @@ method tabxchange (
 
         $fullnote
           .= ' Complete lists of stops for lines '
-          . u::joinseries(@stoplist_links)
+          . Octium::joinseries(@stoplist_links)
           . ' are also available.';
     }
 
@@ -271,7 +271,7 @@ method tabxchange (
         push @noteletters, $EMPTY;
         push @lines,       $trip->line;
 
-    } ## tidy end: foreach my $trip ( $self->trips)
+    }    ## tidy end: foreach my $trip ( $self->trips)
 
     my ( @specdaynotes, @specdaytrips );
 
@@ -293,7 +293,7 @@ method tabxchange (
         foreach my $trip (@trips) {
 
             my @placetimes = $trip->placetimes;
-            my $idx        = u::firstidx {defined} @placetimes;
+            my $idx        = Octium::firstidx {defined} @placetimes;
             my $time       = Octium::Time->from_num( $placetimes[$idx] )->ap;
 
             $specdaytrip .= "<dd>Trip leaving $placedescs[$idx] at $time</dd>";
@@ -302,16 +302,16 @@ method tabxchange (
 
         push @specdaytrips, $specdaytrip;
 
-    } ## tidy end: foreach my $noteletter ( keys...)
+    }    ## tidy end: foreach my $noteletter ( keys...)
 
     @specdaytrips = sort @specdaytrips;
 
     #$p->(@specdaynotes);
 
-    #$fullnote .= u::joinempty(@specdaynotes);
+    #$fullnote .= Octium::joinempty(@specdaynotes);
 
     if (@specdaytrips) {
-        $fullnote .= '<dl>' . u::joinempty(@specdaytrips) . '</dl>';
+        $fullnote .= '<dl>' . Octium::joinempty(@specdaytrips) . '</dl>';
     }
 
     $p->( $fullnote, $linegroup_row_r->{LineGroupNote} );
@@ -322,41 +322,41 @@ method tabxchange (
 
     # lines 13 - Definitions of special day codes
 
-   #    my ( %specday_of_specdayletter, @specdayletters, @noteletters, @lines );
-   #
-   #    foreach my $daysexception ( $self->daysexceptions ) {
-   #        next unless $daysexception;
-   #        my ( $specdayletter, $specday ) = split( / /, $daysexception, 2 );
-   #        $specday_of_specdayletter{$specdayletter} = $specday;
-   #    }
-   #
-   #    foreach my $trip ( $self->trips ) {
-   #        my $tripdays = $trip->days_obj;
-   #        my ( $specdayletter, $specday )
-   #          = $tripdays->specday_and_specdayletter($days);
-   #
-   #        if ($specdayletter) {
-   #            $specday_of_specdayletter{$specdayletter} = $specday;
-   #            push @specdayletters, $specdayletter;
-   #        }
-   #        else {
-   #            push @specdayletters, $EMPTY;
-   #        }
-   #
-   #        push @noteletters, $EMPTY;
-   #        push @lines,       $trip->line;
-   #
-   #    }
-   #
-   #    my @specdaynotes;
-   #
-   #    foreach my $noteletter ( keys %specday_of_specdayletter ) {
-   #        push @specdaynotes,
-   #          u::joinkey( $noteletter, $specday_of_specdayletter{$noteletter} );
-   #    }
-   #
-   #    $p->(@specdaynotes);
-   #
+#    my ( %specday_of_specdayletter, @specdayletters, @noteletters, @lines );
+#
+#    foreach my $daysexception ( $self->daysexceptions ) {
+#        next unless $daysexception;
+#        my ( $specdayletter, $specday ) = split( / /, $daysexception, 2 );
+#        $specday_of_specdayletter{$specdayletter} = $specday;
+#    }
+#
+#    foreach my $trip ( $self->trips ) {
+#        my $tripdays = $trip->days_obj;
+#        my ( $specdayletter, $specday )
+#          = $tripdays->specday_and_specdayletter($days);
+#
+#        if ($specdayletter) {
+#            $specday_of_specdayletter{$specdayletter} = $specday;
+#            push @specdayletters, $specdayletter;
+#        }
+#        else {
+#            push @specdayletters, $EMPTY;
+#        }
+#
+#        push @noteletters, $EMPTY;
+#        push @lines,       $trip->line;
+#
+#    }
+#
+#    my @specdaynotes;
+#
+#    foreach my $noteletter ( keys %specday_of_specdayletter ) {
+#        push @specdaynotes,
+#          Octium::joinkey( $noteletter, $specday_of_specdayletter{$noteletter} );
+#    }
+#
+#    $p->(@specdaynotes);
+#
     $p_blank->();    # special day notes, moved above
 
     # FLIPPING NOTE LETTERS AND SPECIAL DAY CODES TO SEE IF THAT WORKS
@@ -393,7 +393,7 @@ method tabxchange (
 
     return $aoa->tsv . $placetimes_aoa->tsv;
 
-} ## tidy end: method tabxchange
+}    ## tidy end: method tabxchange
 
 1;
 

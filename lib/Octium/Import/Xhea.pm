@@ -46,7 +46,7 @@ const my %blockfield_of_day => qw(
 
 sub xhea_import {
 
-    my %p = u::validate(
+    my %p = Octium::validate(
         @_,
         {   signup       => 1,
             xhea_folder  => 1,
@@ -112,7 +112,7 @@ sub xhea_import {
         $adjusted_values_of_r->{block} = $adjusted_blocks_r;
         $adjusted_values_of_r->{trip}  = $adjusted_trips_r;
 
-    } ## tidy end: elsif ($sch_cal_data)
+    }    ## tidy end: elsif ($sch_cal_data)
 
     my $tab_strings_r
       = Octium::Import::Xhea::tab_strings( $fieldnames_of_r, $fields_of_r,
@@ -146,7 +146,7 @@ sub xhea_import {
 
     return;
 
-} ## tidy end: sub xhea_import
+}    ## tidy end: sub xhea_import
 
 sub tab_strings {
 
@@ -173,7 +173,7 @@ sub tab_strings {
 
     return \%tab_of;
 
-} ## tidy end: sub tab_strings
+}    ## tidy end: sub tab_strings
 
 {
 
@@ -181,7 +181,7 @@ sub tab_strings {
 
         my $cry = cry('Adjusting XHEA data from school calendars');
 
-        my %p = u::validate(
+        my %p = Octium::validate(
             @_,
             {   fields       => 1,
                 values       => 1,
@@ -213,29 +213,29 @@ sub tab_strings {
             my $block = $field{blk_number};
             #            if ( not exists $calendar_of_tripkey{$block} ) {
             push @returned_block_records, [@block_record];
-    #            }
-    #            else {
-    #
-    #                if ( u::is_arrayref( $calendar_of_tripkey{$block} ) ) {
-    #                    $field{blk_evt_stat_dsp}
-    #                      = $calendar_of_tripkey{$block}[0]
-    #                      . $SPACE
-    #                      . $calendar_of_tripkey{$block}[1];
-    #                }
-    #                else {
-    #                    my $days = $calendar_of_tripkey{$block};
-    #                    foreach my $day ( keys %blockfield_of_day ) {
-    #                        $field{ $blockfield_of_day{$day} }
-    #                          = ( $days =~ m/$day/ ) ? 1 : 0;
-    #                    }
-    #
-    #                }
-    #
-    #                my @new_record = @field{@block_headers};
-    #                push @returned_block_records, \@new_record;
-    #            } ## tidy end: else [ if ( not exists $calendar_of_tripkey...)]
+   #            }
+   #            else {
+   #
+   #                if ( Octium::is_arrayref( $calendar_of_tripkey{$block} ) ) {
+   #                    $field{blk_evt_stat_dsp}
+   #                      = $calendar_of_tripkey{$block}[0]
+   #                      . $SPACE
+   #                      . $calendar_of_tripkey{$block}[1];
+   #                }
+   #                else {
+   #                    my $days = $calendar_of_tripkey{$block};
+   #                    foreach my $day ( keys %blockfield_of_day ) {
+   #                        $field{ $blockfield_of_day{$day} }
+   #                          = ( $days =~ m/$day/ ) ? 1 : 0;
+   #                    }
+   #
+   #                }
+   #
+   #                my @new_record = @field{@block_headers};
+   #                push @returned_block_records, \@new_record;
+   #            } ## tidy end: else [ if ( not exists $calendar_of_tripkey...)]
 
-        } ## tidy end: foreach \my @block_record(@block_records)
+        }    ## tidy end: foreach \my @block_record(@block_records)
 
         #### Trip ###
 
@@ -260,7 +260,7 @@ sub tab_strings {
             }
             else {
 
-                if ( u::is_arrayref( $calendar_of_tripkey{$tripkey} ) ) {
+                if ( Octium::is_arrayref( $calendar_of_tripkey{$tripkey} ) ) {
                     $field{trp_event_and_status}
                       = $calendar_of_tripkey{$tripkey}[0]
                       . $SPACE
@@ -278,8 +278,8 @@ sub tab_strings {
                 push @returned_trip_records, \@new_record;
                 #push @display_trip_records, \@new_record;
                 delete $calendar_of_tripkey{$tripkey};
-            } ## tidy end: else [ if ( not exists $calendar_of_tripkey...)]
-        } ## tidy end: foreach \my @trip_record(@trip_records)
+            }    ## tidy end: else [ if ( not exists $calendar_of_tripkey...)]
+        }    ## tidy end: foreach \my @trip_record(@trip_records)
 
         foreach my $tripkey ( sort keys %calendar_of_tripkey ) {
             $cry->text("Didn't find $tripkey in schedules");
@@ -289,7 +289,7 @@ sub tab_strings {
 
         return \@returned_block_records, \@returned_trip_records;
 
-    } ## tidy end: sub adjust_sch_cal
+    }    ## tidy end: sub adjust_sch_cal
 }
 
 const my @HOLIDAYS => map Octium::O::DateTime->new( strptime => $_ ),
@@ -313,7 +313,7 @@ sub _get_trip_notes_from_event_date {
     require Octium::O::DateTime;
     require DateTime::Event::ICal;
 
-    my %p = u::validate(
+    my %p = Octium::validate(
         @_,
         {   fields     => 1,
             values     => 1,
@@ -400,9 +400,9 @@ sub _get_trip_notes_from_event_date {
                   @dts_of_dow;
             }
 
-        } ## tidy end: foreach my $dow ( sort keys...)
+        }    ## tidy end: foreach my $dow ( sort keys...)
 
-    } ## tidy end: foreach my $event ( keys %dts_of_event)
+    }    ## tidy end: foreach my $event ( keys %dts_of_event)
 
     my $edumpfh = $signup->open_write('events.dump');
     foreach my $event ( sort keys %ons_and_offs_of ) {
@@ -431,7 +431,7 @@ sub _get_trip_notes_from_event_date {
                   map { $_->ymd }
                   $ons_and_offs_of{$event}{individual_dates}->@* );
         }
-    } ## tidy end: foreach my $event ( sort keys...)
+    }    ## tidy end: foreach my $event ( sort keys...)
 
     close $edumpfh;
 
@@ -538,7 +538,7 @@ sub _get_trip_notes_from_event_date {
                 $note_text .= '; and also on ';
             }
 
-        } ## tidy end: if (@all_or_mostly_on_days)
+        }    ## tidy end: if (@all_or_mostly_on_days)
 
         if (@individual_dates) {
 
@@ -577,7 +577,7 @@ sub _get_trip_notes_from_event_date {
         $note_of_trip{$trip_number} = $fullnote;
         $notecache{$cachekey}       = $fullnote;
 
-    } ## tidy end: TRIP: foreach \my @trip_record(@trip_records)
+    }    ## tidy end: TRIP: foreach \my @trip_record(@trip_records)
 
     my $dumpfh = $signup->open_write('note_of_trip.dump');
     say $dumpfh Octium::dumpstr(%note_of_trip);
@@ -585,7 +585,7 @@ sub _get_trip_notes_from_event_date {
 
     return \%note_of_trip;
 
-} ## tidy end: sub _get_trip_notes_from_event_date
+}    ## tidy end: sub _get_trip_notes_from_event_date
 
 func joinseries_semicolon_with (Str $and!, Str @things!) {
     return $things[0] if 1 == @things;
@@ -598,7 +598,7 @@ sub adjust_trip_note {
 
     my $cry = cry('Adding trip calendar notes to XHEA trips');
 
-    my %p = u::validate(
+    my %p = Octium::validate(
         @_,
         {   fields       => 1,
             values       => 1,
@@ -637,7 +637,7 @@ sub adjust_trip_note {
             delete $note_of_trip{$tripnum};
         }
 
-    } ## tidy end: foreach \my @trip_record(@trip_records)
+    }    ## tidy end: foreach \my @trip_record(@trip_records)
 
     foreach my $tripnum ( sort keys %note_of_trip ) {
         $cry->text("Didn't find $tripnum in schedules");
@@ -647,7 +647,7 @@ sub adjust_trip_note {
 
     return \@returned_trip_records;
 
-} ## tidy end: sub adjust_trip_note
+}    ## tidy end: sub adjust_trip_note
 
 sub load_adjusted {
 
@@ -710,15 +710,15 @@ sub adjust_for_basetype {
 
             push @{ $adjusted_values_of{$record_name} }, \@adjusted_record;
 
-        } ## tidy end: foreach my $record ( @{ $values_of_r...})
+        }    ## tidy end: foreach my $record ( @{ $values_of_r...})
 
-    } ## tidy end: foreach my $record_name ( keys...)
+    }    ## tidy end: foreach my $record_name ( keys...)
 
     $cry->done;
 
     return \%adjusted_values_of;
 
-} ## tidy end: sub adjust_for_basetype
+}    ## tidy end: sub adjust_for_basetype
 
 sub _adjust_string {
     my $adjusted = shift;
@@ -788,7 +788,7 @@ sub _adjust_boolean {
 
         return ( \@fieldnames, \%fields, \@ppat_records );
 
-    } ## tidy end: sub _load_placepatterns
+    }    ## tidy end: sub _load_placepatterns
 
 }
 
@@ -859,17 +859,17 @@ sub load {
 
         $file_cry->done;
 
-    } ## tidy end: foreach my $filename (@xhea_filenames)
+    }    ## tidy end: foreach my $filename (@xhea_filenames)
 
     $load_cry->done;
 
     return ( \%fieldnames_of, \%fields_of, \%values_of );
 
-} ## tidy end: sub load
+}    ## tidy end: sub load
 
 sub _load_values {
 
-    my %p = u::validate(
+    my %p = Octium::validate(
         @_,
         {   tree       => 1,
             model      => 1,
@@ -925,11 +925,11 @@ sub _load_values {
 
         $record_cry->done;
 
-    } ## tidy end: for my $table_name ( keys...)
+    }    ## tidy end: for my $table_name ( keys...)
 
     return \%values_of;
 
-} ## tidy end: sub _load_values
+}    ## tidy end: sub _load_values
 
 sub _records_and_fields {
 
@@ -1022,11 +1022,11 @@ sub _records_and_fields {
                   = { base => $base, type => $type, idx => $field_idx };
 
                 $field_idx++;
-            } ## tidy end: for my $field (@fieldnames)
+            }    ## tidy end: for my $field (@fieldnames)
 
-        } ## tidy end: for my $record ( keys %info_of_record)
+        }    ## tidy end: for my $record ( keys %info_of_record)
 
-    } ## tidy end: for my $table ( keys %{...})
+    }    ## tidy end: for my $table ( keys %{...})
 
     $xsd_cry->over($EMPTY);
 
@@ -1034,11 +1034,11 @@ sub _records_and_fields {
 
     return \%fieldnames_of, \%records_of, \%fields_of;
 
-} ## tidy end: sub _records_and_fields
+}    ## tidy end: sub _records_and_fields
 
 sub _unexpected_croak {
 
-    my %p = u::validate(
+    my %p = Octium::validate(
         @_,
         {   foundtype    => 1,
             foundname    => 1,
@@ -1101,13 +1101,13 @@ sub _build_tree {
             $parent_hr->{$element}{base} = $base if $base;
         }
 
-    } ## tidy end: while (@queue)
+    }    ## tidy end: while (@queue)
 
     $cry->done;
 
     return \%tree;
 
-} ## tidy end: sub _build_tree
+}    ## tidy end: sub _build_tree
 
 sub _get_xhea_filenames {
 
@@ -1117,7 +1117,7 @@ sub _get_xhea_filenames {
     my @xsdfiles = $xheafolder->glob_files('*.xsd');
 
     foreach ( @xmlfiles, @xsdfiles ) {
-        ( $_, undef ) = u::file_ext($_);
+        ( $_, undef ) = Octium::file_ext($_);
     }
 
     my @xhea_filenames;
@@ -1130,7 +1130,7 @@ sub _get_xhea_filenames {
         # than the simple one this part of the program can deal with
 
         push @xhea_filenames, $filename
-          if u::in( $filename, @xsdfiles );
+          if Octium::in( $filename, @xsdfiles );
     }
 
     # so @xhea_filenames contains filename piece of all filenames where
@@ -1141,7 +1141,7 @@ sub _get_xhea_filenames {
 
     return @xhea_filenames;
 
-} ## tidy end: sub _get_xhea_filenames
+}    ## tidy end: sub _get_xhea_filenames
 
 ##########################
 #### All below is part of the legacy HASI converter
@@ -1414,7 +1414,7 @@ sub _get_xhea_filenames {
                   ;
             }
 
-        } ## tidy end: foreach my $patid ( keys %{...})
+        }    ## tidy end: foreach my $patid ( keys %{...})
 
         close $pat_fh;
 
@@ -1449,7 +1449,7 @@ sub _get_xhea_filenames {
                 printf $trp_fh "PTS,%-8s$CRLF", $passing_time;
             }
 
-        } ## tidy end: foreach my $tripnum ( keys ...)
+        }    ## tidy end: foreach my $tripnum ( keys ...)
 
         $trip_cry->done;
 
@@ -1479,7 +1479,7 @@ sub _get_xhea_filenames {
 
         last_cry()->done;
 
-    } ## tidy end: sub to_hasi
+    }    ## tidy end: sub to_hasi
 
 }
 

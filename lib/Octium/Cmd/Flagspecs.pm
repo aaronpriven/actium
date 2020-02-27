@@ -188,7 +188,7 @@ sub build_place_and_stop_lists {
             $prevroute = $route;
         }
 
-        next PAT if u::in( $route, 'BSH', 'BSD', 'BSN', '399' );
+        next PAT if Octium::in( $route, 'BSH', 'BSD', 'BSN', '399' );
         # skip Broadway Shuttle
 
         my @tps = @{
@@ -348,7 +348,7 @@ sub transbay_and_connections {
         }
     }    ## tidy end: for my $patinfo ( reverse...)
 
-    if ( u::in( $route, @TRANSBAY_NOLOCALS ) ) {
+    if ( Octium::in( $route, @TRANSBAY_NOLOCALS ) ) {
         my $dropoff;
         undef $prev_side;
         for my $patinfo (@all_stops) {
@@ -369,7 +369,7 @@ sub transbay_and_connections {
 
         }
 
-    }    ## tidy end: if ( u::in( $route, @TRANSBAY_NOLOCALS...))
+    }    ## tidy end: if ( Octium::in( $route, @TRANSBAY_NOLOCALS...))
 
 }    ## tidy end: sub transbay_and_connections
 
@@ -411,7 +411,7 @@ sub cull_placepats {
 
     my $cry = cry('Combining duplicate place-patterns');
 
-    foreach my $routedir ( u::sortbyline( keys %num_trips_of_pat ) ) {
+    foreach my $routedir ( Octium::sortbyline( keys %num_trips_of_pat ) ) {
 
         # combine placelists with more than one identifier
 
@@ -433,13 +433,13 @@ sub cull_placepats {
 
         }
 
-    }    ## tidy end: foreach my $routedir ( u::sortbyline...)
+    }    ## tidy end: foreach my $routedir ( Octium::sortbyline...)
 
     $cry->done;
 
     my $cullcry = cry('Culling place-patterns');
 
-    foreach my $routedir ( u::sortbyline( keys %num_trips_of_pat ) ) {
+    foreach my $routedir ( Octium::sortbyline( keys %num_trips_of_pat ) ) {
 
         # delete subset place patterns, if possible
         my $threshold = $num_trips_of_routedir{$routedir} / $CULL_THRESHOLD;
@@ -472,7 +472,7 @@ sub cull_placepats {
             $longest = shift @placelists;
         }    ## tidy end: while (@placelists)
 
-    }    ## tidy end: foreach my $routedir ( u::sortbyline...)
+    }    ## tidy end: foreach my $routedir ( Octium::sortbyline...)
 
     $cullcry->done;
 
@@ -514,7 +514,7 @@ sub cull_placepats {
 
     sub routedirs_of_stop {
         my $stop = shift;
-        return u::sortbyline( keys %{ $pats_of_stop{$stop} } );
+        return Octium::sortbyline( keys %{ $pats_of_stop{$stop} } );
     }
 
     sub patternflag {    # if *any* pattern has the flag
@@ -553,7 +553,7 @@ sub cull_placepats {
             $conn_icon{$_} = 1 foreach keys %{ $patinfo->{ConnIcons} };
         }
 
-        return u::joinempty( map { $ICON_OF{$_} } keys %conn_icon );
+        return Octium::joinempty( map { $ICON_OF{$_} } keys %conn_icon );
 
     }
 
@@ -782,8 +782,8 @@ sub delete_placelist_from_lists {
                   = uniq( sort { length($b) <=> length($a) || $a cmp $b }
                       @placelists );
 
-                my $combokey = u::jointab(@placelists);
-                my $shortkey = u::jointab( $routedir, $combokey );
+                my $combokey = Octium::jointab(@placelists);
+                my $shortkey = Octium::jointab( $routedir, $combokey );
 
                 $combos{$routedir}{$combokey} = \@placelists;
                 push @{ $shortkeys_of_stop{$stop}{$routedir} }, $shortkey;
@@ -859,14 +859,14 @@ sub delete_placelist_from_lists {
         my $short = 'aa';
         my %short_code_of;
 
-        foreach my $routedir ( u::sortbyline keys %combos ) {
+        foreach my $routedir ( Octium::sortbyline keys %combos ) {
 
             my ( $route, $dir ) = routedir($routedir);
 
             my @thesecombos = keys %{ $combos{$routedir} };
 
             foreach my $combokey (@thesecombos) {
-                my $shortkey = u::jointab( $routedir, $combokey );
+                my $shortkey = Octium::jointab( $routedir, $combokey );
                 $short_code_of{$shortkey} = $short++;
                 printf "Line %-3s %68s\n", $route, $short_code_of{$shortkey};
                 my @placelists = @{ $combos{$routedir}{$combokey} };
@@ -882,16 +882,17 @@ sub delete_placelist_from_lists {
                 }
                 say '= Computer: ', destination_of($shortkey);
                 say $comments_of{$shortkey} if $comments_of{$shortkey};
-                say u::joinempty (
+                say Octium::joinempty (
                     $OVERRIDE_STRING, $SPACE, $override_of{$shortkey} || $EMPTY
                 );
                 say $ENTRY_DIVIDER;
             }    ## tidy end: foreach my $combokey (@thesecombos)
 
-        }    ## tidy end: foreach my $routedir ( u::sortbyline...)
+        }    ## tidy end: foreach my $routedir ( Octium::sortbyline...)
 
         say '! The following are no longer in use';
-        foreach my $shortkey ( u::sortbyline keys %preserved_override_of ) {
+        foreach my $shortkey ( Octium::sortbyline keys %preserved_override_of )
+        {
             my ( $route, $dir ) = routedir($shortkey);
             $short_code_of{$shortkey} = $short++;
             printf "Line %-3s %68s\n", $route, $short_code_of{$shortkey};
@@ -986,9 +987,9 @@ sub delete_placelist_from_lists {
                 push @preserved, $input_comments_of{$short}
                   if $input_comments_of{$short};
                 push @preserved,
-                  u::joinempty( $OVERRIDE_STRING, $SPACE,
+                  Octium::joinempty( $OVERRIDE_STRING, $SPACE,
                     $input_override_of{$short} );
-                $preserved_override_of{$shortkey} = u::joinlf(@preserved);
+                $preserved_override_of{$shortkey} = Octium::joinlf(@preserved);
             }
         }
 
@@ -1079,7 +1080,8 @@ sub relevant_places {
             :                'To '
         ) . $destination;
 
-        $destination_of{ u::jointab( $routedir, $combokey ) } = $destination;
+        $destination_of{ Octium::jointab( $routedir, $combokey ) }
+          = $destination;
 
         return;
 
@@ -1175,7 +1177,9 @@ sub output_specs {
 
         print "$stop\t$stopdesc";
 
-        foreach my $route ( u::sortbyline keys %{ $routes_of_stop{$stop} } ) {
+        foreach
+          my $route ( Octium::sortbyline keys %{ $routes_of_stop{$stop} } )
+        {
             if ( exists( $plainroutes_of_stop{$stop}{$route} ) ) {
                 print "\t$route";
             }
@@ -1283,7 +1287,7 @@ sub make_decal_spec {
         $icons = $EMPTY;
     }
 
-    $icons = u::joinempty( sort split( //, $icons ) );
+    $icons = Octium::joinempty( sort split( //, $icons ) );
 
     my $spec = jk( $route, $destination, $icons );
     return $spec;
@@ -1316,7 +1320,7 @@ sub make_decal_spec {
             my ( undef, $letter ) = split( /\-/, $decal );
             $next_decal_of{$route} = ++$letter;
 
-            $icons = u::joinempty( sort split( //, $icons ) );
+            $icons = Octium::joinempty( sort split( //, $icons ) );
 
             $decal_of{ jk( $route, $destination, $icons ) } = $decal;
         }
@@ -1394,8 +1398,8 @@ sub make_decal_spec {
         open my $out, '>', $file or die "Can't open $file for writing";
         my $oldfh = select $out;
 
-        foreach ( u::sortbyline keys %routes ) {    # plain decals
-            print u::jointab ( $_, $_, ( $color_of{$_} || 'grey30' ),
+        foreach ( Octium::sortbyline keys %routes ) {    # plain decals
+            print Octium::jointab ( $_, $_, ( $color_of{$_} || 'grey30' ),
                 style_of_route($_) );
             if ( $plain_override_of{$_} ) {
                 print "\t$plain_override_of{$_}\t";
@@ -1406,12 +1410,12 @@ sub make_decal_spec {
         }
 
         my %spec_of = reverse %decal_of;
-        foreach my $decal ( u::sortbyline keys %spec_of ) {
+        foreach my $decal ( Octium::sortbyline keys %spec_of ) {
             print "$decal\t";
             my ( $route, $destination, $icons ) = sk( $spec_of{$decal} );
             my $style = style_of_route($route);
 
-            say u::jointab (
+            say Octium::jointab (
                 $route, ( $color_of{$route} || 'grey30' ),
                 $style, $destination, $icons
             );
@@ -1439,15 +1443,15 @@ sub style_of_route {
     my @chars = split( //, $route );
     foreach my $char (@chars) {
         for ($char) {
-            if ( u::in( $_, qw/ 3 4 8 0 A B C D / ) ) {
+            if ( Octium::in( $_, qw/ 3 4 8 0 A B C D / ) ) {
                 $val += 15;    # 1 1/4
                 next;
             }
-            if ( u::in( $_, qw/ N O X R / ) ) {
+            if ( Octium::in( $_, qw/ N O X R / ) ) {
                 $val += 18;    # 1 1/2
                 next;
             }
-            if ( u::in( $_, qw/M W/ ) ) {
+            if ( Octium::in( $_, qw/M W/ ) ) {
                 $val += 24;    # 2
                 next;
             }

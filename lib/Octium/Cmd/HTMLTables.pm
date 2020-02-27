@@ -30,9 +30,8 @@ sub START {
 
     my $html_folder = $signup->subfolder('html');
 
-    my $collection = Octium::O::Sked::Collection->load_storable(
-        collection => 'final'
-    );
+    my $collection
+      = Octium::O::Sked::Collection->load_storable( collection => 'final' );
 
     my @skeds = $collection->skeds;
 
@@ -71,7 +70,7 @@ sub START {
         }
     );
 
-    foreach my $linegroup ( u::sortbyline keys %htmls_of_linegroup ) {
+    foreach my $linegroup ( Octium::sortbyline keys %htmls_of_linegroup ) {
         my $file  = "$linegroup.html";
         my @htmls = @{ $htmls_of_linegroup{$linegroup} };
         my $html
@@ -100,7 +99,7 @@ sub START {
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

@@ -54,7 +54,7 @@ sub START {
         foreach my $member ( $zipobj->members ) {
             next if $member->isDirectory;
 
-            my $filename = u::filename( $member->fileName );
+            my $filename = Octium::filename( $member->fileName );
 
             $xcry->over( $filename . '...' );
             my $filespec = $xhea_folder->make_filespec($filename);
@@ -67,7 +67,7 @@ sub START {
 
         $xcry->done;
 
-    } ## tidy end: if ($xheazip)
+    }    ## tidy end: if ($xheazip)
 
     my $sch_cal_folder = $signup->subfolder('sch_cal');
     my $gtfs_folder    = $signup->subfolder('gtfs');
@@ -131,9 +131,9 @@ sub START {
 
         $hasicry->done;
 
-    } ## tidy end: if ( $xheazip or $xhea_folder...)
+    }    ## tidy end: if ( $xheazip or $xhea_folder...)
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

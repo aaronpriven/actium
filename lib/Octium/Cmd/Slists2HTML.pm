@@ -82,7 +82,7 @@ sub START {
     my $htmlversion_cry = cry('Creating HTML versions of stop lists');
 
     my @files = $stoplists_line_folder->glob_plain_files('*.txt');
-    @files = map { u::filename($_) } @files;
+    @files = map { Octium::filename($_) } @files;
 
     my %dirs_of;
 
@@ -97,7 +97,7 @@ sub START {
     my %tables_of_type;
     my %lines_of_type;
 
-    foreach my $line ( u::sortbyline keys %dirs_of ) {
+    foreach my $line ( Octium::sortbyline keys %dirs_of ) {
 
         next if exists $LINE_SHOULD_BE_SKIPPED{$line};
 
@@ -266,7 +266,7 @@ EOT
         push @{ $tables_of_type{$type} },       $outdata;
         push @{ $corner_lists_of_type{$type} }, $cornerlist_outdata;
 
-    }    ## tidy end: foreach my $line ( u::sortbyline...)
+    }    ## tidy end: foreach my $line ( Octium::sortbyline...)
 
     my %display_type_of = map { ( $_, $_ ) } keys %lines_of_type;
     my %subtypes_of = map { ( $_, [$_] ) } keys %lines_of_type;

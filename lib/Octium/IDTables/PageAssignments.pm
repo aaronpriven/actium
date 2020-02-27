@@ -173,7 +173,7 @@ sub assign {
       _make_table_assignments_from_page_assignments( $has_shortpage,
         @page_assignments );
 
-} ## tidy end: sub assign
+}    ## tidy end: sub assign
 
 sub _make_portrait_chars {
     my $has_shortpage    = shift;
@@ -181,7 +181,7 @@ sub _make_portrait_chars {
 
     shift @page_assignments if $has_shortpage;
 
-    return u::joinempty( map { $_->{frameset}->is_portrait ? 'P' : 'L' }
+    return Octium::joinempty( map { $_->{frameset}->is_portrait ? 'P' : 'L' }
           @page_assignments );
 
     #my @portrait_chars;
@@ -233,7 +233,7 @@ sub _overlong_assign_pages {
             push @table_sets, $set;
         }
 
-    } ## tidy end: for my $idtable (@idtables)
+    }    ## tidy end: for my $idtable (@idtables)
 
     my @page_assignments;
     foreach my $table_set (@table_sets) {
@@ -251,7 +251,7 @@ sub _overlong_assign_pages {
 
     return @page_assignments;
 
-} ## tidy end: sub _overlong_assign_pages
+}    ## tidy end: sub _overlong_assign_pages
 
 sub _overlong_set_assign_pages {
 
@@ -297,7 +297,7 @@ sub _overlong_set_assign_pages {
     my @page_partitions;
 
     foreach my $table_set (@expanded_table_sets) {
-        my @tables           = u::flatten($table_set);
+        my @tables           = Octium::flatten($table_set);
         my @these_partitions = ordered_partitions( \@tables );
         push @page_partitions, @these_partitions;
     }
@@ -314,7 +314,7 @@ sub _overlong_set_assign_pages {
 
     return;
 
-} ## tidy end: sub _overlong_set_assign_pages
+}    ## tidy end: sub _overlong_set_assign_pages
 
 sub _count_full_frame_idtables {
     my $full_frame = 0;
@@ -377,14 +377,14 @@ sub _sort_page_partitions {
 
                 my @lines_of_this_table = $table->lines;
                 push @lines,     \@lines_of_this_table;
-                push @all_lines, u::joinkey(@lines_of_this_table);
+                push @all_lines, Octium::joinkey(@lines_of_this_table);
 
                 push @dircodes, $table->dircode;
                 push @daycodes, $table->daycode;
 
             }
 
-            if ( u::all_eq(@ids) ) {
+            if ( Octium::all_eq(@ids) ) {
                 $partitions_with_values{pointsforsorting} += 11;
                 next PAGE;
                 # one ID; maximum value (8+2+1)
@@ -392,7 +392,7 @@ sub _sort_page_partitions {
 
             my $pagepoints = 0;
 
-            my $all_eq_lines = u::all_eq(@all_lines);
+            my $all_eq_lines = Octium::all_eq(@all_lines);
 
             if ($all_eq_lines) {
                 $pagepoints += 8;
@@ -404,18 +404,19 @@ sub _sort_page_partitions {
             else {
                 $pagepoints += 4 if _one_line_in_common(@lines);
             }
-            $pagepoints += 2 if u::all_eq(@daycodes);
-            $pagepoints += 1 if u::all_eq(@dircodes);
+            $pagepoints += 2 if Octium::all_eq(@daycodes);
+            $pagepoints += 1 if Octium::all_eq(@dircodes);
 
             $partitions_with_values{pointsforsorting} += $pagepoints;
 
-        } ## tidy end: PAGE: foreach my $page ( @{$partition...})
+        }    ## tidy end: PAGE: foreach my $page ( @{$partition...})
 
-        $partitions_with_values{deviation} = u::population_stdev(@tablecounts);
+        $partitions_with_values{deviation}
+          = Octium::population_stdev(@tablecounts);
 
         push @page_partitions, \%partitions_with_values;
 
-    } ## tidy end: foreach my $partition (@partitions_to_sort)
+    }    ## tidy end: foreach my $partition (@partitions_to_sort)
 
     @page_partitions = sort _page_partition_sort @page_partitions;
 
@@ -424,7 +425,7 @@ sub _sort_page_partitions {
 
     return @page_partitions;
 
-} ## tidy end: sub _sort_page_partitions
+}    ## tidy end: sub _sort_page_partitions
 
 sub _page_partition_sort {
 
@@ -450,14 +451,14 @@ sub _one_line_in_common {
   ELEMENT:
     foreach my $element (@first_elements) {
         foreach my $list_r (@lol) {
-            next ELEMENT unless u::in( $element, $list_r );
+            next ELEMENT unless Octium::in( $element, $list_r );
         }
         return 1;    # matches all elements
     }
 
     return;
 
-} ## tidy end: sub _one_line_in_common
+}    ## tidy end: sub _one_line_in_common
 
 sub _make_page_assignments {
 
@@ -510,18 +511,18 @@ sub _make_page_assignments {
             push @page_assignments, $page_assignment_r;
             $prefer_portrait = $page_assignment_r->{frameset}->is_portrait;
 
-        } ## tidy end: PAGE: foreach my $tables_on_this_page_r...
+        }    ## tidy end: PAGE: foreach my $tables_on_this_page_r...
 
         last if @page_assignments;
 
-    } ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_permutation_r...
+    }   ## tidy end: POSSIBLE_PAGE_ASSIGNMENT: foreach my $page_permutation_r...
 
     _slide_up_multiframe_tables(@page_assignments)
       if @page_assignments;
 
     return @page_assignments;
 
-} ## tidy end: sub _make_page_assignments
+}    ## tidy end: sub _make_page_assignments
 
 sub _slide_up_multiframe_tables {
 
@@ -572,7 +573,7 @@ sub _slide_up_multiframe_tables {
 
     return @page_assignments;
 
-} ## tidy end: sub _slide_up_multiframe_tables
+}    ## tidy end: sub _slide_up_multiframe_tables
 
 sub _reassign_short_page {
 
@@ -595,7 +596,7 @@ sub _reassign_short_page {
   FRAMESET_TO_REPLACE:
     for my $page_idx (@page_order) {
         my $page_assignment_r = $page_assignments[$page_idx];
-        my $tables_r          = u::flatten( $page_assignment_r->{tables} );
+        my $tables_r          = Octium::flatten( $page_assignment_r->{tables} );
         #my $frameset          = $page_assignment_r->{frameset};
 
         # don't move part of a overlong table to the short page,
@@ -619,12 +620,12 @@ sub _reassign_short_page {
             return 1, @page_assignments;
             #last FRAMESET_TO_REPLACE;
         }
-    } ## tidy end: FRAMESET_TO_REPLACE: for my $page_idx (@page_order)
+    }    ## tidy end: FRAMESET_TO_REPLACE: for my $page_idx (@page_order)
 
     #return $has_shortpage, @page_assignments;
     return 0, @page_assignments;
 
-} ## tidy end: sub _reassign_short_page
+}    ## tidy end: sub _reassign_short_page
 
 sub _make_table_assignments_from_page_assignments {
 
@@ -663,15 +664,15 @@ sub _make_table_assignments_from_page_assignments {
                 # no pagebreak after tables, except at end of page
             }
 
-        } ## tidy end: for my $frame_of_frameset_idx...
+        }    ## tidy end: for my $frame_of_frameset_idx...
 
         $pagebreak = 1;    # end of page
 
-    } ## tidy end: for my $page_assignment_r...
+    }    ## tidy end: for my $page_assignment_r...
 
     return @table_assignments;
 
-} ## tidy end: sub _make_table_assignments_from_page_assignments
+}    ## tidy end: sub _make_table_assignments_from_page_assignments
 
 1;
 

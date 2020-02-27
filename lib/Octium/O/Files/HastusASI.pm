@@ -96,7 +96,7 @@ sub _build_files_list {
         croak "No files found in Hastus AVL Standard folder $flats_folder";
     }
 
-    @all_files = map { u::filename($_) } @all_files;
+    @all_files = map { Octium::filename($_) } @all_files;
 
     my %files_of;
     foreach my $filetype ( $self->_filetypes() ) {
@@ -106,7 +106,7 @@ sub _build_files_list {
 
     return \%files_of;
 
-} ## tidy end: sub _build_files_list
+}    ## tidy end: sub _build_files_list
 
 #########################################
 ### LOAD FLAT FILES (if necessary)
@@ -145,7 +145,7 @@ sub _load {
           = $self->_has_repeating_final_column($table);
         $key_components_idxs{$table} = [ $self->_key_components_idxs($table) ];
 
-    } ## tidy end: foreach my $table ( $self->...)
+    }    ## tidy end: foreach my $table ( $self->...)
 
     my $sequence = 0;
     $self->begin_transaction;
@@ -207,7 +207,7 @@ sub _load {
 
             if ( $has_repeating_final_column{$table} ) {
                 my @finals = splice( @columns, scalar( columns($table) ) );
-                push @columns, u::joinkey( grep { $_ ne $EMPTY } @finals );
+                push @columns, Octium::joinkey( grep { $_ ne $EMPTY } @finals );
             }
 
             my $parent = $parent_of{$table};
@@ -217,7 +217,8 @@ sub _load {
 
             if ( $has_composite_key{$table} ) {
                 push @columns,
-                  u::joinkey( @columns[ @{ $key_components_idxs{$table} } ] );
+                  Octium::joinkey(
+                    @columns[ @{ $key_components_idxs{$table} } ] );
             }
 
             $sth_of{$table}->execute( $sequence, @columns );
@@ -238,7 +239,7 @@ sub _load {
 
     return;
 
-} ## tidy end: sub _load
+}    ## tidy end: sub _load
 
 sub _build_templates {
     # builds the templates used to "unpack" the table row
@@ -312,11 +313,11 @@ beginning and end of each field.
               "Couldn't return seek position to top of $filespec: $OS_ERROR";
         }
 
-    } ## tidy end: foreach my $table ( $self->...)
+    }    ## tidy end: foreach my $table ( $self->...)
 
     return %template_of;
 
-} ## tidy end: sub _build_templates
+}    ## tidy end: sub _build_templates
 
 with 'Octium::O::Files::SQLite';
 

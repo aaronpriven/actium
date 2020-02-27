@@ -47,7 +47,7 @@ sub OPTIONS {
             fallback => 1,
         },
     );
-} ## tidy end: sub OPTIONS
+}    ## tidy end: sub OPTIONS
 
 sub START {
 
@@ -73,7 +73,7 @@ sub START {
     @fields = ($DEFAULT_FIELD) unless @fields;
 
     my $output_file = $env->option('output')
-      // u::add_before_extension( $file, 'out' );
+      // Octium::add_before_extension( $file, 'out' );
 
     my $load_cry = cry("Loading $file");
     my $aoa      = Octium::O::2DArray->new_from_file($file);
@@ -147,14 +147,14 @@ sub START {
     $push_cry->over($EMPTY);
     $push_cry->done;
 
-    # say u::dumpstr( \$aoa );
+    # say Octium::dumpstr( \$aoa );
 
     my $write_cry = cry("Writing $output_file");
 
     $aoa->file( output_file => $output_file );
     $write_cry->done;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

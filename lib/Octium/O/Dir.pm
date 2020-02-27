@@ -72,7 +72,7 @@ sub instance {
     $obj_cache{$orig_direction} = $instance;
     return $instance;
 
-} ## tidy end: sub instance
+}    ## tidy end: sub instance
 
 ####################
 ### Utility methods
@@ -84,7 +84,7 @@ sub linedir {
 
     my $self;
 
-    if ( u::blessed $invocant) {
+    if ( Octium::blessed $invocant) {
         $self = $invocant;
     }
     else {
@@ -111,9 +111,9 @@ const my @BOUND => (
     @DIRECTIONS[ 6 .. $#DIRCODES ],
 );
 
-const my %DIRECTION_OF => u::mesh( @DIRCODES, @DIRECTIONS );
-const my %BOUND_OF     => u::mesh( @DIRCODES, @BOUND );
-const my %ORDER_OF => u::mesh @DIRCODES, @{ [ 0 .. $#DIRCODES ] };
+const my %DIRECTION_OF => Octium::mesh( @DIRCODES, @DIRECTIONS );
+const my %BOUND_OF     => Octium::mesh( @DIRCODES, @BOUND );
+const my %ORDER_OF => Octium::mesh @DIRCODES, @{ [ 0 .. $#DIRCODES ] };
 
 has 'dircode' => (
     is  => 'ro',
@@ -122,7 +122,7 @@ has 'dircode' => (
 
 sub _data_printer {
     my $self  = shift;
-    my $class = u::blessed($self);
+    my $class = Octium::blessed($self);
     return "$class=" . $self->dircode;
 }
 
@@ -185,11 +185,11 @@ sub should_preserve_direction_order {
     my $self    = shift;
     my $dircode = $self->dircode;
 
-    return not u::in( $self->dircode, qw/NB SB EB WB/ );
+    return not Octium::in( $self->dircode, qw/NB SB EB WB/ );
 
 }
 
-u::immut;
+Octium::immut;
 
 1;
 

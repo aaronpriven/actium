@@ -297,7 +297,7 @@ sub get_dates {
     }
     else {
 
-        if ( not u::blessed($effective_date) ) {
+        if ( not Octium::blessed($effective_date) ) {
             $date_obj = date($effective_date);
             die "Unrecognized date '$effective_date'"
               unless defined $date_obj;

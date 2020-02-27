@@ -39,7 +39,7 @@ sub make_labels {
         my $assignment   = $assignment_of_r->{$stopid};
 
         if ( not $desc ) {
-            next if u::folded_in( $stopid => 'id', 'stop id', 'stopid' );
+            next if Octium::folded_in( $stopid => 'id', 'stop id', 'stopid' );
             $desc = '[NO DESCRIPTION FOUND]';
         }
 
@@ -48,11 +48,11 @@ sub make_labels {
         my @found_custom     = grep {m/-/} @found_all;
         my $all_list
           = @found_all
-          ? u::joinseries_with( '&', @found_all )
+          ? Octium::joinseries_with( '&', @found_all )
           : '(NO DECALS FOUND)';
         my $custom_list
           = @found_custom
-          ? u::joinseries_with( '&', @found_custom )
+          ? Octium::joinseries_with( '&', @found_custom )
           : '(NO CUSTOM DECALS FOUND)';
 
         $instructions =~ s/%c/$custom_list/;
@@ -75,10 +75,10 @@ sub make_labels {
             }
 
         }
-        elsif ( u::feq( $instructions, 'P' ) ) {
+        elsif ( Octium::feq( $instructions, 'P' ) ) {
             $instructions = "Place $decal_pluralized $all_list on the flag";
         }
-        elsif ( u::feq( $instructions, 'N' ) ) {
+        elsif ( Octium::feq( $instructions, 'N' ) ) {
             $instructions
               = "Get a new or re-usable flag from storage. "
               . "Place $decal_pluralized $all_list on the flag. "
@@ -87,7 +87,7 @@ sub make_labels {
 
         push @labels, "$stopid   $desc\n$instructions";
 
-    } ## tidy end: foreach my $stopid ( sort keys...)
+    }    ## tidy end: foreach my $stopid ( sort keys...)
 
     my $out_sheet = Octium::O::2DArray->new_across( 2, @labels );
     $out_sheet->ins_col( 1, ($SPACE) x scalar @{$out_sheet} );
@@ -98,7 +98,7 @@ sub make_labels {
 
     return $out_sheet->xlsx( output_file => $output_file, format => $format );
 
-} ## tidy end: sub make_labels
+}    ## tidy end: sub make_labels
 
 sub make_decal_count {
 
@@ -125,7 +125,7 @@ sub make_decal_count {
 
     return;
 
-} ## tidy end: sub make_decal_count
+}    ## tidy end: sub make_decal_count
 
 sub write_decalcount_xlsx {
     my %params          = @_;
@@ -140,7 +140,7 @@ sub write_decalcount_xlsx {
 
     my $text_format = $workbook->add_format( num_format => '@' );
 
-    my @decals = u::sortbyline keys %count_of;
+    my @decals = Octium::sortbyline keys %count_of;
 
     my @columntypes = (qw[Decal Print Stops Adjust]);
     $count_sheet->write_row( 0, 0, \@columntypes );
@@ -197,7 +197,7 @@ sub write_decalcount_xlsx {
 
     return $workbook->close();
 
-} ## tidy end: sub write_decalcount_xlsx
+}    ## tidy end: sub write_decalcount_xlsx
 
 sub count_decals {
 
@@ -228,7 +228,7 @@ sub decals_of_stop {
 
         next
           if $decals eq $EMPTY
-          and u::folded_in( $stopid => 'id', 'stop id', 'stopid' );
+          and Octium::folded_in( $stopid => 'id', 'stop id', 'stopid' );
 
         my ( @decals, @found_decals, @lines );
         @decals = split( /\s+/, $decals );
@@ -258,11 +258,11 @@ sub decals_of_stop {
         $decals_of{$stopid}       = \@decals;
         $found_decals_of{$stopid} = \@found_decals;
 
-    } ## tidy end: foreach my $stopid ( sort keys...)
+    }    ## tidy end: foreach my $stopid ( sort keys...)
 
     return ( \%decals_of, \%found_decals_of );
 
-} ## tidy end: sub decals_of_stop
+}    ## tidy end: sub decals_of_stop
 
 1;
 

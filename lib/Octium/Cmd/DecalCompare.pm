@@ -26,7 +26,7 @@ sub START {
         my ( $id, $olddesc, $decals ) = split( /\t/, $line, 3 );
 
         my @decals;
-        @decals = u::uniq split( /\t/, $decals );
+        @decals = Octium::uniq split( /\t/, $decals );
 
         next unless @decals;
 
@@ -50,7 +50,7 @@ sub START {
                 change      => 'AS',
                 description => $description,
                 new_line =>
-                  [ sortbyline( u::uniq split /\t/, $new_decals_text ) ],
+                  [ sortbyline( Octium::uniq split /\t/, $new_decals_text ) ],
                 old_line         => [],
                 new_decals       => [],
                 old_decals       => [],
@@ -270,7 +270,7 @@ sub move_insignificant_changes_to_unchanged {
     $is_old_decal{$_} = 1 for @{$old_decals};
     $is_new_decal{$_} = 1 for @{$new_decals};
 
-    my $it = u::natatime( 2, @$same_decals );
+    my $it = Octium::natatime( 2, @$same_decals );
 
     while ( my ( $old, $new ) = $it->() ) {
         if ( $is_old_decal{$old} and $is_new_decal{$new} ) {

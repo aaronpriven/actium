@@ -153,7 +153,7 @@ sub _timestamp_now {
     my $tsr = shift // $self->timestamp;
 
     if ($tsr) {
-        if ( u::reftype($tsr) eq 'CODE' ) {
+        if ( Octium::reftype($tsr) eq 'CODE' ) {
             return &{$tsr}($level);
         }
         my ( $s, $m, $h ) = localtime( time() );
@@ -276,7 +276,7 @@ sub _open {
     $self->_mark_opened;
     return $succeeded;
 
-} ## tidy end: sub _open
+}    ## tidy end: sub _open
 
 sub BUILD {
     my $self = shift;
@@ -300,7 +300,7 @@ sub BUILD {
 
     return;
 
-} ## tidy end: sub BUILD
+}    ## tidy end: sub BUILD
 
 sub _print_left_text {
     my $self      = shift;
@@ -313,18 +313,18 @@ sub _print_left_text {
     # Timestamp
     $timestamp = $self->_timestamp_now( $level, $timestamp );
 
-    my $bullet = u::u_pad( $self->bullet, $self->_bullet_width );
+    my $bullet = Octium::u_pad( $self->bullet, $self->_bullet_width );
     my $indent         = $SPACE x ( $self->_step * ( $level - 1 ) );
     my $leading        = $timestamp . $bullet . $indent;
-    my $leading_width  = u::u_columns($leading);
+    my $leading_width  = Octium::u_columns($leading);
     my $leading_spaces = $SPACE x $leading_width;
     my $span_max = $self->_column_width - $leading_width - $NOTIFY_RIGHT_PAD;
     my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
 
     $text .= $ellipsis;
 
-    my @lines = u::u_wrap( $text, $span_min, $span_max );
-    my $final_width = u::u_columns( $lines[-1] );
+    my @lines = Octium::u_wrap( $text, $span_min, $span_max );
+    my $final_width = Octium::u_columns( $lines[-1] );
     $lines[0] = $leading . $lines[0];
     if ( @lines > 1 ) {
         $lines[$_] = "\n" . $leading_spaces . $lines[$_]
@@ -339,7 +339,7 @@ sub _print_left_text {
     $self->set_position( $leading_width + $final_width );
 
     return $self;
-} ## tidy end: sub _print_left_text
+}    ## tidy end: sub _print_left_text
 
 ###########################
 ### close
@@ -353,7 +353,8 @@ sub _close {
 
     # process arguments
     foreach (@_) {
-        if ( defined( u::reftype($_) ) and u::reftype($_) eq 'HASH' ) {
+        if ( defined( Octium::reftype($_) ) and Octium::reftype($_) eq 'HASH' )
+        {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -394,7 +395,7 @@ sub _close {
     # Make the severity text
 
     my $severity_output
-      = u::u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
+      = Octium::u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
     if ( $self->colorize ) {
         $severity_output = $self->_add_color($severity_output);
     }
@@ -453,7 +454,7 @@ sub _close {
 
     return $severity_num;
 
-} ## tidy end: sub _close
+}    ## tidy end: sub _close
 
 sub done {
     my $self = shift;
@@ -565,15 +566,15 @@ sub prog {
     my $self = shift;
     next unless $self->_shows_progress;
 
-    my $separator = u::define($OUTPUT_FIELD_SEPARATOR);
-    my $msg = join( $separator, u::define(@_) );
+    my $separator = Octium::define($OUTPUT_FIELD_SEPARATOR);
+    my $msg = join( $separator, Octium::define(@_) );
 
     my $level = $self->_level;
     return 1 if defined( $self->_maxdepth ) and $level > $self->_maxdepth;
 
     # Start a new line?
     my $avail   = $self->_column_width - $self->position - $NOTIFY_RIGHT_PAD;
-    my $columns = u::u_columns($msg);
+    my $columns = Octium::u_columns($msg);
     my $fh      = $self->_fh;
 
     my $position = $self->position;
@@ -601,7 +602,7 @@ sub prog {
 
     return 1;
 
-} ## tidy end: sub prog
+}    ## tidy end: sub prog
 
 sub over {
     my $self = shift;
@@ -630,7 +631,7 @@ sub over {
     }
 
     return $self->prog(@_);
-} ## tidy end: sub over
+}    ## tidy end: sub over
 
 sub text {
     my $self = shift;
@@ -639,7 +640,8 @@ sub text {
 
     # process arguments
     foreach (@_) {
-        if ( defined( u::reftype($_) ) and u::reftype($_) eq 'HASH' ) {
+        if ( defined( Octium::reftype($_) ) and Octium::reftype($_) eq 'HASH' )
+        {
             %opts = ( %opts, %{$_} );
         }
         else {
@@ -654,7 +656,7 @@ sub text {
       and defined($maxdepth)
       and $level > $maxdepth;
 
-    my $separator = u::define($OUTPUT_FIELD_SEPARATOR);
+    my $separator = Octium::define($OUTPUT_FIELD_SEPARATOR);
     my $text = join( $separator, @args );
 
     my $fh = $self->_fh;
@@ -676,7 +678,7 @@ sub text {
     my $span_max = $self->_column_width - $indent_cols - $NOTIFY_RIGHT_PAD;
     my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
 
-    my @lines = u::u_wrap( $text, $span_min, $span_max );
+    my @lines = Octium::u_wrap( $text, $span_min, $span_max );
 
     foreach my $line (@lines) {
         my $succeeded = print $fh $indentspace, $line, "\n";
@@ -685,7 +687,7 @@ sub text {
     }
 
     return 1;
-} ## tidy end: sub text
+}    ## tidy end: sub text
 
 #######################
 #### COLORIZE
@@ -724,7 +726,7 @@ sub text {
         my $sev_key = uc($sev);
 
         while ( exists( $COLORS_OF{$sev_key} )
-            and defined( u::reftype( $COLORS_OF{$sev_key} ) ) )
+            and defined( Octium::reftype( $COLORS_OF{$sev_key} ) ) )
         {
             $sev_key = ${ $COLORS_OF{$sev_key} };
         }

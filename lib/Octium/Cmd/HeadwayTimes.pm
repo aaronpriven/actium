@@ -46,7 +46,7 @@ sub START {
             my @prevtimes = timenums( split( "\t", $prev ) );
             my @times     = timenums( split( "\t", $line ) );
 
-            my $numfields = u::min( $#prevtimes, $#times );
+            my $numfields = Octium::min( $#prevtimes, $#times );
 
             my @headways;
 
@@ -67,18 +67,18 @@ sub START {
 
             }
 
-            if ( u::any {defined} @headways ) {
-                say u::jointab(@headways);
+            if ( Octium::any {defined} @headways ) {
+                say Octium::jointab(@headways);
             }
 
             say $line;
 
             $prev = $line;
 
-        } ## tidy end: LINE: while ( my $line = readline...)
+        }    ## tidy end: LINE: while ( my $line = readline...)
 
-    } ## tidy end: FILE: foreach my $filename (@argv)
-} ## tidy end: sub START
+    }    ## tidy end: FILE: foreach my $filename (@argv)
+}    ## tidy end: sub START
 
 func timenums (@times) {
     my @timenums = map { Octium::Time->from_str($_)->timenum } @times;

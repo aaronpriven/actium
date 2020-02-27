@@ -27,7 +27,7 @@ my $common_stop_cr = sub {
     my @trips = @_;
     my $common_stop;
     my $last_to_search
-      = ( u::min( map { $_->stoptime_count } @trips ) ) - 1;
+      = ( Octium::min( map { $_->stoptime_count } @trips ) ) - 1;
 
   SORTBY_STOP:
     for my $stop ( 0 .. $last_to_search ) {
@@ -117,7 +117,7 @@ sub stoptime_sort {
 ### TRIPS BY DAY
 
 my $all_are_weekdays_cr = sub {
-    return u::all {m/\A 1? 2? 3? 4? 5? \z/x} @_;
+    return Octium::all {m/\A 1? 2? 3? 4? 5? \z/x} @_;
 };
 
 my $compare_range_cr = sub {
@@ -166,7 +166,7 @@ my $compare_range_cr = sub {
 
         @found_days = map { split(//) } @found_days;
 
-        $compstrs_of_return_day{ u::joinempty( sort @found_days ) }
+        $compstrs_of_return_day{ Octium::joinempty( sort @found_days ) }
           = $found_compstrs_r;
 
     }
@@ -231,7 +231,7 @@ my $compstrs_should_be_merged_cr = sub {
 
 sub trips_by_day {
     my $self  = shift;
-    my $class = u::blessed $self;
+    my $class = Octium::blessed $self;
     my @trips = $self->trips;
 
     # compstr = stoptimes_comparison_str
@@ -334,7 +334,7 @@ sub _merge_trips {
 
 }
 
-u::immut;
+Octium::immut;
 
 1;
 

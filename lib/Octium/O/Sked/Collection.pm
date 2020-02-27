@@ -184,7 +184,7 @@ method load_xlsx (
         signup => $signup
     );
 
-} ## tidy end: method load_xlsx
+}    ## tidy end: method load_xlsx
 
 #######################
 ##### TRANSFORMATION
@@ -227,7 +227,7 @@ method finalize_skeds (
 
     $finalized_collection->output_skeds_all;
 
-} ## tidy end: method finalize_skeds
+}    ## tidy end: method finalize_skeds
 
 ###################
 ##### OUTPUT ######
@@ -237,7 +237,7 @@ sub write_tabxchange {
 
     my $self = shift;
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   tabfolder    => 1,
             commonfolder => 1,
@@ -263,7 +263,7 @@ sub write_tabxchange {
     );
 
     $destination_code->store;
-} ## tidy end: sub write_tabxchange
+}    ## tidy end: sub write_tabxchange
 
 method folder ($the_format = undef) {
     # calling it $format yields syntax formatting errors in Eclipse
@@ -325,7 +325,7 @@ method output_skeds_all {
 
     $outputcry->done;
 
-} ## tidy end: method output_skeds_all
+}    ## tidy end: method output_skeds_all
 
 method output_skeds_storable {
     my $cry      = cry("Writing skeds in Storable format");
@@ -342,7 +342,7 @@ method output_skeds_place {
 
     my $place_xlsx_folder = $self->folder('place');
 
-    my @linegroups = u::sortbyline $self->linegroups;
+    my @linegroups = Octium::sortbyline $self->linegroups;
 
     foreach my $linegroup (@linegroups) {
 
@@ -369,7 +369,7 @@ method output_skeds_place {
 
     return;
 
-} ## tidy end: method output_skeds_place
+}    ## tidy end: method output_skeds_place
 
 method compare_from ( Octium::O::Sked::Collection $oldcollection) {
     require Octium::O::Sked::ComparisonGroup;

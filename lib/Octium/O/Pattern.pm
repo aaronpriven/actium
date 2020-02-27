@@ -161,7 +161,7 @@ has union_indexes_r => (
     handles => { union_indexes => 'elements', union_index => 'get', },
 );
 
-u::immut;
+Octium::immut;
 
 1;
 

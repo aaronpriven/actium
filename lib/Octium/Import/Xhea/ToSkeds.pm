@@ -17,7 +17,7 @@ sub xheatab2skeds {
 
     my $tabcry = cry("Loading xhea tab files...");
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   signup   => 1,
             actiumdb => 1,
@@ -53,7 +53,7 @@ sub xhea2skeds {
 
     my $xhea2skedscry = cry('Converting Xhea to schedules');
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   signup     => 1,
             actiumdb   => 1,
@@ -95,7 +95,7 @@ sub xhea2skeds {
     #        my $dumpfile = '/tmp/xheaout.7';
     #        my $dumpcry = cry("Dumping patterns and trips to $dumpfile");
     #        open my $dump_out, '>', $dumpfile;
-    #        say $dump_out u::dumpstr($patgroup_by_lgdir_r);
+    #        say $dump_out Octium::dumpstr($patgroup_by_lgdir_r);
     #        close $dump_out;
     #        $dumpcry->done;
 
@@ -120,7 +120,7 @@ sub xhea2skeds {
 
 sub _get_blocks {
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   fieldnames => 1,
             values     => 1,
@@ -171,7 +171,7 @@ sub _get_blocks {
 
     sub _get_patterns {
 
-        my %params = u::validate(
+        my %params = Octium::validate(
             @_,
             {   actiumdb   => 1,
                 fieldnames => 1,
@@ -265,7 +265,7 @@ sub _get_blocks {
 
 sub _get_trips {
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   patterns   => 1,
             fieldnames => 1,
@@ -435,7 +435,7 @@ sub _get_trips {
 ### GET PLACE PATTERNS
 
 sub _add_place_patterns_to_patterns {
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   fieldnames          => 1,
             patterns_by_linedir => 1,
@@ -520,7 +520,7 @@ sub _add_place_patterns_to_patterns {
 
 sub _records_in_turn {
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   table      => 1,
             fieldnames => 1,
@@ -562,7 +562,7 @@ sub _records_in_turn {
 
 sub _make_skeds {
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   actiumdb  => 1,
             patgroups => 1,
@@ -573,7 +573,7 @@ sub _make_skeds {
     \my %patgroup_by_lgdir = $params{patgroups};
 
     my @skeds;
-    foreach my $lgdir ( u::sortbyline keys %patgroup_by_lgdir ) {
+    foreach my $lgdir ( Octium::sortbyline keys %patgroup_by_lgdir ) {
         next if $lgdir =~ /^399/;
         # 399 is not a real line
         last_cry()->over( $lgdir, " " );

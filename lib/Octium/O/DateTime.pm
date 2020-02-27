@@ -29,7 +29,7 @@ const my $CONSTRUCTOR => __PACKAGE__ . '->new';
 sub _datetime_arg {
     my $class = shift;
     my $arg   = shift;
-    if ( u::is_blessed_ref($arg) ) {
+    if ( Octium::is_blessed_ref($arg) ) {
         return $class->from_object($arg);
     }
     return $class->_from_strptime($arg);
@@ -41,15 +41,16 @@ sub new {
 
     croak "No arguments given to $CONSTRUCTOR" unless @_;
 
-    if ( @_ == 1 and not u::is_plain_hashref( $_[0] ) ) {
+    if ( @_ == 1 and not Octium::is_plain_hashref( $_[0] ) ) {
         return $class->_datetime_arg(@_);
     }
 
     my %args = @_;
 
-    my @exclusive_args         = (qw[datetime strp cldr]);
-    my $exclusive_args_display = u::joinseries_with( 'or', @exclusive_args );
-    my $exclusive_argcount     = scalar( @args{@exclusive_args} ) // 0;
+    my @exclusive_args = (qw[datetime strp cldr]);
+    my $exclusive_args_display
+      = Octium::joinseries_with( 'or', @exclusive_args );
+    my $exclusive_argcount = scalar( @args{@exclusive_args} ) // 0;
 
     croak
       "Can't specify more than one of ($exclusive_args_display) to $CONSTRUCTOR"
@@ -83,7 +84,7 @@ sub new {
 
     if ( exists $args{ymd} ) {
 
-        if ( not u::is_arrayref( $args{ymd} )
+        if ( not Octium::is_arrayref( $args{ymd} )
             or $args{ymd}->@* != 3 )
         {
             croak 'Argument to ymd must be a reference '
@@ -108,11 +109,11 @@ sub new {
 
         delete $args{ymd};
 
-    } ## tidy end: if ( exists $args{ymd})
+    }    ## tidy end: if ( exists $args{ymd})
 
     return $class->SUPER::new(%args);
 
-} ## tidy end: sub new
+}    ## tidy end: sub new
 
 {
 
@@ -141,7 +142,7 @@ sub new {
         bless $obj, $class;
         return $obj;
 
-    } ## tidy end: sub _from_strptime
+    }    ## tidy end: sub _from_strptime
 
     my %cldr_obj_of;
 
@@ -167,9 +168,9 @@ sub new {
         bless $obj, $class;
         return $obj;
 
-    } ## tidy end: sub _from_cldr
+    }    ## tidy end: sub _from_cldr
 
-} ## tidy end: sub _dt_from_cldr
+}    ## tidy end: sub _dt_from_cldr
 
 ### OBJECT METHODS
 
@@ -309,7 +310,7 @@ sub _x_est_date {
 
     foreach my $date (@dates) {
 
-        if ( not u::is_blessed_ref($date) ) {
+        if ( not Octium::is_blessed_ref($date) ) {
             $date = $class->_from_strptime($date);
         }
 
@@ -333,7 +334,7 @@ sub _x_est_date {
 
     return $x_est_date;
 
-} ## tidy end: sub _x_est_date
+}    ## tidy end: sub _x_est_date
 
 1;
 

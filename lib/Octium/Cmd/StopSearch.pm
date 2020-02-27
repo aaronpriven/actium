@@ -57,11 +57,11 @@ sub START {
 
         say 'Exiting.';
 
-    } ## tidy end: else [ if (@args) ]
+    }    ## tidy end: else [ if (@args) ]
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 sub _display {
 
@@ -69,7 +69,7 @@ sub _display {
 
     foreach my $fields_r (@rows) {
 
-        if ( not defined u::reftype($fields_r) ) {
+        if ( not defined Octium::reftype($fields_r) ) {
             say "Unknown id $fields_r";
             next;
         }

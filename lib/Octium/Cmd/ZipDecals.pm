@@ -25,7 +25,7 @@ sub START {
     my ( $folder, $filename ) = Octium::O::Folder->new_from_file($filespec);
 
     my $sheet  = $folder->load_sheet($filename);
-    my @decals = u::sortbyline $sheet->col(0);
+    my @decals = Octium::sortbyline $sheet->col(0);
 
     my $zipobj = Archive::Zip->new();
 
@@ -39,7 +39,7 @@ sub START {
         $zipobj->addFile( $diskfile, $zip_internal_filename );
     }
 
-    my ( $zipfile, undef ) = u::file_ext($filename);
+    my ( $zipfile, undef ) = Octium::file_ext($filename);
     $zipfile =~ s/-counted\z//i;
     $zipfile = "$zipfile-decals.zip";
     $zipfile =~ s/-decals-decals/-decals/i;

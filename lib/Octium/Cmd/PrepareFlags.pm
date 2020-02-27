@@ -22,7 +22,7 @@ sub START {
 
     if ( defined $input_file ) {
         my $stopidinput_cry = cry("Getting stop IDs from file $input_file");
-        ( $output_file, undef ) = u::file_ext($input_file);
+        ( $output_file, undef ) = Octium::file_ext($input_file);
         $output_file .= '-assignments.txt';
 
         my $in_sheet = Octium::O::2DArray->new_from_file($input_file);
@@ -54,7 +54,7 @@ sub START {
     $assigncry->done;
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

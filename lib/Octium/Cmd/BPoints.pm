@@ -228,7 +228,7 @@ sub START {
 
         next SIGN
           if $env->option('update')
-          and not( u::feq( $status, 'Needs update' ) );
+          and not( Octium::feq( $status, 'Needs update' ) );
 
         my ( $description, $description_nocity, $city, $nonstop );
 
@@ -517,7 +517,7 @@ sub START {
                     \my @cluster_zones = $cluster_of_cityworkzone{$workzone};
 
                     my @cities = map { $city_of_workzone{$_} } @cluster_zones;
-                    my $max_length = u::max( map { length($_) } @cities );
+                    my $max_length = Octium::max( map { length($_) } @cities );
 
                     my $cluster_display;
 
@@ -525,7 +525,7 @@ sub START {
                         $_ = substr( $_, 0, $max_length ) foreach @cities;
                         $cluster_display = join( ',', sort @cities );
                         $max_length--;
-                    } until length($cluster_display)
+                      } until length($cluster_display)
                       <= $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH;
 
                     $cluster_of_city{$city} = $cluster_display;

@@ -32,9 +32,8 @@ sub START {
 
     #my $prehistorics_folder = $signup->subfolder('skeds');
 
-    my $collection = Octium::O::Sked::Collection->load_storable(
-        collection => 'final'
-    );
+    my $collection
+      = Octium::O::Sked::Collection->load_storable( collection => 'final' );
 
     chdir( $signup->path );
 
@@ -52,7 +51,7 @@ sub START {
 
     my @all_lines = map { $_->lines } @skeds;
    #@all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN' and ! m/4\d\d/ } @all_lines;
-    @all_lines = u::uniq u::sortbyline @all_lines;
+    @all_lines = Octium::uniq Octium::sortbyline @all_lines;
 
     my ( $pubtt_contents_with_dates_r, $pubtimetables_r )
       = Octium::IDTables::get_pubtt_contents_with_dates( $actiumdb,
@@ -72,7 +71,7 @@ sub START {
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

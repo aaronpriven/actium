@@ -129,7 +129,7 @@ around BUILDARGS ( $orig, $class : $first_argument, slurpy @rest ) {
 
     return $class->$orig($hashref)
 
-} ## tidy end: around BUILDARGS
+}    ## tidy end: around BUILDARGS
 
 sub split_folderlist {
 
@@ -137,7 +137,7 @@ sub split_folderlist {
     # Takes either an array of strings, or an arrayref of strings.
 
     my $self     = shift;
-    my $folder_r = u::flatten(@_);
+    my $folder_r = Octium::flatten(@_);
 
     my @new_folders;
     foreach my $folder ( @{$folder_r} ) {
@@ -158,7 +158,7 @@ sub split_folderlist {
 #    $folder_r = [ map { File::Spec->splitdir( File::Spec->canonpath($_) ) } @{$folder_r} ];
 #    return $folder_r;
 
-} ## tidy end: sub split_folderlist
+}    ## tidy end: sub split_folderlist
 
 sub BUILD {
     my $self = shift;
@@ -181,7 +181,7 @@ sub BUILD {
 
     return;
 
-} ## tidy end: sub BUILD
+}    ## tidy end: sub BUILD
 
 #######################
 ### CLONING
@@ -271,7 +271,7 @@ sub subfolder {
     my $class = blessed($self);
     return $class->new($params_r);
 
-} ## tidy end: sub subfolder
+}    ## tidy end: sub subfolder
 
 sub _positional {
     # moved from Octium::Util since this is now the only routine that uses it
@@ -300,7 +300,7 @@ sub _positional {
     }
 
     my %newargs;
-    if ( defined u::reftype( $arguments[-1] )
+    if ( defined Octium::reftype( $arguments[-1] )
         and reftype( $arguments[-1] ) eq 'HASH' )
     {
         %newargs = %{ pop @arguments };
@@ -323,7 +323,7 @@ sub _positional {
 
     return \%newargs;
 
-} ## tidy end: sub _positional
+}    ## tidy end: sub _positional
 
 sub new_from_file {
 
@@ -381,13 +381,13 @@ sub glob_plain_files {
 sub glob_files_nopath {
     my $self  = shift;
     my @files = $self->glob_files(@_);
-    return map { u::filename($_) } @files;
+    return map { Octium::filename($_) } @files;
 }
 
 sub glob_plain_files_nopath {
     my $self  = shift;
     my @files = $self->glob_plain_files(@_);
-    return map { u::filename($_) } @files;
+    return map { Octium::filename($_) } @files;
 }
 
 sub children {
@@ -512,7 +512,7 @@ sub retrieve {
     $cry->done;
 
     return $data_r;
-} ## tidy end: sub retrieve
+}    ## tidy end: sub retrieve
 
 sub store {
     my $self     = shift;
@@ -590,7 +590,7 @@ sub load_sqlite {
     my $self              = shift;
     my $default_subfolder = shift;
     my $database_class    = shift;
-    my %params            = u::validate(
+    my %params            = Octium::validate(
         @_,
         {   subfolder => 0,
             db_folder => 0,
@@ -629,7 +629,7 @@ sub load_sqlite {
 
     return $database_class->new(%params);
 
-} ## tidy end: sub load_sqlite
+}    ## tidy end: sub load_sqlite
 
 sub load_hasi {
     my $self = shift;
@@ -642,7 +642,7 @@ sub load_hasi {
 sub write_files_with_method {
     my $self = shift;
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   OBJECTS         => { type    => ARRAYREF },
             METHOD          => 1,
@@ -702,13 +702,13 @@ sub write_files_with_method {
             }
         );
 
-    } ## tidy end: foreach my $obj (@objects)
+    }    ## tidy end: foreach my $obj (@objects)
 
     $cry->over('');
 
     $cry->done;
 
-} ## tidy end: sub write_files_with_method
+}    ## tidy end: sub write_files_with_method
 
 sub write_file_with_method {
     my $self     = shift;
@@ -749,7 +749,7 @@ sub write_file_with_method {
         $cry->done;
     }
 
-} ## tidy end: sub write_file_with_method
+}    ## tidy end: sub write_file_with_method
 
 sub write_files_from_hash {
 
@@ -789,7 +789,7 @@ sub write_files_from_hash {
     $cry->over('');
     $cry->done;
 
-} ## tidy end: sub write_files_from_hash
+}    ## tidy end: sub write_files_from_hash
 
 sub load_sheet {
 

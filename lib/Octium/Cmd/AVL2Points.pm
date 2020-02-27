@@ -125,7 +125,7 @@ sub START {
 
                                 }
 
-                            } ## tidy end: foreach my $days ( sort keys...)
+                            }    ## tidy end: foreach my $days ( sort keys...)
 
                         }    ## <perltidy> end foreach my $dir_code ( keys...)
 
@@ -213,7 +213,7 @@ sub START {
 
                     }
 
-                } ## tidy end: foreach my $combo (@COMBOS_TO_PROCESS)
+                }    ## tidy end: foreach my $combo (@COMBOS_TO_PROCESS)
 
                 # LAST STOP PROCESSING
 
@@ -253,12 +253,12 @@ sub START {
                             }
                         }
 
-                    } ## tidy end: if ( $is_a_nolocal_route...)
+                    }    ## tidy end: if ( $is_a_nolocal_route...)
                     elsif
                       # LASTSTOP
-                      ( u::all { $_->{LASTSTOP} } @{$times_r} ) {
+                      ( Octium::all { $_->{LASTSTOP} } @{$times_r} ) {
 
-               #if ( u::all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
+          #if ( Octium::all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
                         $has_last_stop{$linegroup} = 1;
                         $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
                           = "LASTSTOP";
@@ -295,7 +295,7 @@ sub START {
                             $destinations{ $time_r->{DESTINATION} }++;
                         }
 
-                        my @lines = u::sortbyline keys %lines;
+                        my @lines = Octium::sortbyline keys %lines;
                         my @destinations
                           = sort { $destinations{$b} <=> $destinations{$a} }
                           keys %destinations;
@@ -336,7 +336,7 @@ sub START {
 
                     }
 
-                } ## tidy end: foreach my $combo (@COMBOS_TO_PROCESS)
+                }    ## tidy end: foreach my $combo (@COMBOS_TO_PROCESS)
 
                 # above handles all of 1R except the parts heading northbound
                 # to downtown Oakland (which has mixed destinations)
@@ -394,7 +394,7 @@ sub START {
 
                     }
 
-                } ## tidy end: foreach my $dir_code ( sort...)
+                }    ## tidy end: foreach my $dir_code ( sort...)
 
             }    ## <perltidy> end if ( $has_non_last_stop...)
 
@@ -419,7 +419,8 @@ sub START {
 
         open my $out, '>', "kpoints/${firstdigits}xx/$stop.txt" or die $!;
 
-        foreach my $linegroup ( u::sortbyline keys %{ $stopinfo{$stop} } ) {
+        foreach my $linegroup ( Octium::sortbyline keys %{ $stopinfo{$stop} } )
+        {
 
             foreach my $dir_code (
                 sort { $a <=> $b }
@@ -477,7 +478,7 @@ sub START {
 
     print "\nDone.\n";
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 sub makestoptimes {
     my %avldata = %{ +shift };
@@ -501,7 +502,7 @@ sub makestoptimes {
         my $linegroup = linegroup($line);
 
         my $pattern = $tripinfo_of{Pattern};
-        my $patkey = u::joinkey( $line, $pattern );
+        my $patkey = Octium::joinkey( $line, $pattern );
 
         my $days_input = $tripinfo_of{OperatingDays};
         $days_input =~ tr/0-9//cd;    # strip everything but digits
@@ -533,7 +534,7 @@ sub makestoptimes {
                         next;
                     }
                 }
-            } ## tidy end: if ( $initial_time =~ ...)
+            }    ## tidy end: if ( $initial_time =~ ...)
             elsif ( $initial_time =~ /\d+ p/x )
             {    # if first time is an "p" time (pm that day)
                 tr/px/ba/ foreach @{ $tripinfo_of{PTS} };
@@ -560,7 +561,7 @@ sub makestoptimes {
                 @days = ($days_input);
             }
 
-        } ## tidy end: if ( $line eq '800' or...)
+        }    ## tidy end: if ( $line eq '800' or...)
         else {
             @days = ($days_input);
         }
@@ -620,7 +621,7 @@ sub makestoptimes {
               {LASTSTOP} = 1;
         }
 
-    } ## tidy end: TRIP: foreach my $trip_number ( sort...)
+    }    ## tidy end: TRIP: foreach my $trip_number ( sort...)
 
     return %stopinfo;
 

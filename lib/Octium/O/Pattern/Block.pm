@@ -18,7 +18,7 @@ has [qw[vehicle_group vehicle_type garage]] => (
     isa => 'Str',
 );
 
-u::immut;
+Octium::immut;
 
 1;
 

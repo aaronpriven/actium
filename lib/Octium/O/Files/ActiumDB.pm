@@ -51,7 +51,7 @@ sub _build_keys_of {
     my $query
       = "SELECT $TABLE_OF_KEYFIELD_TABLE, $KEY_OF_KEYFIELD_TABLE FROM $KEYFIELD_TABLE";
     my $rows_r  = $dbh->selectall_arrayref($query);
-    my %keys_of = u::flatten($rows_r);
+    my %keys_of = Octium::flatten($rows_r);
 
     return \%keys_of;
 
@@ -481,7 +481,7 @@ sub i18n_all_indd_hash {
 sub field_of_referenced_place {
     my $self = shift;
 
-    my %params = u::validate(
+    my %params = Octium::validate(
         @_,
         {   field => 1,
             place => 1,
@@ -710,7 +710,7 @@ sub _build_lines_of_linegrouptype {
     foreach my $linegrouptype ( keys %lines_of_linegrouptype ) {
 
         $lines_of_linegrouptype{$linegrouptype}
-          = [ u::sortbyline @{ $lines_of_linegrouptype{$linegrouptype} } ];
+          = [ Octium::sortbyline @{ $lines_of_linegrouptype{$linegrouptype} } ];
 
     }
 
@@ -843,7 +843,7 @@ sub _build_line_descrips_of_transithub {
 sub descrips_of_transithubs_indesign {
     my $self = shift;
 
-    my %params = u::validate( @_, { signup => 1, } );
+    my %params = Octium::validate( @_, { signup => 1, } );
     my $signup = $params{signup};
 
     my %line_cache = $self->line_cache;
@@ -858,12 +858,12 @@ sub descrips_of_transithubs_indesign {
         my @descrip_texts;
         my @lines_of_hub;
 
-        foreach my $line ( u::sortbyline keys %descrip_of ) {
+        foreach my $line ( Octium::sortbyline keys %descrip_of ) {
             push @lines_of_hub, $line;
             my $descrip = $descrip_of{$line};
 
             push @descrip_texts,
-              u::joinempty(
+              Octium::joinempty(
                 $IDT->parastyle('LineDescrip_Line'),
                 $IDT->encode_high_chars($line),
                 $IDT->hardreturn,
@@ -879,7 +879,7 @@ sub descrips_of_transithubs_indesign {
 
         my $effdate = $effdate_obj->long_en;
 
-        $descrips_of_hubs{$transithub} = u::joinempty(
+        $descrips_of_hubs{$transithub} = Octium::joinempty(
             $IDT->start,
             $IDT->parastyle('LineDescrip_TitleLine'),
             $IDT->charstyle('LineDescrip_Title'),
@@ -917,7 +917,7 @@ sub lines_at_transit_hubs_html {
 
         foreach my $hub ( sort $self->_transithubs_of_city($city) ) {
 
-            my @lines = u::sortbyline( $self->_lines_of_transithub($hub) );
+            my @lines = Octium::sortbyline( $self->_lines_of_transithub($hub) );
 
             next unless @lines;
 
@@ -966,7 +966,7 @@ sub line_descrip_html {
 
     my $self = shift;
 
-    my %params = u::validate( @_,
+    my %params = Octium::validate( @_,
         { signup => 1, agency => { default => $DEFAULT_AGENCY } } );
 
     my $signup = $params{signup};

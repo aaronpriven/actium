@@ -46,7 +46,7 @@ sub create_timetable_texts {
 
     return \@alltables, \%tables_of;
 
-} ## tidy end: sub create_timetable_texts
+}    ## tidy end: sub create_timetable_texts
 
 sub output_all_tables {
 
@@ -73,7 +73,7 @@ sub output_all_tables {
 
     $cry->done;
 
-} ## tidy end: sub output_all_tables
+}    ## tidy end: sub output_all_tables
 
 sub get_pubtt_contents_with_dates {
     my $db_obj  = shift;
@@ -105,7 +105,7 @@ sub get_pubtt_contents_with_dates {
         my $date      = $date_obj->long_en;
         my $file_date = $date_obj->ymd('_');
         push @pubtt_contents_with_dates,
-          { lines     => [ u::sortbyline @lines ],
+          { lines     => [ Octium::sortbyline @lines ],
             date      => $date,
             file_date => $file_date
           };
@@ -119,10 +119,10 @@ sub get_pubtt_contents_with_dates {
     my $pubtimetables_r
       = $db_obj->all_in_columns_key( 'PubTimetables', @pubtimetable_cols );
 
-    return [ sort { u::byline( $a->{lines}->[0], $b->{lines}->[0] ) }
+    return [ sort { Octium::byline( $a->{lines}->[0], $b->{lines}->[0] ) }
           @pubtt_contents_with_dates ], $pubtimetables_r;
 
-} ## tidy end: sub get_pubtt_contents_with_dates
+}    ## tidy end: sub get_pubtt_contents_with_dates
 
 sub _minimums {
     my @tables = @{ +shift };
@@ -147,7 +147,7 @@ sub _minimums {
 
     return \%minimum_of;
 
-} ## tidy end: sub _minimums
+}    ## tidy end: sub _minimums
 
 sub _tables_and_lines {
 
@@ -173,11 +173,11 @@ sub _tables_and_lines {
     foreach my $table (@tables) {
         $is_a_line{$_} = 1 foreach ( $table->header_routes );
     }
-    @lines = u::sortbyline( keys %is_a_line );
+    @lines = Octium::sortbyline( keys %is_a_line );
 
     return \@tables, \@lines;
 
-} ## tidy end: sub _tables_and_lines
+}    ## tidy end: sub _tables_and_lines
 
 my %front_style_of = (
     '>' => 'CoverCity',
@@ -240,7 +240,7 @@ sub _output_pubtt_front_matter {
             print $ttfh $per_line_texts_r->{$front_text};
         }
 
-    } ## tidy end: foreach my $front_text (@front_matter)
+    }    ## tidy end: foreach my $front_text (@front_matter)
 
     print $ttfh $IDT->boxbreak;
 
@@ -251,7 +251,7 @@ sub _output_pubtt_front_matter {
 
     return;
 
-} ## tidy end: sub _output_pubtt_front_matter
+}    ## tidy end: sub _output_pubtt_front_matter
 
 sub _make_per_line_texts {
 
@@ -262,8 +262,8 @@ sub _make_per_line_texts {
     my $days_of_r = _make_days( $tables_r, $lines_r );
     my $locals_of_r = _make_locals($lines_r);
 
-    foreach
-      my $line ( u::uniq( sort ( keys %{$days_of_r}, keys %{$locals_of_r} ) ) )
+    foreach my $line (
+        Octium::uniq( sort ( keys %{$days_of_r}, keys %{$locals_of_r} ) ) )
     {
 
         my @texts;
@@ -287,11 +287,11 @@ sub _make_per_line_texts {
 
         $per_line_texts{$line} = join( $IDT->hardreturn, @texts );
 
-    } ## tidy end: foreach my $line ( u::uniq(...))
+    }    ## tidy end: foreach my $line ( Octium::uniq(...))
 
     return \%per_line_texts;
 
-} ## tidy end: sub _make_per_line_texts
+}    ## tidy end: sub _make_per_line_texts
 
 sub _make_days {
 
@@ -316,7 +316,7 @@ sub _make_days {
     }
 
     my @days_objs = values %days_obj_of;
-    my @days_codes = u::uniq( map { $_->as_sortable } @days_objs );
+    my @days_codes = Octium::uniq( map { $_->as_sortable } @days_objs );
 
     if ( @days_codes == 1 ) {
         return { q[] => $days_objs[0] };
@@ -324,7 +324,7 @@ sub _make_days {
 
     return \%days_obj_of;
 
-} ## tidy end: sub _make_days
+}    ## tidy end: sub _make_days
 
 sub _make_locals {
 
@@ -334,7 +334,7 @@ sub _make_locals {
     foreach my $line (@lines) {
 
         if ( $line =~ /\A [A-Z]/sx or $line eq '800' ) {
-            if ( u::in( $line, @TRANSBAY_NOLOCALS ) ) {
+            if ( Octium::in( $line, @TRANSBAY_NOLOCALS ) ) {
                 $local_of{$line} = 0;
             }
             else {
@@ -347,7 +347,7 @@ sub _make_locals {
         }
     }
 
-    my @locals = u::uniq( sort values %local_of );
+    my @locals = Octium::uniq( sort values %local_of );
 
     if ( @locals == 1 ) {
         return { q[] => $locals[0] };
@@ -355,12 +355,12 @@ sub _make_locals {
 
     return \%local_of;
 
-} ## tidy end: sub _make_locals
+}    ## tidy end: sub _make_locals
 
 sub _local_text {
     my $line = shift;
 
-    if ( u::in( $line, @TRANSBAY_NOLOCALS ) ) {
+    if ( Octium::in( $line, @TRANSBAY_NOLOCALS ) ) {
         return $IDT->parastyle('CoverLocalPax') . 'No Local Passengers Allowed';
     }
 
@@ -377,7 +377,7 @@ sub _make_length {
 
     my @lines = @_;
 
-    my $ems = u::max( ( map { ems($_) } @lines ) );
+    my $ems = Octium::max( ( map { ems($_) } @lines ) );
 
     my $length;
     for ($ems) {
@@ -398,8 +398,8 @@ sub _make_length {
 
     }
 
-    return u::max( $length, scalar @lines );
-} ## tidy end: sub _make_length
+    return Octium::max( $length, scalar @lines );
+}    ## tidy end: sub _make_length
 
 sub output_a_pubtts {
 
@@ -484,7 +484,7 @@ sub output_a_pubtts {
 
             $firsttable = 0;
 
-        } ## tidy end: foreach my $table_assignment...
+        }    ## tidy end: foreach my $table_assignment...
 
         # End matter, if there is any, goes here
 
@@ -503,14 +503,15 @@ sub output_a_pubtts {
             portrait_chars   => $portrait_chars,
         };
 
-    } ## tidy end: foreach my $pubtt_content_r...
+    }    ## tidy end: foreach my $pubtt_content_r...
 
     my $listfh  = $pubtt_folder->open_write('_ttlist.txt');
     my @columns = qw<file effectivedate pages MapFile LeaveCoverForMap
       MasterPage has_short_page portrait_chars>;
-    say $listfh u::jointab(@columns);
-    for my $linegroup ( u::sortbyline keys %script_entries ) {
-        say $listfh u::jointab( @{ $script_entries{$linegroup} }{@columns} );
+    say $listfh Octium::jointab(@columns);
+    for my $linegroup ( Octium::sortbyline keys %script_entries ) {
+        say $listfh Octium::jointab(
+            @{ $script_entries{$linegroup} }{@columns} );
     }
     close $listfh;
 
@@ -520,7 +521,7 @@ sub output_a_pubtts {
     # $cry->text( "Has more than eight pages: @over_eight_pages");
     $cry->done;
 
-} ## tidy end: sub output_a_pubtts
+}    ## tidy end: sub output_a_pubtts
 
 1;
 

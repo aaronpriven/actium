@@ -26,12 +26,12 @@ sub new {
         $self = [ [] ];
     }
     elsif ( @rows == 1
-        and u::is_arrayref( $rows[0] )
-        and u::all { u::is_arrayref($_) } $rows[0]->@* )
+        and Octium::is_arrayref( $rows[0] )
+        and Octium::all { Octium::is_arrayref($_) } $rows[0]->@* )
     {
         $self = $rows[0];
     }
-    elsif ( u::any { u::reftype($_) ne 'ARRAY' } @rows ) {
+    elsif ( Octium::any { Octium::reftype($_) ne 'ARRAY' } @rows ) {
         croak 'Arguments to ' . __PACKAGE__ . '->new must be arrayrefs (rows)';
     }
     else {
@@ -41,7 +41,7 @@ sub new {
     CORE::bless $self, $class;
     return $self;
 
-} ## tidy end: sub new
+}    ## tidy end: sub new
 
 sub new_across {
     my $class = shift;
@@ -50,7 +50,7 @@ sub new_across {
     my @values   = @_;
 
     my $self;
-    my $it = u::natatime( $quantity, @values );
+    my $it = Octium::natatime( $quantity, @values );
     while ( my @vals = $it->() ) {
         push @{$self}, [@vals];
     }
@@ -67,7 +67,7 @@ sub new_down {
     my @values   = @_;
 
     my $self;
-    my $it = u::natatime( $quantity, @values );
+    my $it = Octium::natatime( $quantity, @values );
 
     while ( my @vals = $it->() ) {
         for my $i ( 0 .. $#vals ) {
@@ -94,14 +94,16 @@ sub new_to_term_width {
     \my @array = $params{array};
 
     my $separator = $params{separator};
-    my $sepwidth  = u::u_columns($separator);
-    my $colwidth  = $sepwidth + u::max( map { u::u_columns($_) } @array );
-    my $cols = u::floor( ( $params{width} + $sepwidth ) / ($colwidth) ) || 1;
+    my $sepwidth  = Octium::u_columns($separator);
+    my $colwidth
+      = $sepwidth + Octium::max( map { Octium::u_columns($_) } @array );
+    my $cols
+      = Octium::floor( ( $params{width} + $sepwidth ) / ($colwidth) ) || 1;
 
     # add sepwidth there to compensate for the fact that we don't actually
     # print the separator at the end of the line
 
-    my $rows = u::ceil( @array / $cols );
+    my $rows = Octium::ceil( @array / $cols );
 
     my $obj = $class->new_down( $rows, @array );
 
@@ -109,13 +111,13 @@ sub new_to_term_width {
 
     return $obj, \@tabulated;
 
-} ## tidy end: sub new_to_term_width
+}    ## tidy end: sub new_to_term_width
 
 sub bless {
     my $class = shift;
     my $self  = shift;
 
-    my $selfclass = u::blessed($self);
+    my $selfclass = Octium::blessed($self);
 
     if ( defined $selfclass ) {
         return $self if $selfclass eq $class;
@@ -189,20 +191,20 @@ sub new_from_xlsx {
 
     return $class->bless( \@rows );
 
-} ## tidy end: sub new_from_xlsx
+}    ## tidy end: sub new_from_xlsx
 
 my $filetype_from_ext_r = sub {
     my $filespec = shift;
     return unless $filespec;
 
-    my ( $filename, $ext ) = u::file_ext($filespec);
+    my ( $filename, $ext ) = Octium::file_ext($filespec);
     my $fext = fc($ext);
 
     if ( $fext eq fc('xlsx') ) {
         return 'xlsx';
     }
 
-    if ( u::folded_in( $fext, qw/tsv tab txt/ ) ) {
+    if ( Octium::folded_in( $fext, qw/tsv tab txt/ ) ) {
         return 'tsv';
     }
 
@@ -234,14 +236,14 @@ sub new_from_file {
       . __PACKAGE__
       . '->new_from_file';
 
-} ## tidy end: sub new_from_file
+}    ## tidy end: sub new_from_file
 
 ################################################################
 ### shims allowing being called as either class or object method
 
 my $invocant_cr = sub {
     my $invocant = shift;
-    my $blessing = u::blessed $invocant;
+    my $blessing = Octium::blessed $invocant;
 
     return ( $blessing, $invocant ) if defined $blessing;
     # invocant is an object blessed into the $blessing class
@@ -289,7 +291,7 @@ sub height {
 
 sub width {
     my ( $class, $self ) = &$invocant_cr;
-    return u::max( map { scalar @{$_} } @{$self} );
+    return Octium::max( map { scalar @{$_} } @{$self} );
 }
 
 sub last_row {
@@ -299,7 +301,7 @@ sub last_row {
 
 sub last_col {
     my ( $class, $self ) = &$invocant_cr;
-    return u::max( map { $#{$_} } @{$self} );
+    return Octium::max( map { $#{$_} } @{$self} );
 }
 
 #########################################
@@ -376,7 +378,7 @@ sub push_col {
         return $class->width($self);
     }
 
-    my $last_row = u::max( $class->last_row($self), $#col_values );
+    my $last_row = Octium::max( $class->last_row($self), $#col_values );
     my $last_col = $class->last_col($self);
 
     for my $row_index ( 0 .. $last_row ) {
@@ -389,7 +391,7 @@ sub push_col {
 
     return $class->width($self);
 
-} ## tidy end: sub push_col
+}    ## tidy end: sub push_col
 
 sub push_rows {
     my ( $class, $self ) = &$invocant_cr;
@@ -407,7 +409,7 @@ sub push_cols {
         return $class->width($self);
     }
 
-    my $last_row = u::max( $class->last_row($self), $#cols );
+    my $last_row = Octium::max( $class->last_row($self), $#cols );
     my $last_col = $class->last_col($self);
 
     for my $row_index ( 0 .. $last_row ) {
@@ -421,7 +423,7 @@ sub push_cols {
 
     return $class->width($self);
 
-} ## tidy end: sub push_cols
+}    ## tidy end: sub push_cols
 
 sub unshift_row {
     my ( $class, $self ) = &$invocant_cr;
@@ -464,7 +466,7 @@ sub ins_col {
     my $col_idx = shift;
     my @col     = @_;
 
-    my $last_row = u::max( $class->last_row($self), $#col );
+    my $last_row = Octium::max( $class->last_row($self), $#col );
 
     for my $row_idx ( 0 .. $last_row ) {
         splice( @{ $self->[$row_idx] }, $col_idx, 0, $col[$row_idx] );
@@ -487,7 +489,7 @@ sub ins_cols {
     my $col_idx = shift;
     my @cols    = @{ +shift };
 
-    my $last_row = u::max( $class->last_row($self), map { $#{$_} } @cols );
+    my $last_row = Octium::max( $class->last_row($self), map { $#{$_} } @cols );
 
     for my $row_idx ( 0 .. $last_row ) {
         for my $col (@cols) {
@@ -578,7 +580,7 @@ sub slice {
     state $methodname = __PACKAGE__ . '->slice';
 
     croak "Arguments to $methodname must not be negative"
-      if u::any { $_ < 0 } ( $firstcol, $lastcol, $firstrow, $lastrow );
+      if Octium::any { $_ < 0 } ( $firstcol, $lastcol, $firstrow, $lastrow );
 
     ( $firstrow, $lastrow ) = ( $lastrow, $firstrow )
       if $firstrow > $lastrow;
@@ -589,8 +591,8 @@ sub slice {
     my $self_lastcol = $class->lastcol($self);
     my $self_lastrow = $#{$self};
 
-    $lastcol = u::min( $lastcol, $self_lastcol );
-    $lastrow = u::min( $lastrow, $self_lastrow );
+    $lastcol = Octium::min( $lastcol, $self_lastcol );
+    $lastrow = Octium::min( $lastrow, $self_lastrow );
 
     my $new = $class->cols( $self, $firstcol .. $lastcol )
       ->rows( $firstrow .. $lastrow );
@@ -601,7 +603,7 @@ sub slice {
 
     @{$self} = @{$new};
 
-} ## tidy end: sub slice
+}    ## tidy end: sub slice
 
 sub transpose {
     my ( $class, $self ) = &$invocant_cr;
@@ -622,7 +624,7 @@ sub transpose {
     @{$self} = @{$new};
     return;
 
-} ## tidy end: sub transpose
+}    ## tidy end: sub transpose
 
 sub prune {
     my ( $class, $self ) = &$invocant_cr;
@@ -655,7 +657,7 @@ sub prune_callback {
     }
 
     # remove final blank rows
-    while ( @{$self} and u::all { $callback->() } $self->[-1] ) {
+    while ( @{$self} and Octium::all { $callback->() } $self->[-1] ) {
         pop @{$self};
     }
 
@@ -668,10 +670,10 @@ sub prune_callback {
     # remove final blank columns
 
     # does not use the last_col method because that method calls this one
-    my $last_col = u::max( map { $#{$_} } @{$self} );
+    my $last_col = Octium::max( map { $#{$_} } @{$self} );
 
     while ( $last_col > -1
-        and u::all { $callback->() } $class->col( $self, $last_col ) )
+        and Octium::all { $callback->() } $class->col( $self, $last_col ) )
     {
         $last_col--;
 
@@ -682,7 +684,7 @@ sub prune_callback {
 
     return $self;
 
-} ## tidy end: sub prune_callback
+}    ## tidy end: sub prune_callback
 
 sub apply {
     my ( $class, $orig ) = &$invocant_cr;
@@ -706,7 +708,7 @@ sub apply {
         }
     }
     return $self;
-} ## tidy end: sub apply
+}    ## tidy end: sub apply
 
 sub trim {
     my ( $class, $self ) = &$invocant_cr;
@@ -769,7 +771,7 @@ sub hash_of_rows {
     }
 
     return \%hash;
-} ## tidy end: sub hash_of_rows
+}    ## tidy end: sub hash_of_rows
 
 sub hash_of_row_elements {
     my ( $class, $self ) = &$invocant_cr;
@@ -792,7 +794,7 @@ sub hash_of_row_elements {
     }
 
     return \%hash;
-} ## tidy end: sub hash_of_row_elements
+}    ## tidy end: sub hash_of_row_elements
 
 sub tabulate_equal_width {
     my ( $class, $orig ) = &$invocant_cr;
@@ -801,9 +803,9 @@ sub tabulate_equal_width {
     my $separator = shift // $SPACE;
 
     my %width_of;
-    $width_of{$_} = u::u_columns($_) foreach $class->flattened($self);
+    $width_of{$_} = Octium::u_columns($_) foreach $class->flattened($self);
 
-    my $colwidth = u::max( values %width_of );
+    my $colwidth = Octium::max( values %width_of );
 
     my @lines;
 
@@ -818,7 +820,7 @@ sub tabulate_equal_width {
 
     return \@lines;
 
-} ## tidy end: sub tabulate_equal_width
+}    ## tidy end: sub tabulate_equal_width
 
 sub tabulate {
     my ( $class, $orig ) = &$invocant_cr;
@@ -831,13 +833,13 @@ sub tabulate {
 
         my @fields = @{$row};
         for my $this_col ( 0 .. $#fields ) {
-            my $thislength = u::u_columns( $fields[$this_col] ) // 0;
+            my $thislength = Octium::u_columns( $fields[$this_col] ) // 0;
             if ( not $length_of_col[$this_col] ) {
                 $length_of_col[$this_col] = $thislength;
             }
             else {
                 $length_of_col[$this_col]
-                  = u::max( $length_of_col[$this_col], $thislength );
+                  = Octium::max( $length_of_col[$this_col], $thislength );
             }
         }
     }
@@ -858,12 +860,12 @@ sub tabulate {
 
     return \@lines;
 
-} ## tidy end: sub tabulate
+}    ## tidy end: sub tabulate
 
 sub tabulated {
     my ( $class, $self ) = &$invocant_cr;
     \my @lines = $class->tabulate( $self, @_ );
-    return u::joinlf(@lines), "\n";
+    return Octium::joinlf(@lines), "\n";
 }
 
 my $charcarp = sub {
@@ -879,8 +881,8 @@ my $charcarp = sub {
 
 sub flattened {
     my ( $class, $self ) = &$invocant_cr;
-    my @flattened = u::flatten(@$self);
-    # deref there because u::flatten doesn't do blessed objects
+    my @flattened = Octium::flatten(@$self);
+    # deref there because Octium::flatten doesn't do blessed objects
     return @flattened;
 }
 
@@ -898,10 +900,10 @@ sub tsv {
     my ( $class, $orig ) = &$invocant_cr;
     my $self = $class->define($orig);
 
-    my @headers = u::flatten(@_);
+    my @headers = Octium::flatten(@_);
 
     my @lines;
-    push @lines, u::jointab(@headers) if @headers;
+    push @lines, Octium::jointab(@headers) if @headers;
 
     foreach my $row ( @{$self} ) {
         my @rowcopy = @{$row};
@@ -912,7 +914,7 @@ sub tsv {
             }
 
         }
-        push @lines, u::jointab(@rowcopy);
+        push @lines, Octium::jointab(@rowcopy);
     }
 
     foreach (@lines) {
@@ -924,11 +926,11 @@ sub tsv {
         }
     }
 
-    my $str = u::joinlf(@lines) . "\n";
+    my $str = Octium::joinlf(@lines) . "\n";
 
     return $str;
 
-} ## tidy end: sub tsv
+}    ## tidy end: sub tsv
 
 sub file {
     my ( $class, $self ) = &$invocant_cr;
@@ -962,7 +964,7 @@ sub file {
         return;
     }
     croak "Unrecognized type $type in " . __PACKAGE__ . '->file';
-} ## tidy end: sub file
+}    ## tidy end: sub file
 
 sub xlsx {
     my ( $class, $self ) = &$invocant_cr;
@@ -995,7 +997,7 @@ sub xlsx {
     # an array @format is used because if it were a scalar, it would be undef,
     # where what we want if it is empty is no value at all
 
-    my $unblessed = u::blessed $self ? $self->unblessed : $self;
+    my $unblessed = Octium::blessed $self ? $self->unblessed : $self;
 
     # Excel::Writer::XLSX checks 'ref' and not 'reftype'
 
@@ -1009,7 +1011,7 @@ sub xlsx {
 
     return $workbook->close();
 
-} ## tidy end: sub xlsx
+}    ## tidy end: sub xlsx
 
 1;
 
