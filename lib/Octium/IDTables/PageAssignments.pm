@@ -21,6 +21,12 @@ use Octium::O::Sked::Timetable::IDPageFrameSets;
 const my $IDT        => 'Octium::Text::InDesignTags';
 const my $SOFTRETURN => $IDT->softreturn;
 
+const my $KEY_SEPARATOR => "\c]";
+
+sub joinkey {
+    return join( $KEY_SEPARATOR, map { $_ // q[] } @_ );
+}
+
 my $shortpage_framesets = Octium::O::Sked::Timetable::IDPageFrameSets->new(
     {   description => 'Landscape full',
         frames      => [ { widthpair => [ 10, 0 ], frame_idx => 0 } ],
@@ -377,7 +383,7 @@ sub _sort_page_partitions {
 
                 my @lines_of_this_table = $table->lines;
                 push @lines,     \@lines_of_this_table;
-                push @all_lines, Octium::joinkey(@lines_of_this_table);
+                push @all_lines, joinkey(@lines_of_this_table);
 
                 push @dircodes, $table->dircode;
                 push @daycodes, $table->daycode;

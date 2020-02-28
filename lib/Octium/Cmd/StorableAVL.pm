@@ -12,6 +12,7 @@ use Storable();    ### DEP ###
 const my $NO_PARENT        => q{top};
 const my $DELIMITER        => q{,};
 const my $DELIMITER_LENGTH => length($DELIMITER);
+const my $KEY_SEPARATOR    => "\c]";
 
 my %is_used;
 my %is_a_parent;
@@ -69,7 +70,7 @@ sub START {
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 sub read_files {
 
@@ -181,13 +182,13 @@ sub read_files {
                 push @{ $previous_of_r{$parent_row_type}{$row_type} },
                   $ref_to_save;
             }
-        } ## tidy end: else [ if ( $uses_key{$row_type...})]
+        }    ## tidy end: else [ if ( $uses_key{$row_type...})]
 
         # save this row so that if it is the parent of something,
         # its child can be saved in the right place
         $previous_of_r{$row_type} = \%this_row;
 
-    } ## tidy end: ROW: while (<>)
+    }    ## tidy end: ROW: while (<>)
     continue {
         # resets line numbering for errors
         close ARGV if eof;
@@ -195,7 +196,7 @@ sub read_files {
 
     return;
 
-} ## tidy end: sub read_files
+}    ## tidy end: sub read_files
 
 sub init_templates {
 
@@ -221,11 +222,11 @@ sub init_templates {
             $template_of{$row_type} = jointemplate(@template_pieces);
         }
 
-    } ## tidy end: for my $row_type ( keys...)
+    }    ## tidy end: for my $row_type ( keys...)
 
     return;
 
-} ## tidy end: sub init_templates
+}    ## tidy end: sub init_templates
 
 sub jointemplate {
     return join( "x" x $DELIMITER_LENGTH, @_ );
@@ -293,7 +294,7 @@ sub init_field_names {
     }    # FIELD_TYPE
 
     return;
-} ## tidy end: sub init_field_names
+}    ## tidy end: sub init_field_names
 
 1;
 
