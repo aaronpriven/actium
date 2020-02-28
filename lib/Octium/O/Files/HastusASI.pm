@@ -24,6 +24,13 @@ const my $DISPLAY_PERCENTAGE_FACTOR   => 100 / $OCCASIONS_TO_DISPLAY;
 #    qw/db_type key_of_table columns_of_table tables
 #       _load _files_of_filetype _tables_of_filetype/
 #);
+#
+
+const my $KEY_SEPARATOR => "\c]";
+
+sub joinkey {
+    return join( $KEY_SEPARATOR, map { $_ // q[] } @_ );
+}
 
 #########################################
 ### DEFINITION
@@ -207,7 +214,7 @@ sub _load {
 
             if ( $has_repeating_final_column{$table} ) {
                 my @finals = splice( @columns, scalar( columns($table) ) );
-                push @columns, Octium::joinkey( grep { $_ ne $EMPTY } @finals );
+                push @columns, joinkey( grep { $_ ne $EMPTY } @finals );
             }
 
             my $parent = $parent_of{$table};
@@ -217,8 +224,7 @@ sub _load {
 
             if ( $has_composite_key{$table} ) {
                 push @columns,
-                  Octium::joinkey(
-                    @columns[ @{ $key_components_idxs{$table} } ] );
+                  joinkey( @columns[ @{ $key_components_idxs{$table} } ] );
             }
 
             $sth_of{$table}->execute( $sequence, @columns );

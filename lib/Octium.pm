@@ -63,20 +63,6 @@ A carriage return followed by a line feed ("\r\n").
 
 A space.
 
-=item $KEY_SEPARATOR
-
-This contains the C<^]> character (ASCII 29, "Group Separator"), which
-is used by FileMaker to separate entries in repeating fields. It is
-also used by various Octium routines to separate values, e.g., the
-Hastus Standard AVL routines use it in hash keys when two or more
-values are needed to uniquely identify a record. (This is the same
-basic idea as that intended by perl's C<$;> variable [see
-L<perlvar/$;>].)
-
-=item $MINS_IN_12HRS
-
-The number of minutes in 12 hours (12 times 60, or 720).
-
 =item @DIRCODES
 
 Alphabetic two-character direction codes (NB representing northbound, 
@@ -98,11 +84,9 @@ the Lines table in the Octium database used instead.
 
 =cut
 
-const my $EMPTY         => q[];
-const my $CRLF          => qq{\cM\cJ};
-const my $SPACE         => q{ };
-const my $KEY_SEPARATOR => "\c]";
-const my $MINS_IN_12HRS => ( 12 * 60 );
+const my $EMPTY => q[];
+const my $CRLF  => qq{\cM\cJ};
+const my $SPACE => q{ };
 const my @TRANSBAY_NOLOCALS =>
   (qw/BF3 FS G H J L LA LC NX NX1 NX2 NX3 NX4 NXC OX P S SB U V W Z/);
 
@@ -298,8 +282,6 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
             *{ $caller . '::EMPTY' }             = \$EMPTY;
             *{ $caller . '::CRLF' }              = \$CRLF;
             *{ $caller . '::SPACE' }             = \$SPACE;
-            *{ $caller . '::MINS_IN_12HRS' }     = \$MINS_IN_12HRS;
-            *{ $caller . '::KEY_SEPARATOR' }     = \$KEY_SEPARATOR;
             *{ $caller . '::TRANSBAY_NOLOCALS' } = \@TRANSBAY_NOLOCALS;
             *{ $caller . '::DIRCODES' }          = \@DIRCODES;
             *{ $caller . '::env' }               = \&env;
@@ -438,18 +420,6 @@ A quicker way to type "join ('' , @list)".
 
 sub joinempty {
     return join( q[], map { $_ // q[] } @_ );
-}
-
-=item joinkey
-
-Takes the list passed to it and joins it together, with each element
-separated  by the C<$KEY_SEPARATOR> value. A quicker way to type "join
-($KEY_SEPARATOR , @list)".
-
-=cut
-
-sub joinkey {
-    return join( $KEY_SEPARATOR, map { $_ // q[] } @_ );
 }
 
 =item joinlf

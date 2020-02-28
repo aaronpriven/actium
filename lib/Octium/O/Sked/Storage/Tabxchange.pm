@@ -322,41 +322,6 @@ method tabxchange (
 
     # lines 13 - Definitions of special day codes
 
-#    my ( %specday_of_specdayletter, @specdayletters, @noteletters, @lines );
-#
-#    foreach my $daysexception ( $self->daysexceptions ) {
-#        next unless $daysexception;
-#        my ( $specdayletter, $specday ) = split( / /, $daysexception, 2 );
-#        $specday_of_specdayletter{$specdayletter} = $specday;
-#    }
-#
-#    foreach my $trip ( $self->trips ) {
-#        my $tripdays = $trip->days_obj;
-#        my ( $specdayletter, $specday )
-#          = $tripdays->specday_and_specdayletter($days);
-#
-#        if ($specdayletter) {
-#            $specday_of_specdayletter{$specdayletter} = $specday;
-#            push @specdayletters, $specdayletter;
-#        }
-#        else {
-#            push @specdayletters, $EMPTY;
-#        }
-#
-#        push @noteletters, $EMPTY;
-#        push @lines,       $trip->line;
-#
-#    }
-#
-#    my @specdaynotes;
-#
-#    foreach my $noteletter ( keys %specday_of_specdayletter ) {
-#        push @specdaynotes,
-#          Octium::joinkey( $noteletter, $specday_of_specdayletter{$noteletter} );
-#    }
-#
-#    $p->(@specdaynotes);
-#
     $p_blank->();    # special day notes, moved above
 
     # FLIPPING NOTE LETTERS AND SPECIAL DAY CODES TO SEE IF THAT WORKS

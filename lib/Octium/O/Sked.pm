@@ -20,6 +20,8 @@ use Octium::O::Dir;
 use Octium::O::Days;
 use Octium::O::2DArray;
 
+const my $KEY_SEPARATOR => "\c]";
+
 ###################################
 ## CONSTRUCTION
 

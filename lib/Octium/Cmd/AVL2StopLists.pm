@@ -3,6 +3,8 @@ package Octium::Cmd::AVL2StopLists 0.014;
 use Octium;
 # avl2stoplists - see POD documentation below
 
+const my $KEY_SEPARATOR => "\c]";
+
 use sort ('stable');
 
 # add the current program directory to list of files to include

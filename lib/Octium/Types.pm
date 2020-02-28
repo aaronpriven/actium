@@ -3,6 +3,8 @@ package Octium::Types 0.012;
 # Moose types for Actium
 use Octium;
 
+const my $MINS_IN_12HRS => ( 12 * 60 );
+
 ## no critic (ProhibitMagicNumbers)
 
 use MooseX::Types -declare => [

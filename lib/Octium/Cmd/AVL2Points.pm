@@ -12,6 +12,12 @@ const my @COMBOS_TO_PROCESS => (
     [qw( 234 5 2345 )], [qw( 6 7 67 )],     [qw( 12345 67 1234567 )],
 );
 
+const my $KEY_SEPARATOR => "\c]";
+
+sub joinkey {
+    return join( $KEY_SEPARATOR, map { $_ // q[] } @_ );
+}
+
 sub OPTIONS {
     return qw/actiumdb signup/;
 }
@@ -502,7 +508,7 @@ sub makestoptimes {
         my $linegroup = linegroup($line);
 
         my $pattern = $tripinfo_of{Pattern};
-        my $patkey = Octium::joinkey( $line, $pattern );
+        my $patkey = joinkey( $line, $pattern );
 
         my $days_input = $tripinfo_of{OperatingDays};
         $days_input =~ tr/0-9//cd;    # strip everything but digits

@@ -8,6 +8,7 @@ use List::MoreUtils();         ### DEP ###
 
 my $earliest = Actium::Time->from_str('NOON_YESTERDAY')->timenum;
 my $latest   = Actium::Time->from_str('NOON_TOMORROW')->timenum;
+const my $MINS_IN_12HRS => ( 12 * 60 );
 
 sub break_sets {
     my $breaks = shift;

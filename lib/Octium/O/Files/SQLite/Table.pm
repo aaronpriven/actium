@@ -391,7 +391,7 @@ except for rare circumstances.
 For fields with more than one repetition, the data should be stored
 with data  for the different repetitions separated by the group
 separator character  ( ASCII 29, "GS" Group Separator, also known as
-control-]. This is  $KEY_SEPARATOR in L<Actium|Actium>.)
+control-]. )
 
 =item B<has_repeating_final_column>
 

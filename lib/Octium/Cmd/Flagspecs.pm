@@ -32,11 +32,9 @@ sub jk {
 sub keyreadable {
     if (wantarray) {
         my @list = @_;
-        #s/$KEY_SEPARATOR/_/sxg foreach @list;
         return @list;
     }
     my $value = shift;
-    #$value =~ s/$KEY_SEPARATOR/_/gxs;
     return $value;
 }
 
