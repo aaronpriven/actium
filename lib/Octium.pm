@@ -159,10 +159,6 @@ L<MooseX::StrictConstructor|MooseX::StrictConstructor>
 
 L<MooseX::SemiAffordanceAccessor|MooseX::SemiAffordanceAccessor>
 
-=item *
-
-L<Moose::Util::TypeConstraints|Moose::Util::TypeConstraints>
-
 =back
 
 =head2 All modules
@@ -307,7 +303,6 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
             _do_import 'Actium::MooseX::BuiltIsRo';
             _do_import 'MooseX::StrictConstructor';
             _do_import 'MooseX::SemiAffordanceAccessor';
-            _do_import 'Moose::Util::TypeConstraints';
             _do_import 'Kavorka',
               fun => { -as => 'func' },
               'method', '-allmodifiers';
