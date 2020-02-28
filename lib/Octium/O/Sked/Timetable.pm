@@ -5,7 +5,7 @@ package Octium::O::Sked::Timetable 0.012;
 
 use Octium ('class');
 
-use Octium::Time;
+use Actium::Time;
 use Octium::Text::InDesignTags;
 
 const my $idt => 'Octium::Text::InDesignTags';
@@ -237,7 +237,7 @@ sub new_from_sked {
         }
 
         foreach my $timenum ( $trip->placetimes ) {
-            push @row, Octium::Time->from_num($timenum)->ap;
+            push @row, Actium::Time->from_num($timenum)->ap;
         }
 
         push @body_rows, \@row;

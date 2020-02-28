@@ -21,7 +21,7 @@ has timeobj => (
 );
 
 method timesort (@objects) {
-    Octium::Time->timesort(@objects);
+    Actium::Time->timesort(@objects);
 }
 
 has [qw/desttp4 line/] => (

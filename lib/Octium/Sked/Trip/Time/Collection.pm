@@ -131,10 +131,10 @@ collections of times.
 
 This is an array of Octium::Sked::Trip::Time objects, each one
 representing the time the vehicle passes a stop. See
-Octium::Sked::Trip::Time and Octium::Time for more details.
+Octium::Sked::Trip::Time and Actium::Time for more details.
 
 There is one entry for each stop in the schedule, although that may
-point to an Octium::Time value representing a stop that is not served
+point to an Actium::Time value representing a stop that is not served
 by this trip.
 
 =head3 construction
@@ -161,7 +161,7 @@ This is a list of those times from C<stoptimes> that are the times
 representing "places" (timepoints).
 
 There is one entry for each place (timepoint) in the schedule, although
-that may point to an Octium::Time value representing a stop that is not
+that may point to an Actium::Time value representing a stop that is not
 served by this trip.
 
 =head3 construction

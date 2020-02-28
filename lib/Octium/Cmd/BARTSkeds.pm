@@ -9,7 +9,7 @@ use XML::Twig;                       ### DEP ###
 use Date::Simple(qw/date today/);    ### DEP ###
 use Octium::O::2DArray;
 use JSON;
-use Octium::Time;
+use Actium::Time;
 
 use DDP;
 
@@ -117,13 +117,13 @@ sub output_excel {
             foreach my $day (@DAYS) {
                 my $first = $first_of{$station}{$day}{$dest};
                 if ( defined $first ) {
-                    $first = Octium::Time->from_num($first)->ap;
+                    $first = Actium::Time->from_num($first)->ap;
                 }
                 else { $first = '-'; }
 
                 my $last = $last_of{$station}{$day}{$dest};
                 if ( defined $last ) {
-                    $last = Octium::Time->from_num($last)->ap;
+                    $last = Actium::Time->from_num($last)->ap;
                 }
                 else { $last = '-'; }
 
@@ -176,7 +176,7 @@ sub get_firstlast {
                         my $station = $stop_r->{'@station'};
                         $dest_is_used{$station}{$dest} = 1;
                         my $time
-                          = Octium::Time->from_str( $stop_r->{'@origTime'} );
+                          = Actium::Time->from_str( $stop_r->{'@origTime'} );
                         my $timenum = $time->timenum;
                         $timenum += 1440 if $timenum < $BART_MIDNIGHT_TIMENUM;
                         if ( not exists $first_of{$station}{$days}{$dest}

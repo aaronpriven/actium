@@ -1,15 +1,15 @@
 package Octium::Sked::Trip::Time 0.014;
 
 use Octium 'class';
-use Octium::Time;
+use Actium::Time;
 
 has _time_obj => (
     is       => 'rw',
-    isa      => 'Octium::Time',
+    isa      => 'Actium::Time',
     required => 1,
     init_arg => 'time_obj',
     handles  => qr/^(?!(?:new|from_str|from_num|from_excel)$).*/,
-    # use all of Octium::Time's methods except for
+    # use all of Actium::Time's methods except for
     # from_str, from_num, from_excel which are defined below
     # and new which nobody should be using anyway
 );
@@ -23,27 +23,27 @@ has was_interpolated => (
 );
 
 method set_interpolated_str ($string) {
-    $self->_set_time_obj( Octium::Time->from_str($string) );
+    $self->_set_time_obj( Actium::Time->from_str($string) );
     $self->_make_interpolated;
     return;
 }
 
 method set_interpolated_num ($num) {
-    $self->_set_time_obj( Octium::Time->from_num($num) );
+    $self->_set_time_obj( Actium::Time->from_num($num) );
     $self->_make_interpolated;
     return;
 }
 
 method from_str ($class: $string) {
-    return $class->new( time_obj => Octium::Time->from_str($string) );
+    return $class->new( time_obj => Actium::Time->from_str($string) );
 }
 
 method from_num ($class: $num) {
-    return $class->new( time_obj => Octium::Time->from_num($num) );
+    return $class->new( time_obj => Actium::Time->from_num($num) );
 }
 
 method from_excel ($class: $cell) {
-    return $class->new( time_obj => Octium::Time->from_excel($cell) );
+    return $class->new( time_obj => Actium::Time->from_excel($cell) );
 }
 
 Octium::immut;
@@ -69,8 +69,8 @@ This documentation refers to version 0.014
 
 Octium::Sked::Trip::Time is an object representing a time in a 
 schedule. Most of the work is done by
-L<Octium::Time|Octium::Time>, q.v. , and all methods supported by
-Octium::Time are supported by this module. There are only a small
+L<Actium::Time|Actium::Time>, q.v. , and all methods supported by
+Actium::Time are supported by this module. There are only a small
 number of additional methods, which allow the replacement of a time in a
 schedule by an interpolated version.
 
@@ -82,21 +82,21 @@ This method returns a boolean value: true if a time has been
 interpolated here, false if it has not. This indicates that the time
 I<was> interpolated -- to check if a time still needs to be
 interpolated, use the method C<is_awaiting_interpolation> (documented in
-Octium::Time).
+Actium::Time).
 
 =head2 set_interpolated_str, set_interpolated_num
 
 These methods set the value of this time to a new value. The C<set_interpolated_str>
-method expects a string (which is sent to by Octium::Time->from_str), and the
+method expects a string (which is sent to by Actium::Time->from_str), and the
 C<set_interpolated_num> method expects a number (sent to
-Octium::Time->from_num). They also mark this time as having been
+Actium::Time->from_num). They also mark this time as having been
 interpolated (which can be queried by C<was_interpolated>).
 
 =head2 from_str, from_num, from_excel
 
-These are the same as their counterparts in Octium::Time, except that
+These are the same as their counterparts in Actium::Time, except that
 they return an Octium::Sked::Trip::Time object instead of an
-Octium::Time object.
+Actium::Time object.
 
 =back
 
@@ -106,7 +106,7 @@ Octium::Time object.
 
 =item Actium
 
-=item Octium::Time
+=item Actium::Time
 
 =head1 AUTHOR
 

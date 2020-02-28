@@ -4,7 +4,7 @@ use Octium;
 use Octium::Frequency;
 
 use Octium::O::2DArray;
-use Octium::Time;
+use Actium::Time;
 
 sub HELP {
     say 'Determines the frequency of times.';
@@ -46,12 +46,12 @@ sub START {
     }
 
     my @orig_timenums
-      = grep {defined} ( map { Octium::Time->from_str($_)->timenum } @times );
+      = grep {defined} ( map { Actium::Time->from_str($_)->timenum } @times );
 
-    my $first = Octium::Time::->from_num( $orig_timenums[0] )->ap;
+    my $first = Actium::Time::->from_num( $orig_timenums[0] )->ap;
 
     my @timenums = Octium::Frequency::adjust_timenums(@orig_timenums);
-    my $final    = Octium::Time::->from_num( $timenums[-1] )->ap;
+    my $final    = Actium::Time::->from_num( $timenums[-1] )->ap;
 
     ( \my @sets, \my @breaktimes )
       = Octium::Frequency::break_sets( $breaks, \@timenums );
@@ -73,7 +73,7 @@ sub START {
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

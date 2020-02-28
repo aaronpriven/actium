@@ -5,7 +5,7 @@ use Octium ('role');
 use Octium::O::Sked::Trip;
 use Octium::O::Dir;
 use Octium::O::Days;
-use Octium::Time;
+use Actium::Time;
 
 #############################################
 #### READ FROM AN EXCEL SPREADSHEET
@@ -93,7 +93,7 @@ method new_from_xlsx ( $class : Str : $file,
 
     return $sked;
 
-} ## tidy end: method new_from_xlsx
+}    ## tidy end: method new_from_xlsx
 
 func _cell_value ( $sheet !, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
@@ -104,7 +104,7 @@ func _cell_value ( $sheet !, Int $row!, Int $col! ) {
 func _cell_time ( $sheet !, Int $row!, Int $col! ) {
     my $cell = $sheet->get_cell( $row, $col );
     return $EMPTY unless defined $cell;
-    my $time = Octium::Time->from_excel($cell);
+    my $time = Actium::Time->from_excel($cell);
     return $time->timenum;
 }
 
@@ -137,7 +137,7 @@ func _read_stops_and_places (
 
     return \@stops, \@places, \@stopplaces;
 
-} ## tidy end: func _read_stops_and_places
+}    ## tidy end: func _read_stops_and_places
 
 func _read_trips (
     Spreadsheet::ParseExcel::Worksheet : $sheet !,
@@ -172,11 +172,11 @@ func _read_trips (
 
         push @trips, $trip_obj;
 
-    } ## tidy end: foreach my $row ( $minrow .....)
+    }    ## tidy end: foreach my $row ( $minrow .....)
 
     return \@trips;
 
-} ## tidy end: func _read_trips
+}    ## tidy end: func _read_trips
 
 func _read_attribute_names (
     Int : $mincol !,
@@ -208,11 +208,11 @@ func _read_attribute_names (
 
         push @attributes, $attribute;
 
-    } ## tidy end: foreach my $col ( $mincol .....)
+    }    ## tidy end: foreach my $col ( $mincol .....)
 
     return \@attributes;
 
-} ## tidy end: func _read_attribute_names
+}    ## tidy end: func _read_attribute_names
 
 func _process_id ( Str : $id !, Str : $filename ! ) {
     if ($id !~ /\A
@@ -280,7 +280,7 @@ method add_stop_xlsx_sheet (
 
     return;
 
-} ## tidy end: method add_stop_xlsx_sheet
+}    ## tidy end: method add_stop_xlsx_sheet
 
 method add_place_xlsx_sheet (
     Excel::Writer::XLSX         : $workbook !,
@@ -304,7 +304,7 @@ method add_place_xlsx_sheet (
 
     return;
 
-} ## tidy end: method add_place_xlsx_sheet
+}    ## tidy end: method add_place_xlsx_sheet
 
 method xlsx {
 
@@ -326,7 +326,7 @@ method xlsx {
 
     close $stop_workbook_fh or die "$OS_ERROR";
     return $stop_workbook_stream;
-} ## tidy end: method xlsx
+}    ## tidy end: method xlsx
 
 sub xlsx_layers {':raw'}
 
@@ -336,7 +336,7 @@ method _stop_columns {
       = Octium::O::2DArray->new( $self->_stopid_r, $self->_stopplace_r );
 
     foreach my $trip ( $self->trips ) {
-        my @times = map { Octium::Time->from_num($_)->apbx } $trip->stoptimes;
+        my @times = map { Actium::Time->from_num($_)->apbx } $trip->stoptimes;
         $stop_columns->push_row(@times);
     }
 
@@ -365,7 +365,7 @@ method _trip_attribute_columns {
 
     return $trip_attribute_columns;
 
-} ## tidy end: method _trip_attribute_columns
+}    ## tidy end: method _trip_attribute_columns
 
 method _place_columns {
 
@@ -373,7 +373,7 @@ method _place_columns {
       = Octium::O::2DArray->new( $self->_place4_r, $self->_place8_r );
 
     foreach my $trip ( $self->trips ) {
-        my @times = map { Octium::Time->from_num($_)->apbx } $trip->placetimes;
+        my @times = map { Actium::Time->from_num($_)->apbx } $trip->placetimes;
 
         $place_columns->push_row(@times);
     }
