@@ -1,7 +1,7 @@
 package Octium::O::Pattern::Trip 0.012;
 
 use Octium ('class');
-use Octium::Time;
+use Actium::Time;
 
 sub id {
     my $self = shift;
@@ -23,16 +23,16 @@ has [qw/days pattern_id/] => (
 has [
     qw/schedule_daytype event_and_status op_except
       block_id vehicle_group vehicle_type /
-  ] => (
+] => (
     is  => 'ro',
     isa => 'Str',
-  );
+);
 
 has 'stoptime_r' => (
     traits  => ['Array'],
     is      => 'ro',
     writer  => '_set_stoptime_r',
-    isa     => 'ArrayRef[Octium::Time]',
+    isa     => 'ArrayRef[Actium::Time]',
     default => sub { [] },
     handles => {
         set_stoptime        => 'set',

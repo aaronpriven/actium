@@ -14,7 +14,7 @@ use Octium::O::DateTime;
 
 use List::MoreUtils('pairwise');    ### DEP ###
 use Params::Validate(':all');       ### DEP ###
-use Octium::Time;
+use Actium::Time;
 use Octium::O::2DArray;
 
 const my $PREFIX => 'Octium::Import::Xhea';
@@ -251,7 +251,7 @@ sub tab_strings {
 
             my $block = $field{trp_block};
             my $starttime
-              = Octium::Time->from_str( $field{trp_time_start} )->timenum;
+              = Actium::Time->from_str( $field{trp_time_start} )->timenum;
             my $tripkey = "$block/$starttime";
             $cry->over($tripkey);
 
@@ -1345,7 +1345,7 @@ sub _get_xhea_filenames {
             $tps{$patid}[$position]{IsATimingPoint} = $place ? 1 : 0;
 
             $pts{$tripnum}[$position]
-              = Octium::Time->from_str($passing_time)->apbx_noseparator;
+              = Actium::Time->from_str($passing_time)->apbx_noseparator;
         };
 
         Octium::Storage::TabDelimited::read_tab_files(

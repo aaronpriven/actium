@@ -15,7 +15,7 @@ use Moose::Util::TypeConstraints;      ### DEP ###
 
 use namespace::autoclean;              ### DEP ###
 
-use Octium::Time;
+use Actium::Time;
 use Const::Fast;                       ### DEP ###
 
 use Octium::Text::InDesignTags;
@@ -83,7 +83,7 @@ around BUILDARGS => sub {
 
     foreach (@entries) {
         my ( $time, $line, $destination, $place, $exception ) = split(/:/);
-        $time_of{$_} = Octium::Time->from_str($time)->timenum;
+        $time_of{$_} = Actium::Time->from_str($time)->timenum;
     }
 
     @entries = sort { $time_of{$a} <=> $time_of{$b} } @entries;

@@ -1,7 +1,7 @@
 package Octium::O::Sked::Storage::Tabxchange 0.013;
 
 use Octium ('role');
-use Octium::Time;
+use Actium::Time;
 
 const my $LAST_LINE_IN_FIRST_LOCAL_LIST => 70;
 # arbitrary choice, but it must always be the same or links will break
@@ -94,7 +94,7 @@ method tabxchange (
     # lines 7 - one line per bus line
     foreach my $line ( $self->lines ) {
         my $line_row_r = $actiumdb->line_row_r($line);
-        my $color = $line_row_r->{Color} // 'Default';
+        my $color      = $line_row_r->{Color} // 'Default';
         $color = 'Default'
           if not $actiumdb->color_exists($color);
         my $color_row_r = $actiumdb->color_row_r($color);
@@ -294,7 +294,7 @@ method tabxchange (
 
             my @placetimes = $trip->placetimes;
             my $idx        = Octium::firstidx {defined} @placetimes;
-            my $time       = Octium::Time->from_num( $placetimes[$idx] )->ap;
+            my $time       = Actium::Time->from_num( $placetimes[$idx] )->ap;
 
             $specdaytrip .= "<dd>Trip leaving $placedescs[$idx] at $time</dd>";
 
@@ -379,7 +379,7 @@ method tabxchange (
     my $placetimes_aoa = Octium::O::2DArray->new;
 
     foreach my $trip ( $self->trips ) {
-        my @placetimes = map { Octium::Time->from_num($_)->ap_noseparator }
+        my @placetimes = map { Actium::Time->from_num($_)->ap_noseparator }
           $trip->placetimes;
         $placetimes_aoa->push_col(@placetimes);
     }

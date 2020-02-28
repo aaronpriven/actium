@@ -93,8 +93,8 @@ coerce ARCrierBullets, from CrierBullet, via { [$_] };
 ######################
 ## SCHEDULE TIMES
 
-subtype ActiumTime, as class_type('Octium::Time');
-coerce ActiumTime, from Str, via { Octium::Time->from_str($_) };
+subtype ActiumTime, as class_type('Actium::Time');
+coerce ActiumTime, from Str, via { Actium::Time->from_str($_) };
 
 const my $NOON_YESTERDAY => -$MINS_IN_12HRS;
 const my $NOON_TOMORROW  => 3 * $MINS_IN_12HRS;
@@ -106,7 +106,7 @@ subtype TimeNum, as Maybe [Int], where {
 
 subtype ArrayRefOrTimeNum, as TimeNum | ArrayRef [TimeNum];
 
-coerce TimeNum, from Str, via { Octium::Time->from_str($_)->timenum };
+coerce TimeNum, from Str, via { Actium::Time->from_str($_)->timenum };
 
 subtype ArrayRefOfTimeNums, as ArrayRef [ Maybe [TimeNum] ];
 
@@ -227,9 +227,9 @@ A type representing the Octium::O::Dir class.
 
 =item B<TimeNum>
 
-A time number, suitable for use by L<Octium::Time>. The number of
+A time number, suitable for use by L<Actium::Time>. The number of
 minutes after midnight (or before, if negative), or undef. Coerces
-strings into TimeNums using Octium::Time.
+strings into TimeNums using Actium::Time.
 
 =item B<ArrayRefOrTimeNum>
 

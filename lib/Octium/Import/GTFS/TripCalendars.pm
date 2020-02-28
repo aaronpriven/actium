@@ -2,7 +2,7 @@ package Octium::Import::GTFS::TripCalendars 0.012;
 
 use Octium;
 use Octium::Import::GTFS (':all');
-use Octium::Time;
+use Actium::Time;
 use Octium::O::DateTime;
 use DateTime::Duration;
 use DateTime::Event::Recurrence;
@@ -57,7 +57,7 @@ func calendar_notes_of_trips ( Octium::O::Folders::Signup $signup) {
 
     return \%note_of_trip;
 
-} ## tidy end: func calendar_notes_of_trips
+}    ## tidy end: func calendar_notes_of_trips
 
 func read_calendar ($signup) {
 
@@ -79,7 +79,7 @@ func read_calendar ($signup) {
     }
     return;    # results in %calendar
 
-} ## tidy end: func read_calendar
+}    ## tidy end: func read_calendar
 
 func adjust_calendar_for_midnight ($signup) {
     \my %attributes = hash_read_gtfs(
@@ -126,7 +126,7 @@ func adjust_calendar_for_midnight ($signup) {
             $new_calendar{end_date}           = $end->ymd($EMPTY);
             $new_calendar{'_adjusted'}        = 1;
 
-        } ## tidy end: if ( exists $attributes...)
+        }    ## tidy end: if ( exists $attributes...)
         else {
             $new_calendar{'_adjusted'} = 0;
             $start                     = $new_calendar{'_dt_start_date'};
@@ -139,13 +139,13 @@ func adjust_calendar_for_midnight ($signup) {
         $final = $end if not defined $final or $final < $end;
 
         $adjusted_calendar{$service_id} = \%new_calendar;
-    } ## tidy end: foreach my $service_id ( keys...)
+    }    ## tidy end: foreach my $service_id ( keys...)
 
     %calendar = %adjusted_calendar;
 
     return;    # results in %calendar, $initial, $final
 
-} ## tidy end: func adjust_calendar_for_midnight
+}    ## tidy end: func adjust_calendar_for_midnight
 
 func read_calendar_dates ($signup) {
 
@@ -190,12 +190,12 @@ func adjust_exceptions_for_midnight {
         else {
             $adjusted_exceptions{$service_id} = $exceptions{$service_id};
         }
-    } ## tidy end: foreach my $service_id ( keys...)
+    }    ## tidy end: foreach my $service_id ( keys...)
 
     %exceptions = %adjusted_exceptions;
     return;    # results in %exceptions
 
-} ## tidy end: func adjust_exceptions_for_midnight
+}    ## tidy end: func adjust_exceptions_for_midnight
 
 func make_unexceptional_sets {
 
@@ -218,11 +218,11 @@ func make_unexceptional_sets {
             push $serviceids_of_dow{$dow}->@*, $service_id;
         }
 
-    } ## tidy end: foreach my $service_id ( keys...)
+    }    ## tidy end: foreach my $service_id ( keys...)
 
     return;    # results in %dt_set_of, %serviceids_of_dow
 
-} ## tidy end: func make_unexceptional_sets
+}    ## tidy end: func make_unexceptional_sets
 
 const my $EXCEPTION_TYPE_ADD    => 1;
 const my $EXCEPTION_TYPE_REMOVE => 2;
@@ -258,11 +258,11 @@ func place_exceptions_in_sets {
             $dt_set_of{$service_id} = $set->complement(@removals);
         }
 
-    } ## tidy end: foreach my $service_id ( keys...)
+    }    ## tidy end: foreach my $service_id ( keys...)
 
     return;    # results in %dt_set_of
 
-} ## tidy end: func place_exceptions_in_sets
+}    ## tidy end: func place_exceptions_in_sets
 
 func holidays {
 
@@ -310,7 +310,7 @@ func holidays {
     $holiday_set = DateTime::Set->from_datetimes( dates => [$date1] );
 
     return;
-} ## tidy end: func holidays
+}    ## tidy end: func holidays
 
 func delete_unexceptional_sets {
     # these are sets without any exceptions at all,
@@ -342,7 +342,7 @@ func delete_unexceptional_sets {
 
     return;
 
-} ## tidy end: func delete_unexceptional_sets
+}    ## tidy end: func delete_unexceptional_sets
 
 const my @ICAL_DOW       => ( undef, qw/mo tu we th fr sa su/ );
 const my @NOTE_DOW_ABBR  => ( undef, qw/Mon. Tue. Wed. Thurs. Fri. Sat. Sun./ );
@@ -405,13 +405,13 @@ func make_ons_and_offs {
                 push $ons_and_offs_of{$service_id}{individual_dates}->@*, @dts;
             }
 
-        } ## tidy end: foreach my $dow ( sort keys...)
+        }    ## tidy end: foreach my $dow ( sort keys...)
 
-    } ## tidy end: foreach my $service_id ( keys...)
+    }    ## tidy end: foreach my $service_id ( keys...)
 
     return;    # data in %ons_and_offs_of
 
-} ## tidy end: func make_ons_and_offs
+}    ## tidy end: func make_ons_and_offs
 
 func text_notes {
 
@@ -479,7 +479,7 @@ func text_notes {
                 $note_text .= '; and also on ';
             }
 
-        } ## tidy end: if (@all_or_mostly_on_days)
+        }    ## tidy end: if (@all_or_mostly_on_days)
 
         if (@individual_dates) {
 
@@ -514,9 +514,9 @@ func text_notes {
             $note_of_serviceid{$service_id} = $note_text;
         }
 
-    } ## tidy end: foreach my $service_id ( keys...)
+    }    ## tidy end: foreach my $service_id ( keys...)
 
-} ## tidy end: func read_calendar0
+}    ## tidy end: func read_calendar0
 
 func read_tripids ($signup) {
 
@@ -544,11 +544,11 @@ func read_tripids ($signup) {
             #say join(" => " , $trip_id, $service_id , $noteletter, $note);
             $note_of_trip{$trip_id} = "$noteletter $note";
         }
-    } ## tidy end: foreach \my @trip(@trips)
+    }    ## tidy end: foreach \my @trip(@trips)
 
     return;
 
-} ## tidy end: func read_calendar1
+}    ## tidy end: func read_calendar1
 
 func joinseries_semicolon_with (Str $and!, Str @things!) {
     return $things[0] if 1 == @things;

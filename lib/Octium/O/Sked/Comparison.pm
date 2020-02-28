@@ -469,7 +469,7 @@ method _build_trips {
         my @interim_list;
         foreach my $trip (@merged_trips) {
             my @times = $trip->{times}->@*;    # copy
-            @times = map { $_->[0] // $_->[1] } @times;
+            @times = map  { $_->[0] // $_->[1] } @times;
             @times = grep {defined} @times;
             my $average = Octium::mean( $times[0], $times[-1] );
             push @interim_list, [ $trip, $average ];
@@ -564,7 +564,7 @@ method strings_and_formats (:$show_line , :$show_daycode , :$show_specday ) {
 
                 @times = map {
                     defined($_)
-                      ? Octium::Time->from_num($_)->formatted( format => '24+' )
+                      ? Actium::Time->from_num($_)->formatted( format => '24+' )
                       : "-"
                 } @times;
 
@@ -598,7 +598,7 @@ method strings_and_formats (:$show_line , :$show_daycode , :$show_specday ) {
             push @cols, $daycodes[0] if $show_daycode;
             push @cols, $specdays[0] if $show_specday;
             push @cols, map {
-                Octium::Time->from_num( $_->[0] )->formatted( format => '24+' )
+                Actium::Time->from_num( $_->[0] )->formatted( format => '24+' )
             } @row_of_times;
 
             push @results,
@@ -693,7 +693,7 @@ method text (:$show_line , :$show_daycode , :$show_specday ) {
 
                 @times = map {
                     defined($_)
-                      ? Octium::Time->from_num($_)->formatted( format => '24+' )
+                      ? Actium::Time->from_num($_)->formatted( format => '24+' )
                       : "-"
                 } @times;
 
@@ -729,7 +729,7 @@ method text (:$show_line , :$show_daycode , :$show_specday ) {
                 $changemarker,
                 @cols,
                 map {
-                    Octium::Time->from_num( $_->[0] )
+                    Actium::Time->from_num( $_->[0] )
                       ->formatted( format => '24+' )
                 } @row_of_times
             );

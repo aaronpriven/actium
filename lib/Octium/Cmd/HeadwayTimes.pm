@@ -4,7 +4,7 @@ package Octium::Cmd::HeadwayTimes 0.011;
 # minutes between times in the list.
 
 use Octium;
-use Octium::Time;
+use Actium::Time;
 
 ###########################################
 ## COMMAND
@@ -81,7 +81,7 @@ sub START {
 }    ## tidy end: sub START
 
 func timenums (@times) {
-    my @timenums = map { Octium::Time->from_str($_)->timenum } @times;
+    my @timenums = map { Actium::Time->from_str($_)->timenum } @times;
     return @timenums;
 }
 
