@@ -157,19 +157,15 @@ MooseX::MarkAsMethods is imported with parameters "autoclean => 1".
 
 =item *
 
-L<Octium::MooseX::BuildTriggerShortcuts|Octium::MooseX::BuildTriggerShortcuts>
+L<Actium::MooseX::PredicateClearerShortcuts|Actium::MooseX::PredicateClearerShortcuts>
 
 =item *
 
-L<Octium::MooseX::PredicateClearerShortcuts|Octium::MooseX::PredicateClearerShortcuts>
+L<Actium::MooseX::Rwp|Actium::MooseX::Rwp>
 
 =item *
 
-L<Octium::MooseX::Rwp|Octium::MooseX::Rwp>
-
-=item *
-
-L<Octium::MooseX::BuiltIsRo|Octium::MooseX::BuiltIsRo>
+L<Actium::MooseX::BuiltIsRo|Actium::MooseX::BuiltIsRo>
 
 =item *
 
@@ -324,17 +320,16 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
             # either class or role
 
             _do_import 'MooseX::MarkAsMethods', autoclean => 1;
-            _do_import 'Octium::MooseX::BuildTriggerShortcuts';
-            _do_import 'Octium::MooseX::PredicateClearerShortcuts';
-            _do_import 'Octium::MooseX::Rwp';
-            _do_import 'Octium::MooseX::BuiltIsRo';
+            _do_import 'Actium::MooseX::PredicateClearerShortcuts';
+            _do_import 'Actium::MooseX::Rwp';
+            _do_import 'Actium::MooseX::BuiltIsRo';
             _do_import 'MooseX::StrictConstructor';
             _do_import 'MooseX::SemiAffordanceAccessor';
             _do_import 'Moose::Util::TypeConstraints';
             _do_import 'Kavorka',
               fun => { -as => 'func' },
               'method', '-allmodifiers';
-        }    ## tidy end: if ($type)
+        }
         else {
             _do_import( 'Kavorka', fun => { -as => 'func' } );
         }
@@ -546,7 +541,7 @@ sub joinseries {
         $separator .= $SPACE;
     }
     else {
-        $oxford = delete $options{oxford} // 0;
+        $oxford    = delete $options{oxford} // 0;
         $separator = q[, ];
     }
 
@@ -1294,19 +1289,15 @@ Moose (and its accompanying modules)
 
 =item *
 
-Octium::MooseX::BuiltIsRo
+Actium::MooseX::BuiltIsRo
 
 =item *
 
-Octium::MooseX::PredicateClearerShortcuts
+Actium::MooseX::PredicateClearerShortcuts
 
 =item *
 
-Octium::MooseX::BuildTriggerShortcuts
-
-=item *
-
-Octium::MooseX::Rwp
+Actium::MooseX::Rwp
 
 =item *
 
