@@ -560,7 +560,7 @@ sub _build_option_objs {
         }
     }    ## tidy end: while (@optionspecs)
 
-    Octium::immut;
+    Actium::immut;
     # made immutable here, after any new attributes are made in dispatch
     # routines
 

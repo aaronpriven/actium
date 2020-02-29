@@ -583,7 +583,7 @@ sub _get_trip_notes_from_event_date {
     }    ## tidy end: TRIP: foreach \my @trip_record(@trip_records)
 
     my $dumpfh = $signup->open_write('note_of_trip.dump');
-    say $dumpfh Octium::dumpstr(%note_of_trip);
+    say $dumpfh Actium::dumpstr(%note_of_trip);
     close $dumpfh;
 
     return \%note_of_trip;
@@ -1380,7 +1380,7 @@ sub _get_xhea_filenames {
         my $signup = $hasi_folder->signup;
 
         #my $dump_fh = $hasi_folder->open_write("$signup.dump");
-        #say $dump_fh Octium::dumpstr (\%pat, \%tps, \%trp, \%pts);
+        #say $dump_fh Actium::dumpstr (\%pat, \%tps, \%trp, \%pts);
         #close $dump_fh;
 
         $cry->done;

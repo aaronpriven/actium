@@ -388,7 +388,7 @@ method compare_to ( Octium::O::Sked::Collection $newcollection) {
     );
 }
 
-Octium::immut;
+Actium::immut;
 
 1;
 

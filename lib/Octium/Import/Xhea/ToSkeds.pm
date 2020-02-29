@@ -96,7 +96,7 @@ sub xhea2skeds {
     #        my $dumpfile = '/tmp/xheaout.7';
     #        my $dumpcry = cry("Dumping patterns and trips to $dumpfile");
     #        open my $dump_out, '>', $dumpfile;
-    #        say $dump_out Octium::dumpstr($patgroup_by_lgdir_r);
+    #        say $dump_out Actium::dumpstr($patgroup_by_lgdir_r);
     #        close $dump_out;
     #        $dumpcry->done;
 

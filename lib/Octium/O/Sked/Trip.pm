@@ -254,7 +254,7 @@ sub clone {
     my $self  = shift;
     my $class = blessed $self;
 
-    my %init_args = Octium::hashref(@_)->%*;
+    my %init_args = Actium::hashref(@_)->%*;
 
     foreach my $attribute ( $class->meta->get_all_attributes ) {
 
@@ -368,7 +368,7 @@ sub merge_pair {
 
 }    ## <perltidy> end sub merge_pair
 
-Octium::immut;
+Actium::immut;
 
 1;
 
