@@ -278,12 +278,12 @@ sub minimum_pages {
     return 1 if ( $overlong == 0 );
     # if not overlong, could fit on one page
 
-    my $minimum_frames = Octium::ceil( $overlong * 1.5 );
+    my $minimum_frames = Actium::ceil( $overlong * 1.5 );
 
     # Each overlong table can only be paired with one other overlong table.
     # So it takes at least 1.5 frames per overlong one.
 
-    return Octium::ceil( $minimum_frames / $self->maximum_frame_count );
+    return Actium::ceil( $minimum_frames / $self->maximum_frame_count );
 }
 
 sub assign_page {

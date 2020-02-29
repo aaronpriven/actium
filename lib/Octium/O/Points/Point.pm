@@ -518,7 +518,7 @@ my $takes_up_columns_cr = sub {
     my $fits_in_cols = 0;
 
     foreach my $height (@heights) {
-        $fits_in_cols += Octium::ceil( $height / $col_height );
+        $fits_in_cols += Actium::ceil( $height / $col_height );
     }
 
     return $fits_in_cols;
@@ -887,8 +887,8 @@ sub format_columns {
         if ($column_length) {
 
             my $count = $column->formatted_time_count;
-            my $width = Octium::ceil( $count / $column_length );
-            $column_length = Octium::ceil( $count / $width );
+            my $width = Actium::ceil( $count / $column_length );
+            $column_length = Actium::ceil( $count / $width );
 
             my @ft;
             my $iterator = Actium::natatime $column_length,

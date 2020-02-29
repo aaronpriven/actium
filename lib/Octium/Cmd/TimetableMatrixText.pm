@@ -218,7 +218,7 @@ sub quantity {
     my ( $center, $tt_name, $each ) = @_;
 
     my $factor   = $factor_of{"$center\0$tt_name"} // 1;
-    my $quantity = Octium::ceil( $factor * $each );
+    my $quantity = Actium::ceil( $factor * $each );
 
     return $quantity;
 
