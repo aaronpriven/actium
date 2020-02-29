@@ -47,7 +47,7 @@ sub START {
             my @prevtimes = timenums( split( "\t", $prev ) );
             my @times     = timenums( split( "\t", $line ) );
 
-            my $numfields = Octium::min( $#prevtimes, $#times );
+            my $numfields = Actium::min( $#prevtimes, $#times );
 
             my @headways;
 

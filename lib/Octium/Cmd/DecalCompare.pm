@@ -26,7 +26,7 @@ sub START {
         my ( $id, $olddesc, $decals ) = split( /\t/, $line, 3 );
 
         my @decals;
-        @decals = Octium::uniq split( /\t/, $decals );
+        @decals = Actium::uniq split( /\t/, $decals );
 
         next unless @decals;
 

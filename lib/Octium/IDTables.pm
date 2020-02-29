@@ -264,7 +264,7 @@ sub _make_per_line_texts {
     my $locals_of_r = _make_locals($lines_r);
 
     foreach my $line (
-        Octium::uniq( sort ( keys %{$days_of_r}, keys %{$locals_of_r} ) ) )
+        Actium::uniq( sort ( keys %{$days_of_r}, keys %{$locals_of_r} ) ) )
     {
 
         my @texts;
@@ -288,7 +288,7 @@ sub _make_per_line_texts {
 
         $per_line_texts{$line} = join( $IDT->hardreturn, @texts );
 
-    }    ## tidy end: foreach my $line ( Octium::uniq(...))
+    }    ## tidy end: foreach my $line ( Actium::uniq(...))
 
     return \%per_line_texts;
 
@@ -317,7 +317,7 @@ sub _make_days {
     }
 
     my @days_objs = values %days_obj_of;
-    my @days_codes = Octium::uniq( map { $_->as_sortable } @days_objs );
+    my @days_codes = Actium::uniq( map { $_->as_sortable } @days_objs );
 
     if ( @days_codes == 1 ) {
         return { q[] => $days_objs[0] };
@@ -348,7 +348,7 @@ sub _make_locals {
         }
     }
 
-    my @locals = Octium::uniq( sort values %local_of );
+    my @locals = Actium::uniq( sort values %local_of );
 
     if ( @locals == 1 ) {
         return { q[] => $locals[0] };
@@ -378,7 +378,7 @@ sub _make_length {
 
     my @lines = @_;
 
-    my $ems = Octium::max( ( map { ems($_) } @lines ) );
+    my $ems = Actium::max( ( map { ems($_) } @lines ) );
 
     my $length;
     for ($ems) {
@@ -399,7 +399,7 @@ sub _make_length {
 
     }
 
-    return Octium::max( $length, scalar @lines );
+    return Actium::max( $length, scalar @lines );
 }    ## tidy end: sub _make_length
 
 sub output_a_pubtts {

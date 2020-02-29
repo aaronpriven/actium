@@ -74,7 +74,7 @@ has placetime_r => (
     {
         my @stoptimes = $self->stoptimes;
         foreach my $placetime (@$placetimes_r) {
-            if ( Octium::none { $_ == $placetime } @stoptimes ) {
+            if ( Actium::none { $_ == $placetime } @stoptimes ) {
                 croak 'Octium::Sked::Trip::Time object '
                   . 'found in placetimes but not in stoptimes.';
             }

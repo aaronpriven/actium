@@ -19,7 +19,7 @@ sub break_sets {
         return ( [ \@timenums ], [undef] );
     }
 
-    my @objs = Octium::uniq( Actium::Time->from_str( split( /,/, $breaks ) ) );
+    my @objs = Actium::uniq( Actium::Time->from_str( split( /,/, $breaks ) ) );
 
     my @objs_with_num = sort { $a->[1] <=> $b->[1] }
       map { [ $_, $_->timenum ] } @objs;
@@ -67,7 +67,7 @@ sub frequency {
     my %diff_culled       = cull_diffs( $#timenums, \%diff_count );
     my %diff_psych_culled = cull_diffs( $#timenums, \%diff_psychrounded );
 
-    my @alldiffs = Octium::uniq( keys %diff_count, keys %diff_psychrounded );
+    my @alldiffs = Actium::uniq( keys %diff_count, keys %diff_psychrounded );
 
     my @diff_displays = [qw/Time Diff PsychRnd Cull CullPsych/];
 
@@ -126,7 +126,7 @@ sub cull_diffs {
 
     # sorting by the least common difference. This will be (60, 15, 20 , 30)
 
-    my @counts = sort { $a <=> $b } Octium::uniq( values %diff_count );
+    my @counts = sort { $a <=> $b } Actium::uniq( values %diff_count );
     # Also, least common first: (1, 2, 3)
 
     foreach my $diff (@diffs) {

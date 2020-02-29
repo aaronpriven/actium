@@ -28,7 +28,7 @@ my $common_stop_cr = sub {
     my @trips = @_;
     my $common_stop;
     my $last_to_search
-      = ( Octium::min( map { $_->stoptime_count } @trips ) ) - 1;
+      = ( Actium::min( map { $_->stoptime_count } @trips ) ) - 1;
 
   SORTBY_STOP:
     for my $stop ( 0 .. $last_to_search ) {

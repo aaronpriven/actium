@@ -47,7 +47,7 @@ func clusterize (
 
     ## pad leaves to the longest length, with spaces
 
-    my $leaf_length = Octium::max( map {length} keys %original_count );
+    my $leaf_length = Actium::max( map {length} keys %original_count );
 
     if ( not( Octium::looks_like_number($root_digits) ) or $root_digits < 1 ) {
         croak "Invalid root digit specification $root_digits";
@@ -151,7 +151,7 @@ func clusterize (
 
       PARTITION:
         while ( @children_nodes >= 4
-            and ( Octium::sum( @count_of_node{@children_nodes} ) )
+            and ( Actium::sum( @count_of_node{@children_nodes} ) )
             >= $size * 2 )
         {
 
@@ -169,7 +169,7 @@ func clusterize (
             foreach my $last_item_of_partition ( 1 .. $#children_nodes - 2 ) {
 
                 my @partition = @children_nodes[ 0 .. $last_item_of_partition ];
-                my $partition_count = Octium::sum( @count_of_node{@partition} );
+                my $partition_count = Actium::sum( @count_of_node{@partition} );
 
                 if ( $partition_count >= $size ) {
 

@@ -128,7 +128,7 @@ sub _build_heights_of_compression_level_r {
 
     foreach my $level ( keys %heights_of ) {
         my @heights
-          = Octium::uniq( sort { $b <=> $a } @{ $heights_of{$level} } );
+          = Actium::uniq( sort { $b <=> $a } @{ $heights_of{$level} } );
         $heights_of{$level} = \@heights;
     }
 
@@ -153,7 +153,7 @@ sub _build_smallest_frame_height {
     my $min;
     foreach my $frameset ( $self->framesets ) {
         if ( defined $min ) {
-            $min = Octium::min( $min, $frameset->height );
+            $min = Actium::min( $min, $frameset->height );
         }
         else {
             $min = $frameset->height;
@@ -174,7 +174,7 @@ sub _build_maximum_frame_count {
     my $self = shift;
     my $max  = 0;
     foreach my $frameset ( $self->framesets ) {
-        $max = Octium::max( $max, $frameset->frame_count );
+        $max = Actium::max( $max, $frameset->frame_count );
     }
     return $max;
 

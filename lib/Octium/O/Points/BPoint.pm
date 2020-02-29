@@ -614,7 +614,7 @@ sub determine_subtype {
         my %tallest_of_chunk;
         foreach my $chunk_id ( keys %heights_of_chunk ) {
             $tallest_of_chunk{$chunk_id}
-              = Octium::max( @{ $heights_of_chunk{$chunk_id} } );
+              = Actium::max( @{ $heights_of_chunk{$chunk_id} } );
         }
 
         my @chunkids_by_length = reverse
