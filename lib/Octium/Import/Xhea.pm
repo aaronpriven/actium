@@ -217,7 +217,7 @@ sub tab_strings {
    #            }
    #            else {
    #
-   #                if ( Octium::is_arrayref( $calendar_of_tripkey{$block} ) ) {
+   #                if ( Actium::is_arrayref( $calendar_of_tripkey{$block} ) ) {
    #                    $field{blk_evt_stat_dsp}
    #                      = $calendar_of_tripkey{$block}[0]
    #                      . $SPACE
@@ -261,7 +261,7 @@ sub tab_strings {
             }
             else {
 
-                if ( Octium::is_arrayref( $calendar_of_tripkey{$tripkey} ) ) {
+                if ( Actium::is_arrayref( $calendar_of_tripkey{$tripkey} ) ) {
                     $field{trp_event_and_status}
                       = $calendar_of_tripkey{$tripkey}[0]
                       . $SPACE

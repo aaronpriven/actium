@@ -30,7 +30,7 @@ const my $CONSTRUCTOR => __PACKAGE__ . '->new';
 sub _datetime_arg {
     my $class = shift;
     my $arg   = shift;
-    if ( Octium::is_blessed_ref($arg) ) {
+    if ( Actium::is_blessed_ref($arg) ) {
         return $class->from_object($arg);
     }
     return $class->_from_strptime($arg);
@@ -42,7 +42,7 @@ sub new {
 
     croak "No arguments given to $CONSTRUCTOR" unless @_;
 
-    if ( @_ == 1 and not Octium::is_plain_hashref( $_[0] ) ) {
+    if ( @_ == 1 and not Actium::is_plain_hashref( $_[0] ) ) {
         return $class->_datetime_arg(@_);
     }
 
@@ -85,7 +85,7 @@ sub new {
 
     if ( exists $args{ymd} ) {
 
-        if ( not Octium::is_arrayref( $args{ymd} )
+        if ( not Actium::is_arrayref( $args{ymd} )
             or $args{ymd}->@* != 3 )
         {
             croak 'Argument to ymd must be a reference '
@@ -311,7 +311,7 @@ sub _x_est_date {
 
     foreach my $date (@dates) {
 
-        if ( not Octium::is_blessed_ref($date) ) {
+        if ( not Actium::is_blessed_ref($date) ) {
             $date = $class->_from_strptime($date);
         }
 

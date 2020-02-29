@@ -24,7 +24,7 @@ func new_workbook ($fh_or_fname) {
 
     my $workbook = Excel::Writer::XLSX->new($fh_or_fname);
     if ( not defined $workbook ) {
-        if ( Octium::is_ioref($fh_or_fname) ) {
+        if ( Actium::is_ioref($fh_or_fname) ) {
             croak "Couldn't create workbook";
         }
         else {
@@ -80,7 +80,7 @@ sub actium_write_row_string {
     {
         $tokens = $tokens->unblessed;
     }
-    elsif ( not Octium::is_arrayref($tokens) ) {
+    elsif ( not Actium::is_arrayref($tokens) ) {
         croak "Not an array ref in call to actium_write_row_string()";
     }
 
@@ -91,7 +91,7 @@ sub actium_write_row_string {
     for my $token (@$tokens) {
 
         # Check for nested arrays
-        if ( Octium::is_arrayref($token) ) {
+        if ( Actium::is_arrayref($token) ) {
             $ret
               = $self->actium_write_col_string( $row, $col, $token, @options );
         }
@@ -149,7 +149,7 @@ sub actium_write_col_string {
     for my $token (@$tokens) {
 
         # Check for nested arrays
-        if ( Octium::is_arrayref($token) ) {
+        if ( Actium::is_arrayref($token) ) {
             $ret
               = $self->actium_write_row_string( $row, $col, $token, @options );
         }

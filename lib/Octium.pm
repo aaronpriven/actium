@@ -18,10 +18,6 @@ sub last_cry { goto &Actium::last_cry; }
 
 # duplicating Actium into Octium
 
-use Ref::Util    ### DEP ###
-  ( qw( is_arrayref is_blessed_ref is_coderef is_hashref
-      is_ioref is_plain_arrayref is_plain_hashref is_ref)
-  );
 use Scalar::Util    ### DEP ###
   (qw( blessed looks_like_number refaddr reftype ));
 
