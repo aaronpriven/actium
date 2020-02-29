@@ -6,7 +6,7 @@ use Actium;
 use Octium;
 use autodie;
 
-use Octium::O::2DArray;
+use Array::2D;
 
 use Octium::Text::InDesignTags;
 use Octium::O::DateTime;
@@ -54,7 +54,7 @@ sub START {
     my $clusterfile = $outfile . '-clusters.txt';
     $outfile .= "-zt.txt";
 
-    my $list    = Octium::O::2DArray->new_from_xlsx($excelfile);
+    my $list    = Array::2D->new_from_xlsx($excelfile);
     my @headers = $list->shift_row;
 
     my %col;

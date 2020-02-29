@@ -2,6 +2,7 @@ package Octium::O::Sked::Storage::XLSX 0.013;
 
 use Actium ('role');
 use Octium;
+use Array::2D;
 
 use Octium::O::Sked::Trip;
 use Octium::O::Dir;
@@ -333,8 +334,7 @@ sub xlsx_layers {':raw'}
 
 method _stop_columns {
 
-    my $stop_columns
-      = Octium::O::2DArray->new( $self->_stopid_r, $self->_stopplace_r );
+    my $stop_columns = Array::2D->new( $self->_stopid_r, $self->_stopplace_r );
 
     foreach my $trip ( $self->trips ) {
         my @times = map { Actium::Time->from_num($_)->apbx } $trip->stoptimes;
@@ -358,7 +358,7 @@ method _trip_attribute_columns {
     my %shortcol_of = %{$shortcol_of_r};
 
     my $trip_attribute_columns
-      = Octium::O::2DArray->new( [ @shortcol_of{@columns} ] );
+      = Array::2D->new( [ @shortcol_of{@columns} ] );
 
     foreach my $trip ( $self->trips ) {
         $trip_attribute_columns->push_row( map { $trip->$_ } @columns );
@@ -370,8 +370,7 @@ method _trip_attribute_columns {
 
 method _place_columns {
 
-    my $place_columns
-      = Octium::O::2DArray->new( $self->_place4_r, $self->_place8_r );
+    my $place_columns = Array::2D->new( $self->_place4_r, $self->_place8_r );
 
     foreach my $trip ( $self->trips ) {
         my @times = map { Actium::Time->from_num($_)->apbx } $trip->placetimes;

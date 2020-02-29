@@ -206,8 +206,8 @@ method _mainhelp ( Str :$error = q[] , Int :$status = 0 ) {
 
     my $width = $term_width_cr->() - 2;
 
-    require Octium::O::2DArray;
-    ( undef, \my @lines ) = Octium::O::2DArray->new_to_term_width(
+    require Array::2D;
+    ( undef, \my @lines ) = Array::2D->new_to_term_width(
         array     => \@subcommands,
         width     => $width,
         separator => ($SUBCOMMAND_SEPARATOR)

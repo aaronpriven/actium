@@ -4,7 +4,7 @@ use Actium;
 use Octium;
 use Octium::Frequency;
 
-use Octium::O::2DArray;
+use Array::2D;
 use Actium::Time;
 
 sub HELP {
@@ -39,7 +39,7 @@ sub START {
     my $skiplines  = $env->option('skiplines');
     my $breaks     = $env->option('breaks');
 
-    my $aoa = Octium::O::2DArray::->new_from_file($input_file);
+    my $aoa = Array::2D->new_from_file($input_file);
 
     my @times = $aoa->col( $column - 1 );
     if ($skiplines) {

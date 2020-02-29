@@ -8,7 +8,7 @@ use HTTP::Request;                   ### DEP ###
 use LWP::UserAgent;                  ### DEP ###
 use XML::Twig;                       ### DEP ###
 use Date::Simple(qw/date today/);    ### DEP ###
-use Octium::O::2DArray;
+use Array::2D;
 use JSON;
 use Actium::Time;
 
@@ -135,7 +135,7 @@ sub output_excel {
 
         }
 
-        my $aoa  = Octium::O::2DArray->bless( \@results );
+        my $aoa  = Array::2D->bless( \@results );
         my $file = "$foldername/$station.xlsx";
         $aoa->xlsx( output_file => $file );
 

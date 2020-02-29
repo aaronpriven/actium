@@ -5,7 +5,7 @@ package Octium::Cmd::AddFields 0.012;
 use Actium;
 use Octium;
 
-use Octium::O::2DArray;
+use Array::2D;    ### DEP ###
 
 const my $DEFAULT_TABLE  => 'Stops_Neue';
 const my $DEFAULT_FIELD  => 'c_description_full';
@@ -77,7 +77,7 @@ sub START {
       // Octium::add_before_extension( $file, 'out' );
 
     my $load_cry = cry("Loading $file");
-    my $aoa      = Octium::O::2DArray->new_from_file($file);
+    my $aoa      = Array::2D->new_from_file($file);
     $load_cry->done;
 
     my $process_cry = cry("Getting column from $file");
