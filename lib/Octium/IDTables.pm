@@ -509,9 +509,9 @@ sub output_a_pubtts {
     my $listfh  = $pubtt_folder->open_write('_ttlist.txt');
     my @columns = qw<file effectivedate pages MapFile LeaveCoverForMap
       MasterPage has_short_page portrait_chars>;
-    say $listfh Octium::jointab(@columns);
+    say $listfh Actium::jointab(@columns);
     for my $linegroup ( Actium::sortbyline keys %script_entries ) {
-        say $listfh Octium::jointab(
+        say $listfh Actium::jointab(
             @{ $script_entries{$linegroup} }{@columns} );
     }
     close $listfh;

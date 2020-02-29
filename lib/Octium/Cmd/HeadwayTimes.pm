@@ -69,7 +69,7 @@ sub START {
             }
 
             if ( Actium::any {defined} @headways ) {
-                say Octium::jointab(@headways);
+                say Actium::jointab(@headways);
             }
 
             say $line;

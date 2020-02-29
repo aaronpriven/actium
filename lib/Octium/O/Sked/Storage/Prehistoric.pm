@@ -104,7 +104,7 @@ sub prehistoric_skedsfile {
         push @place9s, $place9;
     }
 
-    say $out Octium::jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
+    say $out Actium::jointab( 'SPEC DAYS', 'NOTE', 'VT', 'RTE NUM', @place9s );
 
     foreach my $trip ( $self->trips ) {
         my @times = map { Actium::Time->from_num($_)->ap_noseparator }
@@ -121,7 +121,7 @@ sub prehistoric_skedsfile {
             }
         }
 
-        say $out Octium::jointab( $except, $EMPTY, $EMPTY, $trip->line,
+        say $out Actium::jointab( $except, $EMPTY, $EMPTY, $trip->line,
             $times );
     }
 

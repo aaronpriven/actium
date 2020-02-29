@@ -156,7 +156,7 @@ sub START {
     $weekendcry->done;
 
     my $scriptfile = 'compareskeds.sh';
-    my $script     = Octium::joinlf(@ssdiff_commands) . "\n";
+    my $script     = Actium::joinlf(@ssdiff_commands) . "\n";
 
     $script_folder->slurp_write( $script, $scriptfile );
 
