@@ -175,11 +175,11 @@ sub get_fares {
             $twig->parse($fare_xml);
 
             my @fares = $twig->root->first_child('fares')->children('fare');
-            #my $cash_elt = Octium::first { $_->att('class') eq 'cash' } @fares;
+            #my $cash_elt = Actium::first { $_->att('class') eq 'cash' } @fares;
             #my $cash     = $cash_elt->att('amount');
 
             my $clipper_elt
-              = Octium::first { $_->att('class') eq 'clipper' } @fares;
+              = Actium::first { $_->att('class') eq 'clipper' } @fares;
             my $clipper = $clipper_elt->att('amount');
 
             $fare_to{$dest} = $clipper;

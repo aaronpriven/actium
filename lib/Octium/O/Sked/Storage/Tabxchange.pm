@@ -294,7 +294,7 @@ method tabxchange (
         foreach my $trip (@trips) {
 
             my @placetimes = $trip->placetimes;
-            my $idx        = Octium::firstidx {defined} @placetimes;
+            my $idx        = Actium::firstidx {defined} @placetimes;
             my $time       = Actium::Time->from_num( $placetimes[$idx] )->ap;
 
             $specdaytrip .= "<dd>Trip leaving $placedescs[$idx] at $time</dd>";

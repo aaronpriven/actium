@@ -52,7 +52,7 @@ sub START {
             my @placetimes = $trip->placetimes;
 
             my @indices = (
-                ( Octium::firstidx {defined} @placetimes ),
+                ( Actium::firstidx {defined} @placetimes ),
                 ( List::MoreUtils::lastidx {defined} @placetimes )
             );
 

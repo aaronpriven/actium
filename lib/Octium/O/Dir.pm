@@ -112,9 +112,9 @@ const my @BOUND => (
     @DIRECTIONS[ 6 .. $#DIRCODES ],
 );
 
-const my %DIRECTION_OF => Octium::mesh( @DIRCODES, @DIRECTIONS );
-const my %BOUND_OF     => Octium::mesh( @DIRCODES, @BOUND );
-const my %ORDER_OF => Octium::mesh @DIRCODES, @{ [ 0 .. $#DIRCODES ] };
+const my %DIRECTION_OF => Actium::mesh( @DIRCODES, @DIRECTIONS );
+const my %BOUND_OF     => Actium::mesh( @DIRCODES, @BOUND );
+const my %ORDER_OF => Actium::mesh @DIRCODES, @{ [ 0 .. $#DIRCODES ] };
 
 has 'dircode' => (
     is  => 'ro',
