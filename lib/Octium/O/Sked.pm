@@ -12,7 +12,6 @@ with Storage(
     'format' => 'Storable',
     io       => 'File',
 );
-use Octium::Sorting::Line qw<linekeys>;
 
 use Octium::Types (qw/DirCode ActiumDir ActiumDays/);
 use Octium::O::Sked::Trip;
@@ -652,7 +651,7 @@ sub sortable_id_with_timenum {
     $timenum = sprintf '<%04d>', $timenum;
     # pad to 4 zeros
 
-    my $linegroup = linekeys( $self->linegroup );
+    my $linegroup = Actium::linekeys( $self->linegroup );
     $linegroup =~ s/\0/ /g;
     my $dir = $self->dir_obj->as_sortable;
 

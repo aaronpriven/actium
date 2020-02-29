@@ -2,7 +2,6 @@ package Octium::Cmd::AVL2StopLines 0.012;
 
 use Actium;
 use Octium;
-use Octium::Sorting::Line (qw[sortbyline]);
 use Octium::Set('ordered_union');
 use Octium::DaysDirections (':all');
 
@@ -226,8 +225,8 @@ sub START {
 
         say $stoplines join( "\t",
             $stopid, $active,
-            join( $SPACE, sortbyline(@routes) ),    scalar @routes,
-            join( $SPACE, sortbyline(@routedirs) ), scalar @routedirs,
+            join( $SPACE, Actium::sortbyline(@routes) ),    scalar @routes,
+            join( $SPACE, Actium::sortbyline(@routedirs) ), scalar @routedirs,
             $flagroutes_all, $flagroute_diff,
             $long,           $lat,
         );

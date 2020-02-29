@@ -456,7 +456,7 @@ sub copylatest {
 
         }    ## tidy end: foreach my $line_and_token ...
 
-    }    ## tidy end: FOLDER: foreach my $foldername ( Actium::sortbyline...)
+    }
 
     $copy_cry->over(q[]);
     $copy_cry->done;
@@ -932,8 +932,6 @@ Attempting to move or copy returned a system error.
 =item * Sub::Exporter
 
 =item * Octium::O::Folder
-
-=item * Octium::Sorting::Line
 
 =head1 AUTHOR
 

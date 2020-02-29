@@ -4,7 +4,6 @@ use Actium;
 use Octium;
 
 use Storable();    ### DEP ###
-use Octium::Sorting::Line ('byline');
 use Octium::Set('ordered_union');
 use Octium::DaysDirections (':all');
 use Algorithm::Diff('sdiff');    ### DEP ###
@@ -164,7 +163,8 @@ sub START {
     foreach my $added_stopid ( sort @{ $changes{ADDEDSTOPS} } ) {
         my $description = $newstoplists{$added_stopid}{Description};
         next if dummy($description);
-        my @list = sort byline keys %{ $newstoplists{$added_stopid}{Routes} };
+        my @list
+          = sort Actium::byline keys %{ $newstoplists{$added_stopid}{Routes} };
         print $out "AS\t", $added_stopid, "\t$description\t", scalar @list,
           "\t",
           '"', join( ' ', @list ), '"', "\n";
@@ -173,7 +173,8 @@ sub START {
     foreach my $deleted_stopid ( sort @{ $changes{DELETEDSTOPS} } ) {
         my $description = $oldstoplists{$deleted_stopid}{Description};
         next if dummy($description);
-        my @list = sort byline keys %{ $oldstoplists{$deleted_stopid}{Routes} };
+        my @list = sort Actium::byline
+          keys %{ $oldstoplists{$deleted_stopid}{Routes} };
         print $out "RS\t", $deleted_stopid, "\t$description\t\t\t",
           scalar @list, "\t",
           '"', join( ' ', @list ), '"', "\n";
@@ -213,7 +214,8 @@ sub output_stops {
         print $fh "$desc\t", $stopid, "\t", $oldstoplists{$stopid}{Description};
 
         if ( exists $changes{$type}{$stopid}{ADDED} ) {
-            my @added = sort byline @{ $changes{$type}{$stopid}{ADDED} };
+            my @added
+              = sort Actium::byline @{ $changes{$type}{$stopid}{ADDED} };
             print $fh "\t", scalar @added, "\t", '"', join( ' ', @added ), '"';
         }
         else {
@@ -221,7 +223,8 @@ sub output_stops {
         }
 
         if ( exists $changes{$type}{$stopid}{REMOVED} ) {
-            my @removed = sort byline @{ $changes{$type}{$stopid}{REMOVED} };
+            my @removed
+              = sort Actium::byline @{ $changes{$type}{$stopid}{REMOVED} };
             print $fh "\t", scalar @removed, "\t", '"', join( ' ', @removed ),
               '"';
         }
@@ -231,7 +234,7 @@ sub output_stops {
 
         if ( exists $changes{$type}{$stopid}{UNCHANGED} ) {
             my @unchanged
-              = sort byline @{ $changes{$type}{$stopid}{UNCHANGED} };
+              = sort Actium::byline @{ $changes{$type}{$stopid}{UNCHANGED} };
             print $fh "\t", scalar @unchanged, "\t", '"',
               join( ' ', @unchanged ), '"';
         }

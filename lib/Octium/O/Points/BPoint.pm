@@ -177,7 +177,6 @@ __END__
 
 const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 
-use Octium::Sorting::Line (qw(byline sortbyline));
 use List::Compare::Functional('get_unique');    ### DEP ###
 use Octium::O::DateTime;
 
@@ -407,7 +406,7 @@ sub make_headers_and_footnotes {
             $box->$set_primary_attr( $primary{$attr} );
         }
 
-        my @head_lines = sortbyline keys %{ $seen{line} };
+        my @head_lines = Actium::sortbyline keys %{ $seen{line} };
         $box->set_head_line_r( \@head_lines );
 
         # if more than one line, mark the footnote to it as being seen
@@ -522,7 +521,7 @@ my $takes_up_columns_cr = sub {
 my $columnsort_cr = sub {
     my ( $aa, $bb ) = @_;
     return (
-             byline( $aa->head_line(0), $bb->head_line(0) )
+             Actium::byline( $aa->head_line(0), $bb->head_line(0) )
           or $ewreplace->( $aa->dircode ) <=> $ewreplace->( $bb->dircode )
           or $aa->days cmp $bb->days
           or $aa->primary_destination cmp $bb->primary_destination
