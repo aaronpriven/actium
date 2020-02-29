@@ -416,15 +416,13 @@ func joinlf ( Maybe[Str] @items ) {
 This routine is designed to display a list as it should appear in
 English.
 
-(All items passed to joinseries must be defined, scalar values.)
-
 For example:
 
- joinseries(qw/Sally Carlos/);
+ joinseries(items => [qw/Sally Carlos/]);
  # 'Sally and Carlos'
- joinseries(qw/Fred Sally Carlos/);
+ joinseries(items => [qw/Fred Sally Carlos/]);
  # 'Fred, Sally and Carlos'
- joinseries(qw/Mei Fred Sally Carlos/);
+ joinseries(items => [qw/Mei Fred Sally Carlos/]);
  # 'Mei, Fred, Sally and Carlos'
 
 There are four named parameters. Only "items" is mandatory.
@@ -433,7 +431,8 @@ There are four named parameters. Only "items" is mandatory.
 
 =item items
 
-These are the strings to be joined.
+This is a reference to an array of the strings to be joined. They must
+must be defined, scalar values.)
 
 =item conjunction
 
@@ -441,7 +440,7 @@ The word used to connect the penultimate and last items in the list. If
 passed 'undef' or if not specified, uses "and". Spaces are always
 placed on either side of the conjunction.
 
- joinseries( { conjunction => 'or' } , qw/Fred Sally Carlos/);
+ joinseries(  conjunction => 'or' , items => [ qw/Fred Sally Carlos/] );
  # 'Fred, Sally or Carlos'
 
 =item oxford
@@ -452,7 +451,7 @@ will be treated as though a false value had been supplied, unless a
 custom separator is supplied, in which case it will be treated as
 though a true value had been supplied.
 
- joinseries( { oxford => '1' } , qw/Fred Sally Carlos/);
+ joinseries(  oxford => '1' , items => [ qw/Fred Sally Carlos/] );
  # 'Fred, Sally, and Carlos'
 
 =item separator
