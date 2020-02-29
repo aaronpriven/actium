@@ -315,7 +315,7 @@ sub _build_module {
 
     my $referred;
     while ( exists( $subcommands{$subcommand} )
-        and Octium::is_ref( $subcommands{$subcommand} ) )
+        and Actium::is_ref( $subcommands{$subcommand} ) )
     {
         $subcommand = ${ $subcommands{$subcommand} };
         $referred   = 1;
@@ -486,7 +486,7 @@ sub _subcommand_names {
     \my %subcommands = $self->_subcommands_r;
 
     return (
-        grep { not Octium::is_ref( $subcommands{$_} ) }
+        grep { not Actium::is_ref( $subcommands{$_} ) }
         sort keys %subcommands
     );
 }
@@ -518,12 +518,12 @@ sub _build_option_objs {
     while (@optionspecs) {
         my $optionspec = shift @optionspecs;
 
-        if ( Octium::is_hashref($optionspec) ) {
+        if ( Actium::is_hashref($optionspec) ) {
             $optionspec->{cmdenv} = $self;
             $optionspec->{order}  = $count++;
             push @opt_objs, Octium::CLI::Option->new($optionspec);
         }
-        elsif ( Octium::is_arrayref($optionspec) ) {
+        elsif ( Actium::is_arrayref($optionspec) ) {
 
             my ( $spec, $description, $callbackorfallback ) = @{$optionspec};
 
@@ -537,7 +537,7 @@ sub _build_option_objs {
             if ( defined $callbackorfallback ) {
 
                 my $key
-                  = Octium::is_coderef($callbackorfallback)
+                  = Actium::is_coderef($callbackorfallback)
                   ? 'callback'
                   : 'fallback';
                 $option_init{$key} = $callbackorfallback;
@@ -545,7 +545,7 @@ sub _build_option_objs {
 
             push @opt_objs, Octium::CLI::Option->new( \%option_init );
 
-        }    ## tidy end: elsif ( Octium::is_arrayref...)
+        }    ## tidy end: elsif ( Actium::is_arrayref...)
         else {
             # option package
             if ( not exists $OPTION_PACKAGE_DISPATCH{$optionspec} ) {

@@ -108,7 +108,7 @@ method clone (@params) {
 #my $reader_of_attribute_cr = sub {
 #    my $attribute = shift;
 #    my $reader    = $attribute->reader;
-#    if ( Octium::is_hashref($reader) ) {
+#    if ( Actium::is_hashref($reader) ) {
 #        $reader = ( keys %$reader )[0];
 #    }
 #    return $reader;
@@ -135,10 +135,10 @@ method clone (@params) {
 #        my $value = $self->$reader;
 #        next unless defined $value;
 #
-#        if ( Octium::is_plain_hashref($value) ) {
+#        if ( Actium::is_plain_hashref($value) ) {
 #            $value = { $value->%* };
 #        }
-#        elsif ( Octium::is_plain_arrayref($value) ) {
+#        elsif ( Actium::is_plain_arrayref($value) ) {
 #            $value = [ $value->@* ];
 #        }
 #
