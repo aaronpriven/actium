@@ -33,8 +33,6 @@ use Scalar::Util                                             ### DEP ###
 use Text::Trim('trim');                                      ### DEP ###
 use Statistics::Lite (qw/mean/);                             ### DEP ###
 
-sub _set_env { goto &Actium::_set_env }
-
 sub joinempty { goto &Actium::joinempty }
 
 sub joinlf { goto &Actium::joinlf }

@@ -106,7 +106,7 @@ sub BUILD {
         $self->_mainhelp();
     }
 
-    Octium::_set_env($self);
+    Actium::_set_env($self);
 
     my $module = $self->module;
     if ( $self->_help_requested or $self->option('help') ) {
