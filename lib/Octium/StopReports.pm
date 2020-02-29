@@ -557,14 +557,14 @@ sub linesbycity {
     my @all_lgtypes = $actiumdb->linegrouptypes_in_order;
 
     foreach my $city ( sort keys %lines_of ) {
-        my $city_h = Octium::encode_entities($city);
+        my $city_h = Actium::encode_entities($city);
         print $html_fh
           qq{<h4 style="text-transform:uppercase;" id="$city_h">$city_h</h4>};
 
         #        foreach my $type ( sort keys %{ $lines_of{$city} } ) {
         foreach my $type (@all_lgtypes) {
             next unless exists $lines_of{$city}{$type};
-            my $type_h = Octium::encode_entities($type);
+            my $type_h = Actium::encode_entities($type);
             print $html_fh "<p><strong>$type_h:</strong>";
 
             my @lines = Actium::sortbyline keys %{ $lines_of{$city}{$type} };

@@ -18,21 +18,20 @@ sub last_cry { goto &Actium::last_cry; }
 
 # duplicating Actium into Octium
 
-use HTML::Entities (qw[encode_entities]);                        ### DEP ###
-use List::Util     (qw(all any first max min none sum uniq));    ### DEP ###
-use List::MoreUtils                                              ### DEP ###
+use List::Util (qw(all any first max min none sum uniq));    ### DEP ###
+use List::MoreUtils                                          ### DEP ###
   (qw(firstidx mesh natatime));
 # List::MoreUtils::XS  ### DEP ###
-use POSIX            (qw/ceil floor/);                           ### DEP ###
-use Params::Validate (qw(validate));                             ### DEP ###
-use Ref::Util                                                    ### DEP ###
+use POSIX            (qw/ceil floor/);                       ### DEP ###
+use Params::Validate (qw(validate));                         ### DEP ###
+use Ref::Util                                                ### DEP ###
   ( qw( is_arrayref is_blessed_ref is_coderef is_hashref
       is_ioref is_plain_arrayref is_plain_hashref is_ref)
   );
-use Scalar::Util                                                 ### DEP ###
+use Scalar::Util                                             ### DEP ###
   (qw( blessed looks_like_number refaddr reftype ));
-use Text::Trim('trim');                                          ### DEP ###
-use Statistics::Lite (qw/mean/);                                 ### DEP ###
+use Text::Trim('trim');                                      ### DEP ###
+use Statistics::Lite (qw/mean/);                             ### DEP ###
 
 sub _set_env { goto &Actium::_set_env }
 
