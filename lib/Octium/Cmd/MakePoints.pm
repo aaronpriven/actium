@@ -213,7 +213,7 @@ sub START {
         next if $agency and $agency ne $run_agency;
 
         my @regions;
-        my $regionspec = Octium::trim( $template{Regions} );
+        my $regionspec = Actium::trim( $template{Regions} );
         $regionspec =~ s/\s+/ /;
         $regionspec =~ s/[^0-9: ]//g;
 

@@ -36,7 +36,7 @@ has stoptimes_comparison_str => (
 has average_stoptime => (
     is   => 'ro',
     lazy => method {
-        Octium::mean( grep { $_->has_time } $self->stoptimes )
+        Actium::mean( grep { $_->has_time } $self->stoptimes )
     },
     traits => ['DoNotSerialize'],
 );

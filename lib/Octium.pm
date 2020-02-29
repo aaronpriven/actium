@@ -24,8 +24,6 @@ use Ref::Util    ### DEP ###
   );
 use Scalar::Util    ### DEP ###
   (qw( blessed looks_like_number refaddr reftype ));
-use Text::Trim('trim');    ### DEP ###
-use Statistics::Lite (qw/mean/);    ### DEP ###
 
 sub joinlf { goto &Actium::joinlf }
 
