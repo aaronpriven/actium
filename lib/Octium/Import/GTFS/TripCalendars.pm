@@ -433,7 +433,7 @@ func text_notes {
         if (@all_or_mostly_on_days) {
 
             if ( @all_or_mostly_on_days < 4 ) {
-                $noteletter = Octium::joinempty( map { $NOTELETTER_DOW[$_] }
+                $noteletter = Actium::joinempty( map { $NOTELETTER_DOW[$_] }
                       @all_or_mostly_on_days );
             }
             elsif (

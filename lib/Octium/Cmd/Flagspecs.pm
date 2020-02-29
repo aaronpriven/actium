@@ -552,7 +552,7 @@ sub cull_placepats {
             $conn_icon{$_} = 1 foreach keys %{ $patinfo->{ConnIcons} };
         }
 
-        return Octium::joinempty( map { $ICON_OF{$_} } keys %conn_icon );
+        return Actium::joinempty( map { $ICON_OF{$_} } keys %conn_icon );
 
     }
 
@@ -881,7 +881,7 @@ sub delete_placelist_from_lists {
                 }
                 say '= Computer: ', destination_of($shortkey);
                 say $comments_of{$shortkey} if $comments_of{$shortkey};
-                say Octium::joinempty (
+                say Actium::joinempty (
                     $OVERRIDE_STRING, $SPACE, $override_of{$shortkey} || $EMPTY
                 );
                 say $ENTRY_DIVIDER;
@@ -986,7 +986,7 @@ sub delete_placelist_from_lists {
                 push @preserved, $input_comments_of{$short}
                   if $input_comments_of{$short};
                 push @preserved,
-                  Octium::joinempty( $OVERRIDE_STRING, $SPACE,
+                  Actium::joinempty( $OVERRIDE_STRING, $SPACE,
                     $input_override_of{$short} );
                 $preserved_override_of{$shortkey} = Octium::joinlf(@preserved);
             }
@@ -1286,7 +1286,7 @@ sub make_decal_spec {
         $icons = $EMPTY;
     }
 
-    $icons = Octium::joinempty( sort split( //, $icons ) );
+    $icons = Actium::joinempty( sort split( //, $icons ) );
 
     my $spec = jk( $route, $destination, $icons );
     return $spec;
@@ -1319,7 +1319,7 @@ sub make_decal_spec {
             my ( undef, $letter ) = split( /\-/, $decal );
             $next_decal_of{$route} = ++$letter;
 
-            $icons = Octium::joinempty( sort split( //, $icons ) );
+            $icons = Actium::joinempty( sort split( //, $icons ) );
 
             $decal_of{ jk( $route, $destination, $icons ) } = $decal;
         }

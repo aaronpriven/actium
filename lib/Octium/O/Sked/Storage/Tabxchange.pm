@@ -309,10 +309,10 @@ method tabxchange (
 
     #$p->(@specdaynotes);
 
-    #$fullnote .= Octium::joinempty(@specdaynotes);
+    #$fullnote .= Actium::joinempty(@specdaynotes);
 
     if (@specdaytrips) {
-        $fullnote .= '<dl>' . Octium::joinempty(@specdaytrips) . '</dl>';
+        $fullnote .= '<dl>' . Actium::joinempty(@specdaytrips) . '</dl>';
     }
 
     $p->( $fullnote, $linegroup_row_r->{LineGroupNote} );

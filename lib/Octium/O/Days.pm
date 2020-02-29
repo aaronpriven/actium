@@ -362,7 +362,7 @@ sub _build_as_specdayletter {
     else {
         my @as_specdayletters
           = map { $SPECDAYLETTER_OF{$_} } split( //, $daycode );
-        $specdayletter = Octium::joinempty(@as_specdayletters);
+        $specdayletter = Actium::joinempty(@as_specdayletters);
     }
 
     if ($schspecdayletter) {
