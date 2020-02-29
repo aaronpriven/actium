@@ -459,7 +459,7 @@ sub _get_trip_notes_from_event_date {
           = grep { $field{ $tripfield_of_day{$_} } == 1 } 1 .. 7;
         my %is_a_trip_operating_day = map { $_ => 1 } @trip_operating_days;
 
-        my $cachekey = "$event:" . Octium::joinempty(@trip_operating_days);
+        my $cachekey = "$event:" . Actium::joinempty(@trip_operating_days);
         if ( exists $notecache{$cachekey} ) {
             $note_of_trip{$trip_number} = $notecache{$cachekey};
             next TRIP;
@@ -489,7 +489,7 @@ sub _get_trip_notes_from_event_date {
         if (@all_or_mostly_on_days) {
 
             if ( @all_or_mostly_on_days < 4 ) {
-                $noteletter = Octium::joinempty( map { $NOTELETTER_DOW[$_] }
+                $noteletter = Actium::joinempty( map { $NOTELETTER_DOW[$_] }
                       @all_or_mostly_on_days );
             }
             elsif (

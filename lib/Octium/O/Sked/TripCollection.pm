@@ -167,7 +167,7 @@ my $compare_range_cr = sub {
 
         @found_days = map { split(//) } @found_days;
 
-        $compstrs_of_return_day{ Octium::joinempty( sort @found_days ) }
+        $compstrs_of_return_day{ Actium::joinempty( sort @found_days ) }
           = $found_compstrs_r;
 
     }

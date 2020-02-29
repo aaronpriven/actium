@@ -864,7 +864,7 @@ sub descrips_of_transithubs_indesign {
             my $descrip = $descrip_of{$line};
 
             push @descrip_texts,
-              Octium::joinempty(
+              Actium::joinempty(
                 $IDT->parastyle('LineDescrip_Line'),
                 $IDT->encode_high_chars($line),
                 $IDT->hardreturn,
@@ -880,7 +880,7 @@ sub descrips_of_transithubs_indesign {
 
         my $effdate = $effdate_obj->long_en;
 
-        $descrips_of_hubs{$transithub} = Octium::joinempty(
+        $descrips_of_hubs{$transithub} = Actium::joinempty(
             $IDT->start,
             $IDT->parastyle('LineDescrip_TitleLine'),
             $IDT->charstyle('LineDescrip_Title'),

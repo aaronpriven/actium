@@ -185,7 +185,7 @@ sub _make_portrait_chars {
 
     shift @page_assignments if $has_shortpage;
 
-    return Octium::joinempty( map { $_->{frameset}->is_portrait ? 'P' : 'L' }
+    return Actium::joinempty( map { $_->{frameset}->is_portrait ? 'P' : 'L' }
           @page_assignments );
 
     #my @portrait_chars;
