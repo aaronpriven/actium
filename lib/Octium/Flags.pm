@@ -119,8 +119,8 @@ sub flag_assignments_tabbed {
 
     return unless $assignments_aoa;    # if there was an error
 
-    require Octium::O::2DArray;
-    my $assignments = Octium::O::2DArray->bless($assignments_aoa);
+    require Array::2D;
+    my $assignments = Array::2D->bless($assignments_aoa);
 
     return $assignments->tsv;
 

@@ -799,8 +799,8 @@ sub load_sheet {
 
     my $filespec = $self->make_filespec($filename);
 
-    require Octium::O::2DArray;
-    my $sheet = Octium::O::2DArray::->new_from_file($filespec);
+    require Array::2D;
+    my $sheet = Array::2D->new_from_file($filespec);
 
     return $sheet;
 

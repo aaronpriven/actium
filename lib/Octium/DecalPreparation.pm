@@ -2,7 +2,7 @@ package Octium::DecalPreparation 0.012;
 
 use Actium;
 use Octium;
-use Octium::O::2DArray;
+use Array::2D;
 use Excel::Writer::XLSX;             ### DEP ###
 use Excel::Writer::XLSX::Utility;    ### DEP ###
 
@@ -20,7 +20,7 @@ use Sub::Exporter -setup => {
 sub make_labels {
     my ( $input_file, $output_file, $actium_db ) = @_;
 
-    my $in_sheet          = Octium::O::2DArray->new_from_file($input_file);
+    my $in_sheet          = Array::2D->new_from_file($input_file);
     my $lines_of_r        = $in_sheet->hash_of_row_elements( 0, 1 );
     my $instructions_of_r = $in_sheet->hash_of_row_elements( 0, 3 );
     my $db_decals_of_r = $actium_db->all_in_column_key(qw/Stops_Neue p_decals/);
@@ -90,7 +90,7 @@ sub make_labels {
 
     }    ## tidy end: foreach my $stopid ( sort keys...)
 
-    my $out_sheet = Octium::O::2DArray->new_across( 2, @labels );
+    my $out_sheet = Array::2D->new_across( 2, @labels );
     $out_sheet->ins_col( 1, ($SPACE) x scalar @{$out_sheet} );
 
     # blank column for space in the mdidle of the label
@@ -105,8 +105,8 @@ sub make_decal_count {
 
     my ( $input_file, $output_file, $actium_db ) = @_;
 
-    my $lines_of_r = Octium::O::2DArray->new_from_file($input_file)
-      ->hash_of_row_elements( 0, 1 );
+    my $lines_of_r
+      = Array::2D->new_from_file($input_file)->hash_of_row_elements( 0, 1 );
 
     # stop ID column, lines column
 

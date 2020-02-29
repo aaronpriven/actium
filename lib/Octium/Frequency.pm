@@ -2,7 +2,7 @@ package Octium::Frequency 0.012;
 
 use Actium;
 use Octium;
-use Octium::O::2DArray;
+use Array::2D;
 use Actium::Time;
 use Math::Round('nearest');    ### DEP ###
 use List::MoreUtils();         ### DEP ###
@@ -79,8 +79,7 @@ sub frequency {
           ];
     }
 
-    my $freq_display
-      = Octium::O::2DArray::->new(@diff_displays)->tabulated('  ');
+    my $freq_display = Array::2D->new(@diff_displays)->tabulated('  ');
 
     my ( $lowest, $highest )
       = List::MoreUtils::minmax( keys %diff_psych_culled );

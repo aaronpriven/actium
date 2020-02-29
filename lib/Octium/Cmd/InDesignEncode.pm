@@ -8,7 +8,7 @@ use File::Slurper;
 use Octium::Text::InDesignTags;
 const my $IDT => 'Octium::Text::InDesignTags';
 
-use Octium::O::2DArray;
+use Array::2D;
 
 sub START {
     my ( $class, $env ) = @_;
@@ -19,7 +19,7 @@ sub START {
         my $processing_cry = $env->crier->cry("Processing $input_file");
         my $input_cry      = $env->crier->cry("Loading $input_file");
 
-        my $input = Octium::O::2DArray->new_from_file($input_file);
+        my $input = Array::2D->new_from_file($input_file);
 
         $input->[0][0] =~ s/\N{BYTE ORDER MARK}//;
 

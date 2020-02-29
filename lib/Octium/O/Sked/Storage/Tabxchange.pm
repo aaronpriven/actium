@@ -28,12 +28,12 @@ method tabxchange (
     #  my $actiumdb       = $params{actiumdb};
     #  my $skedcollection = $params{collection};
 
-    require Octium::O::2DArray;
+    require Array::2D;
 
     # line 1 - skedid
 
     my $skedid = $self->transitinfo_id;
-    my $aoa = Octium::O::2DArray->bless( [ [$skedid] ] );
+    my $aoa = Array::2D->bless( [ [$skedid] ] );
 
     my $p = sub { $aoa->push_row( @_, $EMPTY ) };
     # the $EMPTY is probably not needed but the old program
@@ -342,7 +342,7 @@ method tabxchange (
 
     # lines 17 - times
 
-    my $placetimes_aoa = Octium::O::2DArray->new;
+    my $placetimes_aoa = Array::2D->new;
 
     foreach my $trip ( $self->trips ) {
         my @placetimes = map { Actium::Time->from_num($_)->ap_noseparator }

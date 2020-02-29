@@ -5,7 +5,7 @@ package Octium::Cmd::PrepareFlags 0.011;
 use Actium;
 use Octium;
 use Octium::Flags;
-use Octium::O::2DArray;
+use Array::2D;
 
 sub OPTIONS {
     return qw/actiumdb signup/;
@@ -26,7 +26,7 @@ sub START {
         ( $output_file, undef ) = Octium::file_ext($input_file);
         $output_file .= '-assignments.txt';
 
-        my $in_sheet = Octium::O::2DArray->new_from_file($input_file);
+        my $in_sheet = Array::2D->new_from_file($input_file);
         @stopids = $in_sheet->col(0);
         @stopids = grep {/\A \d+ \z/sx} @stopids;
         $stopidinput_cry->d_ok;

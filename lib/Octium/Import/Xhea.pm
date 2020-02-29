@@ -16,7 +16,7 @@ use Octium::O::DateTime;
 use List::MoreUtils('pairwise');    ### DEP ###
 use Params::Validate(':all');       ### DEP ###
 use Actium::Time;
-use Octium::O::2DArray;
+use Array::2D;
 
 const my $PREFIX => 'Octium::Import::Xhea';
 
@@ -126,7 +126,7 @@ sub xhea_import {
             $adjusted_values_of_r->{$STOPS} );
 
         $tab_strings_r->{$STOPS_PC}
-          = Octium::O::2DArray->new($new_s_records_r)->tsv( @{$new_s_heads_r} );
+          = Array::2D->new($new_s_records_r)->tsv( @{$new_s_heads_r} );
 
     }
 
@@ -138,7 +138,7 @@ sub xhea_import {
             $adjusted_values_of_r->{$PLACES} );
 
         $tab_strings_r->{$PLACES_PC}
-          = Octium::O::2DArray->new($new_p_records_r)->tsv( @{$new_p_heads_r} );
+          = Array::2D->new($new_p_records_r)->tsv( @{$new_p_heads_r} );
     }
 
     $tab_folder->write_files_from_hash( $tab_strings_r, qw(tab txt) );
@@ -164,7 +164,7 @@ sub tab_strings {
         my $records_r    = $values_of_r->{$record_name};
 
         $tab_of{$record_name}
-          = Octium::O::2DArray->new($records_r)->tsv( @{$fieldnames_r} );
+          = Array::2D->new($records_r)->tsv( @{$fieldnames_r} );
         # = aoa2tsv( $records_r, $fieldnames_r );
 
     }

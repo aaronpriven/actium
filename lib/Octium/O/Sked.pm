@@ -18,7 +18,7 @@ use Octium::O::Sked::Trip;
 use Actium::Time;
 use Octium::O::Dir;
 use Octium::O::Days;
-use Octium::O::2DArray;
+use Array::2D;
 
 const my $KEY_SEPARATOR => "\c]";
 
@@ -789,7 +789,7 @@ sub spaced {
     local $LIST_SEPARATOR = $SPACE;
     say $out "@simplefields";
 
-    my $place_records = Octium::O::2DArray->new();
+    my $place_records = Array::2D->new();
 
     my ( $columns_r, $shortcol_of_r ) = $self->attribute_columns;
     my @columns     = @{$columns_r};
@@ -823,7 +823,7 @@ sub spaced {
 
     say $out $place_records->tabulated, "\n";
 
-    my $stop_records = Octium::O::2DArray->new();
+    my $stop_records = Array::2D->new();
 
     push @$stop_records, [ $self->stopids ];
     push @$stop_records, [ $self->stopplaces ];
