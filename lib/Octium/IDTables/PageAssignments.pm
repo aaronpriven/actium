@@ -388,7 +388,7 @@ sub _sort_page_partitions {
 
             }
 
-            if ( Octium::all_eq(@ids) ) {
+            if ( Actium::all_eq(@ids) ) {
                 $partitions_with_values{pointsforsorting} += 11;
                 next PAGE;
                 # one ID; maximum value (8+2+1)
@@ -396,7 +396,7 @@ sub _sort_page_partitions {
 
             my $pagepoints = 0;
 
-            my $all_eq_lines = Octium::all_eq(@all_lines);
+            my $all_eq_lines = Actium::all_eq(@all_lines);
 
             if ($all_eq_lines) {
                 $pagepoints += 8;
@@ -408,8 +408,8 @@ sub _sort_page_partitions {
             else {
                 $pagepoints += 4 if _one_line_in_common(@lines);
             }
-            $pagepoints += 2 if Octium::all_eq(@daycodes);
-            $pagepoints += 1 if Octium::all_eq(@dircodes);
+            $pagepoints += 2 if Actium::all_eq(@daycodes);
+            $pagepoints += 1 if Actium::all_eq(@dircodes);
 
             $partitions_with_values{pointsforsorting} += $pagepoints;
 

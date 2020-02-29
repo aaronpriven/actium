@@ -175,7 +175,7 @@ has has_place_differences => (
 method _build_has_place_differences {
     my @sdiffs = $self->place_sdiffs;
     my @changetypes = map { $_->[0] } @sdiffs;
-    return Octium::any { $_ ne 'u' } @changetypes;
+    return Actium::any { $_ ne 'u' } @changetypes;
 }
 
 has _place_sdiff_r => (
@@ -237,7 +237,7 @@ method _build_shows_daycode {
 method _build_shows_specday {
     foreach \my %trip ( $self->trips ) {
         my @specdays = $trip{specday}->@*;
-        return 1 if Octium::any {$_} @specdays;
+        return 1 if Actium::any {$_} @specdays;
     }
     return 0;
 
@@ -446,7 +446,7 @@ method _build_trips {
         # gets a list of all the times for this column
 
         next FIND_COLUMN_TO_COMPARE
-          if Octium::any { not defined $_ } @times;
+          if Actium::any { not defined $_ } @times;
 
         $column_to_compare = $col_idx;
 

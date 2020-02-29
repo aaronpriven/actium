@@ -204,7 +204,7 @@ func clusterize (
         # flatten the structure by a level -- make the grandchildren
         # the children -- and reprocess.
 
-        if ( Octium::any { exists $children_of{$_} } @children_nodes ) {
+        if ( Actium::any { exists $children_of{$_} } @children_nodes ) {
 
             foreach my $child_node (@children_nodes) {
                 if ( exists $children_of{$child_node} ) {

@@ -118,7 +118,7 @@ sub stoptime_sort {
 ### TRIPS BY DAY
 
 my $all_are_weekdays_cr = sub {
-    return Octium::all {m/\A 1? 2? 3? 4? 5? \z/x} @_;
+    return Actium::all {m/\A 1? 2? 3? 4? 5? \z/x} @_;
 };
 
 my $compare_range_cr = sub {
