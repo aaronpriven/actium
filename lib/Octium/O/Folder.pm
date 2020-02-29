@@ -2,7 +2,8 @@ package Octium::O::Folder 0.014;
 
 # Objects representing folders (directories) on disk
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use File::Spec;    ### DEP ###
 use File::Glob ('bsd_glob');    ### DEP ###

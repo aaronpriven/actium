@@ -2,6 +2,7 @@ package Octium::Cmd::PrepareFlags 0.011;
 
 # Prepare artwork so that flags are built
 
+use Actium;
 use Octium;
 use Octium::Flags;
 use Octium::O::2DArray;

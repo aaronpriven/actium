@@ -4,7 +4,8 @@ package Octium::Storage::Ini 0.011;
 # At the moment, and possibly permanently, a thin wrapper around
 # Config::Tiny, but could be more later. Maybe.
 
-use Octium        ('class');
+use Actium ('class');
+use Octium;
 use Octium::Types ('ActiumFolderLike');
 
 use File::HomeDir;    ### DEP ###

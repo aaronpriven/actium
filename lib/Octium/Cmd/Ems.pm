@@ -2,6 +2,7 @@ package Octium::Cmd::Ems 0.011;
 
 # Print number of ems for text
 
+use Actium;
 use Octium;
 
 use Octium::Text::CharWidth ('ems');

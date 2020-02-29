@@ -2,6 +2,7 @@ package Octium::Cmd::BARTSkeds 0.015;
 
 # gets schedules from BART API and creates reports
 
+use Actium;
 use Octium;
 use HTTP::Request;                   ### DEP ###
 use LWP::UserAgent;                  ### DEP ###

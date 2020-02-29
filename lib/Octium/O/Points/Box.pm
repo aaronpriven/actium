@@ -2,7 +2,8 @@ package Octium::O::Points::Box 0.013;
 
 # Object for a single box in an 2019 InDesign point schedule
 
-use Octium('class');
+use Actium('class');
+use Octium;
 use Octium::O::Points::BTime;
 use Octium::Types(qw/ActiumDir ActiumDays/);
 

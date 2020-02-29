@@ -1,5 +1,6 @@
 package Octium::StopReports 0.012;
 
+use Actium;
 use Octium;
 use Excel::Writer::XLSX;    ### DEP ###
 use Octium::Sorting::Line(qw/linekeys sortbyline/);
@@ -381,10 +382,10 @@ sub _kml_stop_description {
     my $hastus_id = $stp{h_stp_identifier};
     my $lines     = $stp{p_lines};
     #my $zip        = $stp{p_zip_code};
-    my $linetext = $lines ? "<u>Lines:</u> $lines" : 'Inactive stop';
-    my $activestar = $stp{p_active} ? $EMPTY : '*';
-    my $workzone = $stp{u_work_zone};
-    my $signtype = $signtype_of_stop{$stop_id};
+    my $linetext   = $lines         ? "<u>Lines:</u> $lines" : 'Inactive stop';
+    my $activestar = $stp{p_active} ? $EMPTY                 : '*';
+    my $workzone   = $stp{u_work_zone};
+    my $signtype   = $signtype_of_stop{$stop_id};
 
     my $connections      = $stp{u_connections};
     my $connections_text = $EMPTY;
@@ -397,7 +398,7 @@ sub _kml_stop_description {
         $connections_text
           = "<br>\n"
           . "<u>Connections:</u> "
-          . Octium::joinseries_with( '&', @connections );
+          . Actium::joinseries( conjunction => '&', items => \@connections );
     }
 
     my $text

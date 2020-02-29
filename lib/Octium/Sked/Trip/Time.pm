@@ -1,6 +1,7 @@
 package Octium::Sked::Trip::Time 0.014;
 
-use Octium 'class';
+use Actium 'class';
+
 use Actium::Time;
 
 has _time_obj => (
@@ -46,7 +47,7 @@ method from_excel ($class: $cell) {
     return $class->new( time_obj => Actium::Time->from_excel($cell) );
 }
 
-Octium::immut;
+Actium::immut;
 
 __END__
 

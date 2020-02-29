@@ -2,6 +2,7 @@ package Octium::Cmd::DecalCount 0.011;
 
 # Makes spreadsheet to calculate decal count
 
+use Actium;
 use Octium;
 use Octium::DecalPreparation(qw/make_decal_count/);
 

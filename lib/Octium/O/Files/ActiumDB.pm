@@ -4,7 +4,8 @@ package Octium::O::Files::ActiumDB 0.013;
 # (the FileMaker database used by Actium users), accessed
 # thorugh ODBC.
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 use Hash::Util();
 
 const my $KEYFIELD_TABLE          => 'FMTableKeys';

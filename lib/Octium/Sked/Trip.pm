@@ -1,6 +1,7 @@
 package Octium::Sked::Trip 0.014;
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -247,7 +248,7 @@ method merge_pair ($secondtrip) {
 
 with 'Octium::Sked::Trip::Time::Collection';
 
-Octium::immut;
+Actium::immut;
 
 1;
 

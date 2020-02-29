@@ -1,8 +1,6 @@
 package Octium::IDTables::PageAssignments 0.012;
 
-use 5.016;
-use warnings;
-
+use Actium;
 use Octium;
 use Octium::Crier (qw/cry last_cry/);
 use Octium::Text::InDesignTags;

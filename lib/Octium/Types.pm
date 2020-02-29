@@ -1,6 +1,7 @@
 package Octium::Types 0.012;
 
 # Moose types for Actium
+use Actium;
 use Octium;
 use Moose::Util::TypeConstraints;
 

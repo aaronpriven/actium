@@ -4,9 +4,7 @@ package Octium::DaysDirections 0.012;
 
 # should be eliminated in favor of Octium::O::Days and Octium::O::Dir
 
-use 5.012;
-use warnings;
-
+use Actium;
 use Octium;
 
 use Sub::Exporter ( -setup => { exports => [qw<day_of_hasi dir_of_hasi>] } )

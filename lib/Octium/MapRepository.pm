@@ -1,5 +1,6 @@
 package Octium::MapRepository 0.012;
 
+use Actium;
 use Octium;
 
 # Routines for dealing with the filenames of line maps

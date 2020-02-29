@@ -1,6 +1,7 @@
 package Octium::O::Pattern::Group 0.012;
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use Octium::Types (qw/ActiumDir/);
 use Octium::O::Dir;

@@ -1,7 +1,7 @@
 package Octium::O::Traits::WithShortColumn 0.012;
 # Trait for adding short column names to attributes
 
-use Octium ('role');
+use Actium ('role');
 
 has short_column => (
     is        => 'rw',

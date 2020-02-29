@@ -1,6 +1,6 @@
 package Octium::O::Pattern::Stop 0.012;
 
-use Octium ('class');
+use Actium ('class');
 
 sub id {
     my $self = shift;
@@ -50,7 +50,7 @@ has 'place_rank' => (
 #    return $stop_and_place;
 #}
 
-Octium::immut;
+Actium::immut;
 
 1;
 

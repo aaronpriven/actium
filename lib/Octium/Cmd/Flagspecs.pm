@@ -1,5 +1,6 @@
 package Octium::Cmd::Flagspecs 0.014;
 
+use Actium;
 use Octium;
 use Octium::Set (qw/ordered_union distinguish/);
 use Octium::DaysDirections(':all');

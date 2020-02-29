@@ -1,6 +1,7 @@
 package Octium::O::DestinationCode 0.012;
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 const my $JSON_FILE => 'destcodes.json';
 

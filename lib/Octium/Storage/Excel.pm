@@ -1,5 +1,6 @@
 package Octium::Storage::Excel 0.013;
 
+use Actium;
 use Octium;
 
 use Ref::Util;

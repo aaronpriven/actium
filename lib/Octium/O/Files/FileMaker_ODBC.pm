@@ -2,7 +2,8 @@ package Octium::O::Files::FileMaker_ODBC 0.012;
 
 # Role for reading and processing FileMaker Pro databases via ODBC
 
-use Octium ('role');
+use Actium ('role');
+use Octium;
 
 use Params::Validate(':all');    ### DEP ###
 

@@ -1,6 +1,7 @@
 package Octium::O::Sked::TripCollection 0.012;
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 use List::Compare;
 
 has 'trips_r' => (

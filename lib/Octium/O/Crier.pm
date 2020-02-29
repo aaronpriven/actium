@@ -3,7 +3,8 @@ package Octium::O::Crier 0.011;
 # Actium/O/Crier - Print with indentation, status, and closure
 # Based on Term::Emit by Steve Roscio
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 use Octium::Types (qw<ARCrierBullets CrierBullet CrierTrailer>);
 use Octium::O::Crier::Cry;
 use Scalar::Util;
@@ -278,7 +279,7 @@ has '_bullet_width' => (
 );
 
 sub _build_bullet_width {
-    my $self = shift;
+    my $self      = shift;
     my $bullets_r = shift // $self->_bullets_r();
 
     # $bullets_r is passed when called as trigger,

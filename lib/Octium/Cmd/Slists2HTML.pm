@@ -1,5 +1,6 @@
 package Octium::Cmd::Slists2HTML 0.013;
 
+use Actium;
 use Octium;
 
 use Octium::O::Dir;

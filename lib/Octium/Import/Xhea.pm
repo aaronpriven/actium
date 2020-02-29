@@ -8,6 +8,7 @@ package Octium::Import::Xhea 0.012;
 
 ## no critic (ProhibitAmbiguousNames)
 
+use Actium;
 use Octium;
 use Octium::Import::CalculateFields;
 use Octium::O::DateTime;
@@ -512,7 +513,8 @@ sub _get_trip_notes_from_event_date {
 
             if ( @all_or_mostly_on_days == @all_on_days ) {
                 $note_text
-                  .= 'every ' . Octium::joinseries( @NOTE_DOW[@all_on_days] );
+                  .= 'every '
+                  . Actium::joinseries( items => \@NOTE_DOW[@all_on_days] );
             }
             else {
                 $note_text .= 'every ';
@@ -526,7 +528,8 @@ sub _get_trip_notes_from_event_date {
                         my @except_dates = map { $_->format_cldr("MMM. d") }
                           $except_days{$dow}->@*;
                         $every
-                          .= ' except ' . Octium::joinseries(@except_dates);
+                          .= ' except '
+                          . Actium::joinseries( items => \@except_dates );
                     }
                     push @everies, $every;
                 }

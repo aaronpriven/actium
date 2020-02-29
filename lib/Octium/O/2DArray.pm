@@ -1,5 +1,6 @@
 package Octium::O::2DArray 0.014;
 
+use Actium;
 use Octium;
 
 use Params::Validate (qw/validate :types/);

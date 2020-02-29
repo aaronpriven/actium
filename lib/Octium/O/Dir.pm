@@ -2,7 +2,8 @@ package Octium::O::Dir 0.012;
 
 # Object representing the scheduled direction (of a trip, or set of trips)
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
 

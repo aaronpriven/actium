@@ -2,6 +2,7 @@ package Octium::Cmd::TimetableMatrixText 0.011;
 
 # Reads the timetable matrix and produces text for it.
 
+use Actium;
 use Octium;
 use Octium::O::Folder;
 use Octium::Sorting::Line('sortbyline');
@@ -164,7 +165,11 @@ sub START {
 
             if ( 1 == scalar keys %tts_of_quantity ) {
                 print $textfh "$each of these timetables: ";
-                print $textfh Octium::joinseries_with( '&', @timetables ), " ";
+                print $textfh Actium::joinseries(
+                    conjunction => '&',
+                    items       => \@timetables
+                  ),
+                  " ";
             }
             else {
 
@@ -176,7 +181,10 @@ sub START {
                     print $textfh "$quantity each of ";
                     my @thesetts = @{ $tts_of_quantity{$quantity} };
 
-                    print $textfh Octium::joinseries_with( '&', @thesetts ),
+                    print $textfh Actium::joinseries(
+                        conjunction => '&',
+                        items       => \@thesetts
+                      ),
                       ". ";
 
                 }
@@ -210,7 +218,7 @@ sub START {
 sub quantity {
     my ( $center, $tt_name, $each ) = @_;
 
-    my $factor = $factor_of{"$center\0$tt_name"} // 1;
+    my $factor   = $factor_of{"$center\0$tt_name"} // 1;
     my $quantity = Octium::ceil( $factor * $each );
 
     return $quantity;

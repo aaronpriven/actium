@@ -1,6 +1,6 @@
 package Octium::Sked::StopSked::Collection 0.014;
 
-use Octium 'class';
+use Actium 'class';
 
 has stopid => (
     is       => 'ro',

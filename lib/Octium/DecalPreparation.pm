@@ -1,5 +1,6 @@
 package Octium::DecalPreparation 0.012;
 
+use Actium;
 use Octium;
 use Octium::O::2DArray;
 use Excel::Writer::XLSX;             ### DEP ###
@@ -48,11 +49,11 @@ sub make_labels {
         my @found_custom     = grep {m/-/} @found_all;
         my $all_list
           = @found_all
-          ? Octium::joinseries_with( '&', @found_all )
+          ? Actium::joinseries( conjunction => '&', items => \@found_all )
           : '(NO DECALS FOUND)';
         my $custom_list
           = @found_custom
-          ? Octium::joinseries_with( '&', @found_custom )
+          ? Actium::joinseries( conjunction => '&', items => \@found_custom )
           : '(NO CUSTOM DECALS FOUND)';
 
         $instructions =~ s/%c/$custom_list/;

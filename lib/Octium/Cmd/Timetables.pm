@@ -2,6 +2,7 @@ package Octium::Cmd::Timetables 0.012;
 
 # Produces InDesign tag files that represent timetables.
 
+use Actium;
 use Octium;
 
 use Octium::O::Sked::Collection;

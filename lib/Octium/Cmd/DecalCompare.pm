@@ -1,5 +1,6 @@
 package Octium::Cmd::DecalCompare 0.012;
 
+use Actium;
 use Octium;
 use Octium::Sorting::Line ('sortbyline');
 

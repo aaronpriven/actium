@@ -1,6 +1,6 @@
 package Octium::O::Pattern::Place 0.012;
 
-use Octium ('class');
+use Actium ('class');
 
 sub id {
     my $self = shift;
@@ -18,7 +18,7 @@ has [qw( ttp_is_public ttp_is_arrival ttp_is_departure)] => (
     isa => 'Str',
 );
 
-Octium::immut;
+Actium::immut;
 
 1;
 

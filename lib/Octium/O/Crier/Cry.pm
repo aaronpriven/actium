@@ -4,7 +4,8 @@ package Octium::O::Crier::Cry 0.013;
 #
 # Based on Term::Emit by Steve Roscio
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 use Unicode::LineBreak;    ### DEP ###
 use Unicode::GCString;     ### DEP ###
 
@@ -29,7 +30,7 @@ has '_crier' => (
                   maxdepth        step  override_severity
                   column_width    fh    default_closestat
                   shows_progress  )
-              ) ),
+        ) ),
         map { $_ => $_ }
           qw(
           position            set_position
@@ -150,7 +151,7 @@ sub _timestamp_now {
     my $self = shift;
 
     my $level = shift;
-    my $tsr = shift // $self->timestamp;
+    my $tsr   = shift // $self->timestamp;
 
     if ($tsr) {
         if ( Octium::reftype($tsr) eq 'CODE' ) {
@@ -402,7 +403,7 @@ sub _close {
     $severity_output = " [$severity_output]\n";
 
     my $closetext = $opts{closetext} // $self->closetext;
-    my $position = $self->position;
+    my $position  = $self->position;
 
     if (   $position == 0
         or $self->opentext ne $closetext

@@ -1,6 +1,6 @@
 package Octium::Sked::StopSked::Trip 0.014;
 
-use Octium 'class';
+use Actium 'class';
 
 has line => (
     is       => 'ro',

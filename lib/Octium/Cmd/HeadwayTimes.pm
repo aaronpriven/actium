@@ -3,6 +3,7 @@ package Octium::Cmd::HeadwayTimes 0.011;
 # This is intended to accept a tab-delimited text file and then display the
 # minutes between times in the list.
 
+use Actium;
 use Octium;
 use Actium::Time;
 

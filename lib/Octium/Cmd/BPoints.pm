@@ -1,5 +1,6 @@
 package Octium::Cmd::BPoints 0.013;
 
+use Actium;
 use Octium;
 
 sub HELP {
@@ -525,7 +526,7 @@ sub START {
                         $_ = substr( $_, 0, $max_length ) foreach @cities;
                         $cluster_display = join( ',', sort @cities );
                         $max_length--;
-                      } until length($cluster_display)
+                    } until length($cluster_display)
                       <= $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH;
 
                     $cluster_of_city{$city} = $cluster_display;

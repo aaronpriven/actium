@@ -3,7 +3,8 @@ package Octium::O::Files::HastusASI 0.011;
 # Class for reading and processing Hastus Standard AVL files
 # and storing in an SQLite database using Octium::O::Files::SQLite
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use File::Glob qw(:glob);    ### DEP ###
 use File::Spec;              ### DEP ###

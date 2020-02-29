@@ -1,5 +1,6 @@
 package Octium::Flags 0.012;
 
+use Actium;
 use Octium;
 
 const my @COLUMNS => qw[
@@ -90,7 +91,7 @@ EOT
         push @{ $rows_of_file{$file} },
           [ $master, $stopid, $description, $decals ];
 
-    } ## tidy end: while ( my $row_r = $sth->...)
+    }    ## tidy end: while ( my $row_r = $sth->...)
     $sth->finish();
 
     foreach my $reason ( keys %skipped_because ) {
@@ -111,7 +112,7 @@ EOT
 
     return \@rows_by_file;
 
-} ## tidy end: sub flag_assignments
+}    ## tidy end: sub flag_assignments
 
 sub flag_assignments_tabbed {
     my $assignments_aoa = Octium::Flags::flag_assignments(@_);

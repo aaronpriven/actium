@@ -2,7 +2,8 @@ package Octium::Sked::Trip::Time::Collection 0.014;
 
 # Collection of times
 
-use Octium ('role');
+use Actium ('role');
+use Octium;
 
 # This is a role applied to Octium::Sked::Trip. It represents
 # the methods associated with the collection of times in the trip

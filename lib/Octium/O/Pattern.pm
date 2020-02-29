@@ -2,7 +2,8 @@ package Octium::O::Pattern 0.012;
 
 # used by Xhea:::ToSkeds
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use Octium::Types (qw/DirCode ActiumDir/);
 use Octium::O::Dir;

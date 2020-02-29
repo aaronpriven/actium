@@ -3,6 +3,7 @@ package Octium::Cmd::TabSkeds2 0.012;
 # This creates the "tab files" that are used in the
 # Designtek-era web schedules
 
+use Actium;
 use Octium;
 
 use Octium::O::Sked::Collection;
@@ -21,9 +22,8 @@ sub START {
     my $commonfolder = $basefolder->subfolder('common');
     my $tabfolder    = $signup->subfolder('tabxchange');
 
-    my $collection = Octium::O::Sked::Collection->load_storable(
-        collection => 'final'
-    );
+    my $collection
+      = Octium::O::Sked::Collection->load_storable( collection => 'final' );
 
     my $dbh = $actiumdb->dbh;
     # just there to move the display forward from where it would
@@ -34,7 +34,7 @@ sub START {
         commonfolder => $commonfolder,
         actiumdb     => $actiumdb,
     );
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

@@ -3,7 +3,8 @@ package Octium::O::Sked::Storage::Prehistoric 0.012;
 # Role to allow reading and writing prehistoric Skedfile files to/from
 # Sked objects
 
-use Octium ('role');
+use Actium ('role');
+use Octium;
 
 const my %TRANSITINFO_DAYS_OF => (
     qw(

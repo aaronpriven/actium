@@ -17,7 +17,8 @@ package Octium::O::Files::SQLite 0.012;
 #Each db_type (datbase type), has one or more filetypes,
 #which has one or more tables (aka rowtypes).
 
-use Octium ('role');
+use Actium ('role');
+use Octium;
 
 use DBI;    ### DEP ###
 # DBD::SQLite ### DEP ###

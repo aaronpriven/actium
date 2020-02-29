@@ -1,5 +1,6 @@
 package Octium::Cmd::HTMLTables 0.012;
 
+use Actium;
 use Octium;
 
 # Produces HTML tables that represent timetables.

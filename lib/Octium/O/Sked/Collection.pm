@@ -1,6 +1,7 @@
 package Octium::O::Sked::Collection 0.014;
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use Octium::O::Sked;
 use Octium::Sorting::Skeds ('skedsort');

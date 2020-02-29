@@ -2,7 +2,8 @@ package Octium::O::Sked::Trip 0.012;
 
 # Trip object (for schedules and headways)
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
