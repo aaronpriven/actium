@@ -232,7 +232,7 @@ my $compstrs_should_be_merged_cr = sub {
 
 sub trips_by_day {
     my $self  = shift;
-    my $class = Octium::blessed $self;
+    my $class = Actium::blessed $self;
     my @trips = $self->trips;
 
     # compstr = stoptimes_comparison_str

@@ -154,7 +154,7 @@ sub _timestamp_now {
     my $tsr   = shift // $self->timestamp;
 
     if ($tsr) {
-        if ( Octium::reftype($tsr) eq 'CODE' ) {
+        if ( Actium::reftype($tsr) eq 'CODE' ) {
             return &{$tsr}($level);
         }
         my ( $s, $m, $h ) = localtime( time() );
@@ -354,7 +354,7 @@ sub _close {
 
     # process arguments
     foreach (@_) {
-        if ( defined( Octium::reftype($_) ) and Octium::reftype($_) eq 'HASH' )
+        if ( defined( Actium::reftype($_) ) and Actium::reftype($_) eq 'HASH' )
         {
             %opts = ( %opts, %{$_} );
         }
@@ -641,7 +641,7 @@ sub text {
 
     # process arguments
     foreach (@_) {
-        if ( defined( Octium::reftype($_) ) and Octium::reftype($_) eq 'HASH' )
+        if ( defined( Actium::reftype($_) ) and Actium::reftype($_) eq 'HASH' )
         {
             %opts = ( %opts, %{$_} );
         }
@@ -727,7 +727,7 @@ sub text {
         my $sev_key = uc($sev);
 
         while ( exists( $COLORS_OF{$sev_key} )
-            and defined( Octium::reftype( $COLORS_OF{$sev_key} ) ) )
+            and defined( Actium::reftype( $COLORS_OF{$sev_key} ) ) )
         {
             $sev_key = ${ $COLORS_OF{$sev_key} };
         }

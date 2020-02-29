@@ -58,7 +58,7 @@ around BUILDARGS ( $orig, $class: @) {
 
     return $class->$orig(@_)
       unless exists $params_r->{frames}
-      and Octium::reftype( $params_r->{frames} ) eq 'ARRAY';
+      and Actium::reftype( $params_r->{frames} ) eq 'ARRAY';
 
     my $frames_r = $params_r->{frames};
 
@@ -70,7 +70,7 @@ around BUILDARGS ( $orig, $class: @) {
         croak 'Frame passed to '
           . __PACKAGE__
           . '->new must be reference to hash of attribute specifications'
-          unless Octium::reftype($frame_r) eq 'HASH';
+          unless Actium::reftype($frame_r) eq 'HASH';
 
         $frames_r->[$i] = Octium::O::Sked::Timetable::IDFrame->new($frame_r);
 

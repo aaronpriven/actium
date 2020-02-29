@@ -18,9 +18,6 @@ sub last_cry { goto &Actium::last_cry; }
 
 # duplicating Actium into Octium
 
-use Scalar::Util    ### DEP ###
-  (qw( blessed looks_like_number refaddr reftype ));
-
 sub joinlf { goto &Actium::joinlf }
 
 sub jointab { goto &Actium::jointab }

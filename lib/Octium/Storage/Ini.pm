@@ -20,7 +20,7 @@ around BUILDARGS ($orig, $class : slurpy @ ) {
     # more than one arg: args are hash
 
     if ( @_ == 1 ) {
-        if ( Octium::reftype $_[0] and Octium::reftype $_[0] eq 'HASH' ) {
+        if ( Actium::reftype $_[0] and Actium::reftype $_[0] eq 'HASH' ) {
             %args = %{ $_[0] };
         }
         else {

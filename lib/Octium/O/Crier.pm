@@ -86,7 +86,7 @@ sub _fh_or_scalarref {
 
     return $arg if defined Scalar::Util::openhandle($arg);
 
-    if ( defined Octium::reftype($arg) and Octium::reftype($arg) eq 'SCALAR' ) {
+    if ( defined Actium::reftype($arg) and Actium::reftype($arg) eq 'SCALAR' ) {
         open( my $fh, '>', \$_[0] );
         return $fh;
     }
@@ -127,7 +127,7 @@ around BUILDARGS ($orig, $class : slurpy @) {
     if ( defined $fh ) {
 
         # ->new($fh, {option => option1, ...})
-        if ( @_ == 1 and Octium::reftype( $_[0] ) eq 'HASH' ) {
+        if ( @_ == 1 and Actium::reftype( $_[0] ) eq 'HASH' ) {
             return $class->$orig( fh => $fh, %{ $_[0] } );
         }
         else {
@@ -428,7 +428,7 @@ sub cry_method {
     my ( %opts, @args );
 
     foreach (@_) {
-        if ( defined( Octium::reftype($_) ) and Octium::reftype($_) eq 'HASH' )
+        if ( defined( Actium::reftype($_) ) and Actium::reftype($_) eq 'HASH' )
         {
             %opts = ( %opts, %{$_} );
         }
@@ -442,8 +442,8 @@ sub cry_method {
     }
 
     if (    @args == 1
-        and defined( Octium::reftype( $args[0] ) )
-        and Octium::reftype( $args[0] ) eq 'ARRAY' )
+        and defined( Actium::reftype( $args[0] ) )
+        and Actium::reftype( $args[0] ) eq 'ARRAY' )
     {
         my @pair = @{ +shift };
         $opts{opentext}  = $pair[0];
@@ -500,7 +500,7 @@ sub _close_up_to {
     my $success;
 
     while ( $this_cry
-        and ( Octium::refaddr($this_cry) != Octium::refaddr($cry) ) )
+        and ( Actium::refaddr($this_cry) != Actium::refaddr($cry) ) )
     {
         $success = $this_cry->_close;    # default severity and options
         return $success unless $success;

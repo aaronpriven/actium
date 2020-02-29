@@ -118,7 +118,7 @@ method clone (@params) {
 #
 #sub clone {
 #    my $self  = shift;
-#    my $class = Octium::blessed $self;
+#    my $class = Actium::blessed $self;
 #
 #    my %init_args = Actium::hashref(@_)->%*;
 #
@@ -165,7 +165,7 @@ method merge_pair ($secondtrip) {
 
 #sub merge_pair {
 #    my $self       = shift;
-#    my $class      = Octium::blessed $self;
+#    my $class      = Actium::blessed $self;
 #    my $secondtrip = shift;
 #
 #    return $self if $self == $secondtrip;
