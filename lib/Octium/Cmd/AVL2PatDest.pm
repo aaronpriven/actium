@@ -7,7 +7,6 @@ use Storable();    ### DEP ###
 use List::Util('uniq');
 
 use Octium::Set('ordered_union');
-use Octium::Sorting::Line(qw/byline sortbyline/);
 
 sub HELP {
 
@@ -125,7 +124,7 @@ sub START {
 
     foreach (
         sort {
-                 byline( $a->{ROUTE}, $b->{ROUTE} )
+                 Actium::byline( $a->{ROUTE}, $b->{ROUTE} )
               or $a->{PAT} <=> $b->{PAT}
               or $a->{DIR} <=> $b->{DIR}
         } @results
@@ -143,7 +142,7 @@ sub START {
     open my $joineddest, ">", "pattern-destinations-joined.txt";
     say $joineddest "line\tdir\tdestination";
 
-    foreach my $ld ( sortbyline( keys %dests_of_ld ) ) {
+    foreach my $ld ( Actium::sortbyline( keys %dests_of_ld ) ) {
 
         my @dests = uniq( $dests_of_ld{$ld}->@* );
 

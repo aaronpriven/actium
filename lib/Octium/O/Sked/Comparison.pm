@@ -76,7 +76,7 @@ method new_id {
 
 method _set_sortkey_from_id ($id!) {
     my ( $lg, $rest ) = split( /_/, $id, 2 );
-    $lg = Octium::Sorting::Line::linekeys($lg);
+    $lg = Actium::linekeys($lg);
     $self->_set_sortkey( $lg . "_$rest" );
     # avoids doing a natural sort on the days,
     # which would sort "67" before "12345"

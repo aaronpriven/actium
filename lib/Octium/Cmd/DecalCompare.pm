@@ -2,7 +2,6 @@ package Octium::Cmd::DecalCompare 0.012;
 
 use Actium;
 use Octium;
-use Octium::Sorting::Line ('sortbyline');
 
 use autodie;         ### DEP ###
 use Data::Dumper;    ### DEP ###
@@ -50,8 +49,12 @@ sub START {
             $results_of{$id} = {
                 change      => 'AS',
                 description => $description,
-                new_line =>
-                  [ sortbyline( Octium::uniq split /\t/, $new_decals_text ) ],
+                new_line    => [
+                    Actium::sortbyline(
+                        Actium::uniq split /\t/,
+                        $new_decals_text
+                    )
+                ],
                 old_line         => [],
                 new_decals       => [],
                 old_decals       => [],
@@ -69,14 +72,16 @@ sub START {
           = add_drop_unchanged( [ keys %old_decals_of_line ],
             [ keys %new_decals_of_line ] );
 
-        $results_of{$id}{new_line}
-          = [
-            sortbyline( map { @{ $new_decals_of_line{$_} } } @{$new_lines} )
-          ];
-        $results_of{$id}{old_line}
-          = [
-            sortbyline( map { @{ $old_decals_of_line{$_} } } @{$old_lines} )
-          ];
+        $results_of{$id}{new_line} = [
+            Actium::sortbyline(
+                map { @{ $new_decals_of_line{$_} } } @{$new_lines}
+            )
+        ];
+        $results_of{$id}{old_line} = [
+            Actium::sortbyline(
+                map { @{ $old_decals_of_line{$_} } } @{$old_lines}
+            )
+        ];
 
         my @old_decals
           = map { @{ $old_decals_of_line{$_} } } @{$unchanged_lines};
@@ -100,12 +105,12 @@ sub START {
     foreach my $id ( keys %decals_of ) {
         next if $results_of{$id};
         $results_of{$id} = {
-            description      => $olddesc_of{$id},
-            change           => 'RS',
-            old_line         => [ sortbyline( split /\t/, $decals_of{$id} ) ],
-            new_line         => [],
-            new_decals       => [],
-            old_decals       => [],
+            description => $olddesc_of{$id},
+            change      => 'RS',
+            old_line   => [ Actium::sortbyline( split /\t/, $decals_of{$id} ) ],
+            new_line   => [],
+            new_decals => [],
+            old_decals => [],
             unchanged_decals => [],
         };
 

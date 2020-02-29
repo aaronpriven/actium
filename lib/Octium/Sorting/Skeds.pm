@@ -9,10 +9,7 @@ use Sub::Exporter -setup => { exports => [qw(skedsort)] };
 # Sub::Exporter ### DEP ###
 use Params::Validate;    ### DEP ###
 
-use Octium::Sorting::Line (qw(byline linekeys));
-
-use List::Util(qw/min/);    ### DEP ###
-use Params::Validate();     ### DEP ###
+use List::Util(qw/min/); ### DEP ###
 
 my $required_methods
   = [qw( linedir earliest_timenum sortable_id sortable_id_with_timenum )];
@@ -61,7 +58,7 @@ sub skedsort {
     @objs_with_ids = sort { $a->{id} cmp $b->{id} } @objs_with_ids;
 
     return map { $_->{obj} } @objs_with_ids;
-} ## tidy end: sub skedsort
+}    ## tidy end: sub skedsort
 
 1;
 

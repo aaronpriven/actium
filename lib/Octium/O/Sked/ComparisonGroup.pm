@@ -3,7 +3,6 @@ package Octium::O::Sked::ComparisonGroup 0.014;
 use Actium 'class';
 use Octium;
 use Octium::O::Sked::Comparison;
-use Octium::Sorting::Line;
 
 use List::Compare;
 

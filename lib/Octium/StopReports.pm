@@ -3,7 +3,6 @@ package Octium::StopReports 0.012;
 use Actium;
 use Octium;
 use Excel::Writer::XLSX;    ### DEP ###
-use Octium::Sorting::Line(qw/linekeys sortbyline/);
 
 use Sub::Exporter -setup => { exports => [qw(crewlist_xlsx stops2kml)] };
 # Sub::Exporter ### DEP ###
@@ -568,7 +567,7 @@ sub linesbycity {
             my $type_h = Octium::encode_entities($type);
             print $html_fh "<p><strong>$type_h:</strong>";
 
-            my @lines = sortbyline keys %{ $lines_of{$city}{$type} };
+            my @lines = Actium::sortbyline keys %{ $lines_of{$city}{$type} };
 
             foreach my $line (@lines) {
                 my $url = $actiumdb->linesked_url($line);

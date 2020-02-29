@@ -3,7 +3,6 @@ package Octium::Cmd::StopsOfEachLine 0.011;
 use Actium;
 use Octium;
 use Storable();    ### DEP ###
-use Octium::Sorting::Line (qw<sortbyline>);
 
 sub HELP {
 
@@ -60,7 +59,7 @@ sub START {
 
     say $stopsfh "Route\tStops\tDecals\tInventory\tPer set";
 
-    foreach my $route ( sortbyline keys %seen_stops_of ) {
+    foreach my $route ( Actium::sortbyline keys %seen_stops_of ) {
 
         next if ( Octium::in( $route, qw/BSD BSH BSN 399 51S/ ) );
 
@@ -79,7 +78,7 @@ sub START {
 
         say $stopsfh "$threshold\t$perset";
 
-    }    ## tidy end: foreach my $route ( sortbyline...)
+    }
 
 }    ## tidy end: sub START
 

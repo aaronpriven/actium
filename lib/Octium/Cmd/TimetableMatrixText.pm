@@ -5,7 +5,6 @@ package Octium::Cmd::TimetableMatrixText 0.011;
 use Actium;
 use Octium;
 use Octium::O::Folder;
-use Octium::Sorting::Line('sortbyline');
 use Text::Trim ('trim');
 
 sub HELP {
@@ -201,7 +200,7 @@ sub START {
 
     my $listfh = $folder->open_write($ttlistfile);
 
-    foreach my $timetable ( sortbyline keys %centers_of ) {
+    foreach my $timetable ( Actium::sortbyline keys %centers_of ) {
         my @centers = @{ $centers_of{$timetable} };
         say $listfh "Timetable for $timetable:";
 
