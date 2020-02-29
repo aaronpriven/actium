@@ -1,5 +1,6 @@
 package Octium::Cmd::Scratch 0.012;
 
+use Actium;
 use Octium;
 
 sub OPTIONS { return 'actiumdb' }

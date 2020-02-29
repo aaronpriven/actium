@@ -2,6 +2,7 @@ package Octium::Cmd::StopSearch 0.011;
 
 # command-line utility to search for stps
 
+use Actium;
 use Octium;
 use Octium::O::Folder;
 

@@ -3,7 +3,8 @@ package Octium::CLI 0.012;
 # Amalgamation of Octium::Cmd, Octium::CLIEnv, and the various
 # Octium::Cmd::Config::* modules
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use Getopt::Long('GetOptionsFromArray');    ### DEP ###
 use Term::ReadKey;                          ### DEP ###
@@ -805,7 +806,7 @@ sub _build_oldsignup {
     my $self = shift;
 
     return Octium::O::Folders::Signup::->new(
-        base => ( $self->option('oldbase') // $self->option('base') ),
+        base       => ( $self->option('oldbase') // $self->option('base') ),
         signup     => $self->option('oldsignup'),
         cache      => $self->option('cache'),
         must_exist => 1,

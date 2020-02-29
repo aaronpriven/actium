@@ -1,10 +1,8 @@
 package Octium::O::Days 0.012;
 # Object representing the scheduled days (of a trip, or set of trips)
 
-use 5.022;
-use warnings;    ### DEP ###
-
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use MooseX::Storage;    ### DEP ###
 with Storage( traits => ['OnlyWhenBuilt'] );
@@ -189,7 +187,7 @@ sub as_adjectives {
     my @as_adjectives = map { $ADJECTIVE_OF{$_} } split( //, $daycode );
 
     my $results
-      = Octium::joinseries(@as_adjectives)
+      = Actium::joinseries( items => \@as_adjectives )
       . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
 
     return $cache_r->{$as_string} = $results;
@@ -229,7 +227,7 @@ sub as_plurals {
     my $schooldaycode = $self->schooldaycode;
 
     my @as_plurals = map { $PLURAL_OF{$_} } split( //, $seriescode );
-    my $results = Octium::joinseries(@as_plurals);
+    my $results = Actium::joinseries( items => @as_plurals );
 
     if ( $PLURAL_SCHOOL_OF{$schooldaycode} ) {
         $results .= $PLURAL_SCHOOL_OF{$schooldaycode};
@@ -311,7 +309,7 @@ sub _build_as_specday {
     last_cry()->text("$daycode gives blank as_plurals in specday")
       if not @as_plurals;
 
-    $specday .= Octium::joinseries(@as_plurals) . ' only';
+    $specday .= Actium::joinseries( items => @as_plurals ) . ' only';
 
     return $specday;
 }    ## tidy end: sub _build_as_specday
@@ -449,7 +447,7 @@ sub specday_and_specdayletter {
                 $union_daycode = join(
                     $EMPTY,
                     (   Octium::uniq(
-                            sort ( split //, $union_daycode . $daycode )
+                            ( sort ( split //, $union_daycode . $daycode ) )
                         )
                     )
                 );

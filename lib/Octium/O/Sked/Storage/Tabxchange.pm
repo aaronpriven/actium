@@ -1,6 +1,7 @@
 package Octium::O::Sked::Storage::Tabxchange 0.013;
 
-use Octium ('role');
+use Actium ('role');
+use Octium;
 use Actium::Time;
 
 const my $LAST_LINE_IN_FIRST_LOCAL_LIST => 70;
@@ -227,7 +228,7 @@ method tabxchange (
 
         $fullnote
           .= ' Complete lists of stops for lines '
-          . Octium::joinseries(@stoplist_links)
+          . Actium::joinseries( items => \@stoplist_links )
           . ' are also available.';
     }
 

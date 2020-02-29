@@ -2,6 +2,7 @@ package Octium::Cmd::ZipDecals 0.012;
 
 # Creates a Zip archive of the relevant decals
 
+use Actium;
 use Octium;
 use Octium::O::Folder;
 use Spreadsheet::ParseXLSX;    ### DEP ###

@@ -1,6 +1,7 @@
 package Octium::Sked::StopSked 0.014;
 
-use Octium 'class';
+use Actium 'class';
+use Octium;
 
 use Octium::Types (qw/DirCode ActiumDir ActiumDays/);
 

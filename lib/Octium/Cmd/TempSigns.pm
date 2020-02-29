@@ -1,5 +1,6 @@
 package Octium::Cmd::TempSigns 0.011;
 
+use Actium;
 use Octium;
 use autodie;
 
@@ -92,7 +93,7 @@ sub START {
     $output_cry->done;
 
     return;
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 sub _translate_graf {
     my $i18n_id  = shift;
@@ -139,7 +140,7 @@ sub _translate_phrase {
 }
 
 sub _zh_phrase {
-    my $phrase = shift;
+    my $phrase   = shift;
     my $zh_style = shift // 'ChineseBold';
 
     $phrase =~ s/((?:<0x[[:xdigit:]]+>)+)/<CharStyle:$zh_style>$1<CharStyle:>/g;

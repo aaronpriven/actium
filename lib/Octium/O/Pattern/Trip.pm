@@ -1,6 +1,6 @@
 package Octium::O::Pattern::Trip 0.012;
 
-use Octium ('class');
+use Actium ('class');
 use Actium::Time;
 
 sub id {
@@ -44,7 +44,7 @@ has 'stoptime_r' => (
     },
 );
 
-Octium::immut;
+Actium::immut;
 
 1;
 

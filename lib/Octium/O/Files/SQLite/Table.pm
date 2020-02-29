@@ -1,6 +1,7 @@
 package Octium::O::Files::SQLite::Table 0.012;
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 # Class for SQLite tables
 

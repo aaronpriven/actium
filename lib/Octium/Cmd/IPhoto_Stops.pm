@@ -2,6 +2,7 @@ package Octium::Cmd::IPhoto_Stops 0.011;
 
 # Command-line program to modify iPhoto stop information
 
+use Actium;
 use Octium;
 
 use Math::Trig   (qw(deg2rad pi great_circle_distance asin acos));   ### DEP ###
@@ -154,7 +155,7 @@ ENDSCRIPT
 
             }
 
-        } ## tidy end: if ($possible_id)
+        }    ## tidy end: if ($possible_id)
 
         # if no possible id, then check lat and long. This allows people to
         # override computerized id
@@ -175,7 +176,7 @@ ENDSCRIPT
 
         }
 
-    } ## tidy end: PHOTO: while (<$readscriptfh>)
+    }    ## tidy end: PHOTO: while (<$readscriptfh>)
 
     close $readscriptfh or die $OS_ERROR;
 
@@ -224,7 +225,7 @@ ENDSCRIPT
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 #### END OF MAIN
 
@@ -278,7 +279,7 @@ sub newcomment {
 
     return $newcomment;
 
-} ## tidy end: sub newcomment
+}    ## tidy end: sub newcomment
 
 sub drop {
     my $iphoto_fields_r = shift;
@@ -319,7 +320,7 @@ sub get_nearest_stop {
     return $nearest if $nearest;
     return;
 
-} ## tidy end: sub get_nearest_stop
+}    ## tidy end: sub get_nearest_stop
 
 sub distance {
 
@@ -359,7 +360,7 @@ sub escape_applescript_values {
 
     return wantarray ? @values : $values[0];
 
-} ## tidy end: sub escape_applescript_values
+}    ## tidy end: sub escape_applescript_values
 
 1;
 

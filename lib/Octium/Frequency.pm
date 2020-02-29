@@ -1,5 +1,6 @@
 package Octium::Frequency 0.012;
 
+use Actium;
 use Octium;
 use Octium::O::2DArray;
 use Actium::Time;

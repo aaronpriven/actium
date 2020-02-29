@@ -2,6 +2,7 @@ package Octium::Cmd::Stops2KML 0.011;
 
 # Creates KML output of stops
 
+use Actium;
 use Octium;
 use Octium::StopReports('stops2kml');
 use File::Slurper('write_text');    ### DEP ###

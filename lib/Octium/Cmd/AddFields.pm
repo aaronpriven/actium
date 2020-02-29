@@ -2,6 +2,7 @@ package Octium::Cmd::AddFields 0.012;
 
 # Adds fields from the database to a file.
 
+use Actium;
 use Octium;
 
 use Octium::O::2DArray;

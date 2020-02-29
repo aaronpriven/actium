@@ -2,6 +2,7 @@ package Octium::Cmd::Bags2 0.014;
 
 # service change bag decals from Excel and into a script
 
+use Actium;
 use Octium;
 use autodie;
 
@@ -340,7 +341,7 @@ sub _para {
 }
 
 sub _zh_phrase {
-    my $phrase = shift;
+    my $phrase   = shift;
     my $zh_style = shift // 'ChineseBold';
 
     $phrase =~ s/((?:<0x[[:xdigit:]]+>)+)/<CharStyle:$zh_style>$1<CharStyle:>/g;

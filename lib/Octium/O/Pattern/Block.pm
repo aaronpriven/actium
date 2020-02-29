@@ -1,6 +1,7 @@
 package Octium::O::Pattern::Block 0.012;
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 sub id {
     my $self = shift;

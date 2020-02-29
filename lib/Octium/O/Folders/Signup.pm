@@ -2,7 +2,8 @@ package Octium::O::Folders::Signup 0.012;
 
 # Object-oriented interface to the signup folder
 
-use Octium('class');
+use Actium('class');
+use Octium;
 
 const my $BASE_CLASS => 'Octium::O::Folder';
 extends $BASE_CLASS;

@@ -1,7 +1,8 @@
 package Octium::O::Sked 0.013;
 # the Sked object, containing everything that is a schedule
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use overload '""' => sub { shift->id }, fallback => 1;
 

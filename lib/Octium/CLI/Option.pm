@@ -1,6 +1,7 @@
 package Octium::CLI::Option 0.011;
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 # it will look for, in this order:
 

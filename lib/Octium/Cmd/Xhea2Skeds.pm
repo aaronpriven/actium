@@ -2,6 +2,7 @@ package Octium::Cmd::Xhea2Skeds 0.012;
 
 # Takes tab files that are result of XheaImport, and makes schedules
 
+use Actium;
 use Octium;
 use Octium::Import::Xhea::ToSkeds;
 

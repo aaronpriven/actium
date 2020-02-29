@@ -1,5 +1,6 @@
 package Octium::Import::GTFS::TripCalendars 0.012;
 
+use Actium;
 use Octium;
 use Octium::Import::GTFS (':all');
 use Actium::Time;
@@ -456,7 +457,8 @@ func text_notes {
 
             if ( @all_or_mostly_on_days == @all_on_days ) {
                 $note_text
-                  .= 'every ' . Octium::joinseries( @NOTE_DOW[@all_on_days] );
+                  .= 'every '
+                  . Actium::joinseries( items => \@NOTE_DOW[@all_on_days] );
             }
             else {
                 $note_text .= 'every ';
@@ -467,7 +469,8 @@ func text_notes {
                         my @except_dates = map { $_->format_cldr("MMM. d") }
                           $except_days{$dow}->@*;
                         $every
-                          .= ' except ' . Octium::joinseries(@except_dates);
+                          .= ' except '
+                          . Actium::joinseries( items => \@except_dates );
                     }
                     push @everies, $every;
                 }
@@ -551,10 +554,11 @@ func read_tripids ($signup) {
 }    ## tidy end: func read_calendar1
 
 func joinseries_semicolon_with (Str $and!, Str @things!) {
-    return $things[0] if 1 == @things;
-    return "$things[0] $and $things[1]" if 2 == @things;
-    my $final = pop @things;
-    return ( join( q{; }, @things ) . "; $and $final" );
+    return Actium::joinseries(
+        conjuction => $and,
+        items      => \@things,
+        separator  => ';'
+    );
 }
 
 #######################################

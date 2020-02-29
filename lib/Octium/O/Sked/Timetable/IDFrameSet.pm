@@ -5,7 +5,8 @@ package Octium::O::Sked::Timetable::IDFrameSet 0.012;
 # Moose object representing the frame set (series of one or more frames
 # used on a page) for an InDesign timetable
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 use Octium::O::Sked::Timetable::IDFrame;
 

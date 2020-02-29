@@ -2,6 +2,7 @@ package Octium::Cmd::DecalLabels 0.011;
 
 # Makes spreadsheet to print decal labels
 
+use Actium;
 use Octium;
 use Octium::DecalPreparation(qw/make_labels/);
 

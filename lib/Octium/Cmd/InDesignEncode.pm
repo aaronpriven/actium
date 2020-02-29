@@ -1,5 +1,6 @@
 package Octium::Cmd::InDesignEncode 0.010;
 
+use Actium;
 use Octium;
 use autodie;
 use File::Slurper;

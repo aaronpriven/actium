@@ -2,6 +2,7 @@ package Octium::Cmd::NewSignup 0.012;
 
 # Prepares a new signup directory
 
+use Actium;
 use Octium;
 use Octium::Import::Xhea;
 use Archive::Zip;    ### DEP ###

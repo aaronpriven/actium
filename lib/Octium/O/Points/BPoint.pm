@@ -2,8 +2,10 @@ package Octium::O::Points::BPoint 0.013;
 
 # object representing an entire point schedule
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
+const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 const my $KFOLDER => 'kpoints';
 
 has actiumdb => (
@@ -22,11 +24,11 @@ has 'nonstop' => (
 has [
     qw/stopid signid delivery agency signtype
       description description_nocity city tidfile/
-  ] => (
+] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
-  );
+);
 
 has copyquantity => (
     is      => 'ro',
@@ -161,7 +163,7 @@ method _build_boxes {
 
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
-            my $lines = Octium::joinseries(@notfound);
+            my $lines = Actium::joinseries( items => \@notfound );
             $self->push_error(
                 "$linetext $lines found in omit list but not in schedule data."
             );

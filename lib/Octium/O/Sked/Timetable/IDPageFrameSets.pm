@@ -3,10 +3,8 @@ package Octium::O::Sked::Timetable::IDPageFrameSets 0.012;
 # Moose object representing all the frame sets (series of one or more frames
 # used on a page) for an InDesign timetable
 
-use warnings;
-use 5.016;
-
-use Octium ('class');
+use Actium ('class');
+use Octium;
 use Octium::O::Sked::Timetable::IDFrameSet;
 use Octium::O::Sked::Timetable::IDTimetable;
 use Octium::Set(':all');

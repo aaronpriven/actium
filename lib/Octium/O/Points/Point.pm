@@ -8,7 +8,8 @@ package Octium::O::Points::Point 0.013;
 # This really needs to be refactored to get rid of the awful use of
 # global variables.
 
-use Octium ('class');
+use Actium ('class');
+use Octium;
 
 const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 
@@ -32,11 +33,11 @@ const my $NBSP         => $IDT->nbsp;
 has [
     qw/stopid signid delivery agency signtype
       description description_nocity city tidfile/
-  ] => (
+] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
-  );
+);
 
 has copyquantity => (
     is      => 'ro',
@@ -363,7 +364,7 @@ sub new_from_kpoints {
 
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
-            my $lines = Octium::joinseries(@notfound);
+            my $lines = Actium::joinseries( items => \@notfound );
             $self->push_error(
                 "$linetext $lines found in omit list but not in schedule data."
             );

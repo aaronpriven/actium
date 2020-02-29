@@ -8,6 +8,7 @@ package Octium::O::DateTime 0.014;
 
 # consider adding DateTimeX::Role::Immutable
 
+use Actium;
 use Octium;
 
 use parent 'DateTime';
@@ -49,7 +50,7 @@ sub new {
 
     my @exclusive_args = (qw[datetime strp cldr]);
     my $exclusive_args_display
-      = Octium::joinseries_with( 'or', @exclusive_args );
+      = Actium::joinseries( conjunction => 'or', items => \@exclusive_args );
     my $exclusive_argcount = scalar( @args{@exclusive_args} ) // 0;
 
     croak

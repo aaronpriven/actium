@@ -1,5 +1,6 @@
 package Octium::Cmd::Frequency 0.011;
 
+use Actium;
 use Octium;
 use Octium::Frequency;
 
