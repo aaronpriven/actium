@@ -50,7 +50,7 @@ func clusterize (
 
     my $leaf_length = Actium::max( map {length} keys %original_count );
 
-    if ( not( Octium::looks_like_number($root_digits) ) or $root_digits < 1 ) {
+    if ( not( Actium::looks_like_number($root_digits) ) or $root_digits < 1 ) {
         croak "Invalid root digit specification $root_digits";
     }
 
@@ -541,7 +541,7 @@ my $sethash_callback = {
     'not a hash of lists' => sub {
         my $sethash_r = shift;
         while ( my ( $id, $set_r ) = each %{$sethash_r} ) {
-            my $reftype = Octium::reftype($set_r);
+            my $reftype = Actium::reftype($set_r);
             if ( not( $reftype and $reftype eq 'ARRAYREF' ) ) {
                 return 0;
             }
@@ -737,8 +737,8 @@ sub _check_arrayrefs {
     my @arrayrefs = @_;
     foreach (@arrayrefs) {
         croak "Arguments to $caller must be array references"
-          unless defined( Octium::reftype($_) )
-          and Octium::reftype($_) eq 'ARRAY';
+          unless defined( Actium::reftype($_) )
+          and Actium::reftype($_) eq 'ARRAY';
     }
     return;
 }

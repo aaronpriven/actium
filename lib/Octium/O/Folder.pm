@@ -301,7 +301,7 @@ sub _positional {
     }
 
     my %newargs;
-    if ( defined Octium::reftype( $arguments[-1] )
+    if ( defined Actium::reftype( $arguments[-1] )
         and reftype( $arguments[-1] ) eq 'HASH' )
     {
         %newargs = %{ pop @arguments };

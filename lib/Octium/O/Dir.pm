@@ -85,7 +85,7 @@ sub linedir {
 
     my $self;
 
-    if ( Octium::blessed $invocant) {
+    if ( Actium::blessed $invocant) {
         $self = $invocant;
     }
     else {
@@ -123,7 +123,7 @@ has 'dircode' => (
 
 sub _data_printer {
     my $self  = shift;
-    my $class = Octium::blessed($self);
+    my $class = Actium::blessed($self);
     return "$class=" . $self->dircode;
 }
 

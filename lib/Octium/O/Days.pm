@@ -94,7 +94,7 @@ sub _build_as_string {
 
 sub _data_printer {
     my $self  = shift;
-    my $class = Octium::blessed($self);
+    my $class = Actium::blessed($self);
     return "$class=" . $self->as_string;
 }
 
@@ -397,7 +397,7 @@ sub specday_and_specdayletter {
     # if the sched days school code isn't 'B', then it must
     # be the same as the trip day code (otherwise no intersection)
     if ( $skedsch ne 'B' ) {
-        my $class = Octium::blessed($tripdays);
+        my $class = Actium::blessed($tripdays);
         $isect = $class->new( $isect->daycode, 'B' );
     }
 
@@ -416,9 +416,9 @@ sub specday_and_specdayletter {
 
         my ( $class, @objs );
 
-        if ( Octium::blessed( $_[0] ) ) {
+        if ( Actium::blessed( $_[0] ) ) {
             @objs  = @_;
-            $class = Octium::blessed( $objs[0] );
+            $class = Actium::blessed( $objs[0] );
         }
         else {
             $class = shift;
@@ -471,9 +471,9 @@ sub intersection {
     my @objs     = @_;
 
     my $class;
-    if ( Octium::blessed($invocant) ) {
+    if ( Actium::blessed($invocant) ) {
         unshift @objs, $invocant;
-        $class = Octium::blessed($invocant);
+        $class = Actium::blessed($invocant);
     }
 
     my $isect_obj           = shift @objs;

@@ -259,7 +259,7 @@ sub get_from_url {
 
     my $message = $root_r->{message};
 
-    if ( defined Octium::reftype($message) ) {
+    if ( defined Actium::reftype($message) ) {
         require Data::Dumper;
         local $Data::Dumper::Terse     = 1;
         local $Data::Dumper::Indent    = 0;
@@ -298,7 +298,7 @@ sub get_dates {
     }
     else {
 
-        if ( not Octium::blessed($effective_date) ) {
+        if ( not Actium::blessed($effective_date) ) {
             $date_obj = date($effective_date);
             die "Unrecognized date '$effective_date'"
               unless defined $date_obj;
