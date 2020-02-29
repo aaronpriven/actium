@@ -352,7 +352,7 @@ sub copylatest {
     my @web_maps_to_process;
 
   FOLDER:
-    foreach my $foldername ( Octium::sortbyline keys %folder_obj_of ) {
+    foreach my $foldername ( Actium::sortbyline keys %folder_obj_of ) {
 
         #        next FOLDER unless $foldername =~ m{
         #                      \A
@@ -456,7 +456,7 @@ sub copylatest {
 
         }    ## tidy end: foreach my $line_and_token ...
 
-    }    ## tidy end: FOLDER: foreach my $foldername ( Octium::sortbyline...)
+    }    ## tidy end: FOLDER: foreach my $foldername ( Actium::sortbyline...)
 
     $copy_cry->over(q[]);
     $copy_cry->done;

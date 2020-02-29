@@ -98,7 +98,7 @@ sub START {
     my %tables_of_type;
     my %lines_of_type;
 
-    foreach my $line ( Octium::sortbyline keys %dirs_of ) {
+    foreach my $line ( Actium::sortbyline keys %dirs_of ) {
 
         next if exists $LINE_SHOULD_BE_SKIPPED{$line};
 
@@ -267,7 +267,7 @@ EOT
         push @{ $tables_of_type{$type} },       $outdata;
         push @{ $corner_lists_of_type{$type} }, $cornerlist_outdata;
 
-    }    ## tidy end: foreach my $line ( Octium::sortbyline...)
+    }    ## tidy end: foreach my $line ( Actium::sortbyline...)
 
     my %display_type_of = map { ( $_, $_ ) } keys %lines_of_type;
     my %subtypes_of = map { ( $_, [$_] ) } keys %lines_of_type;

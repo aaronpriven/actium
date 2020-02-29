@@ -106,7 +106,7 @@ sub get_pubtt_contents_with_dates {
         my $date      = $date_obj->long_en;
         my $file_date = $date_obj->ymd('_');
         push @pubtt_contents_with_dates,
-          { lines     => [ Octium::sortbyline @lines ],
+          { lines     => [ Actium::sortbyline @lines ],
             date      => $date,
             file_date => $file_date
           };
@@ -120,7 +120,7 @@ sub get_pubtt_contents_with_dates {
     my $pubtimetables_r
       = $db_obj->all_in_columns_key( 'PubTimetables', @pubtimetable_cols );
 
-    return [ sort { Octium::byline( $a->{lines}->[0], $b->{lines}->[0] ) }
+    return [ sort { Actium::byline( $a->{lines}->[0], $b->{lines}->[0] ) }
           @pubtt_contents_with_dates ], $pubtimetables_r;
 
 }    ## tidy end: sub get_pubtt_contents_with_dates
@@ -174,7 +174,7 @@ sub _tables_and_lines {
     foreach my $table (@tables) {
         $is_a_line{$_} = 1 foreach ( $table->header_routes );
     }
-    @lines = Octium::sortbyline( keys %is_a_line );
+    @lines = Actium::sortbyline( keys %is_a_line );
 
     return \@tables, \@lines;
 
@@ -510,7 +510,7 @@ sub output_a_pubtts {
     my @columns = qw<file effectivedate pages MapFile LeaveCoverForMap
       MasterPage has_short_page portrait_chars>;
     say $listfh Octium::jointab(@columns);
-    for my $linegroup ( Octium::sortbyline keys %script_entries ) {
+    for my $linegroup ( Actium::sortbyline keys %script_entries ) {
         say $listfh Octium::jointab(
             @{ $script_entries{$linegroup} }{@columns} );
     }

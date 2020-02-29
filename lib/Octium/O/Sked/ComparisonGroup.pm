@@ -55,8 +55,8 @@ my $lgdir_days_cr = sub {
 
 method _build_result {
 
-    my @newids = Octium::sortbyline( $self->newskeds->sked_ids );
-    my @oldids = Octium::sortbyline( $self->oldskeds->sked_ids );
+    my @newids = Actium::sortbyline( $self->newskeds->sked_ids );
+    my @oldids = Actium::sortbyline( $self->oldskeds->sked_ids );
 
     my $lc = List::Compare->new( \@oldids, \@newids );
 
@@ -110,7 +110,7 @@ method _build_result {
     my $comparecry = cry(
         'Comparing ' . $self->oldsignup_id . ' to ' . $self->newsignup_id );
 
-    foreach my $oldid ( Octium::sortbyline( keys %to_compare ) ) {
+    foreach my $oldid ( Actium::sortbyline( keys %to_compare ) ) {
         my $oldsked = $self->oldskeds->sked_obj($oldid);
         foreach my $newid ( $to_compare{$oldid}->@* ) {
             my $newsked = $self->newskeds->sked_obj($newid);

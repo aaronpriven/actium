@@ -581,7 +581,7 @@ sub _build_lines {
         $seen_line{ $trip->line() } = 1;
     }
 
-    return [ Octium::sortbyline( keys %seen_line ) ];
+    return [ Actium::sortbyline( keys %seen_line ) ];
 
 }
 

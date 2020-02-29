@@ -26,7 +26,7 @@ sub START {
     my ( $folder, $filename ) = Octium::O::Folder->new_from_file($filespec);
 
     my $sheet  = $folder->load_sheet($filename);
-    my @decals = Octium::sortbyline $sheet->col(0);
+    my @decals = Actium::sortbyline $sheet->col(0);
 
     my $zipobj = Archive::Zip->new();
 

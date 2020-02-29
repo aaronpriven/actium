@@ -18,9 +18,6 @@ sub last_cry { goto &Actium::last_cry; }
 
 # duplicating Actium into Octium
 
-sub byline     { goto &Actium::byline; }
-sub sortbyline { goto &Actium::sortbyline; }
-
 use HTML::Entities (qw[encode_entities]);                        ### DEP ###
 use List::Util     (qw(all any first max min none sum uniq));    ### DEP ###
 use List::MoreUtils                                              ### DEP ###

@@ -574,7 +574,7 @@ sub _make_skeds {
     \my %patgroup_by_lgdir = $params{patgroups};
 
     my @skeds;
-    foreach my $lgdir ( Octium::sortbyline keys %patgroup_by_lgdir ) {
+    foreach my $lgdir ( Actium::sortbyline keys %patgroup_by_lgdir ) {
         next if $lgdir =~ /^399/;
         # 399 is not a real line
         last_cry()->over( $lgdir, " " );

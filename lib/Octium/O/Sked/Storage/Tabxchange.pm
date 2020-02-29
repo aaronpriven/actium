@@ -210,7 +210,7 @@ method tabxchange (
 
     }    ## tidy end: foreach my $line ( $self->lines)
 
-    my @linklines = Octium::sortbyline keys %stoplist_url_of;
+    my @linklines = Actium::sortbyline keys %stoplist_url_of;
     my $numlinks  = scalar @linklines;
 
     if ( 1 == $numlinks ) {
