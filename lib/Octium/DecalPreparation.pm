@@ -141,7 +141,7 @@ sub write_decalcount_xlsx {
 
     my $text_format = $workbook->add_format( num_format => '@' );
 
-    my @decals = Octium::sortbyline keys %count_of;
+    my @decals = Actium::sortbyline keys %count_of;
 
     my @columntypes = (qw[Decal Print Stops Adjust]);
     $count_sheet->write_row( 0, 0, \@columntypes );

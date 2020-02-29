@@ -302,7 +302,7 @@ sub START {
                             $destinations{ $time_r->{DESTINATION} }++;
                         }
 
-                        my @lines = Octium::sortbyline keys %lines;
+                        my @lines = Actium::sortbyline keys %lines;
                         my @destinations
                           = sort { $destinations{$b} <=> $destinations{$a} }
                           keys %destinations;
@@ -426,7 +426,7 @@ sub START {
 
         open my $out, '>', "kpoints/${firstdigits}xx/$stop.txt" or die $!;
 
-        foreach my $linegroup ( Octium::sortbyline keys %{ $stopinfo{$stop} } )
+        foreach my $linegroup ( Actium::sortbyline keys %{ $stopinfo{$stop} } )
         {
 
             foreach my $dir_code (

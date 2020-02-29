@@ -343,7 +343,7 @@ method output_skeds_place {
 
     my $place_xlsx_folder = $self->folder('place');
 
-    my @linegroups = Octium::sortbyline $self->linegroups;
+    my @linegroups = Actium::sortbyline $self->linegroups;
 
     foreach my $linegroup (@linegroups) {
 

@@ -410,7 +410,7 @@ sub cull_placepats {
 
     my $cry = cry('Combining duplicate place-patterns');
 
-    foreach my $routedir ( Octium::sortbyline( keys %num_trips_of_pat ) ) {
+    foreach my $routedir ( Actium::sortbyline( keys %num_trips_of_pat ) ) {
 
         # combine placelists with more than one identifier
 
@@ -432,13 +432,13 @@ sub cull_placepats {
 
         }
 
-    }    ## tidy end: foreach my $routedir ( Octium::sortbyline...)
+    }    ## tidy end: foreach my $routedir ( Actium::sortbyline...)
 
     $cry->done;
 
     my $cullcry = cry('Culling place-patterns');
 
-    foreach my $routedir ( Octium::sortbyline( keys %num_trips_of_pat ) ) {
+    foreach my $routedir ( Actium::sortbyline( keys %num_trips_of_pat ) ) {
 
         # delete subset place patterns, if possible
         my $threshold = $num_trips_of_routedir{$routedir} / $CULL_THRESHOLD;
@@ -471,7 +471,7 @@ sub cull_placepats {
             $longest = shift @placelists;
         }    ## tidy end: while (@placelists)
 
-    }    ## tidy end: foreach my $routedir ( Octium::sortbyline...)
+    }    ## tidy end: foreach my $routedir ( Actium::sortbyline...)
 
     $cullcry->done;
 
@@ -513,7 +513,7 @@ sub cull_placepats {
 
     sub routedirs_of_stop {
         my $stop = shift;
-        return Octium::sortbyline( keys %{ $pats_of_stop{$stop} } );
+        return Actium::sortbyline( keys %{ $pats_of_stop{$stop} } );
     }
 
     sub patternflag {    # if *any* pattern has the flag
@@ -858,7 +858,7 @@ sub delete_placelist_from_lists {
         my $short = 'aa';
         my %short_code_of;
 
-        foreach my $routedir ( Octium::sortbyline keys %combos ) {
+        foreach my $routedir ( Actium::sortbyline keys %combos ) {
 
             my ( $route, $dir ) = routedir($routedir);
 
@@ -887,10 +887,10 @@ sub delete_placelist_from_lists {
                 say $ENTRY_DIVIDER;
             }    ## tidy end: foreach my $combokey (@thesecombos)
 
-        }    ## tidy end: foreach my $routedir ( Octium::sortbyline...)
+        }    ## tidy end: foreach my $routedir ( Actium::sortbyline...)
 
         say '! The following are no longer in use';
-        foreach my $shortkey ( Octium::sortbyline keys %preserved_override_of )
+        foreach my $shortkey ( Actium::sortbyline keys %preserved_override_of )
         {
             my ( $route, $dir ) = routedir($shortkey);
             $short_code_of{$shortkey} = $short++;
@@ -1177,7 +1177,7 @@ sub output_specs {
         print "$stop\t$stopdesc";
 
         foreach
-          my $route ( Octium::sortbyline keys %{ $routes_of_stop{$stop} } )
+          my $route ( Actium::sortbyline keys %{ $routes_of_stop{$stop} } )
         {
             if ( exists( $plainroutes_of_stop{$stop}{$route} ) ) {
                 print "\t$route";
@@ -1397,7 +1397,7 @@ sub make_decal_spec {
         open my $out, '>', $file or die "Can't open $file for writing";
         my $oldfh = select $out;
 
-        foreach ( Octium::sortbyline keys %routes ) {    # plain decals
+        foreach ( Actium::sortbyline keys %routes ) {    # plain decals
             print Octium::jointab ( $_, $_, ( $color_of{$_} || 'grey30' ),
                 style_of_route($_) );
             if ( $plain_override_of{$_} ) {
@@ -1409,7 +1409,7 @@ sub make_decal_spec {
         }
 
         my %spec_of = reverse %decal_of;
-        foreach my $decal ( Octium::sortbyline keys %spec_of ) {
+        foreach my $decal ( Actium::sortbyline keys %spec_of ) {
             print "$decal\t";
             my ( $route, $destination, $icons ) = sk( $spec_of{$decal} );
             my $style = style_of_route($route);

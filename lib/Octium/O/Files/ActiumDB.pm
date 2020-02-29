@@ -711,7 +711,7 @@ sub _build_lines_of_linegrouptype {
     foreach my $linegrouptype ( keys %lines_of_linegrouptype ) {
 
         $lines_of_linegrouptype{$linegrouptype}
-          = [ Octium::sortbyline @{ $lines_of_linegrouptype{$linegrouptype} } ];
+          = [ Actium::sortbyline @{ $lines_of_linegrouptype{$linegrouptype} } ];
 
     }
 
@@ -859,7 +859,7 @@ sub descrips_of_transithubs_indesign {
         my @descrip_texts;
         my @lines_of_hub;
 
-        foreach my $line ( Octium::sortbyline keys %descrip_of ) {
+        foreach my $line ( Actium::sortbyline keys %descrip_of ) {
             push @lines_of_hub, $line;
             my $descrip = $descrip_of{$line};
 
@@ -918,7 +918,7 @@ sub lines_at_transit_hubs_html {
 
         foreach my $hub ( sort $self->_transithubs_of_city($city) ) {
 
-            my @lines = Octium::sortbyline( $self->_lines_of_transithub($hub) );
+            my @lines = Actium::sortbyline( $self->_lines_of_transithub($hub) );
 
             next unless @lines;
 
