@@ -18,15 +18,14 @@ sub last_cry { goto &Actium::last_cry; }
 
 # duplicating Actium into Octium
 
-use Params::Validate (qw(validate));    ### DEP ###
-use Ref::Util                           ### DEP ###
+use Ref::Util    ### DEP ###
   ( qw( is_arrayref is_blessed_ref is_coderef is_hashref
       is_ioref is_plain_arrayref is_plain_hashref is_ref)
   );
-use Scalar::Util                        ### DEP ###
+use Scalar::Util    ### DEP ###
   (qw( blessed looks_like_number refaddr reftype ));
-use Text::Trim('trim');                 ### DEP ###
-use Statistics::Lite (qw/mean/);        ### DEP ###
+use Text::Trim('trim');    ### DEP ###
+use Statistics::Lite (qw/mean/);    ### DEP ###
 
 sub joinlf { goto &Actium::joinlf }
 

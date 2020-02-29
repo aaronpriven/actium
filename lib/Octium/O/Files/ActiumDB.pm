@@ -7,6 +7,7 @@ package Octium::O::Files::ActiumDB 0.013;
 use Actium ('class');
 use Octium;
 use Hash::Util();
+use Params::Validate;
 
 const my $KEYFIELD_TABLE          => 'FMTableKeys';
 const my $KEY_OF_KEYFIELD_TABLE   => 'FMTableKey';
@@ -482,7 +483,7 @@ sub i18n_all_indd_hash {
 sub field_of_referenced_place {
     my $self = shift;
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   field => 1,
             place => 1,
@@ -844,7 +845,7 @@ sub _build_line_descrips_of_transithub {
 sub descrips_of_transithubs_indesign {
     my $self = shift;
 
-    my %params = Octium::validate( @_, { signup => 1, } );
+    my %params = validate( @_, { signup => 1, } );
     my $signup = $params{signup};
 
     my %line_cache = $self->line_cache;
@@ -967,7 +968,7 @@ sub line_descrip_html {
 
     my $self = shift;
 
-    my %params = Octium::validate( @_,
+    my %params = validate( @_,
         { signup => 1, agency => { default => $DEFAULT_AGENCY } } );
 
     my $signup = $params{signup};

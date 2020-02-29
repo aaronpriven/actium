@@ -591,7 +591,7 @@ sub load_sqlite {
     my $self              = shift;
     my $default_subfolder = shift;
     my $database_class    = shift;
-    my %params            = Octium::validate(
+    my %params            = validate(
         @_,
         {   subfolder => 0,
             db_folder => 0,
@@ -643,7 +643,7 @@ sub load_hasi {
 sub write_files_with_method {
     my $self = shift;
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   OBJECTS         => { type    => ARRAYREF },
             METHOD          => 1,

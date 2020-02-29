@@ -2,6 +2,7 @@ package Octium::Set 0.014;
 
 use Actium;
 use Octium;
+use Params::Validate;
 
 use Algorithm::Diff qw(sdiff traverse_sequences);    ### DEP ###
 use Algorithm::Combinatorics(':all');                ### DEP ###
@@ -562,7 +563,7 @@ sub ordered_union_columns {
 
     ### GET PARAMETERS
 
-    my %params = Octium::validate( @_, $ordered_union_columns_validspec );
+    my %params = validate( @_, $ordered_union_columns_validspec );
 
     my $tiebreaker = $params{tiebreaker};
 

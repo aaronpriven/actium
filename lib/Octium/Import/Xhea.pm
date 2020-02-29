@@ -47,7 +47,7 @@ const my %blockfield_of_day => qw(
 
 sub xhea_import {
 
-    my %p = Octium::validate(
+    my %p = validate(
         @_,
         {   signup       => 1,
             xhea_folder  => 1,
@@ -182,7 +182,7 @@ sub tab_strings {
 
         my $cry = cry('Adjusting XHEA data from school calendars');
 
-        my %p = Octium::validate(
+        my %p = validate(
             @_,
             {   fields       => 1,
                 values       => 1,
@@ -314,7 +314,7 @@ sub _get_trip_notes_from_event_date {
     require Octium::O::DateTime;
     require DateTime::Event::ICal;
 
-    my %p = Octium::validate(
+    my %p = validate(
         @_,
         {   fields     => 1,
             values     => 1,
@@ -601,7 +601,7 @@ sub adjust_trip_note {
 
     my $cry = cry('Adding trip calendar notes to XHEA trips');
 
-    my %p = Octium::validate(
+    my %p = validate(
         @_,
         {   fields       => 1,
             values       => 1,
@@ -872,7 +872,7 @@ sub load {
 
 sub _load_values {
 
-    my %p = Octium::validate(
+    my %p = validate(
         @_,
         {   tree       => 1,
             model      => 1,
@@ -1041,7 +1041,7 @@ sub _records_and_fields {
 
 sub _unexpected_croak {
 
-    my %p = Octium::validate(
+    my %p = validate(
         @_,
         {   foundtype    => 1,
             foundname    => 1,
