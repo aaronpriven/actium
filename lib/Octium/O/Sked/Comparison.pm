@@ -472,7 +472,7 @@ method _build_trips {
             my @times = $trip->{times}->@*;    # copy
             @times = map  { $_->[0] // $_->[1] } @times;
             @times = grep {defined} @times;
-            my $average = Octium::mean( $times[0], $times[-1] );
+            my $average = Actium::mean( $times[0], $times[-1] );
             push @interim_list, [ $trip, $average ];
         }
 
