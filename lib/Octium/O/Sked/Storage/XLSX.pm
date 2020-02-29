@@ -47,7 +47,7 @@ method new_from_xlsx ( $class : Str : $file,
     };
 
     my $min_stop_col
-      = Octium::first { $is_stopid_col_cr->($_) } ( $mincol .. $maxcol );
+      = Actium::first { $is_stopid_col_cr->($_) } ( $mincol .. $maxcol );
 
     \my ( @stops, @place4s, @stopplaces ) = _read_stops_and_places(
         mincol    => $min_stop_col,

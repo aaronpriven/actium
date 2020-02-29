@@ -18,10 +18,7 @@ sub last_cry { goto &Actium::last_cry; }
 
 # duplicating Actium into Octium
 
-use List::Util (qw(first max min none sum uniq));    ### DEP ###
-use List::MoreUtils                                  ### DEP ###
-  (qw(firstidx mesh natatime));
-# List::MoreUtils::XS  ### DEP ###
+use List::Util       (qw(max min none sum uniq));    ### DEP ###
 use POSIX            (qw/ceil floor/);               ### DEP ###
 use Params::Validate (qw(validate));                 ### DEP ###
 use Ref::Util                                        ### DEP ###

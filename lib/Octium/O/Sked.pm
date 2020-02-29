@@ -567,7 +567,7 @@ sub _build_earliest_timenum {
     my $self    = shift;
     my $trip    = $self->trip(0);
     my @times   = $trip->placetimes;
-    my $timenum = Octium::first { defined $_ } @times;
+    my $timenum = Actium::first { defined $_ } @times;
     return $timenum;
 }
 

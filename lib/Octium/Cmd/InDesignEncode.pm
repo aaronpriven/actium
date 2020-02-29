@@ -56,7 +56,7 @@ sub START {
 
                     while ( Actium::any { $_ eq ' ' } @components ) {
                         my $position
-                          = ( Octium::firstidx { $_ eq ' ' } @components );
+                          = ( Actium::firstidx { $_ eq ' ' } @components );
 
                         if ( $position == 0 ) {
                             my $newcomponent = $components[0] . $components[1];

@@ -45,7 +45,7 @@ has destination_stoptime_idx => (
     is   => 'ro',
     lazy => method {
         my $reverseidx
-          = Octium::firstidx { $_->has_time } ( reverse $self->stoptimes );
+          = Actium::firstidx { $_->has_time } ( reverse $self->stoptimes );
         return $self->stoptime_count - $reverseidx - 1;
     },
     traits => ['DoNotSerialize'],

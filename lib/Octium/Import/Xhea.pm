@@ -498,7 +498,7 @@ sub _get_trip_notes_from_event_date {
                 @all_or_mostly_on_days
               )
             {
-                my $dow = Octium::first {
+                my $dow = Actium::first {
                     not Octium::in( $_, @all_or_mostly_on_days )
                 }
                 1 .. 5;

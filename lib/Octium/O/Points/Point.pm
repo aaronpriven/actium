@@ -597,7 +597,7 @@ sub determine_subtype {
             # divide chunks into single schedules and try again
 
             my $chunkid_to_split
-              = Octium::first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
+              = Actium::first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
             sort keys %heights_of_chunk;
 
             if ($chunkid_to_split) {
@@ -891,7 +891,7 @@ sub format_columns {
             $column_length = Octium::ceil( $count / $width );
 
             my @ft;
-            my $iterator = Octium::natatime $column_length,
+            my $iterator = Actium::natatime $column_length,
               $column->formatted_times;
             while ( my @formatted_times = $iterator->() ) {
                 push @ft, join( "\r", @formatted_times );

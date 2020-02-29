@@ -160,7 +160,7 @@ sub _is_SH {
 
 const my @ADJECTIVES => ( @SEVENDAYNAMES, qw(Holiday Weekday Weekend Daily),
     "Daily except holidays" );
-const my %ADJECTIVE_OF => Octium::mesh( @DAYLETTERS, @ADJECTIVES );
+const my %ADJECTIVE_OF => Actium::mesh( @DAYLETTERS, @ADJECTIVES );
 const my %ADJECTIVE_SCHOOL_OF => (
     B => $EMPTY,
     D => ' (except school holidays)',
@@ -199,7 +199,7 @@ const my @PLURALS => (
     'Weekends', 'Every day', "Every day except holidays"
 );
 
-const my %PLURAL_OF => Octium::mesh( @DAYLETTERS, @PLURALS );
+const my %PLURAL_OF => Actium::mesh( @DAYLETTERS, @PLURALS );
 const my %PLURAL_SCHOOL_OF => (
     B => $EMPTY,
     D => ' (School days only)',
@@ -242,7 +242,7 @@ sub as_plurals {
 const my @ABBREVS =>
   ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
 
-const my %ABBREV_OF => Octium::mesh( @DAYLETTERS, @ABBREVS );
+const my %ABBREV_OF => Actium::mesh( @DAYLETTERS, @ABBREVS );
 const my %ABBREV_SCHOOL_OF => (
     B => $EMPTY,
     D => ' (Sch days)',

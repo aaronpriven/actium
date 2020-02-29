@@ -276,7 +276,7 @@ sub move_insignificant_changes_to_unchanged {
     $is_old_decal{$_} = 1 for @{$old_decals};
     $is_new_decal{$_} = 1 for @{$new_decals};
 
-    my $it = Octium::natatime( 2, @$same_decals );
+    my $it = Actium::natatime( 2, @$same_decals );
 
     while ( my ( $old, $new ) = $it->() ) {
         if ( $is_old_decal{$old} and $is_new_decal{$new} ) {
