@@ -52,7 +52,7 @@ sub START {
 
     my @all_lines = map { $_->lines } @skeds;
    #@all_lines = grep { $_ ne 'BSD' and $_ ne 'BSN' and ! m/4\d\d/ } @all_lines;
-    @all_lines = Octium::uniq Actium::sortbyline @all_lines;
+    @all_lines = Actium::uniq Actium::sortbyline @all_lines;
 
     my ( $pubtt_contents_with_dates_r, $pubtimetables_r )
       = Octium::IDTables::get_pubtt_contents_with_dates( $actiumdb,

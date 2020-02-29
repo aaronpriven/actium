@@ -208,7 +208,7 @@ method finalize_skeds (
 
     my @finalized_skeds;
 
-    my @ids = Octium::uniq( $received_collection->sked_ids,
+    my @ids = Actium::uniq( $received_collection->sked_ids,
         $exception_collection->sked_ids );
 
     for my $id (@ids) {

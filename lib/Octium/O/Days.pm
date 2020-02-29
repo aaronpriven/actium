@@ -446,7 +446,7 @@ sub specday_and_specdayletter {
 
                 $union_daycode = join(
                     $EMPTY,
-                    (   Octium::uniq(
+                    (   Actium::uniq(
                             ( sort ( split //, $union_daycode . $daycode ) )
                         )
                     )

@@ -336,7 +336,7 @@ sub all_in_columns_key {
 
     my $key = $self->key_of_table($table);
     unshift @columns, $key;
-    @columns = Octium::uniq(@columns);
+    @columns = Actium::uniq(@columns);
 
     my $dbh = $self->dbh;
 
@@ -429,7 +429,7 @@ sub load_tables {
                         "SELECT $index_field from $table")
                 };
 
-                if ( ( Octium::uniq @all_indexes ) == @all_indexes ) {
+                if ( ( Actium::uniq @all_indexes ) == @all_indexes ) {
                     # indexes are all unique
                     $process_dupe = 0;
                     $dupecry->d_no;

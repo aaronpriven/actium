@@ -204,7 +204,7 @@ my $stop_tiebreaker = sub {
         # if either list has no timepoint ranks,
         # return 0 indicating we can't break the tie
 
-        $avg_ranks[$i] = Octium::sum(@ranks) / @ranks;
+        $avg_ranks[$i] = Actium::sum(@ranks) / @ranks;
 
     }
 

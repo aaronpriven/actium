@@ -461,7 +461,7 @@ sub _kml_stop_description {
         my $lines_r = shift;
         my @lines   = @_;
         my $priority
-          = Octium::min( map { _kml_priority( $lines_r, $_ ) } @lines );
+          = Actium::min( map { _kml_priority( $lines_r, $_ ) } @lines );
         return $color_of_priority{$priority};
     }
 

@@ -288,7 +288,7 @@ method excel (:$file! ) {
             unshift @vals, $headers{$entry};
             $summary->actium_write_col_string( 0, $col, \@vals,
                 $format{unchanged} );
-            my $width = Octium::max( map { length($_) } (@vals) );
+            my $width = Actium::max( map { length($_) } (@vals) );
             $summary->set_column( $col, $col, int( $width * 1.1 ) );
             $col++;
         }

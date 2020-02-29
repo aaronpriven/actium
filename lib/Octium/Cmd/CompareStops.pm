@@ -89,7 +89,7 @@ sub START {
       = assemble_stoplists( $oldsignup, @skipped, $reverse_skipped );
 
     my @stopids
-      = Octium::uniq( sort ( keys %newstoplists, keys %oldstoplists ) );
+      = Actium::uniq( sort ( keys %newstoplists, keys %oldstoplists ) );
 
     foreach my $type (qw<ADDED REMOVED UNCHANGED>) {
         $changes{$type} = {};

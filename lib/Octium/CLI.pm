@@ -234,7 +234,7 @@ sub _output_usage {
         $description_of{$_} = "Same as -$name" foreach $obj->aliases;
     }
 
-    my $longest = 1 + Octium::max( map { length($_) } keys %description_of );
+    my $longest = 1 + Actium::max( map { length($_) } keys %description_of );
     # add one for the hyphen
 
     say STDERR 'Options:';

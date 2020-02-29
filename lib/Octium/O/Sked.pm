@@ -63,10 +63,10 @@ sub _delete_blank_columns {
         my $has_place4s      = not $self->place4s_are_empty;
 
         my $place_id_count = $self->place_count;
-        my $placecount = Octium::max( $place_id_count, $#columns_of_times );
+        my $placecount = Actium::max( $place_id_count, $#columns_of_times );
 
         for my $i ( reverse( 0 .. $placecount ) ) {
-            if (Octium::none { defined($_) }
+            if (Actium::none { defined($_) }
                 @{ $columns_of_times[$i] }
               )
             {
@@ -93,10 +93,10 @@ sub _delete_blank_columns {
 
         my @columns_of_times = $self->_stoptime_columns;
         my $stopid_count     = $self->stop_count;
-        my $stopcount        = Octium::max( $stopid_count, $#columns_of_times );
+        my $stopcount        = Actium::max( $stopid_count, $#columns_of_times );
 
         for my $i ( reverse( 0 .. $stopcount ) ) {
-            if (Octium::none { defined($_) }
+            if (Actium::none { defined($_) }
                 @{ $columns_of_times[$i] }
               )
             {
