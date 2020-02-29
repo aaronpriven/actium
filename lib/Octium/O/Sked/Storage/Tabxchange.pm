@@ -13,21 +13,6 @@ method tabxchange (
     :collection($skedcollection)!,
   ) {
 
-    # tab files for AC Transit web site
-    #  my $self = shift;
-
-    #  my %params = Octium::validate(
-    #      @_,
-    #      {   destinationcode => 1,
-    #          actiumdb        => 1,
-    #          collection      => 1,
-    #      },
-    #  );
-    #
-    #  my $dc             = $params{destinationcode};
-    #  my $actiumdb       = $params{actiumdb};
-    #  my $skedcollection = $params{collection};
-
     require Array::2D;
 
     # line 1 - skedid

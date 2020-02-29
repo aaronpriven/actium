@@ -225,7 +225,7 @@ sub each_columns_in_row_where {
 
     my $self = shift;
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   table   => 1,
             columns => { type => ARRAYREF, required => 1 },

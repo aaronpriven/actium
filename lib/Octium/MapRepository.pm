@@ -21,8 +21,6 @@ use Octium;
 
 #<ext> is of course .eps or .pdf, or another standard filename
 
-use Octium;
-
 use Sub::Exporter -setup => {
     exports => [
         qw(import_to_repository  make_web_maps      copylatest
@@ -57,7 +55,7 @@ my $import_to_repository_paramspec = {
 
 sub import_to_repository {
 
-    my %params = Octium::validate( @_, $import_to_repository_paramspec );
+    my %params = validate( @_, $import_to_repository_paramspec );
 
     # this default is not in the parameter spec because if
     # in the spec, the default object would always be created whether or
@@ -137,7 +135,7 @@ my $make_web_maps_paramspec = {
 
 sub make_web_maps {
 
-    my %params = Octium::validate( @_, $make_web_maps_paramspec );
+    my %params = validate( @_, $make_web_maps_paramspec );
 
     my $output_folder  = $params{web_folder};
     my $verbose        = $params{verbose};
@@ -325,7 +323,7 @@ my $copylatest_spec = {
 
 sub copylatest {
 
-    my %params             = Octium::validate( @_, $copylatest_spec );
+    my %params             = validate( @_, $copylatest_spec );
     my $fullname_folder    = $params{fullname};
     my $linesname_folder   = $params{linesname};
     my $web_folder         = $params{web};

@@ -12,13 +12,15 @@ use Octium::O::Pattern::Stop;
 use Octium::O::Pattern::Trip;
 use Octium::O::Sked::Collection;
 
+use Params::Validate;
+
 const my @required_tables => (qw/ppat block trip trip_pattern trip_stop/);
 
 sub xheatab2skeds {
 
     my $tabcry = cry("Loading xhea tab files...");
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   signup   => 1,
             actiumdb => 1,
@@ -54,7 +56,7 @@ sub xhea2skeds {
 
     my $xhea2skedscry = cry('Converting Xhea to schedules');
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   signup     => 1,
             actiumdb   => 1,
@@ -121,7 +123,7 @@ sub xhea2skeds {
 
 sub _get_blocks {
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   fieldnames => 1,
             values     => 1,
@@ -172,7 +174,7 @@ sub _get_blocks {
 
     sub _get_patterns {
 
-        my %params = Octium::validate(
+        my %params = validate(
             @_,
             {   actiumdb   => 1,
                 fieldnames => 1,
@@ -266,7 +268,7 @@ sub _get_blocks {
 
 sub _get_trips {
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   patterns   => 1,
             fieldnames => 1,
@@ -436,7 +438,7 @@ sub _get_trips {
 ### GET PLACE PATTERNS
 
 sub _add_place_patterns_to_patterns {
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   fieldnames          => 1,
             patterns_by_linedir => 1,
@@ -521,7 +523,7 @@ sub _add_place_patterns_to_patterns {
 
 sub _records_in_turn {
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   table      => 1,
             fieldnames => 1,
@@ -563,7 +565,7 @@ sub _records_in_turn {
 
 sub _make_skeds {
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   actiumdb  => 1,
             patgroups => 1,

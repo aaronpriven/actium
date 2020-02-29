@@ -5,6 +5,7 @@ package Octium::O::Sked::Timetable 0.012;
 
 use Actium ('class');
 use Octium;
+use Params::Validate;
 
 use Actium::Time;
 use Octium::Text::InDesignTags;
@@ -276,7 +277,7 @@ sub as_indesign {
 
     my $self = shift;
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   minimum_columns  => 1,
             minimum_halfcols => 1,

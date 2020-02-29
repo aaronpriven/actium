@@ -7,6 +7,7 @@ use Octium::O::Sked;
 use Octium::Sorting::Skeds ('skedsort');
 
 use Octium::Storage::Excel;
+use Params::Validate;
 
 const my $PHYLUM => 's';
 
@@ -238,7 +239,7 @@ sub write_tabxchange {
 
     my $self = shift;
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   tabfolder    => 1,
             commonfolder => 1,

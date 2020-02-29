@@ -9,7 +9,7 @@ use Sub::Exporter -setup => { exports => [qw(read_aoas read_tab_files)] };
 # Sub::Exporter ### DEP ###
 
 sub read_aoas {
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   folder => {
                 can => [
@@ -51,7 +51,7 @@ sub read_aoas {
 
 sub read_tab_files {
 
-    my %params = Octium::validate(
+    my %params = validate(
         @_,
         {   folder => {
                 can => [

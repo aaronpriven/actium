@@ -3,6 +3,7 @@ package Octium::StopReports 0.012;
 use Actium;
 use Octium;
 use Excel::Writer::XLSX;    ### DEP ###
+use Params::Validate;
 
 use Sub::Exporter -setup => { exports => [qw(crewlist_xlsx stops2kml)] };
 # Sub::Exporter ### DEP ###
@@ -470,7 +471,7 @@ sub _kml_stop_description {
 sub citiesbyline {
 
     my %params
-      = Octium::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
+      = validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
     my $actiumdb = $params{actiumdb};
 
     my $eachstop = $actiumdb->each_columns_in_row_where(
@@ -510,7 +511,7 @@ sub citiesbyline {
 sub linesbycity {
 
     my %params
-      = Octium::validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
+      = validate( @_, { actiumdb => { can => 'each_row_eq' }, } );
 
     my $actiumdb = $params{actiumdb};
 
