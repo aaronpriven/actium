@@ -335,7 +335,7 @@ sub _make_locals {
     foreach my $line (@lines) {
 
         if ( $line =~ /\A [A-Z]/sx or $line eq '800' ) {
-            if ( Octium::in( $line, @TRANSBAY_NOLOCALS ) ) {
+            if ( Actium::in( $line, @TRANSBAY_NOLOCALS ) ) {
                 $local_of{$line} = 0;
             }
             else {
@@ -361,7 +361,7 @@ sub _make_locals {
 sub _local_text {
     my $line = shift;
 
-    if ( Octium::in( $line, @TRANSBAY_NOLOCALS ) ) {
+    if ( Actium::in( $line, @TRANSBAY_NOLOCALS ) ) {
         return $IDT->parastyle('CoverLocalPax') . 'No Local Passengers Allowed';
     }
 

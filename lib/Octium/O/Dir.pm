@@ -186,7 +186,7 @@ sub should_preserve_direction_order {
     my $self    = shift;
     my $dircode = $self->dircode;
 
-    return not Octium::in( $self->dircode, qw/NB SB EB WB/ );
+    return not Actium::in( $self->dircode, qw/NB SB EB WB/ );
 
 }
 

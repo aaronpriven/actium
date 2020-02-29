@@ -460,7 +460,7 @@ sub _check_columns {
     my @columns = $self->columns_of_table($table);
     foreach my $input (@input_columns) {
         croak "Invalid column $input for table $table"
-          if not Octium::in( $input, @columns );
+          if not Actium::in( $input, @columns );
     }
     return;
 }

@@ -66,7 +66,7 @@ sub prehistoric_days {
 
     my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
 
-    return 'WD' unless Octium::in( $transitinfo, @valid_prehistorics );
+    return 'WD' unless Actium::in( $transitinfo, @valid_prehistorics );
     return $transitinfo;
 
 }

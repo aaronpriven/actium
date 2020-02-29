@@ -443,7 +443,7 @@ func text_notes {
               )
             {
                 my $dow = Actium::first {
-                    not Octium::in( $_, @all_or_mostly_on_days )
+                    not Actium::in( $_, @all_or_mostly_on_days )
                 }
                 1 .. 5;
                 $noteletter = 'X' . $NOTELETTER_DOW[$dow];

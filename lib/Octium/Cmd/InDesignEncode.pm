@@ -48,7 +48,7 @@ sub START {
 
                 my ( $row, $col ) = @_;
 
-                if ( Octium::in( $col, @chinese_cols ) ) {
+                if ( Actium::in( $col, @chinese_cols ) ) {
 
                     my @components = $_ =~ /[!-~]+|[^!-~]+/g;
 
@@ -93,7 +93,7 @@ sub START {
 
                     $_ = join( $EMPTY, @components );
 
-                }    ## tidy end: if ( Octium::in( $col, @chinese_cols...))
+                }    ## tidy end: if ( Actium::in( $col, @chinese_cols...))
                 else {
 
                     $IDT->encode_high_chars($_);
