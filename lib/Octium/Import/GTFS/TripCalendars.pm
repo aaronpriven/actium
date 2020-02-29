@@ -438,7 +438,7 @@ func text_notes {
             }
             elsif (
                 @all_or_mostly_on_days == 4
-                and Octium::all { 1 <= $_ and $_ <= 5 }
+                and Actium::all { 1 <= $_ and $_ <= 5 }
                 @all_or_mostly_on_days
               )
             {

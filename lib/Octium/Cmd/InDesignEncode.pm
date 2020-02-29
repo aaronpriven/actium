@@ -54,7 +54,7 @@ sub START {
 
                     # eliminate components with just spaces
 
-                    while ( Octium::any { $_ eq ' ' } @components ) {
+                    while ( Actium::any { $_ eq ' ' } @components ) {
                         my $position
                           = ( Octium::firstidx { $_ eq ' ' } @components );
 
@@ -78,7 +78,7 @@ sub START {
 
                         }
 
-                    }    ## tidy end: while ( Octium::any { $_ eq ' '...})
+                    }    ## tidy end: while ( Actium::any { $_ eq ' '...})
 
                     # separates visible ASCII characters from other characters
                     foreach my $component (@components) {

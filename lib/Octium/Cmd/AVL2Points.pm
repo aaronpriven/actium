@@ -263,9 +263,9 @@ sub START {
                     }    ## tidy end: if ( $is_a_nolocal_route...)
                     elsif
                       # LASTSTOP
-                      ( Octium::all { $_->{LASTSTOP} } @{$times_r} ) {
+                      ( Actium::all { $_->{LASTSTOP} } @{$times_r} ) {
 
-          #if ( Octium::all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
+          #if ( Actium::all { $_->{PLACE} eq $_->{DESTINATION} } @{$times_r} ) {
                         $has_last_stop{$linegroup} = 1;
                         $note_of{"$stop:$linegroup:$dir_code:$days"}{NOTE}
                           = "LASTSTOP";

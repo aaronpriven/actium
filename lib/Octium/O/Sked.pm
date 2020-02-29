@@ -237,7 +237,7 @@ sub _combine_duplicate_timepoints {
             # if this isn't the last column, and there are any times
             # defined later...
             if ($#alltimes > $lastcolumn
-                and Octium::any { defined($_) }
+                and Actium::any { defined($_) }
                 @alltimes[ $lastcolumn + 1 .. $#alltimes ]
               )
             {
