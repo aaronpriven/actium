@@ -499,7 +499,7 @@ sub _get_trip_notes_from_event_date {
               )
             {
                 my $dow = Actium::first {
-                    not Octium::in( $_, @all_or_mostly_on_days )
+                    not Actium::in( $_, @all_or_mostly_on_days )
                 }
                 1 .. 5;
                 $noteletter = 'X' . $NOTELETTER_DOW[$dow];
@@ -1133,7 +1133,7 @@ sub _get_xhea_filenames {
         # than the simple one this part of the program can deal with
 
         push @xhea_filenames, $filename
-          if Octium::in( $filename, @xsdfiles );
+          if Actium::in( $filename, @xsdfiles );
     }
 
     # so @xhea_filenames contains filename piece of all filenames where

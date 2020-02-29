@@ -61,7 +61,7 @@ sub START {
 
     foreach my $route ( Actium::sortbyline keys %seen_stops_of ) {
 
-        next if ( Octium::in( $route, qw/BSD BSH BSN 399 51S/ ) );
+        next if ( Actium::in( $route, qw/BSD BSH BSN 399 51S/ ) );
 
         my $numstops = scalar keys %{ $seen_stops_of{$route} };
 

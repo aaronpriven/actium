@@ -187,7 +187,7 @@ sub build_place_and_stop_lists {
             $prevroute = $route;
         }
 
-        next PAT if Octium::in( $route, 'BSH', 'BSD', 'BSN', '399' );
+        next PAT if Actium::in( $route, 'BSH', 'BSD', 'BSN', '399' );
         # skip Broadway Shuttle
 
         my @tps = @{
@@ -347,7 +347,7 @@ sub transbay_and_connections {
         }
     }    ## tidy end: for my $patinfo ( reverse...)
 
-    if ( Octium::in( $route, @TRANSBAY_NOLOCALS ) ) {
+    if ( Actium::in( $route, @TRANSBAY_NOLOCALS ) ) {
         my $dropoff;
         undef $prev_side;
         for my $patinfo (@all_stops) {
@@ -368,7 +368,7 @@ sub transbay_and_connections {
 
         }
 
-    }    ## tidy end: if ( Octium::in( $route, @TRANSBAY_NOLOCALS...))
+    }    ## tidy end: if ( Actium::in( $route, @TRANSBAY_NOLOCALS...))
 
 }    ## tidy end: sub transbay_and_connections
 
@@ -1442,15 +1442,15 @@ sub style_of_route {
     my @chars = split( //, $route );
     foreach my $char (@chars) {
         for ($char) {
-            if ( Octium::in( $_, qw/ 3 4 8 0 A B C D / ) ) {
+            if ( Actium::in( $_, qw/ 3 4 8 0 A B C D / ) ) {
                 $val += 15;    # 1 1/4
                 next;
             }
-            if ( Octium::in( $_, qw/ N O X R / ) ) {
+            if ( Actium::in( $_, qw/ N O X R / ) ) {
                 $val += 18;    # 1 1/2
                 next;
             }
-            if ( Octium::in( $_, qw/M W/ ) ) {
+            if ( Actium::in( $_, qw/M W/ ) ) {
                 $val += 24;    # 2
                 next;
             }

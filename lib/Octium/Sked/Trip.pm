@@ -204,7 +204,7 @@ method merge_pair ($secondtrip) {
 #            if ( $_ eq '_mergedtrip_r' ) {
 #                next;
 #            }    # do nothing
-#            if ( Octium::in( $_, 'placetime_r', 'stoptime_r' ) ) {
+#            if ( Actium::in( $_, 'placetime_r', 'stoptime_r' ) ) {
 #                # assumed to be equal
 #                $merged_value_of{$init_arg} = $self->$attrname;
 #                next;
@@ -227,7 +227,7 @@ method merge_pair ($secondtrip) {
 #                $merged_value_of{$init_arg} = $firstattr;
 #            }
 #            # if they're identical, set the array to the value
-#            elsif ( Octium::in( $attrname, ['daysexceptions'] ) ) {
+#            elsif ( Actium::in( $attrname, ['daysexceptions'] ) ) {
 #                $merged_value_of{$init_arg} = '';
 #            }
 #            # otherwise, if the attribute name is one of the those, then
