@@ -781,8 +781,8 @@ sub delete_placelist_from_lists {
                   = uniq( sort { length($b) <=> length($a) || $a cmp $b }
                       @placelists );
 
-                my $combokey = Octium::jointab(@placelists);
-                my $shortkey = Octium::jointab( $routedir, $combokey );
+                my $combokey = Actium::jointab(@placelists);
+                my $shortkey = Actium::jointab( $routedir, $combokey );
 
                 $combos{$routedir}{$combokey} = \@placelists;
                 push @{ $shortkeys_of_stop{$stop}{$routedir} }, $shortkey;
@@ -865,7 +865,7 @@ sub delete_placelist_from_lists {
             my @thesecombos = keys %{ $combos{$routedir} };
 
             foreach my $combokey (@thesecombos) {
-                my $shortkey = Octium::jointab( $routedir, $combokey );
+                my $shortkey = Actium::jointab( $routedir, $combokey );
                 $short_code_of{$shortkey} = $short++;
                 printf "Line %-3s %68s\n", $route, $short_code_of{$shortkey};
                 my @placelists = @{ $combos{$routedir}{$combokey} };
@@ -988,7 +988,7 @@ sub delete_placelist_from_lists {
                 push @preserved,
                   Actium::joinempty( $OVERRIDE_STRING, $SPACE,
                     $input_override_of{$short} );
-                $preserved_override_of{$shortkey} = Octium::joinlf(@preserved);
+                $preserved_override_of{$shortkey} = Actium::joinlf(@preserved);
             }
         }
 
@@ -1079,7 +1079,7 @@ sub relevant_places {
             :                'To '
         ) . $destination;
 
-        $destination_of{ Octium::jointab( $routedir, $combokey ) }
+        $destination_of{ Actium::jointab( $routedir, $combokey ) }
           = $destination;
 
         return;
@@ -1398,7 +1398,7 @@ sub make_decal_spec {
         my $oldfh = select $out;
 
         foreach ( Actium::sortbyline keys %routes ) {    # plain decals
-            print Octium::jointab ( $_, $_, ( $color_of{$_} || 'grey30' ),
+            print Actium::jointab ( $_, $_, ( $color_of{$_} || 'grey30' ),
                 style_of_route($_) );
             if ( $plain_override_of{$_} ) {
                 print "\t$plain_override_of{$_}\t";
@@ -1414,7 +1414,7 @@ sub make_decal_spec {
             my ( $route, $destination, $icons ) = sk( $spec_of{$decal} );
             my $style = style_of_route($route);
 
-            say Octium::jointab (
+            say Actium::jointab (
                 $route, ( $color_of{$route} || 'grey30' ),
                 $style, $destination, $icons
             );

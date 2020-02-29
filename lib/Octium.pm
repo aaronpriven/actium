@@ -18,10 +18,6 @@ sub last_cry { goto &Actium::last_cry; }
 
 # duplicating Actium into Octium
 
-sub joinlf { goto &Actium::joinlf }
-
-sub jointab { goto &Actium::jointab }
-
 sub in        { goto &Actium::in }
 sub folded_in { goto &Actium::folded_in }
 

@@ -524,12 +524,12 @@ sub _build_md5 {
     require Digest::MD5;    ### DEP ###
 
     my @sked_stream
-      = ( Octium::jointab( $self->place4s ),
-        Octium::jointab( $self->stopids ) );
+      = ( Actium::jointab( $self->place4s ),
+        Actium::jointab( $self->stopids ) );
 
     foreach my $trip ( $self->trips ) {
-        push @sked_stream, Octium::jointab( $trip->stoptimes );
-        push @sked_stream, Octium::jointab( $trip->placetimes );
+        push @sked_stream, Actium::jointab( $trip->stoptimes );
+        push @sked_stream, Actium::jointab( $trip->placetimes );
     }
 
     my $digest = Digest::MD5::md5_hex( join( $KEY_SEPARATOR, @sked_stream ) );
@@ -542,10 +542,10 @@ sub _build_place_md5 {
     # build an MD5 digest from the placetimes and  places
     require Digest::MD5;    ### DEP ###
 
-    my @sked_stream = ( Octium::jointab( $self->place4s ) );
+    my @sked_stream = ( Actium::jointab( $self->place4s ) );
 
     foreach my $trip ( $self->trips ) {
-        push @sked_stream, Octium::jointab( $trip->placetimes );
+        push @sked_stream, Actium::jointab( $trip->placetimes );
     }
 
     my $digest = Digest::MD5::md5_hex( join( $KEY_SEPARATOR, @sked_stream ) );
