@@ -875,7 +875,7 @@ method compare_to (Octium::O::Sked $newsked) {
 with 'Octium::O::Sked::Storage::Prehistoric', 'Octium::O::Sked::Storage::XLSX',
   'Octium::O::Sked::Storage::Tabxchange', 'Octium::O::Skedlike';
 
-Octium::immut;
+Actium::immut;
 
 1;
 

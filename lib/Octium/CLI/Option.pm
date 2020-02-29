@@ -144,7 +144,7 @@ sub allnames {
     return ( $self->name, $self->aliases );
 }
 
-Octium::immut;
+Actium::immut;
 
 1;
 

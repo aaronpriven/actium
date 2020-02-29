@@ -124,8 +124,10 @@ sub u_wrap {
 sub u_trim_to_columns {
     my $text        = shift;
     my $max_columns = shift;
-    return Actium::u_trim_to_columns( string => $text,
-        columns => $max_columns );
+    return Actium::u_trim_to_columns(
+        string  => $text,
+        columns => $max_columns
+    );
 }
 
 sub define { goto &Actium::define; }
@@ -134,8 +136,6 @@ sub feq { goto &Actium::feq }
 sub fne { goto &Actium::fne }
 
 sub display_percent { goto &Actium::display_percent }
-
-sub hashref { goto &Actium::hashref }
 
 sub flatten {
 
@@ -154,18 +154,5 @@ sub flatten {
     return wantarray ? @results : \@results;
 
 }
-
-# identical to Actium::dumpstr but didn't want to mess with prototypes
-sub dumpstr (\[@$%&];%) {    ## no critic (ProhibitSubroutinePrototypes)
-                              # prototype copied from Data::Printer::np
-    require Data::Printer;    ### DEP ###
-    return Data::Printer::np(
-        @_,
-        hash_separator => ' => ',
-        class => { expand => 'all', parents => 0, show_methods => 'none', },
-    );
-}
-
-sub immut { goto &Actium::immut }
 
 1;

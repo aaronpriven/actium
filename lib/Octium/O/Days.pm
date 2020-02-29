@@ -604,7 +604,7 @@ sub as_transitinfo {
     return $daycode;
 }
 
-Octium::immut();
+Actium::immut();
 
 1;
 

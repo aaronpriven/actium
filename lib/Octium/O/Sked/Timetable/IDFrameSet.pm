@@ -51,7 +51,7 @@ has is_portrait => (
 
 around BUILDARGS ( $orig, $class: @) {
 
-    my $params_r = Octium::hashref(@_);
+    my $params_r = Actium::hashref(@_);
 
     # run through each frame -- if it's not already an object,
     # instantiate the appropriate object and place it back in list
@@ -80,7 +80,7 @@ around BUILDARGS ( $orig, $class: @) {
 
 }    ## tidy end: around BUILDARGS
 
-Octium::immut;
+Actium::immut;
 
 1;
 

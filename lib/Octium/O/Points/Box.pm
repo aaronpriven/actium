@@ -214,7 +214,7 @@ method text_head_lines {
     return join( " / ", $self->head_lines );
 }
 
-Octium::immut;
+Actium::immut;
 
 __END__
 

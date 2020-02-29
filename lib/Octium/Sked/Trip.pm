@@ -120,7 +120,7 @@ method clone (@params) {
 #    my $self  = shift;
 #    my $class = Octium::blessed $self;
 #
-#    my %init_args = Octium::hashref(@_)->%*;
+#    my %init_args = Actium::hashref(@_)->%*;
 #
 #    foreach my $attribute ( $class->meta->get_all_attributes ) {
 #
