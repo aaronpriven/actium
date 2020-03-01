@@ -25,7 +25,7 @@ sub START {
 
     my $config_obj = $env->config;
 
-    my $i18n_cry = $env->crier->cry('Fetching i18ns from database');
+    my $i18n_cry = env->cry('Fetching i18ns from database');
 
     my $actium_db = $env->actiumdb;
 
@@ -49,7 +49,7 @@ sub START {
       su16_63
     );
 
-    my $output_cry = $env->crier->cry('Outputting data to tempsigns.txt');
+    my $output_cry = env->cry('Outputting data to tempsigns.txt');
 
     my $dt = Octium::O::DateTime::->new(
         #datetime => $str,

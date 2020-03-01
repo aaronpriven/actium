@@ -16,13 +16,14 @@ sub START {
     my $actiumdb = $env->actiumdb;
     my @argv     = $env->argv;
 
-    my $assigncry = cry('Creating flag assignments');
+    my $assigncry = env->cry('Creating flag assignments');
 
     my $input_file = shift @argv;
     my ( $output_file, @stopids );
 
     if ( defined $input_file ) {
-        my $stopidinput_cry = cry("Getting stop IDs from file $input_file");
+        my $stopidinput_cry
+          = env->cry("Getting stop IDs from file $input_file");
         ( $output_file, undef ) = Octium::file_ext($input_file);
         $output_file .= '-assignments.txt';
 
@@ -32,7 +33,7 @@ sub START {
         $stopidinput_cry->d_ok;
     }
     else {
-        my $db_cry = cry('Getting stop IDs from database');
+        my $db_cry = env->cry('Getting stop IDs from database');
         $db_cry->d_ok;
     }
 

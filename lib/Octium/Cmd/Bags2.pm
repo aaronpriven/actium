@@ -33,7 +33,7 @@ sub START {
 
     my $config_obj = $env->config;
 
-    my $i18n_cry = $env->crier->cry('Fetching i18ns from database');
+    my $i18n_cry = env->cry('Fetching i18ns from database');
 
     my $actium_db = $env->actiumdb;
 
@@ -41,12 +41,12 @@ sub START {
 
     $i18n_cry->done;
 
-    my $workzone_cry = $env->crier->cry('Fetching work zones from database');
+    my $workzone_cry = env->cry('Fetching work zones from database');
     %workzone_of
       = %{ $actium_db->all_in_column_key(qw(Stops_Neue u_work_zone)) };
     $workzone_cry->done;
 
-    my $read_cry = $env->crier->cry('Reading sheet');
+    my $read_cry = env->cry('Reading sheet');
 
     my $excelfile = $env->argv_idx(0);
 
@@ -63,11 +63,11 @@ sub START {
         $col{$header} = $i;
     }
 
-    $read_cry->text( join( " ", keys %col ) );
+    $read_cry->wail( join( " ", keys %col ) );
 
     $read_cry->done;
 
-    my $output_cry = $env->crier->cry('Processing and outputting data');
+    my $output_cry = env->cry('Processing and outputting data');
 
     open( my $outfh, '>:encoding(UTF-8)', $outfile );
 
@@ -80,7 +80,6 @@ sub START {
         my $stopid = $stop_r->[ $col{StopID} ];
         push @stopids, $stopid;
         my $workzone = $workzone_of{$stopid} // '';
-        #$output_cry->text("$stopid $workzone");
         push @workzones, $workzone_of{$stopid};
     }
 

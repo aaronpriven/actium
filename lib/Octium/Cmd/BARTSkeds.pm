@@ -67,7 +67,7 @@ my ( %first_of, %last_of, %dest_is_used );
 
 sub START {
 
-    my $start_cry = cry('Building BART frequency tables');
+    my $start_cry = env->cry('Building BART frequency tables');
 
     my ( $class,  $env )       = @_;
     my ( $oldest, $date_of_r ) = get_dates( $env->option('date') );
@@ -150,16 +150,16 @@ sub get_firstlast {
         my $day_desc = $DAY_DESC_OF{$days};
         my $date     = $date_of{$days};
 
-        my $routes_cry = cry(
+        my $routes_cry = env->cry(
             [ "Getting $day_desc routes", "Done getting $day_desc routes" ] );
         \my %routes = get_routes($date);
         my @routes = sort { $a <=> $b } keys %routes;
 
-        $routes_cry->text( join( " ", @routes ) );
+        $routes_cry->wail( join( " ", @routes ) );
 
         foreach my $route (@routes) {
             my $route_cry
-              = cry( "Getting ", $routes{$route}{name}, " schedule" );
+              = env->cry( "Getting ", $routes{$route}{name}, " schedule" );
 
             \my @trains = get_sked( $date, $route );
             if ( not @trains ) {
@@ -266,7 +266,7 @@ sub get_from_url {
         local $Data::Dumper::Quotekeys = 0;
         local $Data::Dumper::Pair      = ' : ';
         $message = Data::Dumper::Dumper($message);
-        last_cry()->text("*** Message from BART: $message");
+        Actium::wail("*** Message from BART: $message");
     }
 
     return $root_r;
@@ -305,8 +305,8 @@ sub get_dates {
         }
 
         if ( $date_obj < $today ) {
-            my $cry = last_cry;
-            $cry->text(
+            my $cry = env->last_cry;
+            $cry->wail(
                 "Can't ask for BART schedules for past date $effective_date.");
             $cry->d_error;
             die;
@@ -349,7 +349,7 @@ sub get_stations {
 
     my $date = shift;
 
-    my $cry = cry('Getting station list from BART');
+    my $cry = env->cry('Getting station list from BART');
 
     my $stations_url = stations_url($date);
 
@@ -380,13 +380,13 @@ __END__
 
     my %fl_of;
 
-    my $skeds_cry = cry('Getting station schedules and fares from BART');
+    my $skeds_cry = env->cry('Getting station schedules and fares from BART');
 
     foreach my $station (@station_abbrs) {
 
         my %dest_is_used;
 
-        $skeds_cry->text( "[$station:" . $stations{$station} . "]" );
+        $skeds_cry->wail( "[$station:" . $stations{$station} . "]" );
 
         foreach my $idx ( 0 .. $#DAYS ) {
             my $date        = $dates[$idx];

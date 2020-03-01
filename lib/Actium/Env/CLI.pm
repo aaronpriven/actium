@@ -78,7 +78,7 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
     my %init_args = (
         %params,
         subcommand => $subcommand // $EMPTY,
-        _help_type => $help_type  // $EMPTY,
+        _help_type => $help_type // $EMPTY,
         argv       => \@new_argv,
     );
 
@@ -365,6 +365,7 @@ has crier => (
     is      => 'ro',
     default => sub { Actium::Env::CLI::Crier->new() },
     isa     => 'Actium::Env::CLI::Crier',
+    handles => [qw(cry last_cry wail)],
 );
 
 has command => (
@@ -806,7 +807,7 @@ method _build_signup {
 method _build_oldsignup {
     return Actium::Signup::->new(
         base_folder => ( $self->option('oldbase') // $self->option('base') ),
-        name => $self->option('oldsignup'),
+        name        => $self->option('oldsignup'),
     );
 
 }

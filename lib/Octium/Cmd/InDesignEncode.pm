@@ -16,8 +16,8 @@ sub START {
 
     foreach my $input_file (@argv) {
 
-        my $processing_cry = $env->crier->cry("Processing $input_file");
-        my $input_cry      = $env->crier->cry("Loading $input_file");
+        my $processing_cry = env->cry("Processing $input_file");
+        my $input_cry      = env->cry("Loading $input_file");
 
         my $input = Array::2D->new_from_file($input_file);
 
@@ -25,7 +25,7 @@ sub START {
 
         $input_cry->done;
 
-        my $encode_cry = $env->crier->cry("Encoding $input_file");
+        my $encode_cry = env->cry("Encoding $input_file");
 
         my @headers = $input->row(0);
         my @chinese_cols;
@@ -122,7 +122,7 @@ sub START {
         my ( $base, $ext ) = Octium::file_ext($input_file);
         my $output_file = "$base.tagged.txt";
 
-        my $write_cry = $env->crier->cry("Writing $output_file");
+        my $write_cry = env->cry("Writing $output_file");
 
         File::Slurper::write_text( $output_file, $tsv );
 

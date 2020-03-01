@@ -85,7 +85,7 @@ sub START {
       = Octium::O::Folder->new( $base, 'diffs',
         "$oldsignup-$newsignup-ssdiff" );
 
-    my $cry = cry("Comparing schedules: $oldsignup and $newsignup");
+    my $cry = env->cry("Comparing schedules: $oldsignup and $newsignup");
 
     my @oldfiles = $oldraw->glob_plain_files_nopath('*.txt');
     my @newfiles = $newraw->glob_plain_files_nopath('*.txt');
@@ -128,7 +128,7 @@ sub START {
 
     $cry->d_ok;
 
-    my $weekendcry = cry("Comparing weekend differences");
+    my $weekendcry = env->cry("Comparing weekend differences");
 
     my ( @old_to_delete, @new_to_delete );
 

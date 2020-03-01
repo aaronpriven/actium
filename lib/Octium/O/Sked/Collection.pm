@@ -297,7 +297,7 @@ method output_skeds_dump {
 
 method output_skeds_all {
 
-    my $outputcry = cry("Saving schedules to disk");
+    my $outputcry = env->cry("Saving schedules to disk");
 
     $self->output_skeds_storable;
 
@@ -330,7 +330,7 @@ method output_skeds_all {
 }    ## tidy end: method output_skeds_all
 
 method output_skeds_storable {
-    my $cry      = cry("Writing skeds in Storable format");
+    my $cry      = env->cry("Writing skeds in Storable format");
     my $filespec = $self->folder->make_filespec('skeds.storable');
     $cry->prog($filespec);
 
@@ -340,7 +340,7 @@ method output_skeds_storable {
 
 method output_skeds_place {
 
-    my $cry = cry('Writing place xlsx schedules');
+    my $cry = env->cry('Writing place xlsx schedules');
 
     my $place_xlsx_folder = $self->folder('place');
 

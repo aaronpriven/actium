@@ -106,7 +106,7 @@ method _build_result {
 
     my @results;
 
-    my $comparecry = cry(
+    my $comparecry = env->cry(
         'Comparing ' . $self->oldsignup_id . ' to ' . $self->newsignup_id );
 
     foreach my $oldid ( Actium::sortbyline( keys %to_compare ) ) {
@@ -129,7 +129,7 @@ method _build_result {
     $comparecry->done;
 
     # add all the ones only in one or the other
-    my $onlyocry = cry( 'Adding only in ' . $self->oldsignup_id );
+    my $onlyocry = env->cry( 'Adding only in ' . $self->oldsignup_id );
 
     foreach my $oldid (@only_old_ids) {
         my $oldsked = $self->oldskeds->sked_obj($oldid);
@@ -137,7 +137,7 @@ method _build_result {
     }
     $onlyocry->done;
 
-    my $onlyncry = cry( 'Adding only in ' . $self->newsignup_id );
+    my $onlyncry = env->cry( 'Adding only in ' . $self->newsignup_id );
     foreach my $newid (@only_new_ids) {
         my $newsked = $self->newskeds->sked_obj($newid);
         push @results, Octium::O::Sked::Comparison->new( newsked => $newsked );

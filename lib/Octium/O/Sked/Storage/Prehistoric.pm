@@ -146,7 +146,7 @@ sub load_prehistorics {
 
     my $actium_dbh = $actiumdb->dbh;
 
-    my $cry = cry("Loading prehistoric schedules");
+    my $cry = env->cry("Loading prehistoric schedules");
 
     my %tp4_of_tp8;
 
@@ -201,7 +201,7 @@ sub _new_from_prehistoric {
 
     state %seen_linegroup;
     if ( not $seen_linegroup{$linegroup} ) {
-        last_cry()->over($linegroup) unless $seen_linegroup{$linegroup};
+        env->last_cry->over($linegroup) unless $seen_linegroup{$linegroup};
         $seen_linegroup{$linegroup} = 1;
     }
 
@@ -306,11 +306,11 @@ sub write_prehistorics {
     my $skeds_r = shift;
     my $folder  = shift;
 
-    my $prepare_cry = cry('Preparing prehistoric sked files');
+    my $prepare_cry = env->cry('Preparing prehistoric sked files');
 
     my %prehistorics_of;
 
-    my $create_cry = cry('Creating prehistoric file data');
+    my $create_cry = env->cry('Creating prehistoric file data');
 
     foreach my $sked ( @{$skeds_r} ) {
         my $group_dir = $sked->linegroup . q{_} . $sked->direction;
@@ -330,7 +330,7 @@ sub write_prehistorics {
     my @comparisons
       = ( [qw/SA SU WE/], [qw/WD SA WA/], [qw/WD SU WU/], [qw/WD WE DA/], );
 
-    my $merge_cry = cry('Merging days');
+    my $merge_cry = env->cry('Merging days');
 
     foreach my $group_dir ( sort keys %prehistorics_of ) {
 

@@ -86,7 +86,7 @@ sub read_tab_files {
 
     foreach my $file (@files) {
 
-        my $file_cry = cry("Loading $file");
+        my $file_cry = env->cry("Loading $file");
 
         my $fh = $folder->open_read($file);
 

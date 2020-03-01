@@ -136,9 +136,9 @@ sub START {
 
     # retrieve data
 
-    my $makepoints_cry = cry 'Making InDesign point schedule files';
+    my $makepoints_cry = env->cry('Making InDesign point schedule files');
 
-    my $load_cry = cry 'Loading data from Actium database';
+    my $load_cry = env->cry('Loading data from Actium database');
 
     my %smoking = %{ $actiumdb->all_in_column_key(qw(Cities SmokingText)) };
 
@@ -230,7 +230,7 @@ sub START {
 
     }
 
-    my $ssj_cry = cry('Processing multistop entries');
+    my $ssj_cry = env->cry('Processing multistop entries');
 
     my (%stops_of_sign);
     foreach my $ssj (@ssj) {
@@ -287,14 +287,14 @@ sub START {
               = grep {m/\A $signtype_opt \z/x} keys %seen_signtype;
 
             if ( not @matching_signtypes ) {
-                $makepoints_cry->text(
+                $makepoints_cry->wail(
                     "No signtype of signs to generate matches $signtype_opt "
                       . 'specified on command line.' );
                 $makepoints_cry->d_error;
                 exit 1;
             }
             %signtype_matches = map { ( $_, 1 ) } @matching_signtypes;
-            $makepoints_cry->text("Using sign types: @matching_signtypes");
+            $makepoints_cry->wail("Using sign types: @matching_signtypes");
         }
 
         if ($delivery_opt) {
@@ -302,19 +302,19 @@ sub START {
               = grep {m/\A $delivery_opt \z/x} keys %seen_delivery;
 
             if ( not @matching_deliveries ) {
-                $makepoints_cry->text(
+                $makepoints_cry->wail(
                     "No delivery of signs to generate matches $delivery_opt "
                       . 'specified on command line.' );
                 $makepoints_cry->d_error;
                 exit 1;
             }
             %delivery_matches = map { $_, 1 } @matching_deliveries;
-            $makepoints_cry->text("Using deliveries: @matching_deliveries");
+            $makepoints_cry->wail("Using deliveries: @matching_deliveries");
         }
 
     }
 
-    my $cry = cry('Now processing point schedules for sign number:');
+    my $cry = env->cry('Now processing point schedules for sign number:');
 
     my ( %skipped_stops, %points_of_delivery, @finished_points, %errors,
         %heights, %workzone_count );
@@ -532,7 +532,7 @@ sub START {
 
     my $listfile  = $LISTFILE_BASE . $run_name . '.txt';
     my $excelfile = $CHECKLIST_BASE . $run_name . '.xlsx';
-    my $list_cry  = cry "Writing list to $listfile";
+    my $list_cry  = env->cry("Writing list to $listfile");
 
     my $pointlist_folder = $signup->subfolder('pointlist');
 
@@ -568,7 +568,7 @@ sub START {
                 if (   not exists $stops{$stopid}{u_work_zone}
                     or not defined $stops{$stopid}{u_work_zone} )
                 {
-                    $list_cry->text("Work zone not found in stop id $stopid");
+                    $list_cry->wail("Work zone not found in stop id $stopid");
                 }
                 else {
                     $seen_workzone{ $stops{$stopid}{u_work_zone} } = 1;
@@ -756,7 +756,7 @@ sub START {
     close $list_fh || croak "Can't close $listfile: $ERRNO";
     $list_cry->done;
 
-    my $excel_cry = cry "Writing checklist to $excelfile";
+    my $excel_cry = env->cry("Writing checklist to $excelfile");
 
     {
 
@@ -794,9 +794,8 @@ sub START {
         my $error_count = scalar keys %errors;
 
         my $error_file = $ERRORFILE_BASE . $run_name . '.txt';
-        my $error_cry  = cry "Writing $error_count errors to $error_file";
-        #$error_cry->text(join(" " , keys %errors) );
-        my $error_fh = $pointlist_folder->open_write($error_file);
+        my $error_cry  = env->cry("Writing $error_count errors to $error_file");
+        my $error_fh   = $pointlist_folder->open_write($error_file);
 
         foreach my $signid ( sort { $a <=> $b } keys %errors ) {
             foreach my $error ( @{ $errors{$signid} } ) {
@@ -809,7 +808,7 @@ sub START {
 
     }
     else {
-        my $error_cry = cry 'No errors to log';
+        my $error_cry = env->cry('No errors to log');
         $error_cry->d_ok;
     }
 
@@ -817,7 +816,7 @@ sub START {
 
     if ( $env->option('output_heights') ) {
         my $heights_file = $HEIGHTSFILE_BASE . $run_name . '.txt';
-        my $heights_cry  = cry "Writing heights to $heights_file";
+        my $heights_cry  = env->cry("Writing heights to $heights_file");
         my $heights_fh   = $pointlist_folder->open_write($heights_file);
         foreach my $signid ( sort { $a <=> $b } keys %heights ) {
             say $heights_fh "$signid\t" . $heights{$signid};

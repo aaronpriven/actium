@@ -53,7 +53,7 @@ $not_main_station{$_} = 1 foreach qw/24TH NCON MONT PHIL BAYF CONC/;
 
 sub START {
 
-    my $start_cry = cry('Building BART frequency tables');
+    my $start_cry = env->cry('Building BART frequency tables');
 
     my ( $class,  $env )   = @_;
     my ( $oldest, @dates ) = get_dates( $env->option('date') );
@@ -70,13 +70,13 @@ sub START {
 
     my %fl_of;
 
-    my $skeds_cry = cry('Getting station schedules and fares from BART');
+    my $skeds_cry = env->cry('Getting station schedules and fares from BART');
 
     foreach my $station (@station_abbrs) {
 
         my %dest_is_used;
 
-        $skeds_cry->text( "[$station:" . $stations{$station} . "]" );
+        $skeds_cry->wail( "[$station:" . $stations{$station} . "]" );
 
         foreach my $idx ( 0 .. $#DAYS ) {
             my $date        = $dates[$idx];
@@ -326,14 +326,14 @@ sub get_stations {
 
     my %name_of;
 
-    my $cry = cry('Getting station list from BART');
+    my $cry = env->cry('Getting station list from BART');
 
     my $stations_url = stations_url($date);
 
     my $stations_xml = get_url($stations_url);
     $cry->done;
 
-    my $process_cry = cry('Processing XML data from BART');
+    my $process_cry = env->cry('Processing XML data from BART');
 
     my $twig = XML::Twig->new();
     $twig->parse($stations_xml);
@@ -373,8 +373,8 @@ sub get_dates {
         }
 
         if ( $date_obj < $today ) {
-            my $cry = last_cry;
-            $cry->text(
+            my $cry = env->last_cry;
+            $cry->wail(
                 "Can't ask for BART schedules for past date $effective_date.");
             $cry->d_error;
             die;

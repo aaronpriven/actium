@@ -34,7 +34,7 @@ sub START {
     my $env     = shift;
     my $xheazip = $env->option('xhea');
 
-    my $cry = cry("Making signup and subdirectories");
+    my $cry = env->cry("Making signup and subdirectories");
 
     my $signup      = $env->signup;
     my $hasi_folder = $signup->subfolder('hasi');
@@ -44,7 +44,7 @@ sub START {
 
     if ($xheazip) {
 
-        my $xcry = cry("Extracting XHEA files");
+        my $xcry = env->cry("Extracting XHEA files");
 
         unless ( -e $xheazip ) {
             die "Can't find xhea zip file $xheazip";
@@ -79,7 +79,7 @@ sub START {
 
     if ( $gtfs_folder->glob_plain_files('*.txt') ) {
 
-        my $suppcry = cry("Importing GTFS calendars");
+        my $suppcry = env->cry("Importing GTFS calendars");
         require Octium::Import::GTFS::TripCalendars;
 
         my $note_of_trip_r
@@ -98,7 +98,7 @@ sub START {
 
     if ( $xheazip or $xhea_folder->glob_plain_files('*.xml') ) {
 
-        my $impcry = cry("Importing xhea files");
+        my $impcry = env->cry("Importing xhea files");
 
         my $tab_folder = $xhea_folder->subfolder('tab');
 
@@ -113,7 +113,7 @@ sub START {
 
         $impcry->done;
 
-        my $hasicry = cry("Creating HASI files from XHEA files");
+        my $hasicry = env->cry("Creating HASI files from XHEA files");
 
         Octium::Import::Xhea::to_hasi( $tab_folder, $hasi_folder );
 

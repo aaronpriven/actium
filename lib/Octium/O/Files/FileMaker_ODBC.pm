@@ -44,7 +44,7 @@ sub _connect {
     my $db_user     = $self->db_user;
     my $db_password = $self->db_password;
 
-    my $cry = cry("Connecting to database $db_name");
+    my $cry = env->cry("Connecting to database $db_name");
 
     my $dbh = DBI->connect( "dbi:ODBC:$db_name", $db_user, $db_password,
         { RaiseError => 1, PrintError => 1, AutoCommit => 0 } );
@@ -375,15 +375,15 @@ sub load_tables {
 
     foreach my $table ( sort keys %request_of ) {
 
-        my $tablecry = cry("Loading from $table");
+        my $tablecry = env->cry("Loading from $table");
 
-        my $datacry = cry("Selecting data from table $table");
+        my $datacry = env->cry("Selecting data from table $table");
 
         my $fields;
 
         if ( exists( $request_of{$table}{fields} ) ) {
             $fields = join( ', ', @{ $request_of{$table}{fields} } );
-            $datacry->text("Fields: $fields");
+            $datacry->wail("Fields: $fields");
         }
         else {
             $fields = '*';
@@ -397,7 +397,7 @@ sub load_tables {
 
         if ( exists $request_of{$table}{array} ) {
 
-            my $arraycry = cry("Processing $table into array");
+            my $arraycry = env->cry("Processing $table into array");
             @{ $request_of{$table}{array} } = @{$result_ref};
             # this is to make sure the same array that was passed in
             # gets the results
@@ -414,14 +414,14 @@ sub load_tables {
             $ignoredupe //= 1;
             my $process_dupe = not $ignoredupe;
 
-            my $hashcry = cry("Processing $table into hash");
+            my $hashcry = env->cry("Processing $table into hash");
 
             my $hashref     = $request_of{$table}{hash};
             my $index_field = $request_of{$table}{index_field};
 
             if ($process_dupe) {
 
-                my $dupecry = cry( 'Determining whether there are '
+                my $dupecry = env->cry( 'Determining whether there are '
                       . "duplicate index field ($index_field) entries" );
 
                 my @all_indexes = @{

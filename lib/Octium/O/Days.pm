@@ -306,7 +306,7 @@ sub _build_as_specday {
 
     my @as_plurals = map { $PLURAL_OF{$_} } split( //, $daycode );
 
-    last_cry()->text("$daycode gives blank as_plurals in specday")
+    env->wail("$daycode gives blank as_plurals in specday")
       if not @as_plurals;
 
     $specday .= Actium::joinseries( items => @as_plurals ) . ' only';

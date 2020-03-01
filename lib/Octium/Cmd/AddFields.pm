@@ -76,15 +76,15 @@ sub START {
     my $output_file = $env->option('output')
       // Octium::add_before_extension( $file, 'out' );
 
-    my $load_cry = cry("Loading $file");
+    my $load_cry = env->cry("Loading $file");
     my $aoa      = Array::2D->new_from_file($file);
     $load_cry->done;
 
-    my $process_cry = cry("Getting column from $file");
+    my $process_cry = env->cry("Getting column from $file");
     my $last_col    = $aoa->last_col;
 
     if ( $column > $last_col ) {
-        $process_cry->text(
+        $process_cry->wail(
             sprintf(
 "Column specified, %d, is greater than last column in table, %d",
                 $column + 1,
@@ -98,10 +98,10 @@ sub START {
     my @ids = $aoa->col($column);
     $process_cry->done;
 
-    my $query_cry = cry('Preparing FileMaker query');
-    $query_cry->text("From table $table, using $keyfield as the key");
-    $query_cry->text("Fields: @fields");
-    #$query_cry->text("Values: @ids");
+    my $query_cry = env->cry('Preparing FileMaker query');
+    $query_cry->wail("From table $table, using $keyfield as the key");
+    $query_cry->wail("Fields: @fields");
+    #$query_cry->wail("Values: @ids");
     my $placeholders = join( ' , ', ( ('?') x (@ids) ) );
     my $eachtable = $actiumdb->each_columns_in_row_where(
         table       => $table,
@@ -112,7 +112,7 @@ sub START {
     $query_cry->done;
 
     my %morefields_of;
-    my $fetch_cry = cry('Fetching data from FileMaker');
+    my $fetch_cry = env->cry('Fetching data from FileMaker');
     while ( my $row_r = $eachtable->() ) {
         my @values = @{$row_r};
         # copy is necessary since eachtable->() reuses the reference
@@ -123,11 +123,11 @@ sub START {
     $fetch_cry->over($EMPTY);
     $fetch_cry->done;
 
-    my $push_cry  = cry('Placing data in the correct rows');
+    my $push_cry  = env->cry('Placing data in the correct rows');
     my $first_row = 0;
     if ($has_headers) {
         $first_row = 1;
-        my $header_cry = cry('Adding field names to headers');
+        my $header_cry = env->cry('Adding field names to headers');
 
         $aoa->[0]->$#* = $last_col;
         push $aoa->[0]->@*, @fields;
@@ -150,7 +150,7 @@ sub START {
 
     # say Actium::dumpstr( \$aoa );
 
-    my $write_cry = cry("Writing $output_file");
+    my $write_cry = env->cry("Writing $output_file");
 
     $aoa->file( output_file => $output_file );
     $write_cry->done;

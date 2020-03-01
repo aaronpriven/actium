@@ -23,7 +23,7 @@ has keycolumns_of_table_r => (
 method _connect {
     my $db_name = $self->db_name;
 
-    my $cry = Actium::cry("Connecting to database $db_name");
+    my $cry = env->cry("Connecting to database $db_name");
 
     my $dbh
       = DBI->connect( "dbi:ODBC:$db_name", $self->db_user, $self->db_password,

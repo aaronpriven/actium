@@ -5,16 +5,13 @@ use Actium;
 # imported into the caller's namespace
 #
 use parent 'Exporter';
-our @EXPORT = qw/@TRANSBAY_NOLOCALS @DIRCODES cry last_cry/;
+our @EXPORT = qw/@TRANSBAY_NOLOCALS @DIRCODES /;
 
 const our @TRANSBAY_NOLOCALS =>
   (qw/BF3 FS G H J L LA LC NX NX1 NX2 NX3 NX4 NXC OX P S SB U V W Z/);
 
 const our @DIRCODES => qw( NB SB WB EB IN OU GO RT CW CC D1 D2 UP DN  A  B );
 #  Hastus                 0  1  3  2  4  5  6  7  8  9  10 11 12 13 14 15
-
-sub cry      { goto &Actium::cry; }
-sub last_cry { goto &Actium::last_cry; }
 
 # duplicating Actium into Octium
 
