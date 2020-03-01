@@ -46,7 +46,7 @@ sub START {
     my ( $class, $env ) = @_;
     my $actiumdb = $env->actiumdb;
 
-    my $cry = cry('Generating stoplines');
+    my $cry = env->cry('Generating stoplines');
 
     my $signup = $env->signup;
     chdir $signup->path();
@@ -107,10 +107,11 @@ sub START {
     if ( $env->option_is_set('addsignup') ) {
 
         my $addcry
-          = cry(q{Adding additional signups' stoplines.txt files to this one});
+          = env->cry(
+            q{Adding additional signups' stoplines.txt files to this one});
 
         foreach my $addsignup_name ( $env->option('addsignup')->@* ) {
-            my $signupcry = cry("Adding $addsignup_name");
+            my $signupcry = env->cry("Adding $addsignup_name");
             require Octium::O::Folders::Signup;
             my $addsignup = Octium::O::Folders::Signup::->new(
                 base   => ( $env->option('addbase') // $env->option('base') ),

@@ -94,7 +94,7 @@ sub _build_files_list {
       = bsd_glob( $self->_flat_filespec(q<*>), GLOB_NOCASE | GLOB_NOSORT );
 
     if (File::Glob::GLOB_ERROR) {
-        last_cry()->d_error;
+        env->last_cry->d_error;
         croak 'Error reading list of filenames in Hastus AVL Standard '
           . "folder $flats_folder: $OS_ERROR";
     }
@@ -129,7 +129,7 @@ sub _load {
 
     local $INPUT_RECORD_SEPARATOR = $CRLF;
 
-    my $cry = cry("Reading HastusASI $filetype files");
+    my $cry = env->cry("Reading HastusASI $filetype files");
 
     my ( %sth_of, %parent_of, %key_components_idxs, %has_composite_key,
         %has_repeating_final_column );

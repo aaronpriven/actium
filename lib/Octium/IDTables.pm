@@ -21,7 +21,7 @@ use Octium::IDTables::PageAssignments;
 
 sub create_timetable_texts {
 
-    my $cry = cry("Creating timetable texts");
+    my $cry = env->cry("Creating timetable texts");
 
     my $db_obj = shift;
     my @skeds  = @_;
@@ -51,7 +51,7 @@ sub create_timetable_texts {
 
 sub output_all_tables {
 
-    my $cry = cry("Outputting all tables into all.txt");
+    my $cry = env->cry("Outputting all tables into all.txt");
 
     my $tabulae_folder = shift;
     my $alltables_r    = shift;
@@ -404,7 +404,7 @@ sub _make_length {
 
 sub output_a_pubtts {
 
-    my $cry = cry("Outputting public timetable files for Applescript");
+    my $cry = env->cry("Outputting public timetable files for Applescript");
 
     my $pubtt_folder              = shift;
     my @pubtt_contents_with_dates = @{ +shift };
@@ -435,7 +435,7 @@ sub output_a_pubtts {
             $leave_cover_for_map );
 
         if ( not @table_assignments ) {
-            $cry->text("Can't place $file on pages (too many timepoints?)");
+            $cry->wail("Can't place $file on pages (too many timepoints?)");
             next;
         }
 
@@ -519,7 +519,7 @@ sub output_a_pubtts {
     $cry->over(q[]);
     $cry->done;
 
-    # $cry->text( "Has more than eight pages: @over_eight_pages");
+    # $cry->wail( "Has more than eight pages: @over_eight_pages");
     $cry->done;
 
 }    ## tidy end: sub output_a_pubtts

@@ -18,7 +18,7 @@ const my @required_tables => (qw/ppat block trip trip_pattern trip_stop/);
 
 sub xheatab2skeds {
 
-    my $tabcry = cry("Loading xhea tab files...");
+    my $tabcry = env->cry("Loading xhea tab files...");
 
     my %params = validate(
         @_,
@@ -54,7 +54,7 @@ sub xheatab2skeds {
 
 sub xhea2skeds {
 
-    my $xhea2skedscry = cry('Converting Xhea to schedules');
+    my $xhea2skedscry = env->cry('Converting Xhea to schedules');
 
     my %params = validate(
         @_,
@@ -96,13 +96,13 @@ sub xhea2skeds {
     );
 
     #        my $dumpfile = '/tmp/xheaout.7';
-    #        my $dumpcry = cry("Dumping patterns and trips to $dumpfile");
+    #        my $dumpcry = env->cry("Dumping patterns and trips to $dumpfile");
     #        open my $dump_out, '>', $dumpfile;
     #        say $dump_out Actium::dumpstr($patgroup_by_lgdir_r);
     #        close $dump_out;
     #        $dumpcry->done;
 
-    my $skedscry = cry('Making schedules');
+    my $skedscry = env->cry('Making schedules');
 
     my $skedcollection = _make_skeds(
         signup    => $signup,
@@ -136,7 +136,7 @@ sub _get_blocks {
     my %blocks_by_id;
 
     _records_in_turn(
-        cry        => 'Processing blocks ',
+        env->cry   => 'Processing blocks ',
         fieldnames => $fieldnames_of_r,
         values     => $values_of_r,
         table      => 'block',
@@ -189,7 +189,7 @@ sub _get_blocks {
         my ( %pattern_by_id, %patterns_by_linedir, %patgroup_by_lgdir );
 
         _records_in_turn(
-            cry        => 'Processing trip patterns',
+            env->cry   => 'Processing trip patterns',
             fieldnames => $fieldnames_of_r,
             values     => $values_of_r,
             table      => 'trip_pattern',
@@ -286,7 +286,7 @@ sub _get_trips {
 
     _records_in_turn(
         fieldnames => $fieldnames_of_r,
-        cry        => 'Processing trips',
+        env->cry   => 'Processing trips',
         values     => $values_of_r,
         table      => 'trip',
         callback   => sub {
@@ -333,7 +333,7 @@ sub _get_trips {
 
     _records_in_turn(
         fieldnames => $fieldnames_of_r,
-        cry        => 'Processing trip stops',
+        env->cry   => 'Processing trip stops',
         values     => $values_of_r,
         table      => 'trip_stop',
         callback   => sub {
@@ -373,7 +373,7 @@ sub _get_trips {
 
     #    _records_in_turn(
     #        fieldnames => $fieldnames_of_r,
-    #        cry        => 'Processing trip places',
+    #        env->cry        => 'Processing trip places',
     #        values     => $values_of_r,
     #        table      => 'trip_tp',
     #        callback   => sub {
@@ -408,7 +408,7 @@ sub _get_trips {
     #        },
     #    );
     #
-    #    my $stop_place_cry = cry('Combining stops and places');
+    #    my $stop_place_cry = env->cry('Combining stops and places');
     #
     #    foreach my $pattern ( values %pattern_by_id ) {
     #
@@ -454,7 +454,7 @@ sub _add_place_patterns_to_patterns {
 
     _records_in_turn(
         fieldnames => $fieldnames_of_r,
-        cry        => 'Processing place patterns',
+        env->cry   => 'Processing place patterns',
         values     => $values_of_r,
         table      => 'ppat',
         callback   => sub {
@@ -467,7 +467,7 @@ sub _add_place_patterns_to_patterns {
         },
     );
 
-    my $ppat_stop_cry = cry('Adding place pattern ranks to pattern stops');
+    my $ppat_stop_cry = env->cry('Adding place pattern ranks to pattern stops');
 
     foreach my $linedir ( keys %ppat_of_linedir ) {
         \my @ppat_entries = $ppat_of_linedir{$linedir};
@@ -482,21 +482,21 @@ sub _add_place_patterns_to_patterns {
                 my $ppat_place = $ppat_entries[$ppat_rank];
 
                 unless ( defined $ppat_place ) {
-                    $ppat_stop_cry->text("Linedir: $linedir");
-                    $ppat_stop_cry->text( "This stop: " . $stop->id );
-                    $ppat_stop_cry->text("Stop place $stop_place");
-                    $ppat_stop_cry->text("PPat rank: $ppat_rank");
-                    $ppat_stop_cry->text( "Pattern: " . $pattern->id );
+                    $ppat_stop_cry->wail("Linedir: $linedir");
+                    $ppat_stop_cry->wail( "This stop: " . $stop->id );
+                    $ppat_stop_cry->wail("Stop place $stop_place");
+                    $ppat_stop_cry->wail("PPat rank: $ppat_rank");
+                    $ppat_stop_cry->wail( "Pattern: " . $pattern->id );
                     foreach my $new_stop ( $pattern->stop_objs ) {
-                        $ppat_stop_cry->text( "Stop: " . $new_stop->id );
+                        $ppat_stop_cry->wail( "Stop: " . $new_stop->id );
                     }
 
                     use DDP;
                     p $pattern;
-                    $ppat_stop_cry->text('');
-                    $ppat_stop_cry->text('----');
+                    $ppat_stop_cry->wail('');
+                    $ppat_stop_cry->wail('----');
                     p @ppat_entries;
-                    $ppat_stop_cry->text('');
+                    $ppat_stop_cry->wail('');
                     exit;
                 }
                 while ( $stop_place ne $ppat_place
@@ -529,7 +529,7 @@ sub _records_in_turn {
             fieldnames => 1,
             values     => 1,
             callback   => 1,
-            cry        => 0,
+            env->cry   => 0,
         }
     );
 
@@ -541,7 +541,7 @@ sub _records_in_turn {
     my $cry;
 
     if ($crytext) {
-        $cry = cry($crytext);
+        $cry = env->cry($crytext);
     }
 
     my @headers = @{ $fieldnames_of_r->{$table} };
@@ -579,11 +579,11 @@ sub _make_skeds {
     foreach my $lgdir ( Actium::sortbyline keys %patgroup_by_lgdir ) {
         next if $lgdir =~ /^399/;
         # 399 is not a real line
-        last_cry()->over( $lgdir, " " );
+        env->last_cry->over( $lgdir, " " );
         my $patgroup = $patgroup_by_lgdir{$lgdir};
         push @skeds, $patgroup->skeds( $params{actiumdb} );
     }
-    last_cry()->over(".");
+    env->last_cry->over(".");
 
     return Octium::O::Sked::Collection->new(
         name   => 'received',

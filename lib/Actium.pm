@@ -352,28 +352,6 @@ sub _set_env {
     return;
 }
 
-=head3 Terminal Output
-
-=head4 cry
-
-The same as C<< env->cry(...) >>.
-
-=cut
-
-sub cry {
-    return $env->cry(@_);
-}
-
-=head4 last_cry
-
-The same as C<< env->last_cry(...) >>.
-
-=cut
-
-sub last_cry {
-    return $env->last_cry(@_);
-}
-
 =head2 LISTS
 
 =head3 Joining Lists into Strings

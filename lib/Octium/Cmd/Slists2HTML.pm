@@ -57,7 +57,7 @@ const my %LONGCORNER_OF => (
 
 sub START {
 
-    my $makehtml_cry = cry('Making HTML files of stop lists');
+    my $makehtml_cry = env->cry('Making HTML files of stop lists');
 
     my ( $class, $env ) = @_;
     my $actiumdb = $env->actiumdb;
@@ -68,7 +68,7 @@ sub START {
 
     $actiumdb->ensure_loaded('Stops_Neue');
 
-    my $stopdesc_cry = cry('Getting stop descriptions from FileMaker');
+    my $stopdesc_cry = env->cry('Getting stop descriptions from FileMaker');
 
     my $stops_row_of_r = $actiumdb->all_in_columns_key(
         qw/Stops_Neue c_description_short h_loca_latitude h_loca_longitude
@@ -80,7 +80,7 @@ sub START {
     my $linegrouptype_of_r
       = $actiumdb->all_in_column_key(qw/Lines LineGroupType/);
 
-    my $htmlversion_cry = cry('Creating HTML versions of stop lists');
+    my $htmlversion_cry = env->cry('Creating HTML versions of stop lists');
 
     my @files = $stoplists_line_folder->glob_plain_files('*.txt');
     @files = map { Octium::filename($_) } @files;

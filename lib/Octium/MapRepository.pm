@@ -66,8 +66,8 @@ sub import_to_repository {
     my $verbose    = $params{verbose};
 
     my $importfolder = $params{importfolder};
-    my $cry          = cry( 'Importing line maps from ' . $importfolder->path );
-    my @files        = $importfolder->glob_plain_files();
+    my $cry   = env->cry( 'Importing line maps from ' . $importfolder->path );
+    my @files = $importfolder->glob_plain_files();
 
     my @copied_files;
 
@@ -91,7 +91,7 @@ sub import_to_repository {
         if ( not filename_is_valid($newfilename) ) {
             # check of the newly normalized name - not a duplicate call
 
-            $cry->text( "Can't find line, date, version or "
+            $cry->wail( "Can't find line, date, version or "
                   . "extension in $filename: skipped" );
             next FILE;
         }
@@ -104,7 +104,7 @@ sub import_to_repository {
         my $newfilespec = $linefolder->make_filespec($newfilename);
 
         if ( -e $newfilespec ) {
-            $cry->text( "Can't move $filespec "
+            $cry->wail( "Can't move $filespec "
                   . "because $newfilespec already exists: skipped" );
             next FILE;
         }
@@ -143,7 +143,7 @@ sub make_web_maps {
     my $gsargs         = "-r$params{resolution} -sDEVICE=jpeg "
       . '-dGraphicsAlphaBits=4 -dTextAlphaBits=4 -q';
 
-    my $cry = cry('Making maps for web');
+    my $cry = env->cry('Making maps for web');
 
     foreach my $filespec ( @{ $params{files} } ) {
 
@@ -180,7 +180,7 @@ sub make_web_maps {
             if ($verbose) {
                 my $display_path = _display_path( $first_jpeg_spec, $filespec,
                     $path_to_remove );
-                $cry->text("Successfully rasterized: $display_path");
+                $cry->wail("Successfully rasterized: $display_path");
             }
         }
         else {
@@ -332,7 +332,7 @@ sub copylatest {
 
     my $repository = $params{repository};
 
-    my $list_cry    = cry('Getting list of folders in map repository');
+    my $list_cry    = env->cry('Getting list of folders in map repository');
     my @folder_objs = $repository->children;
     $list_cry->done;
 
@@ -342,7 +342,7 @@ sub copylatest {
     my %latest_date_of;
     my %latest_ver_of;
 
-    my $copy_cry = cry('Copying files in repository folders');
+    my $copy_cry = env->cry('Copying files in repository folders');
 
     my %folder_obj_of;
     $folder_obj_of{ $_->folder } = $_ foreach @folder_objs;
@@ -478,7 +478,7 @@ sub copylatest {
 
 sub _active_maps {
 
-    my $cry = cry('Getting list of active maps');
+    my $cry = env->cry('Getting list of active maps');
 
     my $repository = shift;
     my $filename   = shift;
@@ -509,7 +509,7 @@ sub _file_action {
     if ( $action_r->( $from, $to ) ) {
         if ($verbose) {
             my $display_path = _display_path( $from, $to, $path );
-            last_cry()->text("Successful $actionword: $display_path");
+            env->wail("Successful $actionword: $display_path");
         }
     }
     else {

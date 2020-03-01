@@ -417,7 +417,7 @@ sub slurp_write {
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
 
-    my $cry = cry("Writing $filename...");
+    my $cry = env->cry("Writing $filename...");
 
     require File::Slurper;
     File::Slurper::write_text( $filespec, $string );
@@ -430,7 +430,7 @@ sub slurp_read {
     my $self     = shift;
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
-    my $cry      = cry("Reading $filename...");
+    my $cry      = env->cry("Reading $filename...");
 
     croak "$filespec does not exist"
       unless -e $filespec;
@@ -445,7 +445,7 @@ sub json_retrieve {
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
 
-    my $cry = cry("Retrieving JSON file $filename");
+    my $cry = env->cry("Retrieving JSON file $filename");
 
     my $json_text = $self->slurp_read($filename);
 
@@ -464,7 +464,7 @@ sub json_store {
     my $data_r   = shift;
     my $filename = shift;
 
-    my $cry = cry("Storing JSON file $filename...");
+    my $cry = env->cry("Storing JSON file $filename...");
 
     require JSON;    ### DEP ###
     my $json_text = JSON::to_json($data_r);
@@ -481,7 +481,7 @@ sub json_store_pretty {
     my $data_r   = shift;
     my $filename = shift;
 
-    my $cry = cry("Storing JSON file $filename...");
+    my $cry = env->cry("Storing JSON file $filename...");
 
     require JSON;    ### DEP ###
     my $json_text = JSON::to_json( $data_r, { pretty => 1, canonical => 1 } );
@@ -500,7 +500,7 @@ sub retrieve {
     croak "$filespec does not exist"
       unless -e $filespec;
 
-    my $cry = cry("Retrieving $filename");
+    my $cry = env->cry("Retrieving $filename");
 
     require Storable;
     my $data_r = Storable::retrieve($filespec);
@@ -521,7 +521,7 @@ sub store {
     my $filename = shift;
     my $filespec = $self->make_filespec($filename);
 
-    my $cry = cry("Storing $filename...");
+    my $cry = env->cry("Storing $filename...");
 
     require Storable;
     my $result = Storable::nstore( $data_r, $filespec );
@@ -677,7 +677,7 @@ sub write_files_with_method {
 
     my $count;
 
-    my $cry = cry( "Writing $method files to " . $folder->display_path );
+    my $cry = env->cry( "Writing $method files to " . $folder->display_path );
 
     my %seen_id;
 
@@ -718,7 +718,7 @@ sub write_file_with_method {
     my $filename = $params{FILENAME};
     my $method   = $params{METHOD};
     my $args_r   = $params{ARGS} // [];
-    my $cry      = $params{CRY} // cry("Writing to $filename via $method");
+    my $cry      = $params{CRY} // env->cry("Writing to $filename via $method");
 
     my $out;
 
@@ -766,7 +766,7 @@ sub write_files_from_hash {
         $extension = $EMPTY;
     }
 
-    my $cry = cry( "Writing $filetype files to " . $self->display_path );
+    my $cry = env->cry( "Writing $filetype files to " . $self->display_path );
 
     foreach my $key ( sort keys %hash ) {
 

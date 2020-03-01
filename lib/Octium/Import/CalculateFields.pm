@@ -51,7 +51,7 @@ foreach ( 1 .. 9 ) {
 
 sub hastus_places_import {
 
-    my $cry = cry('Calculating fields derived from Hastus place data');
+    my $cry = env->cry('Calculating fields derived from Hastus place data');
 
     my @place_headers = @{ +shift };
     my @place_records = @{ +shift };
@@ -115,7 +115,7 @@ sub _abbrev9 {
 
 sub hastus_stops_import {
 
-    my $cry = cry('Calculating fields derived from Hastus stop data');
+    my $cry = env->cry('Calculating fields derived from Hastus stop data');
 
     my @stop_headers = @{ +shift };
     my @stop_records = @{ +shift };

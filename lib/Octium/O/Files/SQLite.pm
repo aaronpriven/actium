@@ -169,7 +169,7 @@ sub _connect {
 
     my $existed = -e $db_filespec;
 
-    my $cry = cry(
+    my $cry = env->cry(
         $existed
         ? "Connecting to database $db_filename"
         : "Creating new database $db_filename"
@@ -213,7 +213,7 @@ sub _current_mtimes {
 
         my @stat = stat($filespec);
         unless ( scalar @stat ) {
-            last_cry()->d_error;
+            env->last_cry->d_error;
             croak "Could not get file status for $filespec";
         }
         $mtimes .= "$file\t$stat[$STAT_MTIME]\t";

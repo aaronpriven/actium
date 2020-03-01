@@ -96,11 +96,11 @@ EOT
 
     foreach my $reason ( keys %skipped_because ) {
         my @stops = join( $SPACE, @{ $skipped_because{$reason} } );
-        last_cry()->text("$SKIPPED_EXPLANATION_OF{$reason}: @stops");
+        env->last_cry->wail("$SKIPPED_EXPLANATION_OF{$reason}: @stops");
     }
 
     unless ( scalar %rows_of_file ) {
-        last_cry()->d_error( { -reason => 'Error: No flags to prepare.' } );
+        env->last_cry->d_error( { -reason => 'Error: No flags to prepare.' } );
         return;
     }
 

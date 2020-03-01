@@ -154,7 +154,7 @@ sub tab_strings {
     my ( $fieldnames_of_r, $fields_of_r, $values_of_r ) = (@_);
     my %tab_of;
 
-    my $cry = cry('Processing XHEA data into tab-delimited text');
+    my $cry = env->cry('Processing XHEA data into tab-delimited text');
 
     foreach my $record_name ( keys %{$fields_of_r} ) {
 
@@ -180,7 +180,7 @@ sub tab_strings {
 
     sub adjust_sch_cal {
 
-        my $cry = cry('Adjusting XHEA data from school calendars');
+        my $cry = env->cry('Adjusting XHEA data from school calendars');
 
         my %p = validate(
             @_,
@@ -283,7 +283,7 @@ sub tab_strings {
         }    ## tidy end: foreach \my @trip_record(@trip_records)
 
         foreach my $tripkey ( sort keys %calendar_of_tripkey ) {
-            $cry->text("Didn't find $tripkey in schedules");
+            $cry->wail("Didn't find $tripkey in schedules");
         }
 
         $cry->done;
@@ -309,7 +309,7 @@ const my @NOTE_DOW =>
 
 sub _get_trip_notes_from_event_date {
 
-    my $cry = cry('Creating trip calendar notes from XHEA event dates');
+    my $cry = env->cry('Creating trip calendar notes from XHEA event dates');
 
     require Octium::O::DateTime;
     require DateTime::Event::ICal;
@@ -599,7 +599,7 @@ func joinseries_semicolon_with (Str $and!, Str @things!) {
 
 sub adjust_trip_note {
 
-    my $cry = cry('Adding trip calendar notes to XHEA trips');
+    my $cry = env->cry('Adding trip calendar notes to XHEA trips');
 
     my %p = validate(
         @_,
@@ -643,7 +643,7 @@ sub adjust_trip_note {
     }    ## tidy end: foreach \my @trip_record(@trip_records)
 
     foreach my $tripnum ( sort keys %note_of_trip ) {
-        $cry->text("Didn't find $tripnum in schedules");
+        $cry->wail("Didn't find $tripnum in schedules");
     }
 
     $cry->done;
@@ -672,7 +672,7 @@ sub adjust_for_basetype {
     my ( $fields_of_r, $values_of_r ) = (@_);
     my %adjusted_values_of;
 
-    my $cry = cry('Adjusting XHEA data for its base type');
+    my $cry = env->cry('Adjusting XHEA data for its base type');
 
     foreach my $record_name ( keys %{$fields_of_r} ) {
 
@@ -761,7 +761,7 @@ sub _adjust_boolean {
 
     sub _load_placepatterns {
 
-        my $ppat_cry = cry("Processing place patterns");
+        my $ppat_cry = env->cry("Processing place patterns");
 
         my $xheafolder = shift;
         return unless $xheafolder->file_exists($placepatfile);
@@ -813,13 +813,13 @@ sub load {
 
     my $pastor = XML::Pastor->new();
 
-    my $load_cry = cry('Loading XHEA files');
+    my $load_cry = env->cry('Loading XHEA files');
 
     foreach my $filename (@xhea_filenames) {
 
-        my $file_cry = cry("Processing $filename");
+        my $file_cry = env->cry("Processing $filename");
 
-        my $class_cry = cry('Generating classes from XSD');
+        my $class_cry = env->cry('Generating classes from XSD');
 
         my $xsd       = $xheafolder->make_filespec("$filename.xsd");
         my @xml       = $xheafolder->make_filespec("$filename.xml");
@@ -897,14 +897,14 @@ sub _load_values {
         foreach my $i ( 0 .. $#xmlfiles ) {
             my $filename = $filenames[$i];
             my $xmlfile  = $xmlfiles[$i];
-            my $load_cry = cry("Loading $table_name from $filename.xml");
-            #$load_cry->text('(This can take quite a while; be patient)');
+            my $load_cry = env->cry("Loading $table_name from $filename.xml");
+            #$load_cry->wail('(This can take quite a while; be patient)');
             push @tables, $table_class->from_xml_file($xmlfile);
             $load_cry->done;
 
         }
 
-        my $record_cry = cry("Processing $table_name into records");
+        my $record_cry = env->cry("Processing $table_name into records");
 
         for my $record_name ( @{ $p{records_of}{$table_name} } ) {
 
@@ -936,7 +936,7 @@ sub _load_values {
 
 sub _records_and_fields {
 
-    my $xsd_cry = cry('Processing XSD to record and field info');
+    my $xsd_cry = env->cry('Processing XSD to record and field info');
 
     # Hastus exports XML files with three levels:
     # table level (contains records)
@@ -1058,7 +1058,7 @@ sub _build_tree {
 
     my $model = shift;
 
-    my $cry = cry('Building element tree');
+    my $cry = env->cry('Building element tree');
 
     my %element_obj_of = %{ $model->element };
 
@@ -1248,7 +1248,7 @@ sub _get_xhea_filenames {
     sub to_hasi {
         my ( $xhea_tab_folder, $hasi_folder ) = @_;
 
-        my $cry = cry("Loading XHEA files to memory");
+        my $cry = env->cry("Loading XHEA files to memory");
 
         require Octium::Storage::TabDelimited;
 
@@ -1385,9 +1385,9 @@ sub _get_xhea_filenames {
 
         $cry->done;
 
-        my $hasi_cry = cry("Writing HASI files");
+        my $hasi_cry = env->cry("Writing HASI files");
 
-        my $pat_cry = cry("Writing $signup.PAT");
+        my $pat_cry = env->cry("Writing $signup.PAT");
 
         my $pat_fh = $hasi_folder->open_write("$signup.PAT");
 
@@ -1423,7 +1423,7 @@ sub _get_xhea_filenames {
 
         $pat_cry->done;
 
-        my $trip_cry = cry("Writing $signup.TRP");
+        my $trip_cry = env->cry("Writing $signup.TRP");
         $trip_cry->prog(
             ( scalar keys %{ $trp{InternalNumber} } ) . ' records' );
 
@@ -1432,7 +1432,7 @@ sub _get_xhea_filenames {
         foreach my $tripnum ( keys %{ $trp{InternalNumber} } ) {
 
             unless ( defined $trp{IsPublic}{$tripnum} ) {
-                $trip_cry->text($tripnum);
+                $trip_cry->wail($tripnum);
             }
 
             printf $trp_fh
@@ -1456,7 +1456,7 @@ sub _get_xhea_filenames {
 
         $trip_cry->done;
 
-        my $plc_cry = cry("Writing $signup.PLC");
+        my $plc_cry = env->cry("Writing $signup.PLC");
         $plc_cry->prog( ( scalar keys %{ $plc{Place} } ) . ' records' );
 
         my $plc_fh = $hasi_folder->open_write("$signup.PLC");
@@ -1480,7 +1480,7 @@ sub _get_xhea_filenames {
 
         $plc_cry->done;
 
-        last_cry()->done;
+        env->last_cry->done;
 
     }    ## tidy end: sub to_hasi
 

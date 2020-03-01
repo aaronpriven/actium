@@ -36,7 +36,7 @@ sub START {
 
     my @skeds = $collection->skeds;
 
-    my $tttext_cry = cry('Creating timetable texts');
+    my $tttext_cry = env->cry('Creating timetable texts');
 
     my @tables;
     my $prev_linegroup = $EMPTY;
@@ -61,7 +61,7 @@ sub START {
 
     $tttext_cry->done;
 
-    my $htmlcry = cry('Writing HTML files');
+    my $htmlcry = env->cry('Writing HTML files');
 
     $signup->write_files_with_method(
         {   OBJECTS   => \@tables,
@@ -86,7 +86,7 @@ sub START {
 
     $htmlcry->done;
 
-    my $jsoncry = cry('Writing JSON struct files');
+    my $jsoncry = env->cry('Writing JSON struct files');
 
     $signup->write_files_with_method(
         {   OBJECTS   => \@tables,

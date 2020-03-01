@@ -5,12 +5,12 @@
 use FindBin qw($Bin);    ### DEP ###
 use lib ("$Bin/../lib"); ### DEP ###
 
-use Octium;
-use Octium::CLI;
+use Actium;
+use Actium::Env::CLI;
 
 our $VERSION = 0.012;
 
-Octium::CLI::->new(
+Actium::Env::CLI::->new(
     commandpath => $0,
     system_name => 'octium',
     subcommands => {

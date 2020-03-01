@@ -2,7 +2,6 @@ package Octium::IDTables::PageAssignments 0.012;
 
 use Actium;
 use Octium;
-use Octium::Crier (qw/cry last_cry/);
 use Octium::Text::InDesignTags;
 use Octium::Text::CharWidth ( 'ems', 'char_width' );
 use Octium::O::Sked;
@@ -133,8 +132,7 @@ sub assign {
         foreach my $idtable (@idtables) {
             next unless $idtable->failed;
 
-            last_cry()
-              ->text( $idtable->id
+            env->last_cry->wail( $idtable->id
                   . " could not be fit in the pages available: "
                   . $idtable->dimensions_for_display );
 

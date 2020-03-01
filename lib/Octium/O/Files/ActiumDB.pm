@@ -536,7 +536,7 @@ method destination_or_warn ($tp4) {
         return $self->destination($tp4);
     }
     else {
-        last_cry()->text("No timepoint found for $tp4");
+        env->wail("No timepoint found for $tp4");
         return $tp4;
     }
 }
