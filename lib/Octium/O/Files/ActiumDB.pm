@@ -53,7 +53,7 @@ sub _build_keys_of {
     my $query
       = "SELECT $TABLE_OF_KEYFIELD_TABLE, $KEY_OF_KEYFIELD_TABLE FROM $KEYFIELD_TABLE";
     my $rows_r  = $dbh->selectall_arrayref($query);
-    my %keys_of = Octium::flatten($rows_r);
+    my %keys_of = Actium::arrayify($rows_r);
 
     return \%keys_of;
 

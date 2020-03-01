@@ -184,7 +184,7 @@ EOT
                 $signtype_of_stop{$stopid} = $signtype;
             }
 
-            if ( Octium::feq( $active, 'Sort of' ) ) {
+            if ( Actium::feq( $active, 'Sort of' ) ) {
                 $icon_of_stop{$stopid} = $KML_ICON{'Sort of'};
                 next SIGNROW;
             }
@@ -518,7 +518,7 @@ sub linesbycity {
     my %type_of;
     foreach my $line ( $actiumdb->line_keys ) {
         \my %row = $actiumdb->line_row_r($line);
-        if ( Octium::feq( $row{agency_id}, 'ACTransit' ) ) {
+        if ( Actium::feq( $row{agency_id}, 'ACTransit' ) ) {
             # note that is not agency name. Name has spaces.
             # ID does not
             $type_of{$line} = $row{LineGroupType};

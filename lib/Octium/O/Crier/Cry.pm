@@ -567,8 +567,8 @@ sub prog {
     my $self = shift;
     next unless $self->_shows_progress;
 
-    my $separator = Octium::define($OUTPUT_FIELD_SEPARATOR);
-    my $msg = join( $separator, Octium::define(@_) );
+    my $separator = Actium::define($OUTPUT_FIELD_SEPARATOR);
+    my $msg = join( $separator, Actium::define(@_) );
 
     my $level = $self->_level;
     return 1 if defined( $self->_maxdepth ) and $level > $self->_maxdepth;
@@ -657,7 +657,7 @@ sub text {
       and defined($maxdepth)
       and $level > $maxdepth;
 
-    my $separator = Octium::define($OUTPUT_FIELD_SEPARATOR);
+    my $separator = Actium::define($OUTPUT_FIELD_SEPARATOR);
     my $text = join( $separator, @args );
 
     my $fh = $self->_fh;

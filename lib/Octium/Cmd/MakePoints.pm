@@ -343,16 +343,16 @@ sub START {
           if $signtype_opt and not exists $signtype_matches{$signtype};
 
         next SIGN
-          if $tag_opt and Octium::fne( $tag, $tag_opt );
+          if $tag_opt and Actium::fne( $tag, $tag_opt );
 
         next SIGN
           if $delivery_opt and not exists $delivery_matches{$delivery};
 
         if ( $env->option('update') or $env->option('newsigns') ) {
             next SIGN
-              unless ( Octium::feq( $status, 'Needs update' )
+              unless ( Actium::feq( $status, 'Needs update' )
                 and $env->option('update') )
-              or ( Octium::feq( $status, 'Needs new sign' )
+              or ( Actium::feq( $status, 'Needs new sign' )
                 and $env->option('newsigns') );
         }
 

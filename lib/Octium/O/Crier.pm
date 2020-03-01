@@ -251,7 +251,7 @@ has 'bullets_r' => (
 
 sub set_bullets {
     my $self    = shift;
-    my @bullets = Octium::flatten(@_);
+    my @bullets = Actium::arrayify(@_);
     $self->_set_bullets_r(@bullets);
 }
 
@@ -450,7 +450,7 @@ sub cry_method {
         $opts{closetext} = $pair[1];
     }
     else {
-        my $separator = Octium::define($OUTPUT_FIELD_SEPARATOR);
+        my $separator = Actium::define($OUTPUT_FIELD_SEPARATOR);
         $opts{opentext} = join( $separator, @args );
     }
 

@@ -138,7 +138,7 @@ sub split_folderlist {
     # Takes either an array of strings, or an arrayref of strings.
 
     my $self     = shift;
-    my $folder_r = Octium::flatten(@_);
+    my $folder_r = Actium::arrayify(@_);
 
     my @new_folders;
     foreach my $folder ( @{$folder_r} ) {
