@@ -30,7 +30,7 @@ sub START {
         my @headers = $input->row(0);
         my @chinese_cols;
 
-        if ( Octium::folded_in( 'zh', @headers ) ) {
+        if ( Actium::folded_in( 'zh', @headers ) ) {
 
             # treat that column as though it were Chinese
             @chinese_cols

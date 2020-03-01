@@ -287,7 +287,7 @@ sub _build_bullet_width {
 
     return 0 if @{$bullets_r} == 0;
 
-    my $width = Actium::max( map { Octium::u_columns($_) } @{$bullets_r} );
+    my $width = Actium::max( map { Actium::u_columns($_) } @{$bullets_r} );
     return $width;
 }
 
@@ -298,7 +298,7 @@ sub _alter_bullet_width {
     my $bullet_width = $self->_bullet_width;
 
     my $newbullet_width
-      = Actium::max( map { Octium::u_columns($_) } @{$bullets_r} );
+      = Actium::max( map { Actium::u_columns($_) } @{$bullets_r} );
 
     return if $newbullet_width <= $bullet_width;
 
