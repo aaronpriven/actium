@@ -415,8 +415,7 @@ sub _sort_page_partitions {
 
         }    ## tidy end: PAGE: foreach my $page ( @{$partition...})
 
-        $partitions_with_values{deviation}
-          = Octium::population_stdev(@tablecounts);
+        $partitions_with_values{deviation} = Actium::stddevp(@tablecounts);
 
         push @page_partitions, \%partitions_with_values;
 
