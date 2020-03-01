@@ -185,7 +185,7 @@ sub START {
 } ## tidy end: sub START
 
 sub _say_array {
-    say scalar Octium::u_wrap( joinspace( Actium::sortbyline(@_) ) );
+    say scalar Actium::u_wrap( joinspace( Actium::sortbyline(@_) ) );
 }
 
 sub _makessdiff {

@@ -40,7 +40,7 @@ sub make_labels {
         my $assignment   = $assignment_of_r->{$stopid};
 
         if ( not $desc ) {
-            next if Octium::folded_in( $stopid => 'id', 'stop id', 'stopid' );
+            next if Actium::folded_in( $stopid => 'id', 'stop id', 'stopid' );
             $desc = '[NO DESCRIPTION FOUND]';
         }
 
@@ -229,7 +229,7 @@ sub decals_of_stop {
 
         next
           if $decals eq $EMPTY
-          and Octium::folded_in( $stopid => 'id', 'stop id', 'stopid' );
+          and Actium::folded_in( $stopid => 'id', 'stop id', 'stopid' );
 
         my ( @decals, @found_decals, @lines );
         @decals = split( /\s+/, $decals );

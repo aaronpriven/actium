@@ -314,18 +314,18 @@ sub _print_left_text {
     # Timestamp
     $timestamp = $self->_timestamp_now( $level, $timestamp );
 
-    my $bullet = Octium::u_pad( $self->bullet, $self->_bullet_width );
+    my $bullet = Actium::u_pad( $self->bullet, $self->_bullet_width );
     my $indent         = $SPACE x ( $self->_step * ( $level - 1 ) );
     my $leading        = $timestamp . $bullet . $indent;
-    my $leading_width  = Octium::u_columns($leading);
+    my $leading_width  = Actium::u_columns($leading);
     my $leading_spaces = $SPACE x $leading_width;
     my $span_max = $self->_column_width - $leading_width - $NOTIFY_RIGHT_PAD;
     my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
 
     $text .= $ellipsis;
 
-    my @lines = Octium::u_wrap( $text, $span_min, $span_max );
-    my $final_width = Octium::u_columns( $lines[-1] );
+    my @lines = Actium::u_wrap( $text, $span_min, $span_max );
+    my $final_width = Actium::u_columns( $lines[-1] );
     $lines[0] = $leading . $lines[0];
     if ( @lines > 1 ) {
         $lines[$_] = "\n" . $leading_spaces . $lines[$_]
@@ -396,7 +396,7 @@ sub _close {
     # Make the severity text
 
     my $severity_output
-      = Octium::u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
+      = Actium::u_trim_to_columns( $severity, $MAX_SEVERITY_TEXT_WIDTH );
     if ( $self->colorize ) {
         $severity_output = $self->_add_color($severity_output);
     }
@@ -575,7 +575,7 @@ sub prog {
 
     # Start a new line?
     my $avail   = $self->_column_width - $self->position - $NOTIFY_RIGHT_PAD;
-    my $columns = Octium::u_columns($msg);
+    my $columns = Actium::u_columns($msg);
     my $fh      = $self->_fh;
 
     my $position = $self->position;
@@ -679,7 +679,7 @@ sub text {
     my $span_max = $self->_column_width - $indent_cols - $NOTIFY_RIGHT_PAD;
     my $span_min = int( $span_max * $MIN_SPAN_FACTOR );
 
-    my @lines = Octium::u_wrap( $text, $span_min, $span_max );
+    my @lines = Actium::u_wrap( $text, $span_min, $span_max );
 
     foreach my $line (@lines) {
         my $succeeded = print $fh $indentspace, $line, "\n";

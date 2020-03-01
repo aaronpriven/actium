@@ -18,8 +18,6 @@ sub last_cry { goto &Actium::last_cry; }
 
 # duplicating Actium into Octium
 
-sub folded_in { goto &Actium::folded_in }
-
 sub population_stdev {
 
     my @popul = is_plain_arrayref( $_[0] ) ? @{ $_[0] } : @_;
@@ -60,45 +58,6 @@ sub file_ext {
                       ([^.]+) # one or more non-dot characters
                       \z}sx;
     return ( $filepart, $ext );
-}
-
-=back
-
-=head3 Unicode Column Functions
-
-These utilities are used when displaying text in a monospaced typeface,
-to ensure that text with combining characters and wide characters are 
-shown taking up the proper width.
-
-=over
-
-=item u_columns
-
-This returns the number of columns in its first argument, as determined
-by the L<Unicode::GCString|Unicode::GCString> module.
-
-=cut
-
-sub u_columns { goto &Actium::u_columns }
-
-sub u_pad {
-    my $text  = shift;
-    my $width = shift;
-    return Actium::u_pad( text => $text, width => $width );
-}
-
-sub u_wrap {
-    my ( $msg, $min, $max ) = @_;
-    return Actium::u_wrap( $msg, min_columns => $min, max_columns => $max );
-}
-
-sub u_trim_to_columns {
-    my $text        = shift;
-    my $max_columns = shift;
-    return Actium::u_trim_to_columns(
-        string  => $text,
-        columns => $max_columns
-    );
 }
 
 sub define { goto &Actium::define; }
