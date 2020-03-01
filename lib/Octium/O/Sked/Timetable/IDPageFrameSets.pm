@@ -383,7 +383,7 @@ sub _sort_table_permutations {
         my @sort_values = map { scalar @{$_} } @partition;
         # count of tables in each frame
 
-        unshift @sort_values, Octium::population_stdev(@sort_values);
+        unshift @sort_values, Actium::stddevp(@sort_values);
         # standard deviation -- so makes them as close to the same
         # number of tables as possible
 

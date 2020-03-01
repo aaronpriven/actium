@@ -243,7 +243,7 @@ our @EXPORT = qw/$EMPTY $CRLF $SPACE env/;
 
     sub import {
         my $class = shift;
-        my $type = shift // q{};
+        my $type  = shift // q{};
         $caller = caller;
 
         __PACKAGE__->export_to_level(1);
@@ -314,7 +314,7 @@ use Ref::Util                                                    ### DEP ###
   );
 use Scalar::Util                                                 ### DEP ###
   (qw( blessed looks_like_number refaddr reftype ));
-use Statistics::Lite (qw/mean/);                                 ### DEP ###
+use Statistics::Lite (qw/mean stddevp/);                         ### DEP ###
 use Text::Trim('trim');                                          ### DEP ###
 
 =head1 SUBROUTINES

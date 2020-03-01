@@ -18,14 +18,6 @@ sub last_cry { goto &Actium::last_cry; }
 
 # duplicating Actium into Octium
 
-sub population_stdev {
-
-    my @popul = is_plain_arrayref( $_[0] ) ? @{ $_[0] } : @_;
-
-    my $themean = mean(@popul);
-    return sqrt( mean( [ map { $_**2 } @popul ] ) - ( $themean**2 ) );
-}
-
 sub add_before_extension {
 
     my $input_path = shift;
