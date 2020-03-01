@@ -229,7 +229,7 @@ sub START {
 
         next SIGN
           if $env->option('update')
-          and not( Octium::feq( $status, 'Needs update' ) );
+          and not( Actium::feq( $status, 'Needs update' ) );
 
         my ( $description, $description_nocity, $city, $nonstop );
 

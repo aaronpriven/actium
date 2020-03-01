@@ -301,7 +301,7 @@ sub _overlong_set_assign_pages {
     my @page_partitions;
 
     foreach my $table_set (@expanded_table_sets) {
-        my @tables           = Octium::flatten($table_set);
+        my @tables           = Actium::arrayify($table_set);
         my @these_partitions = ordered_partitions( \@tables );
         push @page_partitions, @these_partitions;
     }
@@ -599,7 +599,7 @@ sub _reassign_short_page {
   FRAMESET_TO_REPLACE:
     for my $page_idx (@page_order) {
         my $page_assignment_r = $page_assignments[$page_idx];
-        my $tables_r          = Octium::flatten( $page_assignment_r->{tables} );
+        my $tables_r = Actium::arrayify( $page_assignment_r->{tables} );
         #my $frameset          = $page_assignment_r->{frameset};
 
         # don't move part of a overlong table to the short page,

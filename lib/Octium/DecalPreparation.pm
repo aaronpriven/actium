@@ -76,10 +76,10 @@ sub make_labels {
             }
 
         }
-        elsif ( Octium::feq( $instructions, 'P' ) ) {
+        elsif ( Actium::feq( $instructions, 'P' ) ) {
             $instructions = "Place $decal_pluralized $all_list on the flag";
         }
-        elsif ( Octium::feq( $instructions, 'N' ) ) {
+        elsif ( Actium::feq( $instructions, 'N' ) ) {
             $instructions
               = "Get a new or re-usable flag from storage. "
               . "Place $decal_pluralized $all_list on the flag. "

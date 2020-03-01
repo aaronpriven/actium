@@ -420,7 +420,7 @@ sub all_in_columns_key {
     if ( ref($firstarg) eq 'HASH' ) {
         $table = $firstarg->{TABLE};
 
-        @columns = Octium::flatten( $firstarg->{COLUMNS} );
+        @columns = Actium::arrayify( $firstarg->{COLUMNS} );
 
         $where = $firstarg->{WHERE};
 
@@ -431,7 +431,7 @@ sub all_in_columns_key {
     }
     else {
         $table   = $firstarg;
-        @columns = Octium::flatten(@_);
+        @columns = Actium::arrayify(@_);
     }
 
     $self->ensure_loaded($table);

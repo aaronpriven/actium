@@ -341,7 +341,7 @@ sub _get_trip_notes_from_event_date {
 
         my $dt = $dt_cache{$date_str} //= Octium::O::DateTime->new($date_str);
 
-        next if Octium::fne( $status, 'on' );
+        next if Actium::fne( $status, 'on' );
 
         push $dts_of_event{$event}->@*, $dt;
     }

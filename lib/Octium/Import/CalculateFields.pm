@@ -155,7 +155,7 @@ sub hastus_stops_import {
 
         my @new_record = (
             @field{@stop_headers},
-            Octium::define( $on, $at, $stnum, $comment, $city, $direction )
+            Actium::define( $on, $at, $stnum, $comment, $city, $direction )
         );
         trim(@new_record);
         push @returned_records, \@new_record;

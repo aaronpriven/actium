@@ -43,7 +43,7 @@ sub _build_portrait_preferred_frameset_r {
         push @{ $divided_framesets[$portrait] }, $frameset;
     }
 
-    return scalar Octium::flatten(@divided_framesets);
+    return scalar Actium::arrayify(@divided_framesets);
 
 }
 

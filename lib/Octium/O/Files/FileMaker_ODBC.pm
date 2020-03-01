@@ -78,7 +78,7 @@ sub _build_tables {
       = "SELECT TableName from $META_TABLES WHERE TableName = BaseTableName";
 
     my $ary_ref    = $dbh->selectall_arrayref($statement);
-    my @tables     = Octium::flatten $ary_ref;
+    my @tables     = Actium::arrayify $ary_ref;
     my %is_a_table = map { $_, 1 } @tables;
 
     return \%is_a_table;
@@ -127,7 +127,7 @@ sub _load_column_cache {
 
     my $query = "SELECT FieldName from $META_FIELDS WHERE TableName = '$table'";
     my $ary_ref = $dbh->selectall_arrayref($query);
-    my @columns = Octium::flatten $ary_ref;
+    my @columns = Actium::arrayify $ary_ref;
 
     my %is_a_column = map { $_, 1 } @columns;
     $self->_set_column_cache_of_table( $table, \%is_a_column );
@@ -317,7 +317,7 @@ sub all_in_columns_key {
     if ( ref($firstarg) eq 'HASH' ) {
         $table = $firstarg->{TABLE};
 
-        @columns = Octium::flatten( $firstarg->{COLUMNS} );
+        @columns = Actium::arrayify( $firstarg->{COLUMNS} );
 
         $where = $firstarg->{WHERE};
 
@@ -328,7 +328,7 @@ sub all_in_columns_key {
     }
     else {
         $table   = $firstarg;
-        @columns = Octium::flatten(@_);
+        @columns = Actium::arrayify(@_);
     }
 
     $self->_ensure_loaded($table);

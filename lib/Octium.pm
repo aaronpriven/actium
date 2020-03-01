@@ -52,29 +52,4 @@ sub file_ext {
     return ( $filepart, $ext );
 }
 
-sub define { goto &Actium::define; }
-
-sub feq { goto &Actium::feq }
-sub fne { goto &Actium::fne }
-
-sub display_percent { goto &Actium::display_percent }
-
-sub flatten {
-
-    my @results;
-
-    while (@_) {
-        my $element = shift @_;
-        if ( is_plain_arrayref($element) ) {
-            unshift @_, @{$element};
-        }
-        else {
-            push @results, $element;
-        }
-    }
-
-    return wantarray ? @results : \@results;
-
-}
-
 1;

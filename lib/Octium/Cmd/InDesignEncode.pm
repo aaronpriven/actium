@@ -34,7 +34,7 @@ sub START {
 
             # treat that column as though it were Chinese
             @chinese_cols
-              = grep { Octium::feq( 'zh', $headers[$_] ) } ( 0 .. $#headers );
+              = grep { Actium::feq( 'zh', $headers[$_] ) } ( 0 .. $#headers );
         }
 
         my %style_of = (

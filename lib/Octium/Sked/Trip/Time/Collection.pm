@@ -28,7 +28,7 @@ has 'stoptime_r' => (
 has stoptimes_comparison_str => (
     is   => 'ro',
     lazy => method {
-        join( '|', Octium::define( map { $_->timenum } $self->stoptimes ) )
+        join( '|', Actium::define( map { $_->timenum } $self->stoptimes ) )
     },
     traits => ['DoNotSerialize'],
 );
