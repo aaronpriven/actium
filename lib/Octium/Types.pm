@@ -82,19 +82,6 @@ subtype ActiumDir, as class_type('Octium::O::Dir');
 coerce( ActiumDir, from DirCode, via { Octium::O::Dir->instance($_) }, );
 
 ######################
-## NOTIFY
-
-subtype CrierBullet, as Str;
-
-subtype CrierTrailer, as Str,
-  #where { (Unicode::GCString::->new($_)->columns) == 1 },
-  #message {"The trailer you provided ($_) is not exactly one column wide"},
-  ;
-
-subtype ARCrierBullets, as ArrayRef [CrierBullet];
-coerce ARCrierBullets, from CrierBullet, via { [$_] };
-
-######################
 ## SCHEDULE TIMES
 
 subtype ActiumTime, as class_type('Actium::Time');
