@@ -16,7 +16,7 @@ mycommand:
 
  Actium::Env::CLI->new(
    commandpath => $0,
-   system_name => 'this_system',
+   system_name => 'actium',
    subcommands => {
      do_something  => 'DoSomething',
      something     => \'do_something',
@@ -66,9 +66,9 @@ program runs.  (Not to be confused with the system environment, perl's
 C<%ENV>, which is a small part of what this program does.)
 
 In theory there could also be other environments that could be
-presented (Actium::O::GUI, Actium::O::Web, or whatever), although none
-exist at the moment.  The basic idea comes from L<Mark Jason Dominus's
-article on the Moonpig billing
+presented (Actium::Env::GUI, Actium::Env::Web, or whatever), although
+none exist at the moment.  The basic idea comes from L<Mark Jason
+Dominus's article on the Moonpig billing
 system|http://blog.plover.com/prog/Moonpig.html>, although that
 encompasses much more than Actium::Env::CLI does.  Typically this
 object is called C<$env> in modules (as in Moonpig), since there could
@@ -132,6 +132,11 @@ practice, it will probably always be "actium", but it could be
 anything. It is used for determining the name of the configuration
 files and any system environment variables that are used.
 
+It is also used for determining the module names that are loaded. The
+system name, with the first character capitalized, and "::Cmd::" are
+added to the subcommand's module name. So if the system name is "foo",
+and the subcommand is "Bar", the module loaded will be "Foo::Cmd::Bar".
+
 =head3 commandpath
 
 The command path is used for determining the name of this command,
@@ -143,7 +148,8 @@ under L<English.pm|English>).
 
 This should be set to a hash reference. The keys are the names of the
 subcommands, and the values are names of modules under the
-C<Actium::Cmd> namespace.
+C<Actium::Cmd> namespace (unless the system name is something other
+than C<actium> -- see L<system_name|/system_name> above).
 
 If the value is a reference to a scalar, that scalar is taken as the
 name of another subcommand. This allows several aliases to be made of
