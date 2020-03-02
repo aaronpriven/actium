@@ -45,7 +45,6 @@ sub OPTIONS {
 }
 
 sub START {
-    my ($class)  = @_;
     my $actiumdb = env->actiumdb;
     my @argv     = env->argv;
 
@@ -56,8 +55,8 @@ sub START {
         return;
     }
 
-    my $use_option;
-    my $workzones = env->option('workzones');
+    my $use_option = '';
+    my $workzones  = env->option('workzones');
     $use_option = 'w' if $workzones;
     my $vicinity = env->option('vicinity');
     $use_option = 'v' if $vicinity;
