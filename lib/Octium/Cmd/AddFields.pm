@@ -12,8 +12,8 @@ const my $DEFAULT_FIELD  => 'c_description_full';
 const my $DEFAULT_ID_COL => 1;
 
 sub HELP {
-    my ( $class, $env ) = @_;
-    my $command = $env->command;
+    my ($class) = @_;
+    my $command = env->command;
     say "Adds fields from the database to a file.";
     say "Usage: $command addfields <input_file> <field> <field>...";
     say '    If no fields are specified, uses "c_description_full"';
@@ -21,7 +21,7 @@ sub HELP {
 }
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
+    my ($class) = @_;
     return (
         'actiumdb',
         {   spec            => 'table=s',
@@ -52,28 +52,28 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
+    my ($class) = @_;
+    my $actiumdb = env->actiumdb;
 
-    my $table    = $env->option('table');
+    my $table    = env->option('table');
     my $keyfield = $actiumdb->key_of_table($table);
 
     my $column;
-    if ( $env->option_is_set('idcolumn') ) {
-        $column = $env->option('idcolumn') - 1;
+    if ( env->option_is_set('idcolumn') ) {
+        $column = env->option('idcolumn') - 1;
     }
     else {
         $column = $DEFAULT_ID_COL;
     }
     # externally one-based, internally zero-based
 
-    my $has_headers = $env->option('headers');
-    my @fields      = $env->argv;
+    my $has_headers = env->option('headers');
+    my @fields      = env->argv;
     my $file        = shift @fields;
 
     @fields = ($DEFAULT_FIELD) unless @fields;
 
-    my $output_file = $env->option('output')
+    my $output_file = env->option('output')
       // Octium::add_before_extension( $file, 'out' );
 
     my $load_cry = env->cry("Loading $file");

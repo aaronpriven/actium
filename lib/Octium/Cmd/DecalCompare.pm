@@ -8,10 +8,7 @@ use Data::Dumper;    ### DEP ###
 
 sub START {
 
-    my $class = shift;
-    my $env   = shift;
-
-    my @argv = $env->argv;
+    my @argv = env->argv;
 
     my $firstfile  = shift(@argv);
     my $secondfile = shift(@argv);

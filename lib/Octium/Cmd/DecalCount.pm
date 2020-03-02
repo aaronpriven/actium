@@ -17,9 +17,8 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
-    my @argv     = $env->argv;
+    my $actiumdb = env->actiumdb;
+    my @argv     = env->argv;
 
     my $input_file = shift @argv;
     my $output_file = Octium::add_before_extension( $input_file, 'counted' );

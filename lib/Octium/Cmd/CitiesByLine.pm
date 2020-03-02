@@ -14,9 +14,8 @@ sub HELP {
 }
 
 sub START {
-    my ( $class, $env ) = @_;
     my $cry      = env->cry("Producing ciies by line report for web site");
-    my $actiumdb = $env->actiumdb;
+    my $actiumdb = env->actiumdb;
     Octium::StopReports::citiesbyline( actiumdb => $actiumdb );
     $cry->done;
 

@@ -17,15 +17,13 @@ const my $DEFAULT_DIVIDER => $SPACE x 2;
 
 sub START {
 
-    my ( $class, $env ) = @_;
+    env->be_quiet();
 
-    $env->be_quiet();
+    my $actiumdb = env->actiumdb;
 
-    my $actiumdb = $env->actiumdb;
+    $divider = env->option('tab') ? "\t" : $DEFAULT_DIVIDER;
 
-    $divider = $env->option('tab') ? "\t" : $DEFAULT_DIVIDER;
-
-    my @args = $env->argv;
+    my @args = env->argv;
 
     # split arguments by commas as well as spaces
     # (assumes we're not searching for commas...)

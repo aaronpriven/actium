@@ -45,9 +45,9 @@ sub OPTIONS {
 }
 
 sub START {
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
-    my @argv     = $env->argv;
+    my ($class)  = @_;
+    my $actiumdb = env->actiumdb;
+    my @argv     = env->argv;
 
     my $outputfile = shift @argv;
 
@@ -57,9 +57,9 @@ sub START {
     }
 
     my $use_option;
-    my $workzones = $env->option('workzones');
+    my $workzones = env->option('workzones');
     $use_option = 'w' if $workzones;
-    my $vicinity = $env->option('vicinity');
+    my $vicinity = env->option('vicinity');
     $use_option = 'v' if $vicinity;
 
     my $kml_text = stops2kml( $actiumdb, $use_option );

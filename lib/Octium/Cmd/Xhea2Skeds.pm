@@ -12,9 +12,8 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $signup   = $env->signup;
-    my $actiumdb = $env->actiumdb;
+    my $signup   = env->signup;
+    my $actiumdb = env->actiumdb;
 
     Octium::Import::Xhea::ToSkeds::xheatab2skeds(
         actiumdb => $actiumdb,

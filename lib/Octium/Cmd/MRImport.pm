@@ -34,7 +34,7 @@ sub OPTIONS {
             0
         ],
     );
-} ## tidy end: sub OPTIONS
+}    ## tidy end: sub OPTIONS
 
 sub HELP {
 
@@ -55,25 +55,24 @@ EOF
 sub START {
 
     my $class = shift;
-    my $env   = shift;
 
-    my @importfolders = $env->argv;
+    my @importfolders = env->argv;
     unless (@importfolders) {
         $class->HELP();
         return;
     }
-    my $web           = $env->option('web');
-    my $webfolder_opt = $env->option('webfolder');
-    my $verbose       = $env->option('verbose');
+    my $web           = env->option('web');
+    my $webfolder_opt = env->option('webfolder');
+    my $verbose       = env->option('verbose');
 
     my $specified_webfolder_obj;
 
     if ( $web and $webfolder_opt ) {
         $specified_webfolder_obj
-          = Octium::O::Folder->new( $env->option('webfolder') );
+          = Octium::O::Folder->new( env->option('webfolder') );
     }
 
-    my $repository_opt = $env->option('repository');
+    my $repository_opt = env->option('repository');
 
     my $repository = Octium::O::Folder->new(
         {   folderlist => $repository_opt,
@@ -90,7 +89,7 @@ sub START {
         );
         my @imported_files = import_to_repository(
             repository   => $repository,
-            move         => $env->option('move'),
+            move         => env->option('move'),
             verbose      => $verbose,
             importfolder => $importfolder
         );
@@ -116,11 +115,11 @@ sub START {
 
         }
 
-    } ## tidy end: foreach my $folderspec (@importfolders)
+    }    ## tidy end: foreach my $folderspec (@importfolders)
 
     return;
 
-} ## tidy end: sub START
+}    ## tidy end: sub START
 
 1;
 

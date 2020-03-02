@@ -29,15 +29,12 @@ sub OPTIONS {
 
 sub START {
 
-    my $class = shift;
-    my $env   = shift;
-
-    my @argv = $env->argv;
+    my @argv = env->argv;
 
     my $input_file = shift @argv;
-    my $column     = $env->option('column');
-    my $skiplines  = $env->option('skiplines');
-    my $breaks     = $env->option('breaks');
+    my $column     = env->option('column');
+    my $skiplines  = env->option('skiplines');
+    my $breaks     = env->option('breaks');
 
     my $aoa = Array::2D->new_from_file($input_file);
 

@@ -53,7 +53,7 @@ sub OPTIONS {
               . 'Default is "_fullnames" in the repository'
         ],
     );
-} ## tidy end: sub OPTIONS
+}    ## tidy end: sub OPTIONS
 
 sub HELP {
 
@@ -74,13 +74,11 @@ EOF
 
 {
 
-    my ( $env, $repository );
+    my ($repository);
 
     sub START {
-        my $class = shift;
-        $env = shift;
 
-        $repository = Octium::O::Folder->new( $env->option('repository') );
+        $repository = Octium::O::Folder->new( env->option('repository') );
 
         my $webfolder = option_folder( 'web', 'webfolder', '_web' );
         my $fullfolder
@@ -93,22 +91,22 @@ EOF
             fullname        => $fullfolder,
             linesname       => $linesfolder,
             web             => $webfolder,
-            verbose         => $env->option('verbose'),
-            active_map_file => $env->option('activemapfile'),
+            verbose         => env->option('verbose'),
+            active_map_file => env->option('activemapfile'),
         );
         return;
 
-    } ## tidy end: sub START
+    }    ## tidy end: sub START
 
     sub option_folder {
         my ( $option, $folderoption, $default ) = @_;
 
         my $folder_obj;
 
-        if ( $env->option($option) ) {
-            if ( $env->option($folderoption) ) {
+        if ( env->option($option) ) {
+            if ( env->option($folderoption) ) {
                 $folder_obj
-                  = Octium::O::Folder->new( $env->option($folderoption) );
+                  = Octium::O::Folder->new( env->option($folderoption) );
             }
             else {
                 $folder_obj = $repository->subfolder($default);

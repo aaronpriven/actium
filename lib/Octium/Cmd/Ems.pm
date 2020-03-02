@@ -15,9 +15,7 @@ sub HELP {
 
 sub START {
 
-    my $class = shift;
-    my $env   = shift;
-    my @argv  = $env->argv;
+    my @argv = env->argv;
 
     foreach my $chars (@argv) {
 

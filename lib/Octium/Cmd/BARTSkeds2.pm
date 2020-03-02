@@ -24,14 +24,12 @@ const my @DAYS => qw/12345 6 7/;
 use constant DO_FARES => 0;
 
 sub HELP {
-    my ( $class, $env ) = @_;
-    my $command = $env->command;
+    my $command = env->command;
     say "Gets schedules from BART API and creates reports..";
     return;
 }
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
     return (
         {   spec        => 'date=s',
             description => 'Effective date of the new BART schedules. '
@@ -55,10 +53,9 @@ sub START {
 
     my $start_cry = env->cry('Building BART frequency tables');
 
-    my ( $class,  $env )   = @_;
-    my ( $oldest, @dates ) = get_dates( $env->option('date') );
+    my ( $oldest, @dates ) = get_dates( env->option('date') );
 
-    my $foldername = $env->option('folder') . '/BARTfreq_' . $oldest;
+    my $foldername = env->option('folder') . '/BARTfreq_' . $oldest;
     unless ( -d $foldername ) {
         mkdir $foldername or die $!;
     }

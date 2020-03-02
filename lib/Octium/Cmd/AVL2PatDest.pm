@@ -20,16 +20,16 @@ EOF
 }
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
+    my ($class) = @_;
     return qw/actiumdb signup/;
 }
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
+    my ($class) = @_;
+    my $actiumdb = env->actiumdb;
 
-    my $signup = $env->signup;
+    my $signup = env->signup;
 
     chdir $signup->path();
 

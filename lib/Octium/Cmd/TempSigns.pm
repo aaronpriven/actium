@@ -16,18 +16,14 @@ sub OPTIONS {
 }
 
 my %i18n;
-my $env;
 
 sub START {
 
-    my $class = shift;
-    $env = shift;
-
-    my $config_obj = $env->config;
+    my $config_obj = env->config;
 
     my $i18n_cry = env->cry('Fetching i18ns from database');
 
-    my $actium_db = $env->actiumdb;
+    my $actium_db = env->actiumdb;
 
     %i18n = %{ $actium_db->all_in_columns_key(qw(I18N en es zh)) };
 
@@ -140,7 +136,7 @@ sub _translate_phrase {
 }
 
 sub _zh_phrase {
-    my $phrase   = shift;
+    my $phrase = shift;
     my $zh_style = shift // 'ChineseBold';
 
     $phrase =~ s/((?:<0x[[:xdigit:]]+>)+)/<CharStyle:$zh_style>$1<CharStyle:>/g;

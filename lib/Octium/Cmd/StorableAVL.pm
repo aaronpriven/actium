@@ -46,8 +46,7 @@ EOF
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $signup = $env->signup;
+    my $signup = env->signup;
     chdir $signup->path();
 
     say 'Reading from ', $signup->path();
