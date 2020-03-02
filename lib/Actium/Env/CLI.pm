@@ -20,10 +20,10 @@ use Types::Standard(qw/Enum Int HashRef Maybe Str/);
 
 use Module::Runtime ('require_module');
 
-const my $EX_USAGE       => 64;           # from "man sysexits"
-const my $EX_SOFTWARE    => 70;           # from "man sysexits"
-const my $EX_SIGINT      => 130;          # from "Advanced BASH scripting guide"
-const my $COMMAND_PREFIX => 'Actium::Cmd';
+const my $EX_USAGE      => 64;      # from "man sysexits"
+const my $EX_SOFTWARE   => 70;      # from "man sysexits"
+const my $EX_SIGINT     => 130;     # from "Advanced BASH scripting guide"
+const my $COMMAND_INFIX => 'Cmd';
 
 const my $FALLBACK_WIDTH => 80;
 
@@ -78,7 +78,7 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
     my %init_args = (
         %params,
         subcommand => $subcommand // $EMPTY,
-        _help_type => $help_type // $EMPTY,
+        _help_type => $help_type  // $EMPTY,
         argv       => \@new_argv,
     );
 
@@ -353,8 +353,9 @@ sub _build_module {
         }
     }
     # _mainhelp exits, and does not return
-
-    my $module = "${COMMAND_PREFIX}::$subcommands{$subcommand}";
+    #
+    my $module = ucfirst( $self->system_name ) . '::'
+      . "${COMMAND_INFIX}::$subcommands{$subcommand}";
     require_module($module)
       or die " Couldn't load module $module: $OS_ERROR";
     return $module;
@@ -657,17 +658,19 @@ sub _default_package {
 }
 
 ### ActiumDB package
+#my $DBCLASS  = "Actium::Storage::DB";
+my $DBCLASS = "Octium::O::Files::ActiumDB";
 
 sub _actiumdb_package {
 
     my $self = shift;
 
-    require Actium::Storage::DB;
+    require_module $DBCLASS;
 
     has actiumdb => (
         is      => 'ro',
         builder => '_build_actiumdb',
-        isa     => 'Actium:::Storage::DB',
+        isa     => $DBCLASS,
         lazy    => 1,
     );
 
@@ -704,7 +707,7 @@ sub _build_actiumdb {
     my $self = shift;
 
     my $actiumdb
-      = Actium::Storage::DB->new( map { $_ => $self->option($_) }
+      = $DBCLASS->new( map { $_ => $self->option($_) }
           qw /db_user db_password db_name/ );
 
     return $actiumdb;
@@ -807,7 +810,7 @@ method _build_signup {
 method _build_oldsignup {
     return Actium::Signup::->new(
         base_folder => ( $self->option('oldbase') // $self->option('base') ),
-        name        => $self->option('oldsignup'),
+        name => $self->option('oldsignup'),
     );
 
 }
