@@ -8,11 +8,11 @@ use Actium ('class');
 use Actium::Env::CLI::Crier::Cry;
 use Actium::Types(qw/CrierImportance CrierStatus/);
 use Scalar::Util;
-use Type::Utils('class_type');
+use Type::Utils('class_type');    ### DEP ###
 use Types::Standard (
     qw/Undef Str Bool Maybe Int ArrayRef CodeRef Tuple FileHandle ScalarRef/);
-
-use MooseX::SingleArg;
+# Types::Standard ### DEP ###
+use MooseX::SingleArg;            ### DEP ###
 no warnings 'experimental::refaliasing';
 # MooseX::SingleArg turns this on, irritatingly
 
@@ -623,8 +623,8 @@ __END__
 
 =head1 NAME
 
-Actium::Env::CLI::Crier - Terminal notification with indentation, status, and
-closure
+Actium::Env::CLI::Crier - Terminal notification with indentation,
+status, and closure
 
 =head1 VERSION
 
@@ -657,10 +657,10 @@ This results in this output to STDOUT:
 
 =head1 DESCRIPTION
 
-Actium::Env::CLI::Crier is used to to output balanced and nested messages with
-a completion status.  These messages indent easily within each other, are
-easily parsed, may be bulleted, can be filtered, and even can show status in
-color.
+Actium::Env::CLI::Crier is used to to output balanced and nested
+messages with a completion status.  These messages indent easily within
+each other, are easily parsed, may be bulleted, can be filtered, and
+even can show status in color.
 
 For example, you write code like this:
 
@@ -692,12 +692,13 @@ whatever, so you can get nice output like this:
       Wrapup of second subtask.................................. [OK]
     Performing the task......................................... [DONE]
 
-A series of examples will make Actium::Env::CLI::Crier easier to understand.
+A series of examples will make Actium::Env::CLI::Crier easier to
+understand.
 
 The name "Crier" refers to town criers, who traditionally made public
-announcements in medieval towns. This module makes announcements, so the name
-seemed appropriate. (Not coincidentally, "cry" is a short word and thus easy to
-type.)
+announcements in medieval towns. This module makes announcements, so
+the name seemed appropriate. (Not coincidentally, "cry" is a short word
+and thus easy to type.)
 
 =head2 Basics
 
@@ -718,52 +719,55 @@ looks like this:
 
     Performing a task........................................... [OK]
 
-The C<c> method closes the method using the numeric status. It can be easier to
-use the method associated with the equivalent status tag, which in this case
-would be C<ok>. There are a number of different methods used for closing a
-message, all of which are just shortcuts for calling C<c> with an option set.
-There are also a number used for opening a message, all of which are equivalent
-to <cry> with an option set.
+The C<c> method closes the method using the numeric status. It can be
+easier to use the method associated with the equivalent status tag,
+which in this case would be C<ok>. There are a number of different
+methods used for closing a message, all of which are just shortcuts for
+calling C<c> with an option set. There are also a number used for
+opening a message, all of which are equivalent to <cry> with an option
+set.
 
-Actium::Env::CLI::Crier works by creating two sets of objects. The I<crier>
-represents the destination of the cries, such as the terminal, or an
-output file. The I<cry> object represents a single cry, such as a cry
-about one particular task or subtask.  Methods on these objects are
+Actium::Env::CLI::Crier works by creating two sets of objects. The
+I<crier> represents the destination of the cries, such as the terminal,
+or an output file. The I<cry> object represents a single cry, such as a
+cry about one particular task or subtask.  Methods on these objects are
 used to issue cries and complete them.
 
 The crier object is created by the C<new> class method of
-C<Actium::Env::CLI::Crier>. The cry object is created by the C<cry> object
-method of the crier object.
+C<Actium::Env::CLI::Crier>. The cry object is created by the C<cry>
+object method of the crier object.
 
-Note that the L<Actium|Actium> module has procedural shortcuts for accessing
-the crier located in the Actium environment object. See that module for more
-information.
+Note that the L<Actium|Actium> module has procedural shortcuts for
+accessing the crier located in the Actium environment object. See that
+module for more information.
 
 =head2 Completion upon destruction
 
-In the above example, we end with a C<ok> call to indicate that the thing we
-told about (I<Performing a task>) is complete.  However, in the event of an
-error in the program, the C<ok> call may not be made. In that event, an
-automatic closure will be made, and the result will be "ABORT".
+In the above example, we end with a C<ok> call to indicate that the
+thing we told about (I<Performing a task>) is complete.  However, in
+the event of an error in the program, the C<ok> call may not be made.
+In that event, an automatic closure will be made, and the result will
+be "ABORT".
 
     Performing a task........................................... [ABORT]
 
-It is possible to change this default using the attribute I<default_status>.
+It is possible to change this default using the attribute
+I<default_status>.
 
 =head2 Completion Status
 
 There's many ways a task can complete.  It can be simply DONE, or it
-can complete with an ERROR, or it can be OK, etc.  
+can complete with an ERROR, or it can be OK, etc.
 
-Actium::Env::CLI::Crier uses both numeric I<status> and a displayed I<tag> to
-indicate the result of a task.
+Actium::Env::CLI::Crier uses both numeric I<status> and a displayed
+I<tag> to indicate the result of a task.
 
-The status is a number betwen -7 and 7. A negative status is intended to
-represent bad results, while positive status are intended to represent good
-results.   The status is returned as the result of the call that closes the
-cry, and is also used for determining the default color. The tag is the text
-that is actually displayed. It must be a string; it will be trimmed to be five
-columns or fewer.
+The status is a number betwen -7 and 7. A negative status is intended
+to represent bad results, while positive status are intended to
+represent good results.   The status is returned as the result of the
+call that closes the cry, and is also used for determining the default
+color. The tag is the text that is actually displayed. It must be a
+string; it will be trimmed to be five columns or fewer.
 
 Each numeric status has a predefined tag:
 
@@ -776,24 +780,25 @@ Each numeric status has a predefined tag:
         1  => YES          -1 => NO
                   0  => OK
 
-But arbitrary tags can be used using the C<tag> option or specifying a string
-as the first argument to the C<c> method.
+But arbitrary tags can be used using the C<tag> option or specifying a
+string as the first argument to the C<c> method.
 
-The tags are chosen such that, for the most part, the positive and negative
-tags for the same absolute value mean the opposite of each other.  (The utility
-of this is, admittedly, rather low for values 6 and 7.)
+The tags are chosen such that, for the most part, the positive and
+negative tags for the same absolute value mean the opposite of each
+other.  (The utility of this is, admittedly, rather low for values 6
+and 7.)
 
 Each of the predefined tags has a method that closes the cry with the
-particular tag: C<bliss>, C<panic>, etc. 
+particular tag: C<bliss>, C<panic>, etc.
 
-The various methods that close tags return with the status number, unless
-there's an error in which case it returns undef (in scalar context) or nothing
-(in list context). Note that 0, while Perl considers this a false value, is not
-an error.
+The various methods that close tags return with the status number,
+unless there's an error in which case it returns undef (in scalar
+context) or nothing (in list context). Note that 0, while Perl
+considers this a false value, is not an error.
 
-As a convienence, it's easier to use methods that incorporate the tag, such as
-C<ok> or C<fail>. See L<Convenience synonyms for "c"|/Convenience synonyms for
-"c"> below for a complete list.
+As a convienence, it's easier to use methods that incorporate the tag,
+such as C<ok> or C<fail>. See L<Convenience synonyms for
+"c"|/Convenience synonyms for "c"> below for a complete list.
 
 We'll change our simple example to give a FAIL completion:
 
@@ -808,16 +813,18 @@ Here's how it looks:
     Performing a task........................................... [FAIL]
 
 Unless specified explicitly using a status-specific close method or the
-I<status> option, the status will be -3 (which corresponds to 'ABORT'). This is
-so that, if the cry object isn't closed explitly using a close method, it will
-be automatically closed with an appropriate message for uncaught exceptions.
+I<status> option, the status will be -3 (which corresponds to 'ABORT').
+This is so that, if the cry object isn't closed explitly using a close
+method, it will be automatically closed with an appropriate message for
+uncaught exceptions.
 
 =head3 Status Colors
 
-One feature of C<Actium::Env::CLI::Crier> is that you can enable colorization
-of the severity tags.  That means that the severity code inside the square
-brackets is output in color, so it's easy to see. The module Term::ANSIColor is
-used to do the colorization. It also makes the type bold for most statuses.
+One feature of C<Actium::Env::CLI::Crier> is that you can enable
+colorization of the severity tags.  That means that the severity code
+inside the square brackets is output in color, so it's easy to see. The
+module Term::ANSIColor is used to do the colorization. It also makes
+the type bold for most statuses.
 
 Here are the colors that are used:
 
@@ -837,8 +844,8 @@ Here are the colors that are used:
         -6        bold blink black on bright yellow
         -7        bold blink bright white on red
 
-To use colors, pass 'colorize => 1' as an option to the
-C<new> method call:
+To use colors, pass 'colorize => 1' as an option to the C<new> method
+call:
 
     my $crier = Actium::Env::CLI::Crier::->new({colorize => 1});
 
@@ -846,8 +853,8 @@ Or, invoke the use_color method on the crier, once it's created:
 
     $crier->use_color;
 
-A cry can also be given a custom color for its tag using the I<tag_color>
-option.
+A cry can also be given a custom color for its tag using the
+I<tag_color> option.
 
 =head2 Nested Messages
 
@@ -875,23 +882,23 @@ within the "Bbb" item.  Note too how the Bbb and Aaa items were
 repeated because their initial lines were interrupted by more-inner
 tasks.
 
-You can control the indentation with the I<step> attribute, and you may turn
-off or alter the repeated text (Bbb and Aaa) as you wish.  
+You can control the indentation with the I<step> attribute, and you may
+turn off or alter the repeated text (Bbb and Aaa) as you wish.
 
 Also, messages deeper than a certain level can be filtered out (see
 L<Filtering, below|/Filtering>.
 
 =head2 Importance
 
-Regardless of how deep a message may be, or what its ultimate status might be,
-some messages are just inherently more important than others. Each message can
-thus be given an importance value, from 0 to 7.  This can be done using the
-I<importance> option to the C<cry> method, or using the specific methods
-C<cry0>, C<cry1>, C<cry2>, etc., through C<cry7>.  Unless specified explicitly,
-the importace is set to 3.  
+Regardless of how deep a message may be, or what its ultimate status
+might be, some messages are just inherently more important than others.
+Each message can thus be given an importance value, from 0 to 7.  This
+can be done using the I<importance> option to the C<cry> method, or
+using the specific methods C<cry0>, C<cry1>, C<cry2>, etc., through
+C<cry7>.  Unless specified explicitly, the importace is set to 3.
 
-The value of this is that messages with lesser importance can be filtered out
-(see L<Filtering, below|/Filtering>.
+The value of this is that messages with lesser importance can be
+filtered out (see L<Filtering, below|/Filtering>.
 
 =head2 Closing with Different Text
 
@@ -960,14 +967,14 @@ more useful:
 (Note that "$crier" is set at file scope, which means it is available
 to subroutines further in the same file.)
 
-This takes advantage of the default closing status being -3, "ABORT." This
-means that if any cry object is destroyed, presumably because the cry variable
-went out of scope without doing a close method (or its equivalents), C<abort>
-will automatically be called.
+This takes advantage of the default closing status being -3, "ABORT."
+This means that if any cry object is destroyed, presumably because the
+cry variable went out of scope without doing a close method (or its
+equivalents), C<abort> will automatically be called.
 
 Next we do_a_subtask and do_another_subtask (whatever these are!). If
-either fails, we simply return.  Automatically then, the C<abort>
-will be called to close out the context.
+either fails, we simply return.  Automatically then, the C<abort> will
+be called to close out the context.
 
 In the third step, we do_major_cleanup().  If that fails, we explicitly
 close out with a warning (the C<warn>), and we pass some reason text.
@@ -977,17 +984,17 @@ If we get through all three steps, we close out with an OK.
 =head2 Filtering
 
 Often a script will have a verbosity option (-v usually), that allows a
-user to control how much output to see.  
+user to control how much output to see.
 
-Actium::Env::CLI::Crier allows filtering out of messages in two ways.  First,
-it can remove all those messages that are lower than a particular importance.
-Second, it can remove all those messages that are nested more deeply than a
-particular level.
+Actium::Env::CLI::Crier allows filtering out of messages in two ways. 
+First, it can remove all those messages that are lower than a
+particular importance. Second, it can remove all those messages that
+are nested more deeply than a particular level.
 
 =head3 Filtering by importance
 
-If the I<filter_below_importance> attribute is set to a number between 1 and 7,
-then messages lower than that importance will not be shown.
+If the I<filter_below_importance> attribute is set to a number between
+1 and 7, then messages lower than that importance will not be shown.
 
  my $crier = Actium::Env::CLI::Crier->new(filter_below_importance => 5);
  my $x = $crier->cry6("A quite important cry"); # will be shown
@@ -1005,13 +1012,13 @@ nesting level. So, something like this:
  $y->ok;
  $x->ok;
 
-Would appear as 
+Would appear as
 
  A normal cry...
     A generally unimportant cry............................[OK]
  A normal cry..............................................[OK]
 
-whereas, if "filter_below_importance" were not set, it would appear as 
+whereas, if "filter_below_importance" were not set, it would appear as
 
  A normal cry...
    A trivial cry...
@@ -1021,8 +1028,8 @@ whereas, if "filter_below_importance" were not set, it would appear as
 
 =head3 Filtering by level
 
-If the I<filter_above_level> attribute is set to a number, then
-cries that are deeper than that level will not be shown.
+If the I<filter_above_level> attribute is set to a number, then cries
+that are deeper than that level will not be shown.
 
  $crier->Actium::Env::CLI::Crier->new(filter_above_level => 2);
  $crier->cry("A cry at the first level"); # will be shown
@@ -1031,38 +1038,40 @@ cries that are deeper than that level will not be shown.
 
 Set the I<filter_above_level> to 0 to mute all output.
 
-If both options are set, then cries need to pass both criteria to be shown.
+If both options are set, then cries need to pass both criteria to be
+shown.
 
 One common use for this would be with a "-verbose" option to a script.
 
 =head3 But Show Severe Statuses
 
 If you're filtering messages, sometimes you still want to see a message
-regardless of the filtering -- for example, a severe error. To set this, use
-the always_show_status_above option. 
+regardless of the filtering -- for example, a severe error. To set
+this, use the always_show_status_above option.
 
-The name is a little misleading -- "above" refers to the absolute value of the
-status, not the status itself. It is possible to set the positive and negative
-values separately:
+The name is a little misleading -- "above" refers to the absolute value
+of the status, not the status itself. It is possible to set the
+positive and negative values separately:
 
  $crier->always_show_status_above([-5, 4])
 
-This will show, regardless of the filter settings, any status with numeric
-value less than -5 (-6 or -7), or greater than 4 (5, 6, or 7).
+This will show, regardless of the filter settings, any status with
+numeric value less than -5 (-6 or -7), or greater than 4 (5, 6, or 7).
 
-Or, it is possible to set a single value, which is taken to be an absolute
-value. 
+Or, it is possible to set a single value, which is taken to be an
+absolute value.
 
   $crier->always_show_status_above(3) 
 
-This is the same as C<< $crier->always_show_status_above([-3, 3]) >>. 
+This is the same as C<< $crier->always_show_status_above([-3, 3]) >>.
 
-See L<Completion Status|/Completion Status> above for the severity numbers.
+See L<Completion Status|/Completion Status> above for the severity
+numbers.
 
 =head2 Output to Other File Handles
 
-By default, Actium::Env::CLI::Crier writes its output to STDERR. You can tell
-it to use another file handle like this:
+By default, Actium::Env::CLI::Crier writes its output to STDERR. You
+can tell it to use another file handle like this:
 
     open (my $fh, '>', 'some_file.txt') or die;
     my $crier = Actium::Env::CLI::Crier::->new({fh => $fh});
@@ -1085,11 +1094,11 @@ object, and cannot be changed.
 
 =head2 Return Status
 
-Methods that attempt to write to the output (including C<cry> and C<c> and
-their equivalents) return a defined value on success and undef on failure.
-Failure can occur, for example, when attempting to write to a closed
-filehandle. Note that a test should be made for defined-ness rather than truth,
-since "0" is a valid status meaning "ok".
+Methods that attempt to write to the output (including C<cry> and C<c>
+and their equivalents) return a defined value on success and undef on
+failure. Failure can occur, for example, when attempting to write to a
+closed filehandle. Note that a test should be made for defined-ness
+rather than truth, since "0" is a valid status meaning "ok".
 
 =head2 Message Bullets
 
@@ -1115,9 +1124,9 @@ string.  Here's some popular bullet definitions:
     bullets => "* "
     bullets => [" * ", " + ", " - ", "   "]
 
-Also, a bullet can be changed for a particular cry with the I<bullet> attribute
-to C<cry> or the C<set_bullet> method on the cry object (although the method
-can only affect the object after it is opened).
+Also, a bullet can be changed for a particular cry with the I<bullet>
+attribute to C<cry> or the C<set_bullet> method on the cry object
+(although the method can only affect the object after it is opened).
 
 Here's an example with bullets turned on:
 
@@ -1143,17 +1152,18 @@ Here's an example with bullets turned on:
  +   Loading crontab jobs...remcon............................ [OK]
  * RDA CAS Setup 8.10-2....................................... [DONE]
 
-If not all bullets are the same width (according to the Unicode::GCString
-module), the bullets will be made the same width by adding spaces to the right.
+If not all bullets are the same width (according to the
+Unicode::GCString module), the bullets will be made the same width by
+adding spaces to the right.
 
 =head2 Mixing Actium::Env::CLI::Crier with other output
 
-Internally, Actium::Env::CLI::Crier keeps track of the output cursor position.
-It only knows about what it has sent to the output destination. If you mix
-C<print> or C<say> statements, or other output methods, with your
-Actium::Env::CLI::Crier output, then things will likely get screwy.  So, you'll
-need to tell Actium::Env::CLI::Crier where you've left the cursor.  Do this by
-using  C<set_position>:
+Internally, Actium::Env::CLI::Crier keeps track of the output cursor
+position. It only knows about what it has sent to the output
+destination. If you mix C<print> or C<say> statements, or other output
+methods, with your Actium::Env::CLI::Crier output, then things will
+likely get screwy.  So, you'll need to tell Actium::Env::CLI::Crier
+where you've left the cursor.  Do this by using  C<set_position>:
 
     $cry = $crier->cry("Doing something");
     print "\nHey, look at me, I'm printed output!\n";
@@ -1168,8 +1178,8 @@ using  C<set_position>:
 =head3 Actium::Env::CLI::Crier->new()
 
 This is the C<new> constructor inherited from Moose by
-Actium::Env::CLI::Crier. It creates a new Crier object: the object associated
-with a particular output.
+Actium::Env::CLI::Crier. It creates a new Crier object: the object
+associated with a particular output.
 
 It accepts various attributes as options, which are listed in
 L<Attributes|/Attributes> below. Attributes can be specified in the
@@ -1186,8 +1196,8 @@ If no arguments are passed, it will use STDERR as the output.
 =head3 $crier->cry()
 
 This creates a new cry. Specifically, it creates a new
-C<Actium::Env::CLI::Crier::Cry> object, and then that object outputs the
-opening text and the ellipsis:
+C<Actium::Env::CLI::Crier::Cry> object, and then that object outputs
+the opening text and the ellipsis:
 
  my $cry = $crier->cry('Starting a task');
 
@@ -1225,13 +1235,14 @@ It is not correct to call C<cry> in void context:
 
   $crier->cry("Doing something")
 
-Since C<cry> creates a cry object, calling it in void context leaves noplace to
-store it. If it is called in void context, the cry will immediately close with
-a WARN tag (status -1), and will display 'Cry error (cry object not saved)'.
+Since C<cry> creates a cry object, calling it in void context leaves
+noplace to store it. If it is called in void context, the cry will
+immediately close with a WARN tag (status -1), and will display 'Cry
+error (cry object not saved)'.
 
 =head3 $crier->cry0, cry1, cry2, etc., through cry7
 
-These are shortcuts for 
+These are shortcuts for
 
  $crier->cry ( ..., { importance => n } )
 
@@ -1240,18 +1251,19 @@ With something like
  $cry->cry1 ( 'Starting task', { importance => 0 } );
  $cry->cry1 ( 'Starting task', { importance => 5 } );
 
-The number that is part of the method name will take precedence, so each of
-these will actually be given importance 1.
+The number that is part of the method name will take precedence, so
+each of these will actually be given importance 1.
 
 =head3 $crier->last_cry()
 
-This returns the most recent cry from Actium::Env::CLI::Crier's stack of cries.
+This returns the most recent cry from Actium::Env::CLI::Crier's stack
+of cries.
 
 =head3 $crier->prog() and $crier->over()
 
 Outputs a progress indication, such as a percent or M/N or whatever you
 devise.  In fact, this simply puts *any* string on the same line as the
-original message (for the current level). 
+original message (for the current level).
 
 Using C<over> will first backspace over a prior progress string (if
 any) to clear it, then it will write the progress string. The prior
@@ -1291,9 +1303,9 @@ included with this package. Here's some styles to get you thinking:
         countdown   9... 8... 7...
                             (liftoff!)
 
-If the cry in question was filtered out, or if it has been muted, or if the
-L<shows_progress|/shows_progress> option is set in the crier, the progress text
-will not be displayed.
+If the cry in question was filtered out, or if it has been muted, or if
+the L<shows_progress|/shows_progress> option is set in the crier, the
+progress text will not be displayed.
 
 
 =head3 $crier->wail()
@@ -1304,8 +1316,8 @@ lines will be wrapped to fit nicely in the given width, using Unicode
 definitions of column width (to allow for composed or double-wide
 characters).
 
-Note that if the most recent cry was filtered out, the wail will not be shown
-either.
+Note that if the most recent cry was filtered out, the wail will not be
+shown either.
 
 =head2 Cry Object Methods
 
@@ -1325,24 +1337,25 @@ provided, then they will all be used as options. If there are
 conflicts, later items will take priority over earlier items in the
 argument list.
 
-The first argument, if it is not a reference, is taken to be the closing status
-and/or status tag. Numbers from -7 to 7 are taken to be the closing status.
-Anything else is taken to be a closing tag, which will, if it is a standard
-tag, set the status accordingly.  
+The first argument, if it is not a reference, is taken to be the
+closing status and/or status tag. Numbers from -7 to 7 are taken to be
+the closing status. Anything else is taken to be a closing tag, which
+will, if it is a standard tag, set the status accordingly.
 
  $cry->c('OK'); # uses status 0
 
-If a standard tag is given as the first argument, it wll override the status
-code:
+If a standard tag is given as the first argument, it wll override the
+status code:
 
  $cry->c('PANIC', { status => '0'} ); # uses status -7
 
-Although the tag will be displayed as provided, it will match the status code
-regardless of case.
+Although the tag will be displayed as provided, it will match the
+status code regardless of case.
 
  $cry->c('done'); # will display '[done]' but will still use status 3
 
-If provided in any other way, the tag will use whatever status is given:
+If provided in any other way, the tag will use whatever status is
+given:
 
  $cry->c({ tag => 'ALERT', status => 5 }); 
  # misleading: will display 'ALERT' but be status 5, which
@@ -1353,9 +1366,9 @@ A non-standard tag will use whatever status is otherwise provided:
  $cry->c('UM...'); # uses the default status
  $cry->c('YIPE', { status => -2 }); # uses status 2
 
-If no status tag or numeric status is given, it will use the status and tag
-that was set otherwise (either as an option on this call, or earlier as an
-option in the constructor or via a method).
+If no status tag or numeric status is given, it will use the status and
+tag that was set otherwise (either as an option on this call, or
+earlier as an option in the constructor or via a method).
 
 One attribute, I<reason>, is only applicable from within a C<c> call
 (or its equivalents).
@@ -1364,8 +1377,8 @@ One attribute, I<reason>, is only applicable from within a C<c> call
 
 These are called as C<< $cry->ok() >>, C<< $cry->done >>, etc.
 
-For convenience, several methods exist to abbreviate the C<< $cry->c >> method,
-for the standard tags:
+For convenience, several methods exist to abbreviate the C<< $cry->c >>
+method, for the standard tags:
 
   $cry->bliss      $cry->panic
   $cry->calm       $cry->alert
@@ -1376,15 +1389,15 @@ for the standard tags:
   $cry->yes        $cry->no
            $cry->ok
 
-Calling C<< $cry->bliss >> is the same as calling << $cry->c('BLISS', ...) >>,
-and so forth.
+Calling C<< $cry->bliss >> is the same as calling << $cry->c('BLISS',
+...) >>, and so forth.
 
 =head3 $cry->c_quiet()
 
 This is equivalent to C<cry>, except that it does NOT output a wrapup
 line or a completion severity.  It simply closes out the current level
-with no message. (It is the same as setting the L<muted|/muted> option.) 
-A severity level can still be set by passing an argument.
+with no message. (It is the same as setting the L<muted|/muted>
+option.)  A severity level can still be set by passing an argument.
 
 =head3 $cry->prog() and $cry->over()
 The same as 
@@ -1416,15 +1429,15 @@ can be set and/or used.
 
 =back
 
-A reference to an array of two numbers: one between -7 and 0, and the other
-between 0 and 7.  Below the first number and above the second number, these
-statuses will always be shown, even if they would otherwise be filtered out by
-level or importance.
+A reference to an array of two numbers: one between -7 and 0, and the
+other between 0 and 7.  Below the first number and above the second
+number, these statuses will always be shown, even if they would
+otherwise be filtered out by level or importance.
 
 If not defined, no statuses will override the filtering.
 
-If set to a single number, it will be treated as though that number and its
-negative had been set: so "5" will become [-5, 5].
+If set to a single number, it will be treated as though that number and
+its negative had been set: so "5" will become [-5, 5].
 
 See L<But Show Severe Statuses|/But Show Severe Statuses>, above.
 
@@ -1445,8 +1458,8 @@ backspace characters to the terminal or not. Some IDE consoles don't
 properly deal with backspaces (I'm looking at you, Eclipse) and so this
 attribute turns that off.
 
-Setting the backspace attribute on a crier will affect all future behavior, on
-issued cries as well as new ones.
+Setting the backspace attribute on a crier will affect all future
+behavior, on issued cries as well as new ones.
 
 =head3 bullet
 
@@ -1460,16 +1473,16 @@ issued cries as well as new ones.
 
 =back
 
-Normally, the bullet for a cry is derived from the I<bullets> attribute of the
-crier object. This attribute allows this to be overridden for this particular
-cry.
+Normally, the bullet for a cry is derived from the I<bullets> attribute
+of the crier object. This attribute allows this to be overridden for
+this particular cry.
 
-All bullets are made to take up the same width. When a custom bullet is used,
-and that bullet is wider than earlier bullets, the bullet width for the entire
-crier is made the width of the widest bullet.
+All bullets are made to take up the same width. When a custom bullet is
+used, and that bullet is wider than earlier bullets, the bullet width
+for the entire crier is made the width of the widest bullet.
 
-Note that this merely changes the bullet that is used I<if> bullets are used --
-the I<bullets> attribute still has to be set.
+Note that this merely changes the bullet that is used I<if> bullets are
+used -- the I<bullets> attribute still has to be set.
 
 =head3 bullets
 
@@ -1483,20 +1496,21 @@ the I<bullets> attribute still has to be set.
 
 =back
 
-Enables or disables the use of bullet characters in front of messages.  Set to
-a reference to n empty array to disable the use of bullets, which is the
-default.  Set to a scalar character string to enable that character(s) as the
-bullet.  Set to an array reference of strings to use different characters for
-each nesting level.  See L<Message Bullets|/Message Bullets>.
+Enables or disables the use of bullet characters in front of messages. 
+Set to a reference to n empty array to disable the use of bullets,
+which is the default.  Set to a scalar character string to enable that
+character(s) as the bullet.  Set to an array reference of strings to
+use different characters for each nesting level.  See L<Message
+Bullets|/Message Bullets>.
 
 The program makes all bullets take up the same width. When bullets are
 altered, the bullet width is made the width of the widest bullet ever
 provided. The bullet width is never reduced.
 
-Setting the bullets attribute on a crier will change the bullets used only for
-future cries, not cries already issued. However, if the bullet width is
-altered, that will affect all future behavior, on issued cries as well as new
-ones.
+Setting the bullets attribute on a crier will change the bullets used
+only for future cries, not cries already issued. However, if the bullet
+width is altered, that will affect all future behavior, on issued cries
+as well as new ones.
 
 =head3 closetext
 
@@ -1513,7 +1527,8 @@ ones.
 Supply a string to be used as the closing text that's paired with this
 level.  Normally, the same text you use when you issue a C<cry> is the
 text used to close it out.  This option lets you specify different
-closing text.  See L<Closing with Different Text|/Closing with Different Text>.
+closing text.  See L<Closing with Different Text|/Closing with
+Different Text>.
 
 =head3 colorize
 
@@ -1531,8 +1546,8 @@ Set to a true value to render the completion severities in color. ANSI
 escape sequences are used for the colors.  The default is to not use
 colors.  See L<Status Colors|/Status Colors> above.
 
-Setting the colorize attribute on a crier will affect all future behavior,
-on issued cries as well as new ones.
+Setting the colorize attribute on a crier will affect all future
+behavior, on issued cries as well as new ones.
 
 =head3 column_width
 
@@ -1546,9 +1561,9 @@ on issued cries as well as new ones.
 
 =back
 
-Sets the column width of your output.  C<Actium::Env::CLI::Crier>> doesn't try
-to determine how wide your terminal screen is, so use this option to
-indicate the width.  The default is 80.
+Sets the column width of your output.  C<Actium::Env::CLI::Crier>>
+doesn't try to determine how wide your terminal screen is, so use this
+option to indicate the width.  The default is 80.
 
 You may want to use L<Term::Size::Any|Term::Size::Any> to determine
 your device's width:
@@ -1584,14 +1599,14 @@ will grow and shrink as the window changes size.
 
 =back
 
-Sets the importance of a cry if none is specified in the C<cry> or equivalent
-call. 
+Sets the importance of a cry if none is specified in the C<cry> or
+equivalent call.
 
-Setting the default_importance attribute on a crier will change the default
-used only for future cries, not cries already issued. 
+Setting the default_importance attribute on a crier will change the
+default used only for future cries, not cries already issued.
 
-Passing undef to set_default_importance restore the default importance to the
-original default value (which is 3).
+Passing undef to set_default_importance restore the default importance
+to the original default value (which is 3).
 
 =head3 default_status
 
@@ -1605,15 +1620,15 @@ original default value (which is 3).
 
 =back
 
-Sets the status to use when completing a cry, if none is specified in the
-C<cry> or any C<c> call. Useful when cries are closed because the object gets
-destroyed.
+Sets the status to use when completing a cry, if none is specified in
+the C<cry> or any C<c> call. Useful when cries are closed because the
+object gets destroyed.
 
-Setting the default_status attribute on a crier will change the default used
-only for future cries, not cries already issued. 
+Setting the default_status attribute on a crier will change the default
+used only for future cries, not cries already issued.
 
-Passing undef to set_default_importance restore the default status to the
-original default value (which is -3).
+Passing undef to set_default_importance restore the default status to
+the original default value (which is -3).
 
 =head3 ellipsis
 
@@ -1635,11 +1650,11 @@ option is often used in combination with I<trailer>.
                      ^^^_____ These dots are the ellipsis
 
 Setting the ellipsis attribute on a cry will affect only that cry.
-Setting it in a C<c> call or equivalent, or using a C<set_ellipsis>
-on an already opened cry, will affect only the close of that cry.
+Setting it in a C<c> call or equivalent, or using a C<set_ellipsis> on
+an already opened cry, will affect only the close of that cry.
 
 Setting the ellipsis attribute on a crier will change the default used
-only for future cries, not cries already issued. 
+only for future cries, not cries already issued.
 
 =head3 fh
 
@@ -1667,11 +1682,11 @@ specified in the argument to C<new>.
 
 =back
 
-Filters messages by setting the maximum level of messages that will be output.
-(This is how many levels of sub-task, not the status or importance.) Set to
-undef (the default) to see all messages.  Set to 0 to disable B<all> messages
-from the crier.  Set to a positive integer to see only messages at that level
-and less.
+Filters messages by setting the maximum level of messages that will be
+output. (This is how many levels of sub-task, not the status or
+importance.) Set to undef (the default) to see all messages.  Set to 0
+to disable B<all> messages from the crier.  Set to a positive integer
+to see only messages at that level and less.
 
 =head3 filter_below_importance
 
@@ -1685,9 +1700,9 @@ and less.
 
 =back
 
-Filters messages by setting the minimum importance of messages that will be
-output.  Set to 0 (the default) to see all messages.  Set to a positive integer
-to see only messages at that importance or greater.
+Filters messages by setting the minimum importance of messages that
+will be output.  Set to 0 (the default) to see all messages.  Set to a
+positive integer to see only messages at that importance or greater.
 
 =head3 importance
 
@@ -1700,7 +1715,8 @@ to see only messages at that importance or greater.
 =back
 
 Sets the importance level of a cry. This is set to the value of the
-I<default_importance> option if not specified in the C<cry> or equivalent call.
+I<default_importance> option if not specified in the C<cry> or
+equivalent call.
 
 =head3 muted
 
@@ -1714,12 +1730,13 @@ I<default_importance> option if not specified in the C<cry> or equivalent call.
 
 =back
 
-Set this option to a true value to have output from this cry quieted, except
-for the opening text.  It will not display any progress text (from C<prog> or
-C<over>), any C<wail> messages, the closing trailer or the status tag.
+Set this option to a true value to have output from this cry quieted,
+except for the opening text.  It will not display any progress text
+(from C<prog> or C<over>), any C<wail> messages, the closing trailer or
+the status tag.
 
-The return status from the call will still be the appropriate value
-for the severity code.
+The return status from the call will still be the appropriate value for
+the severity code.
 
 =head3 opentext
 
@@ -1752,8 +1769,9 @@ See L<< $crier->cry()|/$crier->cry() >>.
 
 =back
 
-Used to reset what Actium::Env::CLI::Crier thinks the cursor position is. You
-may have to do this if you mix ordinary print statements with cries.
+Used to reset what Actium::Env::CLI::Crier thinks the cursor position
+is. You may have to do this if you mix ordinary print statements with
+cries.
 
 Set this to 0 to indicate that the position is at the start of a new
 line (as in, just after a C<print "\n"> or C<say>). See L</Mixing
@@ -1794,10 +1812,10 @@ This programming metaphor is commonly used:
 
 =back
 
-This attribute determines whether C<< $cry->over >> and C<< $cry->prog >>
-display anything. If false, these don't do anything. This is useful for turning
-these off via the command line, especially in circumstances where certain dumb
-IDE consoles can't backspace.
+This attribute determines whether C<< $cry->over >> and C<< $cry->prog
+>> display anything. If false, these don't do anything. This is useful
+for turning these off via the command line, especially in circumstances
+where certain dumb IDE consoles can't backspace.
 
 =head3 status
 
@@ -1813,10 +1831,12 @@ IDE consoles can't backspace.
 
 =back
 
-Sets the numeric status used when completing a cry. This is set to the value of
-the I<default_status> option if not specified in the C<cry> or C<c> call.
+Sets the numeric status used when completing a cry. This is set to the
+value of the I<default_status> option if not specified in the C<cry> or
+C<c> call.
 
-See L<Closing with Different Statuses|/"Closing with Different Statuses">.
+See L<Closing with Different Statuses|/"Closing with Different
+Statuses">.
 
 =head3 step
 
@@ -1851,8 +1871,8 @@ size.
 
 =back
 
-Sets the status tag: the text displayed in brackets as a message is closed.
-See L<< $cry->c()|/$cry->c() >>.
+Sets the status tag: the text displayed in brackets as a message is
+closed. See L<< $cry->c()|/$cry->c() >>.
 
 =head3 tag_color
 
@@ -1866,10 +1886,11 @@ See L<< $cry->c()|/$cry->c() >>.
 
 =back
 
-This is the attribute string passed to L<Term::ANSIColor|Term::ANSIColor> to
-colorize this tag. See that module for details. If the I<colorize> attribute is
-false, this will not be sent. Set it to an empty string to disable color for
-this tag only.
+This is the attribute string passed to
+L<Term::ANSIColor|Term::ANSIColor> to colorize this tag. See that
+module for details. If the I<colorize> attribute is false, this will
+not be sent. Set it to an empty string to disable color for this tag
+only.
 
 =head3 timestamp
 
@@ -1883,13 +1904,14 @@ this tag only.
 
 =back
 
-If false (the default), output lines are not prefixed with a timestamp.  If a
-true scalar, the default local timestamp HH::MM::SS is prefixed to each line.
-If it's a coderef, then that function is called to get the timestamp string.
-The function is passed the current indent level, for what it's worth.  Note
-that no delimiter is provided between the timestamp string and the emitted
-line, so you should provide your own (a space or colon or whatever).  Also,
-C<wail> output is not timestamped, just the opening and closing text.
+If false (the default), output lines are not prefixed with a timestamp.
+ If a true scalar, the default local timestamp HH::MM::SS is prefixed
+to each line. If it's a coderef, then that function is called to get
+the timestamp string. The function is passed the current indent level,
+for what it's worth.  Note that no delimiter is provided between the
+timestamp string and the emitted line, so you should provide your own
+(a space or colon or whatever).  Also, C<wail> output is not
+timestamped, just the opening and closing text.
 
 =head3 trailer
 
@@ -1920,11 +1942,11 @@ Note that the ellipsis after the message is still "..."; use
 I<ellipsis> to change that string as well.
 
 Setting the trailer attribute on a cry will affect only that cry.
-Setting it in a C<c> call or equivalent, or using a C<set_trailer>
-on an already opened cry, will affect only the close of that cry.
+Setting it in a C<c> call or equivalent, or using a C<set_trailer> on
+an already opened cry, will affect only the close of that cry.
 
-Setting the trailer attribute on a crier will affect all future cries, but not
-any cries that have already been opened.
+Setting the trailer attribute on a crier will affect all future cries,
+but not any cries that have already been opened.
 
 =head1 DIAGNOSTICS
 
@@ -1935,11 +1957,13 @@ any cries that have already been opened.
 'Cry error (cry object not saved)'
 
 The C<cry> method was called in void context. This creates an object
-which should be saved to a variable. See L<< $crier->cry()|/$crier->cry() >>.
+which should be saved to a variable. See L<<
+$crier->cry()|/$crier->cry() >>.
 
 =item *
 
-Arguments given in "use Actium::Env::CLI::Crier (default_crier => {args})" but the default crier has already been initialized
+Arguments given in "use Actium::Env::CLI::Crier (default_crier =>
+{args})" but the default crier has already been initialized
 
 A module attempted to set attributes to the default crier in the import
 process, but the default crier can only be created once.  (You can use
@@ -1968,22 +1992,24 @@ of the filehandle.)
 
 =head1 NOTES
 
-Actium::Env::CLI::Crier is a fork of Term::Emit, by Steve Roscio. Term::Emit is
-great, but it is dependent on Scope::Upper, which hasn't always compiled
-cleanly in my installation, and also Term::Emit uses a number of global
-variables, which save typing but mean that its objects aren't self-contained.
-Actium::Env::CLI::Crier is designed to do a lot of what Term::Emit does, but in
-a somewhat cleaner way, even if it means there's a bit more typing involved.
+Actium::Env::CLI::Crier is a fork of Term::Emit, by Steve Roscio.
+Term::Emit is great, but it is dependent on Scope::Upper, which hasn't
+always compiled cleanly in my installation, and also Term::Emit uses a
+number of global variables, which save typing but mean that its objects
+aren't self-contained. Actium::Env::CLI::Crier is designed to do a lot
+of what Term::Emit does, but in a somewhat cleaner way, even if it
+means there's a bit more typing involved.
 
 Actium::Env::CLI::Crier does use Moose, which is somewhat odd for a
-command-line program. Since many other Actium programs also use Moose, this is
-a relatively small loss in this case. If this ever becomes a separate
-distribution it should probably use something else, such as Moo.
+command-line program. Since many other Actium programs also use Moose,
+this is a relatively small loss in this case. If this ever becomes a
+separate distribution it should probably use something else, such as
+Moo.
 
 =head1 BUGS AND LIMITATIONS
 
-The test suite consists mainly of tests adapted from Term::Emit, and many of
-the new methods and capabilities are not tested.
+The test suite consists mainly of tests adapted from Term::Emit, and
+many of the new methods and capabilities are not tested.
 
 =head1 AUTHOR
 

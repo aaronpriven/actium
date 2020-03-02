@@ -4,7 +4,7 @@ package Actium::Storage::Ini 0.015;
 use Actium        ('class');
 use Actium::Types ('File');
 
-use MooseX::SingleArg;
+use MooseX::SingleArg;    ### DEP ###
 single_arg 'file';
 
 # Class for reading .ini files.
