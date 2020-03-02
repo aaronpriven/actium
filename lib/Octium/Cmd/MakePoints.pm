@@ -48,7 +48,6 @@ EOF
 }
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
     return (
         qw/actiumdb signup/,
         {   spec        => 'output_heights',
@@ -123,15 +122,13 @@ q{Will exclude signs that don't have the status "Needs new sign."},
 
 sub START {
 
-    my ( $class, $env ) = @_;
-
     our ( %places, %lines );
     # this use of global variables should be refactored...
 
-    my $actiumdb = $env->actiumdb;
-    my @argv     = $env->argv;
+    my $actiumdb = env->actiumdb;
+    my @argv     = env->argv;
 
-    my $signup = $env->signup;
+    my $signup = env->signup;
     chdir $signup->path();
 
     # retrieve data
@@ -143,13 +140,13 @@ sub START {
     my %smoking = %{ $actiumdb->all_in_column_key(qw(Cities SmokingText)) };
 
     my ( $run_agency, $run_agency_abbr, $run_agency_row )
-      = $actiumdb->agency_or_abbr_row( $env->option('agency') );
+      = $actiumdb->agency_or_abbr_row( env->option('agency') );
     # allows specifying either the agency or the agency abbreviation
     # on the command line
 
     unless ($run_agency) {
         $load_cry->d_error;
-        die 'Agency ' . $env->option('agency') . " not found.\n";
+        die 'Agency ' . env->option('agency') . " not found.\n";
     }
 
     my $effdate = $actiumdb->effective_date( agency => $run_agency );
@@ -258,10 +255,10 @@ sub START {
         @signstodo = sort { $a <=> $b } keys %signs;
     }
 
-    my $signtype_opt   = $env->option('type');
-    my $tag_opt        = $env->option('tag');
-    my $delivery_opt   = $env->option('delivery');
-    my $clusterize_opt = $env->option('clusterize');
+    my $signtype_opt   = env->option('type');
+    my $tag_opt        = env->option('tag');
+    my $delivery_opt   = env->option('delivery');
+    my $clusterize_opt = env->option('clusterize');
 
     my ( %signtype_matches, %delivery_matches );
 
@@ -348,12 +345,12 @@ sub START {
         next SIGN
           if $delivery_opt and not exists $delivery_matches{$delivery};
 
-        if ( $env->option('update') or $env->option('newsigns') ) {
+        if ( env->option('update') or env->option('newsigns') ) {
             next SIGN
               unless ( Actium::feq( $status, 'Needs update' )
-                and $env->option('update') )
+                and env->option('update') )
               or ( Actium::feq( $status, 'Needs new sign' )
-                and $env->option('newsigns') );
+                and env->option('newsigns') );
         }
 
         my ( $description, $description_nocity, $city, $nonstop );
@@ -528,7 +525,7 @@ sub START {
 
     $cry->done;
 
-    my $run_name = _get_run_name( $env, $run_agency_abbr );
+    my $run_name = _get_run_name($run_agency_abbr);
 
     my $listfile  = $LISTFILE_BASE . $run_name . '.txt';
     my $excelfile = $CHECKLIST_BASE . $run_name . '.xlsx';
@@ -581,7 +578,7 @@ sub START {
 
             \my %cluster_of_workzone = clusterize(
                 count_of   => $workzone_count{$delivery},
-                size       => $env->option('minimum-cluster'),
+                size       => env->option('minimum-cluster'),
                 all_values => [ keys %seen_workzone ],
                 return     => 'runlist',
             );
@@ -632,7 +629,7 @@ sub START {
 
             \my %cluster_of_cityworkzone = clusterize(
                 count_of => \%city_workzone_count,
-                size     => $env->option('minimum-cluster'),
+                size     => env->option('minimum-cluster'),
                 return   => 'values',
             );
 
@@ -659,7 +656,7 @@ sub START {
                         $_ = substr( $_, 0, $max_length ) foreach @cities;
                         $cluster_display = join( ',', sort @cities );
                         $max_length--;
-                    } until length($cluster_display)
+                      } until length($cluster_display)
                       <= $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH;
 
                     $cluster_of_city{$city} = $cluster_display;
@@ -814,7 +811,7 @@ sub START {
 
     ### HEIGHTS DISPLAY
 
-    if ( $env->option('output_heights') ) {
+    if ( env->option('output_heights') ) {
         my $heights_file = $HEIGHTSFILE_BASE . $run_name . '.txt';
         my $heights_cry  = env->cry("Writing heights to $heights_file");
         my $heights_fh   = $pointlist_folder->open_write($heights_file);
@@ -832,9 +829,8 @@ sub START {
 
 sub _get_run_name {
 
-    my $env             = shift;
     my $run_agency_abbr = shift;
-    my $nameopt         = $env->option('name');
+    my $nameopt         = env->option('name');
 
     if ( defined $nameopt and $nameopt ne $EMPTY ) {
         if ( $nameopt eq '_' ) {
@@ -843,9 +839,9 @@ sub _get_run_name {
         return '.' . $nameopt;
     }
 
-    my @args     = $env->argv;
-    my $signtype = $env->option('type');
-    my $tag      = $env->option('tag');
+    my @args     = env->argv;
+    my $signtype = env->option('type');
+    my $tag      = env->option('tag');
 
     my @run_pieces;
     push @run_pieces, $run_agency_abbr
@@ -853,8 +849,8 @@ sub _get_run_name {
     push @run_pieces, join( ',', @args ) if @args;
     push @run_pieces, $signtype if $signtype;
     push @run_pieces, $tag      if $tag;
-    push @run_pieces, 'N'       if $env->option('newsigns');
-    push @run_pieces, 'U'       if $env->option('update');
+    push @run_pieces, 'N'       if env->option('newsigns');
+    push @run_pieces, 'U'       if env->option('update');
 
     if (@run_pieces) {
         return '.' . join( '_', @run_pieces );

@@ -39,13 +39,12 @@ my ( %changes, %oldstoplists, %stops );
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $actiumdb  = $env->actiumdb;
-    my $oldsignup = $env->oldsignup;
-    my $signup    = $env->signup;
+    my $actiumdb  = env->actiumdb;
+    my $oldsignup = env->oldsignup;
+    my $signup    = env->signup;
 
-    my $ignore_600s = $env->option('ignore600s');
-    my $only_600s   = $env->option('only600s');
+    my $ignore_600s = env->option('ignore600s');
+    my $only_600s   = env->option('only600s');
 
     die "Can't specify both -ignore600s and -only600s"
       if $ignore_600s and $only_600s;

@@ -8,9 +8,7 @@ use DDP;
 
 sub START {
 
-    my ( $class, $env ) = @_;
-
-    my $actiumdb = $env->actiumdb;
+    my $actiumdb = env->actiumdb;
 
     my $dbh = $actiumdb->dbh;
 

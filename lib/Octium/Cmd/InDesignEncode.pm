@@ -11,8 +11,7 @@ const my $IDT => 'Octium::Text::InDesignTags';
 use Array::2D;
 
 sub START {
-    my ( $class, $env ) = @_;
-    my @argv = $env->argv;
+    my @argv = env->argv;
 
     foreach my $input_file (@argv) {
 

@@ -17,11 +17,9 @@ sub OPTIONS {
 
 sub START {
 
-    my $class     = shift;
-    my $env       = shift;
-    my $actium_db = $env->actiumdb;
+    my $actium_db = env->actiumdb;
 
-    my @argv = $env->argv;
+    my @argv = env->argv;
 
     my $input_file = shift @argv;
     my $output_file = Octium::add_before_extension( $input_file, 'labels' );

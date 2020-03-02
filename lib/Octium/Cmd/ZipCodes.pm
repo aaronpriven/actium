@@ -18,9 +18,8 @@ sub OPTIONS {
 }
 
 sub START {
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
-    my $username = $env->geonames_username;
+    my $actiumdb = env->actiumdb;
+    my $username = env->geonames_username;
 
     my $zip_code_of_r = get_zip_for_stops(
         actiumdb => $actiumdb,

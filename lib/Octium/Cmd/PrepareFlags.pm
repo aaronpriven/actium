@@ -12,9 +12,8 @@ sub OPTIONS {
 }
 
 sub START {
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
-    my @argv     = $env->argv;
+    my $actiumdb = env->actiumdb;
+    my @argv     = env->argv;
 
     my $assigncry = env->cry('Creating flag assignments');
 
@@ -49,7 +48,7 @@ sub START {
         File::Slurper::write_text( $output_file, $tabbed );
     }
     else {
-        my $signup = $env->signup;
+        my $signup = env->signup;
         $signup->slurp_write( $tabbed, 'flag_assignments.txt' );
     }
 

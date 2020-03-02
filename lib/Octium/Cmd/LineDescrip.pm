@@ -22,10 +22,9 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
+    my $actiumdb = env->actiumdb;
 
-    my $signup = $env->signup;
+    my $signup = env->signup;
 
     my $html_descrips = $actiumdb->line_descrip_html( { signup => $signup, } );
 

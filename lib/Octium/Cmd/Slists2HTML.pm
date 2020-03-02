@@ -59,9 +59,8 @@ sub START {
 
     my $makehtml_cry = env->cry('Making HTML files of stop lists');
 
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
-    my $signup   = $env->signup;
+    my $actiumdb = env->actiumdb;
+    my $signup   = env->signup;
 
     my $stoplists_folder      = $signup->subfolder('slists');
     my $stoplists_line_folder = $stoplists_folder->subfolder('line');

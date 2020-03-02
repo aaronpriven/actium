@@ -37,8 +37,8 @@ EOF
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
+    my ($class) = @_;
+    my $actiumdb = env->actiumdb;
 
     my ( %stops, %cities );
 
@@ -57,7 +57,7 @@ sub START {
         }
     );
 
-    my $signup = $env->signup;
+    my $signup = env->signup;
     chdir $signup->path();
 
     # retrieve data

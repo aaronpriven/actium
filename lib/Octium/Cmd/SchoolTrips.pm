@@ -13,9 +13,8 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $actiumdb     = $env->actiumdb;
-    my $signup       = $env->signup;
+    my $actiumdb     = env->actiumdb;
+    my $signup       = env->signup;
     my $basefolder   = $signup->base_obj;
     my $commonfolder = $basefolder->subfolder('common');
 

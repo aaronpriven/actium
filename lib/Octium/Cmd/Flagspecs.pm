@@ -96,11 +96,9 @@ my %color_of;
 
 sub START {
 
-    my $class    = shift;
-    my $env      = shift;
-    my $actiumdb = $env->actiumdb;
+    my $actiumdb = env->actiumdb;
 
-    my $signup = $env->signup;
+    my $signup = env->signup;
 
     my $flagfolder = $signup->subfolder('flags');
 

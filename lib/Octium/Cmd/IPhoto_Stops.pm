@@ -31,8 +31,7 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $actium_db = $env->actiumdb;
+    my $actium_db = env->actiumdb;
 
     ## no critic (ProhibitLongLines)
     my $get_selected_script = <<'ENDSCRIPT';

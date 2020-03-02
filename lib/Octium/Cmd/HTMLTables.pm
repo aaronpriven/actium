@@ -25,9 +25,8 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
-    my $signup   = $env->signup;
+    my $actiumdb = env->actiumdb;
+    my $signup   = env->signup;
 
     my $html_folder = $signup->subfolder('html');
 

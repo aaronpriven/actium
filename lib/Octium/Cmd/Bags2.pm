@@ -21,21 +21,17 @@ sub OPTIONS {
 
 my %i18n;
 my ( %workzone_of, %cluster_of );
-my $env;
 
 sub START {
-
-    my $class = shift;
-    $env = shift;
 
     my @ymd = qw/2019 12 15/;
     my $dt = Octium::O::DateTime::->new( ymd => \@ymd );
 
-    my $config_obj = $env->config;
+    my $config_obj = env->config;
 
     my $i18n_cry = env->cry('Fetching i18ns from database');
 
-    my $actium_db = $env->actiumdb;
+    my $actium_db = env->actiumdb;
 
     %i18n = %{ $actium_db->all_in_columns_key(qw(I18N en es zh)) };
 
@@ -48,7 +44,7 @@ sub START {
 
     my $read_cry = env->cry('Reading sheet');
 
-    my $excelfile = $env->argv_idx(0);
+    my $excelfile = env->argv_idx(0);
 
     my ( $outfile, $oldext ) = Octium::file_ext($excelfile);
     my $clusterfile = $outfile . '-clusters.txt';
@@ -340,7 +336,7 @@ sub _para {
 }
 
 sub _zh_phrase {
-    my $phrase   = shift;
+    my $phrase = shift;
     my $zh_style = shift // 'ChineseBold';
 
     $phrase =~ s/((?:<0x[[:xdigit:]]+>)+)/<CharStyle:$zh_style>$1<CharStyle:>/g;

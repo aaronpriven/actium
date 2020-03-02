@@ -30,8 +30,7 @@ my %color_text = (
 );
 
 sub START {
-    my ( $class, $env ) = @_;
-    my @argv = $env->argv;
+    my @argv = env->argv;
 
     my $filespec = shift @argv;
     die "No input file given" unless $filespec;
@@ -217,7 +216,7 @@ sub START {
 sub quantity {
     my ( $center, $tt_name, $each ) = @_;
 
-    my $factor   = $factor_of{"$center\0$tt_name"} // 1;
+    my $factor = $factor_of{"$center\0$tt_name"} // 1;
     my $quantity = Actium::ceil( $factor * $each );
 
     return $quantity;

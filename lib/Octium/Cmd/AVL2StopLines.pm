@@ -43,12 +43,12 @@ sub OPTIONS {
 
 sub START {
 
-    my ( $class, $env ) = @_;
-    my $actiumdb = $env->actiumdb;
+    my ($class) = @_;
+    my $actiumdb = env->actiumdb;
 
     my $cry = env->cry('Generating stoplines');
 
-    my $signup = $env->signup;
+    my $signup = env->signup;
     chdir $signup->path();
 
     my %stops;
@@ -104,19 +104,19 @@ sub START {
 
     # add stops from other signups (e.g., flex, dumbarton)
 
-    if ( $env->option_is_set('addsignup') ) {
+    if ( env->option_is_set('addsignup') ) {
 
         my $addcry
           = env->cry(
             q{Adding additional signups' stoplines.txt files to this one});
 
-        foreach my $addsignup_name ( $env->option('addsignup')->@* ) {
+        foreach my $addsignup_name ( env->option('addsignup')->@* ) {
             my $signupcry = env->cry("Adding $addsignup_name");
             require Octium::O::Folders::Signup;
             my $addsignup = Octium::O::Folders::Signup::->new(
-                base   => ( $env->option('addbase') // $env->option('base') ),
-                signup => $addsignup_name,
-                cache  => $env->option('cache'),
+                base => ( env->option('addbase') // env->option('base') ),
+                signup     => $addsignup_name,
+                cache      => env->option('cache'),
                 must_exist => 1,
             );
 

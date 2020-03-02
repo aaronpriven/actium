@@ -8,7 +8,6 @@ use Octium::Import::Xhea;
 use Archive::Zip;    ### DEP ###
 
 sub OPTIONS {
-    my ( $class, $env ) = @_;
     return (
         'newsignup',
         {   spec        => 'xhea=s',
@@ -30,13 +29,11 @@ HELP
 
 sub START {
 
-    my $class   = shift;
-    my $env     = shift;
-    my $xheazip = $env->option('xhea');
+    my $xheazip = env->option('xhea');
 
     my $cry = env->cry("Making signup and subdirectories");
 
-    my $signup      = $env->signup;
+    my $signup      = env->signup;
     my $hasi_folder = $signup->subfolder('hasi');
     my $xhea_folder = $signup->subfolder('xhea');
 
