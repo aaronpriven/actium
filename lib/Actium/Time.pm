@@ -3,10 +3,10 @@ package Actium::Time 0.014;
 # object for formatting schedule times and parsing formatted times
 
 use Actium ('class');
-use MooseX::Storage;    ### DEP ###
-with Storage( traits => ['OnlyWhenBuilt'] );
+use Types::Standard(qw/Int Str Undef/);
+use Type::Utils('union');
 
-#use overload '0+' => sub { shift->timenum };
+const my $MINS_IN_12HRS => ( 12 * 60 );
 
 const my %NAMED => (
     NOON_YESTERDAY    => -$MINS_IN_12HRS,
@@ -36,9 +36,9 @@ sub from_num {
     my @objs = (
         map {
             defined $_
-              ? $num_cache{$_} //= $class->new( timenum => $_ )
+              ? $num_cache{$_} //= $class->new( _timenum => $_ )
               : $undef_instance
-              //= $class->new( timenum => undef )
+              //= $class->new( _timenum => undef )
         } @timenums
     );
 
@@ -71,9 +71,14 @@ my $ampm_to_num_cr = sub {
 
 my $t24h_to_num_cr = sub {
 
-    my $time = shift;
+    my $time    = shift;
     my $minutes = substr( $time, -2, 2, $EMPTY );
-    return ( $minutes + $time * 60 );
+    my $sign    = 1;
+    if ( $time =~ /^\-/ ) {
+        $time =~ s/^\-//;
+        $sign = -1;
+    }
+    return ( $sign * ( $minutes + $time * 60 ) );
 
 };
 
@@ -122,7 +127,7 @@ my $str_to_num_cr = sub {
         }
         return $time;
 
-    }    ## tidy end: if ( $time =~ m/ )
+    }
 
     $time = lc($time);
 
@@ -160,7 +165,7 @@ sub from_str {
         defined $_
           ? $str_cache{$_} //= $class->from_num( $str_to_num_cr->($_) )
           : $undef_instance
-          //= $class->new( timenum => undef )
+          //= $class->new( _timenum => undef )
     } @timestrs;
 
     return @objs if wantarray;
@@ -201,47 +206,43 @@ method from_excel ($class: @cells) {
         else {
             push @objs, $class->from_str($formatted);
         }
-    }    ## tidy end: foreach my $cell (@cells)
+    }
 
     return @objs if wantarray;
     return @objs > 1 ? \@objs : $objs[0];
 
-}    ## tidy end: method from_excel
+}
 
 #######################################################
 ## TIMENUM ATTRIBUTE
 #######################################################
 
-#subtype 'Actium::Time::RealTimeNum', as 'Int',
-#  where { ( $_ >= $NAMED{NOON_YESTERDAY} ) && ( $_ <= $NAMED{MAX_TIME} ) };
-#subtype 'Actium::Time::SpecialTimeNum', as 'Maybe[Str]',
-#  where { not defined($_) or $_ eq 'f' or $_ eq 'i' };
-#
-#union 'Actium::Time::TimeNum',
-#  [ 'Actium::Time::RealTimeNum', 'Actium::Time::SpecialTimeNum' ];
-
 has timenum => (
     isa => union(
-        [   subtype(
-                as 'Int',
-                where {
-                    ( $_ >= $NAMED{NOON_YESTERDAY} )
-                      && ( $_ <= $NAMED{MAX_TIME} )
+        [   Int->where(
+                sub {
+                    ( $NAMED{NOON_YESTERDAY} <= $_ )
+                      && ( $_ <= $NAMED{MAX_TIME} );
                 }
             ),
-            subtype(
-                as 'Maybe[Str]',
-                where { not defined($_) or $_ eq 'f' or $_ eq 'i' }
-            )
+            Str->where( sub { $_ eq 'f' or $_ eq 'i' } ),
+            Undef,
         ]
     ),
     is       => 'ro',
+    init_arg => '_timenum',
     required => 1,
 );
 
 #######################################################
 ## BOOLEAN METHODS
 #######################################################
+
+method is_in_range (Int $integer) {
+    return ( $NAMED{NOON_YESTERDAY} <= $integer )
+      && ( $integer <= $NAMED{MAX_TIME} );
+
+}
 
 method is_flex {
     return $self->timenum eq 'f';
@@ -268,8 +269,6 @@ method has_time {
 ## FORMATTED TIMES
 #######################################################
 
-# This should be unified, I think.
-
 # KINDS OF TIMES
 # 12ap - hours, 1-12 , a/p
 # 12apbx - hours, 1-12 , a/p/b/x
@@ -281,10 +280,10 @@ method has_time {
 const my @VALID_FORMATS => qw/12ap 12apbx 12apnm 24 24+/;
 
 has _formatted_cache_r => (
-    traits  => [ 'Hash', 'DoNotSerialize' ],
+    traits  => ['Hash'],
     is      => 'bare',
     isa     => 'HashRef[Str]',
-    default => sub       { {} },
+    default => sub { {} },
     handles => {
         _fcache_exists => 'exists',
         _fcache_set    => 'set',
@@ -301,7 +300,13 @@ method formatted (
     croak "Invalid format $format in " . __PACKAGE__ . '->formatted'
       unless Actium::any { $_ eq $format } @VALID_FORMATS;
 
-    my $cachekey = join( "\0", $format, $separator, $negative_separator );
+    my $cachekey;
+    if ( $format eq '24+' ) {
+        $cachekey = join( "\0", $format, $separator, $negative_separator );
+    }
+    else {
+        $cachekey = join( "\0", $format, $separator );
+    }
     return $self->_fcache($cachekey) if $self->_fcache_exists($cachekey);
 
     my $timenum = $self->timenum;
@@ -366,14 +371,14 @@ method formatted (
     return $self->_fcache_set(
         $cachekey => join( $EMPTY, $hours, $separator, $minutes, $marker ) );
 
-}    ## tidy end: method formatted
+}
 
 has [qw/ap ap_noseparator apbx apbx_noseparator t24/] => (
     isa      => 'Str',
     is       => 'ro',
-    lazy     => '_',
+    lazy     => 1,
+    builder  => 1,
     init_arg => undef,
-    traits   => ['DoNotSerialize'],
 );
 
 method _build_ap {
@@ -418,7 +423,7 @@ sub timesort {
     return map { $_->[0] }
       sort     { $a->[1] <=> $b->[1] } @tosort;
 
-}    ## tidy end: sub timesort
+}
 
 Actium::immut;
 
@@ -484,7 +489,9 @@ performed.
 The object is constructed using C<< Actium::Time->from_str >> , C<<
 Actium::Time->from_num >>, or  C<< Actium::Time->from_excel >>.
 
-=head2 Actium::Time->from_str( I<string> , I<string>, ...) 
+=head2 from_str
+
+ Actium::Time->from_str( I<string> , I<string>, ...) 
 
 This constructor accepts times represented as a string, usually a
 formatted time such as "11:59a" or "13'25", and returns an object for
@@ -577,7 +584,9 @@ treated as one minute before midnight.
 A final "x" is accepted for times after midnight on the following day,
 so '1201x' is treated as one minute after midnight, tomorrow.
 
-=head2 Actium::Time->from_num( I<integer>, I<integer>, ... ) 
+=head2 from_num
+
+ Actium::Time->from_num( I<integer>, I<integer>, ... ) 
 
 This constructor accepts a time number: an integer representing the
 number of minutes after midnight (or, if negative, before midnight). It
@@ -588,7 +597,9 @@ between noon yesterday and one minute before noon tomorrow.
 
 It also accepts the three special values: "f", "i", and the undefined value. 
 
-=head2 Actium::Time->from_excel( I<cell>, I<cell>, ... ) 
+=head2 from_excel
+ 
+ Actium::Time->from_excel( I<cell>, I<cell>, ... ) 
 
 This constructor accepts cells from Excel, specifically those returned
 from the get_cell routine in either Spreadsheet::ParseExcel or
@@ -598,7 +609,14 @@ C<value> and C<unformatted>.)  It can accept a formatted Excel time
 string (which it sends to C<from_str>). It returns one object for each
 cell passed to it.
 
-=head2 Actium::Time->new() 
+=head2 is_in_range
+
+ Actium::Time->is_in_range($integer)
+
+Returns true if the supplied integer is in the valid range for timenum integers
+(between noon on the previous day and 11:59 p.m. on the following day).
+
+=head2 new
 
 B<< Do not use this method. >>
 
@@ -607,7 +625,9 @@ object and insert it into the caches used by C<from_str>, C<from_excel>, and
 C<from_num>.  There should never be a reason to create more than one
 object with the same arguments.
 
-=head2 Actium::Time::->timesort(I<obj>, I<obj>, ... )
+=head2 timesort
+
+ Actium::Time::->timesort(I<obj>, I<obj>, ... )
 
 This class method takes a series of Actium::Time objects and sorts
 them (numerically according to their time number value), returning the 
@@ -615,39 +635,39 @@ sorted list of objects.
 
 =head1 OBJECT METHODS
 
-=head2 B<timenum()>
+=head2 timenum
 
 Returns the time as a number of minutes since midnight (or, if
 negative, before midnight), or one of the special values 'f', 'i', or the 
 undefined value.
 
-=head2 B<is_flex()>
+=head2 is_flex
 
 Returns true if the time represents a flexible stop (i.e., the timenum value 
 is 'f'), false otherwise.
 
-=head2 B<is_awaiting_interpolation()>
+=head2 is_awaiting_interpolation
 
 Returns true if the time represents a time that must be interpolated 
 (i.e., the timenum value is 'i'), false otherwise.
 
-=head2 B<does_stop()>
+=head2 does_stop
 
 Returns true if the time represents a stop that will be made
 (i.e., the timenum value is defined), false otherwise.
 
-=head2 B<no_stop()>
+=head2 no_stop
 
 The opposite of C<does_stop>. Returns true if the time represents a stop
 that will not be made (i.e., the timenum value is not defined), false
 otherwise.
 
-=head2 B<has_time()>
+=head2 has_time
 
 Returns true if the time represents an actual time rather than one of the
 special values 'f', 'i', or the undefined value; false otherwise.
 
-=head2 B<ap()> and B<ap_noseparator>
+=head2 ap and ap_noseparator
 
 The C<ap> method returns the time as a string: hours, a colon, minutes,
 followed by "a" for a.m. or "p" for p.m. For example, "2:25a" or
@@ -659,7 +679,7 @@ time will be returned as the empty string.
 
 These values are cached so will only be generated once for each time.
 
-=head2 B<apbx()> and B<apbx_noseparator>
+=head2 apbx and apbx_noseparator
 
 The C<apbx> method returns the time as a string: hours, a colon,
 minutes, followed by a marker.  Times today are given the marker
@@ -675,7 +695,9 @@ time will be returned as the empty string.
 
 These values are cached so will only be generated once for each time.
 
-=head2 B<< formatted (format => I<format>, separator => I<str> , negative_separator => I<str> >>
+=head2 formatted
+
+C<< formatted (format => I<format>, separator => I<str> , negative_separator => I<str> >>
 
 This method provides the time in one of several formats. In each case,
 the separator given is used to separate the hours and minutes (except
@@ -728,7 +750,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2015-2017
+Copyright 2009-2018
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either:

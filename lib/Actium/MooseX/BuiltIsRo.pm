@@ -5,18 +5,17 @@ use warnings;
 use Moose 1.99 ();
 use Moose::Exporter;
 use Moose::Util::MetaRole;
-# use Actium::MooseX::BuiltIsRO::Role::Attribute;
 
 my %metaroles = (
     class_metaroles =>
-      { attribute => ['Actium::MooseX::BuiltIsRO::Role::Attribute'], },
+      { attribute => ['Actium::MooseX::BuiltIsRo::Role::Attribute'], },
     role_metaroles =>
-      { applied_attribute => ['Actium::MooseX::BuiltIsRO::Role::Attribute'], },
+      { applied_attribute => ['Actium::MooseX::BuiltIsRo::Role::Attribute'], },
 );
 
 Moose::Exporter->setup_import_methods(%metaroles);
 
-package Actium::MooseX::BuiltIsRO::Role::Attribute 0.013;
+package Actium::MooseX::BuiltIsRo::Role::Attribute 0.013;
 
 use Moose::Role;
 

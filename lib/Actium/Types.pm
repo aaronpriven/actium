@@ -1,7 +1,29 @@
 package Actium::Types 0.012;
+# vimcolor: #222222
 
-# Moose types for Actium
-use Actium;
+# Type::Tiny ### DEP ###
+# Type::Tiny types for Actium
+
+use Type::Library
+  -base,
+  -declare => qw( Folder File CrierStatus CrierImportance);
+use Type::Utils -all;
+use Types::Standard -types;
+
+### definitions
+
+class_type Folder, { class => 'Actium::Storage::Folder' };
+class_type File,   { class => 'Actium::Storage::File' };
+
+declare CrierStatus,     as Int, where { -7 <= $_ and $_ <= 7 };
+declare CrierImportance, as Int, where { 0 <= $_  and $_ <= 7 };
+
+### coercions
+
+coerce Folder, from Str, via { Actium::Storage::Folder->new($_) };
+coerce File,   from Str, via { Actium::Storage::File->new($_) };
+
+__END__
 
 ## no critic (ProhibitMagicNumbers)
 
@@ -12,7 +34,6 @@ use MooseX::Types -declare => [
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum
       Str4                Str8
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
-      ActiumFolderLike
       CrierBullet          ARCrierBullets
       CrierTrailer
       >
@@ -53,12 +74,12 @@ coerce DaySpec, from DayCode, via { [ $_, 'B' ] },;
 
 coerce DaySpec, from DayStr, via { [ split( /-/, $_, 2 ) ] };
 
-subtype ActiumDays, as class_type('Actium::O::Days');
+subtype ActiumDays, as class_type('Actium::Days');
 
 coerce ActiumDays,
-  from DaySpec, via { Actium::O::Days->instance( $_->@* ) },
-  from DayCode, via { Actium::O::Days->instance( to_DaySpec($_)->@* ) },
-  from DayStr,  via { Actium::O::Days->instance( to_DaySpec($_)->@* ) },
+  from DaySpec, via { Actium::Days->instance( $_->@* ) },
+  from DayCode, via { Actium::Days->instance( to_DaySpec($_)->@* ) },
+  from DayStr,  via { Actium::Days->instance( to_DaySpec($_)->@* ) },
   ;
 
 #########################
@@ -73,9 +94,9 @@ subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 
 enum( DirCode, \@DIRCODES );
 
-subtype ActiumDir, as class_type('Actium::O::Dir');
+subtype ActiumDir, as class_type('Actium::Dir');
 
-coerce( ActiumDir, from DirCode, via { Actium::O::Dir->instance($_) }, );
+coerce( ActiumDir, from DirCode, via { Actium::Dir->instance($_) }, );
 
 ######################
 ## NOTIFY
@@ -138,17 +159,26 @@ subtype Str4, as Str, where { length == 4 },
 role_type 'Skedlike', { role => 'Actium::O::Skedlike' };
 
 #########################
-## FOLDER
+## FOLDERS / FILES
 
-duck_type ActiumFolderLike, [qw[ path ]];    # maybe make a folderlike role...
+class_type 'Actium::Storage::Folder';
 
-coerce ActiumFolderLike, from Str, via( \&_make_actium_o_folder ),
-  from ArrayRef [Str], via \&_make_actium_o_folder;
+coerce 'Actium::Storage::Folder', from Str,
+  via { require Actium::Storage::Folder; Actium::Storage::Folder::->new($_) };
 
-sub _make_actium_o_folder {
-    require Actium::O::Folder;
-    Actium::O::Folder::->new($_);
-}
+coerce 'Actium::Storage::Folder', from ArrayRef [Str],
+  via { require Actium::Storage::Folder; Actium::Storage::Folder::->new(@$_) };
+
+class_type 'Actium::Storage::File';
+
+coerce 'Actium::Storage::File', from Str,
+  via { require Actium::Storage::File; Actium::Storage::File::->new($_) };
+
+coerce 'Actium::Storage::File', from ArrayRef [Str],
+  via { require Actium::Storage::File; Actium::Storage::File::->new(@$_) };
+
+# note that the coercions neither create the folder,
+# nor check to see that it already exists
 
 1;
 __END__
@@ -217,7 +247,7 @@ L<Actium/Actium>. It can be coerced into  ActiumODir.
 
 =item B<ActiumODir>
 
-A type representing the Actium::O::Dir class.
+A type representing the Actium::Dir class.
 
 =back
 

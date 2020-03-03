@@ -1,0 +1,117 @@
+{
+   "abstract" : "Common routines and imports for Actium programs",
+   "author" : [
+      "Aaron Priven <apriven@actransit.org>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Minilla/v3.0.11, CPAN::Meta::Converter version 2.150010",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "Actium",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "xt",
+         "inc",
+         "share",
+         "eg",
+         "examples",
+         "author",
+         "builder"
+      ]
+   },
+   "prereqs" : {
+      "configure" : {
+         "requires" : {
+            "Module::Build::Tiny" : "0.035"
+         }
+      },
+      "develop" : {
+         "requires" : {
+            "App::Ack" : "0",
+            "PadWalker" : "0",
+            "Perl::Critic" : "0",
+            "Perl::Critic::Bangs" : "0",
+            "Perl::Critic::CognitiveComplexity" : "0",
+            "Perl::Critic::Freenode" : "0",
+            "Perl::Critic::Lax" : "0",
+            "Perl::Critic::Moose" : "0",
+            "Perl::Critic::More" : "0",
+            "Perl::Critic::Nits" : "0",
+            "Perl::Critic::PetPeeves::JTRAMMELL" : "0",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitDeleteOnArrays" : "0",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitReturnOr" : "0",
+            "Perl::Critic::Policy::References::ProhibitComplexDoubleSigils" : "0",
+            "Perl::Critic::Policy::ValuesAndExpressions::ProhibitSingleArgArraySlice" : "0",
+            "Perl::Critic::Pulp" : "0",
+            "Perl::Critic::StricterSubs" : "0",
+            "Perl::Critic::Swift" : "0",
+            "Perl::Critic::Tics" : "0",
+            "Perl::Critic::logicLAB" : "0",
+            "Perl::Tidy" : "0",
+            "Test::CPAN::Meta" : "0",
+            "Test::MinimumVersion::Fast" : "0.04",
+            "Test::PAUSE::Permissions" : "0.04",
+            "Test::Pod" : "1.41",
+            "Test::Spellunker" : "v0.2.7"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Const::Fast" : "0",
+            "Data::Printer" : "0",
+            "HTML::Entities" : "0",
+            "Import::Into" : "0",
+            "JSON" : "0",
+            "Kavorka" : "0",
+            "List::MoreUtils" : "0.422",
+            "List::MoreUtils::XS" : "0.422",
+            "Module::Runtime" : "0",
+            "Moose" : "1.99",
+            "MooseX::MarkAsMethods" : "0",
+            "MooseX::SemiAffordanceAccessor" : "0",
+            "MooseX::SingleArg" : "0",
+            "MooseX::StrictConstructor" : "0",
+            "Path::Class" : "0",
+            "Statistics::Lite" : "0",
+            "Text::Trim" : "0",
+            "Type::Tiny" : "0",
+            "Type::Tiny::XS" : "0",
+            "Unicode::GCString" : "0",
+            "Unicode::LineBreak" : "0",
+            "indirect" : "0",
+            "perl" : "5.024"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Test::More" : "0.98"
+         }
+      }
+   },
+   "release_status" : "unstable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/aaronpriven/actium/issues"
+      },
+      "homepage" : "https://github.com/aaronpriven/actium",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/aaronpriven/actium.git",
+         "web" : "https://github.com/aaronpriven/actium"
+      }
+   },
+   "version" : "0.014",
+   "x_authority" : "cpan:AARONRP",
+   "x_contributors" : [
+      "Google Code Exporter <GoogleCodeExporter@users.noreply.github.com>",
+      "Aaron Priven <aaron@garner.gateway.sonic.net>",
+      "Aaron Priven <aaron@priven.com>"
+   ],
+   "x_serialization_backend" : "JSON::PP version 2.94"
+}

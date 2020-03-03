@@ -1,7 +1,7 @@
 
 ## COPYRIGHT & LICENSE
 
-Copyright 2011-2017
+Copyright 2011-2018
 
 The Actium system is free software; you can redistribute it and/or
 modify it under the terms of either:

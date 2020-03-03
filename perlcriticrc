@@ -76,6 +76,7 @@ severity = 1
 [-ControlStructures::ProhibitUnlessBlocks]
 [-Documentation::RequirePackageMatchesPodName]
 [-Documentation::RequirePodSections]
+[-Documentation::RequirePodAtEnd]
 [-ErrorHandling::RequireCarping]
 [-InputOutput::RequireBriefOpen]
 [-Modules::ProhibitMultiplePackages]
@@ -132,9 +133,10 @@ info_level = 20
 [Lax::RequireConstantOnLeftSideOfEquality::ExceptEq]
 
 [-Lax::ProhibitStringyEval::ExceptForRequire]
+[-Lax::RequireEndWithTrueConst]
 
 [-Lax::ProhibitLeadingZeros::ExceptChmod]
-# Duplicative, the regualr version now allows chmod also
+# Duplicative, the regular version now allows chmod also
 
 [Lax::ProhibitComplexMappings::LinesNotStatements]
 
@@ -172,6 +174,7 @@ formats = #!/usr/bin/env perl
 
 [-CodeLayout::RequireASCII]
 [-Editor::RequireEmacsFileVariables]
+#[-Miscellanea::RequireRcsKeywords]  ## moved to Perl::Critic::Deprecated
 [-Modules::RequirePerlVersion] 
 # included in Actium.pm
 [-ErrorHandling::RequireUseOfExceptions]

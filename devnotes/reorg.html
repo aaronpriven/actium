@@ -1,860 +1,811 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
-	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-	<title></title>
-	<meta name="generator" content="LibreOffice 5.3.4.2 (MacOSX)"/>
-	<meta name="created" content="00:00:00"/>
-	<meta name="changed" content="2017-10-04T17:40:29.582403000"/>
-	<meta name="created" content="00:00:00">
-	<meta name="changed" content="2017-07-11T11:17:33.085630000">
-	<meta name="created" content="00:00:00">
-	<meta name="changed" content="2017-07-11T11:13:31.659069000">
-	<meta name="created" content="00:00:00">
-	<meta name="changed" content="2017-07-11T00:07:13.016120000">
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>Actium reorganization</title>
 </head>
 <body lang="en-US" dir="ltr">
-<table width="1073" cellpadding="2" cellspacing="0" style="page-break-before: always">
-	<col width="291">
-	<col width="255">
-	<col width="464">
-	<col width="45">
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>SIGNUP</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing whole signup</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Signup</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Modification of Actium::O::Folders::Signup, to just return
-			folder objects when folders are wanted</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>SCHEDULE – of a line / direction / days</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing a schedule</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Mostly the same as Actium::O::Sked, with some things moved to
-			subsidiary objects</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing a collection of schedules</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::Collection</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Since signups have several collections of schedules (at least
-			received, final, exceptions), this can’t be just a role.</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing a schedule calendar (like a service id in
-			GTFS)</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::Calendar</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Like a service ID in calendar_dates.txt in GTFS</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing the stop of a schedule</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::Stop</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>This contains the stop ID and the place ID (if any) associated
-			with the stop in the parent Actium::Sked object. Takes the place
-			of stoptimes, stopplaces, etc. in Actium::O::Sked. The stop ID
-			points to the Actium::Stop object</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Role representing a collection of schedule stops 
-			</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::Stop::Collection</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Each schedule has exactly one set of stops, so this can be a
-			role that is applied to Actium::Sked – and
-			Actium:::Sked::StopSked</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing each trip of a schedule</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::Trip</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Mostly the same as Actium::O::Sked::Trip</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Role representing a collection of trips 
-			</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::Trip::Collection</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Each schedule has exactly one set of trips, so this can be a
-			role that is applied to Actium::Sked</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing a time on a schedule</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::Trip::Time</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>This contains an Actium::Time object, but also information on
-			whether it is interpolated by Actium, provided as part of the
-			import, or whether it is actually doesn’t stop there at all for
-			this trip. 
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>X</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Role representing a collection of times</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::Trip::Time::<br/>
-Collection</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Each trip has exactly one set of times, so this can be a role
-			that is applied to Actium::Sked::Trip</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>SCHEDULE – of a stop</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing a bus stop’s schedules</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::StopSked::<br/>
-Collection</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Contains the information related to a bus stop: what lines stop
-			there and when. The information on a point schedule. 
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing schedules at a bus stop</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::StopSked</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><a name="_GoBack"></a>Contains the schedule information just
-			about one line at a stop: the times here, what the destination is
-			of each route that stops here, etc. Represents the column of a
-			point schedule, and also the data on each flag decal.</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Trip of a schedule at a bus stop</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sked::StopSked::Trip</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Contains an Actium::Sked::Trip::Time object but also has
-			information found in kpoints and the patinfo struct in FlagSpecs.
-			A time of a point schedule, including notes etc.</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>IMPORT – Modules representing various formats imported
-			into Actium</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing a Xhea import 
-			</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Import::Xhea</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Objects for each Xhea table</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Import::Xhea::*</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing a GTFS import</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Import::GTFS</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Objects for each GTFS file</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Import::GTFS::*</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Objects/routines shared among import formats</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Import::*</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>SITES AND SIGNS</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing a point in space that should have
-			information</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Site</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Distinct from a stop in that it includes places that are not
-			stops (e.g., TID locations). Distinct from a sign in that multiple
-			physical signs can be placed there (e.g., when two or more pole
-			schedules or TIDs are needed).</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing a physical sign (with a paper insert)</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Sign</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>COMPARISON OBJECTS/CLASSES</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Comparison between two schedules</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Compare::Skeds</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Comparison between sets of stops</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Compare::Stops</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>DATABASE</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Object representing Actium database</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::DB</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>This represents the content of the Actium database rather than
-			the underlying database mechanism. Anything that wouldn’t change
-			if the database were suddenly moved from one database software to
-			another.</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Objects representing Actium database tables</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::DB::Stops, Actium::DB::PubTimetables, etc.</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Roles for common behavior among database table classes (such as
-			caches)</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::DB::Table if just one, otherwise named for behavior</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>APPLICATION ENVIRONMENT</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Environment object</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Env</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>This is what is returned by Actium::env()</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Command line interface class</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::CLI</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>The idea is that this would create the Actium::Env object. Most
-			of what was Actium::O::Cmd</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Command line options</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::CLI::Option</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>What was Actium::O::Cmd::Option</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Terminal input/output</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::CLI::Crier</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>If it isn’t hived off into its own distribution</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Commands</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Cmd</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Actual command modules go into Actium::Cmd, as opposed to
-			things that work on the environment such as Actium::CLI::Crier 
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>STORAGE</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Folder object</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Storage::Folder</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Relates to Path::Class::Dir</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>File object</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Storage::File</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Relates to Path::Class:File</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>FileMaker database class</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Storage::FileMaker</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Low-level database access</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>MORE PRIMITIVE DATA TYPES</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Time object</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Time</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>X</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Date object (to compare dates)</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Date</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Days of service object</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Days</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Direction object</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Dir</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Text object and classes</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Text</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Used for multilingual output, InDesign or HTML tags, etc</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Set / combinatorics</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Set</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><br/>
-
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Type library</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::Types</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>Probably should move to Type::Tiny</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td colspan="3" width="1018" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p><b>Misc</b></p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
-	<tr valign="top">
-		<td width="291" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Map repository</p>
-		</td>
-		<td width="255" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p>Actium::MapRepository</p>
-		</td>
-		<td width="464" style="border-top: 1px solid #00000a; border-bottom: 1px solid #00000a; border-left: 1px solid #00000a; border-right: none; padding-top: 0.02in; padding-bottom: 0.02in; padding-left: 0.08in; padding-right: 0in">
-			<p>We need to consider the larger issue of digital asset
-			management. 
-			</p>
-		</td>
-		<td width="45" style="border: 1px solid #00000a; padding: 0.02in 0.08in">
-			<p><br/>
-
-			</p>
-		</td>
-	</tr>
+<p>The final column is an "X" if this class is named properly
+and is ready to use. There may still be some work to do on it,
+though.</p>
+<table border=1 cellpadding="2" cellspacing="0">
+<col width="25%">
+<col width="25%">
+<col width="45%">
+<col width="5%">
+<tr valign="top">
+<td colspan="4">
+<p><b>SIGNUP</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing whole signup</p>
+</td>
+<td>
+<p>Actium::Signup</p>
+</td>
+<td>
+<p>Modification of Actium::O::Folders::Signup, to just return
+folder objects when folders are wanted</p>
+</td>
+<td>
+<p>X</p>
+</td>
+</tr>
+<tr valign="top">
+<td colspan="4">
+<p><b>SCHEDULE – of a line / direction / days</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing a schedule</p>
+</td>
+<td>
+<p>Actium::Sked</p>
+</td>
+<td>
+<p>Mostly the same as Actium::O::Sked, with some things moved to
+subsidiary objects</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing a collection of schedules</p>
+</td>
+<td>
+<p>Actium::SkedCollection</p>
+</td>
+<td>
+<p>Since signups have several collections of schedules (at least
+received, final, exceptions), this can’t be just a role.</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>Object representing the set of active calendars</td>
+<td>Actium::Sked::CalendarCollection</td>
+<td>Received / Exceptions / Final</td>
+<td>X</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing a schedule calendar (like a service id in
+GTFS)</p>
+</td>
+<td>
+<p>Actium::Sked::Calendar</p>
+</td>
+<td>
+<p>Like a service ID in calendar_dates.txt in GTFS</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing the stop of a schedule</p>
+</td>
+<td>
+<p>Actium::Sked::Stop</p>
+</td>
+<td>
+<p>This contains the stop ID and the place ID (if any) associated
+with the stop in the parent Actium::Sked object. Takes the place
+of stoptimes, stopplaces, etc. in Actium::O::Sked. The stop ID
+points to the Actium::Stop object</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Role representing a collection of schedule stops 
+</p>
+</td>
+<td>
+<p>Actium::Sked::StopCollection</p>
+</td>
+<td>
+<p>Each schedule has exactly one set of stops, so this can be a
+role that is applied to Actium::Sked – and
+Actium:::Sked::StopSked</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing each trip of a schedule</p>
+</td>
+<td>
+<p>Actium::Sked::Trip</p>
+</td>
+<td>
+<p>Mostly the same as Actium::O::Sked::Trip</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Role representing a collection of trips 
+</p>
+</td>
+<td>
+<p>Actium::Sked::TripCollection</p>
+</td>
+<td>
+<p>Each schedule has exactly one set of trips, so this can be a
+role that is applied to Actium::Sked</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing a time on a schedule</p>
+</td>
+<td>
+<p>Actium::Sked::Trip::Time</p>
+</td>
+<td>
+<p>This contains an Actium::Time object, but also information on
+whether it is interpolated by Actium, provided as part of the
+import, or whether it is actually doesn’t stop there at all for
+this trip. 
+</p>
+</td>
+<td>
+<p>X</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Role representing a collection of times</p>
+</td>
+<td>
+<p>Actium::Sked::Trip::
+TimeCollection</p>
+</td>
+<td>
+<p>The trip has a set of times associated with stops, and one associated
+with places, and this object represents those sets.
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td colspan="4">
+<p><b>SCHEDULE – of a stop</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing a bus stop’s schedules</p>
+</td>
+<td>
+<p>Actium::Sked::
+StopSkedCollection</p>
+</td>
+<td>
+<p>Contains the information related to a bus stop: what lines stop
+there and when. The information on a point schedule. 
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing schedules at a bus stop</p>
+</td>
+<td>
+<p>Actium::Sked::StopSked</p>
+</td>
+<td>
+<p><a name="_GoBack"></a>Contains the schedule information just
+about one line at a stop: the times here, what the destination is
+of each route that stops here, etc. Represents the column of a
+point schedule, and also the data on each flag decal.</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Trip of a schedule at a bus stop</p>
+</td>
+<td>
+<p>Actium::Sked::StopSked::Trip</p>
+</td>
+<td>
+<p>Contains an Actium::Sked::Trip::Time object but also has
+information found in kpoints and the patinfo struct in FlagSpecs.
+A time of a point schedule, including notes etc.</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td colspan="4">
+<p><b>IMPORT – Modules representing various formats imported
+into Actium</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing a Xhea import 
+</p>
+</td>
+<td>
+<p>Actium::Import::Xhea</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Objects for each Xhea table</p>
+</td>
+<td>
+<p>Actium::Import::Xhea::*</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing a GTFS import</p>
+</td>
+<td>
+<p>Actium::Import::GTFS</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Objects for each GTFS file</p>
+</td>
+<td>
+<p>Actium::Import::GTFS::*</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Objects/routines shared among import formats</p>
+</td>
+<td>
+<p>Actium::Import::*</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td colspan="4">
+<p><b>SITES, SIGNS, STOPS</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing a point in space that should have
+information</p>
+</td>
+<td>
+<p>Actium::Site</p>
+</td>
+<td>
+<p>Distinct from a stop in that it includes places that are not
+stops (e.g., TID locations). Distinct from a sign in that multiple
+physical signs can be placed there (e.g., when two or more pole
+schedules or TIDs are needed).</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing a physical sign (with a paper insert)</p>
+</td>
+<td>
+<p>Actium::Sign</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing a bus stop</p>
+</td>
+<td>
+<p>Actium::Stop</p>
+</td>
+<td>
+<p>Sites have (optionally) stops, sites have (usually) signs</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td colspan="4">
+<p><b>COMPARISON OBJECTS/CLASSES</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Comparison between two schedules</p>
+</td>
+<td>
+<p>Actium::Compare::Skeds</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Comparison between sets of stops</p>
+</td>
+<td>
+<p>Actium::Compare::Stops</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td colspan="4">
+<p><b>DATABASE</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Object representing Actium database</p>
+</td>
+<td>
+<p>Actium::DB</p>
+</td>
+<td>
+<p>This represents the content of the Actium database rather than
+the underlying database mechanism. Anything that wouldn’t change
+if the database were suddenly moved from one database software to
+another.</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Objects representing Actium database tables</p>
+</td>
+<td>
+<p>Actium::DB::Stops, Actium::DB::PubTimetables, etc.</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Roles for common behavior among database table classes (such as
+caches)</p>
+</td>
+<td>
+<p>Actium::DB::Table if just one, otherwise named for behavior</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td colspan="4">
+<p><b>APPLICATION ENVIRONMENT</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Environment objects</p>
+</td>
+<td>
+<p>Actium::Env::.*</p>
+</td>
+<td>
+<p>These objects are what are returned by Actium::env() . If there are ever other ones besides the CLI object, they will be Actium::Env::Web, Actium::Env::Cocoa, or whatever.</p>
+</td>
+<td>
+<p>
+X
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Command line interface class</p>
+</td>
+<td>
+<p>Actium::Env::CLI</p>
+</td>
+<td>
+<p>The idea is that this would create the Actium::Env object. Most
+of what was Actium::O::Cmd</p>
+</td>
+<td>
+<p>
+X
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Command line options</p>
+</td>
+<td>
+<p>Actium::Env::CLI::Option</p>
+</td>
+<td>
+<p>What was Actium::O::Cmd::Option</p>
+</td>
+<td>
+<p>
+X
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Terminal input/output</p>
+</td>
+<td>
+<p>Actium::Env::CLI::Crier</p>
+</td>
+<td>
+<p> </p>
+</td>
+<td>
+<p>
+X
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Commands</p>
+</td>
+<td>
+<p>Actium::Cmd</p>
+</td>
+<td>
+<p>Actual command modules go into Actium::Cmd, as opposed to
+things that work on the environment such as Actium::Env::CLI::Crier 
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td colspan="4">
+<p><b>STORAGE</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Folder object</p>
+</td>
+<td>
+<p>Actium::Storage::Folder</p>
+</td>
+<td>
+<p>Relates to Path::Class::Dir</p>
+</td>
+<td>
+<p>X</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>File object</p>
+</td>
+<td>
+<p>Actium::Storage::File</p>
+</td>
+<td>
+<p>Relates to Path::Class:File</p>
+</td>
+<td>
+<p>X</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>FileMaker database class</p>
+</td>
+<td>
+<p>Actium::Storage::FileMaker</p>
+</td>
+<td>
+<p>Low-level database access</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td colspan="4">
+<p><b>MORE PRIMITIVE DATA TYPES</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Time object</p>
+</td>
+<td>
+<p>Actium::Time</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>X</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Date object (to compare dates)</p>
+</td>
+<td>
+<p>Actium::Date</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+X
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Days of service object</p>
+</td>
+<td>
+<p>Actium::Days</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+X
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Direction object</p>
+</td>
+<td>
+<p>Actium::Dir</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+X
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Text object and classes</p>
+</td>
+<td>
+<p>Actium::Text</p>
+</td>
+<td>
+<p>Used for multilingual output, InDesign or HTML tags, etc</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Set / combinatorics</p>
+</td>
+<td>
+<p>Actium::Set</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+<td>
+<p>
+
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Type library</p>
+</td>
+<td>
+<p>Actium::Types</p>
+</td>
+<td>
+<p>Probably should move to Type::Tiny</p>
+</td>
+<td>
+<p>
+X
+</p>
+</td>
+</tr>
+<tr valign="top">
+<td colspan="4">
+<p><b>Misc</b></p>
+</td>
+</tr>
+<tr valign="top">
+<td>
+<p>Map repository</p>
+</td>
+<td>
+<p>Actium::MapRepository</p>
+</td>
+<td>
+<p>We need to consider the larger issue of digital asset
+management. 
+</p>
+</td>
+</tr>
 </table>
-<p><br/>
-<br/>
+<p>
+
 
 </p>
 </body>

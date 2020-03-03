@@ -1,66 +1,23 @@
-package Actium::Storage::Ini 0.011;
+package Actium::Storage::Ini 0.015;
+# vimcolor: #FFCCCC
+
+use Actium        ('class');
+use Actium::Types ('File');
+
+use MooseX::SingleArg;    ### DEP ###
+single_arg 'file';
 
 # Class for reading .ini files.
 # At the moment, and possibly permanently, a thin wrapper around
 # Config::Tiny, but could be more later. Maybe.
 
-use Actium        ('class');
-use Actium::Types ('ActiumFolderLike');
+use Config::Tiny;    ### DEP ###
 
-use File::HomeDir;    ### DEP ###
-use Config::Tiny;     ### DEP ###
-
-around BUILDARGS ($orig, $class : slurpy @ ) {
-
-    my %args;
-
-    # one arg, hashref: args are in hashref
-    # one arg, not hashref: one arg is filename
-    # more than one arg: args are hash
-
-    if ( @_ == 1 ) {
-        if ( u::reftype $_[0] and u::reftype $_[0] eq 'HASH' ) {
-            %args = %{ $_[0] };
-        }
-        else {
-            %args = ( filename => $_[0] );
-        }
-    }
-    else {
-        %args = (@_);
-    }
-
-    #$args{folder} //= $ENV{HOME};
-    $args{folder} //= File::HomeDir::->my_home;
-
-    return $class->$orig(%args);
-
-} ## tidy end: around BUILDARGS
-
-has 'filename' => (
-    isa => 'Str',
-    is  => 'ro',
-);
-
-has 'folder' => (
-    isa    => ActiumFolderLike,
-    is     => 'ro',
+has 'file' => (
+    isa    => File,
+    reader => '_file',
     coerce => 1,
 );
-
-has 'filespec' => (
-    is       => 'ro',
-    init_arg => undef,
-    builder  => '_build_filespec',
-    lazy     => 1,
-);
-
-sub _build_filespec {
-    my $self     = shift;
-    my $folder   = $self->folder;
-    my $filespec = $folder->make_filespec( $self->filename );
-    return $filespec;
-}
 
 has '_values_r' => (
     is      => 'ro',
@@ -69,15 +26,23 @@ has '_values_r' => (
     builder => '_build_values',
 );
 
-sub _build_values {
-    my $self   = shift;
-    my $config = Config::Tiny::->read( $self->filespec );
+method BUILD {
+    $self->sections;
+    # that could be anything that runs _build_values
+    # I wanted to just not make _values_r lazy, but it depends on _file
+}
+
+method _build_values {
+    if ( not $self->_file->exists ) {
+        my $empty_hoh = +{ '_' => +{} };
+        return $empty_hoh;
+    }
+    my $string = $self->_file->slurp_text;
+    my $config = Config::Tiny::->read_string($string);
     if ( not defined $config ) {
         my $errstr = Config::Tiny::->errstr;
-        if ( $errstr =~ /does not exist/i or $errstr =~ /no such file/i ) {
-            return +{ '_' => +{} };
-        }
-        croak $errstr;
+        $errstr = 'Unknown error' if not defined $errstr or $errstr eq $EMPTY;
+        croak __PACKAGE__ . ': ' . $errstr;
     }
     my $ini_hoh = { %{$config} };
     # shallow clone, in order to get an unblessed copy
@@ -85,14 +50,11 @@ sub _build_values {
 }
 
 method value ( :$section = '_' , :$key!  ) {
-
     my $ini_hoh = $self->_values_r;
     return $ini_hoh->{$section}{$key};
 }
 
-sub section {
-    my $self    = shift;
-    my $section = shift // '_';
+method section ( $section = '_' ) {
     my $ini_hoh = $self->_values_r;
     if ( exists $ini_hoh->{$section} ) {
         return wantarray ? %{ $ini_hoh->{$section} } : $ini_hoh->{$section};
@@ -100,70 +62,93 @@ sub section {
     return;
 }
 
-sub sections {
-    my $self    = shift;
+method sections {
     my $ini_hoh = $self->_values_r;
-    return keys %{$ini_hoh};
+    return sort keys %{$ini_hoh};
 }
 
 1;
 
 __END__
 
-
 =encoding utf8
 
 =head1 NAME
 
-<name> - <brief description>
+Actium::Storage::Ini - Configuration using .ini files
 
 =head1 VERSION
 
-This documentation refers to version 0.003
+This documentation refers to version 0.015
 
 =head1 SYNOPSIS
 
- use <name>;
- # do something with <name>
-   
+ use Actium::Storage::Ini;
+ my $ini = Actium::Storage::Ini->new('/path/to/file');
+
+ my @sections = $ini->sections;
+ my %values_of_section = $ini->section($sections[0]);
+ my $value = $ini->value(section => $section[1], key => 'key');
+
 =head1 DESCRIPTION
 
-A full description of the module and its features.
+Actium::Storage::Ini provides methods to access the values from .ini
+files. It is a thin wrapper around L<Config::Tiny|Config::Tiny>. See
+that module for more information about how the files are processed.
 
-=head1 SUBROUTINES or METHODS (pick one)
+=head1 CONSTRUCTION
 
-=over
+Pass a file specification, either as a string or as an
+Actium::Storage::File object, to the class method "new."
 
-=item B<subroutine()>
+ Actium::Storage::Ini->new('/any/file/path');
 
-Description of subroutine.
+=head1 METHODS 
 
-=back
+=head2 section
+
+ my $hashref = $ini->section();
+ my %hash = $ini->section('sectionname');
+
+Returns the entire section of the .ini file.  Returns a list of keys
+and values (in list context), or a reference to a hash (in scalar
+context).  If no section name is passed as an argument, returns the
+section '_'.
+
+If the section doesn't exist, returns nothing (in list context), or
+undef (in scalar context).
+
+=head2 sections
+
+ my @sections = $ini->sections;
+
+Returns the list of sections in the file.
+
+=head2 value
+
+ my $value = value ( section => 'section name', key => 'key name');
+
+Returns a single value.  Accepts two named parameters: 'key' (which is
+mandatory' and 'section' (which, if not supplied, defaults to '_').
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties that
-can be se. These descriptions must also include details of any
-configuration language used.
+If any error is found from Config::Tiny, it will croak. See that module
+for specific errors.
 
 =head1 DEPENDENCIES
 
-List its dependencies.
+=over
 
-=head1 BUGS
+=item * 
 
-Sections and keys are case-sensitive.
+Actium
 
+=item *
+
+Config::Tiny
+
+=back
 
 =head1 AUTHOR
 
@@ -171,22 +156,25 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2017
+Copyright 2014-2018
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either:
 
 =over 4
 
-=item * the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any
-later version, or
+=item *
 
-=item * the Artistic License version 2.0.
+the GNU General Public License as published by the Free Software
+Foundation; either version 1, or (at your option) any later version, or
+
+=item *
+
+the Artistic License version 2.0.
 
 =back
 
 This program is distributed in the hope that it will be useful, but
-WITHOUT  ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
