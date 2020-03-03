@@ -44,7 +44,7 @@ while (<$trip>) {
     $tpat{$pat_id}{tpat_via}         = 1;
     $tpat{$pat_id}{tpat_trips_match}++;
 
-}    ## tidy end: while (<$trip>)
+} ## tidy end: while (<$trip>)
 
 close $trip;
 

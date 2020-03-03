@@ -243,7 +243,7 @@ our @EXPORT = qw/$EMPTY $CRLF $SPACE env/;
 
     sub import {
         my $class = shift;
-        my $type  = shift // q{};
+        my $type = shift // q{};
         $caller = caller;
 
         __PACKAGE__->export_to_level(1);

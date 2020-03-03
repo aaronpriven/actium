@@ -1,16 +1,14 @@
-package Octium::O::Points::BPoint 0.013;
+package Actium::O::Points::BPoint 0.013;
 
 # object representing an entire point schedule
 
 use Actium ('class');
-use Octium;
 
-const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 const my $KFOLDER => 'kpoints';
 
 has actiumdb => (
     is       => 'ro',
-    isa      => 'Octium::O::Files::ActiumDB',
+    isa      => 'Actium::O::Files::ActiumDB',
     required => 1,
 );
 
@@ -24,11 +22,11 @@ has 'nonstop' => (
 has [
     qw/stopid signid delivery agency signtype
       description description_nocity city tidfile/
-  ] => (
+] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
-  );
+);
 
 has copyquantity => (
     is      => 'ro',
@@ -38,13 +36,13 @@ has copyquantity => (
 
 has effdate => (
     is       => 'ro',
-    isa      => 'Octium::O::DateTime',
+    isa      => 'Actium::O::DateTime',
     required => 1,
 );
 
 has signup => (
     is       => 'ro',
-    isa      => 'Octium::O::Folders::Signup',
+    isa      => 'Actium::O::Folders::Signup',
     required => 1,
 );
 
@@ -96,7 +94,7 @@ has error_r => (
 has 'box_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Maybe[Octium::O::Points::Column]]',
+    isa     => 'ArrayRef[Maybe[Actium::O::Points::Column]]',
     builder => '_build_boxes',
     lazy    => 1,
     handles => { boxes => 'elements', },
@@ -121,7 +119,7 @@ method _build_boxes {
         while (<$kpoint>) {
 
             chomp;
-            my $box = Octium::O::Points::Box->new(
+            my $box = Actium::O::Points::Box->new(
                 kpointline     => $_,
                 actiumdb       => $self->actiumdb,
                 display_stopid => $box_stopid,
@@ -163,7 +161,7 @@ method _build_boxes {
 
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
-            my $lines = Actium::joinseries( items => \@notfound );
+            my $lines = u::joinseries(@notfound);
             $self->push_error(
                 "$linetext $lines found in omit list but not in schedule data."
             );
@@ -177,16 +175,17 @@ __END__
 
 const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 
+use Actium::Sorting::Line (qw(byline sortbyline));
 use List::Compare::Functional('get_unique');    ### DEP ###
-use Octium::O::DateTime;
+use Actium::O::DateTime;
 
 const my $IDPOINTFOLDER => 'idpoints2019';
 const my $KFOLDER       => 'kpoints';
 
-use Octium::O::Points::Box;
+use Actium::O::Points::Box;
 
-use Octium::Text::InDesignTags;
-const my $IDT        => 'Octium::Text::InDesignTags';
+use Actium::Text::InDesignTags;
+const my $IDT        => 'Actium::Text::InDesignTags';
 const my $IDBOXBREAK => $IDT->boxbreak;
 const my $NBSP       => $IDT->nbsp;
 
@@ -207,13 +206,13 @@ has copyquantity => (
 
 has effdate => (
     is       => 'ro',
-    isa      => 'Octium::O::DateTime',
+    isa      => 'Actium::O::DateTime',
     required => 1,
 );
 
 has signup => (
     is       => 'ro',
-    isa      => 'Octium::O::Folders::Signup',
+    isa      => 'Actium::O::Folders::Signup',
     required => 1,
 );
 
@@ -241,7 +240,7 @@ has heights => (
 
 has actiumdb => (
     is       => 'ro',
-    isa      => 'Octium::O::Files::ActiumDB',
+    isa      => 'Actium::O::Files::ActiumDB',
     required => 1,
 );
 
@@ -308,7 +307,7 @@ has 'note600' => (
 has 'box_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Maybe[Octium::O::Points::Column]]',
+    isa     => 'ArrayRef[Maybe[Actium::O::Points::Column]]',
     default => sub { [] },
     handles => {
         boxes      => 'elements',
@@ -406,7 +405,7 @@ sub make_headers_and_footnotes {
             $box->$set_primary_attr( $primary{$attr} );
         }
 
-        my @head_lines = Actium::sortbyline keys %{ $seen{line} };
+        my @head_lines = sortbyline keys %{ $seen{line} };
         $box->set_head_line_r( \@head_lines );
 
         # if more than one line, mark the footnote to it as being seen
@@ -511,7 +510,7 @@ my $takes_up_columns_cr = sub {
     my $fits_in_cols = 0;
 
     foreach my $height (@heights) {
-        $fits_in_cols += Actium::ceil( $height / $col_height );
+        $fits_in_cols += u::ceil( $height / $col_height );
     }
 
     return $fits_in_cols;
@@ -521,7 +520,7 @@ my $takes_up_columns_cr = sub {
 my $columnsort_cr = sub {
     my ( $aa, $bb ) = @_;
     return (
-             Actium::byline( $aa->head_line(0), $bb->head_line(0) )
+             byline( $aa->head_line(0), $bb->head_line(0) )
           or $ewreplace->( $aa->dircode ) <=> $ewreplace->( $bb->dircode )
           or $aa->days cmp $bb->days
           or $aa->primary_destination cmp $bb->primary_destination
@@ -567,7 +566,7 @@ sub determine_subtype {
 
     }    ## tidy end: foreach my $column ( $self->...)
 
-    @all_heights = reverse sort { $a->[0] <=> $b->[0] || Actium::byline( $a, $b ) }
+    @all_heights = reverse sort { $a->[0] <=> $b->[0] || u::byline( $a, $b ) }
       @all_heights;
     @all_heights = map { $_->[0] . ":" . $_->[1] } @all_heights;
     $self->set_heights("@all_heights");
@@ -589,7 +588,7 @@ sub determine_subtype {
             # divide chunks into single schedules and try again
 
             my $chunkid_to_split
-              = Actium::first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
+              = u::first { scalar( @{ $heights_of_chunk{$_} } ) > 1 }
             sort keys %heights_of_chunk;
 
             if ($chunkid_to_split) {
@@ -614,7 +613,7 @@ sub determine_subtype {
         my %tallest_of_chunk;
         foreach my $chunk_id ( keys %heights_of_chunk ) {
             $tallest_of_chunk{$chunk_id}
-              = Actium::max( @{ $heights_of_chunk{$chunk_id} } );
+              = u::max( @{ $heights_of_chunk{$chunk_id} } );
         }
 
         my @chunkids_by_length = reverse
@@ -879,11 +878,11 @@ sub format_columns {
         if ($column_length) {
 
             my $count = $column->formatted_time_count;
-            my $width = Actium::ceil( $count / $column_length );
-            $column_length = Actium::ceil( $count / $width );
+            my $width = u::ceil( $count / $column_length );
+            $column_length = u::ceil( $count / $width );
 
             my @ft;
-            my $iterator = Actium::natatime $column_length, $column->formatted_times;
+            my $iterator = u::natatime $column_length, $column->formatted_times;
             while ( my @formatted_times = $iterator->() ) {
                 push @ft, join( "\r", @formatted_times );
             }
@@ -957,7 +956,7 @@ sub format_side {
 
 }    ## tidy end: sub format_side
 
-# TODO - allow all values in Octium::O::Days
+# TODO - allow all values in Actium::O::Days
 my %text_of_exception = (
     SD     => 'school days only',
     SH     => 'school holidays only',
@@ -1017,7 +1016,7 @@ sub format_sidenotes {
             $dest =~ s/\.*$/\./;
         }
 
-        # TODO - Update to allow all values in Octium::O::Days
+        # TODO - Update to allow all values in Actium::O::Days
         if ( $attr{exception} ) {
             $exc = $text_of_exception{ $attr{exception} };
         }

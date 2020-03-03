@@ -1,9 +1,8 @@
-package Octium::O::Sked::Comparison 0.014;
+package Actium::O::Sked::Comparison 0.014;
 
 use Actium ('class');
-use Octium;
 use Algorithm::Diff;
-use Octium::O::Sked;
+use Actium::O::Sked;
 
 const my $ONLY_NEW  => 2;
 const my $ONLY_OLD  => 3;
@@ -11,7 +10,7 @@ const my $DIFFER    => 1;
 const my $IDENTICAL => 0;
 
 has [qw/oldsked newsked/] => (
-    isa      => 'Maybe[Octium::O::Sked]',
+    isa      => 'Maybe[Actium::O::Sked]',
     is       => 'ro',
     required => 0,
 );
@@ -76,7 +75,7 @@ method new_id {
 
 method _set_sortkey_from_id ($id!) {
     my ( $lg, $rest ) = split( /_/, $id, 2 );
-    $lg = Actium::linekeys($lg);
+    $lg = Actium::Sorting::Line::linekeys($lg);
     $self->_set_sortkey( $lg . "_$rest" );
     # avoids doing a natural sort on the days,
     # which would sort "67" before "12345"

@@ -373,7 +373,7 @@ method _push_cry {
     Scalar::Util::weaken( ${$cries_r}[-1] );
 }
 
-method cry0  { $self->cry( @_, { importance => 0 } ) }
+method cry0 { $self->cry( @_, { importance => 0 } ) }
 method cry1 { $self->cry( @_, { importance => 1 } ) }
 method cry2 { $self->cry( @_, { importance => 2 } ) }
 method cry3 { $self->cry( @_, { importance => 3 } ) }

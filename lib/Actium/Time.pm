@@ -373,7 +373,7 @@ method formatted (
 
 }
 
-has [qw/ap ap_noseparator apbx apbx_noseparator/] => (
+has [qw/ap ap_noseparator apbx apbx_noseparator t24/] => (
     isa      => 'Str',
     is       => 'ro',
     lazy     => 1,
@@ -383,6 +383,10 @@ has [qw/ap ap_noseparator apbx apbx_noseparator/] => (
 
 method _build_ap {
     return $self->formatted( format => '12ap' );
+}
+
+method _build_t24 {
+    return $self->formatted( format => '24' );
 }
 
 method _build_apbx {
