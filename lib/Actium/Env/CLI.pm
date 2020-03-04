@@ -727,12 +727,12 @@ sub _signup_package {
     my $self   = shift;
     my $is_new = shift;
 
-    require Actium::Signup;
+    require Octium::O::Folders::Signup;
 
     has signup => (
         is      => 'ro',
         builder => ( $is_new ? '_build_newsignup' : '_build_signup' ),
-        isa     => 'Actium::Signup',
+        isa     => 'Octium::O::Folders::Signup',
         lazy    => 1,
     );
 
@@ -793,24 +793,24 @@ sub _signup_with_old_package {
 }
 
 method _build_newsignup {
-    return Actium::Signup::->new(
-        is_new      => 1,
-        base_folder => $self->option('base'),
-        name        => $self->option('signup')
+    return Octium::O::Folders::Signup::->new(
+        is_new => 1,
+        base   => $self->option('base'),
+        signup => $self->option('signup')
     );
 }
 
 method _build_signup {
-    return Actium::Signup::->new(
-        base_folder => $self->option('base'),
-        name        => $self->option('signup')
+    return Octium::O::Folders::Signup->new(
+        base   => $self->option('base'),
+        signup => $self->option('signup')
     );
 }
 
 method _build_oldsignup {
-    return Actium::Signup::->new(
-        base_folder => ( $self->option('oldbase') // $self->option('base') ),
-        name => $self->option('oldsignup'),
+    return Octium::O::Folders::Signup->new(
+        base => ( $self->option('oldbase') // $self->option('base') ),
+        signup => $self->option('oldsignup'),
     );
 
 }
