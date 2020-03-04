@@ -553,22 +553,6 @@ sub _build_place_md5 {
 
 }
 
-sub _build_place_md5 {
-    my $self = shift;
-    # build an MD5 digest from the placetimes and  places
-    require Digest::MD5;    ### DEP ###
-
-    my @sked_stream = ( u::jointab( $self->place4s ) );
-
-    foreach my $trip ( $self->trips ) {
-        push @sked_stream, u::jointab( $trip->placetimes );
-    }
-
-    my $digest = Digest::MD5::md5_hex( join( $KEY_SEPARATOR, @sked_stream ) );
-    return $digest;
-
-}
-
 sub _build_linedir {
     my $self = shift;
     return join( $KEY_SEPARATOR, $self->linegroup, $self->dircode );

@@ -389,22 +389,6 @@ method compare_to ( Octium::O::Sked::Collection $newcollection) {
     );
 }
 
-method compare_from ( Actium::O::Sked::Collection $oldcollection) {
-    require Actium::O::Sked::ComparisonGroup;
-    return Actium::O::Sked::ComparisonGroup->new(
-        oldskeds => $oldcollection,
-        newskeds => $self
-    );
-}
-
-method compare_to ( Actium::O::Sked::Collection $newcollection) {
-    require Actium::O::Sked::ComparisonGroup;
-    return Actium::O::Sked::ComparisonGroup->new(
-        oldskeds => $self,
-        newskeds => $newcollection
-    );
-}
-
 Actium::immut;
 
 1;
