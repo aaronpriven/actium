@@ -8,10 +8,6 @@ use Octium;
 const my $BASE_CLASS => 'Octium::O::Folder';
 extends $BASE_CLASS;
 
-#around BUILDARGS => sub {
-#    my $orig  = shift;
-#    my $class = shift;
-
 around BUILDARGS ( $orig, $class: @ ) {
 
     my $first_argument = shift;
