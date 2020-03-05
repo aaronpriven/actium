@@ -227,7 +227,7 @@ sub as_plurals {
     my $schooldaycode = $self->schooldaycode;
 
     my @as_plurals = map { $PLURAL_OF{$_} } split( //, $seriescode );
-    my $results = Actium::joinseries( items => @as_plurals );
+    my $results = Actium::joinseries( items => \@as_plurals );
 
     if ( $PLURAL_SCHOOL_OF{$schooldaycode} ) {
         $results .= $PLURAL_SCHOOL_OF{$schooldaycode};
@@ -309,7 +309,7 @@ sub _build_as_specday {
     env->wail("$daycode gives blank as_plurals in specday")
       if not @as_plurals;
 
-    $specday .= Actium::joinseries( items => @as_plurals ) . ' only';
+    $specday .= Actium::joinseries( items => \@as_plurals ) . ' only';
 
     return $specday;
 }    ## tidy end: sub _build_as_specday
