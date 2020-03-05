@@ -78,7 +78,7 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
     my %init_args = (
         %params,
         subcommand => $subcommand // $EMPTY,
-        _help_type => $help_type  // $EMPTY,
+        _help_type => $help_type // $EMPTY,
         argv       => \@new_argv,
     );
 
@@ -433,9 +433,6 @@ sub _build_options {
 
     foreach my $obj (@objs) {
         push @option_specs, $obj->spec unless $obj->no_command;
-        if ( defined $obj->default ) {
-            $options{ $obj->name } = $obj->default;
-        }
     }
 
     my @argv = $self->argv;
@@ -445,6 +442,13 @@ sub _build_options {
         say STDERR "Error parsing command-line options.\n";
         %options = ( help => 1 );
     }
+
+    foreach my $obj (@objs) {
+        if ( defined $obj->default ) {
+            $options{ $obj->name } //= $obj->default;
+        }
+    }
+
     $self->_set_argv_r( \@argv );
     # replace old argv with new one without options in it
 
@@ -809,7 +813,7 @@ method _build_signup {
 
 method _build_oldsignup {
     return Octium::O::Folders::Signup->new(
-        base => ( $self->option('oldbase') // $self->option('base') ),
+        base   => ( $self->option('oldbase') // $self->option('base') ),
         signup => $self->option('oldsignup'),
     );
 
