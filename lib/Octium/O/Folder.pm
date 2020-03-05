@@ -436,7 +436,9 @@ sub slurp_read {
       unless -e $filespec;
 
     require File::Slurper;
-    return scalar File::Slurper::read_text($filespec);
+    my $result = scalar File::Slurper::read_text($filespec);
+    $cry->done;
+    return $result;
 
 }
 
