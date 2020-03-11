@@ -32,11 +32,11 @@ const my $NBSP         => $IDT->nbsp;
 has [
     qw/stopid signid delivery agency signtype
       description description_nocity city tidfile/
-] => (
+  ] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
-);
+  );
 
 has copyquantity => (
     is      => 'ro',
@@ -574,8 +574,8 @@ sub determine_subtype {
 
     }
 
-    @all_heights
-      = reverse sort { $a->[0] <=> $b->[0] || Actium::byline( $a, $b ) }
+    @all_heights = reverse
+      sort { $a->[0] <=> $b->[0] || Actium::byline( $a->[1], $b->[1] ) }
       @all_heights;
     @all_heights = map { $_->[0] . ":" . $_->[1] } @all_heights;
     $self->set_heights("@all_heights");
