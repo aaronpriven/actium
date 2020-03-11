@@ -80,7 +80,7 @@ method tabxchange (
     # lines 7 - one line per bus line
     foreach my $line ( $self->lines ) {
         my $line_row_r = $actiumdb->line_row_r($line);
-        my $color      = $line_row_r->{Color} // 'Default';
+        my $color = $line_row_r->{Color} // 'Default';
         $color = 'Default'
           if not $actiumdb->color_exists($color);
         my $color_row_r = $actiumdb->color_row_r($color);
@@ -342,7 +342,15 @@ method tabxchange (
 
     $placetimes_aoa->push_col( $EMPTY x $placetimes_aoa->height() );
 
-    return $aoa->tsv . $placetimes_aoa->tsv;
+    my $text;
+    foreach \my @row( $aoa->@*, $placetimes_aoa->@* ) {
+        $_ //= $EMPTY foreach @row;
+        $text .= join( "\t", @row ) . "\n";
+    }
+
+    return $text;
+    #return $aoa->tsv . $placetimes_aoa->tsv;
+    # that routine prunes, ancient tab files don't
 
 }    ## tidy end: method tabxchange
 
