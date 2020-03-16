@@ -145,7 +145,7 @@ sub START {
     # on the command line
 
     unless ($run_agency) {
-        $load_cry->d_error;
+        $load_cry->error;
         die 'Agency ' . env->option('agency') . " not found.\n";
     }
 
@@ -287,7 +287,7 @@ sub START {
                 $makepoints_cry->wail(
                     "No signtype of signs to generate matches $signtype_opt "
                       . 'specified on command line.' );
-                $makepoints_cry->d_error;
+                $makepoints_cry->error;
                 exit 1;
             }
             %signtype_matches = map { ( $_, 1 ) } @matching_signtypes;
@@ -302,7 +302,7 @@ sub START {
                 $makepoints_cry->wail(
                     "No delivery of signs to generate matches $delivery_opt "
                       . 'specified on command line.' );
-                $makepoints_cry->d_error;
+                $makepoints_cry->error;
                 exit 1;
             }
             %delivery_matches = map { $_, 1 } @matching_deliveries;
@@ -656,7 +656,7 @@ sub START {
                         $_ = substr( $_, 0, $max_length ) foreach @cities;
                         $cluster_display = join( ',', sort @cities );
                         $max_length--;
-                      } until length($cluster_display)
+                    } until length($cluster_display)
                       <= $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH;
 
                     $cluster_of_city{$city} = $cluster_display;
@@ -806,7 +806,7 @@ sub START {
     }
     else {
         my $error_cry = env->cry('No errors to log');
-        $error_cry->d_ok;
+        $error_cry->bliss;
     }
 
     ### HEIGHTS DISPLAY
