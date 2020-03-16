@@ -94,13 +94,13 @@ sub _build_files_list {
       = bsd_glob( $self->_flat_filespec(q<*>), GLOB_NOCASE | GLOB_NOSORT );
 
     if (File::Glob::GLOB_ERROR) {
-        env->last_cry->d_error;
+        env->last_cry->error;
         croak 'Error reading list of filenames in Hastus AVL Standard '
           . "folder $flats_folder: $OS_ERROR";
     }
 
     if ( not scalar @all_files ) {
-        last_cry()->d_error;
+        env->last_cry->error;
         croak "No files found in Hastus AVL Standard folder $flats_folder";
     }
 
@@ -169,7 +169,7 @@ sub _load {
 
         my $result = open my $fh, '<', $filespec;
         if ( not $result ) {
-            $cry->d_error;
+            $cry->error;
             croak "Can't open $filespec for reading: $OS_ERROR";
         }
 
@@ -309,13 +309,13 @@ beginning and end of each field.
 
         }
         if ( not $template_of{$table} ) {
-            last_cry()->d_error;
+            env->last_cry->error;
             croak "Unable to determine columns of $table in $filespec\n"
               . '(never found a line with the right number)';
         }
 
         if ( not seek $fh, 0, 0 ) {
-            last_cry()->d_error;
+            env->last_cry->error;
             croak
               "Couldn't return seek position to top of $filespec: $OS_ERROR";
         }

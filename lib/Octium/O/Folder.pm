@@ -508,7 +508,7 @@ sub retrieve {
     my $data_r = Storable::retrieve($filespec);
 
     unless ($data_r) {
-        $cry->d_error();
+        $cry->error();
         croak "Can't retreive $filespec: $OS_ERROR";
     }
 
@@ -529,7 +529,7 @@ sub store {
     my $result = Storable::nstore( $data_r, $filespec );
 
     unless ($result) {
-        $cry->d_error;
+        $cry->error;
         croak "Can't store $filespec: $OS_ERROR";
     }
 
@@ -727,7 +727,7 @@ sub write_file_with_method {
     my $file = $self->make_filespec($filename);
 
     unless ( open $out, '>', $file ) {
-        $cry->d_error;
+        $cry->error;
         croak "Can't open $file for writing: $OS_ERROR";
     }
 
@@ -744,7 +744,7 @@ sub write_file_with_method {
       or croak "Can't print to $file: $OS_ERROR";
 
     unless ( close $out ) {
-        $cry->d_error;
+        $cry->error;
         croak "Can't close $file for writing: $OS_ERROR";
     }
 
@@ -783,7 +783,7 @@ sub write_files_from_hash {
         print $out $hash{$key} or die "Can't print to $file: $OS_ERROR";
 
         unless ( close $out ) {
-            $cry->d_error;
+            $cry->error;
             die "Can't close $file for writing: $OS_ERROR";
         }
 

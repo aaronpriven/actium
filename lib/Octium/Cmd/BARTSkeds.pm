@@ -160,7 +160,7 @@ sub get_firstlast {
 
             \my @trains = get_sked( $date, $route );
             if ( not @trains ) {
-                $route_cry->d_info( 'SKIP',
+                $route_cry->info( 'SKIP',
                     { closetext => "Skipping this route" } );
             }
             else {
@@ -305,7 +305,7 @@ sub get_dates {
             my $cry = env->last_cry;
             $cry->wail(
                 "Can't ask for BART schedules for past date $effective_date.");
-            $cry->d_error;
+            $cry->error;
             die;
         }
 

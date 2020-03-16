@@ -106,7 +106,7 @@ sub START {
       = $actiumdb->agency_or_abbr_row( env->option('agency') );
 
     unless ($run_agency) {
-        $makepoints_cry->d_error;
+        $makepoints_cry->error;
         die 'Agency ' . env->option('agency') . " not found.\n";
     }
 
@@ -171,7 +171,7 @@ sub START {
                 $makepoints_cry->wail(
                     "No signtype of signs to generate matches $signtype_opt "
                       . 'specified on command line.' );
-                $makepoints_cry->d_error;
+                $makepoints_cry->error;
                 exit 1;
             }
             %signtype_matches = map { ( $_, 1 ) } @matching_signtypes;
@@ -186,7 +186,7 @@ sub START {
                 $makepoints_cry->wail(
                     "No delivery of signs to generate matches $delivery_opt "
                       . 'specified on command line.' );
-                $makepoints_cry->d_error;
+                $makepoints_cry->error;
                 exit 1;
             }
             %delivery_matches = map { $_, 1 } @matching_deliveries;
@@ -397,7 +397,7 @@ sub START {
 
     my $listfile  = $LISTFILE_BASE . $run_name . '.txt';
     my $excelfile = $CHECKLIST_BASE . $run_name . '.xlsx';
-    my $list_cry  = env->cry "Writing list to $listfile";
+    my $list_cry  = env->cry("Writing list to $listfile");
 
     my $pointlist_folder = $signup->subfolder($POINTLIST_FOLDER);
 
@@ -523,7 +523,7 @@ sub START {
                         $_ = substr( $_, 0, $max_length ) foreach @cities;
                         $cluster_display = join( ',', sort @cities );
                         $max_length--;
-                      } until length($cluster_display)
+                    } until length($cluster_display)
                       <= $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH;
 
                     $cluster_of_city{$city} = $cluster_display;
@@ -606,7 +606,7 @@ sub START {
     close $list_fh || croak "Can't close $listfile: $ERRNO";
     $list_cry->done;
 
-    my $excel_cry = env->cry "Writing checklist to $excelfile";
+    my $excel_cry = env->cry("Writing checklist to $excelfile");
 
     {
 
@@ -644,7 +644,7 @@ sub START {
         my $error_count = scalar keys %errors;
 
         my $error_file = $ERRORFILE_BASE . $run_name . '.txt';
-        my $error_cry  = env->cry "Writing $error_count errors to $error_file";
+        my $error_cry  = env->cry("Writing $error_count errors to $error_file");
         #$error_cry->wail(join(" " , keys %errors) );
         my $error_fh = $pointlist_folder->open_write($error_file);
 
@@ -660,7 +660,7 @@ sub START {
     }
     else {
         my $error_cry = env->cry 'No errors to log';
-        $error_cry->d_ok;
+        $error_cry->ok;
     }
 
     ### HEIGHTS DISPLAY
