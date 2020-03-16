@@ -91,7 +91,7 @@ sub START {
                 $last_col + 1,
             )
         );
-        $process_cry->d_error;
+        $process_cry->error;
         die;
     }
 

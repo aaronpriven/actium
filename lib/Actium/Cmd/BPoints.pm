@@ -102,13 +102,13 @@ sub START {
 
     # retrieve data
 
-    my $makepoints_cry = cry 'Making InDesign bpoint schedule files';
+    my $makepoints_cry = cry('Making InDesign bpoint schedule files');
 
     my ( $run_agency, $run_agency_abbr, $run_agency_row )
       = $actiumdb->agency_or_abbr_row( $env->option('agency') );
 
     unless ($run_agency) {
-        $makepoints_cry->d_error;
+        $makepoints_cry->error;
         die 'Agency ' . $env->option('agency') . " not found.\n";
     }
 
@@ -173,7 +173,7 @@ sub START {
                 $makepoints_cry->text(
                     "No signtype of signs to generate matches $signtype_opt "
                       . 'specified on command line.' );
-                $makepoints_cry->d_error;
+                $makepoints_cry->error;
                 exit 1;
             }
             %signtype_matches = map { ( $_, 1 ) } @matching_signtypes;
@@ -188,7 +188,7 @@ sub START {
                 $makepoints_cry->text(
                     "No delivery of signs to generate matches $delivery_opt "
                       . 'specified on command line.' );
-                $makepoints_cry->d_error;
+                $makepoints_cry->error;
                 exit 1;
             }
             %delivery_matches = map { $_, 1 } @matching_deliveries;
@@ -662,7 +662,7 @@ sub START {
     }
     else {
         my $error_cry = cry 'No errors to log';
-        $error_cry->d_ok;
+        $error_cry->ok;
     }
 
     ### HEIGHTS DISPLAY

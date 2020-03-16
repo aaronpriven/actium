@@ -373,7 +373,7 @@ sub get_dates {
             my $cry = env->last_cry;
             $cry->wail(
                 "Can't ask for BART schedules for past date $effective_date.");
-            $cry->d_error;
+            $cry->error;
             die;
         }
 

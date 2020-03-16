@@ -432,10 +432,10 @@ sub load_tables {
                 if ( ( Actium::uniq @all_indexes ) == @all_indexes ) {
                     # indexes are all unique
                     $process_dupe = 0;
-                    $dupecry->d_no;
+                    $dupecry->no;
                 }
                 else {
-                    $dupecry->d_yes;
+                    $dupecry->yes;
                 }
             }
 

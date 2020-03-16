@@ -7,11 +7,11 @@ use HTTP::Request;                   ### DEP ###
 use LWP::UserAgent;                  ### DEP ###
 use XML::Twig;                       ### DEP ###
 use Date::Simple(qw/date today/);    ### DEP ###
-use Actium::O::2DArray;
+use Array::2D;
 
 use DDP;
 
-use Actium::Text::InDesignTags;
+use Octium::Text::InDesignTags;
 const my $IDT => 'Actium::Text::InDesignTags';
 
 const my $API_KEY => 'MW9S-E7SL-26DU-VV8V';
@@ -372,10 +372,10 @@ sub get_dates {
         }
 
         if ( $date_obj < $today ) {
-            my $cry = last_cry;
+            my $cry = env->last_cry;
             $cry->text(
                 "Can't ask for BART schedules for past date $effective_date.");
-            $cry->d_error;
+            $cry->error;
             die;
         }
 

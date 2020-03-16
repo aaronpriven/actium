@@ -29,17 +29,17 @@ sub START {
         my $in_sheet = Array::2D->new_from_file($input_file);
         @stopids = $in_sheet->col(0);
         @stopids = grep {/\A \d+ \z/sx} @stopids;
-        $stopidinput_cry->d_ok;
+        $stopidinput_cry->ok;
     }
     else {
         my $db_cry = env->cry('Getting stop IDs from database');
-        $db_cry->d_ok;
+        $db_cry->ok;
     }
 
     my $tabbed = Octium::Flags::flag_assignments_tabbed( $actiumdb, @stopids );
 
     unless ($tabbed) {
-        $assigncry->d_error;
+        $assigncry->error;
         return;
     }
 

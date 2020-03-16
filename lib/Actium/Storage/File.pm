@@ -230,7 +230,7 @@ method retrieve {
     require Storable;
     my $data_r = Storable::retrieve($self);
     unless ($data_r) {
-        $cry->d_error();
+        $cry->error();
         croak "Can't retreive $self: $!";
     }
     $cry->done;
@@ -270,7 +270,7 @@ method store ($data_r) {
     require Storable;
     my $result = Storable::nstore( $data_r, $self );
     unless ($result) {
-        $cry->d_error;
+        $cry->error;
         croak "Can't store $self: $!";
     }
     $cry->done;

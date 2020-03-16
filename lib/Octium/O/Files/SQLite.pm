@@ -213,7 +213,7 @@ sub _current_mtimes {
 
         my @stat = stat($filespec);
         unless ( scalar @stat ) {
-            env->last_cry->d_error;
+            env->last_cry->error;
             croak "Could not get file status for $filespec";
         }
         $mtimes .= "$file\t$stat[$STAT_MTIME]\t";
