@@ -24,7 +24,7 @@ my ( %workzone_of, %cluster_of );
 
 sub START {
 
-    my @ymd = qw/2019 12 15/;
+    my @ymd = qw/2020 03 29/;
     my $dt = Octium::O::DateTime::->new( ymd => \@ymd );
 
     my $config_obj = env->config;
@@ -47,8 +47,8 @@ sub START {
     my $excelfile = env->argv_idx(0);
 
     my ( $outfile, $oldext ) = Octium::file_ext($excelfile);
-    my $clusterfile = $outfile . '-clusters.txt';
-    $outfile .= "-zt.txt";
+    my $clusterfile = $outfile . '-clusters2.txt';
+    $outfile .= "-b2.txt";
 
     my $list    = Array::2D->new_from_xlsx($excelfile);
     my @headers = $list->shift_row;
@@ -116,14 +116,16 @@ sub _process_stop {
     @removed = grep !/^BS[DN]$/, @removed;
     my @unchanged = split( ' ', $stop[ $col{Unchanged} ] );
     @unchanged = grep !/^BS[DN]$/, @unchanged;
-    my $bagtext = $stop[ $col{'bag text id'} ];
-    $bagtext = $EMPTY unless $bagtext =~ /\w/;
+    my $bagtextid = "sp20-" . $stop[ $col{'StopID'} ];
+    $bagtextid = $EMPTY unless $bagtextid =~ /\w/;
+    my $bagtext = $stop[ $col{'Text'} ];
+    $bagtext = $EMPTY unless $bagtextid =~ /\w/;
     #my $cluster = $stop[ $col{'Work cluster'} ];
     #$cluster =~ s/^c//;
 
     my $bagortmp = $stop[ $col{'Bag / Temp'} ];
 
-    return unless Actium::feq( $bagortmp, 'T' );
+    return unless Actium::feq( $bagortmp, 'B2' );
 
     my $cluster = $cluster_of{ $workzone_of{$stopid} };
     #my $desc = $stop[ $col{'Stop Description'} ] . "      Work zone $cluster";
@@ -190,9 +192,10 @@ sub _process_stop {
         # extra return to add more space after removed
     }
 
+    #if ( defined $bagtextid and $bagtextid !~ /\A\s*\z/ ) {
     if ( defined $bagtext and $bagtext !~ /\A\s*\z/ ) {
         $mainbox
-          .= $HARDRET . _translate_graf( $bagtext, 'Note', 'ChineseMedium' );
+          .= $HARDRET . _translate_graf( $bagtextid, 'Note', 'ChineseMedium' );
     }
 
     #$mainbox = _effective_date_indd($dt) . $HARDRET . $HARDRET . $mainbox;
@@ -336,7 +339,7 @@ sub _para {
 }
 
 sub _zh_phrase {
-    my $phrase = shift;
+    my $phrase   = shift;
     my $zh_style = shift // 'ChineseBold';
 
     $phrase =~ s/((?:<0x[[:xdigit:]]+>)+)/<CharStyle:$zh_style>$1<CharStyle:>/g;
