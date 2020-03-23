@@ -8,8 +8,12 @@ use Octium::O::Folder;
 
 sub OPTIONS {
 
-    return ( 'actiumdb',
-        [ 'tab', 'Uses tabs instead of spaces to separate text' ] );
+    return (
+        'actiumdb',
+        {   spec        => 'tab',
+            description => 'Uses tabs instead of spaces to separate text'
+        }
+    );
 }
 
 my $divider;
