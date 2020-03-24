@@ -2,8 +2,7 @@ package Octium::Cmd::MRCopy 0.012;
 
 # Command-line access to copylatest in Actum::MapRepostory
 
-use 5.014;
-use warnings;
+use Actium;
 
 use Octium::MapRepository (':all');
 use Octium::O::Folder;
@@ -12,48 +11,52 @@ use English '-no_match_vars';    ### DEP ###
 
 sub OPTIONS {
     return (
-        [   'repository=s',
-            'Location of repository in file system',
-            '/Users/Shared/Dropbox (AC_PubInfSys)/B/Maps/Repository'
-        ],
-        [   'activemapfile=s',
-            'Name of file containing list of active maps. '
+        {   spec        => 'repository=s',
+            description => 'Location of repository in file system',
+            fallback => '/Users/Shared/Dropbox (AC_PubInfSys)/B/Maps/Repository'
+        },
+        {   spec        => 'activemapfile=s',
+            description => 'Name of file containing list of active maps. '
               . 'Must be located in the repository.',
-            'active_maps.txt',
-        ],
-        [   'web!',
-            'Create web files of maps (on by default; turn off with -no-web)',
-            1
-        ],
-        [   'fullnames!',
-            'Copy files with their full names '
+            fallback => 'active_maps.txt',
+        },
+        {   spec => 'web!',
+            description =>
+              'Create web files of maps (on by default; turn off with -no-web)',
+            fallback => 1
+        },
+        {   spec        => 'fullnames!',
+            description => 'Copy files with their full names '
               . '(on by default; turn off with -no-fullnames)',
-            1,
-        ],
-        [   'linesnames!',
-            'Copy files using the lines and token as the name only '
+            fallback => 1,
+        },
+        {   spec => 'linesnames!',
+            description =>
+              'Copy files using the lines and token as the name only '
               . '(on by default; turn off with -no-linesnames)',
-            1,
-        ],
-        [   'verbose!',
-            'Display detailed information on each file copied or rasterized.',
-            0,
-        ],
+            fallback => 1,
+        },
+        {   spec => 'verbose!',
+            description =>
+              'Display detailed information on each file copied or rasterized.',
+            fallback => 0,
+        },
 
-        [   'webfolder|wf=s',
-            'Folder where web files will be created. '
+        {   spec        => 'webfolder|wf=s',
+            description => 'Folder where web files will be created. '
               . 'Default is "_web" in the repository'
-        ],
-        [   'linesfolder|lf=s',
-            'Folder to where lines and tokens files will be copied. '
+        },
+        {   spec => 'linesfolder|lf=s',
+            description =>
+              'Folder to where lines and tokens files will be copied. '
               . 'Default is "_linesnames" in the repository'
-        ],
-        [   'fullfolder|ff=s',
-            'Folder to where full names will be copied. '
+        },
+        {   spec        => 'fullfolder|ff=s',
+            description => 'Folder to where full names will be copied. '
               . 'Default is "_fullnames" in the repository'
-        ],
+        },
     );
-}    ## tidy end: sub OPTIONS
+}
 
 sub HELP {
 
@@ -96,7 +99,7 @@ EOF
         );
         return;
 
-    }    ## tidy end: sub START
+    }
 
     sub option_folder {
         my ( $option, $folderoption, $default ) = @_;
