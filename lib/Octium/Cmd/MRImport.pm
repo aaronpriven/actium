@@ -5,6 +5,7 @@ package Octium::Cmd::MRImport 0.012;
 use 5.014;
 use warnings;
 
+use Actium;
 use Octium::MapRepository (':all');
 use Octium::O::Folder;
 
@@ -12,29 +13,31 @@ use English '-no_match_vars';    ### DEP ###
 
 sub OPTIONS {
     return (
-        [   'repository=s',
-            'Location of repository in file system',
-            '/Users/Shared/Dropbox (AC_PubInfSys)/B/Maps/Repository'
-        ],
-        [   'web!',
-            'Create web files of maps (on by default; turn off with -no-web)',
-            1
-        ],
-        [   'webfolder|wf=s',
-            'Folder where web files will be created. '
+        {   spec        => 'repository=s',
+            description => 'Location of repository in file system',
+            fallback => '/Users/Shared/Dropbox (AC_PubInfSys)/B/Maps/Repository'
+        },
+        {   spec => 'web!',
+            description =>
+              'Create web files of maps (on by default; turn off with -no-web)',
+            fallback => 1
+        },
+        {   spec        => 'webfolder|wf=s',
+            description => 'Folder where web files will be created. '
               . 'Default is "web" in the folder where the maps already are'
-        ],
-        [   'move|mv!',
-            'Move files into repository instead of copying '
+        },
+        {   spec        => 'move|mv!',
+            description => 'Move files into repository instead of copying '
               . '(on by default; turn off with -no-move)',
-            1
-        ],
-        [   'verbose!',
-            'Display detailed information on each file copied or rasterized.',
-            0
-        ],
+            fallback => 1
+        },
+        {   spec => 'verbose!',
+            description =>
+              'Display detailed information on each file copied or rasterized.',
+            fallback => 0
+        },
     );
-}    ## tidy end: sub OPTIONS
+}
 
 sub HELP {
 
@@ -115,11 +118,11 @@ sub START {
 
         }
 
-    }    ## tidy end: foreach my $folderspec (@importfolders)
+    }
 
     return;
 
-}    ## tidy end: sub START
+}
 
 1;
 
