@@ -43,7 +43,7 @@ sub _build_portrait_preferred_frameset_r {
         push @{ $divided_framesets[$portrait] }, $frameset;
     }
 
-    return scalar Actium::arrayify(@divided_framesets);
+    return [ Actium::arrayify(@divided_framesets) ];
 
 }
 
@@ -238,9 +238,9 @@ sub make_idtables {
                   if ( not defined $partial_level
                     and $table_width <= $frame_width );
 
-            }    ## tidy end: foreach my $frame ( $frameset...)
+            }
 
-        }    ## tidy end: foreach my $frameset ( $self...)
+        }
 
         if ( defined $partial_level ) {
             # if there's a partial level, save it to the list
@@ -260,11 +260,11 @@ sub make_idtables {
         push @idtables, $IDTABLE->new( timetable_obj => $table, failed => 1 );
         $seen_a_failure = 1;
 
-    }    ## tidy end: TABLE: foreach my $table (@tables)
+    }
 
     return $seen_a_failure, $any_overlong, @idtables;
 
-}    ## tidy end: sub make_idtables
+}
 
 sub minimum_pages {
     my $self     = shift;
@@ -366,12 +366,12 @@ sub assign_page {
 
         # finished all the permutations for this page, but nothing fit
 
-    }    ## tidy end: FRAMESET: foreach my $frameset (@framesets)
+    }
 
     return;
     # finished all the permutations for this page set, but nothing fit
 
-}    ## tidy end: sub assign_page
+}
 
 sub _sort_table_permutations {
 
@@ -395,7 +395,7 @@ sub _sort_table_permutations {
 
     return map { $_->[0] } @partitions;
 
-}    ## tidy end: sub _sort_table_permutations
+}
 
 sub _by_table_permutation_sort {
     my @a = @{ $a->[1] };
@@ -418,7 +418,7 @@ sub _by_table_permutation_sort {
 
     return 0;    # the same...
 
-}    ## tidy end: sub _by_table_permutation_sort
+}
 
 __PACKAGE__->meta->make_immutable;
 
