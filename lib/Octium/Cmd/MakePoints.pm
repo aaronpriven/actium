@@ -656,7 +656,7 @@ sub START {
                         $_ = substr( $_, 0, $max_length ) foreach @cities;
                         $cluster_display = join( ',', sort @cities );
                         $max_length--;
-                    } until length($cluster_display)
+                      } until length($cluster_display)
                       <= $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH;
 
                     $cluster_of_city{$city} = $cluster_display;
@@ -801,12 +801,12 @@ sub START {
         }
 
         $error_fh->close;
-        $cry->done;
+        $error_cry->error;
 
     }
     else {
         my $error_cry = env->cry('No errors to log');
-        $error_cry->bliss;
+        $error_cry->valid;
     }
 
     ### HEIGHTS DISPLAY
