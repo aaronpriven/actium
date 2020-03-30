@@ -313,7 +313,7 @@ If no glob pattern is supplied, returns all files and folders.
 =cut
 
 method glob (Str $pattern //= '*') {
-    require Text::Glob;
+    require Text::Glob;    ### DEP ###
     my $regex = Text::Glob::glob_to_regex($pattern);
     return $self->grep($regex);
 }
