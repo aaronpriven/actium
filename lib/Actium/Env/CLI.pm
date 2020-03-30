@@ -78,7 +78,7 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
     my %init_args = (
         %params,
         subcommand => $subcommand // $EMPTY,
-        _help_type => $help_type  // $EMPTY,
+        _help_type => $help_type // $EMPTY,
         argv       => \@new_argv,
     );
 
@@ -798,7 +798,7 @@ sub _signup_with_old_package {
 
 method _build_newsignup {
     return Octium::O::Folders::Signup::->new(
-        is_new => 1,
+        #is_new => 1,
         base   => $self->option('base'),
         signup => $self->option('signup')
     );
@@ -813,7 +813,7 @@ method _build_signup {
 
 method _build_oldsignup {
     return Octium::O::Folders::Signup->new(
-        base => ( $self->option('oldbase') // $self->option('base') ),
+        base   => ( $self->option('oldbase') // $self->option('base') ),
         signup => $self->option('oldsignup'),
     );
 
