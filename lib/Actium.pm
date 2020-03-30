@@ -243,7 +243,7 @@ our @EXPORT = qw/$EMPTY $CRLF $SPACE env/;
 
     sub import {
         my $class = shift;
-        my $type = shift // q{};
+        my $type  = shift // q{};
         $caller = caller;
 
         __PACKAGE__->export_to_level(1);
@@ -774,7 +774,8 @@ sub file {
 
 A function that returns a new Actium::Storage::Folder object. The same
 as C<< Actium::Storage::Folder->new(...) >>. See
-L<Actium::Storage::File|Actium::Storage::Folder> for more information.
+L<Actium::Storage::Folder|Actium::Storage::Folder> for more
+information.
 
 =cut
 
