@@ -136,7 +136,7 @@ sub _get_blocks {
     my %blocks_by_id;
 
     _records_in_turn(
-        env->cry   => 'Processing blocks ',
+        cry        => 'Processing blocks ',
         fieldnames => $fieldnames_of_r,
         values     => $values_of_r,
         table      => 'block',
@@ -189,7 +189,7 @@ sub _get_blocks {
         my ( %pattern_by_id, %patterns_by_linedir, %patgroup_by_lgdir );
 
         _records_in_turn(
-            env->cry   => 'Processing trip patterns',
+            cry        => 'Processing trip patterns',
             fieldnames => $fieldnames_of_r,
             values     => $values_of_r,
             table      => 'trip_pattern',
@@ -286,7 +286,7 @@ sub _get_trips {
 
     _records_in_turn(
         fieldnames => $fieldnames_of_r,
-        env->cry   => 'Processing trips',
+        cry        => 'Processing trips',
         values     => $values_of_r,
         table      => 'trip',
         callback   => sub {
@@ -333,7 +333,7 @@ sub _get_trips {
 
     _records_in_turn(
         fieldnames => $fieldnames_of_r,
-        env->cry   => 'Processing trip stops',
+        cry        => 'Processing trip stops',
         values     => $values_of_r,
         table      => 'trip_stop',
         callback   => sub {
@@ -373,7 +373,7 @@ sub _get_trips {
 
     #    _records_in_turn(
     #        fieldnames => $fieldnames_of_r,
-    #        env->cry        => 'Processing trip places',
+    #        cry        => 'Processing trip places',
     #        values     => $values_of_r,
     #        table      => 'trip_tp',
     #        callback   => sub {
@@ -454,7 +454,7 @@ sub _add_place_patterns_to_patterns {
 
     _records_in_turn(
         fieldnames => $fieldnames_of_r,
-        env->cry   => 'Processing place patterns',
+        cry        => 'Processing place patterns',
         values     => $values_of_r,
         table      => 'ppat',
         callback   => sub {
@@ -529,7 +529,7 @@ sub _records_in_turn {
             fieldnames => 1,
             values     => 1,
             callback   => 1,
-            env->cry   => 0,
+            cry        => 0,
         }
     );
 
