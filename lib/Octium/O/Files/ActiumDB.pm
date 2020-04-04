@@ -683,8 +683,11 @@ has _lines_of_linegrouptype_r => (
     init_arg => undef,
     isa      => 'HashRef[ArrayRef[Str]]',
     builder  => '_build_lines_of_linegrouptype',
-    handles  => { _lines_of_linegrouptype_r => 'get' },
-    lazy     => 1,
+    handles  => {
+        _linegrouptype_exists     => 'exists',
+        _lines_of_linegrouptype_r => 'get',
+    },
+    lazy => 1,
 );
 
 sub lines {
@@ -695,6 +698,7 @@ sub lines {
 sub _lines_of_linegrouptype {
     my $self          = shift;
     my $linegrouptype = shift;
+    return () unless $self->_linegrouptype_exists($linegrouptype);
     return @{ $self->_lines_of_linegrouptype_r($linegrouptype) };
 }
 
