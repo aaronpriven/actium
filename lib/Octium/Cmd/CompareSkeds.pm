@@ -33,7 +33,11 @@ sub START {
     if ( env->option('excel') ) {    # Excel
         my $filename
           = $old_signup->signup . "-" . $signup->signup . '-diff.xlsx';
+        my $excelcry = env->cry('Writing excel comparison');
+        $excelcry->wail($filename);
+
         $compcollection->excel( file => $filename );
+        $excelcry->done;
 
     }
     else {                           # Text
