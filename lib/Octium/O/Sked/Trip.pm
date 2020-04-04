@@ -349,7 +349,7 @@ sub merge_pair {
                 $merged_value_of{$init_arg} = $firstattr;
             }
             # if they're identical, set the array to the value
-            elsif ( Actium::in( $attrname, ['daysexceptions'] ) ) {
+            elsif ( Actium::in( $attrname, 'daysexceptions' ) ) {
                 $merged_value_of{$init_arg} = '';
             }
             # otherwise, if the attribute name is one of the those, then
