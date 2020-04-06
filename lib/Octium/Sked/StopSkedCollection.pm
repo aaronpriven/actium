@@ -33,7 +33,8 @@ This documentation refers to version 0.014
    
 =head1 DESCRIPTION
 
-This represents schedule information for a particular bus stop.
+This represents schedule information for a particular bus stop or group
+of bus stops.
 
 =head1 ATTRIBUTES/METHODS
 
