@@ -8,7 +8,16 @@ use Octium::O::Dir;
 use HTML::Entities;    ### DEP ###
 
 sub OPTIONS {
-    return qw/actiumdb signup/;
+    return (
+        'actiumdb',
+        'signup',
+        {   spec        => 'modified!',
+            description => 'Put all lines in the category "Modified" '
+              . 'instead of in individual categories',
+            fallback => 0,
+        }
+      ),
+
 }
 
 my $count;
@@ -249,8 +258,8 @@ EOT
 
         $table_of{$line} = $outdata;
 
-        my $type;
-        $type = $linegrouptype_of_r->{$line};
+        my $type
+          = env->option('modified') ? 'Modified' : $linegrouptype_of_r->{$line};
 
         if ( $type eq 'Local' ) {
             no warnings 'numeric';
@@ -270,6 +279,7 @@ EOT
 
     my %display_type_of = map { ( $_, $_ ) } keys %lines_of_type;
     my %subtypes_of = map { ( $_, [$_] ) } keys %lines_of_type;
+    $subtypes_of{Modified} = ['Modified'];
     delete $subtypes_of{Local1};
     delete $subtypes_of{Local2};
     $subtypes_of{Local} = [qw/Local1 Local2/];
@@ -317,10 +327,14 @@ EOT
     say $indexfh $efftext;
     say $cindexfh $efftext;
 
+    my @alltypes
+      = env->option('modified')
+      ? ('Modified')
+      : ( 'Local', 'All Nighter', 'Transbay', 'Service to Schools',
+        'Early Bird' );
+
   TYPE:
-    for my $type ( 'Local', 'All Nighter', 'Transbay', 'Service to Schools',
-        'Early Bird' )
-    {
+    for my $type (@alltypes) {
         my @links;
         my @clinks;
 
