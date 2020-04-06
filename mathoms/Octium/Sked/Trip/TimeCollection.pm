@@ -1,9 +1,10 @@
 package Octium::Sked::Trip::Time::Collection 0.014;
 
-# Collection of times
-
 use Actium ('role');
 use Octium;
+
+# This is part of a start at rewriting Actium::O::Sked to use time objects
+# and otherwise be more modern. It is not complete.
 
 # This is a role applied to Octium::Sked::Trip. It represents
 # the methods associated with the collection of times in the trip
