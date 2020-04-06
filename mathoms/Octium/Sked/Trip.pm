@@ -1,4 +1,8 @@
 package Octium::Sked::Trip 0.014;
+# vimcolor: #132600
+#
+# This is a start at rewriting Actium::O::Sked::Trip to use Actium::Time objects
+# and otherwise be more modern. It is not complete and is currently unused.
 
 use Actium ('class');
 use Octium;
