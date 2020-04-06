@@ -95,7 +95,7 @@ foreach my $attrname ( keys %shortcol_of_attribute ) {
     has $attrname => (
         is           => 'ro',
         isa          => 'Str',
-        traits       => ['Octium::O::Traits::WithShortColumn'],
+        traits       => ['Octium::Traits::WithShortColumn'],
         short_column => $shortcol_of_attribute{$attrname},
         required     => ( $attrname eq 'line' ),
     );
