@@ -10,18 +10,25 @@ use Type::Library
 use Type::Utils -all;
 use Types::Standard -types;
 
-### definitions
+### Folders and files
 
 class_type Folder, { class => 'Actium::Storage::Folder' };
 class_type File,   { class => 'Actium::Storage::File' };
 
-declare CrierStatus,     as Int, where { -7 <= $_ and $_ <= 7 };
-declare CrierImportance, as Int, where { 0 <= $_  and $_ <= 7 };
-
-### coercions
-
 coerce Folder, from Str, via { Actium::Storage::Folder->new($_) };
 coerce File,   from Str, via { Actium::Storage::File->new($_) };
+
+### Time
+
+class_type Time, { class => 'Actium::Time' };
+
+coerce Time, from Num, via { Actium::Time->from_num($_) };
+coerce Time, from Str, via { Actium::Time->from_str($_) };
+
+### Crier fields
+
+declare CrierStatus,     as Int, where { -7 <= $_ and $_ <= 7 };
+declare CrierImportance, as Int, where { 0 <= $_  and $_ <= 7 };
 
 __END__
 
