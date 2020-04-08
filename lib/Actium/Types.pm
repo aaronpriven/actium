@@ -25,6 +25,12 @@ class_type Time, { class => 'Actium::Time' };
 coerce Time, from Num, via { Actium::Time->from_num($_) };
 coerce Time, from Str, via { Actium::Time->from_str($_) };
 
+### Direction
+
+class_type Dir,       { class => 'Actium::Dir' };
+class_type OctiumDir, { class => 'Octium::O::Dir' };
+coerce Dir, from OctiumDir, via { Actium::Dir->instance( $_->dircode ) };
+
 ### Crier fields
 
 declare CrierStatus,     as Int, where { -7 <= $_ and $_ <= 7 };
