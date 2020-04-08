@@ -12,3 +12,4 @@
 #-csci=20 # Closing side comments 20 lines or longer
 #-cscp="## tidy end:"
 -nbbc # don't introduce blanks before comments
+-sal='method func override'
