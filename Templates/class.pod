@@ -20,11 +20,17 @@ This documentation refers to version 0.015
 
 A full description of the module and its features.
 
-=head1 SUBROUTINES or METHODS or ATTRIBUTES
+=head1 CLASS METHODS
 
-=head2 subroutine
+=head2 method
 
-Description of subroutine.
+Description of method.
+
+=head1 OBJECT METHODS or ATTRIBUTES
+
+=head2 method
+
+Description of method.
 
 =head1 DIAGNOSTICS
 
