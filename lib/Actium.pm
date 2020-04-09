@@ -464,11 +464,11 @@ func joinseries (
         $separator =~ s/ *\z/ /;
     }
     else {
-        $oxford = 0 unless $oxford_specified;
+        $oxford    = 0 unless $oxford_specified;
         $separator = q[, ];
     }
 
-    return $items[0] if 1 == @items;
+    return $items[0]                          if 1 == @items;
     return "$items[0] $conjunction $items[1]" if 2 == @items;
 
     my @copied = @items;
@@ -1151,13 +1151,14 @@ unwieldy
     __PACKAGE__->meta->make_immutable
 
 The C<immut> routine simply performs this on the calling package,
-making the Moose class immutable.
+making the Moose class immutable. Any arguments are passed on to
+make_immutable.
 
 =cut
 
-sub immut () {
+sub immut {
     my $package = caller;
-    $package->meta->make_immutable;
+    $package->meta->make_immutable(@_);
     return;
 }
 
