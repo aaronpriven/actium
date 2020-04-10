@@ -31,7 +31,9 @@ coerce Time, from Str, via { Actium::Time->from_str($_) };
 
 class_type Dir,       { class => 'Actium::Dir' };
 class_type OctiumDir, { class => 'Octium::O::Dir' };
-coerce Dir, from OctiumDir, via { Actium::Dir->instance( $_->dircode ) };
+coerce Dir,       from OctiumDir, via { Actium::Dir->instance( $_->dircode ) };
+coerce Dir,       from Str,       via { Actium::Dir->instance($_) };
+coerce OctiumDir, from Str,       via { Octium::O::Dir->instance($_) };
 
 ### Crier fields
 
