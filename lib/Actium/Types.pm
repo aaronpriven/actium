@@ -1,12 +1,14 @@
 package Actium::Types 0.012;
 # vimcolor: #222222
 
+use Actium;
+
 # Type::Tiny ### DEP ###
 # Type::Tiny types for Actium
 
 use Type::Library
   -base,
-  -declare => qw( Folder File CrierStatus CrierImportance);
+  -declare => qw( Folder File CrierStatus CrierImportance Time Dir OctiumDir);
 use Type::Utils -all;
 use Types::Standard -types;
 
@@ -21,9 +23,9 @@ coerce File,   from Str, via { Actium::Storage::File->new($_) };
 ### Time
 
 class_type Time, { class => 'Actium::Time' };
-
-coerce Time, from Num, via { Actium::Time->from_num($_) };
 coerce Time, from Str, via { Actium::Time->from_str($_) };
+# can't coerce from a number because '515' could be a time number
+# or a string representing 5:15 am
 
 ### Direction
 
