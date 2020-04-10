@@ -1,4 +1,4 @@
-package Octium::Sked::StopSkedCollection 0.014;
+package Octium::Sked::StopSkedCollection 0.015;
 
 use Actium 'class';
 
@@ -10,6 +10,20 @@ has _stopskeds_r => (
     required => 1,
     handles  => { stopskeds => 'elements', },
 );
+
+has _stopids_r => (
+    traits   => ['Array'],
+    is       => 'bare',
+    init_arg => undef,
+    isa      => 'ArrayRef[Str]',
+    builder  => 1,
+    handles  => { stopids => 'elements' },
+);
+
+method _build_stopids_r {
+    my @stopids = map { $_->stopid } $self->stopskeds;
+    return Actium::uniq( sort (@stopids) );
+}
 
 1;
 
@@ -24,7 +38,7 @@ for a particular bus stop or group of bus stops
 
 =head1 VERSION
 
-This documentation refers to version 0.014
+This documentation refers to version 0.015
 
 =head1 SYNOPSIS
 
@@ -36,34 +50,31 @@ This documentation refers to version 0.014
 This represents schedule information for a particular bus stop or group
 of bus stops.
 
-=head1 ATTRIBUTES/METHODS
-
-=head2 stopid
-
-Returns the unique identifier of the bus stop.
+=head1 ATTRIBUTE
 
 =head2 stopskeds
 
-Returns a list of the Octium::Sked::OfStop::Sked objects that are
-appropriate for this stop.
+An array of L<Octium::Sked::StopSked|Octium::Sked::StopSked> objects. 
+The "stopskeds" argument in the constructor should be a reference to
+the array, while the stopskeds() method will return the list.
+
+=head1 METHOD
+
+=head2 stopids
+
+Returns a list of the stop IDs associated with the stop schedules.
 
 =head1 DIAGNOSTICS
 
-None so far.
+None specific to this class.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-None so far.
+None.
 
 =head1 DEPENDENCIES
 
-=over
-
-=item * 
-
-Actium
-
-=back
+The Actium system.
 
 =head1 AUTHOR
 
