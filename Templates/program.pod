@@ -30,13 +30,9 @@ interact (e.g., mutual exclusions, required combinations, etc.)
 If all of the application's arguments are optional, this section may be
 omitted entirely.
 
-=over
-
 =head2 argument
 
 Description of argument.
-
-=back
 
 =head1 OPTIONS
 
@@ -81,7 +77,7 @@ None known.
 =head1 BUGS AND LIMITATIONS
 
 None known. Issues are tracked on Github at
-L<https://github.com/aaronpriven/actium/issues|https://github.com/aaronpriven/actium/issues>.
+L<https:E<sol>E<sol>github.comE<sol>aaronprivenE<sol>actiumE<sol>issues|https:E<sol>E<sol>github.comE<sol>aaronprivenE<sol>actiumE<sol>issues>.
 
 =head1 AUTHOR
 
@@ -110,3 +106,4 @@ the Artistic License version 2.0.
 This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
