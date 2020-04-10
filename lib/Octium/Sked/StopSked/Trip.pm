@@ -1,33 +1,72 @@
-package Octium::Sked::StopSked::Trip 0.014;
+package Octium::Sked::StopSked::Trip 0.016;
+# vimcolor: #002626
 
 use Actium 'class';
+use Types::Standard(qw/Str Bool Int ArrayRef/);
+use Type::Utils('class_type');
+use Actium::Types (qw/Time/);
+use Octium::Types (qw/ActiumDays/);
 
-has line => (
+# KPOINTS -
+#  $time_r->{TIME},         - time
+#  $time_r->{LINE},         - line
+#  $time_r->{DESTINATION},  - destination_place
+#  $time_r->{PLACE},        - place
+#  $time_r->{DAYEXCEPTIONS} - calendar_id
+#  last_stop  - is_final_stop (in pathway)
+#  dropoff    - not determined here, requires info from Lines table
+#
+# $patinfo{Place}        - place
+# $patinfo{NextPlace}    - next_place
+# $patinfo{AtPlace}      - at_place
+# $patinfo{Connections}  - requires info from Stops_Neue table
+# $patinfo{District}     - requires info from Stops_Neue table
+# $patinfo{Side}         - requires info from Stops_Neue table
+# $patinfo{Last}         - is_final_stop (in pathway)
+# $patinfo{TransbayOnly} - requires info from Lines table
+# $patinfo{DropOffOnly}  - determined from previous two
+
+has time => (
+    required => 1,
+    isa      => Time,
+    coerce   => 1,
+);
+
+has [qw/line destination_place/] => (
     is       => 'ro',
-    isa      => 'Str',
+    isa      => Str,
     required => 1,
 );
 
-has days_obj => (
-    required => 0,
+has days => (
+    required => 1,
     init_arg => 'days',
     is       => 'ro',
-    isa      => 'Octium::O::Days',
+    isa      => ActiumDays,
     handles  => {
         daycode       => 'daycode',
         sortable_days => 'as_sortable',
     },
 );
 
-has time => (
-    required => 1,
-    isa      => 'Octium::Sked::Time',
+has [qw/place next_place calendar_id /] => (
+    is      => 'ro',
+    default => $EMPTY,
+    isa     => Str,
 );
 
-# more to come
+method is_at_place {
+    return ( $self->place ne $EMPTY );
+}
 
-# with 'Octium::Sked::Stop::Collection';
-# role doesn't exist yet
+has pathway => (
+    # list of subsequent stops
+    isa => class_type('Octium::Sked::StopSked::Pathway')
+      ->plus_constructors( ArrayRef [Str], 'new' ),
+    is       => 'ro',
+    required => 1,
+    handles  => ['is_final_stop'],
+);
 
 1;
 
@@ -37,50 +76,114 @@ __END__
 
 =head1 NAME
 
-<name> - <brief description>
+Octium::Sked::StopSked::Trip - Object representing a trip in a stop
+schedule
 
 =head1 VERSION
 
-This documentation refers to version 0.014
+This documentation refers to version 0.016
 
 =head1 SYNOPSIS
 
- use <name>;
- # do something with <name>
-   
+ use Octium::Sked::StopSked::Trip;
+ my $trip = Octium::Sked::StopSked::Trip->new(
+    time              => '5:15a',
+    line              => '40',
+    place             => '12BD',
+    'at_place'        => 1,
+    destination_place => '11JE',
+    days              => '12345',
+    next_place        => '11JE',
+    pathway           => [qw/51528 51110/],
+ );
+
 =head1 DESCRIPTION
 
-A full description of the module and its features.
+This is an object that represents a single trip in a schedule for a
+stop.  It is created using Moose.
 
-=head1 SUBROUTINES or METHODS or ATTRIBUTES
+=head1 CLASS METHODS
 
-=over
+=head2 new
 
-=item B<subroutine()>
+This is the constructor for the object, inherited from Moose.
 
-Description of subroutine.
+=head1 ATTRIBUTES
 
-=back
+=head2 time
+
+This is an L<Actium::Time|Actium::Time> object. If the constructor is
+passed a string, will use the C<from_str> method of Actium::Time to get
+an object. Required.
+
+=head2 line
+
+A string representing a bus line designation. Required.
+
+=head2 place
+
+A string representing the ID of the place (timepoint) at this stop. If
+this stop is between places, will be the empty string.
+
+=head2 next_place
+
+A string representing the ID of the place (timepoint) following this
+stop. If this stop is the destination place, will be the empty string.
+
+=head2 destination_place
+
+A string representing the ID of the place (timepoint) of the final
+stop. Required.
+
+=head2 days
+
+An L<Octium::O::Days|Octium::O::Days> object. If passed a string, will
+send that to C<Octium::O::Days->instance>. Required.
+
+=head2 calendar_id
+
+A string representing a calendar ID, from the calendars imported with
+this booking.
+
+=head2 pathway
+
+An L<Octium::Sked::StopSked::Pathway|Octium::Sked::StopSked::Pathway>
+object, which represents all the subsequent stops after the one on this
+trip. If passed an array reference of stop IDs, will create an object
+from that. Required.
+
+=head1 METHODS
+
+=head2 is_at_place
+
+Returns true if this stop is at the current place, false if it is
+between places.
+
+=head2 is_final_stop
+
+Returns true if this stop is the final stop, false otherwise.
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
+None specific to this module, but see L<Actium|Actium> and
+L<Moose|Moose>.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties that
-can be se. These descriptions must also include details of any
-configuration language used.
+None.
 
 =head1 DEPENDENCIES
 
-List its dependencies.
+The Actium system.
+
+=head1 INCOMPATIBILITIES
+
+None known.
+
+=head1 BUGS AND LIMITATIONS
+
+None known. Issues are tracked on Github at
+L<https:E<sol>E<sol>github.comE<sol>aaronprivenE<sol>actiumE<sol>issues|https:E<sol>E<sol>github.comE<sol>aaronprivenE<sol>actiumE<sol>issues>.
 
 =head1 AUTHOR
 
@@ -88,25 +191,25 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2017
+Copyright 2020
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either:
 
 =over 4
 
-=item * 
+=item *
 
 the GNU General Public License as published by the Free Software
 Foundation; either version 1, or (at your option) any later version, or
 
-=item * 
+=item *
 
 the Artistic License version 2.0.
 
 =back
 
 This program is distributed in the hope that it will be useful, but
-WITHOUT  ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
