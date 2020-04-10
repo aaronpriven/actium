@@ -170,7 +170,7 @@ sub _verify_headers {
     my @required_headers = @{ +shift };
 
     my $headerline = ( scalar(<$fh>) );
-    my @headers = split( "\t", $headerline );
+    my @headers    = split( "\t", $headerline );
 
     foreach (@headers) {
         s/\A\s+//;
@@ -273,12 +273,11 @@ The named parameters are:
 
 =item folder
 
-This mandatory parameter is intended to be an Octium::O::Folder object
-(or a subclass such as Octium::O::Folders::Signup). However, any object
+This mandatory parameter is intended to be an Octium::Folder object (or
+a subclass such as Octium::Folders::Signup). However, any object
 representing a folder will work if it implements the methods
 "make_filespec", "glob_plain_files", "open_read", and "display_path."
-See L<Octium::O::Folder|Octium::O::Folder> for details of these
-methods.
+See L<Octium::Folder|Octium::Folder> for details of these methods.
 
 =item files
 

@@ -7,7 +7,7 @@ use Octium::DaysDirections (':all');
 
 use List::Compare;
 
-const my @opp => qw( EB WB NB SB CC CW A B IN OU);
+const my @opp         => qw( EB WB NB SB CC CW A B IN OU);
 const my %opposite_of => ( @opp, reverse @opp );
 
 sub HELP {
@@ -112,18 +112,18 @@ sub START {
 
         foreach my $addsignup_name ( env->option('addsignup')->@* ) {
             my $signupcry = env->cry("Adding $addsignup_name");
-            require Octium::O::Folders::Signup;
-            my $addsignup = Octium::O::Folders::Signup::->new(
-                base => ( env->option('addbase') // env->option('base') ),
+            require Octium::Folders::Signup;
+            my $addsignup = Octium::Folders::Signup::->new(
+                base       => ( env->option('addbase') // env->option('base') ),
                 signup     => $addsignup_name,
                 cache      => env->option('cache'),
                 must_exist => 1,
             );
 
-            my $addfh = $addsignup->open_read('stoplines.txt');
+            my $addfh   = $addsignup->open_read('stoplines.txt');
             my @headers = split( /\t/, scalar <$addfh> );
 
-            my $col = 0;
+            my $col          = 0;
             my %headercol_of = map { $_, $col++ } @headers;
             my @cols_to_use
               = @headercol_of{qw/h_stp_511_id p_lines p_linedirs/};

@@ -5,8 +5,8 @@ package Octium::Cmd::Timetables 0.012;
 use Actium;
 use Octium;
 
-use Octium::O::Sked::Collection;
-use Octium::O::Sked;
+use Octium::Sked::Collection;
+use Octium::Sked;
 use Octium::IDTables;
 
 sub HELP {
@@ -33,14 +33,14 @@ sub START {
     #my $prehistorics_folder = $signup->subfolder('skeds');
 
     my $collection
-      = Octium::O::Sked::Collection->load_storable( collection => 'final' );
+      = Octium::Sked::Collection->load_storable( collection => 'final' );
 
     chdir( $signup->path );
 
     # my %front_matter = _get_configuration($signup);
 
     # my @skeds
-    #   = Octium::O::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
+    #   = Octium::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
 
     my @skeds = $collection->skeds;
 

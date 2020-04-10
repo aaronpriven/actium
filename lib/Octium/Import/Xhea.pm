@@ -11,7 +11,7 @@ package Octium::Import::Xhea 0.012;
 use Actium;
 use Octium;
 use Octium::Import::CalculateFields;
-use Octium::O::DateTime;
+use Octium::DateTime;
 
 use List::MoreUtils('pairwise');    ### DEP ###
 use Params::Validate(':all');       ### DEP ###
@@ -293,7 +293,7 @@ sub tab_strings {
     }    ## tidy end: sub adjust_sch_cal
 }
 
-const my @HOLIDAYS => map Octium::O::DateTime->new( strptime => $_ ),
+const my @HOLIDAYS => map Octium::DateTime->new( strptime => $_ ),
   qw/
   2018-09-03 2018-11-22 2018-12-25
   2019-01-01 2019-01-21 2019-02-18 2019-05-27
@@ -311,7 +311,7 @@ sub _get_trip_notes_from_event_date {
 
     my $cry = env->cry('Creating trip calendar notes from XHEA event dates');
 
-    require Octium::O::DateTime;
+    require Octium::DateTime;
     require DateTime::Event::ICal;
 
     my %p = validate(
@@ -339,15 +339,15 @@ sub _get_trip_notes_from_event_date {
         my ( $date_str, $event, $status )
           = @field{qw/evtd_date evtd_event evtd_status/};
 
-        my $dt = $dt_cache{$date_str} //= Octium::O::DateTime->new($date_str);
+        my $dt = $dt_cache{$date_str} //= Octium::DateTime->new($date_str);
 
         next if Actium::fne( $status, 'on' );
 
         push $dts_of_event{$event}->@*, $dt;
     }
 
-    my $start = Octium::O::DateTime->oldest_date( values %dt_cache );
-    my $end   = Octium::O::DateTime->newest_date( values %dt_cache );
+    my $start = Octium::DateTime->oldest_date( values %dt_cache );
+    my $end   = Octium::DateTime->newest_date( values %dt_cache );
 
     my ( %quantity_of_dow, %recurrence_set_of );
 
@@ -591,7 +591,7 @@ sub _get_trip_notes_from_event_date {
 }    ## tidy end: sub _get_trip_notes_from_event_date
 
 func joinseries_semicolon_with (Str $and!, Str @things!) {
-    return $things[0] if 1 == @things;
+    return $things[0]                   if 1 == @things;
     return "$things[0] $and $things[1]" if 2 == @things;
     my $final = pop @things;
     return ( join( q{; }, @things ) . "; $and $final" );
@@ -1304,7 +1304,7 @@ sub _get_xhea_filenames {
 
             my $event = $hr->{trp_event_and_status};
 
-            my $patid = "$route\t$pattern";
+            my $patid     = "$route\t$pattern";
             my $is_public = $patid eq "\t" ? 0 : $pat{IsInService}{$patid};
 
             # if trip has no route or pattern, then make it non-public
@@ -1503,10 +1503,10 @@ This documentation refers to version 0.009
 
 =head1 SYNOPSIS
 
- use Octium::O::Folder;
+ use Octium::Folder;
  use Octium::Import::Xhea;
  
- my $folder = Octium::O::Folder->new("/path/to/folder");
+ my $folder = Octium::Folder->new("/path/to/folder");
  # folder should have paired xsd and xml files
  
  my ($fields_r, $values_r) = Octium::Import::Xhea::load_adjusted ($folder);
@@ -1567,11 +1567,11 @@ The folder to store the tab files in.
 
 =item B<load(I<folderobj>)>
 
-This routine takes a folder object (such as an  Octium::O::Folder or
-Octium::O::Folders::Signup object ), looks for paired xml and xsd files
-in that folder, and returns three structs: one contains a summary of
-the fields and records, one contains further information about the
-records and fields, and the other contains the values from the file.
+This routine takes a folder object (such as an  Octium::Folder or
+Octium::Folders::Signup object ), looks for paired xml and xsd files in
+that folder, and returns three structs: one contains a summary of the
+fields and records, one contains further information about the records
+and fields, and the other contains the values from the file.
 
 The XML and XSD structure is somewhat limited and assumes the sort of
 XML  typically exported from Hastus.

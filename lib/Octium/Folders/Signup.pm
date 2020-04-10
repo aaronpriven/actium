@@ -1,11 +1,11 @@
-package Octium::O::Folders::Signup 0.012;
+package Octium::Folders::Signup 0.012;
 
 # Object-oriented interface to the signup folder
 
 use Actium('class');
 use Octium;
 
-const my $BASE_CLASS => 'Octium::O::Folder';
+const my $BASE_CLASS => 'Octium::Folder';
 extends $BASE_CLASS;
 
 around BUILDARGS ( $orig, $class: @ ) {
@@ -50,7 +50,7 @@ around BUILDARGS ( $orig, $class: @ ) {
         $params_r->{folderlist} = [ $base, $signup ];
         $params_r->{subfolders} = [];
     }
-    # all arrayrefs in folderlist will be flattened in the Octium::O::Folder
+    # all arrayrefs in folderlist will be flattened in the Octium::Folder
     # BUILDARGS
 
     return $class->$orig($params_r);
@@ -97,7 +97,7 @@ has subfolderlist_r => (
 # have elements that are the empty string. I don't think
 # this will matter.
 
-# for below, see big comment in Octium::O::Folder
+# for below, see big comment in Octium::Folder
 
 override original_parameters {
 
@@ -111,10 +111,10 @@ override original_parameters {
 
     return $params_r;
 
-};
+}
 
-override subfolderlist_reader {'_subfolderlist_r'};
-override subfolderlist_init_arg {'subfolders'};
+override subfolderlist_reader {'_subfolderlist_r'}
+override subfolderlist_init_arg {'subfolders'}
 
 override display_path {
     #    my $self       = shift;
@@ -124,7 +124,7 @@ override display_path {
     }
     return "signup " . $self->signup;
 
-};
+}
 
 sub signup_obj {
 
@@ -170,8 +170,7 @@ __END__
 
 =head1 NAME
 
-Octium::O::Folders::Signup - Signup folder objects for the Actium
-system
+Octium::Folders::Signup - Signup folder objects for the Actium system
 
 =head1 VERSION
 
@@ -179,22 +178,22 @@ This documentation refers to version 0.010
 
 =head1 SYNOPSIS
 
- use Octium::O::Folders::Signup;
+ use Octium::Folders::Signup;
 
- $signup = Octium::O::Folders::Signup->new(
+ $signup = Octium::Folders::Signup->new(
       base => '/Actium/signups/',
       signup => 'w00',
     );
  $skeds = $signup->subfolder('skeds');
  # or alternatively
- $skeds = Octium::O::Folders::Signup->new(
+ $skeds = Octium::Folders::Signup->new(
       base => '/Actium/signups/',
       signup => 'w00',
       subfolders => ['skeds'],
     );
  # $skeds is the same thing
 
- $oldsignup = Octium::O::Folders::Signup->new(
+ $oldsignup = Octium::Folders::Signup->new(
     { base => '/Actium/signups/' , signup => 'f08'}
     );
  $oldskeds = $oldsignup->subfolder('skeds');
@@ -209,7 +208,7 @@ This documentation refers to version 0.010
 
 =head2 Introduction
 
-Octium::O::Folders::Signup provides an object-oriented interface to the
+Octium::Folders::Signup provides an object-oriented interface to the
 system of signup folders.
 
 (They are referred to here as "folders" rather than "directories"
@@ -227,7 +226,7 @@ schedule files, files from the Hastus AVL Standard interface, and so
 forth).
 
 This module is designed to make it easier to locate the signup folders
-and the folders within them. It inherits from Octium::O::Folder and its
+and the folders within them. It inherits from Octium::Folder and its
 objects are different almost exclusively in object construction, and
 not in use.
 
@@ -314,9 +313,9 @@ the "subfolder" object method call.
 
 =head1 OBJECT CONSTRUCTION
 
-Octium::O::Folders::Signup objects are created using the B<new>
+Octium::Folders::Signup objects are created using the B<new>
 constructor inherited from Moose. Alternatively, they can be cloned
-from an existing Octium::O::Folders::Signup object, using B<subfolder>.
+from an existing Octium::Folders::Signup object, using B<subfolder>.
 
 The B<new> constructor takes named arguments either in a hash or hash
 reference.
@@ -350,11 +349,11 @@ This is the signup folder, described above.
 This can be a single string with an entire path ('path/to/folder'), a
 reference to a list containing that single string (['path/to/folder']),
 a series of strings each with a folder name (['path' , 'to' ,
-'folder']), or a combination (['path/to' , 'folder']).
-Octium::O::Folder splits the pieces into individual folders for you.
+'folder']), or a combination (['path/to' , 'folder']). Octium::Folder
+splits the pieces into individual folders for you.
 
-If none is supplied, Octium::O::Folders::Signup will represent the
-signup folder itself.
+If none is supplied, Octium::Folders::Signup will represent the signup
+folder itself.
 
 =item I<cache>
 
@@ -369,14 +368,14 @@ filesystem while storing the SQLite databases locally.
 
 =item I<must_exist>
 
-See L<Octium::O::Folder|Octium::O::Folder> .
+See L<Octium::Folder|Octium::Folder> .
 
 =back
 
 =head1 METHODS
 
-Most methods are inherited from L<Octium::O::Folder|Octium::O::Folder>
-and are described in the documentation for that module.
+Most methods are inherited from L<Octium::Folder|Octium::Folder> and
+are described in the documentation for that module.
 
 =over
 
@@ -384,15 +383,15 @@ and are described in the documentation for that module.
 
 =item B<$obj-E<gt>load_hasi()>
 
-Identical to their Octium::O::Folder counterparts, except that if
-present, the cache folder is used instead of the SQLite default.
+Identical to their Octium::Folder counterparts, except that if present,
+the cache folder is used instead of the SQLite default.
 
 =item B<$obj-E<gt>base_obj()>
 
 Returns an object representing the base folder of this object. Since
 the base folder is, by definition, not a signup folder, this is not an
-Octium::O::Folders::Signup object, but instead an
-L<Octium::O::Folder|Octium::O::Folder> object.
+Octium::Folders::Signup object, but instead an
+L<Octium::Folder|Octium::Folder> object.
 
 =item B<$obj-E<gt>signup_obj()>
 
@@ -404,7 +403,7 @@ representing a signup subfolder and one needs the signup folder itself.
 
 =head1 DIAGNOSTICS
 
-See L<Octium::O::Folder|Octium::O::Folder> for most diagnostics.
+See L<Octium::Folder|Octium::Folder> for most diagnostics.
 
 =over
 
@@ -429,7 +428,7 @@ specified.
 
 =item Const::Fast
 
-=item Octium::O::Folder
+=item Octium::Folder
 
 =back
 

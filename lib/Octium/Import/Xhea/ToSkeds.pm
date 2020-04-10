@@ -3,14 +3,14 @@ package Octium::Import::Xhea::ToSkeds 0.012;
 use Actium;
 use Octium;
 use Octium::Storage::TabDelimited 'read_aoas';
-use Octium::O::Dir;
+use Octium::Dir;
 use Actium::Time;
-use Octium::O::Pattern;
-use Octium::O::Pattern::Block;
-use Octium::O::Pattern::Group;
-use Octium::O::Pattern::Stop;
-use Octium::O::Pattern::Trip;
-use Octium::O::Sked::Collection;
+use Octium::Pattern;
+use Octium::Pattern::Block;
+use Octium::Pattern::Group;
+use Octium::Pattern::Stop;
+use Octium::Pattern::Trip;
+use Octium::Sked::Collection;
 
 use Params::Validate;
 
@@ -145,7 +145,7 @@ sub _get_blocks {
 
             my $block_id = $field{blk_number};
 
-            my $block = Octium::O::Pattern::Block->new(
+            my $block = Octium::Pattern::Block->new(
                 block_id      => $block_id,
                 vehicle_group => $field{blk_vehicle_group} // $EMPTY,
                 vehicle_type  => $field{blk_vehicle_type} // $EMPTY,
@@ -168,7 +168,7 @@ sub _get_blocks {
     my %line_cache;
 
     my $linegroup_cr = sub {
-        my $line = shift;
+        my $line      = shift;
         my $linegroup = $line_cache{$line}{LineGroup} || $line;
     };
 
@@ -202,10 +202,9 @@ sub _get_blocks {
                 my $identifier = $field{tpat_id};
                 my $uniqid     = "$line.$identifier";
 
-                my $dir_obj
-                  = Octium::O::Dir::->instance( $field{tpat_direction} );
+                my $dir_obj = Octium::Dir::->instance( $field{tpat_direction} );
 
-                my $pattern = Octium::O::Pattern->new(
+                my $pattern = Octium::Pattern->new(
                     line       => $line,
                     linegroup  => $linegroup,
                     identifier => $identifier,
@@ -219,11 +218,10 @@ sub _get_blocks {
 
                 my $lgdir = $pattern->lgdir;
                 if ( not exists $patgroup_by_lgdir{$lgdir} ) {
-                    $patgroup_by_lgdir{$lgdir}
-                      = Octium::O::Pattern::Group->new(
+                    $patgroup_by_lgdir{$lgdir} = Octium::Pattern::Group->new(
                         linegroup => $linegroup,
                         direction => $dir_obj,
-                      );
+                    );
                 }
 
                 $patgroup_by_lgdir{$lgdir}->add_pattern($pattern);
@@ -308,7 +306,7 @@ sub _get_trips {
             #$event = $EMPTY if $event =~ /\A [A-Z]* on \z/x;
             # delete SCHOOOLon type events
 
-            my $trip = Octium::O::Pattern::Trip->new(
+            my $trip = Octium::Pattern::Trip->new(
                 days             => $days,
                 int_number       => $int_number,
                 schedule_daytype => $field{trp_schedule_type},
@@ -359,7 +357,7 @@ sub _get_trips {
                 my %stop_spec = ( h_stp_511_id => $field{stp_511_id} );
                 $stop_spec{tstp_place} = $field{tstp_place}
                   if $field{tstp_place};
-                my $stop_obj = Octium::O::Pattern::Stop->new(%stop_spec);
+                my $stop_obj = Octium::Pattern::Stop->new(%stop_spec);
                 $pattern->set_stop_obj( $stop_position, $stop_obj );
 
             }
@@ -393,7 +391,7 @@ sub _get_trips {
     #
     #            if ( not defined $pattern_place ) {
     #
-    #                my $place_obj = Octium::O::Pattern::Place->new(
+    #                my $place_obj = Octium::Pattern::Place->new(
     #                    %field{
     #                        qw( ttp_place ttp_is_arrival
     #                          ttp_is_departure ttp_is_public )
@@ -460,7 +458,7 @@ sub _add_place_patterns_to_patterns {
         callback   => sub {
             \my %field = shift;
             my ( $place, $rank ) = @field{qw/place rank/};
-            my $direction = Octium::O::Dir->instance( $field{direction} );
+            my $direction = Octium::Dir->instance( $field{direction} );
             my $linedir   = $direction->linedir( $field{line} );
             $ppat_of_linedir{$linedir}->[$rank] = $place;
             return;
@@ -585,7 +583,7 @@ sub _make_skeds {
     }
     env->last_cry->over(".");
 
-    return Octium::O::Sked::Collection->new(
+    return Octium::Sked::Collection->new(
         name   => 'received',
         skeds  => \@skeds,
         signup => $params{signup}

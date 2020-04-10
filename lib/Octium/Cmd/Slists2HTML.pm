@@ -3,7 +3,7 @@ package Octium::Cmd::Slists2HTML 0.013;
 use Actium;
 use Octium;
 
-use Octium::O::Dir;
+use Octium::Dir;
 
 use HTML::Entities;    ### DEP ###
 
@@ -17,6 +17,7 @@ sub OPTIONS {
             fallback => 0,
         }
       ),
+      ;
 
 }
 
@@ -188,7 +189,7 @@ sub START {
 
         }    ## tidy end: foreach my $dir (@dirs)
 
-        my @dir_objs  = map { Octium::O::Dir->instance($_) } @dirs;
+        my @dir_objs  = map { Octium::Dir->instance($_) } @dirs;
         my @dir_bound = map { $_->as_bound } @dir_objs;
 
         ###########################################
@@ -278,7 +279,7 @@ EOT
     }    ## tidy end: foreach my $line ( Actium::sortbyline...)
 
     my %display_type_of = map { ( $_, $_ ) } keys %lines_of_type;
-    my %subtypes_of = map { ( $_, [$_] ) } keys %lines_of_type;
+    my %subtypes_of     = map { ( $_, [$_] ) } keys %lines_of_type;
     $subtypes_of{Modified} = ['Modified'];
     delete $subtypes_of{Local1};
     delete $subtypes_of{Local2};

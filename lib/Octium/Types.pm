@@ -57,18 +57,18 @@ coerce DaySpec, from DayCode, via { [ $_, 'B' ] },;
 
 coerce DaySpec, from DayStr, via { [ split( /-/, $_, 2 ) ] };
 
-subtype ActiumDays, as class_type('Octium::O::Days');
+subtype ActiumDays, as class_type('Octium::Days');
 
 coerce ActiumDays,
-  from DaySpec, via { Octium::O::Days->instance( $_->@* ) },
-  from DayCode, via { Octium::O::Days->instance( to_DaySpec($_)->@* ) },
-  from DayStr,  via { Octium::O::Days->instance( to_DaySpec($_)->@* ) },
+  from DaySpec, via { Octium::Days->instance( $_->@* ) },
+  from DayCode, via { Octium::Days->instance( to_DaySpec($_)->@* ) },
+  from DayStr,  via { Octium::Days->instance( to_DaySpec($_)->@* ) },
   ;
 
 #########################
 ### SCHEDULE STOP TIMES
 
-subtype ActiumSkedStopTime, as class_type('Octium::O::Sked::Stop::Time');
+subtype ActiumSkedStopTime, as class_type('Octium::Sked::Stop::Time');
 
 subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 
@@ -77,9 +77,9 @@ subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
 
 enum( DirCode, \@DIRCODES );
 
-subtype ActiumDir, as class_type('Octium::O::Dir');
+subtype ActiumDir, as class_type('Octium::Dir');
 
-coerce( ActiumDir, from DirCode, via { Octium::O::Dir->instance($_) }, );
+coerce( ActiumDir, from DirCode, via { Octium::Dir->instance($_) }, );
 
 ######################
 ## SCHEDULE TIMES
@@ -126,7 +126,7 @@ subtype Str4, as Str, where { length == 4 },
 ##########################
 ### CLASS AND ROLE TYPES
 
-role_type 'Skedlike', { role => 'Octium::O::Skedlike' };
+role_type 'Skedlike', { role => 'Octium::Skedlike' };
 
 #########################
 ## FOLDER
@@ -137,8 +137,8 @@ coerce ActiumFolderLike, from Str, via( \&_make_actium_o_folder ),
   from ArrayRef [Str], via \&_make_actium_o_folder;
 
 sub _make_actium_o_folder {
-    require Octium::O::Folder;
-    Octium::O::Folder::->new($_);
+    require Octium::Folder;
+    Octium::Folder::->new($_);
 }
 
 1;
@@ -208,7 +208,7 @@ L<Actium/Actium>. It can be coerced into  ActiumODir.
 
 =item B<ActiumODir>
 
-A type representing the Octium::O::Dir class.
+A type representing the Octium::Dir class.
 
 =back
 

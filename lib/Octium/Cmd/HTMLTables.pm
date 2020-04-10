@@ -5,9 +5,9 @@ use Octium;
 
 # Produces HTML tables that represent timetables.
 
-use Octium::O::Sked;
-use Octium::O::Sked::Collection;
-use Octium::O::Sked::Timetable;
+use Octium::Sked;
+use Octium::Sked::Collection;
+use Octium::Sked::Timetable;
 
 sub HELP {
 
@@ -31,7 +31,7 @@ sub START {
     my $html_folder = $signup->subfolder('html');
 
     my $collection
-      = Octium::O::Sked::Collection->load_storable( collection => 'final' );
+      = Octium::Sked::Collection->load_storable( collection => 'final' );
 
     my @skeds = $collection->skeds;
 
@@ -51,8 +51,7 @@ sub START {
             $prev_linegroup = $linegroup;
         }
 
-        my $table
-          = Octium::O::Sked::Timetable->new_from_sked( $sked, $actiumdb );
+        my $table = Octium::Sked::Timetable->new_from_sked( $sked, $actiumdb );
         push @tables, $table;
         push @{ $htmls_of_linegroup{$linegroup} }, $table->html_table;
 

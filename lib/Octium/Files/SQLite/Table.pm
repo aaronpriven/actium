@@ -1,4 +1,4 @@
-package Octium::O::Files::SQLite::Table 0.012;
+package Octium::Files::SQLite::Table 0.012;
 
 use Actium ('class');
 use Octium;
@@ -268,8 +268,8 @@ __END__
 
 =head1 NAME
 
-Octium::O::Files::SQLite::Table - Class representing tables used by
-classes consuming Octium::O::Files::SQLite role
+Octium::Files::SQLite::Table - Class representing tables used by
+classes consuming Octium::Files::SQLite role
 
 =head1 NOTE
 
@@ -283,10 +283,10 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Octium::O::Files::SQLite::Table;
+ use Octium::Files::SQLite::Table;
  
  my $table_obj = 
-     Octium::O::Files::HastusASI::Table->new(
+     Octium::Files::HastusASI::Table->new(
          id => 'SHA',
          filetype => 'NET' ,
          parent => 'DIS',
@@ -301,16 +301,16 @@ This documentation refers to version 0.001
 
 =head1 DESCRIPTION
 
-Octium::O::Files::SQLite::Table is a class holding information on the
+Octium::Files::SQLite::Table is a class holding information on the
 tables in a type of file imported into SQLite via a class consuming the
- Octium::O::Files::SQLite role.
+ Octium::Files::SQLite role.
 
 All objects are read-only and are expected to be set during object
 construction.
 
 It is intended to be used only from within another class, such as 
-Octium::O::Files::HastusASI::Definition or (formerly) 
-Octium::O::Files::FMPXMLresult. All  attributes and methods should be
+Octium::Files::HastusASI::Definition or (formerly) 
+Octium::Files::FMPXMLresult. All  attributes and methods should be
 considered private to that class.
 
 =head1 ATTRIBUTES and METHODS
@@ -461,7 +461,7 @@ If there is no key for this  table, the value is undef.
 
 As with most Moose classes, the constructor method is called "new".
 Invoke it with C<<
-Octium::O:::Files::HastusASI::Table->new(%hash_of_attributes) >>.
+Octium:::Files::HastusASI::Table->new(%hash_of_attributes) >>.
 
 The following attributes should be specified in object construction:
 

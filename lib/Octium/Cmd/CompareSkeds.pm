@@ -2,7 +2,7 @@ package Octium::Cmd::CompareSkeds 0.014;
 
 use Actium;
 use Octium;
-use Octium::O::Sked::Collection;
+use Octium::Sked::Collection;
 
 sub OPTIONS {
     return (
@@ -18,12 +18,12 @@ sub START {
     my $signup     = Octium::env->signup;
     my $old_signup = Octium::env->oldsignup;
 
-    my $collection = Octium::O::Sked::Collection->load_storable(
+    my $collection = Octium::Sked::Collection->load_storable(
         signup     => $signup,
         collection => 'received'
     );
 
-    my $oldcollection = Octium::O::Sked::Collection->load_storable(
+    my $oldcollection = Octium::Sked::Collection->load_storable(
         signup     => $old_signup,
         collection => 'received'
     );

@@ -4,7 +4,7 @@ package Octium::Cmd::ZipDecals 0.012;
 
 use Actium;
 use Octium;
-use Octium::O::Folder;
+use Octium::Folder;
 use Spreadsheet::ParseXLSX;    ### DEP ###
 
 use Archive::Zip qw(:ERROR_CODES);    ### DEP ###
@@ -22,7 +22,7 @@ sub START {
     my $filespec = shift @argv;
     die "No input file given" unless $filespec;
 
-    my ( $folder, $filename ) = Octium::O::Folder->new_from_file($filespec);
+    my ( $folder, $filename ) = Octium::Folder->new_from_file($filespec);
 
     my $sheet  = $folder->load_sheet($filename);
     my @decals = Actium::sortbyline $sheet->col(0);

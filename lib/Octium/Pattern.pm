@@ -1,4 +1,4 @@
-package Octium::O::Pattern 0.012;
+package Octium::Pattern 0.012;
 
 # used by Xhea:::ToSkeds
 
@@ -6,8 +6,8 @@ use Actium ('class');
 use Octium;
 
 use Octium::Types (qw/DirCode ActiumDir/);
-use Octium::O::Dir;
-use Octium::O::Pattern::Stop;
+use Octium::Dir;
+use Octium::Pattern::Stop;
 
 has [ 'line', 'linegroup' ] => (
     required => 1,
@@ -71,7 +71,7 @@ sub _build_unique_id {
 #has 'place_objs_r' => (
 #    is      => 'rw',
 #    writer  => '_set_place_obj_r',
-#    isa     => 'ArrayRef[Octium::O::Pattern::Place]',
+#    isa     => 'ArrayRef[Octium::Pattern::Place]',
 #    default => sub { [] },
 #    traits  => ['Array'],
 #    handles =>
@@ -82,7 +82,7 @@ sub _build_unique_id {
 has 'stop_objs_r' => (
     is      => 'rw',
     writer  => '_set_stops_obj_r',
-    isa     => 'ArrayRef[Octium::O::Pattern::Stop]',
+    isa     => 'ArrayRef[Octium::Pattern::Stop]',
     default => sub { [] },
     traits  => ['Array'],
     handles => {
@@ -95,7 +95,7 @@ has 'stop_objs_r' => (
 
 has 'trip_objs_r' => (
     is      => 'bare',
-    isa     => 'ArrayRef[Octium::O::Pattern::Trip]',
+    isa     => 'ArrayRef[Octium::Pattern::Trip]',
     default => sub { [] },
     traits  => ['Array'],
     handles => {
@@ -129,7 +129,7 @@ has 'trip_objs_r' => (
 #            }
 #
 #            push @stop_objs,
-#              Octium::O::Pattern::Stop->new(
+#              Octium::Pattern::Stop->new(
 #                h_stp_511_id => $trip_stop_obj->h_stp_511_id,
 #                %place_info
 #              );

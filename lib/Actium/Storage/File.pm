@@ -213,7 +213,7 @@ method json_store ( $data_r ! ) {
     my $cry      = env->cry("Storing JSON file $basename...");
     require JSON;    ### DEP ###
     my $json_text = JSON::to_json( $data_r, { pretty => 1, canonical => 1 } );
-    my $result = $self->spew_text($json_text);
+    my $result    = $self->spew_text($json_text);
     $cry->done;
     return $result;
 }
@@ -542,7 +542,7 @@ method move_to {
     croak "Couldn't move $self: $!";
 }
 
-# Actium::O::Folder equivalents -- see list in Actium::Storage::Folder
+# Actium::Folder equivalents -- see list in Actium::Storage::Folder
 
 1;
 

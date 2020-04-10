@@ -1,4 +1,4 @@
-package Octium::O::Points::BTime 0.013;
+package Octium::Points::BTime 0.013;
 
 # object for a single time in a box in a 2019 InDesign point schedule
 
@@ -8,7 +8,7 @@ use Octium::Types(qw/ActiumTime/);
 
 has actiumdb => (
     is       => 'ro',
-    isa      => 'Octium::O::Files::ActiumDB',
+    isa      => 'Octium::Files::ActiumDB',
     required => 1,
 );
 

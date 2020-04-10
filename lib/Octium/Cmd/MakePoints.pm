@@ -15,14 +15,14 @@ use Octium::Storage::Excel('new_workbook');
 use File::Slurper('read_text');    ### DEP ###
 use Text::Trim;                    ### DEP ###
 
-use Octium::O::Points::Point;
+use Octium::Points::Point;
 
 const my $LISTFILE_BASE    => 'pl';
 const my $ERRORFILE_BASE   => 'err';
 const my $HEIGHTSFILE_BASE => 'ht';
 const my $CHECKLIST_BASE   => 'check';
 
-const my @EXCEL_COLUMN_WIDTHS => ( 2, 5, 5.33, 7.17, 46.5, 14.83 );
+const my @EXCEL_COLUMN_WIDTHS       => ( 2, 5, 5.33, 7.17, 46.5, 14.83 );
 const my $EXCEL_MAX_WORKSHEET_CHARS => 31;
 
 const my $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH => 28;
@@ -432,7 +432,7 @@ sub START {
 
         # 1) Read kpoints from file
 
-        my $point = Octium::O::Points::Point->new_from_kpoints(
+        my $point = Octium::Points::Point->new_from_kpoints(
             {   stopid             => $stopid,
                 signid             => $signid,
                 effdate            => $effdate,
@@ -656,7 +656,7 @@ sub START {
                         $_ = substr( $_, 0, $max_length ) foreach @cities;
                         $cluster_display = join( ',', sort @cities );
                         $max_length--;
-                      } until length($cluster_display)
+                    } until length($cluster_display)
                       <= $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH;
 
                     $cluster_of_city{$city} = $cluster_display;
@@ -847,10 +847,10 @@ sub _get_run_name {
     push @run_pieces, $run_agency_abbr
       unless $run_agency_abbr eq $FALLBACK_AGENCY_ABBR;
     push @run_pieces, join( ',', @args ) if @args;
-    push @run_pieces, $signtype if $signtype;
-    push @run_pieces, $tag      if $tag;
-    push @run_pieces, 'N'       if env->option('newsigns');
-    push @run_pieces, 'U'       if env->option('update');
+    push @run_pieces, $signtype          if $signtype;
+    push @run_pieces, $tag               if $tag;
+    push @run_pieces, 'N'                if env->option('newsigns');
+    push @run_pieces, 'U'                if env->option('update');
 
     if (@run_pieces) {
         return '.' . join( '_', @run_pieces );

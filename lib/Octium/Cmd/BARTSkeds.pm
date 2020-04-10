@@ -21,7 +21,7 @@ const my $DEFAULT_KEY => 'MW9S-E7SL-26DU-VV8V';
 
 const my @DAYS        => qw/12345 6 7/;
 const my %DAY_DESC_OF => qw/12345 Weekday 6 Saturday 7 Sunday/;
-# weekday, saturday, sunday; matches Octium::O::Days
+# weekday, saturday, sunday; matches Octium::Days
 #
 
 use constant DO_FARES => 0;

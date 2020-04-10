@@ -1,4 +1,4 @@
-package Octium::O::DestinationCode 0.012;
+package Octium::DestinationCode 0.012;
 
 use Actium ('class');
 use Octium;
@@ -20,7 +20,7 @@ has '_destination_code_of_r' => (
 
 has '_folder' => (
     is       => 'ro',
-    isa      => 'Octium::O::Folder',
+    isa      => 'Octium::Folder',
     init_arg => 'folder',
 );
 

@@ -1,7 +1,7 @@
-package Octium::O::Sked::Timetable 0.012;
+package Octium::Sked::Timetable 0.012;
 
 # Object representing the data in a timetable to be displayed to the user.
-# Designed to take an Octium::O::Sked object and make it displayable.
+# Designed to take an Octium::Sked object and make it displayable.
 
 use Actium ('class');
 use Octium;
@@ -15,7 +15,7 @@ const my $idt => 'Octium::Text::InDesignTags';
 use HTML::Entities;    ### DEP ###
 
 has sked_obj => (
-    isa      => 'Octium::O::Sked',
+    isa      => 'Octium::Sked',
     is       => 'ro',
     required => 1,
     handles  => {
@@ -36,7 +36,7 @@ has sked_obj => (
         linedays                        => 'linedays',
         daycode                         => 'daycode',
         sortable_id_with_timenum        => 'sortable_id_with_timenum',
-      }
+    }
 
 );
 
@@ -345,7 +345,7 @@ sub as_indesign {
     ##############
     # Header Row (line, days, dest)
 
-    my @routes = $self->header_routes;
+    my @routes     = $self->header_routes;
     my $routechars = length( join( '', @routes ) ) + ( 3 * ($#routes) ) + 1;
 
     # number of characters in routes, plus three characters -- space bullet
@@ -755,7 +755,7 @@ sub as_public_json {
 
     # Public JSON needs access to the Timepoint table in Actium.fp7,
     # so has to be here in Timetable, even though most of the data comes from
-    # the Octium::O::Sked object.
+    # the Octium::Sked object.
 
     my $self = shift;
     my $sked = $self->sked_obj;
@@ -795,7 +795,7 @@ sub as_public_json {
 
 }    ## tidy end: sub as_public_json
 
-with 'Octium::O::Skedlike';
+with 'Octium::Skedlike';
 
 1;
 

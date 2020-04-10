@@ -1,16 +1,16 @@
-package Octium::O::Pattern::Group 0.012;
+package Octium::Pattern::Group 0.012;
 
 use Actium ('class');
 use Octium;
 
 use Octium::Types (qw/ActiumDir/);
-use Octium::O::Dir;
-use Octium::O::Days;
+use Octium::Dir;
+use Octium::Days;
 use Actium::Time;
-use Octium::O::Pattern;
-use Octium::O::Sked::Trip;
-use Octium::O::Sked;
-use Octium::O::Sked::TripCollection;
+use Octium::Pattern;
+use Octium::Sked::Trip;
+use Octium::Sked;
+use Octium::Sked::TripCollection;
 use Octium::Set ('ordered_union_columns');
 
 # OBJECT METHODS AND ATTRIBUTES
@@ -49,7 +49,7 @@ sub id {
 
 has 'patterns_obj' => (
     is      => 'bare',
-    isa     => 'HashRef[Octium::O::Pattern]',
+    isa     => 'HashRef[Octium::Pattern]',
     default => sub { {} },
     traits  => ['Hash'],
     handles => {
@@ -111,7 +111,7 @@ sub skeds {
         # new reference.
 
         push @skeds,
-          Octium::O::Sked->new(
+          Octium::Sked->new(
             place4_r    => [@place4s],
             place8_r    => [@place8s],
             stopplace_r => [@stopplaces],
@@ -119,7 +119,7 @@ sub skeds {
             linegroup   => $self->linegroup,
             direction   => $self->dir_obj,
             trip_r      => [ $trip_collection->trips_r->@* ],
-            days        => Octium::O::Days->instance( $days, 'B' ),
+            days        => Octium::Days->instance( $days, 'B' ),
           );
 
     }
@@ -147,7 +147,7 @@ sub _sked_trip_collections {
                 $event      = '';
             }
 
-            my $days_obj = Octium::O::Days->instance( $days, $schooldays );
+            my $days_obj = Octium::Days->instance( $days, $schooldays );
 
             my @times = map { $_->timenum } $trip->stoptimes;
 
@@ -160,7 +160,7 @@ sub _sked_trip_collections {
             my $vehicletype
               = @vehicle_info ? join( ":", @vehicle_info ) : $EMPTY;
 
-            push @skedtrips, Octium::O::Sked::Trip->new(
+            push @skedtrips, Octium::Sked::Trip->new(
                 blockid => $trip->block_id,
                 pattern => $pattern->identifier,
                 daysexceptions => $event,             # $trip->event_and_status,
@@ -179,7 +179,7 @@ sub _sked_trip_collections {
     }
 
     my $all_trips_collection
-      = Octium::O::Sked::TripCollection->new( trips_r => \@skedtrips );
+      = Octium::Sked::TripCollection->new( trips_r => \@skedtrips );
 
     return $all_trips_collection->trips_by_day;
 

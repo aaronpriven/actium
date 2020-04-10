@@ -7,7 +7,7 @@ use warnings;
 
 use Actium;
 use Octium::MapRepository (':all');
-use Octium::O::Folder;
+use Octium::Folder;
 
 use English '-no_match_vars';    ### DEP ###
 
@@ -72,12 +72,12 @@ sub START {
 
     if ( $web and $webfolder_opt ) {
         $specified_webfolder_obj
-          = Octium::O::Folder->new( env->option('webfolder') );
+          = Octium::Folder->new( env->option('webfolder') );
     }
 
     my $repository_opt = env->option('repository');
 
-    my $repository = Octium::O::Folder->new(
+    my $repository = Octium::Folder->new(
         {   folderlist => $repository_opt,
             must_exist => 1,
         }
@@ -85,7 +85,7 @@ sub START {
     foreach my $folderspec (@importfolders) {
 
         # import to repository
-        my $importfolder = Octium::O::Folder->new(
+        my $importfolder = Octium::Folder->new(
             {   folderlist => $folderspec,
                 must_exist => 1,
             }
@@ -257,7 +257,7 @@ dependencies below.
 
 =item * Octium::MapRepository
 
-=item * Octium::O::Folder
+=item * Octium::Folder
 
 =back
 

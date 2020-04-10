@@ -1,4 +1,4 @@
-package Octium::O::Sked::Timetable::IDFrameSet 0.012;
+package Octium::Sked::Timetable::IDFrameSet 0.012;
 
 # Actium/O/Sked/Timetable/IDFrameSet.pm
 
@@ -8,7 +8,7 @@ package Octium::O::Sked::Timetable::IDFrameSet 0.012;
 use Actium ('class');
 use Octium;
 
-use Octium::O::Sked::Timetable::IDFrame;
+use Octium::Sked::Timetable::IDFrame;
 
 use overload '""' => sub { shift->description };
 # overload ### DEP ###
@@ -21,7 +21,7 @@ has description => (
 has frames_r => (
     traits   => ['Array'],
     is       => 'bare',
-    isa      => 'ArrayRef[Octium::O::Sked::Timetable::IDFrame]',
+    isa      => 'ArrayRef[Octium::Sked::Timetable::IDFrame]',
     required => 1,
     init_arg => 'frames',
     handles  => {
@@ -72,7 +72,7 @@ around BUILDARGS ( $orig, $class: @) {
           . '->new must be reference to hash of attribute specifications'
           unless Actium::reftype($frame_r) eq 'HASH';
 
-        $frames_r->[$i] = Octium::O::Sked::Timetable::IDFrame->new($frame_r);
+        $frames_r->[$i] = Octium::Sked::Timetable::IDFrame->new($frame_r);
 
     }
 
@@ -89,7 +89,7 @@ __END__
 
 head1 NAME
 
-Octium::O::Sked::Timetable::IDFrameSet - Object representing a set of 
+Octium::Sked::Timetable::IDFrameSet - Object representing a set of 
 InDesign timetable frames
 
 =head1 VERSION
@@ -98,8 +98,8 @@ This documentation refers to version 0.002
 
 =head1 SYNOPSIS
 
- use Octium::O::Sked::Timetable::IDFrameSet;
- my $frameset = Octium::O::Sked::Timetable::IDFrameSet->new(
+ use Octium::Sked::Timetable::IDFrameSet;
+ my $frameset = Octium::Sked::Timetable::IDFrameSet->new(
      description       => 'Landscape halves',
      compression_level => 0,
      height            => 42,
@@ -146,15 +146,15 @@ True if this frameset represents a portrait page. Defaults to false.
 
 Required during construction, it consists of the frames that make up
 the  frameset. Frames are described in 
-L<Octium::O::Sked::Timetable::IDFrame|Octium::O::Sked::Timetable::IDFrame>.
+L<Octium::Sked::Timetable::IDFrame|Octium::Sked::Timetable::IDFrame>.
 In the constructor, it should be passed as an array reference; it will
 be  returned as a plain list of objects.
 
 If any of the values passed in the I<frames> entry is an unblessed hash
- reference, Octium::O::Sked::Timetable::IDFrameSet will pass it to 
-Octium::O::Sked::Timetable::IDFrame->new() and use the result.  (So,
-you don't have to explicitly create the IDFrame objects; this module
-will do it for you.)
+ reference, Octium::Sked::Timetable::IDFrameSet will pass it to 
+Octium::Sked::Timetable::IDFrame->new() and use the result.  (So, you
+don't have to explicitly create the IDFrame objects; this module will
+do it for you.)
 
 =item B<height>
 
@@ -191,7 +191,7 @@ circumstances.
 
 =item Scalar::Util
 
-=item Octium::O::Sked::Timetable::IDFrame
+=item Octium::Sked::Timetable::IDFrame
 
 =back
 

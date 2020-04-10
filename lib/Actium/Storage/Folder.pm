@@ -512,7 +512,7 @@ method spew_from_hash (
 
 __END__
 
-# Actium::O::Folder equivalents
+# Actium::Folder equivalents
 
 # in init_arg --
 # folderlist -- this is the same as path

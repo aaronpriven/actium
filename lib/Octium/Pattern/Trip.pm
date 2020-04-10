@@ -1,4 +1,4 @@
-package Octium::O::Pattern::Trip 0.012;
+package Octium::Pattern::Trip 0.012;
 
 use Actium ('class');
 use Actium::Time;

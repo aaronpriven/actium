@@ -18,7 +18,7 @@ const my $IDT => 'Octium::Text::InDesignTags';
 const my $API_KEY => 'MW9S-E7SL-26DU-VV8V';
 
 const my @DAYS => qw/12345 6 7/;
-# weekday, saturday, sunday; matches Octium::O::Days
+# weekday, saturday, sunday; matches Octium::Days
 #
 
 use constant DO_FARES => 0;
@@ -165,7 +165,7 @@ sub get_fares {
             $fare_to{$dest} = 'YAH';
         }
         else {
-            my $url = fare_url( $origin, $dest, $date );
+            my $url      = fare_url( $origin, $dest, $date );
             my $fare_xml = get_url($url);
 
             my $twig = XML::Twig->new();

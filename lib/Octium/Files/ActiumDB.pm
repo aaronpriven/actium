@@ -1,4 +1,4 @@
-package Octium::O::Files::ActiumDB 0.013;
+package Octium::Files::ActiumDB 0.013;
 
 # Class holding routines related to the Actium database
 # (the FileMaker database used by Actium users), accessed
@@ -135,7 +135,7 @@ sub _build_sign_cache {
 }
 
 sub _build_city_cache {
-    my $self = shift;
+    my $self    = shift;
     my $cache_r = $self->_build_table_cache( 'city', qw[City SmokingText ] );
 }
 
@@ -151,7 +151,7 @@ sub _build_stop_cache {
 }
 
 sub _build_i18n_cache {
-    my $self = shift;
+    my $self    = shift;
     my $cache_r = $self->_build_table_cache( 'i18n', qw(en es zh), );
 }
 
@@ -257,7 +257,7 @@ const my @SS_COLUMNS => (
 );
 
 has cachefolder => (
-    isa     => 'Octium::O::Folder',
+    isa     => 'Octium::Folder',
     is      => 'ro',
     builder => '_build_cachefolder',
     lazy    => 1,
@@ -265,8 +265,8 @@ has cachefolder => (
 
 sub _build_cachefolder {
     my $self = shift;
-    require Octium::O::Folder;
-    return Octium::O::Folder::->new($DEFAULT_CACHE_FOLDER);
+    require Octium::Folder;
+    return Octium::Folder::->new($DEFAULT_CACHE_FOLDER);
 }
 
 has _ss_cache_r => (
@@ -648,8 +648,8 @@ method effective_date (
         );
     }
 
-    require Octium::O::DateTime;
-    return Octium::O::DateTime->newest_date(@dates);
+    require Octium::DateTime;
+    return Octium::DateTime->newest_date(@dates);
 
 }    ## tidy end: method effective_date
 
@@ -1131,7 +1131,7 @@ EOF
 
 }    ## tidy end: sub _ldh_header
 
-with 'Octium::O::Files::FileMaker_ODBC';
+with 'Octium::Files::FileMaker_ODBC';
 
 __PACKAGE__->meta->make_immutable;    ## no critic (RequireExplicitInclusion)
 

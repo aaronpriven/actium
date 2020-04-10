@@ -1,16 +1,16 @@
-package Octium::O::Files::HastusASI::Definition 0.012;
+package Octium::Files::HastusASI::Definition 0.012;
 
 # Definition of Hastus ASI tables and file types
 
 use warnings;
 use 5.012;    # turns on features
 
-use MooseX::Singleton; ### DEP ###
+use MooseX::Singleton;    ### DEP ###
 
-use English ('-no_match_vars'); ### DEP ###
+use English ('-no_match_vars');    ### DEP ###
 
-use Octium::O::Files::HastusASI::Filetype;
-use Octium::O::Files::SQLite::Table;
+use Octium::Files::HastusASI::Filetype;
+use Octium::Files::SQLite::Table;
 
 #########################################
 ### DEFINITION
@@ -211,7 +211,7 @@ my $DEFINITION = <<'ENDNAMES'
          
 ENDNAMES
   ;
-  
+
 =begin comment
 
  TABLE FILE PARENT
@@ -232,7 +232,7 @@ ENDNAMES
 =cut
 
 sub _build_table_of_r {
- 
+
 =begin comment
  
 The way this works is that it goes through each table in the above
@@ -263,13 +263,13 @@ attribute.
 
   TABLE:
     while (<$definition_h>) {
-        my @entries = split; # each word
+        my @entries = split;                # each word
 
         my %spec;
 
         # get row type length and column type
         my ( $table_id, $filetype, $parent )
-          = splice( @entries, 0, 3 );    ## no critic (ProhibitMagicNumbers)
+          = splice( @entries, 0, 3 );       ## no critic (ProhibitMagicNumbers)
 
         $spec{filetype} = $filetype;
         $spec{id}       = $table_id;
@@ -307,18 +307,18 @@ attribute.
 
         $table_spec_of{$table_id} = \%spec;
 
-    } ## tidy end: while (<$definition_h>)
+    }    ## tidy end: while (<$definition_h>)
 
     close $definition_h
       or die "Can't close internal variable for reading: $OS_ERROR";
 
     my %tableobjs
-      = map { $_ => Octium::O::Files::SQLite::Table->new( $table_spec_of{$_} ) }
+      = map { $_ => Octium::Files::SQLite::Table->new( $table_spec_of{$_} ) }
       keys %table_spec_of;
 
     return \%tableobjs;
 
-} ## tidy end: sub _build_table_of_r
+}    ## tidy end: sub _build_table_of_r
 
 sub _build_filetype_of_r {
     my $self      = shift;
@@ -332,7 +332,7 @@ sub _build_filetype_of_r {
 
     my %filetypeobj_of;
     foreach my $filetype ( keys %tables_of ) {
-        $filetypeobj_of{$filetype} = Octium::O::Files::HastusASI::Filetype->new(
+        $filetypeobj_of{$filetype} = Octium::Files::HastusASI::Filetype->new(
             id       => $filetype,
             tables_r => $tables_of{$filetype},
         );
@@ -340,8 +340,7 @@ sub _build_filetype_of_r {
 
     return \%filetypeobj_of;
 
-} ## tidy end: sub _build_filetype_of_r
-
+}    ## tidy end: sub _build_filetype_of_r
 
 ################################
 ### ATTRIBUTES
@@ -351,12 +350,12 @@ has '_table_of_r' => (
     init_arg => undef,
     is       => 'ro',
     traits   => ['Hash'],
-    isa      => 'HashRef[Octium::O::Files::SQLite::Table]',
+    isa      => 'HashRef[Octium::Files::SQLite::Table]',
     builder  => '_build_table_of_r',
     lazy     => 1,
     handles  => {
-        tables   => 'keys',
-        _table_of => 'get',
+        tables     => 'keys',
+        _table_of  => 'get',
         is_a_table => 'exists',
     },
 );
@@ -365,11 +364,11 @@ has '_filetype_of_r' => (
     init_arg => undef,
     is       => 'ro',
     traits   => ['Hash'],
-    isa      => 'HashRef[Octium::O::Files::HastusASI::Filetype]',
+    isa      => 'HashRef[Octium::Files::HastusASI::Filetype]',
     builder  => '_build_filetype_of_r',
     lazy     => 1,
     handles  => {
-        filetypes   => 'keys',
+        filetypes    => 'keys',
         _filetype_of => 'get',
     },
 
@@ -457,13 +456,14 @@ __END__
 
 =head1 NAME
 
-Octium::O::Files::HastusASI::Definition - singleton object/class for Hastus AVL 
-Standard Interface 
+Octium::Files::HastusASI::Definition - singleton object/class for
+Hastus AVL  Standard Interface
 
 =head1 NOTE
 
-This documentation is intended for maintainers of the Actium system, not
-users of it. Run "perldoc Actium" for general information on the Actium system.
+This documentation is intended for maintainers of the Actium system,
+not users of it. Run "perldoc Actium" for general information on the
+Actium system.
 
 =head1 VERSION
 
@@ -471,19 +471,19 @@ This documentation refers to version 0.001
 
 =head1 SYNOPSIS
 
- use Octium::O::Files::HastusASI::Definition;
- my $definition = Octium::O::Files::HastusASI::Definition->instance;
+ use Octium::Files::HastusASI::Definition;
+ my $definition = Octium::Files::HastusASI::Definition->instance;
  
  my @tables = $defintion->tables;
  
 =head1 DESCRIPTION
 
-Octium::O::Files::HastusASI::Definition is a singleton class containing data
-about the definition of Hastus ASI files. It builds the data from an embedded
-string and creates the objects when necessary.
+Octium::Files::HastusASI::Definition is a singleton class containing
+data about the definition of Hastus ASI files. It builds the data from
+an embedded string and creates the objects when necessary.
 
-It is private to the L<Octium::O::Files::HastusASI|Octium::O::Files::HastusASI> 
-module. 
+It is private to the
+L<Octium::Files::HastusASI|Octium::Files::HastusASI>  module.
 
 =head1 METHODS
 
@@ -492,94 +492,88 @@ module.
 =item B<instance>
 
 Use the B<instance> class method to obtain the object: 
-C<Octium::O::Files::HastusASI::Definition-E<gt>instance>. (This is unlike
-standard Moose classes and most other perl classes, which create
-a constructor called "new".)
+C<Octium::Files::HastusASI::Definition-E<gt>instance>. (This is unlike
+standard Moose classes and most other perl classes, which create a
+constructor called "new".)
 
 =item B<tables>
 
 Returns a list of the identifiers for each table. See L<I<id> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/id>.
+Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/id>.
 
 =item B<is_a_table(I<table>)>
 
-Returns true if the specified table is a valid table (that is, is a member
-of the above list).
+Returns true if the specified table is a valid table (that is, is a
+member of the above list).
 
 =item B<filetypes>
 
-Returns a list of the identifiers for each filetype. 
-See L<I<id> in
-Octium::O::Files::HastusASI::Filetype|Octium::O::Files::HastusASI::Filetype/id>.
+Returns a list of the identifiers for each filetype.  See L<I<id> in
+Octium::Files::HastusASI::Filetype|Octium::Files::HastusASI::Filetype/id>.
 
 =item B<key_of_table (I<table_id>)>
 
-Returns the key column of the specified table.
-See L<I<key> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/key>.
+Returns the key column of the specified table. See L<I<key> in
+Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/key>.
 
 =item B<columns_of_table (I<table_id>)>
 
-Returns a list of the columns of the specified table.
-See L<I<columns> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/columns>.
+Returns a list of the columns of the specified table. See L<I<columns>
+in Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/columns>.
 
 =item B<tables_of_filetype (I<filetype_id>)>
 
-Returns a list of the tables of the specified filetype.
-See L<I<tables> in
-Octium::O::Files::HastusASI::Filetype|Octium::O::Files::HastusASI::Filetype/tables>.
+Returns a list of the tables of the specified filetype. See L<I<tables>
+in
+Octium::Files::HastusASI::Filetype|Octium::Files::HastusASI::Filetype/tables>.
 
 =item B<filetype_of_table (I<table_id>)>
 
-Returns the filetype of the specified table.
-See L<I<filetype> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/filetype>.
+Returns the filetype of the specified table. See L<I<filetype> in
+Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/filetype>.
 
 =item B<parent_of_table (I<table_id>)>
 
-Returns the parent of the specified table, if any.
-See L<I<parent> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/parent>.
+Returns the parent of the specified table, if any. See L<I<parent> in
+Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/parent>.
 
 =item B<has_repeating_final_column (I<table_id>)>
 
-Returns a boolean value representing whether the final column has repeated
-values (instead of just one value). 
-See L<I<has_repeating_final_column> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/has_repeating_final_column>.
+Returns a boolean value representing whether the final column has
+repeated values (instead of just one value).  See
+L<I<has_repeating_final_column> in
+Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/has_repeating_final_column>.
 
 =item B<has_composite_key (I<table_id>)>
 
-Returns whether the key column is a composite of two or more other columns.
-See L<I<has_composite_key> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/has_composite_key>.
+Returns whether the key column is a composite of two or more other
+columns. See L<I<has_composite_key> in
+Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/has_composite_key>.
 
 =item B<create_query_of_table (I<table_id>)>
 
-Returns the SQLite command creating this table.
-See L<I<sql_createcmd> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/sql_createcmd>.
+Returns the SQLite command creating this table. See L<I<sql_createcmd>
+in
+Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/sql_createcmd>.
 
 =item B<insert_query_of_table (I<table_id>)>
 
-Returns the SQLite command inserting a row of this table into the database.
-See L<I<sql_insertcmd> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/sql_insertcmd>.
+Returns the SQLite command inserting a row of this table into the
+database. See L<I<sql_insertcmd> in
+Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/sql_insertcmd>.
 
 =item B<index_query_of_table (I<table_id>)>
 
-Returns the SQLite command creating the index of the specified table based on the key
-column.
-See L<I<sql_idxcmd> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/sql_idxcmd>.
+Returns the SQLite command creating the index of the specified table
+based on the key column. See L<I<sql_idxcmd> in
+Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/sql_idxcmd>.
 
 =item B<key_components_idxs (I<table_id>)>
 
-Returns the column indexes (what order they are in the columns) of 
-the components that make up the key of the specified table.
-See L<I<key_components_idxs> in
-Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/key_components_idxs>.
+Returns the column indexes (what order they are in the columns) of  the
+components that make up the key of the specified table. See
+L<I<key_components_idxs> in
+Octium::Files::SQLite::Table|Octium::Files::SQLite::Table/key_components_idxs>.
 
 =back
 
@@ -591,8 +585,8 @@ Octium::O::Files::SQLite::Table|Octium::O::Files::SQLite::Table/key_components_i
 
 =item * Can't close internal variable for reading
 
-Perl was unable to open, or close, the variable that holds the definition 
-entries (which it opens as a file). An unlikely error.
+Perl was unable to open, or close, the variable that holds the
+definition  entries (which it opens as a file). An unlikely error.
 
 =back
       
@@ -606,9 +600,9 @@ entries (which it opens as a file). An unlikely error.
 
 =item Moose
 
-=item Octium::O::Files::HastusASI::Filetype
+=item Octium::Files::HastusASI::Filetype
 
-=item Octium::O::Files::SQLite::Table
+=item Octium::Files::SQLite::Table
 
 =back
 
@@ -620,8 +614,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2011
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -633,6 +627,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

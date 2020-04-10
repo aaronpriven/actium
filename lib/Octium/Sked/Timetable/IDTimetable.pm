@@ -1,4 +1,4 @@
-package Octium::O::Sked::Timetable::IDTimetable 0.012;
+package Octium::Sked::Timetable::IDTimetable 0.012;
 
 # Object representing data in a timetable to be displayed to user,
 # specific to InDesign timetables. Mostly to do with frame information.
@@ -6,31 +6,30 @@ package Octium::O::Sked::Timetable::IDTimetable 0.012;
 use 5.016;
 use warnings;
 
-use Moose; ### DEP ###
-use MooseX::StrictConstructor; ### DEP ###
-use MooseX::SemiAffordanceAccessor; ### DEP ###
-use Const::Fast; ### DEP ###
+use Moose;                             ### DEP ###
+use MooseX::StrictConstructor;         ### DEP ###
+use MooseX::SemiAffordanceAccessor;    ### DEP ###
+use Const::Fast;                       ### DEP ###
 
-use List::Util(qw<max sum>); ### DEP ###
+use List::Util(qw<max sum>);           ### DEP ###
 
-use MooseX::MarkAsMethods (autoclean => 1); ### DEP ###
+use MooseX::MarkAsMethods ( autoclean => 1 );    ### DEP ###
 #use overload '""'                   => sub {
 #    my $self = shift;
 #    $self->id . ":" . $self->lower_bound . '-' . $self->upper_bound;
 #};
 
 has timetable_obj => (
-    isa      => 'Octium::O::Sked::Timetable',
+    isa      => 'Octium::Sked::Timetable',
     is       => 'ro',
     required => 1,
     handles =>
-      [qw(lines dircode daycode width_in_halfcols id dimensions_for_display)]
-    ,
+      [qw(lines dircode daycode width_in_halfcols id dimensions_for_display)],
 );
 
 has [qw(upper_bound lower_bound)] => (
-    is      => 'rw',
-    isa     => 'Int',
+    is  => 'rw',
+    isa => 'Int',
 );
 
 has [qw<overlong failed full_frame>] => (
@@ -58,17 +57,18 @@ sub height {
     my $self        = shift;
     my $upper_bound = $self->upper_bound;
     my $lower_bound = $self->lower_bound;
-    return $self->timetable_obj->height 
-       if not defined $upper_bound or not defined $lower_bound;
-    my $height = $upper_bound - $lower_bound +1;
-    $height += $height_adjustment if $upper_bound != ($self->timetable_obj->body_row_count -1);
+    return $self->timetable_obj->height
+      if not defined $upper_bound or not defined $lower_bound;
+    my $height = $upper_bound - $lower_bound + 1;
+    $height += $height_adjustment
+      if $upper_bound != ( $self->timetable_obj->body_row_count - 1 );
     return $height;
 }
 
 sub _overlong_clones {
-    my $self          = shift;
+    my $self                     = shift;
     my $final_frame_is_remainder = shift;
-    my @rows_on_pages = @_;
+    my @rows_on_pages            = @_;
     my @clonespecs;
     my $start      = 0;
     my $page_order = 0;
@@ -80,7 +80,7 @@ sub _overlong_clones {
             upper_bound => $start + $page_rows - 1,
             firstpage   => 0,
             finalpage   => 0,
-            full_frame => 1,
+            full_frame  => 1,
             page_order  => $page_order,
           };
 
@@ -90,18 +90,19 @@ sub _overlong_clones {
 
     $clonespecs[0]{firstpage}  = 1;
     $clonespecs[-1]{finalpage} = 1;
-    
+
     if ($final_frame_is_remainder) {
-       $clonespecs[-1]{full_frame} = 0;
-    } else {
-       $clonespecs[0]{full_frame} = 0;
+        $clonespecs[-1]{full_frame} = 0;
+    }
+    else {
+        $clonespecs[0]{full_frame} = 0;
     }
 
     # see Class::MOP::Class for clone_object
     my @clones = map { $self->meta->clone_object( $self, %{$_} ) } @clonespecs;
     return \@clones;
 
-} ## tidy end: sub _overlong_clones
+}    ## tidy end: sub _overlong_clones
 
 sub expand_overlong {
     my $self         = shift;
@@ -127,26 +128,26 @@ sub expand_overlong {
         # so @rows_on_pages contains $adjusted_height for each page,
         # plus the remainder on the last page
 
-        push @table_sets, $self->_overlong_clones( 0, @rows_on_pages);
+        push @table_sets, $self->_overlong_clones( 0, @rows_on_pages );
         push @table_sets, $self->_overlong_clones( 1, reverse @rows_on_pages );
 
-    } ## tidy end: foreach my $page_height (@page_heights)
+    }    ## tidy end: foreach my $page_height (@page_heights)
 
     return \@table_sets;
 
-} ## tidy end: sub expand_overlong
+}    ## tidy end: sub expand_overlong
 
 sub as_indesign {
     my $self = shift;
 
     my %params = ref( $_[0] ) eq 'HASH' ? %{ $_[0] } : @_;
-    
+
     foreach my $attribute (qw(lower_bound upper_bound firstpage finalpage)) {
         my $value = $self->$attribute;
         next unless defined $value;
         $params{$attribute} = $value;
     }
-        
+
     return $self->timetable_obj->as_indesign( \%params );
 }
 
@@ -156,21 +157,21 @@ const my $EXTRA_TABLE_HEIGHT => 9;
 
 sub get_stacked_measurements {
 
-# add 9 for each additional table in a stack -- 1 for blank line,
-# 4 for timepoints and 4 for the color bar. This is inexact and can mess up...
-# not sure how to fix it at this point, I'd need to measure the headers
+  # add 9 for each additional table in a stack -- 1 for blank line,
+  # 4 for timepoints and 4 for the color bar. This is inexact and can mess up...
+  # not sure how to fix it at this point, I'd need to measure the headers
 
-    my $class = shift;
+    my $class  = shift;
     my @tables = @_;
 
     my @widths  = map { $_->width_in_halfcols } @tables;
     my @heights = map { $_->height } @tables;
 
-    my $maxwidth = max(@widths);
+    my $maxwidth  = max(@widths);
     my $sumheight = sum(@heights) + ( $EXTRA_TABLE_HEIGHT * $#heights );
 
     return ( $sumheight, $maxwidth );
- 
+
 }
 
 __PACKAGE__->meta->make_immutable;
@@ -222,8 +223,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -238,8 +239,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -251,6 +252,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

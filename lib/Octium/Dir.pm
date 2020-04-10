@@ -1,4 +1,4 @@
-package Octium::O::Dir 0.012;
+package Octium::Dir 0.012;
 
 # Object representing the scheduled direction (of a trip, or set of trips)
 
@@ -198,7 +198,7 @@ __END__
 
 =head1 NAME
 
-Octium::O::Dir - Object for holding scheduled direction
+Octium::Dir - Object for holding scheduled direction
 
 =head1 VERSION
 
@@ -206,9 +206,9 @@ This documentation refers to version 0.010
 
 =head1 SYNOPSIS
 
- use Octium::O::Dir;
+ use Octium::Dir;
  
- my $dir = Octium::O::Dir->instance ('WB');
+ my $dir = Octium::Dir->instance ('WB');
  
  say $dir->as_direction; # "West"
  say $days->as_bound; # "Westbound"
@@ -226,9 +226,9 @@ objects are immutable.
 
 =over
 
-=item B<< Octium::O::Dir->instance(I<dircode>) >>
+=item B<< Octium::Dir->instance(I<dircode>) >>
 
-The object is constructed using "Octium::O::Dir->instance".
+The object is constructed using "Octium::Dir->instance".
 
 It accepts a direction string. In general, the directions are as
 follows:
@@ -274,14 +274,13 @@ it accepts:
   We              West
 
 
-=item B<< Octium::O::Dir->new(I<dircode>) >>
+=item B<< Octium::Dir->new(I<dircode>) >>
 
 B<< Do not use this method. >>
 
-This method is used internally by Octium::O::Days to create a new
-object and insert it into the cache used by instance(). There should
-never be a reason to create more than one object with the same
-arguments.
+This method is used internally by Octium::Days to create a new object
+and insert it into the cache used by instance(). There should never be
+a reason to create more than one object with the same arguments.
 
 =item B<< $obj->dircode >>
 

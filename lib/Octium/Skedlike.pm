@@ -1,4 +1,4 @@
-package Octium::O::Skedlike 0.012;
+package Octium::Skedlike 0.012;
 
 # Role for defining objects that do what skeds can do
 # (including such things as Timetables and IDTables)
@@ -6,12 +6,12 @@ package Octium::O::Skedlike 0.012;
 use warnings;
 use 5.016;    # turns on features
 
-use Moose::Role; ### DEP ###
+use Moose::Role;    ### DEP ###
 
 requires(
-       qw[ earliest_timenum id linedir should_preserve_direction_order
-          sortable_id sortable_id_with_timenum ]
-    
+    qw[ earliest_timenum id linedir should_preserve_direction_order
+      sortable_id sortable_id_with_timenum ]
+
 );
 
 no Moose::Role;
@@ -61,8 +61,8 @@ then list the exit status associated with each error.
 
 A full explanation of any configuration system(s) used by the
 application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
 configuration language used.
 
 =head1 DEPENDENCIES
@@ -77,8 +77,8 @@ Aaron Priven <apriven@actransit.org>
 
 Copyright 2017
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
 
 =over 4
 
@@ -90,6 +90,7 @@ later version, or
 
 =back
 
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but
+WITHOUT  ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+

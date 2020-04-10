@@ -530,7 +530,7 @@ subcommand.
 
 =head3 config key: 'quiet' in section 'Terminal'
 
-This will stop Actium::O::Crier from outputting most text (it sets
+This will stop Actium::Crier from outputting most text (it sets
 "filter_above_depth" to 0). L<See
 Actium::Env::CLI::Crier|Actium::Env::CLI::Crier> for more information.
 Submodules may also inspect this option and turn off some information

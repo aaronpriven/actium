@@ -1,4 +1,4 @@
-package Octium::O::Pattern::Place 0.012;
+package Octium::Pattern::Place 0.012;
 
 use Actium ('class');
 

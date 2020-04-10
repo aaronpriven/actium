@@ -33,7 +33,7 @@ use Sub::Exporter -setup => {
 use File::Copy();               ### DEP ###
 use Params::Validate ':all';    ### DEP ###
 
-use Octium::O::Folder;
+use Octium::Folder;
 
 const my $LINE_NAME_LENGTH   => 4;
 const my $DEFAULT_RESOLUTION => 288;
@@ -42,7 +42,7 @@ const my $CAN_ACTIUM_FOLDER =>
   [qw<path children glob_plain_files subfolder make_filespec folder>];
 # these are all the methods that Params::Validate tests for to see if it's
 # a working folder object. Doing it with "can" rather than "isa" means we
-# can use subclasses such as Octium::O::Folders::Signup.
+# can use subclasses such as Octium::Folders::Signup.
 
 ### IMPORTING NEW MAPS
 
@@ -660,9 +660,9 @@ This documentation refers to version 0.001
 
  use Octium::MapsRepository;
  
- $repository = Octium::O::Folder->new('/path/to/repository');
- $import = Octium::O::Folder->new('/path/to/maps/for/importing');
- $webfolder = Octium::O::Folder->new('/path/to/maps/for/web');
+ $repository = Octium::Folder->new('/path/to/repository');
+ $import = Octium::Folder->new('/path/to/maps/for/importing');
+ $webfolder = Octium::Folder->new('/path/to/maps/for/web');
  
  my @imported_files = import_to_repository(
     repository   => $repository,
@@ -696,7 +696,7 @@ and Technical Detail."
 
 Folders passed to any of Octium::MapRepository's routines must be in the form
 of an object, not just a string file specification.  Generally, this will
-be an Octium::O::Folder object or a subclass. Specifically, the object must
+be an Octium::Folder object or a subclass. Specifically, the object must
 handle the following methods:
 
 =over
@@ -715,7 +715,7 @@ handle the following methods:
 
 =back
 
-See L<Octium::O::Folder/Octium::O::Folder> for information on what these methods
+See L<Octium::Folder/Octium::Folder> for information on what these methods
 should do.
 
 =head1 SUBROUTINES
@@ -929,7 +929,7 @@ Attempting to move or copy returned a system error.
 
 =item * Sub::Exporter
 
-=item * Octium::O::Folder
+=item * Octium::Folder
 
 =head1 AUTHOR
 

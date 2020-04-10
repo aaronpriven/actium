@@ -137,8 +137,8 @@ stop. Required.
 
 =head2 days
 
-An L<Octium::O::Days|Octium::O::Days> object. If passed a string, will
-send that to C<Octium::O::Days->instance>. Required.
+An L<Octium::Days|Octium::Days> object. If passed a string, will send
+that to C<Octium::Days->instance>. Required.
 
 =head2 calendar_id
 

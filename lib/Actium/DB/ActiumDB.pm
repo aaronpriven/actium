@@ -131,7 +131,7 @@ PARTICULAR PURPOSE.
 
 head1 NAME
 
-Actium::O::Files::FileMaker_ODBC - role for reading from a FileMaker database
+Actium::Files::FileMaker_ODBC - role for reading from a FileMaker database
 via ODBC drivers
 
 =head1 VERSION
@@ -140,16 +140,16 @@ This documentation refers to version 0.003
 
 =head1 SYNOPSIS
 
- use Actium::O::Files::RoleComposer;
+ use Actium::Files::RoleComposer;
             
- my $db = Actium::O::Files::RoleComposer->new();
+ my $db = Actium::Files::RoleComposer->new();
       
  $row_hr = $db->row('Column' , 'Keyvalue');
  $othervalue = $row_hr->{OtherValue};
    
 =head1 DESCRIPTION
 
-Actium::O::Files::FileMaker_ODBC is a role for reading data from a
+Actium::Files::FileMaker_ODBC is a role for reading data from a
 FileMaker database, over the network using ODBC. It uses L<DBI|DBI> and
 L<DBD::ODBC|DBD::ODBC>.
 
@@ -185,7 +185,7 @@ configuration files.
 
 =back
 
-=head2 Methods in Actium::O::Files::FileMaker_ODBC
+=head2 Methods in Actium::Files::FileMaker_ODBC
 
 =over
 

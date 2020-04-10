@@ -1,13 +1,13 @@
-package Octium::O::Sked::ComparisonGroup 0.014;
+package Octium::Sked::ComparisonGroup 0.014;
 
 use Actium 'class';
 use Octium;
-use Octium::O::Sked::Comparison;
+use Octium::Sked::Comparison;
 
 use List::Compare;
 
 has [qw/oldskeds newskeds/] => (
-    isa      => 'Octium::O::Sked::Collection',
+    isa      => 'Octium::Sked::Collection',
     is       => 'ro',
     required => 1,
 );
@@ -46,7 +46,7 @@ has result_r => (
 my $lgdir_days_cr = sub {
     my $id = shift;
     my ( $lg, $dir, $days ) = split( /_/, $id );
-    my @days = split( //, $days );
+    my @days     = split( //, $days );
     my %is_a_day = map { $_ => 1 } @days;
     return $lg . "_$dir", %is_a_day;
 
@@ -117,7 +117,7 @@ method _build_result {
             $comparecry->over( $oldid eq $newid ? $oldid : "$oldid > $newid" );
 
             push @results,
-              Octium::O::Sked::Comparison->new(
+              Octium::Sked::Comparison->new(
                 oldsked => $oldsked,
                 newsked => $newsked
               );
@@ -133,14 +133,14 @@ method _build_result {
 
     foreach my $oldid (@only_old_ids) {
         my $oldsked = $self->oldskeds->sked_obj($oldid);
-        push @results, Octium::O::Sked::Comparison->new( oldsked => $oldsked );
+        push @results, Octium::Sked::Comparison->new( oldsked => $oldsked );
     }
     $onlyocry->done;
 
     my $onlyncry = env->cry( 'Adding only in ' . $self->newsignup_id );
     foreach my $newid (@only_new_ids) {
         my $newsked = $self->newskeds->sked_obj($newid);
-        push @results, Octium::O::Sked::Comparison->new( newsked => $newsked );
+        push @results, Octium::Sked::Comparison->new( newsked => $newsked );
     }
     $onlyncry->done;
 
@@ -169,25 +169,25 @@ method text {
 }
 
 const my %FORMATSPEC => (
-    ids_str          => { bold     => 1,         size  => 12 },
-    ids_cell         => { valign   => 'bottom',  top   => 2, },
-    new_time         => { bg_color => '#FFFFCC', color => '#99FFFF' },
-    old_time         => { bg_color => '#FFFFCC', color => '#FFCCCC' },
-    changed_time     => { bg_color => '#FFFFCC', color => 'brown' },
-    unchanged_time   => { color    => '#666666' },
-    changed_line     => { bg_color => '#FFFFCC', color => 'brown' },
-    unchanged_line   => { color    => '#666666' },
-    changed_attr     => { bg_color => '#FFFFCC', color => 'brown' },
-    unchanged_attr   => { color    => '#666666' },
-    new_header       => { color    => 'green' },
-    old_header       => { color    => 'red' },
-    changed_header   => { bg_color => '#FFFFCC', color => 'brown' },
+    ids_str        => { bold     => 1,         size  => 12 },
+    ids_cell       => { valign   => 'bottom',  top   => 2, },
+    new_time       => { bg_color => '#FFFFCC', color => '#99FFFF' },
+    old_time       => { bg_color => '#FFFFCC', color => '#FFCCCC' },
+    changed_time   => { bg_color => '#FFFFCC', color => 'brown' },
+    unchanged_time => { color    => '#666666' },
+    changed_line   => { bg_color => '#FFFFCC', color => 'brown' },
+    unchanged_line => { color    => '#666666' },
+    changed_attr   => { bg_color => '#FFFFCC', color => 'brown' },
+    unchanged_attr => { color    => '#666666' },
+    new_header     => { color    => 'green' },
+    old_header     => { color    => 'red' },
+    changed_header => { bg_color => '#FFFFCC', color => 'brown' },
     unchanged_header => {},
-    new_row        => { bg_color => '#99FFFF', },
-    old_row        => { bg_color => '#FFCCCC', },
-    new_marker     => { bg_color => '#99FFFF', bold => 1 },
-    old_marker     => { bg_color => '#FFCCCC', bold => 1 },
-    changed_marker => { bg_color => '#FFFF00', color => 'brown' },
+    new_row          => { bg_color => '#99FFFF', },
+    old_row          => { bg_color => '#FFCCCC', },
+    new_marker       => { bg_color => '#99FFFF', bold => 1 },
+    old_marker       => { bg_color => '#FFCCCC', bold => 1 },
+    changed_marker   => { bg_color => '#FFFF00', color => 'brown' },
     unchanged_marker => {},
 
 );

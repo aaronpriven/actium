@@ -1,4 +1,4 @@
-package Octium::O::Sked::Storage::Prehistoric 0.012;
+package Octium::Sked::Storage::Prehistoric 0.012;
 
 # Role to allow reading and writing prehistoric Skedfile files to/from
 # Sked objects
@@ -53,7 +53,7 @@ has 'place9_r' => (
 );
 
 sub prehistoric_id {
-    my $self = shift;
+    my $self      = shift;
     my $linegroup = $self->linegroup || $self->oldlinegroup;
     return ( join( '_', $linegroup, $self->dircode, $self->prehistoric_days ) );
 }
@@ -253,7 +253,7 @@ sub _new_from_prehistoric {
         # the number timepoint columns -- discarding any extras and
         # padding out empty ones with undef values
 
-        push @trips, Octium::O::Sked::Trip->new(%tripspec);
+        push @trips, Octium::Sked::Trip->new(%tripspec);
 
     }    ## tidy end: while (<$skedsfh>)
 
@@ -262,26 +262,26 @@ sub _new_from_prehistoric {
     if ( @daysexceptions == 1 and $linegroup !~ /\A 6 \d \d \z/sx ) {
         for ( $daysexceptions[0] ) {
             if ( $_ eq 'SD' ) {
-                $days = Octium::O::Days->instance( $days, 'D' );
+                $days = Octium::Days->instance( $days, 'D' );
                 next;
             }
             if ( $_ eq 'SH' ) {
-                $days = Octium::O::Days->instance( $days, 'H' );
+                $days = Octium::Days->instance( $days, 'H' );
                 next;
             }
             if ( exists $DAYS_FROM_TRANSITINFO{$_} ) {
-                $days = Octium::O::Days->instance( $DAYS_FROM_TRANSITINFO{$_} );
+                $days = Octium::Days->instance( $DAYS_FROM_TRANSITINFO{$_} );
                 next;
             }
-            $days = Octium::O::Days->instance($days);
+            $days = Octium::Days->instance($days);
         }
     }
     else {
         if ( $linegroup =~ /\A 6 \d \d \z/sx ) {
-            $days = Octium::O::Days->instance( $days, 'D' );
+            $days = Octium::Days->instance( $days, 'D' );
         }
         else {
-            $days = Octium::O::Days->instance($days);
+            $days = Octium::Days->instance($days);
         }
     }
 

@@ -1,4 +1,4 @@
-package Octium::O::Sked::Trip 0.012;
+package Octium::Sked::Trip 0.012;
 
 # Trip object (for schedules and headways)
 
@@ -21,13 +21,13 @@ sub BUILD {
 
         croak 'Neither placetimes nor stoptimes specified in constructing '
           . "$class object (trip "
-          . $self->internal_num . ") : "
+          . $self->internal_num . ") : ";
 
     }
 
 }
 
-# The following is invoked only from the BUILD routine in Octium::O::Sked
+# The following is invoked only from the BUILD routine in Octium::Sked
 # It requires knowledge of the stopplaces which is in the Sked object
 
 sub _add_placetimes_from_stoptimes {
@@ -178,7 +178,7 @@ has average_stoptime => (
 );
 
 sub _build_average_stoptime {
-    my $self = shift;
+    my $self  = shift;
     my @times = grep { defined $_ } $self->stoptimes;
     return ( List::Util::sum(@times) / scalar @times );
 }
@@ -225,14 +225,14 @@ has placetime_r => (
         placetime            => 'get',
         _splice_placetimes   => 'splice',
         _delete_placetime    => 'delete',
-        # only from BUILD in Octium::O::Sked
+        # only from BUILD in Octium::Sked
     },
 );
 
 has '_mergedtrip_r' => (
     traits  => ['Array'],
     is      => 'ro',
-    isa     => 'ArrayRef[Octium::O::Sked::Trip]',
+    isa     => 'ArrayRef[Octium::Sked::Trip]',
     default => sub { [] },
     handles => { mergedtrips => 'elements', _mergedtrip_count => 'count', },
 
@@ -333,7 +333,7 @@ sub merge_pair {
             }
             if ( $_ eq 'days_obj' ) {
                 $merged_value_of{$init_arg}
-                  = Octium::O::Days->union( $self->$attrname,
+                  = Octium::Days->union( $self->$attrname,
                     $secondtrip->$attrname );
                 next;
             }
@@ -376,17 +376,17 @@ __END__
 
 =head1 NAME
 
-Octium::O::Sked::Trip.pm - Object representing a trip in a schedule
+Octium::Sked::Trip.pm - Object representing a trip in a schedule
 
 =head1 VERSION
 
-This documentation refers to Octium::O::Sked::Trip.pm version 0.001
+This documentation refers to Octium::Sked::Trip.pm version 0.001
 
 =head1 DESCRIPTION
 
 This is a Moose class, representing each trip of a bus schedule. It contains
 information for each trip of a schedule. It is intended to be used by the 
-L<Octium::O::Sked::HeadwayPage> object and the L<Octium::O::Sked> object.
+L<Octium::Sked::HeadwayPage> object and the L<Octium::Sked> object.
 
 =head1 ATTRIBUTES
 
@@ -482,7 +482,7 @@ Returns the value of the placetime of the given index (beginning at 0).
 =item B<mergedtrips>
 
 After trips are  merged using I<merge_pair()>, this will return all the 
-Octium::O::Sked::Trip objects that were originally merged.  
+Octium::Sked::Trip objects that were originally merged.  
 
 =back
 
@@ -499,7 +499,7 @@ carried -- to appear only once in the schedule.)
 
  $trip1->merge_pair($trip2);
 
-A new Octium::O::Sked::Trip object is created, with attributes as follows:
+A new Octium::Sked::Trip object is created, with attributes as follows:
 
 =over
 
@@ -509,13 +509,13 @@ The stoptimes and placetimes for the first trip are used.
 
 =item mergedtrips
 
-This attribute contains the Octium::O::Sked::Trip objects for all
+This attribute contains the Octium::Sked::Trip objects for all
 the parent trips.  In the simplest case, it contains the two
-Octium::O::Sked::Trip objects passed to merge_pair.
+Octium::Sked::Trip objects passed to merge_pair.
 
-However, if either of the Octium::O::Sked::Trip objects passed to
+However, if either of the Octium::Sked::Trip objects passed to
 merge_pair already has a mergedtrips attribute, then instead of
-saving the current Octium::O::Sked::Trip object, it saves the
+saving the current Octium::Sked::Trip object, it saves the
 contents of mergedtrips. The upshot is that mergedtrips contains
 all the trips that are parents of this merged trip.
 
