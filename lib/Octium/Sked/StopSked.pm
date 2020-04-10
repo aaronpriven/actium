@@ -1,56 +1,38 @@
-package Octium::Sked::StopSked 0.014;
+package Octium::Sked::StopSked 0.016;
+# vimcolor: #002613
 
 use Actium 'class';
-use Octium;
 
-use Octium::Types (qw/DirCode ActiumDir ActiumDays/);
+use Octium::Types   (qw/ActiumDays/);
+use Types::Standard (qw/Str ArrayRef/);
+use Actium::Types('Dir');
 
-has dir_obj => (
+has [qw/stopid linegroup/] => (
+    required => 1,
+    is       => 'ro',
+    isa      => Str,
+);
+
+has dir => (
     required => 1,
     coerce   => 1,
-    init_arg => 'direction',
     is       => 'ro',
-    isa      => ActiumDir,
+    isa      => Dir,
     handles  => {
-        direction                       => 'dircode',
-        dircode                         => 'dircode',
-        to_text                         => 'as_to_text',
         should_preserve_direction_order => 'should_preserve_direction_order',
+        to_text                         => 'as_to_text',
     },
 );
 
-has linegroup => (
-    is       => 'ro',
-    isa      => 'Str',
-    required => 1,
-);
-
-has days_obj => (
+has days => (
     required => 1,
     coerce   => 1,
-    init_arg => 'days',
     is       => 'ro',
     isa      => ActiumDays,
     handles  => {
         daycode       => 'daycode',
         sortable_days => 'as_sortable',
     },
-);
-
-has is_last_stop => (
-    default => 0,
-    isa     => 'Bool',
-    traits  => ['Bool'],
-    is      => 'ro',
-    handles => ( make_last_stop => 'set' ),
-);
-
-has is_dropoff_only => (
-    default => 0,
-    isa     => 'Bool',
-    traits  => ['Bool'],
-    is      => 'ro',
-    handles => ( make_dropoff_only => 'set' ),
 );
 
 has _trips_r => (
@@ -62,6 +44,17 @@ has _trips_r => (
     handles  => ( 'trips' => 'elements' ),
 );
 
+has is_final_stop => (
+    lazy     => 1,
+    builder  => 1,
+    init_arg => undef,
+    is       => 'ro',
+);
+
+method _build_is_final_stop {
+    return Actium::all { $_->is_final_stop } $self->trips;
+}
+
 1;
 
 __END__
@@ -70,50 +63,93 @@ __END__
 
 =head1 NAME
 
-<name> - <brief description>
+Octium::Sked::StopSked - Object representing a schedules of a
+particular stop
 
 =head1 VERSION
 
-This documentation refers to version 0.014
+This documentation refers to version 0.016
 
 =head1 SYNOPSIS
 
- use <name>;
- # do something with <name>
-   
+ use Octium::Sked::StopSked;
+ Octium::Sked::StopSked->new(...)
+
 =head1 DESCRIPTION
 
-A full description of the module and its features.
+This is an object that represents a single schedule for a stop: the
+trips on a line, in a direction, and on scheduled days, passing a
+single stop.  It is created using Moose.
 
-=head1 SUBROUTINES or METHODS or ATTRIBUTES
+=head1 CLASS METHODS
 
-=over
+=head2 new
 
-=item B<subroutine()>
+The method inherits its constructor from Moose.
 
-Description of subroutine.
+=head1 ATTRIBUTES
 
-=back
+All attributes are required to be passed to the constructor.
+
+=head2  stopid
+
+A string, the stop ID of the represented stop.
+
+=head2 linegroup
+
+A string, the line group ID of the schedule being reprented here. A
+line group is the set of lines that appear on a single schedule.
+Usually each line group has only one line, but for example, lines 72
+and 72M should be in the same line group.
+
+=head2 dir
+
+An L<Actium::Dir|Actium::Dir> object representing the direction of
+travel for this schedule. Uses coercions defined in
+L<Actium::Types|Actium::Types>.
+
+=head2 days
+
+An L<Octium::O::Days|Octium::O::Days> object representing the scheduled
+days of service for this schedule. Required.  Uses coercions defined in
+L<Actium::Types|Actium::Types>.
+
+=head2 trips
+
+An array of
+L<Octium::Sked::StopSked::Trip|Octium::Sked::StopSked::Trip> objects. 
+It is expected to be passed in the order in which it will be displayed.
+ The "trips" argument in the constructor should be a reference to the
+array, while the trips() method will return the list.
+
+=head1 METHOD
+
+=head2 is_final_stop
+
+True if this is the final stop of this schedule, false otherwise. (Only
+true if it is the final stop of I<every> trip, not just some trips.)
 
 =head1 DIAGNOSTICS
 
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
+None specific to this class, but see L<Actium|Actium> and
+L<Moose|Moose>.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties that
-can be se. These descriptions must also include details of any
-configuration language used.
+None.
 
 =head1 DEPENDENCIES
 
-List its dependencies.
+The Actium system.
+
+=head1 INCOMPATIBILITIES
+
+None known.
+
+=head1 BUGS AND LIMITATIONS
+
+None known. Issues are tracked on Github at
+L<https:E<sol>E<sol>github.comE<sol>aaronprivenE<sol>actiumE<sol>issues|https:E<sol>E<sol>github.comE<sol>aaronprivenE<sol>actiumE<sol>issues>.
 
 =head1 AUTHOR
 
@@ -121,25 +157,25 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2017
+Copyright 2020
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either:
 
 =over 4
 
-=item * 
+=item *
 
 the GNU General Public License as published by the Free Software
 Foundation; either version 1, or (at your option) any later version, or
 
-=item * 
+=item *
 
 the Artistic License version 2.0.
 
 =back
 
 This program is distributed in the hope that it will be useful, but
-WITHOUT  ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
