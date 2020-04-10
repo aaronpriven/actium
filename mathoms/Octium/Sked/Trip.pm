@@ -1,7 +1,7 @@
 package Octium::Sked::Trip 0.014;
 # vimcolor: #132600
 #
-# This is a start at rewriting Actium::O::Sked::Trip to use Actium::Time objects
+# This is a start at rewriting Actium::Sked::Trip to use Actium::Time objects
 # and otherwise be more modern. It is not complete and is currently unused.
 
 use Actium ('class');
@@ -46,7 +46,7 @@ foreach my $attrname ( keys %SHORTCOL_OF_ATTRIBUTE ) {
     has $attrname => (
         is           => 'ro',
         isa          => 'Str',
-        traits       => ['Octium::O::Traits::WithShortColumn'],
+        traits       => ['Octium::Traits::WithShortColumn'],
         short_column => $SHORTCOL_OF_ATTRIBUTE{$attrname},
         required     => ( $attrname eq 'line' ),
     );
@@ -63,7 +63,7 @@ has days => (
     required => 1,
     init_arg => 'days',
     is       => 'ro',
-    isa      => 'Octium::O::Days',
+    isa      => 'Octium::Days',
     handles  => {
         daycode        => 'daycode',
         schooldaycode  => 'schooldaycode',
@@ -215,7 +215,7 @@ method merge_pair ($secondtrip) {
 #            }
 #            if ( $_ eq 'days_obj' ) {
 #                $merged_value_of{$init_arg}
-#                  = Octium::O::Days->union( $self->$attrname,
+#                  = Octium::Days->union( $self->$attrname,
 #                    $secondtrip->$attrname );
 #                next;
 #            }
@@ -260,17 +260,17 @@ __END__
 
 =head1 NAME
 
-Octium::O::Sked::Trip.pm - Object representing a trip in a schedule
+Octium::Sked::Trip.pm - Object representing a trip in a schedule
 
 =head1 VERSION
 
-This documentation refers to Octium::O::Sked::Trip.pm version 0.001
+This documentation refers to Octium::Sked::Trip.pm version 0.001
 
 =head1 DESCRIPTION
 
 This is a Moose class, representing each trip of a bus schedule. It contains
 information for each trip of a schedule. It is intended to be used by the 
-L<Octium::O::Sked::HeadwayPage> object and the L<Octium::O::Sked> object.
+L<Octium::Sked::HeadwayPage> object and the L<Octium::Sked> object.
 
 =head1 ATTRIBUTES
 
@@ -366,7 +366,7 @@ Returns the value of the placetime of the given index (beginning at 0).
 =item B<mergedtrips>
 
 After trips are  merged using I<merge_pair()>, this will return all the 
-Octium::O::Sked::Trip objects that were originally merged.  
+Octium::Sked::Trip objects that were originally merged.  
 
 =back
 
@@ -383,7 +383,7 @@ carried -- to appear only once in the schedule.)
 
  $trip1->merge_pair($trip2);
 
-A new Octium::O::Sked::Trip object is created, with attributes as follows:
+A new Octium::Sked::Trip object is created, with attributes as follows:
 
 =over
 
@@ -393,13 +393,13 @@ The stoptimes and placetimes for the first trip are used.
 
 =item mergedtrips
 
-This attribute contains the Octium::O::Sked::Trip objects for all
+This attribute contains the Octium::Sked::Trip objects for all
 the parent trips.  In the simplest case, it contains the two
-Octium::O::Sked::Trip objects passed to merge_pair.
+Octium::Sked::Trip objects passed to merge_pair.
 
-However, if either of the Octium::O::Sked::Trip objects passed to
+However, if either of the Octium::Sked::Trip objects passed to
 merge_pair already has a mergedtrips attribute, then instead of
-saving the current Octium::O::Sked::Trip object, it saves the
+saving the current Octium::Sked::Trip object, it saves the
 contents of mergedtrips. The upshot is that mergedtrips contains
 all the trips that are parents of this merged trip.
 

@@ -1,4 +1,4 @@
-package Octium::O::Pattern::Stop 0.012;
+package Octium::Pattern::Stop 0.012;
 
 use Actium ('class');
 
@@ -36,7 +36,7 @@ has 'place_rank' => (
 #    is      => 'ro',
 #    writer  => 'set_place_obj',
 #    predicate => 'has_place_obj',
-#    isa     => 'Octium::O::Pattern::Place',
+#    isa     => 'Octium::Pattern::Place',
 #);
 
 #sub _build_stop_and_place {

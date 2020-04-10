@@ -1,4 +1,4 @@
-package Octium::O::Days 0.012;
+package Octium::Days 0.012;
 # Object representing the scheduled days (of a trip, or set of trips)
 
 use Actium ('class');
@@ -160,7 +160,7 @@ sub _is_SH {
 
 const my @ADJECTIVES => ( @SEVENDAYNAMES, qw(Holiday Weekday Weekend Daily),
     "Daily except holidays" );
-const my %ADJECTIVE_OF => Actium::mesh( @DAYLETTERS, @ADJECTIVES );
+const my %ADJECTIVE_OF        => Actium::mesh( @DAYLETTERS, @ADJECTIVES );
 const my %ADJECTIVE_SCHOOL_OF => (
     B => $EMPTY,
     D => ' (except school holidays)',
@@ -195,11 +195,11 @@ sub as_adjectives {
 }    ## tidy end: sub as_adjectives
 
 const my @PLURALS => (
-    @SEVENDAYPLURALS, 'holidays', 'Monday through Friday',
-    'Weekends', 'Every day', "Every day except holidays"
+    @SEVENDAYPLURALS, 'holidays',  'Monday through Friday',
+    'Weekends',       'Every day', "Every day except holidays"
 );
 
-const my %PLURAL_OF => Actium::mesh( @DAYLETTERS, @PLURALS );
+const my %PLURAL_OF        => Actium::mesh( @DAYLETTERS, @PLURALS );
 const my %PLURAL_SCHOOL_OF => (
     B => $EMPTY,
     D => ' (School days only)',
@@ -222,12 +222,12 @@ sub as_plurals {
     $seriescode =~ s/1234567H/D/;    # every day
     $seriescode =~ s/1234567/X/;     # every day except holidays
     $seriescode =~ s/12345/W/;       # weekdays
-        # $seriescode =~ s/67/E/;  # weekends intentionally omitted
+         # $seriescode =~ s/67/E/;  # weekends intentionally omitted
 
     my $schooldaycode = $self->schooldaycode;
 
     my @as_plurals = map { $PLURAL_OF{$_} } split( //, $seriescode );
-    my $results = Actium::joinseries( items => \@as_plurals );
+    my $results    = Actium::joinseries( items => \@as_plurals );
 
     if ( $PLURAL_SCHOOL_OF{$schooldaycode} ) {
         $results .= $PLURAL_SCHOOL_OF{$schooldaycode};
@@ -242,7 +242,7 @@ sub as_plurals {
 const my @ABBREVS =>
   ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
 
-const my %ABBREV_OF => Actium::mesh( @DAYLETTERS, @ABBREVS );
+const my %ABBREV_OF        => Actium::mesh( @DAYLETTERS, @ABBREVS );
 const my %ABBREV_SCHOOL_OF => (
     B => $EMPTY,
     D => ' (Sch days)',
@@ -261,7 +261,7 @@ sub as_abbrevs {
     $daycode =~ s/1234567H/D/;    # every day
     $daycode =~ s/1234567/X/;     # every day except holidays
     $daycode =~ s/12345/W/;       # weekdays
-        # $daycode =~ s/67/E/;        # weekends intentionally omitted
+         # $daycode =~ s/67/E/;        # weekends intentionally omitted
 
     my $schooldaycode = $self->schooldaycode;
 
@@ -491,7 +491,7 @@ sub intersection {
         # they're identical
 
         if ( $schooldaycode ne $isect_schooldaycode ) {
-            my @schooldays = sort ( $schooldaycode, $isect_schooldaycode );
+            my @schooldays      = sort ( $schooldaycode, $isect_schooldaycode );
             my $schoolday_combo = join( $EMPTY, @schooldays );
             if ( $schoolday_combo eq 'DH' ) {
                 return;
@@ -612,7 +612,7 @@ __END__
 
 =head1 NAME
 
-Octium::O::Days - Object for holding scheduled days
+Octium::Days - Object for holding scheduled days
 
 =head1 VERSION
 
@@ -620,9 +620,9 @@ This documentation refers to version 0.010
 
 =head1 SYNOPSIS
 
- use Octium::O::Days;
+ use Octium::Days;
  
- my $days = Octium::O::Days->instance ('135');
+ my $days = Octium::Days->instance ('135');
  
  say $days->as_plurals; # "Mondays, Wednesdays, and Fridays"
  say $days->as_adjectives; # "Monday, Wednesday, and Friday"
@@ -646,9 +646,9 @@ objects are immutable.
 
 =over
 
-=item B<< Octium::O::Days->instance(I<daycode> , I<schooldaycode>) >>
+=item B<< Octium::Days->instance(I<daycode> , I<schooldaycode>) >>
 
-The object is constructed using "Octium::O::Days->instance".
+The object is constructed using "Octium::Days->instance".
 
 The ->instance method accepts a day specification as a string,
 containing any or all of the numbers 1 through 7 and optionally H. If a
@@ -667,16 +667,15 @@ indicates that  operation on both school days and school holidays.
 weekend trips will  still have "B" as the school day flag, unless there
 is a situation where some school service is operated on a Saturday.)
 
-=item B<< Octium::O::Days->new(I<daycode> , I<schooldaycode>) >>
+=item B<< Octium::Days->new(I<daycode> , I<schooldaycode>) >>
 
 B<< Do not use this method. >>
 
-This method is used internally by Octium::O::Days to create a new
-object and insert it into the cache used by instance(). There should
-never be a reason to create more than one method with the same
-arguments.
+This method is used internally by Octium::Days to create a new object
+and insert it into the cache used by instance(). There should never be
+a reason to create more than one method with the same arguments.
 
-=item B<< Octium::O::Days->instance_from_string (I<string>) >>
+=item B<< Octium::Days->instance_from_string (I<string>) >>
 
 This is an alternative constructor. It uses a single string, rather
 than the separate daycode and schooldaycode, to construct an object and
@@ -684,13 +683,13 @@ return it.
 
 The only way to get a valid string is by using the I<as_string> object
 method. The format of the string is internal and not guaranteed to
-remain the same across versions of Octium::O::Days. The purpose of this
-is to allow a single string to contain day information without
-requiring it to have all the object overhead.
+remain the same across versions of Octium::Days. The purpose of this is
+to allow a single string to contain day information without requiring
+it to have all the object overhead.
 
-=item B<< Octium::O::Days->union(I<days_obj> , ... >>
+=item B<< Octium::Days->union(I<days_obj> , ... >>
 
-Another constructor. It takes one or more Octium::O::Days objects and 
+Another constructor. It takes one or more Octium::Days objects and 
 returns a new object representing the union of those objects. For
 example, if passed an object representing Saturday and an object
 representing Sunday,  will return an object representing both Saturday

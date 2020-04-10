@@ -110,8 +110,8 @@ L<Actium::Types|Actium::Types>.
 
 =head2 days
 
-An L<Octium::O::Days|Octium::O::Days> object representing the scheduled
-days of service for this schedule. Required.  Uses coercions defined in
+An L<Octium::Days|Octium::Days> object representing the scheduled days
+of service for this schedule. Required.  Uses coercions defined in
 L<Actium::Types|Actium::Types>.
 
 =head2 trips

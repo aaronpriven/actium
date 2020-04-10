@@ -1,10 +1,10 @@
-package Octium::O::Points::Box 0.013;
+package Octium::Points::Box 0.013;
 
 # Object for a single box in an 2019 InDesign point schedule
 
 use Actium('class');
 use Octium;
-use Octium::O::Points::BTime;
+use Octium::Points::BTime;
 use Octium::Types(qw/ActiumDir ActiumDays/);
 
 use Octium::Text::InDesignTags;
@@ -20,7 +20,7 @@ has parent => (
     is       => 'ro',
     required => 1,
     weak_ref => 1,
-    isa      => 'Octium::O::Points::BPoint',
+    isa      => 'Octium::Points::BPoint',
     handles  => [qw/actiumdb agency/],
 );
 
@@ -62,7 +62,7 @@ has head_line_r => (
 has btimes_r => (
     traits  => ['Array'],
     is      => 'rwp',
-    isa     => 'ArrayRef[Octium::O::Point::BTime]',
+    isa     => 'ArrayRef[Octium::Point::BTime]',
     default => sub { [] },
     handles => { time_count => 'count', },
 );
@@ -111,7 +111,7 @@ method BUILD {
         my @head_lines = split( /:/, $head_lines );
         $self->_set_head_line_r( \@head_lines );
 
-        my @desttp4s = split( /:/, $desttp4s );
+        my @desttp4s     = split( /:/, $desttp4s );
         my @destinations = map { $self->_get_destination($_) } @desttp4s;
 
         #$self->_set_destinations( \@destinations );
@@ -132,7 +132,7 @@ method BUILD {
     foreach my $entry (@entries) {
         my ( $time, $line, $desttp4, $place, $exception )
           = split( /:/, $entry );
-        my $btime = Octium::O::Points::BTime->new(
+        my $btime = Octium::Points::BTime->new(
             time      => $time,
             line      => $line,
             desttp4   => $desttp4,
@@ -150,7 +150,7 @@ method BUILD {
 
     }
 
-    @btimes = Octium::O::Points::BTime->timesort(@btimes);
+    @btimes = Octium::Points::BTime->timesort(@btimes);
     $self->_set_btimes_r( \@btimes );
 
     foreach my $primary_attr (@PRIMARIES) {

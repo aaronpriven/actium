@@ -4,7 +4,7 @@ package Octium::Cmd::StopSearch 0.011;
 
 use Actium;
 use Octium;
-use Octium::O::Folder;
+use Octium::Folder;
 
 sub OPTIONS {
 

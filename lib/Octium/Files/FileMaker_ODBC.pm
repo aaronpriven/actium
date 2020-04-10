@@ -1,4 +1,4 @@
-package Octium::O::Files::FileMaker_ODBC 0.012;
+package Octium::Files::FileMaker_ODBC 0.012;
 
 # Role for reading and processing FileMaker Pro databases via ODBC
 
@@ -227,10 +227,10 @@ sub each_columns_in_row_where {
 
     my %params = validate(
         @_,
-        {   table   => 1,
-            columns => { type => ARRAYREF, required => 1 },
+        {   table       => 1,
+            columns     => { type => ARRAYREF, required => 1 },
             where       => { default => '' },
-            bind_values => { type    => ARRAYREF, default => [] },
+            bind_values => { type => ARRAYREF, default => [] },
         }
     );
 
@@ -467,7 +467,7 @@ __END__
 
 head1 NAME
 
-Octium::O::Files::FileMaker_ODBC - role for reading from a FileMaker database
+Octium::Files::FileMaker_ODBC - role for reading from a FileMaker database
 via ODBC drivers
 
 =head1 VERSION
@@ -476,16 +476,16 @@ This documentation refers to version 0.003
 
 =head1 SYNOPSIS
 
- use Octium::O::Files::RoleComposer;
+ use Octium::Files::RoleComposer;
             
- my $db = Octium::O::Files::RoleComposer->new();
+ my $db = Octium::Files::RoleComposer->new();
       
  $row_hr = $db->row('Column' , 'Keyvalue');
  $othervalue = $row_hr->{OtherValue};
    
 =head1 DESCRIPTION
 
-Octium::O::Files::FileMaker_ODBC is a role for reading data from a
+Octium::Files::FileMaker_ODBC is a role for reading data from a
 FileMaker database, over the network using ODBC. It uses L<DBI|DBI> and
 L<DBD::ODBC|DBD::ODBC>.
 
@@ -521,7 +521,7 @@ configuration files.
 
 =back
 
-=head2 Methods in Octium::O::Files::FileMaker_ODBC
+=head2 Methods in Octium::Files::FileMaker_ODBC
 
 =over
 

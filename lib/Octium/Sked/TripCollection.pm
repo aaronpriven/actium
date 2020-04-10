@@ -1,4 +1,4 @@
-package Octium::O::Sked::TripCollection 0.012;
+package Octium::Sked::TripCollection 0.012;
 
 use Actium ('class');
 use Octium;
@@ -8,7 +8,7 @@ has 'trips_r' => (
     traits   => ['Array'],
     is       => 'ro',
     writer   => '_set_trips_r',
-    isa      => 'ArrayRef[Octium::O::Sked::Trip]',
+    isa      => 'ArrayRef[Octium::Sked::Trip]',
     required => 1,
     handles  => { trips => 'elements', trip => 'get', trip_count => 'count' },
 );
@@ -241,7 +241,7 @@ sub trips_by_day {
 
     foreach my $trip (@trips) {
         my $compstr = $trip->stoptimes_comparison_str;
-        my @days = split( //s, $trip->daycode );
+        my @days    = split( //s, $trip->daycode );
         foreach my $day (@days) {
             push @{ $compstrs_of_day_r->{$day} }, $compstr;
         }
@@ -263,7 +263,7 @@ sub trips_by_day {
 
         for my $trip (@trips) {
 
-            my $sked_day_obj = Octium::O::Days->instance( $skedday, 'B' );
+            my $sked_day_obj = Octium::Days->instance( $skedday, 'B' );
             my $trip_day_obj = $trip->days_obj;
 
             if (   $skedday eq $trip_day_obj->daycode

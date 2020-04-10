@@ -1,9 +1,9 @@
-package Octium::O::Sked::Comparison 0.014;
+package Octium::Sked::Comparison 0.014;
 
 use Actium ('class');
 use Octium;
 use Algorithm::Diff;
-use Octium::O::Sked;
+use Octium::Sked;
 
 const my $ONLY_NEW  => 2;
 const my $ONLY_OLD  => 3;
@@ -11,7 +11,7 @@ const my $DIFFER    => 1;
 const my $IDENTICAL => 0;
 
 has [qw/oldsked newsked/] => (
-    isa      => 'Maybe[Octium::O::Sked]',
+    isa      => 'Maybe[Octium::Sked]',
     is       => 'ro',
     required => 0,
 );
@@ -173,7 +173,7 @@ has has_place_differences => (
 );
 
 method _build_has_place_differences {
-    my @sdiffs = $self->place_sdiffs;
+    my @sdiffs      = $self->place_sdiffs;
     my @changetypes = map { $_->[0] } @sdiffs;
     return Actium::any { $_ ne 'u' } @changetypes;
 }
@@ -470,7 +470,7 @@ method _build_trips {
         my @interim_list;
         foreach my $trip (@merged_trips) {
             my @times = $trip->{times}->@*;    # copy
-            @times = map { $_->[0] // $_->[1] } @times;
+            @times = map  { $_->[0] // $_->[1] } @times;
             @times = grep {defined} @times;
             my $average = Actium::mean( $times[0], $times[-1] );
             push @interim_list, [ $trip, $average ];
@@ -493,7 +493,7 @@ method strings_and_formats (:$show_line , :$show_daycode , :$show_specday ) {
 
     my @headers = (
         $self->has_place_differences
-        ? [ 'x', 'changed_header' ]
+        ? [ 'x',    'changed_header' ]
         : [ $EMPTY, 'unchanged_header' ]
     );
 

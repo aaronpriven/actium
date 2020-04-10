@@ -1,4 +1,4 @@
-package Octium::O::Sked 0.013;
+package Octium::Sked 0.013;
 # the Sked object, containing everything that is a schedule
 
 use Actium ('class');
@@ -14,10 +14,10 @@ with Storage(
 );
 
 use Octium::Types (qw/DirCode ActiumDir ActiumDays/);
-use Octium::O::Sked::Trip;
+use Octium::Sked::Trip;
 use Actium::Time;
-use Octium::O::Dir;
-use Octium::O::Days;
+use Octium::Dir;
+use Octium::Days;
 use Array::2D;
 
 const my $KEY_SEPARATOR => "\c]";
@@ -63,7 +63,7 @@ sub _delete_blank_columns {
         my $has_place4s      = not $self->place4s_are_empty;
 
         my $place_id_count = $self->place_count;
-        my $placecount = Actium::max( $place_id_count, $#columns_of_times );
+        my $placecount     = Actium::max( $place_id_count, $#columns_of_times );
 
         for my $i ( reverse( 0 .. $placecount ) ) {
             if (Actium::none { defined($_) }
@@ -387,7 +387,7 @@ has 'days_obj' => (
 has 'trip_r' => (
     traits  => ['Array'],
     is      => 'bare',
-    isa     => 'ArrayRef[Octium::O::Sked::Trip]',
+    isa     => 'ArrayRef[Octium::Sked::Trip]',
     default => sub { [] },
     handles => {
         trips      => 'elements',
@@ -738,7 +738,7 @@ sub attribute_columns {
 ####################
 #### OUTPUT METHODS
 
-# see also various Octium::O::Sked::Storage:: roles
+# see also various Octium::Sked::Storage:: roles
 
 sub tidydump {
     # cool, but very slow
@@ -858,21 +858,21 @@ sub transitinfo_id {
 
 }
 
-method compare_from (Octium::O::Sked $oldsked) {
-    require Octium::O::Sked::Comparison;
-    return Octium::O::Sked::Comparison->new(
+method compare_from (Octium::Sked $oldsked) {
+    require Octium::Sked::Comparison;
+    return Octium::Sked::Comparison->new(
         oldsked => $oldsked,
         newsked => $self
     );
 
 }
 
-method compare_to (Octium::O::Sked $newsked) {
+method compare_to (Octium::Sked $newsked) {
     return $newsked->compare_from($self);
 }
 
-with 'Octium::O::Sked::Storage::Prehistoric', 'Octium::O::Sked::Storage::XLSX',
-  'Octium::O::Sked::Storage::Tabxchange', 'Octium::O::Skedlike';
+with 'Octium::Sked::Storage::Prehistoric', 'Octium::Sked::Storage::XLSX',
+  'Octium::Sked::Storage::Tabxchange', 'Octium::Skedlike';
 
 Actium::immut;
 

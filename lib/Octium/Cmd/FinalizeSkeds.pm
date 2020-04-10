@@ -2,14 +2,14 @@ package Octium::Cmd::FinalizeSkeds 0.012;
 
 use Actium;
 use Octium;
-use Octium::O::Sked::Collection;
+use Octium::Sked::Collection;
 
 sub OPTIONS {
     return ( 'signup', 'actiumdb' );
 }
 
 sub START {
-    Octium::O::Sked::Collection::->finalize_skeds;
+    Octium::Sked::Collection::->finalize_skeds;
 }
 
 1;

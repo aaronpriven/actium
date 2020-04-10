@@ -78,7 +78,7 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
     my %init_args = (
         %params,
         subcommand => $subcommand // $EMPTY,
-        _help_type => $help_type // $EMPTY,
+        _help_type => $help_type  // $EMPTY,
         argv       => \@new_argv,
     );
 
@@ -231,7 +231,7 @@ sub _output_usage {
     foreach my $obj (@objs) {
         my $name = $obj->name;
         $description_of{$name} = $obj->description;
-        $description_of{$_} = "Same as -$name" foreach $obj->aliases;
+        $description_of{$_}    = "Same as -$name" foreach $obj->aliases;
     }
 
     my $left_padding
@@ -494,7 +494,7 @@ sub _build_options {
 
 has _help_type => (
     isa => Enum [ $EMPTY, qw/help manual/ ],
-    is => 'ro',
+    is  => 'ro',
 );
 
 # used when help found in BUILDARGS -- it's not set if an option is used, e.g.,
@@ -663,7 +663,7 @@ sub _default_package {
 
 ### ActiumDB package
 #my $DBCLASS  = "Actium::Storage::DB";
-my $DBCLASS = "Octium::O::Files::ActiumDB";
+my $DBCLASS = "Octium::Files::ActiumDB";
 
 sub _actiumdb_package {
 
@@ -731,12 +731,12 @@ sub _signup_package {
     my $self   = shift;
     my $is_new = shift;
 
-    require Octium::O::Folders::Signup;
+    require Octium::Folders::Signup;
 
     has signup => (
         is      => 'ro',
         builder => ( $is_new ? '_build_newsignup' : '_build_signup' ),
-        isa     => 'Octium::O::Folders::Signup',
+        isa     => 'Octium::Folders::Signup',
         lazy    => 1,
     );
 
@@ -770,7 +770,7 @@ sub _signup_with_old_package {
     has oldsignup => (
         is      => 'ro',
         builder => '_build_oldsignup',
-        isa     => 'Octium::O::Folders::Signup',
+        isa     => 'Octium::Folders::Signup',
         lazy    => 1,
     );
 
@@ -797,7 +797,7 @@ sub _signup_with_old_package {
 }
 
 method _build_newsignup {
-    return Octium::O::Folders::Signup::->new(
+    return Octium::Folders::Signup::->new(
         #is_new => 1,
         base   => $self->option('base'),
         signup => $self->option('signup')
@@ -805,14 +805,14 @@ method _build_newsignup {
 }
 
 method _build_signup {
-    return Octium::O::Folders::Signup->new(
+    return Octium::Folders::Signup->new(
         base   => $self->option('base'),
         signup => $self->option('signup')
     );
 }
 
 method _build_oldsignup {
-    return Octium::O::Folders::Signup->new(
+    return Octium::Folders::Signup->new(
         base   => ( $self->option('oldbase') // $self->option('base') ),
         signup => $self->option('oldsignup'),
     );

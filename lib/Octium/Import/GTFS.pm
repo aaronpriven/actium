@@ -10,7 +10,7 @@ use Sub::Exporter -setup =>
 
 const my $PHYLUM => 'GTFS';
 
-func array_read_gtfs ( Octium::O::Folders::Signup : $signup, Str : $file ) {
+func array_read_gtfs ( Octium::Folders::Signup : $signup, Str : $file ) {
 
     my $filespec = gtfs_filespec( signup => $signup, file => $file );
     \my @gtfs = csv( in => $filespec, encoding => 'UTF-8' );
@@ -27,12 +27,12 @@ func array_read_gtfs ( Octium::O::Folders::Signup : $signup, Str : $file ) {
 }
 
 func hash_read_gtfs (
-    Octium::O::Folders::Signup :$signup, Str :$file, Str :$key? ) {
+    Octium::Folders::Signup :$signup, Str :$file, Str :$key? ) {
     my $filespec = gtfs_filespec( signup => $signup, file => $file );
     return csv( in => $filespec, encoding => 'UTF-8', key => $key );
 }
 
-func gtfs_filespec ( Octium::O::Folders::Signup : $signup, Str : $file ) {
+func gtfs_filespec ( Octium::Folders::Signup : $signup, Str : $file ) {
     my $folder = $signup->subfolder($PHYLUM);
 
     my $filespec = $folder->make_filespec($file);

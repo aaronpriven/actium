@@ -4,9 +4,9 @@ use Actium;
 use Octium;
 use Octium::Set (qw/ordered_union distinguish/);
 use Octium::DaysDirections(':all');
-use Octium::O::Files::HastusASI;
+use Octium::Files::HastusASI;
 
-use Text::Wrap ('wrap');    ### DEP ###
+use Text::Wrap ('wrap');              ### DEP ###
 use List::MoreUtils(qw/any uniq/);    ### DEP ###
 use File::Spec;                       ### DEP ###
 use Text::Trim;                       ### DEP ###
@@ -126,8 +126,8 @@ sub START {
 
     {
         my $hasi_db = $signup->load_hasi();
-     #        my $hasidir = $signup->subfolder('hasi');
-     #        my $hasi_db = Octium::O::Files::HastusASI->new( $hasidir->path());
+        #        my $hasidir = $signup->subfolder('hasi');
+        #        my $hasi_db = Octium::Files::HastusASI->new( $hasidir->path());
         $hasi_db->ensure_loaded(qw(PAT TRP));
         build_place_and_stop_lists( $hasi_db, \%stops );
 
@@ -465,7 +465,7 @@ sub cull_placepats {
             }
 
             @placelists = grep {defined} @placelists;
-            $longest = shift @placelists;
+            $longest    = shift @placelists;
         }    ## tidy end: while (@placelists)
 
     }    ## tidy end: foreach my $routedir ( Actium::sortbyline...)
@@ -723,7 +723,7 @@ sub delete_a_last_stop {
     if ( not %{ $pat_infos->{$routedir} } ) {
         delete $pat_infos->{$routedir};
     }
-    $routes_r->{$route}--
+    $routes_r->{$route}--;
 
 }
 
@@ -933,7 +933,7 @@ sub delete_placelist_from_lists {
             last if $chunk =~ /^Codes:/sx;
             chomp $chunk;
 
-            my @lines = split( /\n/, $chunk );
+            my @lines       = split( /\n/, $chunk );
             my $comments    = join( "\n", grep {/\A#/} @lines );
             my $description = join( "\n", grep {/\A=/} @lines );
             @lines = grep { $_ and not(m/\A[#=!]/) } @lines;
@@ -1401,7 +1401,7 @@ sub make_decal_spec {
             if ( $plain_override_of{$_} ) {
                 print "\t$plain_override_of{$_}\t";
                 print $ICON_OF{'All Nighter'} if /\A8\d\d/;
-                print $ICON_OF{Rapid} if /R\z/;
+                print $ICON_OF{Rapid}         if /R\z/;
             }
             print "\n";
         }
@@ -1436,7 +1436,7 @@ sub style_of_route {
 
     return 'Route' if length($route) < 2;
 
-    my $val = 0;
+    my $val   = 0;
     my @chars = split( //, $route );
     foreach my $char (@chars) {
         for ($char) {

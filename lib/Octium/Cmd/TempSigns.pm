@@ -4,8 +4,8 @@ use Actium;
 use Octium;
 use autodie;
 
-use Octium::O::Folder;
-use Octium::O::DateTime;
+use Octium::Folder;
+use Octium::DateTime;
 
 use Octium::Text::InDesignTags;
 const my $IDT     => 'Octium::Text::InDesignTags';
@@ -47,7 +47,7 @@ sub START {
 
     my $output_cry = env->cry('Outputting data to tempsigns.txt');
 
-    my $dt = Octium::O::DateTime::->new(
+    my $dt = Octium::DateTime::->new(
         #datetime => $str,
         ymd => [ 2016, 06, 26 ],
         #pattern  => '%Y-%m-%d'
@@ -66,7 +66,7 @@ sub START {
     my $dates
       = $IDT->parastyle('Text16') . join( $HARDRET, $en, $es, $zh ) . $HARDRET;
 
-    my $folder = Octium::O::Folder::->new('/Users/apriven/Desktop');
+    my $folder = Octium::Folder::->new('/Users/apriven/Desktop');
     my $ofh    = $folder->open_write('tempsigns.txt');
 
     print $ofh $IDT->start;
@@ -136,7 +136,7 @@ sub _translate_phrase {
 }
 
 sub _zh_phrase {
-    my $phrase = shift;
+    my $phrase   = shift;
     my $zh_style = shift // 'ChineseBold';
 
     $phrase =~ s/((?:<0x[[:xdigit:]]+>)+)/<CharStyle:$zh_style>$1<CharStyle:>/g;

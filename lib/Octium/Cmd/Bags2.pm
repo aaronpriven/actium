@@ -9,7 +9,7 @@ use autodie;
 use Array::2D;
 
 use Octium::Text::InDesignTags;
-use Octium::O::DateTime;
+use Octium::DateTime;
 use Octium::Set ('clusterize');
 
 const my $IDT     => 'Octium::Text::InDesignTags';
@@ -25,7 +25,7 @@ my ( %workzone_of, %cluster_of );
 sub START {
 
     my @ymd = qw/2020 03 29/;
-    my $dt = Octium::O::DateTime::->new( ymd => \@ymd );
+    my $dt  = Octium::DateTime::->new( ymd => \@ymd );
 
     my $config_obj = env->config;
 
@@ -110,7 +110,7 @@ sub _process_stop {
     my $dt = shift;
 
     my $stopid = $stop[ $col{StopID} ];
-    my @added = split( ' ', $stop[ $col{Added} ] );
+    my @added  = split( ' ', $stop[ $col{Added} ] );
     @added = grep !/^BS[DN]$/, @added;
     my @removed = split( ' ', $stop[ $col{Removed} ] );
     @removed = grep !/^BS[DN]$/, @removed;

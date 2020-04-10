@@ -4,7 +4,7 @@ package Octium::Cmd::TimetableMatrixText 0.011;
 
 use Actium;
 use Octium;
-use Octium::O::Folder;
+use Octium::Folder;
 use Text::Trim ('trim');
 
 sub HELP {
@@ -35,7 +35,7 @@ sub START {
     my $filespec = shift @argv;
     die "No input file given" unless $filespec;
 
-    my ( $folder,   $filename ) = Octium::O::Folder->new_from_file($filespec);
+    my ( $folder,   $filename ) = Octium::Folder->new_from_file($filespec);
     my ( $filepart, $fileext )  = Octium::file_ext($filespec);
 
     my $sheet = $folder->load_sheet($filename);
@@ -216,7 +216,7 @@ sub START {
 sub quantity {
     my ( $center, $tt_name, $each ) = @_;
 
-    my $factor = $factor_of{"$center\0$tt_name"} // 1;
+    my $factor   = $factor_of{"$center\0$tt_name"} // 1;
     my $quantity = Actium::ceil( $factor * $each );
 
     return $quantity;

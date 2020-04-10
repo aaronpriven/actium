@@ -5,7 +5,7 @@ package Octium::Cmd::MRCopy 0.012;
 use Actium;
 
 use Octium::MapRepository (':all');
-use Octium::O::Folder;
+use Octium::Folder;
 
 use English '-no_match_vars';    ### DEP ###
 
@@ -81,7 +81,7 @@ EOF
 
     sub START {
 
-        $repository = Octium::O::Folder->new( env->option('repository') );
+        $repository = Octium::Folder->new( env->option('repository') );
 
         my $webfolder = option_folder( 'web', 'webfolder', '_web' );
         my $fullfolder
@@ -108,8 +108,7 @@ EOF
 
         if ( env->option($option) ) {
             if ( env->option($folderoption) ) {
-                $folder_obj
-                  = Octium::O::Folder->new( env->option($folderoption) );
+                $folder_obj = Octium::Folder->new( env->option($folderoption) );
             }
             else {
                 $folder_obj = $repository->subfolder($default);
@@ -268,7 +267,7 @@ dependencies below.
 
 =item * Octium::MapRepository
 
-=item * Octium::O::Folder
+=item * Octium::Folder
 
 =back
 

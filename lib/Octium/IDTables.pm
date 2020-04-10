@@ -4,12 +4,12 @@ use Actium;
 use Octium;
 
 use Text::Trim;    ### DEP ###
-use Octium::O::DateTime;
+use Octium::DateTime;
 use Octium::Sorting::Skeds('skedsort');
 use Octium::Text::InDesignTags;
 use Octium::Text::CharWidth ( 'ems', 'char_width' );
-use Octium::O::Sked;
-use Octium::O::Sked::Timetable;
+use Octium::Sked;
+use Octium::Sked::Timetable;
 use List::MoreUtils (qw<pairwise each_arrayref>);    ### DEP ###
 use Algorithm::Combinatorics ('combinations');       ### DEP ###
 
@@ -36,7 +36,7 @@ sub create_timetable_texts {
             $prev_linegroup = $linegroup;
         }
 
-        my $table = Octium::O::Sked::Timetable->new_from_sked( $sked, $db_obj );
+        my $table = Octium::Sked::Timetable->new_from_sked( $sked, $db_obj );
         push @{ $tables_of{$linegroup} }, $table;
         push @alltables, $table;
 
@@ -260,7 +260,7 @@ sub _make_per_line_texts {
     my $lines_r  = shift;
     my %per_line_texts;
 
-    my $days_of_r = _make_days( $tables_r, $lines_r );
+    my $days_of_r   = _make_days( $tables_r, $lines_r );
     my $locals_of_r = _make_locals($lines_r);
 
     foreach my $line (
@@ -309,14 +309,14 @@ sub _make_days {
 
     my %days_obj_of;
     while ( my ( $line, $days_objs_r ) = each %all_days_objs_of ) {
-        $days_obj_of{$line} = Octium::O::Days->union( @{$days_objs_r} );
+        $days_obj_of{$line} = Octium::Days->union( @{$days_objs_r} );
     }
 
     if ( @lines == 1 ) {
         return { q[] => $days_obj_of{ $lines[0] } };
     }
 
-    my @days_objs = values %days_obj_of;
+    my @days_objs  = values %days_obj_of;
     my @days_codes = Actium::uniq( map { $_->as_sortable } @days_objs );
 
     if ( @days_codes == 1 ) {

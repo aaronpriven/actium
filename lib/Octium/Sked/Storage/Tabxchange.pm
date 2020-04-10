@@ -1,4 +1,4 @@
-package Octium::O::Sked::Storage::Tabxchange 0.013;
+package Octium::Sked::Storage::Tabxchange 0.013;
 
 use Actium ('role');
 use Octium;
@@ -18,7 +18,7 @@ method tabxchange (
     # line 1 - skedid
 
     my $skedid = $self->transitinfo_id;
-    my $aoa = Array::2D->bless( [ [$skedid] ] );
+    my $aoa    = Array::2D->bless( [ [$skedid] ] );
 
     my $p = sub { $aoa->push_row( @_, $EMPTY ) };
     # the $EMPTY is probably not needed but the old program
@@ -80,7 +80,7 @@ method tabxchange (
     # lines 7 - one line per bus line
     foreach my $line ( $self->lines ) {
         my $line_row_r = $actiumdb->line_row_r($line);
-        my $color = $line_row_r->{Color} // 'Default';
+        my $color      = $line_row_r->{Color} // 'Default';
         $color = 'Default'
           if not $actiumdb->color_exists($color);
         my $color_row_r = $actiumdb->color_row_r($color);

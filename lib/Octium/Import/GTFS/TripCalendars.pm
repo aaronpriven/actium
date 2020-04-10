@@ -4,7 +4,7 @@ use Actium;
 use Octium;
 use Octium::Import::GTFS (':all');
 use Actium::Time;
-use Octium::O::DateTime;
+use Octium::DateTime;
 use DateTime::Duration;
 use DateTime::Event::Recurrence;
 use DateTime::Event::ICal;
@@ -13,8 +13,7 @@ use List::Compare::Functional ('is_LsubsetR');
 
 # "dow" in identifiers means day of week
 
-use Data::Printer { filters => { 'Octium::O::DateTime' => sub { $_[0]->ymd }, },
-};
+use Data::Printer { filters => { 'Octium::DateTime' => sub { $_[0]->ymd }, }, };
 
 const my @DAYS_OF_WEEK =>
   qw/sunday monday tuesday wednesday thursday friday saturday/;
@@ -29,7 +28,7 @@ my (%calendar,    %exceptions,        $initial,
     %note_of_trip,
 );
 
-func calendar_notes_of_trips ( Octium::O::Folders::Signup $signup) {
+func calendar_notes_of_trips ( Octium::Folders::Signup $signup) {
 
     read_calendar($signup);
 
@@ -183,7 +182,7 @@ func adjust_exceptions_for_midnight {
 
                     my %adj_exception = %exception;
                     $adj_exception{'_dt'} = $adj_dt;
-                    $adj_exception{date} = $adj_date;
+                    $adj_exception{date}  = $adj_date;
                     push $adjusted_exceptions{$service_id}->@*, \%adj_exception;
                 }
             }
@@ -570,13 +569,13 @@ func dt_from_gtfs_date ( Str $date) {
     my $year  = substr( $date, 0, 4 );
     my $month = substr( $date, 4, 2 );
     my $day   = substr( $date, 6, 2 );
-    my $dt = Octium::O::DateTime::->new( ymd => [ $year, $month, $day ] );
+    my $dt = Octium::DateTime::->new( ymd => [ $year, $month, $day ] );
     return $dt_of{$date} = $dt;
 }
 
-func following_day ( Octium::O::DateTime $dt) {
+func following_day ( Octium::DateTime $dt) {
     state $one_day = DateTime::Duration->new( days => 1 );
-    my $new_dt = Octium::O::DateTime::->from_object( object => $dt );
+    my $new_dt = Octium::DateTime::->from_object( object => $dt );
     $new_dt->add_duration($one_day);
     return $new_dt;
 }

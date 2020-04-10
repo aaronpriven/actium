@@ -1,12 +1,12 @@
-package Octium::O::Sked::Storage::XLSX 0.013;
+package Octium::Sked::Storage::XLSX 0.013;
 
 use Actium ('role');
 use Octium;
 use Array::2D;
 
-use Octium::O::Sked::Trip;
-use Octium::O::Dir;
-use Octium::O::Days;
+use Octium::Sked::Trip;
+use Octium::Dir;
+use Octium::Days;
 use Actium::Time;
 
 #############################################
@@ -76,11 +76,11 @@ method new_from_xlsx ( $class : Str : $file,
         attributes   => \@attributes,
     );
 
-    my $dir_obj = Octium::O::Dir->instance($dircode);
-    my $day_obj = Octium::O::Days->instance( $daycode, 'B' );
+    my $dir_obj = Octium::Dir->instance($dircode);
+    my $day_obj = Octium::Days->instance( $daycode, 'B' );
 
     my $actiumdb = env->actiumdb;
-    my @place8s = map { $actiumdb->place8($_) } @place4s;
+    my @place8s  = map { $actiumdb->place8($_) } @place4s;
 
     my $sked = $class->new(
         place4_r    => \@place4s,
@@ -164,13 +164,13 @@ func _read_trips (
         #if ( exists $trip{DAY} ) {
         #    my $day_string = delete $trip{DAY};
         #    $trip{days_obj}
-        #      = Octium::O::Days->instance_from_string($day_string);
+        #      = Octium::Days->instance_from_string($day_string);
         #}
 
         $trip{stoptime_r}
           = [ map { _cell_time( $sheet, $row, $_ ) } $min_stop_col .. $maxcol ];
 
-        my $trip_obj = Octium::O::Sked::Trip->new(%trip);
+        my $trip_obj = Octium::Sked::Trip->new(%trip);
 
         push @trips, $trip_obj;
 
@@ -203,7 +203,7 @@ func _read_attribute_names (
         else {
 
             $attribute
-              = Octium::O::Sked::Trip->attribute_of_short_column($shortcol);
+              = Octium::Sked::Trip->attribute_of_short_column($shortcol);
             carp "Invalid column $shortcol in $id ignored"
               unless $attribute;
         }

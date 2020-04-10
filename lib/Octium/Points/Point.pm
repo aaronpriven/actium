@@ -1,9 +1,9 @@
-package Octium::O::Points::Point 0.013;
+package Octium::Points::Point 0.013;
 
 # This object is used for *display*, and should probably be called something
 # that relates to that.
 
-# The object Octium::O::Points is used to hold unformatted data.
+# The object Octium::Points is used to hold unformatted data.
 
 # This really needs to be refactored to get rid of the awful use of
 # global variables.
@@ -16,12 +16,12 @@ const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 use sort ('stable');
 
 use List::Compare::Functional('get_unique');    ### DEP ###
-use Octium::O::DateTime;
+use Octium::DateTime;
 
 const my $IDPOINTFOLDER => 'idpoints2016';
 const my $KFOLDER       => 'kpoints';
 
-use Octium::O::Points::Column;
+use Octium::Points::Column;
 
 use Octium::Text::InDesignTags;
 const my $IDT          => 'Octium::Text::InDesignTags';
@@ -32,11 +32,11 @@ const my $NBSP         => $IDT->nbsp;
 has [
     qw/stopid signid delivery agency signtype
       description description_nocity city tidfile/
-  ] => (
+] => (
     is       => 'ro',
     isa      => 'Str',
     required => 1,
-  );
+);
 
 has copyquantity => (
     is      => 'ro',
@@ -52,13 +52,13 @@ has [qw/tallcolumnnum tallcolumnlines/] => (
 
 has effdate => (
     is       => 'ro',
-    isa      => 'Octium::O::DateTime',
+    isa      => 'Octium::DateTime',
     required => 1,
 );
 
 has signup => (
     is       => 'ro',
-    isa      => 'Octium::O::Folders::Signup',
+    isa      => 'Octium::Folders::Signup',
     required => 1,
 );
 
@@ -86,7 +86,7 @@ has heights => (
 
 has actiumdb => (
     is       => 'ro',
-    isa      => 'Octium::O::Files::ActiumDB',
+    isa      => 'Octium::Files::ActiumDB',
     required => 1,
 );
 
@@ -161,7 +161,7 @@ has 'has_ab' => (
 has 'column_r' => (
     traits  => ['Array'],
     is      => 'rw',
-    isa     => 'ArrayRef[Maybe[Octium::O::Points::Column]]',
+    isa     => 'ArrayRef[Maybe[Octium::Points::Column]]',
     default => sub { [] },
     handles => {
         columns      => 'elements',
@@ -258,7 +258,7 @@ sub new_from_kpoints {
         while (<$kpoint>) {
 
             chomp;
-            my $column = Octium::O::Points::Column->new( $_, $column_stopid );
+            my $column = Octium::Points::Column->new( $_, $column_stopid );
 
             my $linegroup = $column->linegroup;
 
@@ -363,7 +363,7 @@ sub new_from_kpoints {
 
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
-            my $lines = Actium::joinseries( items => \@notfound );
+            my $lines    = Actium::joinseries( items => \@notfound );
             $self->push_error(
                 "$linetext $lines found in omit list but not in schedule data."
             );
@@ -966,7 +966,7 @@ sub format_side {
 
 }
 
-# TODO - allow all values in Octium::O::Days
+# TODO - allow all values in Octium::Days
 my %text_of_exception = (
     SD     => 'school days only',
     SH     => 'school holidays only',
@@ -1026,7 +1026,7 @@ sub format_sidenotes {
             $dest =~ s/\.*$/\./;
         }
 
-        # TODO - Update to allow all values in Octium::O::Days
+        # TODO - Update to allow all values in Octium::Days
         if ( $attr{exception} ) {
             $exc = $text_of_exception{ $attr{exception} };
         }

@@ -1,4 +1,4 @@
-package Octium::O::Points::Column 0.013;
+package Octium::Points::Column 0.013;
 
 # Object for a single column in an InDesign point schedule
 
@@ -396,7 +396,7 @@ sub format_headdays {
     $days =~ s/7/7H/;         # sundays & holidays
 
     my @daycodes = split( //, $days );
-    my @days = map { $weekdays{$_} } @daycodes;
+    my @days     = map { $weekdays{$_} } @daycodes;
 
     if ( @days == 1 ) {
         $days = $days[0];

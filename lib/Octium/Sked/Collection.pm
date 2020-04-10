@@ -1,9 +1,9 @@
-package Octium::O::Sked::Collection 0.014;
+package Octium::Sked::Collection 0.014;
 
 use Actium ('class');
 use Octium;
 
-use Octium::O::Sked;
+use Octium::Sked;
 use Octium::Sorting::Skeds ('skedsort');
 
 use Octium::Storage::Excel;
@@ -32,7 +32,7 @@ has name => (
 
 has signup => (
     is      => 'rwp',
-    isa     => 'Octium::O::Folders::Signup',
+    isa     => 'Octium::Folders::Signup',
     default => sub { Octium::env->signup },
 );
 
@@ -146,7 +146,7 @@ sub skeds_of_lg {
 
 method load_storable (
       $class:
-      Octium::O::Folders::Signup : $signup = Octium::env->signup,
+      Octium::Folders::Signup : $signup = Octium::env->signup,
       Str : $collection !
     ) {
 
@@ -162,7 +162,7 @@ method load_storable (
 
 method load_xlsx (
       $class: 
-      Octium::O::Folders::Signup : $signup = Octium::env->signup,
+      Octium::Folders::Signup : $signup = Octium::env->signup,
       Str : $collection ! 
     ) {
 
@@ -176,7 +176,7 @@ method load_xlsx (
 
     my @skeds;
     foreach my $file (@xlsx_files) {
-        my $sked = Octium::O::Sked->new_from_xlsx( file => $file );
+        my $sked = Octium::Sked->new_from_xlsx( file => $file );
         push @skeds, $sked;
     }
 
@@ -194,7 +194,7 @@ method load_xlsx (
 
 method finalize_skeds (
     $class: 
-    Octium::O::Folders::Signup $signup = Octium::env->signup
+    Octium::Folders::Signup $signup = Octium::env->signup
   ) {
 
     my $received_collection = $class->load_storable(
@@ -248,7 +248,7 @@ sub write_tabxchange {
     );
 
     my $destination_code
-      = Octium::O::DestinationCode->load( $params{commonfolder} );
+      = Octium::DestinationCode->load( $params{commonfolder} );
 
     my @skeds = grep { $_->linegroup !~ /^(?:BS|4\d\d)/ax } $self->skeds;
 
@@ -323,7 +323,7 @@ method output_skeds_all {
 
     my $prehistoricfolder = $self->folder('prehistoric');
 
-    Octium::O::Sked->write_prehistorics( $skeds_r, $prehistoricfolder );
+    Octium::Sked->write_prehistorics( $skeds_r, $prehistoricfolder );
 
     $outputcry->done;
 
@@ -373,17 +373,17 @@ method output_skeds_place {
 
 }    ## tidy end: method output_skeds_place
 
-method compare_from ( Octium::O::Sked::Collection $oldcollection) {
-    require Octium::O::Sked::ComparisonGroup;
-    return Octium::O::Sked::ComparisonGroup->new(
+method compare_from ( Octium::Sked::Collection $oldcollection) {
+    require Octium::Sked::ComparisonGroup;
+    return Octium::Sked::ComparisonGroup->new(
         oldskeds => $oldcollection,
         newskeds => $self
     );
 }
 
-method compare_to ( Octium::O::Sked::Collection $newcollection) {
-    require Octium::O::Sked::ComparisonGroup;
-    return Octium::O::Sked::ComparisonGroup->new(
+method compare_to ( Octium::Sked::Collection $newcollection) {
+    require Octium::Sked::ComparisonGroup;
+    return Octium::Sked::ComparisonGroup->new(
         oldskeds => $self,
         newskeds => $newcollection
     );

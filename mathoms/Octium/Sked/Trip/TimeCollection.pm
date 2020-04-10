@@ -3,7 +3,7 @@ package Octium::Sked::Trip::Time::Collection 0.014;
 use Actium ('role');
 use Octium;
 
-# This is part of a start at rewriting Actium::O::Sked to use time objects
+# This is part of a start at rewriting Actium::Sked to use time objects
 # and otherwise be more modern. It is not complete.
 
 # This is a role applied to Octium::Sked::Trip. It represents
@@ -89,7 +89,7 @@ has placetime_r => (
         placetime             => 'get',
         _splice_placetimes    => 'splice',
         _delete_placetime     => 'delete',
-        # only from BUILD in Octium::O::Sked
+        # only from BUILD in Octium::Sked
     },
 );
 
