@@ -1,4 +1,4 @@
-package Octium::Sked::StopSked::Pathway 0.016;
+package Octium::Sked::StopSked::Pathway 0.015;
 # vimcolor: #132600
 
 # The subsequent stops, after the ones represented by a StopSked
@@ -43,7 +43,7 @@ schedule
 
 =head1 VERSION
 
-This documentation refers to version 0.016
+This documentation refers to version 0.015
 
 =head1 SYNOPSIS
 

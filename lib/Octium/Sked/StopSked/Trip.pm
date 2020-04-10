@@ -1,4 +1,4 @@
-package Octium::Sked::StopSked::Trip 0.016;
+package Octium::Sked::StopSked::Trip 0.015;
 # vimcolor: #002626
 
 use Actium 'class';
@@ -81,7 +81,7 @@ schedule
 
 =head1 VERSION
 
-This documentation refers to version 0.016
+This documentation refers to version 0.015
 
 =head1 SYNOPSIS
 

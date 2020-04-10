@@ -1,4 +1,4 @@
-package Octium::Sked::StopSked 0.016;
+package Octium::Sked::StopSked 0.015;
 # vimcolor: #002613
 
 use Actium 'class';
@@ -68,7 +68,7 @@ particular stop
 
 =head1 VERSION
 
-This documentation refers to version 0.016
+This documentation refers to version 0.015
 
 =head1 SYNOPSIS
 
