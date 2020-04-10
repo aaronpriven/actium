@@ -15,7 +15,7 @@ This documentation refers to version 0.015
 
  use <name>;
  # do something with <name>
-  
+
 =head1 DESCRIPTION
 
 A full description of the module and its features.
@@ -53,7 +53,7 @@ None known.
 =head1 BUGS AND LIMITATIONS
 
 None known. Issues are tracked on Github at
-L<https://github.com/aaronpriven/actium/issues|https://github.com/aaronpriven/actium/issues>.
+L<https:E<sol>E<sol>github.comE<sol>aaronprivenE<sol>actiumE<sol>issues|https:E<sol>E<sol>github.comE<sol>aaronprivenE<sol>actiumE<sol>issues>.
 
 =head1 AUTHOR
 
