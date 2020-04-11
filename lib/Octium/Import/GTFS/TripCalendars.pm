@@ -112,14 +112,16 @@ func adjust_calendar_for_midnight ($signup) {
               = @old_calendar{@DAYS_OF_WEEK};
 
             my $old_start = $old_calendar{'_dt_start_date'};
-            $start                              = following_day($old_start);
+            $start = $old_start->following_day;
+            #$start                              = following_day($old_start);
             $new_calendar{"_old_dt_start_date"} = $old_start;
             $new_calendar{"_old_start_date"}    = $old_calendar{'start_date'};
             $new_calendar{'_dt_start_date'}     = $start;
             $new_calendar{start_date}           = $start->ymd($EMPTY);
 
             my $old_end = $old_calendar{'_dt_end_date'};
-            $end                              = following_day($old_end);
+            $end = $old_end->following_day;
+            #$end                              = following_day($old_end);
             $new_calendar{"_old_dt_end_date"} = $old_end;
             $new_calendar{"_old_end_date"}    = $old_calendar{'end_date'};
             $new_calendar{'_dt_end_date'}     = $end;
@@ -177,7 +179,8 @@ func adjust_exceptions_for_midnight {
             foreach \my @exceptions( $exceptions{$service_id} ) {
                 foreach \my %exception (@exceptions) {
 
-                    my $adj_dt   = following_day( $exception{'_dt'} );
+                    my $adj_dt = $exception{'_dt'}->following_day;
+                    #my $adj_dt   = following_day( $exception{'_dt'} );
                     my $adj_date = $adj_dt->ymd($EMPTY);
 
                     my %adj_exception = %exception;
@@ -573,12 +576,12 @@ func dt_from_gtfs_date ( Str $date) {
     return $dt_of{$date} = $dt;
 }
 
-func following_day ( Octium::DateTime $dt) {
-    state $one_day = DateTime::Duration->new( days => 1 );
-    my $new_dt = Octium::DateTime::->from_object( object => $dt );
-    $new_dt->add_duration($one_day);
-    return $new_dt;
-}
+#func following_day ( Octium::DateTime $dt) {
+#    state $one_day = DateTime::Duration->new( days => 1 );
+#    my $new_dt = Octium::DateTime::->from_object( object => $dt );
+#    $new_dt->add_duration($one_day);
+#    return $new_dt;
+#}
 
 1;
 
