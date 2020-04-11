@@ -1,4 +1,4 @@
-package Octium::DateTime 0.014;
+package Actium::DateTime 0.014;
 
 # Object representing a date and time
 # (a thin wrapper around the DateTime module, with some i18n methods)
@@ -142,7 +142,7 @@ sub new {
         my $obj = $strp_obj->parse_datetime($datestr);
 
         # returns a DateTime object.
-        # This re-blesses it into an Octium::DateTime object
+        # This re-blesses it into an Actium::DateTime object
 
         bless $obj, $class;
         return $obj;
@@ -168,7 +168,7 @@ sub new {
         my $obj = $cldr->parse_datetime($datestr);
 
         # returns a DateTime object.
-        # This re-blesses it into an Octium::DateTime object
+        # This re-blesses it into an Actium::DateTime object
 
         bless $obj, $class;
         return $obj;
@@ -334,9 +334,9 @@ sub _x_est_date {
     return if not defined $x_est_date;
 
     if ( not $x_est_date->isa(__PACKAGE__) ) {
-        $x_est_date = Octium::DateTime::->new($x_est_date);
+        $x_est_date = Actium::DateTime::->new($x_est_date);
         # if somebody is passing DateTime objects,
-        # turns them into Octium::DateTime objects
+        # turns them into Actium::DateTime objects
     }
 
     return $x_est_date;
@@ -351,7 +351,7 @@ __END__
 
 =head1 NAME
 
-Octium::DateTime - dates (and times) for Actium
+Actium::DateTime - dates (and times) for Actium
 
 =head1 VERSION
 
@@ -359,18 +359,18 @@ This documentation refers to version 0.014
 
 =head1 SYNOPSIS
 
- use Octium::DateTime;
+ use Actium::DateTime;
  
- my $dt = Octium::DateTime->('3/27/2017');
+ my $dt = Actium::DateTime->('3/27/2017');
  # or equivalently
- my $dt = Octium::DateTime->(datetime => '3/27/2017');
+ my $dt = Actium::DateTime->(datetime => '3/27/2017');
  
  my $date_es = $dt->long_es;
  # $date_es = "27 de marzo de 2017";
 
 =head1 DESCRIPTION
 
-Octium::DateTime is a subclass of DateTime. It uses
+Actium::DateTime is a subclass of DateTime. It uses
 L<DateTimeX::Role::Immutable|DateTimeX::Role::Immutable>, ensuring that
 the values of an object do not change.
 
@@ -379,29 +379,29 @@ In inherits almost almost everything from DateTime, while providing a
 few convenience methods and convenience ways of constructing the
 object.
 
-Octium::DateTime was created in order to do comparisons and
+Actium::DateTime was created in order to do comparisons and
 presentation of dates rather than times. Therefore, its own methods
 ignore such details as  time zones, leap seconds and the like. 
-Theoretically you could use Octium::DateTime objects to do processing
+Theoretically you could use Actium::DateTime objects to do processing
 on time, but it's not really intended for that purpose.
 
 =head1 CLASS METHODS
 
 =head2 new()
 
-This method takes arguments and returns a new Octium::DateTime object.
+This method takes arguments and returns a new Actium::DateTime object.
 
 Most arguments must be specified using names:
 
     $dt = 
-      Octium::DateTime->new(
+      Actium::DateTime->new(
         cldr => '31-5-2017' , pattern => 'D-M-Y' 
       );
 
 If a single positional argument is seen,  then it is treated the same
 as an argument to 'datetime', below.
 
-The arguments used by Octium::DateTime are given below. If none of
+The arguments used by Actium::DateTime are given below. If none of
 these arguments are present, the arguments are passed through to
 DateTime. Only one of "datetime", "strptime" or "cldr" can be present, 
 and if one is, none of the other arguments other than "pattern" can be
@@ -472,10 +472,10 @@ Any other arguments are treated as they are in DateTime.
 These class methods calculate the newest or oldest date from a list of
 dates passed to it. (Note that the invocant is assumed to be the class
 name and is not used in the calculation, even if the invocant is
-actually an object.)  The dates can be Octium::DateTime objects,
+actually an object.)  The dates can be Actium::DateTime objects,
 DateTime objects, or strings; if they are strings they will be
 formatted as dates as though they were passed to new().  The return
-value is an Octium::DateTime object.
+value is an Actium::DateTime object.
 
 =head1 OBJECT METHODS
 
@@ -515,7 +515,7 @@ added later, they will probably be added  at the end.
 
 =head2 following_date
 
-This returns an Octium::DateTime object representing one day after the
+This returns an Actium::DateTime object representing one day after the
 object's own date.
 
 =head2 en_us_weekday

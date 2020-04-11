@@ -4,7 +4,7 @@ use Actium;
 use Octium;
 
 use Text::Trim;    ### DEP ###
-use Octium::DateTime;
+use Actium::DateTime;
 use Octium::Sorting::Skeds('skedsort');
 use Octium::Text::InDesignTags;
 use Octium::Text::CharWidth ( 'ems', 'char_width' );

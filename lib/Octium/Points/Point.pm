@@ -16,7 +16,7 @@ const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 use sort ('stable');
 
 use List::Compare::Functional('get_unique');    ### DEP ###
-use Octium::DateTime;
+use Actium::DateTime;
 
 const my $IDPOINTFOLDER => 'idpoints2016';
 const my $KFOLDER       => 'kpoints';
@@ -52,7 +52,7 @@ has [qw/tallcolumnnum tallcolumnlines/] => (
 
 has effdate => (
     is       => 'ro',
-    isa      => 'Octium::DateTime',
+    isa      => 'Actium::DateTime',
     required => 1,
 );
 

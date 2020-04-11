@@ -11,7 +11,7 @@ package Octium::Import::Xhea 0.012;
 use Actium;
 use Octium;
 use Octium::Import::CalculateFields;
-use Octium::DateTime;
+use Actium::DateTime;
 
 use List::MoreUtils('pairwise');    ### DEP ###
 use Params::Validate(':all');       ### DEP ###
@@ -293,7 +293,7 @@ sub tab_strings {
     }    ## tidy end: sub adjust_sch_cal
 }
 
-const my @HOLIDAYS => map Octium::DateTime->new( strptime => $_ ),
+const my @HOLIDAYS => map Actium::DateTime->new( strptime => $_ ),
   qw/
   2018-09-03 2018-11-22 2018-12-25
   2019-01-01 2019-01-21 2019-02-18 2019-05-27
@@ -338,15 +338,15 @@ sub _get_trip_notes_from_event_date {
         my ( $date_str, $event, $status )
           = @field{qw/evtd_date evtd_event evtd_status/};
 
-        my $dt = $dt_cache{$date_str} //= Octium::DateTime->new($date_str);
+        my $dt = $dt_cache{$date_str} //= Actium::DateTime->new($date_str);
 
         next if Actium::fne( $status, 'on' );
 
         push $dts_of_event{$event}->@*, $dt;
     }
 
-    my $start = Octium::DateTime->oldest_date( values %dt_cache );
-    my $end   = Octium::DateTime->newest_date( values %dt_cache );
+    my $start = Actium::DateTime->oldest_date( values %dt_cache );
+    my $end   = Actium::DateTime->newest_date( values %dt_cache );
 
     my ( %quantity_of_dow, %recurrence_set_of );
 

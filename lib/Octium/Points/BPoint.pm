@@ -38,7 +38,7 @@ has copyquantity => (
 
 has effdate => (
     is       => 'ro',
-    isa      => 'Octium::DateTime',
+    isa      => 'Actium::DateTime',
     required => 1,
 );
 
@@ -178,7 +178,7 @@ __END__
 const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 
 use List::Compare::Functional('get_unique');    ### DEP ###
-use Octium::DateTime;
+use Actium::DateTime;
 
 const my $IDPOINTFOLDER => 'idpoints2019';
 const my $KFOLDER       => 'kpoints';
@@ -207,7 +207,7 @@ has copyquantity => (
 
 has effdate => (
     is       => 'ro',
-    isa      => 'Octium::DateTime',
+    isa      => 'Actium::DateTime',
     required => 1,
 );
 
