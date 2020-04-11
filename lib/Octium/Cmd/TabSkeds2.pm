@@ -6,7 +6,7 @@ package Octium::Cmd::TabSkeds2 0.012;
 use Actium;
 use Octium;
 
-use Octium::Sked::Collection;
+use Octium::SkedCollection;
 use Octium::DestinationCode;
 
 sub OPTIONS {
@@ -22,7 +22,7 @@ sub START {
     my $tabfolder    = $signup->subfolder('tabxchange');
 
     my $collection
-      = Octium::Sked::Collection->load_storable( collection => 'final' );
+      = Octium::SkedCollection->load_storable( collection => 'final' );
 
     my $dbh = $actiumdb->dbh;
     # just there to move the display forward from where it would

@@ -1,4 +1,4 @@
-package Octium::Sked::Collection 0.014;
+package Octium::SkedCollection 0.014;
 
 use Actium ('class');
 use Octium;
@@ -373,7 +373,7 @@ method output_skeds_place {
 
 }
 
-method compare_from ( Octium::Sked::Collection $oldcollection) {
+method compare_from ( Octium::SkedCollection $oldcollection) {
     require Octium::Sked::ComparisonGroup;
     return Octium::Sked::ComparisonGroup->new(
         oldskeds => $oldcollection,
@@ -381,7 +381,7 @@ method compare_from ( Octium::Sked::Collection $oldcollection) {
     );
 }
 
-method compare_to ( Octium::Sked::Collection $newcollection) {
+method compare_to ( Octium::SkedCollection $newcollection) {
     require Octium::Sked::ComparisonGroup;
     return Octium::Sked::ComparisonGroup->new(
         oldskeds => $self,

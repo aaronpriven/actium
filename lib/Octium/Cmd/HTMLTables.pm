@@ -6,7 +6,7 @@ use Octium;
 # Produces HTML tables that represent timetables.
 
 use Octium::Sked;
-use Octium::Sked::Collection;
+use Octium::SkedCollection;
 use Octium::Sked::Timetable;
 
 sub HELP {
@@ -31,7 +31,7 @@ sub START {
     my $html_folder = $signup->subfolder('html');
 
     my $collection
-      = Octium::Sked::Collection->load_storable( collection => 'final' );
+      = Octium::SkedCollection->load_storable( collection => 'final' );
 
     my @skeds = $collection->skeds;
 
