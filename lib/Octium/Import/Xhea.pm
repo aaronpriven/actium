@@ -311,7 +311,6 @@ sub _get_trip_notes_from_event_date {
 
     my $cry = env->cry('Creating trip calendar notes from XHEA event dates');
 
-    require Octium::DateTime;
     require DateTime::Event::ICal;
 
     my %p = validate(

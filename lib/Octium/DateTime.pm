@@ -9,10 +9,14 @@ package Octium::DateTime 0.014;
 # consider adding DateTimeX::Role::Immutable
 
 use Actium;
-use Octium;
 
 use parent 'DateTime';
 # DateTime ### DEP ###
+
+use Role::Tiny::With;    ### DEP ###
+with 'DateTimeX::Role::Immutable';
+# DateTimeX::Role::Immutable ### DEP ###
+
 use overload q{""} => '_stringify';
 
 sub _stringify {
@@ -169,9 +173,9 @@ sub new {
         bless $obj, $class;
         return $obj;
 
-    }    ## tidy end: sub _from_cldr
+    }
 
-}    ## tidy end: sub _dt_from_cldr
+}
 
 ### OBJECT METHODS
 
@@ -271,12 +275,14 @@ sub new {
 # convenience methods
 sub following_day {
     my $self = shift;
-    state %one_day;
-    my $class = blessed($self);
+    state %one_day;    # caching the duration objects
+    my $class = Actium::blessed($self);
     my $one_day
       = ( $one_day{$class} //= $class->duration_class()->new( days => 1 ) );
-    my $new_dt = $class->from_object( object => $self );
-    $new_dt->add_duration( $one_day{$class} );
+
+    my $new_dt = $self->plus_duration($one_day);
+    #my $new_dt = $class->from_object( object => $self );
+    #$new_dt->add_duration( $one_day{$class} );
     return $new_dt;
 }
 
@@ -335,7 +341,7 @@ sub _x_est_date {
 
     return $x_est_date;
 
-}    ## tidy end: sub _x_est_date
+}
 
 1;
 
@@ -361,27 +367,29 @@ This documentation refers to version 0.014
  
  my $date_es = $dt->long_es;
  # $date_es = "27 de marzo de 2017";
-   
+
 =head1 DESCRIPTION
 
-Octium::DateTime is a thin wrapper around L<DateTime>.  In inherits
-almost almost everything from DateTime, while providing a few
-convenience methods and convenience ways of constructing the object.
+Octium::DateTime is a subclass of DateTime. It uses
+L<DateTimeX::Role::Immutable|DateTimeX::Role::Immutable>, ensuring that
+the values of an object do not change.
+
+
+In inherits almost almost everything from DateTime, while providing a
+few convenience methods and convenience ways of constructing the
+object.
 
 Octium::DateTime was created in order to do comparisons and
 presentation of dates rather than times. Therefore, its own methods
 ignore such details as  time zones, leap seconds and the like. 
-Theoretically you could use Octium::DateTime  objects to do processing
-on time, but it's not really intended for that  purpose.
+Theoretically you could use Octium::DateTime objects to do processing
+on time, but it's not really intended for that purpose.
 
-=head1 METHODS
+=head1 CLASS METHODS
 
-=over
+=head2 new()
 
-=item B<new()>
-
-This subroutine takes arguments and returns a new Octium::DateTime
-object.
+This method takes arguments and returns a new Octium::DateTime object.
 
 Most arguments must be specified using names:
 
@@ -389,7 +397,7 @@ Most arguments must be specified using names:
       Octium::DateTime->new(
         cldr => '31-5-2017' , pattern => 'D-M-Y' 
       );
-    
+
 If a single positional argument is seen,  then it is treated the same
 as an argument to 'datetime', below.
 
@@ -451,6 +459,32 @@ none of  "year", "month" and "day" can also be present.
 
 Any other arguments are treated as they are in DateTime.
 
+=head2 newest_date, oldest_date
+
+=over
+
+=item B<newest_date($date, $date, $date...)>
+
+=item B<oldest_date($date, $date, $date...)>
+
+=back
+
+These class methods calculate the newest or oldest date from a list of
+dates passed to it. (Note that the invocant is assumed to be the class
+name and is not used in the calculation, even if the invocant is
+actually an object.)  The dates can be Octium::DateTime objects,
+DateTime objects, or strings; if they are strings they will be
+formatted as dates as though they were passed to new().  The return
+value is an Octium::DateTime object.
+
+=head1 OBJECT METHODS
+
+=head2 long_I<xx>, full_I<xx>
+
+The actual methods are:
+
+=over
+
 =item B<long_en()>
 
 =item B<long_es()>
@@ -463,6 +497,8 @@ Any other arguments are treated as they are in DateTime.
 
 =item B<full_zh()>
 
+=back
+
 These provide dates formatted in the appropriate languages: English,
 Spanish,  or Chinese (simplified), using the locales "en_US", "es_US",
 and "zh_Hans".
@@ -470,26 +506,22 @@ and "zh_Hans".
 The "long" date formats provide the full name of the month, the day and
 the year.  The "full" date formats add the weekday as well.
 
-=item B<fulls>
+=head2 longs, fulls
 
-=item B<longs>
+The B<fulls> and B<longs> methods return a reference to an array of
+each of the appropriate "full" or  "long" values, in language order.
+The order is currently alphabetical, although if more languages are
+added later, they will probably be added  at the end.
 
-These return a reference to an array of each of the appropriate "full"
-or  "long" values, in language order. The order is currently
-alphabetical, although if more languages are added later, they will
-probably be added  at the end.
+=head2 following_date
 
-=item B<newest_date($date, $date, $date...)>
+This returns an Octium::DateTime object representing one day after the
+object's own date.
 
-This class method (not object method) calculates the newest date from a
-list of dates passed to it. (Note that the invocant is assumed to be
-the class name and is not used in the calculation.)  The dates can be
-Octium::DateTime objects, DateTime objects, or strings; if they are
-strings they will be formatted as dates as though they were passed to
-new() in the strptime argument.  The return value is an
-Octium::DateTime object.
+=head2 en_us_weekday
 
-=back
+Returns a string, the full English weekday name ('Monday', 'Tuesday',
+etc.) for the date represented.
 
 =head1 DIAGNOSTICS
 
@@ -572,7 +604,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2017
+Copyright 2020
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either:
