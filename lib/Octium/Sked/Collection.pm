@@ -186,7 +186,7 @@ method load_xlsx (
         signup => $signup
     );
 
-}    ## tidy end: method load_xlsx
+}
 
 #######################
 ##### TRANSFORMATION
@@ -229,7 +229,7 @@ method finalize_skeds (
 
     $finalized_collection->output_skeds_all;
 
-}    ## tidy end: method finalize_skeds
+}
 
 ###################
 ##### OUTPUT ######
@@ -265,7 +265,7 @@ sub write_tabxchange {
     );
 
     $destination_code->store;
-}    ## tidy end: sub write_tabxchange
+}
 
 method folder ($the_format = undef) {
     # calling it $format yields syntax formatting errors in Eclipse
@@ -327,7 +327,7 @@ method output_skeds_all {
 
     $outputcry->done;
 
-}    ## tidy end: method output_skeds_all
+}
 
 method output_skeds_storable {
     my $cry      = env->cry("Writing skeds in Storable format");
@@ -371,7 +371,7 @@ method output_skeds_place {
 
     return;
 
-}    ## tidy end: method output_skeds_place
+}
 
 method compare_from ( Octium::Sked::Collection $oldcollection) {
     require Octium::Sked::ComparisonGroup;
