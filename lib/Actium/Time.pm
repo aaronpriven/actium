@@ -3,8 +3,7 @@ package Actium::Time 0.014;
 # object for formatting schedule times and parsing formatted times
 
 use Actium ('class');
-use Types::Standard(qw/Int Str Undef/);
-use Type::Utils('union');
+use Types::Standard(qw/Int Str/);
 
 const my $MINS_IN_12HRS => ( 12 * 60 );
 
@@ -14,9 +13,12 @@ const my %NAMED => (
     NOON              => $MINS_IN_12HRS,
     MIDNIGHT_TOMORROW => 2 * $MINS_IN_12HRS,
     MAX_TIME          => ( 3 * $MINS_IN_12HRS ) - 1,
-    f                 => 'f',
-    i                 => 'i',
+    NO_VALUE          => -32000,
+    f                 => -32001,
+    i                 => -32002,
 );
+
+const my %IS_NAMED_VALUE => ( map { $_, 1 } values %NAMED );
 
 ###########################################
 ## CONSTRUCTION
@@ -25,10 +27,6 @@ const my %NAMED => (
 my %str_cache;
 my %num_cache;
 
-my $undef_instance;
-# undef can't be a hash key, so can't keep it in the caches.
-# Can't create it here because rest of object not defined yet
-
 sub from_num {
     my $class    = shift;
     my @timenums = @_;
@@ -36,9 +34,9 @@ sub from_num {
     my @objs = (
         map {
             defined $_
-              ? $num_cache{$_} //= $class->new( _timenum => $_ )
-              : $undef_instance
-              //= $class->new( _timenum => undef )
+              ? ( $num_cache{$_} //= $class->new( _timenum => $_ ) )
+              : $num_cache{ $NAMED{NO_VALUE} }
+              //= $class->new( _timenum => $NAMED{NO_VALUE} )
         } @timenums
     );
 
@@ -164,8 +162,8 @@ sub from_str {
     my @objs = map {
         defined $_
           ? $str_cache{$_} //= $class->from_num( $str_to_num_cr->($_) )
-          : $undef_instance
-          //= $class->new( _timenum => undef )
+          : $num_cache{ $NAMED{NO_VALUE} }
+          //= $class->new( _timenum => $NAMED{NO_VALUE} )
     } @timestrs;
 
     return @objs if wantarray;
@@ -179,7 +177,10 @@ method from_excel ($class: @cells) {
 
     foreach my $cell (@cells) {
 
-        return $undef_instance unless defined $cell;
+        if ( not defined $cell ) {
+            push @objs, $class->from_num( $NAMED{NO_VALUE} );
+            next;
+        }
         my $formatted   = $cell->value;
         my $unformatted = $cell->unformatted;
 
@@ -218,16 +219,11 @@ method from_excel ($class: @cells) {
 #######################################################
 
 has timenum => (
-    isa => union(
-        [   Int->where(
-                sub {
-                    ( $NAMED{NOON_YESTERDAY} <= $_ )
-                      && ( $_ <= $NAMED{MAX_TIME} );
-                }
-            ),
-            Str->where( sub { $_ eq 'f' or $_ eq 'i' } ),
-            Undef,
-        ]
+    isa => Int->where(
+        sub {
+            ( $NAMED{NOON_YESTERDAY} <= $_ ) && ( $_ <= $NAMED{MAX_TIME} )
+              or $IS_NAMED_VALUE{$_};
+        }
     ),
     is       => 'ro',
     init_arg => '_timenum',
@@ -245,24 +241,23 @@ method is_in_range (Int $integer) {
 }
 
 method is_flex {
-    return $self->timenum eq 'f';
+    return $self->timenum == $NAMED{f};
 }
 
 method is_awaiting_interpolation {
-    return $self->timenum eq 'i';
+    return $self->timenum == $NAMED{i};
 }
 
 method does_stop {
-    return defined $self->timenum;
+    return $self->timenum != $NAMED{NO_VALUE};
 }
 
 method no_stop {
-    return not defined $self->timenum;
+    return $self->timenum == $NAMED{NO_VALUE};
 }
 
 method has_time {
-    my $timenum = $self->timenum;
-    return ( defined $timenum and $timenum ne 'f' and $timenum ne 'i' );
+    return ( $self->is_in_range( $self->timenum ) );
 }
 
 #######################################################
@@ -310,16 +305,17 @@ method formatted (
     return $self->_fcache($cachekey) if $self->_fcache_exists($cachekey);
 
     my $timenum = $self->timenum;
-    return $EMPTY unless defined $timenum;
+    return $EMPTY if $timenum == $NAMED{NO_VALUE};
     return $self->_fcache_set( $cachekey => $timenum )
-      if $timenum eq 'f' or $timenum eq 'i';
+      if $timenum == $NAMED{f}
+      or $timenum == $NAMED{i};
 
     ## 24 hour formats
 
     if ( $format eq '24' ) {
         $timenum += ( $MINS_IN_12HRS * 2 ) if $timenum < 0;
         my $minutes = sprintf( '%02d', $timenum % 60 );
-        my $hours = sprintf( '%02d', ( int( $timenum / 60 ) ) % 24 );
+        my $hours   = sprintf( '%02d', ( int( $timenum / 60 ) ) % 24 );
         return $self->_fcache_set(
             $cachekey => join( $EMPTY, $hours, $separator, $minutes ) );
     }
@@ -329,7 +325,7 @@ method formatted (
             $timenum += ( $MINS_IN_12HRS * 2 );
         }
         my $minutes = sprintf( '%02d', $timenum % 60 );
-        my $hours = sprintf( '%02d', ( int( $timenum / 60 ) ) );
+        my $hours   = sprintf( '%02d', ( int( $timenum / 60 ) ) );
         return $self->_fcache_set(
             $cachekey => join( $EMPTY, $hours, $separator, $minutes ) );
     }
@@ -337,7 +333,7 @@ method formatted (
     # 12 hour formats
 
     my $minutes = sprintf( '%02d', $timenum % 60 );
-    my $hours = ( Actium::floor( $timenum / 60 ) ) % 12;
+    my $hours   = ( Actium::floor( $timenum / 60 ) ) % 12;
     $hours = 12 if $hours == 0;
 
     if ( $format eq '12apmn' ) {
@@ -421,7 +417,7 @@ sub timesort {
 
     # Schwartzian transform
     return map { $_->[0] }
-      sort     { $a->[1] <=> $b->[1] } @tosort;
+      sort { $a->[1] <=> $b->[1] } @tosort;
 
 }
 
@@ -437,7 +433,7 @@ Actium::Time - Routines to format times in the Actium system
 
 =head1 VERSION
 
-This documentation refers to Actium::Time version 0.014
+This documentation refers to Actium::Time version 0.015
 
 =head1 SYNOPSIS
 
@@ -476,13 +472,23 @@ This uses "flyweight" objects, meaning that it returns the same object
 every time you pass particular arguments to construct it.  These
 objects are immutable.
 
-There are three special time values.  The first is the undefined value,
-which signifies a blank time on a schedule -- the vehicle does not stop.
-The second is "f", which indicates that this is a stop for flexible service,
+There are three special time values.  
+
+=over
+
+=item * -32000
+
+This signifies a blank time on a schedule -- the vehicle does not stop.
+
+=item * -32001
+
+This signifies that this is a stop for flexible service,
 but that there is no specific time when the bus will arrive at this stop.
-The third is "i", which indicates that this time will eventually be 
-interpolated from nearby times, but this interpolation has not yet been 
-performed.  
+
+=item * -32002
+
+This indicates that this time will eventually be interpolated from nearby
+times, but this interpolation has not yet been performed.  
 
 =head1 CLASS METHODS
 
@@ -497,7 +503,7 @@ This constructor accepts times represented as a string, usually a
 formatted time such as "11:59a" or "13'25", and returns an object for
 each time that is passed.
 
-There are a limited number of special cases where names are used for
+There are a limited number of special cases where names may be for
 times instead of a format string. The valid named times are:
 
 =over
@@ -512,14 +518,22 @@ times instead of a format string. The valid named times are:
 
 =item    MAX_TIME
 
+=item    f
+
+=item    i
+
+=item    NO_VALUE
+
 =back 
+
+The 'f' value is stored as the value representing flexible service, and the 'i'
+value is stored as the value representing future interpolation. 
 
 MAX_TIME is equivalent to 11:59x, or 11:59 a.m. on the following day.
 
-The C<from_str> method also accepts the three special values 'f',
-'i', and the undefined value.  Other than "f" and "i", a string without any
-numbers in it is treated as the undefined value.  (This includes the 
-empty string.)
+The C<from_str> method also accepts the undefined value.  Other than "f" and
+"i", a string without any numbers in it is treated as the undefined value.
+(This includes the empty string.) This is treated the same as NO_VALUE.
 
 Otherwise, the string format can be one of these:
 
@@ -595,7 +609,8 @@ returns one object for each number that is passed.
 The integer must be between -720 and 2159, representing the times
 between noon yesterday and one minute before noon tomorrow.
 
-It also accepts the three special values: "f", "i", and the undefined value. 
+It also accepts the three special values listed above as for flexible service,
+a future interpolated time, and no value.
 
 =head2 from_excel
  
@@ -638,34 +653,31 @@ sorted list of objects.
 =head2 timenum
 
 Returns the time as a number of minutes since midnight (or, if
-negative, before midnight), or one of the special values 'f', 'i', or the 
-undefined value.
+negative, before midnight), or one of the special numeric values given above.
 
 =head2 is_flex
 
-Returns true if the time represents a flexible stop (i.e., the timenum value 
-is 'f'), false otherwise.
+Returns true if the time represents a flexible stop, false otherwise.
 
 =head2 is_awaiting_interpolation
 
-Returns true if the time represents a time that must be interpolated 
-(i.e., the timenum value is 'i'), false otherwise.
+Returns true if the time represents a time that must be interpolated, false otherwise.
 
 =head2 does_stop
 
-Returns true if the time represents a stop that will be made
-(i.e., the timenum value is defined), false otherwise.
+Returns true if the time represents a stop that will be made (i.e., the timenum
+value anything other than the NO_VALUE value), false otherwise.
 
 =head2 no_stop
 
-The opposite of C<does_stop>. Returns true if the time represents a stop
-that will not be made (i.e., the timenum value is not defined), false
+The opposite of C<does_stop>. Returns true if the time represents a stop that
+will not be made (i.e., the timenum value is the NO_VALUE value), false
 otherwise.
 
 =head2 has_time
 
 Returns true if the time represents an actual time rather than one of the
-special values 'f', 'i', or the undefined value; false otherwise.
+special values for flexible service, future interpolation, or no value.
 
 =head2 ap and ap_noseparator
 

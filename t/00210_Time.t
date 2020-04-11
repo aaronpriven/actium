@@ -28,19 +28,33 @@ for my $num (@numtests) {
         "Returned correct number: from-num($num)" );
 }
 
+my $MINS_IN_12HRS = ( 12 * 60 );
+
+my %NAMED = (
+    NOON_YESTERDAY    => -$MINS_IN_12HRS,
+    MIDNIGHT          => 0,
+    NOON              => $MINS_IN_12HRS,
+    MIDNIGHT_TOMORROW => 2 * $MINS_IN_12HRS,
+    MAX_TIME          => ( 3 * $MINS_IN_12HRS ) - 1,
+    NO_VALUE          => -32000,
+    f                 => -32001,
+    i                 => -32002,
+);
+
 note 'from_num() specials';
 
 {
-    my $flextime = Actium::Time->from_num('f');
-    is( $flextime->timenum, 'f', 'Timenum for flex is "f" - from_num' );
+    my $flextime = Actium::Time->from_num( $NAMED{f} );
+    is( $flextime->timenum, $NAMED{f},
+        'Timenum for flex is ' . $NAMED{f} . ' - from_num' );
 
-    my $intertime = Actium::Time->from_num('i');
-    is( $intertime->timenum, 'i', 'Timenum for interpolate is "i" - from_num' );
+    my $intertime = Actium::Time->from_num( $NAMED{i} );
+    is( $intertime->timenum, $NAMED{i},
+        'Timenum for interpolate is ' . $NAMED{i} . ' - from_num' );
 
     my $notime = Actium::Time->from_num(undef);
-    ok( not( defined $notime->timenum ),
-        'Timenum for undef is undef - from_num'
-    );
+    is( $notime->timenum, $NAMED{NO_VALUE},
+        'Timenum for undef is ' . $NAMED{NO_VALUE} . ' - from_num' );
 
     $testcount += 3;
 }
@@ -80,19 +94,20 @@ for my $string ( sort keys %timenum_of ) {
 note 'from_str() specials';
 
 my $flextime = Actium::Time->from_str('f');
-is( $flextime->timenum, 'f', 'Timenum for flex is "f" - from_str' );
+is( $flextime->timenum, $NAMED{f},
+    'Timenum for flex is ' . $NAMED{f} . ' - from_str' );
 
 my $intertime = Actium::Time->from_str('i');
-is( $intertime->timenum, 'i', 'Timenum for interpolate is "i" - from_str' );
+is( $intertime->timenum, $NAMED{i},
+    'Timenum for interpolate is ' . $NAMED{i} . ' - from_str' );
 
 my $notime = Actium::Time->from_str('');
-ok( not( defined $notime->timenum ),
-    'Timenum for empty string is undef - from_str' );
+is( $notime->timenum, $NAMED{NO_VALUE},
+    'Timenum for empty str is ' . $NAMED{NO_VALUE} . ' - from_str' );
 
 my $undeftime = Actium::Time->from_str(undef);
-ok( not( defined $undeftime->timenum ),
-    'Timenum for undef is undef - from_str'
-);
+is( $undeftime->timenum, $NAMED{NO_VALUE},
+    'Timenum for undef is ' . $NAMED{NO_VALUE} . ' - from_str' );
 
 $testcount += 4;
 
@@ -344,7 +359,7 @@ Aaron Priven <apriven@actransit.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2018
+Copyright 2020
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either:
