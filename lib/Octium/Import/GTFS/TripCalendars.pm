@@ -4,7 +4,7 @@ use Actium;
 use Octium;
 use Octium::Import::GTFS (':all');
 use Actium::Time;
-use Octium::DateTime;
+use Actium::DateTime;
 use DateTime::Duration;
 use DateTime::Event::Recurrence;
 use DateTime::Event::ICal;
@@ -13,7 +13,7 @@ use List::Compare::Functional ('is_LsubsetR');
 
 # "dow" in identifiers means day of week
 
-use Data::Printer { filters => { 'Octium::DateTime' => sub { $_[0]->ymd }, }, };
+use Data::Printer { filters => { 'Actium::DateTime' => sub { $_[0]->ymd }, }, };
 
 const my @DAYS_OF_WEEK =>
   qw/sunday monday tuesday wednesday thursday friday saturday/;
@@ -572,13 +572,13 @@ func dt_from_gtfs_date ( Str $date) {
     my $year  = substr( $date, 0, 4 );
     my $month = substr( $date, 4, 2 );
     my $day   = substr( $date, 6, 2 );
-    my $dt = Octium::DateTime::->new( ymd => [ $year, $month, $day ] );
+    my $dt = Actium::DateTime::->new( ymd => [ $year, $month, $day ] );
     return $dt_of{$date} = $dt;
 }
 
-#func following_day ( Octium::DateTime $dt) {
+#func following_day ( Actium::DateTime $dt) {
 #    state $one_day = DateTime::Duration->new( days => 1 );
-#    my $new_dt = Octium::DateTime::->from_object( object => $dt );
+#    my $new_dt = Actium::DateTime::->from_object( object => $dt );
 #    $new_dt->add_duration($one_day);
 #    return $new_dt;
 #}
