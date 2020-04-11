@@ -10,7 +10,7 @@ use Octium::Pattern::Block;
 use Octium::Pattern::Group;
 use Octium::Pattern::Stop;
 use Octium::Pattern::Trip;
-use Octium::Sked::Collection;
+use Octium::SkedCollection;
 
 use Params::Validate;
 
@@ -583,7 +583,7 @@ sub _make_skeds {
     }
     env->last_cry->over(".");
 
-    return Octium::Sked::Collection->new(
+    return Octium::SkedCollection->new(
         name   => 'received',
         skeds  => \@skeds,
         signup => $params{signup}

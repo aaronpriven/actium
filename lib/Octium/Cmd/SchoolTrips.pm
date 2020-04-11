@@ -3,7 +3,7 @@ package Octium::Cmd::SchoolTrips 0.012;
 use Actium;
 use Octium;
 
-use Octium::Sked::Collection;
+use Octium::SkedCollection;
 use List::MoreUtils;
 use Actium::Time;
 
@@ -19,7 +19,7 @@ sub START {
     my $commonfolder = $basefolder->subfolder('common');
 
     my $collection
-      = Octium::Sked::Collection->load_storable( collection => 'received' );
+      = Octium::SkedCollection->load_storable( collection => 'received' );
 
     my @skeds = $collection->skeds;
 

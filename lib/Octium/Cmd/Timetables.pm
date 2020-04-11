@@ -5,7 +5,7 @@ package Octium::Cmd::Timetables 0.012;
 use Actium;
 use Octium;
 
-use Octium::Sked::Collection;
+use Octium::SkedCollection;
 use Octium::Sked;
 use Octium::IDTables;
 
@@ -33,7 +33,7 @@ sub START {
     #my $prehistorics_folder = $signup->subfolder('skeds');
 
     my $collection
-      = Octium::Sked::Collection->load_storable( collection => 'final' );
+      = Octium::SkedCollection->load_storable( collection => 'final' );
 
     chdir( $signup->path );
 

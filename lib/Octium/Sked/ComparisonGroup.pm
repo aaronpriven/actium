@@ -7,7 +7,7 @@ use Octium::Sked::Comparison;
 use List::Compare;
 
 has [qw/oldskeds newskeds/] => (
-    isa      => 'Octium::Sked::Collection',
+    isa      => 'Octium::SkedCollection',
     is       => 'ro',
     required => 1,
 );
