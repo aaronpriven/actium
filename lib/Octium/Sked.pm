@@ -85,7 +85,7 @@ sub _delete_blank_columns {
                 $trip->_delete_placetime($i);
             }
         }
-    }    ## tidy end: if ( not $self->trip(0...))
+    }
 
     if ( not $self->trip(0)->stoptimes_are_empty ) {
 
@@ -115,7 +115,7 @@ sub _delete_blank_columns {
             }
         }
 
-    }    ## tidy end: if ( not $self->trip(0...))
+    }
 
     return;
 
@@ -280,11 +280,11 @@ sub _combine_duplicate_timepoints {
             }
         }
 
-    }    ## <perltidy> end foreach my $run ( reverse @runs)
+    }
 
     return;
 
-}    ## tidy end: sub _combine_duplicate_timepoints
+}
 
 ###################################
 ## MOOSE ATTRIBUTES
@@ -721,7 +721,7 @@ sub attribute_columns {
           ? $attr->short_column
           : $attr->name;
 
-    }    ## tidy end: ATTRIBUTE: foreach my $attr (@attributes_to_search)
+    }
 
     my @colorder = grep { $_ ne 'line' } ( sort keys %shortcol_of );
     unshift @colorder, 'line' if exists $shortcol_of{line};
@@ -733,7 +733,84 @@ sub attribute_columns {
 
     return \@colorder, \%shortcol_of;
 
-}    ## tidy end: sub attribute_columns
+}
+
+method stopskeds {
+
+    require Octium::Sked::StopSked::Trip;
+
+    my %trips_of_stop;
+
+    my @stopids    = $self->stopids;
+    my @stopplaces = $self->stopplaces;
+
+    # go through each trip and build all the sked trips
+
+    foreach my $trip ( $self->trips ) {
+        my $final_idx         = $trip->stoptimes_count - 1;
+        my $destination_place = $self->place4($final_idx);
+
+        # forward loop gets places of each stop
+        my @places;
+        my $prevplace = '';
+        for my $i ( 0 .. $final_idx ) {
+            next unless defined $trip->stoptime($i);
+            # skip this place if the column is blank
+            # need to change that to the Actium::Time method
+            $places[$i] = $stopplaces[$i] || $prevplace;
+            $prevplace = $places[$i];
+        }
+
+        my @pathway;
+        my $following_place = $EMPTY;
+
+        # reverse loop gets next_place and other info, and makes object
+        my $next_place = '';
+        for my $i ( reverse( 0 .. $final_idx ) ) {
+            my $time = $trip->stoptime($i);
+            next unless defined $time;
+            # need to change that to the Actium::Time method
+
+            my $stopid = $stopids[$i];
+
+            my $stoptrip = Octium::Sked::StopSked::Trip->new(
+                time              => $trip->stoptime($i),
+                line              => $trip->line,
+                destination_place => $destination_place,
+                days              => $trip->days,
+                place             => $places[$i],
+                next_place        => $next_place,
+                calendar_id       => ( $trip->specdays )[0],
+                # this is specdayletter for now
+                pathway => [@pathway],
+                # make a new copy each time since otherwise will preserve the
+                # same reference each time through the loop...
+            );
+
+            push $trips_of_stop{$stopid}->@*, $stoptrip;
+
+            # retain current stop info for the next iteration
+            push @pathway, $stopid;
+            $next_place = $stopplaces[$i] if $stopplaces[$i];
+
+        }
+    }
+
+    my @stopskeds;
+    foreach my $stopid ( keys %trips_of_stop ) {
+        push @stopskeds,
+          Octium::Sked::StopSked->new(
+            stopid    => $stopid,
+            linegroup => $self->linegroup,
+            dir       => $self->dir_obj,
+            days      => $self->days_obj,
+            trips     => $trips_of_stop{$stopid},
+          );
+    }
+
+    return @stopskeds;
+
+}
 
 ####################
 #### OUTPUT METHODS
@@ -819,7 +896,7 @@ sub spaced {
 
         }
 
-    }    ## tidy end: foreach my $trip (@trips)
+    }
 
     say $out $place_records->tabulated, "\n";
 
@@ -840,7 +917,7 @@ sub spaced {
 
     return $outdata;
 
-}    ## tidy end: sub spaced
+}
 
 sub storable {
     my $self = shift;
@@ -848,14 +925,11 @@ sub storable {
 }
 
 sub transitinfo_id {
-
     my $self             = shift;
     my $linegroup        = $self->linegroup;
     my $dir              = $self->dircode;
     my $days_transitinfo = $self->days_obj->as_transitinfo;
-
     return join( '_', $linegroup, $dir, $days_transitinfo );
-
 }
 
 method compare_from (Octium::Sked $oldsked) {

@@ -11,18 +11,31 @@ has _stopskeds_r => (
     handles  => { stopskeds => 'elements', },
 );
 
-has _stopids_r => (
-    traits   => ['Array'],
-    is       => 'bare',
-    init_arg => undef,
-    isa      => 'ArrayRef[Str]',
-    builder  => 1,
-    handles  => { stopids => 'elements' },
+method _build_stopskeds_of_stopids_r {
+    my %stopskeds_of_stopid;
+    foreach my $stopsked ( $self->stopskeds ) {
+        my $stopid = $stopsked->stopid;
+        push $stopskeds_of_stopid{$stopid}->@*, $stopsked;
+    }
+    return \%stopskeds_of_stopid;
+}
+
+has _stopskeds_of_stopid_r => (
+    lazy    => 1,
+    builder => 1,
+    traits  => ['Hash'],
+    is      => 'bare',
+    isa     => 'HashRef[ArrayRef[Octium::Sked::StopSked]]',
+    handles => {
+        stopids                  => 'keys',
+        _has_stopskeds_of_stopid => 'exists',
+        _stopskeds_of_stopid_r   => 'get',
+    },
 );
 
-method _build_stopids_r {
-    my @stopids = map { $_->stopid } $self->stopskeds;
-    return Actium::uniq( sort (@stopids) );
+method stopskeds_of_stopid (Str $stopid) {
+    return () if not $self->_has_stopskeds_of_stopid;
+    return $self->_stopskeds_of_stopid_r($stopid)->@*;
 }
 
 1;
@@ -63,6 +76,11 @@ the array, while the stopskeds() method will return the list.
 =head2 stopids
 
 Returns a list of the stop IDs associated with the stop schedules.
+
+=head2 stopskeds_of_stopid($stopid)
+
+Takes a stop ID and returns the associated StopSked objects of that
+stop ID.
 
 =head1 DIAGNOSTICS
 
