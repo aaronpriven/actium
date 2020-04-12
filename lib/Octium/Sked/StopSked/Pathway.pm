@@ -22,7 +22,7 @@ const my $JOINER => "\N{UNIT SEPARATOR}";
 
 my %obj_cache;
 
-override new ( Str @stopids ) {
+override new ( Str @stopids is ref_alias) {
     my $cachekey = join( $JOINER, @stopids );
     return $obj_cache{$cachekey}
       //= $self->_octium_sked_stopsked_pathway_new( { stopids => \@stopids } );

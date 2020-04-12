@@ -231,6 +231,15 @@ method finalize_skeds (
 
 }
 
+method stopskeds {
+    require Octium::Sked::StopSkedCollection;
+    my @stopskeds;
+    foreach my $sked ( $self->skeds ) {
+        push @stopskeds, $sked->stopskeds;
+    }
+    return Octium::Sked::StopSkedCollection->new( stopskeds => \@stopskeds );
+}
+
 ###################
 ##### OUTPUT ######
 ###################
