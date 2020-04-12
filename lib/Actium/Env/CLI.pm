@@ -44,12 +44,12 @@ around BUILDARGS ( $orig, $class : slurpy %params ) {
     my @argv = @{ $params{argv} };
 
     ## no critic (RequireExplicitInclusion, RequireLocalizedPunctuationVars)
-    {    # scoping for "no warnings"
-        no warnings('once');
-        if ( ( not @argv ) and $Actium::Eclipse::is_under_eclipse ) {
-            @argv = Actium::Eclipse::get_command_line();
-        }
-    }
+    #{    # scoping for "no warnings"
+    #    no warnings('once');
+    #    if ( ( not @argv ) and $Actium::Eclipse::is_under_eclipse ) {
+    #        @argv = Actium::Eclipse::get_command_line();
+    #    }
+    #}
     ## use critic
 
     my ( $help_type, $subcommand );
