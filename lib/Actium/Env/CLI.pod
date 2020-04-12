@@ -307,6 +307,11 @@ above, under "Construction".
 
 =head1 OTHER METHODS
 
+=head3 cry, last_cry, wail
+
+These are delegated to the Actium::Env::CLI::Crier object.  See "crier"
+above, under "Construction."
+
 =head3 be_quiet
 
 This method sets the "quiet" command-line option to be true, and sets
