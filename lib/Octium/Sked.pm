@@ -746,6 +746,9 @@ method stopskeds {
 
     # go through each trip and build all the sked trips
 
+    my $cry = env->lastcry;
+    $cry->over(' <trips>');
+
     foreach my $trip ( $self->trips ) {
         my $final_idx         = $trip->stoptimes_count - 1;
         my $destination_place = $self->place4($final_idx);
@@ -796,6 +799,7 @@ method stopskeds {
         }
     }
 
+    $cry->over(' <skeds>');
     my @stopskeds;
     foreach my $stopid ( keys %trips_of_stop ) {
         push @stopskeds,
@@ -807,6 +811,8 @@ method stopskeds {
             trips     => $trips_of_stop{$stopid},
           );
     }
+
+    $cry->over($EMPTY);
 
     return @stopskeds;
 
