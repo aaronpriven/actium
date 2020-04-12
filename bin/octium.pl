@@ -2,8 +2,8 @@
 
 # octium.pl - command-line access to Octium system
 
-use FindBin qw($Bin);    ### DEP ###
-use lib ("$Bin/../lib"); ### DEP ###
+use FindBin qw($Bin);       ### DEP ###
+use lib ("$Bin/../lib");    ### DEP ###
 
 use Actium;
 use Actium::Env::CLI;
@@ -41,6 +41,7 @@ Actium::Env::CLI->new(
         mr_import     => 'MRImport',
         newsignup     => 'NewSignup',
         prepareflags  => 'PrepareFlags',
+        sked2points   => 'Sked2Points',
         storeavl      => 'StorableAVL',
         slists2html   => 'Slists2HTML',
         stopsofline   => 'StopsOfEachLine',
