@@ -202,7 +202,7 @@ sub get_firstlast {
     my $result = $twig->safe_parse($stnsked_xml);
     unless ($result) {
         say "$stnsked_url\n\n$stnsked_xml\n\n";
-        lastcry()->set_position(0);
+        env->last_cry()->set_position(0);
         exit;
 
     }
