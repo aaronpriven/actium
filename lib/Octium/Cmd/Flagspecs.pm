@@ -600,7 +600,7 @@ sub cull_placepats {
             if ( not defined $patinfo->{NextPlace} ) {
                 my $q       = exists $pats_of_stop{$stop_ident};
                 my $disp_rd = keyreadable($routedir);
-                Actium::wail( "NP ${disp_rd} ${stop_ident} "
+                env->wail( "NP ${disp_rd} ${stop_ident} "
                       . join( ' ', keys %$patinfo ) );
                 return;
             }
@@ -626,7 +626,7 @@ sub cull_placepats {
         }
 
         if ( @results == 0 ) {
-            Actium::wail("No results: $stop_ident $routedir");
+            env->wail("No results: $stop_ident $routedir");
         }
 
         return @results;

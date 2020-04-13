@@ -263,7 +263,7 @@ sub get_from_url {
         local $Data::Dumper::Quotekeys = 0;
         local $Data::Dumper::Pair      = ' : ';
         $message = Data::Dumper::Dumper($message);
-        Actium::wail("*** Message from BART: $message");
+        env->wail("*** Message from BART: $message");
     }
 
     return $root_r;
