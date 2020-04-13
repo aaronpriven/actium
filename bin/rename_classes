@@ -1,0 +1,41 @@
+#!/usr/bin/env perl
+#
+# This is used for modifying the class names in Storable files. If we
+# store a blessed object and then retrieve it, it will keep the old
+# name. If we've renamed the class in the meantime, it will give errors.
+#
+# To fix it, make sure all the new classes are loaded, use typeglob
+# aliasing to set the old name of the class to be an alias to the new
+# name of the class, and then load the file. Except for the very outer
+# object, all the classes will magically become associated with the new
+# name and they can be saved out. The very outer object has to be
+# reblessed manually with the new name.
+#
+# I don't really understand why the aliasing works the way it does. But
+# I'm not complaining.
+
+use Storable;
+
+use Octium::SkedCollection;
+use Octium::Sked;
+use Octium::Days;
+use Octium::Dir;
+use Octium::Sked::Trip;
+use Octium::Folders::Signup;
+
+*Octium::O::Sked::Collection:: = *Octium::SkedCollection::;
+*Octium::O::Sked::             = *Octium::Sked::;
+*Octium::O::Days::             = *Octium::Days::;
+*Octium::O::Dir::              = *Octium::Dir::;
+*Octium::O::Sked::Trip::       = *Octium::Sked::Trip::;
+*Octium::O::Folders::Signup::  = *Octium::Folders::Signup::;
+
+my $storefile = $ARGV[0];
+
+my $new = "new_$storefile";
+
+my $store = Storable::retrieve($storefile);
+
+bless $store, 'Octium::SkedCollection';
+
+Storable::nstore( $store, $new );
