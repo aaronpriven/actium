@@ -28,8 +28,8 @@ method tabxchange (
     # to push an actual blank line
 
     # line 2 - days
-    my $days             = $self->days_obj;
-    my $days_transitinfo = $self->days_obj->as_transitinfo;
+    my $days             = $self->days;
+    my $days_transitinfo = $self->days->as_transitinfo;
     $p->(
         $days_transitinfo, $days->as_adjectives,
         $days->as_abbrevs, $days->as_plurals,
@@ -235,7 +235,7 @@ method tabxchange (
 
         my $daysexception = $trip->daysexceptions;
 
-        my $tripdays = $trip->days_obj;
+        my $tripdays = $trip->days;
         my ( $specdayletter, $specday )
           = $tripdays->specday_and_specdayletter($days);
 

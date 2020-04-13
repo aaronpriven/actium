@@ -137,8 +137,8 @@ sub _sked_trip_collections {
     foreach my $pattern ( $self->patterns ) {
         foreach my $trip ( $pattern->trips ) {
 
-            my $days = $trip->days;
-            $days =~ s/7/7H/;    # dumb way of dealing with holidays, but...
+            my $daycode = $trip->days;
+            $daycode =~ s/7/7H/;    # dumb way of dealing with holidays, but...
 
             my $schooldays = 'B';
             my $event      = $trip->event_and_status;
@@ -147,7 +147,7 @@ sub _sked_trip_collections {
                 $event      = '';
             }
 
-            my $days_obj = Octium::Days->instance( $days, $schooldays );
+            my $days = Octium::Days->instance( $daycode, $schooldays );
 
             my @times = map { $_->timenum } $trip->stoptimes;
 
@@ -170,7 +170,7 @@ sub _sked_trip_collections {
                 line           => $pattern->line,
                 internal_num   => $trip->int_number,
                 type       => $trip->schedule_daytype,
-                days       => $days_obj,
+                days       => $days,
                 stoptime_r => \@times,
             );
 

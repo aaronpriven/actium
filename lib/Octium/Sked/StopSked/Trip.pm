@@ -30,6 +30,7 @@ has time => (
     required => 1,
     isa      => Time,
     coerce   => 1,
+    is       => 'ro',
 );
 
 has [qw/line destination_place/] => (

@@ -303,7 +303,7 @@ sub _make_days {
 
     foreach my $table (@tables) {
         foreach my $line ( $table->header_routes ) {
-            push @{ $all_days_objs_of{$line} }, $table->days_obj();
+            push @{ $all_days_objs_of{$line} }, $table->days();
         }
     }
 

@@ -59,10 +59,10 @@ sub prehistoric_id {
 }
 
 sub prehistoric_days {
-    my $self     = shift;
-    my $days_obj = $self->days_obj;
+    my $self = shift;
+    my $days = $self->days;
 
-    my $transitinfo = _as_transitinfo( $days_obj, $self );
+    my $transitinfo = _as_transitinfo( $days, $self );
 
     my @valid_prehistorics = (qw(DA WU WA WD SA SU WE));
 
@@ -117,7 +117,7 @@ sub prehistoric_skedsfile {
 
         if ( not $except ) {
             if ( $trip->daycode ne $self->daycode ) {
-                $except = _as_transitinfo( $trip->days_obj, $trip );
+                $except = _as_transitinfo( $trip->days, $trip );
             }
         }
 
@@ -401,18 +401,18 @@ sub _tp9_to_tp8 {
 
 sub _as_transitinfo {
 
-    my $days_obj  = shift;
+    my $days      = shift;
     my $obj       = shift;
-    my $as_string = $days_obj->as_string;
+    my $as_string = $days->as_string;
 
     state %cache;
     return $cache{$as_string} if $cache{$as_string};
 
-    my $daycode       = $days_obj->daycode;
-    my $schooldaycode = $days_obj->schooldaycode;
+    my $daycode       = $days->daycode;
+    my $schooldaycode = $days->schooldaycode;
 
-    return $cache{$as_string} = "SD" if $days_obj->_is_SD;
-    return $cache{$as_string} = "SH" if $days_obj->_is_SH;
+    return $cache{$as_string} = "SD" if $days->_is_SD;
+    return $cache{$as_string} = "SH" if $days->_is_SH;
 
     if ( exists $TRANSITINFO_DAYS_OF{$daycode} ) {
         return $cache{$as_string} = $TRANSITINFO_DAYS_OF{$daycode};

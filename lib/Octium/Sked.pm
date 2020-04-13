@@ -371,7 +371,7 @@ has 'linegroup' => (
     required => 1,
 );
 
-has 'days_obj' => (
+has 'days' => (
     required => 1,
     coerce   => 1,
     init_arg => 'days',
@@ -592,11 +592,11 @@ sub _build_has_multiple_lines {
 
 sub _build_specdays_r {
 
-    my $self     = shift;
-    my $days_obj = $self->days_obj;
+    my $self = shift;
+    my $days = $self->days;
     my %specday_of;
     foreach my $trip ( $self->trips() ) {
-        my ( $specdayletter, $specday ) = $trip->specday($days_obj);
+        my ( $specdayletter, $specday ) = $trip->specday($days);
         next unless $specdayletter;
         $specday_of{$specdayletter} = $specday;
     }
@@ -746,11 +746,11 @@ method stopskeds {
 
     # go through each trip and build all the sked trips
 
-    my $cry = env->lastcry;
+    my $cry = env->last_cry;
     $cry->over(' <trips>');
 
     foreach my $trip ( $self->trips ) {
-        my $final_idx         = $trip->stoptimes_count - 1;
+        my $final_idx         = $trip->stoptime_count - 1;
         my $destination_place = $self->place4($final_idx);
 
         # forward loop gets places of each stop
@@ -807,7 +807,7 @@ method stopskeds {
             stopid    => $stopid,
             linegroup => $self->linegroup,
             dir       => $self->dir_obj,
-            days      => $self->days_obj,
+            days      => $self->days,
             trips     => $trips_of_stop{$stopid},
           );
     }
@@ -934,7 +934,7 @@ sub transitinfo_id {
     my $self             = shift;
     my $linegroup        = $self->linegroup;
     my $dir              = $self->dircode;
-    my $days_transitinfo = $self->days_obj->as_transitinfo;
+    my $days_transitinfo = $self->days->as_transitinfo;
     return join( '_', $linegroup, $dir, $days_transitinfo );
 }
 

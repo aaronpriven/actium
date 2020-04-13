@@ -101,7 +101,7 @@ foreach my $attrname ( keys %shortcol_of_attribute ) {
     );
 }
 
-has 'days_obj' => (
+has days => (
     required => 0,
     coerce   => 1,
     init_arg => 'days',
@@ -125,7 +125,7 @@ sub specday {
     }
 
     my $skeddays = shift;
-    my $days     = $self->days_obj;
+    my $days     = $self->days;
 
     my ( $specdayletter, $specday )
       = $days->specday_and_specdayletter($skeddays);
@@ -331,7 +331,7 @@ sub merge_pair {
                 $merged_value_of{$init_arg} = $self->$attrname;
                 next;
             }
-            if ( $_ eq 'days_obj' ) {
+            if ( $_ eq 'days' ) {
                 $merged_value_of{$init_arg}
                   = Octium::Days->union( $self->$attrname,
                     $secondtrip->$attrname );
@@ -394,7 +394,7 @@ All attributes are read-only.
 
 =over
 
-=item B<days_obj>
+=item B<days>
 
 ...not written yet...
 
