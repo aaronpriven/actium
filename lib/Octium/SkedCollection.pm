@@ -235,7 +235,7 @@ method stopskeds {
     require Octium::Sked::StopSkedCollection;
     my @stopskeds;
 
-    my $cry = Actium::cry("Making stopskeds from skeds");
+    my $cry = env->cry("Making stopskeds from skeds");
 
     foreach my $sked ( $self->skeds ) {
         $cry->over( $sked->id );
