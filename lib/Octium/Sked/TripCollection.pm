@@ -264,7 +264,7 @@ sub trips_by_day {
         for my $trip (@trips) {
 
             my $sked_day_obj = Octium::Days->instance( $skedday, 'B' );
-            my $trip_day_obj = $trip->days_obj;
+            my $trip_day_obj = $trip->days;
 
             if (   $skedday eq $trip_day_obj->daycode
                 or $sked_day_obj->is_a_superset_of($trip_day_obj) )

@@ -213,7 +213,7 @@ method merge_pair ($secondtrip) {
 #                $merged_value_of{$init_arg} = $self->$attrname;
 #                next;
 #            }
-#            if ( $_ eq 'days_obj' ) {
+#            if ( $_ eq 'days' ) {
 #                $merged_value_of{$init_arg}
 #                  = Octium::Days->union( $self->$attrname,
 #                    $secondtrip->$attrname );
@@ -278,7 +278,7 @@ All attributes are read-only.
 
 =over
 
-=item B<days_obj>
+=item B<days>
 
 ...not written yet...
 

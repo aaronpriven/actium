@@ -29,7 +29,7 @@ has sked_obj => (
         sortable_id                     => 'sortable_id',
         id                              => 'id',
         earliest_timenum                => 'earliest_timenum',
-        days_obj                        => 'days_obj',
+        days                            => 'days',
         dircode                         => 'dircode',
         should_preserve_direction_order => 'should_preserve_direction_order',
         linedir                         => 'linedir',
@@ -108,7 +108,7 @@ sub _build_width_in_halfcols {
     return ( 2 * $self->columns + $self->half_columns );
 }
 
-#has [qw<sortable_id earliest_timenum days_obj>] => (
+#has [qw<sortable_id earliest_timenum days>] => (
 #   is => 'ro',
 #   required => 1,
 #   );
@@ -181,7 +181,7 @@ sub new_from_sked {
 
     #    $spec{header_route_r} = [ $sked->routes ];
 
-    #$spec{days_obj} = $sked->days_obj;
+    #$spec{days} = $sked->days;
     #$spec{linegroup} = $sked->linegroup;
 
     my $linegroup_row_r = $actiumdb->line_row_r( $sked->linegroup );
@@ -191,7 +191,7 @@ sub new_from_sked {
     my $linegrouptype_row_r = $actiumdb->linegrouptype_row_r($linegrouptype);
     $spec{linegrouptype_rgbhex} = $linegrouptype_row_r->{RGBHex};
 
-    $spec{header_daytext} = $sked->days_obj->as_plurals;
+    $spec{header_daytext} = $sked->days->as_plurals;
 
     my $places_r = $actiumdb->all_in_columns_key(
         qw/Places_Neue c_description c_destination /);
@@ -234,7 +234,7 @@ sub new_from_sked {
         }
 
         if ($has_multiple_specdays) {
-            my ( $specdayletter, $specday ) = $trip->specday( $sked->days_obj );
+            my ( $specdayletter, $specday ) = $trip->specday( $sked->days );
             push @row, $specdayletter // $EMPTY;
         }
 

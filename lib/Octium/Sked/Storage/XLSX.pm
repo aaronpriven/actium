@@ -163,7 +163,7 @@ func _read_trips (
 
         #if ( exists $trip{DAY} ) {
         #    my $day_string = delete $trip{DAY};
-        #    $trip{days_obj}
+        #    $trip{days}
         #      = Octium::Days->instance_from_string($day_string);
         #}
 
