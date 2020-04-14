@@ -513,7 +513,7 @@ sub _get_trip_notes_from_event_date {
             if ( @all_or_mostly_on_days == @all_on_days ) {
                 $note_text
                   .= 'every '
-                  . Actium::joinseries( items => \@NOTE_DOW[@all_on_days] );
+                  . Actium::joinseries( items => [ @NOTE_DOW[@all_on_days] ] );
             }
             else {
                 $note_text .= 'every ';
@@ -584,6 +584,8 @@ sub _get_trip_notes_from_event_date {
     my $dumpfh = $signup->open_write('note_of_trip.dump');
     say $dumpfh Actium::dumpstr(%note_of_trip);
     close $dumpfh;
+
+    $cry->done;
 
     return \%note_of_trip;
 
