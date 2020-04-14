@@ -336,10 +336,6 @@ method output_skeds_all {
         EXTENSION => 'txt',
     );
 
-    my $prehistoricfolder = $self->folder('prehistoric');
-
-    Octium::Sked->write_prehistorics( $skeds_r, $prehistoricfolder );
-
     $outputcry->done;
 
 }

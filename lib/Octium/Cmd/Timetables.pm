@@ -26,21 +26,13 @@ sub START {
     my $actiumdb = env->actiumdb;
     my $signup   = env->signup;
 
-    my $tabulae_folder = $signup->subfolder('timetables');
-    #my $pubtt_folder      = $tabulae_folder->subfolder('pubtt');
+    my $tabulae_folder    = $signup->subfolder('timetables');
     my $multipubtt_folder = $tabulae_folder->subfolder('pub-idtags');
-
-    #my $prehistorics_folder = $signup->subfolder('skeds');
 
     my $collection
       = Octium::SkedCollection->load_storable( collection => 'final' );
 
     chdir( $signup->path );
-
-    # my %front_matter = _get_configuration($signup);
-
-    # my @skeds
-    #   = Octium::Sked->load_prehistorics( $prehistorics_folder, $actiumdb );
 
     my @skeds = $collection->skeds;
 
