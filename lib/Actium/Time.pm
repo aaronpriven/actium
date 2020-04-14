@@ -3,7 +3,9 @@ package Actium::Time 0.014;
 # object for formatting schedule times and parsing formatted times
 
 use Actium ('class');
-use Types::Standard(qw/Int Str/);
+use Types::Standard(qw/Int Str Enum/);
+use Types::Common::Numeric (qw/IntRange/);
+### Type::Tiny ### DEP ###
 
 const my $MINS_IN_12HRS => ( 12 * 60 );
 
@@ -17,8 +19,6 @@ const my %NAMED => (
     f                 => -32001,
     i                 => -32002,
 );
-
-const my %IS_NAMED_VALUE => ( map { $_, 1 } values %NAMED );
 
 ###########################################
 ## CONSTRUCTION
@@ -219,12 +219,8 @@ method from_excel ($class: @cells) {
 #######################################################
 
 has timenum => (
-    isa => Int->where(
-        sub {
-            ( $NAMED{NOON_YESTERDAY} <= $_ ) && ( $_ <= $NAMED{MAX_TIME} )
-              or $IS_NAMED_VALUE{$_};
-        }
-    ),
+    isa => ( Enum [ values %NAMED ] )
+      | ( IntRange [ $NAMED{NOON_YESTERDAY}, $NAMED{MAX_TIME} ] ),
     is       => 'ro',
     init_arg => '_timenum',
     required => 1,
