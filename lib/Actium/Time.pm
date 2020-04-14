@@ -150,7 +150,7 @@ my $str_to_num_cr = sub {
 
             # treat as 24 hours, but subtract a day so it refers to yesterday
         }
-        croak "Invalid time [$origtime] [$time]";
+        croak "Invalid time string [orig: $origtime] [result: $time]";
     }
 
 };
