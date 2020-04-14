@@ -218,13 +218,19 @@ method from_excel ($class: @cells) {
 ## TIMENUM ATTRIBUTE
 #######################################################
 
-has timenum => (
+has _timenum => (
     isa => ( Enum [ values %NAMED ] )
       | ( IntRange [ $NAMED{NOON_YESTERDAY}, $NAMED{MAX_TIME} ] ),
-    is       => 'ro',
-    init_arg => '_timenum',
+    is => 'ro',
+    #    init_arg => '_timenum',
     required => 1,
 );
+
+method timenum {
+    my $timenum = $self->_timenum;
+    return undef if $timenum < $NAMED{NOON_YESTERDAY};
+    return $timenum;
+}
 
 #######################################################
 ## BOOLEAN METHODS
@@ -233,7 +239,6 @@ has timenum => (
 method is_in_range (Int $integer) {
     return ( $NAMED{NOON_YESTERDAY} <= $integer )
       && ( $integer <= $NAMED{MAX_TIME} );
-
 }
 
 method is_flex {
