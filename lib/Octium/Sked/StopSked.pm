@@ -37,7 +37,7 @@ has days => (
 
 has _trips_r => (
     required => 1,
-    isa      => 'ArrayRef[Octium::Sked::StopSked::Trip]',
+    isa      => 'ArrayRef[Octium::Sked::StopTrip]',
     is       => 'bare',
     init_arg => 'trips',
     traits   => ['Array'],
@@ -116,8 +116,7 @@ L<Actium::Types|Actium::Types>.
 
 =head2 trips
 
-An array of
-L<Octium::Sked::StopSked::Trip|Octium::Sked::StopSked::Trip> objects. 
+An array of L<Octium::Sked::StopTrip|Octium::Sked::StopTrip> objects. 
 It is expected to be passed in the order in which it will be displayed.
  The "trips" argument in the constructor should be a reference to the
 array, while the trips() method will return the list.

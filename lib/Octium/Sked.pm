@@ -737,7 +737,7 @@ sub attribute_columns {
 
 method stopskeds {
 
-    require Octium::Sked::StopSked::Trip;
+    require Octium::Sked::StopTrip;
 
     my %trips_of_stop;
 
@@ -777,7 +777,7 @@ method stopskeds {
 
             my $stopid = $stopids[$i];
 
-            my $stoptrip = Octium::Sked::StopSked::Trip->new(
+            my $stoptrip = Octium::Sked::StopTrip->new(
                 time => Actium::Time->from_num( $trip->stoptime($i) ),
                 line => $trip->line,
                 destination_place => $destination_place,
