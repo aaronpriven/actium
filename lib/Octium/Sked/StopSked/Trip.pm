@@ -2,7 +2,7 @@ package Octium::Sked::StopSked::Trip 0.015;
 # vimcolor: #002626
 
 use Actium 'class';
-use Types::Standard(qw/Str Bool Int ArrayRef/);
+use Types::Standard(qw/Str Bool Int Maybe ArrayRef/);
 use Type::Utils('class_type');
 use Actium::Types (qw/Time/);
 use Octium::Types (qw/ActiumDays/);
@@ -13,7 +13,7 @@ use Octium::Types (qw/ActiumDays/);
 #  $time_r->{DESTINATION},  - destination_place
 #  $time_r->{PLACE},        - place
 #  $time_r->{DAYEXCEPTIONS} - calendar_id
-#  last_stop  - is_final_stop (in pathway)
+#  last_stop  - is_final_stop (in ensuingstops)
 #  dropoff    - not determined here, requires info from Lines table
 #
 # $patinfo{Place}        - place
@@ -22,7 +22,7 @@ use Octium::Types (qw/ActiumDays/);
 # $patinfo{Connections}  - requires info from Stops_Neue table
 # $patinfo{District}     - requires info from Stops_Neue table
 # $patinfo{Side}         - requires info from Stops_Neue table
-# $patinfo{Last}         - is_final_stop (in pathway)
+# $patinfo{Last}         - is_final_stop (in ensuingstops)
 # $patinfo{TransbayOnly} - requires info from Lines table
 # $patinfo{DropOffOnly}  - determined from previous two
 
@@ -60,10 +60,10 @@ method is_at_place {
     return ( $self->place ne $EMPTY );
 }
 
-has pathway => (
+has ensuingstops => (
     # list of subsequent stops
-    isa => class_type('Octium::Sked::StopSked::Pathway')
-      ->plus_constructors( ArrayRef [Str], 'new' ),
+    isa => class_type('Octium::Sked::StopSked::EnsuringStops')
+      ->plus_constructors( ArrayRef [ Maybe [Str] ], 'new' ),
     is       => 'ro',
     required => 1,
     handles  => ['is_final_stop'],
@@ -95,7 +95,7 @@ This documentation refers to version 0.015
     destination_place => '11JE',
     days              => '12345',
     next_place        => '11JE',
-    pathway           => [qw/51528 51110/],
+    ensuingstops           => [qw/51528 51110/],
  );
 
 =head1 DESCRIPTION
@@ -146,9 +146,10 @@ that to C<Octium::Days->instance>. Required.
 A string representing a calendar ID, from the calendars imported with
 this booking.
 
-=head2 pathway
+=head2 ensuingstops
 
-An L<Octium::Sked::StopSked::Pathway|Octium::Sked::StopSked::Pathway>
+An
+L<Octium::Sked::StopSked::EnsuringStops|Octium::Sked::StopSked::EnsuringStops>
 object, which represents all the subsequent stops after the one on this
 trip. If passed an array reference of stop IDs, will create an object
 from that. Required.

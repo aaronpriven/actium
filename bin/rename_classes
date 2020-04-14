@@ -13,8 +13,12 @@
 #
 # I don't really understand why the aliasing works the way it does. But
 # I'm not complaining.
+#
+# HOWEVER well it works on classes, though, it doesn't work on attributes.
+# This could well conflict with data, but in this case it didn't.
 
 use Storable;
+use Data::Dumper;
 
 use Octium::SkedCollection;
 use Octium::Sked;
@@ -34,8 +38,17 @@ my $storefile = $ARGV[0];
 
 my $new = "new_$storefile";
 
-my $store = Storable::retrieve($storefile);
+my $dump;
+{
+    my $data = Storable::retrieve($storefile);
+    $dump = Dumper($data);
+}
 
-bless $store, 'Octium::SkedCollection';
+$dump =~ s/days_obj/days/g;
 
-Storable::nstore( $store, $new );
+our $VAR1;
+eval $dump;
+
+bless $VAR1, 'Octium::SkedCollection';
+
+Storable::nstore( $VAR1, $new );
