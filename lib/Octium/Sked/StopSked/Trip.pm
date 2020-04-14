@@ -1,4 +1,4 @@
-package Octium::Sked::StopSked::Trip 0.015;
+package Octium::Sked::StopTrip 0.015;
 # vimcolor: #002626
 
 use Actium 'class';
@@ -77,8 +77,7 @@ __END__
 
 =head1 NAME
 
-Octium::Sked::StopSked::Trip - Object representing a trip in a stop
-schedule
+Octium::Sked::StopTrip - Object representing a trip in a stop schedule
 
 =head1 VERSION
 
@@ -86,8 +85,8 @@ This documentation refers to version 0.015
 
 =head1 SYNOPSIS
 
- use Octium::Sked::StopSked::Trip;
- my $trip = Octium::Sked::StopSked::Trip->new(
+ use Octium::Sked::StopTrip;
+ my $trip = Octium::Sked::StopTrip->new(
     time              => '5:15a',
     line              => '40',
     place             => '12BD',
