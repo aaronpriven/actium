@@ -1,4 +1,5 @@
 package Octium::Sked::Trip 0.012;
+# vimcolor: #261300
 
 # Trip object (for schedules and headways)
 
@@ -104,7 +105,6 @@ foreach my $attrname ( keys %shortcol_of_attribute ) {
 has days => (
     required => 0,
     coerce   => 1,
-    init_arg => 'days',
     is       => 'rw',
     isa      => ActiumDays,
     handles  => {

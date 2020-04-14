@@ -746,12 +746,13 @@ method stopskeds {
 
     # go through each trip and build all the sked trips
 
+    my $id  = $self->id;
     my $cry = env->last_cry;
-    $cry->over(' <trips>');
+    $cry->over("$id <trips>");
 
     foreach my $trip ( $self->trips ) {
         my $final_idx         = $trip->stoptime_count - 1;
-        my $destination_place = $self->place4($final_idx);
+        my $destination_place = $self->place4(-1);
 
         # forward loop gets places of each stop
         my @places;
@@ -764,7 +765,7 @@ method stopskeds {
             $prevplace = $places[$i];
         }
 
-        my @pathway;
+        my @ensuingstops;
         my $following_place = $EMPTY;
 
         # reverse loop gets next_place and other info, and makes object
@@ -777,15 +778,16 @@ method stopskeds {
             my $stopid = $stopids[$i];
 
             my $stoptrip = Octium::Sked::StopSked::Trip->new(
-                time              => $trip->stoptime($i),
-                line              => $trip->line,
+                time => Actium::Time->from_num( $trip->stoptime($i) ),
+                line => $trip->line,
                 destination_place => $destination_place,
                 days              => $trip->days,
                 place             => $places[$i],
                 next_place        => $next_place,
-                calendar_id       => ( $trip->specdays )[0],
+                calendar_id       => '',
+                # ( $trip->specday ($self->days) )[0],
                 # this is specdayletter for now
-                pathway => [@pathway],
+                ensuingstops => [@ensuingstops],
                 # make a new copy each time since otherwise will preserve the
                 # same reference each time through the loop...
             );
@@ -793,13 +795,13 @@ method stopskeds {
             push $trips_of_stop{$stopid}->@*, $stoptrip;
 
             # retain current stop info for the next iteration
-            push @pathway, $stopid;
+            push @ensuingstops, $stopid;
             $next_place = $stopplaces[$i] if $stopplaces[$i];
 
         }
     }
 
-    $cry->over(' <skeds>');
+    $cry->over("$id <skeds>");
     my @stopskeds;
     foreach my $stopid ( keys %trips_of_stop ) {
         push @stopskeds,
