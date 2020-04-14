@@ -242,23 +242,23 @@ method is_in_range (Int $integer) {
 }
 
 method is_flex {
-    return $self->timenum == $NAMED{f};
+    return $self->_timenum == $NAMED{f};
 }
 
 method is_awaiting_interpolation {
-    return $self->timenum == $NAMED{i};
+    return $self->_timenum == $NAMED{i};
 }
 
 method does_stop {
-    return $self->timenum != $NAMED{NO_VALUE};
+    return $self->_timenum != $NAMED{NO_VALUE};
 }
 
 method no_stop {
-    return $self->timenum == $NAMED{NO_VALUE};
+    return $self->_timenum == $NAMED{NO_VALUE};
 }
 
 method has_time {
-    return ( $self->is_in_range( $self->timenum ) );
+    return ( $self->is_in_range( $self->_timenum ) );
 }
 
 #######################################################
@@ -305,7 +305,7 @@ method formatted (
     }
     return $self->_fcache($cachekey) if $self->_fcache_exists($cachekey);
 
-    my $timenum = $self->timenum;
+    my $timenum = $self->_timenum;
     return $EMPTY if $timenum == $NAMED{NO_VALUE};
     return $self->_fcache_set( $cachekey => $timenum )
       if $timenum == $NAMED{f}
