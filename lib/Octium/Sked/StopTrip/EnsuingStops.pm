@@ -1,14 +1,15 @@
 package Octium::Sked::StopTrip::EnsuingStops 0.015;
 # vimcolor: #132600
 
-# The subsequent stops, after the ones represented by a StopSked
+# The subsequent stops, after the one represented by a StopTrip
 
 use Actium 'class';
+use Types::Standard (qw/ArrayRef Maybe Str/);
 *Moose::Object::_octium_sked_stoptrip_ensuingstops_new = \&Moose::Object::new;
 
 has _stopids_r => (
     required => 1,
-    isa      => 'ArrayRef[Maybe[Str]]',
+    isa      => ArrayRef [ Maybe [Str] ],
     is       => 'bare',
     init_arg => 'stopids',
     traits   => ['Array'],
