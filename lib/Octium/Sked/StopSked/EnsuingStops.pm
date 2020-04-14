@@ -1,10 +1,10 @@
-package Octium::Sked::StopSked::EnsuringStops 0.015;
+package Octium::Sked::StopTrip::EnsuingStops 0.015;
 # vimcolor: #132600
 
 # The subsequent stops, after the ones represented by a StopSked
 
 use Actium 'class';
-*Moose::Object::_octium_sked_stopsked_ensuingstops_new = \&Moose::Object::new;
+*Moose::Object::_octium_sked_stoptrip_ensuingstops_new = \&Moose::Object::new;
 
 has _stopids_r => (
     required => 1,
@@ -25,11 +25,11 @@ my %obj_cache;
 override new ( Str @stopids is ref_alias) {
     my $cachekey = join( $JOINER, @stopids );
     return $obj_cache{$cachekey}
-      //= $self->_octium_sked_stopsked_ensuingstops_new(
+      //= $self->_octium_sked_stoptrip_ensuingstops_new(
         { stopids => \@stopids } );
 }
 
-Actium::immut( constructor_name => '_octium_sked_stopsked_ensuingstops_new' );
+Actium::immut( constructor_name => '_octium_sked_stoptrip_ensuingstops_new' );
 
 1;
 
@@ -39,7 +39,7 @@ __END__
 
 =head1 NAME
 
-Octium::Sked::StopSked::EnsuringStops - subsequent stops of a trip in a
+Octium::Sked::StopTrip::EnsuingStops - subsequent stops of a trip in a
 stop schedule
 
 =head1 VERSION
@@ -48,8 +48,9 @@ This documentation refers to version 0.015
 
 =head1 SYNOPSIS
 
- use Octium::Sked::StopSked::EnsuringStops;
- my $ensuingstops = Octium::Sked::StopSked::EnsuringStops->new(qw/55555 51038 52382/);
+ use Octium::Sked::StopTrip::EnsuingStops;
+ my $ensuingstops = 
+    Octium::Sked::StopTrip::EnsuingStops->new(qw/55555 51038 52382/);
 
 =head1 DESCRIPTION
 
@@ -60,18 +61,21 @@ Hence, it's important to store information about the subsequent stops
 on the trip. This object stores those subsequent stops. Note that order
 is significant here.
 
-Octium::Sked::StopSked::EnsuringStops caches its objects, so that
+Octium::Sked::StopTrip::EnsuingStops caches its objects, so that
 passing the same stops will result in another reference to the same
-object.
+object. This is useful for determining equality of the two sets of
+ensuing stops.
 
- my $ensuingstops1 = Octium::Sked::StopSked::EnsuringStops->new(qw/55555 51038 52382/);
- my $ensuingstops2 = Octium::Sked::StopSked::EnsuringStops->new(qw/55555 51038 52382/);
+ my $ensuingstops1 = 
+    Octium::Sked::StopTrip::EnsuingStops->new(qw/55555 51038 52382/);
+ my $ensuingstops2 = 
+    Octium::Sked::StopTrip::EnsuingStops->new(qw/55555 51038 52382/);
  say "Yes" if $ensuingstops1 == $ensuingstops2;
  # Output: Yes
 
 =head1 CLASS METHOD
 
-=head2 Octium::Sked::StopSked::EnsuringStops->new(@stopids)
+=head2 Octium::Sked::StopTrip::EnsuingStops->new(@stopids)
 
 The C<new> method takes a list of stop IDs, determines whether an
 object with those stops already exists, and if it does, returns it. If

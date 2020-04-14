@@ -62,7 +62,7 @@ method is_at_place {
 
 has ensuingstops => (
     # list of subsequent stops
-    isa => class_type('Octium::Sked::StopSked::EnsuringStops')
+    isa => class_type('Octium::Sked::StopTrip::EnsuingStops')
       ->plus_constructors( ArrayRef [ Maybe [Str] ], 'new' ),
     is       => 'ro',
     required => 1,
@@ -148,7 +148,7 @@ this booking.
 =head2 ensuingstops
 
 An
-L<Octium::Sked::StopSked::EnsuringStops|Octium::Sked::StopSked::EnsuringStops>
+L<Octium::Sked::StopTrip::EnsuingStops|Octium::Sked::StopTrip::EnsuingStops>
 object, which represents all the subsequent stops after the one on this
 trip. If passed an array reference of stop IDs, will create an object
 from that. Required.
