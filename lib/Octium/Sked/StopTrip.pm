@@ -6,6 +6,7 @@ use Types::Standard(qw/Str Bool Int Maybe ArrayRef/);
 use Type::Utils('class_type');
 use Actium::Types (qw/Time/);
 use Octium::Types (qw/ActiumDays/);
+use Octium::Sked::StopTrip::EnsuingStops;
 
 # KPOINTS -
 #  $time_r->{TIME},         - time
@@ -63,8 +64,9 @@ method is_at_place {
 has ensuingstops => (
     # list of subsequent stops
     isa => class_type('Octium::Sked::StopTrip::EnsuingStops')
-      ->plus_constructors( ArrayRef [ Maybe [Str] ], 'new' ),
+      ->plus_constructors( ArrayRef [Str], 'new' ),
     is       => 'ro',
+    coerce   => 1,
     required => 1,
     handles  => ['is_final_stop'],
 );
