@@ -6,16 +6,13 @@ package Actium::DateTime 0.014;
 # Non-moosey, because Moose kept interfering too much with
 # constructor names and the like
 
-# consider adding DateTimeX::Role::Immutable
+# tried adding DateTimeX::Role::Immutable, but DateTime::Event::Recurrence
+# breaks with immutable objects
 
 use Actium;
 
 use parent 'DateTime';
 # DateTime ### DEP ###
-
-use Role::Tiny::With;    ### DEP ###
-with 'DateTimeX::Role::Immutable';
-# DateTimeX::Role::Immutable ### DEP ###
 
 use overload q{""} => '_stringify';
 
@@ -280,9 +277,7 @@ sub following_day {
     my $one_day
       = ( $one_day{$class} //= $class->duration_class()->new( days => 1 ) );
 
-    my $new_dt = $self->plus_duration($one_day);
-    #my $new_dt = $class->from_object( object => $self );
-    #$new_dt->add_duration( $one_day{$class} );
+    my $new_dt = $self->clone->add_duration($one_day);
     return $new_dt;
 }
 
