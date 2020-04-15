@@ -10,22 +10,22 @@ sub OPTIONS {
 
 sub START {
 
-    my $actiumdb   = env->actiumdb;
-    my $signup     = env->signup;
-    my $basefolder = $signup->base_obj;
-    my $tabfolder  = $signup->subfolder('tabxchange');
+    my $actiumdb = env->actiumdb;
+    my $signup   = env->signup;
 
-    my $collection
+    my $skedcollection
       = Octium::SkedCollection->load_storable( collection => 'final' );
 
     my $dbh = $actiumdb->dbh;
     # just there to move the display forward from where it would
     # otherwise lazily be loaded...
 
-    $collection->stopskeds( actiumdb => $actiumdb, );
+    my $stopskedcollection
+      = $skedcollection->stopskeds( actiumdb => $actiumdb, );
 
-    # write stopskeds from here
-    ...;
+    my $stopskedfolder = $signup->subfolder( 'k', 'final' );
+    $stopskedcollection->store($stopskedfolder);
+
 }
 
 1;

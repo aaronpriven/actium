@@ -737,6 +737,7 @@ sub attribute_columns {
 
 method stopskeds {
 
+    require Octium::Sked::StopSked;
     require Octium::Sked::StopTrip;
 
     my %trips_of_stop;
@@ -777,7 +778,13 @@ method stopskeds {
 
             my $stopid = $stopids[$i];
 
-            my $stoptrip = Octium::Sked::StopTrip->new(
+            #     	use DDP;
+            #	if (not defined $trip->days ) {
+            #	   p $trip;
+            #	   exit;
+            #           }
+
+            my %stoptripspec = (
                 time => Actium::Time->from_num( $trip->stoptime($i) ),
                 line => $trip->line,
                 destination_place => $destination_place,
@@ -791,6 +798,9 @@ method stopskeds {
                 # make a new copy each time since otherwise will preserve the
                 # same reference each time through the loop...
             );
+            #	say Actium::dumpstr(%stoptripspec);
+            #	exit;
+            my $stoptrip = Octium::Sked::StopTrip->new( \%stoptripspec );
 
             push $trips_of_stop{$stopid}->@*, $stoptrip;
 
@@ -953,7 +963,7 @@ method compare_to (Octium::Sked $newsked) {
     return $newsked->compare_from($self);
 }
 
-with 'Octium::Sked::Storage::Prehistoric', 'Octium::Sked::Storage::XLSX',
+with 'Octium::Sked::Storage::XLSX',
   'Octium::Sked::Storage::Tabxchange', 'Octium::Skedlike';
 
 Actium::immut;

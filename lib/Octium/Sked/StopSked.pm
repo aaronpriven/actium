@@ -6,6 +6,7 @@ use Actium 'class';
 use Octium::Types   (qw/ActiumDays/);
 use Types::Standard (qw/Str ArrayRef/);
 use Actium::Types('Dir');
+use Actium::Dir;
 
 has [qw/stopid linegroup/] => (
     required => 1,
@@ -35,13 +36,21 @@ has days => (
     },
 );
 
+method id {
+    my $id = join( '_',
+        $self->stopid,       $self->linegroup,
+        $self->dir->dircode, $self->days->daycode,
+    );
+    return $id;
+}
+
 has _trips_r => (
     required => 1,
     isa      => 'ArrayRef[Octium::Sked::StopTrip]',
     is       => 'bare',
     init_arg => 'trips',
     traits   => ['Array'],
-    handles  => ( 'trips' => 'elements' ),
+    handles  => { 'trips' => 'elements' },
 );
 
 has is_final_stop => (

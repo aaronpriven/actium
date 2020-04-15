@@ -38,6 +38,19 @@ method stopskeds_of_stopid (Str $stopid) {
     return $self->_stopskeds_of_stopid_r($stopid)->@*;
 }
 
+method store ($folder) {
+    my $count     = 0;
+    my @stopskeds = $self->stopskeds;
+    @stopskeds = @stopskeds[ 0 .. 99 ];
+    $folder->write_files_with_method(
+        OBJECTS   => \@stopskeds,
+        METHOD    => 'dump',
+        EXTENSION => 'dump',
+        SUBFOLDER => 'dumped',
+    );
+    return;
+}
+
 1;
 
 __END__
