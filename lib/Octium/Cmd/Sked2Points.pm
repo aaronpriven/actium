@@ -20,11 +20,20 @@ sub START {
     # just there to move the display forward from where it would
     # otherwise lazily be loaded...
 
-    my $stopskedcollection
-      = $skedcollection->stopskeds( actiumdb => $actiumdb, );
+    \my @stopskedcollections = $skedcollection->stopskeds;
+
+    @stopskedcollections = map { $_->[0] }
+      sort { $a->[1] cmp $b->[1] }
+      map { [ $_, $_->first_stopid ] } @stopskedcollections;
 
     my $stopskedfolder = $signup->subfolder( 'k', 'final' );
-    $stopskedcollection->store($stopskedfolder);
+
+    my $cry = env->cry('Writing stop sked collections');
+    for my $stopskedcollection (@stopskedcollections) {
+        $stopskedcollection->writedumped($stopskedfolder);
+    }
+    $cry->over($EMPTY);
+    $cry->done;
 
 }
 

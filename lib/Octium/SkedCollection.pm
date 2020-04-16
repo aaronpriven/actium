@@ -1,4 +1,5 @@
 package Octium::SkedCollection 0.014;
+# vimcolor: #260013
 
 use Actium ('class');
 use Octium;
@@ -235,15 +236,28 @@ method stopskeds {
     require Octium::Sked::StopSkedCollection;
     my @stopskeds;
 
-    my $cry = env->cry("Making stopskeds from skeds");
+    my $makecry = env->cry("Making stopskeds from skeds");
+
+    my %stopskeds_of_stopid;
 
     foreach my $sked ( $self->skeds ) {
-        $cry->over( $sked->id );
-        push @stopskeds, $sked->stopskeds;
+        $makecry->over( $sked->id );
+        my @stopskeds = $sked->stopskeds;
+        foreach my $stopsked (@stopskeds) {
+            my $stopid = $stopsked->stopid;
+            push $stopskeds_of_stopid{$stopid}->@*, $stopsked;
+        }
     }
-    return Octium::Sked::StopSkedCollection->new( stopskeds => \@stopskeds );
+    $makecry->done;
+    my $collectcry = env->cry("Making collections by stop");
 
-    $cry->done;
+    my @stopskedcollections = map {
+        Octium::Sked::StopSkedCollection->new(
+            stopskeds => $stopskeds_of_stopid{$_} )
+    } keys %stopskeds_of_stopid;
+
+    $collectcry->done;
+    return \@stopskedcollections;
 }
 
 ###################

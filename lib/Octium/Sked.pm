@@ -1,5 +1,5 @@
 package Octium::Sked 0.013;
-# the Sked object, containing everything that is a schedule
+# vimcolor: #260026
 
 use Actium ('class');
 use Octium;
@@ -739,6 +739,7 @@ method stopskeds {
 
     require Octium::Sked::StopSked;
     require Octium::Sked::StopTrip;
+    require Octium::Sked::StopTrip::EnsuingStops;
 
     my %trips_of_stop;
 
@@ -749,17 +750,17 @@ method stopskeds {
 
     my $id  = $self->id;
     my $cry = env->last_cry;
-    $cry->over("$id <trips>");
+    $cry->over($id);
 
     foreach my $trip ( $self->trips ) {
-        my $final_idx         = $trip->stoptime_count - 1;
-        my $destination_place = $self->place4(-1);
+        my @stoptimes         = $trip->stoptimes;
+        my $destination_place = $stopplaces[$#stoptimes];
 
         # forward loop gets places of each stop
         my @places;
         my $prevplace = '';
-        for my $i ( 0 .. $final_idx ) {
-            next unless defined $trip->stoptime($i);
+        for my $i ( 0 .. $#stoptimes ) {
+            next unless defined $stoptimes[$i];
             # skip this place if the column is blank
             # need to change that to the Actium::Time method
             $places[$i] = $stopplaces[$i] || $prevplace;
@@ -771,38 +772,32 @@ method stopskeds {
 
         # reverse loop gets next_place and other info, and makes object
         my $next_place = '';
-        for my $i ( reverse( 0 .. $final_idx ) ) {
-            my $time = $trip->stoptime($i);
+        for my $i ( reverse( 0 .. $#stoptimes ) ) {
+            my $time = $stoptimes[$i];
             next unless defined $time;
             # need to change that to the Actium::Time method
 
             my $stopid = $stopids[$i];
 
-            #     	use DDP;
-            #	if (not defined $trip->days ) {
-            #	   p $trip;
-            #	   exit;
-            #           }
+            my $ensuingstops = Octium::Sked::StopTrip::EnsuingStops->new(
+                stopids => [@ensuingstops] );
 
             my %stoptripspec = (
-                time => Actium::Time->from_num( $trip->stoptime($i) ),
-                line => $trip->line,
+                time              => Actium::Time->from_num( $stoptimes[$i] ),
+                line              => $trip->line,
                 destination_place => $destination_place,
                 days              => $trip->days,
                 place             => $places[$i],
+                is_at_place       => ( !!$stopplaces[$i] ),
                 next_place        => $next_place,
-                calendar_id       => '',
-                # ( $trip->specday ($self->days) )[0],
-                # this is specdayletter for now
-                ensuingstops => [@ensuingstops],
+                calendar_id       => $trip->daysexceptions,
+                ensuingstops      => $ensuingstops,
                 # make a new copy each time since otherwise will preserve the
                 # same reference each time through the loop...
             );
-            #	say Actium::dumpstr(%stoptripspec);
-            #	exit;
-            my $stoptrip = Octium::Sked::StopTrip->new( \%stoptripspec );
 
-            push $trips_of_stop{$stopid}->@*, $stoptrip;
+            push $trips_of_stop{$stopid}->@*,
+              Octium::Sked::StopTrip->new( \%stoptripspec );
 
             # retain current stop info for the next iteration
             push @ensuingstops, $stopid;
@@ -811,7 +806,6 @@ method stopskeds {
         }
     }
 
-    $cry->over("$id <skeds>");
     my @stopskeds;
     foreach my $stopid ( keys %trips_of_stop ) {
         push @stopskeds,
