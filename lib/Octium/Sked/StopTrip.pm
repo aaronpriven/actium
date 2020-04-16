@@ -34,7 +34,7 @@ has time => (
     is       => 'ro',
 );
 
-has [qw/line destination_place/] => (
+has [qw/line/] => (
     is       => 'ro',
     isa      => Str,
     required => 1,
@@ -51,15 +51,29 @@ has days => (
     },
 );
 
-has [qw/place next_place calendar_id /] => (
+has [qw/next_place calendar_id/] => (
+    is      => 'ro',
+    default => $EMPTY,
+    isa     => Maybe [Str],
+);
+
+# these are terrible names.
+# place = place of this stop, or the immediately preceding place
+# is_at_place = this stop is actually at this place
+# next_place = the place following this stop, if any (won't be for last stop)
+# destination_place = final place of this trip
+
+has [qw/place destination_place/] => (
     is      => 'ro',
     default => $EMPTY,
     isa     => Str,
 );
 
-method is_at_place {
-    return ( $self->place ne $EMPTY );
-}
+has is_at_place => (
+    is      => 'ro',
+    isa     => Bool,
+    default => 0,
+);
 
 has ensuingstops => (
     # list of subsequent stops

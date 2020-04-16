@@ -1,4 +1,5 @@
 package Octium::Sked::StopSkedCollection 0.015;
+# vimcolor: #c8d8b8
 
 use Actium 'class';
 
@@ -11,7 +12,7 @@ has _stopskeds_r => (
     handles  => { stopskeds => 'elements', },
 );
 
-method _build_stopskeds_of_stopids_r {
+method _build_stopskeds_of_stopid_r {
     my %stopskeds_of_stopid;
     foreach my $stopsked ( $self->stopskeds ) {
         my $stopid = $stopsked->stopid;
@@ -33,21 +34,31 @@ has _stopskeds_of_stopid_r => (
     },
 );
 
+has first_stopid => (
+    lazy     => 1,
+    builder  => 1,
+    is       => 'ro',
+    init_arg => undef,
+);
+
+method _build_first_stopid {
+    my @sorted = sort $self->stopids;
+    return $sorted[0];
+}
+
 method stopskeds_of_stopid (Str $stopid) {
     return () if not $self->_has_stopskeds_of_stopid;
     return $self->_stopskeds_of_stopid_r($stopid)->@*;
 }
 
-method store ($folder) {
-    my $count     = 0;
-    my @stopskeds = $self->stopskeds;
-    @stopskeds = @stopskeds[ 0 .. 99 ];
-    $folder->write_files_with_method(
-        OBJECTS   => \@stopskeds,
-        METHOD    => 'dump',
-        EXTENSION => 'dump',
-        SUBFOLDER => 'dumped',
-    );
+method writedumped ($folder) {
+    my $stopids = join( "_", sort $self->stopids );
+    # there may be more than one collection with the same stop IDs in which
+    # case this will write over one of them
+    env->crier->over($stopids);
+    my $file = Actium::file( $stopids . '.dump' );
+    local $Data::Dumper::Indent = 1;
+    $file->spew_text( $self->dump );
     return;
 }
 
