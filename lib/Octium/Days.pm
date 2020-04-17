@@ -92,6 +92,10 @@ sub _build_as_string {
     return $self->daycode . q{-} . $self->schooldaycode;
 }
 
+method freeze { $self->as_string }
+
+method thaw (Str $cyst) { $self->instance_from_string($cyst) }
+
 sub _data_printer {
     my $self  = shift;
     my $class = Actium::blessed($self);
