@@ -2,6 +2,7 @@ package Octium::Sked::StopSkedCollection 0.015;
 # vimcolor: #c8d8b8
 
 use Actium 'class';
+use Actium::Types('Folder');
 
 has _stopskeds_r => (
     traits   => ['Array'],
@@ -51,15 +52,28 @@ method stopskeds_of_stopid (Str $stopid) {
     return $self->_stopskeds_of_stopid_r($stopid)->@*;
 }
 
-method writedumped ($folder) {
+method writedumped (Folder $folder does coerce) {
     my $stopids = join( "_", sort $self->stopids );
     # there may be more than one collection with the same stop IDs in which
     # case this will write over one of them
     env->crier->over($stopids);
-    my $file = Actium::file( $stopids . '.dump' );
+    my $file = $folder->file( $stopids . '.dump' );
     local $Data::Dumper::Indent = 1;
     $file->spew_text( $self->dump );
     return;
+}
+
+method freeze {
+    my @stopskeds = map { $_->freeze } $self->stopskeds;
+    require JSON;
+    return JSON->new->encode( \@stopskeds );
+}
+
+method thaw (Str $cyst) {
+    require JSON;
+    my $stopskeds_cysts_r = JSON->new->decode($cyst);
+    my $stopskeds_r       = map { $_->thaw } $stopskeds_cysts_r->@*;
+    return $self->new( stopskeds => $stopskeds_r );
 }
 
 1;
@@ -87,6 +101,17 @@ This documentation refers to version 0.015
 This represents schedule information for a particular bus stop or group
 of bus stops.
 
+=head1 CLASS METHODS
+
+=head2 new(...)
+
+The module inherits its constructor from Moose.
+
+=head2 thaw($string)
+
+The C<thaw> method takes a string created by the C<freeze> method and
+returns a recreated object.
+
 =head1 ATTRIBUTE
 
 =head2 stopskeds
@@ -95,7 +120,7 @@ An array of L<Octium::Sked::StopSked|Octium::Sked::StopSked> objects.
 The "stopskeds" argument in the constructor should be a reference to
 the array, while the stopskeds() method will return the list.
 
-=head1 METHOD
+=head1 OBJECT METHODS
 
 =head2 stopids
 
@@ -105,6 +130,11 @@ Returns a list of the stop IDs associated with the stop schedules.
 
 Takes a stop ID and returns the associated StopSked objects of that
 stop ID.
+
+=head2 freeze
+
+This returns a string which, when passed to the C<thaw> class method,
+will recreate the object.
 
 =head1 DIAGNOSTICS
 
