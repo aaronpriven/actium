@@ -29,7 +29,7 @@ sub skedsort {
 
     foreach my $obj (@objs) {
 
-        if ( $obj->should_preserve_direction_order ) {
+        if ( $obj->preserve_dir_order ) {
             push @objs_with_ids, { obj => $obj, id => $obj->sortable_id };
         }
         else {

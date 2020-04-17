@@ -9,7 +9,7 @@ use 5.016;    # turns on features
 use Moose::Role;    ### DEP ###
 
 requires(
-    qw[ earliest_timenum id linedir should_preserve_direction_order
+    qw[ earliest_timenum id linedir preserve_dir_order
       sortable_id sortable_id_with_timenum ]
 
 );

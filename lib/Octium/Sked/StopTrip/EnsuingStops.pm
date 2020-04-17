@@ -20,7 +20,7 @@ has _stopids_r => (
     handles  => {
         stopids       => 'elements',
         is_final_stop => 'is_empty',
-        freeze        => [ join => $JOINER ],
+        bundle        => [ join => $JOINER ],
     },
 );
 
@@ -33,10 +33,10 @@ override new ( Str @stopids is ref_alias) {
         { stopids => \@stopids } );
 }
 
-method thaw (Str $seed) {
-    return $obj_cache{$seed}
+method unbundle (Str $bundle) {
+    return $obj_cache{$bundle}
       //= $self->_octium_sked_stoptrip_ensuingstops_new(
-        { stopids => [ split( /$JOINER/, $seed ) ] } );
+        { stopids => [ split( /$JOINER/, $bundle ) ] } );
 }
 
 Actium::immut( constructor_name => '_octium_sked_stoptrip_ensuingstops_new' );
@@ -91,10 +91,10 @@ The C<new> method takes a list of stop IDs, determines whether an
 object with those stops already exists, and if it does, returns it. If
 it doesn't, it creates a new one.
 
-=head2 Octium::Sked::StopTrip::EnsuingStops->thaw($string)
+=head2 Octium::Sked::StopTrip::EnsuingStops->unbundle($string)
 
-The C<thaw> method takes a string created by the C<freeze> method and
-returns a recreated EnsuingStops object.
+The C<unbundle> method takes a string created by the C<bundle> method
+and returns a recreated EnsuingStops object.
 
 =head1 OBJECT METHODS
 
@@ -107,10 +107,10 @@ The C<stopids> method returns the list of stop IDs.
 The C<is_final_stop> method indicates that the stop is the final one
 (in other words, that there are no stop IDs in the ensuingstops).
 
-=head2 $ensuingstops->freeze
+=head2 $ensuingstops->bundle
 
-This returns a string which, when passed to the C<thaw> class method,
-will recreate the object.
+This returns a string which, when passed to the C<unbundle> class
+method, will recreate the object.
 
 =head1 DIAGNOSTICS
 

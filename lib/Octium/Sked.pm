@@ -359,10 +359,10 @@ has 'dir_obj' => (
     is       => 'ro',
     isa      => Dir,
     handles  => {
-        direction                       => 'dircode',
-        dircode                         => 'dircode',
-        to_text                         => 'as_to_text',
-        should_preserve_direction_order => 'should_preserve_direction_order',
+        direction          => 'dircode',
+        dircode            => 'dircode',
+        to_text            => 'as_to_text',
+        preserve_dir_order => 'preserve_order',
     },
 );
 
@@ -635,7 +635,7 @@ sub _build_skedid {
 sub _build_sortable_id {
     my $self = shift;
 
-    if ( $self->should_preserve_direction_order ) {
+    if ( $self->preserve_dir_order ) {
         return $self->sortable_id_with_timenum(0);
     }
 
