@@ -63,6 +63,13 @@ method writedumped (Folder $folder does coerce) {
     return;
 }
 
+method store (Folder $folder does coerce) {
+    my $stopids = join( "_", sort $self->stopids );
+    env->crier->over($stopids);
+    my $file = $folder->file( $stopids . '.json' );
+    $file->spew_text( $self->freeze );
+}
+
 method freeze {
     my @stopskeds = map { $_->freeze } $self->stopskeds;
     require JSON;

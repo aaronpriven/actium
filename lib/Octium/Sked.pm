@@ -13,10 +13,11 @@ with Storage(
     io       => 'File',
 );
 
-use Octium::Types (qw/DirCode ActiumDir ActiumDays/);
+use Actium::Types('Dir');
+use Octium::Types (qw/ActiumDays/);
 use Octium::Sked::Trip;
 use Actium::Time;
-use Octium::Dir;
+use Actium::Dir;
 use Octium::Days;
 use Array::2D;
 
@@ -356,7 +357,7 @@ has 'dir_obj' => (
     coerce   => 1,
     init_arg => 'direction',
     is       => 'ro',
-    isa      => ActiumDir,
+    isa      => Dir,
     handles  => {
         direction                       => 'dircode',
         dircode                         => 'dircode',

@@ -5,7 +5,7 @@ use Octium;
 use Array::2D;
 
 use Octium::Sked::Trip;
-use Octium::Dir;
+use Actium::Dir;
 use Octium::Days;
 use Actium::Time;
 
@@ -76,7 +76,7 @@ method new_from_xlsx ( $class : Str : $file,
         attributes   => \@attributes,
     );
 
-    my $dir_obj = Octium::Dir->instance($dircode);
+    my $dir_obj = Actium::Dir->instance($dircode);
     my $day_obj = Octium::Days->instance( $daycode, 'B' );
 
     my $actiumdb = env->actiumdb;

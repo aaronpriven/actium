@@ -82,7 +82,7 @@ method thaw (Str $cyst) {
     require JSON;
     my $struct = JSON->new->decode($cyst);
     $struct->{days} = Octium::Days->thaw( $struct->{days} );
-    $struct->{dir}  = Octium::Dir->thaw( $struct->{dir} );
+    $struct->{dir}  = Actium::Dir->thaw( $struct->{dir} );
     $struct->{trips}
       = map { Octium::Sked::StopTrip->thaw($_) } $struct->trips->@*;
     return $self->new($struct);

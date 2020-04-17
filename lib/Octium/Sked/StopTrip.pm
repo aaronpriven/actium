@@ -2,7 +2,7 @@ package Octium::Sked::StopTrip 0.015;
 # vimcolor: #002626
 
 use Actium 'class';
-use Types::Standard(qw/Str Bool Int Maybe ArrayRef/);
+use Types::Standard(qw/Str Bool Int ArrayRef Undef/);
 use Type::Utils('class_type');
 use Actium::Types (qw/Time/);
 use Octium::Types (qw/ActiumDays/);
@@ -57,7 +57,8 @@ has days => (
 has [qw/next_place calendar_id/] => (
     is      => 'ro',
     default => $EMPTY,
-    isa     => Str,
+    isa     => Str->plus_coercions( Undef, sub {$EMPTY} ),
+    coerce  => 1,
 );
 
 # place_in_effect = place of this stop, or the immediately preceding place
@@ -93,8 +94,8 @@ method freeze {
         days         => $self->days->freeze,
         ensuingstops => $self->ensuingstops->freeze,
         map { $_ => $self->$_ }
-          qw/line place next_place calendar_id
-          place_in_effect destination_place at_place/,
+          qw/line calendar_id
+          next_place place_in_effect destination_place is_at_place/,
     };
     require JSON;    ### DEP ###
     return JSON->new->encode($struct);

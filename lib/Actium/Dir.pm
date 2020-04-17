@@ -131,9 +131,6 @@ follows:
 These are listed in the sort order used by this program.  (Note that
 unlike Hastus, it sorts west before east.)
 
-Also note that specifying "1" will give South, not Direction One,
-because Hastus Standard AVL Export numeric directions are accepted.
-
 The method is case-insensitive, and will accept either the direction,
 the code, the Hastus numeric code, or any of the following
 abbreviations:
@@ -210,6 +207,17 @@ method instance ($class: Str $provided_dir) {
     $obj_cache{$dircode}      = $instance;
     return $instance;
 
+}
+
+=head2 thaw($string)
+
+The C<thaw> method takes a string created by the C<freeze> method and
+returns a recreated object.
+
+=cut
+
+method thaw ($class: Str $cyst) {
+    return $class->instance($cyst);
 }
 
 # I don't remember how I used this, but it seems kind of odd to be here.
@@ -384,6 +392,17 @@ However, this is subject to change.
 
 method preserve_order {
     return $DIRDATA{ $self->dircode }[PRESERVE_ORDER];
+}
+
+=head2 freeze
+
+This returns a string which, when passed to the C<thaw> class method,
+will recreate the object.
+
+=cut
+
+method freeze {
+    return $self->dircode;
 }
 
 Actium::immut;
