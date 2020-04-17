@@ -748,61 +748,89 @@ method stopskeds {
 
     # go through each trip and build all the sked trips
 
-    my $id  = $self->id;
-    my $cry = env->last_cry;
-    $cry->over($id);
+    my @trips = $self->trips;
+    my %info_of_pattern;
 
-    foreach my $trip ( $self->trips ) {
-        my @stoptimes         = $trip->stoptimes;
-        my $destination_place = $stopplaces[$#stoptimes];
+    foreach my $trip_idx ( 0 .. $#trips ) {
+        my $trip       = $trips[$trip_idx];
+        my @stoptimes  = $trip->stoptimes;
+        my @has_a_time = map { defined $_ ? 1 : 0 } @stoptimes;
+        my $patternkey = join( '', @has_a_time );
 
-        # forward loop gets places of each stop
-        my @places;
-        my $prevplace = '';
-        for my $i ( 0 .. $#stoptimes ) {
-            next unless defined $stoptimes[$i];
-            # skip this place if the column is blank
-            # need to change that to the Actium::Time method
-            $places[$i] = $stopplaces[$i] || $prevplace;
-            $prevplace = $places[$i];
+        my (@places_in_effect, @is_at_places, @next_places,
+            @ensuingstops,     $destination_place
+        );
+
+        if ( not exists $info_of_pattern{$patternkey} ) {
+
+            # forward loop gets $destination_place, @places_in_effect,
+            # @is_at_places
+
+            my $prev_place = $EMPTY;
+            for my $stop_idx ( 0 .. $#stoptimes ) {
+                next unless $has_a_time[$stop_idx];
+                $is_at_places[$stop_idx] = ( not not $stopplaces[$stop_idx] );
+                $places_in_effect[$stop_idx]
+                  = $stopplaces[$stop_idx] || $prev_place;
+                $prev_place = $places_in_effect[$stop_idx];
+            }
+            $destination_place = $prev_place;
+
+            # reverse loop gets @next_places, @ensuingstops
+
+            my $next_place = $EMPTY;
+            my @these_ensuingstops;
+            for my $stop_idx ( reverse( 0 .. $#stoptimes ) ) {
+                next unless $has_a_time[$stop_idx];
+
+                $ensuingstops[$stop_idx]
+                  = Octium::Sked::StopTrip::EnsuingStops->new(
+                    [@these_ensuingstops] );
+                $next_places[$stop_idx] = $next_place;
+
+                my $stopid = $stopids[$stop_idx];
+                push @these_ensuingstops, $stopids[$stop_idx];
+                $next_place = $stopplaces[$stop_idx] if $stopplaces[$stop_idx];
+            }
+
+            $info_of_pattern{$patternkey} = {
+                next_places       => \@next_places,
+                places_in_effect  => \@places_in_effect,
+                destination_place => $destination_place,
+                ensuingstops      => \@ensuingstops,
+                is_at_places      => \@is_at_places
+            };
+
+        }
+        else {
+
+            \@next_places = $info_of_pattern{$patternkey}{next_places};
+            \@places_in_effect
+              = $info_of_pattern{$patternkey}{places_in_effect};
+            \@ensuingstops = $info_of_pattern{$patternkey}{ensuingstops};
+            \@is_at_places = $info_of_pattern{$patternkey}{is_at_places};
+            $destination_place
+              = $info_of_pattern{$patternkey}{destination_place};
+
         }
 
-        my @ensuingstops;
-        my $following_place = $EMPTY;
-
-        # reverse loop gets next_place and other info, and makes object
-        my $next_place = '';
-        for my $i ( reverse( 0 .. $#stoptimes ) ) {
-            my $time = $stoptimes[$i];
-            next unless defined $time;
-            # need to change that to the Actium::Time method
-
-            my $stopid = $stopids[$i];
-
-            my $ensuingstops = Octium::Sked::StopTrip::EnsuingStops->new(
-                stopids => [@ensuingstops] );
+        for my $stop_idx ( 0 .. $#stoptimes ) {
+            next unless $has_a_time[$stop_idx];
 
             my %stoptripspec = (
-                time              => Actium::Time->from_num( $stoptimes[$i] ),
-                line              => $trip->line,
+                time => Actium::Time->from_num( $stoptimes[$stop_idx] ),
+                line => $trip->line,
                 destination_place => $destination_place,
                 days              => $trip->days,
-                place             => $places[$i],
-                is_at_place       => ( !!$stopplaces[$i] ),
-                next_place        => $next_place,
+                place_in_effect   => $places_in_effect[$stop_idx],
+                is_at_place       => $is_at_places[$stop_idx],
+                next_place        => $next_places[$stop_idx],
                 calendar_id       => $trip->daysexceptions,
-                ensuingstops      => $ensuingstops,
-                # make a new copy each time since otherwise will preserve the
-                # same reference each time through the loop...
+                ensuingstops      => $ensuingstops[$stop_idx],
             );
 
-            push $trips_of_stop{$stopid}->@*,
-              Octium::Sked::StopTrip->new( \%stoptripspec );
-
-            # retain current stop info for the next iteration
-            push @ensuingstops, $stopid;
-            $next_place = $stopplaces[$i] if $stopplaces[$i];
-
+            push $trips_of_stop{ $stopids[$stop_idx] }->@*,
+              Octium::Sked::StopTrip->new(%stoptripspec);
         }
     }
 
@@ -817,8 +845,6 @@ method stopskeds {
             trips     => $trips_of_stop{$stopid},
           );
     }
-
-    $cry->over($EMPTY);
 
     return @stopskeds;
 
