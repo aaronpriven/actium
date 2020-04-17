@@ -20,6 +20,11 @@ class_type File,   { class => 'Actium::Storage::File' };
 coerce Folder, from Str, via { Actium::Storage::Folder->new($_) };
 coerce File,   from Str, via { Actium::Storage::File->new($_) };
 
+coerce Folder, from( class_type 'Octium::Folder' ),
+  via { Actium::Storage::Folder->new( $_->path ) };
+coerce Folder, from( class_type 'Octium::Folders::Signup' ),
+  via { Actium::Storage::Folder->new( $_->path ) };
+
 ### Time
 
 class_type Time, { class => 'Actium::Time' };
