@@ -3,8 +3,8 @@ package Octium::Pattern::Group 0.012;
 use Actium ('class');
 use Octium;
 
-use Octium::Types (qw/ActiumDir/);
-use Octium::Dir;
+use Actium::Types (qw/Dir/);
+use Actium::Dir;
 use Octium::Days;
 use Actium::Time;
 use Octium::Pattern;
@@ -26,7 +26,7 @@ has 'dir_obj' => (
     coerce   => 1,
     init_arg => 'direction',
     is       => 'ro',
-    isa      => ActiumDir,
+    isa      => Dir,
     handles  => ['dircode'],
 );
 
@@ -39,7 +39,7 @@ has 'lgdir' => (
 
 sub _build_lgdir {
     my $self = shift;
-    return $self->dir_obj->linedir( $self->linegroup );
+    return $self->linegroup . '.' . $self->dircode;
 }
 
 sub id {

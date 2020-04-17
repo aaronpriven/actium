@@ -3,7 +3,7 @@ package Octium::Import::Xhea::ToSkeds 0.012;
 use Actium;
 use Octium;
 use Octium::Storage::TabDelimited 'read_aoas';
-use Octium::Dir;
+use Actium::Dir;
 use Actium::Time;
 use Octium::Pattern;
 use Octium::Pattern::Block;
@@ -202,7 +202,7 @@ sub _get_blocks {
                 my $identifier = $field{tpat_id};
                 my $uniqid     = "$line.$identifier";
 
-                my $dir_obj = Octium::Dir::->instance( $field{tpat_direction} );
+                my $dir_obj = Actium::Dir::->instance( $field{tpat_direction} );
 
                 my $pattern = Octium::Pattern->new(
                     line       => $line,
@@ -458,8 +458,8 @@ sub _add_place_patterns_to_patterns {
         callback   => sub {
             \my %field = shift;
             my ( $place, $rank ) = @field{qw/place rank/};
-            my $direction = Octium::Dir->instance( $field{direction} );
-            my $linedir   = $direction->linedir( $field{line} );
+            my $direction = Actium::Dir->instance( $field{direction} );
+            my $linedir   = $field{line} . '.' . $direction->dircode;
             $ppat_of_linedir{$linedir}->[$rank] = $place;
             return;
         },

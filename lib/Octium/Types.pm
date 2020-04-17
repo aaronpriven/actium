@@ -12,7 +12,6 @@ const my $MINS_IN_12HRS => ( 12 * 60 );
 use MooseX::Types -declare => [
     qw <DayCode     SchoolDayCode   DayStr
       DaySpec             ActiumDays  ActiumTime
-      DirCode             ActiumDir
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum
       Str4                Str8
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
@@ -71,15 +70,6 @@ coerce ActiumDays,
 subtype ActiumSkedStopTime, as class_type('Octium::Sked::Stop::Time');
 
 subtype ArrayRefOfActiumSkedStopTime, as ArrayRef [ActiumSkedStopTime];
-
-#########################
-### SCHEDULE DIRECTIONS
-
-enum( DirCode, \@DIRCODES );
-
-subtype ActiumDir, as class_type('Octium::Dir');
-
-coerce( ActiumDir, from DirCode, via { Octium::Dir->instance($_) }, );
 
 ######################
 ## SCHEDULE TIMES
@@ -194,21 +184,6 @@ days ("D"), school holidays ("H"), or both ("B").
 
 ...
 
-
-=back
-
-=head2 SCHEDULE DIRECTIONS
-
-=over
-
-=item B<DirCode>
-
-An enumeration of the elements of @Octium::DIRCODES.  See
-L<Actium/Actium>. It can be coerced into  ActiumODir.
-
-=item B<ActiumODir>
-
-A type representing the Octium::Dir class.
 
 =back
 

@@ -5,8 +5,8 @@ package Octium::Pattern 0.012;
 use Actium ('class');
 use Octium;
 
-use Octium::Types (qw/DirCode ActiumDir/);
-use Octium::Dir;
+use Actium::Types (qw/Dir/);
+use Actium::Dir;
 use Octium::Pattern::Stop;
 
 has [ 'line', 'linegroup' ] => (
@@ -28,12 +28,12 @@ for (qw/linedir lgdir/) {
 
 sub _build_lgdir {
     my $self = shift;
-    return $self->dir_obj->linedir( $self->linegroup );
+    return $self->linegroup . '.' . $self->dircode;
 }
 
 sub _build_linedir {
     my $self = shift;
-    return $self->dir_obj->linedir( $self->line );
+    return $self->line . '.' . $self->dircode;
 }
 
 has 'dir_obj' => (
@@ -41,7 +41,7 @@ has 'dir_obj' => (
     coerce   => 1,
     init_arg => 'direction',
     is       => 'ro',
-    isa      => ActiumDir,
+    isa      => Dir,
     handles  => ['dircode'],
 );
 

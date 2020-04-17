@@ -23,14 +23,12 @@ use Data::Dumper;
 use Octium::SkedCollection;
 use Octium::Sked;
 use Octium::Days;
-use Octium::Dir;
 use Octium::Sked::Trip;
 use Octium::Folders::Signup;
 
 *Octium::O::Sked::Collection:: = *Octium::SkedCollection::;
 *Octium::O::Sked::             = *Octium::Sked::;
 *Octium::O::Days::             = *Octium::Days::;
-*Octium::O::Dir::              = *Octium::Dir::;
 *Octium::O::Sked::Trip::       = *Octium::Sked::Trip::;
 *Octium::O::Folders::Signup::  = *Octium::Folders::Signup::;
 
