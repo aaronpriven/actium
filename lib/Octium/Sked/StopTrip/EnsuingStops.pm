@@ -96,7 +96,7 @@ it doesn't, it creates a new one.
 The C<thaw> method takes a string created by the C<freeze> method and
 returns a recreated EnsuingStops object.
 
-=head1 OBJECT METHOD
+=head1 OBJECT METHODS
 
 =head2 $ensuingstops->stopids
 
@@ -110,7 +110,7 @@ The C<is_final_stop> method indicates that the stop is the final one
 =head2 $ensuingstops->freeze
 
 This returns a string which, when passed to the C<thaw> class method,
-will  recreate the object.
+will recreate the object.
 
 =head1 DIAGNOSTICS
 

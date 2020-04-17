@@ -64,6 +64,30 @@ method _build_is_final_stop {
     return Actium::all { $_->is_final_stop } $self->trips;
 }
 
+method freeze {
+    my @trips = $self->trips;
+    @trips = map { $_->freeze } @trips;
+
+    my $struct = {
+        trips => \@trips,
+        days  => $self->days->freeze,
+        dir   => $self->dir->freeze,
+        map { $_ => $self->$_ } qw/stop_id linegroup/
+    };
+    require JSON;    ### DEP ###
+    return JSON->new->encode($struct);
+}
+
+method thaw (Str $cyst) {
+    require JSON;
+    my $struct = JSON->new->decode($cyst);
+    $struct->{days} = Octium::Days->thaw( $struct->{days} );
+    $struct->{dir}  = Octium::Dir->thaw( $struct->{dir} );
+    $struct->{trips}
+      = map { Octium::Sked::StopTrip->thaw($_) } $struct->trips->@*;
+    return $self->new($struct);
+}
+
 1;
 
 __END__
@@ -95,6 +119,11 @@ single stop.  It is created using Moose.
 =head2 new
 
 The method inherits its constructor from Moose.
+
+=head2 thaw($string)
+
+The C<thaw> method takes a string created by the C<freeze> method and
+returns a recreated object.
 
 =head1 ATTRIBUTES
 
@@ -130,12 +159,17 @@ It is expected to be passed in the order in which it will be displayed.
  The "trips" argument in the constructor should be a reference to the
 array, while the trips() method will return the list.
 
-=head1 METHOD
+=head1 OBJECT METHODS
 
 =head2 is_final_stop
 
 True if this is the final stop of this schedule, false otherwise. (Only
 true if it is the final stop of I<every> trip, not just some trips.)
+
+=head2 freeze
+
+This returns a string which, when passed to the C<thaw> class method,
+will recreate the object.
 
 =head1 DIAGNOSTICS
 
