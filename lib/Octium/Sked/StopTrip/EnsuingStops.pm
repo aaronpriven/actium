@@ -7,6 +7,10 @@ use Actium 'class';
 use Types::Standard (qw/ArrayRef Str/);
 *Moose::Object::_octium_sked_stoptrip_ensuingstops_new = \&Moose::Object::new;
 
+const my $JOINER => $SPACE;
+
+# if stop IDs ever contain spaces, will have to change that
+
 has _stopids_r => (
     required => 1,
     isa      => ArrayRef [Str],
@@ -15,11 +19,10 @@ has _stopids_r => (
     traits   => ['Array'],
     handles  => {
         stopids       => 'elements',
-        is_final_stop => 'is_empty'
+        is_final_stop => 'is_empty',
+        freeze        => [ join => $JOINER ],
     },
 );
-
-const my $JOINER => "\N{UNIT SEPARATOR}";
 
 my %obj_cache;
 
@@ -28,6 +31,12 @@ override new ( Str @stopids is ref_alias) {
     return $obj_cache{$cachekey}
       //= $self->_octium_sked_stoptrip_ensuingstops_new(
         { stopids => \@stopids } );
+}
+
+method thaw (Str $seed) {
+    return $obj_cache{$seed}
+      //= $self->_octium_sked_stoptrip_ensuingstops_new(
+        { stopids => [ split( /$JOINER/, $seed ) ] } );
 }
 
 Actium::immut( constructor_name => '_octium_sked_stoptrip_ensuingstops_new' );
@@ -74,13 +83,18 @@ ensuing stops.
  say "Yes" if $ensuingstops1 == $ensuingstops2;
  # Output: Yes
 
-=head1 CLASS METHOD
+=head1 CLASS METHODS
 
 =head2 Octium::Sked::StopTrip::EnsuingStops->new(@stopids)
 
 The C<new> method takes a list of stop IDs, determines whether an
 object with those stops already exists, and if it does, returns it. If
 it doesn't, it creates a new one.
+
+=head2 Octium::Sked::StopTrip::EnsuingStops->thaw($string)
+
+The C<thaw> method takes a string created by the C<freeze> method and
+returns a recreated EnsuingStops object.
 
 =head1 OBJECT METHOD
 
@@ -92,6 +106,11 @@ The C<stopids> method returns the list of stop IDs.
 
 The C<is_final_stop> method indicates that the stop is the final one
 (in other words, that there are no stop IDs in the ensuingstops).
+
+=head2 $ensuingstops->freeze
+
+This returns a string which, when passed to the C<thaw> class method,
+will  recreate the object.
 
 =head1 DIAGNOSTICS
 
