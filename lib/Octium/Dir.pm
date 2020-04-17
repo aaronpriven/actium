@@ -121,6 +121,14 @@ has 'dircode' => (
     isa => DirCode,
 );
 
+method freeze {
+    return $self->dircode;
+}
+
+method thaw (Str $cyst) {
+    return $self->instance($cyst);
+}
+
 sub _data_printer {
     my $self  = shift;
     my $class = Actium::blessed($self);
