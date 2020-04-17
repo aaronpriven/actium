@@ -6,7 +6,10 @@ use Types::Standard(qw/Str Bool Int Maybe ArrayRef/);
 use Type::Utils('class_type');
 use Actium::Types (qw/Time/);
 use Octium::Types (qw/ActiumDays/);
+
 use Octium::Sked::StopTrip::EnsuingStops;
+use Octium::Days;
+use Actium::Time;
 
 # KPOINTS -
 #  $time_r->{TIME},         - time
@@ -54,16 +57,15 @@ has days => (
 has [qw/next_place calendar_id/] => (
     is      => 'ro',
     default => $EMPTY,
-    isa     => Maybe [Str],
+    isa     => Str,
 );
 
-# these are terrible names.
-# place = place of this stop, or the immediately preceding place
+# place_in_effect = place of this stop, or the immediately preceding place
 # is_at_place = this stop is actually at this place
 # next_place = the place following this stop, if any (won't be for last stop)
 # destination_place = final place of this trip
 
-has [qw/place destination_place/] => (
+has [qw/place_in_effect destination_place/] => (
     is      => 'ro',
     default => $EMPTY,
     isa     => Str,
@@ -85,6 +87,29 @@ has ensuingstops => (
     handles  => ['is_final_stop'],
 );
 
+method freeze {
+    my $struct = {
+        time         => $self->time->freeze,
+        days         => $self->days->freeze,
+        ensuingstops => $self->ensuingstops->freeze,
+        map { $_ => $self->$_ }
+          qw/line place next_place calendar_id
+          place_in_effect destination_place at_place/,
+    };
+    require JSON;    ### DEP ###
+    return JSON->new->encode($struct);
+}
+
+method thaw (Str $cyst) {
+    require JSON;
+    my $struct = JSON->new->decode($cyst);
+    $struct->{time} = Actium::Time->thaw( $struct->{time} );
+    $struct->{days} = Octium::Days->thaw( $struct->{days} );
+    $struct->{ensuingstops}
+      = Octium::Sked::StopTrip::EnsuingStops->thaw( $struct->{ensuingstops} );
+    return $self->new($struct);
+}
+
 1;
 
 __END__
@@ -105,7 +130,7 @@ This documentation refers to version 0.015
  my $trip = Octium::Sked::StopTrip->new(
     time              => '5:15a',
     line              => '40',
-    place             => '12BD',
+    place_in_effect  => '12BD',
     'at_place'        => 1,
     destination_place => '11JE',
     days              => '12345',
@@ -136,10 +161,10 @@ an object. Required.
 
 A string representing a bus line designation. Required.
 
-=head2 place
+=head2 place_in_effect
 
-A string representing the ID of the place (timepoint) at this stop. If
-this stop is between places, will be the empty string.
+A string representing the ID of the place (timepoint) of this stop, or
+the  previous place, if this stop is between places.
 
 =head2 next_place
 
