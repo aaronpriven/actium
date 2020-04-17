@@ -67,7 +67,7 @@ method store_bundled (Folder $folder does coerce) {
     my $stopids = join( "_", sort $self->stopids );
     env->crier->over($stopids);
     my $file = $folder->file( $stopids . '.json' );
-    $file->spew_text( JSON->new->encode( $self->bundle ) );
+    $file->spew_text( JSON->new->pretty->canonical->encode( $self->bundle ) );
 }
 
 method bundle {
