@@ -30,7 +30,7 @@ sub START {
 
     my $cry = env->cry('Writing stop sked collections');
     for my $stopskedcollection (@stopskedcollections) {
-        $stopskedcollection->store($stopskedfolder);
+        $stopskedcollection->store_bundled($stopskedfolder);
     }
     $cry->over($EMPTY);
     $cry->done;

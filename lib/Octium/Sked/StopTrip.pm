@@ -88,27 +88,25 @@ has ensuingstops => (
     handles  => ['is_final_stop'],
 );
 
-method freeze {
-    my $struct = {
-        time         => $self->time->freeze,
-        days         => $self->days->freeze,
-        ensuingstops => $self->ensuingstops->freeze,
+method bundle {
+    my $bundle = {
+        time         => $self->time->bundle,
+        days         => $self->days->bundle,
+        ensuingstops => $self->ensuingstops->bundle,
         map { $_ => $self->$_ }
           qw/line calendar_id
           next_place place_in_effect destination_place is_at_place/,
     };
-    require JSON;    ### DEP ###
-    return JSON->new->encode($struct);
+    return $bundle;
 }
 
-method thaw (Str $cyst) {
-    require JSON;
-    my $struct = JSON->new->decode($cyst);
-    $struct->{time} = Actium::Time->thaw( $struct->{time} );
-    $struct->{days} = Octium::Days->thaw( $struct->{days} );
-    $struct->{ensuingstops}
-      = Octium::Sked::StopTrip::EnsuingStops->thaw( $struct->{ensuingstops} );
-    return $self->new($struct);
+method undbundle (HashRef $bundle) {
+    $bundle->{time} = Actium::Time->unbundle( $bundle->{time} );
+    $bundle->{days} = Octium::Days->unbundle( $bundle->{days} );
+    $bundle->{ensuingstops}
+      = Octium::Sked::StopTrip::EnsuingStops->unbundle(
+        $bundle->{ensuingstops} );
+    return $self->new($bundle);
 }
 
 1;

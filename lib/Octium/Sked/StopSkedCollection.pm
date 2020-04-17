@@ -63,23 +63,19 @@ method writedumped (Folder $folder does coerce) {
     return;
 }
 
-method store (Folder $folder does coerce) {
+method store_bundled (Folder $folder does coerce) {
     my $stopids = join( "_", sort $self->stopids );
     env->crier->over($stopids);
     my $file = $folder->file( $stopids . '.json' );
-    $file->spew_text( $self->freeze );
+    $file->spew_text( JSON->new->encode( $self->bundle ) );
 }
 
-method freeze {
-    my @stopskeds = map { $_->freeze } $self->stopskeds;
-    require JSON;
-    return JSON->new->encode( \@stopskeds );
+method bundle {
+    return [ map { $_->bundle } $self->stopskeds ];
 }
 
-method thaw (Str $cyst) {
-    require JSON;
-    my $stopskeds_cysts_r = JSON->new->decode($cyst);
-    my $stopskeds_r       = map { $_->thaw } $stopskeds_cysts_r->@*;
+method unbundle (ArrayRef $bundle ) {
+    my $stopskeds_r = map { $_->unbundle } $bundle->@*;
     return $self->new( stopskeds => $stopskeds_r );
 }
 
@@ -114,10 +110,10 @@ of bus stops.
 
 The module inherits its constructor from Moose.
 
-=head2 thaw($string)
+=head2 unbundle($string)
 
-The C<thaw> method takes a string created by the C<freeze> method and
-returns a recreated object.
+The C<unbundle> method takes a structure created by the C<bundle>
+method and returns a recreated object.
 
 =head1 ATTRIBUTE
 
@@ -138,10 +134,10 @@ Returns a list of the stop IDs associated with the stop schedules.
 Takes a stop ID and returns the associated StopSked objects of that
 stop ID.
 
-=head2 freeze
+=head2 bundle
 
-This returns a string which, when passed to the C<thaw> class method,
-will recreate the object.
+This returns a struct which, when passed to the C<unbundle> class
+method, will recreate the object.
 
 =head1 DIAGNOSTICS
 

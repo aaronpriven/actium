@@ -20,8 +20,8 @@ has dir => (
     is       => 'ro',
     isa      => Dir,
     handles  => {
-        should_preserve_direction_order => 'should_preserve_direction_order',
-        to_text                         => 'as_to_text',
+        preserve_dir_order => 'preserve_order',
+        to_text            => 'as_to_text',
     },
 );
 
@@ -64,28 +64,24 @@ method _build_is_final_stop {
     return Actium::all { $_->is_final_stop } $self->trips;
 }
 
-method freeze {
+method bundle {
     my @trips = $self->trips;
-    @trips = map { $_->freeze } @trips;
+    @trips = map { $_->bundle } @trips;
 
-    my $struct = {
+    return {
         trips => \@trips,
-        days  => $self->days->freeze,
-        dir   => $self->dir->freeze,
-        map { $_ => $self->$_ } qw/stop_id linegroup/
+        days  => $self->days->bundle,
+        dir   => $self->dir->bundle,
+        map { $_ => $self->$_ } qw/stopid linegroup/
     };
-    require JSON;    ### DEP ###
-    return JSON->new->encode($struct);
 }
 
-method thaw (Str $cyst) {
-    require JSON;
-    my $struct = JSON->new->decode($cyst);
-    $struct->{days} = Octium::Days->thaw( $struct->{days} );
-    $struct->{dir}  = Actium::Dir->thaw( $struct->{dir} );
-    $struct->{trips}
-      = map { Octium::Sked::StopTrip->thaw($_) } $struct->trips->@*;
-    return $self->new($struct);
+method unbundle (HashRef $bundle) {
+    $bundle->{days} = Octium::Days->unbundle( $bundle->{days} );
+    $bundle->{dir}  = Actium::Dir->unbundle( $bundle->{dir} );
+    $bundle->{trips}
+      = map { Octium::Sked::StopTrip->unbundle($_) } $bundle->trips->@*;
+    return $self->new($bundle);
 }
 
 1;
@@ -120,10 +116,10 @@ single stop.  It is created using Moose.
 
 The method inherits its constructor from Moose.
 
-=head2 thaw($string)
+=head2 unbundle($string)
 
-The C<thaw> method takes a string created by the C<freeze> method and
-returns a recreated object.
+The C<unbundle> method takes a string created by the C<bundle> method
+and returns a recreated object.
 
 =head1 ATTRIBUTES
 
@@ -166,10 +162,10 @@ array, while the trips() method will return the list.
 True if this is the final stop of this schedule, false otherwise. (Only
 true if it is the final stop of I<every> trip, not just some trips.)
 
-=head2 freeze
+=head2 bundle
 
-This returns a string which, when passed to the C<thaw> class method,
-will recreate the object.
+This returns a string which, when passed to the C<unbundle> class
+method, will recreate the object.
 
 =head1 DIAGNOSTICS
 

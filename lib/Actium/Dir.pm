@@ -209,15 +209,15 @@ method instance ($class: Str $provided_dir) {
 
 }
 
-=head2 thaw($string)
+=head2 unbundle($string)
 
-The C<thaw> method takes a string created by the C<freeze> method and
-returns a recreated object.
+The C<unbundle> method takes a string created by the C<bundle> method
+and returns a recreated object.
 
 =cut
 
-method thaw ($class: Str $cyst) {
-    return $class->instance($cyst);
+method unbundle ($class: Str $bundle) {
+    return $class->instance($bundle);
 }
 
 # I don't remember how I used this, but it seems kind of odd to be here.
@@ -321,9 +321,16 @@ method as_onechar {
     return $DIRDATA{ $self->dircode }[ONE_CHAR];
 }
 
-#method _as_sortable {
-#    return ( 'A' .. 'Z' )[ $DIRDATA{ $self->dircode }[ORDER] ];
-#}
+method as_sortable {
+    return ( 'A' .. 'Z' )[ $DIRDATA{ $self->dircode }[ORDER] ];
+}
+
+=head2 as_sortable
+
+Returns a string that can be sorted to yield the appropriate sort order
+for directions.
+
+=cut
 
 =head2 as_to_text 
 
@@ -394,14 +401,14 @@ method preserve_order {
     return $DIRDATA{ $self->dircode }[PRESERVE_ORDER];
 }
 
-=head2 freeze
+=head2 bundle
 
-This returns a string which, when passed to the C<thaw> class method,
-will recreate the object.
+This returns a string which, when passed to the C<unbundle> class
+method, will recreate the object.
 
 =cut
 
-method freeze {
+method bundle {
     return $self->dircode;
 }
 

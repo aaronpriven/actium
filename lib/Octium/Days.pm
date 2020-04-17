@@ -92,9 +92,9 @@ sub _build_as_string {
     return $self->daycode . q{-} . $self->schooldaycode;
 }
 
-method freeze { $self->as_string }
+method bundle { $self->as_string }
 
-method thaw (Str $cyst) { $self->instance_from_string($cyst) }
+method unbundle (Str $bundle) { $self->instance_from_string($bundle) }
 
 sub _data_printer {
     my $self  = shift;
