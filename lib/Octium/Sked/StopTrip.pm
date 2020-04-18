@@ -54,48 +54,27 @@ has days => (
     },
 );
 
-has [qw/next_place calendar_id/] => (
+has qw/calendar_id/ => (
     is      => 'ro',
     default => $EMPTY,
     isa     => Str->plus_coercions( Undef, sub {$EMPTY} ),
     coerce  => 1,
 );
 
-# place_in_effect = place of this stop, or the immediately preceding place
-# is_at_place = this stop is actually at this place
-# next_place = the place following this stop, if any (won't be for last stop)
-# destination_place = final place of this trip
-
-has [qw/place_in_effect destination_place/] => (
-    is      => 'ro',
-    default => $EMPTY,
-    isa     => Str,
-);
-
-has is_at_place => (
-    is      => 'ro',
-    isa     => Bool,
-    default => 0,
-);
-
-has ensuingstops => (
+has stoppattern => (
     # list of subsequent stops
-    isa => class_type('Octium::Sked::StopTrip::EnsuingStops')
-      ->plus_constructors( ArrayRef [Str], 'new' ),
+    isa      => class_type('Octium::Sked::StopTrip::StopPattern'),
     is       => 'ro',
-    coerce   => 1,
     required => 1,
     handles  => ['is_final_stop'],
 );
 
 method bundle {
     my $bundle = {
-        time         => $self->time->bundle,
-        days         => $self->days->bundle,
-        ensuingstops => $self->ensuingstops->bundle,
-        map { $_ => $self->$_ }
-          qw/line calendar_id
-          next_place place_in_effect destination_place is_at_place/,
+        time        => $self->time->bundle,
+        days        => $self->days->bundle,
+        stoppattern => $self->stoppattern->bundle,
+        map { $_ => $self->$_ } qw/line calendar_id/,
     };
     return $bundle;
 }
@@ -103,9 +82,8 @@ method bundle {
 method undbundle (HashRef $bundle) {
     $bundle->{time} = Actium::Time->unbundle( $bundle->{time} );
     $bundle->{days} = Octium::Days->unbundle( $bundle->{days} );
-    $bundle->{ensuingstops}
-      = Octium::Sked::StopTrip::EnsuingStops->unbundle(
-        $bundle->{ensuingstops} );
+    $bundle->{stoppattern}
+      = Octium::Sked::StopTrip::StopPattern->unbundle( $bundle->{stoppattern} );
     return $self->new($bundle);
 }
 

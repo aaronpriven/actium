@@ -26,7 +26,7 @@ sub START {
       sort { $a->[1] cmp $b->[1] }
       map { [ $_, $_->first_stopid ] } @stopskedcollections;
 
-    my $stopskedfolder = $signup->subfolder( 'k', 'final', 'stored' );
+    my $stopskedfolder = $signup->subfolder( 'p', 'final', 'json' );
 
     my $cry = env->cry('Writing stop sked collections');
     for my $stopskedcollection (@stopskedcollections) {

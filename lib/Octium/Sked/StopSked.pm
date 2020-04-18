@@ -66,23 +66,72 @@ method _build_is_final_stop {
 
 method bundle {
     my @trips = $self->trips;
-    @trips = map { $_->bundle } @trips;
+    my @stoppatterns;
+    my @tripstructs;
+    my %stoppattern_idx_of;
+
+    foreach my $trip (@trips) {
+        my $tripstruct  = $trip->bundle;
+        my $stoppattern = $trip->stoppattern;
+        my $refaddr     = Actium::refaddr($stoppattern);
+        if ( exists $stoppattern_idx_of{$refaddr} ) {
+            $tripstruct->{stoppattern} = $stoppattern_idx_of{$refaddr};
+            # replace stoppattern struct with index
+        }
+        else {
+            push @stoppatterns, $tripstruct->{stoppattern};
+            $tripstruct->{stoppattern} = $stoppattern_idx_of{$refaddr}
+              = $#stoppatterns;
+        }
+        push @tripstructs, $tripstruct;
+    }
 
     return {
-        trips => \@trips,
-        days  => $self->days->bundle,
-        dir   => $self->dir->bundle,
+        trips        => \@tripstructs,
+        stoppatterns => \@stoppatterns,
+        days         => $self->days->bundle,
+        dir          => $self->dir->bundle,
         map { $_ => $self->$_ } qw/stopid linegroup/
     };
 }
 
-method unbundle (HashRef $bundle) {
+method unbundle (HashRef $bundle ) {
+    \my @stoppatterns = delete $bundle->{stoppatterns};
+    @stoppatterns
+      = map { Octium::Sked::StopTrip::StopPattern->unbundle($_) } @stoppatterns;
+
+    foreach my $tripstruct ( $bundle->{trips}->@* ) {
+        $tripstruct->{stoppattern}
+          = $stoppatterns[ $tripstruct->{stoppattern} ];
+    }
+    # replace index with stoppattern
+
     $bundle->{days} = Octium::Days->unbundle( $bundle->{days} );
     $bundle->{dir}  = Actium::Dir->unbundle( $bundle->{dir} );
-    $bundle->{trips}
-      = map { Octium::Sked::StopTrip->unbundle($_) } $bundle->trips->@*;
+
     return $self->new($bundle);
+
 }
+
+#method oldbundle {
+#    my @trips = $self->trips;
+#    @trips = map { $_->bundle } @trips;
+#
+#    return {
+#        trips => \@trips,
+#        days  => $self->days->bundle,
+#        dir   => $self->dir->bundle,
+#        map { $_ => $self->$_ } qw/stopid linegroup/
+#    };
+#}
+#
+#method oldunbundle (HashRef $bundle) {
+#    $bundle->{days} = Octium::Days->unbundle( $bundle->{days} );
+#    $bundle->{dir}  = Actium::Dir->unbundle( $bundle->{dir} );
+#    $bundle->{trips}
+#      = map { Octium::Sked::StopTrip->unbundle($_) } $bundle->{trips}->@*;
+#    return $self->new($bundle);
+#}
 
 1;
 
