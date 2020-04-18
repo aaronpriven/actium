@@ -1,10 +1,11 @@
 package Octium::Sked::StopTrip::EnsuingStops 0.015;
-# vimcolor: #132600
+# vimcolor: #d4e5c3
 
 # The subsequent stops, after the one represented by a StopTrip
 
 use Actium 'class';
 use Types::Standard (qw/ArrayRef Str/);
+
 *Moose::Object::_octium_sked_stoptrip_ensuingstops_new = \&Moose::Object::new;
 
 const my $JOINER => $SPACE;
