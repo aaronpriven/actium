@@ -1,5 +1,5 @@
 package Octium::Sked::StopSkedCollection 0.015;
-# vimcolor: #c8d8b8
+# vimcolor: #00261C
 
 use Actium 'class';
 use Actium::Types('Folder');
