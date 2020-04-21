@@ -85,6 +85,26 @@ into modules that use Actium with the 'class' parameter.
 
 L<Moose|Moose>
 
+=item *
+
+L<MooseX::XSAccessor|MooseX::XSAccessor>
+
+=back
+
+=head2 CLASSES (No XS)
+
+In addition to modules listed later, the following module is imported
+into modules that use Actium with the 'class-noxs' parameter. (I ran
+into issues where L<MooseX::XSAccessor|MooseX::XSAccessor> caused
+problems with methods being prematurely eliminated inside DEMOLISH
+blocks.)
+
+=over
+
+=item *
+
+L<Moose|Moose>
+
 =back
 
 =head2 ROLES
@@ -252,6 +272,10 @@ our @EXPORT = qw/$EMPTY $CRLF $SPACE env/;
         if ($type) {
             if ( $type eq 'class' ) {
                 _do_import 'Moose';
+                _do_import 'MooseX::XSAccessor';
+            }
+            elsif ( $type eq 'class-noxs' ) {
+                _do_import 'Moose';
             }
             elsif ( $type eq 'role' ) {
                 _do_import 'Moose::Role';
@@ -275,6 +299,7 @@ our @EXPORT = qw/$EMPTY $CRLF $SPACE env/;
             _do_import( 'Kavorka', qw/func multi/ );
         }
 
+        # MooseX::XSAccessor ### DEP ###
         # MooseX::MarkAsMethods ### DEP ###
         # MooseX::StrictConstructor ### DEP ###
         # MooseX::SemiAffordanceAccessor ### DEP ###

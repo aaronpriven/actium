@@ -5,7 +5,7 @@ package Actium::Env::CLI::Crier::Cry 0.015;
 #
 # Based on Term::Emit by Steve Roscio
 
-use Actium ('class');
+use Actium ('class-noxs');
 use Types::Standard(qw/Maybe Str Int Bool CodeRef Undef/);
 use Actium::Types(qw/CrierImportance CrierStatus/);
 
@@ -143,8 +143,8 @@ has 'trailer' => (
 );
 
 has tag_color => (
-    isa => Maybe [Str],
-    is => 'rw',
+    isa     => Maybe [Str],
+    is      => 'rw',
     default => undef,
 );
 
@@ -379,7 +379,7 @@ method _close {
 
     my $status = $self->status;
     my $tag    = Actium::u_trim_to_columns(
-        string => $self->tag // $self->_crier->_tag_of_status($status),
+        string  => $self->tag // $self->_crier->_tag_of_status($status),
         columns => $MAX_TAG_WIDTH
     );
 
@@ -442,7 +442,7 @@ sub c {
     return $self->_crier->_close_up_to( $self, @_, \%opts );
 }
 
-method bliss { $self->c( 'BLISS', @_ ); }
+method bliss  { $self->c( 'BLISS', @_ ); }
 method calm { $self->c( 'CALM',  @_ ); }
 method pass { $self->c( 'PASS',  @_ ); }
 method valid { $self->c( 'VALID', @_ ); }
