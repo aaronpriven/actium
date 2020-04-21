@@ -14,11 +14,16 @@ Single scalar, mandatory, followed by list, optional or mandatory:
 
 List of arguments, optional or mandatory:
  x(@list) 
-This would also include commutative operations, e.g., add ($x, $y).
+The idea is that these are lists of the same *kinds* of argument, so that the
+routine itself is imposing no particular order on the arguments.  It matters
+what order print() receives its arguments, but it's not the print() routine
+that matters.  This would also include commutative operations, e.g., add ($x,
+$y).
 
 Named arguments, optional or mandatory:
 x(:$name1, :$name2...)
 
-Initial mandatory scalar, followed by named arguments, all of which must be
-optional:
-x ($scalar!, :$name1? , :$name2? )
+Initial mandatory scalar, followed by named arguments, optional or mandatory:
+x ($scalar!, :$name1 , :$name2 )
+(At one point I had specified that these must always be optional, but
+I think that's too strict now.)
