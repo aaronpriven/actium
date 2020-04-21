@@ -751,82 +751,98 @@ method stopskeds {
     # go through each trip and build all the sked trips
 
     my @trips = $self->trips;
-    my %info_of_stoppattern;
+    my %stopinfo_of_pattern;
 
+  TRIP:
     foreach my $trip_idx ( 0 .. $#trips ) {
-        my $trip           = $trips[$trip_idx];
-        my @stoptimes      = $trip->stoptimes;
-        my @has_a_time     = map { defined $_ ? 1 : 0 } @stoptimes;
-        my $stoppatternkey = join( '', @has_a_time );
+        my $trip       = $trips[$trip_idx];
+        my @stoptimes  = $trip->stoptimes;
+        my @has_a_time = map { defined $_ ? 1 : 0 } @stoptimes;
+        my $patternkey = join( '', @has_a_time );
 
-        my (@places_in_effect, @is_at_places, @next_places,
-            @ensuingstops,     $destination_place
-        );
+        my %stopinfo;
 
-        if ( not exists $info_of_stoppattern{$stoppatternkey} ) {
+        #my ( @places_in_effect, @is_at_places, @next_places,
+        #    @ensuingstops, @skip_stop, $destination_place );
+
+        if ( not exists $stopinfo_of_pattern{$patternkey} ) {
+
+            # reverse loop gets @next_places, @ensuingstops
+
+            my $next_place = $EMPTY;
+            my ( @these_ensuingstops, %seen_stop );
+
+            for my $stop_idx ( reverse( 0 .. $#stoptimes ) ) {
+                next unless $has_a_time[$stop_idx];
+
+                # Skip stops that are duplicates.  Take the latest instance
+                # that the bus passes this stop, unless the latest instance is
+                # the very last stop. This will make sure that
+                # arrival/departure pairs always use the departure times, and
+                # also weird curling-back-on-itself loops use them, but regular
+                # loops that begin and end at the same point will use the first
+                # time, not the last one.
+
+                my $stopid = $stopids[$stop_idx];
+                if ( not exists $seen_stop{$stopid} ) {
+                    $seen_stop{$stopid}
+                      = $stop_idx == $#stoptimes ? 'SKIP' : 'LAST';
+                }
+                elsif ( $seen_stop{$stopid} eq 'LAST' ) {
+                    # seen this stop before, and it was the last stop
+                    # have it skip the last stop, and then change it so
+                    # it's seen this one
+                    $stopinfo{skip_stop}[$#stoptimes] = 1;
+                    $stopinfo{seen_stop}{$stopid} = 'SKIP';
+                }
+                else {    # ( $seen_stop{$stopid} eq 'SKIP' ) {
+                          # seen this stop before, and it was not the last stop
+                    $stopinfo{skip_stop}[$stop_idx] = 1;
+                    next;
+                }
+
+                $stopinfo{ensuingstops}[$stop_idx]
+                  = Octium::Sked::StopTrip::EnsuingStops->new(
+                    [@these_ensuingstops] );
+                $stopinfo{next_places}[$stop_idx] = $next_place;
+
+                push @these_ensuingstops, $stopids[$stop_idx];
+                $next_place = $stopplaces[$stop_idx] if $stopplaces[$stop_idx];
+            }
 
             # forward loop gets $destination_place, @places_in_effect,
             # @is_at_places
 
             my $prev_place = $EMPTY;
             for my $stop_idx ( 0 .. $#stoptimes ) {
-                next unless $has_a_time[$stop_idx];
-                $is_at_places[$stop_idx] = ( not not $stopplaces[$stop_idx] );
-                $places_in_effect[$stop_idx]
+                next
+                  if $stopinfo{skip_stop}[$stop_idx]
+                  or not $has_a_time[$stop_idx];
+                $stopinfo{is_at_places}[$stop_idx]
+                  = ( not not $stopplaces[$stop_idx] );
+                $stopinfo{places_in_effect}[$stop_idx]
                   = $stopplaces[$stop_idx] || $prev_place;
-                $prev_place = $places_in_effect[$stop_idx];
+                $prev_place = $stopinfo{places_in_effect}[$stop_idx];
             }
-            $destination_place = $prev_place;
+            $stopinfo{destination_place} = $prev_place;
 
-            # reverse loop gets @next_places, @ensuingstops
-
-            my $next_place = $EMPTY;
-            my @these_ensuingstops;
-            for my $stop_idx ( reverse( 0 .. $#stoptimes ) ) {
-                next unless $has_a_time[$stop_idx];
-
-                $ensuingstops[$stop_idx]
-                  = Octium::Sked::StopTrip::EnsuingStops->new(
-                    [@these_ensuingstops] );
-                $next_places[$stop_idx] = $next_place;
-
-                my $stopid = $stopids[$stop_idx];
-                push @these_ensuingstops, $stopids[$stop_idx];
-                $next_place = $stopplaces[$stop_idx] if $stopplaces[$stop_idx];
-            }
-
-            $info_of_stoppattern{$stoppatternkey} = {
-                next_places       => \@next_places,
-                places_in_effect  => \@places_in_effect,
-                destination_place => $destination_place,
-                ensuingstops      => \@ensuingstops,
-                is_at_places      => \@is_at_places
-            };
-
+            $stopinfo_of_pattern{$patternkey} = \%stopinfo;
         }
         else {
-
-            \@next_places = $info_of_stoppattern{$stoppatternkey}{next_places};
-            \@places_in_effect
-              = $info_of_stoppattern{$stoppatternkey}{places_in_effect};
-            \@ensuingstops
-              = $info_of_stoppattern{$stoppatternkey}{ensuingstops};
-            \@is_at_places
-              = $info_of_stoppattern{$stoppatternkey}{is_at_places};
-            $destination_place
-              = $info_of_stoppattern{$stoppatternkey}{destination_place};
-
+            \%stopinfo = $stopinfo_of_pattern{$patternkey};
         }
 
         for my $stop_idx ( 0 .. $#stoptimes ) {
-            next unless $has_a_time[$stop_idx];
+            next
+              if $stopinfo{skip_stop}[$stop_idx]
+              or not $has_a_time[$stop_idx];
 
             my $stoppattern = Octium::Sked::StopTrip::StopPattern->new(
-                destination_place => $destination_place,
-                place_in_effect   => $places_in_effect[$stop_idx],
-                is_at_place       => $is_at_places[$stop_idx],
-                next_place        => $next_places[$stop_idx],
-                ensuingstops      => $ensuingstops[$stop_idx],
+                destination_place => $stopinfo{destination_place},
+                place_in_effect   => $stopinfo{places_in_effect}[$stop_idx],
+                is_at_place       => $stopinfo{is_at_places}[$stop_idx],
+                next_place        => $stopinfo{next_places}[$stop_idx],
+                ensuingstops      => $stopinfo{ensuingstops}[$stop_idx],
             );
 
             my %stoptripspec = (
