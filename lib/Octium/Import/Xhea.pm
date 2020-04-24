@@ -395,7 +395,7 @@ sub _get_trip_notes_from_event_date {
                 $ons_and_offs_of{$event}{except_days}{$dow}
                   = [ $except_set->as_list ];
             }
-            else {
+            elsif ($on_count) {
                 push $ons_and_offs_of{$event}{individual_dates}->@*,
                   @dts_of_dow;
             }
@@ -407,6 +407,10 @@ sub _get_trip_notes_from_event_date {
     my $edumpfh = $signup->open_write('events.dump');
     foreach my $event ( sort keys %ons_and_offs_of ) {
         say $edumpfh "\n$event";
+        if ( 0 == scalar keys $ons_and_offs_of{$event}->%* ) {
+            say $edumpfh "Every day off";
+            next;
+        }
         if ( $ons_and_offs_of{$event}{all_on_days} ) {
             say $edumpfh "All on days: ",
               join( " ", sort $ons_and_offs_of{$event}{all_on_days}->@* );
@@ -461,6 +465,13 @@ sub _get_trip_notes_from_event_date {
         my $cachekey = "$event:" . Actium::joinempty(@trip_operating_days);
         if ( exists $notecache{$cachekey} ) {
             $note_of_trip{$trip_number} = $notecache{$cachekey};
+            next TRIP;
+        }
+
+        if ( 0 == scalar keys $ons_and_offs_of{$event}->%* ) {
+            my $fullnote = "N Will not operate during this service period.";
+            $note_of_trip{$trip_number} = $fullnote;
+            $notecache{$cachekey}       = $fullnote;
             next TRIP;
         }
 
