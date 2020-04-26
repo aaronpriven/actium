@@ -736,144 +736,6 @@ sub attribute_columns {
 
 }
 
-method stopskeds {
-
-    require Octium::Sked::StopSked;
-    require Octium::Sked::StopTrip;
-    require Octium::Sked::StopTrip::StopPattern;
-    require Octium::Sked::StopTrip::EnsuingStops;
-
-    my %trips_of_stop;
-
-    my @stopids    = $self->stopids;
-    my @stopplaces = $self->stopplaces;
-
-    # go through each trip and build all the sked trips
-
-    my @trips = $self->trips;
-    my %stopinfo_of_pattern;
-
-  TRIP:
-    foreach my $trip_idx ( 0 .. $#trips ) {
-        my $trip       = $trips[$trip_idx];
-        my @stoptimes  = $trip->stoptimes;
-        my @has_a_time = map { defined $_ ? 1 : 0 } @stoptimes;
-        my $patternkey = join( '', @has_a_time );
-
-        my %stopinfo;
-
-        #my ( @places_in_effect, @is_at_places, @next_places,
-        #    @ensuingstops, @skip_stop, $destination_place );
-
-        if ( not exists $stopinfo_of_pattern{$patternkey} ) {
-
-            # reverse loop gets @next_places, @ensuingstops
-
-            my $next_place = $EMPTY;
-            my ( @these_ensuingstops, %seen_stop );
-
-            for my $stop_idx ( reverse( 0 .. $#stoptimes ) ) {
-                next unless $has_a_time[$stop_idx];
-
-                # Skip stops that are duplicates.  Take the latest instance
-                # that the bus passes this stop, unless the latest instance is
-                # the very last stop. This will make sure that
-                # arrival/departure pairs always use the departure times, and
-                # also weird curling-back-on-itself loops use them, but regular
-                # loops that begin and end at the same point will use the first
-                # time, not the last one.
-
-                my $stopid = $stopids[$stop_idx];
-                if ( not exists $seen_stop{$stopid} ) {
-                    $seen_stop{$stopid}
-                      = $stop_idx == $#stoptimes ? 'SKIP' : 'LAST';
-                }
-                elsif ( $seen_stop{$stopid} eq 'LAST' ) {
-                    # seen this stop before, and it was the last stop
-                    # have it skip the last stop, and then change it so
-                    # it's seen this one
-                    $stopinfo{skip_stop}[$#stoptimes] = 1;
-                    $stopinfo{seen_stop}{$stopid} = 'SKIP';
-                }
-                else {    # ( $seen_stop{$stopid} eq 'SKIP' ) {
-                          # seen this stop before, and it was not the last stop
-                    $stopinfo{skip_stop}[$stop_idx] = 1;
-                    next;
-                }
-
-                $stopinfo{ensuingstops}[$stop_idx]
-                  = Octium::Sked::StopTrip::EnsuingStops->new(
-                    [@these_ensuingstops] );
-                $stopinfo{next_places}[$stop_idx] = $next_place;
-
-                push @these_ensuingstops, $stopids[$stop_idx];
-                $next_place = $stopplaces[$stop_idx] if $stopplaces[$stop_idx];
-            }
-
-            # forward loop gets $destination_place, @places_in_effect,
-            # @is_at_places
-
-            my $prev_place = $EMPTY;
-            for my $stop_idx ( 0 .. $#stoptimes ) {
-                next
-                  if $stopinfo{skip_stop}[$stop_idx]
-                  or not $has_a_time[$stop_idx];
-                $stopinfo{is_at_places}[$stop_idx]
-                  = ( not not $stopplaces[$stop_idx] );
-                $stopinfo{places_in_effect}[$stop_idx]
-                  = $stopplaces[$stop_idx] || $prev_place;
-                $prev_place = $stopinfo{places_in_effect}[$stop_idx];
-            }
-            $stopinfo{destination_place} = $prev_place;
-
-            $stopinfo_of_pattern{$patternkey} = \%stopinfo;
-        }
-        else {
-            \%stopinfo = $stopinfo_of_pattern{$patternkey};
-        }
-
-        for my $stop_idx ( 0 .. $#stoptimes ) {
-            next
-              if $stopinfo{skip_stop}[$stop_idx]
-              or not $has_a_time[$stop_idx];
-
-            my $stoppattern = Octium::Sked::StopTrip::StopPattern->new(
-                destination_place => $stopinfo{destination_place},
-                place_in_effect   => $stopinfo{places_in_effect}[$stop_idx],
-                is_at_place       => $stopinfo{is_at_places}[$stop_idx],
-                next_place        => $stopinfo{next_places}[$stop_idx],
-                ensuingstops      => $stopinfo{ensuingstops}[$stop_idx],
-            );
-
-            my %stoptripspec = (
-                time        => Actium::Time->from_num( $stoptimes[$stop_idx] ),
-                line        => $trip->line,
-                days        => $trip->days,
-                calendar_id => $trip->daysexceptions,
-                stoppattern => $stoppattern,
-            );
-
-            push $trips_of_stop{ $stopids[$stop_idx] }->@*,
-              Octium::Sked::StopTrip->new(%stoptripspec);
-        }
-    }
-
-    my @stopskeds;
-    foreach my $stopid ( keys %trips_of_stop ) {
-        push @stopskeds,
-          Octium::Sked::StopSked->new(
-            stopid    => $stopid,
-            linegroup => $self->linegroup,
-            dir       => $self->dir_obj,
-            days      => $self->days,
-            trips     => $trips_of_stop{$stopid},
-          );
-    }
-
-    return @stopskeds;
-
-}
-
 ####################
 #### OUTPUT METHODS
 
@@ -1008,7 +870,8 @@ method compare_to (Octium::Sked $newsked) {
 }
 
 with 'Octium::Sked::Storage::XLSX',
-  'Octium::Sked::Storage::Tabxchange', 'Octium::Skedlike';
+  'Octium::Sked::Storage::Tabxchange', 'Octium::Skedlike',
+  'Octium::Sked::StopSkedMaker';
 
 Actium::immut;
 
