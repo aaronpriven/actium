@@ -117,6 +117,7 @@ method stopskeds {
         @stoptimes  = $trip->stoptimes;
         @has_a_time = map { defined $_ ? 1 : 0 } @stoptimes;
         $patternkey = join( '', @has_a_time );
+        my $line = $trip->line;
 
         my %stopinfo;
 
@@ -144,7 +145,7 @@ method stopskeds {
                     or $stopids[$stop_idx] ne $stopids[$stop_idx_prev] )
                   or $stopinfo{skip_stop}[$stop_idx_prev];
 
-                push $trips_of_stop{ $stopids[$stop_idx_prev] }->@*,
+                push $trips_of_stop{$line}{ $stopids[$stop_idx_prev] }->@*,
                   _stoptrip(
                     stopinfo => \%stopinfo,
                     stop_idx => $stop_idx_prev,
@@ -155,7 +156,7 @@ method stopskeds {
 
             }
 
-            push $trips_of_stop{ $stopids[$stop_idx] }->@*,
+            push $trips_of_stop{$line}{ $stopids[$stop_idx] }->@*,
               _stoptrip(
                 stopinfo => \%stopinfo,
                 stop_idx => $stop_idx,
@@ -165,16 +166,22 @@ method stopskeds {
         }
     }
 
-    my @stopskeds = map {
-        Octium::Sked::StopSked->new(
-            stopid    => $_,
-            linegroup => $self->linegroup,
-            dir       => $self->dir_obj,
-            days      => $self->days,
-            trips     => $trips_of_stop{$_},
-        );
-    } ( keys %trips_of_stop );
-    return @stopskeds;
+    my @stopskeds;
+
+    foreach my $line ( keys %trips_of_stop ) {
+
+        push @stopskeds, map {
+            Octium::Sked::StopSked->new(
+                stopid => $_,
+                dir    => $self->dir_obj,
+                days   => $self->days,
+                trips  => $trips_of_stop{$line}{$_},
+            );
+        } ( keys $trips_of_stop{$line}->%* );
+
+        return @stopskeds;
+
+    }
 
 }
 
