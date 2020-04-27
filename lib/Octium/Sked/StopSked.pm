@@ -1,5 +1,5 @@
 package Octium::Sked::StopSked 0.015;
-# vimcolor: #002613
+# vimcolor: #002626
 
 use Actium 'class';
 
@@ -8,7 +8,7 @@ use Types::Standard (qw/Str ArrayRef/);
 use Actium::Types('Dir');
 use Actium::Dir;
 
-has [qw/stopid linegroup/] => (
+has [qw/stopid/] => (
     required => 1,
     is       => 'ro',
     isa      => Str,
@@ -35,14 +35,6 @@ has days => (
         sortable_days => 'as_sortable',
     },
 );
-
-method id {
-    my $id = join( '_',
-        $self->stopid,       $self->linegroup,
-        $self->dir->dircode, $self->days->daycode,
-    );
-    return $id;
-}
 
 has _trips_r => (
     required => 1,
@@ -91,7 +83,7 @@ method bundle {
         stoppatterns => \@stoppatterns,
         days         => $self->days->bundle,
         dir          => $self->dir->bundle,
-        map { $_ => $self->$_ } qw/stopid linegroup/
+        map { $_ => $self->$_ } qw/stopid/
     };
 }
 
@@ -113,24 +105,32 @@ method unbundle (HashRef $bundle ) {
 
 }
 
-#method oldbundle {
-#    my @trips = $self->trips;
-#    @trips = map { $_->bundle } @trips;
-#
-#    return {
-#        trips => \@trips,
-#        days  => $self->days->bundle,
-#        dir   => $self->dir->bundle,
-#        map { $_ => $self->$_ } qw/stopid linegroup/
-#    };
+### stuff I'm not using now, might use later
+
+#method id {
+#    my $id = join( '_',
+#        $self->stopid,       $self->_line_str,
+#        $self->dir->dircode, $self->days->daycode,
+#    );
+#    return $id;
 #}
 #
-#method oldunbundle (HashRef $bundle) {
-#    $bundle->{days} = Octium::Days->unbundle( $bundle->{days} );
-#    $bundle->{dir}  = Actium::Dir->unbundle( $bundle->{dir} );
-#    $bundle->{trips}
-#      = map { Octium::Sked::StopTrip->unbundle($_) } $bundle->{trips}->@*;
-#    return $self->new($bundle);
+#has _lines_r => (
+#    isa      => 'ArrayRef[Octium::Sked::StopTrip]',
+#    is       => 'bare',
+#    builder  => '_build_lines',
+#    init_arg => undef,
+#    traits   => ['Array'],
+#    handles  => {
+#        _lines    => 'elements',
+#        _line_str => [ join => '.' ],
+#    },
+#);
+
+#method _build_lines {
+#    return [
+#        Actium::sortbyline( Actium::uniq( map { $_->line } $self->trips ) )
+#    ];
 #}
 
 1;
@@ -177,13 +177,6 @@ All attributes are required to be passed to the constructor.
 =head2  stopid
 
 A string, the stop ID of the represented stop.
-
-=head2 linegroup
-
-A string, the line group ID of the schedule being reprented here. A
-line group is the set of lines that appear on a single schedule.
-Usually each line group has only one line, but for example, lines 72
-and 72M should be in the same line group.
 
 =head2 dir
 
