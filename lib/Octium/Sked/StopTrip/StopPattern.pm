@@ -26,7 +26,7 @@ has ensuingstops => (
     is       => 'ro',
     coerce   => 1,
     required => 1,
-    handles  => ['is_final_stop'],
+    handles  => [qw/is_final_stop ensuing_str/],
 );
 
 has [qw/next_place/] => (
