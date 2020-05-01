@@ -5,6 +5,7 @@ package Octium::Sked::StopTrip::EnsuingStops 0.015;
 
 use Actium 'class';
 use Types::Standard (qw/ArrayRef Str/);
+use Types::Common::Numeric(qw/PositiveOrZeroInt/);
 
 *Moose::Object::_octium_sked_stoptrip_ensuingstops_new = \&Moose::Object::new;
 
@@ -38,6 +39,22 @@ method unbundle (Str $bundle) {
     return $obj_cache{$bundle}
       //= $self->_octium_sked_stoptrip_ensuingstops_new(
         { stopids => [ split( /$JOINER/, $bundle ) ] } );
+}
+
+my %ensuing_str_cache;
+
+method ensuingstr (PositiveOrZeroInt $threshold //= 0 ) {
+    return $ensuing_str_cache{$threshold}
+      if exists $ensuing_str_cache{$threshold};
+    return $EMPTY if $self->is_final_stop;
+
+    my @stopids = $self->stopids;
+    if ( $threshold != 0 and @stopids < $threshold ) {
+        @stopids = @stopids[ 0 .. $threshold - 1 ];
+    }
+
+    return $ensuing_str_cache{$threshold} = join( $JOINER, @stopids );
+
 }
 
 Actium::immut( constructor_name => '_octium_sked_stoptrip_ensuingstops_new' );
@@ -99,14 +116,20 @@ and returns a recreated EnsuingStops object.
 
 =head1 OBJECT METHODS
 
-=head2 $ensuingstops->stopids
+=head2 stopids
 
 The C<stopids> method returns the list of stop IDs.
 
-=head2 $ensuingstops->is_final_stop
+=head2 is_final_stop
 
 The C<is_final_stop> method indicates that the stop is the final one
 (in other words, that there are no stop IDs in the ensuingstops).
+
+=head2 ensuing_str($threshold)
+
+Returns a string which can be used to compare this set of ensuing stops
+with another set. It consists of the stop IDs of the first
+C<$threshold> ensuing stops (or all of them, if $threshold is 0 ).
 
 =head2 $ensuingstops->bundle
 
