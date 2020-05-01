@@ -3,28 +3,40 @@ package Octium::Cmd::Sked2Points 0.015;
 use Actium;
 
 use Octium::SkedCollection;
+use Octium::Sked::StopSkedCollection;
 
 sub OPTIONS {
-    return qw/actiumdb signup/;
+    return qw/signup/,
+      { spec => 'threshold=i',
+        description =>
+          'The number of ensuing stops that will be used to see if '
+          . 'schedules should be combined. If zero, then will use all '
+          . 'ensuing stops.',
+        fallback => 15,
+      },
+      { spec => 'difference_fraction=f',
+        description =>
+          'The maximum fraction of trips that can have different times '
+          . 'before schedules of the same line and different days '
+          . 'can be combined. ',
+        fallback => .15,
+      },
+      ;
 }
 
 sub START {
 
-    my $actiumdb = env->actiumdb;
-    my $signup   = env->signup;
+    my $signup = env->signup;
 
     my $skedcollection
       = Octium::SkedCollection->load_storable( collection => 'final' );
 
-    my $dbh = $actiumdb->dbh;
-    # just there to move the display forward from where it would
-    # otherwise lazily be loaded...
-
-    \my @stopskedcollections = $skedcollection->stopskeds;
-
-    @stopskedcollections = map { $_->[0] }
-      sort { $a->[1] cmp $b->[1] }
-      map { [ $_, $_->first_stopid ] } @stopskedcollections;
+    \my @stopskedcollections = $skedcollection->stopskeds(
+        threshold           => env->option('threshold'),
+        difference_fraction => env->option('difference_fraction')
+    );
+    @stopskedcollections
+      = Octium::Sked::StopSkedCollection->sorted(@stopskedcollections);
 
     my $stopskedfolder = $signup->subfolder( 'p', 'final', 'json' );
 
