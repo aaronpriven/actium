@@ -4,12 +4,13 @@ package Octium::Sked::StopTrip 0.015;
 use Actium 'class';
 use Types::Standard(qw/Str Bool Int ArrayRef Undef/);
 use Type::Utils('class_type');
-use Actium::Types (qw/Time/);
+use Actium::Types (qw/Time Dir/);
 use Octium::Types (qw/ActiumDays/);
 
 use Octium::Sked::StopTrip::EnsuingStops;
 use Octium::Days;
 use Actium::Time;
+use Actium::Dir;
 
 # KPOINTS -
 #  $time_r->{TIME},         - time
@@ -43,6 +44,16 @@ has [qw/line/] => (
     required => 1,
 );
 
+has dir => (
+    required => 1,
+    coerce   => 1,
+    is       => 'ro',
+    isa      => Dir,
+);
+
+# dir is located in StopTrip because StopSkedCollection can merge multiple
+# schedules into one, even if they have different linegroups or directions.
+
 has days => (
     required => 1,
     init_arg => 'days',
@@ -66,13 +77,20 @@ has stoppattern => (
     isa      => class_type('Octium::Sked::StopTrip::StopPattern'),
     is       => 'ro',
     required => 1,
-    handles  => ['is_final_stop'],
+    handles  => [
+        qw/
+          destination_place   ensuing_str
+          is_at_place         is_final_stop
+          next_place          place_in_effect
+          /
+    ],
 );
 
 method bundle {
     my $bundle = {
         time        => $self->time->bundle,
         days        => $self->days->bundle,
+        dir         => $self->dir->bundle,
         stoppattern => $self->stoppattern->bundle,
         map { $_ => $self->$_ } qw/line calendar_id/,
     };
@@ -80,6 +98,7 @@ method bundle {
 }
 
 method undbundle (HashRef $bundle) {
+    $bundle->{dir}  = Actium::Dir->unbundle( $bundle->{dir} );
     $bundle->{time} = Actium::Time->unbundle( $bundle->{time} );
     $bundle->{days} = Octium::Days->unbundle( $bundle->{days} );
     $bundle->{stoppattern}
@@ -138,6 +157,12 @@ an object. Required.
 
 A string representing a bus line designation. Required.
 
+=head2 dir
+
+An L<Actium::Dir|Actium::Dir> object representing the direction of
+travel for this trip. Uses coercions defined in
+L<Actium::Types|Actium::Types>. Required.
+
 =head2 place_in_effect
 
 A string representing the ID of the place (timepoint) of this stop, or
@@ -181,6 +206,12 @@ between places.
 =head2 is_final_stop
 
 Returns true if this stop is the final stop, false otherwise.
+
+=head2 ensuing_str($threshold)
+
+A string used for comparing ensuing stops on trips. Trips with
+C<$threshold> or more stops in common after this one will have the same
+string. If C<$threshold> is 0 or omitted, compares all the stops.
 
 =head1 DIAGNOSTICS
 
