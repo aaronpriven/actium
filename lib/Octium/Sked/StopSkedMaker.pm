@@ -6,7 +6,7 @@ use Actium ('role');
 my ( @has_a_time, $patternkey, @stopids, %stopinfo_of_pattern, @stopplaces,
     @stoptimes, );
 
-func _stoptrip ( :$trip, :$stop_idx, :\%stopinfo ) {
+func _stoptrip ( :$trip, :$stop_idx, :\%stopinfo , :$dir) {
 
     my $stoppattern = Octium::Sked::StopTrip::StopPattern->new(
         destination_place => $stopinfo{destination_place},
@@ -20,6 +20,7 @@ func _stoptrip ( :$trip, :$stop_idx, :\%stopinfo ) {
         time        => Actium::Time->from_num( $trip->stoptime($stop_idx) ),
         line        => $trip->line,
         days        => $trip->days,
+        dir         => $dir,
         calendar_id => $trip->daysexceptions,
         stoppattern => $stoppattern,
     );
@@ -150,6 +151,7 @@ method stopskeds {
                     stopinfo => \%stopinfo,
                     stop_idx => $stop_idx_prev,
                     trip     => $trip,
+                    dir      => $self->dir_obj,
                   );
 
                 next;
@@ -161,6 +163,7 @@ method stopskeds {
                 stopinfo => \%stopinfo,
                 stop_idx => $stop_idx,
                 trip     => $trip,
+                dir      => $self->dir_obj,
               );
 
         }
@@ -173,7 +176,6 @@ method stopskeds {
         push @stopskeds, map {
             Octium::Sked::StopSked->new(
                 stopid => $_,
-                dir    => $self->dir_obj,
                 days   => $self->days,
                 trips  => $trips_of_stop{$line}{$_},
             );
