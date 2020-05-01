@@ -232,7 +232,12 @@ method finalize_skeds (
 
 }
 
-method stopskeds {
+method stopskeds (
+      :_skip_combining($skip_combining),
+      PositiveOrZeroInt :$threshold,
+      Num :$difference_fraction,
+   ) {
+
     require Octium::Sked::StopSkedCollection;
     my @stopskeds;
 
@@ -257,6 +262,18 @@ method stopskeds {
     } keys %stopskeds_of_stopid;
 
     $collectcry->done;
+
+    unless ($skip_combining) {
+        my $combinecry = env->cry("Combining schedules inside collections");
+        @stopskedcollections = map {
+            $_->combine(
+                threshold           => $threshold,
+                difference_fraction => $difference_fraction,
+            )
+        } @stopskedcollections;
+        $combinecry->done;
+    }
+
     return \@stopskedcollections;
 }
 
