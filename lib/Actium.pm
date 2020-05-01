@@ -9,7 +9,7 @@ use Carp;                                 ### DEP ###
 use Const::Fast;                          ### DEP ###
 use Module::Runtime('require_module');    ### DEP ###
 use Import::Into;                         ### DEP ###
-use Kavorka (qw/func multi/);             ### DEP ###
+use Kavorka (qw/func/);                   ### DEP ###
 
 use experimental ('refaliasing');
 
@@ -186,10 +186,13 @@ parameter is specified when loading the English module.
 
 L<Kavorka|Kavorka>
 
-All modules will have the "multi" keyword imported, as well as the
-function keyword -- imported as "func" rather than Kavorka's default
-"fun." Classes and roles will also have the "method" keyword and all
-method modifiers ("after", "around", "before", "augment", "override") .
+All modules will have the function keyword imported, as "func" rather
+than Kavorka's default "fun." Classes and roles will also have the
+following keywords imported:
+
+   after 
+   around augment before 
+   classmethod sub METHOD0 override
 
 (The reason for importing 'fun' as 'func' is twofold: first, Eclipse
 supports the Method::Signatures keywords "func" and "method". Second, I
@@ -293,10 +296,11 @@ our @EXPORT = qw/$EMPTY $CRLF $SPACE env/;
             _do_import 'Actium::MooseX::BuiltIsRo';
             _do_import 'MooseX::StrictConstructor';
             _do_import 'MooseX::SemiAffordanceAccessor';
-            _do_import 'Kavorka', qw/func multi method -allmodifiers/;
+            _do_import 'Kavorka',
+              qw/func method classmethod objectmethod -allmodifiers/;
         }
         else {
-            _do_import( 'Kavorka', qw/func multi/ );
+            _do_import( 'Kavorka', qw/func/ );
         }
 
         # MooseX::XSAccessor ### DEP ###
