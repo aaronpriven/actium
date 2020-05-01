@@ -1,28 +1,16 @@
 package Octium::Sked::StopSked 0.015;
-# vimcolor: #002626
+# vimcolor: #002020
 
 use Actium 'class';
 
 use Octium::Types   (qw/ActiumDays/);
 use Types::Standard (qw/Str ArrayRef/);
-use Actium::Types('Dir');
-use Actium::Dir;
+use List::MoreUtils('nsort_by');
 
 has [qw/stopid/] => (
     required => 1,
     is       => 'ro',
     isa      => Str,
-);
-
-has dir => (
-    required => 1,
-    coerce   => 1,
-    is       => 'ro',
-    isa      => Dir,
-    handles  => {
-        preserve_dir_order => 'preserve_order',
-        to_text            => 'as_to_text',
-    },
 );
 
 has days => (
@@ -39,11 +27,21 @@ has days => (
 has _trips_r => (
     required => 1,
     isa      => 'ArrayRef[Octium::Sked::StopTrip]',
-    is       => 'bare',
+    is       => 'ro',
     init_arg => 'trips',
     traits   => ['Array'],
-    handles  => { 'trips' => 'elements' },
+    trigger  => \&_trips_r_trigger,
+    handles  => {
+        trips      => 'elements',
+        trip_count => 'count',
+    },
 );
+
+method _trips_r_trigger {
+    my $trips_r      = shift;
+    my @sorted_trips = nsort_by { $_->time->timenum } $trips_r->@*;
+    return \@sorted_trips;
+}
 
 has is_final_stop => (
     lazy     => 1,
@@ -51,6 +49,32 @@ has is_final_stop => (
     init_arg => undef,
     is       => 'ro',
 );
+
+has _merge_comparison_strings_r => (
+    lazy     => 1,
+    bulder   => 1,
+    init_arg => undef,
+    traits   => ['Array'],
+    is       => 'ro',
+    handles  => { merge_comparison_strings => 'elements', },
+);
+
+method _build_merge_comparison_strings_r {
+
+    my @merge_comparison_strings;
+    for my $trip ( $self->trips ) {
+        my @trip_components = (
+            $trip->line,
+            $trip->dir->dircode,
+            $trip->time->timenum,
+            $trip->is_at_place ? $trip->place_in_effect : $EMPTY,
+            $trip->destination_place,
+        );
+        push @merge_comparison_strings, join( "\N{US}", @trip_components );
+    }
+
+    return \@merge_comparison_strings;
+}
 
 method _build_is_final_stop {
     return Actium::all { $_->is_final_stop } $self->trips;
@@ -82,12 +106,11 @@ method bundle {
         trips        => \@tripstructs,
         stoppatterns => \@stoppatterns,
         days         => $self->days->bundle,
-        dir          => $self->dir->bundle,
         map { $_ => $self->$_ } qw/stopid/
     };
 }
 
-method unbundle (HashRef $bundle ) {
+classmethod unbundle (HashRef $bundle ) {
     \my @stoppatterns = delete $bundle->{stoppatterns};
     @stoppatterns
       = map { Octium::Sked::StopTrip::StopPattern->unbundle($_) } @stoppatterns;
@@ -99,9 +122,104 @@ method unbundle (HashRef $bundle ) {
     # replace index with stoppattern
 
     $bundle->{days} = Octium::Days->unbundle( $bundle->{days} );
-    $bundle->{dir}  = Actium::Dir->unbundle( $bundle->{dir} );
 
-    return $self->new($bundle);
+    return $class->new($bundle);
+
+}
+
+method ensuing_count (PositiveOrZeroInt $threshold //=0 ) {
+
+    my %ensuing_count;
+    foreach my $trip ( $self->trips ) {
+        my $ensuing_str = $trip->ensuing_str($threshold);
+        $ensuing_count{$ensuing_str}++;
+    }
+
+    return \%ensuing_count;
+
+}
+
+classmethod merge ($leftsked , $rightsked) {
+    # signals an invalid merge with empty return
+
+    my @ltrips = $leftsked->trips;
+    my @rtrips = $rightsked->trips;
+    @ltrips = [ map { [ $_, $_->time->timenum ] } $leftsked->trips ];
+    @rtrips = [ map { [ $_, $_->time->timenum ] } $rightsked->trips ];
+    my @newtrips;
+
+    while ( @ltrips and @rtrips ) {
+        \my @l = shift @ltrips;
+        \my @r = shift @rtrips;
+        my ( $ltrip, $ltime ) = @l;
+        my ( $rtrip, $rtime ) = @r;
+
+        if ( $ltime < $rtime ) {
+            push @newtrips, $ltrip;
+            unshift @rtrips, \@r;
+        }
+        elsif ( $rtime < $ltime ) {
+            push @newtrips, $rtrip;
+            unshift @rtrips, \@r;
+        }
+        else {    # times are equal - merge if possible
+            return
+                 if $ltrip->line ne $rtrip->line
+              or $ltrip->calendar_id ne $rtrip->calendar_id
+              or $ltrip->stoppattern != $rtrip->stoppattern
+              or $ltrip->dir->dircode ne $rtrip->dir->dircode;
+            # invalid merger. I don't want to display times like
+            #     7:15
+            #     7:15¹
+            #  or
+            #     8:00¹
+            #     8:00²
+            #  It's too confusing and complicated.
+            #  And I don't want to write code that deals with all the
+            #  zillions of possible exceptions that would be needed:
+            #
+            #     ¹ - On weekdays, goes to 14th & Broadway, except on
+            #  weekends and on 7/4 and 9/3, when it goes to Lake Merritt
+            #  BART.
+            #
+            # So return blank, and don't merge these schedules at all.
+            #
+            # Note that stoppattern is reference equality, and depends on
+            # stoppattern being a flyweight object.
+
+            my %newtripspec = map { $_, $ltrip->$_ }
+              qw/time line dir calendar_id stoppattern/;
+            $newtripspec{days}
+              = Octium::Days->union( $ltrip->days, $rtrip->days );
+
+            push @newtrips, $class->new(%newtripspec);
+
+        }
+
+    }
+
+    push @newtrips, $_->[0] foreach ( @ltrips, @rtrips );
+
+    return @newtrips;
+
+}
+
+classmethod combine (@stopskeds) {
+
+    my $days = Octium::Days->union( map { $_->days } @stopskeds );
+
+    my @stopids = map { $_->stopid } @stopskeds;
+    unless ( Actium::all_eq(@stopids) ) {
+        croak "Can't merge schedules where stop IDs are different";
+    }
+
+    my @trips = map { $_->trips } @stopskeds;
+
+    return $class->new(
+        trips  => \@trips,
+        stopid => $stopids[0],
+        days   => $days
+    );
 
 }
 
@@ -165,24 +283,30 @@ single stop.  It is created using Moose.
 
 The method inherits its constructor from Moose.
 
-=head2 unbundle($string)
+=head2 unbundle
+
+ $stopsked = Octium::Sked::StopSked->unbundle($string);
 
 The C<unbundle> method takes a string created by the C<bundle> method
 and returns a recreated object.
+
+=head2 merge 
+
+ $merged = Octium::Sked::StopSked->merge(@stopskeds);
+
+The C<merge> method takes two stop schedule objects and merges them
+into a single object, with a combined set of trips.
+
+The schedules must all be associated with the same stop ID.  The days
+are set to be a union of all the associated schedules' days.
 
 =head1 ATTRIBUTES
 
 All attributes are required to be passed to the constructor.
 
-=head2  stopid
+=head2 stopid
 
 A string, the stop ID of the represented stop.
-
-=head2 dir
-
-An L<Actium::Dir|Actium::Dir> object representing the direction of
-travel for this schedule. Uses coercions defined in
-L<Actium::Types|Actium::Types>.
 
 =head2 days
 
@@ -209,10 +333,27 @@ true if it is the final stop of I<every> trip, not just some trips.)
 This returns a string which, when passed to the C<unbundle> class
 method, will recreate the object.
 
+=head2 ensuing_count ($threshold)
+
+Returns a hash reference. The key is a string, the result of
+L<C<ensuing_str> in
+Octium::Sked::StopTrip::EnsuingStops|Octium::Sked::StopTrip::EnsuingStops/ensuing_str>.
+All trips with the same ensuing stops (up to $threshold, or all of them
+if $threshold is omitted or 0) will have the same string.  The values
+are the counts, the number of trips which will see those ensuing stops.
+
 =head1 DIAGNOSTICS
 
-None specific to this class, but see L<Actium|Actium> and
-L<Moose|Moose>.
+=over
+
+=item Can't merge schedules where stop IDs are different
+
+The C<merge> method received schedules that didn't share a stop ID.
+Merged schedules must share a stop ID.
+
+=back
+
+See alaso L<Actium|Actium> and L<Moose|Moose>.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
