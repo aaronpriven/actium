@@ -268,7 +268,7 @@ method stopskeds (
     unless ($skip_combining) {
         my $combinecry = env->cry("Combining schedules inside collections");
         @stopskedcollections = map {
-            $_->combine(
+            $_->combined(
                 threshold           => $threshold,
                 difference_fraction => $difference_fraction,
             )
