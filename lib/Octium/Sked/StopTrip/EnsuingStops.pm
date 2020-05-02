@@ -43,7 +43,7 @@ method unbundle (Str $bundle) {
 
 my %ensuing_str_cache;
 
-method ensuingstr (PositiveOrZeroInt $threshold //= 0 ) {
+method ensuing_str (PositiveOrZeroInt $threshold //= 0 ) {
     return $ensuing_str_cache{$threshold}
       if exists $ensuing_str_cache{$threshold};
     return $EMPTY if $self->is_final_stop;
