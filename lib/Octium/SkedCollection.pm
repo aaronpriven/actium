@@ -9,6 +9,8 @@ use Octium::Sorting::Skeds ('skedsort');
 
 use Octium::Storage::Excel;
 use Params::Validate;
+use Types::Standard('Num');
+use Types::Common::Numeric('PositiveOrZeroInt');
 
 const my $PHYLUM => 's';
 

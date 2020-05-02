@@ -52,7 +52,7 @@ has is_final_stop => (
 
 has _merge_comparison_strings_r => (
     lazy     => 1,
-    bulder   => 1,
+    builder  => 1,
     init_arg => undef,
     traits   => ['Array'],
     is       => 'ro',
