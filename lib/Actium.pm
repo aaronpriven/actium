@@ -675,8 +675,11 @@ It is mainly useful as part of a longer sort block:
 
 =cut
 
+my %linekey_cache;
+
 sub byline ($$) {    ## no critic ( Prototypes )
-    my ( $aa, $bb ) = linekeys(@_);
+    my $aa = $linekey_cache{ $_[0] } //= linekeys( $_[0] );
+    my $bb = $linekey_cache{ $_[1] } //= linekeys( $_[1] );
     return $aa cmp $bb;
 }
 
@@ -688,38 +691,51 @@ use the values for sorting in another program, or what have you.
 
 =cut
 
-func linekeys (Str @lines) {
+#func linekeys (Str @lines) {
+func linekeys (@lines) {
 
     my @keys;
     foreach my $line (@lines) {
+        if ( $linekey_cache{$line} ) {
+            push @keys, $linekey_cache{$line};
+        }
+        else {
 
-        # this is derived from Sort::Key::Natural
+            # this is derived from Sort::Key::Natural
 
-        my @parts = $line =~ /\d+|[[:alpha:]]+/gx;
+            my @parts = $line =~ /\d+|[[:alpha:]]+/gx;
 
-        # @parts is $line, divided into digit parts or alphanumeric parts
-        # e.g.,
-        #   $line      @parts
-        #   A          ( A )
-        #   72         ( 72 )
-        #   72M        ( 72 , M )
-        #   MA1        ( MA , 1 )
-        #   A11A        ( A  , 11 , A )
+            # @parts is $line, divided into digit parts or alphanumeric parts
+            # e.g.,
+            #   $line      @parts
+            #   A          ( A )
+            #   72         ( 72 )
+            #   72M        ( 72 , M )
+            #   MA1        ( MA , 1 )
+            #   A11A        ( A  , 11 , A )
 
-        for (@parts) {
+            for (@parts) {
 
-            if (m/ \A 0+ \z/sx) {    # special case: if it's zero
-                $_ = '10';
-            }
-            elsif (m/\A\d/sx) {      # otherwise, for digit parts,
+                if (m/\A\d/sx) {    # for digit parts,
 
-                s/ \A 0+ //sx;       # remove leading zeroes
+                    s/ \A 0+ //sx;    # remove leading zeroes
 
-                my $len       = length($_);
-                my $nines     = int( $len / 9 );    ## no critic (MagicNumbers)
-                my $remainder = $len % 9;           ## no critic (MagicNumbers)
-
-                $_ = ( '9' x $nines ) . $remainder . $_;
+                    if ( $_ eq '' ) {
+                        $_ = '10';
+                    }
+                    else {
+                        my $len = length($_);
+                        if ( $len < 10 ) {
+                            $_ = $len . $_;
+                        }
+                        else {
+                            my $nines
+                              = int( $len / 9 );    ## no critic (MagicNumbers)
+                            my $remainder
+                              = $len % 9;           ## no critic (MagicNumbers)
+                            $_ = ( '9' x $nines ) . $remainder . $_;
+                        }
+                    }
 
             # That adds a string representing the length of the number
             # to the front of the part.
@@ -729,20 +745,22 @@ func linekeys (Str @lines) {
             # added, an 11-digit number will have "91" added, an 18-digit number
             # will have "990", etc.
 
-                # This ends up sorting, using the 'cmp' operator,
-                # the same as a numeric comparison for the numeric parts,
-                # while continuing to have a string comparison for the
-                # non-numeric parts.
+                    # This ends up sorting, using the 'cmp' operator,
+                    # the same as a numeric comparison for the numeric parts,
+                    # while continuing to have a string comparison for the
+                    # non-numeric parts.
+
+                }
+                else {
+                    # alphabetic parts
+                    $_ = uc($_);
+                }
 
             }
-            else {
-                # alphabetic parts
-                $_ = uc($_);
-            }
+
+            push @keys, $linekey_cache{$line} = join( "\0", @parts );
 
         }
-
-        push @keys, join( "\0", @parts );
 
     }
 
@@ -763,9 +781,13 @@ will fall back on a standard perl "cmp" sort.)
 
 =cut
 
-func sortbyline (Str @lines) {
-    my @vals = sort { byline( $a, $b ) or $a cmp $b } @_;
+func sortbyline (@lines) {
+
+    my @vals = map { $_->[0] }
+      sort { $a->[1] cmp $b->[1] or $a->[0] cmp $b->[0] }
+      map { [ $_, $linekey_cache{$_} //= linekeys($_) ] } @lines;
     return @vals;
+
 }
 
 =head3 Other List Functions
