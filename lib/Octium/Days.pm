@@ -691,7 +691,7 @@ remain the same across versions of Octium::Days. The purpose of this is
 to allow a single string to contain day information without requiring
 it to have all the object overhead.
 
-=item B<< Octium::Days->union(I<days> , ... >>
+=item B<< Octium::Days->union(I<days> , ... >>)
 
 Another constructor. It takes one or more Octium::Days objects and 
 returns a new object representing the union of those objects. For
