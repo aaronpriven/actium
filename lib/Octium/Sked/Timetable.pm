@@ -797,6 +797,8 @@ sub as_public_json {
 
 with 'Octium::Skedlike';
 
+Actium::immut;
+
 1;
 
 __END__
