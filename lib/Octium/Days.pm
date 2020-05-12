@@ -92,7 +92,10 @@ sub _build_as_string {
     return $self->daycode . q{-} . $self->schooldaycode;
 }
 
-method bundle { $self->as_string }
+{
+    no warnings('once');
+    *bundle = \&as_string;
+}
 
 method unbundle (Str $bundle) { $self->instance_from_string($bundle) }
 
