@@ -4,7 +4,7 @@ package Octium::Sked::StopTrip::StopPattern 0.015;
 # Pattern information of a stop in a StopTrip
 
 use Actium 'class';
-use Types::Standard (qw/ArrayRef Str Bool Undef/);
+use Types::Standard (qw/ArrayRef Str Bool Undef HashRef/);
 use Type::Utils('class_type');
 
 const my $CONSTRUCTOR => '_octium_sked_stoptrip_stoppattern_new';
@@ -48,6 +48,25 @@ has is_at_place => (
     default => 0,
 );
 
+has bundle => (
+    isa      => HashRef,
+    is       => 'ro',
+    lazy     => 1,
+    init_arg => undef,
+    builder  => '_build_bundle',
+);
+
+method _build_bundle {
+
+    my $ensuing_bundle = $self->ensuingstops->bundle;
+    my $bundle         = {
+        ensuingstops => $ensuing_bundle,
+        map { $_ => $self->$_ }
+          qw/next_place place_in_effect destination_place is_at_place/,
+    };
+    return $bundle;
+}
+
 const my $JOINER => $SPACE;
 
 my %obj_cache;
@@ -62,15 +81,6 @@ override new {
     my $params = $self->BUILDARGS(@_);
     my $key    = $cachekey_cr->($params);
     return $obj_cache{$key} //= $self->$CONSTRUCTOR(@_);
-}
-
-method bundle {
-    my $bundle = {
-        ensuingstops => $self->ensuingstops->bundle,
-        map { $_ => $self->$_ }
-          qw/next_place place_in_effect destination_place is_at_place/,
-    };
-    return $bundle;
 }
 
 method undbundle (HashRef $bundle) {

@@ -1,17 +1,30 @@
 package Octium::Sked::StopSkedCollection 0.015;
 # vimcolor: #00261C
-
+#
 use Actium 'class';
 use Actium::Types('Folder');
 use Types::Common::Numeric('PositiveOrZeroInt');
-use List::MoreUtils('nsort_by');
+use Types::Standard(qw/Num ArrayRef InstanceOf/);
+use Type::Utils('class_type');
+use List::MoreUtils('sort_by');
 use List::Compare;
+use Octium::Sked::StopSked;
+
+my $SKEDCLASS;
+
+BEGIN {
+    # assignment to be in a begin block so it can be seen by Kavorka
+    # but the "my" can't be in the block, or it's in the block's scope
+    # and nothing else can see it
+    const $SKEDCLASS => Octium::Sked::StopSked::;
+}
 
 has _stopskeds_r => (
     traits   => ['Array'],
     is       => 'bare',
+    writer   => '_set_stopskeds_r',
     init_arg => 'stopskeds',
-    isa      => 'ArrayRef[Octium::Sked::StopSked]',
+    isa      => ArrayRef [ InstanceOf [$SKEDCLASS] ],
     required => 1,
     handles  => { stopskeds => 'elements', },
 );
@@ -23,10 +36,31 @@ has _stopids_display => (
     builder  => 1,
 );
 
+method BUILD {
+    my @stopskeds    = $self->stopskeds;
+    my @sorted_skeds = ss_sort(@stopskeds);
+    $self->_set_stopskeds_r( \@sorted_skeds );
+}
+
+func ss_sort ( (class_type $SKEDCLASS )  @stopskeds) {
+
+    @stopskeds = map { $_->[0] }
+      sort { $a->[1] cmp $b->[1] or $a->[2] cmp $b->[2] or $a->[3] cmp $b->[3] }
+      map {
+        [   $_,                            Actium::linekeys( $_->_line_str ),
+            $_->trip(0)->dir->as_sortable, $_->days->as_sortable,
+        ]
+      } @stopskeds;
+    return @stopskeds;
+
+}
+
 method _build_stopids_display {
     my @stopids = Actium::uniq( sort map { $_->stopid } $self->stopskeds );
     return join( '.', @stopids );
 }
+
+### STORING AND RETREIVING ###
 
 method store_dumped (Folder $folder does coerce) {
     my $stopids = $self->_stopids_display;
@@ -51,10 +85,82 @@ method bundle {
     return [ map { $_->bundle } $self->stopskeds ];
 }
 
+method unbundle ($class: ArrayRef $bundle ) {
+    my $stopskeds_r = map { $_->unbundle } $bundle->@*;
+    return $class->new( stopskeds => $stopskeds_r );
+}
+
+method store_kpoint (Folder $folder does coerce) {
+    my $stopids = $self->_stopids_display;
+    env->crier->over($stopids);
+    my $subfolder
+      = $folder->ensure_subfolder( substr( $stopids, 0, 3 ) . 'xx' );
+    my $file = $subfolder->file( $stopids . '.txt' );
+    $file->spew_text( $self->kpoint );
+}
+
+method kpoint {
+
+    my @stopskeds = $self->_stopskeds_except_final;
+    @stopskeds = grep {
+        Actium::none { $_ eq '399' or $_ =~ /6\d\d/ } $_->lines;
+    } @stopskeds;
+    my @kpoint_lines = map { $_->kpoint } @stopskeds;
+    return ( join( "\n", @kpoint_lines ) ) . "\n";
+
+}
+
+method _stopskeds_except_final {
+
+    my @stopskeds = $self->stopskeds;
+
+    # filter out last stops that have another line
+    return @stopskeds
+      unless grep { $_->is_final_stop } @stopskeds;
+
+    my @filtered;
+
+    my ( @finals, %is_continuing );
+    foreach my $sked (@stopskeds) {
+        if ( $sked->is_final_stop or $sked->is_dropoff_only ) {
+            push @finals, $sked;
+        }
+        else {
+            push @filtered, $sked;
+            $is_continuing{$_} = 1 foreach $sked->lines;
+        }
+    }
+
+    foreach my $sked (@finals) {
+        # if any of the lines here are not listed somewhere else, keep the
+        # final one. So if we have 38/39 last stop, and 38 is listed somewhere
+        # else but 39 isn't, keep it.
+
+        push @filtered, $sked
+          if ( Actium::any { not $is_continuing{$_} } $sked->lines );
+    }
+
+    return @filtered;
+
+}
+
 ##### COMBINE SIMILAR SCHEDULES #####
 
 func _combine_skeds_with_same_ensuing_stops ( :$threshold , :\@stopskeds) {
     return @stopskeds if @stopskeds == 1;
+
+    my @ss_notfinal = @stopskeds;
+
+    # don't combine anything if it just has final stops
+    my @final_stop_skeds;
+    for my $i ( reverse 0 .. $#ss_notfinal ) {
+        if ( $ss_notfinal[$i]->is_final_stop ) {
+            push @final_stop_skeds, splice( @ss_notfinal, $i, 1 );
+        }
+    }
+
+    return @stopskeds if @ss_notfinal <= 1;
+
     my $ss_class = Actium::blessed( $stopskeds[0] );
 
     # groups, here, refers to groups of schedules that
@@ -63,13 +169,14 @@ func _combine_skeds_with_same_ensuing_stops ( :$threshold , :\@stopskeds) {
 
     # go through each stopsked
   STOPSKED:
-    foreach my $ss_idx ( 0 .. $#stopskeds ) {
-        my $stopsked = $stopskeds[$ss_idx];
+    foreach my $ss_idx ( 0 .. $#ss_notfinal ) {
+        my $stopsked = $ss_notfinal[$ss_idx];
 
         \my %num_trips = $stopsked->ensuing_count($threshold);
         #     %num_trips : ensuing string as keys
         #     and the quantity of trips in this stopsked as value
         #     It is used for determining the %ensuing_min
+        #
 
         # go through each set of ensuing stops of this stopsked
         foreach my $ensuing_str ( keys %num_trips ) {
@@ -147,15 +254,16 @@ func _combine_skeds_with_same_ensuing_stops ( :$threshold , :\@stopskeds) {
         next ENSURING_COMBINE unless @stopsked_idxs > 1;
 
         # combine the skeds
-        push @combined, $ss_class->combine( @stopskeds[@stopsked_idxs] );
+        push @combined, $ss_class->combine( @ss_notfinal[@stopsked_idxs] );
 
-        # mark stopskeds that have been combined
+        # mark ss_notfinal that have been combined
         $has_combined[$_] = 1 foreach @stopsked_idxs;
 
     }
 
-    my @non_combined_idxs = grep { !$has_combined[$_] } ( 0 .. $#stopskeds );
-    return ( @combined, @stopskeds[@non_combined_idxs] );
+    my @non_combined_idxs = grep { !$has_combined[$_] } ( 0 .. $#ss_notfinal );
+
+    return ( @combined, @ss_notfinal[@non_combined_idxs], @final_stop_skeds );
 
 }
 
@@ -168,8 +276,8 @@ func _fraction_different ($left_sked, $right_sked) {
             unsorted => 1,
         }
     );
-    my $num_same      = scalar( $comparator->intersection );
-    my $num_different = scalar( $comparator->symdiff );
+    my $num_same      = scalar( $comparator->get_intersection );
+    my $num_different = scalar( $comparator->get_symdiff );
     return $num_different / ( $num_same + $num_different );
 }
 
@@ -180,7 +288,7 @@ func _merge_skeds_varying_only_by_days (
     my $ss_class = Actium::blessed( $stopskeds[0] );
 
     my @to_return;
-    my @queue = reverse nsort_by { $_->days->as_sortable } @stopskeds;
+    my @queue = reverse sort_by { $_->days->as_sortable } @stopskeds;
 
   OUTER:
     while ( @queue > 1 ) {
@@ -213,7 +321,7 @@ func _merge_skeds_varying_only_by_days (
 
 }
 
-method combined (PositiveOrZeroInt $threshold , Num :$difference_fraction) {
+method combined (PositiveOrZeroInt :$threshold , Num :$difference_fraction) {
     # Create a new collection, with new schedules.
     #
     # * First, combine schedules of different lines, of the same days, with the
@@ -236,6 +344,8 @@ method combined (PositiveOrZeroInt $threshold , Num :$difference_fraction) {
         )
     } keys %stopskeds_of;
 
+    @combined = ss_sort(@combined);
+
     @combined = _merge_skeds_varying_only_by_days(
         difference_fraction => $difference_fraction,
         stopskeds           => \@combined
@@ -253,11 +363,6 @@ method sorted (Str $class: Octium::Sked::StopSkedCollection @collections ) {
       sort { $a->[1] cmp $b->[1] }
       map { [ $_, $_->_stopids_display ] } @collections;
     return @collections;
-}
-
-method unbundle ($class: ArrayRef $bundle ) {
-    my $stopskeds_r = map { $_->unbundle } $bundle->@*;
-    return $class->new( stopskeds => $stopskeds_r );
 }
 
 # don't need these now, but I might later
@@ -300,6 +405,8 @@ method unbundle ($class: ArrayRef $bundle ) {
 #    return () if not $self->_has_stopskeds_of_stopid;
 #    return $self->_stopskeds_of_stopid_r($stopid)->@*;
 #}
+
+Actium::immut;
 
 1;
 

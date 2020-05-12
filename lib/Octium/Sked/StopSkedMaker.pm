@@ -71,7 +71,7 @@ func _make_stoppattern {
           = Octium::Sked::StopTrip::EnsuingStops->new( [@these_ensuingstops] );
         $stopinfo{next_places}[$stop_idx] = $next_place;
 
-        push @these_ensuingstops, $stopids[$stop_idx];
+        unshift @these_ensuingstops, $stopids[$stop_idx];
         $next_place = $stopplaces[$stop_idx] if $stopplaces[$stop_idx];
     }
 
@@ -181,9 +181,8 @@ method stopskeds {
             );
         } ( keys $trips_of_stop{$line}->%* );
 
-        return @stopskeds;
-
     }
+    return @stopskeds;
 
 }
 

@@ -3,9 +3,13 @@ package Octium::Sked::StopSked 0.015;
 
 use Actium 'class';
 
-use Octium::Types   (qw/ActiumDays/);
-use Types::Standard (qw/Str ArrayRef/);
-use List::MoreUtils('nsort_by');
+use Octium::Types (qw/ActiumDays/);
+use Octium::Days;
+use Types::Standard        (qw/Str ArrayRef InstanceOf/);
+use Types::Common::Numeric (qw/PositiveOrZeroInt/);
+use DDP;
+
+### ATTRIBUTES
 
 has [qw/stopid/] => (
     required => 1,
@@ -26,22 +30,16 @@ has days => (
 
 has _trips_r => (
     required => 1,
-    isa      => 'ArrayRef[Octium::Sked::StopTrip]',
-    is       => 'ro',
+    isa      => ArrayRef [ InstanceOf ['Octium::Sked::StopTrip'] ],
+    is       => 'rw',
     init_arg => 'trips',
     traits   => ['Array'],
-    trigger  => \&_trips_r_trigger,
     handles  => {
         trips      => 'elements',
         trip_count => 'count',
+        trip       => 'get',
     },
 );
-
-method _trips_r_trigger {
-    my $trips_r      = shift;
-    my @sorted_trips = nsort_by { $_->time->timenum } $trips_r->@*;
-    return \@sorted_trips;
-}
 
 has is_final_stop => (
     lazy     => 1,
@@ -49,6 +47,22 @@ has is_final_stop => (
     init_arg => undef,
     is       => 'ro',
 );
+
+method _build_is_final_stop {
+    return Actium::all { $_->is_final_stop } $self->trips;
+}
+
+has is_dropoff_only => (
+    lazy     => 1,
+    builder  => 1,
+    init_arg => undef,
+    is       => 'ro',
+);
+
+method _build_is_dropoff_only {
+    # TODO - determine which stops are dropoff-only from Actium database
+    return 0;
+}
 
 has _merge_comparison_strings_r => (
     lazy     => 1,
@@ -65,7 +79,7 @@ method _build_merge_comparison_strings_r {
     for my $trip ( $self->trips ) {
         my @trip_components = (
             $trip->line,
-            $trip->dir->dircode,
+            $trip->dir->as_sortable,
             $trip->time->timenum,
             $trip->is_at_place ? $trip->place_in_effect : $EMPTY,
             $trip->destination_place,
@@ -76,9 +90,62 @@ method _build_merge_comparison_strings_r {
     return \@merge_comparison_strings;
 }
 
-method _build_is_final_stop {
-    return Actium::all { $_->is_final_stop } $self->trips;
+has _lines_r => (
+    isa      => ArrayRef [Str],
+    builder  => '_build_lines',
+    lazy     => 1,
+    init_arg => undef,
+    traits   => ['Array'],
+    is       => 'bare',
+    handles  => {
+        lines      => 'elements',
+        _line_str  => [ join => ':' ],
+        _linegroup => [ get => 0 ],
+    },
+);
+
+method _build_lines {
+    my @lines = map { $_->line } $self->trips;
+    @lines = Actium::uniq( Actium::sortbyline @lines );
+    return \@lines;
 }
+
+has id => (
+    isa      => Str,
+    is       => 'ro',
+    builder  => '_build_id',
+    lazy     => 1,
+    init_arg => undef,
+);
+
+method _build_id {
+
+    my $stopid   = $self->stopid;
+    my @linedirs = map { [ $_->line, $_->dir ] } $self->trips;
+    my $linedirs = join( ":",
+        map  { $_->[0] . $SPACE . $_->[1] }
+        sort { $a->[2] cmp $b->[2] or $a->[3] cmp $b->[3] }
+        map  { [ $_->@*, Actium::linekeys( $_->@* ) ] } @linedirs );
+    my $daycode = $self->days->daycode;
+
+    return join( '_', $stopid, $linedirs, $daycode );
+
+}
+
+method BUILD {
+    my $trips_r      = $self->_trips_r;
+    my @sorted_trips = map { $_->[0] }
+      sort { $a->[1] <=> $b->[1] or $a->[2] cmp $b->[2] }
+      map  { [ $_, $_->time->timenum, Actium::linekeys( $_->line ) ] }
+      $trips_r->@*;
+    $self->_set_trips_r( \@sorted_trips );
+
+    # I think this is the only place I will ever need to sort stoptrips.  If I
+    # need to sort them anywhere else, it should be made a class method of
+    # Octium::Sked::StopTrip
+}
+
+### BUNDLE / UNBUNDLE ###
 
 method bundle {
     my @trips = $self->trips;
@@ -127,6 +194,41 @@ classmethod unbundle (HashRef $bundle ) {
 
 }
 
+### OBJECT METHODS
+
+method kpoint {
+
+    my $firsttrip = $self->trip(0);
+    my $linegroup = $firsttrip->line;
+    my $dir       = $firsttrip->dir->_as_hastus_order;
+    my $day       = $self->daycode;
+    $day =~ s/H//;
+
+    my @entries = ( $linegroup, $dir, $day );
+
+    if ( $self->is_final_stop ) {
+        push @entries, "#LASTSTOP", join( ':', $self->lines );
+        my @dests = map { $_->destination_place } $self->trips;
+        @dests = Actium::uniq( sort @dests );
+        push @entries, join( ':', @dests );
+    }
+    else {
+
+        for my $trip ( $self->trips ) {
+            next if $trip->calendar_id;
+            push @entries,
+              join( ':',
+                $trip->time->apbx_noseparator,
+                $trip->line,
+                $trip->destination_place,
+                $trip->is_at_place ? $trip->place_in_effect : $EMPTY,
+                $EMPTY );
+        }
+    }
+    return join( "\t", @entries );
+
+}
+
 method ensuing_count (PositiveOrZeroInt $threshold //=0 ) {
 
     my %ensuing_count;
@@ -139,18 +241,20 @@ method ensuing_count (PositiveOrZeroInt $threshold //=0 ) {
 
 }
 
+### MERGING AND COMBINING
+
+# merge - merge two schedules so that identical trips are merged into one
+
 classmethod merge ($leftsked , $rightsked) {
     # signals an invalid merge with empty return
 
-    my @ltrips = $leftsked->trips;
-    my @rtrips = $rightsked->trips;
-    @ltrips = [ map { [ $_, $_->time->timenum ] } $leftsked->trips ];
-    @rtrips = [ map { [ $_, $_->time->timenum ] } $rightsked->trips ];
+    my @ltrips = map { [ $_, $_->time->timenum ] } $leftsked->trips;
+    my @rtrips = map { [ $_, $_->time->timenum ] } $rightsked->trips;
     my @newtrips;
 
     while ( @ltrips and @rtrips ) {
-        \my @l = shift @ltrips;
-        \my @r = shift @rtrips;
+        my @l = ( shift @ltrips )->@*;
+        my @r = ( shift @rtrips )->@*;
         my ( $ltrip, $ltime ) = @l;
         my ( $rtrip, $rtime ) = @r;
 
@@ -160,14 +264,16 @@ classmethod merge ($leftsked , $rightsked) {
         }
         elsif ( $rtime < $ltime ) {
             push @newtrips, $rtrip;
-            unshift @rtrips, \@r;
+            unshift @ltrips, \@l;
         }
         else {    # times are equal - merge if possible
-            return
-                 if $ltrip->line ne $rtrip->line
-              or $ltrip->calendar_id ne $rtrip->calendar_id
-              or $ltrip->stoppattern != $rtrip->stoppattern
-              or $ltrip->dir->dircode ne $rtrip->dir->dircode;
+            if (   $ltrip->line ne $rtrip->line
+                or $ltrip->calendar_id ne $rtrip->calendar_id
+                or $ltrip->stoppattern != $rtrip->stoppattern
+                or $ltrip->dir->dircode ne $rtrip->dir->dircode )
+            {
+                return;
+            }
             # invalid merger. I don't want to display times like
             #     7:15
             #     7:15¹
@@ -190,19 +296,30 @@ classmethod merge ($leftsked , $rightsked) {
             my %newtripspec = map { $_, $ltrip->$_ }
               qw/time line dir calendar_id stoppattern/;
             $newtripspec{days}
-              = Octium::Days->union( $ltrip->days, $rtrip->days );
+              = Octium::Days->union( $rtrip->days, $ltrip->days );
 
-            push @newtrips, $class->new(%newtripspec);
+            my $tripclass = Actium::blessed $ltrip;
+            push @newtrips, $tripclass->new(%newtripspec);
 
         }
 
     }
 
+   # at least one of @ltrips or @rtrips is exhausted, but the other might not be
     push @newtrips, $_->[0] foreach ( @ltrips, @rtrips );
 
-    return @newtrips;
+    my $days = Octium::Days->union( $leftsked->days, $rightsked->days );
+
+    return $class->new(
+        trips  => \@newtrips,
+        stopid => $leftsked->stopid,
+        days   => $days,
+    );
 
 }
+
+# merge - combine two schedules so that trips from two different schedules are placed
+# in the same column. It's not assumed that any of them are the same
 
 classmethod combine (@stopskeds) {
 
@@ -223,33 +340,7 @@ classmethod combine (@stopskeds) {
 
 }
 
-### stuff I'm not using now, might use later
-
-#method id {
-#    my $id = join( '_',
-#        $self->stopid,       $self->_line_str,
-#        $self->dir->dircode, $self->days->daycode,
-#    );
-#    return $id;
-#}
-#
-#has _lines_r => (
-#    isa      => 'ArrayRef[Octium::Sked::StopTrip]',
-#    is       => 'bare',
-#    builder  => '_build_lines',
-#    init_arg => undef,
-#    traits   => ['Array'],
-#    handles  => {
-#        _lines    => 'elements',
-#        _line_str => [ join => '.' ],
-#    },
-#);
-
-#method _build_lines {
-#    return [
-#        Actium::sortbyline( Actium::uniq( map { $_->line } $self->trips ) )
-#    ];
-#}
+Actium::immut;
 
 1;
 

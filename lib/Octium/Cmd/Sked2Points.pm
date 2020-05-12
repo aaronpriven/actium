@@ -28,24 +28,43 @@ sub START {
 
     my $signup = env->signup;
 
+    my $threshold           = env->option('threshold');
+    my $difference_fraction = env->option('difference_fraction');
+
+    my $maincry = env->cry('Creating point skeds from skeds');
+    env->wail(
+        "Threshold: $threshold, Difference fraction: $difference_fraction");
+
     my $skedcollection
       = Octium::SkedCollection->load_storable( collection => 'final' );
 
     \my @stopskedcollections = $skedcollection->stopskeds(
+        # _debug            => 1,
+        #_skip_combining    => 1,
         threshold           => env->option('threshold'),
-        difference_fraction => env->option('difference_fraction')
+        difference_fraction => env->option('difference_fraction'),
     );
+
     @stopskedcollections
       = Octium::Sked::StopSkedCollection->sorted(@stopskedcollections);
 
     my $stopskedfolder = $signup->subfolder( 'p', 'final', 'json' );
+    my $kpointsfolder  = $signup->subfolder( 'p', 'final', 'kpoints' );
 
-    my $cry = env->cry('Writing stop sked collections');
+    my $cry = env->cry('Writing stop sked collections as json');
     for my $stopskedcollection (@stopskedcollections) {
         $stopskedcollection->store_bundled($stopskedfolder);
     }
     $cry->over($EMPTY);
     $cry->done;
+
+    my $kcry = env->cry('Writing stop sked collections as kpoints');
+    for my $stopskedcollection (@stopskedcollections) {
+        $stopskedcollection->store_kpoint($kpointsfolder);
+    }
+    $kcry->over($EMPTY);
+    $kcry->done;
+    $maincry->done;
 
 }
 
