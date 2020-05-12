@@ -631,6 +631,8 @@ method plain_text (:$show_line , :$show_daycode , :$show_specday ) {
 
 }
 
+Actium::immut;
+
 1;
 
 __END__
