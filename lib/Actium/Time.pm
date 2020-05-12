@@ -435,6 +435,10 @@ sub timesort {
 
 }
 
+method _data_printer {
+    return Actium::blessed($self) . '=' . $self->formatted( format => '24+' );
+}
+
 Actium::immut;
 
 1;
