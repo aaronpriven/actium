@@ -150,9 +150,9 @@ has 'bullets_r' => (
     reader   => '_bullets_r',
     writer   => '_set_bullets_r',
     coerce   => 1,
-    default => sub { [] },
-    traits  => ['Array'],
-    handles => {
+    default  => sub { [] },
+    traits   => ['Array'],
+    handles  => {
         bullets       => 'elements',
         _bullet_count => 'count',
         bullet        => 'get',
@@ -293,7 +293,7 @@ has always_show_status_above => (
                 ]
             )
         ]
-      )->plus_coercions(
+    )->plus_coercions(
         Int,
         sub {
             [ -( abs($_) ), abs($_) ];
@@ -303,7 +303,7 @@ has always_show_status_above => (
             Int->where( sub { -7 <= $_ and $_ <= 0 } ),
         ],
         sub { [ $_->[1], $_->[0] ] },
-      ),
+    ),
     coerce  => 1,
     default => undef,
 );
@@ -373,7 +373,7 @@ method _push_cry {
     Scalar::Util::weaken( ${$cries_r}[-1] );
 }
 
-method cry0 { $self->cry( @_, { importance => 0 } ) }
+method cry0  { $self->cry( @_, { importance => 0 } ) }
 method cry1 { $self->cry( @_, { importance => 1 } ) }
 method cry2 { $self->cry( @_, { importance => 2 } ) }
 method cry3 { $self->cry( @_, { importance => 3 } ) }
@@ -1007,7 +1007,7 @@ nesting level. So, something like this:
  my $crier = Actium::Env::CLI::Crier->new(filter_below_importance => 2);
  my $x = $crier->cry3("A normal cry"); # will be shown
  my $y = $crier->cry1("A trivial cry");  # will not be shown
- my $z = $crier->cry1("A generally unimportant cry");  # will be shown
+ my $z = $crier->cry2("A generally unimportant cry");  # will be shown
  $z->ok;
  $y->ok;
  $x->ok;
