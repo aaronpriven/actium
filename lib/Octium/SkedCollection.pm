@@ -235,6 +235,7 @@ method finalize_skeds (
 }
 
 method stopskeds (
+      :_debug($debug),
       :_skip_combining($skip_combining),
       PositiveOrZeroInt :$threshold,
       Num :$difference_fraction,
@@ -248,6 +249,7 @@ method stopskeds (
     my %stopskeds_of_stopid;
 
     foreach my $sked ( $self->skeds ) {
+        next if $debug and $sked->linegroup !~ /200/;
         $makecry->over( $sked->id );
         my @stopskeds = $sked->stopskeds;
         foreach my $stopsked (@stopskeds) {

@@ -106,6 +106,8 @@ method undbundle (HashRef $bundle) {
     return $self->new($bundle);
 }
 
+Actium::immut;
+
 1;
 
 __END__

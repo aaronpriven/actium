@@ -4,7 +4,7 @@ package Octium::Sked::StopTrip::EnsuingStops 0.015;
 # The subsequent stops, after the one represented by a StopTrip
 
 use Actium 'class';
-use Types::Standard (qw/ArrayRef Str/);
+use Types::Standard (qw/ArrayRef Str HashRef/);
 use Types::Common::Numeric(qw/PositiveOrZeroInt/);
 
 *Moose::Object::_octium_sked_stoptrip_ensuingstops_new = \&Moose::Object::new;
@@ -26,6 +26,11 @@ has _stopids_r => (
     },
 );
 
+method _data_printer {
+    my $class = Actium::blessed($self);
+    return "$class=" . $self->bundle;
+}
+
 my %obj_cache;
 
 override new ( Str @stopids is ref_alias) {
@@ -41,19 +46,35 @@ method unbundle (Str $bundle) {
         { stopids => [ split( /$JOINER/, $bundle ) ] } );
 }
 
-my %ensuing_str_cache;
+has _ensuing_str_r => (
+    init_arg => undef,
+    default  => sub { {} },
+    isa      => HashRef,
+    traits   => ['Hash'],
+    is       => 'bare',
+    handles  => {
+        _ensuing_str_set => 'set',
+        _ensuing_str     => 'get',
+        _has_ensuing_str => 'exists',
+    },
+);
 
 method ensuing_str (PositiveOrZeroInt $threshold //= 0 ) {
-    return $ensuing_str_cache{$threshold}
-      if exists $ensuing_str_cache{$threshold};
+
+    if ( $self->_has_ensuing_str($threshold) ) {
+        return $self->_ensuing_str($threshold);
+    }
+
     return $EMPTY if $self->is_final_stop;
 
     my @stopids = $self->stopids;
-    if ( $threshold != 0 and @stopids < $threshold ) {
-        @stopids = @stopids[ 0 .. $threshold - 1 ];
+    if ( $threshold != 0 and @stopids > $threshold ) {
+        $#stopids = $threshold - 1;
     }
 
-    return $ensuing_str_cache{$threshold} = join( $JOINER, @stopids );
+    my $ensuing_str = join( $JOINER, @stopids );
+    $self->_ensuing_str_set( $threshold, $ensuing_str );
+    return $ensuing_str;
 
 }
 
