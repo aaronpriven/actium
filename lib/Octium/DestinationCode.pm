@@ -79,6 +79,8 @@ sub _highest_code {
 
 }
 
+Actium::immut;
+
 1;
 
 __END__
