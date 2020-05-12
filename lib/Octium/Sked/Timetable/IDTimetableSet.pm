@@ -37,6 +37,8 @@ sub add_timetable {
     return;
 }
 
+__PACKAGE__->meta->make_immutable;
+
 1;
 
 __END__
