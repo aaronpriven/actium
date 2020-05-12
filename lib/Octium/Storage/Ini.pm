@@ -107,6 +107,8 @@ sub sections {
     return keys %{$ini_hoh};
 }
 
+Actium::immut;
+
 1;
 
 __END__
