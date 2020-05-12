@@ -49,27 +49,27 @@ use constant {
 ## use critic
 
 const my %DIRDATA => (
-    NB => [ 1, 1, N => 'North',     'Northbound', 'To',           0, 0 ],
-    SB => [ 2, 2, S => 'South',     'Southbound', 'To',           0, 0 ],
-    WB => [ 3, 4, W => 'West',      'Westbound',  'To',           0, 0 ],
-    EB => [ 4, 3, E => 'East',      'Eastbound',  'To',           0, 0 ],
-    IN => [ 5, 5, I => 'In',        'Inbound',    'To',           1, 0 ],
-    OU => [ 6, 6, O => 'Out',       'Outbound',   'To',           1, 0 ],
-    GO => [ 7, 7, G => 'Go',        'Going',      'To',           1, 0 ],
-    RT => [ 8, 8, R => 'Return',    'Returning',  'To',           1, 0 ],
-    CW => [ 9, 9, 8 => 'Clockwise', 'Clockwise',  'Clockwise to', 1, 1 ],
+    NB => [ 1, 0, N => 'North',     'Northbound', 'To',           0, 0 ],
+    SB => [ 2, 1, S => 'South',     'Southbound', 'To',           0, 0 ],
+    WB => [ 3, 3, W => 'West',      'Westbound',  'To',           0, 0 ],
+    EB => [ 4, 2, E => 'East',      'Eastbound',  'To',           0, 0 ],
+    IN => [ 5, 4, I => 'In',        'Inbound',    'To',           1, 0 ],
+    OU => [ 6, 5, O => 'Out',       'Outbound',   'To',           1, 0 ],
+    GO => [ 7, 6, G => 'Go',        'Going',      'To',           1, 0 ],
+    RT => [ 8, 7, R => 'Return',    'Returning',  'To',           1, 0 ],
+    CW => [ 9, 8, 8 => 'Clockwise', 'Clockwise',  'Clockwise to', 1, 1 ],
     CC => [
         10,
-        10,
+        9,
         9 => 'Counterclockwise',
         'Counterclockwise', 'Counterclockwise to', 1, 1,
     ],
-    D1 => [ 11, 11, 1 => 'Direction One', 'Direction One', 'To',        1, 0 ],
-    D2 => [ 12, 12, 2 => 'Direction Two', 'Direction Two', 'To',        1, 0 ],
-    UP => [ 13, 13, U => 'Up',            'Going up',      'To',        1, 0 ],
-    DN => [ 14, 14, D => 'Down',          'Going down',    'To',        1, 0 ],
-    A  => [ 15, 15, A => 'A Loop',        'A Loop',        'A Loop to', 1, 1 ],
-    B  => [ 16, 16, B => 'B Loop',        'B Loop',        'B Loop to', 1, 1 ],
+    D1 => [ 11, 10, 1 => 'Direction One', 'Direction One', 'To',        1, 0 ],
+    D2 => [ 12, 11, 2 => 'Direction Two', 'Direction Two', 'To',        1, 0 ],
+    UP => [ 13, 12, U => 'Up',            'Going up',      'To',        1, 0 ],
+    DN => [ 14, 13, D => 'Down',          'Going down',    'To',        1, 0 ],
+    A  => [ 15, 14, A => 'A Loop',        'A Loop',        'A Loop to', 1, 1 ],
+    B  => [ 16, 15, B => 'B Loop',        'B Loop',        'B Loop to', 1, 1 ],
 );
 
 const my %DIR_OF_ALIAS => (
@@ -319,6 +319,10 @@ Returns a one-character version of the direction.
 
 method as_onechar {
     return $DIRDATA{ $self->dircode }[ONE_CHAR];
+}
+
+method _as_hastus_order {
+    return $DIRDATA{ $self->dircode }[HASTUS_ORDER];
 }
 
 method as_sortable {
