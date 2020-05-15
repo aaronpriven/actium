@@ -1,13 +1,13 @@
 package Octium::Files::ActiumDB 0.013;
+# vimcolor: #261C00
 
 # Class holding routines related to the Actium database
 # (the FileMaker database used by Actium users), accessed
 # thorugh ODBC.
 
 use Actium ('class');
-use Octium;
 use Hash::Util();
-use Params::Validate;
+use Types::Standard(qw/HashRef ArrayRef InstanceOf Str/);
 
 const my $KEYFIELD_TABLE          => 'FMTableKeys';
 const my $KEY_OF_KEYFIELD_TABLE   => 'FMTableKey';
@@ -21,24 +21,24 @@ const my $DEFAULT_AGENCY => 'ACTransit';
 
 has 'db_name' => (
     is  => 'ro',
-    isa => 'Str',
+    isa => Str,
 );
 
 has 'db_user' => (
     is  => 'ro',
-    isa => 'Str',
+    isa => Str,
 );
 
 has 'db_password' => (
     is  => 'ro',
-    isa => 'Str',
+    isa => Str,
 );
 
 has '_keys_of_r' => (
     traits   => ['Hash'],
     is       => 'bare',
     init_arg => undef,
-    isa      => 'HashRef[Str]',
+    isa      => HashRef [Str],
     handles  => { key_of_table => 'get', },
     builder  => '_build_keys_of',
     lazy     => 1,
@@ -91,7 +91,7 @@ foreach my $item ( keys %TABLE_OF_ITEM ) {
         traits   => ['Hash'],
         is       => 'bare',
         init_arg => undef,
-        isa      => 'HashRef[HashRef]',
+        isa      => HashRef [HashRef],
         handles  => {
             "${item}_row_r"  => 'get',
             "${item}_exists" => 'exists',
@@ -135,8 +135,9 @@ sub _build_sign_cache {
 }
 
 sub _build_city_cache {
-    my $self    = shift;
-    my $cache_r = $self->_build_table_cache( 'city', qw[City SmokingText ] );
+    my $self = shift;
+    my $cache_r
+      = $self->_build_table_cache( 'city', qw[City Side SmokingText ] );
 }
 
 sub _build_stop_cache {
@@ -222,7 +223,7 @@ sub _build_line_cache {
     );
 
     return $cache_r;
-}    ## tidy end: sub _build_line_cache
+}
 
 sub _build_place_cache {
     my $self = shift;
@@ -233,6 +234,23 @@ sub _build_place_cache {
           ux_usecity_description
           )
     );
+
+}
+
+method zone_dropoffonly (:$line, :$stopid, :$destination_place) {
+    return unless $self->is_nolocals_line($line);
+    croak "No such place $destination_place"
+      unless $self->place_exists($destination_place);
+    my $dest_city = $self->place_row_r($destination_place)->{c_city};
+    croak "No city for place $destination_place"
+      unless $self->city_exists($dest_city);
+    my $dest_zone = $self->city_row_r($dest_city)->{Side};
+    croak "No stop $stopid" unless $self->stop_exists($stopid);
+    my $stop_city = $self->stop_row_r($stopid)->{c_city};
+    croak "No city for stop $stopid" unless $self->city_exists($stop_city);
+    my $stop_zone = $self->city_row_r($stop_city)->{Side};
+
+    return $stop_zone eq $dest_zone;
 
 }
 
@@ -257,7 +275,7 @@ const my @SS_COLUMNS => (
 );
 
 has cachefolder => (
-    isa     => 'Octium::Folder',
+    isa     => InstanceOf ['Octium::Folder'],
     is      => 'ro',
     builder => '_build_cachefolder',
     lazy    => 1,
@@ -273,7 +291,7 @@ has _ss_cache_r => (
     traits   => ['Hash'],
     is       => 'ro',
     init_arg => undef,
-    isa      => 'HashRef[HashRef]',
+    isa      => HashRef [HashRef],
     handles  => { ss => 'get', },
     builder  => '_build_ss_cache',
     lazy     => 1,
@@ -304,7 +322,7 @@ sub _build_ss_cache {
 
     return $cache_r;
 
-}    ## tidy end: sub _build_ss_cache
+}
 
 sub _reload_ss_cache {
     my $self = shift;
@@ -361,7 +379,7 @@ sub search_ss {
 
     return values %row_of_stopid;
 
-}    ## tidy end: sub search_ss
+}
 
 const my $MAXIMUM_VALID_DISTANCE => 1320;
 
@@ -394,7 +412,7 @@ sub ss_nearest_stop {
     return $nearest if $nearest;
     return;
 
-}    ## tidy end: sub ss_nearest_stop
+}
 
 #########################
 ### I18N METHODS
@@ -446,7 +464,7 @@ sub i18n_all_indd {
     $i18n_all_cache_r->{$i18n_id} = $all_r;
     return @{$all_r};
 
-}    ## tidy end: sub i18n_all_indd
+}
 
 sub i18n_all_indd_hash {
     my $self    = shift;
@@ -475,29 +493,21 @@ sub i18n_all_indd_hash {
     $i18n_all_cache_r->{$i18n_id} = $all_r;
     return %{$all_r};
 
-}    ## tidy end: sub i18n_all_indd_hash
+}
 
 #########################
 ### PLACE METHODS
 
-sub field_of_referenced_place {
-    my $self = shift;
+method field_of_referenced_place ( :$field, :$place) {
 
-    my %params = validate(
-        @_,
-        {   field => 1,
-            place => 1,
-        }
-    );
-
-    my $row_r = $self->place_row_r( $params{place} );
+    my $row_r = $self->place_row_r($place);
     while ( $row_r->{h_plc_reference_place}
-        and $row_r->{h_plc_reference_place} ne $params{place} )
+        and $row_r->{h_plc_reference_place} ne $place )
     {
         $row_r = $self->place_row_r( $row_r->{h_plc_reference_place} );
         return unless $row_r;
     }
-    return $row_r->{ $params{field} };
+    return $row_r->{$field};
 }
 
 sub dereference_place {
@@ -651,7 +661,7 @@ method effective_date (
     require Actium::DateTime;
     return Actium::DateTime->newest_date(@dates);
 
-}    ## tidy end: method effective_date
+}
 
 sub date_i18n_texts_hash {
     my $self    = shift;
@@ -672,7 +682,7 @@ sub date_i18n_texts_hash {
 
     return \%text_of;
 
-}    ## tidy end: sub date_i18n_texts_hash
+}
 
 #########################
 ### LINES ATTRIBUTES
@@ -681,7 +691,7 @@ has _lines_of_linegrouptype_r => (
     traits   => ['Hash'],
     is       => 'bare',
     init_arg => undef,
-    isa      => 'HashRef[ArrayRef[Str]]',
+    isa      => HashRef [ ArrayRef [Str] ],
     builder  => '_build_lines_of_linegrouptype',
     handles  => {
         _linegrouptype_exists     => 'exists',
@@ -722,7 +732,7 @@ sub _build_lines_of_linegrouptype {
 
     return \%lines_of_linegrouptype;
 
-}    ## tidy end: sub _build_lines_of_linegrouptype
+}
 
 const my $FALLBACK_COLOR => 'Grey80';
 
@@ -731,6 +741,25 @@ method color_of_line ($line) {
     \my %attribute_of_line = $self->line_row_r($line);
     return $FALLBACK_COLOR unless $attribute_of_line{Color};
     return $attribute_of_line{Color};
+}
+
+has _nolocals_line_r => (
+    traits   => ['Hash'],
+    is       => 'bare',
+    init_arg => undef,
+    isa      => HashRef,
+    handles  => { is_nolocals_line => 'get' },
+    builder  => 1,
+    lazy     => 1,
+);
+
+method _build_nolocals_line_r {
+    return env->actiumdb->all_in_column_key(
+        {   TABLE  => 'Lines',
+            COLUMN => 'NoLocalsOnTransbay',
+            WHERE  => 'NoLocalsOnTransbay = 1',
+        }
+    );
 }
 
 ##############################
@@ -745,7 +774,7 @@ has _transithubs_of_city_r => (
     traits   => ['Hash'],
     is       => 'bare',
     init_arg => undef,
-    isa      => 'HashRef[ArrayRef]',
+    isa      => HashRef [ArrayRef],
     handles => { _transithubs_of_city_r => 'get', transithub_cities => 'keys' },
     builder => '_build_transithubs_of_city',
     lazy    => 1,
@@ -774,7 +803,7 @@ has _lines_of_transithub_r => (
     traits   => ['Hash'],
     is       => 'bare',
     init_arg => undef,
-    isa      => 'HashRef[ArrayRef]',
+    isa      => HashRef [ArrayRef],
     handles  => { _lines_of_transithub_r => 'get' },
     builder  => '_build_lines_of_transithub',
     lazy     => 1,
@@ -810,7 +839,7 @@ sub _build_lines_of_transithub {
 
 has _line_descrips_of_transithubs_r => (
     traits   => ['Hash'],
-    isa      => 'HashRef[HashRef[Str]]',
+    isa      => HashRef [ HashRef [Str] ],
     init_arg => undef,
     is       => 'bare',
     handles  => { _line_descrips_of_transithub_r => 'get' },
@@ -846,11 +875,7 @@ sub _build_line_descrips_of_transithub {
 ######################################
 #### LINE DESCRIPTIONS OF TRANSIT HUBS
 
-sub descrips_of_transithubs_indesign {
-    my $self = shift;
-
-    my %params = validate( @_, { signup => 1, } );
-    my $signup = $params{signup};
+method descrips_of_transithubs_indesign (:$signup) {
 
     my %line_cache = $self->line_cache;
 
@@ -895,11 +920,11 @@ sub descrips_of_transithubs_indesign {
             join( $IDT->hardreturn, $effdate, @descrip_texts ),
         );
 
-    }    ## tidy end: foreach my $transithub ( $self...)
+    }
 
     return \%descrips_of_hubs;
 
-}    ## tidy end: sub descrips_of_transithubs_indesign
+}
 
 #########################
 ### TRANSIT HUBS HTML OUTPUT
@@ -951,31 +976,24 @@ sub lines_at_transit_hubs_html {
               . join( "&nbsp;&middot; ", @displaylines )
               . "</td></tr>\n";
 
-        }    ## tidy end: foreach my $hub ( sort $self...)
+        }
 
         if ( not $skip_city ) {
             $text .= "$citytext</table>\n";
         }
 
-    }    ## tidy end: foreach my $city ( sort $self...)
+    }
 
     return $text;
 
-}    ## tidy end: sub lines_at_transit_hubs_html
+}
 
 #######################
 ### LINES HTML OUTPUT
 
-sub line_descrip_html {
+method line_descrip_html ( :$signup! , :$agency //= $DEFAULT_AGENCY ) {
 
     require HTML::Entities;    ### DEP ###
-
-    my $self = shift;
-
-    my %params = validate( @_,
-        { signup => 1, agency => { default => $DEFAULT_AGENCY } } );
-
-    my $signup = $params{signup};
 
     my $effdate = $self->effective_date()->long_en;
 
@@ -1034,14 +1052,14 @@ sub line_descrip_html {
 #qq{<a href="http://www.actransit.org/maps/schedule_results.php?quick_line=$line&Go=Go">Schedule</a>};
             $html .= '</td></tr>' . "\n";
 
-        }    ## tidy end: foreach my $line (@lines)
+        }
 
         $html .= '</tbody></table>' . "\n";
         $html .= "<p>($linegrouptype lines: $count)</p>\n";
 
         $total += $count;
 
-    }    ## tidy end: foreach my $linegrouptype (...)
+    }
 
     $html .= "<p>(Total lines: $total)</p>\n";
 
@@ -1049,7 +1067,7 @@ sub line_descrip_html {
 
     return $html;
 
-}    ## tidy end: sub line_descrip_html
+}
 
 sub _ldh_footer {
 
@@ -1129,7 +1147,7 @@ EOF
 
     return $header;
 
-}    ## tidy end: sub _ldh_header
+}
 
 with 'Octium::Files::FileMaker_ODBC';
 
