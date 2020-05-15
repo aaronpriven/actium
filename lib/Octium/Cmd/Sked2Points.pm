@@ -6,7 +6,7 @@ use Octium::SkedCollection;
 use Octium::Sked::StopSkedCollection;
 
 sub OPTIONS {
-    return qw/signup/,
+    return qw/signup actiumdb/,
       { spec => 'threshold=i',
         description =>
           'The number of ensuing stops that will be used to see if '

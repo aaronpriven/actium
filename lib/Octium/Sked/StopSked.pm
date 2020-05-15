@@ -60,7 +60,8 @@ has is_dropoff_only => (
 );
 
 method _build_is_dropoff_only {
-    # TODO - determine which stops are dropoff-only from Actium database
+
+    return Actium::all { $_->is_dropoff_only } $self->trips;
     return 0;
 }
 
@@ -133,16 +134,18 @@ method _build_id {
 }
 
 method BUILD {
-    my $trips_r      = $self->_trips_r;
     my @sorted_trips = map { $_->[0] }
       sort { $a->[1] <=> $b->[1] or $a->[2] cmp $b->[2] }
       map  { [ $_, $_->time->timenum, Actium::linekeys( $_->line ) ] }
-      $trips_r->@*;
+      $self->trips;
     $self->_set_trips_r( \@sorted_trips );
 
     # I think this is the only place I will ever need to sort stoptrips.  If I
     # need to sort them anywhere else, it should be made a class method of
     # Octium::Sked::StopTrip
+
+    $_->_set_stopsked($self) foreach @sorted_trips;
+    # tell each trip what schedule it belongs to
 }
 
 ### BUNDLE / UNBUNDLE ###

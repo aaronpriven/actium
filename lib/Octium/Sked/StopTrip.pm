@@ -86,6 +86,28 @@ has stoppattern => (
     ],
 );
 
+has _stopsked => (
+    weak_ref => 1,
+    writer   => '_set_stopsked',
+    handles  => { _stopid => 'stopid' },
+);
+# writer is only used by BUILD in StopSked.pm
+
+has is_dropoff_only => (
+    lazy     => 1,
+    builder  => 1,
+    init_arg => undef,
+    is       => 'ro',
+);
+
+method _build_is_dropoff_only {
+    return env->actiumdb->zone_dropoffonly(
+        line              => $self->line,
+        stopid            => $self->_stopid,
+        destination_place => $self->destination_place,
+    );
+}
+
 method bundle {
     my $bundle = {
         time        => $self->time->bundle,
