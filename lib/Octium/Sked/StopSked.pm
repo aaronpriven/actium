@@ -218,11 +218,13 @@ method kpoint {
     else {
 
         for my $trip ( $self->trips ) {
-            next if $trip->calendar_id;
+            my $line = $trip->line;
+            next if $trip->calendar_id and $line !~ /\A6\d\d\z/;
+
             push @entries,
               join( ':',
                 $trip->time->apbx_noseparator,
-                $trip->line,
+                $line,
                 $trip->destination_place,
                 $trip->is_at_place ? $trip->place_in_effect : $EMPTY,
                 $EMPTY );
