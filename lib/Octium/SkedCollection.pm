@@ -249,7 +249,7 @@ method stopskeds (
     my %stopskeds_of_stopid;
 
     foreach my $sked ( $self->skeds ) {
-        next if $debug and $sked->linegroup !~ /200/;
+        next if $debug and $sked->linegroup !~ /51B/;
         $makecry->over( $sked->id );
         my @stopskeds = $sked->stopskeds;
         foreach my $stopsked (@stopskeds) {

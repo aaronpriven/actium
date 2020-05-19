@@ -201,10 +201,13 @@ classmethod unbundle (HashRef $bundle ) {
 
 method kpoint {
 
-    my $firsttrip = $self->trip(0);
-    my $linegroup = $firsttrip->line;
-    my $dir       = $firsttrip->dir->_as_hastus_order;
-    my $day       = $self->daycode;
+    my @trips     = $self->trips;
+    my $linegroup = $self->_line_str;
+
+    my @dirs = Actium::uniq( sort map { $_->dir->_as_hastus_order } @trips );
+    my $dir  = @dirs == 1 ? $dirs[0] : -1;
+
+    my $day = $self->daycode;
     $day =~ s/H//;
 
     my @entries = ( $linegroup, $dir, $day );
@@ -221,13 +224,17 @@ method kpoint {
             my $line = $trip->line;
             next if $trip->calendar_id and $line !~ /\A6\d\d\z/;
 
-            push @entries,
-              join( ':',
+            my $entry = join( ':',
                 $trip->time->apbx_noseparator,
                 $line,
                 $trip->destination_place,
                 $trip->is_at_place ? $trip->place_in_effect : $EMPTY,
                 $EMPTY );
+
+            $entry .= ':' . $trip->dir->_as_hastus_order
+              if $dir == -1;
+
+            push @entries, $entry;
         }
     }
     return join( "\t", @entries );
