@@ -103,7 +103,7 @@ method kpoint {
 
     my @stopskeds = $self->_stopskeds_except_final;
     @stopskeds = grep {
-        Actium::none { $_ eq '399' or $_ =~ /6\d\d/ } $_->lines;
+        Actium::none { $_ eq '399' } $_->lines;
     } @stopskeds;
     my @kpoint_lines = map { $_->kpoint } @stopskeds;
     return ( join( "\n", @kpoint_lines ) ) . "\n";
