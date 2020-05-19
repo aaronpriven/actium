@@ -412,7 +412,7 @@ sub START {
             # skip stop if file not found
             my $firstdigits
               = substr( $stoptotest, 0, $KPOINT_FOLDER_PREFIX_CHARS );
-            my $kpointfile = "kpoints/${firstdigits}xx/$stoptotest.txt";
+            my $kpointfile = "p/final/kpoints/${firstdigits}xx/$stoptotest.txt";
 
             unless ( -e $kpointfile ) {
                 push @{ $errors{$signid} },
@@ -489,8 +489,13 @@ sub START {
             $workzone_count{$delivery}{$workzone}++;
         }
         else {
-            push @{ $errors{$signid} },
-              "No sign template found in $signtype for $run_agency";
+            if ( $point->columns ) {
+                push @{ $errors{$signid} },
+                  "No sign template found in $signtype for $run_agency";
+            }
+            else {
+                push $errors{$signid}->@*, "No columns for this sign";
+            }
         }
 
         # 6) Format with text and indesign tags. Includes

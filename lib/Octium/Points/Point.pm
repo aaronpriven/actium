@@ -10,6 +10,7 @@ package Octium::Points::Point 0.013;
 
 use Actium ('class');
 use Octium;
+use List::Util;
 
 const my @HASTUS_DIRS => ( 0, 1, 3, 2, 4 .. scalar @DIRCODES );
 
@@ -19,7 +20,7 @@ use List::Compare::Functional('get_unique');    ### DEP ###
 use Actium::DateTime;
 
 const my $IDPOINTFOLDER => 'idpoints2016';
-const my $KFOLDER       => 'kpoints';
+const my $KFOLDER       => 'p/final/kpoints';
 
 use Octium::Points::Column;
 
@@ -231,6 +232,23 @@ sub _i18n_all {
 
 }
 
+my $get_tp_value = sub {
+
+    my $tp4 = shift;
+
+    no warnings 'once';
+    my $tpdest = $Octium::Cmd::MakePoints::places{$tp4}{c_destination};
+
+    if ($tpdest) {
+        return $tpdest;
+    }
+    else {
+        warn "No timepoint found for $tp4";
+        return $tp4;
+    }
+
+};
+
 sub new_from_kpoints {
 
     my $class = shift;
@@ -243,85 +261,165 @@ sub new_from_kpoints {
 
         my $column_stopid = $is_simple ? $EMPTY : $stop_to_import;
 
-        my %do_omit_line
+        my %do_omit_linedir
           = map { $_, 1 } @{ $self->omitted_of($stop_to_import) };
-        my ( %found_line, @found_linedirs );
+
+        # do_omit_linedir contains both lines and linedirs,
+
+        my @found_linedirs;
 
         my $kpointdir = substr( $stop_to_import, 0, 3 ) . 'xx';
 
         my $kpointfile = "$KFOLDER/$kpointdir/$stop_to_import.txt";
 
-        my $kpoint = $self->signup->open_read($kpointfile);
+        my $kpointfh = $self->signup->open_read($kpointfile);
 
-        my (%bsn_columns);
+      LINE_IN_KPOINT_FILE:
+        while ( my $kpoint = <$kpointfh> ) {
 
-        while (<$kpoint>) {
+            chomp $kpoint;
+            my $column;
 
-            chomp;
-            my $column = Octium::Points::Column->new( $_, $column_stopid );
+##################################################
 
-            my $linegroup = $column->linegroup;
+            my ( $linegroup, $dircode, $days, @entries )
+              = split( /\t/, $kpoint );
+
+            # notes that all the lines are found
+            my @linegroup_lines = split( /:/, $linegroup );
+            push @found_linedirs, @linegroup_lines;
 
             my $line_agency
-              = $Octium::Cmd::MakePoints::lines{$linegroup}{agency_id};
-            next if $line_agency ne $self->agency;
+              = $Octium::Cmd::MakePoints::lines{ $linegroup_lines[0] }
+              {agency_id};
 
-            push @found_linedirs, $linegroup;
-            my $dircode = $column->dircode;
+            next LINE_IN_KPOINT_FILE
+              if $line_agency ne $self->agency;
 
-            my $transitinfo_dir = $DIRCODES[ $HASTUS_DIRS[$dircode] ];
+            next LINE_IN_KPOINT_FILE
+              if @linegroup_lines == 1
+              and $do_omit_linedir{$linegroup};
 
-            my $linedir = "$linegroup-$transitinfo_dir";
-            push @found_linedirs, $linedir;
+            $self->set_note600
+              if Actium::any {/6\d\d/} @linegroup_lines;
 
-            next if $do_omit_line{$linedir};
-            next if $do_omit_line{$linegroup};
+            next LINE_IN_KPOINT_FILE
+              if Actium::all {/[46]\d\d/} @linegroup_lines;
 
-            #            # BSH handling
-            #
-            #            if ( $self->agency eq 'BroadwayShuttle' ) {
-            #                if ( $linegroup eq 'BSD' or $linegroup eq 'BSN' ) {
-            #                    $self->push_columns($column);
-            #                }
-            #                next;
-            #            }
-
-            #if ( $self->agency eq 'BroadwayShuttle' ) {
-            #    if ( $linegroup eq 'BSD' or $linegroup eq 'BSH' ) {
-            #        $self->push_columns($column);
-            #    }
-            #    elsif ( $linegroup eq 'BSN' ) {
-            #        $bsn_columns{ $column->days } = $column;
-            #    }
-            #    next;
-            #}
-            #else {
-            #    next
-            #      if ( $linegroup eq 'BSD'
-            #        or $linegroup eq 'BSH'
-            #        or $linegroup eq 'BSN' );
-            #}
-
-            #            if ( $self->agency eq 'DumbartonExpress' ) {
-            #                if ( $linegroup =~ /^DB/ ) {
-            #                    $self->push_columns($column);
-            #                }
-            #                next;
-            #            }
-            #            else {
-            #                next if ( $linegroup =~ /^DB/ );
-            #            }
-
-            next if $linegroup =~ /^[4]\d\d/;
-
-            if ( $linegroup !~ /^6\d\d/ and not $column->has_note ) {
-                $self->push_columns($column);
-            }    # skip 600-series lines
-                 # also skip columns with notes, since hte only note left
-                 # is "drop off only" and the flags should cover that
-            else {
-                $self->set_note600;
+            my $transitinfo_dir;
+            if ( $dircode != -1 ) {
+                $transitinfo_dir = $DIRCODES[ $HASTUS_DIRS[$dircode] ];
+                my @linedirs = map {"$_-$transitinfo_dir"} @linegroup_lines;
+                push @found_linedirs, @linedirs;
+                next LINE_IN_KPOINT_FILE
+                  if Actium::all { $do_omit_linedir{$_} } @linedirs;
             }
+
+            if ( $entries[0] =~ /^\#/s ) {    # entries like "LAST STOP"
+                my ( $note, $head_lines, $desttp4s ) = @entries;
+                $note =~ s/^\#//s;
+                my @head_lines = split( /:/, $head_lines );
+                my @desttp4s   = split( /:/, $desttp4s );
+
+                my @destinations;
+                foreach my $desttp4 (@desttp4s) {
+                    push @destinations, $get_tp_value->($desttp4);
+                }
+
+                $column = Octium::Points::Column->new(
+                    linegroup           => $linegroup,
+                    days                => $days,
+                    dircode             => $dircode,
+                    note                => $note,
+                    head_line_r         => \@head_lines,
+                    line_r              => [@head_lines],
+                    primary_line        => $head_lines[0],
+                    primary_destination => $destinations[0],
+                    primary_exception   => '',
+                    display_stopid      => $column_stopid,
+                );
+            }
+            else {
+
+                my ( @times, @lines, @destinations, @places, @exceptions,
+                    @approxflags, %entry_dircode_count );
+
+                my %time_of;
+
+                foreach (@entries) {
+                    my ( $time, $line, $destination, $place, $exception )
+                      = split(/:/);
+                    $time_of{$_} = Actium::Time->from_str($time)->timenum;
+                }
+
+                @entries = sort { $time_of{$a} <=> $time_of{$b} } @entries;
+
+              ENTRY:
+                foreach (@entries) {
+                    my ( $time, $line, $destination, $place, $exception,
+                        $entry_dircode )
+                      = split(/:/);
+
+                    next ENTRY if $do_omit_linedir{$line};
+                    next ENTRY if $line =~ /[46]\d\d/;
+
+                    if ( $dircode == -1 ) {
+                        $entry_dircode_count{$entry_dircode}++;
+                        my $entry_transitinfo_dir
+                          = $DIRCODES[ $HASTUS_DIRS[$entry_dircode] ];
+                        my $entry_linedir = "$line-$entry_transitinfo_dir";
+                        push @found_linedirs, $entry_linedir;
+
+                        next ENTRY
+                          if $do_omit_linedir{$entry_linedir};
+                    }
+
+                    push @times, $time;
+                    push @lines, $line;
+                    $destination = $get_tp_value->($destination);
+                    push @destinations, $destination;
+                    push @places,       $place;
+                    push @approxflags, ( $place ? 0 : 1 );
+                    push @exceptions, $exception;
+                }
+
+                # if there's mroe than one direction, set it to the
+                # one with the maximum entries
+                if ( $dircode == -1 ) {
+                    $dircode = List::Util::reduce {
+                        $entry_dircode_count{$a} > $entry_dircode_count{$b}
+                          ? $a
+                          : $b
+                    }
+                    keys %entry_dircode_count;
+                }
+
+                next LINE_IN_KPOINT_FILE
+                  unless @times;
+                # they would all be skipped because they're in the omit list
+
+                $column = Octium::Points::Column->new(
+                    linegroup      => $linegroup,
+                    days           => $days,
+                    dircode        => $dircode,
+                    time_r         => \@times,
+                    line_r         => \@lines,
+                    destination_r  => \@destinations,
+                    exception_r    => \@exceptions,
+                    place_r        => \@places,
+                    approxflag_r   => \@approxflags,
+                    display_stopid => $column_stopid,
+                );
+
+            }
+
+##################################################
+
+            next if $column->has_note;
+            # skip columns with notes, since hte only note left
+            # is "drop off only" and the flags should cover that
+
+            $self->push_columns($column);
 
             if ( $dircode eq '14' or $dircode eq '15' ) {
                 $self->set_has_ab;
@@ -329,37 +427,10 @@ sub new_from_kpoints {
 
         }
 
-        close $kpoint or die "Can't close $kpointfile: $!";
-
-#        # ugly kludge for BSH weekday/Friday/Saturday skeds
-#
-#        if ( scalar keys %bsn_columns ) {
-#            my $weekday  = $bsn_columns{'12345'};
-#            my $friday   = $bsn_columns{'5'};
-#            my $saturday = $bsn_columns{'6'};
-#
-#            $self->push_columns($weekday);
-#         # the header formatting is changed so it changes it to "M-TH only"
-#         # This will really screw up if there are any day exceptions in it later
-#
-#            my %is_a_fri_time
-#              = map { $_ => 1 } ( $weekday->times, $friday->times );
-#
-#            my @sat_exceptions;
-#
-#            foreach my $i ( 0 .. $saturday->time_count - 1 ) {
-#                my $sat_time = $saturday->time($i);
-#                push @sat_exceptions, $is_a_fri_time{$sat_time} ? '' : '6';
-#            }
-#
-#            $saturday->_set_exception_r( \@sat_exceptions );
-#
-#            $self->push_columns($saturday);
-#
-#        }
+        close $kpointfh or die "Can't close $kpointfile: $!";
 
         my @notfound
-          = get_unique( [ [ keys %do_omit_line ], \@found_linedirs ] );
+          = get_unique( [ [ keys %do_omit_linedir ], \@found_linedirs ] );
 
         if (@notfound) {
             my $linetext = @notfound > 1 ? 'Lines' : 'Line';
