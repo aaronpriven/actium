@@ -336,7 +336,8 @@ sub format_head_lines {
 
     }
     else {
-        my @color_head_lines = map { color( $color_of{$_}, $_ ) } @head_lines;
+        my @color_head_lines
+          = map { $IDT->color( $color_of{$_}, $_ ) } @head_lines;
         $head_lines = join(
             $IDT->color('Grey80') . $head_line_separator,
             @color_head_lines
