@@ -131,39 +131,7 @@ method stopskeds {
 
         for my $stop_idx ( 0 .. $#stoptimes ) {
             next if $stopinfo{skip_stop}[$stop_idx];
-
             next if not $has_a_time[$stop_idx];
-
-  # this commented out code isn't necessary!  if the time is blank, it will have
-  # not have been processed make_stoppattern. It will never be shown as seen, so
-  # the column with a time the column with a time will not be marked as to be
-  # skipped.
-
- #            if ( not $has_a_time[$stop_idx] ) {
- #                next if $stop_idx == 0;
- #
- #                # This combines arrival/departure columns into one.
- #                # If there is no time, and the previous stop is the same as
- #                # this one, and that one has a time and isn't marked skip, use
- #                # that time instead.
- #
- #                my $stop_idx_prev = $stop_idx - 1;
- #                next
- #                  if ( not $has_a_time[$stop_idx_prev]
- #                    or $stopids[$stop_idx] ne $stopids[$stop_idx_prev] )
- #                  or $stopinfo{skip_stop}[$stop_idx_prev];
- #
- #                push $trips_of_stop{$line}{ $stopids[$stop_idx_prev] }->@*,
- #                  _stoptrip(
- #                    stopinfo => \%stopinfo,
- #                    stop_idx => $stop_idx_prev,
- #                    trip     => $trip,
- #                    dir      => $self->dir_obj,
- #                  );
- #
- #                next;
- #
- #            }
 
             push $trips_of_stop{$line}{ $stopids[$stop_idx] }->@*,
               _stoptrip(
