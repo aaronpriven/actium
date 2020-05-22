@@ -459,20 +459,40 @@ sub make_headers_and_footnotes {
 
         next COLUMN if ( $column->has_note );
 
-        my ( %seen, %primary );
+        my ( %seen_line, %primary );
 
         my @attrs = (qw<line destination exception approxflag>);
+        my ( %seen_attrs, %attr_values_of );
+
+        foreach my $i ( 0 .. $column->time_count - 1 ) {
+            my @attr_values = map { $column->$_($i) } @attrs;
+            $seen_line{ $attr_values[0] }++;
+            my $attr_key = join( "|", @attr_values );
+            $seen_attrs{$attr_key}++;
+            $attr_values_of{$attr_key} = \@attr_values;
+        }
+
+        my $primary_attr_key = most_frequent(%seen_attrs);
+        @primary{@attrs} = $attr_values_of{$primary_attr_key}->@*;
 
         foreach my $attr (@attrs) {
-            foreach my $i ( 0 .. $column->time_count - 1 ) {
-                $seen{$attr}{ $column->$attr($i) }++;
-            }
-            $primary{$attr} = most_frequent( %{ $seen{$attr} } );
             my $set_primary_attr = "set_primary_$attr";
             $column->$set_primary_attr( $primary{$attr} );
         }
 
-        my @head_lines = Actium::sortbyline keys %{ $seen{line} };
+        ### OLD PRIMARY ESTABLISHING ROUTINE
+        # separately setting attributes instead of most common combination
+
+        #foreach my $attr (@attrs) {
+        #    foreach my $i ( 0 .. $column->time_count - 1 ) {
+        #        $seen{$attr}{ $column->$attr($i) }++;
+        #    }
+        #    $primary{$attr} = most_frequent( %{ $seen{$attr} } );
+        #    my $set_primary_attr = "set_primary_$attr";
+        #    $column->$set_primary_attr( $primary{$attr} );
+        #}
+
+        my @head_lines = Actium::sortbyline keys %seen_line;
         $column->set_head_line_r( \@head_lines );
 
         # if more than one line, mark the footnote to it as being seen
@@ -485,23 +505,23 @@ sub make_headers_and_footnotes {
         # if it has a colon, it's a note to one of the times
         # in the column.
 
-        foreach my $i ( 0 .. $column->time_count - 1 ) {
+        foreach my $time_idx ( 0 .. $column->time_count - 1 ) {
 
             my %foot_of;
 
             foreach my $attr (@attrs) {
-                my $item        = $column->$attr($i);
+                my $item        = $column->$attr($time_idx);
                 my $primaryattr = "primary_$attr";
                 my $primaryitem = $column->$primaryattr;
                 $foot_of{$attr} = $item eq $primaryitem ? $EMPTY : $item;
             }
 
             if ( join( $EMPTY, values %foot_of ) eq $EMPTY ) {
-                $column->set_foot( $i, $EMPTY );
+                $column->set_foot( $time_idx, $EMPTY );
             }
             else {
                 my $foot = join( ':', @foot_of{@attrs} );
-                $column->set_foot( $i, $foot );
+                $column->set_foot( $time_idx, $foot );
 
                 #$seen_feet{$foot} = 1;
             }
@@ -1087,7 +1107,8 @@ sub format_sidenotes {
             $attrcode .= substr( $_, 0, 1 ) if $attr{$_};
         }
 
-        #print "[[$attrcode]]";
+        #env->wail( Actium::dumpstr %attr );
+        #env->wail("[[$attrcode]]");
 
         my ( $line, $dest, $exc, $app );
         $line = $attr{line} if $attr{line};
@@ -1116,24 +1137,29 @@ sub format_sidenotes {
         for ($attrcode) {
             if ( $_ eq 'a' )  { print $sidefh "\u$app.";          next; }
             if ( $_ eq 'ad' ) { print $sidefh "\u$app, to $dest"; next; }
+            if ( $_ eq 'ae' ) {
+                print $sidefh "\u$app. Operates $exc.";
+                next;
+            }
+            if ( $_ eq 'al' ) {
+                print $sidefh "\u$app for Line $line.";
+                next;
+            }
+
             if ( $_ eq 'ade' ) {
                 print $sidefh "\u$app. Operates $exc to $dest";
                 next;
             }
-            if ( $_ eq 'adel' ) {
-                print $sidefh "\u$app for Line $line. Operates $exc to $dest";
-                next;
-            }
-            if ( $_ eq 'ae' ) {
-                print $sidefh "\u$app. Operates $exc.";
+            if ( $_ eq 'adl' ) {
+                print $sidefh "\u$app for Line $line, to $dest";
                 next;
             }
             if ( $_ eq 'ael' ) {
                 print $sidefh "\u$app for Line $line. Operates $exc.";
                 next;
             }
-            if ( $_ eq 'al' ) {
-                print $sidefh "\u$app for Line $line.";
+            if ( $_ eq 'adel' ) {
+                print $sidefh "\u$app for Line $line. Operates $exc to $dest";
                 next;
             }
             if ( $_ eq 'd' ) { print $sidefh "To $dest"; next; }
@@ -1304,7 +1330,11 @@ const my %STYLE_OF_MONTH => (
       121  WO
       10  E
       20  E
-      30  SpE
+      /,
+
+    #30  SpE
+    qw/
+      30  O
       40  E
       50  E
       60  SuE
