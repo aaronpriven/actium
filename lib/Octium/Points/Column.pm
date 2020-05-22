@@ -21,7 +21,9 @@ use Const::Fast;                       ### DEP ###
 use Octium::Text::InDesignTags;
 const my $IDT => 'Octium::Text::InDesignTags';
 
-my $head_line_separator = q</>;
+const my $head_line_separator =>
+  ( $IDT->thinspace . $IDT->bullet . $IDT->thinspace );
+# q< / >;
 
 has [qw/linegroup display_stopid days dircode/] => (
     is  => 'ro',
@@ -243,9 +245,10 @@ sub format_head_lines {
     }
     else {
         my @color_head_lines
-          = map { $IDT->color( $color_of{$_}, $_ ) } @head_lines;
+          = map { $IDT->color( $color_of{$_} ) . $_ . $IDT->nocolor }
+          @head_lines;
         $head_lines = join(
-            $IDT->color('Grey80') . $head_line_separator,
+            $IDT->color('Grey80') . $head_line_separator . $IDT->nocolor,
             @color_head_lines
         );
 
