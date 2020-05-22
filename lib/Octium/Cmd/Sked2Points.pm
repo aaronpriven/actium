@@ -12,7 +12,7 @@ sub OPTIONS {
           'The number of ensuing stops that will be used to see if '
           . 'schedules should be combined. If zero, then will use all '
           . 'ensuing stops.',
-        fallback => 15,
+        fallback => 20,
       },
       { spec => 'difference_fraction=f',
         description =>
@@ -21,7 +21,10 @@ sub OPTIONS {
           . 'can be combined. ',
         fallback => .15,
       },
-      ;
+      { spec        => '_debug',
+        fallback    => 0,
+        description => 'debug',
+      };
 }
 
 sub START {
@@ -39,7 +42,7 @@ sub START {
       = Octium::SkedCollection->load_storable( collection => 'final' );
 
     \my @stopskedcollections = $skedcollection->stopskeds(
-        # _debug            => 1,
+        _debug => env->option('_debug'),
         #_skip_combining    => 1,
         threshold           => env->option('threshold'),
         difference_fraction => env->option('difference_fraction'),
