@@ -149,7 +149,7 @@ sub START {
         die 'Agency ' . env->option('agency') . " not found.\n";
     }
 
-    my $effdate = $actiumdb->effective_date( agency => $run_agency );
+    my $agency_effdate = $actiumdb->effective_date( agency => $run_agency );
 
     $actiumdb->load_tables(
         requests => {
@@ -168,7 +168,7 @@ sub START {
                     qw[
                       SignID Active stp_511_id Status SignType Tag Sidenote
                       Agency ShelterNum NonStopLocation NonStopCity
-                      Delivery City TIDFile CopyQuantity
+                      Delivery City TIDFile CopyQuantity OverrideEffDate
                       ]
                 ],
             },
@@ -335,6 +335,15 @@ sub START {
         my $sidenote       = $signs{$signid}{Sidenote} // $EMPTY;
         my $copyquantity   = $signs{$signid}{CopyQuantity} // 1;
         my $templates_of_r = $templates_of{$signtype} // {};
+
+        my $effdate = $signs{$signid}{OverrideEffDate};
+        if ( defined $effdate ) {
+            my ( $year, $month, $day ) = split( /-/, $effdate );
+            $effdate = Actium::DateTime->new( ymd => [ $year, $month, $day ], );
+        }
+        else {
+            $effdate = $agency_effdate;
+        }
 
         next SIGN
           if $signtype_opt and not exists $signtype_matches{$signtype};
