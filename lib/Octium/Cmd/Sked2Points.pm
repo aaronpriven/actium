@@ -23,8 +23,13 @@ sub OPTIONS {
       },
       { spec        => '_debug',
         fallback    => 0,
-        description => 'debug',
+        description => 'debug (use a single line for debugging)',
       };
+    {   spec        => 'collection=f',
+        description => 'Name of the folder (under "s") '
+          . 'to use as the source of the schedules.',
+        fallback => 'final',
+    };
 }
 
 sub START {
