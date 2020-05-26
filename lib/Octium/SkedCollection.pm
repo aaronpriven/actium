@@ -9,7 +9,7 @@ use Octium::Sorting::Skeds ('skedsort');
 
 use Octium::Storage::Excel;
 use Params::Validate;
-use Types::Standard('Num');
+use Types::Standard(qw/Str Num InstanceOf ConsumerOf ArrayRef HashRef/);
 use Types::Common::Numeric('PositiveOrZeroInt');
 
 const my $PHYLUM => 's';
@@ -17,7 +17,7 @@ const my $PHYLUM => 's';
 has skeds_r => (
     is       => 'ro',
     writer   => '_set_skeds_r',
-    isa      => 'ArrayRef[Skedlike]',
+    isa      => ArrayRef [ ConsumerOf ['Octium::Skedlike'] ],
     traits   => ['Array'],
     required => 1,
     init_arg => 'skeds',
@@ -29,13 +29,13 @@ has skeds_r => (
 
 has name => (
     is       => 'rwp',
-    isa      => 'Str',
+    isa      => Str,
     required => 1,
 );
 
 has signup => (
     is      => 'rwp',
-    isa     => 'Octium::Folders::Signup',
+    isa     => InstanceOf ['Octium::Folders::Signup'],
     default => sub { Octium::env->signup },
 );
 
@@ -47,7 +47,7 @@ sub BUILD {
 
 has '_sked_obj_by_id_r' => (
     is      => 'bare',
-    isa     => 'HashRef[Skedlike]',
+    isa     => HashRef [ ConsumerOf ['Octium::Skedlike'] ],
     traits  => ['Hash'],
     builder => '_build_sked_obj_by_id_r',
     lazy    => 1,
@@ -75,7 +75,7 @@ sub _build_sked_obj_by_id_r {
 
 has '_sked_transitinfo_ids_of_lg' => (
     is      => 'bare',
-    isa     => 'HashRef[ArrayRef[Str]]',
+    isa     => HashRef [ ArrayRef [Str] ],
     traits  => ['Hash'],
     builder => '_build_sked_transitinfo_ids_of_lg',
     lazy    => 1,
@@ -107,7 +107,7 @@ sub sked_transitinfo_ids_of_lg {
 
 has '_sked_ids_of_lg' => (
     is      => 'bare',
-    isa     => 'HashRef[ArrayRef[Str]]',
+    isa     => HashRef [ ArrayRef [Str] ],
     traits  => ['Hash'],
     builder => '_build_sked_ids_of_lg',
     lazy    => 1,
@@ -197,17 +197,20 @@ method load_xlsx (
 
 method finalize_skeds (
     $class: 
-    Octium::Folders::Signup $signup = Octium::env->signup
+    Octium::Folders::Signup :$signup = Octium::env->signup,
+    Str :$final = 'final',
+    Str :$exceptions = 'exceptions',
+    Str :$received = 'received',
   ) {
 
     my $received_collection = $class->load_storable(
         signup     => $signup,
-        collection => 'received'
+        collection => $received,
     );
 
     my $exception_collection = $class->load_xlsx(
         signup     => $signup,
-        collection => 'exceptions'
+        collection => $exceptions,
     );
 
     my @finalized_skeds;
@@ -226,7 +229,7 @@ method finalize_skeds (
 
     my $finalized_collection = $class->new(
         skeds  => \@finalized_skeds,
-        name   => 'final',
+        name   => $final,
         signup => $signup,
     );
 

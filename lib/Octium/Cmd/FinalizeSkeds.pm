@@ -5,11 +5,32 @@ use Octium;
 use Octium::SkedCollection;
 
 sub OPTIONS {
-    return ( 'signup', 'actiumdb' );
+    return (
+        'signup', 'actiumdb',
+
+        {   spec => 'exceptions=s',
+            description =>
+              'Folder under "s" to be used for exceptional schedules',
+            fallback => 'exceptions',
+        },
+        {   spec        => 'final=s',
+            description => 'Folder under "s" to be used for final schedules',
+            fallback    => 'final',
+        },
+        {   spec        => 'received=s',
+            description => 'Folder under "s" to be used for received schedules',
+            fallback    => 'received',
+        },
+
+    );
 }
 
 sub START {
-    Octium::SkedCollection::->finalize_skeds;
+    Octium::SkedCollection::->finalize_skeds(
+        exceptions => env->option('exceptions'),
+        final      => env->option('final'),
+        received   => env->option('received'),
+    );
 }
 
 1;
