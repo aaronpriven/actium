@@ -421,18 +421,20 @@ sub _kml_stop_description {
         'Broadway Shuttle', 'All Nighter',
         'Local',            'Service to Schools',
         'Early Bird',       $EMPTY,
+        'Tempo',
     );
 
     const my $LOWEST_PRIORITY => scalar @KML_LINE_TYPES;
 
     const my %KML_LINE_COLORS => (
+        Tempo                => 'FFC8AB00',
         Rapid                => 'FF4040FF',
         Transbay             => 'FF00FF00',
         'Dumbarton Express'  => 'FFFF8000',
         'Broadway Shuttle'   => 'FF00FFC0',
-        'All Nighter'        => 'FFFFFF00',
-        Local                => 'FFFFFF00',
-        'Service to Schools' => 'FF80FFFF',
+        'All Nighter'        => 'FF80FFFF',
+        Local                => 'FF80FFFF',
+        'Service to Schools' => 'FFC0A0FF',
         'Early Bird'         => 'FFD09300',
         # flex is 301DAF - multiplied by 1.46
         Flex   => 'FF462AFF',
