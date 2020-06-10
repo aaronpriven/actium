@@ -203,10 +203,18 @@ method finalize_skeds (
     Str :$received = 'received',
   ) {
 
-    my $received_collection = $class->load_storable(
-        signup     => $signup,
-        collection => $received,
-    );
+    my $received_collection;
+
+    if ( $received eq 'none' ) {
+        $received_collection
+          = $class->new( skeds => [], name => 'received', signup => $signup, );
+    }
+    else {
+        $received_collection = $class->load_storable(
+            signup     => $signup,
+            collection => $received,
+        );
+    }
 
     my $exception_collection = $class->load_xlsx(
         signup     => $signup,
