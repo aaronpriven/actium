@@ -37,85 +37,91 @@ sub _datetime_arg {
     return $class->_from_strptime($arg);
 }
 
-sub new {
-
-    my $class = shift;
-
-    croak "No arguments given to $CONSTRUCTOR" unless @_;
-
-    if ( @_ == 1 and not Actium::is_plain_hashref( $_[0] ) ) {
-        return $class->_datetime_arg(@_);
-    }
-
-    my %args = @_;
-
+{
     my @exclusive_args = (qw[datetime strp cldr]);
     my $exclusive_args_display
       = Actium::joinseries( conjunction => 'or', items => \@exclusive_args );
-    my $exclusive_argcount = scalar( @args{@exclusive_args} ) // 0;
 
-    croak
-      "Can't specify more than one of ($exclusive_args_display) to $CONSTRUCTOR"
-      if $exclusive_argcount > 1;
+    sub new {
 
-    my $pattern;
-    if ( exists $args{pattern} ) {
-        if ($exclusive_argcount) {
-            $pattern = delete $args{pattern};
+        my $class = shift;
+
+        croak "No arguments given to $CONSTRUCTOR" unless @_;
+
+        if ( @_ == 1 and not Actium::is_plain_hashref( $_[0] ) ) {
+            return $class->_datetime_arg(@_);
         }
-        else {
-            croak "Can't specify a pattern without specifying "
-              . "one of $exclusive_args_display to "
-              . $CONSTRUCTOR;
+
+        my %args = @_;
+
+        my $exclusive_argcount = 0;
+        foreach my $exclusive_arg (@exclusive_args) {
+            $exclusive_argcount++ if exists $args{$exclusive_arg};
         }
+
+        croak "Can't specify more than one of "
+          . "($exclusive_args_display) to $CONSTRUCTOR"
+          if $exclusive_argcount > 1;
+
+        my $pattern;
+        if ( exists $args{pattern} ) {
+            if ($exclusive_argcount) {
+                $pattern = delete $args{pattern};
+            }
+            else {
+                croak "Can't specify a pattern without specifying "
+                  . "one of $exclusive_args_display to "
+                  . $CONSTRUCTOR;
+            }
+        }
+
+        croak(  "Can't specify both a exclusive argument "
+              . "(one of $exclusive_args_display)"
+              . " and also DateTime arguments to $CONSTRUCTOR" )
+          if $exclusive_argcount == 1 and ( scalar keys %args > 1 );
+
+        return $class->_datetime_arg( $args{datetime} )
+          if ( exists $args{datetime} );
+
+        return $class->_from_strptime( $args{strptime}, $pattern )
+          if ( exists $args{strptime} );
+
+        return $class->_from_cldr( $args{cldr}, $pattern )
+          if ( exists $args{cldr} );
+
+        if ( exists $args{ymd} ) {
+
+            if ( not Actium::is_arrayref( $args{ymd} )
+                or $args{ymd}->@* != 3 )
+            {
+                croak 'Argument to ymd must be a reference '
+                  . 'to a three-element array (year, month, and day) in '
+                  . $CONSTRUCTOR;
+            }
+
+            croak "Can't specify ymd and also either year, month, or day to"
+              . $CONSTRUCTOR
+              if exists $args{year}
+              or exists $args{month}
+              or exists $args{day};
+
+            my ( $year, $month, $day ) = $args{ymd}->@*;
+
+            %args = (
+                %args,
+                year  => $year,
+                month => $month,
+                day   => $day
+            );
+
+            delete $args{ymd};
+
+        }    ## tidy end: if ( exists $args{ymd})
+
+        return $class->SUPER::new(%args);
+
     }
-
-    croak(  "Can't specify both a exclusive argument "
-          . "(one of $exclusive_args_display)"
-          . " and also DateTime arguments to $CONSTRUCTOR" )
-      if $exclusive_argcount == 1 and ( scalar keys %args > 1 );
-
-    return $class->_datetime_arg( $args{datetime} )
-      if ( exists $args{datetime} );
-
-    return $class->_from_strptime( $args{strptime}, $pattern )
-      if ( exists $args{strptime} );
-
-    return $class->_from_cldr( $args{cldr}, $pattern )
-      if ( exists $args{cldr} );
-
-    if ( exists $args{ymd} ) {
-
-        if ( not Actium::is_arrayref( $args{ymd} )
-            or $args{ymd}->@* != 3 )
-        {
-            croak 'Argument to ymd must be a reference '
-              . 'to a three-element array (year, month, and day) in '
-              . $CONSTRUCTOR;
-        }
-
-        croak "Can't specify ymd and also either year, month, or day to"
-          . $CONSTRUCTOR
-          if exists $args{year}
-          or exists $args{month}
-          or exists $args{day};
-
-        my ( $year, $month, $day ) = $args{ymd}->@*;
-
-        %args = (
-            %args,
-            year  => $year,
-            month => $month,
-            day   => $day
-        );
-
-        delete $args{ymd};
-
-    }    ## tidy end: if ( exists $args{ymd})
-
-    return $class->SUPER::new(%args);
-
-}    ## tidy end: sub new
+}
 
 {
 
@@ -157,7 +163,7 @@ sub new {
         require DateTime::Format::CLDR;    ### DEP ###
 
         my $cldr = $cldr_obj_of{$pattern} //= DateTime::Format::CLDR->new(
-            $pattern => $pattern,
+            pattern  => $pattern,
             locale   => 'en_US',
             on_error => 'croak',
         );
