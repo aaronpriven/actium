@@ -44,7 +44,8 @@ sub START {
 
     my $read_cry = env->cry('Reading sheet');
 
-    my $excelfile = env->argv_idx(0);
+    my @args      = env->argv;
+    my $excelfile = shift @args;
 
     my ( $outfile, $oldext ) = Octium::file_ext($excelfile);
     my $clusterfile = $outfile . '-clusters2.txt';

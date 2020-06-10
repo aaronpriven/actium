@@ -40,7 +40,7 @@ Actium/Cmd/DoSomething.pm:
 
  sub START {
     my ($class, $env) = @_;
-    my $argument = $env->argv(0);
+    my @arguments = $env->argv;
     my $subcommand = $env->subcommand;
     my $command = $env->command;
 
