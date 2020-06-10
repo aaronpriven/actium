@@ -218,7 +218,7 @@ sub new_from_sked {
     $spec{header_columntext_r} = \@header_columntexts;
 
     $spec{header_dirtext}
-      = $sked->to_text . $SPACE . $places_r->{ $place4s[-1] }{c_destination};
+      = $sked->to_text . $places_r->{ $place4s[-1] }{c_destination};
 
     # BODY
 
@@ -641,16 +641,21 @@ qq{<tr\n><th class="skedhead" style="background-color: $linegroup_rgbhex" colspa
 
     print $th "</th></tr>";
 
-    ##############
-    # Service Alert Row
+    if (0) {
 
-    foreach my $header_route (@header_routes) {
-        print $th qq{<tr class=alertrow><th class=alerts colspan=$all_columns>};
+        ##############
+        # Service Alert Row
 
-        print $th
+        foreach my $header_route (@header_routes) {
+            print $th
+              qq{<tr class=alertrow><th class=alerts colspan=$all_columns>};
+
+            print $th
 qq{<a href="http://www.actransit.org/line_alert/?quick_line=$header_route">};
-        print $th "See service alerts for line $header_route.";
-        print $th '</a></th></tr>';
+            print $th "See service alerts for line $header_route.";
+            print $th '</a></th></tr>';
+
+        }
 
     }
 
