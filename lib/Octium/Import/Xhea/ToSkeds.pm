@@ -14,7 +14,7 @@ use Octium::SkedCollection;
 
 use Params::Validate;
 
-const my @required_tables => (qw/ppat block trip trip_pattern trip_stop/);
+const my @required_tables => (qw/ppat block trip trip_pattern trip_stop stop/);
 
 sub xheatab2skeds {
 
