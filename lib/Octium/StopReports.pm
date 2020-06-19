@@ -380,7 +380,7 @@ sub _kml_stop_description {
     my $stop_id   = $stp{h_stp_511_id};
     my $desc      = $stp{c_description_fullabbr};
     my $hastus_id = $stp{h_stp_identifier};
-    my $lines     = $stp{p_lines};
+    my $lines     = $stp{p_linedirs};
     #my $zip        = $stp{p_zip_code};
     my $linetext   = $lines         ? "<u>Lines:</u> $lines" : 'Inactive stop';
     my $activestar = $stp{p_active} ? $EMPTY                 : '*';
