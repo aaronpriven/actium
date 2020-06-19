@@ -2,8 +2,8 @@
 
 # octium.pl - command-line access to Octium system
 
-use FindBin qw($Bin);    ### DEP ###
-use lib ("$Bin/../lib"); ### DEP ###
+use FindBin qw($Bin);       ### DEP ###
+use lib ("$Bin/../lib");    ### DEP ###
 
 use Actium;
 use Actium::Env::CLI;
@@ -14,13 +14,14 @@ Actium::Env::CLI::->new(
     commandpath => $0,
     system_name => 'octium',
     subcommands => {
-        ems          => 'Ems',
-        frequency    => 'Frequency',
-        headwaytimes => 'HeadwayTimes',
-        indd_encode  => 'InDesignEncode',
-        scratch      => 'Scratch',
-        schooltrips  => 'SchoolTrips',
-        tempsigns    => 'TempSigns',
+        ems           => 'Ems',
+        frequency     => 'Frequency',
+        headwaytimes  => 'HeadwayTimes',
+        indd_encode   => 'InDesignEncode',
+        scratch       => 'Scratch',
+        schooltrips   => 'SchoolTrips',
+        tempsigns     => 'TempSigns',
+        comparestops3 => 'CompareStops3',
     },
 );
 
