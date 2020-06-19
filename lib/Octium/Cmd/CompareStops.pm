@@ -11,6 +11,9 @@ use Algorithm::Diff('sdiff');    ### DEP ###
 sub HELP {
 
     my $helptext = <<'EOF';
+
+comparestops <line> [<line>] ...
+
 comparestops reads the data written by readavl.
 It then assembles a list of stops and the routes that stop at each one.
 Finally, it displays a list of new, deleted, and changed stops.
@@ -23,15 +26,15 @@ EOF
 sub OPTIONS {
     return (
         qw/actiumdb signup_with_old/,
-        {   spec        => 'ignore600s!',
-            description => 'Ignore lines 600-699 in comparison. ',
+        {   spec => 'omit!',
+            description =>
+'Instead of comparing ony those lines specified, compares all but those lines specified.',
+            fallback => 0,
+        },
+        {   spec        => '600s!',
+            description => 'Add 600-699 to the list of lines specified',
             fallback    => 0,
         },
-        {   spec        => 'only600s!',
-            description => 'Only compare lines 600-699. ',
-            fallback    => 0,
-        },
-
     );
 }
 
@@ -43,23 +46,9 @@ sub START {
     my $oldsignup = env->oldsignup;
     my $signup    = env->signup;
 
-    my $ignore_600s = env->option('ignore600s');
-    my $only_600s   = env->option('only600s');
-
-    die "Can't specify both -ignore600s and -only600s"
-      if $ignore_600s and $only_600s;
-
-    my ( @skipped, $reverse_skipped );
-    if ($only_600s) {
-        $reverse_skipped = 1;
-        @skipped         = ( 600 .. 699 );
-    }
-    else {
-        @skipped = qw(BSH 399);
-    }
-    if ($ignore_600s) {
-        push @skipped, ( 600 .. 699 );
-    }
+    my @skipped         = env->argv;
+    my $reverse_skipped = not( env->option('omit') );
+    push @skipped, ( 600 .. 699 ) if env->option('600s');
 
     chdir $signup->path;
     $actiumdb->load_tables(
@@ -77,12 +66,14 @@ sub START {
     my %newstoplists
       = assemble_stoplists( $signup, @skipped, $reverse_skipped );
 
-    open my $out, '>:utf8', 'compare/comparestops.txt' or die $OS_ERROR;
+    my $filename
+      = 'comparestops-' . $oldsignup->signup . '-' . $signup->signup . '.txt';
+
+    open my $out, '>:utf8', "compare/$filename" or die $OS_ERROR;
     # done here so as to make sure the file is saved in the *new*
     # signup directory
 
-    print $out
-"Change\tStopID\tStop Description\tNumAdded\tAdded\tNumRemoved\tRemoved\tNumUnchanged\tUnchanged\n";
+    print $out "Change\tStopID\tStop Description\tAdded\tRemoved\tUnchanged\n";
 
     %oldstoplists
       = assemble_stoplists( $oldsignup, @skipped, $reverse_skipped );
@@ -161,10 +152,13 @@ sub START {
 
     foreach my $added_stopid ( sort @{ $changes{ADDEDSTOPS} } ) {
         my $description = $newstoplists{$added_stopid}{Description};
+        #env->wail("No description for $added_stopid")
+        #  if not defined $description;
+        #$description = "-";
         next if dummy($description);
         my @list
           = sort Actium::byline keys %{ $newstoplists{$added_stopid}{Routes} };
-        print $out "AS\t", $added_stopid, "\t$description\t", scalar @list,
+        print $out "AS\t", $added_stopid, "\t$description",
           "\t",
           '"', join( ' ', @list ), '"', "\n";
     }
@@ -174,8 +168,7 @@ sub START {
         next if dummy($description);
         my @list = sort Actium::byline
           keys %{ $oldstoplists{$deleted_stopid}{Routes} };
-        print $out "RS\t", $deleted_stopid, "\t$description\t\t\t",
-          scalar @list, "\t",
+        print $out "RS\t", $deleted_stopid, "\t$description\t\t",
           '"', join( ' ', @list ), '"', "\n";
     }
 
@@ -215,31 +208,26 @@ sub output_stops {
         if ( exists $changes{$type}{$stopid}{ADDED} ) {
             my @added
               = sort Actium::byline @{ $changes{$type}{$stopid}{ADDED} };
-            print $fh "\t", scalar @added, "\t", '"', join( ' ', @added ), '"';
+            print $fh "\t", '"', join( ' ', @added ), '"';
         }
         else {
-            print $fh "\t\t";
+            print $fh "\t";
         }
 
         if ( exists $changes{$type}{$stopid}{REMOVED} ) {
             my @removed
               = sort Actium::byline @{ $changes{$type}{$stopid}{REMOVED} };
-            print $fh "\t", scalar @removed, "\t", '"', join( ' ', @removed ),
-              '"';
+            print $fh "\t", '"', join( ' ', @removed ), '"';
         }
         else {
-            print $fh "\t\t";
+            print $fh "\t";
         }
 
         if ( exists $changes{$type}{$stopid}{UNCHANGED} ) {
             my @unchanged
               = sort Actium::byline @{ $changes{$type}{$stopid}{UNCHANGED} };
-            print $fh "\t", scalar @unchanged, "\t", '"',
-              join( ' ', @unchanged ), '"';
+            print $fh "\t", '"', join( ' ', @unchanged ), '"';
         }
-        #      else {
-        #         print $fh "\t\t";
-        #      }
 
         print $fh "\n";
 
