@@ -12,7 +12,8 @@ use Params::Validate;
 use Types::Standard(qw/Str Num InstanceOf ConsumerOf ArrayRef HashRef/);
 use Types::Common::Numeric('PositiveOrZeroInt');
 
-const my $PHYLUM => 's';
+const my $PHYLUM        => 's';
+const my $DELETEDS_FILE => 'delete_skeds.txt';
 
 has skeds_r => (
     is       => 'ro',
@@ -147,6 +148,21 @@ sub skeds_of_lg {
 ##### INPUT ######
 ##################
 
+method load_deleteds (
+      $class:
+      Octium::Folders::Signup : $signup = Octium::env->signup,
+      Str : $collection !
+    ) {
+
+    my $folder
+      = $signup->folder( phylum => $PHYLUM, collection => $collection );
+
+    my $deleted_text = $folder->slurp_read($DELETEDS_FILE);
+    my @deleteds     = split( "\n", $deleted_text );
+    return @deleteds;
+
+}
+
 method load_storable (
       $class:
       Octium::Folders::Signup : $signup = Octium::env->signup,
@@ -221,6 +237,13 @@ method finalize_skeds (
         collection => $exceptions,
     );
 
+    my @deleteds = $class->load_deleteds(
+        signup     => $signup,
+        collection => $exceptions,
+    );
+
+    my %is_deleted = map { $_ => 1 } @deleteds;
+
     my @finalized_skeds;
 
     my @ids = Actium::uniq( $received_collection->sked_ids,
@@ -230,7 +253,7 @@ method finalize_skeds (
         if ( $exception_collection->_has_sked_id($id) ) {
             push @finalized_skeds, $exception_collection->sked_obj($id);
         }
-        else {
+        elsif ( not $is_deleted{$id} ) {
             push @finalized_skeds, $received_collection->sked_obj($id);
         }
     }
