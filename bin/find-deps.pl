@@ -49,6 +49,7 @@ foreach (@deps) {
     s/'.*'//g;
     s/^\s+//;
     s/\s+$//;
+    s/\s[\d.]+$//;
 
 }
 
@@ -63,6 +64,8 @@ if ($add_general_dependencies) {
       Perl::Critic::Tics
       Perl::Tidy
       App::Ack
+      OptArgs
+      Pod::Tidy
       );    # general dependencies of the system, not for any single module
 }
 
