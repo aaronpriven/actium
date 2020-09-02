@@ -1,6 +1,6 @@
 # New Signup Procedures
 
-Aaron Priven, last modified Winter 2018
+Aaron Priven, last modified Fall 2020
 
 ## Get files
 
@@ -10,8 +10,11 @@ There are two sets of files:
 newsignup . These now include the school calendars, which formerly were
 separate.
 
-   2. The PlacePatterns.xml and xsd files which are usually separate. These
-need to be placed manually in the folder xhea under the signup folder.
+   2. The PlacePattern.xml and xsd files which are usually separate. These need
+to be placed manually in the folder xhea under the signup folder.  At the
+moment, the program needs them to be called "PlacePattern.xml" and
+"PlacePattern.xsd", although the filenames we've received from Scheduling have
+sometimes been "PlacePatterns", with an "s". This needs to be changed manually.
 
 ## Run actium.pl newsignup
 
@@ -45,28 +48,11 @@ folder.
 It will also create temporary Hastus Standard AVL files from the
 XHEA data. 
 
-## Download a copy of the Actium database, for backup
+## Make a copy of the Actium database, for backup
 
-The FileMaker databases contain a lot of info that we enter that's
-used to create the schedules. They are stored on an external server
-at triple8.net.
-
-As a precautionary measure, we download a copy of the Actium database
-before we make the changes below.
-
-a) Using a web browser, go to www.mytriple8.net
-
-b) Log in. I am not putting the user name and password in a document
-like this, but there is one, available on request.
-
-c) Click on "FileMaker Hosting" under "Services"
-
-d) One of the files is "ACTransit\_Actium.fmp12". Click the "Download"
-button. A little box will appear saying "Downloading FileMaker
-Database… zipping file." It will take a while to do that. Once it's
-done, it will present you with a link that says "AC Transit\_Actium.fmp12
-– click to download." Do that. It will save it in the Downloads
-folder (or whatever you have set your web browser to do).
+The FileMaker databases contain a lot of info that we enter that's used to
+create the schedules.  Currently, they are stored in the actium/database
+folder, in a file called ACTransit_Actium.fp12. Make a backup of that file.
 
 ## Import stops into FileMaker
 
@@ -182,24 +168,26 @@ This creates the schedule files in the folder s. There are several types: Excel 
 
 ## Create the file comparing the signups
 
-````Shell
-    cd Actium/db
-    diff y00/s/prehistorics z00/s/prehistorics >diffs/y00-z00.diff
-````
+     actium.pl compareskeds -s z00 -o y00 --excel
 
-This creates the "diff" file that includes the differences between the two sets of directories.
-
-A simple explanation of how a "normal" diff file can be read is here:
-
-<http://www.markusbe.com/2009/12/how-to-read-a-patch-or-diff-and-understand-its-structure-to-apply-it-manually/#how-to-read-a-normal-diff>
+This creates the differences file that includes the differences between the two sets of directories.
+It saves it in the current directory.
 
 ## Analyze comparison and make report
 
-Go through the diff file and write down the changes for the comparison report. Opening the diff file in vim is nice because the syntax checking tools autmatically colorize everything: the previous signup is orange (or blue, on a light background) and the new one is green (or something else if the settings are different from mine).
+Go through the diff file and write down the changes for the comparison report. 
 
-This is basically analysis. Sometimes the changes are clear from the context, such as when the times are just off a minute or three. Sometimes it is clear that it matches whatever Planning and Scheduling has told us about the changes, which is nice. Other times, it's a mystery. Because the rawskeds do not contain information about whether trips are school-day-only trips or not, if one trip is changing it is useful to check in the Crew Schedule reports (traditionally known as headway sheets, hence their placement in the "headways" folder) whether the trips being changed are school-day only.
+This is basically analysis. Sometimes the changes are clear from the context,
+such as when the times are just off a minute or three. Sometimes it is clear
+that it matches whatever Planning and Scheduling has told us about the changes,
+which is nice. Other times, it's a mystery. Because the rawskeds do not contain
+information about whether trips are school-day-only trips or not, if one trip
+is changing it is useful to check in the Crew Schedule reports (traditionally
+known as headway sheets, hence their placement in the "headways" folder)
+whether the trips being changed are school-day only.
 
-I write these up and save them in a file such as diffs/y00-z00-comparison.doc and then send them around.
+I write these up and save them in a file such as diffs/y00-z00-comparison.doc
+and then send them around.
 
 ## Create exceptional schedules
 
@@ -244,20 +232,6 @@ lines and associated information.
 
 Importantly, all changed lines should have their Timetable Date updated.
 
-## Create point schedule files
-
-a) Run the avl2points command:
-
-    actium.pl avl2points -s z00
-
-This creates the files that have the actual times in them, one for each stop.  They are in an intermediate format not intended to be printed.
-
-b) Run the actium k2id command:
-
-    actium.pl makepoints -s z00
-
-At the end it will say something like "20 skipped signs because stop file not found." Each of these signs has an entry in the Signs table in the FileMaker database. It will probably be necessary to go through each one of those and figure out why the stop is no longer there.
-
 ## Create web schedules
 
 Run the tabskeds program:
@@ -271,6 +245,22 @@ zip -r tabskeds tabxchange/
 ````
 
 Then send that to the Help Desk with a request that it be made previews soon and active on the effective date.
+
+## Create point schedule files
+
+a) Run the sked2points command:
+
+    actium.pl sked2points -s z00
+
+This creates the files that have the actual times in them, one for each stop.  They are in an intermediate format not intended to be printed.
+
+b) Run the actium k2id command:
+
+    actium.pl makepoints -s z00
+
+At the end it will say something like "20 skipped signs because stop file not found." Each of these signs has an entry in the Signs table in the FileMaker database. It will probably be necessary to go through each one of those and figure out why the stop is no longer there.
+
+
 
 ## Run timetable program and update timetables
 
