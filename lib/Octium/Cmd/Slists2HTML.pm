@@ -26,7 +26,7 @@ my %order_of = map { $_ => $count++ } @DIRCODES;
 
 const my $HIGHEST_LINE_IN_FIRST_LOCALPAGE => 70;
 
-const my %LINE_SHOULD_BE_SKIPPED => ( 399 => 1 );
+const my %LINE_SHOULD_BE_SKIPPED => map { $_ => 1 } 392 .. 399;
 
 const my %LONGCORNER_OF => (
     # taken from Wikipedia... all of them except the eight principal ones
@@ -331,7 +331,7 @@ EOT
     my @alltypes
       = env->option('modified')
       ? ('Modified')
-      : ( 'Local', 'All Nighter', 'Transbay', 'Service to Schools',
+      : ( 'Tempo', 'Local', 'All Nighter', 'Transbay', 'Service to Schools',
         'Early Bird' );
 
   TYPE:
