@@ -46,9 +46,16 @@ sub START {
     my $oldsignup = env->oldsignup;
     my $signup    = env->signup;
 
-    my @skipped         = env->argv;
-    my $reverse_skipped = not( env->option('omit') );
+    my @skipped = env->argv;
     push @skipped, ( 600 .. 699 ) if env->option('600s');
+
+    my $reverse_skipped;
+    if ( @skipped == 0 ) {
+        $reverse_skipped = 0;
+    }
+    else {
+        $reverse_skipped = not( env->option('omit') );
+    }
 
     chdir $signup->path;
     $actiumdb->load_tables(
