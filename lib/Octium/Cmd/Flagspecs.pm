@@ -184,8 +184,8 @@ sub build_place_and_stop_lists {
             $prevroute = $route;
         }
 
-        next PAT if Actium::in( $route, 'BSH', 'BSD', 'BSN', '399' );
-        # skip Broadway Shuttle
+        next PAT if Actium::in( $route, 'BSH', 'BSD', 'BSN', 392..399 );
+        # skip Broadway Shuttle, supervisor routes
 
         my @tps = @{
             $dbh->selectall_arrayref( $tps_sth, { Slice => {} },
