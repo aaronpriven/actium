@@ -145,6 +145,8 @@ sub START {
         }
 
         next if $change eq 'U';
+        next if $change !~ /D/;
+        # this should probably be an option
 
         #   my $count;
         #   foreach my $group (qw(old_line new_line old_decals new_decals)) {
@@ -205,8 +207,6 @@ sub add_drop_unchanged {
 sub move_insignificant_changes_to_unchanged {
     state $same_decals = [
         qw(
-          46-b 46-d
-          46-d 46-b
           DB-a DB-g
           DB-b DB-h
           DB-c DB-i
@@ -227,42 +227,47 @@ sub move_insignificant_changes_to_unchanged {
           DB3-e DB3-j
           F-e  F-a
           F-f  F-d
+          G-a     G-f
+          G-d     G-g
           M-a  M-e
           M-b  M-f
-          11-d  11-h
-          31-b  31-g
-          232-d 232-c
-          356-a 356-e
-          800-b 800-g
+          S-a     S-c
+          S-b     S-d
+          SB-a    SB-f
+          SB-c    SB-d
+          Z-a     Z-f
+          Z-d     Z-e
           7-c   7-d
-          65-a    65-d
-          65-b    65-e
-          67-f    67-i
-          67-g    67-j
-          88-a    88-c
-          851-a   851-e
+          11-d    11-h
           12-i    12-r
           12-i    12-t
           12-i    12-u
           18-e    18-k
           18-f    18-m
+          21-e    21-m
+          21-e    21-r
+          21-r    21-m
+          29-f    29-n
+          29-g    29-o
+          31-b  31-g
+          46-b 46-d
+          46-d 46-b
           51A-c   51A-h
           51A-c   51A-i
+          65-a    65-d
+          65-b    65-e
+          67-f    67-i
+          67-g    67-j
           80-b    80-k
           80-c    80-n
           80-g    80-m
-          G-a     G-f
-          G-d     G-g
-          S-b     S-d
-          S-a     S-c
-          SB-a    SB-f
-          SB-c    SB-d
-          Z-a     Z-f
-          Z-d     Z-e
+          88-a    88-c
           210-b   210-e
           210-c   210-f
-          29-f    29-n
-          29-g    29-o
+          232-d 232-c
+          356-a 356-e
+          800-b 800-g
+          851-a   851-e
 
           )
     ];
