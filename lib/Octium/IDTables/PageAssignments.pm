@@ -113,7 +113,7 @@ my $page_framesets = Octium::Sked::Timetable::IDPageFrameSets->new(
     },
     {   description       => 'Landscape full, 18.5 narrower columns',
         compression_level => 2,
-        frames            => [ { widthpair => [ 18, 1 ], frame_idx => 0 } ],
+        frames            => [ { widthpair => [ 19, 0 ], frame_idx => 0 } ],
         height            => 40,
     },
 );
