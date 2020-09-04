@@ -212,8 +212,9 @@ method kpoint {
 
     my @entries = ( $linegroup, $dir, $day );
 
-    if ( $self->is_final_stop ) {
-        push @entries, "#LASTSTOP", join( ':', $self->lines );
+    if ( $self->is_final_stop or $self->is_dropoff_only) {
+        my $tag = $self->is_final_stop ? '#LASTSTOP' : '#DROPOFF';
+        push @entries, $tag, join( ':', $self->lines );
         my @dests = map { $_->destination_place } $self->trips;
         @dests = Actium::uniq( sort @dests );
         push @entries, join( ':', @dests );
@@ -237,6 +238,7 @@ method kpoint {
             push @entries, $entry;
         }
     }
+    return unless @entries; # no entries if only entries have calendar items
     return join( "\t", @entries );
 
 }
