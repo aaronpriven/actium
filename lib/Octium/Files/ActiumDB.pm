@@ -239,6 +239,10 @@ sub _build_place_cache {
 
 method zone_dropoffonly (:$line, :$stopid, :$destination_place) {
     return unless $self->is_nolocals_line($line);
+    my $stop_city = $self->stop_row_r($stopid)->{c_city};
+    return 1 if $stop_city eq 'Virtual';
+    croak "No city for stop $stopid" unless $self->city_exists($stop_city);
+
     croak "No such place $destination_place"
       unless $self->place_exists($destination_place);
     my $dest_city = $self->place_row_r($destination_place)->{c_city};
@@ -246,8 +250,7 @@ method zone_dropoffonly (:$line, :$stopid, :$destination_place) {
       unless $self->city_exists($dest_city);
     my $dest_zone = $self->city_row_r($dest_city)->{Side};
     croak "No stop $stopid" unless $self->stop_exists($stopid);
-    my $stop_city = $self->stop_row_r($stopid)->{c_city};
-    croak "No city for stop $stopid" unless $self->city_exists($stop_city);
+
     my $stop_zone = $self->city_row_r($stop_city)->{Side};
 
     return $stop_zone eq $dest_zone;
