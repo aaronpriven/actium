@@ -285,6 +285,9 @@ sub new_from_kpoints {
             my ( $linegroup, $dircode, $days, @entries )
               = split( /\t/, $kpoint );
 
+            next LINE_IN_KPOINT_FILE
+              unless @entries;
+
             # notes that all the lines are found
             my @linegroup_lines = split( /:/, $linegroup );
             push @found_linedirs, @linegroup_lines;
