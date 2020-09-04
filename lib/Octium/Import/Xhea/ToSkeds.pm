@@ -575,8 +575,8 @@ sub _make_skeds {
 
     my @skeds;
     foreach my $lgdir ( Actium::sortbyline keys %patgroup_by_lgdir ) {
-        next if $lgdir =~ /^399/;
-        # 399 is not a real line
+        next if $lgdir =~ /^39[2-9]/;
+        # 392-399 are not real lines
         env->last_cry->over( $lgdir, " " );
         my $patgroup = $patgroup_by_lgdir{$lgdir};
         push @skeds, $patgroup->skeds( $params{actiumdb} );
