@@ -84,7 +84,7 @@ sub START {
         next unless $pat{$key}{IsInService};
 
         my $route = $pat{$key}{Route};
-        next if $route eq '399';    # supervisor order
+        next if $route =~ /\A39[0-9]/;    # supervisor order
 
         my $dir = dir_of_hasi( $pat{$key}{DirectionValue} );
 
@@ -245,6 +245,9 @@ sub START {
 sub get_opposite {
     my $disp = shift;
     my ( $route, $dir, $has_last ) = split( /-/, $disp );
+    if (not exists $opposite_of{$dir}) {
+       die "No opposite: $dir in $route";
+    }
     return "$route-" . $opposite_of{$dir};
 }
 
