@@ -266,8 +266,8 @@ const my @COMPRESSION_SETTINGS => (
         timepointstyle => 'CompressedTimepoints',
     },
     # 2
-    {   col_points     => 38.9,
-        halfcol_points => 19.45,
+    {   col_points     => 37.89, # 19.5 landscape cols - 38.9,
+        halfcol_points => 18.945, # 19.45,
         timestyle      => 'CompressedTime',
         timepointstyle => 'CompressedTimepoints',
     }
