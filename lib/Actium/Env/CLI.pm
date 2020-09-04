@@ -471,7 +471,7 @@ sub _build_options {
             elsif ( $obj->prompt ) {
                 my $prompt = $obj->prompt;
                 $prompt = $obj->description if $prompt eq '1';
-                $prompt = $obj->prompt =~ s/:*\z/:/r;
+                $prompt =~ s/:*\z/:/;
                 # add a colon if it's not already there
                 $options{$name} = $self->prompt( $prompt, $obj->prompthide );
             }
