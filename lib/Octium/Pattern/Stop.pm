@@ -13,6 +13,15 @@ has 'h_stp_511_id' => (
     required => 1,
 );
 
+method _data_printer {
+    my $display    = $self->h_stp_511_id;
+    my $tstp_place = $self->tstp_place;
+    if ( defined $tstp_place ) {
+        $display = $display . ':' . $tstp_place;
+    }
+    return Actium::blessed($self) . '=' . $display;
+}
+
 has 'tstp_place' => (
     is        => 'ro',
     isa       => 'Str',

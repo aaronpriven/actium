@@ -14,6 +14,10 @@ has 'int_number' => (
     isa      => 'Int',
 );
 
+method _data_printer {
+    return Actium::blessed($self) . '=' . $self->int_number;
+}
+
 has [qw/days pattern_id/] => (
     is       => 'ro',
     required => 1,
