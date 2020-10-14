@@ -254,8 +254,9 @@ sub _stops_description {
     # "Undefined value in comparison errors
 
     my $rest;
-    ( $on, $rest ) = split( /:/, $desc, 2 );
+    ( $on, $rest ) = split( / *[&:] */, $desc, 2 );
     # on is everything before colon, if there's a colon
+    # or ampersand
     # the rest is everything else
 
     if ( $on =~ / at / and not $rest ) {
