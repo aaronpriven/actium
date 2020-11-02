@@ -311,7 +311,7 @@ sub _get_trip_notes_from_event_date {
 
     my $cry = env->cry('Creating trip calendar notes from XHEA event dates');
 
-    require DateTime::Event::ICal;
+    require DateTime::Event::ICal;  ### DEP ###
 
     my %p = validate(
         @_,
