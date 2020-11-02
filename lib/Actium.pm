@@ -332,19 +332,19 @@ our @EXPORT = qw/$EMPTY $CRLF $SPACE env/;
 
 }
 
-use HTML::Entities (qw[encode_entities]);                        ### DEP ###
-use List::Util     (qw(all any first max min none sum uniq));    ### DEP ###
-use List::MoreUtils 0.426 (qw(arrayify firstidx mesh natatime)); ### DEP ###
+use HTML::Entities (qw[encode_entities]);                           ### DEP ###
+use List::Util     (qw(all any first max min none sum uniq));       ### DEP ###
+use List::MoreUtils 0.426 (qw(arrayify firstidx mesh natatime));    ### DEP ###
 # List::MoreUtils::XS  ### DEP ###
-use POSIX (qw/ceil floor/);                                      ### DEP ###
-use Ref::Util                                                    ### DEP ###
+use POSIX (qw/ceil floor/);                                         ### DEP ###
+use Ref::Util                                                       ### DEP ###
   ( qw( is_arrayref is_blessed_ref is_coderef is_hashref
       is_ioref is_plain_arrayref is_plain_hashref is_ref)
   );
-use Scalar::Util                                                 ### DEP ###
+use Scalar::Util                                                    ### DEP ###
   (qw( blessed looks_like_number refaddr reftype ));
-use Statistics::Lite (qw/mean stddevp/);                         ### DEP ###
-use Text::Trim('trim');                                          ### DEP ###
+use Statistics::Lite (qw/mean stddevp/);                            ### DEP ###
+use Text::Trim('trim');                                             ### DEP ###
 
 =head1 SUBROUTINES
 
@@ -976,9 +976,12 @@ func u_wrap ( Str $msg!,
                 my @rest_of_the_lines = $breaker->break($rest);
 
                 if ( $addspace and $indent < 0 ) {
-                    $_ = $indentspace . $_ foreach @rest_of_the_lines;
+                    foreach my $line (@rest_of_the_lines) {
+	            push @lines, $indentspace . $line;
+                    }
+                    #$_ = $indentspace . $_ foreach @rest_of_the_lines;
                 }
-                push @lines, @rest_of_the_lines;
+                #push @lines, @rest_of_the_lines;
             }
             else {
                 push @lines, $breaker->break($line);
@@ -1185,7 +1188,7 @@ passed data structure, suitable for displaying and debugging.
 =cut
 
 sub dumpstr (\[@$%&];%) {    ## no critic (Prototypes)
-                              # prototype copied from Data::Printer::np
+              # prototype copied from Data::Printer::np
     require Data::Printer;    ### DEP ###
     return Data::Printer::np(
         @_,
