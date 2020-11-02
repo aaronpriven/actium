@@ -139,7 +139,7 @@ sub START {
 
     close $nbdest;
 
-    open my $joineddest, ">", "pattern-destinations-joined.txt";
+    open my $joineddest, ">", "direction-destinations.txt";
     say $joineddest "line\tdir\tdestination";
 
     foreach my $ld ( Actium::sortbyline( keys %dests_of_ld ) ) {
