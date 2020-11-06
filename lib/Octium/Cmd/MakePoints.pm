@@ -33,6 +33,10 @@ const my $FALLBACK_AGENCY_ABBR => 'AC';
 const my $DEFAULT_TALLCOLUMNNUM   => 10;
 const my $DEFAULT_TALLCOLUMNLINES => 50;
 
+const our $HEIGHT_OF_FREQUENT_ICON => 5;
+# if this is 4, then the icon is 4 lines long in the column
+
+
 sub HELP {
 
     my $helptext = <<'EOF';
@@ -833,7 +837,7 @@ sub START {
             say $heights_fh "$signid\t" . $heights{$signid};
         }
         $heights_fh->close;
-        $cry->done;
+        $heights_cry->done;
     }
 
     $makepoints_cry->done;

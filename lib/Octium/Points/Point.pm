@@ -31,12 +31,6 @@ const my $BOXBREAK     => $IDT->boxbreak;
 const my $BLANK_COLUMN => ( $BOXBREAK x 2 );
 const my $NBSP         => $IDT->nbsp;
 
-const my $FREQUENT_SERVICE         => 15;
-const my $MINIMUM_TRIPS_IN_A_RANGE => 7;
-# first and last will still be shown, so if this is 7, it omits 5 or more times in a row
-const my $HEIGHT_OF_FREQUENT_ICON => 4;
-# if this is 4, then the icon is 4 lines long in the column
-
 has [
     qw/stopid signid delivery agency signtype
       description description_nocity city tidfile/
@@ -661,7 +655,8 @@ sub determine_subtype {
             $height = 9;    # height of drop off only note
         }
         else {
-            $height = $column->time_count || 1;
+            #$height = $column->time_count || 1;
+            $height = $column->content_height || 1;
         }
         # at least one time -- that used to be there for noteonly
 
@@ -949,70 +944,13 @@ sub format_columns {
         my $prev_pstyle = $EMPTY;
         my $column_length;
 
-        ##### BUILD FREQUENT FLAG
-
-        my @frequent_action;
-        if ( $column->linegroup eq '1T' ) {
-            my @ranges;
-            my @times    = $column->times;
-            my @timenums = map { Actium::Time::->from_str($_)->timenum } @times;
-            my @feet     = $column->feet;
-
-            my $start = 0;
-
-            my $in_a_range = 0;
-
-          TRIP:
-            for my $trip_idx ( 0 .. $#times - 1 ) {
-
-                my $next_idx = $trip_idx + 1;
-
-                my $this        = $timenums[$trip_idx];
-                my $next        = $timenums[$next_idx];
-                my $is_frequent = ( $next - $this ) < $FREQUENT_SERVICE;
-                my $thisfoot    = $feet[$trip_idx];
-                my $nextfoot    = $feet[$next_idx];
-
-                if (    not $in_a_range
-                    and not $thisfoot
-                    and not $nextfoot
-                    and $is_frequent )
-                {
-                    # start a range
-                    push @ranges, [$trip_idx];
-                    $in_a_range = 1;
-                }
-                elsif ( $in_a_range and ( $nextfoot or not $is_frequent ) ) {
-                    # end a range
-                    $ranges[-1][1] = $trip_idx;
-                    $in_a_range = 0;
-                }
-            }
-
-            # filter out ranges that are too small
-            @ranges = grep {
-                \my @range = $_;
-                my $diff = $range[1] - $range[0];
-                $diff < $MINIMUM_TRIPS_IN_A_RANGE
-            } @ranges;
-
-            foreach \my @range(@ranges) {
-                my $first = $range[0];
-                my $last  = $range[1];
-                $frequent_action[$first] = 'S';
-                $frequent_action[$last]  = 'E';
-                foreach my $trip_idx ( $first + 1 .. $last - 1 ) {
-                    $frequent_action[$trip_idx] = 'C';
-                }
-            }
-
-        }
+        my @frequent_actions = $column->frequent_actions;
 
         my $num_lines = 0;
       TIME:
         foreach my $i ( 0 .. $column->time_count - 1 ) {
 
-            my $frequent_action = $frequent_action[$i];
+            my $frequent_action = $frequent_actions[$i] // $EMPTY;
             next if $frequent_action eq 'C';
             # don't add a time  if in the middle of a range
 
@@ -1046,8 +984,9 @@ sub format_columns {
 
             if ( $frequent_action eq 'S' ) {
                 # if it's the start of a range
-                $time .= "\r" . IDT->parastyle('FrequentIcon') . 'B';
-                $num_lines += $HEIGHT_OF_FREQUENT_ICON;
+                $time .= "\r" . $IDT->parastyle('FrequentIcon') . 'A';
+	    no warnings 'once';
+                $num_lines += $Octium::Cmd::MakePoints::HEIGHT_OF_FREQUENT_ICON;
             }
 
             $num_lines++;

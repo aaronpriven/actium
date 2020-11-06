@@ -24,6 +24,11 @@ const my $IDT => 'Octium::Text::InDesignTags';
 const my $head_line_separator =>
   ( $IDT->thinspace . $IDT->bullet . $IDT->thinspace );
 # q< / >;
+#
+#
+const my $FREQUENT_SERVICE => 15;
+const my $MINIMUM_TRIPS_IN_A_RANGE => 8;
+# first and last will still be shown
 
 has [qw/linegroup display_stopid days dircode/] => (
     is  => 'ro',
@@ -144,6 +149,8 @@ has approxflag_r => (
 has formatted_height => (
     is  => 'rw',
     isa => 'Maybe[Int]',
+    # this is the height of the column after it's been formatted, that is,
+    # the height on the template
 );
 
 has 'previous_blank_columns' => (
@@ -151,6 +158,24 @@ has 'previous_blank_columns' => (
     is      => 'rw',
     default => 0,
 );
+
+has frequent_action_r => (
+    traits  => ['Array'],
+    is      => 'ro',
+    isa     => 'ArrayRef',
+    builder => '_build_frequent_action_r',
+    lazy    => 1,
+    handles => { frequent_actions => 'elements', },
+);
+
+has content_height => (
+    is      => 'ro',
+    builder => '_build_content_height',
+    lazy    => 1,
+    isa     => 'Int',
+);
+# this is the number of visible rows in the column, that is, times plus
+# space for the frequent icon
 
 sub format_header {
     my $self = shift;
@@ -392,6 +417,97 @@ sub format_approxflag {
     }
 
     return;
+
+}
+
+sub _build_frequent_action_r {
+    my $self = shift;
+
+    my @frequent_actions;
+    if ( $self->linegroup eq '1T' ) {
+        my @ranges;
+        my @times    = $self->times;
+        my @timenums = map { Actium::Time::->from_str($_)->timenum } @times;
+        my @feet     = $self->feet;
+
+        my $start = 0;
+
+        my $in_a_range = 0;
+
+      TRIP:
+        for my $trip_idx ( 0 .. $#times - 1 ) {
+
+            my $next_idx = $trip_idx + 1;
+
+            my $this        = $timenums[$trip_idx];
+            my $next        = $timenums[$next_idx];
+            my $is_frequent = ( $next - $this ) <= $FREQUENT_SERVICE;
+            my $thisfoot    = $feet[$trip_idx];
+            my $nextfoot    = $feet[$next_idx];
+
+            if (    not $in_a_range
+                and not $thisfoot
+                and not $nextfoot
+                and $is_frequent )
+            {
+                # start a range
+                push @ranges, [$trip_idx];
+                $in_a_range = 1;
+            }
+            elsif ( $in_a_range and ( $nextfoot or not $is_frequent ) ) {
+                # end a range
+                $ranges[-1][1] = $trip_idx;
+                $in_a_range = 0;
+            }
+        }
+
+        $ranges[-1][1] = $#times if ($in_a_range);
+
+        #Actium::env->wail( Actium::dumpstr(@ranges) );
+
+        # filter out ranges that are too small
+        @ranges = grep {
+            #\my @range = $_;
+            #my $diff = $range[1] - $range[0];
+            #$MINIMUM_TRIPS_IN_A_RANGE <= $diff;
+            $MINIMUM_TRIPS_IN_A_RANGE <= ( $_->[1] - $_->[0] );
+            # same thing as commented out code, only without refalias
+        } @ranges;
+
+        foreach my $range (@ranges) {
+            my $first = $range->[0];
+            my $last  = $range->[1];
+            $frequent_actions[$first] = 'S';
+            $frequent_actions[$last]  = 'E';
+            foreach my $trip_idx ( $first + 1 .. $last - 1 ) {
+                $frequent_actions[$trip_idx] = 'C';
+            }
+        }
+
+        my @freq = map { $_ // '' } @frequent_actions;
+        #Actium::env->wail("@freq");
+
+    }
+
+    return \@frequent_actions;
+
+}
+
+sub _build_content_height {
+    my $self = shift;
+
+    my $height = 0;
+    for my $frequent_action ( $self->frequent_actions ) {
+        if ( not defined $frequent_action or $frequent_action eq 'E' ) {
+            $height++;
+        }
+        elsif ( $frequent_action eq 'S' ) {
+            no warnings 'once';
+            $height += $Octium::Cmd::MakePoints::HEIGHT_OF_FREQUENT_ICON + 1;
+        }
+
+    }
+    return $height;
 
 }
 
