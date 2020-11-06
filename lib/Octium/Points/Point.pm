@@ -18,6 +18,7 @@ use sort ('stable');
 
 use List::Compare::Functional('get_unique');    ### DEP ###
 use Actium::DateTime;
+use Actium::Time;
 
 const my $IDPOINTFOLDER => 'idpoints2016';
 const my $KFOLDER       => 'p/final/kpoints';
@@ -29,6 +30,12 @@ const my $IDT          => 'Octium::Text::InDesignTags';
 const my $BOXBREAK     => $IDT->boxbreak;
 const my $BLANK_COLUMN => ( $BOXBREAK x 2 );
 const my $NBSP         => $IDT->nbsp;
+
+const my $FREQUENT_SERVICE         => 15;
+const my $MINIMUM_TRIPS_IN_A_RANGE => 7;
+# first and last will still be shown, so if this is 7, it omits 5 or more times in a row
+const my $HEIGHT_OF_FREQUENT_ICON => 4;
+# if this is 4, then the icon is 4 lines long in the column
 
 has [
     qw/stopid signid delivery agency signtype
@@ -352,7 +359,7 @@ sub new_from_kpoints {
                 foreach (@entries) {
                     my ( $time, $line, $destination, $place, $exception )
                       = split(/:/);
-                    $time_of{$_} = Actium::Time->from_str($time)->timenum;
+                    $time_of{$_} = Actium::Time::->from_str($time)->timenum;
                 }
 
                 @entries = sort { $time_of{$a} <=> $time_of{$b} } @entries;
@@ -940,8 +947,74 @@ sub format_columns {
         }
 
         my $prev_pstyle = $EMPTY;
+        my $column_length;
 
+        ##### BUILD FREQUENT FLAG
+
+        my @frequent_action;
+        if ( $column->linegroup eq '1T' ) {
+            my @ranges;
+            my @times    = $column->times;
+            my @timenums = map { Actium::Time::->from_str($_)->timenum } @times;
+            my @feet     = $column->feet;
+
+            my $start = 0;
+
+            my $in_a_range = 0;
+
+          TRIP:
+            for my $trip_idx ( 0 .. $#times - 1 ) {
+
+                my $next_idx = $trip_idx + 1;
+
+                my $this        = $timenums[$trip_idx];
+                my $next        = $timenums[$next_idx];
+                my $is_frequent = ( $next - $this ) < $FREQUENT_SERVICE;
+                my $thisfoot    = $feet[$trip_idx];
+                my $nextfoot    = $feet[$next_idx];
+
+                if (    not $in_a_range
+                    and not $thisfoot
+                    and not $nextfoot
+                    and $is_frequent )
+                {
+                    # start a range
+                    push @ranges, [$trip_idx];
+                    $in_a_range = 1;
+                }
+                elsif ( $in_a_range and ( $nextfoot or not $is_frequent ) ) {
+                    # end a range
+                    $ranges[-1][1] = $trip_idx;
+                    $in_a_range = 0;
+                }
+            }
+
+            # filter out ranges that are too small
+            @ranges = grep {
+                \my @range = $_;
+                my $diff = $range[1] - $range[0];
+                $diff < $MINIMUM_TRIPS_IN_A_RANGE
+            } @ranges;
+
+            foreach \my @range(@ranges) {
+                my $first = $range[0];
+                my $last  = $range[1];
+                $frequent_action[$first] = 'S';
+                $frequent_action[$last]  = 'E';
+                foreach my $trip_idx ( $first + 1 .. $last - 1 ) {
+                    $frequent_action[$trip_idx] = 'C';
+                }
+            }
+
+        }
+
+        my $num_lines = 0;
+      TIME:
         foreach my $i ( 0 .. $column->time_count - 1 ) {
+
+            my $frequent_action = $frequent_action[$i];
+            next if $frequent_action eq 'C';
+            # don't add a time  if in the middle of a range
 
             my $time = $column->time($i);
             my $foot = $column->foot($i);
@@ -954,7 +1027,7 @@ sub format_columns {
             $time = "\t${time}$ampm";
 
             my $pstyle = $ampm eq 'a' ? 'amtimes' : 'pmtimes';
-            if ( $prev_pstyle ne $pstyle ) {
+            if ( $prev_pstyle ne $pstyle or $frequent_action eq 'E' ) {
                 $prev_pstyle = $pstyle;
                 $time        = $IDT->parastyle($pstyle) . $time;
             }
@@ -971,22 +1044,35 @@ sub format_columns {
                 $time .= $IDT->combi_foot($marker);
             }
 
+            if ( $frequent_action eq 'S' ) {
+                # if it's the start of a range
+                $time .= "\r" . IDT->parastyle('FrequentIcon') . 'B';
+                $num_lines += $HEIGHT_OF_FREQUENT_ICON;
+            }
+
+            $num_lines++;
+
             $column->set_formatted_time( $i, $time );
 
         }
 
-        my $column_length = $column->formatted_height;
+        $column_length = $column->formatted_height;
+        # this is the length of the column from the SignTemplate database
+
         my $formatted_columns;
+        my @all_columns_formatted_times
+          = grep {defined} $column->formatted_times;
 
         if ($column_length) {
+   # TODO - figure out how to deal with frequent service breaking across columns
 
             my $count = $column->formatted_time_count;
-            my $width = Actium::ceil( $count / $column_length );
-            $column_length = Actium::ceil( $count / $width );
+            my $width = Actium::ceil( $num_lines / $column_length );
+            $column_length = Actium::ceil( $num_lines / $width );
 
             my @ft;
             my $iterator = Actium::natatime $column_length,
-              $column->formatted_times;
+              @all_columns_formatted_times;
             while ( my @formatted_times = $iterator->() ) {
                 push @ft, join( "\r", @formatted_times );
             }
