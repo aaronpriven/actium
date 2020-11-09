@@ -458,9 +458,10 @@ sub _build_frequent_action_r {
     my $self = shift;
 
     my @frequent_actions;
+    my @times = $self->times;
+
     if ( $self->linegroup eq '1T' ) {
         my @ranges;
-        my @times    = $self->times;
         my @timenums = map { Actium::Time::->from_str($_)->timenum } @times;
         my @feet     = $self->feet;
 
@@ -498,8 +499,6 @@ sub _build_frequent_action_r {
 
         $ranges[-1][1] = $#times if ($in_a_range);
 
-        #Actium::env->wail( Actium::dumpstr(@ranges) );
-
         # filter out ranges that are too small
         @ranges = grep {
 
@@ -521,11 +520,11 @@ sub _build_frequent_action_r {
             }
         }
 
-        my @freq = map { $_ // '' } @frequent_actions;
-
-        #Actium::env->wail("@freq");
-
     }
+
+    $#frequent_actions = $#times;
+
+    my @freq = map { $_ // '' } @frequent_actions;
 
     return \@frequent_actions;
 
@@ -534,17 +533,23 @@ sub _build_frequent_action_r {
 sub _build_content_height {
     my $self = shift;
 
-    my $height = 0;
-    for my $frequent_action ( $self->frequent_actions ) {
+    my $height           = 0;
+    my @frequent_actions = $self->frequent_actions;
+    for my $frequent_action (@frequent_actions) {
+
+        #for my $frequent_action ( @frequent_actions) {
         if ( not defined $frequent_action or $frequent_action eq 'E' ) {
             $height++;
         }
         elsif ( $frequent_action eq 'S' ) {
             no warnings 'once';
+            my $oldheight = $height;
             $height += Octium::Cmd::MakePoints::HEIGHT_OF_FREQUENT_ICON() + 1;
+
         }
 
     }
+
     return $height;
 
 }
@@ -555,78 +560,87 @@ const my $icon_object_height =>
 sub divide_columns {
     my ( $self, $max_column_height ) = @_;
 
-    my $content_height = $self->content_height;
-    return ( { $content_height => 1 } )
-      if $max_column_height >= $content_height;
-
-    my $width        = Actium::ceil( $content_height / $max_column_height );
-    my $break_height = Actium::ceil( $content_height / $width );
-
-    my $current_column_height = 0;
-    my %column_division;
-
+    my $content_height   = $self->content_height;
     my @frequent_actions = $self->frequent_actions;
 
-my $break_at_next_e = 0;
-    foreach my $action_idx ( 0 .. $#frequent_actions ) {
+    my @freq  = map { defined ? $_ : '-' } @frequent_actions;
+    my @times = $self->times;
 
-        my $action = $frequent_actions[$action_idx];
-        my $to_add;
+    my %column_division = ( $#frequent_actions => 1 );
 
-        if ( not defined $action ) {
-            $to_add = 1;
-        }
-        elsif ( $action eq 'S' ) {
-            $to_add = Octium::Cmd::MakePoints::HEIGHT_OF_FREQUENT_ICON() + 2;
-        }
-        elsif ($action eq 'E') {
-            if ($break_at_next_e) {
-               $column_division{$action_idx} = 1;
-	}
-	next;
-        } else {
-            $to_add = 0;
-        }
+    if ( $max_column_height < $content_height ) {
 
-        # push current item on next column if current item is too big
-        # to fit in this column
-        if ( $current_column_height + $to_add > $max_column_height ) {
-            $column_division{ $action_idx - 1 } = 1;
-            $current_column_height = $to_add;
-        }
-        elsif ( $action_idx == $#frequent_actions ) {
-            $column_division{$action_idx} = 1;
+        my $width        = Actium::ceil( $content_height / $max_column_height );
+        my $break_height = Actium::ceil( $content_height / $width );
 
-            # it fits, and this is is the last item,
-            # so set last column end to this one
-        }
-        else {
+        my $current_column_height = 0;
 
-            # it fits, and there are more items, so add current height
-            # to the tally
-            $current_column_height += $to_add;
+        my $break_at_next_e = 0;
+        foreach my $action_idx ( 0 .. $#frequent_actions ) {
 
-            # if it is now at or over the break height, set this
-            # to be the last row in the column , and set the active column
-            # to be the next one
-	# 
-	# Except that if this is an "S", we don't break here,
-	# we break after the next "E"
+            my $action = $frequent_actions[$action_idx];
+            my $to_add;
 
-            if ( $current_column_height >= $break_height ) {
-	    if ($action eq 'S') {
-	       $break_at_next_e = 1;
-	       } else {
-                   $column_division{$action_idx} = 1;
-	       }
-
-                $current_column_height = 0;
+            if ( not defined $action ) {
+                $to_add = 1;
             }
+            elsif ( $action eq 'S' ) {
+                $to_add
+                  = Octium::Cmd::MakePoints::HEIGHT_OF_FREQUENT_ICON() + 2;
+            }
+            elsif ( $action eq 'E' and $break_at_next_e ) {
+                $column_division{$action_idx} = 1;
+                $break_at_next_e = 0;
+                next;
+            }
+            else {
+                next;
+            }
+
+            # push current item on next column if current item is too big
+            # to fit in this column
+            if ( $current_column_height + $to_add > $max_column_height ) {
+                $column_division{ $action_idx - 1 } = 1;
+                $current_column_height = $to_add;
+            }
+
+            #elsif ( $action_idx == $#frequent_actions ) {
+            #    $column_division{$action_idx} = 1;
+            #
+            #                # it fits, and this is is the last item,
+            #                # so set last column end to this one
+            #            }
+            elsif ( $action_idx != $#frequent_actions ) {
+
+                # it fits, and there are more items, so add current height
+                # to the tally
+                $current_column_height += $to_add;
+
+                # if it is now at or over the break height, set this
+                # to be the last row in the column , and set the active column
+                # to be the next one
+                #
+                # Except that if this is an "S", we don't break here,
+                # we break after the next "E"
+
+                if ( $current_column_height >= $break_height ) {
+                    if ( $action eq 'S' ) {
+                        $break_at_next_e = 1;
+                    }
+                    else {
+                        $column_division{$action_idx} = 1;
+                    }
+
+                    $current_column_height = 0;
+                }
+            }
+
         }
 
     }
 
     $self->_set_column_division( $max_column_height, \%column_division );
+
     return \%column_division;
 
 }
