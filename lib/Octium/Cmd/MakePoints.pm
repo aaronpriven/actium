@@ -15,8 +15,6 @@ use Octium::Storage::Excel('new_workbook');
 use File::Slurper('read_text');    ### DEP ###
 use Text::Trim;                    ### DEP ###
 
-use Octium::Points::Point;
-
 const my $LISTFILE_BASE    => 'pl';
 const my $ERRORFILE_BASE   => 'err';
 const my $HEIGHTSFILE_BASE => 'ht';
@@ -33,9 +31,12 @@ const my $FALLBACK_AGENCY_ABBR => 'AC';
 const my $DEFAULT_TALLCOLUMNNUM   => 10;
 const my $DEFAULT_TALLCOLUMNLINES => 50;
 
-const our $HEIGHT_OF_FREQUENT_ICON => 5;
+use constant HEIGHT_OF_FREQUENT_ICON => 5;
 # if this is 4, then the icon is 4 lines long in the column
 
+
+use Octium::Points::Point;
+use Octium::Points::Column;
 
 sub HELP {
 
