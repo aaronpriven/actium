@@ -624,7 +624,7 @@ sub divide_columns {
                 # we break after the next "E"
 
                 if ( $current_column_height >= $break_height ) {
-                    if ( $action eq 'S' ) {
+                    if ( defined $action and $action eq 'S' ) {
                         $break_at_next_e = 1;
                     }
                     else {
