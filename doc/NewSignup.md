@@ -284,7 +284,7 @@ Run the program
 
     actium.pl avl2patdest –s z00
 
-It will create the file Actium/db/z00/nextbus-destinations.txt. Email this file to Nextbus.
+It will create two files in Actium/db/z00 -- pattern-destinations.txt and new-codebook.txt. Email this file to Clever, or whoever is working on that by now.
 
 ## Update flag and decal specifications
 
