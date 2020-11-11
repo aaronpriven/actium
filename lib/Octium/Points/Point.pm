@@ -18,11 +18,12 @@ use sort ('stable');
 
 use List::Compare::Functional('get_unique');    ### DEP ###
 use Actium::DateTime;
+use Actium::Time;
 
 const my $IDPOINTFOLDER => 'idpoints2016';
 const my $KFOLDER       => 'p/final/kpoints';
 
-use Octium::Points::Column;
+require Octium::Points::Column;
 
 use Octium::Text::InDesignTags;
 const my $IDT          => 'Octium::Text::InDesignTags';
@@ -292,6 +293,8 @@ sub new_from_kpoints {
             my @linegroup_lines = split( /:/, $linegroup );
             push @found_linedirs, @linegroup_lines;
 
+            no warnings 'once';
+
             my $line_agency
               = $Octium::Cmd::MakePoints::lines{ $linegroup_lines[0] }
               {agency_id};
@@ -352,7 +355,7 @@ sub new_from_kpoints {
                 foreach (@entries) {
                     my ( $time, $line, $destination, $place, $exception )
                       = split(/:/);
-                    $time_of{$_} = Actium::Time->from_str($time)->timenum;
+                    $time_of{$_} = Actium::Time::->from_str($time)->timenum;
                 }
 
                 @entries = sort { $time_of{$a} <=> $time_of{$b} } @entries;
@@ -399,6 +402,7 @@ sub new_from_kpoints {
 
                 next LINE_IN_KPOINT_FILE
                   unless @times;
+
                 # they would all be skipped because they're in the omit list
 
                 $column = Octium::Points::Column->new(
@@ -419,6 +423,7 @@ sub new_from_kpoints {
 ##################################################
 
             next if $column->has_note;
+
             # skip columns with notes, since hte only note left
             # is "drop off only" and the flags should cover that
 
@@ -556,6 +561,7 @@ sub adjust_times {
 my $ewreplace = sub {
     my $dircode = shift;
     $dircode =~ tr/23/32/;
+
     # we want westbound sorted before eastbound,
     # because transbay lines work that way. Usually.
     #
@@ -570,6 +576,7 @@ sub sort_columns_and_determine_heights {
     my ( $self, $signtype ) = @_;
 
     $signtype =~ s/=.*\z//;
+
     # Don't allow specifying a subtype manually
     # -- it will just treat it as though it were a main type
 
@@ -607,12 +614,12 @@ sub no_subtype {
 
 my $takes_up_columns_cr = sub {
 
-    my ( $col_height, @heights ) = @_;
+    my ( $col_height, @columns ) = @_;
 
     my $fits_in_cols = 0;
 
-    foreach my $height (@heights) {
-        $fits_in_cols += Actium::ceil( $height / $col_height );
+    foreach my $column (@columns) {
+        $fits_in_cols += $column->fits_in_columns($col_height);
     }
 
     return $fits_in_cols;
@@ -654,8 +661,10 @@ sub determine_subtype {
             $height = 9;    # height of drop off only note
         }
         else {
-            $height = $column->time_count || 1;
+            #$height = $column->time_count || 1;
+            $height = $column->content_height || 1;
         }
+
         # at least one time -- that used to be there for noteonly
 
         push @all_heights,
@@ -752,9 +761,14 @@ sub determine_subtype {
 
                         my $columns_needed = 0;
                         foreach my $chunk_id ( @{ $chunkids_by_region[$i] } ) {
+
+                            #$columns_needed += $takes_up_columns_cr->(
+                            #    $regions[$i]{height},
+                            #    @{ $heights_of_chunk{$chunk_id} },
+                            #);
                             $columns_needed += $takes_up_columns_cr->(
                                 $regions[$i]{height},
-                                @{ $heights_of_chunk{$chunk_id} },
+                                @{ $columns_of_chunk{$chunk_id} },
                             );
                         }
 
@@ -763,6 +777,7 @@ sub determine_subtype {
                             # it doesn't fit
 
                             if ( $i == $#regions ) {
+
                              # Smallest region is filled, so it can't fit at all
                                 next TAILFIRST;
                             }
@@ -911,6 +926,7 @@ sub format_columns {
             my $notetext;
 
             for ( $column->note ) {
+
                 #if ( $_ eq 'LASTSTOP' ) {
                 #$notetext = "Last Stop";
                 #    next;
@@ -920,6 +936,7 @@ sub format_columns {
                         $IDT->hardreturn,
                         $self->_i18n_all('drop_off_only')
                     );
+
                     #$notetext = "Drop Off Only";
                     next;
                 }
@@ -939,9 +956,30 @@ sub format_columns {
 
         }
 
-        my $prev_pstyle = $EMPTY;
+        my $prev_pstyle   = $EMPTY;
+        my $column_length = $column->formatted_height;
 
-        foreach my $i ( 0 .. $column->time_count - 1 ) {
+        # this is the length of the column from the SignTemplate database
+
+        my @frequent_actions = $column->frequent_actions;
+        my %column_divisions;
+        if ($column_length) {
+            %column_divisions = $column->column_division($column_length)->%*;
+            $self->add_to_width( scalar keys %column_divisions );
+        }
+        else {
+            $self->add_to_width(1);
+        }
+
+        my $num_lines  = 0;
+        my $final_time = $column->time_count - 1;
+      TIME:
+        foreach my $i ( 0 .. $final_time ) {
+
+            my $frequent_action = $frequent_actions[$i] // $EMPTY;
+            next if $frequent_action eq 'C';
+
+            # don't add a time  if in the middle of a range
 
             my $time = $column->time($i);
             my $foot = $column->foot($i);
@@ -954,7 +992,7 @@ sub format_columns {
             $time = "\t${time}$ampm";
 
             my $pstyle = $ampm eq 'a' ? 'amtimes' : 'pmtimes';
-            if ( $prev_pstyle ne $pstyle ) {
+            if ( $prev_pstyle ne $pstyle or $frequent_action eq 'E' ) {
                 $prev_pstyle = $pstyle;
                 $time        = $IDT->parastyle($pstyle) . $time;
             }
@@ -971,36 +1009,33 @@ sub format_columns {
                 $time .= $IDT->combi_foot($marker);
             }
 
+            if ( $frequent_action eq 'S' ) {
+
+                # if it's the start of a range
+                $time .= "\r" . $IDT->parastyle('FrequentIcon') . 'A';
+                $num_lines
+                  += Octium::Cmd::MakePoints::HEIGHT_OF_FREQUENT_ICON();
+            }
+
+            if ( $i != $final_time ) {
+                if ( $column_divisions{$i} ) {
+                    $time .= $BOXBREAK . $IDT->parastyle($pstyle) . $BOXBREAK;
+                }
+                else {
+                    $time .= "\r";
+                }
+            }
+
+            $num_lines++;
+
             $column->set_formatted_time( $i, $time );
 
         }
 
-        my $column_length = $column->formatted_height;
-        my $formatted_columns;
+        my @all_columns_formatted_times
+          = grep {defined} $column->formatted_times;
 
-        if ($column_length) {
-
-            my $count = $column->formatted_time_count;
-            my $width = Actium::ceil( $count / $column_length );
-            $column_length = Actium::ceil( $count / $width );
-
-            my @ft;
-            my $iterator = Actium::natatime $column_length,
-              $column->formatted_times;
-            while ( my @formatted_times = $iterator->() ) {
-                push @ft, join( "\r", @formatted_times );
-            }
-
-            $self->add_to_width( scalar @ft );
-
-            $formatted_columns = join( ( ( $BOXBREAK x 2 ) ), @ft );
-            # one column to get to header, one to get to next schedule box
-
-        }
-        else {    # no entry for TallColumnLines in Signtype table
-            $formatted_columns = join( "\r", $column->formatted_times );
-            $self->add_to_width(1);
-        }
+        my $formatted_columns = join( $EMPTY, @all_columns_formatted_times );
 
         $column->set_formatted_column( $blanks
               . $column->formatted_header
@@ -1022,6 +1057,7 @@ sub format_side {
     print $sidefh $self->_effective_date_indd($is_bsh);
 
     print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
+
     # blank line to separate effective dates from side notes
 
     my $sidenote = $self->sidenote;
@@ -1101,6 +1137,7 @@ sub format_sidenotes {
         my $attrcode = $EMPTY;
 
         @attr{@attrs} = split( /:/, $foot, scalar @attrs );
+
         # scalar @attrs sets the LIMIT field, so it doesn't delete empty
         # trailing entries, see split in perldoc perlfunc for info on LIMIT
 
@@ -1275,6 +1312,7 @@ sub output {
     print $fh $IDT->start, $IDT->nocharstyle;
 
     if ( not defined $self->subtype ) {
+
         # output blank columns at beginning
         # if subtype is defined, was already done in determine_subtype()
 
@@ -1283,6 +1321,7 @@ sub output {
         if ( $maxcolumns and $maxcolumns > $self->width )
         {    # if there's an entry in SignTypes
             my $columns = $maxcolumns - ( $self->width );
+
             #print "[[$maxcolumns:" , $self->width , ":$columns]]";
             print $fh (
                 $IDT->parastyle('amtimes'),
@@ -1402,6 +1441,7 @@ sub _effective_date_indd {
     #$color   = $COLORS{$oddyear};
     #$color   = $IDT->color($color);
     my $style = $STYLE_OF_MONTH{ $month . $oddyear };
+
     #$shading = "<pShadingColor:$shading>";
     #$end     = '<pShadingColor:>';
 

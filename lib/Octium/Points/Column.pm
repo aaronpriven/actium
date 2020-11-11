@@ -1,7 +1,7 @@
 package Octium::Points::Column 0.013;
 
 # Object for a single column in an InDesign point schedule
-
+#
 use warnings;
 use strict;
 
@@ -23,7 +23,11 @@ const my $IDT => 'Octium::Text::InDesignTags';
 
 const my $head_line_separator =>
   ( $IDT->thinspace . $IDT->bullet . $IDT->thinspace );
-# q< / >;
+
+const my $FREQUENT_SERVICE         => 15;
+const my $MINIMUM_TRIPS_IN_A_RANGE => 8;
+
+# first and last will still be shown
 
 has [qw/linegroup display_stopid days dircode/] => (
     is  => 'ro',
@@ -144,6 +148,9 @@ has approxflag_r => (
 has formatted_height => (
     is  => 'rw',
     isa => 'Maybe[Int]',
+
+    # this is the height of the column after it's been formatted, that is,
+    # the height on the template
 );
 
 has 'previous_blank_columns' => (
@@ -151,6 +158,56 @@ has 'previous_blank_columns' => (
     is      => 'rw',
     default => 0,
 );
+
+has frequent_action_r => (
+    traits  => ['Array'],
+    is      => 'ro',
+    isa     => 'ArrayRef',
+    builder => '_build_frequent_action_r',
+    lazy    => 1,
+    handles => { frequent_actions => 'elements', },
+);
+
+has content_height => (
+    is      => 'ro',
+    builder => '_build_content_height',
+    lazy    => 1,
+    isa     => 'Int',
+);
+
+# this is the number of visible rows in the column, that is, times plus
+# space for the frequent icon
+
+has _column_division_r => (
+    is      => 'bare',
+    default => sub { {} },
+    isa     => 'HashRef',
+    traits  => ['Hash'],
+    handles => {
+        _set_column_division    => 'set',
+        _column_division        => 'get',
+        _column_division_exists => 'exists',
+    },
+);
+
+sub column_division {
+    my ( $self, $column_height ) = @_;
+    if ( $self->_column_division_exists($column_height) ) {
+        return $self->_column_division($column_height);
+    }
+    return $self->divide_columns($column_height);
+
+}
+
+sub fits_in_columns {
+    my ( $self, $column_height ) = @_;
+    my $division = $self->column_division($column_height);
+    return scalar keys $division->%*;
+}
+
+# column divisions are array references of the last entry of each column (0-based)
+# So [10] means there's 1 column and rows 0-10 are in it
+# [10, 15] means there's 2 columns, rows 0-10 are in the first one, 11-15 in the second one
 
 sub format_header {
     my $self = shift;
@@ -188,6 +245,7 @@ sub format_head_lines {
                 $color = $line;
 
                 if ( $line eq 'BSN' ) {
+
                    #    my $days = $self->days;
                    #    $line = 'FRI NIGHT' if $days eq '5';
                    #    #$line = 'SAT NIGHT'       if $days eq '6';
@@ -210,6 +268,7 @@ sub format_head_lines {
                     $IDT->parastyle('BSHdays-dest'),
                     $IDT->color($color),
                     $line,
+
                     #$IDT->thirdspace,
                     $IDT->end_nested_style,
                     $IDT->softreturn,
@@ -392,6 +451,197 @@ sub format_approxflag {
     }
 
     return;
+
+}
+
+sub _build_frequent_action_r {
+    my $self = shift;
+
+    my @frequent_actions;
+    my @times = $self->times;
+
+    if ( $self->linegroup eq '1T' ) {
+        my @ranges;
+        my @timenums = map { Actium::Time::->from_str($_)->timenum } @times;
+        my @feet     = $self->feet;
+
+        my $start = 0;
+
+        my $in_a_range = 0;
+
+      TRIP:
+        for my $trip_idx ( 0 .. $#times - 1 ) {
+
+            my $next_idx = $trip_idx + 1;
+
+            my $this        = $timenums[$trip_idx];
+            my $next        = $timenums[$next_idx];
+            my $is_frequent = ( $next - $this ) <= $FREQUENT_SERVICE;
+            my $thisfoot    = $feet[$trip_idx];
+            my $nextfoot    = $feet[$next_idx];
+
+            if (    not $in_a_range
+                and not $thisfoot
+                and not $nextfoot
+                and $is_frequent )
+            {
+                # start a range
+                push @ranges, [$trip_idx];
+                $in_a_range = 1;
+            }
+            elsif ( $in_a_range and ( $nextfoot or not $is_frequent ) ) {
+
+                # end a range
+                $ranges[-1][1] = $trip_idx;
+                $in_a_range = 0;
+            }
+        }
+
+        $ranges[-1][1] = $#times if ($in_a_range);
+
+        # filter out ranges that are too small
+        @ranges = grep {
+
+            #\my @range = $_;
+            #my $diff = $range[1] - $range[0];
+            #$MINIMUM_TRIPS_IN_A_RANGE <= $diff;
+            $MINIMUM_TRIPS_IN_A_RANGE <= ( $_->[1] - $_->[0] );
+
+            # same thing as commented out code, only without refalias
+        } @ranges;
+
+        foreach my $range (@ranges) {
+            my $first = $range->[0];
+            my $last  = $range->[1];
+            $frequent_actions[$first] = 'S';
+            $frequent_actions[$last]  = 'E';
+            foreach my $trip_idx ( $first + 1 .. $last - 1 ) {
+                $frequent_actions[$trip_idx] = 'C';
+            }
+        }
+
+    }
+
+    $#frequent_actions = $#times;
+
+    my @freq = map { $_ // '' } @frequent_actions;
+
+    return \@frequent_actions;
+
+}
+
+sub _build_content_height {
+    my $self = shift;
+
+    my $height           = 0;
+    my @frequent_actions = $self->frequent_actions;
+    for my $frequent_action (@frequent_actions) {
+
+        #for my $frequent_action ( @frequent_actions) {
+        if ( not defined $frequent_action or $frequent_action eq 'E' ) {
+            $height++;
+        }
+        elsif ( $frequent_action eq 'S' ) {
+            no warnings 'once';
+            my $oldheight = $height;
+            $height += Octium::Cmd::MakePoints::HEIGHT_OF_FREQUENT_ICON() + 1;
+
+        }
+
+    }
+
+    return $height;
+
+}
+
+const my $icon_object_height =>
+  Octium::Cmd::MakePoints::HEIGHT_OF_FREQUENT_ICON() + 2;
+
+sub divide_columns {
+    my ( $self, $max_column_height ) = @_;
+
+    my $content_height   = $self->content_height;
+    my @frequent_actions = $self->frequent_actions;
+
+    my @freq  = map { defined ? $_ : '-' } @frequent_actions;
+    my @times = $self->times;
+
+    my %column_division = ( $#frequent_actions => 1 );
+
+    if ( $max_column_height < $content_height ) {
+
+        my $width        = Actium::ceil( $content_height / $max_column_height );
+        my $break_height = Actium::ceil( $content_height / $width );
+
+        my $current_column_height = 0;
+
+        my $break_at_next_e = 0;
+        foreach my $action_idx ( 0 .. $#frequent_actions ) {
+
+            my $action = $frequent_actions[$action_idx];
+            my $to_add;
+
+            if ( not defined $action ) {
+                $to_add = 1;
+            }
+            elsif ( $action eq 'S' ) {
+                $to_add
+                  = Octium::Cmd::MakePoints::HEIGHT_OF_FREQUENT_ICON() + 2;
+            }
+            elsif ( $action eq 'E' and $break_at_next_e ) {
+                $column_division{$action_idx} = 1;
+                $break_at_next_e = 0;
+                next;
+            }
+            else {
+                next;
+            }
+
+            # push current item on next column if current item is too big
+            # to fit in this column
+            if ( $current_column_height + $to_add > $max_column_height ) {
+                $column_division{ $action_idx - 1 } = 1;
+                $current_column_height = $to_add;
+            }
+
+            #elsif ( $action_idx == $#frequent_actions ) {
+            #    $column_division{$action_idx} = 1;
+            #
+            #                # it fits, and this is is the last item,
+            #                # so set last column end to this one
+            #            }
+            elsif ( $action_idx != $#frequent_actions ) {
+
+                # it fits, and there are more items, so add current height
+                # to the tally
+                $current_column_height += $to_add;
+
+                # if it is now at or over the break height, set this
+                # to be the last row in the column , and set the active column
+                # to be the next one
+                #
+                # Except that if this is an "S", we don't break here,
+                # we break after the next "E"
+
+                if ( $current_column_height >= $break_height ) {
+                    if ( defined $action and $action eq 'S' ) {
+                        $break_at_next_e = 1;
+                    }
+                    else {
+                        $column_division{$action_idx} = 1;
+                    }
+
+                    $current_column_height = 0;
+                }
+            }
+
+        }
+
+    }
+
+    $self->_set_column_division( $max_column_height, \%column_division );
+
+    return \%column_division;
 
 }
 
