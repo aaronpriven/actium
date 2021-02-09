@@ -1288,7 +1288,7 @@ sub format_bottom {
 
         print $botfh '<DefineTextVariable:Output Date=<TextVarType:OutputDate>';
         print $botfh '<tvDateFormat:MMMM d\, yyyy>>';
-        print $botfh ' Printed <cPageNumType:TextVariable>';
+        print $botfh ' Prepared <cPageNumType:TextVariable>';
         print $botfh '<TextVarName:Output Date><cPageNumType:>.';
 
     }
