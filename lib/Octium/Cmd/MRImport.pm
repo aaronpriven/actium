@@ -15,7 +15,10 @@ sub OPTIONS {
     return (
         {   spec        => 'repository=s',
             description => 'Location of repository in file system',
-            fallback => '/Users/Shared/Dropbox (AC_PubInfSys)/B/Maps/Repository'
+            fallback =>
+              '/Users/Shared/Dropbox (AC_PubInfSys)/B/Maps/Repository',
+            config_key     => 'repository',
+            config_section => 'Repository',
         },
         {   spec => 'web!',
             description =>
