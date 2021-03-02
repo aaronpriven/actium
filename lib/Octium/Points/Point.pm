@@ -1372,11 +1372,7 @@ const my %STYLE_OF_MONTH => (
       121  WO
       10  E
       20  E
-      /,
-
-    #30  SpE
-    qw/
-      30  O
+      30  SpE
       40  E
       50  E
       60  SuE
@@ -1386,36 +1382,20 @@ const my %STYLE_OF_MONTH => (
       100 E
       110  E
       120  WE
+      12  T
+      22  T
+      32  SpT
+      42  T
+      52  T
+      62  SuT
+      72  T
+      82  FT
+      92  T
+      102 T
+      112  T
+      122  WT
       /
 );
-
-#const my %SHADINGS => (
-#    qw/
-#      11  Gray20
-#      21  Gray20
-#      31  LineFern
-#      41  Gray20
-#      51  Gray20
-#      61  H103-Pink
-#      71  Gray20
-#      81  LineSky
-#      91  Gray20
-#      101  Gray20
-#      111  Gray20
-#      121  LineLavender
-#      10  Grey80
-#      20  Grey80
-#      30/, 'New AC Green', qw/
-#      40  Grey80
-#      50  Grey80
-#      60  LineMaroon
-#      70  Grey80
-#      80  LineBlue
-#      90  Grey80
-#      100  Grey80
-#      110  Grey80
-#      120  LineViolet/
-#);
 
 const my @ALL_LANGUAGES => qw/en es zh/;
 
@@ -1435,7 +1415,7 @@ sub _effective_date_indd {
     my $metastyle = 'Bold';
 
     my $month   = $dt->month;
-    my $oddyear = $dt->year % 2;
+    my $oddyear = $dt->year % 3;
 
     # EFFECTIVE DATE and colors
     #$color   = $COLORS{$oddyear};
