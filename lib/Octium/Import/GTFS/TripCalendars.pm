@@ -7,7 +7,7 @@ use Actium::Time;
 use Actium::DateTime;
 use DateTime::Duration;
 use DateTime::Event::Recurrence;
-use DateTime::Event::ICal;
+use DateTime::Event::ICal;    ### DEP ###
 use DateTime::Span;
 use List::Compare::Functional ('is_LsubsetR');
 
@@ -470,6 +470,7 @@ func text_notes {
                     if ( exists $except_days{$dow} ) {
                         my @except_dates = map { $_->format_cldr("MMM. d") }
                           $except_days{$dow}->@*;
+                        s/May\./May/ foreach @except_dates;
                         $every
                           .= ' except '
                           . Actium::joinseries( items => \@except_dates );
@@ -495,6 +496,8 @@ func text_notes {
 
             my @individual_date_text = map { $_->format_cldr("EEE., MMM. d") }
               sort @individual_dates;
+
+            s/May\./May/ foreach @individual_dates;
 
             $note_text
               .= joinseries_semicolon_with( 'and', @individual_date_text );
@@ -572,7 +575,7 @@ func dt_from_gtfs_date ( Str $date) {
     my $year  = substr( $date, 0, 4 );
     my $month = substr( $date, 4, 2 );
     my $day   = substr( $date, 6, 2 );
-    my $dt = Actium::DateTime::->new( ymd => [ $year, $month, $day ] );
+    my $dt    = Actium::DateTime::->new( ymd => [ $year, $month, $day ] );
     return $dt_of{$date} = $dt;
 }
 
