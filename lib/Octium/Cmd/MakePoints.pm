@@ -34,7 +34,6 @@ const my $DEFAULT_TALLCOLUMNLINES => 50;
 use constant HEIGHT_OF_FREQUENT_ICON => 5;
 # if this is 4, then the icon is 4 lines long in the column
 
-
 use Octium::Points::Point;
 use Octium::Points::Column;
 
@@ -335,11 +334,11 @@ sub START {
         my $tallcolumnlines = $signtypes{$signtype}{TallColumnLines}
           || $DEFAULT_TALLCOLUMNLINES;
         my $status         = $signs{$signid}{Status};
-        my $tag            = $signs{$signid}{Tag} // $EMPTY;
-        my $shelternum     = $signs{$signid}{ShelterNum} // $EMPTY;
-        my $sidenote       = $signs{$signid}{Sidenote} // $EMPTY;
+        my $tag            = $signs{$signid}{Tag}          // $EMPTY;
+        my $shelternum     = $signs{$signid}{ShelterNum}   // $EMPTY;
+        my $sidenote       = $signs{$signid}{Sidenote}     // $EMPTY;
         my $copyquantity   = $signs{$signid}{CopyQuantity} // 1;
-        my $templates_of_r = $templates_of{$signtype} // {};
+        my $templates_of_r = $templates_of{$signtype}      // {};
 
         my $effdate = $signs{$signid}{OverrideEffDate};
         if ( defined $effdate ) {
@@ -602,6 +601,8 @@ sub START {
                 return     => 'runlist',
             );
 
+            %cluster_of_workzone = _letterize(%cluster_of_workzone);
+
             my $skip_cluster;
 
             if ( ( scalar keys %cluster_of_workzone ) == 1 ) {
@@ -726,6 +727,7 @@ sub START {
     # to the addition
 
     my %checklist_of;
+    my %has_shelternum;
 
     foreach my $signtype ( sort keys %pages_of ) {
 
@@ -758,11 +760,19 @@ sub START {
                     $sheet = $addition;
                 }
 
-                push $checklist_of{$sheet}->@*,
-                  [ $copyquantity,              $signid,
-                    $point->stopid,             $point->signtype,
-                    $point->description_nocity, $point->city,
-                  ];
+                my @checklist_entry = (
+                    $copyquantity, $signid, $point->stopid, $point->signtype,
+                    $point->description_nocity,
+                    $point->city,
+                );
+
+                my $shelternum = $point->shelternum;
+                if ($shelternum) {
+                    push @checklist_entry, $shelternum;
+                    $has_shelternum{$sheet} = 1;
+                }
+
+                push $checklist_of{$sheet}->@*, \@checklist_entry;
 
             }
         }
@@ -783,12 +793,14 @@ sub START {
 
         foreach my $addition ( sort keys %checklist_of ) {
 
+            my @header_row = qw/x SignID StopID SignType Location City/;
+            push @header_row, "ShelterNum" if $has_shelternum{$addition};
+
             my $worksheet = $workbook->add_worksheet($addition);
             $worksheet->set_header('&A');          # header = worksheet name
             $worksheet->set_footer('&P of &N');    # footer - page #
             $worksheet->hide_gridlines(0);         # don't hide gridlines
-            $worksheet->write_row( 'A1',
-                [qw/x SignID StopID SignType Location City/], $header_fmt );
+            $worksheet->write_row( 'A1', \@header_row, $header_fmt );
             $worksheet->repeat_rows(0);
             $worksheet->write_col( 'A2', $checklist_of{$addition}, $body_fmt );
 
@@ -844,6 +856,19 @@ sub START {
     $makepoints_cry->done;
     return;
 
+}
+
+sub _letterize {
+    my %cluster_of_workzone = @_;
+    my %return;
+    my %letter_of_cluster;
+    my $letter = 'A';
+    foreach my $key ( sort keys %cluster_of_workzone ) {
+        my $cluster = $cluster_of_workzone{$key};
+        $return{$key} = ( $letter_of_cluster{$cluster} //= $letter++ );
+
+    }
+    return %return;
 }
 
 sub _get_run_name {
