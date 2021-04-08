@@ -249,7 +249,7 @@ EOT
         my $foldername;
 
         if ( $option eq 'w' ) {
-            $foldername = $workzone;
+            $foldername = "$workzone-$activity";
         }
         else {
             $foldername = $activity;
