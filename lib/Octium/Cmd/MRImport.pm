@@ -9,7 +9,7 @@ use Actium;
 use Octium::MapRepository (':all');
 use Octium::Folder;
 
-use English '-no_match_vars';    ### DEP ###
+use English;
 
 sub OPTIONS {
     return (
@@ -22,8 +22,8 @@ sub OPTIONS {
         },
         {   spec => 'web!',
             description =>
-              'Create web files of maps (on by default; turn off with -no-web)',
-            fallback => 1
+              'Create jpeg files for old web site',
+            fallback => 0
         },
         {   spec        => 'webfolder|wf=s',
             description => 'Folder where web files will be created. '

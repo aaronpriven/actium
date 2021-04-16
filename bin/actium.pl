@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# octium.pl - command-line access to Octium system
+# actium.pl - command-line access to Actium system
 
 use FindBin qw($Bin);       ### DEP ###
 use lib ("$Bin/../lib");    ### DEP ###

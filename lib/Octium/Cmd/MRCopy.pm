@@ -25,8 +25,8 @@ sub OPTIONS {
         },
         {   spec => 'web!',
             description =>
-              'Create web files of maps (on by default; turn off with -no-web)',
-            fallback => 1
+              'Create jpeg web files for old web site',
+            fallback => 0
         },
         {   spec        => 'fullnames!',
             description => 'Copy files with their full names '
