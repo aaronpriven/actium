@@ -27,7 +27,7 @@ sub START {
 
         next unless @decals;
 
-        $decals_of{$id} = join( "\t", @decals );
+        $decals_of{$id}  = join( "\t", @decals );
         $olddesc_of{$id} = $olddesc;
     }
 
@@ -145,7 +145,7 @@ sub START {
         }
 
         next if $change eq 'U';
-        next if $change !~ /D/;
+        #next if $change !~ /D/;
         # this should probably be an option
 
         #   my $count;
@@ -175,10 +175,15 @@ sub START {
 sub decals_of_line {
 
     my @decals = split( /\t/, shift );
+    s/@// foreach @decals;
     my %decal_of;
 
     foreach my $decal (@decals) {
         my ( $line, $decalletter ) = split( /-/, $decal );
+        if ( not defined $line ) {
+            die "Can't get line from $decal";
+        }
+
         push @{ $decal_of{$line} }, $decal;
     }
 
