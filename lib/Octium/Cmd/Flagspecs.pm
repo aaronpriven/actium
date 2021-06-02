@@ -5,6 +5,7 @@ use Octium;
 use Octium::Set (qw/ordered_union distinguish/);
 use Octium::DaysDirections(':all');
 use Octium::Files::HastusASI;
+use Octium::Folder;
 
 use Text::Wrap ('wrap');              ### DEP ###
 use List::MoreUtils(qw/any uniq/);    ### DEP ###
@@ -125,13 +126,20 @@ sub START {
     );
 
     {
-        my $hasi_db = $signup->load_hasi();
-        #        my $hasidir = $signup->subfolder('hasi');
-        #        my $hasi_db = Octium::Files::HastusASI->new( $hasidir->path());
+       #my $hasi_db = $signup->load_hasi();
+       my $hastusASI = env->cry("Loading Hastus ASI files");
+
+       my $signup_name = $signup->signup;
+       my $hasi_foldername = $ENV{HOME} . "/.actium/$signup_name";
+       my $hasidir = Octium::Folder->new($hasi_foldername );
+       my $hasi_db = Octium::Files::HastusASI->new( flats_folder => $signup->subfolder('hasi')->path, db_folder => $hasidir->path());
+
         $hasi_db->ensure_loaded(qw(PAT TRP));
         build_place_and_stop_lists( $hasi_db, \%stops );
 
         build_trip_quantity_lists($hasi_db);
+
+        $hastusASI->done;
     }
 
     cull_placepats();
