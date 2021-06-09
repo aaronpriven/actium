@@ -438,7 +438,7 @@ sub format_approxflag {
         $self->append_to_formatted_header(
             $primary_approxflag
             ? " Approximate departure times from stop $display_stopid:"
-            : " Scheduled departure times from stop $display_stopid:"
+            : " Scheduled departures from stop $display_stopid:"
         );
 
     }
@@ -446,7 +446,7 @@ sub format_approxflag {
         $self->append_to_formatted_header(
             $primary_approxflag
             ? ' Approximate departure times:'
-            : ' Scheduled departure times:'
+            : ' Scheduled departures:'
         );
     }
 
