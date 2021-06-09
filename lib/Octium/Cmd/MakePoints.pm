@@ -14,13 +14,14 @@ use Octium::Storage::Excel('new_workbook');
 
 use File::Slurper('read_text');    ### DEP ###
 use Text::Trim;                    ### DEP ###
+use List::MoreUtils;               ### DEP ###
 
 const my $LISTFILE_BASE    => 'pl';
 const my $ERRORFILE_BASE   => 'err';
 const my $HEIGHTSFILE_BASE => 'ht';
 const my $CHECKLIST_BASE   => 'check';
 
-const my @EXCEL_COLUMN_WIDTHS       => ( 2, 5, 5.33, 7.17, 46.5, 14.83 );
+const my @EXCEL_COLUMN_WIDTHS       => ( 2, 7, 5.33, 7.17, 46.5, 14.83 );
 const my $EXCEL_MAX_WORKSHEET_CHARS => 31;
 
 const my $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH => 28;
@@ -129,8 +130,8 @@ sub START {
     our ( %places, %lines );
     # this use of global variables should be refactored...
 
-    my $actiumdb = env->actiumdb;
-    my @argv     = env->argv;
+    my $actiumdb        = env->actiumdb;
+    my @specified_signs = env->argv;
 
     my $signup = env->signup;
     chdir $signup->path();
@@ -173,6 +174,7 @@ sub START {
                       SignID Active stp_511_id Status SignType Tag Sidenote
                       Agency ShelterNum NonStopLocation NonStopCity
                       Delivery City TIDFile CopyQuantity OverrideEffDate
+                      Stop_id_suffix
                       ]
                 ],
             },
@@ -197,6 +199,9 @@ sub START {
             },
         }
     );
+
+    \my ( %new_signid, %signs_of_stopid )
+      = new_signid( signs => \%signs, run_agency => $run_agency );
 
     my %city_of_workzone;
     foreach my $city ( keys %cities ) {
@@ -251,13 +256,27 @@ sub START {
     $load_cry->done;
 
     my @signstodo;
-
-    if (@argv) {
-        @signstodo = sort { $a <=> $b } @argv;
+    if (@specified_signs) {
+        foreach my $specsign (@specified_signs) {
+            if ( $specsign =~ /^N/ ) {
+                my $old_signid = substr( $specsign, 1 );
+                push @signstodo, $old_signid;
+            }
+            else {
+                push @signstodo, $signs_of_stopid{$specsign}->@*;
+            }
+        }
     }
     else {
-        @signstodo = sort { $a <=> $b } keys %signs;
+        @signstodo = keys %new_signid;
     }
+
+    my %sortkey_of_old_signid
+      = map { $_, Actium::linekeys( $new_signid{$_} ) } @signstodo;
+
+    @signstodo
+      = sort { $sortkey_of_old_signid{$a} cmp $sortkey_of_old_signid{$b} }
+      @signstodo;
 
     my $signtype_opt   = env->option('type');
     my $tag_opt        = env->option('tag');
@@ -276,9 +295,9 @@ sub START {
 
         $seen_delivery{TID} = 1;
 
-        foreach my $signid (@signstodo) {
-            my $delivery = $signs{$signid}{Delivery} // $EMPTY;
-            my $signtype = $signs{$signid}{SignType} // $EMPTY;
+        foreach my $old_signid (@signstodo) {
+            my $delivery = $signs{$old_signid}{Delivery} // $EMPTY;
+            my $signtype = $signs{$old_signid}{SignType} // $EMPTY;
             $seen_delivery{$delivery} = 1;
             $seen_signtype{$signtype} = 1;
         }
@@ -315,17 +334,18 @@ sub START {
 
     }
 
-    my $cry = env->cry('Now processing point schedules for sign number:');
+    my $cry = env->cry('Now processing point schedules for sign:');
 
     my ( %skipped_stops, %points_of_delivery, @finished_points, %errors,
         %heights, %workzone_count );
 
   SIGN:
-    foreach my $signid (@signstodo) {
+    foreach my $old_signid (@signstodo) {
 
-        my $stopid   = $signs{$signid}{stp_511_id};
-        my $delivery = $signs{$signid}{Delivery} // $EMPTY;
-        my $signtype = $signs{$signid}{SignType} // $EMPTY;
+        my $stopid     = $signs{$old_signid}{stp_511_id};
+        my $new_signid = $new_signid{$old_signid};
+        my $delivery   = $signs{$old_signid}{Delivery} // $EMPTY;
+        my $signtype   = $signs{$old_signid}{SignType} // $EMPTY;
         if ( $signtype =~ /^TID/ ) {
             $delivery = 'TID';
         }
@@ -333,14 +353,14 @@ sub START {
           || $DEFAULT_TALLCOLUMNNUM;
         my $tallcolumnlines = $signtypes{$signtype}{TallColumnLines}
           || $DEFAULT_TALLCOLUMNLINES;
-        my $status         = $signs{$signid}{Status};
-        my $tag            = $signs{$signid}{Tag}          // $EMPTY;
-        my $shelternum     = $signs{$signid}{ShelterNum}   // $EMPTY;
-        my $sidenote       = $signs{$signid}{Sidenote}     // $EMPTY;
-        my $copyquantity   = $signs{$signid}{CopyQuantity} // 1;
-        my $templates_of_r = $templates_of{$signtype}      // {};
+        my $status         = $signs{$old_signid}{Status};
+        my $tag            = $signs{$old_signid}{Tag}          // $EMPTY;
+        my $shelternum     = $signs{$old_signid}{ShelterNum}   // $EMPTY;
+        my $sidenote       = $signs{$old_signid}{Sidenote}     // $EMPTY;
+        my $copyquantity   = $signs{$old_signid}{CopyQuantity} // 1;
+        my $templates_of_r = $templates_of{$signtype}          // {};
 
-        my $effdate = $signs{$signid}{OverrideEffDate};
+        my $effdate = $signs{$old_signid}{OverrideEffDate};
         if ( defined $effdate ) {
             my ( $year, $month, $day ) = split( /-/, $effdate );
             $effdate = Actium::DateTime->new( ymd => [ $year, $month, $day ], );
@@ -375,8 +395,8 @@ sub START {
         }
         else {
             $nonstop            = 1;
-            $description_nocity = $signs{$signid}{NonStopLocation};
-            $city               = $signs{$signid}{NonStopCity};
+            $description_nocity = $signs{$old_signid}{NonStopLocation};
+            $city               = $signs{$old_signid}{NonStopCity};
             $description        = $description_nocity;
             $description .= ", $city" if $city;
         }
@@ -386,9 +406,9 @@ sub START {
         $smoking //= $smoking{$city} // $IDT->emdash;
 
         my $omitted_of_stop_r;
-        if ( exists $stops_of_sign{$signid} ) {
+        if ( exists $stops_of_sign{$old_signid} ) {
 
-            $omitted_of_stop_r = $stops_of_sign{$signid};
+            $omitted_of_stop_r = $stops_of_sign{$old_signid};
 
             if ( not $stopid ) {
                 my @allstopids = sort keys %{$omitted_of_stop_r};
@@ -400,18 +420,18 @@ sub START {
             $omitted_of_stop_r = { $stopid => [] };
         }
 
-        my $sign_is_active = lc( $signs{$signid}{Active} );
+        my $sign_is_active = lc( $signs{$old_signid}{Active} );
 
-        next SIGN if $signs{$signid}{Status} =~ /no service/i;
+        next SIGN if $signs{$old_signid}{Status} =~ /no service/i;
         next SIGN if $sign_is_active ne 'yes';
         next SIGN unless $stopid;
 
         my $workzone = $stops{$stopid}{u_work_zone} // $EMPTY;
 
-        my $agency      = $signs{$signid}{Agency};
+        my $agency      = $signs{$old_signid}{Agency};
         my $agency_abbr = $actiumdb->agency_row_r($agency)->{agency_abbr};
 
-        my $tidfile = $signs{$signid}{TIDFile} // $EMPTY;
+        my $tidfile = $signs{$old_signid}{TIDFile} // $EMPTY;
 
         next SIGN unless $agency eq $run_agency;
 
@@ -428,26 +448,26 @@ sub START {
             my $kpointfile = "p/final/kpoints/${firstdigits}xx/$stoptotest.txt";
 
             unless ( -e $kpointfile ) {
-                push @{ $errors{$signid} },
+                push @{ $errors{$new_signid} },
                   "Stop $stoptotest not found"
                   . (
                     $agency ne $FALLBACK_AGENCY
                     ? " ($agency)"
                     : $EMPTY
                   );
-                $skipped_stops{$signid} = $stoptotest;
+                $skipped_stops{$new_signid} = $stoptotest;
                 next SIGN;
             }
 
         }
 
-        $cry->over("$signid ");
+        $cry->over("$new_signid ");
 
         # 1) Read kpoints from file
 
         my $point = Octium::Points::Point->new_from_kpoints(
             {   stopid             => $stopid,
-                signid             => $signid,
+                signid             => $old_signid,
                 effdate            => $effdate,
                 agency             => $agency,
                 omitted_of_stop_r  => $omitted_of_stop_r,
@@ -469,6 +489,7 @@ sub START {
                 templates_of_r     => $templates_of_r,
                 copyquantity       => $copyquantity,
                 tidfile            => $tidfile,
+                new_signid         => $new_signid,
             }
         );
         # 2) Change kpoints to the kind of data that's output in
@@ -490,10 +511,10 @@ sub START {
 
         #$point->sort_columns_by_route_etc;
 
-        $heights{$signid} = $point->heights if defined $point->heights;
+        $heights{$new_signid} = $point->heights if defined $point->heights;
 
         my $subtype = $point->sort_columns_and_determine_heights(
-            $signs{$signid}{SignType} );
+            $signs{$old_signid}{SignType} );
 
         if ( $subtype and $subtype ne '!' ) {
             #my ( $signtype, $subtype ) = split( /=/, $subtype );
@@ -503,11 +524,11 @@ sub START {
         }
         else {
             if ( $point->columns ) {
-                push @{ $errors{$signid} },
+                push @{ $errors{$new_signid} },
                   "No sign template found in $signtype for $run_agency";
             }
             else {
-                push $errors{$signid}->@*, "No columns for this sign";
+                push $errors{$new_signid}->@*, "No columns for this sign";
             }
         }
 
@@ -517,7 +538,7 @@ sub START {
         #    the proper length (length comes from SignType),
         #    and adding footnote markers
 
-        $point->format_columns( $signs{$signid}{SignType} );
+        $point->format_columns( $signs{$old_signid}{SignType} );
 
         # 7) Format and expand the footnotes (the actual
         #    footnotes, not the footnote markers)
@@ -535,11 +556,11 @@ sub START {
 
         my @errors = $point->errors;
 
-        push @{ $errors{$signid} }, @errors if @errors;
+        push @{ $errors{$new_signid} }, @errors if @errors;
 
-        $heights{$signid} = $point->heights if defined $point->heights;
+        $heights{$new_signid} = $point->heights if defined $point->heights;
 
-    }    ## <perltidy> end foreach my $signid ( sort {...})
+    }
 
     $cry->done;
 
@@ -568,7 +589,7 @@ sub START {
             my $signtype = $point->signtype;
 
             push $pages_of{$signtype}{$tidfile}->@*,
-              [ $point->signid, $point->subtype, $point ];
+              [ $point->new_signid, $point->subtype, $point ];
 
         }
 
@@ -622,7 +643,7 @@ sub START {
                 # truncate to 31 characters
 
                 push @{ $pages_of{ $point->signtype }{$addition} },
-                  [ $point->signid, $point->subtype, $point ];
+                  [ $point->new_signid, $point->subtype, $point ];
 
             }
 
@@ -641,7 +662,7 @@ sub START {
 
                 if ( not defined $workzone ) {
                     die "Work zone code not defined for $city in "
-                      . $point->signid;
+                      . $point->new_signid;
                 }
 
                 $city_workzone_count{$workzone}++;
@@ -693,7 +714,7 @@ sub START {
                   );
 
                 push @{ $pages_of{ $point->signtype }{$addition} },
-                  [ $point->signid, $point->subtype, $point ];
+                  [ $point->new_signid, $point->subtype, $point ];
 
             }
         }
@@ -707,7 +728,7 @@ sub START {
 
             foreach my $point (@these_points) {
                 push $pages_of{ $point->signtype }{$delivery}->@*,
-                  [ $point->signid, $point->subtype, $point ];
+                  [ $point->new_signid, $point->subtype, $point ];
             }
 
         }
@@ -717,7 +738,7 @@ sub START {
 
         foreach my $point (@finished_points) {
             push $pages_of{ $point->signtype }{'all'}->@*,
-              [ $point->signid, $point->subtype, $point ];
+              [ $point->new_signid, $point->subtype, $point ];
         }
 
     }
@@ -734,8 +755,8 @@ sub START {
         foreach my $addition ( sort keys $pages_of{$signtype}->%* ) {
 
             my @pages = @{ $pages_of{$signtype}{$addition} };
-            @pages = sort { $a->[0] <=> $b->[0] } @pages;
-            # sort numerically by signid
+
+            @pages = sort { Actium::byline( $a->[0], $b->[0] ) } @pages;
 
             my $thisfile = $addition;
             $thisfile .= $run_name unless $signtype =~ /^TID/;
@@ -745,9 +766,10 @@ sub START {
 
             foreach my $page (@pages) {
 
-                my ( $signid, $subtype_letter, $point ) = $page->@*;
+                my ( $new_signid, $subtype_letter, $point ) = $page->@*;
+	    my $map_page = $new_signid =~ s/[A-Za-z]+\z//r;
 
-                say $list_fh "$signid\t$subtype_letter";
+                say $list_fh "$new_signid\t$subtype_letter\t$map_page";
 
                 my $copyquantity = $point->copyquantity;
                 $copyquantity = $EMPTY if $copyquantity == 1;
@@ -761,8 +783,8 @@ sub START {
                 }
 
                 my @checklist_entry = (
-                    $copyquantity, $signid, $point->stopid, $point->signtype,
-                    $point->description_nocity,
+                    $copyquantity, $new_signid, $point->stopid,
+                    $point->signtype, $point->description_nocity,
                     $point->city,
                 );
 
@@ -788,7 +810,7 @@ sub START {
 
         my $workbook_fh = $pointlist_folder->open_write_binary($excelfile);
         my $workbook    = new_workbook($workbook_fh);
-        my $body_fmt = $workbook->add_format( text_wrap => 1, valign => 'top' );
+        my $body_fmt = $workbook->add_format( text_wrap => 1, align => 'left' , valign => 'top' );
         my $header_fmt = $workbook->add_format( bold => 1 );
 
         foreach my $addition ( sort keys %checklist_of ) {
@@ -825,9 +847,9 @@ sub START {
         my $error_cry  = env->cry("Writing $error_count errors to $error_file");
         my $error_fh   = $pointlist_folder->open_write($error_file);
 
-        foreach my $signid ( sort { $a <=> $b } keys %errors ) {
-            foreach my $error ( @{ $errors{$signid} } ) {
-                say $error_fh "$signid\t$error";
+        foreach my $new_signid ( Actium::sortbyline keys %errors ) {
+            foreach my $error ( @{ $errors{$new_signid} } ) {
+                say $error_fh "$new_signid\t$error";
             }
         }
 
@@ -846,8 +868,8 @@ sub START {
         my $heights_file = $HEIGHTSFILE_BASE . $run_name . '.txt';
         my $heights_cry  = env->cry("Writing heights to $heights_file");
         my $heights_fh   = $pointlist_folder->open_write($heights_file);
-        foreach my $signid ( sort { $a <=> $b } keys %heights ) {
-            say $heights_fh "$signid\t" . $heights{$signid};
+        foreach my $new_signid ( Actium::sortbyline keys %heights ) {
+            say $heights_fh "$new_signid\t" . $heights{$new_signid};
         }
         $heights_fh->close;
         $heights_cry->done;
@@ -903,6 +925,59 @@ sub _get_run_name {
         return $EMPTY;
     }
 
+}
+
+func new_signid (:\%signs, :$run_agency) {
+    my %new_signid;
+    my %signs_of_stopid;
+
+    foreach my $signid ( keys %signs ) {
+        next unless lc( $signs{$signid}{Active} ) eq 'yes';
+        my $stopid = $signs{$signid}{stp_511_id};
+        if ( not defined $stopid ) {
+            my $new_signid = "N" . $signid;
+            $new_signid{$signid}          = $new_signid;
+            $signs_of_stopid{$new_signid} = [$signid];
+            next;
+        }
+        push $signs_of_stopid{$stopid}->@*, $signid;
+    }
+
+    foreach my $stopid ( sort keys %signs_of_stopid ) {
+        my @signids = $signs_of_stopid{$stopid}->@*;
+        if ( @signids == 1 ) {
+            my $signid = $signids[0];
+            my $suffix = $signs{$signid}{Stop_id_suffix};
+            $suffix = Actium::define($suffix);
+            $new_signid{$signid} = $stopid . $suffix;
+            next;
+        }
+
+        my ( $without_suffix, $with_suffix ) = List::MoreUtils::part {
+            exists $signs{$_}{Stop_id_suffix}
+              and ( !!$signs{$_}{Stop_id_suffix} )
+        }
+        sort { $a <=> $b } @signids;
+
+        my %seen_suffix;
+        foreach my $signid ( $with_suffix->@* ) {
+            my $suffix = $signs{$signid}{Stop_id_suffix};
+            die "Duplicate suffix $suffix "
+              . "in stop ID $stopid, sign ID $signid"
+              if $seen_suffix{$suffix};
+            $seen_suffix{$suffix} = 1;
+            $new_signid{$signid}  = $stopid . $suffix;
+        }
+
+        my $suffix = 'A';
+        foreach my $signid ( sort { $a <=> $b } $without_suffix->@* ) {
+            $suffix++ while $seen_suffix{$suffix};
+            $new_signid{$signid}  = $stopid . $suffix;
+            $seen_suffix{$suffix} = 1;
+        }
+    }
+
+    return \%new_signid, \%signs_of_stopid;
 }
 
 1;

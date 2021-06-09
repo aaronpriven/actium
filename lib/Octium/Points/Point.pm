@@ -33,7 +33,7 @@ const my $NBSP         => $IDT->nbsp;
 
 has [
     qw/stopid signid delivery agency signtype
-      description description_nocity city tidfile/
+      description description_nocity city tidfile new_signid/
 ] => (
     is       => 'ro',
     isa      => 'Str',
@@ -829,11 +829,8 @@ sub determine_subtype {
     @texts = @chosen_regions;
 
     if ( not $chosen_subtype ) {
-        my $signid = $self->signid;
-
         $self->push_error("Couldn't fit in any $signtype template");
         return;
-
     }
 
     #$self->set_region_count( scalar @chunkids_by_region );
@@ -1048,7 +1045,6 @@ sub format_columns {
 
 sub format_side {
     my $self   = shift;
-    my $signid = $self->signid;
     my $is_bsh = $self->agency eq 'BroadwayShuttle';
 
     my $formatted_side;
@@ -1242,7 +1238,6 @@ sub format_bottom {
 
     my $self = shift;
 
-    my $signid = $self->signid;
     my $stopid = $self->stopid;
 
     my $formatted_bottom;
@@ -1276,21 +1271,20 @@ sub format_bottom {
 
     $IDT->encode_high_chars($description);
 
-    print $botfh $IDT->parastyle('bottomnotes'), "$description. Sign #$signid.";
 
-    print $botfh " Stop $stopid." unless $self->nonstop;
+    my $new_signid = $self->new_signid;
+    print $botfh $IDT->parastyle('bottomnotes'), "$description. Sign $new_signid.";
+
+    #print $botfh " Stop $stopid." unless $self->nonstop;
 
     my $shelternum = $self->shelternum;
-
-    print $botfh " Shelter site #$shelternum." if $shelternum;
+    print $botfh " Shelter $shelternum." if $shelternum;
 
     if ( $self->signtype !~ /\ATID/i ) {
-
         print $botfh '<DefineTextVariable:Output Date=<TextVarType:OutputDate>';
         print $botfh '<tvDateFormat:MMMM d\, yyyy>>';
         print $botfh ' Prepared <cPageNumType:TextVariable>';
         print $botfh '<TextVarName:Output Date><cPageNumType:>.';
-
     }
 
     close $botfh;
@@ -1303,7 +1297,7 @@ sub output {
 
     my $self = shift;
 
-    my $signid = $self->signid;
+    my $signid = $self->new_signid;
 
     my $pointdir = $self->signup->subfolder($IDPOINTFOLDER);
 
