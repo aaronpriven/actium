@@ -235,19 +235,20 @@ sub _output_usage {
     }
 
     my $left_padding
-      = 5 + Actium::max( map { length($_) } keys %description_of );
-    # add one for the hyphen, plus four spaces
+      =  1+ Actium::max( map { Actium::u_columns($_) } keys %description_of );
+    # add one for the hyphen
 
     say STDERR 'Options:';
 
     foreach my $name ( sort keys %description_of ) {
         next if $name =~ /\A_/s;
-        my $displayname = sprintf '%*s -- ', $left_padding, "-$name";
+        my $displayname = sprintf '%*s — ', $left_padding, "-$name";
 
         my $wrapped = Actium::u_wrap(
             $displayname . $description_of{$name},
             max_columns => $self->term_width,
-            indent      => -$left_padding,
+            indent      => - ( $left_padding + 3),
+	# add three for the ' — ' added in the format above
             addspace    => 1,
         );
 
