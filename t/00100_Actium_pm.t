@@ -250,7 +250,7 @@ is_deeply( [ Actium::u_wrap( $text, indent => 5, addspace => 1 ) ],
     $lines_indent_r, 'Wraps with positive indent and space' );
 
 is_deeply(
-    [ Actium::u_wrap( $text, max_columns => 74, indent => -5, addspace => 1 ) ],
+    [ Actium::u_wrap( $text, max_columns => 79, indent => -5, addspace => 1 ) ],
     $lines_hanging_r,
     'Wraps with negative indent and space'
 );
