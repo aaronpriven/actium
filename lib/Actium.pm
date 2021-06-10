@@ -939,8 +939,6 @@ func u_wrap ( Str $msg!,
 	 ) {
 
     return $msg if $max < $min;
-    my $indented_max = $max - $indent;
-    my $indentspace  = $SPACE x abs($indent);
 
     require Unicode::LineBreak;    ### DEP ###
 
@@ -949,52 +947,68 @@ func u_wrap ( Str $msg!,
         Urgent  => 'FORCE',
         Newline => $EMPTY,
     );
-    $breaker->config( ColMax => $max, ColMin => $min ) unless $indent;
 
-    # First split on newlines
-    my @lines;
-    foreach my $line ( split( /\n/, $msg ) ) {
+    my ( $firstmax, $restmax, $firstspaces, $restspaces );
 
-        my $linewidth = u_columns($line);
-        if ( $linewidth <= $indented_max ) {
-            push @lines, $line;
+    if ( 0 == $indent ) {
+        $breaker->config( ColMax => $max, ColMin => $min );
+        $firstmax = $max;
+    }
+    else {
+        my $indentspaces = abs($indent);
+        if ( $indent < 0 ) {
+            $firstmax    = $max;
+            $firstspaces = '';
+            $restmax     = $max - $indentspaces;
+            $restspaces  = $addspace ? $SPACE x $indentspaces : '';
+        }
+        else {
+            $firstmax    = $max - $indentspaces;
+            $firstspaces = $addspace ? $SPACE x $indentspaces : '';
+            $restmax     = $max;
+            $restspaces  = '';
+        }
+    }
+
+    # First split on newlines to make paragraphs
+    my @returned;
+    foreach my $graf ( split( /\n/, $msg ) ) {
+
+        my $grafwidth = u_columns($graf);
+        if ( $grafwidth <= $firstmax ) {
+            push @returned, $graf;
         }
         else {
             if ($indent) {
                 # indent first line, save rest of lines in $rest
 
-                $breaker->config( ColMax => $indented_max, ColMin => $min );
+                $breaker->config( ColMax => $firstmax, ColMin => $min );
                 my @initially_broken_lines = $breaker->break($msg);
-                my $firstline              = shift @initially_broken_lines;
-                $firstline = $indentspace . $firstline
-                  if $addspace and $indent > 0;
-                push @lines, $firstline;
+                my $firstline = $firstspaces . shift @initially_broken_lines;
+                push @returned, $firstline;
                 my $rest = join( $SPACE, @initially_broken_lines );
 
                 # break $rest
-                $breaker->config( ColMax => $max );
+                $breaker->config( ColMax => $restmax );
                 my @rest_of_the_lines = $breaker->break($rest);
 
-                if ( $addspace and $indent < 0 ) {
-                    foreach my $line (@rest_of_the_lines) {
-	            push @lines, $indentspace . $line;
-                    }
-                    #$_ = $indentspace . $_ foreach @rest_of_the_lines;
+                foreach my $line (@rest_of_the_lines) {
+                    push @returned, $restspaces . $line;
                 }
-                #push @lines, @rest_of_the_lines;
+
             }
             else {
-                push @lines, $breaker->break($line);
+                push @returned, $breaker->break($graf);
             }
 
         }
 
     }
-    foreach (@lines) {
+    foreach (@returned) {
         $_ = "$_";    # stringify -- eliminate overloaded objects
     }
 
-    return wantarray ? @lines : joinlf(@lines);
+    return wantarray ? @returned : joinlf(@returned);
 
 }
 
