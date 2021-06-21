@@ -15,26 +15,27 @@ use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
 #);
 
 const my $KML_ICON_DEFAULT =>
-  'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png';
+  'http://maps.google.com/mapfiles/kml/paddle/wht-blank.png';
 
-const my $KML_START => <<"KMLSTART";
+const my $KML_START_OLD => <<"KMLSTART";
 <?xml version="1.0" encoding="utf-8"?>
 <kml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/kml/2.2">
   <Document>
     <Style id="highlightInactivePlacemark">
        <BalloonStyle><text>\$[description]</text>
           <bgColor>FFCCCCCC</bgColor></BalloonStyle>
-       <LabelStyle><scale>.7</scale></LabelStyle>
       <IconStyle>
-         <scale>.7</scale>
+        <scale>1.5</scale>
+        <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction" />
         <Icon>
           <href>$KML_ICON_DEFAULT</href>
         </Icon>
       </IconStyle>
     </Style>
        <Style id="highlightActivePlacemark">
-       <LabelStyle><scale>.9</scale></LabelStyle>
       <IconStyle>
+        <scale>1.5</scale>
+        <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction" />
         <Icon>
           <href>$KML_ICON_DEFAULT</href>
         </Icon>
@@ -42,9 +43,9 @@ const my $KML_START => <<"KMLSTART";
     <BalloonStyle><text>\$[description]</text></BalloonStyle>
     </Style>
     <Style id="normalInactivePlacemark">
-       <LabelStyle><scale>.7</scale></LabelStyle>
       <IconStyle>
-         <scale>.7</scale>
+        <scale>1.5</scale>
+        <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction" />
         <Icon>
           <href>$KML_ICON_DEFAULT</href>
         </Icon>
@@ -52,8 +53,9 @@ const my $KML_START => <<"KMLSTART";
     <BalloonStyle><text>\$[description]</text></BalloonStyle>
     </Style>
     <Style id="normalActivePlacemark">
-       <LabelStyle><scale>.9</scale></LabelStyle>
+        <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction" />
       <IconStyle>
+        <scale>1.5</scale>
         <Icon>
           <href>$KML_ICON_DEFAULT</href>
         </Icon>
@@ -83,12 +85,54 @@ const my $KML_START => <<"KMLSTART";
     </StyleMap>
 KMLSTART
 
+const my $KML_START => <<"KMLSTART";
+<?xml version="1.0" encoding="utf-8"?>
+<kml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Style id="stopActiveStyle">
+       <LabelStyle>
+          <scale>.8</scale>
+       </LabelStyle>
+       <BalloonStyle><text>\$[description]</text>
+          <bgColor>FFFFFFFF</bgColor>
+       </BalloonStyle>
+       <IconStyle>
+          <scale>1.5</scale>
+          <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction" />
+          <Icon>
+            <href>$KML_ICON_DEFAULT</href>
+          </Icon>
+        </IconStyle>
+    </Style>
+
+     <Style id="stopInactiveStyle">
+       <LabelStyle>
+          <scale>.8</scale>
+       </LabelStyle>
+       <BalloonStyle><text>\$[description]</text>
+          <bgColor>FFFFFFFF</bgColor>
+       </BalloonStyle>
+       <IconStyle>
+          <scale>1.25</scale>
+          <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction" />
+          <Icon>
+            <href>$KML_ICON_DEFAULT</href>
+          </Icon>
+        </IconStyle>
+    </Style>
+
+KMLSTART
+
 const my $KML_END => <<'KMLEND';
   </Document>
 </kml>
 KMLEND
 
-func stops2kml ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
+func stops2kmz ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
+
+    my $overallcry = env->cry("Making KMZ file");
+
+    my $dbcry = env->cry("Fetching from database");
 
     my $stops_r = $actiumdb->all_in_columns_key(
         {   TABLE   => 'Stops_Neue',
@@ -110,12 +154,16 @@ func stops2kml ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
     \my ( %signtype_text_of, %signclassification_of )
       = signinfo( actiumdb => $actiumdb );
 
+    $dbcry->done;
+
+    my $stopscry = env->cry("Assembling stops data");
+
     my ( %folders, %icons );
 
     if ( $option eq 'w' ) {
         my %seen_workzone;
         foreach my $stopid ( sort keys %{$stops_r} ) {
-            my $workzone = $stops_r->{$stopid}{u_work_zone};
+            my $workzone = $stops_r->{$stopid}{u_work_zone} // '0';
             $seen_workzone{$workzone}++;
         }
 
@@ -130,7 +178,7 @@ func stops2kml ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
         \my %stp = $stops_r->{$stopid};
         next if $stp{c_city} eq 'Virtual';
         my $active   = $stp{p_active};
-        my $workzone = $stp{u_work_zone};
+        my $workzone = $stp{u_work_zone} // '0';
         my $lines    = $stp{p_lines};
         my $city     = $stp{c_city};
 
@@ -139,23 +187,27 @@ func stops2kml ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
         my $description
           = _kml_stop_description( \%stp, $signtype_text_of{$stopid} );
 
-        my $text;
-        my $icon = $EMPTY;
-
-        if ( not exists $signclassification_of{$stopid} ) {
-            $icon = 'rectangle';
+        my ( $text, $icon );
+        if ( $option eq 'w' ) {
+            $icon = ( ( $workzone eq '0' ) ? 'black' : 'white' )
+              . ( $active ? '-b' : '' );
         }
         else {
-            my $signclass = $signclassification_of{$stopid};
-            if ( $signclass eq 'Polesign' ) {
-                $icon = 'capsule';
+            $icon = $active ? "white" : "black";
+
+            if ( exists $signclassification_of{$stopid} ) {
+                my $signclass = $signclassification_of{$stopid};
+
+                $icon .=
+                    $signclass eq 'Polesign'        ? '-circle'
+                  : $signclass eq 'Shelter'         ? '-square'
+                  : $signclass eq 'Multiple'        ? '-plus'
+                  : $signclass eq 'Sortof'          ? '-minus'
+                  : $signclass eq 'Multiple-Sortof' ? '-x'
+                  :                                   '-star';
             }
-            elsif ( $signclass eq 'Shelter' ) {
-                $icon = 'pentagon';
-            }
-            else { $icon = 'octagon' }
         }
-        $icon .= "-italic" unless $active;
+
         $icon .= "/$stopid.png";
         $icons{$icon} = 1;
 
@@ -174,12 +226,12 @@ func stops2kml ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
             $text
               .= "<Style>\n"
               . "<IconStyle>\n"
-              . "<color>$color</color>\n"
+              . ($workzone eq '0' ? '' : "<color>$color</color>\n" )
               . $icon_text
               . "</IconStyle>\n"
-              . "<LabelStyle>\n"
-              . "<color>$color</color>\n"
-              . "</LabelStyle>\n"
+              #. "<LabelStyle>\n"
+              #. "<color>$color</color>\n"
+              #. "</LabelStyle>\n"
               . "</Style>\n";
 
         }
@@ -191,9 +243,11 @@ func stops2kml ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
                 $linetext = $stp{p_lines};
                 my @lines = split( ' ', $linetext );
                 $color = _kml_line_color( $lines_r, @lines );
+                warn "unnknown color for " . $stp{p_lines}
+                  if not defined $color;
             }
             else {
-                $linetext = '*';
+                $linetext = '';
                 $color    = _kml_inactive_color();
             }
 
@@ -203,22 +257,16 @@ func stops2kml ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
               . "<styleUrl>#stop${activity}Style</styleUrl>\n"
               . "<description>$description</description>\n";
 
-            if ($active) {
-
-                warn "unnknown color for " . $stp{p_lines}
-                  unless defined $color;
-
-                $text
-                  .= "<Style>\n"
-                  . "<IconStyle>\n"
-                  . $icon_text
-                  . "<color>$color</color>\n"
-                  . "</IconStyle>\n"
-                  . "<LabelStyle>\n"
-                  . "<color>$color</color>\n"
-                  . "</LabelStyle>\n"
-                  . "</Style>\n";
-            }
+            $text
+              .= "<Style>\n"
+              . "<IconStyle>\n"
+              . $icon_text
+              . "<color>$color</color>\n"
+              . "</IconStyle>\n"
+              #. "<LabelStyle>\n"
+              #. "<color>$color</color>\n"
+              #. "</LabelStyle>\n"
+              . "</Style>\n";
 
         }
 
@@ -261,6 +309,12 @@ func stops2kml ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
     $kmltext .= join( $EMPTY, @folders{@keys} );
     $kmltext .= $KML_END;
 
+    $stopscry->done;
+
+    my $kmzcry = env->cry("Assembling kmz members");
+
+    $kmzcry->over('doc.kml');
+
     my $kmz             = Archive::Zip->new();
     my $kml_text_member = $kmz->addString( $kmltext, 'doc.kml' );
     $kml_text_member->desiredCompressionMethod(COMPRESSION_DEFLATED);
@@ -269,15 +323,25 @@ func stops2kml ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
     unless ( $icon_zip->read($icon_file) == AZ_OK ) {
         die 'read error';
     }
+
     foreach my $icon ( sort keys %icons ) {
+        $kmzcry->over($icon);
         my $iconmember = $icon_zip->memberNamed($icon);
         $kmz->addMember($iconmember);
     }
+
+    $kmzcry->over('');
+    $kmzcry->done;
+
+    my $cry = env->cry("Saving to $save_file");
 
     # Save the Zip file
     unless ( $kmz->writeToFileNamed($save_file) == AZ_OK ) {
         die 'write error on file' . $save_file;
     }
+
+    $cry->done;
+    $overallcry->done;
 
     return;
 
@@ -295,7 +359,7 @@ sub _kml_stop_description {
     #my $zip        = $stp{p_zip_code};
     my $linetext   = $lines         ? "<u>Lines:</u> $lines" : 'Inactive stop';
     my $activestar = $stp{p_active} ? $EMPTY                 : '*';
-    my $workzone   = $stp{u_work_zone};
+    my $workzone   = $stp{u_work_zone} // '0';
 
     my $connections      = $stp{u_connections};
     my $connections_text = $EMPTY;
@@ -351,7 +415,7 @@ sub _kml_stop_description {
         $EMPTY => 'FF80FFFF',
     );
 
-    func _kml_inactive_color { $KML_LINE_COLORS{$EMPTY} }
+    func _kml_inactive_color {'FFFFFFFF'}
 
     my %color_of_priority;
     my %priority_of_type;
@@ -389,34 +453,51 @@ func signinfo (:$actiumdb) {
     \my %signs = $actiumdb->all_in_columns_key(
         {   TABLE   => 'Signs',
             COLUMNS => [qw/stp_511_id Active SignType/],
+            WHERE   => "Signs.Active <> 'No'"
         }
     );
 
     \my %classification_of_type = $actiumdb->all_in_column_key(
         {   TABLE  => 'SignTypes',
-            COLUMN => ['SignClassification'],
+            COLUMN => 'SignClassification',
         }
     );
 
     my ( %signtypes_of, %signtype_texts_of );
+    my %has_sortof_active_sign;
 
     foreach my $signid ( keys %signs ) {
-        my $stopid = $signs{stp_511_id};
-        push $signtypes_of{$stopid}->@*, $signs{SignType};
+        \my %sign = $signs{$signid};
+        my $stopid = $sign{stp_511_id};
+        next unless ($stopid);
+        push $signtypes_of{$stopid}->@*, $sign{SignType};
+        my $is_sortof = $sign{Active} eq 'Sort of';
+        $has_sortof_active_sign{$stopid} = 1 if $is_sortof;
+        # it's not "= $is_sortof" because so we don't override
+        # previous loops
         push $signtype_texts_of{$stopid}->@*,
-          $signs{SignType} . ( $signs{Active} eq 'Sort of' ? '*' : '' );
+          $sign{SignType} . ( $is_sortof ? '*' : '' );
     }
 
     my ( %signtype_text_of, %classification_of );
 
     foreach my $stopid ( keys %signtypes_of ) {
         my @signtypes = $signtypes_of{$stopid}->@*;
+
         my @classifications
           = Actium::uniq( map { $classification_of_type{$_} } @signtypes );
-        $classification_of{$stopid}
-          = @classifications == 1 ? $classifications[0] : 'Multiple';
+
+        if ( $has_sortof_active_sign{$stopid} ) {
+            $classification_of{$stopid}
+              = @classifications == 1 ? 'Sortof' : 'Multiple-Sortof';
+        }
+        else {
+            $classification_of{$stopid}
+              = @classifications == 1 ? $classifications[0] : 'Multiple';
+        }
+
         $signtype_text_of{$stopid}
-          = join( " / ", sort %signtype_texts_of{$stopid} );
+          = join( " / ", sort $signtype_texts_of{$stopid}->@* );
     }
 
     return \%signtype_text_of, \%classification_of;

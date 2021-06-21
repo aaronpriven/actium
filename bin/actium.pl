@@ -52,7 +52,7 @@ Actium::Env::CLI->new(
         sked2points   => 'Sked2Points',
         slists2html   => 'Slists2HTML',
         ss            => 'StopSearch',
-        stops2kml     => 'Stops2KML',
+        stops2kmz     => 'Stops2KMZ',
         stopsearch    => \'ss',
         stopsofline   => 'StopsOfEachLine',
         storeavl      => 'StorableAVL',
