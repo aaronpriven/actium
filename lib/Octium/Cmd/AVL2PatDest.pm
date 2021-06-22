@@ -109,7 +109,7 @@ sub START {
 
             $dest = "To $dest";
 
-        }    ## tidy end: for ($dir)
+        }
 
         push @results,
           { ROUTE  => $route,
@@ -117,10 +117,10 @@ sub START {
             DIR    => $dir,
             DEST   => $dest,
             LASTTP => $lasttp,
-            VEH    => $veh,
+            VEH    => $veh ||  0,
           };
 
-    }    ## tidy end: foreach my $key ( keys %pat)
+    }
 
     foreach (
         sort {
@@ -181,11 +181,7 @@ sub START {
 
     close $new_codebook;
 
-    #foreach ( sort keys %seen ) {
-    #    say "$_\t$seen{$_}";
-    #}
-
-}    ## tidy end: sub START
+}
 
 1;
 
