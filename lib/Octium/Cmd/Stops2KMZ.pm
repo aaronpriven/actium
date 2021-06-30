@@ -34,6 +34,10 @@ sub OPTIONS {
             config_section => 'Stops2KML',
             config_key     => 'WorkZones',
         },
+        {   spec        => 'kml_only!',
+            description => 'Write KML file only',
+            fallback    => '',
+        }
     );
 }
 
@@ -42,12 +46,15 @@ sub START {
 
     my $signup    = env->signup;
     my $workzones = env->option('workzones');
+    my $kml_only  = env->option('kml_only');
 
     my $iconfile
       = Actium::file( env->option('base'), 'common', 'kmzicons.zip' );
     my $kmzfile
-      = env->option('signup') . ( $workzones ? "-wz" : '-stops' ) . '.kmz';
-    my $outputfile = Actium::file($signup->path , $kmzfile);
+      = env->option('signup')
+      . ( $workzones ? "-wz"  : '-stops' )
+      . ( $kml_only  ? '.kml' : '.kmz' );
+    my $outputfile = Actium::file( $signup->path, $kmzfile );
 
     my $use_option = '';
     $use_option = 'w' if $workzones;
@@ -57,6 +64,7 @@ sub START {
         option    => $use_option,
         save_file => "$outputfile",
         icon_file => "$iconfile",
+        kml_only  => $kml_only,
     );
 
     return;
