@@ -19,7 +19,8 @@ const my $KML_ICON_DEFAULT =>
 
 const my $KML_START_OLD => <<"KMLSTART";
 <?xml version="1.0" encoding="utf-8"?>
-<kml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/kml/2.2">
+<kml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+          xmlns="http://www.opengis.net/kml/2.2">
   <Document>
     <Style id="highlightInactivePlacemark">
        <BalloonStyle><text>\$[description]</text>
@@ -128,7 +129,7 @@ const my $KML_END => <<'KMLEND';
 </kml>
 KMLEND
 
-func stops2kmz ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
+func stops2kmz ( :$actiumdb , :$option, :$save_file, :$icon_file, :$kml_only ) {
 
     my $overallcry = env->cry("Making KMZ file");
 
@@ -221,12 +222,12 @@ func stops2kmz ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
               = "<Placemark>\n"
               . "<name>$workzone</name>\n"
               . "<styleUrl>#stop${activity}Style</styleUrl>\n"
-              . "<description>$description</description>\n";
+              . "<description>$description&lt;br /&gt;$color</description>\n";
 
             $text
               .= "<Style>\n"
               . "<IconStyle>\n"
-              . ($workzone eq '0' ? '' : "<color>$color</color>\n" )
+              . ( $workzone eq '0' ? '' : "<color>$color</color>\n" )
               . $icon_text
               . "</IconStyle>\n"
               #. "<LabelStyle>\n"
@@ -310,6 +311,15 @@ func stops2kmz ( :$actiumdb , :$option, :$save_file, :$icon_file ) {
     $kmltext .= $KML_END;
 
     $stopscry->done;
+
+    if ($kml_only) {
+        my $kmlcry   = env->cry("Writing KML to $save_file");
+        my $kml_file = Actium::file($save_file);
+        $kml_file->spew_text($kmltext);
+        $kmlcry->done;
+        $overallcry->done;
+        return;
+    }
 
     my $kmzcry = env->cry("Assembling kmz members");
 
@@ -507,25 +517,26 @@ func signinfo (:$actiumdb) {
 {
     # colors for  workzone hash
 
-    const my @RGBS => qw(
-      6666FF
+    const my @RGBS => List::Util::shuffle (qw(
+      FAEBD7 00FFFF 7FFFD4 FF7F50 BDB76B C0C0C0 FFD700 00FF00 FF69B4
+      ADD8E6 F08080 FFB6C1 87CEFA FF00FF FFA500
+      98FB98 DDA0DD A020F0 FFFFFF FFFF00 8ABD22
+    ));
+
+    const my @nothing => qw(
       0080FF
+      FFFFCC
       00FF00
-      00FF80
       8000FF
-      8080FF
       80FF00
-      80FF80
       80FFFF
       FF0000
       FF00FF
       FF8000
+      FFFF00
+      FFFFFF
       FF8080
       FF80FF
-      FFFF00
-      FFFF80
-      FFFFFF
-
     );
 
     const my @HASH_COLORS =>
