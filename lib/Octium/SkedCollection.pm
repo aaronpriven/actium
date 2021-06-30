@@ -453,6 +453,68 @@ method output_skeds_place {
 
 }
 
+method output_skeds_flaglists {
+
+    require Octium::Set;
+    require Array::2D;
+
+    my $cry = env->cry('Writing lists for flags');
+
+    my $xlsx_folder = $self->folder('flaglist');
+
+    my @linegroups = Actium::sortbyline $self->linegroups;
+
+    foreach my $linegroup (@linegroups) {
+
+        $cry->over("$linegroup ");
+
+        my $workbook_fh
+          = $xlsx_folder->open_write_binary( $linegroup . '_f.xlsx' );
+        my $workbook    = Excel::Writer::XLSX->new($workbook_fh);
+        my $text_format = $workbook->actium_text_format;
+
+        my %stops_of_dir;
+        my %place_of;
+        foreach my $sked ( $self->skeds_of_lg($linegroup) ) {
+
+            my @stopids    = $sked->stopids;
+            my @stopplaces = $sked->stopplaces;
+
+            for my $i ( 0 .. $#stopids ) {
+                my $stop  = $stopids[$i];
+                my $place = $stopplaces[$i];
+                if ($place) {
+                    $place_of{$stop} = $place;
+                }
+            }
+
+            push $stops_of_dir{ $sked->direction }->@*, \@stopids;
+
+        }
+
+        foreach my $dir ( keys %stops_of_dir ) {
+            my @union = Octium::Set::ordered_union( $stops_of_dir{$dir}->@* );
+            my @rows  = map { [ $_, ( $place_of{$_} // $EMPTY ) ] } @union;
+            my $sheet = $workbook->add_worksheet( $linegroup . "_$dir" );
+            $sheet->actium_write_row_string( 0, 0, [ "Stop", "Place" ],
+                $text_format );
+            $sheet->actium_write_row_string( 1, 0, \@rows, $text_format );
+            $sheet->freeze_panes( 1, 0 );
+            $sheet->set_zoom(125);
+
+        }
+
+        $workbook->close;
+
+    }
+
+    $cry->over($EMPTY);
+    $cry->done;
+
+    return;
+
+}
+
 method compare_from ( Octium::SkedCollection $oldcollection) {
     require Octium::Sked::ComparisonGroup;
     return Octium::Sked::ComparisonGroup->new(
