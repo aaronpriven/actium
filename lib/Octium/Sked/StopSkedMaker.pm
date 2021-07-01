@@ -102,7 +102,7 @@ method stopskeds {
     require Octium::Sked::StopTrip::StopPattern;
     require Octium::Sked::StopTrip::EnsuingStops;
 
-    my %trips_of_stop;
+    my ( %trips_of_stop, @patternkeys, @destplaceids );
 
     @stopids    = $self->stopids;
     @stopplaces = $self->stopplaces;
@@ -118,7 +118,9 @@ method stopskeds {
         @stoptimes  = $trip->stoptimes;
         @has_a_time = map { defined $_ ? 1 : 0 } @stoptimes;
         $patternkey = join( '', @has_a_time );
-        my $line = $trip->line;
+        my $line     = $trip->line;
+        my $days     = $trip->days;
+        my $daycount = $days->count;
 
         my %stopinfo;
 
@@ -132,6 +134,9 @@ method stopskeds {
         for my $stop_idx ( 0 .. $#stoptimes ) {
             next if $stopinfo{skip_stop}[$stop_idx];
             next if not $has_a_time[$stop_idx];
+
+            $patternkeys[$stop_idx]{$line}{$patternkey} += $daycount;
+            $destplaceids[$stop_idx]{$line}{ $stopinfo{destination_place} } = 1;
 
             push $trips_of_stop{$line}{ $stopids[$stop_idx] }->@*,
               _stoptrip(
@@ -157,6 +162,13 @@ method stopskeds {
         } ( keys $trips_of_stop{$line}->%* );
 
     }
+
+    my @flaglist_entries;
+    # TODO return items here
+
+
+
+
     return @stopskeds;
 
 }

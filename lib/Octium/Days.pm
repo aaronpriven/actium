@@ -62,6 +62,12 @@ sub _initialize_daycode {
     $set->($daycode);
 }
 
+method count {
+    my $daycode = $self->daycode;
+    my $count   = $daycode =~ tr/1-7//;
+    return $count;
+}
+
 has 'schooldaycode' => (
     is      => 'ro',
     isa     => SchoolDayCode,    # [BDH]
@@ -229,7 +235,7 @@ sub as_plurals {
     $seriescode =~ s/1234567H/D/;    # every day
     $seriescode =~ s/1234567/X/;     # every day except holidays
     $seriescode =~ s/12345/W/;       # weekdays
-         # $seriescode =~ s/67/E/;  # weekends intentionally omitted
+        # $seriescode =~ s/67/E/;  # weekends intentionally omitted
 
     my $schooldaycode = $self->schooldaycode;
 
@@ -268,7 +274,7 @@ sub as_abbrevs {
     $daycode =~ s/1234567H/D/;    # every day
     $daycode =~ s/1234567/X/;     # every day except holidays
     $daycode =~ s/12345/W/;       # weekdays
-         # $daycode =~ s/67/E/;        # weekends intentionally omitted
+        # $daycode =~ s/67/E/;        # weekends intentionally omitted
 
     my $schooldaycode = $self->schooldaycode;
 

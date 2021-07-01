@@ -25,7 +25,7 @@ sub OPTIONS {
         fallback    => 0,
         description => 'debug (use a single line for debugging)',
       };
-    {   spec        => 'collection=f',
+    {   spec        => 'collection=s',
         description => 'Name of the folder (under "s") '
           . 'to use as the source of the schedules.',
         fallback => 'final',
@@ -38,13 +38,14 @@ sub START {
 
     my $threshold           = env->option('threshold');
     my $difference_fraction = env->option('difference_fraction');
+    my $collection          = option('collection');
 
     my $maincry = env->cry('Creating point skeds from skeds');
     env->wail(
         "Threshold: $threshold, Difference fraction: $difference_fraction");
 
     my $skedcollection
-      = Octium::SkedCollection->load_storable( collection => 'final' );
+      = Octium::SkedCollection->load_storable( collection => $collection );
 
     \my @stopskedcollections = $skedcollection->stopskeds(
         _debug => env->option('_debug'),
@@ -56,8 +57,8 @@ sub START {
     @stopskedcollections
       = Octium::Sked::StopSkedCollection->sorted(@stopskedcollections);
 
-    my $stopskedfolder = $signup->subfolder( 'p', 'final', 'json' );
-    my $kpointsfolder  = $signup->subfolder( 'p', 'final', 'kpoints' );
+    my $stopskedfolder = $signup->subfolder( 'p', $collection, 'json' );
+    my $kpointsfolder  = $signup->subfolder( 'p', $collection, 'kpoints' );
 
     my $cry = env->cry('Writing stop sked collections as json');
     for my $stopskedcollection (@stopskedcollections) {
