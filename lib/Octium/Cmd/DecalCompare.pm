@@ -175,7 +175,7 @@ sub START {
 sub decals_of_line {
 
     my @decals = split( /\t/, shift );
-    s/@// foreach @decals;
+    #s/@// foreach @decals;
     my %decal_of;
 
     foreach my $decal (@decals) {
@@ -252,6 +252,8 @@ sub move_insignificant_changes_to_unchanged {
           21-e    21-m
           21-e    21-r
           21-r    21-m
+          21-m    21-r
+          21-n    21-a
           29-f    29-n
           29-g    29-o
           31-b  31-g
