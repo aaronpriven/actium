@@ -24,12 +24,12 @@ sub OPTIONS {
       { spec        => '_debug',
         fallback    => 0,
         description => 'debug (use a single line for debugging)',
-      };
-    {   spec        => 'collection=s',
+      },
+      { spec        => 'collection=s',
+        fallback    => 'final',
         description => 'Name of the folder (under "s") '
           . 'to use as the source of the schedules.',
-        fallback => 'final',
-    };
+      };
 }
 
 sub START {
@@ -38,7 +38,7 @@ sub START {
 
     my $threshold           = env->option('threshold');
     my $difference_fraction = env->option('difference_fraction');
-    my $collection          = option('collection');
+    my $collection          = env->option('collection');
 
     my $maincry = env->cry('Creating point skeds from skeds');
     env->wail(
