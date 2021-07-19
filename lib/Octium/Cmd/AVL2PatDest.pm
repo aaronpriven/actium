@@ -155,8 +155,8 @@ sub START {
 
     my %text_of_veh;
 
-    open my $new_codebook, '>', 'new-codebook.txt'
-      or die "Can't open new-codebook.txt";
+    open my $new_codebook, '>', 'new-codebook-obsolete.txt'
+      or die "Can't open new-codebook-obsolete.txt";
 
     say $new_codebook "vdc_id\tdestination";
 
