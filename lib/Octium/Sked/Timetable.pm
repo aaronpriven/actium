@@ -688,6 +688,8 @@ qq{<a href="http://www.actransit.org/line_alert/?quick_line=$header_route">};
     }
 
     for my $headertext (@temp_header_columntexts) {
+        $headertext =~ s{/}{/&x#200b}g;
+        # put zero-width spaces after slashes to allow line breaks after them
         print $th qq{<th class="timepointheader">$headertext</th>};
     }
 
