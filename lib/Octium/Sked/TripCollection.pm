@@ -308,7 +308,7 @@ sub _merge_trips {
 
     my @trips = $self->stoptime_sort( map {@$_} @trips_rs )->@*;
 
-    my @methods  = ('stoptimes_comparison_str');
+    my @methods  = ('stoptimes_comparison_str', 'daysexceptions');
     my @newtrips = shift @trips;
 
   TRIP_TO_MERGE:
