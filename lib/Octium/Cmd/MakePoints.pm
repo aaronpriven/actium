@@ -859,6 +859,8 @@ sub START {
 
     foreach my $addition ( sort keys %inst_signids_of ) {
 
+        my $cluster = $addition =~ s/^Crew_//r;
+
         my $workbook_fh
           = $inst_folder->open_write_binary( $addition . '.xlsx' );
         my $workbook = new_workbook($workbook_fh);
@@ -885,6 +887,8 @@ sub START {
             else {
                 $inst = "Install pole scheule " . $signids[0];
             }
+	$inst .= " (Group $cluster)";
+
             push @entries, [ $stopid, $inst_desc_of{$stopid}, $inst ];
 
         }
