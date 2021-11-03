@@ -1,0 +1,127 @@
+package Octium::Sked::FlagListMaker 0.013;
+#vimcolor: #202020
+
+use Actium ('role');
+
+method flaglists {
+
+    my %skeds_of_linedir;
+    foreach my $sked ( $self->skeds ) {
+        push $skeds_of_linedir{ $sked->linedir }->@*, $sked;
+    }
+
+    my @skeds;
+    foreach my $linedir ( keys %skeds_of_linedir ) {
+        push @skeds, _merge_skeds_for_fl( $skeds_of_linedir{$linedir}->@* );
+    }
+
+    my @flaglists = map { $_->flaglist } @skeds;
+    # flaglist in Octium::Sked not yet implemented
+    return @flaglists;
+
+}
+
+func _merge_skeds_for_fl (Octium::Sked @skeds) {
+
+    die "no skeds passed to _merge_skeds" unless @skeds;
+    return $skeds[0] if @skeds == 1;
+
+    my @merged_skeds;
+    # merge multiple skeds into one
+    # not yet implemented
+    ...;
+
+    return @merged_skeds;
+
+}
+
+__END__
+
+=encoding utf8
+
+=head1 NAME
+
+<name> - <brief description>
+
+=head1 VERSION
+
+This documentation refers to version 0.015
+
+=head1 SYNOPSIS
+
+ use <name>;
+ # do something with <name>
+
+=head1 DESCRIPTION
+
+A full description of the module and its features.
+
+=head1 CLASS METHODS
+
+=head2 method
+
+Description of method.
+
+=head1 OBJECT METHODS or ATTRIBUTES
+
+=head2 method
+
+Description of method.
+
+=head1 DIAGNOSTICS
+
+A list of every error and warning message that the application can
+generate (even the ones that will "never happen"), with a full
+explanation of each problem, one or more likely causes, and any
+suggested remedies. If the application generates exit status codes,
+then list the exit status associated with each error.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+A full explanation of any configuration system(s) used by the
+application, including the names and locations of any configuration
+files, and the meaning of any environment variables or properties that
+can be se. These descriptions must also include details of any
+configuration language used.
+
+=head1 DEPENDENCIES
+
+The Actium system, and...
+
+=head1 INCOMPATIBILITIES
+
+None known.
+
+=head1 BUGS AND LIMITATIONS
+
+None known. Issues are tracked on Github at
+L<https:E<sol>E<sol>github.comE<sol>aaronprivenE<sol>actiumE<sol>issues|https:E<sol>E<sol>github.comE<sol>aaronprivenE<sol>actiumE<sol>issues>.
+
+=head1 AUTHOR
+
+Aaron Priven <apriven@actransit.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2020
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+=over 4
+
+=item *
+
+the GNU General Public License as published by the Free Software
+Foundation; either version 1, or (at your option) any later version, or
+
+=item *
+
+the Artistic License version 2.0.
+
+=back
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
