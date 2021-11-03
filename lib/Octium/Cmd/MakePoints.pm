@@ -23,6 +23,7 @@ const my $CHECKLIST_BASE   => 'check';
 const my $INST_BASE        => 'inst';
 
 const my @EXCEL_COLUMN_WIDTHS       => ( 2, 7, 5.33, 7.17, 46.5, 14.83 );
+const my $INST_COLUMN_WIDTH => 46.5;
 const my $EXCEL_MAX_WORKSHEET_CHARS => 31;
 
 const my $MAX_CLEARCHANNEL_CLUSTER_DISPLAY_LENGTH => 28;
@@ -805,6 +806,7 @@ sub START {
                 next unless Actium::feq( $point->delivery, 'PoleCrew' );
 
                 push $inst_signids_of{$addition}{$stopid}->@*, $new_signid;
+	    $inst_desc_of{$stopid} = $desc;
 
             }
         }
@@ -851,14 +853,14 @@ sub START {
 
     $excel_cry->done;
 
-    my $inst_folder = $pointlist_folder->ensure_subfolder($instfoldername);
+    my $inst_folder = $pointlist_folder->subfolder($instfoldername);
 
     my @header_row = qw/StopID Location Instructions/;
 
     foreach my $addition ( sort keys %inst_signids_of ) {
 
         my $workbook_fh
-          = $pointlist_folder->open_write_binary( $addition . '.xlsx' );
+          = $inst_folder->open_write_binary( $addition . '.xlsx' );
         my $workbook = new_workbook($workbook_fh);
         my $body_fmt = $workbook->add_format(
             text_wrap => 1,
@@ -877,17 +879,18 @@ sub START {
 
             my @signids = sort $inst_signids_of{$addition}{$stopid}->@*;
             my $inst;
-            if ( @signids > 1 ) {
-                $inst = "Install pole scheule " . $signids[0];
+            if ( scalar @signids > 1 ) {
+                $inst = "Install pole schedules " . Actium::joincomma(@signids);
             }
             else {
-                $inst = "Install pole schedules " . Actium::joincomma(@signids);
+                $inst = "Install pole scheule " . $signids[0];
             }
             push @entries, [ $stopid, $inst_desc_of{$stopid}, $inst ];
 
         }
-
         $worksheet->write_col( 'A2', \@entries, $body_fmt );
+
+        $worksheet->set_column( 1, 2, $INST_COLUMN_WIDTH);
 
     }
 
