@@ -20,6 +20,7 @@ const my $LISTFILE_BASE    => 'pl';
 const my $ERRORFILE_BASE   => 'err';
 const my $HEIGHTSFILE_BASE => 'ht';
 const my $CHECKLIST_BASE   => 'check';
+const my $INST_BASE        => 'inst';
 
 const my @EXCEL_COLUMN_WIDTHS       => ( 2, 7, 5.33, 7.17, 46.5, 14.83 );
 const my $EXCEL_MAX_WORKSHEET_CHARS => 31;
@@ -566,9 +567,10 @@ sub START {
 
     my $run_name = _get_run_name($run_agency_abbr);
 
-    my $listfile  = $LISTFILE_BASE . $run_name . '.txt';
-    my $excelfile = $CHECKLIST_BASE . $run_name . '.xlsx';
-    my $list_cry  = env->cry("Writing list to $listfile");
+    my $listfile       = $LISTFILE_BASE . $run_name . '.txt';
+    my $excelfile      = $CHECKLIST_BASE . $run_name . '.xlsx';
+    my $instfoldername = $INST_BASE . $run_name;
+    my $list_cry       = env->cry("Writing list to $listfile");
 
     my $pointlist_folder = $signup->subfolder('pointlist');
 
@@ -748,6 +750,8 @@ sub START {
     # to the addition
 
     my %checklist_of;
+    my %inst_signids_of;
+    my %inst_desc_of;
     my %has_shelternum;
 
     foreach my $signtype ( sort keys %pages_of ) {
@@ -767,7 +771,7 @@ sub START {
             foreach my $page (@pages) {
 
                 my ( $new_signid, $subtype_letter, $point ) = $page->@*;
-	    my $map_page = $new_signid =~ s/[A-Za-z]+\z//r;
+                my $map_page = $new_signid =~ s/[A-Za-z]+\z//r;
 
                 say $list_fh "$new_signid\t$subtype_letter\t$map_page";
 
@@ -782,10 +786,12 @@ sub START {
                     $sheet = $addition;
                 }
 
+                my $stopid = $point->stopid;
+                my $desc   = $point->description_nocity;
+
                 my @checklist_entry = (
-                    $copyquantity, $new_signid, $point->stopid,
-                    $point->signtype, $point->description_nocity,
-                    $point->city,
+                    $copyquantity, $new_signid, $stopid,
+                    $point->signtype, $desc, $point->city,
                 );
 
                 my $shelternum = $point->shelternum;
@@ -796,12 +802,16 @@ sub START {
 
                 push $checklist_of{$sheet}->@*, \@checklist_entry;
 
+                next unless Actium::feq( $point->delivery, 'PoleCrew' );
+
+                push $inst_signids_of{$addition}{$stopid}->@*, $new_signid;
+
             }
         }
 
     }
 
-    close $list_fh || croak "Can't close $listfile: $ERRNO";
+    close $list_fh or croak "Can't close $listfile: $ERRNO";
     $list_cry->done;
 
     my $excel_cry = env->cry("Writing checklist to $excelfile");
@@ -810,7 +820,11 @@ sub START {
 
         my $workbook_fh = $pointlist_folder->open_write_binary($excelfile);
         my $workbook    = new_workbook($workbook_fh);
-        my $body_fmt = $workbook->add_format( text_wrap => 1, align => 'left' , valign => 'top' );
+        my $body_fmt    = $workbook->add_format(
+            text_wrap => 1,
+            align     => 'left',
+            valign    => 'top'
+        );
         my $header_fmt = $workbook->add_format( bold => 1 );
 
         foreach my $addition ( sort keys %checklist_of ) {
@@ -836,6 +850,46 @@ sub START {
     }
 
     $excel_cry->done;
+
+    my $inst_folder = $pointlist_folder->ensure_subfolder($instfoldername);
+
+    my @header_row = qw/StopID Location Instructions/;
+
+    foreach my $addition ( sort keys %inst_signids_of ) {
+
+        my $workbook_fh
+          = $pointlist_folder->open_write_binary( $addition . '.xlsx' );
+        my $workbook = new_workbook($workbook_fh);
+        my $body_fmt = $workbook->add_format(
+            text_wrap => 1,
+            align     => 'left',
+            valign    => 'top'
+        );
+        my $header_fmt = $workbook->add_format( bold => 1 );
+        my $worksheet  = $workbook->add_worksheet($addition);
+        $worksheet->hide_gridlines(0);    # don't hide gridlines
+        $worksheet->write_row( 'A1', \@header_row, $header_fmt );
+        $worksheet->repeat_rows(0);
+
+        my @entries;
+
+        foreach my $stopid ( sort keys $inst_signids_of{$addition}->%* ) {
+
+            my @signids = sort $inst_signids_of{$addition}{$stopid}->@*;
+            my $inst;
+            if ( @signids > 1 ) {
+                $inst = "Install pole scheule " . $signids[0];
+            }
+            else {
+                $inst = "Install pole schedules " . Actium::joincomma(@signids);
+            }
+            push @entries, [ $stopid, $inst_desc_of{$stopid}, $inst ];
+
+        }
+
+        $worksheet->write_col( 'A2', \@entries, $body_fmt );
+
+    }
 
     ### ERROR DISPLAY
 
