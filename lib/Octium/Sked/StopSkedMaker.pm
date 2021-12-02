@@ -3,9 +3,6 @@ package Octium::Sked::StopSkedMaker 0.013;
 
 use Actium ('role');
 
-my ( @has_a_time, $patternkey, @stopids, %stopinfo_of_pattern, @stopplaces,
-    @stoptimes, );
-
 func _stoptrip ( :$trip, :$stop_idx, :\%stopinfo , :$dir) {
 
     my $stoppattern = Octium::Sked::StopTrip::StopPattern->new(
@@ -28,6 +25,8 @@ func _stoptrip ( :$trip, :$stop_idx, :\%stopinfo , :$dir) {
     return Octium::Sked::StopTrip->new( \%stoptripspec );
 
 }
+
+my ( @stoptimes, @has_a_time, @stopids, @stopplaces );
 
 func _make_stoppattern {
 
@@ -91,11 +90,13 @@ func _make_stoppattern {
     }
     $stopinfo{destination_place} = $prev_place;
 
-    return $stopinfo_of_pattern{$patternkey} = \%stopinfo;
+    return \%stopinfo;
 
 }
 
 method stopskeds {
+
+    my ( $patternkey, %stopinfo_of_pattern );
 
     require Octium::Sked::StopSked;
     require Octium::Sked::StopTrip;
@@ -110,7 +111,6 @@ method stopskeds {
     # go through each trip and build all the sked trips
 
     my @trips = $self->trips;
-    undef %stopinfo_of_pattern;
 
   TRIP:
     foreach my $trip_idx ( 0 .. $#trips ) {
@@ -126,6 +126,7 @@ method stopskeds {
 
         if ( not exists $stopinfo_of_pattern{$patternkey} ) {
             \%stopinfo = _make_stoppattern();
+            $stopinfo_of_pattern{$patternkey} = \%stopinfo;
         }
         else {
             \%stopinfo = $stopinfo_of_pattern{$patternkey};
@@ -162,12 +163,6 @@ method stopskeds {
         } ( keys $trips_of_stop{$line}->%* );
 
     }
-
-    my @flaglist_entries;
-    # TODO return items here
-
-
-
 
     return @stopskeds;
 
