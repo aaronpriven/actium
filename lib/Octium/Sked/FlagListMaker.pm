@@ -1,5 +1,5 @@
 package Octium::Sked::FlagListMaker 0.013;
-#vimcolor: #202020
+#vimcolor: #000000
 
 use Actium ('role');
 use Octium::Set;
@@ -10,8 +10,9 @@ my @FLAGLIST_HEADER;
 BEGIN {
     const @FLAGLIST_HEADER => (
         qw/ DestItem DestDefault DestOverride
-          StopID PlaceID In_patterns c_description_full DestPlaceIDs NameDefault
-          NameOverrideKey NameOverride IconsDefault IconsDefaultKey IconsOverride/
+          StopID PlaceID In_patterns StopDescrip DestPlaceIDs
+          NameDefault NameOverrideKey NameOverride
+          IconsDefault IconsDefaultKey IconsOverride/
     );
 }
 
@@ -20,25 +21,29 @@ use constant {
 };
 # turns the header names into constants for the column ids
 
-use constant { STOPS => 0, COUNT => 1 };
+use constant { STOPS => 0, PLACES => 1, COUNT => 2 };
 
 method _flaglist_patterns {
 
-    my %pat_of_ld;
+    my ( %pat_of_ld, %dirobj_of_ld );
 
     foreach my $sked ( $self->skeds ) {
-        my $dir     = $sked->dircode;
-        my $daycode = $sked->daycode;
-        my @stops   = $sked->stops;
+        my $dir        = $sked->dircode;
+        my $dir_obj    = $sked->dir_obj;
+        my $daycode    = $sked->daycode;
+        my @stops      = $sked->stopids;
+        my @stopplaces = $sked->stopplaces;
 
         foreach my $trip ( $sked->trips ) {
             my $line = $trip->line;
             my $ld   = "$line-$dir";
+            $dirobj_of_ld{$ld} //= $dir_obj;
 
-            my @stoptimes  = $trip->stoptimes;
-            my @has_a_time = map { defined $_ ? 1 : 0 } @stoptimes;
-            my @tripstops
-              = @stops[ grep { $has_a_time[$_] } ( 0 .. $#stoptimes ) ];
+            my @stoptimes     = $trip->stoptimes;
+            my @has_a_time    = map  { defined $_ ? 1 : 0 } @stoptimes;
+            my @tripstop_idxs = grep { $has_a_time[$_] } ( 0 .. $#stoptimes );
+
+            my @tripstops  = @stops[@tripstop_idxs];
             my $patternkey = join( " ", @tripstops );
 
             if ( exists $pat_of_ld{$ld}{$patternkey} ) {
@@ -47,81 +52,74 @@ method _flaglist_patterns {
             else {
                 $pat_of_ld{$ld}{$patternkey}[STOPS] = \@tripstops;
                 $pat_of_ld{$ld}{$patternkey}[COUNT]{$daycode} = 1;
+                $pat_of_ld{$ld}{$patternkey}[PLACES]
+                  = [ @stopplaces[@tripstop_idxs] ];
             }
 
         }
 
     }
 
-    return \%pat_of_ld;
+    return \%pat_of_ld, \%dirobj_of_ld;
 
 }
 
-method flaglists {
+method flaglists (:$actiumdb = env->actiumdb) {
 
-    \my %patterns_of_linedir = $self->_flaglist_patterns;
+    my $stopinfo_r
+      = env->actiumdb->all_in_columns_key(
+        qw/Stops_Neue c_description_fullabbr h_stp_place/);
 
-    # so stops_of_pattern{$patternkey} has the list of stops, and
-    # count_of_pattern{$patternkey}{daycode} has the count of trips for that day
+    my $cry = env->cry('Assembling flag lists');
+
+    ( \my %patterns_of_linedir, \my %dirobj_of_linedir )
+      = $self->_flaglist_patterns;
 
     my %flaglists_of_linedir;
 
     for my $linedir ( keys %patterns_of_linedir ) {
 
-        my ( @ids, @stop_sets );
-        for my $patternkey ( keys $patterns_of_linedir{$linedir}->%* ) {
-            push @ids,       $patternkey;
-            push @stop_sets, $patterns_of_linedir{$linedir}{$patternkey}[STOPS];
-        }
-
-        \my %union_info = Octium::Set::ordered_union_columns(
-            ids  => \@ids,
-            sets => \@stop_sets,
+        my %pat = _flaglist_patinfo(
+            patterns_of_linedir => \%patterns_of_linedir,
+            linedir             => $linedir
         );
 
-        \my @union_stops = $union_info{union};
-        \my %columns_of  = $union_info{columns_of};
-
-        # set up pattern letters and in_patterns
-
-        my ( %letter_of, %id_of, @in_patterns_of_hash, @in_patterns_of_str,
-            @all_letters, $letter );
-        for my $id (@ids) {
-            $letter = $letter ? $letter++ : 'A';
-            push @all_letters, $letter;
-            #increment letter, or set to 'A' if it was never set
-
-            $letter_of{$id} = $letter;
-            $id_of{$letter} = $id;
-
-            \my @column_idxs = $columns_of{$id};
-
-            foreach my $column_idx (@column_idxs) {
-                $in_patterns_of_hash[$column_idx]{$letter} = 1;
-            }
-        }
-
-        foreach my $column_idx ( 0 .. $#union_stops ) {
-            my $str = $EMPTY;
-            for my $letter (@all_letters) {
-                $str
-                  .= $in_patterns_of_hash[$column_idx]{$letter} ? $letter : '_';
-            }
-            $in_patterns_of_str[$column_idx] = $str;
-        }
-
-        my @pat_display;
-        foreach my $letter (@all_letters) {
-            my $pat_display = "$letter: ";
-            # TODO add days and counts
-            push @pat_display, $pat_display;
-        }
-
         my $flaglist = Array::2D->new;
-        $flaglist->set_col( DestItem, $linedir, @pat_display );
-        $flaglist->set_col( StopID, @union_stops );
 
-        $flaglist->set_col( In_patterns, @pat_display );
+        $flaglist->set_col( DestItem, $linedir, $pat{patterns}->@* );
+
+        my @dests
+          = map { $actiumdb->destination_or_warn($_) } $pat{final_places}->@*;
+        my $line_dest = join( " / ", Actium::uniq(@dests) );
+        $flaglist->set_col( DestDefault, $line_dest, @dests );
+
+        $flaglist->set_col( StopID, $pat{union_stops}->@* );
+
+        $flaglist->set_col( StopDescrip,
+            map { $stopinfo_r->{$_}{c_description_fullabbr} }
+              $pat{union_stops}->@* );
+
+        $flaglist->set_col( PlaceID, $pat{union_places}->@* );
+
+        $flaglist->set_col( In_patterns, $pat{in_patterns}->@* );
+
+        #my @union_dest_ids = map { join(" " , $_->@* ) } $pat{union_dests}->@*;
+        #$flaglist->set_col( DestPlaceIDs , @union_dest_ids);
+
+        my $dirobj = $dirobj_of_linedir{$linedir};
+
+        my ( @union_dest_ids, @name_defaults );
+        for my $stop_idx ( 0 .. $pat{union_dests}->$#* ) {
+            my @stop_dests = $pat{union_dests}[$stop_idx]->@*;
+            push @union_dest_ids, join( " ", @stop_dests );
+            my @dest_names
+              = Actium::uniq( map { $actiumdb->destination_or_warn($_) }
+                  @stop_dests );
+            push @name_defaults,
+              $dirobj->as_to_text . join( " / ", @dest_names );
+        }
+        $flaglist->set_col( DestPlaceIDs, @union_dest_ids );
+        $flaglist->set_col( NameDefault,  @name_defaults );
 
         $flaglist->unshift_row(@FLAGLIST_HEADER);
 
@@ -129,26 +127,125 @@ method flaglists {
 
     }
 
+    $cry->done;
+
     return \%flaglists_of_linedir;
+
+}
+
+func _flaglist_patinfo (:\%patterns_of_linedir , :$linedir) {
+
+    my ( %order_of, %places_of, %stops_of, @ids );
+    for my $patternkey ( keys $patterns_of_linedir{$linedir}->%* ) {
+        push @ids, $patternkey;
+        $stops_of{$patternkey}
+          = $patterns_of_linedir{$linedir}{$patternkey}[STOPS];
+        $places_of{$patternkey}
+          = $patterns_of_linedir{$linedir}{$patternkey}[PLACES];
+    }
+
+    my %union_info
+      = Octium::Set::ordered_union_columns( sethash => \%stops_of, );
+
+    \my @union_stops = $union_info{union};
+    \my %columns_of  = $union_info{columns_of};
+    my @union_places;
+
+    # set up pattern letters and in_patterns
+
+    my ( %letter_of, %id_of, @in_patterns_of_hash, @in_patterns_of_str,
+        @all_letters, $letter, %final_place_of, @union_dests );
+    for my $id (@ids) {
+        if ( defined $letter ) {
+            $letter++;
+        }
+        else {
+            $letter = 'A';
+        }
+        push @all_letters, $letter;
+        #increment letter, or set to 'A' if it was never set
+
+        $letter_of{$id} = $letter;
+        $id_of{$letter} = $id;
+
+        \my @column_idxs = $columns_of{$id};
+
+        #foreach my $column_idx (@column_idxs) {
+        #    $in_patterns_of_hash[$column_idx]{$letter} = 1;
+        #}
+
+        my $final_place = '';
+        foreach my $pat_column_idx ( reverse( 0 .. $#column_idxs ) ) {
+            my $column_idx = $column_idxs[$pat_column_idx];
+            $in_patterns_of_hash[$column_idx]{$letter} = 1;
+            my $place = $places_of{$id}[$pat_column_idx];
+            if ($place) {
+                $union_places[$column_idx] //= $place;
+                $final_place ||= $place;
+            }
+
+            $union_dests[$column_idx]{$final_place} = 1;
+        }
+
+        $final_place_of{$letter} = $final_place;
+
+    }
+
+    foreach my $union_idx ( 0 .. $#union_stops ) {
+        my $str = $EMPTY;
+        for my $letter (@all_letters) {
+            $str .= $in_patterns_of_hash[$union_idx]{$letter} ? $letter : '_';
+        }
+        $in_patterns_of_str[$union_idx] = $str;
+
+        @union_dests[$union_idx] = [ sort keys $union_dests[$union_idx]->%* ];
+    }
+
+    my ( @pat_display, @final_places );
+    foreach my $letter (@all_letters) {
+
+        \my %counts = $patterns_of_linedir{$linedir}{ $id_of{$letter} }[COUNT];
+
+        my $pat_display = "$letter";
+        foreach my $day ( sort keys %counts ) {
+            my $shortcode = Octium::Days->instance( $day, 'B' )->as_shortcode;
+            $pat_display .= " $shortcode:" . $counts{$day};
+        }
+
+        push @pat_display,  $pat_display;
+        push @final_places, $final_place_of{$letter};
+    }
+
+    return union_stops => \@union_stops,
+      union_places     => \@union_places,
+      patterns         => \@pat_display,
+      final_places     => \@final_places,
+      in_patterns      => \@in_patterns_of_str,
+      union_dests      => \@union_dests,
+      ;
 
 }
 
 const my $PHYLUM => 'f';
 
 method output_skeds_flaglists (
-      Octium::Folders::Signup : $signup = Octium::env->signup,
-      Str : $collection  = 'final',
+      :$actiumdb = env->actiumdb,
+      Octium::Folders::Signup :$signup = env->signup,
+      Str :$collection  = 'final',
       ) {
 
     my $output_folder      = $signup->subfolder( $PHYLUM, $collection );
     my $output_folder_path = $output_folder->path;
 
-    \my %flaglists_of_linedir = $self->flaglists;
+    \my %flaglists_of_linedir = $self->flaglists( actiumdb => $actiumdb );
 
-    foreach my $linedir ( keys %flaglists_of_linedir ) {
+    my $cry = env->cry("Writing flag lists...");
+    foreach my $linedir ( Actium::sortbyline keys %flaglists_of_linedir ) {
+        $cry->over($linedir);
         my $flaglist = $flaglists_of_linedir{$linedir};
-        $flaglist->xlsx("$output_folder/$linedir.xlsx");
+        $flaglist->xlsx( output_file => "$output_folder/$linedir.xlsx" );
     }
+    $cry->done;
 
     return;
 

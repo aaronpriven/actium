@@ -469,6 +469,8 @@ method compare_to ( Octium::SkedCollection $newcollection) {
     );
 }
 
+with 'Octium::Sked::FlagListMaker';
+
 Actium::immut;
 
 1;
