@@ -353,7 +353,7 @@ sub ordered_partitions {
         return [ \@data ];
     }
 
-    my @indices = ( 0 .. $final_idx - 1 );
+    my @indices              = ( 0 .. $final_idx - 1 );
     my @break_after_idx_sets = combinations( \@indices, $num_frames - 1 );
 
     my @partitions;
@@ -572,7 +572,7 @@ sub ordered_union_columns {
     my @ordered_ids = map { $_->[0] }
       reverse
       sort { @{ $a->[1] } <=> @{ $b->[1] } or "@{$a->[1]}" cmp "@{$b->[1]}" }
-      map { [ $_, $set_of{$_} ] }
+      map  { [ $_, $set_of{$_} ] }
       keys %set_of;
 
     # sort it so the list with the most entries is first,
@@ -1036,22 +1036,15 @@ arguments.
 
 ordered_union_columns is an elaboration on ordered_union. It takes the 
 following named parameters, which may be specified in a hash or as a
-hash  reference. (L<Params::Validate|Params::Validate> is used for
+hash reference. (L<Params::Validate|Params::Validate> is used for
 validating  parameters.)
 
 =over
 
-=item sets
+=item sethash
 
-This must be an array reference, containing references to other arrays
-which are the sets that are unified. It is required.
-
-=item ids
-
-This is another array reference. It should contain a unique ID for each
-set that is passed. This is used in the columns_of return value. If it
-is not specified, the lists are assigned the ids ( 0, 1, 2, ... ) and
-so on.
+This is a hash reference, where the keys are an arbitrary ID and the values are
+the references to arrays of the sets that are unified. It is required.
 
 =item tiebreaker
 
