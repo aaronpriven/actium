@@ -32,6 +32,7 @@ Actium::Env::CLI->new(
         ems           => 'Ems',
         finalizeskeds => 'FinalizeSkeds',
         flagspecs     => 'Flagspecs',
+        flaglists     => 'Flaglists',
         frequency     => 'Frequency',
         headwaytimes  => 'HeadwayTimes',
         htmltables    => 'HTMLTables',

@@ -6,11 +6,10 @@ use Octium::SkedCollection;
 
 sub OPTIONS {
     return (
-        'signup', 
-        {   spec => 'collection=s',
-            description =>
-              'Collection under "s" (e.g., "final" or "received")',
-            fallback => 'final',
+        qw/signup actiumdb/,
+        {   spec        => 'collection=s',
+            description => 'Collection under "s" (e.g., "final" or "received")',
+            fallback    => 'final',
         },
 
     );
@@ -18,11 +17,12 @@ sub OPTIONS {
 
 sub START {
     my $collection = Octium::SkedCollection::->load_storable(
-        signup => env->signup,
-        collection  => env->option('collection'),
+        signup     => env->signup,
+        collection => env->option('collection'),
     );
 
-    $collection->output_skeds_flaglists;
+    $collection->output_skeds_flaglists( actiumdb => env->actiumdb );
+
 }
 
 1;
