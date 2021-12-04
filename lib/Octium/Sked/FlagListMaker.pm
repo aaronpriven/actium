@@ -1,5 +1,4 @@
 package Octium::Sked::FlagListMaker 0.013;
-#vimcolor: #000000
 
 use Actium ('role');
 use Octium::Set;
@@ -22,6 +21,10 @@ use constant {
 # turns the header names into constants for the column ids
 
 use constant { STOPS => 0, PLACES => 1, COUNT => 2 };
+
+const my $LASTSTOP_TOKEN      => '@L';
+const my $TRANSBAY_ONLY_TOKEN => '@TO';
+const my $TRANSBAY_DROPOFF    => '@TD';
 
 method _flaglist_patterns {
 
@@ -112,12 +115,19 @@ method flaglists (:$actiumdb = env->actiumdb) {
         for my $stop_idx ( 0 .. $pat{union_dests}->$#* ) {
             my @stop_dests = $pat{union_dests}[$stop_idx]->@*;
             push @union_dest_ids, join( " ", @stop_dests );
-            my @dest_names
-              = Actium::uniq( map { $actiumdb->destination_or_warn($_) }
-                  @stop_dests );
-            push @name_defaults,
-              $dirobj->as_to_text . join( " / ", @dest_names );
+
+            if ( $stop_dests[0] =~ /^@/ ) {
+                push @name_defaults, $stop_dests[0];
+            }
+            else {
+                my @dest_names
+                  = Actium::uniq( map { $actiumdb->destination_or_warn($_) }
+                      @stop_dests );
+                push @name_defaults,
+                  $dirobj->as_to_text . join( " / ", @dest_names );
+            }
         }
+
         $flaglist->set_col( DestPlaceIDs, @union_dest_ids );
         $flaglist->set_col( NameDefault,  @name_defaults );
 
@@ -153,8 +163,10 @@ func _flaglist_patinfo (:\%patterns_of_linedir , :$linedir) {
 
     # set up pattern letters and in_patterns
 
-    my ( %letter_of, %id_of, @in_patterns_of_hash, @in_patterns_of_str,
-        @all_letters, $letter, %final_place_of, @union_dests );
+    my (%letter_of,          %id_of,       @in_patterns_of_hash,
+        @in_patterns_of_str, @all_letters, $letter,
+        %final_place_of,     @union_dests, @is_intermediate_stop
+    );
     for my $id (@ids) {
         if ( defined $letter ) {
             $letter++;
@@ -175,6 +187,7 @@ func _flaglist_patinfo (:\%patterns_of_linedir , :$linedir) {
         #}
 
         my $final_place = '';
+        my $seen_final_pat_column;
         foreach my $pat_column_idx ( reverse( 0 .. $#column_idxs ) ) {
             my $column_idx = $column_idxs[$pat_column_idx];
             $in_patterns_of_hash[$column_idx]{$letter} = 1;
@@ -185,6 +198,13 @@ func _flaglist_patinfo (:\%patterns_of_linedir , :$linedir) {
             }
 
             $union_dests[$column_idx]{$final_place} = 1;
+            if ($seen_final_pat_column) {
+                @is_intermediate_stop[$column_idx] = 1;
+            }
+            else {
+                $seen_final_pat_column = 1;
+            }
+
         }
 
         $final_place_of{$letter} = $final_place;
@@ -198,13 +218,19 @@ func _flaglist_patinfo (:\%patterns_of_linedir , :$linedir) {
         }
         $in_patterns_of_str[$union_idx] = $str;
 
-        @union_dests[$union_idx] = [ sort keys $union_dests[$union_idx]->%* ];
+        @union_dests[$union_idx]
+          = [ sort keys $union_dests[$union_idx]->%* ];
+        if ( not $is_intermediate_stop[$union_idx] ) {
+            unshift $union_dests[$union_idx]->@*, $LASTSTOP_TOKEN;
+        }
+
     }
 
     my ( @pat_display, @final_places );
     foreach my $letter (@all_letters) {
 
-        \my %counts = $patterns_of_linedir{$linedir}{ $id_of{$letter} }[COUNT];
+        \my %counts
+          = $patterns_of_linedir{$linedir}{ $id_of{$letter} }[COUNT];
 
         my $pat_display = "$letter";
         foreach my $day ( sort keys %counts ) {
