@@ -2,8 +2,8 @@ package Actium::Types 0.012;
 # vimcolor: #222222
 
 use Actium;
-
 # Type::Tiny ### DEP ###
+# Type::Tiny::XS ### DEP ###
 # Type::Tiny types for Actium
 
 use Type::Library
@@ -41,6 +41,11 @@ coerce Dir, from Str, via { Actium::Dir->instance($_) };
 
 declare CrierStatus,     as Int, where { -7 <= $_ and $_ <= 7 };
 declare CrierImportance, as Int, where { 0 <= $_  and $_ <= 7 };
+
+__PACKAGE__->make_immutable;
+# that's a Type::Tiny make_immutable, not a Moose one
+
+1;
 
 __END__
 

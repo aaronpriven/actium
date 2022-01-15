@@ -2,7 +2,7 @@ package Actium 0.014;    ## no critic 'ProhibitExcessMainComplexity'
 # vimcolor: #132600
 
 use utf8;
-use 5.026;
+use 5.032;
 use warnings;
 
 use Carp;                                 ### DEP ###
