@@ -13,11 +13,8 @@ use MooseX::Types -declare => [
     qw <DayCode     SchoolDayCode   DayStr
       DaySpec             ActiumDays  ActiumTime
       ArrayRefOfTimeNums  TimeNum     _ArrayRefOfStrs ArrayRefOrTimeNum
-      Str4                Str8
       ActiumSkedStopTime  ArrayRefOfActiumSkedStopTime
       ActiumFolderLike
-      CrierBullet          ARCrierBullets
-      CrierTrailer
       >
 ];
 
@@ -103,15 +100,6 @@ coerce ArrayRefOfTimeNums, from _ArrayRefOfStrs, via {
     my @array = map { defined($_) ? to_TimeNum($_) : undef } @{$_};
     return ( \@array );
 };
-
-############################
-### TIMEPOINT ABBREVIATIONS
-
-subtype Str8, as Str, where { length == 8 },
-  message {qq<The entry "$_" is not an eight-character-long string>};
-
-subtype Str4, as Str, where { length == 4 },
-  message {qq<The entry "$_" is not an four-character-long string>};
 
 ##########################
 ### CLASS AND ROLE TYPES
@@ -205,17 +193,6 @@ A "union type" -- either an array reference, or a TimeNum.
 
 An array reference, which must refer to an array consisting solely of
 TimeNums.
-
-=back
-
-=head2 TIMEPOINT ABBREVIATIONS
-
-=over
-
-=item B<Str4> and B<Str8>
-
-A string of exactly four characters or eight characters. These are used
-in  specifying timepoint abbreviations.
 
 =back
 
