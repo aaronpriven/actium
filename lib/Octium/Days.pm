@@ -581,42 +581,6 @@ sub is_equal_to {
 
 }
 
-const my %TRANSITINFO_DAYS_OF => (
-    qw(
-      1234567H DA
-      123457H  WU
-      123456   WA
-      12345    WD
-      1        MY
-      2        TY
-      3        WY
-      4        TH
-      5        FY
-      6        SA
-      56       FS
-      7H       SU
-      67H      WE
-      24       TT
-      25       TF
-      35       WF
-      123      MX
-      135      MZ
-      1245     XW
-      1235     XH
-      1234     XF
-      45       HF
-      )
-);
-
-sub as_transitinfo {
-    my $self    = shift;
-    my $daycode = $self->daycode;
-    if ( exists $TRANSITINFO_DAYS_OF{$daycode} ) {
-        return $TRANSITINFO_DAYS_OF{$daycode};
-    }
-    return $daycode;
-}
-
 Actium::immut();
 
 1;

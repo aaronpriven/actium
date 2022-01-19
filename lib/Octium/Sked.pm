@@ -848,14 +848,6 @@ sub storable {
     return $self->freeze;    # uses MooseX::Storage;
 }
 
-sub transitinfo_id {
-    my $self             = shift;
-    my $linegroup        = $self->linegroup;
-    my $dir              = $self->dircode;
-    my $days_transitinfo = $self->days->as_transitinfo;
-    return join( '_', $linegroup, $dir, $days_transitinfo );
-}
-
 method compare_from (Octium::Sked $oldsked) {
     require Octium::Sked::Comparison;
     return Octium::Sked::Comparison->new(
@@ -869,8 +861,7 @@ method compare_to (Octium::Sked $newsked) {
     return $newsked->compare_from($self);
 }
 
-with 'Octium::Sked::Storage::XLSX',
-  'Octium::Sked::Storage::Tabxchange', 'Octium::Skedlike',
+with 'Octium::Sked::Storage::XLSX', 'Octium::Skedlike',
   'Octium::Sked::StopSkedMaker';
 
 Actium::immut;
