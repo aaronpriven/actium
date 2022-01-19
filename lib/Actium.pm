@@ -68,6 +68,8 @@ const our $EMPTY => q[];
 const our $CRLF  => qq{\cM\cJ};
 const our $SPACE => q{ };
 
+#<<<
+
 =head1 IMPORTED MODULES
 
 Unless otherwise specified, the modules below are imported into the
@@ -190,9 +192,41 @@ All modules will have the function keyword imported, as "func" rather
 than Kavorka's default "fun." Classes and roles will also have the
 following keywords imported:
 
-   after 
-   around augment before 
-   classmethod sub METHOD0 override
+=over 
+
+=item * 
+
+after 
+
+=item * 
+
+around 
+
+=item * 
+
+augment 
+
+=item * 
+
+before 
+
+=item * 
+
+classmethod 
+
+=item * 
+
+method 
+
+=item * 
+
+objectmethod 
+
+=item * 
+
+override 
+
+=back
 
 (The reason for importing 'fun' as 'func' is twofold: first, Eclipse
 supports the Method::Signatures keywords "func" and "method". Second, I
@@ -242,6 +276,8 @@ turned off: 'experimental::refaliasing' and 'experimental::postderef'.
 =back
 
 =cut
+
+#>>>
 
 use parent 'Exporter';
 our @EXPORT = qw/$EMPTY $CRLF $SPACE env/;
