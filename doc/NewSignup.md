@@ -232,20 +232,6 @@ lines and associated information.
 
 Importantly, all changed lines should have their Timetable Date updated.
 
-## Create web schedules
-
-Run the tabskeds program:
-
-    actium.pl tabskeds -s z00
-
-This creates a bunch of tab files in the folder tabxchange . Send these to IS with a request that they be made the preview schedules effective of the effective date.  Usually I put them in a zip file called tabskeds.zip
-
-````Shell
-zip -r tabskeds tabxchange/
-````
-
-Then send that to the Help Desk with a request that it be made previews soon and active on the effective date.
-
 ## Create point schedule files
 
 a) Run the sked2points command:
@@ -259,8 +245,6 @@ b) Run the actium k2id command:
     actium.pl makepoints -s z00
 
 At the end it will say something like "20 skipped signs because stop file not found." Each of these signs has an entry in the Signs table in the FileMaker database. It will probably be necessary to go through each one of those and figure out why the stop is no longer there.
-
-
 
 ## Run timetable program and update timetables
 
