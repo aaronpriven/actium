@@ -72,40 +72,6 @@ sub _build_sked_obj_by_id_r {
     return \%sked_obj_by_id;
 }
 
-# Transitinfo IDs used by tabxchange
-
-has '_sked_transitinfo_ids_of_lg' => (
-    is      => 'bare',
-    isa     => HashRef [ ArrayRef [Str] ],
-    traits  => ['Hash'],
-    builder => '_build_sked_transitinfo_ids_of_lg',
-    lazy    => 1,
-    handles => { _sked_transitinfo_ids_of_lg => 'get' },
-);
-
-sub _build_sked_transitinfo_ids_of_lg {
-    my $self  = shift;
-    my @skeds = $self->skeds;
-    my %sked_transitinfo_ids_of_lg;
-    foreach my $sked (@skeds) {
-
-        my $t_id      = $sked->transitinfo_id;
-        my $linegroup = $sked->linegroup;
-        push $sked_transitinfo_ids_of_lg{$linegroup}->@*, $t_id;
-
-    }
-
-    return \%sked_transitinfo_ids_of_lg;
-
-}
-
-sub sked_transitinfo_ids_of_lg {
-    my $self      = shift;
-    my $linegroup = shift;
-    my @skedids   = sort ( $self->_sked_transitinfo_ids_of_lg($linegroup)->@* );
-    return @skedids;
-}
-
 has '_sked_ids_of_lg' => (
     is      => 'bare',
     isa     => HashRef [ ArrayRef [Str] ],
@@ -318,38 +284,6 @@ method stopskeds (
 ###################
 ##### OUTPUT ######
 ###################
-
-sub write_tabxchange {
-
-    my $self = shift;
-
-    my %params = validate(
-        @_,
-        {   tabfolder    => 1,
-            commonfolder => 1,
-            actiumdb     => 1,
-        },
-    );
-
-    my $destination_code
-      = Octium::DestinationCode->load( $params{commonfolder} );
-
-    my @skeds = grep { $_->linegroup !~ /^(?:BS|4\d\d)/ax } $self->skeds;
-
-    $params{tabfolder}->write_files_with_method(
-        OBJECTS         => \@skeds,
-        METHOD          => 'tabxchange',
-        EXTENSION       => 'tab',
-        FILENAME_METHOD => 'transitinfo_id',
-        ARGS            => [
-            destinationcode => $destination_code,
-            actiumdb        => $params{actiumdb},
-            collection      => $self,
-        ],
-    );
-
-    $destination_code->store;
-}
 
 method folder ($the_format = undef) {
     # calling it $format yields syntax formatting errors in Eclipse
