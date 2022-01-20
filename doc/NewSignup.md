@@ -212,8 +212,8 @@ listed, with a time. Although this is not implemented yet, I plan to
 allow "i" to be used to have the program interpolate times stops between
 timepoints, and "f" to be used for flexible stops (on Flex lines).
 
-At this time there is no way to delete an incoming schedule so it is not
-used.
+To delete an incoming schedule so it is not used, add its id to a file called
+"delete_skeds.txt" in the exceptions folder.
 
 ## Create final schedule files
 
@@ -268,7 +268,11 @@ Run the program
 
     actium.pl avl2patdest –s z00
 
-It will create two files in Actium/db/z00 -- pattern-destinations.txt and new-codebook.txt. Email this file to Clever, or whoever is working on that by now.
+It will create two files in Actium/db/z00 -- pattern-destinations.txt and
+direction-destinations.txt. Email these file to IT, or whoever is working on
+that by now. Destination-directions will need to be updated to correct the
+order of merged destinations and also have the names truncated to fit Clever's
+dumb length limitations.
 
 ## Update flag and decal specifications
 
