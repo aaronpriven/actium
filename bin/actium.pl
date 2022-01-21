@@ -57,7 +57,6 @@ Actium::Env::CLI->new(
         stopsearch    => \'ss',
         stopsofline   => 'StopsOfEachLine',
         storeavl      => 'StorableAVL',
-        tabskeds      => 'TabSkeds2',
         tabula        => \'timetables',
         tabulae       => \'timetables',
         tempsigns     => 'TempSigns',

@@ -212,8 +212,8 @@ listed, with a time. Although this is not implemented yet, I plan to
 allow "i" to be used to have the program interpolate times stops between
 timepoints, and "f" to be used for flexible stops (on Flex lines).
 
-At this time there is no way to delete an incoming schedule so it is not
-used.
+To delete an incoming schedule so it is not used, add its id to a file called
+"delete_skeds.txt" in the exceptions folder.
 
 ## Create final schedule files
 
@@ -232,20 +232,6 @@ lines and associated information.
 
 Importantly, all changed lines should have their Timetable Date updated.
 
-## Create web schedules
-
-Run the tabskeds program:
-
-    actium.pl tabskeds -s z00
-
-This creates a bunch of tab files in the folder tabxchange . Send these to IS with a request that they be made the preview schedules effective of the effective date.  Usually I put them in a zip file called tabskeds.zip
-
-````Shell
-zip -r tabskeds tabxchange/
-````
-
-Then send that to the Help Desk with a request that it be made previews soon and active on the effective date.
-
 ## Create point schedule files
 
 a) Run the sked2points command:
@@ -259,8 +245,6 @@ b) Run the actium k2id command:
     actium.pl makepoints -s z00
 
 At the end it will say something like "20 skipped signs because stop file not found." Each of these signs has an entry in the Signs table in the FileMaker database. It will probably be necessary to go through each one of those and figure out why the stop is no longer there.
-
-
 
 ## Run timetable program and update timetables
 
@@ -284,7 +268,11 @@ Run the program
 
     actium.pl avl2patdest –s z00
 
-It will create two files in Actium/db/z00 -- pattern-destinations.txt and new-codebook.txt. Email this file to Clever, or whoever is working on that by now.
+It will create two files in Actium/db/z00 -- pattern-destinations.txt and
+direction-destinations.txt. Email these file to IT, or whoever is working on
+that by now. Destination-directions will need to be updated to correct the
+order of merged destinations and also have the names truncated to fit Clever's
+dumb length limitations.
 
 ## Update flag and decal specifications
 

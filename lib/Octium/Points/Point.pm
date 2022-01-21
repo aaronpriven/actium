@@ -312,10 +312,10 @@ sub new_from_kpoints {
             next LINE_IN_KPOINT_FILE
               if Actium::all {/[46]\d\d/} @linegroup_lines;
 
-            my $transitinfo_dir;
+            my $output_dircode;
             if ( $dircode != -1 ) {
-                $transitinfo_dir = $DIRCODES[ $HASTUS_DIRS[$dircode] ];
-                my @linedirs = map {"$_-$transitinfo_dir"} @linegroup_lines;
+                $output_dircode = $DIRCODES[ $HASTUS_DIRS[$dircode] ];
+                my @linedirs = map {"$_-$output_dircode"} @linegroup_lines;
                 push @found_linedirs, @linedirs;
                 next LINE_IN_KPOINT_FILE
                   if Actium::all { $do_omit_linedir{$_} } @linedirs;
@@ -371,9 +371,9 @@ sub new_from_kpoints {
 
                     if ( $dircode == -1 ) {
                         $entry_dircode_count{$entry_dircode}++;
-                        my $entry_transitinfo_dir
+                        my $entry_output_dircode
                           = $DIRCODES[ $HASTUS_DIRS[$entry_dircode] ];
-                        my $entry_linedir = "$line-$entry_transitinfo_dir";
+                        my $entry_linedir = "$line-$entry_output_dircode";
                         push @found_linedirs, $entry_linedir;
 
                         next ENTRY
