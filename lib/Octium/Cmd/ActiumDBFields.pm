@@ -1,4 +1,4 @@
-package Octium::Cmd::Scratch 0.012;
+package Octium::Cmd::ActiumDBFields 0.012;
 
 use Actium;
 use Octium;
