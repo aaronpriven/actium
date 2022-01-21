@@ -15,6 +15,7 @@ Actium::Env::CLI->new(
     system_name => 'octium',
     subcommands => {
 
+        actiumdbfields => 'ActiumDBFields',
         addfields     => 'AddFields',
         avl2patdest   => 'AVL2PatDest',
         avl2points    => 'AVL2Points',
@@ -49,7 +50,6 @@ Actium::Env::CLI->new(
         newsignup     => 'NewSignup',
         prepareflags  => 'PrepareFlags',
         schooltrips   => 'SchoolTrips',
-        scratch       => 'Scratch',
         sked2points   => 'Sked2Points',
         slists2html   => 'Slists2HTML',
         ss            => 'StopSearch',
