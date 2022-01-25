@@ -23,7 +23,7 @@ const my $CHECK_FOR_INSTANCE => 'use_instance_not_new';
 
 around BUILDARGS ($orig, $class : @args) {
     if ( $args[0] ne $CHECK_FOR_INSTANCE ) {
-        croak 'Attempt to create Actium::OperatingDays object '
+        croak "Attempt to create $class object "
           . 'using new() instead of instance()';
     }
     shift @args;
