@@ -3,12 +3,12 @@ package Actium::Time 0.014;
 # object for formatting schedule times and parsing formatted times
 
 use Actium ('class');
-use Type::Tiny;
+use Type::Tiny;    ### DEP ###
 use Types::Standard(qw/Int Str Enum/);
 use Types::Common::Numeric (qw/IntRange/);
-### Type::Tiny ### DEP ###
 
-const my $MINS_IN_12HRS => ( 12 * 60 );
+const my $MINS_IN_12HRS      => ( 12 * 60 );
+const my $CHECK_FOR_INSTANCE => 'use_instance_not_new';
 
 const my %NAMED => (
     NOON_YESTERDAY    => -$MINS_IN_12HRS,
@@ -25,6 +25,15 @@ const my %NAMED => (
 ## CONSTRUCTION
 ###########################################
 
+around BUILDARGS ($orig, $class : @args) {
+    if ( $args[0] ne $CHECK_FOR_INSTANCE ) {
+        croak "Attempt to create $class object "
+          . 'using new() instead of one of the instance methods';
+    }
+    shift @args;
+    $class->$orig(@args);
+}
+
 my %str_cache;
 my %num_cache;
 
@@ -35,9 +44,11 @@ sub from_num {
     my @objs = (
         map {
             defined $_
-              ? ( $num_cache{$_} //= $class->new( _timenum => $_ ) )
+              ? ( $num_cache{$_}
+                  //= $class->new( $CHECK_FOR_INSTANCE, _timenum => $_ ) )
               : $num_cache{ $NAMED{NO_VALUE} }
-              //= $class->new( _timenum => $NAMED{NO_VALUE} )
+              //= $class->new( $CHECK_FOR_INSTANCE,
+                _timenum => $NAMED{NO_VALUE} )
         } @timenums
     );
 
@@ -164,7 +175,7 @@ sub from_str {
         defined $_
           ? $str_cache{$_} //= $class->from_num( $str_to_num_cr->($_) )
           : $num_cache{ $NAMED{NO_VALUE} }
-          //= $class->new( _timenum => $NAMED{NO_VALUE} )
+          //= $class->new( $CHECK_FOR_INSTANCE, _timenum => $NAMED{NO_VALUE} )
     } @timestrs;
 
     return @objs if wantarray;
@@ -783,6 +794,17 @@ The separator serves to indicate times on the previous day. Times on the
 previous day use the negative separator provided, rather than the regular
 separator. (This is the only format that uses the negative separator.) 
 The default negative separator is a single quote (').
+
+=back
+
+=head1 DIAGNOSTICS
+
+=over
+
+=item Attempt to create Actium::Time object using new() instead of one of the instance methods
+
+An attempt was made to call the C<new()> method directly, instead of using the
+instance methods C<from_str()>, C<from_num()>, or C<from_excel()>.
 
 =back
 

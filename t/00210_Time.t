@@ -45,15 +45,15 @@ note 'from_num() specials';
 
 {
     my $flextime = Actium::Time->from_num( $NAMED{f} );
-    is( $flextime->timenum, $NAMED{f},
+    is( $flextime->_timenum, $NAMED{f},
         'Timenum for flex is ' . $NAMED{f} . ' - from_num' );
 
     my $intertime = Actium::Time->from_num( $NAMED{i} );
-    is( $intertime->timenum, $NAMED{i},
+    is( $intertime->_timenum, $NAMED{i},
         'Timenum for interpolate is ' . $NAMED{i} . ' - from_num' );
 
     my $notime = Actium::Time->from_num(undef);
-    is( $notime->timenum, $NAMED{NO_VALUE},
+    is( $notime->_timenum, $NAMED{NO_VALUE},
         'Timenum for undef is ' . $NAMED{NO_VALUE} . ' - from_num' );
 
     $testcount += 3;
@@ -94,19 +94,19 @@ for my $string ( sort keys %timenum_of ) {
 note 'from_str() specials';
 
 my $flextime = Actium::Time->from_str('f');
-is( $flextime->timenum, $NAMED{f},
+is( $flextime->_timenum, $NAMED{f},
     'Timenum for flex is ' . $NAMED{f} . ' - from_str' );
 
 my $intertime = Actium::Time->from_str('i');
-is( $intertime->timenum, $NAMED{i},
+is( $intertime->_timenum, $NAMED{i},
     'Timenum for interpolate is ' . $NAMED{i} . ' - from_str' );
 
 my $notime = Actium::Time->from_str('');
-is( $notime->timenum, $NAMED{NO_VALUE},
+is( $notime->_timenum, $NAMED{NO_VALUE},
     'Timenum for empty str is ' . $NAMED{NO_VALUE} . ' - from_str' );
 
 my $undeftime = Actium::Time->from_str(undef);
-is( $undeftime->timenum, $NAMED{NO_VALUE},
+is( $undeftime->_timenum, $NAMED{NO_VALUE},
     'Timenum for undef is ' . $NAMED{NO_VALUE} . ' - from_str' );
 
 $testcount += 4;
