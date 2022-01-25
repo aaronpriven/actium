@@ -1,4 +1,4 @@
-package Octium::DaysDirections 0.012;
+package Octium::DaysDirections 0.019;
 
 # Day and direction codes, conversion between in Hastus and legacy systems
 
