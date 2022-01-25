@@ -27,7 +27,7 @@ around BUILDARGS ($orig, $class : @args) {
           . 'using new() instead of instance()';
     }
     shift @args;
-    $class->orig(@args);
+    $class->$orig(@args);
 }
 
 my %OF_SHORTCODE = ( DA => '1234567', WD => '12345', WE => '67', );
@@ -37,14 +37,25 @@ method instance ($class: $daycode! , :$holidaypolicy //= '7') {
     state %obj_cache;
 
     state $old_sd_carped;
-    if ( not $old_sd_carped and $daycode =~ /\-[BDH]\z/ ) {
-        carp "Stripping old-style school code from day code";
-        $old_sd_carped = 1;
+    if ( $daycode =~ /\-[BDH]\z/ ) {
+        if ( not $old_sd_carped ) {
+            carp "Stripping old-style school code from day code";
+            $old_sd_carped = 1;
+        }
         $daycode =~ s/-[BDH]\z//;
     }
 
-    # this school code part is what prevents us from doing coercion on daycode
-    # instead of doing the line below
+    state $seven_h_carped;
+    if ( $daycode =~ /7H/ ) {
+        if ( not $seven_h_carped ) {
+            carp "Stripping old-style Sunday-and-holiday H from day code";
+            $seven_h_carped = 1;
+        }
+        $daycode =~ s/7H/7/;
+    }
+
+    # this backwards compatiblity part is what prevents us from doing coercion
+    # on daycode instead of doing the line below
 
     $daycode = $OF_SHORTCODE{$daycode} if exists $OF_SHORTCODE{$daycode};
 
@@ -125,7 +136,7 @@ func _verify_union_or_intersection ($invocant, @objs) {
     my $class;
     if ( Actium::blessed($invocant) ) {
         $class = Actium::blessed($invocant);
-        push @objs, $invocant;
+        unshift @objs, $invocant;
     }
     else {
         $class = $invocant;
@@ -310,7 +321,7 @@ method _build_as_specdayletter {
       : $daycode eq '1245'    ? 'XW'
       : $daycode eq '1345'    ? 'XT'
       : $daycode eq '2345'    ? 'XM'
-      : $daycode eq '12345'   ? 'M-F'
+      : $daycode eq '12345'   ? 'WD'
       : $daycode eq '1234567' ? 'DA'
       :   join( '', map { $SPECDAYLETTER_OF{$_} } split( //, $daycode ) );
 
@@ -343,11 +354,9 @@ __END__
 
 Actium::OperatingDays - Object for holding scheduled days
 
-NOT UPDATED FROM OLD OCTIUM::DAYS
-
 =head1 VERSION
 
-This documentation refers to version 0.010
+This documentation refers to version 0.019
 
 =head1 SYNOPSIS
 
@@ -385,11 +394,25 @@ containing any or all of the digits 1 through 7, in order. If a
 1 is present, it operates on Mondays; if 2, it operates on Tuesdays;
 and so on through 7 for Sundays.
 
+For backward compatibility, it will accept, but strip off, trailing school day
+codes ("-B", "-D" , "-H") or a letter H after the number 7 (indicating the old
+way of showing the holidays). It will issue a warning the first time it sees
+these.
+
+There are three short codes it will accept going forward:
+
+   DA  is short for  1234667
+   WD  is short for  12345
+   WE  is short for  67
+
+These are for convenience only; any other days should be specified with the
+full list of days.
+
 The constructor also accepts a holiday policy, a single digit from 0 through 7.
 A 0 indicates that there is no holiday policy and no mention should be made of
-holidays. If it is 1 through 7, it indicates that holidays should be included
-on that day's schedule (1 for Monday, 2 for Tuesday, etc.). If not given, it
-uses 7, for Sunday.
+holidays. If it is 1 through 7, it indicates that holidays should be mentioned
+along with that day's schedule (e.g., "Thursdays and holidays") -- 1 for
+Monday, 2 for Tuesday, etc.). If not given, it uses 7, for Sunday.
 
 =item B<< Actium::OperatingDays->new() >>
 
@@ -453,6 +476,11 @@ If holiday policies for the different objects are not identical, it will throw a
 Returns the day specification: a string with one or more of the
 characters 1 through 7, indicating operation on Monday through Sunday.
 
+=item B<< $obj->count >>
+
+Returns the number of days of the week this object represents (in other words,
+if it's five days a week, it would be 5; three days a week, would be 3; etc.).
+
 =item B<< $obj->holidaypolicy >>
 
 Returns one character: the digit 0, indicating that there is no holiday policy,
@@ -470,6 +498,16 @@ be sorted using perl's cmp operator to be in order.
 Returns a version of the day code and holiday policy that can be used to
 create a new object using B<unbundle>.
 
+=item B<< $obj->is_equal_to($other_obj) >>
+
+Returns true if the passed object is the same as the invoked object. The object
+must be completely identical (the same instance).
+
+=item B<< $obj->is_a_superset_of($other_obj) >>
+
+Returns true if the passed object is a superset of the invoked object (in other
+words, if the passed object contains all the days of the invoked object).
+
 =item B<< $obj->as_full >>
 
 This returns a string containing English text describing the days.
@@ -480,6 +518,15 @@ row are given as "Day through Day", and if all days are shown, will return
 
 May be followed by "except holidays" or "and holidays," as appropriate.
 
+=item B<< $obj->as_shortcode >>
+
+This returns the day code, except that the following day codes are changed to
+their abbreviations:
+
+   1234667  will return  DA
+   12345    will return  WD
+   67       will return  WE
+
 =item B<< $obj->as_specdayletter >>
 
 Returns a short version of the days suitable for inclusion on a schedule.
@@ -487,13 +534,17 @@ Normally it is a combination of short day abbreviations ( M, T, W, Th, F, S,
 Su), but there are a number of exceptions for sets of weekdays.  It will
 include 'Hol' if holidays should be shown.
 
-=item B<< $obj->specday_and_specdayletter($sked_obj) >>
+=item B<< $trip_days_obj->specday_and_specdayletter($schedule_days_object) >>
 
-Returns two things: the as_specdayletter value, and the as_full value with
-"only" tacked on at the end. This is the letter used for notes in a timetable,
-and the description that should be used afterwards.
+This method checks an Actium::OperatingDays object representing an individual
+trip against an Actium::OperatingDays object representing a whole schedule.
 
-If the objects have no days in common, or have identical days, will return nothing.
+If there is no intersection between the two day objects, or if they are the
+same, nothing is returned.
+
+Otherwise, it returns two things. The first is the as_specdayletter value, and
+the as_full value with "only" tacked on at the end. This is the letter used for
+notes in a timetable, and the description that should be used afterwards.
 
 =back
 
