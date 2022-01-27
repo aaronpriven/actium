@@ -71,7 +71,7 @@ has 'daycode' => (
     is       => 'ro',
     isa      => DayCode,
     required => 1,
-    coerce   => 1,
+    #    coerce   => 1,
 );
 
 has 'holidaypolicy' => (
@@ -260,19 +260,20 @@ method _build_as_shortcode {
       :                         $daycode;
 }
 
-const my @NAMES => qw(Monday Tuesday Wednesday Thursday Friday Saturday Sunday);
+const my @NAMES =>
+  qw(ZeroDay Mondays Tuesdays Wednesdays Thursdays Fridays Saturdays Sundays);
 
 method _build_as_full {
     my $daycode = $self->daycode;
     return 'Every day' if $daycode eq '1234567';
 
-    require Set::IntSpan;
+    require Set::IntSpan;    ### DEP ###
 
     my $set   = Set::IntSpan->new( [ split //, $daycode ] );
     my @spans = $set->spans;
     my @texts;
     foreach my $span (@spans) {
-        my ( $low, $high ) = $span;
+        my ( $low, $high ) = $span->@*;
         if ( $low == $high ) {
             push @texts, $NAMES[$low];
         }
@@ -286,16 +287,23 @@ method _build_as_full {
     }
 
     my $holiday = $self->_show_holiday;
+
     if ( $holiday eq 'H' ) {
-        push @texts, 'and holidays';
-    }
-    elsif ( $holiday eq 'X' ) {
-        push @texts, 'except holidays';
+        push @texts, 'holidays';
     }
 
-    my $results = Actium::joinseries( items => \@texts );
+    my $result = Actium::joinseries( items => \@texts );
 
-    return $results;
+    if ( $holiday eq 'X' ) {
+        if ( @texts == 1 and $texts[0] !~ /through/ ) {
+            $result .= ' except holidays';
+        }
+        else {
+            $result .= ', except holidays';
+        }
+    }
+
+    return $result;
 
 }
 
@@ -316,7 +324,7 @@ method _build_as_specdayletter {
     my $daycode = $self->daycode;
 
     my $result
-      = $daycode eq '1234'    ? 'XF '
+      = $daycode eq '1234'    ? 'XF'
       : $daycode eq '1235'    ? 'XTh'
       : $daycode eq '1245'    ? 'XW'
       : $daycode eq '1345'    ? 'XT'
@@ -325,7 +333,7 @@ method _build_as_specdayletter {
       : $daycode eq '1234567' ? 'DA'
       :   join( '', map { $SPECDAYLETTER_OF{$_} } split( //, $daycode ) );
 
-    $result .= 'Hol' if $self->_show_holiday;
+    $result .= 'Hol' if $self->_show_holiday eq 'H';
 
     return $result;
 
@@ -385,7 +393,7 @@ objects are immutable.
 
 =over
 
-=item B<< Actium::OperatingDays->instance(daycode => I<daycode> , holidaypolicy => I<holidaypolicy>) >>
+=item B<< Actium::OperatingDays->instance(I<daycode> [, holidaypolicy => I<holidaypolicy>) ]>>
 
 The object is constructed using "Actium::OperatingDays->instance".
 
@@ -408,11 +416,12 @@ There are three short codes it will accept going forward:
 These are for convenience only; any other days should be specified with the
 full list of days.
 
-The constructor also accepts a holiday policy, a single digit from 0 through 7.
-A 0 indicates that there is no holiday policy and no mention should be made of
-holidays. If it is 1 through 7, it indicates that holidays should be mentioned
-along with that day's schedule (e.g., "Thursdays and holidays") -- 1 for
-Monday, 2 for Tuesday, etc.). If not given, it uses 7, for Sunday.
+The constructor also accepts an optional holiday policy argument, which must
+be, a single digit from 0 through 7.  A 0 indicates that there is no holiday
+policy and no mention should be made of holidays. If it is 1 through 7, it
+indicates that holidays should be mentioned along with that day's schedule
+(e.g., "Thursdays and holidays") -- 1 for Monday, 2 for Tuesday, etc.). If not
+given, it uses 7, for Sunday.
 
 =item B<< Actium::OperatingDays->new() >>
 
@@ -512,8 +521,8 @@ words, if the passed object contains all the days of the invoked object).
 
 This returns a string containing English text describing the days.
 
-The general form is "Day, Day and Day,"  but a set of four or more days in a
-row are given as "Day through Day", and if all days are shown, will return
+The general form is "Days, Days and Days,"  but a set of four or more days in a
+row are given as "Days through Days", and if all days are shown, will return
 "Every day."
 
 May be followed by "except holidays" or "and holidays," as appropriate.
