@@ -180,33 +180,6 @@ const my %ADJECTIVE_SCHOOL_OF => (
     H => ' (except school days)',
 );
 
-sub as_adjectives {
-
-    my $self = shift;
-
-    my $as_string = $self->as_string;
-
-    state $cache_r;
-    return $cache_r->{$as_string} if $cache_r->{$as_string};
-
-    my $daycode = $self->daycode;
-    $daycode =~ s/1234567H/D/;    # every day
-    $daycode =~ s/1234567/X/;     # every day except holidays
-    $daycode =~ s/12345/W/;       # weekdays
-    $daycode =~ s/67/E/;          # weekends
-
-    my $schooldaycode = $self->schooldaycode;
-
-    my @as_adjectives = map { $ADJECTIVE_OF{$_} } split( //, $daycode );
-
-    my $results
-      = Actium::joinseries( items => \@as_adjectives )
-      . $ADJECTIVE_SCHOOL_OF{$schooldaycode};
-
-    return $cache_r->{$as_string} = $results;
-
-}    ## tidy end: sub as_adjectives
-
 const my @PLURALS => (
     @SEVENDAYPLURALS, 'holidays',  'Monday through Friday',
     'Weekends',       'Every day', "Every day except holidays"
@@ -261,34 +234,6 @@ const my %ABBREV_SCHOOL_OF => (
     D => ' (Sch days)',
     H => ' (Sch hols)',
 );
-
-sub as_abbrevs {
-
-    my $self      = shift;
-    my $as_string = $self->as_string;
-
-    state $cache_r;
-    return $cache_r->{$as_string} if $cache_r->{$as_string};
-
-    my $daycode = $self->daycode;
-    $daycode =~ s/1234567H/D/;    # every day
-    $daycode =~ s/1234567/X/;     # every day except holidays
-    $daycode =~ s/12345/W/;       # weekdays
-        # $daycode =~ s/67/E/;        # weekends intentionally omitted
-
-    my $schooldaycode = $self->schooldaycode;
-
-    my @as_abbrevs = map { $ABBREV_OF{$_} } split( //, $daycode );
-
-    if ( scalar @as_abbrevs > 1 ) {
-        $as_abbrevs[-1] = "& $as_abbrevs[-1]";
-    }
-    my $results
-      = join( $SPACE, @as_abbrevs ) . $ABBREV_SCHOOL_OF{$schooldaycode};
-
-    return $cache_r->{$as_string} = $results;
-
-}    ## tidy end: sub as_abbrevs
 
 for my $attr (qw/specday specdayletter/) {
 
@@ -602,8 +547,6 @@ This documentation refers to version 0.010
  my $days = Octium::Days->instance ('135');
  
  say $days->as_plurals; # "Mondays, Wednesdays, and Fridays"
- say $days->as_adjectives; # "Monday, Wednesday, and Friday"
- say $days->as_abbrevs; # "Mon Wed & Fri"
  
 =head1 DESCRIPTION
 
@@ -704,20 +647,6 @@ using  perl's cmp operator to be in order.
 Returns a version of the day code / schoolday code that can be used to
 create a new object using B<instance_from_string>.
 
-=item B<< $obj->as_adjectives >>
-
-This returns a string containing English text describing the days in a
-form intended for use to describe service: "This is <x> service."
-
-The form is "Day, Day and Day" . The days used are as follows:
-
- Monday     Thursday   Sunday    Weekend
- Tuesday    Friday     Holiday   Daily
- Wednesday  Saturday   Weekday
- 
-May be followed by "(except school holidays)" or "(except school
-days)".
-
 =item B<< $obj->as_plurals >>
 
 This returns a string containing English text describing the days in a
@@ -734,20 +663,6 @@ The form is "Days, Days and Days" . The days used are as follows:
 (Saturdays and Sundays are not combined into weekends here.)
 
 May be followed by "(School days only)" or "(School holidays only)".
-
-=item B<< $obj->as_abbrevs >>
-
-This returns a string containing English text describing the days in as
- brief a form as possible, for tables or other places with little
-space.
-
-The form is "Day Day & Day" . The days used are as follows:
-
- Mon     Thu    Sun       Daily
- Tue     Fri    Hol
- Wed     Sat    Weekday
- 
-May be followed by "(Sch days)" or "(Sch hols)".
 
 =back
 
