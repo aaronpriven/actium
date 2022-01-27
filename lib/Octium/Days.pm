@@ -25,7 +25,6 @@ const my @DAYLETTERS => qw(1 2 3 4 5 6 7 H W E D X);
 const my @SEVENDAYNAMES =>
   qw(Monday Tuesday Wednesday Thursday Friday Saturday Sunday);
 const my @SEVENDAYPLURALS => ( map {"${_}s"} @SEVENDAYNAMES );
-const my @SEVENDAYABBREVS => map { substr( $_, 0, 3 ) } @SEVENDAYNAMES;
 
 ###################################
 #### ATTRIBUTES AND CONSTRUCTION
@@ -52,10 +51,6 @@ sub _initialize_daycode {
 
     $daycode =~ s/\D//g;
     # eliminate anything that's not a digit
-
-    # TODO - add option to make it Saturdays-and-holidays
-    #    instead of Sundays-and-holidays, or treat holidays as a separate
-    #    schedule
 
     $daycode =~ s/7H?/7H/;    # make sure Sundays always includes holidays
 
@@ -171,15 +166,6 @@ sub _is_SH {
     return;
 }
 
-const my @ADJECTIVES => ( @SEVENDAYNAMES, qw(Holiday Weekday Weekend Daily),
-    "Daily except holidays" );
-const my %ADJECTIVE_OF        => Actium::mesh( @DAYLETTERS, @ADJECTIVES );
-const my %ADJECTIVE_SCHOOL_OF => (
-    B => $EMPTY,
-    D => ' (except school holidays)',
-    H => ' (except school days)',
-);
-
 const my @PLURALS => (
     @SEVENDAYPLURALS, 'holidays',  'Monday through Friday',
     'Weekends',       'Every day', "Every day except holidays"
@@ -191,9 +177,6 @@ const my %PLURAL_SCHOOL_OF => (
     D => ' (School days only)',
     H => ' (School holidays only)',
 );
-
-# TODO: all these methods with caches should be turned into attributes
-# with lazy builders
 
 sub as_plurals {
 
@@ -224,16 +207,7 @@ sub as_plurals {
 
     return $cache_r->{$as_string} = ucfirst($results);
 
-}    ## tidy end: sub as_plurals
-const my @ABBREVS =>
-  ( @SEVENDAYABBREVS, qw(Hol Weekday Weekend), 'Daily', "Daily except Hol" );
-
-const my %ABBREV_OF        => Actium::mesh( @DAYLETTERS, @ABBREVS );
-const my %ABBREV_SCHOOL_OF => (
-    B => $EMPTY,
-    D => ' (Sch days)',
-    H => ' (Sch hols)',
-);
+}
 
 for my $attr (qw/specday specdayletter/) {
 
