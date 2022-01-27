@@ -11,7 +11,7 @@ use Types::Standard -types;
 #my %OF_SHORTCODE = ( DA => '1234567', WD => '12345', WE => '67', );
 
 #declare ShortCode, as Enum [ keys %OF_SHORTCODE ];
-declare DayCode, as Str, where {/\A 1? 2? 3? 4? 5?  6? 7? \z/x};
+declare DayCode, as Str, where {length > 0 and /\A 1? 2? 3? 4? 5?  6? 7? \z/x};
 declare HolidayPolicy, as Int, where { 0 <= $_ <= 7 };
 
 #coerce DayCode, from ShortCode, via sub { $OF_SHORTCODE{$_} };

@@ -54,9 +54,6 @@ method instance ($class: $daycode! , :$holidaypolicy //= '7') {
         $daycode =~ s/7H/7/;
     }
 
-    # this backwards compatiblity part is what prevents us from doing coercion
-    # on daycode instead of doing the line below
-
     $daycode = $OF_SHORTCODE{$daycode} if exists $OF_SHORTCODE{$daycode};
 
     my $cachekey = "$daycode:$holidaypolicy";
@@ -109,7 +106,7 @@ method as_string {
 
 method unbundle ($class: Str $bundle) {
     my ( $daycode, $holidaypolicy ) = split /:/, $bundle;
-    return $class->instance( daycode => $bundle, holiday => $holidaypolicy );
+    return $class->instance( $daycode, holidaypolicy => $holidaypolicy );
 }
 
 {
