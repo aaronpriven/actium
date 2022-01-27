@@ -12,7 +12,8 @@ BEGIN {
 }
 
 use parent 'Exporter';
-our @EXPORT = qw/is_blessed isnt_blessed test_exception tempfilename/;
+our @EXPORT = qw/is_blessed isnt_blessed test_exception tempfilename
+  run_code_and_warn_maybe/;
 
 use Scalar::Util(qw/blessed/);
 
@@ -23,7 +24,7 @@ sub tempfilename {
     my $suffix = shift;
     my $tempname;
     my $template = 'Actium_testing_XXXXXXXXXX';
-    my %args = ( OPEN => 0, DIR => $tmpdir );
+    my %args     = ( OPEN => 0, DIR => $tmpdir );
     $args{SUFFIX} = $suffix if defined $suffix;
 
     {
@@ -91,7 +92,7 @@ sub test_exception (&;@) {
 
 my $has_test_warnings;
 
-sub _run_code_and_warn_maybe (&@) {
+sub run_code_and_warn_maybe : prototype(&@) {
     my ( $code, $regex, $description ) = @_;
 
     if ( not defined $regex ) {
