@@ -65,33 +65,9 @@ sub START {
 
         $xcry->done;
 
-    }    ## tidy end: if ($xheazip)
-
-    my $sch_cal_folder = $signup->subfolder('sch_cal');
-    my $gtfs_folder    = $signup->subfolder('gtfs');
+    }
 
     my %schcal_xhea_specs;
-
-    #my $calendar_of_block_r;
-
-    if ( $gtfs_folder->glob_plain_files('*.txt') ) {
-
-        my $suppcry = env->cry("Importing GTFS calendars");
-        require Octium::Import::GTFS::TripCalendars;
-
-        my $note_of_trip_r
-          = Octium::Import::GTFS::TripCalendars::calendar_notes_of_trips(
-            $signup);
-
-        %schcal_xhea_specs = ( note_of_trip => $note_of_trip_r );
-
-        my $dumpfh = $signup->open_write('note_of_trip.dump');
-        say $dumpfh Actium::dumpstr($note_of_trip_r);
-        close $dumpfh;
-
-        $suppcry->done;
-
-    }
 
     if ( $xheazip or $xhea_folder->glob_plain_files('*.xml') ) {
 
@@ -116,9 +92,9 @@ sub START {
 
         $hasicry->done;
 
-    }    ## tidy end: if ( $xheazip or $xhea_folder...)
+    }
 
-}    ## tidy end: sub START
+}
 
 1;
 
