@@ -311,7 +311,7 @@ sub _get_trip_notes_from_event_date {
 
     my $cry = env->cry('Creating trip calendar notes from XHEA event dates');
 
-    require DateTime::Event::ICal;  ### DEP ###
+    require DateTime::Event::ICal;    ### DEP ###
 
     my %p = validate(
         @_,
@@ -537,6 +537,10 @@ sub _get_trip_notes_from_event_date {
                     {
                         my @except_dates = map { $_->format_cldr("MMM. d") }
                           $except_days{$dow}->@*;
+                        s/May\./May/ foreach @except_dates;
+                        s/Jun\./June/ foreach @except_dates;
+                        s/Jul\./July/ foreach @except_dates;
+
                         $every
                           .= ' except '
                           . Actium::joinseries( items => \@except_dates );
@@ -562,6 +566,9 @@ sub _get_trip_notes_from_event_date {
 
             my @individual_date_text = map { $_->format_cldr("EEE., MMM. d") }
               sort @individual_dates;
+            s/May\./May/ foreach @individual_date_text;
+            s/Jun\./June/ foreach @individual_date_text;
+            s/Jul\./July/ foreach @individual_date_text;
 
             $note_text
               .= joinseries_semicolon_with( 'and', @individual_date_text );
