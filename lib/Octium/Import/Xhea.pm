@@ -537,7 +537,7 @@ sub _get_trip_notes_from_event_date {
                     {
                         my @except_dates = map { $_->format_cldr("MMM. d") }
                           $except_days{$dow}->@*;
-                        s/May\./May/ foreach @except_dates;
+                        s/May\./May/  foreach @except_dates;
                         s/Jun\./June/ foreach @except_dates;
                         s/Jul\./July/ foreach @except_dates;
 
@@ -566,7 +566,7 @@ sub _get_trip_notes_from_event_date {
 
             my @individual_date_text = map { $_->format_cldr("EEE., MMM. d") }
               sort @individual_dates;
-            s/May\./May/ foreach @individual_date_text;
+            s/May\./May/  foreach @individual_date_text;
             s/Jun\./June/ foreach @individual_date_text;
             s/Jul\./July/ foreach @individual_date_text;
 
@@ -1345,13 +1345,26 @@ sub _get_xhea_filenames {
             }
         );
 
+        #my (%seen_missingtrips, @missing_trips,@headers);
+
         my $stop_callback = sub {
             my $hr = shift;
 
             my %this_row;
 
-            my $stopid   = $hr->{stp_511_id};
-            my $tripnum  = $hr->{trp_int_number};
+            my $stopid  = $hr->{stp_511_id};
+            my $tripnum = $hr->{trp_int_number};
+
+            #    if ( not exists $trp{RouteForStatistics}{$tripnum} ) {
+            #      @headers = Actium::uniq( @headers, sort keys %$hr );
+            #       my $row = join( "\t", $hr->@{@headers} );
+            #       push @missing_trips, $row;
+            #       #env->crier->wail("No trip: $tripnum")
+            #       #  unless $seen_missingtrips{$tripnum};
+            #       $seen_missingtrips{$tripnum} = 1;
+            #       return;
+            #   }
+
             my $place    = $hr->{tstp_place};
             my $position = $hr->{tstp_position} - 1;
 
@@ -1376,6 +1389,14 @@ sub _get_xhea_filenames {
                 callback => $stop_callback,
             }
         );
+
+        #if (@missing_trips) {
+        #    my $fh = $xhea_tab_folder->open_write('missing_trips.txt');
+        #    say $fh join( "\t", @headers );
+        #    say $fh join( "\n", @missing_trips );
+        #    close $fh;
+        #}
+        #say join("\n", @missing_trips);
 
         my $place_callback = sub {
             my $hr = shift;
