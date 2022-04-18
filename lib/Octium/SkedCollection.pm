@@ -330,14 +330,14 @@ method output_skeds_all {
 
     $self->output_skeds_place;
 
-    $self->output_skeds_dump;
+    #$self->output_skeds_dump;
 
-    my $spacedfolder = $self->folder('spaced');
-    $spacedfolder->write_files_with_method(
-        OBJECTS   => $skeds_r,
-        METHOD    => 'spaced',
-        EXTENSION => 'txt',
-    );
+    #my $spacedfolder = $self->folder('spaced');
+    #$spacedfolder->write_files_with_method(
+    #    OBJECTS   => $skeds_r,
+    #    METHOD    => 'spaced',
+    #    EXTENSION => 'txt',
+    #);
 
     $outputcry->done;
 
