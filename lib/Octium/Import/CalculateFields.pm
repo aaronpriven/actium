@@ -1,4 +1,4 @@
-package Octium::Import::CalculateFields 0.012;
+package Octium::Import::CalculateFields 0.019;
 
 # Routines for calculating fields based on imported data.
 # Does things like break up "description" into "on" and "at". Etc.
@@ -106,7 +106,7 @@ sub _abbrev9 {
 
     return $number if length($number) <= 4;
 
-    my $first = substr( $number, 0, 4 );
+    my $first  = substr( $number, 0, 4 );
     my $second = substr( $number, 4 );
     trim( $first, $second );
     my $abbrev9 = "$first $second";
@@ -273,6 +273,13 @@ sub _stops_description {
     # add a number sign to
     # the rest, so the following code recognizes it as a street number
 
+    # This is now obsolete actually, there's no more number signs left
+
+    if ( not $rest and $on =~ /^[0-9]+\s/ ) {
+        ( $rest, $on ) = split( /\s/, $desc, 2 );
+        $rest = "#$rest";
+    }
+
     if ($rest) {
         $rest =~ s{  \( ( .* ) \) } {}sx;
         $comment = $1;
@@ -300,7 +307,7 @@ sub _stops_description {
         $at =~ s/\bat //i;
         # remove any literal word "at" (followed by a word break, and including
         # a subsequent space, and
-    }    ## tidy end: if ($rest)
+    }
 
     if ($comment) {
         for ($comment) {

@@ -17,6 +17,8 @@ Actium::Env::CLI->new(
 
         actiumdbfields => 'ActiumDBFields',
         addfields     => 'AddFields',
+        annupopulate => 'AnnuPopulate',
+        testcalc => 'TestCalc',
         avl2patdest   => 'AVL2PatDest',
         avl2points    => 'AVL2Points',
         avl2stoplines => 'AVL2StopLines',
