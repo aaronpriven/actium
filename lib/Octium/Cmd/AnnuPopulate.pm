@@ -51,26 +51,30 @@ sub START {
     my $bystop = Array::2D->new();
     push @$bystop, [
         qw/StopID On SignOn AudioOn At SignAt AudioAt
-          Comment SignComment AudioComment /
+          Comment SignComment AudioComment SignStNum AudioStNum/
     ];
     my %texts_of;
     foreach my $stopid ( keys %stops ) {
         # skipping street numbers for now
 
-        my ( $on, $at, $comment )
-          = $stops{$stopid}->@{qw/c_on c_at c_comment/};
-
-        my ( $sign_comment, $audio_comment );
+        my ( $on, $at, $comment, $stnum )
+          = $stops{$stopid}->@{qw/c_on c_at c_comment c_street_num/};
 
         my ( $sign_on, $sign_at, $audio_on, $audio_at )
           = $sa_of{$stopid}
           ->@[ SAF_SIGN_ON, SAF_SIGN_AT, SAF_AUDIO_ON, SAF_AUDIO_AT ];
 
-        #my @x = ( $sign_on, $sign_at, $audio_on, $audio_at );
-        #p @x;
-        #my @y = ($on, $at, $comment);
-        #p @y;
-        #exit;
+        my ( $sign_stnum, $audio_stnum, $sign_comment, $audio_comment );
+
+        if ($stnum) {
+            if ( $audio_on and $audio_on =~ /^No_/ ) {
+                ( $audio_stnum, $audio_on ) = split( /,/, $audio_on, 2 );
+            }
+            if ( $sign_on and $sign_on =~ /^[0-9]+\s/ ) {
+                ( $sign_stnum, $sign_on ) = split( /\s/, $sign_on, 2 );
+            }
+
+        }
 
         if ($comment) {
             if ($sign_at) {
@@ -98,11 +102,14 @@ sub START {
           if $comment and $sign_comment;
         $texts_of{$comment}[TA_AUDIO]{$audio_comment} = 1
           if $comment and $audio_comment;
+        $texts_of{$stnum}[TA_SIGN]{$sign_stnum}   = 1 if $stnum and $sign_stnum;
+        $texts_of{$stnum}[TA_AUDIO]{$audio_stnum} = 1
+          if $stnum and $audio_stnum;
 
         push @$bystop,
-          [ $stopid,       $on,      $sign_on,  $audio_on,
-            $at,           $sign_at, $audio_at, $comment,
-            $sign_comment, $audio_comment
+          [ $stopid,       $on,            $sign_on,    $audio_on,
+            $at,           $sign_at,       $audio_at,   $comment,
+            $sign_comment, $audio_comment, $sign_stnum, $audio_stnum,
           ];
 
     }
@@ -126,7 +133,7 @@ sub START {
     my $annu_file = $cleverworks_folder->file('annu.txt');
     my $annu_fh   = $annu_file->openw_text();
 
-    say $annu_fh "Text\tSignText\tAudios";
+    say $annu_fh "annu_label\tannu_sign_text\tannu_audios";
 
     for my $text ( keys %concat_texts_of ) {
 
