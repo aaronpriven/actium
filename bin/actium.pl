@@ -64,7 +64,7 @@ Actium::Env::CLI->new(
         tempsigns     => 'TempSigns',
         timetables    => 'Timetables',
         xhea2skeds    => 'Xhea2Skeds',
-        xhea2annu    => 'Xhea2Annu',
+        stopannu    => 'StopAnnu',
         zipcodes      => 'ZipCodes',
         zipdecals     => 'ZipDecals',
 

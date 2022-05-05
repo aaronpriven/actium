@@ -1,4 +1,4 @@
-package Octium::Import::Xhea::ToAnnu 0.019;
+package Octium::Clever::StopAnnu 0.019;
 
 use Actium;
 use Array::2D;

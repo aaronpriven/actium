@@ -1,4 +1,4 @@
-package Octium::Cmd::Xhea2Annu 0.019;
+package Octium::Cmd::StopAnnu 0.019;
 
 # Takes tab files that are result of XheaImport, and makes
 # announcements (and maybe stop lists later?)
@@ -17,7 +17,7 @@ sub START {
     my $signupfolder = $signup->actiumfolder;
     my $actiumdb     = env->actiumdb;
 
-    Octium::Import::Xhea::ToAnnu::xhea2annu(
+    Octium::Clever::StopAnnu::xhea2annu(
         actiumdb     => $actiumdb,
         signupfolder => $signupfolder,
     );
