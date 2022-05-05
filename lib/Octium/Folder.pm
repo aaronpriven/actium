@@ -67,6 +67,18 @@ has path => (
     lazy     => 1,
 );
 
+has actiumfolder => (
+   is => 'ro',
+   isa => 'Actium::Storage::Folder',
+   init_arg => undef,
+   builder => '_build_actiumfolder',
+   lazy => 1,
+);
+
+method _build_actiumfolder {
+   return Actium::folder($self->path);
+}
+
 sub _stringify {
     my $self = shift;
     return $self->path;
