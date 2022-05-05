@@ -2,24 +2,37 @@ package Octium::Import::Xhea::ToAnnu 0.019;
 
 use Actium;
 use Array::2D;
+use Text::CSV;
 use DDP;
 
-my ($xheatabfolder,     %is_in_serv,   %pat_of_trip,
-    %trip_of_pat,       %stops_of_pat, %is_virtual,
-    $stopinfo_of_511_r, $audio_of_r,   %stopinfo_of_hastus,
-    %all_audios,
+my ($xheatabfolder,      %is_in_serv, %pat_of_trip,       %trip_of_pat,
+    %stops_of_pat,       %is_virtual, $stopinfo_of_511_r, $audio_of_r,
+    %stopinfo_of_hastus, %all_audios, %audio_row_of,      $cwfolder,
 );
 # the ones that are _r scalars rather than hash variables is because there is a
 # bug in refaliasing around changes in inner scopes not being seen by outer
 # ones.
 
+my $csv = Text::CSV->new( { binary => 1 } );
+
+use constant {
+    S_ROUTE       => 0,
+    S_VARIANT     => 1,
+    S_PATTERN     => 2,
+    S_DIRECTION   => 3,
+    S_STOPID      => 4,
+    S_TEXT        => 9,
+    S_AUDIO_START => 10,
+};
+
 func xhea2annu (:$signupfolder, :$actiumdb) {
 
     $xheatabfolder = $signupfolder->subfolder('xhea/tab');
+    $cwfolder      = $signupfolder->ensure_subfolder('cleverworks');
 
     $stopinfo_of_511_r = $actiumdb->all_in_columns_key(
         'Stops_Neue',
-        qw/h_stp_identifier          c_description_fullabbr
+        qw/h_stp_identifier         c_description_fullabbr
           c_annu_on_compare
           c_annu_on                 c_annu_at
           c_annu_comment            c_annu_street_num
@@ -41,18 +54,19 @@ func xhea2annu (:$signupfolder, :$actiumdb) {
 
     # _output_pat_files($signupfolder);
 
-    _output_audio($signupfolder);
+    _generate_audio($signupfolder);
+    _make_import_file();
 
 }
 
-func _output_audio ($signupfolder) {
+func _generate_audio ($signupfolder) {
 
-    my $cry  = env->cry('Writing audio file');
-    my $file = $signupfolder->ensure_subfolder('cleverworks')
-      ->file('audio_intermed.txt');
-    my $fh = $file->openw_text;
+    my $cry = env->cry('Writing audio file');
 
-    say $fh join( "\t",
+    my $intermedfile = $cwfolder->file('audio_intermed.txt');
+    my $intermedfh   = $intermedfile->openw_text;
+
+    say $intermedfh join( "\t",
         qw/route pattern h_stp_identifier h_stp_511_id description sign audios/
     );
 
@@ -82,9 +96,9 @@ func _output_audio ($signupfolder) {
             my $sign;
             my @audios;
 
-            if ( $at and ($stnum or $prev_on_compare ne $on_compare) ) {
-	    # there probably won't be any actual examples of street numbers
-	    # and a valid "at", but just in case...
+            if ( $at and ( $stnum or $prev_on_compare ne $on_compare ) ) {
+                # there probably won't be any actual examples of street numbers
+                # and a valid "at", but just in case...
                 $sign            = "$on & $at";
                 $prev_on_compare = $on_compare;
                 @audios          = (
@@ -122,14 +136,16 @@ func _output_audio ($signupfolder) {
 
             my $audio = join( ',', @audios );
 
-	$all_audios{$_} = 1 foreach @audios;
+            $all_audios{$_} = 1 foreach @audios;
 
             my ( $route, $pat ) = split( /-/, $rp );
-            say $fh join( "\t",
+            say $intermedfh join( "\t",
                 $route, $pat, $h_stp_identifier, $h_stp_511_id, $desc, $sign,
                 $audio );
 
-            my $rps = "$pat-$h_stp_identifier";
+            my $rps = "$rp-$h_stp_identifier";
+
+            $audio_row_of{$rps} = [ $sign, @audios ];
 
         }
 
@@ -138,15 +154,59 @@ func _output_audio ($signupfolder) {
     $cry->over('');
     $cry->done;
 
-    my $allaudios  = env->cry('Writing all-audios file');
-    my $allaudiosfile = $signupfolder->ensure_subfolder('cleverworks')
-      ->file('allaudios.txt');
+    my $allaudios_cry = env->cry('Writing all-audios file');
+    my $allaudiosfile
+      = $signupfolder->ensure_subfolder('cleverworks')->file('allaudios.txt');
 
     my @all_audios = sort keys %all_audios;
 
-    $allaudiosfile->spew_text( (join("\n" , @all_audios )) . "\n" );
+    $allaudiosfile->spew_text( ( join( "\n", @all_audios ) ) . "\n" );
 
-    $allaudios->done;
+    $allaudios_cry->done;
+
+}
+
+func _make_import_file {
+
+    my @stopaudiofiles = sort ( $cwfolder->glob('MA_Stop_Sign_Text_Audio*') );
+    my $stopaudiofile  = $stopaudiofiles[-1];    # last file should be newest
+
+    my $import_file = $cwfolder->file('signaudio_import.csv');
+    my $importfh    = $import_file->openw_text;
+
+    my $read_stopaudioscry
+      = env->cry("Reading CleverWorks export and writing CleverWorks import");
+    $read_stopaudioscry->wail( "Reading " . $stopaudiofile->basename );
+    $read_stopaudioscry->wail( "Writing " . $import_file->basename );
+
+    my $stopaudio_fh = $stopaudiofile->openr_text;
+
+    # headers
+    for ( 1 .. 3 ) {
+        print $importfh scalar( readline $stopaudio_fh );
+    }
+
+    while ( my $row_r = $csv->getline($stopaudio_fh) ) {
+        my ( $route, $pattern, $stopid )
+          = @{$row_r}[ S_ROUTE, S_PATTERN, S_STOPID ];
+
+        s/^0+// for ( $route, $pattern );
+
+        my $rps = join( "-", $route, $pattern, $stopid );
+        next unless $audio_row_of{$rps};
+
+        my ( $sign, @audios ) = $audio_row_of{$rps}->@*;
+
+        $row_r->[S_TEXT] = $sign;
+        $#$row_r = S_TEXT;
+        push @$row_r, @audios;
+        $csv->say( $importfh, $row_r );
+
+    }
+    close $stopaudio_fh;
+    close $importfh;
+
+    $read_stopaudioscry->done;
 
 }
 
