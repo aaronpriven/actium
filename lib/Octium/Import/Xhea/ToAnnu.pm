@@ -5,15 +5,16 @@ use Array::2D;
 use Text::CSV;
 use DDP;
 
-my ($xheatabfolder,      %is_in_serv, %pat_of_trip,       %trip_of_pat,
-    %stops_of_pat,       %is_virtual, $stopinfo_of_511_r, $audio_of_r,
-    %stopinfo_of_hastus, %all_audios, %audio_row_of,      $cwfolder,
-);
+my ( $xheatabfolder, %is_in_serv, %stops_of_pat_fullid,
+    $stopinfo_of_511_r, %stopinfo_of_hastus, %audio_row_of, $cwfolder, );
 # the ones that are _r scalars rather than hash variables is because there is a
 # bug in refaliasing around changes in inner scopes not being seen by outer
 # ones.
 
-my $csv = Text::CSV->new( { binary => 1 } );
+# my %is_virtual;
+
+my $csv     = Text::CSV->new( { binary => 1 } );
+my $csv_out = Text::CSV->new( { binary => 1, eol => "\r\n" } );
 
 use constant {
     S_ROUTE       => 0,
@@ -24,6 +25,12 @@ use constant {
     S_TEXT        => 9,
     S_AUDIO_START => 10,
 };
+
+# This createes the stop sign text and stop audio announcements.  It uses the
+# Stops_Neue and annu tables from the database, the trip_pattern, trip, and
+# trip_stops files from the Enterprise Database export, and the
+# MA_Stop_Sign_Text_Audio file exported from CleverWorks, and outputs a new
+# Stop_Sign_Text_Audio file that can be imported into CleverWorks
 
 func xhea2annu (:$signupfolder, :$actiumdb) {
 
@@ -50,16 +57,97 @@ func xhea2annu (:$signupfolder, :$actiumdb) {
     _get_trips();
     _get_stop_sequences();
 
-    $audio_of_r = $actiumdb->all_in_column_key( 'annu', 'annu_audios' );
+    \my %audio_of = $actiumdb->all_in_column_key( 'annu', 'annu_audios' );
 
     # _output_pat_files($signupfolder);
 
-    _generate_audio($signupfolder);
+    _generate_audio( $signupfolder, \%audio_of );
     _make_import_file();
 
 }
 
-func _generate_audio ($signupfolder) {
+{
+    my %pat_fullid_of_trip;
+
+    func _get_in_service_patterns {
+        my $patternfile = $xheatabfolder->file('trip_pattern.txt');
+
+        my $patterns_aoa = Array::2D->new_from_file( $patternfile, 'tsv' );
+        \my @headers = shift @$patterns_aoa;
+
+        foreach my $row_r (@$patterns_aoa) {
+            my %row;
+            @row{@headers} = @$row_r;
+            next unless $row{tpat_in_serv};
+            my $pat_fullid
+              = $row{tpat_route} . '-'
+              . $row{tpat_id} . '-'
+              . $row{tpat_direction};
+            $is_in_serv{$pat_fullid} = 1;
+
+        }
+
+        return;
+    }
+
+    func _get_trips {
+        my $tripfile = $xheatabfolder->file('trip.txt');
+
+        my $trips_aoa = Array::2D->new_from_file( $tripfile, 'tsv' );
+        \my @headers = shift @$trips_aoa;
+
+        my %seen_pat_fullid;
+
+        foreach my $row_r (@$trips_aoa) {
+            my %row;
+            @row{@headers} = @$row_r;
+            my $pat_fullid = $row{tpat_route} . '-';
+            $pat_fullid .= $row{trp_pattern} . '-';
+            $pat_fullid .= $row{tpat_direction};
+
+            next unless $is_in_serv{$pat_fullid};
+            next if $seen_pat_fullid{$pat_fullid};
+
+            my $tripnum = $row{trp_int_number};
+            $seen_pat_fullid{$pat_fullid} = $tripnum;
+            $pat_fullid_of_trip{$tripnum} = $pat_fullid;
+        }
+
+        return;
+
+    }
+
+    func _get_stop_sequences {
+        my $tripstopfile = $xheatabfolder->file('trip_stop.txt');
+
+        my $fh = $tripstopfile->openr_text;
+
+        my $headerline = readline $fh;
+        chomp $headerline;
+        my @headers = split( /\t/, $headerline );
+        while ( my $row = readline $fh ) {
+            chomp $row;
+            my %row;
+            @row{@headers} = split( /\t/, $row );
+            my $number     = $row{trp_int_number};
+            my $pat_fullid = $pat_fullid_of_trip{$number};
+            next unless $pat_fullid;
+
+            my $h_stp_identifier = $row{tstp_stop_id};
+            my $position         = $row{tstp_position} - 1;
+            # changing from 1 based to 0 based
+            $stops_of_pat_fullid{$pat_fullid}[$position] = $h_stp_identifier;
+            #$is_virtual{$h_stp_identifier} = 1 if $h_stp_identifier =~ /^D/;
+
+        }
+
+        return;
+
+    }
+
+}
+
+func _generate_audio ($signupfolder, \%audio_of) {
 
     my $cry = env->cry('Writing audio file');
 
@@ -67,13 +155,15 @@ func _generate_audio ($signupfolder) {
     my $intermedfh   = $intermedfile->openw_text;
 
     say $intermedfh join( "\t",
-        qw/route pattern h_stp_identifier h_stp_511_id description sign audios/
+        qw/route pattern direction h_stp_identifier h_stp_511_id description sign audios/
     );
 
-    foreach my $rp ( sort keys %stops_of_pat ) {
-        $cry->over($rp);
+    my %all_audios;
 
-        my @allstops = $stops_of_pat{$rp}->@*;
+    foreach my $pat_fullid ( sort keys %stops_of_pat_fullid ) {
+        $cry->over($pat_fullid);
+
+        my @allstops = $stops_of_pat_fullid{$pat_fullid}->@*;
 
         my $prev_on_compare = '';
         for my $stop_seq ( 0 .. $#allstops ) {
@@ -101,28 +191,26 @@ func _generate_audio ($signupfolder) {
                 # and a valid "at", but just in case...
                 $sign            = "$on & $at";
                 $prev_on_compare = $on_compare;
-                @audios          = (
-                    $audio_of_r->{$on} // 'UNDEF',
-                    '+', $audio_of_r->{$at} // 'UNDEF'
-                );
+                @audios          = ( $audio_of{$on} // 'UNDEF',
+                    '+', $audio_of{$at} // 'UNDEF' );
             }
             elsif ($at) {
                 $sign   = $at;
-                @audios = $audio_of_r->{$at} // 'UNDEF';
+                @audios = $audio_of{$at} // 'UNDEF';
             }
             else {
                 $sign            = $on;
                 $prev_on_compare = $on;
-                @audios          = $audio_of_r->{$on} // 'UNDEF';
+                @audios          = $audio_of{$on} // 'UNDEF';
             }
 
             if ($stnum) {
-                unshift @audios, $audio_of_r->{$stnum} // 'UNDEF';
+                unshift @audios, $audio_of{$stnum} // 'UNDEF';
                 $sign = "$stnum $sign";
             }
 
             if ($comment) {
-                push @audios, $audio_of_r->{$comment} // 'UNDEF';
+                push @audios, $audio_of{$comment} // 'UNDEF';
                 $sign = "$sign ($comment)";
             }
 
@@ -138,14 +226,14 @@ func _generate_audio ($signupfolder) {
 
             $all_audios{$_} = 1 foreach @audios;
 
-            my ( $route, $pat ) = split( /-/, $rp );
+            my ( $route, $pat, $direction ) = split( /-/, $pat_fullid );
             say $intermedfh join( "\t",
-                $route, $pat, $h_stp_identifier, $h_stp_511_id, $desc, $sign,
-                $audio );
+                $route, $pat, $direction, $h_stp_identifier, $h_stp_511_id,
+                $desc, $sign, $audio );
 
-            my $rps = "$rp-$h_stp_identifier";
+            my $fullpat_and_stop = "$pat_fullid-$h_stp_identifier";
 
-            $audio_row_of{$rps} = [ $sign, @audios ];
+            $audio_row_of{$fullpat_and_stop} = [ $sign, @audios ];
 
         }
 
@@ -187,20 +275,23 @@ func _make_import_file {
     }
 
     while ( my $row_r = $csv->getline($stopaudio_fh) ) {
-        my ( $route, $pattern, $stopid )
-          = @{$row_r}[ S_ROUTE, S_PATTERN, S_STOPID ];
+        my ( $route, $pattern, $direction, $stopid )
+          = @{$row_r}[ S_ROUTE, S_PATTERN, S_DIRECTION, S_STOPID ];
+
+        $direction = ucfirst( lc($direction) );
 
         s/^0+// for ( $route, $pattern );
 
-        my $rps = join( "-", $route, $pattern, $stopid );
-        next unless $audio_row_of{$rps};
+        my $fullpat_and_stop
+          = join( "-", $route, $pattern, $direction, $stopid );
+        next unless $audio_row_of{$fullpat_and_stop};
 
-        my ( $sign, @audios ) = $audio_row_of{$rps}->@*;
+        my ( $sign, @audios ) = $audio_row_of{$fullpat_and_stop}->@*;
 
         $row_r->[S_TEXT] = $sign;
         $#$row_r = S_TEXT;
         push @$row_r, @audios;
-        $csv->say( $importfh, $row_r );
+        $csv_out->say( $importfh, $row_r );
 
     }
     close $stopaudio_fh;
@@ -217,9 +308,9 @@ func _make_import_file {
 #
 #     my $cry = env->cry('Writing pat files');
 #
-#     foreach my $pat ( sort keys %stops_of_pat ) {
+#     foreach my $pat ( sort keys %stops_of_pat_fullid ) {
 #
-#         my @allstops      = $stops_of_pat{$pat}->@*;
+#         my @allstops      = $stops_of_pat_fullid{$pat}->@*;
 #         my @nonvirt_stops = grep { not $is_virtual{$_} } @allstops;
 #
 #         $cry->over($pat);
@@ -254,69 +345,6 @@ func _make_import_file {
 # get sequence of stops for a sample trip from trip_stops.txt
 
 # end result should be route, pattern ID, sequence of stops
-
-func _get_stop_sequences {
-    my $tripstopfile = $xheatabfolder->file('trip_stop.txt');
-
-    my $fh = $tripstopfile->openr_text;
-
-    my $headerline = readline $fh;
-    chomp $headerline;
-    my @headers = split( /\t/, $headerline );
-    while ( my $row = readline $fh ) {
-        chomp $row;
-        my %row;
-        @row{@headers} = split( /\t/, $row );
-        my $number = $row{trp_int_number};
-        my $pat    = $pat_of_trip{$number};
-        next unless $pat;
-
-        my $h_stp_identifier = $row{tstp_stop_id};
-        my $position         = $row{tstp_position} - 1;
-        # changing from 1 based to 0 based
-        $stops_of_pat{$pat}[$position] = $h_stp_identifier;
-        $is_virtual{$h_stp_identifier} = 1 if $h_stp_identifier =~ /^D/;
-
-    }
-
-}
-
-func _get_trips {
-    my $tripfile = $xheatabfolder->file('trip.txt');
-
-    my $patterns_aoa = Array::2D->new_from_file( $tripfile, 'tsv' );
-    \my @headers = shift @$patterns_aoa;
-
-    foreach my $row_r (@$patterns_aoa) {
-        my %row;
-        @row{@headers} = @$row_r;
-        my $route_pattern = $row{tpat_route} . '-' . $row{trp_pattern};
-        next unless $is_in_serv{$route_pattern};
-        next if ( $trip_of_pat{$route_pattern} );
-        my $tripnum = $row{trp_int_number};
-        $trip_of_pat{$route_pattern} = $tripnum;
-        $pat_of_trip{$tripnum}       = $route_pattern;
-    }
-
-}
-
-func _get_in_service_patterns {
-    my $patternfile = $xheatabfolder->file('trip_pattern.txt');
-
-    my $patterns_aoa = Array::2D->new_from_file( $patternfile, 'tsv' );
-    \my @headers = shift @$patterns_aoa;
-
-    foreach my $row_r (@$patterns_aoa) {
-        my %row;
-        @row{@headers} = @$row_r;
-        next unless $row{tpat_in_serv};
-        my $route_pattern = $row{tpat_route} . '-' . $row{tpat_id};
-        $is_in_serv{$route_pattern} = 1;
-
-    }
-
-    return;
-}
 
 1;
 
