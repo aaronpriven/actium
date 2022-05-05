@@ -1,9 +1,8 @@
-package Octium::Import::Xhea::ToAnnu 0.019;
+package Octium::Clever::StopAnnu 0.019;
 
 use Actium;
 use Array::2D;
 use Text::CSV;
-use DDP;
 
 my ( $xheatabfolder, %is_in_serv, %stops_of_pat_fullid,
     $stopinfo_of_511_r, %stopinfo_of_hastus, %audio_row_of, $cwfolder, );
@@ -32,7 +31,7 @@ use constant {
 # MA_Stop_Sign_Text_Audio file exported from CleverWorks, and outputs a new
 # Stop_Sign_Text_Audio file that can be imported into CleverWorks
 
-func xhea2annu (:$signupfolder, :$actiumdb) {
+func stopannu (:$signupfolder, :$actiumdb) {
 
     $xheatabfolder = $signupfolder->subfolder('xhea/tab');
     $cwfolder      = $signupfolder->ensure_subfolder('cleverworks');
