@@ -2,14 +2,13 @@ package Octium::Clever::RouteAudio 0.019;
 
 use Actium('class');
 
-has 'in_service_variants_r' => (
-    traits  => ['Array'],
-    reader  => '_in_service_variants_r',
-    isa     => 'ArrayRef',
-    default => sub { [] },
+has '_in_service_variants_r' => (
+    traits   => ['Array'],
+    is       => 'ro',
+    init_arg => 'in_service_variants',
+    isa      => 'ArrayRef',
+    default  => sub { [] },
 );
-
-with 'Octium::Clever::CSVfile';
 
 method _load_data ($fh) {
     state $csv = $self->csv;
@@ -37,5 +36,7 @@ method _load_data ($fh) {
 method _key_cols {
     return qw/RouteName RouteVariant MessageType/;
 }
+
+with 'Octium::Clever::CSVfile';
 
 1;

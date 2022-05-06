@@ -2,8 +2,6 @@ package Octium::Clever::RouteAttribute 0.019;
 
 use Actium('class');
 
-with 'Octium::Clever::CSVfile';
-
 has keep_all => (
     is      => 'ro',
     isa     => 'Bool',
@@ -33,5 +31,7 @@ method _load_data ($fh) {
 method _key_cols {
     return qw/RouteName RouteVariant/;
 }
+
+with 'Octium::Clever::CSVfile';
 
 1;

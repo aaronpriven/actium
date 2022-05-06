@@ -39,7 +39,10 @@ has '_row_of' => (
     is      => 'bare',
     isa     => 'HashRef',
     builder => '_build_row_of',
-    handles => { row => 'get', },
+    handles => {
+        row_of_var => 'get',
+        variants   => 'elements',
+    },
 );
 
 method BUILD {
