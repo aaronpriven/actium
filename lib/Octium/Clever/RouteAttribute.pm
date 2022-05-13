@@ -16,16 +16,13 @@ method _load_data ($fh) {
         @rows = getline_all($fh);
     }
     else {
-        my @idxs
-          = map { $self->index_of($_) } qw/RouteName RouteVariant InService/;
-
         my $insvc_index = $self->index_of('InService');
         while ( my $row_r = $csv->getline($fh) ) {
             push @rows, $row_r if $row_r->[$insvc_index];
         }
     }
 
-    $self->_set_rows( \@rows );
+    $self->_set_row_r( \@rows );
 }
 
 method _key_cols {

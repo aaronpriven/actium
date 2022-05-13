@@ -30,7 +30,7 @@ method _load_data ($fh) {
         }
     }
 
-    $self->_set_rows( \@rows );
+    $self->_set_row_r( \@rows );
 }
 
 method _key_cols {

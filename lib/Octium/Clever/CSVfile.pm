@@ -1,37 +1,38 @@
 package Octium::Clever::CSVfile 0.019;
+# vimcolor: #000040
 
 use Actium('role');
 
 requires qw/_load_data _key_cols/;
 
-has file => (
-    required => 1,
-    is       => 'ro',
-    isa      => 'Actium::Storage::File',
-);
-
 has preamble => (
-    is       => 'rwp',
-    init_arg => undef,
-    isa      => 'Str',
+    is  => 'rwp',
+    isa => 'Str',
 );
 
-has '_columns' => (
+has 'column_names' => (
+    traits => ['Array'],
+    is     => 'rwp',
+    isa    => 'ArrayRef',
+);
+
+has '_column_idx_of' => (
     traits  => ['Hash'],
-    is      => 'bare',
+    is      => 'rw',
     isa     => 'HashRef',
-    writer  => '_set_columns',
+    builder => '_build_column_idx_of',
+    lazy    => 1,
     handles => {
         column_names => 'keys',
-        index_of     => 'get',
+        col_idx     => 'get',
     },
 );
 
-has '_rows' => (
+has 'rows' => (
     traits  => ['Array'],
-    is      => 'rw',
+    is      => 'rwp',
     isa     => 'ArrayRef',
-    handles => { 'row_number' => 'get', },
+    handles => { 'row' => 'get' },
 );
 
 has '_row_of' => (
@@ -39,30 +40,62 @@ has '_row_of' => (
     is      => 'bare',
     isa     => 'HashRef',
     builder => '_build_row_of',
+    lazy    => 1,
     handles => {
-        row_of_var => 'get',
-        variants   => 'elements',
+        _row_of => 'get',
+        keys    => 'keys',
     },
 );
+# with composite keys, the names get pointless. "route-variant-stop"?
 
-method BUILD {
-    $self->_open;
-}
-
-method _open {
+classmethod load (Actium::Storage::File $file, %args) {
     my $load_cry = env->cry('Loading Clever file');
-    my $file     = $self->file;
+
     $load_cry->wail( $file->basename );
     my $fh = $file->openr_text;
 
-    $self->_load_headers($fh);
-
-    $self->_load_data($fh);
+    my $obj = $class->new(%args);
+    $obj->_load_headers($fh);
+    $obj->_load_data($fh);
     # _load_data provided by consuming classes
 
     close $fh;
 
     $load_cry->done;
+}
+
+method filter (:$callback!, Actium::Storage::File :$file ) {
+    \my @rows          = $self->rows;
+    \my %column_idx_of = $self->_column_idx_of;
+    \my @column_names  = $self->_column_names;
+
+    my @newrows;
+
+    foreach my $idx ( 0 .. $#rows ) {
+        \my @row = $self->row($idx);
+        my %hash     = map { $_ => $row[$_] } keys %column_idx_of;
+        my $newrow_r = $callback->( \%hash );
+        next unless $newrow_r;
+        my @newrow = @{$newrow_r}{@column_names};
+        push @newrows, \@newrow;
+    }
+
+    return $self->clone( \@newrows );
+
+}
+
+method clone ($rows_r) {
+    my $class = Actium::blessed($self);
+    $rows_r //= $self->rows;
+
+    my $clone = $class->new(
+        preamble     => $self->preamble,
+        column_names => $self->column_names,
+        rows         => $rows_r
+    );
+
+    return $clone;
+
 }
 
 method _load_headers ($fh) {
@@ -77,20 +110,27 @@ method _load_headers ($fh) {
     my @column_names = $self->csv->fields();
     s/\s*\*// foreach @column_names;    # remove asterisks in field names
     my %column_idx_of = map { $column_names[$_] => $_ } @column_names;
-    $self->_set_columns( \%column_idx_of );
+    $self->_set_column_names( \@column_names );
+    $self->_set_column_idx_of( \%column_idx_of );
 }
 
-method _buld_row_of {
-    my @columns = map { $self->index_of($_) } $self->_key_cols;
+method _build_column_idx_of {
+    \my @column_names = $self->_column_names;
+    my %column_idx_of = map { $column_names[$_] => $_ } @column_names;
+    return \%column_idx_of;
+}
+
+method _build_row_of {
+    my @col_idxs = map { $self->col_idx($_) } $self->_key_cols;
     # _key_cols provided by consuming class
 
     my %row_of;
 
-    \my @rows = $self->_rows;
-    foreach my $row_r (@rows) {
-        my $values = $row_r->@[@columns];
-        my $key    = join( "|", $values );
-        $row_of{$key} = $row_r;
+    \my @rows = $self->rows;
+    foreach \my @row(@rows) {
+        my @values = @row[@col_idxs];
+        my $key    = join( "|", @values );
+        $row_of{$key} = \@row;
     }
 
     return \%row_of;
