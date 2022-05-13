@@ -64,15 +64,13 @@ classmethod load (Actium::Storage::File $file, %args) {
     $load_cry->done;
 }
 
-method filter (:$callback!, Actium::Storage::File :$file ) {
+method filter ($callback!) {
     \my @rows          = $self->rows;
     \my %column_idx_of = $self->_column_idx_of;
     \my @column_names  = $self->_column_names;
-
     my @newrows;
 
-    foreach my $idx ( 0 .. $#rows ) {
-        \my @row = $self->row($idx);
+    foreach \my @row ( @rows ) {
         my %hash     = map { $_ => $row[$_] } keys %column_idx_of;
         my $newrow_r = $callback->( \%hash );
         next unless $newrow_r;
