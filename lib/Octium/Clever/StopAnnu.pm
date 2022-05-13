@@ -1,4 +1,5 @@
 package Octium::Clever::StopAnnu 0.019;
+# vimcolor: #CCFFCC
 
 use Actium;
 use Array::2D;
