@@ -264,7 +264,7 @@ method ensure_subfolder (@subcomponents) {
 
 =head3 existing_subfolder
 
-Like <C<subfolder()>, but croaks if the folder does not already exist.
+Like C<subfolder()>, but croaks if the folder does not already exist.
 
 =cut
 
@@ -473,8 +473,9 @@ terminal. If not given, will use 'hash'.
 
 =item extension
 
-The file extension. If it is not empty, it is added to the filename,
-after a period.
+The file extension. If it is not empty, it is added to the filename, after a
+period (whether or not a period is the first character of the extension, so
+C<extension = 'txt'> and C<extension='.txt'> are equivalent).
 
 =back
 

@@ -362,7 +362,7 @@ arguments.
 =item do_cry
 
 If present and set to a false value, will omit the terminal status
-display, which uses Actium::CLI::Crier. If not present, will display
+display, which uses Actium::Env::CLI::Crier. If not present, will display
 the status.
 
 =back
