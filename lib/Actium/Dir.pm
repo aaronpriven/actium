@@ -35,6 +35,8 @@ objects are immutable.
 use Actium ('class');
 use Types::Standard qw( Str );
 
+use overload '""' => sub { shift->dircode };
+
 ## no critic 'ProhibitConstantPragma'
 use constant {
     ORDER          => 0,
