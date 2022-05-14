@@ -3,7 +3,7 @@ package Octium::Clever::CSVfile 0.019;
 
 use Actium('role');
 
-requires qw/_load_data _key_cols/;
+requires qw/_load_csv_data _key_cols/;
 
 has preamble => (
     is  => 'rwp',
@@ -24,7 +24,7 @@ has '_column_idx_of' => (
     lazy    => 1,
     handles => {
         column_names => 'keys',
-        col_idx     => 'get',
+        col_idx      => 'get',
     },
 );
 
@@ -48,15 +48,17 @@ has '_row_of' => (
 );
 # with composite keys, the names get pointless. "route-variant-stop"?
 
-classmethod load (Actium::Storage::File $file, %args) {
+my $csv = Text::CSV->new( { binary => 1 } );
+
+classmethod load_csv (Actium::Storage::File $file, %args) {
     my $load_cry = env->cry('Loading Clever file');
 
     $load_cry->wail( $file->basename );
     my $fh = $file->openr_text;
 
     my $obj = $class->new(%args);
-    $obj->_load_headers($fh);
-    $obj->_load_data($fh);
+    $obj->_load_csv_headers($fh);
+    $obj->_load_csv_data( fh => $fh, csv => $csv );
     # _load_data provided by consuming classes
 
     close $fh;
@@ -70,7 +72,7 @@ method filter ($callback!) {
     \my @column_names  = $self->_column_names;
     my @newrows;
 
-    foreach \my @row ( @rows ) {
+    foreach \my @row(@rows) {
         my %hash     = map { $_ => $row[$_] } keys %column_idx_of;
         my $newrow_r = $callback->( \%hash );
         next unless $newrow_r;
@@ -96,7 +98,7 @@ method clone ($rows_r) {
 
 }
 
-method _load_headers ($fh) {
+method _load_csv_headers ($fh) {
     my $preamble = '';
     $preamble .= ( scalar readline $fh ) . ( scalar readline $fh );
     # metadata and version lines
@@ -135,14 +137,19 @@ method _build_row_of {
 
 }
 
-method csv {
-    state $csv = Text::CSV->new( { binary => 1 } );
-    return $csv;
-}
-
-method csv_out {
+method store_csv (Actium::Storage::File $file) {
     state $csv_out = Text::CSV->new( { binary => 1, eol => "\r\n" } );
-    return $csv_out;
+
+    my $cry = env->cry("Writing $file");
+
+    my $fh = $file->openr_text;
+    print $fh $self->preamble;
+    \my @rows = $self->rows;
+    $csv->print( $fh, $_ ) foreach @rows;
+    close $fh;
+
+    $cry->done;
+
 }
 
 1;

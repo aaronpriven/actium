@@ -8,8 +8,7 @@ has keep_all => (
     default => 0,
 );
 
-method _load_data ($fh) {
-    state $csv = $self->csv;
+method _load_csv_data (:$fh, :$csv) {
     my @rows;
 
     if ( $self->keep_all ) {

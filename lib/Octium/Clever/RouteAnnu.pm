@@ -1,9 +1,11 @@
 package Octium::Clever::RouteAnnu 0.019;
+# vimcolor: #002200
 
 use Actium;
-use Array::2D;
-use Text::CSV;
-use DDP;
+use Actium::Dir;
+use Octium::Clever::RouteAttribute;
+use Octium::Clever::RouteAudio;
+use Lingua::EN::TitleCase;
 
 # things to overwrite:
 # - Audio - Audio1 through Audio10 (route  /destination audios)
@@ -16,200 +18,246 @@ my $csv     = Text::CSV->new( { binary => 1 } );
 my $csv_out = Text::CSV->new( { binary => 1, eol => "\r\n" } );
 
 const my $ATTRIBUTE_IMPORT_FILE => 'route_attribute_import.csv';
-const my $AUDIO_IMPORT_FILE     => 'route_aaudio_import.csv';
+const my $AUDIO_IMPORT_FILE     => 'route_audio_import.csv';
+const my $MAX_AUDIOS = 10;
 
-func routeannu (:$signupfolder, :$actiumdb, :$getaudios) {
+func routeannu (:$signupfolder, :$actiumdb ) {
 
-    my $xheatabfolder = $signupfolder->subfolder('xhea/tab');
-    my $cwfolder      = $signupfolder->ensure_subfolder('cleverworks');
+    my $cwfolder = $signupfolder->ensure_subfolder('cleverworks');
 
-    my $maincry = env->cry(
-        $getaudios
-        ? 'Assembling route audio from Clever file'
-        : 'Producing route audio Clever files'
-    );
-
-    _read_clever_files(
-        cwfolder  => $cwfolder,
-        audio_of  => \my %audio_of,
-        getaudios => $getaudios,
-        attr_rows => \my %attr_rows,
-    );
-
-    if ($getaudios) {
-        _write_route_audios( cwfolder => $cwfolder, audio_of => \%audio_of );
-        $maincry->done;
-        exit 0;
-    }
+    my $maincry = env->cry('Producing route audio and attribute Clever files');
+    my ( $attr, $audio ) = _read_clever_files($cwfolder);
 
     \my %routeinfo = $actiumdb->all_in_columns_key( 'Lines',
         qw/annu_sign_text NoLocalsOnTransbay/ );
     \my %annu_of = $actiumdb->all_in_column_key( 'annu', 'annu_audios' );
 
-    _write_clever_files( attr_rows => \%attr_rows, );
+    \my %dests_of = _read_dest_files($signupfolder);
+
+    my ( $new_attr, $sign_of_rdp_r ) = _new_attr(
+        attr      => $attr,
+        dests     => \%dests_of,
+        routeinfo => %routeinfo,
+    );
+
+    my $new_audio = _new_audio(
+        audio       => $audio,
+        sign_of_rdp => $sign_of_rdp_r,
+        actiumdb    => $actiumdb,
+    );
+
+    $new_audio->store_csv( $cwfolder->file($AUDIO_IMPORT_FILE) );
+    $new_attr->store_csv( $cwfolder->file($ATTRIBUTE_IMPORT_FILE) );
 
     $maincry->done;
 
 }
 
-func _write_clever_files (
-    :%attr_rows! is ref_alias,
-) {
+{
+    const my $a_rte    => 'RouteName';
+    const my $a_pat    => 'PatternID';
+    const my $a_var    => 'RouteVariant';
+    const my $a_dir    => 'Direction';
+    const my $a_msg    => 'MessageType';
+    const my @a_audios => map { 'Audio' . $_ } 1 .. $MAX_AUDIOS;
 
-    my$writecry=env->cry('Writing files for import into CleverWorks');
+    # RouteID, RouteVar, Pattern, Direction, RouteDescription, MessageType,
+    # Language, Audio1, Audio2, Audio3, Audio4, Audio5, Audio6, Audio7, Audio8,
+    # Audio9, Audio10
 
-    foreach my $var_fullid  (sort keys %attr_rows) {
-        
+    func _new_audio (:$audio, :\%sign_of_rdp, :$actiumdb) {
 
+        \my %audio_of = $actiumdb->all_in_column_key( 'annu', 'annu_audios' );
 
-    }
+        my $new_audio = $audio->filter(
+            sub {
 
-}
+                my %row = shift->%*;
+                my $msg = $row{$a_msg};
+                return if $msg eq 'Mid-Trip Dest';
 
-func _read_clever_files (
-    :$cwfolder, 
-    :%audio_of! is ref_alias, 
-    :$getaudios , 
-    :%attr_rows is ref_alias ,
-) {
+                my ( $route, $dir, $pat ) = @row{ $a_rte, $a_dir, $a_pat };
+                my $rdp        = join( ':', $route, $dir, $pat );
+                my $old_audios = join( ',', @row{@a_audios} );
+                my ( $new_audios, $wailmsg );
 
-    my ( $audio_fh, $attr_fh ) = _open_clever_files($cwfolder);
+                if ( $msg eq 'Destination' ) {
+                    my $sign = $sign_of_rdp{$rdp};
+                    $new_audios = $audio_of{$sign};
+                    $wailmsg    = "sign $sign";
+                }
+                elsif ( $msg eq 'Route' ) {
+                    my $new_audios = $audio_of{$route};
 
-    my ( %attr_row, %audio_row, %route_audios, %dest_audios, %in_service );
+                    # this may need to change at some point if we ever have a #
+                    # disconnect between the name and the audio under that name
+                    # -- we'll need to change the annu key to something that
+                    # makes it clear it's a route
+                    $wailmsg = "route $route";
+                }
+                else {
+                    die "Unrecognized $msg in Clever audio file";
+                }
 
-    my $attr_headertexts = _clever_headers(
-        fh             => $attr_fh,
-        column_indexes => \my %attrcol,
-        cry            => 'attr'
-    );
+                return if $old_audios eq $new_audios;
+                my @new_audios = split( /,/, $new_audios );
 
-    my $attr_cry = env->cry('Getting rows from attr file');
-    while ( my $row_r = $csv->getline($attr_fh) ) {
-        my ( $route, $variant, $in_service )
-          = @{$row_r}[ @attrcol{qw/RouteName RouteVariant InService/} ];
+                if ( @new_audios > $MAX_AUDIOS ) {
+                    env->crier->wail("Too many audios for $wailmsg");
+                    env->crier->wail($new_audios);
+                }
 
-        my $var_fullid = "$route-$variant";
+                $#new_audios = 9;
+                $_ //= '' foreach @new_audios;
+                @row{@a_audios} = @new_audios;
 
-        next unless $in_service or $getaudios;
-        $in_service{$var_fullid} = 1;
-        $attr_row{$var_fullid}   = [@$row_r];
-        # copy needed because csv reuses reference
-        # or does it? Am I thinking of something from DBI?
-        # oh well, it doesn't take that long
-    }
-    close $attr_fh;
-    $attr_cry->done;
+                return \%row;
 
-    my $audio_headertexts = _clever_headers(
-        fh             => $audio_fh,
-        column_indexes => \my %audiocol,
-        cry            => 'audio'
-    );
-    my $audio_cry = env->cry('Getting rows from audio file');
-    while ( my $row_r = $csv->getline($audio_fh) ) {
-        my ( $route, $variant, $messagetype, $sign )
-          = @{$row_r}[ @audiocol{qw/RouteID RouteVar MessageType/} ];
-
-        my @audiocols = @audiocol{ map { 'Audio' . $_ } ( 1 .. 10 ) };
-        my @audios    = @{$row_r}[@audiocols];
-
-        @audios = grep {$_} @audios;
-        @audios = grep { !/(?:Local|Transbay) Fare/ } @audios;
-        # no blank entries or fare entries
-
-        my $var_fullid = "$route-$variant";
-        next unless $in_service{$var_fullid};
-
-        $audio_row{$var_fullid}{$messagetype} = [@$row_r];
-
-        my $audios = join( ',', @audios );
-        if ( $messagetype eq 'Route' ) {
-            #$audio_cry->wail( "[[$audios]]   ", join( ",", @$row_r ) );
-            $audio_of{$route}{$audios} = 1 if $audios and $route;
-            $route_audios{$var_fullid} = \@audios;
-        }
-        elsif ( $messagetype eq 'Destination' ) {
-            my $sign = $attr_row{$var_fullid}[ $attrcol{DestinationSign} ];
-            $sign =~ s/$route //g;
-            if ($sign) {
-                $audio_of{$sign}{$audios} = 1 if $audios and $sign;
-                $dest_audios{$var_fullid} = \@audios;
             }
-        }
+        );
 
     }
-    close $attr_fh;
-    $audio_cry->done;
 
 }
 
-func _clever_headers (:$fh, :%column_indexes! is ref_alias, :$cry ) {
+{
+    const my $a_rte   => 'RouteName';
+    const my $a_pat   => 'PatternID';
+    const my $a_var   => 'RouteVariant';
+    const my $a_dir   => 'Direction';
+    const my $a_tch   => 'TCHRouteVariantDescription';
+    const my $a_sign  => 'DestinationSign';
+    const my $a_pdest => 'BusTimePublicRouteDirection';
+    const my $a_ddest => 'BusTimePublicRouteDescription';
 
-    my $header_cry   = env->cry("Getting headers from $cry file");
-    my $header_texts = '';
-    $header_texts .= ( scalar readline $fh ) . ( scalar readline $fh );
-    # metadata and version lines
-    my $header_fields = scalar readline $fh;
-    $header_texts .= $header_fields;
-    $csv->parse($header_fields);
-    my @column_names = $csv->fields();
+    # RouteName, RouteVariant, PatternID, Direction, RouteVariantDescription,
+    # TCHRouteVariantDescription, InService, Verified, DestinationSignCode,
+    # CodeBook, DestinationSign, BusTimePublicRouteDirection,
+    # BusTimePublicRouteDescription, TAFareBoxRouteLogonID, FareBoxFareSetID,
+    # FareBoxDirectionID, TspType, TspThreshold, TspMinPassengerCount,
+    # IsHeadwayManaged, CountdownThresholdTimer, IncludeInScheduleReporting,
+    # ExportToGTFS
 
-    s/\s*\*// foreach @column_names;    # remove asterisks in field names
-    foreach my $i ( 0 .. $#column_names ) {
-        $column_indexes{ $column_names[$i] } = $i;
+    func _new_attr ( :$attr, :\%routeaudio! , :\%dests ) {
+        state $tc = Lingua::EN::Titlecase->new();
+        my %sign_of_rdp;
+
+        my $new_attr = $attr->filter(
+            sub {
+
+                my %row = shift->%*;
+                my $rdp = join( ':', @row{ $a_rte, $a_dir, $a_pat } );
+                my $changed;
+
+                # DestinationSign - Remove duplicate route entries
+                # TCHRouteVariantDescription - set to title-cased destination
+                # sign
+
+                if ( $row{$a_sign} ) {
+
+                    my @signwords = split( ' ', $row{$a_sign} );
+                    my $line      = shift @signwords;
+                    for ( reverse 0 .. $#signwords ) {
+                        splice( @signwords, $_, 1 ) if $signwords[$_] eq $line;
+                    }
+                    my $newsign = join( ' ', $line, @signwords );
+                    if ( $newsign ne $row{$a_sign} ) {
+                        $row{$a_sign} = $newsign;
+                        $row{$a_tch}  = $tc->title($newsign);
+                        $changed      = 1;
+                    }
+                }
+                $sign_of_rdp{$rdp} = $row{$a_sign};
+
+                # BusTimePublicRouteDirection - use direction destination
+                # BusTimePublicRouteDescription - use pattern destination
+                my ( $ddest, $pdest ) = $dests{$rdp}->@*;
+
+                if ( $row{$a_ddest} ne $ddest ) {
+                    $row{$a_ddest} = $ddest;
+                    $changed = 1;
+                }
+                if ( $row{$a_pdest} ne $pdest ) {
+                    $row{$a_pdest} = $pdest;
+                    $changed = 1;
+                }
+
+                return %row if $changed;
+                return;
+
+            }
+        );
+
+        return $new_attr, \%sign_of_rdp;
+
     }
 
-    $header_cry->done;
-
-    return $header_texts;
 }
 
-func _open_clever_files ($cwfolder) {
+func _read_clever_files ($cwfolder) {
 
-    my $cry = env->cry('Opening files');
+    my $cry = env->cry('Reading Clever exported files');
+
+    my $findcry = env->cry('Finding Clever files');
 
     my @audio_files = sort ( $cwfolder->glob('MA_Route_Audio*') );
     my $audio_file  = $audio_files[-1];    # last file should be newest
     $cry->wail( $audio_file->basename );
-    my $audio_fh = $audio_file->openr_text;
 
     my @attr_files = sort ( $cwfolder->glob('MA_Route_Attribute*') );
     my $attr_file  = $attr_files[-1];      # last file should be newest
     $cry->wail( $attr_file->basename );
-    my $attr_fh = $attr_file->openr_text;
 
-    $cry->done;
+    $findcry->ok;
 
-    return $audio_fh, $attr_fh;
+    my $attr = Octium::Clever::RouteAttribute->load_csv( file => $attr_file );
+
+    my $audio = Octium::Clever::RouteAudio->load_csv(
+        file                => $audio_file,
+        in_service_variants => $attr->variants,
+    );
+
+    return $attr, $audio;
 
 }
 
-func _write_route_audios (:$cwfolder, :%audio_of, ) {
+func _read_dest_files (:$signupfolder) {
 
-    my $fh = $cwfolder->file('route_audios.txt')->openw_text;
+    my $cry = env->cry("Loading pattern and direction destinations");
 
-    my @texts = sort { length($a) <=> length($b) || $a cmp $b }
-      keys %audio_of;
+    my $basename = $signupfolder->basename;
+    my $dirdest_fh
+      = $signupfolder->file("direction-destinations-$basename.txt")->openr_text;
+    my $patdest_fh
+      = $signupfolder->file("pattern-destinations-$basename.txt")->openr_text;
+    my ( %dirdest_of, %dests_of );
 
-    my ( @one, @multi );
-
-    foreach my $text (@texts) {
-        my @audios = sort keys $audio_of{$text}->%*;
-        my $audios = join( "|", @audios );
-        my $line   = "$text\t$audios";
-        if ( @audios == 1 ) {
-            push @one, $line;
-        }
-        else {
-            push @multi, $line;
-        }
+    while (<$dirdest_fh>) {
+        chomp;
+        my ( $route, $direction, $destination ) = split(/\t/);
+        $direction = Actium::Dir->instance($direction);
+        my $rd = "$route:$direction";
+        $dirdest_of{$rd} = $destination;
     }
+    close $dirdest_fh;
 
-    foreach my $line ( @one, @multi ) {
-        say $fh join( "\t", $line );
+    readline($patdest_fh);    # throw away headers
+    while (<$patdest_fh>) {
+        chomp;
+        my ( $route, $pattern, $direction, $patdest, $vdc_id, $place )
+          = split(/\t/);
+        $direction = Actium::Dir->instance($direction);
+        my $rd      = "$route:$direction";
+        my $dirdest = $dirdest_of{$rd};
+        my $rdp     = "$route:$direction:$pattern";
+        cry->wail("dir overlong: $rd $dirdest")  if length($dirdest) > 50;
+        cry->wail("pat overlong: $rdp $patdest") if length($patdest) > 50;
+        $dests_of{$rdp} = [ $dirdest, $patdest ];
     }
+    close $patdest_fh;
 
-    close $fh;
+    return \%dests_of;
+
 }
 
 1;

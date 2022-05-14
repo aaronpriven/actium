@@ -10,8 +10,7 @@ has '_in_service_variants_r' => (
     default  => sub { [] },
 );
 
-method _load_data ($fh) {
-    state $csv = $self->csv;
+method _load_csv_data (:$fh, :$csv) {
     my @rows;
 
     \my @in_service_variants = $self->_in_service_variants_r;
