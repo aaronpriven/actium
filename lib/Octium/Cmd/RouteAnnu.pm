@@ -11,10 +11,6 @@ sub OPTIONS {
     return (
         'signup',
         'actiumdb',
-        {   spec        => 'getaudios!',
-            description => 'Get audios from Clever file',
-            fallback    => '',
-        }
     );
 }
 
@@ -24,12 +20,10 @@ sub START {
     my $signupfolder = $signup->actiumfolder;
 
     my $actiumdb  = env->actiumdb;
-    my $getaudios = env->option('getaudios');
 
     Octium::Clever::RouteAnnu::routeannu(
         actiumdb     => $actiumdb,
         signupfolder => $signupfolder,
-        getaudios    => $getaudios,
     );
 
 }

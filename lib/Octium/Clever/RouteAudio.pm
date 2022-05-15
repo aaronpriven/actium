@@ -20,7 +20,7 @@ method _load_csv_data (:$fh, :$csv) {
     }
     else {
         my %use_variant = map { $_ => 1 } @in_service_variants;
-        my @idxs = map { $self->index_of($_) } qw/RouteName RouteVariant/;
+        my @idxs = map { $self->col_idx($_) } qw/RouteID RouteVar/;
 
         while ( my $row_r = $csv->getline($fh) ) {
             my ( $route, $variant ) = $row_r->@[@idxs];
@@ -29,7 +29,7 @@ method _load_csv_data (:$fh, :$csv) {
         }
     }
 
-    $self->_set_row_r( \@rows );
+    $self->_set_rows( \@rows );
 }
 
 method _key_cols {

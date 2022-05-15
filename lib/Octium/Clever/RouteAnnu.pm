@@ -5,7 +5,7 @@ use Actium;
 use Actium::Dir;
 use Octium::Clever::RouteAttribute;
 use Octium::Clever::RouteAudio;
-use Lingua::EN::TitleCase;
+use Lingua::EN::Titlecase;
 
 # things to overwrite:
 # - Audio - Audio1 through Audio10 (route  /destination audios)
@@ -14,12 +14,9 @@ use Lingua::EN::TitleCase;
 #          BusTimePublicRouteDirection,  (direction destination)
 #          BusTimePublicRouteDescription (pattern destination)
 
-my $csv     = Text::CSV->new( { binary => 1 } );
-my $csv_out = Text::CSV->new( { binary => 1, eol => "\r\n" } );
-
 const my $ATTRIBUTE_IMPORT_FILE => 'route_attribute_import.csv';
 const my $AUDIO_IMPORT_FILE     => 'route_audio_import.csv';
-const my $MAX_AUDIOS = 10;
+const my $MAX_AUDIOS            => 10;
 
 func routeannu (:$signupfolder, :$actiumdb ) {
 
@@ -28,16 +25,14 @@ func routeannu (:$signupfolder, :$actiumdb ) {
     my $maincry = env->cry('Producing route audio and attribute Clever files');
     my ( $attr, $audio ) = _read_clever_files($cwfolder);
 
-    \my %routeinfo = $actiumdb->all_in_columns_key( 'Lines',
-        qw/annu_sign_text NoLocalsOnTransbay/ );
     \my %annu_of = $actiumdb->all_in_column_key( 'annu', 'annu_audios' );
 
     \my %dests_of = _read_dest_files($signupfolder);
 
     my ( $new_attr, $sign_of_rdp_r ) = _new_attr(
-        attr      => $attr,
-        dests     => \%dests_of,
-        routeinfo => %routeinfo,
+        attr     => $attr,
+        dests    => \%dests_of,
+        actiumdb => $actiumdb,
     );
 
     my $new_audio = _new_audio(
@@ -54,9 +49,9 @@ func routeannu (:$signupfolder, :$actiumdb ) {
 }
 
 {
-    const my $a_rte    => 'RouteName';
-    const my $a_pat    => 'PatternID';
-    const my $a_var    => 'RouteVariant';
+    const my $a_rte    => 'RouteID';
+    const my $a_pat    => 'Pattern';
+    const my $a_var    => 'RouteVar';
     const my $a_dir    => 'Direction';
     const my $a_msg    => 'MessageType';
     const my @a_audios => map { 'Audio' . $_ } 1 .. $MAX_AUDIOS;
@@ -68,7 +63,6 @@ func routeannu (:$signupfolder, :$actiumdb ) {
     func _new_audio (:$audio, :\%sign_of_rdp, :$actiumdb) {
 
         \my %audio_of = $actiumdb->all_in_column_key( 'annu', 'annu_audios' );
-
         my $new_audio = $audio->filter(
             sub {
 
@@ -83,11 +77,11 @@ func routeannu (:$signupfolder, :$actiumdb ) {
 
                 if ( $msg eq 'Destination' ) {
                     my $sign = $sign_of_rdp{$rdp};
-                    $new_audios = $audio_of{$sign};
+                    $new_audios = $audio_of{$sign} || '*** NO AUDIO ***';
                     $wailmsg    = "sign $sign";
                 }
                 elsif ( $msg eq 'Route' ) {
-                    my $new_audios = $audio_of{$route};
+                    $new_audios = $audio_of{$route} || '*** NO AUDIO ***';
 
                     # this may need to change at some point if we ever have a #
                     # disconnect between the name and the audio under that name
@@ -138,9 +132,14 @@ func routeannu (:$signupfolder, :$actiumdb ) {
     # IsHeadwayManaged, CountdownThresholdTimer, IncludeInScheduleReporting,
     # ExportToGTFS
 
-    func _new_attr ( :$attr, :\%routeaudio! , :\%dests ) {
+    func _new_attr ( :$attr!, :$actiumdb! , :\%dests! ) {
         state $tc = Lingua::EN::Titlecase->new();
         my %sign_of_rdp;
+
+        \my %line_override_text
+          = $actiumdb->all_in_column_key( 'Lines', 'annu_sign_text' );
+        \my %no_locals_on_trasnbay
+          = $actiumdb->all_in_column_key( 'Lines', 'NoLocalsOnTransbay' );
 
         my $new_attr = $attr->filter(
             sub {
@@ -171,18 +170,21 @@ func routeannu (:$signupfolder, :$actiumdb ) {
 
                 # BusTimePublicRouteDirection - use direction destination
                 # BusTimePublicRouteDescription - use pattern destination
-                my ( $ddest, $pdest ) = $dests{$rdp}->@*;
 
-                if ( $row{$a_ddest} ne $ddest ) {
-                    $row{$a_ddest} = $ddest;
-                    $changed = 1;
-                }
-                if ( $row{$a_pdest} ne $pdest ) {
-                    $row{$a_pdest} = $pdest;
-                    $changed = 1;
+                if ( exists $dests{$rdp} ) {
+                    my ( $ddest, $pdest ) = $dests{$rdp}->@*;
+
+                    if ( $row{$a_ddest} ne $ddest ) {
+                        $row{$a_ddest} = $ddest;
+                        $changed = 1;
+                    }
+                    if ( $row{$a_pdest} ne $pdest ) {
+                        $row{$a_pdest} = $pdest;
+                        $changed = 1;
+                    }
                 }
 
-                return %row if $changed;
+                return \%row if $changed;
                 return;
 
             }
@@ -210,18 +212,18 @@ func _read_clever_files ($cwfolder) {
 
     $findcry->ok;
 
-    my $attr = Octium::Clever::RouteAttribute->load_csv( file => $attr_file );
+    my $attr = Octium::Clever::RouteAttribute->load_csv($attr_file);
 
-    my $audio = Octium::Clever::RouteAudio->load_csv(
-        file                => $audio_file,
-        in_service_variants => $attr->variants,
-    );
+    my $audio = Octium::Clever::RouteAudio->load_csv( $audio_file,
+        in_service_variants => [ $attr->keys ], );
+
+    $cry->done;
 
     return $attr, $audio;
 
 }
 
-func _read_dest_files (:$signupfolder) {
+func _read_dest_files (Actium::Storage::Folder $signupfolder) {
 
     my $cry = env->cry("Loading pattern and direction destinations");
 
@@ -235,6 +237,7 @@ func _read_dest_files (:$signupfolder) {
     while (<$dirdest_fh>) {
         chomp;
         my ( $route, $direction, $destination ) = split(/\t/);
+        next if $route eq 'line';
         $direction = Actium::Dir->instance($direction);
         my $rd = "$route:$direction";
         $dirdest_of{$rd} = $destination;
@@ -255,6 +258,8 @@ func _read_dest_files (:$signupfolder) {
         $dests_of{$rdp} = [ $dirdest, $patdest ];
     }
     close $patdest_fh;
+
+    $cry->done;
 
     return \%dests_of;
 

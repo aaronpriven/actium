@@ -15,13 +15,13 @@ method _load_csv_data (:$fh, :$csv) {
         @rows = getline_all($fh);
     }
     else {
-        my $insvc_index = $self->index_of('InService');
+        my $insvc_index = $self->col_idx('InService');
         while ( my $row_r = $csv->getline($fh) ) {
             push @rows, $row_r if $row_r->[$insvc_index];
         }
     }
 
-    $self->_set_row_r( \@rows );
+    $self->_set_rows( \@rows );
 }
 
 method _key_cols {

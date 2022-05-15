@@ -2,6 +2,7 @@ package Octium::Clever::CSVfile 0.019;
 # vimcolor: #000040
 
 use Actium('role');
+use Text::CSV;
 
 requires qw/_load_csv_data _key_cols/;
 
@@ -22,10 +23,7 @@ has '_column_idx_of' => (
     isa     => 'HashRef',
     builder => '_build_column_idx_of',
     lazy    => 1,
-    handles => {
-        column_names => 'keys',
-        col_idx      => 'get',
-    },
+    handles => { col_idx => 'get', },
 );
 
 has 'rows' => (
@@ -64,16 +62,16 @@ classmethod load_csv (Actium::Storage::File $file, %args) {
     close $fh;
 
     $load_cry->done;
+    return $obj;
 }
 
 method filter ($callback!) {
-    \my @rows          = $self->rows;
-    \my %column_idx_of = $self->_column_idx_of;
-    \my @column_names  = $self->_column_names;
+    \my @rows         = $self->rows;
+    \my @column_names = $self->column_names;
     my @newrows;
 
     foreach \my @row(@rows) {
-        my %hash     = map { $_ => $row[$_] } keys %column_idx_of;
+        my %hash = map { $column_names[$_] => $row[$_] } 0 .. $#column_names;
         my $newrow_r = $callback->( \%hash );
         next unless $newrow_r;
         my @newrow = @{$newrow_r}{@column_names};
@@ -106,10 +104,10 @@ method _load_csv_headers ($fh) {
     $preamble .= $nameline;
     $self->_set_preamble($preamble);
 
-    $self->csv->parse($nameline);
-    my @column_names = $self->csv->fields();
+    $csv->parse($nameline);
+    my @column_names = $csv->fields();
     s/\s*\*// foreach @column_names;    # remove asterisks in field names
-    my %column_idx_of = map { $column_names[$_] => $_ } @column_names;
+    my %column_idx_of = map { $column_names[$_] => $_ } 0 .. $#column_names;
     $self->_set_column_names( \@column_names );
     $self->_set_column_idx_of( \%column_idx_of );
 }
@@ -142,7 +140,7 @@ method store_csv (Actium::Storage::File $file) {
 
     my $cry = env->cry("Writing $file");
 
-    my $fh = $file->openr_text;
+    my $fh = $file->openw_text;
     print $fh $self->preamble;
     \my @rows = $self->rows;
     $csv->print( $fh, $_ ) foreach @rows;
