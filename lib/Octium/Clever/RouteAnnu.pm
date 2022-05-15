@@ -5,7 +5,7 @@ use Actium;
 use Actium::Dir;
 use Octium::Clever::RouteAttribute;
 use Octium::Clever::RouteAudio;
-use Lingua::EN::Titlecase;
+#use Lingua::EN::Titlecase;
 
 # things to overwrite:
 # - Audio - Audio1 through Audio10 (route  /destination audios)
@@ -29,13 +29,13 @@ func routeannu (:$signupfolder, :$actiumdb ) {
 
     \my %dests_of = _read_dest_files($signupfolder);
 
-    my ( $new_attr, $sign_of_rdp_r ) = _new_attr(
+    my ( $new_attr, $sign_of_rdp_r ) = _adjust_attr(
         attr     => $attr,
         dests    => \%dests_of,
         actiumdb => $actiumdb,
     );
 
-    my $new_audio = _new_audio(
+    my $new_audio = _adjust_audio(
         audio       => $audio,
         sign_of_rdp => $sign_of_rdp_r,
         actiumdb    => $actiumdb,
@@ -64,7 +64,9 @@ func routeannu (:$signupfolder, :$actiumdb ) {
     # Language, Audio1, Audio2, Audio3, Audio4, Audio5, Audio6, Audio7, Audio8,
     # Audio9, Audio10
 
-    func _new_audio (:$audio, :\%sign_of_rdp, :$actiumdb) {
+    func _adjust_audio (:$audio, :\%sign_of_rdp, :$actiumdb) {
+
+        my $cry = env->cry("Adjusting audios");
 
         \my %lineinfo = $actiumdb->all_in_columns_key( 'Lines',
             qw/annu_sign_text NoLocalsOnTransbay annu_fare/ );
@@ -93,12 +95,17 @@ func routeannu (:$signupfolder, :$actiumdb ) {
                 return if $msg eq 'Mid-Trip Dest';
 
                 my ( $route, $dir, $pat ) = @row{ $a_rte, $a_dir, $a_pat };
-                my $rdp        = join( ':', $route, $dir, $pat );
+                $dir = Actium::Dir->instance($dir)->dircode;
+                my $rdp = join( ':', $route, $dir, $pat );
                 my $old_audios = join( ',', grep {$_} @row{@a_audios} );
                 # eliminate empty ones
                 my ( $new_audios, $wailmsg );
 
                 if ( $msg eq 'Destination' ) {
+                    if ( not exists $sign_of_rdp{$rdp} ) {
+                        env->wail("No sign: $rdp");
+                        return;
+                    }
                     my $sign = $sign_of_rdp{$rdp};
                     if ( not exists $audio_of{$sign} ) {
                         env->wail("No audio: $rdp destination $sign");
@@ -146,6 +153,10 @@ func routeannu (:$signupfolder, :$actiumdb ) {
             }
         );
 
+        $cry->done;
+
+        return $new_audio;
+
     }
 
 }
@@ -157,8 +168,8 @@ func routeannu (:$signupfolder, :$actiumdb ) {
     const my $a_dir   => 'Direction';
     const my $a_tch   => 'TCHRouteVariantDescription';
     const my $a_sign  => 'DestinationSign';
-    const my $a_pdest => 'BusTimePublicRouteDirection';
-    const my $a_ddest => 'BusTimePublicRouteDescription';
+    const my $a_ddest => 'BusTimePublicRouteDirection';
+    const my $a_pdest => 'BusTimePublicRouteDescription';
 
     # RouteName, RouteVariant, PatternID, Direction, RouteVariantDescription,
     # TCHRouteVariantDescription, InService, Verified, DestinationSignCode,
@@ -168,22 +179,25 @@ func routeannu (:$signupfolder, :$actiumdb ) {
     # IsHeadwayManaged, CountdownThresholdTimer, IncludeInScheduleReporting,
     # ExportToGTFS
 
-    func _new_attr ( :$attr!, :$actiumdb! , :\%dests! ) {
-        state $tc = Lingua::EN::Titlecase->new();
+    func _adjust_attr ( :$attr!, :$actiumdb! , :\%dests! ) {
+        #        state $tc = Lingua::EN::Titlecase->new();
         my %sign_of_rdp;
+
+        my $cry = env->cry("Adjusting attributes");
 
         my $new_attr = $attr->filter(
             sub {
 
                 my %row = shift->%*;
                 my ( $rte, $dir, $pat ) = @row{ $a_rte, $a_dir, $a_pat };
+
+                $dir = Actium::Dir->instance($dir)->dircode;
                 my $rdp = join( ':', $rte, $dir, $pat );
 
                 my $changed;
 
                 # DestinationSign - Remove duplicate route entries
-                # TCHRouteVariantDescription - set to title-cased destination
-                # sign
+                # TCHRouteVariantDescription - set to same as destination sign
 
                 if ( $row{$a_sign} ) {
 
@@ -195,17 +209,22 @@ func routeannu (:$signupfolder, :$actiumdb ) {
                     my $newsign = join( ' ', $line, @signwords );
                     if ( $newsign ne $row{$a_sign} ) {
                         $row{$a_sign} = $newsign;
-                        $row{$a_tch}  = $tc->title($newsign);
-                        $changed      = 1;
+                        $changed = 1;
+                    }
+                    if ( $newsign ne $row{$a_tch} ) {
+                        $row{$a_tch} = $newsign;    #
+                        $changed = 1;
                     }
                 }
+
                 $sign_of_rdp{$rdp} = $row{$a_sign} =~ s/\A$rte //r;
 
                 # BusTimePublicRouteDirection - use direction destination
                 # BusTimePublicRouteDescription - use pattern destination
 
                 if ( exists $dests{$rdp} ) {
-                    my ( $ddest, $pdest ) = $dests{$rdp}->@*;
+                    my $ddest = $dests{$rdp}{d};
+                    my $pdest = $dests{$rdp}{p};
 
                     if ( $row{$a_ddest} ne $ddest ) {
                         $row{$a_ddest} = $ddest;
@@ -222,6 +241,8 @@ func routeannu (:$signupfolder, :$actiumdb ) {
 
             }
         );
+
+        $cry->done;
 
         return $new_attr, \%sign_of_rdp;
 
@@ -282,13 +303,15 @@ func _read_dest_files (Actium::Storage::Folder $signupfolder) {
         chomp;
         my ( $route, $pattern, $direction, $patdest, $vdc_id, $place )
           = split(/\t/);
+
+        $patdest =~ s/^To //;
         $direction = Actium::Dir->instance($direction);
         my $rd      = "$route:$direction";
         my $dirdest = $dirdest_of{$rd};
         my $rdp     = "$route:$direction:$pattern";
         cry->wail("dir overlong: $rd $dirdest")  if length($dirdest) > 50;
         cry->wail("pat overlong: $rdp $patdest") if length($patdest) > 50;
-        $dests_of{$rdp} = [ $dirdest, $patdest ];
+        $dests_of{$rdp} = { d => $dirdest, p => $patdest };
     }
     close $patdest_fh;
 

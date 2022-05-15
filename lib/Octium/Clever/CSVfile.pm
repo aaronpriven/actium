@@ -12,13 +12,11 @@ has preamble => (
 );
 
 has '_column_names_r' => (
-    traits  => ['Array'],
-    is      => 'rw',
-    isa     => 'ArrayRef',
+    traits   => ['Array'],
+    is       => 'rw',
+    isa      => 'ArrayRef',
     init_arg => 'column_names',
-    handles => {
-        'column_names' => 'elemnts'
-    },
+    handles  => { 'column_names' => 'elements', },
 );
 
 has '_column_idx_of_r' => (
@@ -31,13 +29,13 @@ has '_column_idx_of_r' => (
 );
 
 has '_rows_r' => (
-    traits  => ['Array'],
-    is      => 'rw',
-    isa     => 'ArrayRef',
+    traits   => ['Array'],
+    is       => 'rw',
+    isa      => 'ArrayRef',
     init_arg => 'rows',
-    handles => {
+    handles  => {
         'row'  => 'get',
-        'rows' => 'elemnts'
+        'rows' => 'elements'
     },
 );
 
@@ -53,9 +51,14 @@ has '_row_of_r' => (
 
 classmethod load_csv (Actium::Storage::File $file, %args) {
     my $csv      = Text::CSV->new( { binary => 1 } );
-    my $load_cry = env->cry('Loading Clever file');
+    my $basename = $file->basename;
+    if ( Actium::u_columns($basename) > 30 ) {
+        $basename
+          = Actium::u_trim_to_columns( string => $basename, columns => 27 )
+          . '...';
+    }
+    my $load_cry = env->cry(qq{Loading Clever file "$basename"});
 
-    $load_cry->wail( $file->basename );
     my $fh = $file->openr_text;
 
     my $obj = $class->new(%args);
@@ -104,11 +107,11 @@ method filter ($callback!) {
 
 method clone ($rows_r) {
     my $class = Actium::blessed($self);
-    $rows_r //= $self->_rows_r;
+    $rows_r //= [ $self->_rows_r->@* ];
 
     my $clone = $class->new(
         preamble     => $self->preamble,
-        column_names => $self->column_names,
+        column_names => [ $self->column_names ],
         rows         => $rows_r
     );
 
@@ -143,7 +146,7 @@ method store_csv (Actium::Storage::File $file) {
     state $csv_out
       = Text::CSV->new( { binary => 1, eol => "\r\n", quote_space => 0 } );
 
-    my $cry = env->cry("Writing $file");
+    my $cry = env->cry( "Writing " . $file->basename );
 
     my $fh = $file->openw_text;
     print $fh $self->preamble;
