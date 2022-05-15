@@ -29,7 +29,7 @@ method _load_csv_data (:$fh, :$csv) {
         }
     }
 
-    $self->_set_rows( \@rows );
+    $self->_set_rows_r( \@rows );
 }
 
 method _key_cols {

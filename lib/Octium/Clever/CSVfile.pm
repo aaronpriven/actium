@@ -11,13 +11,17 @@ has preamble => (
     isa => 'Str',
 );
 
-has 'column_names' => (
-    traits => ['Array'],
-    is     => 'rwp',
-    isa    => 'ArrayRef',
+has '_column_names_r' => (
+    traits  => ['Array'],
+    is      => 'rw',
+    isa     => 'ArrayRef',
+    init_arg => 'column_names',
+    handles => {
+        'column_names' => 'elemnts'
+    },
 );
 
-has '_column_idx_of' => (
+has '_column_idx_of_r' => (
     traits  => ['Hash'],
     is      => 'rw',
     isa     => 'HashRef',
@@ -26,23 +30,24 @@ has '_column_idx_of' => (
     handles => { col_idx => 'get', },
 );
 
-has 'rows' => (
+has '_rows_r' => (
     traits  => ['Array'],
-    is      => 'rwp',
+    is      => 'rw',
     isa     => 'ArrayRef',
-    handles => { 'row' => 'get' },
+    init_arg => 'rows',
+    handles => {
+        'row'  => 'get',
+        'rows' => 'elemnts'
+    },
 );
 
-has '_row_of' => (
+has '_row_of_r' => (
     traits  => ['Hash'],
     is      => 'bare',
     isa     => 'HashRef',
     builder => '_build_row_of',
     lazy    => 1,
-    handles => {
-        _row_of => 'get',
-        keys    => 'keys',
-    },
+    handles => { keys => 'keys', },
 );
 # with composite keys, the names get pointless. "route-variant-stop"?
 
@@ -76,13 +81,13 @@ method _load_csv_headers (:$fh!, :$csv!) {
     my @column_names = $csv->fields();
     s/\s*\*// foreach @column_names;    # remove asterisks in field names
     my %column_idx_of = map { $column_names[$_] => $_ } 0 .. $#column_names;
-    $self->_set_column_names( \@column_names );
-    $self->_set_column_idx_of( \%column_idx_of );
+    $self->_set_column_names_r( \@column_names );
+    $self->_set_column_idx_of_r( \%column_idx_of );
 }
 
 method filter ($callback!) {
-    \my @rows         = $self->rows;
-    \my @column_names = $self->column_names;
+    \my @rows         = $self->_rows_r;
+    \my @column_names = $self->_column_names_r;
     my @newrows;
 
     foreach \my @row(@rows) {
@@ -99,7 +104,7 @@ method filter ($callback!) {
 
 method clone ($rows_r) {
     my $class = Actium::blessed($self);
-    $rows_r //= $self->rows;
+    $rows_r //= $self->_rows_r;
 
     my $clone = $class->new(
         preamble     => $self->preamble,
@@ -112,20 +117,20 @@ method clone ($rows_r) {
 }
 
 method _build_column_idx_of {
-    \my @column_names = $self->_column_names;
+    \my @column_names = $self->_column_names_r;
     my %column_idx_of = map { $column_names[$_] => $_ } @column_names;
     return \%column_idx_of;
 }
 
 method _build_row_of {
-    my @col_idxs = map { $self->col_idx($_) } $self->_key_cols;
+    my @key_col_idxs = map { $self->col_idx($_) } $self->_key_cols;
     # _key_cols provided by consuming class
 
     my %row_of;
 
-    \my @rows = $self->rows;
+    \my @rows = $self->_rows_r;
     foreach \my @row(@rows) {
-        my @values = @row[@col_idxs];
+        my @values = @row[@key_col_idxs];
         my $key    = join( "|", @values );
         $row_of{$key} = \@row;
     }
@@ -142,7 +147,7 @@ method store_csv (Actium::Storage::File $file) {
 
     my $fh = $file->openw_text;
     print $fh $self->preamble;
-    \my @rows = $self->rows;
+    \my @rows = $self->_rows_r;
     $csv_out->print( $fh, $_ ) foreach @rows;
     close $fh;
 
