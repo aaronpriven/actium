@@ -46,16 +46,15 @@ has '_row_of' => (
 );
 # with composite keys, the names get pointless. "route-variant-stop"?
 
-my $csv = Text::CSV->new( { binary => 1 } );
-
 classmethod load_csv (Actium::Storage::File $file, %args) {
+    my $csv      = Text::CSV->new( { binary => 1 } );
     my $load_cry = env->cry('Loading Clever file');
 
     $load_cry->wail( $file->basename );
     my $fh = $file->openr_text;
 
     my $obj = $class->new(%args);
-    $obj->_load_csv_headers($fh);
+    $obj->_load_csv_headers( fh => $fh, csv => $csv );
     $obj->_load_csv_data( fh => $fh, csv => $csv );
     # _load_data provided by consuming classes
 
@@ -63,6 +62,22 @@ classmethod load_csv (Actium::Storage::File $file, %args) {
 
     $load_cry->done;
     return $obj;
+}
+
+method _load_csv_headers (:$fh!, :$csv!) {
+    my $preamble = '';
+    $preamble .= ( scalar readline $fh ) . ( scalar readline $fh );
+    # metadata and version lines
+    my $nameline = scalar readline $fh;
+    $preamble .= $nameline;
+    $self->_set_preamble($preamble);
+
+    $csv->parse($nameline);
+    my @column_names = $csv->fields();
+    s/\s*\*// foreach @column_names;    # remove asterisks in field names
+    my %column_idx_of = map { $column_names[$_] => $_ } 0 .. $#column_names;
+    $self->_set_column_names( \@column_names );
+    $self->_set_column_idx_of( \%column_idx_of );
 }
 
 method filter ($callback!) {
@@ -96,22 +111,6 @@ method clone ($rows_r) {
 
 }
 
-method _load_csv_headers ($fh) {
-    my $preamble = '';
-    $preamble .= ( scalar readline $fh ) . ( scalar readline $fh );
-    # metadata and version lines
-    my $nameline = scalar readline $fh;
-    $preamble .= $nameline;
-    $self->_set_preamble($preamble);
-
-    $csv->parse($nameline);
-    my @column_names = $csv->fields();
-    s/\s*\*// foreach @column_names;    # remove asterisks in field names
-    my %column_idx_of = map { $column_names[$_] => $_ } 0 .. $#column_names;
-    $self->_set_column_names( \@column_names );
-    $self->_set_column_idx_of( \%column_idx_of );
-}
-
 method _build_column_idx_of {
     \my @column_names = $self->_column_names;
     my %column_idx_of = map { $column_names[$_] => $_ } @column_names;
@@ -136,14 +135,15 @@ method _build_row_of {
 }
 
 method store_csv (Actium::Storage::File $file) {
-    state $csv_out = Text::CSV->new( { binary => 1, eol => "\r\n" } );
+    state $csv_out
+      = Text::CSV->new( { binary => 1, eol => "\r\n", quote_space => 0 } );
 
     my $cry = env->cry("Writing $file");
 
     my $fh = $file->openw_text;
     print $fh $self->preamble;
     \my @rows = $self->rows;
-    $csv->print( $fh, $_ ) foreach @rows;
+    $csv_out->print( $fh, $_ ) foreach @rows;
     close $fh;
 
     $cry->done;

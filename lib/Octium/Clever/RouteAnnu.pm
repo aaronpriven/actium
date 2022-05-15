@@ -55,6 +55,10 @@ func routeannu (:$signupfolder, :$actiumdb ) {
     const my $a_dir    => 'Direction';
     const my $a_msg    => 'MessageType';
     const my @a_audios => map { 'Audio' . $_ } 1 .. $MAX_AUDIOS;
+    const my $local_fare_msg =>
+'Local Routes  Local Fare 2 50 Youth Seniors and Persons with Disabilities Fare 1 25';
+    const my $transbay_fare_msg =>
+'Transbay Routes Transbay Fare 6 00 Transbay Youth Seniors and Persons with Disabilities Fare is 3 00';
 
     # RouteID, RouteVar, Pattern, Direction, RouteDescription, MessageType,
     # Language, Audio1, Audio2, Audio3, Audio4, Audio5, Audio6, Audio7, Audio8,
@@ -62,7 +66,25 @@ func routeannu (:$signupfolder, :$actiumdb ) {
 
     func _new_audio (:$audio, :\%sign_of_rdp, :$actiumdb) {
 
+        \my %lineinfo = $actiumdb->all_in_columns_key( 'Lines',
+            qw/annu_sign_text NoLocalsOnTransbay annu_fare/ );
+
+        my %fare_of;
+        for my $line ( keys %lineinfo ) {
+            my $annu_fare = $lineinfo{$line}{annu_fare};
+            $annu_fare = 'Transbay' if $annu_fare eq 'Transbay2Zone';
+
+            # not currently doing anything with 2zone, putting all fares
+            # everywhere since line info the same everywhere
+
+            $annu_fare = 'Both'
+              if $annu_fare eq 'Transbay'
+              and not $lineinfo{$line}{NoLocalsOnTransbay};
+            $fare_of{$line} = $annu_fare;
+        }
+
         \my %audio_of = $actiumdb->all_in_column_key( 'annu', 'annu_audios' );
+
         my $new_audio = $audio->filter(
             sub {
 
@@ -72,22 +94,36 @@ func routeannu (:$signupfolder, :$actiumdb ) {
 
                 my ( $route, $dir, $pat ) = @row{ $a_rte, $a_dir, $a_pat };
                 my $rdp        = join( ':', $route, $dir, $pat );
-                my $old_audios = join( ',', @row{@a_audios} );
+                my $old_audios = join( ',', grep {$_} @row{@a_audios} );
+                # eliminate empty ones
                 my ( $new_audios, $wailmsg );
 
                 if ( $msg eq 'Destination' ) {
                     my $sign = $sign_of_rdp{$rdp};
+                    if ( not exists $audio_of{$sign} ) {
+                        env->wail("No audio: $rdp destination $sign");
+                    }
                     $new_audios = $audio_of{$sign} || '*** NO AUDIO ***';
-                    $wailmsg    = "sign $sign";
+
+                    if ( exists $fare_of{$route} ) {
+                        my $annu_fare = $fare_of{$route};
+                        $new_audios .= ',' . $local_fare_msg
+                          if $annu_fare eq 'Local' or $annu_fare eq 'Both';
+                        $new_audios .= ',' . $transbay_fare_msg
+                          if $annu_fare eq 'Transbay' or $annu_fare eq 'Both';
+                    }
+
+                    $wailmsg = "sign $sign";
                 }
                 elsif ( $msg eq 'Route' ) {
-                    $new_audios = $audio_of{$route} || '*** NO AUDIO ***';
+                    my $text = $lineinfo{$route}{annu_sign_text} || $route;
 
-                    # this may need to change at some point if we ever have a #
-                    # disconnect between the name and the audio under that name
-                    # -- we'll need to change the annu key to something that
-                    # makes it clear it's a route
-                    $wailmsg = "route $route";
+                    if ( not exists $audio_of{$text} ) {
+                        env->wail("No audio: $rdp route $text");
+                    }
+
+                    $new_audios = $audio_of{$text} || '*** NO AUDIO ***';
+                    $wailmsg    = "route $route";
                 }
                 else {
                     die "Unrecognized $msg in Clever audio file";
@@ -136,16 +172,13 @@ func routeannu (:$signupfolder, :$actiumdb ) {
         state $tc = Lingua::EN::Titlecase->new();
         my %sign_of_rdp;
 
-        \my %line_override_text
-          = $actiumdb->all_in_column_key( 'Lines', 'annu_sign_text' );
-        \my %no_locals_on_trasnbay
-          = $actiumdb->all_in_column_key( 'Lines', 'NoLocalsOnTransbay' );
-
         my $new_attr = $attr->filter(
             sub {
 
                 my %row = shift->%*;
-                my $rdp = join( ':', @row{ $a_rte, $a_dir, $a_pat } );
+                my ( $rte, $dir, $pat ) = @row{ $a_rte, $a_dir, $a_pat };
+                my $rdp = join( ':', $rte, $dir, $pat );
+
                 my $changed;
 
                 # DestinationSign - Remove duplicate route entries
@@ -166,7 +199,7 @@ func routeannu (:$signupfolder, :$actiumdb ) {
                         $changed      = 1;
                     }
                 }
-                $sign_of_rdp{$rdp} = $row{$a_sign};
+                $sign_of_rdp{$rdp} = $row{$a_sign} =~ s/\A$rte //r;
 
                 # BusTimePublicRouteDirection - use direction destination
                 # BusTimePublicRouteDescription - use pattern destination
