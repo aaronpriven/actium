@@ -332,6 +332,8 @@ sub new_from_kpoints {
                     push @destinations, $get_tp_value->($desttp4);
                 }
 
+
+
                 $column = Octium::Points::Column->new(
                     linegroup           => $linegroup,
                     days                => $days,
@@ -405,6 +407,8 @@ sub new_from_kpoints {
 
                 # they would all be skipped because they're in the omit list
 
+	    my $collapse_frequent = ($linegroup eq '1T' or  $self->signtype =~ /^TID/i);
+
                 $column = Octium::Points::Column->new(
                     linegroup      => $linegroup,
                     days           => $days,
@@ -416,6 +420,7 @@ sub new_from_kpoints {
                     place_r        => \@places,
                     approxflag_r   => \@approxflags,
                     display_stopid => $column_stopid,
+	        collapse_frequent => $collapse_frequent,
                 );
 
             }

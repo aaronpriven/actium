@@ -58,6 +58,12 @@ sub append_to_formatted_header {
     $self->set_formatted_header( $self->formatted_header . join( '', @_ ) );
 }
 
+has collapse_frequent => (
+is => 'ro',
+isa => 'Bool',
+default => 0,
+);
+
 has primary_approxflag => (
     is  => 'rw',
     isa => 'Bool',
@@ -460,7 +466,8 @@ sub _build_frequent_action_r {
     my @frequent_actions;
     my @times = $self->times;
 
-    if ( $self->linegroup eq '1T' ) {
+    if ( $self->collapse_frequent  ) {
+    #if ( $self->linegroup eq '1T' ) {
         my @ranges;
         my @timenums = map { Actium::Time::->from_str($_)->timenum } @times;
         my @feet     = $self->feet;
