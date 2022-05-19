@@ -160,6 +160,22 @@ has 'has_ab' => (
     handles => { set_has_ab => 'set', },
 );
 
+has 'has_frequent' => (
+    traits  => ['Bool'],
+    is      => 'ro',
+    isa     => 'Bool',
+    default => '0',
+    handles => { set_has_frequent => 'set', },
+);
+
+has 'has_tempo' => (
+    traits  => ['Bool'],
+    is      => 'ro',
+    isa     => 'Bool',
+    default => '0',
+    handles => { set_has_tempo => 'set', },
+);
+
 has 'column_r' => (
     traits  => ['Array'],
     is      => 'rw',
@@ -332,8 +348,6 @@ sub new_from_kpoints {
                     push @destinations, $get_tp_value->($desttp4);
                 }
 
-
-
                 $column = Octium::Points::Column->new(
                     linegroup           => $linegroup,
                     days                => $days,
@@ -407,20 +421,22 @@ sub new_from_kpoints {
 
                 # they would all be skipped because they're in the omit list
 
-	    my $collapse_frequent = ($linegroup eq '1T' or  $self->signtype =~ /^TID/i);
+                my $collapse_frequent = 1;
+                # ($linegroup eq '1T' or  $self->signtype =~ /^TID/i);
+                $self->set_has_tempo if $linegroup eq '1T';
 
                 $column = Octium::Points::Column->new(
-                    linegroup      => $linegroup,
-                    days           => $days,
-                    dircode        => $dircode,
-                    time_r         => \@times,
-                    line_r         => \@lines,
-                    destination_r  => \@destinations,
-                    exception_r    => \@exceptions,
-                    place_r        => \@places,
-                    approxflag_r   => \@approxflags,
-                    display_stopid => $column_stopid,
-	        collapse_frequent => $collapse_frequent,
+                    linegroup         => $linegroup,
+                    days              => $days,
+                    dircode           => $dircode,
+                    time_r            => \@times,
+                    line_r            => \@lines,
+                    destination_r     => \@destinations,
+                    exception_r       => \@exceptions,
+                    place_r           => \@places,
+                    approxflag_r      => \@approxflags,
+                    display_stopid    => $column_stopid,
+                    collapse_frequent => $collapse_frequent,
                 );
 
             }
@@ -429,7 +445,7 @@ sub new_from_kpoints {
 
             next if $column->has_note;
 
-            # skip columns with notes, since hte only note left
+            # skip columns with notes, since the only note left
             # is "drop off only" and the flags should cover that
 
             $self->push_columns($column);
@@ -964,6 +980,7 @@ sub format_columns {
         # this is the length of the column from the SignTemplate database
 
         my @frequent_actions = $column->frequent_actions;
+        $self->set_has_frequent if $column->has_frequent;
         my %column_divisions;
         if ($column_length) {
             %column_divisions = $column->column_division($column_length)->%*;
@@ -1048,6 +1065,14 @@ sub format_columns {
 
 }
 
+const my $FREQNOTE => join(
+    $IDT->hardreturn,
+    '<ParaStyle:FreqIcon>E',
+'<ParaStyle:FreqNote>Between the times shown, buses run every 15 minutes or better.',
+'<ParaStyle:FreqNote>Entre los tiempos mostrados, los autobuses operan cada 15 minutos o menos.',
+'<ParaStyle:FreqNote><CharStyle:ZH\_Regular><0x5728><0x6240><0x793A><0x65F6><0x95F4><0x4E4B><0x95F4><0xFF0C><0x5DF4><0x58EB><0x6BCF><CharStyle:>15<CharStyle:ZH\_Regular><0x5206><0x949F><0xFF08><0x6216><0x66F4><0x77ED><0x65F6><0x95F4><0xFF09><0x4E00><0x73ED><0x8F66><0x3002><CharStyle:>'
+);
+
 sub format_side {
     my $self   = shift;
     my $is_bsh = $self->agency eq 'BroadwayShuttle';
@@ -1056,6 +1081,10 @@ sub format_side {
     open my $sidefh, '>:utf8', \$formatted_side;
 
     print $sidefh $self->_effective_date_indd($is_bsh);
+
+    if ( $self->has_frequent and not $self->has_tempo ) {
+        print $sidefh $IDT->hardreturn, $FREQNOTE;
+    }
 
     print $sidefh $IDT->hardreturn, $IDT->parastyle('sidenotes');
 
@@ -1276,9 +1305,9 @@ sub format_bottom {
 
     $IDT->encode_high_chars($description);
 
-
     my $new_signid = $self->new_signid;
-    print $botfh $IDT->parastyle('bottomnotes'), "$description. Sign $new_signid.";
+    print $botfh $IDT->parastyle('bottomnotes'),
+      "$description. Sign $new_signid.";
 
     #print $botfh " Stop $stopid." unless $self->nonstop;
 

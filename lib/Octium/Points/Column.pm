@@ -58,6 +58,14 @@ sub append_to_formatted_header {
     $self->set_formatted_header( $self->formatted_header . join( '', @_ ) );
 }
 
+has 'has_frequent' => (
+    traits  => ['Bool'],
+    is      => 'ro',
+    isa     => 'Bool',
+    default => '0',
+    handles => { set_has_frequent => 'set', },
+);
+
 has collapse_frequent => (
 is => 'ro',
 isa => 'Bool',
@@ -516,6 +524,8 @@ sub _build_frequent_action_r {
 
             # same thing as commented out code, only without refalias
         } @ranges;
+
+        $self->set_has_frequent if @ranges;
 
         foreach my $range (@ranges) {
             my $first = $range->[0];
