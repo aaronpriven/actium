@@ -68,7 +68,7 @@ a) Go into the Stops\_Neue layout in FileMaker. Display all records.
 
 b) import stop\_with\_i.txt
 
-Go to Import -> File and select "stops\_with\_i.txt". Check "Don't
+Go to Import -> File and select "stop\_with\_i.txt". Check "Don't
 import first record (contains field names)" and then select "Arrange
 by: matching names".
 
@@ -116,7 +116,7 @@ a) Go into the Places layout in FileMaker. Display all records.
 
 b) import place\_with\_i.txt
 
-Go to Import -> File and select "places\_with\_i.txt". Check "Don't
+Go to Import -> File and select "place\_with\_i.txt". Check "Don't
 import first record (contains field names)" and then select "Arrange
 by: matching names".
 
@@ -157,6 +157,18 @@ Go to Import -> File and select "stoplines.txt". Check "Don't import first recor
 Then check "Update matching records in found set" and click the arrow next to "h\_stp\_511\_id" so it becomes double-headed arrow. (Arrange By will change to "custom import order")
 
 Click "Import."  On the "Import Options" box, click "Import" again (it doesn't matter whether "Perform auto-enter options" is checked).
+
+## Create stops lists
+
+a) create the stop lists in "slists"
+
+    actium.pl avl2stoplists –s z00
+
+b) create the comparison lists
+
+    actium.pl comparestops –o y00 –s z00
+
+That creates the comparestops.txt that has the added stops, removed stops, and changed lines for each changed stop. Open in Excel, save as .xlsx and distribute to interested parties.
 
 ## Create "raw" schedule files 
 
@@ -240,7 +252,7 @@ a) Run the sked2points command:
 
 This creates the files that have the actual times in them, one for each stop.  They are in an intermediate format not intended to be printed.
 
-b) Run the actium k2id command:
+b) Run the actium makepoints command:
 
     actium.pl makepoints -s z00
 
@@ -249,18 +261,6 @@ At the end it will say something like "20 skipped signs because stop file not fo
 ## Run timetable program and update timetables
 
 See the separate make timetables document.
-
-## Create stops lists
-
-a) create the stop lists in "slists"
-
-    actium.pl avl2stoplists –s z00
-
-b) create the comparison lists
-
-    actium.pl comparestops –o y00 –s z00
-
-That creates the comparestops.txt that has the added stops, removed stops, and changed lines for each changed stop. Open in Excel, save as .xlsx and distribute to interested parties.
 
 ## Update destinations for Nextbus
 
@@ -282,9 +282,9 @@ dumb length limitations.
 
 Run the program
 
-    actium.pl stops2kml <outputfile>
+    actium.pl stops2kmz <outputfile>
 
-Replace "<outputfile>" with the name of the file, which should probably be something like "Z00-bystops.kml". Once it's done, copy that file where others can see it, such as to the District Public Share area.
+Replace "<outputfile>" with the name of the file, which should probably be something like "Z00-bystops.kmz". Once it's done, copy that file where others can see it, such as to the District Public Share area.
 
 ## Update Dumbarton Express website
 
@@ -292,7 +292,7 @@ Replace "<outputfile>" with the name of the file, which should probably be somet
 
 ## COPYRIGHT & LICENSE
 
-Copyright 2011-2017
+Copyright 2011-2022
 
 The Actium system is free software; you can redistribute it and/or
 modify it under the terms of either:
