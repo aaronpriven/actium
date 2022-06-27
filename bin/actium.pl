@@ -33,6 +33,7 @@ Actium::Env::CLI->new(
         decalcount    => 'DecalCount',
         decallabels   => 'DecalLabels',
         ems           => 'Ems',
+        excelcompare => 'ExcelCompare',
         finalizeskeds => 'FinalizeSkeds',
         flagspecs     => 'Flagspecs',
         flaglists     => 'Flaglists',
