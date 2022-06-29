@@ -12,7 +12,7 @@ method _load_csv_data (:$fh, :$csv) {
     my @rows;
 
     if ( $self->keep_all ) {
-        @rows = getline_all($fh);
+        @rows = @{ $csv->getline_all($fh) };
     }
     else {
         my $insvc_index = $self->col_idx('InService');

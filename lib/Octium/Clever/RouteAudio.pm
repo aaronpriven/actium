@@ -16,11 +16,11 @@ method _load_csv_data (:$fh, :$csv) {
     \my @in_service_variants = $self->_in_service_variants_r;
 
     if ( not @in_service_variants ) {
-        @rows = getline_all($fh);
+        @rows = @{ $csv->getline_all($fh) };
     }
     else {
         my %use_variant = map { $_ => 1 } @in_service_variants;
-        my @idxs = map { $self->col_idx($_) } qw/RouteID RouteVar/;
+        my @idxs        = map { $self->col_idx($_) } qw/RouteID RouteVar/;
 
         while ( my $row_r = $csv->getline($fh) ) {
             my ( $route, $variant ) = $row_r->@[@idxs];

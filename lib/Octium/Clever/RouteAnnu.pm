@@ -6,6 +6,7 @@ use Actium::Dir;
 use Octium::Clever::RouteAttribute;
 use Octium::Clever::RouteAudio;
 #use Lingua::EN::Titlecase;
+use Text::CSV;
 
 # things to overwrite:
 # - Audio - Audio1 through Audio10 (route  /destination audios)
@@ -25,7 +26,7 @@ func routeannu (:$signupfolder, :$actiumdb ) {
     my $maincry = env->cry('Producing route audio and attribute Clever files');
     my ( $attr, $audio ) = _read_clever_files($cwfolder);
 
-    \my %annu_of = $actiumdb->all_in_column_key( 'annu', 'annu_audios' );
+    #\my %annu_of = $actiumdb->all_in_column_key( 'annu', 'annu_audios' );
 
     \my %dests_of = _read_dest_files($signupfolder);
 
@@ -60,6 +61,8 @@ func routeannu (:$signupfolder, :$actiumdb ) {
     const my $transbay_fare_msg =>
 'Transbay Routes Transbay Fare 6 00 Transbay Youth Seniors and Persons with Disabilities Fare is 3 00';
 
+    my $csv = Text::CSV->new( { binary => 1 } );
+
     # RouteID, RouteVar, Pattern, Direction, RouteDescription, MessageType,
     # Language, Audio1, Audio2, Audio3, Audio4, Audio5, Audio6, Audio7, Audio8,
     # Audio9, Audio10
@@ -92,7 +95,7 @@ func routeannu (:$signupfolder, :$actiumdb ) {
 
                 my %row = shift->%*;
                 my $msg = $row{$a_msg};
-                return if $msg eq 'Mid-Trip Dest';
+                return \%row if $msg eq 'Mid-Trip Dest';
 
                 my ( $route, $dir, $pat ) = @row{ $a_rte, $a_dir, $a_pat };
                 $dir = Actium::Dir->instance($dir)->dircode;
@@ -103,12 +106,15 @@ func routeannu (:$signupfolder, :$actiumdb ) {
 
                 if ( $msg eq 'Destination' ) {
                     if ( not exists $sign_of_rdp{$rdp} ) {
-                        env->wail("No sign: $rdp");
-                        return;
+                        #env->wail("No sign: $rdp");
+                        # return;
+                        return \%row;
                     }
                     my $sign = $sign_of_rdp{$rdp};
                     if ( not exists $audio_of{$sign} ) {
-                        env->wail("No audio: $rdp destination $sign");
+                        #env->wail("No audio: $rdp destination $sign");
+                        #return;
+                        return \%row;
                     }
                     $new_audios = $audio_of{$sign} || '*** NO AUDIO ***';
 
@@ -126,7 +132,10 @@ func routeannu (:$signupfolder, :$actiumdb ) {
                     my $text = $lineinfo{$route}{annu_sign_text} || $route;
 
                     if ( not exists $audio_of{$text} ) {
-                        env->wail("No audio: $rdp route $text");
+                        #env->wail("No audio: $rdp route $text");
+
+                        return \%row;
+
                     }
 
                     $new_audios = $audio_of{$text} || '*** NO AUDIO ***';
@@ -136,8 +145,13 @@ func routeannu (:$signupfolder, :$actiumdb ) {
                     die "Unrecognized $msg in Clever audio file";
                 }
 
-                return if $old_audios eq $new_audios;
-                my @new_audios = split( /,/, $new_audios );
+                #return if $old_audios eq $new_audios;
+                #my @new_audios = split( /,/, $new_audios );
+
+                # CSV
+                my $csv_status = $csv->parse($new_audios);
+                croak "Invalid CSV in audio: $new_audios" unless $csv_status;
+                my @new_audios = $csv->fields;
 
                 if ( @new_audios > $MAX_AUDIOS ) {
                     env->crier->wail("Too many audios for $wailmsg");
@@ -162,14 +176,15 @@ func routeannu (:$signupfolder, :$actiumdb ) {
 }
 
 {
-    const my $a_rte   => 'RouteName';
-    const my $a_pat   => 'PatternID';
-    const my $a_var   => 'RouteVariant';
-    const my $a_dir   => 'Direction';
-    const my $a_tch   => 'TCHRouteVariantDescription';
-    const my $a_sign  => 'DestinationSign';
-    const my $a_ddest => 'BusTimePublicRouteDirection';
-    const my $a_pdest => 'BusTimePublicRouteDescription';
+    const my $a_rte    => 'RouteName';
+    const my $a_pat    => 'PatternID';
+    const my $a_var    => 'RouteVariant';
+    const my $a_dir    => 'Direction';
+    const my $a_tch    => 'TCHRouteVariantDescription';
+    const my $a_sign   => 'DestinationSign';
+    const my $a_ddest  => 'BusTimePublicRouteDirection';
+    const my $a_pdest  => 'BusTimePublicRouteDescription';
+    const my $a_inserv => 'InService';
 
     # RouteName, RouteVariant, PatternID, Direction, RouteVariantDescription,
     # TCHRouteVariantDescription, InService, Verified, DestinationSignCode,
@@ -189,7 +204,10 @@ func routeannu (:$signupfolder, :$actiumdb ) {
             sub {
 
                 my %row = shift->%*;
+                return \%row unless $row{$a_inserv};
+
                 my ( $rte, $dir, $pat ) = @row{ $a_rte, $a_dir, $a_pat };
+                return \%row unless $dir;
 
                 $dir = Actium::Dir->instance($dir)->dircode;
                 my $rdp = join( ':', $rte, $dir, $pat );
@@ -236,8 +254,8 @@ func routeannu (:$signupfolder, :$actiumdb ) {
                     }
                 }
 
-                return \%row if $changed;
-                return;
+                #return \%row if $changed;
+                return \%row;
 
             }
         );
@@ -266,7 +284,8 @@ func _read_clever_files ($cwfolder) {
 
     $findcry->ok;
 
-    my $attr = Octium::Clever::RouteAttribute->load_csv($attr_file);
+    my $attr
+      = Octium::Clever::RouteAttribute->load_csv( $attr_file, keep_all => 1 );
 
     my $audio = Octium::Clever::RouteAudio->load_csv( $audio_file,
         in_service_variants => [ $attr->keys ], );

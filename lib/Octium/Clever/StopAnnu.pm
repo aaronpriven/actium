@@ -13,8 +13,9 @@ my ( $xheatabfolder, %is_in_serv, %stops_of_pat_fullid,
 
 # my %is_virtual;
 
-my $csv     = Text::CSV->new( { binary => 1 } );
-my $csv_out = Text::CSV->new( { binary => 1, eol => "\r\n" } );
+my $csv = Text::CSV->new( { binary => 1 } );
+my $csv_out
+  = Text::CSV->new( { binary => 1, eol => "\r\n", quote_space => 0 } );
 
 use constant {
     S_ROUTE       => 0,
@@ -25,6 +26,8 @@ use constant {
     S_TEXT        => 9,
     S_AUDIO_START => 10,
 };
+
+const my $MAX_AUDIOS => 10;
 
 # This createes the stop sign text and stop audio announcements.  It uses the
 # Stops_Neue and annu tables from the database, the trip_pattern, trip, and
@@ -37,6 +40,7 @@ func stopannu (:$signupfolder, :$actiumdb) {
     $xheatabfolder = $signupfolder->subfolder('xhea/tab');
     $cwfolder      = $signupfolder->ensure_subfolder('cleverworks');
 
+    my $stopcry = env->cry("Reading stops from database");
     $stopinfo_of_511_r = $actiumdb->all_in_columns_key(
         'Stops_Neue',
         qw/h_stp_identifier         c_description_fullabbr
@@ -45,6 +49,7 @@ func stopannu (:$signupfolder, :$actiumdb) {
           c_annu_comment            c_annu_street_num
           /
     );
+    $stopcry->done;
 
     for my $h_stp_511_id ( keys %$stopinfo_of_511_r ) {
         my $h_stp_identifier
@@ -193,34 +198,69 @@ func _generate_audio ($signupfolder, \%audio_of) {
                 $prev_on_compare = $on_compare;
                 @audios          = ( $audio_of{$on} // 'UNDEF',
                     '+', $audio_of{$at} // 'UNDEF' );
+
+                $cry->wail("Stop $h_stp_511_id: Audio not defined for $on")
+                  if not defined $audio_of{$on};
+                $cry->wail("Stop $h_stp_511_id: Audio not defined for $at")
+                  if not defined $audio_of{$at};
             }
             elsif ($at) {
                 $sign   = $at;
                 @audios = $audio_of{$at} // 'UNDEF';
+                $cry->wail("Stop $h_stp_511_id: Audio not defined for $at")
+                  if not defined $audio_of{$at};
             }
             else {
                 $sign            = $on;
                 $prev_on_compare = $on;
                 @audios          = $audio_of{$on} // 'UNDEF';
+                $cry->wail("Stop $h_stp_511_id: Audio not defined for $on")
+                  if not defined $audio_of{$on};
             }
 
             if ($stnum) {
                 unshift @audios, $audio_of{$stnum} // 'UNDEF';
                 $sign = "$stnum $sign";
+                $cry->wail("Stop $h_stp_511_id: Audio not defined for $stnum")
+                  if not defined $audio_of{$stnum};
             }
 
             if ($comment) {
                 push @audios, $audio_of{$comment} // 'UNDEF';
                 $sign = "$sign ($comment)";
+                $cry->wail("Stop $h_stp_511_id: Audio not defined for $comment")
+                  if not defined $audio_of{$comment};
             }
 
-            @audios = map { split(/,/) } @audios;
+            #@audios = map { split(/,/) } @audios;
+
+            my @new_audios;
+            foreach (@audios) {
+                die "Invalid CSV in audio: $pat_fullid $h_stp_511_id $_"
+                  unless $csv->parse($_);
+                push @new_audios, $csv->fields;
+            }
+            @audios = @new_audios;
+
+            #@audios = map {
+            #    croak "Invalid CSV in audio: $_"
+            #      unless $csv->parse($_);
+            #    ( $csv->fields );
+            #  }
+
             #@audios = map { defined ? split(/,/) : '' } @audios;
             # handle embedded , in the database entries
 
             push @audios, 'END_OF_LINE' if ( $stop_seq == $#allstops );
-            $#audios = 9;    # exactly ten audio fields in CleverWorks
-            @audios  = map { $_ // '' } @audios;
+
+            if ( @audios > $MAX_AUDIOS ) {
+                env->crier->wail("Too many audios for stop $h_stp_511_id");
+                env->crier->wail(@audios);
+            }
+
+            $#audios = $MAX_AUDIOS - 1;
+            # $# zero-based. exactly ten audio fields in CleverWorks
+            @audios = map { $_ // '' } @audios;
 
             my $audio = join( ',', @audios );
 
@@ -256,8 +296,9 @@ func _generate_audio ($signupfolder, \%audio_of) {
 
 func _make_import_file {
 
-    my @stopaudiofiles = sort ( $cwfolder->glob('MA_Stop_Sign_Text_Audio*') );
-    my $stopaudiofile  = $stopaudiofiles[-1];    # last file should be newest
+    my @stopaudiofiles
+      = sort ( $cwfolder->glob('MA_Stop_Sign_Text_Audio*.csv') );
+    my $stopaudiofile = $stopaudiofiles[-1];    # last file should be newest
 
     my $import_file = $cwfolder->file('signaudio_import.csv');
     my $importfh    = $import_file->openw_text;
@@ -284,13 +325,17 @@ func _make_import_file {
 
         my $fullpat_and_stop
           = join( "-", $route, $pattern, $direction, $stopid );
-        next unless $audio_row_of{$fullpat_and_stop};
+        #next unless $audio_row_of{$fullpat_and_stop};
 
-        my ( $sign, @audios ) = $audio_row_of{$fullpat_and_stop}->@*;
+        if ( $audio_row_of{$fullpat_and_stop} ) {
 
-        $row_r->[S_TEXT] = $sign;
-        $#$row_r = S_TEXT;
-        push @$row_r, @audios;
+            my ( $sign, @audios ) = $audio_row_of{$fullpat_and_stop}->@*;
+
+            $row_r->[S_TEXT] = $sign;
+            $#$row_r = S_TEXT;
+            push @$row_r, @audios;
+
+        }
         $csv_out->say( $importfh, $row_r );
 
     }
