@@ -50,7 +50,7 @@ has [qw<compression_level page_order>] => (
     default => 0,
 );
 
-const my $height_adjustment => 1;
+const my $height_adjustment => 3;
 # number of lines that the "continued" at the bottom takes up
 
 sub height {
