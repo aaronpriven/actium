@@ -41,6 +41,11 @@ sub OPTIONS {
               . 'with "-out" just before the extension; e.g., "file.txt" '
               . 'will be changed to "file-out.txt".',
         },
+        {   spec        => 'keyfield=s',
+            description => 'Name of the key field in the database to use. If not specified, '
+              . 'will use the default key field of the specified table',
+	  fallback => 0,
+        },
         {   spec => 'headers!',
             description =>
               'Treat the first row of the files as the names of the headers '
@@ -56,7 +61,7 @@ sub START {
     my $actiumdb = env->actiumdb;
 
     my $table    = env->option('table');
-    my $keyfield = $actiumdb->key_of_table($table);
+    my $keyfield = env->option('keyfield') or $actiumdb->key_of_table($table);
 
     my $column;
     if ( env->option_is_set('idcolumn') ) {
