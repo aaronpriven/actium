@@ -183,8 +183,8 @@ const my %ENDING_OF => (
     Fwy  => 'Fwy.',
     Ln   => 'Lane',
     Lp   => 'Loop',
-    Pkwy => 'Pkwy.',
-    Pl   => 'Pl.',
+    Pkwy => 'Parkway',
+    Pl   => 'Place',
     Rd   => 'Road',
     St   => 'St.',
     Blvd => 'Blvd.',
@@ -193,8 +193,8 @@ const my %ENDING_OF => (
     W    => 'West',
     Sch  => 'School',
     Sq   => 'Square',
-    Ter  => 'Terr.',
-    Terr => 'Terr.',
+    Ter  => 'Terrace',
+    Terr => 'Terrace',
     Apts => 'Apartments',
 );
 
@@ -250,7 +250,7 @@ sub _stops_description {
     my $desc = shift;
 
     my ( $on, $at, $stnum, $comment ) = ( $EMPTY, $EMPTY, $EMPTY, $EMPTY );
-    # assign these the empty streets to avoid
+    # assign these the empty strings to avoid
     # "Undefined value in comparison errors
 
     my $rest;
