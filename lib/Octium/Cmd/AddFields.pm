@@ -44,7 +44,7 @@ sub OPTIONS {
         {   spec        => 'keyfield=s',
             description => 'Name of the key field in the database to use. If not specified, '
               . 'will use the default key field of the specified table',
-	  fallback => 0,
+	  fallback => '',
         },
         {   spec => 'headers!',
             description =>
@@ -61,7 +61,7 @@ sub START {
     my $actiumdb = env->actiumdb;
 
     my $table    = env->option('table');
-    my $keyfield = env->option('keyfield') or $actiumdb->key_of_table($table);
+    my $keyfield = env->option('keyfield') || $actiumdb->key_of_table($table);
 
     my $column;
     if ( env->option_is_set('idcolumn') ) {
