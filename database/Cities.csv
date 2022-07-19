@@ -1,0 +1,43 @@
+City,CityWorkZone,Code,CrewAssignment,Region,Sector,Side,SmokingText
+San Francisco,611,14,2,San Francisco,P,W,SF Health Code 19F-1009.22(d)
+Palo Alto,622,22,4,Peninsula,P,W,
+Alameda,342,01,3,Alameda,O,E,AMC 24-11.23
+Albany,231,02,1,AlbBerkEmery,B,E,AMC Chap 17-1.3b (2)
+Berkeley,232,03,1,AlbBerkEmery,B,E,BMC 12.70
+Castro Valley,456,04,3,CentAla,S,E,Alameda County Code 6.27.050 (3)
+El Cerrito,123,05,1,WestContraCosta,R,E,ECMC 8.06.020(T)
+El Sobrante,102,,1,WestContraCosta,R,E,Contra Costa County Code 445-4(c)
+Emeryville,233,06,2,AlbBerkEmery,B,E,EMC 5-29.04.b(6)
+Foster City,652,18,4,Peninsula,P,W,
+Fremont,574,07,4,SouthAla,F,E,FMC Chap. 6 Sec. 4-6104
+Hayward,461,08,4,CentAla,H,E,HMC Sec.5-6.04.a(2)(3)
+Milpitas,576,23,4,SouthAla,F,E,
+Newark,575,09,4,SouthAla,F,E,NMC 8.32.025(J)
+Oakland,341,10,,OaklandArea,O,E,OMC 8.30.055
+Orinda,357,21,1,OaklandArea,(none),E,
+Piedmont,343,11,2,OaklandArea,O,E,PMC 12.27(a)(6)
+Pinole,101,12,1,WestContraCosta,R,E,
+Redwood City,632,25,4,Peninsula,P,W,
+Richmond,113,13,1,WestContraCosta,R,E,RMC 9.56.020(b)(3)
+San Leandro,451,15,3,CentAla,S,E,SLMC 4-12-205(b)(d)
+San Lorenzo,453,20,3,CentAla,S,E,Alameda County Code 6.27.050 (3)
+San Leandro (U),452,,,CentAla,S,E,Alameda County Code 6.27.050 (3)
+San Mateo,651,19,4,Peninsula,P,W,
+San Pablo,111,16,1,WestContraCosta,R,E,San Pablo Muni Code 8.36.040(d)
+Stanford,621,,4,Peninsula,P,W,
+Union City,463,17,4,SouthAla,H,E,UCMC 7.13.020
+Alameda County (Uninc.),457,98,,CentAla,(none),E,Alameda County Code 6.27.050 (3)
+Contra Costa County (Uninc.),122,99,,WestContraCosta,(none),E,Contra Costa County Code 445-4(c)
+Menlo Park,631,24,4,Peninsula,P,W,
+East Palo Alto,623,26,4,Peninsula,P,W,
+San Mateo County (Uninc.),641,97,,Peninsula,P,W,
+Ashland,454,,3,CentAla,S,E,Alameda County Code 6.27.050 (3)
+Cherryland,455,,4,CentAla,S,E,Alameda County Code 6.27.050 (3)
+Kensington,121,,1,WestContraCosta,B,E,Contra Costa County Code 445-4(c)
+North Richmond,112,,1,WestContraCosta,R,E,Contra Costa County Code 445-4(c)
+Walnut Creek,354,,1,EastContraCosta,(none),E,
+Contra Costa Centre,355,,1,EastContraCosta,(none),E,
+Pittsburg,356,,1,EastContraCosta,(none),E,
+East Richmond Heights,114,,1,WestContraCosta,R,E,Contra Costa County Code 445-4(c)
+Fairview,462,,4,CentAla,H,W,Alameda County Code 6.27.050 (3)
+Dublin,580,27,,SouthAla,(none),E,

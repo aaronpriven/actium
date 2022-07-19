@@ -1,0 +1,17 @@
+GenerateWrongText,ShortColumnLines,ShortColumnNum,SignClassification,SignType,SignTypeEnglish,StopIDsInAFile,TallColumnLines,TallColumnNum
+No,,,Shelter,S3,"Shelter (21” by 36”)",500,68,6
+Yes,,,Polesign,R22,"Small (9” by 22”)",250,67,10
+No,,,Shelter,S5,"Shelter (40” by 44”)",1250,67,11
+Yes,,,Polesign,R17,"Small (9” by 17”)",2500,67,10
+No,,,Shelter,S4,"Shelter (23” by 37”)",2500,70,10
+No,,,Shelter,S2,"Shelter (22” by 33”)",2500,60,7
+No,,,Shelter,Oak11,Small Totem Square,2500,32,23
+No,,,Polesign,R11,"Very Small (9"" by 12"")",2500,36,10
+No,,,Shelter,S1,"Shelter (22” by 34”)",2500,60,7
+No,,,Kiosk,TID16,TID,2500,58,8
+No,40,48,Kiosk,TID20s,TID,2500,96,40
+No,,,Kiosk,TID16s,TID,2500,75,65
+No,,,Shelter,S6,Richmond BART shelters,2500,36,
+No,,,Other,1080L,"Electronic screen, 1080x1920",2500,46,14
+No,,,Other,1080Ls,"Electronic screen, 1080x1920",2500,46,14
+No,,,Shelter,Tempo,Tempo Station Sign,2500,,

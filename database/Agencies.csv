@@ -1,0 +1,4 @@
+agency_abbr,agency_effective_date,agency_fare_url,agency_id,agency_lang,agency_linemap_url,agency_linesked_url,agency_mapversion,agency_name,agency_phone,agency_timezone,agency_url
+AC,2021-08-08,,ACTransit,en,http://www.actransit.org/maps/maps_results.php??ms_view_type=2&maps_line=[actium_line]&version_id=[actium_version],http://www.actransit.org/maps/schedule_results.php?quick_line=[actium_line]&Go=Go,46,AC Transit,+1 510 891 4777,America/Los_Angeles,http://actransit.org
+DBX,2020-01-01,,DumbartonExpress,en,http://dumbartonexpress.com/route-map-2/,http://dumbartonexpress.com/line-[actium_line]-schedule/,,Dumbarton Express,"511 and say “Dumbarton Express”",America/Los_Angeles,http://dumbartonexpress.com
+BSH,2019-08-11,,BroadwayShuttle,en,http://www.meetdowntownoak.com/map.php,http://www.actransit.org/maps/schedule_results.php?quick_line=[actium_line]&Go=Go,,Broadway Shuttle,+1 510 891 7142,America/Los_Angeles,http://bshuttle.com
