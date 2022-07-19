@@ -16,6 +16,7 @@ Actium::Env::CLI->new(
     subcommands => {
 
         actiumdbfields => 'ActiumDBFields',
+        actiumdbexport => 'ActiumDBExport',
         addfields     => 'AddFields',
         annupopulate => 'AnnuPopulate',
         testcalc => 'TestCalc',
