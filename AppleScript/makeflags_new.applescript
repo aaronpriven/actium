@@ -4,14 +4,16 @@ set FlagListFileSpec to FlagListFileSpec as string
 global OriginalIDFileFolder
 global IDFileFolder
 
+set Bireme to "Users:Shared:Dropbox (AC_PubInfSys):B"
+
 set OriginalIDFileFolder to (POSIX file "/Users/Shared/Dropbox (AC_PubInfSys)/AC_PubInfSys Team Folder/Flags/Flag Artwork" as string) & ":"
-set IDFileFolder to "Bireme:Actium:flagart:generated:"
-set EPSFileFolder to (POSIX file "/Volumes/Bireme/ACTium/flagart/Decals/export_eps" as string) & ":"
+set IDFileFolder to Bireme & ":Actium:flagart:generated:"
+set EPSFileFolder to Bireme & ":ACTium:flagart:Decals:export_eps:"
 set FlagListFile to open for access file FlagListFileSpec
 set FlaglistLines to read FlagListFile for (get eof FlagListFile) using delimiter ASCII character 10 -- LF
 close access FlagListFile
 
-tell application "Adobe InDesign CC 2017"
+tell application "Adobe InDesign 2022"
 	
 	-- open first file
 	
@@ -104,9 +106,10 @@ on hyphenDateString()
 end hyphenDateString
 
 on openOriginalIDfile(OriginalIDFIle)
-	tell application "Adobe InDesign CC 2017"
+	tell application "Adobe InDesign 2022"
 		
 		set OriginalIDFileSpec to OriginalIDFileFolder & OriginalIDFIle & ".indd"
+		display dialog OriginalIDFileSpec
 		set myDocument to open OriginalIDFileSpec without showing window
 		set NewIDFile to IDFileFolder & OriginalIDFIle & "_" & (my hyphenDateString()) & ".indd"
 		set myDocument to save myDocument to NewIDFile with force save
@@ -127,7 +130,7 @@ on spacefields(myLine)
 end spacefields
 
 on overridetext(myLabel, myPage, myText)
-	tell application "Adobe InDesign CC 2017"
+	tell application "Adobe InDesign 2022"
 		--set myMasterItem to page item myLabel of all page items of applied master of myPage
 		set myMasterItem to item 1 of (all page items of applied master of myPage) whose label is myLabel
 		
@@ -140,7 +143,7 @@ on overridetext(myLabel, myPage, myText)
 end overridetext
 
 on overridegraphic(myLabel, myPage, myEPS)
-	tell application "Adobe InDesign CC 2017"
+	tell application "Adobe InDesign 2022"
 		--		set myMasterItem to page item myLabel of applied master of myPage
 		
 		set myMasterItem to item 1 of (all page items of applied master of myPage) whose label is myLabel
@@ -151,65 +154,3 @@ on overridegraphic(myLabel, myPage, myEPS)
 		return
 	end tell
 end overridegraphic
-
-
-(*
-
-=head1 NAME
-
-<name> - <brief description>
-
-=head1 VERSION
-
-This documentation refers to version 0.003
-
-=head1 DESCRIPTION
-
-A full description of the module and its features.
-
-=head1 DIAGNOSTICS
-
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
-
-=head1 DEPENDENCIES
-
-List its dependencies.
-
-=head1 AUTHOR
-
-Aaron Priven <apriven@actransit.org>
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2017
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
-
-=over 4
-
-=item * the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any
-later version, or
-
-=item * the Artistic License version 2.0.
-
-=back
-
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
-
-*)

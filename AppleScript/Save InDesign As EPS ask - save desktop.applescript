@@ -63,11 +63,13 @@ on SaveAsEPS(Bleed, OutlineText, indd)
 			set myPage to page thePageNum of indd
 			
 			set myPageName to ""
-			repeat with PageNameLabel in {"PageName", "fStopID", "bStopID", "StopID", "Decalcode", "Line"}
+			set myIncludeFileName to true
+			repeat with PageNameLabel in {"NonPrintingSignID", "PageName", "fStopID", "bStopID", "StopID", "Decalcode", "Line"}
 				set PageNameLabelText to (PageNameLabel as string)
 				set myPageNameItems to (every page item of myPage whose label is PageNameLabelText)
 				repeat with myPageNameItemRef in myPageNameItems
 					set myPageNameItemText to text of contents of myPageNameItemRef
+					
 					if (myPageName is equal to "" and myPageNameItemText is not equal to "") then
 						
 						log PageNameLabel
@@ -78,6 +80,11 @@ on SaveAsEPS(Bleed, OutlineText, indd)
 						else if (PageNameLabel contains "bStopID") then
 							log "b"
 							set myPageName to myPageNameItemText & "Bk"
+							
+						else if (PageNameLabel contains "Decalcode" or PageNameLabel contains "Line") then
+							set myPageName to myPageNameItemText
+							set myIncludeFileName to false
+							
 						else
 							set myPageName to myPageNameItemText
 						end if
@@ -97,18 +104,27 @@ on SaveAsEPS(Bleed, OutlineText, indd)
 				
 				set user interaction level to never interact
 				set page of PDF file options of settings to thePageNum
-				open (thePDFName as alias) without dialogs
+				set thePDFPosixPath to POSIX path of (thePDFName as alias)
+				open file thePDFPosixPath without dialogs
+				--open (thePDFName as alias) without dialogs
 				
-				set theEPSName to (theFileName & "_" & myPageName & "_outl.eps") as string
-				
-				if OutlineText then
-					set theEPSName to (theFileName & "_" & myPageName & "_outl.eps") as string
-					convert to paths text frames of current document
+				if (myIncludeFileName) then
+					set theBaseName to theFileName & "_" & myPageName
+					--set theEPSName to (theFileName & "_" & myPageName & "_outl.eps") as string
 				else
-					set theEPSName to (theFileName & "_" & myPageName & ".eps") as string
+					set theBaseName to ExportPath & myPageName
+					--set theEPSName to (ExportPath & myPageName & "_outl.eps") as string
 				end if
 				
-				save current document in (theEPSName) as eps with options {CMYK PostScript:true, embed all fonts:true, preview:color TIFF, compatibility:Illustrator 8}
+				
+				if OutlineText then
+					set theEPSName to (theBaseName & "_outl.eps") as string
+					convert to paths text frames of current document
+				else
+					set theEPSName to (theBaseName & ".EPS") as string
+				end if
+				log theEPSName
+				save current document in (theEPSName) as eps with options {CMYK PostScript:true, embed all fonts:true, preview:color TIFF, compatibility:Illustrator 12}
 				close current document saving no
 				
 			end tell
@@ -186,66 +202,3 @@ on open Lst
 	display alert "Done exporting." giving up after 10
 	
 end open
-
-
-
-(*
-
-=head1 NAME
-
-<name> - <brief description>
-
-=head1 VERSION
-
-This documentation refers to version 0.003
-
-=head1 DESCRIPTION
-
-A full description of the module and its features.
-
-=head1 DIAGNOSTICS
-
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
-
-=head1 DEPENDENCIES
-
-List its dependencies.
-
-=head1 AUTHOR
-
-Aaron Priven <apriven@actransit.org>
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2017
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
-
-=over 4
-
-=item * the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any
-later version, or
-
-=item * the Artistic License version 2.0.
-
-=back
-
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
-
-*)

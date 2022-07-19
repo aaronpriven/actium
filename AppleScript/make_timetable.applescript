@@ -1,17 +1,39 @@
-set TimetableDataFolder to "Bireme:ACTium:db:current:timetables:pub-idtags:"
---set TimetableDataFolder to "Users:apriven:Dev:signups:f13:timetables:m-pubtt:"
-set TimetableDataListFile to TimetableDataFolder & "_ttlist.txt"
-set MapFolder to "Bireme:Maps:Repository:_linesnames:"
+tell application "System Events"
+	set RootVolume to name of startup disk
+end tell
+set BiremeFolder to RootVolume & ":Users:apriven:Alameda - Contra Costa Transit:PubInfSys - Documents:"
+set ActiumFolder to RootVolume & ":Users:apriven:Alameda - Contra Costa Transit:PubInfSys - Documents:Actium:"
+set currentsignuplibrary to (ActiumFolder & "Applications:current_signup.scpt")
+set libraryURL to (currentsignuplibrary as «class furl»)
+set current_library to load script file libraryURL
 
-set PixFolder to "/Users/Shared/Dropbox (AC_PubInfSys)/AC_PubInfSys Team Folder/PubTimetables/"
+global Signup
+
+tell current_library
+	set Signup to current_signup()
+end tell
+
+set SignupFolder to ActiumFolder & "signups:" & Signup
+--set SignupFolder to "livia:Documents:signups:" & Signup
+set TimetableDataFolder to SignupFolder & ":timetables:pub-idtags:"
+set IDFileFolder to SignupFolder & ":timetables:tableart:"
+
+try
+	tell application "System Events" to make new folder at (folder (SignupFolder & ":timetables")) with properties {name:"tableart"}
+end try
+
+set TimetableDataListFile to TimetableDataFolder & "_ttlist.txt"
+set MapFolder to BiremeFolder & "Maps:Repository:_linesnames:"
+
+set PixFolder to "/Users/apriven/Alameda - Contra Costa Transit/PubInfSys - Documents/PubTimetables/"
 
 set OriginalIDFile to POSIX file (PixFolder & "TimetableMasters.indd")
 set GenericShortpage to POSIX file (PixFolder & "GenericTwoThirdsText.indd")
 set PlaceholderCoverFile to POSIX file (PixFolder & "PlaceholderCover.indd")
 set PlaceholderMapFile to POSIX file (PixFolder & "PlaceholderMap.indd")
 
-set IDFileFolder to "Bireme:Actium:tableart:indd:"
-set CoverPageFileFolder to "Bireme:Actium:tableart:CoverPages:"
+--set IDFileFolder to (ActiumFolder & "tableart:indd:")
+set CoverPageFileFolder to (ActiumFolder & "tableart:CoverPages:")
 
 set TimetableDataListFileHandle to open for access file TimetableDataListFile
 set TimetableDataList to read TimetableDataListFileHandle for (get eof TimetableDataListFileHandle) using delimiter ASCII character 10
@@ -35,7 +57,7 @@ if chosenTimetables is false or ((count of chosenTimetables) is 0) then
 	return
 end if
 
-tell application "Adobe InDesign CC 2017"
+tell application "Adobe InDesign 2022"
 	set myRotateMatrix to make transformation matrix with properties {counterclockwise rotation angle:90}
 	
 	set userCrop to PDF crop of PDF place preferences -- get the user's current settings for safekeeping
@@ -59,7 +81,7 @@ repeat with TimetableValueList in TimetableDataList
 		set hasshortpage to item 7 of TimetableValues
 		set PortraitChars to (characters of item 8 of TimetableValues)
 		
-		tell application "Adobe InDesign CC 2017"
+		tell application "Adobe InDesign 2022"
 			set myDocument to open OriginalIDFile without showing window
 			
 			try -- only used to show window in the event of an error
@@ -120,6 +142,19 @@ repeat with TimetableValueList in TimetableDataList
 					
 				end repeat
 				
+				
+				set myTables to tables of parent story of LineFrame
+				repeat with thisTable in myTables
+					set myRow to row 1 of thisTable
+					set HeightOfMyRow to height of myRow
+					set height of myRow to HeightOfMyRow
+				end repeat
+				
+				--set myRow to row 1 of table 1 of parent story of LineFrame
+				--set HeightOfMyRow to height of myRow
+				--set height of myRow to HeightOfMyRow
+				(* you would think that wouldn't do anything, but for some reason InDesign has been importing tables and making the heights of a lot of rows 0 when displayed, and that resets it *)
+				
 				set mapPage to my makeblankpage(myDocument, "L")
 				
 				set mapFileAlias to my getPdfOrPlaceholder(MapFile, MapFolder, PlaceholderMapFile)
@@ -166,20 +201,22 @@ repeat with TimetableValueList in TimetableDataList
 	
 end repeat
 
-tell application "Adobe InDesign CC 2017" to set PDF crop of PDF place preferences to userCrop -- set the user's orignal setting back
+tell application "Adobe InDesign 2022" to set PDF crop of PDF place preferences to userCrop -- set the user's orignal setting back
 --say "Done making timetables." without waiting until completion
 display alert "Done making timetables." giving up after 10
 
 on getPdfOrPlaceholder(theFileName, theFolder, thePlaceholder)
 	set thefile to theFolder & theFileName & ".pdf"
+	--display dialog thefile
 	tell application "System Events" to set myExists to exists disk item thefile
 	if myExists = false then set thefile to thePlaceholder
-	set thefile to thefile as alias
+	--set thefile to thefile as alias
+	set thefile to (thefile as «class furl»)
 	return thefile
 end getPdfOrPlaceholder
 
 on makeblankpage(theDocument, PortraitCharacter)
-	tell application "Adobe InDesign CC 2017"
+	tell application "Adobe InDesign 2022"
 		tell theDocument
 			set blankPage to make page
 			if false then
@@ -194,7 +231,7 @@ on makeblankpage(theDocument, PortraitCharacter)
 end makeblankpage
 
 on overridetextgroup(myInitialLabel, myFinalLabel, myPage)
-	tell application "Adobe InDesign CC 2017"
+	tell application "Adobe InDesign 2022"
 		set myMasterItem to item 1 of (all page items of applied master of myPage) whose label is myInitialLabel
 		set myMasterGroup to parent of myMasterItem
 		tell myMasterGroup
@@ -215,66 +252,3 @@ end overridetextgroup
 
 
 
-
-
-
-(*
-
-=head1 NAME
-
-<name> - <brief description>
-
-=head1 VERSION
-
-This documentation refers to version 0.003
-
-=head1 DESCRIPTION
-
-A full description of the module and its features.
-
-=head1 DIAGNOSTICS
-
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
-
-=head1 DEPENDENCIES
-
-List its dependencies.
-
-=head1 AUTHOR
-
-Aaron Priven <apriven@actransit.org>
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2017
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
-
-=over 4
-
-=item * the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any
-later version, or
-
-=item * the Artistic License version 2.0.
-
-=back
-
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
-
-*)

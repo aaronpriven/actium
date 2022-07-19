@@ -11,6 +11,8 @@ on SaveAsEPS(indd)
 	tell application id "com.adobe.InDesign"
 		set inddFolder to file path of indd
 		set inddName to name of indd
+		--set PDFPreset to PDF export preset named "[High Quality Print]"
+		
 	end tell
 	
 	-- the following sets basename to be the InDesign filename without the .indd extension
@@ -57,6 +59,7 @@ on SaveAsEPS(indd)
 		
 		tell indd
 			with timeout of 600 seconds
+				--export format PDF type to thePDFName using PDFPreset without showing options
 				export format PDF type to thePDFName without showing options
 			end timeout
 		end tell
@@ -72,6 +75,7 @@ on SaveAsEPS(indd)
 			repeat with PageNameLabel in {"PageName", "fStopID", "bStopID", "StopID", "Decalcode", "Line"}
 				set PageNameLabelText to (PageNameLabel as string)
 				set myPageNameItems to (every page item of myPage whose label is PageNameLabelText)
+				set myIncludeFileName to true
 				repeat with myPageNameItemRef in myPageNameItems
 					set myPageNameItemText to text of contents of myPageNameItemRef
 					if (myPageName is equal to "" and myPageNameItemText is not equal to "") then
@@ -84,6 +88,10 @@ on SaveAsEPS(indd)
 						else if (PageNameLabel contains "bStopID") then
 							log "b"
 							set myPageName to myPageNameItemText & "Bk"
+						else if (PageNameLabel contains "Decalcode" or PageNameLabel contains "Line") then
+							set myPageName to myPageNameItemText
+							set myIncludeFileName to false
+							
 						else
 							set myPageName to myPageNameItemText
 						end if
@@ -103,8 +111,9 @@ on SaveAsEPS(indd)
 				
 				set user interaction level to never interact
 				set page of PDF file options of settings to thePageNum
-				open (thePDFName as alias) without dialogs
-				
+				set thePDFPosixPath to POSIX path of (thePDFName as alias)
+				open file thePDFPosixPath without dialogs
+				--open (thePDFName as alias) without dialogs
 				
 				
 				set Ra to artboard rectangle of artboard 1 of current document -- this is the new artboard with lots of bleed
@@ -117,15 +126,13 @@ on SaveAsEPS(indd)
 				
 				set ScoreRect to make rectangle at beginning of current document with properties {bounds:Rscore, filled:false, stroke width:1, stroke color:{class:CMYK color info, cyan:0.0, magenta:0.0, yellow:0.0, black:100.0}}
 				
-				
-				set theEPSName to (theFileName & "_" & myPageName & "_outl.eps") as string
-				
-				if OutlineText then
+				if (myIncludeFileName) then
 					set theEPSName to (theFileName & "_" & myPageName & "_outl.eps") as string
-					convert to paths text frames of current document
 				else
-					set theEPSName to (theFileName & "_" & myPageName & ".eps") as string
+					set theEPSName to (ExportPath & myPageName & "_outl.eps") as string
 				end if
+				
+				convert to paths text frames of current document
 				
 				save current document in (theEPSName) as eps with options {CMYK PostScript:true, embed all fonts:true, preview:color TIFF, compatibility:Illustrator 8}
 				close current document saving no
@@ -172,66 +179,3 @@ on open Lst
 	display alert "Done exporting." giving up after 10
 	
 end open
-
-
-
-(*
-
-=head1 NAME
-
-<name> - <brief description>
-
-=head1 VERSION
-
-This documentation refers to version 0.003
-
-=head1 DESCRIPTION
-
-A full description of the module and its features.
-
-=head1 DIAGNOSTICS
-
-A list of every error and warning message that the application can
-generate (even the ones that will "never happen"), with a full
-explanation of each problem, one or more likely causes, and any
-suggested remedies. If the application generates exit status codes,
-then list the exit status associated with each error.
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-A full explanation of any configuration system(s) used by the
-application, including the names and locations of any configuration
-files, and the meaning of any environment variables or properties
-that can be se. These descriptions must also include details of any
-configuration language used.
-
-=head1 DEPENDENCIES
-
-List its dependencies.
-
-=head1 AUTHOR
-
-Aaron Priven <apriven@actransit.org>
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2017
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of either:
-
-=over 4
-
-=item * the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any
-later version, or
-
-=item * the Artistic License version 2.0.
-
-=back
-
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-FITNESS FOR A PARTICULAR PURPOSE.
-
-*)
