@@ -1,6 +1,6 @@
 # New Signup Procedures
 
-Aaron Priven, last modified Fall 2020
+Aaron Priven, last modified Fall 2022
 
 ## Get files
 
