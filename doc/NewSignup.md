@@ -45,14 +45,16 @@ This will take the XML files and convert them to tab-delimited text
 files, which are easier to work with. Those wll be in the z00/xhea/tab
 folder.
 
-It will also create temporary Hastus Standard AVL files from the
-XHEA data. 
+It will also create temporary Hastus Standard AVL files from the XHEA data.
+There are a few programs that were written to read these files which have never
+been rewritten (notably avl2stoplists). 
 
 ## Make a copy of the Actium database, for backup
 
 The FileMaker databases contain a lot of info that we enter that's used to
-create the schedules.  Currently, they are stored in the actium/database
-folder, in a file called ACTransit_Actium.fp12. Make a backup of that file.
+create the schedules.  Currently, they are stored in the Documents folder of
+the livia user on the Mac Mini server, in a file called ACTransit_Actium.fp12.
+Make a backup of that file.
 
 ## Import stops into FileMaker
 
@@ -146,7 +148,7 @@ a) Run the avl2stoplines program
 
     actium.pl avl2stoplines -s z00
 
-That creates the file stoplines.txt
+That creates the file stoplines.txt (which shows which stops are active and what lines those stops serve).
 
 b) Go into the Stops layout in FileMaker. Display all records.
 
@@ -203,6 +205,9 @@ and then send them around.
 
 ## Create exceptional schedules
 
+At one point I reguularly rewrote odd schedules to make them more logical -- loops were explained better, lines where the layover point isn't actually on the end of the route (like 29 and 33) were rewritten so that the endpoint was somewhere else. I've stopped doing that at this point, because the web schedules are now being produced by Planeteria and it seems wrong to modify the PDF schedules so they don't match anymore.
+
+(Old text:
 There are always some schedules that don't come out quite right from the
 scheduling system.  The scheduling system contains times for
 intermediate timepoints on headway-based schedules, which need to be
@@ -211,6 +216,7 @@ same bus serves as the end of the eastbound trip and the beginning of
 the westbound trip, it appears on both schedules.  Some lines (like LA)
 have "opportunity trips" that show up as separate lines on the schedule,
 though they are really continuations of the previous trips. 
+)
 
 Create a new folder called "exceptions" under "s" under the signup
 folder.  Copy the old exceptions from the previous signup folder to it,
@@ -220,12 +226,12 @@ the stop schedules output from the scheduling system (found in the
 "received" folder under "s" in the signup folder).
 
 Note that these are schedules for _stops_, so that each stop has to be
-listed, with a time. Although this is not implemented yet, I plan to
+listed, with a time. Although this was never implemented, I planned to
 allow "i" to be used to have the program interpolate times stops between
 timepoints, and "f" to be used for flexible stops (on Flex lines).
 
 To delete an incoming schedule so it is not used, add its id to a file called
-"delete_skeds.txt" in the exceptions folder.
+"delete_skeds.txt" in the exceptions folder. That file must be present, but can be an empty file.
 
 ## Create final schedule files
 
@@ -276,7 +282,7 @@ dumb length limitations.
 
 ## Update flag and decal specifications
 
-(instructions to come)
+Not currently used due to the new map's colors not working with the new system.
 
 ## Create KML export
 
@@ -288,7 +294,7 @@ Replace "<outputfile>" with the name of the file, which should probably be somet
 
 ## Update Dumbarton Express website
 
-(instructions to come)
+Take the output from the "htmltables" program and place that table on the Dumbarton Express web site.
 
 ## COPYRIGHT & LICENSE
 
