@@ -22,30 +22,39 @@ The program newsignup is intended to encapsulate as much as possible
 of the routine work of creating a new signup.
 
 ````Shell
-actium.pl newsignup -b /Volumes/Bireme/Actium/db –s z00 –x Z00.ZIP
+actium.pl newsignup -b ~/si/ –s z00 –x Z00.ZIP
 ````
 
 The -s argument should be the name of the signup, which will be
-created in the base folder (Actium/db).
+created in the base folder (specified with the -b command-line option,
+but it usually is something like
 
-In this document I will use "z00", but this is just a placeholder.
-Most of the time signups are something like "f11" or "sp12" -- f,
-w, sp, su = fall, winter, spring, summer followed by a two-digit
-year – f11, su10, sp08. Actually the name is arbitrary and could
-be anything. This is the "signup folder".
+~/Library/CloudStorage/OneDrive-SharedLibraries-Alameda-ContraCostaTransit/PubInfSys - Documents/Actium/signups
+
+I keep a symlink in my home directory called ~/si that points to that folder.
+
+In this document I will use "z00" for the signup, but this is just a
+placeholder.  Most of the time signups are something like "f11" or "sp12" -- f,
+w, sp, su = fall, winter, spring, summer followed by a two-digit year – f11,
+su10, sp08. Actually the name is arbitrary and could be anything. This is the
+"signup folder".
 
 If present, the optional -x argument should be the name of the ZIP
-file that contains the Xhea exports (the export files from Ajay).
+file that contains the Enterprise Database exports (from Scheduling).
 XHEA originally stood for "XML Hastus Exports for Actium", but
 really the exports are the format created for the AC Transit
 Enterprise Database. That still begins with "A" so the acronym still
 works.
+
+If -x is not specified, it assumes the Enterprise Database exports are already
+in the "xhea" folder inside the signup folder.
 
 This will take the XML files and convert them to tab-delimited text
 files, which are easier to work with. Those wll be in the z00/xhea/tab
 folder.
 
 It will also create temporary Hastus Standard AVL files from the XHEA data.
+This is an export format provided by Hastus.
 There are a few programs that were written to read these files which have never
 been rewritten (notably avl2stoplists). 
 

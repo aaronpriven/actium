@@ -1,6 +1,6 @@
 # Perl installation for Actium
 
-## New instructions as of 10/9/2017.
+## New instructions as of 10/9/2017 - modified mildly July 2022
 
 Log in as Octavian (administrative user)
 
@@ -10,7 +10,7 @@ Log in as Octavian (administrative user)
 
 3. Install ODBC Manager
 
-4. Create a "System DSN" for ActiumFM (fm70.triple8.net,
+4. Create a "System DSN" for ActiumFM (localhost, 
 ACTransit_Actium, etc. In "Language Options" uncheck automatic and set
 the results to utf-8.
 
@@ -28,31 +28,23 @@ the system .ini files.
 8. Install openssl with homebrew. Add path to the openssl to the PATH
 environment variable
 
-9. Install ghostscript with homebrew
+9. NO LONGER NEEDED (we no longer produce web maps) -- Install ghostscript with homebrew 
 
 10. Install perlbrew from perlbrew.pl
 
 11. perlbrew install-cpanm
 
-12. perlbrew -- Install latest stable Perl 5 (perl 5.26.1)
+12. perlbrew -- Install latest stable Perl 5 
 
 13. Go through dependencies of Actium and install them using cpanm 
 (use find-deps.pl to get list of dependencies).
 
-## Eclipse and Perl::Tidy::Sweetened
-
-The way I got this to work is to replace the file "perlutils/perltidy/perltidy"
-in the archive org.epic.perleditor_0.6.39.jar with a copy of "perltidier" from
-the Perl::Tidy::Sweetened distribution, and made sure that a "use lib <location
-to Perl::Tidy::Sweetened library>" line was put in the file. (Note that this
-should be the *last* "use lib", because "use lib" unshifts onto @INC, and if
-the system libraries are added after this, those will be used first. At the
-moment the cpan version of Perl::Tidy::Sweetened does not handle closing side
-comments correctly.)
+(There's a bunch of stuff in the way vi is set up  to do syntax checking that I
+won't include here.)
 
 ## COPYRIGHT & LICENSE
 
-Copyright 2011-2017
+Copyright 2011-2022
 
 The Actium system is free software; you can redistribute it and/or
 modify it under the terms of either:
