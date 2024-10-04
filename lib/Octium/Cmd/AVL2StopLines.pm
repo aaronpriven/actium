@@ -87,7 +87,6 @@ sub START {
         next if $route =~ /\A39[0-9]/;    # supervisor order
         next if $route =~ /\A19[0-9]/;    # f23 supervisor orders
 
-
         my $dir = dir_of_hasi( $pat{$key}{DirectionValue} );
 
         for my $tps_n ( 0 .. $#{ $pat{$key}{TPS} } ) {
