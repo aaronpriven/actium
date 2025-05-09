@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>17. Clever route audio and attributes </title>
+  <style>
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">17. Clever route audio and attributes </h1>
+</header>
+<h1 id="communications-department-responsibility">Communications
+Department responsibility</h1>
+<p>There are several pieces of information that fall under
+Communications’ responsibility:</p>
+<ul>
+<li><p>Route audio (that is, the spoken route number or letter)</p></li>
+<li><p>Destination audio (that is, audio that corresponds to the
+headsign text). It also includes the fare information, which varies for
+Transbay routes</p></li>
+<li><p>Clever’s field “BusTimePublicRouteDirection” – this is the
+direction destination</p></li>
+<li><p>Clever’s field “BusTimePublicRouteDescription” – this is poorly
+named, it is the pattern destination</p></li>
+</ul>
+<p>There are a couple of other fields that I’ve ended up working on just
+because they were easy to do.</p>
+<ul>
+<li><p>Clever’s field “TCHRouteVariantDescription” – this is what
+operators see. I set this to the same as “BusTimePublic
+RouteDescription”</p></li>
+<li><p>Clever’s field “DestinationSign”. This is set from the Hastus
+import into CleverWorks to be the vehicle display text, but for some
+reason the import process doesn’t remove the repeated route numbers (so
+this text looks like “88 DOWNTOWN BERKELEY 88 VIA MARKET STREET 88
+SACRAMENTO STREET”). It was easy so I removed those numbers.</p></li>
+</ul>
+<h1 id="cleverworks-process">CleverWorks process</h1>
+<p>There’s a user interface in the CleverWorks system that allows
+modification of these fields, which I won’t be going into.</p>
+<p>Editing the route attribute and audio information in a more efficient
+way begins with exporting the Route Attributes and Route Audio files.
+The resulting files are “MA_Route_Audio_AC TRANSIT_2022-06-27T12.13.csv”
+and “MA_Route_Attribute_AC TRANSIT_2022-06-27T12.14.csv” (with changed
+date/time parts).</p>
+<p>These are a comma-separated values files. If one is careful to make
+sure Excel imports all the columns as “Text” format and not “General”
+(using the “Text Import Wizard”), one can edit them in Excel, save
+changes, and the re-upload it into CleverWorks.</p>
+<p>This is almost certainly the best way to do this without writing any
+code. Route audio and destination audio isn’t as difficult as stop
+audio; there’s a lot less of it and copying and pasting it from previous
+variants is usually okay. If it’s an audio file that doesn’t exist yet,
+it should be clear.</p>
+<p>But the way I chose to do it was to generate the full audio, each
+time, from entries in the FileMaker database.</p>
+<h1 id="data-used">Data used</h1>
+<h2 id="filemaker-lines-table">FileMaker ”Lines” table</h2>
+<p>There are several fields in this table referring specifically to
+announcements.</p>
+<p>The “annu_sign_text” field is used to override the line number if the
+line number doesn’t match the audio file. For example, if there were an
+audio recording called “N_L” that actually spoke the letters “NL”, one
+would enter N_L into the annu_sign_text field.</p>
+<p>The “annu_fare” field is either Local or Transbay and says whether
+this bus line should have the local fare or the Transbay fare
+information spoken after the destination. If it is Transbay and the
+“NoLocalsOnTransbay” box isn’t checked, then it will have both sets of
+fare information spoken.</p>
+<h2 id="filemaker-annu-table">FileMaker “annu” table</h2>
+<p>There “annu” table is used to associate the text on the sign (the
+field “annu_sign_text”) with the audio file in CleverWorks that
+represents that text (annu_audios).</p>
+<p>The same audio file can be used for two different pieces of text, so
+“Glen Ave.” and “Glenn Ave.” use the same audio file.</p>
+<p>In some cases, a single piece of sign text is represented by multiple
+audio files, so these are included, in comma-separated value format, in
+the annu_audios field.</p>
+<h2 id="output-from-avl2patdest">Output from avl2patdest</h2>
+<p>The program reads the output files from avl2patdest
+(pattern-destinations and direction-destinations). In the past few years
+I’ve manually renamed those files with the signup name after I was done
+with them, and this program expects that, so actium.pl routeannu -s w22
+will expect to see files named pattern-destinations-w22.txt and
+direction-destinations-w22.txt.\</p>
+<h1 id="running-the-program">Running the program</h1>
+<p>Running “actium.pl routeannu -s w22” (or whatever the signup is) will
+read the latest audio and attribute export files the “cleverworks”
+folder in the signup folder, and create new files in the same format,
+suitable for importing into Cleverworks, calledr
+oute_attribute_import.csv and route_audio_import.csv.</p>
+<p>If during the run, the computer program finds headsign text or a
+route number that does not have an equivalent audio file entry (that is,
+there’s no entry in the annu table for it), it will leave the value “***
+NO AUDIO ***” in the routeaudio_import.csv file. One should open up the
+routeaudio_import.csv file and look for values of “*** NO VALUE ***”,
+and then fix the values in the FileMaker database associated with the
+sign text by adding a new audio file entry corresponding to that sign
+text.</p>
+<p>Once the program has ben re-run and generated no “*** NO VALUE ***”
+entries, the file is done, and can be imported into CleverWorks. You
+have to import the files in the Import Attributes screen under the
+“Import” tab, and then and then accept all the changes in “Attribute
+Updates”, also under the “Import” tab.</p>
+<h1 id="adding-audio-files">Adding audio files</h1>
+<p>If a piece of text has no audio file in the “annu” table, the easiest
+thing to do is just to add a new entry, and just put the text in twice.
+When the file is uploaded into CleverWorks, assuming there’s no existing
+entry in the audio inventory by that name, it will create a new entry.
+The request can then be sent to Clever Devices to have their audio
+talent make a recording of it. (Sometimes I’ve sent a recording of my
+own voice saying the words to the talent, just to clarify any ambiguous
+spellings.)</p>
+<p>There are a lot of audio files in the CleverWorks inventory, but I
+could only add those that were actively associated with a stop or route
+to the “annu” table in FileMaker. There may already be an audio
+recording that says the same thing as your new text. You can search the
+existing inventory to see if any file names seem to match.</p>
+<p>One of the more irritating things about CleverWorks is its treatment
+of audio file names. Inside the system, audio file names can have either
+spaces or underscores, but both are shown as spaces in the CleverWorks
+user interface. The only way to find out how to actually specify an
+existing audio file is to associate it with a stop or route in the UI,
+export that attribute file, and see what the result was in the
+downloaded attribute file. Then that text can be added in the
+annu_stop_audios field.</p>
+<h1 id="incomplete-projects">Incomplete projects</h1>
+<p>There are a couple of fields that I am not touching with my programs,
+but I’m not 100% sure are being handled by other people working in
+CleverWorks. These are “FareBoxFareSetID” in the route attributes file
+(I believe 0 sets the value to local fares, and 1 to Transbay fares, but
+I’m not sure how it should deal with locals-OK transbay lines like F and
+NL). The other is “DestinationSignCode” which should come out of Hastus
+but may not be.</p>
+<h1 id="future">Future</h1>
+<p>Route audio and attribute information is less error prone than stop
+data, and it’s not unreasonable to consider doing this manually. Still,
+it would be good to keep the automatic processing complete.</p>
+</body>
+</html>

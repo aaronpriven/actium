@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Bus Stop Naming and Announcing Protocols</title>
+  <style>
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Bus Stop Naming and Announcing Protocols</h1>
+</header>
+<p>The naming of stops is a difficult matter. Because stop names are
+used in several different contexts (in lists of a bus line’s stops, in
+trip plans, in on-board announcements, in service disruption notices,
+and more), the names must be presented in different ways. At the same
+time, these different presentations must still be recognizable as the
+same stop across these contexts.</p>
+<p>So, there are two separate but related tasks: <em>choosing the best
+name</em> for a stop, and <em>presenting that name</em> in various
+circumstances.</p>
+<h1 id="principles-of-naming">Principles of naming</h1>
+<ul>
+<li><p>Stop names used for the public should be names that members of
+the public will understand. The primary responsibility in creating them
+is to help passengers use the transit system.</p></li>
+<li><p>The name of a stop does not have to <em>uniquely</em> identify a
+stop. A stop name describes a small group of stops that are close to
+each other -- usually within sight – where no single bus trip stops at
+more than one of them, and where passengers can use signs to find the
+one they need. So, there are typically two stops on either side of a
+street intersection, both of which have the same name. In a transit
+center, typically all the stops will have the same name, since they are
+within sight of each other. A stop name <em>is</em> supposed to uniquely
+identify the area where a stop is located.</p></li>
+</ul>
+<h1 id="stop-name-components">Stop name components</h1>
+<p>A stop name should be made from three different components, which,
+due to the varying needs of different presentations, should be stored
+separately.</p>
+<h2 id="on">On</h2>
+<p>This is usually the street on which the bus operates. When a stop is
+located within a transit center or on the grounds of an institution, the
+<strong>on</strong> is usually that name instead: “Eastmont Transit
+Center,” “Bay Fair BART,” “California School for the Deaf,” “Juan Crespi
+Middle School.”</p>
+<h2 id="at">At </h2>
+<p>This is usually the cross-street at which the bus stops, but the
+concept is a little broader than that. The <strong>at</strong> is what
+narrows down the larger group of stops described by the
+<strong>on</strong> into the smaller set of stops within sight of each
+other. So, for example, there are many stops <strong>on</strong> Main
+St., but only one or two <strong>at</strong> 1st Ave.</p>
+<p>For some locations, such as transit centers, the name of the location
+fully describes the stop location, so no <strong>at</strong> is
+necessary.</p>
+<p>A street address number is a kind of <strong>at</strong>, but is
+presented differently.</p>
+<h2 id="additional-text">Additional text</h2>
+<p>The additional text is wording used to clarify the location of the
+stop for the public.</p>
+<p>Three categories of additional text are common:</p>
+<p><strong>Critical Landmark.</strong> In some cases, a stop is at a
+street intersection, but a nearby landmark is so prominent that it
+outweighs that intersection in importance. In these rare cases, the
+landmark name should be added to the stop name. These might include
+train stations, transit centers, major hospitals, middle and high
+schools, or universities. Including landmarks in the names should be the
+exception, not the rule. Elementary schools, businesses, local shopping
+centers, building names, government buildings with few public services,
+places of worship, service organizations, and apartment complexes should
+not be included. These critical landmarks should <em>describe the
+location</em> of the stop, not merely be close to the stop.</p>
+<p><strong>Additional At.</strong> Sometimes, it is best to include the
+name of another nearby cross-street in the name, when the actual closest
+cross-street is minor and the other nearby cross-street is very
+prominent. An example would be where a major arterial road changes into
+a minor street at the intersection, or where a small court is closer to
+the stop than a major roadway. However, only when the additional street
+name far outweighs in importance the primary street name should it be
+included.</p>
+<p><strong>Distinguishing Text.</strong> Occasionally it is necessary to
+distinguish a stop from another stop in another way – one that is not so
+close by that it is within sight of the first. The usual example is when
+curvy streets intersect twice, and so a clarification such as “north
+intersection” or “south intersection” must be added to distinguish the
+stops. (For this purpose, “intersection” rather than “junction” is
+preferable.)</p>
+<p>It is difficult to imagine a situation where it would be beneficial
+to use more than one piece of additional text. If this odd situation
+should in fact occur, the separate pieces should be stored separated by
+semicolons (“Short St.; North Berkeley BART”).</p>
+<h1 id="choosing-a-stop-name">Choosing a stop name</h1>
+<ul>
+<li><p>The two most important factors when choosing a name for a stop
+are <em>permanence</em> and <em>prominence</em>. Stop names should not
+need to be changed often, nor should they refer to things that are not
+obvious to a potential passenger. However, sometimes these factors are
+in conflict.</p></li>
+<li><p>The paths people take as they travel – streets, trails and
+pathways – are the primary way people navigate, and therefore their
+names are the best way of indicating stops. They also have names that
+rarely change, and streets are almost always prominently signed. Thus,
+most bus stops should be named for the street on which they travel and
+the closest cross-street. Even if a stop is a few hundred feet from the
+nearest intersection, as long as it is the closest stop to that
+intersection, the cross-street is usually the best name.</p></li>
+<li><p>Street suffixes (“Avenue,” “Street,” “Boulevard,” etc.) should
+always be included in some presentations (such as written stop lists).
+In others, where brevity is crucial, it may be reasonable to omit the
+most common ones. However, suffixes are often important to disambiguate
+similarly named streets, and any removals must be carefully chosen to
+make sure that no ambiguities result. It is preferable to include them
+all, rather than to drop them by default and only put back ones that
+have been recognized as resolving ambiguities.</p></li>
+<li><p>Only where there is no cross-street, or for some other reason
+using it is not desirable, then local landmarks should be considered for
+the “at” component of the stop name. In these rare cases where there is
+no cross-street, nearby landmarks of lesser importance can be considered
+for the name, even when those landmarks aren’t as important as the
+“Critical Landmarks” referred to above. For example, one would never
+need to add an ordinary business name to a name with a good cross-street
+(never “<del>Broadway at 14th St. (Walgreens)</del>”), but for a stop
+mid-block, the nearby business may be the best name available (“81st
+Ave. at U-Haul”).</p></li>
+<li><p>Parks, government buildings or facilities, and to a lesser extent
+hospitals, schools, and private institutions such as places of worship
+and service organizations are long-lasting and prominent, so these can
+be good names. Note that the name of the institution itself is
+sufficient – it is better to use “Fire Department” instead of “<del>Fire
+Department driveway</del>,” “Main Library” instead of “<del>Main Library
+entrance</del>.”</p></li>
+<li><p>Compared to these kinds of landmarks, businesses move more often
+and have names that change more often. Using names of businesses, even
+prominent ones like Walmart or Target, should be avoided if other
+alternatives are available. The names of business parks, shopping
+centers, or apartment complexes, although often not as prominent as
+business names, are typically longer-lasting, and should be used
+instead.</p></li>
+<li><p>Address numbers are not as meaningful as other ways of naming
+stops, and should be used only as a last resort. People don’t typically
+navigate by address numbers until they are very close to their final
+destination.</p></li>
+<li><p>Transit agencies, where they do not own the facility being named,
+honor the names used by those who do. Cities and (in unincorporated
+areas) counties own the streets and parks and decide on their names;
+train stations are named by those who own and operate them; other
+institutions also decide on their own names. We might justifiably
+disagree with the name “Warm Springs/South Fremont BART” for several
+reasons, but it is not our place to say.</p></li>
+</ul>
+<h2 id="stop-name-style">Stop name style</h2>
+<ul>
+<li><p>Stop names should be in English, but when appropriate, any
+Unicode character should be eligible for inclusion in a stop
+name.</p></li>
+<li><p>The importance of directional prefixes (“West Grand,” “East 14th
+St.”) varies locally. In some cities they distinguish completely
+different streets and must be included. In others, they merely
+distinguish address numbers from each other, and can be omitted. This
+varies by city and even by location within a city, so omissions should
+be chosen carefully.</p></li>
+<li><p>If a cross-street changes names near the stop (e.g., one side of
+Broadway is Pleasant Valley Ave., the other side is 51st St.), the
+cross-street name used should be the one on the side of the street where
+the bus travels. (The cross-street on the other side may be added as
+additional text.)</p></li>
+<li><p>“Opposite” should not be used in stop names.</p></li>
+<li><p>Address numbers, where absolutely necessary, should be taken from
+the side of the street the bus is traveling, unless there is no
+development on that side of the street. When address numbers are used,
+they should always be numbers on signage visible to pedestrians near the
+stop. (It should be noted that the presence of midblock stops that can
+only be described by address numbers is often a sign that the stops are
+closer together than the stop spacing standards specify. The best way to
+deal with a hard-to-describe stop within 600 feet of the stops on either
+side of it may be to discontinue its use.)</p></li>
+<li><p>Where appropriate, freeways shall be given with just their
+highway designation. AP Style uses “U.S. 101,” “I-580,” and for state
+highways, “Highway 24.”</p></li>
+</ul>
+<ul>
+<li><p>The word “station” shall not be used in BART stations, Amtrak
+stations, etc. The name of the service is sufficient: “Bay Fair BART,”
+“Fremont Amtrak and ACE,” “Hillsdale Caltrain.”</p></li>
+<li><p>Generic terms (“walkway,” “railroad crossing” should be avoided
+where possible.</p></li>
+<li><p>We will use “Uptown Transit Center” as the <strong>on</strong>
+for all the stops there. Names with “Jr.” or a similar suffix will be
+spelled without commas: “Martin Luther King Jr. Way”.</p></li>
+<li><p>“Lakeshore Avenue” and &quot;Walavista Avenue&quot; in Oakland will be
+spelled without an internal space (not “Lake Shore”). &quot;Red Line Avenue&quot;
+in Alameda will use an internal space.</p></li>
+<li><p>If transit agencies share a physical stop location, it is
+preferred that the stop name be the same in the stop inventories of all
+agencies sharing that stop. This helps with regional information
+dissemination.</p></li>
+<li><p>Non-revenue or non-public stops should not be made
+public.</p></li>
+</ul>
+<h2 id="further-clarifying-information">Further clarifying
+information</h2>
+<p>Since several stops can have the same name, it is frequently
+necessary to use other information in distinguishing the stops. None of
+these should be part of the name, but some should often be presented
+along with the name.</p>
+<p><strong>Corner.</strong> Stops on street corners can be described as
+being on the “northwest corner,” “southwest corner,” and so forth, of
+the intersection.</p>
+<p><strong>Cardinal direction.</strong> Buses serving a stop are going
+north, south, east, or west (or some intermediate direction like
+northeast).</p>
+<p><strong>City.</strong> An exception to the rule that stops with the
+same name should be within sight of each other is when stops in
+different cities are at intersections with identically named streets or
+institutions (e.g., Bret Harte Middle School). In circumstances where
+ambiguity is possible, the city should be presented along with the stop
+name.</p>
+<p><strong>Site (near side / far side).</strong> Although useful inside
+the transit agency, this information is jargon and should never be used
+for the public. Its main use in public information is that if corner and
+site are both provided, the cardinal direction can be determined.</p>
+<p><strong>Bay number.</strong> This distinguishes stops within transit
+centers. Unless the transit center is very big and stops are very far
+away, for the public it is usually better to not use bay numbers, and
+instead rely on the lines that serve the stop to distinguish one stop
+from another. Note that an important exception is the Salesforce Transit
+Center, which is indeed very big and the stops are not all within sight
+of each other, even on the same level.</p>
+<p><strong>Stop Code.</strong> A public identifying number for the stop
+within the transit system. (This field is named for the GTFS term “stop
+code,” which is different than an internal-to-agencies-only “stop
+ID”).</p>
+<p><strong>Clarification.</strong> Occasionally some additional comment
+is helpful to distinguish a stop from nearby stops or make it easier to
+find, e.g., “on traffic island” or “underneath overpass.” These should
+not be part of the stop name, but might be presented in some
+circumstances, e.g., a trip plan. These are usually not necessary,
+however, since for the transit agency, the geolocation should be
+sufficient to find the stop.</p>
+<h1 id="presentation">Presentation</h1>
+<p>Each of these components should be stored as separate database fields
+and made available to data consumers for reassembly in the way that is
+best for each application. This could be done by adding fields to the
+GTFS stops.txt file, or by making the names available separately.
+However, since most data applications will not be customized to use this
+detail, it is still important to provide good defaults for these
+applications.</p>
+<h2 id="general-presentation-principles">General presentation
+principles</h2>
+<ul>
+<li><p>Text should follow conventional rules of English spelling,
+grammar, and writing style, including punctuation. Technical limitations
+may require in some cases abbreviating information, but this should be a
+last resort and should be worked around as much as possible. Rather than
+thinking of stop names as <em>data,</em> they should be thought of as
+<em>writing,</em> and need to be written properly, just as with any
+other passenger communication.</p></li>
+<li><p>Names of streets and other components are proper nouns and should
+be appropriately capitalized, with the first letters of important words
+in capitals. Mixed case is easier to read than all-capitals text. Names
+that use irregular capitalizations in ordinary writing (e.g.,
+“MacArthur”) should use the same capitalizations in presentations of
+stop names. Where generic labels must be used in stop names, they should
+be in lower case (“pathway” or “entrance”).</p></li>
+<li><p>In writing, numbers shall be given as digits: “1st St.”, “135th
+Ave.” Ordinal suffixes (“st”, “nd”, “th”) should not be printed in
+superscript.</p></li>
+<li><p>In writing, the following abbreviations should be used for street
+endings: “Ave.” for Avenue, “Blvd.” for Boulevard, “Cir.” for Circle,
+“Ct.” for Court, “Dr.” for Drive, “Pl.” for Place, “St.” for Street, and
+“Terr.” for Terrace. Other street names should be spelled out.</p></li>
+<li><p>Other abbreviations should be used in specific circumstances:
+&quot;Mt.&quot; for &quot;Mount&quot; at the beginning of &quot;Mt. Eden&quot; or other similar place
+names, and &quot;Jr.&quot; when used as part of someone&#39;s name.</p></li>
+</ul>
+<h2 id="gtfs-stop_name-and-stop_desc">GTFS: stop_name and stop_desc</h2>
+<p>GTFS provides two fields designed to provide human-readable stop
+information.</p>
+<blockquote>
+<p>[Required]The <strong>stop_name</strong> field contains the name of a
+stop, station, or station entrance. Please use a name that people will
+understand in the local and tourist vernacular.</p>
+<p>[Optional] The <strong>stop_desc</strong> field contains a
+description of a stop. Please provide useful, quality information. Do
+not simply duplicate the name of the stop.</p>
+</blockquote>
+<p>Components should be assembled to form these two fields. The
+stop_name should be assembled as follows:</p>
+<blockquote>
+<p>&lt;On&gt; at &lt;At&gt; (&lt;Additional Text&gt;)</p>
+</blockquote>
+<p>Except that a stop with a street address number should be assembled
+this way:</p>
+<blockquote>
+<p>&lt;Street Address Number&gt; &lt;On&gt; (&lt;Additional
+Text&gt;)</p>
+</blockquote>
+<p>The stop_desc should be assembled as follows:</p>
+<blockquote>
+<p>&lt;Corner&gt; corner, going &lt;cardinal direction&gt;. Bay &lt;Bay
+number&gt;. &lt;Clarification&gt;.</p>
+</blockquote>
+<p>No stops should have all these fields present, and the spaces or
+punctuation around fields that aren’t actually present should be
+omitted. Directions should be spelled out as words (“northeast,”
+“south”) and not abbreviated.</p>
+<p>The following abbreviations should be used: “Ave.” for Avenue,
+“Blvd.” for Boulevard, “Cir.” for Circle, “Ct.” for Court, “Dr.” for
+Drive, “Pl.” for Place, “St.” for Street, and “Terr.” for Terrace.</p>
+<h2 id="hastus-name">Hastus name</h2>
+<p>The Hastus stop name should match the GTFS stop_name, except:</p>
+<ul>
+<li><p>Due to the limited number of characters in the Hastus stop name,
+the colon should continue to be used to separate the On and At
+components.</p></li>
+<li><p>When field length or character set limitations in Hastus prevent
+the correct stop name from being used, a close approximation should be
+created and used instead.</p></li>
+</ul>
+<h2 id="audible-on-board-announcements">Audible on-board
+announcements</h2>
+<p>Some announcements on board buses are required by the Americans with
+Disabilities Act, but announcements are helpful for all passengers and
+the ADA requirements should be viewed as a minimum, not a maximum.
+Announcing every stop is helpful for all passengers. At the same time,
+too much noise on board buses gives an unpleasant riding experience.
+Thus, announcements should not have any information beyond that needed
+to identify the stop. Every additional piece of information, added in an
+attempt to be helpful, adds to the cacophony on board an inherently
+noisy vehicle.</p>
+<ul>
+<li><p>The announcement system does not need to announce the first stop
+on a line, unless passengers are expected to ride through the layover,
+as on loops.</p></li>
+<li><p>The announcement system should not announce stops that should not
+be used for alighting (such as stops heading toward San Francisco on
+Transbay lines that do not accept local passengers).</p></li>
+<li><p>If the name of a stop is an address, it should be read as one:
+“500 International Blvd.”, not “International Blvd. at 500” or the
+like.</p></li>
+<li><p>Otherwise, for the second and subsequent stops, it should
+announce the <strong>on</strong> only if it changes from the previous
+location (even if that location was the first stop and not announced).
+If the street changes, it should first announce the <strong>on</strong>
+followed by the word “at.”</p></li>
+<li><p>For all stops that are announced, the system should announce the
+<strong>at</strong>, and where present, the <strong>additional
+text</strong>. Street suffixes should be announced wherever possible,
+and any words that are typically abbreviated in print should be read out
+in full. Say “Avenue” and not “Ave,” for example.</p></li>
+<li><p>It should be “Cal State” and “Cal State East Bay” (not spelled
+out C-S-U).</p></li>
+<li><p>Freeway numbers should be rarely used, but when used, should be
+said as follows: “Interstate Eighty”, “Interstate Two Thirty-Eight”,
+“Interstate Five Eighty”, “Interstate Eight Eighty, ” etc. “U.S. One Oh
+One.” For California state highways: “Highway Thirteen”, “Highway
+Twenty-Four,” “Highway Two Thirty-Seven,” etc. (Highway numbers for
+non-freeways should not be used, and street names such as “San Pablo
+Ave.” or “Mission Blvd.” used instead.)</p></li>
+<li><p>Although the “hundred” in highway numbers should not be
+pronounced, it should be pronounced in numbered avenues: “One Hundred
+Fourth Avenue.”</p></li>
+<li><p>“End of line” should be announced after the stop at the end of
+the line, if all passengers are expected to alight.</p></li>
+</ul>
+<h2 id="lists-of-a-bus-lines-stops">Lists of a bus line’s stops</h2>
+<p>Each stop in a the list of stops of a bus line should be presented in
+the same way as the GTFS stop_name, above. In addition, the stop_code
+should be presented alongside the name, and the city should also be
+listed, either along with each name or as a subheading. So either:</p>
+<blockquote>
+<p>Oakland</p>
+<p>Martin Luther King Jr. Way at 61st St. (55127)</p>
+<p>Berkeley</p>
+<p>Adeline St. at Alcatraz Ave. (52252)<br />
+Martin Luther King Jr. Way at Prince St. (Ashby BART) (52177)</p>
+</blockquote>
+<p>Or:</p>
+<blockquote>
+<p>Martin Luther King Jr. Way at 61st St., Oakland (55127)<br />
+Adeline St. at Alcatraz Ave., Berkeley (52252)<br />
+Martin Luther King Jr. Way at Prince St. (Ashby BART), Berkeley
+(52177)</p>
+</blockquote>
+<p>Depending on the presentation, the stop code could also be separated
+from the name in a separate column, or using other punctuation than
+parentheses.</p>
+<h2 id="sign-location">Sign location</h2>
+<p>New schedule signs or flags have locations printed on them, partially
+for customer use, but mainly to make it possible for the maintenance
+crew to install them. Because of this, they should include the site
+information not usually included in public information. The general
+pattern is “&lt;On&gt; at &lt;At&gt; (&lt;Additional Text&gt;),
+&lt;City&gt;, &lt;Site&gt;, &lt;Cardinal Direction&gt;. (Stop
+&lt;stop_code&gt;)”</p>
+<p>So:</p>
+<blockquote>
+<p>Fremont Blvd. at Thornton Ave., Fremont, near side, going east. (Stop
+52523)</p>
+</blockquote>
+<h2 id="written-materials">Written materials</h2>
+<p>Textual descriptions of stops should generally include the
+<strong>on, at,</strong> and <strong>additional text.</strong> However,
+these require presentation flexibility. Sometimes, it will be best to
+combine multiple stops on the same street into a single description
+(“Stops on Broadway at 38th St., 40th St. and 42nd St.”). Since text
+descriptions are usually ephemeral, it can be better to use the name of
+local businesses as the most prominent landmark (“Broadway at 14th St.,
+in front of Walgreens”) rather than the cardinal direction or other ways
+of clarifying where the stop is. In any event, clarity and
+comprehensibility must be our aim: our deep and singular aim.</p>
+</body>
+</html>

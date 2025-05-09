@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>The Actium Maps Repository: Extended Usage and Technical Detail</title>
+  <style>
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">The Actium Maps Repository:<br />
+Extended Usage and Technical Detail</h1>
+<p class="subtitle">Aaron Priven, February 2012</p>
+</header>
+<p>This document contains more detail about the Actium Maps Repository
+than can be found in the Quick Start guide. It is useful for
+understanding how the repository works and taking advantage of other
+details of the mr_import and mr_copy programs.</p>
+<h1 id="repository-folder-structure-and-folder-names">Repository folder
+structure and folder names</h1>
+<p>The repository has a very simple folder structure. There is a base
+folder of the repository, which is “/Volumes/Bireme/Maps/Repository” by
+default, and one level of subsidiary folders within that.</p>
+<p>There are two types of subsidiary folders within the repository.
+Folders that do not start with an underscore (_) are the storage
+folders, and contain the main copies of the maps. Folders that do start
+with an underscore are special, and store copies of the maps from the
+other folders.</p>
+<p>The storage folders have names that are one or more descriptors
+separated by underscores. Usually these descriptors are the designations
+of the bus lines shown on the maps. So, for example, the folder covering
+line 7 will be called simply “7”. Folders with maps describing more than
+one line will have the lines separated by underscores: for example,
+“1_1R_801”. Descriptors can consist only of letters or numbers (no
+special characters).</p>
+<p>The descriptors of the storage folders can be any length. If they are
+four characters or fewer, it is assumed they are bus line designations,
+and will be converted to uppercase when imported using the mr_import
+command. Longer names are assumed to be other sorts of names (for
+example, “PosterMap” or “Fremont” for various segments of the system
+map) and are not converted.</p>
+<p>There should be no folders within any of the storage folders or
+special folders.</p>
+<h1 id="repository-file-names">Repository file names</h1>
+<p>The file name of each map in the repository is in a special format,
+with a number of components separated by hyphens (and a file extension,
+separated from the rest of the name by a period). That format is as
+follows:</p>
+<p><em>&lt;descriptor&gt;-&lt;date&gt;-&lt;version&gt;.&lt;extension&gt;</em></p>
+<p>Some files, generally older ones, may have an additional
+component:</p>
+<p><em>&lt;descriptor&gt;=&lt;token&gt;-&lt;date&gt;-&lt;version&gt;.&lt;extension&gt;</em></p>
+<p>The “token” component is separated from the descriptor by an equals
+sign, not a hyphen.</p>
+<h2 id="descriptor">Descriptor</h2>
+<p>The descriptor should be exactly the same as the descriptor of the
+storage folder. It is one or more bus line designations separated by
+underscores, or a longer descriptor for a segment of the system map.
+Examples are “7”, “1_1R_801”, or “PosterMap.” As in folder names,
+segments of the descriptor shorter than five characters are expected to
+be line names and converted to uppercase, while longer names are left
+alone. Descriptors can consist of letters or numbers only, no special
+characters.</p>
+<p>The mr_import program understands that commas may be used instead of
+underscores, but converts them to underscores before copying the
+files.</p>
+<h2 id="token">Token</h2>
+<p>The token is used to distinguish two different maps with the same
+descriptor that will be used simultaneously. An example would be lines M
+or U, which formerly had one map for the East Bay and a second separate
+map for the West Bay. These were given tokens such as “e” or “w”, so in
+total the filenames looked something like “M=e-2004_08-v2.eps”.</p>
+<p>At this writing (Feburary, 2012), these are not currently used, but
+at some future point they may again be useful.</p>
+<h2 id="date">Date</h2>
+<p>The date of a map contains only a numeric year, separated by an
+underscore by a numeric month (which must be two digits). An example
+would be “2012_02” for February 2012. The mr_import program understands
+dates in the form of “feb12”, but converts them to numeric dates before
+copying the files.</p>
+<h2 id="version">Version</h2>
+<p>The version of a map is used to distinguish when a map has been
+revised more than once within a month. Whichever version sorts last
+alphabetically is used. (Numbers sort before letters, so “1” and “2” are
+considered earlier than “v1” and “v2”.)</p>
+<p>(In the past we occasionally used the version component for other
+kinds of differences. For example, for a long time we received two
+different .pdf versions from Eureka – a “web” version formatted to print
+at 8.5 by 11, and a regular version formatted to print at the same size
+as the map in the printed timetables. The “web” version generally used
+version numbers beginning with “wv” while the regular version used
+version numbers beginning with “v”. These are no longer being
+produced.)</p>
+<h2 id="extension">Extension</h2>
+<p>The extension is a standard file extension, such as “.eps” for
+Encapsulated PostScript (EPS) files, or “.pdf” for Portable Document
+Format (PDF) files. While a file with any extension may be placed in an
+archive, the programs assume that .eps files and .pdf files will be
+present.</p>
+<h1 id="files-for-the-web">Files for the Web</h1>
+<p>Both mr_import and mr_copy make copies of the maps intended for the
+web site. Two sorts of changes must be made to the maps for the Web.</p>
+<p>Firstly, the AC Transit web site does not know that the same map is
+used for several different bus lines. It cannot cope with the idea that
+“1_1R_801-…” may be used for all three of the relevant lines. Thus,
+files saved for the web are copied once for each line: the map beginning
+with 1_1R_801 will be copied to 1.pdf, 1R.pdf, and 801.pdf.</p>
+<p>Secondly, the AC Transit web site needs a JPEG version of the map for
+the pan-and-zoom map display. So JPEG files are created, again with one
+copy for each line: 1.jpg, 1R.jpg, and 801.jpg.</p>
+<h1 id="the-mr_import-program">The mr_import program</h1>
+<p>mr_import takes one or more folders where maps may exist. First, it
+checks the names of each of those files, and if it can, puts it into the
+proper name style for the repository. Second, it copies the files to the
+repository. Third, it creates versions of the PDF files for the web.</p>
+<h3 id="usage">Usage</h3>
+<p>The mr_import program takes files and copies them into the
+repository. You run it by entering the following into the Terminal
+(shell):</p>
+<p>actium.pl mr_import /Name/Of/A/Folder</p>
+<p>or, for more than one folder,</p>
+<p>actium.pl mr_import <em>/Folder1 /Folder2 /AndSoOn</em></p>
+<p>One of the most usual ways is to “cd” to the appropriate folder in
+the Terminal and simply enter (note the period):</p>
+<p>actium.pl mr_import .</p>
+<h3 id="options">Options</h3>
+<p>The mr_import program has several options that can be used on the
+command line. These should be placed after mr_import:</p>
+<p>actium.pl mr_import –no-web _new</p>
+<p>actium.pl mr_import –repository /Users/myname/MyRepository _new</p>
+<p>A full list of options can be seen by typing</p>
+<p>actium.pl mr_import -help</p>
+<p>However, in practice only a few of them are actually useful.</p>
+<h3 id="move">-move</h3>
+<p>This option moves, rather than copies, the files into the repository.
+They will be removed from the specified folder once they are copied
+successfully.</p>
+<p>This option is on by default. To copy instead of moving, so the maps
+will remain in the folder you specify, enter “-no-move” on the command
+line. “move” can be abbreviated as “mv”</p>
+<h3 id="repository">-repository</h3>
+<p>The repository is currently located at
+“/Volume/Bireme/Maps/Repository”. To use another repository, specify its
+full path here.</p>
+<h3 id="web">-web</h3>
+<p>This option will create a folder called “web” underneath the folder
+you specify, and create copies of the maps intended for the web in them.
+(See “Files for the web,” above.)</p>
+<p>This option is on by default. To suppress the creation of web files,
+enter “‑no‑web” on the command line.</p>
+<h3 id="webfolder">-webfolder</h3>
+<p>An alternative folder where web files will be created, instead of
+“web” under the specified folder. This will be the same for all files
+converted (it doesn’t just replace the folder “web”within each folder
+with a new name, it specifies a single folder where all converted files
+will be located). “webfolder” can be abbreviated “wf”.</p>
+<h3 id="quiet--verbose-and-progress">-quiet, -verbose, and
+–progress</h3>
+<p>These three options tell the program how much detail to display on
+screen.</p>
+<p>“-quiet” eliminates all display except text that describes why the
+program quit unexpectedly.</p>
+<p>“-verbose” displays on the screen a message indicating the names of
+each map copied or rasterized.</p>
+<p>“-progress” produces a running indication of which lines’ maps are
+being processed, when “‑verbose” is not in effect. This is on by
+default; use “-no-progress” to turn it off.</p>
+<h1 id="the-mr_copy-program">The mr_copy program</h1>
+<p>Because the repository consists of regular files in the file system,
+no special technique is necessary to view them: simply open the files as
+with any file. However, a program called “mr_copy” is provided to help
+gather all the latest maps from the system together.</p>
+<h2 id="usage-1">Usage</h2>
+<p>mr_copy goes through the repository and keeps track of the very
+latest map of each set of lines. It then takes each map of the latest
+date (that is, all the versions with the same date and version – whether
+EPS, PDF, or something else) and copies them three times to special
+folders in the repository:</p>
+<p>1) to the “_fullnames” folder. In this folder the file will keep its
+full name, including date and version.</p>
+<p>2) to the “_linesnames” folder. In this folder the file will be named
+only by its lines (and token if present). So “1_1R_801-2012_02-v1.eps”
+would become just “1_1R_801.eps”</p>
+<p>3) to the “_web” folder. The PDF version, only, of the latest file
+will be copied to this folder once for each line. (So, for example,
+“1_1R_801-2012_02-v1.pdf” will be copied three times, as “1.pdf”,
+“1R.pdf”, and “801.pdf”.) Also, JPEG versions of each PDF file will be
+created (“rasterized”), also multiple copies for each line (“1.jpg”,
+“1R.jpg”, “801.jpg”).</p>
+<h2 id="active_maps.txt">active_maps.txt</h2>
+<p>mr_copy relies on a file within the repository called
+“active_maps.txt” to know what maps are active. Otherwise, it has no way
+of knowing which lines are currently being operated and which ones are
+purely historical. The active_maps.txt is a simple text file. Each line
+contains the lines (and token, if necessary) of an active map:</p>
+<p>1_1R_801<br />
+7<br />
+11<br />
+12<br />
+M=e<br />
+M=w</p>
+<p>Lines in active_maps.txt do not have to be specified in order.</p>
+<h2 id="usage-2">Usage</h2>
+<p>The mr_copy program takes files from the repository and copies the
+latest ones to the special folders. You run it by entering the following
+into the Terminal (shell):</p>
+<p>actium.pl mr_copy</p>
+<h2 id="options-1">Options</h2>
+<p>The mr_copy program has several options that can be used on the
+command line. These should be placed after mr_import:</p>
+<p>actium.pl mr_copy –no-web</p>
+<p>actium.pl mr_copy –repository /Users/me/MyRepository</p>
+<p>A full list of options can be seen by typing</p>
+<p>actium.pl mr_copy -help</p>
+<p>However, in practice only a few of them are actually useful.</p>
+<h3 id="activemapfile">-activemapfile</h3>
+<p>This allows the user to use a different file than active_maps.txt as
+the list of active maps. The file must, however, still be located in the
+repository folder.</p>
+<h3 id="fullfolder">-fullfolder</h3>
+<p>This allows you to change where copies with the full names are made.
+The default is “_fullnames” in the repository. Use “-fullfolder” to
+specify another location on the file system:</p>
+<p>actium.pl mr_copy –fullfolder<br />
+/Volumes/SHARE$/District Public Share/Apriven/CurrentLineMaps</p>
+<p>“fullfolder” can be abbreviated “ff”.</p>
+<h3 id="fullnames">-fullnames</h3>
+<p>This option will copy the files into the “_fullnames” folder (or
+whatever the ‑fullfolder option specifies). This is on by default. To
+suppress copying of full names files, use “-no-fullnames” on the command
+line.</p>
+<h3 id="linesfolder">-linesfolder</h3>
+<p>This allows you to change where copies with just the line names are
+made. The default is “_linesnames” in the repository. Use “-linesfolder”
+to specify another location on the file system:</p>
+<p>actium.pl mr_copy –linesfolder<br />
+/Volumes/SHARE$/District Public Share/Apriven/LineMapsNoDates</p>
+<p>“linesfolder” can be abbreviated “lf”.</p>
+<h3 id="linesnames">-linesnames</h3>
+<p>This option will copy the files into the “_linesnames” folder (or
+whatever the ‑linesfolder option specifies). This is on by default. To
+suppress copying of lines names files, use “-no-linesnames” on the
+command line.</p>
+<h3 id="repository-1">-repository</h3>
+<p>The repository is currently located at
+“/Volume/Bireme/Maps/Repository”. To use another repository, specify its
+full path here.</p>
+<h3 id="web-1">-web</h3>
+<p>This option will copy the files into the “_web” folder (or whatever
+the –webfolder option specifies), and create the JPEG files. This is on
+by default. To suppress copying and rasterization of web files, use
+“-no-web” on the command line.</p>
+<p>Rasterization takes the longest time so I suspect “-no-web” is the
+most likely option to be used.</p>
+<h3 id="webfolder-1">-webfolder</h3>
+<p>This allows you to change where web files made. The default is “_web”
+in the repository. Use “-webfolder” to specify another location on the
+file system:</p>
+<p>actium.pl mr_copy –webfolder<br />
+/Volumes/SHARE$/District Public Share/Apriven/MapsForWeb</p>
+<h3 id="quiet--verbose-and-progress-1">-quiet, -verbose, and
+–progress</h3>
+<p>These three options tell the program how much detail to display on
+screen.</p>
+<p>“-quiet” eliminates all display except text that describes why the
+program quit unexpectedly.</p>
+<p>“-verbose” displays on the screen a message indicating the names of
+each map copied or rasterized.</p>
+<p>“-progress” produces a running indication of which lines’ maps are
+being processed, when “‑verbose” is not in effect. This is on by
+default; use “-no-progress” to turn it off.</p>
+</body>
+</html>

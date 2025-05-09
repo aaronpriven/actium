@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>2. Technology Systems and Locations</title>
+  <style>
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">2. Technology Systems and Locations</h1>
+</header>
+<p>Over the years I have put together a series of systems that create
+passenger information products. I could not have created the products I
+did without a substantial amount of automation. However, the systems are
+generally out of date, and many of the products themselves are badly in
+need of redesign. It would be possible for people who have knowledge of
+Perl, FileMaker and InDesign/Illustrator scripting to keep these systems
+going while incrementally upgrading them to be modern and robust. But at
+this point, it seems like a bad idea to try to keep this alive rather
+than replace it thoroughly with modern software that&#39;s built in a way
+that&#39;s consistent with other AC Transit systems.</p>
+<p>In short: Nobody thinks these systems are worth saving, even me. I&#39;ll
+write about them to explain what they do and how they work. If someone
+thinks it&#39;s important to keep them alive to make it through the current
+quarter, I hope this will help them do that. But the programs should be
+replaced, or eliminated.</p>
+<h1 id="locations">Locations</h1>
+<p>There are several basic systems that I use to create passenger
+information: the FileMaker database, the perl programs, and
+InDesign/Illustrator scripts, which are located in different places.
+Together, they are loosely called “Actium” (the first three letters are
+“ACT” for AC Transit, and looking at words that began with those
+letters, I picked “Actium,” the name of an ancient battle that led to
+the Roman Empire).</p>
+<h2 id="github">Github</h2>
+<p>There is a Github repository at
+https://github.com/aaronpriven/actium. The perl programs have always
+been there, and as a part of transition I added:</p>
+<ul>
+<li><p>a “clone” of the FileMaker database (a copy with the data
+removed, but with the database structure, scripts, and layouts
+intact)</p></li>
+<li><p>an export of the full data in CSV form</p></li>
+<li><p>text versions of all the InDesign/Illustrator scripts</p></li>
+</ul>
+<h2 id="mac-mini-server">Mac Mini Server</h2>
+<p>Except for the InDesign / Illustrator scripts, most of the programs
+are run on a Mac Mini Server (Mid-2011 model). It is running macOS High
+Sierra (10.13). This computer cannot run a newer OS than this, but it&#39;s
+kept around mainly because FIleMaker 14 is a 32-bit program and will not
+run on recent versions of macOS.</p>
+<h2 id="actium.ini">.actium.ini</h2>
+<p>The perl programs read a file called .actium.ini in the user’s home
+folder, which is a regular Windows-style .ini configuration file. A copy
+of mine is found in the transition folder (with the name
+“dot-actium.ini” since I figured actually putting the dot in front –
+typical for settings file in Unix systems – would be counterproductive).
+The most important one to modify is the “base” under “Signup”, which
+indicates where the signup folders are to be found. On my system the
+actual folder is
+“~/Library/CloudStorage/OneDrive-SharedLibraries-Alameda-ContraCostaTransit/PubInfSys
+- Documents/Actium/signups” which is a mouthful. I usually make a
+symlink ~/si pointing to it, and a symlink ~/p pointing to
+“~/Library/CloudStorage/OneDrive-SharedLibraries-Alameda-ContraCostaTransit/PubInfSys
+- Documents/”</p>
+<h2 id="onedrive-sharepoint">OneDrive / Sharepoint</h2>
+<p>Many of the files are located in the “<a href="https://actrans.sharepoint.com/:f:/r/sites/PubInfSys/Shared%20Documents/Actium?csf=1&amp;web=1&amp;e=cfh5AW">Actium</a>”
+folder in the “PubInfSys” documents library on OneDrive / Sharepoint.
+This includes the “signup folder” with the schedules for each signup
+(booking), and most of the other files. For historical reasons (because
+for a while they were stored separately), some of the templates for the
+artwork is located in other folders of the “PubInfSys” documents
+library.</p>
+<p>Here are some of the more important locations in the “PubInfSys –
+Documents” library.</p>
+<h3 id="signup-folders">Signup folders</h3>
+<p>/Actium/signups is the folder that contains data relating to each
+signup (schedules, stop lists, etc.) They’re given names like “su22” for
+Summer 2022, “f22” for Fall 2022, etc. There are separate folders for
+Dumbarton service and Flex service. (A p at the end, like f22p, means
+it’s preliminary data.) At this point I’ve kept a number of old signups
+in there (such as “sp20”, the last pre-pandemic service).</p>
+<p>The contents have changed over time so I’ll describe the current
+signup, f22.</p>
+<p>/Actium/signups/f22/cleverworks – This is where the program that
+creates the CleverWorks import files looks for its data</p>
+<p>/Actium/signups/f22/compare – This is where stop and schedule
+comparison reports are found, as well as written pieces describing those
+differences</p>
+<p>/Actium/signups/f22/hasi – Some of the programs were written to use
+the Hastus Standard AVL Export as their input. The program that imports
+the new signups creates these from the Enterprise Database import so
+that those programs can use them.</p>
+<p>/Actium/signups/f22/idpoints2016 – These are InDesign Tagged Text
+files that contain the schedules for each pole schedule or shelter
+insert. They are created by “actium.pl makepoints”</p>
+<p>/Actium/signups/f22/p – These are files that contain just the
+schedule data for each stop, without any of the formatting used by
+InDesign. They are created by “actium.pl sked2points” and used by
+“actium.pl makepoints”</p>
+<p>/Actium/signups/f22/pointlist – These are lists of the point
+schedules (pole schedules and shelter inserts). Each run of “actium.pl
+makepoints” makes a file called pl.&lt;something&gt;.txt, which then is
+used by the Applescript makepoints.app program to make the actual sign
+artwork in InDesign. There are also checklist spreadsheets for each run
+and instruction spreadsheets designed to be imported into WorkLog.</p>
+<p>/Actium/signups/f22/s – Contains the actual schedule data. The
+schedule files are stored as Excel files, although for speed some of the
+programs read a version of the objects saved in a Perl internal format
+(the file is skeds.storable). The initial schedules are created by
+“actium.pl xhea2skeds” and are stored in /Actium/signups/f22/s/received.
+Then I make a set of modified versions in
+/Actium/signups/f22/s/exceptions (where the import routine didn’t get it
+quite right, or for other reasons) and these are assembled into the
+final set stored in /Actium/signups/f22/s/exceptions. Within each of
+those folders, the main “skeds” folder contains the actual data that’s
+used for other programs (files like 19_EB_67H.xlsx). There are also
+schedule data that’s exported in other versions, most usefully “place”,
+which has times only for timepoints, not for all stops.</p>
+<p>/Actium/signups/f22/signart – this is where the Applescript
+makepoints.app program stores the resulting pole schedule and shelter
+insert artwork.</p>
+<p>/Actium/signups/f22/slists – This contains the lists of stops, by
+pattern and then by “line” (really, by direction, e.g., all northbound
+stops or eastbound stops combined). These are made by “actium.pl
+avl2stoplists”.</p>
+<p>/Actium/signups/f22/timetables – This contains the information used
+for the printable PDF timetables. The folder pub-idtags contains the
+InDesign Tagged Text files used by make_timetable.scpt. That script
+saves the finished public timetables in
+/Actium/signups/f22/timetables/tableart, although as part of exporting
+them I move them to /Actium/tableart instead.</p>
+<p>/Actium/signups/f22/xhea – This is where the Enterprise Database
+Export files go. The tab-delimited results from “actium.pl newsignup”
+are in /Actium/signups/f22/xhea/tab</p>
+<h3 id="other-folders-in-actium">Other folders in /Actium</h3>
+<p>/Actium/Applications – the AppleScript programs are located here.</p>
+<p>/Actium/database – This contains older database files (the real one
+is located on the Mac Mini server) and also some experiments at
+replacing it with something else.</p>
+<p>/Actium/documentation – Various documentation, mostly old and out of
+date. As I go through this I’ll copy over the stuff that still seems
+relevant to the folder where this is located.</p>
+<p>/Actium/flagart/Decals/export – location of the exported flag decal
+artwork (this folder used for placing into flags in InDesign, when
+preparing whole flags for printing)</p>
+<p>/Actium/flagart/Decals/export_bleed – location of the exported flag
+decal artwork (this folder used for sending to the print shop and making
+decals to be placed on flags)</p>
+<p>/Actium/signart2016/maps – Contains the maps that are placed into the
+pole schedules and shelter inserts. The “makepoints” program looks for
+the exported PDF maps in /Actium/signart2016/maps/export when making
+pole schedules.</p>
+<p>/Actium/subsidiary – This contains artwork that is placed inside the
+point schedule files. This hasn’t been culled in 20+ years so contains a
+lot of stuff that isn’t used anymore. Most of the actual files that are
+used are in the /AtStopSchedules folder.</p>
+<p>/Actium/tableart – This contains the files used for printable PDF
+timetables.</p>
+<p>/Actium/tableart/CoverPages – Exported PDF versions of the cover
+pages for each timetable.</p>
+<p>/Actium/tableart/indd – Archive of old timetables, going back years
+now.</p>
+<p>/Actium/tableart/pdf – Exported PDF timetables. The important one is
+/Actium/tableart/pdf/oneline-dates, which are the files that need to be
+uploaded to the web server.</p>
+<h3 id="other-folders-in-pubinfsys-documents">Other folders in
+“PubInfSys – Documents”</h3>
+<p>There are a lot of these folders and many of them are just old
+projects or other things that don’t require a lot of knowledge transfer.
+But some of them do.</p>
+<p>/AtStopSchedules – This contains the templates used by the
+Applescript makepoints program to create the pole schedules and shelter
+inserts. “Templates” contains the templates themselves, while
+“Subsidiary” has other documents that are placed inside those InDesign
+files (fare information, header images, etc.)</p>
+<p>/Cleverworks is mostly archival information about CleverWorks – the
+information that’s used is mostly in the signup directory.</p>
+<p>/Flags contains the InDesign artwork for flags, decals, service
+change bag decals, and zip-tie sign decals.</p>
+<p>/Flags/Bags contains templates for service change bags. Most service
+change bags are made up manually, but when we’ve had major service
+changes, I’ve created bags in bulk, using these templates.</p>
+<p>/Flags/Decals contains the current decals (new map colors). Previous
+versions of decals are also present.</p>
+<p>/Flags/Flag Artwork contains the current base artwork for flags
+(blank flags without lines).</p>
+<p>/Flags/TempSigns contains templates for various sizes of laminated
+signs to be zip-tied to poles, as well as the artwork for the preprinted
+signs we’ve given to Supervision. (I’ve always felt the smaller 5.5 x 17
+signs stayed on the poles better and were less likely to flop around and
+look unprofessional than the 11 x 17 signs we usually use, but
+whatever.)</p>
+<p>/Maps contains all the different line and system map projects. Most
+of them are just folders of documents, but there are a few that are
+special.</p>
+<p>/Maps/Repository contains a repository of line maps, mostly complete
+from about 2006-ish, but with some older ones. Although it’s maintained
+by some programs, there’s nothing special about the folder except that
+it has a naming convention.</p>
+<p>/Maps/Schematics is similar to /Maps/Repository except that it
+contains a series of schematic maps that our cartographers produced for
+the Training and Education Department in the 2008-2010 time frame (until
+budget cuts forced their discontinuance).</p>
+<p>/Passenger Information contains some documentation I wanted to make
+more widely available. Some of this is still applicable.</p>
+<p>/PubTimetables contains the templates and un-exported artwork for the
+printable PDF timetables.</p>
+<p>In addition to the “PubInfSys – Documents” library, there is also
+“PubInfSys – Archive library” which contains much old information.</p>
+<h1 id="systems">Systems</h1>
+<h2 id="filemaker-database">FileMaker database</h2>
+<p>The FileMaker database is called &quot;ACTransit_Actium.fmp12&quot;. It is
+currently set up to be loaded on a copy of FileMaker Pro 14, which is
+located on our Mac Mini server</p>
+<p>The FileMaker database used to be stored on a hosted server, which we
+paid for. Unfortunately FileMaker 15 did not support shared hosting in
+the way that FileMaker 14 did, so when that came out, I moved the file
+onto a copy of FileMaker Pro 14.</p>
+<p>These are the tables in the FileMaker database. Back in 2014 I wrote
+some documentation on the table and field descriptions that were done at
+that time, called “ActiumExports – Table and Field Definitions.docx” – I
+believe all the information in there is still accurate, although now
+incomplete. I’ve copied it into the Transition folder.</p>
+<h3 id="agencies">Agencies</h3>
+<p>This table shows information about the three agencies that are part
+of the at-stop schedule program: AC Transit, Broadway Shuttle, and
+Dumbarton Express.</p>
+<h3 id="cities">Cities</h3>
+<p>Information about the cities, including the jurisdiction code in
+Hastus and what the legal requirement for the “no smoking” text is.</p>
+<h3 id="colors">Colors</h3>
+<p>Information about the colors used for lines (the color name, the CMYK
+and RGB values, etc)</p>
+<h3 id="fmtablekeys">FMTableKeys</h3>
+<p>Metadata – the primary key for each FileMaker table.</p>
+<h3 id="flagtypes">Flagtypes</h3>
+<p>Sizes and types of flag artwork. Only used for automatically making
+large numbers of flags, which we haven’t done in a while. (Most new
+flags, when they have to be laid out, are done by just placing the
+appropriate art in InDesign)</p>
+<h3 id="i18n">I18N</h3>
+<p>Snippets of translated text: e.g., the tag “we_only” is associated
+with “Weekends only”, “S&lt;0x00F3&gt;lo los fines de semana”, and
+“&lt;0x4EC5&gt;&lt;0x9650&gt;&lt;0x5468&gt;&lt;0x672B&gt;”. The hex
+codes are Unicode values in the format that InDesign uses.</p>
+<h3 id="linegrouptypes">LineGroupTypes</h3>
+<p>Colors and sort values for line types such as Local, Transbay, Early
+Bird, etc.</p>
+<h3 id="lines">Lines</h3>
+<p>One of the main tables, it includes information on each line: whether
+it’s active, what it’s color is, what agency it’s associated with, its
+description, and the transit hubs served.</p>
+<h3 id="poi_stops_join">POI_Stops_Join</h3>
+<p>A join table for PoIs and Stops_Neue. Not used.</p>
+<h3 id="places_neue">Places_Neue</h3>
+<p>Information about timepoints (“places” in Hastus). The name of the
+place and the destination associated with each one.</p>
+<h3 id="pois">PoIs</h3>
+<p>Points of Interest. Not used.</p>
+<h3 id="signlog">SignLog</h3>
+<p>This contains the log entries for what at-stop schedule signs were
+printed.</p>
+<h3 id="signtemplates">SignTemplates</h3>
+<p>Contains information on each template page (InDesign parent page) in
+the at-stop schedule templates. Lists the number of columns and lengths
+of each column.</p>
+<h3 id="signtypes">SignTypes</h3>
+<p>Contains information on each template file – each SignTemplate is
+associated with one SignType. Numbers and lengths of columns in this
+file are no longer used – instead it uses the values from the
+SignTemplates table.</p>
+<h3 id="signs">Signs</h3>
+<p>This is the table that contains information about each at-stop
+schedule (shelter insert, pole schedule, etc.) Is that sign active, what
+stop is it associated with, etc.</p>
+<h3 id="signs_stops_join">Signs_Stops_Join</h3>
+<p>A join table between Signs and Stops. Signs can be located at a stop
+and take schedules from that stop, or can take schedules from multiple
+stops, in which case it is placed in this table.</p>
+<h3 id="stops_neue">Stops_Neue</h3>
+<p>Information about each stop. “ActiumExports – Table and Field
+Definitions.docx” has the information about what the leading letter at
+the beginning of each column name means.</p>
+<h3 id="transithubs">TransitHubs</h3>
+<p>Information about the transit centers associated with each line</p>
+<h3 id="zipcodes">ZipCodes</h3>
+<p>The crew assignment this once supported is no longer used</p>
+<h3 id="annu">annu </h3>
+<p>This associates the tag in CleverWorks for an audio file
+(“annu_audios”) with text that, when found on a sign, should trigger
+that text to be played (“annu_sign_text”).</p>
+<h1 id="perl-programs">Perl programs</h1>
+<p>The perl programs were written over many years. Some aren’t used
+anymore; others have been heavily modified over the years; others, like
+the Clever ones, were written recently and are still used regularly.</p>
+<p>I was hoping to be able to rewrite the programs. As such, there is a
+library folder called “Actium,” which consists of rewritten programs,
+and one called “Octium,” meaning old-Actium, which consists of old
+programs. Nearly everything is still in Octium.</p>
+<p>Instructions for installing Perl on a Mac are here: <a href="https://github.com/aaronpriven/actium/blob/main/doc/Perl_installation.md">https://github.com/aaronpriven/actium/blob/main/doc/Perl_installation.md</a></p>
+<p>I haven’t needed to do it lately, though.</p>
+<p>Most programs access the FileMaker database using ODBC (one has to
+install “unixodbc” before installing the CPAN “DBD::ODBC” module, and
+then set up the FileMaker ODBC driver on the Mac using the free ODBC
+Manager), and the files in the current signup folder.</p>
+<p>The programs depends on many libraries from CPAN (cpan.org). I listed
+them in the file “found-dependencies.txt” in the repository. However,
+that’s created by looking for a tag that’s placed manually, and I may
+have forgotten to add it to some dependencies.</p>
+<p>Here I’m just going to describe each program briefly. I wrote this
+but I’m not sure how useful it will be to answer “what is this program?”
+or “what is this table?” I suspect it will be more useful for me to
+describe each project, which I’ll do in another document.</p>
+<p>Except for “actium.pl”, none of the programs are actually in the
+“bin” folder. They’re stored as modules in the “lib/Octium/Cmd” folder.
+The programs are run using “actium.pl” and then the name of the program,
+e.g., “actium.pl actiumdbfields” runs the actiumdbfields program.</p>
+<h3 id="actiumdbexport">actiumdbexport</h3>
+<p>Exports all data from the FileMaker database to CSV files.</p>
+<h3 id="actiumdbfields">actiumdbfields</h3>
+<p>Exports the field and table names from the FileMaker database to a
+text file.</p>
+<h3 id="addfields">addfields</h3>
+<p>Takes a text file and makes a copy with columns from the database
+added to the end. Useful for taking a list of stop IDs and adding the
+stop names to the list.</p>
+<h3 id="annupopulate">annupopulate</h3>
+<p>Once used to take the Clever data and populate the annu table. Not
+needed now</p>
+<h3 id="avl2patdest">avl2patdest</h3>
+<p>Creates the pattern destination and direction destination information
+for each pattern</p>
+<h3 id="avl2points">avl2points</h3>
+<p>Not used, old program to make at-stop schedules</p>
+<h3 id="avl2stoplines">avl2stoplines</h3>
+<p>Makes the stoplines.txt file that has what lines stop at each
+stop</p>
+<h3 id="avl2stoplists">avl2stoplists</h3>
+<p>Creates the lists of stops for each line and each pattern.</p>
+<h3 id="bags2">bags2</h3>
+<p>Used to make large numbers of service change bags. I haven’t used it
+since the last major service change</p>
+<h3 id="bartskeds">bartskeds</h3>
+<p>Uses the BART API to get first and last trains. Once used for TIDs,
+but BART asked us not to put this information up anymore</p>
+<h3 id="citiesbyline">citiesbyline</h3>
+<p>not used regularly</p>
+<h3 id="compareskeds">compareskeds</h3>
+<p>Important program, compares sets of schedules to get the differences
+between signups</p>
+<h3 id="comparestops">comparestops</h3>
+<p>Compares what lines stop at each stop between signups</p>
+<h3 id="comparestops3">comparestops3</h3>
+<p>Compares what lines stop at each stop between signups, only it
+compares three separate signups. (Useful for figuring out Fall, where
+600-series lines don’t run during summer)</p>
+<h3 id="decalcompare">decalcompare</h3>
+<p>Designed to compare the output of “flagspecs” to see what changed
+between signups</p>
+<h3 id="decalcount">decalcount</h3>
+<p>Counts decals listed in a spreadsheet to see what needs to be
+printed</p>
+<h3 id="decallabels">decallabels</h3>
+<p>Makes spreadsheet with labels for decal envelopes.</p>
+<h3 id="ems">ems</h3>
+<p>Gets approximate width of text in ems (in Frutiger)</p>
+<h3 id="excelcompare">excelcompare</h3>
+<p>copies two Excel files to different names so you can open two Excel
+files with the same name (e.g., two schedules from different signups) at
+the same time</p>
+<h3 id="finalizeskeds">finalizeskeds</h3>
+<p>Takes the received schedules and the exceptional schedules and
+combines them to make final schedules</p>
+<h3 id="flaglists">flaglists</h3>
+<p>not used (attempt to replace flagspecs)</p>
+<h3 id="flagspecs">flagspecs</h3>
+<p>old program to make flag specifications</p>
+<h3 id="frequency">frequency</h3>
+<p>not used</p>
+<h3 id="headwaytimes">headwaytimes</h3>
+<p>not used</p>
+<h3 id="help">help</h3>
+<p>displays whatever I put in each program’s file to display</p>
+<h3 id="htmltables">htmltables</h3>
+<p>Creates HTML tables with schedule information. Not used for anything
+except the Dumbarton Express schedules</p>
+<h3 id="indd_encode">indd_encode</h3>
+<p>Encodes Unicode text in ways that InDesign can use</p>
+<h3 id="iphoto_stops">iphoto_stops</h3>
+<p>Not used (formerly geocoded photos in iPhoto, but that was before
+iPhoto was phased out)</p>
+<h3 id="linedescrip">linedescrip</h3>
+<p>Gets line descriptions from the FileMaker database and outputs it in
+ways that are used on the web (formerly) and in the TIDs</p>
+<h3 id="linesbycity">linesbycity</h3>
+<p>Reports on what lines serve each city</p>
+<h3 id="makepoints">makepoints</h3>
+<p>Program that creates the InDesign point schedule art</p>
+<h3 id="manual">manual</h3>
+<p>displays whatever I put in each program’s file to display</p>
+<h3 id="matrix">matrix</h3>
+<p>Not used</p>
+<h3 id="mr_copy">mr_copy</h3>
+<p>map repository copy – makes copies of latest version of each line
+map</p>
+<h3 id="mr_import">mr_import</h3>
+<p>imports line maps into the repository</p>
+<h3 id="newsignup">newsignup</h3>
+<p>Takes AC Transit Enterprise Data export and turns it into
+tab-delimited files. Also creates altered stop name fields (e.g., turns
+“Av” in the stop description into “Ave.”)</p>
+<h3 id="prepareflags">prepareflags</h3>
+<p>Make new flags in bulk. Haven’t used it in years</p>
+<h3 id="routeannu">routeannu</h3>
+<p>Prepare route attribute and route announcement data for
+CleverWorks</p>
+<h3 id="schooltrips">schooltrips</h3>
+<p>not used</p>
+<h3 id="sked2points">sked2points</h3>
+<p>Makes the intermediate files with the schedule data for each point.
+These files are in turn used by makepoints</p>
+<h3 id="slists2html">slists2html</h3>
+<p>Turns the stop list files into web pages. Not used now</p>
+<h3 id="ss">ss</h3>
+<p>Search for a stop ID. Not used now</p>
+<h3 id="stopannu">stopannu</h3>
+<p>Prepare stop announcement data for CleverWorks</p>
+<h3 id="stops2kmz">stops2kmz</h3>
+<p>Makes the Google Earth .kmz file I use to display stops</p>
+<h3 id="stopsofline">stopsofline</h3>
+<p>Counts the number of stops per line</p>
+<h3 id="storeavl">storeavl</h3>
+<p>Converts the temporary Hastus Standard AVL files into perl
+structures</p>
+<h3 id="tempsigns">tempsigns</h3>
+<p>program to make bulk temporary signs (the 5x17 or 11x17 signs
+zip-tied to poles)</p>
+<h3 id="testcalc">testcalc</h3>
+<p>tests the calculation of fields (e.g., turning “Av” to “Ave.”) from
+Enterprise Database data</p>
+<h3 id="timetables">timetables</h3>
+<p>Makes the InDesign files used to make printable timetables</p>
+<h3 id="xhea2skeds">xhea2skeds</h3>
+<p>Makes the schedule files (Excel schedules) from the Enterprise
+Database files</p>
+<h3 id="zipcodes-1">zipcodes</h3>
+<p>Gets the zip codes for stops in the database without them (using
+geocode servers)</p>
+<h3 id="zipdecals">zipdecals</h3>
+<p>Prepares a zip file with decals listed in a spreadsheet</p>
+<h1 id="indesign-illustrator-scripting">InDesign / Illustrator
+scripting</h1>
+<p>These are located in the folder “Actium/applications” in the
+PubInfSys – Documents library on Sharepoint. Some are saved as both
+applications and also .scpt AppleScript files. Text versions are on
+Github.</p>
+<p>AppleScript is everybody’s least favorite language, and justifiably
+so. Some of these scripts could be rewritten in Adobe’s ExtendScript
+(their JavaScript version), but my understanding is that Adobe’s system
+only allows automation of their particular app, and one can’t hand
+information off from the Finder to Illustrator, or even from InDesign to
+Illustrator, the way one can in AppleScript. (And I’ve read bad things
+about Apple’s JavaScript for Automation although I haven’t tried
+it.)</p>
+<p>Originally, I wasn’t very careful about the way I wrote the path
+specifications. There are still lots of paths specified in them using
+paths with my username in them, for example. When I’ve made
+modifications in recent years I’ve tried to do this better (using things
+like “path to home folder” instead of “Users:apriven” or ‘POSIX file
+‘/Users/apriven’), but I haven’t gone back and fixed the old ones. (One
+of the irritating things about Applescript is that it likes to use the
+old <a href="https://developer.apple.com/library/archive/documentation/AppleScript/Conceptual/AppleScriptLangGuide/conceptual/ASLR_fundamentals.html#//apple_ref/doc/uid/TP40000983-CH218-SW28">Macintosh
+path syntax</a> instead of current path syntax.)</p>
+<h3 id="make-bags-2018">Make Bags 2018</h3>
+<p>Used to make large numbers of service change bags.</p>
+<h3 id="makemapsforpointskeds.scpt">MakeMapsForPointSkeds.scpt</h3>
+<p>Not used now</p>
+<h3 id="save-indesign-as-eps-linedecals">Save InDesign As EPS
+LineDecals</h3>
+<p>Used to save decals to the appropriate folders (export and
+export_bleed), including adding trim lines to the bleed version. Very
+useful</p>
+<h3 id="save-indesign-as-eps-ask---save-desktop">Save InDesign As EPS
+ask - save desktop</h3>
+<p>Saves the current InDesign file as an EPS file to the desktop. Can
+optionally set a bleed and arrange to outline the text, using
+Illustrator</p>
+<h3 id="save-indesign-as-eps-decal.app">Save InDesign As EPS
+decal.app</h3>
+<p>Save the current file as a decal, adding trim lines</p>
+<h3 id="save-indesign-as-pdf-ask---save-desktop">Save InDesign As PDF
+ask - save desktop</h3>
+<p>Saves the current InDesign file as an PDF file to the desktop. Can
+optionally set a bleed</p>
+<h3 id="close_first_indesign_document.scpt">close_first_indesign_document.scpt</h3>
+<p>Debug tool (use when “without showing window” has been used in a
+script)</p>
+<h3 id="current_signup.scpt">current_signup.scpt</h3>
+<p>Library – it’s imported into other programs, and has the current
+signup folder. Just used in make_timetable.scpt although the idea was it
+would be used more widely</p>
+<h3 id="export_by_2.scpt">export_by_2.scpt</h3>
+<p>not used</p>
+<h3 id="export_coverpages.scpt">export_coverpages.scpt</h3>
+<p>Used to export the cover pages of public timetables</p>
+<h3 id="export_pointmaps.scpt">export_pointmaps.scpt</h3>
+<p>Used to export the maps for at-stop schedules into separate PDF
+files</p>
+<h3 id="export_this_pointmap.scpt">export_this_pointmap.scpt</h3>
+<p>Used to export the maps for at-stop schedules into separate PDF files
+– but just the current one (rather than exporting all of them)</p>
+<h3 id="export_timetables">export_timetables</h3>
+<p>Exports the public timetables as PDFs</p>
+<h3 id="make-map-pages.scpt">make map pages.scpt</h3>
+<p>not used now</p>
+<h3 id="make_timetable.scpt">make_timetable.scpt</h3>
+<p>make timetable</p>
+<h3 id="makedecal-id5.5.scpt">makedecal-id5.5.scpt</h3>
+<p>not used now (used to make lots of decals at once from the program
+output, but in practice we don’t do this now)</p>
+<h3 id="makeflags_new">makeflags_new</h3>
+<p>Current program making flags from specifications</p>
+<h3 id="makepoints4.app">makepoints4.app</h3>
+<p>Important program that creates the pole schedules, shelter inserts,
+etc.</p>
+<h3 id="override_library.scpt">override_library.scpt</h3>
+<p>Library that contains routines to override items from parent pages in
+InDesign</p>
+</body>
+</html>

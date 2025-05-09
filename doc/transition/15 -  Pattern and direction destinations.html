@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>15. Pattern and direction destinations </title>
+  <style>
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">15. Pattern and direction destinations </h1>
+</header>
+<p>Given how much consternation these items seem to have gathered over
+the years, they’re actually pretty simple.</p>
+<p>There are two files generated from “actium.pl avl2patdest -s signup”.
+First, it takes each pattern (from the stub Hastus Standard AVL Export
+format files that are generated from the Enterprise Database export as
+part of newsignup), determines the final timepoint of that pattern, and
+then fetches the c_destination value of that timepoint in the Places
+table. It sends that value, plus some other information about the
+pattern, to pattern-destinations.txt in the signup folder.</p>
+<p>The program also outputs the direction-destinations.txt file, which
+simply takes all the patterns for each direction and combines them.</p>
+<p>Unlike the pattern-destinations file, this needs some editorial
+adjustment. First, the BusTime system truncates them to a small number
+of characters, and the length needs to be trimmed for some items.
+Second, some destinations are short turns that are only served by a
+small percentage of trips, and it may not be useful to list that in the
+destination (for example, the pull-in trips on Line 97, which end on
+Hesperian at Winton). Finally, I didn’t try to program information about
+which destination should be listed first, even though there’s a
+convention that the furthest destination is listed first in a
+destination like Line 72’s “To Hilltop Mall / Contra Costa College”. I
+edit this file manually to resolve these issues. Then I send it to
+IT.</p>
+<h1 id="future">Future</h1>
+<p>Using the timepoint as the source of destination information works
+most of the time but there are exceptions where it isn’t ideal.
+Moreover, Scheduling has started incorporating the direction-destination
+information into Hastus (as the PublicDirection1 and PublicDirection2
+fields in the routes table) – but because the actium.pl avl2patdest
+program can’t work until the data has been received, the timing is
+off.</p>
+<p>It would be preferable in the future for the pattern and destination
+destinations to be included in Hastus. Communications should be given
+the service specifications that Planning creates for Scheduling at the
+same time as Scheduling gets them, and Communications should write the
+destinations and give them to Scheduling for inclusion. To do this, a
+new field would need to be created in Hastus for the pattern
+destination.</p>
+</body>
+</html>

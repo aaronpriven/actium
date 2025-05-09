@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>20. Line and system maps and map repository </title>
+  <style>
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">20. Line and system maps and map repository </h1>
+</header>
+<h1 id="line-map-repository">Line map repository</h1>
+<p>One thing that I handled was the line map repository.</p>
+<p>There are actually two line map repositories: the one called
+“Repository” and the one called “Schematics”, both in PubInfSys –
+Documents/Maps. We stopped doing schematic maps for training purposes
+after the big budget cuts in 2009 or so, but we still have the old
+ones.</p>
+<p>I described this in excruciating detail in two instruction documents
+(“Maps Repository – Quick Start” and “Maps Repository – Extended”) back
+when this was first created. Other than that I removed the creation of
+JPEG maps for the web (since these are no longer used), these documents
+still pretty well describe how it works.</p>
+<p>But in short: the repositories are just big sets of folders and
+files, with a naming convention that allows a program to determine which
+of the line maps are the current ones. The mr_import program renames a
+file to match the naming convention and moves it to the right place in a
+folder; the mr_copy program gets the latest version of each map and
+copies it into a different folder. That’s it.</p>
+<p>The truth is that nothing these programs do couldn’t be done
+manually. Anybody could move a map into a folder with the same name as
+the lines described by that map, and then copy the current map into
+another folder when a new one comes in. It’s not even that inefficient,
+compared to some of the things we do.</p>
+<p>It would be possible to install Perl and these programs, and then run
+the programs on any Mac. There isn’t any access to the database that
+would make it hard to run on any system. There just needs to be a line
+in .actium.ini listing the location of the repository. Mine is:</p>
+<blockquote>
+<p>[Repository]</p>
+<p>repository = /Users/apriven/p/Maps/Repository</p>
+</blockquote>
+<p>Where “~/p” is a symlink to the “PubInfSys - Documents”
+directory.</p>
+<p>It would be much better, though, if a real digital asset management
+system were procured, which would allow versions to be better tracked
+and assets tagged with the appropriate line designations.</p>
+</body>
+</html>

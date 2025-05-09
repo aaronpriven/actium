@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>The Actium Maps Repository: Quick Start Guide</title>
+  <style>
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">The Actium Maps Repository:<br />
+Quick Start Guide</h1>
+<p class="subtitle">Aaron Priven, February 2012</p>
+</header>
+<h1 id="about-the-repository">About the repository</h1>
+<p>A data repository “is a central place in which an aggregation of data
+is kept and maintained in an organized way.”<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>AC Transit’s line map repository – called the “Actium Maps
+Repository” – is a very, very simple system.</p>
+<p>The repository itself is just a folder on the shared Macintosh
+server. This folder is</p>
+<p>/Volumes/Bireme/Maps/Repository</p>
+<p>The only difference between it and any other folder is that the names
+of files and folders inside the repository can’t be just anything. They
+have to fit a particular pattern.</p>
+<p>There’s no real restriction on putting files in or taking files out
+of the repository. Anybody with access to the server can do that from
+the Macintosh Finder, or from the command line. In fact, you can
+probably break the repository by renaming files or folders. So don’t do
+that.</p>
+<p>I have written a couple of programs, which make it easier to import
+files into the repository, and to go through the repository and find the
+latest version of all the active maps.</p>
+<h1 id="summary-of-file-and-folder-names">Summary of file and folder
+names</h1>
+<p>This is a summary of what most file names look like now. More
+details, including information on file name segments no longer commonly
+used, can be found in the separate document “The Actium Maps Repository:
+Extended Usage and Technical Detail.”</p>
+<h2 id="file-name">File name</h2>
+<p>Each map file in the repository has a name that matches the following
+pattern:</p>
+<p><em>&lt;line or
+title&gt;-&lt;date&gt;-&lt;version&gt;.&lt;extension&gt;</em></p>
+<p>The first part is the bus line each map refers to. If the map has
+more than one bus line, this part will be a list of bus lines separated
+by underscores (such as “1_1R_801”).</p>
+<p>The second part is a date: four-digit year, followed by an
+underscore, followed by a two-digit month (such as “2012_02”).</p>
+<p>The third part is a piece of text that is used when more than one
+revision is received in a single month. Usually it is something like
+“v1” or “TT1” for the first revision, “v2” or “TT2” for the second
+revision, and so on.</p>
+<p>Finally, the extension is the usual file extension for that type of
+file (.pdf, .eps, and so forth).</p>
+<h2 id="folder-name">Folder name</h2>
+<p>Each map is in a folder with the same name as the lines of that map.
+So, the map for lines 1, 1R, and 801 will have a name starting with
+“1_1R_801” and will be in a folder called “1_1R_801”.</p>
+<p>There are a few special folders in the repository, which themselves
+start with underscores. They aren’t used for the long-term storage of
+the maps, just for short-term copies.</p>
+<h1 id="importing-files-into-the-repository">Importing files into the
+repository</h1>
+<p>At first, it might seem like the easiest way to put a file in the
+repository is just to use the Finder to put it there. But because the
+names have to be in a special format, and because they have to be placed
+in just the right folder, I wrote a program to do this, called
+“mr_import”.</p>
+<p>The following is the most common usage scenario for mr_import. More
+details on mr_import are found in the separate document “The Actium Maps
+Repository: Extended Usage and Technical Detail.”</p>
+<h2 id="copy-files-to-the-_new-folder-and-run-acrobat-distiller">Copy
+files to the _new folder and run Acrobat Distiller</h2>
+<p>When we receive new maps, they should be placed in the folder “/_new”
+(note the underscore) in the repository (so
+“/Volumes/Bireme/Maps/Repository/_new”).</p>
+<p>Most of the time, the maps come to us in EPS format. Before
+processing, a PDF version should be created of them. Create them using
+the Acrobat Distiller program which comes with Acrobat Pro. (You can
+drag the files and drop them on the Distiller icon.) Make sure the PDF
+settings are “High Quality Print”.</p>
+<h2 id="log-into-the-server-and-run-mr_import">Log into the server and
+run mr_import</h2>
+<p>As with all Actium programs, mr_import runs from the Terminal of the
+server (“Consul”), not from your desktop computer. You can go up to the
+server in the copy room and run it there, do “screen sharing” so you can
+see the Consul screen from your computer, or use the “ssh” program from
+Terminal on your local machine to access the server’s Unix shell.</p>
+<p>Either way, eventually you will get a shell prompt on the Consul
+system, and enter the following:</p>
+<p>cd /Volumes/Bireme/Maps/Repository</p>
+<p>actium.pl mr_import _new</p>
+<p>This will run the mr_import program.</p>
+<p>First, it will look through the _new folder for all the map files
+whose names fit the pattern, or whose names can be converted to the
+pattern by some simple rules (replacing commas with underscores in the
+lines, and changing dates like “feb12” to dates like “2012_02”). It will
+move those files to the proper place in the repository.</p>
+<p>Second, it will create a new folder called “web” inside “_new”. If
+PDF files are present, it will create versions of those files suitable
+for sending to the Information Services department for placement on the
+AC Transit web site. (Details on what those files are will be found in
+the separate document “The Actium Maps Repository: Extended Usage and
+Technical Detail.”.)</p>
+<h1 id="getting-the-latest-version-of-each-map">Getting the latest
+version of each map</h1>
+<p>The reason for the special treatment of files and folders in the
+repository is so that a program can determine which maps are the most
+recent ones for each line. We can copy them to the shared drive for
+others to see, or make sure that versions linked from InDesign files are
+always the latest version.</p>
+<p>The program mr_copy makes copies of the latest map files for us.
+Again, this is the most common usage scenario for mr_copy. More details
+can be found in the separate document “The Actium Maps Repository:
+Extended Usage and Technical Detail.”.</p>
+<h2 id="make-sure-that-the-correct-maps-are-marked-active">Make sure
+that the correct maps are marked active</h2>
+<p>There is a plain text file in the repository called
+“active_maps.txt”. This can be edited on your local system with TextEdit
+or a Unix editor such as “vi”. (Do not edit it with Microsoft Word.) It
+is very simple, and has the lines for one active map on each line of the
+file:</p>
+<p>1_1R_801<br />
+7<br />
+11<br />
+12<br />
+...</p>
+<p>And so on. This doesn’t need to change most of the time, but if a new
+line has been added, or new versions of the maps describe different
+lines (for example, if previously we had a map “F_FS” but now we have
+two separate maps “F” and “FS”), then the file will need to be edited to
+make sure all the current maps are listed.</p>
+<p>It doesn’t matter in what order the maps are listed.</p>
+<h2 id="log-into-the-server-and-run-mr_copy">Log into the server and run
+mr_copy</h2>
+<p>From a shell prompt on the Consul system, enter the following:</p>
+<p>actium.pl mr_copy</p>
+<p>This will run the mr_copy program.</p>
+<p>This will make three separate copies of the map with the latest date
+and version.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<p>The first copy will be found in the _fullnames folder in the
+repository, and will be simple copies of the most recent maps.</p>
+<p>The second copy will be found in the _linesnames folder. This will
+also have a simple copy of each map, but the name will be shortened. It
+will not include the date or version. So where the full name is
+“86_386-2012_02-v1.eps”, the copy in the _linesnames folder will be just
+“86_386.eps”.</p>
+<p>The third copy is in the _web folder in the repository. It will take
+any PDF files it finds and will create, in the _web folder, versions of
+those files suitable for sending to the Informaton Services department
+for placement on the AC Transit web site. (Details on what those files
+are will be found in the extended usage and technical detail
+document.)</p>
+<p>Note that mr_copy never deletes any files in the folders it copies
+into. So for each new revision, a new set of files will be found in
+_fullnames. Also, when the active_maps.txt file is changed, old maps
+that are no longer active may still be found in _fullnames, _linesnames,
+and _web. It is a good idea to delete these three folders and have
+mr_copy recreate them whenever a major change is made. The mr_copy
+program does not do this for you.</p>
+<p>Once the files are found in the _fullnames, _linesnames, and _web
+folders, they can be copied to the District shared drive (usually from
+_fullnames) or imported into InDesign (usually from _linesnames).</p>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>From
+http://searchoracle.techtarget.com/definition/repository , retrieved
+February 13, 2012.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>For checking dates and versions, mr_copy looks at .eps
+files only. If there is no .eps file, it won’t see it. So don’t, for
+example, make a new version of a map in Adobe Illustrator and save it as
+an .ai file without also saving an .eps file. This also means the part
+of the program that makes copies for the web will only look at a .pdf
+file if there is an .eps file with the same date and version.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+</body>
+</html>

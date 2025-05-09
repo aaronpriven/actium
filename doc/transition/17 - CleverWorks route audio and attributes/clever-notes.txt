@@ -1,0 +1,18 @@
+Clever activities:
+
+For each pattern:
+
+   * TCH variant description - copy destination sign info, but 
+     without repeating route designation the way destination signs are listed
+   * BusTime public route direction - needs "To"
+   * BusTime public pattern direction - does not need "To"
+   * Farebox fareset ID  - 0 for local, 1 for transbay
+
+* Sign codes for deadheads/ pulls should be set to "Not in service"
+
+Audio:
+
+Route Announcement associated with headsign text
+
+Route designation, route destination, and fare info (transbay, transbay/local,
+local)
